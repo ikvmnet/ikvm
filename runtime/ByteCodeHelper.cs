@@ -354,68 +354,83 @@ namespace IKVM.Runtime
 		[DebuggerStepThroughAttribute]
 		public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
 		{
-			if(src != dest)
+			// If the two arrays are the same, we can use the fast path, but we're also required to do so,
+			// to get the required memmove semantics.
+			if(src == dest)
 			{
-				// NOTE side effect of GetTypeHandle call is null check for src and dest (it
-				// throws an ArgumentNullException)
-				// Since constructing a Type object is expensive, we use Type.GetTypeHandle and
-				// hope that it is implemented in a such a way that it is more efficient than
-				// Object.GetType()
 				try
 				{
-					RuntimeTypeHandle type_src = Type.GetTypeHandle(src);
-					RuntimeTypeHandle type_dst = Type.GetTypeHandle(dest);
-					if(type_src.Value != type_dst.Value)
-					{
-						if(len >= 0)
-						{
-							try
-							{
-								// since Java strictly defines what happens when an ArrayStoreException occurs during copying
-								// and .NET doesn't, we have to do it by hand
-								object[] src1 = src as object[];
-								object[] dst1 = dest as object[];
-								if(src1 != null && dst1 != null)
-								{
-									for(; len > 0; len--)
-									{
-										dst1[destStart++] = src1[srcStart++];
-									}
-								}
-								else
-								{
-									// one (or both) of the arrays might be a value type array
-									Array src2 = (Array)src;
-									Array dst2 = (Array)dest;
-									// we don't want to allow copying a primitive into an object array!
-									if(ClassLoaderWrapper.GetWrapperFromType(src2.GetType().GetElementType()).IsPrimitive ||
-										ClassLoaderWrapper.GetWrapperFromType(dst2.GetType().GetElementType()).IsPrimitive)
-									{
-										throw JavaException.ArrayStoreException();
-									}
-									for(; len > 0; len--)
-									{
-										dst2.SetValue(src2.GetValue(srcStart++), destStart++);
-									}
-								}
-								return;
-							}
-							catch(InvalidCastException)
-							{
-								throw JavaException.ArrayStoreException();
-							}
-						}
-						throw JavaException.ArrayIndexOutOfBoundsException();
-					}
+					arraycopy_fast((Array)src, srcStart, (Array)dest, destStart, len);
+					return;
 				}
-				catch(ArgumentNullException)
+				catch(InvalidCastException)
 				{
-					throw JavaException.NullPointerException();
+					throw JavaException.ArrayStoreException();
 				}
 			}
+			else if(src == null || dest == null)
+			{
+				throw JavaException.NullPointerException();
+			}
+			else if(len < 0)
+			{
+				throw JavaException.ArrayIndexOutOfBoundsException();
+			}
+			else
+			{
+				object[] src1 = src as object[];
+				object[] dst1 = dest as object[];
+				if(src1 != null && dst1 != null)
+				{
+					// for small copies, don't bother comparing the types as this is relatively expensive
+					if(len > 50 && Type.GetTypeHandle(src).Value == Type.GetTypeHandle(dest).Value)
+					{
+						arraycopy_fast(src1, srcStart, dst1, destStart, len);
+						return;
+					}
+					else
+					{
+						for(; len > 0; len--)
+						{
+							// NOTE we don't need to catch ArrayTypeMismatchException & IndexOutOfRangeException, because
+							// they automatically get converted to the Java equivalents anyway.
+							dst1[destStart++] = src1[srcStart++];
+						}
+						return;
+					}
+				}
+				else if(Type.GetTypeHandle(src).Value != Type.GetTypeHandle(dest).Value &&
+						(IsPrimitiveArrayType(src.GetType()) || IsPrimitiveArrayType(dest.GetType())))
+				{
+					// we don't want to allow copying a primitive into an object array!
+					throw JavaException.ArrayStoreException();
+				}
+				else
+				{
+					try
+					{
+						arraycopy_fast((Array)src, srcStart, (Array)dest, destStart, len);
+						return;
+					}
+					catch(InvalidCastException)
+					{
+						throw JavaException.ArrayStoreException();
+					}
+				}
+			}
+		}
+
+		private static bool IsPrimitiveArrayType(Type type)
+		{
+			return type.IsArray && ClassLoaderWrapper.GetWrapperFromType(type.GetElementType()).IsPrimitive;
+		}
+		
+		[DebuggerStepThroughAttribute]
+		public static void arraycopy_fast(Array src, int srcStart, Array dest, int destStart, int len)
+		{
 			try 
 			{
-				Array.Copy((Array)src, srcStart, (Array)dest, destStart, len);
+				Array.Copy(src, srcStart, dest, destStart, len);
 			}
 			catch(ArgumentNullException)
 			{
@@ -425,12 +440,8 @@ namespace IKVM.Runtime
 			{
 				throw JavaException.ArrayIndexOutOfBoundsException();
 			}
-			catch(InvalidCastException)
-			{
-				throw JavaException.ArrayStoreException();
-			}
 		}
-		
+
 		[DebuggerStepThroughAttribute]
 		public static void arraycopy_primitive_8(Array src, int srcStart, Array dest, int destStart, int len)
 		{

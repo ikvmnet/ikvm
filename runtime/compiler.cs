@@ -53,6 +53,7 @@ class Compiler
 	private static MethodInfo d2iMethod;
 	private static MethodInfo f2lMethod;
 	private static MethodInfo d2lMethod;
+	private static MethodInfo arraycopy_fastMethod;
 	private static MethodInfo arraycopy_primitive_8Method;
 	private static MethodInfo arraycopy_primitive_4Method;
 	private static MethodInfo arraycopy_primitive_2Method;
@@ -88,6 +89,7 @@ class Compiler
 		d2iMethod = typeof(ByteCodeHelper).GetMethod("d2i");
 		f2lMethod = typeof(ByteCodeHelper).GetMethod("f2l");
 		d2lMethod = typeof(ByteCodeHelper).GetMethod("d2l");
+		arraycopy_fastMethod = typeof(ByteCodeHelper).GetMethod("arraycopy_fast");
 		arraycopy_primitive_8Method = typeof(ByteCodeHelper).GetMethod("arraycopy_primitive_8");
 		arraycopy_primitive_4Method = typeof(ByteCodeHelper).GetMethod("arraycopy_primitive_4");
 		arraycopy_primitive_2Method = typeof(ByteCodeHelper).GetMethod("arraycopy_primitive_2");
@@ -1421,11 +1423,11 @@ class Compiler
 							cpi.Signature == "(Ljava.lang.Object;ILjava.lang.Object;II)V" &&
 							cpi.GetClassType().GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())
 						{
-							TypeWrapper t1 = ma.GetRawStackTypeWrapper(i, 2);
-							TypeWrapper t2 = ma.GetRawStackTypeWrapper(i, 4);
-							if(t1.IsArray && t1 == t2)
+							TypeWrapper dst_type = ma.GetRawStackTypeWrapper(i, 2);
+							TypeWrapper src_type = ma.GetRawStackTypeWrapper(i, 4);
+							if(dst_type.IsArray && dst_type == src_type)
 							{
-								switch(t1.Name[1])
+								switch(dst_type.Name[1])
 								{
 									case 'J':
 									case 'D':
@@ -1444,7 +1446,21 @@ class Compiler
 										ilGenerator.Emit(OpCodes.Call, arraycopy_primitive_1Method);
 										break;
 									default:
-										ilGenerator.Emit(OpCodes.Call, arraycopyMethod);
+										// TODO once the verifier tracks actual types (i.e. it knows that
+										// a particular reference is the result of a "new" opcode) we can
+										// use the fast version if the exact destination type is known
+										// (in that case the "dst_type == src_type" above should
+										// be changed to "src_type.IsAssignableTo(dst_type)".
+										TypeWrapper elemtw = dst_type.ElementTypeWrapper;
+										// note that IsFinal returns true for array types, so we have to be careful!
+										if(!elemtw.IsArray && elemtw.IsFinal)
+										{
+											ilGenerator.Emit(OpCodes.Call, arraycopy_fastMethod);
+										}
+										else
+										{
+											ilGenerator.Emit(OpCodes.Call, arraycopyMethod);
+										}
 										break;
 								}
 								break;
