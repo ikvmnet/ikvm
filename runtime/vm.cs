@@ -287,6 +287,7 @@ namespace IKVM.Internal
 		private static bool compilationPhase1;
 		private static string sourcePath;
 		private static bool monoBugWorkaround;
+		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static ikvm.@internal.LibraryVMInterface lib;
 
 		internal static ikvm.@internal.LibraryVMInterface Library
@@ -350,6 +351,26 @@ namespace IKVM.Internal
 			get
 			{
 				return noStackTraceInfo;
+			}
+		}
+
+		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters
+		{
+			get
+			{
+				return enableReflectionOnMethodsWithUnloadableTypeParameters;
+			}
+			set
+			{
+				enableReflectionOnMethodsWithUnloadableTypeParameters = value;
+			}
+		}
+
+		internal static bool DisableDynamicBinding
+		{
+			get
+			{
+				return isStaticCompiler;
 			}
 		}
 
@@ -1215,6 +1236,10 @@ namespace IKVM.Internal
 								{
 									AttributeHelper.SetDeprecatedAttribute(mbCore);
 								}
+								if(m.HideFromJava)
+								{
+									AttributeHelper.HideFromJava(mbCore);
+								}
 							}
 
 							if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) == 0)
@@ -1241,6 +1266,10 @@ namespace IKVM.Internal
 								if(m.Deprecated)
 								{
 									AttributeHelper.SetDeprecatedAttribute(mbHelper);
+								}
+								if(m.HideFromJava)
+								{
+									AttributeHelper.HideFromJava(mbHelper);
 								}
 							}
 							return mbCore;
@@ -2024,7 +2053,7 @@ namespace IKVM.Internal
 						{
 							if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
 							{
-								Console.Error.WriteLine("Note: found main method in class: {0}", f.Name);
+								Console.Error.WriteLine("Note: found main method in class \"{0}\"", f.Name);
 								options.mainClass = f.Name;
 								break;
 							}
@@ -2073,7 +2102,7 @@ namespace IKVM.Internal
 				{
 					options.path = options.assembly + ".exe";
 				}
-				Console.Error.WriteLine("Note: output file is: {0}", options.path);
+				Console.Error.WriteLine("Note: output file is \"{0}\"", options.path);
 			}
 
 			if(options.targetIsModule)
@@ -2159,8 +2188,7 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: bootstrap classes missing and IKVM.GNU.Classpath.dll not found");
 					return 1;
 				}
-				Console.Error.WriteLine("Warning: bootstrap classes are missing, automatically adding reference to {0}", classpath.Location);
-				Console.Error.WriteLine("  (to avoid this warning add \"-reference:{0}\" to the command line)", classpath.Location);
+				Console.Error.WriteLine("Note: automatically adding reference to \"{0}\"", classpath.Location);
 				// we need to scan again for remapped types, now that we've loaded the core library
 				ClassLoaderWrapper.LoadRemappedTypes();
 			}
@@ -2179,22 +2207,34 @@ namespace IKVM.Internal
 					if(wrapper == null)
 					{
 						// this should only happen for netexp types (because the other classes must exist, after all we just parsed them)
-						Console.Error.WriteLine("Class not found: {0}", s);
+						ClassFile c = h[s] as ClassFile;
+						if(c == null || c.IKVMAssemblyAttribute == null)
+						{
+							Console.Error.WriteLine("Error: loading class \"{0}\" failed for unknown reason", s);
+							return 1;
+						}
+						Console.Error.WriteLine("Warning: ikvmstub class \"{0}\" refers to non-existing type", s);
 					}
 					else
 					{
 						allwrappers.Add(wrapper);
 					}
 				}
-				catch(Exception x)
+				catch(NoClassDefFoundError x)
 				{
-					Console.Error.WriteLine("Loading class {0} failed due to:", s);
-					Console.Error.WriteLine(x);
+					Console.Error.WriteLine("Warning: unable to compile class \"{0}\" (missing class \"{1}\")", s, x.Message);
 				}
 			}
 			if(options.mainClass != null)
 			{
-				TypeWrapper wrapper = loader.LoadClassByDottedNameFast(options.mainClass);
+				TypeWrapper wrapper = null;
+				try
+				{
+					wrapper = loader.LoadClassByDottedNameFast(options.mainClass);
+				}
+				catch(NoClassDefFoundError)
+				{
+				}
 				if(wrapper == null)
 				{
 					Console.Error.WriteLine("Error: main class not found");

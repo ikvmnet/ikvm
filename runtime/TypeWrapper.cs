@@ -538,6 +538,14 @@ abstract class TypeWrapper
 		return GetType().Name + "[" + name + "]";
 	}
 
+	// For UnloadableTypeWrapper it tries to load the type through the specified loader
+	// and if that fails it throw a NoClassDefFoundError (not a java.lang.NoClassDefFoundError),
+	// for all other types this is a no-op.
+	internal virtual TypeWrapper EnsureLoadable(ClassLoaderWrapper loader)
+	{
+		return this;
+	}
+
 	internal bool HasIncompleteInterfaceImplementation
 	{
 		get
@@ -1546,9 +1554,40 @@ abstract class TypeWrapper
 
 class UnloadableTypeWrapper : TypeWrapper
 {
+	private static Hashtable warningHashtable;
+
 	internal UnloadableTypeWrapper(string name)
 		: base(TypeWrapper.UnloadableModifiersHack, name, null, null, null)
 	{
+		if(JVM.IsStaticCompiler && name != "<verifier>")
+		{
+			if(warningHashtable == null)
+			{
+				warningHashtable = new Hashtable();
+			}
+			if(!warningHashtable.ContainsKey(name))
+			{
+				warningHashtable.Add(name, name);
+				Console.Error.WriteLine("Warning: class \"{0}\" not found", name);
+			}
+		}
+	}
+
+	internal override TypeWrapper EnsureLoadable(ClassLoaderWrapper loader)
+	{
+		TypeWrapper tw = null;
+		try
+		{
+			tw = loader.LoadClassByDottedNameFast(this.Name);
+		}
+		catch
+		{
+		}
+		if(tw == null)
+		{
+			throw new NoClassDefFoundError(this.Name);
+		}
+		return tw;
 	}
 
 	internal override Assembly Assembly
@@ -3512,7 +3551,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					ilGenerator.Emit(OpCodes.Call, monitorEnter);
 					ilGenerator.BeginExceptionBlock();
 				}
-				FieldBuilder methodPtr = typeBuilder.DefineField(JNI.METHOD_PTR_FIELD_PREFIX + m.Name + m.Signature + ">", typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
+				string sig = m.Signature.Replace('.', '/');
+				FieldBuilder methodPtr = typeBuilder.DefineField(JNI.METHOD_PTR_FIELD_PREFIX + m.Name + sig, typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
 				LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
 				ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 				ilGenerator.Emit(OpCodes.Initobj, localRefStructType);
@@ -3529,7 +3569,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				}
 				ilGenerator.Emit(OpCodes.Ldstr, classFile.Name.Replace('.', '/'));
 				ilGenerator.Emit(OpCodes.Ldstr, m.Name);
-				ilGenerator.Emit(OpCodes.Ldstr, m.Signature.Replace('.', '/'));
+				ilGenerator.Emit(OpCodes.Ldstr, sig);
 				ilGenerator.Emit(OpCodes.Call, jniFuncPtrMethod);
 				ilGenerator.Emit(OpCodes.Stsfld, methodPtr);
 				ilGenerator.MarkLabel(oklabel);
@@ -4049,6 +4089,13 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							// assert that the method we're overriding is in fact virtual and not final!
 							Debug.Assert(baseMce.GetMethod().IsVirtual && !baseMce.GetMethod().IsFinal);
 							typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMce.GetMethod());
+						}
+						// HACK extremely lame hack!!! Eclipse 3.0 sucks and assumes that it will find this class
+						// in the stack trace, but since it contains only very small static methods by default
+						// the CLR will inline these methods.
+						if(wrapper.Name == "org.eclipse.ui.editors.text.EditorsUI")
+						{
+							mb.SetImplementationFlags(MethodImplAttributes.NoInlining);
 						}
 						// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
 						// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
