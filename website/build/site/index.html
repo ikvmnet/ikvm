@@ -247,7 +247,7 @@
 
 <li>
 
-<strong>ikvm.runtime.dll</strong>: The VM runtime and all supporting code. It contains (among other things):
+<strong>IKVM.Runtime.dll</strong>: The VM runtime and all supporting code. It contains (among other things):
 <ul>
 
 <li>Byte Code JIT compiler/verifier: Just-in-time compiles Java Byte Code to CIL.</li>
@@ -263,13 +263,13 @@ Java code as java.lang.Object, java.lang.String and java.lang.Throwable.</li>
 
 <li>
 
-<strong>ikvm.gnu.classpath.dll</strong>: compiled version of <a href="http://www.gnu.org/software/classpath/classpath.html">GNU Classpath</a>, the Free Software Foundation's implementation of the Java class libraries, 
+<strong>IKVM.GNU.Classpath.dll</strong>: compiled version of <a href="http://www.gnu.org/software/classpath/classpath.html">GNU Classpath</a>, the Free Software Foundation's implementation of the Java class libraries, 
 plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>part</em> of IKVM.NET, but it is <em>used</em> by IK.VM.NET 
 </li>
 
 <li>
 
-<strong>ikvm.jni.[mono|clr-win32].dll</strong>: Managed C++ assembly that implements the JNI interface. This is an optional part, only required when an application uses its own native libraries. This will not be required for pure Java applications, this is important because this code will only run on Microsoft's .NET implementation. 
+<strong>IKVM.JNI.[Mono|CLR-Win32].dll</strong>: Managed C++ assembly that implements the JNI interface. This is an optional part, only required when an application uses its own native libraries. This is not needed for pure Java applications. 
 </li>
 
 <li>
@@ -348,7 +348,7 @@ plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>p
 <tr>
 <td colspan="2" bgcolor="#CFDCED" class="copyright" align="center"><font size="2" face="Arial, Helvetica, Sans-Serif">
 	  
-      Send feedback about the website to <a href="mailto:webmaster@ikvm.net?subject=IKVM Website Feedback Page&body=Page URL: ">webmaster@ikvm.net</a>
+      Send feedback about this page to <a href="mailto:webmaster@ikvm.net?subject=IKVM Website Feedback - Page index.html">webmaster@ikvm.net</a>
 <br>
 	  
 	  Copyright &copy;

@@ -78,7 +78,7 @@
                     </tr>
                     <tr>
                         <td>IKVM.JNI.CLR-Win32.dll</td>
-                        <td>Managed C++ assembly that implements the JNI interface. This is an optional part, only required when an application uses it's own native libraries. This will not be required for pure Java applications, this is important because this code will only run on Microsoft's .NET implementation.</td>
+                        <td>Managed C++ assembly that implements the JNI interface. This is an optional part, only required when an application uses its own native libraries. This is not needed for pure Java applications. </td>
                     </tr>
                     <tr>
                         <td>IKVM.JNI.Mono.dll</td>
