@@ -25,10 +25,10 @@ public class JNI : IJniProvider
 {
 	static Hashtable modules = new Hashtable ();
 
-	[DllImport("mono-ikvm-jni-native")]
+	[DllImport("mono-ikvm-jni")]
 		private static extern IntPtr native_load_native_library (string filename);
 
-	[DllImport("mono-ikvm-jni-native")]
+	[DllImport("mono-ikvm-jni")]
 		private static extern bool native_lookup_symbol (IntPtr module, string symbol_name, ref int symbol);
 
 	[DllImport("gmodule-2.0")]
@@ -332,10 +332,10 @@ public unsafe struct IkvmJNIEnv {
 		return env.UnwrapLocalRef (localRef);
 	}
 
-	[DllImport("mono-ikvm-jni-native")]
+	[DllImport("mono-ikvm-jni")]
 		private static extern IntPtr mono_jni_get_func_table ();
 
-	[DllImport("mono-ikvm-jni-native")]
+	[DllImport("mono-ikvm-jni")]
 		private static extern int mono_jni_jnienv_init (
 			Delegate makelocalref_func,
 			Delegate unwind_func,
@@ -354,7 +354,7 @@ public unsafe struct IkvmJNIEnv {
 			Delegate findclass_func,
 			Delegate getjnienv_func);
 
-	[DllImport("mono-ikvm-jni-native")]
+	[DllImport("mono-ikvm-jni")]
 		public extern static void mono_jni_set_jnifunc (int index, Delegate func);
 
 	static IkvmJNIEnv () {
