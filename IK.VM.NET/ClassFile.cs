@@ -40,6 +40,7 @@ class ClassFile
 	private string sourceFile;
 	private bool sourceFileCached;
 	private ClassFile outerClass;
+	private int majorVersion;
 	private static readonly char[] illegalcharacters = { '<', '>' };
 
 	internal class ClassFormatError : ApplicationException
@@ -67,11 +68,15 @@ class ClassFile
 			{
 				throw new ClassFormatError("Bad magic number");
 			}
-			int minor = br.ReadUInt16();
-			int major = br.ReadUInt16();
-			if(major < 45 || major > 48)
+			int minorVersion = br.ReadUInt16();
+			majorVersion = br.ReadUInt16();
+			if(majorVersion < 45 || majorVersion > 49)
 			{
-				throw new UnsupportedClassVersionError(major + "." + minor);
+				throw new UnsupportedClassVersionError(majorVersion + "." + minorVersion);
+			}
+			if(majorVersion == 49)
+			{
+				Tracer.Warning(Tracer.Runtime, "WARNING: Support for JDK 1.5 is experimental");
 			}
 			int constantpoolcount = br.ReadUInt16();
 			constantpool = new ConstantPoolItem[constantpoolcount];
@@ -238,6 +243,14 @@ class ClassFile
 //			fs.Close();
 //			throw;
 //		}
+	}
+
+	internal int MajorVersion
+	{
+		get
+		{
+			return majorVersion;
+		}
 	}
 
 	// NOTE this property is only used when statically compiling
@@ -559,7 +572,8 @@ class ClassFile
 		Long,
 		Float,
 		Double,
-		String
+		String,
+		Class
 	}
 
 	internal abstract class ConstantPoolItem
@@ -655,6 +669,11 @@ class ClassFile
 			}
 			return typeWrapper;
 		}
+
+		internal override ConstantType GetConstantType()
+		{
+			return ConstantType.Class;
+		}
 	}
 
 	private static TypeWrapper LoadClassHelper(ClassLoaderWrapper classLoader, string name)
@@ -697,93 +716,6 @@ class ClassFile
 			}
 			return new UnloadableTypeWrapper(name);
 		}
-	}
-
-	private static TypeWrapper SigDecoderWrapper(ClassLoaderWrapper classLoader, ref int index, string sig)
-	{
-		switch(sig[index++])
-		{
-			case 'B':
-				return PrimitiveTypeWrapper.BYTE;
-			case 'C':
-				return PrimitiveTypeWrapper.CHAR;
-			case 'D':
-				return PrimitiveTypeWrapper.DOUBLE;
-			case 'F':
-				return PrimitiveTypeWrapper.FLOAT;
-			case 'I':
-				return PrimitiveTypeWrapper.INT;
-			case 'J':
-				return PrimitiveTypeWrapper.LONG;
-			case 'L':
-			{
-				int pos = index;
-				index = sig.IndexOf(';', index) + 1;
-				return LoadClassHelper(classLoader, sig.Substring(pos, index - pos - 1));
-			}
-			case 'S':
-				return PrimitiveTypeWrapper.SHORT;
-			case 'Z':
-				return PrimitiveTypeWrapper.BOOLEAN;
-			case 'V':
-				return PrimitiveTypeWrapper.VOID;
-			case '[':
-			{
-				// TODO this can be optimized
-				string array = "[";
-				while(sig[index] == '[')
-				{
-					index++;
-					array += "[";
-				}
-				switch(sig[index])
-				{
-					case 'L':
-					{
-						int pos = index;
-						index = sig.IndexOf(';', index) + 1;
-						return LoadClassHelper(classLoader, array + sig.Substring(pos, index - pos));
-					}
-					case 'B':
-					case 'C':
-					case 'D':
-					case 'F':
-					case 'I':
-					case 'J':
-					case 'S':
-					case 'Z':
-						return LoadClassHelper(classLoader, array + sig[index++]);
-					default:
-						// TODO this should never happen, because ClassFile should validate the descriptors
-						throw new InvalidOperationException(sig.Substring(index));
-				}
-			}
-			default:
-				// TODO this should never happen, because ClassFile should validate the descriptors
-				throw new InvalidOperationException(sig.Substring(index));
-		}
-	}
-
-	private static TypeWrapper[] ArgTypeWrapperListFromSig(ClassLoaderWrapper classLoader, string sig)
-	{
-		if(sig[1] == ')')
-		{
-			return TypeWrapper.EmptyArray;
-		}
-		ArrayList list = new ArrayList();
-		for(int i = 1; sig[i] != ')';)
-		{
-			list.Add(SigDecoderWrapper(classLoader, ref i, sig));
-		}
-		TypeWrapper[] types = new TypeWrapper[list.Count];
-		list.CopyTo(types);
-		return types;
-	}
-
-	private static TypeWrapper RetTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
-	{
-		int index = sig.IndexOf(')') + 1;
-		return SigDecoderWrapper(classLoader, ref index, sig);
 	}
 
 	private class ConstantPoolItemDouble : ConstantPoolItem
@@ -1038,7 +970,7 @@ class ClassFile
 		{
 			if(argTypeWrappers == null)
 			{
-				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, descriptor);
+				argTypeWrappers = classLoader.ArgTypeWrapperListFromSig(descriptor);
 			}
 			return argTypeWrappers;
 		}
@@ -1047,7 +979,7 @@ class ClassFile
 		{
 			if(retTypeWrapper == null)
 			{
-				retTypeWrapper = RetTypeWrapperFromSig(classLoader, descriptor);
+				retTypeWrapper = classLoader.RetTypeWrapperFromSig(descriptor);
 			}
 			return retTypeWrapper;
 		}
@@ -1056,8 +988,7 @@ class ClassFile
 		{
 			if(fieldTypeWrapper == null)
 			{
-				// HACK
-				fieldTypeWrapper = RetTypeWrapperFromSig(classLoader, "()" + descriptor);
+				fieldTypeWrapper = classLoader.FieldTypeWrapperFromSig(descriptor);
 			}
 			return fieldTypeWrapper;
 		}
@@ -1240,7 +1171,7 @@ class ClassFile
 		{
 			if(argTypeWrappers == null)
 			{
-				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, Signature);
+				argTypeWrappers = classLoader.ArgTypeWrapperListFromSig(Signature);
 			}
 			return argTypeWrappers;
 		}
@@ -1249,7 +1180,7 @@ class ClassFile
 		{
 			if(retTypeWrapper == null)
 			{
-				retTypeWrapper = RetTypeWrapperFromSig(classLoader, Signature);
+				retTypeWrapper = classLoader.RetTypeWrapperFromSig(Signature);
 			}
 			return retTypeWrapper;
 		}
@@ -1258,8 +1189,7 @@ class ClassFile
 		{
 			if(fieldTypeWrapper == null)
 			{
-				// HACK
-				fieldTypeWrapper = RetTypeWrapperFromSig(classLoader, "()" + Signature);
+				fieldTypeWrapper = classLoader.FieldTypeWrapperFromSig(Signature);
 			}
 			return fieldTypeWrapper;
 		}

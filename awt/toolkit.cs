@@ -46,7 +46,7 @@ namespace ikvm.awt
 	delegate void SetColor(Color c);
 	delegate java.awt.Dimension GetDimension();
 
-	public class NetToolkit : java.awt.Toolkit
+	public class NetToolkit : gnu.java.awt.ClasspathToolkit
 	{
 		private static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
 		private static Form bogusForm;
@@ -364,6 +364,109 @@ namespace ikvm.awt
 				return new NetLightweightContainerPeer((java.awt.Container)target);
 			}
 			return new NetLightweightComponentPeer(target);
+		}
+
+		public override java.awt.Font createFont(int format, java.io.InputStream stream)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override gnu.java.awt.peer.ClasspathFontPeer getClasspathFontPeer(string name, java.util.Map attrs)
+		{
+			return new NetFontPeer(name, attrs);
+		}
+
+		public override java.awt.GraphicsEnvironment getLocalGraphicsEnvironment()
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	class NetFontPeer : gnu.java.awt.peer.ClasspathFontPeer
+	{
+		internal NetFontPeer(string name, java.util.Map attrs)
+			: base(name, attrs)
+		{
+		}
+
+		public override bool canDisplay(java.awt.Font param1, char param2)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override int canDisplayUpTo(java.awt.Font param1, java.text.CharacterIterator param2, int param3, int param4)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.font.GlyphVector createGlyphVector(java.awt.Font param1, java.awt.font.FontRenderContext param2, int[] param3)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.font.GlyphVector createGlyphVector(java.awt.Font param1, java.awt.font.FontRenderContext param2, java.text.CharacterIterator param3)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override sbyte getBaselineFor(java.awt.Font param1, char param2)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.FontMetrics getFontMetrics(java.awt.Font param)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override string getGlyphName(java.awt.Font param1, int param2)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.font.LineMetrics getLineMetrics(java.awt.Font param1, java.text.CharacterIterator param2, int param3, int param4, java.awt.font.FontRenderContext param5)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.geom.Rectangle2D getMaxCharBounds(java.awt.Font param1, java.awt.font.FontRenderContext param2)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override int getMissingGlyphCode(java.awt.Font param)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override int getNumGlyphs(java.awt.Font param)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override string getPostScriptName(java.awt.Font param)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.geom.Rectangle2D getStringBounds(java.awt.Font param1, java.text.CharacterIterator param2, int param3, int param4, java.awt.font.FontRenderContext param5)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override bool hasUniformLineMetrics(java.awt.Font param)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.font.GlyphVector layoutGlyphVector(java.awt.Font param1, java.awt.font.FontRenderContext param2, char[] param3, int param4, int param5, int param6)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override string getSubFamilyName(java.awt.Font param1, Locale param2)
+		{
+			throw new NotImplementedException();
 		}
 	}
 
@@ -1181,7 +1284,7 @@ namespace ikvm.awt
 
 		public java.awt.Image createImage(int width, int height)
 		{
-			throw new NotImplementedException();
+			return new NetBufferedImage(width, height);
 		}
 
 		public void disable()
@@ -1191,7 +1294,13 @@ namespace ikvm.awt
 
 		public void dispose()
 		{
-			control.Parent = null;
+			control.Invoke(new SetVoid(disposeImpl));
+		}
+
+		private void disposeImpl()
+		{
+			// HACK we should dispose the control here, but that hangs in an infinite loop...
+			control.Hide();
 		}
 
 		public void enable()
@@ -1281,7 +1390,7 @@ namespace ikvm.awt
 
 		public void paint(java.awt.Graphics graphics)
 		{
-			throw new NotImplementedException();
+			//throw new NotImplementedException();
 		}
 
 		public bool prepareImage(java.awt.Image img, int width, int height, ImageObserver ob)
@@ -1781,13 +1890,15 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
 		public java.awt.Dimension preferredSize(int len)
 		{
 			throw new NotImplementedException();
 		}
+
 		public java.awt.Dimension getMinimumSize(int len)
 		{
-			throw new NotImplementedException();
+			return getPreferredSize(len);
 		}
 
 		public java.awt.Dimension getPreferredSize(int len)
@@ -1803,6 +1914,7 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
 		public void setEchoCharacter(char echo_char)
 		{
 			throw new NotImplementedException();

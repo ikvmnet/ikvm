@@ -526,10 +526,11 @@ final class StringHelper
     static int hashCode(String s)
     {
 	int h = 0;
-	int len = s.length();
-	for(int i = 0; i < len; i++)
+	// NOTE having the get_Length in the for condition is actually faster than hoisting it,
+	// the CLR JIT recognizes this pattern and optimizes the array bounds check in get_Chars.
+	for(int i = 0; i < cli.System.String.get_Length(s); i++)
 	{
-	    h = h *31 + cli.System.String.get_Chars(s, i);
+	    h = h * 31 + cli.System.String.get_Chars(s, i);
 	}
 	return h;
     }

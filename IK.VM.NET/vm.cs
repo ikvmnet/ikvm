@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Resources;
 using System.Reflection.Emit;
 using System.Reflection;
 using System.IO;
@@ -241,10 +242,10 @@ public class JVM
 				byte[] buf = (byte[])d.Value;
 				if(buf.Length > 0)
 				{
-					moduleBuilder.DefineInitializedData((string)d.Key, buf, FieldAttributes.Public | FieldAttributes.Static);
+					IResourceWriter writer = moduleBuilder.DefineResource("ikvm:" + d.Key, "");
+					writer.AddResource("ikvm", buf);
 				}
 			}
-			moduleBuilder.CreateGlobalFunctions();
 		}
 
 		private static MethodAttributes MapMethodAccessModifiers(MapXml.MapModifiers mod)
@@ -317,7 +318,9 @@ public class JVM
 			}
 			if(!redir.RetTypeWrapper.IsAssignableTo(md.RetTypeWrapper))
 			{
-				// HACK we're using a null context, is that safe?
+				// NOTE we're passing a null context, this is safe because the return type
+				// should always be loadable
+				Debug.CompareTo(!md.RetTypeWrapper.IsUnloadable);
 				md.RetTypeWrapper.EmitCheckcast(null, ilgen);
 			}
 		}
@@ -347,6 +350,8 @@ public class JVM
 				{
 					return null;
 				}
+				// NOTE we cannot use CoreClasses.java_lang_Object here, because that would trigger a load
+				// of java.lang.String and java.lang.Throwable before we've got the remapping set up.
 				return ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
 			}
 
@@ -966,7 +971,7 @@ public class JVM
 								throw new InvalidOperationException("remapping field: " + f.Name + f.Sig + " not found");
 							}
 							// TODO emit an static helper method that enables access to the field at runtime
-							AddField(FieldWrapper.Create(this, GetClassLoader().RetTypeWrapperFromSig("()" + f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, null, method.EmitCall, CodeEmitter.InternalError));
+							AddField(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, null, method.EmitCall, CodeEmitter.InternalError));
 						}
 						else if((f.Modifiers & MapXml.MapModifiers.Static) != 0)
 						{
@@ -979,7 +984,7 @@ public class JVM
 							{
 								attr |= FieldAttributes.InitOnly;
 							}
-							FieldBuilder fb = tb.DefineField(f.Name, GetClassLoader().RetTypeWrapperFromSig("()" + f.Sig).TypeAsFieldType, attr);
+							FieldBuilder fb = tb.DefineField(f.Name, GetClassLoader().FieldTypeWrapperFromSig(f.Sig).TypeAsFieldType, attr);
 							object constant;
 							if(f.Constant != null)
 							{
@@ -994,11 +999,11 @@ public class JVM
 								}
 								fb.SetConstant(constant);
 								CodeEmitter getter = CodeEmitter.CreateLoadConstant(constant);
-								AddField(FieldWrapper.Create(this, GetClassLoader().RetTypeWrapperFromSig("()" + f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, getter, CodeEmitter.InternalError, constant));
+								AddField(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, getter, CodeEmitter.InternalError, constant));
 							}
 							else
 							{
-								AddField(FieldWrapper.Create(this, GetClassLoader().RetTypeWrapperFromSig("()" + f.Sig), fb, f.Sig, (Modifiers)f.Modifiers));
+								AddField(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Sig, (Modifiers)f.Modifiers));
 							}
 						}
 						else
@@ -1092,7 +1097,7 @@ public class JVM
 			{
 				get
 				{
-					return equivalencyType.IsInterface ? equivalencyType : typeBuilder;
+					return typeBuilder;
 				}
 			}
 
@@ -1101,6 +1106,15 @@ public class JVM
 				get
 				{
 					return typeBuilder;
+				}
+			}
+
+			internal override bool IsMapUnsafeException
+			{
+				get
+				{
+					// any remapped exceptions are automatically unsafe
+					return equivalencyType == typeof(Exception) || equivalencyType.IsSubclassOf(typeof(Exception));
 				}
 			}
 		}

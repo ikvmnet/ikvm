@@ -164,6 +164,12 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	public static object DynamicClassLiteral(RuntimeTypeHandle type, string clazz)
+	{
+		return NativeCode.java.lang.VMClass.getClassFromWrapper(LoadTypeWrapper(type, clazz));
+	}
+
+	[StackTraceInfo(Hidden = true)]
 	public static object DynamicCast(object obj, RuntimeTypeHandle type, string clazz)
 	{
 		if(!DynamicInstanceOf(obj, type, clazz))

@@ -400,7 +400,7 @@ class InstructionState
 			TypeWrapper baseType = FindCommonBaseTypeHelper(elem1, elem2);
 			if(baseType == VerifierTypeWrapper.Invalid)
 			{
-				baseType = MethodAnalyzer.java_lang_Object;
+				baseType = CoreClasses.java_lang_Object;
 				rank--;
 				if(rank == 0)
 				{
@@ -445,12 +445,12 @@ class InstructionState
 			foreach (TypeWrapper baseInterface in t1.Interfaces)
 			{
 				TypeWrapper commonBase = FindCommonBaseTypeHelper(baseInterface, t2);
-				if (commonBase != MethodAnalyzer.java_lang_Object)
+				if (commonBase != CoreClasses.java_lang_Object)
 				{
 					return commonBase;
 				}
 			}
-			return MethodAnalyzer.java_lang_Object;
+			return CoreClasses.java_lang_Object;
 		}
 		Stack st1 = new Stack();
 		Stack st2 = new Stack();
@@ -995,9 +995,6 @@ class VerifierTypeWrapper : TypeWrapper
 
 class MethodAnalyzer
 {
-	internal static TypeWrapper java_lang_Object;
-	private static TypeWrapper java_lang_Throwable;
-	private static TypeWrapper java_lang_String;
 	private static TypeWrapper ByteArrayType;
 	private static TypeWrapper BooleanArrayType;
 	private static TypeWrapper ShortArrayType;
@@ -1013,27 +1010,22 @@ class MethodAnalyzer
 	private TypeWrapper[] localTypes;
 	private bool[] aload_used;
 
+	static MethodAnalyzer()
+	{
+		ByteArrayType = PrimitiveTypeWrapper.BYTE.MakeArrayType(1);
+		BooleanArrayType = PrimitiveTypeWrapper.BOOLEAN.MakeArrayType(1);
+		ShortArrayType = PrimitiveTypeWrapper.SHORT.MakeArrayType(1);
+		CharArrayType = PrimitiveTypeWrapper.CHAR.MakeArrayType(1);
+		IntArrayType = PrimitiveTypeWrapper.INT.MakeArrayType(1);
+		FloatArrayType = PrimitiveTypeWrapper.FLOAT.MakeArrayType(1);
+		DoubleArrayType = PrimitiveTypeWrapper.DOUBLE.MakeArrayType(1);
+		LongArrayType = PrimitiveTypeWrapper.LONG.MakeArrayType(1);
+	}
+
 	internal MethodAnalyzer(TypeWrapper wrapper, ClassFile.Method.Code method, ClassLoaderWrapper classLoader)
 	{
 		this.classLoader = classLoader;
 		this.method = method;
-		lock(GetType())
-		{
-			if(java_lang_Throwable == null)
-			{
-				java_lang_Object = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
-				java_lang_Throwable = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable");
-				java_lang_String = ClassLoaderWrapper.LoadClassCritical("java.lang.String");
-				ByteArrayType = PrimitiveTypeWrapper.BYTE.MakeArrayType(1);
-				BooleanArrayType = PrimitiveTypeWrapper.BOOLEAN.MakeArrayType(1);
-				ShortArrayType = PrimitiveTypeWrapper.SHORT.MakeArrayType(1);
-				CharArrayType = PrimitiveTypeWrapper.CHAR.MakeArrayType(1);
-				IntArrayType = PrimitiveTypeWrapper.INT.MakeArrayType(1);
-				FloatArrayType = PrimitiveTypeWrapper.FLOAT.MakeArrayType(1);
-				DoubleArrayType = PrimitiveTypeWrapper.DOUBLE.MakeArrayType(1);
-				LongArrayType = PrimitiveTypeWrapper.LONG.MakeArrayType(1);
-			}
-		}
 		state = new InstructionState[method.Instructions.Length];
 		callsites = new ArrayList[method.Instructions.Length];
 		localTypes = new TypeWrapper[method.MaxLocals];
@@ -1109,7 +1101,7 @@ class MethodAnalyzer
 								int catch_type = method.ExceptionTable[j].catch_type;
 								if(catch_type == 0)
 								{
-									ex.PushType(java_lang_Throwable);
+									ex.PushType(CoreClasses.java_lang_Throwable);
 								}
 								else
 								{
@@ -1341,7 +1333,14 @@ class MethodAnalyzer
 										s.PushLong();
 										break;
 									case ClassFile.ConstantType.String:
-										s.PushType(java_lang_String);
+										s.PushType(CoreClasses.java_lang_String);
+										break;
+									case ClassFile.ConstantType.Class:
+										if(method.Method.ClassFile.MajorVersion < 49)
+										{
+											throw new VerifyError("Illegal type in constant pool");
+										}
+										s.PushType(CoreClasses.java_lang_Class);
 										break;
 									default:
 										// NOTE this is not a VerifyError, because it cannot happen (unless we have
@@ -1848,7 +1847,7 @@ class MethodAnalyzer
 								s.GetLocalInt(instr.Arg1);
 								break;
 							case NormalizedByteCode.__athrow:
-								s.PopObjectType(java_lang_Throwable);
+								s.PopObjectType(CoreClasses.java_lang_Throwable);
 								break;
 							case NormalizedByteCode.__lookupswitch:
 								s.PopInt();
@@ -2051,7 +2050,7 @@ class MethodAnalyzer
 								{
 									if(!VerifierTypeWrapper.IsNullOrUnloadable(l) && l.IsNonPrimitiveValueType)
 									{
-										l = java_lang_Object;
+										l = CoreClasses.java_lang_Object;
 									}
 									if(localTypes[j] == VerifierTypeWrapper.Invalid)
 									{

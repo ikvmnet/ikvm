@@ -94,6 +94,46 @@ namespace MapXml
 								throw new InvalidOperationException();
 							}
 						}
+						// TODO this code is part of what Compiler.CastInterfaceArgs (in compiler.cs) does,
+						// it would be nice if we could avoid this duplication...
+						TypeWrapper[] argTypeWrappers = method.Descriptor.ArgTypeWrappers;
+						for(int i = 0; i < argTypeWrappers.Length; i++)
+						{
+							if(argTypeWrappers[i].IsGhost)
+							{
+								LocalBuilder[] temps = new LocalBuilder[argTypeWrappers.Length + (method.IsStatic ? 0 : 1)];
+								for(int j = temps.Length - 1; j >= 0; j--)
+								{
+									TypeWrapper tw;
+									if(method.IsStatic)
+									{
+										tw = argTypeWrappers[j];
+									}
+									else
+									{
+										if(j == 0)
+										{
+											tw = method.DeclaringType;
+										}
+										else
+										{
+											tw = argTypeWrappers[j - 1];
+										}
+									}
+									if(tw.IsGhost)
+									{
+										tw.EmitConvStackToParameterType(ilgen, tw);
+									}
+									temps[j] = ilgen.DeclareLocal(tw.TypeAsParameterType);
+									ilgen.Emit(OpCodes.Stloc, temps[j]);
+								}
+								for(int j = 0; j < temps.Length; j++)
+								{
+									ilgen.Emit(OpCodes.Ldloc, temps[j]);
+								}
+								break;
+							}
+						}
 					}
 					else
 					{
@@ -471,7 +511,7 @@ namespace MapXml
 
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
-			ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, ClassLoaderWrapper.GetBootstrapClassLoader().RetTypeWrapperFromSig("()" + Sig)).EmitSet.Emit(ilgen);
+			ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, ClassLoaderWrapper.GetBootstrapClassLoader().FieldTypeWrapperFromSig(Sig)).EmitSet.Emit(ilgen);
 		}
 	}
 

@@ -129,22 +129,22 @@ final class VMClassLoader
    * @param name the resource to find
    * @return the URL to the resource
    */
-	static URL getResource(String name)
+    static URL getResource(String name)
+    {
+	try
 	{
-		try
-		{
-			Assembly assembly = findResourceAssembly(name);
-			if(assembly != null)
-			{
-				return new URL("ikvmres:" + assembly.get_FullName() + ":" + name);
-			}
-		}
-		catch(java.net.MalformedURLException x)
-		{
-		}
-		return null;
+	    Assembly assembly = findResourceAssembly(name);
+	    if(assembly != null)
+	    {
+		return new URL("ikvmres", assembly.get_FullName(), 0, "/" + name);
+	    }
 	}
-	private static native Assembly findResourceAssembly(String name);
+	catch(java.net.MalformedURLException x)
+	{
+	}
+	return null;
+    }
+    private static native Assembly findResourceAssembly(String name);
 
   /**
    * Helper to get a list of resources from the bootstrap class loader.

@@ -204,8 +204,10 @@
 					<ret />
 				</body>
 			</method>
-			<!-- we have a toString here to make sure that toString shows up as a declared method in reflection -->
+			<!-- we have a toString here to make sure that it shows up as a declared method in reflection -->
 			<method name="toString" sig="()Ljava.lang.String;" modifiers="public" />
+			<!-- we have an equals here to make sure that it shows up as a declared method in reflection -->
+			<method name="equals" sig="(Ljava.lang.Object;)Z" modifiers="public" />
 			<method name="valueOf" sig="(Z)Ljava.lang.String;" modifiers="public static">
 				<redirect class="java.lang.StringHelper" />
 			</method>
@@ -308,6 +310,9 @@
 			<method name="compareTo" sig="(Ljava.lang.String;)I" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
 			</method>
+			<method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public">
+				<redirect name="CompareTo" />
+			</method>
 			<method name="replace" sig="(CC)Ljava.lang.String;" modifiers="public">
 				<redirect name="Replace" />
 			</method>
@@ -335,6 +340,64 @@
 			</method>
 			<method name="concat" sig="(Ljava.lang.String;)Ljava.lang.String;" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" />
+			</method>
+			<method name="contentEquals" sig="(Ljava.lang.StringBuffer;)Z" modifiers="public">
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<callvirt class="java.lang.StringBuffer" name="toString" sig="()Ljava.lang.String;" />
+					<callvirt type="System.String, mscorlib" name="Equals" sig="(Ljava.lang.String;)Z" />
+					<ret />
+				</body>
+			</method>
+			<method name="matches" sig="(Ljava.lang.String;)Z" modifiers="public">
+				<body>
+					<ldarg_1 />
+					<ldarg_0 />
+					<call class="java.util.regex.Pattern" name="matches" sig="(Ljava.lang.String;Ljava.lang.CharSequence;)Z" />
+					<ret />
+				</body>
+			</method>
+			<method name="replaceAll" sig="(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" modifiers="public">
+				<body>
+					<ldarg_1 />
+					<call class="java.util.regex.Pattern" name="compile" sig="(Ljava.lang.String;)Ljava.util.regex.Pattern;" />
+					<ldarg_0 />
+					<callvirt class="java.util.regex.Pattern" name="matcher" sig="(Ljava.lang.CharSequence;)Ljava.util.regex.Matcher;" />
+					<ldarg_2 />
+					<callvirt class="java.util.regex.Matcher" name="replaceAll" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+					<ret />
+				</body>
+			</method>
+			<method name="replaceFirst" sig="(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" modifiers="public">
+				<body>
+					<ldarg_1 />
+					<call class="java.util.regex.Pattern" name="compile" sig="(Ljava.lang.String;)Ljava.util.regex.Pattern;" />
+					<ldarg_0 />
+					<callvirt class="java.util.regex.Pattern" name="matcher" sig="(Ljava.lang.CharSequence;)Ljava.util.regex.Matcher;" />
+					<ldarg_2 />
+					<callvirt class="java.util.regex.Matcher" name="replaceFirst" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+					<ret />
+				</body>
+			</method>
+			<method name="split" sig="(Ljava.lang.String;)[Ljava.lang.String;" modifiers="public">
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<ldc_i4_0 />
+					<callvirt class="java.lang.String" name="split" sig="(Ljava.lang.String;I)[Ljava.lang.String;" />
+					<ret />
+				</body>
+			</method>
+			<method name="split" sig="(Ljava.lang.String;I)[Ljava.lang.String;" modifiers="public">
+				<body>
+					<ldarg_1 />
+					<call class="java.util.regex.Pattern" name="compile" sig="(Ljava.lang.String;)Ljava.util.regex.Pattern;" />
+					<ldarg_0 />
+					<ldarg_2 />
+					<callvirt class="java.util.regex.Pattern" name="split" sig="(Ljava.lang.CharSequence;I)[Ljava.lang.String;" />
+					<ret />
+				</body>
 			</method>
 			<method name="copyValueOf" sig="([C)Ljava.lang.String;" modifiers="public static">
 				<body>

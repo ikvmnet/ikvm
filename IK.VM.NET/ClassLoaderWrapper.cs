@@ -73,6 +73,8 @@ class ClassLoaderWrapper
 		Debug.Assert(coreAssembly == null);
 
 		// HACK we need to find the "core" library, to figure out the remapped types
+		// TODO this approach fails if the core library was compiled as a module (ikvmc always generates an assembly
+		// and the assembly attributes end up on the assemblies main module that is deleted when ikvmc finishes)
 		foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 		{
 			object[] remapped = asm.GetCustomAttributes(typeof(RemappedClassAttribute), false);
@@ -762,6 +764,12 @@ class ClassLoaderWrapper
 			default:
 				throw new InvalidOperationException(sig.Substring(index));
 		}
+	}
+
+	internal TypeWrapper FieldTypeWrapperFromSig(string sig)
+	{
+		int index = 0;
+		return SigDecoderWrapper(ref index, sig);
 	}
 
 	internal TypeWrapper RetTypeWrapperFromSig(string sig)

@@ -82,6 +82,12 @@ public class PlainSocketImpl extends SocketImpl
 		try
 		{
 			if(false) throw new cli.System.Net.Sockets.SocketException();
+			int timeout = ((Integer)getOption(SO_TIMEOUT)).intValue();
+			if(timeout != 0 && !socket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
+			     cli.System.Net.Sockets.SelectMode.wrap(cli.System.Net.Sockets.SelectMode.SelectRead)))
+			{
+			    throw new java.io.InterruptedIOException("Accept timed out");
+			}
 			cli.System.Net.Sockets.Socket accept = socket.Accept();
 			((PlainSocketImpl)impl).socket = accept;
 			IPEndPoint remoteEndPoint = ((IPEndPoint)accept.get_RemoteEndPoint());

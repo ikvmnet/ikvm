@@ -64,11 +64,13 @@ class Compiler
 	private static CodeEmitter mapExceptionFastMethod;
 	private static CodeEmitter fillInStackTraceMethod;
 	private static MethodInfo getTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle");
+	private static MethodInfo getClassFromTypeMethod = typeof(NativeCode.java.lang.VMClass).GetMethod("getClassFromType");
 	private static MethodInfo multiANewArrayMethod = typeof(ByteCodeHelper).GetMethod("multianewarray");
 	private static MethodInfo monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter");
 	private static MethodInfo monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit");
 	private static MethodInfo objectToStringMethod = typeof(object).GetMethod("ToString");
 	private static TypeWrapper java_lang_Object;
+	private static TypeWrapper java_lang_Class;
 	private static TypeWrapper java_lang_Throwable;
 	private static TypeWrapper java_lang_ThreadDeath;
 	private TypeWrapper clazz;
@@ -86,8 +88,9 @@ class Compiler
 		mapExceptionMethod = exceptionHelper.GetMethodWrapper(MethodDescriptor.FromNameSig(exceptionHelper.GetClassLoader(), "MapException", "(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;"), false).EmitCall;
 		mapExceptionFastMethod = exceptionHelper.GetMethodWrapper(MethodDescriptor.FromNameSig(exceptionHelper.GetClassLoader(), "MapExceptionFast", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;"), false).EmitCall;
 		fillInStackTraceMethod = exceptionHelper.GetMethodWrapper(MethodDescriptor.FromNameSig(exceptionHelper.GetClassLoader(), "fillInStackTrace", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;"), false).EmitCall;
-		java_lang_Throwable = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable");
-		java_lang_Object = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
+		java_lang_Throwable = CoreClasses.java_lang_Throwable;
+		java_lang_Object = CoreClasses.java_lang_Object;
+		java_lang_Class = CoreClasses.java_lang_Class;
 		java_lang_ThreadDeath = ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadDeath");
 	}
 
@@ -445,8 +448,24 @@ class Compiler
 
 	private sealed class ReturnCookie
 	{
-		internal Label Stub;
-		internal LocalBuilder Local;
+		private Label stub;
+		private LocalBuilder local;
+
+		internal ReturnCookie(Label stub, LocalBuilder local)
+		{
+			this.stub = stub;
+			this.local = local;
+		}
+
+		internal void EmitRet(ILGenerator ilgen)
+		{
+			ilgen.MarkLabel(stub);
+			if(local != null)
+			{
+				ilgen.Emit(OpCodes.Ldloc, local);
+			}
+			ilgen.Emit(OpCodes.Ret);
+		}
 	}
 
 	private sealed class BranchCookie
@@ -593,7 +612,32 @@ class Compiler
 			return;
 		}
 		Profiler.Enter("Compile");
-		c.Compile(0, 0, null);
+		if(m.IsStatic && m.IsSynchronized)
+		{
+			ArrayList exits = new ArrayList();
+			// TODO consider caching the Class object in a static field
+			ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+			ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
+			ilGenerator.Emit(OpCodes.Call, getClassFromTypeMethod);
+			ilGenerator.Emit(OpCodes.Dup);
+			LocalBuilder monitor = ilGenerator.DeclareLocal(typeof(object));
+			ilGenerator.Emit(OpCodes.Stloc, monitor);
+			ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
+			ilGenerator.BeginExceptionBlock();
+			c.Compile(0, 0, exits);
+			ilGenerator.BeginFinallyBlock();
+			ilGenerator.Emit(OpCodes.Ldloc, monitor);
+			ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
+			ilGenerator.EndExceptionBlock();
+			foreach(ReturnCookie rc in exits)
+			{
+				rc.EmitRet(ilGenerator);
+			}
+		}
+		else
+		{
+			c.Compile(0, 0, null);
+		}
 		Profiler.Leave("Compile");
 	}
 
@@ -809,14 +853,9 @@ class Compiler
 							ReturnCookie rc = exit as ReturnCookie;
 							if(rc != null)
 							{
-								if(exceptionIndex == 0)
+								if(exits == null)
 								{
-									ilGenerator.MarkLabel(rc.Stub);
-									if(rc.Local != null)
-									{
-										ilGenerator.Emit(OpCodes.Ldloc, rc.Local);
-									}
-									ilGenerator.Emit(OpCodes.Ret);
+									rc.EmitRet(ilGenerator);
 								}
 								else
 								{
@@ -953,6 +992,24 @@ class Compiler
 								case ClassFile.ConstantType.String:
 									ilGenerator.Emit(OpCodes.Ldstr, cf.GetConstantPoolConstantString(constant));
 									break;
+								case ClassFile.ConstantType.Class:
+								{
+									TypeWrapper tw = cf.GetConstantPoolClassType(constant, classLoader);
+									if(tw.IsUnloadable)
+									{
+										ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+										ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
+										ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicClassLiteral"));
+									}
+									else
+									{
+										ilGenerator.Emit(OpCodes.Ldtoken, tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
+										ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
+										ilGenerator.Emit(OpCodes.Call, getClassFromTypeMethod);
+									}
+									java_lang_Class.EmitCheckcast(clazz, ilGenerator);
+									break;
+								}
 								default:
 									throw new InvalidOperationException();
 							}
@@ -1184,25 +1241,25 @@ class Compiler
 						case NormalizedByteCode.__freturn:
 						case NormalizedByteCode.__dreturn:
 						{
-							if(exceptionIndex != 0)
+							if(exits != null)
 							{
 								// if we're inside an exception block, copy TOS to local, emit "leave" and push item onto our "todo" list
-								ReturnCookie rc = new ReturnCookie();
+								LocalBuilder local = null;
 								if(instr.NormalizedOpCode != NormalizedByteCode.__return)
 								{
 									TypeWrapper retTypeWrapper = m.Method.GetRetType(classLoader);
-									rc.Local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
 									retTypeWrapper.EmitConvStackToParameterType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
 									if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
 									{
 										ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsParameterType);
 									}
-									ilGenerator.Emit(OpCodes.Stloc, rc.Local);
+									local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
+									ilGenerator.Emit(OpCodes.Stloc, local);
 								}
-								rc.Stub = ilGenerator.DefineLabel();
+								Label label = ilGenerator.DefineLabel();
 								// NOTE leave automatically discards any junk that may be on the stack
-								ilGenerator.Emit(OpCodes.Leave, rc.Stub);
-								exits.Add(rc);
+								ilGenerator.Emit(OpCodes.Leave, label);
+								exits.Add(new ReturnCookie(label, local));
 							}
 							else
 							{
@@ -1211,10 +1268,7 @@ class Compiler
 								int stackHeight = ma.GetStackHeight(i);
 								if(instr.NormalizedOpCode == NormalizedByteCode.__return)
 								{
-									for(int j = 0; j < stackHeight; j++)
-									{
-										ilGenerator.Emit(OpCodes.Pop);
-									}
+									ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
 									ilGenerator.Emit(OpCodes.Ret);
 								}
 								else
@@ -1229,10 +1283,7 @@ class Compiler
 									{
 										LocalBuilder local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
 										ilGenerator.Emit(OpCodes.Stloc, local);
-										for(int j = 1; j < stackHeight; j++)
-										{
-											ilGenerator.Emit(OpCodes.Pop);
-										}
+										ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
 										ilGenerator.Emit(OpCodes.Ldloc, local);
 									}
 									ilGenerator.Emit(OpCodes.Ret);
@@ -2608,7 +2659,7 @@ class Compiler
 					// NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
 					if(method == null)
 					{
-						method = ClassLoaderWrapper.LoadClassCritical("java.lang.Object").GetMethodWrapper(md, false);
+						method = java_lang_Object.GetMethodWrapper(md, false);
 					}
 				}
 				else

@@ -449,7 +449,8 @@ final class VMRuntime
 	p.setProperty("user.home", home);
 	p.setProperty("user.dir", cli.System.Environment.get_CurrentDirectory());
 	p.setProperty("awt.toolkit", "ikvm.awt.NetToolkit, awt, Version=1.0, Culture=neutral, PublicKeyToken=null");
-	p.setProperty("gnu.classpath.home.url", "ikvmres:" + cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName() + ":lib");
+	// HACK since we cannot use URL here, we manually encode the assembly name
+        p.setProperty("gnu.classpath.home.url", "ikvmres://" + cli.System.String.Replace(cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName(), " ", "%20") + "/lib");
     }
 
     // HACK we need a way to get the assembly version of ik.vm.net.dll

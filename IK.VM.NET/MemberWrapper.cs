@@ -440,7 +440,7 @@ class MethodWrapper : MemberWrapper
 		// constructor
 		if(IsStatic)
 		{
-			MethodInfo method = this.originalMethod != null && !(this.originalMethod is MethodBuilder) ? (MethodInfo)this.originalMethod : DeclaringType.TypeAsTBD.GetMethod(md.Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypes, null);
+			MethodInfo method = this.originalMethod != null && !(this.originalMethod is MethodBuilder) ? (MethodInfo)this.originalMethod : DeclaringType.TypeAsTBD.GetMethod(md.Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypesDontUse, null);
 			try
 			{
 				return method.Invoke(null, args);
@@ -460,7 +460,7 @@ class MethodWrapper : MemberWrapper
 			// NOTE this means that we cannot detect a NullPointerException when calling <init>
 			if(md.Name == "<init>")
 			{
-				ConstructorInfo constructor = this.originalMethod != null && !(this.originalMethod is ConstructorBuilder) ? (ConstructorInfo)this.originalMethod : DeclaringType.TypeAsTBD.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, CallingConventions.Standard, md.ArgTypes, null);
+				ConstructorInfo constructor = this.originalMethod != null && !(this.originalMethod is ConstructorBuilder) ? (ConstructorInfo)this.originalMethod : DeclaringType.TypeAsTBD.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, CallingConventions.Standard, md.ArgTypesDontUse, null);
 				try
 				{
 					if(obj != null)
@@ -503,7 +503,7 @@ class MethodWrapper : MemberWrapper
 			{
 				if(method is MethodBuilder || method == null)
 				{
-					method = DeclaringType.TypeAsTBD.GetMethod(md.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypes, null);
+					method = DeclaringType.TypeAsTBD.GetMethod(md.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypesDontUse, null);
 				}
 				if(method == null)
 				{
@@ -606,13 +606,12 @@ class FieldWrapper : MemberWrapper
 	}
 
 	// HACK used (indirectly thru NativeCode.java.lang.Field.getConstant) by netexp to find out if the
-	// field is a constant (and if it is its value)
+	// field is a constant (and if it is, to get its value)
 	internal object GetConstant()
 	{
 		// NOTE only pritimives and string can be literals in Java (because the other "primitives" (like uint),
 		// are treated as NonPrimitiveValueTypes)
-		TypeWrapper java_lang_String = ClassLoaderWrapper.LoadClassCritical("java.lang.String");
-		if(field != null && (fieldType.IsPrimitive || fieldType == java_lang_String) && field.IsLiteral)
+		if(field != null && (fieldType.IsPrimitive || fieldType == CoreClasses.java_lang_String) && field.IsLiteral)
 		{
 			ReflectionOnConstant.IssueWarning(field);
 			object val = field.GetValue(null);
@@ -656,9 +655,8 @@ class FieldWrapper : MemberWrapper
 
 	private class VolatileLongDoubleGetter : CodeEmitter
 	{
-		private static MethodInfo getFieldFromHandle = typeof(FieldInfo).GetMethod("GetFieldFromHandle");
-		private static MethodInfo monitorEnter = typeof(System.Threading.Monitor).GetMethod("Enter");
-		private static MethodInfo monitorExit = typeof(System.Threading.Monitor).GetMethod("Exit");
+		private static MethodInfo volatileReadDouble = typeof(System.Threading.Thread).GetMethod("VolatileRead", new Type[] { Type.GetType("System.Double&") });
+		private static MethodInfo volatileReadLong = typeof(System.Threading.Thread).GetMethod("VolatileRead", new Type[] { Type.GetType("System.Int64&") });
 		private FieldInfo fi;
 
 		internal VolatileLongDoubleGetter(FieldInfo fi)
@@ -668,37 +666,23 @@ class FieldWrapper : MemberWrapper
 
 		internal override void Emit(ILGenerator ilgen)
 		{
-			if(!fi.IsStatic)
+			ilgen.Emit(fi.IsStatic ? OpCodes.Ldsflda : OpCodes.Ldflda, fi);
+			if(fi.FieldType == typeof(double))
 			{
-				ilgen.Emit(OpCodes.Dup);
-				Label label = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Brtrue, label);
-				ilgen.ThrowException(typeof(NullReferenceException));
-				ilgen.MarkLabel(label);
-			}
-			// HACK we lock on the FieldInfo object
-			ilgen.Emit(OpCodes.Ldtoken, fi);
-			ilgen.Emit(OpCodes.Call, getFieldFromHandle);
-			ilgen.Emit(OpCodes.Call, monitorEnter);
-			if(fi.IsStatic)
-			{
-				ilgen.Emit(OpCodes.Ldsfld, fi);
+				ilgen.Emit(OpCodes.Call, volatileReadDouble);
 			}
 			else
 			{
-				ilgen.Emit(OpCodes.Ldfld, fi);
+				Debug.Assert(fi.FieldType == typeof(long));
+				ilgen.Emit(OpCodes.Call, volatileReadLong);
 			}
-			ilgen.Emit(OpCodes.Ldtoken, fi);
-			ilgen.Emit(OpCodes.Call, getFieldFromHandle);
-			ilgen.Emit(OpCodes.Call, monitorExit);
 		}
 	}
 
 	private class VolatileLongDoubleSetter : CodeEmitter
 	{
-		private static MethodInfo getFieldFromHandle = typeof(FieldInfo).GetMethod("GetFieldFromHandle");
-		private static MethodInfo monitorEnter = typeof(System.Threading.Monitor).GetMethod("Enter");
-		private static MethodInfo monitorExit = typeof(System.Threading.Monitor).GetMethod("Exit");
+		private static MethodInfo volatileWriteDouble = typeof(System.Threading.Thread).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Double&"), typeof(double) });
+		private static MethodInfo volatileWriteLong = typeof(System.Threading.Thread).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Int64&"), typeof(long) });
 		private FieldInfo fi;
 
 		internal VolatileLongDoubleSetter(FieldInfo fi)
@@ -708,32 +692,19 @@ class FieldWrapper : MemberWrapper
 
 		internal override void Emit(ILGenerator ilgen)
 		{
-			if(!fi.IsStatic)
+			LocalBuilder temp = ilgen.DeclareLocal(fi.FieldType);
+			ilgen.Emit(OpCodes.Stloc, temp);
+			ilgen.Emit(fi.IsStatic ? OpCodes.Ldsflda : OpCodes.Ldflda, fi);
+			ilgen.Emit(OpCodes.Ldloc, temp);
+			if(fi.FieldType == typeof(double))
 			{
-				LocalBuilder local = ilgen.DeclareLocal(fi.FieldType);
-				ilgen.Emit(OpCodes.Stloc, local);
-				ilgen.Emit(OpCodes.Dup);
-				Label label = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Brtrue, label);
-				ilgen.ThrowException(typeof(NullReferenceException));
-				ilgen.MarkLabel(label);
-				ilgen.Emit(OpCodes.Ldloc, local);
-			}
-			// HACK we lock on the FieldInfo object
-			ilgen.Emit(OpCodes.Ldtoken, fi);
-			ilgen.Emit(OpCodes.Call, getFieldFromHandle);
-			ilgen.Emit(OpCodes.Call, monitorEnter);
-			if(fi.IsStatic)
-			{
-				ilgen.Emit(OpCodes.Stsfld, fi);
+				ilgen.Emit(OpCodes.Call, volatileWriteDouble);
 			}
 			else
 			{
-				ilgen.Emit(OpCodes.Stfld, fi);
+				Debug.Assert(fi.FieldType == typeof(long));
+				ilgen.Emit(OpCodes.Call, volatileWriteLong);
 			}
-			ilgen.Emit(OpCodes.Ldtoken, fi);
-			ilgen.Emit(OpCodes.Call, getFieldFromHandle);
-			ilgen.Emit(OpCodes.Call, monitorExit);
 		}
 	}
 

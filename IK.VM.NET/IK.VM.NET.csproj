@@ -139,6 +139,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "CoreClasses.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "DoubleToString.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -160,11 +165,6 @@
                 />
                 <File
                     RelPath = "MemberWrapper.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ObjectHelper.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

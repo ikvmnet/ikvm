@@ -309,10 +309,6 @@ public class Starter
 				}
 			}
 			java.lang.Class clazz = java.lang.Class.forName(mainClass, true, loader);
-			if(saveAssembly)
-			{
-				java.lang.Runtime.getRuntime().addShutdownHook(new SaveAssemblyShutdownHook(clazz));
-			}
 			Method method = FindMainMethod(clazz);
 			if(method == null)
 			{
@@ -324,6 +320,10 @@ public class Starter
 			}
 			else
 			{
+				if(saveAssembly)
+				{
+					java.lang.Runtime.getRuntime().addShutdownHook(new SaveAssemblyShutdownHook(clazz));
+				}
 				try
 				{
 					method.invoke(null, new object[] { vmargs });
@@ -338,11 +338,16 @@ public class Starter
 		catch(System.Exception x)
 		{
 			java.lang.Thread thread = java.lang.Thread.currentThread();
-			thread.getThreadGroup().uncaughtException(thread, ExceptionHelper.MapExceptionFast(x));
+			thread.getThreadGroup().uncaughtException(thread, java.lang.ExceptionHelper.MapExceptionFast(x));
 		}
 		finally
 		{
-			// TODO the current thread should be removed from its ThreadGroup and signaled
+			// FXBUG when the main thread ends, it doesn't actually die, it stays around to manage the lifetime
+			// of the CLR, but in doing so it also keeps alive the thread local storage for this thread and we
+			// use the TLS as a hack to track when the thread dies (if the object stored in the TLS is finalized,
+			// we know the thread is dead). So to make that work for the main thread, we explicitly clear the TLS
+			// slot that contains our hack object.
+			System.Threading.Thread.SetData(System.Threading.Thread.GetNamedDataSlot("ikvm-thread-hack"), null);
 		}
 		return 1;
 	}

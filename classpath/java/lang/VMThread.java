@@ -4,6 +4,10 @@ package java.lang;
 // executing code in this class.
 final class VMThread
 {
+    private static cli.System.LocalDataStoreSlot localDataStoreSlot = cli.System.Threading.Thread.AllocateDataSlot();
+    private static cli.System.LocalDataStoreSlot cleanupDataStoreSlot = cli.System.Threading.Thread.AllocateNamedDataSlot("ikvm-thread-hack");
+    private cli.System.WeakReference nativeThreadReference;
+
     // Note: when this thread dies, this reference is *not* cleared
     volatile Thread thread;
     private volatile boolean running;
@@ -49,11 +53,6 @@ final class VMThread
 	    // VMThread be unstoppable.
 	    running = false;
 	    thread.die();
-	    synchronized(this)
-	    {
-		// release the threads waiting to join us
-		notifyAll();
-	    }
 	}
     }
 
@@ -98,11 +97,28 @@ final class VMThread
 	return 0;
     }
 
+    private static cli.System.TimeSpan makeTimeSpan(long ms, int ns)
+    {
+	// NOTE we assume that ns is already validated to be in the range 0..999999
+	return new cli.System.TimeSpan(Math.min(ms, Long.MAX_VALUE / 10000) * 10000 + (ns + 99) / 100);
+    }
+
     synchronized void join(long ms, int ns) throws InterruptedException
     {
-	// We use the VMThread object to wait on, because this is a private
-	// object, so client code cannot call notify on us.
-        wait(ms, ns);
+	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	if(nativeThread != null)
+	{
+	    // TODO if we're joining a thread that has a CleanupHack object, we should coordinate with the CleanupHack,
+	    // to make sure there is no race between join returning and the thread being removed from the thread group.
+	    if(ms == 0 && ns == 0)
+	    {
+		nativeThread.Join();
+	    }
+	    else
+	    {
+		nativeThread.Join(makeTimeSpan(ms, ns));
+	    }
+	}
     }
 
     void stop(Throwable t)
@@ -115,10 +131,7 @@ final class VMThread
 	    thread.stillborn = t;
     }
 
-    private static cli.System.LocalDataStoreSlot localDataStoreSlot = cli.System.Threading.Thread.AllocateDataSlot();
-    private cli.System.Threading.Thread nativeThread;
-
-    /*native*/ void start(long stacksize)
+    void start(long stacksize)
     {
 	cli.System.Threading.ThreadStart starter = new cli.System.Threading.ThreadStart(
 	    new cli.System.Threading.ThreadStart.Method()
@@ -129,19 +142,24 @@ final class VMThread
 		run();
 	    }
 	});
-	nativeThread = new cli.System.Threading.Thread(starter);
+	cli.System.Threading.Thread nativeThread = new cli.System.Threading.Thread(starter);
+	nativeThreadReference = new cli.System.WeakReference(nativeThread);
 	nativeThread.set_Name(thread.name);
 	nativeThread.set_IsBackground(thread.daemon);
 	nativeSetPriority(thread.priority);
 	nativeThread.Start();
     }
 
-    /*native*/ void interrupt()
+    void interrupt()
     {
-	nativeThread.Interrupt();
+	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	if(nativeThread != null)
+	{
+	    nativeThread.Interrupt();
+	}
     }
 
-    /*native*/ boolean isInterrupted()
+    boolean isInterrupted()
     {
 	// NOTE special case for current thread, because then we can use the .NET interrupted status
 	if(thread == currentThread())
@@ -155,7 +173,11 @@ final class VMThread
 	    catch(InterruptedException x)
 	    {
 		// because we "consumed" the interrupt, we need to interrupt ourself again
-		nativeThread.Interrupt();
+		cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+		if(nativeThread != null)
+		{
+		    nativeThread.Interrupt();
+		}
 		return true;
 	    }
 	}
@@ -165,41 +187,53 @@ final class VMThread
 	return false;
     }
 
-    /*native*/ void suspend()
+    void suspend()
     {
-	nativeThread.Suspend();
-    }
-
-    /*native*/ void resume()
-    {
-	nativeThread.Resume();
-    }
-
-    /*native*/ void nativeSetPriority(int priority)
-    {
-	if(priority == Thread.MIN_PRIORITY)
+	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	if(nativeThread != null)
 	{
-	    nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(cli.System.Threading.ThreadPriority.Lowest));
-	}
-	else if(priority > Thread.MIN_PRIORITY && priority < Thread.NORM_PRIORITY)
-	{
-	    nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(cli.System.Threading.ThreadPriority.BelowNormal));
-	}
-	else if(priority == Thread.NORM_PRIORITY)
-	{
-	    nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(cli.System.Threading.ThreadPriority.Normal));
-	}
-	else if(priority > Thread.NORM_PRIORITY && priority < Thread.MAX_PRIORITY)
-	{
-	    nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(cli.System.Threading.ThreadPriority.AboveNormal));
-	}
-	else if(priority == Thread.MAX_PRIORITY)
-	{
-	    nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(cli.System.Threading.ThreadPriority.Highest));
+	    nativeThread.Suspend();
 	}
     }
 
-    /*native*/ void nativeStop(Throwable t)
+    void resume()
+    {
+	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	if(nativeThread != null)
+	{
+	    nativeThread.Resume();
+	}
+    }
+
+    void nativeSetPriority(int priority)
+    {
+	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	if(nativeThread != null)
+	{
+	    if(priority == Thread.MIN_PRIORITY)
+	    {
+		nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(cli.System.Threading.ThreadPriority.Lowest));
+	    }
+	    else if(priority > Thread.MIN_PRIORITY && priority < Thread.NORM_PRIORITY)
+	    {
+		nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(cli.System.Threading.ThreadPriority.BelowNormal));
+	    }
+	    else if(priority == Thread.NORM_PRIORITY)
+	    {
+		nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(cli.System.Threading.ThreadPriority.Normal));
+	    }
+	    else if(priority > Thread.NORM_PRIORITY && priority < Thread.MAX_PRIORITY)
+	    {
+		nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(cli.System.Threading.ThreadPriority.AboveNormal));
+	    }
+	    else if(priority == Thread.MAX_PRIORITY)
+	    {
+		nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(cli.System.Threading.ThreadPriority.Highest));
+	    }
+	}
+    }
+
+    void nativeStop(Throwable t)
     {
 	// NOTE we allow ThreadDeath (and its subclasses) to be thrown on every thread, but any
 	// other exception is ignored, except if we're throwing it on the current Thread. This
@@ -217,21 +251,39 @@ final class VMThread
 	}
 	else if(t instanceof ThreadDeath)
 	{
-	    nativeThread.Abort(t);
+	    cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	    if(nativeThread != null)
+	    {
+		nativeThread.Abort(t);
+	    }
 	}
     }
 
-    /*native*/ static Thread currentThread()
+    private static class CleanupHack
+    {
+	private Thread thread;
+
+	CleanupHack(Thread thread)
+	{
+	    this.thread = thread;
+	}
+
+	protected void finalize()
+	{
+	    thread.die();
+	}
+    }
+
+    static Thread currentThread()
     {
 	Thread javaThread = (Thread)cli.System.Threading.Thread.GetData(localDataStoreSlot);
 	if(javaThread == null)
 	{
 	    // threads created outside of Java always run in the root thread group
-	    // TODO if the thread dies, it needs to be removed from the root ThreadGroup   
-	    // and any other threads waiting to join it, should be released.
+	    // TODO if the thread dies, it needs to be removed from the root ThreadGroup
 	    cli.System.Threading.Thread nativeThread = cli.System.Threading.Thread.get_CurrentThread();
 	    VMThread vmThread = new VMThread(null);
-	    vmThread.nativeThread = nativeThread;
+	    vmThread.nativeThreadReference = new cli.System.WeakReference(nativeThread);
 	    vmThread.running = true;
 	    int priority = Thread.NORM_PRIORITY;
 	    switch(nativeThread.get_Priority().Value)
@@ -255,6 +307,7 @@ final class VMThread
 	    javaThread = new Thread(vmThread, nativeThread.get_Name(), priority, nativeThread.get_IsBackground());
 	    vmThread.thread = javaThread;
 	    cli.System.Threading.Thread.SetData(localDataStoreSlot, javaThread);
+	    cli.System.Threading.Thread.SetData(cleanupDataStoreSlot, new CleanupHack(javaThread));
 	    javaThread.group = ThreadGroup.root;
 	    javaThread.group.addThread(javaThread);
 	    InheritableThreadLocal.newChildThread(javaThread);
@@ -262,26 +315,17 @@ final class VMThread
 	return javaThread;
     }
 
-    static /*native*/ void yield()
+    static void yield()
     {
 	cli.System.Threading.Thread.Sleep(0);
     }
 
-    static /*native*/ void sleep(long ms, int ns) throws InterruptedException
+    static void sleep(long ms, int ns) throws InterruptedException
     {
-	try
-	{
-	    if(false) throw new cli.System.Threading.ThreadInterruptedException();
-	    // TODO guard against ms and ns overflowing
-	    cli.System.Threading.Thread.Sleep(new cli.System.TimeSpan(ms * 10000 + (ns + 99) / 100));
-	}
-	catch(cli.System.Threading.ThreadInterruptedException x)
-	{
-	    throw new InterruptedException(x.getMessage());
-	}
+	cli.System.Threading.Thread.Sleep(makeTimeSpan(ms, ns));
     }
 
-    static /*native*/ boolean interrupted()
+    static boolean interrupted()
     {
 	try
 	{
@@ -298,7 +342,7 @@ final class VMThread
 	}
     }
 
-    static /*native*/ boolean holdsLock(Object obj)
+    static boolean holdsLock(Object obj)
     {
 	if(obj == null)
 	{

@@ -40,24 +40,24 @@ class Profiler
 
 	~Profiler()
 	{
-		Console.WriteLine("{0,-40}{1,10}{2,12}", "Event", "Count", "Time (ms)");
-		Console.WriteLine("{0,-40}{1,10}{2,12}", "-----", "-----", "---------");
+		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "Event", "Count", "Time (ms)");
+		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "-----", "-----", "---------");
 		long totalTime = 0;
 		foreach(DictionaryEntry e in counters)
 		{
 			Entry entry = (Entry)e.Value;
 			if(entry.Time == 0)
 			{
-				Console.WriteLine("{0,-40}{1,10}", e.Key, entry.Count);
+				Console.Error.WriteLine("{0,-40}{1,10}", e.Key, entry.Count);
 			}
 			else
 			{
 				totalTime += entry.Time / 10000;
-				Console.WriteLine("{0,-40}{1,10}{2,12}", e.Key, entry.Count, entry.Time / 10000);
+				Console.Error.WriteLine("{0,-40}{1,10}{2,12}", e.Key, entry.Count, entry.Time / 10000);
 			}
 		}
-		Console.WriteLine("{0,-40}{1,10}{2,12}", "", "", "---------");
-		Console.WriteLine("{0,-40}{1,10}{2,12}", "", "", totalTime);
+		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "", "", "---------");
+		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "", "", totalTime);
 	}
 
 	[Conditional("PROFILE")]

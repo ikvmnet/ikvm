@@ -110,7 +110,7 @@ sealed class MethodDescriptor
 
 	// NOTE this exposes potentially unfinished types!
 	// HACK this should not be used and all existing uses should be reworked
-	internal Type[] ArgTypes
+	internal Type[] ArgTypesDontUse
 	{
 		get
 		{
@@ -136,16 +136,6 @@ sealed class MethodDescriptor
 		get
 		{
 			return RetTypeWrapper.TypeAsParameterType;
-		}
-	}
-
-	// NOTE this exposes potentially unfinished types!
-	// HACK this should not be used and all existing uses should be reworked
-	internal Type RetType
-	{
-		get
-		{
-			return RetTypeForDefineMethod;
 		}
 	}
 
@@ -239,7 +229,7 @@ sealed class MethodDescriptor
 		else
 		{
 			name = "Ljava.lang.Object;";
-			typeWrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
+			typeWrapper = CoreClasses.java_lang_Object;
 		}
 	}
 
@@ -477,14 +467,16 @@ class AttributeHelper
 
 	internal static void ImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper ifaceWrapper)
 	{
-		Type iface = ifaceWrapper.TypeAsTBD;
+		// we always want the "clean" type in the attribute, so for ghosts we use the wrapping value type instead
+		// of the nested interface
+		Type iface = ifaceWrapper.IsGhost ? ifaceWrapper.TypeAsTBD : ifaceWrapper.TypeAsBaseType;
 		if(implementsAttribute == null)
 		{
 			implementsAttribute = typeof(ImplementsAttribute).GetConstructor(new Type[] { typeof(Type) });
 		}
 		// FXBUG because SetCustomAttribute(CustomAttributeBuilder) incorrectly always stores the assembly qualified name
 		// we have our own version for when the type lives in the same assembly as the attribute. If we don't do this
-		// ikvmc will have problems accessing this attribute when it uses Assembly.LoadFrom to load an assembly.
+		// the .NET runtime will have problems resolving this type when the assembly is loaded in the LoadFrom context.
 		if(typeBuilder.Assembly.Equals(iface.Assembly))
 		{
 			typeBuilder.SetCustomAttribute(implementsAttribute, FreezeDryType(iface));
@@ -642,7 +634,6 @@ class AttributeHelper
 
 abstract class TypeWrapper
 {
-	private static TypeWrapper java_lang_Object;
 	private readonly ClassLoaderWrapper classLoader;
 	private readonly string name;		// java name (e.g. java.lang.Object)
 	private readonly Modifiers modifiers;
@@ -1253,13 +1244,8 @@ abstract class TypeWrapper
 			}
 			return ImplementsInterface(baseType);
 		}
-		if(java_lang_Object == null)
-		{
-			// TODO cache java.lang.Object somewhere else
-			java_lang_Object = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
-		}
 		// NOTE this isn't just an optimization, it is also required when this is an interface
-		if(baseType == java_lang_Object)
+		if(baseType == CoreClasses.java_lang_Object)
 		{
 			return true;
 		}
@@ -1334,12 +1320,12 @@ abstract class TypeWrapper
 
 	private void ImplementInterfaceMethodStubImpl(MethodDescriptor md, MethodBase ifmethod, TypeBuilder typeBuilder, DynamicTypeWrapper wrapper)
 	{
-		// HACK we're mangling the name to prevent subclasses from overriding this method
-		string mangledName = this.Name + "$" + ifmethod.Name + "$" + wrapper.Name;
+		// we're mangling the name to prevent subclasses from accidentally overriding this method
+		string mangledName = this.Name + "/" + ifmethod.Name;
 		MethodWrapper mce = wrapper.GetMethodWrapper(md, true);
 		if(mce != null && mce.HasUnloadableArgsOrRet)
 		{
-			// HACK for now we make it seem as if the method isn't there, we should be emitting
+			// TODO for now we make it seem as if the method isn't there, we should be emitting
 			// a stub that throws a NoClassDefFoundError
 			// NOTE AFAICT this can only happen when code explicitly messes around with the custom class loaders
 			// that violate the class loader rules.
@@ -1379,7 +1365,7 @@ abstract class TypeWrapper
 				// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
 				// interface methods, so we have to generate a stub here that doesn't do anything but call the base
 				// implementation
-				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.Private | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
+				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
 				AttributeHelper.HideFromReflection(mb);
 				ILGenerator ilGenerator = mb.GetILGenerator();
@@ -2729,6 +2715,7 @@ class DynamicTypeWrapper : TypeWrapper
 					{
 						// HACK methods that have unloadable types in the signature do not have an underlying method, so we end
 						// up here
+						// TODO I don't think the above is true anymore, this needs to be tested...
 						continue;
 					}
 					ClassFile.Method m = classFile.Methods[i];
@@ -3447,7 +3434,7 @@ class DynamicTypeWrapper : TypeWrapper
 								break;
 							}
 							// here are the complex rules for determining whether this method overrides the method we found
-							// RULE 1: final methods may not be overriden
+							// RULE 1: final methods may not be overridden
 							if(baseMce.IsFinal)
 							{
 								// NOTE we don't need to test for our method being private, because if it is
@@ -3520,18 +3507,57 @@ class DynamicTypeWrapper : TypeWrapper
 					}
 					else
 					{
-						mb = typeBuilder.DefineMethod(name, attribs, retType, args);
-						// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize
-						if(baseMethod != null &&
-							baseMethod.Name == "finalize" &&
-							baseMethod.DeclaringType.FullName == "java.lang.Object" && 
-							md.Signature == "()V")
+						bool needFinalize = false;
+						bool needDispatch = false;
+						if(baseMethod != null && md.Name == "finalize" && md.Signature == "()V")
 						{
-							MethodBuilder finalize = typeBuilder.DefineMethod("Finalize", MethodAttributes.Family | MethodAttributes.Virtual, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
+							if(baseMethod.Name == "Finalize")
+							{
+								baseMethod = null;
+								attribs |= MethodAttributes.NewSlot;
+								needFinalize = true;
+								needDispatch = true;
+							}
+							else if(baseMethod.DeclaringType == CoreClasses.java_lang_Object.TypeAsBaseType)
+							{
+								needFinalize = true;
+								needDispatch = true;
+							}
+							else if(m.IsFinal)
+							{
+								needFinalize = true;
+								needDispatch = false;
+							}
+						}
+						mb = typeBuilder.DefineMethod(name, attribs, retType, args);
+						// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
+						// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
+						if(needFinalize)
+						{
+							MethodInfo baseFinalize = typeBuilder.BaseType.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+							MethodAttributes attr = MethodAttributes.Virtual;
+							// make sure we don't reduce accessibility
+							attr |= baseFinalize.IsPublic ? MethodAttributes.Public : MethodAttributes.Family;
+							if(m.IsFinal)
+							{
+								attr |= MethodAttributes.Final;
+							}
+							MethodBuilder finalize = typeBuilder.DefineMethod("Finalize", attr, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
+							AttributeHelper.HideFromReflection(finalize);
 							ILGenerator ilgen = finalize.GetILGenerator();
-							// NOTE we're not calling the base class Finalize (that would be Object.Finalize, which doesn't do anything)
-							ilgen.Emit(OpCodes.Ldarg_0);
-							ilgen.Emit(OpCodes.Callvirt, mb);
+							if(needDispatch)
+							{
+								ilgen.BeginExceptionBlock();
+								ilgen.Emit(OpCodes.Ldarg_0);
+								ilgen.Emit(OpCodes.Callvirt, mb);
+								ilgen.BeginCatchBlock(typeof(object));
+								ilgen.EndExceptionBlock();
+							}
+							else
+							{
+								ilgen.Emit(OpCodes.Ldarg_0);
+								ilgen.Emit(OpCodes.Call, baseFinalize);
+							}
 							ilgen.Emit(OpCodes.Ret);
 						}
 					}
@@ -3584,9 +3610,11 @@ class DynamicTypeWrapper : TypeWrapper
 						}
 					}
 					method = mb;
-					// since Java constructors (and static intializers) aren't allowed to be synchronized, we only check this here
-					if(m.IsSynchronized)
+					// since Java constructors aren't allowed to be synchronized, we only check this here
+					if(m.IsSynchronized && !m.IsStatic)
 					{
+						// NOTE for static methods we cannot get by with setting the MethodImplAttributes.Synchronized flag,
+						// we actually need to emit code to lock the Class object!
 						mb.SetImplementationFlags(method.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
 					}
 					if(baseMethod != null && (explicitOverride || baseMethod.Name != name))
@@ -3921,7 +3949,7 @@ class CompiledTypeWrapper : LazyTypeWrapper
 		else if(type.BaseType == null)
 		{
 			// System.Object must appear to be derived from java.lang.Object
-			return ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
+			return CoreClasses.java_lang_Object;
 		}
 		else
 		{
@@ -3934,7 +3962,7 @@ class CompiledTypeWrapper : LazyTypeWrapper
 				}
 				else
 				{
-					return ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
+					return CoreClasses.java_lang_Object;
 				}
 			}
 			return ClassLoaderWrapper.GetWrapperFromType(type.BaseType);
@@ -4482,7 +4510,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 					for(int i = 0; i < args.Length; i++)
 					{
 						// HACK if the delegate has pointer args, we cannot handle them, but it is already
-						// to late to refuse to load the class, so we replace pointers with IntPtr.
+						// too late to refuse to load the class, so we replace pointers with IntPtr.
 						// This is not a solution, because if the delegate would be instantiated the generated
 						// code would be invalid.
 						if(parameters[i].ParameterType.IsPointer)
@@ -4920,6 +4948,18 @@ class DotNetTypeWrapper : LazyTypeWrapper
 	// TODO why doesn't this use the standard MethodWrapper.Create?
 	private MethodWrapper CreateMethodWrapper(MethodDescriptor md, MethodBase mb, bool isRemapped, bool privateInterfaceImplHack)
 	{
+		Modifiers mods = AttributeHelper.GetModifiers(mb, true);
+		if(md.Name == "Finalize" && md.Signature == "()V" && !mb.IsStatic &&
+			TypeAsBaseType.IsSubclassOf(CoreClasses.java_lang_Object.TypeAsBaseType))
+		{
+			// TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
+			MethodWrapper mw = new MethodWrapper(this, MethodDescriptor.FromNameSig(GetClassLoader(), "finalize", "()V"), mb, null, mods, false);
+			mw.SetDeclaredExceptions(new string[] { "java.lang.Throwable" });
+			mw.EmitCall = CodeEmitter.Create(OpCodes.Call, mb);
+			mw.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, mb);
+			mw.EmitNewobj = CodeEmitter.InternalError;
+			return mw;
+		}
 		ParameterInfo[] parameters = mb.GetParameters();
 		Type[] args = new Type[parameters.Length];
 		bool hasByRefArgs = false;
@@ -4937,7 +4977,6 @@ class DotNetTypeWrapper : LazyTypeWrapper
 				hasByRefArgs = true;
 			}
 		}
-		Modifiers mods = AttributeHelper.GetModifiers(mb, true);
 		if(isRemapped)
 		{
 			// all methods are static and final doesn't make sense
@@ -4983,7 +5022,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			}
 			if(!mb.IsStatic)
 			{
-				method.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)mb);
+				method.EmitCallvirt = CodeEmitter.Create(this.IsNonPrimitiveValueType ? OpCodes.Call : OpCodes.Callvirt, (MethodInfo)mb);
 				if(nonPrimitiveValueType)
 				{
 					method.EmitCallvirt += CodeEmitter.CreateEmitBoxCall(md.RetTypeWrapper);
@@ -5070,7 +5109,7 @@ class ArrayTypeWrapper : TypeWrapper
 	private Type type;
 
 	internal ArrayTypeWrapper(Type type, Modifiers modifiers, string name, ClassLoaderWrapper classLoader)
-		: base(modifiers, name, ClassLoaderWrapper.LoadClassCritical("java.lang.Object"), classLoader)
+		: base(modifiers, name, CoreClasses.java_lang_Object, classLoader)
 	{
 		this.type = type;
 		if(mdClone == null)

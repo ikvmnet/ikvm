@@ -60,6 +60,7 @@ class Compiler
 
 	static int Main(string[] args)
 	{
+		AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
 		System.Threading.Thread.CurrentThread.Name = "compiler";
 		Tracer.EnableTraceForDebug();
 		System.Reflection.Emit.PEFileKinds target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
@@ -170,12 +171,17 @@ class Compiler
 					string spec = s.Substring(9);
 					if(Directory.Exists(spec))
 					{
-						DirectoryInfo dir = new DirectoryInfo(spec);
+						// NOTE we're appending a DirectorySeparatorChar to make sure that dir.FullName always
+						// ends with a separator (multiple separators are automatically collapsed into one).
+						// This is important because later on we will be using baseDir.FullName to make
+						// an absolute path relative again.
+						DirectoryInfo dir = new DirectoryInfo(spec + Path.DirectorySeparatorChar);
 						Recurse(dir, dir, "*");
 					}
 					else
 					{
-						DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec));
+						// see comment above about Path.DirectorySeparatorChar
+						DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec) + Path.DirectorySeparatorChar);
 						Recurse(dir, dir, Path.GetFileName(spec));
 					}
 				}
@@ -388,7 +394,7 @@ class Compiler
 							byte[] b = new byte[fs.Length];
 							fs.Read(b, 0, b.Length);
 							// HACK very lame way to extract the resource name (by chopping off the base directory)
-							string name = file.Substring(baseDir.FullName.Length + 1);
+							string name = file.Substring(baseDir.FullName.Length);
 							name = name.Replace('\\', '/');
 							resources.Add(name, b);
 							itemsProcessed++;
@@ -438,5 +444,19 @@ class Compiler
 		{
 			Console.Error.WriteLine("Warning: could not find exclusion file '{0}'", filename);
 		}
+	}
+
+	private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+	{
+		// make sure all the referenced assemblies are visible (they are loaded with LoadFrom, so
+		// they end up in the LoadFrom context [unless they happen to be available in one of the probe paths])
+		foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
+		{
+			if(a.FullName == args.Name)
+			{
+				return a;
+			}
+		}
+		return null;
 	}
 }

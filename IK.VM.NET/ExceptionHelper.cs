@@ -83,7 +83,7 @@ public class ExceptionHelper
 		}
 	}
 
-	// HACK this is used by starter.cs (ikvm.exe) to map exceptions that escape from main
+	// HACK this is used in ClassFile.cs and MemberWrapper.cs
 	public static Exception MapExceptionFast(Exception x)
 	{
 		try

@@ -374,22 +374,6 @@ namespace NativeCode.java
 				return typeof(VMRuntime).Assembly.GetName().Version.ToString();
 			}
 
-//			public static string nativeGetLibname(string pathname, string libname)
-//			{
-//				if(Environment.OSVersion.ToString().IndexOf("Unix") >= 0)
-//				{
-//					return "lib" + libname + ".so";
-//				}
-//
-//				// HACK this seems like a lame way of doing things, but in order to get Eclipse to work,
-//				// we have append .dll to the libname here
-//				if(!libname.ToUpper().EndsWith(".DLL"))
-//				{
-//					libname += ".dll";
-//				}
-//				return libname;
-//			}
-
 			public static int nativeLoad(string filename)
 			{
 				// TODO native libraries somehow need to be scoped by class loader
@@ -579,7 +563,7 @@ namespace NativeCode.java
 						ar.Add(VMClass.getClassFromType(frame.GetMethod().DeclaringType));
 					}
 				}
-				return ar.ToArray(ClassLoaderWrapper.LoadClassCritical("java.lang.Class").TypeAsArrayType);
+				return ar.ToArray(CoreClasses.java_lang_Class.TypeAsArrayType);
 			}
 
 			public static object currentClassLoader()
@@ -768,38 +752,30 @@ namespace NativeCode.java
 				return !BitConverter.IsLittleEndian;
 			}
 
-			private static long timebase = ((TimeZone.CurrentTimeZone.ToUniversalTime(DateTime.Now) - new DateTime(1970, 1, 1)).Ticks / 10000L) - Environment.TickCount;
-
 			public static long currentTimeMillis()
 			{
-				// NOTE this wraps after 24.9 days, but it is much faster than calling DateTime.Now every time
-				return timebase + Environment.TickCount;
+				const long january_1st_1970 = 62135596800000L;
+				return DateTime.UtcNow.Ticks / 10000L - january_1st_1970;
 			}
 
 			public static void setErr(object printStream)
 			{
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
-				tw.Finish();
-				// NOTE we cannot use Java reflection, because the field is final
-				// TODO JNI reflection should also ignore the final-ness of a field, so once we've got that
-				// sorted out, we could use that mechanism
-				tw.TypeAsTBD.GetField("err", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
+				FieldWrapper fw = tw.GetFieldWrapper("err", ClassLoaderWrapper.LoadClassCritical("java.io.PrintStream"));
 			}
 
 			public static void setIn(object inputStream)
 			{
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
-				tw.Finish();
-				// NOTE we cannot use Java reflection, because the field is final
-				tw.TypeAsTBD.GetField("in", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, inputStream);
+				FieldWrapper fw = tw.GetFieldWrapper("in", ClassLoaderWrapper.LoadClassCritical("java.io.InputStream"));
+				fw.SetValue(null, inputStream);
 			}
 
 			public static void setOut(object printStream)
 			{
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
-				tw.Finish();
-				// NOTE we cannot use Java reflection, because the field is final
-				tw.TypeAsTBD.GetField("out", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
+				FieldWrapper fw = tw.GetFieldWrapper("in", ClassLoaderWrapper.LoadClassCritical("java.io.PrintStream"));
+				fw.SetValue(null, printStream);
 			}
 
 			public static int identityHashCode(object o)
@@ -817,7 +793,7 @@ namespace NativeCode.java
 				{
 					if(!(assemblies[i] is NetSystem.Reflection.Emit.AssemblyBuilder))
 					{
-						if(assemblies[i].GetLoadedModules()[0].GetField(name) != null)
+						if(assemblies[i].GetManifestResourceInfo("ikvm:" + name) != null)
 						{
 							return assemblies[i];
 						}
