@@ -771,7 +771,7 @@ class Compiler
 										bc.ContentOnStack = true;
 										ilGenerator.MarkLabel(bc.Stub);
 										int stack = bc.dh.Count;
-										for(int n = 0; n < stack; n++)
+										for(int n = stack - 1; n >= 0; n--)
 										{
 											bc.dh.Load(n);
 										}
