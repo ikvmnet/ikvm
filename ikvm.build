@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <project name="ikvm" default="all">
     <target name="all">
-        <nant buildfile="ik.vm.net/ik.vm.net.build" />
-        <nant buildfile="ik.vm.jni/ik.vm.jni.build" />
+        <nant buildfile="IK.VM.NET/ik.vm.net.build" />
+        <nant buildfile="IK.VM.JNI/ik.vm.jni.build" />
         <nant buildfile="netexp/netexp.build" />
         <nant buildfile="ikvmc/ikvmc.build" />
         <nant buildfile="classpath/classpath.build" />

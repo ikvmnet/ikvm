@@ -49,6 +49,7 @@ class ClassLoaderWrapper
 	// HACK moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
 	// so for the time being, we share one dynamic assembly among all classloaders
 	private static ModuleBuilder moduleBuilder;
+	private static bool saveDebugImage;
 
 	// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
 	internal static void SetBootstrapClassLoader(ClassLoaderWrapper bootstrapClassLoader)
@@ -478,6 +479,12 @@ class ClassLoaderWrapper
 		return (this == GetBootstrapClassLoader()) ? null : javaClassLoader;
 	}
 
+	internal static void PrepareForSaveDebugImage()
+	{
+		Debug.Assert(moduleBuilder == null);
+		saveDebugImage = true;
+	}
+
 	internal static void SaveDebugImage(object mainClass)
 	{
 		// HACK we iterate 3 times, in the hopes that that will be enough. We really should let FinishAll return a boolean whether
@@ -567,7 +574,7 @@ class ClassLoaderWrapper
 	{
 		AssemblyName name = new AssemblyName();
 		name.Name = "ikvm_dynamic_assembly__" + (this == GetBootstrapClassLoader() ? "bootstrap" : javaClassLoader);
-		AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
+		AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
 		ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
 		if(JVM.Debug)
 		{

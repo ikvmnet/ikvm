@@ -153,6 +153,7 @@ public class Starter
 				else if(args[i] == "-Xsave")
 				{
 					saveAssembly = true;
+					JVM.PrepareForSaveDebugImage();
 				}
 				else if(args[i] == "-Xtime")
 				{

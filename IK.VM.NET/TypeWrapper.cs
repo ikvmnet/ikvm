@@ -4121,6 +4121,7 @@ sealed class FieldWrapper
 	private IntPtr cookie;
 	internal CodeEmitter EmitGet;
 	internal CodeEmitter EmitSet;
+	private FieldInfo field;
 
 	internal FieldWrapper(TypeWrapper declaringType, string name, string sig, Modifiers modifiers)
 	{
@@ -4385,9 +4386,8 @@ sealed class FieldWrapper
 		return field;
 	}
 
-	internal void SetValue(object obj, object val)
+	private void LookupField()
 	{
-		// TODO this is a broken implementation (for one thing, it needs to support redirection)
 		BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic;
 		if(IsStatic)
 		{
@@ -4397,21 +4397,26 @@ sealed class FieldWrapper
 		{
 			bindings |= BindingFlags.Instance;
 		}
-		DeclaringType.Type.GetField(name, bindings).SetValue(obj, val);
+		field = DeclaringType.Type.GetField(name, bindings);
+	}
+
+	internal void SetValue(object obj, object val)
+	{
+		// TODO this is a broken implementation (for one thing, it needs to support redirection)
+		if(field == null)
+		{
+			LookupField();
+		}
+		field.SetValue(obj, val);
 	}
 
 	internal object GetValue(object obj)
 	{
 		// TODO this is a broken implementation (for one thing, it needs to support redirection)
-		BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic;
-		if(IsStatic)
+		if(field == null)
 		{
-			bindings |= BindingFlags.Static;
+			LookupField();
 		}
-		else
-		{
-			bindings |= BindingFlags.Instance;
-		}
-		return DeclaringType.Type.GetField(name, bindings).GetValue(obj);
+		return field.GetValue(obj);
 	}
 }

@@ -293,6 +293,11 @@ public class JVM
 		loader.AddResources(resources);
 		loader.Save();
 	}
+
+	public static void PrepareForSaveDebugImage()
+	{
+		ClassLoaderWrapper.PrepareForSaveDebugImage();
+	}
 	
 	public static void SaveDebugImage(object mainClass)
 	{
