@@ -84,6 +84,17 @@ String* StringFromUTF8(const char* psz)
 	return sb->ToString();
 }
 
+jobject JNIEnv::MakeLocalRef(System::Object* obj)
+{
+	return VM::MakeLocalRef(this, obj);
+}
+
+Object* JNIEnv::UnwrapRef(jobject o)
+{
+	return VM::UnwrapRef(this, o);
+}
+
+
 JNIEnv::JNIEnv()
 {
 }
@@ -318,55 +329,69 @@ jint JNIEnv::ThrowNew(jclass clazz, const char *msg)
 
 jint JNICALL JNIEnv::Throw(jthrowable obj)
 {
-	// TODO once we implement PopLocalFrame, we need to make sure that pendingException isn't in the popped local frame
-	pendingException = (jthrowable)NewLocalRef(obj);
-	return JNI_OK;
+	//// TODO once we implement PopLocalFrame, we need to make sure that pendingException isn't in the popped local frame
+	//pendingException = (jthrowable)NewLocalRef(obj);
+	//return JNI_OK;
+	throw new InvalidOperationException();
 }
 
 jthrowable JNICALL JNIEnv::ExceptionOccurred()
 {
-	return (jthrowable)NewLocalRef(pendingException);
+	//return (jthrowable)NewLocalRef(pendingException);
+	throw new InvalidOperationException();
 }
 
 void JNICALL JNIEnv::ExceptionDescribe()
 {
-	if(pendingException)
-	{
-		// when calling JNI methods there cannot be an exception pending, so we clear the exception
-		// temporarily, while we print it
-		jthrowable exception = pendingException;
-		pendingException = 0;
-		jclass cls = FindClass("java/lang/Throwable");
-		if(cls)
-		{
-			jmethodID mid = GetMethodID(cls, "printStackTrace", "()V");
-			DeleteLocalRef(cls);
-			if(mid)
-			{
-				CallVoidMethod(exception, mid);
-			}
-			else
-			{
-				Console::Error->WriteLine(S"JNI internal error: printStackTrace method not found in java.lang.Throwable");
-			}
-		}
-		else
-		{
-			Console::Error->WriteLine(S"JNI internal error: java.lang.Throwable not found");
-		}
-		pendingException = exception;
-	}
+	//if(pendingException)
+	//{
+	//	// when calling JNI methods there cannot be an exception pending, so we clear the exception
+	//	// temporarily, while we print it
+	//	jthrowable exception = pendingException;
+	//	pendingException = 0;
+	//	jclass cls = FindClass("java/lang/Throwable");
+	//	if(cls)
+	//	{
+	//		jmethodID mid = GetMethodID(cls, "printStackTrace", "()V");
+	//		DeleteLocalRef(cls);
+	//		if(mid)
+	//		{
+	//			CallVoidMethod(exception, mid);
+	//		}
+	//		else
+	//		{
+	//			Console::Error->WriteLine(S"JNI internal error: printStackTrace method not found in java.lang.Throwable");
+	//		}
+	//	}
+	//	else
+	//	{
+	//		Console::Error->WriteLine(S"JNI internal error: java.lang.Throwable not found");
+	//	}
+	//	pendingException = exception;
+	//}
+	throw new InvalidOperationException();
 }
 
 void JNICALL JNIEnv::ExceptionClear()
 {
-	DeleteLocalRef(pendingException);
-	pendingException = 0;
+	//DeleteLocalRef(pendingException);
+	//pendingException = 0;
+	throw new InvalidOperationException();
 }
 
 jclass JNIEnv::FindClass(const char *utf)
 {
-	return (jclass)MakeLocalRef(VM::FindClass(StringFromUTF8(utf)));
+	try
+	{
+		return (jclass)MakeLocalRef(VM::FindClass(StringFromUTF8(utf)));
+	}
+	catch(Exception* x)
+	{
+		jobject o = MakeLocalRef(x);
+		Throw((jthrowable)o);
+		DeleteLocalRef(o);
+		return 0;
+	}
 }
 
 jobject JNIEnv::AllocObject(jclass cls)
@@ -418,54 +443,58 @@ static int GetMethodArgs(jmethodID methodID, char* sig)
 
 Object* JNIEnv::InvokeHelper(jobject object, jmethodID methodID, jvalue* args, bool nonVirtual)
 {
-	assert(!pendingException);
-	assert(methodID);
+	DebugBreak();
+	return 0;
+	////assert(!pendingException);
+	//assert(methodID);
 
-	char sig[257];
-	int argc = GetMethodArgs(methodID, sig);
-	Object* argarray __gc[] = new Object*[argc];
-	for(int i = 0; i < argc; i++)
-	{
-		switch(sig[i])
-		{
-		case 'Z':
-			argarray[i] = __box(args[i].z != JNI_FALSE);
-			break;
-		case 'B':
-			argarray[i] = __box((char)args[i].b);
-			break;
-		case 'C':
-			argarray[i] = __box((__wchar_t)args[i].c);
-			break;
-		case 'S':
-			argarray[i] = __box((short)args[i].s);
-			break;
-		case 'I':
-			argarray[i] = __box((int)args[i].i);
-			break;
-		case 'J':
-			argarray[i] = __box((__int64)args[i].j);
-			break;
-		case 'F':
-			argarray[i] = __box((float)args[i].f);
-			break;
-		case 'D':
-			argarray[i] = __box((double)args[i].d);
-			break;
-		case 'L':
-			argarray[i] = UnwrapRef(args[i].l);
-			break;
-		}
-	}
-	try
-	{
-		return VM::InvokeMethod(methodID, UnwrapRef(object), argarray, nonVirtual);
-	}
-	catch(Exception* x)
-	{
-		pendingException = (jthrowable)MakeLocalRef(x);
-		return 0;
-	}
+	//char sig[257];
+	//int argc = GetMethodArgs(methodID, sig);
+	//Object* argarray __gc[] = new Object*[argc];
+	//for(int i = 0; i < argc; i++)
+	//{
+	//	switch(sig[i])
+	//	{
+	//	case 'Z':
+	//		argarray[i] = __box(args[i].z != JNI_FALSE);
+	//		break;
+	//	case 'B':
+	//		argarray[i] = __box((char)args[i].b);
+	//		break;
+	//	case 'C':
+	//		argarray[i] = __box((__wchar_t)args[i].c);
+	//		break;
+	//	case 'S':
+	//		argarray[i] = __box((short)args[i].s);
+	//		break;
+	//	case 'I':
+	//		argarray[i] = __box((int)args[i].i);
+	//		break;
+	//	case 'J':
+	//		argarray[i] = __box((__int64)args[i].j);
+	//		break;
+	//	case 'F':
+	//		argarray[i] = __box((float)args[i].f);
+	//		break;
+	//	case 'D':
+	//		argarray[i] = __box((double)args[i].d);
+	//		break;
+	//	case 'L':
+	//		argarray[i] = UnwrapRef(args[i].l);
+	//		break;
+	//	}
+	//}
+	//try
+	//{
+	//	return VM::InvokeMethod(methodID, UnwrapRef(object), argarray, nonVirtual);
+	//}
+	//catch(Exception* x)
+	//{
+	//	jobject o = MakeLocalRef(x);
+	//	Throw((jthrowable)o);
+	//	DeleteLocalRef(o);
+	//	return 0;
+	//}
 }
 
 void JNICALL JNIEnv::CallStaticVoidMethodA(jclass cls, jmethodID methodID, jvalue* args)
@@ -1157,41 +1186,44 @@ jobject JNICALL JNIEnv::NewLocalRef(jobject ref)
 
 jobject JNICALL JNIEnv::NewGlobalRef(jobject obj)
 {
-	if(!obj)
-	{
-		return 0;
-	}
-	// TODO search for an empty slot before adding it to the end...
-	return (jobject)-(GlobalRefs::globalRefs->Add(UnwrapRef(obj)) + 1);
+	//if(!obj)
+	//{
+	//	return 0;
+	//}
+	//// TODO search for an empty slot before adding it to the end...
+	//return (jobject)-(GlobalRefs::globalRefs->Add(UnwrapRef(obj)) + 1);
+	throw new InvalidOperationException();
 }
 
 void JNICALL JNIEnv::DeleteGlobalRef(jobject gref)
 {
-	int i = int(gref);
-	if(i < 0)
-	{
-		GlobalRefs::globalRefs->Item[(-i) - 1] = 0;
-		return;
-	}
-	if(i > 0)
-	{
-		DebugBreak();
-	}
+	//int i = int(gref);
+	//if(i < 0)
+	//{
+	//	GlobalRefs::globalRefs->Item[(-i) - 1] = 0;
+	//	return;
+	//}
+	//if(i > 0)
+	//{
+	//	DebugBreak();
+	//}
+	throw new InvalidOperationException();
 }
 
 void JNICALL JNIEnv::DeleteLocalRef(jobject obj)
 {
-	int i = (int)obj;
-	if(i > 0)
-	{
-		localRefs[i >> LOCAL_REF_SHIFT].DeleteLocalRef(i & LOCAL_REF_MASK);
-		return;
-	}
-	if(i < 0)
-	{
-		Console::WriteLine("bogus localref in DeleteLocalRef");
-		DebugBreak();
-	}
+	//int i = (int)obj;
+	//if(i > 0)
+	//{
+	//	localRefs[i >> LOCAL_REF_SHIFT].DeleteLocalRef(i & LOCAL_REF_MASK);
+	//	return;
+	//}
+	//if(i < 0)
+	//{
+	//	Console::WriteLine("bogus localref in DeleteLocalRef");
+	//	DebugBreak();
+	//}
+	throw new InvalidOperationException();
 }
 
 jboolean JNICALL JNIEnv::IsSameObject(jobject obj1, jobject obj2)
@@ -1331,7 +1363,8 @@ jint JNICALL JNIEnv::GetVersion()
 
 jboolean JNICALL JNIEnv::ExceptionCheck()
 {
-	return pendingException != 0;
+	//return pendingException != 0;
+	throw new InvalidOperationException();
 }
 
 jmethodID JNICALL JNIEnv::FromReflectedMethod(jobject method)
@@ -1399,7 +1432,7 @@ jint JavaVM::AttachCurrentThread(void **penv, void *args)
 	// TODO do we need a new local ref frame?
 	// TODO for now we only support attaching to an existing thread
 	// TODO support args (JavaVMAttachArgs)
-	JNIEnv* p = LocalRefStruct::GetEnv();
+	JNIEnv* p = VM::GetEnv();
 	if(p)
 	{
 		*penv = p;
@@ -1420,7 +1453,7 @@ jint JavaVM::DetachCurrentThread()
 jint JavaVM::GetEnv(void **penv, jint version)
 {
 	// TODO we should check the version
-	JNIEnv* p = LocalRefStruct::GetEnv();
+	JNIEnv* p = VM::GetEnv();
 	if(p)
 	{
 		*penv = p;
@@ -1428,6 +1461,28 @@ jint JavaVM::GetEnv(void **penv, jint version)
 	}
 	return JNI_EDETACHED;
 }
+
+jint JNICALL JNIEnv::RegisterNatives(jclass clazz, const JNINativeMethod *methods, jint nMethods)
+{
+	Object* pclass = UnwrapRef(clazz);
+	for(int i = 0; i < nMethods; i++)
+	{
+		if(!VM::SetNativeMethodPointer(pclass, StringFromUTF8(methods[i].name), StringFromUTF8(methods[i].signature), methods[i].fnPtr))
+		{
+			// TODO set the exception message
+			ThrowNew(FindClass("java/lang/NoSuchMethodError"), "");
+			return JNI_ERR;
+		}
+	}
+	return JNI_OK;
+}
+
+jint JNICALL JNIEnv::UnregisterNatives(jclass clazz)
+{
+	VM::ResetNativeMethodPointers(UnwrapRef(clazz));
+	return JNI_OK;
+}
+
 #pragma unmanaged
 
 jint JavaVM::AttachCurrentThreadAsDaemon(void **penv, void *args)
@@ -1442,9 +1497,6 @@ jint JavaVM::AttachCurrentThreadAsDaemon(void **penv, void *args)
 jint JNICALL JNIEnv::PushLocalFrame(jint capacity) { assert(false); _asm int 3} 
 jobject JNICALL JNIEnv::PopLocalFrame(jobject result) { assert(false); _asm int 3}
 jint JNICALL JNIEnv::EnsureLocalCapacity(jint capacity) { assert(false); _asm int 3} 
-
-jint JNICALL JNIEnv::RegisterNatives(jclass clazz, const JNINativeMethod *methods, jint nMethods) {	assert(false); _asm int 3}
-jint JNICALL JNIEnv::UnregisterNatives(jclass clazz) { assert(false); _asm int 3}
 
 jweak JNICALL JNIEnv::NewWeakGlobalRef(jobject obj) { assert(false); _asm int 3}
 void JNICALL JNIEnv::DeleteWeakGlobalRef(jweak ref) { assert(false); _asm int 3}

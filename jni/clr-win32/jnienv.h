@@ -134,149 +134,149 @@ typedef union jvalue {
 	jobject  l;
 } jvalue;
 
-public __value class LocalRefStruct;
+//public __value class LocalRefStruct;
 
 #pragma managed
 
-[StructLayout(LayoutKind::Sequential)]
-__value struct LocalRefCache
-{
-	Object* loc1;
-	Object* loc2;
-	Object* loc3;
-	Object* loc4;
-	Object* loc5;
-	Object* loc6;
-	Object* loc7;
-	Object* loc8;
-	Object* loc9;
-	Object* loc10;
-};
-
-#define STATIC_LIST_SIZE 10
-#define BUCKET_SIZE (1 << LOCAL_REF_SHIFT)
-#define LOCAL_REF_SHIFT 10
-#define LOCAL_REF_MASK (BUCKET_SIZE - 1)
-
-__value struct LocalRefListEntry
-{
-	Object* __nogc* static_list;
-	Object* dynamic_list __gc[];
-
-	int MakeLocalRef(Object* o)
-	{
-		Object** p = static_list;
-		for(int i = 0; i < STATIC_LIST_SIZE; i++)
-		{
-			if(p[i] == 0)
-			{
-				p[i] = o;
-				return i;
-			}
-		}
-		if(!dynamic_list)
-		{
-			dynamic_list = new Object* __gc[32 - STATIC_LIST_SIZE];
-		}
-		for(int i = 0; i < dynamic_list->Length; i++)
-		{
-			if(dynamic_list[i] == 0)
-			{
-				dynamic_list[i] = o;
-				return i + STATIC_LIST_SIZE;
-			}
-		}
-		int newsize = (dynamic_list->Length + STATIC_LIST_SIZE) * 2 - STATIC_LIST_SIZE;
-		if(newsize > BUCKET_SIZE)
-		{
-			return -1;
-		}
-		Object* tmp __gc[] = dynamic_list;
-		dynamic_list = new Object* __gc[newsize];
-		Array::Copy(tmp, 0, dynamic_list, 0, tmp->Length);
-		dynamic_list[tmp->Length] = o;
-		return tmp->Length + STATIC_LIST_SIZE;
-	}
-
-	void DeleteLocalRef(unsigned int i)
-	{
-		if(i < STATIC_LIST_SIZE)
-		{
-			static_list[i] = 0;
-		}
-		else
-		{
-			dynamic_list[i - STATIC_LIST_SIZE] = 0;
-		}
-	}
-
-	Object* UnwrapLocalRef(unsigned int i)
-	{
-		if(i < STATIC_LIST_SIZE)
-		{
-			return static_list[i];
-		}
-		else
-		{
-			return dynamic_list[i - STATIC_LIST_SIZE];
-		}
-	}
-};
-
-__gc struct GlobalRefs
-{
-	static System::Collections::ArrayList* globalRefs = new System::Collections::ArrayList();
-};
-
-class JNIEnv;
-
-public __value class LocalRefStruct
-{
-	JNIEnv* pJNIEnv;
-	LocalRefStruct __nogc* pPrevLocalRefCache;
-	LocalRefCache fastlocalrefs;
-	LocalRefListEntry localRefs __gc[];
-
-public:
-	static JNIEnv* GetEnv();
-
-	IntPtr Enter();
-	void Leave();
-
-	IntPtr MakeLocalRef(Object* o);
-	Object* UnwrapLocalRef(IntPtr p);
-};
+//[StructLayout(LayoutKind::Sequential)]
+//__value struct LocalRefCache
+//{
+//	Object* loc1;
+//	Object* loc2;
+//	Object* loc3;
+//	Object* loc4;
+//	Object* loc5;
+//	Object* loc6;
+//	Object* loc7;
+//	Object* loc8;
+//	Object* loc9;
+//	Object* loc10;
+//};
+//
+//#define STATIC_LIST_SIZE 10
+//#define BUCKET_SIZE (1 << LOCAL_REF_SHIFT)
+//#define LOCAL_REF_SHIFT 10
+//#define LOCAL_REF_MASK (BUCKET_SIZE - 1)
+//
+//__value struct LocalRefListEntry
+//{
+//	Object* __nogc* static_list;
+//	Object* dynamic_list __gc[];
+//
+//	int MakeLocalRef(Object* o)
+//	{
+//		Object** p = static_list;
+//		for(int i = 0; i < STATIC_LIST_SIZE; i++)
+//		{
+//			if(p[i] == 0)
+//			{
+//				p[i] = o;
+//				return i;
+//			}
+//		}
+//		if(!dynamic_list)
+//		{
+//			dynamic_list = new Object* __gc[32 - STATIC_LIST_SIZE];
+//		}
+//		for(int i = 0; i < dynamic_list->Length; i++)
+//		{
+//			if(dynamic_list[i] == 0)
+//			{
+//				dynamic_list[i] = o;
+//				return i + STATIC_LIST_SIZE;
+//			}
+//		}
+//		int newsize = (dynamic_list->Length + STATIC_LIST_SIZE) * 2 - STATIC_LIST_SIZE;
+//		if(newsize > BUCKET_SIZE)
+//		{
+//			return -1;
+//		}
+//		Object* tmp __gc[] = dynamic_list;
+//		dynamic_list = new Object* __gc[newsize];
+//		Array::Copy(tmp, 0, dynamic_list, 0, tmp->Length);
+//		dynamic_list[tmp->Length] = o;
+//		return tmp->Length + STATIC_LIST_SIZE;
+//	}
+//
+//	void DeleteLocalRef(unsigned int i)
+//	{
+//		if(i < STATIC_LIST_SIZE)
+//		{
+//			static_list[i] = 0;
+//		}
+//		else
+//		{
+//			dynamic_list[i - STATIC_LIST_SIZE] = 0;
+//		}
+//	}
+//
+//	Object* UnwrapLocalRef(unsigned int i)
+//	{
+//		if(i < STATIC_LIST_SIZE)
+//		{
+//			return static_list[i];
+//		}
+//		else
+//		{
+//			return dynamic_list[i - STATIC_LIST_SIZE];
+//		}
+//	}
+//};
+//
+//__gc struct GlobalRefs
+//{
+//	static System::Collections::ArrayList* globalRefs = new System::Collections::ArrayList();
+//};
+//
+//class JNIEnv;
+//
+//public __value class LocalRefStruct
+//{
+//	JNIEnv* pJNIEnv;
+//	LocalRefStruct __nogc* pPrevLocalRefCache;
+//	LocalRefCache fastlocalrefs;
+//	LocalRefListEntry localRefs __gc[];
+//
+//public:
+//	static JNIEnv* GetEnv();
+//
+//	IntPtr Enter();
+//	void Leave();
+//
+//	IntPtr MakeLocalRef(Object* o);
+//	Object* UnwrapLocalRef(IntPtr p);
+//};
 
 class JNIEnv
 {
 public:
-	jobject MakeLocalRef(System::Object* obj)
-	{
-		return (jobject)(void*)pActiveLocalRefCache->MakeLocalRef(obj);
-	}
+	jobject MakeLocalRef(System::Object* obj);
+	//{
+	//	return (jobject)(void*)pActiveLocalRefCache->MakeLocalRef(obj);
+	//}
 
-	Object* JNIEnv::UnwrapRef(jobject o)
-	{
-		int i = (int)o;
-		if(i > 0)
-		{
-			return pActiveLocalRefCache->UnwrapLocalRef((void*)o);
-		}
-		if(i < 0)
-		{
-			return GlobalRefs::globalRefs->Item[(-i) - 1];
-		}
-		return 0;
-	}
+	Object* UnwrapRef(jobject o);
+	//{
+	//	int i = (int)o;
+	//	if(i > 0)
+	//	{
+	//		return pActiveLocalRefCache->UnwrapLocalRef((void*)o);
+	//	}
+	//	if(i < 0)
+	//	{
+	//		return GlobalRefs::globalRefs->Item[(-i) - 1];
+	//	}
+	//	return 0;
+	//}
 
 	jmethodID FindMethodID(jclass cls, const char* name, const char* sig, bool isstatic);
 	Object* InvokeHelper(jobject object, jmethodID methodID, jvalue* args, bool nonVirtual);
 	jfieldID FindFieldID(jclass cls, const char* name, const char* sig, bool isstatic);
 
-	int localRefSlot;
-	LocalRefStruct __nogc* pActiveLocalRefCache;
-	gcroot<LocalRefListEntry __gc[]> localRefs;
-	jthrowable pendingException;
+	//int localRefSlot;
+	//LocalRefStruct __nogc* pActiveLocalRefCache;
+	//gcroot<LocalRefListEntry __gc[]> localRefs;
+	//jthrowable pendingException;
 
 	JNIEnv();
 	~JNIEnv();

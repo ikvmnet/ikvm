@@ -53,6 +53,42 @@ public:
 	Type* GetLocalRefStructType();
 	MethodInfo* GetJniFuncPtrMethod();
 
+	void** GetVtable()
+	{
+		JNIEnv p;
+		return *(void***)&p;
+	}
+
+	IntPtr LoadLibraryFoo(String* name)
+	{
+		return (IntPtr)(void*)LoadLibrary(name);
+	}
+
+	void FreeLibraryFoo(IntPtr p)
+	{
+		FreeLibrary((HMODULE)(void*)p);
+	}
+
+	IntPtr GetProcAddress(IntPtr library, String* name, int argcount)
+	{
+		String* n = String::Format(S"_{0}@{1}", name, __box(argcount));
+		return (IntPtr)GetProcAddress((HMODULE)(void*)library, n);
+	}
+
+	IntPtr GetJavaVM()
+	{
+		JavaVM* pvm;
+		((JNIEnv*)0)->JNIEnv::GetJavaVM(&pvm);
+		return pvm;
+	}
+
+	typedef JNIEXPORT jint (JNICALL *PJNI_ONLOAD)(JavaVM* vm, void* reserved);
+
+	int CallOnLoad(IntPtr pFunc, IntPtr javavm, IntPtr reserved)
+	{
+		return ((PJNI_ONLOAD)(void*)pFunc)((JavaVM*)(void*)javavm, (void*)reserved);
+	}
+
 	static IntPtr GetJniFuncPtr(String* name, String* sig, String* clazz);
 };
 
@@ -135,5 +171,26 @@ public:
 	static Object* DefineClass(String* name, Object* loader, System::Byte array __gc[])
 	{
 		return JniHelper::DefineClass(name, loader, array);
+	}
+	static bool SetNativeMethodPointer(Object* clazz, String* name, String* signature, IntPtr methodPtr)
+	{
+		return JniHelper::SetNativeMethodPointer(clazz, name, signature, methodPtr);
+	}
+	static void ResetNativeMethodPointers(Object* clazz)
+	{
+		return JniHelper::ResetNativeMethodPointers(clazz);
+	}
+
+	static JNIEnv* GetEnv()
+	{
+		return (JNIEnv*)(void*)JniHelper::GetEnv();
+	}
+	static jobject MakeLocalRef(JNIEnv* pEnv, Object* obj)
+	{
+		return (jobject)(void*)JniHelper::MakeLocalRef(pEnv, obj);
+	}
+	static Object* UnwrapRef(JNIEnv* pEnv, jobject obj)
+	{
+		return JniHelper::UnwrapRef(pEnv, obj);
 	}
 };
