@@ -26,6 +26,7 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections;
+using System.Text;
 
 using java.lang.reflect;
 using java.net;
@@ -239,9 +240,29 @@ public class Starter
 			// but at the moment it is broken (doesn't implement findClass())
 			java.lang.System.setProperty("java.system.class.loader", typeof(AppClassLoader).AssemblyQualifiedName);
 			java.lang.ClassLoader loader = java.lang.ClassLoader.getSystemClassLoader();
-			if(java.lang.System.getProperty("ikvm.boot.class.path", "") != "")
+			string bootclasspath = java.lang.System.getProperty("ikvm.boot.class.path", "");
+			if(bootclasspath != "")
 			{
-				JVM.SetBootstrapClassLoader(new PathClassLoader(java.lang.System.getProperty("ikvm.boot.class.path"), null));
+				StringBuilder sb = new StringBuilder();
+				foreach(string part in bootclasspath.Split(';'))
+				{
+					if(part.ToUpper().EndsWith(".DLL"))
+					{
+						Assembly.Load(part.Substring(0, part.Length - 4));
+					}
+					else
+					{
+						if(sb.Length > 0)
+						{
+							sb.Append(';');
+						}
+						sb.Append(part);
+					}
+				}
+				if(sb.Length > 0)
+				{
+					JVM.SetBootstrapClassLoader(new PathClassLoader(sb.ToString(), null));
+				}
 			}
 			java.lang.Class clazz = loader.loadClass(mainClass);
 			Method method = clazz.getMethod("main", new java.lang.Class[] { java.lang.Class.getClassFromType(typeof(string[])) });

@@ -773,27 +773,28 @@ namespace NativeCode.java
 
 			public static object defineClass(object classLoader, string name, byte[] data, int offset, int length, object protectionDomain)
 			{
-				// TODO handle errors
-				ClassFile classFile = new ClassFile(data, offset, length, name);
-				if(name != null && classFile.Name.Replace('/', '.') != name)
+				Profiler.Enter("ClassLoader.defineClass");
+				try
 				{
-					throw JavaException.NoClassDefFoundError("{0} (wrong name: {1})", name, classFile.Name);
+					// TODO handle errors
+					ClassFile classFile = new ClassFile(data, offset, length, name);
+					if(name != null && classFile.Name.Replace('/', '.') != name)
+					{
+						throw JavaException.NoClassDefFoundError("{0} (wrong name: {1})", name, classFile.Name);
+					}
+					TypeWrapper type = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader).DefineClass(classFile);
+					object clazz = Class.CreateInstance(null, type);
+					if(protectionDomain != null)
+					{
+						// TODO cache the FieldInfo
+						clazz.GetType().GetField("pd", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(clazz, protectionDomain);
+					}
+					return clazz;
 				}
-//				if(classFile.Name == "org/eclipse/core/internal/boot/InternalBootLoader")
-//				{
-//					using(FileStream fs = File.Create("internalbootloader.class"))
-//					{
-//						fs.Write(data, offset, length);
-//					}
-//				}
-				TypeWrapper type = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader).DefineClass(classFile);
-				object clazz = Class.CreateInstance(null, type);
-				if(protectionDomain != null)
+				finally
 				{
-					// TODO cache the FieldInfo
-					clazz.GetType().GetField("pd", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(clazz, protectionDomain);
+					Profiler.Leave("ClassLoader.defineClass");
 				}
-				return clazz;
 			}
 		}
 

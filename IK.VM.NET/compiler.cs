@@ -107,6 +107,15 @@ class Compiler
 		Profiler.Enter("MethodAnalyzer");
 		ma = new MethodAnalyzer(m, classLoader);
 		Profiler.Leave("MethodAnalyzer");
+		// HACK force types of locals to be loaded, so we don't run into a problem later (GetLocal cannot handle an unloadable type)
+		for(int i = 0; i < m.MaxLocals; i++)
+		{
+			string t = ma.GetDeclaredLocalType(i);
+			if(t != null && t != "Lnull")
+			{
+				classLoader.ExpressionType(t);
+			}
+		}
 		ArrayList ar = new ArrayList(m.ExceptionTable);
 //		Console.WriteLine("before processing:");
 //		foreach(ExceptionTableEntry e in ar)
@@ -423,12 +432,27 @@ class Compiler
 			ilGenerator.Emit(OpCodes.Ldstr, msg);
 			ilGenerator.Emit(OpCodes.Newobj, verifyError.GetConstructor(new Type[] { typeof(string) }));
 			ilGenerator.Emit(OpCodes.Throw);
-			// TODO uncomment next line
-			//if(JVM.IsStaticCompiler)
+			// TODO
+			if(true || JVM.IsStaticCompiler)
 			{
 				Console.WriteLine("java.lang.VerifyError: " + msg);
 			}
 			return;
+		}
+		catch(Exception x1)
+		{
+			// HACK because the verifier currently cannot deal with unloadable classes, we have
+			// to work around it by just generating code to throw a verify error
+			if(x1.GetType().FullName == "java.lang.ClassNotFoundException")
+			{
+				Type verifyError = ClassLoaderWrapper.GetType("java.lang.VerifyError");
+				string msg = string.Format("{0}.{1}{2} cannot be verified due to unloadable class {3}", clazz.Name, m.Name, m.Signature, x1.Message);
+				ilGenerator.Emit(OpCodes.Ldstr, msg);
+				ilGenerator.Emit(OpCodes.Newobj, verifyError.GetConstructor(new Type[] { typeof(string) }));
+				ilGenerator.Emit(OpCodes.Throw);
+				return;
+			}
+			throw;
 		}
 		Profiler.Enter("Compile");
 		c.Compile(0, 0, null);
@@ -2106,7 +2130,15 @@ class Compiler
 						}
 						else
 						{
-							return field;
+							// HACK for the time being we handle fields of an unloadable type here
+							if(field.EmitGet == null && field.EmitSet == null)
+							{
+								EmitError("java.lang.NoClassDefFoundError", "Field " + cpi.Class + "." + cpi.Name + " is is of the unloadable type " + cpi.Signature);
+							}
+							else
+							{
+								return field;
+							}
 						}
 					}
 					else
@@ -2196,7 +2228,15 @@ class Compiler
 							(method.IsPrivate && clazz == method.DeclaringType) ||
 							(!(method.IsPublic || method.IsPrivate) && clazz.IsInSamePackageAs(method.DeclaringType)))
 						{
-							return method;
+							// HACK for the time being we handle methods with an unloadable type in the sig here
+							if(method.EmitCall == null && method.EmitCallvirt == null && method.EmitNewobj == null)
+							{
+								EmitError("java.lang.NoClassDefFoundError", "Method " + cpi.Class + "." + cpi.Name + cpi.Signature + " has an unloadable type in its signature");
+							}
+							else
+							{
+								return method;
+							}
 						}
 						else
 						{

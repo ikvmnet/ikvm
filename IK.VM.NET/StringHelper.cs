@@ -272,6 +272,12 @@ public class StringHelper
 		// TODO
 		return s.ToUpper();
 	}
+
+	public static string toLowerCase(string s, object locale)
+	{
+		// TODO
+		return s.ToLower();
+	}
 }
 
 public class StringBufferHelper

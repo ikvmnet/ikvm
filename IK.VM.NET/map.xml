@@ -218,6 +218,9 @@
 			<method name="toLowerCase" sig="()Ljava/lang/String;" modifiers="public">
 				<redirect name="ToLower" />
 			</method>
+			<method name="toLowerCase" sig="(Ljava/util/Locale;)Ljava/lang/String;" modifiers="public">
+				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;" />
+			</method>
 			<method name="compareToIgnoreCase" sig="(Ljava/lang/String;)I" modifiers="public">
 				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)I" />
 			</method>

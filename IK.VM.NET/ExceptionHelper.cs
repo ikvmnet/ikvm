@@ -45,18 +45,26 @@ public class ExceptionHelper
 		[StackTraceInfo(Hidden = true)]
 		internal ExceptionInfoHelper(Exception x)
 		{
-			Append(new StackTrace(x, true));
-			bool chopFirst = stackTrace.Count != 0;
-			Append(new StackTrace(true));
-			if(chopFirst && stackTrace.Count > 0 && JVM.CleanStackTraces)
+			Profiler.Enter("new ExceptionInfoHelper");
+			try
 			{
-				stackTrace.RemoveAt(0);
+				Append(new StackTrace(x, true));
+				bool chopFirst = stackTrace.Count != 0;
+				Append(new StackTrace(true));
+				if(chopFirst && stackTrace.Count > 0 && JVM.CleanStackTraces)
+				{
+					stackTrace.RemoveAt(0);
+				}
+				cause = x.InnerException;
+				if(cause == null)
+				{
+					cause = CAUSE_NOT_SET;
+				}
 			}
-			cause = x.InnerException;
-			if(cause == null)
+			finally
 			{
-				cause = CAUSE_NOT_SET;
-			}
+				Profiler.Leave("new ExceptionInfoHelper");
+			}	
 		}
 
 		internal Exception Cause
@@ -92,132 +100,137 @@ public class ExceptionHelper
 
 		private void Append(StackTrace st)
 		{
-			if(st.FrameCount > 0)
+			Profiler.Enter("ExceptionInfoHelper.Append");
+			try
 			{
-				int baseSize = stackTrace.Count;
-				for(int i = 0; i < st.FrameCount; i++)
+				if(st.FrameCount > 0)
 				{
-					StackFrame frame = st.GetFrame(i);
-					MethodBase m = frame.GetMethod();
-					// TODO I may need more safety checks like these
-					if(m.DeclaringType == null || m.ReflectedType == null)
+					int baseSize = stackTrace.Count;
+					for(int i = 0; i < st.FrameCount; i++)
 					{
-						continue;
-					}
-					if(m.DeclaringType == typeof(System.Runtime.CompilerServices.RuntimeHelpers)
-						|| m.DeclaringType.IsSubclassOf(typeof(System.Reflection.MethodInfo))
-						|| IsPrivateScope(m)) // NOTE we assume that privatescope methods are always stubs that we should exclude
-					{
-						if(JVM.CleanStackTraces)
+						StackFrame frame = st.GetFrame(i);
+						MethodBase m = frame.GetMethod();
+						// TODO I may need more safety checks like these
+						if(m.DeclaringType == null || m.ReflectedType == null)
 						{
 							continue;
 						}
-					}
-					string methodName = frame.GetMethod().Name;
-					if(methodName == ".ctor")
-					{
-						methodName = "<init>";
-					}
-					else if(methodName == ".cctor")
-					{
-						methodName = "<clinit>";
-					}
-					int lineNumber = frame.GetFileLineNumber();
-					if(lineNumber == 0)
-					{
-						lineNumber = -1;
-					}
-					string fileName = frame.GetFileName();
-					if(fileName != null)
-					{
-						fileName = new System.IO.FileInfo(fileName).Name;
-					}
-					string className = ClassHelper.getName(frame.GetMethod().ReflectedType);
-					bool native = false;
-					if(m.IsDefined(typeof(ModifiersAttribute), false))
-					{
-						object[] methodFlagAttribs = m.GetCustomAttributes(typeof(ModifiersAttribute), false);
-						if(methodFlagAttribs.Length == 1)
+						if(JVM.CleanStackTraces && (m.DeclaringType == typeof(System.Runtime.CompilerServices.RuntimeHelpers)
+							|| m.DeclaringType.IsSubclassOf(typeof(System.Reflection.MethodInfo))
+							|| IsPrivateScope(m))) // NOTE we assume that privatescope methods are always stubs that we should exclude
 						{
-							ModifiersAttribute modifiersAttrib = (ModifiersAttribute)methodFlagAttribs[0];
-							if(modifiersAttrib.IsSynthetic)
+							continue;
+						}
+						string methodName = frame.GetMethod().Name;
+						if(methodName == ".ctor")
+						{
+							methodName = "<init>";
+						}
+						else if(methodName == ".cctor")
+						{
+							methodName = "<clinit>";
+						}
+						int lineNumber = frame.GetFileLineNumber();
+						if(lineNumber == 0)
+						{
+							lineNumber = -1;
+						}
+						string fileName = frame.GetFileName();
+						if(fileName != null)
+						{
+							fileName = new System.IO.FileInfo(fileName).Name;
+						}
+						string className = ClassHelper.getName(frame.GetMethod().ReflectedType);
+						bool native = false;
+						if(JVM.CleanStackTraces && m.IsDefined(typeof(ModifiersAttribute), false))
+						{
+							object[] methodFlagAttribs = m.GetCustomAttributes(typeof(ModifiersAttribute), false);
+							if(methodFlagAttribs.Length == 1)
 							{
-								continue;
-							}
-							if((modifiersAttrib.Modifiers & Modifiers.Native) != 0)
-							{
-								native = true;
+								ModifiersAttribute modifiersAttrib = (ModifiersAttribute)methodFlagAttribs[0];
+								if(modifiersAttrib.IsSynthetic)
+								{
+									continue;
+								}
+								if((modifiersAttrib.Modifiers & Modifiers.Native) != 0)
+								{
+									native = true;
+								}
 							}
 						}
+						if(JVM.CleanStackTraces)
+						{
+							object[] attribs = m.DeclaringType.GetCustomAttributes(typeof(StackTraceInfoAttribute), false);
+							if(attribs.Length == 1)
+							{
+								StackTraceInfoAttribute sta = (StackTraceInfoAttribute)attribs[0];
+								if(sta.EatFrames > 0)
+								{
+									stackTrace.RemoveRange(stackTrace.Count - sta.EatFrames, sta.EatFrames);
+								}
+								if(sta.Hidden)
+								{
+									continue;
+								}
+								if(sta.Truncate)
+								{
+									stackTrace.RemoveRange(baseSize, stackTrace.Count - baseSize);
+									continue;
+								}
+								if(sta.Class != null)
+								{
+									className = sta.Class;
+								}
+							}
+							attribs = m.GetCustomAttributes(typeof(StackTraceInfoAttribute), false);
+							if(attribs.Length == 1)
+							{
+								StackTraceInfoAttribute sta = (StackTraceInfoAttribute)attribs[0];
+								if(sta.EatFrames > 0)
+								{
+									int eat = Math.Min(stackTrace.Count, sta.EatFrames);
+									stackTrace.RemoveRange(stackTrace.Count - eat, eat);
+								}
+								if(sta.Hidden)
+								{
+									continue;
+								}
+								if(sta.Truncate)
+								{
+									stackTrace.RemoveRange(baseSize, stackTrace.Count - baseSize);
+									continue;
+								}
+								if(sta.Class != null)
+								{
+									className = sta.Class;
+								}
+							}
+						}
+						stackTrace.Add(new StackTraceElement(fileName, lineNumber, className, methodName, native));
 					}
 					if(JVM.CleanStackTraces)
 					{
-						object[] attribs = m.DeclaringType.GetCustomAttributes(typeof(StackTraceInfoAttribute), false);
-						if(attribs.Length == 1)
+						int chop = 0;
+						for(int i = stackTrace.Count - 1; i >= 0; i--)
 						{
-							StackTraceInfoAttribute sta = (StackTraceInfoAttribute)attribs[0];
-							if(sta.EatFrames > 0)
+							StackTraceElement ste = (StackTraceElement)stackTrace[i];
+							if(ste.getClassName() == "System.Reflection.RuntimeMethodInfo")
 							{
-								stackTrace.RemoveRange(stackTrace.Count - sta.EatFrames, sta.EatFrames);
+								// skip method invocation by reflection, if it is at the top of the stack
+								chop++;
 							}
-							if(sta.Hidden)
+							else
 							{
-								continue;
-							}
-							if(sta.Truncate)
-							{
-								stackTrace.RemoveRange(baseSize, stackTrace.Count - baseSize);
-								continue;
-							}
-							if(sta.Class != null)
-							{
-								className = sta.Class;
+								break;
 							}
 						}
-						attribs = m.GetCustomAttributes(typeof(StackTraceInfoAttribute), false);
-						if(attribs.Length == 1)
-						{
-							StackTraceInfoAttribute sta = (StackTraceInfoAttribute)attribs[0];
-							if(sta.EatFrames > 0)
-							{
-								int eat = Math.Min(stackTrace.Count, sta.EatFrames);
-								stackTrace.RemoveRange(stackTrace.Count - eat, eat);
-							}
-							if(sta.Hidden)
-							{
-								continue;
-							}
-							if(sta.Truncate)
-							{
-								stackTrace.RemoveRange(baseSize, stackTrace.Count - baseSize);
-								continue;
-							}
-							if(sta.Class != null)
-							{
-								className = sta.Class;
-							}
-						}
+						stackTrace.RemoveRange(stackTrace.Count - chop, chop);
 					}
-					stackTrace.Add(new StackTraceElement(fileName, lineNumber, className, methodName, native));
 				}
-				if(JVM.CleanStackTraces)
-				{
-					int chop = 0;
-					for(int i = stackTrace.Count - 1; i >= 0; i--)
-					{
-						StackTraceElement ste = (StackTraceElement)stackTrace[i];
-						if(ste.getClassName() == "System.Reflection.RuntimeMethodInfo")
-						{
-							// skip method invocation by reflection, if it is at the top of the stack
-							chop++;
-						}
-						else
-						{
-							break;
-						}
-					}
-					stackTrace.RemoveRange(stackTrace.Count - chop, chop);
-				}
+			}
+			finally
+			{
+				Profiler.Leave("ExceptionInfoHelper.Append");
 			}
 		}
 
@@ -462,101 +475,109 @@ public class ExceptionHelper
 	[StackTraceInfo(Truncate = true)]
 	public static Exception MapException(Exception t, Type handler)
 	{
-		//Console.WriteLine("MapException: {0}, {1}", t, handler);
-		//Console.WriteLine(new StackTrace(t));
-		Exception org = t;
-		Type type = t.GetType();
-		// TODO don't remap if the exception already has associated ExceptionInfoHelper object (this means
-		// that the .NET exception was thrown from Java code, explicitly).
-		if(type == typeof(NullReferenceException))
+		Profiler.Enter("MapException");
+		try
 		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.NullPointerException"));
-		}
-		else if(type == typeof(IndexOutOfRangeException))
-		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArrayIndexOutOfBoundsException"));
-		}
-		// HACK for String methods, we remap ArgumentOutOfRangeException to StringIndexOutOfBoundsException
-		else if(type == typeof(ArgumentOutOfRangeException))
-		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.StringIndexOutOfBoundsException"));
-		}
-		else if(type == typeof(InvalidCastException))
-		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ClassCastException"));
-		}
-		else if(type == typeof(TypeInitializationException))
-		{
-			t = (Exception)MapExceptionFast(t.InnerException);
-			if(!ClassLoaderWrapper.GetType("java.lang.Error").IsInstanceOfType(t))
+			//Console.WriteLine("MapException: {0}, {1}", t, handler);
+			//Console.WriteLine(new StackTrace(t));
+			Exception org = t;
+			Type type = t.GetType();
+			// TODO don't remap if the exception already has associated ExceptionInfoHelper object (this means
+			// that the .NET exception was thrown from Java code, explicitly).
+			if(type == typeof(NullReferenceException))
 			{
-				ConstructorInfo constructor = ClassLoaderWrapper.GetType("java.lang.ExceptionInInitializerError").GetConstructor(new Type[] { typeof(Exception) });
-				t = (Exception)constructor.Invoke(new object[] { t });
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.NullPointerException"));
 			}
-		}
-		else if(type == typeof(System.Threading.SynchronizationLockException))
-		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.IllegalMonitorStateException"));
-		}
-		else if(type == typeof(System.Threading.ThreadInterruptedException))
-		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.InterruptedException"));
-		}
-		else if(type == typeof(OutOfMemoryException))
-		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.OutOfMemoryError"));
-		}
-		else if(type == typeof(DivideByZeroException))
-		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArithmeticException"), new object[] { "/ by zero" });
-		}
-		else if(type == typeof(ArrayTypeMismatchException))
-		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArrayStoreException"));
-		}
-		else if(type == typeof(StackOverflowException))
-		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.StackOverflowError"));
-		}
-		else if(type == typeof(System.Security.VerificationException))
-		{
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.VerifyError"));
-		}
-		else if(type == typeof(System.Threading.ThreadAbortException))
-		{
-			System.Threading.ThreadAbortException abort = (System.Threading.ThreadAbortException)t;
-			if(abort.ExceptionState is Exception)
+			else if(type == typeof(IndexOutOfRangeException))
 			{
-				t = (Exception)abort.ExceptionState;
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArrayIndexOutOfBoundsException"));
 			}
-			else
+				// HACK for String methods, we remap ArgumentOutOfRangeException to StringIndexOutOfBoundsException
+			else if(type == typeof(ArgumentOutOfRangeException))
 			{
-				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ThreadDeath"));
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.StringIndexOutOfBoundsException"));
 			}
-			System.Threading.Thread.ResetAbort();
-		}
-		else if(type == typeof(OverflowException))
-		{
-			// TODO make sure the originating method was from an IK.VM.NET generated assembly, because if it was
-			// generated by non-Java code, this remapping is obviously bogus.
-			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.NegativeArraySizeException"));
-		}
-		else if(type.FullName.StartsWith("System.") && type != typeof(TargetInvocationException))
-		{
-			// TODO this is just for debugging
-			Console.WriteLine("caught: {0}, handler: {1}", t.GetType().FullName, handler.FullName);
-			Console.WriteLine(t);
-		}
-		if(!exceptions.ContainsKey(t))
-		{
-			exceptions.Add(t, new ExceptionInfoHelper(org));
-			Exception inner = org.InnerException;
-			if(inner != null && !exceptions.ContainsKey(inner))
+			else if(type == typeof(InvalidCastException))
 			{
-				exceptions.Add(inner, new ExceptionInfoHelper(inner));
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ClassCastException"));
 			}
+			else if(type == typeof(TypeInitializationException))
+			{
+				t = (Exception)MapExceptionFast(t.InnerException);
+				if(!ClassLoaderWrapper.GetType("java.lang.Error").IsInstanceOfType(t))
+				{
+					ConstructorInfo constructor = ClassLoaderWrapper.GetType("java.lang.ExceptionInInitializerError").GetConstructor(new Type[] { typeof(Exception) });
+					t = (Exception)constructor.Invoke(new object[] { t });
+				}
+			}
+			else if(type == typeof(System.Threading.SynchronizationLockException))
+			{
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.IllegalMonitorStateException"));
+			}
+			else if(type == typeof(System.Threading.ThreadInterruptedException))
+			{
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.InterruptedException"));
+			}
+			else if(type == typeof(OutOfMemoryException))
+			{
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.OutOfMemoryError"));
+			}
+			else if(type == typeof(DivideByZeroException))
+			{
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArithmeticException"), new object[] { "/ by zero" });
+			}
+			else if(type == typeof(ArrayTypeMismatchException))
+			{
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArrayStoreException"));
+			}
+			else if(type == typeof(StackOverflowException))
+			{
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.StackOverflowError"));
+			}
+			else if(type == typeof(System.Security.VerificationException))
+			{
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.VerifyError"));
+			}
+			else if(type == typeof(System.Threading.ThreadAbortException))
+			{
+				System.Threading.ThreadAbortException abort = (System.Threading.ThreadAbortException)t;
+				if(abort.ExceptionState is Exception)
+				{
+					t = (Exception)abort.ExceptionState;
+				}
+				else
+				{
+					t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ThreadDeath"));
+				}
+				System.Threading.Thread.ResetAbort();
+			}
+			else if(type == typeof(OverflowException))
+			{
+				// TODO make sure the originating method was from an IK.VM.NET generated assembly, because if it was
+				// generated by non-Java code, this remapping is obviously bogus.
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.NegativeArraySizeException"));
+			}
+			else if(type.FullName.StartsWith("System.") && type != typeof(TargetInvocationException))
+			{
+				// TODO this is just for debugging
+				Console.WriteLine("caught: {0}, handler: {1}", t.GetType().FullName, handler.FullName);
+				Console.WriteLine(t);
+			}
+			if(!exceptions.ContainsKey(t))
+			{
+				exceptions.Add(t, new ExceptionInfoHelper(org));
+				Exception inner = org.InnerException;
+				if(inner != null && !exceptions.ContainsKey(inner))
+				{
+					exceptions.Add(inner, new ExceptionInfoHelper(inner));
+				}
+			}
+			return handler.IsInstanceOfType(t) ? t : null;
 		}
-		return handler.IsInstanceOfType(t) ? t : null;
+		finally
+		{
+			Profiler.Leave("MapException");
+		}
 	}
 
 	public static string toString(Exception x)

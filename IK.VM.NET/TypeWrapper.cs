@@ -466,6 +466,28 @@ abstract class TypeWrapper
 				ilGenerator.Emit(OpCodes.Ret);
 				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
 			}
+			else if(mce.GetMethod().DeclaringType.Assembly != typeBuilder.Assembly)
+			{
+				// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
+				// interface methods, so we have to generate a stub here that doesn't do anything but call the base
+				// implementation
+				if(mce.IsAbstract)
+				{
+					// TODO figure out what to do here
+					throw new NotImplementedException();
+				}
+				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Virtual, md.RetType, md.ArgTypes);
+				mb.SetCustomAttribute(methodFlags);
+				ILGenerator ilGenerator = mb.GetILGenerator();
+				ilGenerator.Emit(OpCodes.Ldarg_0);
+				int argc = md.ArgTypes.Length;
+				for(int n = 0; n < argc; n++)
+				{
+					ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(n + 1));
+				}
+				mce.EmitCall.Emit(ilGenerator);
+				ilGenerator.Emit(OpCodes.Ret);
+			}
 		}
 		else
 		{
@@ -742,16 +764,6 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				typeAttribs |= TypeAttributes.Public;
 			}
-			if(f.IsInterface)
-			{
-				typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
-				typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(f.Name.Replace('/', '.'), typeAttribs);
-			}
-			else
-			{
-				typeAttribs |= TypeAttributes.Class;
-				typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(f.Name.Replace('/', '.'), typeAttribs, baseWrapper.Type);
-			}
 			interfaces = new TypeWrapper[f.Interfaces.Length];
 			for(int i = 0; i < f.Interfaces.Length; i++)
 			{
@@ -764,6 +776,21 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					throw JavaException.IllegalAccessError("Class {0} cannot access its superinterface {1}", wrapper.Name, interfaces[i].Name);
 				}
+			}
+			// NOTE we call DefineType after all the interfaces have been resolved, because otherwise
+			// we end up with a .NET type that cannot be completed
+			if(f.IsInterface)
+			{
+				typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
+				typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(f.Name.Replace('/', '.'), typeAttribs);
+			}
+			else
+			{
+				typeAttribs |= TypeAttributes.Class;
+				typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(f.Name.Replace('/', '.'), typeAttribs, baseWrapper.Type);
+			}
+			for(int i = 0; i < interfaces.Length; i++)
+			{
 				typeBuilder.AddInterfaceImplementation(interfaces[i].Type);
 			}
 		}
@@ -843,9 +870,15 @@ class DynamicTypeWrapper : TypeWrapper
 						ilGenerator.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("RunClassConstructor"));
 					}
 				}
-				else
+				else if(mb != null)
 				{
 					ilGenerator = ((MethodBuilder)mb).GetILGenerator();
+				}
+				else
+				{
+					// HACK methods that have unloadable types in the signature do not have an underlying method, so we end
+					// up here
+					continue;
 				}
 				ClassFile.Method m = classFile.Methods[i];
 				if(m.IsAbstract)
@@ -1042,7 +1075,16 @@ class DynamicTypeWrapper : TypeWrapper
 
 			try
 			{
-				Type type = typeBuilder.CreateType();
+				Type type;
+				Profiler.Enter("TypeBuilder.CreateType");
+				try
+				{
+					type = typeBuilder.CreateType();
+				}
+				finally
+				{
+					Profiler.Leave("TypeBuilder.CreateType");
+				}
 				ClassLoaderWrapper.SetWrapperForType(type, wrapper);
 				return new FinishedTypeImpl(type);
 			}
@@ -1089,7 +1131,22 @@ class DynamicTypeWrapper : TypeWrapper
 		{
 			FieldBuilder field;
 			ClassFile.Field fld = classFile.Fields[i];
-			Type type = wrapper.GetClassLoader().ExpressionType(fld.Signature);
+			Type type = null;
+			try
+			{
+				type = wrapper.GetClassLoader().ExpressionType(fld.Signature);
+			}
+			catch(Exception x)
+			{
+				if(x.GetType().FullName == "java.lang.ClassNotFoundException")
+				{
+					// TODO set fields[i] to a special FieldWrapper that does the appropriate thing (whatever that may be)
+					fields[i] = new FieldWrapper(this.wrapper, fld.Name, fld.Signature, fld.Modifiers);
+					Console.Error.WriteLine("Type " + fld.Signature + " of field " + fld.Name + " in class " + classFile.Name + " is unloadable");
+					return;
+				}
+				throw;
+			}
 			FieldAttributes attribs = 0;
 			MethodAttributes methodAttribs = 0;
 			bool setModifiers = false;
@@ -1259,7 +1316,24 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 			MethodBase method;
 			ClassFile.Method m = classFile.Methods[index];
-			Type[] args = wrapper.GetClassLoader().ArgTypeListFromSig(m.Signature);
+			Type[] args = null;
+			Type retType = null;
+			try
+			{
+				args = wrapper.GetClassLoader().ArgTypeListFromSig(m.Signature);
+				retType = wrapper.GetClassLoader().RetTypeFromSig(m.Signature);
+			}
+			catch(Exception x)
+			{
+				if(x.GetType().FullName == "java.lang.ClassNotFoundException")
+				{
+					// TODO set methods[i] to a special MethodWrapper that does the appropriate thing (whatever that may be)
+					methods[index] = new MethodWrapper(this.wrapper, new MethodDescriptor(wrapper.GetClassLoader(), m.Name, m.Signature), null, m.Modifiers);
+					Console.Error.WriteLine("Type " + x.Message + " of method " + m.Name + m.Signature + " in class " + classFile.Name + " is unloadable");
+					return;
+				}
+				throw;
+			}
 			MethodAttributes attribs = 0;
 			if(m.IsAbstract)
 			{
@@ -1400,7 +1474,7 @@ class DynamicTypeWrapper : TypeWrapper
 						attribs |= MethodAttributes.NewSlot;
 					}
 				}
-				MethodBuilder mb = typeBuilder.DefineMethod(name, attribs, wrapper.GetClassLoader().RetTypeFromSig(m.Signature), args);
+				MethodBuilder mb = typeBuilder.DefineMethod(name, attribs, retType, args);
 				method = mb;
 				// since Java constructors (and static intializers?) aren't allowed to be synchronized, we only check this here
 				if(m.IsSynchronized)

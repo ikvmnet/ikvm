@@ -29,7 +29,8 @@ class Profiler
 {
 	private static Profiler instance = new Profiler();
 	private static Hashtable counters = new Hashtable();
-	private static Stack stack = new Stack();
+	[ThreadStatic]
+	private static Stack stack;
 
 	private class Entry
 	{
@@ -41,7 +42,15 @@ class Profiler
 	{
 		foreach(DictionaryEntry e in counters)
 		{
-			Console.WriteLine("{0} was executed {1} times for a total of {2} ms", e.Key, ((Entry)e.Value).Count, ((Entry)e.Value).Time / 10000);
+			Entry entry = (Entry)e.Value;
+			if(entry.Time == 0)
+			{
+				Console.WriteLine("{0} occurred {1} times", e.Key, entry.Count);
+			}
+			else
+			{
+				Console.WriteLine("{0} was executed {1} times for a total of {2} ms", e.Key, entry.Count, entry.Time / 10000);
+			}
 		}
 	}
 
@@ -49,19 +58,26 @@ class Profiler
 	internal static void Enter(string name)
 	{
 		long ticks = DateTime.Now.Ticks;
-		if(stack.Count > 0)
+		lock(counters)
 		{
-			((Entry)stack.Peek()).Time += ticks;
+			if(stack == null)
+			{
+				stack = new Stack();
+			}
+			if(stack.Count > 0)
+			{
+				((Entry)stack.Peek()).Time += ticks;
+			}
+			Entry e = (Entry)counters[name];
+			if(e == null)
+			{
+				e = new Entry();
+				counters[name] = e;
+			}
+			e.Count++;
+			e.Time -= ticks;
+			stack.Push(e);
 		}
-		Entry e = (Entry)counters[name];
-		if(e == null)
-		{
-			e = new Entry();
-			counters[name] = e;
-		}
-		e.Count++;
-		e.Time -= ticks;
-		stack.Push(e);
 	}
 
 	[Conditional("PROFILE")]
@@ -69,11 +85,26 @@ class Profiler
 	{
 		long ticks = DateTime.Now.Ticks;
 		stack.Pop();
-		Entry e = (Entry)counters[name];
-		e.Time += ticks;
-		if(stack.Count > 0)
+		lock(counters)
 		{
-			((Entry)stack.Peek()).Time -= ticks;
+			Entry e = (Entry)counters[name];
+			e.Time += ticks;
+			if(stack.Count > 0)
+			{
+				((Entry)stack.Peek()).Time -= ticks;
+			}
 		}
+	}
+
+	[Conditional("PROFILE")]
+	internal static void Count(string name)
+	{
+		Entry e = (Entry)counters[name];
+		if(e == null)
+		{
+			e = new Entry();
+			counters[name] = e;
+		}
+		e.Count++;
 	}
 }

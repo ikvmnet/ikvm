@@ -75,6 +75,7 @@ sealed class JavaException
 		if(JVM.IsStaticCompiler)
 		{
 			Console.WriteLine("ClassNotFound: " + s);
+			//Console.WriteLine(new System.Diagnostics.StackTrace(true));
 			if(classNotFound)
 			{
 				throw new BootstrapClassMissing();

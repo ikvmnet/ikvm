@@ -184,104 +184,120 @@ class ClassLoaderWrapper
 	// TODO implement vmspec 5.3.4 Loading Constraints
 	internal TypeWrapper LoadClassByDottedName(string name)
 	{
-		TypeWrapper type = (TypeWrapper)types[name];
-		if(type != null)
+		Profiler.Enter("LoadClassByDottedName");
+		try
 		{
-			return type;
-		}
-		if(name.Length > 1 && name[0] == '[')
-		{
-			int dims = 1;
-			while(name[dims] == '[')
-			{
-				dims++;
-			}
-			switch(name[dims])
-			{
-				case 'L':
-				{
-					type = LoadClassByDottedName(name.Substring(dims + 1, name.IndexOf(';', dims) - dims - 1));
-					type = type.GetClassLoader().CreateArrayType(name, type.Type, dims);
-					return type;
-				}
-				case 'B':
-					return GetBootstrapClassLoader().CreateArrayType(name, typeof(sbyte), dims);
-				case 'C':
-					return GetBootstrapClassLoader().CreateArrayType(name, typeof(char), dims);
-				case 'D':
-					return GetBootstrapClassLoader().CreateArrayType(name, typeof(double), dims);
-				case 'F':
-					return GetBootstrapClassLoader().CreateArrayType(name, typeof(float), dims);
-				case 'I':
-					return GetBootstrapClassLoader().CreateArrayType(name, typeof(int), dims);
-				case 'J':
-					return GetBootstrapClassLoader().CreateArrayType(name, typeof(long), dims);
-				case 'S':
-					return GetBootstrapClassLoader().CreateArrayType(name, typeof(short), dims);
-				case 'Z':
-					return GetBootstrapClassLoader().CreateArrayType(name, typeof(bool), dims);
-				default:
-					// TODO I'm not sure this is the right exception here (instead we could throw a NoClassDefFoundError)
-					throw JavaException.ClassNotFoundException(name);
-			}
-		}
-		if(this == GetBootstrapClassLoader())
-		{
-			// HACK if the name contains a comma, we assume it is an assembly qualified name
-			if(name.IndexOf(',') != -1)
-			{
-				Type t = Type.GetType(name);
-				if(t != null)
-				{
-					return GetCompiledTypeWrapper(t);
-				}
-			}
-			type = GetBootstrapType(name);
+			TypeWrapper type = (TypeWrapper)types[name];
 			if(type != null)
 			{
 				return type;
 			}
-			if(javaClassLoader == null)
+			if(name.Length > 1 && name[0] == '[')
 			{
-				throw JavaException.ClassNotFoundException(name);
+				int dims = 1;
+				while(name[dims] == '[')
+				{
+					dims++;
+				}
+				switch(name[dims])
+				{
+					case 'L':
+					{
+						type = LoadClassByDottedName(name.Substring(dims + 1, name.IndexOf(';', dims) - dims - 1));
+						type = type.GetClassLoader().CreateArrayType(name, type.Type, dims);
+						return type;
+					}
+					case 'B':
+						return GetBootstrapClassLoader().CreateArrayType(name, typeof(sbyte), dims);
+					case 'C':
+						return GetBootstrapClassLoader().CreateArrayType(name, typeof(char), dims);
+					case 'D':
+						return GetBootstrapClassLoader().CreateArrayType(name, typeof(double), dims);
+					case 'F':
+						return GetBootstrapClassLoader().CreateArrayType(name, typeof(float), dims);
+					case 'I':
+						return GetBootstrapClassLoader().CreateArrayType(name, typeof(int), dims);
+					case 'J':
+						return GetBootstrapClassLoader().CreateArrayType(name, typeof(long), dims);
+					case 'S':
+						return GetBootstrapClassLoader().CreateArrayType(name, typeof(short), dims);
+					case 'Z':
+						return GetBootstrapClassLoader().CreateArrayType(name, typeof(bool), dims);
+					default:
+						// TODO I'm not sure this is the right exception here (instead we could throw a NoClassDefFoundError)
+						throw JavaException.ClassNotFoundException(name);
+				}
 			}
-		}
-		// OPTIMIZE this should be optimized
-		try
-		{
-			object clazz;
-			// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
-			lock(javaClassLoader)
+			if(this == GetBootstrapClassLoader())
 			{
-				clazz = loadClassMethod.Invoke(javaClassLoader, new object[] { name });
+				// HACK if the name contains a comma, we assume it is an assembly qualified name
+				if(name.IndexOf(',') != -1)
+				{
+					Type t = Type.GetType(name);
+					if(t != null)
+					{
+						return GetCompiledTypeWrapper(t);
+					}
+				}
+				type = GetBootstrapType(name);
+				if(type != null)
+				{
+					return type;
+				}
+				if(javaClassLoader == null)
+				{
+					throw JavaException.ClassNotFoundException(name);
+				}
 			}
-			type = (TypeWrapper)clazz.GetType().GetField("wrapper", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clazz);
-			if(type == null)
+			// OPTIMIZE this should be optimized
+			try
 			{
-				Type t = (Type)clazz.GetType().GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clazz);
-				ClassLoaderWrapper loader = GetClassLoader(t);
-				type = (TypeWrapper)loader.types[name];
+				object clazz;
+				// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
+				lock(javaClassLoader)
+				{
+					Profiler.Enter("ClassLoader.loadClass");
+					try
+					{
+						clazz = loadClassMethod.Invoke(javaClassLoader, new object[] { name });
+					}
+					finally
+					{
+						Profiler.Leave("ClassLoader.loadClass");
+					}
+				}
+				type = (TypeWrapper)clazz.GetType().GetField("wrapper", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clazz);
 				if(type == null)
 				{
-					// this shouldn't be possible
-					throw new InvalidOperationException(name + ", this = " + javaClassLoader);
+					Type t = (Type)clazz.GetType().GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clazz);
+					ClassLoaderWrapper loader = GetClassLoader(t);
+					type = (TypeWrapper)loader.types[name];
+					if(type == null)
+					{
+						// this shouldn't be possible
+						throw new InvalidOperationException(name + ", this = " + javaClassLoader);
+					}
 				}
-			}
-			// NOTE we're caching types loaded by parent classloaders as well!
-			// TODO not sure if this is correct
-			if(type.GetClassLoader() != this)
-			{
-				if(types[name] != type)
+				// NOTE we're caching types loaded by parent classloaders as well!
+				// TODO not sure if this is correct
+				if(type.GetClassLoader() != this)
 				{
-					types.Add(name, type);
+					if(types[name] != type)
+					{
+						types.Add(name, type);
+					}
 				}
+				return type;
 			}
-			return type;
+			catch(TargetInvocationException x)
+			{
+				ExceptionHelper.MapExceptionFast(x);
+				throw x.InnerException;
+			}
 		}
-		catch(TargetInvocationException x)
+		finally
 		{
-			ExceptionHelper.MapExceptionFast(x);
-			throw x.InnerException;
+			Profiler.Leave("LoadClassByDottedName");
 		}
 	}
 
