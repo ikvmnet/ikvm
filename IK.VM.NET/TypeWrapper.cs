@@ -1485,13 +1485,9 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					throw new NotImplementedException(constantValue.GetType().FullName);
 				}
-				// TODO this should probably emit a IllegalAccessError (or whatever)
-				// TODO also check other field[x].EmitSet's for final fields
-				// UPDATE for other final fields this shouldn't happend, because the compiler will check access before
-				// calling EmitSet
-				// UPDATE when non-blank final fields are updated, the JIT normally doesn't see that (because the
-				// constant value is inlined), so we emulate that behavior by emitting a Nop
-				fields[i].EmitSet = CodeEmitter.Create(OpCodes.Nop);
+				// when non-blank final fields are updated, the JIT normally doesn't see that (because the
+				// constant value is inlined), so we emulate that behavior by emitting a Pop
+				fields[i].EmitSet = CodeEmitter.Create(OpCodes.Pop);
 			}
 			else
 			{
