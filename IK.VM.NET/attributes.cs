@@ -214,6 +214,12 @@ public class ModifiersAttribute : Attribute
 		mb.SetCustomAttribute(customAttributeBuilder);
 	}
 
+	public static void SetModifiers(ConstructorBuilder cb, Modifiers modifiers)
+	{
+		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeof(ModifiersAttribute).GetConstructor(new Type[] { typeof(Modifiers) }), new object[] { modifiers });
+		cb.SetCustomAttribute(customAttributeBuilder);
+	}
+
 	public static void SetModifiers(FieldBuilder fb, Modifiers modifiers)
 	{
 		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeof(ModifiersAttribute).GetConstructor(new Type[] { typeof(Modifiers) }), new object[] { modifiers });

@@ -174,6 +174,10 @@ class ClassLoaderWrapper
 	// TODO implement vmspec 5.3.4 Loading Constraints
 	internal TypeWrapper LoadClassByDottedName(string name)
 	{
+		if(name == null)
+		{
+			throw new NullReferenceException();
+		}
 		Profiler.Enter("LoadClassByDottedName");
 		try
 		{
@@ -306,6 +310,18 @@ class ClassLoaderWrapper
 				return t;
 			}
 		}
+		// HACK for the time being we'll look into all loaded assemblies, this is to work around
+		// a bug caused by the fact that SigDecoderWrapper is used to parse signatures that contain .NET exported
+		// types (the Mauve test gnu.testlet.java.io.ObjectStreamClass.ProxyTest failed because
+		// it did a getDeclaredMethods on java/lang/VMClassLoader which has a method that returns a System.Reflection.Assembly)
+		foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
+		{
+			Type t = a.GetType(name);
+			if(t != null)
+			{
+				return t;
+			}
+		}
 		return null;
 	}
 
@@ -356,15 +372,21 @@ class ClassLoaderWrapper
 			interfaces[0] = GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Cloneable");
 			interfaces[1] = GetBootstrapClassLoader().LoadClassByDottedName("java.io.Serializable");
 			MethodDescriptor mdClone = new MethodDescriptor(GetBootstrapClassLoader(), "clone", "()Ljava/lang/Object;");
-			Modifiers modifiers = Modifiers.Final | Modifiers.Public;
+			Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
+			// TODO taking the publicness from the .NET isn't 100% correct, we really should look at the wrapper
+			if(elementType.IsPublic)
+			{
+				modifiers |= Modifiers.Public;
+			}
 			// TODO copy accessibility from element type
 			wrapper = new RemappedTypeWrapper(this, modifiers, name, array, interfaces, GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object"));
 			MethodInfo clone = typeof(Array).GetMethod("Clone");
-			MethodWrapper mw = new MethodWrapper(wrapper, mdClone, clone, null, Modifiers.Public);
+			MethodWrapper mw = new MethodWrapper(wrapper, mdClone, clone, null, Modifiers.Synthetic);
 			mw.EmitCall = CodeEmitter.Create(OpCodes.Callvirt, clone);
 			mw.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, clone);
 			wrapper.AddMethod(mw);
 			types.Add(name, wrapper);
+			typeToTypeWrapper[array] = wrapper;
 		}
 		return wrapper;
 	}
