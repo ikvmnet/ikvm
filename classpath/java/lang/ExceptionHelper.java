@@ -23,6 +23,9 @@
 */
 package java.lang;
 
+import java.io.*;
+import java.lang.reflect.*;
+
 public final class ExceptionHelper
 {
     // the contents of the NULL_STRING should be empty (because when the exception propagates to other .NET code
@@ -51,6 +54,11 @@ public final class ExceptionHelper
 	    {
 		cause = CAUSE_NOT_SET;
 	    }
+	}
+
+	Throwable getCauseForSerialization(Throwable t)
+	{
+	    return cause == CAUSE_NOT_SET ? t : cause;
 	}
 
 	Throwable get_Cause()
@@ -426,4 +434,53 @@ public final class ExceptionHelper
 	}
 	return handler.IsInstanceOfType(t) ? t : null;
     }
+
+    static ObjectStreamField[] getPersistentFields()
+    {
+	return new ObjectStreamField[] {
+	    new ObjectStreamField("detailMessage", String.class),
+	    new ObjectStreamField("cause", Throwable.class),
+	    new ObjectStreamField("stackTrace", StackTraceElement[].class)
+	};
+    }
+
+    static void writeObject(Throwable t, ObjectOutputStream s) throws IOException
+    {
+	ObjectOutputStream.PutField fields = s.putFields();
+	fields.put("detailMessage", t.getMessage());
+	Throwable cause;
+	ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(t);
+	if(eih == null)
+	{
+	    cause = ((cli.System.Exception)t).get_InnerException();
+	}
+	else
+	{
+	    // TODO we need to use getCauseForSerialization, but Classpath 0.09 has a bug that
+	    // causes infinite recursion if we try to save a reference to this here (which
+	    // happens if cause was uninitialized [it gets set to 'this' to signal that])
+	    cause = eih.get_Cause();
+	    //cause = eih.getCauseForSerialization(t);
+	}
+	fields.put("cause", cause);
+	fields.put("stackTrace", t.getStackTrace());
+	s.writeFields();	    
+    }
+
+    static void readObject(Throwable t, ObjectInputStream s) throws IOException
+    {
+	ObjectInputStream.GetField fields = null;
+	try
+	{
+	    fields = s.readFields();
+	}
+	catch(ClassNotFoundException x)
+	{
+	    throw new IOException(x.getMessage());
+	}
+	initThrowable(t, fields.get("detailMessage", null), fields.get("cause", null));
+	setStackTrace(t, (StackTraceElement[])fields.get("stackTrace", null));
+    }
+
+    private static native void initThrowable(Object throwable, Object detailMessage, Object cause);
 }

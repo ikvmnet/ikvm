@@ -451,6 +451,32 @@
 		<class name="java.lang.Throwable" shadows="System.Exception, mscorlib" modifiers="public">
 			<implements class="java.io.Serializable" />
 			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-3042686055658047285" />
+			<field name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" modifiers="private static final" />
+			<clinit>
+				<body>
+					<call class="java.lang.ExceptionHelper" name="getPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
+					<stsfld class="java.lang.Throwable" name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" />
+					<ret />
+				</body>
+			</clinit>
+			<method name="readObject" sig="(Ljava.io.ObjectInputStream;)V" modifiers="private">
+				<throws class="java.io.IOException" />
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<call class="java.lang.ExceptionHelper" name="readObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectInputStream;)V" />
+					<ret />
+				</body>
+			</method>
+			<method name="writeObject" sig="(Ljava.io.ObjectOutputStream;)V" modifiers="private">
+				<throws class="java.io.IOException" />
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<call class="java.lang.ExceptionHelper" name="writeObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectOutputStream;)V" />
+					<ret />
+				</body>
+			</method>
 			<constructor sig="()V" modifiers="public">
 				<body>
 					<ldarg_0 />
@@ -475,6 +501,13 @@
 					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 					<ldarg_2 />
 					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+					<ldarg_2 />
+					<brtrue name="skip" />
+					<ldarg_0 />
+					<ldarg_2 />
+					<call class="java.lang.ExceptionHelper" name="initCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+					<pop />
+					<label name="skip" />
 					<ret />
 				</body>
 			</constructor>
@@ -485,6 +518,13 @@
 					<call class="java.lang.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
 					<ldarg_1 />
 					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+					<ldarg_1 />
+					<brtrue name="skip" />
+					<ldarg_0 />
+					<ldarg_1 />
+					<call class="java.lang.ExceptionHelper" name="initCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+					<pop />
+					<label name="skip" />
 					<ret />
 				</body>
 			</constructor>

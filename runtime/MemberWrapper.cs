@@ -528,11 +528,11 @@ class MethodWrapper : MemberWrapper
 				else if(!method.DeclaringType.IsInstanceOfType(obj))
 				{
 					// we're trying to initialize an existing instance of a remapped type
-					// HACK special case for deserialization of java.lang.Throwable subclasses
 					if(obj is System.Exception && (args == null || args.Length == 0))
 					{
-						// TODO this isn't the right constructor. We should be calling Exception(ExceptionHelper.get_NullString()).
-						method = typeof(System.Exception).GetConstructor(Type.EmptyTypes);
+						// HACK special case for deserialization of java.lang.Throwable subclasses
+						// we don't call the constructor here, it will be called by Throwable.readObject()
+						return null;
 					}
 					else
 					{
