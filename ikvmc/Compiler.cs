@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -72,24 +72,16 @@ class Compiler
 		AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
 		System.Threading.Thread.CurrentThread.Name = "compiler";
 		Tracer.EnableTraceForDebug();
-		System.Reflection.Emit.PEFileKinds target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
-		bool guessFileKind = true;
-		string assemblyname = null;
-		string outputfile = null;
-		string version = "0.0.0.0";
-		string keyfile = null;
-		bool targetIsModule = false;
-		string main = null;
+		JVM.CompilerOptions options = new JVM.CompilerOptions();
+		options.target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
+		options.guessFileKind = true;
+		options.version = "0.0.0.0";
+		options.apartment = ApartmentState.STA;
 		string defaultAssemblyName = null;
-		string remapfile = null;
-		bool nojni = false;
-		bool noglobbing = false;
-		bool nostacktraceinfo = false;
-		ApartmentState apartment = ApartmentState.STA;
 		ArrayList classesToExclude = new ArrayList();
 		ArrayList references = new ArrayList();
 		ArrayList arglist = GetArgs(args);
-		Hashtable props = new Hashtable();
+		options.props = new Hashtable();
 		if(arglist.Count == 0)
 		{
 			Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
@@ -123,6 +115,7 @@ class Compiler
 			Console.Error.WriteLine("    -disableassertions[:<packagename>...|:<classname>]");
 			Console.Error.WriteLine("                               Set system property to disable assertions");
 			Console.Error.WriteLine("    -nostacktraceinfo          Don't create metadata to emit rich stack traces");
+			Console.Error.WriteLine("    -opt:fields                Remove unused private fields");
 			Console.Error.WriteLine("    -Xtrace:<string>           Displays all tracepoints with the given name");
 			Console.Error.WriteLine("    -Xmethodtrace:<string>     Build tracing into the specified output methods");
 			return 1;
@@ -133,7 +126,7 @@ class Compiler
 			{
 				if(s.StartsWith("-out:"))
 				{
-					outputfile = s.Substring(5);
+					options.path = s.Substring(5);
 				}
 				else if(s.StartsWith("-Xtrace:"))
 				{
@@ -145,28 +138,28 @@ class Compiler
 				}
 				else if(s.StartsWith("-assembly:"))
 				{
-					assemblyname = s.Substring(10);
+					options.assembly = s.Substring(10);
 				}
 				else if(s.StartsWith("-target:"))
 				{
 					switch(s)
 					{
 						case "-target:exe":
-							target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
-							guessFileKind = false;
+							options.target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
+							options.guessFileKind = false;
 							break;
 						case "-target:winexe":
-							target = System.Reflection.Emit.PEFileKinds.WindowApplication;
-							guessFileKind = false;
+							options.target = System.Reflection.Emit.PEFileKinds.WindowApplication;
+							options.guessFileKind = false;
 							break;
 						case "-target:module":
-							targetIsModule = true;
-							target = System.Reflection.Emit.PEFileKinds.Dll;
-							guessFileKind = false;
+							options.targetIsModule = true;
+							options.target = System.Reflection.Emit.PEFileKinds.Dll;
+							options.guessFileKind = false;
 							break;
 						case "-target:library":
-							target = System.Reflection.Emit.PEFileKinds.Dll;
-							guessFileKind = false;
+							options.target = System.Reflection.Emit.PEFileKinds.Dll;
+							options.guessFileKind = false;
 							break;
 						default:
 							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
@@ -178,13 +171,13 @@ class Compiler
 					switch(s)
 					{
 						case "-apartment:sta":
-							apartment = ApartmentState.STA;
+							options.apartment = ApartmentState.STA;
 							break;
 						case "-apartment:mta":
-							apartment = ApartmentState.MTA;
+							options.apartment = ApartmentState.MTA;
 							break;
 						case "-apartment:none":
-							apartment = ApartmentState.Unknown;
+							options.apartment = ApartmentState.Unknown;
 							break;
 						default:
 							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
@@ -193,7 +186,7 @@ class Compiler
 				}
 				else if(s == "-noglobbing")
 				{
-					noglobbing = true;
+					options.noglobbing = true;
 				}
 				else if(s.StartsWith("-D"))
 				{
@@ -202,27 +195,27 @@ class Compiler
 					{
 						keyvalue = new string[] { keyvalue[0], "" };
 					}
-					props[keyvalue[0]] = keyvalue[1];
+					options.props[keyvalue[0]] = keyvalue[1];
 				}
 				else if(s == "-ea" || s == "-enableassertions")
 				{
-					props["ikvm.assert.default"] = "true";
+					options.props["ikvm.assert.default"] = "true";
 				}
 				else if(s == "-da" || s == "-disableassertions")
 				{
-					props["ikvm.assert.default"] = "false";
+					options.props["ikvm.assert.default"] = "false";
 				}
 				else if(s.StartsWith("-ea:") || s.StartsWith("-enableassertions:"))
 				{
-					props["ikvm.assert.enable"] = s.Substring(s.IndexOf(':') + 1);
+					options.props["ikvm.assert.enable"] = s.Substring(s.IndexOf(':') + 1);
 				}
 				else if(s.StartsWith("-da:") || s.StartsWith("-disableassertions:"))
 				{
-					props["ikvm.assert.disable"] = s.Substring(s.IndexOf(':') + 1);
+					options.props["ikvm.assert.disable"] = s.Substring(s.IndexOf(':') + 1);
 				}
 				else if(s.StartsWith("-main:"))
 				{
-					main = s.Substring(6);
+					options.mainClass = s.Substring(6);
 				}
 				else if(s.StartsWith("-reference:") || s.StartsWith("-r:"))
 				{
@@ -302,7 +295,7 @@ class Compiler
 				}
 				else if(s == "-nojni")
 				{
-					nojni = true;
+					options.nojni = true;
 				}
 				else if(s.StartsWith("-exclude:"))
 				{
@@ -310,11 +303,11 @@ class Compiler
 				}
 				else if(s.StartsWith("-version:"))
 				{
-					version = s.Substring(9);
-					if(version.EndsWith(".*"))
+					options.version = s.Substring(9);
+					if(options.version.EndsWith(".*"))
 					{
-						version = version.Substring(0, version.Length - 1);
-						int count = version.Split('.').Length;
+						options.version = options.version.Substring(0, options.version.Length - 1);
+						int count = options.version.Split('.').Length;
 						// NOTE this is the published algorithm for generating automatic build and revision numbers
 						// (see AssemblyVersionAttribute constructor docs), but it turns out that the revision
 						// number is off an hour (on my system)...
@@ -323,22 +316,22 @@ class Compiler
 						int days = (int)(now - new DateTime(2000, 1, 1)).TotalDays;
 						if(count == 3)
 						{
-							version += days + "." + seconds;
+							options.version += days + "." + seconds;
 						}
 						else if(count == 4)
 						{
-							version += seconds;
+							options.version += seconds;
 						}
 						else
 						{
-							Console.Error.WriteLine("Error: Invalid version specified: {0}*", version);
+							Console.Error.WriteLine("Error: Invalid version specified: {0}*", options.version);
 							return 1;
 						}
 					}
 				}
 				else if(s.StartsWith("-keyfile:"))
 				{
-					keyfile = s.Substring(9);
+					options.keyfilename = s.Substring(9);
 				}
 				else if(s == "-debug")
 				{
@@ -350,11 +343,15 @@ class Compiler
 				}
 				else if(s.StartsWith("-remap:"))
 				{
-					remapfile = s.Substring(7);
+					options.remapfile = s.Substring(7);
 				}
 				else if(s == "-nostacktraceinfo")
 				{
-					nostacktraceinfo = true;
+					options.nostacktraceinfo = true;
+				}
+				else if(s == "-opt:fields")
+				{
+					options.removeUnusedFields = true;
 				}
 				else
 				{
@@ -397,9 +394,9 @@ class Compiler
 				}
 			}
 		}
-		if(assemblyname == null)
+		if(options.assembly == null)
 		{
-			string basename = outputfile == null ? defaultAssemblyName : new FileInfo(outputfile).Name;
+			string basename = options.path == null ? defaultAssemblyName : new FileInfo(options.path).Name;
 			if(basename == null)
 			{
 				Console.Error.WriteLine("Error: no output file specified");
@@ -408,29 +405,33 @@ class Compiler
 			int idx = basename.LastIndexOf('.');
 			if(idx > 0)
 			{
-				assemblyname = basename.Substring(0, idx);
+				options.assembly = basename.Substring(0, idx);
 			}
 			else
 			{
-				assemblyname = basename;
+				options.assembly = basename;
 			}
 		}
-		if(outputfile != null && guessFileKind)
+		if(options.path != null && options.guessFileKind)
 		{
-			if(outputfile.ToLower().EndsWith(".dll"))
+			if(options.path.ToLower().EndsWith(".dll"))
 			{
-				target = System.Reflection.Emit.PEFileKinds.Dll;
+				options.target = System.Reflection.Emit.PEFileKinds.Dll;
 			}
-			guessFileKind = false;
+			options.guessFileKind = false;
 		}
-		if(main == null && manifestMainClass != null && (guessFileKind || target != System.Reflection.Emit.PEFileKinds.Dll))
+		if(options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != System.Reflection.Emit.PEFileKinds.Dll))
 		{
 			Console.Error.WriteLine("Note: using main class {0} based on jar manifest", manifestMainClass);
-			main = manifestMainClass;
+			options.mainClass = manifestMainClass;
 		}
 		try
 		{
-			return JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, apartment, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)), remapfile, props, noglobbing, nostacktraceinfo);
+			options.classes = (byte[][])classes.ToArray(typeof(byte[]));
+			options.references = (string[])references.ToArray(typeof(string));
+			options.resources = resources;
+			options.classesToExclude = (string[])classesToExclude.ToArray(typeof(string));
+			return JVM.Compile(options);
 		}
 		catch(Exception x)
 		{

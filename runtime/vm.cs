@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1848,13 +1848,36 @@ namespace IKVM.Internal
 			}
 		}
 
-		public static int Compile(string path, string keyfilename, string version, bool targetIsModule, string assembly, string mainClass, ApartmentState apartment, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude, string remapfile, Hashtable props, bool noglobbing, bool nostacktraceinfo)
+		public class CompilerOptions
 		{
-			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", path, assembly);
+			public string path;
+			public string keyfilename;
+			public string version;
+			public bool targetIsModule;
+			public string assembly;
+			public string mainClass;
+			public ApartmentState apartment;
+			public PEFileKinds target;
+			public bool guessFileKind;
+			public byte[][] classes;
+			public string[] references;
+			public bool nojni;
+			public Hashtable resources;
+			public string[] classesToExclude;
+			public string remapfile;
+			public Hashtable props;
+			public bool noglobbing;
+			public bool nostacktraceinfo;
+			public bool removeUnusedFields;
+		}
+
+		public static int Compile(CompilerOptions options)
+		{
+			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", options.path, options.assembly);
 			isStaticCompiler = true;
-			noJniStubs = nojni;
-			noStackTraceInfo = nostacktraceinfo;
-			foreach(string r in references)
+			noJniStubs = options.nojni;
+			noStackTraceInfo = options.nostacktraceinfo;
+			foreach(string r in options.references)
 			{
 				try
 				{
@@ -1874,12 +1897,12 @@ namespace IKVM.Internal
 			}
 			Hashtable h = new Hashtable();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
-			for(int i = 0; i < classes.Length; i++)
+			for(int i = 0; i < options.classes.Length; i++)
 			{
 				ClassFile f;
 				try
 				{
-					f = new ClassFile(classes[i], 0, classes[i].Length, null, true);
+					f = new ClassFile(options.classes[i], 0, options.classes[i].Length, null, true);
 				}
 				catch(UnsupportedClassVersionError x)
 				{
@@ -1893,9 +1916,9 @@ namespace IKVM.Internal
 				}
 				string name = f.Name;
 				bool excluded = false;
-				for(int j = 0; j < classesToExclude.Length; j++)
+				for(int j = 0; j < options.classesToExclude.Length; j++)
 				{
-					if(Regex.IsMatch(name, classesToExclude[j]))
+					if(Regex.IsMatch(name, options.classesToExclude[j]))
 					{
 						excluded = true;
 						break;
@@ -1908,15 +1931,19 @@ namespace IKVM.Internal
 				}
 				if(!excluded)
 				{
+					if(options.removeUnusedFields)
+					{
+						f.RemoveUnusedFields();
+					}
 					h[name] = f;
-					if(mainClass == null && (guessFileKind || target != PEFileKinds.Dll))
+					if(options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
 					{
 						foreach(ClassFile.Method m in f.Methods)
 						{
 							if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
 							{
 								Console.Error.WriteLine("Note: found main method in class: {0}", f.Name);
-								mainClass = f.Name;
+								options.mainClass = f.Name;
 								break;
 							}
 						}
@@ -1924,62 +1951,62 @@ namespace IKVM.Internal
 				}
 			}
 
-			if(guessFileKind && mainClass == null)
+			if(options.guessFileKind && options.mainClass == null)
 			{
-				target = PEFileKinds.Dll;
+				options.target = PEFileKinds.Dll;
 			}
 
-			if(target == PEFileKinds.Dll && mainClass != null)
+			if(options.target == PEFileKinds.Dll && options.mainClass != null)
 			{
 				Console.Error.WriteLine("Error: main class cannot be specified for library or module");
 				return 1;
 			}
 
-			if(target != PEFileKinds.Dll && mainClass == null)
+			if(options.target != PEFileKinds.Dll && options.mainClass == null)
 			{
 				Console.Error.WriteLine("Error: no main method found");
 				return 1;
 			}
 
-			if(target == PEFileKinds.Dll && props.Count != 0)
+			if(options.target == PEFileKinds.Dll && options.props.Count != 0)
 			{
 				Console.Error.WriteLine("Error: properties cannot be specified for library or module");
 				return 1;
 			}
 
-			if(path == null)
+			if(options.path == null)
 			{
-				if(target == PEFileKinds.Dll)
+				if(options.target == PEFileKinds.Dll)
 				{
-					if(targetIsModule)
+					if(options.targetIsModule)
 					{
-						path = assembly + ".netmodule";
+						options.path = options.assembly + ".netmodule";
 					}
 					else
 					{
-						path = assembly + ".dll";
+						options.path = options.assembly + ".dll";
 					}
 				}
 				else
 				{
-					path = assembly + ".exe";
+					options.path = options.assembly + ".exe";
 				}
-				Console.Error.WriteLine("Note: output file is: {0}", path);
+				Console.Error.WriteLine("Note: output file is: {0}", options.path);
 			}
 
-			if(targetIsModule)
+			if(options.targetIsModule)
 			{
 				// TODO if we're overwriting a user specified assembly name, we need to emit a warning
-				assembly = new FileInfo(path).Name;
+				options.assembly = new FileInfo(options.path).Name;
 			}
 
-			if(target == PEFileKinds.Dll && !path.ToLower().EndsWith(".dll") && !targetIsModule)
+			if(options.target == PEFileKinds.Dll && !options.path.ToLower().EndsWith(".dll") && !options.targetIsModule)
 			{
 				Console.Error.WriteLine("Error: library output file must end with .dll");
 				return 1;
 			}
 
-			if(target != PEFileKinds.Dll && !path.ToLower().EndsWith(".exe"))
+			if(options.target != PEFileKinds.Dll && !options.path.ToLower().EndsWith(".exe"))
 			{
 				Console.Error.WriteLine("Error: executable output file must end with .exe");
 				return 1;
@@ -2022,17 +2049,17 @@ namespace IKVM.Internal
 			}
 
 			Tracer.Info(Tracer.Compiler, "Constructing compiler");
-			CompilerClassLoader loader = new CompilerClassLoader(path, keyfilename, version, targetIsModule, assembly, h);
+			CompilerClassLoader loader = new CompilerClassLoader(options.path, options.keyfilename, options.version, options.targetIsModule, options.assembly, h);
 			ClassLoaderWrapper.SetBootstrapClassLoader(loader);
 			compilationPhase1 = true;
 			IKVM.Internal.MapXml.Root map = null;
-			if(remapfile != null)
+			if(options.remapfile != null)
 			{
-				Tracer.Info(Tracer.Compiler, "Loading remapped types (1) from {0}", remapfile);
+				Tracer.Info(Tracer.Compiler, "Loading remapped types (1) from {0}", options.remapfile);
 				System.Xml.Serialization.XmlSerializer ser = new System.Xml.Serialization.XmlSerializer(typeof(IKVM.Internal.MapXml.Root));
 				ser.UnknownElement += new System.Xml.Serialization.XmlElementEventHandler(ser_UnknownElement);
 				ser.UnknownAttribute += new System.Xml.Serialization.XmlAttributeEventHandler(ser_UnknownAttribute);
-				using(FileStream fs = File.Open(remapfile, FileMode.Open))
+				using(FileStream fs = File.Open(options.remapfile, FileMode.Open))
 				{
 					XmlTextReader rdr = new XmlTextReader(fs);
 					IKVM.Internal.MapXml.Root.xmlReader = rdr;
@@ -2083,9 +2110,9 @@ namespace IKVM.Internal
 					Console.Error.WriteLine(x);
 				}
 			}
-			if(mainClass != null)
+			if(options.mainClass != null)
 			{
-				TypeWrapper wrapper = loader.LoadClassByDottedNameFast(mainClass);
+				TypeWrapper wrapper = loader.LoadClassByDottedNameFast(options.mainClass);
 				if(wrapper == null)
 				{
 					Console.Error.WriteLine("Error: main class not found");
@@ -2111,15 +2138,15 @@ namespace IKVM.Internal
 					return 1;
 				}
 				Type apartmentAttributeType = null;
-				if(apartment == ApartmentState.STA)
+				if(options.apartment == ApartmentState.STA)
 				{
 					apartmentAttributeType = typeof(STAThreadAttribute);
 				}
-				else if(apartment == ApartmentState.MTA)
+				else if(options.apartment == ApartmentState.MTA)
 				{
 					apartmentAttributeType = typeof(MTAThreadAttribute);
 				}
-				loader.SetMain(method, target, props, noglobbing, apartmentAttributeType);
+				loader.SetMain(method, options.target, options.props, options.noglobbing, apartmentAttributeType);
 			}
 			compilationPhase1 = false;
 			if(map != null)
@@ -2140,7 +2167,7 @@ namespace IKVM.Internal
 				loader.FinishRemappedTypes();
 			}
 			Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
-			loader.AddResources(resources);
+			loader.AddResources(options.resources);
 			loader.Save();
 			return 0;
 		}

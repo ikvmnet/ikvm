@@ -28,7 +28,7 @@
     </target>
 
     <target name="IKVM.GNU.Classpath.dll" depends="classes">
-        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true" commandline="-version:0.9.* -nojni -out:IKVM.GNU.Classpath.dll -remap:map.xml -exclude:exclude.lst -target:library -recurse:./*.class -recurse:${Classpath.dir}/*.class -recurse:${Classpath.dir}/*.properties -recurse:${Classpath.dir}/resource/*.properties mscorlib.jar System.jar System.Xml.jar -resource:lib/security/classpath.security=classpath.security" />
+        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true" commandline="-version:0.9.* -opt:fields -nojni -out:IKVM.GNU.Classpath.dll -remap:map.xml -exclude:exclude.lst -target:library -recurse:./*.class -recurse:${Classpath.dir}/*.class -recurse:${Classpath.dir}/*.properties -recurse:${Classpath.dir}/resource/*.properties mscorlib.jar System.jar System.Xml.jar -resource:lib/security/classpath.security=classpath.security" />
         <copy file="IKVM.GNU.Classpath.dll" tofile="../bin/IKVM.GNU.Classpath.dll.new" />
         <if propertytrue="nant.platform.win32">
 			<call target="peverify-classpath"/>

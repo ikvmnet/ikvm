@@ -33,7 +33,7 @@ using IKVM.Internal;
 // MONOBUG mcs 1.0 still has problems resolving properties vs. type names
 using __Modifiers = IKVM.Attributes.Modifiers;
 
-class ClassFile
+sealed class ClassFile
 {
 	private ConstantPoolItem[] constantpool;
 	private string[] utf8_cp;
@@ -545,6 +545,40 @@ class ClassFile
 		}
 	}
 
+	internal void RemoveUnusedFields()
+	{
+		ArrayList list = new ArrayList();
+		foreach(Field f in fields)
+		{
+			if(f.IsPrivate && f.Name != "serialVersionUID" && !IsReferenced(f))
+			{
+				// unused, so we skip it
+				Tracer.Info(Tracer.Compiler, "Unused field {0}::{1}", this.Name, f.Name);
+			}
+			else
+			{
+				list.Add(f);
+			}
+		}
+		fields = (Field[])list.ToArray(typeof(Field));
+	}
+
+	private bool IsReferenced(Field fld)
+	{
+		foreach(ConstantPoolItem cpi in constantpool)
+		{
+			ConstantPoolItemFieldref fieldref = cpi as ConstantPoolItemFieldref;
+			if(fieldref != null && 
+				fieldref.Class == this.Name && 
+				fieldref.Name == fld.Name && 
+				fieldref.Signature == fld.Signature)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	internal ConstantPoolItemFieldref GetFieldref(int index)
 	{
 		return (ConstantPoolItemFieldref)constantpool[index];
@@ -724,7 +758,7 @@ class ClassFile
 		}
 	}
 
-	internal class ConstantPoolItemClass : ConstantPoolItem
+	internal sealed class ConstantPoolItemClass : ConstantPoolItem
 	{
 		private ushort name_index;
 		private string name;
@@ -949,7 +983,7 @@ class ClassFile
 		return SigDecoderWrapper(classLoader, classCache, ref index, sig);
 	}
 
-	private class ConstantPoolItemDouble : ConstantPoolItem
+	private sealed class ConstantPoolItemDouble : ConstantPoolItem
 	{
 		private double d;
 
@@ -1038,7 +1072,7 @@ class ClassFile
 		}
 	}
 
-	internal class ConstantPoolItemFieldref : ConstantPoolItemFMI
+	internal sealed class ConstantPoolItemFieldref : ConstantPoolItemFMI
 	{
 		private FieldWrapper field;
 		private TypeWrapper fieldTypeWrapper;
@@ -1151,7 +1185,7 @@ class ClassFile
 		}
 	}
 
-	internal class ConstantPoolItemMethodref : ConstantPoolItemMI
+	internal sealed class ConstantPoolItemMethodref : ConstantPoolItemMI
 	{
 		internal ConstantPoolItemMethodref(BigEndianBinaryReader br) : base(br)
 		{
@@ -1182,7 +1216,7 @@ class ClassFile
 		}
 	}
 
-	internal class ConstantPoolItemInterfaceMethodref : ConstantPoolItemMI
+	internal sealed class ConstantPoolItemInterfaceMethodref : ConstantPoolItemMI
 	{
 		internal ConstantPoolItemInterfaceMethodref(BigEndianBinaryReader br) : base(br)
 		{
@@ -1227,7 +1261,7 @@ class ClassFile
 		}
 	}
 
-	private class ConstantPoolItemFloat : ConstantPoolItem
+	private sealed class ConstantPoolItemFloat : ConstantPoolItem
 	{
 		private float v;
 
@@ -1250,7 +1284,7 @@ class ClassFile
 		}
 	}
 
-	private class ConstantPoolItemInteger : ConstantPoolItem
+	private sealed class ConstantPoolItemInteger : ConstantPoolItem
 	{
 		private int v;
 
@@ -1273,7 +1307,7 @@ class ClassFile
 		}
 	}
 
-	private class ConstantPoolItemLong : ConstantPoolItem
+	private sealed class ConstantPoolItemLong : ConstantPoolItem
 	{
 		private long l;
 
@@ -1296,7 +1330,7 @@ class ClassFile
 		}
 	}
 
-	internal class ConstantPoolItemNameAndType : ConstantPoolItem
+	internal sealed class ConstantPoolItemNameAndType : ConstantPoolItem
 	{
 		internal ushort name_index;
 		internal ushort descriptor_index;
@@ -1308,7 +1342,7 @@ class ClassFile
 		}
 	}
 
-	private class ConstantPoolItemString : ConstantPoolItem
+	private sealed class ConstantPoolItemString : ConstantPoolItem
 	{
 		private ushort string_index;
 		private string s;
@@ -1483,7 +1517,7 @@ class ClassFile
 		}
 	}
 
-	internal class Field : FieldOrMethod
+	internal sealed class Field : FieldOrMethod
 	{
 		private object constantValue;
 
@@ -1595,7 +1629,7 @@ class ClassFile
 		}
 	}
 
-	internal class Method : FieldOrMethod
+	internal sealed class Method : FieldOrMethod
 	{
 		private Code code;
 		private string[] exceptions;
@@ -1974,7 +2008,7 @@ class ClassFile
 			}
 		}
 
-		internal class ExceptionTableEntry
+		internal sealed class ExceptionTableEntry
 		{
 			internal ushort start_pc;
 			internal ushort end_pc;
