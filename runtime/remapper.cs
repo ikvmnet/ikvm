@@ -618,6 +618,14 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("ldlen")]
+	public sealed class Ldlen : Simple
+	{
+		public Ldlen() : base(OpCodes.Ldlen)
+		{
+		}
+	}
+
 	public class InstructionList : CodeEmitter
 	{
 		[XmlElement(typeof(Ldstr))]
@@ -655,6 +663,7 @@ namespace MapXml
 		[XmlElement(typeof(Conv_U2))]
 		[XmlElement(typeof(Conv_U4))]
 		[XmlElement(typeof(Conv_U8))]
+		[XmlElement(typeof(Ldlen))]
 		public Instruction[] invoke;
 
 		internal sealed override void Emit(ILGenerator ilgen)

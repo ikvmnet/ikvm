@@ -401,6 +401,10 @@
 			</method>
 			<method name="copyValueOf" sig="([C)Ljava.lang.String;" modifiers="public static">
 				<body>
+					<!-- force a NullPointerException if the array is null -->
+					<ldarg_0 />
+					<ldlen />
+					<pop />
 					<ldarg_0 />
 					<newobj type="System.String, mscorlib" name=".ctor" sig="([C)V" />
 					<ret />
