@@ -78,9 +78,9 @@ namespace IKVM.Runtime
 
 	public unsafe sealed class JNI
 	{
-		internal static bool jvmCreated;
-		internal static bool jvmDestroyed;
-		internal const string METHOD_PTR_FIELD_PREFIX = "__<jniptr/";
+		internal static volatile bool jvmCreated;
+		internal static volatile bool jvmDestroyed;
+		internal const string METHOD_PTR_FIELD_PREFIX = "__<jniptr>";
 
 		internal static bool IsSupportedJniVersion(jint version)
 		{
@@ -275,6 +275,8 @@ namespace IKVM.Runtime
 				string mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
 				string shortMethodName = String.Format("Java_{0}_{1}", mangledClass, mangledName);
 				string longMethodName = String.Format("Java_{0}_{1}__{2}", mangledClass, mangledName, mangledSig);
+				Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}",
+					clazz, name, sig, loader, shortMethodName, longMethodName, sp + 2 * IntPtr.Size);
 				lock(JniHelper.JniLock)
 				{
 					foreach(IntPtr p in loader.GetNativeLibraries())
@@ -282,11 +284,13 @@ namespace IKVM.Runtime
 						IntPtr pfunc = JniHelper.ikvm_GetProcAddress(p, shortMethodName, sp + 2 * IntPtr.Size);
 						if(pfunc != IntPtr.Zero)
 						{
+							Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p.ToInt64());
 							return pfunc;
 						}
 						pfunc = JniHelper.ikvm_GetProcAddress(p, longMethodName, sp + 2 * IntPtr.Size);
 						if(pfunc != IntPtr.Zero)
 						{
+							Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (long)", clazz, name, sig, p.ToInt64());
 							return pfunc;
 						}
 					}
@@ -391,11 +395,13 @@ namespace IKVM.Runtime
 
 		internal unsafe static int LoadLibrary(string filename, ClassLoaderWrapper loader)
 		{
+			Tracer.Info(Tracer.Jni, "loadLibrary: {0}, class loader: {1}", filename, loader);
 			lock(JniLock)
 			{
 				IntPtr p = ikvm_LoadLibrary(filename);
 				if(p == IntPtr.Zero)
 				{
+					Tracer.Info(Tracer.Jni, "Library not found: {0}", filename);
 					return 0;
 				}
 				try
@@ -407,6 +413,7 @@ namespace IKVM.Runtime
 							// the library was already loaded by the current class loader,
 							// no need to do anything
 							ikvm_FreeLibrary(p);
+							Tracer.Warning(Tracer.Jni, "Library was already loaded: {0}", filename);
 							return 1;
 						}
 					}
@@ -414,9 +421,11 @@ namespace IKVM.Runtime
 					{
 						throw JavaException.UnsatisfiedLinkError("Native library {0} already loaded in another classloader", filename);
 					}
+					Tracer.Info(Tracer.Jni, "Library loaded: {0}, handle = 0x{1:X}", filename, p.ToInt64());
 					IntPtr onload = ikvm_GetProcAddress(p, "JNI_OnLoad", IntPtr.Size * 2);
 					if(onload != IntPtr.Zero)
 					{
+						Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
 						JNI.Frame f = new JNI.Frame();
 						ClassLoaderWrapper prevLoader = f.Enter(loader);
 						int version = ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
@@ -530,6 +539,7 @@ namespace IKVM.Runtime
 
 		static VtableBuilder()
 		{
+			JNI.jvmCreated = true;
 			// JNIEnv
 			void** pmcpp = JniHelper.ikvm_GetJNIEnvVTable();
 			void** p = (void**)JniMem.Alloc(IntPtr.Size * vtableDelegates.Length);
@@ -2885,17 +2895,20 @@ namespace IKVM.Runtime
 				wrapper.Finish();
 				for(int i = 0; i < nMethods; i++)
 				{
-					string methodsig = StringFromUTF8(methods[i].signature);
+					string methodName = StringFromUTF8(methods[i].name);
+					string methodSig = StringFromUTF8(methods[i].signature);
+					Tracer.Info(Tracer.Jni, "Registering native method: {0}.{1}{2}, fnPtr = 0x{3:X}", wrapper.Name, methodName, methodSig, ((IntPtr)methods[i].fnPtr).ToInt64());
 					FieldInfo fi = null;
 					// don't allow dotted names!
-					if(methodsig.IndexOf('.') < 0)
+					if(methodSig.IndexOf('.') < 0)
 					{
 						// TODO this won't work when we're putting the JNI methods in jniproxy.dll
-						fi = wrapper.TypeAsTBD.GetField(JNI.METHOD_PTR_FIELD_PREFIX + StringFromUTF8(methods[i].name) + methodsig.Replace('/', '.') + ">", BindingFlags.Static | BindingFlags.NonPublic);
+						fi = wrapper.TypeAsTBD.GetField(JNI.METHOD_PTR_FIELD_PREFIX + methodName + methodSig, BindingFlags.Static | BindingFlags.NonPublic);
 					}
 					if(fi == null)
 					{
-						SetPendingException(pEnv, JavaException.NoSuchMethodError(StringFromUTF8(methods[i].name)));
+						Tracer.Error(Tracer.Jni, "Failed to register native method: {0}.{1}{2}", wrapper.Name, methodName, methodSig);
+						SetPendingException(pEnv, JavaException.NoSuchMethodError(methodName));
 						return JNI_ERR;
 					}
 					fi.SetValue(null, (IntPtr)methods[i].fnPtr);
@@ -2923,8 +2936,10 @@ namespace IKVM.Runtime
 				// TODO this won't work when we're putting the JNI methods in jniproxy.dll
 				foreach(FieldInfo fi in wrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.NonPublic))
 				{
-					if(fi.Name.StartsWith(JNI.METHOD_PTR_FIELD_PREFIX))
+					string name = fi.Name;
+					if(name.StartsWith(JNI.METHOD_PTR_FIELD_PREFIX))
 					{
+						Tracer.Info(Tracer.Jni, "Unregistering native method: {0}.{1}", wrapper.Name, name.Substring(JNI.METHOD_PTR_FIELD_PREFIX.Length));
 						fi.SetValue(null, IntPtr.Zero);
 					}
 				}

@@ -196,7 +196,9 @@ sealed class JavaException
 
 	internal static Exception UnsatisfiedLinkError(string s, params object[] args)
 	{
-		return JVM.Library.newUnsatisfiedLinkError(Format(s, args));
+		s = Format(s, args);
+		Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", s);
+		return JVM.Library.newUnsatisfiedLinkError(s);
 	}
 
 	internal static Exception IllegalArgumentException(string s, params object[] args)

@@ -542,6 +542,21 @@
 					<ret />
 				</body>
 			</clinit>
+			<method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public static" hidefromjava="true">
+				<body>
+					<ldarg_0 />
+					<call class="java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+					<ret />
+				</body>				
+			</method>
+			<method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;" modifiers="public static" hidefromjava="true">
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<call class="java.lang.ExceptionHelper" name="MapException" sig="(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;" />
+					<ret />
+				</body>				
+			</method>
 			<method name="readObject" sig="(Ljava.io.ObjectInputStream;)V" modifiers="private">
 				<throws class="java.io.IOException" />
 				<body>

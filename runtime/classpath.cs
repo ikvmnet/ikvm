@@ -106,11 +106,7 @@ namespace IKVM.NativeCode.java
 				{
 					MethodWrapper wrapper = (MethodWrapper)methodCookie;
 					TypeWrapper retType = wrapper.ReturnType;
-					// HACK we should have a better plan than this
-					if(retType.IsUnloadable)
-					{
-						retType = wrapper.DeclaringType.GetClassLoader().FieldTypeWrapperFromSig(retType.SigName);
-					}
+					retType = retType.EnsureLoadable(wrapper.DeclaringType.GetClassLoader());
 					return retType.ClassObject;
 				}
 
@@ -121,12 +117,7 @@ namespace IKVM.NativeCode.java
 					object[] parameterClasses = new object[parameters.Length];
 					for(int i = 0; i < parameters.Length; i++)
 					{
-						TypeWrapper paramType = parameters[i];
-						// HACK we should have a better plan than this
-						if(paramType.IsUnloadable)
-						{
-							paramType = wrapper.DeclaringType.GetClassLoader().FieldTypeWrapperFromSig(paramType.SigName);
-						}
+						TypeWrapper paramType = parameters[i].EnsureLoadable(wrapper.DeclaringType.GetClassLoader());
 						parameterClasses[i] = paramType.ClassObject;
 					}
 					return parameterClasses;
@@ -215,11 +206,7 @@ namespace IKVM.NativeCode.java
 				{
 					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
 					TypeWrapper fieldType = wrapper.FieldTypeWrapper;
-					// HACK we should have a better plan than this
-					if(fieldType.IsUnloadable)
-					{
-						fieldType = wrapper.DeclaringType.GetClassLoader().FieldTypeWrapperFromSig(fieldType.SigName);
-					}
+					fieldType = fieldType.EnsureLoadable(wrapper.DeclaringType.GetClassLoader());
 					return fieldType.ClassObject;
 				}
 
@@ -893,24 +880,13 @@ namespace IKVM.NativeCode.java
 							}
 							else if((methods[i].Name == "<init>") != getMethods)
 							{
-								if(methods[i].ReturnType.IsUnloadable)
+								if(!JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters)
 								{
-									// HACK we should have a better plan than this
-									if(wrapper.GetClassLoader().LoadClassByDottedNameFast(methods[i].ReturnType.Name) == null)
+									methods[i].ReturnType.EnsureLoadable(wrapper.GetClassLoader());
+									TypeWrapper[] args = methods[i].GetParameters();
+									for(int j = 0; j < args.Length; j++)
 									{
-										throw JavaException.NoClassDefFoundError(methods[i].ReturnType.Name);
-									}
-								}
-								TypeWrapper[] args = methods[i].GetParameters();
-								for(int j = 0; j < args.Length; j++)
-								{
-									if(args[j].IsUnloadable)
-									{
-										// HACK we should have a better plan than this
-										if(wrapper.GetClassLoader().LoadClassByDottedNameFast(args[j].Name) == null)
-										{
-											throw JavaException.NoClassDefFoundError(args[j].Name);
-										}
+										args[j].EnsureLoadable(wrapper.GetClassLoader());
 									}
 								}
 								list.Add(methods[i]);
@@ -954,14 +930,7 @@ namespace IKVM.NativeCode.java
 					// escape into the 'wild'
 					for(int i = 0; i < fields.Length; i++)
 					{
-						if(fields[i].FieldTypeWrapper.IsUnloadable)
-						{
-							// HACK we should have a better plan than this
-							if(wrapper.GetClassLoader().LoadClassByDottedNameFast(fields[i].FieldTypeWrapper.Name) == null)
-							{
-								throw JavaException.NoClassDefFoundError(fields[i].FieldTypeWrapper.Name);
-							}
-						}
+						fields[i].FieldTypeWrapper.EnsureLoadable(wrapper.GetClassLoader());
 					}
 					return fields;
 				}

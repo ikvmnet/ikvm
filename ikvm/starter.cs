@@ -352,21 +352,31 @@ public class Starter
 
 	private static Method FindMainMethod(java.lang.Class clazz)
 	{
-		while(clazz != null)
+		// HACK without this hack, clazz.getDeclaredMethods would throw a NoClassDefFoundError if any
+		// of the methods in the class had an unloadable parameter type, but we don't want that.
+		JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters = true;
+		try
 		{
-			foreach(Method m in clazz.getDeclaredMethods())
+			while(clazz != null)
 			{
-				if(m.getName() == "main" && m.getReturnType() == java.lang.Void.TYPE)
+				foreach(Method m in clazz.getDeclaredMethods())
 				{
-					java.lang.Class[] parameters = m.getParameterTypes();
-					if(parameters.Length == 1 && parameters[0] == java.lang.Class.forName("[Ljava.lang.String;"))
+					if(m.getName() == "main" && m.getReturnType() == java.lang.Void.TYPE)
 					{
-						return m;
+						java.lang.Class[] parameters = m.getParameterTypes();
+						if(parameters.Length == 1 && parameters[0] == java.lang.Class.forName("[Ljava.lang.String;"))
+						{
+							return m;
+						}
 					}
 				}
+				clazz = clazz.getSuperclass();
 			}
-			clazz = clazz.getSuperclass();
+			return null;
 		}
-		return null;
+		finally
+		{
+			JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters = false;
+		}
 	}
 }
