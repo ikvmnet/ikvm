@@ -378,7 +378,7 @@ namespace IKVM.Runtime
 			{
 				StackFrame frame = st.GetFrame(i);
 				Type type = frame.GetMethod().DeclaringType;
-				if(type != null)
+				if(type != null && type.Assembly != typeof(JniHelper).Assembly)
 				{
 					// TODO we need a more robust algorithm to find the "caller" (note that in addition to native methods,
 					// System.loadLibrary can also trigger executing native code)
