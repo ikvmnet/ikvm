@@ -2393,7 +2393,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				{
 					if(classObjectField == null)
 					{
-						classObjectField = typeBuilder.DefineField("__<classObject>", CoreClasses.java.lang.Class.Wrapper.TypeAsFieldType, FieldAttributes.Private | FieldAttributes.Static);
+						classObjectField = typeBuilder.DefineField("__<classObject>", typeof(object), FieldAttributes.Private | FieldAttributes.Static);
 						AttributeHelper.HideFromJava((FieldBuilder)classObjectField);
 					}
 					return classObjectField;
@@ -3161,7 +3161,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					FieldInfo classObjectField;
 					if(thruProxy)
 					{
-						classObjectField = typeBuilder.DefineField("__<classObject>", CoreClasses.java.lang.Class.Wrapper.TypeAsFieldType, FieldAttributes.Static | FieldAttributes.Private);
+						classObjectField = typeBuilder.DefineField("__<classObject>", typeof(object), FieldAttributes.Static | FieldAttributes.Private);
 					}
 					else
 					{

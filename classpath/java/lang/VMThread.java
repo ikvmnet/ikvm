@@ -52,7 +52,7 @@ final class VMThread
 	{
 	    // Setting runnable to false is partial protection against stop
 	    // being called while we're cleaning up. To be safe all code in
-	    // VMThread be unstoppable.
+	    // VMThread should be unstoppable.
 	    running = false;
 	    cleanup();
 	}
@@ -358,6 +358,11 @@ final class VMThread
 	    if(nativeThread != null)
 	    {
 		nativeThread.Abort(t);
+		int suspend = cli.System.Threading.ThreadState.Suspended | cli.System.Threading.ThreadState.SuspendRequested;
+		if((nativeThread.get_ThreadState().Value & suspend) != 0)
+		{
+		    nativeThread.Resume();
+		}
 	    }
 	}
     }
@@ -386,8 +391,6 @@ final class VMThread
 	Thread javaThread = (Thread)cli.System.Threading.Thread.GetData(localDataStoreSlot);
 	if(javaThread == null)
 	{
-	    // threads created outside of Java always run in the root thread group
-	    // TODO if the thread dies, it needs to be removed from the root ThreadGroup
 	    cli.System.Threading.Thread nativeThread = cli.System.Threading.Thread.get_CurrentThread();
 	    VMThread vmThread = new VMThread(null);
 	    vmThread.nativeThreadReference = new cli.System.WeakReference(nativeThread);
@@ -422,6 +425,7 @@ final class VMThread
 	    vmThread.thread = javaThread;
 	    cli.System.Threading.Thread.SetData(localDataStoreSlot, javaThread);
 	    cli.System.Threading.Thread.SetData(cli.System.Threading.Thread.GetNamedDataSlot("ikvm-thread-hack"), new CleanupHack(javaThread));
+	    // HACK JNI code can attach native threads to any thread group
 	    ThreadGroup group = (ThreadGroup)cli.System.Threading.Thread.GetData(cli.System.Threading.Thread.GetNamedDataSlot("ikvm-thread-group"));
 	    javaThread.group = group == null ? ThreadGroup.root : group;
 	    javaThread.group.addThread(javaThread);
