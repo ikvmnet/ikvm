@@ -253,7 +253,7 @@ class ClassLoaderWrapper
 					type = LoadClassByDottedNameFast(elemClass);
 					if(type != null)
 					{
-						type = type.GetClassLoader().CreateArrayType(name, type.TypeAsArrayType, dims);
+						type = type.GetClassLoader().CreateArrayType(name, type, dims);
 					}
 					return type;
 				}
@@ -265,21 +265,21 @@ class ClassLoaderWrapper
 				switch(name[dims])
 				{
 					case 'B':
-						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BYTE.TypeAsArrayType, dims);
+						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BYTE, dims);
 					case 'C':
-						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.CHAR.TypeAsArrayType, dims);
+						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.CHAR, dims);
 					case 'D':
-						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE.TypeAsArrayType, dims);
+						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE, dims);
 					case 'F':
-						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.FLOAT.TypeAsArrayType, dims);
+						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.FLOAT, dims);
 					case 'I':
-						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.INT.TypeAsArrayType, dims);
+						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.INT, dims);
 					case 'J':
-						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.LONG.TypeAsArrayType, dims);
+						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.LONG, dims);
 					case 'S':
-						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.SHORT.TypeAsArrayType, dims);
+						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.SHORT, dims);
 					case 'Z':
-						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN.TypeAsArrayType, dims);
+						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN, dims);
 					default:
 						return null;
 				}
@@ -488,8 +488,9 @@ class ClassLoaderWrapper
 		return null;
 	}
 
-	private TypeWrapper CreateArrayType(string name, Type elementType, int dims)
+	private TypeWrapper CreateArrayType(string name, TypeWrapper elementTypeWrapper, int dims)
 	{
+		Type elementType = elementTypeWrapper.TypeAsArrayType;
 		Debug.Assert(!elementType.IsArray);
 		lock(types.SyncRoot)
 		{
@@ -526,12 +527,10 @@ class ClassLoaderWrapper
 					array = elementType.Assembly.GetType(elementType.FullName + netname, true);
 				}
 				Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
-				// TODO taking the visibility from the .NET isn't 100% correct, we really should look at the wrapper
-				if(DotNetTypeWrapper.IsVisible(elementType))
-				{
-					modifiers |= Modifiers.Public;
-				}
-				wrapper = new ArrayTypeWrapper(array, modifiers, name, this);
+				Modifiers reflectiveModifiers = modifiers;
+				modifiers |= elementTypeWrapper.Modifiers & Modifiers.Public;
+				reflectiveModifiers |= elementTypeWrapper.ReflectiveModifiers & Modifiers.AccessMask;
+				wrapper = new ArrayTypeWrapper(array, modifiers, reflectiveModifiers, name, this);
 				Debug.Assert(!types.ContainsKey(name));
 				types.Add(name, wrapper);
 				if(!(elementType is TypeBuilder) && !wrapper.IsGhostArray)

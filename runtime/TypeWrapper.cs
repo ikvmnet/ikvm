@@ -5977,12 +5977,13 @@ sealed class ArrayTypeWrapper : TypeWrapper
 	private static TypeWrapper[] interfaces;
 	private static MethodInfo clone;
 	private Type type;
+	private Modifiers reflectiveModifiers;
 
-	// TODO what's the protection domain of an array type?
-	internal ArrayTypeWrapper(Type type, Modifiers modifiers, string name, ClassLoaderWrapper classLoader)
+	internal ArrayTypeWrapper(Type type, Modifiers modifiers, Modifiers reflectiveModifiers, string name, ClassLoaderWrapper classLoader)
 		: base(modifiers, name, CoreClasses.java.lang.Object.Wrapper, classLoader, null)
 	{
 		this.type = type;
+		this.reflectiveModifiers = reflectiveModifiers;
 		if(clone == null)
 		{
 			clone = typeof(Array).GetMethod("Clone");
@@ -5990,6 +5991,14 @@ sealed class ArrayTypeWrapper : TypeWrapper
 		MethodWrapper mw = new SimpleCallMethodWrapper(this, new MethodDescriptor("clone", "()Ljava.lang.Object;"), clone, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Public, true, OpCodes.Callvirt, OpCodes.Callvirt);
 		mw.Link();
 		AddMethod(mw);
+	}
+
+	internal override Modifiers ReflectiveModifiers
+	{
+		get
+		{
+			return reflectiveModifiers;
+		}
 	}
 
 	internal override Assembly Assembly

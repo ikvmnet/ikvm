@@ -263,7 +263,10 @@ namespace IKVM.Attributes
 		Native			= 0x0100,
 		Interface		= 0x0200,
 		Abstract		= 0x0400,
-		Strictfp		= 0x0800
+		Strictfp		= 0x0800,
+
+		// Masks
+		AccessMask		= Public | Private | Protected
 	}
 
 	[AttributeUsage(AttributeTargets.All)]
