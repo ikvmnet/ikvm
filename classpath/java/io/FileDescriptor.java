@@ -89,22 +89,49 @@ public final class FileDescriptor
 	{
 		// HACK for some reason Java accepts: \c:\foo.txt
 		// I don't know what else, but for now lets just support this
-		if(path.length() > 3 && path.charAt(0) == '\\' && path.charAt(2) == ':')
+		if(path.length() > 3 && (path.charAt(0) == '\\' || path.charAt(0) == '/') && path.charAt(2) == ':')
 		{
 			path = path.substring(1);
 		}
 		return path;
 	}
 
-	static FileDescriptor open(String name, boolean append, boolean create, boolean read, boolean write) throws FileNotFoundException
+	static final int Append = 0;	// FileMode.Append, FileAccess.Write (FileOutputStream(append = true))
+	static final int Write = 1;		// FileMode.Create, FileAccess.Write (FileOutputStream(append = false))
+	static final int Read = 2;		// FileMode.Open, FileAccess.Read (FileInputStream, RandomAccessFile("r"))
+	static final int ReadWrite = 3; // FileMode.OpenOrCreate, FileAccess.ReadWrite (RandomAccessFile("rw"))
+
+	static FileDescriptor open(String name, int mode) throws FileNotFoundException
 	{
 		try
 		{
+			int fileMode;
+			int fileAccess;
+			switch(mode)
+			{
+				case Append:
+					fileMode = FileMode.Append;
+					fileAccess = FileAccess.Write;
+					break;
+				case Write:
+					fileMode = FileMode.Create;
+					fileAccess = FileAccess.Write;
+					break;
+				case Read:
+					fileMode = FileMode.Open;
+					fileAccess = FileAccess.Read;
+					break;
+				case ReadWrite:
+					fileMode = FileMode.OpenOrCreate;
+					fileAccess = FileAccess.ReadWrite;
+					break;
+				default:
+					throw new Error("Invalid mode: " + mode);
+			}
 			if(false) throw new system.io.IOException();
 			if(false) throw new system.security.SecurityException();
-			FileStream fs = system.io.File.Open(demanglePath(name),
-				append ? FileMode.Append : (create ? FileMode.OpenOrCreate : FileMode.Open),
-				write ? (read ? FileAccess.ReadWrite : FileAccess.Write) : FileAccess.Read, FileShare.ReadWrite);
+			if(false) throw new system.UnauthorizedAccessException();
+			FileStream fs = system.io.File.Open(demanglePath(name), fileMode, fileAccess, FileShare.ReadWrite);
 			return new FileDescriptor(fs);
 		}
 		catch(system.security.SecurityException x1)
@@ -114,6 +141,11 @@ public final class FileDescriptor
 		catch(system.io.IOException x2)
 		{
 			throw new FileNotFoundException(x2.get_Message());
+		}
+		catch(system.UnauthorizedAccessException x3)
+		{
+			// this is caused by "name" being a directory instead of a file
+			throw new FileNotFoundException(x3.get_Message());
 		}
 		// TODO map al the other exceptions as well...
 	}

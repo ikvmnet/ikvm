@@ -153,7 +153,7 @@ RandomAccessFile(File file, String mode) throws IllegalArgumentException,
   if (mode.equals("r"))
     read_only = true;
 
-	fd = FileDescriptor.open(file.getPath(), false, !read_only, true, !read_only);
+	fd = FileDescriptor.open(file.getPath(), read_only ? FileDescriptor.Read : FileDescriptor.ReadWrite);
 }
 
 /*************************************************************************/

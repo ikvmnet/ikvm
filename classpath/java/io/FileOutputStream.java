@@ -166,7 +166,7 @@ FileOutputStream(String name, boolean append) throws SecurityException,
 //        }
     }
 
-  fd = FileDescriptor.open((new File(name)).getAbsolutePath(), append, true, false, true);
+  fd = FileDescriptor.open((new File(name)).getAbsolutePath(), append ? FileDescriptor.Append : FileDescriptor.Write);
 }
 
 /*************************************************************************/

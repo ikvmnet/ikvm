@@ -127,7 +127,7 @@ FileInputStream(File file) throws SecurityException, FileNotFoundException
   if (!file.exists())
     throw new FileNotFoundException(file.getName());
 
-  fd = FileDescriptor.open(file.getPath(), false, false, true, false);
+  fd = FileDescriptor.open(file.getPath(), FileDescriptor.Read);
 }
 
 /*************************************************************************/
