@@ -352,7 +352,8 @@ public unsafe struct IkvmJNIEnv {
 			Delegate invokemethod_func,
 			Delegate getmethodarglist_func,
 			Delegate findclass_func,
-			Delegate getjnienv_func);
+			Delegate getjnienv_func,
+			Delegate allocobject_func);
 
 	[DllImport("mono-ikvm-jni")]
 		public extern static void mono_jni_set_jnifunc (int index, Delegate func);
@@ -378,7 +379,8 @@ public unsafe struct IkvmJNIEnv {
 			new InvokeMethodDelegate (InvokeMethod),
 			new GetMethodArgListDelegate (GetMethodArgList),
 			new FindClassDelegate (FindClass),
-			new GetJniEnvDelegate (GetJniEnv));
+			new GetJniEnvDelegate (GetJniEnv),
+			new AllocObjectDelegate (JniHelper.AllocObject));
 
 		the_func_table = mono_jni_get_func_table ();
 	}
@@ -557,4 +559,6 @@ public unsafe struct IkvmJNIEnv {
 	public static unsafe IntPtr GetJniEnv () {
 		return current.GetEnvPtr ();
 	}
+
+	public delegate object AllocObjectDelegate (object clazz);
 }
