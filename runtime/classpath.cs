@@ -797,7 +797,18 @@ namespace IKVM.NativeCode.java
 				{
 					return JVM.Library.getSystemClassLoader();
 				}
-				return ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader().GetJavaClassLoader();
+				else if(type.Module is System.Reflection.Emit.ModuleBuilder)
+				{
+					return ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader().GetJavaClassLoader();
+				}
+				else if(ClassLoaderWrapper.IsCoreAssemblyType(type))
+				{
+					return null;
+				}
+				else
+				{
+					return JVM.Library.getSystemClassLoader();
+				}
 			}
 
 			public static object[] GetDeclaredMethods(object cwrapper, bool getMethods, bool publicOnly)

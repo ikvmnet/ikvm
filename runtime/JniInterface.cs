@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -152,6 +152,19 @@ namespace IKVM.Runtime
 			private object[] quickLocals;
 			private int quickLocalIndex;
 			private int prevLocalRefSlot;
+
+			internal ClassLoaderWrapper Enter(ClassLoaderWrapper loader)
+			{
+				Enter(new RuntimeMethodHandle());
+				ClassLoaderWrapper prev = (ClassLoaderWrapper)pJNIEnv->classLoader.Target;
+				pJNIEnv->classLoader.Target = loader;
+				return prev;
+			}
+
+			internal void Leave(ClassLoaderWrapper prev)
+			{
+				pJNIEnv->classLoader.Target = prev;
+			}
 
 			public IntPtr Enter(RuntimeMethodHandle method)
 			{
@@ -428,9 +441,9 @@ namespace IKVM.Runtime
 					if(onload != IntPtr.Zero)
 					{
 						JNI.Frame f = new JNI.Frame();
-						f.Enter(m.MethodHandle);
+						ClassLoaderWrapper prevLoader = f.Enter(loader);
 						int version = ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
-						f.Leave();
+						f.Leave(prevLoader);
 						if(!JavaVM.IsSupportedJniVersion(version))
 						{
 							throw JavaException.UnsatisfiedLinkError("Unsupported JNI version 0x{0:X} required by {1}", version, filename);
@@ -1019,6 +1032,7 @@ namespace IKVM.Runtime
 		internal int localRefSlot;
 		internal IntPtr pendingException;
 		internal RuntimeMethodHandle currentMethod;
+		internal GCHandle classLoader;
 		private static LocalDataStoreSlot cleanupHelperDataSlot = System.Threading.Thread.AllocateDataSlot();
 
 		unsafe class JNIEnvCleanupHelper
@@ -1033,6 +1047,7 @@ namespace IKVM.Runtime
 			~JNIEnvCleanupHelper()
 			{
 				pJNIEnv->localRefs.Free();
+				pJNIEnv->classLoader.Free();
 				JniMem.Free((IntPtr)(void*)pJNIEnv);
 			}
 		}
@@ -1051,6 +1066,7 @@ namespace IKVM.Runtime
 			pJNIEnv->localRefSlot = 0;
 			pJNIEnv->pendingException = IntPtr.Zero;
 			pJNIEnv->currentMethod = new RuntimeMethodHandle();
+			pJNIEnv->classLoader = GCHandle.Alloc(null);
 			return pJNIEnv;
 		}
 
@@ -1231,6 +1247,10 @@ namespace IKVM.Runtime
 						}
 					}
 				}
+			}
+			if(pEnv->classLoader.Target != null)
+			{
+				return (ClassLoaderWrapper)pEnv->classLoader.Target;
 			}
 			return ClassLoaderWrapper.GetSystemClassLoader();
 		}

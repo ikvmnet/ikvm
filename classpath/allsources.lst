@@ -1,8 +1,8 @@
-gnu/classpath/VMSystemProperties.java
 ikvm/internal/LibraryVMInterface.java
 ikvm/lang/CIL.java
 gnu/classpath/Configuration.java
 gnu/classpath/RawData.java
+gnu/classpath/VMSystemProperties.java
 gnu/java/nio/channels/FileChannelImpl.java
 gnu/java/net/protocol/ikvmres/Handler.java
 gnu/java/net/PlainSocketImpl.java
@@ -93,6 +93,8 @@ sun/misc/Ref.java
 ../../classpath/gnu/java/beans/decoder/StaticMethodContext.java
 ../../classpath/gnu/java/beans/decoder/StringHandler.java
 ../../classpath/gnu/java/beans/decoder/VoidHandler.java
+../../classpath/gnu/java/beans/DummyAppletContext.java
+../../classpath/gnu/java/beans/DummyAppletStub.java
 ../../classpath/gnu/java/beans/editors/ColorEditor.java
 ../../classpath/gnu/java/beans/editors/FontEditor.java
 ../../classpath/gnu/java/beans/editors/NativeBooleanEditor.java
@@ -313,6 +315,7 @@ sun/misc/Ref.java
 ../../classpath/gnu/java/locale/LocaleInformation_ml.java
 ../../classpath/gnu/java/locale/LocaleInformation_ml_IN.java
 ../../classpath/gnu/java/locale/LocaleInformation_mn.java
+../../classpath/gnu/java/locale/LocaleInformation_mn_MN.java
 ../../classpath/gnu/java/locale/LocaleInformation_mr.java
 ../../classpath/gnu/java/locale/LocaleInformation_mr_IN.java
 ../../classpath/gnu/java/locale/LocaleInformation_ms.java
