@@ -918,13 +918,17 @@ namespace NativeCode.java
 
 			public static object loadBootstrapClass(string name, bool initialize)
 			{
-				TypeWrapper type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(name);
-				type.Finish();
-				if(initialize)
+				TypeWrapper type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
+				if(type != null)
 				{
-					RuntimeHelpers.RunClassConstructor(type.Type.TypeHandle);
+					if(initialize)
+					{
+						type.Finish();
+						RuntimeHelpers.RunClassConstructor(type.Type.TypeHandle);
+					}
+					return getClassFromWrapper(type);
 				}
-				return getClassFromType(type.Type);
+				return null;
 			}
 
 			internal static object CreateInstance(Type type, TypeWrapper wrapper)
@@ -1685,8 +1689,13 @@ namespace NativeCode.java
 		{
 			public static string getDefaultTimeZoneId()
 			{
-				// HACK return null, classpath then assumes GMT, which is fine by me, for the time being
-				return null;
+				NetSystem.TimeZone currentTimeZone = NetSystem.TimeZone.CurrentTimeZone;
+				NetSystem.TimeSpan timeSpan = currentTimeZone.GetUtcOffset(DateTime.Now);
+
+				int hours = timeSpan.Hours;
+				int mins = timeSpan.Minutes;
+
+				return "GMT" + hours + ":" + mins;
 			}
 		}
 	}

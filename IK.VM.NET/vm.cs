@@ -34,6 +34,7 @@ public class JVM
 	private static bool debug = false;
 	private static bool noJniStubs = false;
 	private static bool isStaticCompiler = false;
+	private static bool logClassLoadFailures = false;
 	private static IJniProvider jniProvider;
 
 	public static bool Debug
@@ -61,6 +62,18 @@ public class JVM
 		get
 		{
 			return isStaticCompiler;
+		}
+	}
+
+	public static bool LogClassLoadFailures
+	{
+		get
+		{
+			return logClassLoadFailures;
+		}
+		set
+		{
+			logClassLoadFailures = value;
 		}
 	}
 
@@ -222,7 +235,7 @@ public class JVM
 		{
 			Assembly.LoadFrom(r);
 		}
-		Console.WriteLine("Loading remapped types");
+		Console.WriteLine("Loading remapped types (1)");
 		loader.LoadRemappedTypes();
 		Console.WriteLine("Compiling class files (1)");
 		foreach(string s in h.Keys)
@@ -253,6 +266,8 @@ public class JVM
 				loader.SetMain(method, target);
 			}
 		}
+		Console.WriteLine("Loading remapped types (2)");
+		loader.LoadRemappedTypesStep2();
 		Console.WriteLine("Compiling class files (2)");
 		loader.AddResources(resources);
 		loader.Save();

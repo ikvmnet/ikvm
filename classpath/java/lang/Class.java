@@ -171,8 +171,11 @@ public final class Class implements Serializable
 	public static Class forName(String name)
 		throws ClassNotFoundException
 	{
-		return forName(name, true,
-			VMSecurityManager.getClassContext()[1].getClassLoader());
+		// if we ever get back to using a separate assembly for each class loader, it
+		// might be faster to use Assembly.GetCallingAssembly here...
+		system.diagnostics.StackFrame frame = new system.diagnostics.StackFrame(1);
+		ClassLoader cl = getClassLoader0(frame.GetMethod().get_DeclaringType());
+		return forName(name, true, cl);
 	}
 
 	/**
@@ -209,10 +212,6 @@ public final class Class implements Serializable
 			if(c == null)
 			{
 				throw new ClassNotFoundException(name);
-			}
-			if(initialize)
-			{
-				initializeType(c.getType());
 			}
 			return c;
 		}

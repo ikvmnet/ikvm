@@ -1,31 +1,54 @@
-/*
-  Copyright (C) 2002 Jeroen Frijters
+/* FileDescriptor.java -- Opaque file handle class
+   Copyright (C) 1998,2003 Free Software Foundation, Inc.
 
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
+This file is part of GNU Classpath.
 
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
+GNU Classpath is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
+ 
+GNU Classpath is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
 
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
+You should have received a copy of the GNU General Public License
+along with GNU Classpath; see the file COPYING.  If not, write to the
+Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+02111-1307 USA.
 
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
+Linking this library statically or dynamically with other modules is
+making a combined work based on this library.  Thus, the terms and
+conditions of the GNU General Public License cover the whole
+combination.
+
+As a special exception, the copyright holders of this library give you
+permission to link this library with independent modules to produce an
+executable, regardless of the license terms of these independent
+modules, and to copy and distribute the resulting executable under
+terms of your choice, provided that you also meet, for each linked
+independent module, the terms and conditions of the license of that
+module.  An independent module is a module which is not derived from
+or based on this library.  If you modify this library, you may extend
+this exception to your version of the library, but you are not
+obligated to do so.  If you do not wish to do so, delete this
+exception statement from your version. */
+
+
 package java.io;
 
 import system.Console;
 import system.io.*;
 
+/**
+  * This class represents an opaque file handle as a Java class.  It should
+  * be used only to pass to other methods that expect an object of this
+  * type.  No system specific information can be obtained from this object.
+  *
+  * @author Aaron M. Renn (arenn@urbanophile.com)
+  * @author Jeroen Frijters (jeroen@sumatra.nl)
+  */
 public final class FileDescriptor
 {
 	public static final FileDescriptor in = new FileDescriptor(Console.OpenStandardInput());
@@ -96,43 +119,57 @@ public final class FileDescriptor
 		return path;
 	}
 
-	static final int Append = 0;	// FileMode.Append, FileAccess.Write (FileOutputStream(append = true))
-	static final int Write = 1;		// FileMode.Create, FileAccess.Write (FileOutputStream(append = false))
-	static final int Read = 2;		// FileMode.Open, FileAccess.Read (FileInputStream, RandomAccessFile("r"))
-	static final int ReadWrite = 3; // FileMode.OpenOrCreate, FileAccess.ReadWrite (RandomAccessFile("rw"))
-
-	static FileDescriptor open(String name, int mode) throws FileNotFoundException
+	synchronized void open(String path, String mode) throws IOException
 	{
+		if(stream != null)
+			throw new IOException("FileDescriptor already open");
+		if ((path == null) || path.equals(""))
+			throw new IllegalArgumentException("Path cannot be null");
 		try
 		{
 			int fileMode;
 			int fileAccess;
-			switch(mode)
+			if(mode.equals("r"))
 			{
-				case Append:
-					fileMode = FileMode.Append;
-					fileAccess = FileAccess.Write;
-					break;
-				case Write:
-					fileMode = FileMode.Create;
-					fileAccess = FileAccess.Write;
-					break;
-				case Read:
-					fileMode = FileMode.Open;
-					fileAccess = FileAccess.Read;
-					break;
-				case ReadWrite:
-					fileMode = FileMode.OpenOrCreate;
-					fileAccess = FileAccess.ReadWrite;
-					break;
-				default:
-					throw new Error("Invalid mode: " + mode);
+				fileMode = FileMode.Open;
+				fileAccess = FileAccess.Read;
+			}
+			else if(mode.equals("rw"))
+			{
+				fileMode = FileMode.OpenOrCreate;
+				fileAccess = FileAccess.ReadWrite;
+			}
+			else if(mode.equals("rws") || mode.equals("rwd"))
+			{
+				// TODO implement this
+				throw new IllegalArgumentException("rws and rwd not implemented");
+				//fileMode = FileMode.OpenOrCreate;
+				//fileAccess = FileAccess.ReadWrite;
+			}
+			else if(mode.equals("rwa"))
+			{
+				// TODO this is a bogus mode
+				fileMode = FileMode.Append;
+				fileAccess = FileAccess.ReadWrite;
+			}
+			else if(mode.equals("w"))
+			{
+				fileMode = FileMode.Create;
+				fileAccess = FileAccess.Write;
+			}
+			else if(mode.equals("a"))
+			{
+				fileMode = FileMode.Append;
+				fileAccess = FileAccess.Write;
+			}
+			else
+			{
+				throw new IllegalArgumentException("Invalid mode value: " + mode);
 			}
 			if(false) throw new system.io.IOException();
 			if(false) throw new system.security.SecurityException();
 			if(false) throw new system.UnauthorizedAccessException();
-			FileStream fs = system.io.File.Open(demanglePath(name), fileMode, fileAccess, FileShare.ReadWrite);
-			return new FileDescriptor(fs);
+			stream = system.io.File.Open(demanglePath(path), fileMode, fileAccess, FileShare.ReadWrite);
 		}
 		catch(system.security.SecurityException x1)
 		{
@@ -153,9 +190,8 @@ public final class FileDescriptor
 	synchronized long getFilePointer() throws IOException
 	{
 		if(stream == null)
-		{
-			throw new IOException();
-		}
+			throw new IOException("Invalid FileDescriptor");
+
 		try
 		{
 			if(false) throw new system.io.IOException();
@@ -171,9 +207,8 @@ public final class FileDescriptor
 	synchronized long getLength() throws IOException
 	{
 		if(stream == null)
-		{
-			throw new IOException();
-		}
+			throw new IOException("Invalid FileDescriptor");
+
 		try
 		{
 			if(false) throw new system.io.IOException();
@@ -186,16 +221,19 @@ public final class FileDescriptor
 		// TODO map al the other exceptions as well...
 	}
 
-	synchronized void setLength(long length) throws IOException
+	synchronized void setLength(long len) throws IOException
 	{
 		if(stream == null)
-		{
-			throw new IOException();
-		}
+			throw new IOException("Invalid FileDescriptor");
+
+		if (len < 0)
+			throw new IllegalArgumentException("Length cannot be less than zero " +
+				len);
+
 		try
 		{
 			if(false) throw new system.io.IOException();
-			stream.SetLength(length);
+			stream.SetLength(len);
 		}
 		catch(system.io.IOException x)
 		{
@@ -204,16 +242,27 @@ public final class FileDescriptor
 		// TODO map al the other exceptions as well...
 	}
 
-	synchronized void seek(long pos) throws IOException
+	static final int SET = SeekOrigin.Begin;
+	static final int CUR = SeekOrigin.Current;
+	static final int END = SeekOrigin.End;
+
+	synchronized long seek(long offset, int whence, boolean stopAtEof) throws IOException
 	{
 		if(stream == null)
-		{
-			throw new IOException();
-		}
+			throw new IOException("Invalid FileDescriptor");
+
+		if ((whence != SET) && (whence != CUR) && (whence != END))
+			throw new IllegalArgumentException("Invalid whence value: " + whence);
+
 		try
 		{
 			if(false) throw new system.io.IOException();
-			stream.Seek(pos, SeekOrigin.Begin);
+			long newpos = stream.Seek(offset, whence);
+			if(stopAtEof && newpos > stream.get_Length())
+			{
+				newpos = stream.Seek(0, SeekOrigin.End);
+			}
+			return newpos;
 		}
 		catch(system.io.IOException x)
 		{
@@ -222,16 +271,15 @@ public final class FileDescriptor
 		// TODO map al the other exceptions as well...
 	}
 
-	synchronized int read(byte[] buf, int offset, int length) throws IOException
+	synchronized int read() throws IOException
 	{
 		if(stream == null)
-		{
-			throw new IOException();
-		}
+			throw new IOException("Invalid FileDescriptor");
+
 		try
 		{
 			if(false) throw new system.io.IOException();
-			return stream.Read(buf, offset, length);
+			return stream.ReadByte();
 		}
 		catch(system.io.IOException x)
 		{
@@ -240,16 +288,29 @@ public final class FileDescriptor
 		// TODO map al the other exceptions as well...
 	}
 
-	synchronized void write(byte[] buf, int offset, int length) throws IOException
+	synchronized int read(byte[] buf, int offset, int len) throws IOException
 	{
 		if(stream == null)
-		{
-			throw new IOException();
-		}
+			throw new IOException("Invalid FileDescriptor");
+
+		if (len == 0)
+			return(0);
+
+		if ((offset < 0) || (offset > buf.length))
+			throw new IllegalArgumentException("Offset invalid: " + offset);
+
+		if ((len < 0) || (len > (buf.length - offset)))
+			throw new IllegalArgumentException("Length invalid: " + len);
+
 		try
 		{
 			if(false) throw new system.io.IOException();
-			stream.Write(buf, offset, length);
+			int count = stream.Read(buf, offset, len);
+			if(count == 0)
+			{
+				count = -1;
+			}
+			return count;
 		}
 		catch(system.io.IOException x)
 		{
@@ -258,19 +319,16 @@ public final class FileDescriptor
 		// TODO map al the other exceptions as well...
 	}
 
-	synchronized long skip(long n) throws IOException
+	synchronized void write(int b) throws IOException
 	{
 		if(stream == null)
 		{
-			throw new IOException();
+			throw new IOException("Invalid FileDescriptor");
 		}
 		try
 		{
 			if(false) throw new system.io.IOException();
-			// TODO this is broken, because non-seekable streams should support skip as well...
-			// (and I don't think we should seek past EOF here)
-			stream.Seek(n, SeekOrigin.Current);
-			return n;
+			stream.WriteByte((byte)b);
 		}
 		catch(system.io.IOException x)
 		{
@@ -278,4 +336,45 @@ public final class FileDescriptor
 		}
 		// TODO map al the other exceptions as well...
 	}
-}
+
+	synchronized void write(byte[] buf, int offset, int len) throws IOException
+	{
+		if(stream == null)
+			throw new IOException("Invalid FileDescriptor");
+
+		if (len == 0)
+			return;
+
+		if ((offset < 0) || (offset > buf.length))
+			throw new IllegalArgumentException("Offset invalid: " + offset);
+
+		if ((len < 0) || (len > (buf.length - offset)))
+			throw new IllegalArgumentException("Length invalid: " + len);
+
+		try
+		{
+			if(false) throw new system.io.IOException();
+			stream.Write(buf, offset, len);
+		}
+		catch(system.io.IOException x)
+		{
+			throw new IOException(x.get_Message());
+		}
+		// TODO map al the other exceptions as well...
+	}
+
+	synchronized int available() throws IOException
+	{
+		if(stream == null)
+			throw new IOException("Invalid FileDescriptor");
+
+		// TODO might need to implement this
+		return 0;
+	}
+
+	long getNativeFd()
+	{
+		throw new Error("getNativeFd not supported");
+	}
+
+} // class FileDescriptor

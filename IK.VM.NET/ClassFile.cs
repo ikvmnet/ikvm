@@ -627,10 +627,13 @@ class ClassFile
 		{
 			return classLoader.LoadClassBySlashedName(name);
 		}
-		catch(Exception)
+		catch(Exception x)
 		{
-			// TODO consider what to do with this error, may be a command line switch?
 			// TODO it might not be a good idea to catch .NET system exceptions here
+			if(JVM.LogClassLoadFailures)
+			{
+				Console.Error.WriteLine(x);
+			}
 			return new UnloadableTypeWrapper(name);
 		}
 	}

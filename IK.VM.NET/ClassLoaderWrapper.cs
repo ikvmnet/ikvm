@@ -127,7 +127,7 @@ class ClassLoaderWrapper
 	internal void LoadRemappedTypes()
 	{
 		nativeMethods = new Hashtable();
-		// NOTE interfaces have *not* java/lang/Object as the base type (even though they do in the class file)
+		// NOTE interfaces do *not* have java/lang/Object as the base type (even though they do in the class file)
 		types["java.lang.Cloneable"] = new RemappedTypeWrapper(this, ModifiersAttribute.GetModifiers(typeof(java.lang.Cloneable)), "java/lang/Cloneable", typeof(java.lang.Cloneable), new TypeWrapper[0], null);
 		typeToTypeWrapper.Add(typeof(java.lang.Cloneable), types["java.lang.Cloneable"]);
 		types["java.io.Serializable"] = new RemappedTypeWrapper(this, ModifiersAttribute.GetModifiers(typeof(java.io.Serializable)), "java/io/Serializable", typeof(java.io.Serializable), new TypeWrapper[0], null);
@@ -152,6 +152,11 @@ class ClassLoaderWrapper
 			types.Add(name, tw);
 			typeToTypeWrapper.Add(tw.Type, tw);
 		}
+	}
+
+	internal void LoadRemappedTypesStep2()
+	{
+		MapXml.Root map = MapXmlGenerator.Generate();
 		foreach(MapXml.Class c in map.remappings)
 		{
 			((RemappedTypeWrapper)types[c.Name]).LoadRemappings(c);
@@ -175,8 +180,18 @@ class ClassLoaderWrapper
 		return LoadClassByDottedName(name.Replace('/', '.'));
 	}
 
-	// TODO implement vmspec 5.3.4 Loading Constraints
 	internal TypeWrapper LoadClassByDottedName(string name)
+	{
+		TypeWrapper type = LoadClassByDottedNameFast(name);
+		if(type != null)
+		{
+			return type;
+		}
+		throw JavaException.ClassNotFoundException(name);
+	}
+
+	// TODO implement vmspec 5.3.4 Loading Constraints
+	internal TypeWrapper LoadClassByDottedNameFast(string name)
 	{
 		if(name == null)
 		{
@@ -222,8 +237,7 @@ class ClassLoaderWrapper
 					case 'Z':
 						return GetBootstrapClassLoader().CreateArrayType(name, typeof(bool), dims);
 					default:
-						// TODO I'm not sure this is the right exception here (instead we could throw a NoClassDefFoundError)
-						throw JavaException.ClassNotFoundException(name);
+						return null;
 				}
 			}
 			if(this == GetBootstrapClassLoader())
@@ -247,7 +261,7 @@ class ClassLoaderWrapper
 				}
 				if(javaClassLoader == null)
 				{
-					throw JavaException.ClassNotFoundException(name);
+					return null;
 				}
 			}
 			// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
@@ -755,6 +769,7 @@ class ClassLoaderWrapper
 		{
 			bootstrapClassLoader = new ClassLoaderWrapper(null);
 			bootstrapClassLoader.LoadRemappedTypes();
+			bootstrapClassLoader.LoadRemappedTypesStep2();
 		}
 		return bootstrapClassLoader;
 	}

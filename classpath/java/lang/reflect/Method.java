@@ -175,27 +175,6 @@ public final class Method extends AccessibleObject implements Member
 	 */
 	public boolean equals(Object o)
 	{
-		// Implementation note:
-		// The following is a correct but possibly slow implementation.
-		//
-		// This class has a private field 'slot' that could be used by
-		// the VM implementation to "link" a particular method to a Class.
-		// In that case equals could be simply implemented as:
-		//
-		// if (o instanceof Method)
-		// {
-		//    Method m = (Method)o;
-		//    return m.declaringClass == this.declaringClass
-		//           && m.slot == this.slot;
-		// }
-		// return false;
-		//
-		// If a VM uses the Method class as their native/internal representation
-		// then just using the following would be optimal:
-		//
-		// return return this == o;
-		//
-
 		if (!(o instanceof Method))
 			return false;
 
@@ -204,6 +183,9 @@ public final class Method extends AccessibleObject implements Member
 			return false;
 
 		if(declaringClass != m.declaringClass)
+			return false;
+
+		if(getReturnType() != m.getReturnType())
 			return false;
 
 		Class[] params1 = getParameterTypes();

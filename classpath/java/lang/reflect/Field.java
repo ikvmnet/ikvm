@@ -134,19 +134,27 @@ public final class Field extends AccessibleObject implements Member
 	/**
 	 * Compare two objects to see if they are semantically equivalent.
 	 * Two Fields are semantically equivalent if they have the same declaring
-	 * class, name, and type. Since you can't creat a Field except through
-	 * the VM, this is just the == relation.
+	 * class, name, and type.
 	 *
 	 * @param o the object to compare to
 	 * @return <code>true</code> if they are equal; <code>false</code> if not
 	 */
 	public boolean equals(Object o)
 	{
-		if(o instanceof Field)
-		{
-			return fieldCookie == ((Field)o).fieldCookie;
-		}
-		return false;
+		if(!(o instanceof Field))
+			return false;
+
+		Field f = (Field)o;
+		if(!getName().equals(f.getName()))
+			return false;
+
+		if(declaringClass != f.declaringClass)
+			return false;
+
+		if(getType() != f.getType())
+			return false;
+
+		return true;
 	}
 
 	/**

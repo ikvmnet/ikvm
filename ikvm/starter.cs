@@ -146,15 +146,15 @@ public class Starter
 		{
 			if(args[i][0] == '-')
 			{
-				if(args[i] == "-help")
+				if(args[i] == "-help" || args[i] == "-?")
 				{
 					break;
 				}
-				else if(args[i] == "-save")
+				else if(args[i] == "-Xsave")
 				{
 					saveAssembly = true;
 				}
-				else if(args[i] == "-time")
+				else if(args[i] == "-Xtime")
 				{
 					new Timer();
 				}
@@ -179,6 +179,10 @@ public class Starter
 				{
 					java.lang.System.setProperty("ikvm.boot.class.path", args[i].Substring(16));
 				}
+				else if(args[i] == "-Xlogclf")
+				{
+					JVM.LogClassLoadFailures = true;
+				}
 				else
 				{
 					Console.Error.WriteLine("{0}: illegal argument", args[i]);
@@ -201,14 +205,15 @@ public class Starter
 			Console.Error.WriteLine("          (to execute a jar file)");
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("where options include:");
-			Console.Error.WriteLine("    -help             display this message");
-			Console.Error.WriteLine("    -cp -classpath <directories and zip/jar files separated by ;>");
+			Console.Error.WriteLine("    -? -help          display this message");
+			Console.Error.WriteLine("    -cp -classpath <directories and zip/jar files separated by {0}>", Path.PathSeparator);
 			Console.Error.WriteLine("                      set search path for application classes and resources");
-			Console.Error.WriteLine("    -save             save the generated assembly (for debugging)");
-			Console.Error.WriteLine("    -time             time the execution");
 			Console.Error.WriteLine("    -D<name>=<value>  set a system property");
-			Console.Error.WriteLine("    -Xbootclasspath:<directories and zip/jar files separated by ;>");
+			Console.Error.WriteLine("    -Xsave            save the generated assembly (for debugging)");
+			Console.Error.WriteLine("    -Xtime            time the execution");
+			Console.Error.WriteLine("    -Xbootclasspath:<directories and zip/jar files separated by {0}>", Path.PathSeparator);
 			Console.Error.WriteLine("                      set search path for bootstrap classes and resources");
+			Console.Error.WriteLine("    -Xlogclf          log class load failures");
 			return 1;
 		}
 		try

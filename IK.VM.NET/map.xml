@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?> 
 <!--
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -109,7 +109,7 @@
 			<constructor sig="([CII)V" modifiers="public" />
 			<!-- Package private constructor, that we redirect to static helper -->
 			<constructor sig="([CIIZ)V" modifiers="">
-				<redirect class="StringHelper" name="NewString" type="static" sig="([CIIZ)Ljava/lang/String;" />
+				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([CIIZ)Ljava/lang/String;" />
 			</constructor>
 			<constructor sig="(Ljava/lang/String;)V" modifiers="public">
 				<redirect class="System.String" name="Copy" type="static" sig="(Ljava/lang/String;)Ljava/lang/String;" />
@@ -118,22 +118,22 @@
 				<redirect class="System.Text.StringBuilder" name="ToString" sig="()Ljava/lang/String;" />
 			</constructor>
 			<constructor sig="([B)V" modifiers="public">
-				<redirect class="StringHelper" name="NewString" type="static" sig="([B)Ljava/lang/String;" />
+				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([B)Ljava/lang/String;" />
 			</constructor>
 			<constructor sig="([BI)V" modifiers="public">
-				<redirect class="StringHelper" name="NewString" type="static" sig="([BI)Ljava/lang/String;" />
+				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BI)Ljava/lang/String;" />
 			</constructor>
 			<constructor sig="([BII)V" modifiers="public">
-				<redirect class="StringHelper" name="NewString" type="static" sig="([BII)Ljava/lang/String;" />
+				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BII)Ljava/lang/String;" />
 			</constructor>
 			<constructor sig="([BIII)V" modifiers="public">
-				<redirect class="StringHelper" name="NewString" type="static" sig="([BIII)Ljava/lang/String;" />
+				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIII)Ljava/lang/String;" />
 			</constructor>
 			<constructor sig="([BLjava/lang/String;)V" modifiers="public">
-				<redirect class="StringHelper" name="NewString" type="static" sig="([BLjava/lang/String;)Ljava/lang/String;" />
+				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BLjava/lang/String;)Ljava/lang/String;" />
 			</constructor>
 			<constructor sig="([BIILjava/lang/String;)V" modifiers="public">
-				<redirect class="StringHelper" name="NewString" type="static" sig="([BIILjava/lang/String;)Ljava/lang/String;" />
+				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIILjava/lang/String;)Ljava/lang/String;" />
 			</constructor>
 			<method name="hashCode" sig="()I" modifiers="public">
 				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;)I" />
@@ -220,52 +220,52 @@
 				<redirect name="EndsWith" />
 			</method>
 			<method name="toUpperCase" sig="()Ljava/lang/String;" modifiers="public">
-				<redirect name="ToUpper" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;)Ljava/lang/String;" />
 			</method>
 			<method name="toUpperCase" sig="(Ljava/util/Locale;)Ljava/lang/String;" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;Ljava/util/Locale;)Ljava/lang/String;" />
 			</method>
 			<method name="toLowerCase" sig="()Ljava/lang/String;" modifiers="public">
-				<redirect name="ToLower" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;)Ljava/lang/String;" />
 			</method>
 			<method name="toLowerCase" sig="(Ljava/util/Locale;)Ljava/lang/String;" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;Ljava/util/Locale;)Ljava/lang/String;" />
 			</method>
 			<method name="compareToIgnoreCase" sig="(Ljava/lang/String;)I" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)I" />
 			</method>
 			<method name="equalsIgnoreCase" sig="(Ljava/lang/String;)Z" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)Z" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)Z" />
 			</method>
 			<method name="intern" sig="()Ljava/lang/String;" modifiers="public">
 				<redirect type="static" name="Intern" sig="(Ljava/lang/String;)Ljava/lang/String;" />
 			</method>
 			<method name="compareTo" sig="(Ljava/lang/String;)I" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)I" />
 			</method>
 			<method name="replace" sig="(CC)Ljava/lang/String;" modifiers="public">
 				<redirect name="Replace" />
 			</method>
 			<method name="getBytes" sig="()[B" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;)[B" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;)[B" />
 			</method>
 			<method name="getBytes" sig="(Ljava/lang/String;)[B" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)[B" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)[B" />
 			</method>
 			<method name="subSequence" sig="(II)Ljava/lang/CharSequence;" modifiers="public">
 				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;II)Ljava/lang/Object;" />
 			</method>
 			<method name="trim" sig="()Ljava/lang/String;" modifiers="public">
-				<redirect name="Trim" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;)Ljava/lang/String;" />
 			</method>
 			<method name="regionMatches" sig="(ZILjava/lang/String;II)Z" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;ZILjava/lang/String;II)Z" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;ZILjava/lang/String;II)Z" />
 			</method>
 			<method name="regionMatches" sig="(ILjava/lang/String;II)Z" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;ILjava/lang/String;II)Z" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;ILjava/lang/String;II)Z" />
 			</method>
 			<method name="getBytes" sig="(II[BI)V" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;II[BI)V" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;II[BI)V" />
 			</method>
 			<method name="concat" sig="(Ljava/lang/String;)Ljava/lang/String;" modifiers="public">
 				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;" />
@@ -280,6 +280,9 @@
 					<newobj class="System.String" name=".ctor" sig="([CII)V" />
 				</invokestatic>
 			</method>
+			<field name="CASE_INSENSITIVE_ORDER" sig="Ljava/util/Comparator;" modifiers="public static final">
+				<redirect class="StringHelper" type="static" name="GetCaseInsensitiveOrder" sig="()Ljava/lang/Object;" />
+			</field>
 			<!-- NOTE we're redirecting fields to static methods here!
 				NOTE only reading fields can be redirected
 			-->

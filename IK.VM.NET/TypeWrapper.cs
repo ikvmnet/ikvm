@@ -829,27 +829,27 @@ class UnloadableTypeWrapper : TypeWrapper
 
 	protected override FieldWrapper GetFieldImpl(string fieldName)
 	{
-		throw new InvalidOperationException("GetFieldImpl called on UnloadableTypeWrapper");
+		throw new InvalidOperationException("GetFieldImpl called on UnloadableTypeWrapper: " + Name);
 	}
 
 	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
 	{
-		throw new InvalidOperationException("GetMethodImpl called on UnloadableTypeWrapper");
+		throw new InvalidOperationException("GetMethodImpl called on UnloadableTypeWrapper: " + Name);
 	}
 
 	public override Type Type
 	{
 		get
 		{
-			throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper");
-		}
-	}
+			throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper: " + Name);
+		} 
+	} 
 
 	public override bool IsInterface
 	{
 		get
 		{
-			throw new InvalidOperationException("get_IsInterface called on UnloadableTypeWrapper");
+			throw new InvalidOperationException("get_IsInterface called on UnloadableTypeWrapper: " + Name);
 		}
 	}
 
@@ -857,7 +857,7 @@ class UnloadableTypeWrapper : TypeWrapper
 	{
 		get
 		{
-			throw new InvalidOperationException("get_Interfaces called on UnloadableTypeWrapper");
+			throw new InvalidOperationException("get_Interfaces called on UnloadableTypeWrapper: " + Name);
 		}
 	}
 
@@ -865,7 +865,7 @@ class UnloadableTypeWrapper : TypeWrapper
 	{
 		get
 		{
-			throw new InvalidOperationException("get_InnerClasses called on UnloadableTypeWrapper");
+			throw new InvalidOperationException("get_InnerClasses called on UnloadableTypeWrapper: " + Name);
 		}
 	}
 
@@ -873,13 +873,13 @@ class UnloadableTypeWrapper : TypeWrapper
 	{
 		get
 		{
-			throw new InvalidOperationException("get_DeclaringTypeWrapper called on UnloadableTypeWrapper");
+			throw new InvalidOperationException("get_DeclaringTypeWrapper called on UnloadableTypeWrapper: " + Name);
 		}
 	}
 
 	public override void Finish()
 	{
-		throw new InvalidOperationException("Finish called on UnloadableTypeWrapper");
+		throw new InvalidOperationException("Finish called on UnloadableTypeWrapper: " + Name);
 	}
 }
 
@@ -1948,7 +1948,7 @@ class DynamicTypeWrapper : TypeWrapper
 				}
 				MethodBuilder mb = typeBuilder.DefineMethod(name, attribs, retType, args);
 				method = mb;
-				// since Java constructors (and static intializers?) aren't allowed to be synchronized, we only check this here
+				// since Java constructors (and static intializers) aren't allowed to be synchronized, we only check this here
 				if(m.IsSynchronized)
 				{
 					mb.SetImplementationFlags(method.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
@@ -1963,8 +1963,9 @@ class DynamicTypeWrapper : TypeWrapper
 			if(retTypeWrapper.IsUnloadable)
 			{
 				CustomAttributeBuilder attrib = new CustomAttributeBuilder(typeof(UnloadableTypeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { retTypeWrapper.Name });
-				// TODO DefineParameter(0, ...) throws an exception, even though this looks like the way to do it...
-				((MethodBuilder)method).DefineParameter(0, ParameterAttributes.None, null).SetCustomAttribute(attrib);
+				// NOTE since DefineParameter(0, ...) throws an exception (bug in .NET, I believe),
+				// we attach the attribute to the method instead of the return value
+				((MethodBuilder)method).SetCustomAttribute(attrib);
 			}
 			for(int i = 0; i < argTypeWrappers.Length; i++)
 			{
@@ -2150,12 +2151,27 @@ class RemappedTypeWrapper : TypeWrapper
 						{
 							binding |= BindingFlags.Instance;
 						}
-						Type t = this.type;
 						if(method.redirect.Class != null)
 						{
-							t = Type.GetType(method.redirect.Class, true);
+							TypeWrapper tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(method.redirect.Class);
+							if(tw is DynamicTypeWrapper)
+							{
+								MethodWrapper mw1 = tw.GetMethodWrapper(redir, false);
+								if(mw1 == null)
+								{
+									Console.WriteLine("method not found: " + tw.Name + "." + redir.Name + redir.Signature);
+								}
+								redirect = mw1.GetMethod();
+							}
+							else
+							{
+								redirect = tw.Type.GetMethod(name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+							}
 						}
-						redirect = t.GetMethod(name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+						else
+						{
+							redirect = this.type.GetMethod(name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+						}
 						if(redirect == null)
 						{
 							throw new InvalidOperationException("remapping method: " + name + sig + " not found");
@@ -2196,11 +2212,7 @@ class RemappedTypeWrapper : TypeWrapper
 								}
 							}
 						}
-						// NOTE we abuse MethodWrapper.Create here to construct the emitters for us
-						MethodWrapper temp = MethodWrapper.Create(this, md, overrideMethod, redirect, modifiers);
-						newopc = temp.EmitNewobj;
-						invokespecial = temp.EmitCall;
-						invokevirtual = temp.EmitCallvirt;
+						MethodWrapper.CreateEmitters(overrideMethod, redirect, ref invokespecial, ref invokevirtual, ref newopc);
 					}
 					else
 					{
@@ -2233,6 +2245,14 @@ class RemappedTypeWrapper : TypeWrapper
 						{
 							invokevirtual = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)overrideMethod);
 						}
+					}
+					// HACK MethodWrapper doesn't accept a MethodBuilder, so we have to blank it out, note
+					// that this means that reflection won't work on this method, so we have to add support
+					// for that
+					// TODO support reflection
+					if(redirect is MethodBuilder)
+					{
+						redirect = null;
 					}
 					MethodWrapper mw = new MethodWrapper(this, md, overrideMethod, redirect, modifiers);
 					mw.EmitNewobj = newopc;
@@ -2312,19 +2332,42 @@ class RemappedTypeWrapper : TypeWrapper
 						{
 							binding |= BindingFlags.Instance;
 						}
-						Type t = this.type;
+						MethodBase redirect = null;
 						if(constructor.redirect.Class != null)
 						{
-							t = Type.GetType(constructor.redirect.Class, true);
-						}
-						MethodBase redirect = null;
-						if(constructor.redirect.Name != null)
-						{
-							redirect = t.GetMethod(constructor.redirect.Name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+							TypeWrapper tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(constructor.redirect.Class);
+							if(tw is DynamicTypeWrapper)
+							{
+								MethodDescriptor md1 = new MethodDescriptor(GetClassLoader(), constructor.redirect.Name != null ? constructor.redirect.Name : "<init>", sig);
+								MethodWrapper mw1 = tw.GetMethodWrapper(md1, false);
+								if(mw1 == null)
+								{
+									Console.WriteLine("constructor not found: " + tw.Name + "." + redir.Name + redir.Signature);
+								}
+								redirect = mw1.GetMethod();
+							}
+							else
+							{
+								if(constructor.redirect.Name != null)
+								{
+									redirect = tw.Type.GetMethod(constructor.redirect.Name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+								}
+								else
+								{
+									redirect = tw.Type.GetConstructor(binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+								}
+							}
 						}
 						else
 						{
-							redirect = t.GetConstructor(binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+							if(constructor.redirect.Name != null)
+							{
+								redirect = this.type.GetMethod(constructor.redirect.Name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+							}
+							else
+							{
+								redirect = this.type.GetConstructor(binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+							}
 						}
 						if(redirect == null)
 						{
@@ -2410,10 +2453,14 @@ class RemappedTypeWrapper : TypeWrapper
 				{
 					throw new InvalidOperationException("remapping method: " + name + sig + " not found");
 				}
-				// TODO ensure that return type for redirected method matches with field type, or emit a castclass
 				FieldWrapper fw = new FieldWrapper(this, fieldName, fieldSig, modifiers);
 				fw.EmitGet = CodeEmitter.Create(OpCodes.Call, method);
 				fw.EmitSet = null;
+				// ensure that return type for redirected method matches with field type, or emit a castclass
+				if(!field.redirect.Sig.EndsWith(fieldSig))
+				{
+					fw.EmitGet += new CastEmitter("()" + fieldSig);
+				}
 				AddField(fw);
 			}
 		}
@@ -3525,33 +3572,38 @@ sealed class MethodWrapper
 			throw new InvalidOperationException();
 		}
 		MethodWrapper wrapper = new MethodWrapper(declaringType, md, originalMethod, method, modifiers);
+		CreateEmitters(originalMethod, method, ref wrapper.EmitCall, ref wrapper.EmitCallvirt, ref wrapper.EmitNewobj);
+		return wrapper;
+	}
+
+	internal static void CreateEmitters(MethodBase originalMethod, MethodBase method, ref CodeEmitter call, ref CodeEmitter callvirt, ref CodeEmitter newobj)
+	{
 		if(method is ConstructorInfo)
 		{
-			wrapper.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)method);
-			wrapper.EmitCallvirt = null;
-			wrapper.EmitNewobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)method);
+			call = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)method);
+			callvirt = null;
+			newobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)method);
 		}
 		else
 		{
-			wrapper.EmitCall = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
+			call = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
 			if(originalMethod != null && originalMethod != method)
 			{
 				// if we're calling a virtual method that is redirected, that overrides an already
 				// existing method, we have to call it virtually, instead of redirecting
-				wrapper.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)originalMethod);
+				callvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)originalMethod);
 			}
 			else if(method.IsStatic)
 			{
 				// because of redirection, it can be legal to call a static method with invokevirtual
-				wrapper.EmitCallvirt = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
+				callvirt = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
 			}
 			else
 			{
-				wrapper.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)method);
+				callvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)method);
 			}
-			wrapper.EmitNewobj = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
+			newobj = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
 		}
-		return wrapper;
 	}
 
 	internal MethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase originalMethod, MethodBase method, Modifiers modifiers)

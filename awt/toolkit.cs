@@ -458,6 +458,10 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+		public bool requestFocus(java.awt.Component source, bool bool1, bool bool2, long x)
+		{
+			throw new NotImplementedException();
+		}
 		public void reshape(int x, int y, int width, int height)
 		{
 			throw new NotImplementedException();
@@ -523,6 +527,62 @@ namespace ikvm.awt
 		public void setEventMask (long mask)
 		{
 			Console.WriteLine("NOTE: NetComponentPeer.setEventMask not implemented");
+		}
+
+		public bool isObscured()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool canDetermineObscurity()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void coalescePaintEvent(java.awt.@event.PaintEvent e)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void updateCursorImmediately()
+		{
+			throw new NotImplementedException();
+		}
+
+		public VolatileImage createVolatileImage(int width, int height)
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool handlesWheelScrolling()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void createBuffers(int x, java.awt.BufferCapabilities capabilities)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Image getBackBuffer()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void flip(java.awt.BufferCapabilities.FlipContents contents)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void destroyBuffers()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool isFocusable()
+		{
+			// TODO
+			return true;
 		}
 	}
 
@@ -629,6 +689,18 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 		public void setCaretPosition(int pos)
+		{
+			throw new NotImplementedException();
+		}
+		public long filterEvents(long filter)
+		{
+			throw new NotImplementedException();
+		}
+		public int getIndexAtPoint(int x, int y)
+		{
+			throw new NotImplementedException();
+		}
+		public java.awt.Rectangle getCharacterBounds(int pos)
 		{
 			throw new NotImplementedException();
 		}
@@ -757,6 +829,18 @@ namespace ikvm.awt
 		{
 			Console.WriteLine("NOTE: NetContainerPeer.endValidate not implemented");
 		}
+		public void beginLayout()
+		{
+			throw new NotImplementedException();
+		}
+		public void endLayout()
+		{
+			throw new NotImplementedException();
+		}
+		public bool isPaintPending()
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetPanelPeer : NetContainerPeer, PanelPeer
@@ -845,6 +929,18 @@ namespace ikvm.awt
 			Rectangle client = control.ClientRectangle;
 			// TODO use control.Invoke
 			return new java.awt.Insets(0, 0, control.Height - client.Height, control.Width - client.Width);
+		}
+		public int getState()
+		{
+			throw new NotImplementedException();
+		}
+		public void setState(int state)
+		{
+			throw new NotImplementedException();
+		}
+		public void setMaximizedBounds(java.awt.Rectangle r)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

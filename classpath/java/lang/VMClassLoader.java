@@ -118,12 +118,7 @@ final class VMClassLoader
    */
   static Class loadClass(String name, boolean resolve) throws ClassNotFoundException
   {
-    Class c = Class.loadBootstrapClass(name, false);
-    if(c == null)
-    {
-       throw new ClassNotFoundException(name);
-    }
-    return c;
+    return Class.loadBootstrapClass(name, false);
   }
 
   /**

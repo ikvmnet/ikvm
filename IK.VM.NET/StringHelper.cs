@@ -27,100 +27,6 @@ using System.Reflection;
 
 public class StringHelper
 {
-	public static string NewString(char[] data, int offset, int count, bool dont_copy)
-	{
-		return new String(data, offset, count);
-	}
-
-	public static string NewString(sbyte[] sdata)
-	{
-		return NewString(sdata, 0, sdata.Length);
-	}
-
-	public static string NewString(sbyte[] sdata, int hibyte)
-	{
-		return NewString(sdata, hibyte, 0, sdata.Length);
-	}
-
-	public static string NewString(sbyte[] sdata, int offset, int count)
-	{
-		// TODO what encoding should this use?
-		// TODO could use the unsafe constructor that takes sbyte*, but I don't know if that is worthwhile to be unsafe for
-		byte[] data = new byte[sdata.Length];
-		for(int i = 0; i < data.Length; i++)
-		{
-			data[i] = (byte)sdata[i];
-		}
-		try {
-			return System.Text.Encoding.ASCII.GetString(data, offset, count);
-		}
-		catch {
-			return null;
-		}
-	}
-
-	public static string NewString(sbyte[] sdata, int hibyte, int offset, int count)
-	{
-		// TODO benchmark this versus using a stringbuilder instead of a char[]
-		hibyte <<= 8;
-		char[] data = new char[count];
-		for(int i = 0; i < count; i++)
-		{
-			// TODO what happens for negative bytes?
-			data[i] = (char)(((byte)sdata[i + offset]) | hibyte);
-		}
-		return new String(data);
-	}
-
-	public static string NewString(sbyte[] sdata, string charsetName)
-	{
-		return NewString(sdata, 0, sdata.Length, charsetName);
-	}
-
-	public static string NewString(sbyte[] sdata, int offset, int count, string charsetName)
-	{
-		// HACK special case for UTF8, I really need to implement this by
-		// redirecting to the classpath character encoding support
-		if(charsetName == "UTF8")
-		{
-			char[] ch = new Char[count];
-			int l = 0;
-			for(int i = 0; i < count; i++)
-			{
-				int c = (byte)sdata[offset + i];
-				int char2, char3;
-				switch (c >> 4)
-				{
-					case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
-						// 0xxxxxxx
-						break;
-					case 12: case 13:
-						// 110x xxxx   10xx xxxx
-						char2 = (byte)sdata[offset + ++i];
-						c = (((c & 0x1F) << 6) | (char2 & 0x3F));
-						break;
-					case 14:
-						// 1110 xxxx  10xx xxxx  10xx xxxx
-						char2 = (byte)sdata[offset + ++i];
-						char3 = (byte)sdata[offset + ++i];
-						c = (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
-						break;
-				}
-				ch[l++] = (char)c;
-			}
-			return new String(ch, 0, l);
-		}
-		// TODO don't use reflection, but write a Java helper class and redirect this method there
-		Type t = ClassLoaderWrapper.GetType("gnu.java.io.EncodingManager");
-		try {
-			object decoder = t.InvokeMember("getDecoder", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new object[] { charsetName });
-			return new String((char[])decoder.GetType().InvokeMember("convertToChars", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, decoder, new object[] { sdata, offset, count }));
-		}
-		catch (TargetInvocationException ex) {
-			throw ExceptionHelper.MapExceptionFast(ex.InnerException);
-		}
-	}
-
 	public static string valueOf(bool b)
 	{
 		return b ? "true" : "false";
@@ -216,89 +122,10 @@ public class StringHelper
 		return 0;
 	}
 
-	public static bool equalsIgnoreCase(string s1, string s2)
-	{
-		return String.Compare(s1, s2, true) == 0;
-	}
-
-	public static int compareToIgnoreCase(string s1, string s2)
-	{
-		return String.Compare(s1, s2, true);
-	}
-
-	public static int compareTo(string s1, string s2)
-	{
-		int len = Math.Min(s1.Length, s2.Length);
-		for(int i = 0; i < len; i++)
-		{
-			int diff = s1[i] - s2[i];
-			if(diff != 0)
-			{
-				return diff;
-			}
-		}
-		return s1.Length - s2.Length;
-	}
-
-	public static sbyte[] getBytes(string s)
-	{
-		byte[] data = System.Text.Encoding.ASCII.GetBytes(s);
-		sbyte[] sdata = new sbyte[data.Length];
-		for(int i = 0; i < data.Length; i++)
-		{
-			sdata[i] = (sbyte)data[i];
-		}
-		return sdata;
-	}
-
-	public static sbyte[] getBytes(string s, string charsetName)
-	{
-		// TODO don't use reflection, but write a Java helper class and redirect this method there
-		char[] ch = s.ToCharArray();
-		Type t = ClassLoaderWrapper.GetType("gnu.java.io.EncodingManager");
-		object encoder = t.InvokeMember("getEncoder", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new object[] { charsetName });
-		return (sbyte[])encoder.GetType().InvokeMember("convertToBytes", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, encoder, new object[] { ch, 0, ch.Length });
-	}
-
-	public static void getBytes(string s, int srcBegin, int srcEnd, sbyte[] dst, int dstBegin)
-	{
-		if(srcBegin > srcEnd)
-		{
-			throw JavaException.ArrayIndexOutOfBoundsException();
-		}
-		for(int i = 0; i < (srcEnd - srcBegin); i++)
-		{
-			dst[i + dstBegin] = (sbyte)s[i + srcBegin];
-		}
-	}
-
 	public static object subSequence(string s, int offset, int count)
 	{
 		// TODO
 		throw new NotImplementedException();
-	}
-
-	public static bool regionMatches(string s, int toffset, string other, int ooffset, int len)
-	{
-		return regionMatches(s, false, toffset, other, ooffset, len);
-	}
-
-	public static bool regionMatches(string s, bool ignoreCase, int toffset, string other, int ooffset, int len)
-	{
-		if(toffset < 0 || ooffset < 0 || toffset + len > s.Length || ooffset + len > other.Length)
-		{
-			return false;
-		}
-		while(--len >= 0)
-		{
-			char c1 = s[toffset++];
-			char c2 = other[ooffset++];
-			if(c1 != c2 && (!ignoreCase || (Char.ToLower(c1) != Char.ToLower(c2) && (Char.ToUpper(c1) != Char.ToUpper(c2)))))
-			{
-				return false;
-			}
-		}
-		return true;
 	}
 
 	// NOTE argument is of type object, because otherwise the code that calls this function
@@ -311,18 +138,6 @@ public class StringHelper
 			h = h * 31 + c;
 		}
 		return h;
-	}
-
-	public static string toUpperCase(string s, object locale)
-	{
-		// TODO
-		return s.ToUpper();
-	}
-
-	public static string toLowerCase(string s, object locale)
-	{
-		// TODO
-		return s.ToLower();
 	}
 
 	public static int indexOf(string s, char ch, int fromIndex)
@@ -378,6 +193,17 @@ public class StringHelper
 			return s1;
 		}
 		return String.Concat(s1, s2);
+	}
+
+	private static object CASE_INSENSITIVE_ORDER;
+
+	public static object GetCaseInsensitiveOrder()
+	{
+		if(CASE_INSENSITIVE_ORDER == null)
+		{
+			CASE_INSENSITIVE_ORDER = Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.String$CaseInsensitiveComparator"), true);
+		}
+		return CASE_INSENSITIVE_ORDER;
 	}
 }
 

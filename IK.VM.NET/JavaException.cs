@@ -68,6 +68,8 @@ sealed class JavaException
 
 	private class BootstrapClassMissing : Exception {}
 
+	private static ConstructorInfo classNotFoundConstructor;
+
 	internal static Exception ClassNotFoundException(string s, params object[] args)
 	{
 		// HACK if java.lang.ClassNotFoundException is not found, this method would recurse until the
@@ -86,8 +88,11 @@ sealed class JavaException
 			classNotFound = true;
 			//Console.WriteLine("ClassNotFoundException: " + s);
 			s = String.Format(s, args);
-			ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.ClassNotFoundException").GetConstructor(new Type[] { typeof(string) });
-			return (Exception)ci.Invoke(new object[] { s });
+			if(classNotFoundConstructor == null)
+			{
+				classNotFoundConstructor = ClassLoaderWrapper.GetType("java.lang.ClassNotFoundException").GetConstructor(new Type[] { typeof(string) });
+			}
+			return (Exception)classNotFoundConstructor.Invoke(new object[] { s });
 		}
 		catch(BootstrapClassMissing)
 		{
