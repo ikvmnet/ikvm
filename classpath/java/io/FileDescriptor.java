@@ -38,8 +38,9 @@ exception statement from your version. */
 
 package java.io;
 
-import system.Console;
-import system.io.*;
+import cli.System.Console;
+import cli.System.IO.*;
+import ikvm.lang.ByteArrayHack;
 
 /**
   * This class represents an opaque file handle as a Java class.  It should
@@ -91,12 +92,12 @@ public final class FileDescriptor
 	}
 	try
 	{
-	    if(false) throw new system.io.IOException();
+	    if(false) throw new cli.System.IO.IOException();
 	    stream.Flush();
 	}
-	catch(system.io.IOException x)
+	catch(cli.System.IO.IOException x)
 	{
-	    throw new SyncFailedException(x.get_Message());
+	    throw new SyncFailedException(x.getMessage());
 	}
     }
 
@@ -115,11 +116,11 @@ public final class FileDescriptor
 		try
 		{
 		    stream.Close();
-		    if(false) throw new system.io.IOException();
+		    if(false) throw new cli.System.IO.IOException();
 		}
-		catch(system.io.IOException x)
+		catch(cli.System.IO.IOException x)
 		{
-		    throw new IOException(x.get_Message());
+		    throw new IOException(x.getMessage());
 		}
 	    }
 	    stream = null;
@@ -171,23 +172,23 @@ public final class FileDescriptor
 		default:
 		    throw new IllegalArgumentException("Invalid mode value: " + mode);
 	    }
-	    if(false) throw new system.io.IOException();
-	    if(false) throw new system.security.SecurityException();
-	    if(false) throw new system.UnauthorizedAccessException();
-	    stream = system.io.File.Open(demanglePath(path), fileMode, fileAccess, FileShare.ReadWrite);
+	    if(false) throw new cli.System.IO.IOException();
+	    if(false) throw new cli.System.Security.SecurityException();
+	    if(false) throw new cli.System.UnauthorizedAccessException();
+	    stream = cli.System.IO.File.Open(demanglePath(path), FileMode.wrap(fileMode), FileAccess.wrap(fileAccess), FileShare.wrap(FileShare.ReadWrite));
 	}
-	catch(system.security.SecurityException x1)
+	catch(cli.System.Security.SecurityException x1)
 	{
-	    throw new SecurityException(x1.get_Message());
+	    throw new SecurityException(x1.getMessage());
 	}
-	catch(system.io.IOException x2)
+	catch(cli.System.IO.IOException x2)
 	{
-	    throw new FileNotFoundException(x2.get_Message());
+	    throw new FileNotFoundException(x2.getMessage());
 	}
-	catch(system.UnauthorizedAccessException x3)
+	catch(cli.System.UnauthorizedAccessException x3)
 	{
 	    // this is caused by "name" being a directory instead of a file
-	    throw new FileNotFoundException(x3.get_Message());
+	    throw new FileNotFoundException(x3.getMessage());
 	}
 	// TODO map al the other exceptions as well...
     }
@@ -199,12 +200,12 @@ public final class FileDescriptor
 
 	try
 	{
-	    if(false) throw new system.io.IOException();
+	    if(false) throw new cli.System.IO.IOException();
 	    return stream.get_Position();
 	}
-	catch(system.io.IOException x)
+	catch(cli.System.IO.IOException x)
 	{
-	    throw new IOException(x.get_Message());
+	    throw new IOException(x.getMessage());
 	}
 	// TODO map al the other exceptions as well...
     }
@@ -216,12 +217,12 @@ public final class FileDescriptor
 
 	try
 	{
-	    if(false) throw new system.io.IOException();
+	    if(false) throw new cli.System.IO.IOException();
 	    return stream.get_Length();
 	}
-	catch(system.io.IOException x)
+	catch(cli.System.IO.IOException x)
 	{
-	    throw new IOException(x.get_Message());
+	    throw new IOException(x.getMessage());
 	}
 	// TODO map al the other exceptions as well...
     }
@@ -237,12 +238,12 @@ public final class FileDescriptor
 
 	try
 	{
-	    if(false) throw new system.io.IOException();
+	    if(false) throw new cli.System.IO.IOException();
 	    stream.SetLength(len);
 	}
-	catch(system.io.IOException x)
+	catch(cli.System.IO.IOException x)
 	{
-	    throw new IOException(x.get_Message());
+	    throw new IOException(x.getMessage());
 	}
 	// TODO map al the other exceptions as well...
     }
@@ -257,17 +258,17 @@ public final class FileDescriptor
 
 	try
 	{
-	    if(false) throw new system.io.IOException();
-	    long newpos = stream.Seek(offset, whence);
+	    if(false) throw new cli.System.IO.IOException();
+	    long newpos = stream.Seek(offset, SeekOrigin.wrap(whence));
 	    if(stopAtEof && newpos > stream.get_Length())
 	    {
-		newpos = stream.Seek(0, SeekOrigin.End);
+		newpos = stream.Seek(0, SeekOrigin.wrap(SeekOrigin.End));
 	    }
 	    return newpos;
 	}
-	catch(system.io.IOException x)
+	catch(cli.System.IO.IOException x)
 	{
-	    throw new IOException(x.get_Message());
+	    throw new IOException(x.getMessage());
 	}
 	// TODO map al the other exceptions as well...
     }
@@ -279,12 +280,12 @@ public final class FileDescriptor
 
 	try
 	{
-	    if(false) throw new system.io.IOException();
+	    if(false) throw new cli.System.IO.IOException();
 	    return stream.ReadByte();
 	}
-	catch(system.io.IOException x)
+	catch(cli.System.IO.IOException x)
 	{
-	    throw new IOException(x.get_Message());
+	    throw new IOException(x.getMessage());
 	}
 	// TODO map al the other exceptions as well...
     }
@@ -305,37 +306,25 @@ public final class FileDescriptor
 
 	try
 	{
-	    if(false) throw new system.io.IOException();
-	    int count = stream.Read(buf, offset, len);
+	    if(false) throw new cli.System.IO.IOException();
+	    int count = stream.Read(ByteArrayHack.cast(buf), offset, len);
 	    if(count == 0)
 	    {
 		count = -1;
 	    }
 	    return count;
 	}
-	catch(system.io.IOException x)
+	catch(cli.System.IO.IOException x)
 	{
-	    throw new IOException(x.get_Message());
+	    throw new IOException(x.getMessage());
 	}
 	// TODO map al the other exceptions as well...
     }
 
     synchronized void write(int b) throws IOException
     {
-	if(stream == null)
-	{
-	    throw new IOException("Invalid FileDescriptor");
-	}
-	try
-	{
-	    if(false) throw new system.io.IOException();
-	    stream.WriteByte((byte)b);
-	}
-	catch(system.io.IOException x)
-	{
-	    throw new IOException(x.get_Message());
-	}
-	// TODO map al the other exceptions as well...
+	// HACK we can't call WriteByte because it takes a cli.System.Byte
+	write(new byte[] { (byte)b }, 0, 1);
     }
 
     synchronized void write(byte[] buf, int offset, int len) throws IOException
@@ -354,12 +343,12 @@ public final class FileDescriptor
 
 	try
 	{
-	    if(false) throw new system.io.IOException();
-	    stream.Write(buf, offset, len);
+	    if(false) throw new cli.System.IO.IOException();
+	    stream.Write(ByteArrayHack.cast(buf), offset, len);
 	}
-	catch(system.io.IOException x)
+	catch(cli.System.IO.IOException x)
 	{
-	    throw new IOException(x.get_Message());
+	    throw new IOException(x.getMessage());
 	}
 	// TODO map al the other exceptions as well...
     }
@@ -371,17 +360,17 @@ public final class FileDescriptor
 
 	try
 	{
-	    if(false) throw new system.io.IOException();
-	    if(false) throw new system.NotSupportedException();
+	    if(false) throw new cli.System.IO.IOException();
+	    if(false) throw new cli.System.NotSupportedException();
 	    if(stream.get_CanSeek())
 		return (int)Math.min(Integer.MAX_VALUE, Math.max(0, stream.get_Length() - stream.get_Position()));
 	    return 0;
 	}
-	catch(system.io.IOException x)
+	catch(cli.System.IO.IOException x)
 	{
-	    throw new IOException(x.get_Message());
+	    throw new IOException(x.getMessage());
 	}
-	catch(system.NotSupportedException x1)
+	catch(cli.System.NotSupportedException x1)
 	{
 	    // this means we have a broken Stream, because if CanSeek returns true, it must
 	    // support Length and Position

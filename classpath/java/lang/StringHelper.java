@@ -293,25 +293,24 @@ public final class StringHelper
 
     public static String substring(String s, int off, int end)
     {
-	return ((system.String)(Object)s).Substring(off, end - off);
+	return cli.System.String.Substring(s, off, end - off);
     }
 
-    public static boolean startsWith(String si, String prefix, int toffset)
+    public static boolean startsWith(String s, String prefix, int toffset)
     {
 	if(toffset < 0)
 	{
 	    return false;
 	}
-	system.String s = (system.String)(Object)si;
-	s = (system.String)(Object)s.Substring(Math.min(s.get_Length(), toffset));
-	return s.StartsWith(prefix);
+	s = cli.System.String.Substring(s, Math.min(s.length(), toffset));
+	return cli.System.String.StartsWith(s, prefix);
     }
 
     public static char charAt(String s, int index)
     {
 	try 
 	{
-	    return ((system.String)(Object)s).get_Chars(index);
+	    return cli.System.String.get_Chars(s, index);
 	}
 	// NOTE the System.IndexOutOfRangeException thrown by get_Chars, is translated by our
 	// exception handling code to an ArrayIndexOutOfBoundsException, so we catch that.
@@ -323,7 +322,7 @@ public final class StringHelper
 
     public static void getChars(String s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 
     {
-	((system.String)(Object)s).CopyTo(srcBegin, dst, dstBegin, srcEnd - srcBegin);
+	cli.System.String.CopyTo(s, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
     // this exposes the package accessible "count" field (for use by StringBuffer)
@@ -344,31 +343,28 @@ public final class StringHelper
 	return 0;
     }
 
-    public static int indexOf(String si, char ch, int fromIndex)
+    public static int indexOf(String s, char ch, int fromIndex)
     {
 	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
-	system.String s = (system.String)(Object)si;
-	return s.IndexOf(ch, Math.max(0, Math.min(s.get_Length(), fromIndex)));
+	return cli.System.String.IndexOf(s, ch, Math.max(0, Math.min(s.length(), fromIndex)));
     }
 
-    public static int indexOf(String si, String o, int fromIndex)
+    public static int indexOf(String s, String o, int fromIndex)
     {
 	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
-	system.String s = (system.String)(Object)si;
-	return s.IndexOf(o, Math.max(0, Math.min(s.get_Length(), fromIndex)));
+	return cli.System.String.IndexOf(s, o, Math.max(0, Math.min(s.length(), fromIndex)));
     }
 
-    public static int lastIndexOf(String si, char ch, int fromIndex)
+    public static int lastIndexOf(String s, char ch, int fromIndex)
     {
-	system.String s = (system.String)(Object)si;
 	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
-	int len = s.get_Length();
+	int len = s.length();
 	if(fromIndex  < 0)
 	{
 	    return -1;
 	}
 	// Java allow fromIndex to be above the length of the string, .NET doesn't
-	return s.LastIndexOf(ch, Math.min(len - 1, fromIndex));
+	return cli.System.String.LastIndexOf(s, ch, Math.min(len - 1, fromIndex));
     }
 
     public static int lastIndexOf(String s, String o)
@@ -376,11 +372,10 @@ public final class StringHelper
 	return lastIndexOf(s, o, s.length());
     }
 
-    public static int lastIndexOf(String si, String o, int fromIndex)
+    public static int lastIndexOf(String s, String o, int fromIndex)
     {
-	system.String s = (system.String)(Object)si;
 	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
-	int len = s.get_Length();
+	int len = s.length();
 	if(fromIndex  < 0)
 	{
 	    return -1;
@@ -390,7 +385,7 @@ public final class StringHelper
 	    return Math.min(len, fromIndex);
 	}
 	// Java allow fromIndex to be above the length of the string, .NET doesn't
-	return s.LastIndexOf(o, Math.min(len - 1, fromIndex + o.length() - 1));
+	return cli.System.String.LastIndexOf(s, o, Math.min(len - 1, fromIndex + o.length() - 1));
     }
 
     public static String concat(String s1, String s2)
@@ -401,7 +396,7 @@ public final class StringHelper
 	{
 	    return s1;
 	}
-	return system.String.Concat(s1, s2);
+	return cli.System.String.Concat(s1, s2);
     }
 
     public static void getBytes(String s, int srcBegin, int srcEnd, byte dst[], int dstBegin)
@@ -501,7 +496,7 @@ public final class StringHelper
 
     public static String valueOf(char c)
     {
-	return new system.String(c, 1).ToString();
+	return cli.System.String.__new(c, 1);
     }
 
     public static String valueOf(float f)
@@ -531,11 +526,11 @@ public final class StringHelper
 
     public static int hashCode(String s)
     {
-	system.String ns = (system.String)(Object)s;
 	int h = 0;
-	for(int i = 0; i < ns.get_Length(); i++)
+	int len = s.length();
+	for(int i = 0; i < len; i++)
 	{
-	    h = h *31 + ns.get_Chars(i);
+	    h = h *31 + cli.System.String.get_Chars(s, i);
 	}
 	return h;
     }

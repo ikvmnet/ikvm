@@ -4,10 +4,10 @@
         <nant buildfile="OpenSystem.Java/OpenSystem.Java.build" />
         <nant buildfile="IK.VM.NET/ik.vm.net.build" />
         <nant buildfile="IK.VM.JNI/ik.vm.jni.build" />
-        <nant buildfile="netexp/netexp.build" />
         <nant buildfile="ikvmc/ikvmc.build" />
         <nant buildfile="classpath/classpath.build" />
         <nant buildfile="ikvm/ikvm.build" />
         <nant buildfile="awt/awt.build" />
+        <nant buildfile="netexp/netexp.build" />
     </target>
 </project>

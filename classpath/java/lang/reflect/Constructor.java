@@ -38,8 +38,6 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
-import system.reflection.*;
-
 /**
  * The Constructor class represents a constructor of a class. It also allows
  * dynamic creation of an object, via reflection. Invocation on Constructor
@@ -162,7 +160,7 @@ public final class Constructor
 	 */
 	public boolean equals(Object o)
 	{
-		if(o instanceof ConstructorInfo)
+		if(o instanceof Constructor)
 		{
 			return methodCookie == ((Constructor)o).methodCookie;
 		}

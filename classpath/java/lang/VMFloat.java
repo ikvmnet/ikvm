@@ -28,7 +28,7 @@ final class VMFloat
 {
     static float intBitsToFloat(int v)
     {
-	return system.BitConverter.ToSingle(system.BitConverter.GetBytes(v), 0);
+	return cli.System.BitConverter.ToSingle(cli.System.BitConverter.GetBytes(v), 0);
     }
 
     static int floatToIntBits(float v)
@@ -37,11 +37,11 @@ final class VMFloat
 	{
 	    return 0x7fc00000;
 	}
-	return system.BitConverter.ToInt32(system.BitConverter.GetBytes(v), 0);
+	return cli.System.BitConverter.ToInt32(cli.System.BitConverter.GetBytes(v), 0);
     }
 
     static int floatToRawIntBits(float v)
     {
-	return system.BitConverter.ToInt32(system.BitConverter.GetBytes(v), 0);
+	return cli.System.BitConverter.ToInt32(cli.System.BitConverter.GetBytes(v), 0);
     }
 }

@@ -27,23 +27,22 @@
 		<class name="java.lang.Object" type="System.Object" modifiers="public">
 			<constructor sig="()V" modifiers="public" />
 			<method name="notifyAll" sig="()V" modifiers="public final">
-				<redirect class="System.Threading.Monitor" name="PulseAll" sig="(Ljava.lang.Object;)V" type="static" />
+				<redirect class="System.Threading.Monitor, mscorlib" name="PulseAll" sig="(Ljava.lang.Object;)V" type="static" />
 			</method>
 			<method name="notify" sig="()V" modifiers="public final">
-				<redirect class="System.Threading.Monitor" name="Pulse" sig="(Ljava.lang.Object;)V" type="static" />
+				<redirect class="System.Threading.Monitor, mscorlib" name="Pulse" sig="(Ljava.lang.Object;)V" type="static" />
 			</method>
 			<method name="wait" sig="()V" modifiers="public final">
 				<invokespecial>
-					<call type="System.Threading.Monitor" name="Wait" sig="(Ljava.lang.Object;)Z" />
+					<call type="System.Threading.Monitor, mscorlib" name="Wait" sig="(Ljava.lang.Object;)Z" />
 					<!-- For some reason, Wait returns a boolean -->
 					<pop />
 				</invokespecial>
 				<invokevirtual>
-					<call type="System.Threading.Monitor" name="Wait" sig="(Ljava.lang.Object;)Z" />
+					<call type="System.Threading.Monitor, mscorlib" name="Wait" sig="(Ljava.lang.Object;)Z" />
 					<!-- For some reason, Wait returns a boolean -->
 					<pop />
 				</invokevirtual>
-				<!--redirect class="System.Threading.Monitor" name="Wait" sig="(Ljava.lang.Object;)V" type="static" /-->
 			</method>
 			<method name="wait" sig="(J)V" modifiers="public final">
 				<redirect class="java.lang.ObjectHelper" name="wait" sig="(Ljava.lang.Object;J)V" type="static" />
@@ -68,7 +67,7 @@
 				<invokespecial>
 					<!-- TODO if we already know statically that the type implements java.lang.Cloneable this check can be omitted -->
 					<dup />
-					<isinst type="java.lang.Cloneable" />
+					<isinst class="java.lang.Cloneable" />
 					<brtrue name="ok" />
 					<newobj class="java.lang.CloneNotSupportedException" name="&lt;init&gt;" sig="()V" />
 					<throw />
@@ -104,9 +103,9 @@
 				<override name="GetHashCode" />
 				<invokevirtual>
 					<dup />
-					<isinst type="System.String" />
+					<isinst type="System.String, mscorlib" />
 					<brfalse name="skip" />
-					<castclass type="System.String" />
+					<castclass type="System.String, mscorlib" />
 					<call class="java.lang.StringHelper" name="hashCode" sig="(Ljava.lang.String;)I" />
 					<br name="end" />
 					<label name="skip" />
@@ -121,7 +120,7 @@
 				<override name="Finalize" />
 			</method>
 		</class>
-		<class name="java.lang.String" type="System.String" modifiers="public final">
+		<class name="java.lang.String" type="System.String, mscorlib" modifiers="public final">
 			<implements class="java.lang.Comparable" />
 			<implements class="java.lang.CharSequence" />
 			<implements class="java.io.Serializable" />
@@ -129,7 +128,7 @@
 				<!-- TODO -->
 				<newobj>
 					<ldstr value="" />
-					<call type="System.String" name="Copy" />
+					<call type="System.String, mscorlib" name="Copy" />
 				</newobj>
 			</constructor>
 			<constructor sig="([C)V" modifiers="public" />
@@ -139,7 +138,7 @@
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([CIIZ)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="(Ljava.lang.String;)V" modifiers="public">
-				<redirect class="System.String" name="Copy" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+				<redirect class="System.String, mscorlib" name="Copy" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="(Ljava.lang.StringBuffer;)V" modifiers="public">
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="(Ljava.lang.StringBuffer;)Ljava.lang.String;" />
@@ -299,12 +298,12 @@
 			</method>
 			<method name="copyValueOf" sig="([C)Ljava.lang.String;" modifiers="public static">
 				<invokestatic>
-					<newobj type="System.String" name=".ctor" sig="([C)V" />
+					<newobj type="System.String, mscorlib" name=".ctor" sig="([C)V" />
 				</invokestatic>
 			</method>
 			<method name="copyValueOf" sig="([CII)Ljava.lang.String;" modifiers="public static">
 				<invokestatic>
-					<newobj type="System.String" name=".ctor" sig="([CII)V" />
+					<newobj type="System.String, mscorlib" name=".ctor" sig="([CII)V" />
 				</invokestatic>
 			</method>
 			<field name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" modifiers="public static final">
@@ -335,20 +334,20 @@
 			<implements class="java.io.Serializable" />
 			<constructor sig="()V" modifiers="public">
 				<invokespecial>
-					<call type="ExceptionHelper" name="get_NullString" />
+					<call type="ExceptionHelper, ik.vm.net" name="get_NullString" />
 					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
 				</invokespecial>
 			</constructor>
 			<constructor sig="(Ljava.lang.String;)V" modifiers="public">
 				<invokespecial>
-					<call type="ExceptionHelper" name="FilterMessage" />
+					<call type="ExceptionHelper, ik.vm.net" name="FilterMessage" />
 					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
 				</invokespecial>
 			</constructor>
 			<constructor sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" modifiers="public">
 				<invokespecial>
 					<stloc name="x" type="System.Exception" />
-					<call type="ExceptionHelper" name="FilterMessage" />
+					<call type="ExceptionHelper, ik.vm.net" name="FilterMessage" />
 					<ldloc name="x" />
 					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
 				</invokespecial>
@@ -357,47 +356,47 @@
 				<invokespecial>
 					<stloc name="x" type="System.Exception" />
 					<ldloc name="x" />
-					<call type="ExceptionHelper" name="GetMessageFromCause" />
+					<call type="ExceptionHelper, ik.vm.net" name="GetMessageFromCause" />
 					<ldloc name="x" />
 					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
 				</invokespecial>
 			</constructor>
 			<method type="virtual" name="printStackTrace" sig="()V" modifiers="public">
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)V" type="static" />
 			</method>
 			<method type="virtual" name="printStackTrace" sig="(Ljava.io.PrintStream;)V" modifiers="public">
 				<!-- NOTE both printStackTrace(Ljava.io.PrintStream;)V & printStackTrace(Ljava.io.PrintWriter;)V redirect
 					to the same method, this is not a bug -->
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.lang.Object;)V" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;Ljava.lang.Object;)V" type="static" />
 			</method>
 			<method type="virtual" name="printStackTrace" sig="(Ljava.io.PrintWriter;)V" modifiers="public">
 				<!-- NOTE both printStackTrace(Ljava.io.PrintStream;)V & printStackTrace(Ljava.io.PrintWriter;)V redirect
 					to the same method, this is not a bug -->
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.lang.Object;)V" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;Ljava.lang.Object;)V" type="static" />
 			</method>
 			<method type="virtual" name="getMessage" sig="()Ljava.lang.String;" modifiers="public">
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
 			</method>
 			<method type="virtual" name="getLocalizedMessage" sig="()Ljava.lang.String;" modifiers="public">
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
 			</method>
 			<method type="virtual" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" modifiers="public">
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
 			</method>
 			<method type="virtual" name="initCause" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public">
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
 			</method>
 			<method type="virtual" name="getCause" sig="()Ljava.lang.Throwable;" modifiers="public">
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
 			</method>
 			<method type="virtual" name="getStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="public">
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" type="static" />
 			</method>
 			<method type="virtual" name="setStackTrace" sig="([Ljava.lang.StackTraceElement;)V" modifiers="public">
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" type="static" />
 			</method>
 			<method type="virtual" name="toString" sig="()Ljava.lang.String;" modifiers="public">
-				<redirect class="ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
 			</method>
 		</class>
 		<class name="java.lang.Comparable" type="System.IComparable" modifiers="public interface">
@@ -446,6 +445,16 @@
 				<ldarg_0 />
 				<unbox type="System.Int32" />
 				<ldind_i4 />
+				<ret />
+			</method>
+		</class>
+		<class name="ikvm.lang.ByteArrayHack">
+			<method name="cast" sig="([B)[Lcli.System.Byte;">
+				<ldarg_0 />
+				<ret />
+			</method>
+			<method name="cast" sig="([Lcli.System.Byte;)[B">
+				<ldarg_0 />
 				<ret />
 			</method>
 		</class>

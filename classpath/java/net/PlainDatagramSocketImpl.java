@@ -39,9 +39,10 @@ exception statement from your version. */
 package java.net;
 
 import java.io.IOException;
-import system.net.*;
-import system.net.sockets.*;
+import cli.System.Net.*;
+import cli.System.Net.Sockets.*;
 import ikvm.lang.CIL;
+import ikvm.lang.ByteArrayHack;
 
 /**
 * This is the default socket implementation for datagram sockets.
@@ -70,12 +71,12 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 
 	private static class MyUdpClient extends UdpClient
 	{
-		MyUdpClient(system.net.IPEndPoint ep)
+		MyUdpClient(cli.System.Net.IPEndPoint ep)
 		{
 			super(ep);
 		}
 
-		system.net.sockets.Socket getSocket()
+		cli.System.Net.Sockets.Socket getSocket()
 		{
 			return super.get_Client();
 		}
@@ -153,7 +154,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	{
 		// TODO error handling
 		int len = packet.getLength();
-		if(socket.Send(packet.getData(), len, new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(packet.getAddress()), packet.getPort())) != len)
+		if(socket.Send(ByteArrayHack.cast(packet.getData()), len, new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(packet.getAddress()), packet.getPort())) != len)
 		{
 			// TODO
 			throw new IOException();
@@ -183,13 +184,13 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	{
 	    try
 	    {
-		if(false) throw new system.net.sockets.SocketException();
+		if(false) throw new cli.System.Net.Sockets.SocketException();
 		byte[] data = packet.getData();
 		int length = packet.getLength();
-		system.net.IPEndPoint[] remoteEP = new system.net.IPEndPoint[] {
-		    new system.net.IPEndPoint(0, 0)
+		cli.System.Net.IPEndPoint[] remoteEP = new cli.System.Net.IPEndPoint[] {
+		    new cli.System.Net.IPEndPoint(0, 0)
 		};
-		byte[] buf = socket.Receive(remoteEP);
+		byte[] buf = ByteArrayHack.cast(socket.Receive(remoteEP));
 		System.arraycopy(buf, 0, data, 0, Math.min(length, buf.length));
 		// I think the spec says that the Length property of DatagramPacket
 		// contains the number of bytes in the network packet (even if
@@ -201,10 +202,10 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 		packet.setAddress(remoteAddress);
 		packet.setPort(remoteEP[0].get_Port());
 	    }
-	    catch(system.net.sockets.SocketException x)
+	    catch(cli.System.Net.Sockets.SocketException x)
 	    {
 		// TODO error handling
-		throw new IOException(x.get_Message());
+		throw new IOException(x.getMessage());
 	    }
 	}
 
@@ -221,13 +222,13 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	{
 		try
 		{
-			if(false) throw new system.net.sockets.SocketException();
-			socket.JoinMulticastGroup(new system.net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr)));
+			if(false) throw new cli.System.Net.Sockets.SocketException();
+			socket.JoinMulticastGroup(new cli.System.Net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr)));
 		}
-		catch(system.net.sockets.SocketException x)
+		catch(cli.System.Net.Sockets.SocketException x)
 		{
 			// TODO error handling
-			throw new IOException(x.get_Message());
+			throw new IOException(x.getMessage());
 		}
 	}
 
@@ -244,13 +245,13 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	{
 		try
 		{
-			if(false) throw new system.net.sockets.SocketException();
-			socket.DropMulticastGroup(new system.net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr)));
+			if(false) throw new cli.System.Net.Sockets.SocketException();
+			socket.DropMulticastGroup(new cli.System.Net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr)));
 		}
-		catch(system.net.sockets.SocketException x)
+		catch(cli.System.Net.Sockets.SocketException x)
 		{
 			// TODO error handling
-			throw new IOException(x.get_Message());
+			throw new IOException(x.getMessage());
 		}
 	}
 
@@ -335,20 +336,20 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	{
 		try
 		{
-			if(false) throw new system.net.sockets.SocketException();
+			if(false) throw new cli.System.Net.Sockets.SocketException();
 			switch(option_id)
 			{
 				case IP_TTL:
-					return new Integer(CIL.unbox_int(socket.getSocket().GetSocketOption(SocketOptionLevel.IP, SocketOptionName.IpTimeToLive)));
+					return new Integer(CIL.unbox_int(socket.getSocket().GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive))));
 				case SocketOptions.SO_TIMEOUT:
-				        return new Integer(CIL.unbox_int(socket.getSocket().GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout)));
+				        return new Integer(CIL.unbox_int(socket.getSocket().GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout))));
 				default:
 					throw new Error("getOption(" + option_id + ") not implemented");
 			}
 		}
-		catch(system.net.sockets.SocketException x)
+		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			throw new SocketException(x.get_Message());
+			throw new SocketException(x.getMessage());
 		}
 	}
 
@@ -366,26 +367,26 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	{
 		try
 		{
-			if(false) throw new system.net.sockets.SocketException();
+			if(false) throw new cli.System.Net.Sockets.SocketException();
 			switch(option_id)
 			{
 				case IP_TTL:
-					socket.getSocket().SetSocketOption(SocketOptionLevel.IP, SocketOptionName.IpTimeToLive, ((Integer)val).intValue());
+					socket.getSocket().SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ((Integer)val).intValue());
 					break;
 				case SocketOptions.SO_TIMEOUT:
-				        socket.getSocket().SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, ((Integer)val).intValue());
-					socket.getSocket().SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, ((Integer)val).intValue());
+				        socket.getSocket().SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout), ((Integer)val).intValue());
+					socket.getSocket().SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendTimeout), ((Integer)val).intValue());
 					break;
 				case SocketOptions.SO_REUSEADDR:
-					socket.getSocket().SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, ((Boolean)val).booleanValue() ? 1 : 0);
+					socket.getSocket().SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress), ((Boolean)val).booleanValue() ? 1 : 0);
 					break;
 				default:
 					throw new Error("setOption(" + option_id + ") not implemented");
 			}
 		}
-		catch(system.net.sockets.SocketException x)
+		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			throw new SocketException(x.get_Message());
+			throw new SocketException(x.getMessage());
 		}
 	}
 

@@ -46,8 +46,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.lang.reflect.Constructor;
 import gnu.java.lang.SystemClassLoader;
-import system.*;
-import system.reflection.*;
+import cli.System.*;
+import cli.System.Reflection.*;
 
 /**
  * java.lang.VMClassLoader is a package-private helper for VMs to implement
@@ -217,12 +217,7 @@ final class VMClassLoader
    * @param type the primitive type
    * @return a "bogus" class representing the primitive type
    */
-	static final Class getPrimitiveClass(char type)
-	{
-		return VMClass.getClassFromType(getPrimitiveType(type));
-	}
-	
-	private static native system.Type getPrimitiveType(char type);
+	static native Class getPrimitiveClass(char type);
 
   /**
    * The system default for assertion status. This is used for all system

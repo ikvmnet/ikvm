@@ -38,8 +38,6 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
-import system.reflection.*;
-
 /**
  * The Method class represents a member method of a class. It also allows
  * dynamic invocation, via reflection. This works for both static and

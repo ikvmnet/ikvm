@@ -25,8 +25,9 @@ using System;
 using System.Reflection;
 using System.IO;
 using System.Text;
-using System.Collections;
 using ICSharpCode.SharpZipLib.Zip;
+using java.lang;
+using java.lang.reflect;
 
 public class NetExp
 {
@@ -39,6 +40,10 @@ public class NetExp
 		{
 			assembly = Assembly.LoadFrom(args[0]);
 		}
+		else
+		{
+			assembly = Assembly.LoadWithPartialName(args[0]);
+		}
 		if(assembly == null)
 		{
 			Console.Error.WriteLine("Error: Assembly \"{0}\" not found", args[0]);
@@ -46,299 +51,19 @@ public class NetExp
 		else
 		{
 			zipFile = new ZipOutputStream(new FileStream(assembly.GetName().Name + ".jar", FileMode.Create));
+			// HACK if we're doing the "classpath" assembly, also include the remapped types
+			// java.lang.Object and java.lang.Throwable are automatic, because of the $OverrideStub
+			if(args[0] == "classpath")
+			{
+				ProcessClass(assembly.FullName, Class.forName("java.lang.String"), null);
+				ProcessClass(assembly.FullName, Class.forName("java.lang.Comparable"), null);
+			}
 			ProcessAssembly(assembly);
 			zipFile.Close();
 		}
-	}
-
-	private static void ProcessAssembly(Assembly assembly)
-	{
-		object[] attribs = assembly.GetCustomAttributes(typeof(CLSCompliantAttribute), false);
-		bool assemblyIsCLSCompliant = true;
-		if(attribs.Length != 1)
-		{
-			assemblyIsCLSCompliant = false;
-			Console.Error.WriteLine("Warning: assembly has no (or multiple) CLS compliance attribute");
-		}
-		else if(!((CLSCompliantAttribute)attribs[0]).IsCompliant)
-		{
-			assemblyIsCLSCompliant = false;
-			Console.Error.WriteLine("Warning: assembly is marked as non-CLS compliant");
-		}
-		foreach(Type t in assembly.GetTypes())
-		{
-			bool typeIsCLSCompliant = true;
-			if(assemblyIsCLSCompliant)
-			{
-				attribs = t.GetCustomAttributes(typeof(CLSCompliantAttribute), false);
-				if(attribs.Length == 1)
-				{
-					typeIsCLSCompliant = ((CLSCompliantAttribute)attribs[0]).IsCompliant;
-				}
-			}
-			if(t.IsPublic && typeIsCLSCompliant)
-			{
-				ProcessType(t);
-			}
-		}
-	}
-
-	private static object UnwrapEnum(object o)
-	{
-		// is there a way to generically convert a boxed enum to its boxed underlying value?
-		Type underlyingType = Enum.GetUnderlyingType(o.GetType());
-		if (underlyingType == typeof(long))
-		{
-			o = (long)o;
-		}	
-		else if(underlyingType == typeof(int))
-		{
-			o = (int)o;
-		}
-		else if(underlyingType == typeof(short))
-		{
-			o = (short)o;
-		}
-		else if (underlyingType == typeof(sbyte))
-		{
-			o = (sbyte)o;
-		}
-		else if (underlyingType == typeof(ulong))
-		{
-			o = (ulong)o;
-		}		
-		else if (underlyingType == typeof(uint))
-		{
-			o = (uint)o;
-		}
-		else if (underlyingType == typeof(ushort))
-		{
-			o = (ushort)o;
-		}
-		else if (underlyingType == typeof(byte))
-		{
-			o = (byte)o;
-		}
-		else
-		{
-			throw new NotImplementedException(o.GetType().Name);
-		}
-		return o;
-	}
-
-	private static string ClassName(Type t)
-	{
-		if(t == typeof(object))
-		{
-			return "java/lang/Object";
-		}
-		else if(t == typeof(string))
-		{
-			return "java/lang/String";
-		}
-		string name = t.FullName;
-		int lastDot = name.LastIndexOf('.');
-		if(lastDot > 0)
-		{
-			name = name.Substring(0, lastDot).ToLower() + name.Substring(lastDot);
-		}
-		return name.Replace('.', '/');
-	}
-
-	// returns the mapped type in signature format (e.g. Ljava/lang/String;)
-	private static string SigType(Type t)
-	{
-		if(t.IsByRef)
-		{
-			return "[" + SigType(t.GetElementType());
-		}
-		if(t.IsEnum)
-		{
-			t = Enum.GetUnderlyingType(t);
-		}
-		if(t == typeof(void))
-		{
-			return "V";
-		}
-		else if(t == typeof(byte) || t == typeof(sbyte))
-		{
-			return "B";
-		}
-		else if(t == typeof(bool))
-		{
-			return "Z";
-		}
-		else if(t == typeof(short) || t == typeof(ushort))
-		{
-			return "S";
-		}
-		else if(t == typeof(char))
-		{
-			return "C";
-		}
-		else if(t == typeof(int) || t == typeof(uint))
-		{
-			return "I";
-		}
-		else if(t == typeof(long) || t == typeof(ulong))
-		{
-			return "J";
-		}
-		else if(t == typeof(float))
-		{
-			return "F";
-		}
-		else if(t == typeof(double))
-		{
-			return "D";
-		}
-		else if(t == typeof(IntPtr))
-		{
-			// HACK
-			return "I";
-		}
-		else if(t.IsArray)
-		{
-			StringBuilder sb = new StringBuilder();
-			while(t.IsArray)
-			{
-				sb.Append('[');
-				t = t.GetElementType();
-			}
-			sb.Append(SigType(t));
-			return sb.ToString();
-		}
-		else if(!t.IsPrimitive)
-		{
-			return "L" + ClassName(t) + ";";
-		}
-		else
-		{
-			throw new NotImplementedException(t.FullName);
-		}
-	}
-
-	private static void ProcessType(Type type)
-	{
-		if(type == typeof(object))// || type == typeof(string))
-		{
-			// special case for System.Object & System.String, don't emit those
-			return;
-		}
-		string name = ClassName(type);
-		if(type == typeof(string))
-		{
-			name = "system/String";
-		}
-		string super;
-		if(type.BaseType == null)
-		{
-			// in .NET interfaces don't have a baseType, but in Java they "extend" java/lang/Object
-			super = "java/lang/Object";
-		}
-		else
-		{
-			if(type == typeof(Exception))
-			{
-				super = "java/lang/Throwable";
-			}
-			else
-			{
-				super = ClassName(type.BaseType);
-			}
-		}
-		Modifiers mods = Modifiers.Public | Modifiers.Super;
-		if(type.IsInterface)
-		{
-			mods |= Modifiers.Interface;
-		}
-		if(type.IsSealed)
-		{
-			mods |= Modifiers.Final;
-		}
-		if(type.IsAbstract)
-		{
-			mods |= Modifiers.Abstract;
-		}
-		ClassFileWriter f = new ClassFileWriter(mods, name, super);
-		f.AddStringAttribute("IK.VM.NET.Type", type.AssemblyQualifiedName);
-		FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-		Hashtable clashtable = new Hashtable();
-		for(int i = 0; i < fields.Length; i++)
-		{
-			if(fields[i].IsPublic || fields[i].IsFamily)
-			{
-				object[] attribs = fields[i].GetCustomAttributes(typeof(CLSCompliantAttribute), false);
-				if(attribs.Length == 1 && !((CLSCompliantAttribute)attribs[0]).IsCompliant)
-				{
-					// skip non-CLS compliant field
-				}
-				else
-				{
-					ProcessField(type, f, fields[i], clashtable);
-				}
-			}
-		}
-		clashtable.Clear();
-		ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-		for(int i = 0; i < constructors.Length; i++)
-		{
-			if(constructors[i].IsPublic || constructors[i].IsFamily)
-			{
-				object[] attribs = constructors[i].GetCustomAttributes(typeof(CLSCompliantAttribute), false);
-				if(attribs.Length == 1 && !((CLSCompliantAttribute)attribs[0]).IsCompliant)
-				{
-					// skip non-CLS compliant constructor
-				}
-				else
-				{
-					ProcessMethod(type, f, constructors[i], clashtable);
-				}
-			}
-		}
-		MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
-		for(int i = 0; i < methods.Length; i++)
-		{
-			if(methods[i].IsPublic || methods[i].IsFamily)
-			{
-				object[] attribs = methods[i].GetCustomAttributes(typeof(CLSCompliantAttribute), false);
-				if(attribs.Length == 1 && !((CLSCompliantAttribute)attribs[0]).IsCompliant)
-				{
-					// skip non-CLS compliant method
-				}
-				else
-				{
-					ProcessMethod(type, f, methods[i], clashtable);
-				}
-			}
-		}
-		// for delegates we have to construct the inner interface
-		if(type.IsSubclassOf(typeof(MulticastDelegate)))
-		{
-			InnerClassesAttribute innerclasses = new InnerClassesAttribute(f);
-			string outer = ClassName(type);
-			innerclasses.Add(outer + "$Method", outer, "Method", 0x609);
-			f.AddAttribute(innerclasses);
-			// now we construct the inner interface type
-			ClassFileWriter iface = new ClassFileWriter(Modifiers.Interface | Modifiers.Public | Modifiers.Abstract, outer + "$Method", "java/lang/Object");
-			MethodInfo invoke = type.GetMethod("Invoke");
-			StringBuilder sb = new StringBuilder();
-			sb.Append('(');
-			ParameterInfo[] parameters = invoke.GetParameters();
-			for(int i = 0; i < parameters.Length; i++)
-			{
-				sb.Append(SigType(parameters[i].ParameterType));
-			}
-			sb.Append(')');
-			sb.Append(SigType(invoke.ReturnType));
-			// TODO IK.VM.NET.Sig must be set here as well
-			iface.AddMethod(Modifiers.Public | Modifiers.Abstract, "Invoke", sb.ToString());
-			innerclasses = new InnerClassesAttribute(iface);
-			innerclasses.Add(outer + "$Method", outer, "Method", 0x609);
-			iface.AddAttribute(innerclasses);
-			WriteClass(outer + "$Method.class", iface);
-		}
-		WriteClass(name + ".class", f);
+		// HACK if we run on the "classpath" assembly, the awt thread gets started,
+		// so we force an exit here
+		Environment.Exit(0);
 	}
 
 	private static void WriteClass(string name, ClassFileWriter c)
@@ -347,164 +72,219 @@ public class NetExp
 		c.Write(zipFile);
 	}
 
-	private static void ProcessField(Type type, ClassFileWriter f, FieldInfo fi, Hashtable clashtable)
+	private class MyClassLoader : ClassLoader
 	{
-		Modifiers access;
-		if(fi.IsPublic)
+		public Class loadClass(Type type)
 		{
-			access = Modifiers.Public;
-		}
-		else
-		{
-			access = Modifiers.Protected;
-		}
-		object v = null;
-		if(fi.IsLiteral)
-		{
-			v = fi.GetValue(null);
-			if(v is Enum)
-			{
-				v = UnwrapEnum(v);
-			}
-			if(v is byte)
-			{
-				v = (int)(byte)v;
-			}
-			else if (v is sbyte)
-			{
-				v = (int)(sbyte)v;
-			}
-			else if(v is char)
-			{
-				v = (int)(char)v;
-			}
-			else if(v is short)
-			{
-				v = (int)(short)v;
-			}
-			else if(v is ushort)
-			{
-				v = (int)(ushort)v;
-			}
-			else if(v is bool)
-			{
-				v = ((bool)v) ? 1 : 0;
-			}
-			else if(v is int || v is uint || v is ulong || v is long || v is float || v is double || v is string)
-			{
-			}
-			else
-			{
-				throw new NotImplementedException(v.GetType().FullName);
-			}
-			access |= Modifiers.Static | Modifiers.Final;
-		}
-		else
-		{
-			if(fi.IsInitOnly)
-			{
-				access |= Modifiers.Final;
-			}
-			if(fi.IsStatic)
-			{
-				access |= Modifiers.Static;
-			}
-			if(type.IsEnum)
-			{
-				// we don't want the value__ field
-				return;
-			}
-		}
-		string sig = SigType(fi.FieldType);
-		string key = fi.Name + sig;
-		if(clashtable.ContainsKey(key))
-		{
-			// TODO instead of skipping, we should mangle the name
-			Console.Error.WriteLine("Skipping field " + type.FullName + "." + fi.Name + " (type " + sig + ") because it clashes");
-		}
-		else
-		{
-			clashtable.Add(key, key);
-			f.AddField(access, fi.Name, sig, v);
+			return base.loadClass(type.AssemblyQualifiedName);
 		}
 	}
 
-	private static void ProcessMethod(Type type, ClassFileWriter f, MethodBase mb, Hashtable clashtable)
+	private static void ProcessAssembly(Assembly assembly)
 	{
-		Modifiers access = 0;
-		if(!mb.IsAbstract)
+		// HACK we use our own class loader to prevent class initialization
+		MyClassLoader loader = new MyClassLoader();
+		foreach(Type t in assembly.GetTypes())
 		{
-			access = Modifiers.Native;
+			if(t.IsPublic)
+			{
+				ProcessClass(assembly.FullName, loader.loadClass(t), null);
+			}
 		}
-		if(mb.IsPublic)
+	}
+
+	private static void ProcessClass(string assemblyName, Class c, Class outer)
+	{
+		string name = c.getName().Replace('.', '/');
+		//Console.WriteLine(name);
+		string super = null;
+		if(c.getSuperclass() != null)
 		{
-			access |= Modifiers.Public;
+			super = c.getSuperclass().getName().Replace('.', '/');
 		}
-		else
+		if(c.isInterface())
 		{
-			access |= Modifiers.Protected;
+			super = "java/lang/Object";
 		}
-		if(mb.IsFinal || !mb.IsVirtual)
+		ClassFileWriter f = new ClassFileWriter((Modifiers)c.getModifiers(), name, super);
+		f.AddStringAttribute("IKVM.NET.Assembly", assemblyName);
+		InnerClassesAttribute innerClassesAttribute = null;
+		if(outer != null)
 		{
-			access |= Modifiers.Final;
+			innerClassesAttribute = new InnerClassesAttribute(f);
+			innerClassesAttribute.Add(name, outer.getName().Replace('.', '/'), null, (ushort)Modifiers.Public);
 		}
-		if(mb.IsStatic)
+		Class[] innerClasses = c.getDeclaredClasses();
+		for(int i = 0; i < innerClasses.Length; i++)
 		{
-			access |= Modifiers.Static;
+			Modifiers mods = (Modifiers)innerClasses[i].getModifiers();
+			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
+			{
+				if(innerClassesAttribute == null)
+				{
+					innerClassesAttribute = new InnerClassesAttribute(f);
+				}
+				string namePart = innerClasses[i].getName();
+				namePart = namePart.Substring(namePart.LastIndexOf('$') + 1);
+				innerClassesAttribute.Add(innerClasses[i].getName().Replace('.', '/'), name, namePart, (ushort)innerClasses[i].getModifiers());
+				ProcessClass(assemblyName, innerClasses[i], c);
+			}
 		}
-		if(mb.IsAbstract)
+		Constructor[] constructors = c.getDeclaredConstructors();
+		for(int i = 0; i < constructors.Length; i++)
 		{
-			access |= Modifiers.Abstract;
+			Modifiers mods = (Modifiers)constructors[i].getModifiers();
+			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
+			{
+				f.AddMethod(mods | Modifiers.Native, "<init>", MakeSig(constructors[i].getParameterTypes(), java.lang.Void.TYPE));
+			}
 		}
-		// special case for delegate constructors!
-		if(mb.IsConstructor && type.IsSubclassOf(typeof(MulticastDelegate)))
+		Method[] methods = c.getDeclaredMethods();
+		for(int i = 0; i < methods.Length; i++)
 		{
-			access &= ~Modifiers.Final;
-			f.AddMethod(access, "<init>", "(L" + ClassName(type) + "$Method;)V");
-			return;
+			Modifiers mods = (Modifiers)methods[i].getModifiers();
+			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
+			{
+				if((mods & Modifiers.Abstract) == 0)
+				{
+					mods |= Modifiers.Native;
+				}
+				f.AddMethod(mods, methods[i].getName(), MakeSig(methods[i].getParameterTypes(), methods[i].getReturnType()));
+			}
 		}
-		// HACK the native signature is really is very lame way of storing the signature
-		// TODO only store it when it doesn't match the Java sig and split it into parts (instead of one giant string)
-		StringBuilder nativesig = new StringBuilder();
+		Field[] fields = c.getDeclaredFields();
+		for(int i = 0; i < fields.Length; i++)
+		{
+			Modifiers mods = (Modifiers)fields[i].getModifiers();
+			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
+			{
+				object constantValue = null;
+				// HACK we only look for constants on static final fields, to trigger less static initializers
+				if((mods & (Modifiers.Final | Modifiers.Static)) == (Modifiers.Final | Modifiers.Static))
+				{
+					// HACK we use a non-standard API to get constant value
+					// NOTE we can't use Field.get() because that will run the static initializer and
+					// also won't allow us to see the difference between constants and blank final fields.
+					constantValue = NativeCode.java.lang.reflect.Field.getConstant(fields[i]);
+					if(constantValue != null)
+					{
+						if(constantValue is java.lang.Boolean)
+						{
+							constantValue = ((java.lang.Boolean)constantValue).booleanValue();
+						}
+						else if(constantValue is java.lang.Byte)
+						{
+							constantValue = ((java.lang.Byte)constantValue).byteValue();
+						}
+						else if(constantValue is java.lang.Short)
+						{
+							constantValue = ((java.lang.Short)constantValue).shortValue();
+						}
+						else if(constantValue is java.lang.Character)
+						{
+							constantValue = ((java.lang.Character)constantValue).charValue();
+						}
+						else if(constantValue is java.lang.Integer)
+						{
+							constantValue = ((java.lang.Integer)constantValue).intValue();
+						}
+						else if(constantValue is java.lang.Long)
+						{
+							constantValue = ((java.lang.Long)constantValue).longValue();
+						}
+						else if(constantValue is java.lang.Float)
+						{
+							constantValue = ((java.lang.Float)constantValue).floatValue();
+						}
+						else if(constantValue is java.lang.Double)
+						{
+							constantValue = ((java.lang.Double)constantValue).doubleValue();
+						}
+						else if(constantValue is string)
+						{
+							// no conversion needed
+						}
+						else
+						{
+							throw new InvalidOperationException();
+						}
+					}
+				}
+				f.AddField(mods, fields[i].getName(), ClassToSig(fields[i].getType()), constantValue);
+			}
+		}
+		if(innerClassesAttribute != null)
+		{
+			f.AddAttribute(innerClassesAttribute);
+		}
+		WriteClass(name + ".class", f);
+	}
+
+	private static string MakeSig(Class[] args, Class ret)
+	{
 		StringBuilder sb = new StringBuilder();
 		sb.Append('(');
-		ParameterInfo[] parameters = mb.GetParameters();
-		string sep = "";
-		for(int i = 0; i < parameters.Length; i++)
+		for(int i = 0; i < args.Length; i++)
 		{
-			if(parameters[i].ParameterType.IsPointer)
-			{
-				// Java doesn't support pointer parameters
-				return;
-			}
-			sb.Append(SigType(parameters[i].ParameterType));
-			nativesig.Append(sep).Append(parameters[i].ParameterType.AssemblyQualifiedName);
-			sep = "|";
+			sb.Append(ClassToSig(args[i]));
 		}
 		sb.Append(')');
-		if(mb.IsConstructor)
+		sb.Append(ClassToSig(ret));
+		return sb.ToString();
+	}
+
+	private static string ClassToSig(Class c)
+	{
+		if(c.isPrimitive())
 		{
-			// HACK constructors may not be final in Java
-			access &= ~Modifiers.Final;
-			sb.Append('V');
+			if(c == java.lang.Void.TYPE)
+			{
+				return "V";
+			}
+			else if(c == java.lang.Byte.TYPE)
+			{
+				return "B";
+			}
+			else if(c == java.lang.Boolean.TYPE)
+			{
+				return "Z";
+			}
+			else if(c == java.lang.Short.TYPE)
+			{
+				return "S";
+			}
+			else if(c == java.lang.Character.TYPE)
+			{
+				return "C";
+			}
+			else if(c == java.lang.Integer.TYPE)
+			{
+				return "I";
+			}
+			else if(c == java.lang.Long.TYPE)
+			{
+				return "J";
+			}
+			else if(c == java.lang.Float.TYPE)
+			{
+				return "F";
+			}
+			else if(c == java.lang.Double.TYPE)
+			{
+				return "D";
+			}
+			else
+			{
+				throw new InvalidOperationException();
+			}
+		}
+		else if(c.isArray())
+		{
+			return "[" + ClassToSig(c.getComponentType());
 		}
 		else
 		{
-			sb.Append(SigType(((MethodInfo)mb).ReturnType));
-		}
-		string name = mb.IsConstructor ? "<init>" : mb.Name;
-		string sig = sb.ToString();
-		string key = name + sig;
-		if(clashtable.ContainsKey(key))
-		{
-			// TODO instead of skipping, we should mangle the name
-			Console.Error.WriteLine("Skipping method " + type.FullName + "." + name + sig + " because it clashes");
-		}
-		else
-		{
-			clashtable.Add(key, key);
-			f.AddMethod(access, name, sig)
-				.AddAttribute(new StringAttribute(f.AddUtf8("IK.VM.NET.Sig"), f.AddUtf8(nativesig.ToString())));
+			return "L" + c.getName().Replace('.', '/') + ";";
 		}
 	}
 }

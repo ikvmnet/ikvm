@@ -179,6 +179,10 @@ namespace NativeCode.java
 					{
 						return Activator.CreateInstance(java_lang_Byte, new object[] { o });
 					}
+					else if(o is byte)
+					{
+						return Activator.CreateInstance(java_lang_Byte, new object[] { (sbyte)(byte)o });
+					}
 					else if(o is bool)
 					{
 						return Activator.CreateInstance(java_lang_Boolean, new object[] { o });
@@ -186,6 +190,10 @@ namespace NativeCode.java
 					else if(o is short)
 					{
 						return Activator.CreateInstance(java_lang_Short, new object[] { o });
+					}
+					else if(o is ushort)
+					{
+						return Activator.CreateInstance(java_lang_Short, new object[] { (short)(ushort)o });
 					}
 					else if(o is char)
 					{
@@ -195,9 +203,17 @@ namespace NativeCode.java
 					{
 						return Activator.CreateInstance(java_lang_Integer, new object[] { o });
 					}
+					else if(o is uint)
+					{
+						return Activator.CreateInstance(java_lang_Integer, new object[] { (int)(uint)o });
+					}
 					else if(o is long)
 					{
 						return Activator.CreateInstance(java_lang_Long, new object[] { o });
+					}
+					else if(o is ulong)
+					{
+						return Activator.CreateInstance(java_lang_Long, new object[] { (long)(ulong)o });
 					}
 					else if(o is float)
 					{
@@ -206,6 +222,38 @@ namespace NativeCode.java
 					else if(o is double)
 					{
 						return Activator.CreateInstance(java_lang_Double, new object[] { o });
+					}
+					else if(o is Enum)
+					{
+						Type enumType = Enum.GetUnderlyingType(o.GetType());
+						if(enumType == typeof(byte) || enumType == typeof(sbyte))
+						{
+							return JavaWrapper.Box((sbyte)((IConvertible)o).ToInt32(null));
+						}
+						else if(enumType == typeof(short) || enumType == typeof(ushort))
+						{
+							return JavaWrapper.Box((short)((IConvertible)o).ToInt32(null));
+						}
+						else if(enumType == typeof(int))
+						{
+							return JavaWrapper.Box(((IConvertible)o).ToInt32(null));
+						}
+						else if(enumType == typeof(uint))
+						{
+							return JavaWrapper.Box(unchecked((int)((IConvertible)o).ToUInt32(null)));
+						}
+						else if(enumType == typeof(long))
+						{
+							return JavaWrapper.Box(((IConvertible)o).ToInt64(null));
+						}
+						else if(enumType == typeof(ulong))
+						{
+							return JavaWrapper.Box(unchecked((long)((IConvertible)o).ToUInt64(null)));
+						}
+						else
+						{
+							throw new InvalidOperationException();
+						}
 					}
 					else
 					{
@@ -327,6 +375,14 @@ namespace NativeCode.java
 
 			public class Field
 			{
+				// HACK this is used by netexp to query the constant value of a field
+				public static object getConstant(object field)
+				{
+					// HACK we use reflection to extract the fieldCookie from the java.lang.reflect.Field object
+					FieldWrapper wrapper = (FieldWrapper)field.GetType().GetField("fieldCookie", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(field);
+					return wrapper.GetConstant();
+				}
+
 				public static string GetName(object fieldCookie)
 				{
 					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
@@ -951,28 +1007,28 @@ namespace NativeCode.java
 				return null;
 			}
 
-			public static Type getPrimitiveType(char type)
+			public static object getPrimitiveClass(char type)
 			{
 				switch(type)
 				{
 					case 'Z':
-						return typeof(bool);
+						return VMClass.getClassFromType(typeof(bool));
 					case 'B':
-						return typeof(sbyte);
+						return VMClass.getClassFromType(typeof(sbyte));
 					case 'C':
-						return typeof(char);
+						return VMClass.getClassFromType(typeof(char));
 					case 'D':
-						return typeof(double);
+						return VMClass.getClassFromType(typeof(double));
 					case 'F':
-						return typeof(float);
+						return VMClass.getClassFromType(typeof(float));
 					case 'I':
-						return typeof(int);
+						return VMClass.getClassFromType(typeof(int));
 					case 'J':
-						return typeof(long);
+						return VMClass.getClassFromType(typeof(long));
 					case 'S':
-						return typeof(short);
+						return VMClass.getClassFromType(typeof(short));
 					case 'V':
-						return typeof(void);
+						return VMClass.getClassFromType(typeof(void));
 					default:
 						throw new InvalidOperationException();
 				}
@@ -990,7 +1046,7 @@ namespace NativeCode.java
 						throw JavaException.NoClassDefFoundError("{0} (wrong name: {1})", name, classFile.Name);
 					}
 					TypeWrapper type = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader).DefineClass(classFile);
-					object clazz = VMClass.CreateInstance(null, type);
+					object clazz = VMClass.CreateClassInstance(type);
 					if(protectionDomain != null)
 					{
 						// TODO cache the FieldInfo
@@ -1008,8 +1064,9 @@ namespace NativeCode.java
 		public class VMClass
 		{
 			private static Hashtable map = new Hashtable();
-			private static MethodInfo createClass;
-			private static MethodInfo getTypeMethod;
+			private delegate object CreateClassDelegate(object typeWrapper);
+			private static CreateClassDelegate CreateClass;
+			private static MethodInfo getWrapper;
 
 			public static void throwException(Exception e)
 			{
@@ -1038,20 +1095,27 @@ namespace NativeCode.java
 				return null;
 			}
 
-			internal static object CreateInstance(Type type, TypeWrapper wrapper)
+			internal static object CreateClassInstance(TypeWrapper wrapper)
 			{
-				TypeWrapper.AssertFinished(type);
-				if(createClass == null)
+				if(CreateClass == null)
 				{
-					createClass = ClassLoaderWrapper.GetType("java.lang.VMClass").GetMethod("createClass", BindingFlags.Static | BindingFlags.NonPublic);
+					CreateClass = (CreateClassDelegate)Delegate.CreateDelegate(typeof(CreateClassDelegate), ClassLoaderWrapper.GetType("java.lang.VMClass").GetMethod("createClass", BindingFlags.Static | BindingFlags.Public));
+					// HACK to make sure we don't run into any problems creating class objects for classes that
+					// participate in the VMClass static initialization, we first do a bogus call to initialize
+					// the machinery (I ran into this when running netexp on classpath.dll)
+					CreateClass(null);
+					lock(map.SyncRoot)
+					{
+						object o = map[wrapper];
+						if(o != null)
+						{
+							return o;
+						}
+					}
 				}
-				object clazz = createClass.Invoke(null, new object[] { type, wrapper });
+				object clazz = CreateClass(wrapper);
 				lock(map.SyncRoot)
 				{
-					if(type != null)
-					{
-						map.Add(type, clazz);
-					}
 					if(wrapper != null)
 					{
 						map.Add(wrapper, clazz);
@@ -1060,9 +1124,19 @@ namespace NativeCode.java
 				return clazz;
 			}
 
-			public static bool IsAssignableFrom(Object w1, Object w2)
+			public static bool IsAssignableFrom(object w1, object w2)
 			{
 				return ((TypeWrapper)w2).IsAssignableTo((TypeWrapper)w1);
+			}
+
+			public static bool IsInterface(object wrapper)
+			{
+				return ((TypeWrapper)wrapper).IsInterface;
+			}
+
+			public static bool IsArray(object wrapper)
+			{
+				return ((TypeWrapper)wrapper).IsArray;
 			}
 
 			public static object GetSuperClassFromWrapper(object wrapper)
@@ -1093,13 +1167,6 @@ namespace NativeCode.java
 				((TypeWrapper)wrapper).Finish();
 				Type type = ((TypeWrapper)wrapper).Type;
 				TypeWrapper.AssertFinished(type);
-				lock(map.SyncRoot)
-				{
-					// NOTE since this method can be called multiple times (or after getClassFromType has added
-					// the Class to the map), we don't use Add() here, but the indexer because that can handle
-					// "overwriting" the existing association (which should always be the same as the new one)
-					map[type] = clazz;
-				}
 				return type;
 			}
 
@@ -1110,11 +1177,13 @@ namespace NativeCode.java
 
 			public static Type getType(object clazz)
 			{
-				if(getTypeMethod == null)
+				if(getWrapper == null)
 				{
-					getTypeMethod = ClassLoaderWrapper.GetType("java.lang.VMClass").GetMethod("getTypeFromClass", BindingFlags.NonPublic | BindingFlags.Static);
+					getWrapper = ClassLoaderWrapper.GetType("java.lang.VMClass").GetMethod("getWrapperFromClass", BindingFlags.NonPublic | BindingFlags.Static);
 				}
-				return (Type)getTypeMethod.Invoke(null, new object[] { clazz });
+				TypeWrapper wrapper = (TypeWrapper)getWrapper.Invoke(null, new object[] { clazz });
+				wrapper.Finish();
+				return wrapper.Type;
 			}
 
 			internal static object getClassFromWrapper(TypeWrapper wrapper)
@@ -1124,12 +1193,7 @@ namespace NativeCode.java
 					object clazz = map[wrapper];
 					if(clazz == null)
 					{
-						// Maybe the Class object was already constructed from the type
-						clazz = map[wrapper.Type];
-						if(clazz == null)
-						{
-							clazz = CreateInstance(null, wrapper);
-						}
+						clazz = CreateClassInstance(wrapper);
 					}
 					return clazz;
 				}
@@ -1142,71 +1206,61 @@ namespace NativeCode.java
 				{
 					return null;
 				}
-				lock(map.SyncRoot)
-				{
-					object clazz = map[type];
-					if(clazz == null)
-					{
-						// maybe the Class object was constructed from the wrapper
-						TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
-						if(wrapper != null)
-						{
-							clazz = map[wrapper];
-							if(clazz != null)
-							{
-								map.Add(type, clazz);
-								return clazz;
-							}
-						}
-						// NOTE we need to get the bootstrap classloader to trigger its construction (if it
-						// hasn't been created yet), because otherwise CreateInstance will do that and this
-						// causes the same class object to be created multiple times)
-						ClassLoaderWrapper.GetBootstrapClassLoader();
-						clazz = map[type];
-						if(clazz == null)
-						{
-							// if this type is an override stub (e.g. java.lang.Object), we need to return the
-							// class object for the parent type
-							// NOTE we first check if type isn't an array, because Type.IsDefined throws an exception
-							// when called on an array type (?)
-							if(!type.IsArray && type.IsDefined(typeof(HideFromReflectionAttribute), false))
-							{
-								clazz = getClassFromType(type.BaseType);
-								map.Add(type, clazz);
-							}
-							else
-							{
-								// TODO should we specify the wrapper?
-								// NOTE CreateInstance adds the Class to the "map"
-								clazz = CreateInstance(type, null);
-							}
-						}
-					}
-					return clazz;
-				}
+				return getClassFromWrapper(ClassLoaderWrapper.GetWrapperFromType(type));
 			}
 
-			public static string getName(Type type)
+			public static string GetName(object wrapper)
 			{
-				return GetName(type, null);
+				TypeWrapper typeWrapper = (TypeWrapper)wrapper;
+				if(typeWrapper.IsPrimitive)
+				{
+					if(typeWrapper == PrimitiveTypeWrapper.VOID)
+					{
+						return "void";
+					}
+					else if(typeWrapper == PrimitiveTypeWrapper.BYTE)
+					{
+						return "byte";
+					}
+					else if(typeWrapper == PrimitiveTypeWrapper.BOOLEAN)
+					{
+						return "boolean";
+					}
+					else if(typeWrapper == PrimitiveTypeWrapper.SHORT)
+					{
+						return "short";
+					}
+					else if(typeWrapper == PrimitiveTypeWrapper.CHAR)
+					{
+						return "char";
+					}
+					else if(typeWrapper == PrimitiveTypeWrapper.INT)
+					{
+						return "int";
+					}
+					else if(typeWrapper == PrimitiveTypeWrapper.LONG)
+					{
+						return "long";
+					}
+					else if(typeWrapper == PrimitiveTypeWrapper.FLOAT)
+					{
+						return "float";
+					}
+					else if(typeWrapper == PrimitiveTypeWrapper.DOUBLE)
+					{
+						return "double";
+					}
+					else
+					{
+						throw new InvalidOperationException();
+					}
+				}
+				return typeWrapper.Name;
 			}
 	
-			public static string GetName(Type type, object wrapperType)
+			internal static string getName(Type type)
 			{
-				if(type == null)
-				{
-					string name = ((TypeWrapper)wrapperType).Name;
-					// HACK name is null for primitives
-					if(name != null)
-					{
-						return name;
-					}
-					type = ((TypeWrapper)wrapperType).Type;
-				}
-				if(wrapperType == null)
-				{
-					wrapperType = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
-				}
+				TypeWrapper wrapperType = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
 				if(wrapperType != null)
 				{
 					string name = ((TypeWrapper)wrapperType).Name;
@@ -1256,7 +1310,8 @@ namespace NativeCode.java
 					}
 					else
 					{
-						return type.FullName;
+						// HACK we're assuming for the time being that Java code cannot define new value types
+						return DotNetTypeWrapper.GetName(type);
 					}
 				}
 				else if(type.IsArray)
@@ -1307,12 +1362,13 @@ namespace NativeCode.java
 						}
 						else
 						{
-							sb.Append(type.FullName);
+							// HACK we're assuming for the time being that Java code cannot define new value types
+							sb.Append(DotNetTypeWrapper.GetName(type));
 						}
 					}
 					else
 					{
-						sb.Append('L').Append(GetName(type, null)).Append(';');
+						sb.Append('L').Append(getName(type)).Append(';');
 					}
 					return sb.ToString();
 				}
@@ -1333,32 +1389,38 @@ namespace NativeCode.java
 					{
 						return ((InnerClassAttribute)attribs[0]).InnerClassName;
 					}
-					return type.FullName;
+					if(type.Assembly is System.Reflection.Emit.AssemblyBuilder || type.Assembly.IsDefined(typeof(JavaAssemblyAttribute), false))
+					{
+						return type.FullName;
+					}
+					else
+					{
+						return DotNetTypeWrapper.GetName(type);
+					}
 				}
 			}
 
 			[StackTraceInfo(Hidden = true)]
-			public static void initializeType(Type type)
-			{
-				RuntimeHelpers.RunClassConstructor(type.TypeHandle);
-			}
-
-			public static object getClassLoader0(Type type, object wrapper)
-			{
-				if(wrapper != null)
-				{
-					return ((TypeWrapper)wrapper).GetClassLoader().GetJavaClassLoader();
-				}
-				return ClassLoaderWrapper.GetClassLoader(type).GetJavaClassLoader();
-			}
-
-			public static object[] GetDeclaredMethods(Type type, object cwrapper, bool getMethods, bool publicOnly)
+			public static void initialize(object cwrapper)
 			{
 				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				if(wrapper == null)
-				{
-					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
-				}
+				wrapper.Finish();
+				RuntimeHelpers.RunClassConstructor(wrapper.Type.TypeHandle);
+			}
+
+			public static object getClassLoader0(object wrapper)
+			{
+				return ((TypeWrapper)wrapper).GetClassLoader().GetJavaClassLoader();
+			}
+
+			public static object getClassLoaderFromType(Type type)
+			{
+				return ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader().GetJavaClassLoader();
+			}
+
+			public static object[] GetDeclaredMethods(object cwrapper, bool getMethods, bool publicOnly)
+			{
+				TypeWrapper wrapper = (TypeWrapper)cwrapper;
 				// we need to finish the type otherwise all methods will not be in the method map yet
 				wrapper.Finish();
 				// we need to look through the array for unloadable types, because we may not let them
@@ -1400,13 +1462,9 @@ namespace NativeCode.java
 				return (MethodWrapper[])list.ToArray(typeof(MethodWrapper));
 			}
 
-			public static object[] GetDeclaredFields(Type type, object cwrapper, bool publicOnly)
+			public static object[] GetDeclaredFields(object cwrapper, bool publicOnly)
 			{
 				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				if(wrapper == null)
-				{
-					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
-				}
 				// we need to finish the type otherwise all fields will not be in the field map yet
 				wrapper.Finish();
 				// we need to look through the array for unloadable types, because we may not let them
@@ -1434,13 +1492,9 @@ namespace NativeCode.java
 				return fields;
 			}
 
-			public static object[] GetDeclaredClasses(Type type, object cwrapper, bool publicOnly)
+			public static object[] GetDeclaredClasses(object cwrapper, bool publicOnly)
 			{
 				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				if(wrapper == null)
-				{
-					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
-				}
 				// NOTE to get at the InnerClasses we need to finish the type
 				wrapper.Finish();
 				TypeWrapper[] wrappers = wrapper.InnerClasses;
@@ -1476,13 +1530,9 @@ namespace NativeCode.java
 				return innerclasses;
 			}
 
-			public static object GetDeclaringClass(Type type, object cwrapper)
+			public static object GetDeclaringClass(object cwrapper)
 			{
 				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				if(wrapper == null)
-				{
-					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
-				}
 				// before we can call DeclaringTypeWrapper, we need to finish the type
 				wrapper.Finish();
 				TypeWrapper declaring = wrapper.DeclaringTypeWrapper;
@@ -1497,14 +1547,11 @@ namespace NativeCode.java
 				return getClassFromWrapper(declaring);
 			}
 
-			public static object[] GetInterfaces(Type type, object cwrapper)
+			public static object[] GetInterfaces(object cwrapper)
 			{
 				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				if(wrapper == null)
-				{
-					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
-				}
 				// we need to finish the type otherwise all fields will not be in the field map yet
+				// TODO this should not be needed (make sure it isn't and remove)
 				wrapper.Finish();
 				TypeWrapper[] interfaceWrappers = wrapper.Interfaces;
 				object[] interfaces = new object[interfaceWrappers.Length];
@@ -1515,13 +1562,9 @@ namespace NativeCode.java
 				return interfaces;
 			}
 
-			public static int GetModifiers(Type type, Object cwrapper)
+			public static int GetModifiers(Object cwrapper)
 			{
 				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				if(wrapper == null)
-				{
-					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
-				}
 				// NOTE ReflectiveModifiers is only available for finished types
 				wrapper.Finish();
 				// NOTE we don't return the modifiers from the TypeWrapper, because for inner classes

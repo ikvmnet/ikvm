@@ -60,6 +60,7 @@ class Compiler
 		string outputfile = null;
 		string main = null;
 		bool nojni = false;
+		ArrayList classesToExclude = new ArrayList();
 		ArrayList references = new ArrayList();
 		ArrayList arglist = GetArgs(args);
 		if(arglist.Count == 0)
@@ -77,6 +78,8 @@ class Compiler
 			Console.Error.WriteLine("    -recurse:<filespec>     Recurse directory and include matching files");
 			Console.Error.WriteLine("    -nojni                  Do not generate JNI stub for native methods");
 			Console.Error.WriteLine("    -resource:<name>=<path> Include file as Java resource");
+			Console.Error.WriteLine("    -exclude:<filename>     A file containing a list of classes to exclude");
+			Console.Error.WriteLine("    -debug                  Creates debugging information for the output file");
 			return 1;
 		}
 		ArrayList classes = new ArrayList();
@@ -151,6 +154,14 @@ class Compiler
 				{
 					nojni = true;
 				}
+				else if(s.StartsWith("-exclude:"))
+				{
+					ProcessExclusionFile(classesToExclude, s.Substring(9));
+				}
+				else if(s == "-debug")
+				{
+					JVM.Debug = true;
+				}
 				else
 				{
 					Console.Error.WriteLine("Warning: Unrecognized option: {0}", s);
@@ -190,7 +201,7 @@ class Compiler
 		}
 		try
 		{
-			JVM.Compile(outputfile, assemblyname, main, target, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources);
+			JVM.Compile(outputfile, assemblyname, main, target, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)));
 			return 0;
 		}
 		catch(Exception x)
@@ -263,14 +274,21 @@ class Compiler
 				else
 				{
 					// include as resource
-					using(FileStream fs = new FileStream(file, FileMode.Open))
+					try 
 					{
-						byte[] b = new byte[fs.Length];
-						fs.Read(b, 0, b.Length);
-						// HACK very lame way to extract the resource name (by chopping off the base directory)
-						string name = file.Substring(baseDir.FullName.Length + 1);
-						name = name.Replace('\\', '/');
-						resources.Add(name, b);
+						using(FileStream fs = new FileStream(file, FileMode.Open))
+						{
+							byte[] b = new byte[fs.Length];
+							fs.Read(b, 0, b.Length);
+							// HACK very lame way to extract the resource name (by chopping off the base directory)
+							string name = file.Substring(baseDir.FullName.Length + 1);
+							name = name.Replace('\\', '/');
+							resources.Add(name, b);
+						}
+					}
+					catch(UnauthorizedAccessException)
+					{
+						Console.Error.WriteLine("Warning: Error reading file {0}: Access Denied", file);
 					}
 				}
 				break;
@@ -287,6 +305,30 @@ class Compiler
 		foreach(DirectoryInfo sub in dir.GetDirectories())
 		{
 			Recurse(classes, resources, baseDir, sub, spec);
+		}
+	}
+
+	//This processes an exclusion file with a single regular expression per line
+	private static void ProcessExclusionFile(ArrayList classesToExclude, String filename)
+	{
+		try 
+		{
+			using(StreamReader file = new StreamReader(filename))
+			{
+				String line;
+				while((line = file.ReadLine()) != null)
+				{
+					line = line.Trim();
+					if(!line.StartsWith("//") && line.Length != 0)
+					{
+						classesToExclude.Add(line);
+					}
+				}
+			}
+		} 
+		catch(FileNotFoundException) 
+		{
+			Console.Error.WriteLine("Warning: Could not find exclusion file '{0}'", filename);
 		}
 	}
 }

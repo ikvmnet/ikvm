@@ -126,7 +126,7 @@ class ClassLoaderWrapper
 		this.javaClassLoader = javaClassLoader;
 		if(javaClassLoader != null && loadClassDelegate == null)
 		{
-			loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), GetType("java.lang.VMClass"), "__loadClassHelper");
+			loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), GetType("java.lang.VMClass"), "loadClassHelper");
 		}
 	}
 
@@ -139,6 +139,11 @@ class ClassLoaderWrapper
 	internal static TypeWrapper[] GetGhostImplementers(TypeWrapper wrapper)
 	{
 		return (TypeWrapper[])((ArrayList)ghosts[wrapper.Name]).ToArray(typeof(TypeWrapper));
+	}
+
+	internal static bool IsRemappedType(Type type)
+	{
+		return typeToTypeWrapper[type] is RemappedTypeWrapper;
 	}
 
 	internal void LoadRemappedTypes()
@@ -161,7 +166,9 @@ class ClassLoaderWrapper
 				baseWrapper = null;
 			}
 			TypeWrapper tw = new RemappedTypeWrapper(this, modifiers, name, type, new TypeWrapper[0], baseWrapper);
+			Debug.Assert(!types.ContainsKey(name));
 			types.Add(name, tw);
+			Debug.Assert(!typeToTypeWrapper.ContainsKey(tw.Type));
 			typeToTypeWrapper.Add(tw.Type, tw);
 		}
 		// find the ghost interfaces
@@ -301,16 +308,44 @@ class ClassLoaderWrapper
 					Type t = Type.GetType(name);
 					if(t != null)
 					{
-						return GetCompiledTypeWrapper(t);
+						if(t.Assembly.IsDefined(typeof(JavaAssemblyAttribute), false))
+						{
+							return GetWrapperFromType(t);
+						}
+						else
+						{
+							// HACK weird way to load the .NET type wrapper that always works
+							// (for remapped types as well, because netexp uses this way of
+							// loading types, we need the remapped types to appear in their
+							// .NET "warped" form).
+							return LoadClassByDottedName(DotNetTypeWrapper.GetName(t));
+						}
 					}
 				}
+				// TODO why is this check here and not at the top of the method?
 				if(name != "")
 				{
-					type = GetBootstrapType(name);
-				}
-				if(type != null)
-				{
-					return type;
+					Type t = GetBootstrapTypeRaw(name);
+					if(t != null)
+					{
+						return GetWrapperFromBootstrapType(t);
+					}
+					type = DotNetTypeWrapper.LoadDotNetTypeWrapper(name);
+					if(type != null)
+					{
+						Debug.Assert(type.Name == name, type.Name + " != " + name);
+						Debug.Assert(!types.ContainsKey(name), name);
+						types.Add(name, type);
+						return type;
+					}
+					// NOTE it is important that this is done last, because otherwise we will
+					// load the netexp generated fake types (e.g. delegate inner interface) instead
+					// of having DotNetTypeWrapper generating it.
+					type = GetTypeWrapperCompilerHook(name);
+					if(type != null)
+					{
+						return type;
+					}
 				}
 				if(javaClassLoader == null)
 				{
@@ -347,34 +382,45 @@ class ClassLoaderWrapper
 		}
 	}
 
-	private TypeWrapper GetCompiledTypeWrapper(Type type)
+	private TypeWrapper GetWrapperFromBootstrapType(Type type)
 	{
-		TypeWrapper.AssertFinished(type);
+		Debug.Assert(GetWrapperFromTypeFast(type) == null);
+		Debug.Assert(!type.IsArray);
+		Debug.Assert(!(type.Assembly is AssemblyBuilder));
 		// only the bootstrap classloader can own compiled types
 		Debug.Assert(this == GetBootstrapClassLoader());
-		string name = NativeCode.java.lang.VMClass.getName(type);
-		TypeWrapper wrapper = (TypeWrapper)types[name];
-		if(wrapper == null)
+		TypeWrapper wrapper = null;
+		if(type.Assembly.IsDefined(typeof(JavaAssemblyAttribute), false))
 		{
-			wrapper = new CompiledTypeWrapper(name, type);
-			types.Add(name, wrapper);
-			typeToTypeWrapper[type] = wrapper;
-		}
-		else if(wrapper is RemappedTypeWrapper)
-		{
-			// When remapped types are loaded by their original name (e.g. System.Object)
-			// we end up here, and we make a CompiledTypeWrapper for it that reflects on
-			// the original type (note that you can never encounter these types anywhere,
-			// except when explicitly loaded with Class.forName)
-			name = type.FullName;
+			string name = CompiledTypeWrapper.GetName(type);
 			wrapper = (TypeWrapper)types[name];
 			if(wrapper == null)
 			{
-				// TODO instead of using CompiledTypeWrapper here, we probably should
-				// have a subclass that converts all instance methods to static methods (and
-				// makes the class appear final with only a private constructor)
+				// since this type was compiled from Java source, we have to look for our
+				// attributes
 				wrapper = new CompiledTypeWrapper(name, type);
-				types.Add(name, wrapper);			
+				Debug.Assert(wrapper.Name == name);
+				Debug.Assert(!types.ContainsKey(wrapper.Name), wrapper.Name);
+				types.Add(wrapper.Name, wrapper);
+				Debug.Assert(!typeToTypeWrapper.ContainsKey(type));
+				typeToTypeWrapper.Add(type, wrapper);
+			}
+		}
+		else
+		{
+			string name = DotNetTypeWrapper.GetName(type);
+			wrapper = (TypeWrapper)types[name];
+			if(wrapper == null)
+			{
+				// since this type was not compiled from Java source, we don't need to
+				// look for our attributes, but we do need to filter unrepresentable
+				// stuff (and transform some other stuff)
+				wrapper = new DotNetTypeWrapper(type);
+				Debug.Assert(wrapper.Name == name);
+				Debug.Assert(!types.ContainsKey(wrapper.Name), wrapper.Name);
+				types.Add(wrapper.Name, wrapper);
+				Debug.Assert(!typeToTypeWrapper.ContainsKey(type));
+				typeToTypeWrapper.Add(type, wrapper);
 			}
 		}
 		return wrapper;
@@ -398,18 +444,11 @@ class ClassLoaderWrapper
 				return t;
 			}
 		}
-		// HACK we also try mscorlib and this assembly (for the remapped types)
-		// TODO this should be fixed by making the map.xml type names for .NET types assembly qualified
-		return Type.GetType(name);
+		return null;
 	}
 
-	internal virtual TypeWrapper GetBootstrapType(string name)
+	internal virtual TypeWrapper GetTypeWrapperCompilerHook(string name)
 	{
-		Type t = GetBootstrapTypeRaw(name);
-		if(t != null)
-		{
-			return GetCompiledTypeWrapper(t);
-		}
 		return null;
 	}
 
@@ -454,10 +493,12 @@ class ClassLoaderWrapper
 				modifiers |= Modifiers.Public;
 			}
 			wrapper = new ArrayTypeWrapper(array, modifiers, name, this);
+			Debug.Assert(!types.ContainsKey(name));
 			types.Add(name, wrapper);
 			if(!(elementType is TypeBuilder))
 			{
-				typeToTypeWrapper[array] = wrapper;
+				Debug.Assert(!typeToTypeWrapper.ContainsKey(array));
+				typeToTypeWrapper.Add(array, wrapper);
 			}
 		}
 		return wrapper;
@@ -510,14 +551,24 @@ class ClassLoaderWrapper
 			{
 				throw JavaException.IncompatibleClassChangeError("Class {0} has interface {1} as superclass", f.Name, baseType.Name);
 			}
-			string dotnetType = f.NetExpTypeAttribute;
-			if(dotnetType != null)
+			string dotnetAssembly = f.NetExpAssemblyAttribute;
+			if(dotnetAssembly != null)
 			{
-				type = new NetExpTypeWrapper(f, dotnetType, baseType);
+				// The sole purpose of the netexp class is to let us load the assembly that the class lives in,
+				// once we've done that, all types in it become visible.
+				Assembly.Load(dotnetAssembly);
+				types.Remove(f.Name);
+				type = GetBootstrapClassLoader().LoadClassByDottedNameFast(f.Name);
+				if(type == null)
+				{
+					throw JavaException.NoClassDefFoundError("{0} (loaded through NetExp class)", f.Name);
+				}
+				return type;
 			}
 			else
 			{
 				type = new DynamicTypeWrapper(f, this, nativeMethods);
+				Debug.Assert(!dynamicTypes.ContainsKey(type.Type.FullName));
 				dynamicTypes.Add(type.Type.FullName, type);
 			}
 			Debug.Assert(types[f.Name] == null);
@@ -856,7 +907,8 @@ class ClassLoaderWrapper
 			// if we found it, store it in the map
 			if(wrapper != null)
 			{
-				typeToTypeWrapper[type] = wrapper;
+				Debug.Assert(!typeToTypeWrapper.ContainsKey(type));
+				typeToTypeWrapper.Add(type, wrapper);
 			}
 		}
 		return wrapper;
@@ -880,58 +932,14 @@ class ClassLoaderWrapper
 				}
 				wrapper = GetWrapperFromType(elem);
 				// HACK this is a lame way of creating the array wrapper
-				if(wrapper.IsPrimitive)
-				{
-					string elemType;
-					if(wrapper == PrimitiveTypeWrapper.BYTE)
-					{
-						elemType = "B";
-					}
-					else if(wrapper == PrimitiveTypeWrapper.BOOLEAN)
-					{
-						elemType = "Z";
-					}
-					else if(wrapper == PrimitiveTypeWrapper.SHORT)
-					{
-						elemType = "S";
-					}
-					else if(wrapper == PrimitiveTypeWrapper.CHAR)
-					{
-						elemType = "C";
-					}
-					else if(wrapper == PrimitiveTypeWrapper.INT)
-					{
-						elemType = "I";
-					}
-					else if(wrapper == PrimitiveTypeWrapper.LONG)
-					{
-						elemType = "J";
-					}
-					else if(wrapper == PrimitiveTypeWrapper.FLOAT)
-					{
-						elemType = "F";
-					}
-					else if(wrapper == PrimitiveTypeWrapper.DOUBLE)
-					{
-						elemType = "D";
-					}
-					else
-					{
-						throw new InvalidOperationException();
-					}
-					return wrapper.GetClassLoader().LoadClassByDottedName(new String('[', rank) + elemType);
-				}
-				else
-				{
-					return wrapper.GetClassLoader().LoadClassByDottedName(new String('[', rank) + "L" + wrapper.Name + ";");
-				}
+				return wrapper.GetClassLoader().LoadClassByDottedName(new String('[', rank) + wrapper.SigName);
 			}
 			// if the wrapper doesn't already exist, that must mean that the type
 			// is a .NET type (or a pre-compiled Java class), which means that it
 			// was "loaded" by the bootstrap classloader
 			// TODO think up a scheme to deal with .NET types that have the same name. Since all .NET types
 			// appear in the boostrap classloader, we need to devise a scheme to mangle the class name
-			return GetBootstrapClassLoader().GetCompiledTypeWrapper(type);
+			return GetBootstrapClassLoader().GetWrapperFromBootstrapType(type);
 		}
 		return wrapper;
 	}
@@ -939,6 +947,7 @@ class ClassLoaderWrapper
 	internal static void SetWrapperForType(Type type, TypeWrapper wrapper)
 	{
 		TypeWrapper.AssertFinished(type);
+		Debug.Assert(!typeToTypeWrapper.ContainsKey(type));
 		typeToTypeWrapper.Add(type, wrapper);
 	}
 

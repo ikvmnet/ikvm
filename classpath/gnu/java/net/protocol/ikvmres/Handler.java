@@ -24,8 +24,8 @@
 
 package gnu.java.net.protocol.ikvmres;
 
-import system.io.*;
-import system.reflection.*;
+import cli.System.IO.*;
+import cli.System.Reflection.*;
 import java.net.*;
 import java.io.*;
 import java.io.IOException;
@@ -56,8 +56,8 @@ class IkvmresURLConnection extends URLConnection
 			{
 				throw new IOException("resource " + resource + " not found in assembly " + assembly);
 			}
-			byte[] b = new byte[system.runtime.interopservices.Marshal.SizeOf(fi.get_FieldType())];
-			system.runtime.compilerservices.RuntimeHelpers.InitializeArray((system.Array)(Object)b, fi.get_FieldHandle());
+			byte[] b = new byte[cli.System.Runtime.InteropServices.Marshal.SizeOf(fi.get_FieldType())];
+			cli.System.Runtime.CompilerServices.RuntimeHelpers.InitializeArray((cli.System.Array)(Object)b, fi.get_FieldHandle());
 			inputStream = new ByteArrayInputStream(b);
 			connected = true;
 		}

@@ -26,14 +26,14 @@ package ikvm.lang;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.File;
-import system.text.StringBuilder;
-import system.diagnostics.ProcessStartInfo;
+import cli.System.Text.StringBuilder;
+import cli.System.Diagnostics.ProcessStartInfo;
 
 public class DotNetProcess extends Process
 {
-	private system.diagnostics.Process proc;
+	private cli.System.Diagnostics.Process proc;
 
-	private DotNetProcess(system.diagnostics.Process proc)
+	private DotNetProcess(cli.System.Diagnostics.Process proc)
 	{
 		this.proc = proc;
 	}
@@ -72,10 +72,10 @@ public class DotNetProcess extends Process
 	{
 		try
 		{
-			if(false) throw new system.InvalidOperationException();
+			if(false) throw new cli.System.InvalidOperationException();
 			proc.Kill();
 		}
-		catch(system.InvalidOperationException x)
+		catch(cli.System.InvalidOperationException x)
 		{
 		}
 	}
@@ -119,6 +119,6 @@ public class DotNetProcess extends Process
 			}
 		}
 		// TODO map the exceptions
-		return new DotNetProcess(system.diagnostics.Process.Start(si));
+		return new DotNetProcess(cli.System.Diagnostics.Process.Start(si));
 	}
 }

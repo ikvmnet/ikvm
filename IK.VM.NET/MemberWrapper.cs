@@ -531,8 +531,9 @@ sealed class FieldWrapper : MemberWrapper
 	internal readonly CodeEmitter EmitSet;
 	private FieldInfo field;
 	private TypeWrapper fieldType;
+	private static System.Collections.Hashtable warnOnce;
 
-	private FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, CodeEmitter emitGet, CodeEmitter emitSet)
+	private FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, CodeEmitter emitGet, CodeEmitter emitSet)
 		: base(declaringType, modifiers, false)
 	{
 		Debug.Assert(fieldType != null);
@@ -543,8 +544,46 @@ sealed class FieldWrapper : MemberWrapper
 		this.name = name;
 		this.sig = sig;
 		this.fieldType = fieldType;
+		this.field = field;
 		this.EmitGet = emitGet;
 		this.EmitSet = emitSet;
+	}
+
+	// HACK used (indirectly thru NativeCode.java.lang.Field.getConstant) by netexp to find out if the
+	// field is a constant (and if it is its value)
+	internal object GetConstant()
+	{
+		// NOTE only pritimives and string can be literals in Java (because the other "primitives" (like uint),
+		// are treated as NonPrimitiveValueTypes)
+		TypeWrapper java_lang_String = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.String");
+		if(field != null && (fieldType.IsPrimitive || fieldType == java_lang_String) && field.IsLiteral)
+		{
+			// NOTE .NET BUG this causes the type initializer to run and we don't want that.
+			// TODO may need to find a workaround, for now we just spit out a warning (only shows up during netexp)
+			if(field.DeclaringType.TypeInitializer != null)
+			{
+				// HACK lame way to support a command line switch to suppress this warning
+				if(Environment.CommandLine.IndexOf("-noTypeInitWarning") == -1)
+				{
+					if(warnOnce == null)
+					{
+						warnOnce = new System.Collections.Hashtable();
+					}
+					if(!warnOnce.ContainsKey(field.DeclaringType.FullName))
+					{
+						warnOnce.Add(field.DeclaringType.FullName, null);
+						Console.WriteLine("Warning: Running type initializer for {0} due to .NET bug", field.DeclaringType.FullName);
+					}
+				}
+			}
+			object val = field.GetValue(null);
+			if(val != null && !(val is string))
+			{
+				return NativeCode.java.lang.reflect.JavaWrapper.Box(val);
+			}
+			return val;
+		}
+		return null;
 	}
 
 	internal static FieldWrapper FromCookie(IntPtr cookie)
@@ -679,9 +718,9 @@ sealed class FieldWrapper : MemberWrapper
 		}
 	}
 
-	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, CodeEmitter getter, CodeEmitter setter)
+	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo fi, CodeEmitter getter, CodeEmitter setter)
 	{
-		return new FieldWrapper(declaringType, fieldType, name, sig, modifiers, getter, setter);
+		return new FieldWrapper(declaringType, fieldType, name, sig, modifiers, fi, getter, setter);
 	}
 
 	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string sig, Modifiers modifiers)
@@ -697,7 +736,7 @@ sealed class FieldWrapper : MemberWrapper
 		{
 			emitGet += CodeEmitter.NoClassDefFoundError(fieldType.Name);
 			emitSet += CodeEmitter.NoClassDefFoundError(fieldType.Name);
-			return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, emitGet, emitSet);
+			return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
 		}
 		if(fieldType.IsNonPrimitiveValueType)
 		{
@@ -712,7 +751,7 @@ sealed class FieldWrapper : MemberWrapper
 				// TODO shouldn't we use += here (for volatile fields inside of value types)?
 				emitGet = new VolatileLongDoubleGetter(fi);
 				emitSet = new VolatileLongDoubleSetter(fi);
-				return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, emitGet, emitSet);
+				return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
 			}
 			emitGet += CodeEmitter.Volatile;
 			emitSet += CodeEmitter.Volatile;
@@ -731,7 +770,7 @@ sealed class FieldWrapper : MemberWrapper
 		{
 			emitGet += CodeEmitter.Create(OpCodes.Box, fieldType.Type);
 		}
-		return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, emitGet, emitSet);
+		return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
 	}
 
 	private void LookupField()
@@ -751,7 +790,7 @@ sealed class FieldWrapper : MemberWrapper
 	internal void SetValue(object obj, object val)
 	{
 		// TODO this is a broken implementation (for one thing, it needs to support redirection)
-		if(field == null)
+		if(field == null || field is FieldBuilder)
 		{
 			LookupField();
 		}
@@ -761,7 +800,7 @@ sealed class FieldWrapper : MemberWrapper
 	internal object GetValue(object obj)
 	{
 		// TODO this is a broken implementation (for one thing, it needs to support redirection)
-		if(field == null)
+		if(field == null || field is FieldBuilder)
 		{
 			LookupField();
 		}

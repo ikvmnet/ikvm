@@ -28,7 +28,7 @@ final class VMDouble
 {
     static double longBitsToDouble(long v)
     {
-	return system.BitConverter.Int64BitsToDouble(v);
+	return cli.System.BitConverter.Int64BitsToDouble(v);
     }
 
     static long doubleToLongBits(double v)
@@ -37,11 +37,11 @@ final class VMDouble
 	{
 	    return 0x7ff8000000000000L;
 	}
-	return system.BitConverter.DoubleToInt64Bits(v);
+	return cli.System.BitConverter.DoubleToInt64Bits(v);
     }
 
     static long doubleToRawLongBits(double v)
     {
-	return system.BitConverter.DoubleToInt64Bits(v);
+	return cli.System.BitConverter.DoubleToInt64Bits(v);
     }
 }

@@ -29,6 +29,7 @@ using System.Collections;
 using System.Xml;
 using System.Diagnostics;
 using OpenSystem.Java;
+using System.Text.RegularExpressions;
 
 public class JVM
 {
@@ -145,7 +146,6 @@ public class JVM
 		private string assembly;
 		private string path;
 		private AssemblyBuilder assemblyBuilder;
-		private ModuleBuilder moduleBuilder;
 
 		internal CompilerClassLoader(string path, string assembly, Hashtable classes)
 			: base(null)
@@ -157,26 +157,23 @@ public class JVM
 
 		protected override ModuleBuilder CreateModuleBuilder()
 		{
-			if(moduleBuilder == null)
+			AssemblyName name = new AssemblyName();
+			name.Name = assembly;
+			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
+			CustomAttributeBuilder ikvmAssemblyAttr = new CustomAttributeBuilder(typeof(JavaAssemblyAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+			assemblyBuilder.SetCustomAttribute(ikvmAssemblyAttr);
+			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(path, JVM.Debug);
+			if(JVM.Debug)
 			{
-				AssemblyName name = new AssemblyName();
-				name.Name = assembly;
-				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
-				CustomAttributeBuilder ikvmAssemblyAttr = new CustomAttributeBuilder(typeof(JavaAssemblyAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
-				assemblyBuilder.SetCustomAttribute(ikvmAssemblyAttr);
-				moduleBuilder = assemblyBuilder.DefineDynamicModule(path, JVM.Debug);
-				if(JVM.Debug)
-				{
-					CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, true });
-					moduleBuilder.SetCustomAttribute(debugAttr);
-				}
+				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, true });
+				moduleBuilder.SetCustomAttribute(debugAttr);
 			}
 			return moduleBuilder;
 		}
 
-		internal override TypeWrapper GetBootstrapType(string name)
+		internal override TypeWrapper GetTypeWrapperCompilerHook(string name)
 		{
-			TypeWrapper type = base.GetBootstrapType(name);
+			TypeWrapper type = base.GetTypeWrapperCompilerHook(name);
 			if(type == null)
 			{
 				ClassFile f = (ClassFile)classes[name];
@@ -201,11 +198,7 @@ public class JVM
 
 		internal void AddResources(Hashtable resources)
 		{
-			if(moduleBuilder == null)
-			{
-				// this happens if the module contains no clases
-				CreateModuleBuilder();
-			}
+			ModuleBuilder moduleBuilder = this.ModuleBuilder;
 			foreach(DictionaryEntry d in resources)
 			{
 				byte[] buf = (byte[])d.Value;
@@ -218,7 +211,7 @@ public class JVM
 		}
 	}
 
-	public static void Compile(string path, string assembly, string mainClass, PEFileKinds target, byte[][] classes, string[] references, bool nojni, Hashtable resources)
+	public static void Compile(string path, string assembly, string mainClass, PEFileKinds target, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude)
 	{
 		isStaticCompiler = true;
 		noJniStubs = nojni;
@@ -232,12 +225,29 @@ public class JVM
 		{
 			ClassFile f = new ClassFile(classes[i], 0, classes[i].Length, null);
 			string name = f.Name;
+			bool excluded = false;
+			for(int j = 0; j < classesToExclude.Length; j++)
+			{
+				if(Regex.IsMatch(name, classesToExclude[j]))
+				{
+					excluded = true;
+					//Console.WriteLine("Excluding: {0} on rule {1}", name, (String)classesToExclude[j]);
+					break;
+				}
+			}
+//			if (!excluded)
+//				Console.WriteLine("Adding: {0}", name);
+//			else
+//				Console.WriteLine("Not Adding: {0}", name);
 			if(h.ContainsKey(name))
 			{
 				Console.Error.WriteLine("Duplicate class name: {0}", name);
 				return;
 			}
-			h[name] = f;
+			if(!excluded)
+			{
+				h[name] = f;
+			}
 		}
 
 		// make sure all inner classes have a reference to their outer class
@@ -246,7 +256,7 @@ public class JVM
 		foreach(ClassFile classFile in h.Values)
 		{
 			// don't handle inner classes for NetExp types
-			if(classFile.NetExpTypeAttribute == null)
+			if(classFile.NetExpAssemblyAttribute == null)
 			{
 				ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
 				if(innerClasses != null)

@@ -484,11 +484,11 @@ class ClassFile
 		}
 	}
 
-	internal string NetExpTypeAttribute
+	internal string NetExpAssemblyAttribute
 	{
 		get
 		{
-			Attribute attr = GetAttribute("IK.VM.NET.Type");
+			Attribute attr = GetAttribute("IKVM.NET.Assembly");
 			if(attr != null)
 			{
 				return ((ConstantPoolItemUtf8)GetConstantPoolItem(attr.Data.ReadUInt16())).Value;

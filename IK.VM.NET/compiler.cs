@@ -960,7 +960,7 @@ class Compiler
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>" && VerifierTypeWrapper.IsNew(type))
 						{
 							TypeWrapper[] args = cpi.GetArgTypes(classLoader);
-							CastInterfaceArgs(args, i, true, false);
+							CastInterfaceArgs(args, i, false, false);
 						}
 						else
 						{

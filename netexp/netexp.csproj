@@ -84,6 +84,21 @@
                     AssemblyName = "SharpZipLib"
                     HintPath = "..\bin\SharpZipLib.dll"
                 />
+                <Reference
+                    Name = "IK.VM.NET"
+                    Project = "{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                />
+                <Reference
+                    Name = "OpenSystem.Java"
+                    Project = "{13A5BB9F-D5FB-4061-BB0C-A111BE84A978}"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                />
+                <Reference
+                    Name = "classpath"
+                    AssemblyName = "classpath"
+                    HintPath = "..\bin\classpath.dll"
+                />
             </References>
         </Build>
         <Files>

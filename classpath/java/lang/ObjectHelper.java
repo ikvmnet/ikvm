@@ -44,12 +44,12 @@ public class ObjectHelper
 	}
 	if(timeout == 0 && nanos == 0)
 	{
-	    system.threading.Monitor.Wait(o);
+	    cli.System.Threading.Monitor.Wait(o);
 	}
 	else
 	{
 	    // TODO handle time span calculation overflow
-	    system.threading.Monitor.Wait(o, new system.TimeSpan(timeout * 10000 + (nanos + 99) / 100));
+	    cli.System.Threading.Monitor.Wait(o, new cli.System.TimeSpan(timeout * 10000 + (nanos + 99) / 100));
 	}
     }
 

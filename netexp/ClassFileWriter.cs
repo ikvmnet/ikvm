@@ -568,7 +568,23 @@ class ClassFileWriter
 		if(constantValue != null)
 		{
 			ushort constantValueIndex;
-			if(constantValue is int)
+			if(constantValue is sbyte)
+			{
+				constantValueIndex = AddInt((sbyte)constantValue);
+			}
+			else if(constantValue is bool)
+			{
+				constantValueIndex = AddInt((bool)constantValue ? 1 : 0);
+			}
+			else if(constantValue is short)
+			{
+				constantValueIndex = AddInt((short)constantValue);
+			}
+			else if(constantValue is char)
+			{
+				constantValueIndex = AddInt((char)constantValue);
+			}
+			else if(constantValue is int)
 			{
 				constantValueIndex = AddInt((int)constantValue);
 			}

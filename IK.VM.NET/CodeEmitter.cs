@@ -151,13 +151,17 @@ public abstract class CodeEmitter
 		{
 			return new CodeEmitter.OpCodeEmitter(OpCodes.Ldnull);
 		}
-		else if(constant is int || constant is uint ||
+		else if(constant is int || 
 			constant is short || constant is ushort ||
 			constant is byte || constant is sbyte ||
 			constant is char ||
 			constant is bool)
 		{
 			return CodeEmitter.Create(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
+		}
+		else if(constant is uint)
+		{
+			return CodeEmitter.Create(OpCodes.Ldc_I4, unchecked((int)((IConvertible)constant).ToUInt32(null)));
 		}
 		else if(constant is string)
 		{
@@ -171,16 +175,28 @@ public abstract class CodeEmitter
 		{
 			return CodeEmitter.Create(OpCodes.Ldc_R8, (double)constant);
 		}
-		else if(constant is long || constant is ulong)
+		else if(constant is long)
 		{
 			return CodeEmitter.Create(OpCodes.Ldc_I8, (long)constant);
+		}
+		else if(constant is ulong)
+		{
+			return CodeEmitter.Create(OpCodes.Ldc_I8, unchecked((long)(ulong)constant));
 		}
 		else if(constant is Enum)
 		{
 			Type underlying = Enum.GetUnderlyingType(constant.GetType());
-			if(underlying == typeof(long) || underlying == typeof(ulong))
+			if(underlying == typeof(long))
 			{
 				return CodeEmitter.Create(OpCodes.Ldc_I8, ((IConvertible)constant).ToInt64(null));
+			}
+			if(underlying == typeof(ulong))
+			{
+				return CodeEmitter.Create(OpCodes.Ldc_I8, unchecked((long)((IConvertible)constant).ToUInt64(null)));
+			}
+			else if(underlying == typeof(uint))
+			{
+				return CodeEmitter.Create(OpCodes.Ldc_I4, unchecked((int)((IConvertible)constant).ToUInt32(null)));
 			}
 			else
 			{

@@ -40,8 +40,8 @@ package java.lang;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import system.*;
-import system.reflection.*;
+import cli.System.*;
+import cli.System.Reflection.*;
 
 /*
  * This class is a reference version, mainly for compiling a class library
@@ -57,366 +57,345 @@ import system.reflection.*;
  */
 final class VMClass 
 {
-	/** The .NET type */
-	private Type type;
-	private Object wrapper;
+    private Object wrapper; // the corresponding TypeWrapper
     private Class clazz;
 
-	public static native Class getClassFromType(Type t);
-	private static native Type getTypeFromWrapper(Object clazz, Object wrapper);
-	private static native Object getWrapperFromType(Type t);
-
-    private static Type getTypeFromClass(Class c)
+    // NOTE this is used in classpath.cs to go from a Class object to a TypeWrapper
+    private static Object getWrapperFromClass(Class c)
     {
-	return c.vmClass.getType();
+	return c.vmClass.wrapper;
     }
 
-	private Type getType()
-	{
-		if(type == null)
-		{
-			type = getTypeFromWrapper(clazz, wrapper);
-		}
-		return type;
-	}
-	private Object getWrapper()
-	{
-		if(wrapper == null)
-		{
-			wrapper = getWrapperFromType(type);
-		}
-		return wrapper;
-	}
+    private VMClass(Object wrapper)
+    {
+	this.wrapper = wrapper;
+    }
 
-	private VMClass(Type type, Object wrapper)
-	{
-		this.type = type;
-		this.wrapper = wrapper;
-	}
-
-	private static Class createClass(Type type, Object wrapper)
-	{
-	    VMClass vmClass = new VMClass(type, wrapper);
-	    Class c = new Class(vmClass);
-	    vmClass.clazz = c;
-	    return c;
-	}
+    // HACK public because we want to create a delegate to call it
+    public static Object createClass(Object wrapper)
+    {
+	VMClass vmClass = new VMClass(wrapper);
+	Class c = new Class(vmClass);
+	vmClass.clazz = c;
+	return c;
+    }
 
     // HACK we need a way to call ClassLoader.loadClass() from C#, so we need this helper method
-    public static Object __loadClassHelper(Object loader, String name) throws java.lang.ClassNotFoundException
+    // and its public because we want to create a delegate to call it
+    public static Object loadClassHelper(Object loader, String name) throws java.lang.ClassNotFoundException
     {
-	return ((ClassLoader)loader).loadClass(name).vmClass.getWrapper();
+	return ((ClassLoader)loader).loadClass(name).vmClass.wrapper;
     }
     
-	/**
-	* Discover whether an Object is an instance of this Class.  Think of it
-	* as almost like <code>o instanceof (this class)</code>.
-	*
-	* @param o the Object to check
-	* @return whether o is an instance of this class
-	* @since 1.1
-	*/
-	boolean isInstance(Object o)
-	{
-		// TODO this needs to be implemented by the "native" code, because
-		// remapped types can appear to implement interfaces that they don't
-		// actually implement
-		return getType().IsInstanceOfType(o);
-	}
+    /**
+     * Discover whether an Object is an instance of this Class.  Think of it
+     * as almost like <code>o instanceof (this class)</code>.
+     *
+     * @param o the Object to check
+     * @return whether o is an instance of this class
+     * @since 1.1
+     */
+    boolean isInstance(Object o)
+    {
+	return o != null && clazz.isAssignableFrom(o.getClass());
+    }
 
-	/**
-	* Discover whether an instance of the Class parameter would be an
-	* instance of this Class as well.  Think of doing
-	* <code>isInstance(c.newInstance())</code> or even
-	* <code>c.newInstance() instanceof (this class)</code>. While this
-	* checks widening conversions for objects, it must be exact for primitive
-	* types.
-	*
-	* @param c the class to check
-	* @return whether an instance of c would be an instance of this class
-	*         as well
-	* @throws NullPointerException if c is null
-	* @since 1.1
-	*/
-	boolean isAssignableFrom(Class c)
-	{
-		// this needs to be implemented by the "native" code, because
-		// remapped types can appear to implement interfaces that they don't
-		// actually implement
-		return IsAssignableFrom(getWrapper(), c.vmClass.getWrapper());
-	}
-	private static native boolean IsAssignableFrom(Object w1, Object w2);
+    /**
+     * Discover whether an instance of the Class parameter would be an
+     * instance of this Class as well.  Think of doing
+     * <code>isInstance(c.newInstance())</code> or even
+     * <code>c.newInstance() instanceof (this class)</code>. While this
+     * checks widening conversions for objects, it must be exact for primitive
+     * types.
+     *
+     * @param c the class to check
+     * @return whether an instance of c would be an instance of this class
+     *         as well
+     * @throws NullPointerException if c is null
+     * @since 1.1
+     */
+    boolean isAssignableFrom(Class c)
+    {
+	// this is implemented by the "native" code, because
+	// remapped types can appear to implement interfaces that they don't
+	// actually implement
+	return IsAssignableFrom(wrapper, c.vmClass.wrapper);
+    }
+    private static native boolean IsAssignableFrom(Object w1, Object w2);
 
-	/**
-	* Check whether this class is an interface or not.  Array types are not
-	* interfaces.
-	*
-	* @return whether this class is an interface or not
-	*/
-	boolean isInterface()
-	{
-		return getType().get_IsInterface();
-	}
+    /**
+     * Check whether this class is an interface or not.  Array types are not
+     * interfaces.
+     *
+     * @return whether this class is an interface or not
+     */
+    boolean isInterface()
+    {
+	return IsInterface(wrapper);
+    }
+    private static native boolean IsInterface(Object wrapper);
 
-	/**
-	* Return whether this class is a primitive type.  A primitive type class
-	* is a class representing a kind of "placeholder" for the various
-	* primitive types, or void.  You can access the various primitive type
-	* classes through java.lang.Boolean.TYPE, java.lang.Integer.TYPE, etc.,
-	* or through boolean.class, int.class, etc.
-	*
-	* @return whether this class is a primitive type
-	* @see Boolean#TYPE
-	* @see Byte#TYPE
-	* @see Character#TYPE
-	* @see Short#TYPE
-	* @see Integer#TYPE
-	* @see Long#TYPE
-	* @see Float#TYPE
-	* @see Double#TYPE
-	* @see Void#TYPE
-	* @since 1.1
-	*/
-	boolean isPrimitive()
-	{
-		return clazz == boolean.class ||
-		    clazz == byte.class ||
-		    clazz == char.class ||
-		    clazz == short.class ||
-		    clazz == int.class ||
-		    clazz == long.class ||
-		    clazz == float.class ||
-		    clazz == double.class ||
-		    clazz == void.class;
-	}
+    /**
+     * Return whether this class is a primitive type.  A primitive type class
+     * is a class representing a kind of "placeholder" for the various
+     * primitive types, or void.  You can access the various primitive type
+     * classes through java.lang.Boolean.TYPE, java.lang.Integer.TYPE, etc.,
+     * or through boolean.class, int.class, etc.
+     *
+     * @return whether this class is a primitive type
+     * @see Boolean#TYPE
+     * @see Byte#TYPE
+     * @see Character#TYPE
+     * @see Short#TYPE
+     * @see Integer#TYPE
+     * @see Long#TYPE
+     * @see Float#TYPE
+     * @see Double#TYPE
+     * @see Void#TYPE
+     * @since 1.1
+     */
+    boolean isPrimitive()
+    {
+	return clazz == boolean.class ||
+	    clazz == byte.class ||
+	    clazz == char.class ||
+	    clazz == short.class ||
+	    clazz == int.class ||
+	    clazz == long.class ||
+	    clazz == float.class ||
+	    clazz == double.class ||
+	    clazz == void.class;
+    }
 
-	/**
-	* Get the name of this class, separated by dots for package separators.
-	* Primitive types and arrays are encoded as:
-	* <pre>
-	* boolean             Z
-	* byte                B
-	* char                C
-	* short               S
-	* int                 I
-	* long                J
-	* float               F
-	* double              D
-	* void                V
-	* array type          [<em>element type</em>
-	* class or interface, alone: &lt;dotted name&gt;
-	* class or interface, as element type: L&lt;dotted name&gt;;
-	*
-	* @return the name of this class
-	*/
-	String getName()
-	{
-		// getName() is used by the classloader, so it shouldn't trigger a resolve of the class
-		return GetName(type, wrapper);
-	}
-	private static native String GetName(Type type, Object wrapper);
+    /**
+     * Get the name of this class, separated by dots for package separators.
+     * Primitive types and arrays are encoded as:
+     * <pre>
+     * boolean             Z
+     * byte                B
+     * char                C
+     * short               S
+     * int                 I
+     * long                J
+     * float               F
+     * double              D
+     * void                V
+     * array type          [<em>element type</em>
+     * class or interface, alone: &lt;dotted name&gt;
+     * class or interface, as element type: L&lt;dotted name&gt;;
+     *
+     * @return the name of this class
+     */
+    String getName()
+    {
+	// getName() is used by the classloader, so it shouldn't trigger a resolve of the class
+	return GetName(wrapper);
+    }
+    private static native String GetName(Object wrapper);
 
-	/**
-	* Get the direct superclass of this class.  If this is an interface,
-	* Object, a primitive type, or void, it will return null. If this is an
-	* array type, it will return Object.
-	*
-	* @return the direct superclass of this class
-	*/
-	Class getSuperclass()
-	{
-		return (Class)GetSuperClassFromWrapper(getWrapper());
-	}
-	private native static Object GetSuperClassFromWrapper(Object wrapper);
+    /**
+     * Get the direct superclass of this class.  If this is an interface,
+     * Object, a primitive type, or void, it will return null. If this is an
+     * array type, it will return Object.
+     *
+     * @return the direct superclass of this class
+     */
+    Class getSuperclass()
+    {
+	return (Class)GetSuperClassFromWrapper(wrapper);
+    }
+    private native static Object GetSuperClassFromWrapper(Object wrapper);
 
-	/**
-	* Get the interfaces this class <EM>directly</EM> implements, in the
-	* order that they were declared. This returns an empty array, not null,
-	* for Object, primitives, void, and classes or interfaces with no direct
-	* superinterface. Array types return Cloneable and Serializable.
-	*
-	* @return the interfaces this class directly implements
-	*/
-	Class[] getInterfaces()
-	{
-		Object[] interfaces = GetInterfaces(type, wrapper);
-		Class[] interfacesClass = new Class[interfaces.length];
-		System.arraycopy(interfaces, 0, interfacesClass, 0, interfaces.length);
-		return interfacesClass;
-	}
-	private static native Object[] GetInterfaces(Type type, Object wrapper);
+    /**
+     * Get the interfaces this class <EM>directly</EM> implements, in the
+     * order that they were declared. This returns an empty array, not null,
+     * for Object, primitives, void, and classes or interfaces with no direct
+     * superinterface. Array types return Cloneable and Serializable.
+     *
+     * @return the interfaces this class directly implements
+     */
+    Class[] getInterfaces()
+    {
+	Object[] interfaces = GetInterfaces(wrapper);
+	Class[] interfacesClass = new Class[interfaces.length];
+	System.arraycopy(interfaces, 0, interfacesClass, 0, interfaces.length);
+	return interfacesClass;
+    }
+    private static native Object[] GetInterfaces(Object wrapper);
 
-	/**
-	* If this is an array, get the Class representing the type of array.
-	* Examples: "[[Ljava.lang.String;" would return "[Ljava.lang.String;", and
-	* calling getComponentType on that would give "java.lang.String".  If
-	* this is not an array, returns null.
-	*
-	* @return the array type of this class, or null
-	* @see Array
-	* @since 1.1
-	*/
-	Class getComponentType()
-	{
-		// .NET array types can have unfinished element types, but we don't
-		// want to expose those, so we may need to finish the type
-		return (Class)getComponentClassFromWrapper(getWrapper());
-	}
-	private static native Object getComponentClassFromWrapper(Object wrapper);
+    /**
+     * If this is an array, get the Class representing the type of array.
+     * Examples: "[[Ljava.lang.String;" would return "[Ljava.lang.String;", and
+     * calling getComponentType on that would give "java.lang.String".  If
+     * this is not an array, returns null.
+     *
+     * @return the array type of this class, or null
+     * @see Array
+     * @since 1.1
+     */
+    Class getComponentType()
+    {
+	// .NET array types can have unfinished element types, but we don't
+	// want to expose those, so we may need to finish the type
+	return (Class)getComponentClassFromWrapper(wrapper);
+    }
+    private static native Object getComponentClassFromWrapper(Object wrapper);
 
-	/**
-	* Get the modifiers of this class.  These can be decoded using Modifier,
-	* and is limited to one of public, protected, or private, and any of
-	* final, static, abstract, or interface. An array class has the same
-	* public, protected, or private modifier as its component type, and is
-	* marked final but not an interface. Primitive types and void are marked
-	* public and final, but not an interface.
-	*
-	* @return the modifiers of this class
-	* @see Modifer
-	* @since 1.1
-	*/
-	int getModifiers()
-	{
-		return GetModifiers(type, wrapper);
-	}
-	private static native int GetModifiers(Type type, Object wrapper);
+    /**
+     * Get the modifiers of this class.  These can be decoded using Modifier,
+     * and is limited to one of public, protected, or private, and any of
+     * final, static, abstract, or interface. An array class has the same
+     * public, protected, or private modifier as its component type, and is
+     * marked final but not an interface. Primitive types and void are marked
+     * public and final, but not an interface.
+     *
+     * @return the modifiers of this class
+     * @see Modifer
+     * @since 1.1
+     */
+    int getModifiers()
+    {
+	return GetModifiers(wrapper);
+    }
+    private static native int GetModifiers(Object wrapper);
 
-	/**
-	* If this is a nested or inner class, return the class that declared it.
-	* If not, return null.
-	*
-	* @return the declaring class of this class
-	* @since 1.1
-	*/
-	Class getDeclaringClass()
-	{
-		return (Class)GetDeclaringClass(type, wrapper);
-	}
-	private native static Object GetDeclaringClass(Type type, Object wrapper);
+    /**
+     * If this is a nested or inner class, return the class that declared it.
+     * If not, return null.
+     *
+     * @return the declaring class of this class
+     * @since 1.1
+     */
+    Class getDeclaringClass()
+    {
+	return (Class)GetDeclaringClass(wrapper);
+    }
+    private native static Object GetDeclaringClass(Object wrapper);
 
-	/**
-	* Like <code>getDeclaredClasses()</code> but without the security checks.
-	*
-	* @param pulicOnly Only public classes should be returned
-	*/
-	Class[] getDeclaredClasses(boolean publicOnly)
-	{
-		Object[] classes = GetDeclaredClasses(type, wrapper, publicOnly);
-		Class[] classesClass = new Class[classes.length];
-		System.arraycopy(classes, 0, classesClass, 0, classes.length);
-		return classesClass;
-	}
-	private static native Object[] GetDeclaredClasses(Type type, Object wrapper, boolean publicOnly);
+    /**
+     * Like <code>getDeclaredClasses()</code> but without the security checks.
+     *
+     * @param pulicOnly Only public classes should be returned
+     */
+    Class[] getDeclaredClasses(boolean publicOnly)
+    {
+	Object[] classes = GetDeclaredClasses(wrapper, publicOnly);
+	Class[] classesClass = new Class[classes.length];
+	System.arraycopy(classes, 0, classesClass, 0, classes.length);
+	return classesClass;
+    }
+    private static native Object[] GetDeclaredClasses(Object wrapper, boolean publicOnly);
 
-	/**
-	* Like <code>getDeclaredFields()</code> but without the security checks.
-	*
-	* @param pulicOnly Only public fields should be returned
-	*/
-	Field[] getDeclaredFields(boolean publicOnly)
+    /**
+     * Like <code>getDeclaredFields()</code> but without the security checks.
+     *
+     * @param pulicOnly Only public fields should be returned
+     */
+    Field[] getDeclaredFields(boolean publicOnly)
+    {
+	Object[] fieldCookies = GetDeclaredFields(wrapper, publicOnly);
+	Field[] fields = new Field[fieldCookies.length];
+	for(int i = 0; i < fields.length; i++)
 	{
-		Object[] fieldCookies = GetDeclaredFields(type, wrapper, publicOnly);
-		Field[] fields = new Field[fieldCookies.length];
-		for(int i = 0; i < fields.length; i++)
-		{
-			fields[i] = new Field(clazz, fieldCookies[i]);
-		}
-		return fields;
+	    fields[i] = new Field(clazz, fieldCookies[i]);
 	}
-	private static native Object[] GetDeclaredFields(Type type, Object wrapper, boolean publicOnly);
+	return fields;
+    }
+    private static native Object[] GetDeclaredFields(Object wrapper, boolean publicOnly);
 
-	/**
-	* Like <code>getDeclaredMethods()</code> but without the security checks.
-	*
-	* @param pulicOnly Only public methods should be returned
-	*/
-	Method[] getDeclaredMethods(boolean publicOnly)
+    /**
+     * Like <code>getDeclaredMethods()</code> but without the security checks.
+     *
+     * @param pulicOnly Only public methods should be returned
+     */
+    Method[] getDeclaredMethods(boolean publicOnly)
+    {
+	Object[] methodCookies = GetDeclaredMethods(wrapper, true, publicOnly);
+	Method[] methods = new Method[methodCookies.length];
+	for(int i = 0; i < methodCookies.length; i++)
 	{
-		Object[] methodCookies = GetDeclaredMethods(type, wrapper, true, publicOnly);
-		Method[] methods = new Method[methodCookies.length];
-		for(int i = 0; i < methodCookies.length; i++)
-		{
-			methods[i] = new Method(clazz, methodCookies[i]);
-		}
-		return methods;
+	    methods[i] = new Method(clazz, methodCookies[i]);
 	}
-	private static native Object[] GetDeclaredMethods(Type type, Object wrapper, boolean methods, boolean publicOnly);
+	return methods;
+    }
+    private static native Object[] GetDeclaredMethods(Object wrapper, boolean methods, boolean publicOnly);
 
-	/**
-	* Like <code>getDeclaredConstructors()</code> but without
-	* the security checks.
-	*
-	* @param pulicOnly Only public constructors should be returned
-	*/
-	Constructor[] getDeclaredConstructors(boolean publicOnly)
+    /**
+     * Like <code>getDeclaredConstructors()</code> but without
+     * the security checks.
+     *
+     * @param pulicOnly Only public constructors should be returned
+     */
+    Constructor[] getDeclaredConstructors(boolean publicOnly)
+    {
+	Object[] methodCookies = GetDeclaredMethods(wrapper, false, publicOnly);
+	Constructor[] constructors = new Constructor[methodCookies.length];
+	for(int i = 0; i < methodCookies.length; i++)
 	{
-		Object[] methodCookies = GetDeclaredMethods(type, wrapper, false, publicOnly);
-		Constructor[] constructors = new Constructor[methodCookies.length];
-		for(int i = 0; i < methodCookies.length; i++)
-		{
-			constructors[i] = new Constructor(clazz, methodCookies[i]);
-		}
-		return constructors;
+	    constructors[i] = new Constructor(clazz, methodCookies[i]);
 	}
+	return constructors;
+    }
 
-	/**
-	* Return the class loader of this class.
-	*
-	* @return the class loader
-	*/
-	ClassLoader getClassLoader()
-	{
-	    // getClassLoader() can be used by the classloader, so it shouldn't trigger a resolve of the class
-	    return getClassLoader0(type, wrapper);
-	}
-	private static native ClassLoader getClassLoader0(Type type, Object wrapper);
+    /**
+     * Return the class loader of this class.
+     *
+     * @return the class loader
+     */
+    ClassLoader getClassLoader()
+    {
+	// getClassLoader() can be used by the classloader, so it shouldn't trigger a resolve of the class
+	return getClassLoader0(wrapper);
+    }
+    private static native ClassLoader getClassLoader0(Object wrapper);
 
-	/**
-	* VM implementors are free to make this method a noop if 
-	* the default implementation is acceptable.
-	*
-	* @param name the name of the class to find
-	* @return the Class object representing the class or null for noop
-	* @throws ClassNotFoundException if the class was not found by the
-	*         classloader
-	* @throws LinkageError if linking the class fails
-	* @throws ExceptionInInitializerError if the class loads, but an exception
-	*         occurs during initialization
-	*/
-	static Class forName(String name) throws ClassNotFoundException
+    /**
+     * VM implementors are free to make this method a noop if 
+     * the default implementation is acceptable.
+     *
+     * @param name the name of the class to find
+     * @return the Class object representing the class or null for noop
+     * @throws ClassNotFoundException if the class was not found by the
+     *         classloader
+     * @throws LinkageError if linking the class fails
+     * @throws ExceptionInInitializerError if the class loads, but an exception
+     *         occurs during initialization
+     */
+    static Class forName(String name) throws ClassNotFoundException
+    {
+	// if we ever get back to using a separate assembly for each class loader, it
+	// might be faster to use Assembly.GetCallingAssembly here...
+	cli.System.Diagnostics.StackFrame frame = new cli.System.Diagnostics.StackFrame(1);
+	// HACK a lame way to deal with potential inlining of this method (or Class.forName)
+	if(frame.GetMethod().get_Name().equals("forName"))
 	{
-		// if we ever get back to using a separate assembly for each class loader, it
-		// might be faster to use Assembly.GetCallingAssembly here...
-		system.diagnostics.StackFrame frame = new system.diagnostics.StackFrame(1);
-	    // HACK a lame way to deal with potential inlining of this method (or Class.forName)
-	    if(frame.GetMethod().get_Name().equals("forName"))
-	    {
-		frame = new system.diagnostics.StackFrame(2);
-	    }
-		ClassLoader cl = getClassLoader0(frame.GetMethod().get_DeclaringType(), null);
-		return Class.forName(name, true, cl);
+	    frame = new cli.System.Diagnostics.StackFrame(2);
 	}
+	ClassLoader cl = getClassLoaderFromType(frame.GetMethod().get_DeclaringType());
+	return Class.forName(name, true, cl);
+    }
+    private static native ClassLoader getClassLoaderFromType(Type type);
 
     void initialize()
     {
-	initializeType(getType());
+	initialize(wrapper);
     }
+    private static native void initialize(Object wrapper);
 
-	static native Class loadArrayClass(String name, Object classLoader);
-	static native Class loadBootstrapClass(String name, boolean initialize);
-	private static native void initializeType(Type type);
+    static native Class loadArrayClass(String name, Object classLoader);
+    static native Class loadBootstrapClass(String name, boolean initialize);
 
     static native void throwException(Throwable t);
 
-	/**
-	* Return whether this class is an array type.
-	*
-	* @return 1 if this class is an array type, 0 otherwise, -1 if unsupported
-	* operation
-	*/
-	int isArray()
-	{
-		return getType().get_IsArray() ? 1 : 0;
-	}
-} // class VMClass
+    /**
+     * Return whether this class is an array type.
+     *
+     * @return 1 if this class is an array type, 0 otherwise, -1 if unsupported
+     * operation
+     */
+    int isArray()
+    {
+	return IsArray(wrapper) ? 1 : 0;
+    }
+    private static native boolean IsArray(Object wrapper);
+}
