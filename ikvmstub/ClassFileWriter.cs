@@ -726,7 +726,7 @@ class ClassFileWriter
 			ushort constantValueIndex;
 			if(constantValue is byte)
 			{
-				constantValueIndex = AddInt((byte)constantValue);
+				constantValueIndex = AddInt((sbyte)(byte)constantValue);
 			}
 			else if(constantValue is bool)
 			{
