@@ -368,7 +368,9 @@ public final class FileDescriptor
 		if(stream == null)
 			throw new IOException("Invalid FileDescriptor");
 
-		// TODO might need to implement this
+		if(stream.get_CanSeek())
+			return (int)Math.max(Integer.MAX_VALUE, stream.get_Length() - stream.get_Position());
+
 		return 0;
 	}
 } // class FileDescriptor
