@@ -1921,7 +1921,15 @@ namespace NativeCode.java
 
 			public static string getHostByAddr(byte[] address)
 			{
-				string s = NetSystem.Net.Dns.GetHostByAddress(string.Format("{0}.{1}.{2}.{3}", address[0], address[1], address[2], address[3])).HostName;
+				string s;
+				try
+				{
+					s = NetSystem.Net.Dns.GetHostByAddress(string.Format("{0}.{1}.{2}.{3}", address[0], address[1], address[2], address[3])).HostName;
+				}
+				catch(NetSystem.Net.Sockets.SocketException x)
+				{
+					throw JavaException.UnknownHostException(x.Message);
+				}
 				try
 				{
 					NetSystem.Net.Dns.GetHostByName(s);
