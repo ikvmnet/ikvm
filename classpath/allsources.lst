@@ -57,6 +57,7 @@ sun/misc/Ref.java
 ../../classpath-0.13/gnu/java/awt/peer/ClasspathFontPeer.java
 ../../classpath-0.13/gnu/java/awt/peer/ClasspathTextLayoutPeer.java
 ../../classpath-0.13/gnu/java/awt/peer/EmbeddedWindowPeer.java
+../../classpath-0.13/gnu/java/awt/peer/GLightweightPeer.java
 ../../classpath-0.13/gnu/java/beans/BeanInfoEmbryo.java
 ../../classpath-0.13/gnu/java/beans/decoder/AbstractContext.java
 ../../classpath-0.13/gnu/java/beans/decoder/AbstractCreatableObjectContext.java
