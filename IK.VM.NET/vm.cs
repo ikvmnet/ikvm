@@ -84,7 +84,7 @@ public class JVM
 	{
 		get
 		{
-			return logClassLoadFailures;
+			return logClassLoadFailures || isStaticCompiler;
 		}
 		set
 		{
@@ -301,7 +301,8 @@ public class JVM
 			}
 			catch(Exception x)
 			{
-				Console.Error.WriteLine("Loading class {0} failed due to: {1}", s, x.Message);
+				Console.Error.WriteLine("Loading class {0} failed due to:", s);
+				Console.Error.WriteLine(x);
 			}
 			if(s == mainClass && wrapper != null)
 			{

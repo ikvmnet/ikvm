@@ -56,7 +56,7 @@ import ikvm.lang.ByteArrayHack;
   *
   * @author Aaron M. Renn (arenn@urbanophile.com)
   */
-class PlainSocketImpl extends SocketImpl
+public class PlainSocketImpl extends SocketImpl
 {
 	/**
 	 * This is the native file descriptor for this socket

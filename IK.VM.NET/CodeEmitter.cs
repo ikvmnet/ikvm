@@ -388,7 +388,7 @@ public abstract class CodeEmitter
 
 class ReturnCastEmitter : CodeEmitter
 {
-	private Type type;
+	private TypeWrapper type;
 	private string className;
 
 	internal ReturnCastEmitter(string className)
@@ -400,11 +400,22 @@ class ReturnCastEmitter : CodeEmitter
 	{
 		if(type == null)
 		{
-			type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(className).TypeAsParameterType;
+			type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(className);
 		}
-		if(type != typeof(object))
+		if(type.IsGhost)
 		{
-			ilgen.Emit(OpCodes.Castclass, type);
+			LocalBuilder local1 = ilgen.DeclareLocal(type.TypeAsLocalOrStackType);
+			ilgen.Emit(OpCodes.Stloc, local1);
+			LocalBuilder local2 = ilgen.DeclareLocal(type.TypeAsParameterType);
+			ilgen.Emit(OpCodes.Ldloca, local2);
+			ilgen.Emit(OpCodes.Ldloc, local1);
+			ilgen.Emit(OpCodes.Stfld, type.GhostRefField);
+			ilgen.Emit(OpCodes.Ldloca, local2);
+			ilgen.Emit(OpCodes.Ldobj, type.TypeAsParameterType);			
+		}
+		else if(type.TypeAsParameterType != typeof(object))
+		{
+			ilgen.Emit(OpCodes.Castclass, type.TypeAsParameterType);
 		}
 	}
 }

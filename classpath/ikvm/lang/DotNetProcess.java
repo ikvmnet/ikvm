@@ -91,7 +91,7 @@ public class DotNetProcess extends Process
 			}
 			// HACK if the arg contains a space, we surround it with quotes
 			// this isn't nearly good enough, but for now it'll have to do
-			if(cmd[i].indexOf(' ') >= 0)
+			if(cmd[i].indexOf(' ') >= 0 && cmd[i].charAt(0) != '"')
 			{
 				sb.Append('"').Append(cmd[i]).Append('"');
 			}

@@ -2,6 +2,8 @@ C:\ikvm\classpath\ikvm\lang\DotNetProcess.java
 C:\ikvm\classpath\ikvm\lang\CIL.java
 C:\ikvm\classpath\gnu\classpath\Configuration.java
 C:\ikvm\classpath\gnu\java\net\protocol\ikvmres\Handler.java
+C:\ikvm\classpath\gnu\java\net\PlainSocketImpl.java
+C:\ikvm\classpath\gnu\java\net\PlainDatagramSocketImpl.java
 C:\ikvm\classpath\java\io\FileDescriptor.java
 C:\ikvm\classpath\java\lang\VMThread.java
 C:\ikvm\classpath\java\lang\VMClass.java
@@ -15,6 +17,8 @@ C:\ikvm\classpath\java\lang\reflect\Method.java
 C:\ikvm\classpath\java\lang\reflect\Field.java
 C:\ikvm\classpath\java\net\PlainSocketImpl.java
 C:\ikvm\classpath\java\net\PlainDatagramSocketImpl.java
+C:\ikvm\classpath\java\net\SocketInputStream.java
+C:\ikvm\classpath\java\net\SocketOutputStream.java
 C:\ikvm\classpath\sun\misc\Ref.java
 C:\classpath\gnu\classpath\RawData.java
 C:\classpath\gnu\java\awt\BitMaskExtent.java
@@ -218,13 +222,18 @@ C:\classpath\gnu\java\net\protocol\http\HttpURLConnection.java
 C:\classpath\gnu\java\net\protocol\jar\Handler.java
 C:\classpath\gnu\java\net\protocol\jar\JarURLConnection.java
 C:\classpath\gnu\java\nio\DatagramChannelImpl.java
+C:\classpath\gnu\java\nio\DatagramChannelSelectionKey.java
 C:\classpath\gnu\java\nio\FileLockImpl.java
+C:\classpath\gnu\java\nio\NIOConstants.java
+C:\classpath\gnu\java\nio\NIODatagramSocket.java
+C:\classpath\gnu\java\nio\NIOSocket.java
 C:\classpath\gnu\java\nio\PipeImpl.java
 C:\classpath\gnu\java\nio\SelectionKeyImpl.java
 C:\classpath\gnu\java\nio\SelectorImpl.java
 C:\classpath\gnu\java\nio\SelectorProviderImpl.java
 C:\classpath\gnu\java\nio\ServerSocketChannelImpl.java
 C:\classpath\gnu\java\nio\SocketChannelImpl.java
+C:\classpath\gnu\java\nio\SocketChannelSelectionKey.java
 C:\classpath\gnu\java\nio\charset\ISO_8859_1.java
 C:\classpath\gnu\java\nio\charset\Provider.java
 C:\classpath\gnu\java\nio\charset\US_ASCII.java
@@ -245,7 +254,10 @@ C:\classpath\gnu\java\rmi\registry\RegistryImpl_Stub.java
 C:\classpath\gnu\java\rmi\rmic\Compiler.java
 C:\classpath\gnu\java\rmi\rmic\CompilerProcess.java
 C:\classpath\gnu\java\rmi\rmic\Compile_gcj.java
+C:\classpath\gnu\java\rmi\rmic\Compile_jikes.java
+C:\classpath\gnu\java\rmi\rmic\Compile_kjc.java
 C:\classpath\gnu\java\rmi\rmic\RMIC.java
+C:\classpath\gnu\java\rmi\rmic\RMICException.java
 C:\classpath\gnu\java\rmi\rmic\TabbedWriter.java
 C:\classpath\gnu\java\rmi\server\ConnectionRunnerPool.java
 C:\classpath\gnu\java\rmi\server\ProtocolConstants.java
@@ -861,9 +873,7 @@ C:\classpath\java\net\SocketAddress.java
 C:\classpath\java\net\SocketException.java
 C:\classpath\java\net\SocketImpl.java
 C:\classpath\java\net\SocketImplFactory.java
-C:\classpath\java\net\SocketInputStream.java
 C:\classpath\java\net\SocketOptions.java
-C:\classpath\java\net\SocketOutputStream.java
 C:\classpath\java\net\SocketPermission.java
 C:\classpath\java\net\SocketTimeoutException.java
 C:\classpath\java\net\UnknownHostException.java
@@ -881,6 +891,7 @@ C:\classpath\java\nio\Buffer.java
 C:\classpath\java\nio\BufferOverflowException.java
 C:\classpath\java\nio\BufferUnderflowException.java
 C:\classpath\java\nio\ByteBuffer.java
+C:\classpath\java\nio\ByteBufferHelper.java
 C:\classpath\java\nio\ByteBufferImpl.java
 C:\classpath\java\nio\ByteOrder.java
 C:\classpath\java\nio\CharBuffer.java

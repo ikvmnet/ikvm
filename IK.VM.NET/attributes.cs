@@ -25,6 +25,11 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Assembly)]
+public sealed class NoPackagePrefixAttribute : Attribute
+{
+}
+
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Method)]
 public sealed class UnloadableTypeAttribute : Attribute
 {
@@ -44,23 +49,9 @@ public sealed class UnloadableTypeAttribute : Attribute
 	}
 }
 
-[AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Method)]
-public sealed class GhostTypeAttribute : Attribute
+[AttributeUsage(AttributeTargets.Struct)]
+public sealed class GhostInterfaceAttribute : Attribute
 {
-	private Type type;
-
-	public GhostTypeAttribute(Type type)
-	{
-		this.type = type;
-	}
-
-	public Type Type
-	{
-		get
-		{
-			return type;
-		}
-	}
 }
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Property | AttributeTargets.Class)]

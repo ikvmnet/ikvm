@@ -960,12 +960,18 @@ class Compiler
 						}
 						else
 						{
-							// for invokeinterface, the this reference is included in the argument list
-							// because it may also need to be cast
+							// the this reference is included in the argument list because it may also need to be cast
 							TypeWrapper[] methodArgs = cpi.GetArgTypes(classLoader);
 							TypeWrapper[] args = new TypeWrapper[methodArgs.Length + 1];
 							methodArgs.CopyTo(args, 1);
-							args[0] = thisType;
+							if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
+							{
+								args[0] = cpi.GetClassType(classLoader);
+							}
+							else
+							{
+								args[0] = thisType;
+							}
 							CastInterfaceArgs(args, i, true, instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && type != VerifierTypeWrapper.UninitializedThis);
 						}
 
@@ -1216,16 +1222,20 @@ class Compiler
 								TypeWrapper retTypeWrapper = m.Method.GetRetType(classLoader);
 								if(!retTypeWrapper.IsUnloadable)
 								{
-									// because of the way interface merging works, any reference is valid
-									// for any interface reference
-									if(retTypeWrapper.IsInterfaceOrInterfaceArray && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(retTypeWrapper))
+									TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 0);
+									if(!tw.IsUnloadable)
 									{
-										ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
-									}
-									if(retTypeWrapper.IsNonPrimitiveValueType)
-									{
-										ilGenerator.Emit(OpCodes.Unbox, retTypeWrapper.Type);
-										ilGenerator.Emit(OpCodes.Ldobj, retTypeWrapper.Type);
+										// because of the way interface merging works, any reference is valid
+										// for any interface reference
+										if(retTypeWrapper.IsInterfaceOrInterfaceArray && !tw.IsAssignableTo(retTypeWrapper))
+										{
+											ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
+										}
+										if(retTypeWrapper.IsNonPrimitiveValueType)
+										{
+											ilGenerator.Emit(OpCodes.Unbox, retTypeWrapper.Type);
+											ilGenerator.Emit(OpCodes.Ldobj, retTypeWrapper.Type);
+										}
 									}
 								}
 								if(stackHeight != 1)
@@ -1237,6 +1247,17 @@ class Compiler
 										ilGenerator.Emit(OpCodes.Pop);
 									}
 									ilGenerator.Emit(OpCodes.Ldloc, local);
+								}
+								if(retTypeWrapper.IsGhost)
+								{
+									LocalBuilder local1 = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsLocalOrStackType);
+									ilGenerator.Emit(OpCodes.Stloc, local1);
+									LocalBuilder local2 = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
+									ilGenerator.Emit(OpCodes.Ldloca, local2);
+									ilGenerator.Emit(OpCodes.Ldloc, local1);
+									ilGenerator.Emit(OpCodes.Stfld, retTypeWrapper.GhostRefField);
+									ilGenerator.Emit(OpCodes.Ldloca, local2);
+									ilGenerator.Emit(OpCodes.Ldobj, retTypeWrapper.TypeAsParameterType);
 								}
 								ilGenerator.Emit(OpCodes.Ret);
 							}
@@ -1274,12 +1295,27 @@ class Compiler
 									ilGenerator.Emit(OpCodes.Castclass, type.Type);
 								}
 							}
-							else if(!type.IsUnloadable && type.IsNonPrimitiveValueType)
+							else
 							{
-								// HACK we're boxing the arguments when they are loaded, this is inconsistent
-								// with the way locals are treated, so we probably should only box the arguments
-								// once (on method entry)
-								ilGenerator.Emit(OpCodes.Box, type.Type);
+								if(type.IsUnloadable)
+								{
+									// nothing to do
+								}
+								else if(type.IsNonPrimitiveValueType)
+								{
+									// HACK we're boxing the arguments when they are loaded, this is inconsistent
+									// with the way locals are treated, so we probably should only box the arguments
+									// once (on method entry)
+									ilGenerator.Emit(OpCodes.Box, type.Type);
+								}
+								else if(type.IsGhost)
+								{
+									// HACK instead creating an extra local, we should just take the address of the original argument
+									LocalBuilder local = ilGenerator.DeclareLocal(type.TypeAsParameterType);
+									ilGenerator.Emit(OpCodes.Stloc, local);
+									ilGenerator.Emit(OpCodes.Ldloca, local);
+									ilGenerator.Emit(OpCodes.Ldfld, type.GhostRefField);
+								}
 							}
 						}
 						break;
@@ -1309,6 +1345,15 @@ class Compiler
 						}
 						else
 						{
+							if(instr.NormalizedArg1 < m.ArgMap.Length)
+							{
+								if(!type.IsUnloadable && type != VerifierTypeWrapper.Null &&
+									(type.IsNonPrimitiveValueType || type.IsGhost))
+								{
+									// TODO we must support IsNonPrimitiveValueType and IsGhost types here (for 
+									throw new NotImplementedException();
+								}
+							}
 							Store(instr, typeof(object));
 						}
 						break;
@@ -1456,21 +1501,10 @@ class Compiler
 						}
 						else if(wrapper.IsGhost)
 						{
-							TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(wrapper);
-							Type[] implementerTypes = new Type[implementers.Length];
-							for(int j = 0; j < implementers.Length; j++)
-							{
-								implementerTypes[j] = implementers[j].Type;
-							}
-							Label end = ilGenerator.DefineLabel();
-							for(int j = 0; j < implementerTypes.Length; j++)
-							{
-								ilGenerator.Emit(OpCodes.Dup);
-								ilGenerator.Emit(OpCodes.Isinst, implementerTypes[j]);
-								ilGenerator.Emit(OpCodes.Brtrue, end);
-							}
-							ilGenerator.Emit(OpCodes.Castclass, wrapper.Type);
-							ilGenerator.MarkLabel(end);
+							ilGenerator.Emit(OpCodes.Dup);
+							// TODO make sure we get the right "Cast" method and cache it
+							ilGenerator.Emit(OpCodes.Call, wrapper.Type.GetMethod("Cast"));
+							ilGenerator.Emit(OpCodes.Pop);
 						}
 						else if(wrapper.IsGhostArray)
 						{
@@ -1515,30 +1549,8 @@ class Compiler
 						}
 						else if(wrapper.IsGhost)
 						{
-							TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(wrapper);
-							Type[] implementerTypes = new Type[implementers.Length];
-							for(int j = 0; j < implementers.Length; j++)
-							{
-								implementerTypes[j] = implementers[j].Type;
-							}
-							Label end = ilGenerator.DefineLabel();
-							for(int j = 0; j < implementerTypes.Length; j++)
-							{
-								ilGenerator.Emit(OpCodes.Dup);
-								ilGenerator.Emit(OpCodes.Isinst, implementerTypes[j]);
-								Label label = ilGenerator.DefineLabel();
-								ilGenerator.Emit(OpCodes.Brfalse_S, label);
-								ilGenerator.Emit(OpCodes.Pop);
-								ilGenerator.Emit(OpCodes.Ldc_I4_1);
-								ilGenerator.Emit(OpCodes.Br, end);
-								ilGenerator.MarkLabel(label);
-							}
-							ilGenerator.Emit(OpCodes.Isinst, wrapper.Type);
-							ilGenerator.Emit(OpCodes.Ldnull);
-							ilGenerator.Emit(OpCodes.Ceq);
-							ilGenerator.Emit(OpCodes.Ldc_I4_0);
-							ilGenerator.Emit(OpCodes.Ceq);
-							ilGenerator.MarkLabel(end);
+							// TODO make sure we get the right "IsInstance" method and cache it
+							ilGenerator.Emit(OpCodes.Call, wrapper.Type.GetMethod("IsInstance"));
 						}
 						else if(wrapper.IsGhostArray)
 						{
@@ -2315,6 +2327,11 @@ class Compiler
 				{
 					// nothing to do, callee will (eventually) do the cast
 				}
+				else if(args[i].IsGhost)
+				{
+					needsCast = true;
+					break;
+				}
 				else if(args[i].IsInterfaceOrInterfaceArray)
 				{
 					TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
@@ -2363,13 +2380,29 @@ class Compiler
 			}
 			for(int i = 0; i < args.Length; i++)
 			{
-				dh.Load(i);
-				if(!args[i].IsUnloadable && args[i].IsNonPrimitiveValueType)
+				if(!args[i].IsUnloadable && args[i].IsGhost)
 				{
-					ilGenerator.Emit(OpCodes.Unbox, args[i].Type);
+					LocalBuilder local = ilGenerator.DeclareLocal(args[i].TypeAsParameterType);
+					ilGenerator.Emit(OpCodes.Ldloca, local);
+					dh.Load(i);
+					ilGenerator.Emit(OpCodes.Stfld, args[i].GhostRefField);
+					ilGenerator.Emit(OpCodes.Ldloca, local);
+					// NOTE when the this argument is a value type, we need the address on the stack instead of the value
 					if(i != 0 || !instanceMethod)
 					{
-						ilGenerator.Emit(OpCodes.Ldobj, args[i].Type);
+						ilGenerator.Emit(OpCodes.Ldobj, args[i].TypeAsParameterType);
+					}
+				}
+				else
+				{
+					dh.Load(i);
+					if(!args[i].IsUnloadable && args[i].IsNonPrimitiveValueType)
+					{
+						ilGenerator.Emit(OpCodes.Unbox, args[i].Type);
+						if(i != 0 || !instanceMethod)
+						{
+							ilGenerator.Emit(OpCodes.Ldobj, args[i].Type);
+						}
 					}
 				}
 			}

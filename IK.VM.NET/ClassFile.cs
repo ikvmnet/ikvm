@@ -629,21 +629,24 @@ class ClassFile
 			// TODO it might not be a good idea to catch .NET system exceptions here
 			if(JVM.LogClassLoadFailures)
 			{
-				System.Text.StringBuilder sb = new System.Text.StringBuilder();
 				object cl = classLoader.GetJavaClassLoader();
-				Type type = cl.GetType();
-				while(type.FullName != "java.lang.ClassLoader")
+				if(cl != null)
 				{
-					type = type.BaseType;
+					System.Text.StringBuilder sb = new System.Text.StringBuilder();
+					Type type = cl.GetType();
+					while(type.FullName != "java.lang.ClassLoader")
+					{
+						type = type.BaseType;
+					}
+					string sep = "";
+					while(cl != null)
+					{
+						sb.Append(sep).Append(cl);
+						sep = " -> ";
+						cl = type.InvokeMember("getParent", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.Instance, null, cl, new object[0]);
+					}
+					Console.Error.WriteLine("ClassLoader chain: " + sb);
 				}
-				string sep = "";
-				while(cl != null)
-				{
-					sb.Append(sep).Append(cl);
-					sep = " -> ";
-					cl = type.InvokeMember("getParent", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.Instance, null, cl, new object[0]);
-				}
-				Console.Error.WriteLine("ClassLoader chain: " + sb);
 				ExceptionHelper.printStackTrace(ExceptionHelper.MapExceptionFast(x));
 			}
 			return new UnloadableTypeWrapper(name);

@@ -95,4 +95,9 @@ public interface Configuration
    * @see java.lang.reflect.Proxy
    */
   boolean HAVE_NATIVE_GENERATE_PROXY_CLASS = false;
+
+  /**
+   * Name of default AWT peer library.
+   */
+  String default_awt_peer_toolkit = "gnu.java.awt.peer.gtk.GTKToolkit";
 }

@@ -186,54 +186,22 @@ class MethodWrapper : MemberWrapper
 	internal class GhostCallEmitter : CodeEmitter
 	{
 		private MethodDescriptor md;
-		private TypeWrapper[] implementers;
-		private CodeEmitter[] methods;
+		private TypeWrapper type;
+		private MethodInfo method;
 
-		internal GhostCallEmitter(TypeWrapper type, MethodDescriptor md, MethodBase method)
+		internal GhostCallEmitter(TypeWrapper type, MethodDescriptor md, MethodBase __method)
 		{
+			this.type = type;
 			this.md = md;
-			TypeWrapper[] imps = ClassLoaderWrapper.GetGhostImplementers(type);
-			implementers = new TypeWrapper[imps.Length + 1];
-			imps.CopyTo(implementers, 1);
-			methods = new CodeEmitter[implementers.Length + 1];
-			implementers[0] = type;
-			methods[0] = CodeEmitter.Create(OpCodes.Callvirt, method);
 		}
 
 		internal override void Emit(ILGenerator ilgen)
 		{
-			TypeWrapper[] args = md.ArgTypeWrappers;
-			LocalBuilder[] argLocals = new LocalBuilder[args.Length];
-			for(int i = args.Length - 1; i >= 0; i--)
+			if(method == null)
 			{
-				argLocals[i] = ilgen.DeclareLocal(args[i].TypeAsLocalOrStackType);
-				ilgen.Emit(OpCodes.Stloc, argLocals[i]);
+				method = type.TypeAsParameterType.GetMethod(md.Name, md.ArgTypesForDefineMethod);
 			}
-			Label end = ilgen.DefineLabel();
-			for(int i = 0; i < implementers.Length; i++)
-			{
-				ilgen.Emit(OpCodes.Dup);
-				ilgen.Emit(OpCodes.Isinst, implementers[i].Type);
-				Label label = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Brfalse_S, label);
-				ilgen.Emit(OpCodes.Castclass, implementers[i].Type);
-				for(int j = 0; j < argLocals.Length; j++)
-				{
-					ilgen.Emit(OpCodes.Ldloc, argLocals[j]);
-				}
-				if(methods[i] == null)
-				{
-					// NOTE this needs to be done lazily, because otherwise any the first implementer
-					// of a ghost interface will trigger GetMethodWrapper calls to itself, before it is
-					// constructed.
-					methods[i] = implementers[i].GetMethodWrapper(md, true).EmitCallvirt;
-				}
-				methods[i].Emit(ilgen);
-				ilgen.Emit(OpCodes.Br, end);
-				ilgen.MarkLabel(label);
-			}
-			EmitHelper.Throw(ilgen, "java.lang.IncompatibleClassChangeError", "ghost interface not implemented");
-			ilgen.MarkLabel(end);
+			ilgen.Emit(OpCodes.Call, method);
 		}
 	}
 
@@ -423,6 +391,7 @@ class MethodWrapper : MemberWrapper
 
 	internal virtual object Invoke(object obj, object[] args, bool nonVirtual)
 	{
+		// TODO if any of the parameters is a ghost, convert the passed in reference to a ghost value type
 		// TODO instead of looking up the method using reflection, we should use the method object passed into the
 		// constructor
 		if(IsStatic)
@@ -720,6 +689,29 @@ sealed class FieldWrapper : MemberWrapper
 		}
 	}
 
+	private class GhostFieldSetter : CodeEmitter
+	{
+		private OpCode ldflda;
+		private FieldInfo field;
+		private TypeWrapper type;
+
+		internal GhostFieldSetter(FieldInfo field, TypeWrapper type, OpCode ldflda)
+		{
+			this.field = field;
+			this.type = type;
+			this.ldflda = ldflda;
+		}
+
+		internal override void Emit(ILGenerator ilgen)
+		{
+			LocalBuilder local = ilgen.DeclareLocal(type.TypeAsLocalOrStackType);
+			ilgen.Emit(OpCodes.Stloc, local);
+			ilgen.Emit(ldflda, field);
+			ilgen.Emit(OpCodes.Ldloc, local);
+			ilgen.Emit(OpCodes.Stfld, type.GhostRefField);
+		}
+	}
+
 	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo fi, CodeEmitter getter, CodeEmitter setter)
 	{
 		return new FieldWrapper(declaringType, fieldType, name, sig, modifiers, fi, getter, setter);
@@ -736,8 +728,23 @@ sealed class FieldWrapper : MemberWrapper
 		}
 		if(fieldType.IsUnloadable)
 		{
+			// TODO emit code to dynamically get/set the field
 			emitGet += CodeEmitter.NoClassDefFoundError(fieldType.Name);
 			emitSet += CodeEmitter.NoClassDefFoundError(fieldType.Name);
+			return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
+		}
+		if(fieldType.IsGhost)
+		{
+			if((modifiers & Modifiers.Static) != 0)
+			{
+				emitGet += CodeEmitter.Create(OpCodes.Ldsflda, fi) + CodeEmitter.Create(OpCodes.Ldfld, fieldType.GhostRefField);
+				emitSet += new GhostFieldSetter(fi, fieldType, OpCodes.Ldsflda);
+			}
+			else
+			{
+				emitGet += CodeEmitter.Create(OpCodes.Ldflda, fi) + CodeEmitter.Create(OpCodes.Ldfld, fieldType.GhostRefField);
+				emitSet += new GhostFieldSetter(fi, fieldType, OpCodes.Ldflda);
+			}
 			return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
 		}
 		if(fieldType.IsNonPrimitiveValueType)
@@ -796,6 +803,12 @@ sealed class FieldWrapper : MemberWrapper
 		{
 			LookupField();
 		}
+		if(fieldType.IsGhost)
+		{
+			object temp = field.GetValue(obj);
+			fieldType.GhostRefField.SetValue(temp, val);
+			val = temp;
+		}
 		field.SetValue(obj, val);
 	}
 
@@ -806,6 +819,11 @@ sealed class FieldWrapper : MemberWrapper
 		{
 			LookupField();
 		}
-		return field.GetValue(obj);
+		object val = field.GetValue(obj);
+		if(fieldType.IsGhost)
+		{
+			val = fieldType.GhostRefField.GetValue(val);
+		}
+		return val;
 	}
 }

@@ -404,28 +404,23 @@ namespace NativeCode.java
 
 				public static object GetValue(object fieldCookie, object o)
 				{
-					// TODO this is a very lame implementation, no where near correct
 					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-					wrapper.DeclaringType.Finish();
-					FieldInfo fi = wrapper.DeclaringType.Type.GetField(wrapper.Name, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-					if(fi.FieldType.IsValueType)
+					object val = wrapper.GetValue(o);
+					if(wrapper.FieldTypeWrapper.IsPrimitive)
 					{
-						return JavaWrapper.Box(fi.GetValue(o));
+						val = JavaWrapper.Box(val);
 					}
-					return fi.GetValue(o);
+					return val;
 				}
 
 				public static void SetValue(object fieldCookie, object o, object v)
 				{
-					// TODO this is a very lame implementation, no where near correct
 					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-					wrapper.DeclaringType.Finish();
-					FieldInfo fi = wrapper.DeclaringType.Type.GetField(wrapper.Name, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-					if(fi.FieldType.IsValueType)
+					if(wrapper.FieldTypeWrapper.IsPrimitive)
 					{
 						v = JavaWrapper.Unbox(v);
 					}
-					fi.SetValue(o, v);
+					wrapper.SetValue(o, v);
 				}
 			}
 		}
@@ -436,7 +431,7 @@ namespace NativeCode.java
 			{
 				MethodInfo m = properties.GetType().GetMethod("setProperty");
 				// TODO set all these properties to something useful
-				m.Invoke(properties, new string[] { "java.version", "1.3" });
+				m.Invoke(properties, new string[] { "java.version", "1.4" });
 				m.Invoke(properties, new string[] { "java.vendor", "Jeroen Frijters" });
 				m.Invoke(properties, new string[] { "java.vendor.url", "http://ikvm.net/" });
 				// HACK using the Assembly.Location property isn't correct
@@ -447,7 +442,7 @@ namespace NativeCode.java
 				m.Invoke(properties, new string[] { "java.vm.version", typeof(Runtime).Assembly.GetName().Version.ToString() });
 				m.Invoke(properties, new string[] { "java.vm.vendor", "Jeroen Frijters" });
 				m.Invoke(properties, new string[] { "java.vm.name", "IKVM.NET" });
-				m.Invoke(properties, new string[] { "java.specification.version", "1.3" });
+				m.Invoke(properties, new string[] { "java.specification.version", "1.4" });
 				m.Invoke(properties, new string[] { "java.specification.vendor", "Sun Microsystems Inc." });
 				m.Invoke(properties, new string[] { "java.specification.name", "Java Platform API Specification" });
 				m.Invoke(properties, new string[] { "java.class.version", "48.0" });

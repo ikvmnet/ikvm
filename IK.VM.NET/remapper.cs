@@ -171,7 +171,7 @@ namespace MapXml
 					typeType = Type.GetType(type, true);
 				}
 			}
-			ilgen.Emit(opcode, typeType != null ? typeType : typeWrapper.Type);
+			ilgen.Emit(opcode, typeType != null ? typeType : typeWrapper.TypeAsBaseType);
 		}
 	}
 
@@ -489,7 +489,9 @@ namespace MapXml
 		[XmlEnum("interface")]
 		Interface = Modifiers.Interface,
 		[XmlEnum("static")]
-		Static = Modifiers.Static
+		Static = Modifiers.Static,
+		[XmlEnum("abstract")]
+		Abstract = Modifiers.Abstract
 	}
 
 	[XmlType("class")]

@@ -399,8 +399,8 @@
 				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
 			</method>
 		</class>
-		<class name="java.lang.Comparable" type="System.IComparable" modifiers="public interface">
-			<method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public">
+		<class name="java.lang.Comparable" type="System.IComparable" modifiers="public abstract interface">
+			<method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public abstract">
 				<override name="CompareTo" />
 			</method>
 		</class>
