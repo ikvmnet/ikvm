@@ -424,8 +424,9 @@ public final class Class implements Serializable
 	 */
 	public Class getSuperclass()
 	{
-		return getClassFromType(getType().get_BaseType());
+		return (Class)GetSuperClassFromWrapper(getWrapper());
 	}
+	private native static Object GetSuperClassFromWrapper(Object wrapper);
 
 	/**
 	 * Returns the <code>Package</code> in which this class is defined
