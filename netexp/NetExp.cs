@@ -191,8 +191,17 @@ public class NetExp
 				FieldOrMethod m = f.AddMethod(mods, "<init>", MakeSig(args, java.lang.Void.TYPE));
 				CodeAttribute code = new CodeAttribute(f);
 				code.MaxLocals = (ushort)(args.Length + 1);
-				code.MaxStack = 0;
-				code.ByteCode = new byte[] { 177 };
+				code.MaxStack = 3;
+				ushort index1 = f.AddClass("java/lang/UnsatisfiedLinkError");
+				ushort index2 = f.AddString("Netexp generated stubs can only be used on IKVM.NET");
+				ushort index3 = f.AddMethodRef("java/lang/UnsatisfiedLinkError", "<init>", "(Ljava/lang/String;)V");
+				code.ByteCode = new byte[] {
+					187, (byte)(index1 >> 8), (byte)index1,	// new java/lang/UnsatisfiedLinkError
+					89,										// dup
+				    19,	 (byte)(index2 >> 8), (byte)index2,	// ldc_w "..."
+					183, (byte)(index3 >> 8), (byte)index3, // invokespecial java/lang/UnsatisfiedLinkError/init()V
+					191										// athrow
+				};
 				m.AddAttribute(code);
 			}
 		}

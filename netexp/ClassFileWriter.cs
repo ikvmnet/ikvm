@@ -172,6 +172,74 @@ class ConstantPoolItemClass : ConstantPoolItem
 	}
 }
 
+class ConstantPoolItemMethodref : ConstantPoolItem
+{
+	private ushort class_index;
+	private ushort name_and_type_index;
+
+	public ConstantPoolItemMethodref(ushort class_index, ushort name_and_type_index)
+	{
+		this.class_index = class_index;
+		this.name_and_type_index = name_and_type_index;
+	}
+
+	public override int GetHashCode()
+	{
+		return class_index | (name_and_type_index << 16);
+	}
+
+	public override bool Equals(object o)
+	{
+		if(o != null && o.GetType() == typeof(ConstantPoolItemMethodref))
+		{
+			ConstantPoolItemMethodref m = (ConstantPoolItemMethodref)o;
+			return m.class_index == class_index && m.name_and_type_index == name_and_type_index;
+		}
+		return false;
+	}
+
+	public override void Write(BigEndianStream bes)
+	{
+		bes.WriteByte((byte)Constant.Methodref);
+		bes.WriteUInt16(class_index);
+		bes.WriteUInt16(name_and_type_index);
+	}
+}
+
+class ConstantPoolItemNameAndType : ConstantPoolItem
+{
+	private ushort name_index;
+	private ushort descriptor_index;
+
+	public ConstantPoolItemNameAndType(ushort name_index, ushort descriptor_index)
+	{
+		this.name_index = name_index;
+		this.descriptor_index = descriptor_index;
+	}
+
+	public override int GetHashCode()
+	{
+		return name_index | (descriptor_index << 16);
+	}
+
+	public override bool Equals(object o)
+	{
+		if(o != null && o.GetType() == typeof(ConstantPoolItemNameAndType))
+		{
+			ConstantPoolItemNameAndType n = (ConstantPoolItemNameAndType)o;
+			return n.name_index == name_index && n.descriptor_index == descriptor_index;
+		}
+		return false;
+	}
+
+	public override void Write(BigEndianStream bes)
+	{
+		bes.WriteByte((byte)Constant.NameAndType);
+		bes.WriteUInt16(name_index);
+		bes.WriteUInt16(descriptor_index);
+	}
+}
+
 class ConstantPoolItemUtf8 : ConstantPoolItem
 {
 	private string str;
@@ -606,6 +674,16 @@ class ClassFileWriter
 		return Add(new ConstantPoolItemClass(AddUtf8(classname)));
 	}
 
+	public ushort AddMethodRef(string classname, string methodname, string signature)
+	{
+		return Add(new ConstantPoolItemMethodref(AddClass(classname), AddNameAndType(methodname, signature)));
+	}
+
+	public ushort AddNameAndType(string name, string type)
+	{
+		return Add(new ConstantPoolItemNameAndType(AddUtf8(name), AddUtf8(type)));
+	}
+
 	private ushort AddInt(int i)
 	{
 		return Add(new ConstantPoolItemInt(i));
@@ -626,7 +704,7 @@ class ClassFileWriter
 		return Add(new ConstantPoolItemDouble(d));
 	}
 
-	private ushort AddString(string s)
+	public ushort AddString(string s)
 	{
 		return Add(new ConstantPoolItemString(AddUtf8(s)));
 	}
