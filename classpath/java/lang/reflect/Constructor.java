@@ -263,7 +263,7 @@ public final class Constructor
 	InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    Field.checkAccess(modifiers, declaringClass, new StackFrame(1));
+	    Field.checkAccess(modifiers, null, declaringClass, new StackFrame(1));
 	if(Modifier.isAbstract(declaringClass.getModifiers()))
 	{
 	    throw new InstantiationException();

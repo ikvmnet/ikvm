@@ -4346,6 +4346,20 @@ class CompiledTypeWrapper : LazyTypeWrapper
 				}
 				method.EmitNewobj = CodeEmitter.InternalError;
 			}
+			TypeWrapper retType = method.ReturnType;
+			if(!retType.IsUnloadable)
+			{
+				if(retType.IsNonPrimitiveValueType)
+				{
+					method.EmitCall += CodeEmitter.CreateEmitBoxCall(retType);
+					method.EmitCallvirt += CodeEmitter.CreateEmitBoxCall(retType);
+				}
+				else if(retType.IsGhost)
+				{
+					method.EmitCall += new MethodWrapper.GhostUnwrapper(retType);
+					method.EmitCallvirt += new MethodWrapper.GhostUnwrapper(retType);
+				}
+			}
 		}
 		return method;
 	}
@@ -4703,6 +4717,51 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		return type.IsPublic || (type.IsNestedPublic && IsVisible(type.DeclaringType));
 	}
 
+	private class EnumWrapMethodWrapper : MethodWrapper
+	{
+		internal EnumWrapMethodWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
+			: base(tw, MethodDescriptor.FromNameSig(tw.GetClassLoader(), "wrap", "(" + fieldType.SigName + ")" + tw.SigName), null, Modifiers.Static | Modifiers.Public, false)
+		{
+			// NOTE we don't support custom boxing rules for enums
+			EmitCall = CodeEmitter.Create(OpCodes.Box, tw.type);
+		}
+
+		internal override object Invoke(object obj, object[] args, bool nonVirtual)
+		{
+			return Enum.ToObject(DeclaringType.TypeAsTBD, ((IConvertible)args[0]).ToInt64(null));
+		}
+	}
+
+	private class EnumValueFieldWrapper : FieldWrapper
+	{
+		// NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
+		internal EnumValueFieldWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
+			: base(tw, fieldType, "Value", fieldType.SigName, Modifiers.Public | Modifiers.Final, null,
+					CodeEmitter.Create(OpCodes.Unbox, tw.type) + CodeEmitter.Create(OpCodes.Ldobj, tw.type), CodeEmitter.Pop + CodeEmitter.Pop)
+		{
+		}
+
+		internal override void SetValue(object obj, object val)
+		{
+			// NOTE even though the field is final, JNI reflection can still be used to set its value!
+			// NOTE the CLI spec says that an enum has exactly one instance field, so we take advantage of that fact.
+			FieldInfo f = DeclaringType.TypeAsTBD.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)[0];
+			f.SetValue(obj, val);
+		}
+
+		internal override object GetValue(object obj)
+		{
+			if(FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
+			{
+				return ((IConvertible)obj).ToInt64(null);
+			}
+			else
+			{
+				return ((IConvertible)obj).ToInt32(null);
+			}
+		}
+	}
+
 	protected override void LazyPublishMembers()
 	{
 		// special support for enums
@@ -4715,19 +4774,20 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			{
 				if(fields[i].FieldType == type)
 				{
-					// TODO handle name/signature clash
-					AddField(FieldWrapper.Create(this, fieldType, fields[i].Name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], CodeEmitter.CreateLoadConstantField(fields[i]), CodeEmitter.Pop));
+					string name = fields[i].Name;
+					if(name == "Value")
+					{
+						name = "_Value";
+					}
+					else if(name.StartsWith("_") && name.EndsWith("Value"))
+					{
+						name = "_" + name;
+					}
+					AddField(FieldWrapper.Create(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], CodeEmitter.CreateLoadConstantField(fields[i]), CodeEmitter.Pop));
 				}
 			}
-			// NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
-			CodeEmitter getter = CodeEmitter.Create(OpCodes.Unbox, type) + CodeEmitter.Create(OpCodes.Ldobj, type);
-			CodeEmitter setter = CodeEmitter.Pop + CodeEmitter.Pop;
-			FieldWrapper fw = FieldWrapper.Create(this, fieldType, "Value", fieldType.SigName, Modifiers.Public | Modifiers.Final, null, getter, setter);
-			AddField(fw);
-			MethodWrapper mw = new MethodWrapper(this, MethodDescriptor.FromNameSig(GetClassLoader(), "wrap", "(" + fieldType.SigName + ")" + this.SigName), null, Modifiers.Static | Modifiers.Public, false);
-			// NOTE we don't support custom boxing rules for enums
-			mw.EmitCall = CodeEmitter.Create(OpCodes.Box, type);
-			AddMethod(mw);
+			AddField(new EnumValueFieldWrapper(this, fieldType));
+			AddMethod(new EnumWrapMethodWrapper(this, fieldType));
 		}
 		else
 		{

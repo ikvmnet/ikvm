@@ -248,7 +248,7 @@ class InstructionState
 					}
 					else
 					{
-						System.Diagnostics.Debug.Fail("invalid merge");
+						throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, s2.stack[i].Name));
 					}
 				}
 				if(type != baseType)
@@ -439,8 +439,12 @@ class InstructionState
 				rank1--;
 				rank2--;
 			}
-			TypeWrapper baseType = FindCommonBaseTypeHelper(elem1, elem2);
-			if(baseType == VerifierTypeWrapper.Invalid)
+			// NOTE arrays of value types have special merging semantics!
+			// NOTE we don't have to test for the case where the element types are the same, because that
+			// is only relevant if the ranks are the same, but if that is the case the types are completely
+			// identical, in which case the identity test at the top of this method already returned.
+			TypeWrapper baseType;
+			if(elem1.IsPrimitive || elem2.IsPrimitive || elem1.IsNonPrimitiveValueType || elem2.IsNonPrimitiveValueType)
 			{
 				baseType = CoreClasses.java.lang.Object.Wrapper;
 				rank--;
@@ -448,6 +452,10 @@ class InstructionState
 				{
 					return baseType;
 				}
+			}
+			else
+			{
+				baseType = FindCommonBaseTypeHelper(elem1, elem2);
 			}
 			return baseType.MakeArrayType(rank);
 		}
@@ -460,38 +468,16 @@ class InstructionState
 		{
 			return t1;
 		}
-		if(t1.IsNonPrimitiveValueType || t2.IsNonPrimitiveValueType)
-		{
-			return VerifierTypeWrapper.Invalid;
-		}
 		if(t1.IsInterface || t2.IsInterface)
 		{
-			// TODO I don't know how finding the common base for interfaces is defined, but
-			// for now I'm just doing the naive thing
-			// UPDATE according to a paper by Alessandro Coglio & Allen Goldberg titled
+			// NOTE according to a paper by Alessandro Coglio & Allen Goldberg titled
 			// "Type Safety in the JVM: Some Problems in Java 2 SDK 1.2 and Proposed Solutions"
 			// the common base of two interfaces is java.lang.Object, and there is special
 			// treatment for java.lang.Object types that allow it to be assigned to any interface
 			// type, the JVM's typesafety then depends on the invokeinterface instruction to make
 			// sure that the reference actually implements the interface.
-			// So strictly speaking, the code below isn't correct, but it works and it produces
-			// more efficient code, so for now it stays in.
-			if(t1.ImplementsInterface(t2))
-			{
-				return t2;
-			}
-			if(t2.ImplementsInterface(t1))
-			{
-				return t1;
-			}
-			foreach (TypeWrapper baseInterface in t1.Interfaces)
-			{
-				TypeWrapper commonBase = FindCommonBaseTypeHelper(baseInterface, t2);
-				if (commonBase != CoreClasses.java.lang.Object.Wrapper)
-				{
-					return commonBase;
-				}
-			}
+			// NOTE the ECMA CLI spec also specifies this interface merging algorithm, so we can't
+			// really do anything more clever than this.
 			return CoreClasses.java.lang.Object.Wrapper;
 		}
 		Stack st1 = new Stack();

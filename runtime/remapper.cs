@@ -395,6 +395,22 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("bge_un")]
+	public sealed class Bge_Un : Branch
+	{
+		public Bge_Un() : base(OpCodes.Bge_Un)
+		{
+		}
+	}
+
+	[XmlType("ble_un")]
+	public sealed class Ble_Un : Branch
+	{
+		public Ble_Un() : base(OpCodes.Ble_Un)
+		{
+		}
+	}
+
 	[XmlType("label")]
 	public sealed class BrLabel : Instruction
 	{
@@ -578,10 +594,30 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("ldc_i4")]
+	public sealed class Ldc_I4 : Instruction
+	{
+		[XmlAttribute("value")]
+		public int val;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Ldc_I4, val);
+		}
+	}
+
 	[XmlType("ldc_i4_0")]
 	public sealed class Ldc_I4_0 : Simple
 	{
 		public Ldc_I4_0() : base(OpCodes.Ldc_I4_0)
+		{
+		}
+	}
+
+	[XmlType("ldc_i4_m1")]
+	public sealed class Ldc_I4_M1 : Simple
+	{
+		public Ldc_I4_M1() : base(OpCodes.Ldc_I4_M1)
 		{
 		}
 	}
@@ -640,6 +676,8 @@ namespace MapXml
 		[XmlElement(typeof(BrFalse))]
 		[XmlElement(typeof(BrTrue))]
 		[XmlElement(typeof(Br))]
+		[XmlElement(typeof(Bge_Un))]
+		[XmlElement(typeof(Ble_Un))]
 		[XmlElement(typeof(BrLabel))]
 		[XmlElement(typeof(NewObj))]
 		[XmlElement(typeof(StLoc))]
@@ -658,7 +696,9 @@ namespace MapXml
 		[XmlElement(typeof(Throw))]
 		[XmlElement(typeof(Ldnull))]
 		[XmlElement(typeof(Stsfld))]
+		[XmlElement(typeof(Ldc_I4))]
 		[XmlElement(typeof(Ldc_I4_0))]
+		[XmlElement(typeof(Ldc_I4_M1))]
 		[XmlElement(typeof(Conv_U1))]
 		[XmlElement(typeof(Conv_U2))]
 		[XmlElement(typeof(Conv_U4))]

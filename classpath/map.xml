@@ -258,10 +258,21 @@
 				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)Ljava.lang.String;" />
 			</method>
 			<method name="indexOf" sig="(I)I" modifiers="public">
-				<redirect name="IndexOf" sig="(C)I" />
+				<body>
+					<ldarg_1 />
+					<ldc_i4 value="65535" />
+					<ble_un name="ok" />
+					<ldc_i4_m1 />
+					<ret />
+					<label name="ok" />
+					<ldarg_0 />
+					<ldarg_1 />
+					<call type="System.String, mscorlib" name="IndexOf" sig="(C)I" />
+					<ret />
+				</body>
 			</method>
 			<method name="indexOf" sig="(II)I" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;CI)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)I" />
 			</method>
 			<method name="indexOf" sig="(Ljava.lang.String;)I" modifiers="public">
 				<redirect name="IndexOf" />
@@ -270,10 +281,21 @@
 				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;I)I" />
 			</method>
 			<method name="lastIndexOf" sig="(I)I" modifiers="public">
-				<redirect name="LastIndexOf" sig="(C)I" />
+				<body>
+					<ldarg_1 />
+					<ldc_i4 value="65535" />
+					<ble_un name="ok" />
+					<ldc_i4_m1 />
+					<ret />
+					<label name="ok" />
+					<ldarg_0 />
+					<ldarg_1 />
+					<call type="System.String, mscorlib" name="LastIndexOf" sig="(C)I" />
+					<ret />
+				</body>
 			</method>
 			<method name="lastIndexOf" sig="(II)I" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;CI)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)I" />
 			</method>
 			<method name="lastIndexOf" sig="(Ljava.lang.String;)I" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;)I" />

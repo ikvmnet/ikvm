@@ -391,22 +391,15 @@ final class VMThread
 	}
 	try
 	{
-	    // HACK this is a lame way of doing this, but I can't see any other way
-	    // NOTE Wait causes the lock to be released temporarily, which isn't what we want
+	    // The new 1.5 memory model explicitly allows spurious wake-ups from Object.wait,
+	    // so we abuse Pulse to check if we own the monitor.
 	    if(false) throw new IllegalMonitorStateException();
-	    if(false) throw new InterruptedException();
-	    cli.System.Threading.Monitor.Wait(obj, 0);
+	    cli.System.Threading.Monitor.Pulse(obj);
 	    return true;
 	}
 	catch(IllegalMonitorStateException x)
 	{
 	    return false;
-	}
-	catch(InterruptedException x1)
-	{
-	    // since we "consumed" the interrupt, we have to interrupt ourself again
-	    cli.System.Threading.Thread.get_CurrentThread().Interrupt();
-	    return true;
 	}
     }
 }

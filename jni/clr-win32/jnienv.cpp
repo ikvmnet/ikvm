@@ -1125,11 +1125,26 @@ jint JavaVM::DestroyJavaVM()
 	_asm int 3
 }
 
-jint JavaVM::AttachCurrentThread(void **penv, void *args)
+static void AttachCurrentThread_NotImplemented()
 {
 	assert(false);
 	_asm int 3
 }
+
+#pragma managed
+jint JavaVM::AttachCurrentThread(void **penv, void *args)
+{
+	// TODO for now we only support attaching to an existing thread
+	JNIEnv* p = LocalRefStruct::GetEnv();
+	if(p)
+	{
+		*penv = p;
+		return JNI_OK;
+	}
+	AttachCurrentThread_NotImplemented();
+	return JNI_ERR;
+}
+#pragma unmanaged
 
 jint JavaVM::DetachCurrentThread()
 {

@@ -143,7 +143,7 @@ class MethodWrapper : MemberWrapper
 	internal CodeEmitter EmitCallvirt;
 	internal CodeEmitter EmitNewobj;
 
-	private class GhostUnwrapper : CodeEmitter
+	internal class GhostUnwrapper : CodeEmitter
 	{
 		private TypeWrapper type;
 
@@ -374,6 +374,7 @@ class MethodWrapper : MemberWrapper
 	// we expose the underlying MethodBase object,
 	// for Java types, this is the method that contains the compiled Java bytecode
 	// for remapped types, this is the mbCore method (not the helper)
+	// Note that for some artificial methods (notably wrap() in enums), method is null
 	internal MethodBase GetMethod()
 	{
 		return method;
@@ -700,7 +701,7 @@ class FieldWrapper : MemberWrapper
 	private FieldInfo field;
 	private TypeWrapper fieldType;
 
-	private FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, CodeEmitter emitGet, CodeEmitter emitSet)
+	internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, CodeEmitter emitGet, CodeEmitter emitSet)
 		: base(declaringType, modifiers, false)
 	{
 		Debug.Assert(fieldType != null);
@@ -970,7 +971,7 @@ class FieldWrapper : MemberWrapper
 		Debug.Assert(field != null);
 	}
 
-	internal void SetValue(object obj, object val)
+	internal virtual void SetValue(object obj, object val)
 	{
 		// TODO this is a broken implementation (for one thing, it needs to support redirection)
 		if(field == null || field is FieldBuilder)

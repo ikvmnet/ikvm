@@ -342,10 +342,18 @@ final class StringHelper
 	return 0;
     }
 
-    static int indexOf(cli.System.String s, char ch, int fromIndex)
+    static int indexOf(cli.System.String s, int ch, int fromIndex)
     {
+	if(ch < 0 || ch > Character.MAX_VALUE)
+	{
+	    if(s == null)
+	    {
+		throw new NullPointerException();
+	    }
+    	    return -1;
+	}
 	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
-	return s.IndexOf(ch, Math.max(0, Math.min(s.get_Length(), fromIndex)));
+	return s.IndexOf((char)ch, Math.max(0, Math.min(s.get_Length(), fromIndex)));
     }
 
     static int indexOf(cli.System.String s, String o, int fromIndex)
@@ -354,7 +362,7 @@ final class StringHelper
 	return s.IndexOf(o, Math.max(0, Math.min(s.get_Length(), fromIndex)));
     }
 
-    static int lastIndexOf(cli.System.String s, char ch, int fromIndex)
+    static int lastIndexOf(cli.System.String s, int ch, int fromIndex)
     {
 	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
 	int len = s.get_Length();
@@ -362,8 +370,12 @@ final class StringHelper
 	{
 	    return -1;
 	}
+	if(ch < 0 || ch > Character.MAX_VALUE)
+	{
+	    return -1;
+	}
 	// Java allow fromIndex to be above the length of the string, .NET doesn't
-	return s.LastIndexOf(ch, Math.min(len - 1, fromIndex));
+	return s.LastIndexOf((char)ch, Math.min(len - 1, fromIndex));
     }
 
     static int lastIndexOf(cli.System.String s, String o)

@@ -128,8 +128,14 @@ class Compiler
 		this.symboldocument = symboldocument;
 
 		Profiler.Enter("MethodAnalyzer");
-		ma = new MethodAnalyzer(clazz, m, classLoader);
-		Profiler.Leave("MethodAnalyzer");
+		try
+		{
+			ma = new MethodAnalyzer(clazz, m, classLoader);
+		}
+		finally
+		{
+			Profiler.Leave("MethodAnalyzer");
+		}
 
 		TypeWrapper[] args = m.Method.GetArgTypes(classLoader);
 		LocalVar[] locals = ma.GetAllLocalVars();
@@ -696,8 +702,14 @@ class Compiler
 		try
 		{
 			Profiler.Enter("new Compiler");
-			c = new Compiler(clazz, m.CodeAttribute, ilGenerator, classLoader, symboldocument);
-			Profiler.Leave("new Compiler");
+			try
+			{
+				c = new Compiler(clazz, m.CodeAttribute, ilGenerator, classLoader, symboldocument);
+			}
+			finally
+			{
+				Profiler.Leave("new Compiler");
+			}
 		}
 		catch(VerifyError x)
 		{
@@ -708,37 +720,43 @@ class Compiler
 			return;
 		}
 		Profiler.Enter("Compile");
-		if(m.IsStatic && m.IsSynchronized)
+		try
 		{
-			ArrayList exits = new ArrayList();
-			// TODO consider caching the Class object in a static field
-			ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-			ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
-			ilGenerator.Emit(OpCodes.Call, getClassFromTypeMethod);
-			ilGenerator.Emit(OpCodes.Dup);
-			LocalBuilder monitor = ilGenerator.DeclareLocal(typeof(object));
-			ilGenerator.Emit(OpCodes.Stloc, monitor);
-			ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
-			ilGenerator.BeginExceptionBlock();
-			Block b = new Block(c, 0, int.MaxValue, -1, exits, true);
-			c.Compile(b);
-			b.Leave();
-			ilGenerator.BeginFinallyBlock();
-			ilGenerator.Emit(OpCodes.Ldloc, monitor);
-			ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
-			ilGenerator.EndExceptionBlock();
-			b.LeaveStubs(new Block(c, 0, int.MaxValue, -1, null, false));
+			if(m.IsStatic && m.IsSynchronized)
+			{
+				ArrayList exits = new ArrayList();
+				// TODO consider caching the Class object in a static field
+				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+				ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
+				ilGenerator.Emit(OpCodes.Call, getClassFromTypeMethod);
+				ilGenerator.Emit(OpCodes.Dup);
+				LocalBuilder monitor = ilGenerator.DeclareLocal(typeof(object));
+				ilGenerator.Emit(OpCodes.Stloc, monitor);
+				ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
+				ilGenerator.BeginExceptionBlock();
+				Block b = new Block(c, 0, int.MaxValue, -1, exits, true);
+				c.Compile(b);
+				b.Leave();
+				ilGenerator.BeginFinallyBlock();
+				ilGenerator.Emit(OpCodes.Ldloc, monitor);
+				ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
+				ilGenerator.EndExceptionBlock();
+				b.LeaveStubs(new Block(c, 0, int.MaxValue, -1, null, false));
+			}
+			else
+			{
+				Block b = new Block(c, 0, int.MaxValue, -1, null, false);
+				c.Compile(b);
+				b.Leave();
+			}
+			// HACK because of the bogus Leave instruction that Reflection.Emit generates, this location
+			// sometimes appears reachable (it isn't), so we emit a bogus branch to keep the verifier happy.
+			ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
 		}
-		else
+		finally
 		{
-			Block b = new Block(c, 0, int.MaxValue, -1, null, false);
-			c.Compile(b);
-			b.Leave();
+			Profiler.Leave("Compile");
 		}
-		// HACK because of the bogus Leave instruction that Reflection.Emit generates, this location
-		// sometimes appears reachable (it isn't), so we emit a bogus branch to keep the verifier happy.
-		ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
-		Profiler.Leave("Compile");
 	}
 
 	private class Block
@@ -2671,6 +2689,7 @@ class Compiler
 					{
 						// TODO ideally, instead of an InvalidCastException, the castclass should throw a IncompatibleClassChangeError
 						ilGenerator.Emit(OpCodes.Castclass, args[i].TypeAsTBD);
+						Profiler.Count("InterfaceDownCast");
 					}
 				}
 				dh.Store(i);

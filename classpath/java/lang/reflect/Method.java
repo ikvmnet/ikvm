@@ -322,10 +322,9 @@ public final class Method extends AccessibleObject implements Member
     public Object invoke(Object o, Object[] args)
 	throws IllegalAccessException, InvocationTargetException
     {
-	// TODO check args
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    Field.checkAccess(modifiers, declaringClass, new StackFrame(1));
-	if(!Modifier.isStatic(getModifiers()))
+	    Field.checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+	if(!Modifier.isStatic(modifiers))
 	{
 	    if(o == null)
 	    {
@@ -341,6 +340,7 @@ public final class Method extends AccessibleObject implements Member
 	{
 	    throw new IllegalArgumentException();
 	}
+	// TODO check all argument types
 	return Invoke(methodCookie, o, args);
     }
 
