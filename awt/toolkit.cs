@@ -57,7 +57,7 @@ namespace ikvm.awt
 	public class NetToolkit : gnu.java.awt.ClasspathToolkit
 	{
 		private static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
-		private static Form bogusForm;
+		private static volatile Form bogusForm;
 		private static Delegate createControlInstance;
 		private int resolution;
 
@@ -66,18 +66,20 @@ namespace ikvm.awt
 		private static void MessageLoop()
 		{
 			createControlInstance = new CreateControlInstanceDelegate(CreateControlImpl);
-			Form form = new Form();
-			form.CreateControl();
-			// HACK I have no idea why this line is necessary...
-			IntPtr p = form.Handle;
-			bogusForm = form;
-			// HACK to make sure we can be aborted (Thread.Abort) we need to periodically
-			// fire an event (because otherwise we'll be blocking in unmanaged code and
-			// the Abort cannot be handled there).
-			System.Windows.Forms.Timer t = new System.Windows.Forms.Timer();
-			t.Interval = 100;
-			t.Start();
-			Application.Run();
+			using(Form form = new Form())
+			{
+				form.CreateControl();
+				// HACK I have no idea why this line is necessary...
+				IntPtr p = form.Handle;
+				bogusForm = form;
+				// HACK to make sure we can be aborted (Thread.Abort) we need to periodically
+				// fire an event (because otherwise we'll be blocking in unmanaged code and
+				// the Abort cannot be handled there).
+				System.Windows.Forms.Timer t = new System.Windows.Forms.Timer();
+				t.Interval = 100;
+				t.Start();
+				Application.Run();
+			}
 		}
 
 		internal static Control CreateControlImpl(Type type)
@@ -103,7 +105,7 @@ namespace ikvm.awt
 				Thread thread = new Thread(new ThreadStart(MessageLoop));
 				thread.Start();
 				// TODO don't use polling...
-				while(bogusForm == null)
+				while(bogusForm == null && thread.IsAlive)
 				{
 					Thread.Sleep(1);
 				}
