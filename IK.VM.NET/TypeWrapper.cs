@@ -710,7 +710,7 @@ abstract class TypeWrapper
 			{
 				// the type doesn't implement the interface method and isn't abstract either. The JVM allows this, but the CLR doesn't,
 				// so we have to create a stub method that throws an AbstractMethodError
-				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetType, md.ArgTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual, md.RetType, md.ArgTypes);
 				mb.SetCustomAttribute(methodFlags);
 				ILGenerator ilGenerator = mb.GetILGenerator();
 				TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/AbstractMethodError");
@@ -718,6 +718,10 @@ abstract class TypeWrapper
 				exception.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false).EmitNewobj.Emit(ilGenerator);
 				ilGenerator.Emit(OpCodes.Throw);
 				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
+				// NOTE because we are introducing a Miranda method, we must also update the corresponding wrapper.
+				// If we don't do this, subclasses might think they are introducing a new method, instead of overriding
+				// this one.
+				wrapper.AddMethod(MethodWrapper.Create(wrapper, md, mb, mb, Modifiers.Synthetic | Modifiers.Public | Modifiers.Abstract));
 			}
 			else
 			{
@@ -763,7 +767,7 @@ abstract class TypeWrapper
 				// NOTE because we are introducing a Miranda method, we must also update the corresponding wrapper.
 				// If we don't do this, subclasses might think they are introducing a new method, instead of overriding
 				// this one.
-				wrapper.AddMethod(MethodWrapper.Create(wrapper, md, mb, mb, Modifiers.Public | Modifiers.Abstract));
+				wrapper.AddMethod(MethodWrapper.Create(wrapper, md, mb, mb, Modifiers.Synthetic | Modifiers.Public | Modifiers.Abstract));
 			}
 		}
 	}
@@ -1308,7 +1312,10 @@ class DynamicTypeWrapper : TypeWrapper
 							MethodDescriptor md = methods[i].Descriptor;
 							if(mi != null && mi.IsAbstract && wrapper.GetMethodWrapper(md, true).IsAbstract)
 							{
+								// NOTE in Sun's JRE 1.4.1 this method cannot be overridden by subclasses,
+								// but I think this is a bug, so we'll support it anyway.
 								MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Abstract|MethodAttributes.NewSlot), CallingConventions.Standard, md.RetType, md.ArgTypes);
+								ModifiersAttribute.SetModifiers(mb, methods[i].Modifiers);
 								ILGenerator ilGenerator = mb.GetILGenerator();
 								TypeWrapper exceptionType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/AbstractMethodError");
 								MethodWrapper method = exceptionType.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false);
@@ -1854,6 +1861,7 @@ class DynamicTypeWrapper : TypeWrapper
 					args[i] = argTypeWrappers[i].Type;
 				}
 			}
+			bool setModifiers = false;
 			MethodAttributes attribs = 0;
 			if(m.IsAbstract)
 			{
@@ -1864,12 +1872,20 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					attribs |= MethodAttributes.Abstract;
 				}
+				else
+				{
+					setModifiers = true;
+				}
 			}
 			if(m.IsFinal)
 			{
 				if(!m.IsStatic && !m.IsPrivate)
 				{
 					attribs |= MethodAttributes.Final;
+				}
+				else
+				{
+					setModifiers = true;
 				}
 			}
 			if(m.IsPrivate)
@@ -1894,6 +1910,8 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 			if(m.Name == "<init>")
 			{
+				// NOTE we don't need to record the modifiers here, because only access modifiers are valid for
+				// constructors and we have a well defined (reversible) mapping from them
 				method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, args);
 			}
 			else if(m.Name == "<clinit>" && m.Signature == "()V")
@@ -1905,6 +1923,8 @@ class DynamicTypeWrapper : TypeWrapper
 					attribs &= ~MethodAttributes.MemberAccessMask;
 					attribs |= MethodAttributes.Public;
 				}
+				// NOTE we don't need to record the modifiers here, because they aren't visible from Java reflection
+				// (well they might be visible from JNI reflection, but that isn't important enough to justify the custom attribute)
 				method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, args);
 			}
 			else
@@ -1913,7 +1933,6 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					attribs |= MethodAttributes.Virtual;
 				}
-				bool setModifiers = false;
 				string name = m.Name;
 				MethodDescriptor md = new MethodDescriptor(wrapper.GetClassLoader(), m);
 				// if a method is virtual, we need to find the method it overrides (if any), for several reasons:
@@ -1922,10 +1941,10 @@ class DynamicTypeWrapper : TypeWrapper
 				// - if one of the base classes has a similar method that is private (or package) that we aren't
 				//   overriding, we need to specify an explicit MethodOverride
 				MethodBase baseMethod = null;
+				MethodWrapper baseMce = null;
 				bool explicitOverride = false;
 				if((attribs & MethodAttributes.Virtual) != 0 && !classFile.IsInterface)
 				{
-					MethodWrapper baseMce = null;
 					TypeWrapper tw = baseWrapper;
 					while(tw != null)
 					{
@@ -1995,22 +2014,51 @@ class DynamicTypeWrapper : TypeWrapper
 						// to override System.Object.Equals)
 						attribs |= MethodAttributes.NewSlot;
 					}
-					// if we have a method overriding a more accessible method (yes, this does work), we need to make the
-					// method more accessible, because otherwise the CLR will complain that we're reducing access)
-					if(baseMethod != null && 
-						((baseMethod.IsPublic && !m.IsPublic) ||
-						(baseMethod.IsFamily && !m.IsPublic && !m.IsProtected) ||
-						(!m.IsPublic && !m.IsProtected && !baseMce.DeclaringType.IsInSamePackageAs(wrapper))))
+					else
 					{
-						attribs &= ~MethodAttributes.MemberAccessMask;
-						attribs |= baseMethod.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
-						setModifiers = true;
+						// if we have a method overriding a more accessible method (yes, this does work), we need to make the
+						// method more accessible, because otherwise the CLR will complain that we're reducing access)
+						if((baseMethod.IsPublic && !m.IsPublic) ||
+							(baseMethod.IsFamily && !m.IsPublic && !m.IsProtected) ||
+							(!m.IsPublic && !m.IsProtected && !baseMce.DeclaringType.IsInSamePackageAs(wrapper)))
+						{
+							attribs &= ~MethodAttributes.MemberAccessMask;
+							attribs |= baseMethod.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+							setModifiers = true;
+						}
 					}
 				}
 				MethodBuilder mb = typeBuilder.DefineMethod(name, attribs, retType, args);
 				if(setModifiers)
 				{
 					ModifiersAttribute.SetModifiers(mb, m.Modifiers);
+				}
+				// if we're public and we're overriding a method that is not public, then we might be also
+				// be implementing an interface method that has an IllegalAccessError stub
+				// Example:
+				//   class Base {
+				//     protected void Foo() {}
+				//   }
+				//   interface IFoo {
+				//     public void Foo();
+				//   }
+				//   class Derived extends Base implements IFoo {
+				//   }
+				//   class MostDerived extends Derived {
+				//     public void Foo() {} 
+				//   }
+				if(baseMethod != null && !baseMethod.IsPublic && m.IsPublic)
+				{
+					Hashtable hashtable = null;
+					TypeWrapper tw = baseWrapper;
+					while(tw != baseMce.DeclaringType)
+					{
+						foreach(TypeWrapper iface in tw.Interfaces)
+						{
+							AddMethodOverride(typeBuilder, mb, iface, md, ref hashtable);
+						}
+						tw = tw.BaseTypeWrapper;
+					}
 				}
 				method = mb;
 				// since Java constructors (and static intializers) aren't allowed to be synchronized, we only check this here
@@ -2048,6 +2096,28 @@ class DynamicTypeWrapper : TypeWrapper
 				}
 			}
 			methods[index] = MethodWrapper.Create(wrapper, new MethodDescriptor(wrapper.GetClassLoader(), m), method, method, m.Modifiers);
+		}
+
+		private static void AddMethodOverride(TypeBuilder typeBuilder, MethodBuilder mb, TypeWrapper iface, MethodDescriptor md, ref Hashtable hashtable)
+		{
+			if(hashtable != null && hashtable.ContainsKey(iface))
+			{
+				return;
+			}
+			MethodWrapper mw = iface.GetMethodWrapper(md, false);
+			if(mw != null)
+			{
+				if(hashtable == null)
+				{
+					hashtable = new Hashtable();
+				}
+				hashtable.Add(iface, iface);
+				typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
+			}
+			foreach(TypeWrapper iface2 in iface.Interfaces)
+			{
+				AddMethodOverride(typeBuilder, mb, iface2, md, ref hashtable);
+			}
 		}
 
 		public override Type Type
