@@ -26,58 +26,6 @@ using System.Reflection;
 
 public class ObjectHelper
 {
-	public static void notify(object o)
-	{
-		System.Threading.Monitor.Pulse(o);
-	}
-
-	public static void notifyAll(object o)
-	{
-		System.Threading.Monitor.PulseAll(o);
-	}
-
-	public static void wait(object o)
-	{
-		System.Threading.Monitor.Wait(o);
-	}
-
-	public static void wait(object o, long timeout)
-	{
-		if(timeout < 0)
-		{
-			throw JavaException.IllegalArgumentException("timeout < 0");
-		}
-		wait(o, timeout, 0);
-	}
-
-	public static void wait(object o, long timeout, int nanos)
-	{
-		if(o == null)
-		{
-			throw new NullReferenceException();
-		}
-		if(timeout < 0 || nanos < 0 || nanos > 999999)
-		{
-			throw JavaException.IllegalArgumentException("argument out of range");
-		}
-		if(timeout == 0 && nanos == 0)
-		{
-			System.Threading.Monitor.Wait(o);
-		}
-		else
-		{
-			System.Threading.Monitor.Wait(o, new TimeSpan(timeout * 10000 + (nanos + 99) / 100));
-		}
-	}
-
-	public static void clonecheck(object o)
-	{
-		if(!(o is java.lang.Cloneable))
-		{
-			throw JavaException.CloneNotSupportedException();
-		}
-	}
-
 	public static object virtualclone(object o)
 	{
 		// TODO because Object.clone() is protected it is accessible from other classes in the java.lang package,
@@ -87,7 +35,6 @@ public class ObjectHelper
 		{
 			return ((Array)o).Clone();
 		}
-		clonecheck(o);
 		// TODO this doesn't happen very often, the only sensible pattern that I can think of that produces code
 		// that ends up here is as follows:
 		//   class Base {
@@ -103,41 +50,10 @@ public class ObjectHelper
 		{
 			return clone.Invoke(o, new object[0]);
 		}
+		if(!(o is java.lang.Cloneable))
+		{
+			throw JavaException.CloneNotSupportedException();
+		}
 		return typeof(object).GetType().InvokeMember("MemberwiseClone", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.NonPublic, null, o, new object[0]);
-	}
-
-	public static string toStringVirtual(object o)
-	{
-		if(o is Array)
-		{
-			return toStringSpecial(o);
-		}
-		return o.ToString();
-	}
-
-	private delegate string toHexStringDelegate(int i);
-	private static toHexStringDelegate toHexString;
-
-	public static string toStringSpecial(object o)
-	{
-		if(toHexString == null)
-		{
-			toHexString = (toHexStringDelegate)Delegate.CreateDelegate(typeof(toHexStringDelegate), ClassLoaderWrapper.GetType("java.lang.Integer").GetMethod("toHexString"));
-		}
-		int h;
-		if(o is string)
-		{
-			h = StringHelper.hashCode(o);
-		}
-		else
-		{
-			h = o.GetHashCode();
-		}
-		return NativeCode.java.lang.Class.getName(o.GetType()) + "@" + toHexString(h);
-	}
-
-	public static object getClass(object o)
-	{
-		return NativeCode.java.lang.Class.getClassFromType(o.GetType());
 	}
 }

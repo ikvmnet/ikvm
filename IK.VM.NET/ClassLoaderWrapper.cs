@@ -120,7 +120,7 @@ class ClassLoaderWrapper
 		this.javaClassLoader = javaClassLoader;
 		if(javaClassLoader != null && loadClassDelegate == null)
 		{
-			loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), GetType("java.lang.Class"), "__loadClassHelper");
+			loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), GetType("java.lang.VMClass"), "__loadClassHelper");
 		}
 	}
 
@@ -157,10 +157,6 @@ class ClassLoaderWrapper
 	internal void LoadRemappedTypesStep2()
 	{
 		MapXml.Root map = MapXmlGenerator.Generate();
-		foreach(MapXml.Class c in map.remappings)
-		{
-			((RemappedTypeWrapper)types[c.Name]).LoadRemappings(c);
-		}
 		// native methods
 		foreach(MapXml.Class c in map.nativeMethods)
 		{
@@ -171,6 +167,10 @@ class ClassLoaderWrapper
 				string methodSig = method.Sig;
 				nativeMethods[className + "." + methodName + methodSig] = method;
 			}
+		}
+		foreach(MapXml.Class c in map.remappings)
+		{
+			((RemappedTypeWrapper)types[c.Name]).LoadRemappings(c);
 		}
 	}
 
@@ -299,7 +299,7 @@ class ClassLoaderWrapper
 		TypeWrapper.AssertFinished(type);
 		// only the bootstrap classloader can own compiled types
 		Debug.Assert(this == GetBootstrapClassLoader());
-		string name = NativeCode.java.lang.Class.getName(type);
+		string name = NativeCode.java.lang.VMClass.getName(type);
 		TypeWrapper wrapper = (TypeWrapper)types[name];
 		if(wrapper == null)
 		{
@@ -490,7 +490,7 @@ class ClassLoaderWrapper
 			}
 		}
 		// HACK use reflection to get the type from the class
-		Type mainType = NativeCode.java.lang.Class.getType(mainClass);
+		Type mainType = NativeCode.java.lang.VMClass.getType(mainClass);
 		MethodInfo main = mainType.GetMethod("main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(string[]) }, null);
 		AssemblyBuilder asm = ((AssemblyBuilder)moduleBuilder.Assembly);
 		asm.SetEntryPoint(main, PEFileKinds.ConsoleApplication);
@@ -512,7 +512,7 @@ class ClassLoaderWrapper
 			}
 		}
 		// HACK use reflection to get the type from the class
-		Type mainType = NativeCode.java.lang.Class.getType(mainClass);
+		Type mainType = NativeCode.java.lang.VMClass.getType(mainClass);
 		MethodInfo main = mainType.GetMethod("main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(string[]) }, null);
 		foreach(DictionaryEntry entry in ClassLoaderWrapper.assemblyToClassLoaderWrapper)
 		{

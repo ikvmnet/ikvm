@@ -45,320 +45,384 @@ import gnu.java.lang.CharData;
 
 public final class StringHelper
 {
-	private StringHelper() {}
+    private static final java.util.Comparator CASE_INSENSITIVE_ORDER = constructCaseInsensitiveOrder();
+    private StringHelper() {}
 
-	public static boolean equalsIgnoreCase(String s1, String s2)
+    public static boolean equalsIgnoreCase(String s1, String s2)
+    {
+	int len = s1.length();
+	if(s2 == null || len != s2.length())
 	{
-		int len = s1.length();
-		if(s2 == null || len != s2.length())
-		{
-			return false;
-		}
-		for(int i = 0; i < len; i++)
-		{
-			char c1 = s1.charAt(i);
-			char c2 = s2.charAt(i);
-			if(c1 != c2 && (Character.toUpperCase(c1) != Character.toUpperCase(c2)) &&
-				(Character.toLowerCase(c1) != Character.toLowerCase(c2)))
-			{
-				return false;
-			}
-		}
-		return true;
+	    return false;
 	}
-
-	public static int compareTo(String s1, String s2)
+	for(int i = 0; i < len; i++)
 	{
-		int len = Math.min(s1.length(), s2.length());
-		for(int i = 0; i < len; i++)
-		{
-			int diff = s1.charAt(i) - s2.charAt(i);
-			if(diff != 0)
-			{
-				return diff;
-			}
-		}
-		return s1.length() - s2.length();
+	    char c1 = s1.charAt(i);
+	    char c2 = s2.charAt(i);
+	    if(c1 != c2 && (Character.toUpperCase(c1) != Character.toUpperCase(c2)) &&
+		(Character.toLowerCase(c1) != Character.toLowerCase(c2)))
+	    {
+		return false;
+	    }
 	}
+	return true;
+    }
 
-	public static int compareToIgnoreCase(String s1, String s2)
+    public static int compareTo(String s1, String s2)
+    {
+	int len = Math.min(s1.length(), s2.length());
+	for(int i = 0; i < len; i++)
 	{
-		int len = Math.min(s1.length(), s2.length());
-		for(int i = 0; i < len; i++)
-		{
-			int result = Character.toLowerCase(Character.toUpperCase(s1.charAt(i)))
-				- Character.toLowerCase(Character.toUpperCase(s2.charAt(i)));
-			if (result != 0)
-				return result;
-		}
-		return s1.length() - s2.length();
+	    int diff = s1.charAt(i) - s2.charAt(i);
+	    if(diff != 0)
+	    {
+		return diff;
+	    }
 	}
+	return s1.length() - s2.length();
+    }
 
-	public static String toLowerCase(String s)
+    public static int compareToIgnoreCase(String s1, String s2)
+    {
+	int len = Math.min(s1.length(), s2.length());
+	for(int i = 0; i < len; i++)
 	{
-		return toLowerCase(s, Locale.getDefault());
+	    int result = Character.toLowerCase(Character.toUpperCase(s1.charAt(i)))
+		- Character.toLowerCase(Character.toUpperCase(s2.charAt(i)));
+	    if (result != 0)
+		return result;
 	}
+	return s1.length() - s2.length();
+    }
 
-	public static String toLowerCase(String s, Locale loc)
+    public static String toLowerCase(String s)
+    {
+	return toLowerCase(s, Locale.getDefault());
+    }
+
+    public static String toLowerCase(String s, Locale loc)
+    {
+	// First, see if the current string is already lower case.
+	boolean turkish = "tr".equals(loc.getLanguage());
+	int len = s.length();
+	for(int i = 0; i < len; i++)
 	{
-		// First, see if the current string is already lower case.
-		boolean turkish = "tr".equals(loc.getLanguage());
-		int len = s.length();
-		for(int i = 0; i < len; i++)
+	    char ch = s.charAt(i);
+	    if((turkish && ch == '\u0049') || ch != Character.toLowerCase(ch))
+	    {
+		// Now we perform the conversion. Fortunately, there are no multi-character
+		// lowercase expansions in Unicode 3.0.0.
+		char[] newStr = (char[])s.toCharArray();
+		for(; i < len; i++)
 		{
-			char ch = s.charAt(i);
-			if((turkish && ch == '\u0049') || ch != Character.toLowerCase(ch))
-			{
-				// Now we perform the conversion. Fortunately, there are no multi-character
-				// lowercase expansions in Unicode 3.0.0.
-				char[] newStr = (char[])s.toCharArray();
-				for(; i < len; i++)
-				{
-					ch = newStr[i];
-					// Hardcoded special case.
-					newStr[i] = (turkish && ch == '\u0049') ? '\u0131' : Character.toLowerCase(ch);
-				}
-				return new String(newStr);
-			}
-		}
-		return s;
-	}
-
-	public static String toUpperCase(String s)
-	{
-		return toUpperCase(s, Locale.getDefault());
-	}
-
-	public static String toUpperCase(String s, Locale loc)
-	{
-		// First, see how many characters we have to grow by, as well as if the
-		// current string is already upper case.
-		boolean turkish = "tr".equals(loc.getLanguage());
-		int expand = 0;
-		boolean unchanged = true;
-		int i = s.length();
-		int x = i;
-		while (--i >= 0)
-		{
-			char ch = s.charAt(--x);
-			expand += upperCaseExpansion(ch);
-			unchanged = (unchanged && expand == 0
-				&& ! (turkish && ch == '\u0069')
-				&& ch == Character.toUpperCase(ch));
-		}
-		if (unchanged)
-			return s;
-
-		// Now we perform the conversion.
-		i = s.length();
-		if (expand == 0)
-		{
-			char[] newStr = s.toCharArray();
-			while (--i >= 0)
-			{
-				char ch = s.charAt(x);
-				// Hardcoded special case.
-				newStr[x++] = (turkish && ch == '\u0069') ? '\u0130'
-					: Character.toUpperCase(ch);
-			}
-			return new String(newStr);
-		}
-
-		// Expansion is necessary.
-		char[] newStr = new char[s.length() + expand];
-		int j = 0;
-		while (--i >= 0)
-		{
-			char ch = s.charAt(x++);
-			// Hardcoded special case.
-			if (turkish && ch == '\u0069')
-			{
-				newStr[j++] = '\u0130';
-				continue;
-			}
-			expand = upperCaseExpansion(ch);
-			if (expand > 0)
-			{
-				int index = upperCaseIndex(ch);
-				while (expand-- >= 0)
-					newStr[j++] = upperExpand[index++];
-			}
-			else
-				newStr[j++] = Character.toUpperCase(ch);
+		    ch = newStr[i];
+		    // Hardcoded special case.
+		    newStr[i] = (turkish && ch == '\u0049') ? '\u0131' : Character.toLowerCase(ch);
 		}
 		return new String(newStr);
+	    }
 	}
+	return s;
+    }
 
-	private static int upperCaseExpansion(char ch)
+    public static String toUpperCase(String s)
+    {
+	return toUpperCase(s, Locale.getDefault());
+    }
+
+    public static String toUpperCase(String s, Locale loc)
+    {
+	// First, see how many characters we have to grow by, as well as if the
+	// current string is already upper case.
+	boolean turkish = "tr".equals(loc.getLanguage());
+	int expand = 0;
+	boolean unchanged = true;
+	int i = s.length();
+	int x = i;
+	while (--i >= 0)
 	{
-		return Character.direction[Character.readChar(ch) >> 7] & 3;
+	    char ch = s.charAt(--x);
+	    expand += upperCaseExpansion(ch);
+	    unchanged = (unchanged && expand == 0
+		&& ! (turkish && ch == '\u0069')
+		&& ch == Character.toUpperCase(ch));
 	}
+	if (unchanged)
+	    return s;
 
-	private static int upperCaseIndex(char ch)
+	// Now we perform the conversion.
+	i = s.length();
+	if (expand == 0)
 	{
-		// Simple binary search for the correct character.
-		int low = 0;
-		int hi = upperSpecial.length - 2;
-		int mid = ((low + hi) >> 2) << 1;
-		char c = upperSpecial[mid];
-		while (ch != c)
-		{
-			if (ch < c)
-				hi = mid - 2;
-			else
-				low = mid + 2;
-			mid = ((low + hi) >> 2) << 1;
-			c = upperSpecial[mid];
-		}
-		return upperSpecial[mid + 1];
+	    char[] newStr = s.toCharArray();
+	    while (--i >= 0)
+	    {
+		char ch = s.charAt(x);
+		// Hardcoded special case.
+		newStr[x++] = (turkish && ch == '\u0069') ? '\u0130'
+		    : Character.toUpperCase(ch);
+	    }
+	    return new String(newStr);
 	}
 
-	private static final char[] upperExpand = CharData.UPPER_EXPAND.toCharArray();
-	private static final char[] upperSpecial = CharData.UPPER_SPECIAL.toCharArray();
-
-	public static String NewString(byte[] ascii, int hibyte, int offset, int count)
+	// Expansion is necessary.
+	char[] newStr = new char[s.length() + expand];
+	int j = 0;
+	while (--i >= 0)
 	{
-		if (offset < 0 || count < 0 || offset + count > ascii.length)
-			throw new StringIndexOutOfBoundsException();
-		char[] value = new char[count];
-		hibyte <<= 8;
-		offset += count;
-		while (--count >= 0)
-			value[count] = (char) (hibyte | (ascii[--offset] & 0xff));
-		return new String(value);
+	    char ch = s.charAt(x++);
+	    // Hardcoded special case.
+	    if (turkish && ch == '\u0069')
+	    {
+		newStr[j++] = '\u0130';
+		continue;
+	    }
+	    expand = upperCaseExpansion(ch);
+	    if (expand > 0)
+	    {
+		int index = upperCaseIndex(ch);
+		while (expand-- >= 0)
+		    newStr[j++] = upperExpand[index++];
+	    }
+	    else
+		newStr[j++] = Character.toUpperCase(ch);
 	}
+	return new String(newStr);
+    }
 
-	public static String NewString(byte[] ascii, int hibyte)
-	{
-		return NewString(ascii, hibyte, 0, ascii.length);
-	}
+    private static int upperCaseExpansion(char ch)
+    {
+	return Character.direction[Character.readChar(ch) >> 7] & 3;
+    }
 
-	public static String NewString(byte[] data, int offset, int count, String encoding)
-		throws UnsupportedEncodingException
+    private static int upperCaseIndex(char ch)
+    {
+	// Simple binary search for the correct character.
+	int low = 0;
+	int hi = upperSpecial.length - 2;
+	int mid = ((low + hi) >> 2) << 1;
+	char c = upperSpecial[mid];
+	while (ch != c)
 	{
-		if (offset < 0 || count < 0 || offset + count > data.length)
-			throw new StringIndexOutOfBoundsException();
-		try
-		{
-			// XXX Consider using java.nio here.
-			return new String(EncodingManager.getDecoder(encoding)
-				.convertToChars(data, offset, count));
-		}
-		catch (CharConversionException cce)
-		{
-			throw new Error(cce);
-		}
+	    if (ch < c)
+		hi = mid - 2;
+	    else
+		low = mid + 2;
+	    mid = ((low + hi) >> 2) << 1;
+	    c = upperSpecial[mid];
 	}
+	return upperSpecial[mid + 1];
+    }
 
-	public static String NewString(byte[] data, String encoding)
-		throws UnsupportedEncodingException
-	{
-		return NewString(data, 0, data.length, encoding);
-	}
+    private static final char[] upperExpand = CharData.UPPER_EXPAND.toCharArray();
+    private static final char[] upperSpecial = CharData.UPPER_SPECIAL.toCharArray();
 
-	public static String NewString(byte[] data, int offset, int count)
-	{
-		if (offset < 0 || count < 0 || offset + count > data.length)
-			throw new StringIndexOutOfBoundsException();
-		try
-		{
-			// XXX Consider using java.nio here.
-			return new String(EncodingManager.getDecoder()
-				.convertToChars(data, offset, count));
-		}
-		catch (CharConversionException cce)
-		{
-			throw new Error(cce);
-		}
-	}
+    public static String NewString(byte[] ascii, int hibyte, int offset, int count)
+    {
+	if (offset < 0 || count < 0 || offset + count > ascii.length)
+	    throw new StringIndexOutOfBoundsException();
+	char[] value = new char[count];
+	hibyte <<= 8;
+	offset += count;
+	while (--count >= 0)
+	    value[count] = (char) (hibyte | (ascii[--offset] & 0xff));
+	return new String(value);
+    }
 
-	public static String NewString(byte[] data)
-	{
-		return NewString(data, 0, data.length);
-	}
+    public static String NewString(byte[] ascii, int hibyte)
+    {
+	return NewString(ascii, hibyte, 0, ascii.length);
+    }
 
-	public static String NewString(char[] data, int offset, int count, boolean dont_copy)
+    public static String NewString(byte[] data, int offset, int count, String encoding)
+	throws UnsupportedEncodingException
+    {
+	if (offset < 0 || count < 0 || offset + count > data.length)
+	    throw new StringIndexOutOfBoundsException();
+	try
 	{
-		return new String(data, offset, count);
+	    // XXX Consider using java.nio here.
+	    return new String(EncodingManager.getDecoder(encoding)
+		.convertToChars(data, offset, count));
 	}
+	catch (CharConversionException cce)
+	{
+	    throw new Error(cce);
+	}
+    }
 
-	public static void getBytes(String s, int srcBegin, int srcEnd, byte dst[], int dstBegin)
-	{
-		if (srcBegin < 0 || srcBegin > srcEnd || srcEnd > s.length())
-			throw new StringIndexOutOfBoundsException();
-		int i = srcEnd - srcBegin;
-		while (--i >= 0)
-			dst[dstBegin++] = (byte)s.charAt(srcBegin++);
-	}
+    public static String NewString(byte[] data, String encoding)
+	throws UnsupportedEncodingException
+    {
+	return NewString(data, 0, data.length, encoding);
+    }
 
-	public static byte[] getBytes(String s, String enc) throws UnsupportedEncodingException
+    public static String NewString(byte[] data, int offset, int count)
+    {
+	if (offset < 0 || count < 0 || offset + count > data.length)
+	    throw new StringIndexOutOfBoundsException();
+	try
 	{
-		try
-		{
-			// XXX Consider using java.nio here.
-			return EncodingManager.getEncoder(enc)
-				.convertToBytes(s.toCharArray());
-		}
-		catch (CharConversionException e)
-		{
-			return null;
-		}
+	    // XXX Consider using java.nio here.
+	    return new String(EncodingManager.getDecoder()
+		.convertToChars(data, offset, count));
 	}
+	catch (CharConversionException cce)
+	{
+	    throw new Error(cce);
+	}
+    }
 
-	public static byte[] getBytes(String s)
-	{
-		try
-		{
-			// XXX Consider using java.nio here.
-			return EncodingManager.getEncoder()
-				.convertToBytes(s.toCharArray());
-		}
-		catch (CharConversionException e)
-		{
-			return null;
-		}
-	}
+    public static String NewString(byte[] data)
+    {
+	return NewString(data, 0, data.length);
+    }
 
-	public static boolean regionMatches(String s, int toffset, String other, int ooffset, int len)
-	{
-		return regionMatches(s, false, toffset, other, ooffset, len);
-	}
+    public static String NewString(char[] data, int offset, int count, boolean dont_copy)
+    {
+	return new String(data, offset, count);
+    }
 
-	public static boolean regionMatches(String s, boolean ignoreCase, int toffset,
-		String other, int ooffset, int len)
-	{
-		if (toffset < 0 || ooffset < 0 || toffset + len > s.length()
-			|| ooffset + len > other.length())
-			return false;
-		while (--len >= 0)
-		{
-			char c1 = s.charAt(toffset++);
-			char c2 = other.charAt(ooffset++);
-			// Note that checking c1 != c2 is redundant when ignoreCase is true,
-			// but it avoids method calls.
-			if (c1 != c2
-				&& (! ignoreCase
-				|| (Character.toLowerCase(c1) != Character.toLowerCase(c2)
-				&& (Character.toUpperCase(c1)
-				!= Character.toUpperCase(c2)))))
-				return false;
-		}
-		return true;
-	}
+    public static void getBytes(String s, int srcBegin, int srcEnd, byte dst[], int dstBegin)
+    {
+	if (srcBegin < 0 || srcBegin > srcEnd || srcEnd > s.length())
+	    throw new StringIndexOutOfBoundsException();
+	int i = srcEnd - srcBegin;
+	while (--i >= 0)
+	    dst[dstBegin++] = (byte)s.charAt(srcBegin++);
+    }
 
-	public static String trim(String s)
+    public static byte[] getBytes(String s, String enc) throws UnsupportedEncodingException
+    {
+	try
 	{
-		int limit = s.length();
-		if (limit == 0 || (s.charAt(0) > '\u0020'
-			&& s.charAt(limit - 1) > '\u0020'))
-			return s;
-		int begin = 0;
-		do
-			if (begin == limit)
-				return "";
-		while (s.charAt(begin++) <= '\u0020');
-		int end = limit;
-		while (s.charAt(--end) <= '\u0020');
-		return s.substring(begin - 1, end + 1);
+	    // XXX Consider using java.nio here.
+	    return EncodingManager.getEncoder(enc)
+		.convertToBytes(s.toCharArray());
 	}
+	catch (CharConversionException e)
+	{
+	    return null;
+	}
+    }
+
+    public static byte[] getBytes(String s)
+    {
+	try
+	{
+	    // XXX Consider using java.nio here.
+	    return EncodingManager.getEncoder()
+		.convertToBytes(s.toCharArray());
+	}
+	catch (CharConversionException e)
+	{
+	    return null;
+	}
+    }
+
+    public static boolean regionMatches(String s, int toffset, String other, int ooffset, int len)
+    {
+	return regionMatches(s, false, toffset, other, ooffset, len);
+    }
+
+    public static boolean regionMatches(String s, boolean ignoreCase, int toffset,
+	String other, int ooffset, int len)
+    {
+	if (toffset < 0 || ooffset < 0 || toffset + len > s.length()
+	    || ooffset + len > other.length())
+	    return false;
+	while (--len >= 0)
+	{
+	    char c1 = s.charAt(toffset++);
+	    char c2 = other.charAt(ooffset++);
+	    // Note that checking c1 != c2 is redundant when ignoreCase is true,
+	    // but it avoids method calls.
+	    if (c1 != c2
+		&& (! ignoreCase
+		|| (Character.toLowerCase(c1) != Character.toLowerCase(c2)
+		&& (Character.toUpperCase(c1)
+		!= Character.toUpperCase(c2)))))
+		return false;
+	}
+	return true;
+    }
+
+    public static String trim(String s)
+    {
+	int limit = s.length();
+	if (limit == 0 || (s.charAt(0) > '\u0020'
+	    && s.charAt(limit - 1) > '\u0020'))
+	    return s;
+	int begin = 0;
+	do
+	    if (begin == limit)
+		return "";
+	while (s.charAt(begin++) <= '\u0020');
+	int end = limit;
+	while (s.charAt(--end) <= '\u0020');
+	return s.substring(begin - 1, end + 1);
+    }
+
+    public static String valueOf(boolean b)
+    {
+	return b ? "true" : "false";
+    }
+
+    public static String valueOf(int i)
+    {
+	return Integer.toString(i, 10);
+    }
+
+    public static String valueOf(long l)
+    {
+	return Long.toString(l);
+    }
+
+    public static String valueOf(char c)
+    {
+	return new system.String(c, 1).ToString();
+    }
+
+    public static String valueOf(float f)
+    {
+	return Float.toString(f);
+    }
+
+    public static String valueOf(double d)
+    {
+	return Double.toString(d);
+    }
+
+    public static String valueOf(char[] c)
+    {
+	return new String(c);
+    }
+
+    public static String valueOf(char[] c, int offset, int count)
+    {
+	return new String(c, offset, count);
+    }
+
+    public static String valueOf(Object o)
+    {
+	return o == null ? "null" : o.toString();
+    }
+
+    public static int hashCode(String s)
+    {
+	system.String ns = (system.String)(Object)s;
+	int h = 0;
+	for(int i = 0; i < ns.get_Length(); i++)
+	{
+	    h = h *31 + ns.get_Chars(i);
+	}
+	return h;
+    }
+
+    public static java.util.Comparator getCaseInsensitiveOrder()
+    {
+	return CASE_INSENSITIVE_ORDER;
+    }
+
+    private static native java.util.Comparator constructCaseInsensitiveOrder();
 }

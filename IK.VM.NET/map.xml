@@ -27,32 +27,57 @@
 		<class name="java.lang.Object" type="System.Object" modifiers="public">
 			<constructor sig="()V" modifiers="public" />
 			<method name="notifyAll" sig="()V" modifiers="public final">
-				<redirect class="ObjectHelper" name="notifyAll" sig="(Ljava/lang/Object;)V" type="static" />
+				<redirect class="System.Threading.Monitor" name="PulseAll" sig="(Ljava/lang/Object;)V" type="static" />
 			</method>
 			<method name="notify" sig="()V" modifiers="public final">
-				<redirect class="ObjectHelper" name="notify" sig="(Ljava/lang/Object;)V" type="static" />
+				<redirect class="System.Threading.Monitor" name="Pulse" sig="(Ljava/lang/Object;)V" type="static" />
 			</method>
 			<method name="wait" sig="()V" modifiers="public final">
-				<redirect class="ObjectHelper" name="wait" sig="(Ljava/lang/Object;)V" type="static" />
+				<invokespecial>
+					<call type="System.Threading.Monitor" name="Wait" sig="(Ljava/lang/Object;)Z" />
+					<!-- For some reason, Wait returns a boolean -->
+					<pop />
+				</invokespecial>
+				<invokevirtual>
+					<call type="System.Threading.Monitor" name="Wait" sig="(Ljava/lang/Object;)Z" />
+					<!-- For some reason, Wait returns a boolean -->
+					<pop />
+				</invokevirtual>
+				<!--redirect class="System.Threading.Monitor" name="Wait" sig="(Ljava/lang/Object;)V" type="static" /-->
 			</method>
 			<method name="wait" sig="(J)V" modifiers="public final">
-				<redirect class="ObjectHelper" name="wait" sig="(Ljava/lang/Object;J)V" type="static" />
+				<redirect class="java.lang.ObjectHelper" name="wait" sig="(Ljava/lang/Object;J)V" type="static" />
 			</method>
 			<method name="wait" sig="(JI)V" modifiers="public final">
-				<redirect class="ObjectHelper" name="wait" sig="(Ljava/lang/Object;JI)V" type="static" />
+				<redirect class="java.lang.ObjectHelper" name="wait" sig="(Ljava/lang/Object;JI)V" type="static" />
 			</method>
 			<method name="getClass" sig="()Ljava/lang/Class;" modifiers="public final">
-				<redirect class="ObjectHelper" name="getClass" sig="(Ljava/lang/Object;)Ljava/lang/Object;" type="static" />
+				<invokespecial>
+					<call type="System.Object" name="GetType" />
+					<call type="NativeCode.java.lang.VMClass" name="getClassFromType" />
+					<castclass class="java.lang.Class" />
+				</invokespecial>
+				<invokevirtual>
+					<call type="System.Object" name="GetType" />
+					<call type="NativeCode.java.lang.VMClass" name="getClassFromType" />
+					<castclass class="java.lang.Class" />
+				</invokevirtual>
+				<!--redirect class="ObjectHelper" name="getClass" sig="(Ljava/lang/Object;)Ljava/lang/Object;" type="static" /-->
 			</method>
 			<method name="clone" sig="()Ljava/lang/Object;" modifiers="protected">
 				<invokespecial>
 					<!-- TODO if we already know statically that the type implements java/lang/Cloneable this check can be omitted -->
 					<dup />
-					<call class="ObjectHelper" name="clonecheck" />
-					<call class="System.Object" name="MemberwiseClone" />
+					<isinst type="java.lang.Cloneable" />
+					<brtrue name="ok" />
+					<newobj class="java.lang.CloneNotSupportedException" name="&lt;init&gt;" sig="()V" />
+					<throw />
+					<!--call type="ObjectHelper" name="throwCloneNotSupportedException" /-->
+					<label name="ok" />
+					<call type="System.Object" name="MemberwiseClone" />
 				</invokespecial>
 				<invokevirtual>
-					<call class="ObjectHelper" name="virtualclone" />
+					<call type="ObjectHelper" name="virtualclone" />
 				</invokevirtual>
 			</method>
 			<!-- virtual methods -->
@@ -62,16 +87,16 @@
 			<method name="toString" sig="()Ljava/lang/String;" modifiers="public">
 				<override name="ToString" />
 				<invokespecial>
-					<call class="ObjectHelper" name="toStringSpecial" />
+					<call class="java.lang.ObjectHelper" name="toStringSpecial" sig="(Ljava/lang/Object;)Ljava/lang/String;" />
 				</invokespecial>
 				<invokevirtual>
 					<dup />
-					<isinst class="System.Array" />
+					<isinst type="System.Array" />
 					<brfalse name="skip" />
-					<call class="ObjectHelper" name="toStringSpecial" />
+					<call class="java.lang.ObjectHelper" name="toStringSpecial" sig="(Ljava/lang/Object;)Ljava/lang/String;" />
 					<br name="end" />
 					<label name="skip" />
-					<callvirt class="System.Object" name="ToString" />
+					<callvirt type="System.Object" name="ToString" />
 					<label name="end" />
 				</invokevirtual>
 			</method>
@@ -79,12 +104,13 @@
 				<override name="GetHashCode" />
 				<invokevirtual>
 					<dup />
-					<isinst class="System.String" />
+					<isinst type="System.String" />
 					<brfalse name="skip" />
-					<call class="StringHelper" name="hashCode" />
+					<castclass type="System.String" />
+					<call class="java.lang.StringHelper" name="hashCode" sig="(Ljava/lang/String;)I" />
 					<br name="end" />
 					<label name="skip" />
-					<callvirt class="System.Object" name="GetHashCode" />
+					<callvirt type="System.Object" name="GetHashCode" />
 					<label name="end" />
 				</invokevirtual>
 			</method>
@@ -102,7 +128,7 @@
 				<!-- TODO -->
 				<newobj>
 					<ldstr value="" />
-					<call class="System.String" name="Copy" />
+					<call type="System.String" name="Copy" />
 				</newobj>
 			</constructor>
 			<constructor sig="([C)V" modifiers="public" />
@@ -136,37 +162,37 @@
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIILjava/lang/String;)Ljava/lang/String;" />
 			</constructor>
 			<method name="hashCode" sig="()I" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava/lang/String;)I" />
 			</method>
 			<method name="toString" sig="()Ljava/lang/String;" modifiers="public">
 				<redirect name="ToString" />
 			</method>
 			<method name="valueOf" sig="(Z)Ljava/lang/String;" modifiers="public static">
-				<redirect class="StringHelper" />
+				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="valueOf" sig="(I)Ljava/lang/String;" modifiers="public static">
-				<redirect class="StringHelper" />
+				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="valueOf" sig="(J)Ljava/lang/String;" modifiers="public static">
-				<redirect class="StringHelper" />
+				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="valueOf" sig="(C)Ljava/lang/String;" modifiers="public static">
-				<redirect class="StringHelper" />
+				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="valueOf" sig="(F)Ljava/lang/String;" modifiers="public static">
-				<redirect class="StringHelper" />
+				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="valueOf" sig="(D)Ljava/lang/String;" modifiers="public static">
-				<redirect class="StringHelper" />
+				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="valueOf" sig="([C)Ljava/lang/String;" modifiers="public static">
-				<redirect class="StringHelper" />
+				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="valueOf" sig="([CII)Ljava/lang/String;" modifiers="public static">
-				<redirect class="StringHelper" />
+				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="valueOf" sig="(Ljava/lang/Object;)Ljava/lang/String;" modifiers="public static">
-				<redirect class="StringHelper" />
+				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="substring" sig="(I)Ljava/lang/String;" modifiers="public">
 				<redirect name="Substring" />
@@ -272,16 +298,16 @@
 			</method>
 			<method name="copyValueOf" sig="([C)Ljava/lang/String;" modifiers="public static">
 				<invokestatic>
-					<newobj class="System.String" name=".ctor" sig="([C)V" />
+					<newobj type="System.String" name=".ctor" sig="([C)V" />
 				</invokestatic>
 			</method>
 			<method name="copyValueOf" sig="([CII)Ljava/lang/String;" modifiers="public static">
 				<invokestatic>
-					<newobj class="System.String" name=".ctor" sig="([CII)V" />
+					<newobj type="System.String" name=".ctor" sig="([CII)V" />
 				</invokestatic>
 			</method>
 			<field name="CASE_INSENSITIVE_ORDER" sig="Ljava/util/Comparator;" modifiers="public static final">
-				<redirect class="StringHelper" type="static" name="GetCaseInsensitiveOrder" sig="()Ljava/lang/Object;" />
+				<redirect class="java.lang.StringHelper" type="static" name="getCaseInsensitiveOrder" sig="()Ljava/util/Comparator;" />
 			</field>
 			<!-- NOTE we're redirecting fields to static methods here!
 				NOTE only reading fields can be redirected
@@ -317,11 +343,11 @@
 			</method>
 			<method name="ensureCapacity" sig="(I)V" modifiers="public">
 				<invokevirtual>
-					<call class="System.Text.StringBuilder" name="EnsureCapacity" />
+					<call type="System.Text.StringBuilder" name="EnsureCapacity" />
 					<pop />
 				</invokevirtual>
 				<invokespecial>
-					<call class="System.Text.StringBuilder" name="EnsureCapacity" />
+					<call type="System.Text.StringBuilder" name="EnsureCapacity" />
 					<pop />
 				</invokespecial>
 			</method>
@@ -386,31 +412,31 @@
 		<class name="java.lang.Throwable" type="System.Exception" modifiers="public">
 			<constructor sig="()V" modifiers="public">
 				<invokespecial>
-					<call class="ExceptionHelper" name="get_NullString" />
-					<call class="System.Exception" name=".ctor" sig="(Ljava/lang/String;)V" />
+					<call type="ExceptionHelper" name="get_NullString" />
+					<call type="System.Exception" name=".ctor" sig="(Ljava/lang/String;)V" />
 				</invokespecial>
 			</constructor>
 			<constructor sig="(Ljava/lang/String;)V" modifiers="public">
 				<invokespecial>
-					<call class="ExceptionHelper" name="FilterMessage" />
-					<call class="System.Exception" name=".ctor" sig="(Ljava/lang/String;)V" />
+					<call type="ExceptionHelper" name="FilterMessage" />
+					<call type="System.Exception" name=".ctor" sig="(Ljava/lang/String;)V" />
 				</invokespecial>
 			</constructor>
 			<constructor sig="(Ljava/lang/String;Ljava/lang/Throwable;)V" modifiers="public">
 				<invokespecial>
-					<stloc name="x" class="System.Exception" />
-					<call class="ExceptionHelper" name="FilterMessage" />
+					<stloc name="x" type="System.Exception" />
+					<call type="ExceptionHelper" name="FilterMessage" />
 					<ldloc name="x" />
-					<call class="System.Exception" name=".ctor" sig="(Ljava/lang/String;Ljava/lang/Throwable;)V" />
+					<call type="System.Exception" name=".ctor" sig="(Ljava/lang/String;Ljava/lang/Throwable;)V" />
 				</invokespecial>
 			</constructor>
 			<constructor sig="(Ljava/lang/Throwable;)V" modifiers="public">
 				<invokespecial>
-					<stloc name="x" class="System.Exception" />
+					<stloc name="x" type="System.Exception" />
 					<ldloc name="x" />
-					<call class="ExceptionHelper" name="GetMessageFromCause" />
+					<call type="ExceptionHelper" name="GetMessageFromCause" />
 					<ldloc name="x" />
-					<call class="System.Exception" name=".ctor" sig="(Ljava/lang/String;Ljava/lang/Throwable;)V" />
+					<call type="System.Exception" name=".ctor" sig="(Ljava/lang/String;Ljava/lang/Throwable;)V" />
 				</invokespecial>
 			</constructor>
 			<method type="virtual" name="printStackTrace" sig="()V" modifiers="public">
@@ -466,7 +492,7 @@
 		<class name="java.lang.VMSystem">
 			<method name="identityHashCode" sig="(Ljava/lang/Object;)I">
 				<ldarg_0 />
-				<call class="System.Object" name="GetHashCode" />
+				<call type="System.Object" name="GetHashCode" />
 				<ret />
 			</method>
 		</class>
@@ -476,7 +502,13 @@
 				<ldarg_1 />
 				<ldarg_2 />
 				<ldarg_3 />
-				<call class="ikvm.lang.DotNetProcess" name="execInternal" />
+				<call class="ikvm.lang.DotNetProcess" name="execInternal" sig="(Ljava/lang/Runtime;[Ljava/lang/String;[Ljava/lang/String;Ljava/io/File;)Ljava/lang/Process;" />
+				<ret />
+			</method>
+		</class>
+		<class name="java.lang.StringHelper">
+			<method name="constructCaseInsensitiveOrder" sig="()Ljava/util/Comparator;">
+				<newobj class="java.lang.String$CaseInsensitiveComparator" name="&lt;init&gt;" sig="()V" />
 				<ret />
 			</method>
 		</class>

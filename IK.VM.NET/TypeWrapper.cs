@@ -188,7 +188,7 @@ sealed class MethodDescriptor
 		}
 		else
 		{
-			string s = NativeCode.java.lang.Class.getName(type).Replace('.', '/');
+			string s = NativeCode.java.lang.VMClass.getName(type).Replace('.', '/');
 			if(s[0] != '[')
 			{
 				s = "L" + s + ";";
@@ -264,6 +264,14 @@ abstract class TypeWrapper
 		}
 	}
 
+	internal bool IsNonPrimitiveValueType
+	{
+		get
+		{
+			return !IsPrimitive && Type.IsValueType;
+		}
+	}
+
 	internal virtual bool IsPrimitive
 	{
 		get
@@ -322,7 +330,7 @@ abstract class TypeWrapper
 		}
 	}
 
-	internal ClassLoaderWrapper GetClassLoader()
+	internal virtual ClassLoaderWrapper GetClassLoader()
 	{
 		return classLoader;
 	}
@@ -607,7 +615,7 @@ abstract class TypeWrapper
 				rank1--;
 				rank2--;
 			}
-			return elem1.IsSubTypeOf(elem2);
+			return !elem1.IsNonPrimitiveValueType && elem1.IsSubTypeOf(elem2);
 		}
 		return this.IsSubTypeOf(wrapper);
 	}
@@ -906,9 +914,14 @@ class PrimitiveTypeWrapper : TypeWrapper
 	private Type type;
 
 	private PrimitiveTypeWrapper(Type type)
-		: base(Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null, null, ClassLoaderWrapper.GetBootstrapClassLoader())
+		: base(Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null, null, null)
 	{
 		this.type = type;
+	}
+
+	internal override ClassLoaderWrapper GetClassLoader()
+	{
+		return ClassLoaderWrapper.GetBootstrapClassLoader();
 	}
 
 	internal override bool IsPrimitive
@@ -1452,7 +1465,7 @@ class DynamicTypeWrapper : TypeWrapper
 								ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 								ilGenerator.Emit(OpCodes.Ldtoken, this.Type);
 								ilGenerator.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle"));
-								ilGenerator.Emit(OpCodes.Call, typeof(NativeCode.java.lang.Class).GetMethod("getClassFromType"));
+								ilGenerator.Emit(OpCodes.Call, typeof(NativeCode.java.lang.VMClass).GetMethod("getClassFromType"));
 								ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("MakeLocalRef"));
 							}
 							for(int j = 0; j < args.Length; j++)
@@ -2417,9 +2430,8 @@ class RemappedTypeWrapper : TypeWrapper
 						{
 							retcast = new CastEmitter(md.Signature);
 						}
-						// NOTE we abuse MethodWrapper.Create here to construct the emitters for us
-						MethodWrapper temp = MethodWrapper.Create(this, md, null, redirect, modifiers);
-						newopc = temp.EmitNewobj;
+						CodeEmitter ignore = null;
+						MethodWrapper.CreateEmitters(null, redirect, ref ignore, ref ignore, ref newopc);
 					}
 					else
 					{
@@ -2481,7 +2493,7 @@ class RemappedTypeWrapper : TypeWrapper
 				Type t = this.type;
 				if(field.redirect.Class != null)
 				{
-					t = Type.GetType(field.redirect.Class, true);
+					t = ClassLoaderWrapper.GetType(field.redirect.Class);
 				}
 				MethodInfo method = t.GetMethod(name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
 				if(method == null)
@@ -2867,6 +2879,40 @@ class NetExpTypeWrapper : TypeWrapper
 		}
 	}
 
+	private class RefArgConverter : CodeEmitter
+	{
+		private Type[] args;
+
+		internal RefArgConverter(Type[] args)
+		{
+			this.args = args;
+		}
+
+		internal override void Emit(ILGenerator ilgen)
+		{
+			LocalBuilder[] locals = new LocalBuilder[args.Length];
+			for(int i = args.Length - 1; i >= 0; i--)
+			{
+				Type type = args[i];
+				if(type.IsByRef)
+				{
+					type = type.Assembly.GetType(type.GetElementType().FullName + "[]", true);
+				}
+				locals[i] = ilgen.DeclareLocal(type);
+				ilgen.Emit(OpCodes.Stloc, locals[i]);
+			}
+			for(int i = 0; i < args.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldloc, locals[i]);
+				if(args[i].IsByRef)
+				{
+					ilgen.Emit(OpCodes.Ldc_I4_0);
+					ilgen.Emit(OpCodes.Ldelema, args[i].GetElementType());
+				}
+			}
+		}
+	}
+
 	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
 	{
 		// special case for delegate constructors!
@@ -2887,6 +2933,7 @@ class NetExpTypeWrapper : TypeWrapper
 		{
 			if(methods[i].Name == md.Name && methods[i].Signature == md.Signature)
 			{
+				bool hasByRefArgs = false;
 				Type[] args;
 				string[] sig = methods[i].NetExpSigAttribute;
 				if(sig == null)
@@ -2899,6 +2946,10 @@ class NetExpTypeWrapper : TypeWrapper
 					for(int j = 0; j < sig.Length; j++)
 					{
 						args[j] = Type.GetType(sig[j], true);
+						if(args[j].IsByRef)
+						{
+							hasByRefArgs = true;
+						}
 					}
 				}
 				MethodBase method;
@@ -2914,7 +2965,14 @@ class NetExpTypeWrapper : TypeWrapper
 				{
 					// TODO we can decode the actual method attributes, or we can use them from the NetExp class, what is
 					// preferred?
-					return MethodWrapper.Create(this, md, method, method, ModifiersAttribute.GetModifiers(method));
+					MethodWrapper mw = MethodWrapper.Create(this, md, method, method, ModifiersAttribute.GetModifiers(method));
+					if(hasByRefArgs)
+					{
+						mw.EmitCall = new RefArgConverter(args) + mw.EmitCall;
+						mw.EmitCallvirt = new RefArgConverter(args) + mw.EmitCallvirt;
+						mw.EmitNewobj = new RefArgConverter(args) + mw.EmitNewobj;
+					}
+					return mw;
 				}
 			}
 		}
@@ -3395,7 +3453,21 @@ public abstract class CodeEmitter
 
 	internal static CodeEmitter Create(OpCode opcode, MethodInfo mi)
 	{
+		Debug.Assert(mi != null);
 		return new MethodInfoCodeEmitter(opcode, mi);
+	}
+
+	internal static CodeEmitter Create(OpCode opcode, MethodBase mb)
+	{
+		Debug.Assert(mb != null);
+		if(mb is MethodInfo)
+		{
+			return new MethodInfoCodeEmitter(opcode, (MethodInfo)mb);
+		}
+		else
+		{
+			return new ConstructorInfoCodeEmitter(opcode, (ConstructorInfo)mb);
+		}
 	}
 
 	private class ConstructorInfoCodeEmitter : CodeEmitter
@@ -3417,6 +3489,7 @@ public abstract class CodeEmitter
 
 	internal static CodeEmitter Create(OpCode opcode, ConstructorInfo ci)
 	{
+		Debug.Assert(ci != null);
 		return new ConstructorInfoCodeEmitter(opcode, ci);
 	}
 
@@ -3439,6 +3512,7 @@ public abstract class CodeEmitter
 
 	internal static CodeEmitter Create(OpCode opcode, FieldInfo fi)
 	{
+		Debug.Assert(fi != null);
 		return new FieldInfoCodeEmitter(opcode, fi);
 	}
 
@@ -3618,6 +3692,24 @@ sealed class MethodWrapper
 		}
 		MethodWrapper wrapper = new MethodWrapper(declaringType, md, originalMethod, method, modifiers);
 		CreateEmitters(originalMethod, method, ref wrapper.EmitCall, ref wrapper.EmitCallvirt, ref wrapper.EmitNewobj);
+		TypeWrapper retType = md.RetTypeWrapper;
+		if(retType.IsNonPrimitiveValueType)
+		{
+			wrapper.EmitCall += CodeEmitter.Create(OpCodes.Box, retType.Type);
+			wrapper.EmitCallvirt += CodeEmitter.Create(OpCodes.Box, retType.Type);
+		}
+		if(declaringType.IsNonPrimitiveValueType)
+		{
+			if(method is ConstructorInfo)
+			{
+				wrapper.EmitNewobj += CodeEmitter.Create(OpCodes.Box, declaringType.Type);
+			}
+			else
+			{
+				// callvirt isn't allowed on a value type
+				wrapper.EmitCallvirt = wrapper.EmitCall;
+			}
+		}
 		return wrapper;
 	}
 
@@ -4214,9 +4306,39 @@ sealed class FieldWrapper
 		}
 	}
 
+	private class ValueTypeFieldSetter : CodeEmitter
+	{
+		private Type declaringType;
+		private Type fieldType;
+
+		internal ValueTypeFieldSetter(Type declaringType, Type fieldType)
+		{
+			this.declaringType = declaringType;
+			this.fieldType = fieldType;
+		}
+
+		internal override void Emit(ILGenerator ilgen)
+		{
+			LocalBuilder local = ilgen.DeclareLocal(fieldType);
+			ilgen.Emit(OpCodes.Stloc, local);
+			ilgen.Emit(OpCodes.Unbox, declaringType);
+			ilgen.Emit(OpCodes.Ldloc, local);
+		}
+	}
+
 	internal static FieldWrapper Create(TypeWrapper declaringType, FieldInfo fi, string sig, Modifiers modifiers)
 	{
 		FieldWrapper field = new FieldWrapper(declaringType, fi.Name, sig, modifiers);
+		if(declaringType.IsNonPrimitiveValueType)
+		{
+			field.EmitSet = new ValueTypeFieldSetter(declaringType.Type, field.FieldType);
+			field.EmitGet = CodeEmitter.Create(OpCodes.Unbox, declaringType.Type);
+		}
+		if(field.FieldTypeWrapper.IsNonPrimitiveValueType)
+		{
+			field.EmitSet += CodeEmitter.Create(OpCodes.Unbox, field.FieldTypeWrapper.Type);
+			field.EmitSet += CodeEmitter.Create(OpCodes.Ldobj, field.FieldTypeWrapper.Type);
+		}
 		if(field.IsVolatile)
 		{
 			// long & double field accesses must be made atomic
@@ -4238,6 +4360,10 @@ sealed class FieldWrapper
 		{
 			field.EmitGet += CodeEmitter.Create(OpCodes.Ldfld, fi);
 			field.EmitSet += CodeEmitter.Create(OpCodes.Stfld, fi);
+		}
+		if(field.FieldTypeWrapper.IsNonPrimitiveValueType)
+		{
+			field.EmitGet += CodeEmitter.Create(OpCodes.Box, field.FieldTypeWrapper.Type);
 		}
 		return field;
 	}

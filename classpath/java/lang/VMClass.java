@@ -398,6 +398,8 @@ final class VMClass
 	static native Class loadBootstrapClass(String name, boolean initialize);
 	private static native void initializeType(Type type);
 
+    static native void throwException(Throwable t);
+
 	/**
 	* Return whether this class is an array type.
 	*

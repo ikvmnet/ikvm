@@ -30,7 +30,7 @@ public sealed class JniHelper
 {
 	public static IntPtr GetMethodCookie(object clazz, string name, string sig, bool isStatic)
 	{
-		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.Class.getType(clazz));
+		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.VMClass.getType(clazz));
 		wrapper.Finish();
 		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig), true);
 		if(mw != null)
@@ -85,7 +85,7 @@ public sealed class JniHelper
 
 	public static IntPtr GetFieldCookie(object clazz, string name, string sig, bool isStatic)
 	{
-		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.Class.getType(clazz));
+		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.VMClass.getType(clazz));
 		wrapper.Finish();
 		// TODO GetFieldWrapper should take sig (what about searching the base classes?)
 		FieldWrapper fw = wrapper.GetFieldWrapper(name);
@@ -113,7 +113,7 @@ public sealed class JniHelper
 	{
 		TypeWrapper wrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName(javaName);
 		wrapper.Finish();
-		return NativeCode.java.lang.Class.getClassFromWrapper(wrapper);
+		return NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper);
 	}
 
 	public static Exception UnsatisfiedLinkError(string msg)
@@ -123,7 +123,7 @@ public sealed class JniHelper
 
 	public static object GetClassFromType(Type type)
 	{
-		return NativeCode.java.lang.Class.getClassFromType(type);
+		return NativeCode.java.lang.VMClass.getClassFromType(type);
 	}
 }
 

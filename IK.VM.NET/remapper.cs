@@ -3,6 +3,7 @@ using System.Xml.Serialization;
 using System.Collections;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Diagnostics;
 
 namespace MapXml
 {
@@ -37,58 +38,58 @@ namespace MapXml
 
 		[XmlAttribute("class")]
 		public string Class;
+		[XmlAttribute("type")]
+		public string type;
 		[XmlAttribute("name")]
 		public string Name;
 		[XmlAttribute("sig")]
 		public string Sig;
 
-		private MethodBase method;
+		private CodeEmitter emitter;
 		private OpCode opcode;
 
 		internal sealed override void Generate(Hashtable context, ILGenerator ilgen)
 		{
-			if(method == null)
+			if(emitter == null)
 			{
-				string name = Name;
-				if(name == ".ctor")
+				Debug.Assert(Name != null);
+				if(Name == ".ctor")
 				{
-					string sig = Sig;
-					Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(sig);
-					// TODO use our own reflection, because the type might not have been finished
-					method = Type.GetType(Class, true).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
+					Debug.Assert(Class == null && type != null);
+					Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
+					emitter = CodeEmitter.Create(opcode, Type.GetType(type, true).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null));
 				}
 				else
 				{
-					if(Type.GetType(Class, true).Assembly is AssemblyBuilder)
+					Debug.Assert(Class == null ^ type == null);
+					if(Class != null)
 					{
-						MethodWrapper[] methods = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethods();
-						for(int i = 0; i < methods.Length; i++)
+						Debug.Assert(Sig != null);
+						MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), Name, Sig), false);
+						if(method != null)
 						{
-							if(methods[i].Name == name)
-							{
-								method = methods[i].GetMethod();
-								break;
-							}
+							emitter = CodeEmitter.Create(opcode, method.GetMethod());
 						}
 					}
 					else
 					{
-						method = Type.GetType(Class, true).GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+						if(Sig != null)
+						{
+							Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
+							emitter = CodeEmitter.Create(opcode, Type.GetType(type, true).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null));
+						}
+						else
+						{
+							emitter = CodeEmitter.Create(opcode, Type.GetType(type, true).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static));
+						}
 					}
 				}
-				if(method == null)
+				if(emitter == null)
 				{
-					throw new InvalidOperationException("method not found: " + name);
+					throw new InvalidOperationException("method not found: " + Name);
 				}
 			}
-			if(method.IsConstructor)
-			{
-				ilgen.Emit(opcode, (ConstructorInfo)method);
-			}
-			else
-			{
-				ilgen.Emit(opcode, (MethodInfo)method);
-			}
+			emitter.Emit(ilgen);
 		}
 	}
 
@@ -139,21 +140,53 @@ namespace MapXml
 		}
 	}
 
-	[XmlType("isinst")]
-	public sealed class IsInst : Instruction
+	public abstract class TypeInstruction : Instruction
 	{
 		[XmlAttribute("class")]
 		public string Class;
+		[XmlAttribute("type")]
+		public string type;
 
-		private Type type;
+		private OpCode opcode;
+		private TypeWrapper typeWrapper;
+		private Type typeType;
+
+		internal TypeInstruction(OpCode opcode)
+		{
+			this.opcode = opcode;
+		}
 
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
-			if(type == null)
+			if(typeWrapper == null && typeType == null)
 			{
-				type = Type.GetType(Class, true);
+				Debug.Assert(Class == null ^ type == null);
+				if(Class != null)
+				{
+					typeWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class);
+				}
+				else
+				{
+					typeType = Type.GetType(type, true);
+				}
 			}
-			ilgen.Emit(OpCodes.Isinst, type);
+			ilgen.Emit(OpCodes.Isinst, typeType != null ? typeType : typeWrapper.Type);
+		}
+	}
+
+	[XmlType("isinst")]
+	public sealed class IsInst : TypeInstruction
+	{
+		public IsInst() : base(OpCodes.Isinst)
+		{
+		}
+	}
+
+	[XmlType("castclass")]
+	public sealed class Castclass : TypeInstruction
+	{
+		public Castclass() : base(OpCodes.Castclass)
+		{
 		}
 	}
 
@@ -189,6 +222,14 @@ namespace MapXml
 	public sealed class BrFalse : Branch
 	{
 		public BrFalse() : base(OpCodes.Brfalse)
+		{
+		}
+	}
+
+	[XmlType("brtrue")]
+	public sealed class BrTrue : Branch
+	{
+		public BrTrue() : base(OpCodes.Brtrue)
 		{
 		}
 	}
@@ -230,19 +271,30 @@ namespace MapXml
 		public string Name;
 		[XmlAttribute("class")]
 		public string Class;
-	
-		private Type type;
+		[XmlAttribute("type")]
+		public string type;
+
+		private TypeWrapper typeWrapper;
+		private Type typeType;
 
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
 			LocalBuilder lb = (LocalBuilder)context[Name];
 			if(lb == null)
 			{
-				if(type == null)
+				if(typeWrapper == null && typeType == null)
 				{
-					type = Type.GetType(Class, true);
+					Debug.Assert(Class == null ^ type == null);
+					if(type != null)
+					{
+						typeType = Type.GetType(type, true);
+					}
+					else
+					{
+						typeWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class);
+					}
 				}
-				lb = ilgen.DeclareLocal(type);
+				lb = ilgen.DeclareLocal(typeType != null ? typeType : typeWrapper.Type);
 				context[Name] = lb;
 			}
 			ilgen.Emit(OpCodes.Stloc, lb);
@@ -301,6 +353,14 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("throw")]
+	public sealed class Throw : Simple
+	{
+		public Throw() : base(OpCodes.Throw)
+		{
+		}
+	}
+
 	public class InstructionList : CodeEmitter
 	{
 		[XmlElement(typeof(Ldstr))]
@@ -309,7 +369,9 @@ namespace MapXml
 		[XmlElement(typeof(Dup))]
 		[XmlElement(typeof(Pop))]
 		[XmlElement(typeof(IsInst))]
+		[XmlElement(typeof(Castclass))]
 		[XmlElement(typeof(BrFalse))]
+		[XmlElement(typeof(BrTrue))]
 		[XmlElement(typeof(Br))]
 		[XmlElement(typeof(BrLabel))]
 		[XmlElement(typeof(NewObj))]
@@ -320,6 +382,7 @@ namespace MapXml
 		[XmlElement(typeof(LdArg_2))]
 		[XmlElement(typeof(LdArg_3))]
 		[XmlElement(typeof(Ret))]
+		[XmlElement(typeof(Throw))]
 		public Instruction[] invoke;
 
 		internal sealed override void Emit(ILGenerator ilgen)

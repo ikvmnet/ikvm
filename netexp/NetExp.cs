@@ -148,6 +148,10 @@ public class NetExp
 	// returns the mapped type in signature format (e.g. Ljava/lang/String;)
 	private static string SigType(Type t)
 	{
+		if(t.IsByRef)
+		{
+			return "[" + SigType(t.GetElementType());
+		}
 		if(t.IsEnum)
 		{
 			t = Enum.GetUnderlyingType(t);
@@ -216,12 +220,16 @@ public class NetExp
 
 	private static void ProcessType(Type type)
 	{
-		if(type == typeof(object) || type == typeof(string))
+		if(type == typeof(object))// || type == typeof(string))
 		{
 			// special case for System.Object & System.String, don't emit those
 			return;
 		}
 		string name = ClassName(type);
+		if(type == typeof(string))
+		{
+			name = "system/String";
+		}
 		string super;
 		if(type.BaseType == null)
 		{
@@ -280,7 +288,7 @@ public class NetExp
 				object[] attribs = constructors[i].GetCustomAttributes(typeof(CLSCompliantAttribute), false);
 				if(attribs.Length == 1 && !((CLSCompliantAttribute)attribs[0]).IsCompliant)
 				{
-					// skip non-CLS compliant field
+					// skip non-CLS compliant constructor
 				}
 				else
 				{
@@ -296,7 +304,7 @@ public class NetExp
 				object[] attribs = methods[i].GetCustomAttributes(typeof(CLSCompliantAttribute), false);
 				if(attribs.Length == 1 && !((CLSCompliantAttribute)attribs[0]).IsCompliant)
 				{
-					// skip non-CLS compliant field
+					// skip non-CLS compliant method
 				}
 				else
 				{
@@ -464,9 +472,9 @@ public class NetExp
 		string sep = "";
 		for(int i = 0; i < parameters.Length; i++)
 		{
-			if(parameters[i].ParameterType.IsByRef)
+			if(parameters[i].ParameterType.IsPointer)
 			{
-				// Java doesn't support byref parameters
+				// Java doesn't support pointer parameters
 				return;
 			}
 			sb.Append(SigType(parameters[i].ParameterType));

@@ -369,7 +369,15 @@ class Compiler
 			{
 				isnull[i] = true;
 			}
-			else if(!VerifierTypeWrapper.IsNew(type))
+			else if(VerifierTypeWrapper.IsNew(type))
+			{
+				// new objects aren't really there on the stack
+			}
+			else if(type.IsNonPrimitiveValueType)
+			{
+				locals[i] = ilgen.DeclareLocal(typeof(object));
+			}
+			else
 			{
 				locals[i] = ilgen.DeclareLocal(type.TypeOrUnloadableAsObject);
 			}
@@ -963,7 +971,7 @@ class Compiler
 						{
 							// if the stack values don't match the argument types (for interface argument types)
 							// we must emit code to cast the stack value to the interface type
-							CastInterfaceArgs(cpi.GetArgTypes(classLoader), i);
+							CastInterfaceArgs(cpi.GetArgTypes(classLoader), i, false);
 							method.EmitCall.Emit(ilGenerator);
 						}
 						else
@@ -989,7 +997,12 @@ class Compiler
 						// if the stack values don't match the argument types (for interface argument types)
 						// we must emit code to cast the stack value to the interface type
 						TypeWrapper[] args;
-						if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
+						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>" && VerifierTypeWrapper.IsNew(type))
+						{
+							args = cpi.GetArgTypes(classLoader);
+						}
+						else
+//						if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
 						{
 							// for invokeinterface, the this reference is included in the argument list
 							// because it may also need to be cast
@@ -998,17 +1011,17 @@ class Compiler
 							methodArgs.CopyTo(args, 1);
 							args[0] = thisType;
 						}
-						else
-						{
-							args = cpi.GetArgTypes(classLoader);
-
-							if(!thisType.IsUnloadable && !thisType.IsSubTypeOf(cpi.GetClassType(classLoader)))
-							{
-								EmitError("java.lang.IncompatibleClassChangeError", null);
-								thisType = null;
-							}
-						}
-						CastInterfaceArgs(args, i);
+//						else
+//						{
+//							args = cpi.GetArgTypes(classLoader);
+//
+//							if(!thisType.IsUnloadable && !thisType.IsSubTypeOf(cpi.GetClassType(classLoader)))
+//							{
+//								EmitError("java.lang.IncompatibleClassChangeError", null);
+//								thisType = null;
+//							}
+//						}
+						CastInterfaceArgs(args, i, true);
 
 						MethodWrapper method = (thisType != null) ? GetMethod(cpi, thisType, instr.NormalizedOpCode) : null;
 						CodeEmitter emit = null;
@@ -1222,6 +1235,11 @@ class Compiler
 								{
 									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
 								}
+								if(retTypeWrapper.IsNonPrimitiveValueType)
+								{
+									ilGenerator.Emit(OpCodes.Unbox, retTypeWrapper.Type);
+									ilGenerator.Emit(OpCodes.Ldobj, retTypeWrapper.Type);
+								}
 								ilGenerator.Emit(OpCodes.Stloc, rc.Local);
 							}
 							rc.Stub = ilGenerator.DefineLabel();
@@ -1250,6 +1268,11 @@ class Compiler
 								if(retTypeWrapper.IsInterface && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(retTypeWrapper))
 								{
 									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
+								}
+								if(retTypeWrapper.IsNonPrimitiveValueType)
+								{
+									ilGenerator.Emit(OpCodes.Unbox, retTypeWrapper.Type);
+									ilGenerator.Emit(OpCodes.Ldobj, retTypeWrapper.Type);
 								}
 								if(stackHeight != 1)
 								{
@@ -1292,10 +1315,17 @@ class Compiler
 							{
 								// HACK since, for now, all locals are of type object, we've got to cast them to the proper type
 								// UPDATE the above is no longer true, we now have at least some idea of the type of the local
-								if(type != ma.GetDeclaredLocalTypeWrapper(instr.NormalizedArg1) && !type.IsUnloadable)
+								if(type != ma.GetDeclaredLocalTypeWrapper(instr.NormalizedArg1) && !type.IsUnloadable && !type.IsNonPrimitiveValueType)
 								{
 									ilGenerator.Emit(OpCodes.Castclass, type.Type);
 								}
+							}
+							else if(type.IsNonPrimitiveValueType)
+							{
+								// HACK we're boxing the arguments when they are loaded, this is inconsistent
+								// with the way locals are treated, so we probably should only box the arguments
+								// once (on method entry)
+								ilGenerator.Emit(OpCodes.Box, type.Type);
 							}
 						}
 						break;
@@ -1472,7 +1502,17 @@ class Compiler
 						break;
 					}
 					case NormalizedByteCode.__aaload:
-						ilGenerator.Emit(OpCodes.Ldelem_Ref);
+						if(ma.GetRawStackTypeWrapper(i, 1).ElementTypeWrapper.IsNonPrimitiveValueType)
+						{
+							Type t = ma.GetRawStackTypeWrapper(i, 1).ElementTypeWrapper.Type;
+							ilGenerator.Emit(OpCodes.Ldelema, t);
+							ilGenerator.Emit(OpCodes.Ldobj, t);
+							ilGenerator.Emit(OpCodes.Box, t);
+						}
+						else
+						{
+							ilGenerator.Emit(OpCodes.Ldelem_Ref);
+						}
 						break;
 					case NormalizedByteCode.__baload:
 						// NOTE both the JVM and the CLR use signed bytes for boolean arrays (how convenient!)
@@ -1518,7 +1558,21 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Stelem_R8);
 						break;
 					case NormalizedByteCode.__aastore:
-						ilGenerator.Emit(OpCodes.Stelem_Ref);
+						if(ma.GetRawStackTypeWrapper(i, 2).ElementTypeWrapper.IsNonPrimitiveValueType)
+						{
+							Type t = ma.GetRawStackTypeWrapper(i, 2).ElementTypeWrapper.Type;
+							LocalBuilder local = ilGenerator.DeclareLocal(typeof(object));
+							ilGenerator.Emit(OpCodes.Stloc, local);
+							ilGenerator.Emit(OpCodes.Ldelema, t);
+							ilGenerator.Emit(OpCodes.Ldloc, local);
+							ilGenerator.Emit(OpCodes.Unbox, t);
+							ilGenerator.Emit(OpCodes.Ldobj, t);
+							ilGenerator.Emit(OpCodes.Stobj, t);
+						}
+						else
+						{
+							ilGenerator.Emit(OpCodes.Stelem_Ref);
+						}
 						break;
 					case NormalizedByteCode.__arraylength:
 						ilGenerator.Emit(OpCodes.Ldlen);
@@ -2146,7 +2200,8 @@ class Compiler
 		}
 	}
 
-	private void CastInterfaceArgs(TypeWrapper[] args, int instructionIndex)
+	// NOTE despite its name this also handles value type args
+	private void CastInterfaceArgs(TypeWrapper[] args, int instructionIndex, bool instanceMethod)
 	{
 		// TODO handle unloadable types
 		bool needsCast = false;
@@ -2160,6 +2215,11 @@ class Compiler
 					needsCast = true;
 					break;
 				}
+			}
+			if(args[i].IsNonPrimitiveValueType)
+			{
+				needsCast = true;
+				break;
 			}
 		}
 
@@ -2183,6 +2243,14 @@ class Compiler
 			for(int i = 0; i < args.Length; i++)
 			{
 				dh.Load(i);
+				if(args[i].IsNonPrimitiveValueType)
+				{
+					ilGenerator.Emit(OpCodes.Unbox, args[i].Type);
+					if(i != 0 || !instanceMethod)
+					{
+						ilGenerator.Emit(OpCodes.Ldobj, args[i].Type);
+					}
+				}
 			}
 		}
 	}

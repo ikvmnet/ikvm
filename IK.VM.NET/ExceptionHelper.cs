@@ -27,7 +27,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Collections;
 using java.lang;
-using ClassHelper = NativeCode.java.lang.Class;
+using ClassHelper = NativeCode.java.lang.VMClass;
 
 public class ExceptionHelper
 {

@@ -38,7 +38,6 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
-import system.*;
 import system.reflection.*;
 
 /**

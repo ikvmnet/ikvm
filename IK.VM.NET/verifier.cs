@@ -398,8 +398,7 @@ class InstructionState
 			TypeWrapper baseType = FindCommonBaseTypeHelper(elem1, elem2);
 			if(baseType == VerifierTypeWrapper.Invalid)
 			{
-				// TODO cache java.lang.Object type somewhere
-				baseType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Object");
+				baseType = MethodAnalyzer.java_lang_Object;
 				rank--;
 				if(rank == 0)
 				{
@@ -417,6 +416,10 @@ class InstructionState
 		if(t1 == t2)
 		{
 			return t1;
+		}
+		if(t1.IsNonPrimitiveValueType || t2.IsNonPrimitiveValueType)
+		{
+			return VerifierTypeWrapper.Invalid;
 		}
 		if(t1.IsInterface || t2.IsInterface)
 		{
@@ -437,8 +440,7 @@ class InstructionState
 			{
 				return t1;
 			}
-			// TODO cache java.lang.Object type somewhere
-			return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Object");
+			return MethodAnalyzer.java_lang_Object;
 		}
 		Stack st1 = new Stack();
 		Stack st2 = new Stack();
@@ -980,6 +982,7 @@ class VerifierTypeWrapper : TypeWrapper
 
 class MethodAnalyzer
 {
+	internal static TypeWrapper java_lang_Object;
 	private static TypeWrapper java_lang_Throwable;
 	private static TypeWrapper java_lang_String;
 	private static TypeWrapper ByteArrayType;
@@ -1005,6 +1008,7 @@ class MethodAnalyzer
 		{
 			if(java_lang_Throwable == null)
 			{
+				java_lang_Object = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Object");
 				java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Throwable");
 				java_lang_String = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/String");
 				ByteArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[B");
@@ -2012,6 +2016,10 @@ class MethodAnalyzer
 								}
 								else if(!VerifierTypeWrapper.IsRet(l) && !l.IsPrimitive)
 								{
+									if(l != VerifierTypeWrapper.Null && l.IsNonPrimitiveValueType)
+									{
+										l = java_lang_Object;
+									}
 									if(localTypes[j] == VerifierTypeWrapper.Invalid)
 									{
 										localTypes[j] = l;

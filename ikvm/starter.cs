@@ -228,8 +228,7 @@ public class Starter
 				JarFile jf = new JarFile(mainClass);
 				try
 				{
-					// TODO use Attributes.Name.MAIN_CLASS (we don't support inner classes at the moment)
-					mainClass = jf.getManifest().getMainAttributes().getValue("Main-Class");
+					mainClass = jf.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
 				}
 				finally
 				{
@@ -270,7 +269,7 @@ public class Starter
 				}
 			}
 			java.lang.Class clazz = loader.loadClass(mainClass);
-			Method method = clazz.getMethod("main", new java.lang.Class[] { java.lang.Class.getClassFromType(typeof(string[])) });
+			Method method = clazz.getMethod("main", new java.lang.Class[] { java.lang.Class.forName("[Ljava.lang.String;") });
 			if(!Modifier.isPublic(method.getModifiers()))
 			{
 				Console.Error.WriteLine("Main method not public.");

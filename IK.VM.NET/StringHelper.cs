@@ -27,57 +27,6 @@ using System.Reflection;
 
 public class StringHelper
 {
-	public static string valueOf(bool b)
-	{
-		return b ? "true" : "false";
-	}
-
-	public static string valueOf(int i)
-	{
-		return i.ToString();
-	}
-
-	public static string valueOf(long l)
-	{
-		return l.ToString();
-	}
-
-	public static string valueOf(char c)
-	{
-		return c.ToString();
-	}
-
-	public static string valueOf(float f)
-	{
-		StringBuilder sb = new StringBuilder();
-		return StringBufferHelper.append(sb, f).ToString();
-	}
-
-	public static string valueOf(double d)
-	{
-		StringBuilder sb = new StringBuilder();
-		return StringBufferHelper.append(sb, d).ToString();
-	}
-
-	public static string valueOf(char[] c)
-	{
-		return new String(c);
-	}
-
-	public static string valueOf(char[] c, int offset, int count)
-	{
-		return new String(c, offset, count);
-	}
-
-	public static string valueOf(object o)
-	{
-		if(o == null)
-		{
-			return "null";
-		}
-		return ObjectHelper.toStringVirtual(o);
-	}
-
 	public static string substring(string s, int off, int end)
 	{
 		return s.Substring(off, end - off);
@@ -126,18 +75,6 @@ public class StringHelper
 	{
 		// TODO
 		throw new NotImplementedException();
-	}
-
-	// NOTE argument is of type object, because otherwise the code that calls this function
-	// has to be much more complex
-	public static int hashCode(object s)
-	{
-		int h = 0;
-		foreach(char c in (string)s)
-		{
-			h = h * 31 + c;
-		}
-		return h;
 	}
 
 	public static int indexOf(string s, char ch, int fromIndex)
@@ -195,27 +132,38 @@ public class StringHelper
 		return String.Concat(s1, s2);
 	}
 
-	private static object CASE_INSENSITIVE_ORDER;
-
-	public static object GetCaseInsensitiveOrder()
-	{
-		if(CASE_INSENSITIVE_ORDER == null)
-		{
-			CASE_INSENSITIVE_ORDER = Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.String$CaseInsensitiveComparator"), true);
-		}
-		return CASE_INSENSITIVE_ORDER;
-	}
+//	private static object CASE_INSENSITIVE_ORDER;
+//
+//	public static object GetCaseInsensitiveOrder()
+//	{
+//		if(CASE_INSENSITIVE_ORDER == null)
+//		{
+//			CASE_INSENSITIVE_ORDER = Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.String$CaseInsensitiveComparator"), true);
+//		}
+//		return CASE_INSENSITIVE_ORDER;
+//	}
 }
 
 public class StringBufferHelper
 {
+	private delegate string toHexStringDelegate(int i);
+	private static toHexStringDelegate toHexString;
+
 	public static StringBuilder append(StringBuilder thiz, object o)
 	{
 		if(o == null)
 		{
-			o = "null";
+			return thiz.Append("null");
 		}
-		return thiz.Append(ObjectHelper.toStringVirtual(o));
+		if(o is Array)
+		{
+			if(toHexString == null)
+			{
+				toHexString = (toHexStringDelegate)Delegate.CreateDelegate(typeof(toHexStringDelegate), ClassLoaderWrapper.GetType("java.lang.Integer").GetMethod("toHexString"));
+			}
+			return thiz.Append(NativeCode.java.lang.VMClass.getName(o.GetType()) + "@" + toHexString(o.GetHashCode()));
+		}
+		return thiz.Append(o);
 	}
 
 	public static StringBuilder append(StringBuilder thiz, string s)
