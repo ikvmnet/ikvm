@@ -32,12 +32,20 @@ abstract class RetargetableJavaException : ApplicationException
 	{
 	}
 
+	internal RetargetableJavaException(string msg, Exception x) : base(msg, x)
+	{
+	}
+
 	internal abstract Exception ToJava();
 }
 
 class LinkageError : RetargetableJavaException
 {
 	internal LinkageError(string msg) : base(msg)
+	{
+	}
+
+	internal LinkageError(string msg, Exception x) : base(msg, x)
 	{
 	}
 
@@ -49,12 +57,6 @@ class LinkageError : RetargetableJavaException
 
 class VerifyError : LinkageError
 {
-	private int byteCodeOffset;
-	private string clazz;
-	private string method;
-	private string signature;
-	private string instruction;
-
 	internal VerifyError() : base("")
 	{
 	}
@@ -63,28 +65,8 @@ class VerifyError : LinkageError
 	{
 	}
 
-	internal void SetInfo(int byteCodeOffset, string clazz, string method, string signature, string instruction)
+	internal VerifyError(string msg, Exception x) : base(msg, x)
 	{
-		this.byteCodeOffset = byteCodeOffset;
-		this.clazz = clazz;
-		this.method = method;
-		this.signature = signature;
-		this.instruction = instruction;
-	}
-
-	public override string Message
-	{
-		get
-		{
-			if(clazz != null)
-			{
-				return string.Format("(class: {0}, method: {1}, signature: {2}, offset: {3}, instruction: {4}) {5}", clazz, method, signature, byteCodeOffset, instruction, base.Message);
-			}
-			else
-			{
-				return base.Message;
-			}
-		}
 	}
 
 	internal override Exception ToJava()

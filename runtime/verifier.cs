@@ -2210,9 +2210,8 @@ class MethodAnalyzer
 						{
 							opcode = opcode.Substring(2);
 						}
-						x.SetInfo(instructions[i].PC, classFile.Name, method.Name, method.Signature, opcode);
-						Tracer.Info(Tracer.Verifier, x.ToString());
-						throw;
+						throw new VerifyError(string.Format("{5} (class: {0}, method: {1}, signature: {2}, offset: {3}, instruction: {4})",
+							classFile.Name, method.Name, method.Signature, instructions[i].PC, opcode, x.Message), x);
 					}
 				}
 			}

@@ -1257,7 +1257,7 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 			catch(TypeLoadException)
 			{
 				// If we end up here, we're not running on Windows, so we'll try two Mono specific methods.
-				// The first one is using Mono.Posix, this is part of the documented public Mono API.
+				// TODO convert this to Mono.Unix
 				Type t = Type.GetType("Mono.Posix.Syscall, Mono.Posix");
 				if(t != null)
 				{

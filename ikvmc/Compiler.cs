@@ -253,19 +253,14 @@ class Compiler
 					}
 					if(exists)
 					{
-						// NOTE we're appending a DirectorySeparatorChar to make sure that dir.FullName always
-						// ends with a separator (multiple separators are automatically collapsed into one).
-						// This is important because later on we will be using baseDir.FullName to make
-						// an absolute path relative again.
-						DirectoryInfo dir = new DirectoryInfo(spec + Path.DirectorySeparatorChar);
+						DirectoryInfo dir = new DirectoryInfo(spec);
 						Recurse(dir, dir, "*");
 					}
 					else
 					{
 						try
 						{
-							// see comment above about Path.DirectorySeparatorChar
-							DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec) + Path.DirectorySeparatorChar);
+							DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec));
 							Recurse(dir, dir, Path.GetFileName(spec));
 						}
 						catch(PathTooLongException)
@@ -542,8 +537,12 @@ class Compiler
 						{
 							byte[] b = new byte[fs.Length];
 							fs.Read(b, 0, b.Length);
-							// HACK very lame way to extract the resource name (by chopping off the base directory)
+							// extract the resource name by chopping off the base directory
 							string name = file.Substring(baseDir.FullName.Length);
+							if(name.Length > 0 && name[0] == Path.DirectorySeparatorChar)
+							{
+								name = name.Substring(1);
+							}
 							name = name.Replace('\\', '/');
 							resources.Add(name, b);
 						}

@@ -73,7 +73,7 @@ package java.lang.ref;
  */
 public abstract class Reference
 {
-    private cli.System.WeakReference referent;
+    private volatile cli.System.WeakReference referent;
 
     /**
      * The queue this reference is registered on. This is null, if this
@@ -98,7 +98,10 @@ public abstract class Reference
      */
     Reference(Object ref)
     {
-	referent = new cli.System.WeakReference(ref);
+        if (ref != null)
+        {
+	    referent = new cli.System.WeakReference(ref);
+        }
     }
 
     /**
@@ -113,9 +116,12 @@ public abstract class Reference
     {
 	if (q == null)
 	    throw new NullPointerException();
-	referent = new cli.System.WeakReference(ref, this instanceof PhantomReference);
-	queue = q;
-	new QueueWatcher();
+        queue = q;
+        if (ref != null)
+        {
+            referent = new cli.System.WeakReference(ref, this instanceof PhantomReference);
+	    new QueueWatcher();
+        }
     }
 
     private class QueueWatcher
@@ -126,6 +132,12 @@ public abstract class Reference
 	    try
 	    {
 		if(false) throw new cli.System.InvalidOperationException();
+                cli.System.WeakReference referent = Reference.this.referent;
+                if (referent == null)
+                {
+                    // ref was explicitly cleared, so we don't enqueue
+                    return;
+                }
 		alive = referent.get_IsAlive();
 	    }
 	    catch(cli.System.InvalidOperationException x)
@@ -143,7 +155,7 @@ public abstract class Reference
 	    }
 	    else
 	    {
-		enqueue();
+		enqueueImpl();
 	    }
 	}
     }
@@ -158,7 +170,8 @@ public abstract class Reference
 	try
 	{
 	    if(false) throw new cli.System.InvalidOperationException();
-	    return referent.get_Target();
+            cli.System.WeakReference referent = this.referent;
+	    return referent == null ? null : referent.get_Target();
 	}
 	catch(cli.System.InvalidOperationException x)
 	{
@@ -175,15 +188,7 @@ public abstract class Reference
      */
     public void clear()
     {
-	try
-	{
-	    if(false) throw new cli.System.InvalidOperationException();
-	    referent.set_Target(null);
-	}
-	catch(cli.System.InvalidOperationException x)
-	{
-	    // HACK we were already finalized, so we don't need to do anything.
-	}
+        referent = null;
     }
 
     /**
@@ -201,12 +206,19 @@ public abstract class Reference
      */
     public synchronized boolean enqueue() 
     {
-	if (queue != null && nextOnQueue == null)
-	{
-	    queue.enqueue(this);
-	    queue = null;
-	    return true;
-	}
-	return false;
+        // delegate to a private impl to prevent subclasses from overriding the enqueue
+        // event in the finalization thread
+        return enqueueImpl();
+    }
+
+    private synchronized boolean enqueueImpl()
+    {
+        if (queue != null && nextOnQueue == null)
+        {
+            queue.enqueue(this);
+            queue = null;
+            return true;
+        }
+        return false;
     }
 }

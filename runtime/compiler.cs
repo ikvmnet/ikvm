@@ -474,7 +474,7 @@ class Compiler
 
 		internal void Emit(ILGenerator ilgen, ClassFile classFile, ClassFile.Method m)
 		{
-			Tracer.Warning(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", type.Name, Message, classFile.Name, m.Name, m.Signature);
+			Tracer.Error(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", type.Name, Message, classFile.Name, m.Name, m.Signature);
 			ilgen.Emit(OpCodes.Ldstr, Message);
 			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor("<init>", "(Ljava.lang.String;)V"), false);
 			method.Link();
@@ -743,6 +743,7 @@ class Compiler
 		}
 		catch(VerifyError x)
 		{
+			Tracer.Error(Tracer.Verifier, x.ToString());
 			// because in Java the method is only verified if it is actually called,
 			// we generate code here to throw the VerificationError
 			EmitHelper.Throw(ilGenerator, "java.lang.VerifyError", x.Message);
@@ -1382,7 +1383,9 @@ class Compiler
 						ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
 						// HACK special case for calls to System.arraycopy, if the array arguments on the stack
 						// are of a known array type, we can redirect to an optimized version of arraycopy.
-						if(cpi.Class == "java.lang.System" &&
+						// Note that we also have to handle VMSystem.arraycopy, because StringBuffer directly calls
+						// this method to avoid prematurely initialising System.
+						if((cpi.Class == "java.lang.System" || cpi.Class == "java.lang.VMSystem")&&
 							cpi.Name == "arraycopy" &&
 							cpi.Signature == "(Ljava.lang.Object;ILjava.lang.Object;II)V" &&
 							cpi.GetClassType().GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())

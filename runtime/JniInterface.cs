@@ -351,22 +351,16 @@ namespace IKVM.Runtime
 
 	sealed class JniHelper
 	{
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_LoadLibrary@4")]
 		[DllImport("ikvm-native")]
 		private static extern IntPtr ikvm_LoadLibrary(string filename);
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_FreeLibrary@4")]
 		[DllImport("ikvm-native")]
 		private static extern void ikvm_FreeLibrary(IntPtr handle);
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_GetProcAddress@12")]
 		[DllImport("ikvm-native")]
 		internal static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_CallOnLoad@12")]
 		[DllImport("ikvm-native")]
 		private unsafe static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_GetJNIEnvVTable@0")]
 		[DllImport("ikvm-native")]
 		internal unsafe static extern void** ikvm_GetJNIEnvVTable();
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_MarshalDelegate@4")]
 		[DllImport("ikvm-native")]
 		internal unsafe static extern void* ikvm_MarshalDelegate(Delegate d);
 

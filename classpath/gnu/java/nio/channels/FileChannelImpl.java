@@ -139,7 +139,7 @@ public final class FileChannelImpl extends FileChannel
 	    if(false) throw new cli.System.UnauthorizedAccessException();
 	    if(false) throw new cli.System.ArgumentException();
 	    if(false) throw new cli.System.NotSupportedException();
-	    return cli.System.IO.File.Open(demanglePath(path), FileMode.wrap(fileMode), FileAccess.wrap(fileAccess), FileShare.wrap(FileShare.ReadWrite));
+	    return new cli.System.IO.FileStream(demanglePath(path), FileMode.wrap(fileMode), FileAccess.wrap(fileAccess), FileShare.wrap(FileShare.ReadWrite), 1, false);
 	}
 	catch(cli.System.Security.SecurityException x1)
 	{
@@ -450,10 +450,10 @@ public final class FileChannelImpl extends FileChannel
 	return result;
     }
 
-    public void write (byte[] buf, int offset, int len) throws IOException
+    public void write(byte[] buf, int offset, int len) throws IOException
     {
 	if(stream == null)
-	    throw new IOException("Invalid FileChannelImpl");
+	    throw new ClosedChannelException();
 
 	if (len == 0)
 	    return;
@@ -466,7 +466,8 @@ public final class FileChannelImpl extends FileChannel
 
 	try
 	{
-	    if(false) throw new cli.System.IO.IOException();
+            if(false) throw new cli.System.IO.IOException();
+            if(false) throw new cli.System.ObjectDisposedException(null);
 	    stream.Write(ByteArrayHack.cast(buf), offset, len);
 	    // NOTE FileStream buffers the output, so we have to flush explicitly
 	    stream.Flush();
@@ -475,12 +476,33 @@ public final class FileChannelImpl extends FileChannel
 	{
 	    throw new IOException(x.getMessage());
 	}
-	// TODO map al the other exceptions as well...
+        catch(cli.System.ObjectDisposedException x2)
+        {
+            throw new ClosedChannelException();
+        }
     }
   
-    public void write (int b) throws IOException
+    public void write(int b) throws IOException
     {
-	stream.WriteByte(CIL.box_ubyte((byte)b));
+        if(stream == null)
+            throw new ClosedChannelException();
+
+        try
+        {
+            if(false) throw new cli.System.IO.IOException();
+            if(false) throw new cli.System.ObjectDisposedException(null);
+            stream.WriteByte(CIL.box_ubyte((byte)b));
+            // NOTE FileStream buffers the output, so we have to flush explicitly
+            stream.Flush();
+        }
+        catch(cli.System.IO.IOException x)
+        {
+            throw new IOException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x2)
+        {
+            throw new ClosedChannelException();
+        }
     }
 
     public long write(ByteBuffer[] srcs, int offset, int length)

@@ -212,6 +212,8 @@ sun/misc/Ref.java
 ../../classpath/gnu/java/locale/LocaleInformation_nn_NO.java
 ../../classpath/gnu/java/locale/LocaleInformation_no_NO.java
 ../../classpath/gnu/java/locale/LocaleInformation_oc_FR.java
+../../classpath/gnu/java/locale/LocaleInformation_pa.java
+../../classpath/gnu/java/locale/LocaleInformation_pa_IN.java
 ../../classpath/gnu/java/locale/LocaleInformation_pl_PL.java
 ../../classpath/gnu/java/locale/LocaleInformation_pt_BR.java
 ../../classpath/gnu/java/locale/LocaleInformation_pt_PT.java

@@ -40,13 +40,19 @@
 #ifdef _WIN64
 		return GetProcAddress(handle, name);
 #else
+		void* pfunc;
 		char buf[512];
 		if(strlen(name) > sizeof(buf) - 11)
 		{
 			return 0;
 		}
 		wsprintf(buf, "_%s@%d", name, argc);
-		return GetProcAddress(handle, buf);
+		pfunc = GetProcAddress(handle, buf);
+		if (pfunc)
+			return pfunc;
+		// If we didn't find the mangled name, try the unmangled name (this happens if you have an
+		// explicit EXPORT in the linker def).
+		return GetProcAddress(handle, name);
 #endif
 	}
 #else
