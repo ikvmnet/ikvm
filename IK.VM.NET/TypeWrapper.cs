@@ -2252,7 +2252,13 @@ class DynamicTypeWrapper : TypeWrapper
 							// we need set NewSlot here, to prevent accidentally overriding methods
 							// (for example, if a Java class has a method "boolean Equals(object)", we don't want that method
 							// to override System.Object.Equals)
-							attribs |= MethodAttributes.NewSlot;
+							// Unless, of course, we're implementing an inherited interface method (the miranda method might not
+							// have been created at this point, because that happens during the finishing of our base class)
+							// TODO a better way to fix this would be to move Miranda method creation from Finish to GetMethodImpl
+							if(wrapper.BaseTypeWrapper == null || !IsInterfaceMethod(wrapper.BaseTypeWrapper, md))
+							{
+								attribs |= MethodAttributes.NewSlot;
+							}
 						}
 						else
 						{
@@ -2353,6 +2359,18 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				Profiler.Leave("JavaTypeImpl.GenerateMethod");
 			}
+		}
+
+		private static bool IsInterfaceMethod(TypeWrapper wrapper, MethodDescriptor md)
+		{
+			foreach(TypeWrapper iface in wrapper.Interfaces)
+			{
+				if(iface.GetMethodWrapper(md, false) != null || IsInterfaceMethod(iface, md))
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		private static void AddMethodOverride(TypeBuilder typeBuilder, MethodBuilder mb, TypeWrapper iface, MethodDescriptor md, ref Hashtable hashtable)
