@@ -352,32 +352,25 @@ class MethodWrapper : MemberWrapper
 		return md.ArgTypeWrappers;
 	}
 
-	internal TypeWrapper[] GetExceptions()
+	internal string[] GetExceptions()
 	{
 		// remapped types and dynamically compiled types have declaredExceptions set
 		if(declaredExceptions != null)
 		{
-			TypeWrapper[] wrappers = new TypeWrapper[declaredExceptions.Length];
-			for(int i = 0; i < declaredExceptions.Length; i++)
-			{
-				// TODO if the type isn't found, put in an unloadable
-				wrappers[i] = DeclaringType.GetClassLoader().LoadClassByDottedName(declaredExceptions[i]);
-			}
-			return wrappers;
+			return (string[])declaredExceptions.Clone();
 		}
 		// NOTE if originalMethod is a MethodBuilder, GetCustomAttributes doesn't work
 		if(originalMethod != null && !(originalMethod is MethodBuilder))
 		{
-			object[] exceptions = originalMethod.GetCustomAttributes(typeof(ThrowsAttribute), false);
-			TypeWrapper[] wrappers = new TypeWrapper[exceptions.Length];
+			object[] attributes = originalMethod.GetCustomAttributes(typeof(ThrowsAttribute), false);
+			string[] exceptions = new string[attributes.Length];
 			for(int i = 0; i < exceptions.Length; i++)
 			{
-				// TODO if the type isn't found, put in an unloadable
-				wrappers[i] = DeclaringType.GetClassLoader().LoadClassByDottedName(((ThrowsAttribute)exceptions[i]).ClassName);
+				exceptions[i] = ((ThrowsAttribute)attributes[i]).ClassName;
 			}
-			return wrappers;
+			return exceptions;
 		}
-		return TypeWrapper.EmptyArray;
+		return new string[0];
 	}
 
 	// IsRemappedOverride (only possible for remapped types) indicates whether the method in the
@@ -585,6 +578,7 @@ class MethodWrapper : MemberWrapper
 class ReflectionOnConstant
 {
 	private static bool isBroken;
+	private static System.Collections.Hashtable warnOnce;
 
 	static ReflectionOnConstant()
 	{
@@ -596,6 +590,29 @@ class ReflectionOnConstant
 		get
 		{
 			return isBroken;
+		}
+	}
+
+	internal static void IssueWarning(FieldInfo field)
+	{
+		// NOTE .NET (1.0 & 1.1) BUG FieldInfo.GetValue() on a literal causes the type initializer to run and
+		// we don't want that.
+		// TODO may need to find a workaround, for now we just spit out a warning
+		if(ReflectionOnConstant.IsBroken && field.DeclaringType.TypeInitializer != null)
+		{
+			// HACK lame way to support a command line switch to suppress this warning
+			if(Environment.CommandLine.IndexOf("-noTypeInitWarning") == -1)
+			{
+				if(warnOnce == null)
+				{
+					warnOnce = new System.Collections.Hashtable();
+				}
+				if(!warnOnce.ContainsKey(field.DeclaringType.FullName))
+				{
+					warnOnce.Add(field.DeclaringType.FullName, null);
+					Console.Error.WriteLine("Warning: Running type initializer for {0} due to CLR bug", field.DeclaringType.FullName);
+				}
+			}
 		}
 	}
 
@@ -618,7 +635,6 @@ class FieldWrapper : MemberWrapper
 	internal readonly CodeEmitter EmitSet;
 	private FieldInfo field;
 	private TypeWrapper fieldType;
-	private static System.Collections.Hashtable warnOnce;
 
 	private FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, CodeEmitter emitGet, CodeEmitter emitSet)
 		: base(declaringType, modifiers, false)
@@ -642,27 +658,10 @@ class FieldWrapper : MemberWrapper
 	{
 		// NOTE only pritimives and string can be literals in Java (because the other "primitives" (like uint),
 		// are treated as NonPrimitiveValueTypes)
-		TypeWrapper java_lang_String = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.String");
+		TypeWrapper java_lang_String = ClassLoaderWrapper.LoadClassCritical("java.lang.String");
 		if(field != null && (fieldType.IsPrimitive || fieldType == java_lang_String) && field.IsLiteral)
 		{
-			// NOTE .NET (1.0 & 1.1) BUG this causes the type initializer to run and we don't want that.
-			// TODO may need to find a workaround, for now we just spit out a warning (only shows up during netexp)
-			if(field.DeclaringType.TypeInitializer != null && ReflectionOnConstant.IsBroken)
-			{
-				// HACK lame way to support a command line switch to suppress this warning
-				if(Environment.CommandLine.IndexOf("-noTypeInitWarning") == -1)
-				{
-					if(warnOnce == null)
-					{
-						warnOnce = new System.Collections.Hashtable();
-					}
-					if(!warnOnce.ContainsKey(field.DeclaringType.FullName))
-					{
-						warnOnce.Add(field.DeclaringType.FullName, null);
-						Console.WriteLine("Warning: Running type initializer for {0} due to .NET bug", field.DeclaringType.FullName);
-					}
-				}
-			}
+			ReflectionOnConstant.IssueWarning(field);
 			object val = field.GetValue(null);
 			if(val != null && !(val is string))
 			{
@@ -857,9 +856,19 @@ class FieldWrapper : MemberWrapper
 		}
 		if(fieldType.IsUnloadable)
 		{
-			// TODO emit code to dynamically get/set the field
-			emitGet += CodeEmitter.NoClassDefFoundError(fieldType.Name);
-			emitSet += CodeEmitter.NoClassDefFoundError(fieldType.Name);
+			// TODO we might need to emit code to check the type dynamically
+			// TODO the fact that the type is unloadable now, doesn't mean it will be unloadable when a method
+			// that accesses this field is compiled, that means that that method (may) need to emit a cast
+			if((modifiers & Modifiers.Static) != 0)
+			{
+				emitGet += CodeEmitter.Create(OpCodes.Ldsfld, fi);
+				emitSet += CodeEmitter.Create(OpCodes.Stsfld, fi);
+			}
+			else
+			{
+				emitGet += CodeEmitter.Create(OpCodes.Ldfld, fi);
+				emitSet += CodeEmitter.Create(OpCodes.Stfld, fi);
+			}
 			return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
 		}
 		if(fieldType.IsGhost)
@@ -932,13 +941,26 @@ class FieldWrapper : MemberWrapper
 		{
 			LookupField();
 		}
+		if(field.IsLiteral)
+		{
+			// NOTE this is illegal, but it will still run type initialization
+			// on a non-broken CLR GetValue on a literal will not trigger type initialization, but on Java it should
+			System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(field.DeclaringType.TypeHandle);
+		}
 		if(fieldType.IsGhost)
 		{
 			object temp = field.GetValue(obj);
 			fieldType.GhostRefField.SetValue(temp, val);
 			val = temp;
 		}
-		field.SetValue(obj, val);
+		try
+		{
+			field.SetValue(obj, val);
+		}
+		catch(FieldAccessException x)
+		{
+			throw JavaException.IllegalAccessError(x.Message);
+		}
 	}
 
 	internal virtual object GetValue(object obj)
@@ -947,6 +969,11 @@ class FieldWrapper : MemberWrapper
 		if(field == null || field is FieldBuilder)
 		{
 			LookupField();
+		}
+		if(field.IsLiteral)
+		{
+			// on a non-broken CLR GetValue on a literal will not trigger type initialization, but on Java it should
+			System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(field.DeclaringType.TypeHandle);
 		}
 		object val = field.GetValue(obj);
 		if(fieldType.IsGhost)

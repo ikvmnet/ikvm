@@ -70,7 +70,9 @@ public class ExceptionHelper
 
 	static ExceptionHelper()
 	{
-		Type exceptionHelper = ClassLoaderWrapper.GetType("java.lang.ExceptionHelper");
+		TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.ExceptionHelper");
+		tw.Finish();
+		Type exceptionHelper = tw.Type;
 		mapExceptionFastMethod = exceptionHelper.GetMethod("MapExceptionFast");
 		printStackTraceMethod = exceptionHelper.GetMethod("printStackTrace", new Type[] { typeof(Exception) });
 	}
@@ -87,6 +89,7 @@ public class ExceptionHelper
 		}
 	}
 
+	// HACK this is used by starter.cs (ikvm.exe) to map exceptions that escape from main
 	public static Exception MapExceptionFast(Exception x)
 	{
 		try
@@ -97,12 +100,5 @@ public class ExceptionHelper
 		{
 			throw t.InnerException;
 		}
-	}
-
-	// NOTE this is used by compiler.cs to obfuscate certain exceptions for the CLR verifier
-	// (it doesn't like unreachable code)
-	public static void ThrowHack(Exception x)
-	{
-		throw x;
 	}
 }

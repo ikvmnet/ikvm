@@ -127,7 +127,9 @@ class ClassLoaderWrapper
 		this.javaClassLoader = javaClassLoader;
 		if(javaClassLoader != null && loadClassDelegate == null)
 		{
-			loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), GetType("java.lang.VMClass"), "loadClassHelper");
+			TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
+			tw.Finish();
+			loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), tw.Type, "loadClassHelper");
 		}
 	}
 
@@ -723,9 +725,9 @@ class ClassLoaderWrapper
 		// anything was done, and continue iterating until all FinishAlls return false.
 		for(int i = 0; i < 3; i++)
 		{
-			foreach(ClassLoaderWrapper wrapper in classLoaders)
+			for(int j = 0; j < classLoaders.Count; j++)
 			{
-				wrapper.FinishAll();
+				((ClassLoaderWrapper)classLoaders[j]).FinishAll();
 			}
 		}
 		// HACK use reflection to get the type from the class
@@ -733,7 +735,7 @@ class ClassLoaderWrapper
 		MethodInfo main = mainType.GetMethod("main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(string[]) }, null);
 		AssemblyBuilder asm = ((AssemblyBuilder)moduleBuilder.Assembly);
 		asm.SetEntryPoint(main, PEFileKinds.ConsoleApplication);
-		asm.Save(moduleBuilder.Name);
+		asm.Save("ikvmdump.exe");
 	}
 
 	// this version isn't used at the moment, because multi assembly type references are broken in the CLR
@@ -807,7 +809,7 @@ class ClassLoaderWrapper
 		AssemblyName name = new AssemblyName();
 		name.Name = "ikvm_dynamic_assembly__" + (this == GetBootstrapClassLoader() ? "bootstrap" : javaClassLoader);
 		AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
-		ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
+		ModuleBuilder moduleBuilder = saveDebugImage ? assemblyBuilder.DefineDynamicModule(name.Name, "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
 		if(JVM.Debug)
 		{
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, true });
@@ -1050,8 +1052,7 @@ class ClassLoaderWrapper
 					elem = elem.GetElementType();
 				}
 				wrapper = GetWrapperFromType(elem);
-				// HACK this is a lame way of creating the array wrapper
-				return wrapper.GetClassLoader().LoadClassByDottedName(new String('[', rank) + wrapper.SigName);
+				return wrapper.MakeArrayType(rank);
 			}
 			// if the wrapper doesn't already exist, that must mean that the type
 			// is a .NET type (or a pre-compiled Java class), which means that it
@@ -1070,12 +1071,16 @@ class ClassLoaderWrapper
 		typeToTypeWrapper.Add(type, wrapper);
 	}
 
-	// name is dot separated (e.g. java.lang.Object)
-	internal static Type GetType(string name)
+	internal static TypeWrapper LoadClassCritical(string name)
 	{
-		TypeWrapper wrapper = GetBootstrapClassLoader().LoadClassByDottedName(name);
-		// TODO think about this Finish here
-		wrapper.Finish();
-		return wrapper.Type;
+		try
+		{
+			return GetBootstrapClassLoader().LoadClassByDottedName(name);
+		}
+		catch(Exception x)
+		{
+			JVM.CriticalFailure("Loading of critical class failed", x);
+			return null;
+		}
 	}
 }

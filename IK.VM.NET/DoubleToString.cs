@@ -5,7 +5,7 @@
 using System;
 using System.Text;
 
-public class DoubleToString
+internal class DoubleToString
 {
 	//Hardcode some arrays to make them quickly available
 	private static readonly string[] ZEROS = new string[] {

@@ -409,8 +409,7 @@ class InstructionState
 					return baseType;
 				}
 			}
-			// HACK load the array type
-			return baseType.GetClassLoader().LoadClassByDottedName(new String('[', rank) + "L" + baseType.Name + ";");
+			return baseType.MakeArrayType(rank);
 		}
 		return FindCommonBaseTypeHelper(type1, type2);
 	}
@@ -1026,17 +1025,17 @@ class MethodAnalyzer
 		{
 			if(java_lang_Throwable == null)
 			{
-				java_lang_Object = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object");
-				java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Throwable");
-				java_lang_String = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.String");
-				ByteArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[B");
-				BooleanArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[Z");
-				ShortArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[S");
-				CharArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[C");
-				IntArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[I");
-				FloatArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[F");
-				DoubleArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[D");
-				LongArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[J");
+				java_lang_Object = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
+				java_lang_Throwable = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable");
+				java_lang_String = ClassLoaderWrapper.LoadClassCritical("java.lang.String");
+				ByteArrayType = PrimitiveTypeWrapper.BYTE.MakeArrayType(1);
+				BooleanArrayType = PrimitiveTypeWrapper.BOOLEAN.MakeArrayType(1);
+				ShortArrayType = PrimitiveTypeWrapper.SHORT.MakeArrayType(1);
+				CharArrayType = PrimitiveTypeWrapper.CHAR.MakeArrayType(1);
+				IntArrayType = PrimitiveTypeWrapper.INT.MakeArrayType(1);
+				FloatArrayType = PrimitiveTypeWrapper.FLOAT.MakeArrayType(1);
+				DoubleArrayType = PrimitiveTypeWrapper.DOUBLE.MakeArrayType(1);
+				LongArrayType = PrimitiveTypeWrapper.LONG.MakeArrayType(1);
 			}
 		}
 		state = new InstructionState[method.Instructions.Length];
@@ -1557,18 +1556,18 @@ class MethodAnalyzer
 							{
 								s.PopInt();
 								TypeWrapper type = GetConstantPoolClassType(instr.Arg1);
-								string name = type.Name;
-								if(name[0] != '[')
-								{
-									name = "L" + name + ";";
-								}
 								if(type.IsUnloadable)
 								{
+									string name = type.Name;
+									if(name[0] != '[')
+									{
+										name = "L" + name + ";";
+									}
 									s.PushType(new UnloadableTypeWrapper(name));
 								}
 								else
 								{
-									s.PushType(type.GetClassLoader().LoadClassByDottedName("[" + name));
+									s.PushType(type.MakeArrayType(1));
 								}
 								break;
 							}

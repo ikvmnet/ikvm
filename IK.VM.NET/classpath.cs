@@ -73,14 +73,14 @@ namespace NativeCode.java
 
 			internal class JavaWrapper
 			{
-				private static Type java_lang_Byte = ClassLoaderWrapper.GetType("java.lang.Byte");
-				private static Type java_lang_Boolean = ClassLoaderWrapper.GetType("java.lang.Boolean");
-				private static Type java_lang_Short = ClassLoaderWrapper.GetType("java.lang.Short");
-				private static Type java_lang_Character = ClassLoaderWrapper.GetType("java.lang.Character");
-				private static Type java_lang_Integer = ClassLoaderWrapper.GetType("java.lang.Integer");
-				private static Type java_lang_Long = ClassLoaderWrapper.GetType("java.lang.Long");
-				private static Type java_lang_Float = ClassLoaderWrapper.GetType("java.lang.Float");
-				private static Type java_lang_Double = ClassLoaderWrapper.GetType("java.lang.Double");
+				private static Type java_lang_Byte = ClassLoaderWrapper.LoadClassCritical("java.lang.Byte").Type;
+				private static Type java_lang_Boolean = ClassLoaderWrapper.LoadClassCritical("java.lang.Boolean").Type;
+				private static Type java_lang_Short = ClassLoaderWrapper.LoadClassCritical("java.lang.Short").Type;
+				private static Type java_lang_Character = ClassLoaderWrapper.LoadClassCritical("java.lang.Character").Type;
+				private static Type java_lang_Integer = ClassLoaderWrapper.LoadClassCritical("java.lang.Integer").Type;
+				private static Type java_lang_Long = ClassLoaderWrapper.LoadClassCritical("java.lang.Long").Type;
+				private static Type java_lang_Float = ClassLoaderWrapper.LoadClassCritical("java.lang.Float").Type;
+				private static Type java_lang_Double = ClassLoaderWrapper.LoadClassCritical("java.lang.Double").Type;
 
 				internal static object Box(object o)
 				{
@@ -244,18 +244,11 @@ namespace NativeCode.java
 					return parameterClasses;
 				}
 
-				public static object[] GetExceptionTypes(object methodCookie)
+				public static string[] GetExceptionTypes(object methodCookie)
 				{
 					MethodWrapper wrapper = (MethodWrapper)methodCookie;
 					wrapper.DeclaringType.Finish();
-					TypeWrapper[] exceptions = wrapper.GetExceptions();
-					object[] exceptionClasses = new object[exceptions.Length];
-					for(int i = 0; i < exceptions.Length; i++)
-					{
-						// TODO check for unloadable types
-						exceptionClasses[i] = VMClass.getClassFromWrapper(exceptions[i]);
-					}
-					return exceptionClasses;
+					return wrapper.GetExceptions();
 				}
 
 				[StackTraceInfo(Hidden = true)]
@@ -547,7 +540,7 @@ namespace NativeCode.java
 						ar.Add(VMClass.getClassFromType(frame.GetMethod().DeclaringType));
 					}
 				}
-				return ar.ToArray(ClassLoaderWrapper.GetType("java.lang.Class"));
+				return ar.ToArray(ClassLoaderWrapper.LoadClassCritical("java.lang.Class").Type);
 			}
 
 			public static object currentClassLoader()
@@ -746,17 +739,26 @@ namespace NativeCode.java
 
 			public static void setErr(object printStream)
 			{
-				ClassLoaderWrapper.GetType("java.lang.System").GetField("err", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
+				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
+				tw.Finish();
+				// NOTE we cannot use Java reflection, because the field is final
+				tw.Type.GetField("err", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
 			}
 
 			public static void setIn(object inputStream)
 			{
-				ClassLoaderWrapper.GetType("java.lang.System").GetField("in", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, inputStream);
+				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
+				tw.Finish();
+				// NOTE we cannot use Java reflection, because the field is final
+				tw.Type.GetField("in", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, inputStream);
 			}
 
 			public static void setOut(object printStream)
 			{
-				ClassLoaderWrapper.GetType("java.lang.System").GetField("out", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
+				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
+				tw.Finish();
+				// NOTE we cannot use Java reflection, because the field is final
+				tw.Type.GetField("out", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
 			}
 
 			public static int identityHashCode(object o)
@@ -875,7 +877,9 @@ namespace NativeCode.java
 			{
 				if(CreateClass == null)
 				{
-					CreateClass = (CreateClassDelegate)Delegate.CreateDelegate(typeof(CreateClassDelegate), ClassLoaderWrapper.GetType("java.lang.VMClass").GetMethod("createClass", BindingFlags.Static | BindingFlags.Public));
+					TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
+					tw.Finish();
+					CreateClass = (CreateClassDelegate)Delegate.CreateDelegate(typeof(CreateClassDelegate), tw.Type.GetMethod("createClass", BindingFlags.Static | BindingFlags.Public));
 					// HACK to make sure we don't run into any problems creating class objects for classes that
 					// participate in the VMClass static initialization, we first do a bogus call to initialize
 					// the machinery (I ran into this when running netexp on classpath.dll)
@@ -955,7 +959,9 @@ namespace NativeCode.java
 			{
 				if(getWrapper == null)
 				{
-					getWrapper = ClassLoaderWrapper.GetType("java.lang.VMClass").GetMethod("getWrapperFromClass", BindingFlags.NonPublic | BindingFlags.Static);
+					TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
+					tw.Finish();
+					getWrapper = tw.Type.GetMethod("getWrapperFromClass", BindingFlags.NonPublic | BindingFlags.Static);
 				}
 				TypeWrapper wrapper = (TypeWrapper)getWrapper.Invoke(null, new object[] { clazz });
 				wrapper.Finish();

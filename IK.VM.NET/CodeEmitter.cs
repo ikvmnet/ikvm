@@ -32,8 +32,21 @@ public abstract class CodeEmitter
 	public static readonly CodeEmitter Nop = new OpCodeEmitter(OpCodes.Nop);
 	public static readonly CodeEmitter Pop = new OpCodeEmitter(OpCodes.Pop);
 	public static readonly CodeEmitter Volatile = new OpCodeEmitter(OpCodes.Volatile);
+	public static readonly CodeEmitter InternalError = new InternalErrorEmitter();
 
 	internal abstract void Emit(ILGenerator ilgen);
+
+	private class InternalErrorEmitter : CodeEmitter
+	{
+		internal InternalErrorEmitter()
+		{
+		}
+
+		internal override void Emit(ILGenerator ilgen)
+		{
+			throw new InvalidOperationException();
+		}
+	}
 
 	private class ChainCodeEmitter : CodeEmitter
 	{
@@ -143,6 +156,19 @@ public abstract class CodeEmitter
 		Debug.Assert(fi != null);
 		Debug.Assert(!fi.IsLiteral);
 		return new FieldInfoCodeEmitter(opcode, fi);
+	}
+
+	internal static CodeEmitter CreateLoadConstantField(FieldInfo field)
+	{
+		// NOTE the ReflectionOnConstant bug is also a problem when we're not
+		// statically compiling, but the warnings are too intrusive
+		// TODO if we ever get a pedantic mode, we should enable this warning at
+		// runtime as well
+		if(JVM.IsStaticCompiler)
+		{
+			ReflectionOnConstant.IssueWarning(field);
+		}
+		return CreateLoadConstant(field.GetValue(null));
 	}
 
 	internal static CodeEmitter CreateLoadConstant(object constant)
@@ -395,58 +421,19 @@ public abstract class CodeEmitter
 	{
 		return new LongCodeEmitter(opcode, l);
 	}
-
-	private class ThrowEmitter : CodeEmitter
-	{
-		private string className;
-		private string msg;
-
-		internal ThrowEmitter(string className, string msg)
-		{
-			this.className = className;
-			this.msg = msg;
-		}
-
-		internal override void Emit(ILGenerator ilGenerator)
-		{
-			EmitHelper.Throw(ilGenerator, className, msg);
-		}
-	}
-
-	// HACK instead of emitting a NoClassDefFoundError, we should be emitting code
-	// that tries to load the class and do whatever needs to be done dynamically.
-	internal static CodeEmitter NoClassDefFoundError(string msg)
-	{
-		return new ThrowEmitter("java.lang.NoClassDefFoundError", msg);
-	}
-
-	internal static CodeEmitter Throw(string className, string msg)
-	{
-		return new ThrowEmitter(className, msg);
-	}
 }
 
 class ReturnCastEmitter : CodeEmitter
 {
 	private TypeWrapper type;
-	private string className;
 
 	internal ReturnCastEmitter(TypeWrapper type)
 	{
 		this.type = type;
 	}
 
-	internal ReturnCastEmitter(string className)
-	{
-		this.className = className;
-	}
-
 	internal override void Emit(ILGenerator ilgen)
 	{
-		if(type == null)
-		{
-			type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(className);
-		}
 		if(type.IsGhost)
 		{
 			LocalBuilder local1 = ilgen.DeclareLocal(type.TypeAsLocalOrStackType);

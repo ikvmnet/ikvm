@@ -51,7 +51,7 @@ public class ObjectHelper
 			return clone.Invoke(o, new object[0]);
 		}
 		TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(o.GetType());
-		TypeWrapper cloneable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Cloneable");
+		TypeWrapper cloneable = ClassLoaderWrapper.LoadClassCritical("java.lang.Cloneable");
 		if(!tw.ImplementsInterface(cloneable))
 		{
 			throw JavaException.CloneNotSupportedException();

@@ -144,7 +144,16 @@ public class Starter
 
 		public override void run()
 		{
-			JVM.SaveDebugImage(clazz);
+			Console.Error.WriteLine("Saving dynamic assembly...");
+			try
+			{
+				JVM.SaveDebugImage(clazz);
+			}
+			catch(Exception x)
+			{
+				Console.Error.WriteLine(x);
+				System.Diagnostics.Debug.Assert(false, x.ToString());
+			}
 		}
 	}
 
@@ -293,13 +302,11 @@ public class Starter
 					JVM.SetBootstrapClassLoader(new PathClassLoader(sb.ToString(), null));
 				}
 			}
-			java.lang.Class clazz = loader.loadClass(mainClass);
+			java.lang.Class clazz = java.lang.Class.forName(mainClass, true, loader);
 			if(saveAssembly)
 			{
 				java.lang.Runtime.getRuntime().addShutdownHook(new SaveAssemblyShutdownHook(clazz));
 			}
-			// NOTE Sun's JRE runs the static initializer even if the main method doesn't exist, so we do the same.
-			System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(NativeCode.java.lang.VMClass.getType(clazz).TypeHandle);
 			Method method = FindMainMethod(clazz);
 			if(method == null)
 			{

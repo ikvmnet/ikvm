@@ -146,22 +146,10 @@ public class ByteCodeHelper
 	private static TypeWrapper LoadTypeWrapper(RuntimeTypeHandle type, string clazz)
 	{
 		ClassLoaderWrapper classLoader = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type)).GetClassLoader();
-		TypeWrapper wrapper;
-		try
+		TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(clazz);
+		if(wrapper == null)
 		{
-			wrapper = classLoader.LoadClassByDottedNameFast(clazz);
-			if(wrapper == null)
-			{
-				throw JavaException.NoClassDefFoundError(clazz);
-			}
-		}
-		catch(Exception x)
-		{
-			if(x.GetType() == ClassLoaderWrapper.GetType("java.lang.ClassNotFoundException"))
-			{
-				throw JavaException.NoClassDefFoundError(clazz);
-			}
-			throw;
+			throw JavaException.NoClassDefFoundError(clazz);
 		}
 		// TODO is this really needed?
 		wrapper.Finish();

@@ -645,7 +645,16 @@ class ClassFile
 	{
 		try
 		{
-			return classLoader.LoadClassByDottedName(name);
+			TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(name);
+			if(wrapper == null)
+			{
+				if(JVM.LogClassLoadFailures)
+				{
+					Console.Error.WriteLine("Class not found: {0}", name);
+				}
+				wrapper = new UnloadableTypeWrapper(name);
+			}
+			return wrapper;
 		}
 		catch(Exception x)
 		{
@@ -668,7 +677,7 @@ class ClassFile
 						sep = " -> ";
 						cl = type.InvokeMember("getParent", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.Instance, null, cl, new object[0]);
 					}
-					Console.Error.WriteLine("ClassLoader chain: " + sb);
+					Console.Error.WriteLine("ClassLoader chain: {0}", sb);
 				}
 				ExceptionHelper.printStackTrace(ExceptionHelper.MapExceptionFast(x));
 			}

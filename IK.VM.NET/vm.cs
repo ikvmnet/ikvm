@@ -196,7 +196,7 @@ public class JVM
 						}
 						if(DotNetTypeWrapper.LoadDotNetTypeWrapper(name) == null)
 						{
-							throw new TypeLoadException(name);
+							return null;
 						}
 					}
 					type = DefineClass(f);
@@ -368,12 +368,12 @@ public class JVM
 			TypeWrapper wrapper = null;
 			try
 			{
-				wrapper = loader.LoadClassByDottedName(s);
-			}
-			catch(TypeLoadException x)
-			{
-				// this should only happen for netexp types (we throw the exception ourselves in GetTypeWrapperCompilerHook)
-				Console.Error.WriteLine("Class not found: {0}", x.Message);
+				wrapper = loader.LoadClassByDottedNameFast(s);
+				if(wrapper == null)
+				{
+					// this should only happen for netexp types (because the other classes must exist, after all we just parsed them)
+					Console.Error.WriteLine("Class not found: {0}", s);
+				}
 			}
 			catch(Exception x)
 			{
@@ -424,5 +424,34 @@ public class JVM
 	public static void SetBootstrapClassLoader(object classLoader)
 	{
 		ClassLoaderWrapper.GetBootstrapClassLoader().SetJavaClassLoader(classLoader);
+	}
+
+	internal static void CriticalFailure(string message, Exception x)
+	{
+		// NOTE we use reflection to invoke MessageBox.Show, to make sure we run on Mono as well
+		Assembly winForms = Assembly.LoadWithPartialName("System.Windows.Forms");
+		Type messageBox = null;
+		if(winForms != null)
+		{
+			messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
+		}
+		message = String.Format("****** Critical Failure: {1} ******{0}" +
+				"{2}{0}" + 
+				"{3}{0}" +
+				"{4}",
+			Environment.NewLine,
+			message,
+			x,
+			new StackTrace(x, true),
+			new StackTrace(true));
+		if(messageBox != null)
+		{
+			messageBox.InvokeMember("Show", BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.Public, null, null, new object[] { message, "IKVM.NET Critical Failure" });
+		}
+		else
+		{
+			Console.Error.WriteLine(message);
+		}
+		Environment.Exit(1);
 	}
 }

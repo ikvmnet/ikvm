@@ -100,7 +100,7 @@ sealed class MethodDescriptor
 				Type[] temp = new Type[wrappers.Length];
 				for(int i = 0; i < wrappers.Length; i++)
 				{
-					temp[i] = wrappers[i].Type;
+					temp[i] = wrappers[i].TypeAsParameterType;
 				}
 				args = temp;
 			}
@@ -135,7 +135,7 @@ sealed class MethodDescriptor
 	{
 		get
 		{
-			return RetTypeWrapper.Type;
+			return RetTypeWrapper.TypeAsParameterType;
 		}
 	}
 
@@ -239,7 +239,7 @@ sealed class MethodDescriptor
 		else
 		{
 			name = "Ljava.lang.Object;";
-			typeWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object");
+			typeWrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
 		}
 	}
 
@@ -533,7 +533,7 @@ class AttributeHelper
 		}
 	}
 
-	internal static Modifiers GetModifiers(MethodBase mb)
+	internal static Modifiers GetModifiers(MethodBase mb, bool assemblyIsPrivate)
 	{
 		object[] customAttribute = mb.GetCustomAttributes(typeof(ModifiersAttribute), false);
 		if(customAttribute.Length == 1)
@@ -545,13 +545,17 @@ class AttributeHelper
 		{
 			modifiers |= Modifiers.Public;
 		}
-		if(mb.IsPrivate)
+		else if(mb.IsPrivate)
 		{
 			modifiers |= Modifiers.Private;
 		}
-		if(mb.IsFamily || mb.IsFamilyOrAssembly)
+		else if(mb.IsFamily || mb.IsFamilyOrAssembly)
 		{
 			modifiers |= Modifiers.Protected;
+		}
+		else if(assemblyIsPrivate)
+		{
+			modifiers |= Modifiers.Private;
 		}
 		// NOTE Java doesn't support non-virtual methods, but we set the Final modifier for
 		// non-virtual methods to approximate the semantics
@@ -584,7 +588,7 @@ class AttributeHelper
 		return modifiers;
 	}
 
-	internal static Modifiers GetModifiers(FieldInfo fi)
+	internal static Modifiers GetModifiers(FieldInfo fi, bool assemblyIsPrivate)
 	{
 		object[] customAttribute = fi.GetCustomAttributes(typeof(ModifiersAttribute), false);
 		if(customAttribute.Length == 1)
@@ -596,13 +600,17 @@ class AttributeHelper
 		{
 			modifiers |= Modifiers.Public;
 		}
-		if(fi.IsPrivate)
+		else if(fi.IsPrivate)
 		{
 			modifiers |= Modifiers.Private;
 		}
-		if(fi.IsFamily || fi.IsFamilyOrAssembly)
+		else if(fi.IsFamily || fi.IsFamilyOrAssembly)
 		{
 			modifiers |= Modifiers.Protected;
+		}
+		else if(assemblyIsPrivate)
+		{
+			modifiers |= Modifiers.Private;
 		}
 		if(fi.IsInitOnly || fi.IsLiteral)
 		{
@@ -1006,7 +1014,7 @@ abstract class TypeWrapper
 		return IsPublic || IsInSamePackageAs(wrapper);
 	}
 
-	public bool IsInSamePackageAs(TypeWrapper wrapper)
+	internal bool IsInSamePackageAs(TypeWrapper wrapper)
 	{
 		if(GetClassLoader() == wrapper.GetClassLoader())
 		{
@@ -1016,11 +1024,32 @@ abstract class TypeWrapper
 			{
 				return true;
 			}
-			if(index1 != index2)
+			// for array types we need to skip the brackets
+			int skip1 = 0;
+			int skip2 = 0;
+			while(name[skip1] == '[')
+			{
+				skip1++;
+			}
+			while(wrapper.name[skip2] == '[')
+			{
+				skip2++;
+			}
+			if(skip1 > 0)
+			{
+				// skip over the L that follows the brackets
+				skip1++;
+			}
+			if(skip2 > 0)
+			{
+				// skip over the L that follows the brackets
+				skip2++;
+			}
+			if((index1 - skip1) != (index2 - skip2))
 			{
 				return false;
 			}
-			return String.CompareOrdinal(name, 0, wrapper.name, 0, index1) == 0;
+			return String.CompareOrdinal(name, skip1, wrapper.name, skip2, index1) == 0;
 		}
 		return false;
 	}
@@ -1151,6 +1180,8 @@ abstract class TypeWrapper
 	{
 		get
 		{
+			Debug.Assert(!this.IsUnloadable);
+
 			if(this == VerifierTypeWrapper.Null)
 			{
 				return VerifierTypeWrapper.Null;
@@ -1187,6 +1218,11 @@ abstract class TypeWrapper
 					throw new InvalidOperationException(name);
 			}
 		}
+	}
+
+	internal TypeWrapper MakeArrayType(int rank)
+	{
+		return GetClassLoader().LoadClassByDottedName(new String('[', rank) + this.SigName);
 	}
 
 	public bool ImplementsInterface(TypeWrapper interfaceWrapper)
@@ -1230,7 +1266,7 @@ abstract class TypeWrapper
 		if(java_lang_Object == null)
 		{
 			// TODO cache java.lang.Object somewhere else
-			java_lang_Object = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object");
+			java_lang_Object = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
 		}
 		// NOTE this isn't just an optimization, it is also required when this is an interface
 		if(baseType == java_lang_Object)
@@ -2052,8 +2088,8 @@ class DynamicTypeWrapper : TypeWrapper
 			// (this should only happen during compilation of classpath.dll and is most likely caused by a bug somewhere)
 			if(JVM.IsStaticCompilerPhase1)
 			{
-				Console.Error.WriteLine("Internal Error: Finish triggered during phase 1 of compilation.");
-				Environment.Exit(1);
+				JVM.CriticalFailure("Finish triggered during phase 1 of compilation.", null);
+				return null;
 			}
 			if(wrapper.BaseTypeWrapper != null)
 			{
@@ -2431,6 +2467,7 @@ class DynamicTypeWrapper : TypeWrapper
 								else
 								{
 									JniBuilder.Generate(ilGenerator, wrapper, typeBuilder, m, args);
+									//JniProxyBuilder.Generate(ilGenerator, wrapper, typeBuilder, m, args);
 								}
 							}
 						}
@@ -2529,40 +2566,56 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 			catch(Exception x)
 			{
-				if(JVM.IsStaticCompiler)
-				{
-					throw new InvalidOperationException("Internal error during finishing of " + wrapper.Name, x);
-				}
-				// NOTE we use reflection to invoke MessageBox.Show, to make sure we run on Mono as well
-				Assembly winForms = Assembly.LoadWithPartialName("System.Windows.Forms");
-				Type messageBox = null;
-				if(winForms != null)
-				{
-					messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
-				}
-				if(messageBox != null)
-				{
-					string message = String.Format("****** Exception during finishing of {0} ******", wrapper.Name);
-					message += "\r\n" + x;
-					message += "\r\n" + new StackTrace(x);
-					message += "\r\n" + new StackTrace(true);
-					messageBox.InvokeMember("Show", BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.Public, null, null, new object[] { message, "IKVM.NET Internal Error" });
-					//System.Windows.Forms.MessageBox.Show(message, "IKVM.NET Internal Error");
-				}
-				else
-				{
-					Console.WriteLine("****** Exception during finishing of {0} ******", wrapper.Name);
-					Console.WriteLine(x);
-					Console.WriteLine(new StackTrace(x));
-					Console.WriteLine(new StackTrace(true));
-				}
-				// we bail out, because there is not much chance that we can continue to run after this
-				Environment.Exit(1);
+				JVM.CriticalFailure("Exception during finishing of: " + wrapper.Name, x);
 				return null;
 			}
 			finally
 			{
 				Profiler.Leave("JavaTypeImpl.Finish.Core");
+			}
+		}
+
+		internal class JniProxyBuilder
+		{
+			private static ModuleBuilder mod;
+			private static int count;
+
+			private static string Cleanup(string n)
+			{
+				n = n.Replace('\\', '_');
+				n = n.Replace('[', '_');
+				n = n.Replace(']', '_');
+				n = n.Replace('+', '_');
+				n = n.Replace(',', '_');
+				return n;
+			}
+
+			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, TypeBuilder typeBuilder, ClassFile.Method m, TypeWrapper[] args)
+			{
+				if(mod == null)
+				{
+					mod = ((AssemblyBuilder)ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder.Assembly).DefineDynamicModule("jniproxy", "jniproxy.dll");
+				}
+				TypeBuilder tb = mod.DefineType("class" + (count++), TypeAttributes.Public | TypeAttributes.Class);
+				int instance = m.IsStatic ? 0 : 1;
+				Type[] argTypes = new Type[args.Length + instance];
+				if(instance != 0)
+				{
+					argTypes[0] = wrapper.TypeAsParameterType;
+				}
+				for(int i = instance; i < argTypes.Length + instance; i++)
+				{
+					argTypes[i] = args[i].TypeAsParameterType;
+				}
+				MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, m.GetRetType(wrapper.GetClassLoader()).TypeAsParameterType, argTypes);
+				JniBuilder.Generate(mb.GetILGenerator(), wrapper, tb, m, args);
+				for(int i = 0; i < argTypes.Length; i++)
+				{
+					ilGenerator.Emit(OpCodes.Ldarg, (ushort)i);
+				}
+				ilGenerator.Emit(OpCodes.Call, mb);
+				ilGenerator.Emit(OpCodes.Ret);
+				tb.CreateType();
 			}
 		}
 
@@ -2867,7 +2920,7 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					AttributeHelper.SetUnloadableType(field, typeWrapper.Name);
 				}
-				if(typeWrapper.IsGhostArray)
+				else if(typeWrapper.IsGhostArray)
 				{
 					// TODO we need to annotate the field so that we know the real type of the field (for reflection)
 				}
@@ -3523,7 +3576,7 @@ class RemappedTypeWrapper : TypeWrapper
 							{
 								ret = ret.Substring(1, ret.Length - 2);
 							}
-							retcast = new ReturnCastEmitter(ret);
+							retcast = new ReturnCastEmitter(ClassLoaderWrapper.LoadClassCritical(ret));
 						}
 						if(BaseTypeWrapper != null && !Type.IsSealed)
 						{
@@ -3728,7 +3781,7 @@ class RemappedTypeWrapper : TypeWrapper
 							{
 								ret = ret.Substring(1, ret.Length - 2);
 							}
-							retcast = new ReturnCastEmitter(ret);
+							retcast = new ReturnCastEmitter(ClassLoaderWrapper.LoadClassCritical(ret));
 						}
 						CodeEmitter ignore = null;
 						MethodWrapper.CreateEmitters(null, redirect, ref ignore, ref ignore, ref newopc);
@@ -3808,27 +3861,35 @@ class RemappedTypeWrapper : TypeWrapper
 					{
 						binding |= BindingFlags.Instance;
 					}
-					Type t = this.type;
 					if(field.redirect.Class != null)
 					{
-						t = ClassLoaderWrapper.GetType(field.redirect.Class);
+						TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(field.redirect.Class);
+						MethodWrapper method = tw.GetMethodWrapper(redir, false);
+						if(method == null)
+						{
+							throw new InvalidOperationException("remapping method: " + name + sig + " not found");
+						}
+						getter = method.EmitCall;
 					}
-					MethodInfo method = t.GetMethod(name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
-					if(method == null)
+					else
 					{
-						throw new InvalidOperationException("remapping method: " + name + sig + " not found");
+						MethodInfo method = type.GetMethod(name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+						if(method == null)
+						{
+							throw new InvalidOperationException("remapping method: " + name + sig + " not found");
+						}
+						getter = CodeEmitter.Create(OpCodes.Call, method);
 					}
-					getter = CodeEmitter.Create(OpCodes.Call, method);
 					// ensure that return type for redirected method matches with field type, or emit a castclass
 					if(!field.redirect.Sig.EndsWith(fieldSig))
 					{
 						if(fieldSig[0] == 'L')
 						{
-							getter += new ReturnCastEmitter(fieldSig.Substring(1, fieldSig.Length - 2));
+							getter += new ReturnCastEmitter(ClassLoaderWrapper.LoadClassCritical(fieldSig.Substring(1, fieldSig.Length - 2)));
 						}
 						else if(fieldSig[0] == '[')
 						{
-							getter += new ReturnCastEmitter(fieldSig);
+							getter += new ReturnCastEmitter(ClassLoaderWrapper.LoadClassCritical(fieldSig));
 						}
 						else
 						{
@@ -3836,7 +3897,7 @@ class RemappedTypeWrapper : TypeWrapper
 						}
 					}
 				}
-				CodeEmitter setter = CodeEmitter.Throw("java.lang.IllegalAccessError", "Redirected field " + this.Name + "." + fieldName + " is read-only");
+				CodeEmitter setter = CodeEmitter.InternalError;
 				// HACK we abuse RetTypeWrapperFromSig
 				FieldWrapper fw = FieldWrapper.Create(this, GetClassLoader().RetTypeWrapperFromSig("()" + fieldSig), fieldName, fieldSig, modifiers, null, getter, setter, constant);
 				AddField(fw);
@@ -4176,7 +4237,7 @@ class CompiledTypeWrapper : TypeWrapper
 		else if(type.BaseType == null)
 		{
 			// System.Object must appear to be derived from java.lang.Object
-			return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object");
+			return ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
 		}
 		else
 		{
@@ -4363,7 +4424,7 @@ class CompiledTypeWrapper : TypeWrapper
 				{
 					fieldName = fieldName.Substring(0, idx);
 				}
-				list.Add(CreateFieldWrapper(AttributeHelper.GetModifiers(fields[i]), fieldName, fields[i].FieldType, fields[i], null));
+				list.Add(CreateFieldWrapper(AttributeHelper.GetModifiers(fields[i], false), fieldName, fields[i].FieldType, fields[i], null));
 			}
 		}
 		return (FieldWrapper[])list.ToArray(typeof(FieldWrapper));
@@ -4373,7 +4434,13 @@ class CompiledTypeWrapper : TypeWrapper
 	{
 		CodeEmitter emitGet;
 		CodeEmitter emitSet;
-		if((modifiers & Modifiers.Static) != 0)
+		if((modifiers & Modifiers.Private) != 0)
+		{
+			// there is no way to emit code to access a private member, so we don't need to generate these
+			emitGet = CodeEmitter.InternalError;
+			emitSet = CodeEmitter.InternalError;
+		}
+		else if((modifiers & Modifiers.Static) != 0)
 		{
 			if(getter != null)
 			{
@@ -4384,7 +4451,7 @@ class CompiledTypeWrapper : TypeWrapper
 				// if field is a literal, we emit an ldc instead of a ldsfld
 				if(field.IsLiteral)
 				{
-					emitGet = CodeEmitter.CreateLoadConstant(field.GetValue(null));
+					emitGet = CodeEmitter.CreateLoadConstantField(field);
 				}
 				else
 				{
@@ -4458,7 +4525,7 @@ class CompiledTypeWrapper : TypeWrapper
 			{
 				throw new InvalidOperationException();
 			}
-			Modifiers modifiers = AttributeHelper.GetModifiers(field);
+			Modifiers modifiers = AttributeHelper.GetModifiers(field, false);
 			MethodInfo getter = prop.GetGetMethod(true);
 			MethodInfo setter = prop.GetSetMethod(true);
 			if(getter == null || setter != null)
@@ -4470,7 +4537,7 @@ class CompiledTypeWrapper : TypeWrapper
 		else
 		{
 			FieldInfo fi = (FieldInfo)members[0];
-			return CreateFieldWrapper(AttributeHelper.GetModifiers(fi), fi.Name, fi.FieldType, fi, null);
+			return CreateFieldWrapper(AttributeHelper.GetModifiers(fi, false), fi.Name, fi.FieldType, fi, null);
 		}
 	}
 	
@@ -4505,7 +4572,7 @@ class CompiledTypeWrapper : TypeWrapper
 		{
 			return null;
 		}
-		MethodWrapper method = new MethodWrapper(this, md, mb, null, AttributeHelper.GetModifiers(mb), false);
+		MethodWrapper method = new MethodWrapper(this, md, mb, null, AttributeHelper.GetModifiers(mb, false), false);
 		if(IsGhost)
 		{
 			method.EmitCallvirt = new MethodWrapper.GhostCallEmitter(this, md, mb);
@@ -4814,7 +4881,7 @@ class DotNetTypeWrapper : TypeWrapper
 				if(fields[i].FieldType == type)
 				{
 					// TODO handle name/signature clash
-					AddField(FieldWrapper.Create(this, fieldType, fields[i].Name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], CodeEmitter.CreateLoadConstant(fields[i].GetValue(null)), CodeEmitter.Pop));
+					AddField(FieldWrapper.Create(this, fieldType, fields[i].Name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], CodeEmitter.CreateLoadConstantField(fields[i]), CodeEmitter.Pop));
 				}
 			}
 			// NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
@@ -4842,7 +4909,7 @@ class DotNetTypeWrapper : TypeWrapper
 				else
 				{
 					// TODO handle name/signature clash
-					AddField(CreateFieldWrapper(AttributeHelper.GetModifiers(fields[i]), fields[i].Name, fields[i].FieldType, fields[i], null));
+					AddField(CreateFieldWrapper(AttributeHelper.GetModifiers(fields[i], true), fields[i].Name, fields[i].FieldType, fields[i], null));
 				}
 			}
 
@@ -5064,7 +5131,13 @@ class DotNetTypeWrapper : TypeWrapper
 	{
 		CodeEmitter emitGet;
 		CodeEmitter emitSet;
-		if((modifiers & Modifiers.Static) != 0)
+		if((modifiers & Modifiers.Private) != 0)
+		{
+			// there is no way to emit code to access a private member, so we don't need to generate these
+			emitGet = CodeEmitter.InternalError;
+			emitSet = CodeEmitter.InternalError;
+		}
+		else if((modifiers & Modifiers.Static) != 0)
 		{
 			if(getter != null)
 			{
@@ -5075,7 +5148,7 @@ class DotNetTypeWrapper : TypeWrapper
 				// if field is a literal, we must emit an ldc instead of a ldsfld
 				if(field.IsLiteral)
 				{
-					emitGet = CodeEmitter.CreateLoadConstant(field.GetValue(null));
+					emitGet = CodeEmitter.CreateLoadConstantField(field);
 				}
 				else
 				{
@@ -5139,7 +5212,7 @@ class DotNetTypeWrapper : TypeWrapper
 				hasByRefArgs = true;
 			}
 		}
-		Modifiers mods = AttributeHelper.GetModifiers(mb);
+		Modifiers mods = AttributeHelper.GetModifiers(mb, true);
 		if(isRemapped)
 		{
 			// all methods are static and final doesn't make sense
@@ -5312,7 +5385,7 @@ class ArrayTypeWrapper : TypeWrapper
 	private Type type;
 
 	internal ArrayTypeWrapper(Type type, Modifiers modifiers, string name, ClassLoaderWrapper classLoader)
-		: base(modifiers, name, ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object"), classLoader)
+		: base(modifiers, name, ClassLoaderWrapper.LoadClassCritical("java.lang.Object"), classLoader)
 	{
 		this.type = type;
 		if(mdClone == null)
@@ -5349,8 +5422,8 @@ class ArrayTypeWrapper : TypeWrapper
 			if(interfaces == null)
 			{
 				TypeWrapper[] tw = new TypeWrapper[2];
-				tw[0] = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Cloneable");
-				tw[1] = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.io.Serializable");
+				tw[0] = ClassLoaderWrapper.LoadClassCritical("java.lang.Cloneable");
+				tw[1] = ClassLoaderWrapper.LoadClassCritical("java.io.Serializable");
 				interfaces = tw;
 			}
 			return interfaces;

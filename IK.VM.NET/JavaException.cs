@@ -28,80 +28,45 @@ sealed class JavaException
 {
 	private JavaException() {}
 
+	private static Type Load(string clazz)
+	{
+		TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(clazz);
+		tw.Finish();
+		return tw.Type;
+	}
+
 	internal static Exception ClassFormatError(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.ClassFormatError").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.ClassFormatError"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception UnsupportedClassVersionError(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.UnsupportedClassVersionError").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.UnsupportedClassVersionError"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception IllegalAccessError(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.IllegalAccessError").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalAccessError"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception VerifyError(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.VerifyError").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.VerifyError"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception IncompatibleClassChangeError(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.IncompatibleClassChangeError").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.IncompatibleClassChangeError"), new object[] { String.Format(s, args) });
 	}
-
-	[ThreadStatic]
-	private static bool classNotFound;
-
-	private class BootstrapClassMissing : Exception {}
-
-	private static ConstructorInfo classNotFoundConstructor;
 
 	internal static Exception ClassNotFoundException(string s, params object[] args)
 	{
-		// HACK if java.lang.ClassNotFoundException is not found, this method would recurse until the
-		// stack overflows, so in order to prevent that, we use this hack
-		if(classNotFound)
+		if(JVM.IsStaticCompilerPhase1)
 		{
-			throw new BootstrapClassMissing();
+			Console.Error.WriteLine("ClassNotFoundException: {0}", s);
 		}
-		if(JVM.IsStaticCompiler)
-		{
-			Console.WriteLine("ClassNotFound: " + s);
-			//Console.WriteLine(new System.Diagnostics.StackTrace(true));
-		}
-		try
-		{
-			classNotFound = true;
-			//Console.WriteLine("ClassNotFoundException: " + s);
-			s = String.Format(s, args);
-			if(classNotFoundConstructor == null)
-			{
-				classNotFoundConstructor = ClassLoaderWrapper.GetType("java.lang.ClassNotFoundException").GetConstructor(new Type[] { typeof(string) });
-			}
-			return (Exception)classNotFoundConstructor.Invoke(new object[] { s });
-		}
-		catch(BootstrapClassMissing)
-		{
-			throw new TypeLoadException("ClassNotFoundException: " + s);
-		}
-		finally
-		{
-			classNotFound = false;
-		}
+		return (Exception)Activator.CreateInstance(Load("java.lang.ClassNotFoundException"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception NoClassDefFoundError(string s, params object[] args)
@@ -110,103 +75,82 @@ sealed class JavaException
 		{
 			Console.Error.WriteLine("NoClassDefFoundError: {0}", s);
 		}
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.NoClassDefFoundError").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.NoClassDefFoundError"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception UnsatisfiedLinkError(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.UnsatisfiedLinkError").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.UnsatisfiedLinkError"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception IllegalStateException(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.IllegalStateException").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalStateException"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception IllegalArgumentException(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.IllegalArgumentException").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalArgumentException"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception NegativeArraySizeException()
 	{
-		return (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.NegativeArraySizeException"));
+		return (Exception)Activator.CreateInstance(Load("java.lang.NegativeArraySizeException"));
 	}
 
 	internal static Exception ArrayStoreException(string s)
 	{
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.ArrayStoreException").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.ArrayStoreException"), new object[] { s });
 	}
 
 	internal static Exception IndexOutOfBoundsException(string s)
 	{
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.IndexOutOfBoundsException").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.IndexOutOfBoundsException"), new object[] { s });
 	}
 
 	internal static Exception StringIndexOutOfBoundsException(string s)
 	{
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.StringIndexOutOfBoundsException").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
- 	}
+		return (Exception)Activator.CreateInstance(Load("java.lang.StringIndexOutOfBoundsException"), new object[] { s });
+	}
 
 	internal static Exception InvocationTargetException(Exception x)
 	{
-		return (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.reflect.InvocationTargetException"), new object[] { x });
+		return (Exception)Activator.CreateInstance(Load("java.lang.reflect.InvocationTargetException"), new object[] { x });
 	}
 
 	internal static Exception IOException(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.io.IOException").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.io.IOException"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception UnknownHostException(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.net.UnknownHostException").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.net.UnknownHostException"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception ArrayIndexOutOfBoundsException()
 	{
-		return (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArrayIndexOutOfBoundsException"));
+		return (Exception)Activator.CreateInstance(Load("java.lang.ArrayIndexOutOfBoundsException"));
 	}
 
 	internal static Exception NumberFormatException(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.NumberFormatException").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.NumberFormatException"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception CloneNotSupportedException()
 	{
-		return (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.CloneNotSupportedException"));
+		return (Exception)Activator.CreateInstance(Load("java.lang.CloneNotSupportedException"));
 	}
 
 	internal static Exception LinkageError(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.LinkageError").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.LinkageError"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception ClassCircularityError(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.ClassCircularityError").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.ClassCircularityError"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception NullPointerException()
@@ -218,15 +162,11 @@ sealed class JavaException
 
 	internal static Exception ClassCastException(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.ClassCastException").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.ClassCastException"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception NoSuchFieldError(string s, params object[] args)
 	{
-		s = String.Format(s, args);
-		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.NoSuchFieldError").GetConstructor(new Type[] { typeof(string) });
-		return (Exception)ci.Invoke(new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.NoSuchFieldError"), new object[] { String.Format(s, args) });
 	}
 }
