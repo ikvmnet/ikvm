@@ -7,7 +7,7 @@
             </sources>
 			<arg value="-unsafe"/>
             <references>
-                <includes name="../bin/IK.VM.NET.dll" asis="true" />
+                <includes name="../bin/ik.vm.net.dll" asis="true" />
             </references>
         </csc>
     </target>
