@@ -34,6 +34,7 @@ public class JVM
 	private static bool debug = false;
 	private static bool noJniStubs = false;
 	private static bool isStaticCompiler = false;
+	private static IJniProvider jniProvider;
 
 	public static bool Debug
 	{
@@ -68,6 +69,20 @@ public class JVM
 		get
 		{
 			return true;
+		}
+	}
+
+	public static IJniProvider JniProvider
+	{
+		get
+		{
+			if(jniProvider == null)
+			{
+				// TODO make the assembly provider configurable
+				Type provider = Assembly.LoadFrom("c:\\ikvm\\ik.vm.jni\\debug\\ik.vm.jni.dll").GetType("JNI", true);
+				jniProvider = (IJniProvider)Activator.CreateInstance(provider);
+			}
+			return jniProvider;
 		}
 	}
 
@@ -191,5 +206,10 @@ public class JVM
 	public static void SaveDebugImage(object mainClass)
 	{
 		ClassLoaderWrapper.SaveDebugImage(mainClass);
+	}
+
+	public static void SetBootstrapClassLoader(object classLoader)
+	{
+		ClassLoaderWrapper.GetBootstrapClassLoader().SetJavaClassLoader(classLoader);
 	}
 }

@@ -105,7 +105,6 @@ public class ExceptionHelper
 						continue;
 					}
 					if(m.DeclaringType == typeof(System.Runtime.CompilerServices.RuntimeHelpers)
-						|| m.DeclaringType == typeof(JNI) // HACK we exclude the JNI class from the stack trace
 						|| m.DeclaringType.IsSubclassOf(typeof(System.Reflection.MethodInfo))
 						|| IsPrivateScope(m)) // NOTE we assume that privatescope methods are always stubs that we should exclude
 					{
@@ -476,6 +475,11 @@ public class ExceptionHelper
 		else if(type == typeof(IndexOutOfRangeException))
 		{
 			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArrayIndexOutOfBoundsException"));
+		}
+		// HACK for String methods, we remap ArgumentOutOfRangeException to StringIndexOutOfBoundsException
+		else if(type == typeof(ArgumentOutOfRangeException))
+		{
+			t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.StringIndexOutOfBoundsException"));
 		}
 		else if(type == typeof(InvalidCastException))
 		{

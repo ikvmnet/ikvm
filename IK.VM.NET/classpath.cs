@@ -410,7 +410,7 @@ namespace NativeCode.java
 
 			public static int nativeLoad(object obj, string filename)
 			{
-				return JNI.LoadNativeLibrary(filename);
+				return JVM.JniProvider.LoadNativeLibrary(filename);
 			}
 
 			public static void gc(object obj)
@@ -474,42 +474,6 @@ namespace NativeCode.java
 			public static void traceMethodCalls(object obj, bool b)
 			{
 				// not supported
-			}
-		}
-
-		public class System
-		{
-			private static long timebase;
-
-			static System()
-			{
-				timebase = ((TimeZone.CurrentTimeZone.ToUniversalTime(DateTime.Now) - new DateTime(1970, 1, 1)).Ticks / 10000L) - Environment.TickCount;
-			}
-
-			public static bool isWordsBigEndian()
-			{
-				return !BitConverter.IsLittleEndian;
-			}
-
-			public static long currentTimeMillis()
-			{
-				// NOTE this wraps after 24.9 days, but it is much faster than calling DateTime.Now every time
-				return timebase + Environment.TickCount;
-			}
-
-			public static void setErr0(object printStream)
-			{
-				ClassLoaderWrapper.GetType("java.lang.System").GetField("err", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
-			}
-
-			public static void setIn0(object inputStream)
-			{
-				ClassLoaderWrapper.GetType("java.lang.System").GetField("in", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, inputStream);
-			}
-
-			public static void setOut0(object printStream)
-			{
-				ClassLoaderWrapper.GetType("java.lang.System").GetField("out", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
 			}
 		}
 
@@ -686,6 +650,39 @@ namespace NativeCode.java
 			}
 		}
 
+		/* not used anymore
+		public class System
+		{
+			public static bool isWordsBigEndian()
+			{
+				return !BitConverter.IsLittleEndian;
+			}
+
+			private static long timebase = ((TimeZone.CurrentTimeZone.ToUniversalTime(DateTime.Now) - new DateTime(1970, 1, 1)).Ticks / 10000L) - Environment.TickCount;
+
+			public static long currentTimeMillis()
+			{
+				// NOTE this wraps after 24.9 days, but it is much faster than calling DateTime.Now every time
+				return timebase + Environment.TickCount;
+			}
+
+			public static void setErr0(object printStream)
+			{
+				ClassLoaderWrapper.GetType("java.lang.System").GetField("err", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
+			}
+
+			public static void setIn0(object inputStream)
+			{
+				ClassLoaderWrapper.GetType("java.lang.System").GetField("in", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, inputStream);
+			}
+
+			public static void setOut0(object printStream)
+			{
+				ClassLoaderWrapper.GetType("java.lang.System").GetField("out", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
+			}
+		}
+		*/
+
 		public class VMSystem
 		{
 			public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
@@ -694,21 +691,32 @@ namespace NativeCode.java
 				Array.Copy((Array)src, srcStart, (Array)dest, destStart, len);
 			}
 
-			private static MethodInfo hashCodeMethod;
-			private static object[] noargs = new object[0];
-
-			public static int identityHashCode(object arg)
+			public static bool isWordsBigEndian()
 			{
-				if(arg == null)
-				{
-					return 0;
-				}
-				// TODO this should be optimized, using reflection is probably too slow
-				if(hashCodeMethod == null)
-				{
-					hashCodeMethod = typeof(object).GetMethod("GetHashCode");
-				}
-				return (int)hashCodeMethod.Invoke(arg, noargs);
+				return !BitConverter.IsLittleEndian;
+			}
+
+			private static long timebase = ((TimeZone.CurrentTimeZone.ToUniversalTime(DateTime.Now) - new DateTime(1970, 1, 1)).Ticks / 10000L) - Environment.TickCount;
+
+			public static long currentTimeMillis()
+			{
+				// NOTE this wraps after 24.9 days, but it is much faster than calling DateTime.Now every time
+				return timebase + Environment.TickCount;
+			}
+
+			public static void setErr(object printStream)
+			{
+				ClassLoaderWrapper.GetType("java.lang.System").GetField("err", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
+			}
+
+			public static void setIn(object inputStream)
+			{
+				ClassLoaderWrapper.GetType("java.lang.System").GetField("in", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, inputStream);
+			}
+
+			public static void setOut(object printStream)
+			{
+				ClassLoaderWrapper.GetType("java.lang.System").GetField("out", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
 			}
 		}
 
@@ -1141,13 +1149,19 @@ namespace NativeCode.java
 		{
 			internal static string DemanglePath(string path)
 			{
+				//Console.WriteLine("Demangle: " + path);
 				// HACK for some reason Java accepts: \c:\foo.txt
 				// I don't know what else, but for now lets just support this
-				if(path.Length > 3 && path[0] == '\\' && path[2] == ':')
+				if(path.Length > 3 && (path[0] == '\\' || path[0] == '/') && path[2] == ':')
 				{
 					path = path.Substring(1);
 				}
 				return path;
+			}
+
+			public static string[] listRootsInternal()
+			{
+				return System.IO.Directory.GetLogicalDrives();
 			}
 
 			public static bool existsInternal(object obj, string path)
@@ -1206,8 +1220,8 @@ namespace NativeCode.java
 
 			public static bool mkdirInternal(object obj, string path)
 			{
+				path = DemanglePath(path);
 				// TODO handle errors
-				// TODO shouldn't we demangle the path?
 				if (!NetSystem.IO.Directory.Exists(NetSystem.IO.Directory.GetParent(path).FullName) ||
 					NetSystem.IO.Directory.Exists(path)) 
 				{
@@ -1220,19 +1234,26 @@ namespace NativeCode.java
 			{
 				// TODO handle errors
 				// TODO shouldn't we demangle the path?
-				if (NetSystem.IO.Directory.Exists(path)) 
+				try
 				{
-					NetSystem.IO.Directory.Delete(path);
-				} 
-				else if (NetSystem.IO.File.Exists(path)) 
-				{
-					NetSystem.IO.File.Delete(path);
-				} 
-				else 
+					if (NetSystem.IO.Directory.Exists(path)) 
+					{
+						NetSystem.IO.Directory.Delete(path);
+					} 
+					else if (NetSystem.IO.File.Exists(path)) 
+					{
+						NetSystem.IO.File.Delete(path);
+					} 
+					else 
+					{
+						return false;
+					}
+					return true;
+				}
+				catch(Exception)
 				{
 					return false;
 				}
-				return true;
 			}
 
 			public static bool createInternal(string path) 
@@ -1565,17 +1586,17 @@ namespace NativeCode.java
 				return NetSystem.Net.Dns.GetHostName();
 			}
 
-			public static int[][] getHostByName(string name)
+			public static sbyte[][] getHostByName(string name)
 			{
 				// TODO error handling
 				try
 				{
 					NetSystem.Net.IPHostEntry he = NetSystem.Net.Dns.GetHostByName(name);
 					NetSystem.Net.IPAddress[] addresses = he.AddressList;
-					int[][] list = new int[addresses.Length][];
+					sbyte[][] list = new sbyte[addresses.Length][];
 					for(int i = 0; i < addresses.Length; i++)
 					{
-						list[i] = AddressToIntArray((int)addresses[i].Address);
+						list[i] = AddressToByteArray((int)addresses[i].Address);
 					}
 					return list;
 				}
@@ -1590,10 +1611,10 @@ namespace NativeCode.java
 				return NetSystem.Net.Dns.GetHostByAddress(string.Format("{0}.{1}.{2}.{3}", address[0], address[1], address[2], address[3])).HostName;
 			}
 
-			private static int[] AddressToIntArray(int address)
+			private static sbyte[] AddressToByteArray(int address)
 			{
 				// TODO check for correctness
-				return new int[] { address & 0xff, (address >> 8) & 0xff, (address >> 16) & 0xff, (address >> 24) & 0xff };
+				return new sbyte[] { (sbyte)address, (sbyte)(address >> 8), (sbyte)(address >> 16), (sbyte)(address >> 24) };
 			}
 		}
 

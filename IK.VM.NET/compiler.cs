@@ -419,9 +419,15 @@ class Compiler
 			// because in Java the method is only verified if it is actually called,
 			// we generate code here to throw the VerificationError
 			Type verifyError = ClassLoaderWrapper.GetType("java.lang.VerifyError");
-			ilGenerator.Emit(OpCodes.Ldstr, string.Format("(class: {0}, method: {1}, signature: {2}, offset: {3}, instruction: {4}) {5}", x.Class, x.Method, x.Signature, x.ByteCodeOffset, x.Instruction, x.Message));
+			string msg = string.Format("(class: {0}, method: {1}, signature: {2}, offset: {3}, instruction: {4}) {5}", x.Class, x.Method, x.Signature, x.ByteCodeOffset, x.Instruction, x.Message);
+			ilGenerator.Emit(OpCodes.Ldstr, msg);
 			ilGenerator.Emit(OpCodes.Newobj, verifyError.GetConstructor(new Type[] { typeof(string) }));
 			ilGenerator.Emit(OpCodes.Throw);
+			// TODO uncomment next line
+			//if(JVM.IsStaticCompiler)
+			{
+				Console.WriteLine("java.lang.VerifyError: " + msg);
+			}
 			return;
 		}
 		Profiler.Enter("Compile");
@@ -867,6 +873,8 @@ class Compiler
 						MethodWrapper method = GetMethod(cpi, null, NormalizedByteCode.__invokestatic);
 						if(method != null)
 						{
+							// TODO if the stack values don't match the argument types (for interface argument types)
+							// we must emit code to cast the stack value to the interface type
 							method.EmitCall.Emit(ilGenerator);
 						}
 						else
@@ -884,6 +892,9 @@ class Compiler
 					case NormalizedByteCode.__invokeinterface:
 					case NormalizedByteCode.__invokespecial:
 					{
+						// TODO if the stack values don't match the argument types (for interface argument types)
+						// we must emit code to cast the stack value to the interface type
+
 						// TODO invokespecial should check for null "this" reference
 						ClassFile.ConstantPoolItemFMI cpi = m.Method.ClassFile.GetMethodref(instr.Arg1);
 						SigEnumerator sig = new SigEnumerator(cpi.Signature);
@@ -1148,7 +1159,7 @@ class Compiler
 								rc.Local = ilGenerator.DeclareLocal(retType);
 								// because of the way interface merging works, an object reference is valid
 								// for any interface reference
-								if(retType != typeof(object) && ma.GetRawStackType(i, 0) == "Ljava/lang/Object;")
+								if(retType.IsInterface && m.Method.Signature.Substring(m.Method.Signature.LastIndexOf(')') + 1) != ma.GetRawStackType(i, 0))
 								{
 									ilGenerator.Emit(OpCodes.Castclass, retType);
 								}
@@ -1178,7 +1189,7 @@ class Compiler
 								Type retType = classLoader.RetTypeFromSig(m.Method.Signature);
 								// because of the way interface merging works, an object reference is valid
 								// for any interface reference
-								if(retType != typeof(object) && ma.GetRawStackType(i, 0) == "Ljava/lang/Object;")
+								if(retType.IsInterface && m.Method.Signature.Substring(m.Method.Signature.LastIndexOf(')') + 1) != ma.GetRawStackType(i, 0))
 								{
 									ilGenerator.Emit(OpCodes.Castclass, retType);
 								}

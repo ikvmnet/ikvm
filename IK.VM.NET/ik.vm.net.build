@@ -5,9 +5,6 @@
             <sources>
                 <includes name="*.cs" />
             </sources>
-            <references>
-                <includes name="../bin/IK.VM.JNI.dll" asis="true" />
-            </references>
             <arg value="/resource:map.xml" />
         </csc>
     </target>

@@ -102,6 +102,36 @@ public class Starter
 		}
 	}
 
+	public class PathClassLoader : URLClassLoader
+	{
+		private static URL[] GetClassPath(string classpath)
+		{
+			string[] s = classpath.Split(';');
+			URL[] urls = new URL[s.Length];
+			for(int i = 0; i < urls.Length; i++)
+			{
+				// TODO non-existing file/dir is treated as current directory, this obviously isn't correct
+				urls[i] = new java.io.File(s[i]).toURL();
+			}
+			return urls;
+		}
+
+		public PathClassLoader(string classpath, java.lang.ClassLoader parent)
+			: base(GetClassPath(classpath), parent)
+		{
+		}
+
+		protected override java.lang.Class loadClass(string name, bool resolve)
+		{
+			java.lang.Class c = findClass(name);
+			if(resolve)
+			{
+				resolveClass(c);
+			}
+			return c;
+		}
+	}
+
 	[StackTraceInfo(Hidden = true, EatFrames = 1)]
 	[STAThread]	// NOTE this is here because otherwise SWT's RegisterDragDrop (a COM thing) doesn't work
 	static int Main(string[] args)
@@ -144,6 +174,10 @@ public class Starter
 				{
 					java.lang.System.setProperty("java.class.path", args[++i]);
 				}
+				else if(args[i].StartsWith("-Xbootclasspath:"))
+				{
+					java.lang.System.setProperty("ikvm.boot.class.path", args[i].Substring(16));
+				}
 				else
 				{
 					Console.Error.WriteLine("{0}: illegal argument", args[i]);
@@ -166,12 +200,14 @@ public class Starter
 			Console.Error.WriteLine("          (to execute a jar file)");
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("where options include:");
-			Console.Error.WriteLine("    -help             Display this message");
+			Console.Error.WriteLine("    -help             display this message");
 			Console.Error.WriteLine("    -cp -classpath <directories and zip/jar files separated by ;>");
 			Console.Error.WriteLine("                      set search path for application classes and resources");
-			Console.Error.WriteLine("    -save             Save the generated assembly (for debugging)");
-			Console.Error.WriteLine("    -time             Time the execution");
-			Console.Error.WriteLine("    -D<name>=<value>  Set a system property");
+			Console.Error.WriteLine("    -save             save the generated assembly (for debugging)");
+			Console.Error.WriteLine("    -time             time the execution");
+			Console.Error.WriteLine("    -D<name>=<value>  set a system property");
+			Console.Error.WriteLine("    -Xbootclasspath:<directories and zip/jar files separated by ;>");
+			Console.Error.WriteLine("                      set search path for bootstrap classes and resources");
 			return 1;
 		}
 		try
@@ -203,6 +239,10 @@ public class Starter
 			// but at the moment it is broken (doesn't implement findClass())
 			java.lang.System.setProperty("java.system.class.loader", typeof(AppClassLoader).AssemblyQualifiedName);
 			java.lang.ClassLoader loader = java.lang.ClassLoader.getSystemClassLoader();
+			if(java.lang.System.getProperty("ikvm.boot.class.path", "") != "")
+			{
+				JVM.SetBootstrapClassLoader(new PathClassLoader(java.lang.System.getProperty("ikvm.boot.class.path"), null));
+			}
 			java.lang.Class clazz = loader.loadClass(mainClass);
 			Method method = clazz.getMethod("main", new java.lang.Class[] { java.lang.Class.getClassFromType(typeof(string[])) });
 			if(!Modifier.isPublic(method.getModifiers()))

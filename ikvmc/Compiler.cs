@@ -206,7 +206,14 @@ class Compiler : MarshalByRefObject
 					{
 						buf[i] = (byte)sbuf[i];
 					}
-					resources.Add(ze.getName(), buf);
+					if(resources.ContainsKey(ze.getName()))
+					{
+						Console.Error.WriteLine("Warning: skipping resource (name clash): " + ze.getName());
+					}
+					else
+					{
+						resources.Add(ze.getName(), buf);
+					}
 				}
 			}
 		}

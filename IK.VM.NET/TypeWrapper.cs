@@ -910,6 +910,7 @@ class DynamicTypeWrapper : TypeWrapper
 						{
 							ilGenerator.Emit(OpCodes.Castclass, retType);
 						}
+						ilGenerator.Emit(OpCodes.Ret);
 					}
 					else
 					{
@@ -922,26 +923,32 @@ class DynamicTypeWrapper : TypeWrapper
 							ilGenerator.Emit(OpCodes.Throw);
 							continue;
 						}
-						//ilGenerator.EmitWriteLine(m.Name);
 						FieldBuilder methodPtr = typeBuilder.DefineField(m.Name + "$Ptr", typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
-						LocalBuilder localsref = ilGenerator.DeclareLocal(typeof(LocalRefStruct));
+						Type localRefStructType = JVM.JniProvider.GetLocalRefStructType();
+						LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
+						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+						ilGenerator.Emit(OpCodes.Initobj, localRefStructType);
 						ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
 						Label oklabel = ilGenerator.DefineLabel();
 						ilGenerator.Emit(OpCodes.Brtrue, oklabel);
 						ilGenerator.Emit(OpCodes.Ldstr, m.Name);
 						ilGenerator.Emit(OpCodes.Ldstr, m.Signature);
 						ilGenerator.Emit(OpCodes.Ldstr, classFile.Name);
-						ilGenerator.Emit(OpCodes.Call, typeof(JNI).GetMethod("GetJniFuncPtr"));
+						ilGenerator.Emit(OpCodes.Call, JVM.JniProvider.GetJniFuncPtrMethod());
 						ilGenerator.Emit(OpCodes.Stsfld, methodPtr);
 						ilGenerator.MarkLabel(oklabel);
+						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+						ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("Enter"));
+						LocalBuilder jnienv = ilGenerator.DeclareLocal(typeof(IntPtr));
+						ilGenerator.Emit(OpCodes.Stloc, jnienv);
+						Label tryBlock = ilGenerator.BeginExceptionBlock();
 						Type retType = wrapper.GetClassLoader().RetTypeFromSig(m.Signature);
-						if(!retType.IsValueType)
+						if(!retType.IsValueType && retType != typeof(void))
 						{
 							// this one is for use after we return from "calli"
-							ilGenerator.Emit(OpCodes.Ldloca, localsref);
+							ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 						}
-						ilGenerator.Emit(OpCodes.Ldloca, localsref);
-						ilGenerator.Emit(OpCodes.Call, typeof(LocalRefStruct).GetMethod("Enter"));
+						ilGenerator.Emit(OpCodes.Ldloc, jnienv);
 						Type[] modargs = new Type[args.Length + 2];
 						modargs[0] = typeof(IntPtr);
 						modargs[1] = typeof(IntPtr);
@@ -949,26 +956,26 @@ class DynamicTypeWrapper : TypeWrapper
 						int add = 0;
 						if(!m.IsStatic)
 						{
-							ilGenerator.Emit(OpCodes.Ldloca, localsref);
+							ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 							ilGenerator.Emit(OpCodes.Ldarg_0);
-							ilGenerator.Emit(OpCodes.Call, typeof(LocalRefStruct).GetMethod("MakeLocalRef"));
+							ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("MakeLocalRef"));
 							add = 1;
 						}
 						else
 						{
-							ilGenerator.Emit(OpCodes.Ldloca, localsref);
+							ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 							ilGenerator.Emit(OpCodes.Ldtoken, this.Type);
 							ilGenerator.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle"));
 							ilGenerator.Emit(OpCodes.Call, typeof(NativeCode.java.lang.Class).GetMethod("getClassFromType"));
-							ilGenerator.Emit(OpCodes.Call, typeof(LocalRefStruct).GetMethod("MakeLocalRef"));
+							ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("MakeLocalRef"));
 						}
 						for(int j = 0; j < args.Length; j++)
 						{
 							if(!args[j].IsValueType)
 							{
-								ilGenerator.Emit(OpCodes.Ldloca, localsref);
+								ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 								ilGenerator.Emit(OpCodes.Ldarg, j + add);
-								ilGenerator.Emit(OpCodes.Call, typeof(LocalRefStruct).GetMethod("MakeLocalRef"));
+								ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("MakeLocalRef"));
 								modargs[j + 2] = typeof(IntPtr);
 							}
 							else
@@ -977,17 +984,32 @@ class DynamicTypeWrapper : TypeWrapper
 							}
 						}
 						ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
-						ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, retType.IsValueType ? retType : typeof(IntPtr), modargs);
-						ilGenerator.Emit(OpCodes.Ldloca, localsref);
-						// TODO we should use a try {} finally {} to make sure Leave is called, even if the native code throws an exception
-						ilGenerator.Emit(OpCodes.Call, typeof(LocalRefStruct).GetMethod("Leave"));
-						if(!retType.IsValueType)
+						ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retType.IsValueType || retType == typeof(void)) ? retType : typeof(IntPtr), modargs);
+						LocalBuilder retValue = null;
+						if(retType != typeof(void))
 						{
-							ilGenerator.Emit(OpCodes.Call, typeof(LocalRefStruct).GetMethod("UnwrapLocalRef"));
-							ilGenerator.Emit(OpCodes.Castclass, retType);
+							if(!retType.IsValueType)
+							{
+								ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("UnwrapLocalRef"));
+								ilGenerator.Emit(OpCodes.Castclass, retType);
+							}
+							retValue = ilGenerator.DeclareLocal(retType);
+							ilGenerator.Emit(OpCodes.Stloc, retValue);
 						}
+						ilGenerator.BeginCatchBlock(typeof(object));
+						ilGenerator.EmitWriteLine("*** exception in native code ***");
+						ilGenerator.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", new Type[] { typeof(object) }, null));
+						ilGenerator.Emit(OpCodes.Rethrow);
+						ilGenerator.BeginFinallyBlock();
+						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+						ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("Leave"));
+						ilGenerator.EndExceptionBlock();
+						if(retType != typeof(void))
+						{
+							ilGenerator.Emit(OpCodes.Ldloc, retValue);
+						}
+						ilGenerator.Emit(OpCodes.Ret);
 					}
-					ilGenerator.Emit(OpCodes.Ret);
 				}
 				else
 				{
@@ -1807,6 +1829,22 @@ class RemappedTypeWrapper : TypeWrapper
 				AddField(fw);
 			}
 		}
+		if(classMap.Interfaces != null)
+		{
+			ArrayList ar = new ArrayList();
+			if(interfaces != null)
+			{
+				for(int i = 0; i < interfaces.Length; i++)
+				{
+					ar.Add(interfaces[i]);
+				}
+			}
+			foreach(MapXml.Interface iface in classMap.Interfaces)
+			{
+				ar.Add(GetClassLoader().LoadClassByDottedName(iface.Name));
+			}
+			interfaces = (TypeWrapper[])ar.ToArray(typeof(TypeWrapper));
+		}
 		// if the type has "overrides" we need to construct a stub class that actually overrides the methods
 		// (for when the type itself is instantiated, instead of a subtype [e.g. java.lang.Throwable])
 		if(hasOverrides)
@@ -2440,76 +2478,6 @@ class CompiledTypeWrapper : TypeWrapper
 
 	public override void Finish()
 	{
-	}
-}
-
-public sealed class JniHack : IJniHack
-{
-	public override System.Reflection.MethodBase GetMethod(object clazz, string name, string sig, bool isStatic)
-	{
-		// TODO this is totally broken, because JNI needs to support redirection
-		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.Class.getType(clazz));
-		wrapper.Finish();
-		MethodDescriptor md = new MethodDescriptor(wrapper.GetClassLoader(), name, sig);
-		BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic;
-		if(isStatic)
-		{
-			bindings |= BindingFlags.Static;
-		}
-		else
-		{
-			bindings |= BindingFlags.Instance;
-		}
-		if(name == "<init>")
-		{
-			return wrapper.Type.GetConstructor(bindings, null, md.ArgTypes, null);
-		}
-		Type type = wrapper.Type;
-		while(type != null)
-		{
-			MethodInfo m = type.GetMethod(name, bindings, null, CallingConventions.Standard, md.ArgTypes, null);
-			if(m != null)
-			{
-				return m;
-			}
-			type = type.BaseType;
-		}
-		return null;
-	}
-
-	public override System.Reflection.FieldInfo GetField(object clazz, string name, string sig, bool isStatic)
-	{
-		// TODO this is totally broken, because JNI needs to support redirection
-		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.Class.getType(clazz));
-		wrapper.Finish();
-		MethodDescriptor md = new MethodDescriptor(wrapper.GetClassLoader(), name, sig);
-		BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic;
-		if(isStatic)
-		{
-			bindings |= BindingFlags.Static;
-		}
-		else
-		{
-			bindings |= BindingFlags.Instance;
-		}
-		return wrapper.Type.GetField(name, bindings);
-	}
-
-	public override object FindClass(string javaName)
-	{
-		TypeWrapper wrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName(javaName);
-		wrapper.Finish();
-		return NativeCode.java.lang.Class.getClassFromWrapper(wrapper);
-	}
-
-	public override Exception UnsatisfiedLinkError(string msg)
-	{
-		return JavaException.UnsatisfiedLinkError(msg);
-	}
-
-	public override object GetClassFromType(Type type)
-	{
-		return NativeCode.java.lang.Class.getClassFromType(type);
 	}
 }
 

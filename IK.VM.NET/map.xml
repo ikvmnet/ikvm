@@ -96,6 +96,7 @@
 			</method>
 		</class>
 		<class name="java.lang.String" type="System.String" modifiers="public final">
+			<implements class="java.lang.Comparable" />
 			<constructor sig="()V" modifiers="public">
 				<!-- TODO -->
 				<newobj>
@@ -152,6 +153,9 @@
 				<redirect class="StringHelper" />
 			</method>
 			<method name="valueOf" sig="(D)Ljava/lang/String;" modifiers="public static">
+				<redirect class="StringHelper" />
+			</method>
+			<method name="valueOf" sig="([C)Ljava/lang/String;" modifiers="public static">
 				<redirect class="StringHelper" />
 			</method>
 			<method name="valueOf" sig="(Ljava/lang/Object;)Ljava/lang/String;" modifiers="public static">

@@ -346,6 +346,12 @@ namespace MapXml
 		public Redirect redirect;
 	}
 
+	public class Interface
+	{
+		[XmlAttribute("class")]
+		public string Name;
+	}
+
 	[Flags]
 	public enum MapModifiers
 	{
@@ -376,6 +382,8 @@ namespace MapXml
 		public Method[] Methods;
 		[XmlElement("field")]
 		public Field[] Fields;
+		[XmlElement("implements")]
+		public Interface[] Interfaces;
 	}
 
 	[XmlRoot("root")]

@@ -143,6 +143,11 @@ public class StringHelper
 		return StringBufferHelper.append(sb, d).ToString();
 	}
 
+	public static string valueOf(char[] c)
+	{
+		return new String(c);
+	}
+
 	public static string valueOf(object o)
 	{
 		if(o == null)

@@ -110,6 +110,12 @@ class ClassLoaderWrapper
 
 	internal ClassLoaderWrapper(object javaClassLoader)
 	{
+		SetJavaClassLoader(javaClassLoader);
+		classLoaders.Add(this);
+	}
+
+	internal void SetJavaClassLoader(object javaClassLoader)
+	{
 		this.javaClassLoader = javaClassLoader;
 		if(javaClassLoader != null)
 		{
@@ -119,7 +125,6 @@ class ClassLoaderWrapper
 				throw new InvalidOperationException();
 			}
 		}
-		classLoaders.Add(this);
 	}
 
 	internal void LoadRemappedTypes()
@@ -220,7 +225,7 @@ class ClassLoaderWrapper
 					throw JavaException.ClassNotFoundException(name);
 			}
 		}
-		if(javaClassLoader == null)
+		if(this == GetBootstrapClassLoader())
 		{
 			// HACK if the name contains a comma, we assume it is an assembly qualified name
 			if(name.IndexOf(',') != -1)
@@ -236,47 +241,47 @@ class ClassLoaderWrapper
 			{
 				return type;
 			}
-			throw JavaException.ClassNotFoundException(name);
-		}
-		else
-		{
-			// OPTIMIZE this should be optimized
-			try
+			if(javaClassLoader == null)
 			{
-				object clazz;
-				// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
-				lock(javaClassLoader)
-				{
-					clazz = loadClassMethod.Invoke(javaClassLoader, new object[] { name });
-				}
-				type = (TypeWrapper)clazz.GetType().GetField("wrapper", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clazz);
+				throw JavaException.ClassNotFoundException(name);
+			}
+		}
+		// OPTIMIZE this should be optimized
+		try
+		{
+			object clazz;
+			// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
+			lock(javaClassLoader)
+			{
+				clazz = loadClassMethod.Invoke(javaClassLoader, new object[] { name });
+			}
+			type = (TypeWrapper)clazz.GetType().GetField("wrapper", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clazz);
+			if(type == null)
+			{
+				Type t = (Type)clazz.GetType().GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clazz);
+				ClassLoaderWrapper loader = GetClassLoader(t);
+				type = (TypeWrapper)loader.types[name];
 				if(type == null)
 				{
-					Type t = (Type)clazz.GetType().GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clazz);
-					ClassLoaderWrapper loader = GetClassLoader(t);
-					type = (TypeWrapper)loader.types[name];
-					if(type == null)
-					{
-						// this shouldn't be possible
-						throw new InvalidOperationException(name + ", this = " + javaClassLoader);
-					}
+					// this shouldn't be possible
+					throw new InvalidOperationException(name + ", this = " + javaClassLoader);
 				}
-				// NOTE we're caching types loaded by parent classloaders as well!
-				// TODO not sure if this is correct
-				if(type.GetClassLoader() != this)
-				{
-					if(types[name] != type)
-					{
-						types.Add(name, type);
-					}
-				}
-				return type;
 			}
-			catch(TargetInvocationException x)
+			// NOTE we're caching types loaded by parent classloaders as well!
+			// TODO not sure if this is correct
+			if(type.GetClassLoader() != this)
 			{
-				ExceptionHelper.MapExceptionFast(x);
-				throw x.InnerException;
+				if(types[name] != type)
+				{
+					types.Add(name, type);
+				}
 			}
+			return type;
+		}
+		catch(TargetInvocationException x)
+		{
+			ExceptionHelper.MapExceptionFast(x);
+			throw x.InnerException;
 		}
 	}
 
@@ -284,7 +289,7 @@ class ClassLoaderWrapper
 	{
 		Debug.Assert(!(type is TypeBuilder));
 		// only the bootstrap classloader can own compiled types
-		Debug.Assert(javaClassLoader == null);
+		Debug.Assert(this == GetBootstrapClassLoader());
 		string name = NativeCode.java.lang.Class.getName(type);
 		TypeWrapper wrapper = (TypeWrapper)types[name];
 		if(wrapper == null)
@@ -428,7 +433,7 @@ class ClassLoaderWrapper
 
 	internal object GetJavaClassLoader()
 	{
-		return javaClassLoader;
+		return (this == GetBootstrapClassLoader()) ? null : javaClassLoader;
 	}
 
 	internal static void SaveDebugImage(object mainClass)
@@ -519,7 +524,7 @@ class ClassLoaderWrapper
 	protected virtual ModuleBuilder CreateModuleBuilder()
 	{
 		AssemblyName name = new AssemblyName();
-		name.Name = "ikvm_dynamic_assembly__" + (javaClassLoader == null ? "bootstrap" : javaClassLoader);
+		name.Name = "ikvm_dynamic_assembly__" + (this == GetBootstrapClassLoader() ? "bootstrap" : javaClassLoader);
 		AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
 		ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
 		if(JVM.Debug)
@@ -789,7 +794,7 @@ class ClassLoaderWrapper
 	
 	internal static ClassLoaderWrapper GetClassLoaderWrapper(object javaClassLoader)
 	{
-		if(javaClassLoader == null)
+		if(javaClassLoader == null || GetBootstrapClassLoader().javaClassLoader == javaClassLoader)
 		{
 			return GetBootstrapClassLoader();
 		}

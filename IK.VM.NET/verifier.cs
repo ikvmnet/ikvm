@@ -118,9 +118,9 @@ class InstructionState
 		return new InstructionState(ma, (ArrayList)stack.Clone(), (string[])locals.Clone(), CopySubroutines(subroutines), callsites);
 	}
 
-	internal InstructionState CopyLocalsAndSubroutines()
+	internal InstructionState CopyLocals()
 	{
-		return new InstructionState(ma, new ArrayList(), (string[])locals.Clone(), CopySubroutines(subroutines), callsites);
+		return new InstructionState(ma, new ArrayList(), (string[])locals.Clone(), new ArrayList(), callsites);
 	}
 
 	private ArrayList CopySubroutines(ArrayList l)
@@ -138,6 +138,40 @@ class InstructionState
 		return Merge(s1, s2, null, null);
 	}
 
+	private void MergeSubroutineHelper(InstructionState s2)
+	{
+		foreach(Subroutine ss2 in s2.subroutines)
+		{
+			bool found = false;
+			foreach(Subroutine ss in subroutines)
+			{
+				if(ss.SubroutineIndex == ss2.SubroutineIndex)
+				{
+					for(int i = 0; i < ss.LocalsModified.Length; i++)
+					{
+						if(ss2.LocalsModified[i] && !ss.LocalsModified[i])
+						{
+							ss.LocalsModified[i] = true;
+							changed = true;
+						}
+					}
+					found = true;
+				}
+			}
+			if(!found)
+			{
+				subroutines.Add(ss2.Copy());
+				changed = true;
+			}
+		}
+		if(s2.callsites > callsites)
+		{
+			//Console.WriteLine("s2.callsites = {0}, callsites = {1}", s2.callsites, callsites);
+			callsites = s2.callsites;
+			changed = true;
+		}
+	}
+
 	internal static InstructionState Merge(InstructionState s1, InstructionState s2, bool[] locals_modified, InstructionState s3)
 	{
 		if(s1 == null)
@@ -152,6 +186,10 @@ class InstructionState
 						s2.locals[i] = s3.locals[i];
 					}
 				}
+			}
+			if(s3 != null)
+			{
+				s2.MergeSubroutineHelper(s3);
 			}
 			return s2;
 		}
@@ -217,35 +255,10 @@ class InstructionState
 				}
 			}
 		}
-		foreach(Subroutine ss2 in s2.subroutines)
+		s.MergeSubroutineHelper(s2);
+		if(s3 != null)
 		{
-			bool found = false;
-			foreach(Subroutine ss in s.subroutines)
-			{
-				if(ss.SubroutineIndex == ss2.SubroutineIndex)
-				{
-					for(int i = 0; i < ss.LocalsModified.Length; i++)
-					{
-						if(ss2.LocalsModified[i] && !ss.LocalsModified[i])
-						{
-							ss.LocalsModified[i] = true;
-							s.changed = true;
-						}
-					}
-					found = true;
-				}
-			}
-			if(!found)
-			{
-				s.subroutines.Add(ss2.Copy());
-				s.changed = true;
-			}
-		}
-		if(s2.callsites > s.callsites)
-		{
-			//Console.WriteLine("s2.callsites = {0}, s.callsites = {1}", s2.callsites, s.callsites);
-			s.callsites = s2.callsites;
-			s.changed = true;
+			s.MergeSubroutineHelper(s3);
 		}
 		return s;
 	}
@@ -275,11 +288,13 @@ class InstructionState
 		{
 			if(s.SubroutineIndex == subroutineIndex)
 			{
-				subroutines.Remove(s);
+				// TODO i'm not 100% sure about this, but I think we need to clear
+				// the subroutines here (because when you return you can never "become" inside a subroutine)
+				subroutines.Clear();
 				return s.LocalsModified;
 			}
 		}
-		throw new VerifyError();
+		throw new VerifyError("return from wrong subroutine");
 	}
 
 	internal void CheckSubroutineActive(int subroutineIndex)
@@ -291,7 +306,7 @@ class InstructionState
 				return;
 			}
 		}
-		throw new VerifyError();
+		throw new VerifyError("inactive subroutine");
 	}
 
 	private bool IsSubType(string subType, string baseType)
@@ -328,6 +343,10 @@ class InstructionState
 			if(baseDepth > subDepth)
 			{
 				return false;
+			}
+			if(baseDepth < subDepth)
+			{
+				return baseType.EndsWith("[Ljava/lang/Object;");
 			}
 			if(subType[subDepth] == baseType[baseDepth])
 			{
@@ -478,7 +497,7 @@ class InstructionState
 	{
 		if(locals[index] != "J" || locals[index + 1] != "J2")
 		{
-			throw new VerifyError();
+			throw new VerifyError("incorrect local type, not long");
 		}
 	}
 
@@ -486,7 +505,7 @@ class InstructionState
 	{
 		if(locals[index] != "F")
 		{
-			throw new VerifyError();
+			throw new VerifyError("incorrect local type, not float");
 		}
 	}
 
@@ -504,7 +523,7 @@ class InstructionState
 	{
 		if(locals[index] != "D" || locals[index + 1] != "D2")
 		{
-			throw new VerifyError();
+			throw new VerifyError("incorrect local type, not double");
 		}
 	}
 
@@ -518,7 +537,7 @@ class InstructionState
 		string type = locals[index];
 		if(!type.StartsWith("Lret;"))
 		{
-			throw new VerifyError();
+			throw new VerifyError("incorrect local type, not ret");
 		}
 		return int.Parse(type.Substring(5));
 	}
@@ -528,7 +547,7 @@ class InstructionState
 		string s = locals[index];
 		if(s == null || (s[0] != 'L' && s[0] != '[' && s[0] != 'U' && s[0] != 'N') || s.StartsWith("Lret;"))
 		{
-			throw new VerifyError();
+			throw new VerifyError("incorrect local type, not object");
 		}
 		return s;
 	}
@@ -537,7 +556,7 @@ class InstructionState
 	{
 		if(type[0] != 'L' && type[0] != '[' && type[0] != 'U' && type[0] != 'N')
 		{
-			throw new VerifyError();
+			throw new VerifyError("SetLocalObject");
 		}
 		SetLocal1(index, type);
 	}
@@ -563,14 +582,14 @@ class InstructionState
 	{
 		if(type == null)
 		{
-			throw new VerifyError();
+			throw new VerifyError("PushObject null");
 		}
 		if(type[0] == 'L' || type[0] == '[' || type[0] == 'U' || type[0] == 'N')
 		{
 			PushHelper(type);
 			return;
 		}
-		throw new VerifyError();
+		throw new VerifyError("PushObject not object");
 	}
 
 	internal void PushInt()
@@ -842,6 +861,22 @@ class InstructionState
 		Console.WriteLine();
 	}
 
+	internal void DumpSubroutines()
+	{
+		Console.Write("// subs: ");
+		string sep = "";
+		if(subroutines != null)
+		{
+			for(int i = 0; i < subroutines.Count; i++)
+			{
+				Console.Write(sep);
+				Console.Write(((Subroutine)subroutines[i]).SubroutineIndex);
+				sep = ", ";
+			}
+		}
+		Console.WriteLine();
+	}
+
 	// this method ensures that no uninitialized object are in the locals for the current state
 	internal void CheckLocalsForUninitializedObjRefs()
 	{
@@ -849,7 +884,7 @@ class InstructionState
 		{
 			if(locals[i] != null && (((locals[i])[0] == 'U') || ((locals[i])[0] == 'N')))
 			{
-				throw new VerifyError();
+				throw new VerifyError("uninitialized object ref in local (1)");
 			}
 		}
 	}
@@ -861,14 +896,14 @@ class InstructionState
 		{
 			if(locals[i] != null && (((locals[i])[0] == 'U') || ((locals[i])[0] == 'N')))
 			{
-				throw new VerifyError();
+				throw new VerifyError("uninitialized object ref in local (2)");
 			}
 		}
 		for(int i = 0; i < stack.Count; i++)
 		{
 			if((((string)stack[i])[0] == 'U') || (((string)stack[i])[0] == 'N'))
 			{
-				throw new VerifyError();
+				throw new VerifyError("uninitialized object ref on stack");
 			}
 		}
 	}
@@ -880,14 +915,14 @@ class InstructionState
 		{
 			if(locals[i] == type)
 			{
-				throw new VerifyError();
+				throw new VerifyError("unininitialized " + type + " in locals");
 			}
 		}
 		for(int i = 0; i < stack.Count; i++)
 		{
 			if((string)stack[i] == type)
 			{
-				throw new VerifyError();
+				throw new VerifyError("uninitialized " + type + " on stack");
 			}
 		}
 	}
@@ -1074,7 +1109,11 @@ class MethodAnalyzer
 							if(method.ExceptionTable[j].start_pc <= method.Instructions[i].PC && method.ExceptionTable[j].end_pc > method.Instructions[i].PC)
 							{
 								state[i].CheckLocalsForUninitializedObjRefs();
-								InstructionState ex = state[i].CopyLocalsAndSubroutines();
+								// NOTE this used to be CopyLocalsAndSubroutines, but it doesn't (always) make
+								// sense to copy the subroutine state
+								// TODO figure out if there are circumstances under which it does make sense
+								// to copy the active subroutine state
+								InstructionState ex = state[i].CopyLocals();
 								int catch_type = method.ExceptionTable[j].catch_type;
 								if(catch_type == 0)
 								{
@@ -1246,10 +1285,12 @@ class MethodAnalyzer
 								break;
 							case NormalizedByteCode.__ifnonnull:
 							case NormalizedByteCode.__ifnull:
+								// TODO it might be legal to use an unitialized ref here
 								s.PopObject("Ljava/lang/Object;");
 								break;
 							case NormalizedByteCode.__if_acmpeq:
 							case NormalizedByteCode.__if_acmpne:
+								// TODO it might be legal to use an unitialized ref here
 								s.PopObject("Ljava/lang/Object;");
 								s.PopObject("Ljava/lang/Object;");
 								break;
@@ -1362,6 +1403,20 @@ class MethodAnalyzer
 											s.PopFloat();
 											break;
 										case 'L':
+										{
+											// HACK if the return type is an interface, any object is legal
+											if(classLoader.RetTypeFromSig("()" + rse.Current).IsInterface)
+											{
+												// TODO implement support in the compiler for this condition (the code that
+												// is currently generated works, but isn't verifiable)
+												s.PopObject("Ljava/lang/Object;");
+											}
+											else
+											{
+												s.PopObject(rse.Current);
+											}
+											break;
+										}
 										case '[':
 											s.PopObject(rse.Current);
 											break;
@@ -1727,6 +1782,7 @@ class MethodAnalyzer
 								break;
 							case NormalizedByteCode.__monitorenter:
 							case NormalizedByteCode.__monitorexit:
+								// TODO is this allowed to be an uninitialized object?
 								s.PopObject("Ljava/lang/Object;");
 								break;
 							case NormalizedByteCode.__return:
@@ -1737,10 +1793,10 @@ class MethodAnalyzer
 								break;
 							case NormalizedByteCode.__areturn:
 							{
-								// HACK we always allow object, because if the return type is an interface, this is legal
-								if(s.Peek() == "Ljava/lang/Object;")
+								// HACK if the return type is an interface, any object is legal
+								if(classLoader.RetTypeFromSig(method.Method.Signature).IsInterface)
 								{
-									s.Pop();
+									s.PopObject("Ljava/lang/Object;");
 								}
 								else
 								{
@@ -1933,6 +1989,10 @@ class MethodAnalyzer
 								break;
 							}
 							case NormalizedByteCode.__nop:
+								if(i + 1 == method.Method.CodeAttribute.Instructions.Length)
+								{
+									throw new VerifyError("Falling off the end of the code");
+								}
 								break;
 							default:
 								throw new NotImplementedException(instr.NormalizedOpCode.ToString());
@@ -2029,7 +2089,7 @@ class MethodAnalyzer
 							// NOTE because PcIndexMap returns -1 for illegal PCs (in the middle of an instruction) and
 							// we always use that value as an index into the state array, any invalid PC will result
 							// in an IndexOutOfRangeException
-							throw new VerifyError("Invalid branch target");
+							throw new VerifyError("Illegal target of jump or branch");
 						}
 						// HACK track the local types (but only for object references)
 						for(int j = 0; j < localTypes.Length ; j++)
@@ -2064,19 +2124,23 @@ class MethodAnalyzer
 							opcode = opcode.Substring(2);
 						}
 						x.Instruction = opcode;
+						/*
+						for(int j = 0; j < method.Instructions.Length; j++)
+						{
+							//state[j].DumpLocals();
+							//state[j].DumpStack();
+							if(state[j] != null)
+							{
+								state[j].DumpSubroutines();
+								Console.WriteLine("{0}: {1}", method.Instructions[j].PC, method.Instructions[j].OpCode.ToString());
+							}
+						}
+						*/
 						throw;
 					}
 				}
 			}
-		}
-/*
-		for(int i = 0; i < method.Instructions.Length; i++)
-		{
-			state[i].DumpLocals();
-			state[i].DumpStack();
-			Console.WriteLine("{0}: {1}", method.Instructions[i].PC, method.Instructions[i].OpCode.ToString());
-		}
-*/		
+		}		
 	}
 
 	private ClassFile.ConstantPoolItemFMI GetMethodref(int index)
