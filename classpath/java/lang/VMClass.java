@@ -61,9 +61,10 @@ final class VMClass
     private Class clazz;
 
     // NOTE this is used in classpath.cs to go from a Class object to a TypeWrapper
-    private static Object getWrapperFromClass(Class c)
+    // HACK public because we want to create a delegate to call it
+    public static Object getWrapperFromClass(Object c)
     {
-	return c.vmClass.wrapper;
+	return ((Class)c).vmClass.wrapper;
     }
 
     private VMClass(Object wrapper)

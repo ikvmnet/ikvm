@@ -38,6 +38,8 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
+import cli.System.Diagnostics.StackFrame;
+
 /**
  * The Method class represents a member method of a class. It also allows
  * dynamic invocation, via reflection. This works for both static and
@@ -75,6 +77,7 @@ public final class Method extends AccessibleObject implements Member
 {
     private Class declaringClass;
     private Object methodCookie;
+    private int modifiers;
 
     /**
      * This class is uninstantiable.
@@ -83,7 +86,9 @@ public final class Method extends AccessibleObject implements Member
     {
 	this.declaringClass = declaringClass;
 	this.methodCookie = methodCookie;
+	modifiers = GetModifiers(methodCookie);
     }
+    static native int GetModifiers(Object methodCookie);
 
     /**
      * Gets the class that declared this method, or the class where this method
@@ -116,9 +121,8 @@ public final class Method extends AccessibleObject implements Member
      */
     public int getModifiers()
     {
-	return GetModifiers(methodCookie);
+	return modifiers;
     }
-    static native int GetModifiers(Object methodCookie);
 
     /**
      * Gets the return type of this method.
@@ -316,7 +320,9 @@ public final class Method extends AccessibleObject implements Member
     public Object invoke(Object o, Object[] args)
 	throws IllegalAccessException, InvocationTargetException
     {
-	// TODO check args and accessibility
+	// TODO check args
+	if(!isAccessible() && !Modifier.isPublic(modifiers))
+	    Field.checkAccess(modifiers, declaringClass, new StackFrame(1));
 	if(!Modifier.isStatic(getModifiers()))
 	{
 	    if(o == null)

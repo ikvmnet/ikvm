@@ -1177,13 +1177,14 @@ abstract class TypeWrapper
 		TypeWrapper typeWrapper = this;
 		while(typeWrapper != null)
 		{
-			for(int i = 0; i < typeWrapper.Interfaces.Length; i++)
+			TypeWrapper[] interfaces = typeWrapper.Interfaces;
+			for(int i = 0; i < interfaces.Length; i++)
 			{
-				if(typeWrapper.Interfaces[i] == interfaceWrapper)
+				if(interfaces[i] == interfaceWrapper)
 				{
 					return true;
 				}
-				if(typeWrapper.Interfaces[i].ImplementsInterface(interfaceWrapper))
+				if(interfaces[i].ImplementsInterface(interfaceWrapper))
 				{
 					return true;
 				}
@@ -1245,6 +1246,10 @@ abstract class TypeWrapper
 		if(this == VerifierTypeWrapper.Null)
 		{
 			return true;
+		}
+		if(wrapper.IsInterface)
+		{
+			return ImplementsInterface(wrapper);
 		}
 		int rank1 = this.ArrayRank;
 		int rank2 = wrapper.ArrayRank;

@@ -42,6 +42,22 @@ class ClassFile
 	private ClassFile outerClass;
 	private static readonly char[] illegalcharacters = { '<', '>' };
 
+	internal class ClassFormatError : ApplicationException
+	{
+		internal ClassFormatError(string msg, params object[] p)
+			: base(string.Format(msg, p))
+		{
+		}
+	}
+
+	internal class UnsupportedClassVersionError : ClassFormatError
+	{
+		internal UnsupportedClassVersionError(string msg)
+			: base(msg)
+		{
+		}
+	}
+
 	internal ClassFile(byte[] buf, int offset, int length, string inputClassName)
 	{
 		try
@@ -49,13 +65,13 @@ class ClassFile
 			BigEndianBinaryReader br = new BigEndianBinaryReader(buf, offset);
 			if(br.ReadUInt32() != 0xCAFEBABE)
 			{
-				throw JavaException.ClassFormatError("Bad magic number");
+				throw new ClassFormatError("Bad magic number");
 			}
 			int minor = br.ReadUInt16();
 			int major = br.ReadUInt16();
 			if(major < 45 || major > 48)
 			{
-				throw JavaException.UnsupportedClassVersionError(major + "." + minor);
+				throw new UnsupportedClassVersionError(major + "." + minor);
 			}
 			int constantpoolcount = br.ReadUInt16();
 			constantpool = new ConstantPoolItem[constantpoolcount];
@@ -78,11 +94,11 @@ class ClassFile
 					}
 					catch(IndexOutOfRangeException)
 					{
-						throw JavaException.ClassFormatError("{0} (Invalid constant pool item #{1})", inputClassName, i);
+						throw new ClassFormatError("{0} (Invalid constant pool item #{1})", inputClassName, i);
 					}
 					catch(InvalidCastException)
 					{
-						throw JavaException.ClassFormatError("{0} (Invalid constant pool item #{1})", inputClassName, i);
+						throw new ClassFormatError("{0} (Invalid constant pool item #{1})", inputClassName, i);
 					}
 				}
 			}
@@ -92,7 +108,7 @@ class ClassFile
 			// NOTE although the vmspec implies (in 4.1) that ACC_SUPER is illegal on interfaces, it doesn't enforce this
 			if((IsInterface && IsFinal) || (IsAbstract && IsFinal))
 			{
-				throw JavaException.ClassFormatError("{0} (Illegal class modifiers 0x{1:X})", inputClassName, access_flags);
+				throw new ClassFormatError("{0} (Illegal class modifiers 0x{1:X})", inputClassName, access_flags);
 			}
 			int this_class = br.ReadUInt16();
 			try
@@ -101,7 +117,7 @@ class ClassFile
 			}
 			catch(Exception)
 			{
-				throw JavaException.ClassFormatError("{0} (Class name has bad constant pool index)", inputClassName);
+				throw new ClassFormatError("{0} (Class name has bad constant pool index)", inputClassName);
 			}
 			int super_class = br.ReadUInt16();
 			// NOTE for convenience we allow parsing java/lang/Object (which has no super class), so
@@ -114,19 +130,19 @@ class ClassFile
 				}
 				catch(Exception)
 				{
-					throw JavaException.ClassFormatError("{0} (Bad superclass constant pool index)", inputClassName);
+					throw new ClassFormatError("{0} (Bad superclass constant pool index)", inputClassName);
 				}
 			}
 			else
 			{
 				if(this.Name != "java.lang.Object")
 				{
-					throw JavaException.ClassFormatError("{0} (Bad superclass index)", Name);
+					throw new ClassFormatError("{0} (Bad superclass index)", Name);
 				}
 			}
 			if(IsInterface && (super_class == 0 || super_cpi.Name != "java.lang.Object"))
 			{
-				throw JavaException.ClassFormatError("{0} (Interfaces must have java.lang.Object as superclass)", Name);
+				throw new ClassFormatError("{0} (Interfaces must have java.lang.Object as superclass)", Name);
 			}
 			int interfaces_count = br.ReadUInt16();
 			interfaces = new ConstantPoolItemClass[interfaces_count];
@@ -136,17 +152,17 @@ class ClassFile
 				int index = br.ReadUInt16();
 				if(index == 0 || index >= constantpool.Length)
 				{
-					throw JavaException.ClassFormatError("{0} (Illegal constant pool index)", Name);
+					throw new ClassFormatError("{0} (Illegal constant pool index)", Name);
 				}
 				ConstantPoolItemClass cpi = constantpool[index] as ConstantPoolItemClass;
 				if(cpi == null)
 				{
-					throw JavaException.ClassFormatError("{0} (Interface name has bad constant type)", Name);
+					throw new ClassFormatError("{0} (Interface name has bad constant type)", Name);
 				}
 				interfaces[i] = (ConstantPoolItemClass)GetConstantPoolItem(index);
 				if(interfaceNames.ContainsKey(interfaces[i]))
 				{
-					throw JavaException.ClassFormatError("{0} (Repetitive interface name)", Name);
+					throw new ClassFormatError("{0} (Repetitive interface name)", Name);
 				}
 				interfaceNames.Add(interfaces[i], interfaces[i]);
 			}
@@ -161,12 +177,12 @@ class ClassFile
 				// contain '<' or '>'
 				if(name.Length == 0 || name.IndexOfAny(illegalcharacters) != -1)
 				{
-					throw JavaException.ClassFormatError("{0} (Illegal field name \"{1}\")", Name, name);
+					throw new ClassFormatError("{0} (Illegal field name \"{1}\")", Name, name);
 				}
 				string nameSig = name + fields[i].Signature;
 				if(fieldNameSigs.ContainsKey(nameSig))
 				{
-					throw JavaException.ClassFormatError("{0} (Repetitive field name/signature)", Name);
+					throw new ClassFormatError("{0} (Repetitive field name/signature)", Name);
 				}
 				fieldNameSigs.Add(nameSig, nameSig);
 			}
@@ -180,16 +196,16 @@ class ClassFile
 				string sig = methods[i].Signature;
 				if(name.Length == 0 || (name.IndexOfAny(illegalcharacters) != -1 && name != "<init>" && name != "<clinit>"))
 				{
-					throw JavaException.ClassFormatError("{0} (Illegal method name \"{1}\")", Name, name);
+					throw new ClassFormatError("{0} (Illegal method name \"{1}\")", Name, name);
 				}
 				if((name == "<init>" || name == "<clinit>") && !sig.EndsWith("V"))
 				{
-					throw JavaException.ClassFormatError("{0} (Method \"{1}\" has illegal signature \"{2}\")", Name, name, sig);
+					throw new ClassFormatError("{0} (Method \"{1}\" has illegal signature \"{2}\")", Name, name, sig);
 				}
 				string nameSig = name + sig;
 				if(methodNameSigs.ContainsKey(nameSig))
 				{
-					throw JavaException.ClassFormatError("{0} (Repetitive method name/signature)", Name);
+					throw new ClassFormatError("{0} (Repetitive method name/signature)", Name);
 				}
 				methodNameSigs.Add(nameSig, nameSig);
 			}
@@ -203,17 +219,17 @@ class ClassFile
 			{
 				if(br.Position > offset + length)
 				{
-					throw JavaException.ClassFormatError("Truncated class file");
+					throw new ClassFormatError("Truncated class file");
 				}
 				else
 				{
-					throw JavaException.ClassFormatError("Extra bytes at the end of the class file");
+					throw new ClassFormatError("Extra bytes at the end of the class file");
 				}
 			}
 		}
 		catch(IndexOutOfRangeException)
 		{
-			throw JavaException.ClassFormatError("Truncated class file");
+			throw new ClassFormatError("Truncated class file");
 		}
 //		catch(Exception)
 //		{
@@ -597,7 +613,7 @@ class ClassFile
 				case Constant.Utf8:
 					return new ConstantPoolItemUtf8(inputClassName, br);
 				default:
-					throw JavaException.ClassFormatError("{0} (Illegal constant pool type 0x{1:X})", inputClassName, tag);
+					throw new ClassFormatError("{0} (Illegal constant pool type 0x{1:X})", inputClassName, tag);
 			}
 		}
 	}
@@ -1092,7 +1108,7 @@ class ClassFile
 			}
 			catch(FormatException)
 			{
-				throw JavaException.ClassFormatError("{0} (Illegal UTF8 string in constant pool)", inputClassName);
+				throw new ClassFormatError("{0} (Illegal UTF8 string in constant pool)", inputClassName);
 			}
 		}
 
@@ -1159,7 +1175,7 @@ class ClassFile
 			catch(IndexOutOfRangeException)
 			{
 			}
-			throw JavaException.ClassFormatError("{0} (Attribute name invalid type)", classFile.Name);
+			throw new ClassFormatError("{0} (Attribute name invalid type)", classFile.Name);
 		}
 
 		internal string Name
@@ -1377,7 +1393,7 @@ class ClassFile
 				|| (IsFinal && IsVolatile)
 				|| (classFile.IsInterface && (!IsPublic || !IsStatic || !IsFinal || IsTransient)))
 			{
-				throw JavaException.ClassFormatError("{0} (Illegal field modifiers: 0x{1:X})", classFile.Name, access_flags);
+				throw new ClassFormatError("{0} (Illegal field modifiers: 0x{1:X})", classFile.Name, access_flags);
 			}
 			// spec (4.7.2) says we should silently ignore ConstantValue attribute on non-static fields
 			// NOTE a field doesn't have to be final to have a constant value!
@@ -1419,24 +1435,24 @@ class ClassFile
 								constantValue = classFile.GetConstantPoolConstantString(index);
 								break;
 							default:
-								throw JavaException.ClassFormatError("{0} (Invalid signature for constant)", classFile.Name);
+								throw new ClassFormatError("{0} (Invalid signature for constant)", classFile.Name);
 						}
 					}
 					catch(InvalidCastException)
 					{
-						throw JavaException.ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
+						throw new ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
 					}
 					catch(IndexOutOfRangeException)
 					{
-						throw JavaException.ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
+						throw new ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
 					}
 					catch(InvalidOperationException)
 					{
-						throw JavaException.ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
+						throw new ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
 					}
 					catch(NullReferenceException)
 					{
-						throw JavaException.ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
+						throw new ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
 					}
 				}
 			}
@@ -1470,7 +1486,7 @@ class ClassFile
 					|| (IsAbstract && (IsFinal || IsNative || IsPrivate || IsStatic || IsStrictfp || IsSynchronized))
 					|| (classFile.IsInterface && (!IsPublic || !IsAbstract)))
 				{
-					throw JavaException.ClassFormatError("{0} (Illegal method modifiers: 0x{1:X})", classFile.Name, access_flags);
+					throw new ClassFormatError("{0} (Illegal method modifiers: 0x{1:X})", classFile.Name, access_flags);
 				}
 			}
 			// TODO if the method is abstract or native it may not have a Code attribute (right?)
@@ -1900,7 +1916,7 @@ class ClassFile
 						return new Instruction(method, pc, bc, default_offset, values, target_offset);
 					}
 					default:
-						throw JavaException.ClassFormatError("Invalid opcode: {0}", bc);
+						throw new ClassFormatError("Invalid opcode: {0}", bc);
 				}
 			}
 

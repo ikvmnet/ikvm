@@ -310,6 +310,16 @@ namespace NativeCode.java
 					return VMClass.getClassFromWrapper(wrapper.FieldTypeWrapper);
 				}
 
+				public static bool isSamePackage(object a, object b)
+				{
+					return VMClass.getWrapperFromClass(a).IsInSamePackageAs(VMClass.getWrapperFromClass(b));
+				}
+
+				public static object getClassFromFrame(NetSystem.Diagnostics.StackFrame frame)
+				{
+					return VMClass.getClassFromType(frame.GetMethod().DeclaringType);
+				}
+
 				public static object GetValue(object fieldCookie, object o)
 				{
 					Profiler.Enter("Field.GetValue");
@@ -848,20 +858,30 @@ namespace NativeCode.java
 				Profiler.Enter("ClassLoader.defineClass");
 				try
 				{
-					// TODO handle errors
-					ClassFile classFile = new ClassFile(data, offset, length, name);
-					if(name != null && classFile.Name != name)
+					try
 					{
-						throw JavaException.NoClassDefFoundError("{0} (wrong name: {1})", name, classFile.Name);
+						ClassFile classFile = new ClassFile(data, offset, length, name);
+						if(name != null && classFile.Name != name)
+						{
+							throw JavaException.NoClassDefFoundError("{0} (wrong name: {1})", name, classFile.Name);
+						}
+						TypeWrapper type = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader).DefineClass(classFile);
+						object clazz = VMClass.CreateClassInstance(type);
+						if(protectionDomain != null)
+						{
+							// TODO cache the FieldInfo
+							clazz.GetType().GetField("pd", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(clazz, protectionDomain);
+						}
+						return clazz;
 					}
-					TypeWrapper type = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader).DefineClass(classFile);
-					object clazz = VMClass.CreateClassInstance(type);
-					if(protectionDomain != null)
+					catch(ClassFile.UnsupportedClassVersionError x)
 					{
-						// TODO cache the FieldInfo
-						clazz.GetType().GetField("pd", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(clazz, protectionDomain);
+						throw JavaException.UnsupportedClassVersionError(x.Message);
 					}
-					return clazz;
+					catch(ClassFile.ClassFormatError x)
+					{
+						throw JavaException.ClassFormatError(x.Message);
+					}
 				}
 				finally
 				{
@@ -873,9 +893,9 @@ namespace NativeCode.java
 		public class VMClass
 		{
 			private static Hashtable map = new Hashtable();
-			private delegate object CreateClassDelegate(object typeWrapper);
-			private static CreateClassDelegate CreateClass;
-			private static MethodInfo getWrapper;
+			private delegate object LookupDelegate(object o);
+			private static LookupDelegate createClass;
+			private static LookupDelegate getWrapper;
 
 			public static void throwException(Exception e)
 			{
@@ -906,15 +926,15 @@ namespace NativeCode.java
 
 			internal static object CreateClassInstance(TypeWrapper wrapper)
 			{
-				if(CreateClass == null)
+				if(createClass == null)
 				{
 					TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
 					tw.Finish();
-					CreateClass = (CreateClassDelegate)Delegate.CreateDelegate(typeof(CreateClassDelegate), tw.TypeAsTBD.GetMethod("createClass", BindingFlags.Static | BindingFlags.Public));
+					createClass = (LookupDelegate)Delegate.CreateDelegate(typeof(LookupDelegate), tw.TypeAsTBD.GetMethod("createClass", BindingFlags.Static | BindingFlags.Public));
 					// HACK to make sure we don't run into any problems creating class objects for classes that
 					// participate in the VMClass static initialization, we first do a bogus call to initialize
 					// the machinery (I ran into this when running netexp on classpath.dll)
-					CreateClass(null);
+					createClass(null);
 					lock(map.SyncRoot)
 					{
 						object o = map[wrapper];
@@ -924,7 +944,7 @@ namespace NativeCode.java
 						}
 					}
 				}
-				object clazz = CreateClass(wrapper);
+				object clazz = createClass(wrapper);
 				lock(map.SyncRoot)
 				{
 					if(wrapper != null)
@@ -979,9 +999,9 @@ namespace NativeCode.java
 				{
 					TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
 					tw.Finish();
-					getWrapper = tw.TypeAsTBD.GetMethod("getWrapperFromClass", BindingFlags.NonPublic | BindingFlags.Static);
+					getWrapper = (LookupDelegate)Delegate.CreateDelegate(typeof(LookupDelegate), tw.TypeAsTBD.GetMethod("getWrapperFromClass", BindingFlags.Static | BindingFlags.Public));
 				}
-				return (TypeWrapper)getWrapper.Invoke(null, new object[] { clazz });
+				return (TypeWrapper)getWrapper(clazz);
 			}
 
 			internal static object getClassFromWrapper(TypeWrapper wrapper)
@@ -1539,6 +1559,7 @@ namespace NativeCode.java
 				try
 				{
 					TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+					wrapper.Finish();
 					return NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsTBD);
 				}
 				finally
@@ -1552,7 +1573,6 @@ namespace NativeCode.java
 				Profiler.Enter("ObjectInputStream.callConstructor");
 				try
 				{
-					// TODO use TypeWrapper based reflection, instead of .NET reflection
 					TypeWrapper type = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
 					type.Finish();
 					MethodWrapper mw = type.GetMethodWrapper(MethodDescriptor.FromNameSig(type.GetClassLoader(), "<init>", "()V"), false);

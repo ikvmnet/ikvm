@@ -38,6 +38,8 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
+import cli.System.Diagnostics.StackFrame;
+
 /**
  * The Constructor class represents a constructor of a class. It also allows
  * dynamic creation of an object, via reflection. Invocation on Constructor
@@ -74,8 +76,9 @@ package java.lang.reflect;
 public final class Constructor
     extends AccessibleObject implements Member
 {
-    private Class clazz;
+    private Class declaringClass;
     private Object methodCookie;
+    private int modifiers;
   
     /**
      * This class is instantiated by java.lang.Class
@@ -83,8 +86,9 @@ public final class Constructor
     // TODO this constructor shouldn't be public (but it needs to be accessible to java.lang.Class)
     public Constructor(Class declaringClass, Object methodCookie)
     {
-	this.clazz = declaringClass;
+	this.declaringClass = declaringClass;
 	this.methodCookie = methodCookie;
+	modifiers = Method.GetModifiers(methodCookie);
     }
 
     /**
@@ -93,7 +97,7 @@ public final class Constructor
      */
     public Class getDeclaringClass()
     {
-	return clazz;
+	return declaringClass;
     }
 
     /**
@@ -103,7 +107,7 @@ public final class Constructor
      */
     public String getName()
     {
-	return clazz.getName();
+	return declaringClass.getName();
     }
 
     /**
@@ -116,7 +120,7 @@ public final class Constructor
      */
     public int getModifiers()
     {
-	return Method.GetModifiers(methodCookie);
+	return modifiers;
     }
 
     /**
@@ -256,7 +260,9 @@ public final class Constructor
 	throws InstantiationException, IllegalAccessException,
 	InvocationTargetException
     {
-	if(Modifier.isAbstract(clazz.getModifiers()))
+	if(!isAccessible() && !Modifier.isPublic(modifiers))
+	    Field.checkAccess(modifiers, declaringClass, new StackFrame(1));
+	if(Modifier.isAbstract(declaringClass.getModifiers()))
 	{
 	    throw new InstantiationException();
 	}

@@ -64,28 +64,13 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	private static final int IP_TTL = 0x1E61; // 7777
 
-
-	/*
-	 * Instance Variables
-	 */
-
-	private static class MyUdpClient extends UdpClient
-	{
-		MyUdpClient(cli.System.Net.IPEndPoint ep)
-		{
-			super(ep);
-		}
-
-		cli.System.Net.Sockets.Socket getSocket()
-		{
-			return super.get_Client();
-		}
-	}
-
 	/**
 	 * This is the actual underlying socket
 	 */
-	private MyUdpClient socket;
+	private cli.System.Net.Sockets.Socket socket = new cli.System.Net.Sockets.Socket(
+	    AddressFamily.wrap(AddressFamily.InterNetwork), 
+	    SocketType.wrap(SocketType.Dgram),
+	    ProtocolType.wrap(ProtocolType.Udp));
 
 	/*************************************************************************/
 
@@ -122,7 +107,11 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	protected void close()
 	{
+	    if(socket != null)
+	    {
 		socket.Close();
+		socket = null;
+	    }
 	}
 
 	/*************************************************************************/
@@ -137,8 +126,16 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	protected void bind(int port, InetAddress addr) throws SocketException
 	{
-		// TODO error handling
-		socket = new MyUdpClient(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(addr), port));
+	    try
+	    {
+		if(false) throw new cli.System.Net.Sockets.SocketException();
+		socket.Bind(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(addr), port));
+		localPort = ((IPEndPoint)socket.get_LocalEndPoint()).get_Port();
+	    }
+	    catch(cli.System.Net.Sockets.SocketException x)
+	    {
+		throw new BindException(x.getMessage());
+	    }
 	}
 
 	/*************************************************************************/
@@ -154,7 +151,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	{
 		// TODO error handling
 		int len = packet.getLength();
-		if(socket.Send(ByteArrayHack.cast(packet.getData()), len, new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(packet.getAddress()), packet.getPort())) != len)
+		if(socket.SendTo(ByteArrayHack.cast(packet.getData()), len, SocketFlags.wrap(SocketFlags.None), new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(packet.getAddress()), packet.getPort())) != len)
 		{
 			// TODO
 			throw new IOException();
@@ -186,24 +183,21 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	    {
 		if(false) throw new cli.System.Net.Sockets.SocketException();
 		byte[] data = packet.getData();
-		int length = packet.getLength();
-		cli.System.Net.IPEndPoint[] remoteEP = new cli.System.Net.IPEndPoint[] {
+		cli.System.Net.EndPoint[] remoteEP = new cli.System.Net.EndPoint[] {
 		    new cli.System.Net.IPEndPoint(0, 0)
 		};
-		byte[] buf = ByteArrayHack.cast(socket.Receive(remoteEP));
-		System.arraycopy(buf, 0, data, 0, Math.min(length, buf.length));
-		// I think the spec says that the Length property of DatagramPacket
-		// contains the number of bytes in the network packet (even if
-		// the buffer was smaller than the network packet)
-		packet.setLength(buf.length);
-		int remoteIP = (int)remoteEP[0].get_Address().get_Address();
+		int length = socket.ReceiveFrom(ByteArrayHack.cast(data), remoteEP);
+		packet.setLength(length);
+		int remoteIP = (int)((cli.System.Net.IPEndPoint)remoteEP[0]).get_Address().get_Address();
 		byte[] ipv4 = new byte[] { (byte)remoteIP, (byte)(remoteIP >> 8), (byte)(remoteIP >> 16), (byte)(remoteIP >> 24) };
 		InetAddress remoteAddress = InetAddress.getByAddress(ipv4);
 		packet.setAddress(remoteAddress);
-		packet.setPort(remoteEP[0].get_Port());
+		packet.setPort(((cli.System.Net.IPEndPoint)remoteEP[0]).get_Port());
 	    }
 	    catch(cli.System.Net.Sockets.SocketException x)
 	    {
+		if(x.get_ErrorCode() == 10060)
+		    throw new java.io.InterruptedIOException(x.getMessage());
 		// TODO error handling
 		throw new IOException(x.getMessage());
 	    }
@@ -223,12 +217,17 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 		try
 		{
 			if(false) throw new cli.System.Net.Sockets.SocketException();
-			socket.JoinMulticastGroup(new cli.System.Net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr)));
+			if(false) throw new cli.System.ArgumentException();
+			socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), new MulticastOption(new cli.System.Net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr))));
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
 			// TODO error handling
 			throw new IOException(x.getMessage());
+		}
+		catch(cli.System.ArgumentException x1)
+		{
+		    throw new IOException(x1.getMessage());
 		}
 	}
 
@@ -246,12 +245,17 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 		try
 		{
 			if(false) throw new cli.System.Net.Sockets.SocketException();
-			socket.DropMulticastGroup(new cli.System.Net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr)));
+			if(false) throw new cli.System.ArgumentException();
+    			socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), new MulticastOption(new cli.System.Net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr))));
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
 			// TODO error handling
 			throw new IOException(x.getMessage());
+		}
+		catch(cli.System.ArgumentException x1)
+		{
+		    throw new IOException(x1.getMessage());
 		}
 	}
 
@@ -340,9 +344,18 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 			switch(option_id)
 			{
 				case IP_TTL:
-					return new Integer(CIL.unbox_int(socket.getSocket().GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive))));
+					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive))));
 				case SocketOptions.SO_TIMEOUT:
-				        return new Integer(CIL.unbox_int(socket.getSocket().GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout))));
+				        return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout))));
+				case SocketOptions.SO_BINDADDR:
+					try
+					{
+						return InetAddress.getByAddress(PlainSocketImpl.getLocalAddress(socket));
+					}
+					catch(UnknownHostException x)
+					{
+						throw new SocketException(x.getMessage());
+					}
 				default:
 					throw new Error("getOption(" + option_id + ") not implemented");
 			}
@@ -365,29 +378,29 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	public void setOption(int option_id, Object val) throws SocketException
 	{
-		try
-		{
-			if(false) throw new cli.System.Net.Sockets.SocketException();
-			switch(option_id)
-			{
-				case IP_TTL:
-					socket.getSocket().SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ((Integer)val).intValue());
-					break;
-				case SocketOptions.SO_TIMEOUT:
-				        socket.getSocket().SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout), ((Integer)val).intValue());
-					socket.getSocket().SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendTimeout), ((Integer)val).intValue());
-					break;
-				case SocketOptions.SO_REUSEADDR:
-					socket.getSocket().SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress), ((Boolean)val).booleanValue() ? 1 : 0);
-					break;
-				default:
-					throw new Error("setOption(" + option_id + ") not implemented");
-			}
-		}
-		catch(cli.System.Net.Sockets.SocketException x)
-		{
-			throw new SocketException(x.getMessage());
-		}
+	    try
+	    {
+		    if(false) throw new cli.System.Net.Sockets.SocketException();
+		    switch(option_id)
+		    {
+			    case IP_TTL:
+				    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ((Integer)val).intValue());
+				    break;
+			    case SocketOptions.SO_TIMEOUT:
+				    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout), ((Integer)val).intValue());
+				    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendTimeout), ((Integer)val).intValue());
+				    break;
+			    case SocketOptions.SO_REUSEADDR:
+				    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress), ((Boolean)val).booleanValue() ? 1 : 0);
+				    break;
+			    default:
+				    throw new Error("setOption(" + option_id + ") not implemented");
+		    }
+	    }
+	    catch(cli.System.Net.Sockets.SocketException x)
+	    {
+		    throw new SocketException(x.getMessage());
+	    }
 	}
 
 	public int peekData(DatagramPacket packet)

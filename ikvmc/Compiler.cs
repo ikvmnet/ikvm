@@ -31,6 +31,8 @@ class Compiler
 {
 	private static string manifestMainClass;
 	private static int itemsProcessed;
+	private static ArrayList classes = new ArrayList();
+	private static Hashtable resources = new Hashtable();
 
 	private static ArrayList GetArgs(string[] args)
 	{
@@ -93,8 +95,6 @@ class Compiler
 			Console.Error.WriteLine("    -debug                  Creates debugging information for the output file");
 			return 1;
 		}
-		ArrayList classes = new ArrayList();
-		Hashtable resources = new Hashtable();
 		foreach(string s in arglist)
 		{
 			if(s[0] == '-')
@@ -152,12 +152,12 @@ class Compiler
 					if(Directory.Exists(spec))
 					{
 						DirectoryInfo dir = new DirectoryInfo(spec);
-						Recurse(classes, resources, dir, dir, "*");
+						Recurse(dir, dir, "*");
 					}
 					else
 					{
 						DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec));
-						Recurse(classes, resources, dir, dir, Path.GetFileName(spec));
+						Recurse(dir, dir, Path.GetFileName(spec));
 					}
 				}
 				else if(s.StartsWith("-resource:"))
@@ -217,7 +217,7 @@ class Compiler
 				}
 				foreach(string f in files)
 				{
-					ProcessFile(classes, resources, null, f);
+					ProcessFile(null, f);
 				}
 			}
 		}
@@ -276,7 +276,56 @@ class Compiler
 		return buf;
 	}
 
-	private static void ProcessFile(ArrayList classes, Hashtable resources, DirectoryInfo baseDir, string file)
+	private static void ProcessZipFile(string file)
+	{
+		ZipFile zf = new ZipFile(file);
+		try
+		{
+			foreach(ZipEntry ze in zf)
+			{
+				if(ze.Name.ToLower().EndsWith(".class"))
+				{
+					classes.Add(ReadFromZip(zf, ze));
+					itemsProcessed++;
+				}
+				else
+				{
+					// if it's not a class, we treat it as a resource and the manifest
+					// is examined to find the Main-Class
+					if(ze.Name == "META-INF/MANIFEST.MF" && manifestMainClass == null)
+					{
+						// read main class from manifest
+						// TODO find out if we can use other information from manifest
+						StreamReader rdr = new StreamReader(zf.GetInputStream(ze));
+						string line;
+						while((line = rdr.ReadLine()) != null)
+						{
+							if(line.StartsWith("Main-Class: "))
+							{
+								manifestMainClass = line.Substring(12);
+								break;
+							}
+						}
+					}
+					if(resources.ContainsKey(ze.Name))
+					{
+						Console.Error.WriteLine("Warning: skipping resource (name clash): " + ze.Name);
+					}
+					else
+					{
+						resources.Add(ze.Name, ReadFromZip(zf, ze));
+						itemsProcessed++;
+					}
+				}
+			}
+		}
+		finally
+		{
+			zf.Close();
+		}
+	}
+
+	private static void ProcessFile(DirectoryInfo baseDir, string file)
 	{
 		switch(new FileInfo(file).Extension.ToLower())
 		{
@@ -291,50 +340,13 @@ class Compiler
 				break;
 			case ".jar":
 			case ".zip":
-				ZipFile zf = new ZipFile(file);
 				try
 				{
-					foreach(ZipEntry ze in zf)
-					{
-						if(ze.Name.ToLower().EndsWith(".class"))
-						{
-							classes.Add(ReadFromZip(zf, ze));
-							itemsProcessed++;
-						}
-						else
-						{
-							// if it's not a class, we treat it as a resource and the manifest
-							// is examined to find the Main-Class
-							if(ze.Name == "META-INF/MANIFEST.MF" && manifestMainClass == null)
-							{
-								// read main class from manifest
-								// TODO find out if we can use other information from manifest
-								StreamReader rdr = new StreamReader(zf.GetInputStream(ze));
-								string line;
-								while((line = rdr.ReadLine()) != null)
-								{
-									if(line.StartsWith("Main-Class: "))
-									{
-										manifestMainClass = line.Substring(12);
-										break;
-									}
-								}
-							}
-							if(resources.ContainsKey(ze.Name))
-							{
-								Console.Error.WriteLine("Warning: skipping resource (name clash): " + ze.Name);
-							}
-							else
-							{
-								resources.Add(ze.Name, ReadFromZip(zf, ze));
-								itemsProcessed++;
-							}
-						}
-					}
+					ProcessZipFile(file);
 				}
-				finally
+				catch(ICSharpCode.SharpZipLib.ZipException x)
 				{
-					zf.Close();
+					Console.Error.WriteLine("Warning: error reading {0}: {1}", file, x.Message);
 				}
 				break;
 			default:
@@ -369,15 +381,15 @@ class Compiler
 		}
 	}
 
-	private static void Recurse(ArrayList classes, Hashtable resources, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
+	private static void Recurse(DirectoryInfo baseDir, DirectoryInfo dir, string spec)
 	{
 		foreach(FileInfo file in dir.GetFiles(spec))
 		{
-			ProcessFile(classes, resources, baseDir, file.FullName);
+			ProcessFile(baseDir, file.FullName);
 		}
 		foreach(DirectoryInfo sub in dir.GetDirectories())
 		{
-			Recurse(classes, resources, baseDir, sub, spec);
+			Recurse(baseDir, sub, spec);
 		}
 	}
 

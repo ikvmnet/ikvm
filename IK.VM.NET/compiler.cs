@@ -1892,15 +1892,33 @@ class Compiler
 							ilGenerator.Emit(OpCodes.Rem);
 							break;
 						case NormalizedByteCode.__ishl:
+							ilGenerator.Emit(OpCodes.Ldc_I4, 31);
+							ilGenerator.Emit(OpCodes.And);
+							ilGenerator.Emit(OpCodes.Shl);
+							break;
 						case NormalizedByteCode.__lshl:
+							ilGenerator.Emit(OpCodes.Ldc_I4, 63);
+							ilGenerator.Emit(OpCodes.And);
 							ilGenerator.Emit(OpCodes.Shl);
 							break;
 						case NormalizedByteCode.__iushr:
+							ilGenerator.Emit(OpCodes.Ldc_I4, 31);
+							ilGenerator.Emit(OpCodes.And);
+							ilGenerator.Emit(OpCodes.Shr_Un);
+							break;
 						case NormalizedByteCode.__lushr:
+							ilGenerator.Emit(OpCodes.Ldc_I4, 63);
+							ilGenerator.Emit(OpCodes.And);
 							ilGenerator.Emit(OpCodes.Shr_Un);
 							break;
 						case NormalizedByteCode.__ishr:
+							ilGenerator.Emit(OpCodes.Ldc_I4, 31);
+							ilGenerator.Emit(OpCodes.And);
+							ilGenerator.Emit(OpCodes.Shr);
+							break;
 						case NormalizedByteCode.__lshr:
+							ilGenerator.Emit(OpCodes.Ldc_I4, 63);
+							ilGenerator.Emit(OpCodes.And);
 							ilGenerator.Emit(OpCodes.Shr);
 							break;
 						case NormalizedByteCode.__swap:

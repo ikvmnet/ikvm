@@ -440,7 +440,7 @@ public class PlainSocketImpl extends SocketImpl
 		}
 	}
 
-	private static byte[] getLocalAddress(cli.System.Net.Sockets.Socket socket)
+	static byte[] getLocalAddress(cli.System.Net.Sockets.Socket socket)
 	{
 	    int address = (int)((cli.System.Net.IPEndPoint)socket.get_LocalEndPoint()).get_Address().get_Address();
 	    return new byte[] { (byte)address, (byte)(address >> 8), (byte)(address >> 16), (byte)(address >> 24) };

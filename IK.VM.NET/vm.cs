@@ -268,7 +268,21 @@ public class JVM
 		Console.WriteLine("Parsing class files");
 		for(int i = 0; i < classes.Length; i++)
 		{
-			ClassFile f = new ClassFile(classes[i], 0, classes[i].Length, null);
+			ClassFile f;
+			try
+			{
+				f = new ClassFile(classes[i], 0, classes[i].Length, null);
+			}
+			catch(ClassFile.UnsupportedClassVersionError x)
+			{
+				Console.Error.WriteLine("Error: unsupported class file version: {0}", x.Message);
+				return;
+			}
+			catch(ClassFile.ClassFormatError x)
+			{
+				Console.Error.WriteLine("Error: invalid class file: {0}", x.Message);
+				return;
+			}
 			string name = f.Name;
 			bool excluded = false;
 			for(int j = 0; j < classesToExclude.Length; j++)
@@ -281,7 +295,7 @@ public class JVM
 			}
 			if(h.ContainsKey(name))
 			{
-				Console.Error.WriteLine("Duplicate class name: {0}", name);
+				Console.Error.WriteLine("Error: duplicate class name: {0}", name);
 				return;
 			}
 			if(!excluded)
