@@ -368,9 +368,23 @@ public final class FileDescriptor
 		if(stream == null)
 			throw new IOException("Invalid FileDescriptor");
 
-		if(stream.get_CanSeek())
-			return (int)Math.max(Integer.MAX_VALUE, stream.get_Length() - stream.get_Position());
-
-		return 0;
+		try
+		{
+		    if(false) throw new system.io.IOException();
+		    if(false) throw new system.NotSupportedException();
+		    if(stream.get_CanSeek())
+			    return (int)Math.min(Integer.MAX_VALUE, Math.max(0, stream.get_Length() - stream.get_Position()));
+		    return 0;
+		}
+		catch(system.io.IOException x)
+		{
+		    throw new IOException(x.get_Message());
+		}
+		catch(system.NotSupportedException x1)
+		{
+		    // this means we have a broken Stream, because if CanSeek returns true, it must
+		    // support Length and Position
+		    return 0;
+		}
 	}
 } // class FileDescriptor
