@@ -980,26 +980,6 @@ namespace NativeCode.java
 			}
 		}
 
-		public class Thread
-		{
-			public static void sleep(long millis, int nanos)
-			{
-				NetSystem.Threading.Thread.Sleep(new TimeSpan(millis * 10000 + (nanos + 99) / 100));
-			}
-
-			public static void joinInternal(NetSystem.Threading.Thread nativeThread, long millis, int nanos)
-			{
-				if(millis == 0 && nanos == 0)
-				{
-					nativeThread.Join();
-				}
-				else
-				{
-					nativeThread.Join(new TimeSpan(millis * 10000 + (nanos + 99) / 100));
-				}
-			}
-		}
-
 		public class VMClass
 		{
 			private static Hashtable map = new Hashtable();
