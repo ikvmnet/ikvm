@@ -352,7 +352,8 @@ class ClassFile
 	{
 		get
 		{
-			return (access_flags & Modifiers.Abstract) != 0;
+			// interfaces are implicitly abstract
+			return (access_flags & (Modifiers.Abstract | Modifiers.Interface)) != 0;
 		}
 	}
 
@@ -634,12 +635,16 @@ class ClassFile
 					{
 						type = type.BaseType;
 					}
-					string sep = "";
-					while(cl != null)
+					System.Reflection.FieldInfo parentField = type.GetField("parent", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+					if(parentField != null)
 					{
-						sb.Append(sep).Append(cl);
-						sep = " -> ";
-						cl = type.InvokeMember("getParent", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.Instance, null, cl, new object[0]);
+						string sep = "";
+						while(cl != null)
+						{
+							sb.Append(sep).Append(cl);
+							sep = " -> ";
+							cl = parentField.GetValue(cl);
+						}
 					}
 					Tracer.Error(Tracer.ClassLoading, "ClassLoader chain: {0}", sb);
 				}
@@ -1598,7 +1603,11 @@ class ClassFile
 					switch(classFile.GetConstantPoolUtf8String(br.ReadUInt16()))
 					{
 						case "LineNumberTable":
-							if(JVM.Debug)
+							if(JVM.NoStackTraceInfo)
+							{
+								br.Skip(br.ReadUInt32());
+							}
+							else
 							{
 								BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
 								int count = rdr.ReadUInt16();
@@ -1608,10 +1617,6 @@ class ClassFile
 									lineNumberTable[j].start_pc = rdr.ReadUInt16();
 									lineNumberTable[j].line_number = rdr.ReadUInt16();
 								}
-							}
-							else
-							{
-								br.Skip(br.ReadUInt32());
 							}
 							break;
 						case "LocalVariableTable":

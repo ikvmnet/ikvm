@@ -33,6 +33,16 @@ namespace IKVM.NativeCode.java.lang
 {
 	public class ExceptionHelper
 	{
+		public static Exception getInnerException(Exception t)
+		{
+			return t.InnerException;
+		}
+
+		public static string getMessageFromCliException(Exception t)
+		{
+			return t.Message;
+		}
+
 		public static bool IsNative(MethodBase m)
 		{
 			if(m.IsDefined(typeof(ModifiersAttribute), false))
@@ -50,8 +60,42 @@ namespace IKVM.NativeCode.java.lang
 			return false;
 		}
 
+		public static string GetMethodName(MethodBase mb)
+		{
+			if(mb.IsDefined(typeof(NameSigAttribute), false))
+			{
+				object[] attr = mb.GetCustomAttributes(typeof(NameSigAttribute), false);
+				if(attr.Length == 1)
+				{
+					return ((NameSigAttribute)attr[0]).Name;
+				}
+				return mb.Name;
+			}
+			else if(mb.Name == ".ctor")
+			{
+				return "<init>";
+			}
+			else if(mb.Name == ".cctor")
+			{
+				return "<clinit>";
+			}
+			else
+			{
+				return mb.Name;
+			}
+		}
+
+		public static bool IsHideFromJava(MethodBase mb)
+		{
+			return mb.IsDefined(typeof(HideFromJavaAttribute), false);
+		}
+
 		public static string getClassNameFromType(Type type)
 		{
+			if(ClassLoaderWrapper.IsRemappedType(type))
+			{
+				return DotNetTypeWrapper.GetName(type);
+			}
 			return TypeWrapper.GetNameFromType(type);
 		}
 
@@ -67,6 +111,38 @@ namespace IKVM.NativeCode.java.lang
 				MethodWrapper mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper(new MethodDescriptor("<init>", "(Ljava.lang.String;Ljava.lang.Throwable;)V"), false);
 				mw.Invoke(throwable, new object[] { detailMessage, cause }, true);
 			}
+		}
+
+		public static int GetLineNumber(StackFrame frame)
+		{
+			int ilOffset = frame.GetILOffset();
+			if(ilOffset != StackFrame.OFFSET_UNKNOWN)
+			{
+				MethodBase mb = frame.GetMethod();
+				if(mb != null)
+				{
+					object[] attr = mb.GetCustomAttributes(typeof(LineNumberTableAttribute), false);
+					if(attr.Length == 1)
+					{
+						return ((LineNumberTableAttribute)attr[0]).GetLineNumber(ilOffset);
+					}
+				}
+			}
+			return -1;
+		}
+
+		public static string GetFileName(StackFrame frame)
+		{
+			MethodBase mb = frame.GetMethod();
+			if(mb != null)
+			{
+				object[] attr = mb.DeclaringType.GetCustomAttributes(typeof(SourceFileAttribute), false);
+				if(attr.Length == 1)
+				{
+					return ((SourceFileAttribute)attr[0]).SourceFile;
+				}
+			}
+			return null;
 		}
 	}
 }

@@ -30,6 +30,8 @@ using IKVM.Attributes;
 using IKVM.Internal;
 using IKVM.Runtime;
 
+using ILGenerator = CountingILGenerator;
+
 [Flags]
 enum MemberFlags : short
 {

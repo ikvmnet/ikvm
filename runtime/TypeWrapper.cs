@@ -30,6 +30,8 @@ using IKVM.Runtime;
 using IKVM.Attributes;
 using IKVM.Internal;
 
+using ILGenerator = CountingILGenerator;
+
 sealed class MethodDescriptor
 {
 	private string name;
@@ -100,7 +102,7 @@ class EmitHelper
 
 	internal static void RunClassConstructor(ILGenerator ilgen, Type type)
 	{
-		// NOTE we're *not* running the .cctor is the class is not a Java class
+		// NOTE we're *not* running the .cctor if the class is not a Java class
 		// NOTE this is a potential versioning problem, if the base class lives in another assembly and doesn't
 		// have a <clinit> now, a newer version that does have a <clinit> will not have it's <clinit> called by us.
 		// A possible solution would be to use RuntimeHelpers.RunClassConstructor when "type" is a Java type and
@@ -129,6 +131,9 @@ class AttributeHelper
 	private static CustomAttributeBuilder deprecatedAttribute;
 	private static ConstructorInfo implementsAttribute;
 	private static ConstructorInfo throwsAttribute;
+	private static ConstructorInfo sourceFileAttribute;
+	private static ConstructorInfo lineNumberTableAttribute;
+	private static ConstructorInfo wideLineNumberTableAttribute;
 
 	internal static void SetDeprecatedAttribute(MethodBase mb)
 	{
@@ -433,6 +438,47 @@ class AttributeHelper
 		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ci, args);
 		typeBuilder.SetCustomAttribute(customAttributeBuilder);
 	}
+
+	internal static void SetSourceFile(TypeBuilder typeBuilder, string filename)
+	{
+		if(sourceFileAttribute == null)
+		{
+			sourceFileAttribute = typeof(SourceFileAttribute).GetConstructor(new Type[] { typeof(string) });
+		}
+		typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(sourceFileAttribute, new object[] { filename }));
+	}
+
+	internal static void SetLineNumberTable(MethodBase mb, byte[] table)
+	{
+		if(wideLineNumberTableAttribute == null)
+		{
+			wideLineNumberTableAttribute = typeof(LineNumberTableAttribute).GetConstructor(new Type[] { typeof(byte[]) });
+		}
+		if(mb is ConstructorBuilder)
+		{
+			((ConstructorBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(wideLineNumberTableAttribute, new object[] { table }));
+		}
+		else
+		{
+			((MethodBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(wideLineNumberTableAttribute, new object[] { table }));
+		}
+	}
+
+	internal static void SetLineNumberTable(MethodBase mb, ushort[] table)
+	{
+		if(lineNumberTableAttribute == null)
+		{
+			lineNumberTableAttribute = typeof(LineNumberTableAttribute).GetConstructor(new Type[] { typeof(ushort[]) });
+		}
+		if(mb is ConstructorBuilder)
+		{
+			((ConstructorBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(lineNumberTableAttribute, new object[] { table }));
+		}
+		else
+		{
+			((MethodBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(lineNumberTableAttribute, new object[] { table }));
+		}
+	}
 }
 
 abstract class TypeWrapper
@@ -609,8 +655,6 @@ abstract class TypeWrapper
 		}
 	}
 
-	// TODO since for inner classes, the modifiers returned by Class.getModifiers are different from the actual
-	// modifiers (as used by the VM access control mechanism), we need an additional property (e.g. InnerClassModifiers)
 	internal Modifiers Modifiers
 	{
 		get
@@ -621,7 +665,6 @@ abstract class TypeWrapper
 
 	// since for inner classes, the modifiers returned by Class.getModifiers are different from the actual
 	// modifiers (as used by the VM access control mechanism), we have this additional property
-	// NOTE this property can only be called for finished types!
 	internal virtual Modifiers ReflectiveModifiers
 	{
 		get
@@ -642,7 +685,8 @@ abstract class TypeWrapper
 	{
 		get
 		{
-			return (modifiers & Modifiers.Abstract) != 0;
+			// interfaces don't need to marked abstract explicitly (and javac 1.1 didn't do it)
+			return (modifiers & (Modifiers.Abstract | Modifiers.Interface)) != 0;
 		}
 	}
 
@@ -774,19 +818,6 @@ abstract class TypeWrapper
 		get
 		{
 			return "L" + this.Name + ";";
-		}
-	}
-
-	internal string PackageName
-	{
-		get
-		{
-			int index = name.LastIndexOf('.');
-			if(index == -1)
-			{
-				return "";
-			}
-			return name.Substring(0, index);
 		}
 	}
 
@@ -1288,7 +1319,7 @@ abstract class TypeWrapper
 		ilgen.MarkLabel(label2);
 	}
 
-	internal virtual void EmitBox(ILGenerator ilgen)
+	internal void EmitBox(ILGenerator ilgen)
 	{
 		Debug.Assert(this.IsNonPrimitiveValueType);
 
@@ -2201,6 +2232,10 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				{
 					AttributeHelper.SetDeprecatedAttribute(typeBuilder);
 				}
+				if(f.SourceFileAttribute != null && !JVM.NoStackTraceInfo)
+				{
+					AttributeHelper.SetSourceFile(typeBuilder, f.SourceFileAttribute);
+				}
 			}
 			catch(Exception x)
 			{
@@ -2785,7 +2820,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
 							// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
-							if(!classFile.IsAbstract && !classFile.IsInterface)
+							if(!classFile.IsAbstract)
 							{
 								ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
 								Tracer.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
@@ -3651,7 +3686,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						// only if the classfile is abstract, we make the CLR method abstract, otherwise,
 						// we have to generate a method that throws an AbstractMethodError (because the JVM
 						// allows abstract methods in non-abstract classes)
-						if(classFile.IsAbstract || classFile.IsInterface)
+						if(classFile.IsAbstract)
 						{
 							attribs |= MethodAttributes.Abstract;
 						}
@@ -5206,6 +5241,30 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		}
 	}
 
+	private class ValueTypeDefaultCtor : MethodWrapper
+	{
+		internal ValueTypeDefaultCtor(DotNetTypeWrapper tw)
+			: base(tw, new MethodDescriptor("<init>", "()V"), null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Public, MemberFlags.None)
+		{
+		}
+
+		internal override void EmitNewobj(ILGenerator ilgen)
+		{
+			LocalBuilder local = ilgen.DeclareLocal(DeclaringType.TypeAsTBD);
+			ilgen.Emit(OpCodes.Ldloc, local);
+			ilgen.Emit(OpCodes.Box, DeclaringType.TypeAsTBD);
+		}
+
+		internal override object Invoke(object obj, object[] args, bool nonVirtual)
+		{
+			if(obj == null)
+			{
+				obj = Activator.CreateInstance(DeclaringType.TypeAsTBD);
+			}
+			return obj;
+		}
+	}
+
 	protected override void LazyPublishMembers()
 	{
 		// special support for enums
@@ -5259,15 +5318,27 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 				AddMethod(new DelegateMethodWrapper(this, type, iface));
 			}
 
+			bool fabricateDefaultCtor = type.IsValueType;
+
 			ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 			for(int i = 0; i < constructors.Length; i++)
 			{
 				MethodDescriptor md = MakeMethodDescriptor(constructors[i]);
 				if(md != null)
 				{
+					if(fabricateDefaultCtor && !constructors[i].IsStatic && md.Signature == "()V")
+					{
+						fabricateDefaultCtor = false;
+					}
 					// TODO handle name/signature clash
 					AddMethod(CreateMethodWrapper(md, constructors[i], false));
 				}
+			}
+
+			if(fabricateDefaultCtor)
+			{
+				// Value types have an implicit default ctor
+				AddMethod(new ValueTypeDefaultCtor(this));
 			}
 
 			MethodInfo[] methods = type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
@@ -5290,7 +5361,7 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 
 			// HACK private interface implementations need to be published as well
 			// (otherwise the type appears abstract while it isn't)
-			if(!type.IsInterface && !type.IsAbstract)
+			if(!type.IsAbstract)
 			{
 				Type[] interfaces = type.GetInterfaces();
 				for(int i = 0; i < interfaces.Length; i++)
@@ -5610,6 +5681,38 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		{
 			return ClassLoaderWrapper.IsRemappedType(type);
 		}
+	}
+
+	internal override void EmitInstanceOf(TypeWrapper context, ILGenerator ilgen)
+	{
+		if(IsRemapped)
+		{
+			TypeWrapper shadow = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
+			MethodInfo method = shadow.TypeAsBaseType.GetMethod("shadow/instanceof");
+			if(method != null)
+			{
+				ilgen.Emit(OpCodes.Call, method);
+				return;
+			}
+		}
+		ilgen.Emit(OpCodes.Isinst, type);
+		ilgen.Emit(OpCodes.Ldnull);
+		ilgen.Emit(OpCodes.Cgt_Un);
+	}
+
+	internal override void EmitCheckcast(TypeWrapper context, ILGenerator ilgen)
+	{
+		if(IsRemapped)
+		{
+			TypeWrapper shadow = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
+			MethodInfo method = shadow.TypeAsBaseType.GetMethod("shadow/checkcast");
+			if(method != null)
+			{
+				ilgen.Emit(OpCodes.Call, method);
+				return;
+			}
+		}
+		ilgen.Emit(OpCodes.Castclass, type);
 	}
 }
 

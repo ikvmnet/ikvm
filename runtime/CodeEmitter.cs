@@ -22,13 +22,312 @@
   
 */
 using System;
+using System.Collections;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
+using System.Diagnostics.SymbolStore;
+
+class CountingILGenerator
+{
+	private ILGenerator ilgen;
+	private int offset;
+	private ArrayList locals = new ArrayList();
+	private Stack exceptionStack = new Stack();
+	private bool inFinally;
+	private ArrayList linenums;
+
+	public static implicit operator CountingILGenerator(ILGenerator ilgen)
+	{
+		return new CountingILGenerator(ilgen);
+	}
+
+	internal CountingILGenerator(ILGenerator ilgen)
+	{
+		this.ilgen = ilgen;
+	}
+
+	internal int GetILOffset()
+	{
+		return offset;
+	}
+
+	internal void BeginCatchBlock(Type exceptionType)
+	{
+		offset += 5;
+		ilgen.BeginCatchBlock(exceptionType);
+	}
+
+	internal void BeginExceptFilterBlock()
+	{
+		offset += 5;
+		ilgen.BeginExceptFilterBlock();
+	}
+
+	internal Label BeginExceptionBlock()
+	{
+		exceptionStack.Push(inFinally);
+		inFinally = false;
+		return ilgen.BeginExceptionBlock();
+	}
+
+	internal void BeginFaultBlock()
+	{
+		offset += 5;
+		ilgen.BeginFaultBlock();
+	}
+
+	internal void BeginFinallyBlock()
+	{
+		inFinally = true;
+		offset += 5;
+		ilgen.BeginFinallyBlock();
+	}
+
+	internal void BeginScope()
+	{
+		ilgen.BeginScope();
+	}
+
+	internal LocalBuilder DeclareLocal(Type localType)
+	{
+		LocalBuilder loc = ilgen.DeclareLocal(localType);
+		locals.Add(loc);
+		return loc;
+	}
+
+	internal Label DefineLabel()
+	{
+		return ilgen.DefineLabel();
+	}
+
+	internal void Emit(OpCode opcode)
+	{
+		offset += opcode.Size;
+		ilgen.Emit(opcode);
+	}
+
+	internal void Emit(OpCode opcode, byte arg)
+	{
+		offset += opcode.Size + 1;
+		ilgen.Emit(opcode, arg);
+	}
+
+	internal void Emit(OpCode opcode, ConstructorInfo con)
+	{
+		offset += opcode.Size + 4;
+		ilgen.Emit(opcode, con);
+	}
+
+	internal void Emit(OpCode opcode, double arg)
+	{
+		offset += opcode.Size + 8;
+		ilgen.Emit(opcode, arg);
+	}
+
+	internal void Emit(OpCode opcode, FieldInfo field)
+	{
+		offset += opcode.Size + 4;
+		ilgen.Emit(opcode, field);
+	}
+
+	internal void Emit(OpCode opcode, short arg)
+	{
+		offset += opcode.Size + 2;
+		ilgen.Emit(opcode, arg);
+	}
+
+	internal void Emit(OpCode opcode, int arg)
+	{
+		offset += opcode.Size + 4;
+		ilgen.Emit(opcode, arg);
+	}
+
+	internal void Emit(OpCode opcode, long arg)
+	{
+		offset += opcode.Size + 8;
+		ilgen.Emit(opcode, arg);
+	}
+
+	internal void Emit(OpCode opcode, Label label)
+	{
+		offset += opcode.Size;
+		ilgen.Emit(opcode, label);
+		switch(opcode.OperandType)
+		{
+			case OperandType.InlineBrTarget:
+				offset += 4;
+				break;
+			case OperandType.ShortInlineBrTarget:
+				offset += 1;
+				break;
+			default:
+				throw new NotImplementedException();
+		}
+	}
+
+	internal void Emit(OpCode opcode, Label[] labels)
+	{
+		offset += opcode.Size;
+		ilgen.Emit(opcode, labels);
+		throw new NotImplementedException();
+	}
+
+	internal void Emit(OpCode opcode, LocalBuilder local)
+	{
+		ilgen.Emit(opcode, local);
+		int index = locals.IndexOf(local);
+		if(index < 4 && opcode.Value != OpCodes.Ldloca.Value && opcode.Value != OpCodes.Ldloca_S.Value)
+		{
+			offset += 1;
+		}
+		else if(index < 256)
+		{
+			offset += 2;
+		}
+		else
+		{
+			offset += 4;
+		}
+	}
+
+	internal void Emit(OpCode opcode, MethodInfo meth)
+	{
+		offset += opcode.Size + 4;
+		ilgen.Emit(opcode, meth);
+	}
+
+	internal void Emit(OpCode opcode, sbyte arg)
+	{
+		offset += opcode.Size + 1;
+		ilgen.Emit(opcode, arg);
+	}
+
+	internal void Emit(OpCode opcode, SignatureHelper signature)
+	{
+		offset += opcode.Size;
+		ilgen.Emit(opcode, signature);
+		throw new NotImplementedException();
+	}
+
+	internal void Emit(OpCode opcode, float arg)
+	{
+		offset += opcode.Size + 4;
+		ilgen.Emit(opcode, arg);
+	}
+
+	internal void Emit(OpCode opcode, string arg)
+	{
+		offset += opcode.Size + 4;
+		ilgen.Emit(opcode, arg);
+	}
+
+	internal void Emit(OpCode opcode, Type cls)
+	{
+		offset += opcode.Size + 4;
+		ilgen.Emit(opcode, cls);
+	}
+
+	internal void EmitCall(OpCode opcode, MethodInfo methodInfo, Type[] optionalParameterTypes)
+	{
+		offset += opcode.Size;
+		ilgen.EmitCall(opcode, methodInfo, optionalParameterTypes);
+		throw new NotImplementedException();
+	}
+
+	internal void EmitCalli(OpCode opcode, CallingConvention unmanagedCallConv, Type returnType, Type[] parameterTypes)
+	{
+		offset += 5;
+		ilgen.EmitCalli(opcode, unmanagedCallConv, returnType, parameterTypes);
+	}
+
+	internal void EmitCalli(OpCode opcode, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
+	{
+		offset += 5;
+		ilgen.EmitCalli(opcode, callingConvention, returnType, parameterTypes, optionalParameterTypes);
+	}
+
+	internal void EmitWriteLine(FieldInfo fld)
+	{
+		ilgen.EmitWriteLine(fld);
+		throw new NotImplementedException();
+	}
+
+	internal void EmitWriteLine(LocalBuilder localBuilder)
+	{
+		ilgen.EmitWriteLine(localBuilder);
+		throw new NotImplementedException();
+	}
+
+	internal void EmitWriteLine(string value)
+	{
+		offset += 10;
+		ilgen.EmitWriteLine(value);
+	}
+
+	internal void EndExceptionBlock()
+	{
+		if(inFinally)
+		{
+			offset += 1;
+		}
+		else
+		{
+			offset += 5;
+		}
+		inFinally = (bool)exceptionStack.Pop();
+		ilgen.EndExceptionBlock();
+	}
+
+	internal void EndScope()
+	{
+		ilgen.EndScope();
+	}
+
+	internal void MarkLabel(Label loc)
+	{
+		ilgen.MarkLabel(loc);
+	}
+
+	internal void MarkSequencePoint(ISymbolDocumentWriter document, int startLine, int startColumn, int endLine, int endColumn)
+	{
+		ilgen.MarkSequencePoint(document, startLine, startColumn, endLine, endColumn);
+	}
+
+	internal void ThrowException(Type excType)
+	{
+		offset += 6;
+		ilgen.ThrowException(excType);
+	}
+
+	internal void UsingNamespace(string usingNamespace)
+	{
+		ilgen.UsingNamespace(usingNamespace);
+	}
+
+	internal void SetLineNumber(ushort line)
+	{
+		if(linenums == null)
+		{
+			linenums = new ArrayList();
+		}
+		linenums.Add((ushort)offset);
+		linenums.Add(line);
+	}
+
+	internal void EmitLineNumberTable(MethodBase mb)
+	{
+		if(!IKVM.Internal.JVM.NoStackTraceInfo && linenums != null)
+		{
+			AttributeHelper.SetLineNumberTable(mb, (ushort[])linenums.ToArray(typeof(ushort)));
+		}
+	}
+}
 
 namespace IKVM.Internal
 {
 	public abstract class CodeEmitter
 	{
-		internal abstract void Emit(ILGenerator ilgen);
+		internal abstract void Emit(CountingILGenerator ilgen);
 	}
 }

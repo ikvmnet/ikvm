@@ -73,8 +73,7 @@
 			<method name="getClass" sig="()Ljava.lang.Class;" modifiers="public final">
 				<body>
 					<ldarg_0 />
-					<call type="System.Object, mscorlib" name="GetType" sig="()Lcli.System.Type;" />
-					<call type="IKVM.NativeCode.java.lang.VMClass" name="getClassFromType" sig="(Lcli.System.Type;)Ljava.lang.Class;" />
+					<call type="IKVM.Runtime.Util" name="GetClassFromObject" sig="(Ljava.lang.Object;)Ljava.lang.Object;" />
 					<castclass class="java.lang.Class" />
 					<ret />
 				</body>
@@ -213,11 +212,7 @@
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIILjava.lang.String;)Ljava.lang.String;" />
 			</constructor>
 			<method name="hashCode" sig="()I" modifiers="public">
-				<body>
-					<ldarg_0 />
-					<call class="java.lang.StringHelper" name="hashCode" sig="(Lcli.System.String;)I" />
-					<ret />
-				</body>
+				<redirect class="java.lang.StringHelper" name="hashCode" type="static" sig="(Lcli.System.String;)I" />
 			</method>
 			<!-- we have a toString here to make sure that it shows up as a declared method in reflection -->
 			<method name="toString" sig="()Ljava.lang.String;" modifiers="public" />
@@ -257,7 +252,23 @@
 				<redirect name="get_Length" />
 			</method>
 			<method name="charAt" sig="(I)C" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;I)C" />
+				<body>
+					<exceptionBlock>
+						<try>
+							<ldarg_0 />
+							<ldarg_1 />
+							<callvirt type="System.String, mscorlib" name="get_Chars" sig="(I)C" />
+							<stloc name="char" type="System.Char, mscorlib" />
+						</try>
+						<catch type="System.IndexOutOfRangeException, mscorlib">
+							<pop />
+							<newobj class="java.lang.StringIndexOutOfBoundsException" name="&lt;init&gt;" sig="()V" />
+							<throw />
+						</catch>
+					</exceptionBlock>
+					<ldloc name="char" />
+					<ret />
+				</body>
 			</method>
 			<method name="substring" sig="(II)Ljava.lang.String;" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)Ljava.lang.String;" />

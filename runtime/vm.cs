@@ -28,17 +28,22 @@ using System.Reflection.Emit;
 using System.Reflection;
 using System.IO;
 using System.Collections;
-using System.Collections.Specialized;
 using System.Xml;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using IKVM.Attributes;
 using IKVM.Runtime;
 
+using ILGenerator = CountingILGenerator;
+
 namespace IKVM.Runtime
 {
-	public class Startup
+	public sealed class Startup
 	{
+		private Startup()
+		{
+		}
+
 		public static string[] Glob(string arg)
 		{
 			if(IKVM.Internal.JVM.IsUnix)
@@ -148,15 +153,10 @@ namespace IKVM.Runtime
 			}
 		}
 
-		public static void SetProperties(System.Collections.Specialized.StringDictionary props)
+		public static void SetProperties(System.Collections.Hashtable props)
 		{
 			Type vmruntime = Type.GetType("java.lang.VMRuntime, IKVM.GNU.Classpath");
-			System.Collections.Hashtable h = new System.Collections.Hashtable();
-			foreach(DictionaryEntry de in props)
-			{
-				h.Add(de.Key, de.Value);
-			}
-			vmruntime.GetField("props", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, h);
+			vmruntime.GetField("props", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, props.Clone());
 		}
 
 		public static void EnterMainThread()
@@ -177,15 +177,45 @@ namespace IKVM.Runtime
 			Thread.SetData(Thread.GetNamedDataSlot("ikvm-thread-hack"), null);
 		}
 	}
+
+	public sealed class Util
+	{
+		private Util()
+		{
+		}
+
+		public static object GetClassFromObject(object o)
+		{
+			Type t = o.GetType();
+			if(t.IsPrimitive || (ClassLoaderWrapper.IsRemappedType(t) && !t.IsSealed))
+			{
+				// TODO there should be a better way
+				return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(DotNetTypeWrapper.GetName(t)));
+			}
+			return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetWrapperFromType(t));
+		}
+
+		public static object GetClassFromTypeHandle(RuntimeTypeHandle handle)
+		{
+			Type t = Type.GetTypeFromHandle(handle);
+			if(t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t))
+			{
+				// TODO there should be a better way
+				return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(DotNetTypeWrapper.GetName(t)));
+			}
+			return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetWrapperFromType(t));
+		}
+	}
 }
 
 namespace IKVM.Internal
 {
 	public class JVM
 	{
-		private static bool debug = false;
-		private static bool noJniStubs = false;
-		private static bool isStaticCompiler = false;
+		private static bool debug;
+		private static bool noJniStubs;
+		private static bool isStaticCompiler;
+		private static bool noStackTraceInfo;
 		private static bool compilationPhase1;
 		private static string sourcePath;
 
@@ -218,6 +248,14 @@ namespace IKVM.Internal
 			get
 			{
 				return noJniStubs;
+			}
+		}
+
+		public static bool NoStackTraceInfo
+		{
+			get
+			{
+				return noStackTraceInfo;
 			}
 		}
 
@@ -326,11 +364,8 @@ namespace IKVM.Internal
 				moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, JVM.Debug);
 				CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeof(JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 				moduleBuilder.SetCustomAttribute(ikvmModuleAttr);
-				if(JVM.Debug)
-				{
-					CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, true });
-					assemblyBuilder.SetCustomAttribute(debugAttr);
-				}
+				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
+				assemblyBuilder.SetCustomAttribute(debugAttr);
 				return moduleBuilder;
 			}
 
@@ -373,7 +408,7 @@ namespace IKVM.Internal
 				return type;
 			}
 
-			internal void SetMain(MethodInfo m, PEFileKinds target, StringDictionary props, bool noglobbing, Type apartmentAttributeType)
+			internal void SetMain(MethodInfo m, PEFileKinds target, Hashtable props, bool noglobbing, Type apartmentAttributeType)
 			{
 				Type[] args = Type.EmptyTypes;
 				if(noglobbing)
@@ -388,13 +423,13 @@ namespace IKVM.Internal
 				ILGenerator ilgen = mainStub.GetILGenerator();
 				if(props.Count > 0)
 				{
-					ilgen.Emit(OpCodes.Newobj, typeof(StringDictionary).GetConstructor(Type.EmptyTypes));
+					ilgen.Emit(OpCodes.Newobj, typeof(Hashtable).GetConstructor(Type.EmptyTypes));
 					foreach(DictionaryEntry de in props)
 					{
 						ilgen.Emit(OpCodes.Dup);
 						ilgen.Emit(OpCodes.Ldstr, (string)de.Key);
 						ilgen.Emit(OpCodes.Ldstr, (string)de.Value);
-						ilgen.Emit(OpCodes.Callvirt, typeof(StringDictionary).GetMethod("Add"));
+						ilgen.Emit(OpCodes.Callvirt, typeof(Hashtable).GetMethod("Add"));
 					}
 					ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("SetProperties"));
 				}
@@ -579,6 +614,10 @@ namespace IKVM.Internal
 					{
 						typeBuilder.AddInterfaceImplementation(baseInterface);
 					}
+					if(!JVM.NoStackTraceInfo)
+					{
+						AttributeHelper.SetSourceFile(typeBuilder, IKVM.Internal.MapXml.Root.filename);
+					}
 
 					if(baseIsSealed)
 					{
@@ -746,6 +785,7 @@ namespace IKVM.Internal
 								}
 								ilgen.Emit(OpCodes.Ret);
 							}
+							ilgen.EmitLineNumberTable(cbCore);
 						}
 
 						if(mbHelper != null)
@@ -812,6 +852,7 @@ namespace IKVM.Internal
 								ilgen.Emit(OpCodes.Newobj, baseCon);
 								ilgen.Emit(OpCodes.Ret);
 							}
+							ilgen.EmitLineNumberTable(mbHelper);
 						}
 					}
 				}
@@ -1057,6 +1098,10 @@ namespace IKVM.Internal
 							}
 							else
 							{
+								if(m.redirect != null && m.redirect.LineNumber != -1)
+								{
+									ilgen.SetLineNumber((ushort)m.redirect.LineNumber);
+								}
 								int thisOffset = 0;
 								if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) == 0)
 								{
@@ -1082,6 +1127,7 @@ namespace IKVM.Internal
 								this.ReturnType.EmitConvStackToParameterType(ilgen, null);
 								ilgen.Emit(OpCodes.Ret);
 							}
+							ilgen.EmitLineNumberTable(mbCore);
 						}
 
 						// NOTE static methods don't have helpers
@@ -1161,6 +1207,10 @@ namespace IKVM.Internal
 							}
 							else
 							{
+								if(m.redirect != null && m.redirect.LineNumber != -1)
+								{
+									ilgen.SetLineNumber((ushort)m.redirect.LineNumber);
+								}
 								Type shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
 								for(int i = 0; i < paramTypes.Length + 1; i++)
 								{
@@ -1196,6 +1246,7 @@ namespace IKVM.Internal
 								this.ReturnType.EmitConvStackToParameterType(ilgen, null);
 								ilgen.Emit(OpCodes.Ret);
 							}
+							ilgen.EmitLineNumberTable(mbHelper);
 						}
 
 						// do we need a helper for non-virtual reflection invocation?
@@ -1206,6 +1257,7 @@ namespace IKVM.Internal
 							argTypes[0] = typeWrapper.TypeAsParameterType;
 							this.GetParametersForDefineMethod().CopyTo(argTypes, 1);
 							MethodBuilder mb = typeWrapper.typeBuilder.DefineMethod("nonvirtualhelper/" + this.Name, MethodAttributes.Private | MethodAttributes.Static, this.ReturnTypeForDefineMethod, argTypes);
+							AttributeHelper.HideFromJava(mb);
 							ILGenerator ilgen = mb.GetILGenerator();
 							if(m.nonvirtualAlternateBody != null)
 							{
@@ -1372,7 +1424,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal void Process4thPass()
+				internal void Process4thPass(ICollection remappedTypes)
 				{
 					foreach(RemappedMethodBaseWrapper m in GetMethods())
 					{
@@ -1397,10 +1449,113 @@ namespace IKVM.Internal
 						}
 					}
 
+					CreateShadowInstanceOf(remappedTypes);
+					CreateShadowCheckCast(remappedTypes);
+
 					typeBuilder.CreateType();
 					if(helperTypeBuilder != null)
 					{
 						helperTypeBuilder.CreateType();
+					}
+				}
+
+				private void CreateShadowInstanceOf(ICollection remappedTypes)
+				{
+					// FXBUG .NET 1.1 doesn't allow static methods on interfaces
+					if(typeBuilder.IsInterface)
+					{
+						return;
+					}
+					MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
+					MethodBuilder mb = typeBuilder.DefineMethod("shadow/instanceof", attr, typeof(bool), new Type[] { typeof(object) });
+					AttributeHelper.HideFromJava(mb);
+					ILGenerator ilgen = mb.GetILGenerator();
+
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Isinst, shadowType);
+					Label retFalse = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Brfalse_S, retFalse);
+
+					if(!shadowType.IsSealed)
+					{
+						ilgen.Emit(OpCodes.Ldarg_0);
+						ilgen.Emit(OpCodes.Isinst, typeBuilder);
+						ilgen.Emit(OpCodes.Brtrue_S, retFalse);
+					}
+
+					if(shadowType == typeof(object))
+					{
+						ilgen.Emit(OpCodes.Ldarg_0);
+						ilgen.Emit(OpCodes.Isinst, typeof(Array));
+						ilgen.Emit(OpCodes.Brtrue_S, retFalse);
+					}
+
+					foreach(RemapperTypeWrapper r in remappedTypes)
+					{
+						if(!r.shadowType.IsInterface && r.shadowType.IsSubclassOf(shadowType))
+						{
+							ilgen.Emit(OpCodes.Ldarg_0);
+							ilgen.Emit(OpCodes.Isinst, r.shadowType);
+							ilgen.Emit(OpCodes.Brtrue_S, retFalse);
+						}
+					}
+					ilgen.Emit(OpCodes.Ldc_I4_1);
+					ilgen.Emit(OpCodes.Ret);
+
+					ilgen.MarkLabel(retFalse);
+					ilgen.Emit(OpCodes.Ldc_I4_0);
+					ilgen.Emit(OpCodes.Ret);
+				}
+
+				private void CreateShadowCheckCast(ICollection remappedTypes)
+				{
+					// FXBUG .NET 1.1 doesn't allow static methods on interfaces
+					if(typeBuilder.IsInterface)
+					{
+						return;
+					}
+					MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
+					MethodBuilder mb = typeBuilder.DefineMethod("shadow/checkcast", attr, shadowType, new Type[] { typeof(object) });
+					AttributeHelper.HideFromJava(mb);
+					ILGenerator ilgen = mb.GetILGenerator();
+
+					Label fail = ilgen.DefineLabel();
+					bool hasfail = false;
+
+					if(!shadowType.IsSealed)
+					{
+						ilgen.Emit(OpCodes.Ldarg_0);
+						ilgen.Emit(OpCodes.Isinst, typeBuilder);
+						ilgen.Emit(OpCodes.Brtrue_S, fail);
+						hasfail = true;
+					}
+
+					if(shadowType == typeof(object))
+					{
+						ilgen.Emit(OpCodes.Ldarg_0);
+						ilgen.Emit(OpCodes.Isinst, typeof(Array));
+						ilgen.Emit(OpCodes.Brtrue_S, fail);
+						hasfail = true;
+					}
+
+					foreach(RemapperTypeWrapper r in remappedTypes)
+					{
+						if(!r.shadowType.IsInterface && r.shadowType.IsSubclassOf(shadowType))
+						{
+							ilgen.Emit(OpCodes.Ldarg_0);
+							ilgen.Emit(OpCodes.Isinst, r.shadowType);
+							ilgen.Emit(OpCodes.Brtrue_S, fail);
+							hasfail = true;
+						}
+					}
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Castclass, shadowType);
+					ilgen.Emit(OpCodes.Ret);
+
+					if(hasfail)
+					{
+						ilgen.MarkLabel(fail);
+						ilgen.ThrowException(typeof(InvalidCastException));
 					}
 				}
 
@@ -1516,16 +1671,17 @@ namespace IKVM.Internal
 				// 4th pass, implement methods/fields and bake the type
 				foreach(RemapperTypeWrapper typeWrapper in remapped.Values)
 				{
-					typeWrapper.Process4thPass();
+					typeWrapper.Process4thPass(remapped.Values);
 				}
 			}
 		}
 
-		public static void Compile(string path, string keyfilename, string version, bool targetIsModule, string assembly, string mainClass, ApartmentState apartment, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude, string remapfile, StringDictionary props, bool noglobbing)
+		public static void Compile(string path, string keyfilename, string version, bool targetIsModule, string assembly, string mainClass, ApartmentState apartment, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude, string remapfile, Hashtable props, bool noglobbing, bool nostacktraceinfo)
 		{
 			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", path, assembly);
 			isStaticCompiler = true;
 			noJniStubs = nojni;
+			noStackTraceInfo = nostacktraceinfo;
 			foreach(string r in references)
 			{
 				try
@@ -1703,9 +1859,13 @@ namespace IKVM.Internal
 				Tracer.Info(Tracer.Compiler, "Loading remapped types (1) from {0}", remapfile);
 				System.Xml.Serialization.XmlSerializer ser = new System.Xml.Serialization.XmlSerializer(typeof(IKVM.Internal.MapXml.Root));
 				ser.UnknownElement += new System.Xml.Serialization.XmlElementEventHandler(ser_UnknownElement);
+				ser.UnknownAttribute += new System.Xml.Serialization.XmlAttributeEventHandler(ser_UnknownAttribute);
 				using(FileStream fs = File.Open(remapfile, FileMode.Open))
 				{
-					map = (IKVM.Internal.MapXml.Root)ser.Deserialize(fs);
+					XmlTextReader rdr = new XmlTextReader(fs);
+					IKVM.Internal.MapXml.Root.xmlReader = rdr;
+					IKVM.Internal.MapXml.Root.filename = new FileInfo(fs.Name).Name;
+					map = (IKVM.Internal.MapXml.Root)ser.Deserialize(rdr);
 				}
 				loader.EmitRemappedTypes(map);
 			}
@@ -1867,6 +2027,12 @@ namespace IKVM.Internal
 		private static void ser_UnknownElement(object sender, System.Xml.Serialization.XmlElementEventArgs e)
 		{
 			Console.Error.WriteLine("Unknown element {0} in XML mapping file, line {1}, column {2}", e.Element.Name, e.LineNumber, e.LinePosition);
+			Environment.Exit(1);
+		}
+
+		private static void ser_UnknownAttribute(object sender, System.Xml.Serialization.XmlAttributeEventArgs e)
+		{
+			Console.Error.WriteLine("Unknown attribute {0} in XML mapping file, line {1}, column {2}", e.Attr.Name, e.LineNumber, e.LinePosition);
 			Environment.Exit(1);
 		}
 	}

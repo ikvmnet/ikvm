@@ -79,7 +79,7 @@ final class VMClassLoader
      * {@link #defineClass(ClassLoader, String, byte[], int, int, ProtectionDomain)}
      *   instead.
      */
-    static final Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len) throws ClassFormatError
+    static Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len) throws ClassFormatError
     {
 	return defineClass(cl, name, data, offset, len, null);
     }
@@ -96,7 +96,7 @@ final class VMClassLoader
      * @return the class that was defined
      * @throws ClassFormatError if data is not in proper classfile format
      */
-    static final native Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
+    static native Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
 	throws ClassFormatError;
 
     /**
@@ -104,7 +104,7 @@ final class VMClassLoader
      *
      * @param c the class to resolve
      */
-    static final void resolveClass(Class c)
+    static void resolveClass(Class c)
     {
     }
 
@@ -188,7 +188,7 @@ final class VMClassLoader
 	}
     }
 
-    private static final cli.System.LocalDataStoreSlot nestedGetResourcesHack = cli.System.Threading.Thread.AllocateDataSlot();
+    private static cli.System.LocalDataStoreSlot nestedGetResourcesHack = cli.System.Threading.Thread.AllocateDataSlot();
 
     /**
      * Helper to get a package from the bootstrap class loader.  The default
@@ -255,7 +255,7 @@ final class VMClassLoader
      */
     static boolean defaultAssertionStatus()
     {
-	return Boolean.valueOf(getSystemProperty("ikvm.assert.default", "false")).booleanValue();
+	return Boolean.valueOf(ClassLoader.getSystemProperty("ikvm.assert.default", "false")).booleanValue();
     }
 
     /**
@@ -271,7 +271,7 @@ final class VMClassLoader
 	if(packageAssertionMap == null)
 	{
 	    HashMap m = new HashMap();
-	    String enable = getSystemProperty("ikvm.assert.enable", null);
+	    String enable = ClassLoader.getSystemProperty("ikvm.assert.enable", null);
 	    if(enable != null)
 	    {
 		StringTokenizer st = new StringTokenizer(enable, ":");
@@ -280,7 +280,7 @@ final class VMClassLoader
 		    m.put(st.nextToken(), Boolean.TRUE);
 		}
 	    }
-	    String disable = getSystemProperty("ikvm.assert.disable", null);
+	    String disable = ClassLoader.getSystemProperty("ikvm.assert.disable", null);
 	    if(disable != null)
 	    {
 		StringTokenizer st = new StringTokenizer(disable, ":");
@@ -309,85 +309,8 @@ final class VMClassLoader
 	return packageAssertionStatus();
     }
 
-    private static URL[] getExtClassLoaderUrls()
-    {
-	String classpath = getSystemProperty("java.ext.dirs", "");
-	java.util.StringTokenizer tok = new java.util.StringTokenizer(classpath, java.io.File.pathSeparator);
-	ArrayList list = new ArrayList();
-	while(tok.hasMoreTokens())
-	{
-	    try
-	    {
-		java.io.File f = new java.io.File(tok.nextToken());
-		java.io.File[] files = f.listFiles();
-		for(int i = 0; i < files.length; i++)
-		{
-		    list.add(files[i].toURL());
-		}
-	    }
-	    catch(Exception x)
-	    {
-	    }
-	}
-	URL[] urls = new URL[list.size()];
-	list.toArray(urls);
-	return urls;
-    }
-
-    private static URL[] getSystemClassLoaderUrls()
-    {
-	return crackClassPath(getSystemProperty("java.class.path", "."));
-    }
-
-    private static URL[] crackClassPath(String classpath)
-    {
-	java.util.StringTokenizer tok = new java.util.StringTokenizer(classpath, java.io.File.pathSeparator);
-	ArrayList list = new ArrayList();
-	while(tok.hasMoreTokens())
-	{
-	    try
-	    {
-		list.add(new java.io.File(tok.nextToken()).toURL());
-	    }
-	    catch(java.net.MalformedURLException x)
-	    {
-	    }
-	}
-	URL[] urls = new URL[list.size()];
-	list.toArray(urls);
-	return urls;
-    }
-
     static ClassLoader getSystemClassLoader()
     {
-	ClassLoader extClassLoader = new java.net.URLClassLoader(getExtClassLoaderUrls(), null);
-	ClassLoader systemClassLoader = new java.net.URLClassLoader(getSystemClassLoaderUrls(), extClassLoader);
-	String loader = getSystemProperty("java.system.class.loader", null);
-	if(loader == null)
-	{
-	    return systemClassLoader;
-	}
-	try
-	{
-	    Constructor c = Class.forName(loader, false, systemClassLoader)
-		.getConstructor(new Class[] { ClassLoader.class });
-	    return (ClassLoader)c.newInstance(new Object[] { systemClassLoader });
-	}
-	catch(Exception e)
-	{
-	    System.err.println("Requested system classloader " + loader + " failed.");
-	    throw (Error)new Error("Requested system classloader " + loader + " failed.").initCause(e);
-	}
-    }
-
-    private static String getSystemProperty(String name, String defaultValue)
-    {
-	// access properties directly to bypass security
-	String val = System.properties.getProperty(name);
-	if(val == null)
-	{
-	    val = defaultValue;
-	}
-	return val;
+	return ClassLoader.defaultGetSystemClassLoader();
     }
 }

@@ -130,10 +130,11 @@ public class Starter
 	}
 
 	[STAThread]	// NOTE this is here because otherwise SWT's RegisterDragDrop (a COM thing) doesn't work
+	[IKVM.Attributes.HideFromJava]
 	static int Main(string[] args)
 	{
 		Tracer.EnableTraceForDebug();
-		StringDictionary props = new StringDictionary();
+		Hashtable props = new Hashtable();
 		bool jar = false;
 		bool saveAssembly = false;
 		bool saveAssemblyX = false;

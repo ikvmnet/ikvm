@@ -708,11 +708,8 @@ class ClassLoaderWrapper
 		}
 		AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true);
 		ModuleBuilder moduleBuilder = saveDebugImage ? assemblyBuilder.DefineDynamicModule(name.Name, "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
-		if(JVM.Debug)
-		{
-			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, true });
-			assemblyBuilder.SetCustomAttribute(debugAttr);
-		}
+		CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
+		assemblyBuilder.SetCustomAttribute(debugAttr);
 		return moduleBuilder;
 	}
 

@@ -85,11 +85,12 @@ class Compiler
 		string remapfile = null;
 		bool nojni = false;
 		bool noglobbing = false;
+		bool nostacktraceinfo = false;
 		ApartmentState apartment = ApartmentState.STA;
 		ArrayList classesToExclude = new ArrayList();
 		ArrayList references = new ArrayList();
 		ArrayList arglist = GetArgs(args);
-		StringDictionary props = new StringDictionary();
+		Hashtable props = new Hashtable();
 		if(arglist.Count == 0)
 		{
 			Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
@@ -122,6 +123,7 @@ class Compiler
 			Console.Error.WriteLine("    -da[:<packagename>...|:<classname>]");
 			Console.Error.WriteLine("    -disableassertions[:<packagename>...|:<classname>]");
 			Console.Error.WriteLine("                               Set system property to disable assertions");
+			Console.Error.WriteLine("    -nostacktraceinfo          Don't create metadata to emit rich stack traces");
 			Console.Error.WriteLine("    -Xtrace:<string>           Displays all tracepoints with the given name");
 			Console.Error.WriteLine("    -Xmethodtrace:<string>     Build tracing into the specified output methods");
 			return 1;
@@ -241,7 +243,16 @@ class Compiler
 				else if(s.StartsWith("-recurse:"))
 				{
 					string spec = s.Substring(9);
-					if(Directory.Exists(spec))
+					bool exists = false;
+					// MONOBUG On Mono 1.0.2, Directory.Exists throws an exception if we pass an invalid directory name
+					try
+					{
+						exists = Directory.Exists(spec);
+					}
+					catch(IOException)
+					{
+					}
+					if(exists)
 					{
 						// NOTE we're appending a DirectorySeparatorChar to make sure that dir.FullName always
 						// ends with a separator (multiple separators are automatically collapsed into one).
@@ -252,9 +263,22 @@ class Compiler
 					}
 					else
 					{
-						// see comment above about Path.DirectorySeparatorChar
-						DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec) + Path.DirectorySeparatorChar);
-						Recurse(dir, dir, Path.GetFileName(spec));
+						try
+						{
+							// see comment above about Path.DirectorySeparatorChar
+							DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec) + Path.DirectorySeparatorChar);
+							Recurse(dir, dir, Path.GetFileName(spec));
+						}
+						catch(PathTooLongException)
+						{
+							Console.Error.WriteLine("Error: path too long: {0}", spec);
+							return 1;
+						}
+						catch(ArgumentException)
+						{
+							Console.Error.WriteLine("Error: invalid path: {0}", spec);
+							return 1;
+						}
 					}
 				}
 				else if(s.StartsWith("-resource:"))
@@ -266,11 +290,19 @@ class Compiler
 					}
 					else
 					{
-						using(FileStream fs = new FileStream(spec[1], FileMode.Open))
+						try
 						{
-							byte[] b = new byte[fs.Length];
-							fs.Read(b, 0, b.Length);
-							resources.Add(spec[0], b);
+							using(FileStream fs = new FileStream(spec[1], FileMode.Open))
+							{
+								byte[] b = new byte[fs.Length];
+								fs.Read(b, 0, b.Length);
+								resources.Add(spec[0], b);
+							}
+						}
+						catch(Exception x)
+						{
+							Console.Error.WriteLine("Error: {0}: {1}", x.Message, spec[1]);
+							return 1;
 						}
 					}
 				}
@@ -325,6 +357,10 @@ class Compiler
 				else if(s.StartsWith("-remap:"))
 				{
 					remapfile = s.Substring(7);
+				}
+				else if(s == "-nostacktraceinfo")
+				{
+					nostacktraceinfo = true;
 				}
 				else
 				{
@@ -405,7 +441,7 @@ class Compiler
 		}
 		try
 		{
-			JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, apartment, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)), remapfile, props, noglobbing);
+			JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, apartment, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)), remapfile, props, noglobbing, nostacktraceinfo);
 			return 0;
 		}
 		catch(Exception x)

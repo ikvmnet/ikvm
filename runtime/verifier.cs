@@ -1688,7 +1688,12 @@ class MethodAnalyzer
 								TypeWrapper type = (TypeWrapper)newTypes[instr.PC];
 								if(type == null)
 								{
-									type = VerifierTypeWrapper.MakeNew(GetConstantPoolClassType(instr.Arg1), instr.PC);
+									type = GetConstantPoolClassType(instr.Arg1);
+									if(type.IsArray)
+									{
+										throw new VerifyError("Illegal use of array type");
+									}
+									type = VerifierTypeWrapper.MakeNew(type, instr.PC);
 									newTypes[instr.PC] = type;
 								}
 								s.PushType(type);
@@ -2229,7 +2234,7 @@ class MethodAnalyzer
 			// if we're emitting debug info, we need to keep dead stores as well...
 			for(int i = 0; i < instructions.Length; i++)
 			{
-				if(IsStoreLocal(instructions[i].NormalizedOpCode))
+				if(IsReachable(i) && IsStoreLocal(instructions[i].NormalizedOpCode))
 				{
 					if(!localByStoreSite.ContainsKey(i + ":" + instructions[i].NormalizedArg1))
 					{

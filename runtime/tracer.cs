@@ -30,6 +30,8 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Configuration;
 
+using ILGenerator = CountingILGenerator;
+
 namespace IKVM.Internal
 {
 	public class Tracer

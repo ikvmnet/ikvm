@@ -27,6 +27,73 @@ using System.Reflection.Emit;
 
 namespace IKVM.Attributes
 {
+	public sealed class SourceFileAttribute : Attribute
+	{
+		private string file;
+
+		public SourceFileAttribute(string file)
+		{
+			this.file = file;
+		}
+
+		public string SourceFile
+		{
+			get
+			{
+				return file;
+			}
+		}
+	}
+
+	public sealed class LineNumberTableAttribute : Attribute
+	{
+		private ushort[] table;
+		private byte[] wideTable;
+
+		public LineNumberTableAttribute(ushort[] table)
+		{
+			this.table = table;
+		}
+
+		public LineNumberTableAttribute(byte[] table)
+		{
+			this.wideTable = table;
+		}
+
+		public int GetLineNumber(int ilOffset)
+		{
+			int line = -1;
+			if(table != null)
+			{
+				for(int i = 0; i < table.Length; i += 2)
+				{
+					if(table[i + 0] > ilOffset)
+					{
+						return line;
+					}
+					line = table[i + 1];
+				}
+			}
+			else
+			{
+				for(int i = 0; i < wideTable.Length; i += 6)
+				{
+					int offset =
+						(wideTable[i + 0] << 0) +
+						(wideTable[i + 1] << 8) +
+						(wideTable[i + 2] << 16) +
+						(wideTable[i + 3] << 24);
+					if(offset > ilOffset)
+					{
+						return line;
+					}
+					line = wideTable[i + 4] + (wideTable[i + 5] << 8);
+				}
+			}
+			return line;
+		}
+	}
+
 	[AttributeUsage(AttributeTargets.Class)]
 	public sealed class ExceptionIsUnsafeForMappingAttribute : Attribute
 	{

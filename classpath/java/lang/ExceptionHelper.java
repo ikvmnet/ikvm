@@ -34,7 +34,7 @@ public final class ExceptionHelper
     private static final String NULL_STRING = new String();
     private static final java.util.WeakHashMap exceptions = new java.util.WeakHashMap();
     private static final boolean cleanStackTrace = System.getProperty("ikvm.cleanstacktrace", "1").equals("1");
-    private static cli.System.Type System_Reflection_MethodInfo = cli.System.Type.GetType("System.Reflection.MethodInfo, mscorlib");
+    private static cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
     private static cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
 
     private static class ExceptionInfoHelper
@@ -49,7 +49,7 @@ public final class ExceptionHelper
 	{
 	    tracePart1 = new cli.System.Diagnostics.StackTrace(x, true);
 	    tracePart2 = new cli.System.Diagnostics.StackTrace(true);
-	    cause = ((cli.System.Exception)x).get_InnerException();
+	    cause = getInnerException(x);
 	    if(cause == null)
 	    {
 		cause = CAUSE_NOT_SET;
@@ -92,35 +92,52 @@ public final class ExceptionHelper
 		    !mb.get_IsFamilyOrAssembly() && !mb.get_IsPublic();
 	}
 
-	StackTraceElement[] get_StackTrace()
+	StackTraceElement[] get_StackTrace(Throwable t)
 	{
-	    if(stackTrace == null)
+	    synchronized(this)
 	    {
-		stackTrace = new cli.System.Collections.ArrayList();
-		Append(stackTrace, tracePart1);
-		if(tracePart2 != null)
+		if(stackTrace == null)
 		{
-		    Append(stackTrace, tracePart2);
-		}
-		tracePart1 = null;
-		tracePart2 = null;
-		if(cleanStackTrace)
-		{
-		    int chop = 0;
-		    for(int i = stackTrace.get_Count() - 1; i >= 0; i--)
+		    stackTrace = new cli.System.Collections.ArrayList();
+		    int skip1 = 0;
+		    if(t instanceof NullPointerException && tracePart1.get_FrameCount() > 0)
 		    {
-			StackTraceElement ste = (StackTraceElement)stackTrace.get_Item(i);
-			if(ste.getClassName().equals("System.Reflection.MethodBase"))
+			// HACK if a NullPointerException originated inside an instancehelper method,
+			// we assume that the reference the method was called on was really the one that was null,
+			// so we filter it.
+			if(tracePart1.GetFrame(0).GetMethod().get_Name().startsWith("instancehelper_") &&
+			    !GetMethodName(tracePart1.GetFrame(0).GetMethod()).startsWith("instancehelper_"))
 			{
-			    // skip method invocation by reflection, if it is at the top of the stack
-			    chop++;
-			}
-			else
-			{
-			    break;
+			    skip1 = 1;
 			}
 		    }
-		    stackTrace.RemoveRange(stackTrace.get_Count() - chop, chop);
+		    Append(stackTrace, tracePart1, skip1);
+		    if(tracePart2 != null)
+		    {
+			int skip = 0;
+			while(tracePart2.get_FrameCount() > skip && 
+			    tracePart2.GetFrame(skip).GetMethod().get_DeclaringType().get_FullName().startsWith("java.lang.ExceptionHelper"))
+			{
+			    skip++;
+			}
+			if(tracePart1.get_FrameCount() > 0 &&
+			    tracePart2.get_FrameCount() > skip &&
+			    tracePart1.GetFrame(tracePart1.get_FrameCount() - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
+			{
+			    skip++;
+			}
+			Append(stackTrace, tracePart2, skip);
+		    }
+		    if(stackTrace.get_Count() > 0)
+		    {
+			StackTraceElement elem = (StackTraceElement)stackTrace.get_Item(stackTrace.get_Count() - 1);
+			if(elem.getClassName().equals("java.lang.reflect.Method"))
+			{
+			    stackTrace.RemoveAt(stackTrace.get_Count() - 1);
+			}
+		    }
+		    tracePart1 = null;
+		    tracePart2 = null;
 		}
 	    }
 	    StackTraceElement[] array = new StackTraceElement[stackTrace.get_Count()];
@@ -135,63 +152,66 @@ public final class ExceptionHelper
 	    tracePart2 = null;
 	}
 
-	public static void Append(cli.System.Collections.ArrayList stackTrace, cli.System.Diagnostics.StackTrace st)
+	static void Append(cli.System.Collections.ArrayList stackTrace, cli.System.Diagnostics.StackTrace st, int skip)
 	{
-	    if(st.get_FrameCount() > 0)
+	    for(int i = skip; i < st.get_FrameCount(); i++)
 	    {
-		int baseSize = stackTrace.get_Count();
-		for(int i = 0; i < st.get_FrameCount(); i++)
+		cli.System.Diagnostics.StackFrame frame = st.GetFrame(i);
+		cli.System.Reflection.MethodBase m = frame.GetMethod();
+		// TODO I may need more safety checks like these
+		if(m == null || m.get_DeclaringType() == null)
 		{
-		    cli.System.Diagnostics.StackFrame frame = st.GetFrame(i);
-		    cli.System.Reflection.MethodBase m = frame.GetMethod();
-		    // TODO I may need more safety checks like these
-		    if(m == null || m.get_DeclaringType() == null || m.get_ReflectedType() == null)
-		    {
-			continue;
-		    }
-		    if(cleanStackTrace &&
-			(m.get_DeclaringType().IsSubclassOf(System_Reflection_MethodInfo)
-			|| IsPrivateScope(m))) // NOTE we assume that privatescope methods are always stubs that we should exclude
-		    {
-			continue;
-		    }
-		    String methodName = frame.GetMethod().get_Name();
-		    if(methodName.equals(".ctor"))
-		    {
-			methodName = "<init>";
-		    }
-		    else if(methodName.equals(".cctor"))
-		    {
-			methodName = "<clinit>";
-		    }
-		    int lineNumber = frame.GetFileLineNumber();
-		    if(lineNumber == 0)
-		    {
-			lineNumber = -1;
-		    }
-		    String fileName = frame.GetFileName();
-		    if(fileName != null)
-		    {
-			try
-			{
-			    fileName = new cli.System.IO.FileInfo(fileName).get_Name();
-			}
-			catch(Throwable x)
-			{
-			    // Mono returns "<unknown>" for frame.GetFileName() and the FileInfo constructor
-			    // doesn't like that
-			    fileName = null;
-			}
-		    }
-		    String className = getClassNameFromType(frame.GetMethod().get_ReflectedType());
-		    stackTrace.Add(new StackTraceElement(fileName, lineNumber, className, methodName, IsNative(m)));
+		    continue;
 		}
+		if(cleanStackTrace &&
+		    (System_Reflection_MethodBase.IsAssignableFrom(m.get_DeclaringType())
+		    || m.get_DeclaringType().get_FullName().startsWith("java.lang.ExceptionHelper")
+		    || m.get_DeclaringType().get_FullName().equals("System.RuntimeMethodHandle")
+		    || IsHideFromJava(m)
+		    || IsPrivateScope(m))) // NOTE we assume that privatescope methods are always stubs that we should exclude
+		{
+		    continue;
+		}
+		String methodName = GetMethodName(frame.GetMethod());
+		int lineNumber = frame.GetFileLineNumber();
+		if(lineNumber == 0)
+		{
+		    lineNumber = GetLineNumber(frame);
+		}
+		String fileName = frame.GetFileName();
+		if(fileName != null)
+		{
+		    try
+		    {
+			fileName = new cli.System.IO.FileInfo(fileName).get_Name();
+		    }
+		    catch(Throwable x)
+		    {
+			// Mono returns "<unknown>" for frame.GetFileName() and the FileInfo constructor
+			// doesn't like that
+			fileName = null;
+		    }
+		}
+		if(fileName == null)
+		{
+		    fileName = GetFileName(frame);
+		}
+		String className = getClassNameFromType(frame.GetMethod().get_DeclaringType());
+		stackTrace.Add(new StackTraceElement(fileName, lineNumber, className, methodName, IsNative(m)));
 	    }
 	}
     }
 
+    private static native boolean IsHideFromJava(cli.System.Reflection.MethodBase mb);
+    private static native cli.System.Exception getInnerException(Throwable t);
+    private static native String getMessageFromCliException(Throwable t);
     private static native boolean IsNative(cli.System.Reflection.MethodBase mb);
+    private static native String GetMethodName(cli.System.Reflection.MethodBase mb);
     private static native String getClassNameFromType(cli.System.Type type);
+    private static native int GetLineNumber(cli.System.Diagnostics.StackFrame frame);
+    private static native String GetFileName(cli.System.Diagnostics.StackFrame frame);
+    private static native void initThrowable(Object throwable, Object detailMessage, Object cause);
+    private static native Throwable MapExceptionImpl(Throwable t);
 
     public static void printStackTrace(Throwable x)
     {
@@ -296,7 +316,7 @@ public final class ExceptionHelper
 	ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(x);
 	if(eih == null)
 	{
-	    return ((cli.System.Exception)x).get_InnerException();
+	    return getInnerException(x);
 	}
 	return eih.get_Cause();
     }
@@ -312,7 +332,7 @@ public final class ExceptionHelper
 	{
 	    return new StackTraceElement[0];
 	}
-	return ei.get_StackTrace();
+	return ei.get_StackTrace(x);
     }
 
     public static void setStackTrace(Throwable x, StackTraceElement[] stackTrace)
@@ -362,7 +382,7 @@ public final class ExceptionHelper
 
     public static String getMessage(Throwable x)
     {
-	String message = ((cli.System.Exception)x).get_Message();
+	String message = getMessageFromCliException(x);
 	if(message == NULL_STRING)
 	{
 	    message = null;
@@ -413,8 +433,6 @@ public final class ExceptionHelper
 	return MapException(t, System_Exception);
     }
 
-    private static native Throwable MapExceptionImpl(Throwable t);
-
     public static Throwable MapException(Throwable t, cli.System.Type handler)
     {
 	//cli.System.Console.WriteLine("MapException: {0}, {1}", t, handler);
@@ -426,7 +444,7 @@ public final class ExceptionHelper
 	if(!exceptions.containsKey(t))
 	{
 	    exceptions.put(t, new ExceptionInfoHelper(org));
-	    Throwable inner = ((cli.System.Exception)org).get_InnerException();
+	    Throwable inner = getInnerException(org);
 	    if(inner != null && !exceptions.containsKey(inner))
 	    {
 		exceptions.put(inner, new ExceptionInfoHelper(inner));
@@ -452,7 +470,7 @@ public final class ExceptionHelper
 	ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(t);
 	if(eih == null)
 	{
-	    cause = ((cli.System.Exception)t).get_InnerException();
+	    cause = getInnerException(t);
 	}
 	else
 	{
@@ -478,6 +496,4 @@ public final class ExceptionHelper
 	StackTraceElement[] stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
 	setStackTrace(t, stackTrace == null ? new StackTraceElement[0] : stackTrace);
     }
-
-    private static native void initThrowable(Object throwable, Object detailMessage, Object cause);
 }

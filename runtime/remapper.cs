@@ -29,10 +29,22 @@ using System.Reflection.Emit;
 using System.Diagnostics;
 using IKVM.Attributes;
 
+using ILGenerator = CountingILGenerator;
+
 namespace IKVM.Internal.MapXml
 {
 	public abstract class Instruction
 	{
+		private int lineNumber = Root.LineNumber;
+
+		internal int LineNumber
+		{
+			get
+			{
+				return lineNumber;
+			}
+		}
+
 		internal abstract void Generate(Hashtable context, ILGenerator ilgen);
 	}
 
@@ -417,6 +429,14 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("blt")]
+	public sealed class Blt : Branch
+	{
+		public Blt() : base(OpCodes.Blt)
+		{
+		}
+	}
+
 	[XmlType("label")]
 	public sealed class BrLabel : Instruction
 	{
@@ -622,6 +642,14 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("ldc_i4_1")]
+	public sealed class Ldc_I4_1 : Simple
+	{
+		public Ldc_I4_1() : base(OpCodes.Ldc_I4_1)
+		{
+		}
+	}
+
 	[XmlType("ldc_i4_m1")]
 	public sealed class Ldc_I4_M1 : Simple
 	{
@@ -670,6 +698,22 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("add")]
+	public sealed class Add : Simple
+	{
+		public Add() : base(OpCodes.Add)
+		{
+		}
+	}
+
+	[XmlType("mul")]
+	public sealed class Mul : Simple
+	{
+		public Mul() : base(OpCodes.Mul)
+		{
+		}
+	}
+
 	[XmlType("exceptionBlock")]
 	public sealed class ExceptionBlock : Instruction
 	{
@@ -680,16 +724,16 @@ namespace IKVM.Internal.MapXml
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
 			ilgen.BeginExceptionBlock();
-			@try.Emit(ilgen);
+			@try.Generate(context, ilgen);
 			if(@catch != null)
 			{
 				ilgen.BeginCatchBlock(Type.GetType(@catch.type, true));
-				@catch.Emit(ilgen);
+				@catch.Generate(context, ilgen);
 			}
 			if(@finally != null)
 			{
 				ilgen.BeginFinallyBlock();
-				@finally.Emit(ilgen);
+				@finally.Generate(context, ilgen);
 			}
 			ilgen.EndExceptionBlock();
 		}
@@ -717,6 +761,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Br))]
 		[XmlElement(typeof(Bge_Un))]
 		[XmlElement(typeof(Ble_Un))]
+		[XmlElement(typeof(Blt))]
 		[XmlElement(typeof(BrLabel))]
 		[XmlElement(typeof(NewObj))]
 		[XmlElement(typeof(StLoc))]
@@ -737,6 +782,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Stsfld))]
 		[XmlElement(typeof(Ldc_I4))]
 		[XmlElement(typeof(Ldc_I4_0))]
+		[XmlElement(typeof(Ldc_I4_1))]
 		[XmlElement(typeof(Ldc_I4_M1))]
 		[XmlElement(typeof(Conv_U1))]
 		[XmlElement(typeof(Conv_U2))]
@@ -744,18 +790,28 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Conv_U8))]
 		[XmlElement(typeof(Ldlen))]
 		[XmlElement(typeof(ExceptionBlock))]
+		[XmlElement(typeof(Add))]
+		[XmlElement(typeof(Mul))]
 		public Instruction[] invoke;
 
-		internal sealed override void Emit(ILGenerator ilgen)
+		internal void Generate(Hashtable context, ILGenerator ilgen)
 		{
 			if(invoke != null)
 			{
-				Hashtable context = new Hashtable();
 				for(int i = 0; i < invoke.Length; i++)
 				{
+					if(invoke[i].LineNumber != -1)
+					{
+						ilgen.SetLineNumber((ushort)invoke[i].LineNumber);
+					}
 					invoke[i].Generate(context, ilgen);
 				}
 			}
+		}
+
+		internal sealed override void Emit(ILGenerator ilgen)
+		{
+			Generate(new Hashtable(), ilgen);
 		}
 	}
 
@@ -780,6 +836,16 @@ namespace IKVM.Internal.MapXml
 
 	public class Redirect
 	{
+		private int linenum = Root.LineNumber;
+
+		internal int LineNumber
+		{
+			get
+			{
+				return linenum;
+			}
+		}
+
 		[XmlAttribute("class")]
 		public string Class;
 		[XmlAttribute("name")]
@@ -880,8 +946,6 @@ namespace IKVM.Internal.MapXml
 		public Field[] Fields;
 		[XmlElement("implements")]
 		public Interface[] Interfaces;
-		[XmlElement("box")]
-		public InstructionList Box;
 		[XmlElement("clinit")]
 		public Method Clinit;
 	}
@@ -899,6 +963,17 @@ namespace IKVM.Internal.MapXml
 	[XmlRoot("root")]
 	public class Root
 	{
+		internal static System.Xml.XmlTextReader xmlReader;
+		internal static string filename;
+
+		internal static int LineNumber
+		{
+			get
+			{
+				return xmlReader == null ? -1: xmlReader.LineNumber;
+			}
+		}
+
 		public Class[] assembly;
 		public ExceptionMapping[] exceptionMappings;
 	}

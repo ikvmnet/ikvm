@@ -92,7 +92,7 @@ namespace IKVM.Runtime
 			{
 				return JNIEnv.JNI_ERR;
 			}
-			StringDictionary props = new StringDictionary();
+			Hashtable props = new Hashtable();
 			for(int i = 0; i < pInitArgs->nOptions; i++)
 			{
 				string option = new String(pInitArgs->options[i].optionString);
@@ -1500,7 +1500,7 @@ namespace IKVM.Runtime
 			try
 			{
 				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
-				if(wrapper.IsInterface || wrapper.IsAbstract)
+				if(wrapper.IsAbstract)
 				{
 					SetPendingException(pEnv, JavaException.InstantiationException(wrapper.Name));
 					return IntPtr.Zero;
@@ -1597,12 +1597,12 @@ namespace IKVM.Runtime
 
 		internal static jclass GetObjectClass(JNIEnv* pEnv, jobject obj)
 		{
-			return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClass.getClassFromType(pEnv->UnwrapRef(obj).GetType()));
+			return pEnv->MakeLocalRef(IKVM.Runtime.Util.GetClassFromObject(pEnv->UnwrapRef(obj)));
 		}
 
 		internal static jboolean IsInstanceOf(JNIEnv* pEnv, jobject obj, jclass clazz)
 		{
-			object objClass = IKVM.NativeCode.java.lang.VMClass.getClassFromType(pEnv->UnwrapRef(obj).GetType());
+			object objClass = IKVM.Runtime.Util.GetClassFromObject(pEnv->UnwrapRef(obj));
 			TypeWrapper w1 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
 			TypeWrapper w2 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(objClass);
 			return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;

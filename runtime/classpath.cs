@@ -272,6 +272,7 @@ namespace IKVM.NativeCode.java
 					}
 				}
 
+				[HideFromJava]
 				public static object Invoke(object methodCookie, object o, object[] args)
 				{
 					try
@@ -903,7 +904,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public static object getClassFromType(Type type)
+			internal static object getClassFromType(Type type)
 			{
 				TypeWrapper.AssertFinished(type);
 				if(type == null)
@@ -1413,19 +1414,9 @@ namespace IKVM.NativeCode.java
 	{
 		public class VMAccessController
 		{
-			public static object[][] getStack()
+			public static object getClassFromFrame(NetSystem.Diagnostics.StackFrame frame)
 			{
-				NetSystem.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace(1);
-				object[][] array = new object[2][];
-				array[0] = (object[])Array.CreateInstance(CoreClasses.java.lang.Class.Wrapper.TypeAsArrayType, trace.FrameCount);
-				array[1] = new string[trace.FrameCount];
-				for(int i = 0; i < trace.FrameCount; i++)
-				{
-					MethodBase mb = trace.GetFrame(i).GetMethod();
-					array[0][i] = NativeCode.java.lang.VMClass.getClassFromType(mb.DeclaringType);
-					array[1][i] = mb.Name;
-				}
-				return array;
+				return NativeCode.java.lang.VMClass.getClassFromType(frame.GetMethod().DeclaringType);
 			}
 		}
 	}

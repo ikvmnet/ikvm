@@ -31,6 +31,8 @@ using IKVM.Runtime;
 using IKVM.Attributes;
 using IKVM.Internal;
 
+using ILGenerator = CountingILGenerator;
+
 using ExceptionTableEntry = ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = ClassFile.Method.LocalVariableTableEntry;
 using Instruction = ClassFile.Method.Instruction;
@@ -68,6 +70,8 @@ class Compiler
 	private MethodAnalyzer ma;
 	private ExceptionTableEntry[] exceptions;
 	private ISymbolDocumentWriter symboldocument;
+	private ushort[] lineNumbers;
+	private byte[] wideLineNumbers;
 
 	static Compiler()
 	{
@@ -137,6 +141,14 @@ class Compiler
 		this.ilGenerator = ilGenerator;
 		this.classLoader = classLoader;
 		this.symboldocument = symboldocument;
+		if(m.LineNumberTableAttribute != null && !JVM.NoStackTraceInfo)
+		{
+			this.lineNumbers = new ushort[m.LineNumberTableAttribute.Length * 2];
+			for(int i = 0; i < m.LineNumberTableAttribute.Length; i++)
+			{
+				this.lineNumbers[i * 2 + 1] = m.LineNumberTableAttribute[i].line_number;
+			}
+		}
 
 		Profiler.Enter("MethodAnalyzer");
 		try
@@ -680,7 +692,10 @@ class Compiler
 			{
 				if(JVM.SourcePath != null)
 				{
-					sourcefile = new System.IO.FileInfo(JVM.SourcePath + "/" + clazz.PackageName.Replace('.', '/') + "/" + sourcefile).FullName;
+					string package = clazz.Name;
+					int index = package.LastIndexOf('.');
+					package = index == -1 ? "" : package.Substring(0, index).Replace('.', '/');
+					sourcefile = new System.IO.FileInfo(JVM.SourcePath + "/" + package + "/" + sourcefile).FullName;
 				}
 				symboldocument = classLoader.ModuleBuilder.DefineDocument(sourcefile, SymLanguageType.Java, Guid.Empty, SymDocumentType.Text);
 				// the very first instruction in the method must have an associated line number, to be able
@@ -779,9 +794,18 @@ class Compiler
 				c.Compile(b);
 				b.Leave();
 			}
+			if(c.lineNumbers != null)
+			{
+				AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.lineNumbers);
+			}
+			if(c.wideLineNumbers != null)
+			{
+				AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.wideLineNumbers);
+			}
 			// HACK because of the bogus Leave instruction that Reflection.Emit generates, this location
 			// sometimes appears reachable (it isn't), so we emit a bogus branch to keep the verifier happy.
-			ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
+			ilGenerator.Emit(OpCodes.Br, - (ilGenerator.GetILOffset() + 5));
+			//ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
 		}
 		finally
 		{
@@ -1258,20 +1282,48 @@ class Compiler
 				block.MarkLabel(i);
 			}
 
-			if(symboldocument != null)
+			ClassFile.Method.LineNumberTableEntry[] table = m.LineNumberTableAttribute;
+			if(table != null && (symboldocument != null || lineNumbers != null || wideLineNumbers != null))
 			{
-				ClassFile.Method.LineNumberTableEntry[] table = m.LineNumberTableAttribute;
-				if(table != null)
+				for(int j = 0; j < table.Length; j++)
 				{
-					for(int j = 0; j < table.Length; j++)
+					if(table[j].start_pc == instr.PC && table[j].line_number != 0)
 					{
-						if(table[j].start_pc == instr.PC && table[j].line_number != 0)
+						if(symboldocument != null)
 						{
 							ilGenerator.MarkSequencePoint(symboldocument, table[j].line_number, 0, table[j].line_number + 1, 0);
 							// we emit a nop to make sure we always have an instruction associated with the sequence point
 							ilGenerator.Emit(OpCodes.Nop);
-							break;
 						}
+						if(lineNumbers != null)
+						{
+							int iloffset = ilGenerator.GetILOffset();
+							if(iloffset > 65535)
+							{
+								wideLineNumbers = new byte[lineNumbers.Length * 3];
+								for(int k = 0; k < lineNumbers.Length / 2; k++)
+								{
+									wideLineNumbers[k * 6 + 0] = (byte)(lineNumbers[k * 2 + 0] >> 0);
+									wideLineNumbers[k * 6 + 1] = (byte)(lineNumbers[k * 2 + 0] >> 8);
+									wideLineNumbers[k * 6 + 4] = (byte)(lineNumbers[k * 2 + 1] >> 0);
+									wideLineNumbers[k * 6 + 5] = (byte)(lineNumbers[k * 2 + 1] >> 8);
+								}
+								lineNumbers = null;
+							}
+							else
+							{
+								lineNumbers[j * 2 + 0] = (ushort)iloffset;
+							}
+						}
+						if(wideLineNumbers != null)
+						{
+							int iloffset = ilGenerator.GetILOffset();
+							wideLineNumbers[j * 6 + 0] = (byte)(iloffset >>  0);
+							wideLineNumbers[j * 6 + 1] = (byte)(iloffset >>  8);
+							wideLineNumbers[j * 6 + 2] = (byte)(iloffset >> 16);
+							wideLineNumbers[j * 6 + 3] = (byte)(iloffset >> 24);
+						}
+						break;
 					}
 				}
 			}
@@ -1734,7 +1786,7 @@ class Compiler
 						{
 							throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
 						}
-						else if(wrapper.IsAbstract || wrapper.IsInterface)
+						else if(wrapper.IsAbstract)
 						{
 							throw new InstantiationError(wrapper.Name);
 						}

@@ -305,20 +305,6 @@ final class StringHelper
 	return s.StartsWith(prefix);
     }
 
-    static char charAt(cli.System.String s, int index)
-    {
-	try 
-	{
-	    return s.get_Chars(index);
-	}
-	// NOTE the System.IndexOutOfRangeException thrown by get_Chars, is translated by our
-	// exception handling code to an ArrayIndexOutOfBoundsException, so we catch that.
-	catch (ArrayIndexOutOfBoundsException x) 
-	{
-	    throw new StringIndexOutOfBoundsException();
-	}
-    }
-
     static void getChars(cli.System.String s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 
     {
 	s.CopyTo(srcBegin, dst, dstBegin, srcEnd - srcBegin);

@@ -85,8 +85,8 @@ final class VMAccessController
   private static final boolean DEBUG = false;
   private static void debug(String msg)
   {
-    System.err.print(">>> VMAccessController: ");
-    System.err.println(msg);
+    cli.System.Console.WriteLine(">>> VMAccessController: ");
+    cli.System.Console.WriteLine(msg);
   }
 
   // Constructors.
@@ -189,6 +189,11 @@ final class VMAccessController
         Class clazz = classes[i];
         String method = methods[i];
 
+	// Module static methods don't have a class (and since they aren't
+	// Java method, they have no security implications either)
+	if (clazz == null)
+	    continue;
+
         if (DEBUG)
           {
             debug(">>> checking " + clazz + "." + method);
@@ -261,6 +266,18 @@ final class VMAccessController
    */
   private static Object[][] getStack()
   {
-    return new Object[][] { new Class[0], new String[0] };
+    cli.System.Diagnostics.StackTrace trace = new cli.System.Diagnostics.StackTrace(1);
+    Object[][] array = new Object[2][];
+    array[0] = new Class[trace.get_FrameCount()];
+    array[1] = new String[trace.get_FrameCount()];
+    for(int i = 0; i < trace.get_FrameCount(); i++)
+    {
+	cli.System.Diagnostics.StackFrame frame = trace.GetFrame(i);
+	array[0][i] = getClassFromFrame(frame);
+	array[1][i] = frame.GetMethod().get_Name();
+    }
+    return array;
   }
+
+  private static native Class getClassFromFrame(cli.System.Diagnostics.StackFrame frame);
 }

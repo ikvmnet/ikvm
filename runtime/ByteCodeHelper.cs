@@ -158,7 +158,7 @@ namespace IKVM.Runtime
 		{
 			Profiler.Count("DynamicNewCheckOnly");
 			TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
-			if(wrapper.IsAbstract || wrapper.IsInterface)
+			if(wrapper.IsAbstract)
 			{
 				throw JavaException.InstantiationError(clazz);
 			}
@@ -361,7 +361,7 @@ namespace IKVM.Runtime
 		[DebuggerStepThroughAttribute]
 		public static object GetClassFromTypeHandle(RuntimeTypeHandle typeHandle)
 		{
-			return IKVM.NativeCode.java.lang.VMClass.getClassFromType(Type.GetTypeFromHandle(typeHandle));
+			return Util.GetClassFromTypeHandle(typeHandle);
 		}
 
 		[DebuggerStepThroughAttribute]
