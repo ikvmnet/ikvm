@@ -78,8 +78,15 @@ public class JVM
 		{
 			if(jniProvider == null)
 			{
-				// TODO make the assembly provider configurable
-				Type provider = Assembly.LoadFrom("c:\\ikvm\\ik.vm.jni\\debug\\ik.vm.jni.dll").GetType("JNI", true);
+				Type provider;
+				if(Environment.GetEnvironmentVariable("IKVM_JNI_PROVIDER") != null)
+				{
+					provider = Assembly.LoadFrom(Environment.GetEnvironmentVariable("IKVM_JNI_PROVIDER")).GetType("JNI", true);
+				}
+				else
+				{
+					provider = Assembly.Load("ik.vm.jni").GetType("JNI", true);
+				}
 				jniProvider = (IJniProvider)Activator.CreateInstance(provider);
 			}
 			return jniProvider;
