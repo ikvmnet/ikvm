@@ -1446,7 +1446,7 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 			{
 				FlushFileBuffers(new IntPtr(-1));
 			}
-			catch(EntryPointNotFoundException)
+			catch(TypeLoadException)
 			{
 				// If we end up here, we're not running on Windows, so we'll try two Mono specific methods.
 				// The first one is using Mono.Posix, this is part of the documented public Mono API.
@@ -1487,7 +1487,7 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 				{
 					return FlushFileBuffers(fs.Handle);
 				}
-				catch(EntryPointNotFoundException)
+				catch(TypeLoadException)
 				{
 					// we're apparently running on a alternate runtime, so we'll just pretend that flush succeeded
 					Tracer.Warning(Tracer.Runtime, "FlushFileBuffers/fsync not supported on this runtime");
