@@ -489,7 +489,7 @@ class Compiler
 						{
 							if(line.StartsWith("Main-Class: "))
 							{
-								manifestMainClass = line.Substring(12);
+								manifestMainClass = line.Substring(12).Replace('/', '.');
 								break;
 							}
 						}

@@ -806,6 +806,7 @@ class Compiler
 			// sometimes appears reachable (it isn't), so we emit a bogus branch to keep the verifier happy.
 			ilGenerator.Emit(OpCodes.Br, - (ilGenerator.GetILOffset() + 5));
 			//ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
+			ilGenerator.Finish();
 		}
 		finally
 		{

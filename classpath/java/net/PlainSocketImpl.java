@@ -58,6 +58,26 @@ import ikvm.lang.ByteArrayHack;
   */
 public class PlainSocketImpl extends SocketImpl
 {
+    static IOException convertSocketExceptionToIOException(cli.System.Net.Sockets.SocketException x) throws IOException
+    {
+	switch(x.get_ErrorCode())
+	{
+	    case 10048: //WSAEADDRINUSE
+		return new BindException(x.getMessage());
+	    case 10051: //WSAENETUNREACH
+	    case 10065: //WSAEHOSTUNREACH
+		return new NoRouteToHostException(x.getMessage());
+	    case 10060: //WSAETIMEDOUT
+		return new java.io.InterruptedIOException(x.getMessage());
+	    case 10061: //WSAECONNREFUSED
+		return new PortUnreachableException(x.getMessage());
+	    case 11001: //WSAHOST_NOT_FOUND
+		return new UnknownHostException(x.getMessage());
+	    default:
+		return new SocketException(x.getMessage());
+	}
+    }
+
 	/**
 	 * This is the native file descriptor for this socket
 	 */
@@ -86,7 +106,7 @@ public class PlainSocketImpl extends SocketImpl
 			if(timeout != 0 && !socket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
 			     cli.System.Net.Sockets.SelectMode.wrap(cli.System.Net.Sockets.SelectMode.SelectRead)))
 			{
-			    throw new java.io.InterruptedIOException("Accept timed out");
+			    throw new SocketTimeoutException("Accept timed out");
 			}
 			cli.System.Net.Sockets.Socket accept = socket.Accept();
 			((PlainSocketImpl)impl).socket = accept;
@@ -99,8 +119,7 @@ public class PlainSocketImpl extends SocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw convertSocketExceptionToIOException(x);
 		}
 	}
 
@@ -121,8 +140,7 @@ public class PlainSocketImpl extends SocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw convertSocketExceptionToIOException(x);
 		}
 	}
 
@@ -145,8 +163,7 @@ public class PlainSocketImpl extends SocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw new BindException(x.getMessage());
 		}
 	}
 
@@ -174,8 +191,7 @@ public class PlainSocketImpl extends SocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw convertSocketExceptionToIOException(x);
 		}
 	}
 
@@ -199,8 +215,7 @@ public class PlainSocketImpl extends SocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw new ConnectException(x.getMessage());
 		}
 	}
 
@@ -227,7 +242,6 @@ public class PlainSocketImpl extends SocketImpl
 	 */
 	protected void create(boolean stream) throws IOException
 	{
-		// TODO error handling
 		if(!stream)
 		{
 			// TODO
@@ -241,8 +255,7 @@ public class PlainSocketImpl extends SocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw convertSocketExceptionToIOException(x);
 		}
 	}
 
@@ -266,8 +279,7 @@ public class PlainSocketImpl extends SocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw convertSocketExceptionToIOException(x);
 		}
 	}
 
@@ -289,8 +301,7 @@ public class PlainSocketImpl extends SocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw convertSocketExceptionToIOException(x);
 		}
 	}
 
@@ -310,8 +321,7 @@ public class PlainSocketImpl extends SocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw convertSocketExceptionToIOException(x);
 		}
 	}
 
@@ -363,7 +373,6 @@ public class PlainSocketImpl extends SocketImpl
 	}
 	catch(cli.System.Net.Sockets.SocketException x)
 	{
-	    // TODO error handling
 	    throw new SocketException(x.getMessage());
 	}
     }
@@ -395,7 +404,6 @@ public class PlainSocketImpl extends SocketImpl
 	}
 	catch(cli.System.Net.Sockets.SocketException x)
 	{
-	    // TODO error handling
 	    throw new SocketException(x.getMessage());
 	}
     }
@@ -439,7 +447,6 @@ public class PlainSocketImpl extends SocketImpl
 	}
 	catch(cli.System.Net.Sockets.SocketException x)
 	{
-	    // TODO error handling
 	    throw new SocketException(x.getMessage());
 	}
     }
@@ -474,7 +481,6 @@ public class PlainSocketImpl extends SocketImpl
 	}
 	catch(cli.System.Net.Sockets.SocketException x)
 	{
-	    // TODO error handling
 	    throw new SocketException(x.getMessage());
 	}
     }
@@ -518,18 +524,31 @@ public class PlainSocketImpl extends SocketImpl
 		connect(inetAddress.getAddress(), inetAddress.getPort());
 	}
 
+	protected boolean supportsUrgentData()
+	{
+	    // This method has to be overwritten by socket classes that support
+	    // sending urgent data.
+	    return true;
+	}
+
 	public void sendUrgentData(int data)
 	{
-		throw new InternalError ("PlainSocketImpl::sendUrgentData not implemented");
+	    // Send one byte of urgent data on the socket. The byte to be sent is
+	    // the lowest eight bits of the data parameter.
+	    // The urgent byte is sent after any preceding writes to the socket
+	    // OutputStream and before any future writes to the OutputStream.
+	    byte[] oob = {(byte)data};
+	    socket.Send(ByteArrayHack.cast(oob),
+		SocketFlags.wrap(SocketFlags.OutOfBand));
 	}
 
 	public void shutdownInput()
 	{
-		throw new InternalError ("PlainSocketImpl::shutdownInput not implemented");
+	    socket.Shutdown(SocketShutdown.wrap(SocketShutdown.Receive));
 	}
 
 	public void shutdownOutput()
 	{
-		throw new InternalError ("PlainSocketImpl::shutdownOutput not implemented");
+	    socket.Shutdown(SocketShutdown.wrap(SocketShutdown.Send));
 	}
 } // class PlainSocketImpl

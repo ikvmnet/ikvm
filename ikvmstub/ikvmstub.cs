@@ -232,6 +232,7 @@ public class NetExp
 					191										// athrow
 				};
 				m.AddAttribute(code);
+				AddExceptions(f, m, constructors[i].getExceptionTypes());
 			}
 		}
 		Method[] methods = c.getDeclaredMethods();
@@ -246,17 +247,7 @@ public class NetExp
 				}
 				// TODO what happens if one of the argument types (or the return type) is non-public?
 				FieldOrMethod m = f.AddMethod(mods, methods[i].getName(), MakeSig(methods[i].getParameterTypes(), methods[i].getReturnType()));
-				Class[] exceptions = methods[i].getExceptionTypes();
-				if(exceptions.Length > 0)
-				{
-					ExceptionsAttribute attrib = new ExceptionsAttribute(f);
-					foreach(Class x in exceptions)
-					{
-						// TODO what happens if one of the exception types is non-public?
-						attrib.Add(x.getName().Replace('.', '/'));
-					}
-					m.AddAttribute(attrib);
-				}
+				AddExceptions(f, m, methods[i].getExceptionTypes());
 			}
 		}
 		Field[] fields = c.getDeclaredFields();
@@ -327,6 +318,20 @@ public class NetExp
 			f.AddAttribute(innerClassesAttribute);
 		}
 		WriteClass(name + ".class", f);
+	}
+
+	private static void AddExceptions(ClassFileWriter f, FieldOrMethod m, Class[] exceptions)
+	{
+		if(exceptions.Length > 0)
+		{
+			ExceptionsAttribute attrib = new ExceptionsAttribute(f);
+			foreach(Class x in exceptions)
+			{
+				// TODO what happens if one of the exception types is non-public?
+				attrib.Add(x.getName().Replace('.', '/'));
+			}
+			m.AddAttribute(attrib);
+		}
 	}
 
 	private static string MakeSig(Class[] args, Class ret)

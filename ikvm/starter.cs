@@ -282,7 +282,7 @@ public class Starter
 				JarFile jf = new JarFile(mainClass);
 				try
 				{
-					mainClass = jf.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
+					mainClass = jf.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS).Replace('/', '.');
 				}
 				finally
 				{

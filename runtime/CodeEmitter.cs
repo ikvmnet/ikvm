@@ -36,6 +36,9 @@ class CountingILGenerator
 	private Stack exceptionStack = new Stack();
 	private bool inFinally;
 	private ArrayList linenums;
+#if LABELCHECK
+	private Hashtable labels = new Hashtable();
+#endif
 
 	public static implicit operator CountingILGenerator(ILGenerator ilgen)
 	{
@@ -98,7 +101,11 @@ class CountingILGenerator
 
 	internal Label DefineLabel()
 	{
-		return ilgen.DefineLabel();
+		Label label = ilgen.DefineLabel();
+#if LABELCHECK
+		labels.Add(label, new System.Diagnostics.StackFrame(1, true));
+#endif
+		return label;
 	}
 
 	internal void Emit(OpCode opcode)
@@ -286,6 +293,9 @@ class CountingILGenerator
 
 	internal void MarkLabel(Label loc)
 	{
+#if LABELCHECK
+		labels.Remove(loc);
+#endif
 		ilgen.MarkLabel(loc);
 	}
 
@@ -321,6 +331,17 @@ class CountingILGenerator
 		{
 			AttributeHelper.SetLineNumberTable(mb, (ushort[])linenums.ToArray(typeof(ushort)));
 		}
+	}
+
+	internal void Finish()
+	{
+#if LABELCHECK
+		foreach(System.Diagnostics.StackFrame frame in labels.Values)
+		{
+			string name = frame.GetFileName() + ":" + frame.GetFileLineNumber();
+			IKVM.Internal.JVM.CriticalFailure("Label failure: " + name, null);
+		}
+#endif
 	}
 }
 

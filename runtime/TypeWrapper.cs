@@ -307,7 +307,7 @@ class AttributeHelper
 		}
 		// NOTE Java doesn't support non-virtual methods, but we set the Final modifier for
 		// non-virtual methods to approximate the semantics
-		if((mb.IsFinal || (!mb.IsVirtual && !mb.IsPrivate && !assemblyIsPrivate)) && !mb.IsStatic && !mb.IsConstructor)
+		if((mb.IsFinal || (!mb.IsVirtual && ((modifiers & Modifiers.Private) == 0))) && !mb.IsStatic && !mb.IsConstructor)
 		{
 			modifiers |= Modifiers.Final;
 		}
@@ -3358,7 +3358,9 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					memberclashtable = new Hashtable();
 					for(int i = 0; i < methods.Length; i++)
 					{
-						if(methods[i].IsLinked)
+						// TODO at the moment we don't support constructor signature clash resolving, so we better
+						// not put them in the clash table
+						if(methods[i].IsLinked && methods[i].Name != "<init>")
 						{
 							string key = GenerateClashKey("method", methods[i].RealName, methods[i].ReturnTypeForDefineMethod, methods[i].GetParametersForDefineMethod());
 							memberclashtable.Add(key, key);
@@ -5019,6 +5021,12 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		return null;
 	}
 
+	internal static TypeWrapper GetWrapperFromDotNetType(Type type)
+	{
+		// TODO there should be a better way
+		return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(DotNetTypeWrapper.GetName(type));
+	}
+
 	private static TypeWrapper GetBaseTypeWrapper(Type type)
 	{
 		if(type.IsInterface)
@@ -5035,6 +5043,10 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 				return CoreClasses.java.lang.Object.Wrapper;
 			}
 			return ClassLoaderWrapper.GetWrapperFromType(type);
+		}
+		else if(ClassLoaderWrapper.IsRemappedType(type.BaseType))
+		{
+			return GetWrapperFromDotNetType(type.BaseType);
 		}
 		else
 		{
@@ -5353,6 +5365,14 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 					MethodDescriptor md = MakeMethodDescriptor(methods[i]);
 					if(md != null)
 					{
+						if(!methods[i].IsStatic && !methods[i].IsPrivate && BaseTypeWrapper != null)
+						{
+							MethodWrapper baseMethod = BaseTypeWrapper.GetMethodWrapper(md, true);
+							if(baseMethod != null && baseMethod.IsFinal && !baseMethod.IsStatic && !baseMethod.IsPrivate)
+							{
+								continue;
+							}
+						}
 						// TODO handle name/signature clash
 						AddMethod(CreateMethodWrapper(md, methods[i], false));
 					}
@@ -5376,6 +5396,14 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 								MethodDescriptor md = MakeMethodDescriptor(map.InterfaceMethods[j]);
 								if(md != null)
 								{
+									if(BaseTypeWrapper != null)
+									{
+										MethodWrapper baseMethod = BaseTypeWrapper.GetMethodWrapper(md, true);
+										if(baseMethod != null && !baseMethod.IsStatic && baseMethod.IsPublic)
+										{
+											continue;
+										}
+									}
 									// TODO handle name/signature clash
 									AddMethod(CreateMethodWrapper(md, map.InterfaceMethods[j], true));
 								}

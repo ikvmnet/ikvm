@@ -1496,7 +1496,11 @@ sealed class GetterFieldWrapper : FieldWrapper
 				ilgen.Emit(getter.IsStatic ? OpCodes.Call : OpCodes.Callvirt, getter);
 			}
 		}
-		if(FieldTypeWrapper.IsGhost)
+		if(FieldTypeWrapper.IsUnloadable)
+		{
+			// no need to do anything
+		}
+		else if(FieldTypeWrapper.IsGhost)
 		{
 			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsFieldType);
 			ilgen.Emit(OpCodes.Stloc, temp);
@@ -1512,13 +1516,37 @@ sealed class GetterFieldWrapper : FieldWrapper
 	protected override void EmitSetImpl(ILGenerator ilgen)
 	{
 		FieldInfo fi = GetField();
-		LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
-		ilgen.Emit(OpCodes.Stloc, temp);
-		if(FieldTypeWrapper.IsGhost)
+		if(FieldTypeWrapper.IsUnloadable)
 		{
-			if(fi.IsStatic)
+			LocalBuilder temp = ilgen.DeclareLocal(typeof(object));
+			ilgen.Emit(OpCodes.Stloc, temp);
+			if(DeclaringType.IsNonPrimitiveValueType)
 			{
-				ilgen.Emit(OpCodes.Ldsflda, fi);
+				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+			}
+			ilgen.Emit(OpCodes.Ldloc, temp);
+			ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
+		}
+		else
+		{
+			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
+			ilgen.Emit(OpCodes.Stloc, temp);
+			if(FieldTypeWrapper.IsGhost)
+			{
+				if(fi.IsStatic)
+				{
+					ilgen.Emit(OpCodes.Ldsflda, fi);
+				}
+				else
+				{
+					if(DeclaringType.IsNonPrimitiveValueType)
+					{
+						ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+					}
+					ilgen.Emit(OpCodes.Ldflda, fi);
+				}
+				ilgen.Emit(OpCodes.Ldloc, temp);
+				ilgen.Emit(OpCodes.Stfld, FieldTypeWrapper.GhostRefField);
 			}
 			else
 			{
@@ -1526,23 +1554,13 @@ sealed class GetterFieldWrapper : FieldWrapper
 				{
 					ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
 				}
-				ilgen.Emit(OpCodes.Ldflda, fi);
+				ilgen.Emit(OpCodes.Ldloc, temp);
+				if(FieldTypeWrapper.IsNonPrimitiveValueType)
+				{
+					FieldTypeWrapper.EmitUnbox(ilgen);
+				}
+				ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
 			}
-			ilgen.Emit(OpCodes.Ldloc, temp);
-			ilgen.Emit(OpCodes.Stfld, FieldTypeWrapper.GhostRefField);
-		}
-		else
-		{
-			if(DeclaringType.IsNonPrimitiveValueType)
-			{
-				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-			}
-			ilgen.Emit(OpCodes.Ldloc, temp);
-			if(FieldTypeWrapper.IsNonPrimitiveValueType)
-			{
-				FieldTypeWrapper.EmitUnbox(ilgen);
-			}
-			ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
 		}
 	}
 }

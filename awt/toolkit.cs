@@ -233,6 +233,8 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
+		[Obsolete]
 		protected override java.awt.peer.FontPeer getFontPeer(string name, int style)
 		{
 			throw new NotImplementedException();
@@ -260,9 +262,11 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
+		[Obsolete]
 		public override string[] getFontList()
 		{
-			throw new NotImplementedException();
+			// This method is deprecated and Sun's JDK only returns these fonts as well
+			return new string[] { "Dialog", "SansSerif", "Serif", "Monospaced", "DialogInput" };
 		}
 
 		public override java.awt.FontMetrics getFontMetrics(java.awt.Font font)
@@ -825,6 +829,7 @@ namespace ikvm.awt
 			return getClipRect();
 		}
 
+		[Obsolete]
 		public override java.awt.Rectangle getClipRect()
 		{
 			if(_clip != null)

@@ -189,8 +189,7 @@ namespace IKVM.Runtime
 			Type t = o.GetType();
 			if(t.IsPrimitive || (ClassLoaderWrapper.IsRemappedType(t) && !t.IsSealed))
 			{
-				// TODO there should be a better way
-				return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(DotNetTypeWrapper.GetName(t)));
+				return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(DotNetTypeWrapper.GetWrapperFromDotNetType(t));
 			}
 			return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetWrapperFromType(t));
 		}
@@ -200,8 +199,7 @@ namespace IKVM.Runtime
 			Type t = Type.GetTypeFromHandle(handle);
 			if(t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t))
 			{
-				// TODO there should be a better way
-				return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(DotNetTypeWrapper.GetName(t)));
+				return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(DotNetTypeWrapper.GetWrapperFromDotNetType(t));
 			}
 			return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetWrapperFromType(t));
 		}
@@ -635,7 +633,6 @@ namespace IKVM.Internal
 
 						ConstructorInfo remappedTypeAttribute = typeof(RemappedTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
 						typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedTypeAttribute, new object[] { shadowType }));
-						AttributeHelper.HideFromJava(typeBuilder);
 					}
 
 					// HACK because of the above FXBUG that prevents us from making the type both abstract and sealed,
@@ -943,6 +940,7 @@ namespace IKVM.Internal
 								{
 									// FXBUG we use a nested helper class, because Reflection.Emit won't allow us to add a static method to the interface
 									typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class);
+									AttributeHelper.HideFromJava(typeWrapper.helperTypeBuilder);
 								}
 								helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.Public | MethodAttributes.Static, typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsParameterType, argTypes);
 								ILGenerator ilgen = helper.GetILGenerator();

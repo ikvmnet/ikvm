@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<project name="japi-status" default="ikvm-japi-status.html">
+
+    <property name="REFERENCE_API_JAR" value="c:\j2re1.4.1\lib\rt.jar" />
+    <property name="REFERENCE_API_NAME" value="JDK-1.4.1" />
+    <property name="JAPI_HOME" value="c:\japi\japitools" />
+    <property name="IKVM_VERSION" value="0.9" />
+
+    <target name="ikvm-japi-status.html" depends="japi.diff">
+	<exec program="perl" commandline="${JAPI_HOME}/bin/japiohtml japi.diff" output="ikvm-japi-status.html" />
+	<call target="clean" />
+    </target>
+
+    <target name="japi.diff" depends="jdk.japi,ikvm.japi">
+        <exec program="perl" commandline="${JAPI_HOME}/bin/japicompat -j -o japi.diff ${REFERENCE_API_NAME}.japi IKVM-${IKVM_VERSION}.japi" />
+    </target>
+
+    <target name="jdk.japi" depends="japize">
+	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as ${REFERENCE_API_NAME} apis ${REFERENCE_API_JAR} +java +javax" />
+    </target>
+
+    <target name="ikvm.japi" depends="IKVM.GNU.Classpath.jar,japize">
+	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis IKVM.GNU.Classpath.jar +java +javax" />
+    </target>
+
+    <target name="IKVM.GNU.Classpath.jar">
+	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="IKVM.GNU.Classpath" />
+    </target>
+
+    <target name="japize">
+	<exec program="../bin/ikvmc.exe" useruntimeengine="true" commandline="-main:net.wuffies.japi.Japize -out:..\bin\japize.exe ${JAPI_HOME}/share/java/japitools.jar" />
+    </target>
+
+    <target name="clean">
+        <delete failonerror="false">
+	    <fileset>
+                <includes name="IKVM.GNU.Classpath.jar" />
+                <includes name="japi.diff" />
+                <includes name="${REFERENCE_API_NAME}.japi" />
+                <includes name="IKVM-${IKVM_VERSION}.japi" />
+		<includes name="../bin/japize.exe" />
+            </fileset>
+        </delete>
+    </target>
+</project>

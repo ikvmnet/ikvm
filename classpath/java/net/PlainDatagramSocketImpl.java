@@ -144,13 +144,19 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	protected void send(DatagramPacket packet) throws IOException
 	{
-		// TODO error handling
+	    try		
+	    {
+		if(false) throw new cli.System.Net.Sockets.SocketException();
 		int len = packet.getLength();
 		if(socket.SendTo(ByteArrayHack.cast(packet.getData()), len, SocketFlags.wrap(SocketFlags.None), new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(packet.getAddress()), packet.getPort())) != len)
 		{
-			// TODO
-			throw new IOException();
+		    throw new SocketException("Not all data was sent");
 		}
+	    }
+	    catch(cli.System.Net.Sockets.SocketException x)
+	    {
+		throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+	    }
 	}
 
 	/*************************************************************************/
@@ -191,10 +197,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	    }
 	    catch(cli.System.Net.Sockets.SocketException x)
 	    {
-		if(x.get_ErrorCode() == 10060)
-		    throw new java.io.InterruptedIOException(x.getMessage());
-		// TODO error handling
-		throw new IOException(x.getMessage());
+		throw PlainSocketImpl.convertSocketExceptionToIOException(x);
 	    }
 	}
 
@@ -217,8 +220,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
 		}
 		catch(cli.System.ArgumentException x1)
 		{
@@ -245,8 +247,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 		}
 		catch(cli.System.Net.Sockets.SocketException x)
 		{
-			// TODO error handling
-			throw new IOException(x.getMessage());
+		    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
 		}
 		catch(cli.System.ArgumentException x1)
 		{
