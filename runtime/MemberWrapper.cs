@@ -1031,16 +1031,14 @@ sealed class ReflectionOnConstant
 	}
 }
 
-class FieldWrapper : MemberWrapper
+abstract class FieldWrapper : MemberWrapper
 {
 	private string name;
 	private string sig;
-	private readonly CodeEmitter __EmitGet;
-	private readonly CodeEmitter __EmitSet;
 	private FieldInfo field;
 	private TypeWrapper fieldType;
 
-	internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, CodeEmitter emitGet, CodeEmitter emitSet)
+	internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field)
 		: base(declaringType, modifiers, false)
 	{
 		Debug.Assert(fieldType != null);
@@ -1050,8 +1048,12 @@ class FieldWrapper : MemberWrapper
 		this.sig = sig;
 		this.fieldType = fieldType;
 		this.field = field;
-		this.__EmitGet = emitGet;
-		this.__EmitSet = emitSet;
+	}
+
+	internal FieldInfo GetField()
+	{
+		AssertLinked();
+		return field;
 	}
 
 	[Conditional("DEBUG")]
@@ -1112,10 +1114,7 @@ class FieldWrapper : MemberWrapper
 		EmitGetImpl(ilgen);
 	}
 
-	protected virtual void EmitGetImpl(ILGenerator ilgen)
-	{
-		__EmitGet.Emit(ilgen);
-	}
+	protected abstract void EmitGetImpl(ILGenerator ilgen);
 
 	internal void EmitSet(ILGenerator ilgen)
 	{
@@ -1123,10 +1122,7 @@ class FieldWrapper : MemberWrapper
 		EmitSetImpl(ilgen);
 	}
 
-	protected virtual void EmitSetImpl(ILGenerator ilgen)
-	{
-		__EmitSet.Emit(ilgen);
-	}
+	protected abstract void EmitSetImpl(ILGenerator ilgen);
 
 	internal void Link()
 	{
@@ -1160,182 +1156,37 @@ class FieldWrapper : MemberWrapper
 		}
 	}
 
-	private class VolatileLongDoubleGetter : CodeEmitter
+	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
 	{
-		private static MethodInfo volatileReadDouble = typeof(System.Threading.Thread).GetMethod("VolatileRead", new Type[] { Type.GetType("System.Double&") });
-		private static MethodInfo volatileReadLong = typeof(System.Threading.Thread).GetMethod("VolatileRead", new Type[] { Type.GetType("System.Int64&") });
-		private FieldInfo fi;
-
-		internal VolatileLongDoubleGetter(FieldInfo fi)
-		{
-			this.fi = fi;
-		}
-
-		internal override void Emit(ILGenerator ilgen)
-		{
-			ilgen.Emit(fi.IsStatic ? OpCodes.Ldsflda : OpCodes.Ldflda, fi);
-			if(fi.FieldType == typeof(double))
-			{
-				ilgen.Emit(OpCodes.Call, volatileReadDouble);
-			}
-			else
-			{
-				Debug.Assert(fi.FieldType == typeof(long));
-				ilgen.Emit(OpCodes.Call, volatileReadLong);
-			}
-		}
-	}
-
-	private class VolatileLongDoubleSetter : CodeEmitter
-	{
-		private static MethodInfo volatileWriteDouble = typeof(System.Threading.Thread).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Double&"), typeof(double) });
-		private static MethodInfo volatileWriteLong = typeof(System.Threading.Thread).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Int64&"), typeof(long) });
-		private FieldInfo fi;
-
-		internal VolatileLongDoubleSetter(FieldInfo fi)
-		{
-			this.fi = fi;
-		}
-
-		internal override void Emit(ILGenerator ilgen)
-		{
-			LocalBuilder temp = ilgen.DeclareLocal(fi.FieldType);
-			ilgen.Emit(OpCodes.Stloc, temp);
-			ilgen.Emit(fi.IsStatic ? OpCodes.Ldsflda : OpCodes.Ldflda, fi);
-			ilgen.Emit(OpCodes.Ldloc, temp);
-			if(fi.FieldType == typeof(double))
-			{
-				ilgen.Emit(OpCodes.Call, volatileWriteDouble);
-			}
-			else
-			{
-				Debug.Assert(fi.FieldType == typeof(long));
-				ilgen.Emit(OpCodes.Call, volatileWriteLong);
-			}
-		}
-	}
-
-	private class ValueTypeFieldSetter : CodeEmitter
-	{
-		private Type declaringType;
-		private Type fieldType;
-
-		internal ValueTypeFieldSetter(Type declaringType, Type fieldType)
-		{
-			this.declaringType = declaringType;
-			this.fieldType = fieldType;
-		}
-
-		internal override void Emit(ILGenerator ilgen)
-		{
-			LocalBuilder local = ilgen.DeclareLocal(fieldType);
-			ilgen.Emit(OpCodes.Stloc, local);
-			ilgen.Emit(OpCodes.Unbox, declaringType);
-			ilgen.Emit(OpCodes.Ldloc, local);
-		}
-	}
-
-	private class GhostFieldSetter : CodeEmitter
-	{
-		private OpCode ldflda;
-		private FieldInfo field;
-		private TypeWrapper type;
-
-		internal GhostFieldSetter(FieldInfo field, TypeWrapper type, OpCode ldflda)
-		{
-			this.field = field;
-			this.type = type;
-			this.ldflda = ldflda;
-		}
-
-		internal override void Emit(ILGenerator ilgen)
-		{
-			LocalBuilder local = ilgen.DeclareLocal(type.TypeAsLocalOrStackType);
-			ilgen.Emit(OpCodes.Stloc, local);
-			ilgen.Emit(ldflda, field);
-			ilgen.Emit(OpCodes.Ldloc, local);
-			ilgen.Emit(OpCodes.Stfld, type.GhostRefField);
-		}
-	}
-
-	internal static FieldWrapper Create1(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo fi, CodeEmitter getter, CodeEmitter setter)
-	{
-		return new FieldWrapper(declaringType, fieldType, name, sig, modifiers, fi, getter, setter);
-	}
-
-	internal static FieldWrapper Create3(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string sig, Modifiers modifiers)
-	{
-		CodeEmitter emitGet = null;
-		CodeEmitter emitSet = null;
-		if(declaringType.IsNonPrimitiveValueType)
-		{
-			// NOTE all that ValueTypeFieldSetter does, is unbox the boxed value type that contains the field that we are setting
-			emitSet = new ValueTypeFieldSetter(declaringType.TypeAsTBD, fieldType.TypeAsTBD);
-			emitGet = CodeEmitter.Create(OpCodes.Unbox, declaringType.TypeAsTBD);
-		}
 		if(fieldType.IsUnloadable)
 		{
 			// TODO we might need to emit code to check the type dynamically
 			// TODO the fact that the type is unloadable now, doesn't mean it will be unloadable when a method
-			// that accesses this field is compiled, that means that that method (may) need to emit a cast
-			if((modifiers & Modifiers.Static) != 0)
-			{
-				emitGet += CodeEmitter.Create(OpCodes.Ldsfld, fi);
-				emitSet += CodeEmitter.Create(OpCodes.Stsfld, fi);
-			}
-			else
-			{
-				emitGet += CodeEmitter.Create(OpCodes.Ldfld, fi);
-				emitSet += CodeEmitter.Create(OpCodes.Stfld, fi);
-			}
-			return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
-		}
-		if(fieldType.IsGhost)
-		{
-			if((modifiers & Modifiers.Static) != 0)
-			{
-				emitGet += CodeEmitter.Create(OpCodes.Ldsflda, fi) + CodeEmitter.Create(OpCodes.Ldfld, fieldType.GhostRefField);
-				emitSet += new GhostFieldSetter(fi, fieldType, OpCodes.Ldsflda);
-			}
-			else
-			{
-				emitGet += CodeEmitter.Create(OpCodes.Ldflda, fi) + CodeEmitter.Create(OpCodes.Ldfld, fieldType.GhostRefField);
-				emitSet += new GhostFieldSetter(fi, fieldType, OpCodes.Ldflda);
-			}
-			return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
-		}
-		if(fieldType.IsNonPrimitiveValueType)
-		{
-			emitSet += CodeEmitter.CreateEmitUnboxCall(fieldType);
-		}
-		if((modifiers & Modifiers.Volatile) != 0)
-		{
-			// long & double field accesses must be made atomic
-			if(fi.FieldType == typeof(long) || fi.FieldType == typeof(double))
-			{
-				// TODO shouldn't we use += here (for volatile fields inside of value types)?
-				emitGet = new VolatileLongDoubleGetter(fi);
-				emitSet = new VolatileLongDoubleSetter(fi);
-				return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
-			}
-			emitGet += CodeEmitter.Volatile;
-			emitSet += CodeEmitter.Volatile;
-		}
-		if((modifiers & Modifiers.Static) != 0)
-		{
-			emitGet += CodeEmitter.Create(OpCodes.Ldsfld, fi);
-			emitSet += CodeEmitter.Create(OpCodes.Stsfld, fi);
+			// that accesses this field is compiled, that means that that method may need to emit a cast
 		}
 		else
 		{
-			emitGet += CodeEmitter.Create(OpCodes.Ldfld, fi);
-			emitSet += CodeEmitter.Create(OpCodes.Stfld, fi);
+			if(fieldType.IsGhost)
+			{
+				return new GhostFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
+			}
+			if((modifiers & Modifiers.Volatile) != 0)
+			{
+				// long & double field accesses must be made atomic
+				if(fi.FieldType == typeof(long) || fi.FieldType == typeof(double))
+				{
+					return new VolatileLongDoubleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
+				}
+			}
 		}
-		if(fieldType.IsNonPrimitiveValueType)
+		if(declaringType.IsNonPrimitiveValueType)
 		{
-			emitGet += CodeEmitter.CreateEmitBoxCall(fieldType);
+			return new NonPrimitiveValueTypeFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
 		}
-		return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
+		else
+		{
+			return new SimpleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
+		}
 	}
 
 	private void LookupField()
@@ -1398,39 +1249,395 @@ class FieldWrapper : MemberWrapper
 		}
 		return val;
 	}
+}
 
-	// NOTE this type is only used for remapped fields, dynamically compiled classes are always finished before we
-	// allow reflection (so we can look at the underlying field in that case)
-	internal sealed class ConstantFieldWrapper : FieldWrapper
+sealed class SimpleFieldWrapper : FieldWrapper
+{
+	internal SimpleFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
+		: base(declaringType, fieldType, name, sig, modifiers, fi)
 	{
-		private object constant;
-		private CodeEmitter emitGet;
+		Debug.Assert(!declaringType.IsNonPrimitiveValueType);
+		Debug.Assert(!fieldType.IsGhost);
+		Debug.Assert(fieldType != PrimitiveTypeWrapper.DOUBLE || fieldType != PrimitiveTypeWrapper.LONG || !IsVolatile);
+	}
 
-		internal ConstantFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant)
-			: base(declaringType, fieldType, name, sig, modifiers, field, null, null)
+	protected override void EmitGetImpl(ILGenerator ilgen)
+	{
+		if(IsVolatile)
 		{
-			this.constant = constant;
-			emitGet = CodeEmitter.CreateLoadConstant(constant);
+			ilgen.Emit(OpCodes.Volatile);
 		}
+		ilgen.Emit(IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, GetField());
+		if(FieldTypeWrapper.IsNonPrimitiveValueType)
+		{
+			FieldTypeWrapper.EmitBox(ilgen);
+		}
+	}
 
-		protected override void EmitGetImpl(ILGenerator ilgen)
+	protected override void EmitSetImpl(ILGenerator ilgen)
+	{
+		if(FieldTypeWrapper.IsNonPrimitiveValueType)
 		{
-			// NOTE even though you're not supposed to access a constant static final (the compiler is supposed
-			// to inline them), we have to support it (because it does happen, e.g. if the field becomes final
-			// after the referencing class was compiled)
-			emitGet.Emit(ilgen);
+			FieldTypeWrapper.EmitUnbox(ilgen);
 		}
+		if(IsVolatile)
+		{
+			ilgen.Emit(OpCodes.Volatile);
+		}
+		ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, GetField());
+	}
+}
 
-		protected override void EmitSetImpl(ILGenerator ilgen)
-		{
-			// when constant static final fields are updated, the JIT normally doesn't see that (because the
-			// constant value is inlined), so we emulate that behavior by emitting a Pop
-			ilgen.Emit(OpCodes.Pop);
-		}
+sealed class VolatileLongDoubleFieldWrapper : FieldWrapper
+{
+	private static MethodInfo volatileReadDouble = typeof(System.Threading.Thread).GetMethod("VolatileRead", new Type[] { Type.GetType("System.Double&") });
+	private static MethodInfo volatileReadLong = typeof(System.Threading.Thread).GetMethod("VolatileRead", new Type[] { Type.GetType("System.Int64&") });
+	private static MethodInfo volatileWriteDouble = typeof(System.Threading.Thread).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Double&"), typeof(double) });
+	private static MethodInfo volatileWriteLong = typeof(System.Threading.Thread).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Int64&"), typeof(long) });
 
-		internal override object GetValue(object obj)
+	internal VolatileLongDoubleFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
+		: base(declaringType, fieldType, name, sig, modifiers, fi)
+	{
+		Debug.Assert(IsVolatile);
+		Debug.Assert(fieldType == PrimitiveTypeWrapper.DOUBLE || fieldType == PrimitiveTypeWrapper.LONG);
+	}
+
+	protected override void EmitGetImpl(ILGenerator ilgen)
+	{
+		FieldInfo fi = GetField();
+		if(fi.IsStatic)
 		{
-			return constant;
+			ilgen.Emit(OpCodes.Ldsflda, fi);
 		}
+		else
+		{
+			if(DeclaringType.IsNonPrimitiveValueType)
+			{
+				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+			}
+			ilgen.Emit(OpCodes.Ldflda, fi);
+		}
+		if(fi.FieldType == typeof(double))
+		{
+			ilgen.Emit(OpCodes.Call, volatileReadDouble);
+		}
+		else
+		{
+			Debug.Assert(fi.FieldType == typeof(long));
+			ilgen.Emit(OpCodes.Call, volatileReadLong);
+		}
+	}
+
+	protected override void EmitSetImpl(ILGenerator ilgen)
+	{
+		FieldInfo fi = GetField();
+		LocalBuilder temp = ilgen.DeclareLocal(fi.FieldType);
+		ilgen.Emit(OpCodes.Stloc, temp);
+		if(fi.IsStatic)
+		{
+			ilgen.Emit(OpCodes.Ldsflda, fi);
+		}
+		else
+		{
+			if(DeclaringType.IsNonPrimitiveValueType)
+			{
+				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+			}
+			ilgen.Emit(OpCodes.Ldflda, fi);
+		}
+		ilgen.Emit(OpCodes.Ldloc, temp);
+		if(fi.FieldType == typeof(double))
+		{
+			ilgen.Emit(OpCodes.Call, volatileWriteDouble);
+		}
+		else
+		{
+			Debug.Assert(fi.FieldType == typeof(long));
+			ilgen.Emit(OpCodes.Call, volatileWriteLong);
+		}
+	}
+}
+
+sealed class GhostFieldWrapper : FieldWrapper
+{
+	internal GhostFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
+		: base(declaringType, fieldType, name, sig, modifiers, fi)
+	{
+		Debug.Assert(fieldType.IsGhost);
+	}
+
+	protected override void EmitGetImpl(ILGenerator ilgen)
+	{
+		FieldInfo fi = GetField();
+		if(fi.IsStatic)
+		{
+			ilgen.Emit(OpCodes.Ldsflda, fi);
+		}
+		else
+		{
+			if(DeclaringType.IsNonPrimitiveValueType)
+			{
+				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+			}
+			ilgen.Emit(OpCodes.Ldflda, fi);
+		}
+		if(IsVolatile)
+		{
+			ilgen.Emit(OpCodes.Volatile);
+		}
+		ilgen.Emit(OpCodes.Ldfld, FieldTypeWrapper.GhostRefField);
+	}
+
+	protected override void EmitSetImpl(ILGenerator ilgen)
+	{
+		FieldInfo fi = GetField();
+		LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
+		ilgen.Emit(OpCodes.Stloc, temp);
+		if(fi.IsStatic)
+		{
+			ilgen.Emit(OpCodes.Ldsflda, fi);
+		}
+		else
+		{
+			if(DeclaringType.IsNonPrimitiveValueType)
+			{
+				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+			}
+			ilgen.Emit(OpCodes.Ldflda, fi);
+		}
+		ilgen.Emit(OpCodes.Ldloc, temp);
+		if(IsVolatile)
+		{
+			ilgen.Emit(OpCodes.Volatile);
+		}
+		ilgen.Emit(OpCodes.Stfld, FieldTypeWrapper.GhostRefField);
+	}
+}
+
+sealed class NonPrimitiveValueTypeFieldWrapper : FieldWrapper
+{
+	internal NonPrimitiveValueTypeFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
+		: base(declaringType, fieldType, name, sig, modifiers, fi)
+	{
+		Debug.Assert(declaringType.IsNonPrimitiveValueType);
+		Debug.Assert(!fieldType.IsGhost);
+		Debug.Assert(fieldType != PrimitiveTypeWrapper.DOUBLE || fieldType != PrimitiveTypeWrapper.LONG || !IsVolatile);
+	}
+
+	protected override void EmitGetImpl(ILGenerator ilgen)
+	{
+		if(!IsStatic)
+		{
+			ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+		}
+		if(IsVolatile)
+		{
+			ilgen.Emit(OpCodes.Volatile);
+		}
+		ilgen.Emit(IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, GetField());
+		if(FieldTypeWrapper.IsNonPrimitiveValueType)
+		{
+			FieldTypeWrapper.EmitBox(ilgen);
+		}
+	}
+
+	protected override void EmitSetImpl(ILGenerator ilgen)
+	{
+		if(!IsStatic)
+		{
+			FieldInfo fi = GetField();
+			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
+			ilgen.Emit(OpCodes.Stloc, temp);
+			ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+			ilgen.Emit(OpCodes.Ldloc, temp);
+		}
+		if(FieldTypeWrapper.IsNonPrimitiveValueType)
+		{
+			FieldTypeWrapper.EmitUnbox(ilgen);
+		}
+		if(IsVolatile)
+		{
+			ilgen.Emit(OpCodes.Volatile);
+		}
+		ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, GetField());
+	}
+}
+
+sealed class GetterFieldWrapper : FieldWrapper
+{
+	private MethodInfo getter;
+
+	// NOTE fi may be null!
+	internal GetterFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers, MethodInfo getter)
+		: base(declaringType, fieldType, name, sig, modifiers, fi)
+	{
+		Debug.Assert(!IsVolatile);
+
+		this.getter = getter;
+	}
+
+	protected override void EmitGetImpl(ILGenerator ilgen)
+	{
+		if(IsStatic)
+		{
+			ilgen.Emit(OpCodes.Call, getter);
+		}
+		else
+		{
+			if(DeclaringType.IsNonPrimitiveValueType)
+			{
+				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+				ilgen.Emit(OpCodes.Call, getter);
+			}
+			else
+			{
+				ilgen.Emit(getter.IsStatic ? OpCodes.Call : OpCodes.Callvirt, getter);
+			}
+		}
+		if(FieldTypeWrapper.IsGhost)
+		{
+			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsFieldType);
+			ilgen.Emit(OpCodes.Stloc, temp);
+			ilgen.Emit(OpCodes.Ldloca, temp);
+			ilgen.Emit(OpCodes.Ldfld, FieldTypeWrapper.GhostRefField);
+		}
+		else if(FieldTypeWrapper.IsNonPrimitiveValueType)
+		{
+			FieldTypeWrapper.EmitBox(ilgen);
+		}
+	}
+
+	protected override void EmitSetImpl(ILGenerator ilgen)
+	{
+		FieldInfo fi = GetField();
+		LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
+		ilgen.Emit(OpCodes.Stloc, temp);
+		if(FieldTypeWrapper.IsGhost)
+		{
+			if(fi.IsStatic)
+			{
+				ilgen.Emit(OpCodes.Ldsflda, fi);
+			}
+			else
+			{
+				if(DeclaringType.IsNonPrimitiveValueType)
+				{
+					ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+				}
+				ilgen.Emit(OpCodes.Ldflda, fi);
+			}
+			ilgen.Emit(OpCodes.Ldloc, temp);
+			ilgen.Emit(OpCodes.Stfld, FieldTypeWrapper.GhostRefField);
+		}
+		else
+		{
+			if(DeclaringType.IsNonPrimitiveValueType)
+			{
+				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+			}
+			ilgen.Emit(OpCodes.Ldloc, temp);
+			if(FieldTypeWrapper.IsNonPrimitiveValueType)
+			{
+				FieldTypeWrapper.EmitUnbox(ilgen);
+			}
+			ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
+		}
+	}
+}
+
+// NOTE this type is only used for remapped fields, dynamically compiled classes are always finished before we
+// allow reflection (so we can look at the underlying field in that case)
+sealed class ConstantFieldWrapper : FieldWrapper
+{
+	private object constant;
+
+	internal ConstantFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant)
+		: base(declaringType, fieldType, name, sig, modifiers, field)
+	{
+		this.constant = constant;
+	}
+
+	protected override void EmitGetImpl(ILGenerator ilgen)
+	{
+		// NOTE even though you're not supposed to access a constant static final (the compiler is supposed
+		// to inline them), we have to support it (because it does happen, e.g. if the field becomes final
+		// after the referencing class was compiled)
+		object v = GetValue(null);
+		if(v == null)
+		{
+			ilgen.Emit(OpCodes.Ldnull);
+		}
+		else if(constant is int || 
+			constant is short || constant is ushort ||
+			constant is byte || constant is sbyte ||
+			constant is char ||
+			constant is bool)
+		{
+			ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
+		}
+		else if(constant is uint)
+		{
+			ilgen.Emit(OpCodes.Ldc_I4, unchecked((int)((IConvertible)constant).ToUInt32(null)));
+		}
+		else if(constant is string)
+		{
+			ilgen.Emit(OpCodes.Ldstr, (string)constant);
+		}
+		else if(constant is float)
+		{
+			ilgen.Emit(OpCodes.Ldc_R4, (float)constant);
+		}
+		else if(constant is double)
+		{
+			ilgen.Emit(OpCodes.Ldc_R8, (double)constant);
+		}
+		else if(constant is long)
+		{
+			ilgen.Emit(OpCodes.Ldc_I8, (long)constant);
+		}
+		else if(constant is ulong)
+		{
+			ilgen.Emit(OpCodes.Ldc_I8, unchecked((long)(ulong)constant));
+		}
+		else if(constant is Enum)
+		{
+			Type underlying = Enum.GetUnderlyingType(constant.GetType());
+			if(underlying == typeof(long))
+			{
+				ilgen.Emit(OpCodes.Ldc_I8, ((IConvertible)constant).ToInt64(null));
+			}
+			if(underlying == typeof(ulong))
+			{
+				ilgen.Emit(OpCodes.Ldc_I8, unchecked((long)((IConvertible)constant).ToUInt64(null)));
+			}
+			else if(underlying == typeof(uint))
+			{
+				ilgen.Emit(OpCodes.Ldc_I4, unchecked((int)((IConvertible)constant).ToUInt32(null)));
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
+			}
+		}
+		else
+		{
+			throw new NotImplementedException(constant.GetType().FullName);
+		}
+	}
+
+	protected override void EmitSetImpl(ILGenerator ilgen)
+	{
+		// when constant static final fields are updated, the JIT normally doesn't see that (because the
+		// constant value is inlined), so we emulate that behavior by emitting a Pop
+		ilgen.Emit(OpCodes.Pop);
+	}
+
+	internal override object GetValue(object obj)
+	{
+		if(constant == null)
+		{
+			constant = GetField().GetValue(null);
+		}
+		return constant;
 	}
 }

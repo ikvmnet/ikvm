@@ -73,8 +73,8 @@
 			<method name="getClass" sig="()Ljava.lang.Class;" modifiers="public final">
 				<body>
 					<ldarg_0 />
-					<call type="System.Object, mscorlib" name="GetType" />
-					<call type="IKVM.NativeCode.java.lang.VMClass" name="getClassFromType" />
+					<call type="System.Object, mscorlib" name="GetType" sig="()Lcli.System.Type;" />
+					<call type="IKVM.NativeCode.java.lang.VMClass" name="getClassFromType" sig="(Lcli.System.Type;)Ljava.lang.Class;" />
 					<castclass class="java.lang.Class" />
 					<ret />
 				</body>
@@ -89,7 +89,7 @@
 					<throw />
 					<label name="ok" />
 					<ldarg_0 />
-					<call type="System.Object, mscorlib" name="MemberwiseClone" />
+					<call type="System.Object, mscorlib" name="MemberwiseClone" sig="()Ljava.lang.Object;" />
 					<ret />
 				</body>
 				<alternateBody>
@@ -120,7 +120,7 @@
 					<br name="end" />
 					<label name="skip" />
 					<ldarg_0 />
-					<callvirt type="System.Object, mscorlib" name="ToString" />
+					<callvirt type="System.Object, mscorlib" name="ToString" sig="()Ljava.lang.String;" />
 					<label name="end" />
 					<ret />
 				</alternateBody>
@@ -148,7 +148,7 @@
 				-->
 				<body>
 					<ldarg_0 />
-					<call type="System.Object, mscorlib" name="Finalize" />
+					<call type="System.Object, mscorlib" name="Finalize" sig="()V" />
 					<ret />
 				</body>
 				<alternateBody>
@@ -166,7 +166,7 @@
 			<constructor sig="()V" modifiers="public">
 				<alternateBody>
 					<ldstr value="" />
-					<call type="System.String, mscorlib" name="Copy" />
+					<call type="System.String, mscorlib" name="Copy" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 					<ret />
 				</alternateBody>
 			</constructor>

@@ -1824,7 +1824,7 @@ namespace IKVM.Runtime
 			{
 				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
 				wrapper.Finish();
-				FieldWrapper fw = wrapper.GetFieldWrapper(StringFromUTF8(name), wrapper.GetClassLoader().ExpressionTypeWrapper(StringFromUTF8(sig).Replace('/', '.')));
+				FieldWrapper fw = wrapper.GetFieldWrapper(StringFromUTF8(name), StringFromUTF8(sig).Replace('/', '.'));
 				if(fw != null)
 				{
 					if(fw.IsStatic == isstatic)
@@ -3217,6 +3217,7 @@ namespace IKVM.Runtime
 		internal static IntPtr Alloc(int cb)
 		{
 			// MONOBUG Marshal.AllocHGlobal returns a null pointer if we try to allocate zero bytes
+			// (as of Mono 1.0.2 this shouldn't be necessary anymore)
 			if(cb == 0)
 			{
 				cb = 1;

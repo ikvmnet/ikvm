@@ -840,7 +840,7 @@ class ClassFile
 			TypeWrapper wrapper = GetClassType();
 			if(!wrapper.IsUnloadable)
 			{
-				field = wrapper.GetFieldWrapper(Name, GetFieldType());
+				field = wrapper.GetFieldWrapper(Name, Signature);
 				if(field != null)
 				{
 					field.Link();

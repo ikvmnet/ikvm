@@ -23,13 +23,108 @@
 */
 package java.util;
 
-final class VMTimeZone
+final class VMTimeZone extends TimeZone
 {
-    static TimeZone getDefaultTimeZoneId()
+    private cli.System.TimeZone tz = cli.System.TimeZone.get_CurrentTimeZone();
+    private int extraOffset;
+
+    public int getOffset(int era, int year, int month, int day, int dayOfWeek, int milliseconds)
     {
-	return TimeZone.getDefaultTimeZone(getTimeZone());
+	if(era != GregorianCalendar.AD)
+	    throw new IllegalArgumentException("Unsupported era");
+
+	return getOffset(new cli.System.DateTime(year, month + 1, day).AddMilliseconds(milliseconds));
     }
 
+    private int getOffset(cli.System.DateTime d)
+    {
+	return extraOffset + (int)tz.GetUtcOffset(d).get_TotalMilliseconds();
+    }
+
+    public int getOffset(long date)
+    {
+	return getOffset(new cli.System.DateTime((62135596800000L + date) * 10000L).ToLocalTime());
+    }
+
+    public void setRawOffset(int offsetMillis)
+    {
+	extraOffset = offsetMillis - (getRawOffset() - extraOffset);
+    }
+
+    public int getRawOffset()
+    {
+	cli.System.DateTime now = cli.System.DateTime.get_Now();
+
+	int offset = (int)tz.GetUtcOffset(now).get_TotalMilliseconds();
+	if(tz.IsDaylightSavingTime(now))
+	{
+	    offset -= tz.GetDaylightChanges(now.get_Year()).get_Delta().get_TotalMilliseconds();
+	}
+	return offset + extraOffset;
+    }
+
+    public String getDisplayName(boolean daylight, int style, Locale locale)
+    {
+	return daylight ? tz.get_DaylightName() : tz.get_StandardName();
+    }
+
+    public int getDSTSavings()
+    {
+	return (int)tz.GetDaylightChanges(cli.System.DateTime.get_Today().get_Year()).get_Delta().get_TotalMilliseconds();
+    }
+
+    public boolean useDaylightTime()
+    {
+	return getDSTSavings() != 0;
+    }
+
+    public boolean inDaylightTime(Date date)
+    {
+	return tz.IsDaylightSavingTime(new cli.System.DateTime(date.getYear(), date.getMonth() + 1, date.getDay()));
+    }
+
+    public boolean hasSameRules(TimeZone other)
+    {
+	if(other instanceof VMTimeZone)
+	{
+	    VMTimeZone o = (VMTimeZone)other;
+	    return o.tz == tz && o.extraOffset == extraOffset;
+	}
+	return false;
+    }
+
+    static TimeZone getDefaultTimeZoneId()
+    {
+	TimeZone nettz = new VMTimeZone();
+	String[] ids = TimeZone.getAvailableIDs(nettz.getRawOffset());
+outer:
+	for(int i = 0; i < ids.length; i++)
+	{
+	    TimeZone tz = TimeZone.getTimeZone(ids[i]);
+	    if(nettz.useDaylightTime() == tz.useDaylightTime())
+	    {
+		if(!tz.useDaylightTime())
+		    return tz;
+		// HACK extremely lame: we cycle through all days to check if the time zones are "the same"
+		long d = new cli.System.DateTime(cli.System.DateTime.get_Today().get_Year(), 1, 1).get_Ticks() / 10000L - 62135596800000L;
+		for(int j = 0; j < 365; j++)
+		{
+		    if(tz.getOffset(d) != nettz.getOffset(d))
+		    {
+			break outer;
+		    }
+		    d += 24 * 60 * 60 * 1000;
+		}
+		return tz;
+	    }
+	}
+	// we didn't find a match, return our own implementation, this isn't really
+	// a proper time zone (it isn't serializable), but it'll have to do.
+	nettz.setID(".NET TimeZone");
+	return nettz;
+    }
+
+/*
     private static String getTimeZone()
     {
 	cli.System.TimeZone currentTimeZone = cli.System.TimeZone.get_CurrentTimeZone();
@@ -61,4 +156,5 @@ final class VMTimeZone
 	    }
 	}
     }  
+*/
 }

@@ -112,6 +112,11 @@ class ClassLoaderWrapper
 		}
 	}
 
+	internal static bool IsCoreAssemblyType(Type type)
+	{
+		return type.Assembly == coreAssembly;
+	}
+
 	private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
 	{
 		lock(arrayConstructionLock)
@@ -842,6 +847,11 @@ class ClassLoaderWrapper
 
 	internal static ClassLoaderWrapper GetSystemClassLoader()
 	{
+		// during static compilation, we don't have a system class loader
+		if(JVM.IsStaticCompiler)
+		{
+			return GetBootstrapClassLoader();
+		}
 		lock(typeof(ClassLoaderWrapper))
 		{
 			if(systemClassLoader == null)

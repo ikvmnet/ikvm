@@ -134,9 +134,6 @@ public class Starter
 	{
 		Tracer.EnableTraceForDebug();
 		StringDictionary props = new StringDictionary();
-		// HACK we take our own assembly location as the location of classpath (this is used by the Security infrastructure
-		// to find the classpath.security file)
-		props["gnu.classpath.home"] = new System.IO.FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName;
 		bool jar = false;
 		bool saveAssembly = false;
 		bool saveAssemblyX = false;
@@ -196,6 +193,22 @@ public class Starter
 					}
 					props[keyvalue[0]] = keyvalue[1];
 				}
+				else if(args[i] == "-ea" || args[i] == "-enableassertions")
+				{
+					props["ikvm.assert.default"] = "true";
+				}
+				else if(args[i] == "-da" || args[i] == "-disableassertions")
+				{
+					props["ikvm.assert.default"] = "false";
+				}
+				else if(args[i].StartsWith("-ea:") || args[i].StartsWith("-enableassertions:"))
+				{
+					props["ikvm.assert.enable"] = args[i].Substring(args[i].IndexOf(':') + 1);
+				}
+				else if(args[i].StartsWith("-da:") || args[i].StartsWith("-disableassertions:"))
+				{
+					props["ikvm.assert.disable"] = args[i].Substring(args[i].IndexOf(':') + 1);
+				}
 				else if(args[i] == "-cp" || args[i] == "-classpath")
 				{
 					props["java.class.path"] = args[++i];
@@ -234,17 +247,25 @@ public class Starter
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("where options include:");
 			Console.Error.WriteLine("    -? -help          Display this message");
+			Console.Error.WriteLine("    -version          Display IKVM and runtime version");
 			Console.Error.WriteLine("    -cp -classpath <directories and zip/jar files separated by {0}>", Path.PathSeparator);
 			Console.Error.WriteLine("                      Set search path for application classes and resources");
 			Console.Error.WriteLine("    -D<name>=<value>  Set a system property");
+			Console.Error.WriteLine("    -ea[:<packagename>...|:<classname>]");
+			Console.Error.WriteLine("    -enableassertions[:<packagename>...|:<classname>]");
+			Console.Error.WriteLine("                      Enable assertions.");
+			Console.Error.WriteLine("    -da[:<packagename>...|:<classname>]");
+			Console.Error.WriteLine("    -disableassertions[:<packagename>...|:<classname>]");
+			Console.Error.WriteLine("                      Disable assertions");
 			Console.Error.WriteLine("    -Xsave            Save the generated assembly (for debugging)");
 			Console.Error.WriteLine("    -Xtime            Time the execution");
 			Console.Error.WriteLine("    -Xbootclasspath:<directories and zip/jar files separated by {0}>", Path.PathSeparator);
 			Console.Error.WriteLine("                      Set search path for bootstrap classes and resources");
 			Console.Error.WriteLine("    -Xtrace:<string>  Displays all tracepoints with the given name");
-			Console.Error.WriteLine("    -Xmethodtrace:<string>  Builds method trace into the specified output methods");
+			Console.Error.WriteLine("    -Xmethodtrace:<string>");
+			Console.Error.WriteLine("                      Builds method trace into the specified output methods");
 			Console.Error.WriteLine("    -Xwait            Keep process hanging around after exit");
-			Console.Error.WriteLine("    -Xbreak           Trigger a user defined breakpoint");
+			Console.Error.WriteLine("    -Xbreak           Trigger a user defined breakpoint at startup");
 			return 1;
 		}
 		try

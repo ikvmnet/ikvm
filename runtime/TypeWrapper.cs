@@ -685,22 +685,22 @@ abstract class TypeWrapper
 		return classLoader;
 	}
 
-	protected abstract FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType);
+	protected abstract FieldWrapper GetFieldImpl(string fieldName, string fieldSig);
 
-	internal virtual FieldWrapper GetFieldWrapper(string fieldName, TypeWrapper fieldType)
+	internal virtual FieldWrapper GetFieldWrapper(string fieldName, string fieldSig)
 	{
 		lock(fields.SyncRoot)
 		{
-			string key = fieldName + fieldType.SigName;
+			string key = fieldName + fieldSig;
 			FieldWrapper fae = (FieldWrapper)fields[key];
 			if(fae == null)
 			{
-				fae = GetFieldImpl(fieldName, fieldType);
+				fae = GetFieldImpl(fieldName, fieldSig);
 				if(fae == null)
 				{
 					foreach(TypeWrapper iface in this.Interfaces)
 					{
-						fae = iface.GetFieldWrapper(fieldName, fieldType);
+						fae = iface.GetFieldWrapper(fieldName, fieldSig);
 						if(fae != null)
 						{
 							return fae;
@@ -708,7 +708,7 @@ abstract class TypeWrapper
 					}
 					if(baseWrapper != null)
 					{
-						return baseWrapper.GetFieldWrapper(fieldName, fieldType);
+						return baseWrapper.GetFieldWrapper(fieldName, fieldSig);
 					}
 					return null;
 				}
@@ -1497,7 +1497,7 @@ class UnloadableTypeWrapper : TypeWrapper
 		}
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+	protected override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
 	{
 		throw new InvalidOperationException("GetFieldImpl called on UnloadableTypeWrapper: " + Name);
 	}
@@ -1610,7 +1610,7 @@ class PrimitiveTypeWrapper : TypeWrapper
 		}
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+	protected override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
 	{
 		return null;
 	}
@@ -1687,6 +1687,30 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			{
 				throw new IncompatibleClassChangeError("Class " + f.Name + " has interface " + BaseTypeWrapper.Name + " as superclass");
 			}
+			if(!f.IsFinal)
+			{
+				if(BaseTypeWrapper.TypeAsTBD == typeof(ValueType) || BaseTypeWrapper.TypeAsTBD == typeof(Enum))
+				{
+					throw new VerifyError("Value types must be final");
+				}
+				if(BaseTypeWrapper.TypeAsTBD == typeof(MulticastDelegate))
+				{
+					throw new VerifyError("Delegates must be final");
+				}
+			}
+			if(BaseTypeWrapper.TypeAsTBD == typeof(Delegate))
+			{
+				throw new VerifyError(BaseTypeWrapper.Name + " cannot be used as a base class");
+			}
+			// NOTE defining value types, enums and delegates is not supported in IKVM v1
+			if(BaseTypeWrapper.TypeAsTBD == typeof(ValueType) || BaseTypeWrapper.TypeAsTBD == typeof(Enum))
+			{
+				throw new VerifyError("Defining value types in Java is not implemented in IKVM v1");
+			}
+			if(BaseTypeWrapper.TypeAsTBD == typeof(MulticastDelegate))
+			{
+				throw new VerifyError("Defining delegates in Java is not implemented in IKVM v1");
+			}
 		}
 
 		ClassFile.ConstantPoolItemClass[] interfaces = f.Interfaces;
@@ -1740,9 +1764,9 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		}
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+	protected override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
 	{
-		return impl.GetFieldImpl(fieldName, fieldType);
+		return impl.GetFieldImpl(fieldName, fieldSig);
 	}
 
 	internal override TypeWrapper[] Interfaces
@@ -1867,46 +1891,6 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			this.map = map;
 		}
 
-		// MONOBUG this method doesn't work on Mono yet, so we use a Type based approach instead
-#if USE_TYPEHANDLE_EXCEPTION_MAPPING
-		internal override void Emit(ILGenerator ilgen)
-		{
-			ilgen.Emit(OpCodes.Ldarg_0);
-			ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeHandle"));
-			LocalBuilder typehandle = ilgen.DeclareLocal(typeof(RuntimeTypeHandle));
-			ilgen.Emit(OpCodes.Stloc, typehandle);
-			ilgen.Emit(OpCodes.Ldloca, typehandle);
-			MethodInfo get_Value = typeof(RuntimeTypeHandle).GetMethod("get_Value");
-			ilgen.Emit(OpCodes.Call, get_Value);
-			for(int i = 0; i < map.Length; i++)
-			{
-				ilgen.Emit(OpCodes.Dup);
-				ilgen.Emit(OpCodes.Ldtoken, Type.GetType(map[i].src));
-				ilgen.Emit(OpCodes.Stloc, typehandle);
-				ilgen.Emit(OpCodes.Ldloca, typehandle);
-				ilgen.Emit(OpCodes.Call, get_Value);
-				Label label = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Bne_Un_S, label);
-				ilgen.Emit(OpCodes.Pop);
-				if(map[i].code != null)
-				{
-					ilgen.Emit(OpCodes.Ldarg_0);
-					map[i].code.Emit(ilgen);
-					ilgen.Emit(OpCodes.Ret);
-				}
-				else
-				{
-					TypeWrapper tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(map[i].dst);
-					tw.GetMethodWrapper(MethodDescriptor.FromNameSig(tw.GetClassLoader(), "<init>", "()V"), false).EmitNewobj.Emit(ilgen);
-					ilgen.Emit(OpCodes.Ret);
-				}
-				ilgen.MarkLabel(label);
-			}
-			ilgen.Emit(OpCodes.Pop);
-			ilgen.Emit(OpCodes.Ldarg_0);
-			ilgen.Emit(OpCodes.Ret);
-		}
-#else // USE_TYPEHANDLE_EXCEPTION_MAPPING
 		internal override void Emit(ILGenerator ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldarg_0);
@@ -1941,7 +1925,6 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ret);
 		}
-#endif // USE_TYPEHANDLE_EXCEPTION_MAPPING
 	}
 
 	internal static void LoadNativeMethods(IKVM.Internal.MapXml.Root map)
@@ -2014,7 +1997,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 
 	private abstract class DynamicImpl
 	{
-		internal abstract FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType);
+		internal abstract FieldWrapper GetFieldImpl(string fieldName, string fieldSig);
 		internal abstract Type Type { get; }
 		internal abstract Type TypeAsBaseType { get; }
 		internal abstract TypeWrapper[] InnerClasses { get; }
@@ -3307,7 +3290,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		internal override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+		internal override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
 		{
 			if(fieldLookup == null)
 			{
@@ -3318,7 +3301,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					fieldLookup[classFile.Fields[i].Name + classFile.Fields[i].Signature] = i;
 				}
 			}
-			object index = fieldLookup[fieldName + fieldType.SigName];
+			object index = fieldLookup[fieldName + fieldSig];
 			if(index != null)
 			{
 				int i = (int)index;
@@ -3421,7 +3404,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					attribs |= FieldAttributes.Literal;
 					field = typeBuilder.DefineField(fieldName, type, attribs);
 					field.SetConstant(constantValue);
-					fields[i] = new FieldWrapper.ConstantFieldWrapper(wrapper, typeWrapper, fld.Name, fld.Signature, fld.Modifiers, field, constantValue);
+					fields[i] = new ConstantFieldWrapper(wrapper, typeWrapper, fld.Name, fld.Signature, fld.Modifiers, field, constantValue);
 				}
 				else
 				{
@@ -3458,10 +3441,6 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						MethodBuilder getter = typeBuilder.DefineMethod("get_" + fld.Name, methodAttribs, CallingConventions.Standard, type, Type.EmptyTypes);
 						AttributeHelper.HideFromJava(getter);
 						ILGenerator ilgen = getter.GetILGenerator();
-						if(fld.IsVolatile)
-						{
-							ilgen.Emit(OpCodes.Volatile);
-						}
 						if(fld.IsStatic)
 						{
 							ilgen.Emit(OpCodes.Ldsfld, field);
@@ -3474,25 +3453,11 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						ilgen.Emit(OpCodes.Ret);
 						PropertyBuilder pb = typeBuilder.DefineProperty(fld.Name, PropertyAttributes.None, type, Type.EmptyTypes);
 						pb.SetGetMethod(getter);
-						CodeEmitter emitGet = CodeEmitter.Create(OpCodes.Call, getter);
-						CodeEmitter emitSet = null;
-						if(fld.IsVolatile)
-						{
-							emitSet += CodeEmitter.Volatile;
-						}
-						if(fld.IsStatic)
-						{
-							emitSet += CodeEmitter.Create(OpCodes.Stsfld, field);
-						}
-						else
-						{
-							emitSet += CodeEmitter.Create(OpCodes.Stfld, field);
-						}
-						fields[i] = FieldWrapper.Create1(wrapper, typeWrapper, fld.Name, fld.Signature, fld.Modifiers, field, emitGet, emitSet);
+						fields[i] = new GetterFieldWrapper(wrapper, typeWrapper, field, fld.Name, fld.Signature, fld.Modifiers, getter);
 					}
 					else
 					{
-						fields[i] = FieldWrapper.Create3(wrapper, typeWrapper, field, fld.Signature, fld.Modifiers);
+						fields[i] = FieldWrapper.Create(wrapper, typeWrapper, field, fld.Name, fld.Signature, fld.Modifiers);
 					}
 				}
 				// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
@@ -4033,7 +3998,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		internal override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+		internal override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
 		{
 			return null;
 		}
@@ -4173,7 +4138,7 @@ abstract class LazyTypeWrapper : TypeWrapper
 		return base.GetMethodWrapper(md, inherit);
 	}
 
-	internal override FieldWrapper GetFieldWrapper(string fieldName, TypeWrapper fieldType)
+	internal override FieldWrapper[] GetFields()
 	{
 		lock(this)
 		{
@@ -4183,10 +4148,23 @@ abstract class LazyTypeWrapper : TypeWrapper
 				Publish();
 			}
 		}
-		return base.GetFieldWrapper (fieldName, fieldType);
+		return base.GetFields ();
 	}
 
-	protected sealed override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+	internal override FieldWrapper GetFieldWrapper(string fieldName, string fieldSig)
+	{
+		lock(this)
+		{
+			if(!membersPublished)
+			{
+				membersPublished = true;
+				Publish();
+			}
+		}
+		return base.GetFieldWrapper (fieldName, fieldSig);
+	}
+
+	protected sealed override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
 	{
 		return null;
 	}
@@ -4250,8 +4228,13 @@ sealed class CompiledTypeWrapper : LazyTypeWrapper
 		}
 	}
 
+	private static ClassLoaderWrapper GetClassLoader(Type type)
+	{
+		return ClassLoaderWrapper.IsCoreAssemblyType(type) ? ClassLoaderWrapper.GetBootstrapClassLoader() : ClassLoaderWrapper.GetSystemClassLoader();
+	}
+
 	internal CompiledTypeWrapper(string name, Type type)
-		: base(GetModifiers(type), name, GetBaseTypeWrapper(type), ClassLoaderWrapper.GetBootstrapClassLoader())
+		: base(GetModifiers(type), name, GetBaseTypeWrapper(type), GetClassLoader(type))
 	{
 		Debug.Assert(!(type is TypeBuilder));
 		Debug.Assert(!type.IsArray);
@@ -4753,67 +4736,7 @@ sealed class CompiledTypeWrapper : LazyTypeWrapper
 
 	private FieldWrapper CreateFieldWrapper(FieldInfo field)
 	{
-		MethodInfo getter = null;
 		Modifiers modifiers = AttributeHelper.GetModifiers(field, false);
-
-		// If the backing field is private, but the modifiers aren't, we've got a final field that
-		// has a property accessor method.
-		if(field.IsPrivate && ((modifiers & Modifiers.Private) == 0))
-		{
-			BindingFlags bindingFlags = BindingFlags.DeclaredOnly | BindingFlags.NonPublic | BindingFlags.Public;
-			bindingFlags |= field.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-			PropertyInfo prop = field.DeclaringType.GetProperty(field.Name, bindingFlags, null, field.FieldType, Type.EmptyTypes, null);
-			Debug.Assert(prop != null);
-			if(prop != null)
-			{
-				getter = prop.GetGetMethod(true);
-			}
-		}
-
-		CodeEmitter emitGet;
-		CodeEmitter emitSet;
-		if((modifiers & Modifiers.Private) != 0)
-		{
-			// there is no way to emit code to access a private member, so we don't need to generate these
-			emitGet = CodeEmitter.InternalError;
-			emitSet = CodeEmitter.InternalError;
-		}
-		else if(field.IsLiteral)
-		{
-			if((modifiers & Modifiers.Static) == 0)
-			{
-				throw new InvalidOperationException("Invalid assembly, a non-static literal field was encountered.");
-			}
-			// if field is a literal, we must emit an ldc instead of a ldsfld
-			emitGet = CodeEmitter.CreateLoadConstantField(field);
-			// it is never legal to emit code to set a final field (from outside the class)
-			emitSet = CodeEmitter.InternalError;
-		}
-		else if((modifiers & Modifiers.Static) != 0)
-		{
-			if(getter != null)
-			{
-				emitGet = CodeEmitter.Create(OpCodes.Call, getter);
-			}
-			else
-			{
-				emitGet = CodeEmitter.Create(OpCodes.Ldsfld, field);
-			}
-			emitSet = CodeEmitter.Create(OpCodes.Stsfld, field);
-		}
-		else
-		{
-			if(getter != null)
-			{
-				emitGet = CodeEmitter.Create(OpCodes.Callvirt, getter);
-			}
-			else
-			{
-				emitGet = CodeEmitter.Create(OpCodes.Ldfld, field);
-			}
-			emitSet = CodeEmitter.Create(OpCodes.Stfld, field);
-		}
-		// if the field name is mangled (because its type is unloadable), chop off the mangled bit
 		string name = field.Name;
 		TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(field.FieldType);
 		if(field.IsDefined(typeof(NameSigAttribute), false))
@@ -4822,7 +4745,25 @@ sealed class CompiledTypeWrapper : LazyTypeWrapper
 			name = attr.Name;
 			SigTypePatchUp(attr.Sig, ref type);
 		}
-		return FieldWrapper.Create1(this, type, name, type.SigName, modifiers, field, emitGet, emitSet);
+
+		// If the backing field is private, but the modifiers aren't, we've got a final field that
+		// has a property accessor method.
+		if(field.IsPrivate && ((modifiers & Modifiers.Private) == 0))
+		{
+			BindingFlags bindingFlags = BindingFlags.DeclaredOnly | BindingFlags.NonPublic | BindingFlags.Public;
+			bindingFlags |= field.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
+			PropertyInfo prop = field.DeclaringType.GetProperty(field.Name, bindingFlags, null, field.FieldType, Type.EmptyTypes, null);
+			MethodInfo getter = prop.GetGetMethod(true);
+			return new GetterFieldWrapper(this, type, field, name, type.SigName, modifiers, getter);
+		}
+		else if(field.IsLiteral)
+		{
+			return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers, field, null);
+		}
+		else
+		{
+			return FieldWrapper.Create(this, type, field, name, type.SigName, modifiers);
+		}
 	}
 
 	internal override bool IsGhost
@@ -4855,6 +4796,23 @@ sealed class CompiledTypeWrapper : LazyTypeWrapper
 		{
 			return type.IsDefined(typeof(ExceptionIsUnsafeForMappingAttribute), false);
 		}
+	}
+}
+
+sealed class Whidbey
+{
+	private static readonly object[] noargs = new object[0];
+	private static readonly MethodInfo get_IsGenericTypeDefinition = typeof(Type).GetMethod("get_IsGenericTypeDefinition");
+	private static readonly MethodInfo get_IsGenericMethodDefinition = typeof(MethodBase).GetMethod("get_IsGenericMethodDefinition");
+
+	internal static bool IsGenericTypeDefinition(Type type)
+	{
+		return get_IsGenericTypeDefinition != null && (bool)get_IsGenericTypeDefinition.Invoke(type, noargs);
+	}
+
+	internal static bool IsGenericMethodDefinition(MethodBase mb)
+	{
+		return get_IsGenericMethodDefinition != null && (bool)get_IsGenericMethodDefinition.Invoke(mb, noargs);
 	}
 }
 
@@ -4957,6 +4915,10 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		Type type = LoadTypeFromLoadedAssemblies(name);
 		if(type != null)
 		{
+			if(Whidbey.IsGenericTypeDefinition(type))
+			{
+				return null;
+			}
 			if(prefixed || type.IsDefined(typeof(NoPackagePrefixAttribute), false) || type.Assembly.IsDefined(typeof(NoPackagePrefixAttribute), false))
 			{
 				return new DotNetTypeWrapper(type);
@@ -5046,7 +5008,7 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 	}
 
 	internal DotNetTypeWrapper(Type type)
-		: base(GetModifiers(type), GetName(type), GetBaseTypeWrapper(type), ClassLoaderWrapper.GetBootstrapClassLoader())
+		: base(GetModifiers(type), GetName(type), GetBaseTypeWrapper(type), ClassLoaderWrapper.GetSystemClassLoader())
 	{
 		Debug.Assert(!(type.IsByRef), type.FullName);
 		Debug.Assert(!(type.IsPointer), type.FullName);
@@ -5199,9 +5161,20 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 	{
 		// NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
 		internal EnumValueFieldWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
-			: base(tw, fieldType, "Value", fieldType.SigName, Modifiers.Public | Modifiers.Final, null,
-					CodeEmitter.Create(OpCodes.Unbox, tw.type) + CodeEmitter.Create(OpCodes.Ldobj, tw.type), CodeEmitter.Pop + CodeEmitter.Pop)
+			: base(tw, fieldType, "Value", fieldType.SigName, Modifiers.Public | Modifiers.Final, null)
 		{
+		}
+
+		protected override void EmitGetImpl(ILGenerator ilgen)
+		{
+			DotNetTypeWrapper tw = (DotNetTypeWrapper)this.DeclaringType;
+			ilgen.Emit(OpCodes.Unbox, tw.type);
+			ilgen.Emit(OpCodes.Ldobj, tw.type);
+		}
+
+		protected override void EmitSetImpl(ILGenerator ilgen)
+		{
+			throw new InvalidOperationException();
 		}
 
 		internal override void SetValue(object obj, object val)
@@ -5254,7 +5227,7 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 					{
 						name = "_" + name;
 					}
-					AddField(FieldWrapper.Create1(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], CodeEmitter.CreateLoadConstantField(fields[i]), CodeEmitter.Pop));
+					AddField(new ConstantFieldWrapper(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], null));
 				}
 			}
 			AddField(new EnumValueFieldWrapper(this, fieldType));
@@ -5273,7 +5246,7 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 				else
 				{
 					// TODO handle name/signature clash
-					AddField(CreateFieldWrapper(AttributeHelper.GetModifiers(fields[i], true), fields[i].Name, fields[i].FieldType, fields[i], null));
+					AddField(CreateFieldWrapperDotNet(AttributeHelper.GetModifiers(fields[i], true), fields[i].Name, fields[i].FieldType, fields[i]));
 				}
 			}
 
@@ -5400,6 +5373,10 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 
 	private MethodDescriptor MakeMethodDescriptor(MethodBase mb)
 	{
+		if(Whidbey.IsGenericMethodDefinition(mb))
+		{
+			return null;
+		}
 		System.Text.StringBuilder sb = new System.Text.StringBuilder();
 		sb.Append('(');
 		ParameterInfo[] parameters = mb.GetParameters();
@@ -5413,6 +5390,10 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 			}
 			if(type.IsByRef)
 			{
+				if(type.GetElementType().IsPointer)
+				{
+					return null;
+				}
 				type = type.Assembly.GetType(type.GetElementType().FullName + "[]", true);
 				if(mb.IsAbstract)
 				{
@@ -5501,11 +5482,15 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 					else
 					{
 						Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic);
-						innerClasses = new TypeWrapper[nestedTypes.Length];
+						ArrayList list = new ArrayList(nestedTypes.Length);
 						for(int i = 0; i < nestedTypes.Length; i++)
 						{
-							innerClasses[i] = ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]);
+							if(!Whidbey.IsGenericTypeDefinition(nestedTypes[i]))
+							{
+								list.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
+							}
 						}
+						innerClasses = (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
 					}
 				}
 			}
@@ -5541,66 +5526,17 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		}
 	}
 
-	// TODO support NonPrimitiveValueTypes
-	// TODO why doesn't this use the standard FieldWrapper.Create?
-	private FieldWrapper CreateFieldWrapper(Modifiers modifiers, string name, Type fieldType, FieldInfo field, MethodInfo getter)
+	private FieldWrapper CreateFieldWrapperDotNet(Modifiers modifiers, string name, Type fieldType, FieldInfo field)
 	{
-		CodeEmitter emitGet;
-		CodeEmitter emitSet;
-		if((modifiers & Modifiers.Private) != 0)
+		TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(fieldType);
+		if(field.IsLiteral)
 		{
-			// there is no way to emit code to access a private member, so we don't need to generate these
-			emitGet = CodeEmitter.InternalError;
-			emitSet = CodeEmitter.InternalError;
-		}
-		else if((modifiers & Modifiers.Static) != 0)
-		{
-			if(getter != null)
-			{
-				emitGet = CodeEmitter.Create(OpCodes.Call, getter);
-			}
-			else
-			{
-				// if field is a literal, we must emit an ldc instead of a ldsfld
-				if(field.IsLiteral)
-				{
-					emitGet = CodeEmitter.CreateLoadConstantField(field);
-				}
-				else
-				{
-					emitGet = CodeEmitter.Create(OpCodes.Ldsfld, field);
-				}
-			}
-			if(field != null && !field.IsLiteral)
-			{
-				emitSet = CodeEmitter.Create(OpCodes.Stsfld, field);
-			}
-			else
-			{
-				emitSet = CodeEmitter.InternalError;
-			}
+			return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers, field, null);
 		}
 		else
 		{
-			if(getter != null)
-			{
-				emitGet = CodeEmitter.Create(OpCodes.Callvirt, getter);
-			}
-			else
-			{
-				emitGet = CodeEmitter.Create(OpCodes.Ldfld, field);
-			}
-			if(field != null)
-			{
-				emitSet = CodeEmitter.Create(OpCodes.Stfld, field);
-			}
-			else
-			{
-				emitSet = CodeEmitter.InternalError;
-			}
+			return FieldWrapper.Create(this, type, field, name, type.SigName, modifiers);
 		}
-		TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(fieldType);
-		return FieldWrapper.Create1(this, type, name, type.SigName, modifiers, field, emitGet, emitSet);
 	}
 
 	private MethodWrapper CreateMethodWrapper(MethodDescriptor md, MethodBase mb, bool privateInterfaceImplHack)
@@ -5752,7 +5688,7 @@ sealed class ArrayTypeWrapper : TypeWrapper
 		}
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+	protected override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
 	{
 		return null;
 	}

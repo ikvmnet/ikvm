@@ -77,109 +77,102 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("sig")]
 		public string Sig;
 
-		private CodeEmitter emitter;
 		private OpCode opcode;
 
 		internal sealed override void Generate(Hashtable context, ILGenerator ilgen)
 		{
-			if(emitter == null)
+			Debug.Assert(Name != null);
+			if(Name == ".ctor")
 			{
-				Debug.Assert(Name != null);
-				if(Name == ".ctor")
+				Debug.Assert(Class == null && type != null);
+				Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
+				ConstructorInfo ci = Type.GetType(type, true).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
+				if(ci == null)
 				{
-					Debug.Assert(Class == null && type != null);
-					Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
-					emitter = CodeEmitter.Create(opcode, Type.GetType(type, true).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null));
+					throw new InvalidOperationException("Missing .ctor: " + type + "..ctor" + Sig);
 				}
-				else
+				ilgen.Emit(opcode, ci);
+			}
+			else
+			{
+				Debug.Assert(Class == null ^ type == null);
+				if(Class != null)
 				{
-					Debug.Assert(Class == null ^ type == null);
-					if(Class != null)
+					Debug.Assert(Sig != null);
+					MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(new MethodDescriptor(Name, Sig), false);
+					if(method == null)
 					{
-						Debug.Assert(Sig != null);
-						MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(new MethodDescriptor(Name, Sig), false);
-						if(method == null)
+						throw new InvalidOperationException("method not found: " + Class + "." + Name + Sig);
+					}
+					method.Link();
+					// TODO this code is part of what Compiler.CastInterfaceArgs (in compiler.cs) does,
+					// it would be nice if we could avoid this duplication...
+					TypeWrapper[] argTypeWrappers = method.GetParameters();
+					for(int i = 0; i < argTypeWrappers.Length; i++)
+					{
+						if(argTypeWrappers[i].IsGhost)
 						{
-							throw new InvalidOperationException("method not found: " + Class + "." + Name + Sig);
-						}
-						method.Link();
-						if(opcode.Value == OpCodes.Call.Value)
-						{
-							emitter = CodeEmitter.WrapCall(method);
-						}
-						else if(opcode.Value == OpCodes.Callvirt.Value)
-						{
-							emitter = CodeEmitter.WrapCallvirt(method);
-						}
-						else if(opcode.Value == OpCodes.Newobj.Value)
-						{
-							emitter = CodeEmitter.WrapNewobj(method);
-						}
-						else
-						{
-							throw new InvalidOperationException();
-						}
-						// TODO this code is part of what Compiler.CastInterfaceArgs (in compiler.cs) does,
-						// it would be nice if we could avoid this duplication...
-						TypeWrapper[] argTypeWrappers = method.GetParameters();
-						for(int i = 0; i < argTypeWrappers.Length; i++)
-						{
-							if(argTypeWrappers[i].IsGhost)
+							LocalBuilder[] temps = new LocalBuilder[argTypeWrappers.Length + (method.IsStatic ? 0 : 1)];
+							for(int j = temps.Length - 1; j >= 0; j--)
 							{
-								LocalBuilder[] temps = new LocalBuilder[argTypeWrappers.Length + (method.IsStatic ? 0 : 1)];
-								for(int j = temps.Length - 1; j >= 0; j--)
+								TypeWrapper tw;
+								if(method.IsStatic)
 								{
-									TypeWrapper tw;
-									if(method.IsStatic)
+									tw = argTypeWrappers[j];
+								}
+								else
+								{
+									if(j == 0)
 									{
-										tw = argTypeWrappers[j];
+										tw = method.DeclaringType;
 									}
 									else
 									{
-										if(j == 0)
-										{
-											tw = method.DeclaringType;
-										}
-										else
-										{
-											tw = argTypeWrappers[j - 1];
-										}
+										tw = argTypeWrappers[j - 1];
 									}
-									if(tw.IsGhost)
-									{
-										tw.EmitConvStackToParameterType(ilgen, tw);
-									}
-									temps[j] = ilgen.DeclareLocal(tw.TypeAsParameterType);
-									ilgen.Emit(OpCodes.Stloc, temps[j]);
 								}
-								for(int j = 0; j < temps.Length; j++)
+								if(tw.IsGhost)
 								{
-									ilgen.Emit(OpCodes.Ldloc, temps[j]);
+									tw.EmitConvStackToParameterType(ilgen, tw);
 								}
-								break;
+								temps[j] = ilgen.DeclareLocal(tw.TypeAsParameterType);
+								ilgen.Emit(OpCodes.Stloc, temps[j]);
 							}
+							for(int j = 0; j < temps.Length; j++)
+							{
+								ilgen.Emit(OpCodes.Ldloc, temps[j]);
+							}
+							break;
 						}
+					}
+					if(opcode.Value == OpCodes.Call.Value)
+					{
+						method.EmitCall(ilgen);
+					}
+					else if(opcode.Value == OpCodes.Callvirt.Value)
+					{
+						method.EmitCallvirt(ilgen);
+					}
+					else if(opcode.Value == OpCodes.Newobj.Value)
+					{
+						method.EmitNewobj(ilgen);
 					}
 					else
 					{
-						if(Sig != null)
-						{
-							Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
-							emitter = CodeEmitter.Create(opcode, Type.GetType(type, true).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null));
-						}
-						else
-						{
-							emitter = CodeEmitter.Create(opcode, Type.GetType(type, true).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static));
-						}
+						throw new InvalidOperationException();
 					}
 				}
-				if(emitter == null)
+				else
 				{
-					// TODO better error handling
-					throw new InvalidOperationException("method not found: " + Name);
+					Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
+					MethodInfo mi = Type.GetType(type, true).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
+					if(mi == null)
+					{
+						throw new InvalidOperationException("Missing method: " + type + "." + Name + Sig);
+					}
+					ilgen.Emit(opcode, mi);
 				}
 			}
-			emitter.Emit(ilgen);
 		}
 	}
 
@@ -603,7 +596,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
-			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, ClassLoaderWrapper.GetBootstrapClassLoader().FieldTypeWrapperFromSig(Sig));
+			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
 			fw.EmitSet(ilgen);
 		}

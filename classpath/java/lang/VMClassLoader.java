@@ -45,6 +45,7 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.StringTokenizer;
 import java.lang.reflect.Constructor;
 import gnu.java.lang.SystemClassLoader;
 import gnu.java.util.DoubleEnumeration;
@@ -58,6 +59,7 @@ import cli.System.Reflection.*;
  * @author John Keiser
  * @author Mark Wielaard <mark@klomp.org>
  * @author Eric Blake <ebb9@email.byu.edu>
+ * @author Jeroen Frijters
  */
 final class VMClassLoader
 {
@@ -249,13 +251,11 @@ final class VMClassLoader
      * classes (those with a null ClassLoader), as well as the initial value for
      * every ClassLoader's default assertion status.
      *
-     * XXX - Not implemented yet; this requires native help.
-     *
      * @return the system-wide default assertion status
      */
-    static final boolean defaultAssertionStatus()
+    static boolean defaultAssertionStatus()
     {
-	return true;
+	return Boolean.valueOf(getSystemProperty("ikvm.assert.default", "false")).booleanValue();
     }
 
     /**
@@ -264,32 +264,54 @@ final class VMClassLoader
      * package names to Boolean.TRUE or Boolean.FALSE, with the unnamed package
      * represented as a null key.
      *
-     * XXX - Not implemented yet; this requires native help.
-     *
      * @return a (read-only) map for the default packageAssertionStatus
      */
-    static final Map packageAssertionStatus()
+    static Map packageAssertionStatus()
     {
-	return new HashMap();
+	if(packageAssertionMap == null)
+	{
+	    HashMap m = new HashMap();
+	    String enable = getSystemProperty("ikvm.assert.enable", null);
+	    if(enable != null)
+	    {
+		StringTokenizer st = new StringTokenizer(enable, ":");
+		while(st.hasMoreTokens())
+		{
+		    m.put(st.nextToken(), Boolean.TRUE);
+		}
+	    }
+	    String disable = getSystemProperty("ikvm.assert.disable", null);
+	    if(disable != null)
+	    {
+		StringTokenizer st = new StringTokenizer(disable, ":");
+		while(st.hasMoreTokens())
+		{
+		    m.put(st.nextToken(), Boolean.FALSE);
+		}
+	    }
+	    packageAssertionMap = m;
+	}
+	return packageAssertionMap;
     }
+    private static Map packageAssertionMap;
 
     /**
      * The system default for class assertion status. This is used for all
      * ClassLoader's classAssertionStatus defaults. It must be a map of
      * class names to Boolean.TRUE or Boolean.FALSE
      *
-     * XXX - Not implemented yet; this requires native help.
-     *
      * @return a (read-only) map for the default classAssertionStatus
      */
-    static final Map classAssertionStatus()
+    static Map classAssertionStatus()
     {
-	return new HashMap();
+	// there is no distinction between the package and the class assertion status map
+	// (because the command line options don't make the distinction either)
+	return packageAssertionStatus();
     }
 
     private static URL[] getExtClassLoaderUrls()
     {
-	String classpath = java.lang.System.getProperty("java.ext.dirs", "");
+	String classpath = getSystemProperty("java.ext.dirs", "");
 	java.util.StringTokenizer tok = new java.util.StringTokenizer(classpath, java.io.File.pathSeparator);
 	ArrayList list = new ArrayList();
 	while(tok.hasMoreTokens())
@@ -314,7 +336,7 @@ final class VMClassLoader
 
     private static URL[] getSystemClassLoaderUrls()
     {
-	return crackClassPath(java.lang.System.getProperty("java.class.path", "."));
+	return crackClassPath(getSystemProperty("java.class.path", "."));
     }
 
     private static URL[] crackClassPath(String classpath)
@@ -340,7 +362,7 @@ final class VMClassLoader
     {
 	ClassLoader extClassLoader = new java.net.URLClassLoader(getExtClassLoaderUrls(), null);
 	ClassLoader systemClassLoader = new java.net.URLClassLoader(getSystemClassLoaderUrls(), extClassLoader);
-	String loader = System.getProperty("java.system.class.loader", null);
+	String loader = getSystemProperty("java.system.class.loader", null);
 	if(loader == null)
 	{
 	    return systemClassLoader;
@@ -356,5 +378,16 @@ final class VMClassLoader
 	    System.err.println("Requested system classloader " + loader + " failed.");
 	    throw (Error)new Error("Requested system classloader " + loader + " failed.").initCause(e);
 	}
+    }
+
+    private static String getSystemProperty(String name, String defaultValue)
+    {
+	// access properties directly to bypass security
+	String val = System.properties.getProperty(name);
+	if(val == null)
+	{
+	    val = defaultValue;
+	}
+	return val;
     }
 }

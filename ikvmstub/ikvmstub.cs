@@ -107,7 +107,17 @@ public class NetExp
 		{
 			if(t.IsPublic)
 			{
-				ProcessClass(assembly.FullName, Class.forName(t.AssemblyQualifiedName, false, null), null);
+				Class c;
+				try
+				{
+					c = Class.forName(t.AssemblyQualifiedName, false, null);
+				}
+				catch(ClassNotFoundException)
+				{
+					// types that IKVM doesn't support don't show up
+					continue;
+				}
+				ProcessClass(assembly.FullName, c, null);
 			}
 		}
 	}

@@ -641,21 +641,21 @@ namespace IKVM.NativeCode.java
 			public static void setErr(object printStream)
 			{
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
-				FieldWrapper fw = tw.GetFieldWrapper("err", ClassLoaderWrapper.LoadClassCritical("java.io.PrintStream"));
+				FieldWrapper fw = tw.GetFieldWrapper("err", "Ljava.io.PrintStream;");
 				fw.SetValue(null, printStream);
 			}
 
 			public static void setIn(object inputStream)
 			{
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
-				FieldWrapper fw = tw.GetFieldWrapper("in", ClassLoaderWrapper.LoadClassCritical("java.io.InputStream"));
+				FieldWrapper fw = tw.GetFieldWrapper("in", "Ljava.io.InputStream;");
 				fw.SetValue(null, inputStream);
 			}
 
 			public static void setOut(object printStream)
 			{
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
-				FieldWrapper fw = tw.GetFieldWrapper("out", ClassLoaderWrapper.LoadClassCritical("java.io.PrintStream"));
+				FieldWrapper fw = tw.GetFieldWrapper("out", "Ljava.io.PrintStream;");
 				fw.SetValue(null, printStream);
 			}
 		}

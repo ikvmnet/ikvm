@@ -2859,7 +2859,7 @@ class Compiler
 				thisType = SigTypeToClassName(ma.GetRawStackTypeWrapper(i, 1), cpi.GetClassType());
 			}
 			bool isStatic = (bytecode == NormalizedByteCode.__putstatic || bytecode == NormalizedByteCode.__getstatic);
-			FieldWrapper field = cpi.GetField(); //wrapper.GetFieldWrapper(cpi.Name, cpi.GetFieldType(classLoader));
+			FieldWrapper field = cpi.GetField();
 			if(field != null)
 			{
 				CheckLoaderConstraints(cpi, field);

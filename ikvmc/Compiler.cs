@@ -101,23 +101,29 @@ class Compiler
 			Console.Error.WriteLine("    -target:winexe             Build a windows executable");
 			Console.Error.WriteLine("    -target:library            Build a library");
 			Console.Error.WriteLine("    -target:module             Build a module for use by the linker");
-			Console.Error.WriteLine("    -keyfile:keyfilename       Use keyfile to sign the assembly");
-			Console.Error.WriteLine("    -version:M.m.b.r           Assembly version");
+			Console.Error.WriteLine("    -keyfile:<keyfilename>     Use keyfile to sign the assembly");
+			Console.Error.WriteLine("    -version:<M.m.b.r>         Assembly version");
 			Console.Error.WriteLine("    -main:<class>              Specify the class containing the main method");
-			Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly");
+			Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly (short form -r:<filespec>)");
 			Console.Error.WriteLine("    -recurse:<filespec>        Recurse directory and include matching files");
 			Console.Error.WriteLine("    -nojni                     Do not generate JNI stub for native methods");
 			Console.Error.WriteLine("    -resource:<name>=<path>    Include file as Java resource");
 			Console.Error.WriteLine("    -exclude:<filename>        A file containing a list of classes to exclude");
-			Console.Error.WriteLine("    -debug                     Creates debugging information for the output file");
+			Console.Error.WriteLine("    -debug                     Generate debug info for the output file");
 			Console.Error.WriteLine("    -srcpath:<path>            Prepend path and package name to source file");
-			Console.Error.WriteLine("    -apartment:sta             (default) Mark main method with STAThreadAttribute");
-			Console.Error.WriteLine("    -apartment:mta             Mark main method with MTAThreadAttribute");
-			Console.Error.WriteLine("    -apartment:none            Don't mark main method with STAThreadAttribute");
+			Console.Error.WriteLine("    -apartment:sta             (default) Apply STAThreadAttribute to main");
+			Console.Error.WriteLine("    -apartment:mta             Apply MTAThreadAttribute to main");
+			Console.Error.WriteLine("    -apartment:none            Don't apply STAThreadAttribute to main");
 			Console.Error.WriteLine("    -noglobbing                Don't glob the arguments");
-			Console.Error.WriteLine("    -D<name>=<value>           Set a system property (at runtime)");
+			Console.Error.WriteLine("    -D<name>=<value>           Set system property (at runtime)");
+			Console.Error.WriteLine("    -ea[:<packagename>...|:<classname>]");
+			Console.Error.WriteLine("    -enableassertions[:<packagename>...|:<classname>]");
+			Console.Error.WriteLine("                               Set system property to enable assertions");
+			Console.Error.WriteLine("    -da[:<packagename>...|:<classname>]");
+			Console.Error.WriteLine("    -disableassertions[:<packagename>...|:<classname>]");
+			Console.Error.WriteLine("                               Set system property to disable assertions");
 			Console.Error.WriteLine("    -Xtrace:<string>           Displays all tracepoints with the given name");
-			Console.Error.WriteLine("    -Xmethodtrace:<string>     Builds method trace into the specified output methods");
+			Console.Error.WriteLine("    -Xmethodtrace:<string>     Build tracing into the specified output methods");
 			return 1;
 		}
 		foreach(string s in arglist)
@@ -197,13 +203,29 @@ class Compiler
 					}
 					props[keyvalue[0]] = keyvalue[1];
 				}
+				else if(s == "-ea" || s == "-enableassertions")
+				{
+					props["ikvm.assert.default"] = "true";
+				}
+				else if(s == "-da" || s == "-disableassertions")
+				{
+					props["ikvm.assert.default"] = "false";
+				}
+				else if(s.StartsWith("-ea:") || s.StartsWith("-enableassertions:"))
+				{
+					props["ikvm.assert.enable"] = s.Substring(s.IndexOf(':') + 1);
+				}
+				else if(s.StartsWith("-da:") || s.StartsWith("-disableassertions:"))
+				{
+					props["ikvm.assert.disable"] = s.Substring(s.IndexOf(':') + 1);
+				}
 				else if(s.StartsWith("-main:"))
 				{
 					main = s.Substring(6);
 				}
-				else if(s.StartsWith("-reference:"))
+				else if(s.StartsWith("-reference:") || s.StartsWith("-r:"))
 				{
-					string r = s.Substring(11);
+					string r = s.Substring(s.IndexOf(':') + 1);
 					string path = Path.GetDirectoryName(r);
 					string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(r));
 					if(files.Length == 0)
@@ -323,8 +345,17 @@ class Compiler
 						// it as a potential default assembly name
 					}
 				}
-				string path = Path.GetDirectoryName(s);
-				string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s));
+				string[] files;
+				try
+				{
+					string path = Path.GetDirectoryName(s);
+					files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s));
+				}
+				catch(Exception)
+				{
+					Console.Error.WriteLine("Error: invalid filename: {0}", s);
+					return 1;
+				}
 				if(files.Length == 0)
 				{
 					Console.Error.WriteLine("Error: file not found: {0}", s);

@@ -97,7 +97,7 @@ namespace IKVM.Runtime
 		{
 			TypeWrapper caller = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type));
 			TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
-			FieldWrapper field = wrapper.GetFieldWrapper(name, caller.GetClassLoader().ExpressionTypeWrapper(sig));
+			FieldWrapper field = wrapper.GetFieldWrapper(name, sig);
 			if(field == null)
 			{
 				throw JavaException.NoSuchFieldError(clazz + "." + name);

@@ -1320,7 +1320,7 @@ namespace IKVM.Internal
 								}
 								// TODO emit an static helper method that enables access to the field at runtime
 								method.Link();
-								AddField(FieldWrapper.Create1(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, null, CodeEmitter.WrapCall(method), CodeEmitter.InternalError));
+								AddField(new GetterFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), null, f.Name, f.Sig, (Modifiers)f.Modifiers, (MethodInfo)method.GetMethod()));
 							}
 							else if((f.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) != 0)
 							{
@@ -1347,11 +1347,11 @@ namespace IKVM.Internal
 											throw new NotImplementedException("remapped constant field of type: " + f.Sig);
 									}
 									fb.SetConstant(constant);
-									AddField(new FieldWrapper.ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant));
+									AddField(new ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant));
 								}
 								else
 								{
-									AddField(FieldWrapper.Create3(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Sig, (Modifiers)f.Modifiers));
+									AddField(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Name, f.Sig, (Modifiers)f.Modifiers));
 								}
 							}
 							else
@@ -1422,7 +1422,7 @@ namespace IKVM.Internal
 				{
 				}
 
-				protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+				protected override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
 				{
 					// we don't resolve fields lazily
 					return null;

@@ -997,7 +997,7 @@ class VerifierTypeWrapper : TypeWrapper
 		this.underlyingType = underlyingType;
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+	protected override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
 	{
 		throw new InvalidOperationException("GetFieldImpl called on " + this);
 	}
