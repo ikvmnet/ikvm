@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<project name="awt" default="awt">
+    <target name="awt">
+        <csc target="library" output="../bin/awt.dll">
+            <sources>
+                <includes name="*.cs" />
+            </sources>
+            <references>
+                <includes name="../bin/classpath.dll" asis="true" />
+                <includes name="../bin/ik.vm.net.dll" asis="true" />
+            </references>
+        </csc>
+    </target>
+</project>

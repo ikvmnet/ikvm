@@ -1,0 +1,4 @@
+Compiling class files (1)
+Constructing compiler
+Loading remapped types
+Parsing class files

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<project name="classpath.dll" default="classpath.dll">
+    <property name="Classpath.dir" value="/classpath-0.04" />
+
+    <target name="jars">
+        <!-- TODO
+        <exec program="${nant.project.basedir}/../bin/netexp.exe" commandline="" />
+        -->
+    </target>
+
+    <target name="classes" depends="jars" description="Classpath + IK.VM.NET specifica Java classes">
+        <delete>
+		<fileset basedir="${Classpath.dir}">
+			<includes name="**.class"/>
+		</fileset>
+	</delete>
+	<delete>
+		<fileset basedir=".">
+			<includes name="**.class"/>
+		</fileset>
+	</delete>
+        <property name="classpath" value=".;${Classpath.dir};${Classpath.dir}/vm/reference;mscorlib.jar;System.jar" />
+        <exec program="jikes.exe" commandline="-classpath ${classpath} @allsources.lst"/>
+    </target>
+
+    <target name="classpath.dll" depends="classes">
+        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" commandline="-nojni -out:classpath.dll -target:library -recurse:./*.class -recurse:${Classpath.dir}/*.class mscorlib.jar System.jar System.Xml.jar" />
+        <copy file="classpath.dll" tofile="../bin/classpath.dll.new" />
+        <exec program="peverify" commandline="../bin/classpath.dll.new" />
+        <copy file="classpath.dll" todir="../bin" />
+	<delete file="../bin/classpath.dll.new" />
+    </target>
+</project>

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<project name="ikvm" default="ikvm">
+    <target name="ikvm">
+        <csc target="exe" output="../bin/ikvm.exe">
+            <sources>
+                <includes name="*.cs" />
+            </sources>
+            <references>
+                <includes name="../bin/classpath.dll" asis="true" />
+                <includes name="../bin/IK.VM.NET.dll" asis="true" />
+            </references>
+        </csc>
+    </target>
+</project>

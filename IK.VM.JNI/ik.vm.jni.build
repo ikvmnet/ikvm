@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<project name="ik.vm.jni" default="ik.vm.jni">
+    <target name="ik.vm.jni">
+        <echo message="*** TODO ***" />
+    </target>
+</project>
