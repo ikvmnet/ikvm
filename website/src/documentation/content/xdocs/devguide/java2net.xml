@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>Developing .NET Applications in Java</title> 
+    <authors><person name="Stephen Schaub" email="sschaub@bju.edu"/> 
+    </authors> 
+     <abstract>This section discusses information you need to know when you
+     want to develop .NET applications in Java. </abstract>
+  </header> 
+  <body> 
+
+      <section>
+      <title>Overview</title>
+      
+      <p>IKVM makes it possible to develop .NET applications using the Java language. Here's how it works:</p>
+      <ol>
+        <li>Identify .NET classes you want to use in your application.</li>
+        <li>Identify which .NET dll's contain the .NET classes you identified in step 1.
+        <p><strong>Tip:</strong> If you're developing on Windows, the Microsoft .NET SDK Class Reference documentation identifies the assembly / dll 
+        for a .NET class at the bottom of each class overview page.</p>
+        </li>
+        <li>Use the <link href="site:ikvmstub">ikvmstub</link> application to generate a Java jar file for each dll you identified in step 2.
+        <p>The ikvmstub tool analyzes the .NET classes in the designated dll
+        and generates a jar file containing Java interfaces and stub classes. This information is needed by the Java source compiler, which
+        knows nothing about .NET assemblies.</p>
+        </li>
+        <li>Compile your Java source code using javac or jikes, with the ikvmstub-generated jar files on the compiler classpath.</li>
+        <li>Compile the resulting Java classes using ikvmc. Use the -reference option to reference the dll's containing the
+          .NET classes you used; do <em>not</em> include the ikvmstub-generated jar files on the compiler classpath.</li> 
+      </ol>
+      <p>For an example of this, see the <link href="site:tutorial">tutorial</link>.</p>
+      </section>
+
+      <section>
+      <title>Mapping .NET API's to Java</title>
+
+        <p>When ikvmstub generates a stub jarfile, it has to prevent namespace conflicts between Java API classes and
+        generated stub classes. It must also map .NET features such as properties, delegates, enumerations,
+        and variable-length argument lists to Java language equivalents.
+        </p>
+        <p>To prevent namespace conflicts, ikvmstub creates Java package names from .NET namespaces by 
+        prefixing them with cli. For example, a .NET class in the <code>System.IO</code> namespace would have a stub generated
+        for it in a Java package named <code>cli.System.IO</code>. So, when writing Java code that uses the 
+        System.IO.File class, you would use one of the following import statements in your Java code:</p>
+        <p xml:space="preserve"><code>     import cli.System.IO.*;
+     import cli.System.IO.File;        
+</code>        </p>
+        <p>The following sections discuss how .NET features are mapped to the Java language. Some of the mappings,
+        such as properties and enumerations, are fairly straightforward. Others, such as delegates and event handling,
+        require a little more work.  </p>
+        <p><strong>Tip:</strong> Java development tools that
+        provide code assist features are a great help when writing applications that use .NET API's. 
+        If you install the ikvmstub-generated jar files into your favorite Java IDE, you can use code completion to help you
+        use the .NET methods, properties, and enumerations correctly. Note, however, that you will not be able to test
+        your applications using your Java IDE debugger.
+        </p>
+    </section>
+    
+    <section>
+      <title>Properties</title>
+      <p>Since Java has no direct language support for properties, ikvmstub maps .NET properties to Java getter and
+      setter methods. A .NET property defined in C# like this:</p>
+      <source>
+    public <em>datatype</em> <em>property-name</em> {
+        get { ... }
+        set { ... }
+    }</source>
+      
+      <p>would be translated to a pair of Java stub methods, like this:</p>
+      
+            <source>
+    public <em>datatype</em> get_<em>property-name</em>( ) { ... }
+    public void set_<em>property-name</em>(<em>datatype</em> value) { ... }</source>
+      
+      <p>Here is an example of C# code that uses a property, and how you would access the same property in Java:
+      </p>
+      
+      <table>
+      <tr>
+         <th>C#</th>
+         <th>Java</th>
+      </tr>
+      <tr>
+        <td>
+      <p xml:space="preserve"><code>
+      int weight = bear.Weight;
+      bear.Weight = 15;
+      </code></p>
+      </td>
+      <td>      
+      <p xml:space="preserve"><code>
+       int weight = bear.get_Weight();
+       bear.set_Weight(15);
+      </code></p>
+      </td>
+      </tr>
+      </table>
+      
+    </section>
+    
+    <section>
+      <title>Enumerations</title>
+      <p>TODO. For now, see the <link href="ext:ikvmweblogfull">IKVM Weblog</link>, March 20, 2004 entry.
+      </p>
+    </section>
+
+    <section>
+      <title>Delegates and Event Processing</title>
+      <p>TODO. For now, see the <link href="ext:ikvmweblogfull">IKVM Weblog</link>, March 20, 2004 entry.
+      Also, see the winforms sample.</p>
+    </section>
+    
+    <section>
+      <title>Varargs</title>
+      <p>TODO. For now, see the <link href="ext:ikvmweblogfull">IKVM Weblog</link>, March 20, 2004 entry.
+      Also, see the usenetapi/CreateFile.java sample.</p>
+    </section>
+  </body>
+</document>

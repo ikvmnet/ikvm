@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>Uses for IKVM.NET</title> 
+    <abstract>IKVM.NET is useful for several different software development
+      scenarios. Here is a sampling of some of the possibilities.</abstract>  
+  </header> 
+  <body> 
+    <section>
+      <title>Drop-in JVM</title>
+      <p>The <link href="site:ikvm">ikvm application</link> included with the distribution is a .NET
+      implementation of a Java Virtual Machine. In many cases, you can use it
+      as a drop-in replacement for java. For example, instead of typing</p>
+     <p xml:space="preserve"><code>    java -jar myapp.jar</code></p>
+      <p>to run an application, you can type</p>
+      <p xml:space="preserve"><code>    ikvm -jar myapp.jar</code></p>
+      
+    </section>
+    <section>
+      <title>Use Java libraries in your .NET applications</title>
+      <p>IKVM.NET includes <link href="site:ikvmc">ikvmc</link>, a Java bytecode to .NET IL translator. 
+      If you have a Java library that you would like to use in a .NET application,
+      run <code>ikvmc -target:library  mylib.jar</code> to create mylib.dll.
+      </p>
+      <p>For example, the Apache FOP project is an open source XSL-FO
+      processor written in Java that is widely used to generate PDF documents from XML 
+      source. With IKVM.NET technology, Apache FOP can be used by
+      any .NET application.</p>
+    </section>
+    
+    <section>
+      <title>Develop .NET applications in Java</title>
+      <p>IKVM provides a way for you to develop .NET applications in
+      Java. Although IKVM.NET does not include a Java compiler for .NET,
+      you can use the open source <fork href="ext:jikes">Jikes compiler</fork> to 
+      compile Java source code to JVM bytecode, then use 
+      <code>ikvmc -target:exe myapp.jar</code> 
+      to produce a .NET executable. You can even use .NET API's in your
+      Java code using the included <link href="site:ikvmstub">ikvmstub</link> application. 
+      </p>
+    </section>
+    
+  </body>
+</document>

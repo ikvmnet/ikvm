@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>Using Java API's in .NET Applications</title> 
+     <abstract>This section discusses information of interest to developers
+       who want to use Java API's in their .NET applications. </abstract>
+  </header> 
+  <body> 
+
+   <section>
+      <title>Overview</title>
+      
+      <p>IKVM makes it possible to develop .NET applications that use Java API's. Here's how to proceed:</p>
+      <ol>
+        <li>IKVM comes with an implementation of GNU Classpath in .NET. To use those API's, simply add
+        a reference to IKVM.GNU.Classpath.dll to your Mono / .NET IDE project. </li>
+        <li>To use other Java API's, you can take one of the following approaches:
+            <ul>
+               <li>Convert the Java API to .NET CIL using <link href="site:ikvmc">ikvmc</link>.
+                       This produces a .NET dll that you can reference in your project. </li>
+                <li>Use the Java reflection API's to dynamically load and execute the Java bytecode using the
+                        IKVM bytecode interpreter.
+                        For example, your application can load Java bytecode over a network connection
+                        and execute it dynamically.</li>
+            </ul>
+        </li>
+      </ol>
+      
+    </section>
+
+    <section>
+      <title>Java / .NET Interoperability Issues</title>
+      
+      <p>When calling Java API's from a .NET language such as C#, you will need to know 
+      how to deal with the gap between the .NET and Java object models. For example, Java and .NET
+      both have their own String class, primitive wrapper classes, exception hierarchy, and so on. 
+      Eventually, that information will be included in this manual. For now, you can use the following
+      as resources:</p>
+      
+      <ul>
+        <li>The <link href="http://weblog.ikvm.net">IKVM WebLog</link> has several
+          helpful entries. The series from February 29 - March 10 describe the object model.</li>
+        <li>The hodgepodge sample in the <link href="site:download">sample distribution</link>
+        is a simple demonstration of using Java API's from a C# application.</li>
+        <li>The IKVM source code is the ultimate reference, of course. </li>
+      </ul>
+    </section>
+    
+    <section>
+      <title>Subclassing Java Code</title>
+      <p>See IKVM Weblog Article: March 9</p>
+    </section>
+    
+  </body>
+</document>

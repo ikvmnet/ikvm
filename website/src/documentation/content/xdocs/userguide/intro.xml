@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>IKVM.NET User's Guide</title> 
+    <authors><person name="Stephen Schaub" email="sschaub@bju.edu"/> 
+    <person name="Brian J. Sletten" email="brian@bosatsu.net"/> 
+    </authors> 
+  </header> 
+  <body> 
+    <section>
+      <title>Introduction</title>
+      <p>IKVM.NET is a Java Virtual Machine (JVM) for the .NET and Mono runtimes. At a time when most people in the computer industry consider Java and 
+        .NET as mutually exclusive technologies, IKVM.NET stands in the unique position of bringing them together. 
+        Initially born out of frustration with the limitations of tools like JUMP and J#, IKVM.NET was created when Jeroen Fritjers set out to 
+        create a way to migrate an existing Java<sup>TM</sup> database application 
+        to .NET<sup>TM</sup>.
+        </p>
+        <p>IKVM.NET has gone through a variety of designs and name changes to emerge as a sophisticated collection of tools offering a variety of integration patterns
+        between the Java and .NET languages and platforms. It is still under development but people have reported success in running sophisticated applications and tools
+        including Eclipse, JmDNS, JGroups, Jetty (with a few changes), etc.
+        </p>
+      <p>This manual is written for IKVM.NET version 0.80. </p>
+      
+    </section>
+    
+    <section>
+      <title>Overview</title>
+      
+      <p>There are two main ways of using IKVM.NET:</p>
+      
+       <ul>
+                <li>
+                    <p>Dynamically: In this mode, Java classes and jars are used directly to execute Java applications on the .NET<sup>TM</sup> runtime. 
+                    Java bytecode is translated on the fly into CIL and no further steps are necessary. The full Java class loader model is supported in this mode.</p>
+                </li>
+                <li>
+                    <p>Statically: In order to allow Java code to be used by .NET applications, it must be compiled down to a DLL and used directly. 
+                    The bytecode is translated to CIL and stored in this form. The assemblies can be referenced directly by the .NET applications and 
+                    the "Java" objects can be used as if they were .NET objects. While the static mode does not support the full Java class loader mechanism, 
+                    it is possible for statically-compiled code to create a class loader and load classes dynamically.
+                    </p>
+                </li>
+            </ul>
+      
+      <p>
+      IKVM.NET provides the VM-related technologies for byte-code translation and verification, classloading, etc. 
+      It is dependent upon the <fork href="ext:classpath">GNU Classpath</fork> project 
+      for implementations of the JDK libraries. While there are several holes in the coverage provided by these libraries, they are used by at least ten open source VMs. 
+      This means that they will continue evolving and being debugged rapidly to improve the quality of the IKVM.NET experience.</p>
+      
+      <p>IKVM.NET is comprised by the following components:</p>
+            
+             <table><caption>IKVM.NET Components</caption>
+               <tr>
+                   <th>Component</th>
+                      <th>Description</th>
+                   </tr>
+                <tr>
+                        <td>IKVM.Runtime.dll</td>
+                        <td>The VM runtime and all supporting code. It contains (among other things):
+                            <ul>
+                                <li><p>
+                                    Byte Code JIT compiler/verifier: Just-in-time compiles Java Byte Code to CIL.</p>
+                                </li>
+                                <li><p>
+                                    Object model remapping infrastructure: Makes System.Object, System.String and System.Exception appear to Java code as java.lang.Object, java.lang.String and java.lang.Throwable.</p>
+                                </li>
+                                <li><p>
+                                    Managed .NET re-implementations of the native methods in Classpath.</p>
+                                </li>
+                            </ul>
+                        </td>
+                   </tr>
+                    <tr>
+                        <td>IKVM.GNU.Classpath.dll</td>
+                        <td>This is a compiled version of <fork href="ext:classpath">GNU Classpath</fork>, the Free Software Foundation's implementation of the Java class libraries, plus some additional IKVM.NET specific code. Note that GNU Classpath isn't part of IKVM.NET, but it is used by IK.VM.NET.</td>
+                    </tr>
+                    <tr>
+                        <td>IKVM.JNI.CLR-Win32.dll</td>
+                        <td>Managed C++ assembly that implements the JNI interface. This is an optional part, only required when an application uses it's own native libraries. This will not be required for pure Java applications, this is important because this code will only run on Microsoft's .NET implementation.</td>
+                    </tr>
+                    <tr>
+                        <td>IKVM.JNI.Mono.dll</td>
+                        <td>Mono implementation of the JNI interface. Works together with libmono-ikvm-jni.so, which is developed and maintained as part of Mono.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>IKVM.AWT.WinForms.dll</td>
+                        <td>Very limited and broken implementation of a few AWT peers. This is a low priority issue until the platform stabilizes and works sufficiently well.</td>
+                    </tr>
+                    <tr>
+                        <td>ikvm.exe</td>
+                        <td>Starter executable, comparable to java.exe ("dynamic mode").</td>
+                    </tr>
+                    <tr>
+                        <td>ikvmc.exe</td>
+                        <td>Static compiler. Used to compile Java classes and jars into a .NET assembly ("static mode")</td>
+                    </tr>
+                    <tr>
+                        <td>ikvmstub.exe</td>
+                        <td>A tool that generates stub class files from a .NET assembly, so that Java code can be compiled against .NET code. IKVM.NET understands the stubs and replaces the references to the stubs by references to the actual .NET types.</td>
+                    </tr>
+
+   </table>
+
+      
+      </section>
+      
+    <section>
+      <title>System Requirements</title>
+      <p>You must have one of the following .NET frameworks 
+      installed:</p>
+      <ul>
+      <li>Microsoft .NET Framework 1.1 SDK (Windows platform)</li>
+      <li>Mono Framework 1.0 (Windows or Linux)</li>
+      </ul>
+      
+    </section>
+    
+  
+  </body>
+</document>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>IKVM.NET User Manual</title> 
+    <authors><person name="Stephen Schaub" email="sschaub@bju.edu"/> 
+    </authors> 
+  </header> 
+  <body> 
+    <section>
+      <title></title>
+      <p>This manual is written for IKVM.NET version ???. </p>
+      
+    </section>
+    
+  </body>
+</document>

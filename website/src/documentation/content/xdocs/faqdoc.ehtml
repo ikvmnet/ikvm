@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+	
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>IKVM.NET FAQ</title>
+</head>
+
+<body>
+	<h2>Frequently Asked Questions</h2>
+<P><STRONG>What is IKVM.NET?</STRONG></P>
+<P>IKVM.NET is a JVM for <A href="http://www.go-mono.com/">Mono</A> and the Microsoft .NET framework.</P>
+<P><STRONG>What do you mean by <EM>JVM for .NET</EM>?</STRONG></P>
+<P>The goal of IKVM.NET is two-fold:</P>
+<ul>
+	<li>To be able to run any Java existing application (&quot;dynamic mode&quot;).</li>
+<li>To be able to statically compile Java libraries into .NET assemblies 
+(&quot;static mode&quot;). Note that you can also statically compile Java applications, 
+but if the application depends on the exact Java class loading semantics, it 
+might need to be adapted. Dynamic mode supports the full Java class loader 
+model, but in static mode there are necessarily some limitations. A mixed model 
+is also possible, for example, statically compiled code can instantiate a class 
+loader and use it to dynamically load classes.</li>
+</ul>
+
+<P><STRONG>Why this project?</STRONG></P>
+<P>There are several answers to this. First of all, it's a fun thing to work on. Second, it just seems obvious that something like this should exist. Third, I want to migrate&nbsp;some of&nbsp;my Java code to .NET and J# and JUMP just aren't good enough.</P>
+<P><STRONG>How compatible is it?</STRONG></P>
+<P>The goal is to fully implement the JVM spec and to be compatible with Sun's JDK 1.4 reference implementation. At the moment we're not quite there yet, but many things are working already. Note that this refers to the JVM, not the class libraries. For details on the completeness of the class libraries, please visit the <A href="http://www.gnu.org/software/classpath/">GNU Classpath</A> site.</P>
+
+</body>
+</html>

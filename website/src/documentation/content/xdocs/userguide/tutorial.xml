@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>IKVM.NET Tutorial</title> 
+    <authors><person name="Stephen Schaub" email="sschaub@bju.edu"/> 
+    </authors> 
+    
+  </header> 
+  <body> 
+    <section>
+      <title>Setup your Environment</title>
+      <p>This tutorial includes information for both the Windows and Linux platforms. It assumes that
+       Windows users will be using the .NET SDK, and Linux users will be using the Mono SDK. </p>
+      
+      <p>This tutorial references files in the samples distribution available on the <link href="site:download">download page</link>. 
+      Before you begin,  prepare your environment by adding the following to your PATH environment variable:</p>
+      <ul>
+      <li>The directory containing the IKVM executables</li>
+      <li>The directory containing the C# compiler (Windows: csc / Mono: mcs). On Windows, this is typically
+      C:\WINDOWS\Microsoft.NET\Framework\v1.1.4322.</li>
+      <li>The directory containing a Java compiler (javac or jikes)</li>
+      </ul>
+    </section>
+    
+    <section>
+      <title>Run a Java Application Dynamically</title>
+      
+      <p>IKVM.NET includes a Java Virtual Machine implented in C#. To try it out, navigate to
+      <em>IKVMROOT</em>\samples\hello and compile the sample application:</p>
+      
+      <p xml:space="preserve"><code>     javac Hello
+    jar cfm hello.jar manifest.mf Hello.class</code></p>
+      
+      <p>Now, to run the application using the IKVM Virtual Machine, enter the following:</p>
+      
+      <p xml:space="preserve"><code>     ikvm Hello</code></p>
+      <p>This command starts the virtual machine, which searches for a 
+      file named Hello.class. When it finds it, it loads it and executes the bytecodes dynamically.
+      You should be prompted to enter your name, and see a brief greeting.</p>
+      <p>If you experience problems, check the following:</p>      
+      <ul>
+      <li>Check your capitalization: ikvm, like java, requires you to capitalize class names correctly.</li>
+      <li>If ikvm reports a ClassNotFoundException, check whether the CLASSPATH environment variable is set.
+      If so, try clearing the CLASSPATH or adding the current directory to it so ikvm can find the class in the current directory.</li>
+      </ul>
+      
+
+      <p>You can also execute Java applications in a jar file. Try it out:</p>
+      <p xml:space="preserve"><code>     ikvm -jar hello.jar</code></p>
+      <p>See the <link href="site:ikvm">ikvm reference</link> for more information about ikvm command line options.</p>
+      
+    </section>
+    
+    <section>
+      <title>Convert a Java Application to .NET</title>
+      
+      <p>IKVM.NET includes <link href="site:ikvmc">ikvmc</link>, a utility that converts
+      Java .jar files to .NET .dll libraries and .exe applications. In this section, you'll convert a Java application to a .NET
+      .exe.</p>
+      <p>Navigate to <em>IKVMROOT</em>\samples\hello and enter the following:</p>
+      
+      <p xml:space="preserve"><code>     ikvmc hello.jar</code></p>
+      
+      <note>If you're using Mono, you will have to tell ikvmc where to find the GNU Classpath dll. Try the following,
+      substituting the location of IKVM.GNU.Classpath.dll on your system if necessary:<br/>
+      <br/>
+       <code>ikvmc -reference:/usr/lib/IKVM.GNU.Classpath.dll hello.jar</code>
+       </note>
+      
+      <p>After the command completes, you should find a hello.exe file in the current directory. To execute it:</p>
+      <ul>
+      <li><strong>Windows / .NET Framework:</strong>
+      <p>Try running hello.exe. If you get a FileNotFound exception when the .NET runtime attempts to load the referenced
+      IKVM.GNU.Classpath.dll, remember that the .NET framework expects to find referenced dll's in the current
+      directory or in the Global Assembly Cache. Either <link href="site:install">install the dll's in the
+      Global Assembly Cache</link>, or copy them to the current directory.</p>
+      </li>
+      <li><strong>Linux / Mono:</strong>
+      <p>Run it using the following command:</p>
+       <p xml:space="preserve"><code>     mono hello.exe</code></p>
+       </li>
+       </ul>
+      
+    </section>
+    
+    <anchor id="tutorial_java2net"/>
+    <section>
+      <title>Develop a .NET Application in Java</title>
+      <p>In this section, you will learn the steps needed to develop .NET applications in Java. </p>
+      <p>To begin, open a command window and navigate to <em>IKVMROOT</em>\samples\usenetapi.
+      Take a look at ShowDir.java -- this is a Java application that uses the .NET API to display a list of files
+      in the current directory. Notice the imports at the top -- the package names begin with <code>cli.*</code>. These are not
+      packages in the Java API; rather, they are "pseudo" packages that map to .NET namespaces.
+      For more information on this, see the <link href="site:java2net">Developer's Guide</link>.</p>
+      
+      <p><strong>Step 1: Generate Java stubs</strong></p>
+      <p>IKVM does not come with a Java compiler, so we will compile ShowDir using a standard Java compiler.
+      Since Java compilers can only compile applications that use Java API's, not .NET API's, we have to fool the
+      Java compiler into believing that there is really a Java package named cli.System.IO. The 
+      <link href="site:ikvmstub">ikvmstub</link> application
+      helps us do this. It generates Java jar files from .NET dll's. The jar files generated by ikvmstub contain Java classes
+      and interfaces that correspond to .NET classes, but don't contain any real code. They contain just enough to satisfy
+      the Java compiler, and allow it to type check the Java application.</p>
+      <p>Type the following:</p>
+      
+      <p xml:space="preserve"><code>     ikvmstub mscorlib.dll</code></p>
+      <p>Note: On a Linux Mono installation, you will have to type the full pathname to mscorlib.dll, like this:</p>
+      <p xml:space="preserve"><code>     ikvmstub /usr/lib/mscorlib.dll</code></p>
+      
+      <p>After the command completes, you should find a file named mscorlib.jar in the current directory.</p>
+      
+      <p><strong>Step 2: Compile the Java source code</strong></p>
+      
+      <p>Now, we'll compile the Java source code. If you're using javac, type the following:</p>
+      
+      <p xml:space="preserve"><code>     javac -classpath mscorlib.jar ShowDir.java</code></p>
+      
+      <p>(Substitute <code>jikes</code> for <code>javac</code> if you're using that tool.)</p>
+      
+      <p>After the command completes, you should find ShowDir.class in the current directory. </p>
+      
+       <p><strong>Step 3: Generate a .NET executable</strong></p>
+       
+       <p>Now, we'll convert the Java class file to a .NET application. Type the following:</p>
+      
+      <p xml:space="preserve"><code>     ikvmc ShowDir.class</code></p>
+      <p>Note: On a Linux Mono installation, you will have to add a -reference option, like this:</p>
+      
+      <p xml:space="preserve"><code>     ikvmc -reference:/usr/lib/IKVM.GNU.Classpath.dll ShowDir.class</code></p>
+       
+       <p>After the command completes, you should find ShowDir.exe in the current directory. You should be able to
+       execute it successfully. (On Windows .NET, remember to copy the IKVM dll's to the current directory.)</p>
+    </section>
+    
+    
+    
+  </body>
+</document>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>IKVM.NET Home Page</title> 
+  </header> 
+  <body> 
+    <section>
+      <title>Introduction</title>
+      <p>IKVM.NET is an implementation of Java for <fork href="ext:mono">Mono</fork> and the <fork href="ext:dotnet">Microsoft .NET Framework</fork>.
+      It includes the following components:</p>
+      <ul>
+      <li>A Java Virtual Machine implemented in .NET</li>
+      <li>A .NET implementation of the Java class libraries</li>
+      <li>Tools that enable Java and .NET interoperability</li>
+      </ul>
+      <p><link href="uses.html">Read more</link> about what you can do with IKVM.NET.</p>
+    </section>
+    <section>
+    <title>IKVM.NET Components</title>
+    <p >IKVM.NET consists of several parts:</p>
+<ul >
+<li>
+<strong>ikvm.runtime.dll</strong>: The VM runtime and all supporting code. It contains (among other things):
+<ul>
+<li>Byte Code JIT compiler/verifier: Just-in-time compiles Java Byte Code to CIL.</li>
+<li>Object model remapping infrastructure: Makes System.Object, System.String and System.Exception appear to 
+Java code as java.lang.Object, java.lang.String and java.lang.Throwable.</li>
+<li>Managed .NET re-implementations of the native methods in Classpath. </li>
+</ul>
+</li>
+<li>
+<strong>ikvm.gnu.classpath.dll</strong>: compiled version of <link href="ext:classpath">GNU Classpath</link>, the Free Software Foundation's implementation of the Java class libraries, 
+plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>part</em> of IKVM.NET, but it is <em>used</em> by IK.VM.NET 
+</li>
+<li>
+<strong>ikvm.jni.[mono|clr-win32].dll</strong>: Managed C++ assembly that implements the JNI interface. This is an optional part, only required when an application uses its own native libraries. This will not be required for pure Java applications, this is important because this code will only run on Microsoft's .NET implementation. 
+</li>
+<li>
+<strong>ikvm.exe</strong>: Starter executable, comparable to java.exe ("dynamic mode").
+</li>
+<li>
+<strong>ikvmc.exe</strong>: Static compiler. Used to compile Java classes and jars into a .NET assembly ("static mode") .
+</li>
+<li>
+<strong>ikvmstub.exe</strong>: A tool that generates stub class files from a .NET assembly, so that Java code can be compiled against .NET code. IKVM.NET understands the stubs and replaces the references to the stubs by references to the actual .NET types. 
+</li>
+<li>
+<strong>IKVM.AWT.WinForms.dll</strong>: Very limited and broken implementation of a few AWT peers. This is a low priority issue for me.</li>
+</ul>
+  </section>
+    <section>
+      <title>Project Status</title>
+      <p>This project is currently in active development. Compliance with JDK 1.4 is largely implemented, but there are some
+      holes (particularly in the <jump href="http://www.kaffe.org/~stuart/japi/htmlout/h-jdk14-classpath.html">Classpath API's</jump>). In particular, </p>
+      <ul>
+      <li>AWT and Swing are not presently functional. This is a low priority item for the project developers.</li>
+      <li>Security is another fairly large hole missing from the IKVM platform. This will be solved by relying on the sophisticated and powerful security model offered by the .NET platform.</li>
+      </ul>
+      <p>Still, enough functionality is in place that several large Java projects run successfully. </p>
+
+      
+    </section>
+    <section>
+      <title>Related Work</title>
+      <p>The following projects are related to IKVM.NET in some way:</p>
+      <ul>
+        <li><link href="ext:monodevelop">MonoDevelop: A Mono IDE with IKVM Support</link></li>
+        <li><link href="ext:classpath">GNU Classpath: The Free Java Library Project</link></li>
+        <li><link href="http://msdn.microsoft.com/vjsharp/default.aspx">Microsoft's J# for .NET</link></li>
+      </ul>
+    </section>
+  </body>
+</document>

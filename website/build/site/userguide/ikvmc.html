@@ -1,0 +1,524 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>IKVM.NET Bytecode Compiler (ikvmc.exe)</title>
+<link type="text/css" href="../skin/page.css" rel="stylesheet">
+</head>
+<body text="#000000" bgcolor="#FFFFFF">
+<!--================= start Navigation Path ==================-->
+<table summary="navigation path" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td nowrap="nowrap" valign="middle" bgcolor="#CFDCED" height="20"><img height="1" width="5" alt="" src="../skin/images/spacer.gif" class="spacer"><!--===== breadcrumb trail (javascript-generated) ====--><font size="2" face="Arial, Helvetica, Sans-serif"><script src="../skin/breadcrumbs.js" language="JavaScript" type="text/javascript"></script></font></td>
+</tr>
+<tr>
+<td bgcolor="#4C6C8F" height="2"><img height="2" width="2" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+<!--================= end Navigation Path ==================-->
+<!--================= start Banner ==================-->
+<table summary="header with logos" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<!--================= start Group Logo ==================-->
+<td bgcolor="#294563"></td>
+<!--================= end Group Logo ==================-->
+<!--================= start Project Logo ==================--><td width="100%" align="center" bgcolor="#294563"><a href="http://www.ikvm.net/"><img border="0" class="logoImage" alt="IKVM.NET" src="../images/project.gif" title="Java on .NET"></a></td>
+<!--================= end Project Logo ==================-->
+<!--================= start Search ==================--><td valign="top" rowspan="2" bgcolor="#294563"></td>
+<!--================= start Search ==================--><td bgcolor="#294563"><img height="10" width="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td valign="bottom" bgcolor="#294563" colspan="2">
+<!--================= start Tabs ==================-->
+<div class="tab">
+<table summary="tab bar" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td width="6"><img alt="" height="8" width="6" src="../skin/images/spacer.gif"></td>
+</tr>
+</table>
+</div>
+<!--================= end Tabs ==================-->
+</td><td bgcolor="#294563"><img alt="" width="1" height="1" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td bgcolor="#4C6C8F" colspan="4"><img width="1" height="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+<!--================= end Banner ==================-->
+<!--================= start Menu, NavBar, Content ==================-->
+<table summary="page content" bgcolor="#ffffff" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td valign="top">
+<table summary="menu" border="0" cellspacing="0" cellpadding="0">
+<tr>
+<!--================= start left top NavBar ==================-->
+<td rowspan="3" valign="top">
+<table summary="blue line" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td bgcolor="#CFDCED"><font color="#4C6C8F" size="4" face="Arial, Helvetica, Sans-serif">&nbsp;</font></td>
+</tr>
+<tr>
+<td bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+</td>
+<!--================= end left top NavBar ==================--><td bgcolor="#294563"><img width="1" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td valign="bottom" bgcolor="#4C6C8F"><img width="10" height="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td nowrap="nowrap" valign="top" bgcolor="#4C6C8F">
+<!--================= start Menu items ==================-->
+<div class="menu">
+<ul>
+<li>
+<font color="#CFDCED">About</font>
+<ul>
+    
+<li>
+<a href="../index.html" title="">Home</a>
+</li>
+    
+<li>
+<a href="../download.html" title="">Download</a>
+</li>
+    
+<li>
+<a href="../uses.html" title="">Uses</a>
+</li>
+    
+<li>
+<a href="http://weblog.ikvm.net" title="">News</a>
+</li>
+    
+<li>
+<a href="../faqdoc.html" title="">FAQ</a>
+</li>
+    
+<li>
+<a href="../license.html" title="">License</a>
+</li>
+  
+</ul>
+</li>
+<li>
+<font color="#CFDCED">User's Guide</font>
+<ul>
+    
+<li>
+<a href="../userguide/intro.html">Introduction</a>
+</li>
+    
+<li>
+<a href="../userguide/install.html" title="">Installation</a>
+</li>
+    
+<li>
+<a href="../userguide/tutorial.html" title="">Tutorial</a>
+</li>
+    
+<li>
+<a href="../userguide/tools.html" title="">Tools Reference</a>
+</li>
+      
+      
+      
+  
+</ul>
+</li>
+<li>
+<font color="#CFDCED">Developer's Guide</font>
+<ul>
+    
+<li>
+<a href="../devguide/intro.html" title="">Introduction</a>
+</li>    
+    
+<li>
+<a href="../devguide/concepts.html" title="">Concepts</a>
+</li>
+    
+<li>
+<a href="../devguide/net2java.html" title="">Using Java Libraries</a>
+</li>
+    
+<li>
+<a href="../devguide/java2net.html" title="">Developing in Java</a>
+</li>
+  
+</ul>
+</li>
+<li>
+<font color="#CFDCED">Contributing</font>
+<ul>
+    
+<li>
+<a href="http://sourceforge.net/mail/?group_id=69637">Mailing Lists</a>
+</li>
+    
+<li>
+<a href="http://sourceforge.net/cvs/?group_id=69637">CVS Repository</a>
+</li>
+  
+</ul>
+</li>
+</ul>
+</div>
+<!--================= end Menu items ==================-->
+</td><td valign="bottom" bgcolor="#4C6C8F"><img width="10" height="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td bgcolor="#294563"><img width="1" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td valign="bottom" align="left" colspan="2" rowspan="2" bgcolor="#4C6C8F"><img height="10" width="10" border="0" alt="" src="../skin/images/menu-left.gif"></td><td bgcolor="#4C6C8F"><img height="10" width="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td valign="bottom" align="right" colspan="2" rowspan="2" bgcolor="#4C6C8F"><img height="10" width="10" border="0" alt="" src="../skin/images/menu-right.gif"></td>
+</tr>
+<tr>
+<td height="1" bgcolor="#294563"><img width="1" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+</td><td valign="top" width="100%">
+<table summary="content" width="100%" border="0" cellpadding="0" cellspacing="0">
+<!--================= start middle NavBar ==================-->
+<tr>
+<td colspan="4" bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td align="left" width="10" bgcolor="#CFDCED"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td align="left" width="50%" bgcolor="#CFDCED"><font color="#4C6C8F" size="3" face="Arial, Helvetica, Sans-serif">
+                &nbsp;
+                
+                </font><img width="10" height="8" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td align="right" width="50%" bgcolor="#CFDCED"><font color="#4C6C8F" size="3" face="Arial, Helvetica, Sans-serif">
+                &nbsp;
+                
+                </font><img width="10" height="8" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td width="10" bgcolor="#CFDCED"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td colspan="4" bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<!--================= end middle NavBar ==================-->
+<!--================= start Content==================-->
+<tr>
+<td align="left" width="10"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td colspan="2" align="left" width="100%">
+<div class="content">
+<table class="title" summary="">
+<tr>
+<td valign="middle">
+<h1>IKVM.NET Bytecode Compiler (ikvmc.exe)</h1>
+</td>
+</tr>
+</table>
+<p>The ikvmc tool converts Java bytecode to .NET dll's and exe's.</p>
+<ul class="minitoc">
+<li>
+<a href="#Usage">Usage</a>
+</li>
+<li>
+<a href="#Options">Options</a>
+</li>
+<li>
+<a href="#Notes">Notes</a>
+</li>
+<li>
+<a href="#Examples">Examples</a>
+</li>
+</ul>
+		
+<a name="N1000F"></a><a name="Usage"></a>
+<h3>Usage</h3>
+<div style="margin-left: 0 ; border: 2px">
+<table class="ForrestTable" cellspacing="1" cellpadding="4">
+<tr>
+<td colspan="1" rowspan="1">
+			
+<div class="pre">    ikvmc [ <em>options</em> ] <em>classOrJarfile</em> [ <em>classOrJarfile ...</em> ]</div>
+
+</td>
+</tr>
+</table>
+<dl>
+				
+<dt>options</dt>
+				
+<dd>See below.</dd>
+				
+<dt>classOrJarfile</dt>
+				
+<dd>Name of a Java .class or .jar file. May contain wildcards (*.class).</dd>
+			
+</dl>
+</div>
+
+		
+<a name="N1003A"></a><a name="Options"></a>
+<h3>Options</h3>
+<div style="margin-left: 0 ; border: 2px">
+<table class="ForrestTable" cellspacing="1" cellpadding="4">
+				
+<tr>
+					
+<th colspan="1" rowspan="1">Option</th>
+					<th colspan="1" rowspan="1">Description</th>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-out:<em>outputfile</em>
+					</td>
+					<td colspan="1" rowspan="1">Specifies the name of the output file. Should have a .dll extension (if -target is library) or an .exe extension (if -target is exe or winexe).
+                            In most cases, if you omit this option, ikvmc will choose an output name based on the -target and the
+                            name of the input files. However, if you specify input files using wildcards, you must use
+                            this option to specify the output file.</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-assembly:<em>assembly-name</em>
+					</td>
+					<td colspan="1" rowspan="1">
+						Specifies the name of the generated assembly. If omitted, the assembly name is (usually) 
+                        the output filename.
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-target:<em>target-type</em>            
+					</td>
+					<td colspan="1" rowspan="1">
+						Specifies whether to generate an .exe or .dll.
+                        <em>target-type</em> is one of 
+                        <ul>
+                          
+<li>exe - generates an executable that runs in a Windows command window</li>
+                          
+<li>winexe - generates an .exe for GUI applications</li>
+                          
+<li>library - generates a .dll</li>
+                          
+<li>module - generates a .netmodule</li>
+                        
+</ul>
+                        
+<p>On Linux, there is no difference between <em>exe</em> and <em>winexe</em>.</p>
+                        
+					
+</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-keyfile:<em>keyfilename</em>            
+					</td>
+					<td colspan="1" rowspan="1">
+						Uses <em>keyfilename</em> to sign the resulting assembly.
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-version:M.m.b.r            
+					</td>
+					<td colspan="1" rowspan="1">
+						Specifies the assembly version.
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-main:<em>classname</em>              
+					</td>
+					<td colspan="1" rowspan="1">
+						Specifies the name of the class containing the main method.
+                        If omitted and the -target is exe or winexe, ikvmc searches
+                        for a qualifying main method and reports if it finds one.
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						 -reference:<em>library-filespec</em>              
+					</td>
+					<td colspan="1" rowspan="1">
+						If your Java code uses .NET API's, specify the dll's using this
+                        option. This option can appear more than once if more than one library is referenced.
+                        Wildcards are permitted (e.g. c:\libs\*.dll).
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-recurse:<em>filespec</em>              
+					</td>
+					<td colspan="1" rowspan="1">
+						Processes all files matching <em>filespec</em> in and under the directory specified by
+                        <em>filespec</em>.  Example: -recurse:*.class
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-nojni
+					</td>
+					<td colspan="1" rowspan="1">
+						Do not generate JNI stub for native methods 
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-resource:<em>name</em>=<em>path</em>              
+					</td>
+					<td colspan="1" rowspan="1">
+						Includes <em>path</em> as a Java resource named <em>name</em>  
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-exclude:<em>filename</em>              
+					</td>
+					<td colspan="1" rowspan="1">
+						<em>filename</em> is a file containing a list of classes to exclude 
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-debug              
+					</td>
+					<td colspan="1" rowspan="1">
+						Generates debugging information in the output. Note that this is only helpful
+                                                            if the .class files contain debug information (compiled with the javac -g option).
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-srcpath:<em>path</em>              
+					</td>
+					<td colspan="1" rowspan="1">
+						Specifies the location of source code. Use with -debug. The  
+                        package of the class is appended to the specified <em>path</em> to locate
+                        the source code for the class.
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-Xtrace:<em>name</em>              
+					</td>
+					<td colspan="1" rowspan="1">
+						Displays all tracepoints with <em>name</em> 
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-Xmethodtrace:<em>methodname</em>              
+					</td>
+					<td colspan="1" rowspan="1">
+						Builds method trace into the specified output method.
+					</td>
+				
+</tr>
+			
+</table>
+</div>
+		
+<a name="N1016E"></a><a name="Notes"></a>
+<h3>Notes</h3>
+<div style="margin-left: 0 ; border: 2px">
+<p>The ikvmc tool generates .NET assemblies from Java class files and jar files. 
+            It converts the Java bytecodes in the input files to .NET CIL. Use it to produce</p>
+<ul>
+            
+<li>.NET executables (-target:exe or -target:winexe)</li>
+            
+<li>.NET libraries (-target:library)</li>
+            
+<li>.NET modules (-target:module)</li>
+            
+</ul>
+<p>Java applications often consist of a collection of jar files. ikvmc can process several input jar files (and class files)
+            and produce a single .NET executable or library. For example, an application consisting of main.jar, lib1.jar,
+            and lib2.jar can be converted to a single main.exe. </p>
+<p>When processing multiple input jar files that contain duplicate classes / resources, ikvmc will use the first
+            class / resource it encounters, and ignore duplicates encountered in jars that appear later on the
+            command line. It will produce a warning in this case. Thus, order of jar files can be significant.</p>
+<div class="frame note">
+<div class="label">Note</div>
+<div class="content">
+            When converting a Java application with ikvmc, for best results, list the jars on the ikvmc command
+            line in the same order that they appear in the Java application's classpath.</div>
+</div>
+</div>
+		
+		
+<a name="N1018D"></a><a name="Examples"></a>
+<h3>Examples</h3>
+<div style="margin-left: 0 ; border: 2px">
+<div class="pre">
+<span class="codefrag">    ikvmc myProg.jar </span>
+</div>
+<p>Scans myprog.jar for a main method. If found, an .exe is produced; otherwise, a .dll is generated. 
+			</p>
+<div class="pre">
+<span class="codefrag">    ikvmc -out:myapp.exe -main:org.anywhere.Main -recurse:bin\*.class lib\mylib.jar</span>
+</div>
+<p>Processes all .class files in and under the bin directory, and mylib.jar in the lib directory. Generates an executable
+            named myapp.exe using the class org.anywhere.Main as the main method.</p>
+</div>
+	
+<div class="attribution"></div>
+</div>
+</td><td width="10"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<!--================= end Content==================-->
+</table>
+</td>
+</tr>
+</table>
+<!--================= end Menu, NavBar, Content ==================-->
+<!--================= start Footer ==================-->
+<table summary="footer" cellspacing="0" cellpadding="0" width="100%" border="0">
+<tr>
+<td colspan="2" height="1" bgcolor="#4C6C8F"><img height="1" width="1" alt="" src="../skin/images/spacer.gif" class="spacer"><a href="../skin/images/label.gif"></a><a href="../skin/images/page.gif"></a><a href="../skin/images/chapter.gif"></a><a href="../skin/images/chapter_open.gif"></a><a href="../skin/images/current.gif"></a><a href="/favicon.ico"></a></td>
+</tr>
+<tr>
+<td colspan="2" bgcolor="#CFDCED" class="copyright" align="center"><font size="2" face="Arial, Helvetica, Sans-Serif">Copyright &copy;
+          2004&nbsp;Jeroen Frijters  All rights reserved.<script type="text/javascript" language="JavaScript"><!--
+              document.write(" - "+"Last Published: " + document.lastModified);
+            //  --></script></font></td>
+</tr>
+<tr>
+<td colspan="2" align="left" bgcolor="#CFDCED" class="logos"></td>
+</tr>
+</table>
+<!--================= end Footer ==================-->
+</body>
+</html>

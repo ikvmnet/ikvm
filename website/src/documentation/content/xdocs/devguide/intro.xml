@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>IKVM.NET Developer's Guide</title> 
+    <authors><person name="Stephen Schaub" email="sschaub@bju.edu"/> 
+    </authors> 
+  </header> 
+  <body> 
+    
+      <p>IKVM.NET makes it possible both to develop .NET applications in Java, and to use existing Java API's and libraries
+      in applications written in any .NET language. This guide includes information of
+      interest to developers who want to use Java as their preferred .NET development language, as well as
+      for those who wish to use Java libraries in their C# or VB.NET applications.</p>
+    
+  </body>
+</document>

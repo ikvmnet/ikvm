@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>IKVM.NET Installation</title> 
+  </header> 
+  <body> 
+  <section>
+    <title>Installation</title>
+      <p>The installation procedure for both Windows and Linux is straightforward.
+      After <link href="site:download">downloading</link> the binary distribution, simply extract the 
+      files from the archive. Open a command or shell window, cd to ikvm\bin, and type</p>
+      <p xml:space="preserve"><code>       ikvm</code></p>
+      <p>If your system is operating correctly, you should see the following output:</p>
+      <p xml:space="preserve"><code>
+    usage: ikvm [-options] &lt;class> [args...]
+            (to execute a class)
+      or ikvm -jar [-options] &lt;jarfile> [args...]
+            (to execute a jar file)
+          </code>...</p>
+      <p>For convenience, you may wish to add the \ikvm\bin folder to your system's path, but this is not required.  
+      Now, if all you want to do is use IKVM as a Java VM, you're done -- no further configuration is needed.
+      If you want to use IKVM for .NET / Mono development, read the configuration instructions below.
+      </p>
+    </section>
+    
+      <section>
+        <title>Configuration for Development</title>
+        <p>If you plan to do .NET development with IKVM.NET, you may wish to do the following:</p>
+        <ul><li>Download the <fork href="ext:jikes">Jikes compiler</fork>
+        <p>If you plan to develop code in Java that runs in .NET, you will need a Java compiler. IKVM.NET does not
+              come with a compiler. You may use any Java compiler that emits standard Java .class files. Jikes is an excellent
+              open source, fast Java compiler that is available for many platforms.</p></li>
+        <li>Windows: Install IKVM dll's in the Global Assembly Cache
+        <p>When running .NET applications in Windows that use IKVM dll's, the .NET framework must be able to locate the dll's. 
+        It looks in the Global Assembly Cache, then in the current directory. If you want to be able to do development
+        without having the dll's in the current directory, you must install them in the Global Assembly Cache.
+        To do this in Windows,  access the Microsoft .NET Framework
+        Configuration item in the Windows Control Panel, and add the assemblies to the Assembly Cache.
+        At minimum, you will want to install the IKVM.GNU.Classpath.dll and IKVM.Runtime.dll.
+        </p>
+        </li>
+        </ul>
+        <p></p>
+      </section>
+
+</body>
+</document>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/ttd/document-v12.ttd">
+<document>
+	<header>
+		<title>IKVM.NET Stub Generator (ikvmstub.exe)</title>
+		<abstract>The ikvmstub tool generates Java stubs from .NET assemblies.</abstract>
+	</header>
+	<body>
+		<section>
+			<title>Usage</title>
+<table><tr><td>
+			<p xml:space="preserve">    ikvmstub <em>assemblyNameOrPath</em> </p>
+</td></tr></table>				
+			<dl>
+				<dt>assemblyNameOrPath</dt>
+				<dd>Name of an assembly. May be a fully-qualified path. </dd>
+				
+			</dl>
+		</section>
+
+		
+		<section>
+			<title>Notes</title>
+            <p>ikvmstub reads the specified assembly and generates a Java jar file containing
+            Java interfaces and stub classes. For more information about the generated stubs,
+            see the <link href="site:java2net">Developer's Guide</link>.</p>
+			<p>The tool uses the following algorithm to locate the assembly:</p>
+                                                <ol>
+                                                <li>First it attempts to load the assembly from the default load context of ikvmstub.exe.
+                                                For practical purposes, this usually means it searches the Global Assembly Cache.</li>
+                                                <li>If not found in the default load context, ikvmstub looks for the assembly at the indicated path (or the current
+                                                   directory, if no path is supplied).</li>
+                                                </ol>
+						
+			
+			
+		</section>
+		
+		<section>
+			<title>Examples</title>
+			<p xml:space="preserve"><code>    ikvmstub mscorlib.dll </code></p>
+			<p>Generates mscorlib.jar, containing stubs for classes, interfaces, etc., defined in mscorlib.dll.
+			</p>
+                        
+                                                <p xml:space="preserve"><code>    ikvmstub c:\lib\mylib.dll </code></p>
+			<p>Generates mylib.jar, containing stubs for classes, interfaces, etc., defined in c:\lib\mylib.dll.
+			</p>
+
+			
+		</section>
+	</body>
+</document>

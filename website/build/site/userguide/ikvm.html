@@ -1,0 +1,457 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>IKVM.NET Virtual Machine (ikvm.exe)</title>
+<link type="text/css" href="../skin/page.css" rel="stylesheet">
+</head>
+<body text="#000000" bgcolor="#FFFFFF">
+<!--================= start Navigation Path ==================-->
+<table summary="navigation path" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td nowrap="nowrap" valign="middle" bgcolor="#CFDCED" height="20"><img height="1" width="5" alt="" src="../skin/images/spacer.gif" class="spacer"><!--===== breadcrumb trail (javascript-generated) ====--><font size="2" face="Arial, Helvetica, Sans-serif"><script src="../skin/breadcrumbs.js" language="JavaScript" type="text/javascript"></script></font></td>
+</tr>
+<tr>
+<td bgcolor="#4C6C8F" height="2"><img height="2" width="2" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+<!--================= end Navigation Path ==================-->
+<!--================= start Banner ==================-->
+<table summary="header with logos" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<!--================= start Group Logo ==================-->
+<td bgcolor="#294563"></td>
+<!--================= end Group Logo ==================-->
+<!--================= start Project Logo ==================--><td width="100%" align="center" bgcolor="#294563"><a href="http://www.ikvm.net/"><img border="0" class="logoImage" alt="IKVM.NET" src="../images/project.gif" title="Java on .NET"></a></td>
+<!--================= end Project Logo ==================-->
+<!--================= start Search ==================--><td valign="top" rowspan="2" bgcolor="#294563"></td>
+<!--================= start Search ==================--><td bgcolor="#294563"><img height="10" width="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td valign="bottom" bgcolor="#294563" colspan="2">
+<!--================= start Tabs ==================-->
+<div class="tab">
+<table summary="tab bar" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td width="6"><img alt="" height="8" width="6" src="../skin/images/spacer.gif"></td>
+</tr>
+</table>
+</div>
+<!--================= end Tabs ==================-->
+</td><td bgcolor="#294563"><img alt="" width="1" height="1" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td bgcolor="#4C6C8F" colspan="4"><img width="1" height="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+<!--================= end Banner ==================-->
+<!--================= start Menu, NavBar, Content ==================-->
+<table summary="page content" bgcolor="#ffffff" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td valign="top">
+<table summary="menu" border="0" cellspacing="0" cellpadding="0">
+<tr>
+<!--================= start left top NavBar ==================-->
+<td rowspan="3" valign="top">
+<table summary="blue line" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td bgcolor="#CFDCED"><font color="#4C6C8F" size="4" face="Arial, Helvetica, Sans-serif">&nbsp;</font></td>
+</tr>
+<tr>
+<td bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+</td>
+<!--================= end left top NavBar ==================--><td bgcolor="#294563"><img width="1" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td valign="bottom" bgcolor="#4C6C8F"><img width="10" height="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td nowrap="nowrap" valign="top" bgcolor="#4C6C8F">
+<!--================= start Menu items ==================-->
+<div class="menu">
+<ul>
+<li>
+<font color="#CFDCED">About</font>
+<ul>
+    
+<li>
+<a href="../index.html" title="">Home</a>
+</li>
+    
+<li>
+<a href="../download.html" title="">Download</a>
+</li>
+    
+<li>
+<a href="../uses.html" title="">Uses</a>
+</li>
+    
+<li>
+<a href="http://weblog.ikvm.net" title="">News</a>
+</li>
+    
+<li>
+<a href="../faqdoc.html" title="">FAQ</a>
+</li>
+    
+<li>
+<a href="../license.html" title="">License</a>
+</li>
+  
+</ul>
+</li>
+<li>
+<font color="#CFDCED">User's Guide</font>
+<ul>
+    
+<li>
+<a href="../userguide/intro.html">Introduction</a>
+</li>
+    
+<li>
+<a href="../userguide/install.html" title="">Installation</a>
+</li>
+    
+<li>
+<a href="../userguide/tutorial.html" title="">Tutorial</a>
+</li>
+    
+<li>
+<a href="../userguide/tools.html" title="">Tools Reference</a>
+</li>
+      
+      
+      
+  
+</ul>
+</li>
+<li>
+<font color="#CFDCED">Developer's Guide</font>
+<ul>
+    
+<li>
+<a href="../devguide/intro.html" title="">Introduction</a>
+</li>    
+    
+<li>
+<a href="../devguide/concepts.html" title="">Concepts</a>
+</li>
+    
+<li>
+<a href="../devguide/net2java.html" title="">Using Java Libraries</a>
+</li>
+    
+<li>
+<a href="../devguide/java2net.html" title="">Developing in Java</a>
+</li>
+  
+</ul>
+</li>
+<li>
+<font color="#CFDCED">Contributing</font>
+<ul>
+    
+<li>
+<a href="http://sourceforge.net/mail/?group_id=69637">Mailing Lists</a>
+</li>
+    
+<li>
+<a href="http://sourceforge.net/cvs/?group_id=69637">CVS Repository</a>
+</li>
+  
+</ul>
+</li>
+</ul>
+</div>
+<!--================= end Menu items ==================-->
+</td><td valign="bottom" bgcolor="#4C6C8F"><img width="10" height="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td bgcolor="#294563"><img width="1" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td valign="bottom" align="left" colspan="2" rowspan="2" bgcolor="#4C6C8F"><img height="10" width="10" border="0" alt="" src="../skin/images/menu-left.gif"></td><td bgcolor="#4C6C8F"><img height="10" width="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td valign="bottom" align="right" colspan="2" rowspan="2" bgcolor="#4C6C8F"><img height="10" width="10" border="0" alt="" src="../skin/images/menu-right.gif"></td>
+</tr>
+<tr>
+<td height="1" bgcolor="#294563"><img width="1" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+</td><td valign="top" width="100%">
+<table summary="content" width="100%" border="0" cellpadding="0" cellspacing="0">
+<!--================= start middle NavBar ==================-->
+<tr>
+<td colspan="4" bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td align="left" width="10" bgcolor="#CFDCED"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td align="left" width="50%" bgcolor="#CFDCED"><font color="#4C6C8F" size="3" face="Arial, Helvetica, Sans-serif">
+                &nbsp;
+                
+                </font><img width="10" height="8" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td align="right" width="50%" bgcolor="#CFDCED"><font color="#4C6C8F" size="3" face="Arial, Helvetica, Sans-serif">
+                &nbsp;
+                
+                </font><img width="10" height="8" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td width="10" bgcolor="#CFDCED"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td colspan="4" bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<!--================= end middle NavBar ==================-->
+<!--================= start Content==================-->
+<tr>
+<td align="left" width="10"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td colspan="2" align="left" width="100%">
+<div class="content">
+<table class="title" summary="">
+<tr>
+<td valign="middle">
+<h1>IKVM.NET Virtual Machine (ikvm.exe)</h1>
+</td>
+</tr>
+</table>
+<p>The ikvm tool is a Java virtual machine implemented in .NET.</p>
+<ul class="minitoc">
+<li>
+<a href="#Usage">Usage</a>
+</li>
+<li>
+<a href="#Options">Options</a>
+</li>
+<li>
+<a href="#Notes">Notes</a>
+</li>
+<li>
+<a href="#Examples">Examples</a>
+</li>
+</ul>
+		
+<a name="N1000F"></a><a name="Usage"></a>
+<h3>Usage</h3>
+<div style="margin-left: 0 ; border: 2px">
+<table class="ForrestTable" cellspacing="1" cellpadding="4">
+<tr>
+<td colspan="1" rowspan="1">
+			
+<div class="pre">    ikvm [ <em>options</em> ] <em>classname</em> [ <em>args ...</em> ]</div>
+			
+<div class="pre">    ikvm [ <em>options</em> ] -jar <em>jarfile</em> [ <em>args ...</em> ]</div>
+
+</td>
+</tr>
+</table>
+<dl>
+				
+<dt>options</dt>
+				
+<dd>Command-line options for the virtual machine.</dd>
+				
+<dt>classname</dt>
+				
+<dd>Fully-qualified name of a class containing the main method to execute. Do not include a
+				path or a .class extension. Do not use this with the -jar option.</dd>
+				
+<dt>jarfile</dt>
+				
+<dd>The name of an executable .jar file to execute. Used only with the -jar option.</dd>
+				
+<dt>args</dt>
+				
+<dd>Command-line arguments passed to the main class.</dd>
+			
+</dl>
+</div>
+
+		
+<a name="N10054"></a><a name="Options"></a>
+<h3>Options</h3>
+<div style="margin-left: 0 ; border: 2px">
+<table class="ForrestTable" cellspacing="1" cellpadding="4">
+				
+<tr>
+					
+<th colspan="1" rowspan="1">Option</th>
+					<th colspan="1" rowspan="1">Description</th>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-cp&nbsp;<em>classpath</em>	
+<br>
+						-classpath&nbsp;<em>classpath</em>
+					</td>
+					<td colspan="1" rowspan="1">
+<p>Specifies the classpath for the JVM. <em>classpath</em> is a semicolon-delimited list of pathnames to directories and zip files / jar files.</p>
+                                                          
+<p>Note: If you specify this option more than once, only the last is used.</p>
+                                                 
+</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-D<em>property-name</em>=<em>value</em>
+					</td>
+					<td colspan="1" rowspan="1">
+						Set a system property named <em>property-name</em> to <em>value</em>. Note that there is no
+						space between the -D and <em>property-name</em>.
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-Xsave            
+					</td>
+					<td colspan="1" rowspan="1">
+						Saves the generated assembly (for debugging)
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-Xtime            
+					</td>
+					<td colspan="1" rowspan="1">
+						Times the execution
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-Xbootclasspath:<em>classpath</em>            
+					</td>
+					<td colspan="1" rowspan="1">
+						
+<p>Specifies the boot classpath for the JVM. <em>classpath</em> is a semicolon-delimited list of pathnames to directories and jars.
+						These classes override those in the GNU Classpath libraries.</p>
+                                                            
+<p>Note: If you specify this option more than once, only the last is used.</p>
+					
+</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-Xtrace:<em>name</em>              
+					</td>
+					<td colspan="1" rowspan="1">
+						Displays all tracepoints with the given name
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						 -Xmethodtrace:<em>name</em>               
+					</td>
+					<td colspan="1" rowspan="1">
+						Builds method trace into the specified output method 
+					</td>
+				
+</tr>
+				
+<tr>
+					
+<td colspan="1" rowspan="1">
+						-Xwait              
+					</td>
+					<td colspan="1" rowspan="1">
+						Keeps process hanging around after exit
+					</td>
+				
+</tr>
+			
+</table>
+</div>
+		
+<a name="N10104"></a><a name="Notes"></a>
+<h3>Notes</h3>
+<div style="margin-left: 0 ; border: 2px">
+<p>This command is intended to act as a "drop-in" replacement for the Sun / IBM JVM's. In many cases,
+			you can take a java command line and simply replace <em>java</em> with <em>ikvm</em>.</p>
+<p>Please refer to the <a target="_top" href="http://java.sun.com/j2se/1.4.2/docs/tooldocs/windows/java.html">Sun documentation</a>
+			for usage details. Note that ikvm supports only the options listed here.</p>
+<p>ikvm finds classes as follows:</p>
+<ul>
+                                
+<li>If no -cp/-classpath or -jar option specified, and no CLASSPATH environment variable is set,
+                                looks in the current directory.</li>
+                                
+<li>If no -cp/-classpath or -jar option specified, and CLASSPATH environment variable is set,
+                                looks in directories specified in CLASSPATH (not in the current directory unless CLASSPATH contains .).</li>
+                                
+<li>If -cp/-classpath option specified, ignores CLASSPATH environment variable, and looks only in
+                                directories specified in -cp/-classpath option.</li>
+                                
+<li>If -jar option specified, prepends jarfile to CLASSPATH (or -cp/-classpath specified classpath).
+                                <p>
+<strong>Note:</strong> This is different from the Sun JVM behavior.</p>
+                                
+</li>
+                              
+</ul>
+<p>For information about creating executable jar files, see <a target="_top" href="http://www-106.ibm.com/developerworks/library/j-jar/">this IBM article</a>.</p>
+</div>
+		
+		
+<a name="N10139"></a><a name="Examples"></a>
+<h3>Examples</h3>
+<div style="margin-left: 0 ; border: 2px">
+<div class="pre">
+<span class="codefrag">    ikvm MyProg </span>
+</div>
+<p>Loads a class named MyProg.class from the current directory (unless the CLASSPATH environment variable
+			is set, in which case that is searched instead) and executes its main method. 
+			</p>
+<div class="pre">
+<span class="codefrag">    ikvm -cp c:\java\lib;c:\mystuff\mylib.jar;c:\mystuff\otherlib.zip org.me.MyProg </span>
+</div>
+<p>Loads a class named org.me.MyProg from a file named MyProg.class and executes its main method. Searches for it in the following locations:</p>
+<ul>
+			
+<li>c:\java\lib\org\me\MyProg.class</li>
+			
+<li>c:\mystuff\mylib.jar (looks inside for org/me/MyProg.class)</li>
+			
+<li>c:\mystuff\otherlib.zip (looks inside for org/me/MyProg.class)</li>
+			
+</ul>
+<div class="pre">
+<span class="codefrag">    ikvm -jar /usr/share/myprog.jar </span>
+</div>
+<p>Executes Java code in the executable jar file /usr/share/myprog.jar.</p>
+</div>
+	
+<div class="attribution"></div>
+</div>
+</td><td width="10"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<!--================= end Content==================-->
+</table>
+</td>
+</tr>
+</table>
+<!--================= end Menu, NavBar, Content ==================-->
+<!--================= start Footer ==================-->
+<table summary="footer" cellspacing="0" cellpadding="0" width="100%" border="0">
+<tr>
+<td colspan="2" height="1" bgcolor="#4C6C8F"><img height="1" width="1" alt="" src="../skin/images/spacer.gif" class="spacer"><a href="../skin/images/label.gif"></a><a href="../skin/images/page.gif"></a><a href="../skin/images/chapter.gif"></a><a href="../skin/images/chapter_open.gif"></a><a href="../skin/images/current.gif"></a><a href="/favicon.ico"></a></td>
+</tr>
+<tr>
+<td colspan="2" bgcolor="#CFDCED" class="copyright" align="center"><font size="2" face="Arial, Helvetica, Sans-Serif">Copyright &copy;
+          2004&nbsp;Jeroen Frijters  All rights reserved.<script type="text/javascript" language="JavaScript"><!--
+              document.write(" - "+"Last Published: " + document.lastModified);
+            //  --></script></font></td>
+</tr>
+<tr>
+<td colspan="2" align="left" bgcolor="#CFDCED" class="logos"></td>
+</tr>
+</table>
+<!--================= end Footer ==================-->
+</body>
+</html>

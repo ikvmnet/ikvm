@@ -1,0 +1,394 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Developing .NET Applications in Java</title>
+<link type="text/css" href="../skin/page.css" rel="stylesheet">
+</head>
+<body text="#000000" bgcolor="#FFFFFF">
+<!--================= start Navigation Path ==================-->
+<table summary="navigation path" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td nowrap="nowrap" valign="middle" bgcolor="#CFDCED" height="20"><img height="1" width="5" alt="" src="../skin/images/spacer.gif" class="spacer"><!--===== breadcrumb trail (javascript-generated) ====--><font size="2" face="Arial, Helvetica, Sans-serif"><script src="../skin/breadcrumbs.js" language="JavaScript" type="text/javascript"></script></font></td>
+</tr>
+<tr>
+<td bgcolor="#4C6C8F" height="2"><img height="2" width="2" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+<!--================= end Navigation Path ==================-->
+<!--================= start Banner ==================-->
+<table summary="header with logos" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<!--================= start Group Logo ==================-->
+<td bgcolor="#294563"></td>
+<!--================= end Group Logo ==================-->
+<!--================= start Project Logo ==================--><td width="100%" align="center" bgcolor="#294563"><a href="http://www.ikvm.net/"><img border="0" class="logoImage" alt="IKVM.NET" src="../images/project.gif" title="Java on .NET"></a></td>
+<!--================= end Project Logo ==================-->
+<!--================= start Search ==================--><td valign="top" rowspan="2" bgcolor="#294563"></td>
+<!--================= start Search ==================--><td bgcolor="#294563"><img height="10" width="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td valign="bottom" bgcolor="#294563" colspan="2">
+<!--================= start Tabs ==================-->
+<div class="tab">
+<table summary="tab bar" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td width="6"><img alt="" height="8" width="6" src="../skin/images/spacer.gif"></td>
+</tr>
+</table>
+</div>
+<!--================= end Tabs ==================-->
+</td><td bgcolor="#294563"><img alt="" width="1" height="1" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td bgcolor="#4C6C8F" colspan="4"><img width="1" height="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+<!--================= end Banner ==================-->
+<!--================= start Menu, NavBar, Content ==================-->
+<table summary="page content" bgcolor="#ffffff" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td valign="top">
+<table summary="menu" border="0" cellspacing="0" cellpadding="0">
+<tr>
+<!--================= start left top NavBar ==================-->
+<td rowspan="3" valign="top">
+<table summary="blue line" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td bgcolor="#CFDCED"><font color="#4C6C8F" size="4" face="Arial, Helvetica, Sans-serif">&nbsp;</font></td>
+</tr>
+<tr>
+<td bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+</td>
+<!--================= end left top NavBar ==================--><td bgcolor="#294563"><img width="1" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td valign="bottom" bgcolor="#4C6C8F"><img width="10" height="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td nowrap="nowrap" valign="top" bgcolor="#4C6C8F">
+<!--================= start Menu items ==================-->
+<div class="menu">
+<ul>
+<li>
+<font color="#CFDCED">About</font>
+<ul>
+    
+<li>
+<a href="../index.html" title="">Home</a>
+</li>
+    
+<li>
+<a href="../download.html" title="">Download</a>
+</li>
+    
+<li>
+<a href="../uses.html" title="">Uses</a>
+</li>
+    
+<li>
+<a href="http://weblog.ikvm.net" title="">News</a>
+</li>
+    
+<li>
+<a href="../faqdoc.html" title="">FAQ</a>
+</li>
+    
+<li>
+<a href="../license.html" title="">License</a>
+</li>
+  
+</ul>
+</li>
+<li>
+<font color="#CFDCED">User's Guide</font>
+<ul>
+    
+<li>
+<a href="../userguide/intro.html">Introduction</a>
+</li>
+    
+<li>
+<a href="../userguide/install.html" title="">Installation</a>
+</li>
+    
+<li>
+<a href="../userguide/tutorial.html" title="">Tutorial</a>
+</li>
+    
+<li>
+<a href="../userguide/tools.html" title="">Tools Reference</a>
+</li>
+      
+      
+      
+  
+</ul>
+</li>
+<li>
+<font color="#CFDCED">Developer's Guide</font>
+<ul>
+    
+<li>
+<a href="../devguide/intro.html" title="">Introduction</a>
+</li>    
+    
+<li>
+<a href="../devguide/concepts.html" title="">Concepts</a>
+</li>
+    
+<li>
+<a href="../devguide/net2java.html" title="">Using Java Libraries</a>
+</li>
+    
+<li>
+<span class="sel"><font color="#ffcc00">Developing in Java</font></span>
+</li>
+  
+</ul>
+</li>
+<li>
+<font color="#CFDCED">Contributing</font>
+<ul>
+    
+<li>
+<a href="http://sourceforge.net/mail/?group_id=69637">Mailing Lists</a>
+</li>
+    
+<li>
+<a href="http://sourceforge.net/cvs/?group_id=69637">CVS Repository</a>
+</li>
+  
+</ul>
+</li>
+</ul>
+</div>
+<!--================= end Menu items ==================-->
+</td><td valign="bottom" bgcolor="#4C6C8F"><img width="10" height="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td bgcolor="#294563"><img width="1" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td valign="bottom" align="left" colspan="2" rowspan="2" bgcolor="#4C6C8F"><img height="10" width="10" border="0" alt="" src="../skin/images/menu-left.gif"></td><td bgcolor="#4C6C8F"><img height="10" width="10" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td valign="bottom" align="right" colspan="2" rowspan="2" bgcolor="#4C6C8F"><img height="10" width="10" border="0" alt="" src="../skin/images/menu-right.gif"></td>
+</tr>
+<tr>
+<td height="1" bgcolor="#294563"><img width="1" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+</table>
+</td><td valign="top" width="100%">
+<table summary="content" width="100%" border="0" cellpadding="0" cellspacing="0">
+<!--================= start middle NavBar ==================-->
+<tr>
+<td colspan="4" bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td align="left" width="10" bgcolor="#CFDCED"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td align="left" width="50%" bgcolor="#CFDCED"><font color="#4C6C8F" size="3" face="Arial, Helvetica, Sans-serif">
+                &nbsp;
+                
+                </font><img width="10" height="8" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td align="right" width="50%" bgcolor="#CFDCED"><font color="#4C6C8F" size="3" face="Arial, Helvetica, Sans-serif">
+                &nbsp;
+                
+                </font><img width="10" height="8" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td width="10" bgcolor="#CFDCED"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<tr>
+<td colspan="4" bgcolor="#294563"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<!--================= end middle NavBar ==================-->
+<!--================= start Content==================-->
+<tr>
+<td align="left" width="10"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td><td colspan="2" align="left" width="100%">
+<div class="content">
+<table class="title" summary="">
+<tr>
+<td valign="middle">
+<h1>Developing .NET Applications in Java</h1>
+</td>
+</tr>
+</table>
+<p>This section discusses information you need to know when you
+     want to develop .NET applications in Java. </p>
+<ul class="minitoc">
+<li>
+<a href="#Overview">Overview</a>
+</li>
+<li>
+<a href="#Mapping+.NET+API%27s+to+Java">Mapping .NET API's to Java</a>
+</li>
+<li>
+<a href="#Properties">Properties</a>
+</li>
+<li>
+<a href="#Enumerations">Enumerations</a>
+</li>
+<li>
+<a href="#Delegates+and+Event+Processing">Delegates and Event Processing</a>
+</li>
+<li>
+<a href="#Varargs">Varargs</a>
+</li>
+</ul> 
+
+      
+<a name="N10015"></a><a name="Overview"></a>
+<h3>Overview</h3>
+<div style="margin-left: 0 ; border: 2px">
+<p>IKVM makes it possible to develop .NET applications using the Java language. Here's how it works:</p>
+<ol>
+        
+<li>Identify .NET classes you want to use in your application.</li>
+        
+<li>Identify which .NET dll's contain the .NET classes you identified in step 1.
+        <p>
+<strong>Tip:</strong> If you're developing on Windows, the Microsoft .NET SDK Class Reference documentation identifies the assembly / dll 
+        for a .NET class at the bottom of each class overview page.</p>
+        
+</li>
+        
+<li>Use the <a href="../userguide/ikvmstub.html">ikvmstub</a> application to generate a Java jar file for each dll you identified in step 2.
+        <p>The ikvmstub tool analyzes the .NET classes in the designated dll
+        and generates a jar file containing Java interfaces and stub classes. This information is needed by the Java source compiler, which
+        knows nothing about .NET assemblies.</p>
+        
+</li>
+        
+<li>Compile your Java source code using javac or jikes, with the ikvmstub-generated jar files on the compiler classpath.</li>
+        
+<li>Compile the resulting Java classes using ikvmc. Use the -reference option to reference the dll's containing the
+          .NET classes you used; do <em>not</em> include the ikvmstub-generated jar files on the compiler classpath.</li> 
+      
+</ol>
+<p>For an example of this, see the <a href="../userguide/tutorial.html">tutorial</a>.</p>
+</div>
+
+      
+<a name="N10047"></a><a name="Mapping+.NET+API%27s+to+Java"></a>
+<h3>Mapping .NET API's to Java</h3>
+<div style="margin-left: 0 ; border: 2px">
+<p>When ikvmstub generates a stub jarfile, it has to prevent namespace conflicts between Java API classes and
+        generated stub classes. It must also map .NET features such as properties, delegates, enumerations,
+        and variable-length argument lists to Java language equivalents.
+        </p>
+<p>To prevent namespace conflicts, ikvmstub creates Java package names from .NET namespaces by 
+        prefixing them with cli. For example, a .NET class in the <span class="codefrag">System.IO</span> namespace would have a stub generated
+        for it in a Java package named <span class="codefrag">cli.System.IO</span>. So, when writing Java code that uses the 
+        System.IO.File class, you would use one of the following import statements in your Java code:</p>
+<div class="pre">
+<span class="codefrag">     import cli.System.IO.*;
+     import cli.System.IO.File;        
+</span>        
+</div>
+<p>The following sections discuss how .NET features are mapped to the Java language. Some of the mappings,
+        such as properties and enumerations, are fairly straightforward. Others, such as delegates and event handling,
+        require a little more work.  </p>
+<p>
+<strong>Tip:</strong> Java development tools that
+        provide code assist features are a great help when writing applications that use .NET API's. 
+        If you install the ikvmstub-generated jar files into your favorite Java IDE, you can use code completion to help you
+        use the .NET methods, properties, and enumerations correctly. Note, however, that you will not be able to test
+        your applications using your Java IDE debugger.
+        </p>
+</div>
+    
+    
+<a name="N10069"></a><a name="Properties"></a>
+<h3>Properties</h3>
+<div style="margin-left: 0 ; border: 2px">
+<p>Since Java has no direct language support for properties, ikvmstub maps .NET properties to Java getter and
+      setter methods. A .NET property defined in C# like this:</p>
+<pre class="code">
+    public <em>datatype</em> <em>property-name</em> {
+        get { ... }
+        set { ... }
+    }</pre>
+<p>would be translated to a pair of Java stub methods, like this:</p>
+<pre class="code">
+    public <em>datatype</em> get_<em>property-name</em>( ) { ... }
+    public void set_<em>property-name</em>(<em>datatype</em> value) { ... }</pre>
+<p>Here is an example of C# code that uses a property, and how you would access the same property in Java:
+      </p>
+<table class="ForrestTable" cellspacing="1" cellpadding="4">
+      
+<tr>
+         
+<th colspan="1" rowspan="1">C#</th>
+         <th colspan="1" rowspan="1">Java</th>
+      
+</tr>
+      
+<tr>
+        
+<td colspan="1" rowspan="1">
+      
+<div class="pre">
+<span class="codefrag">
+      int weight = bear.Weight;
+      bear.Weight = 15;
+      </span>
+</div>
+      
+</td>
+      <td colspan="1" rowspan="1">      
+      
+<div class="pre">
+<span class="codefrag">
+       int weight = bear.get_Weight();
+       bear.set_Weight(15);
+      </span>
+</div>
+      
+</td>
+      
+</tr>
+      
+</table>
+</div>
+    
+    
+<a name="N100BE"></a><a name="Enumerations"></a>
+<h3>Enumerations</h3>
+<div style="margin-left: 0 ; border: 2px">
+<p>TODO. For now, see the <a href="http://weblog.ikvm.net/allentries.aspx">IKVM Weblog</a>, March 20, 2004 entry.
+      </p>
+</div>
+
+    
+<a name="N100CC"></a><a name="Delegates+and+Event+Processing"></a>
+<h3>Delegates and Event Processing</h3>
+<div style="margin-left: 0 ; border: 2px">
+<p>TODO. For now, see the <a href="http://weblog.ikvm.net/allentries.aspx">IKVM Weblog</a>, March 20, 2004 entry.
+      Also, see the winforms sample.</p>
+</div>
+    
+    
+<a name="N100DA"></a><a name="Varargs"></a>
+<h3>Varargs</h3>
+<div style="margin-left: 0 ; border: 2px">
+<p>TODO. For now, see the <a href="http://weblog.ikvm.net/allentries.aspx">IKVM Weblog</a>, March 20, 2004 entry.
+      Also, see the usenetapi/CreateFile.java sample.</p>
+</div>
+  
+<div class="attribution">by&nbsp;Stephen Schaub</div>
+</div>
+</td><td width="10"><img width="10" height="1" alt="" src="../skin/images/spacer.gif" class="spacer"></td>
+</tr>
+<!--================= end Content==================-->
+</table>
+</td>
+</tr>
+</table>
+<!--================= end Menu, NavBar, Content ==================-->
+<!--================= start Footer ==================-->
+<table summary="footer" cellspacing="0" cellpadding="0" width="100%" border="0">
+<tr>
+<td colspan="2" height="1" bgcolor="#4C6C8F"><img height="1" width="1" alt="" src="../skin/images/spacer.gif" class="spacer"><a href="../skin/images/label.gif"></a><a href="../skin/images/page.gif"></a><a href="../skin/images/chapter.gif"></a><a href="../skin/images/chapter_open.gif"></a><a href="../skin/images/current.gif"></a><a href="/favicon.ico"></a></td>
+</tr>
+<tr>
+<td colspan="2" bgcolor="#CFDCED" class="copyright" align="center"><font size="2" face="Arial, Helvetica, Sans-Serif">Copyright &copy;
+          2004&nbsp;Jeroen Frijters  All rights reserved.<script type="text/javascript" language="JavaScript"><!--
+              document.write(" - "+"Last Published: " + document.lastModified);
+            //  --></script></font></td>
+</tr>
+<tr>
+<td colspan="2" align="left" bgcolor="#CFDCED" class="logos"></td>
+</tr>
+</table>
+<!--================= end Footer ==================-->
+</body>
+</html>
