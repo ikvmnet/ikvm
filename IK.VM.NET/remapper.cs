@@ -240,7 +240,7 @@ namespace MapXml
 		{
 			if(typeType == null)
 			{
-				Debug.Assert(type == null);
+				Debug.Assert(type != null);
 				typeType = Type.GetType(type, true);
 			}
 			ilgen.Emit(opcode, typeType);

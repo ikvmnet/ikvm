@@ -1134,7 +1134,7 @@ abstract class TypeWrapper
 		get
 		{
 			Debug.Assert(!this.IsUnloadable);
-			Debug.Assert(this.IsArray);
+			Debug.Assert(this == VerifierTypeWrapper.Null || this.IsArray);
 
 			if(this == VerifierTypeWrapper.Null)
 			{
