@@ -384,10 +384,12 @@ class CastEmitter : CodeEmitter
 	{
 		if(type == null)
 		{
-			// TODO for ghosts we emit a castclass System.Object, this is harmless but obviously a bit wasteful
 			type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(className).TypeOrUnloadableAsObject;
 		}
-		ilgen.Emit(OpCodes.Castclass, type);
+		if(type != typeof(object))
+		{
+			ilgen.Emit(OpCodes.Castclass, type);
+		}
 	}
 }
 

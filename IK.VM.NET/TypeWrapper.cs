@@ -439,14 +439,34 @@ class AttributeHelper
 		tb.SetCustomAttribute(customAttributeBuilder);
 	}
 
-	internal static void SetGhostType(ParameterBuilder pb, Type type)
+	private static byte[] FreezeDryType(Type type)
+	{
+		System.IO.MemoryStream mem = new System.IO.MemoryStream();
+		System.IO.BinaryWriter bw = new System.IO.BinaryWriter(mem, System.Text.UTF8Encoding.UTF8);
+		bw.Write((short)1);
+		bw.Write(type.FullName);
+		bw.Write((short)0);
+		return mem.ToArray();
+	}
+
+	internal static void SetGhostType(TypeBuilder ownerType, ParameterBuilder pb, Type type)
 	{
 		if(ghostTypeAttribute == null)
 		{
 			ghostTypeAttribute = typeof(GhostTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
 		}
-		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ghostTypeAttribute, new object[] { type });
-		pb.SetCustomAttribute(customAttributeBuilder);
+		// HACK because SetCustomAttribute(CustomAttributeBuilder) incorrectly always stores the assembly qualified name
+		// we have our own version for when the type lives in the same assembly as the attribute. If we don't do this
+		// ikvmc will have problems accessing this attribute when it uses Assembly.LoadFrom to load an assembly.
+		if(ownerType.Assembly.Equals(type.Assembly))
+		{
+			pb.SetCustomAttribute(ghostTypeAttribute, FreezeDryType(type));
+		}
+		else
+		{
+			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ghostTypeAttribute, new object[] { type });
+			pb.SetCustomAttribute(customAttributeBuilder);
+		}
 	}
 
 	internal static void SetGhostType(MethodBuilder mb, Type type)
@@ -455,8 +475,18 @@ class AttributeHelper
 		{
 			ghostTypeAttribute = typeof(GhostTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
 		}
-		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ghostTypeAttribute, new object[] { type });
-		mb.SetCustomAttribute(customAttributeBuilder);
+		// HACK because SetCustomAttribute(CustomAttributeBuilder) incorrectly always stores the assembly qualified name
+		// we have our own version for when the type lives in the same assembly as the attribute. If we don't do this
+		// ikvmc will have problems accessing this attribute when it uses Assembly.LoadFrom to load an assembly.
+		if(mb.DeclaringType.Assembly.Equals(type.Assembly))
+		{
+			mb.SetCustomAttribute(ghostTypeAttribute, FreezeDryType(type));
+		}
+		else
+		{
+			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ghostTypeAttribute, new object[] { type });
+			mb.SetCustomAttribute(customAttributeBuilder);
+		}
 	}
 
 	internal static void SetGhostType(FieldBuilder fb, Type type)
@@ -465,8 +495,18 @@ class AttributeHelper
 		{
 			ghostTypeAttribute = typeof(GhostTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
 		}
-		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ghostTypeAttribute, new object[] { type });
-		fb.SetCustomAttribute(customAttributeBuilder);
+		// HACK because SetCustomAttribute(CustomAttributeBuilder) incorrectly always stores the assembly qualified name
+		// we have our own version for when the type lives in the same assembly as the attribute. If we don't do this
+		// ikvmc will have problems accessing this attribute when it uses Assembly.LoadFrom to load an assembly.
+		if(fb.DeclaringType.Assembly.Equals(type.Assembly))
+		{
+			fb.SetCustomAttribute(ghostTypeAttribute, FreezeDryType(type));
+		}
+		else
+		{
+			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ghostTypeAttribute, new object[] { type });
+			fb.SetCustomAttribute(customAttributeBuilder);
+		}
 	}
 
 	internal static void SetUnloadableType(FieldBuilder field, string name)
@@ -1858,7 +1898,8 @@ class DynamicTypeWrapper : TypeWrapper
 				LocalBuilder jnienv = ilGenerator.DeclareLocal(typeof(IntPtr));
 				ilGenerator.Emit(OpCodes.Stloc, jnienv);
 				Label tryBlock = ilGenerator.BeginExceptionBlock();
-				Type retType = m.GetRetType(wrapper.GetClassLoader()).Type;
+				TypeWrapper retTypeWrapper = m.GetRetType(wrapper.GetClassLoader());
+				Type retType = retTypeWrapper.Type;
 				if(!retType.IsValueType && retType != typeof(void))
 				{
 					// this one is for use after we return from "calli"
@@ -1890,10 +1931,14 @@ class DynamicTypeWrapper : TypeWrapper
 				}
 				for(int j = 0; j < args.Length; j++)
 				{
-					if(!args[j].Type.IsValueType)
+					if(!args[j].IsPrimitive)
 					{
 						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 						ilGenerator.Emit(OpCodes.Ldarg, j + add);
+						if(args[j].IsNonPrimitiveValueType)
+						{
+							ilGenerator.Emit(OpCodes.Box, args[j].Type);
+						}
 						ilGenerator.Emit(OpCodes.Call, makeLocalRef);
 						modargs[j + 2] = typeof(IntPtr);
 					}
@@ -1903,15 +1948,22 @@ class DynamicTypeWrapper : TypeWrapper
 					}
 				}
 				ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
-				Type returnType =(retType.IsValueType || retType == typeof(void)) ? retType : typeof(IntPtr);
-				ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, returnType, modargs);
+				ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retTypeWrapper.IsPrimitive) ? retType : typeof(IntPtr), modargs);
 				LocalBuilder retValue = null;
 				if(retType != typeof(void))
 				{
-					if(!retType.IsValueType)
+					if(!retTypeWrapper.IsPrimitive)
 					{
 						ilGenerator.Emit(OpCodes.Call, unwrapLocalRef);
-						ilGenerator.Emit(OpCodes.Castclass, retType);
+						if(retTypeWrapper.IsNonPrimitiveValueType)
+						{
+							ilGenerator.Emit(OpCodes.Unbox, retType);
+							ilGenerator.Emit(OpCodes.Ldobj, retType);
+						}
+						else if(!retTypeWrapper.IsGhost)
+						{
+							ilGenerator.Emit(OpCodes.Castclass, retType);
+						}
 					}
 					retValue = ilGenerator.DeclareLocal(retType);
 					ilGenerator.Emit(OpCodes.Stloc, retValue);
@@ -2248,7 +2300,7 @@ class DynamicTypeWrapper : TypeWrapper
 							{
 								pb = ((ConstructorBuilder)method).DefineParameter(i + 1, ParameterAttributes.None, null);
 							}
-							AttributeHelper.SetGhostType(pb, argTypeWrappers[i].Type);
+							AttributeHelper.SetGhostType(typeBuilder, pb, argTypeWrappers[i].Type);
 						}
 					}
 				}
@@ -2382,7 +2434,7 @@ class DynamicTypeWrapper : TypeWrapper
 							{
 								pb = mb.DefineParameter(i + 1, ParameterAttributes.None, null);
 							}
-							AttributeHelper.SetGhostType(pb, argTypeWrappers[i].Type);
+							AttributeHelper.SetGhostType(typeBuilder, pb, argTypeWrappers[i].Type);
 						}
 					}
 					if(retTypeWrapper.IsGhost)
