@@ -2844,7 +2844,8 @@ namespace IKVM.Runtime
 				wrapper.Finish();
 				for(int i = 0; i < nMethods; i++)
 				{
-					FieldInfo fi = wrapper.TypeAsTBD.GetField("jniptr/" + StringFromUTF8(methods[i].name) + StringFromUTF8(methods[i].signature).Replace('/', '.'), BindingFlags.Static | BindingFlags.NonPublic);
+					// TODO this won't work when we're putting the JNI methods in jniproxy.dll
+					FieldInfo fi = wrapper.TypeAsTBD.GetField(JNI.METHOD_PTR_FIELD_PREFIX + StringFromUTF8(methods[i].name) + StringFromUTF8(methods[i].signature).Replace('/', '.') + ">", BindingFlags.Static | BindingFlags.NonPublic);
 					if(fi == null)
 					{
 						SetPendingException(pEnv, JavaException.NoSuchMethodError(StringFromUTF8(methods[i].name)));
@@ -2867,6 +2868,7 @@ namespace IKVM.Runtime
 			{
 				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
 				wrapper.Finish();
+				// TODO this won't work when we're putting the JNI methods in jniproxy.dll
 				foreach(FieldInfo fi in wrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.NonPublic))
 				{
 					if(fi.Name.StartsWith(JNI.METHOD_PTR_FIELD_PREFIX))
