@@ -76,6 +76,7 @@ class InstructionState
 {
 	private TypeWrapper[] stack;
 	private int stackSize;
+	private int stackEnd;
 	private TypeWrapper[] locals;
 	private Hashtable[] localStoreSites;
 	private ArrayList subroutines;
@@ -83,10 +84,11 @@ class InstructionState
 	private bool unitializedThis;
 	internal bool changed = true;
 
-	private InstructionState(TypeWrapper[] stack, int stackSize, TypeWrapper[] locals, Hashtable[] localStoreSites, ArrayList subroutines, int callsites, bool unitializedThis)
+	private InstructionState(TypeWrapper[] stack, int stackSize, int stackEnd, TypeWrapper[] locals, Hashtable[] localStoreSites, ArrayList subroutines, int callsites, bool unitializedThis)
 	{
 		this.stack = stack;
 		this.stackSize = stackSize;
+		this.stackEnd = stackEnd;
 		this.locals = locals;
 		this.localStoreSites = localStoreSites;
 		this.subroutines = subroutines;
@@ -97,19 +99,21 @@ class InstructionState
 	internal InstructionState(int maxLocals, int maxStack)
 	{
 		this.stack = new TypeWrapper[maxStack];
+		this.stackEnd = maxStack;
 		this.locals = new TypeWrapper[maxLocals];
 		this.localStoreSites = new Hashtable[maxLocals];
 	}
 
 	internal InstructionState Copy()
 	{
-		return new InstructionState((TypeWrapper[])stack.Clone(), stackSize, (TypeWrapper[])locals.Clone(), (Hashtable[])localStoreSites.Clone(), CopySubroutines(subroutines), callsites, unitializedThis);
+		return new InstructionState((TypeWrapper[])stack.Clone(), stackSize, stackEnd, (TypeWrapper[])locals.Clone(), (Hashtable[])localStoreSites.Clone(), CopySubroutines(subroutines), callsites, unitializedThis);
 	}
 
 	internal void CopyTo(InstructionState target)
 	{
 		stack.CopyTo(target.stack, 0);
 		target.stackSize = stackSize;
+		target.stackEnd = stackEnd;
 		locals.CopyTo(target.locals, 0);
 		localStoreSites.CopyTo(target.localStoreSites, 0);
 		target.subroutines = CopySubroutines(subroutines);
@@ -120,7 +124,7 @@ class InstructionState
 
 	internal InstructionState CopyLocalsAndSubroutines()
 	{
-		return new InstructionState(new TypeWrapper[stack.Length], 0, (TypeWrapper[])locals.Clone(), (Hashtable[])localStoreSites.Clone(), CopySubroutines(subroutines), callsites, unitializedThis);
+		return new InstructionState(new TypeWrapper[stack.Length], 0, stack.Length, (TypeWrapper[])locals.Clone(), (Hashtable[])localStoreSites.Clone(), CopySubroutines(subroutines), callsites, unitializedThis);
 	}
 
 	private ArrayList CopySubroutines(ArrayList l)
@@ -210,9 +214,11 @@ class InstructionState
 			}
 			return s2;
 		}
-		if(s1.stackSize != s2.stackSize)
+		if(s1.stackSize != s2.stackSize || s1.stackEnd != s2.stackEnd)
 		{
-			throw new VerifyError(string.Format("Inconsistent stack height: {0} != {1}", s1.stackSize, s2.stackSize));
+			throw new VerifyError(string.Format("Inconsistent stack height: {0} != {1}",
+				s1.stackSize + s1.stack.Length - s1.stackEnd,
+				s2.stackSize + s2.stack.Length - s2.stackEnd));
 		}
 		InstructionState s = s1.Copy();
 		s.changed = s1.changed;
@@ -799,7 +805,12 @@ class InstructionState
 		{
 			throw new VerifyError("Unable to pop operand off an empty stack");
 		}
-		return stack[--stackSize];
+		TypeWrapper type = stack[--stackSize];
+		if(type.IsWidePrimitive)
+		{
+			stackEnd++;
+		}
+		return type;
 	}
 
 	// NOTE this can *not* be used to pop double or long
@@ -854,7 +865,11 @@ class InstructionState
 
 	private void PushHelper(TypeWrapper type)
 	{
-		if(stackSize == stack.Length)
+		if(type.IsWidePrimitive)
+		{
+			stackEnd--;
+		}
+		if(stackSize >= stackEnd)
 		{
 			throw new VerifyError("Stack overflow");
 		}
@@ -1156,7 +1171,7 @@ class MethodAnalyzer
 				int start = method.PcIndexMap[method.ExceptionTable[i].start_pc];
 				int end = method.PcIndexMap[method.ExceptionTable[i].end_pc];
 				int handler = method.PcIndexMap[method.ExceptionTable[i].handler_pc];
-				if((start > end && end != -1) || start == -1 ||
+				if((start >= end && end != -1) || start == -1 ||
 					(end == -1 && method.ExceptionTable[i].end_pc != end_pc) ||
 					handler == -1)
 				{
