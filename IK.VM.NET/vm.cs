@@ -67,6 +67,18 @@ public class JVM
 		}
 	}
 
+	public static bool CompileInnerClassesAsNestedTypes
+	{
+		get
+		{
+			// NOTE at the moment, we always do this when compiling statically
+			// note that it makes no sense to turn this on when we're dynamically
+			// running Java code, it only makes sense to turn it off when statically
+			// compiling code that is never used as a library.
+			return IsStaticCompiler;
+		}
+	}
+
 	public static bool LogClassLoadFailures
 	{
 		get

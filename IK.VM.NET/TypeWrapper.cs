@@ -1306,8 +1306,9 @@ class DynamicTypeWrapper : TypeWrapper
 				typeAttribs |= TypeAttributes.Sealed;
 			}
 			TypeBuilder outer = null;
-			// only if we're statically compiling, we compile inner classes as nested types
-			if(JVM.IsStaticCompiler)
+			// only if requested, we compile inner classes as nested types, because it has a higher cost
+			// and doesn't buy us anything, unless we're compiling a library that could be used from C# (e.g.)
+			if(JVM.CompileInnerClassesAsNestedTypes)
 			{
 				if(f.OuterClass != null)
 				{
@@ -1386,6 +1387,20 @@ class DynamicTypeWrapper : TypeWrapper
 			if(outerClassWrapper != null)
 			{
 				outerClassWrapper.Finish();
+			}
+			// NOTE there is a bug in the CLR (.NET 1.0 & 1.1 [1.2 is not yet available]) that
+			// causes the AppDomain.TypeResolve event to receive the incorrect type name for nested types.
+			// The Name in the ResolveEventArgs contains only the nested type name, not the full type name,
+			// for example, if the type being resolved is "MyOuterType+MyInnerType", then the event only
+			// receives "MyInnerType" as the name. Since we only compile inner classes as nested types
+			// when we're statically compiling, we can only run into this bug when we're statically compiling.
+			// NOTE To work around this bug, we have to make sure that all types that are going to be
+			// required in finished form, are finished explicitly here. It isn't clear what other types are
+			// required to be finished. I instrumented a static compilation of classpath.dll and this
+			// turned up no other cases of the TypeResolve event firing.
+			for(int i = 0; i < wrapper.Interfaces.Length; i++)
+			{
+				wrapper.Interfaces[i].Finish();
 			}
 			// make sure all classes are loaded, before we start finishing the type. During finishing, we
 			// may not run any Java code, because that might result in a request to finish the type that we
@@ -1667,7 +1682,7 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 			catch(Exception x)
 			{
-				Console.WriteLine("****** Exception during finishing ******");
+				Console.WriteLine("****** Exception during finishing of {0} ******", wrapper.Name);
 				Console.WriteLine(x);
 				// we bail out, because there is not much chance that we can continue to run after this
 				Environment.Exit(1);
