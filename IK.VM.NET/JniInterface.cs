@@ -78,7 +78,6 @@ public sealed class JniHelper
 		}
 	}
 
-	[StackTraceInfo(Hidden = true)]
 	public static object InvokeMethod(IntPtr cookie, object obj, object[] args, bool nonVirtual)
 	{
 		return MethodWrapper.FromCookie(cookie).Invoke(obj, args, nonVirtual);

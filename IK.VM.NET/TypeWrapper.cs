@@ -378,27 +378,21 @@ class AttributeHelper
 
 	internal static void SetThrowsAttribute(MethodBase mb, string[] exceptions)
 	{
-		if(exceptions != null)
+		if(exceptions != null && exceptions.Length != 0)
 		{
 			if(throwsAttribute == null)
 			{
-				throwsAttribute = typeof(ThrowsAttribute).GetConstructor(new Type[] { typeof(string) });
+				throwsAttribute = typeof(ThrowsAttribute).GetConstructor(new Type[] { typeof(string[]) });
 			}
 			if(mb is MethodBuilder)
 			{
 				MethodBuilder method = (MethodBuilder)mb;
-				for(int i = 0; i < exceptions.Length; i++)
-				{
-					method.SetCustomAttribute(new CustomAttributeBuilder(throwsAttribute, new object[] { exceptions[i] }));
-				}
+				method.SetCustomAttribute(new CustomAttributeBuilder(throwsAttribute, new object[] { exceptions }));
 			}
 			else
 			{
 				ConstructorBuilder constructor = (ConstructorBuilder)mb;
-				for(int i = 0; i < exceptions.Length; i++)
-				{
-					constructor.SetCustomAttribute(new CustomAttributeBuilder(throwsAttribute, new object[] { exceptions[i] }));
-				}
+				constructor.SetCustomAttribute(new CustomAttributeBuilder(throwsAttribute, new object[] { exceptions }));
 			}
 		}
 	}
@@ -465,25 +459,20 @@ class AttributeHelper
 		return mi.IsDefined(typeof(HideFromReflectionAttribute), false);
 	}
 
-	internal static void ImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper ifaceWrapper)
+	internal static void SetImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper[] ifaceWrappers)
 	{
-		// we always want the "clean" type in the attribute, so for ghosts we use the wrapping value type instead
-		// of the nested interface
-		Type iface = ifaceWrapper.IsGhost ? ifaceWrapper.TypeAsTBD : ifaceWrapper.TypeAsBaseType;
-		if(implementsAttribute == null)
+		if(ifaceWrappers != null && ifaceWrappers.Length != 0)
 		{
-			implementsAttribute = typeof(ImplementsAttribute).GetConstructor(new Type[] { typeof(Type) });
-		}
-		// FXBUG because SetCustomAttribute(CustomAttributeBuilder) incorrectly always stores the assembly qualified name
-		// we have our own version for when the type lives in the same assembly as the attribute. If we don't do this
-		// the .NET runtime will have problems resolving this type when the assembly is loaded in the LoadFrom context.
-		if(typeBuilder.Assembly.Equals(iface.Assembly))
-		{
-			typeBuilder.SetCustomAttribute(implementsAttribute, FreezeDryType(iface));
-		}
-		else
-		{
-			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(implementsAttribute, new object[] { iface }));
+			string[] interfaces = new string[ifaceWrappers.Length];
+			for(int i = 0; i < interfaces.Length; i++)
+			{
+				interfaces[i] = ifaceWrappers[i].Name;
+			}
+			if(implementsAttribute == null)
+			{
+				implementsAttribute = typeof(ImplementsAttribute).GetConstructor(new Type[] { typeof(string[]) });
+			}
+			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(implementsAttribute, new object[] { interfaces }));
 		}
 	}
 
@@ -2234,10 +2223,17 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				if(f.OuterClass != null)
 				{
-					outerClassWrapper = wrapper.GetClassLoader().LoadClassByDottedName(f.OuterClass.Name);
-					if(outerClassWrapper is DynamicTypeWrapper)
+					if(!CheckInnerOuterNames(f.Name, f.OuterClass.Name))
 					{
-						outer = outerClassWrapper.TypeAsBuilder;
+						Tracer.Warning(Tracer.Compiler, "Incorrect InnerClasses attribute on {0}", f.Name);
+					}
+					else
+					{
+						outerClassWrapper = wrapper.GetClassLoader().LoadClassByDottedName(f.OuterClass.Name);
+						if(outerClassWrapper is DynamicTypeWrapper)
+						{
+							outer = outerClassWrapper.TypeAsBuilder;
+						}
 					}
 				}
 			}
@@ -2311,20 +2307,23 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				// NOTE we're using TypeAsBaseType for the interfaces!
 				typeBuilder.AddInterfaceImplementation(interfaces[i].TypeAsBaseType);
-				AttributeHelper.ImplementsAttribute(typeBuilder, interfaces[i]);
 			}
+			AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
 			if(JVM.IsStaticCompiler && classFile.DeprecatedAttribute)
 			{
 				AttributeHelper.SetDeprecatedAttribute(typeBuilder);
 			}
 		}
 
+		private static bool CheckInnerOuterNames(string inner, string outer)
+		{
+			// do some sanity checks on the inner/outer class names
+			return inner.Length > outer.Length + 1 && inner[outer.Length] == '$' && inner.IndexOf('$', outer.Length + 1) == -1;
+		}
+
 		private static string GetInnerClassName(string outer, string inner)
 		{
-			Debug.Assert(inner.Length > outer.Length + 1);
-			Debug.Assert(inner[outer.Length] == '$');
-			Debug.Assert(inner.IndexOf('$', outer.Length + 1) == -1);
-
+			Debug.Assert(CheckInnerOuterNames(inner, outer));
 			return inner.Substring(outer.Length + 1);
 		}
 
@@ -2906,6 +2905,7 @@ class DynamicTypeWrapper : TypeWrapper
 						if(interfaces[i].IsGhost)
 						{
 							MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, interfaces[i].TypeAsParameterType, new Type[] { wrapper.TypeAsParameterType });
+							AttributeHelper.HideFromReflection(mb);
 							ILGenerator ilgen = mb.GetILGenerator();
 							LocalBuilder local = ilgen.DeclareLocal(interfaces[i].TypeAsParameterType);
 							ilgen.Emit(OpCodes.Ldloca, local);
@@ -3455,7 +3455,7 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					if(!m.IsPrivate && !m.IsStatic)
 					{
-						attribs |= MethodAttributes.Virtual;
+						attribs |= MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
 					}
 					string name = m.Name;
 					MethodDescriptor md = new MethodDescriptor(wrapper.GetClassLoader(), m);
@@ -4087,13 +4087,20 @@ class CompiledTypeWrapper : LazyTypeWrapper
 				// reports the interfaces *directly* implemented by the type, not the inherited
 				// interfaces. This is significant for serialVersionUID calculation (for example).
 				object[] attribs = type.GetCustomAttributes(typeof(ImplementsAttribute), false);
-				ArrayList wrappers = new ArrayList();
-				for(int i = 0; i < attribs.Length; i++)
+				if(attribs.Length == 1)
 				{
-					ImplementsAttribute impl = (ImplementsAttribute)attribs[i];
-					wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(impl.Type));
+					string[] interfaceNames = ((ImplementsAttribute)attribs[0]).Interfaces;
+					TypeWrapper[] interfaceWrappers = new TypeWrapper[interfaceNames.Length];
+					for(int i = 0; i < interfaceWrappers.Length; i++)
+					{
+						interfaceWrappers[i] = GetClassLoader().LoadClassByDottedName(interfaceNames[i]);
+					}
+					this.interfaces = interfaceWrappers;
 				}
-				interfaces = (TypeWrapper[])wrappers.ToArray(typeof(TypeWrapper));
+				else
+				{
+					interfaces = TypeWrapper.EmptyArray;
+				}
 			}
 			return interfaces;
 		}
@@ -4802,7 +4809,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 
 			// HACK private interface implementations need to be published as well
 			// (otherwise the type appears abstract while it isn't)
-			if(!type.IsSealed && !type.IsInterface)
+			if(!type.IsInterface)
 			{
 				Type[] interfaces = type.GetInterfaces();
 				for(int i = 0; i < interfaces.Length; i++)

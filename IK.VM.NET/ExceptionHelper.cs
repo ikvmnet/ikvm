@@ -57,7 +57,7 @@ namespace NativeCode.java.lang
 	}
 }
 
-public class ExceptionHelper
+class ExceptionHelper
 {
 	static MethodInfo mapExceptionFastMethod;
 	static MethodInfo printStackTraceMethod;
@@ -84,7 +84,7 @@ public class ExceptionHelper
 	}
 
 	// HACK this is used in ClassFile.cs and MemberWrapper.cs
-	public static Exception MapExceptionFast(Exception x)
+	internal static Exception MapExceptionFast(Exception x)
 	{
 		try
 		{

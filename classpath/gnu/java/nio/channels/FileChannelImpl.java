@@ -104,7 +104,7 @@ public final class FileChannelImpl extends FileChannel
     private Stream open (String path, int mode) throws FileNotFoundException
     {
 	if(stream != null)
-	    throw new InternalError("FileDescriptor already open");
+	    throw new InternalError("FileChannelImpl already open");
 	if ((path == null) || path.equals(""))
 	    throw new IllegalArgumentException("Path cannot be null");
 	try
@@ -139,6 +139,7 @@ public final class FileChannelImpl extends FileChannel
 	    if(false) throw new cli.System.Security.SecurityException();
 	    if(false) throw new cli.System.UnauthorizedAccessException();
 	    if(false) throw new cli.System.ArgumentException();
+	    if(false) throw new cli.System.NotSupportedException();
 	    return cli.System.IO.File.Open(demanglePath(path), FileMode.wrap(fileMode), FileAccess.wrap(fileAccess), FileShare.wrap(FileShare.ReadWrite));
 	}
 	catch(cli.System.Security.SecurityException x1)
@@ -158,7 +159,10 @@ public final class FileChannelImpl extends FileChannel
 	{
 	    throw new FileNotFoundException(x4.getMessage());
 	}
-	// TODO map al the other exceptions as well...
+	catch(cli.System.NotSupportedException x5)
+	{
+	    throw new FileNotFoundException(x5.getMessage());
+	}
     }
 
     private static String demanglePath(String path)
@@ -170,12 +174,6 @@ public final class FileChannelImpl extends FileChannel
 	    path = path.substring(1);
 	}
 	return path;
-    }
-
-    /** Attach to an already-opened file.  */
-    private FileChannelImpl (int desc, int mode)
-    {
-	this.mode = mode;
     }
 
     public int available () throws IOException

@@ -71,41 +71,43 @@ namespace OpenSystem.Java
 		}
 	}
 
-	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method, AllowMultiple = true)]
+	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method)]
 	public sealed class ThrowsAttribute : Attribute
 	{
-		private string className;
+		private string[] classes;
 
-		public ThrowsAttribute(string className)
+		// NOTE this is not CLS compliant, so maybe we should have a couple of overloads
+		public ThrowsAttribute(string[] classes)
 		{
-			this.className = className;
+			this.classes = classes;
 		}
 
-		// dotted Java class name (e.g. java.lang.Throwable)
-		public string ClassName
+		// dotted Java class names (e.g. java.lang.Throwable)
+		public string[] Classes
 		{
 			get
 			{
-				return className;
+				return classes;
 			}
 		}
 	}
 
-	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = true)]
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
 	public sealed class ImplementsAttribute : Attribute
 	{
-		private Type type;
+		private string[] interfaces;
 
-		public ImplementsAttribute(Type type)
+		// NOTE this is not CLS compliant, so maybe we should have a couple of overloads
+		public ImplementsAttribute(string[] interfaces)
 		{
-			this.type = type;
+			this.interfaces = interfaces;
 		}
 
-		public Type Type
+		public string[] Interfaces
 		{
 			get
 			{
-				return type;
+				return interfaces;
 			}
 		}
 	}

@@ -171,7 +171,6 @@ public class Starter
 		}
 	}
 
-	[StackTraceInfo(Hidden = true, EatFrames = 1)]
 	[STAThread]	// NOTE this is here because otherwise SWT's RegisterDragDrop (a COM thing) doesn't work
 	static int Main(string[] args)
 	{

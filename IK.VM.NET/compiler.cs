@@ -167,28 +167,21 @@ class Compiler
 			}
 		}
 
-		ArrayList ar = new ArrayList(m.ExceptionTable);
-		//		Console.WriteLine(m.Method.ClassFile.Name + "." + m.Method.Name + m.Method.Signature);
-		//		Console.WriteLine("before processing:");
-		//		foreach(ExceptionTableEntry e in ar)
-		//		{
-		//			Console.WriteLine("{0} to {1} handler {2}", e.start_pc, e.end_pc, e.handler_pc);
-		//		}
-		// TODO it's very bad practice to mess with ExceptionTableEntrys that are owned by the Method, yet we
-		// do that here, should be changed to use our own ETE class (which should also contain the ordinal, instead
+		// NOTE we're going to be messing with ExceptionTableEntrys that are owned by the Method, this is very bad practice,
+		// this code should probably be changed to use our own ETE class (which should also contain the ordinal, instead
 		// of the one in ClassFile.cs)
-		// OPTIMIZE there must be a more efficient algorithm to do this...
-		// TODO we should ensure that exception blocks and handlers start and end at instruction boundaries (note: wide prefix)
+
+		ArrayList ar = new ArrayList(m.ExceptionTable);
 		restart:
 			for(int i = 0; i < ar.Count; i++)
 			{
 				ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
-				for(int j = i + 1; j < ar.Count; j++)
+				for(int j = 0; j < ar.Count; j++)
 				{
 					ExceptionTableEntry ej = (ExceptionTableEntry)ar[j];
-					if(ei.start_pc <= ej.start_pc && ei.end_pc > ej.start_pc)
+					if(ei.start_pc <= ej.start_pc && ej.start_pc < ei.end_pc)
 					{
-						// try1.j
+						// 0006/test.j
 						if(ej.end_pc > ei.end_pc)
 						{
 							ExceptionTableEntry emi = new ExceptionTableEntry();
@@ -207,7 +200,8 @@ class Compiler
 							ar.Insert(i + 1, emi);
 							goto restart;
 						}
-						else if(ej.end_pc < ei.end_pc)	// try2.j
+						// 0007/test.j
+						else if(j > i && ej.end_pc < ei.end_pc)
 						{
 							ExceptionTableEntry emi = new ExceptionTableEntry();
 							emi.start_pc = ej.start_pc;
@@ -287,7 +281,7 @@ class Compiler
 							for(int k = -1; k < m.Instructions[j].Values.Length; k++)
 							{
 								int targetPC = m.Instructions[j].PC + (k == -1 ? m.Instructions[j].DefaultOffset : m.Instructions[j].TargetOffsets[k]);
-								if(targetPC > ei.start_pc && targetPC < ei.end_pc)
+								if(ei.start_pc < targetPC && targetPC < ei.end_pc)
 								{
 									ExceptionTableEntry en = new ExceptionTableEntry();
 									en.catch_type = ei.catch_type;
@@ -320,7 +314,7 @@ class Compiler
 						case NormalizedByteCode.__jsr:
 						{
 							int targetPC = m.Instructions[j].PC + m.Instructions[j].Arg1;
-							if(targetPC > ei.start_pc && targetPC < ei.end_pc)
+							if(ei.start_pc < targetPC && targetPC < ei.end_pc)
 							{
 								ExceptionTableEntry en = new ExceptionTableEntry();
 								en.catch_type = ei.catch_type;
@@ -344,14 +338,14 @@ class Compiler
 			for(int j = 0; j < ar.Count; j++)
 			{
 				ExceptionTableEntry ej = (ExceptionTableEntry)ar[j];
-				if(ej.handler_pc > ei.start_pc && ej.handler_pc < ei.end_pc)
+				if(ei.start_pc < ej.handler_pc && ej.handler_pc < ei.end_pc)
 				{
 					ExceptionTableEntry en = new ExceptionTableEntry();
 					en.catch_type = ei.catch_type;
 					en.handler_pc = ei.handler_pc;
-					en.start_pc = (ushort)ej.handler_pc;
+					en.start_pc = ej.handler_pc;
 					en.end_pc = ei.end_pc;
-					ei.end_pc = (ushort)ej.handler_pc;
+					ei.end_pc = ej.handler_pc;
 					ar.Insert(i + 1, en);
 					goto restart_jsr;
 				}

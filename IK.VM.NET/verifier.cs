@@ -1142,6 +1142,8 @@ class MethodAnalyzer
 		Hashtable returnAddressTypes = new Hashtable();
 		Hashtable newTypes = new Hashtable();
 
+		// TODO we should ensure that exception blocks and handlers start and end at instruction boundaries (note: wide prefix)
+
 		// start by computing the initial state, the stack is empty and the locals contain the arguments
 		state[0] = new InstructionState(method.MaxLocals, method.MaxStack);
 		int firstNonArgLocalIndex = 0;

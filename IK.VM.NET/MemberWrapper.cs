@@ -359,12 +359,10 @@ class MethodWrapper : MemberWrapper
 		if(originalMethod != null && !(originalMethod is MethodBuilder))
 		{
 			object[] attributes = originalMethod.GetCustomAttributes(typeof(ThrowsAttribute), false);
-			string[] exceptions = new string[attributes.Length];
-			for(int i = 0; i < exceptions.Length; i++)
+			if(attributes.Length == 1)
 			{
-				exceptions[i] = ((ThrowsAttribute)attributes[i]).ClassName;
+				return ((ThrowsAttribute)attributes[0]).Classes;
 			}
-			return exceptions;
 		}
 		return new string[0];
 	}

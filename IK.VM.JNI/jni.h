@@ -119,7 +119,6 @@ public:
 	{
 		return JniHelper::GetMethodArgList(cookie);
 	}
-	[StackTraceInfo(Hidden = true)]
 	static Object* InvokeMethod(IntPtr cookie, Object* obj, Object* args[], bool nonVirtual)
 	{
 		return JniHelper::InvokeMethod(cookie, obj, args, nonVirtual);

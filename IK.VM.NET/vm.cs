@@ -180,9 +180,9 @@ public class JVM
 			}
 			name.Version = new Version(version);
 			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, assemblyDir);
-			CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeof(JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 			ModuleBuilder moduleBuilder;
 			moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, JVM.Debug);
+			CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeof(JavaModuleAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { Assembly.GetExecutingAssembly().GetName().Version.ToString() });
 			moduleBuilder.SetCustomAttribute(ikvmModuleAttr);
 			if(JVM.Debug)
 			{
@@ -597,7 +597,7 @@ public class JVM
 						}
 						else if((m.Modifiers & MapXml.MapModifiers.Private) == 0 && (m.Modifiers & MapXml.MapModifiers.Final) == 0)
 						{
-							attr |= MethodAttributes.Virtual | MethodAttributes.NewSlot;
+							attr |= MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
 							if(typeWrapper.BaseTypeWrapper != null)
 							{
 								RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(md, true) as RemappedMethodWrapper;
@@ -964,8 +964,8 @@ public class JVM
 						{
 							tb.AddInterfaceImplementation(ifaceTypeWrapper.TypeAsBaseType);
 						}
-						AttributeHelper.ImplementsAttribute(tb, ifaceTypeWrapper);
 					}
+					AttributeHelper.SetImplementsAttribute(tb, interfaceWrappers);
 				}
 				else
 				{

@@ -110,6 +110,20 @@ public sealed class RemappedTypeAttribute : Attribute
 [AttributeUsage(AttributeTargets.Module)]
 public sealed class JavaModuleAttribute : Attribute
 {
+	private string version;
+
+	public JavaModuleAttribute(string version)
+	{
+		this.version = version;
+	}
+
+	public Version Version
+	{
+		get
+		{
+			return new Version(version);
+		}
+	}
 }
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Assembly)]
@@ -139,61 +153,4 @@ public sealed class UnloadableTypeAttribute : Attribute
 [AttributeUsage(AttributeTargets.Struct)]
 public sealed class GhostInterfaceAttribute : Attribute
 {
-}
-
-[AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Property | AttributeTargets.Class)]
-public sealed class StackTraceInfoAttribute : Attribute
-{
-	private bool hidden;
-	private string className;
-	private bool truncate;
-	private int eatFrames;
-
-	public bool Hidden
-	{
-		get
-		{
-			return hidden;
-		}
-		set
-		{
-			hidden = value;
-		}
-	}
-
-	public int EatFrames
-	{
-		get
-		{
-			return eatFrames;
-		}
-		set
-		{
-			eatFrames = value;
-		}
-	}
-
-	public string Class
-	{
-		get
-		{
-			return className;
-		}
-		set
-		{
-			className = value;
-		}
-	}
-
-	public bool Truncate
-	{
-		get
-		{
-			return truncate;
-		}
-		set
-		{
-			truncate = value;
-		}
-	}
 }
