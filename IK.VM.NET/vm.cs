@@ -68,7 +68,7 @@ public class JVM
 	{
 		get
 		{
-			return true;
+			return false;
 		}
 	}
 
@@ -173,7 +173,13 @@ public class JVM
 		for(int i = 0; i < classes.Length; i++)
 		{
 			ClassFile f = new ClassFile(classes[i], 0, classes[i].Length, null);
-			h[f.Name.Replace('/', '.')] = f;
+			string name = f.Name.Replace('/', '.');
+			if(h.ContainsKey(name))
+			{
+				Console.Error.WriteLine("Duplicate class name: {0}", name);
+				return;
+			}
+			h[name] = f;
 		}
 		Console.WriteLine("Constructing compiler");
 		CompilerClassLoader loader = new CompilerClassLoader(path, assembly, h);
@@ -187,8 +193,16 @@ public class JVM
 		Console.WriteLine("Compiling class files (1)");
 		foreach(string s in h.Keys)
 		{
-			TypeWrapper wrapper = loader.LoadClassByDottedName(s);
-			if(s == mainClass)
+			TypeWrapper wrapper = null;
+			try
+			{
+				wrapper = loader.LoadClassByDottedName(s);
+			}
+			catch(Exception x)
+			{
+				Console.Error.WriteLine("Loading class {0} failed due to: {1}", s, x.Message);
+			}
+			if(s == mainClass && wrapper != null)
 			{
 				MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(loader, "main", "([Ljava/lang/String;)V"), false);
 				if(mw == null)
