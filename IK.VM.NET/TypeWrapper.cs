@@ -469,7 +469,7 @@ abstract class TypeWrapper
 		}
 		else
 		{
-			if(!wrapper.IsAbstract || true)
+			if(!wrapper.IsAbstract)
 			{
 				// the type doesn't implement the interface method and isn't abstract either. The JVM allows this, but the CLR doesn't,
 				// so we have to create a stub method that throws an AbstractMethodError
@@ -523,6 +523,10 @@ abstract class TypeWrapper
 				//}
 				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract, md.RetType, md.ArgTypes);
 				mb.SetCustomAttribute(methodFlags);
+				// NOTE because we are introducing a Miranda method, we must also update the corresponding wrapper.
+				// If we don't do this, subclasses might think they are introducing a new method, instead of overriding
+				// this one.
+				wrapper.AddMethod(MethodWrapper.Create(wrapper, md, mb, mb, Modifiers.Public | Modifiers.Abstract));
 			}
 		}
 	}
@@ -771,6 +775,12 @@ class DynamicTypeWrapper : TypeWrapper
 
 		public override DynamicImpl Finish()
 		{
+			if(baseWrapper != null)
+			{
+				// make sure that the base type is already finished (because we need any Miranda methods it
+				// might introduce to be visible)
+				baseWrapper.Finish();
+			}
 			if(finishing)
 			{
 				throw new InvalidOperationException("Finishing already in progress, for type " + classFile.Name);
@@ -1362,6 +1372,9 @@ class DynamicTypeWrapper : TypeWrapper
 					}
 					if(baseMethod == null)
 					{
+						// we need set NewSlot here, to prevent accidentally overriding methods
+						// (for example, if a Java class has a method "boolean Equals(object)", we don't want that method
+						// to override System.Object.Equals)
 						attribs |= MethodAttributes.NewSlot;
 					}
 				}
@@ -1377,20 +1390,6 @@ class DynamicTypeWrapper : TypeWrapper
 					// assert that the method we're overriding is in fact virtual and not final!
 					Debug.Assert(baseMethod.IsVirtual && !baseMethod.IsFinal);
 					typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod);
-				}
-				if(!wrapper.IsAbstract && m.IsPublic && !m.IsStatic)
-				{
-					// TODO this must be sped up...
-					// TODO process interfaces implemented by base classes (and interfaces implemented by interfaces)
-					foreach(TypeWrapper ifw in wrapper.BaseTypeWrapper.Interfaces)
-					{
-						MethodWrapper mw = ifw.GetMethodWrapper(md, false);
-						if(mw != null)
-						{
-							// TODO don't add explicit method override, unless it is required
-							typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
-						}
-					}
 				}
 			}
 			methods[index] = MethodWrapper.Create(wrapper, new MethodDescriptor(wrapper.GetClassLoader(), m.Name, m.Signature), method, method, m.Modifiers);
