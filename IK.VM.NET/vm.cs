@@ -68,7 +68,7 @@ public class JVM
 	{
 		get
 		{
-			return false;
+			return true;
 		}
 	}
 
