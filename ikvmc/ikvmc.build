@@ -7,7 +7,7 @@
             </sources>
             <references>
                 <includes name="../bin/ik.vm.net.dll" asis="true" />
-                <includes name="../bin/SharpZipLib.dll" asis="true" />
+                <includes name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
             </references>
         </csc>
     </target>

@@ -333,7 +333,7 @@ public class JVM
 				MethodWrapper mw = tw.GetMethodWrapper(redir, false);
 				if(mw == null)
 				{
-					throw new InvalidOperationException();
+					throw new InvalidOperationException("Missing redirect method: " + tw.Name + "." + redir.Name + redir.Signature);
 				}
 				mw.EmitCall.Emit(ilgen);
 			}
@@ -349,7 +349,7 @@ public class JVM
 		private class RemapperTypeWrapper : TypeWrapper
 		{
 			private TypeBuilder typeBuilder;
-			private Type equivalencyType;
+			private Type shadowType;
 			private MapXml.Class classDef;
 			private TypeWrapper[] interfaceWrappers;
 
@@ -381,9 +381,9 @@ public class JVM
 			{
 				classDef = c;
 				bool baseIsSealed = false;
-				equivalencyType = Type.GetType(c.Type, true);
-				classLoader.SetRemappedType(equivalencyType, this);
-				Type baseType = equivalencyType;
+				shadowType = Type.GetType(c.Shadows, true);
+				classLoader.SetRemappedType(shadowType, this);
+				Type baseType = shadowType;
 				Type baseInterface = null;
 				if(baseType.IsInterface)
 				{
@@ -425,17 +425,17 @@ public class JVM
 					AttributeHelper.SetModifiers(typeBuilder, (Modifiers)c.Modifiers);
 				}
 
-				if(!c.OneWay)
+				if(c.scope == MapXml.Scope.Public)
 				{
 					// FXBUG we would like to emit an attribute with a Type argument here, but that doesn't work because
 					// of a bug in SetCustomAttribute that causes type arguments to be serialized incorrectly (if the type
 					// is in the same assembly). Normally we use AttributeHelper.FreezeDry to get around this, but that doesn't
 					// work in this case (to attribute is emitted at all). So we work around by emitting a string instead
 					ConstructorInfo remappedClassAttribute = typeof(RemappedClassAttribute).GetConstructor(new Type[] { typeof(string), typeof(Type) });
-					classLoader.assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedClassAttribute, new object[] { name, equivalencyType }));
+					classLoader.assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedClassAttribute, new object[] { name, shadowType }));
 
 					ConstructorInfo remappedTypeAttribute = typeof(RemappedTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
-					typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedTypeAttribute, new object[] { equivalencyType }));
+					typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedTypeAttribute, new object[] { shadowType }));
 					AttributeHelper.HideFromReflection(typeBuilder);
 				}
 
@@ -497,7 +497,7 @@ public class JVM
 					this.cbHelper = cbHelper;
 
 					this.EmitCallvirt = CodeEmitter.InternalError;
-					if(typeWrapper.equivalencyType.IsSealed)
+					if(typeWrapper.shadowType.IsSealed)
 					{
 						this.EmitCall = CodeEmitter.InternalError;
 						this.EmitNewobj = CodeEmitter.Create(OpCodes.Call, cbHelper);
@@ -526,9 +526,9 @@ public class JVM
 					MethodDescriptor md = MethodDescriptor.FromNameSig(typeWrapper.GetClassLoader(), "<init>", m.Sig);
 					Type[] paramTypes = md.ArgTypesForDefineMethod;
 
-					if(typeWrapper.equivalencyType.IsSealed)
+					if(typeWrapper.shadowType.IsSealed)
 					{
-						cbHelper = typeWrapper.typeBuilder.DefineMethod("newhelper", attr | MethodAttributes.Static, CallingConventions.Standard, typeWrapper.equivalencyType, paramTypes);
+						cbHelper = typeWrapper.typeBuilder.DefineMethod("newhelper", attr | MethodAttributes.Static, CallingConventions.Standard, typeWrapper.shadowType, paramTypes);
 						AddDeclaredExceptions(cbHelper, m.throws);
 					}
 					else
@@ -549,7 +549,7 @@ public class JVM
 						{
 							throw new InvalidOperationException(typeWrapper.Name + "." + m.Name + m.Sig);
 						}
-						MethodInfo interfaceMethod = typeWrapper.equivalencyType.GetMethod(m.@override.Name, md.ArgTypesForDefineMethod);
+						MethodInfo interfaceMethod = typeWrapper.shadowType.GetMethod(m.@override.Name, md.ArgTypesForDefineMethod);
 						if(interfaceMethod == null)
 						{
 							throw new InvalidOperationException(typeWrapper.Name + "." + m.Name + m.Sig);
@@ -569,7 +569,7 @@ public class JVM
 					Type[] paramTypes = md.ArgTypesForDefineMethod;
 					Type retType = md.RetTypeForDefineMethod;
 
-					if(typeWrapper.equivalencyType.IsSealed && (m.Modifiers & MapXml.MapModifiers.Static) == 0)
+					if(typeWrapper.shadowType.IsSealed && (m.Modifiers & MapXml.MapModifiers.Static) == 0)
 					{
 						// skip instance methods in sealed types, but we do need to add them to the overriders
 						if(typeWrapper.BaseTypeWrapper != null && (m.Modifiers & MapXml.MapModifiers.Private) == 0)
@@ -627,9 +627,18 @@ public class JVM
 					{
 						// instance methods must have an instancehelper method
 						MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.Static;
+						// NOTE instancehelpers for protected methods are made public,
+						// because cli.System.Object derived types can call protected methods
+						if((m.Modifiers & MapXml.MapModifiers.Protected) != 0)
+						{
+							attr &= ~MethodAttributes.MemberAccessMask;
+							attr |= MethodAttributes.Public;
+							// mark with specialname, so that tools (hopefully) won't show them
+							attr |= MethodAttributes.SpecialName;
+						}
 						Type[] exParamTypes = new Type[paramTypes.Length + 1];
 						Array.Copy(paramTypes, 0, exParamTypes, 1, paramTypes.Length);
-						exParamTypes[0] = typeWrapper.equivalencyType;
+						exParamTypes[0] = typeWrapper.shadowType;
 						mbHelper = typeWrapper.typeBuilder.DefineMethod("instancehelper_" + m.Name, attr, CallingConventions.Standard, retType, exParamTypes);
 						AddDeclaredExceptions(mbHelper, m.throws);
 					}
@@ -898,18 +907,18 @@ public class JVM
 							}
 							else
 							{
-								Type equivalencyType = ((RemapperTypeWrapper)DeclaringType).equivalencyType;
+								Type shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
 								for(int i = 0; i < paramTypes.Length + 1; i++)
 								{
 									ilgen.Emit(OpCodes.Ldarg, (short)i);
 								}
 								if(m.redirect != null)
 								{
-									EmitRedirect(equivalencyType, md, m, ilgen);
+									EmitRedirect(shadowType, md, m, ilgen);
 								}
 								else if(m.@override != null)
 								{
-									MethodInfo baseMethod = equivalencyType.GetMethod(m.@override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+									MethodInfo baseMethod = shadowType.GetMethod(m.@override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
 									if(baseMethod == null)
 									{
 										throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
@@ -923,7 +932,7 @@ public class JVM
 									{
 										throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
 									}
-									MethodInfo overrideMethod = equivalencyType.GetMethod(baseMethod.xmlMethod.@override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+									MethodInfo overrideMethod = shadowType.GetMethod(baseMethod.xmlMethod.@override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
 									if(overrideMethod == null)
 									{
 										throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
@@ -942,7 +951,7 @@ public class JVM
 			{
 				MapXml.Class c = classDef;
 				TypeBuilder tb = typeBuilder;
-				bool baseIsSealed = equivalencyType.IsSealed;
+				bool baseIsSealed = shadowType.IsSealed;
 
 				if(c.Interfaces != null)
 				{
@@ -1113,7 +1122,7 @@ public class JVM
 			{
 				get
 				{
-					return equivalencyType;
+					return shadowType;
 				}
 			}
 
@@ -1138,7 +1147,7 @@ public class JVM
 				get
 				{
 					// any remapped exceptions are automatically unsafe
-					return equivalencyType == typeof(Exception) || equivalencyType.IsSubclassOf(typeof(Exception));
+					return shadowType == typeof(Exception) || shadowType.IsSubclassOf(typeof(Exception));
 				}
 			}
 		}
@@ -1148,18 +1157,24 @@ public class JVM
 			Tracer.Info(Tracer.Compiler, "Emit remapped types");
 
 			// 1st pass, put all types in remapped to make them loadable
-			foreach(MapXml.Class c in map.remappings)
+			foreach(MapXml.Class c in map.assembly)
 			{
-				remapped.Add(c.Name, new RemapperTypeWrapper(this, c));
+				if(c.Shadows != null)
+				{
+					remapped.Add(c.Name, new RemapperTypeWrapper(this, c));
+				}
 			}
 
 			DynamicTypeWrapper.SetupGhosts(map);
 
 			// 2nd pass, resolve interfaces, publish methods/fields
-			foreach(MapXml.Class c in map.remappings)
+			foreach(MapXml.Class c in map.assembly)
 			{
-				RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
-				typeWrapper.Process2ndPass();
+				if(c.Shadows != null)
+				{
+					RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
+					typeWrapper.Process2ndPass();
+				}
 			}
 		}
 

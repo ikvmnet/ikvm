@@ -134,8 +134,7 @@ class ClassLoaderWrapper
 
 	internal static bool IsRemappedType(Type type)
 	{
-		TypeWrapper tw = (TypeWrapper)typeToTypeWrapper[type];
-		return (tw != null && tw.IsRemapped) || remappedTypes.ContainsKey(type);
+		return remappedTypes.ContainsKey(type);
 	}
 
 	internal void SetRemappedType(Type type, TypeWrapper tw)
@@ -144,6 +143,7 @@ class ClassLoaderWrapper
 		types.Add(tw.Name, tw);
 		Debug.Assert(!typeToTypeWrapper.ContainsKey(type));
 		typeToTypeWrapper.Add(type, tw);
+		remappedTypes.Add(type, type);
 	}
 
 	// HACK return the TypeWrapper if it is already loaded
@@ -337,6 +337,7 @@ class ClassLoaderWrapper
 
 	private TypeWrapper GetWrapperFromBootstrapType(Type type)
 	{
+		//Tracer.Info(Tracer.Runtime, "GetWrapperFromBootstrapType: {0}", type.FullName);
 		Debug.Assert(GetWrapperFromTypeFast(type) == null);
 		Debug.Assert(!type.IsArray);
 		Debug.Assert(!(type.Assembly is AssemblyBuilder));
@@ -566,6 +567,14 @@ class ClassLoaderWrapper
 	internal object GetJavaClassLoader()
 	{
 		return (this == GetBootstrapClassLoader()) ? null : javaClassLoader;
+	}
+
+	// When -Xbootclasspath is specified, we use a URLClassLoader as an
+	// additional bootstrap class loader (this is not visible to the Java code).
+	// We need to access this to be able to load resources.
+	internal static object GetJavaBootstrapClassLoader()
+	{
+		return GetBootstrapClassLoader().javaClassLoader;
 	}
 
 	internal static void PrepareForSaveDebugImage()

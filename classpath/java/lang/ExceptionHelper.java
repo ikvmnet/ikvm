@@ -36,7 +36,7 @@ public final class ExceptionHelper
 
     private static class ExceptionInfoHelper
     {
-	private static final Throwable CAUSE_NOT_SET = cli.System.Exception.__new();
+	private static final Throwable CAUSE_NOT_SET = new cli.System.Exception();
 	private cli.System.Diagnostics.StackTrace tracePart1;
 	private cli.System.Diagnostics.StackTrace tracePart2;
 	private cli.System.Collections.ArrayList stackTrace;
@@ -46,7 +46,7 @@ public final class ExceptionHelper
 	{
 	    tracePart1 = new cli.System.Diagnostics.StackTrace(x, true);
 	    tracePart2 = new cli.System.Diagnostics.StackTrace(true);
-	    cause = cli.System.Exception.get_InnerException(x);
+	    cause = ((cli.System.Exception)x).get_InnerException();
 	    if(cause == null)
 	    {
 		cause = CAUSE_NOT_SET;
@@ -288,7 +288,7 @@ public final class ExceptionHelper
 	ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(x);
 	if(eih == null)
 	{
-	    return cli.System.Exception.get_InnerException(x);
+	    return ((cli.System.Exception)x).get_InnerException();
 	}
 	return eih.get_Cause();
     }
@@ -354,7 +354,7 @@ public final class ExceptionHelper
 
     public static String getMessage(Throwable x)
     {
-	String message = cli.System.Exception.get_Message(x);
+	String message = ((cli.System.Exception)x).get_Message();
 	if(message == NULL_STRING)
 	{
 	    message = null;
@@ -418,7 +418,7 @@ public final class ExceptionHelper
 	if(!exceptions.containsKey(t))
 	{
 	    exceptions.put(t, new ExceptionInfoHelper(org));
-	    Throwable inner = cli.System.Exception.get_InnerException(org);
+	    Throwable inner = ((cli.System.Exception)org).get_InnerException();
 	    if(inner != null && !exceptions.containsKey(inner))
 	    {
 		exceptions.put(inner, new ExceptionInfoHelper(inner));

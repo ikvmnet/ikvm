@@ -1,3 +1,26 @@
+/*
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+  Jeroen Frijters
+  jeroen@frijters.net
+  
+*/
 using System;
 using System.Xml.Serialization;
 using System.Collections;
@@ -75,24 +98,25 @@ namespace MapXml
 					{
 						Debug.Assert(Sig != null);
 						MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), Name, Sig), false);
-						if(method != null)
+						if(method == null)
 						{
-							if(opcode.Value == OpCodes.Call.Value)
-							{
-								emitter = method.EmitCall;
-							}
-							else if(opcode.Value == OpCodes.Callvirt.Value)
-							{
-								emitter = method.EmitCallvirt;
-							}
-							else if(opcode.Value == OpCodes.Newobj.Value)
-							{
-								emitter = method.EmitNewobj;
-							}
-							else
-							{
-								throw new InvalidOperationException();
-							}
+							throw new InvalidOperationException("method not found: " + Class + "." + Name + Sig);
+						}
+						if(opcode.Value == OpCodes.Call.Value)
+						{
+							emitter = method.EmitCall;
+						}
+						else if(opcode.Value == OpCodes.Callvirt.Value)
+						{
+							emitter = method.EmitCallvirt;
+						}
+						else if(opcode.Value == OpCodes.Newobj.Value)
+						{
+							emitter = method.EmitNewobj;
+						}
+						else
+						{
+							throw new InvalidOperationException();
 						}
 						// TODO this code is part of what Compiler.CastInterfaceArgs (in compiler.cs) does,
 						// it would be nice if we could avoid this duplication...
@@ -656,17 +680,25 @@ namespace MapXml
 		Abstract = Modifiers.Abstract
 	}
 
+	public enum Scope
+	{
+		[XmlEnum("public")]
+		Public = 0,
+		[XmlEnum("private")]
+		Private = 1
+	}
+
 	[XmlType("class")]
 	public class Class
 	{
 		[XmlAttribute("name")]
 		public string Name;
-		[XmlAttribute("type")]
-		public string Type;
+		[XmlAttribute("shadows")]
+		public string Shadows;
 		[XmlAttribute("modifiers")]
 		public MapModifiers Modifiers;
-		[XmlAttribute("oneway")]
-		public bool OneWay;
+		[XmlAttribute("scope")]
+		public Scope scope;
 		[XmlElement("constructor")]
 		public Constructor[] Constructors;
 		[XmlElement("method")]
@@ -694,8 +726,7 @@ namespace MapXml
 	[XmlRoot("root")]
 	public class Root
 	{
-		public Class[] remappings;
-		public Class[] nativeMethods;
+		public Class[] assembly;
 		public ExceptionMapping[] exceptionMappings;
 	}
 }

@@ -290,26 +290,26 @@ final class StringHelper
 	}
     }
 
-    static String substring(String s, int off, int end)
+    static String substring(cli.System.String s, int off, int end)
     {
-	return cli.System.String.Substring(s, off, end - off);
+	return s.Substring(off, end - off);
     }
 
-    static boolean startsWith(String s, String prefix, int toffset)
+    static boolean startsWith(cli.System.String s, String prefix, int toffset)
     {
 	if(toffset < 0)
 	{
 	    return false;
 	}
-	s = cli.System.String.Substring(s, Math.min(s.length(), toffset));
-	return cli.System.String.StartsWith(s, prefix);
+	s = (cli.System.String)(Object)s.Substring(Math.min(s.get_Length(), toffset));
+	return s.StartsWith(prefix);
     }
 
-    static char charAt(String s, int index)
+    static char charAt(cli.System.String s, int index)
     {
 	try 
 	{
-	    return cli.System.String.get_Chars(s, index);
+	    return s.get_Chars(index);
 	}
 	// NOTE the System.IndexOutOfRangeException thrown by get_Chars, is translated by our
 	// exception handling code to an ArrayIndexOutOfBoundsException, so we catch that.
@@ -319,62 +319,62 @@ final class StringHelper
 	}
     }
 
-    static void getChars(String s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 
+    static void getChars(cli.System.String s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 
     {
-	cli.System.String.CopyTo(s, srcBegin, dst, dstBegin, srcEnd - srcBegin);
+	s.CopyTo(srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
     // this exposes the package accessible "count" field (for use by StringBuffer)
-    static int GetCountField(String s)
+    static int GetCountField(cli.System.String s)
     {
-	return s.length();
+	return s.get_Length();
     }
 
     // this exposes the package accessible "value" field (for use by StringBuffer)
-    static char[] GetValueField(String s)
+    static char[] GetValueField(cli.System.String s)
     {
-	return s.toCharArray();
+	return s.ToCharArray();
     }
 
     // this exposes the package accessible "offset" field (for use by StringBuffer)
-    static int GetOffsetField(String s)
+    static int GetOffsetField(cli.System.String s)
     {
 	return 0;
     }
 
-    static int indexOf(String s, char ch, int fromIndex)
+    static int indexOf(cli.System.String s, char ch, int fromIndex)
     {
 	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
-	return cli.System.String.IndexOf(s, ch, Math.max(0, Math.min(s.length(), fromIndex)));
+	return s.IndexOf(ch, Math.max(0, Math.min(s.get_Length(), fromIndex)));
     }
 
-    static int indexOf(String s, String o, int fromIndex)
+    static int indexOf(cli.System.String s, String o, int fromIndex)
     {
 	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
-	return cli.System.String.IndexOf(s, o, Math.max(0, Math.min(s.length(), fromIndex)));
+	return s.IndexOf(o, Math.max(0, Math.min(s.get_Length(), fromIndex)));
     }
 
-    static int lastIndexOf(String s, char ch, int fromIndex)
+    static int lastIndexOf(cli.System.String s, char ch, int fromIndex)
     {
 	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
-	int len = s.length();
+	int len = s.get_Length();
 	if(fromIndex  < 0)
 	{
 	    return -1;
 	}
 	// Java allow fromIndex to be above the length of the string, .NET doesn't
-	return cli.System.String.LastIndexOf(s, ch, Math.min(len - 1, fromIndex));
+	return s.LastIndexOf(ch, Math.min(len - 1, fromIndex));
     }
 
-    static int lastIndexOf(String s, String o)
+    static int lastIndexOf(cli.System.String s, String o)
     {
-	return lastIndexOf(s, o, s.length());
+	return lastIndexOf(s, o, s.get_Length());
     }
 
-    static int lastIndexOf(String s, String o, int fromIndex)
+    static int lastIndexOf(cli.System.String s, String o, int fromIndex)
     {
 	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
-	int len = s.length();
+	int len = s.get_Length();
 	if(fromIndex  < 0)
 	{
 	    return -1;
@@ -384,13 +384,15 @@ final class StringHelper
 	    return Math.min(len, fromIndex);
 	}
 	// Java allow fromIndex to be above the length of the string, .NET doesn't
-	return cli.System.String.LastIndexOf(s, o, Math.min(len - 1, fromIndex + o.length() - 1));
+	return s.LastIndexOf(o, Math.min(len - 1, fromIndex + o.length() - 1));
     }
 
     static String concat(String s1, String s2)
     {
-	// null check
-	s1 = s1.toString();
+	if(s1.length() == 0)
+	{
+	    return s2;
+	}
 	if(s2.length() == 0)
 	{
 	    return s1;
@@ -493,9 +495,9 @@ final class StringHelper
 	return Long.toString(l);
     }
 
-    static String valueOf(char c)
+    static cli.System.String valueOf(char c)
     {
-	return cli.System.String.__new(c, 1);
+	return new cli.System.String(c, 1);
     }
 
     static String valueOf(float f)
@@ -523,14 +525,14 @@ final class StringHelper
 	return o == null ? "null" : o.toString();
     }
 
-    static int hashCode(String s)
+    static int hashCode(cli.System.String s)
     {
 	int h = 0;
 	// NOTE having the get_Length in the for condition is actually faster than hoisting it,
 	// the CLR JIT recognizes this pattern and optimizes the array bounds check in get_Chars.
-	for(int i = 0; i < cli.System.String.get_Length(s); i++)
+	for(int i = 0; i < s.get_Length(); i++)
 	{
-	    h = h * 31 + cli.System.String.get_Chars(s, i);
+	    h = h * 31 + s.get_Chars(i);
 	}
 	return h;
     }

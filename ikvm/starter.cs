@@ -148,6 +148,7 @@ public class Starter
 			try
 			{
 				JVM.SaveDebugImage(clazz);
+				Console.Error.WriteLine("Saving done.");
 			}
 			catch(Exception x)
 			{

@@ -26,10 +26,9 @@ package java.lang;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileDescriptor;
 import java.util.Properties;
+import java.nio.channels.Channels;
+import gnu.java.nio.channels.FileChannelImpl;
 import cli.System.Text.StringBuilder;
 import cli.System.Diagnostics.ProcessStartInfo;
 
@@ -287,16 +286,20 @@ final class VMRuntime
     private static class DotNetProcess extends Process
     {
 	private cli.System.Diagnostics.Process proc;
-	private FileOutputStream stdin;
-	private FileInputStream stdout;
-	private FileInputStream stderr;
+	private OutputStream stdin;
+	private InputStream stdout;
+	private InputStream stderr;
 
 	private DotNetProcess(cli.System.Diagnostics.Process proc)
 	{
 	    this.proc = proc;
-	    stdin = new FileOutputStream(new FileDescriptor(proc.get_StandardInput().get_BaseStream()));
-	    stdout = new FileInputStream(new FileDescriptor(proc.get_StandardOutput().get_BaseStream()));
-	    stderr = new FileInputStream(new FileDescriptor(proc.get_StandardError().get_BaseStream()));
+	    // TODO enable this when Channels.new[Out|in]putStream is working
+	    //stdin = Channels.newOutputStream(new FileChannelImpl(proc.get_StandardInput().get_BaseStream()));
+	    //stdout = Channels.newInputStream(new FileChannelImpl(proc.get_StandardOutput().get_BaseStream()));
+	    //stderr = Channels.newInputStream(new FileChannelImpl(proc.get_StandardError().get_BaseStream()));
+	    stdin = new gnu.java.nio.ChannelOutputStream(new FileChannelImpl(proc.get_StandardInput().get_BaseStream()));
+	    stdout = new gnu.java.nio.ChannelInputStream(new FileChannelImpl(proc.get_StandardOutput().get_BaseStream()));
+	    stderr = new gnu.java.nio.ChannelInputStream(new FileChannelImpl(proc.get_StandardError().get_BaseStream()));
 	}
 
 	public OutputStream getOutputStream()
@@ -429,7 +432,7 @@ final class VMRuntime
 	String osname = cli.System.Environment.get_OSVersion().ToString();
 	String osver = cli.System.Environment.get_OSVersion().get_Version().ToString();
 	// HACK if the osname contains the version, we remove it
-	osname = cli.System.String.Replace(osname, osver, "").trim();
+	osname = ((cli.System.String)(Object)osname).Replace(osver, "").trim();
 	p.setProperty("os.name", osname);
 	String arch = cli.System.Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
 	if(arch == null)
@@ -462,7 +465,7 @@ final class VMRuntime
 	p.setProperty("user.dir", cli.System.Environment.get_CurrentDirectory());
 	p.setProperty("awt.toolkit", "ikvm.awt.NetToolkit, awt, Version=1.0, Culture=neutral, PublicKeyToken=null");
 	// HACK since we cannot use URL here (it depends on the properties being set), we manually encode the spaces in the assembly name
-        p.setProperty("gnu.classpath.home.url", "ikvmres://" + cli.System.String.Replace(cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName(), " ", "%20") + "/lib");
+        p.setProperty("gnu.classpath.home.url", "ikvmres://" + ((cli.System.String)(Object)cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName()).Replace(" ", "%20") + "/lib");
     }
 
     // HACK we need a way to get the assembly version of ik.vm.net.dll

@@ -1,9 +1,9 @@
 ikvm/lang/CIL.java
 gnu/classpath/Configuration.java
+gnu/java/nio/channels/FileChannelImpl.java
 gnu/java/net/protocol/ikvmres/Handler.java
 gnu/java/net/PlainSocketImpl.java
 gnu/java/net/PlainDatagramSocketImpl.java
-java/io/FileDescriptor.java
 java/lang/VMThread.java
 java/lang/VMClass.java
 java/lang/VMDouble.java
@@ -591,6 +591,7 @@ sun/misc/Ref.java
 ../../classpath/java/awt/im/spi/InputMethod.java
 ../../classpath/java/awt/im/spi/InputMethodContext.java
 ../../classpath/java/awt/im/spi/InputMethodDescriptor.java
+../../classpath/java/awt/image/AffineTransformOp.java
 ../../classpath/java/awt/image/AreaAveragingScaleFilter.java
 ../../classpath/java/awt/image/BufferedImage.java
 ../../classpath/java/awt/image/BufferedImageOp.java
@@ -732,6 +733,7 @@ sun/misc/Ref.java
 ../../classpath/java/io/EOFException.java
 ../../classpath/java/io/Externalizable.java
 ../../classpath/java/io/File.java
+../../classpath/java/io/FileDescriptor.java
 ../../classpath/java/io/FileFilter.java
 ../../classpath/java/io/FileInputStream.java
 ../../classpath/java/io/FilenameFilter.java
@@ -971,7 +973,6 @@ sun/misc/Ref.java
 ../../classpath/java/nio/channels/ConnectionPendingException.java
 ../../classpath/java/nio/channels/DatagramChannel.java
 ../../classpath/java/nio/channels/FileChannel.java
-../../classpath/java/nio/channels/FileChannelImpl.java
 ../../classpath/java/nio/channels/FileLock.java
 ../../classpath/java/nio/channels/FileLockInterruptionException.java
 ../../classpath/java/nio/channels/GatheringByteChannel.java
@@ -1815,9 +1816,13 @@ sun/misc/Ref.java
 ../../classpath/javax/swing/plaf/basic/BasicLookAndFeel.java
 ../../classpath/javax/swing/plaf/basic/BasicOptionPaneUI.java
 ../../classpath/javax/swing/plaf/basic/BasicPanelUI.java
+../../classpath/javax/swing/plaf/basic/BasicProgressBarUI.java
 ../../classpath/javax/swing/plaf/basic/BasicRadioButtonUI.java
 ../../classpath/javax/swing/plaf/basic/BasicRootPaneUI.java
+../../classpath/javax/swing/plaf/basic/BasicScrollBarUI.java
 ../../classpath/javax/swing/plaf/basic/BasicScrollPaneUI.java
+../../classpath/javax/swing/plaf/basic/BasicSeparatorUI.java
+../../classpath/javax/swing/plaf/basic/BasicSliderUI.java
 ../../classpath/javax/swing/plaf/basic/BasicSplitPaneDivider.java
 ../../classpath/javax/swing/plaf/basic/BasicSplitPaneUI.java
 ../../classpath/javax/swing/plaf/basic/BasicTabbedPaneUI.java

@@ -23,8 +23,8 @@
   
 -->
 <root>
-	<remappings>
-		<class name="java.lang.Object" type="System.Object, mscorlib" modifiers="public">
+	<assembly>
+		<class name="java.lang.Object" shadows="System.Object, mscorlib" modifiers="public">
 			<constructor sig="()V" modifiers="public" />
 			<method name="notifyAll" sig="()V" modifiers="public final">
 				<body>
@@ -153,7 +153,7 @@
 				</alternateBody>
 			</method>
 		</class>
-		<class name="java.lang.String" type="System.String, mscorlib" modifiers="public final">
+		<class name="java.lang.String" shadows="System.String, mscorlib" modifiers="public final">
 			<implements class="java.lang.Comparable" />
 			<implements class="java.lang.CharSequence" />
 			<implements class="java.io.Serializable" />
@@ -200,7 +200,7 @@
 			<method name="hashCode" sig="()I" modifiers="public">
 				<body>
 					<ldarg_0 />
-					<call class="java.lang.StringHelper" name="hashCode" sig="(Ljava.lang.String;)I" />
+					<call class="java.lang.StringHelper" name="hashCode" sig="(Lcli.System.String;)I" />
 					<ret />
 				</body>
 			</method>
@@ -218,7 +218,7 @@
 				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="valueOf" sig="(C)Ljava.lang.String;" modifiers="public static">
-				<redirect class="java.lang.StringHelper" />
+				<redirect class="java.lang.StringHelper" sig="(C)Lcli.System.String;" />
 			</method>
 			<method name="valueOf" sig="(F)Ljava.lang.String;" modifiers="public static">
 				<redirect class="java.lang.StringHelper" />
@@ -242,46 +242,46 @@
 				<redirect name="get_Length" />
 			</method>
 			<method name="charAt" sig="(I)C" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;I)C" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;I)C" />
 			</method>
 			<method name="substring" sig="(II)Ljava.lang.String;" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II)Ljava.lang.String;" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)Ljava.lang.String;" />
 			</method>
 			<method name="indexOf" sig="(I)I" modifiers="public">
 				<redirect name="IndexOf" sig="(C)I" />
 			</method>
 			<method name="indexOf" sig="(II)I" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;CI)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;CI)I" />
 			</method>
 			<method name="indexOf" sig="(Ljava.lang.String;)I" modifiers="public">
 				<redirect name="IndexOf" />
 			</method>
 			<method name="indexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;I)I" />
 			</method>
 			<method name="lastIndexOf" sig="(I)I" modifiers="public">
 				<redirect name="LastIndexOf" sig="(C)I" />
 			</method>
 			<method name="lastIndexOf" sig="(II)I" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;CI)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;CI)I" />
 			</method>
 			<method name="lastIndexOf" sig="(Ljava.lang.String;)I" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;)I" />
 			</method>
 			<method name="lastIndexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;I)I" />
 			</method>
 			<method name="toCharArray" sig="()[C" modifiers="public">
 				<redirect name="ToCharArray" />
 			</method>
 			<method name="getChars" sig="(II[CI)V" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II[CI)V" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II[CI)V" />
 			</method>
 			<method name="startsWith" sig="(Ljava.lang.String;)Z" modifiers="public">
 				<redirect name="StartsWith" />
 			</method>
 			<method name="startsWith" sig="(Ljava.lang.String;I)Z" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)Z" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;I)Z" />
 			</method>
 			<method name="endsWith" sig="(Ljava.lang.String;)Z" modifiers="public">
 				<redirect name="EndsWith" />
@@ -324,7 +324,7 @@
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)[B" />
 			</method>
 			<method name="subSequence" sig="(II)Ljava.lang.CharSequence;" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" name="substring" sig="(Ljava.lang.String;II)Ljava.lang.String;" />
+				<redirect class="java.lang.StringHelper" type="static" name="substring" sig="(Lcli.System.String;II)Ljava.lang.String;" />
 			</method>
 			<method name="trim" sig="()Ljava.lang.String;" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
@@ -420,7 +420,7 @@
 				NOTE only reading fields can be redirected
 			-->
 			<field name="count" sig="I" modifiers="">
-				<redirect class="java.lang.StringHelper" type="static" name="GetCountField" sig="(Ljava.lang.String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" name="GetCountField" sig="(Lcli.System.String;)I" />
 			</field>
 			<!-- Making a new char array instead of directly accessing the contents of the string, probably isn't
 				as efficient as the coder of this construct wished for, but hey ;-) At least it works...
@@ -434,10 +434,10 @@
 			</method>
 			<!-- NOTE value and offset aren't used anymore in Classpath's StringBuffer, so we should drop them -->
 			<field name="value" sig="[C" modifiers="">
-				<redirect class="java.lang.StringHelper" type="static" name="GetValueField" sig="(Ljava.lang.String;)[C" />
+				<redirect class="java.lang.StringHelper" type="static" name="GetValueField" sig="(Lcli.System.String;)[C" />
 			</field>
 			<field name="offset" sig="I" modifiers="">
-				<redirect class="java.lang.StringHelper" type="static" name="GetOffsetField" sig="(Ljava.lang.String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" name="GetOffsetField" sig="(Lcli.System.String;)I" />
 			</field>
 			<!-- TODO mark this method as BeforeFieldInit (and benchmark to see if that is faster) -->
 			<clinit>
@@ -448,7 +448,7 @@
 				</body>
 			</clinit>
 		</class>
-		<class name="java.lang.Throwable" type="System.Exception, mscorlib" modifiers="public">
+		<class name="java.lang.Throwable" shadows="System.Exception, mscorlib" modifiers="public">
 			<implements class="java.io.Serializable" />
 			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-3042686055658047285" />
 			<constructor sig="()V" modifiers="public">
@@ -522,14 +522,14 @@
 				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
 			</method>
 		</class>
-		<class name="java.lang.Comparable" type="System.IComparable, mscorlib" modifiers="public abstract interface">
+		<class name="java.lang.Comparable" shadows="System.IComparable, mscorlib" modifiers="public abstract interface">
 			<method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public abstract">
 				<override name="CompareTo" />
 			</method>
 		</class>
-		<class name="gnu.classpath.RawData" type="System.IntPtr, mscorlib" oneway="true">
-			<!-- TODO custom boxing isn't support for non-oneway remapped types, but since this is the only
-			     type that has a custom boxing rule, this isn't yet as issue -->
+		<class name="gnu.classpath.RawData" shadows="System.IntPtr, mscorlib" scope="private">
+			<!-- TODO custom boxing isn't support for non-private remapped types, but since this is the only
+			     type that has a custom boxing rule, this isn't yet an issue -->
 			<box>
 				<!-- We special case boxing, to "box" IntPtr.Zero as null -->
 				<dup />
@@ -542,8 +542,7 @@
 				<label name="end" />
 			</box>
 		</class>
-	</remappings>
-	<nativeMethods>
+		<!-- This is where the "native" helper methods start -->
 		<class name="ikvm.lang.CIL">
 			<method name="unbox_int" sig="(Ljava.lang.Object;)I">
 				<body>
@@ -568,7 +567,7 @@
 				</body>
 			</method>
 		</class>
-	</nativeMethods>
+	</assembly>
 	<exceptionMappings>
 		<exception src="System.NullReferenceException, mscorlib" dst="java.lang.NullPointerException" />
 		<!-- many of the String and Object methods throw ArgumentNullException where Java throws an NPE -->

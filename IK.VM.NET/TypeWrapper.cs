@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1999,9 +1999,9 @@ class DynamicTypeWrapper : TypeWrapper
 		ghosts = new Hashtable();
 
 		// find the ghost interfaces
-		foreach(MapXml.Class c in map.remappings)
+		foreach(MapXml.Class c in map.assembly)
 		{
-			if(c.Interfaces != null)
+			if(c.Shadows != null && c.Interfaces != null)
 			{
 				// NOTE we don't support interfaces that inherit from other interfaces
 				// (actually, if they are explicitly listed it would probably work)
@@ -2140,14 +2140,21 @@ class DynamicTypeWrapper : TypeWrapper
 		nativeMethods = new Hashtable();
 		// HACK we've got a hardcoded location for the exception mapping method that is generated from the xml mapping
 		nativeMethods["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
-		foreach(MapXml.Class c in map.nativeMethods)
+		foreach(MapXml.Class c in map.assembly)
 		{
-			string className = c.Name;
-			foreach(MapXml.Method method in c.Methods)
+			// HACK if it is not a remapped type, we assume it is a container for native methods
+			if(c.Shadows == null)
 			{
-				string methodName = method.Name;
-				string methodSig = method.Sig;
-				nativeMethods[className + "." + methodName + methodSig] = method.body;
+				string className = c.Name;
+				foreach(MapXml.Method method in c.Methods)
+				{
+					if(method.body != null)
+					{
+						string methodName = method.Name;
+						string methodSig = method.Sig;
+						nativeMethods[className + "." + methodName + methodSig] = method.body;
+					}
+				}
 			}
 		}
 	}
@@ -3224,11 +3231,15 @@ class DynamicTypeWrapper : TypeWrapper
 					bool isWrappedFinal = fld.IsFinal && (fld.IsPublic || fld.IsProtected) && !wrapper.IsInterface;
 					if(isWrappedFinal)
 					{
-						// NOTE blank final fields get converted into a read-only property with a private field backing store
-						// we used to make the field privatescope, but that really serves no purpose (and it hinders serialization,
-						// which uses .NET reflection to get at the field)
+						// NOTE public/protected blank final fields get converted into a read-only property with a private field
+						// backing store we used to make the field privatescope, but that really serves no purpose (and it hinders
+						// serialization, which uses .NET reflection to get at the field)
 						attribs &= ~FieldAttributes.FieldAccessMask;
 						attribs |= FieldAttributes.Private;
+						setModifiers = true;
+					}
+					else if(fld.IsFinal)
+					{
 						setModifiers = true;
 					}
 					field = typeBuilder.DefineField(fieldName, type, attribs);
@@ -3973,7 +3984,7 @@ class CompiledTypeWrapper : LazyTypeWrapper
 	}
 
 	// TODO consider resolving the baseType lazily
-	internal static TypeWrapper GetBaseTypeWrapper(Type type)
+	private static TypeWrapper GetBaseTypeWrapper(Type type)
 	{
 		if(type.IsInterface || type.IsDefined(typeof(GhostInterfaceAttribute), false))
 		{
@@ -4481,7 +4492,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			modifiers |= Modifiers.Static;
 		}
 
-		if(type.IsSealed || (ClassLoaderWrapper.IsRemappedType(type) && !type.IsInterface))
+		if(type.IsSealed)
 		{
 			modifiers |= Modifiers.Final;
 		}
@@ -4504,11 +4515,30 @@ class DotNetTypeWrapper : LazyTypeWrapper
 
 		if(type.IsDefined(typeof(NoPackagePrefixAttribute), false) || type.Assembly.IsDefined(typeof(NoPackagePrefixAttribute), false))
 		{
+			// TODO figure out if this is even required
 			return type.FullName.Replace('+', '$');
 		}
 
+		return MangleTypeName(type.FullName);
+	}
+
+	private static string MangleTypeName(string name)
+	{
 		// TODO a fully reversible name mangling should be used (all characters not supported by Java should be escaped)
-		return NamePrefix + type.FullName.Replace('+', '$');
+		return NamePrefix + name.Replace('+', '$');
+	}
+
+	private static string DemangleTypeName(string name)
+	{
+		Debug.Assert(name.StartsWith(NamePrefix));
+		// TODO a fully reversible name mangling should be used (all characters not supported by Java should be escaped)
+		name = name.Substring(NamePrefix.Length);
+		if(name.EndsWith(DelegateInterfaceSuffix))
+		{
+			// HACK if we're a delegate nested type, don't replace the $ sign
+			return name;
+		}
+		return name.Replace('$', '+');
 	}
 
 	// this method should only be called once for each name, it doesn't do any caching or duplicate prevention
@@ -4517,7 +4547,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		bool prefixed = name.StartsWith(NamePrefix);
 		if(prefixed)
 		{
-			name = name.Substring(NamePrefix.Length);
+			name = DemangleTypeName(name);
 		}
 		Type type = LoadTypeFromLoadedAssemblies(name);
 		if(type != null)
@@ -4530,7 +4560,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		if(name.EndsWith(DelegateInterfaceSuffix))
 		{
 			Type delegateType = LoadTypeFromLoadedAssemblies(name.Substring(0, name.Length - DelegateInterfaceSuffix.Length));
-			if(delegateType.IsSubclassOf(typeof(Delegate)))
+			if(delegateType != null && delegateType.IsSubclassOf(typeof(Delegate)))
 			{
 				ModuleBuilder moduleBuilder = ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
 				TypeBuilder typeBuilder = moduleBuilder.DefineType(NamePrefix + name, TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract);
@@ -4576,6 +4606,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 					return t;
 				}
 				// HACK we might be looking for an inner classes
+				// (if we remove the mangling of NoPackagePrefix types from GetName, we don't need this anymore)
 				t = a.GetType(name.Replace('$', '+'));
 				if(t != null)
 				{
@@ -4586,8 +4617,31 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		return null;
 	}
 
+	private static TypeWrapper GetBaseTypeWrapper(Type type)
+	{
+		if(type.IsInterface)
+		{
+			return null;
+		}
+		else if(ClassLoaderWrapper.IsRemappedType(type))
+		{
+			// Remapped types extend their alter ego
+			// (e.g. cli.System.Object must appear to be derived from java.lang.Object)
+			// except when they're sealed, of course.
+			if(type.IsSealed)
+			{
+				return CoreClasses.java.lang.Object.Wrapper;
+			}
+			return ClassLoaderWrapper.GetWrapperFromType(type);
+		}
+		else
+		{
+			return ClassLoaderWrapper.GetWrapperFromType(type.BaseType);
+		}
+	}
+
 	internal DotNetTypeWrapper(Type type)
-		: base(GetModifiers(type), GetName(type), CompiledTypeWrapper.GetBaseTypeWrapper(type), ClassLoaderWrapper.GetBootstrapClassLoader())
+		: base(GetModifiers(type), GetName(type), GetBaseTypeWrapper(type), ClassLoaderWrapper.GetBootstrapClassLoader())
 	{
 		Debug.Assert(!(type.IsByRef), type.FullName);
 		Debug.Assert(!(type.IsPointer), type.FullName);
@@ -4682,8 +4736,6 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		}
 		else
 		{
-			bool isRemapped = ClassLoaderWrapper.IsRemappedType(type) && !type.IsInterface;
-
 			FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 			for(int i = 0; i < fields.Length; i++)
 			{
@@ -4722,11 +4774,11 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 			for(int i = 0; i < constructors.Length; i++)
 			{
-				MethodDescriptor md = MakeMethodDescriptor(constructors[i], isRemapped);
+				MethodDescriptor md = MakeMethodDescriptor(constructors[i]);
 				if(md != null)
 				{
 					// TODO handle name/signature clash
-					AddMethod(CreateMethodWrapper(md, constructors[i], isRemapped, false));
+					AddMethod(CreateMethodWrapper(md, constructors[i], false));
 				}
 			}
 
@@ -4739,18 +4791,18 @@ class DotNetTypeWrapper : LazyTypeWrapper
 				}
 				else
 				{
-					MethodDescriptor md = MakeMethodDescriptor(methods[i], isRemapped);
+					MethodDescriptor md = MakeMethodDescriptor(methods[i]);
 					if(md != null)
 					{
 						// TODO handle name/signature clash
-						AddMethod(CreateMethodWrapper(md, methods[i], isRemapped, false));
+						AddMethod(CreateMethodWrapper(md, methods[i], false));
 					}
 				}
 			}
 
 			// HACK private interface implementations need to be published as well
 			// (otherwise the type appears abstract while it isn't)
-			if(!isRemapped && !type.IsInterface)
+			if(!type.IsSealed && !type.IsInterface)
 			{
 				Type[] interfaces = type.GetInterfaces();
 				for(int i = 0; i < interfaces.Length; i++)
@@ -4762,32 +4814,59 @@ class DotNetTypeWrapper : LazyTypeWrapper
 						{
 							if(!map.TargetMethods[j].IsPublic && map.TargetMethods[j].DeclaringType == type)
 							{
-								MethodDescriptor md = MakeMethodDescriptor(map.InterfaceMethods[j], false);
+								MethodDescriptor md = MakeMethodDescriptor(map.InterfaceMethods[j]);
 								if(md != null)
 								{
 									// TODO handle name/signature clash
-									AddMethod(CreateMethodWrapper(md, map.InterfaceMethods[j], false, true));
+									AddMethod(CreateMethodWrapper(md, map.InterfaceMethods[j], true));
 								}
 							}
 						}
 					}
 				}
 			}
+
+			// for non-final remapped types, we need to add all the virtual methods in our alter ego (which
+			// appears as our base class) and make them final (to prevent Java code from overriding these
+			// methods, which don't really exist).
+			if(ClassLoaderWrapper.IsRemappedType(type) && !type.IsSealed && !type.IsInterface)
+			{
+				// Finish the type, to make sure the methods are populated
+				this.BaseTypeWrapper.Finish();
+				Hashtable h = new Hashtable();
+				TypeWrapper baseTypeWrapper = this.BaseTypeWrapper;
+				while(baseTypeWrapper != null)
+				{
+					foreach(MethodWrapper m in baseTypeWrapper.GetMethods())
+					{
+						if(!m.IsStatic && !m.IsFinal && (m.IsPublic || m.IsProtected) && m.Name != "<init>")
+						{
+							if(!h.ContainsKey(m.Descriptor.Name + m.Descriptor.Signature))
+							{
+								h.Add(m.Descriptor.Name + m.Descriptor.Signature, "");
+								MethodWrapper newmw = new MethodWrapper(this, m.Descriptor, m.GetMethod(), m.GetMethod(), m.Modifiers | Modifiers.Final, false);
+								newmw.EmitNewobj = CodeEmitter.InternalError;
+								// we bind EmitCall to EmitCallvirt, because we always want to end up at the instancehelper method
+								// (EmitCall would go to our alter ego .NET type and that wouldn't be legal)
+								newmw.EmitCall = m.EmitCallvirt;
+								newmw.EmitCallvirt = m.EmitCallvirt;
+								// TODO handle name/sig clash (what should we do?)
+								AddMethod(newmw);
+							}
+						}
+					}
+					baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
+				}
+			}
 		}
 	}
 
-	private MethodDescriptor MakeMethodDescriptor(MethodBase mb, bool isRemapped)
+	private MethodDescriptor MakeMethodDescriptor(MethodBase mb)
 	{
 		System.Text.StringBuilder sb = new System.Text.StringBuilder();
 		sb.Append('(');
 		ParameterInfo[] parameters = mb.GetParameters();
-		int bias = (isRemapped && !mb.IsStatic && !mb.IsConstructor) ? 1 : 0;
-		TypeWrapper[] args = new TypeWrapper[parameters.Length + bias];
-		if(bias == 1)
-		{
-			args[0] = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
-			sb.Append(args[0].SigName);
-		}
+		TypeWrapper[] args = new TypeWrapper[parameters.Length];
 		for(int i = 0; i < parameters.Length; i++)
 		{
 			Type type = parameters[i].ParameterType;
@@ -4806,7 +4885,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 				}
 			}
 			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
-			args[i + bias] = tw;
+			args[i] = tw;
 			sb.Append(tw.SigName);
 		}
 		sb.Append(')');
@@ -4817,11 +4896,6 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			if(mb.IsStatic)
 			{
 				name = "<clinit>";
-			}
-			else if(isRemapped)
-			{
-				name = "__new";
-				ret = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
 			}
 			else
 			{
@@ -4849,7 +4923,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		{
 			// remapped type cannot be instantiated, so it wouldn't make sense to implement
 			// interfaces
-			if(IsRemapped && !IsInterface)
+			if(ClassLoaderWrapper.IsRemappedType(type) && !IsInterface)
 			{
 				return TypeWrapper.EmptyArray;
 			}
@@ -4979,7 +5053,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 	}
 
 	// TODO why doesn't this use the standard MethodWrapper.Create?
-	private MethodWrapper CreateMethodWrapper(MethodDescriptor md, MethodBase mb, bool isRemapped, bool privateInterfaceImplHack)
+	private MethodWrapper CreateMethodWrapper(MethodDescriptor md, MethodBase mb, bool privateInterfaceImplHack)
 	{
 		Modifiers mods = AttributeHelper.GetModifiers(mb, true);
 		if(md.Name == "Finalize" && md.Signature == "()V" && !mb.IsStatic &&
@@ -5010,12 +5084,6 @@ class DotNetTypeWrapper : LazyTypeWrapper
 				hasByRefArgs = true;
 			}
 		}
-		if(isRemapped)
-		{
-			// all methods are static and final doesn't make sense
-			mods |= Modifiers.Static;
-			mods &= ~Modifiers.Final;
-		}
 		if(privateInterfaceImplHack)
 		{
 			mods &= ~Modifiers.Abstract;
@@ -5029,20 +5097,13 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			new ByRefMethodWrapper(byrefs, this, md, mb, null, mods, false) : new MethodWrapper(this, md, mb, null, mods, false);
 		if(mb is ConstructorInfo)
 		{
-			if(isRemapped)
+			method.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)mb);
+			method.EmitNewobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)mb);
+			if(this.IsNonPrimitiveValueType)
 			{
-				method.EmitCall = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)mb);
-			}
-			else
-			{
-				method.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)mb);
-				method.EmitNewobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)mb);
-				if(this.IsNonPrimitiveValueType)
-				{
-					// HACK after constructing a new object, we don't want the custom boxing rule to run
-					// (because that would turn "new IntPtr" into a null reference)
-					method.EmitNewobj += CodeEmitter.Create(OpCodes.Box, this.TypeAsTBD);
-				}
+				// HACK after constructing a new object, we don't want the custom boxing rule to run
+				// (because that would turn "new IntPtr" into a null reference)
+				method.EmitNewobj += CodeEmitter.Create(OpCodes.Box, this.TypeAsTBD);
 			}
 		}
 		else
@@ -5129,6 +5190,14 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		get
 		{
 			return type;
+		}
+	}
+
+	internal override bool IsRemapped
+	{
+		get
+		{
+			return ClassLoaderWrapper.IsRemappedType(type);
 		}
 	}
 }

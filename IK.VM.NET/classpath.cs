@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -802,6 +802,11 @@ namespace NativeCode.java
 				return null;
 			}
 
+			public static object getBootstrapClassLoader()
+			{
+				return ClassLoaderWrapper.GetJavaBootstrapClassLoader();
+			}
+
 			public static object getPrimitiveClass(char type)
 			{
 				switch(type)
@@ -1336,8 +1341,8 @@ namespace NativeCode.java
 
 			public static bool deleteInternal(object obj, string path) 
 			{
+				path = DemanglePath(path);
 				// TODO handle errors
-				// TODO shouldn't we demangle the path?
 				try
 				{
 					if (NetSystem.IO.Directory.Exists(path)) 
@@ -1362,8 +1367,8 @@ namespace NativeCode.java
 
 			public static bool createInternal(string path) 
 			{
+				path = DemanglePath(path);
 				// TODO handle errors
-				// TODO shouldn't we demangle the path?
 				try
 				{
 					NetSystem.IO.File.Open(path, FileMode.CreateNew).Close();
@@ -1402,7 +1407,7 @@ namespace NativeCode.java
 				// TODO error handling
 				try
 				{
-					string[] l = NetSystem.IO.Directory.GetFileSystemEntries(dirname);
+					string[] l = NetSystem.IO.Directory.GetFileSystemEntries(DemanglePath(dirname));
 					for(int i = 0; i < l.Length; i++)
 					{
 						int pos = l[i].LastIndexOf(Path.DirectorySeparatorChar);
@@ -1421,6 +1426,7 @@ namespace NativeCode.java
 
 			public static bool canReadInternal(object obj, string file)
 			{
+				file = DemanglePath(file);
 				try
 				{
 					// HACK if file refers to a directory, we always return true
@@ -1439,6 +1445,7 @@ namespace NativeCode.java
 
 			public static bool canWriteInternal(object obj, string file)
 			{
+				file = DemanglePath(file);
 				try
 				{
 					// HACK if file refers to a directory, we always return true
@@ -1457,6 +1464,8 @@ namespace NativeCode.java
 
 			public static bool renameToInternal(object obj, string oldName, string newName)
 			{
+				oldName = DemanglePath(oldName);
+				newName = DemanglePath(newName);
 				try
 				{
 					new FileInfo(oldName).MoveTo(newName);
@@ -1470,6 +1479,7 @@ namespace NativeCode.java
 
 			public static bool setLastModifiedInternal(object obj, string file, long lastModified)
 			{
+				file = DemanglePath(file);
 				try
 				{
 					new FileInfo(file).LastWriteTime = JavaLongTimeToDateTime(lastModified);
@@ -1483,6 +1493,7 @@ namespace NativeCode.java
 
 			public static bool setReadOnlyInternal(object obj, string file)
 			{
+				file = DemanglePath(file);
 				try
 				{
 					new FileInfo(file).Attributes |= FileAttributes.ReadOnly;
@@ -1517,6 +1528,57 @@ namespace NativeCode.java
 					return false;
 				}
 			}
+
+			private static FieldWrapper GetFieldWrapperFromField(object field)
+			{
+				// TODO optimize this
+				return (FieldWrapper)field.GetType().GetField("fieldCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(field);
+			}
+
+			public static void setDoubleNative(object field, object obj, double val)
+			{
+				GetFieldWrapperFromField(field).SetValue(obj, val);
+			}
+
+			public static void setFloatNative(object field, object obj, float val)
+			{
+				GetFieldWrapperFromField(field).SetValue(obj, val);
+			}
+
+			public static void setLongNative(object field, object obj, long val)
+			{
+				GetFieldWrapperFromField(field).SetValue(obj, val);
+			}
+
+			public static void setIntNative(object field, object obj, int val)
+			{
+				GetFieldWrapperFromField(field).SetValue(obj, val);
+			}
+
+			public static void setShortNative(object field, object obj, short val)
+			{
+				GetFieldWrapperFromField(field).SetValue(obj, val);
+			}
+
+			public static void setCharNative(object field, object obj, char val)
+			{
+				GetFieldWrapperFromField(field).SetValue(obj, val);
+			}
+
+			public static void setByteNative(object field, object obj, sbyte val)
+			{
+				GetFieldWrapperFromField(field).SetValue(obj, val);
+			}
+
+			public static void setBooleanNative(object field, object obj, bool val)
+			{
+				GetFieldWrapperFromField(field).SetValue(obj, val);
+			}
+
+			public static void setObjectNative(object field, object obj, object val)
+			{
+				GetFieldWrapperFromField(field).SetValue(obj, val);
+			}
 		}
 
 		public class ObjectInputStream
@@ -1534,10 +1596,7 @@ namespace NativeCode.java
 				Profiler.Enter("ObjectInputStream.allocateObject");
 				try
 				{
-					TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
-					wrapper.Finish();
-					// TODO if we're instantiating a remapping type, we need to use TypeAsBaseType (except for String)
-					return NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsTBD);
+					return JniHelper.AllocObject(clazz);
 				}
 				finally
 				{

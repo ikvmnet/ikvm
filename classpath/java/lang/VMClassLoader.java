@@ -133,6 +133,15 @@ final class VMClassLoader
     {
 	try
 	{
+	    ClassLoader bootstrap = getBootstrapClassLoader();
+	    if(bootstrap != null)
+	    {
+		URL url = bootstrap.findResource(name);
+		if(url != null)
+		{
+		    return url;
+		}
+	    }
 	    Assembly assembly = findResourceAssembly(name);
 	    if(assembly != null)
 	    {
@@ -145,6 +154,7 @@ final class VMClassLoader
 	return null;
     }
     private static native Assembly findResourceAssembly(String name);
+    private static native ClassLoader getBootstrapClassLoader();
 
   /**
    * Helper to get a list of resources from the bootstrap class loader.

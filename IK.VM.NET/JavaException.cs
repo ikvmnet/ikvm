@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -30,6 +30,7 @@ sealed class JavaException
 
 	private static Type Load(string clazz)
 	{
+		Tracer.Info(Tracer.Runtime, "Loading exception class: {0}", clazz);
 		TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(clazz);
 		tw.Finish();
 		return tw.TypeAsTBD;
