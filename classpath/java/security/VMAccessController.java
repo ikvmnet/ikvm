@@ -57,14 +57,14 @@ final class VMAccessController
    * call stack. We use this to remember which context object corresponds to
    * which call.
    */
-  private static final cli.System.LocalDataStoreSlot contexts = cli.System.Threading.Thread.AllocateDataSlot();
+  private static LinkedList __tls_contexts;
 
   /**
    * This is a Boolean that, if set, tells getContext that it has already
    * been called once, allowing us to handle recursive permission checks
    * caused by methods getContext calls.
    */
-  private static final cli.System.LocalDataStoreSlot inGetContext = cli.System.Threading.Thread.AllocateDataSlot();
+  private static boolean __tls_inGetContext;
 
   /**
    * And we return this all-permissive context to ensure that privileged
@@ -111,11 +111,11 @@ final class VMAccessController
   {
     if (DEBUG)
       debug("pushing " + acc);
-    LinkedList stack = (LinkedList) cli.System.Threading.Thread.GetData(contexts);
+    LinkedList stack = __tls_contexts;
     if (stack == null)
       {
         stack = new LinkedList();
-        cli.System.Threading.Thread.SetData(contexts, stack);
+        __tls_contexts = stack;
       }
     stack.addFirst(acc);
   }
@@ -133,12 +133,12 @@ final class VMAccessController
 
     // Stack should never be null, nor should it be empty, if this method
     // and its counterpart has been called properly.
-    LinkedList stack = (LinkedList) cli.System.Threading.Thread.GetData(contexts);
+    LinkedList stack = __tls_contexts;
     if (stack != null)
       {
         stack.removeFirst();
         if (stack.isEmpty())
-          cli.System.Threading.Thread.SetData(contexts, null);
+          __tls_contexts = null;
       }
   }
 
@@ -157,15 +157,14 @@ final class VMAccessController
     //
     // XXX is this necessary? We should verify if there are any calls in
     // the stack below this method that require permission checks.
-    Boolean inCall = (Boolean) cli.System.Threading.Thread.GetData(inGetContext);
-    if (inCall != null && inCall.booleanValue())
+    if (__tls_inGetContext)
       {
         if (DEBUG)
           debug("already in getContext");
         return DEFAULT_CONTEXT;
       }
 
-    cli.System.Threading.Thread.SetData(inGetContext, Boolean.TRUE);
+    __tls_inGetContext = true;
 
     Object[][] stack = getStack();
     Class[] classes = (Class[]) stack[0];
@@ -210,7 +209,7 @@ final class VMAccessController
           {
             // If there was a call to doPrivileged with a supplied context,
             // return that context.
-            LinkedList l = (LinkedList) cli.System.Threading.Thread.GetData(contexts);
+            LinkedList l = __tls_contexts;
             if (l != null)
               context = (AccessControlContext) l.getFirst();
             privileged = 1;
@@ -245,7 +244,7 @@ final class VMAccessController
     else
       context = new AccessControlContext(result);
 
-    cli.System.Threading.Thread.SetData(inGetContext, Boolean.FALSE);
+    __tls_inGetContext = false;
     return context;
   }
 

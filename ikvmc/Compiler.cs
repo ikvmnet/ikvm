@@ -120,6 +120,8 @@ class Compiler
 			Console.Error.WriteLine("    -Xtrace:<string>           Displays all tracepoints with the given name");
 			Console.Error.WriteLine("    -Xmethodtrace:<string>     Build tracing into the specified output methods");
 			Console.Error.WriteLine("    -monoBugWorkaround         Workaround metadata bug in Mono 1.0.5 and 1.1.3");
+			Console.Error.WriteLine("    -enabletls                 Apply ThreadStaticAttribute to fields starting");
+			Console.Error.WriteLine("                               with __tls_");
 			return 1;
 		}
 		foreach(string s in arglist)
@@ -358,6 +360,10 @@ class Compiler
 				else if(s == "-monoBugWorkaround")
 				{
 					options.monoBugWorkaround = true;
+				}
+				else if(s == "-enabletls")
+				{
+					options.enableTls = true;
 				}
 				else if(s == "-opt:fields")
 				{

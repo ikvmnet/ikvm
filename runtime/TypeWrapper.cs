@@ -89,9 +89,9 @@ class EmitHelper
 			ilgen.Emit(OpCodes.Isinst, type);
 			ilgen.Emit(OpCodes.Dup);
 			Label ok = ilgen.DefineLabel();
-			ilgen.Emit(OpCodes.Brtrue, ok);
+			ilgen.Emit(OpCodes.Brtrue_S, ok);
 			ilgen.Emit(OpCodes.Ldloc, lb);
-			ilgen.Emit(OpCodes.Brfalse, ok);	// handle null
+			ilgen.Emit(OpCodes.Brfalse_S, ok);	// handle null
 			ilgen.Emit(OpCodes.Ldtoken, type);
 			ilgen.Emit(OpCodes.Ldloc, lb);
 			ilgen.Emit(OpCodes.Call, verboseCastFailure);
@@ -101,6 +101,23 @@ class EmitHelper
 		{
 			ilgen.Emit(OpCodes.Castclass, type);
 		}
+	}
+
+	// This is basically the same as Castclass, except that it
+	// throws an IncompatibleClassChangeError on failure.
+	internal static void EmitAssertType(ILGenerator ilgen, Type type)
+	{
+		LocalBuilder lb = ilgen.DeclareLocal(typeof(object));
+		ilgen.Emit(OpCodes.Stloc, lb);
+		ilgen.Emit(OpCodes.Ldloc, lb);
+		ilgen.Emit(OpCodes.Isinst, type);
+		ilgen.Emit(OpCodes.Dup);
+		Label ok = ilgen.DefineLabel();
+		ilgen.Emit(OpCodes.Brtrue_S, ok);
+		ilgen.Emit(OpCodes.Ldloc, lb);
+		ilgen.Emit(OpCodes.Brfalse_S, ok);	// handle null
+		EmitHelper.Throw(ilgen, "java.lang.IncompatibleClassChangeError");
+		ilgen.MarkLabel(ok);
 	}
 }
 
@@ -1391,7 +1408,8 @@ abstract class TypeWrapper
 				// for any interface reference
 			else if(IsInterfaceOrInterfaceArray && (sourceType == null || sourceType.IsUnloadable || !sourceType.IsAssignableTo(this)))
 			{
-				ilgen.Emit(OpCodes.Castclass, TypeAsTBD);
+				EmitHelper.EmitAssertType(ilgen, TypeAsTBD);
+				Profiler.Count("InterfaceDownCast");
 			}
 			else if(IsNonPrimitiveValueType)
 			{
@@ -2720,6 +2738,11 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					setModifiers = true;
 				}
 				field = typeBuilder.DefineField(fieldName, type, attribs);
+				if(JVM.IsTlsEnabled && fieldName.StartsWith("__tls_"))
+				{
+					CustomAttributeBuilder threadStaticAttrib = new CustomAttributeBuilder(typeof(ThreadStaticAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+					field.SetCustomAttribute(threadStaticAttrib);
+				}
 				if(fld.IsTransient)
 				{
 					CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(typeof(NonSerializedAttribute).GetConstructor(Type.EmptyTypes), new object[0]);

@@ -370,16 +370,22 @@ namespace IKVM.Runtime
 
 	sealed class JniHelper
 	{
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_LoadLibrary@4")]
 		[DllImport("ikvm-native")]
 		private static extern IntPtr ikvm_LoadLibrary(string filename);
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_FreeLibrary@4")]
 		[DllImport("ikvm-native")]
 		private static extern void ikvm_FreeLibrary(IntPtr handle);
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_GetProcAddress@12")]
 		[DllImport("ikvm-native")]
 		internal static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_CallOnLoad@12")]
 		[DllImport("ikvm-native")]
 		private unsafe static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_GetJNIEnvVTable@0")]
 		[DllImport("ikvm-native")]
 		internal unsafe static extern void** ikvm_GetJNIEnvVTable();
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_MarshalDelegate@4")]
 		[DllImport("ikvm-native")]
 		internal unsafe static extern void* ikvm_MarshalDelegate(Delegate d);
 
@@ -1639,13 +1645,18 @@ namespace IKVM.Runtime
 			{
 				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
 				wrapper.Finish();
-				MethodWrapper mw = wrapper.GetMethodWrapper(StringFromUTF8(name), StringFromUTF8(sig).Replace('/', '.'), true);
-				if(mw != null)
+				string methodsig = StringFromUTF8(sig);
+				// don't allow dotted names!
+				if(methodsig.IndexOf('.') < 0)
 				{
-					if(mw.IsStatic == isstatic)
+					MethodWrapper mw = wrapper.GetMethodWrapper(StringFromUTF8(name), methodsig.Replace('/', '.'), true);
+					if(mw != null)
 					{
-						mw.Link();
-						return mw.Cookie;
+						if(mw.IsStatic == isstatic)
+						{
+							mw.Link();
+							return mw.Cookie;
+						}
 					}
 				}
 				SetPendingException(pEnv, JavaException.NoSuchMethodError("{0}{1}", StringFromUTF8(name), StringFromUTF8(sig).Replace('/', '.')));
@@ -1852,12 +1863,17 @@ namespace IKVM.Runtime
 			{
 				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
 				wrapper.Finish();
-				FieldWrapper fw = wrapper.GetFieldWrapper(StringFromUTF8(name), StringFromUTF8(sig).Replace('/', '.'));
-				if(fw != null)
+				string fieldsig = StringFromUTF8(sig);
+				// don't allow dotted names!
+				if(fieldsig.IndexOf('.') < 0)
 				{
-					if(fw.IsStatic == isstatic)
+					FieldWrapper fw = wrapper.GetFieldWrapper(StringFromUTF8(name), fieldsig.Replace('/', '.'));
+					if(fw != null)
 					{
-						return fw.Cookie;
+						if(fw.IsStatic == isstatic)
+						{
+							return fw.Cookie;
+						}
 					}
 				}
 				SetPendingException(pEnv, JavaException.NoSuchFieldError(StringFromUTF8(name)));
@@ -2872,8 +2888,14 @@ namespace IKVM.Runtime
 				wrapper.Finish();
 				for(int i = 0; i < nMethods; i++)
 				{
-					// TODO this won't work when we're putting the JNI methods in jniproxy.dll
-					FieldInfo fi = wrapper.TypeAsTBD.GetField(JNI.METHOD_PTR_FIELD_PREFIX + StringFromUTF8(methods[i].name) + StringFromUTF8(methods[i].signature).Replace('/', '.') + ">", BindingFlags.Static | BindingFlags.NonPublic);
+					string methodsig = StringFromUTF8(methods[i].signature);
+					FieldInfo fi = null;
+					// don't allow dotted names!
+					if(methodsig.IndexOf('.') < 0)
+					{
+						// TODO this won't work when we're putting the JNI methods in jniproxy.dll
+						fi = wrapper.TypeAsTBD.GetField(JNI.METHOD_PTR_FIELD_PREFIX + StringFromUTF8(methods[i].name) + methodsig.Replace('/', '.') + ">", BindingFlags.Static | BindingFlags.NonPublic);
+					}
 					if(fi == null)
 					{
 						SetPendingException(pEnv, JavaException.NoSuchMethodError(StringFromUTF8(methods[i].name)));
@@ -3139,7 +3161,8 @@ namespace IKVM.Runtime
 			{
 				for(int i = 0; i < GlobalRefs.weakRefs.Length; i++)
 				{
-					if(!GlobalRefs.weakRefs[i].IsAllocated)
+					// MONOBUG GCHandle.IsAllocated is horribly broken, so we also check the value of the handle
+					if(!GlobalRefs.weakRefs[i].IsAllocated || (IntPtr)GlobalRefs.weakRefs[i] == IntPtr.Zero)
 					{
 						GlobalRefs.weakRefs[i] = GCHandle.Alloc(o, GCHandleType.WeakTrackResurrection);
 						return (IntPtr)(- (i | (1 << 30)));

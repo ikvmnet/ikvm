@@ -2419,6 +2419,7 @@ sun/misc/Ref.java
 ../../classpath/javax/swing/SizeRequirements.java
 ../../classpath/javax/swing/SizeSequence.java
 ../../classpath/javax/swing/SortingFocusTraversalPolicy.java
+../../classpath/javax/swing/SpinnerDateModel.java
 ../../classpath/javax/swing/SpinnerListModel.java
 ../../classpath/javax/swing/SpinnerModel.java
 ../../classpath/javax/swing/SpinnerNumberModel.java
@@ -2734,7 +2735,7 @@ sun/misc/Ref.java
 ../../classpath/gnu/xml/aelfred2/XmlReader.java
 ../../classpath/gnu/xml/dom/Consumer.java
 ../../classpath/gnu/xml/dom/DomAttr.java
-../../classpath/gnu/xml/dom/DomCDATA.java
+../../classpath/gnu/xml/dom/DomCDATASection.java
 ../../classpath/gnu/xml/dom/DomCharacterData.java
 ../../classpath/gnu/xml/dom/DomComment.java
 ../../classpath/gnu/xml/dom/DomDoctype.java
@@ -2742,13 +2743,13 @@ sun/misc/Ref.java
 ../../classpath/gnu/xml/dom/DomDocumentBuilder.java
 ../../classpath/gnu/xml/dom/DomDocumentBuilderFactory.java
 ../../classpath/gnu/xml/dom/DomDocumentConfiguration.java
+../../classpath/gnu/xml/dom/DomDocumentFragment.java
+../../classpath/gnu/xml/dom/DomDOMException.java
 ../../classpath/gnu/xml/dom/DomElement.java
 ../../classpath/gnu/xml/dom/DomEntity.java
 ../../classpath/gnu/xml/dom/DomEntityReference.java
 ../../classpath/gnu/xml/dom/DomEvent.java
-../../classpath/gnu/xml/dom/DomEx.java
 ../../classpath/gnu/xml/dom/DomExtern.java
-../../classpath/gnu/xml/dom/DomFragment.java
 ../../classpath/gnu/xml/dom/DomImpl.java
 ../../classpath/gnu/xml/dom/DomIterator.java
 ../../classpath/gnu/xml/dom/DomNamedNodeMap.java
@@ -2757,7 +2758,7 @@ sun/misc/Ref.java
 ../../classpath/gnu/xml/dom/DomNotation.java
 ../../classpath/gnu/xml/dom/DomNsNode.java
 ../../classpath/gnu/xml/dom/DomNSResolverContext.java
-../../classpath/gnu/xml/dom/DomPI.java
+../../classpath/gnu/xml/dom/DomProcessingInstruction.java
 ../../classpath/gnu/xml/dom/DomText.java
 ../../classpath/gnu/xml/dom/DomXPathExpression.java
 ../../classpath/gnu/xml/dom/DomXPathNSResolver.java
@@ -2767,7 +2768,7 @@ sun/misc/Ref.java
 ../../classpath/gnu/xml/dom/ImplementationList.java
 ../../classpath/gnu/xml/dom/ImplementationSource.java
 ../../classpath/gnu/xml/dom/JAXPFactory.java
-../../classpath/gnu/xml/dom/ls/DomLSEx.java
+../../classpath/gnu/xml/dom/ls/DomLSException.java
 ../../classpath/gnu/xml/dom/ls/DomLSInput.java
 ../../classpath/gnu/xml/dom/ls/DomLSOutput.java
 ../../classpath/gnu/xml/dom/ls/DomLSParser.java

@@ -6,7 +6,8 @@ final class VMThread
 {
     private static final Object countLock = new Object();
     private static int nonDaemonCount;
-    private static final cli.System.LocalDataStoreSlot localDataStoreSlot = cli.System.Threading.Thread.AllocateDataSlot();
+    private static Thread __tls_javaThread;
+    private static Object __tls_cleanup;
     private cli.System.WeakReference nativeThreadReference;
 
     // Note: when this thread dies, this reference is *not* cleared
@@ -122,7 +123,8 @@ final class VMThread
 	synchronized(vmthread)
 	{
 	    vmthread.cleanup();
-	    cli.System.Threading.Thread.SetData(localDataStoreSlot, null);
+            __tls_javaThread = null;
+            __tls_cleanup = null;
             VMThread joinWaiter = vmthread.firstJoinWaiter;
             while(joinWaiter != null)
             {
@@ -163,8 +165,7 @@ final class VMThread
 
     static void setThreadGroup(ThreadGroup group)
     {
-        Thread javaThread = (Thread)cli.System.Threading.Thread.GetData(localDataStoreSlot);
-        if(javaThread == null)
+        if(__tls_javaThread == null)
         {
             newThread(group);
         }
@@ -283,7 +284,7 @@ final class VMThread
 	{
 	    public void Invoke()
 	    {
-		cli.System.Threading.Thread.SetData(localDataStoreSlot, thread);
+                __tls_javaThread = thread;
 		run();
 	    }
 	});
@@ -508,8 +509,8 @@ final class VMThread
             }
         }
         vmThread.thread = javaThread;
-        cli.System.Threading.Thread.SetData(localDataStoreSlot, javaThread);
-        cli.System.Threading.Thread.SetData(cli.System.Threading.Thread.GetNamedDataSlot("ikvm-thread-hack"), new CleanupHack(javaThread));
+        __tls_javaThread = javaThread;
+        __tls_cleanup = new CleanupHack(javaThread);
         javaThread.group = group;
         javaThread.group.addThread(javaThread);
         InheritableThreadLocal.newChildThread(javaThread);
@@ -518,10 +519,10 @@ final class VMThread
 
     static Thread currentThread()
     {
-        Thread javaThread = (Thread)cli.System.Threading.Thread.GetData(localDataStoreSlot);
+        Thread javaThread = __tls_javaThread;
 	if(javaThread == null)
 	{
-            javaThread = newThread(ThreadGroup.root);
+            __tls_javaThread = javaThread = newThread(ThreadGroup.root);
 	}
 	return javaThread;
     }

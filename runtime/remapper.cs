@@ -145,7 +145,7 @@ namespace IKVM.Internal.MapXml
 								}
 								if(tw.IsGhost)
 								{
-									tw.EmitConvStackTypeToSignatureType(ilgen, tw);
+									tw.EmitConvStackTypeToSignatureType(ilgen, null);
 								}
 								temps[j] = ilgen.DeclareLocal(tw.TypeAsSignatureType);
 								ilgen.Emit(OpCodes.Stloc, temps[j]);

@@ -74,7 +74,8 @@ class MemberWrapper
 		{
 			lock(this)
 			{
-				if(!handle.IsAllocated)
+				// MONOBUG GCHandle.IsAllocated is horribly broken, so we also check the value of the handle
+				if(!handle.IsAllocated || (IntPtr)handle == IntPtr.Zero)
 				{
 					handle = System.Runtime.InteropServices.GCHandle.Alloc(this, System.Runtime.InteropServices.GCHandleType.Weak);
 				}

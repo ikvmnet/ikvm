@@ -45,12 +45,8 @@ namespace IKVM.Runtime
 		{
 		}
 
-		public static string[] Glob(string arg)
+		private static string[] Glob(string arg)
 		{
-			if(IKVM.Internal.JVM.IsUnix)
-			{
-				return new string[] { arg };
-			}
 			try
 			{
 				string dir = Path.GetDirectoryName(arg);
@@ -77,14 +73,7 @@ namespace IKVM.Runtime
 
 		public static string[] Glob()
 		{
-			if(IKVM.Internal.JVM.IsUnix)
-			{
-				return Environment.GetCommandLineArgs();
-			}
-			else
-			{
-				return Glob(1);
-			}
+			return Glob(1);
 		}
 
 		public static string[] Glob(int skip)
@@ -163,7 +152,13 @@ namespace IKVM.Runtime
 		{
 			if(Thread.CurrentThread.Name == null)
 			{
-				Thread.CurrentThread.Name = "main";
+				try
+				{
+					Thread.CurrentThread.Name = "main";
+				}
+				catch(InvalidOperationException)
+				{
+				}
 			}
 		}
 
@@ -172,17 +167,9 @@ namespace IKVM.Runtime
 			// FXBUG when the main thread ends, it doesn't actually die, it stays around to manage the lifetime
 			// of the CLR, but in doing so it also keeps alive the thread local storage for this thread and we
 			// use the TLS as a hack to track when the thread dies (if the object stored in the TLS is finalized,
-			// we know the thread is dead). So to make that work for the main thread, we explicitly clear the TLS
-			// slot that contains our hack object.
-			try
-			{
-				Thread.SetData(Thread.GetNamedDataSlot("ikvm-thread-hack"), null);
-			}
-			catch(NullReferenceException)
-			{
-				// MONOBUG Thread.SetData throws a NullReferenceException on Mono
-				// if the slot hadn't already been allocated
-			}
+			// we know the thread is dead). So to make that work for the main thread, we use jniDetach which
+			// explicitly cleans up our thread.
+			IKVM.Internal.JVM.Library.jniDetach();
 		}
 	}
 
@@ -296,6 +283,7 @@ namespace IKVM.Internal
 		private static bool noJniStubs;
 		private static bool isStaticCompiler;
 		private static bool noStackTraceInfo;
+		private static bool isTlsEnabled;
 		private static bool compilationPhase1;
 		private static string sourcePath;
 		private static bool monoBugWorkaround;
@@ -378,6 +366,18 @@ namespace IKVM.Internal
 			get
 			{
 				return compilationPhase1;
+			}
+		}
+
+		internal static bool IsTlsEnabled
+		{
+			get
+			{
+				return isTlsEnabled;
+			}
+			set
+			{
+				isTlsEnabled = value;
 			}
 		}
 
@@ -1948,6 +1948,7 @@ namespace IKVM.Internal
 			public bool nostacktraceinfo;
 			public bool removeUnusedFields;
 			public bool monoBugWorkaround;
+			public bool enableTls;
 		}
 
 		public static int Compile(CompilerOptions options)
@@ -1957,6 +1958,7 @@ namespace IKVM.Internal
 			noJniStubs = options.nojni;
 			noStackTraceInfo = options.nostacktraceinfo;
 			monoBugWorkaround = options.monoBugWorkaround;
+			isTlsEnabled = options.enableTls;
 			foreach(string r in options.references)
 			{
 				try

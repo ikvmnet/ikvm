@@ -174,37 +174,34 @@ final class VMClassLoader
      */
     static Enumeration getResources(String name) throws IOException
     {
-        synchronized(nestedGetResourcesHack)
-        {
-	    if(cli.System.Threading.Thread.GetData(nestedGetResourcesHack) != null)
+	if(__tls_nestedGetResourcesHack)
+	{
+	    return gnu.java.util.EmptyEnumeration.getInstance();
+	}
+	__tls_nestedGetResourcesHack = true;
+	try
+	{
+	    Assembly[] assemblies = findResourceAssemblies(name);
+	    java.util.Vector v = new java.util.Vector();
+	    for(int i = 0; i < assemblies.length; i++)
 	    {
-	        return gnu.java.util.EmptyEnumeration.getInstance();
+		v.addElement(new URL("ikvmres", assemblies[i].get_FullName(), -1, "/" + name));
 	    }
-	    cli.System.Threading.Thread.SetData(nestedGetResourcesHack, "");
-	    try
+	    Enumeration e = v.elements();
+	    ClassLoader bootstrap = getBootstrapClassLoader();
+	    if(bootstrap != null)
 	    {
-	        Assembly[] assemblies = findResourceAssemblies(name);
-	        java.util.Vector v = new java.util.Vector();
-	        for(int i = 0; i < assemblies.length; i++)
-	        {
-		    v.addElement(new URL("ikvmres", assemblies[i].get_FullName(), -1, "/" + name));
-	        }
-	        Enumeration e = v.elements();
-	        ClassLoader bootstrap = getBootstrapClassLoader();
-	        if(bootstrap != null)
-	        {
-		    e = new DoubleEnumeration(e, bootstrap.getResources(name));
-	        }
-	        return e;
+		e = new DoubleEnumeration(e, bootstrap.getResources(name));
 	    }
-	    finally
-	    {
-	        cli.System.Threading.Thread.SetData(nestedGetResourcesHack, null);
-	    }
-        }
+	    return e;
+	}
+	finally
+	{
+	    __tls_nestedGetResourcesHack = false;
+	}
     }
 
-    private static cli.System.LocalDataStoreSlot nestedGetResourcesHack = cli.System.Threading.Thread.AllocateDataSlot();
+    private static boolean __tls_nestedGetResourcesHack;
 
     /**
      * Helper to get a package from the bootstrap class loader.  The default
@@ -252,15 +249,9 @@ final class VMClassLoader
         if(packages == null)
         {
             ClassLoader boot = getBootstrapClassLoader();
-            if(boot != null)
+            if(boot != null && __tls_nestedGetResourcesHack)
             {
-                synchronized(nestedGetResourcesHack)
-                {
-                    if(cli.System.Threading.Thread.GetData(nestedGetResourcesHack) != null)
-                    {
-                        return new Package[0];
-                    }
-                }
+                return new Package[0];
             }
             HashMap h = new HashMap();
             Assembly[] assemblies = AppDomain.get_CurrentDomain().GetAssemblies();
@@ -283,17 +274,14 @@ final class VMClassLoader
             if(boot != null)
             {
                 Package[] pkgboot;
-                synchronized(nestedGetResourcesHack)
+                __tls_nestedGetResourcesHack = true;
+                try
                 {
-                    cli.System.Threading.Thread.SetData(nestedGetResourcesHack, "");
-                    try
-                    {
-                        pkgboot = boot.getPackages();
-                    }
-                    finally
-                    {
-                        cli.System.Threading.Thread.SetData(nestedGetResourcesHack, null);
-                    }
+                    pkgboot = boot.getPackages();
+                }
+                finally
+                {
+                    __tls_nestedGetResourcesHack = false;
                 }
                 Collection c = h.values();
                 packages = new Package[c.size() + pkgboot.length];

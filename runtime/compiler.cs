@@ -1987,6 +1987,9 @@ class Compiler
 							}
 							else
 							{
+								// NOTE for verifiability it is expressly *not* required that the
+								// value matches the array type, so we don't need to handle interface
+								// references here.
 								ilGenerator.Emit(OpCodes.Stelem_Ref);
 							}
 						}
@@ -2789,8 +2792,7 @@ class Compiler
 					TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
 					if(tw.IsUnloadable || (args[i].IsInterfaceOrInterfaceArray && !tw.IsAssignableTo(args[i])))
 					{
-						// TODO ideally, instead of an InvalidCastException, the castclass should throw a IncompatibleClassChangeError
-						ilGenerator.Emit(OpCodes.Castclass, args[i].TypeAsTBD);
+						EmitHelper.EmitAssertType(ilGenerator, args[i].TypeAsTBD);
 						Profiler.Count("InterfaceDownCast");
 					}
 				}
