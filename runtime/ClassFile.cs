@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -550,7 +550,7 @@ sealed class ClassFile
 		ArrayList list = new ArrayList();
 		foreach(Field f in fields)
 		{
-			if(f.IsPrivate && f.Name != "serialVersionUID" && !IsReferenced(f))
+			if(f.IsPrivate && f.IsStatic && f.Name != "serialVersionUID" && !IsReferenced(f))
 			{
 				// unused, so we skip it
 				Tracer.Info(Tracer.Compiler, "Unused field {0}::{1}", this.Name, f.Name);

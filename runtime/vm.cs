@@ -173,7 +173,15 @@ namespace IKVM.Runtime
 			// use the TLS as a hack to track when the thread dies (if the object stored in the TLS is finalized,
 			// we know the thread is dead). So to make that work for the main thread, we explicitly clear the TLS
 			// slot that contains our hack object.
-			Thread.SetData(Thread.GetNamedDataSlot("ikvm-thread-hack"), null);
+			try
+			{
+				Thread.SetData(Thread.GetNamedDataSlot("ikvm-thread-hack"), null);
+			}
+			catch(NullReferenceException)
+			{
+				// MONOBUG Thread.SetData throws a NullReferenceException on Mono
+				// if the slot hadn't already been allocated
+			}
 		}
 	}
 
@@ -289,6 +297,7 @@ namespace IKVM.Internal
 		private static bool noStackTraceInfo;
 		private static bool compilationPhase1;
 		private static string sourcePath;
+		private static bool monoBugWorkaround;
 		private static ikvm.@internal.LibraryVMInterface lib;
 
 		internal static ikvm.@internal.LibraryVMInterface Library
@@ -564,10 +573,46 @@ namespace IKVM.Internal
 				assemblyBuilder.SetEntryPoint(mainStub, target);
 			}
 
+			private void MonoBugWorkaround()
+			{
+				// Mono 1.0.5 (and earlier) and 1.1.3 (and earlier) have bug in the metadata routines.
+				// Zoltan says:
+				// The size calculation for the MethodSematics:Association metadata column was wrong,
+				// it was based on the size of the Method table, so when the number of methods in the
+				// dll exceeded some number, all the tables after the MethodSematics table had the
+				// wrong address. This means the only workaround for this bug is to emit
+				// like 32768 dummy Events or Properties, or decrease the size of the Method table to
+				// below 32768 by dropping some classes.
+				// ---
+				// We distribute the properties in 128 nested classes, because peverify has some very
+				// non-linear algorithms and is extremely slow with 32768 properties in a single class.
+				// (it also helps make the overhead a little smaller.)
+				TypeBuilder tb = ModuleBuilder.DefineType("MonoBugWorkaround", TypeAttributes.NotPublic);
+				TypeBuilder[] nested = new TypeBuilder[128];
+				for(int i = 0; i < nested.Length; i++)
+				{
+					nested[i] = tb.DefineNestedType(i.ToString(), TypeAttributes.NestedPrivate);
+					for(int j = 0; j < 32768 / nested.Length; j++)
+					{
+						nested[i].DefineProperty(j.ToString(), PropertyAttributes.None, typeof(int), Type.EmptyTypes);
+					}
+				}
+				tb.CreateType();
+				for(int i = 0; i < nested.Length; i++)
+				{
+					nested[i].CreateType();
+				}
+			}
+
 			internal void Save()
 			{
 				Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
 				FinishAll();
+
+				if(monoBugWorkaround)
+				{
+					MonoBugWorkaround();
+				}
 
 				ModuleBuilder.CreateGlobalFunctions();
 
@@ -1869,6 +1914,7 @@ namespace IKVM.Internal
 			public bool noglobbing;
 			public bool nostacktraceinfo;
 			public bool removeUnusedFields;
+			public bool monoBugWorkaround;
 		}
 
 		public static int Compile(CompilerOptions options)
@@ -1877,6 +1923,7 @@ namespace IKVM.Internal
 			isStaticCompiler = true;
 			noJniStubs = options.nojni;
 			noStackTraceInfo = options.nostacktraceinfo;
+			monoBugWorkaround = options.monoBugWorkaround;
 			foreach(string r in options.references)
 			{
 				try
