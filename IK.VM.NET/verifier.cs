@@ -1599,7 +1599,8 @@ class MethodAnalyzer
 							}
 							case NormalizedByteCode.__monitorenter:
 							case NormalizedByteCode.__monitorexit:
-								// TODO is this allowed to be an uninitialized object?
+								// TODO these bytecodes are allowed on an uninitialized object, but
+								// we don't support that at the moment...
 								s.PopObjectType();
 								break;
 							case NormalizedByteCode.__return:

@@ -22,58 +22,91 @@
   
 */
 using System;
+using System.Text;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 public sealed class JniHelper
 {
-	public static System.Reflection.MethodBase GetMethod(object clazz, string name, string sig, bool isStatic)
+	public static IntPtr GetMethodCookie(object clazz, string name, string sig, bool isStatic)
 	{
-		// TODO this is totally broken, because JNI needs to support redirection
 		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.Class.getType(clazz));
 		wrapper.Finish();
-		MethodDescriptor md = new MethodDescriptor(wrapper.GetClassLoader(), name, sig);
-		BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic;
-		if(isStatic)
+		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig), true);
+		if(mw != null)
 		{
-			bindings |= BindingFlags.Static;
-		}
-		else
-		{
-			bindings |= BindingFlags.Instance;
-		}
-		if(name == "<init>")
-		{
-			return wrapper.Type.GetConstructor(bindings, null, md.ArgTypes, null);
-		}
-		Type type = wrapper.Type;
-		while(type != null)
-		{
-			MethodInfo m = type.GetMethod(name, bindings, null, CallingConventions.Standard, md.ArgTypes, null);
-			if(m != null)
+			if(mw.IsStatic == isStatic)
 			{
-				return m;
+				return mw.Cookie;
 			}
-			type = type.BaseType;
 		}
-		return null;
+		return (IntPtr)0;
 	}
 
-	public static System.Reflection.FieldInfo GetField(object clazz, string name, string sig, bool isStatic)
+	// this method returns a simplified method argument descriptor.
+	// some examples:
+	// "()V" -> ""
+	// "(ILjava/lang/String;)I" -> "IL"
+	// "([Ljava/lang/String;)V" -> "L"
+	public static string GetMethodArgList(IntPtr cookie)
 	{
-		// TODO this is totally broken, because JNI needs to support redirection
+		StringBuilder sb = new StringBuilder();
+		string s = MethodWrapper.FromCookie(cookie).Descriptor.Signature;
+		for(int i = 1;; i++)
+		{
+			switch(s[i])
+			{
+				case '[':
+					while(s[i] == '[') i++;
+					if(s[i] == 'L')
+					{
+						while(s[i] != ';') i++;
+					}
+					sb.Append('L');
+					break;
+				case 'L':
+					while(s[i] != ';') i++;
+					sb.Append('L');
+					break;
+				case ')':
+					return sb.ToString();
+				default:
+					sb.Append(s[i]);
+					break;
+			}
+		}
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static object InvokeMethod(IntPtr cookie, object obj, object[] args, bool nonVirtual)
+	{
+		return MethodWrapper.FromCookie(cookie).Invoke(obj, args, nonVirtual);
+	}
+
+	public static IntPtr GetFieldCookie(object clazz, string name, string sig, bool isStatic)
+	{
 		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.Class.getType(clazz));
 		wrapper.Finish();
-		MethodDescriptor md = new MethodDescriptor(wrapper.GetClassLoader(), name, sig);
-		BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic;
-		if(isStatic)
+		// TODO GetFieldWrapper should take sig (what about searching the base classes?)
+		FieldWrapper fw = wrapper.GetFieldWrapper(name);
+		if(fw != null)
 		{
-			bindings |= BindingFlags.Static;
+			if(fw.IsStatic == isStatic)
+			{
+				return fw.Cookie;
+			}
 		}
-		else
-		{
-			bindings |= BindingFlags.Instance;
-		}
-		return wrapper.Type.GetField(name, bindings);
+		return (IntPtr)0;
+	}
+
+	public static void SetFieldValue(IntPtr cookie, object obj, object val)
+	{
+		FieldWrapper.FromCookie(cookie).SetValue(obj, val);
+	}
+
+	public static object GetFieldValue(IntPtr cookie, object obj)
+	{
+		return FieldWrapper.FromCookie(cookie).GetValue(obj);
 	}
 
 	public static object FindClass(string javaName)

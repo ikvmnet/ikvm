@@ -307,70 +307,16 @@ public final class Method extends AccessibleObject implements Member
 	public Object invoke(Object o, Object[] args)
 		throws IllegalAccessException, InvocationTargetException
 	{
-		// TODO
-		return Invoke(methodCookie, o, args);
-		/*
+		// TODO check args and accessibility
 		try
 		{
-			if(false) throw new MemberAccessException();
-			if(false) throw new ArgumentException();
-			if(false) throw new TargetParameterCountException();
-			if(false) throw new TargetInvocationException(null);
-			ParameterInfo[] params = method.GetParameters();
-			for(int i = 0; i < params.length; i++)
-			{
-				Type type = params[i].get_ParameterType();
-				if(type.get_IsPrimitive())
-				{
-					if(type == BoxHelper.INT)
-					{
-						args[i] = BoxHelper.boxInteger(((Integer)args[i]).intValue());
-					}
-					else if(type == BoxHelper.BOOLEAN)
-					{
-						args[i] = BoxHelper.boxBoolean(((java.lang.Boolean)args[i]).booleanValue());
-					}
-					else
-					{
-						throw new InternalError("method invoke arg boxing not implemented for " + type.get_FullName());
-					}
-				}
-			}
-			// TODO wrappers need to be unwrapped (e.g. java.lang.Integer -> boxed System.Int32)
-			Object retval = method.Invoke(o, args);
-			Type rettype = method.get_ReturnType();
-			if(rettype.get_IsPrimitive())
-			{
-				if(rettype == BoxHelper.INT)
-				{
-					retval = new Integer(BoxHelper.unboxInteger(retval));
-				}
-				else
-				{
-					throw new InternalError("method invoke retval unboxing not implemented for " + rettype.get_FullName());
-				}
-			}
-			return retval;
+			return Invoke(methodCookie, o, args);
 		}
-		catch(MemberAccessException x1)
+		catch(Throwable x)
 		{
-			throw new IllegalAccessException(x1.get_Message());
+			throw new InvocationTargetException(x);
 		}
-		catch(ArgumentException x2)
-		{
-			throw new IllegalArgumentException();
-		}
-		catch(TargetParameterCountException x3)
-		{
-			throw new IllegalArgumentException();
-		}
-		catch(TargetInvocationException x4)
-		{
-			throw new InvocationTargetException(mapException(x4.get_InnerException()));
-		}
-		*/
 	}
-	static native Object Invoke(Object methodCookie, Object o, Object[] args);
 
-	static native Throwable mapException(Throwable x);
+	static native Object Invoke(Object methodCookie, Object o, Object[] args);
 }

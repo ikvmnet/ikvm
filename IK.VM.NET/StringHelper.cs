@@ -164,8 +164,7 @@ public class StringHelper
 
 	public static bool startsWith(string s, string prefix, int toffset)
 	{
-		// TODO
-		throw new NotImplementedException();
+		return s.Substring(toffset).StartsWith(prefix);
 	}
 
 	public static void getChars(string s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 

@@ -113,13 +113,30 @@ public:
 public __gc class VM
 {
 public:
-	static MethodBase* GetMethod(Object* clazz, String* name, String* sig, bool isStatic)
+	static IntPtr GetMethodCookie(Object* clazz, String* name, String* sig, bool isStatic)
 	{
-		return JniHelper::GetMethod(clazz, name, sig, isStatic);
+		return JniHelper::GetMethodCookie(clazz, name, sig, isStatic);
 	}
-	static FieldInfo* GetField(Object* clazz, String* name, String* sig, bool isStatic)
+	static String* GetMethodArgList(IntPtr cookie)
 	{
-		return JniHelper::GetField(clazz, name, sig, isStatic);
+		return JniHelper::GetMethodArgList(cookie);
+	}
+	[StackTraceInfo(Hidden = true)]
+	static Object* InvokeMethod(IntPtr cookie, Object* obj, Object* args[], bool nonVirtual)
+	{
+		return JniHelper::InvokeMethod(cookie, obj, args, nonVirtual);
+	}
+	static IntPtr GetFieldCookie(Object* clazz, String* name, String* sig, bool isStatic)
+	{
+		return JniHelper::GetFieldCookie(clazz, name, sig, isStatic);
+	}
+	static Object* GetFieldValue(IntPtr cookie, Object* obj)
+	{
+		return JniHelper::GetFieldValue(cookie, obj);
+	}
+	static void SetFieldValue(IntPtr cookie, Object* obj, Object* value)
+	{
+		JniHelper::SetFieldValue(cookie, obj, value);
 	}
 	static Object* FindClass(String* javaName)
 	{

@@ -212,7 +212,7 @@ public class ExceptionHelper
 						for(int i = stackTrace.Count - 1; i >= 0; i--)
 						{
 							StackTraceElement ste = (StackTraceElement)stackTrace[i];
-							if(ste.getClassName() == "System.Reflection.RuntimeMethodInfo")
+							if(ste.getClassName() == "System.Reflection.MethodBase")
 							{
 								// skip method invocation by reflection, if it is at the top of the stack
 								chop++;
@@ -242,12 +242,13 @@ public class ExceptionHelper
 					Append(tracePart1);
 					if(tracePart2 != null)
 					{
-						bool chopFirst = stackTrace.Count != 0;
+						// don't have a clue why this was here, but it doesn't work for jni.class
+						//bool chopFirst = stackTrace.Count != 0;
 						Append(tracePart2);
-						if(chopFirst && stackTrace.Count > 0 && JVM.CleanStackTraces)
-						{
-							stackTrace.RemoveAt(0);
-						}
+						//if(chopFirst && stackTrace.Count > 0 && JVM.CleanStackTraces)
+						//{
+						//	stackTrace.RemoveAt(0);
+						//}
 					}
 					tracePart1 = null;
 					tracePart2 = null;

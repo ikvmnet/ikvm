@@ -249,72 +249,26 @@ jobject JNIEnv::AllocObject(jclass cls)
 
 jmethodID JNIEnv::FindMethodID(jclass cls, const char* name, const char* sig, bool isstatic)
 {
-	MethodBase* m = VM::GetMethod(UnwrapRef(cls), StringFromUTF8(name), StringFromUTF8(sig), isstatic);
-	if(!m)
+	jmethodID mid = (jmethodID)(void*)VM::GetMethodCookie(UnwrapRef(cls), StringFromUTF8(name), StringFromUTF8(sig), isstatic);
+	if(!mid)
 	{
 		//Console::WriteLine("Method not found: {0}{1} (static = {2})", StringFromUTF8(name), StringFromUTF8(sig), __box(isstatic));
+		// TODO set the exception message
 		ThrowNew(FindClass("java/lang/NoSuchMethodError"), "");
 		return 0;
 	}
-	// TODO jmethodID must be cached and delete'd!!! As it stands, we have a huge leak...
-	// also, don't forget to Free the GCHandle...
-	jmethodID mid = new _jmethodID;
-	mid->method = (void*)(IntPtr)GCHandle::Alloc(m);
-	int argc = 0;
-	for(int i = 1; sig[i] != ')'; i++)
-	{
-		switch(sig[i])
-		{
-		case 'I':
-		case 'Z':
-		case 'S':
-		case 'C':
-		case 'B':
-			mid->args[argc++] = 'I';
-			break;
-		case 'L':
-			while(sig[i] != ';') i++;
-			mid->args[argc++] = 'L';
-			break;
-		case '[':
-			while(sig[i] == '[') i++;
-			if(sig[i] == 'L') while(sig[i] != ';') i++;
-			mid->args[argc++] = 'L';
-			break;
-		case 'D':
-			mid->args[argc++] = 'D';
-			break;
-		case 'F':
-			mid->args[argc++] = 'F';
-			break;
-		case 'J':
-			mid->args[argc++] = 'J';
-			break;
-		}
-		if(argc == 256)
-		{
-			// it isn't valid for a Java method to have more than 256 arguments,
-			// so this cannot happen for valid classes
-			throw new NotSupportedException();
-		}
-	}
-	mid->args[argc] = 0;
 	return mid;
 }
 
 jfieldID JNIEnv::FindFieldID(jclass cls, const char* name, const char* sig, bool isstatic)
 {
-	FieldInfo* f = VM::GetField(UnwrapRef(cls), StringFromUTF8(name), StringFromUTF8(sig), isstatic);
-	if(!f)
+	jfieldID fid = (jfieldID)(void*)VM::GetFieldCookie(UnwrapRef(cls), StringFromUTF8(name), StringFromUTF8(sig), isstatic);
+	if(!fid)
 	{
-		// TODO what is the proper handling of this
-		assert(false);
-		throw new NotImplementedException("field not found");
+		// TODO set the exception message
+		ThrowNew(FindClass("java/lang/NoSuchFieldError"), "");
+		return 0;
 	}
-	// TODO jfieldID must be cached and delete'd!!! As it stands, we have a huge leak...
-	// also, don't forget to Free the GCHandle...
-	jfieldID fid = new _jfieldID;
-	fid->field = (void*)(IntPtr)GCHandle::Alloc(f);
 	return fid;
 }
 
@@ -323,11 +277,70 @@ jmethodID JNIEnv::GetStaticMethodID(jclass cls, const char *name, const char *si
 	return FindMethodID(cls, name, sig, true);
 }
 
+static int GetMethodArgs(jmethodID methodID, char* sig)
+{
+	int count = 0;
+	String* s = VM::GetMethodArgList(methodID);
+	for(int i = 0; i < s->Length; i++)
+	{
+		*sig++ = (char)s->get_Chars(i);
+		count++;
+	}
+	*sig = 0;
+	return count;
+}
+
 Object* JNIEnv::InvokeHelper(jobject object, jmethodID methodID, jvalue* args)
 {
 	assert(!pLocalRefs->PendingException);
 	assert(methodID);
 
+	char sig[257];
+	int argc = GetMethodArgs(methodID, sig);
+	Object* argarray __gc[] = new Object*[argc];
+	for(int i = 0; i < argc; i++)
+	{
+		switch(sig[i])
+		{
+		case 'Z':
+			argarray[i] = __box(args[i].z != JNI_FALSE);
+			break;
+		case 'B':
+			argarray[i] = __box((char)args[i].b);
+			break;
+		case 'C':
+			argarray[i] = __box((__wchar_t)args[i].c);
+			break;
+		case 'S':
+			argarray[i] = __box((short)args[i].s);
+			break;
+		case 'I':
+			argarray[i] = __box((int)args[i].i);
+			break;
+		case 'J':
+			argarray[i] = __box((__int64)args[i].j);
+			break;
+		case 'F':
+			argarray[i] = __box((float)args[i].f);
+			break;
+		case 'D':
+			argarray[i] = __box((double)args[i].d);
+			break;
+		case 'L':
+			argarray[i] = UnwrapRef(args[i].l);
+			break;
+		}
+	}
+	try
+	{
+		return VM::InvokeMethod(methodID, UnwrapRef(object), argarray, false);
+	}
+	catch(Exception* x)
+	{
+		pLocalRefs->PendingException = x;
+		return 0;
+	}
+/*
 	MethodBase* m = __try_cast<MethodBase*>(GCHandle::op_Explicit((IntPtr)methodID->method).Target);
 	ParameterInfo* p __gc[] = m->GetParameters();
 	Object* argarray __gc[] = new Object*[p->Length];
@@ -410,6 +423,7 @@ Object* JNIEnv::InvokeHelper(jobject object, jmethodID methodID, jvalue* args)
 		pLocalRefs->PendingException = x->InnerException;
 		return 0;
 	}
+*/
 }
 
 void JNICALL JNIEnv::CallStaticVoidMethodA(jclass cls, jmethodID methodID, jvalue* args)
@@ -420,12 +434,17 @@ void JNICALL JNIEnv::CallStaticVoidMethodA(jclass cls, jmethodID methodID, jvalu
 
 void JNICALL JNIEnv::CallStaticVoidMethodV(jclass clazz, jmethodID methodID, va_list args)
 {
-	int argc = strlen(methodID->args);
+	char arglist[257];
+	int argc = GetMethodArgs(methodID, arglist);
 	jvalue* argarray = (jvalue*)_alloca(argc * sizeof(jvalue));
 	for(int i = 0; i < argc; i++)
 	{
-		switch(methodID->args[i])
+		switch(arglist[i])
 		{
+		case 'Z':
+		case 'B':
+		case 'S':
+		case 'C':
 		case 'I':
 			argarray[i].i = va_arg(args, int);
 			break;
@@ -457,12 +476,17 @@ void JNIEnv::CallStaticVoidMethod(jclass clazz, jmethodID methodID, ...)
 #define STATIC_METHOD_IMPL(Type,type) \
 type JNICALL JNIEnv::CallStatic##Type##MethodV(jclass clazz, jmethodID methodID, va_list args)\
 {\
-	int argc = strlen(methodID->args);\
+	char sig[257];\
+	int argc = GetMethodArgs(methodID, sig);\
 	jvalue* argarray = (jvalue*)_alloca(argc * sizeof(jvalue));\
 	for(int i = 0; i < argc; i++)\
 	{\
-		switch(methodID->args[i])\
+		switch(sig[i])\
 		{\
+		case 'Z':\
+		case 'B':\
+		case 'S':\
+		case 'C':\
 		case 'I':\
 			argarray[i].i = va_arg(args, int);\
 			break;\
@@ -543,13 +567,11 @@ jfieldID JNICALL JNIEnv::GetStaticFieldID(jclass cls, const char *name, const ch
 #define GET_SET_FIELD(Type,type,cpptype) \
 void JNICALL JNIEnv::Set##Type##Field(jobject obj, jfieldID fieldID, type val)\
 {\
-	FieldInfo* pField = __try_cast<FieldInfo*>(GCHandle::op_Explicit((IntPtr)fieldID->field).Target);\
-	pField->SetValue(UnwrapRef(obj), __box((cpptype)val));\
+	VM::SetFieldValue((IntPtr)fieldID, UnwrapRef(obj), __box((cpptype)val));\
 }\
 type JNICALL JNIEnv::Get##Type##Field(jobject obj, jfieldID fieldID)\
 {\
-	FieldInfo* pField = __try_cast<FieldInfo*>(GCHandle::op_Explicit((IntPtr)fieldID->field).Target);\
-	return __unbox<cpptype>(pField->GetValue(UnwrapRef(obj)));\
+	return __unbox<cpptype>(VM::GetFieldValue((IntPtr)fieldID, UnwrapRef(obj)));\
 }
 
 GET_SET_FIELD(Boolean,jboolean,bool)
@@ -563,14 +585,12 @@ GET_SET_FIELD(Double,jdouble,double)
 
 void JNICALL JNIEnv::SetObjectField(jobject obj, jfieldID fieldID, jobject val)
 {
-	FieldInfo* pField = __try_cast<FieldInfo*>(GCHandle::op_Explicit((IntPtr)fieldID->field).Target);
-	pField->SetValue(UnwrapRef(obj), UnwrapRef(val));
+	VM::SetFieldValue((IntPtr)fieldID, UnwrapRef(obj), UnwrapRef(val));
 }
 
 jobject JNICALL JNIEnv::GetObjectField(jobject obj, jfieldID fieldID)
 {
-	FieldInfo* pField = __try_cast<FieldInfo*>(GCHandle::op_Explicit((IntPtr)fieldID->field).Target);
-	return (jobject)(void*)pLocalRefs->MakeLocalRef(pField->GetValue(UnwrapRef(obj)));
+	return (jobject)(void*)pLocalRefs->MakeLocalRef(VM::GetFieldValue((IntPtr)fieldID, UnwrapRef(obj)));
 }
 #pragma unmanaged
 
@@ -603,12 +623,17 @@ type JNIEnv::Call##Type##Method(jobject obj, jmethodID methodID, ...) \
 }\
 type JNICALL JNIEnv::Call##Type##MethodV(jobject obj, jmethodID methodID, va_list args)\
 {\
-	int argc = strlen(methodID->args);\
+	char sig[257];\
+	int argc = GetMethodArgs(methodID, sig);\
 	jvalue* argarray = (jvalue*)_alloca(argc * sizeof(jvalue));\
 	for(int i = 0; i < argc; i++)\
 	{\
-		switch(methodID->args[i])\
+		switch(sig[i])\
 		{\
+		case 'Z':\
+		case 'B':\
+		case 'S':\
+		case 'C':\
 		case 'I':\
 			argarray[i].i = va_arg(args, int);\
 			break;\
@@ -674,12 +699,17 @@ void JNIEnv::CallVoidMethod(jobject obj, jmethodID methodID, ...)
 
 void JNICALL JNIEnv::CallVoidMethodV(jobject obj, jmethodID methodID, va_list args)
 {
-	int argc = strlen(methodID->args);
+	char sig[257];
+	int argc = GetMethodArgs(methodID, sig);
 	jvalue* argarray = (jvalue*)_alloca(argc * sizeof(jvalue));
 	for(int i = 0; i < argc; i++)
 	{
-		switch(methodID->args[i])
+		switch(sig[i])
 		{
+		case 'Z':
+		case 'B':
+		case 'S':
+		case 'C':
 		case 'I':
 			argarray[i].i = va_arg(args, int);
 			break;
@@ -857,12 +887,17 @@ jobject JNICALL JNIEnv::NewObject(jclass clazz, jmethodID methodID, ...)
 
 jobject JNICALL JNIEnv::NewObjectV(jclass clazz, jmethodID methodID, va_list args)
 {
-	int argc = strlen(methodID->args);
+	char sig[257];
+	int argc = GetMethodArgs(methodID, sig);
 	jvalue* argarray = (jvalue*)_alloca(argc * sizeof(jvalue));
 	for(int i = 0; i < argc; i++)
 	{
-		switch(methodID->args[i])
+		switch(sig[i])
 		{
+		case 'Z':
+		case 'B':
+		case 'S':
+		case 'C':
 		case 'I':
 			argarray[i].i = va_arg(args, int);
 			break;

@@ -78,18 +78,13 @@ public class ByteCodeHelper
 		TypeWrapper wrapper = classLoader.LoadClassBySlashedName(clazz);
 		wrapper.Finish();
 		// TODO who checks that the arg types are loadable?
-		// TODO instead of getting the constructor from the type, we should use the (future) reflection support in MethodWrapper
-		//MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(classLoader, name, sig), false);
-		// TODO handle error, check access, etc.
-		ConstructorInfo constructor = wrapper.Type.GetConstructor(classLoader.ArgTypeListFromSig(sig));
-		try
+		// TODO check accessibility
+		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(classLoader, name, sig), false);
+		if(mw == null)
 		{
-			return constructor.Invoke(args);
+			// TODO throw the appropriate exception
+			throw new NotImplementedException("constructor missing");
 		}
-		catch(TargetInvocationException x)
-		{
-			ExceptionHelper.MapExceptionFast(x);
-			throw x.InnerException;
-		}
+		return mw.Invoke(null, args, false);
 	}
 }

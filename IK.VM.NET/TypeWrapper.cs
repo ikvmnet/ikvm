@@ -1781,6 +1781,7 @@ class DynamicTypeWrapper : TypeWrapper
 			if(retTypeWrapper.IsUnloadable)
 			{
 				CustomAttributeBuilder attrib = new CustomAttributeBuilder(typeof(UnloadableTypeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { retTypeWrapper.Name });
+				// TODO DefineParameter(0, ...) throws an exception, even though this looks like the way to do it...
 				((MethodBuilder)method).DefineParameter(0, ParameterAttributes.None, null).SetCustomAttribute(attrib);
 			}
 			for(int i = 0; i < argTypeWrappers.Length; i++)
@@ -2029,7 +2030,7 @@ class RemappedTypeWrapper : TypeWrapper
 							invokevirtual = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)overrideMethod);
 						}
 					}
-					MethodWrapper mw = new MethodWrapper(this, md, overrideMethod, modifiers);
+					MethodWrapper mw = new MethodWrapper(this, md, overrideMethod, redirect, modifiers);
 					mw.EmitNewobj = newopc;
 					mw.EmitCall = invokespecial;
 					mw.EmitCallvirt = invokevirtual;
@@ -2143,7 +2144,7 @@ class RemappedTypeWrapper : TypeWrapper
 						newopc = constructor.newobj;
 						invokespecial = constructor.invokespecial;
 					}
-					MethodWrapper mw = new MethodWrapper(this, md, null, modifiers);
+					MethodWrapper mw = new MethodWrapper(this, md, null, null, modifiers);
 					mw.EmitNewobj = newopc;
 					mw.EmitCall = invokespecial;
 					if(retcast != null)
@@ -2551,7 +2552,7 @@ class NetExpTypeWrapper : TypeWrapper
 		if(md.Name == "<init>" && type.IsSubclassOf(typeof(MulticastDelegate)))
 		{
 			// TODO set method flags
-			MethodWrapper method = new MethodWrapper(this, md, null, Modifiers.Public);
+			MethodWrapper method = new MethodWrapper(this, md, null, null, Modifiers.Public);
 			// TODO what class loader should we use?
 			TypeWrapper iface = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName(classFile.Name + "$Method");
 			iface.Finish();
@@ -2812,7 +2813,7 @@ class CompiledTypeWrapper : TypeWrapper
 		{
 			return null;
 		}
-		MethodWrapper method = new MethodWrapper(this, md, mb, ModifiersAttribute.GetModifiers(mb));
+		MethodWrapper method = new MethodWrapper(this, md, mb, null, ModifiersAttribute.GetModifiers(mb));
 		if(mb is ConstructorInfo)
 		{
 			method.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)mb);
@@ -3116,9 +3117,11 @@ public abstract class CodeEmitter
 
 sealed class MethodWrapper
 {
+	private IntPtr cookie;
 	private TypeWrapper declaringType;
 	private MethodDescriptor md;
 	private MethodBase originalMethod;
+	private MethodBase redirMethod;
 	private Modifiers modifiers;
 	private bool isRemappedVirtual;
 	private bool isRemappedOverride;
@@ -3126,13 +3129,14 @@ sealed class MethodWrapper
 	internal CodeEmitter EmitCallvirt;
 	internal CodeEmitter EmitNewobj;
 
+	// TODO creation of MethodWrappers should be cleaned up (and every instance should support Invoke())
 	internal static MethodWrapper Create(TypeWrapper declaringType, MethodDescriptor md, MethodBase originalMethod, MethodBase method, Modifiers modifiers)
 	{
 		if(method == null)
 		{
 			throw new InvalidOperationException();
 		}
-		MethodWrapper wrapper = new MethodWrapper(declaringType, md, originalMethod, modifiers);
+		MethodWrapper wrapper = new MethodWrapper(declaringType, md, originalMethod, method, modifiers);
 		if(method is ConstructorInfo)
 		{
 			wrapper.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)method);
@@ -3162,13 +3166,35 @@ sealed class MethodWrapper
 		return wrapper;
 	}
 
-	internal MethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase originalMethod, Modifiers modifiers)
+	internal MethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase originalMethod, MethodBase method, Modifiers modifiers)
 	{
+		if(method != originalMethod)
+		{
+			redirMethod = method;
+			Debug.Assert(!(method is MethodBuilder));
+		}
 		this.declaringType = declaringType;
 		this.md = md;
 		// NOTE originalMethod may be null
 		this.originalMethod = originalMethod;
 		this.modifiers = modifiers;
+	}
+
+	internal IntPtr Cookie
+	{
+		get
+		{
+			if(cookie == (IntPtr)0)
+			{
+				cookie = (IntPtr)System.Runtime.InteropServices.GCHandle.Alloc(this);
+			}
+			return cookie;
+		}
+	}
+
+	internal static MethodWrapper FromCookie(IntPtr cookie)
+	{
+		return (MethodWrapper)((System.Runtime.InteropServices.GCHandle)cookie).Target;
 	}
 
 	internal TypeWrapper DeclaringType
@@ -3342,6 +3368,85 @@ sealed class MethodWrapper
 			return (modifiers & Modifiers.Abstract) != 0;
 		}
 	}
+
+	internal object Invoke(object obj, object[] args, bool nonVirtual)
+	{
+		// TODO instead of looking up the method using reflection, we should use the method object passed into the
+		// constructor
+		if(IsStatic)
+		{
+			MethodInfo method = this.originalMethod != null && !(this.originalMethod is MethodBuilder) ? (MethodInfo)this.originalMethod : declaringType.Type.GetMethod(md.Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypes, null);
+			try
+			{
+				return method.Invoke(null, args);
+			}
+			catch(TargetInvocationException x)
+			{
+				throw ExceptionHelper.MapExceptionFast(x.InnerException);
+			}
+		}
+		else
+		{
+			// calling <init> without an instance means that we're constructing a new instance
+			// NOTE this means that we cannot detect a NullPointerException when calling <init>
+			if(md.Name == "<init>")
+			{
+				if(obj == null)
+				{
+					ConstructorInfo constructor = this.originalMethod != null && !(this.originalMethod is ConstructorBuilder) ? (ConstructorInfo)this.originalMethod : declaringType.Type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, CallingConventions.Standard, md.ArgTypes, null);
+					try
+					{
+						return constructor.Invoke(args);
+					}
+					catch(TargetInvocationException x)
+					{
+						throw ExceptionHelper.MapExceptionFast(x.InnerException);
+					}
+				}
+				else
+				{
+					throw new NotImplementedException("invoking constructor on existing instance");
+				}
+			}
+			if(nonVirtual)
+			{
+				throw new NotImplementedException("non-virtual reflective method invocation non implemented");
+			}
+			MethodInfo method = (MethodInfo)this.originalMethod;
+			if(redirMethod != null)
+			{
+				method = (MethodInfo)redirMethod;
+				if(method.IsStatic)
+				{
+					// we've been redirected to a static method, so we have to copy the this into the args
+					object[] oldargs = args;
+					args = new object[args.Length + 1];
+					args[0] = obj;
+					oldargs.CopyTo(args, 1);
+					obj = null;
+				}
+			}
+			else
+			{
+				if(method is MethodBuilder || method == null)
+				{
+					method = declaringType.Type.GetMethod(md.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypes, null);
+				}
+				if(method == null)
+				{
+					throw new NotImplementedException("method not found: " + this.declaringType.Name + "." + md.Name + md.Signature);
+				}
+			}
+			try
+			{
+				return method.Invoke(obj, args);
+			}
+			catch(TargetInvocationException x)
+			{
+				throw ExceptionHelper.MapExceptionFast(x.InnerException);
+			}
+		}
+	}
 }
 
 class CastEmitter : CodeEmitter
@@ -3395,6 +3500,7 @@ sealed class FieldWrapper
 	private string name;
 	private string sig;
 	private Modifiers modifiers;
+	private IntPtr cookie;
 	internal CodeEmitter EmitGet;
 	internal CodeEmitter EmitSet;
 
@@ -3408,6 +3514,23 @@ sealed class FieldWrapper
 		this.name = name;
 		this.sig = sig;
 		this.modifiers = modifiers;
+	}
+
+	internal IntPtr Cookie
+	{
+		get
+		{
+			if(cookie == (IntPtr)0)
+			{
+				cookie = (IntPtr)System.Runtime.InteropServices.GCHandle.Alloc(this);
+			}
+			return cookie;
+		}
+	}
+
+	internal static FieldWrapper FromCookie(IntPtr cookie)
+	{
+		return (FieldWrapper)((System.Runtime.InteropServices.GCHandle)cookie).Target;
 	}
 
 	internal TypeWrapper DeclaringType
@@ -3608,5 +3731,35 @@ sealed class FieldWrapper
 			field.EmitSet += CodeEmitter.Create(OpCodes.Stfld, fi);
 		}
 		return field;
+	}
+
+	internal void SetValue(object obj, object val)
+	{
+		// TODO this is a broken implementation (for one thing, it needs to support redirection)
+		BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic;
+		if(IsStatic)
+		{
+			bindings |= BindingFlags.Static;
+		}
+		else
+		{
+			bindings |= BindingFlags.Instance;
+		}
+		DeclaringType.Type.GetField(name, bindings).SetValue(obj, val);
+	}
+
+	internal object GetValue(object obj)
+	{
+		// TODO this is a broken implementation (for one thing, it needs to support redirection)
+		BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic;
+		if(IsStatic)
+		{
+			bindings |= BindingFlags.Static;
+		}
+		else
+		{
+			bindings |= BindingFlags.Instance;
+		}
+		return DeclaringType.Type.GetField(name, bindings).GetValue(obj);
 	}
 }

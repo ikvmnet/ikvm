@@ -248,35 +248,18 @@ public final class Constructor
 		throws InstantiationException, IllegalAccessException,
 		InvocationTargetException
 	{
-		return Method.Invoke(methodCookie, null, args);
-		/*
+		if(Modifier.isAbstract(clazz.getModifiers()))
+		{
+			throw new InstantiationException();
+		}
+		// TODO check args and accessibility
 		try
 		{
-			if(false) throw new MemberAccessException();
-			if(false) throw new ArgumentException();
-			if(false) throw new TargetParameterCountException();
-			if(false) throw new TargetInvocationException(null);
-			// TODO wrappers need to be unwrapped (e.g. java.lang.Integer -> boxed System.Int32)
-			return ci.Invoke(args);
+			return Method.Invoke(methodCookie, null, args);
 		}
-		catch(MemberAccessException x1)
+		catch(Throwable x)
 		{
-			throw new IllegalAccessException(x1.get_Message());
+			throw new InvocationTargetException(x);
 		}
-		catch(ArgumentException x2)
-		{
-			throw new IllegalArgumentException();
-		}
-		catch(TargetParameterCountException x3)
-		{
-			throw new IllegalArgumentException();
-		}
-		catch(TargetInvocationException x4)
-		{
-			InstantiationException ie = new InstantiationException();
-			ie.initCause(Method.mapException(x4.get_InnerException()));
-			throw ie;
-		}
-		*/
 	}
 }

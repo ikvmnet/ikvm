@@ -481,7 +481,7 @@ class Compiler
 					throw new NotImplementedException("branch into try block not implemented: " + clazz.Name + "." + m.Method.Name + m.Method.Signature + " (index = " + exceptionIndex + ", pc = " + instr.PC + ")");
 				}
 
-				// every instruction has an associated label, for now
+				// TODO for now, every instruction has an associated label, optimize this
 				if(true)
 				{
 					object label = labels[instr.PC];
@@ -991,166 +991,147 @@ class Compiler
 							thisType = null;
 						}
 						MethodWrapper method = (thisType != null) ? GetMethod(cpi, thisType, instr.NormalizedOpCode) : null;
+						CodeEmitter emit = null;
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
 						{
-							if(cpi.Name == "<init>")
+							emit = method.EmitCall;
+						}
+						else
+						{
+							emit = method.EmitCallvirt;
+						}
+						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
+						{
+							if(VerifierTypeWrapper.IsNew(type))
 							{
-								if(VerifierTypeWrapper.IsNew(type))
+								if(!thisType.IsUnloadable && (thisType.IsAbstract || thisType.IsInterface))
 								{
-									if(!thisType.IsUnloadable && (thisType.IsAbstract || thisType.IsInterface))
+									// the CLR gets confused when we do a newobj on an abstract class,
+									// so we set method to null, to basically just comment out the constructor
+									// call (the InstantiationError was already emitted at the "new" bytecode)
+									method = null;
+								}
+								// we have to construct a list of all the unitialized references to the object
+								// we're about to create on the stack, so that we can reconstruct the stack after
+								// the "newobj" instruction
+								int trivcount = 0;
+								bool nontrivial = false;
+								bool[] stackfix = new bool[ma.GetStackHeight(i) - (argcount + 1)];
+								bool[] localsfix = new bool[m.MaxLocals];
+								for(int j = 0; j < stackfix.Length; j++)
+								{
+									if(ma.GetRawStackTypeWrapper(i, argcount + 1 + j) == type)
 									{
-										// the CLR gets confused when we do a newobj on an abstract class,
-										// so we set method to null, to basically just comment out the constructor
-										// call (the InstantiationError was already emitted at the "new" bytecode)
-										method = null;
+										stackfix[j] = true;
+										if(trivcount == j)
+										{
+											trivcount++;
+										}
+										else
+										{
+											// if there is other stuff on the stack between the new object
+											// references, we need to do more work to construct the proper stack
+											// layout after the newobj instruction
+											nontrivial = true;
+										}
 									}
-									// we have to construct a list of all the unitialized references to the object
-									// we're about to create on the stack, so that we can reconstruct the stack after
-									// the "newobj" instruction
-									int trivcount = 0;
-									bool nontrivial = false;
-									bool[] stackfix = new bool[ma.GetStackHeight(i) - (argcount + 1)];
-									bool[] localsfix = new bool[m.MaxLocals];
+								}
+								for(int j = 0; j < localsfix.Length; j++)
+								{
+									if(ma.GetLocalTypeWrapper(i, j) == type)
+									{
+										localsfix[j] = true;
+										nontrivial = true;
+									}
+								}
+								if(method != null)
+								{
+									method.EmitNewobj.Emit(ilGenerator);
+								}
+								else
+								{
+									for(int j = 0; j < argcount; j++)
+									{
+										ilGenerator.Emit(OpCodes.Pop);
+									}
+									ilGenerator.Emit(OpCodes.Ldnull);
+								}
+								if(java_lang_Throwable == null)
+								{
+									java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Throwable");
+								}
+								if(thisType.IsSubTypeOf(java_lang_Throwable))
+								{
+									// HACK if the next instruction isn't an athrow, we need to
+									// call fillInStackTrace, because the object might be used
+									// to print out a stack trace without ever being thrown
+									if(code[i + 1].NormalizedOpCode != NormalizedByteCode.__athrow)
+									{
+										ilGenerator.Emit(OpCodes.Dup);
+										ilGenerator.Emit(OpCodes.Call, fillInStackTraceMethod);
+										ilGenerator.Emit(OpCodes.Pop);
+									}
+								}
+								if(nontrivial)
+								{
+									// this could be done a little more efficiently, but since in practice this
+									// code never runs (for code compiled from Java source) it doesn't
+									// really matter
+									LocalBuilder newobj = ilGenerator.DeclareLocal(thisType.Type);
+									ilGenerator.Emit(OpCodes.Stloc, newobj);
+									LocalBuilder[] tempstack = new LocalBuilder[stackfix.Length];
 									for(int j = 0; j < stackfix.Length; j++)
 									{
-										if(ma.GetRawStackTypeWrapper(i, argcount + 1 + j) == type)
+										if(!stackfix[j])
 										{
-											stackfix[j] = true;
-											if(trivcount == j)
+											TypeWrapper stacktype = ma.GetRawStackTypeWrapper(i, argcount + 1 + j);
+											// it could be another new object reference (not from current invokespecial <init>
+											// instruction)
+											if(stacktype == VerifierTypeWrapper.Null)
 											{
-												trivcount++;
+												// TODO handle null stack entries
+												throw new NotImplementedException();
 											}
-											else
+											else if(!VerifierTypeWrapper.IsNew(stacktype))
 											{
-												// if there is other stuff on the stack between the new object
-												// references, we need to do more work to construct the proper stack
-												// layout after the newobj instruction
-												nontrivial = true;
+												LocalBuilder lb = ilGenerator.DeclareLocal(stacktype.TypeOrUnloadableAsObject);
+												ilGenerator.Emit(OpCodes.Stloc, lb);
+												tempstack[j] = lb;
 											}
+										}
+									}
+									for(int j = stackfix.Length - 1; j >= 0; j--)
+									{
+										if(stackfix[j])
+										{
+											ilGenerator.Emit(OpCodes.Ldloc, newobj);
+										}
+										else if(tempstack[j] != null)
+										{
+											ilGenerator.Emit(OpCodes.Ldloc, tempstack[j]);
 										}
 									}
 									for(int j = 0; j < localsfix.Length; j++)
 									{
-										if(ma.GetLocalTypeWrapper(i, j) == type)
+										if(localsfix[j])
 										{
-											localsfix[j] = true;
-											nontrivial = true;
-										}
-									}
-									if(method != null)
-									{
-										method.EmitNewobj.Emit(ilGenerator);
-									}
-									else
-									{
-										for(int j = 0; j < argcount; j++)
-										{
-											ilGenerator.Emit(OpCodes.Pop);
-										}
-										ilGenerator.Emit(OpCodes.Ldnull);
-									}
-									if(java_lang_Throwable == null)
-									{
-										java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Throwable");
-									}
-									if(thisType.IsSubTypeOf(java_lang_Throwable))
-									{
-										// HACK if the next instruction isn't an athrow, we need to
-										// call fillInStackTrace, because the object might be used
-										// to print out a stack trace without ever being thrown
-										if(code[i + 1].NormalizedOpCode != NormalizedByteCode.__athrow)
-										{
-											ilGenerator.Emit(OpCodes.Dup);
-											ilGenerator.Emit(OpCodes.Call, fillInStackTraceMethod);
-											ilGenerator.Emit(OpCodes.Pop);
-										}
-									}
-									if(nontrivial)
-									{
-										// this could be done a little more efficiently, but since in practice this
-										// code never runs (for code compiled from Java source) it doesn't
-										// really matter
-										LocalBuilder newobj = ilGenerator.DeclareLocal(thisType.Type);
-										ilGenerator.Emit(OpCodes.Stloc, newobj);
-										LocalBuilder[] tempstack = new LocalBuilder[stackfix.Length];
-										for(int j = 0; j < stackfix.Length; j++)
-										{
-											if(!stackfix[j])
-											{
-												TypeWrapper stacktype = ma.GetRawStackTypeWrapper(i, argcount + 1 + j);
-												// it could be another new object reference (not from current invokespecial <init>
-												// instruction)
-												if(stacktype == VerifierTypeWrapper.Null)
-												{
-													// TODO handle null stack entries
-													throw new NotImplementedException();
-												}
-												else if(!VerifierTypeWrapper.IsNew(stacktype))
-												{
-													LocalBuilder lb = ilGenerator.DeclareLocal(stacktype.TypeOrUnloadableAsObject);
-													ilGenerator.Emit(OpCodes.Stloc, lb);
-													tempstack[j] = lb;
-												}
-											}
-										}
-										for(int j = stackfix.Length - 1; j >= 0; j--)
-										{
-											if(stackfix[j])
-											{
-												ilGenerator.Emit(OpCodes.Ldloc, newobj);
-											}
-											else if(tempstack[j] != null)
-											{
-												ilGenerator.Emit(OpCodes.Ldloc, tempstack[j]);
-											}
-										}
-										for(int j = 0; j < localsfix.Length; j++)
-										{
-											if(localsfix[j])
-											{
-												ilGenerator.Emit(OpCodes.Ldloc, newobj);
-												ilGenerator.Emit(OpCodes.Stloc, GetLocal(typeof(object), j));
-											}
-										}
-									}
-									else
-									{
-										if(trivcount == 0)
-										{
-											ilGenerator.Emit(OpCodes.Pop);
-										}
-										else
-										{
-											for(int j = 1; j < trivcount; j++)
-											{
-												ilGenerator.Emit(OpCodes.Dup);
-											}
+											ilGenerator.Emit(OpCodes.Ldloc, newobj);
+											ilGenerator.Emit(OpCodes.Stloc, GetLocal(typeof(object), j));
 										}
 									}
 								}
 								else
 								{
-									if(method != null)
+									if(trivcount == 0)
 									{
-										method.EmitCall.Emit(ilGenerator);
+										ilGenerator.Emit(OpCodes.Pop);
 									}
 									else
 									{
-										// if we're a constructor and the call to the base class constructor
-										// wasn't accessible, we need make sure that there is no code path that
-										// returns from the constructor, otherwise the method will be not verifiable
-										// TODO this isn't anywhere near a proper solution, but for the time being it works
-										// some things to consider:
-										// - only pull this full when calls to the base class constructor fail
-										// - when control flow is complex, this trivial solution will not work
-										ilGenerator.Emit(OpCodes.Ldnull);
-										ilGenerator.Emit(OpCodes.Throw);
-										return;
-										//										for(int j = 0; j < argcount + 1; j++)
-										//										{
-										//											ilGenerator.Emit(OpCodes.Pop);
-										//										}
-										//										EmitPlaceholder(cpi.Signature.Substring(cpi.Signature.LastIndexOf(')') + 1));
+										for(int j = 1; j < trivcount; j++)
+										{
+											ilGenerator.Emit(OpCodes.Dup);
+										}
 									}
 								}
 							}
@@ -1162,19 +1143,29 @@ class Compiler
 								}
 								else
 								{
-									for(int j = 0; j < argcount + 1; j++)
-									{
-										ilGenerator.Emit(OpCodes.Pop);
-									}
-									EmitPlaceholder(cpi.GetRetType(classLoader));
+									// if we're a constructor and the call to the base class constructor
+									// wasn't accessible, we need make sure that there is no code path that
+									// returns from the constructor, otherwise the method will be not verifiable
+									// TODO this isn't anywhere near a proper solution, but for the time being it works
+									// some things to consider:
+									// - only pull this full when calls to the base class constructor fail
+									// - when control flow is complex, this trivial solution will not work
+									ilGenerator.Emit(OpCodes.Ldnull);
+									ilGenerator.Emit(OpCodes.Throw);
+									return;
+									//										for(int j = 0; j < argcount + 1; j++)
+									//										{
+									//											ilGenerator.Emit(OpCodes.Pop);
+									//										}
+									//										EmitPlaceholder(cpi.Signature.Substring(cpi.Signature.LastIndexOf(')') + 1));
 								}
 							}
 						}
 						else
 						{
-							if(method != null)
+							if(emit != null)
 							{
-								method.EmitCallvirt.Emit(ilGenerator);
+								emit.Emit(ilGenerator);
 							}
 							else
 							{
@@ -2244,7 +2235,7 @@ class Compiler
 		// we cannot use EmitError, because that will yield an invalid constructor (that doesn't call the superclass constructor)
 		if(IsUnloadable(cpi))
 		{
-			MethodWrapper dummy = new MethodWrapper(null, null, null, Modifiers.Synthetic);
+			MethodWrapper dummy = new MethodWrapper(null, null, null, null, Modifiers.Synthetic);
 			if(invoke == NormalizedByteCode.__invokespecial)
 			{
 				dummy.EmitNewobj = new DynamicNewEmitter(classLoader, clazz, cpi);

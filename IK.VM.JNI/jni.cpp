@@ -96,17 +96,6 @@ Object* JNI::UnwrapGlobalRef(jobject o)
 	return 0;
 }
 
-/*
-void* CreateDebugWrapper(String* name, void* pfunc)
-{
-	char* pstub = new char[6];
-	pstub[0] = 0x90;
-	pstub[1] = 0xe8;
-	*((void**)&pstub[2]) = pfunc;
-	return pstub;
-}
-*/
-
 IntPtr JNI::GetJniFuncPtr(String* method, String* sig, String* clazz)
 {
 	System::Text::StringBuilder* mangledSig = new System::Text::StringBuilder();

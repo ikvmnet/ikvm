@@ -172,6 +172,59 @@ namespace NativeCode.java
 				}
 			}
 
+			internal class JavaWrapper
+			{
+				private static Type java_lang_Integer = ClassLoaderWrapper.GetType("java.lang.Integer");
+				private static Type java_lang_Short = ClassLoaderWrapper.GetType("java.lang.Short");
+				private static Type java_lang_Boolean = ClassLoaderWrapper.GetType("java.lang.Boolean");
+				private static Type java_lang_Long = ClassLoaderWrapper.GetType("java.lang.Long");
+
+				internal static object Box(object o)
+				{
+					if(o is int)
+					{
+						return Activator.CreateInstance(java_lang_Integer, new object[] { o });
+					}
+					else if(o is bool)
+					{
+						return Activator.CreateInstance(java_lang_Boolean, new object[] { o });
+					}
+					else if(o is long)
+					{
+						return Activator.CreateInstance(java_lang_Long, new object[] { o });
+					}
+					else
+					{
+						throw new NotImplementedException(o.GetType().FullName);
+					}
+				}
+
+				internal static object Unbox(object o)
+				{
+					Type type = o.GetType();
+					if(type == java_lang_Integer)
+					{
+						return java_lang_Integer.GetMethod("intValue").Invoke(o, new object[0]);
+					}
+					else if(type == java_lang_Boolean)
+					{
+						return java_lang_Boolean.GetMethod("booleanValue").Invoke(o, new object[0]);
+					}
+					else if(type == java_lang_Short)
+					{
+						return java_lang_Short.GetMethod("shortValue").Invoke(o, new object[0]);
+					}
+					else if(type == java_lang_Long)
+					{
+						return java_lang_Long.GetMethod("longValue").Invoke(o, new object[0]);
+					}
+					else
+					{
+						throw new NotImplementedException(o.GetType().FullName);
+					}
+				}
+			}
+
 			public class Method
 			{
 				public static String GetName(object methodCookie)
@@ -211,98 +264,25 @@ namespace NativeCode.java
 					return new object[0];
 				}
 
+				[StackTraceInfo(Hidden = true)]
 				public static object Invoke(object methodCookie, object o, object[] args)
 				{
-					// TODO this is a very lame implementation, no where near correct
-					MethodWrapper wrapper = (MethodWrapper)methodCookie;
-					wrapper.DeclaringType.Finish();
-					TypeWrapper[] argWrappers = wrapper.GetParameters();
-					Type[] argTypes = new Type[argWrappers.Length];
-					for(int i = 0; i < argTypes.Length; i++)
+					MethodWrapper mw = (MethodWrapper)methodCookie;
+					mw.DeclaringType.Finish();
+					TypeWrapper[] argWrappers = mw.GetParameters();
+					for(int i = 0; i < argWrappers.Length; i++)
 					{
-						argWrappers[i].Finish();
-						argTypes[i] = argWrappers[i].Type;
-						if(argTypes[i].IsPrimitive)
+						if(argWrappers[i].IsPrimitive)
 						{
-							if(argTypes[i] == typeof(int))
-							{
-								args[i] = ClassLoaderWrapper.GetType("java.lang.Integer").GetMethod("intValue").Invoke(args[i], new object[0]);
-							}
-							else if(argTypes[i] == typeof(bool))
-							{
-								args[i] = ClassLoaderWrapper.GetType("java.lang.Boolean").GetMethod("booleanValue").Invoke(args[i], new object[0]);
-							}
-							else if(argTypes[i] == typeof(short))
-							{
-								args[i] = ClassLoaderWrapper.GetType("java.lang.Short").GetMethod("shortValue").Invoke(args[i], new object[0]);
-							}
-							else
-							{
-								throw new NotImplementedException("argtype: " + argTypes[i].FullName);
-							}
+							args[i] = JavaWrapper.Unbox(args[i]);
 						}
 					}
-					try
+					object retval = mw.Invoke(o, args, false);
+					if(mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
 					{
-						if(wrapper.Name == "<init>")
-						{
-							if(o == null)
-							{
-								return wrapper.DeclaringType.Type.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, argTypes, null).Invoke(args);
-							}
-							else
-							{
-								throw new NotImplementedException("invoking constructor on existing instance");
-							}
-						}
-						else
-						{
-							MethodInfo mi;
-							if(wrapper.GetMethod() is NetSystem.Reflection.Emit.MethodBuilder || wrapper.GetMethod() == null)
-							{
-								mi = wrapper.DeclaringType.Type.GetMethod(wrapper.Name, BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, argTypes, null);
-							}
-							else
-							{
-								mi = (MethodInfo)wrapper.GetMethod();
-							}
-							if(mi == null)
-							{
-								throw new InvalidOperationException("Method not found: " + wrapper.DeclaringType.Name + "." + wrapper.Name + wrapper.Descriptor.Signature);
-							}
-							object retval = mi.Invoke(o, args);
-							if(wrapper.ReturnType.Type.IsValueType)
-							{
-								if(wrapper.ReturnType.Type == typeof(int))
-								{
-									retval = Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.Integer"), new object[] { (int)retval });
-								}
-								else if(wrapper.ReturnType.Type == typeof(bool))
-								{
-									retval = Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.Boolean"), new object[] { (bool)retval });
-								}
-								else if(wrapper.ReturnType.Type == typeof(void))
-								{
-									// nothing to do
-								}
-								else
-								{
-									throw new NotImplementedException("rettype: " + wrapper.ReturnType.Type.FullName);
-								}
-							}
-							return retval;
-						}
+						retval = JavaWrapper.Box(retval);
 					}
-					catch(TargetInvocationException x)
-					{
-						throw JavaException.InvocationTargetException(ExceptionHelper.MapException(x.InnerException, typeof(Exception)));
-					}
-				}
-
-				// TODO remove this, it isn't used anymore
-				public static Exception mapException(Exception x)
-				{
-					return ExceptionHelper.MapException(x, typeof(Exception));
+					return retval;
 				}
 			}
 
@@ -366,20 +346,21 @@ namespace NativeCode.java
 			{
 				MethodInfo m = properties.GetType().GetMethod("setProperty");
 				// TODO set all these properties to something useful
-				m.Invoke(properties, new string[] { "java.version", "1.1" });
+				m.Invoke(properties, new string[] { "java.version", "1.3" });
 				m.Invoke(properties, new string[] { "java.vendor", "Jeroen Frijters" });
-				m.Invoke(properties, new string[] { "java.vendor.url", "http://jeroen.nu/" });
-				m.Invoke(properties, new string[] { "java.home", "" });
-				m.Invoke(properties, new string[] { "java.vm.specification.version", "" });
-				m.Invoke(properties, new string[] { "java.vm.specification.vendor", "" });
-				m.Invoke(properties, new string[] { "java.vm.specification.name", "" });
-				m.Invoke(properties, new string[] { "java.vm.version", "" });
-				m.Invoke(properties, new string[] { "java.vm.vendor", "" });
-				m.Invoke(properties, new string[] { "java.vm.name", "" });
-				m.Invoke(properties, new string[] { "java.specification.version", "" });
-				m.Invoke(properties, new string[] { "java.specification.vendor", "" });
-				m.Invoke(properties, new string[] { "java.specification.name", "" });
-				m.Invoke(properties, new string[] { "java.class.version", "" });
+				m.Invoke(properties, new string[] { "java.vendor.url", "http://ikvm.net/" });
+				// HACK using the Assembly.Location property isn't correct
+				m.Invoke(properties, new string[] { "java.home", new FileInfo(typeof(Runtime).Assembly.Location).DirectoryName });
+				m.Invoke(properties, new string[] { "java.vm.specification.version", "1.0" });
+				m.Invoke(properties, new string[] { "java.vm.specification.vendor", "Sun Microsystems Inc." });
+				m.Invoke(properties, new string[] { "java.vm.specification.name", "Java Virtual Machine Specification" });
+				m.Invoke(properties, new string[] { "java.vm.version", typeof(Runtime).Assembly.GetName().Version.ToString() });
+				m.Invoke(properties, new string[] { "java.vm.vendor", "Jeroen Frijters" });
+				m.Invoke(properties, new string[] { "java.vm.name", "IKVM.NET" });
+				m.Invoke(properties, new string[] { "java.specification.version", "1.3" });
+				m.Invoke(properties, new string[] { "java.specification.vendor", "Sun Microsystems Inc." });
+				m.Invoke(properties, new string[] { "java.specification.name", "Java Platform API Specification" });
+				m.Invoke(properties, new string[] { "java.class.version", "48.0" });
 				string classpath = Environment.GetEnvironmentVariable("CLASSPATH");
 				if(classpath == null)
 				{
@@ -390,15 +371,20 @@ namespace NativeCode.java
 				m.Invoke(properties, new string[] { "java.io.tmpdir", Path.GetTempPath() });
 				m.Invoke(properties, new string[] { "java.compiler", "" });
 				m.Invoke(properties, new string[] { "java.ext.dirs", "" });
-				m.Invoke(properties, new string[] { "os.name", "Windows" });
-				m.Invoke(properties, new string[] { "os.arch", "" });
-				m.Invoke(properties, new string[] { "os.version", Environment.OSVersion.ToString() });
+				// NOTE os.name *must* contain "Windows" when running on Windows, because Classpath tests on that
+				string osname = Environment.OSVersion.ToString();
+				string osver = Environment.OSVersion.Version.ToString();
+				// HACK if the osname contains the version, we remove it
+				osname = osname.Replace(osver, "").Trim();
+				m.Invoke(properties, new string[] { "os.name", osname });
+				m.Invoke(properties, new string[] { "os.arch", Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE") });
+				m.Invoke(properties, new string[] { "os.version", osver });
 				m.Invoke(properties, new string[] { "file.separator", Path.DirectorySeparatorChar.ToString() });
 				m.Invoke(properties, new string[] { "file.encoding", "8859_1" });
 				m.Invoke(properties, new string[] { "path.separator", Path.PathSeparator.ToString() });
 				m.Invoke(properties, new string[] { "line.separator", Environment.NewLine });
 				m.Invoke(properties, new string[] { "user.name", Environment.UserName });
-				m.Invoke(properties, new string[] { "user.home", "" });
+				m.Invoke(properties, new string[] { "user.home", Environment.GetEnvironmentVariable("USERPROFILE") });
 				m.Invoke(properties, new string[] { "user.dir", Environment.CurrentDirectory });
 				m.Invoke(properties, new string[] { "awt.toolkit", "ikvm.awt.NetToolkit, awt, Version=1.0, Culture=neutral, PublicKeyToken=null" });
 			}
@@ -416,6 +402,7 @@ namespace NativeCode.java
 
 			public static int nativeLoad(object obj, string filename)
 			{
+				// TODO native libraries somehow need to be scoped by class loader
 				return JVM.JniProvider.LoadNativeLibrary(filename);
 			}
 
@@ -655,39 +642,6 @@ namespace NativeCode.java
 				return null;
 			}
 		}
-
-		/* not used anymore
-		public class System
-		{
-			public static bool isWordsBigEndian()
-			{
-				return !BitConverter.IsLittleEndian;
-			}
-
-			private static long timebase = ((TimeZone.CurrentTimeZone.ToUniversalTime(DateTime.Now) - new DateTime(1970, 1, 1)).Ticks / 10000L) - Environment.TickCount;
-
-			public static long currentTimeMillis()
-			{
-				// NOTE this wraps after 24.9 days, but it is much faster than calling DateTime.Now every time
-				return timebase + Environment.TickCount;
-			}
-
-			public static void setErr0(object printStream)
-			{
-				ClassLoaderWrapper.GetType("java.lang.System").GetField("err", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
-			}
-
-			public static void setIn0(object inputStream)
-			{
-				ClassLoaderWrapper.GetType("java.lang.System").GetField("in", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, inputStream);
-			}
-
-			public static void setOut0(object printStream)
-			{
-				ClassLoaderWrapper.GetType("java.lang.System").GetField("out", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
-			}
-		}
-		*/
 
 		public class VMSystem
 		{

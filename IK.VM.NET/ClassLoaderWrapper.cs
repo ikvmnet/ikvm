@@ -127,7 +127,7 @@ class ClassLoaderWrapper
 	internal void LoadRemappedTypes()
 	{
 		nativeMethods = new Hashtable();
-		// TODO interfaces have java/lang/Object as the base type (do they really?)
+		// NOTE interfaces have *not* java/lang/Object as the base type (even though they do in the class file)
 		types["java.lang.Cloneable"] = new RemappedTypeWrapper(this, ModifiersAttribute.GetModifiers(typeof(java.lang.Cloneable)), "java/lang/Cloneable", typeof(java.lang.Cloneable), new TypeWrapper[0], null);
 		typeToTypeWrapper.Add(typeof(java.lang.Cloneable), types["java.lang.Cloneable"]);
 		types["java.io.Serializable"] = new RemappedTypeWrapper(this, ModifiersAttribute.GetModifiers(typeof(java.io.Serializable)), "java/io/Serializable", typeof(java.io.Serializable), new TypeWrapper[0], null);
@@ -360,7 +360,7 @@ class ClassLoaderWrapper
 			// TODO copy accessibility from element type
 			wrapper = new RemappedTypeWrapper(this, modifiers, name, array, interfaces, GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object"));
 			MethodInfo clone = typeof(Array).GetMethod("Clone");
-			MethodWrapper mw = new MethodWrapper(wrapper, mdClone, clone, Modifiers.Public);
+			MethodWrapper mw = new MethodWrapper(wrapper, mdClone, clone, null, Modifiers.Public);
 			mw.EmitCall = CodeEmitter.Create(OpCodes.Callvirt, clone);
 			mw.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, clone);
 			wrapper.AddMethod(mw);

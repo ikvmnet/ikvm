@@ -94,13 +94,10 @@ typedef struct _jfieldID* jfieldID;
 
 struct _jmethodID
 {
-	void* method;
-	char args[257];		// 'I', 'J', 'L', 'D' or 'F', and terminated by '\0'
 };
 
 struct _jfieldID
 {
-	void* field;
 };
 
 /*
