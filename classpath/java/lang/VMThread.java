@@ -103,12 +103,6 @@ final class VMThread
 	return 0;
     }
 
-    private static cli.System.TimeSpan makeTimeSpan(long ms, int ns)
-    {
-	// NOTE we assume that ns is already validated to be in the range 0..999999
-	return new cli.System.TimeSpan(Math.min(ms, Long.MAX_VALUE / 10000) * 10000 + (ns + 99) / 100);
-    }
-
     void join(long ms, int ns) throws InterruptedException
     {
 	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
@@ -120,7 +114,16 @@ final class VMThread
 	    }
 	    else
 	    {
-		nativeThread.Join(makeTimeSpan(ms, ns));
+		// if nanoseconds are specified, round up to one millisecond
+		if(ns != 0)
+		{
+		    nativeThread.Join(1);
+		}
+		for(long iter = ms / Integer.MAX_VALUE; iter != 0; iter--)
+		{
+		    nativeThread.Join(Integer.MAX_VALUE);
+		}
+		nativeThread.Join((int)(ms % Integer.MAX_VALUE));
 	    }
 	    // make sure the thread is marked as dead and removed from the thread group, before we
 	    // return from a successful join
@@ -345,14 +348,24 @@ final class VMThread
 
     static void sleep(long ms, int ns) throws InterruptedException
     {
-	// NOTE strangely, sleep(0) doesn't trigger a pending interrupt
+	// NOTE sleep(0) doesn't trigger a pending interrupt on the Sun JDK,
+	// so we duplicate that behavior.
 	if(ms == 0 && ns == 0)
 	{
 	    yield();
 	}
 	else
 	{
-	    cli.System.Threading.Thread.Sleep(makeTimeSpan(ms, ns));
+	    // if nanoseconds are specified, round up to one millisecond
+	    if(ns != 0)
+	    {
+		cli.System.Threading.Thread.Sleep(1);
+	    }
+	    for(long iter = ms / Integer.MAX_VALUE; iter != 0; iter--)
+	    {
+		cli.System.Threading.Thread.Sleep(Integer.MAX_VALUE);
+	    }
+	    cli.System.Threading.Thread.Sleep((int)(ms % Integer.MAX_VALUE));
 	}
     }
 

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <project name="classpath.dll" default="classpath.dll">
-    <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath" />
+    <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-0.09" />
     <property name="pathsep" value=":" />
     <if propertytrue="nant.platform.win32">
         <property name="pathsep" value=";" />
