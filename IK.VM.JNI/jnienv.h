@@ -131,12 +131,12 @@ typedef union jvalue {
 	jobject  l;
 } jvalue;
 
-public __value class LocalRefStruct;
+//public __value class LocalRefStruct;
 public __gc class System::Object;
 
 class JNIEnv
 {
-	LocalRefStruct __nogc* pLocalRefs;
+	//LocalRefStruct __nogc* pLocalRefs;
 
 	System::Object __gc* UnwrapRef(jobject o);
 	jmethodID FindMethodID(jclass cls, const char* name, const char* sig, bool isstatic);

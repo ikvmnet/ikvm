@@ -545,9 +545,8 @@ class ClassFile
 	{
 		private ushort class_index;
 		private ushort name_and_type_index;
-		private string name;
-		private string signature;
-		private string clazz;
+		private ConstantPoolItemNameAndType name_and_type;
+		private ConstantPoolItemClass clazz;
 
 		internal ConstantPoolItemFMI(BigEndianBinaryReader br)
 		{
@@ -557,20 +556,15 @@ class ClassFile
 
 		internal override void Resolve(ClassFile classFile)
 		{
-			ConstantPoolItemNameAndType nat = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
-			nat.Resolve(classFile);
-			name = nat.Name;
-			signature = nat.Type;
-			ConstantPoolItemClass cls = (ConstantPoolItemClass)classFile.GetConstantPoolItem(class_index);
-			cls.Resolve(classFile);
-			clazz = cls.Name;
+			name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
+			clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(class_index);
 		}
 
 		internal string Name
 		{
 			get
 			{
-				return name;
+				return name_and_type.Name;
 			}
 		}
 
@@ -578,7 +572,7 @@ class ClassFile
 		{
 			get
 			{
-				return signature;
+				return name_and_type.Type;
 			}
 		}
 
@@ -586,7 +580,7 @@ class ClassFile
 		{
 			get
 			{
-				return clazz;
+				return clazz.Name;
 			}
 		}
 	}
@@ -1178,7 +1172,7 @@ class ClassFile
 				{
 					pcIndexMap[i] = -1;
 				}
-				for(int i = 0; i < this.instructions.Length; i++)
+				for(int i = 0; i < this.instructions.Length - 1; i++)
 				{
 					pcIndexMap[this.instructions[i].PC] = i;
 				}

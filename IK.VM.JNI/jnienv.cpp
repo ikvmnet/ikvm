@@ -33,6 +33,8 @@
 
 #include <assert.h>
 
+#define pLocalRefs (LocalRefStruct::Current())
+
 using namespace System;
 using namespace System::Runtime::InteropServices;
 using namespace System::Reflection;
@@ -193,9 +195,23 @@ void JNICALL JNIEnv::ExceptionDescribe()
 		Exception* pException = pLocalRefs->PendingException;
 		pLocalRefs->PendingException = 0;
 		jclass cls = FindClass("java/lang/Throwable");
-		jmethodID mid = GetMethodID(cls, "printStackTrace", "()V");
-		DeleteLocalRef(cls);
-		CallVoidMethod(exception, mid);
+		if(cls)
+		{
+			jmethodID mid = GetMethodID(cls, "printStackTrace", "()V");
+			if(mid)
+			{
+				DeleteLocalRef(cls);
+				CallVoidMethod(exception, mid);
+			}
+			else
+			{
+				Console::Error->WriteLine(S"JNI internal error: printStackTrace method not found in java.lang.Throwable");
+			}
+		}
+		else
+		{
+			Console::Error->WriteLine(S"JNI internal error: java.lang.Throwable not found");
+		}
 		pLocalRefs->DeleteLocalRef(exception);
 		pLocalRefs->PendingException = pException;
 	}
@@ -309,6 +325,9 @@ jmethodID JNIEnv::GetStaticMethodID(jclass cls, const char *name, const char *si
 
 Object* JNIEnv::InvokeHelper(jobject object, jmethodID methodID, jvalue* args)
 {
+	assert(!pLocalRefs->PendingException);
+	assert(methodID);
+
 	MethodBase* m = __try_cast<MethodBase*>(GCHandle::op_Explicit((IntPtr)methodID->method).Target);
 	ParameterInfo* p __gc[] = m->GetParameters();
 	Object* argarray __gc[] = new Object*[p->Length];
@@ -384,7 +403,10 @@ Object* JNIEnv::InvokeHelper(jobject object, jmethodID methodID, jvalue* args)
 	}
 	catch(TargetInvocationException* x)
 	{
+		// TODO remove this
+		Console::WriteLine(S"InvokeHelper: {0}", x);
 		// TODO retain stack trace information
+		//Console::WriteLine(S"LocalRefs = ", __box((int)pLocalRefs));
 		pLocalRefs->PendingException = x->InnerException;
 		return 0;
 	}

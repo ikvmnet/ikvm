@@ -34,6 +34,7 @@
 using namespace System;
 using namespace System::Collections;
 using namespace System::Runtime::InteropServices;
+using namespace System::Reflection;
 
 int JNI::LoadNativeLibrary(String* name)
 {
@@ -44,6 +45,16 @@ int JNI::LoadNativeLibrary(String* name)
 	}
 	libs->Add(__box((int)hMod));
 	return 1;
+}
+
+Type* JNI::GetLocalRefStructType()
+{
+	return __typeof(LocalRefStruct);
+}
+
+MethodInfo* JNI::GetJniFuncPtrMethod()
+{
+	return __typeof(JNI)->GetMethod("GetJniFuncPtr");
 }
 
 jobject JNI::MakeGlobalRef(Object* o)
@@ -85,6 +96,17 @@ Object* JNI::UnwrapGlobalRef(jobject o)
 	return 0;
 }
 
+/*
+void* CreateDebugWrapper(String* name, void* pfunc)
+{
+	char* pstub = new char[6];
+	pstub[0] = 0x90;
+	pstub[1] = 0xe8;
+	*((void**)&pstub[2]) = pfunc;
+	return pstub;
+}
+*/
+
 IntPtr JNI::GetJniFuncPtr(String* method, String* sig, String* clazz)
 {
 	System::Text::StringBuilder* mangledSig = new System::Text::StringBuilder();
@@ -109,6 +131,10 @@ IntPtr JNI::GetJniFuncPtr(String* method, String* sig, String* clazz)
 					{
 						mangledSig->Append(S"_");
 					}
+					else if(sig->Chars[i] == '_')
+					{
+						mangledSig->Append(S"_1");
+					}
 					else
 					{
 						mangledSig->Append(sig->Chars[i]);
@@ -125,6 +151,10 @@ IntPtr JNI::GetJniFuncPtr(String* method, String* sig, String* clazz)
 				if(sig->Chars[i] == '/')
 				{
 					mangledSig->Append(S"_");
+				}
+				else if(sig->Chars[i] == '_')
+				{
+					mangledSig->Append(S"_1");
 				}
 				else
 				{
@@ -175,4 +205,136 @@ IntPtr JNI::GetJniFuncPtr(String* method, String* sig, String* clazz)
 		}
 	}
 	throw VM::UnsatisfiedLinkError(methodName);
+}
+
+// NOTE we have only one global JNIEnv*, because allocating the JNIEnv is TLS proved too much of a headache,
+// we only keep the pointer to the current frame (LocalRefStruct) in a TLS variable
+static JNIEnv jniEnv;
+
+// If we put the ThreadStatic in LocalRefStruct we get an ExecutionEngineException (?!)
+__gc class TlsHack
+{
+public:
+	[ThreadStatic]
+	static void* currentLocalRefStruct;
+};
+
+JNIEnv* LocalRefStruct::GetEnv()
+{
+	if(TlsHack::currentLocalRefStruct)
+	{
+		return &jniEnv;
+	}
+	return 0;
+}
+
+LocalRefStruct* LocalRefStruct::Current()
+{
+	return (LocalRefStruct*)TlsHack::currentLocalRefStruct;
+}
+
+IntPtr LocalRefStruct::Enter()
+{
+	pPrevLocalRefCache = TlsHack::currentLocalRefStruct;
+	// NOTE since this __value type can (should) only be allocated on the stack,
+	// it is "safe" to store the this pointer in a __nogc*, but the compiler
+	// doesn't know this, so we have to use a __pin* to bypass its checks.
+	LocalRefStruct __pin* pPinHack = this;
+	TlsHack::currentLocalRefStruct = pPinHack;
+	return (IntPtr)&jniEnv;
+}
+
+void LocalRefStruct::Leave()
+{
+	TlsHack::currentLocalRefStruct = pPrevLocalRefCache;
+	if(pendingException)
+	{
+		// TODO retain the stack trace of the exception object
+		throw pendingException;
+	}
+}
+
+Exception* LocalRefStruct::get_PendingException()
+{
+	return pendingException;
+}
+
+void LocalRefStruct::set_PendingException(Exception* exception)
+{
+	pendingException = exception;
+}
+
+IntPtr LocalRefStruct::MakeLocalRef(Object* o)
+{
+	if(o == 0)
+	{
+		return 0;
+	}
+	Object** p = &cache.loc1;
+	for(int i = 0; i < 10; i++)
+	{
+		if(p[i] == 0)
+		{
+			p[i] = o;
+			return i + 1;
+		}
+	}
+	if(!overflow)
+	{
+		// HACK we use a very large dynamic table size, because we don't yet support growing it
+		overflow = new Object* __gc[256];
+	}
+	for(int i = 0; i < overflow->Length; i++)
+	{
+		if(overflow[i] == 0)
+		{
+			overflow[i] = o;
+			return i + 11;
+		}
+	}
+	throw new NotImplementedException(S"Growing the localref table is not implemented");
+}
+
+void LocalRefStruct::DeleteLocalRef(jobject o)
+{
+	int i = (int)o;
+	if(i < 0)
+	{
+		Console::WriteLine("bogus localref in DeleteLocalRef");
+		DebugBreak();
+	}
+	if(i > 0)
+	{
+		if(i <= 10)
+		{
+			Object** p = &cache.loc1;
+			p[i - 1] = 0;
+		}
+		else
+		{
+			overflow[i - 11] = 0;
+		}
+	}
+}
+
+Object* LocalRefStruct::UnwrapLocalRef(IntPtr localref)
+{
+	if(localref == 0)
+	{
+		return 0;
+	}
+	if(int(localref) < 0)
+	{
+		Console::WriteLine("bogus localref in UnwrapLocalRef");
+		DebugBreak();
+	}
+	if(int(localref) <= 10)
+	{
+		Object** p = &cache.loc1;
+		return p[int(localref) - 1];
+	}
+	else
+	{
+		return overflow[int(localref) - 11];
+	}
 }
