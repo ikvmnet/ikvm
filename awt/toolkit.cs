@@ -270,7 +270,7 @@ namespace ikvm.awt
 		{
 			try
 			{
-				using(System.IO.FileStream stream = new System.IO.FileStream(filename, System.IO.FileMode.Open))
+				using(System.IO.FileStream stream = new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
 				{
 					return new NetBufferedImage(new Bitmap(Image.FromStream(stream)));
 				}
@@ -294,22 +294,26 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
-		public override bool prepareImage(java.awt.Image image,
-			int width,
-			int height,
-			java.awt.image.ImageObserver observer)
+
+		public override bool prepareImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
 		{
-			throw new NotImplementedException();
+			// HACK for now we call checkImage to obtain the status and fire the observer
+			return (checkImage(image, width, height, observer) & 32) != 0;
 		}
 
-		public override int checkImage(java.awt.Image image,
-			int width,
-			int height,
-			java.awt.image.ImageObserver observer)
+		public override int checkImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
 		{
 			if(image.getWidth(null) == -1)
 			{
+				if(observer != null)
+				{
+					observer.imageUpdate(image, 64, 0, 0, -1, -1);
+				}
 				return 64; // ERROR
+			}
+			if(observer != null)
+			{
+				observer.imageUpdate(image, 1 + 2 + 16 + 32, 0, 0, image.getWidth(null), image.getHeight(null));
 			}
 			// HACK we cannot use the constants defined in the interface from C#, so we hardcode the flags
 			return 1 + 2 + 16 + 32; // WIDTH + HEIGHT + FRAMEBITS + ALLBITS
@@ -319,22 +323,22 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
-		public override java.awt.Image createImage(sbyte[] imagedata,
-			int imageoffset,
-			int imagelength)
+
+		public override java.awt.Image createImage(sbyte[] imagedata, int imageoffset, int imagelength)
 		{
 			throw new NotImplementedException();
 		}
-		public override java.awt.PrintJob getPrintJob(java.awt.Frame frame,
-			string jobtitle,
-			Properties props)
+
+		public override java.awt.PrintJob getPrintJob(java.awt.Frame frame, string jobtitle, Properties props)
 		{
 			throw new NotImplementedException();
 		}
+
 		public override void beep()
 		{
 			throw new NotImplementedException();
 		}
+
 		public override java.awt.datatransfer.Clipboard getSystemClipboard()
 		{
 			throw new NotImplementedException();
@@ -353,6 +357,31 @@ namespace ikvm.awt
 		public override Map mapInputMethodHighlight(java.awt.im.InputMethodHighlight highlight)
 		{
 			throw new NotImplementedException();
+		}
+
+		protected override java.awt.peer.LightweightPeer createComponent(java.awt.Component target)
+		{
+			if(target is java.awt.Container)
+			{
+				return new NetLightweightContainerPeer((java.awt.Container)target);
+			}
+			return new NetLightweightComponentPeer(target);
+		}
+	}
+
+	class NetLightweightComponentPeer : NetComponentPeer, java.awt.peer.LightweightPeer
+	{
+		public NetLightweightComponentPeer(java.awt.Component target)
+			: base(target, ((NetComponentPeer)target.getParent().getPeer()).control)
+		{
+		}
+	}
+
+	class NetLightweightContainerPeer : NetContainerPeer, java.awt.peer.LightweightPeer
+	{
+		public NetLightweightContainerPeer(java.awt.Container target)
+			: base(target, (ContainerControl)((NetContainerPeer)target.getParent().getPeer()).control)
+		{
 		}
 	}
 
@@ -438,7 +467,12 @@ namespace ikvm.awt
 
 		public override java.awt.Graphics create()
 		{
-			return null;
+			// TODO we need to actually recreate a new underlying Graphics object, but .NET doesn't
+			// seem to have a way of doing that, so we probably need access to the underlying surface.
+			// Sigh...
+			NetGraphics newg = new NetGraphics(g, font, false);
+			// TODO copy other attributes
+			return newg;
 		}
 
 		public override void dispose()
@@ -476,8 +510,18 @@ namespace ikvm.awt
 			return true;
 		}
 
-		public override bool drawImage(java.awt.Image param1, int param2, int param3, int param4, int param5, int param6, int param7, int param8, int param9, java.awt.image.ImageObserver param10)
+		public override bool drawImage(java.awt.Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, java.awt.image.ImageObserver observer)
 		{
+			if(img is NetBufferedImage)
+			{
+				Rectangle destRect = new Rectangle(dx1, dy1, dx2 - dx1, dy2 - dy1);
+				Rectangle srcRect = new Rectangle(sx1, sy1, sx2 - sx1, sy2 - sy1);
+				g.DrawImage(((NetBufferedImage)img).bitmap, destRect, srcRect, GraphicsUnit.Pixel);
+			}
+			else
+			{
+				throw new NotImplementedException();
+			}
 			return true;
 		}
 
@@ -496,8 +540,16 @@ namespace ikvm.awt
 			return true;
 		}
 
-		public override bool drawImage(java.awt.Image param1, int param2, int param3, java.awt.image.ImageObserver param4)
+		public override bool drawImage(java.awt.Image img, int x, int y, java.awt.image.ImageObserver observer)
 		{
+			if(img is NetBufferedImage)
+			{
+				g.DrawImage(((NetBufferedImage)img).bitmap, x, y);
+			}
+			else
+			{
+				throw new NotImplementedException();
+			}
 			return true;
 		}
 
@@ -505,6 +557,12 @@ namespace ikvm.awt
 		{
 			using(Pen p = new Pen(color))
 			{
+				// HACK DrawLine doesn't appear to draw the last pixel, so for single pixel lines, we add one
+				// TODO figure out if this applies to all lines
+				if(x1 == x2 && y1 == y2)
+				{
+					x2++;
+				}
 				g.DrawLine(p, x1, y1, x2, y2);
 			}
 		}
@@ -975,7 +1033,7 @@ namespace ikvm.awt
 			this.control = control;
 			this.component = component;
 			java.awt.Container parent = component.getParent();
-			if(parent != null)
+			if(parent != null && !(this is java.awt.peer.LightweightPeer))
 			{
 				control.Parent = ((NetComponentPeer)parent.getPeer()).control;
 				if(parent is java.awt.Frame)
@@ -1071,7 +1129,7 @@ namespace ikvm.awt
 
 		public int checkImage(java.awt.Image img, int width, int height, java.awt.image.ImageObserver ob)
 		{
-			throw new NotImplementedException();
+			return getToolkit().checkImage(img, width, height, ob);
 		}
 
 		public java.awt.Image createImage(java.awt.image.ImageProducer prod)
@@ -1091,6 +1149,7 @@ namespace ikvm.awt
 
 		public void dispose()
 		{
+			control.Parent = null;
 		}
 
 		public void enable()
@@ -1185,7 +1244,7 @@ namespace ikvm.awt
 
 		public bool prepareImage(java.awt.Image img, int width, int height, ImageObserver ob)
 		{
-			throw new NotImplementedException();
+			return getToolkit().prepareImage(img, width, height, ob);
 		}
 
 		public void print(java.awt.Graphics graphics)
@@ -1286,10 +1345,8 @@ namespace ikvm.awt
 		private void setVisibleImpl(bool visible)
 		{
 			control.Visible = visible;
-			if(visible)
-			{
-				postEvent(new java.awt.@event.ComponentEvent(component, java.awt.@event.ComponentEvent.COMPONENT_SHOWN));
-			}
+			postEvent(new java.awt.@event.ComponentEvent(component,
+				visible ? java.awt.@event.ComponentEvent.COMPONENT_SHOWN : java.awt.@event.ComponentEvent.COMPONENT_HIDDEN));
 		}
 
 		public void setVisible(bool visible)
@@ -1373,7 +1430,7 @@ namespace ikvm.awt
 	// provide a hacked up version
 	class NetBufferedImage : java.awt.image.BufferedImage
 	{
-		private Bitmap bitmap;
+		internal Bitmap bitmap;
 
 		internal NetBufferedImage(Bitmap bitmap)
 			: base(bitmap.Width, bitmap.Height, java.awt.image.BufferedImage.TYPE_INT_RGB)
@@ -1696,12 +1753,7 @@ namespace ikvm.awt
 			// TODO use control.Invoke
 			using(Graphics g = control.CreateGraphics())
 			{
-				string text = control.Text;
-				if(text == "")
-				{
-					text = "W";
-				}
-				return new java.awt.Dimension((int)Math.Round(g.MeasureString(text, control.Font, -1, new StringFormat(StringFormatFlags.MeasureTrailingSpaces)).Width), ((TextBox)control).PreferredHeight);
+				return new java.awt.Dimension((int)Math.Round((g.MeasureString("abcdefghijklm", control.Font).Width * len) / 13), ((TextBox)control).PreferredHeight);
 			}
 		}
 
