@@ -1418,8 +1418,6 @@ sealed class GetterFieldWrapper : FieldWrapper
 	}
 }
 
-// NOTE this type is only used for remapped fields, dynamically compiled classes are always finished before we
-// allow reflection (so we can look at the underlying field in that case)
 sealed class ConstantFieldWrapper : FieldWrapper
 {
 	private object constant;
@@ -1427,6 +1425,7 @@ sealed class ConstantFieldWrapper : FieldWrapper
 	internal ConstantFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant)
 		: base(declaringType, fieldType, name, sig, modifiers, field)
 	{
+		Debug.Assert(IsStatic);
 		this.constant = constant;
 	}
 
@@ -1496,7 +1495,6 @@ sealed class ConstantFieldWrapper : FieldWrapper
 	{
 		// when constant static final fields are updated, the JIT normally doesn't see that (because the
 		// constant value is inlined), so we emulate that behavior by emitting a Pop
-		// TODO can we have a constant instance field?
 		ilgen.Emit(OpCodes.Pop);
 	}
 

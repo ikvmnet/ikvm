@@ -84,10 +84,10 @@ final class VMSystem
      * @param o the Object to get the hash code for
      * @return the VM-dependent hash code for this Object
      */
-    static int identityHashCode(Object o)
-    {
-	return cli.System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(o);
-    }
+    // FXBUG this is implemented by a non-virtual call to System.Object.GetHashCode (in map.xml),
+    // because RuntimeHelpers.GetHashCode is broken (in v1.x) when called in a secondary AppDomain.
+    // See http://weblog.ikvm.net/PermaLink.aspx?guid=c2442bc8-7b48-4570-b082-82649cc347dc
+    static native int identityHashCode(Object o);
 
     /**
      * Convert a library name to its platform-specific variant.

@@ -1804,7 +1804,7 @@ namespace IKVM.Internal
 						}
 					}
 					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Castclass, shadowType);
+					EmitHelper.Castclass(ilgen, shadowType);
 					ilgen.Emit(OpCodes.Ret);
 
 					if(hasfail)

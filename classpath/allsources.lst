@@ -534,14 +534,6 @@ sun/misc/Ref.java
 ../../classpath/gnu/java/rmi/registry/RegistryImpl.java
 ../../classpath/gnu/java/rmi/registry/RegistryImpl_Skel.java
 ../../classpath/gnu/java/rmi/registry/RegistryImpl_Stub.java
-../../classpath/gnu/java/rmi/rmic/Compile_gcj.java
-../../classpath/gnu/java/rmi/rmic/Compile_jikes.java
-../../classpath/gnu/java/rmi/rmic/Compile_kjc.java
-../../classpath/gnu/java/rmi/rmic/Compiler.java
-../../classpath/gnu/java/rmi/rmic/CompilerProcess.java
-../../classpath/gnu/java/rmi/rmic/RMIC.java
-../../classpath/gnu/java/rmi/rmic/RMICException.java
-../../classpath/gnu/java/rmi/rmic/TabbedWriter.java
 ../../classpath/gnu/java/rmi/RMIMarshalledObjectInputStream.java
 ../../classpath/gnu/java/rmi/RMIMarshalledObjectOutputStream.java
 ../../classpath/gnu/java/rmi/server/ConnectionRunnerPool.java

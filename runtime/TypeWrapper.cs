@@ -35,6 +35,7 @@ using ILGenerator = CountingILGenerator;
 class EmitHelper
 {
 	private static MethodInfo objectToString = typeof(object).GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+	private static MethodInfo verboseCastFailure = Environment.GetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : typeof(ByteCodeHelper).GetMethod("VerboseCastFailure");
 
 	internal static void Throw(ILGenerator ilgen, string dottedClassName)
 	{
@@ -76,6 +77,30 @@ class EmitHelper
 		// reference is null
 		ilgen.Emit(OpCodes.Ldvirtftn, objectToString);
 		ilgen.Emit(OpCodes.Pop);
+	}
+
+	internal static void Castclass(ILGenerator ilgen, Type type)
+	{
+		if(verboseCastFailure != null)
+		{
+			LocalBuilder lb = ilgen.DeclareLocal(typeof(object));
+			ilgen.Emit(OpCodes.Stloc, lb);
+			ilgen.Emit(OpCodes.Ldloc, lb);
+			ilgen.Emit(OpCodes.Isinst, type);
+			ilgen.Emit(OpCodes.Dup);
+			Label ok = ilgen.DefineLabel();
+			ilgen.Emit(OpCodes.Brtrue, ok);
+			ilgen.Emit(OpCodes.Ldloc, lb);
+			ilgen.Emit(OpCodes.Brfalse, ok);	// handle null
+			ilgen.Emit(OpCodes.Ldtoken, type);
+			ilgen.Emit(OpCodes.Ldloc, lb);
+			ilgen.Emit(OpCodes.Call, verboseCastFailure);
+			ilgen.MarkLabel(ok);
+		}
+		else
+		{
+			ilgen.Emit(OpCodes.Castclass, type);
+		}
 	}
 }
 
@@ -1404,7 +1429,7 @@ abstract class TypeWrapper
 		}
 		else
 		{
-			ilgen.Emit(OpCodes.Castclass, TypeAsTBD);
+			EmitHelper.Castclass(ilgen, TypeAsTBD);
 		}
 	}
 
@@ -3537,15 +3562,15 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				}
 				for(int j = 0; j < args.Length; j++)
 				{
-					if(!args[j].IsPrimitive)
+					if(args[j].IsUnloadable || !args[j].IsPrimitive)
 					{
 						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-						if(args[j].IsNonPrimitiveValueType)
+						if(!args[j].IsUnloadable && args[j].IsNonPrimitiveValueType)
 						{
 							ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(j + add));
 							args[j].EmitBox(ilGenerator);
 						}
-						else if(args[j].IsGhost)
+						else if(!args[j].IsUnloadable && args[j].IsGhost)
 						{
 							ilGenerator.Emit(OpCodes.Ldarga_S, (byte)(j + add));
 							ilGenerator.Emit(OpCodes.Ldfld, args[j].GhostRefField);
@@ -5150,34 +5175,21 @@ sealed class DotNetTypeWrapper : TypeWrapper
 		if(name.EndsWith(DelegateInterfaceSuffix))
 		{
 			Type delegateType = LoadTypeFromLoadedAssemblies(name.Substring(0, name.Length - DelegateInterfaceSuffix.Length));
-			if(delegateType != null && delegateType.IsSubclassOf(typeof(Delegate)))
+			if(delegateType != null && IsDelegate(delegateType))
 			{
+				MethodInfo invoke = delegateType.GetMethod("Invoke");
+				ParameterInfo[] parameters = invoke.GetParameters();
+				Type[] args = new Type[parameters.Length];
+				for(int i = 0; i < args.Length; i++)
+				{
+					// we know there aren't any unsupported parameter types, because IsDelegate() returned true
+					args[i] = parameters[i].ParameterType;
+				}
 				ModuleBuilder moduleBuilder = ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
 				TypeBuilder typeBuilder = moduleBuilder.DefineType(NamePrefix + name, TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract);
 				AttributeHelper.SetInnerClass(typeBuilder, NamePrefix + name, NamePrefix + delegateType.FullName, "Method", Modifiers.Public | Modifiers.Interface | Modifiers.Static | Modifiers.Abstract);
-				MethodInfo invoke = delegateType.GetMethod("Invoke");
-				if(invoke != null)
-				{
-					ParameterInfo[] parameters = invoke.GetParameters();
-					Type[] args = new Type[parameters.Length];
-					for(int i = 0; i < args.Length; i++)
-					{
-						// HACK if the delegate has pointer args, we cannot handle them, but it is already
-						// too late to refuse to load the class, so we replace pointers with IntPtr.
-						// This is not a solution, because if the delegate would be instantiated the generated
-						// code would be invalid.
-						if(parameters[i].ParameterType.IsPointer)
-						{
-							args[i] = typeof(IntPtr);
-						}
-						else
-						{
-							args[i] = parameters[i].ParameterType;
-						}
-					}
-					typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual, CallingConventions.Standard, invoke.ReturnType, args);
-					return new CompiledTypeWrapper(NamePrefix + name, typeBuilder.CreateType());
-				}
+				typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual, CallingConventions.Standard, invoke.ReturnType, args);
+				return new CompiledTypeWrapper(NamePrefix + name, typeBuilder.CreateType());
 			}
 		}
 		return null;
@@ -5580,7 +5592,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 			}
 
 			// special case for delegate constructors!
-			if(IsDelegate)
+			if(IsDelegate(type))
 			{
 				TypeWrapper iface = InnerClasses[0];
 				Debug.Assert(iface is CompiledTypeWrapper);
@@ -5851,16 +5863,29 @@ sealed class DotNetTypeWrapper : TypeWrapper
 		}
 	}
 
-	private bool IsDelegate
+	private static bool IsDelegate(Type type)
 	{
-		get
+		// HACK non-public delegates do not get the special treatment (because they are likely to refer to
+		// non-public types in the arg list and they're not really useful anyway)
+		// NOTE we don't have to check in what assembly the type lives, because this is a DotNetTypeWrapper,
+		// we know that it is a different assembly.
+		if(!type.IsAbstract && type.IsSubclassOf(typeof(MulticastDelegate)) && IsVisible(type))
 		{
-			// HACK non-public delegates do not get the special treatment (because they are likely to refer to
-			// non-public types in the arg list and they're not really useful anyway)
-			// NOTE we don't have to check in what assembly the type lives, because this is a DotNetTypeWrapper,
-			// we know that it is a different assembly.
-			return !type.IsAbstract && type.IsSubclassOf(typeof(MulticastDelegate)) && IsVisible(type);
+			MethodInfo invoke = type.GetMethod("Invoke");
+			if(invoke != null)
+			{
+				foreach(ParameterInfo p in invoke.GetParameters())
+				{
+					// TODO at the moment we don't support delegates with pointer or byref parameters
+					if(p.ParameterType.IsPointer || p.ParameterType.IsByRef)
+					{
+						return false;
+					}
+				}
+				return true;
+			}
 		}
+		return false;
 	}
 
 	internal override TypeWrapper[] InnerClasses
@@ -5871,9 +5896,9 @@ sealed class DotNetTypeWrapper : TypeWrapper
 			{
 				if(innerClasses == null)
 				{
-					if(IsDelegate)
+					if(IsDelegate(type))
 					{
-						innerClasses = new TypeWrapper[] { GetClassLoader().LoadClassByDottedName(Name + DelegateInterfaceSuffix) };
+						innerClasses = new TypeWrapper[] { ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Name + DelegateInterfaceSuffix) };
 					}
 					else
 					{
@@ -6037,7 +6062,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 				return;
 			}
 		}
-		ilgen.Emit(OpCodes.Castclass, type);
+		EmitHelper.Castclass(ilgen, type);
 	}
 
 	internal override void Finish(bool forDebugSave)

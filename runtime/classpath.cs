@@ -253,7 +253,7 @@ namespace IKVM.NativeCode.java
 					}
 				}
 
-				public static void SetValue(object fieldCookie, object o, object v)
+				public static void SetValue(object fieldCookie, object o, object v, bool accessible)
 				{
 					Profiler.Enter("Field.SetValue");
 					try
@@ -263,8 +263,13 @@ namespace IKVM.NativeCode.java
 						{
 							// NOTE Java runs the class initializer when trying to set a final field
 							wrapper.DeclaringType.RunClassInit();
-							// NOTE even if the caller is the class itself, it still isn't legal
-							throw JavaException.IllegalAccessException("Field is final");
+							// Starting with JDK 1.5, it is legal to change final instance fields
+							// (see JSR-133)
+							if(wrapper.IsStatic || !accessible)
+							{
+								// NOTE even if the caller is the class itself, it still isn't legal
+								throw JavaException.IllegalAccessException("Field is final");
+							}
 						}
 						if(wrapper.FieldTypeWrapper.IsPrimitive)
 						{

@@ -48,6 +48,7 @@ class Compiler
 	private static MethodInfo monitorEnterMethod;
 	private static MethodInfo monitorExitMethod;
 	private static MethodInfo objectToStringMethod;
+	private static MethodInfo keepAliveMethod;
 	private static MethodInfo f2iMethod;
 	private static MethodInfo d2iMethod;
 	private static MethodInfo f2lMethod;
@@ -80,6 +81,7 @@ class Compiler
 		monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		objectToStringMethod = typeof(object).GetMethod("ToString");
+		keepAliveMethod = typeof(GC).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		f2iMethod = typeof(ByteCodeHelper).GetMethod("f2i");
 		d2iMethod = typeof(ByteCodeHelper).GetMethod("d2i");
 		f2lMethod = typeof(ByteCodeHelper).GetMethod("f2l");
@@ -759,7 +761,6 @@ class Compiler
 		{
 			if(m.IsSynchronized && m.IsStatic)
 			{
-				ArrayList exits = new ArrayList();
 				ilGenerator.Emit(OpCodes.Ldsfld, clazz.ClassObjectField);
 				Label label = ilGenerator.DefineLabel();
 				ilGenerator.Emit(OpCodes.Brtrue_S, label);
@@ -773,7 +774,7 @@ class Compiler
 				ilGenerator.Emit(OpCodes.Stloc, monitor);
 				ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
 				ilGenerator.BeginExceptionBlock();
-				Block b = new Block(c, 0, int.MaxValue, -1, exits, true);
+				Block b = new Block(c, 0, int.MaxValue, -1, new ArrayList(), true);
 				c.Compile(b);
 				b.Leave();
 				ilGenerator.BeginFinallyBlock();

@@ -847,6 +847,16 @@
 				</body>
 			</method>
 		</class>
+		<class name="java.lang.VMSystem">
+			<method name="identityHashCode" sig="(Ljava.lang.Object;)I">
+				<body>
+					<!-- FXBUG RuntimeHelpers.GetHashCode is broken in multi AppDomain scenarios (on v1.x) -->
+					<ldarg_0 />
+					<call type="System.Object, mscorlib" name="GetHashCode" sig="()I" />
+					<ret />
+				</body>
+			</method>
+		</class>
 		<class name="java.lang.LibraryVMInterfaceImpl">
 			<method name="getWrapperFromField" sig="(Ljava.lang.reflect.Field;)Ljava.lang.Object;">
 				<body>
