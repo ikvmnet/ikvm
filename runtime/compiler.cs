@@ -968,13 +968,13 @@ class Compiler
 					ReturnCookie rc = exit as ReturnCookie;
 					if(rc != null)
 					{
-						if(newBlock.exits == null)
+						if(newBlock.IsNested)
 						{
-							rc.EmitRet(ilgen);
+							newBlock.exits.Add(rc);
 						}
 						else
 						{
-							newBlock.exits.Add(rc);
+							rc.EmitRet(ilgen);
 						}
 					}
 					else
