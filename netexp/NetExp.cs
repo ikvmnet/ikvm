@@ -317,10 +317,10 @@ public class NetExp
 		{
 			InnerClassesAttribute innerclasses = new InnerClassesAttribute(f);
 			string outer = ClassName(type);
-			innerclasses.Add(outer + "$Method", outer, "Method", 0x209);
+			innerclasses.Add(outer + "$Method", outer, "Method", 0x609);
 			f.AddAttribute(innerclasses);
 			// now we construct the inner interface type
-			ClassFileWriter iface = new ClassFileWriter(Modifiers.Interface | Modifiers.Public, outer + "$Method", "java/lang/Object");
+			ClassFileWriter iface = new ClassFileWriter(Modifiers.Interface | Modifiers.Public | Modifiers.Abstract, outer + "$Method", "java/lang/Object");
 			MethodInfo invoke = type.GetMethod("Invoke");
 			StringBuilder sb = new StringBuilder();
 			sb.Append('(');
@@ -334,7 +334,7 @@ public class NetExp
 			// TODO IK.VM.NET.Sig must be set here as well
 			iface.AddMethod(Modifiers.Public | Modifiers.Abstract, "Invoke", sb.ToString());
 			innerclasses = new InnerClassesAttribute(iface);
-			innerclasses.Add(outer + "$Method", outer, "Method", 0x209);
+			innerclasses.Add(outer + "$Method", outer, "Method", 0x609);
 			iface.AddAttribute(innerclasses);
 			WriteClass(outer + "$Method.class", iface);
 		}

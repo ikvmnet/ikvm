@@ -51,6 +51,9 @@ class ClassLoaderWrapper
 	// so for the time being, we share one dynamic assembly among all classloaders
 	private static ModuleBuilder moduleBuilder;
 	private static bool saveDebugImage;
+	private static Hashtable nameClashHash = new Hashtable();
+	private static int instanceCounter = 0;
+	private int instanceId = System.Threading.Interlocked.Increment(ref instanceCounter);
 
 	// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
 	internal static void SetBootstrapClassLoader(ClassLoaderWrapper bootstrapClassLoader)
@@ -173,6 +176,29 @@ class ClassLoaderWrapper
 		foreach(MapXml.Class c in map.remappings)
 		{
 			((RemappedTypeWrapper)types[c.Name]).LoadRemappings(c);
+		}
+	}
+
+	// This mangles type names, to enable different class loaders loading classes with the same names.
+	// We used to support this by using an assembly per class loader instance, but because
+	// of the CLR TypeResolve bug, we put all types in a single assembly for now.
+	internal string MangleTypeName(string name)
+	{
+		lock(nameClashHash)
+		{
+			if(nameClashHash.ContainsKey(name))
+			{
+				if(JVM.IsStaticCompiler)
+				{
+					Console.Error.WriteLine("WARNING: Class name clash: " + name);
+				}
+				return name + "\\\\" + instanceId;
+			}
+			else
+			{
+				nameClashHash.Add(name, name);
+				return name;
+			}
 		}
 	}
 
@@ -423,8 +449,6 @@ class ClassLoaderWrapper
 		return wrapper;
 	}
 
-	// TODO make sure class isn't defined already
-	// TODO check for circularity
 	// TODO disallow anyone other than the bootstrap classloader defining classes in the "java." package
 	internal TypeWrapper DefineClass(ClassFile f)
 	{
@@ -433,6 +457,18 @@ class ClassLoaderWrapper
 		{
 			throw JavaException.ClassFormatError("Bad name");
 		}
+		if(types.ContainsKey(f.Name))
+		{
+			if(types[f.Name] == null)
+			{
+				// NOTE this can also happen if we (incorrectly) trigger a load of this class during
+				// the loading of the base class, so we print a warning here.
+				Console.Error.WriteLine("**** ClassCircularityError: {0} ****", f.Name);
+				throw JavaException.ClassCircularityError("{0}", f.Name);
+			}
+			throw JavaException.LinkageError("duplicate class definition: {0}", f.Name);
+		}
+		types.Add(f.Name, null);
 		TypeWrapper type;
 		// TODO also figure out what should happen if LoadClassByDottedNameFast throws an exception (custom class loaders
 		// can throw whatever exception they want)
@@ -465,9 +501,10 @@ class ClassLoaderWrapper
 		else
 		{
 			type = new DynamicTypeWrapper(f, this, nativeMethods);
-			dynamicTypes.Add(f.Name, type);
+			dynamicTypes.Add(type.Type.FullName, type);
 		}
-		types.Add(f.Name, type);
+		Debug.Assert(types[f.Name] == null);
+		types[f.Name] = type;
 		return type;
 	}
 
@@ -595,89 +632,19 @@ class ClassLoaderWrapper
 		return SigDecoderWrapper(ref index, type);
 	}
 
-	// NOTE: this will ignore anything following the sig marker (so that it can be used to decode method signatures)
-	private Type SigDecoder(ref int index, string sig)
-	{
-		switch(sig[index++])
-		{
-			case 'B':
-				return typeof(sbyte);
-			case 'C':
-				return typeof(char);
-			case 'D':
-				return typeof(double);
-			case 'F':
-				return typeof(float);
-			case 'I':
-				return typeof(int);
-			case 'J':
-				return typeof(long);
-			case 'L':
-			{
-				int pos = index;
-				index = sig.IndexOf(';', index) + 1;
-				return LoadClassByDottedName(sig.Substring(pos, index - pos - 1)).Type;
-			}
-			case 'S':
-				return typeof(short);
-			case 'Z':
-				return typeof(bool);
-			case 'V':
-				return typeof(void);
-			case '[':
-			{
-				// TODO this can be optimized
-				string array = "[";
-				while(sig[index] == '[')
-				{
-					index++;
-					array += "[";
-				}
-				switch(sig[index])
-				{
-					case 'L':
-					{
-						int pos = index;
-						index = sig.IndexOf(';', index) + 1;
-						return LoadClassByDottedName(array + sig.Substring(pos, index - pos)).Type;
-					}
-					case 'B':
-					case 'C':
-					case 'D':
-					case 'F':
-					case 'I':
-					case 'J':
-					case 'S':
-					case 'Z':
-						return LoadClassByDottedName(array + sig[index++]).Type;
-					default:
-						throw new InvalidOperationException(sig.Substring(index));
-				}
-			}
-			default:
-				throw new InvalidOperationException("Invalid at " + index + " in " + sig);
-		}
-	}
-
-	internal Type RetTypeFromSig(string sig)
-	{
-		int index = sig.IndexOf(')') + 1;
-		return SigDecoder(ref index, sig);
-	}
-
+	// NOTE this exposes potentially unfinished types
 	internal Type[] ArgTypeListFromSig(string sig)
 	{
 		if(sig[1] == ')')
 		{
 			return Type.EmptyTypes;
 		}
-		ArrayList list = new ArrayList();
-		for(int i = 1; sig[i] != ')';)
+		TypeWrapper[] wrappers = ArgTypeWrapperListFromSig(sig);
+		Type[] types = new Type[wrappers.Length];
+		for(int i = 0; i < wrappers.Length; i++)
 		{
-			list.Add(SigDecoder(ref i, sig));
+			types[i] = wrappers[i].Type;
 		}
-		Type[] types = new Type[list.Count];
-		list.CopyTo(types);
 		return types;
 	}
 
@@ -883,55 +850,52 @@ class ClassLoaderWrapper
 					rank++;
 					elem = elem.GetElementType();
 				}
-				wrapper = (TypeWrapper)typeToTypeWrapper[elem];
-				if(wrapper != null)
+				wrapper = GetWrapperFromType(elem);
+				// HACK this is a lame way of creating the array wrapper
+				if(elem.IsPrimitive)
 				{
-					// HACK this is a lame way of creating the array wrapper
-					if(elem.IsPrimitive)
+					string elemType;
+					if(elem == typeof(sbyte))
 					{
-						string elemType;
-						if(elem == typeof(sbyte))
-						{
-							elemType = "B";
-						}
-						else if(elem == typeof(bool))
-						{
-							elemType = "Z";
-						}
-						else if(elem == typeof(short))
-						{
-							elemType = "S";
-						}
-						else if(elem == typeof(char))
-						{
-							elemType = "C";
-						}
-						else if(elem == typeof(int))
-						{
-							elemType = "I";
-						}
-						else if(elem == typeof(long))
-						{
-							elemType = "J";
-						}
-						else if(elem == typeof(float))
-						{
-							elemType = "F";
-						}
-						else if(elem == typeof(double))
-						{
-							elemType = "D";
-						}
-						else
-						{
-							throw new InvalidOperationException();
-						}
-						return wrapper.GetClassLoader().LoadClassByDottedName(new String('[', rank) + elemType);
+						elemType = "B";
+					}
+					else if(elem == typeof(bool))
+					{
+						elemType = "Z";
+					}
+					else if(elem == typeof(short))
+					{
+						elemType = "S";
+					}
+					else if(elem == typeof(char))
+					{
+						elemType = "C";
+					}
+					else if(elem == typeof(int))
+					{
+						elemType = "I";
+					}
+					else if(elem == typeof(long))
+					{
+						elemType = "J";
+					}
+					else if(elem == typeof(float))
+					{
+						elemType = "F";
+					}
+					else if(elem == typeof(double))
+					{
+						elemType = "D";
 					}
 					else
 					{
-						return wrapper.GetClassLoader().LoadClassByDottedName(new String('[', rank) + "L" + wrapper.Name + ";");
+						throw new InvalidOperationException();
 					}
+					return wrapper.GetClassLoader().LoadClassByDottedName(new String('[', rank) + elemType);
+				}
+				else
+				{
+					return wrapper.GetClassLoader().LoadClassByDottedName(new String('[', rank) + "L" + wrapper.Name + ";");
 				}
 			}
 			// if the wrapper doesn't already exist, that must mean that the type

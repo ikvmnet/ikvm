@@ -155,7 +155,7 @@ sealed class MethodWrapper : MemberWrapper
 		MethodWrapper wrapper = new MethodWrapper(declaringType, md, originalMethod, method, modifiers, hideFromReflection);
 		CreateEmitters(originalMethod, method, ref wrapper.EmitCall, ref wrapper.EmitCallvirt, ref wrapper.EmitNewobj);
 		TypeWrapper retType = md.RetTypeWrapper;
-		if(retType.IsNonPrimitiveValueType)
+		if(!retType.IsUnloadable && retType.IsNonPrimitiveValueType)
 		{
 			wrapper.EmitCall += CodeEmitter.Create(OpCodes.Box, retType.Type);
 			wrapper.EmitCallvirt += CodeEmitter.Create(OpCodes.Box, retType.Type);
@@ -237,6 +237,25 @@ sealed class MethodWrapper : MemberWrapper
 		get
 		{
 			return md.Name;
+		}
+	}
+
+	internal bool HasUnloadableArgsOrRet
+	{
+		get
+		{
+			if(ReturnType.IsUnloadable)
+			{
+				return true;
+			}
+			foreach(TypeWrapper tw in GetParameters())
+			{
+				if(tw.IsUnloadable)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 
@@ -451,12 +470,18 @@ sealed class FieldWrapper : MemberWrapper
 	internal CodeEmitter EmitGet;
 	internal CodeEmitter EmitSet;
 	private FieldInfo field;
+	private TypeWrapper fieldType;
 
-	internal FieldWrapper(TypeWrapper declaringType, string name, string sig, Modifiers modifiers)
+	internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers)
 		: base(declaringType, modifiers, false)
 	{
 		this.name = name;
 		this.sig = sig;
+		if(fieldType == null)
+		{
+			fieldType = DeclaringType.GetClassLoader().RetTypeWrapperFromSig("()" + sig);
+		}
+		this.fieldType = fieldType;
 	}
 
 	internal static FieldWrapper FromCookie(IntPtr cookie)
@@ -484,8 +509,7 @@ sealed class FieldWrapper : MemberWrapper
 	{
 		get
 		{
-			// HACK
-			return DeclaringType.GetClassLoader().RetTypeWrapperFromSig("()" + sig);
+			return fieldType;
 		}
 	}
 
@@ -600,13 +624,29 @@ sealed class FieldWrapper : MemberWrapper
 		}
 	}
 
+	internal static FieldWrapper Create(TypeWrapper declaringType, FieldInfo fi, ClassFile.Field fld)
+	{
+		return Create(declaringType, fld.GetFieldType(declaringType.GetClassLoader()), fi, fld.Signature, fld.Modifiers);
+	}
+
 	internal static FieldWrapper Create(TypeWrapper declaringType, FieldInfo fi, string sig, Modifiers modifiers)
 	{
-		FieldWrapper field = new FieldWrapper(declaringType, fi.Name, sig, modifiers);
+		return Create(declaringType, null, fi, sig, modifiers);
+	}
+
+	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string sig, Modifiers modifiers)
+	{
+		FieldWrapper field = new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers);
 		if(declaringType.IsNonPrimitiveValueType)
 		{
 			field.EmitSet = new ValueTypeFieldSetter(declaringType.Type, field.FieldType);
 			field.EmitGet = CodeEmitter.Create(OpCodes.Unbox, declaringType.Type);
+		}
+		if(field.FieldTypeWrapper.IsUnloadable)
+		{
+			field.EmitGet += CodeEmitter.NoClassDefFoundError(field.FieldTypeWrapper.Name);
+			field.EmitSet += CodeEmitter.NoClassDefFoundError(field.FieldTypeWrapper.Name);
+			return field;
 		}
 		if(field.FieldTypeWrapper.IsNonPrimitiveValueType)
 		{

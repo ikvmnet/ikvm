@@ -179,7 +179,15 @@ final class VMClass
 	*/
 	boolean isPrimitive()
 	{
-		return getType().get_IsPrimitive() || this == Void.TYPE.vmClass;
+		return clazz == boolean.class ||
+		    clazz == byte.class ||
+		    clazz == char.class ||
+		    clazz == short.class ||
+		    clazz == int.class ||
+		    clazz == long.class ||
+		    clazz == float.class ||
+		    clazz == double.class ||
+		    clazz == void.class;
 	}
 
 	/**
@@ -359,9 +367,10 @@ final class VMClass
 	*/
 	ClassLoader getClassLoader()
 	{
-		return getClassLoader0(getType());
+	    // getClassLoader() can be used by the classloader, so it shouldn't trigger a resolve of the class
+	    return getClassLoader0(type, wrapper);
 	}
-	private static native ClassLoader getClassLoader0(Type type);
+	private static native ClassLoader getClassLoader0(Type type, Object wrapper);
 
 	/**
 	* VM implementors are free to make this method a noop if 
@@ -385,7 +394,7 @@ final class VMClass
 	    {
 		frame = new system.diagnostics.StackFrame(2);
 	    }
-		ClassLoader cl = getClassLoader0(frame.GetMethod().get_DeclaringType());
+		ClassLoader cl = getClassLoader0(frame.GetMethod().get_DeclaringType(), null);
 		return Class.forName(name, true, cl);
 	}
 

@@ -1379,8 +1379,12 @@ namespace NativeCode.java
 				RuntimeHelpers.RunClassConstructor(type.TypeHandle);
 			}
 
-			public static object getClassLoader0(Type type)
+			public static object getClassLoader0(Type type, object wrapper)
 			{
+				if(wrapper != null)
+				{
+					return ((TypeWrapper)wrapper).GetClassLoader().GetJavaClassLoader();
+				}
 				return ClassLoaderWrapper.GetClassLoader(type).GetJavaClassLoader();
 			}
 

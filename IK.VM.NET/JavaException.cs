@@ -190,4 +190,18 @@ sealed class JavaException
 	{
 		return (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.CloneNotSupportedException"));
 	}
+
+	internal static Exception LinkageError(string s, params object[] args)
+	{
+		s = String.Format(s, args);
+		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.LinkageError").GetConstructor(new Type[] { typeof(string) });
+		return (Exception)ci.Invoke(new object[] { s });
+	}
+
+	internal static Exception ClassCircularityError(string s, params object[] args)
+	{
+		s = String.Format(s, args);
+		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.ClassCircularityError").GetConstructor(new Type[] { typeof(string) });
+		return (Exception)ci.Invoke(new object[] { s });
+	}
 }

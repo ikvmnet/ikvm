@@ -290,25 +290,47 @@ public abstract class CodeEmitter
 	{
 		return new LongCodeEmitter(opcode, l);
 	}
+
+	private class NoClassDefHackEmitter : CodeEmitter
+	{
+		private string msg;
+
+		internal NoClassDefHackEmitter(string msg)
+		{
+			this.msg = msg;
+		}
+
+		internal override void Emit(ILGenerator ilGenerator)
+		{
+			EmitHelper.Throw(ilGenerator, "java.lang.NoClassDefFoundError", msg);
+		}
+	}
+
+	// HACK instead of emitting a NoClassDefFoundError, we should be emitting code
+	// that tries to load the class and do whatever needs to be done dynamically.
+	internal static CodeEmitter NoClassDefFoundError(string msg)
+	{
+		return new NoClassDefHackEmitter(msg);
+	}
 }
 
 class CastEmitter : CodeEmitter
 {
-	private Type retType;
-	private string sig;
+	private Type type;
+	private string className;
 
-	internal CastEmitter(string sig)
+	internal CastEmitter(string className)
 	{
-		this.sig = sig;
+		this.className = className;
 	}
 
 	internal override void Emit(ILGenerator ilgen)
 	{
-		if(retType == null)
+		if(type == null)
 		{
-			retType = ClassLoaderWrapper.GetBootstrapClassLoader().RetTypeFromSig(sig);
+			type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(className).Type;
 		}
-		ilgen.Emit(OpCodes.Castclass, retType);
+		ilgen.Emit(OpCodes.Castclass, type);
 	}
 }
 

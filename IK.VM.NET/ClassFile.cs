@@ -247,6 +247,15 @@ class ClassFile
 				constantpool[i].LoadAllReferencedTypes(classLoader);
 			}
 		}
+		for(int i = 0; i < fields.Length; i++)
+		{
+			fields[i].GetFieldType(classLoader);
+		}
+		for(int i = 0; i < methods.Length; i++)
+		{
+			methods[i].GetArgTypes(classLoader);
+			methods[i].GetRetType(classLoader);
+		}
 	}
 
 	internal Modifiers Modifiers
@@ -620,7 +629,22 @@ class ClassFile
 			// TODO it might not be a good idea to catch .NET system exceptions here
 			if(JVM.LogClassLoadFailures)
 			{
-				Console.Error.WriteLine(x);
+				System.Text.StringBuilder sb = new System.Text.StringBuilder();
+				object cl = classLoader.GetJavaClassLoader();
+				Type type = cl.GetType();
+				while(type.FullName != "java.lang.ClassLoader")
+				{
+					type = type.BaseType;
+				}
+				string sep = "";
+				while(cl != null)
+				{
+					sb.Append(sep).Append(cl);
+					sep = " -> ";
+					cl = type.InvokeMember("getParent", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.Instance, null, cl, new object[0]);
+				}
+				Console.Error.WriteLine("ClassLoader chain: " + sb);
+				ExceptionHelper.printStackTrace(ExceptionHelper.MapExceptionFast(x));
 			}
 			return new UnloadableTypeWrapper(name);
 		}

@@ -351,6 +351,9 @@
 					<pop />
 				</invokespecial>
 			</method>
+			<method name="capacity" sig="()I" modifiers="public">
+				<redirect name="get_Capacity" />
+			</method>
 			<method name="append" sig="(Ljava.lang.Object;)Ljava.lang.StringBuffer;" modifiers="public">
 				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.Object;)Ljava.lang.StringBuffer;" />
 			</method>
@@ -485,7 +488,20 @@
 		<!-- TODO java.lang.StackTraceElement shouldn't be here, but it should be represented by a different TypeWrapper (that can take
 			a .NET type and present it as a Java type -->
 		<class name="java.lang.StackTraceElement" type="java.lang.StackTraceElement" modifiers="public final">
-			<!-- TODO fill out the methods -->
+			<method name="getFileName" sig="()Ljava.lang.String;" modifiers="public" />
+			<method name="getLineNumber" sig="()I" modifiers="public" />
+			<method name="getClassName" sig="()Ljava.lang.String;" modifiers="public" />
+			<method name="getMethodName" sig="()Ljava.lang.String;" modifiers="public" />
+			<method name="isNativeMethod" sig="()Z" modifiers="public" />
+			<method name="toString" sig="()Ljava.lang.String;" modifiers="public">
+				<redirect name="ToString" />
+			</method>
+			<method name="equals" sig="(Ljava.lang.Object;)Z" modifiers="public">
+				<redirect name="Equals" />
+			</method>
+			<method name="hashCode" sig="()I" modifiers="public">
+				<redirect name="GetHashCode" />
+			</method>
 		</class>
 	</remappings>
 	<nativeMethods>

@@ -414,6 +414,21 @@ class Compiler
 
 	internal static void Compile(TypeWrapper clazz, ClassFile.Method m, ILGenerator ilGenerator, ClassLoaderWrapper classLoader)
 	{
+		string unloadableName = m.GetRetType(classLoader).Name;
+		bool unloadable = m.GetRetType(classLoader).IsUnloadable;
+		foreach(TypeWrapper tw in m.GetArgTypes(classLoader))
+		{
+			if(tw.IsUnloadable)
+			{
+				unloadable = true;
+				unloadableName = tw.Name;
+			}
+		}
+		if(unloadable)
+		{
+			EmitHelper.Throw(ilGenerator, "java.lang.NoClassDefFoundError", unloadableName);
+			return;
+		}
 		Compiler c;
 		try
 		{
@@ -2383,7 +2398,8 @@ class Compiler
 			}
 			else
 			{
-				throw new NotImplementedException();
+				dummy.EmitCall = CodeEmitter.NoClassDefFoundError(cpi.Signature);
+				dummy.EmitCallvirt = CodeEmitter.NoClassDefFoundError(cpi.Signature);
 			}
 			return dummy;
 		}
