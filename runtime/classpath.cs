@@ -28,7 +28,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Text;
-using OpenSystem.Java;
 using NetSystem = System;
 
 namespace NativeCode.java

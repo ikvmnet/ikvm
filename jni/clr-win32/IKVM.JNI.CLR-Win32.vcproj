@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="IK.VM.JNI"
+	Name="IKVM.JNI.CLR-Win32"
 	ProjectGUID="{4D400F9D-68A1-4066-95F6-85AF0E58B710}"
 	Keyword="ManagedCProj">
 	<Platforms>
@@ -33,7 +33,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/IK.VM.JNI.dll"
+				OutputFile="$(OutDir)/IKVM.JNI.CLR-Win32.dll"
 				LinkIncremental="2"
 				GenerateDebugInformation="TRUE"/>
 			<Tool
@@ -79,7 +79,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/IK.VM.JNI.dll"
+				OutputFile="$(OutDir)/IKVM.JNI.CLR-Win32.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="TRUE"/>
 			<Tool
@@ -107,7 +107,7 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}"
-			Name="IK.VM.NET"/>
+			Name="IKVM.Runtime"/>
 	</References>
 	<Files>
 		<Filter

@@ -247,7 +247,15 @@ class Compiler
 			{
 				if(defaultAssemblyName == null)
 				{
-					defaultAssemblyName = new FileInfo(Path.GetFileName(s)).Name;
+					try
+					{
+						defaultAssemblyName = new FileInfo(Path.GetFileName(s)).Name;
+					}
+					catch(ArgumentException)
+					{
+						// if the filename contains a wildcard (or any other invalid character), we ignore
+						// it as a potential default assembly name
+					}
 				}
 				string path = Path.GetDirectoryName(s);
 				string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s));

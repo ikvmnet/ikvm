@@ -1,13 +1,14 @@
 <?xml version="1.0"?>
-<project name="ikvm" default="ikvm">
-    <target name="ikvm">
-        <csc target="exe" output="../bin/ikvm.exe" define="TRACE">
+<project name="ikvmstub" default="ikvmstub">
+    <target name="ikvmstub">
+        <csc target="exe" output="../bin/ikvmstub.exe" define="TRACE">
             <sources>
                 <includes name="*.cs" />
             </sources>
             <references>
                 <includes name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
                 <includes name="../bin/IKVM.Runtime.dll" asis="true" />
+                <includes name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
             </references>
         </csc>
     </target>

@@ -80,24 +80,19 @@
                     HintPath = "..\..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.0.3705\System.XML.dll"
                 />
                 <Reference
-                    Name = "IK.VM.NET"
-                    Project = "{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
-                />
-                <Reference
-                    Name = "classpath"
-                    AssemblyName = "classpath"
-                    HintPath = "..\bin\classpath.dll"
-                />
-                <Reference
                     Name = "awt"
                     Project = "{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}"
                     Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
                 />
                 <Reference
-                    Name = "OpenSystem.Java"
-                    Project = "{13A5BB9F-D5FB-4061-BB0C-A111BE84A978}"
+                    Name = "IKVM.Runtime"
+                    Project = "{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}"
                     Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                />
+                <Reference
+                    Name = "IKVM.GNU.Classpath"
+                    AssemblyName = "IKVM.GNU.Classpath"
+                    HintPath = "..\bin\IKVM.GNU.Classpath.dll"
                 />
             </References>
         </Build>

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="classpath.dll" default="classpath.dll">
+<project name="IKVM.GNU.Classpath.dll" default="IKVM.GNU.Classpath.dll">
     <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-0.09" />
     <property name="pathsep" value=":" />
     <if propertytrue="nant.platform.win32">
@@ -8,11 +8,11 @@
 
     <target name="jars">
         <!-- TODO
-        <exec program="${nant.project.basedir}/../bin/netexp.exe" commandline="" />
+        <exec program="${nant.project.basedir}/../bin/ikvmstub.exe" commandline="" />
         -->
     </target>
 
-    <target name="classes" depends="jars" description="Classpath + IK.VM.NET specifica Java classes">
+    <target name="classes" depends="jars" description="GNU Classpath + IKVM.NET specific Java classes">
         <delete>
 		<fileset basedir="${Classpath.dir}">
 			<includes name="**.class"/>
@@ -27,11 +27,11 @@
         <exec program="jikes" commandline="-g -nowarn -classpath ${classpath} @allsources.lst"/>
     </target>
 
-    <target name="classpath.dll" depends="classes">
-        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true" commandline="-version:0.9 -nojni -out:classpath.dll -remap:map.xml -exclude:exclude.lst -target:library -recurse:./*.class -recurse:${Classpath.dir}/*.class -recurse:${Classpath.dir}/*.properties -recurse:${Classpath.dir}/resource/*.properties mscorlib.jar System.jar System.Xml.jar -resource:lib/security/classpath.security=classpath.security" />
-        <copy file="classpath.dll" tofile="../bin/classpath.dll.new" />
-        <exec program="peverify" commandline="../bin/classpath.dll.new" />
-        <copy file="classpath.dll" todir="../bin" />
-	<delete file="../bin/classpath.dll.new" />
+    <target name="IKVM.GNU.Classpath.dll" depends="classes">
+        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true" commandline="-version:0.9 -nojni -out:IKVM.GNU.Classpath.dll -remap:map.xml -exclude:exclude.lst -target:library -recurse:./*.class -recurse:${Classpath.dir}/*.class -recurse:${Classpath.dir}/*.properties -recurse:${Classpath.dir}/resource/*.properties mscorlib.jar System.jar System.Xml.jar -resource:lib/security/classpath.security=classpath.security" />
+        <copy file="IKVM.GNU.Classpath.dll" tofile="../bin/IKVM.GNU.Classpath.dll.new" />
+        <exec program="peverify" commandline="../bin/IKVM.GNU.Classpath.dll.new" />
+        <copy file="IKVM.GNU.Classpath.dll" todir="../bin" />
+	<delete file="../bin/IKVM.GNU.Classpath.dll.new" />
     </target>
 </project>

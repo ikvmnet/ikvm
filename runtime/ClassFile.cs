@@ -24,7 +24,6 @@
 using System;
 using System.IO;
 using System.Collections;
-using OpenSystem.Java;
 
 class ClassFile
 {

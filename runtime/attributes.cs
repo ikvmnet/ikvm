@@ -154,3 +154,140 @@ public sealed class UnloadableTypeAttribute : Attribute
 public sealed class GhostInterfaceAttribute : Attribute
 {
 }
+
+// Whenever the VM or compiler generates a helper class/method/field, it should be marked
+// with this custom attribute, so that it can be hidden from Java reflection.
+// NOTE when this attribute is applied to a class, it means that instances of this class
+// will appear to be instances of the base class.
+[AttributeUsage(AttributeTargets.All)]
+public sealed class HideFromReflectionAttribute : Attribute
+{
+}
+
+[Flags]
+public enum Modifiers : ushort
+{
+	Public			= 0x0001,
+	Private			= 0x0002,
+	Protected		= 0x0004,
+	Static			= 0x0008,
+	Final			= 0x0010,
+	Super			= 0x0020,
+	Synchronized	= 0x0020,
+	Volatile		= 0x0040,
+	Transient		= 0x0080,
+	Native			= 0x0100,
+	Interface		= 0x0200,
+	Abstract		= 0x0400,
+	Strictfp		= 0x0800
+}
+
+[AttributeUsage(AttributeTargets.All)]
+public sealed class ModifiersAttribute : Attribute
+{
+	private Modifiers modifiers;
+
+	public ModifiersAttribute(Modifiers modifiers)
+	{
+		this.modifiers = modifiers;
+	}
+
+	public Modifiers Modifiers
+	{
+		get
+		{
+			return modifiers;
+		}
+	}
+}
+
+[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method)]
+public sealed class ThrowsAttribute : Attribute
+{
+	private string[] classes;
+
+	// NOTE this is not CLS compliant, so maybe we should have a couple of overloads
+	public ThrowsAttribute(string[] classes)
+	{
+		this.classes = classes;
+	}
+
+	// dotted Java class names (e.g. java.lang.Throwable)
+	public string[] Classes
+	{
+		get
+		{
+			return classes;
+		}
+	}
+}
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
+public sealed class ImplementsAttribute : Attribute
+{
+	private string[] interfaces;
+
+	// NOTE this is not CLS compliant, so maybe we should have a couple of overloads
+	public ImplementsAttribute(string[] interfaces)
+	{
+		this.interfaces = interfaces;
+	}
+
+	public string[] Interfaces
+	{
+		get
+		{
+			return interfaces;
+		}
+	}
+}
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
+public sealed class InnerClassAttribute : Attribute
+{
+	private string innerClassName;
+	private string outerClassName;
+	private string name;
+	private Modifiers modifiers;
+
+	public InnerClassAttribute(string innerClassName, string outerClassName, string name, Modifiers modifiers)
+	{
+		this.innerClassName = innerClassName;
+		this.outerClassName = outerClassName;
+		this.name = name;
+		this.modifiers = modifiers;
+	}
+
+	public string InnerClassName
+	{
+		get
+		{
+			return innerClassName;
+		}
+	}
+
+	public string OuterClassName
+	{
+		get
+		{
+			return OuterClassName;
+		}
+	}
+
+	// NOTE returns null for anonymous inner classes
+	public string Name
+	{
+		get
+		{
+			return name;
+		}
+	}
+
+	public Modifiers Modifiers
+	{
+		get
+		{
+			return modifiers;
+		}
+	}
+}

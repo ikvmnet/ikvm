@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
-<project name="Mono.IKVM.JNI" default="all">
+<project name="IKVM.JNI.Mono" default="all">
     <target name="all">
-        <csc target="library" output="../bin/Mono.IKVM.JNI.dll" define="TRACE">
+        <csc target="library" output="../../bin/IKVM.JNI.Mono.dll" define="TRACE">
             <sources>
                 <includes name="JNI.cs" />
             </sources>
 			<arg value="-unsafe"/>
             <references>
-                <includes name="../bin/ik.vm.net.dll" asis="true" />
+                <includes name="../../bin/IKVM.Runtime.dll" asis="true" />
             </references>
         </csc>
     </target>

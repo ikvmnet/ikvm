@@ -6,7 +6,7 @@
                 <includes name="*.cs" />
             </sources>
             <references>
-                <includes name="../bin/ik.vm.net.dll" asis="true" />
+                <includes name="../bin/IKVM.Runtime.dll" asis="true" />
                 <includes name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
             </references>
         </csc>

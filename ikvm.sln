@@ -1,9 +1,9 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.VM.NET", "IK.VM.NET\IK.VM.NET.csproj", "{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Runtime", "runtime\IKVM.Runtime.csproj", "{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IK.VM.JNI", "IK.VM.JNI\IK.VM.JNI.vcproj", "{4D400F9D-68A1-4066-95F6-85AF0E58B710}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IKVM.JNI.CLR-Win32", "jni\clr-win32\IKVM.JNI.CLR-Win32.vcproj", "{4D400F9D-68A1-4066-95F6-85AF0E58B710}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvm", "ikvm\ikvm.csproj", 
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "netexp", "netexp\netexp.csproj", "{D2A9434D-59E4-43E9-8D9C-332AA138CEAD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmstub", "ikvmstub\ikvmstub.csproj", "{D2A9434D-59E4-43E9-8D9C-332AA138CEAD}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
@@ -20,10 +20,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc", "ikvmc\ikvmc.csproj
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "awt", "awt\awt.csproj", "{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSystem.Java", "OpenSystem.Java\OpenSystem.Java.csproj", "{13A5BB9F-D5FB-4061-BB0C-A111BE84A978}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
