@@ -1935,30 +1935,7 @@ class DynamicTypeWrapper : TypeWrapper
 					// NOTE even though you're not supposed to access a constant static final (the compiler is supposed
 					// to inline them), we have to support it (because it does happen, e.g. if the field becomes final
 					// after the referencing class was compiled)
-					if(constantValue is int || constantValue is short || constantValue is sbyte || constantValue is char || constantValue is bool)
-					{
-						fields[i].EmitGet = CodeEmitter.Create(OpCodes.Ldc_I4, ((IConvertible)constantValue).ToInt32(null));
-					}
-					else if(constantValue is string)
-					{
-						fields[i].EmitGet = CodeEmitter.Create(OpCodes.Ldstr, (string)constantValue);
-					}
-					else if(constantValue is float)
-					{
-						fields[i].EmitGet = CodeEmitter.Create(OpCodes.Ldc_R4, (float)constantValue);
-					}
-					else if(constantValue is double)
-					{
-						fields[i].EmitGet = CodeEmitter.Create(OpCodes.Ldc_R8, (double)constantValue);
-					}
-					else if(constantValue is long)
-					{
-						fields[i].EmitGet = CodeEmitter.Create(OpCodes.Ldc_I8, (long)constantValue);
-					}
-					else
-					{
-						throw new NotImplementedException(constantValue.GetType().FullName);
-					}
+					fields[i].EmitGet = CodeEmitter.CreateLoadConstant(constantValue);
 					// when non-blank final fields are updated, the JIT normally doesn't see that (because the
 					// constant value is inlined), so we emulate that behavior by emitting a Pop
 					fields[i].EmitSet = CodeEmitter.Pop;
@@ -2142,7 +2119,9 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					// NOTE we don't need to record the modifiers here, because they aren't visible from Java reflection
 					// (well they might be visible from JNI reflection, but that isn't important enough to justify the custom attribute)
-					method = typeBuilder.DefineTypeInitializer();
+					// HACK because Peverify (in Whidbey) is complaining about private methods in interfaces, I'm making them public for the time being
+					method = typeBuilder.DefineConstructor(MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
+					//method = typeBuilder.DefineTypeInitializer();
 				}
 				else
 				{
@@ -3497,10 +3476,17 @@ class CompiledTypeWrapper : TypeWrapper
 			}
 			else
 			{
-				// TODO if field is a literal, we should emit an ldc instead of a ldsfld
-				fieldWrapper.EmitGet = CodeEmitter.Create(OpCodes.Ldsfld, field);
+				// if field is a literal, we emit an ldc instead of a ldsfld
+				if(field.IsLiteral)
+				{
+					fieldWrapper.EmitGet = CodeEmitter.CreateLoadConstant(field.GetValue(null));
+				}
+				else
+				{
+					fieldWrapper.EmitGet = CodeEmitter.Create(OpCodes.Ldsfld, field);
+				}
 			}
-			if(field != null)
+			if(field != null && !field.IsLiteral)
 			{
 				fieldWrapper.EmitSet = CodeEmitter.Create(OpCodes.Stsfld, field);
 			}

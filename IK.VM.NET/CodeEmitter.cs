@@ -141,7 +141,56 @@ public abstract class CodeEmitter
 	internal static CodeEmitter Create(OpCode opcode, FieldInfo fi)
 	{
 		Debug.Assert(fi != null);
+		Debug.Assert(!fi.IsLiteral);
 		return new FieldInfoCodeEmitter(opcode, fi);
+	}
+
+	internal static CodeEmitter CreateLoadConstant(object constant)
+	{
+		if(constant == null)
+		{
+			return new CodeEmitter.OpCodeEmitter(OpCodes.Ldnull);
+		}
+		else if(constant is int || constant is uint ||
+			constant is short || constant is ushort ||
+			constant is byte || constant is sbyte ||
+			constant is char ||
+			constant is bool)
+		{
+			return CodeEmitter.Create(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
+		}
+		else if(constant is string)
+		{
+			return CodeEmitter.Create(OpCodes.Ldstr, (string)constant);
+		}
+		else if(constant is float)
+		{
+			return CodeEmitter.Create(OpCodes.Ldc_R4, (float)constant);
+		}
+		else if(constant is double)
+		{
+			return CodeEmitter.Create(OpCodes.Ldc_R8, (double)constant);
+		}
+		else if(constant is long || constant is ulong)
+		{
+			return CodeEmitter.Create(OpCodes.Ldc_I8, (long)constant);
+		}
+		else if(constant is Enum)
+		{
+			Type underlying = Enum.GetUnderlyingType(constant.GetType());
+			if(underlying == typeof(long) || underlying == typeof(ulong))
+			{
+				return CodeEmitter.Create(OpCodes.Ldc_I8, ((IConvertible)constant).ToInt64(null));
+			}
+			else
+			{
+				return CodeEmitter.Create(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
+			}
+		}
+		else
+		{
+			throw new NotImplementedException(constant.GetType().FullName);
+		}
 	}
 
 	private class OpCodeEmitter : CodeEmitter
