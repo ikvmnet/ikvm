@@ -219,7 +219,6 @@ C:\classpath\gnu\java\net\protocol\http\HttpURLConnection.java
 C:\classpath\gnu\java\net\protocol\jar\Handler.java
 C:\classpath\gnu\java\net\protocol\jar\JarURLConnection.java
 C:\classpath\gnu\java\nio\DatagramChannelImpl.java
-C:\classpath\gnu\java\nio\FileChannelImpl.java
 C:\classpath\gnu\java\nio\FileLockImpl.java
 C:\classpath\gnu\java\nio\PipeImpl.java
 C:\classpath\gnu\java\nio\SelectionKeyImpl.java
@@ -364,6 +363,7 @@ C:\classpath\java\awt\GraphicsDevice.java
 C:\classpath\java\awt\GraphicsEnvironment.java
 C:\classpath\java\awt\GridBagConstraints.java
 C:\classpath\java\awt\GridBagLayout.java
+C:\classpath\java\awt\GridBagLayoutInfo.java
 C:\classpath\java\awt\GridLayout.java
 C:\classpath\java\awt\HeadlessException.java
 C:\classpath\java\awt\IllegalComponentStateException.java
@@ -901,13 +901,7 @@ C:\classpath\java\nio\LongBuffer.java
 C:\classpath\java\nio\LongBufferImpl.java
 C:\classpath\java\nio\LongViewBufferImpl.java
 C:\classpath\java\nio\MappedByteBuffer.java
-C:\classpath\java\nio\MappedByteFileBuffer.java
-C:\classpath\java\nio\MappedCharFileBuffer.java
-C:\classpath\java\nio\MappedDoubleFileBuffer.java
-C:\classpath\java\nio\MappedFloatFileBuffer.java
-C:\classpath\java\nio\MappedIntFileBuffer.java
-C:\classpath\java\nio\MappedLongFileBuffer.java
-C:\classpath\java\nio\MappedShortFileBuffer.java
+C:\classpath\java\nio\MappedByteBufferImpl.java
 C:\classpath\java\nio\ReadOnlyBufferException.java
 C:\classpath\java\nio\ShortBuffer.java
 C:\classpath\java\nio\ShortBufferImpl.java
@@ -924,6 +918,7 @@ C:\classpath\java\nio\channels\ClosedSelectorException.java
 C:\classpath\java\nio\channels\ConnectionPendingException.java
 C:\classpath\java\nio\channels\DatagramChannel.java
 C:\classpath\java\nio\channels\FileChannel.java
+C:\classpath\java\nio\channels\FileChannelImpl.java
 C:\classpath\java\nio\channels\FileLock.java
 C:\classpath\java\nio\channels\FileLockInterruptionException.java
 C:\classpath\java\nio\channels\GatheringByteChannel.java
@@ -1575,6 +1570,8 @@ C:\classpath\javax\swing\MenuElement.java
 C:\classpath\javax\swing\MenuSelectionManager.java
 C:\classpath\javax\swing\MutableComboBoxModel.java
 C:\classpath\javax\swing\OverlayLayout.java
+C:\classpath\javax\swing\Popup.java
+C:\classpath\javax\swing\PopupFactory.java
 C:\classpath\javax\swing\ProgressMonitor.java
 C:\classpath\javax\swing\ProgressMonitorInputStream.java
 C:\classpath\javax\swing\Renderer.java
@@ -1586,6 +1583,7 @@ C:\classpath\javax\swing\ScrollPaneLayout.java
 C:\classpath\javax\swing\SingleSelectionModel.java
 C:\classpath\javax\swing\SizeRequirements.java
 C:\classpath\javax\swing\SizeSequence.java
+C:\classpath\javax\swing\SpinnerModel.java
 C:\classpath\javax\swing\SwingConstants.java
 C:\classpath\javax\swing\SwingUtilities.java
 C:\classpath\javax\swing\Timer.java
@@ -1604,6 +1602,7 @@ C:\classpath\javax\swing\border\EmptyBorder.java
 C:\classpath\javax\swing\border\EtchedBorder.java
 C:\classpath\javax\swing\border\LineBorder.java
 C:\classpath\javax\swing\border\MatteBorder.java
+C:\classpath\javax\swing\border\SoftBevelBorder.java
 C:\classpath\javax\swing\border\TitledBorder.java
 C:\classpath\javax\swing\colorchooser\AbstractColorChooserPanel.java
 C:\classpath\javax\swing\colorchooser\ColorChooserComponentFactory.java
@@ -1685,6 +1684,7 @@ C:\classpath\javax\swing\plaf\ScrollBarUI.java
 C:\classpath\javax\swing\plaf\ScrollPaneUI.java
 C:\classpath\javax\swing\plaf\SeparatorUI.java
 C:\classpath\javax\swing\plaf\SliderUI.java
+C:\classpath\javax\swing\plaf\SpinnerUI.java
 C:\classpath\javax\swing\plaf\SplitPaneUI.java
 C:\classpath\javax\swing\plaf\TabbedPaneUI.java
 C:\classpath\javax\swing\plaf\TableHeaderUI.java
@@ -1708,6 +1708,8 @@ C:\classpath\javax\swing\plaf\basic\BasicOptionPaneUI.java
 C:\classpath\javax\swing\plaf\basic\BasicPanelUI.java
 C:\classpath\javax\swing\plaf\basic\BasicRadioButtonUI.java
 C:\classpath\javax\swing\plaf\basic\BasicScrollPaneUI.java
+C:\classpath\javax\swing\plaf\basic\BasicSplitPaneDivider.java
+C:\classpath\javax\swing\plaf\basic\BasicSplitPaneUI.java
 C:\classpath\javax\swing\plaf\basic\BasicTabbedPaneUI.java
 C:\classpath\javax\swing\plaf\basic\BasicTextUI.java
 C:\classpath\javax\swing\plaf\basic\BasicToggleButtonUI.java
@@ -1800,7 +1802,10 @@ C:\classpath\vm\reference\gnu\vm\stack\StackFrame.java
 C:\classpath\vm\reference\gnu\vm\stack\StackTrace.java
 C:\classpath\vm\reference\java\io\VMObjectStreamClass.java
 C:\classpath\vm\reference\java\lang\Runtime.java
+C:\classpath\vm\reference\java\lang\VMDouble.java
+C:\classpath\vm\reference\java\lang\VMFloat.java
 C:\classpath\vm\reference\java\lang\VMObject.java
 C:\classpath\vm\reference\java\lang\VMSecurityManager.java
+C:\classpath\vm\reference\java\lang\VMString.java
 C:\classpath\vm\reference\java\lang\VMSystem.java
 C:\classpath\vm\reference\java\lang\VMThrowable.java

@@ -340,6 +340,8 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 			{
 				case IP_TTL:
 					return new Integer(CIL.unbox_int(socket.getSocket().GetSocketOption(SocketOptionLevel.IP, SocketOptionName.IpTimeToLive)));
+				case SocketOptions.SO_TIMEOUT:
+				        return new Integer(CIL.unbox_int(socket.getSocket().GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout)));
 				default:
 					throw new Error("getOption(" + option_id + ") not implemented");
 			}
@@ -370,8 +372,15 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 				case IP_TTL:
 					socket.getSocket().SetSocketOption(SocketOptionLevel.IP, SocketOptionName.IpTimeToLive, ((Integer)val).intValue());
 					break;
+				case SocketOptions.SO_TIMEOUT:
+				        socket.getSocket().SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, ((Integer)val).intValue());
+					socket.getSocket().SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, ((Integer)val).intValue());
+					break;
+				case SocketOptions.SO_REUSEADDR:
+					socket.getSocket().SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, ((Boolean)val).booleanValue() ? 1 : 0);
+					break;
 				default:
-					throw new Error("getOption(" + option_id + ") not implemented");
+					throw new Error("setOption(" + option_id + ") not implemented");
 			}
 		}
 		catch(system.net.sockets.SocketException x)

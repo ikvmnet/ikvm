@@ -2127,6 +2127,10 @@ class DynamicTypeWrapper : TypeWrapper
 					// NOTE we don't need to record the modifiers here, because only access modifiers are valid for
 					// constructors and we have a well defined (reversible) mapping from them
 					method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, args);
+					if(JVM.IsStaticCompiler)
+					{
+						AddParameterNames(method, m);
+					}
 				}
 				else if(m.Name == "<clinit>" && m.Signature == "()V")
 				{
@@ -2244,6 +2248,10 @@ class DynamicTypeWrapper : TypeWrapper
 						}
 					}
 					MethodBuilder mb = typeBuilder.DefineMethod(name, attribs, retType, args);
+					if(JVM.IsStaticCompiler)
+					{
+						AddParameterNames(mb, m);
+					}
 					if(setModifiers)
 					{
 						AttributeHelper.SetModifiers(mb, m.Modifiers);
@@ -2327,6 +2335,43 @@ class DynamicTypeWrapper : TypeWrapper
 			finally
 			{
 				Profiler.Leave("JavaTypeImpl.GenerateMethod");
+			}
+		}
+
+		private static void AddParameterNames(MethodBase mb, ClassFile.Method m)
+		{
+			if(m.CodeAttribute != null)
+			{
+				ClassFile.Method.LocalVariableTableEntry[] localVars = m.CodeAttribute.LocalVariableTableAttribute;
+				if(localVars != null)
+				{
+					int bias = 1;
+					if(m.IsStatic)
+					{
+						bias = 0;
+					}
+					for(int i = bias; i < m.CodeAttribute.ArgMap.Length; i++)
+					{
+						if(m.CodeAttribute.ArgMap[i] != -1)
+						{
+							for(int j = 0; j < localVars.Length; j++)
+							{
+								if(localVars[j].index == i)
+								{
+									if(mb is MethodBuilder)
+									{
+										((MethodBuilder)mb).DefineParameter(m.CodeAttribute.ArgMap[i] + 1 - bias, ParameterAttributes.None, localVars[j].name);
+									}
+									else if(mb is ConstructorBuilder)
+									{
+										((ConstructorBuilder)mb).DefineParameter(m.CodeAttribute.ArgMap[i], ParameterAttributes.None, localVars[j].name);
+									}
+									break;
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 

@@ -471,9 +471,11 @@ class PlainSocketImpl extends SocketImpl
 		return new SocketOutputStream(this);
 	}
 
-	public void connect(SocketAddress address, int timeout)
+	public void connect(SocketAddress address, int timeout) throws IOException
 	{
-		throw new InternalError ("PlainSocketImpl::connect not implemented");
+		// NOTE for now we ignore the timeout and we only support InetSocketAddress
+		InetSocketAddress inetAddress = (InetSocketAddress)address;
+		connect(inetAddress.getAddress(), inetAddress.getPort());
 	}
 
 	public void sendUrgentData(int data)

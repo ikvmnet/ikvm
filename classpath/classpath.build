@@ -20,7 +20,7 @@
 		</fileset>
 	</delete>
         <property name="classpath" value=".;${Classpath.dir};${Classpath.dir}/vm/reference;mscorlib.jar;System.jar" />
-        <exec program="jikes.exe" commandline="-classpath ${classpath} @allsources.lst"/>
+        <exec program="jikes.exe" commandline="-g:vars -classpath ${classpath} @allsources.lst"/>
     </target>
 
     <target name="classpath.dll" depends="classes">

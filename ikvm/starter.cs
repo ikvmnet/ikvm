@@ -163,6 +163,15 @@ public class Starter
 				{
 					jar = true;
 				}
+				else if(args[i] == "-version")
+				{
+					Console.WriteLine("CLR version: {0}", Environment.Version);
+					foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+					{
+						Console.WriteLine("{0}: {1}", asm.GetName().Name, asm.GetName().Version);
+					}
+					return 0;
+				}
 				else if(args[i].StartsWith("-D"))
 				{
 					string[] keyvalue = args[i].Substring(2).Split('=');
