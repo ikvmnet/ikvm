@@ -77,6 +77,7 @@ class DoubleArray$ : public Array$ {};
 
 typedef class _jclass* jclass;
 typedef class _jobject* jobject;
+typedef jobject jweak;
 typedef class _jstring* jstring;
 typedef class _jthrowable* jthrowable;
 typedef class Array$* jarray;
@@ -423,6 +424,24 @@ public:
 	virtual jint JNICALL MonitorExit(jobject obj);
 
 	virtual jint JNICALL GetJavaVM(JavaVM **vm);
+
+	virtual void JNICALL GetStringRegion(jstring str, jsize start, jsize len, jchar *buf);
+	virtual void JNICALL GetStringUTFRegion(jstring str, jsize start, jsize len, char *buf);
+
+	virtual void* JNICALL GetPrimitiveArrayCritical(jarray array, jboolean *isCopy);
+	virtual void JNICALL ReleasePrimitiveArrayCritical(jarray array, void *carray, jint mode);
+
+	virtual const jchar* JNICALL GetStringCritical(jstring string, jboolean *isCopy);
+	virtual void JNICALL ReleaseStringCritical(jstring string, const jchar *cstring);
+
+	virtual jweak JNICALL NewWeakGlobalRef(jobject obj);
+	virtual void JNICALL DeleteWeakGlobalRef(jweak ref);
+
+	virtual jboolean JNICALL ExceptionCheck();
+
+	virtual jobject JNICALL NewDirectByteBuffer(void* address, jlong capacity);
+	virtual void* JNICALL GetDirectBufferAddress(jobject buf);
+	virtual jlong JNICALL GetDirectBufferCapacity(jobject buf);
 };
 
 class JavaVM

@@ -811,14 +811,17 @@ jintArray JNICALL JNIEnv::NewIntArray(jsize len)
 	return (jintArray)(void*)pLocalRefs->MakeLocalRef(new int __gc[len]);
 }
 
-#pragma unmanaged
 void JNIEnv::SetObjectArrayElement(jobjectArray array, jsize index, jobject val)
 {
-	assert(false);
-	_asm int 3
+	Object* ar __gc[] = __try_cast<Object* __gc[]>(UnwrapRef(array));
+	if(index >= ar->Length)
+	{
+		// TODO handle error
+		assert(false);
+	}
+	ar[index] = UnwrapRef(val);
 }
 
-#pragma managed
 jobject JNIEnv::GetObjectArrayElement(jobjectArray array, jsize index)
 {
 	Object* ar __gc[] = __try_cast<Object* __gc[]>(UnwrapRef(array));
@@ -829,6 +832,38 @@ jobject JNIEnv::GetObjectArrayElement(jobjectArray array, jsize index)
 	}
 	return (jobject)(void*)pLocalRefs->MakeLocalRef(ar[index]);
 }
+
+#define GET_SET_ARRAY_REGION(Name, JavaType, ClrType) \
+void JNICALL JNIEnv::Get##Name##ArrayRegion(JavaType##Array array, jsize start, jsize l, JavaType *buf) \
+{ \
+	ClrType ar __gc[] = __try_cast<ClrType __gc[]>(UnwrapRef(array)); \
+	for(; l != 0; l--) \
+	{ \
+		*buf++ = ar[start++]; \
+	} \
+} \
+void JNICALL JNIEnv::Set##Name##ArrayRegion(JavaType##Array array, jsize start, jsize l, JavaType *buf) \
+{ \
+	ClrType ar __gc[] = __try_cast<ClrType __gc[]>(UnwrapRef(array)); \
+	for(; l != 0; l--) \
+	{ \
+		ar[start++] = *buf++; \
+	} \
+}
+
+#pragma warning (push)
+// stop the compiler from wanking about "forcing value to bool 'true' or 'false' (performance warning)"
+#pragma warning (disable : 4800)
+GET_SET_ARRAY_REGION(Boolean, jboolean, bool)
+#pragma warning (pop)
+GET_SET_ARRAY_REGION(Byte, jbyte, System::SByte)
+GET_SET_ARRAY_REGION(Char, jchar, wchar_t)
+GET_SET_ARRAY_REGION(Short, jshort, short)
+GET_SET_ARRAY_REGION(Int, jint, int)
+GET_SET_ARRAY_REGION(Long, jlong, __int64)
+GET_SET_ARRAY_REGION(Float, jfloat, float)
+GET_SET_ARRAY_REGION(Double, jdouble, double)
+
 
 #define GET_SET_ARRAY_ELEMENTS(Type,type,cpptype) \
 type* JNIEnv::Get##Type##ArrayElements(type##Array array, jboolean *isCopy)\
@@ -1015,6 +1050,56 @@ jint JNICALL JNIEnv::GetJavaVM(JavaVM **vm)
 	return 0;
 }
 
+#pragma managed
+void* JNICALL JNIEnv::GetPrimitiveArrayCritical(jarray array, jboolean *isCopy)
+{
+	Array* ar = __try_cast<Array*>(UnwrapRef(array));
+	GCHandle h = GCHandle::Alloc(ar, GCHandleType::Pinned);
+	try
+	{
+		int len;
+		Type* type = ar->GetType()->GetElementType();
+		if(type == __typeof(System::SByte) || type == __typeof(System::Boolean))
+		{
+			len = ar->Length;
+		}
+		else if(type == __typeof(System::Int16) || type == __typeof(System::Char))
+		{
+			len = ar->Length * 2;
+		}
+		else if(type == __typeof(System::Int32) || type == __typeof(System::Single))
+		{
+			len = ar->Length * 4;
+		}
+		else if(type == __typeof(System::Int64) || type == __typeof(System::Double))
+		{
+			len = ar->Length * 8;
+		}
+		else
+		{
+			assert(false);
+			return 0;
+		}
+		char* buf = new char[len];
+		memcpy(buf, (void*)h.AddrOfPinnedObject(), len);
+		if(isCopy)
+		{
+			*isCopy = JNI_TRUE;
+		}
+		return buf;
+	}
+	__finally
+	{
+		h.Free();
+	}
+}
+
+void JNICALL JNIEnv::ReleasePrimitiveArrayCritical(jarray array, void *carray, jint mode)
+{
+	delete[] (char*)carray;
+}
+#pragma unmanaged
+
 void JavaVM::reserved0() { assert(false); _asm int 3}
 void JavaVM::reserved1() { assert(false); _asm int 3}
 void JavaVM::reserved2() { assert(false); _asm int 3}
@@ -1143,20 +1228,17 @@ jlongArray JNICALL JNIEnv::NewLongArray(jsize len) { assert(false); _asm int 3}
 jfloatArray JNICALL JNIEnv::NewFloatArray(jsize len) { assert(false); _asm int 3}
 jdoubleArray JNICALL JNIEnv::NewDoubleArray(jsize len) { assert(false); _asm int 3}
 
-void JNICALL JNIEnv::GetBooleanArrayRegion(jbooleanArray array, jsize start, jsize l, jboolean *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::GetByteArrayRegion(jbyteArray array, jsize start, jsize len, jbyte *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::GetCharArrayRegion(jcharArray array, jsize start, jsize len, jchar *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::GetShortArrayRegion(jshortArray array, jsize start, jsize len, jshort *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::GetIntArrayRegion(jintArray array, jsize start, jsize len, jint *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::GetLongArrayRegion(jlongArray array, jsize start, jsize len, jlong *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::GetFloatArrayRegion(jfloatArray array, jsize start, jsize len, jfloat *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::GetDoubleArrayRegion(jdoubleArray array, jsize start, jsize len, jdouble *buf) { assert(false); _asm int 3}
+void JNICALL JNIEnv::GetStringRegion(jstring str, jsize start, jsize len, jchar *buf) { assert(false); _asm int 3}
+void JNICALL JNIEnv::GetStringUTFRegion(jstring str, jsize start, jsize len, char *buf) { assert(false); _asm int 3}
 
-void JNICALL JNIEnv::SetBooleanArrayRegion(jbooleanArray array, jsize start, jsize l, jboolean *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetByteArrayRegion(jbyteArray array, jsize start, jsize len, jbyte *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetCharArrayRegion(jcharArray array, jsize start, jsize len, jchar *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetShortArrayRegion(jshortArray array, jsize start, jsize len, jshort *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetIntArrayRegion(jintArray array, jsize start, jsize len, jint *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetLongArrayRegion(jlongArray array, jsize start, jsize len, jlong *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetFloatArrayRegion(jfloatArray array, jsize start, jsize len, jfloat *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetDoubleArrayRegion(jdoubleArray array, jsize start, jsize len, jdouble *buf) { assert(false); _asm int 3}
+const jchar* JNICALL JNIEnv::GetStringCritical(jstring string, jboolean *isCopy) { assert(false); _asm int 3}
+void JNICALL JNIEnv::ReleaseStringCritical(jstring string, const jchar *cstring) { assert(false); _asm int 3}
+
+jweak JNICALL JNIEnv::NewWeakGlobalRef(jobject obj) { assert(false); _asm int 3}
+void JNICALL JNIEnv::DeleteWeakGlobalRef(jweak ref) { assert(false); _asm int 3}
+
+jboolean JNICALL JNIEnv::ExceptionCheck() { assert(false); _asm int 3}
+
+jobject JNICALL JNIEnv::NewDirectByteBuffer(void* address, jlong capacity) { assert(false); _asm int 3}
+void* JNICALL JNIEnv::GetDirectBufferAddress(jobject buf) { assert(false); _asm int 3}
+jlong JNICALL JNIEnv::GetDirectBufferCapacity(jobject buf) { assert(false); _asm int 3}
