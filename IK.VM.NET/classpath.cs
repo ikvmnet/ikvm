@@ -411,14 +411,29 @@ namespace NativeCode.java
 				// HACK if the osname contains the version, we remove it
 				osname = osname.Replace(osver, "").Trim();
 				m.Invoke(properties, new string[] { "os.name", osname });
-				m.Invoke(properties, new string[] { "os.arch", Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE") });
+				string arch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
+				if(arch == null)
+				{
+					// TODO get this info from somewhere else
+					arch = "x86";
+				}
+				m.Invoke(properties, new string[] { "os.arch", arch });
 				m.Invoke(properties, new string[] { "os.version", osver });
 				m.Invoke(properties, new string[] { "file.separator", Path.DirectorySeparatorChar.ToString() });
 				m.Invoke(properties, new string[] { "file.encoding", "8859_1" });
 				m.Invoke(properties, new string[] { "path.separator", Path.PathSeparator.ToString() });
 				m.Invoke(properties, new string[] { "line.separator", Environment.NewLine });
 				m.Invoke(properties, new string[] { "user.name", Environment.UserName });
-				m.Invoke(properties, new string[] { "user.home", Environment.GetEnvironmentVariable("USERPROFILE") });
+				string home = Environment.GetEnvironmentVariable("USERPROFILE");
+				if(home == null)
+				{
+					// TODO may be there is a better way
+					// NOTE on MS .NET this doesn't return the correct path
+					// (it returns "C:\Documents and Settings\username\My Documents", but we really need
+					// "C:\Documents and Settings\username" to be compatible with Sun)
+					home = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+				}
+				m.Invoke(properties, new string[] { "user.home", home });
 				m.Invoke(properties, new string[] { "user.dir", Environment.CurrentDirectory });
 				m.Invoke(properties, new string[] { "awt.toolkit", "ikvm.awt.NetToolkit, awt, Version=1.0, Culture=neutral, PublicKeyToken=null" });
 			}
