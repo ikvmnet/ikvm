@@ -434,11 +434,12 @@ namespace IKVM.Internal
 			private string assemblyFile;
 			private string assemblyDir;
 			private string keyfilename;
+			private string keycontainer;
 			private string version;
 			private bool targetIsModule;
 			private AssemblyBuilder assemblyBuilder;
 
-			internal CompilerClassLoader(string path, string keyfilename, string version, bool targetIsModule, string assemblyName, Hashtable classes)
+			internal CompilerClassLoader(string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
 				: base(null)
 			{
 				this.classes = classes;
@@ -449,6 +450,7 @@ namespace IKVM.Internal
 				this.targetIsModule = targetIsModule;
 				this.version = version;
 				this.keyfilename = keyfilename;
+				this.keycontainer = keycontainer;
 				Tracer.Info(Tracer.Compiler, "Instantiate CompilerClassLoader for {0}", assemblyName);
 			}
 
@@ -462,6 +464,10 @@ namespace IKVM.Internal
 					{
 						name.KeyPair = new StrongNameKeyPair(stream);
 					}
+				}
+				if(keycontainer != null)
+				{
+					name.KeyPair = new StrongNameKeyPair(keycontainer);
 				}
 				name.Version = new Version(version);
 				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, assemblyDir);
@@ -1897,6 +1903,7 @@ namespace IKVM.Internal
 		{
 			public string path;
 			public string keyfilename;
+			public string keycontainer;
 			public string version;
 			public bool targetIsModule;
 			public string assembly;
@@ -2096,7 +2103,7 @@ namespace IKVM.Internal
 			}
 
 			Tracer.Info(Tracer.Compiler, "Constructing compiler");
-			CompilerClassLoader loader = new CompilerClassLoader(options.path, options.keyfilename, options.version, options.targetIsModule, options.assembly, h);
+			CompilerClassLoader loader = new CompilerClassLoader(options.path, options.keyfilename, options.keycontainer, options.version, options.targetIsModule, options.assembly, h);
 			ClassLoaderWrapper.SetBootstrapClassLoader(loader);
 			compilationPhase1 = true;
 			IKVM.Internal.MapXml.Root map = null;

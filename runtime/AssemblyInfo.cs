@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -34,7 +34,7 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("IKVM.NET")]
-[assembly: AssemblyCopyright("Copyright (C) 2002, 2003, 2004 Jeroen Frijters")]
+[assembly: AssemblyCopyright("Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]		
 
@@ -49,7 +49,7 @@ using System.Runtime.CompilerServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("0.9.*")]
+[assembly: AssemblyVersion("0.10.0.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -77,5 +77,6 @@ using System.Runtime.CompilerServices;
 //       documentation for more information on this.
 //
 [assembly: AssemblyDelaySign(false)]
-//[assembly: AssemblyKeyFile("c:\\ikvm-key\\ikvm.snk")]
-[assembly: AssemblyKeyName("")]
+#if SIGNCODE
+	[assembly: AssemblyKeyName("ikvm-key")]
+#endif

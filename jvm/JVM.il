@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004 Jeroen Frijters
+  Copyright (C) 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,7 +21,10 @@
   jeroen@frijters.net
   
 */
-.assembly JVM {}
+.assembly JVM
+{
+  .ver 0:10:0:0
+}
 .module JVM.DLL
 .corflags 0x00000002
 .vtfixup [3] int32 fromunmanaged at VTable

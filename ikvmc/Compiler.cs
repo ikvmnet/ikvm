@@ -94,6 +94,7 @@ class Compiler
 			Console.Error.WriteLine("    -target:library            Build a library");
 			Console.Error.WriteLine("    -target:module             Build a module for use by the linker");
 			Console.Error.WriteLine("    -keyfile:<keyfilename>     Use keyfile to sign the assembly");
+			Console.Error.WriteLine("    -key:<keycontainer>        Use keycontainer to sign the assembly");
 			Console.Error.WriteLine("    -version:<M.m.b.r>         Assembly version");
 			Console.Error.WriteLine("    -main:<class>              Specify the class containing the main method");
 			Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly (short form -r:<filespec>)");
@@ -333,6 +334,10 @@ class Compiler
 				else if(s.StartsWith("-keyfile:"))
 				{
 					options.keyfilename = s.Substring(9);
+				}
+				else if(s.StartsWith("-key:"))
+				{
+					options.keycontainer = s.Substring(5);
 				}
 				else if(s == "-debug")
 				{

@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <project name="awt" default="awt">
     <target name="awt">
-        <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE">
+        <property overwrite="false" name="signed" value="" />
+        <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE;${signed}">
             <sources>
                 <includes name="*.cs" />
             </sources>

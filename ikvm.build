@@ -1,5 +1,11 @@
 <?xml version="1.0"?>
 <project name="ikvm" default="all">
+    <target name="signed">
+         <property name="signed" value="SIGNCODE" />
+         <property name="signoption" value="-key:ikvm-key" />
+         <property name="ilasm_signoption" value="/key:@ikvm-key" />
+         <call target="all" />
+    </target>
     <target name="all">
         <nant buildfile="tools/tools.build" />
         <nant buildfile="runtime/runtime.build" />
