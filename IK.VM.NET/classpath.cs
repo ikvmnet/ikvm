@@ -394,6 +394,7 @@ namespace NativeCode.java
 				m.Invoke(properties, new string[] { "os.arch", "" });
 				m.Invoke(properties, new string[] { "os.version", Environment.OSVersion.ToString() });
 				m.Invoke(properties, new string[] { "file.separator", Path.DirectorySeparatorChar.ToString() });
+				m.Invoke(properties, new string[] { "file.encoding", "8859_1" });
 				m.Invoke(properties, new string[] { "path.separator", Path.PathSeparator.ToString() });
 				m.Invoke(properties, new string[] { "line.separator", Environment.NewLine });
 				m.Invoke(properties, new string[] { "user.name", Environment.UserName });
