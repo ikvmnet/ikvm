@@ -142,7 +142,17 @@ public class NetExp
 		{
 			super = "java/lang/Object";
 		}
-		ClassFileWriter f = new ClassFileWriter((Modifiers)c.getModifiers() & ~Modifiers.Static, name, super);
+		Modifiers classmods = (Modifiers)c.getModifiers();
+		if(outer != null)
+		{
+			// protected inner classes are actually public and private inner classes are actually package
+			if((classmods & Modifiers.Protected) != 0)
+			{
+				classmods |= Modifiers.Public;
+			}
+			classmods &= ~(Modifiers.Static | Modifiers.Private | Modifiers.Protected);
+		}
+		ClassFileWriter f = new ClassFileWriter(classmods, name, super);
 		f.AddStringAttribute("IKVM.NET.Assembly", assemblyName);
 		InnerClassesAttribute innerClassesAttribute = null;
 		if(outer != null)
