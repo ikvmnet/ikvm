@@ -306,20 +306,23 @@ class Compiler
 				// NOTE we don't remove exception handlers that could catch ThreadDeath, because that can be thrown
 				// asynchronously (and thus appear on any instruction). This is particularly important to ensure that
 				// we run finally blocks when a thread is killed.
-				if(ei.catch_type != 0 &&
-					!java_lang_ThreadDeath.IsAssignableTo(m.Method.ClassFile.GetConstantPoolClassType(ei.catch_type, classLoader)))
+				if(ei.catch_type != 0)
 				{
-					int start = FindPcIndex(ei.start_pc);
-					int end = FindPcIndex(ei.end_pc);
-					for(int j = start; j < end; j++)
+					TypeWrapper exceptionType = m.Method.ClassFile.GetConstantPoolClassType(ei.catch_type, classLoader);
+					if(!exceptionType.IsUnloadable && !java_lang_ThreadDeath.IsAssignableTo(exceptionType))
 					{
-						if(ByteCodeMetaData.CanThrowException(m.Instructions[j].OpCode))
+						int start = FindPcIndex(ei.start_pc);
+						int end = FindPcIndex(ei.end_pc);
+						for(int j = start; j < end; j++)
 						{
-							goto next;
+							if(ByteCodeMetaData.CanThrowException(m.Instructions[j].OpCode))
+							{
+								goto next;
+							}
 						}
+						ar.RemoveAt(i);
+						i--;
 					}
-					ar.RemoveAt(i);
-					i--;
 				}
 			}
 		next:;
