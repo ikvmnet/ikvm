@@ -143,8 +143,12 @@ class ClassLoaderWrapper
 			}
 			string name = c.Name;
 			Modifiers modifiers = (Modifiers)c.Modifiers;
-			// TODO specify interfaces
-			TypeWrapper tw = new RemappedTypeWrapper(this, modifiers, name.Replace('.', '/'), Type.GetType(c.Type, true), new TypeWrapper[0], baseWrapper);
+			Type type = Type.GetType(c.Type, true);
+			if(type.IsInterface)
+			{
+				baseWrapper = null;
+			}
+			TypeWrapper tw = new RemappedTypeWrapper(this, modifiers, name.Replace('.', '/'), type, new TypeWrapper[0], baseWrapper);
 			types.Add(name, tw);
 			typeToTypeWrapper.Add(tw.Type, tw);
 		}
@@ -283,7 +287,11 @@ class ClassLoaderWrapper
 		if(wrapper == null)
 		{
 			TypeWrapper baseType;
-			if(type.BaseType == null)
+			if(type.IsInterface)
+			{
+				baseType = null;
+			}
+			else if(type.BaseType == null)
 			{
 				baseType = LoadClassByDottedName("java.lang.Object");
 			}
@@ -378,10 +386,9 @@ class ClassLoaderWrapper
 			{
 				modifiers |= Modifiers.Public;
 			}
-			// TODO copy accessibility from element type
 			wrapper = new RemappedTypeWrapper(this, modifiers, name, array, interfaces, GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object"));
 			MethodInfo clone = typeof(Array).GetMethod("Clone");
-			MethodWrapper mw = new MethodWrapper(wrapper, mdClone, clone, null, Modifiers.Synthetic);
+			MethodWrapper mw = new MethodWrapper(wrapper, mdClone, clone, null, Modifiers.Public | Modifiers.Synthetic);
 			mw.EmitCall = CodeEmitter.Create(OpCodes.Callvirt, clone);
 			mw.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, clone);
 			wrapper.AddMethod(mw);

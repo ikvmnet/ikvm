@@ -427,11 +427,16 @@ namespace NativeCode.java
 				string home = Environment.GetEnvironmentVariable("USERPROFILE");
 				if(home == null)
 				{
-					// TODO may be there is a better way
-					// NOTE on MS .NET this doesn't return the correct path
-					// (it returns "C:\Documents and Settings\username\My Documents", but we really need
-					// "C:\Documents and Settings\username" to be compatible with Sun)
-					home = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+					// maybe we're on *nix
+					home = Environment.GetEnvironmentVariable("HOME");
+					if(home == null)
+					{
+						// TODO may be there is a better way
+						// NOTE on MS .NET this doesn't return the correct path
+						// (it returns "C:\Documents and Settings\username\My Documents", but we really need
+						// "C:\Documents and Settings\username" to be compatible with Sun)
+						home = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+					}
 				}
 				m.Invoke(properties, new string[] { "user.home", home });
 				m.Invoke(properties, new string[] { "user.dir", Environment.CurrentDirectory });
@@ -605,8 +610,15 @@ namespace NativeCode.java
 
 			public static double parseDouble(string s)
 			{
-				// TODO I doubt that this is correct
-				return double.Parse(s);
+				try
+				{
+					// TODO I doubt that this is correct
+					return double.Parse(s);
+				}
+				catch(FormatException x)
+				{
+					throw JavaException.NumberFormatException(x.Message);
+				}
 			}
 
 			public static long doubleToLongBits(double v)
@@ -895,11 +907,26 @@ namespace NativeCode.java
 				return ((TypeWrapper)w2).IsAssignableTo((TypeWrapper)w1);
 			}
 
+			public static object GetSuperClassFromWrapper(object wrapper)
+			{
+				TypeWrapper baseWrapper = ((TypeWrapper)wrapper).BaseTypeWrapper;
+				if(baseWrapper != null)
+				{
+					return getClassFromWrapper(baseWrapper);
+				}
+				return null;
+			}
+
 			public static object getComponentClassFromWrapper(object wrapper)
 			{
-				TypeWrapper elementWrapper = ((TypeWrapper)wrapper).ElementTypeWrapper;
-				elementWrapper.Finish();
-				return getClassFromWrapper(elementWrapper);
+				TypeWrapper typeWrapper = (TypeWrapper)wrapper;
+				if(typeWrapper.ArrayRank > 0)
+				{
+					TypeWrapper elementWrapper = typeWrapper.ElementTypeWrapper;
+					elementWrapper.Finish();
+					return getClassFromWrapper(elementWrapper);
+				}
+				return null;
 			}
 
 			public static Type getTypeFromWrapper(object clazz, object wrapper)
@@ -1175,7 +1202,7 @@ namespace NativeCode.java
 				{
 					// we don't want to expose synthetics methods (one reason is that it would
 					// mess up the serialVersionUID computation)
-					if(methods[i].Modifiers == Modifiers.Synthetic)
+					if((methods[i].Modifiers & Modifiers.Synthetic) != 0)
 					{
 						MethodWrapper[] newmethods = new MethodWrapper[methods.Length - 1];
 						Array.Copy(methods, 0, newmethods, 0, i);
@@ -1518,7 +1545,7 @@ namespace NativeCode.java
 				{
 					if(!type.IsArray && type.TypeInitializer != null)
 					{
-						if(ModifiersAttribute.GetModifiers(type.TypeInitializer) != Modifiers.Synthetic)
+						if(!ModifiersAttribute.IsSynthetic(type.TypeInitializer))
 						{
 							return true;
 						}

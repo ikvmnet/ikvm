@@ -26,7 +26,7 @@ using System.IO;
 using System.Collections;
 
 [Flags]
-public enum Modifiers : short
+public enum Modifiers : ushort
 {
 	Public			= 0x0001,
 	Private			= 0x0002,
@@ -41,7 +41,7 @@ public enum Modifiers : short
 	Interface		= 0x0200,
 	Abstract		= 0x0400,
 	Strictfp		= 0x0800,
-	Synthetic		= -1			// we use this to record the fact that we created the method/field/property
+	Synthetic		= 0x8000		// we use this to record the fact that we created the method/field/property
 									// so the member should not be visible through reflection
 }
 
@@ -482,6 +482,49 @@ class ClassFile
 			if(attr != null)
 			{
 				return ((ConstantPoolItemUtf8)GetConstantPoolItem(attr.Data.ReadUInt16())).Value;
+			}
+			return null;
+		}
+	}
+
+	internal struct InnerClass
+	{
+		internal string innerClass;
+		internal string outerClass;
+		internal string name;
+		internal Modifiers accessFlags;
+	}
+
+	internal InnerClass[] InnerClasses
+	{
+		get
+		{
+			Attribute attr = GetAttribute("InnerClasses");
+			if(attr != null)
+			{
+				BigEndianBinaryReader rdr = attr.Data;
+				ushort count = rdr.ReadUInt16();
+				InnerClass[] list = new InnerClass[count];
+				for(int i = 0; i < list.Length; i++)
+				{
+					ushort u = rdr.ReadUInt16();
+					if(u != 0)
+					{
+						list[i].innerClass = GetConstantPoolClass(u);
+					}
+					u = rdr.ReadUInt16();
+					if(u != 0)
+					{
+						list[i].outerClass = GetConstantPoolClass(u);
+					}
+					u = rdr.ReadUInt16();
+					if(u != 0)
+					{
+						list[i].name = GetConstantPoolUtf8(u);
+					}
+					list[i].accessFlags = (Modifiers)rdr.ReadUInt16();
+				}
+				return list;
 			}
 			return null;
 		}

@@ -64,20 +64,22 @@ public class ModifiersAttribute : Attribute
 		this.modifiers = modifiers;
 	}
 
-	public bool IsSynthetic
-	{
-		get
-		{
-			return modifiers == Modifiers.Synthetic;
-		}
-	}
-
 	public Modifiers Modifiers
 	{
 		get
 		{
 			return modifiers;
 		}
+	}
+
+	public static bool IsSynthetic(FieldInfo fi)
+	{
+		return (GetModifiers(fi) & Modifiers.Synthetic) != 0;
+	}
+
+	public static bool IsSynthetic(MethodBase mb)
+	{
+		return (GetModifiers(mb) & Modifiers.Synthetic) != 0;
 	}
 
 	public static Modifiers GetModifiers(MethodBase mb)
@@ -224,6 +226,12 @@ public class ModifiersAttribute : Attribute
 	{
 		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeof(ModifiersAttribute).GetConstructor(new Type[] { typeof(Modifiers) }), new object[] { modifiers });
 		fb.SetCustomAttribute(customAttributeBuilder);
+	}
+
+	public static void SetModifiers(TypeBuilder tb, Modifiers modifiers)
+	{
+		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeof(ModifiersAttribute).GetConstructor(new Type[] { typeof(Modifiers) }), new object[] { modifiers });
+		tb.SetCustomAttribute(customAttributeBuilder);
 	}
 }
 
