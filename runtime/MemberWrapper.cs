@@ -1135,6 +1135,7 @@ class FieldWrapper : MemberWrapper
 					// HACK if linking fails, we unlink to make sure
 					// that the next link attempt will fail again
 					fieldType = null;
+					throw;
 				}
 			}
 		}

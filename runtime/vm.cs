@@ -36,7 +36,6 @@ public class JVM
 	private static bool debug = false;
 	private static bool noJniStubs = false;
 	private static bool isStaticCompiler = false;
-	private static IJniProvider jniProvider;
 	private static bool compilationPhase1;
 	private static string sourcePath;
 
@@ -105,38 +104,6 @@ public class JVM
 		get
 		{
 			return Environment.OSVersion.ToString().IndexOf("Unix") >= 0;
-		}
-	}
-
-	public static IJniProvider JniProvider
-	{
-		get
-		{
-			if(jniProvider == null)
-			{
-				Type provider;
-				string providerAssembly = Environment.GetEnvironmentVariable("IKVM_JNI_PROVIDER");
-				if(providerAssembly != null)
-				{
-					Tracer.Info(Tracer.Runtime, "Loading environment specified JNI provider: {0}", providerAssembly);
-					provider = Assembly.LoadFrom(providerAssembly).GetType("JNI", true);
-				}
-				else
-				{
-					if(IsUnix)
-					{
-						Tracer.Info(Tracer.Runtime, "Loading JNI provider: IKVM.JNI.Mono");
-						provider = Assembly.LoadWithPartialName("IKVM.JNI.Mono").GetType("JNI", true);
-					}
-					else
-					{
-						Tracer.Info(Tracer.Runtime, "Loading JNI provider: IKVM.JNI.CLR-Win32");
-						provider = Assembly.LoadWithPartialName("IKVM.JNI.CLR-Win32").GetType("JNI", true);
-					}
-				}
-				jniProvider = (IJniProvider)Activator.CreateInstance(provider);
-			}
-			return jniProvider;
 		}
 	}
 
@@ -1355,7 +1322,7 @@ public class JVM
 			ClassFile f;
 			try
 			{
-				f = new ClassFile(classes[i], 0, classes[i].Length, null);
+				f = new ClassFile(classes[i], 0, classes[i].Length, null, true);
 			}
 			catch(UnsupportedClassVersionError x)
 			{

@@ -56,7 +56,9 @@ class Compiler
 	private static TypeWrapper java_lang_Throwable;
 	private static TypeWrapper java_lang_ThreadDeath;
 	private TypeWrapper clazz;
-	private ClassFile.Method.Code m;
+	private MethodWrapper mw;
+	private ClassFile classFile;
+	private ClassFile.Method m;
 	private ILGenerator ilGenerator;
 	private ClassLoaderWrapper classLoader;
 	private MethodAnalyzer ma;
@@ -122,9 +124,11 @@ class Compiler
 		}
 	}
 
-	private Compiler(TypeWrapper clazz, ClassFile.Method.Code m, ILGenerator ilGenerator, ClassLoaderWrapper classLoader, ISymbolDocumentWriter symboldocument)
+	private Compiler(TypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ClassLoaderWrapper classLoader, ISymbolDocumentWriter symboldocument)
 	{
 		this.clazz = clazz;
+		this.mw = mw;
+		this.classFile = classFile;
 		this.m = m;
 		this.ilGenerator = ilGenerator;
 		this.classLoader = classLoader;
@@ -133,14 +137,14 @@ class Compiler
 		Profiler.Enter("MethodAnalyzer");
 		try
 		{
-			ma = new MethodAnalyzer(clazz, m, classLoader);
+			ma = new MethodAnalyzer(clazz, mw, classFile, m, classLoader);
 		}
 		finally
 		{
 			Profiler.Leave("MethodAnalyzer");
 		}
 
-		TypeWrapper[] args = m.Method.GetArgTypes(classLoader);
+		TypeWrapper[] args = mw.GetParameters();
 		LocalVar[] locals = ma.GetAllLocalVars();
 		foreach(LocalVar v in locals)
 		{
@@ -148,7 +152,7 @@ class Compiler
 			{
 				int arg = m.ArgMap[v.local];
 				TypeWrapper tw;
-				if(m.Method.IsStatic)
+				if(m.IsStatic)
 				{
 					tw = args[arg];
 				}
@@ -287,9 +291,9 @@ class Compiler
 					{
 						case NormalizedByteCode.__lookupswitch:
 							// start at -1 to have an opportunity to handle the default offset
-							for(int k = -1; k < m.Instructions[j].Values.Length; k++)
+							for(int k = -1; k < m.Instructions[j].SwitchEntryCount; k++)
 							{
-								int targetPC = m.Instructions[j].PC + (k == -1 ? m.Instructions[j].DefaultOffset : m.Instructions[j].TargetOffsets[k]);
+								int targetPC = m.Instructions[j].PC + (k == -1 ? m.Instructions[j].DefaultOffset : m.Instructions[j].GetSwitchTargetOffset(k));
 								if(ei.start_pc < targetPC && targetPC < ei.end_pc)
 								{
 									ExceptionTableEntry en = new ExceptionTableEntry();
@@ -378,7 +382,7 @@ class Compiler
 				// we run finally blocks when a thread is killed.
 				if(ei.catch_type != 0)
 				{
-					TypeWrapper exceptionType = m.Method.ClassFile.GetConstantPoolClassType(ei.catch_type, classLoader);
+					TypeWrapper exceptionType = classFile.GetConstantPoolClassType(ei.catch_type);
 					if(!exceptionType.IsUnloadable && !java_lang_ThreadDeath.IsAssignableTo(exceptionType))
 					{
 						int start = FindPcIndex(ei.start_pc);
@@ -457,9 +461,9 @@ class Compiler
 			this.type = type;
 		}
 
-		internal void Emit(ILGenerator ilgen, ClassFile.Method m)
+		internal void Emit(ILGenerator ilgen, ClassFile classFile, ClassFile.Method m)
 		{
-			Tracer.Warning(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", type.Name, Message, m.ClassFile.Name, m.Name, m.Signature);
+			Tracer.Warning(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", type.Name, Message, classFile.Name, m.Name, m.Signature);
 			ilgen.Emit(OpCodes.Ldstr, Message);
 			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor("<init>", "(Ljava.lang.String;)V"), false);
 			method.Link();
@@ -661,13 +665,13 @@ class Compiler
 		}
 	}
 
-	internal static void Compile(TypeWrapper clazz, ClassFile.Method m, ILGenerator ilGenerator)
+	internal static void Compile(TypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator)
 	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
 		if(JVM.Debug)
 		{
-			string sourcefile = m.ClassFile.SourceFileAttribute;
+			string sourcefile = classFile.SourceFileAttribute;
 			if(sourcefile != null)
 			{
 				if(JVM.SourcePath != null)
@@ -677,7 +681,7 @@ class Compiler
 				symboldocument = classLoader.ModuleBuilder.DefineDocument(sourcefile, SymLanguageType.Java, Guid.Empty, SymDocumentType.Text);
 				// the very first instruction in the method must have an associated line number, to be able
 				// to step into the method in Visual Studio .NET
-				ClassFile.Method.LineNumberTableEntry[] table = m.CodeAttribute.LineNumberTableAttribute;
+				ClassFile.Method.LineNumberTableEntry[] table = m.LineNumberTableAttribute;
 				if(table != null)
 				{
 					int firstPC = int.MaxValue;
@@ -697,7 +701,7 @@ class Compiler
 				}
 			}
 		}
-		TypeWrapper[] args= m.GetArgTypes(classLoader);
+		TypeWrapper[] args = mw.GetParameters();
 		for(int i = 0; i < args.Length; i++)
 		{
 			if(args[i].IsUnloadable)
@@ -716,7 +720,7 @@ class Compiler
 			Profiler.Enter("new Compiler");
 			try
 			{
-				c = new Compiler(clazz, m.CodeAttribute, ilGenerator, classLoader, symboldocument);
+				c = new Compiler(clazz, mw, classFile, m, ilGenerator, classLoader, symboldocument);
 			}
 			finally
 			{
@@ -986,7 +990,7 @@ class Compiler
 
 	private void CheckLoaderConstraints(ClassFile.ConstantPoolItemFieldref cpi, FieldWrapper fw)
 	{
-		if(cpi.GetFieldType(classLoader) != fw.FieldTypeWrapper && !fw.FieldTypeWrapper.IsUnloadable)
+		if(cpi.GetFieldType() != fw.FieldTypeWrapper && !fw.FieldTypeWrapper.IsUnloadable)
 		{
 			throw new LinkageError("Loader constraints violated: " + fw.Name);
 		}
@@ -994,11 +998,11 @@ class Compiler
 
 	private void CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, MethodWrapper mw)
 	{
-		if(cpi.GetRetType(classLoader) != mw.ReturnType && !mw.ReturnType.IsUnloadable)
+		if(cpi.GetRetType() != mw.ReturnType && !mw.ReturnType.IsUnloadable)
 		{
 			throw new LinkageError("Loader constraints violated: " + mw.Name + mw.Signature);
 		}
-		TypeWrapper[] here = cpi.GetArgTypes(classLoader);
+		TypeWrapper[] here = cpi.GetArgTypes();
 		TypeWrapper[] there = mw.GetParameters();
 		for(int i = 0; i < here.Length; i++)
 		{
@@ -1091,7 +1095,7 @@ class Compiler
 				}
 				else
 				{
-					exceptionTypeWrapper = m.Method.ClassFile.GetConstantPoolClassType(exc.catch_type, classLoader);
+					exceptionTypeWrapper = classFile.GetConstantPoolClassType(exc.catch_type);
 				}
 				Type excType = exceptionTypeWrapper.TypeAsExceptionType;
 				bool mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException;
@@ -1299,28 +1303,27 @@ class Compiler
 						break;
 					case NormalizedByteCode.__ldc:
 					{
-						ClassFile cf = instr.MethodCode.Method.ClassFile;
 						int constant = instr.Arg1;
-						switch(cf.GetConstantPoolConstantType(constant))
+						switch(classFile.GetConstantPoolConstantType(constant))
 						{
 							case ClassFile.ConstantType.Double:
-								ilGenerator.Emit(OpCodes.Ldc_R8, cf.GetConstantPoolConstantDouble(constant));
+								ilGenerator.Emit(OpCodes.Ldc_R8, classFile.GetConstantPoolConstantDouble(constant));
 								break;
 							case ClassFile.ConstantType.Float:
-								ilGenerator.Emit(OpCodes.Ldc_R4, cf.GetConstantPoolConstantFloat(constant));
+								ilGenerator.Emit(OpCodes.Ldc_R4, classFile.GetConstantPoolConstantFloat(constant));
 								break;
 							case ClassFile.ConstantType.Integer:
-								EmitLdc_I4(cf.GetConstantPoolConstantInteger(constant));
+								EmitLdc_I4(classFile.GetConstantPoolConstantInteger(constant));
 								break;
 							case ClassFile.ConstantType.Long:
-								ilGenerator.Emit(OpCodes.Ldc_I8, cf.GetConstantPoolConstantLong(constant));
+								ilGenerator.Emit(OpCodes.Ldc_I8, classFile.GetConstantPoolConstantLong(constant));
 								break;
 							case ClassFile.ConstantType.String:
-								ilGenerator.Emit(OpCodes.Ldstr, cf.GetConstantPoolConstantString(constant));
+								ilGenerator.Emit(OpCodes.Ldstr, classFile.GetConstantPoolConstantString(constant));
 								break;
 							case ClassFile.ConstantType.Class:
 							{
-								TypeWrapper tw = cf.GetConstantPoolClassType(constant, classLoader);
+								TypeWrapper tw = classFile.GetConstantPoolClassType(constant);
 								if(tw.IsUnloadable)
 								{
 									Profiler.Count("EmitDynamicClassLiteral");
@@ -1344,13 +1347,13 @@ class Compiler
 					}
 					case NormalizedByteCode.__invokestatic:
 					{
-						ClassFile.ConstantPoolItemMI cpi = m.Method.ClassFile.GetMethodref(instr.Arg1);
+						ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
 						// HACK special case for calls to System.arraycopy, if the array arguments on the stack
 						// are of a known array type, we can redirect to an optimized version of arraycopy.
 						if(cpi.Class == "java.lang.System" &&
 							cpi.Name == "arraycopy" &&
 							cpi.Signature == "(Ljava.lang.Object;ILjava.lang.Object;II)V" &&
-							cpi.GetClassType(classLoader).GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())
+							cpi.GetClassType().GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())
 						{
 							TypeWrapper t1 = ma.GetRawStackTypeWrapper(i, 2);
 							TypeWrapper t2 = ma.GetRawStackTypeWrapper(i, 4);
@@ -1384,7 +1387,7 @@ class Compiler
 						MethodWrapper method = GetMethodCallEmitter(cpi, null, NormalizedByteCode.__invokestatic);
 						// if the stack values don't match the argument types (for interface argument types)
 						// we must emit code to cast the stack value to the interface type
-						CastInterfaceArgs(method, cpi.GetArgTypes(classLoader), i, false, false);
+						CastInterfaceArgs(method, cpi.GetArgTypes(), i, false, false);
 						method.EmitCall(ilGenerator);
 						break;
 					}
@@ -1392,10 +1395,10 @@ class Compiler
 					case NormalizedByteCode.__invokeinterface:
 					case NormalizedByteCode.__invokespecial:
 					{
-						ClassFile.ConstantPoolItemMI cpi = m.Method.ClassFile.GetMethodref(instr.Arg1);
-						int argcount = cpi.GetArgTypes(classLoader).Length;
+						ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
+						int argcount = cpi.GetArgTypes().Length;
 						TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
-						TypeWrapper thisType = SigTypeToClassName(type, cpi.GetClassType(classLoader));
+						TypeWrapper thisType = SigTypeToClassName(type, cpi.GetClassType());
 
 						MethodWrapper method = GetMethodCallEmitter(cpi, thisType, instr.NormalizedOpCode);
 
@@ -1403,18 +1406,18 @@ class Compiler
 						// we must emit code to cast the stack value to the interface type
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>" && VerifierTypeWrapper.IsNew(type))
 						{
-							TypeWrapper[] args = cpi.GetArgTypes(classLoader);
+							TypeWrapper[] args = cpi.GetArgTypes();
 							CastInterfaceArgs(method, args, i, false, false);
 						}
 						else
 						{
 							// the this reference is included in the argument list because it may also need to be cast
-							TypeWrapper[] methodArgs = cpi.GetArgTypes(classLoader);
+							TypeWrapper[] methodArgs = cpi.GetArgTypes();
 							TypeWrapper[] args = new TypeWrapper[methodArgs.Length + 1];
 							methodArgs.CopyTo(args, 1);
 							if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
 							{
-								args[0] = cpi.GetClassType(classLoader);
+								args[0] = cpi.GetClassType();
 							}
 							else
 							{
@@ -1586,7 +1589,7 @@ class Compiler
 							LocalBuilder local = null;
 							if(instr.NormalizedOpCode != NormalizedByteCode.__return)
 							{
-								TypeWrapper retTypeWrapper = m.Method.GetRetType(classLoader);
+								TypeWrapper retTypeWrapper = mw.ReturnType;
 								retTypeWrapper.EmitConvStackToParameterType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
 								if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
 								{
@@ -1615,7 +1618,7 @@ class Compiler
 							}
 							else
 							{
-								TypeWrapper retTypeWrapper = m.Method.GetRetType(classLoader);
+								TypeWrapper retTypeWrapper = mw.ReturnType;
 								retTypeWrapper.EmitConvStackToParameterType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
 								if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
 								{
@@ -1706,7 +1709,7 @@ class Compiler
 						break;
 					case NormalizedByteCode.__new:
 					{
-						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
+						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 						if(wrapper.IsUnloadable)
 						{
 							Profiler.Count("EmitDynamicNewCheckOnly");
@@ -1742,7 +1745,7 @@ class Compiler
 							ilGenerator.Emit(OpCodes.Ldloc, localInt);
 							ilGenerator.Emit(OpCodes.Stelem_I4);
 						}
-						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
+						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 						if(wrapper.IsUnloadable)
 						{
 							Profiler.Count("EmitDynamicMultianewarray");
@@ -1767,7 +1770,7 @@ class Compiler
 					}
 					case NormalizedByteCode.__anewarray:
 					{
-						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
+						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 						if(wrapper.IsUnloadable)
 						{
 							Profiler.Count("EmitDynamicNewarray");
@@ -1829,7 +1832,7 @@ class Compiler
 						break;
 					case NormalizedByteCode.__checkcast:
 					{
-						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
+						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 						if(!wrapper.IsUnloadable && !wrapper.IsAccessibleFrom(clazz))
 						{
 							throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
@@ -1839,7 +1842,7 @@ class Compiler
 					}
 					case NormalizedByteCode.__instanceof:
 					{
-						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
+						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 						if(!wrapper.IsUnloadable && !wrapper.IsAccessibleFrom(clazz))
 						{
 							throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
@@ -2476,14 +2479,14 @@ class Compiler
 						break;
 					case NormalizedByteCode.__lookupswitch:
 						// TODO use OpCodes.Switch
-						for(int j = 0; j < instr.Values.Length; j++)
+						for(int j = 0; j < instr.SwitchEntryCount; j++)
 						{
 							ilGenerator.Emit(OpCodes.Dup);
-							EmitLdc_I4(instr.Values[j]);
+							EmitLdc_I4(instr.GetSwitchValue(j));
 							Label label = ilGenerator.DefineLabel();
 							ilGenerator.Emit(OpCodes.Bne_Un_S, label);
 							ilGenerator.Emit(OpCodes.Pop);
-							ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.TargetOffsets[j]));
+							ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j)));
 							ilGenerator.MarkLabel(label);
 						}
 						ilGenerator.Emit(OpCodes.Pop);
@@ -2598,7 +2601,7 @@ class Compiler
 			}
 			catch(EmitException x)
 			{
-				x.Emit(ilGenerator, m.Method);
+				x.Emit(ilGenerator, classFile, m);
 				// mark the next instruction as not forward reachable,
 				// this will cause the stack to be loaded from locals
 				// (which is needed for the code to be verifiable)
@@ -2781,12 +2784,12 @@ class Compiler
 	private void GetPutField(Instruction instr, int i)
 	{
 		NormalizedByteCode bytecode = instr.NormalizedOpCode;
-		ClassFile.ConstantPoolItemFieldref cpi = m.Method.ClassFile.GetFieldref(instr.Arg1);
+		ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
 		bool write = (bytecode == NormalizedByteCode.__putfield || bytecode == NormalizedByteCode.__putstatic);
-		TypeWrapper wrapper = cpi.GetClassType(classLoader);
+		TypeWrapper wrapper = cpi.GetClassType();
 		if(wrapper.IsUnloadable)
 		{
-			TypeWrapper fieldTypeWrapper = cpi.GetFieldType(classLoader);
+			TypeWrapper fieldTypeWrapper = cpi.GetFieldType();
 			if(write && !fieldTypeWrapper.IsUnloadable && fieldTypeWrapper.IsPrimitive)
 			{
 				ilGenerator.Emit(OpCodes.Box, fieldTypeWrapper.TypeAsTBD);
@@ -2827,11 +2830,11 @@ class Compiler
 			TypeWrapper thisType = null;
 			if(bytecode == NormalizedByteCode.__getfield)
 			{
-				thisType = SigTypeToClassName(ma.GetRawStackTypeWrapper(i, 0), cpi.GetClassType(classLoader));
+				thisType = SigTypeToClassName(ma.GetRawStackTypeWrapper(i, 0), cpi.GetClassType());
 			}
 			else if(bytecode == NormalizedByteCode.__putfield)
 			{
-				thisType = SigTypeToClassName(ma.GetRawStackTypeWrapper(i, 1), cpi.GetClassType(classLoader));
+				thisType = SigTypeToClassName(ma.GetRawStackTypeWrapper(i, 1), cpi.GetClassType());
 			}
 			bool isStatic = (bytecode == NormalizedByteCode.__putstatic || bytecode == NormalizedByteCode.__getstatic);
 			FieldWrapper field = cpi.GetField(); //wrapper.GetFieldWrapper(cpi.Name, cpi.GetFieldType(classLoader));
@@ -2925,23 +2928,23 @@ class Compiler
 
 		internal override void EmitCall(ILGenerator ilgen)
 		{
-			Emit(dynamicInvokestatic, ilgen, cpi.GetRetType(classLoader));
+			Emit(dynamicInvokestatic, ilgen, cpi.GetRetType());
 		}
 
 		internal override void EmitCallvirt(ILGenerator ilgen)
 		{
-			Emit(dynamicInvokevirtual, ilgen, cpi.GetRetType(classLoader));
+			Emit(dynamicInvokevirtual, ilgen, cpi.GetRetType());
 		}
 
 		internal override void EmitNewobj(ILGenerator ilgen)
 		{
-			Emit(dynamicInvokeSpecialNew, ilgen, cpi.GetClassType(classLoader));
+			Emit(dynamicInvokeSpecialNew, ilgen, cpi.GetClassType());
 		}
 
 		private void Emit(MethodInfo helperMethod, ILGenerator ilGenerator, TypeWrapper retTypeWrapper)
 		{
 			Profiler.Count("EmitDynamicInvokeEmitter");
-			TypeWrapper[] args = cpi.GetArgTypes(classLoader);
+			TypeWrapper[] args = cpi.GetArgTypes();
 			LocalBuilder argarray = ilGenerator.DeclareLocal(typeof(object[]));
 			LocalBuilder val = ilGenerator.DeclareLocal(typeof(object));
 			ilGenerator.Emit(OpCodes.Ldc_I4, args.Length);
@@ -2971,7 +2974,7 @@ class Compiler
 
 	private MethodWrapper GetMethodCallEmitter(ClassFile.ConstantPoolItemMI cpi, TypeWrapper thisType, NormalizedByteCode invoke)
 	{
-		TypeWrapper wrapper = cpi.GetClassType(classLoader);
+		TypeWrapper wrapper = cpi.GetClassType();
 		if(wrapper.IsUnloadable || (thisType != null && thisType.IsUnloadable))
 		{
 			return new DynamicMethodWrapper(classLoader, clazz, cpi);
@@ -3149,11 +3152,11 @@ class Compiler
 
 	private bool IsUnloadable(ClassFile.ConstantPoolItemMI cpi)
 	{
-		if(cpi.GetClassType(classLoader).IsUnloadable || cpi.GetRetType(classLoader).IsUnloadable)
+		if(cpi.GetClassType().IsUnloadable || cpi.GetRetType().IsUnloadable)
 		{
 			return true;
 		}
-		TypeWrapper[] args = cpi.GetArgTypes(classLoader);
+		TypeWrapper[] args = cpi.GetArgTypes();
 		for(int i = 0; i < args.Length; i++)
 		{
 			if(args[i].IsUnloadable)

@@ -867,6 +867,8 @@
 				<stloc name="x" class="java.lang.ThreadDeath" />
 				<exceptionBlock>
 					<try>
+						<!-- TODO instead of catching the ThreadStateException, we should check the ThreadState
+						     before calling ResetAbort -->
 						<call type="System.Threading.Thread, mscorlib" name="ResetAbort" sig="()V" />
 					</try>
 					<catch type="System.Threading.ThreadStateException, mscorlib">

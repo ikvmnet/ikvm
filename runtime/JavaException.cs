@@ -303,4 +303,14 @@ sealed class JavaException
 	{
 		return (Exception)Activator.CreateInstance(Load("java.lang.InstantiationError"), new object[] { String.Format(s, args) });
 	}
+
+	internal static Exception InterruptedException()
+	{
+		return (Exception)Activator.CreateInstance(Load("java.lang.InterruptedException"));
+	}
+
+	internal static Exception IllegalMonitorStateException()
+	{
+		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalMonitorStateException"));
+	}
 }

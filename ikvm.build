@@ -2,10 +2,7 @@
 <project name="ikvm" default="all">
     <target name="all">
         <nant buildfile="runtime/runtime.build" />
-        <if propertytrue="nant.platform.win32">
-            <nant buildfile="jni/clr-win32/clr-win32.build" />
-        </if>
-	<nant buildfile="jni/mono/mono.build" />
+        <nant buildfile="native/native.build" />
         <nant buildfile="ikvmc/ikvmc.build" />
         <nant buildfile="classpath/classpath.build" />
         <nant buildfile="ikvm/ikvm.build" />
@@ -20,8 +17,8 @@
                 <includes name="bin/IKVM.AWT.WinForms.dll" />
                 <includes name="bin/IKVM.Runtime.dll" />
                 <includes name="bin/IKVM.GNU.Classpath.dll" />
-                <includes name="bin/IKVM.JNI.CLR-Win32.dll" />
-		<includes name="bin/IKVM.JNI.Mono.dll" />
+                <includes name="bin/ikvm-native.dll" />
+                <includes name="bin/libikvm-native.so" />
                 <includes name="bin/ikvm.exe" />
                 <includes name="bin/ikvmc.exe" />
                 <includes name="bin/ikvmstub.exe" />

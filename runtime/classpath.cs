@@ -409,8 +409,7 @@ namespace NativeCode.java
 
 			public static int nativeLoad(string filename)
 			{
-				// TODO native libraries somehow need to be scoped by class loader
-				return JVM.JniProvider.LoadNativeLibrary(filename);
+				return JniHelper.LoadLibrary(filename);
 			}
 		}
 
@@ -532,7 +531,7 @@ namespace NativeCode.java
 				try
 				{
 					// TODO I doubt that this is correct
-					return double.Parse(s);
+					return double.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
 				}
 				catch(FormatException x)
 				{
@@ -788,21 +787,11 @@ namespace NativeCode.java
 				}
 			}
 
-			public static bool isWordsBigEndian()
-			{
-				return !BitConverter.IsLittleEndian;
-			}
-
-			public static long currentTimeMillis()
-			{
-				const long january_1st_1970 = 62135596800000L;
-				return DateTime.UtcNow.Ticks / 10000L - january_1st_1970;
-			}
-
 			public static void setErr(object printStream)
 			{
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
 				FieldWrapper fw = tw.GetFieldWrapper("err", ClassLoaderWrapper.LoadClassCritical("java.io.PrintStream"));
+				fw.SetValue(null, printStream);
 			}
 
 			public static void setIn(object inputStream)
@@ -817,11 +806,6 @@ namespace NativeCode.java
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
 				FieldWrapper fw = tw.GetFieldWrapper("out", ClassLoaderWrapper.LoadClassCritical("java.io.PrintStream"));
 				fw.SetValue(null, printStream);
-			}
-
-			public static int identityHashCode(object o)
-			{
-				return RuntimeHelpers.GetHashCode(o);
 			}
 		}
 
@@ -914,7 +898,7 @@ namespace NativeCode.java
 				{
 					try
 					{
-						ClassFile classFile = new ClassFile(data, offset, length, name);
+						ClassFile classFile = new ClassFile(data, offset, length, name, false);
 						if(name != null && classFile.Name != name)
 						{
 							throw new NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
@@ -1511,7 +1495,28 @@ namespace NativeCode.java
 				int hours = timeSpan.Hours;
 				int mins = timeSpan.Minutes;
 
-				return "GMT" + hours + ":" + mins;
+				if(mins != 0)
+				{
+					if(hours < 0)
+					{
+						return "GMT+" + ((-hours) * 60  + mins);
+					}
+					else
+					{
+						return "GMT-" + (hours * 60  + mins);
+					}
+				}
+				else
+				{
+					if(hours < 0)
+					{
+						return "GMT+" + (-hours);
+					}
+					else
+					{
+						return "GMT-" + (hours  + mins);
+					}
+				}
 			}
 		}
 	}

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<project name="ikvm-native" default="ikvm-native">
+    <target name="ikvm-native">
+		<if propertytrue="nant.platform.unix">
+            <call target="ikvm-native-unix"/>
+        </if>
+        <if propertytrue="nant.platform.win32">
+            <call target="ikvm-native-win32"/>
+        </if>
+    </target>
+    <target name="ikvm-native-unix">
+        <exec program="/bin/bash" commandline="-c 'gcc -o libikvm-native.so --shared -fPIC `pkg-config --cflags gmodule-2.0` jni.c os.c'"/>
+        <copy file="libikvm-native.so" todir="../bin"/>
+    </target>
+    <target name="ikvm-native-win32">
+        <mkdir dir="Release"/>
+        <cl outputdir="Release" options="/O2 /D WIN32 /D NDEBUG /D _WINDLL /D _MBCS /GS /W3 /nologo /c">
+            <sources>
+                <includes name="*.c"/>
+            </sources>
+        </cl>
+        <link output="Release/ikvm-native.dll" options="/DLL user32.lib">
+            <sources>
+                <includes name="Release/*.obj"/>
+            </sources>
+        </link>
+        <copy file="Release/ikvm-native.dll" todir="../bin" />
+    </target>
+</project>

@@ -93,7 +93,7 @@ final class VMRuntime
     static long totalMemory()
     {
 	// NOTE this really is a bogus number, but we have to return something
-	return cli.System.GC.GetTotalMemory(false);
+	return cli.System.GC.GetTotalMemory(false) + freeMemory();
     }
 
     /**

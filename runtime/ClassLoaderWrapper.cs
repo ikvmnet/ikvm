@@ -42,6 +42,7 @@ class ClassLoaderWrapper
 	private static ClassLoaderWrapper bootstrapClassLoader;
 	private object javaClassLoader;
 	private Hashtable types = new Hashtable();
+	private ArrayList nativeLibraries;
 	// FXBUG moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
 	// so for the time being, we share one dynamic assembly among all classloaders
 	private static ModuleBuilder moduleBuilder;
@@ -193,7 +194,7 @@ class ClassLoaderWrapper
 				{
 					Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", name);
 				}
-				return name + "\\\\" + instanceId;
+				return name + "/" + instanceId;
 			}
 			else
 			{
@@ -900,6 +901,30 @@ class ClassLoaderWrapper
 		{
 			JVM.CriticalFailure("Loading of critical class failed", x);
 			return null;
+		}
+	}
+
+	internal void RegisterNativeLibrary(IntPtr p)
+	{
+		lock(this)
+		{
+			if(nativeLibraries == null)
+			{
+				nativeLibraries = new ArrayList();
+			}
+			nativeLibraries.Add(p);
+		}
+	}
+
+	internal IntPtr[] GetNativeLibraries()
+	{
+		lock(this)
+		{
+			if(nativeLibraries ==  null)
+			{
+				return new IntPtr[0];
+			}
+			return (IntPtr[])nativeLibraries.ToArray(typeof(IntPtr));
 		}
 	}
 }

@@ -102,7 +102,7 @@ class EmitHelper
 		// have a <clinit> now, a newer version that does have a <clinit> will not have it's <clinit> called by us.
 		// A possible solution would be to use RuntimeHelpers.RunClassConstructor when "type" is a Java type and
 		// lives in another assembly as the caller (which we don't know at the moment).
-		FieldInfo field = type.GetField("__<clinit>");
+		FieldInfo field = type.GetField("__<clinit>", BindingFlags.Static | BindingFlags.NonPublic);
 		if(field != null)
 		{
 			ilgen.Emit(OpCodes.Ldsfld, field);
@@ -675,10 +675,6 @@ abstract class TypeWrapper
 	}
 
 	protected abstract FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType);
-
-//	internal FieldWrapper GetFieldWrapper(string fieldName, string fieldSig)
-//	{
-//	}
 
 	internal virtual FieldWrapper GetFieldWrapper(string fieldName, TypeWrapper fieldType)
 	{
@@ -1385,9 +1381,7 @@ abstract class TypeWrapper
 		{
 			ilgen.Emit(OpCodes.Isinst, TypeAsTBD);
 			ilgen.Emit(OpCodes.Ldnull);
-			ilgen.Emit(OpCodes.Ceq);
-			ilgen.Emit(OpCodes.Ldc_I4_0);
-			ilgen.Emit(OpCodes.Ceq);
+			ilgen.Emit(OpCodes.Cgt_Un);
 		}
 	}
 
@@ -2013,6 +2007,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		private readonly TypeWrapper outerClassWrapper;
 		private readonly TypeBuilder typeBuilderGhostInterface;
 		private Hashtable memberclashtable;
+		private Hashtable classCache = new Hashtable();
 
 		internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper)
 		{
@@ -2376,7 +2371,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			// make sure all classes are loaded, before we start finishing the type. During finishing, we
 			// may not run any Java code, because that might result in a request to finish the type that we
 			// are in the process of finishing, and this would be a problem.
-			classFile.Link(wrapper);
+			classFile.Link(wrapper, classCache);
 //			for(int i = 0; i < fields.Length; i++)
 //			{
 //				fields[i].Link();
@@ -2408,13 +2403,13 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					{
 						if(innerclasses[i].innerClass != 0 && innerclasses[i].outerClass != 0)
 						{
-							if(classFile.GetConstantPoolClassType(innerclasses[i].outerClass, wrapper.GetClassLoader()) == wrapper)
+							if(classFile.GetConstantPoolClassType(innerclasses[i].outerClass) == wrapper)
 							{
-								wrappers.Add(classFile.GetConstantPoolClassType(innerclasses[i].innerClass, wrapper.GetClassLoader()));
+								wrappers.Add(classFile.GetConstantPoolClassType(innerclasses[i].innerClass));
 							}
-							if(classFile.GetConstantPoolClassType(innerclasses[i].innerClass, wrapper.GetClassLoader()) == wrapper)
+							if(classFile.GetConstantPoolClassType(innerclasses[i].innerClass) == wrapper)
 							{
-								declaringTypeWrapper = classFile.GetConstantPoolClassType(innerclasses[i].outerClass, wrapper.GetClassLoader());
+								declaringTypeWrapper = classFile.GetConstantPoolClassType(innerclasses[i].outerClass);
 								AttributeHelper.SetInnerClass(typeBuilder,
 									classFile.GetConstantPoolClass(innerclasses[i].innerClass),
 									classFile.GetConstantPoolClass(innerclasses[i].outerClass),
@@ -2532,9 +2527,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Isinst, wrapper.TypeAsBaseType);
 						ilgen.Emit(OpCodes.Ldnull);
-						ilgen.Emit(OpCodes.Ceq);
-						ilgen.Emit(OpCodes.Ldc_I4_0);
-						ilgen.Emit(OpCodes.Ceq);
+						ilgen.Emit(OpCodes.Cgt_Un);
 						ilgen.MarkLabel(end);
 						ilgen.Emit(OpCodes.Ret);
 						// Implement the "IsInstanceArray" method
@@ -2673,7 +2666,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					if(mb is ConstructorBuilder)
 					{
 						ILGenerator ilGenerator = ((ConstructorBuilder)mb).GetILGenerator();
-						Tracer.EmitMethodTrace(ilGenerator, m.ClassFile.Name + "." + m.Name + m.Signature);
+						Tracer.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 						if(basehasclinit && m.IsClassInitializer && !classFile.IsInterface)
 						{
 							hasclinit = true;
@@ -2681,7 +2674,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							EmitConstantValueInitialization(ilGenerator);
 							EmitHelper.RunClassConstructor(ilGenerator, Type.BaseType);
 						}
-						Compiler.Compile(wrapper, m, ilGenerator);
+						Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator);
 					}
 					else
 					{
@@ -2689,11 +2682,11 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
 							// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
-							if(!m.ClassFile.IsAbstract && !m.ClassFile.IsInterface)
+							if(!classFile.IsAbstract && !classFile.IsInterface)
 							{
 								ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
-								Tracer.EmitMethodTrace(ilGenerator, m.ClassFile.Name + "." + m.Name + m.Signature);
-								EmitHelper.Throw(ilGenerator, "java.lang.AbstractMethodError", m.ClassFile.Name + "." + m.Name + m.Signature);
+								Tracer.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
+								EmitHelper.Throw(ilGenerator, "java.lang.AbstractMethodError", classFile.Name + "." + m.Name + m.Signature);
 							}
 						}
 						else if(m.IsNative)
@@ -2702,7 +2695,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							try
 							{
 								ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
-								Tracer.EmitMethodTrace(ilGenerator, m.ClassFile.Name + "." + m.Name + m.Signature);
+								Tracer.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 								// do we have a native implementation in map.xml?
 								if(nativeMethods != null)
 								{
@@ -2716,7 +2709,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 								// see if there exists a NativeCode class for this type
 								Type nativeCodeType = Type.GetType("NativeCode." + classFile.Name.Replace('$', '+'));
 								MethodInfo nativeMethod = null;
-								TypeWrapper[] args = m.GetArgTypes(wrapper.GetClassLoader());
+								TypeWrapper[] args = methods[i].GetParameters();
 								if(nativeCodeType != null)
 								{
 									TypeWrapper[] nargs = args;
@@ -2775,11 +2768,11 @@ sealed class DynamicTypeWrapper : TypeWrapper
 									{
 										if(ClassLoaderWrapper.IsSaveDebugImage)
 										{
-											JniProxyBuilder.Generate(ilGenerator, wrapper, typeBuilder, m, args);
+											JniProxyBuilder.Generate(ilGenerator, wrapper, methods[i], typeBuilder, classFile, m, args);
 										}
 										else
 										{
-											JniBuilder.Generate(ilGenerator, wrapper, typeBuilder, m, args);
+											JniBuilder.Generate(ilGenerator, wrapper, methods[i], typeBuilder, classFile, m, args);
 										}
 									}
 								}
@@ -2792,8 +2785,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						else
 						{
 							ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
-							Tracer.EmitMethodTrace(ilGenerator, m.ClassFile.Name + "." + m.Name + m.Signature);
-							Compiler.Compile(wrapper, m, ilGenerator);
+							Tracer.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
+							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator);
 						}
 					}
 				}
@@ -2935,7 +2928,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				return n;
 			}
 
-			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, TypeBuilder typeBuilder, ClassFile.Method m, TypeWrapper[] args)
+			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args)
 			{
 				if(mod == null)
 				{
@@ -2952,8 +2945,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				{
 					argTypes[i] = args[i].TypeAsParameterType;
 				}
-				MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, m.GetRetType(wrapper.GetClassLoader()).TypeAsParameterType, argTypes);
-				JniBuilder.Generate(mb.GetILGenerator(), wrapper, tb, m, args);
+				MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, mw.ReturnType.TypeAsParameterType, argTypes);
+				JniBuilder.Generate(mb.GetILGenerator(), wrapper, mw, tb, classFile, m, args);
 				for(int i = 0; i < argTypes.Length; i++)
 				{
 					ilGenerator.Emit(OpCodes.Ldarg, (short)i);
@@ -2971,8 +2964,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 
 		private class JniBuilder
 		{
-			private static readonly Type localRefStructType = JVM.JniProvider.GetLocalRefStructType();
-			private static readonly MethodInfo jniFuncPtrMethod = JVM.JniProvider.GetJniFuncPtrMethod();
+			private static readonly Type localRefStructType = typeof(JniFrame);
+			private static readonly MethodInfo jniFuncPtrMethod = localRefStructType.GetMethod("GetFuncPtr");
 			private static readonly MethodInfo enterLocalRefStruct = localRefStructType.GetMethod("Enter");
 			private static readonly MethodInfo leaveLocalRefStruct = localRefStructType.GetMethod("Leave");
 			private static readonly MethodInfo makeLocalRef = localRefStructType.GetMethod("MakeLocalRef");
@@ -2981,27 +2974,29 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			private static readonly MethodInfo getClassFromType = typeof(NativeCode.java.lang.VMClass).GetMethod("getClassFromType");
 			private static readonly MethodInfo writeLine = typeof(Console).GetMethod("WriteLine", new Type[] { typeof(object) }, null);
 
-			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, TypeBuilder typeBuilder, ClassFile.Method m, TypeWrapper[] args)
+			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args)
 			{
-				FieldBuilder methodPtr = typeBuilder.DefineField(m.Name + "$Ptr", typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
+				FieldBuilder methodPtr = typeBuilder.DefineField("jniptr/" + m.Name + m.Signature, typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
 				LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
 				ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 				ilGenerator.Emit(OpCodes.Initobj, localRefStructType);
 				ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
 				Label oklabel = ilGenerator.DefineLabel();
 				ilGenerator.Emit(OpCodes.Brtrue, oklabel);
+				ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
+				ilGenerator.Emit(OpCodes.Ldstr, classFile.Name.Replace('.', '/'));
 				ilGenerator.Emit(OpCodes.Ldstr, m.Name);
 				ilGenerator.Emit(OpCodes.Ldstr, m.Signature.Replace('.', '/'));
-				ilGenerator.Emit(OpCodes.Ldstr, m.ClassFile.Name.Replace('.', '/'));
 				ilGenerator.Emit(OpCodes.Call, jniFuncPtrMethod);
 				ilGenerator.Emit(OpCodes.Stsfld, methodPtr);
 				ilGenerator.MarkLabel(oklabel);
 				ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+				ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
 				ilGenerator.Emit(OpCodes.Call, enterLocalRefStruct);
 				LocalBuilder jnienv = ilGenerator.DeclareLocal(typeof(IntPtr));
 				ilGenerator.Emit(OpCodes.Stloc, jnienv);
 				Label tryBlock = ilGenerator.BeginExceptionBlock();
-				TypeWrapper retTypeWrapper = m.GetRetType(wrapper.GetClassLoader());
+				TypeWrapper retTypeWrapper = mw.ReturnType;
 				if(!retTypeWrapper.IsPrimitive)
 				{
 					// this one is for use after we return from "calli"
@@ -3188,7 +3183,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				FieldBuilder field;
 				ClassFile.Field fld = classFile.Fields[i];
 				string fieldName = fld.Name;
-				TypeWrapper typeWrapper = fld.GetFieldType(wrapper.GetClassLoader());
+				// TODO we're not allowed to load types here (potentially), it needs to be done in the Link step
+				TypeWrapper typeWrapper = ClassFile.FieldTypeWrapperFromSig(wrapper.GetClassLoader(), classCache, fld.Signature);
 				Type type = typeWrapper.TypeAsFieldType;
 				bool setNameSig = typeWrapper.IsUnloadable || typeWrapper.IsGhostArray;
 				if(setNameSig)
@@ -3236,7 +3232,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					attribs |= FieldAttributes.Literal;
 					field = typeBuilder.DefineField(fieldName, type, attribs);
 					field.SetConstant(constantValue);
-					fields[i] = new FieldWrapper.ConstantFieldWrapper(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), fld.Name, fld.Signature, fld.Modifiers, field, constantValue);
+					fields[i] = new FieldWrapper.ConstantFieldWrapper(wrapper, typeWrapper, fld.Name, fld.Signature, fld.Modifiers, field, constantValue);
 				}
 				else
 				{
@@ -3244,7 +3240,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					if(isWrappedFinal)
 					{
 						// NOTE public/protected blank final fields get converted into a read-only property with a private field
-						// backing store we used to make the field privatescope, but that really serves no purpose (and it hinders
+						// backing store
+						// we used to make the field privatescope, but that really serves no purpose (and it hinders
 						// serialization, which uses .NET reflection to get at the field)
 						attribs &= ~FieldAttributes.FieldAccessMask;
 						attribs |= FieldAttributes.Private;
@@ -3302,11 +3299,11 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							emitSet += CodeEmitter.Create(OpCodes.Stfld, field);
 						}
-						fields[i] = FieldWrapper.Create1(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), fld.Name, fld.Signature, fld.Modifiers, field, emitGet, emitSet);
+						fields[i] = FieldWrapper.Create1(wrapper, typeWrapper, fld.Name, fld.Signature, fld.Modifiers, field, emitGet, emitSet);
 					}
 					else
 					{
-						fields[i] = FieldWrapper.Create3(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), field, fld.Signature, fld.Modifiers);
+						fields[i] = FieldWrapper.Create3(wrapper, typeWrapper, field, fld.Signature, fld.Modifiers);
 					}
 				}
 				// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
@@ -3337,7 +3334,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			{
 				// We create a field that the derived classes can access in their .cctor to trigger our .cctor
 				// (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
-				FieldBuilder field = typeBuilder.DefineField("__<clinit>", typeof(int), FieldAttributes.SpecialName | FieldAttributes.Public | FieldAttributes.Static);
+				FieldBuilder field = typeBuilder.DefineField("__<clinit>", typeof(int), FieldAttributes.SpecialName | FieldAttributes.Family | FieldAttributes.Static);
 				AttributeHelper.HideFromJava(field);
 			}
 			if(typeBuilder.IsInterface)
@@ -3500,7 +3497,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						// only if the classfile is abstract, we make the CLR method abstract, otherwise,
 						// we have to generate a method that throws an AbstractMethodError (because the JVM
 						// allows abstract methods in non-abstract classes)
-						if(m.ClassFile.IsAbstract || m.ClassFile.IsInterface)
+						if(classFile.IsAbstract || classFile.IsInterface)
 						{
 							attribs |= MethodAttributes.Abstract;
 						}
@@ -3685,40 +3682,37 @@ sealed class DynamicTypeWrapper : TypeWrapper
 
 		private static ParameterBuilder[] AddParameterNames(MethodBase mb, ClassFile.Method m)
 		{
-			if(m.CodeAttribute != null)
+			ClassFile.Method.LocalVariableTableEntry[] localVars = m.LocalVariableTableAttribute;
+			if(localVars != null)
 			{
-				ClassFile.Method.LocalVariableTableEntry[] localVars = m.CodeAttribute.LocalVariableTableAttribute;
-				if(localVars != null)
+				int bias = 1;
+				if(m.IsStatic)
 				{
-					int bias = 1;
-					if(m.IsStatic)
+					bias = 0;
+				}
+				ParameterBuilder[] parameterBuilders = new ParameterBuilder[m.ArgMap.Length - bias];
+				for(int i = bias; i < m.ArgMap.Length; i++)
+				{
+					if(m.ArgMap[i] != -1)
 					{
-						bias = 0;
-					}
-					ParameterBuilder[] parameterBuilders = new ParameterBuilder[m.CodeAttribute.ArgMap.Length - bias];
-					for(int i = bias; i < m.CodeAttribute.ArgMap.Length; i++)
-					{
-						if(m.CodeAttribute.ArgMap[i] != -1)
+						for(int j = 0; j < localVars.Length; j++)
 						{
-							for(int j = 0; j < localVars.Length; j++)
+							if(localVars[j].index == i && parameterBuilders[i - bias] == null)
 							{
-								if(localVars[j].index == i && parameterBuilders[i - bias] == null)
+								if(mb is MethodBuilder)
 								{
-									if(mb is MethodBuilder)
-									{
-										parameterBuilders[i - bias] = ((MethodBuilder)mb).DefineParameter(m.CodeAttribute.ArgMap[i] + 1 - bias, ParameterAttributes.None, localVars[j].name);
-									}
-									else if(mb is ConstructorBuilder)
-									{
-										parameterBuilders[i - bias] = ((ConstructorBuilder)mb).DefineParameter(m.CodeAttribute.ArgMap[i], ParameterAttributes.None, localVars[j].name);
-									}
-									break;
+									parameterBuilders[i - bias] = ((MethodBuilder)mb).DefineParameter(m.ArgMap[i] + 1 - bias, ParameterAttributes.None, localVars[j].name);
 								}
+								else if(mb is ConstructorBuilder)
+								{
+									parameterBuilders[i - bias] = ((ConstructorBuilder)mb).DefineParameter(m.ArgMap[i], ParameterAttributes.None, localVars[j].name);
+								}
+								break;
 							}
 						}
 					}
-					return parameterBuilders;
 				}
+				return parameterBuilders;
 			}
 			return null;
 		}

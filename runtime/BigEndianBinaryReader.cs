@@ -28,28 +28,24 @@ sealed class BigEndianBinaryReader
 {
 	private byte[] buf;
 	private int pos;
+	private int end;
 
-	internal BigEndianBinaryReader(byte[] buf)
-		: this(buf, 0)
-	{
-	}
-
-	internal BigEndianBinaryReader(byte[] buf, int offset)
+	internal BigEndianBinaryReader(byte[] buf, int offset, int length)
 	{
 		this.buf = buf;
 		this.pos = offset;
+		this.end = checked(offset + length);
+		if(offset < 0 || length < 0 || buf.Length - offset < length)
+		{
+			throw new ClassFormatError("Truncated class file");
+		}
 	}
 
-	internal BigEndianBinaryReader Section(int length)
+	internal BigEndianBinaryReader Section(uint length)
 	{
-		BigEndianBinaryReader br = new BigEndianBinaryReader(buf, pos);
-		pos += length;
+		BigEndianBinaryReader br = new BigEndianBinaryReader(buf, pos, checked((int)length));
+		Skip(length);
 		return br;
-	}
-
-	internal BigEndianBinaryReader Duplicate()
-	{
-		return new BigEndianBinaryReader(buf, pos);
 	}
 
 	internal int Position
@@ -60,18 +56,33 @@ sealed class BigEndianBinaryReader
 		}
 	}
 
-	internal void Skip(int count)
+	internal void Skip(uint count)
 	{
-		pos += count;
+		if(end - pos < count)
+		{
+			throw new ClassFormatError("Truncated class file");
+		}
+		checked
+		{
+			pos += (int)count;
+		}
 	}
 
 	internal byte ReadByte()
 	{
+		if(pos == end)
+		{
+			throw new ClassFormatError("Truncated class file");
+		}
 		return buf[pos++];
 	}
 
 	internal sbyte ReadSByte()
 	{
+		if(pos == end)
+		{
+			throw new ClassFormatError("Truncated class file");
+		}
 		return (sbyte)buf[pos++];
 	}
 
@@ -82,6 +93,10 @@ sealed class BigEndianBinaryReader
 
 	internal short ReadInt16()
 	{
+		if(end - pos < 2)
+		{
+			throw new ClassFormatError("Truncated class file");
+		}
 		short s = (short)((buf[pos] << 8) + buf[pos + 1]);
 		pos += 2;
 		return s;
@@ -89,6 +104,10 @@ sealed class BigEndianBinaryReader
 
 	internal int ReadInt32()
 	{
+		if(end - pos < 4)
+		{
+			throw new ClassFormatError("Truncated class file");
+		}
 		int i = (int)((buf[pos] << 24) + (buf[pos + 1] << 16) + (buf[pos + 2] << 8) + buf[pos + 3]);
 		pos += 4;
 		return i;
@@ -96,6 +115,10 @@ sealed class BigEndianBinaryReader
 
 	internal long ReadInt64()
 	{
+		if(end - pos < 8)
+		{
+			throw new ClassFormatError("Truncated class file");
+		}
 		uint i1 = (uint)((buf[pos] << 24) + (buf[pos + 1] << 16) + (buf[pos + 2] << 8) + buf[pos + 3]);
 		uint i2 = (uint)((buf[pos + 4] << 24) + (buf[pos + 5] << 16) + (buf[pos + 6] << 8) + buf[pos + 7]);
 		long l = (((long)i1) << 32) + i2;
@@ -111,6 +134,10 @@ sealed class BigEndianBinaryReader
 	internal string ReadString()
 	{
 		int len = ReadUInt16();
+		if(end - pos < len)
+		{
+			throw new ClassFormatError("Truncated class file");
+		}
 		// special code path for ASCII strings (which occur *very* frequently)
 		for(int j = 0; j < len; j++)
 		{
@@ -129,7 +156,7 @@ sealed class BigEndianBinaryReader
 						case 0:
 							if(c == 0)
 							{
-								throw new FormatException();
+								throw new ClassFormatError("Illegal UTF8 string in constant pool");
 							}
 							break;
 						case 1: case 2: case 3: case 4: case 5: case 6: case 7:
@@ -140,7 +167,7 @@ sealed class BigEndianBinaryReader
 							char2 = buf[pos + ++i];
 							if((char2 & 0xc0) != 0x80)
 							{
-								throw new FormatException();
+								throw new ClassFormatError("Illegal UTF8 string in constant pool");
 							}
 							c = (((c & 0x1F) << 6) | (char2 & 0x3F));
 							break;
@@ -150,12 +177,12 @@ sealed class BigEndianBinaryReader
 							char3 = buf[pos + ++i];
 							if((char2 & 0xc0) != 0x80 || (char3 & 0xc0) != 0x80)
 							{
-								throw new FormatException();
+								throw new ClassFormatError("Illegal UTF8 string in constant pool");
 							}
 							c = (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
 							break;
 						default:
-							throw new FormatException();
+							throw new ClassFormatError("Illegal UTF8 string in constant pool");
 					}
 					ch[l++] = (char)c;
 				}
@@ -170,6 +197,10 @@ sealed class BigEndianBinaryReader
 
 	internal ushort ReadUInt16()
 	{
+		if(end - pos < 2)
+		{
+			throw new ClassFormatError("Truncated class file");
+		}
 		ushort s = (ushort)((buf[pos] << 8) + buf[pos + 1]);
 		pos += 2;
 		return s;
@@ -177,6 +208,10 @@ sealed class BigEndianBinaryReader
 
 	internal uint ReadUInt32()
 	{
+		if(end - pos < 4)
+		{
+			throw new ClassFormatError("Truncated class file");
+		}
 		uint i = (uint)((buf[pos] << 24) + (buf[pos + 1] << 16) + (buf[pos + 2] << 8) + buf[pos + 3]);
 		pos += 4;
 		return i;

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="IKVM.Runtime" default="IKVM.Runtime">
     <target name="IKVM.Runtime">
-        <csc target="library" output="../bin/IKVM.Runtime.dll" define="TRACE" optimize="true">
+        <csc target="library" output="../bin/IKVM.Runtime.dll" define="TRACE" optimize="true" unsafe="true">
             <sources>
                 <includes name="*.cs" />
             </sources>

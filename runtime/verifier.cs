@@ -1051,7 +1051,7 @@ class LocalVar
 	internal int start_pc;
 	internal int end_pc;
 
-	internal void FindLvtEntry(ClassFile.Method.Code method, int instructionIndex)
+	internal void FindLvtEntry(ClassFile.Method method, int instructionIndex)
 	{
 		ClassFile.Method.LocalVariableTableEntry[] lvt = method.LocalVariableTableAttribute;
 		if(lvt != null)
@@ -1087,7 +1087,8 @@ class MethodAnalyzer
 	private static TypeWrapper DoubleArrayType;
 	private static TypeWrapper LongArrayType;
 	private ClassLoaderWrapper classLoader;
-	private ClassFile.Method.Code method;
+	private ClassFile classFile;
+	private ClassFile.Method method;
 	private InstructionState[] state;
 	private ArrayList[] callsites;
 	private LocalVar[/*instructionIndex*/] localVars;
@@ -1106,9 +1107,10 @@ class MethodAnalyzer
 		LongArrayType = PrimitiveTypeWrapper.LONG.MakeArrayType(1);
 	}
 
-	internal MethodAnalyzer(TypeWrapper wrapper, ClassFile.Method.Code method, ClassLoaderWrapper classLoader)
+	internal MethodAnalyzer(TypeWrapper wrapper, MethodWrapper mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader)
 	{
 		this.classLoader = classLoader;
+		this.classFile = classFile;
 		this.method = method;
 		state = new InstructionState[method.Instructions.Length];
 		callsites = new ArrayList[method.Instructions.Length];
@@ -1124,10 +1126,10 @@ class MethodAnalyzer
 		// start by computing the initial state, the stack is empty and the locals contain the arguments
 		state[0] = new InstructionState(method.MaxLocals, method.MaxStack);
 		int firstNonArgLocalIndex = 0;
-		if(!method.Method.IsStatic)
+		if(!method.IsStatic)
 		{
 			// this reference. If we're a constructor, the this reference is uninitialized.
-			if(method.Method.Name == "<init>")
+			if(method.Name == "<init>")
 			{
 				state[0].SetLocalType(firstNonArgLocalIndex++, VerifierTypeWrapper.UninitializedThis, -1);
 			}
@@ -1136,7 +1138,7 @@ class MethodAnalyzer
 				state[0].SetLocalType(firstNonArgLocalIndex++, wrapper, -1);
 			}
 		}
-		TypeWrapper[] argTypeWrappers = method.Method.GetArgTypes(classLoader);
+		TypeWrapper[] argTypeWrappers = mw.GetParameters();
 		for(int i = 0; i < argTypeWrappers.Length; i++)
 		{
 			TypeWrapper type = argTypeWrappers[i];
@@ -1157,10 +1159,11 @@ class MethodAnalyzer
 		}
 		InstructionState s = state[0].Copy();
 		bool done = false;
+		ClassFile.Method.Instruction[] instructions = method.Instructions;
 		while(!done)
 		{
 			done = true;
-			for(int i = 0; i < method.Instructions.Length; i++)
+			for(int i = 0; i < instructions.Length; i++)
 			{
 				if(state[i] != null && state[i].changed)
 				{
@@ -1172,7 +1175,7 @@ class MethodAnalyzer
 						// mark the exception handlers reachable from this instruction
 						for(int j = 0; j < method.ExceptionTable.Length; j++)
 						{
-							if(method.ExceptionTable[j].start_pc <= method.Instructions[i].PC && method.ExceptionTable[j].end_pc > method.Instructions[i].PC)
+							if(method.ExceptionTable[j].start_pc <= instructions[i].PC && method.ExceptionTable[j].end_pc > instructions[i].PC)
 							{
 								// NOTE this used to be CopyLocalsAndSubroutines, but it doesn't (always) make
 								// sense to copy the subroutine state
@@ -1198,7 +1201,7 @@ class MethodAnalyzer
 							}
 						}
 						state[i].CopyTo(s);
-						ClassFile.Method.Instruction instr = method.Instructions[i];
+						ClassFile.Method.Instruction instr = instructions[i];
 						switch(instr.NormalizedOpCode)
 						{
 							case NormalizedByteCode.__aload:
@@ -1378,17 +1381,17 @@ class MethodAnalyzer
 								s.PopObjectType();
 								break;
 							case NormalizedByteCode.__getstatic:
-								s.PushType((GetFieldref(instr.Arg1)).GetFieldType(classLoader));
+								s.PushType((GetFieldref(instr.Arg1)).GetFieldType());
 								break;
 							case NormalizedByteCode.__putstatic:
-								s.PopType(GetFieldref(instr.Arg1).GetFieldType(classLoader));
+								s.PopType(GetFieldref(instr.Arg1).GetFieldType());
 								break;
 							case NormalizedByteCode.__getfield:
-								s.PopObjectType(GetFieldref(instr.Arg1).GetClassType(classLoader));
-								s.PushType(GetFieldref(instr.Arg1).GetFieldType(classLoader));
+								s.PopObjectType(GetFieldref(instr.Arg1).GetClassType());
+								s.PushType(GetFieldref(instr.Arg1).GetFieldType());
 								break;
 							case NormalizedByteCode.__putfield:
-								s.PopType(GetFieldref(instr.Arg1).GetFieldType(classLoader));
+								s.PopType(GetFieldref(instr.Arg1).GetFieldType());
 								// putfield is allowed to access the unintialized this
 								if(s.PeekType() == VerifierTypeWrapper.UninitializedThis)
 								{
@@ -1396,7 +1399,7 @@ class MethodAnalyzer
 								}
 								else
 								{
-									s.PopObjectType(GetFieldref(instr.Arg1).GetClassType(classLoader));
+									s.PopObjectType(GetFieldref(instr.Arg1).GetClassType());
 								}
 								break;
 							case NormalizedByteCode.__ldc:
@@ -1419,7 +1422,7 @@ class MethodAnalyzer
 										s.PushType(CoreClasses.java.lang.String.Wrapper);
 										break;
 									case ClassFile.ConstantType.Class:
-										if(method.Method.ClassFile.MajorVersion < 49)
+										if(classFile.MajorVersion < 49)
 										{
 											throw new VerifyError("Illegal type in constant pool");
 										}
@@ -1450,7 +1453,7 @@ class MethodAnalyzer
 								{
 									throw new VerifyError("Illegal call to internal method");
 								}
-								TypeWrapper[] args = cpi.GetArgTypes(classLoader);
+								TypeWrapper[] args = cpi.GetArgTypes();
 								for(int j = args.Length - 1; j >= 0; j--)
 								{
 									s.PopType(args[j]);
@@ -1466,8 +1469,8 @@ class MethodAnalyzer
 									if(cpi.Name == "<init>")
 									{
 										TypeWrapper type = s.PopType();
-										if((VerifierTypeWrapper.IsNew(type) && ((VerifierTypeWrapper)type).UnderlyingType != cpi.GetClassType(classLoader)) ||
-											(type == VerifierTypeWrapper.UninitializedThis && cpi.GetClassType(classLoader) != wrapper.BaseTypeWrapper && cpi.GetClassType(classLoader) != wrapper) ||
+										if((VerifierTypeWrapper.IsNew(type) && ((VerifierTypeWrapper)type).UnderlyingType != cpi.GetClassType()) ||
+											(type == VerifierTypeWrapper.UninitializedThis && cpi.GetClassType() != wrapper.BaseTypeWrapper && cpi.GetClassType() != wrapper) ||
 											(!VerifierTypeWrapper.IsNew(type) && type != VerifierTypeWrapper.UninitializedThis))
 										{
 											// TODO oddly enough, Java fails verification for the class without
@@ -1493,7 +1496,7 @@ class MethodAnalyzer
 										if(instr.NormalizedOpCode != NormalizedByteCode.__invokeinterface)
 										{
 											TypeWrapper refType = s.PopObjectType();
-											TypeWrapper targetType = cpi.GetClassType(classLoader);
+											TypeWrapper targetType = cpi.GetClassType();
 											if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && 
 												!targetType.IsUnloadable &&
 												!refType.IsAssignableTo(targetType))
@@ -1522,7 +1525,7 @@ class MethodAnalyzer
 										}
 									}
 								}
-								TypeWrapper retType = cpi.GetRetType(classLoader);
+								TypeWrapper retType = cpi.GetRetType();
 								if(retType != PrimitiveTypeWrapper.VOID)
 								{
 									s.PushType(retType);
@@ -1832,19 +1835,18 @@ class MethodAnalyzer
 								s.PopObjectType();
 								break;
 							case NormalizedByteCode.__return:
-								if(method.Method.GetRetType(classLoader) != PrimitiveTypeWrapper.VOID)
+								if(mw.ReturnType != PrimitiveTypeWrapper.VOID)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}
 								break;
 							case NormalizedByteCode.__areturn:
-								s.PopObjectType(method.Method.GetRetType(classLoader));
+								s.PopObjectType(mw.ReturnType);
 								break;
 							case NormalizedByteCode.__ireturn:
 							{
 								s.PopInt();
-								TypeWrapper retType = method.Method.GetRetType(classLoader);
-								if(!retType.IsIntOnStackPrimitive)
+								if(!mw.ReturnType.IsIntOnStackPrimitive)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}
@@ -1852,21 +1854,21 @@ class MethodAnalyzer
 							}
 							case NormalizedByteCode.__lreturn:
 								s.PopLong();
-								if(method.Method.GetRetType(classLoader) != PrimitiveTypeWrapper.LONG)
+								if(mw.ReturnType != PrimitiveTypeWrapper.LONG)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}
 								break;
 							case NormalizedByteCode.__freturn:
 								s.PopFloat();
-								if(method.Method.GetRetType(classLoader) != PrimitiveTypeWrapper.FLOAT)
+								if(mw.ReturnType != PrimitiveTypeWrapper.FLOAT)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}
 								break;
 							case NormalizedByteCode.__dreturn:
 								s.PopDouble();
-								if(method.Method.GetRetType(classLoader) != PrimitiveTypeWrapper.DOUBLE)
+								if(mw.ReturnType != PrimitiveTypeWrapper.DOUBLE)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}
@@ -2014,7 +2016,7 @@ class MethodAnalyzer
 								break;
 							}
 							case NormalizedByteCode.__nop:
-								if(i + 1 == method.Method.CodeAttribute.Instructions.Length)
+								if(i + 1 == instructions.Length)
 								{
 									throw new VerifyError("Falling off the end of the code");
 								}
@@ -2032,9 +2034,9 @@ class MethodAnalyzer
 							switch(instr.NormalizedOpCode)
 							{
 								case NormalizedByteCode.__lookupswitch:
-									for(int j = 0; j < instr.Values.Length; j++)
+									for(int j = 0; j < instr.SwitchEntryCount; j++)
 									{
-										state[method.PcIndexMap[instr.PC + instr.TargetOffsets[j]]] += s;
+										state[method.PcIndexMap[instr.PC + instr.GetSwitchTargetOffset(j)]] += s;
 									}
 									state[method.PcIndexMap[instr.PC + instr.DefaultOffset]] += s;
 									break;
@@ -2125,12 +2127,12 @@ class MethodAnalyzer
 					}
 					catch(VerifyError x)
 					{
-						string opcode = method.Instructions[i].OpCode.ToString();
+						string opcode = instructions[i].OpCode.ToString();
 						if(opcode.StartsWith("__"))
 						{
 							opcode = opcode.Substring(2);
 						}
-						x.SetInfo(method.Instructions[i].PC, method.Method.ClassFile.Name, method.Method.Name, method.Method.Signature, opcode);
+						x.SetInfo(instructions[i].PC, classFile.Name, method.Name, method.Signature, opcode);
 						Tracer.Info(Tracer.Verifier, x.ToString());
 						throw;
 					}
@@ -2152,14 +2154,14 @@ class MethodAnalyzer
 		if(JVM.Debug)
 		{
 			// if we're emitting debug info, we need to keep dead stores as well...
-			for(int i = 0; i < method.Instructions.Length; i++)
+			for(int i = 0; i < instructions.Length; i++)
 			{
-				if(IsStoreLocal(method.Instructions[i].NormalizedOpCode))
+				if(IsStoreLocal(instructions[i].NormalizedOpCode))
 				{
-					if(!localByStoreSite.ContainsKey(i + ":" + method.Instructions[i].NormalizedArg1))
+					if(!localByStoreSite.ContainsKey(i + ":" + instructions[i].NormalizedArg1))
 					{
 						LocalVar v = new LocalVar();
-						v.local = method.Instructions[i].NormalizedArg1;
+						v.local = instructions[i].NormalizedArg1;
 						v.type = GetRawStackTypeWrapper(i, 0);
 						v.FindLvtEntry(method, i);
 						locals.Add(v);
@@ -2214,25 +2216,25 @@ class MethodAnalyzer
 				}
 			}
 		}
-		invokespecialLocalVars = new LocalVar[method.Instructions.Length][];
-		localVars = new LocalVar[method.Instructions.Length];
+		invokespecialLocalVars = new LocalVar[instructions.Length][];
+		localVars = new LocalVar[instructions.Length];
 		for(int i = 0; i < localVars.Length; i++)
 		{
 			LocalVar v = null;
 			if(localStoreReaders[i] != null)
 			{
-				Debug.Assert(IsLoadLocal(method.Instructions[i].NormalizedOpCode));
+				Debug.Assert(IsLoadLocal(instructions[i].NormalizedOpCode));
 				// lame way to look up the local variable for a load
 				// (by indirecting through a corresponding store)
 				foreach(int store in localStoreReaders[i].Keys)
 				{
-					v = (LocalVar)localByStoreSite[store + ":" + method.Instructions[i].NormalizedArg1];
+					v = (LocalVar)localByStoreSite[store + ":" + instructions[i].NormalizedArg1];
 					break;
 				}
 			}
 			else
 			{
-				if(method.Instructions[i].NormalizedOpCode == NormalizedByteCode.__invokespecial)
+				if(instructions[i].NormalizedOpCode == NormalizedByteCode.__invokespecial)
 				{
 					invokespecialLocalVars[i] = new LocalVar[method.MaxLocals];
 					for(int j = 0; j < invokespecialLocalVars[i].Length; j++)
@@ -2242,7 +2244,7 @@ class MethodAnalyzer
 				}
 				else
 				{
-					v = (LocalVar)localByStoreSite[i + ":" + method.Instructions[i].NormalizedArg1];
+					v = (LocalVar)localByStoreSite[i + ":" + instructions[i].NormalizedArg1];
 				}
 			}
 			if(v != null)
@@ -2392,7 +2394,7 @@ class MethodAnalyzer
 	{
 		try
 		{
-			ClassFile.ConstantPoolItemMI item = method.Method.ClassFile.GetMethodref(index);
+			ClassFile.ConstantPoolItemMI item = classFile.GetMethodref(index);
 			if(item != null)
 			{
 				return item;
@@ -2411,7 +2413,7 @@ class MethodAnalyzer
 	{
 		try
 		{
-			ClassFile.ConstantPoolItemFieldref item = method.Method.ClassFile.GetFieldref(index);
+			ClassFile.ConstantPoolItemFieldref item = classFile.GetFieldref(index);
 			if(item != null)
 			{
 				return item;
@@ -2430,7 +2432,7 @@ class MethodAnalyzer
 	{
 		try
 		{
-			return method.Method.ClassFile.GetConstantPoolConstantType(index);
+			return classFile.GetConstantPoolConstantType(index);
 		}
 		catch(IndexOutOfRangeException)
 		{
@@ -2451,7 +2453,7 @@ class MethodAnalyzer
 	{
 		try
 		{
-			return method.Method.ClassFile.GetConstantPoolClass(index);
+			return classFile.GetConstantPoolClass(index);
 		}
 		catch(InvalidCastException)
 		{
@@ -2466,7 +2468,7 @@ class MethodAnalyzer
 	{
 		try
 		{
-			return method.Method.ClassFile.GetConstantPoolClassType(index, classLoader);
+			return classFile.GetConstantPoolClassType(index);
 		}
 		catch(InvalidCastException)
 		{
