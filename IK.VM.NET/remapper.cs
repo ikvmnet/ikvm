@@ -95,6 +95,7 @@ namespace MapXml
 				}
 				if(emitter == null)
 				{
+					// TODO better error handling
 					throw new InvalidOperationException("method not found: " + Name);
 				}
 			}
@@ -149,21 +150,15 @@ namespace MapXml
 		}
 	}
 
-	public abstract class TypeInstruction : Instruction
+	public abstract class TypeOrTypeWrapperInstruction : Instruction
 	{
 		[XmlAttribute("class")]
 		public string Class;
 		[XmlAttribute("type")]
 		public string type;
 
-		private OpCode opcode;
-		private TypeWrapper typeWrapper;
-		private Type typeType;
-
-		internal TypeInstruction(OpCode opcode)
-		{
-			this.opcode = opcode;
-		}
+		internal TypeWrapper typeWrapper;
+		internal Type typeType;
 
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
@@ -179,23 +174,76 @@ namespace MapXml
 					typeType = Type.GetType(type, true);
 				}
 			}
-			ilgen.Emit(opcode, typeType != null ? typeType : typeWrapper.TypeAsBaseType);
 		}
 	}
 
 	[XmlType("isinst")]
-	public sealed class IsInst : TypeInstruction
+	public sealed class IsInst : TypeOrTypeWrapperInstruction
 	{
-		public IsInst() : base(OpCodes.Isinst)
+		public IsInst()
 		{
+		}
+	
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			base.Generate(context, ilgen);
+			if(typeType != null)
+			{
+				ilgen.Emit(OpCodes.Isinst, typeType);
+			}
+			else
+			{
+				// NOTE we pass a null context, but that shouldn't be a problem, because
+				// typeWrapper should never be an UnloadableTypeWrapper
+				typeWrapper.EmitInstanceOf(null, ilgen);
+			}
 		}
 	}
 
 	[XmlType("castclass")]
-	public sealed class Castclass : TypeInstruction
+	public sealed class Castclass : TypeOrTypeWrapperInstruction
 	{
-		public Castclass() : base(OpCodes.Castclass)
+		public Castclass()
 		{
+		}
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			base.Generate(context, ilgen);
+			if(typeType != null)
+			{
+				ilgen.Emit(OpCodes.Castclass, typeType);
+			}
+			else
+			{
+				// NOTE we pass a null context, but that shouldn't be a problem, because
+				// typeWrapper should never be an UnloadableTypeWrapper
+				typeWrapper.EmitCheckcast(null, ilgen);
+			}
+		}
+	}
+
+	public abstract class TypeInstruction : Instruction
+	{
+		[XmlAttribute("type")]
+		public string type;
+
+		private OpCode opcode;
+		private Type typeType;
+
+		internal TypeInstruction(OpCode opcode)
+		{
+			this.opcode = opcode;
+		}
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			if(typeType == null)
+			{
+				Debug.Assert(type == null);
+				typeType = Type.GetType(type, true);
+			}
+			ilgen.Emit(opcode, typeType);
 		}
 	}
 
@@ -319,7 +367,7 @@ namespace MapXml
 						typeWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class);
 					}
 				}
-				lb = ilgen.DeclareLocal(typeType != null ? typeType : typeWrapper.Type);
+				lb = ilgen.DeclareLocal(typeType != null ? typeType : typeWrapper.TypeAsTBD);
 				context[Name] = lb;
 			}
 			ilgen.Emit(OpCodes.Stloc, lb);

@@ -61,6 +61,9 @@ class Compiler
 		bool guessFileKind = true;
 		string assemblyname = null;
 		string outputfile = null;
+		string version = "0.0.0.0";
+		string keyfile = null;
+		bool targetIsModule = false;
 		string main = null;
 		string defaultName = null;
 		bool nojni = false;
@@ -77,6 +80,9 @@ class Compiler
 			Console.Error.WriteLine("    -target:exe             Build a console executable");
 			Console.Error.WriteLine("    -target:winexe          Build a windows executable");
 			Console.Error.WriteLine("    -target:library         Build a library");
+			Console.Error.WriteLine("    -target:module          Build a module for use by the linker");
+			Console.Error.WriteLine("    -keyfile:keyfilename    Use keyfile to sign the assembly");
+			Console.Error.WriteLine("    -version:M.m.b.r        Assembly version");
 			Console.Error.WriteLine("    -main:<class>           Specify the class containing the main method");
 			Console.Error.WriteLine("    -reference:<filespec>   Reference an assembly");
 			Console.Error.WriteLine("    -recurse:<filespec>     Recurse directory and include matching files");
@@ -110,6 +116,11 @@ class Compiler
 							break;
 						case "-target:winexe":
 							target = System.Reflection.Emit.PEFileKinds.WindowApplication;
+							guessFileKind = false;
+							break;
+						case "-target:module":
+							targetIsModule = true;
+							target = System.Reflection.Emit.PEFileKinds.Dll;
 							guessFileKind = false;
 							break;
 						case "-target:library":
@@ -173,6 +184,14 @@ class Compiler
 				{
 					ProcessExclusionFile(classesToExclude, s.Substring(9));
 				}
+				else if(s.StartsWith("-version:"))
+				{
+					version = s.Substring(9);
+				}
+				else if(s.StartsWith("-keyfile:"))
+				{
+					keyfile = s.Substring(9);
+				}
 				else if(s == "-debug")
 				{
 					JVM.Debug = true;
@@ -232,10 +251,9 @@ class Compiler
 			Console.Error.WriteLine("Note: using main class {0} based on jar manifest", manifestMainClass);
 			main = manifestMainClass;
 		}
-		// TODO add support for taking default main class from jar manifest
 		try
 		{
-			JVM.Compile(outputfile, assemblyname, main, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)));
+			JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)));
 			return 0;
 		}
 		catch(Exception x)
@@ -280,12 +298,15 @@ class Compiler
 						{
 							classes.Add(ReadFromZip(zf, ze));
 						}
-						else if(ze.Name == "META-INF/MANIFEST.MF" && manifestMainClass == null)
+						else
 						{
-							// read main class from manifest
-							// TODO find out if we can use other information from manifest
-							using(StreamReader rdr = new StreamReader(zf.GetInputStream(ze)))
+							// if it's not a class, we treat it as a resource and the manifest
+							// is examined to find the Main-Class
+							if(ze.Name == "META-INF/MANIFEST.MF" && manifestMainClass == null)
 							{
+								// read main class from manifest
+								// TODO find out if we can use other information from manifest
+								StreamReader rdr = new StreamReader(zf.GetInputStream(ze));
 								string line;
 								while((line = rdr.ReadLine()) != null)
 								{
@@ -296,10 +317,6 @@ class Compiler
 									}
 								}
 							}
-						}
-						else
-						{
-							// if it's not a class, we treat it as a resource
 							if(resources.ContainsKey(ze.Name))
 							{
 								Console.Error.WriteLine("Warning: skipping resource (name clash): " + ze.Name);

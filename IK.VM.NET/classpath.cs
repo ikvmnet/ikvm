@@ -65,7 +65,7 @@ namespace NativeCode.java
 					if(dim >= 0)
 					{
 						// TODO handle ghost types
-						return NetSystem.Array.CreateInstance(VMClass.getType(clazz), dim);
+						return NetSystem.Array.CreateInstance(VMClass.getWrapperFromClass(clazz).TypeAsArrayType, dim);
 					}
 					throw JavaException.NegativeArraySizeException();
 				}
@@ -73,14 +73,14 @@ namespace NativeCode.java
 
 			internal class JavaWrapper
 			{
-				private static Type java_lang_Byte = ClassLoaderWrapper.LoadClassCritical("java.lang.Byte").Type;
-				private static Type java_lang_Boolean = ClassLoaderWrapper.LoadClassCritical("java.lang.Boolean").Type;
-				private static Type java_lang_Short = ClassLoaderWrapper.LoadClassCritical("java.lang.Short").Type;
-				private static Type java_lang_Character = ClassLoaderWrapper.LoadClassCritical("java.lang.Character").Type;
-				private static Type java_lang_Integer = ClassLoaderWrapper.LoadClassCritical("java.lang.Integer").Type;
-				private static Type java_lang_Long = ClassLoaderWrapper.LoadClassCritical("java.lang.Long").Type;
-				private static Type java_lang_Float = ClassLoaderWrapper.LoadClassCritical("java.lang.Float").Type;
-				private static Type java_lang_Double = ClassLoaderWrapper.LoadClassCritical("java.lang.Double").Type;
+				private static Type java_lang_Byte = ClassLoaderWrapper.LoadClassCritical("java.lang.Byte").TypeAsTBD;
+				private static Type java_lang_Boolean = ClassLoaderWrapper.LoadClassCritical("java.lang.Boolean").TypeAsTBD;
+				private static Type java_lang_Short = ClassLoaderWrapper.LoadClassCritical("java.lang.Short").TypeAsTBD;
+				private static Type java_lang_Character = ClassLoaderWrapper.LoadClassCritical("java.lang.Character").TypeAsTBD;
+				private static Type java_lang_Integer = ClassLoaderWrapper.LoadClassCritical("java.lang.Integer").TypeAsTBD;
+				private static Type java_lang_Long = ClassLoaderWrapper.LoadClassCritical("java.lang.Long").TypeAsTBD;
+				private static Type java_lang_Float = ClassLoaderWrapper.LoadClassCritical("java.lang.Float").TypeAsTBD;
+				private static Type java_lang_Double = ClassLoaderWrapper.LoadClassCritical("java.lang.Double").TypeAsTBD;
 
 				internal static object Box(object o)
 				{
@@ -540,7 +540,7 @@ namespace NativeCode.java
 						ar.Add(VMClass.getClassFromType(frame.GetMethod().DeclaringType));
 					}
 				}
-				return ar.ToArray(ClassLoaderWrapper.LoadClassCritical("java.lang.Class").Type);
+				return ar.ToArray(ClassLoaderWrapper.LoadClassCritical("java.lang.Class").TypeAsArrayType);
 			}
 
 			public static object currentClassLoader()
@@ -742,7 +742,9 @@ namespace NativeCode.java
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
 				tw.Finish();
 				// NOTE we cannot use Java reflection, because the field is final
-				tw.Type.GetField("err", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
+				// TODO JNI reflection should also ignore the final-ness of a field, so once we've got that
+				// sorted out, we could use that mechanism
+				tw.TypeAsTBD.GetField("err", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
 			}
 
 			public static void setIn(object inputStream)
@@ -750,7 +752,7 @@ namespace NativeCode.java
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
 				tw.Finish();
 				// NOTE we cannot use Java reflection, because the field is final
-				tw.Type.GetField("in", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, inputStream);
+				tw.TypeAsTBD.GetField("in", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, inputStream);
 			}
 
 			public static void setOut(object printStream)
@@ -758,7 +760,7 @@ namespace NativeCode.java
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
 				tw.Finish();
 				// NOTE we cannot use Java reflection, because the field is final
-				tw.Type.GetField("out", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
+				tw.TypeAsTBD.GetField("out", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
 			}
 
 			public static int identityHashCode(object o)
@@ -866,7 +868,7 @@ namespace NativeCode.java
 					if(initialize)
 					{
 						type.Finish();
-						RuntimeHelpers.RunClassConstructor(type.Type.TypeHandle);
+						type.RunClassInit();
 					}
 					return getClassFromWrapper(type);
 				}
@@ -879,7 +881,7 @@ namespace NativeCode.java
 				{
 					TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
 					tw.Finish();
-					CreateClass = (CreateClassDelegate)Delegate.CreateDelegate(typeof(CreateClassDelegate), tw.Type.GetMethod("createClass", BindingFlags.Static | BindingFlags.Public));
+					CreateClass = (CreateClassDelegate)Delegate.CreateDelegate(typeof(CreateClassDelegate), tw.TypeAsTBD.GetMethod("createClass", BindingFlags.Static | BindingFlags.Public));
 					// HACK to make sure we don't run into any problems creating class objects for classes that
 					// participate in the VMClass static initialization, we first do a bogus call to initialize
 					// the machinery (I ran into this when running netexp on classpath.dll)
@@ -942,30 +944,15 @@ namespace NativeCode.java
 				return null;
 			}
 
-			public static Type getTypeFromWrapper(object clazz, object wrapper)
-			{
-				((TypeWrapper)wrapper).Finish();
-				Type type = ((TypeWrapper)wrapper).Type;
-				TypeWrapper.AssertFinished(type);
-				return type;
-			}
-
-			public static object getWrapperFromType(Type t)
-			{
-				return ClassLoaderWrapper.GetWrapperFromType(t);
-			}
-
-			public static Type getType(object clazz)
+			internal static TypeWrapper getWrapperFromClass(object clazz)
 			{
 				if(getWrapper == null)
 				{
 					TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
 					tw.Finish();
-					getWrapper = tw.Type.GetMethod("getWrapperFromClass", BindingFlags.NonPublic | BindingFlags.Static);
+					getWrapper = tw.TypeAsTBD.GetMethod("getWrapperFromClass", BindingFlags.NonPublic | BindingFlags.Static);
 				}
-				TypeWrapper wrapper = (TypeWrapper)getWrapper.Invoke(null, new object[] { clazz });
-				wrapper.Finish();
-				return wrapper.Type;
+				return (TypeWrapper)getWrapper.Invoke(null, new object[] { clazz });
 			}
 
 			internal static object getClassFromWrapper(TypeWrapper wrapper)
@@ -1040,154 +1027,12 @@ namespace NativeCode.java
 				return typeWrapper.Name;
 			}
 	
-			internal static string getName(Type type)
-			{
-				TypeWrapper wrapperType = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
-				if(wrapperType != null)
-				{
-					string name = ((TypeWrapper)wrapperType).Name;
-					// HACK name is null for primitives
-					if(name != null)
-					{
-						return name;
-					}
-				}
-				if(type.IsValueType)
-				{
-					if(type == typeof(void))
-					{
-						return "void";
-					}
-					else if(type == typeof(bool))
-					{
-						return "boolean";
-					}
-					else if(type == typeof(sbyte))
-					{
-						return "byte";
-					}
-					else if(type == typeof(char))
-					{
-						return "char";
-					}
-					else if(type == typeof(short))
-					{
-						return "short";
-					}
-					else if(type == typeof(int))
-					{
-						return "int";
-					}
-					else if(type == typeof(long))
-					{
-						return "long";
-					}
-					else if(type == typeof(float))
-					{
-						return "float";
-					}
-					else if(type == typeof(double))
-					{
-						return "double";
-					}
-					else
-					{
-						// HACK we're assuming for the time being that Java code cannot define new value types
-						return DotNetTypeWrapper.GetName(type);
-					}
-				}
-				else if(type.IsArray)
-				{
-					StringBuilder sb = new StringBuilder();
-					while(type.IsArray)
-					{
-						sb.Append('[');
-						type = type.GetElementType();
-					}
-					if(type.IsValueType)
-					{
-						if(type == typeof(void))
-						{
-							sb.Append('V');
-						}
-						else if(type == typeof(bool))
-						{
-							sb.Append('Z');
-						}
-						else if(type == typeof(sbyte))
-						{
-							sb.Append('B');
-						}
-						else if(type == typeof(char))
-						{
-							sb.Append('C');
-						}
-						else if(type == typeof(short))
-						{
-							sb.Append('S');
-						}
-						else if(type == typeof(int))
-						{
-							sb.Append('I');
-						}
-						else if(type == typeof(long))
-						{
-							sb.Append('J');
-						}
-						else if(type == typeof(float))
-						{
-							sb.Append('F');
-						}
-						else if(type == typeof(double))
-						{
-							sb.Append('D');
-						}
-						else
-						{
-							// HACK we're assuming for the time being that Java code cannot define new value types
-							sb.Append(DotNetTypeWrapper.GetName(type));
-						}
-					}
-					else
-					{
-						sb.Append('L').Append(getName(type)).Append(';');
-					}
-					return sb.ToString();
-				}
-				else
-				{
-					while(type.IsDefined(typeof(HideFromReflectionAttribute), false))
-					{
-						type = type.BaseType;
-					}
-					TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
-					if(wrapper != null)
-					{
-						return wrapper.Name;
-					}
-					// look for our custom attribute, that contains the real name of the type (for inner classes)
-					Object[] attribs = type.GetCustomAttributes(typeof(InnerClassAttribute), false);
-					if(attribs.Length == 1)
-					{
-						return ((InnerClassAttribute)attribs[0]).InnerClassName;
-					}
-					if(type.Assembly is System.Reflection.Emit.AssemblyBuilder || type.Assembly.IsDefined(typeof(JavaAssemblyAttribute), false))
-					{
-						return type.FullName;
-					}
-					else
-					{
-						return DotNetTypeWrapper.GetName(type);
-					}
-				}
-			}
-
 			[StackTraceInfo(Hidden = true)]
 			public static void initialize(object cwrapper)
 			{
 				TypeWrapper wrapper = (TypeWrapper)cwrapper;
 				wrapper.Finish();
-				RuntimeHelpers.RunClassConstructor(wrapper.Type.TypeHandle);
+				wrapper.RunClassInit();
 			}
 
 			public static object getClassLoader0(object wrapper)
@@ -1613,7 +1458,9 @@ namespace NativeCode.java
 		{
 			public static bool hasClassInitializer(object clazz)
 			{
-				Type type = NativeCode.java.lang.VMClass.getType(clazz);
+				TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+				wrapper.Finish();
+				Type type = wrapper.TypeAsTBD;
 				try
 				{
 					if(!type.IsArray && type.TypeInitializer != null)
@@ -1643,15 +1490,23 @@ namespace NativeCode.java
 
 			public static object allocateObject(object ois, object clazz)
 			{
-				Type type = NativeCode.java.lang.VMClass.getType(clazz);
-				return NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(type);
+				TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+				return NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsTBD);
 			}
 
 			public static void callConstructor(object ois, object clazz, object obj)
 			{
 				// TODO use TypeWrapper based reflection, instead of .NET reflection
-				Type type = NativeCode.java.lang.VMClass.getType(clazz);
-				type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null).Invoke(obj, null);
+				TypeWrapper type = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+				type.Finish();
+				MethodWrapper mw = type.GetMethodWrapper(MethodDescriptor.FromNameSig(type.GetClassLoader(), "<init>", "()V"), false);
+				if(mw == null)
+				{
+					// TODO what should we do here?
+					throw new NotImplementedException();
+				}
+				// TODO what about exceptions? (should they be unwrapped?)
+				mw.Invoke(obj, null, true);
 			}
 		}
 	}

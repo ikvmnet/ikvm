@@ -168,10 +168,8 @@ class MethodWrapper : MemberWrapper
 	// TODO creation of MethodWrappers should be cleaned up (and every instance should support Invoke())
 	internal static MethodWrapper Create(TypeWrapper declaringType, MethodDescriptor md, MethodBase originalMethod, MethodBase method, Modifiers modifiers, bool hideFromReflection)
 	{
-		if(method == null)
-		{
-			throw new InvalidOperationException();
-		}
+		Debug.Assert(method != null);
+
 		MethodWrapper wrapper = new MethodWrapper(declaringType, md, originalMethod, method, modifiers, hideFromReflection);
 		if(declaringType.IsGhost)
 		{
@@ -201,7 +199,7 @@ class MethodWrapper : MemberWrapper
 			{
 				// HACK after constructing a new object, we don't want the custom boxing rule to run
 				// (because that would turn "new IntPtr" into a null reference)
-				wrapper.EmitNewobj += CodeEmitter.Create(OpCodes.Box, declaringType.Type);
+				wrapper.EmitNewobj += CodeEmitter.Create(OpCodes.Box, declaringType.TypeAsTBD);
 			}
 			else
 			{
@@ -475,7 +473,7 @@ class MethodWrapper : MemberWrapper
 		// constructor
 		if(IsStatic)
 		{
-			MethodInfo method = this.originalMethod != null && !(this.originalMethod is MethodBuilder) ? (MethodInfo)this.originalMethod : DeclaringType.Type.GetMethod(md.Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypes, null);
+			MethodInfo method = this.originalMethod != null && !(this.originalMethod is MethodBuilder) ? (MethodInfo)this.originalMethod : DeclaringType.TypeAsTBD.GetMethod(md.Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypes, null);
 			try
 			{
 				return method.Invoke(null, args);
@@ -495,25 +493,25 @@ class MethodWrapper : MemberWrapper
 			// NOTE this means that we cannot detect a NullPointerException when calling <init>
 			if(md.Name == "<init>")
 			{
-				if(obj == null)
+				ConstructorInfo constructor = this.originalMethod != null && !(this.originalMethod is ConstructorBuilder) ? (ConstructorInfo)this.originalMethod : DeclaringType.TypeAsTBD.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, CallingConventions.Standard, md.ArgTypes, null);
+				try
 				{
-					ConstructorInfo constructor = this.originalMethod != null && !(this.originalMethod is ConstructorBuilder) ? (ConstructorInfo)this.originalMethod : DeclaringType.Type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, CallingConventions.Standard, md.ArgTypes, null);
-					try
+					if(obj != null)
+					{
+						return constructor.Invoke(obj, args);
+					}
+					else
 					{
 						return constructor.Invoke(args);
 					}
-					catch(ArgumentException x1)
-					{
-						throw JavaException.IllegalArgumentException(x1.Message);
-					}
-					catch(TargetInvocationException x)
-					{
-						throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
-					}
 				}
-				else
+				catch(ArgumentException x1)
 				{
-					throw new NotImplementedException("invoking constructor on existing instance");
+					throw JavaException.IllegalArgumentException(x1.Message);
+				}
+				catch(TargetInvocationException x)
+				{
+					throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
 				}
 			}
 			if(nonVirtual)
@@ -536,7 +534,7 @@ class MethodWrapper : MemberWrapper
 					if(IsRemappedVirtual)
 					{
 						Type[] argTypes = new Type[md.ArgTypes.Length + 1];
-						argTypes[0] = this.DeclaringType.Type;
+						argTypes[0] = this.DeclaringType.TypeAsTBD;
 						md.ArgTypes.CopyTo(argTypes, 1);
 						method = ((RemappedTypeWrapper)this.DeclaringType).VirtualsHelperHack.GetMethod(md.Name, BindingFlags.Static | BindingFlags.Public, null, argTypes, null);
 					}
@@ -550,7 +548,7 @@ class MethodWrapper : MemberWrapper
 			{
 				if(method is MethodBuilder || method == null)
 				{
-					method = DeclaringType.Type.GetMethod(md.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypes, null);
+					method = DeclaringType.TypeAsTBD.GetMethod(md.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypes, null);
 				}
 				if(method == null)
 				{
@@ -851,8 +849,8 @@ class FieldWrapper : MemberWrapper
 		if(declaringType.IsNonPrimitiveValueType)
 		{
 			// NOTE all that ValueTypeFieldSetter does, is unbox the boxed value type that contains the field that we are setting
-			emitSet = new ValueTypeFieldSetter(declaringType.Type, fieldType.Type);
-			emitGet = CodeEmitter.Create(OpCodes.Unbox, declaringType.Type);
+			emitSet = new ValueTypeFieldSetter(declaringType.TypeAsTBD, fieldType.TypeAsTBD);
+			emitGet = CodeEmitter.Create(OpCodes.Unbox, declaringType.TypeAsTBD);
 		}
 		if(fieldType.IsUnloadable)
 		{
@@ -930,7 +928,7 @@ class FieldWrapper : MemberWrapper
 		{
 			bindings |= BindingFlags.Instance;
 		}
-		field = DeclaringType.Type.GetField(name, bindings);
+		field = DeclaringType.TypeAsTBD.GetField(name, bindings);
 		Debug.Assert(field != null);
 	}
 

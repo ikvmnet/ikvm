@@ -24,7 +24,7 @@
 -->
 <root>
 	<remappings>
-		<class name="java.lang.Object" type="System.Object" modifiers="public">
+		<class name="java.lang.Object" type="System.Object, mscorlib" modifiers="public">
 			<constructor sig="()V" modifiers="public" />
 			<method name="notifyAll" sig="()V" modifiers="public final">
 				<redirect class="System.Threading.Monitor, mscorlib" name="PulseAll" sig="(Ljava.lang.Object;)V" type="static" />
@@ -55,12 +55,12 @@
 			</method>
 			<method name="getClass" sig="()Ljava.lang.Class;" modifiers="public final">
 				<invokespecial>
-					<call type="System.Object" name="GetType" />
+					<call type="System.Object, mscorlib" name="GetType" />
 					<call type="NativeCode.java.lang.VMClass" name="getClassFromType" />
 					<castclass class="java.lang.Class" />
 				</invokespecial>
 				<invokevirtual>
-					<call type="System.Object" name="GetType" />
+					<call type="System.Object, mscorlib" name="GetType" />
 					<call type="NativeCode.java.lang.VMClass" name="getClassFromType" />
 					<castclass class="java.lang.Class" />
 				</invokevirtual>
@@ -77,7 +77,7 @@
 					<throw />
 					<!--call type="ObjectHelper" name="throwCloneNotSupportedException" /-->
 					<label name="ok" />
-					<call type="System.Object" name="MemberwiseClone" />
+					<call type="System.Object, mscorlib" name="MemberwiseClone" />
 				</invokespecial>
 				<invokevirtual>
 					<call type="ObjectHelper" name="virtualclone" />
@@ -94,12 +94,12 @@
 				</invokespecial>
 				<invokevirtual>
 					<dup />
-					<isinst type="System.Array" />
+					<isinst type="System.Array, mscorlib" />
 					<brfalse name="skip" />
 					<call class="java.lang.ObjectHelper" name="toStringSpecial" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
 					<br name="end" />
 					<label name="skip" />
-					<callvirt type="System.Object" name="ToString" />
+					<callvirt type="System.Object, mscorlib" name="ToString" />
 					<label name="end" />
 				</invokevirtual>
 			</method>
@@ -113,7 +113,7 @@
 					<call class="java.lang.StringHelper" name="hashCode" sig="(Ljava.lang.String;)I" />
 					<br name="end" />
 					<label name="skip" />
-					<callvirt type="System.Object" name="GetHashCode" />
+					<callvirt type="System.Object, mscorlib" name="GetHashCode" />
 					<label name="end" />
 				</invokevirtual>
 			</method>
@@ -337,36 +337,36 @@
 				<redirect class="java.lang.StringHelper" type="static" name="GetOffsetField" sig="(Ljava.lang.String;)I" />
 			</field>
 		</class>
-		<class name="java.lang.Throwable" type="System.Exception" modifiers="public">
+		<class name="java.lang.Throwable" type="System.Exception, mscorlib" modifiers="public">
 			<implements class="java.io.Serializable" />
 			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-3042686055658047285" />
 			<constructor sig="()V" modifiers="public">
 				<invokespecial>
 					<call class="java.lang.ExceptionHelper" name="get_NullString" sig="()Ljava.lang.String;" />
-					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
+					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;)V" />
 				</invokespecial>
 			</constructor>
 			<constructor sig="(Ljava.lang.String;)V" modifiers="public">
 				<invokespecial>
 					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
-					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
+					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;)V" />
 				</invokespecial>
 			</constructor>
 			<constructor sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" modifiers="public">
 				<invokespecial>
-					<stloc name="x" type="System.Exception" />
+					<stloc name="x" type="System.Exception, mscorlib" />
 					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 					<ldloc name="x" />
-					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
 				</invokespecial>
 			</constructor>
 			<constructor sig="(Ljava.lang.Throwable;)V" modifiers="public">
 				<invokespecial>
-					<stloc name="x" type="System.Exception" />
+					<stloc name="x" type="System.Exception, mscorlib" />
 					<ldloc name="x" />
 					<call class="java.lang.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
 					<ldloc name="x" />
-					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
 				</invokespecial>
 			</constructor>
 			<method type="virtual" name="printStackTrace" sig="()V" modifiers="public">
@@ -403,18 +403,18 @@
 				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
 			</method>
 		</class>
-		<class name="java.lang.Comparable" type="System.IComparable" modifiers="public abstract interface">
+		<class name="java.lang.Comparable" type="System.IComparable, mscorlib" modifiers="public abstract interface">
 			<method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public abstract">
 				<override name="CompareTo" />
 			</method>
 		</class>
 		<!-- TODO support "oneway" attribute (don't associate System.IntPtr with gnu.classpath.RawData -->
-		<class name="gnu.classpath.RawData" type="System.IntPtr" oneway="true">
+		<class name="gnu.classpath.RawData" type="System.IntPtr, mscorlib" oneway="true">
 			<box>
 				<!-- We special case boxing, to "box" IntPtr.Zero as null -->
 				<dup />
 				<brfalse name="null" />
-				<box type="System.IntPtr" />
+				<box type="System.IntPtr, mscorlib" />
 				<br name="end" />
 				<label name="null" />
 				<pop />
@@ -433,7 +433,7 @@
 		<class name="ikvm.lang.CIL">
 			<method name="unbox_int" sig="(Ljava.lang.Object;)I">
 				<ldarg_0 />
-				<unbox type="System.Int32" />
+				<unbox type="System.Int32, mscorlib" />
 				<ldind_i4 />
 				<ret />
 			</method>
@@ -493,7 +493,7 @@
 				<newobj class="java.lang.ThreadDeath" name="&lt;init&gt;" sig="()V" />
 				<label name="end" />
 				<!-- NOTE ResetAbort clears the ExceptionState of the ThreadAbortException (why?) -->
-				<call type="System.Threading.Thread" name="ResetAbort" sig="()V" />
+				<call type="System.Threading.Thread, mscorlib" name="ResetAbort" sig="()V" />
 			</code>
 		</exception>
 		<!-- TODO make sure the originating method was from an IKVM.NET generated assembly, because if it was

@@ -242,9 +242,7 @@ class InstructionState
 					}
 					else
 					{
-						Console.WriteLine("type = " + type);
-						Console.WriteLine("s2.stack[i] = " + s2.stack[i]);
-						throw new InvalidOperationException();
+						System.Diagnostics.Debug.Assert(false);
 					}
 				}
 				if(type != baseType)
@@ -801,10 +799,8 @@ class InstructionState
 
 	internal void MarkInitialized(TypeWrapper type, TypeWrapper initType)
 	{
-		if(type == null || initType == null)
-		{
-			throw new InvalidOperationException();
-		}
+		System.Diagnostics.Debug.Assert(type != null && initType != null);
+
 		for(int i = 0; i < locals.Length; i++)
 		{
 			if(locals[i] == type)
@@ -959,7 +955,7 @@ class VerifierTypeWrapper : TypeWrapper
 		throw new InvalidOperationException("GetMethodImpl called on " + this);
 	}
 
-	public override Type Type
+	public override Type TypeAsTBD
 	{
 		get
 		{

@@ -36,7 +36,6 @@ class ClassLoaderWrapper
 	private delegate object LoadClassDelegate(object classLoader, string className);
 	private static LoadClassDelegate loadClassDelegate;
 	private static bool arrayConstructionHack;
-	private static ArrayList ikvmAssemblies = new ArrayList();
 	private static Hashtable assemblyToClassLoaderWrapper = new Hashtable();
 	private static Hashtable javaClassLoaderToClassLoaderWrapper = new Hashtable();
 	private static ArrayList classLoaders = new ArrayList();
@@ -60,32 +59,14 @@ class ClassLoaderWrapper
 	// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
 	internal static void SetBootstrapClassLoader(ClassLoaderWrapper bootstrapClassLoader)
 	{
-		if(ClassLoaderWrapper.bootstrapClassLoader != null)
-		{
-			throw new InvalidOperationException();
-		}
+		Debug.Assert(ClassLoaderWrapper.bootstrapClassLoader == null);
+
 		ClassLoaderWrapper.bootstrapClassLoader = bootstrapClassLoader;
 	}
 
 	static ClassLoaderWrapper()
 	{
 		AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
-		AppDomain.CurrentDomain.AssemblyLoad += new AssemblyLoadEventHandler(OnAssemblyLoad);
-		foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
-		{
-			if(a.IsDefined(typeof(JavaAssemblyAttribute), false) && !(a is AssemblyBuilder))
-			{
-				ikvmAssemblies.Add(a);
-			}
-		}
-	}
-
-	private static void OnAssemblyLoad(object sender, AssemblyLoadEventArgs e)
-	{
-		if(e.LoadedAssembly.IsDefined(typeof(JavaAssemblyAttribute), false) && !(e.LoadedAssembly is AssemblyBuilder))
-		{
-			ikvmAssemblies.Add(e.LoadedAssembly);
-		}
 	}
 
 	private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
@@ -103,7 +84,7 @@ class ClassLoaderWrapper
 				return null;
 			}
 			type.Finish();
-			return type.Type.Assembly;
+			return type.TypeAsTBD.Assembly;
 		}
 		catch(Exception x)
 		{
@@ -129,7 +110,7 @@ class ClassLoaderWrapper
 		{
 			TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
 			tw.Finish();
-			loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), tw.Type, "loadClassHelper");
+			loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), tw.TypeAsTBD, "loadClassHelper");
 		}
 	}
 
@@ -175,8 +156,8 @@ class ClassLoaderWrapper
 			TypeWrapper tw = new RemappedTypeWrapper(this, modifiers, name, type, new TypeWrapper[0], baseWrapper);
 			Debug.Assert(!types.ContainsKey(name));
 			types.Add(name, tw);
-			Debug.Assert(!typeToTypeWrapper.ContainsKey(tw.Type));
-			typeToTypeWrapper.Add(tw.Type, tw);
+			Debug.Assert(!typeToTypeWrapper.ContainsKey(tw.TypeAsTBD));
+			typeToTypeWrapper.Add(tw.TypeAsTBD, tw);
 		}
 		// find the ghost interfaces
 		foreach(MapXml.Class c in map.remappings)
@@ -189,7 +170,7 @@ class ClassLoaderWrapper
 				foreach(MapXml.Interface iface in c.Interfaces)
 				{
 					TypeWrapper ifaceWrapper = (TypeWrapper)types[iface.Name];
-					if(ifaceWrapper == null || !ifaceWrapper.Type.IsAssignableFrom(typeWrapper.Type))
+					if(ifaceWrapper == null || !ifaceWrapper.TypeAsTBD.IsAssignableFrom(typeWrapper.TypeAsTBD))
 					{
 						AddGhost(iface.Name, typeWrapper);
 					}
@@ -360,7 +341,7 @@ class ClassLoaderWrapper
 					case 'L':
 					{
 						type = LoadClassByDottedName(name.Substring(dims + 1, name.IndexOf(';', dims) - dims - 1));
-						type = type.GetClassLoader().CreateArrayType(name, type.Type, dims);
+						type = type.GetClassLoader().CreateArrayType(name, type.TypeAsTBD, dims);
 						return type;
 					}
 					case 'B':
@@ -408,7 +389,7 @@ class ClassLoaderWrapper
 					}
 					if(t != null)
 					{
-						if(t.Assembly.IsDefined(typeof(JavaAssemblyAttribute), false))
+						if(t.Module.IsDefined(typeof(JavaModuleAttribute), false))
 						{
 							return GetWrapperFromType(t);
 						}
@@ -490,7 +471,7 @@ class ClassLoaderWrapper
 		// only the bootstrap classloader can own compiled types
 		Debug.Assert(this == GetBootstrapClassLoader());
 		TypeWrapper wrapper = null;
-		if(type.Assembly.IsDefined(typeof(JavaAssemblyAttribute), false))
+		if(type.Module.IsDefined(typeof(JavaModuleAttribute), false))
 		{
 			string name = CompiledTypeWrapper.GetName(type);
 			wrapper = (TypeWrapper)types[name];
@@ -526,22 +507,24 @@ class ClassLoaderWrapper
 		return wrapper;
 	}
 
+	// NOTE this method only sees pre-compiled Java classes
 	internal Type GetBootstrapTypeRaw(string name)
 	{
-		// TODO consider the thread safety aspects of this (if another thread triggers a load of an IKVM assembly,
-		// the collection enumerator will throw a version exception)
-		foreach(Assembly a in ikvmAssemblies)
+		foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
 		{
-			Type t = a.GetType(name);
-			if(t != null)
+			if(!(a is AssemblyBuilder))
 			{
-				return t;
-			}
-			// HACK we might be looking for an inner classes
-			t = a.GetType(name.Replace('$', '+'));
-			if(t != null)
-			{
-				return t;
+				Type t = a.GetType(name);
+				if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+				{
+					return t;
+				}
+				// HACK we might be looking for an inner classes
+				t = a.GetType(name.Replace('$', '+'));
+				if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+				{
+					return t;
+				}
 			}
 		}
 		return null;
@@ -660,8 +643,8 @@ class ClassLoaderWrapper
 				throw JavaException.IncompatibleClassChangeError("Class {0} has interface {1} as superclass", f.Name, baseType.Name);
 			}
 			type = new DynamicTypeWrapper(f, this, nativeMethods);
-			Debug.Assert(!dynamicTypes.ContainsKey(type.Type.FullName));
-			dynamicTypes.Add(type.Type.FullName, type);
+			Debug.Assert(!dynamicTypes.ContainsKey(type.TypeAsTBD.FullName));
+			dynamicTypes.Add(type.TypeAsTBD.FullName, type);
 			Debug.Assert(types[f.Name] == null);
 			types[f.Name] = type;
 			return type;
@@ -731,7 +714,9 @@ class ClassLoaderWrapper
 			}
 		}
 		// HACK use reflection to get the type from the class
-		Type mainType = NativeCode.java.lang.VMClass.getType(mainClass);
+		TypeWrapper mainTypeWrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(mainClass);
+		mainTypeWrapper.Finish();
+		Type mainType = mainTypeWrapper.TypeAsTBD;
 		MethodInfo main = mainType.GetMethod("main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(string[]) }, null);
 		AssemblyBuilder asm = ((AssemblyBuilder)moduleBuilder.Assembly);
 		asm.SetEntryPoint(main, PEFileKinds.ConsoleApplication);
@@ -753,7 +738,9 @@ class ClassLoaderWrapper
 			}
 		}
 		// HACK use reflection to get the type from the class
-		Type mainType = NativeCode.java.lang.VMClass.getType(mainClass);
+		TypeWrapper mainTypeWrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(mainClass);
+		mainTypeWrapper.Finish();
+		Type mainType = mainTypeWrapper.TypeAsTBD;
 		MethodInfo main = mainType.GetMethod("main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(string[]) }, null);
 		foreach(DictionaryEntry entry in ClassLoaderWrapper.assemblyToClassLoaderWrapper)
 		{
@@ -820,14 +807,9 @@ class ClassLoaderWrapper
 
 	internal TypeWrapper ExpressionTypeWrapper(string type)
 	{
-		if(type.StartsWith("Lret;"))
-		{
-			throw new InvalidOperationException("ExpressionTypeWrapper for Lret; requested");
-		}
-		if(type == "Lnull")
-		{
-			throw new InvalidOperationException("ExpressionTypeWrapper for Lnull requested");
-		}
+		Debug.Assert(!type.StartsWith("Lret;"));
+		Debug.Assert(type != "Lnull");
+
 		int index = 0;
 		return SigDecoderWrapper(ref index, type);
 	}
@@ -843,7 +825,7 @@ class ClassLoaderWrapper
 		Type[] types = new Type[wrappers.Length];
 		for(int i = 0; i < wrappers.Length; i++)
 		{
-			types[i] = wrappers[i].Type;
+			types[i] = wrappers[i].TypeAsParameterType;
 		}
 		return types;
 	}

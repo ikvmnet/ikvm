@@ -575,7 +575,7 @@ class Compiler
 			if(args[i].IsUnloadable)
 			{
 				ilGenerator.Emit(OpCodes.Ldarg, (ushort)(i + (m.IsStatic ? 0 : 1)));
-				ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
+				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 				ilGenerator.Emit(OpCodes.Ldstr, args[i].Name);
 				ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicCast"));
 				ilGenerator.Emit(OpCodes.Pop);
@@ -780,7 +780,7 @@ class Compiler
 							{
 								if(exceptionTypeWrapper.IsUnloadable)
 								{
-									ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
+									ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 									ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
 									ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetTypeAsExceptionType"));
 									mapExceptionMethod.Emit(ilGenerator);
@@ -1116,7 +1116,7 @@ class Compiler
 										// this could be done a little more efficiently, but since in practice this
 										// code never runs (for code compiled from Java source) it doesn't
 										// really matter
-										LocalBuilder newobj = ilGenerator.DeclareLocal(thisType.Type);
+										LocalBuilder newobj = ilGenerator.DeclareLocal(thisType.TypeAsTBD);
 										ilGenerator.Emit(OpCodes.Stloc, newobj);
 										LocalBuilder[] tempstack = new LocalBuilder[stackfix.Length];
 										for(int j = 0; j < stackfix.Length; j++)
@@ -1276,7 +1276,7 @@ class Compiler
 									// UPDATE the above is no longer true, we now have at least some idea of the type of the local
 									if(type != ma.GetDeclaredLocalTypeWrapper(instr.NormalizedArg1) && !type.IsUnloadable && !type.IsGhost && !type.IsNonPrimitiveValueType)
 									{
-										ilGenerator.Emit(OpCodes.Castclass, type.Type);
+										ilGenerator.Emit(OpCodes.Castclass, type.TypeAsTBD);
 									}
 								}
 								else
@@ -1371,9 +1371,9 @@ class Compiler
 							{
 								// this is here to make sure we throw the exception in the right location (before
 								// evaluating the constructor arguments)
-								ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
+								ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 								ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-								ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicLoadClass"));
+								ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicNewCheckOnly"));
 							}
 							else if(!wrapper.IsAccessibleFrom(clazz))
 							{
@@ -1404,7 +1404,7 @@ class Compiler
 							TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
 							if(wrapper.IsUnloadable)
 							{
-								ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
+								ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 								ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 								ilGenerator.Emit(OpCodes.Ldloc, localArray);
 								ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicMultianewarray"));
@@ -1428,7 +1428,7 @@ class Compiler
 							TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
 							if(wrapper.IsUnloadable)
 							{
-								ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
+								ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 								ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 								ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicNewarray"));
 							}
@@ -1487,122 +1487,21 @@ class Compiler
 						case NormalizedByteCode.__checkcast:
 						{
 							TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
-							if(wrapper.IsUnloadable)
+							if(!wrapper.IsUnloadable && !wrapper.IsAccessibleFrom(clazz))
 							{
-								ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
-								ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-								ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicCast"));
+								throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
 							}
-							else
-							{
-								if(!wrapper.IsAccessibleFrom(clazz))
-								{
-									throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
-								}
-								if(wrapper.IsGhost)
-								{
-									ilGenerator.Emit(OpCodes.Dup);
-									// TODO make sure we get the right "Cast" method and cache it
-									ilGenerator.Emit(OpCodes.Call, wrapper.Type.GetMethod("Cast"));
-									ilGenerator.Emit(OpCodes.Pop);
-								}
-								else if(wrapper.IsGhostArray)
-								{
-									string brackets = "[]";
-									TypeWrapper element = wrapper.ElementTypeWrapper;
-									while(element.IsArray)
-									{
-										brackets += "[]";
-										element = wrapper.ElementTypeWrapper;
-									}
-									TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(element);
-									Type[] implementerTypes = new Type[implementers.Length];
-									for(int j = 0; j < implementers.Length; j++)
-									{
-										implementerTypes[j] = implementers[j].Type.Module.GetType(implementers[j].Type.FullName + brackets);
-									}
-									Label end = ilGenerator.DefineLabel();
-									for(int j = 0; j < implementerTypes.Length; j++)
-									{
-										ilGenerator.Emit(OpCodes.Dup);
-										ilGenerator.Emit(OpCodes.Isinst, implementerTypes[j]);
-										ilGenerator.Emit(OpCodes.Brtrue, end);
-									}
-									// TODO once we "fix" array instantiation this should ever occur
-									ilGenerator.Emit(OpCodes.Castclass, wrapper.Type);
-									ilGenerator.MarkLabel(end);
-								}
-								else
-								{
-									ilGenerator.Emit(OpCodes.Castclass, wrapper.Type);
-								}
-							}
+							wrapper.EmitCheckcast(clazz, ilGenerator);
 							break;
 						}
 						case NormalizedByteCode.__instanceof:
 						{
 							TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
-							if(wrapper.IsUnloadable)
+							if(!wrapper.IsUnloadable && !wrapper.IsAccessibleFrom(clazz))
 							{
-								ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
-								ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-								ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicInstanceOf"));
+								throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
 							}
-							else
-							{
-								if(!wrapper.IsAccessibleFrom(clazz))
-								{
-									throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
-								}
-								if(wrapper.IsGhost)
-								{
-									// TODO make sure we get the right "IsInstance" method and cache it
-									ilGenerator.Emit(OpCodes.Call, wrapper.Type.GetMethod("IsInstance"));
-								}
-								else if(wrapper.IsGhostArray)
-								{
-									string brackets = "[]";
-									TypeWrapper element = wrapper.ElementTypeWrapper;
-									while(element.IsArray)
-									{
-										brackets += "[]";
-										element = wrapper.ElementTypeWrapper;
-									}
-									TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(element);
-									Type[] implementerTypes = new Type[implementers.Length];
-									for(int j = 0; j < implementers.Length; j++)
-									{
-										implementerTypes[j] = implementers[j].Type.Module.GetType(implementers[j].Type.FullName + brackets);
-									}
-									Label end = ilGenerator.DefineLabel();
-									for(int j = 0; j < implementerTypes.Length; j++)
-									{
-										ilGenerator.Emit(OpCodes.Dup);
-										ilGenerator.Emit(OpCodes.Isinst, implementerTypes[j]);
-										Label label = ilGenerator.DefineLabel();
-										ilGenerator.Emit(OpCodes.Brfalse_S, label);
-										ilGenerator.Emit(OpCodes.Pop);
-										ilGenerator.Emit(OpCodes.Ldc_I4_1);
-										ilGenerator.Emit(OpCodes.Br, end);
-										ilGenerator.MarkLabel(label);
-									}
-									// TODO once we "fix" array instantiation this should ever occur
-									ilGenerator.Emit(OpCodes.Isinst, wrapper.Type);
-									ilGenerator.Emit(OpCodes.Ldnull);
-									ilGenerator.Emit(OpCodes.Ceq);
-									ilGenerator.Emit(OpCodes.Ldc_I4_0);
-									ilGenerator.Emit(OpCodes.Ceq);
-									ilGenerator.MarkLabel(end);
-								}
-								else
-								{
-									ilGenerator.Emit(OpCodes.Isinst, wrapper.Type);
-									ilGenerator.Emit(OpCodes.Ldnull);
-									ilGenerator.Emit(OpCodes.Ceq);
-									ilGenerator.Emit(OpCodes.Ldc_I4_0);
-									ilGenerator.Emit(OpCodes.Ceq);
-								}
-							}
+							wrapper.EmitInstanceOf(clazz, ilGenerator);
 							break;
 						}
 						case NormalizedByteCode.__aaload:
@@ -1610,7 +1509,7 @@ class Compiler
 							TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 1);
 							if(tw.IsUnloadable)
 							{
-								ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
+								ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 								ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
 								ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicAaload"));
 							}
@@ -1619,7 +1518,7 @@ class Compiler
 								TypeWrapper elem = tw.ElementTypeWrapper;
 								if(elem.IsNonPrimitiveValueType)
 								{
-									Type t = elem.Type;
+									Type t = elem.TypeAsTBD;
 									ilGenerator.Emit(OpCodes.Ldelema, t);
 									ilGenerator.Emit(OpCodes.Ldobj, t);
 									elem.EmitBox(ilGenerator);
@@ -1679,7 +1578,7 @@ class Compiler
 							TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 2);
 							if(tw.IsUnloadable)
 							{
-								ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
+								ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 								ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
 								ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicAastore"));
 							}
@@ -1688,7 +1587,7 @@ class Compiler
 								TypeWrapper elem = tw.ElementTypeWrapper;
 								if(elem.IsNonPrimitiveValueType)
 								{
-									Type t = elem.Type;
+									Type t = elem.TypeAsTBD;
 									LocalBuilder local = ilGenerator.DeclareLocal(typeof(object));
 									ilGenerator.Emit(OpCodes.Stloc, local);
 									ilGenerator.Emit(OpCodes.Ldelema, t);
@@ -2412,7 +2311,7 @@ class Compiler
 					if(tw.IsUnloadable || (args[i].IsInterfaceOrInterfaceArray && !tw.IsAssignableTo(args[i])))
 					{
 						// TODO ideally, instead of an InvalidCastException, the castclass should throw a IncompatibleClassChangeError
-						ilGenerator.Emit(OpCodes.Castclass, args[i].Type);
+						ilGenerator.Emit(OpCodes.Castclass, args[i].TypeAsTBD);
 					}
 				}
 				dh.Store(i);
@@ -2453,7 +2352,7 @@ class Compiler
 							}
 							else
 							{
-								ilGenerator.Emit(OpCodes.Unbox, args[i].Type);
+								ilGenerator.Emit(OpCodes.Unbox, args[i].TypeAsTBD);
 							}
 						}
 						else if(ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsUnloadable)
@@ -2477,11 +2376,11 @@ class Compiler
 			TypeWrapper fieldTypeWrapper = cpi.GetFieldType(classLoader);
 			if(write && !fieldTypeWrapper.IsUnloadable && fieldTypeWrapper.IsPrimitive)
 			{
-				ilGenerator.Emit(OpCodes.Box, fieldTypeWrapper.Type);
+				ilGenerator.Emit(OpCodes.Box, fieldTypeWrapper.TypeAsTBD);
 			}
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Name);
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
-			ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
+			ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 			ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 			switch(bytecode)
 			{
@@ -2547,7 +2446,7 @@ class Compiler
 								TypeWrapper val = ma.GetRawStackTypeWrapper(i, 0);
 								if(!tw.IsUnloadable && (val.IsUnloadable || (tw.IsInterfaceOrInterfaceArray && !tw.IsGhost && !val.IsAssignableTo(tw))))
 								{
-									ilGenerator.Emit(OpCodes.Castclass, tw.Type);
+									ilGenerator.Emit(OpCodes.Castclass, tw.TypeAsTBD);
 								}
 								field.EmitSet.Emit(ilGenerator);
 								return;
@@ -2619,7 +2518,7 @@ class Compiler
 			{
 				if(args[i].IsPrimitive)
 				{
-					ilGenerator.Emit(OpCodes.Box, args[i].Type);
+					ilGenerator.Emit(OpCodes.Box, args[i].TypeAsTBD);
 				}
 				ilGenerator.Emit(OpCodes.Stloc, val);
 				ilGenerator.Emit(OpCodes.Ldloc, argarray);
@@ -2627,7 +2526,7 @@ class Compiler
 				ilGenerator.Emit(OpCodes.Ldloc, val);
 				ilGenerator.Emit(OpCodes.Stelem_Ref);
 			}
-			ilGenerator.Emit(OpCodes.Ldtoken, wrapper.Type);
+			ilGenerator.Emit(OpCodes.Ldtoken, wrapper.TypeAsTBD);
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Class);
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Name);
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
@@ -2650,12 +2549,12 @@ class Compiler
 		else if(typeWrapper.IsPrimitive)
 		{
 			// NOTE we don't need to use TypeWrapper.EmitUnbox, because the return value cannot be null
-			ilgen.Emit(OpCodes.Unbox, typeWrapper.Type);
-			ilgen.Emit(OpCodes.Ldobj, typeWrapper.Type);
+			ilgen.Emit(OpCodes.Unbox, typeWrapper.TypeAsTBD);
+			ilgen.Emit(OpCodes.Ldobj, typeWrapper.TypeAsTBD);
 		}
 		else
 		{
-			ilgen.Emit(OpCodes.Castclass, typeWrapper.Type);
+			ilgen.Emit(OpCodes.Castclass, typeWrapper.TypeAsTBD);
 		}
 	}
 

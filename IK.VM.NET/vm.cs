@@ -146,24 +146,39 @@ public class JVM
 		private Hashtable classes;
 		private string assembly;
 		private string path;
+        private string keyfilename;
+        private string version;
+        private bool targetIsModule;
 		private AssemblyBuilder assemblyBuilder;
 
-		internal CompilerClassLoader(string path, string assembly, Hashtable classes)
+		internal CompilerClassLoader(string path, string keyfilename, string version, bool targetIsModule, string assembly, Hashtable classes)
 			: base(null)
 		{
 			this.classes = classes;
 			this.assembly = assembly;
 			this.path = path;
+            this.targetIsModule = targetIsModule;
+            this.version = version;
+            this.keyfilename = keyfilename;
 		}
 
 		protected override ModuleBuilder CreateModuleBuilder()
 		{
 			AssemblyName name = new AssemblyName();
 			name.Name = assembly;
+			if(keyfilename != null) 
+			{
+				using(FileStream stream = File.Open(keyfilename, FileMode.Open))
+				{
+					name.KeyPair = new StrongNameKeyPair(stream);
+				}
+			}
+			name.Version = new Version(version);
 			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
-			CustomAttributeBuilder ikvmAssemblyAttr = new CustomAttributeBuilder(typeof(JavaAssemblyAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
-			assemblyBuilder.SetCustomAttribute(ikvmAssemblyAttr);
-			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(assembly, path, JVM.Debug);
+			CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeof(JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+			ModuleBuilder moduleBuilder;
+			moduleBuilder = assemblyBuilder.DefineDynamicModule(assembly, path, JVM.Debug);
+			moduleBuilder.SetCustomAttribute(ikvmModuleAttr);
 			if(JVM.Debug)
 			{
 				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, true });
@@ -213,7 +228,17 @@ public class JVM
 		internal void Save()
 		{
 			FinishAll();
-			assemblyBuilder.Save(path);
+
+			if(targetIsModule)
+			{
+				string manifestAssembly = "temp.$$$";
+				assemblyBuilder.Save(manifestAssembly);
+				File.Delete(manifestAssembly);
+			}
+			else
+			{
+				assemblyBuilder.Save(path);
+			}
 		}
 
 		internal void AddResources(Hashtable resources)
@@ -231,7 +256,7 @@ public class JVM
 		}
 	}
 
-	public static void Compile(string path, string assembly, string mainClass, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude)
+	public static void Compile(string path, string keyfilename, string version, bool targetIsModule, string assembly, string mainClass, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude)
 	{
 		isStaticCompiler = true;
 		noJniStubs = nojni;
@@ -290,11 +315,31 @@ public class JVM
 
 		if(path == null)
 		{
-			path = assembly + (target == PEFileKinds.Dll ? ".dll" : ".exe");
+			if(target == PEFileKinds.Dll)
+			{
+				if(targetIsModule)
+				{
+					path = assembly + ".netmodule";
+				}
+				else
+				{
+					path = assembly + ".dll";
+				}
+			}
+			else
+			{
+				path = assembly + ".exe";
+			}
 			Console.Error.WriteLine("Note: output file is: {0}", path);
 		}
 
-		if(target == PEFileKinds.Dll && !path.ToLower().EndsWith(".dll"))
+		if(targetIsModule)
+		{
+			// TODO if we're overwriting a user specified assembly name, we need to emit a warning
+			assembly = path;
+		}
+
+		if(target == PEFileKinds.Dll && !path.ToLower().EndsWith(".dll") && !targetIsModule)
 		{
 			Console.Error.WriteLine("Error: library output file must end with .dll");
 			return;
@@ -343,7 +388,7 @@ public class JVM
 		}
 
 		Console.WriteLine("Constructing compiler");
-		CompilerClassLoader loader = new CompilerClassLoader(path, assembly, h);
+		CompilerClassLoader loader = new CompilerClassLoader(path, keyfilename, version, targetIsModule, assembly, h);
 		ClassLoaderWrapper.SetBootstrapClassLoader(loader);
 		compilationPhase1 = true;
 		Console.WriteLine("Loading remapped types (1)");

@@ -31,7 +31,7 @@ public sealed class JniHelper
 	// NOTE sig contains slashed class names
 	public static IntPtr GetMethodCookie(object clazz, string name, string sig, bool isStatic)
 	{
-		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.VMClass.getType(clazz));
+		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
 		wrapper.Finish();
 		MethodWrapper mw = wrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(wrapper.GetClassLoader(), name, sig.Replace('/', '.')), true);
 		if(mw != null)
@@ -87,7 +87,7 @@ public sealed class JniHelper
 	// NOTE sig contains slashed class names
 	public static IntPtr GetFieldCookie(object clazz, string name, string sig, bool isStatic)
 	{
-		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.VMClass.getType(clazz));
+		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
 		wrapper.Finish();
 		// TODO GetFieldWrapper should take sig (what about searching the base classes?)
 		FieldWrapper fw = wrapper.GetFieldWrapper(name);

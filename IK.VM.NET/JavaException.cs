@@ -32,7 +32,7 @@ sealed class JavaException
 	{
 		TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(clazz);
 		tw.Finish();
-		return tw.Type;
+		return tw.TypeAsTBD;
 	}
 
 	internal static Exception ClassFormatError(string s, params object[] args)
@@ -168,5 +168,10 @@ sealed class JavaException
 	internal static Exception NoSuchFieldError(string s, params object[] args)
 	{
 		return (Exception)Activator.CreateInstance(Load("java.lang.NoSuchFieldError"), new object[] { String.Format(s, args) });
+	}
+
+	internal static Exception InstantiationError(string s, params object[] args)
+	{
+		return (Exception)Activator.CreateInstance(Load("java.lang.InstantiationError"), new object[] { String.Format(s, args) });
 	}
 }

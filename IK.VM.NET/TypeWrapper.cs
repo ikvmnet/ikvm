@@ -188,7 +188,7 @@ sealed class MethodDescriptor
 				type = type.Assembly.GetType(type.GetElementType().FullName + "[]", true);
 				// TODO test type for unsupported types
 			}
-			name = GetSigNameFromType(type);
+			name = TypeWrapper.GetSigNameFromType(type);
 			typeWrapper = ClassLoaderWrapper.GetWrapperFromType(type);
 		}
 	}
@@ -202,7 +202,7 @@ sealed class MethodDescriptor
 		}
 		else
 		{
-			name = GetSigNameFromType(type);
+			name = TypeWrapper.GetSigNameFromType(type);
 			typeWrapper = ClassLoaderWrapper.GetWrapperFromType(type);
 		}
 	}
@@ -214,7 +214,7 @@ sealed class MethodDescriptor
 		{
 			return GetSigNameFromCustomAttribute(field);
 		}
-		return GetSigNameFromType(type);
+		return TypeWrapper.GetSigNameFromType(type);
 	}
 
 	private static void CrackSigFromCustomAttribute(ICustomAttributeProvider provider, out string name, out TypeWrapper typeWrapper)
@@ -259,62 +259,6 @@ sealed class MethodDescriptor
 			}
 		}
 		return "Ljava.lang.Object;";
-	}
-
-	private static string GetSigNameFromType(Type type)
-	{
-		if(type.IsValueType)
-		{
-			if(type == typeof(void))
-			{
-				return "V";
-			}
-			else if(type == typeof(bool))
-			{
-				return "Z";
-			}
-			else if(type == typeof(sbyte))
-			{
-				return "B";
-			}
-			else if(type == typeof(char))
-			{
-				return "C";
-			}
-			else if(type == typeof(short))
-			{
-				return "S";
-			}
-			else if(type == typeof(int))
-			{
-				return "I";
-			}
-			else if(type == typeof(long))
-			{
-				return "J";
-			}
-			else if(type == typeof(float))
-			{
-				return "F";
-			}
-			else if(type == typeof(double))
-			{
-				return "D";
-			}
-			else
-			{
-				return "L" + type.FullName + ";";
-			}
-		}
-		else
-		{
-			string s = NativeCode.java.lang.VMClass.getName(type);
-			if(s[0] != '[')
-			{
-				s = "L" + s + ";";
-			}
-			return s;
-		}
 	}
 
 	// TODO ensure that FromMethodBase is only used on statically compiled Java types, and
@@ -515,7 +459,7 @@ class AttributeHelper
 
 	internal static void ImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper ifaceWrapper)
 	{
-		Type iface = ifaceWrapper.Type;
+		Type iface = ifaceWrapper.TypeAsTBD;
 		if(implementsAttribute == null)
 		{
 			implementsAttribute = typeof(ImplementsAttribute).GetConstructor(new Type[] { typeof(Type) });
@@ -778,7 +722,7 @@ abstract class TypeWrapper
 	{
 		get
 		{
-			return this != VerifierTypeWrapper.Null && !IsPrimitive && !IsGhost && Type.IsValueType;
+			return this != VerifierTypeWrapper.Null && !IsPrimitive && !IsGhost && TypeAsTBD.IsValueType;
 		}
 	}
 
@@ -1054,7 +998,7 @@ abstract class TypeWrapper
 		return false;
 	}
 
-	public abstract Type Type
+	public abstract Type TypeAsTBD
 	{
 		get;
 	}
@@ -1063,7 +1007,7 @@ abstract class TypeWrapper
 	{
 		get
 		{
-			TypeBuilder typeBuilder = Type as TypeBuilder;
+			TypeBuilder typeBuilder = TypeAsTBD as TypeBuilder;
 			Debug.Assert(typeBuilder != null);
 			return typeBuilder;
 		}
@@ -1095,7 +1039,7 @@ abstract class TypeWrapper
 				}
 				return Type.GetType(type, true);
 			}
-			return Type;
+			return TypeAsTBD;
 		}
 	}
 
@@ -1103,7 +1047,7 @@ abstract class TypeWrapper
 	{
 		get
 		{
-			return Type;
+			return TypeAsTBD;
 		}
 	}
 
@@ -1130,10 +1074,11 @@ abstract class TypeWrapper
 				}
 				return Type.GetType(type, true);
 			}
-			return Type;
+			return TypeAsTBD;
 		}
 	}
 
+	/** <summary>Use this if the type is used as an array or array element</summary> */
 	internal Type TypeAsArrayType
 	{
 		get
@@ -1152,7 +1097,7 @@ abstract class TypeWrapper
 				}
 				return Type.GetType(type, true);
 			}
-			return Type;
+			return TypeAsTBD;
 		}
 	}
 
@@ -1164,7 +1109,7 @@ abstract class TypeWrapper
 			{
 				return typeof(Exception);
 			}
-			return Type;
+			return TypeAsTBD;
 		}
 	}
 
@@ -1181,23 +1126,24 @@ abstract class TypeWrapper
 		get
 		{
 			Debug.Assert(!this.IsUnloadable);
+			Debug.Assert(this.IsArray);
 
 			if(this == VerifierTypeWrapper.Null)
 			{
 				return VerifierTypeWrapper.Null;
 			}
-			if(name[0] != '[')
-			{
-				throw new InvalidOperationException(name);
-			}
+
 			// TODO consider caching the element type
 			switch(name[1])
 			{
 				case '[':
-					// TODO are we allowed to trigger class loading here?
-					return classLoader.LoadClassByDottedName(name.Substring(1));
+					// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
+					// (because the ultimate element type was already loaded when this type was created)
+					return classLoader.LoadClassByDottedNameFast(name.Substring(1));
 				case 'L':
-					return classLoader.LoadClassByDottedName(name.Substring(2, name.Length - 3));
+					// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
+					// (because the ultimate element type was already loaded when this type was created)
+					return classLoader.LoadClassByDottedNameFast(name.Substring(2, name.Length - 3));
 				case 'Z':
 					return PrimitiveTypeWrapper.BOOLEAN;
 				case 'B':
@@ -1222,7 +1168,8 @@ abstract class TypeWrapper
 
 	internal TypeWrapper MakeArrayType(int rank)
 	{
-		return GetClassLoader().LoadClassByDottedName(new String('[', rank) + this.SigName);
+		// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
+		return GetClassLoader().LoadClassByDottedNameFast(new String('[', rank) + this.SigName);
 	}
 
 	public bool ImplementsInterface(TypeWrapper interfaceWrapper)
@@ -1380,7 +1327,7 @@ abstract class TypeWrapper
 				ilGenerator.Emit(OpCodes.Ret);
 				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
 			}
-			else if(mce.DeclaringType.Type.Assembly != typeBuilder.Assembly)
+			else if(mce.DeclaringType.TypeAsTBD.Assembly != typeBuilder.Assembly)
 			{
 				// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
 				// interface methods, so we have to generate a stub here that doesn't do anything but call the base
@@ -1472,11 +1419,10 @@ abstract class TypeWrapper
 
 	internal void ImplementInterfaceMethodStubs(TypeBuilder typeBuilder, DynamicTypeWrapper wrapper, Hashtable doneSet)
 	{
+		Debug.Assert(this.IsInterface);
+
 		// TODO interfaces that implement other interfaces need to be handled as well...
-		if(!IsInterface)
-		{
-			throw new InvalidOperationException();
-		}
+
 		// make sure we don't do the same method twice
 		if(doneSet.ContainsKey(this))
 		{
@@ -1490,7 +1436,7 @@ abstract class TypeWrapper
 		// of these (ab)use the methods hashtable to obtain a list of methods
 		// NOTE since the types have been finished, we know for sure that all methods
 		// are in fact in the methods cache
-		if(Type.Assembly is AssemblyBuilder || this is RemappedTypeWrapper)
+		if(TypeAsTBD.Assembly is AssemblyBuilder || this is RemappedTypeWrapper)
 		{
 			foreach(MethodWrapper method in methods.Values)
 			{
@@ -1537,11 +1483,16 @@ abstract class TypeWrapper
 		}
 	}
 
+	internal void RunClassInit()
+	{
+		System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(TypeAsTBD.TypeHandle);
+	}
+
 	internal void EmitUnbox(ILGenerator ilgen)
 	{
 		Debug.Assert(this.IsNonPrimitiveValueType);
 
-		Type type = this.Type;
+		Type type = this.TypeAsTBD;
 		// NOTE if the reference is null, we treat it as a default instance of the value type.
 		ilgen.Emit(OpCodes.Dup);
 		Label label1 = ilgen.DefineLabel();
@@ -1560,7 +1511,7 @@ abstract class TypeWrapper
 	{
 		Debug.Assert(this.IsNonPrimitiveValueType);
 
-		ilgen.Emit(OpCodes.Box, this.Type);
+		ilgen.Emit(OpCodes.Box, this.TypeAsTBD);
 	}
 
 	// NOTE sourceType is only used for special types (e.g. interfaces), it is *not* used to automatically
@@ -1573,7 +1524,7 @@ abstract class TypeWrapper
 			// for any interface reference
 			if(IsInterfaceOrInterfaceArray && (sourceType.IsUnloadable || !sourceType.IsAssignableTo(this)))
 			{
-				ilgen.Emit(OpCodes.Castclass, Type);
+				ilgen.Emit(OpCodes.Castclass, TypeAsTBD);
 			}
 			else if(IsNonPrimitiveValueType)
 			{
@@ -1611,6 +1562,155 @@ abstract class TypeWrapper
 			ilgen.Emit(OpCodes.Ldfld, GhostRefField);
 		}
 	}
+
+	internal virtual void EmitCheckcast(TypeWrapper context, ILGenerator ilgen)
+	{
+		if(IsGhost)
+		{
+			ilgen.Emit(OpCodes.Dup);
+			// TODO make sure we get the right "Cast" method and cache it
+			ilgen.Emit(OpCodes.Call, TypeAsTBD.GetMethod("Cast"));
+			ilgen.Emit(OpCodes.Pop);
+		}
+		else if(IsGhostArray)
+		{
+			string brackets = "[]";
+			TypeWrapper element = ElementTypeWrapper;
+			while(element.IsArray)
+			{
+				brackets += "[]";
+				element = element.ElementTypeWrapper;
+			}
+			TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(element);
+			Type[] implementerTypes = new Type[implementers.Length];
+			for(int j = 0; j < implementers.Length; j++)
+			{
+				implementerTypes[j] = implementers[j].TypeAsTBD.Module.GetType(implementers[j].TypeAsTBD.FullName + brackets);
+			}
+			Label end = ilgen.DefineLabel();
+			for(int j = 0; j < implementerTypes.Length; j++)
+			{
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Isinst, implementerTypes[j]);
+				ilgen.Emit(OpCodes.Brtrue, end);
+			}
+			// TODO once we "fix" array instantiation this should ever occur
+			ilgen.Emit(OpCodes.Castclass, TypeAsTBD);
+			ilgen.MarkLabel(end);
+		}
+		else
+		{
+			ilgen.Emit(OpCodes.Castclass, TypeAsTBD);
+		}
+	}
+
+	internal virtual void EmitInstanceOf(TypeWrapper context, ILGenerator ilgen)
+	{
+		if(IsGhost)
+		{
+			// TODO make sure we get the right "IsInstance" method and cache it
+			ilgen.Emit(OpCodes.Call, TypeAsTBD.GetMethod("IsInstance"));
+		}
+		else if(IsGhostArray)
+		{
+			string brackets = "[]";
+			TypeWrapper element = ElementTypeWrapper;
+			while(element.IsArray)
+			{
+				brackets += "[]";
+				element = element.ElementTypeWrapper;
+			}
+			TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(element);
+			Type[] implementerTypes = new Type[implementers.Length];
+			for(int j = 0; j < implementers.Length; j++)
+			{
+				implementerTypes[j] = implementers[j].TypeAsTBD.Module.GetType(implementers[j].TypeAsTBD.FullName + brackets);
+			}
+			Label end = ilgen.DefineLabel();
+			for(int j = 0; j < implementerTypes.Length; j++)
+			{
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Isinst, implementerTypes[j]);
+				Label label = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Brfalse_S, label);
+				ilgen.Emit(OpCodes.Pop);
+				ilgen.Emit(OpCodes.Ldc_I4_1);
+				ilgen.Emit(OpCodes.Br, end);
+				ilgen.MarkLabel(label);
+			}
+			// TODO once we "fix" array instantiation this should ever occur
+			ilgen.Emit(OpCodes.Isinst, TypeAsTBD);
+			ilgen.Emit(OpCodes.Ldnull);
+			ilgen.Emit(OpCodes.Ceq);
+			ilgen.Emit(OpCodes.Ldc_I4_0);
+			ilgen.Emit(OpCodes.Ceq);
+			ilgen.MarkLabel(end);
+		}
+		else
+		{
+			ilgen.Emit(OpCodes.Isinst, TypeAsTBD);
+			ilgen.Emit(OpCodes.Ldnull);
+			ilgen.Emit(OpCodes.Ceq);
+			ilgen.Emit(OpCodes.Ldc_I4_0);
+			ilgen.Emit(OpCodes.Ceq);
+		}
+	}
+
+	internal static string GetSigNameFromType(Type type)
+	{
+		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
+
+		if(wrapper != null)
+		{
+			return wrapper.SigName;
+		}
+
+		if(type.IsArray)
+		{
+			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			while(type.IsArray)
+			{
+				sb.Append('[');
+				type = type.GetElementType();
+			}
+			return sb.Append(GetSigNameFromType(type)).ToString();
+		}
+
+		string s = TypeWrapper.GetNameFromType(type);
+		if(s[0] != '[')
+		{
+			s = "L" + s + ";";
+		}
+		return s;
+	}
+
+	// NOTE returns null for primitive types
+	internal static string GetNameFromType(Type type)
+	{
+		TypeWrapper.AssertFinished(type);
+
+		if(type.IsArray)
+		{
+			return GetSigNameFromType(type);
+		}
+
+		// first we check if a wrapper exists, because if it does we must use the name from the wrapper to
+		// make sure that remapped types return the proper name
+		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
+		if(wrapper != null)
+		{
+			return wrapper.Name;
+		}
+
+		if(type.Module.IsDefined(typeof(JavaModuleAttribute), false))
+		{
+			return CompiledTypeWrapper.GetName(type);
+		}
+		else
+		{
+			return DotNetTypeWrapper.GetName(type);
+		}
+	}
 }
 
 class UnloadableTypeWrapper : TypeWrapper
@@ -1630,7 +1730,7 @@ class UnloadableTypeWrapper : TypeWrapper
 		throw new InvalidOperationException("GetMethodImpl called on UnloadableTypeWrapper: " + Name);
 	}
 
-	public override Type Type
+	public override Type TypeAsTBD
 	{
 		get
 		{
@@ -1665,6 +1765,20 @@ class UnloadableTypeWrapper : TypeWrapper
 	public override void Finish()
 	{
 		throw new InvalidOperationException("Finish called on UnloadableTypeWrapper: " + Name);
+	}
+
+	internal override void EmitCheckcast(TypeWrapper context, ILGenerator ilgen)
+	{
+		ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
+		ilgen.Emit(OpCodes.Ldstr, Name);
+		ilgen.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicCast"));
+	}
+
+	internal override void EmitInstanceOf(TypeWrapper context, ILGenerator ilgen)
+	{
+		ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
+		ilgen.Emit(OpCodes.Ldstr, Name);
+		ilgen.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicInstanceOf"));
 	}
 }
 
@@ -1703,7 +1817,7 @@ class PrimitiveTypeWrapper : TypeWrapper
 		return ClassLoaderWrapper.GetBootstrapClassLoader();
 	}
 
-	public override Type Type
+	public override Type TypeAsTBD
 	{
 		get
 		{
@@ -1850,7 +1964,7 @@ class DynamicTypeWrapper : TypeWrapper
 		}
 	}
 
-	public override Type Type
+	public override Type TypeAsTBD
 	{
 		get
 		{
@@ -2013,10 +2127,10 @@ class DynamicTypeWrapper : TypeWrapper
 
 		private static string GetInnerClassName(string outer, string inner)
 		{
-			if(inner.Length <= (outer.Length + 1) || inner[outer.Length] != '$' || inner.IndexOf('$', outer.Length + 1) >= 0)
-			{
-				throw new InvalidOperationException(string.Format("Inner class name {0} is not well formed wrt outer class {1}", inner, outer));
-			}
+			Debug.Assert(inner.Length > outer.Length + 1);
+			Debug.Assert(inner[outer.Length] == '$');
+			Debug.Assert(inner.IndexOf('$', outer.Length + 1) == -1);
+
 			return inner.Substring(outer.Length + 1);
 		}
 
@@ -2026,7 +2140,7 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				for(int i = 0; i < caller.Length; i++)
 				{
-					if(caller[i].Type == typeof(sbyte[]) && callee[i].Type == typeof(byte[]))
+					if(caller[i].TypeAsParameterType == typeof(sbyte[]) && callee[i].TypeAsParameterType == typeof(byte[]))
 					{
 						// special case for byte array cheating...
 					}
@@ -2354,7 +2468,7 @@ class DynamicTypeWrapper : TypeWrapper
 						parent = parent.BaseTypeWrapper;
 					}
 				}
-				bool basehasclinit = (wrapper.BaseTypeWrapper == null) ? false : wrapper.BaseTypeWrapper.Type.TypeInitializer != null;
+				bool basehasclinit = (wrapper.BaseTypeWrapper == null) ? false : wrapper.BaseTypeWrapper.TypeAsTBD.TypeInitializer != null;
 				bool hasclinit = false;
 				for(int i = 0; i < methods.Length; i++)
 				{
@@ -2408,7 +2522,7 @@ class DynamicTypeWrapper : TypeWrapper
 								}
 							}
 							// see if there exists a NativeCode class for this type
-							Type nativeCodeType = Type.GetType("NativeCode." + classFile.Name);
+							Type nativeCodeType = Type.GetType("NativeCode." + classFile.Name.Replace('$', '+'));
 							MethodInfo nativeMethod = null;
 							TypeWrapper[] args = m.GetArgTypes(wrapper.GetClassLoader());
 							if(nativeCodeType != null)
@@ -2451,9 +2565,9 @@ class DynamicTypeWrapper : TypeWrapper
 								}
 								ilGenerator.Emit(OpCodes.Call, nativeMethod);
 								TypeWrapper retTypeWrapper = m.GetRetType(wrapper.GetClassLoader());
-								if(!retTypeWrapper.Type.Equals(nativeMethod.ReturnType) && !retTypeWrapper.IsGhost)
+								if(!retTypeWrapper.TypeAsTBD.Equals(nativeMethod.ReturnType) && !retTypeWrapper.IsGhost)
 								{
-									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
+									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsTBD);
 								}
 								ilGenerator.Emit(OpCodes.Ret);
 							}
@@ -2676,7 +2790,7 @@ class DynamicTypeWrapper : TypeWrapper
 				else
 				{
 					ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-					ilGenerator.Emit(OpCodes.Ldtoken, wrapper.Type);
+					ilGenerator.Emit(OpCodes.Ldtoken, wrapper.TypeAsTBD);
 					ilGenerator.Emit(OpCodes.Call, getTypeFromHandle);
 					ilGenerator.Emit(OpCodes.Call, getClassFromType);
 					ilGenerator.Emit(OpCodes.Call, makeLocalRef);
@@ -2700,7 +2814,7 @@ class DynamicTypeWrapper : TypeWrapper
 					}
 				}
 				ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
-				ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retTypeWrapper.IsPrimitive) ? retTypeWrapper.Type : typeof(IntPtr), modargs);
+				ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retTypeWrapper.IsPrimitive) ? retTypeWrapper.TypeAsParameterType : typeof(IntPtr), modargs);
 				LocalBuilder retValue = null;
 				if(retTypeWrapper != PrimitiveTypeWrapper.VOID)
 				{
@@ -2713,7 +2827,7 @@ class DynamicTypeWrapper : TypeWrapper
 						}
 						else if(!retTypeWrapper.IsGhost)
 						{
-							ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
+							ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsTBD);
 						}
 					}
 					retValue = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
@@ -3112,20 +3226,6 @@ class DynamicTypeWrapper : TypeWrapper
 									explicitOverride = false;
 									break;
 								}
-								// if our method's accessibility is less than the method it overrides, we
-								// need to make our method more accessible, because the CLR doesn't allow reducing access
-								if((attribs & MethodAttributes.Public) == 0)
-								{
-									attribs &= ~MethodAttributes.MemberAccessMask;
-									if(baseMce.IsPublic)
-									{
-										attribs |= MethodAttributes.Public;
-									}
-									else
-									{
-										attribs |= MethodAttributes.FamORAssem;
-									}
-								}
 								baseMethod = baseMce.GetMethod();
 								break;
 							}
@@ -3495,6 +3595,7 @@ class RemappedTypeWrapper : TypeWrapper
 					MethodBase mb = type.GetMethod(name, binding, null, CallingConventions.Standard, md.ArgTypes, null);
 					if(mb == null)
 					{
+						// TODO better error handling
 						throw new InvalidOperationException("declared method: " + Name + "." + name + sig + " not found");
 					}
 					MethodWrapper mw = MethodWrapper.Create(this, md, mb, mb, modifiers, false);
@@ -3517,6 +3618,7 @@ class RemappedTypeWrapper : TypeWrapper
 							method.invokestatic != null ||
 							method.@override != null)
 						{
+							// TODO better error handling
 							throw new InvalidOperationException();
 						}
 						if(method.redirect.Name != null)
@@ -3556,7 +3658,7 @@ class RemappedTypeWrapper : TypeWrapper
 							}
 							else
 							{
-								redirect = tw.Type.GetMethod(name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+								redirect = tw.TypeAsTBD.GetMethod(name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
 							}
 						}
 						else
@@ -3565,6 +3667,7 @@ class RemappedTypeWrapper : TypeWrapper
 						}
 						if(redirect == null)
 						{
+							// TODO better error handling
 							throw new InvalidOperationException("remapping method: " + name + sig + " not found");
 						}
 						string ret = md.Signature.Substring(md.Signature.IndexOf(')') + 1);
@@ -3578,7 +3681,7 @@ class RemappedTypeWrapper : TypeWrapper
 							}
 							retcast = new ReturnCastEmitter(ClassLoaderWrapper.LoadClassCritical(ret));
 						}
-						if(BaseTypeWrapper != null && !Type.IsSealed)
+						if(BaseTypeWrapper != null && !TypeAsBaseType.IsSealed)
 						{
 							MethodWrapper mce1 = BaseTypeWrapper.GetMethodWrapper(md, true);
 							if(mce1 != null)
@@ -3617,6 +3720,7 @@ class RemappedTypeWrapper : TypeWrapper
 							overrideMethod = type.GetMethod(method.@override.Name, binding, null, CallingConventions.Standard, GetClassLoader().ArgTypeListFromSig(sig), null);
 							if(overrideMethod == null)
 							{
+								// TODO better error handling
 								throw new InvalidOperationException("Override method not found: " + Name + "." + name + sig);
 							}
 						}
@@ -3690,6 +3794,7 @@ class RemappedTypeWrapper : TypeWrapper
 					MethodBase method = type.GetConstructor(binding, null, CallingConventions.Standard, md.ArgTypes, null);
 					if(method == null)
 					{
+						// TODO better error handling
 						throw new InvalidOperationException("declared constructor: " + classMap.Name + constructor.Sig + " not found");
 					}
 					MethodWrapper mw = MethodWrapper.Create(this, md, method, method, modifiers, false);
@@ -3706,6 +3811,7 @@ class RemappedTypeWrapper : TypeWrapper
 					{
 						if(constructor.invokespecial != null || constructor.newobj != null)
 						{
+							// TODO better error handling
 							throw new InvalidOperationException();
 						}
 						string sig = constructor.Sig;
@@ -3722,6 +3828,7 @@ class RemappedTypeWrapper : TypeWrapper
 							{
 								// NOTE only final classes can have constructors redirected to static methods,
 								// because we don't have support for making the distinction between new and invokespecial
+								// TODO better error handling
 								throw new InvalidOperationException();
 							}
 						}
@@ -3747,11 +3854,11 @@ class RemappedTypeWrapper : TypeWrapper
 							{
 								if(constructor.redirect.Name != null)
 								{
-									redirect = tw.Type.GetMethod(constructor.redirect.Name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+									redirect = tw.TypeAsTBD.GetMethod(constructor.redirect.Name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
 								}
 								else
 								{
-									redirect = tw.Type.GetConstructor(binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+									redirect = tw.TypeAsTBD.GetConstructor(binding, null, CallingConventions.Standard, redir.ArgTypes, null);
 								}
 							}
 						}
@@ -3768,6 +3875,7 @@ class RemappedTypeWrapper : TypeWrapper
 						}
 						if(redirect == null)
 						{
+							// TODO better error handling
 							throw new InvalidOperationException("remapping constructor: " + classMap.Name + constructor.Sig + " not found");
 						}
 						string ret = md.Signature.Substring(md.Signature.IndexOf(')') + 1);
@@ -3821,6 +3929,7 @@ class RemappedTypeWrapper : TypeWrapper
 				{
 					if(field.Constant == null || (modifiers & (Modifiers.Static | Modifiers.Final)) != (Modifiers.Static | Modifiers.Final))
 					{
+						// TODO better error handling
 						throw new InvalidOperationException();
 					}
 					// we got a constant (literal) field
@@ -3867,6 +3976,7 @@ class RemappedTypeWrapper : TypeWrapper
 						MethodWrapper method = tw.GetMethodWrapper(redir, false);
 						if(method == null)
 						{
+							// TODO better error handling
 							throw new InvalidOperationException("remapping method: " + name + sig + " not found");
 						}
 						getter = method.EmitCall;
@@ -3876,6 +3986,7 @@ class RemappedTypeWrapper : TypeWrapper
 						MethodInfo method = type.GetMethod(name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
 						if(method == null)
 						{
+							// TODO better error handling
 							throw new InvalidOperationException("remapping method: " + name + sig + " not found");
 						}
 						getter = CodeEmitter.Create(OpCodes.Call, method);
@@ -3893,6 +4004,7 @@ class RemappedTypeWrapper : TypeWrapper
 						}
 						else
 						{
+							// TODO better error handling
 							throw new InvalidOperationException("invalid field sig: " + fieldSig);
 						}
 					}
@@ -4013,7 +4125,7 @@ class RemappedTypeWrapper : TypeWrapper
 		}
 	}
 
-	public override Type Type
+	public override Type TypeAsTBD
 	{
 		get
 		{
@@ -4113,8 +4225,8 @@ class RemappedTypeWrapper : TypeWrapper
 						{
 							twInterface.Finish();
 							twHelper.Finish();
-							virtualsInterface = twInterface.Type;
-							virtualsHelperHack = twHelper.Type;
+							virtualsInterface = twInterface.TypeAsTBD;
+							virtualsHelperHack = twHelper.TypeAsTBD;
 						}
 					}
 					catch(Exception)
@@ -4134,7 +4246,7 @@ class RemappedTypeWrapper : TypeWrapper
 						MethodBuilder ifmethod = typeBuilder.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 						Type[] args = new Type[md.ArgTypesForDefineMethod.Length + 1];
 						md.ArgTypesForDefineMethod.CopyTo(args, 1);
-						args[0] = this.Type;
+						args[0] = this.TypeAsTBD;
 						MethodBuilder mb = tbStaticHack.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Static, md.RetTypeForDefineMethod, args);
 						ILGenerator ilgen = mb.GetILGenerator();
 						ilgen.Emit(OpCodes.Ldarg_0);
@@ -4213,7 +4325,8 @@ class CompiledTypeWrapper : TypeWrapper
 
 	internal static string GetName(Type type)
 	{
-		Debug.Assert(type.Assembly.IsDefined(typeof(JavaAssemblyAttribute), false));
+		Debug.Assert(type.Module.IsDefined(typeof(JavaModuleAttribute), false));
+
 		if(type.IsDefined(typeof(HideFromReflectionAttribute), false))
 		{
 			return ClassLoaderWrapper.GetWrapperFromType(type.BaseType).Name;
@@ -4523,6 +4636,7 @@ class CompiledTypeWrapper : TypeWrapper
 			}
 			else
 			{
+				// TODO what does this mean?
 				throw new InvalidOperationException();
 			}
 			Modifiers modifiers = AttributeHelper.GetModifiers(field, false);
@@ -4530,6 +4644,7 @@ class CompiledTypeWrapper : TypeWrapper
 			MethodInfo setter = prop.GetSetMethod(true);
 			if(getter == null || setter != null)
 			{
+				// TODO what does this mean?
 				throw new InvalidOperationException();
 			}
 			return CreateFieldWrapper(modifiers, field.Name, field.FieldType, field, getter);
@@ -4612,7 +4727,7 @@ class CompiledTypeWrapper : TypeWrapper
 		// is a TypeBuilder
 		for(int i = 0; i < md.ArgCount; i++)
 		{
-			if(md.ArgTypeWrappers[i].IsUnloadable || IsBuilderType(md.ArgTypeWrappers[i].Type))
+			if(md.ArgTypeWrappers[i].IsUnloadable || IsBuilderType(md.ArgTypeWrappers[i].TypeAsTBD))
 			{
 				return null;
 			}
@@ -4649,7 +4764,7 @@ class CompiledTypeWrapper : TypeWrapper
 		return null;
 	}
 
-	public override Type Type
+	public override Type TypeAsTBD
 	{
 		get
 		{
@@ -4714,7 +4829,7 @@ class DotNetTypeWrapper : TypeWrapper
 	// E.g. GetName(typeof(object)) returns "cli.System.Object".
 	internal static string GetName(Type type)
 	{
-		Debug.Assert(!type.Assembly.IsDefined(typeof(JavaAssemblyAttribute), false), type.FullName);
+		Debug.Assert(!type.IsArray && !type.Module.IsDefined(typeof(JavaModuleAttribute), false));
 
 		if(type.IsDefined(typeof(NoPackagePrefixAttribute), false) || type.Assembly.IsDefined(typeof(NoPackagePrefixAttribute), false))
 		{
@@ -4807,7 +4922,7 @@ class DotNetTypeWrapper : TypeWrapper
 		Debug.Assert(!(type.IsPointer), type.FullName);
 		Debug.Assert(!(type.IsArray), type.FullName);
 		Debug.Assert(!(type is TypeBuilder), type.FullName);
-		Debug.Assert(!(type.Assembly.IsDefined(typeof(JavaAssemblyAttribute), false)));
+		Debug.Assert(!(type.Module.IsDefined(typeof(JavaModuleAttribute), false)));
 
 		this.type = type;
 	}
@@ -4822,7 +4937,7 @@ class DotNetTypeWrapper : TypeWrapper
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
 		{
 			// TODO map exceptions
-			return Delegate.CreateDelegate(DeclaringType.Type, args[0], "Invoke");
+			return Delegate.CreateDelegate(DeclaringType.TypeAsTBD, args[0], "Invoke");
 		}
 	}
 
@@ -4927,7 +5042,7 @@ class DotNetTypeWrapper : TypeWrapper
 					iface.Finish();
 					MethodDescriptor md = MethodDescriptor.FromNameSig(GetClassLoader(), "<init>", "(" + iface.SigName + ")V");
 					MethodWrapper method = new DelegateMethodWrapper(this, md);
-					method.EmitNewobj = new DelegateConstructorEmitter(type.GetConstructor(new Type[] { typeof(object), typeof(IntPtr) }), iface.Type.GetMethod("Invoke"));
+					method.EmitNewobj = new DelegateConstructorEmitter(type.GetConstructor(new Type[] { typeof(object), typeof(IntPtr) }), iface.TypeAsTBD.GetMethod("Invoke"));
 					AddMethod(method);
 					innerClasses = new TypeWrapper[] { iface };
 				}
@@ -5063,7 +5178,7 @@ class DotNetTypeWrapper : TypeWrapper
 		{
 			// remapped type cannot be instantiated, so it wouldn't make sense to implement
 			// interfaces
-			if(ClassLoaderWrapper.IsRemappedType(Type) && !Type.IsInterface)
+			if(ClassLoaderWrapper.IsRemappedType(TypeAsTBD) && !TypeAsTBD.IsInterface)
 			{
 				return TypeWrapper.EmptyArray;
 			}
@@ -5244,7 +5359,7 @@ class DotNetTypeWrapper : TypeWrapper
 				{
 					// HACK after constructing a new object, we don't want the custom boxing rule to run
 					// (because that would turn "new IntPtr" into a null reference)
-					method.EmitNewobj += CodeEmitter.Create(OpCodes.Box, this.Type);
+					method.EmitNewobj += CodeEmitter.Create(OpCodes.Box, this.TypeAsTBD);
 				}
 			}
 		}
@@ -5355,7 +5470,7 @@ class DotNetTypeWrapper : TypeWrapper
 		return null;
 	}
 
-	public override Type Type
+	public override Type TypeAsTBD
 	{
 		get
 		{
@@ -5446,7 +5561,7 @@ class ArrayTypeWrapper : TypeWrapper
 		}
 	}
 
-	public override Type Type
+	public override Type TypeAsTBD
 	{
 		get
 		{
@@ -5479,14 +5594,12 @@ class ArrayTypeWrapper : TypeWrapper
 
 	public override void Finish()
 	{
-		// TODO once we have upward notification (when element TypeWrappers have a reference to their containing arrays)
-		// we can optimize this
 		lock(this)
 		{
 			if(!IsFinished)
 			{
 				TypeWrapper elementTypeWrapper = ElementTypeWrapper;
-				Type elementType = elementTypeWrapper.Type;
+				Type elementType = elementTypeWrapper.TypeAsArrayType;
 				elementTypeWrapper.Finish();
 				type = elementType.Assembly.GetType(elementType.FullName + "[]", true);
 				ClassLoaderWrapper.SetWrapperForType(type, this);

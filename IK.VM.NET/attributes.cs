@@ -25,6 +25,11 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 
+[AttributeUsage(AttributeTargets.Module)]
+public sealed class JavaModuleAttribute : Attribute
+{
+}
+
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Assembly)]
 public sealed class NoPackagePrefixAttribute : Attribute
 {

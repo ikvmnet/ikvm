@@ -27,7 +27,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Collections;
 using OpenSystem.Java;
-using ClassHelper = NativeCode.java.lang.VMClass;
 using NetSystem = System;
 
 namespace NativeCode.java.lang
@@ -51,14 +50,9 @@ namespace NativeCode.java.lang
 			return false;
 		}
 
-		public static Type @typeof(object clazz)
-		{
-			return NativeCode.java.lang.VMClass.getType(clazz);
-		}
-
 		public static string getClassNameFromType(Type type)
 		{
-			return ClassHelper.getName(type);
+			return TypeWrapper.GetNameFromType(type);
 		}
 	}
 }
@@ -72,7 +66,7 @@ public class ExceptionHelper
 	{
 		TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.ExceptionHelper");
 		tw.Finish();
-		Type exceptionHelper = tw.Type;
+		Type exceptionHelper = tw.TypeAsTBD;
 		mapExceptionFastMethod = exceptionHelper.GetMethod("MapExceptionFast");
 		printStackTraceMethod = exceptionHelper.GetMethod("printStackTrace", new Type[] { typeof(Exception) });
 	}

@@ -470,7 +470,7 @@ class VirtualEmitter : CodeEmitter
 		{
 			Type[] args = new Type[md.ArgTypes.Length + 1];
 			md.ArgTypes.CopyTo(args, 1);
-			args[0] = wrapper.Type;
+			args[0] = wrapper.TypeAsTBD;
 			method = wrapper.VirtualsHelperHack.GetMethod(md.Name, BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, args, null);
 		}
 		ilgen.Emit(OpCodes.Call, method);

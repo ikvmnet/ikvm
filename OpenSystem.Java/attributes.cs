@@ -34,11 +34,6 @@ namespace OpenSystem.Java
 	{
 	}
 
-	[AttributeUsage(AttributeTargets.Assembly)]
-	public sealed class JavaAssemblyAttribute : Attribute
-	{
-	}
-
 	[Flags]
 	public enum Modifiers : ushort
 	{

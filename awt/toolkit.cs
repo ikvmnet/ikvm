@@ -84,10 +84,8 @@ namespace ikvm.awt
 		{
 			lock(typeof(NetToolkit))
 			{
-				if(bogusForm != null)
-				{
-					throw new InvalidOperationException();
-				}
+				System.Diagnostics.Debug.Assert(bogusForm == null);
+
 				Thread thread = new Thread(new ThreadStart(MessageLoop));
 				thread.Start();
 				// TODO don't use polling...

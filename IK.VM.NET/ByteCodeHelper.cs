@@ -57,7 +57,7 @@ public class ByteCodeHelper
 	public static object DynamicMultianewarray(RuntimeTypeHandle type, string clazz, int[] lengths)
 	{
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
-		return multianewarray(wrapper.Type.TypeHandle, lengths);
+		return multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
 	}
 
 	[StackTraceInfo(Hidden = true)]
@@ -135,21 +135,29 @@ public class ByteCodeHelper
 		GetFieldWrapper(null, type, clazz, name, sig, true).SetValue(null, val);
 	}
 
-	// the sole purpose of this method is to throw a NoClassDefFoundError if clazz cannot be loaded
+	// the sole purpose of this method is to check whether the clazz can be instantiated (but not to actually do it)
 	[StackTraceInfo(Hidden = true)]
-	public static void DynamicLoadClass(RuntimeTypeHandle type, string clazz)
+	public static void DynamicNewCheckOnly(RuntimeTypeHandle type, string clazz)
 	{
-		LoadTypeWrapper(type, clazz);
+		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
+		if(wrapper.IsAbstract || wrapper.IsInterface)
+		{
+			throw JavaException.InstantiationError(clazz);
+		}
 	}
 
 	[StackTraceInfo(Hidden = true)]
 	private static TypeWrapper LoadTypeWrapper(RuntimeTypeHandle type, string clazz)
 	{
-		ClassLoaderWrapper classLoader = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type)).GetClassLoader();
-		TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(clazz);
+		TypeWrapper context = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type));
+		TypeWrapper wrapper = context.GetClassLoader().LoadClassByDottedNameFast(clazz);
 		if(wrapper == null)
 		{
 			throw JavaException.NoClassDefFoundError(clazz);
+		}
+		if(!wrapper.IsAccessibleFrom(context))
+		{
+			throw JavaException.IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz);
 		}
 		// TODO is this really needed?
 		wrapper.Finish();
