@@ -285,6 +285,10 @@ public class Starter
 				Console.Error.WriteLine("Main method not public.");
 				return 1;
 			}
+			if(!Modifier.isStatic(method.getModifiers()))
+			{
+				throw new java.lang.NoSuchMethodError("main");
+			}
 			try
 			{
 				try

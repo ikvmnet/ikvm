@@ -627,7 +627,7 @@ public class Thread implements Runnable
    *
    * @return the Thread's priority
    */
-  public final int getPriority()
+  public final synchronized int getPriority()
   {
     VMThread t = vmThread;
     return t == null ? priority : t.getPriority();

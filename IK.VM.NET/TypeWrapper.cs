@@ -798,6 +798,23 @@ abstract class TypeWrapper
 		}
 	}
 
+	// this exists because interfaces and arrays of interfaces are treated specially
+	// by the verifier, interfaces don't have a common base (other than java.lang.Object)
+	// so any object reference or object array reference can be used where an interface
+	// or interface array reference is expected (the compiler will insert the required casts).
+	internal bool IsInterfaceOrInterfaceArray
+	{
+		get
+		{
+			TypeWrapper tw = this;
+			while(tw.IsArray)
+			{
+				tw = tw.ElementTypeWrapper;
+			}
+			return tw.IsInterface;
+		}
+	}
+
 	internal virtual ClassLoaderWrapper GetClassLoader()
 	{
 		return classLoader;

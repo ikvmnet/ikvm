@@ -435,7 +435,8 @@ class InstructionState
 			// treatment for java.lang.Object types that allow it to be assigned to any interface
 			// type, the JVM's typesafety then depends on the invokeinterface instruction to make
 			// sure that the reference actually implements the interface.
-			// So strictly speaking, the code below isn't correct, but it works, so for now it stays in.
+			// So strictly speaking, the code below isn't correct, but it works and it produces
+			// more efficient code, so for now it stays in.
 			if(t1.ImplementsInterface(t2))
 			{
 				return t2;
@@ -443,6 +444,14 @@ class InstructionState
 			if(t2.ImplementsInterface(t1))
 			{
 				return t1;
+			}
+			foreach (TypeWrapper baseInterface in t1.Interfaces)
+			{
+				TypeWrapper commonBase = FindCommonBaseTypeHelper(baseInterface, t2);
+				if (commonBase != MethodAnalyzer.java_lang_Object)
+				{
+					return commonBase;
+				}
 			}
 			return MethodAnalyzer.java_lang_Object;
 		}
@@ -712,12 +721,21 @@ class InstructionState
 	{
 		TypeWrapper type = PopObjectType();
 		// HACK because of the way interfaces references works, if baseType
-		// is an interface, any reference will be accepted
-		if(!baseType.IsUnloadable && !baseType.IsInterface && !(type.IsUnloadable || type.IsAssignableTo(baseType)))
+		// is an interface or array of interfaces, any reference will be accepted
+		if(!baseType.IsUnloadable && !baseType.IsInterfaceOrInterfaceArray && !(type.IsUnloadable || type.IsAssignableTo(baseType)))
 		{
 			throw new VerifyError("Unexpected type " + type + " where " + baseType + " was expected");
 		}
 		return type;
+	}
+
+	internal TypeWrapper PeekType()
+	{
+		if(stackSize == 0)
+		{
+			throw new VerifyError("Unable to pop operand off an empty stack");
+		}
+		return stack[stackSize - 1];
 	}
 
 	internal TypeWrapper PopAnyType()
@@ -756,13 +774,17 @@ class InstructionState
 			}
 		}
 		TypeWrapper type = PopAnyType();
+		if(VerifierTypeWrapper.IsNew(type) || type == VerifierTypeWrapper.UninitializedThis)
+		{
+			throw new VerifyError("Expecting to find object/array on stack");
+		}
 		if(type != baseType &&
 			!((type.IsUnloadable && !baseType.IsPrimitive) || (baseType.IsUnloadable && !type.IsPrimitive) ||
 				type.IsAssignableTo(baseType)))
 		{
 			// HACK because of the way interfaces references works, if baseType
-			// is an interface, any reference will be accepted
-			if(baseType.IsInterface && !type.IsPrimitive)
+			// is an interface or array of interfaces, any reference will be accepted
+			if(baseType.IsInterfaceOrInterfaceArray && !type.IsPrimitive)
 			{
 				return type;
 			}
@@ -1313,7 +1335,15 @@ class MethodAnalyzer
 								break;
 							case NormalizedByteCode.__putfield:
 								s.PopType(GetFieldref(instr.Arg1).GetFieldType(classLoader));
-								s.PopObjectType(GetFieldref(instr.Arg1).GetClassType(classLoader));
+								// putfield is allowed to access the unintialized this
+								if(s.PeekType() == VerifierTypeWrapper.UninitializedThis)
+								{
+									s.PopType();
+								}
+								else
+								{
+									s.PopObjectType(GetFieldref(instr.Arg1).GetClassType(classLoader));
+								}
 								break;
 							case NormalizedByteCode.__ldc:
 							{

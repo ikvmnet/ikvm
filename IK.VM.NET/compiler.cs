@@ -1185,7 +1185,7 @@ class Compiler
 								{
 									// because of the way interface merging works, any reference is valid
 									// for any interface reference
-									if(retTypeWrapper.IsInterface && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(retTypeWrapper))
+									if(retTypeWrapper.IsInterfaceOrInterfaceArray && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(retTypeWrapper))
 									{
 										ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
 									}
@@ -1222,7 +1222,7 @@ class Compiler
 								{
 									// because of the way interface merging works, any reference is valid
 									// for any interface reference
-									if(retTypeWrapper.IsInterface && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(retTypeWrapper))
+									if(retTypeWrapper.IsInterfaceOrInterfaceArray && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(retTypeWrapper))
 									{
 										ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
 									}
@@ -2258,7 +2258,7 @@ class Compiler
 				{
 					// nothing to do, callee will (eventually) do the cast
 				}
-				else if(args[i].IsInterface)
+				else if(args[i].IsInterfaceOrInterfaceArray)
 				{
 					TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
 					if(!tw.IsUnloadable && !tw.IsAssignableTo(args[i]))
@@ -2286,11 +2286,13 @@ class Compiler
 			// TODO instead of an InvalidCastException, the castclass should throw a IncompatibleClassChangeError
 			for(int i = args.Length - 1; i >= 0; i--)
 			{
-				if(!args[i].IsUnloadable && 
-					args[i].IsInterface &&
-					!ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsAssignableTo(args[i]))
+				if(!args[i].IsUnloadable && args[i].IsInterfaceOrInterfaceArray)
 				{
-					ilGenerator.Emit(OpCodes.Castclass, args[i].Type);
+					TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
+					if(!tw.IsUnloadable && !tw.IsAssignableTo(args[i]))
+					{
+						ilGenerator.Emit(OpCodes.Castclass, args[i].Type);
+					}
 				}
 				dh.Store(i);
 			}
@@ -2392,7 +2394,7 @@ class Compiler
 							{
 								TypeWrapper tw = field.FieldTypeWrapper;
 								int stackpos = (bytecode == NormalizedByteCode.__putstatic) ? 0 : 1;
-								if(!tw.IsUnloadable && tw.IsInterface && !tw.IsGhost && !ma.GetRawStackTypeWrapper(i, stackpos).IsAssignableTo(tw))
+								if(!tw.IsUnloadable && tw.IsInterfaceOrInterfaceArray && !tw.IsGhost && !ma.GetRawStackTypeWrapper(i, stackpos).IsAssignableTo(tw))
 								{
 									ilGenerator.Emit(OpCodes.Castclass, tw.Type);
 								}
