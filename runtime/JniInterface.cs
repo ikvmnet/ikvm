@@ -78,6 +78,7 @@ sealed class JniHelper
 		else
 		{
 			loader = ClassLoaderWrapper.GetBootstrapClassLoader();
+			m = MethodBase.GetCurrentMethod();
 		}
 		lock(JniLock)
 		{
