@@ -171,10 +171,17 @@ public class ModifiersAttribute : Attribute
 
 	public static Modifiers GetModifiers(Type type)
 	{
-		// NOTE array types do not support GetCustomAttributes, but they also have some funny modifiers
+		TypeWrapper.AssertFinished(type);
+		// NOTE array types do not support GetCustomAttributes
 		if(type.IsArray)
 		{
-			return ClassLoaderWrapper.GetWrapperFromType(type).Modifiers;
+			// NOTE in .NET arrays are always public, so we need to look at the ultimate element type
+			Type elemType = type.GetElementType();
+			while(elemType.IsArray)
+			{
+				elemType = type.GetElementType();
+			}
+			return Modifiers.Final | Modifiers.Abstract | (elemType.IsPublic ? Modifiers.Public : 0);
 		}
 		try
 		{

@@ -866,8 +866,7 @@ namespace NativeCode.java
 			{
 				ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader);
 				TypeWrapper type = classLoaderWrapper.LoadClassByDottedName(name);
-				type.Finish();
-				return getClassFromType(type.Type);
+				return getClassFromWrapper(type);
 			}
 
 			public static object loadBootstrapClass(string name, bool initialize)
@@ -883,6 +882,7 @@ namespace NativeCode.java
 
 			internal static object CreateInstance(Type type, TypeWrapper wrapper)
 			{
+				TypeWrapper.AssertFinished(type);
 				if(classConstructor == null)
 				{
 					classConstructor = ClassLoaderWrapper.GetType("java.lang.Class").GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, new Type[] { typeof(Type), typeof(object) }, null);
@@ -923,6 +923,7 @@ namespace NativeCode.java
 				if(typeWrapper.ArrayRank > 0)
 				{
 					TypeWrapper elementWrapper = typeWrapper.ElementTypeWrapper;
+					// TODO why are we finishing here? This shouldn't be necessary
 					elementWrapper.Finish();
 					return getClassFromWrapper(elementWrapper);
 				}
@@ -933,6 +934,7 @@ namespace NativeCode.java
 			{
 				((TypeWrapper)wrapper).Finish();
 				Type type = ((TypeWrapper)wrapper).Type;
+				TypeWrapper.AssertFinished(type);
 				lock(map.SyncRoot)
 				{
 					// NOTE since this method can be called multiple times (or after getClassFromType has added
@@ -977,13 +979,10 @@ namespace NativeCode.java
 
 			public static object getClassFromType(Type type)
 			{
+				TypeWrapper.AssertFinished(type);
 				if(type == null)
 				{
 					return null;
-				}
-				if(type is NetSystem.Reflection.Emit.TypeBuilder)
-				{
-					throw new InvalidOperationException();
 				}
 				lock(map.SyncRoot)
 				{
@@ -1165,12 +1164,12 @@ namespace NativeCode.java
 					{
 						type = type.BaseType;
 					}
-					// TODO look for our custom attribute (which doesn't exist yet), that contains the real name of the type
 					TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
 					if(wrapper != null)
 					{
 						return wrapper.Name.Replace('/', '.');
 					}
+					// look for our custom attribute, that contains the real name of the type (for inner classes)
 					Object[] attribs = type.GetCustomAttributes(typeof(ClassNameAttribute), false);
 					if(attribs.Length == 1)
 					{
@@ -1626,6 +1625,7 @@ namespace NativeCode.java
 
 			public static void callConstructor(object ois, object clazz, object obj)
 			{
+				// TODO use TypeWrapper based reflection, instead of .NET reflection
 				Type type = NativeCode.java.lang.Class.getType(clazz);
 				type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null).Invoke(obj, null);
 			}

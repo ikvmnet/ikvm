@@ -805,6 +805,19 @@ abstract class TypeWrapper
 	internal virtual void ImplementOverrideStubsAndVirtuals(TypeBuilder typeBuilder, TypeWrapper wrapper, Hashtable methodLookup)
 	{
 	}
+
+	[Conditional("DEBUG")]
+	internal static void AssertFinished(Type type)
+	{
+		if(type != null)
+		{
+			while(type.IsArray)
+			{
+				type = type.GetElementType();
+			}
+			Debug.Assert(!(type is TypeBuilder));
+		}
+	}
 }
 
 class UnloadableTypeWrapper : TypeWrapper
@@ -2848,6 +2861,7 @@ class CompiledTypeWrapper : TypeWrapper
 	internal CompiledTypeWrapper(string name, Type type, TypeWrapper baseType)
 		: base(ModifiersAttribute.GetModifiers(type), name, baseType, ClassLoaderWrapper.GetBootstrapClassLoader())
 	{
+		Debug.Assert(!type.IsArray);
 		this.type = type;
 	}
 
@@ -3117,6 +3131,124 @@ class CompiledTypeWrapper : TypeWrapper
 
 	public override void Finish()
 	{
+	}
+}
+
+class ArrayTypeWrapper : TypeWrapper
+{
+	private static TypeWrapper[] interfaces;
+	private static MethodDescriptor mdClone;
+	private static MethodInfo clone;
+	private static CodeEmitter callclone;
+	private Type type;
+
+	internal ArrayTypeWrapper(Type type, Modifiers modifiers, string name, ClassLoaderWrapper classLoader)
+		: base(modifiers, name, ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object"), classLoader)
+	{
+		this.type = type;
+		if(mdClone == null)
+		{
+			mdClone = new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "clone", "()Ljava/lang/Object;");
+		}
+		if(clone == null)
+		{
+			clone = typeof(Array).GetMethod("Clone");
+		}
+		MethodWrapper mw = new MethodWrapper(this, mdClone, clone, null, Modifiers.Public | Modifiers.Synthetic);
+		if(callclone == null)
+		{
+			callclone = CodeEmitter.Create(OpCodes.Callvirt, clone);
+		}
+		mw.EmitCall = callclone;
+		mw.EmitCallvirt = callclone;
+		AddMethod(mw);
+	}
+
+	public override bool IsInterface
+	{
+		get
+		{
+			return false;
+		}
+	}
+
+	public override TypeWrapper[] Interfaces
+	{
+		get
+		{
+			if(interfaces == null)
+			{
+				TypeWrapper[] tw = new TypeWrapper[2];
+				tw[0] = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Cloneable");
+				tw[1] = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.io.Serializable");
+				interfaces = tw;
+			}
+			return interfaces;
+		}
+	}
+
+	public override TypeWrapper[] InnerClasses
+	{
+		get
+		{
+			return new TypeWrapper[0];
+		}
+	}
+
+	public override TypeWrapper DeclaringTypeWrapper
+	{
+		get
+		{
+			return null;
+		}
+	}
+
+	public override Type Type
+	{
+		get
+		{
+			return type;
+		}
+	}
+
+	protected override FieldWrapper GetFieldImpl(string fieldName)
+	{
+		return null;
+	}
+
+	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
+	{
+		return null;
+	}
+
+	private bool IsFinished
+	{
+		get
+		{
+			Type elem = type.GetElementType();
+			while(elem.IsArray)
+			{
+				elem = elem.GetElementType();
+			}
+			return !(elem is TypeBuilder);
+		}
+	}
+
+	public override void Finish()
+	{
+		// TODO once we have upward notification (when element TypeWrappers have a reference to their containing arrays)
+		// we can optimize this
+		lock(this)
+		{
+			if(!IsFinished)
+			{
+				TypeWrapper elementTypeWrapper = ElementTypeWrapper;
+				Type elementType = elementTypeWrapper.Type;
+				elementTypeWrapper.Finish();
+				type = elementType.Assembly.GetType(elementType.FullName + "[]");
+				ClassLoaderWrapper.SetWrapperForType(type, this);
+			}
+		}
 	}
 }
 

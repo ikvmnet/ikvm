@@ -282,7 +282,7 @@ class ClassLoaderWrapper
 
 	private TypeWrapper GetCompiledTypeWrapper(Type type)
 	{
-		Debug.Assert(!(type is TypeBuilder));
+		TypeWrapper.AssertFinished(type);
 		// only the bootstrap classloader can own compiled types
 		Debug.Assert(this == GetBootstrapClassLoader());
 		string name = NativeCode.java.lang.Class.getName(type);
@@ -333,16 +333,21 @@ class ClassLoaderWrapper
 		// it did a getDeclaredMethods on java/lang/VMClassLoader which has a method that returns a System.Reflection.Assembly)
 		foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
 		{
-			Type t = a.GetType(name);
-			if(t != null)
+			// we shouldn't look inside an AssemblyBuilder, because the type in there
+			// obviously aren't bootstrap types
+			if(!(a is AssemblyBuilder))
 			{
-				return t;
-			}
-			// HACK we might be looking for an inner classes
-			t = a.GetType(name.Replace('$', '+'));
-			if(t != null)
-			{
-				return t;
+				Type t = a.GetType(name);
+				if(t != null)
+				{
+					return t;
+				}
+				// HACK we might be looking for an inner classes
+				t = a.GetType(name.Replace('$', '+'));
+				if(t != null)
+				{
+					return t;
+				}
 			}
 		}
 		return null;
@@ -360,6 +365,7 @@ class ClassLoaderWrapper
 
 	private TypeWrapper CreateArrayType(string name, Type elementType, int dims)
 	{
+		Debug.Assert(!elementType.IsArray);
 		// TODO array accessibility should be the same as the elementType's accessibility
 		// (and this should be enforced)
 		TypeWrapper wrapper = (TypeWrapper)types[name];
@@ -391,24 +397,18 @@ class ClassLoaderWrapper
 			{
 				array = elementType.Assembly.GetType(elementType.FullName + netname, true);
 			}
-			TypeWrapper[] interfaces = new TypeWrapper[2];
-			interfaces[0] = GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Cloneable");
-			interfaces[1] = GetBootstrapClassLoader().LoadClassByDottedName("java.io.Serializable");
-			MethodDescriptor mdClone = new MethodDescriptor(GetBootstrapClassLoader(), "clone", "()Ljava/lang/Object;");
 			Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
 			// TODO taking the publicness from the .NET isn't 100% correct, we really should look at the wrapper
 			if(elementType.IsPublic)
 			{
 				modifiers |= Modifiers.Public;
 			}
-			wrapper = new RemappedTypeWrapper(this, modifiers, name, array, interfaces, GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object"));
-			MethodInfo clone = typeof(Array).GetMethod("Clone");
-			MethodWrapper mw = new MethodWrapper(wrapper, mdClone, clone, null, Modifiers.Public | Modifiers.Synthetic);
-			mw.EmitCall = CodeEmitter.Create(OpCodes.Callvirt, clone);
-			mw.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, clone);
-			wrapper.AddMethod(mw);
+			wrapper = new ArrayTypeWrapper(array, modifiers, name, this);
 			types.Add(name, wrapper);
-			typeToTypeWrapper[array] = wrapper;
+			if(!(elementType is TypeBuilder))
+			{
+				typeToTypeWrapper[array] = wrapper;
+			}
 		}
 		return wrapper;
 	}
@@ -776,7 +776,7 @@ class ClassLoaderWrapper
 
 	internal static ClassLoaderWrapper GetClassLoader(Type type)
 	{
-		Debug.Assert(!(type is TypeBuilder));
+		TypeWrapper.AssertFinished(type);
 		TypeWrapper wrapper = GetWrapperFromTypeFast(type);
 		if(wrapper != null)
 		{
@@ -796,7 +796,7 @@ class ClassLoaderWrapper
 	// If the wrapper doesn't exist, that means that the type is either a .NET type or a pre-compiled Java class
 	internal static TypeWrapper GetWrapperFromTypeFast(Type type)
 	{
-		Debug.Assert(!(type is TypeBuilder));
+		TypeWrapper.AssertFinished(type);
 		TypeWrapper wrapper = (TypeWrapper)typeToTypeWrapper[type];
 		if(wrapper == null)
 		{
@@ -850,7 +850,7 @@ class ClassLoaderWrapper
 
 	internal static TypeWrapper GetWrapperFromType(Type type)
 	{
-		Debug.Assert(!(type is TypeBuilder));
+		TypeWrapper.AssertFinished(type);
 		TypeWrapper wrapper = GetWrapperFromTypeFast(type);
 		if(wrapper == null)
 		{
@@ -907,11 +907,11 @@ class ClassLoaderWrapper
 						{
 							throw new InvalidOperationException();
 						}
-						wrapper = wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + elemType);
+						return wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + elemType);
 					}
 					else
 					{
-						wrapper = wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + "L" + wrapper.Name + ";");
+						return wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + "L" + wrapper.Name + ";");
 					}
 				}
 			}
@@ -920,14 +920,14 @@ class ClassLoaderWrapper
 			// was "loaded" by the bootstrap classloader
 			// TODO think up a scheme to deal with .NET types that have the same name. Since all .NET types
 			// appear in the boostrap classloader, we need to devise a scheme to mangle the class name
-			wrapper = GetBootstrapClassLoader().GetCompiledTypeWrapper(type);
+			return GetBootstrapClassLoader().GetCompiledTypeWrapper(type);
 		}
 		return wrapper;
 	}
 
 	internal static void SetWrapperForType(Type type, TypeWrapper wrapper)
 	{
-		Debug.Assert(!(type is TypeBuilder));
+		TypeWrapper.AssertFinished(type);
 		typeToTypeWrapper.Add(type, wrapper);
 	}
 
