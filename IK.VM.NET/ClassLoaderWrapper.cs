@@ -29,6 +29,7 @@ using System.IO;
 using System.Collections;
 using System.Xml;
 using System.Diagnostics;
+using OpenSystem.Java;
 
 class ClassLoaderWrapper
 {
@@ -67,7 +68,7 @@ class ClassLoaderWrapper
 		AppDomain.CurrentDomain.AssemblyLoad += new AssemblyLoadEventHandler(OnAssemblyLoad);
 		foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
 		{
-			if(a.IsDefined(typeof(IKVMAssemblyAttribute), false) && !(a is AssemblyBuilder))
+			if(a.IsDefined(typeof(JavaAssemblyAttribute), false) && !(a is AssemblyBuilder))
 			{
 				ikvmAssemblies.Add(a);
 			}
@@ -76,7 +77,7 @@ class ClassLoaderWrapper
 
 	private static void OnAssemblyLoad(object sender, AssemblyLoadEventArgs e)
 	{
-		if(e.LoadedAssembly.IsDefined(typeof(IKVMAssemblyAttribute), false) && !(e.LoadedAssembly is AssemblyBuilder))
+		if(e.LoadedAssembly.IsDefined(typeof(JavaAssemblyAttribute), false) && !(e.LoadedAssembly is AssemblyBuilder))
 		{
 			ikvmAssemblies.Add(e.LoadedAssembly);
 		}
@@ -128,10 +129,10 @@ class ClassLoaderWrapper
 	internal void LoadRemappedTypes()
 	{
 		nativeMethods = new Hashtable();
-		// NOTE interfaces do *not* have java/lang/Object as the base type (even though they do in the class file)
-		types["java.lang.Cloneable"] = new RemappedTypeWrapper(this, ModifiersAttribute.GetModifiers(typeof(java.lang.Cloneable)), "java/lang/Cloneable", typeof(java.lang.Cloneable), new TypeWrapper[0], null);
+		// NOTE interfaces do *not* have java.lang.Object as the base type (even though they do in the class file)
+		types["java.lang.Cloneable"] = new RemappedTypeWrapper(this, Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.Cloneable", typeof(java.lang.Cloneable), TypeWrapper.EmptyArray, null);
 		typeToTypeWrapper.Add(typeof(java.lang.Cloneable), types["java.lang.Cloneable"]);
-		types["java.io.Serializable"] = new RemappedTypeWrapper(this, ModifiersAttribute.GetModifiers(typeof(java.io.Serializable)), "java/io/Serializable", typeof(java.io.Serializable), new TypeWrapper[0], null);
+		types["java.io.Serializable"] = new RemappedTypeWrapper(this, Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.io.Serializable", typeof(java.io.Serializable), TypeWrapper.EmptyArray, null);
 		typeToTypeWrapper.Add(typeof(java.io.Serializable), types["java.io.Serializable"]);
 		MapXml.Root map = MapXmlGenerator.Generate();
 		foreach(MapXml.Class c in map.remappings)
@@ -149,7 +150,7 @@ class ClassLoaderWrapper
 			{
 				baseWrapper = null;
 			}
-			TypeWrapper tw = new RemappedTypeWrapper(this, modifiers, name.Replace('.', '/'), type, new TypeWrapper[0], baseWrapper);
+			TypeWrapper tw = new RemappedTypeWrapper(this, modifiers, name, type, new TypeWrapper[0], baseWrapper);
 			types.Add(name, tw);
 			typeToTypeWrapper.Add(tw.Type, tw);
 		}
@@ -173,12 +174,6 @@ class ClassLoaderWrapper
 		{
 			((RemappedTypeWrapper)types[c.Name]).LoadRemappings(c);
 		}
-	}
-
-	internal TypeWrapper LoadClassBySlashedName(string name)
-	{
-		// OPTIMIZE
-		return LoadClassByDottedName(name.Replace('/', '.'));
 	}
 
 	internal TypeWrapper LoadClassByDottedName(string name)
@@ -317,7 +312,7 @@ class ClassLoaderWrapper
 			{
 				baseType = GetWrapperFromType(type.BaseType);
 			}
-			wrapper = new CompiledTypeWrapper(name.Replace('.', '/'), type, baseType);
+			wrapper = new CompiledTypeWrapper(name, type, baseType);
 			types.Add(name, wrapper);
 			typeToTypeWrapper[type] = wrapper;
 		}
@@ -345,7 +340,7 @@ class ClassLoaderWrapper
 		// HACK for the time being we'll look into all loaded assemblies, this is to work around
 		// a bug caused by the fact that SigDecoderWrapper is used to parse signatures that contain .NET exported
 		// types (the Mauve test gnu.testlet.java.io.ObjectStreamClass.ProxyTest failed because
-		// it did a getDeclaredMethods on java/lang/VMClassLoader which has a method that returns a System.Reflection.Assembly)
+		// it did a getDeclaredMethods on java.lang.VMClassLoader which has a method that returns a System.Reflection.Assembly)
 		foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
 		{
 			// we shouldn't look inside an AssemblyBuilder, because the type in there
@@ -439,11 +434,13 @@ class ClassLoaderWrapper
 			throw JavaException.ClassFormatError("Bad name");
 		}
 		TypeWrapper type;
-		// TODO if the class doesn't exist, LoadClassBySlashedName throws a ClassNotFoundException, but
-		// we need to catch that and throw a NoClassDefFoundError (because that is unchecked)
-		// TODO also figure out what should happen if LoadClassBySlashedName throws another exception (custom class loaders
+		// TODO also figure out what should happen if LoadClassByDottedNameFast throws an exception (custom class loaders
 		// can throw whatever exception they want)
-		TypeWrapper baseType = LoadClassBySlashedName(f.SuperClass);
+		TypeWrapper baseType = LoadClassByDottedNameFast(f.SuperClass);
+		if(baseType == null)
+		{
+			throw JavaException.NoClassDefFoundError(f.SuperClass);
+		}
 		// if the base type isn't public, it must be in the same package
 		if(!baseType.IsPublic)
 		{
@@ -468,9 +465,9 @@ class ClassLoaderWrapper
 		else
 		{
 			type = new DynamicTypeWrapper(f, this, nativeMethods);
-			dynamicTypes.Add(f.Name.Replace('/', '.'), type);
+			dynamicTypes.Add(f.Name, type);
 		}
-		types.Add(f.Name.Replace('/', '.'), type);
+		types.Add(f.Name, type);
 		return type;
 	}
 
@@ -619,7 +616,7 @@ class ClassLoaderWrapper
 			{
 				int pos = index;
 				index = sig.IndexOf(';', index) + 1;
-				return LoadClassBySlashedName(sig.Substring(pos, index - pos - 1)).Type;
+				return LoadClassByDottedName(sig.Substring(pos, index - pos - 1)).Type;
 			}
 			case 'S':
 				return typeof(short);
@@ -642,7 +639,7 @@ class ClassLoaderWrapper
 					{
 						int pos = index;
 						index = sig.IndexOf(';', index) + 1;
-						return LoadClassBySlashedName(array + sig.Substring(pos, index - pos)).Type;
+						return LoadClassByDottedName(array + sig.Substring(pos, index - pos)).Type;
 					}
 					case 'B':
 					case 'C':
@@ -652,7 +649,7 @@ class ClassLoaderWrapper
 					case 'J':
 					case 'S':
 					case 'Z':
-						return LoadClassBySlashedName(array + sig[index++]).Type;
+						return LoadClassByDottedName(array + sig[index++]).Type;
 					default:
 						throw new InvalidOperationException(sig.Substring(index));
 				}
@@ -705,7 +702,7 @@ class ClassLoaderWrapper
 			{
 				int pos = index;
 				index = sig.IndexOf(';', index) + 1;
-				return LoadClassBySlashedName(sig.Substring(pos, index - pos - 1));
+				return LoadClassByDottedName(sig.Substring(pos, index - pos - 1));
 			}
 			case 'S':
 				return PrimitiveTypeWrapper.SHORT;
@@ -728,7 +725,7 @@ class ClassLoaderWrapper
 					{
 						int pos = index;
 						index = sig.IndexOf(';', index) + 1;
-						return LoadClassBySlashedName(array + sig.Substring(pos, index - pos));
+						return LoadClassByDottedName(array + sig.Substring(pos, index - pos));
 					}
 					case 'B':
 					case 'C':
@@ -738,7 +735,7 @@ class ClassLoaderWrapper
 					case 'J':
 					case 'S':
 					case 'Z':
-						return LoadClassBySlashedName(array + sig[index++]);
+						return LoadClassByDottedName(array + sig[index++]);
 					default:
 						throw new InvalidOperationException(sig.Substring(index));
 				}
@@ -758,7 +755,7 @@ class ClassLoaderWrapper
 	{
 		if(sig[1] == ')')
 		{
-			return new TypeWrapper[0];
+			return TypeWrapper.EmptyArray;
 		}
 		ArrayList list = new ArrayList();
 		for(int i = 1; sig[i] != ')';)
@@ -929,11 +926,11 @@ class ClassLoaderWrapper
 						{
 							throw new InvalidOperationException();
 						}
-						return wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + elemType);
+						return wrapper.GetClassLoader().LoadClassByDottedName(new String('[', rank) + elemType);
 					}
 					else
 					{
-						return wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + "L" + wrapper.Name + ";");
+						return wrapper.GetClassLoader().LoadClassByDottedName(new String('[', rank) + "L" + wrapper.Name + ";");
 					}
 				}
 			}

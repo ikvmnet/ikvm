@@ -406,7 +406,7 @@ class InstructionState
 				}
 			}
 			// HACK load the array type
-			return baseType.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + "L" + baseType.Name + ";");
+			return baseType.GetClassLoader().LoadClassByDottedName(new String('[', rank) + "L" + baseType.Name + ";");
 		}
 		return FindCommonBaseTypeHelper(type1, type2);
 	}
@@ -427,8 +427,8 @@ class InstructionState
 			// for now I'm just doing the naive thing
 			// UPDATE according to a paper by Alessandro Coglio & Allen Goldberg titled
 			// "Type Safety in the JVM: Some Problems in Java 2 SDK 1.2 and Proposed Solutions"
-			// the common base of two interfaces is java/lang/Object, and there is special
-			// treatment for java/lang/Object types that allow it to be assigned to any interface
+			// the common base of two interfaces is java.lang.Object, and there is special
+			// treatment for java.lang.Object types that allow it to be assigned to any interface
 			// type, the JVM's typesafety then depends on the invokeinterface instruction to make
 			// sure that the reference actually implements the interface.
 			// So strictly speaking, the code below isn't correct, but it works, so for now it stays in.
@@ -918,7 +918,7 @@ class VerifierTypeWrapper : TypeWrapper
 	}
 
 	private VerifierTypeWrapper(string name, int index, TypeWrapper underlyingType)
-		: base(Modifiers.Final | Modifiers.Interface, name, null, null)
+		: base(TypeWrapper.VerifierTypeModifiersHack, name, null, null)
 	{
 		this.index = index;
 		this.underlyingType = underlyingType;
@@ -939,14 +939,6 @@ class VerifierTypeWrapper : TypeWrapper
 		get
 		{
 			throw new InvalidOperationException("get_Type called on " + this);
-		}
-	}
-
-	public override bool IsInterface
-	{
-		get
-		{
-			throw new InvalidOperationException("get_IsInterface called on " + this);
 		}
 	}
 
@@ -1008,17 +1000,17 @@ class MethodAnalyzer
 		{
 			if(java_lang_Throwable == null)
 			{
-				java_lang_Object = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Object");
-				java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Throwable");
-				java_lang_String = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/String");
-				ByteArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[B");
-				BooleanArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[Z");
-				ShortArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[S");
-				CharArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[C");
-				IntArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[I");
-				FloatArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[F");
-				DoubleArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[D");
-				LongArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[J");
+				java_lang_Object = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object");
+				java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Throwable");
+				java_lang_String = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.String");
+				ByteArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[B");
+				BooleanArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[Z");
+				ShortArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[S");
+				CharArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[C");
+				IntArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[I");
+				FloatArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[F");
+				DoubleArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[D");
+				LongArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("[J");
 			}
 		}
 		state = new InstructionState[method.Instructions.Length];
@@ -1538,7 +1530,7 @@ class MethodAnalyzer
 								}
 								else
 								{
-									s.PushType(type.GetClassLoader().LoadClassBySlashedName("[" + name));
+									s.PushType(type.GetClassLoader().LoadClassByDottedName("[" + name));
 								}
 								break;
 							}

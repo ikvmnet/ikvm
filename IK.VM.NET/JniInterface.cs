@@ -28,11 +28,12 @@ using System.Runtime.InteropServices;
 
 public sealed class JniHelper
 {
+	// NOTE sig contains slashed class names
 	public static IntPtr GetMethodCookie(object clazz, string name, string sig, bool isStatic)
 	{
 		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.VMClass.getType(clazz));
 		wrapper.Finish();
-		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig), true);
+		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig.Replace('/', '.')), true);
 		if(mw != null)
 		{
 			if(mw.IsStatic == isStatic)
@@ -46,8 +47,8 @@ public sealed class JniHelper
 	// this method returns a simplified method argument descriptor.
 	// some examples:
 	// "()V" -> ""
-	// "(ILjava/lang/String;)I" -> "IL"
-	// "([Ljava/lang/String;)V" -> "L"
+	// "(ILjava.lang.String;)I" -> "IL"
+	// "([Ljava.lang.String;)V" -> "L"
 	public static string GetMethodArgList(IntPtr cookie)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -83,6 +84,7 @@ public sealed class JniHelper
 		return MethodWrapper.FromCookie(cookie).Invoke(obj, args, nonVirtual);
 	}
 
+	// NOTE sig contains slashed class names
 	public static IntPtr GetFieldCookie(object clazz, string name, string sig, bool isStatic)
 	{
 		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.VMClass.getType(clazz));
@@ -111,7 +113,7 @@ public sealed class JniHelper
 
 	public static object FindClass(string javaName)
 	{
-		TypeWrapper wrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName(javaName);
+		TypeWrapper wrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(javaName.Replace('/', '.'));
 		wrapper.Finish();
 		return NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper);
 	}
@@ -131,5 +133,8 @@ public interface IJniProvider
 {
 	int LoadNativeLibrary(string filename);
 	Type GetLocalRefStructType();
+	// NOTE the signature of the GetJniFuncPtr method is:
+	//  IntPtr GetJniFuncPtr(String method, String sig, String clazz)
+	// sig & clazz are contain slashed class names
 	MethodInfo GetJniFuncPtrMethod();
 }

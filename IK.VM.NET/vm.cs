@@ -28,6 +28,7 @@ using System.IO;
 using System.Collections;
 using System.Xml;
 using System.Diagnostics;
+using OpenSystem.Java;
 
 public class JVM
 {
@@ -142,7 +143,7 @@ public class JVM
 				AssemblyName name = new AssemblyName();
 				name.Name = assembly;
 				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
-				CustomAttributeBuilder ikvmAssemblyAttr = new CustomAttributeBuilder(typeof(IKVMAssemblyAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+				CustomAttributeBuilder ikvmAssemblyAttr = new CustomAttributeBuilder(typeof(JavaAssemblyAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 				assemblyBuilder.SetCustomAttribute(ikvmAssemblyAttr);
 				moduleBuilder = assemblyBuilder.DefineDynamicModule(path, JVM.Debug);
 				if(JVM.Debug)
@@ -211,7 +212,7 @@ public class JVM
 		for(int i = 0; i < classes.Length; i++)
 		{
 			ClassFile f = new ClassFile(classes[i], 0, classes[i].Length, null);
-			string name = f.Name.Replace('/', '.');
+			string name = f.Name;
 			if(h.ContainsKey(name))
 			{
 				Console.Error.WriteLine("Duplicate class name: {0}", name);
@@ -229,24 +230,27 @@ public class JVM
 			if(classFile.NetExpTypeAttribute == null)
 			{
 				ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
-				for(int j = 0; j < innerClasses.Length; j++)
+				if(innerClasses != null)
 				{
-					if(innerClasses[j].outerClass != 0 && classFile.GetConstantPoolClass(innerClasses[j].outerClass) == classFile.Name)
+					for(int j = 0; j < innerClasses.Length; j++)
 					{
-						string inner = classFile.GetConstantPoolClass(innerClasses[j].innerClass);
-						ClassFile innerClass = (ClassFile)h[inner.Replace('/', '.')];
-						if(innerClass != null)
+						if(innerClasses[j].outerClass != 0 && classFile.GetConstantPoolClass(innerClasses[j].outerClass) == classFile.Name)
 						{
-							if(innerClass.OuterClass != null)
+							string inner = classFile.GetConstantPoolClass(innerClasses[j].innerClass);
+							ClassFile innerClass = (ClassFile)h[inner];
+							if(innerClass != null)
 							{
-								Console.Error.WriteLine("Error: Inner class {0} has multiple outer classes", inner);
-								return;
+								if(innerClass.OuterClass != null)
+								{
+									Console.Error.WriteLine("Error: Inner class {0} has multiple outer classes", inner);
+									return;
+								}
+								innerClass.OuterClass = classFile;
 							}
-							innerClass.OuterClass = classFile;
-						}
-						else
-						{
-							Console.Error.WriteLine("Warning: inner class {0} missing", inner);
+							else
+							{
+								Console.Error.WriteLine("Warning: inner class {0} missing", inner);
+							}
 						}
 					}
 				}
@@ -272,7 +276,7 @@ public class JVM
 			}
 			if(s == mainClass && wrapper != null)
 			{
-				MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(loader, "main", "([Ljava/lang/String;)V"), false);
+				MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(loader, "main", "([Ljava.lang.String;)V"), false);
 				if(mw == null)
 				{
 					Console.Error.WriteLine("Error: main method not found");

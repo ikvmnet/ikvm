@@ -110,6 +110,7 @@ class Compiler
 		ma = new MethodAnalyzer(clazz, m, classLoader);
 		Profiler.Leave("MethodAnalyzer");
 		ArrayList ar = new ArrayList(m.ExceptionTable);
+		//		Console.WriteLine(m.Method.ClassFile.Name + "." + m.Method.Name + m.Method.Signature);
 		//		Console.WriteLine("before processing:");
 		//		foreach(ExceptionTableEntry e in ar)
 		//		{
@@ -626,7 +627,7 @@ class Compiler
 						else
 						{
 							// TODO handle class not found
-							excType = classLoader.LoadClassBySlashedName(m.Method.ClassFile.GetConstantPoolClass(exceptions[j].catch_type)).Type;
+							excType = classLoader.LoadClassByDottedName(m.Method.ClassFile.GetConstantPoolClass(exceptions[j].catch_type)).Type;
 						}
 						if(true)
 						{
@@ -933,9 +934,9 @@ class Compiler
 						ClassFile.ConstantPoolItemFMI cpi = m.Method.ClassFile.GetMethodref(instr.Arg1);
 						// HACK special case for calls to System.arraycopy, if the array arguments on the stack
 						// are of a known array type, we can redirect to an optimized version of arraycopy.
-						if(cpi.Class == "java/lang/System" &&
+						if(cpi.Class == "java.lang.System" &&
 							cpi.Name == "arraycopy" &&
-							cpi.Signature == "(Ljava/lang/Object;ILjava/lang/Object;II)V")
+							cpi.Signature == "(Ljava.lang.Object;ILjava.lang.Object;II)V")
 						{
 							TypeWrapper t1 = ma.GetRawStackTypeWrapper(i, 2);
 							TypeWrapper t2 = ma.GetRawStackTypeWrapper(i, 4);
@@ -1083,7 +1084,7 @@ class Compiler
 								}
 								if(java_lang_Throwable == null)
 								{
-									java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Throwable");
+									java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Throwable");
 								}
 								if(thisType.IsSubTypeOf(java_lang_Throwable))
 								{
@@ -2375,7 +2376,7 @@ class Compiler
 		// we cannot use EmitError, because that will yield an invalid constructor (that doesn't call the superclass constructor)
 		if(IsUnloadable(cpi))
 		{
-			MethodWrapper dummy = new MethodWrapper(null, null, null, null, Modifiers.Synthetic);
+			MethodWrapper dummy = new MethodWrapper(null, null, null, null, 0, true);
 			if(invoke == NormalizedByteCode.__invokespecial)
 			{
 				dummy.EmitNewobj = new DynamicNewEmitter(classLoader, clazz, cpi);
@@ -2407,7 +2408,7 @@ class Compiler
 					// NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
 					if(method == null)
 					{
-						method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Object").GetMethodWrapper(md, false);
+						method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object").GetMethodWrapper(md, false);
 					}
 				}
 				else
@@ -2475,7 +2476,7 @@ class Compiler
 			}
 			ilGenerator.Emit(OpCodes.Ldstr, message);
 			TypeWrapper type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(errorType);
-			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor(type.GetClassLoader(), "<init>", "(Ljava/lang/String;)V"), false);
+			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor(type.GetClassLoader(), "<init>", "(Ljava.lang.String;)V"), false);
 			method.EmitNewobj.Emit(ilGenerator);
 		}
 		else
@@ -2500,7 +2501,7 @@ class Compiler
 	{
 		try
 		{
-			TypeWrapper type = classLoader.LoadClassBySlashedName(classname);
+			TypeWrapper type = classLoader.LoadClassByDottedName(classname);
 			if(!type.IsPublic && !clazz.IsInSamePackageAs(type))
 			{
 				// TODO all classnames in error messages should be dotted instead of slashed

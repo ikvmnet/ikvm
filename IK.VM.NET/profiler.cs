@@ -40,18 +40,24 @@ class Profiler
 
 	~Profiler()
 	{
+		Console.WriteLine("{0,-40}{1,10}{2,12}", "Event", "Count", "Time (ms)");
+		Console.WriteLine("{0,-40}{1,10}{2,12}", "-----", "-----", "---------");
+		long totalTime = 0;
 		foreach(DictionaryEntry e in counters)
 		{
 			Entry entry = (Entry)e.Value;
 			if(entry.Time == 0)
 			{
-				Console.WriteLine("{0} occurred {1} times", e.Key, entry.Count);
+				Console.WriteLine("{0,-40}{1,10}", e.Key, entry.Count);
 			}
 			else
 			{
-				Console.WriteLine("{0} was executed {1} times for a total of {2} ms", e.Key, entry.Count, entry.Time / 10000);
+				totalTime += entry.Time / 10000;
+				Console.WriteLine("{0,-40}{1,10}{2,12}", e.Key, entry.Count, entry.Time / 10000);
 			}
 		}
+		Console.WriteLine("{0,-40}{1,10}{2,12}", "", "", "---------");
+		Console.WriteLine("{0,-40}{1,10}{2,12}", "", "", totalTime);
 	}
 
 	[Conditional("PROFILE")]
@@ -99,12 +105,15 @@ class Profiler
 	[Conditional("PROFILE")]
 	internal static void Count(string name)
 	{
-		Entry e = (Entry)counters[name];
-		if(e == null)
+		lock(counters)
 		{
-			e = new Entry();
-			counters[name] = e;
+			Entry e = (Entry)counters[name];
+			if(e == null)
+			{
+				e = new Entry();
+				counters[name] = e;
+			}
+			e.Count++;
 		}
-		e.Count++;
 	}
 }

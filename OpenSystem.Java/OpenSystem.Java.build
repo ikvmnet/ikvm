@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<project name="OpenSystem.Java" default="OpenSystem.Java">
+    <target name="OpenSystem.Java">
+        <csc target="library" output="../bin/OpenSystem.Java.dll">
+            <sources>
+                <includes name="*.cs" />
+            </sources>
+        </csc>
+    </target>
+</project>

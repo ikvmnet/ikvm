@@ -27,6 +27,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Collections;
 using java.lang;
+using OpenSystem.Java;
 using ClassHelper = NativeCode.java.lang.VMClass;
 
 public class ExceptionHelper
@@ -149,16 +150,12 @@ public class ExceptionHelper
 						}
 						string className = ClassHelper.getName(frame.GetMethod().ReflectedType);
 						bool native = false;
-						if(JVM.CleanStackTraces && m.IsDefined(typeof(ModifiersAttribute), false))
+						if(m.IsDefined(typeof(ModifiersAttribute), false))
 						{
 							object[] methodFlagAttribs = m.GetCustomAttributes(typeof(ModifiersAttribute), false);
 							if(methodFlagAttribs.Length == 1)
 							{
 								ModifiersAttribute modifiersAttrib = (ModifiersAttribute)methodFlagAttribs[0];
-								if((modifiersAttrib.Modifiers & Modifiers.Synthetic) != 0)
-								{
-									continue;
-								}
 								if((modifiersAttrib.Modifiers & Modifiers.Native) != 0)
 								{
 									native = true;
@@ -167,6 +164,10 @@ public class ExceptionHelper
 						}
 						if(JVM.CleanStackTraces)
 						{
+							if(AttributeHelper.IsHideFromReflection(m))
+							{
+								continue;
+							}
 							object[] attribs = m.DeclaringType.GetCustomAttributes(typeof(StackTraceInfoAttribute), false);
 							if(attribs.Length == 1)
 							{
@@ -655,7 +656,7 @@ public class ExceptionHelper
 	{
 		if(toString_methodWrapper == null)
 		{
-			toString_methodWrapper = GetMethod("toString", "()Ljava/lang/String;");
+			toString_methodWrapper = GetMethod("toString", "()Ljava.lang.String;");
 		}
 		return (string)toString_methodWrapper.Invoke(x, noargs, false);
 	}
@@ -664,7 +665,7 @@ public class ExceptionHelper
 	{
 		if(getMessage_methodWrapper == null)
 		{
-			getMessage_methodWrapper = GetMethod("getMessage", "()Ljava/lang/String;");
+			getMessage_methodWrapper = GetMethod("getMessage", "()Ljava.lang.String;");
 		}
 		return (string)getMessage_methodWrapper.Invoke(x, noargs, false);
 	}
@@ -673,7 +674,7 @@ public class ExceptionHelper
 	{
 		if(getStackTrace_methodWrapper == null)
 		{
-			getStackTrace_methodWrapper = GetMethod("getStackTrace", "()[Ljava/lang/StackTraceElement;");
+			getStackTrace_methodWrapper = GetMethod("getStackTrace", "()[Ljava.lang.StackTraceElement;");
 		}
 		return (StackTraceElement[])getStackTrace_methodWrapper.Invoke(x, noargs, false);
 	}
@@ -682,7 +683,7 @@ public class ExceptionHelper
 	{
 		if(getCause_methodWrapper == null)
 		{
-			getCause_methodWrapper = GetMethod("getCause", "()Ljava/lang/Throwable;");
+			getCause_methodWrapper = GetMethod("getCause", "()Ljava.lang.Throwable;");
 		}
 		return (Exception)getCause_methodWrapper.Invoke(x, noargs, false);
 	}
@@ -691,7 +692,7 @@ public class ExceptionHelper
 	{
 		if(getLocalizedMessage_methodWrapper == null)
 		{
-			getLocalizedMessage_methodWrapper = GetMethod("getLocalizedMessage", "()Ljava/lang/String;");
+			getLocalizedMessage_methodWrapper = GetMethod("getLocalizedMessage", "()Ljava.lang.String;");
 		}
 		return (string)getLocalizedMessage_methodWrapper.Invoke(x, noargs, false);
 	}

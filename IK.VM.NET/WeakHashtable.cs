@@ -5,8 +5,48 @@ using System.Collections;
 // TODO implement this properly, instead of this quick hack
 public class WeakHashtable : IDictionary
 {
-	private GCHandle[] keys = new GCHandle[101];
-	private object[] values = new object[101];
+	private struct Pair
+	{
+		private GCHandle keyHandle;
+		internal object Value;
+
+		internal object Key
+		{
+			get
+			{
+				return keyHandle.IsAllocated ? keyHandle.Target : null;
+			}
+			set
+			{
+				if(!keyHandle.IsAllocated)
+				{
+					keyHandle = GCHandle.Alloc(value, GCHandleType.Weak);
+				}
+				else
+				{
+					keyHandle.Target = value;
+				}
+			}
+		}
+
+		internal bool IsAllocated
+		{
+			get
+			{
+				return keyHandle.IsAllocated;
+			}
+		}
+
+		internal void Free()
+		{
+			if(keyHandle.IsAllocated)
+			{
+				keyHandle.Free();
+			}
+		}
+	}
+
+	private Pair[] data = new Pair[101];
 
 	public WeakHashtable()
 	{
@@ -14,12 +54,9 @@ public class WeakHashtable : IDictionary
 
 	~WeakHashtable()
 	{
-		foreach(GCHandle h in keys)
+		foreach(Pair p in data)
 		{
-			if(h.IsAllocated)
-			{
-				h.Free();
-			}
+			p.Free();
 		}
 	}
 
@@ -48,7 +85,7 @@ public class WeakHashtable : IDictionary
 		lock(this)
 		{
 			int index = FindKey(key);
-			return index != -1 && keys[index].IsAllocated && keys[index].Target != null;
+			return index != -1 && data[index].Key != null;
 		}
 	}
 
@@ -62,23 +99,19 @@ public class WeakHashtable : IDictionary
 		lock(this)
 		{
 			int index = FindKey(key);
-			if(index != -1 && keys[index].IsAllocated && keys[index].Target != null)
+			if(index != -1 && data[index].Key != null)
 			{
 				throw new ArgumentException();
 			}
-			int newSize = keys.Length;
+			int newSize = data.Length;
 			while(index == -1)
 			{
 				Rehash(newSize);
-				newSize = keys.Length * 2 - 1;
+				newSize = data.Length * 2 - 1;
 				index = FindKey(key);
 			}
-			if(keys[index].IsAllocated)
-			{
-				keys[index].Free();
-			}
-			keys[index] = GCHandle.Alloc(key, GCHandleType.Weak);
-			values[index] = value;
+			data[index].Key = key;
+			data[index].Value = value;
 		}
 	}
 
@@ -95,15 +128,15 @@ public class WeakHashtable : IDictionary
 	// table is too full to contain the key
 	private int FindKey(object key)
 	{
-		int start = key.GetHashCode() % keys.Length;
-		int end = (start + 5) % keys.Length;
-		for(int index = start; ; index = (index + 1) % keys.Length)
+		int start = key.GetHashCode() % data.Length;
+		int end = (start + 5) % data.Length;
+		for(int index = start; ; index = (index + 1) % data.Length)
 		{
-			if(!keys[index].IsAllocated)
+			if(!data[index].IsAllocated)
 			{
 				return index;
 			}
-			if(key.Equals(keys[index].Target))
+			if(key.Equals(data[index].Key))
 			{
 				return index;
 			}
@@ -116,32 +149,37 @@ public class WeakHashtable : IDictionary
 
 	private void Rehash(int newSize)
 	{
-		GCHandle[] currKeys = keys;
-		object[] currValues = values;
-	restart:
-		keys = new GCHandle[newSize];
-		values = new object[newSize];
-		for(int i = 0; i < currKeys.Length; i++)
+		Profiler.Enter("WeakHashtable.Rehash");
+		try
 		{
-			if(currKeys[i].IsAllocated)
+			Pair[] curr = data;
+		restart:
+			data = new Pair[newSize];
+			for(int i = 0; i < curr.Length; i++)
 			{
-				object key = currKeys[i].Target;
-				if(key != null)
+				if(curr[i].IsAllocated)
 				{
-					int index = FindKey(key);
-					if(index == -1)
+					object key = curr[i].Key;
+					if(key != null)
 					{
-						newSize = newSize * 2 - 1;
-						goto restart;
+						int index = FindKey(key);
+						if(index == -1)
+						{
+							newSize = newSize * 2 - 1;
+							goto restart;
+						}
+						data[index] = curr[i];
 					}
-					keys[index] = currKeys[i];
-					values[index] = currValues[i];
-				}
-				else
-				{
-					currKeys[i].Free();
+					else
+					{
+						curr[i].Free();
+					}
 				}
 			}
+		}
+		finally
+		{
+			Profiler.Leave("WeakHashtable.Rehash");
 		}
 	}
 
@@ -152,11 +190,7 @@ public class WeakHashtable : IDictionary
 			lock(this)
 			{
 				int index = FindKey(key);
-				if(index >= 0)
-				{
-					return values[index];
-				}
-				return null;
+				return index == -1 ? null : data[index].Value;
 			}
 		}
 		set
@@ -164,19 +198,15 @@ public class WeakHashtable : IDictionary
 			lock(this)
 			{
 				int index = FindKey(key);
-				int newSize = keys.Length;
+				int newSize = data.Length;
 				while(index == -1)
 				{
 					Rehash(newSize);
-					newSize = keys.Length * 2 - 1;
+					newSize = data.Length * 2 - 1;
 					index = FindKey(key);
 				}
-				if(keys[index].IsAllocated)
-				{
-					keys[index].Free();
-				}
-				keys[index] = GCHandle.Alloc(key, GCHandleType.Weak);
-				values[index] = value;
+				data[index].Key = key;
+				data[index].Value = value;
 			}
 		}
 	}

@@ -56,8 +56,11 @@ public class ByteCodeHelper
 	public static object DynamicInvokeSpecialNew(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 	{
 		ClassLoaderWrapper classLoader = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type)).GetClassLoader();
-		// TODO we should catch ClassNotFoundException and throw a NoClassDefError instead
-		TypeWrapper wrapper = classLoader.LoadClassBySlashedName(clazz);
+		TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(clazz);
+		if(wrapper == null)
+		{
+			throw JavaException.NoClassDefFoundError(clazz);
+		}
 		wrapper.Finish();
 		// TODO who checks that the arg types are loadable?
 		// TODO check accessibility

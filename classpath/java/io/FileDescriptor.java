@@ -51,340 +51,340 @@ import system.io.*;
   */
 public final class FileDescriptor
 {
-	public static final FileDescriptor in = new FileDescriptor(Console.OpenStandardInput());
-	public static final FileDescriptor out = new FileDescriptor(Console.OpenStandardOutput());
-	public static final FileDescriptor err = new FileDescriptor(Console.OpenStandardError());
-	private Stream stream;
+    public static final FileDescriptor in = new FileDescriptor(Console.OpenStandardInput());
+    public static final FileDescriptor out = new FileDescriptor(Console.OpenStandardOutput());
+    public static final FileDescriptor err = new FileDescriptor(Console.OpenStandardError());
+    private Stream stream;
 
-	public FileDescriptor()
+    static final int SET = SeekOrigin.Begin;
+    static final int CUR = SeekOrigin.Current;
+    static final int END = SeekOrigin.End;
+
+    // These are mode values for open().
+    static final int READ   = 1;
+    static final int WRITE  = 2;
+    static final int APPEND = 4;
+    // NOTE EXCL is not used!
+    //static final int EXCL   = 8;
+    static final int SYNC   = 16;
+    static final int DSYNC  = 32;
+
+    public FileDescriptor()
+    {
+    }
+
+    public FileDescriptor(Stream stream)
+    {
+	this.stream = stream;
+    }
+
+    FileDescriptor(String path, int mode) throws FileNotFoundException
+    {
+	open(path, mode);
+    }
+
+    public synchronized void sync() throws SyncFailedException
+    {
+	if(stream == null)
 	{
+	    throw new SyncFailedException("The handle is invalid");
 	}
-
-	public FileDescriptor(Stream stream)
+	try
 	{
-		this.stream = stream;
+	    if(false) throw new system.io.IOException();
+	    stream.Flush();
 	}
-
-	public synchronized void sync() throws SyncFailedException
+	catch(system.io.IOException x)
 	{
-		if(stream == null)
-		{
-			throw new SyncFailedException("The handle is invalid");
-		}
+	    throw new SyncFailedException(x.get_Message());
+	}
+    }
+
+    public synchronized boolean valid()
+    {
+	return stream != null;
+    }
+
+    synchronized void close() throws IOException
+    {
+	if(stream != null)
+	{
+	    // HACK don't close stdin because that throws a NotSupportedException (bug in System.IO.__ConsoleStream)
+	    if(stream != in.stream)
+	    {
 		try
 		{
-			if(false) throw new system.io.IOException();
-			stream.Flush();
-		}
-		catch(system.io.IOException x)
-		{
-			throw new SyncFailedException(x.get_Message());
-		}
-	}
-
-	public synchronized boolean valid()
-	{
-		return stream != null;
-	}
-
-	synchronized void close() throws IOException
-	{
-		if(stream != null)
-		{
-			// HACK don't close stdin because that throws a NotSupportedException (bug in System.IO.__ConsoleStream)
-			if(stream != in.stream)
-			{
-				try
-				{
-					stream.Close();
-					if(false) throw new system.io.IOException();
-				}
-				catch(system.io.IOException x)
-				{
-					throw new IOException(x.get_Message());
-				}
-			}
-			stream = null;
-		}
-	}
-
-	private static String demanglePath(String path)
-	{
-		// HACK for some reason Java accepts: \c:\foo.txt
-		// I don't know what else, but for now lets just support this
-		if(path.length() > 3 && (path.charAt(0) == '\\' || path.charAt(0) == '/') && path.charAt(2) == ':')
-		{
-			path = path.substring(1);
-		}
-		return path;
-	}
-
-	synchronized void open(String path, String mode) throws IOException
-	{
-		if(stream != null)
-			throw new IOException("FileDescriptor already open");
-		if ((path == null) || path.equals(""))
-			throw new IllegalArgumentException("Path cannot be null");
-		try
-		{
-			int fileMode;
-			int fileAccess;
-			if(mode.equals("r"))
-			{
-				fileMode = FileMode.Open;
-				fileAccess = FileAccess.Read;
-			}
-			else if(mode.equals("rw"))
-			{
-				fileMode = FileMode.OpenOrCreate;
-				fileAccess = FileAccess.ReadWrite;
-			}
-			else if(mode.equals("rws") || mode.equals("rwd"))
-			{
-				// TODO implement this
-				throw new IllegalArgumentException("rws and rwd not implemented");
-				//fileMode = FileMode.OpenOrCreate;
-				//fileAccess = FileAccess.ReadWrite;
-			}
-			else if(mode.equals("rwa"))
-			{
-				// TODO this is a bogus mode
-				fileMode = FileMode.Append;
-				fileAccess = FileAccess.ReadWrite;
-			}
-			else if(mode.equals("w"))
-			{
-				fileMode = FileMode.Create;
-				fileAccess = FileAccess.Write;
-			}
-			else if(mode.equals("a"))
-			{
-				fileMode = FileMode.Append;
-				fileAccess = FileAccess.Write;
-			}
-			else
-			{
-				throw new IllegalArgumentException("Invalid mode value: " + mode);
-			}
-			if(false) throw new system.io.IOException();
-			if(false) throw new system.security.SecurityException();
-			if(false) throw new system.UnauthorizedAccessException();
-			stream = system.io.File.Open(demanglePath(path), fileMode, fileAccess, FileShare.ReadWrite);
-		}
-		catch(system.security.SecurityException x1)
-		{
-			throw new SecurityException(x1.get_Message());
-		}
-		catch(system.io.IOException x2)
-		{
-			throw new FileNotFoundException(x2.get_Message());
-		}
-		catch(system.UnauthorizedAccessException x3)
-		{
-			// this is caused by "name" being a directory instead of a file
-			throw new FileNotFoundException(x3.get_Message());
-		}
-		// TODO map al the other exceptions as well...
-	}
-
-	synchronized long getFilePointer() throws IOException
-	{
-		if(stream == null)
-			throw new IOException("Invalid FileDescriptor");
-
-		try
-		{
-			if(false) throw new system.io.IOException();
-			return stream.get_Position();
-		}
-		catch(system.io.IOException x)
-		{
-			throw new IOException(x.get_Message());
-		}
-		// TODO map al the other exceptions as well...
-	}
-
-	synchronized long getLength() throws IOException
-	{
-		if(stream == null)
-			throw new IOException("Invalid FileDescriptor");
-
-		try
-		{
-			if(false) throw new system.io.IOException();
-			return stream.get_Length();
-		}
-		catch(system.io.IOException x)
-		{
-			throw new IOException(x.get_Message());
-		}
-		// TODO map al the other exceptions as well...
-	}
-
-	synchronized void setLength(long len) throws IOException
-	{
-		if(stream == null)
-			throw new IOException("Invalid FileDescriptor");
-
-		if (len < 0)
-			throw new IllegalArgumentException("Length cannot be less than zero " +
-				len);
-
-		try
-		{
-			if(false) throw new system.io.IOException();
-			stream.SetLength(len);
-		}
-		catch(system.io.IOException x)
-		{
-			throw new IOException(x.get_Message());
-		}
-		// TODO map al the other exceptions as well...
-	}
-
-	static final int SET = SeekOrigin.Begin;
-	static final int CUR = SeekOrigin.Current;
-	static final int END = SeekOrigin.End;
-
-	synchronized long seek(long offset, int whence, boolean stopAtEof) throws IOException
-	{
-		if(stream == null)
-			throw new IOException("Invalid FileDescriptor");
-
-		if ((whence != SET) && (whence != CUR) && (whence != END))
-			throw new IllegalArgumentException("Invalid whence value: " + whence);
-
-		try
-		{
-			if(false) throw new system.io.IOException();
-			long newpos = stream.Seek(offset, whence);
-			if(stopAtEof && newpos > stream.get_Length())
-			{
-				newpos = stream.Seek(0, SeekOrigin.End);
-			}
-			return newpos;
-		}
-		catch(system.io.IOException x)
-		{
-			throw new IOException(x.get_Message());
-		}
-		// TODO map al the other exceptions as well...
-	}
-
-	synchronized int read() throws IOException
-	{
-		if(stream == null)
-			throw new IOException("Invalid FileDescriptor");
-
-		try
-		{
-			if(false) throw new system.io.IOException();
-			return stream.ReadByte();
-		}
-		catch(system.io.IOException x)
-		{
-			throw new IOException(x.get_Message());
-		}
-		// TODO map al the other exceptions as well...
-	}
-
-	synchronized int read(byte[] buf, int offset, int len) throws IOException
-	{
-		if(stream == null)
-			throw new IOException("Invalid FileDescriptor");
-
-		if (len == 0)
-			return(0);
-
-		if ((offset < 0) || (offset > buf.length))
-			throw new IllegalArgumentException("Offset invalid: " + offset);
-
-		if ((len < 0) || (len > (buf.length - offset)))
-			throw new IllegalArgumentException("Length invalid: " + len);
-
-		try
-		{
-			if(false) throw new system.io.IOException();
-			int count = stream.Read(buf, offset, len);
-			if(count == 0)
-			{
-				count = -1;
-			}
-			return count;
-		}
-		catch(system.io.IOException x)
-		{
-			throw new IOException(x.get_Message());
-		}
-		// TODO map al the other exceptions as well...
-	}
-
-	synchronized void write(int b) throws IOException
-	{
-		if(stream == null)
-		{
-			throw new IOException("Invalid FileDescriptor");
-		}
-		try
-		{
-			if(false) throw new system.io.IOException();
-			stream.WriteByte((byte)b);
-		}
-		catch(system.io.IOException x)
-		{
-			throw new IOException(x.get_Message());
-		}
-		// TODO map al the other exceptions as well...
-	}
-
-	synchronized void write(byte[] buf, int offset, int len) throws IOException
-	{
-		if(stream == null)
-			throw new IOException("Invalid FileDescriptor");
-
-		if (len == 0)
-			return;
-
-		if ((offset < 0) || (offset > buf.length))
-			throw new IllegalArgumentException("Offset invalid: " + offset);
-
-		if ((len < 0) || (len > (buf.length - offset)))
-			throw new IllegalArgumentException("Length invalid: " + len);
-
-		try
-		{
-			if(false) throw new system.io.IOException();
-			stream.Write(buf, offset, len);
-		}
-		catch(system.io.IOException x)
-		{
-			throw new IOException(x.get_Message());
-		}
-		// TODO map al the other exceptions as well...
-	}
-
-	synchronized int available() throws IOException
-	{
-		if(stream == null)
-			throw new IOException("Invalid FileDescriptor");
-
-		try
-		{
+		    stream.Close();
 		    if(false) throw new system.io.IOException();
-		    if(false) throw new system.NotSupportedException();
-		    if(stream.get_CanSeek())
-			    return (int)Math.min(Integer.MAX_VALUE, Math.max(0, stream.get_Length() - stream.get_Position()));
-		    return 0;
 		}
 		catch(system.io.IOException x)
 		{
 		    throw new IOException(x.get_Message());
 		}
-		catch(system.NotSupportedException x1)
-		{
-		    // this means we have a broken Stream, because if CanSeek returns true, it must
-		    // support Length and Position
-		    return 0;
-		}
+	    }
+	    stream = null;
 	}
+    }
+
+    private static String demanglePath(String path)
+    {
+	// HACK for some reason Java accepts: \c:\foo.txt
+	// I don't know what else, but for now lets just support this
+	if(path.length() > 3 && (path.charAt(0) == '\\' || path.charAt(0) == '/') && path.charAt(2) == ':')
+	{
+	    path = path.substring(1);
+	}
+	return path;
+    }
+
+    private void open(String path, int mode) throws FileNotFoundException
+    {
+	if(stream != null)
+	    throw new InternalError("FileDescriptor already open");
+	if ((path == null) || path.equals(""))
+	    throw new IllegalArgumentException("Path cannot be null");
+	try
+	{
+	    int fileMode;
+	    int fileAccess;
+	    int fileShare;
+	    // NOTE we don't support SYNC or DSYNC
+	    switch(mode & (READ|WRITE|APPEND))
+	    {
+		case READ:
+		    fileMode = FileMode.Open;
+		    fileAccess = FileAccess.Read;
+		    break;
+		case READ|WRITE:
+		    fileMode = FileMode.OpenOrCreate;
+		    fileAccess = FileAccess.ReadWrite;
+		    break;
+		case WRITE:
+		    fileMode = FileMode.Create;
+		    fileAccess = FileAccess.Write;
+		    break;
+		case APPEND:
+		    fileMode = FileMode.Append;
+		    fileAccess = FileAccess.Write;
+		    break;
+		default:
+		    throw new IllegalArgumentException("Invalid mode value: " + mode);
+	    }
+	    if(false) throw new system.io.IOException();
+	    if(false) throw new system.security.SecurityException();
+	    if(false) throw new system.UnauthorizedAccessException();
+	    stream = system.io.File.Open(demanglePath(path), fileMode, fileAccess, FileShare.ReadWrite);
+	}
+	catch(system.security.SecurityException x1)
+	{
+	    throw new SecurityException(x1.get_Message());
+	}
+	catch(system.io.IOException x2)
+	{
+	    throw new FileNotFoundException(x2.get_Message());
+	}
+	catch(system.UnauthorizedAccessException x3)
+	{
+	    // this is caused by "name" being a directory instead of a file
+	    throw new FileNotFoundException(x3.get_Message());
+	}
+	// TODO map al the other exceptions as well...
+    }
+
+    synchronized long getFilePointer() throws IOException
+    {
+	if(stream == null)
+	    throw new IOException("Invalid FileDescriptor");
+
+	try
+	{
+	    if(false) throw new system.io.IOException();
+	    return stream.get_Position();
+	}
+	catch(system.io.IOException x)
+	{
+	    throw new IOException(x.get_Message());
+	}
+	// TODO map al the other exceptions as well...
+    }
+
+    synchronized long getLength() throws IOException
+    {
+	if(stream == null)
+	    throw new IOException("Invalid FileDescriptor");
+
+	try
+	{
+	    if(false) throw new system.io.IOException();
+	    return stream.get_Length();
+	}
+	catch(system.io.IOException x)
+	{
+	    throw new IOException(x.get_Message());
+	}
+	// TODO map al the other exceptions as well...
+    }
+
+    synchronized void setLength(long len) throws IOException
+    {
+	if(stream == null)
+	    throw new IOException("Invalid FileDescriptor");
+
+	if (len < 0)
+	    throw new IllegalArgumentException("Length cannot be less than zero " +
+		len);
+
+	try
+	{
+	    if(false) throw new system.io.IOException();
+	    stream.SetLength(len);
+	}
+	catch(system.io.IOException x)
+	{
+	    throw new IOException(x.get_Message());
+	}
+	// TODO map al the other exceptions as well...
+    }
+
+    synchronized long seek(long offset, int whence, boolean stopAtEof) throws IOException
+    {
+	if(stream == null)
+	    throw new IOException("Invalid FileDescriptor");
+
+	if ((whence != SET) && (whence != CUR) && (whence != END))
+	    throw new IllegalArgumentException("Invalid whence value: " + whence);
+
+	try
+	{
+	    if(false) throw new system.io.IOException();
+	    long newpos = stream.Seek(offset, whence);
+	    if(stopAtEof && newpos > stream.get_Length())
+	    {
+		newpos = stream.Seek(0, SeekOrigin.End);
+	    }
+	    return newpos;
+	}
+	catch(system.io.IOException x)
+	{
+	    throw new IOException(x.get_Message());
+	}
+	// TODO map al the other exceptions as well...
+    }
+
+    synchronized int read() throws IOException
+    {
+	if(stream == null)
+	    throw new IOException("Invalid FileDescriptor");
+
+	try
+	{
+	    if(false) throw new system.io.IOException();
+	    return stream.ReadByte();
+	}
+	catch(system.io.IOException x)
+	{
+	    throw new IOException(x.get_Message());
+	}
+	// TODO map al the other exceptions as well...
+    }
+
+    synchronized int read(byte[] buf, int offset, int len) throws IOException
+    {
+	if(stream == null)
+	    throw new IOException("Invalid FileDescriptor");
+
+	if (len == 0)
+	    return(0);
+
+	if ((offset < 0) || (offset > buf.length))
+	    throw new IllegalArgumentException("Offset invalid: " + offset);
+
+	if ((len < 0) || (len > (buf.length - offset)))
+	    throw new IllegalArgumentException("Length invalid: " + len);
+
+	try
+	{
+	    if(false) throw new system.io.IOException();
+	    int count = stream.Read(buf, offset, len);
+	    if(count == 0)
+	    {
+		count = -1;
+	    }
+	    return count;
+	}
+	catch(system.io.IOException x)
+	{
+	    throw new IOException(x.get_Message());
+	}
+	// TODO map al the other exceptions as well...
+    }
+
+    synchronized void write(int b) throws IOException
+    {
+	if(stream == null)
+	{
+	    throw new IOException("Invalid FileDescriptor");
+	}
+	try
+	{
+	    if(false) throw new system.io.IOException();
+	    stream.WriteByte((byte)b);
+	}
+	catch(system.io.IOException x)
+	{
+	    throw new IOException(x.get_Message());
+	}
+	// TODO map al the other exceptions as well...
+    }
+
+    synchronized void write(byte[] buf, int offset, int len) throws IOException
+    {
+	if(stream == null)
+	    throw new IOException("Invalid FileDescriptor");
+
+	if (len == 0)
+	    return;
+
+	if ((offset < 0) || (offset > buf.length))
+	    throw new IllegalArgumentException("Offset invalid: " + offset);
+
+	if ((len < 0) || (len > (buf.length - offset)))
+	    throw new IllegalArgumentException("Length invalid: " + len);
+
+	try
+	{
+	    if(false) throw new system.io.IOException();
+	    stream.Write(buf, offset, len);
+	}
+	catch(system.io.IOException x)
+	{
+	    throw new IOException(x.get_Message());
+	}
+	// TODO map al the other exceptions as well...
+    }
+
+    synchronized int available() throws IOException
+    {
+	if(stream == null)
+	    throw new IOException("Invalid FileDescriptor");
+
+	try
+	{
+	    if(false) throw new system.io.IOException();
+	    if(false) throw new system.NotSupportedException();
+	    if(stream.get_CanSeek())
+		return (int)Math.min(Integer.MAX_VALUE, Math.max(0, stream.get_Length() - stream.get_Position()));
+	    return 0;
+	}
+	catch(system.io.IOException x)
+	{
+	    throw new IOException(x.get_Message());
+	}
+	catch(system.NotSupportedException x1)
+	{
+	    // this means we have a broken Stream, because if CanSeek returns true, it must
+	    // support Length and Position
+	    return 0;
+	}
+    }
 } // class FileDescriptor

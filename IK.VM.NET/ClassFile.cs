@@ -24,26 +24,7 @@
 using System;
 using System.IO;
 using System.Collections;
-
-[Flags]
-public enum Modifiers : ushort
-{
-	Public			= 0x0001,
-	Private			= 0x0002,
-	Protected		= 0x0004,
-	Static			= 0x0008,
-	Final			= 0x0010,
-	Super			= 0x0020,
-	Synchronized	= 0x0020,
-	Volatile		= 0x0040,
-	Transient		= 0x0080,
-	Native			= 0x0100,
-	Interface		= 0x0200,
-	Abstract		= 0x0400,
-	Strictfp		= 0x0800,
-	Synthetic		= 0x8000		// we use this to record the fact that we created the method/field/property
-									// so the member should not be visible through reflection
-}
+using OpenSystem.Java;
 
 class ClassFile
 {
@@ -138,12 +119,12 @@ class ClassFile
 			}
 			else
 			{
-				if(this.Name != "java/lang/Object")
+				if(this.Name != "java.lang.Object")
 				{
 					throw JavaException.ClassFormatError("{0} (Bad superclass index)", Name);
 				}
 			}
-			if(IsInterface && (super_class == 0 || super_cpi.Name != "java/lang/Object"))
+			if(IsInterface && (super_class == 0 || super_cpi.Name != "java.lang.Object"))
 			{
 				throw JavaException.ClassFormatError("{0} (Interfaces must have java.lang.Object as superclass)", Name);
 			}
@@ -243,6 +224,8 @@ class ClassFile
 //		}
 	}
 
+	// NOTE this property is only used when statically compiling
+	// (and it is set by the static compiler's class loader in vm.cs)
 	internal ClassFile OuterClass
 	{
 		get
@@ -345,9 +328,14 @@ class ClassFile
 		return ((ConstantPoolItemString)constantpool[index]).Value;
 	}
 
-	private string GetConstantPoolUtf8(int index)
+	private ConstantPoolItemUtf8 GetConstantPoolUtf8(int index)
 	{
-		return ((ConstantPoolItemUtf8)constantpool[index]).Value;
+		return ((ConstantPoolItemUtf8)constantpool[index]);
+	}
+
+	internal string GetConstantPoolUtf8String(int index)
+	{
+		return GetConstantPoolUtf8(index).Value;
 	}
 
 	internal object GetConstantPoolConstant(int index)
@@ -392,7 +380,7 @@ class ClassFile
 		get
 		{
 			string name = Name;
-			int index = name.LastIndexOf('/');
+			int index = name.LastIndexOf('.');
 			if(index == -1)
 			{
 				return "";
@@ -527,7 +515,7 @@ class ClassFile
 				}
 				return list;
 			}
-			return new InnerClass[0];
+			return null;
 		}
 	}
 
@@ -595,7 +583,7 @@ class ClassFile
 
 		internal override void Resolve(ClassFile classFile)
 		{
-			name = ((ConstantPoolItemUtf8)classFile.GetConstantPoolItem(name_index)).Value;;
+			name = ((ConstantPoolItemUtf8)classFile.GetConstantPoolItem(name_index)).DottifiedValue;;
 		}
 
 		internal override void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
@@ -625,7 +613,7 @@ class ClassFile
 	{
 		try
 		{
-			return classLoader.LoadClassBySlashedName(name);
+			return classLoader.LoadClassByDottedName(name);
 		}
 		catch(Exception x)
 		{
@@ -707,7 +695,7 @@ class ClassFile
 	{
 		if(sig[1] == ')')
 		{
-			return new TypeWrapper[0];
+			return TypeWrapper.EmptyArray;
 		}
 		ArrayList list = new ArrayList();
 		for(int i = 1; sig[i] != ')';)
@@ -921,7 +909,7 @@ class ClassFile
 			name = nameUtf8.Value;
 			ConstantPoolItemUtf8 descriptorUtf8 = (ConstantPoolItemUtf8)classFile.GetConstantPoolItem(descriptor_index);
 			descriptorUtf8.Resolve(classFile);
-			descriptor = descriptorUtf8.Value;
+			descriptor = descriptorUtf8.DottifiedValue;
 		}
 
 		internal override void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
@@ -1031,6 +1019,14 @@ class ClassFile
 				return s;
 			}
 		}
+
+		internal string DottifiedValue
+		{
+			get
+			{
+				return s.Replace('/', '.');
+			}
+		}
 	}
 
 	private enum Constant
@@ -1062,7 +1058,7 @@ class ClassFile
 			try
 			{
 				int name_index = br.ReadUInt16();
-				string name = classFile.GetConstantPoolUtf8(name_index);
+				string name = classFile.GetConstantPoolUtf8(name_index).Value;
 				int attribute_length = br.ReadInt32();
 				Attribute a = new Attribute();
 				a.name = name;
@@ -1130,7 +1126,7 @@ class ClassFile
 		{
 			get
 			{
-				return classFile.GetConstantPoolUtf8(name_index);
+				return classFile.GetConstantPoolUtf8(name_index).Value;
 			}
 		}
 
@@ -1138,7 +1134,7 @@ class ClassFile
 		{
 			get
 			{
-				return classFile.GetConstantPoolUtf8(descriptor_index);
+				return classFile.GetConstantPoolUtf8(descriptor_index).DottifiedValue;
 			}
 		}
 
@@ -1328,7 +1324,7 @@ class ClassFile
 						case "D":
 							constantValue = (double)o;
 							break;
-						case "Ljava/lang/String;":
+						case "Ljava.lang.String;":
 							constantValue = (string)o;
 							break;
 						default:
@@ -1396,7 +1392,7 @@ class ClassFile
 				Attribute attr = GetAttribute("IK.VM.NET.Sig");
 				if(attr != null)
 				{
-					string s = ClassFile.GetConstantPoolUtf8(attr.Data.ReadUInt16());
+					string s = ClassFile.GetConstantPoolUtf8(attr.Data.ReadUInt16()).Value;
 					if(s.Length == 0)
 					{
 						return new string[0];
@@ -1632,8 +1628,8 @@ class ClassFile
 							{
 								localVariableTable[i].start_pc = rdr.ReadUInt16();
 								localVariableTable[i].length = rdr.ReadUInt16();
-								localVariableTable[i].name = method.ClassFile.GetConstantPoolUtf8(rdr.ReadUInt16());
-								localVariableTable[i].descriptor = method.ClassFile.GetConstantPoolUtf8(rdr.ReadUInt16());
+								localVariableTable[i].name = method.ClassFile.GetConstantPoolUtf8(rdr.ReadUInt16()).Value;
+								localVariableTable[i].descriptor = method.ClassFile.GetConstantPoolUtf8(rdr.ReadUInt16()).DottifiedValue;
 								localVariableTable[i].index = rdr.ReadUInt16();
 							}
 						}

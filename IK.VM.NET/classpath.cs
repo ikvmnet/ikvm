@@ -28,6 +28,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Text;
+using OpenSystem.Java;
 using NetSystem = System;
 
 namespace java.lang
@@ -987,7 +988,7 @@ namespace NativeCode.java
 				{
 					// TODO handle errors
 					ClassFile classFile = new ClassFile(data, offset, length, name);
-					if(name != null && classFile.Name.Replace('/', '.') != name)
+					if(name != null && classFile.Name != name)
 					{
 						throw JavaException.NoClassDefFoundError("{0} (wrong name: {1})", name, classFile.Name);
 					}
@@ -1191,7 +1192,7 @@ namespace NativeCode.java
 							// class object for the parent type
 							// NOTE we first check if type isn't an array, because Type.IsDefined throws an exception
 							// when called on an array type (?)
-							if(!type.IsArray && type.IsDefined(typeof(OverrideStubTypeAttribute), false))
+							if(!type.IsArray && type.IsDefined(typeof(HideFromReflectionAttribute), false))
 							{
 								clazz = getClassFromType(type.BaseType);
 								map.Add(type, clazz);
@@ -1221,7 +1222,7 @@ namespace NativeCode.java
 					// HACK name is null for primitives
 					if(name != null)
 					{
-						return name.Replace('/', '.');
+						return name;
 					}
 					type = ((TypeWrapper)wrapperType).Type;
 				}
@@ -1235,7 +1236,7 @@ namespace NativeCode.java
 					// HACK name is null for primitives
 					if(name != null)
 					{
-						return name.Replace('/', '.');
+						return name;
 					}
 				}
 				if(type.IsValueType)
@@ -1340,20 +1341,20 @@ namespace NativeCode.java
 				}
 				else
 				{
-					while(type.IsDefined(typeof(OverrideStubTypeAttribute), false))
+					while(type.IsDefined(typeof(HideFromReflectionAttribute), false))
 					{
 						type = type.BaseType;
 					}
 					TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
 					if(wrapper != null)
 					{
-						return wrapper.Name.Replace('/', '.');
+						return wrapper.Name;
 					}
 					// look for our custom attribute, that contains the real name of the type (for inner classes)
-					Object[] attribs = type.GetCustomAttributes(typeof(ClassNameAttribute), false);
+					Object[] attribs = type.GetCustomAttributes(typeof(InnerClassAttribute), false);
 					if(attribs.Length == 1)
 					{
-						return ((ClassNameAttribute)attribs[0]).Name.Replace('/', '.');
+						return ((InnerClassAttribute)attribs[0]).InnerClassName;
 					}
 					return type.FullName;
 				}
@@ -1385,9 +1386,9 @@ namespace NativeCode.java
 				ArrayList list = new ArrayList();
 				for(int i = 0; i < methods.Length; i++)
 				{
-					// we don't want to expose synthetics methods (one reason is that it would
+					// we don't want to expose "hideFromReflection" methods (one reason is that it would
 					// mess up the serialVersionUID computation)
-					if((methods[i].Modifiers & Modifiers.Synthetic) == 0)
+					if(!methods[i].IsHideFromReflection)
 					{
 						if(methods[i].Name == "<clinit>")
 						{
@@ -1459,18 +1460,23 @@ namespace NativeCode.java
 				{
 					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
 				}
-				// NOTE to get at the InnerClasses we *don't* need to finish the type
+				// NOTE to get at the InnerClasses we need to finish the type
+				wrapper.Finish();
 				TypeWrapper[] wrappers = wrapper.InnerClasses;
 				if(publicOnly)
 				{
 					ArrayList list = new ArrayList();
 					for(int i = 0; i < wrappers.Length; i++)
 					{
+						if(wrappers[i].IsUnloadable)
+						{
+							throw JavaException.NoClassDefFoundError(wrappers[i].Name);
+						}
 						// because the VM lacks any support for nested visibility control, we
 						// cannot rely on the publicness of the type here, but instead we have
 						// to look at the reflective modifiers
 						wrappers[i].Finish();
-						if((ModifiersAttribute.GetModifiers(wrappers[i].Type) & Modifiers.Public) != 0)
+						if((wrappers[i].ReflectiveModifiers & Modifiers.Public) != 0)
 						{
 							list.Add(wrappers[i]);
 						}
@@ -1496,6 +1502,8 @@ namespace NativeCode.java
 				{
 					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
 				}
+				// before we can call DeclaringTypeWrapper, we need to finish the type
+				wrapper.Finish();
 				TypeWrapper declaring = wrapper.DeclaringTypeWrapper;
 				if(declaring == null)
 				{
@@ -1528,15 +1536,16 @@ namespace NativeCode.java
 
 			public static int GetModifiers(Type type, Object cwrapper)
 			{
-				if(type == null)
+				TypeWrapper wrapper = (TypeWrapper)cwrapper;
+				if(wrapper == null)
 				{
-					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					wrapper.Finish();
-					type = wrapper.Type;
+					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
 				}
+				// NOTE ReflectiveModifiers is only available for finished types
+				wrapper.Finish();
 				// NOTE we don't return the modifiers from the TypeWrapper, because for inner classes
 				// the reflected modifiers are different from the physical ones
-				Modifiers modifiers = ModifiersAttribute.GetModifiers(type);
+				Modifiers modifiers = wrapper.ReflectiveModifiers;
 				// only returns public, protected, private, final, static, abstract and interface (as per
 				// the documentation of Class.getModifiers())
 				Modifiers mask = Modifiers.Public | Modifiers.Protected | Modifiers.Private | Modifiers.Final |
@@ -1803,10 +1812,7 @@ namespace NativeCode.java
 				{
 					if(!type.IsArray && type.TypeInitializer != null)
 					{
-						if(!ModifiersAttribute.IsSynthetic(type.TypeInitializer))
-						{
-							return true;
-						}
+						return !AttributeHelper.IsHideFromReflection(type.TypeInitializer);
 					}
 					return false;
 				}

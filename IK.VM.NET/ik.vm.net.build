@@ -5,6 +5,9 @@
             <sources>
                 <includes name="*.cs" />
             </sources>
+            <references>
+                <includes name="../bin/OpenSystem.Java.dll" asis="true" />
+            </references>
             <arg value="/resource:map.xml" />
         </csc>
     </target>
