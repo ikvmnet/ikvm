@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -248,7 +248,7 @@ class InstructionState
 					}
 					else
 					{
-						System.Diagnostics.Debug.Assert(false);
+						System.Diagnostics.Debug.Fail("invalid merge");
 					}
 				}
 				if(type != baseType)
@@ -1063,8 +1063,9 @@ class VerifierTypeWrapper : TypeWrapper
 	}
 }
 
-class LocalVar : IComparable
+class LocalVar
 {
+	internal bool isArg;
 	internal int local;
 	internal TypeWrapper type;
 	internal System.Reflection.Emit.LocalBuilder builder;
@@ -1072,38 +1073,29 @@ class LocalVar : IComparable
 	internal string name;
 	internal int start_pc;
 	internal int end_pc;
-	// we have a linked list of LocalVars that are really the same
-	private LocalVar next;
 
-	internal void Link(LocalVar v)
+	internal void FindLvtEntry(ClassFile.Method.Code method, int instructionIndex)
 	{
-		Debug.Assert(v != this);
-		v = v.Tail();
-		v.next = this;
-		next = null;
-	}
-
-	internal LocalVar Tail()
-	{
-		if(next == null)
+		ClassFile.Method.LocalVariableTableEntry[] lvt = method.LocalVariableTableAttribute;
+		if(lvt != null)
 		{
-			return this;
+			int pc = method.Instructions[instructionIndex].PC;
+			int nextPC = method.Instructions[instructionIndex + 1].PC;
+			bool isStore = MethodAnalyzer.IsStoreLocal(method.Instructions[instructionIndex].NormalizedOpCode);
+			foreach(ClassFile.Method.LocalVariableTableEntry e in lvt)
+			{
+				// TODO validate the contents of the LVT entry
+				if(e.index == local &&
+					(e.start_pc <= pc || (e.start_pc == nextPC && isStore)) && 
+					e.start_pc + e.length > pc)
+				{
+					name = e.name;
+					start_pc = e.start_pc;
+					end_pc = e.start_pc + e.length;
+					break;
+				}
+			}
 		}
-		return next.Tail();
-	}
-
-	int IComparable.CompareTo(object obj)
-	{
-		LocalVar other = (LocalVar)obj;
-		if(local > other.local)
-		{
-			return 1;
-		}
-		else if(local < other.local)
-		{
-			return -1;
-		}
-		return type.SigName.CompareTo(other.type.SigName);
 	}
 }
 
@@ -1121,8 +1113,9 @@ class MethodAnalyzer
 	private ClassFile.Method.Code method;
 	private InstructionState[] state;
 	private ArrayList[] callsites;
-	private LocalVar[] localVars;
-	private LocalVar[][] invokespecialLocalVars;
+	private LocalVar[/*instructionIndex*/] localVars;
+	private LocalVar[/*instructionIndex*/][/*localIndex*/] invokespecialLocalVars;
+	private LocalVar[/*index*/] allLocalVars;
 
 	static MethodAnalyzer()
 	{
@@ -1143,7 +1136,7 @@ class MethodAnalyzer
 		state = new InstructionState[method.Instructions.Length];
 		callsites = new ArrayList[method.Instructions.Length];
 
-		Hashtable[] localStoreReaders = new Hashtable[method.Instructions.Length];
+		Hashtable/*<int,ignored>*/[] localStoreReaders = new Hashtable[method.Instructions.Length];
 
 		// HACK because types have to have identity, the subroutine return address and new types are cached here
 		Hashtable returnAddressTypes = new Hashtable();
@@ -1151,36 +1144,37 @@ class MethodAnalyzer
 
 		// start by computing the initial state, the stack is empty and the locals contain the arguments
 		state[0] = new InstructionState(method.MaxLocals, method.MaxStack);
-		int arg = 0;
+		int firstNonArgLocalIndex = 0;
 		if(!method.Method.IsStatic)
 		{
 			// this reference. If we're a constructor, the this reference is uninitialized.
 			if(method.Method.Name == "<init>")
 			{
-				state[0].SetLocalType(arg++, VerifierTypeWrapper.UninitializedThis, -1);
+				state[0].SetLocalType(firstNonArgLocalIndex++, VerifierTypeWrapper.UninitializedThis, -1);
 			}
 			else
 			{
-				state[0].SetLocalType(arg++, wrapper, -1);
+				state[0].SetLocalType(firstNonArgLocalIndex++, wrapper, -1);
 			}
 		}
-		// HACK articial scope to make "args" name reusable
-		if(true)
+		TypeWrapper[] argTypeWrappers = method.Method.GetArgTypes(classLoader);
+		for(int i = 0; i < argTypeWrappers.Length; i++)
 		{
-			TypeWrapper[] args = method.Method.GetArgTypes(classLoader);
-			for(int i = 0; i < args.Length; i++)
+			TypeWrapper type = argTypeWrappers[i];
+			if(type.IsIntOnStackPrimitive)
 			{
-				TypeWrapper type = args[i];
-				if(type.IsIntOnStackPrimitive)
-				{
-					type = PrimitiveTypeWrapper.INT;
-				}
-				state[0].SetLocalType(arg++, type, -1);
-				if(type.IsWidePrimitive)
-				{
-					arg++;
-				}
+				type = PrimitiveTypeWrapper.INT;
 			}
+			state[0].SetLocalType(firstNonArgLocalIndex++, type, -1);
+			if(type.IsWidePrimitive)
+			{
+				firstNonArgLocalIndex++;
+			}
+		}
+		TypeWrapper[] argumentsByLocalIndex = new TypeWrapper[firstNonArgLocalIndex];
+		for(int i = 0; i < argumentsByLocalIndex.Length; i++)
+		{
+			argumentsByLocalIndex[i] = state[0].GetLocalTypeEx(i);
 		}
 		InstructionState s = state[0].Copy();
 		bool done = false;
@@ -2175,8 +2169,8 @@ class MethodAnalyzer
 		}
 		
 		// now that we've done the code flow analysis, we can do a liveness analysis on the local variables
-		Hashtable localByStoreSite = new Hashtable();
-		ArrayList locals = new ArrayList();
+		Hashtable/*<string,LocalVar>*/ localByStoreSite = new Hashtable();
+		ArrayList/*<LocalVar>*/ locals = new ArrayList();
 		for(int i = 0; i < localStoreReaders.Length; i++)
 		{
 			if(localStoreReaders[i] != null)
@@ -2184,28 +2178,70 @@ class MethodAnalyzer
 				VisitLocalLoads(locals, localByStoreSite, localStoreReaders[i], i);
 			}
 		}
-		Hashtable unique = new Hashtable();
-		for(int i = 0; i < locals.Count; i++)
-		{
-			unique[((LocalVar)locals[i]).Tail()] = "";
-		}
-		locals = new ArrayList(unique.Keys);
-		locals.Sort();
 		Hashtable forwarders = new Hashtable();
-		for(int i = 0; i < locals.Count - 1; i++)
+		if(JVM.Debug)
 		{
-			LocalVar v1 = (LocalVar)locals[i];
-			LocalVar v2 = (LocalVar)locals[i + 1];
-			// if the two locals are the same, we merge them (note that the debugging stuff
-			// will always match if debugging is disabled)
-			// NOTE this is a small optimization (and to improve the debugging experience)
-			// it should *not* be required for correctness.
-			if(v1.local == v2.local && v1.type == v2.type &&
-				v1.name == v2.name && v1.start_pc == v2.start_pc && v1.end_pc == v2.end_pc)
+			// if we're emitting debug info, we need to keep dead stores as well...
+			for(int i = 0; i < method.Instructions.Length; i++)
 			{
-				forwarders.Add(v2, v1);
-				locals.RemoveAt(i + 1);
-				i--;
+				if(IsStoreLocal(method.Instructions[i].NormalizedOpCode))
+				{
+					if(!localByStoreSite.ContainsKey(i + ":" + method.Instructions[i].NormalizedArg1))
+					{
+						LocalVar v = new LocalVar();
+						v.local = method.Instructions[i].NormalizedArg1;
+						v.type = GetRawStackTypeWrapper(i, 0);
+						v.FindLvtEntry(method, i);
+						locals.Add(v);
+						localByStoreSite.Add(i + ":" + v.local, v);
+					}
+				}
+			}
+			// to make the debugging experience better, we have to trust the
+			// LocalVariableTable (unless it's clearly bogus) and merge locals
+			// together that are the same according to the LVT
+			for(int i = 0; i < locals.Count - 1; i++)
+			{
+				for(int j = i + 1; j < locals.Count; j++)
+				{
+					LocalVar v1 = (LocalVar)locals[i];
+					LocalVar v2 = (LocalVar)locals[j];
+					if(v1.name != null && v1.name == v2.name && v1.start_pc == v2.start_pc && v1.end_pc == v2.end_pc)
+					{
+						// we can only merge if the resulting type is valid (this protects against incorrect
+						// LVT data, but is also needed for constructors, where the uninitialized this is a different
+						// type from the initialized this)
+						TypeWrapper tw = InstructionState.FindCommonBaseType(v1.type, v2.type);
+						if(tw != VerifierTypeWrapper.Invalid)
+						{
+							v1.isArg |= v2.isArg;
+							v1.type = tw;
+							forwarders.Add(v2, v1);
+							locals.RemoveAt(j);
+							j--;
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			for(int i = 0; i < locals.Count - 1; i++)
+			{
+				for(int j = i + 1; j < locals.Count; j++)
+				{
+					LocalVar v1 = (LocalVar)locals[i];
+					LocalVar v2 = (LocalVar)locals[j];
+					// if the two locals are the same, we merge them, this is a small
+					// optimization, it should *not* be required for correctness.
+					if(v1.local == v2.local && v1.type == v2.type)
+					{
+						v1.isArg |= v2.isArg;
+						forwarders.Add(v2, v1);
+						locals.RemoveAt(j);
+						j--;
+					}
+				}
 			}
 		}
 		invokespecialLocalVars = new LocalVar[method.Instructions.Length][];
@@ -2249,6 +2285,7 @@ class MethodAnalyzer
 				localVars[i] = v;
 			}
 		}
+		this.allLocalVars = (LocalVar[])locals.ToArray(typeof(LocalVar));
 	}
 
 	private static bool IsLoadLocal(NormalizedByteCode bc)
@@ -2262,7 +2299,7 @@ class MethodAnalyzer
 			bc == NormalizedByteCode.__ret;
 	}
 
-	private static bool IsStoreLocal(NormalizedByteCode bc)
+	internal static bool IsStoreLocal(NormalizedByteCode bc)
 	{
 		return bc == NormalizedByteCode.__astore ||
 			bc == NormalizedByteCode.__istore ||
@@ -2277,12 +2314,14 @@ class MethodAnalyzer
 		LocalVar local = null;
 		TypeWrapper type = VerifierTypeWrapper.Null;
 		int localIndex = method.Instructions[instructionIndex].NormalizedArg1;
+		bool isArg = false;
 		foreach(int store in storeSites.Keys)
 		{
 			if(store == -1)
 			{
 				// it's a method argument, it has no initial store, but the type is simply the parameter type
 				type = InstructionState.FindCommonBaseType(type, state[0].GetLocalTypeEx(localIndex));
+				isArg = true;
 			}
 			else
 			{
@@ -2300,27 +2339,25 @@ class MethodAnalyzer
 			Debug.Assert(type != VerifierTypeWrapper.Invalid);
 
 			LocalVar l = (LocalVar)localByStoreSite[store + ":" + localIndex];
-
-			// If we've already defined a LocalVar and we find another one, then we join them
-			// together.
-			// This happens for the following code fragment:
-			//
-			// int i = -1;
-			// try { i = 0; for(; ; ) System.out.println(i); } catch(Exception x) {}
-			// try { i = 0; for(; ; ) System.out.println(i); } catch(Exception x) {}
-			// System.out.println(i);
-			//
-			if(l != null && local != null && l != local)
-			{
-				Debug.Assert(l.local == local.local);
-				local.Link(l);
-				l = null;
-			}
-			Debug.Assert(local == null || l == null || local == l);
 			if(l != null)
 			{
-				Debug.Assert(l.local == localIndex);
-				local = l;
+				if(local == null)
+				{
+					local = l;
+				}
+				else
+				{
+					// If we've already defined a LocalVar and we find another one, then we merge them
+					// together.
+					// This happens for the following code fragment:
+					//
+					// int i = -1;
+					// try { i = 0; for(; ; ) System.out.println(i); } catch(Exception x) {}
+					// try { i = 0; for(; ; ) System.out.println(i); } catch(Exception x) {}
+					// System.out.println(i);
+					//
+					local = MergeLocals(locals, localByStoreSite, local, l);
+				}
 			}
 		}
 		if(local == null)
@@ -2328,35 +2365,57 @@ class MethodAnalyzer
 			local = new LocalVar();
 			local.local = localIndex;
 			local.type = type;
+			local.isArg = isArg;
 			if(JVM.Debug)
 			{
-				ClassFile.Method.LocalVariableTableEntry[] lvt = method.LocalVariableTableAttribute;
-				if(lvt != null)
-				{
-					int pc = method.Instructions[instructionIndex].PC;
-					foreach(ClassFile.Method.LocalVariableTableEntry e in lvt)
-					{
-						if(e.index == localIndex && e.start_pc <= pc && e.start_pc + e.length >= pc)
-						{
-							local.name = e.name;
-							local.start_pc = e.start_pc;
-							local.end_pc = e.start_pc + e.length;
-							break;
-						}
-					}
-				}
+				local.FindLvtEntry(method, instructionIndex);
 			}
 			locals.Add(local);
 		}
 		else
 		{
+			local.isArg |= isArg;
 			local.type = InstructionState.FindCommonBaseType(local.type, type);
 			Debug.Assert(local.type != VerifierTypeWrapper.Invalid);
 		}
 		foreach(int store in storeSites.Keys)
 		{
-			localByStoreSite[store + ":" + localIndex] = local;
+			LocalVar v = (LocalVar)localByStoreSite[store + ":" + localIndex];
+			if(v == null)
+			{
+				// TODO does this ever happen?
+				localByStoreSite[store + ":" + localIndex] = local;
+			}
+			else if(v != local)
+			{
+				// TODO does this ever happen?
+				Console.WriteLine("merging...");
+				local = MergeLocals(locals, localByStoreSite, local, v);
+			}
 		}
+	}
+
+	private static LocalVar MergeLocals(ArrayList locals, Hashtable localByStoreSite, LocalVar l1, LocalVar l2)
+	{
+		Debug.Assert(l1.local == l2.local);
+		for(int i = 0; i < locals.Count; i++)
+		{
+			if(locals[i] == l2)
+			{
+				locals.RemoveAt(i);
+				i--;
+			}
+		}
+		Hashtable temp = (Hashtable)localByStoreSite.Clone();
+		localByStoreSite.Clear();
+		foreach(DictionaryEntry de in temp)
+		{
+			localByStoreSite[de.Key] = de.Value == l2 ? l1 : de.Value;
+		}
+		l1.isArg |= l2.isArg;
+		l1.type = InstructionState.FindCommonBaseType(l1.type, l2.type);
+		Debug.Assert(l1.type != VerifierTypeWrapper.Invalid);
+		return l1;
 	}
 
 	private ClassFile.ConstantPoolItemFMI GetMethodref(int index)
@@ -2492,5 +2551,15 @@ class MethodAnalyzer
 	{
 		Debug.Assert(method.Instructions[instructionIndex].NormalizedOpCode == NormalizedByteCode.__invokespecial);
 		return invokespecialLocalVars[instructionIndex];
+	}
+
+	internal LocalVar[] GetAllLocalVars()
+	{
+		return allLocalVars;
+	}
+
+	internal bool IsReachable(int instructionIndex)
+	{
+		return state[instructionIndex] != null;
 	}
 }

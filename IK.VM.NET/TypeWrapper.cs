@@ -2816,7 +2816,7 @@ class DynamicTypeWrapper : TypeWrapper
 					}
 					else
 					{
-						Compiler.Compile(wrapper, m, ilGenerator, wrapper.GetClassLoader());
+						Compiler.Compile(wrapper, m, ilGenerator);
 					}
 				}
 				if(!classFile.IsInterface)

@@ -39,6 +39,7 @@ public class JVM
 	private static bool isStaticCompiler = false;
 	private static IJniProvider jniProvider;
 	private static bool compilationPhase1;
+	private static string sourcePath;
 
 	public static bool Debug
 	{
@@ -49,6 +50,18 @@ public class JVM
 		set
 		{
 			debug = value;
+		}
+	}
+
+	public static string SourcePath
+	{
+		get
+		{
+			return sourcePath;
+		}
+		set
+		{
+			sourcePath = value;
 		}
 	}
 

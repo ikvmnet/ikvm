@@ -46,6 +46,14 @@ namespace ikvm.awt
 	delegate void SetColor(Color c);
 	delegate java.awt.Dimension GetDimension();
 
+	class UndecoratedForm : Form
+	{
+		public UndecoratedForm()
+		{
+			this.FormBorderStyle = FormBorderStyle.None;
+		}
+	}
+
 	public class NetToolkit : gnu.java.awt.ClasspathToolkit
 	{
 		private static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
@@ -193,8 +201,9 @@ namespace ikvm.awt
 
 		protected override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
 		{
-			throw new NotImplementedException();
+			return new NetWindowPeer(target, (Form)CreateControl(typeof(UndecoratedForm)));
 		}
+
 		protected override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
 		{
 			throw new NotImplementedException();
@@ -227,9 +236,10 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
 		public override java.awt.Dimension getScreenSize()
 		{
-			throw new NotImplementedException();
+			return new java.awt.Dimension(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
 		}
 
 		public override int getScreenResolution()
@@ -1151,7 +1161,14 @@ namespace ikvm.awt
 			java.awt.Container parent = component.getParent();
 			if(parent != null && !(this is java.awt.peer.LightweightPeer))
 			{
-				control.Parent = ((NetComponentPeer)parent.getPeer()).control;
+				if(control is Form)
+				{
+					((Form)control).Owner = (Form)((NetComponentPeer)parent.getPeer()).control;
+				}
+				else
+				{
+					control.Parent = ((NetComponentPeer)parent.getPeer()).control;
+				}
 				if(parent is java.awt.Frame)
 				{
 					java.awt.Insets ins = ((NetFramePeer)parent.getPeer()).getInsets();

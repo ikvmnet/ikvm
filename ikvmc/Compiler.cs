@@ -97,6 +97,7 @@ class Compiler
 			Console.Error.WriteLine("    -resource:<name>=<path> Include file as Java resource");
 			Console.Error.WriteLine("    -exclude:<filename>     A file containing a list of classes to exclude");
 			Console.Error.WriteLine("    -debug                  Creates debugging information for the output file");
+			Console.Error.WriteLine("    -srcpath:<path>         Prepend path and package name to source file");
 			Console.Error.WriteLine("    -Xtrace:<string>        Displays all tracepoints with the given name");
 			Console.Error.WriteLine("    -Xmethodtrace:<string>  Builds method trace into the specified output methods");
 			return 1;
@@ -221,6 +222,10 @@ class Compiler
 				else if(s == "-debug")
 				{
 					JVM.Debug = true;
+				}
+				else if(s.StartsWith("-srcpath:"))
+				{
+					JVM.SourcePath = s.Substring(9);
 				}
 				else if(s.StartsWith("-remap:"))
 				{
