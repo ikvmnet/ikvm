@@ -339,6 +339,8 @@ public class Starter
 			}
 			else
 			{
+				// if clazz isn't public, we can still call main
+				method.setAccessible(true);
 				if(saveAssembly)
 				{
 					java.lang.Runtime.getRuntime().addShutdownHook(new SaveAssemblyShutdownHook(clazz));

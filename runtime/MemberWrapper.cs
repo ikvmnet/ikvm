@@ -525,6 +525,24 @@ class MethodWrapper : MemberWrapper
 						throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
 					}
 				}
+				else if(!method.DeclaringType.IsInstanceOfType(obj))
+				{
+					// we're trying to initialize an existing instance of a remapped type
+					// HACK special case for deserialization of java.lang.Throwable subclasses
+					if(obj is System.Exception && (args == null || args.Length == 0))
+					{
+						// TODO this isn't the right constructor. We should be calling Exception(ExceptionHelper.get_NullString()).
+						method = typeof(System.Exception).GetConstructor(Type.EmptyTypes);
+					}
+					else
+					{
+						// NOTE this will also happen if you try to deserialize a .NET object
+						// (i.e. a type that doesn't derive from our java.lang.Object).
+						// We might want to support that in the future (it's fairly easy, because
+						// the call to Object.<init> can just be ignored)
+						throw new NotSupportedException("Unable to partially construct object of type " + obj.GetType().FullName + " to type " + method.DeclaringType.FullName);
+					}
+				}
 			}
 			else if(nonVirtual && !method.IsStatic)
 			{
@@ -947,6 +965,7 @@ class FieldWrapper : MemberWrapper
 		{
 			bindings |= BindingFlags.Instance;
 		}
+		// TODO instead of looking up the field by name, we should use the Token to find it.
 		field = DeclaringType.TypeAsTBD.GetField(name, bindings);
 		Debug.Assert(field != null);
 	}
