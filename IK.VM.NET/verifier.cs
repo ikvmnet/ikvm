@@ -380,6 +380,10 @@ class InstructionState
 		{
 			return VerifierTypeWrapper.Invalid;
 		}
+		if(type1.IsUnloadable || type2.IsUnloadable)
+		{
+			return VerifierTypeWrapper.Unloadable;
+		}
 		if(type1.ArrayRank > 0 && type2.ArrayRank > 0)
 		{
 			int rank = 1;
@@ -685,7 +689,7 @@ class InstructionState
 	internal TypeWrapper PopArrayType()
 	{
 		TypeWrapper type = PopAnyType();
-		if(type != VerifierTypeWrapper.Null && type.ArrayRank == 0)
+		if(!VerifierTypeWrapper.IsNullOrUnloadable(type) && type.ArrayRank == 0)
 		{
 			throw new VerifyError("Array reference expected on stack");
 		}
@@ -709,7 +713,7 @@ class InstructionState
 		TypeWrapper type = PopObjectType();
 		// HACK because of the way interfaces references works, if baseType
 		// is an interface, any reference will be accepted
-		if(!baseType.IsInterface && !type.IsAssignableTo(baseType))
+		if(!baseType.IsUnloadable && !baseType.IsInterface && !(type.IsUnloadable || type.IsAssignableTo(baseType)))
 		{
 			throw new VerifyError("Unexpected type " + type + " where " + baseType + " was expected");
 		}
@@ -752,7 +756,9 @@ class InstructionState
 			}
 		}
 		TypeWrapper type = PopAnyType();
-		if(type != baseType && !type.IsAssignableTo(baseType))
+		if(type != baseType &&
+			!((type.IsUnloadable && !baseType.IsPrimitive) || (baseType.IsUnloadable && !type.IsPrimitive) ||
+				type.IsAssignableTo(baseType)))
 		{
 			// HACK because of the way interfaces references works, if baseType
 			// is an interface, any reference will be accepted
@@ -876,6 +882,7 @@ class VerifierTypeWrapper : TypeWrapper
 	internal static readonly TypeWrapper Invalid = null;
 	internal static readonly TypeWrapper Null = new VerifierTypeWrapper("null", 0, null);
 	internal static readonly TypeWrapper UninitializedThis = new VerifierTypeWrapper("this", 0, null);
+	internal static readonly TypeWrapper Unloadable = new UnloadableTypeWrapper("verifier");
 
 	private int index;
 	private TypeWrapper underlyingType;
@@ -903,6 +910,11 @@ class VerifierTypeWrapper : TypeWrapper
 	internal static bool IsRet(TypeWrapper w)
 	{
 		return w != null && w.IsVerifierType && w.Name == "ret";
+	}
+
+	internal static bool IsNullOrUnloadable(TypeWrapper w)
+	{
+		return w == Null || w.IsUnloadable;
 	}
 
 	internal int Index
@@ -1147,6 +1159,10 @@ class MethodAnalyzer
 									// otherwise the rest of the code will not verify correctly
 									s.PushType(VerifierTypeWrapper.Null);
 								}
+								else if(type.IsUnloadable)
+								{
+									s.PushType(VerifierTypeWrapper.Unloadable);
+								}
 								else
 								{
 									type = type.ElementTypeWrapper;
@@ -1168,7 +1184,7 @@ class MethodAnalyzer
 							{
 								s.PopInt();
 								TypeWrapper type = s.PopArrayType();
-								if(type != VerifierTypeWrapper.Null &&
+								if(!VerifierTypeWrapper.IsNullOrUnloadable(type) &&
 									type != ByteArrayType &&
 									type != BooleanArrayType)
 								{
@@ -1182,7 +1198,7 @@ class MethodAnalyzer
 								s.PopInt();
 								s.PopInt();
 								TypeWrapper type = s.PopArrayType();
-								if(type != VerifierTypeWrapper.Null &&
+								if(!VerifierTypeWrapper.IsNullOrUnloadable(type) &&
 									type != ByteArrayType &&
 									type != BooleanArrayType)
 								{
@@ -1386,16 +1402,23 @@ class MethodAnalyzer
 									}
 									else
 									{
-										// for invokespecial we need to make sure we're calling ourself or a base class
-										if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
+										if(instr.NormalizedOpCode != NormalizedByteCode.__invokeinterface)
 										{
 											TypeWrapper refType = s.PopObjectType();
-											if(refType != VerifierTypeWrapper.Null && !wrapper.IsAssignableTo(refType))
+											if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && !refType.IsAssignableTo(cpi.GetClassType(classLoader)))
 											{
-												throw new VerifyError("Incompatible object argument for invokespecial");
+												throw new VerifyError("Incompatible object argument for function call");
+											}
+											// for invokespecial we also need to make sure we're calling ourself or a base class
+											if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
+											{
+												if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && !wrapper.IsAssignableTo(refType))
+												{
+													throw new VerifyError("Incompatible object argument for invokespecial");
+												}
 											}
 										}
-										else
+										else /* __invokeinterface */
 										{
 											// NOTE previously we checked the type here, but it turns out that
 											// the JVM throws an IncompatibleClassChangeError at runtime instead
@@ -2024,7 +2047,7 @@ class MethodAnalyzer
 								}
 								else if(!VerifierTypeWrapper.IsRet(l) && !l.IsPrimitive)
 								{
-									if(l != VerifierTypeWrapper.Null && l.IsNonPrimitiveValueType)
+									if(!VerifierTypeWrapper.IsNullOrUnloadable(l) && l.IsNonPrimitiveValueType)
 									{
 										l = java_lang_Object;
 									}

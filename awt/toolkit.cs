@@ -150,7 +150,7 @@ namespace ikvm.awt
 
 		protected override java.awt.peer.ListPeer createList(java.awt.List target)
 		{
-			throw new NotImplementedException();
+			return new NetListPeer(target, (ListBox)CreateControl(typeof(ListBox)));
 		}
 
 		protected override java.awt.peer.CheckboxPeer createCheckbox(java.awt.Checkbox target)
@@ -726,7 +726,14 @@ namespace ikvm.awt
 					fam = FontFamily.GenericSansSerif;
 					break;
 				default:
-					fam = new FontFamily(f.getName());
+					try
+					{
+						fam = new FontFamily(f.getName());
+					}
+					catch(ArgumentException)
+					{
+						fam = FontFamily.GenericSansSerif;
+					}
 					break;
 			}
 			// NOTE Regular is guaranteed zero
@@ -2037,6 +2044,89 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 		public void setMaximizedBounds(java.awt.Rectangle r)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	class NetListPeer : NetComponentPeer, ListPeer
+	{
+		internal NetListPeer(java.awt.List target, ListBox listbox)
+			: base(target, listbox)
+		{
+		}
+
+		public void add(String item, int index)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void addItem(String item, int index)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void clear()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void delItems(int start_index, int end_index)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void deselect(int index)
+		{
+			throw new NotImplementedException();
+		}
+
+		public int[] getSelectedIndexes()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void makeVisible(int index)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Dimension minimumSize(int s)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Dimension preferredSize(int s)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void removeAll()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void select(int index)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setMultipleMode(bool multi)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setMultipleSelections(bool multi)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Dimension getPreferredSize(int s)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Dimension getMinimumSize(int s)
 		{
 			throw new NotImplementedException();
 		}

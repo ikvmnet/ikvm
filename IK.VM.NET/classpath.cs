@@ -342,7 +342,7 @@ namespace NativeCode.java
 				public static object GetFieldType(object fieldCookie)
 				{
 					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-					return VMClass.getClassFromType(wrapper.FieldType);
+					return VMClass.getClassFromWrapper(wrapper.FieldTypeWrapper);
 				}
 
 				public static object GetValue(object fieldCookie, object o)

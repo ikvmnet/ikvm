@@ -78,8 +78,16 @@ sealed class MethodDescriptor
 		}
 	}
 
+	internal int ArgCount
+	{
+		get
+		{
+			return ArgTypeWrappers.Length;
+		}
+	}
+
 	// NOTE this exposes potentially unfinished types!
-	internal Type[] ArgTypes
+	internal Type[] ArgTypesForDefineMethod
 	{
 		get
 		{
@@ -97,6 +105,16 @@ sealed class MethodDescriptor
 		}
 	}
 
+	// NOTE this exposes potentially unfinished types!
+	// HACK this should not be used and all existing uses should be reworked
+	internal Type[] ArgTypes
+	{
+		get
+		{
+			return ArgTypesForDefineMethod;
+		}
+	}
+
 	internal TypeWrapper[] ArgTypeWrappers
 	{
 		get
@@ -110,11 +128,21 @@ sealed class MethodDescriptor
 	}
 
 	// NOTE this exposes a potentially unfinished type!
-	internal Type RetType
+	internal Type RetTypeForDefineMethod
 	{
 		get
 		{
 			return RetTypeWrapper.Type;
+		}
+	}
+
+	// NOTE this exposes potentially unfinished types!
+	// HACK this should not be used and all existing uses should be reworked
+	internal Type RetType
+	{
+		get
+		{
+			return RetTypeForDefineMethod;
 		}
 	}
 
@@ -325,8 +353,9 @@ class AttributeHelper
 		return mi.IsDefined(typeof(HideFromReflectionAttribute), false);
 	}
 
-	internal static void ImplementsAttribute(TypeBuilder typeBuilder, Type iface)
+	internal static void ImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper ifaceWrapper)
 	{
+		Type iface = ifaceWrapper.Type;
 		if(implementsAttribute == null)
 		{
 			implementsAttribute = typeof(ImplementsAttribute).GetConstructor(new Type[] { typeof(Type) });
@@ -459,8 +488,9 @@ class AttributeHelper
 		return mem.ToArray();
 	}
 
-	internal static void SetGhostType(TypeBuilder ownerType, ParameterBuilder pb, Type type)
+	internal static void SetGhostType(TypeBuilder ownerType, ParameterBuilder pb, TypeWrapper typeWrapper)
 	{
+		Type type = typeWrapper.Type;
 		if(ghostTypeAttribute == null)
 		{
 			ghostTypeAttribute = typeof(GhostTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
@@ -479,8 +509,9 @@ class AttributeHelper
 		}
 	}
 
-	internal static void SetGhostType(MethodBuilder mb, Type type)
+	internal static void SetGhostType(MethodBuilder mb, TypeWrapper typeWrapper)
 	{
+		Type type = typeWrapper.Type;
 		if(ghostTypeAttribute == null)
 		{
 			ghostTypeAttribute = typeof(GhostTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
@@ -499,8 +530,9 @@ class AttributeHelper
 		}
 	}
 
-	internal static void SetGhostType(FieldBuilder fb, Type type)
+	internal static void SetGhostType(FieldBuilder fb, TypeWrapper typeWrapper)
 	{
+		Type type = typeWrapper.Type;
 		if(ghostTypeAttribute == null)
 		{
 			ghostTypeAttribute = typeof(GhostTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
@@ -577,6 +609,15 @@ abstract class TypeWrapper
 		get
 		{
 			return ClassLoaderWrapper.IsGhost(this);
+		}
+	}
+
+	// is this an array type of which the ultimate element type is a ghost?
+	internal bool IsGhostArray
+	{
+		get
+		{
+			return IsArray && (ElementTypeWrapper.IsGhost || ElementTypeWrapper.IsGhostArray);
 		}
 	}
 
@@ -822,6 +863,16 @@ abstract class TypeWrapper
 		get;
 	}
 
+	public TypeBuilder TypeAsBuilder
+	{
+		get
+		{
+			TypeBuilder typeBuilder = Type as TypeBuilder;
+			Debug.Assert(typeBuilder != null);
+			return typeBuilder;
+		}
+	}
+
 	// TODO this should really be named TypeAsLocalArgOrStackType (or something like that)
 	internal Type TypeOrUnloadableAsObject
 	{
@@ -830,6 +881,16 @@ abstract class TypeWrapper
 			if(IsUnloadable || IsGhost)
 			{
 				return typeof(object);
+			}
+			if(IsGhostArray)
+			{
+				int rank = ArrayRank;
+				string type = "System.Object";
+				for(int i = 0; i < rank; i++)
+				{
+					type += "[]";
+				}
+				return Type.GetType(type, true);
 			}
 			// HACK as a convenience to the compiler, we replace return address types with typeof(int)
 			if(VerifierTypeWrapper.IsRet(this))
@@ -915,6 +976,9 @@ abstract class TypeWrapper
 		// make sure IsSubTypeOf isn't used on primitives
 		Debug.Assert(!this.IsPrimitive);
 		Debug.Assert(!baseType.IsPrimitive);
+		// can't be used on Unloadable
+		Debug.Assert(!this.IsUnloadable);
+		Debug.Assert(!baseType.IsUnloadable);
 
 		if(baseType.IsInterface)
 		{
@@ -1020,7 +1084,7 @@ abstract class TypeWrapper
 				// it makes sense, so I hope the spec is wrong
 				// UPDATE unfortunately, according to Serge Lidin the spec is correct, and it is not allowed to have virtual privatescope
 				// methods. Sigh! So I have to use private methods and mangle the name
-				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetType, md.ArgTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 				AttributeHelper.HideFromReflection(mb);
 				EmitHelper.Throw(mb.GetILGenerator(), "java.lang.IllegalAccessError", wrapper.Name + "." + md.Name + md.Signature);
 				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
@@ -1028,11 +1092,11 @@ abstract class TypeWrapper
 			}
 			else if(mce.GetMethod().Name != ifmethod.Name)
 			{
-				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetType, md.ArgTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 				AttributeHelper.HideFromReflection(mb);
 				ILGenerator ilGenerator = mb.GetILGenerator();
 				ilGenerator.Emit(OpCodes.Ldarg_0);
-				int argc = md.ArgTypes.Length;
+				int argc = md.ArgCount;
 				for(int n = 0; n < argc; n++)
 				{
 					ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(n + 1));
@@ -1051,11 +1115,11 @@ abstract class TypeWrapper
 					// TODO figure out what to do here
 					throw new NotImplementedException();
 				}
-				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Virtual, md.RetType, md.ArgTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Virtual, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 				AttributeHelper.HideFromReflection(mb);
 				ILGenerator ilGenerator = mb.GetILGenerator();
 				ilGenerator.Emit(OpCodes.Ldarg_0);
-				int argc = md.ArgTypes.Length;
+				int argc = md.ArgCount;
 				for(int n = 0; n < argc; n++)
 				{
 					ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(n + 1));
@@ -1070,7 +1134,7 @@ abstract class TypeWrapper
 			{
 				// the type doesn't implement the interface method and isn't abstract either. The JVM allows this, but the CLR doesn't,
 				// so we have to create a stub method that throws an AbstractMethodError
-				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetType, md.ArgTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 				AttributeHelper.HideFromReflection(mb);
 				EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + md.Name + md.Signature);
 				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
@@ -1115,7 +1179,7 @@ abstract class TypeWrapper
 				//        return null;
 				//    }
 				//}
-				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract, md.RetType, md.ArgTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 				AttributeHelper.HideFromReflection(mb);
 				// NOTE because we are introducing a Miranda method, we must also update the corresponding wrapper.
 				// If we don't do this, subclasses might think they are introducing a new method, instead of overriding
@@ -1492,7 +1556,7 @@ class DynamicTypeWrapper : TypeWrapper
 					outerClassWrapper = wrapper.GetClassLoader().LoadClassByDottedName(f.OuterClass.Name);
 					if(outerClassWrapper is DynamicTypeWrapper)
 					{
-						outer = (TypeBuilder)outerClassWrapper.Type;
+						outer = outerClassWrapper.TypeAsBuilder;
 					}
 				}
 			}
@@ -1541,7 +1605,7 @@ class DynamicTypeWrapper : TypeWrapper
 			for(int i = 0; i < interfaces.Length; i++)
 			{
 				typeBuilder.AddInterfaceImplementation(interfaces[i].Type);
-				AttributeHelper.ImplementsAttribute(typeBuilder, interfaces[i].Type);
+				AttributeHelper.ImplementsAttribute(typeBuilder, interfaces[i]);
 			}
 		}
 
@@ -1690,7 +1754,7 @@ class DynamicTypeWrapper : TypeWrapper
 							{
 								// NOTE in Sun's JRE 1.4.1 this method cannot be overridden by subclasses,
 								// but I think this is a bug, so we'll support it anyway.
-								MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Abstract|MethodAttributes.NewSlot), CallingConventions.Standard, md.RetType, md.ArgTypes);
+								MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Abstract|MethodAttributes.NewSlot), CallingConventions.Standard, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 								AttributeHelper.SetModifiers(mb, methods[i].Modifiers);
 								EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + md.Name + md.Signature);
 							}
@@ -1862,10 +1926,19 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 			catch(Exception x)
 			{
-				Console.WriteLine("****** Exception during finishing of {0} ******", wrapper.Name);
-				Console.WriteLine(x);
-				Console.WriteLine(new StackTrace(x));
-				Console.WriteLine(new StackTrace(true));
+				if(JVM.IsStaticCompiler)
+				{
+					throw new InvalidOperationException("Internal error during finishing of " + wrapper.Name, x);
+				}
+				string message = String.Format("****** Exception during finishing of {0} ******", wrapper.Name);
+				message += "\r\n" + x;
+				message += "\r\n" + new StackTrace(x);
+				message += "\r\n" + new StackTrace(true);
+				System.Windows.Forms.MessageBox.Show(message, "IKVM.NET Internal Error");
+//				Console.WriteLine("****** Exception during finishing of {0} ******", wrapper.Name);
+//				Console.WriteLine(x);
+//				Console.WriteLine(new StackTrace(x));
+//				Console.WriteLine(new StackTrace(true));
 				// we bail out, because there is not much chance that we can continue to run after this
 				Environment.Exit(1);
 				return null;
@@ -1909,8 +1982,7 @@ class DynamicTypeWrapper : TypeWrapper
 				ilGenerator.Emit(OpCodes.Stloc, jnienv);
 				Label tryBlock = ilGenerator.BeginExceptionBlock();
 				TypeWrapper retTypeWrapper = m.GetRetType(wrapper.GetClassLoader());
-				Type retType = retTypeWrapper.Type;
-				if(!retType.IsValueType && retType != typeof(void))
+				if(!retTypeWrapper.IsPrimitive)
 				{
 					// this one is for use after we return from "calli"
 					ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
@@ -1921,7 +1993,7 @@ class DynamicTypeWrapper : TypeWrapper
 				modargs[1] = typeof(IntPtr);
 				for(int i = 0; i < args.Length; i++)
 				{
-					modargs[i + 2] = args[i].Type;
+					modargs[i + 2] = args[i].TypeOrUnloadableAsObject;
 				}
 				int add = 0;
 				if(!m.IsStatic)
@@ -1958,24 +2030,24 @@ class DynamicTypeWrapper : TypeWrapper
 					}
 				}
 				ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
-				ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retTypeWrapper.IsPrimitive) ? retType : typeof(IntPtr), modargs);
+				ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retTypeWrapper.IsPrimitive) ? retTypeWrapper.Type : typeof(IntPtr), modargs);
 				LocalBuilder retValue = null;
-				if(retType != typeof(void))
+				if(retTypeWrapper != PrimitiveTypeWrapper.VOID)
 				{
-					if(!retTypeWrapper.IsPrimitive)
+					if(!retTypeWrapper.IsUnloadable && !retTypeWrapper.IsPrimitive)
 					{
 						ilGenerator.Emit(OpCodes.Call, unwrapLocalRef);
 						if(retTypeWrapper.IsNonPrimitiveValueType)
 						{
-							ilGenerator.Emit(OpCodes.Unbox, retType);
-							ilGenerator.Emit(OpCodes.Ldobj, retType);
+							ilGenerator.Emit(OpCodes.Unbox, retTypeWrapper.Type);
+							ilGenerator.Emit(OpCodes.Ldobj, retTypeWrapper.Type);
 						}
 						else if(!retTypeWrapper.IsGhost)
 						{
-							ilGenerator.Emit(OpCodes.Castclass, retType);
+							ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
 						}
 					}
-					retValue = ilGenerator.DeclareLocal(retType);
+					retValue = ilGenerator.DeclareLocal(retTypeWrapper.TypeOrUnloadableAsObject);
 					ilGenerator.Emit(OpCodes.Stloc, retValue);
 				}
 				ilGenerator.BeginCatchBlock(typeof(object));
@@ -1986,7 +2058,7 @@ class DynamicTypeWrapper : TypeWrapper
 				ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 				ilGenerator.Emit(OpCodes.Call, leaveLocalRefStruct);
 				ilGenerator.EndExceptionBlock();
-				if(retType != typeof(void))
+				if(retTypeWrapper != PrimitiveTypeWrapper.VOID)
 				{
 					ilGenerator.Emit(OpCodes.Ldloc, retValue);
 				}
@@ -2178,7 +2250,7 @@ class DynamicTypeWrapper : TypeWrapper
 				}
 				if(typeWrapper.IsGhost)
 				{
-					AttributeHelper.SetGhostType(field, typeWrapper.Type);
+					AttributeHelper.SetGhostType(field, typeWrapper);
 				}
 				// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
 				// the Java modifiers
@@ -2306,7 +2378,7 @@ class DynamicTypeWrapper : TypeWrapper
 							{
 								pb = ((ConstructorBuilder)method).DefineParameter(i + 1, ParameterAttributes.None, null);
 							}
-							AttributeHelper.SetGhostType(typeBuilder, pb, argTypeWrappers[i].Type);
+							AttributeHelper.SetGhostType(typeBuilder, pb, argTypeWrappers[i]);
 						}
 					}
 				}
@@ -2440,12 +2512,14 @@ class DynamicTypeWrapper : TypeWrapper
 							{
 								pb = mb.DefineParameter(i + 1, ParameterAttributes.None, null);
 							}
-							AttributeHelper.SetGhostType(typeBuilder, pb, argTypeWrappers[i].Type);
+							AttributeHelper.SetGhostType(typeBuilder, pb, argTypeWrappers[i]);
 						}
 					}
 					if(retTypeWrapper.IsGhost)
 					{
-						AttributeHelper.SetGhostType(mb, retTypeWrapper.Type);
+						// HACK we're attaching the return type attribute to the method, because
+						// of the DefineParameter(0, ...) .NET bug
+						AttributeHelper.SetGhostType(mb, retTypeWrapper);
 					}
 					if(setModifiers)
 					{
@@ -3156,10 +3230,10 @@ class RemappedTypeWrapper : TypeWrapper
 					MethodDescriptor md = mw.Descriptor;
 					if(mw.IsRemappedOverride)
 					{
-						MethodBuilder mb = stub.DefineMethod(md.Name, mw.GetMethodAttributes(), CallingConventions.Standard, md.RetType, md.ArgTypes);
+						MethodBuilder mb = stub.DefineMethod(md.Name, mw.GetMethodAttributes(), CallingConventions.Standard, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 						ILGenerator ilgen = mb.GetILGenerator();
 						ilgen.Emit(OpCodes.Ldarg_0);
-						int argc = md.ArgTypes.Length;
+						int argc = md.ArgCount;
 						for(int n = 0; n < argc; n++)
 						{
 							ilgen.Emit(OpCodes.Ldarg, n + 1);
@@ -3174,7 +3248,7 @@ class RemappedTypeWrapper : TypeWrapper
 						ConstructorBuilder cb = stub.DefineConstructor(mw.GetMethodAttributes(), CallingConventions.Standard, md.ArgTypes);
 						ILGenerator ilgen = cb.GetILGenerator();
 						ilgen.Emit(OpCodes.Ldarg_0);
-						int argc = md.ArgTypes.Length;
+						int argc = md.ArgCount;
 						for(int n = 0; n < argc; n++)
 						{
 							ilgen.Emit(OpCodes.Ldarg, n + 1);
@@ -3244,10 +3318,10 @@ class RemappedTypeWrapper : TypeWrapper
 				MethodDescriptor md = mce.Descriptor;
 				if(!methodLookup.ContainsKey(md))
 				{
-					MethodBuilder mb = typeBuilder.DefineMethod(md.Name, mce.GetMethodAttributes(), CallingConventions.Standard, md.RetType, md.ArgTypes);
+					MethodBuilder mb = typeBuilder.DefineMethod(md.Name, mce.GetMethodAttributes(), CallingConventions.Standard, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 					ILGenerator ilgen = mb.GetILGenerator();
 					ilgen.Emit(OpCodes.Ldarg_0);
-					int argc = md.ArgTypes.Length;
+					int argc = md.ArgCount;
 					for(int n = 0; n < argc; n++)
 					{
 						ilgen.Emit(OpCodes.Ldarg, n + 1);
@@ -3268,10 +3342,10 @@ class RemappedTypeWrapper : TypeWrapper
 					// TODO the attributes aren't correct, but we cannot make the method non-public, because
 					// that would violate the interface contract. In other words, we need to find a different
 					// mechanism for implementing non-public virtuals.
-					MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.Virtual | MethodAttributes.Public, CallingConventions.Standard, md.RetType, md.ArgTypes);
+					MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.Virtual | MethodAttributes.Public, CallingConventions.Standard, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 					ILGenerator ilgen = mb.GetILGenerator();
 					ilgen.Emit(OpCodes.Ldarg_0);
-					int argc = md.ArgTypes.Length;
+					int argc = md.ArgCount;
 					for(int n = 0; n < argc; n++)
 					{
 						ilgen.Emit(OpCodes.Ldarg, n + 1);
@@ -3327,11 +3401,11 @@ class RemappedTypeWrapper : TypeWrapper
 					foreach(MethodWrapper mw in virtuals)
 					{
 						MethodDescriptor md = mw.Descriptor;
-						MethodBuilder ifmethod = typeBuilder.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract, md.RetType, md.ArgTypes);
-						Type[] args = new Type[md.ArgTypes.Length + 1];
-						md.ArgTypes.CopyTo(args, 1);
+						MethodBuilder ifmethod = typeBuilder.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
+						Type[] args = new Type[md.ArgTypesForDefineMethod.Length + 1];
+						md.ArgTypesForDefineMethod.CopyTo(args, 1);
 						args[0] = this.Type;
-						MethodBuilder mb = tbStaticHack.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Static, md.RetType, args);
+						MethodBuilder mb = tbStaticHack.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Static, md.RetTypeForDefineMethod, args);
 						ILGenerator ilgen = mb.GetILGenerator();
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Isinst, typeBuilder);
@@ -3885,7 +3959,7 @@ class CompiledTypeWrapper : TypeWrapper
 		// If the MethodDescriptor contains types that aren't compiled types, we can never have that method
 		// This check is important because Type.GetMethod throws an ArgumentException if one of the argument types
 		// is a TypeBuilder
-		for(int i = 0; i < md.ArgTypeWrappers.Length; i++)
+		for(int i = 0; i < md.ArgCount; i++)
 		{
 			if(md.ArgTypeWrappers[i].IsUnloadable || md.ArgTypeWrappers[i].Type is TypeBuilder)
 			{

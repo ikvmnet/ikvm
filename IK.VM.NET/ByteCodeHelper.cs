@@ -53,24 +53,190 @@ public class ByteCodeHelper
 		return o;
 	}
 
-	public static object DynamicInvokeSpecialNew(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
+	[StackTraceInfo(Hidden = true)]
+	public static object DynamicMultianewarray(RuntimeTypeHandle type, string clazz, int[] lengths)
+	{
+		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
+		return multianewarray(wrapper.Type.TypeHandle, lengths);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static object DynamicNewarray(int length, RuntimeTypeHandle type, string clazz)
+	{
+		if(length < 0)
+		{
+			throw JavaException.NegativeArraySizeException();
+		}
+		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
+		return Array.CreateInstance(wrapper.TypeOrUnloadableAsObject, length);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static void DynamicAastore(object arrayref, int index, object val, RuntimeTypeHandle type, string clazz)
+	{
+		// TODO do we need to load the type here?
+		((Array)arrayref).SetValue(val, index);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static object DynamicAaload(object arrayref, int index, RuntimeTypeHandle type, string clazz)
+	{
+		// TODO do we need to load the type here?
+		return ((Array)arrayref).GetValue(index);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	private static FieldWrapper GetFieldWrapper(TypeWrapper thisType, RuntimeTypeHandle type, string clazz, string name, string sig, bool isStatic)
+	{
+		TypeWrapper caller = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type));
+		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
+		// TODO take sig into account
+		FieldWrapper field = wrapper.GetFieldWrapper(name);
+		if(field == null)
+		{
+			throw JavaException.NoSuchFieldError(clazz + "." + name);
+		}
+		if(field.IsStatic != isStatic)
+		{
+			throw JavaException.IncompatibleClassChangeError(clazz + "." + name);
+		}
+		// NOTE this access check is duplicated in Compiler.GetPutField
+		if(field.IsPublic ||
+			(field.IsProtected && (isStatic ? caller.IsSubTypeOf(field.DeclaringType) : thisType.IsSubTypeOf(caller))) ||
+			(field.IsPrivate && caller == field.DeclaringType) ||
+			(!(field.IsPublic || field.IsPrivate) && caller.IsInSamePackageAs(field.DeclaringType)))
+		{
+			return field;
+		}
+		throw JavaException.IllegalAccessError(field.DeclaringType.Name + "." + name);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static object DynamicGetfield(object obj, string name, string sig, RuntimeTypeHandle type, string clazz)
+	{
+		return GetFieldWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false).GetValue(obj);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static object DynamicGetstatic(string name, string sig, RuntimeTypeHandle type, string clazz)
+	{
+		return GetFieldWrapper(null, type, clazz, name, sig, true).GetValue(null);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static void DynamicPutfield(object obj, object val, string name, string sig, RuntimeTypeHandle type, string clazz)
+	{
+		GetFieldWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false).SetValue(obj, val);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static void DynamicPutstatic(object val, string name, string sig, RuntimeTypeHandle type, string clazz)
+	{
+		GetFieldWrapper(null, type, clazz, name, sig, true).SetValue(null, val);
+	}
+
+	// the sole purpose of this method is to throw a NoClassDefFoundError if clazz cannot be loaded
+	[StackTraceInfo(Hidden = true)]
+	public static void DynamicLoadClass(RuntimeTypeHandle type, string clazz)
+	{
+		LoadTypeWrapper(type, clazz);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	private static TypeWrapper LoadTypeWrapper(RuntimeTypeHandle type, string clazz)
 	{
 		ClassLoaderWrapper classLoader = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type)).GetClassLoader();
-		TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(clazz);
-		if(wrapper == null)
+		TypeWrapper wrapper;
+		try
 		{
-			throw JavaException.NoClassDefFoundError(clazz);
+			wrapper = classLoader.LoadClassByDottedNameFast(clazz);
+			if(wrapper == null)
+			{
+				throw JavaException.NoClassDefFoundError(clazz);
+			}
 		}
+		catch(Exception x)
+		{
+			if(x.GetType() == ClassLoaderWrapper.GetType("java.lang.ClassNotFoundException"))
+			{
+				throw JavaException.NoClassDefFoundError(clazz);
+			}
+			throw;
+		}
+		// TODO is this really needed?
 		wrapper.Finish();
+		return wrapper;
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static object DynamicCast(object obj, RuntimeTypeHandle type, string clazz)
+	{
+		if(!DynamicInstanceOf(obj, type, clazz))
+		{
+			throw JavaException.ClassCastException(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()).Name);
+		}
+		return obj;
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static bool DynamicInstanceOf(object obj, RuntimeTypeHandle type, string clazz)
+	{
+		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
+		TypeWrapper other = ClassLoaderWrapper.GetWrapperFromType(obj.GetType());
+		return other.IsAssignableTo(wrapper);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static object DynamicInvokeSpecialNew(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
+	{
+		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 		// TODO who checks that the arg types are loadable?
 		// TODO check accessibility
-		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(classLoader, name, sig), false);
+		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig), false);
 		if(mw == null)
 		{
 			// TODO throw the appropriate exception
 			throw new NotImplementedException("constructor missing");
 		}
 		return mw.Invoke(null, args, false);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static object DynamicInvokestatic(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
+	{
+		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
+		// TODO who checks that the arg types are loadable?
+		// TODO check accessibility
+		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig), true);
+		if(mw == null)
+		{
+			// TODO throw the appropriate exception
+			throw new NotImplementedException("method missing");
+		}
+		return mw.Invoke(null, args, false);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static object DynamicInvokevirtual(object obj, RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
+	{
+		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
+		// TODO who checks that the arg types are loadable?
+		// TODO check accessibility
+		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig), true);
+		if(mw == null)
+		{
+			// TODO throw the appropriate exception
+			throw new NotImplementedException("method missing");
+		}
+		return mw.Invoke(obj, args, false);
+	}
+
+	[StackTraceInfo(Hidden = true)]
+	public static Type DynamicGetType(RuntimeTypeHandle type, string clazz)
+	{
+		TypeWrapper tw = LoadTypeWrapper(type, clazz);
+		tw.Finish();
+		return tw.Type;
 	}
 
 	public static int f2i(float f)

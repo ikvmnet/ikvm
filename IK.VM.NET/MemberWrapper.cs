@@ -200,11 +200,11 @@ sealed class MethodWrapper : MemberWrapper
 
 		internal override void Emit(ILGenerator ilgen)
 		{
-			Type[] args = md.ArgTypes;
+			TypeWrapper[] args = md.ArgTypeWrappers;
 			LocalBuilder[] argLocals = new LocalBuilder[args.Length];
 			for(int i = args.Length - 1; i >= 0; i--)
 			{
-				argLocals[i] = ilgen.DeclareLocal(args[i]);
+				argLocals[i] = ilgen.DeclareLocal(args[i].TypeOrUnloadableAsObject);
 				ilgen.Emit(OpCodes.Stloc, argLocals[i]);
 			}
 			Label end = ilgen.DefineLabel();
@@ -215,7 +215,7 @@ sealed class MethodWrapper : MemberWrapper
 				Label label = ilgen.DefineLabel();
 				ilgen.Emit(OpCodes.Brfalse_S, label);
 				ilgen.Emit(OpCodes.Castclass, implementers[i].Type);
-				for(int j = 0; j < args.Length; j++)
+				for(int j = 0; j < argLocals.Length; j++)
 				{
 					ilgen.Emit(OpCodes.Ldloc, argLocals[j]);
 				}
@@ -557,14 +557,6 @@ sealed class FieldWrapper : MemberWrapper
 		get
 		{
 			return name;
-		}
-	}
-
-	internal Type FieldType
-	{
-		get
-		{
-			return FieldTypeWrapper.Type;
 		}
 	}
 

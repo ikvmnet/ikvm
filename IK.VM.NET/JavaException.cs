@@ -211,4 +211,18 @@ sealed class JavaException
 		// reflection to get a real java.lang.NullPointerException
 		return new NullReferenceException();
 	}
+
+	internal static Exception ClassCastException(string s, params object[] args)
+	{
+		s = String.Format(s, args);
+		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.ClassCastException").GetConstructor(new Type[] { typeof(string) });
+		return (Exception)ci.Invoke(new object[] { s });
+	}
+
+	internal static Exception NoSuchFieldError(string s, params object[] args)
+	{
+		s = String.Format(s, args);
+		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.NoSuchFieldError").GetConstructor(new Type[] { typeof(string) });
+		return (Exception)ci.Invoke(new object[] { s });
+	}
 }
