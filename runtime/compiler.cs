@@ -863,8 +863,18 @@ class Compiler
 					if(bc != null && bc.ContentOnStack)
 					{
 						bc.ContentOnStack = false;
-						ilgen.MarkLabel(bc.Stub);
 						int stack = bc.dh.Count;
+						// HACK this is unreachable code, but we make sure that
+						// forward pass verification always yields a valid stack
+						// (this is required for unreachable leave stubs that are
+						// generated for unreachable code that follows an
+						// embedded exception emitted by the compiler for invalid
+						// code (e.g. NoSuchFieldError))
+						for(int n = stack - 1; n >= 0; n--)
+						{
+							bc.dh.Load(n);
+						}
+						ilgen.MarkLabel(bc.Stub);
 						for(int n = 0; n < stack; n++)
 						{
 							bc.dh.Store(n);
@@ -2542,6 +2552,10 @@ class Compiler
 			catch(EmitException x)
 			{
 				x.Emit(ilGenerator, m.Method);
+				// mark the next instruction as not forward reachable,
+				// this will cause the stack to be loaded from locals
+				// (which is needed for the code to be verifiable)
+				instructionIsForwardReachable = false;
 			}
 		}
 	}

@@ -110,20 +110,6 @@ public sealed class RemappedTypeAttribute : Attribute
 [AttributeUsage(AttributeTargets.Module)]
 public sealed class JavaModuleAttribute : Attribute
 {
-	private string version;
-
-	public JavaModuleAttribute(string version)
-	{
-		this.version = version;
-	}
-
-	public Version Version
-	{
-		get
-		{
-			return new Version(version);
-		}
-	}
 }
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Assembly)]

@@ -38,9 +38,23 @@ public class NetExp
 	public static void Main(string[] args)
 	{
 		Tracer.EnableTraceForDebug();
+		if(args.Length != 1)
+		{
+			Console.Error.WriteLine("usage: ikvmstub <assemblyNameOrPath>");
+			return;
+		}
 		Assembly assembly = null;
-		FileInfo file = new FileInfo(args[0]);
-		if(file.Exists)
+		FileInfo file = null;
+		try
+		{
+			file = new FileInfo(args[0]);
+		}
+		catch(System.Exception x)
+		{
+			Console.Error.WriteLine("Error: unable to load \"{0}\"\n  {1}", args[0], x.Message);
+			return;
+		}
+		if(file != null && file.Exists)
 		{
 			try
 			{

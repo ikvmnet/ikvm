@@ -181,7 +181,7 @@ public class JVM
 			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, assemblyDir);
 			ModuleBuilder moduleBuilder;
 			moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, JVM.Debug);
-			CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeof(JavaModuleAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { Assembly.GetExecutingAssembly().GetName().Version.ToString() });
+			CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeof(JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 			moduleBuilder.SetCustomAttribute(ikvmModuleAttr);
 			if(JVM.Debug)
 			{
