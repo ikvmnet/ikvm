@@ -88,43 +88,54 @@ class Subroutine
 
 class InstructionState
 {
-	private static ArrayList empty = new ArrayList();
-	private MethodAnalyzer ma;
-	private ArrayList stack;			// each entry contains a TypeWrapper object
-	private TypeWrapper[] locals;		// each entry contains a TypeWrapper object
+	private TypeWrapper[] stack;
+	private int stackSize;
+	private TypeWrapper[] locals;
 	private ArrayList subroutines;
 	private int callsites;
 	internal bool changed = true;
 
-	private InstructionState(MethodAnalyzer ma, ArrayList stack, TypeWrapper[] locals, ArrayList subroutines, int callsites)
+	private InstructionState(TypeWrapper[] stack, int stackSize, TypeWrapper[] locals, ArrayList subroutines, int callsites)
 	{
-		this.ma = ma;
 		this.stack = stack;
+		this.stackSize = stackSize;
 		this.locals = locals;
 		this.subroutines = subroutines;
 		this.callsites = callsites;
 	}
 
-	internal InstructionState(MethodAnalyzer ma, int maxLocals)
+	internal InstructionState(int maxLocals, int maxStack)
 	{
-		this.ma = ma;
-		this.stack = new ArrayList();
+		this.stack = new TypeWrapper[maxStack];
 		this.locals = new TypeWrapper[maxLocals];
-		this.subroutines = new ArrayList();
 	}
 
 	internal InstructionState Copy()
 	{
-		return new InstructionState(ma, (ArrayList)stack.Clone(), (TypeWrapper[])locals.Clone(), CopySubroutines(subroutines), callsites);
+		return new InstructionState((TypeWrapper[])stack.Clone(), stackSize, (TypeWrapper[])locals.Clone(), CopySubroutines(subroutines), callsites);
+	}
+
+	internal void CopyTo(InstructionState target)
+	{
+		stack.CopyTo(target.stack, 0);
+		target.stackSize = stackSize;
+		locals.CopyTo(target.locals, 0);
+		target.subroutines = CopySubroutines(subroutines);
+		target.callsites = callsites;
+		target.changed = true;
 	}
 
 	internal InstructionState CopyLocalsAndSubroutines()
 	{
-		return new InstructionState(ma, new ArrayList(), (TypeWrapper[])locals.Clone(), CopySubroutines(subroutines), callsites);
+		return new InstructionState(new TypeWrapper[stack.Length], 0, (TypeWrapper[])locals.Clone(), CopySubroutines(subroutines), callsites);
 	}
 
 	private ArrayList CopySubroutines(ArrayList l)
 	{
+		if(l == null)
+		{
+			return null;
+		}
 		ArrayList n = new ArrayList(l.Count);
 		foreach(Subroutine s in l)
 		{
@@ -140,57 +151,42 @@ class InstructionState
 
 	private void MergeSubroutineHelper(InstructionState s2)
 	{
-		ArrayList ss1 = subroutines;
-		subroutines = new ArrayList();
-		foreach(Subroutine ss2 in s2.subroutines)
+		if(subroutines == null || s2.subroutines == null)
 		{
-			foreach(Subroutine ss in ss1)
+			if(subroutines != null)
 			{
-				if(ss.SubroutineIndex == ss2.SubroutineIndex)
-				{
-					subroutines.Add(ss);
-					for(int i = 0; i < ss.LocalsModified.Length; i++)
-					{
-						if(ss2.LocalsModified[i] && !ss.LocalsModified[i])
-						{
-							ss.LocalsModified[i] = true;
-							changed = true;
-						}
-					}
-				}
-			}
-		}
-		if(ss1.Count != subroutines.Count)
-		{
-			changed = true;
-		}
-
-		/*
-		foreach(Subroutine ss2 in s2.subroutines)
-		{
-			bool found = false;
-			foreach(Subroutine ss in subroutines)
-			{
-				if(ss.SubroutineIndex == ss2.SubroutineIndex)
-				{
-					for(int i = 0; i < ss.LocalsModified.Length; i++)
-					{
-						if(ss2.LocalsModified[i] && !ss.LocalsModified[i])
-						{
-							ss.LocalsModified[i] = true;
-							changed = true;
-						}
-					}
-					found = true;
-				}
-			}
-			if(!found)
-			{
-				subroutines.Add(ss2.Copy());
+				subroutines = null;
 				changed = true;
 			}
 		}
-		*/
+		else
+		{
+			ArrayList ss1 = subroutines;
+			subroutines = new ArrayList();
+			foreach(Subroutine ss2 in s2.subroutines)
+			{
+				foreach(Subroutine ss in ss1)
+				{
+					if(ss.SubroutineIndex == ss2.SubroutineIndex)
+					{
+						subroutines.Add(ss);
+						for(int i = 0; i < ss.LocalsModified.Length; i++)
+						{
+							if(ss2.LocalsModified[i] && !ss.LocalsModified[i])
+							{
+								ss.LocalsModified[i] = true;
+								changed = true;
+							}
+						}
+					}
+				}
+			}
+			if(ss1.Count != subroutines.Count)
+			{
+				changed = true;
+			}
+		}
+
 		if(s2.callsites > callsites)
 		{
 			//Console.WriteLine("s2.callsites = {0}, callsites = {1}", s2.callsites, callsites);
@@ -220,27 +216,27 @@ class InstructionState
 			}
 			return s2;
 		}
-		if(s1.stack.Count != s2.stack.Count)
+		if(s1.stackSize != s2.stackSize)
 		{
-			throw new VerifyError(string.Format("Inconsistent stack height: {0} != {1}", s1.stack.Count, s2.stack.Count));
+			throw new VerifyError(string.Format("Inconsistent stack height: {0} != {1}", s1.stackSize, s2.stackSize));
 		}
 		InstructionState s = s1.Copy();
 		s.changed = s1.changed;
-		for(int i = 0; i < s.stack.Count; i++)
+		for(int i = 0; i < s.stackSize; i++)
 		{
-			TypeWrapper type = (TypeWrapper)s.stack[i];
+			TypeWrapper type = s.stack[i];
 			if(type == s2.stack[i])
 			{
 				// perfect match, nothing to do
 			}
 			else if(!type.IsPrimitive)
 			{
-				TypeWrapper baseType = s.FindCommonBaseType(type, (TypeWrapper)s2.stack[i]);
+				TypeWrapper baseType = s.FindCommonBaseType(type, s2.stack[i]);
 				if(baseType == VerifierTypeWrapper.Invalid)
 				{
 					// if we never return from a subroutine, it is legal to merge to subroutine flows
 					// (this is from the Mauve test subr.pass.mergeok)
-					if(VerifierTypeWrapper.IsRet(type) && VerifierTypeWrapper.IsRet((TypeWrapper)s2.stack[i]))
+					if(VerifierTypeWrapper.IsRet(type) && VerifierTypeWrapper.IsRet(s2.stack[i]))
 					{
 						baseType = VerifierTypeWrapper.Invalid;
 					}
@@ -259,7 +255,7 @@ class InstructionState
 			}
 			else
 			{
-				throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, ((TypeWrapper)s2.stack[i]).Name));
+				throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, s2.stack[i].Name));
 			}
 		}
 		for(int i = 0; i < s.locals.Length; i++)
@@ -297,12 +293,19 @@ class InstructionState
 
 	internal void SetSubroutineId(int subroutineIndex)
 	{
-		foreach(Subroutine s in subroutines)
+		if(subroutines == null)
 		{
-			if(s.SubroutineIndex == subroutineIndex)
+			subroutines = new ArrayList();
+		}
+		else
+		{
+			foreach(Subroutine s in subroutines)
 			{
-				// subroutines cannot recursivly call themselves
-				throw new VerifyError("subroutines cannot recurse");
+				if(s.SubroutineIndex == subroutineIndex)
+				{
+					// subroutines cannot recursivly call themselves
+					throw new VerifyError("subroutines cannot recurse");
+				}
 			}
 		}
 		subroutines.Add(new Subroutine(subroutineIndex, locals.Length));
@@ -310,16 +313,19 @@ class InstructionState
 
 	internal bool[] ClearSubroutineId(int subroutineIndex)
 	{
-		foreach(Subroutine s in subroutines)
+		if(subroutines != null)
 		{
-			if(s.SubroutineIndex == subroutineIndex)
+			foreach(Subroutine s in subroutines)
 			{
-				// TODO i'm not 100% sure about this, but I think we need to clear
-				// the subroutines here (because when you return you can never "become" inside a subroutine)
-				// UPDATE the above is incorrect, we only need to remove the subroutine we're actually
-				// returning from
-				subroutines.Remove(s);
-				return s.LocalsModified;
+				if(s.SubroutineIndex == subroutineIndex)
+				{
+					// TODO i'm not 100% sure about this, but I think we need to clear
+					// the subroutines here (because when you return you can never "become" inside a subroutine)
+					// UPDATE the above is incorrect, we only need to remove the subroutine we're actually
+					// returning from
+					subroutines.Remove(s);
+					return s.LocalsModified;
+				}
 			}
 		}
 		throw new VerifyError("return from wrong subroutine");
@@ -327,11 +333,14 @@ class InstructionState
 
 	internal void CheckSubroutineActive(int subroutineIndex)
 	{
-		foreach(Subroutine s in subroutines)
+		if(subroutines != null)
 		{
-			if(s.SubroutineIndex == subroutineIndex)
+			foreach(Subroutine s in subroutines)
 			{
-				return;
+				if(s.SubroutineIndex == subroutineIndex)
+				{
+					return;
+				}
 			}
 		}
 		throw new VerifyError("inactive subroutine");
@@ -463,15 +472,21 @@ class InstructionState
 			if(index > 0 && (locals[index - 1] == PrimitiveTypeWrapper.DOUBLE || locals[index - 1] == PrimitiveTypeWrapper.LONG))
 			{
 				locals[index - 1] = VerifierTypeWrapper.Invalid;
-				foreach(Subroutine s in subroutines)
+				if(subroutines != null)
 				{
-					s.SetLocalModified(index - 1);
+					foreach(Subroutine s in subroutines)
+					{
+						s.SetLocalModified(index - 1);
+					}
 				}
 			}
 			locals[index] = type;
-			foreach(Subroutine s in subroutines)
+			if(subroutines != null)
 			{
-				s.SetLocalModified(index);
+				foreach(Subroutine s in subroutines)
+				{
+					s.SetLocalModified(index);
+				}
 			}
 		}
 		catch(IndexOutOfRangeException)
@@ -487,17 +502,23 @@ class InstructionState
 			if(index > 0 && (locals[index - 1] == PrimitiveTypeWrapper.DOUBLE || locals[index - 1] == PrimitiveTypeWrapper.LONG))
 			{
 				locals[index - 1] = VerifierTypeWrapper.Invalid;
-				foreach(Subroutine s in subroutines)
+				if(subroutines != null)
 				{
-					s.SetLocalModified(index - 1);
+					foreach(Subroutine s in subroutines)
+					{
+						s.SetLocalModified(index - 1);
+					}
 				}
 			}
 			locals[index] = type;
 			locals[index + 1] = VerifierTypeWrapper.Invalid;
-			foreach(Subroutine s in subroutines)
+			if(subroutines != null)
 			{
-				s.SetLocalModified(index);
-				s.SetLocalModified(index + 1);
+				foreach(Subroutine s in subroutines)
+				{
+					s.SetLocalModified(index);
+					s.SetLocalModified(index + 1);
+				}
 			}
 		}
 		catch(IndexOutOfRangeException)
@@ -695,13 +716,11 @@ class InstructionState
 
 	internal TypeWrapper PopAnyType()
 	{
-		if(stack.Count == 0)
+		if(stackSize == 0)
 		{
 			throw new VerifyError("Unable to pop operand off an empty stack");
 		}
-		TypeWrapper s = (TypeWrapper)stack[stack.Count - 1];
-		stack.RemoveAt(stack.Count - 1);
-		return s;
+		return stack[--stackSize];
 	}
 
 	// NOTE this can *not* be used to pop double or long
@@ -746,17 +765,17 @@ class InstructionState
 
 	internal int GetStackHeight()
 	{
-		return stack.Count;
+		return stackSize;
 	}
 
 	internal TypeWrapper GetStackSlot(int pos)
 	{
-		return (TypeWrapper)stack[stack.Count - 1 - pos];
+		return stack[stackSize - 1 - pos];
 	}
 
 	private void PushHelper(TypeWrapper type)
 	{
-		stack.Add(type);
+		stack[stackSize++] = type;
 	}
 
 	internal void MarkInitialized(TypeWrapper type, TypeWrapper initType)
@@ -772,7 +791,7 @@ class InstructionState
 				locals[i] = initType;
 			}
 		}
-		for(int i = 0; i < stack.Count; i++)
+		for(int i = 0; i < stackSize; i++)
 		{
 			if(stack[i] == type)
 			{
@@ -798,7 +817,7 @@ class InstructionState
 	{
 		Console.Write("// ");
 		string sep = "";
-		for(int i = 0; i < stack.Count; i++)
+		for(int i = 0; i < stackSize; i++)
 		{
 			Console.Write(sep);
 			Console.Write(stack[i]);
@@ -834,9 +853,9 @@ class InstructionState
 				throw new VerifyError("uninitialized object ref in local (2)");
 			}
 		}
-		for(int i = 0; i < stack.Count; i++)
+		for(int i = 0; i < stackSize; i++)
 		{
-			TypeWrapper type = (TypeWrapper)stack[i];
+			TypeWrapper type = stack[i];
 			if(type == VerifierTypeWrapper.UninitializedThis || VerifierTypeWrapper.IsNew(type))
 			{
 				throw new VerifyError("uninitialized object ref on stack");
@@ -971,7 +990,7 @@ class MethodAnalyzer
 	private static TypeWrapper FloatArrayType;
 	private static TypeWrapper DoubleArrayType;
 	private static TypeWrapper LongArrayType;
-	internal readonly ClassLoaderWrapper classLoader;
+	private ClassLoaderWrapper classLoader;
 	private ClassFile.Method.Code method;
 	private InstructionState[] state;
 	private ArrayList[] callsites;
@@ -1011,7 +1030,7 @@ class MethodAnalyzer
 		Hashtable newTypes = new Hashtable();
 
 		// start by computing the initial state, the stack is empty and the locals contain the arguments
-		state[0] = new InstructionState(this, method.MaxLocals);
+		state[0] = new InstructionState(method.MaxLocals, method.MaxStack);
 		int arg = 0;
 		if(!method.Method.IsStatic)
 		{
@@ -1047,6 +1066,7 @@ class MethodAnalyzer
 				}
 			}
 		}
+		InstructionState s = state[0].Copy();
 		bool done = false;
 		while(!done)
 		{
@@ -1088,7 +1108,7 @@ class MethodAnalyzer
 								state[idx] += ex;
 							}
 						}
-						InstructionState s = state[i].Copy();
+						state[i].CopyTo(s);
 						ClassFile.Method.Instruction instr = method.Instructions[i];
 						switch(instr.NormalizedOpCode)
 						{
