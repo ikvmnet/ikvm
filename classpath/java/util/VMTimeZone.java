@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004 Jeroen Frijters
+  Copyright (C) 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -80,7 +80,7 @@ final class VMTimeZone extends TimeZone
 
     public boolean inDaylightTime(Date date)
     {
-	return tz.IsDaylightSavingTime(new cli.System.DateTime(date.getYear(), date.getMonth() + 1, date.getDay()));
+	return tz.IsDaylightSavingTime(new cli.System.DateTime(date.getYear() + 1900, date.getMonth() + 1, date.getDate()));
     }
 
     public boolean hasSameRules(TimeZone other)
