@@ -489,9 +489,9 @@ class ClassFile
 
 	internal struct InnerClass
 	{
-		internal string innerClass;
-		internal string outerClass;
-		internal string name;
+		internal int innerClass;		// ConstantPoolItemClass
+		internal int outerClass;		// ConstantPoolItemClass
+		internal int name;				// ConstantPoolItemUtf8
 		internal Modifiers accessFlags;
 	}
 
@@ -507,26 +507,14 @@ class ClassFile
 				InnerClass[] list = new InnerClass[count];
 				for(int i = 0; i < list.Length; i++)
 				{
-					ushort u = rdr.ReadUInt16();
-					if(u != 0)
-					{
-						list[i].innerClass = GetConstantPoolClass(u);
-					}
-					u = rdr.ReadUInt16();
-					if(u != 0)
-					{
-						list[i].outerClass = GetConstantPoolClass(u);
-					}
-					u = rdr.ReadUInt16();
-					if(u != 0)
-					{
-						list[i].name = GetConstantPoolUtf8(u);
-					}
+					list[i].innerClass = rdr.ReadUInt16();
+					list[i].outerClass = rdr.ReadUInt16();
+					list[i].name = rdr.ReadUInt16();
 					list[i].accessFlags = (Modifiers)rdr.ReadUInt16();
 				}
 				return list;
 			}
-			return null;
+			return new InnerClass[0];
 		}
 	}
 

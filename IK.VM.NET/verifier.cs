@@ -878,6 +878,22 @@ class VerifierTypeWrapper : TypeWrapper
 		}
 	}
 
+	public override TypeWrapper[] InnerClasses
+	{
+		get
+		{
+			throw new InvalidOperationException("get_InnerClasses called on " + this);
+		}
+	}
+
+	public override TypeWrapper DeclaringTypeWrapper
+	{
+		get
+		{
+			throw new InvalidOperationException("get_DeclaringTypeWrapper called on " + this);
+		}
+	}
+
 	public override void Finish()
 	{
 		throw new InvalidOperationException("Finish called on " + this);

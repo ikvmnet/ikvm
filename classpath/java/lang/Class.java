@@ -537,8 +537,9 @@ public final class Class implements Serializable
 	 */
 	public Class getDeclaringClass()
 	{
-		return getClassFromType(getType().get_DeclaringType());
+		return (Class)GetDeclaringClass(type, wrapper);
 	}
+	private native static Object GetDeclaringClass(Type type, Object wrapper);
 
 	/**
 	 * Get all the public member classes and interfaces declared in this

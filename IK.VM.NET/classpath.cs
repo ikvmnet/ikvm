@@ -1254,8 +1254,42 @@ namespace NativeCode.java
 
 			public static object[] GetDeclaredClasses(Type type, object cwrapper)
 			{
-				// TODO
-				return new object[0];
+				TypeWrapper wrapper = (TypeWrapper)cwrapper;
+				if(wrapper == null)
+				{
+					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+				}
+				// NOTE to get at the InnerClasses we *don't* need to finish the type
+				TypeWrapper[] wrappers = wrapper.InnerClasses;
+				object[] innerclasses = new object[wrappers.Length];
+				for(int i = 0; i < innerclasses.Length; i++)
+				{
+					if(wrappers[i].IsUnloadable)
+					{
+						throw JavaException.NoClassDefFoundError(wrappers[i].Name);
+					}
+					innerclasses[i] = getClassFromWrapper(wrappers[i]);
+				}
+				return innerclasses;
+			}
+
+			public static object GetDeclaringClass(Type type, object cwrapper)
+			{
+				TypeWrapper wrapper = (TypeWrapper)cwrapper;
+				if(wrapper == null)
+				{
+					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+				}
+				TypeWrapper declaring = wrapper.DeclaringTypeWrapper;
+				if(declaring == null)
+				{
+					return null;
+				}
+				if(declaring.IsUnloadable)
+				{
+					throw JavaException.NoClassDefFoundError(declaring.Name);
+				}
+				return getClassFromWrapper(declaring);
 			}
 
 			public static object[] GetInterfaces(Type type, object cwrapper)
@@ -1278,16 +1312,20 @@ namespace NativeCode.java
 
 			public static int GetModifiers(Type type, Object cwrapper)
 			{
-				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				if(wrapper == null)
+				if(type == null)
 				{
-					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+					TypeWrapper wrapper = (TypeWrapper)cwrapper;
+					wrapper.Finish();
+					type = wrapper.Type;
 				}
+				// NOTE we don't return the modifiers from the TypeWrapper, because for inner classes
+				// the reflected modifiers are different from the physical ones
+				Modifiers modifiers = ModifiersAttribute.GetModifiers(type);
 				// only returns public, protected, private, final, static, abstract and interface (as per
 				// the documentation of Class.getModifiers())
 				Modifiers mask = Modifiers.Public | Modifiers.Protected | Modifiers.Private | Modifiers.Final |
 					Modifiers.Static | Modifiers.Abstract | Modifiers.Interface;
-				return (int)(wrapper.Modifiers & mask);
+				return (int)(modifiers & mask);
 			}
 		}
 	}

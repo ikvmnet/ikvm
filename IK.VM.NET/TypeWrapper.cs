@@ -614,6 +614,16 @@ abstract class TypeWrapper
 		get;
 	}
 
+	public abstract TypeWrapper[] InnerClasses
+	{
+		get;
+	}
+
+	public abstract TypeWrapper DeclaringTypeWrapper
+	{
+		get;
+	}
+
 	public abstract void Finish();
 
 	private void ImplementInterfaceMethodStubImpl(MethodDescriptor md, MethodBase ifmethod, TypeBuilder typeBuilder, TypeWrapper wrapper)
@@ -838,6 +848,22 @@ class UnloadableTypeWrapper : TypeWrapper
 		}
 	}
 
+	public override TypeWrapper[] InnerClasses
+	{
+		get
+		{
+			throw new InvalidOperationException("get_InnerClasses called on UnloadableTypeWrapper");
+		}
+	}
+
+	public override TypeWrapper DeclaringTypeWrapper
+	{
+		get
+		{
+			throw new InvalidOperationException("get_DeclaringTypeWrapper called on UnloadableTypeWrapper");
+		}
+	}
+
 	public override void Finish()
 	{
 		throw new InvalidOperationException("Finish called on UnloadableTypeWrapper");
@@ -904,6 +930,22 @@ class PrimitiveTypeWrapper : TypeWrapper
 		{
 			// TODO does a primitive implement any interfaces?
 			return new TypeWrapper[0];
+		}
+	}
+
+	public override TypeWrapper[] InnerClasses
+	{
+		get
+		{
+			return new TypeWrapper[0];
+		}
+	}
+
+	public override TypeWrapper DeclaringTypeWrapper
+	{
+		get
+		{
+			return null;
 		}
 	}
 
@@ -986,6 +1028,22 @@ class DynamicTypeWrapper : TypeWrapper
 		}
 	}
 
+	public override TypeWrapper[] InnerClasses
+	{
+		get
+		{
+			return impl.InnerClasses;
+		}
+	}
+
+	public override TypeWrapper DeclaringTypeWrapper
+	{
+		get
+		{
+			return impl.DeclaringTypeWrapper;
+		}
+	}
+
 	public override Type Type
 	{
 		get
@@ -1008,6 +1066,8 @@ class DynamicTypeWrapper : TypeWrapper
 		public abstract MethodWrapper GetMethodImpl(MethodDescriptor md);
 		public abstract Type Type { get; }
 		public abstract bool IsInterface { get; }
+		public abstract TypeWrapper[] InnerClasses { get; }
+		public abstract TypeWrapper DeclaringTypeWrapper { get; }
 		public abstract DynamicImpl Finish();
 	}
 
@@ -1089,6 +1149,19 @@ class DynamicTypeWrapper : TypeWrapper
 					throw new InvalidOperationException("Finishing already in progress, for type " + classFile.Name);
 				}
 				finishing = true;
+				// if we're an inner class, we need to attach a ModifiersAttribute to the type, with the reflected modifiers
+				ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
+				for(int i = 0; i < innerclasses.Length; i++)
+				{
+					if(innerclasses[i].innerClass != 0)
+					{
+						if(classFile.GetConstantPoolClassType(innerclasses[i].innerClass, wrapper.GetClassLoader()) == wrapper)
+						{
+							ModifiersAttribute.SetModifiers(typeBuilder, innerclasses[i].accessFlags);
+							break;
+						}
+					}
+				}
 				//Console.WriteLine("finishing TypeFactory for " + classFile.Name);
 				if(fieldLookup == null)
 				{
@@ -1362,7 +1435,8 @@ class DynamicTypeWrapper : TypeWrapper
 					Profiler.Leave("TypeBuilder.CreateType");
 				}
 				ClassLoaderWrapper.SetWrapperForType(type, wrapper);
-				finishedType = new FinishedTypeImpl(type);
+				// TODO don't pre-compute InnerClasses and DeclaringTypeWrapper here
+				finishedType = new FinishedTypeImpl(type, InnerClasses, DeclaringTypeWrapper);
 				return finishedType;
 			}
 			catch(Exception x)
@@ -1380,6 +1454,46 @@ class DynamicTypeWrapper : TypeWrapper
 			get
 			{
 				return typeBuilder.IsInterface;
+			}
+		}
+
+		public override TypeWrapper[] InnerClasses
+		{
+			get
+			{
+				ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
+				ArrayList wrappers = new ArrayList();
+				for(int i = 0; i < innerclasses.Length; i++)
+				{
+					if(innerclasses[i].outerClass != 0 && innerclasses[i].innerClass != 0)
+					{
+						if(classFile.GetConstantPoolClassType(innerclasses[i].outerClass, wrapper.GetClassLoader()) == wrapper)
+						{
+							wrappers.Add(classFile.GetConstantPoolClassType(innerclasses[i].innerClass, wrapper.GetClassLoader()));
+						}
+					}
+				}
+				return (TypeWrapper[])wrappers.ToArray(typeof(TypeWrapper));
+			}
+		}
+
+		public override TypeWrapper DeclaringTypeWrapper
+		{
+			get
+			{
+				ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
+				ArrayList wrappers = new ArrayList();
+				for(int i = 0; i < innerclasses.Length; i++)
+				{
+					if(innerclasses[i].outerClass != 0 && innerclasses[i].innerClass != 0)
+					{
+						if(classFile.GetConstantPoolClassType(innerclasses[i].innerClass, wrapper.GetClassLoader()) == wrapper)
+						{
+							return classFile.GetConstantPoolClassType(innerclasses[i].outerClass, wrapper.GetClassLoader());
+						}
+					}
+				}
+				return null;
 			}
 		}
 
@@ -1812,10 +1926,32 @@ class DynamicTypeWrapper : TypeWrapper
 	private class FinishedTypeImpl : DynamicImpl
 	{
 		private Type type;
+		private TypeWrapper[] innerclasses;
+		private TypeWrapper declaringTypeWrapper;
 
-		public FinishedTypeImpl(Type type)
+		public FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper)
 		{
 			this.type = type;
+			this.innerclasses = innerclasses;
+			this.declaringTypeWrapper = declaringTypeWrapper;
+		}
+
+		public override TypeWrapper[] InnerClasses
+		{
+			get
+			{
+				// TODO compute the innerclasses lazily (and fix JavaTypeImpl to not always compute them)
+				return innerclasses;
+			}
+		}
+
+		public override TypeWrapper DeclaringTypeWrapper
+		{
+			get
+			{
+				// TODO compute lazily (and fix JavaTypeImpl to not always compute it)
+				return declaringTypeWrapper;
+			}
 		}
 
 		public override bool IsInterface
@@ -2310,6 +2446,24 @@ class RemappedTypeWrapper : TypeWrapper
 		}
 	}
 
+	public override TypeWrapper[] InnerClasses
+	{
+		get
+		{
+			// remapped types do not support inner classes at the moment
+			return new TypeWrapper[0];
+		}
+	}
+
+	public override TypeWrapper DeclaringTypeWrapper
+	{
+		get
+		{
+			// remapped types cannot be inside inner classes at the moment
+			return null;
+		}
+	}
+
 	public override Type Type
 	{
 		get
@@ -2512,6 +2666,24 @@ class NetExpTypeWrapper : TypeWrapper
 		}
 	}
 
+	public override TypeWrapper[] InnerClasses
+	{
+		get
+		{
+			// TODO resolve the inner classes!
+			return new TypeWrapper[0];
+		}
+	}
+
+	public override TypeWrapper DeclaringTypeWrapper
+	{
+		get
+		{
+			// TODO resolve the outer class!
+			return null;
+		}
+	}
+
 	protected override FieldWrapper GetFieldImpl(string fieldName)
 	{
 		// HACK this is a totally broken quick & dirty implementation
@@ -2614,6 +2786,7 @@ class CompiledTypeWrapper : TypeWrapper
 {
 	private Type type;
 	private TypeWrapper[] interfaces;
+	private TypeWrapper[] innerclasses;
 
 	// TODO consider resolving the baseType lazily
 	internal CompiledTypeWrapper(string name, Type type, TypeWrapper baseType)
@@ -2659,6 +2832,28 @@ class CompiledTypeWrapper : TypeWrapper
 				interfaces = (TypeWrapper[])wrappers.ToArray(typeof(TypeWrapper));
 			}
 			return interfaces;
+		}
+	}
+
+	public override TypeWrapper[] InnerClasses
+	{
+		get
+		{
+			if(innerclasses == null)
+			{
+				// TODO
+				throw new NotImplementedException();
+			}
+			return innerclasses;
+		}
+	}
+
+	public override TypeWrapper DeclaringTypeWrapper
+	{
+		get
+		{
+			// TODO
+			throw new NotImplementedException();
 		}
 	}
 
