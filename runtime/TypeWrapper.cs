@@ -26,6 +26,9 @@ using System.Collections;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
+using IKVM.Runtime;
+using IKVM.Attributes;
+using IKVM.Internal;
 
 sealed class MethodDescriptor
 {
@@ -895,9 +898,14 @@ abstract class TypeWrapper
 			{
 				return typeof(int);
 			}
-			if(IsUnloadable || IsGhost || IsNonPrimitiveValueType)
+			if(IsUnloadable || IsGhost)
 			{
 				return typeof(object);
+			}
+			if(IsNonPrimitiveValueType)
+			{
+				// return either System.ValueType or System.Enum
+				return TypeAsTBD.BaseType;
 			}
 			if(IsGhostArray)
 			{
@@ -1776,19 +1784,19 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		}
 	}
 
-	internal static void SetupGhosts(MapXml.Root map)
+	internal static void SetupGhosts(IKVM.Internal.MapXml.Root map)
 	{
 		ghosts = new Hashtable();
 
 		// find the ghost interfaces
-		foreach(MapXml.Class c in map.assembly)
+		foreach(IKVM.Internal.MapXml.Class c in map.assembly)
 		{
 			if(c.Shadows != null && c.Interfaces != null)
 			{
 				// NOTE we don't support interfaces that inherit from other interfaces
 				// (actually, if they are explicitly listed it would probably work)
 				TypeWrapper typeWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().GetLoadedClass(c.Name);
-				foreach(MapXml.Interface iface in c.Interfaces)
+				foreach(IKVM.Internal.MapXml.Interface iface in c.Interfaces)
 				{
 					TypeWrapper ifaceWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().GetLoadedClass(iface.Name);
 					if(ifaceWrapper == null || !ifaceWrapper.TypeAsTBD.IsAssignableFrom(typeWrapper.TypeAsTBD))
@@ -1835,9 +1843,9 @@ sealed class DynamicTypeWrapper : TypeWrapper
 
 	private class ExceptionMapEmitter : CodeEmitter
 	{
-		private MapXml.ExceptionMapping[] map;
+		private IKVM.Internal.MapXml.ExceptionMapping[] map;
 
-		internal ExceptionMapEmitter(MapXml.ExceptionMapping[] map)
+		internal ExceptionMapEmitter(IKVM.Internal.MapXml.ExceptionMapping[] map)
 		{
 			this.map = map;
 		}
@@ -1919,18 +1927,18 @@ sealed class DynamicTypeWrapper : TypeWrapper
 #endif // USE_TYPEHANDLE_EXCEPTION_MAPPING
 	}
 
-	internal static void LoadNativeMethods(MapXml.Root map)
+	internal static void LoadNativeMethods(IKVM.Internal.MapXml.Root map)
 	{
 		nativeMethods = new Hashtable();
 		// HACK we've got a hardcoded location for the exception mapping method that is generated from the xml mapping
 		nativeMethods["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
-		foreach(MapXml.Class c in map.assembly)
+		foreach(IKVM.Internal.MapXml.Class c in map.assembly)
 		{
 			// HACK if it is not a remapped type, we assume it is a container for native methods
 			if(c.Shadows == null)
 			{
 				string className = c.Name;
-				foreach(MapXml.Method method in c.Methods)
+				foreach(IKVM.Internal.MapXml.Method method in c.Methods)
 				{
 					if(method.body != null)
 					{
@@ -1962,7 +1970,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		}
 	}
 
-	internal static void LoadMappedExceptions(MapXml.Root map)
+	internal static void LoadMappedExceptions(IKVM.Internal.MapXml.Root map)
 	{
 		mappedExceptionsAllSubClasses = new bool[map.exceptionMappings.Length];
 		mappedExceptions = new TypeWrapper[map.exceptionMappings.Length];
@@ -2706,8 +2714,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 										continue;
 									}
 								}
-								// see if there exists a NativeCode class for this type
-								Type nativeCodeType = Type.GetType("NativeCode." + classFile.Name.Replace('$', '+'));
+								// see if there exists a IKVM.NativeCode class for this type
+								Type nativeCodeType = Type.GetType("IKVM.NativeCode." + classFile.Name.Replace('$', '+'));
 								MethodInfo nativeMethod = null;
 								TypeWrapper[] args = methods[i].GetParameters();
 								if(nativeCodeType != null)
@@ -2967,14 +2975,13 @@ sealed class DynamicTypeWrapper : TypeWrapper
 
 		private class JniBuilder
 		{
-			private static readonly Type localRefStructType = typeof(JniFrame);
+			private static readonly Type localRefStructType = typeof(IKVM.Runtime.JNI.Frame);
 			private static readonly MethodInfo jniFuncPtrMethod = localRefStructType.GetMethod("GetFuncPtr");
 			private static readonly MethodInfo enterLocalRefStruct = localRefStructType.GetMethod("Enter");
 			private static readonly MethodInfo leaveLocalRefStruct = localRefStructType.GetMethod("Leave");
 			private static readonly MethodInfo makeLocalRef = localRefStructType.GetMethod("MakeLocalRef");
 			private static readonly MethodInfo unwrapLocalRef = localRefStructType.GetMethod("UnwrapLocalRef");
-			private static readonly MethodInfo getTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle");
-			private static readonly MethodInfo getClassFromType = typeof(NativeCode.java.lang.VMClass).GetMethod("getClassFromType");
+			private static readonly MethodInfo getClassFromTypeHandle = typeof(ByteCodeHelper).GetMethod("GetClassFromTypeHandle");
 			private static readonly MethodInfo writeLine = typeof(Console).GetMethod("WriteLine", new Type[] { typeof(object) }, null);
 
 			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args, bool thruProxy)
@@ -3039,8 +3046,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				{
 					ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 					ilGenerator.Emit(OpCodes.Ldtoken, wrapper.TypeAsTBD);
-					ilGenerator.Emit(OpCodes.Call, getTypeFromHandle);
-					ilGenerator.Emit(OpCodes.Call, getClassFromType);
+					ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandle);
 					ilGenerator.Emit(OpCodes.Call, makeLocalRef);
 				}
 				for(int j = 0; j < args.Length; j++)

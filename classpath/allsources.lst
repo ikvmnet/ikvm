@@ -25,6 +25,7 @@ java/net/PlainDatagramSocketImpl.java
 java/net/SocketInputStream.java
 java/net/SocketOutputStream.java
 java/security/VMAccessController.java
+java/util/VMTimeZone.java
 sun/misc/Ref.java
 ../../classpath/gnu/classpath/RawData.java
 ../../classpath/gnu/classpath/ServiceFactory.java

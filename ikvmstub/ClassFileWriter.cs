@@ -24,6 +24,7 @@
 using System;
 using System.IO;
 using System.Collections;
+using IKVM.Attributes;
 
 class BigEndianStream
 {

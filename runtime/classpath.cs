@@ -28,9 +28,13 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Text;
+using IKVM.Attributes;
+using IKVM.Runtime;
+using IKVM.Internal;
+
 using NetSystem = System;
 
-namespace NativeCode.java
+namespace IKVM.NativeCode.java
 {
 	namespace lang
 	{
@@ -409,7 +413,7 @@ namespace NativeCode.java
 
 			public static int nativeLoad(string filename)
 			{
-				return JniHelper.LoadLibrary(filename);
+				return IKVM.Runtime.JniHelper.LoadLibrary(filename);
 			}
 		}
 
@@ -625,166 +629,9 @@ namespace NativeCode.java
 
 		public class VMSystem
 		{
-			public static void arraycopy_primitive_8(Array src, int srcStart, Array dest, int destStart, int len)
-			{
-				try 
-				{
-					checked
-					{
-						Buffer.BlockCopy(src, srcStart << 3, dest, destStart << 3, len << 3);
-						return;
-					}
-				}
-				catch(ArgumentNullException)
-				{
-					throw JavaException.NullPointerException();
-				}
-				catch(OverflowException)
-				{
-					throw JavaException.ArrayIndexOutOfBoundsException();
-				}
-				catch(ArgumentException) 
-				{
-					throw JavaException.ArrayIndexOutOfBoundsException();
-				}
-			}
-
-			public static void arraycopy_primitive_4(Array src, int srcStart, Array dest, int destStart, int len)
-			{
-				try 
-				{
-					checked
-					{
-						Buffer.BlockCopy(src, srcStart << 2, dest, destStart << 2, len << 2);
-						return;
-					}
-				}
-				catch(ArgumentNullException)
-				{
-					throw JavaException.NullPointerException();
-				}
-				catch(OverflowException)
-				{
-					throw JavaException.ArrayIndexOutOfBoundsException();
-				}
-				catch(ArgumentException) 
-				{
-					throw JavaException.ArrayIndexOutOfBoundsException();
-				}
-			}
-
-			public static void arraycopy_primitive_2(Array src, int srcStart, Array dest, int destStart, int len)
-			{
-				try 
-				{
-					checked
-					{
-						Buffer.BlockCopy(src, srcStart << 1, dest, destStart << 1, len << 1);
-						return;
-					}
-				}
-				catch(ArgumentNullException)
-				{
-					throw JavaException.NullPointerException();
-				}
-				catch(OverflowException)
-				{
-					throw JavaException.ArrayIndexOutOfBoundsException();
-				}
-				catch(ArgumentException) 
-				{
-					throw JavaException.ArrayIndexOutOfBoundsException();
-				}
-			}
-
-			public static void arraycopy_primitive_1(Array src, int srcStart, Array dest, int destStart, int len)
-			{
-				try 
-				{
-					Buffer.BlockCopy(src, srcStart, dest, destStart, len);
-					return;
-				}
-				catch(ArgumentNullException)
-				{
-					throw JavaException.NullPointerException();
-				}
-				catch(OverflowException)
-				{
-					throw JavaException.ArrayIndexOutOfBoundsException();
-				}
-				catch(ArgumentException) 
-				{
-					throw JavaException.ArrayIndexOutOfBoundsException();
-				}
-			}
-
 			public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
 			{
-				if(src != dest)
-				{
-					// NOTE side effect of GetTypeHandle call is null check for src and dest (it
-					// throws an ArgumentNullException)
-					// Since constructing a Type object is expensive, we use Type.GetTypeHandle and
-					// hope that it is implemented in a such a way that it is more efficient than
-					// Object.GetType()
-					try
-					{
-						RuntimeTypeHandle type_src = Type.GetTypeHandle(src);
-						RuntimeTypeHandle type_dst = Type.GetTypeHandle(dest);
-						if(type_src.Value != type_dst.Value)
-						{
-							if(len >= 0)
-							{
-								try
-								{
-									// since Java strictly defines what happens when an ArrayStoreException occurs during copying
-									// and .NET doesn't, we have to do it by hand
-									Object[] src1 = (Object[])src;
-									Object[] dst1 = (Object[])dest;
-									for(; len > 0; len--)
-									{
-										dst1[destStart++] = src1[srcStart++];
-									}
-									return;
-								}
-								catch(InvalidCastException)
-								{
-									throw JavaException.ArrayStoreException("cast failed");
-								}
-							}
-							throw JavaException.ArrayIndexOutOfBoundsException();
-						}
-					}
-					catch(ArgumentNullException)
-					{
-						throw JavaException.NullPointerException();
-					}
-				}
-				try 
-				{
-					Array.Copy((Array)src, srcStart, (Array)dest, destStart, len);
-				}
-				catch(ArgumentNullException)
-				{
-					throw JavaException.NullPointerException();
-				}
-				catch(ArgumentException) 
-				{
-					throw JavaException.ArrayIndexOutOfBoundsException();
-				}
-				catch(InvalidCastException x)
-				{
-					if(!src.GetType().IsArray)
-					{
-						throw JavaException.ArrayStoreException("source is not an array");
-					}
-					if(!dest.GetType().IsArray)
-					{
-						throw JavaException.ArrayStoreException("destination is not an array");
-					}
-					// this shouldn't happen
-					throw JavaException.ArrayStoreException(x.Message);
-				}
+				ByteCodeHelper.arraycopy(src, srcStart, dest, destStart, len);
 			}
 
 			public static void setErr(object printStream)
@@ -1485,44 +1332,6 @@ namespace NativeCode.java
 		}
 	}
 
-	namespace util
-	{
-		public class TimeZone
-		{
-			public static string getDefaultTimeZoneId()
-			{
-				NetSystem.TimeZone currentTimeZone = NetSystem.TimeZone.CurrentTimeZone;
-				NetSystem.TimeSpan timeSpan = currentTimeZone.GetUtcOffset(DateTime.Now);
-
-				int hours = timeSpan.Hours;
-				int mins = timeSpan.Minutes;
-
-				if(mins != 0)
-				{
-					if(hours < 0)
-					{
-						return "GMT+" + ((-hours) * 60  + mins);
-					}
-					else
-					{
-						return "GMT-" + (hours * 60  + mins);
-					}
-				}
-				else
-				{
-					if(hours < 0)
-					{
-						return "GMT+" + (-hours);
-					}
-					else
-					{
-						return "GMT-" + (hours  + mins);
-					}
-				}
-			}
-		}
-	}
-
 	namespace net
 	{
 		public class InetAddress
@@ -1618,7 +1427,7 @@ namespace NativeCode.java
 	}
 }
 
-namespace NativeCode.gnu.java.net.protocol.ikvmres
+namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 {
 	public class IkvmresURLConnection
 	{

@@ -28,6 +28,9 @@ using System.IO;
 using System.Collections;
 using System.Xml;
 using System.Diagnostics;
+using IKVM.Attributes;
+using IKVM.Runtime;
+using IKVM.Internal;
 
 class ClassLoaderWrapper
 {
@@ -40,6 +43,7 @@ class ClassLoaderWrapper
 	// TODO typeToTypeWrapper should be an identity hashtable
 	private static Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable());
 	private static ClassLoaderWrapper bootstrapClassLoader;
+	private static ClassLoaderWrapper systemClassLoader;
 	private object javaClassLoader;
 	private Hashtable types = new Hashtable();
 	private ArrayList nativeLibraries;
@@ -646,7 +650,7 @@ class ClassLoaderWrapper
 	{
 		FinishAll();
 		// HACK use reflection to get the type from the class
-		TypeWrapper mainTypeWrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(mainClass);
+		TypeWrapper mainTypeWrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(mainClass);
 		mainTypeWrapper.Finish();
 		Type mainType = mainTypeWrapper.TypeAsTBD;
 		MethodInfo main = mainType.GetMethod("main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(string[]) }, null);
@@ -833,6 +837,20 @@ class ClassLoaderWrapper
 				bootstrapClassLoader = new ClassLoaderWrapper(null);
 			}
 			return bootstrapClassLoader;
+		}
+	}
+
+	internal static ClassLoaderWrapper GetSystemClassLoader()
+	{
+		lock(typeof(ClassLoaderWrapper))
+		{
+			if(systemClassLoader == null)
+			{
+				TypeWrapper tw = LoadClassCritical("java.lang.ClassLoader");
+				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("getSystemClassLoader", "()Ljava.lang.ClassLoader;"), false);
+				systemClassLoader = GetClassLoaderWrapper(mw.Invoke(null, new object[0], false));
+			}
+			return systemClassLoader;
 		}
 	}
 	

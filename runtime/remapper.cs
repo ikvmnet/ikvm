@@ -27,8 +27,9 @@ using System.Collections;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
+using IKVM.Attributes;
 
-namespace MapXml
+namespace IKVM.Internal.MapXml
 {
 	public abstract class Instruction
 	{

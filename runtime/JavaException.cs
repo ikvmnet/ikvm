@@ -23,6 +23,8 @@
 */
 using System;
 using System.Reflection;
+using IKVM.Runtime;
+using IKVM.Internal;
 
 abstract class RetargetableJavaException : ApplicationException
 {
@@ -237,9 +239,9 @@ sealed class JavaException
 		return (Exception)Activator.CreateInstance(Load("java.lang.NegativeArraySizeException"));
 	}
 
-	internal static Exception ArrayStoreException(string s)
+	internal static Exception ArrayStoreException()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.ArrayStoreException"), new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.ArrayStoreException"));
 	}
 
 	internal static Exception IndexOutOfBoundsException(string s)
@@ -302,6 +304,11 @@ sealed class JavaException
 	internal static Exception InstantiationError(string s, params object[] args)
 	{
 		return (Exception)Activator.CreateInstance(Load("java.lang.InstantiationError"), new object[] { String.Format(s, args) });
+	}
+
+	internal static Exception InstantiationException(string s, params object[] args)
+	{
+		return (Exception)Activator.CreateInstance(Load("java.lang.InstantiationException"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception InterruptedException()

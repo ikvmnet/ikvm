@@ -26,9 +26,10 @@ using System.Reflection;
 using System.Diagnostics;
 using System.Text;
 using System.Collections;
+using IKVM.Attributes;
 using NetSystem = System;
 
-namespace NativeCode.java.lang
+namespace IKVM.NativeCode.java.lang
 {
 	public class ExceptionHelper
 	{

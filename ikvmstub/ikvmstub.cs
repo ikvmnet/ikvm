@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -29,6 +29,8 @@ using System.Collections;
 using ICSharpCode.SharpZipLib.Zip;
 using java.lang;
 using java.lang.reflect;
+using IKVM.Attributes;
+using IKVM.Internal;
 
 public class NetExp
 {
@@ -261,7 +263,7 @@ public class NetExp
 					// HACK we use a non-standard API to get constant value
 					// NOTE we can't use Field.get() because that will run the static initializer and
 					// also won't allow us to see the difference between constants and blank final fields.
-					constantValue = NativeCode.java.lang.reflect.Field.getConstant(fields[i]);
+					constantValue = IKVM.NativeCode.java.lang.reflect.Field.getConstant(fields[i]);
 					if(constantValue != null)
 					{
 						if(constantValue is java.lang.Boolean)

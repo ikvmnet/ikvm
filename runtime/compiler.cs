@@ -27,6 +27,10 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
+using IKVM.Runtime;
+using IKVM.Attributes;
+using IKVM.Internal;
+
 using ExceptionTableEntry = ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = ClassFile.Method.LocalVariableTableEntry;
 using Instruction = ClassFile.Method.Instruction;
@@ -37,7 +41,7 @@ class Compiler
 	private static MethodWrapper mapExceptionFastMethod;
 	private static MethodWrapper fillInStackTraceMethod;
 	private static MethodInfo getTypeFromHandleMethod;
-	private static MethodInfo getClassFromTypeMethod;
+	private static MethodInfo getClassFromTypeHandleMethod;
 	private static MethodInfo multiANewArrayMethod;
 	private static MethodInfo monitorEnterMethod;
 	private static MethodInfo monitorExitMethod;
@@ -68,7 +72,7 @@ class Compiler
 	static Compiler()
 	{
 		getTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle");
-		getClassFromTypeMethod = typeof(NativeCode.java.lang.VMClass).GetMethod("getClassFromType");
+		getClassFromTypeHandleMethod = typeof(ByteCodeHelper).GetMethod("GetClassFromTypeHandle");
 		multiANewArrayMethod = typeof(ByteCodeHelper).GetMethod("multianewarray");
 		monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter");
 		monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit");
@@ -77,11 +81,11 @@ class Compiler
 		d2iMethod = typeof(ByteCodeHelper).GetMethod("d2i");
 		f2lMethod = typeof(ByteCodeHelper).GetMethod("f2l");
 		d2lMethod = typeof(ByteCodeHelper).GetMethod("d2l");
-		arraycopy_primitive_8Method = typeof(NativeCode.java.lang.VMSystem).GetMethod("arraycopy_primitive_8");
-		arraycopy_primitive_4Method = typeof(NativeCode.java.lang.VMSystem).GetMethod("arraycopy_primitive_4");
-		arraycopy_primitive_2Method = typeof(NativeCode.java.lang.VMSystem).GetMethod("arraycopy_primitive_2");
-		arraycopy_primitive_1Method = typeof(NativeCode.java.lang.VMSystem).GetMethod("arraycopy_primitive_1");
-		arraycopyMethod = typeof(NativeCode.java.lang.VMSystem).GetMethod("arraycopy");
+		arraycopy_primitive_8Method = typeof(ByteCodeHelper).GetMethod("arraycopy_primitive_8");
+		arraycopy_primitive_4Method = typeof(ByteCodeHelper).GetMethod("arraycopy_primitive_4");
+		arraycopy_primitive_2Method = typeof(ByteCodeHelper).GetMethod("arraycopy_primitive_2");
+		arraycopy_primitive_1Method = typeof(ByteCodeHelper).GetMethod("arraycopy_primitive_1");
+		arraycopyMethod = typeof(ByteCodeHelper).GetMethod("arraycopy");
 		TypeWrapper exceptionHelper = ClassLoaderWrapper.LoadClassCritical("java.lang.ExceptionHelper");
 		mapExceptionMethod = exceptionHelper.GetMethodWrapper(new MethodDescriptor("MapException", "(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;"), false);
 		mapExceptionMethod.Link();
@@ -742,8 +746,7 @@ class Compiler
 				ArrayList exits = new ArrayList();
 				// TODO consider caching the Class object in a static field
 				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-				ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
-				ilGenerator.Emit(OpCodes.Call, getClassFromTypeMethod);
+				ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandleMethod);
 				ilGenerator.Emit(OpCodes.Dup);
 				LocalBuilder monitor = ilGenerator.DeclareLocal(typeof(object));
 				ilGenerator.Emit(OpCodes.Stloc, monitor);
@@ -1334,8 +1337,7 @@ class Compiler
 								else
 								{
 									ilGenerator.Emit(OpCodes.Ldtoken, tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
-									ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
-									ilGenerator.Emit(OpCodes.Call, getClassFromTypeMethod);
+									ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandleMethod);
 								}
 								java_lang_Class.EmitCheckcast(clazz, ilGenerator);
 								break;
@@ -2686,7 +2688,14 @@ class Compiler
 				}
 				else if(args[i].IsNonPrimitiveValueType)
 				{
-					needsCast = true;
+					if(i == 0 && instanceMethod && method.DeclaringType != args[i])
+					{
+						// no cast needed because we're calling an inherited method
+					}
+					else
+					{
+						needsCast = true;
+					}
 					break;
 				}
 				// if the stack contains an unloadable, we might need to cast it
@@ -2762,13 +2771,17 @@ class Compiler
 					{
 						if(args[i].IsNonPrimitiveValueType)
 						{
-							if(i != 0 || !instanceMethod)
+							if(i == 0 && instanceMethod)
 							{
-								args[i].EmitUnbox(ilGenerator);
+								// we only need to unbox if the method was actually declared on the value type
+								if(method.DeclaringType == args[i])
+								{
+									ilGenerator.Emit(OpCodes.Unbox, args[i].TypeAsTBD);
+								}
 							}
 							else
 							{
-								ilGenerator.Emit(OpCodes.Unbox, args[i].TypeAsTBD);
+								args[i].EmitUnbox(ilGenerator);
 							}
 						}
 						else if(ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsUnloadable)

@@ -30,188 +30,191 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Configuration;
 
-public class Tracer
+namespace IKVM.Internal
 {
-	public readonly static TraceSwitch Compiler = new TraceSwitch("compiler", "Static Compiler");
-	public readonly static TraceSwitch FxBug = new TraceSwitch("fxbug", ".NET Framework bug related events");
-	public readonly static TraceSwitch ClassLoading = new TraceSwitch("classloading", "Class loading");
-	public readonly static TraceSwitch Verifier = new TraceSwitch("verifier", "Bytecode Verifier");
-	public readonly static TraceSwitch Runtime = new TraceSwitch("runtime", "Miscellaneous runtime events");
-//	public readonly static TraceSwitch Methods = new TraceSwitch("methods", "Method Trace");
-	private readonly static Hashtable allTraceSwitches = new Hashtable();
-
-	private readonly static MethodInfo methodIsTracedMethod = typeof(Tracer).GetMethod("IsTracedMethod");
-	private readonly static MethodInfo methodMethodInfo = typeof(Tracer).GetMethod("MethodInfo");
-
-	private readonly static ArrayList methodtraces = new ArrayList();
-
-	private class MyTextWriterTraceListener : TextWriterTraceListener
+	public class Tracer
 	{
-		internal MyTextWriterTraceListener(System.IO.TextWriter tw)
-			: base(tw)
+		public readonly static TraceSwitch Compiler = new TraceSwitch("compiler", "Static Compiler");
+		public readonly static TraceSwitch FxBug = new TraceSwitch("fxbug", ".NET Framework bug related events");
+		public readonly static TraceSwitch ClassLoading = new TraceSwitch("classloading", "Class loading");
+		public readonly static TraceSwitch Verifier = new TraceSwitch("verifier", "Bytecode Verifier");
+		public readonly static TraceSwitch Runtime = new TraceSwitch("runtime", "Miscellaneous runtime events");
+		//	public readonly static TraceSwitch Methods = new TraceSwitch("methods", "Method Trace");
+		private readonly static Hashtable allTraceSwitches = new Hashtable();
+
+		private readonly static MethodInfo methodIsTracedMethod = typeof(Tracer).GetMethod("IsTracedMethod");
+		private readonly static MethodInfo methodMethodInfo = typeof(Tracer).GetMethod("MethodInfo");
+
+		private readonly static ArrayList methodtraces = new ArrayList();
+
+		private class MyTextWriterTraceListener : TextWriterTraceListener
 		{
-		}
-
-		public override void Fail(string message)
-		{
-			this.WriteLine("Assert.Fail: " + message);
-			this.WriteLine(new StackTrace(true).ToString());
-			base.Fail(message);
-		}
-
-		public override void Fail(string message, string detailMessage)
-		{
-			this.WriteLine("Assert.Fail: " + message + ".\n" + detailMessage);
-			this.WriteLine(new StackTrace(true).ToString());
-			base.Fail(message, detailMessage);
-		}
-	}
-
-	static Tracer()
-	{
-		allTraceSwitches[Compiler.DisplayName] = Compiler;
-		allTraceSwitches[FxBug.DisplayName] = FxBug;
-		allTraceSwitches[ClassLoading.DisplayName] = ClassLoading;
-		allTraceSwitches[Verifier.DisplayName] = Verifier;
-		allTraceSwitches[Runtime.DisplayName] = Runtime;
-
-		Trace.AutoFlush = true;
-		Trace.Listeners.Add(new MyTextWriterTraceListener(Console.Error));
-		/* If the app config file gives some method trace - add it */
-		string trace = ConfigurationSettings.AppSettings["Traced Methods"];
-		if(trace != null)
-		{
-			methodtraces.Add(trace);
-		}
-	}
-
-	[Conditional("DEBUG")]
-	public static void EnableTraceForDebug()
-	{
-		SetTraceLevel("*", TraceLevel.Verbose);
-	}
-
-	public static void HandleMethodTrace(string name)
-	{
-		methodtraces.Add(name);
-	}
-
-	public static bool IsTracedMethod(string name)
-	{
-		if(methodtraces.Count == 0)
-		{
-			return false;
-		}
-		IEnumerator e = methodtraces.GetEnumerator();
-		while(e.MoveNext())
-		{
-			try 
+			internal MyTextWriterTraceListener(System.IO.TextWriter tw)
+				: base(tw)
 			{
-				if(Regex.IsMatch(name, e.Current.ToString()))
+			}
+
+			public override void Fail(string message)
+			{
+				this.WriteLine("Assert.Fail: " + message);
+				this.WriteLine(new StackTrace(true).ToString());
+				base.Fail(message);
+			}
+
+			public override void Fail(string message, string detailMessage)
+			{
+				this.WriteLine("Assert.Fail: " + message + ".\n" + detailMessage);
+				this.WriteLine(new StackTrace(true).ToString());
+				base.Fail(message, detailMessage);
+			}
+		}
+
+		static Tracer()
+		{
+			allTraceSwitches[Compiler.DisplayName] = Compiler;
+			allTraceSwitches[FxBug.DisplayName] = FxBug;
+			allTraceSwitches[ClassLoading.DisplayName] = ClassLoading;
+			allTraceSwitches[Verifier.DisplayName] = Verifier;
+			allTraceSwitches[Runtime.DisplayName] = Runtime;
+
+			Trace.AutoFlush = true;
+			Trace.Listeners.Add(new MyTextWriterTraceListener(Console.Error));
+			/* If the app config file gives some method trace - add it */
+			string trace = ConfigurationSettings.AppSettings["Traced Methods"];
+			if(trace != null)
+			{
+				methodtraces.Add(trace);
+			}
+		}
+
+		[Conditional("DEBUG")]
+		public static void EnableTraceForDebug()
+		{
+			SetTraceLevel("*", TraceLevel.Verbose);
+		}
+
+		public static void HandleMethodTrace(string name)
+		{
+			methodtraces.Add(name);
+		}
+
+		public static bool IsTracedMethod(string name)
+		{
+			if(methodtraces.Count == 0)
+			{
+				return false;
+			}
+			IEnumerator e = methodtraces.GetEnumerator();
+			while(e.MoveNext())
+			{
+				try 
 				{
-					return true;
+					if(Regex.IsMatch(name, e.Current.ToString()))
+					{
+						return true;
+					}
+				}
+				catch(Exception x) 
+				{
+					Tracer.Warning(Tracer.Compiler,"Regular Expression match failure: " + e.Current + ":" + x);
 				}
 			}
-			catch(Exception x) 
-			{
-				Tracer.Warning(Tracer.Compiler,"Regular Expression match failure: " + e.Current + ":" + x);
-			}
+			return false;
 		}
-		return false;
-	}
 
-	public static void SetTraceLevel(string name)
-	{
-		string[] trace = name.Split('=');
-		System.Diagnostics.TraceLevel level = System.Diagnostics.TraceLevel.Verbose;
-		if(trace.Length == 2)
+		public static void SetTraceLevel(string name)
 		{
-			level = (System.Diagnostics.TraceLevel)Enum.Parse(typeof(System.Diagnostics.TraceLevel), trace[1], true);
-		}
-		SetTraceLevel(trace[0], level);
-	}
-
-	public static void SetTraceLevel(string name, TraceLevel level)
-	{
-		if(name == "*")
-		{
-			foreach(TraceSwitch ts in allTraceSwitches.Values)
+			string[] trace = name.Split('=');
+			System.Diagnostics.TraceLevel level = System.Diagnostics.TraceLevel.Verbose;
+			if(trace.Length == 2)
 			{
-				ts.Level = level;
+				level = (System.Diagnostics.TraceLevel)Enum.Parse(typeof(System.Diagnostics.TraceLevel), trace[1], true);
 			}
+			SetTraceLevel(trace[0], level);
 		}
-		else
+
+		public static void SetTraceLevel(string name, TraceLevel level)
 		{
-			TraceSwitch ts = (TraceSwitch)allTraceSwitches[name];
-			if(ts != null)
+			if(name == "*")
 			{
-				ts.Level = level;
+				foreach(TraceSwitch ts in allTraceSwitches.Values)
+				{
+					ts.Level = level;
+				}
 			}
 			else
 			{
-				Console.Error.WriteLine("Warning: Invalid traceswitch name: {0}", name);
+				TraceSwitch ts = (TraceSwitch)allTraceSwitches[name];
+				if(ts != null)
+				{
+					ts.Level = level;
+				}
+				else
+				{
+					Console.Error.WriteLine("Warning: Invalid traceswitch name: {0}", name);
+				}
 			}
 		}
-	}
 
-	private static void WriteLine(string message, object[] p)
-	{
-		if(p.Length > 0)
+		private static void WriteLine(string message, object[] p)
 		{
-			message = string.Format(message, p);
-		}
-		Trace.WriteLine(string.Format("[{0:HH':'mm':'ss'.'fffff} {1}] {2}", DateTime.Now, Thread.CurrentThread.Name, message));
-	}
-
-	[Conditional("TRACE")]
-	public static void Info(TraceSwitch traceSwitch, string message, params object[] p)
-	{
-		if(traceSwitch.TraceInfo)
-		{
-			WriteLine(message, p);
-		}
-	}
-
-	[Conditional("TRACE")]
-	public static void MethodInfo(string message)
-	{
-		Trace.WriteLine(string.Format("[{0:HH':'mm':'ss'.'fffff} {1}] {2}", DateTime.Now, Thread.CurrentThread.Name, message));
-	}
-
-	[Conditional("TRACE")]
-	public static void Warning(TraceSwitch traceSwitch, string message, params object[] p)
-	{
-		if(traceSwitch.TraceWarning)
-		{
-			WriteLine(message, p);
-		}
-	}
-
-	[Conditional("TRACE")]
-	public static void Error(TraceSwitch traceSwitch, string message, params object[] p)
-	{
-		if(traceSwitch.TraceError)
-		{
-			WriteLine(message, p);
-		}
-	}
-
-	[Conditional("TRACE")]
-	internal static void EmitMethodTrace(ILGenerator ilgen, string tracemessage)
-	{
-		if(IsTracedMethod(tracemessage))
-		{
-			Label label = ilgen.DefineLabel();
-			if(JVM.IsStaticCompiler)
+			if(p.Length > 0)
 			{
-				// TODO this should be a boolean field test instead of a call to Tracer.IsTracedMessage
-				ilgen.Emit(OpCodes.Ldstr, tracemessage);
-				ilgen.Emit(OpCodes.Call, methodIsTracedMethod);
-				ilgen.Emit(OpCodes.Brfalse_S, label);
+				message = string.Format(message, p);
 			}
-			ilgen.Emit(OpCodes.Ldstr, tracemessage);
-			ilgen.Emit(OpCodes.Call, methodMethodInfo);
-			ilgen.MarkLabel(label);
+			Trace.WriteLine(string.Format("[{0:HH':'mm':'ss'.'fffff} {1}] {2}", DateTime.Now, Thread.CurrentThread.Name, message));
+		}
+
+		[Conditional("TRACE")]
+		public static void Info(TraceSwitch traceSwitch, string message, params object[] p)
+		{
+			if(traceSwitch.TraceInfo)
+			{
+				WriteLine(message, p);
+			}
+		}
+
+		[Conditional("TRACE")]
+		public static void MethodInfo(string message)
+		{
+			Trace.WriteLine(string.Format("[{0:HH':'mm':'ss'.'fffff} {1}] {2}", DateTime.Now, Thread.CurrentThread.Name, message));
+		}
+
+		[Conditional("TRACE")]
+		public static void Warning(TraceSwitch traceSwitch, string message, params object[] p)
+		{
+			if(traceSwitch.TraceWarning)
+			{
+				WriteLine(message, p);
+			}
+		}
+
+		[Conditional("TRACE")]
+		public static void Error(TraceSwitch traceSwitch, string message, params object[] p)
+		{
+			if(traceSwitch.TraceError)
+			{
+				WriteLine(message, p);
+			}
+		}
+
+		[Conditional("TRACE")]
+		internal static void EmitMethodTrace(ILGenerator ilgen, string tracemessage)
+		{
+			if(IsTracedMethod(tracemessage))
+			{
+				Label label = ilgen.DefineLabel();
+				if(JVM.IsStaticCompiler)
+				{
+					// TODO this should be a boolean field test instead of a call to Tracer.IsTracedMessage
+					ilgen.Emit(OpCodes.Ldstr, tracemessage);
+					ilgen.Emit(OpCodes.Call, methodIsTracedMethod);
+					ilgen.Emit(OpCodes.Brfalse_S, label);
+				}
+				ilgen.Emit(OpCodes.Ldstr, tracemessage);
+				ilgen.Emit(OpCodes.Call, methodMethodInfo);
+				ilgen.MarkLabel(label);
+			}
 		}
 	}
 }

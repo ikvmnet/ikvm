@@ -74,7 +74,7 @@
 				<body>
 					<ldarg_0 />
 					<call type="System.Object, mscorlib" name="GetType" />
-					<call type="NativeCode.java.lang.VMClass" name="getClassFromType" />
+					<call type="IKVM.NativeCode.java.lang.VMClass" name="getClassFromType" />
 					<castclass class="java.lang.Class" />
 					<ret />
 				</body>

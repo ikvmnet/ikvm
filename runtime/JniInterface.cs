@@ -27,6 +27,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using IKVM.Internal;
 
 // Java type JNI aliases
 using jboolean = System.SByte;
@@ -56,219 +57,514 @@ using jweak = System.IntPtr;
 using jmethodID = System.IntPtr;
 using jfieldID = System.IntPtr;
 
-sealed class JniHelper
+namespace IKVM.Runtime
 {
-	//[DllImport("ikvm-native", EntryPoint="_ikvm_LoadLibrary@4")]
-	[DllImport("ikvm-native")]
-	private static extern IntPtr ikvm_LoadLibrary(string filename);
-	//[DllImport("ikvm-native", EntryPoint="_ikvm_FreeLibrary@4")]
-	[DllImport("ikvm-native")]
-	private static extern void ikvm_FreeLibrary(IntPtr handle);
-	//[DllImport("ikvm-native", EntryPoint="_ikvm_GetProcAddress@12")]
-	[DllImport("ikvm-native")]
-	internal static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
-	//[DllImport("ikvm-native", EntryPoint="_ikvm_CallOnLoad@12")]
-	[DllImport("ikvm-native")]
-	private unsafe static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
-	//[DllImport("ikvm-native", EntryPoint="_ikvm_GetJNIEnvVTable@0")]
-	[DllImport("ikvm-native")]
-	internal unsafe static extern void** ikvm_GetJNIEnvVTable();
-	//[DllImport("ikvm-native", EntryPoint="_ikvm_MarshalDelegate@4")]
-	[DllImport("ikvm-native")]
-	internal unsafe static extern void* ikvm_MarshalDelegate(Delegate d);
-
-	private static MethodBase FindCaller()
+	[StructLayout(LayoutKind.Sequential)]
+	unsafe struct JavaVMOption
 	{
-		StackTrace st = new StackTrace();
-		for(int i = 0; i < st.FrameCount; i++)
-		{
-			StackFrame frame = st.GetFrame(i);
-			Type type = frame.GetMethod().DeclaringType;
-			if(type != null)
-			{
-				// TODO we need a more robust algorithm to find the "caller" (note that in addition to native methods,
-				// System.loadLibrary can also trigger executing native code)
-				ClassLoaderWrapper loader = ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader();
-				if(loader.GetJavaClassLoader() != null)
-				{
-					return frame.GetMethod();
-				}
-			}
-		}
-		return null;
+		internal sbyte* optionString;
+		internal void* extraInfo;
 	}
 
-	private static ArrayList nativeLibraries = new ArrayList();
-	internal static readonly object JniLock = new object();
-
-	internal unsafe static int LoadLibrary(string filename)
+	[StructLayout(LayoutKind.Sequential)]
+	unsafe struct JavaVMInitArgs
 	{
-		MethodBase m = FindCaller();
-		ClassLoaderWrapper loader;
-		if(m != null)
-		{
-			loader = ClassLoaderWrapper.GetWrapperFromType(m.DeclaringType).GetClassLoader();
-		}
-		else
-		{
-			loader = ClassLoaderWrapper.GetBootstrapClassLoader();
-			m = MethodBase.GetCurrentMethod();
-		}
-		lock(JniLock)
-		{
-			IntPtr p = ikvm_LoadLibrary(filename);
-			if(p == IntPtr.Zero)
-			{
-				return 0;
-			}
-			try
-			{
-				foreach(IntPtr tmp in loader.GetNativeLibraries())
-				{
-					if(tmp == p)
-					{
-						// the library was already loaded by the current class loader,
-						// no need to do anything
-						ikvm_FreeLibrary(p);
-						return 1;
-					}
-				}
-				if(nativeLibraries.Contains(p))
-				{
-					throw JavaException.UnsatisfiedLinkError("Native library {0} already loaded in another classloader", filename);
-				}
-				IntPtr onload = ikvm_GetProcAddress(p, "JNI_OnLoad", IntPtr.Size * 2);
-				if(onload != IntPtr.Zero)
-				{
-					JniFrame f = new JniFrame();
-					f.Enter(m.MethodHandle);
-					int version = ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
-					f.Leave();
-					if(version != JNIEnv.JNI_VERSION_1_1 && version != JNIEnv.JNI_VERSION_1_2 && version != JNIEnv.JNI_VERSION_1_4)
-					{
-						throw JavaException.UnsatisfiedLinkError("Unsupported JNI version 0x{0:X} required by {1}", version, filename);
-					}
-				}
-				nativeLibraries.Add(p);
-				loader.RegisterNativeLibrary(p);
-				return 1;
-			}
-			catch
-			{
-				ikvm_FreeLibrary(p);
-				throw;
-			}
-		}
+		internal jint version;
+		internal jint nOptions;
+		internal JavaVMOption* options;
+		internal jboolean ignoreUnrecognized;
 	}
-}
 
-class GlobalRefs
-{
-	internal static System.Collections.ArrayList globalRefs = new System.Collections.ArrayList();
-	internal static readonly object weakRefLock = new object();
-	internal static GCHandle[] weakRefs = new GCHandle[16];
-}
-
-unsafe class VtableBuilder
-{
-	delegate int pf_int_IntPtr(JNIEnv* pEnv, IntPtr p);
-	delegate IntPtr pf_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p);
-	delegate void pf_void_IntPtr(JNIEnv* pEnv, IntPtr p);
-	delegate IntPtr pf_IntPtr(JNIEnv* pEnv);
-	delegate void pf_void(JNIEnv* pEnv);
-	delegate sbyte pf_sbyte(JNIEnv* pEnv);
-	delegate IntPtr pf_IntPtr_pbyte(JNIEnv* pEnv, byte* p);
-	delegate int pf_int(JNIEnv* pEnv);
-	delegate IntPtr pf_IntPtr_pbyte_IntPtr_psbyte_IntPtr(JNIEnv* pEnv, byte* p1, IntPtr p2, sbyte* p3, int p4);
-	delegate IntPtr pf_IntPtr_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
-	delegate jchar* pf_pjchar_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
-	delegate int pf_int_IntPtr_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2);
-	delegate void pf_void_pbyte(JNIEnv* pEnv, byte* p1);
-	delegate IntPtr pf_IntPtr_IntPtr_pbyte_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2, byte* p3);
-	delegate int pf_int_IntPtr_pJNINativeMethod_int(JNIEnv* pEnv, IntPtr p1, JNIEnv.JNINativeMethod* p2, int p3);
-	delegate int pf_int_ppJavaVM(JNIEnv* pEnv, JavaVM** ppJavaVM);
-	delegate sbyte pf_sbyte_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
-	delegate short pf_short_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
-	delegate ushort pf_ushort_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
-	delegate int pf_int_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
-	delegate long pf_long_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
-	delegate float pf_float_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
-	delegate double pf_double_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
-	delegate void pf_void_IntPtr_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3);
-	delegate void pf_void_IntPtr_IntPtr_sbyte(JNIEnv* pEnv, IntPtr p1, IntPtr p2, sbyte p3);
-	delegate void pf_void_IntPtr_IntPtr_short(JNIEnv* pEnv, IntPtr p1, IntPtr p2, short p3);
-	delegate void pf_void_IntPtr_IntPtr_ushort(JNIEnv* pEnv, IntPtr p1, IntPtr p2, ushort p3);
-	delegate void pf_void_IntPtr_IntPtr_int(JNIEnv* pEnv, IntPtr p1, IntPtr p2, int p3);
-	delegate void pf_void_IntPtr_IntPtr_long(JNIEnv* pEnv, IntPtr p1, IntPtr p2, long p3);
-	delegate void pf_void_IntPtr_IntPtr_float(JNIEnv* pEnv, IntPtr p1, IntPtr p2, float p3);
-	delegate void pf_void_IntPtr_IntPtr_double(JNIEnv* pEnv, IntPtr p1, IntPtr p2, double p3);
-	delegate IntPtr pf_IntPtr_pjchar_int(JNIEnv* pEnv, jchar* p1, int p2);
-	delegate void pf_void_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
-	delegate void pf_void_IntPtr_pjchar(JNIEnv* pEnv, IntPtr p1, jchar* p2);
-	delegate IntPtr pf_IntPtr_int_IntPtr_IntPtr(JNIEnv* pEnv, int p1, IntPtr p2, IntPtr p3);
-	delegate IntPtr pf_IntPtr_IntPtr_int(JNIEnv* pEnv, IntPtr p1, int p2);
-	delegate void pf_void_IntPtr_int_IntPtr(JNIEnv* pEnv, IntPtr p1, int p2, IntPtr p3);
-	delegate IntPtr pf_IntPtr_int(JNIEnv* pEnv, int p1);
-	delegate void pf_void_IntPtr_int_int_IntPtr(JNIEnv* pEnv, IntPtr p1, int p2, int p3, IntPtr p4);
-	delegate IntPtr pf_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
-	delegate sbyte pf_sbyte_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
-	delegate short pf_short_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
-	delegate ushort pf_ushort_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
-	delegate int pf_int_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
-	delegate long pf_long_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
-	delegate float pf_float_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
-	delegate double pf_double_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
-	delegate void pf_void_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
-	delegate IntPtr pf_IntPtr_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
-	delegate sbyte pf_sbyte_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
-	delegate ushort pf_ushort_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
-	delegate short pf_short_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
-	delegate int pf_int_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
-	delegate long pf_long_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
-	delegate float pf_float_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
-	delegate double pf_double_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
-	delegate void pf_void_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
-	delegate byte* pf_pbyte_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
-	delegate void pf_void_IntPtr_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2);
-	delegate jboolean* pf_pjboolean_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
-	delegate jbyte* pf_pjbyte_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
-	delegate jshort* pf_pjshort_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
-	delegate jint* pf_pjint_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
-	delegate jlong* pf_pjlong_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
-	delegate jfloat* pf_pjfloat_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
-	delegate jdouble* pf_pjdouble_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
-	delegate void pf_void_IntPtr_pjboolean_int(JNIEnv* pEnv, IntPtr p1, jboolean* p2, int p3);
-	delegate void pf_void_IntPtr_pjbyte_int(JNIEnv* pEnv, IntPtr p1, jbyte* p2, int p3);
-	delegate void pf_void_IntPtr_pjchar_int(JNIEnv* pEnv, IntPtr p1, jchar* p2, int p3);
-	delegate void pf_void_IntPtr_pjshort_int(JNIEnv* pEnv, IntPtr p1, jshort* p2, int p3);
-	delegate void pf_void_IntPtr_pjint_int(JNIEnv* pEnv, IntPtr p1, jint* p2, int p3);
-	delegate void pf_void_IntPtr_pjlong_int(JNIEnv* pEnv, IntPtr p1, jlong* p2, int p3);
-	delegate void pf_void_IntPtr_pjfloat_int(JNIEnv* pEnv, IntPtr p1, jfloat* p2, int p3);
-	delegate void pf_void_IntPtr_pjdouble_int(JNIEnv* pEnv, IntPtr p1, jdouble* p2, int p3);
-	delegate int pf_int_int(JNIEnv* pEnv, int p1);
-
-	internal static void* vtable;
-
-	static VtableBuilder()
+	public unsafe sealed class JNI
 	{
-		// JNIEnv
-		void** pmcpp = JniHelper.ikvm_GetJNIEnvVTable();
-		void** p = (void**)JniMem.Alloc(IntPtr.Size * vtableDelegates.Length);
-		for(int i = 0; i < vtableDelegates.Length; i++)
+		internal static bool jvmCreated;
+
+		public static int CreateJavaVM(void* ppvm, void* ppenv, void* args)
 		{
-			if(vtableDelegates[i] != null)
+			JavaVMInitArgs* pInitArgs = (JavaVMInitArgs*)args;
+			// we don't support the JDK 1.1 JavaVMInitArgs
+			if(pInitArgs->version != JNIEnv.JNI_VERSION_1_2)
 			{
-				p[i] = JniHelper.ikvm_MarshalDelegate(vtableDelegates[i]);
+				return JNIEnv.JNI_EVERSION;
+			}
+			if(jvmCreated)
+			{
+				return JNIEnv.JNI_ERR;
+			}
+			Hashtable props = new Hashtable();
+			for(int i = 0; i < pInitArgs->nOptions; i++)
+			{
+				string option = new String(pInitArgs->options[i].optionString);
+				if(option.StartsWith("-D"))
+				{
+					int idx = option.IndexOf('=', 2);
+					props[option.Substring(2, idx - 2)] = option.Substring(idx + 1);
+				}
+				else if(option.StartsWith("-verbose"))
+				{
+					// ignore
+				}
+				else if(option == "vfprintf" || option == "exit" || option == "abort")
+				{
+					// not supported
+				}
+				else if(pInitArgs->ignoreUnrecognized == JNIEnv.JNI_FALSE)
+				{
+					return JNIEnv.JNI_ERR;
+				}
+			}
+			// HACK make sure the Java library is loaded
+			Assembly javalib = Assembly.Load("IKVM.GNU.Classpath");
+
+			// HACK poke the properties into a special field in VMRuntime, so that they are copied into the
+			// defaultProperties collection.
+			Type vmruntime = javalib.GetType("java.lang.VMRuntime");
+			vmruntime.GetField("props", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, props);
+
+			*((void**)ppvm) = JavaVM.pJavaVM;
+			return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)ppenv, null);
+		}
+
+		public static int GetDefaultJavaVMInitArgs(void* vm_args)
+		{
+			// This is only used for JDK 1.1 JavaVMInitArgs, and we don't support those.
+			return JNIEnv.JNI_ERR;
+		}
+
+		public static int GetCreatedJavaVMs(void* ppvmBuf, int bufLen, int* nVMs)
+		{
+			if(jvmCreated)
+			{
+				if(bufLen >= 1)
+				{
+					*((void**)ppvmBuf) = JavaVM.pJavaVM;
+				}
+				*nVMs = 1;
 			}
 			else
 			{
-				p[i] = pmcpp[i];
+				*nVMs = 0;
+			}
+			return JNIEnv.JNI_OK;
+		}
+
+		public unsafe struct Frame
+		{
+			private JNIEnv* pJNIEnv;
+			private RuntimeMethodHandle prevMethod;
+			private object[] quickLocals;
+			private int quickLocalIndex;
+			private int prevLocalRefSlot;
+
+			public IntPtr Enter(RuntimeMethodHandle method)
+			{
+				pJNIEnv = TlsHack.pJNIEnv;
+				if(pJNIEnv == null)
+				{
+					pJNIEnv = JNIEnv.CreateJNIEnv();
+				}
+				prevMethod = pJNIEnv->currentMethod;
+				pJNIEnv->currentMethod = method;
+				object[][] localRefs = pJNIEnv->GetLocalRefs();
+				prevLocalRefSlot = pJNIEnv->localRefSlot;
+				pJNIEnv->localRefSlot++;
+				if(pJNIEnv->localRefSlot >= localRefs.Length)
+				{
+					object[][] tmp = new object[localRefs.Length * 2][];
+					Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
+					pJNIEnv->localRefs.Target = localRefs = tmp;
+				}
+				if(localRefs[pJNIEnv->localRefSlot] == null)
+				{
+					localRefs[pJNIEnv->localRefSlot] = new object[32];
+				}
+				quickLocals = localRefs[pJNIEnv->localRefSlot];
+				quickLocalIndex = (pJNIEnv->localRefSlot << JNIEnv.LOCAL_REF_SHIFT);
+				return (IntPtr)(void*)pJNIEnv;
+			}
+
+			public void Leave()
+			{
+				pJNIEnv->currentMethod = prevMethod;
+				Exception x = (Exception)pJNIEnv->UnwrapRef(pJNIEnv->pendingException);
+				pJNIEnv->pendingException = IntPtr.Zero;
+				object[][] localRefs = pJNIEnv->GetLocalRefs();
+				while(pJNIEnv->localRefSlot != prevLocalRefSlot)
+				{
+					if(localRefs[pJNIEnv->localRefSlot] != null)
+					{
+						if(localRefs[pJNIEnv->localRefSlot].Length == JNIEnv.LOCAL_REF_BUCKET_SIZE)
+						{
+							// if the bucket is totally allocated, we're assuming a leaky method so we throw the bucket away
+							localRefs[pJNIEnv->localRefSlot] = null;
+						}
+						else
+						{
+							Array.Clear(localRefs[pJNIEnv->localRefSlot], 0, localRefs[pJNIEnv->localRefSlot].Length);
+						}
+					}
+					pJNIEnv->localRefSlot--;
+				}
+				if(x != null)
+				{
+					throw x;
+				}
+			}
+
+			public static IntPtr GetFuncPtr(RuntimeMethodHandle method, string clazz, string name, string sig)
+			{
+				MethodBase mb = MethodBase.GetMethodFromHandle(method);
+				// MONOBUG Mono 1.0 doesn't implement MethodBase.GetMethodFromHandle
+				if(mb == null)
+				{
+					mb = new StackFrame(1).GetMethod();
+				}
+				ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
+				StringBuilder mangledSig = new StringBuilder();
+				int sp = 0;
+				for(int i = 1; sig[i] != ')'; i++)
+				{
+					switch(sig[i])
+					{
+						case '[':
+							mangledSig.Append("_3");
+							sp += IntPtr.Size;
+							while(sig[++i] == '[')
+							{
+								mangledSig.Append("_3");
+							}
+							mangledSig.Append(sig[i]);
+							if(sig[i] == 'L')
+							{
+								while(sig[++i] != ';')
+								{
+									if(sig[i] == '/')
+									{
+										mangledSig.Append("_");
+									}
+									else if(sig[i] == '_')
+									{
+										mangledSig.Append("_1");
+									}
+									else
+									{
+										mangledSig.Append(sig[i]);
+									}
+								}
+								mangledSig.Append("_2");
+							}
+							break;
+						case 'L':
+							sp += IntPtr.Size;
+							mangledSig.Append("L");
+							while(sig[++i] != ';')
+							{
+								if(sig[i] == '/')
+								{
+									mangledSig.Append("_");
+								}
+								else if(sig[i] == '_')
+								{
+									mangledSig.Append("_1");
+								}
+								else
+								{
+									mangledSig.Append(sig[i]);
+								}
+							}
+							mangledSig.Append("_2");
+							break;
+						case 'J':
+						case 'D':
+							mangledSig.Append(sig[i]);
+							sp += 8;
+							break;
+						case 'F':
+						case 'I':
+						case 'C':
+						case 'Z':
+						case 'S':
+						case 'B':
+							mangledSig.Append(sig[i]);
+							sp += 4;
+							break;
+						default:
+							Debug.Assert(false);
+							break;
+					}
+				}
+				lock(JniHelper.JniLock)
+				{
+					string shortMethodName = String.Format("Java_{0}_{1}", clazz.Replace("_", "_1").Replace('/', '_'), name.Replace("_", "_1"));
+					string longMethodName = String.Format("Java_{0}_{1}__{2}", clazz.Replace("_", "_1").Replace('/', '_'), name.Replace("_", "_1"), mangledSig);
+					foreach(IntPtr p in loader.GetNativeLibraries())
+					{
+						IntPtr pfunc = JniHelper.ikvm_GetProcAddress(p, shortMethodName, sp + 2 * IntPtr.Size);
+						if(pfunc != IntPtr.Zero)
+						{
+							return pfunc;
+						}
+						pfunc = JniHelper.ikvm_GetProcAddress(p, longMethodName, sp + 2 * IntPtr.Size);
+						if(pfunc != IntPtr.Zero)
+						{
+							return pfunc;
+						}
+					}
+				}
+				throw JavaException.UnsatisfiedLinkError("{0}.{1}{2}", clazz, name, sig);
+			}
+
+			public IntPtr MakeLocalRef(object obj)
+			{
+				if(obj == null)
+				{
+					return IntPtr.Zero;
+				}
+				int i = quickLocalIndex & JNIEnv.LOCAL_REF_MASK;
+				if(i < quickLocals.Length)
+				{
+					quickLocals[i] = obj;
+					return (IntPtr)quickLocalIndex++;
+				}
+				else if(i < JNIEnv.LOCAL_REF_BUCKET_SIZE)
+				{
+					object[] tmp = new object[quickLocals.Length * 2];
+					Array.Copy(quickLocals, 0, tmp, 0, quickLocals.Length);
+					quickLocals = tmp;
+					object[][] localRefs = (object[][])pJNIEnv->localRefs.Target;
+					localRefs[pJNIEnv->localRefSlot] = quickLocals;
+					quickLocals[i] = obj;
+					return (IntPtr)quickLocalIndex++;
+				}
+				else
+				{
+					// this can't happen, because LOCAL_REF_BUCKET_SIZE is larger than the maximum number of object
+					// references that can be required by a native method call (256 arguments + a class reference)
+					JVM.CriticalFailure("JNI.Frame.MakeLocalRef cannot spill into next slot", null);
+					return IntPtr.Zero;
+				}
+			}
+
+			public object UnwrapLocalRef(IntPtr p)
+			{
+				return pJNIEnv->UnwrapRef(p);
 			}
 		}
-		vtable = p;
 	}
 
-	static Delegate[] vtableDelegates =
+	sealed class JniHelper
+	{
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_LoadLibrary@4")]
+		[DllImport("ikvm-native")]
+		private static extern IntPtr ikvm_LoadLibrary(string filename);
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_FreeLibrary@4")]
+		[DllImport("ikvm-native")]
+		private static extern void ikvm_FreeLibrary(IntPtr handle);
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_GetProcAddress@12")]
+		[DllImport("ikvm-native")]
+		internal static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_CallOnLoad@12")]
+		[DllImport("ikvm-native")]
+		private unsafe static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_GetJNIEnvVTable@0")]
+		[DllImport("ikvm-native")]
+		internal unsafe static extern void** ikvm_GetJNIEnvVTable();
+		//[DllImport("ikvm-native", EntryPoint="_ikvm_MarshalDelegate@4")]
+		[DllImport("ikvm-native")]
+		internal unsafe static extern void* ikvm_MarshalDelegate(Delegate d);
+
+		private static MethodBase FindCaller()
+		{
+			StackTrace st = new StackTrace();
+			for(int i = 0; i < st.FrameCount; i++)
+			{
+				StackFrame frame = st.GetFrame(i);
+				Type type = frame.GetMethod().DeclaringType;
+				if(type != null)
+				{
+					// TODO we need a more robust algorithm to find the "caller" (note that in addition to native methods,
+					// System.loadLibrary can also trigger executing native code)
+					ClassLoaderWrapper loader = ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader();
+					if(loader.GetJavaClassLoader() != null)
+					{
+						return frame.GetMethod();
+					}
+				}
+			}
+			return null;
+		}
+
+		private static ArrayList nativeLibraries = new ArrayList();
+		internal static readonly object JniLock = new object();
+
+		internal unsafe static int LoadLibrary(string filename)
+		{
+			MethodBase m = FindCaller();
+			ClassLoaderWrapper loader;
+			if(m != null)
+			{
+				loader = ClassLoaderWrapper.GetWrapperFromType(m.DeclaringType).GetClassLoader();
+			}
+			else
+			{
+				loader = ClassLoaderWrapper.GetBootstrapClassLoader();
+				m = MethodBase.GetCurrentMethod();
+			}
+			lock(JniLock)
+			{
+				IntPtr p = ikvm_LoadLibrary(filename);
+				if(p == IntPtr.Zero)
+				{
+					return 0;
+				}
+				try
+				{
+					foreach(IntPtr tmp in loader.GetNativeLibraries())
+					{
+						if(tmp == p)
+						{
+							// the library was already loaded by the current class loader,
+							// no need to do anything
+							ikvm_FreeLibrary(p);
+							return 1;
+						}
+					}
+					if(nativeLibraries.Contains(p))
+					{
+						throw JavaException.UnsatisfiedLinkError("Native library {0} already loaded in another classloader", filename);
+					}
+					IntPtr onload = ikvm_GetProcAddress(p, "JNI_OnLoad", IntPtr.Size * 2);
+					if(onload != IntPtr.Zero)
+					{
+						JNI.Frame f = new JNI.Frame();
+						f.Enter(m.MethodHandle);
+						int version = ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
+						f.Leave();
+						if(!JavaVM.IsSupportedJniVersion(version))
+						{
+							throw JavaException.UnsatisfiedLinkError("Unsupported JNI version 0x{0:X} required by {1}", version, filename);
+						}
+					}
+					nativeLibraries.Add(p);
+					loader.RegisterNativeLibrary(p);
+					return 1;
+				}
+				catch
+				{
+					ikvm_FreeLibrary(p);
+					throw;
+				}
+			}
+		}
+	}
+
+	class GlobalRefs
+	{
+		internal static System.Collections.ArrayList globalRefs = new System.Collections.ArrayList();
+		internal static readonly object weakRefLock = new object();
+		internal static GCHandle[] weakRefs = new GCHandle[16];
+	}
+
+	unsafe class VtableBuilder
+	{
+		delegate int pf_int_IntPtr(JNIEnv* pEnv, IntPtr p);
+		delegate IntPtr pf_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p);
+		delegate void pf_void_IntPtr(JNIEnv* pEnv, IntPtr p);
+		delegate IntPtr pf_IntPtr(JNIEnv* pEnv);
+		delegate void pf_void(JNIEnv* pEnv);
+		delegate sbyte pf_sbyte(JNIEnv* pEnv);
+		delegate IntPtr pf_IntPtr_pbyte(JNIEnv* pEnv, byte* p);
+		delegate int pf_int(JNIEnv* pEnv);
+		delegate IntPtr pf_IntPtr_pbyte_IntPtr_psbyte_IntPtr(JNIEnv* pEnv, byte* p1, IntPtr p2, sbyte* p3, int p4);
+		delegate IntPtr pf_IntPtr_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+		delegate jchar* pf_pjchar_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+		delegate int pf_int_IntPtr_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2);
+		delegate void pf_void_pbyte(JNIEnv* pEnv, byte* p1);
+		delegate IntPtr pf_IntPtr_IntPtr_pbyte_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2, byte* p3);
+		delegate int pf_int_IntPtr_pJNINativeMethod_int(JNIEnv* pEnv, IntPtr p1, JNIEnv.JNINativeMethod* p2, int p3);
+		delegate int pf_int_ppJavaVM(JNIEnv* pEnv, JavaVM** ppJavaVM);
+		delegate sbyte pf_sbyte_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+		delegate short pf_short_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+		delegate ushort pf_ushort_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+		delegate int pf_int_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+		delegate long pf_long_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+		delegate float pf_float_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+		delegate double pf_double_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+		delegate void pf_void_IntPtr_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3);
+		delegate void pf_void_IntPtr_IntPtr_sbyte(JNIEnv* pEnv, IntPtr p1, IntPtr p2, sbyte p3);
+		delegate void pf_void_IntPtr_IntPtr_short(JNIEnv* pEnv, IntPtr p1, IntPtr p2, short p3);
+		delegate void pf_void_IntPtr_IntPtr_ushort(JNIEnv* pEnv, IntPtr p1, IntPtr p2, ushort p3);
+		delegate void pf_void_IntPtr_IntPtr_int(JNIEnv* pEnv, IntPtr p1, IntPtr p2, int p3);
+		delegate void pf_void_IntPtr_IntPtr_long(JNIEnv* pEnv, IntPtr p1, IntPtr p2, long p3);
+		delegate void pf_void_IntPtr_IntPtr_float(JNIEnv* pEnv, IntPtr p1, IntPtr p2, float p3);
+		delegate void pf_void_IntPtr_IntPtr_double(JNIEnv* pEnv, IntPtr p1, IntPtr p2, double p3);
+		delegate IntPtr pf_IntPtr_pjchar_int(JNIEnv* pEnv, jchar* p1, int p2);
+		delegate void pf_void_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+		delegate void pf_void_IntPtr_pjchar(JNIEnv* pEnv, IntPtr p1, jchar* p2);
+		delegate IntPtr pf_IntPtr_int_IntPtr_IntPtr(JNIEnv* pEnv, int p1, IntPtr p2, IntPtr p3);
+		delegate IntPtr pf_IntPtr_IntPtr_int(JNIEnv* pEnv, IntPtr p1, int p2);
+		delegate void pf_void_IntPtr_int_IntPtr(JNIEnv* pEnv, IntPtr p1, int p2, IntPtr p3);
+		delegate IntPtr pf_IntPtr_int(JNIEnv* pEnv, int p1);
+		delegate void pf_void_IntPtr_int_int_IntPtr(JNIEnv* pEnv, IntPtr p1, int p2, int p3, IntPtr p4);
+		delegate IntPtr pf_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
+		delegate sbyte pf_sbyte_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
+		delegate short pf_short_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
+		delegate ushort pf_ushort_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
+		delegate int pf_int_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
+		delegate long pf_long_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
+		delegate float pf_float_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
+		delegate double pf_double_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
+		delegate void pf_void_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
+		delegate IntPtr pf_IntPtr_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+		delegate sbyte pf_sbyte_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+		delegate ushort pf_ushort_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+		delegate short pf_short_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+		delegate int pf_int_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+		delegate long pf_long_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+		delegate float pf_float_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+		delegate double pf_double_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+		delegate void pf_void_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+		delegate byte* pf_pbyte_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+		delegate void pf_void_IntPtr_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2);
+		delegate jboolean* pf_pjboolean_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+		delegate jbyte* pf_pjbyte_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+		delegate jshort* pf_pjshort_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+		delegate jint* pf_pjint_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+		delegate jlong* pf_pjlong_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+		delegate jfloat* pf_pjfloat_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+		delegate jdouble* pf_pjdouble_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+		delegate void pf_void_IntPtr_pjboolean_int(JNIEnv* pEnv, IntPtr p1, jboolean* p2, int p3);
+		delegate void pf_void_IntPtr_pjbyte_int(JNIEnv* pEnv, IntPtr p1, jbyte* p2, int p3);
+		delegate void pf_void_IntPtr_pjchar_int(JNIEnv* pEnv, IntPtr p1, jchar* p2, int p3);
+		delegate void pf_void_IntPtr_pjshort_int(JNIEnv* pEnv, IntPtr p1, jshort* p2, int p3);
+		delegate void pf_void_IntPtr_pjint_int(JNIEnv* pEnv, IntPtr p1, jint* p2, int p3);
+		delegate void pf_void_IntPtr_pjlong_int(JNIEnv* pEnv, IntPtr p1, jlong* p2, int p3);
+		delegate void pf_void_IntPtr_pjfloat_int(JNIEnv* pEnv, IntPtr p1, jfloat* p2, int p3);
+		delegate void pf_void_IntPtr_pjdouble_int(JNIEnv* pEnv, IntPtr p1, jdouble* p2, int p3);
+		delegate int pf_int_int(JNIEnv* pEnv, int p1);
+
+		internal static void* vtable;
+
+		static VtableBuilder()
+		{
+			// JNIEnv
+			void** pmcpp = JniHelper.ikvm_GetJNIEnvVTable();
+			void** p = (void**)JniMem.Alloc(IntPtr.Size * vtableDelegates.Length);
+			for(int i = 0; i < vtableDelegates.Length; i++)
+			{
+				if(vtableDelegates[i] != null)
+				{
+					p[i] = JniHelper.ikvm_MarshalDelegate(vtableDelegates[i]);
+				}
+				else
+				{
+					p[i] = pmcpp[i];
+				}
+			}
+			vtable = p;
+		}
+
+		static Delegate[] vtableDelegates =
 		{
 			new pf_int_IntPtr_pbyte(JNIEnv.GetMethodArgs), //virtual void JNICALL reserved0();
 			null, //virtual void JNICALL reserved1();
@@ -570,19 +866,27 @@ unsafe class VtableBuilder
 			new pf_void(JNIEnv.NotImplemented), //virtual void* JNICALL GetDirectBufferAddress(jobject buf);
 			new pf_void(JNIEnv.NotImplemented)  //virtual jlong JNICALL GetDirectBufferCapacity(jobject buf);
 		};
-}
+	}
 
-[StructLayout(LayoutKind.Sequential)]
-unsafe struct JavaVM
-{
-	internal static JavaVM* pJavaVM;
-	void** vtable;
-	void* firstVtableEntry;
-	delegate int pf_int(JavaVM* pJVM);
-	delegate int pf_int_ppvoid_pvoid(JavaVM* pJVM, void** p1, void* p2);
-	delegate int pf_int_ppvoid_int(JavaVM* pJVM, void** p1, int p2);
+	[StructLayout(LayoutKind.Sequential)]
+	unsafe struct JavaVMAttachArgs
+	{
+		internal jint version;
+		internal sbyte* name;
+		internal jobject group;
+	}
 
-	static Delegate[] vtableDelegates =
+	[StructLayout(LayoutKind.Sequential)]
+	unsafe struct JavaVM
+	{
+		internal static JavaVM* pJavaVM;
+		void** vtable;
+		void* firstVtableEntry;
+		delegate int pf_int(JavaVM* pJVM);
+		delegate int pf_int_ppvoid_pvoid(JavaVM* pJVM, void** p1, void* p2);
+		delegate int pf_int_ppvoid_int(JavaVM* pJVM, void** p1, int p2);
+
+		static Delegate[] vtableDelegates =
 		{
 			null,
 			null,
@@ -594,2048 +898,160 @@ unsafe struct JavaVM
 			new pf_int_ppvoid_pvoid(AttachCurrentThreadAsDaemon)
 		};
 
-	static JavaVM()
-	{
-		pJavaVM = (JavaVM*)(void*)JniMem.Alloc(IntPtr.Size * (1 + vtableDelegates.Length));
+		static JavaVM()
+		{
+			JNI.jvmCreated = true;
+			pJavaVM = (JavaVM*)(void*)JniMem.Alloc(IntPtr.Size * (1 + vtableDelegates.Length));
 #if __MonoCS__ 
 		// MONOBUG mcs requires this bogus fixed construct (and Microsoft doesn't allow it)
 		fixed(void** p = &pJavaVM->firstVtableEntry) { pJavaVM->vtable = p; }
 #else
-		pJavaVM->vtable = &pJavaVM->firstVtableEntry;
+			pJavaVM->vtable = &pJavaVM->firstVtableEntry;
 #endif
-		for(int i = 0; i < vtableDelegates.Length; i++)
-		{
-			pJavaVM->vtable[i] = JniHelper.ikvm_MarshalDelegate(vtableDelegates[i]);
+			for(int i = 0; i < vtableDelegates.Length; i++)
+			{
+				pJavaVM->vtable[i] = JniHelper.ikvm_MarshalDelegate(vtableDelegates[i]);
+			}
 		}
-	}
 
-	internal static int DestroyJavaVM(JavaVM* pJVM)
-	{
-		return JNIEnv.JNI_ERR;
-	}
-
-	internal static int AttachCurrentThread(JavaVM* pJVM, void **penv, void *args)
-	{
-		// TODO do we need a new local ref frame?
-		// TODO for now we only support attaching to an existing thread
-		// TODO support args (JavaVMAttachArgs)
-		JNIEnv* p = TlsHack.pJNIEnv;
-		if(p != null)
+		internal static jint DestroyJavaVM(JavaVM* pJVM)
 		{
-			*penv = p;
+			TypeWrapper vmthread = ClassLoaderWrapper.LoadClassCritical("java.lang.VMThread");
+			vmthread.GetMethodWrapper(new MethodDescriptor("jniWaitUntilLastThread", "()V"), false).Invoke(null, new object[0], false);
+			return JNIEnv.JNI_ERR;
+		}
+
+		internal static jint AttachCurrentThread(JavaVM* pJVM, void **penv, void *args)
+		{
+			return AttachCurrentThreadImpl(pJVM, penv, (JavaVMAttachArgs*)args, false);
+		}
+
+		internal static jint AttachCurrentThreadImpl(JavaVM* pJVM, void** penv, JavaVMAttachArgs* pAttachArgs, bool asDaemon)
+		{
+			if(pAttachArgs != null)
+			{
+				if(pAttachArgs->version != JNIEnv.JNI_VERSION_1_2)
+				{
+					*penv = null;
+					return JNIEnv.JNI_EVERSION;
+				}
+			}
+			JNIEnv* p = TlsHack.pJNIEnv;
+			if(p != null)
+			{
+				*penv = p;
+				return JNIEnv.JNI_OK;
+			}
+			// NOTE if we're here, it is *very* likely that the thread was created by native code and not by managed code,
+			// but it's not impossible that the thread started life as a managed thread and if it did the changes to the
+			// thread we're making are somewhat dubious.
+			if(pAttachArgs != null)
+			{
+				if(pAttachArgs->name != null && System.Threading.Thread.CurrentThread.Name == null)
+				{
+					System.Threading.Thread.CurrentThread.Name = new String(pAttachArgs->name);
+				}
+				// NOTE we're calling UnwrapRef on a null reference, but that's OK because group is a global reference
+				object threadGroup = p->UnwrapRef(pAttachArgs->group);
+				if(threadGroup != null)
+				{
+					// TODO instead of using a thread data slot to communicate the thread group, we should probably use
+					// another mechanism, this is probably a security issue.
+					System.Threading.Thread.SetData(System.Threading.Thread.GetNamedDataSlot("ikvm-thread-group"), threadGroup);
+				}
+			}
+			System.Threading.Thread.CurrentThread.IsBackground = asDaemon;
+			*penv = JNIEnv.CreateJNIEnv();
 			return JNIEnv.JNI_OK;
 		}
-		JVM.CriticalFailure("AttachCurrentThread for non-Java threads not implemented", null);
-		return JNIEnv.JNI_ERR;
-	}
 
-	internal static int DetachCurrentThread(JavaVM* pJVM)
-	{
-		JVM.CriticalFailure("DetachCurrentThread not implemented", null);
-		return JNIEnv.JNI_ERR;
-	}
-
-	internal static int GetEnv(JavaVM* pJVM, void **penv, int version)
-	{
-		// TODO we should check the version
-		JNIEnv* p = TlsHack.pJNIEnv;
-		if(p != null)
+		internal static jint DetachCurrentThread(JavaVM* pJVM)
 		{
-			*penv = p;
+			if(TlsHack.pJNIEnv == null)
+			{
+				return JNIEnv.JNI_EDETACHED;
+			}
+			// TODO if we set Thread.IsBackground to false when we attached, now might be a good time to set it back to true.
+			JNIEnv.FreeJNIEnv();
+			TypeWrapper vmthread = ClassLoaderWrapper.LoadClassCritical("java.lang.VMThread");
+			vmthread.GetMethodWrapper(new MethodDescriptor("jniDetach", "()V"), false).Invoke(null, new object[0], false);
 			return JNIEnv.JNI_OK;
 		}
-		return JNIEnv.JNI_EDETACHED;
-	}
 
-	internal static int AttachCurrentThreadAsDaemon(JavaVM* pJVM, void **penv, void *args)
-	{
-		// TODO do we need a new local ref frame?
-		// TODO for now we only support attaching to an existing thread
-		// TODO support args (JavaVMAttachArgs)
-		JNIEnv* p = TlsHack.pJNIEnv;
-		if(p != null)
+		internal static bool IsSupportedJniVersion(jint version)
 		{
-			*penv = p;
-			return JNIEnv.JNI_OK;
+			return version == JNIEnv.JNI_VERSION_1_1 || version == JNIEnv.JNI_VERSION_1_2 || version == JNIEnv.JNI_VERSION_1_4;
 		}
-		JVM.CriticalFailure("AttachCurrentThreadAsDaemon not implemented", null);
-		return JNIEnv.JNI_ERR;
-	}
-}
 
-[StructLayout(LayoutKind.Sequential)]
-unsafe struct JNIEnv
-{
-	internal const int LOCAL_REF_SHIFT = 10;
-	internal const int LOCAL_REF_BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
-	internal const int LOCAL_REF_MASK = (LOCAL_REF_BUCKET_SIZE - 1);
-	internal const int JNI_OK = 0;
-	internal const int JNI_ERR = -1;
-	internal const int JNI_EDETACHED = -2;
-	internal const int JNI_EVERSION = -3;
-	internal const int JNI_COMMIT = 1;
-	internal const int JNI_ABORT = 2;
-	internal const int JNI_VERSION_1_1 = 0x00010001;
-	internal const int JNI_VERSION_1_2 = 0x00010002;
-	internal const int JNI_VERSION_1_4 = 0x00010004;
-	internal const sbyte JNI_TRUE = 1;
-	internal const sbyte JNI_FALSE = 0;
-	internal void* vtable;
-	internal GCHandle localRefs;
-	internal int localRefSlot;
-	internal IntPtr pendingException;
-
-	private static string StringFromUTF8(byte* psz)
-	{
-		// Sun's modified UTF8 encoding is not compatible with System.Text.Encoding.UTF8,
-		// so we need to roll our own
-		int len = 0;
-		bool hasNonAscii = false;
-		while(psz[len] != 0)
+		internal static jint GetEnv(JavaVM* pJVM, void **penv, jint version)
 		{
-			hasNonAscii |= psz[len] >= 128;
-			len++;
-		}
-		if(!hasNonAscii)
-		{
-			// optimize the common case of 7-bit ASCII
-			return new String((sbyte*)psz);
-		}
-		StringBuilder sb = new StringBuilder(len);
-		for(int i = 0; i < len; i++)
-		{
-			int c = *psz++;
-			int char2, char3;
-			switch(c >> 4)
+			if(IsSupportedJniVersion(version))
 			{
-				case 12:
-				case 13:
-					char2 = *psz++;
-					i++;
-					c = (((c & 0x1F) << 6) | (char2 & 0x3F));
-					break;
-				case 14:
-					char2 = *psz++;
-					char3 = *psz++;
-					i++;
-					i++;
-					c = ((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F);
-					break;
-			}
-			sb.Append((char)c);
-		}
-		return sb.ToString();
-	}
-
-	private static int StringUTF8Length(string s)
-	{
-		int len = 0;
-		for(int i = 0; i < s.Length; i++)
-		{
-			char ch = s[i];
-			if((ch != 0) && (ch <= 0x7F))
-			{
-				len++;
-			}
-			else if(ch <= 0x7FF)
-			{
-				len += 2;
-			}
-			else
-			{
-				len += 3;
-			}
-		}
-		return len;
-	}
-
-	// this method returns a simplified method argument descriptor.
-	// some examples:
-	// "()V" -> ""
-	// "(ILjava.lang.String;)I" -> "IL"
-	// "([Ljava.lang.String;)V" -> "L"
-	private static string GetMethodArgList(IntPtr cookie)
-	{
-		try
-		{
-			StringBuilder sb = new StringBuilder();
-			string s = MethodWrapper.FromCookie(cookie).Signature;
-			for(int i = 1;; i++)
-			{
-				switch(s[i])
+				JNIEnv* p = TlsHack.pJNIEnv;
+				if(p != null)
 				{
-					case '[':
-						while(s[i] == '[') i++;
-						if(s[i] == 'L')
-						{
-							while(s[i] != ';') i++;
-						}
-						sb.Append('L');
-						break;
-					case 'L':
-						while(s[i] != ';') i++;
-						sb.Append('L');
-						break;
-					case ')':
-						return sb.ToString();
-					default:
-						sb.Append(s[i]);
-						break;
+					*penv = p;
+					return JNIEnv.JNI_OK;
 				}
+				*penv = null;
+				return JNIEnv.JNI_EDETACHED;
 			}
+			*penv = null;
+			return JNIEnv.JNI_EVERSION;
 		}
-		catch
-		{
-			Debug.Assert(false);
-			throw;
-		}
-	}
-
-	internal static jint GetMethodArgs(JNIEnv* pEnv, IntPtr method, byte* sig)
-	{
-		string s = GetMethodArgList(method);
-		for(int i = 0; i < s.Length; i++)
-		{
-			sig[i] = (byte)s[i];
-		}
-		return s.Length;
-	}
-
-	internal static jint GetVersion(JNIEnv* pEnv)
-	{
-		return JNI_VERSION_1_4;
-	}
-
-	internal static jclass DefineClass(JNIEnv* pEnv, byte* name, jobject loader, jbyte* pbuf, jint length)
-	{
-		byte[] buf = new byte[length];
-		Marshal.Copy((IntPtr)(void*)pbuf, buf, 0, length);
-		// TODO what should the protection domain be?
-		return pEnv->MakeLocalRef(NativeCode.java.lang.VMClassLoader.defineClass(pEnv->UnwrapRef(loader), StringFromUTF8(name), buf, 0, buf.Length, null));
-	}
-
-	private static ClassLoaderWrapper FindNativeMethodClassLoader()
-	{
-		StackTrace st = new StackTrace();
-		for(int i = 0; i < st.FrameCount; i++)
-		{
-			StackFrame frame = st.GetFrame(i);
-			Type type = frame.GetMethod().DeclaringType;
-			if(type != null)
-			{
-				// TODO we need a more robust algorithm to find the "caller" (note that in addition to native methods,
-				// System.loadLibrary can also trigger executing native code)
-				ClassLoaderWrapper loader = ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader();
-				if(loader.GetJavaClassLoader() != null)
-				{
-					return loader;
-				}
-			}
-		}
-		// TODO instead of using the bootstrap class loader, we need to use the system (aka application) class loader
-		return ClassLoaderWrapper.GetBootstrapClassLoader();
-	}
-
-	internal static jclass FindClass(JNIEnv* pEnv, byte* name)
-	{
-		try
-		{
-			TypeWrapper wrapper = FindNativeMethodClassLoader().LoadClassByDottedName(StringFromUTF8(name).Replace('/', '.'));
-			// TODO is this needed?
-			wrapper.Finish();
-			return pEnv->MakeLocalRef(NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper));
-		}
-		catch(Exception x)
-		{
-			SetPendingException(pEnv, x);
-			return IntPtr.Zero;
-		}
-	}
-
-	internal static jmethodID FromReflectedMethod(JNIEnv* pEnv, jobject method)
-	{
-		object methodObj = pEnv->UnwrapRef(method);
-		MethodWrapper mw = (MethodWrapper)methodObj.GetType().GetField("methodCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(methodObj);
-		return mw.Cookie;
-	}
-
-	internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)
-	{
-		object fieldObj = pEnv->UnwrapRef(field);
-		FieldWrapper fw = (FieldWrapper)fieldObj.GetType().GetField("fieldCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(fieldObj);
-		return fw.Cookie;
-	}
-
-	internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method)
-	{
-		MethodWrapper mw = MethodWrapper.FromCookie(method);
-		TypeWrapper tw;
-		if(mw.Name == "<init>")
-		{
-			tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Constructor");
-		}
-		else
-		{
-			tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Method");
-		}
-		object clazz = NativeCode.java.lang.VMClass.getClassFromWrapper(mw.DeclaringType);
-		return pEnv->MakeLocalRef(Activator.CreateInstance(tw.TypeAsTBD, new object[] { clazz, mw }));
-	}
-
-	internal static jclass GetSuperclass(JNIEnv* pEnv, jclass sub)
-	{
-		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(sub)).BaseTypeWrapper;
-		return pEnv->MakeLocalRef(wrapper == null ? null : NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper));
-	}
-
-	internal static jboolean IsAssignableFrom(JNIEnv* pEnv, jclass sub, jclass super)
-	{
-		TypeWrapper w1 = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(sub));
-		TypeWrapper w2 = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(super));
-		return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
-	}
-
-	internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field)
-	{
-		FieldWrapper fw = FieldWrapper.FromCookie(field);
-		TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Field");
-		object clazz = NativeCode.java.lang.VMClass.getClassFromWrapper(fw.DeclaringType);
-		return pEnv->MakeLocalRef(Activator.CreateInstance(tw.TypeAsTBD, new object[] { clazz, fw }));
-	}
-
-	private static void SetPendingException(JNIEnv* pEnv, Exception x)
-	{
-		DeleteLocalRef(pEnv, pEnv->pendingException);
-		pEnv->pendingException = pEnv->MakeLocalRef(x);
-	}
-
-	internal static jint Throw(JNIEnv* pEnv, jthrowable throwable)
-	{
-		DeleteLocalRef(pEnv, pEnv->pendingException);
-		pEnv->pendingException = NewLocalRef(pEnv, throwable);
-		return JNI_OK;
-	}
-
-	internal static jint ThrowNew(JNIEnv* pEnv, jclass clazz, byte* msg)
-	{
-		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
-		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor("<init>", "(Ljava.lang.String;)V"), false);
-		if(mw != null)
-		{
-			jint rc;
-			Exception exception;
-			try
-			{
-				wrapper.Finish();
-				exception = (Exception)mw.Invoke(null, new object[] { StringFromUTF8(msg) }, false);
-				rc = JNI_OK;
-			}
-			catch(Exception x)
-			{
-				exception = x;
-				rc = JNI_ERR;
-			}
-			SetPendingException(pEnv, exception);
-			return rc;
-		}
-		else
-		{
-			SetPendingException(pEnv, JavaException.NoSuchMethodError("<init>(Ljava.lang.String;)V"));
-			return JNI_ERR;
-		}
-	}
-
-	internal static jthrowable ExceptionOccurred(JNIEnv* pEnv)
-	{
-		return NewLocalRef(pEnv, pEnv->pendingException);
-	}
-
-	internal static void ExceptionDescribe(JNIEnv* pEnv)
-	{
-		Exception x = (Exception)pEnv->UnwrapRef(pEnv->pendingException);
-		if(x != null)
-		{
-			try
-			{
-				MethodWrapper mw = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable").GetMethodWrapper(new MethodDescriptor("printStackTrace", "()V"), false);
-				mw.Invoke(x, null, false);
-			}
-			catch(Exception ex)
-			{
-				Debug.Assert(false, ex.ToString());
-			}
-		}
-	}
-
-	internal static void ExceptionClear(JNIEnv* pEnv)
-	{
-		DeleteLocalRef(pEnv, pEnv->pendingException);
-		pEnv->pendingException = IntPtr.Zero;
-	}
-
-	internal static void FatalError(JNIEnv* pEnv, byte* msg)
-	{
-		JVM.CriticalFailure(StringFromUTF8(msg), null);
-	}
-
-	internal static jint PushLocalFrame(JNIEnv* pEnv, jint capacity)
-	{
-		object[][] localRefs = pEnv->GetLocalRefs();
-		pEnv->localRefSlot += 2;
-		if(pEnv->localRefSlot >= localRefs.Length)
-		{
-			object[][] tmp = new object[localRefs.Length * 2][];
-			Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
-			pEnv->localRefs.Target = localRefs = tmp;
-		}
-		// we use a null slot to mark the fact that we used PushLocalFrame
-		localRefs[pEnv->localRefSlot - 1] = null;
-		if(localRefs[pEnv->localRefSlot] == null)
-		{
-			// we can't use capacity, because the array length must be a power of two
-			localRefs[pEnv->localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
-		}
-		return JNI_OK;
-	}
-
-	internal static jobject PopLocalFrame(JNIEnv* pEnv, jobject result)
-	{
-		object res = pEnv->UnwrapRef(result);
-		object[][] localRefs = pEnv->GetLocalRefs();
-		while(localRefs[pEnv->localRefSlot] != null)
-		{
-			localRefs[pEnv->localRefSlot] = null;
-			pEnv->localRefSlot--;
-		}
-		pEnv->localRefSlot--;
-		return pEnv->MakeLocalRef(res);
-	}
-
-	internal static jobject NewGlobalRef(JNIEnv* pEnv, jobject obj)
-	{
-		object o = pEnv->UnwrapRef(obj);
-		if(o == null)
-		{
-			return IntPtr.Zero;
-		}
-		lock(GlobalRefs.globalRefs)
-		{
-			int index = GlobalRefs.globalRefs.IndexOf(null);
-			if(index >= 0)
-			{
-				GlobalRefs.globalRefs[index] = o;
-			}
-			else
-			{
-				index = GlobalRefs.globalRefs.Add(o);
-			}
-			return (IntPtr)(-(index + 1));
-		}
-	}
-
-	internal static void DeleteGlobalRef(JNIEnv* pEnv, jobject obj)
-	{
-		int i = obj.ToInt32();
-		if(i < 0)
-		{
-			lock(GlobalRefs.globalRefs)
-			{
-				GlobalRefs.globalRefs[(-i) - 1] = null;
-			}
-			return;
-		}
-		if(i > 0)
-		{
-			Debug.Assert(false, "Local ref passed to DeleteGlobalRef");
-		}
-	}
-
-	internal object[][] GetLocalRefs()
-	{
-		return (object[][])localRefs.Target;
-	}
-
-	internal static void DeleteLocalRef(JNIEnv* pEnv, jobject obj)
-	{
-		int i = obj.ToInt32();
-		if(i > 0)
-		{
-			object[][] localRefs = pEnv->GetLocalRefs();
-			localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK] = null;
-			return;
-		}
-		if(i < 0)
-		{
-			Debug.Assert(false, "bogus localref in DeleteLocalRef");
-		}
-	}
-
-	internal static jboolean IsSameObject(JNIEnv* pEnv, jobject obj1, jobject obj2)
-	{
-		return pEnv->UnwrapRef(obj1) == pEnv->UnwrapRef(obj2) ? JNI_TRUE : JNI_FALSE;
-	}
-
-	internal static jobject NewLocalRef(JNIEnv* pEnv, jobject obj)
-	{
-		return pEnv->MakeLocalRef(pEnv->UnwrapRef(obj));
-	}
-
-	internal static jint EnsureLocalCapacity(JNIEnv* pEnv, jint capacity)
-	{
-		// since we can dynamically grow the local ref table, we'll just return success for any number
-		return JNI_OK;
-	}
-
-	internal static jobject AllocObject(JNIEnv* pEnv, jclass clazz)
-	{
-		try
-		{
-			TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
-			wrapper.Finish();
-			// TODO add error handling (e.g. when trying to instantiate an interface or abstract class)
-			return pEnv->MakeLocalRef(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType));
-		}
-		catch(Exception x)
-		{
-			SetPendingException(pEnv, x);
-			return IntPtr.Zero;
-		}
-	}
-
-	[StructLayout(LayoutKind.Explicit)]
-		internal struct jvalue
-	{
-		[FieldOffset(0)]
-		public jboolean z;
-		[FieldOffset(0)]
-		public jbyte b;
-		[FieldOffset(0)]
-		public jchar c;
-		[FieldOffset(0)]
-		public jshort s;
-		[FieldOffset(0)]
-		public jint i;
-		[FieldOffset(0)]
-		public jlong j;
-		[FieldOffset(0)]
-		public jfloat f;
-		[FieldOffset(0)]
-		public jdouble d;
-		[FieldOffset(0)]
-		public jobject l;
-	}
-
-	private static object InvokeHelper(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue *args, bool nonVirtual)
-	{
-		string sig = GetMethodArgList(methodID);
-		object[] argarray = new object[sig.Length];
-		for(int i = 0; i < sig.Length; i++)
-		{
-			switch(sig[i])
-			{
-				case 'Z':
-					argarray[i] = args[i].z != JNI_FALSE;
-					break;
-				case 'B':
-					argarray[i] = args[i].b;
-					break;
-				case 'C':
-					argarray[i] = (char)args[i].c;
-					break;
-				case 'S':
-					argarray[i] = args[i].s;
-					break;
-				case 'I':
-					argarray[i] = args[i].i;
-					break;
-				case 'J':
-					argarray[i] = args[i].j;
-					break;
-				case 'F':
-					argarray[i] = args[i].f;
-					break;
-				case 'D':
-					argarray[i] = args[i].d;
-					break;
-				case 'L':
-					argarray[i] = pEnv->UnwrapRef(args[i].l);
-					break;
-			}
-		}
-		try
-		{
-			return MethodWrapper.FromCookie(methodID).Invoke(pEnv->UnwrapRef(obj), argarray, nonVirtual);
-		}
-		catch(Exception x)
-		{
-			SetPendingException(pEnv, ExceptionHelper.MapExceptionFast(x));
-			return null;
-		}
-	}
-
-	internal static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
-	{
-		return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false));
-	}
-
-	internal static jclass GetObjectClass(JNIEnv* pEnv, jobject obj)
-	{
-		return pEnv->MakeLocalRef(NativeCode.java.lang.VMClass.getClassFromType(pEnv->UnwrapRef(obj).GetType()));
-	}
-
-	internal static jboolean IsInstanceOf(JNIEnv* pEnv, jobject obj, jclass clazz)
-	{
-		object objClass = NativeCode.java.lang.VMClass.getClassFromType(pEnv->UnwrapRef(obj).GetType());
-		TypeWrapper w1 = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
-		TypeWrapper w2 = NativeCode.java.lang.VMClass.getWrapperFromClass(objClass);
-		return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
-	}
-
-	private static jmethodID FindMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
-	{
-		try
-		{
-			TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
-			wrapper.Finish();
-			MethodDescriptor md = new MethodDescriptor(StringFromUTF8(name), StringFromUTF8(sig).Replace('/', '.'));
-			MethodWrapper mw = wrapper.GetMethodWrapper(md, true);
-			if(mw != null)
-			{
-				if(mw.IsStatic == isstatic)
-				{
-					mw.Link();
-					return mw.Cookie;
-				}
-			}
-			SetPendingException(pEnv, JavaException.NoSuchMethodError("{0}{1}", md.Name, md.Signature));
-		}
-		catch(Exception x)
-		{
-			SetPendingException(pEnv, x);
-		}
-		return IntPtr.Zero;
-	}
-
-	internal static jmethodID GetMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
-	{
-		return FindMethodID(pEnv, clazz, name, sig, false);
-	}
-
-	internal static jobject CallObjectMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
-	{
-		return pEnv->MakeLocalRef(InvokeHelper(pEnv, obj, methodID, args, false));
-	}
-
-	internal static jboolean CallBooleanMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, false);
-		if(o != null)
-		{
-			return ((bool)o) ? JNI_TRUE : JNI_FALSE;
-		}
-		return JNI_FALSE;
-	}
-
-	internal static jbyte CallByteMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, false);
-		if(o != null)
-		{
-			return (jbyte)(sbyte)o;
-		}
-		return 0;
-	}
-
-	internal static jchar CallCharMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, false);
-		if(o != null)
-		{
-			return (jchar)(char)o;
-		}
-		return 0;
-	}
-
-	internal static jshort CallShortMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, false);
-		if(o != null)
-		{
-			return (jshort)(short)o;
-		}
-		return 0;
-	}
-
-	internal static jint CallIntMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, false);
-		if(o != null)
-		{
-			return (jint)(int)o;
-		}
-		return 0;
-	}
-
-	internal static jlong CallLongMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, false);
-		if(o != null)
-		{
-			return (jlong)(long)o;
-		}
-		return 0;
-	}
-
-	internal static jfloat CallFloatMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, false);
-		if(o != null)
-		{
-			return (jfloat)(float)o;
-		}
-		return 0;
-	}
-
-	internal static jdouble CallDoubleMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, false);
-		if(o != null)
-		{
-			return (jdouble)(double)o;
-		}
-		return 0;
-	}
-
-	internal static void CallVoidMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue*  args)
-	{
-		InvokeHelper(pEnv, obj, methodID, args, false);
-	}
-
-	internal static jobject CallNonvirtualObjectMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue*  args)
-	{
-		return pEnv->MakeLocalRef(InvokeHelper(pEnv, obj, methodID, args, true));
-	}
-
-	internal static jboolean CallNonvirtualBooleanMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue*  args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, true);
-		if(o != null)
-		{
-			return ((bool)o) ? JNI_TRUE : JNI_FALSE;
-		}
-		return JNI_FALSE;
-	}
-
-	internal static jbyte CallNonvirtualByteMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, true);
-		if(o != null)
-		{
-			return (jbyte)(sbyte)o;
-		}
-		return 0;
-	}
-
-	internal static jchar CallNonvirtualCharMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, true);
-		if(o != null)
-		{
-			return (jchar)(char)o;
-		}
-		return 0;
-	}
-
-	internal static jshort CallNonvirtualShortMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, true);
-		if(o != null)
-		{
-			return (jshort)(short)o;
-		}
-		return 0;
-	}
-
-	internal static jint CallNonvirtualIntMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, true);
-		if(o != null)
-		{
-			return (jint)(int)o;
-		}
-		return 0;
-	}
-
-	internal static jlong CallNonvirtualLongMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, true);
-		if(o != null)
-		{
-			return (jlong)(long)o;
-		}
-		return 0;
-	}
-
-	internal static jfloat CallNonvirtualFloatMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, true);
-		if(o != null)
-		{
-			return (jfloat)(float)o;
-		}
-		return 0;
-	}
-
-	internal static jdouble CallNonvirtualDoubleMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
-	{
-		object o = InvokeHelper(pEnv, obj, methodID, args, true);
-		if(o != null)
-		{
-			return (jdouble)(double)o;
-		}
-		return 0;
-	}
-
-	internal static void CallNonvirtualVoidMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
-	{
-		InvokeHelper(pEnv, obj, methodID, args, true);
-	}
-
-	private static jfieldID FindFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
-	{
-		try
-		{
-			TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
-			wrapper.Finish();
-			// TODO what about searching the base classes?
-			FieldWrapper fw = wrapper.GetFieldWrapper(StringFromUTF8(name), wrapper.GetClassLoader().ExpressionTypeWrapper(StringFromUTF8(sig).Replace('/', '.')));
-			if(fw != null)
-			{
-				if(fw.IsStatic == isstatic)
-				{
-					// TODO fw.Link()
-					return fw.Cookie;
-				}
-			}
-			SetPendingException(pEnv, JavaException.NoSuchFieldError(StringFromUTF8(name)));
-		}
-		catch(Exception x)
-		{
-			SetPendingException(pEnv, x);
-		}
-		return IntPtr.Zero;
-	}
-
-	internal static jfieldID GetFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
-	{
-		return FindFieldID(pEnv, clazz, name, sig, false);
-	}
-
-	private static void SetFieldValue(jfieldID cookie, object obj, object val)
-	{
-		try
-		{
-			FieldWrapper.FromCookie(cookie).SetValue(obj, val);
-		}
-		catch
-		{
-			Debug.Assert(false);
-			throw;
-		}
-	}
-
-	private static object GetFieldValue(jfieldID cookie, object obj)
-	{
-		try
-		{
-			return FieldWrapper.FromCookie(cookie).GetValue(obj);
-		}
-		catch
-		{
-			Debug.Assert(false);
-			throw;
-		}
-	}
-
-	internal static jobject GetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
-	{
-		return pEnv->MakeLocalRef(GetFieldValue(fieldID, pEnv->UnwrapRef(obj)));
-	}
-
-	internal static jboolean GetBooleanField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
-	{
-		return ((bool)GetFieldValue(fieldID, pEnv->UnwrapRef(obj))) ? JNI_TRUE : JNI_FALSE;
-	}
-
-	internal static jbyte GetByteField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
-	{
-		return (jbyte)(sbyte)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
-	}
-
-	internal static jchar GetCharField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
-	{
-		return (jchar)(char)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
-	}
-
-	internal static jshort GetShortField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
-	{
-		return (jshort)(short)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
-	}
-
-	internal static jint GetIntField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
-	{
-		return (jint)(int)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
-	}
-
-	internal static jlong GetLongField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
-	{
-		return (jlong)(long)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
-	}
-
-	internal static jfloat GetFloatField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
-	{
-		return (jfloat)(float)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
-	}
-
-	internal static jdouble GetDoubleField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
-	{
-		return (jdouble)(double)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
-	}
-
-	internal static void SetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jobject val)
-	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), pEnv->UnwrapRef(val));
-	}
-
-	internal static void SetBooleanField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jboolean val)
-	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), val != JNI_FALSE);
-	}
-
-	internal static void SetByteField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jbyte val)
-	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (sbyte)val);
-	}
-
-	internal static void SetCharField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jchar val)
-	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (char)val);
-	}
-
-	internal static void SetShortField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jshort val)
-	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (short)val);
-	}
-
-	internal static void SetIntField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jint val)
-	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (int)val);
-	}
-
-	internal static void SetLongField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jlong val)
-	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (long)val);
-	}
-
-	internal static void SetFloatField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jfloat val)
-	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (float)val);
-	}
 
-	internal static void SetDoubleField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jdouble val)
-	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (double)val);
-	}
-
-	internal static jmethodID GetStaticMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
-	{
-		return FindMethodID(pEnv, clazz, name, sig, true);
-	}
-
-	internal static jobject CallStaticObjectMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
-	{
-		return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false));
-	}
-
-	internal static jboolean CallStaticBooleanMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
-	{
-		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
-		if(o != null)
-		{
-			return ((bool)o) ? JNI_TRUE : JNI_FALSE;
-		}
-		return JNI_FALSE;
-	}
-
-	internal static jbyte CallStaticByteMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
-	{
-		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
-		if(o != null)
-		{
-			return (jbyte)(sbyte)o;
-		}
-		return 0;
-	}
-
-	internal static jchar CallStaticCharMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
-	{
-		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
-		if(o != null)
-		{
-			return (jchar)(char)o;
-		}
-		return 0;
-	}
-
-	internal static jshort CallStaticShortMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
-	{
-		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
-		if(o != null)
-		{
-			return (jshort)(short)o;
-		}
-		return 0;
-	}
-
-	internal static jint CallStaticIntMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
-	{
-		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
-		if(o != null)
-		{
-			return (jint)(int)o;
-		}
-		return 0;
-	}
-
-	internal static jlong CallStaticLongMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
-	{
-		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
-		if(o != null)
-		{
-			return (jlong)(long)o;
-		}
-		return 0;
-	}
-
-	internal static jfloat CallStaticFloatMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
-	{
-		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
-		if(o != null)
-		{
-			return (jfloat)(float)o;
-		}
-		return 0;
-	}
-
-	internal static jdouble CallStaticDoubleMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
-	{
-		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
-		if(o != null)
-		{
-			return (jdouble)(double)o;
-		}
-		return 0;
-	}
-
-	internal static void CallStaticVoidMethodA(JNIEnv* pEnv, jclass cls, jmethodID methodID, jvalue * args)
-	{
-		InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
-	}
-
-	internal static jfieldID GetStaticFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
-	{
-		return FindFieldID(pEnv, clazz, name, sig, true);
-	}
-
-	internal static jobject GetStaticObjectField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
-	{
-		return pEnv->MakeLocalRef(GetFieldValue(fieldID, null));
-	}
-
-	internal static jboolean GetStaticBooleanField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
-	{
-		return ((bool)GetFieldValue(fieldID, null)) ? JNI_TRUE : JNI_FALSE;
-	}
-
-	internal static jbyte GetStaticByteField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
-	{
-		return (jbyte)(sbyte)GetFieldValue(fieldID, null);
-	}
-
-	internal static jchar GetStaticCharField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
-	{
-		return (jchar)(char)GetFieldValue(fieldID, null);
-	}
-
-	internal static jshort GetStaticShortField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
-	{
-		return (jshort)(short)GetFieldValue(fieldID, null);
-	}
-
-	internal static jint GetStaticIntField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
-	{
-		return (jint)(int)GetFieldValue(fieldID, null);
-	}
-
-	internal static jlong GetStaticLongField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
-	{
-		return (jlong)(long)GetFieldValue(fieldID, null);
-	}
-
-	internal static jfloat GetStaticFloatField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
-	{
-		return (jfloat)(float)GetFieldValue(fieldID, null);
-	}
-
-	internal static jdouble GetStaticDoubleField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
-	{
-		return (jdouble)(double)GetFieldValue(fieldID, null);
-	}
-
-	internal static void SetStaticObjectField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jobject val)
-	{
-		SetFieldValue(fieldID, null, pEnv->UnwrapRef(val));
-	}
-
-	internal static void SetStaticBooleanField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jboolean val)
-	{
-		SetFieldValue(fieldID, null, val != JNI_FALSE);
-	}
-
-	internal static void SetStaticByteField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jbyte val)
-	{
-		SetFieldValue(fieldID, null, (sbyte)val);
-	}
-
-	internal static void SetStaticCharField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jchar val)
-	{
-		SetFieldValue(fieldID, null, (char)val);
-	}
-
-	internal static void SetStaticShortField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jshort val)
-	{
-		SetFieldValue(fieldID, null, (short)val);
-	}
-
-	internal static void SetStaticIntField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jint val)
-	{
-		SetFieldValue(fieldID, null, (int)val);
-	}
-
-	internal static void SetStaticLongField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jlong val)
-	{
-		SetFieldValue(fieldID, null, (long)val);
-	}
-
-	internal static void SetStaticFloatField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jfloat val)
-	{
-		SetFieldValue(fieldID, null, (float)val);
-	}
-
-	internal static void SetStaticDoubleField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jdouble val)
-	{
-		SetFieldValue(fieldID, null, (double)val);
-	}
-
-	internal static jstring NewString(JNIEnv* pEnv, jchar* unicode, int len)
-	{
-		return pEnv->MakeLocalRef(new String((char*)unicode, 0, len));
-	}
-
-	internal static jint GetStringLength(JNIEnv* pEnv, jstring str)
-	{
-		return ((string)pEnv->UnwrapRef(str)).Length;
-	}
-
-	internal static jchar* GetStringChars(JNIEnv* pEnv, jstring str, jboolean* isCopy)
-	{
-		string s = (string)pEnv->UnwrapRef(str);
-		if(isCopy != null)
-		{
-			*isCopy = JNI_TRUE;
-		}
-		return (jchar*)(void*)Marshal.StringToHGlobalUni(s);
-	}
-
-	internal static void ReleaseStringChars(JNIEnv* pEnv, jstring str, jchar* chars)
-	{
-		Marshal.FreeHGlobal((IntPtr)(void*)chars);
-	}
-
-	internal static jobject NewStringUTF(JNIEnv* pEnv, byte* psz)
-	{
-		return pEnv->MakeLocalRef(StringFromUTF8(psz));
-	}
-
-	internal static jint GetStringUTFLength(JNIEnv* pEnv, jstring str)
-	{
-		return StringUTF8Length((string)pEnv->UnwrapRef(str));
-	}
-
-	internal static byte* GetStringUTFChars(JNIEnv* pEnv, jstring str, jboolean* isCopy)
-	{
-		string s = (string)pEnv->UnwrapRef(str);
-		byte* buf = (byte*)JniMem.Alloc(StringUTF8Length(s) + 1);
-		int j = 0;
-		for(int i = 0; i < s.Length; i++)
-		{
-			char ch = s[i];
-			if((ch != 0) && (ch <= 0x7F))
-			{
-				buf[j++] = (byte)ch;
-			}
-			else if(ch <= 0x7FF)
-			{
-				buf[j++] = (byte)((ch >> 6) | 0xC0);
-				buf[j++] = (byte)((ch & 0x3F) | 0x80);
-			}
-			else
-			{
-				buf[j++] = (byte)((ch >> 12) | 0xE0);
-				buf[j++] = (byte)(((ch >> 6) & 0x3F) | 0x80);
-				buf[j++] = (byte)((ch & 0x3F) | 0x80);
-			}
-		}
-		buf[j] = 0;
-		if(isCopy != null)
-		{
-			*isCopy = JNI_TRUE;
-		}
-		return buf;
-	}
-
-	internal static void ReleaseStringUTFChars(JNIEnv* pEnv, jstring str, byte* chars)
-	{
-		JniMem.Free((IntPtr)(void*)chars);
-	}
-
-	internal static jsize GetArrayLength(JNIEnv* pEnv, jarray array)
-	{
-		return ((Array)pEnv->UnwrapRef(array)).Length;
-	}
-
-	internal static jobject NewObjectArray(JNIEnv* pEnv, jsize len, jclass clazz, jobject init)
-	{
-		// TODO if we want to support (non-primitive) value types we can't use the object[] cast
-		object[] array = (object[])Array.CreateInstance(NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz)).TypeAsArrayType, len);
-		object o = pEnv->UnwrapRef(init);
-		if(o != null)
-		{
-			for(int i = 0; i < array.Length; i++)
-			{
-				array[i] = o;
-			}
-		}
-		return pEnv->MakeLocalRef(array);
-	}
-
-	internal static jobject GetObjectArrayElement(JNIEnv* pEnv, jarray array, jsize index)
-	{
-		try
-		{
-			// TODO if we want to support (non-primitive) value types we can't use the object[] cast
-			return pEnv->MakeLocalRef(((object[])pEnv->UnwrapRef(array))[index]);
-		}
-		catch(IndexOutOfRangeException)
-		{
-			SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
-			return IntPtr.Zero;
-		}
-	}
-
-	internal static void SetObjectArrayElement(JNIEnv* pEnv, jarray array, jsize index, jobject val)
-	{
-		try
-		{
-			// TODO if we want to support (non-primitive) value types we can't use the object[] cast
-			((object[])pEnv->UnwrapRef(array))[index] = pEnv->UnwrapRef(val);
-		}
-		catch(IndexOutOfRangeException)
-		{
-			SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
-		}
-	}
-
-	internal static jbooleanArray NewBooleanArray(JNIEnv* pEnv, jsize len)
-	{
-		return pEnv->MakeLocalRef(new bool[len]);
-	}
-
-	internal static jbyteArray NewByteArray(JNIEnv* pEnv, jsize len)
-	{
-		return pEnv->MakeLocalRef(new sbyte[len]);
-	}
-
-	internal static jcharArray NewCharArray(JNIEnv* pEnv, jsize len)
-	{
-		return pEnv->MakeLocalRef(new char[len]);
-	}
-
-	internal static jshortArray NewShortArray(JNIEnv* pEnv, jsize len)
-	{
-		return pEnv->MakeLocalRef(new short[len]);
-	}
-
-	internal static jintArray NewIntArray(JNIEnv* pEnv, jsize len)
-	{
-		return pEnv->MakeLocalRef(new int[len]);
-	}
-
-	internal static jlongArray NewLongArray(JNIEnv* pEnv, jsize len)
-	{
-		return pEnv->MakeLocalRef(new long[len]);
-	}
-
-	internal static jfloatArray NewFloatArray(JNIEnv* pEnv, jsize len)
-	{
-		return pEnv->MakeLocalRef(new float[len]);
-	}
-
-	internal static jdoubleArray NewDoubleArray(JNIEnv* pEnv, jsize len)
-	{
-		return pEnv->MakeLocalRef(new double[len]);
-	}
-
-	internal static jboolean* GetBooleanArrayElements(JNIEnv* pEnv, jbooleanArray array, jboolean* isCopy)
-	{
-		bool[] b = (bool[])pEnv->UnwrapRef(array);
-		jboolean* p = (jboolean*)(void*)JniMem.Alloc(b.Length * 1);
-		for(int i = 0; i < b.Length; i++)
-		{
-			p[i] = b[i] ? JNI_TRUE : JNI_FALSE;
-		}
-		if(isCopy != null)
-		{
-			*isCopy = JNI_TRUE;
-		}
-		return p;
-	}
-
-	internal static jbyte* GetByteArrayElements(JNIEnv* pEnv, jbyteArray array, jboolean* isCopy)
-	{
-		sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
-		jbyte* p = (jbyte*)(void*)JniMem.Alloc(b.Length * 1);
-		for(int i = 0; i < b.Length; i++)
-		{
-			p[i] = (jbyte)b[i];
-		}
-		if(isCopy != null)
-		{
-			*isCopy = JNI_TRUE;
-		}
-		return p;
-	}
-
-	internal static jchar* GetCharArrayElements(JNIEnv* pEnv, jcharArray array, jboolean* isCopy)
-	{
-		char[] b = (char[])pEnv->UnwrapRef(array);
-		IntPtr buf = JniMem.Alloc(b.Length * 2);
-		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != null)
-		{
-			*isCopy = JNI_TRUE;
-		}
-		return (jchar*)(void*)buf;
-	}
-
-	internal static jshort* GetShortArrayElements(JNIEnv* pEnv, jshortArray array, jboolean* isCopy)
-	{
-		short[] b = (short[])pEnv->UnwrapRef(array);
-		IntPtr buf = JniMem.Alloc(b.Length * 2);
-		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != null)
-		{
-			*isCopy = JNI_TRUE;
-		}
-		return (jshort*)(void*)buf;
-	}
-
-	internal static jint* GetIntArrayElements(JNIEnv* pEnv, jintArray array, jboolean* isCopy)
-	{
-		int[] b = (int[])pEnv->UnwrapRef(array);
-		IntPtr buf = JniMem.Alloc(b.Length * 4);
-		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != null)
-		{
-			*isCopy = JNI_TRUE;
-		}
-		return (jint*)(void*)buf;
-	}
-
-	internal static jlong* GetLongArrayElements(JNIEnv* pEnv, jlongArray array, jboolean* isCopy)
-	{
-		long[] b = (long[])pEnv->UnwrapRef(array);
-		IntPtr buf = JniMem.Alloc(b.Length * 8);
-		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != null)
-		{
-			*isCopy = JNI_TRUE;
-		}
-		return (jlong*)(void*)buf;
-	}
-
-	internal static jfloat* GetFloatArrayElements(JNIEnv* pEnv, jfloatArray array, jboolean* isCopy)
-	{
-		float[] b = (float[])pEnv->UnwrapRef(array);
-		IntPtr buf = JniMem.Alloc(b.Length * 4);
-		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != null)
-		{
-			*isCopy = JNI_TRUE;
-		}
-		return (jfloat*)(void*)buf;
-	}
-
-	internal static jdouble* GetDoubleArrayElements(JNIEnv* pEnv, jdoubleArray array, jboolean* isCopy)
-	{
-		double[] b = (double[])pEnv->UnwrapRef(array);
-		IntPtr buf = JniMem.Alloc(b.Length * 8);
-		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != null)
-		{
-			*isCopy = JNI_TRUE;
-		}
-		return (jdouble*)(void*)buf;
-	}
-
-	internal static void ReleaseBooleanArrayElements(JNIEnv* pEnv, jbooleanArray array, jboolean* elems, jint mode)
-	{
-		if(mode == 0 || mode == JNI_COMMIT)
-		{
-			bool[] b = (bool[])pEnv->UnwrapRef(array);
-			for(int i = 0; i < b.Length; i++)
-			{
-				b[i] = elems[i] != JNI_FALSE;
-			}
-		}
-		if(mode == 0 || mode == JNI_ABORT)
-		{
-			JniMem.Free((IntPtr)(void*)elems);
-		}
-	}
-
-	internal static void ReleaseByteArrayElements(JNIEnv* pEnv, jbyteArray array, jbyte* elems, jint mode)
-	{
-		if(mode == 0 || mode == JNI_COMMIT)
-		{
-			sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
-			for(int i = 0; i < b.Length; i++)
-			{
-				b[i] = (sbyte)elems[i];
-			}
-		}
-		if(mode == 0 || mode == JNI_ABORT)
-		{
-			JniMem.Free((IntPtr)(void*)elems);
-		}
-	}
-
-	internal static void ReleaseCharArrayElements(JNIEnv* pEnv, jcharArray array, jchar* elems, jint mode)
-	{
-		if(mode == 0 || mode == JNI_COMMIT)
-		{
-			char[] b = (char[])pEnv->UnwrapRef(array);
-			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
-		}
-		if(mode == 0 || mode == JNI_ABORT)
-		{
-			JniMem.Free((IntPtr)(void*)elems);
-		}
-	}
-
-	internal static void ReleaseShortArrayElements(JNIEnv* pEnv, jshortArray array, jshort* elems, jint mode)
-	{
-		if(mode == 0 || mode == JNI_COMMIT)
-		{
-			short[] b = (short[])pEnv->UnwrapRef(array);
-			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
-		}
-		if(mode == 0 || mode == JNI_ABORT)
-		{
-			JniMem.Free((IntPtr)(void*)elems);
-		}
-	}
-
-	internal static void ReleaseIntArrayElements(JNIEnv* pEnv, jintArray array, jint* elems, jint mode)
-	{
-		if(mode == 0 || mode == JNI_COMMIT)
-		{
-			int[] b = (int[])pEnv->UnwrapRef(array);
-			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
-		}
-		if(mode == 0 || mode == JNI_ABORT)
-		{
-			JniMem.Free((IntPtr)(void*)elems);
-		}
-	}
-
-	internal static void ReleaseLongArrayElements(JNIEnv* pEnv, jlongArray array, jlong* elems, jint mode)
-	{
-		if(mode == 0 || mode == JNI_COMMIT)
-		{
-			long[] b = (long[])pEnv->UnwrapRef(array);
-			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
-		}
-		if(mode == 0 || mode == JNI_ABORT)
-		{
-			JniMem.Free((IntPtr)(void*)elems);
-		}
-	}
-
-	internal static void ReleaseFloatArrayElements(JNIEnv* pEnv, jfloatArray array, jfloat* elems, jint mode)
-	{
-		if(mode == 0 || mode == JNI_COMMIT)
-		{
-			float[] b = (float[])pEnv->UnwrapRef(array);
-			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
-		}
-		if(mode == 0 || mode == JNI_ABORT)
-		{
-			JniMem.Free((IntPtr)(void*)elems);
-		}
-	}
-
-	internal static void ReleaseDoubleArrayElements(JNIEnv* pEnv, jdoubleArray array, jdouble* elems, jint mode)
-	{
-		if(mode == 0 || mode == JNI_COMMIT)
-		{
-			double[] b = (double[])pEnv->UnwrapRef(array);
-			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
-		}
-		if(mode == 0 || mode == JNI_ABORT)
-		{
-			JniMem.Free((IntPtr)(void*)elems);
-		}
-	}
-
-	internal static void GetBooleanArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		bool[] b = (bool[])pEnv->UnwrapRef(array);
-		sbyte* p = (sbyte*)(void*)buf;
-		for(int i = 0; i < len; i++)
-		{
-			*p++ = b[start + i] ? JNI_TRUE : JNI_FALSE;
-		}
-	}
-
-	internal static void GetByteArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
-		sbyte* p = (sbyte*)(void*)buf;
-		for(int i = 0; i < len; i++)
-		{
-			*p++ = b[start + i];
-		}
-	}
-
-	internal static void GetCharArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		char[] b = (char[])pEnv->UnwrapRef(array);
-		Marshal.Copy(b, start, buf, len);
-	}
-
-	internal static void GetShortArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		short[] b = (short[])pEnv->UnwrapRef(array);
-		Marshal.Copy(b, start, buf, len);
-	}
-
-	internal static void GetIntArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		int[] b = (int[])pEnv->UnwrapRef(array);
-		Marshal.Copy(b, start, buf, len);
-	}
-
-	internal static void GetLongArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		long[] b = (long[])pEnv->UnwrapRef(array);
-		Marshal.Copy(b, start, buf, len);
-	}
-
-	internal static void GetFloatArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		float[] b = (float[])pEnv->UnwrapRef(array);
-		Marshal.Copy(b, start, buf, len);
-	}
-
-	internal static void GetDoubleArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		double[] b = (double[])pEnv->UnwrapRef(array);
-		Marshal.Copy(b, start, buf, len);
-	}
-
-	internal static void SetBooleanArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		bool[] b = (bool[])pEnv->UnwrapRef(array);
-		sbyte* p = (sbyte*)(void*)buf;
-		for(int i = 0; i < len; i++)
-		{
-			b[start + i] = *p++ != JNI_FALSE;
-		}
-	}
-
-	internal static void SetByteArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
-		sbyte* p = (sbyte*)(void*)buf;
-		for(int i = 0; i < len; i++)
+		internal static jint AttachCurrentThreadAsDaemon(JavaVM* pJVM, void **penv, void *args)
 		{
-			b[start + i] = *p++;
+			return AttachCurrentThreadImpl(pJVM, penv, (JavaVMAttachArgs*)args, true);
 		}
-	}
-
-	internal static void SetCharArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		char[] b = (char[])pEnv->UnwrapRef(array);
-		Marshal.Copy(buf, b, start, len);
-	}
-
-	internal static void SetShortArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		short[] b = (short[])pEnv->UnwrapRef(array);
-		Marshal.Copy(buf, b, start, len);
-	}
-
-	internal static void SetIntArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		int[] b = (int[])pEnv->UnwrapRef(array);
-		Marshal.Copy(buf, b, start, len);
-	}
-
-	internal static void SetLongArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		long[] b = (long[])pEnv->UnwrapRef(array);
-		Marshal.Copy(buf, b, start, len);
-	}
-
-	internal static void SetFloatArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		float[] b = (float[])pEnv->UnwrapRef(array);
-		Marshal.Copy(buf, b, start, len);
-	}
-
-	internal static void SetDoubleArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
-	{
-		double[] b = (double[])pEnv->UnwrapRef(array);
-		Marshal.Copy(buf, b, start, len);
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-		internal struct JNINativeMethod
+	unsafe struct JNIEnv
 	{
-		public byte* name;
-		public byte* signature;
-		public void* fnPtr;
-	}
+		internal const int LOCAL_REF_SHIFT = 10;
+		internal const int LOCAL_REF_BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
+		internal const int LOCAL_REF_MASK = (LOCAL_REF_BUCKET_SIZE - 1);
+		internal const int JNI_OK = 0;
+		internal const int JNI_ERR = -1;
+		internal const int JNI_EDETACHED = -2;
+		internal const int JNI_EVERSION = -3;
+		internal const int JNI_COMMIT = 1;
+		internal const int JNI_ABORT = 2;
+		internal const int JNI_VERSION_1_1 = 0x00010001;
+		internal const int JNI_VERSION_1_2 = 0x00010002;
+		internal const int JNI_VERSION_1_4 = 0x00010004;
+		internal const sbyte JNI_TRUE = 1;
+		internal const sbyte JNI_FALSE = 0;
+		internal void* vtable;
+		internal GCHandle localRefs;
+		internal int localRefSlot;
+		internal IntPtr pendingException;
+		internal RuntimeMethodHandle currentMethod;
+		private static LocalDataStoreSlot cleanupHelperDataSlot = System.Threading.Thread.AllocateDataSlot();
 
-	internal static int RegisterNatives(JNIEnv* pEnv, IntPtr clazz, JNINativeMethod* methods, int nMethods)
-	{
-		try
+		unsafe class JNIEnvCleanupHelper
 		{
-			TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
-			wrapper.Finish();
-			for(int i = 0; i < nMethods; i++)
+			private JNIEnv* pJNIEnv;
+
+			internal JNIEnvCleanupHelper(JNIEnv* pJNIEnv)
 			{
-				FieldInfo fi = wrapper.TypeAsTBD.GetField("jniptr/" + StringFromUTF8(methods[i].name) + StringFromUTF8(methods[i].signature).Replace('/', '.'), BindingFlags.Static | BindingFlags.NonPublic);
-				if(fi == null)
-				{
-					SetPendingException(pEnv, JavaException.NoSuchMethodError(StringFromUTF8(methods[i].name)));
-					return JNI_ERR;
-				}
-				fi.SetValue(null, (IntPtr)methods[i].fnPtr);
+				this.pJNIEnv = pJNIEnv;
 			}
-			return JNI_OK;
-		}
-		catch(Exception x)
-		{
-			SetPendingException(pEnv, x);
-			return JNI_ERR;
-		}
-	}
 
-	internal static int UnregisterNatives(JNIEnv* pEnv, IntPtr clazz)
-	{
-		try
-		{
-			TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
-			wrapper.Finish();
-			foreach(FieldInfo fi in wrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.NonPublic))
+			~JNIEnvCleanupHelper()
 			{
-				if(fi.Name.StartsWith("jniptr/"))
-				{
-					fi.SetValue(null, IntPtr.Zero);
-				}
-			}
-			return JNI_OK;
-		}
-		catch(Exception x)
-		{
-			SetPendingException(pEnv, x);
-			return JNI_ERR;
-		}
-	}
-
-	internal static int MonitorEnter(JNIEnv* pEnv, IntPtr obj)
-	{
-		try
-		{
-			System.Threading.Monitor.Enter(pEnv->UnwrapRef(obj));
-			return JNI_OK;
-		}
-		catch(System.Threading.ThreadInterruptedException)
-		{
-			SetPendingException(pEnv, JavaException.InterruptedException());
-			return JNI_ERR;
-		}
-	}
-
-	internal static int MonitorExit(JNIEnv* pEnv, IntPtr obj)
-	{
-		try
-		{
-			System.Threading.Monitor.Exit(pEnv->UnwrapRef(obj));
-			return JNI_OK;
-		}
-		catch(System.Threading.SynchronizationLockException)
-		{
-			SetPendingException(pEnv, JavaException.IllegalMonitorStateException());
-			return JNI_ERR;
-		}
-	}
-
-	internal static int GetJavaVM(JNIEnv* pEnv, JavaVM **ppJavaVM)
-	{
-		*ppJavaVM = JavaVM.pJavaVM;
-		return JNI_OK;
-	}
-
-	internal static void GetStringRegion(JNIEnv* pEnv, IntPtr str, int start, int len, IntPtr buf)
-	{
-		string s = (string)pEnv->UnwrapRef(str);
-		if(s != null)
-		{
-			if(start < 0 || start > s.Length || s.Length - start < len)
-			{
-				SetPendingException(pEnv, JavaException.StringIndexOutOfBoundsException(""));
-				return;
-			}
-			else
-			{
-				char* p = (char*)(void*)buf;
-				// TODO isn't there a managed memcpy?
-				for(int i = 0; i < len; i++)
-				{
-					*p++ = s[start + i];
-				}
-				return;
+				pJNIEnv->localRefs.Free();
+				JniMem.Free((IntPtr)(void*)pJNIEnv);
 			}
 		}
-		else
-		{
-			SetPendingException(pEnv, JavaException.NullPointerException());
-		}
-	}
 
-	internal static void GetStringUTFRegion(JNIEnv* pEnv, IntPtr str, int start, int len, IntPtr buf)
-	{
-		string s = (string)pEnv->UnwrapRef(str);
-		if(s != null)
+		internal static JNIEnv* CreateJNIEnv()
 		{
-			if(start < 0 || start > s.Length || s.Length - start < len)
-			{
-				SetPendingException(pEnv, JavaException.StringIndexOutOfBoundsException(""));
-				return;
-			}
-			else
-			{
-				byte* p = (byte*)(void*)buf;
-				for(int i = 0; i < len; i++)
-				{
-					char ch = s[start + i];
-					if((ch != 0) && (ch <= 0x7F))
-					{
-						*p++ = (byte)ch;
-					}
-					else if(ch <= 0x7FF)
-					{
-						*p++ = (byte)((ch >> 6) | 0xC0);
-						*p++ = (byte)((ch & 0x3F) | 0x80);
-					}
-					else
-					{
-						*p++ = (byte)((ch >> 12) | 0xE0);
-						*p++ = (byte)(((ch >> 6) & 0x3F) | 0x80);
-						*p++ = (byte)((ch & 0x3F) | 0x80);
-					}
-				}
-				return;
-			}
-		}
-		else
-		{
-			SetPendingException(pEnv, JavaException.NullPointerException());
-		}
-	}
-
-	private static int GetPrimitiveArrayElementSize(Array ar)
-	{
-		Type type = ar.GetType().GetElementType();
-		if(type == typeof(sbyte) || type == typeof(bool))
-		{
-			return 1;
-		}
-		else if(type == typeof(short) || type == typeof(char))
-		{
-			return 2;
-		}
-		else if(type == typeof(int) || type == typeof(float))
-		{
-			return 4;
-		}
-		else if(type == typeof(long) || type == typeof(double))
-		{
-			return 8;
-		}
-		else
-		{
-			JVM.CriticalFailure("invalid array type", null);
-			return 0;
-		}
-	}
-
-	internal static IntPtr GetPrimitiveArrayCritical(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
-	{
-		Array ar = (Array)pEnv->UnwrapRef(array);
-		int len = ar.Length * GetPrimitiveArrayElementSize(ar);
-		GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
-		try
-		{
-			IntPtr hglobal = JniMem.Alloc(len);
-			byte* pdst = (byte*)(void*)hglobal;
-			byte* psrc = (byte*)(void*)h.AddrOfPinnedObject();
-			// TODO isn't there a managed memcpy?
-			for(int i = 0; i < len; i++)
-			{
-				*pdst++ = *psrc++;
-			}
-			if(isCopy != IntPtr.Zero)
-			{
-				*((sbyte*)(void*)isCopy) = JNI_TRUE;
-			}
-			return hglobal;
-		}
-		finally
-		{
-			h.Free();
-		}		
-	}
-
-	internal static void ReleasePrimitiveArrayCritical(JNIEnv* pEnv, IntPtr array, IntPtr carray, int mode)
-	{
-		if(mode == 0 || mode == JNI_COMMIT)
-		{
-			Array ar = (Array)pEnv->UnwrapRef(array);
-			int len = ar.Length * GetPrimitiveArrayElementSize(ar);
-			GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
-			try
-			{
-				byte* pdst = (byte*)(void*)h.AddrOfPinnedObject();
-				byte* psrc = (byte*)(void*)carray;
-				// TODO isn't there a managed memcpy?
-				for(int i = 0; i < len; i++)
-				{
-					*pdst++ = *psrc++;
-				}
-			}
-			finally
-			{
-				h.Free();
-			}
-		}
-		if(mode == 0 || mode == JNI_ABORT)
-		{
-			JniMem.Free(carray);
-		}
-	}
-
-	internal static IntPtr GetStringCritical(JNIEnv* pEnv, IntPtr str, IntPtr isCopy)
-	{
-		string s = (string)pEnv->UnwrapRef(str);
-		if(s != null)
-		{
-			if(isCopy != IntPtr.Zero)
-			{
-				*((sbyte*)(void*)isCopy) = JNI_TRUE;
-			}
-			return Marshal.StringToHGlobalUni(s);		
-		}
-		SetPendingException(pEnv, JavaException.NullPointerException());
-		return IntPtr.Zero;
-	}
-
-	internal static void ReleaseStringCritical(JNIEnv* pEnv, IntPtr str, IntPtr cstring)
-	{
-		Marshal.FreeHGlobal(cstring);
-	}
-
-	internal static jweak NewWeakGlobalRef(JNIEnv* pEnv, jobject obj)
-	{
-		object o = pEnv->UnwrapRef(obj);
-		if(o == null)
-		{
-			return IntPtr.Zero;
-		}
-		lock(GlobalRefs.weakRefLock)
-		{
-			for(int i = 0; i < GlobalRefs.weakRefs.Length; i++)
-			{
-				if(!GlobalRefs.weakRefs[i].IsAllocated)
-				{
-					GlobalRefs.weakRefs[i] = GCHandle.Alloc(o, GCHandleType.WeakTrackResurrection);
-					return (IntPtr)(- (i | (1 << 30)));
-				}
-			}
-			int len = GlobalRefs.weakRefs.Length;
-			GCHandle[] tmp = new GCHandle[len * 2];
-			Array.Copy(GlobalRefs.weakRefs, 0, tmp, 0, len);
-			tmp[len] = GCHandle.Alloc(o, GCHandleType.WeakTrackResurrection);
-			GlobalRefs.weakRefs = tmp;
-			return (IntPtr)(- (len | (1 << 30)));
-		}
-	}
-
-	internal static void DeleteWeakGlobalRef(JNIEnv* pEnv, jweak obj)
-	{
-		int i = obj.ToInt32();
-		if(i < 0)
-		{
-			i = -i;
-			i -= (1 << 30);
-			lock(GlobalRefs.weakRefLock)
-			{
-				GlobalRefs.weakRefs[i].Free();
-			}
-		}
-		if(i > 0)
-		{
-			Debug.Assert(false, "local ref passed to DeleteWeakGlobalRef");
-		}
-	}
-
-	internal static sbyte ExceptionCheck(JNIEnv* pEnv)
-	{
-		return pEnv->UnwrapRef(pEnv->pendingException) != null ? JNI_TRUE : JNI_FALSE;
-	}
-
-	internal static void NotImplemented(JNIEnv* pEnv)
-	{
-		JVM.CriticalFailure("Unimplemented JNIEnv function called", null);
-	}
-
-	internal IntPtr MakeLocalRef(object obj)
-	{
-		if(obj == null)
-		{
-			return IntPtr.Zero;
-		}
-		object[][] localRefs = GetLocalRefs();
-		object[] active = localRefs[localRefSlot];
-		for(int i = 0; i < active.Length; i++)
-		{
-			if(active[i] == null)
-			{
-				active[i] = obj;
-				return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
-			}
-		}
-		if(active.Length < LOCAL_REF_BUCKET_SIZE)
-		{
-			int i = active.Length;
-			object[] tmp = new object[i * 2];
-			Array.Copy(active, 0, tmp, 0, i);
-			active = localRefs[localRefSlot] = tmp;
-			active[i] = obj;
-			return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
-		}
-		// TODO consider allocating a new slot (if we do this, the code in
-		// PushLocalFrame/PopLocalFrame (and Leave) must be fixed to take this into account)
-		JVM.CriticalFailure("Too many JNI local references", null);
-		return IntPtr.Zero;
-	}
-
-	internal object UnwrapRef(IntPtr o)
-	{
-		int i = o.ToInt32();
-		if(i > 0)
-		{
-			object[][] localRefs = GetLocalRefs();
-			return localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK];
-		}
-		if(i < 0)
-		{
-			i = -i;
-			if((i & (1 << 30)) != 0)
-			{
-				lock(GlobalRefs.weakRefLock)
-				{
-					return GlobalRefs.weakRefs[i - (1 << 30)].Target;
-				}
-			}
-			else
-			{
-				lock(GlobalRefs.globalRefs)
-				{
-					return GlobalRefs.globalRefs[i - 1];
-				}
-			}
-		}
-		return null;
-	}
-}
-
-class JniMem
-{
-	internal static IntPtr Alloc(int cb)
-	{
-		// MONOBUG Marshal.AllocHGlobal returns a null pointer if we try to allocate zero bytes
-		if(cb == 0)
-		{
-			cb = 1;
-		}
-		return Marshal.AllocHGlobal(cb);
-	}
-
-	internal static void Free(IntPtr p)
-	{
-		Marshal.FreeHGlobal(p);
-	}
-}
-
-unsafe class TlsHack
-{
-	[ThreadStatic]
-	internal static JNIEnv* pJNIEnv;
-}
-
-public unsafe struct JniFrame
-{
-	private JNIEnv* pJNIEnv;
-	private RuntimeMethodHandle method;
-	private object[] quickLocals;
-	private int quickLocalIndex;
-	private int prevLocalRefSlot;
-
-	public IntPtr Enter(RuntimeMethodHandle method)
-	{
-		this.method = method;
-		pJNIEnv = TlsHack.pJNIEnv;
-		object[][] localRefs;
-		if(pJNIEnv == null)
-		{
-			// TODO when the thread dies, we're leaking the JNIEnv and the GCHandle
-			pJNIEnv = TlsHack.pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
+			JNIEnv* pJNIEnv = TlsHack.pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
+			System.Threading.Thread.SetData(cleanupHelperDataSlot, new JNIEnvCleanupHelper(pJNIEnv));
 			pJNIEnv->vtable = VtableBuilder.vtable;
-			localRefs = new object[32][];
+			object[][] localRefs = new object[32][];
 			localRefs[0] = new object[JNIEnv.LOCAL_REF_BUCKET_SIZE];
 			// stuff something in the first entry to make sure we don't hand out a zero handle
 			// (a zero handle corresponds to a null reference)
@@ -2643,186 +1059,2178 @@ public unsafe struct JniFrame
 			pJNIEnv->localRefs = GCHandle.Alloc(localRefs);
 			pJNIEnv->localRefSlot = 0;
 			pJNIEnv->pendingException = IntPtr.Zero;
+			pJNIEnv->currentMethod = new RuntimeMethodHandle();
+			return pJNIEnv;
 		}
-		else
-		{
-			localRefs = pJNIEnv->GetLocalRefs();
-		}
-		prevLocalRefSlot = pJNIEnv->localRefSlot;
-		pJNIEnv->localRefSlot++;
-		if(pJNIEnv->localRefSlot >= localRefs.Length)
-		{
-			object[][] tmp = new object[localRefs.Length * 2][];
-			Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
-			pJNIEnv->localRefs.Target = localRefs = tmp;
-		}
-		if(localRefs[pJNIEnv->localRefSlot] == null)
-		{
-			localRefs[pJNIEnv->localRefSlot] = new object[32];
-		}
-		quickLocals = localRefs[pJNIEnv->localRefSlot];
-		quickLocalIndex = (pJNIEnv->localRefSlot << JNIEnv.LOCAL_REF_SHIFT);
-		return (IntPtr)(void*)pJNIEnv;
-	}
 
-	public void Leave()
-	{
-		Exception x = (Exception)pJNIEnv->UnwrapRef(pJNIEnv->pendingException);
-		pJNIEnv->pendingException = IntPtr.Zero;
-		object[][] localRefs = pJNIEnv->GetLocalRefs();
-		while(pJNIEnv->localRefSlot != prevLocalRefSlot)
+		internal static void FreeJNIEnv()
 		{
-			if(localRefs[pJNIEnv->localRefSlot] != null)
+			// the cleanup helper will eventually free the JNIEnv
+			System.Threading.Thread.SetData(cleanupHelperDataSlot, null);
+			TlsHack.pJNIEnv = null;
+		}
+
+		internal static string StringFromUTF8(byte* psz)
+		{
+			// Sun's modified UTF8 encoding is not compatible with System.Text.Encoding.UTF8,
+			// so we need to roll our own
+			int len = 0;
+			bool hasNonAscii = false;
+			while(psz[len] != 0)
 			{
-				Array.Clear(localRefs[pJNIEnv->localRefSlot], 0, localRefs[pJNIEnv->localRefSlot].Length);
+				hasNonAscii |= psz[len] >= 128;
+				len++;
 			}
-			pJNIEnv->localRefSlot--;
-		}
-		if(x != null)
-		{
-			throw x;
-		}
-	}
-
-	public static IntPtr GetFuncPtr(RuntimeMethodHandle method, string clazz, string name, string sig)
-	{
-		MethodBase mb = MethodBase.GetMethodFromHandle(method);
-		// MONOBUG Mono 1.0 doesn't implement MethodBase.GetMethodFromHandle
-		if(mb == null)
-		{
-			mb = new StackFrame(1).GetMethod();
-		}
-		ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
-		StringBuilder mangledSig = new StringBuilder();
-		int sp = 0;
-		for(int i = 1; sig[i] != ')'; i++)
-		{
-			switch(sig[i])
+			if(!hasNonAscii)
 			{
-			case '[':
-				mangledSig.Append("_3");
-				sp += IntPtr.Size;
-				while(sig[++i] == '[')
+				// optimize the common case of 7-bit ASCII
+				return new String((sbyte*)psz);
+			}
+			StringBuilder sb = new StringBuilder(len);
+			for(int i = 0; i < len; i++)
+			{
+				int c = *psz++;
+				int char2, char3;
+				switch(c >> 4)
 				{
-					mangledSig.Append("_3");
+					case 12:
+					case 13:
+						char2 = *psz++;
+						i++;
+						c = (((c & 0x1F) << 6) | (char2 & 0x3F));
+						break;
+					case 14:
+						char2 = *psz++;
+						char3 = *psz++;
+						i++;
+						i++;
+						c = ((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F);
+						break;
 				}
-				mangledSig.Append(sig[i]);
-				if(sig[i] == 'L')
+				sb.Append((char)c);
+			}
+			return sb.ToString();
+		}
+
+		private static int StringUTF8Length(string s)
+		{
+			int len = 0;
+			for(int i = 0; i < s.Length; i++)
+			{
+				char ch = s[i];
+				if((ch != 0) && (ch <= 0x7F))
 				{
-					while(sig[++i] != ';')
+					len++;
+				}
+				else if(ch <= 0x7FF)
+				{
+					len += 2;
+				}
+				else
+				{
+					len += 3;
+				}
+			}
+			return len;
+		}
+
+		// this method returns a simplified method argument descriptor.
+		// some examples:
+		// "()V" -> ""
+		// "(ILjava.lang.String;)I" -> "IL"
+		// "([Ljava.lang.String;)V" -> "L"
+		private static string GetMethodArgList(IntPtr cookie)
+		{
+			try
+			{
+				StringBuilder sb = new StringBuilder();
+				string s = MethodWrapper.FromCookie(cookie).Signature;
+				for(int i = 1;; i++)
+				{
+					switch(s[i])
 					{
-						if(sig[i] == '/')
+						case '[':
+							while(s[i] == '[') i++;
+							if(s[i] == 'L')
+							{
+								while(s[i] != ';') i++;
+							}
+							sb.Append('L');
+							break;
+						case 'L':
+							while(s[i] != ';') i++;
+							sb.Append('L');
+							break;
+						case ')':
+							return sb.ToString();
+						default:
+							sb.Append(s[i]);
+							break;
+					}
+				}
+			}
+			catch
+			{
+				Debug.Assert(false);
+				throw;
+			}
+		}
+
+		internal static jint GetMethodArgs(JNIEnv* pEnv, IntPtr method, byte* sig)
+		{
+			string s = GetMethodArgList(method);
+			for(int i = 0; i < s.Length; i++)
+			{
+				sig[i] = (byte)s[i];
+			}
+			return s.Length;
+		}
+
+		internal static jint GetVersion(JNIEnv* pEnv)
+		{
+			return JNI_VERSION_1_4;
+		}
+
+		internal static jclass DefineClass(JNIEnv* pEnv, byte* name, jobject loader, jbyte* pbuf, jint length)
+		{
+			try
+			{
+				byte[] buf = new byte[length];
+				Marshal.Copy((IntPtr)(void*)pbuf, buf, 0, length);
+				// TODO what should the protection domain be?
+				// NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
+				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClassLoader.defineClass(pEnv->UnwrapRef(loader), name != null ? new String((sbyte*)name) : null, buf, 0, buf.Length, null));
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		private static ClassLoaderWrapper FindNativeMethodClassLoader(JNIEnv* pEnv)
+		{
+			if(pEnv->currentMethod.Value != IntPtr.Zero)
+			{
+				MethodBase mb = MethodBase.GetMethodFromHandle(pEnv->currentMethod);
+				if(mb != null)
+				{
+					ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
+					if(loader.GetJavaClassLoader() != null)
+					{
+						return loader;
+					}
+				}
+				else
+				{
+					// MONOBUG Mono 1.0 doesn't implement MethodBase.GetMethodFromHandle, so we do a stack walk
+					// to try and find the caller
+					StackTrace st = new StackTrace();
+					for(int i = 0; i < st.FrameCount; i++)
+					{
+						StackFrame frame = st.GetFrame(i);
+						Type type = frame.GetMethod().DeclaringType;
+						if(type != null && frame.GetMethod().MethodHandle.Value == pEnv->currentMethod.Value)
 						{
-							mangledSig.Append("_");
+							ClassLoaderWrapper loader = ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader();
+							if(loader.GetJavaClassLoader() != null)
+							{
+								return loader;
+							}
 						}
-						else if(sig[i] == '_')
+					}
+				}
+			}
+			return ClassLoaderWrapper.GetSystemClassLoader();
+		}
+
+		internal static jclass FindClass(JNIEnv* pEnv, byte* name)
+		{
+			try
+			{
+				TypeWrapper wrapper = FindNativeMethodClassLoader(pEnv).LoadClassByDottedName(new String((sbyte*)name).Replace('/', '.'));
+				wrapper.Finish();
+				// spec doesn't say it, but Sun runs the static initializer
+				wrapper.RunClassInit();
+				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper));
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static jmethodID FromReflectedMethod(JNIEnv* pEnv, jobject method)
+		{
+			object methodObj = pEnv->UnwrapRef(method);
+			MethodWrapper mw = (MethodWrapper)methodObj.GetType().GetField("methodCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(methodObj);
+			return mw.Cookie;
+		}
+
+		internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)
+		{
+			object fieldObj = pEnv->UnwrapRef(field);
+			FieldWrapper fw = (FieldWrapper)fieldObj.GetType().GetField("fieldCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(fieldObj);
+			return fw.Cookie;
+		}
+
+		internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method)
+		{
+			MethodWrapper mw = MethodWrapper.FromCookie(method);
+			TypeWrapper tw;
+			if(mw.Name == "<init>")
+			{
+				tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Constructor");
+			}
+			else
+			{
+				tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Method");
+			}
+			object clazz = IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(mw.DeclaringType);
+			return pEnv->MakeLocalRef(Activator.CreateInstance(tw.TypeAsTBD, new object[] { clazz, mw }));
+		}
+
+		internal static jclass GetSuperclass(JNIEnv* pEnv, jclass sub)
+		{
+			TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(sub)).BaseTypeWrapper;
+			return pEnv->MakeLocalRef(wrapper == null ? null : IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper));
+		}
+
+		internal static jboolean IsAssignableFrom(JNIEnv* pEnv, jclass sub, jclass super)
+		{
+			TypeWrapper w1 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(sub));
+			TypeWrapper w2 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(super));
+			return w1.IsAssignableTo(w2) ? JNI_TRUE : JNI_FALSE;
+		}
+
+		internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field)
+		{
+			FieldWrapper fw = FieldWrapper.FromCookie(field);
+			TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Field");
+			object clazz = IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(fw.DeclaringType);
+			return pEnv->MakeLocalRef(Activator.CreateInstance(tw.TypeAsTBD, new object[] { clazz, fw }));
+		}
+
+		private static void SetPendingException(JNIEnv* pEnv, Exception x)
+		{
+			DeleteLocalRef(pEnv, pEnv->pendingException);
+			pEnv->pendingException = x == null ? IntPtr.Zero : pEnv->MakeLocalRef(ExceptionHelper.MapExceptionFast(x));
+		}
+
+		internal static jint Throw(JNIEnv* pEnv, jthrowable throwable)
+		{
+			DeleteLocalRef(pEnv, pEnv->pendingException);
+			pEnv->pendingException = NewLocalRef(pEnv, throwable);
+			return JNI_OK;
+		}
+
+		internal static jint ThrowNew(JNIEnv* pEnv, jclass clazz, byte* msg)
+		{
+			TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+			MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor("<init>", "(Ljava.lang.String;)V"), false);
+			if(mw != null)
+			{
+				jint rc;
+				Exception exception;
+				try
+				{
+					wrapper.Finish();
+					exception = (Exception)mw.Invoke(null, new object[] { new String((sbyte*)msg) }, false);
+					rc = JNI_OK;
+				}
+				catch(Exception x)
+				{
+					exception = x;
+					rc = JNI_ERR;
+				}
+				SetPendingException(pEnv, exception);
+				return rc;
+			}
+			else
+			{
+				SetPendingException(pEnv, JavaException.NoSuchMethodError("<init>(Ljava.lang.String;)V"));
+				return JNI_ERR;
+			}
+		}
+
+		internal static jthrowable ExceptionOccurred(JNIEnv* pEnv)
+		{
+			return NewLocalRef(pEnv, pEnv->pendingException);
+		}
+
+		internal static void ExceptionDescribe(JNIEnv* pEnv)
+		{
+			Exception x = (Exception)pEnv->UnwrapRef(pEnv->pendingException);
+			if(x != null)
+			{
+				SetPendingException(pEnv, null);
+				try
+				{
+					MethodWrapper mw = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable").GetMethodWrapper(new MethodDescriptor("printStackTrace", "()V"), false);
+					// Sun always prints 'Exception in thread "..." '
+					mw.Invoke(x, new object[0], false);
+				}
+				catch(Exception ex)
+				{
+					Debug.Assert(false, ex.ToString());
+				}
+			}
+		}
+
+		internal static void ExceptionClear(JNIEnv* pEnv)
+		{
+			DeleteLocalRef(pEnv, pEnv->pendingException);
+			pEnv->pendingException = IntPtr.Zero;
+		}
+
+		internal static void FatalError(JNIEnv* pEnv, byte* msg)
+		{
+			JVM.CriticalFailure(new String((sbyte*)msg), null);
+		}
+
+		internal static jint PushLocalFrame(JNIEnv* pEnv, jint capacity)
+		{
+			object[][] localRefs = pEnv->GetLocalRefs();
+			pEnv->localRefSlot += 2;
+			if(pEnv->localRefSlot >= localRefs.Length)
+			{
+				object[][] tmp = new object[localRefs.Length * 2][];
+				Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
+				pEnv->localRefs.Target = localRefs = tmp;
+			}
+			// we use a null slot to mark the fact that we used PushLocalFrame
+			localRefs[pEnv->localRefSlot - 1] = null;
+			if(localRefs[pEnv->localRefSlot] == null)
+			{
+				// we can't use capacity, because the array length must be a power of two
+				localRefs[pEnv->localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
+			}
+			return JNI_OK;
+		}
+
+		internal static jobject PopLocalFrame(JNIEnv* pEnv, jobject result)
+		{
+			object res = pEnv->UnwrapRef(result);
+			object[][] localRefs = pEnv->GetLocalRefs();
+			while(localRefs[pEnv->localRefSlot] != null)
+			{
+				localRefs[pEnv->localRefSlot] = null;
+				pEnv->localRefSlot--;
+			}
+			pEnv->localRefSlot--;
+			return pEnv->MakeLocalRef(res);
+		}
+
+		internal static jobject NewGlobalRef(JNIEnv* pEnv, jobject obj)
+		{
+			object o = pEnv->UnwrapRef(obj);
+			if(o == null)
+			{
+				return IntPtr.Zero;
+			}
+			lock(GlobalRefs.globalRefs)
+			{
+				int index = GlobalRefs.globalRefs.IndexOf(null);
+				if(index >= 0)
+				{
+					GlobalRefs.globalRefs[index] = o;
+				}
+				else
+				{
+					index = GlobalRefs.globalRefs.Add(o);
+				}
+				return (IntPtr)(-(index + 1));
+			}
+		}
+
+		internal static void DeleteGlobalRef(JNIEnv* pEnv, jobject obj)
+		{
+			int i = obj.ToInt32();
+			if(i < 0)
+			{
+				lock(GlobalRefs.globalRefs)
+				{
+					GlobalRefs.globalRefs[(-i) - 1] = null;
+				}
+				return;
+			}
+			if(i > 0)
+			{
+				Debug.Assert(false, "Local ref passed to DeleteGlobalRef");
+			}
+		}
+
+		internal object[][] GetLocalRefs()
+		{
+			return (object[][])localRefs.Target;
+		}
+
+		internal static void DeleteLocalRef(JNIEnv* pEnv, jobject obj)
+		{
+			int i = obj.ToInt32();
+			if(i > 0)
+			{
+				object[][] localRefs = pEnv->GetLocalRefs();
+				localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK] = null;
+				return;
+			}
+			if(i < 0)
+			{
+				Debug.Assert(false, "bogus localref in DeleteLocalRef");
+			}
+		}
+
+		internal static jboolean IsSameObject(JNIEnv* pEnv, jobject obj1, jobject obj2)
+		{
+			return pEnv->UnwrapRef(obj1) == pEnv->UnwrapRef(obj2) ? JNI_TRUE : JNI_FALSE;
+		}
+
+		internal static jobject NewLocalRef(JNIEnv* pEnv, jobject obj)
+		{
+			return pEnv->MakeLocalRef(pEnv->UnwrapRef(obj));
+		}
+
+		internal static jint EnsureLocalCapacity(JNIEnv* pEnv, jint capacity)
+		{
+			// since we can dynamically grow the local ref table, we'll just return success for any number
+			return JNI_OK;
+		}
+
+		internal static jobject AllocObject(JNIEnv* pEnv, jclass clazz)
+		{
+			try
+			{
+				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+				if(wrapper.IsInterface || wrapper.IsAbstract)
+				{
+					SetPendingException(pEnv, JavaException.InstantiationException(wrapper.Name));
+					return IntPtr.Zero;
+				}
+				wrapper.Finish();
+				return pEnv->MakeLocalRef(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType));
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		[StructLayout(LayoutKind.Explicit)]
+			internal struct jvalue
+		{
+			[FieldOffset(0)]
+			public jboolean z;
+			[FieldOffset(0)]
+			public jbyte b;
+			[FieldOffset(0)]
+			public jchar c;
+			[FieldOffset(0)]
+			public jshort s;
+			[FieldOffset(0)]
+			public jint i;
+			[FieldOffset(0)]
+			public jlong j;
+			[FieldOffset(0)]
+			public jfloat f;
+			[FieldOffset(0)]
+			public jdouble d;
+			[FieldOffset(0)]
+			public jobject l;
+		}
+
+		private static object InvokeHelper(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue *args, bool nonVirtual)
+		{
+			string sig = GetMethodArgList(methodID);
+			object[] argarray = new object[sig.Length];
+			for(int i = 0; i < sig.Length; i++)
+			{
+				switch(sig[i])
+				{
+					case 'Z':
+						argarray[i] = args[i].z != JNI_FALSE;
+						break;
+					case 'B':
+						argarray[i] = args[i].b;
+						break;
+					case 'C':
+						argarray[i] = (char)args[i].c;
+						break;
+					case 'S':
+						argarray[i] = args[i].s;
+						break;
+					case 'I':
+						argarray[i] = args[i].i;
+						break;
+					case 'J':
+						argarray[i] = args[i].j;
+						break;
+					case 'F':
+						argarray[i] = args[i].f;
+						break;
+					case 'D':
+						argarray[i] = args[i].d;
+						break;
+					case 'L':
+						argarray[i] = pEnv->UnwrapRef(args[i].l);
+						break;
+				}
+			}
+			try
+			{
+				return MethodWrapper.FromCookie(methodID).Invoke(pEnv->UnwrapRef(obj), argarray, nonVirtual);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, ExceptionHelper.MapExceptionFast(x));
+				return null;
+			}
+		}
+
+		internal static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
+		{
+			return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false));
+		}
+
+		internal static jclass GetObjectClass(JNIEnv* pEnv, jobject obj)
+		{
+			return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClass.getClassFromType(pEnv->UnwrapRef(obj).GetType()));
+		}
+
+		internal static jboolean IsInstanceOf(JNIEnv* pEnv, jobject obj, jclass clazz)
+		{
+			object objClass = IKVM.NativeCode.java.lang.VMClass.getClassFromType(pEnv->UnwrapRef(obj).GetType());
+			TypeWrapper w1 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+			TypeWrapper w2 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(objClass);
+			return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
+		}
+
+		private static jmethodID FindMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
+		{
+			try
+			{
+				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+				wrapper.Finish();
+				MethodDescriptor md = new MethodDescriptor(StringFromUTF8(name), StringFromUTF8(sig).Replace('/', '.'));
+				MethodWrapper mw = wrapper.GetMethodWrapper(md, true);
+				if(mw != null)
+				{
+					if(mw.IsStatic == isstatic)
+					{
+						mw.Link();
+						return mw.Cookie;
+					}
+				}
+				SetPendingException(pEnv, JavaException.NoSuchMethodError("{0}{1}", md.Name, md.Signature));
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+			}
+			return IntPtr.Zero;
+		}
+
+		internal static jmethodID GetMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
+		{
+			return FindMethodID(pEnv, clazz, name, sig, false);
+		}
+
+		internal static jobject CallObjectMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+		{
+			return pEnv->MakeLocalRef(InvokeHelper(pEnv, obj, methodID, args, false));
+		}
+
+		internal static jboolean CallBooleanMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, false);
+			if(o != null)
+			{
+				return ((bool)o) ? JNI_TRUE : JNI_FALSE;
+			}
+			return JNI_FALSE;
+		}
+
+		internal static jbyte CallByteMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, false);
+			if(o != null)
+			{
+				return (jbyte)(sbyte)o;
+			}
+			return 0;
+		}
+
+		internal static jchar CallCharMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, false);
+			if(o != null)
+			{
+				return (jchar)(char)o;
+			}
+			return 0;
+		}
+
+		internal static jshort CallShortMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, false);
+			if(o != null)
+			{
+				return (jshort)(short)o;
+			}
+			return 0;
+		}
+
+		internal static jint CallIntMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, false);
+			if(o != null)
+			{
+				return (jint)(int)o;
+			}
+			return 0;
+		}
+
+		internal static jlong CallLongMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, false);
+			if(o != null)
+			{
+				return (jlong)(long)o;
+			}
+			return 0;
+		}
+
+		internal static jfloat CallFloatMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, false);
+			if(o != null)
+			{
+				return (jfloat)(float)o;
+			}
+			return 0;
+		}
+
+		internal static jdouble CallDoubleMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, false);
+			if(o != null)
+			{
+				return (jdouble)(double)o;
+			}
+			return 0;
+		}
+
+		internal static void CallVoidMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue*  args)
+		{
+			InvokeHelper(pEnv, obj, methodID, args, false);
+		}
+
+		internal static jobject CallNonvirtualObjectMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue*  args)
+		{
+			return pEnv->MakeLocalRef(InvokeHelper(pEnv, obj, methodID, args, true));
+		}
+
+		internal static jboolean CallNonvirtualBooleanMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue*  args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, true);
+			if(o != null)
+			{
+				return ((bool)o) ? JNI_TRUE : JNI_FALSE;
+			}
+			return JNI_FALSE;
+		}
+
+		internal static jbyte CallNonvirtualByteMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, true);
+			if(o != null)
+			{
+				return (jbyte)(sbyte)o;
+			}
+			return 0;
+		}
+
+		internal static jchar CallNonvirtualCharMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, true);
+			if(o != null)
+			{
+				return (jchar)(char)o;
+			}
+			return 0;
+		}
+
+		internal static jshort CallNonvirtualShortMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, true);
+			if(o != null)
+			{
+				return (jshort)(short)o;
+			}
+			return 0;
+		}
+
+		internal static jint CallNonvirtualIntMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, true);
+			if(o != null)
+			{
+				return (jint)(int)o;
+			}
+			return 0;
+		}
+
+		internal static jlong CallNonvirtualLongMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, true);
+			if(o != null)
+			{
+				return (jlong)(long)o;
+			}
+			return 0;
+		}
+
+		internal static jfloat CallNonvirtualFloatMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, true);
+			if(o != null)
+			{
+				return (jfloat)(float)o;
+			}
+			return 0;
+		}
+
+		internal static jdouble CallNonvirtualDoubleMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+		{
+			object o = InvokeHelper(pEnv, obj, methodID, args, true);
+			if(o != null)
+			{
+				return (jdouble)(double)o;
+			}
+			return 0;
+		}
+
+		internal static void CallNonvirtualVoidMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+		{
+			InvokeHelper(pEnv, obj, methodID, args, true);
+		}
+
+		private static jfieldID FindFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
+		{
+			try
+			{
+				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+				wrapper.Finish();
+				FieldWrapper fw = wrapper.GetFieldWrapper(StringFromUTF8(name), wrapper.GetClassLoader().ExpressionTypeWrapper(StringFromUTF8(sig).Replace('/', '.')));
+				if(fw != null)
+				{
+					if(fw.IsStatic == isstatic)
+					{
+						// TODO fw.Link()
+						return fw.Cookie;
+					}
+				}
+				SetPendingException(pEnv, JavaException.NoSuchFieldError(StringFromUTF8(name)));
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+			}
+			return IntPtr.Zero;
+		}
+
+		internal static jfieldID GetFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
+		{
+			return FindFieldID(pEnv, clazz, name, sig, false);
+		}
+
+		private static void SetFieldValue(jfieldID cookie, object obj, object val)
+		{
+			try
+			{
+				FieldWrapper.FromCookie(cookie).SetValue(obj, val);
+			}
+			catch
+			{
+				Debug.Assert(false);
+				throw;
+			}
+		}
+
+		private static object GetFieldValue(jfieldID cookie, object obj)
+		{
+			try
+			{
+				return FieldWrapper.FromCookie(cookie).GetValue(obj);
+			}
+			catch
+			{
+				Debug.Assert(false);
+				throw;
+			}
+		}
+
+		internal static jobject GetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
+		{
+			return pEnv->MakeLocalRef(GetFieldValue(fieldID, pEnv->UnwrapRef(obj)));
+		}
+
+		internal static jboolean GetBooleanField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
+		{
+			return ((bool)GetFieldValue(fieldID, pEnv->UnwrapRef(obj))) ? JNI_TRUE : JNI_FALSE;
+		}
+
+		internal static jbyte GetByteField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
+		{
+			return (jbyte)(sbyte)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		}
+
+		internal static jchar GetCharField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
+		{
+			return (jchar)(char)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		}
+
+		internal static jshort GetShortField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
+		{
+			return (jshort)(short)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		}
+
+		internal static jint GetIntField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
+		{
+			return (jint)(int)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		}
+
+		internal static jlong GetLongField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
+		{
+			return (jlong)(long)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		}
+
+		internal static jfloat GetFloatField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
+		{
+			return (jfloat)(float)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		}
+
+		internal static jdouble GetDoubleField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
+		{
+			return (jdouble)(double)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		}
+
+		internal static void SetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jobject val)
+		{
+			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), pEnv->UnwrapRef(val));
+		}
+
+		internal static void SetBooleanField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jboolean val)
+		{
+			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), val != JNI_FALSE);
+		}
+
+		internal static void SetByteField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jbyte val)
+		{
+			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (sbyte)val);
+		}
+
+		internal static void SetCharField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jchar val)
+		{
+			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (char)val);
+		}
+
+		internal static void SetShortField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jshort val)
+		{
+			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (short)val);
+		}
+
+		internal static void SetIntField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jint val)
+		{
+			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (int)val);
+		}
+
+		internal static void SetLongField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jlong val)
+		{
+			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (long)val);
+		}
+
+		internal static void SetFloatField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jfloat val)
+		{
+			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (float)val);
+		}
+
+		internal static void SetDoubleField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jdouble val)
+		{
+			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (double)val);
+		}
+
+		internal static jmethodID GetStaticMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
+		{
+			return FindMethodID(pEnv, clazz, name, sig, true);
+		}
+
+		internal static jobject CallStaticObjectMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
+		{
+			return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false));
+		}
+
+		internal static jboolean CallStaticBooleanMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
+		{
+			object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
+			if(o != null)
+			{
+				return ((bool)o) ? JNI_TRUE : JNI_FALSE;
+			}
+			return JNI_FALSE;
+		}
+
+		internal static jbyte CallStaticByteMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
+		{
+			object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
+			if(o != null)
+			{
+				return (jbyte)(sbyte)o;
+			}
+			return 0;
+		}
+
+		internal static jchar CallStaticCharMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
+		{
+			object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
+			if(o != null)
+			{
+				return (jchar)(char)o;
+			}
+			return 0;
+		}
+
+		internal static jshort CallStaticShortMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
+		{
+			object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
+			if(o != null)
+			{
+				return (jshort)(short)o;
+			}
+			return 0;
+		}
+
+		internal static jint CallStaticIntMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
+		{
+			object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
+			if(o != null)
+			{
+				return (jint)(int)o;
+			}
+			return 0;
+		}
+
+		internal static jlong CallStaticLongMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
+		{
+			object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
+			if(o != null)
+			{
+				return (jlong)(long)o;
+			}
+			return 0;
+		}
+
+		internal static jfloat CallStaticFloatMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
+		{
+			object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
+			if(o != null)
+			{
+				return (jfloat)(float)o;
+			}
+			return 0;
+		}
+
+		internal static jdouble CallStaticDoubleMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
+		{
+			object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
+			if(o != null)
+			{
+				return (jdouble)(double)o;
+			}
+			return 0;
+		}
+
+		internal static void CallStaticVoidMethodA(JNIEnv* pEnv, jclass cls, jmethodID methodID, jvalue * args)
+		{
+			InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
+		}
+
+		internal static jfieldID GetStaticFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
+		{
+			return FindFieldID(pEnv, clazz, name, sig, true);
+		}
+
+		internal static jobject GetStaticObjectField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
+		{
+			return pEnv->MakeLocalRef(GetFieldValue(fieldID, null));
+		}
+
+		internal static jboolean GetStaticBooleanField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
+		{
+			return ((bool)GetFieldValue(fieldID, null)) ? JNI_TRUE : JNI_FALSE;
+		}
+
+		internal static jbyte GetStaticByteField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
+		{
+			return (jbyte)(sbyte)GetFieldValue(fieldID, null);
+		}
+
+		internal static jchar GetStaticCharField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
+		{
+			return (jchar)(char)GetFieldValue(fieldID, null);
+		}
+
+		internal static jshort GetStaticShortField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
+		{
+			return (jshort)(short)GetFieldValue(fieldID, null);
+		}
+
+		internal static jint GetStaticIntField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
+		{
+			return (jint)(int)GetFieldValue(fieldID, null);
+		}
+
+		internal static jlong GetStaticLongField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
+		{
+			return (jlong)(long)GetFieldValue(fieldID, null);
+		}
+
+		internal static jfloat GetStaticFloatField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
+		{
+			return (jfloat)(float)GetFieldValue(fieldID, null);
+		}
+
+		internal static jdouble GetStaticDoubleField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
+		{
+			return (jdouble)(double)GetFieldValue(fieldID, null);
+		}
+
+		internal static void SetStaticObjectField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jobject val)
+		{
+			SetFieldValue(fieldID, null, pEnv->UnwrapRef(val));
+		}
+
+		internal static void SetStaticBooleanField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jboolean val)
+		{
+			SetFieldValue(fieldID, null, val != JNI_FALSE);
+		}
+
+		internal static void SetStaticByteField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jbyte val)
+		{
+			SetFieldValue(fieldID, null, (sbyte)val);
+		}
+
+		internal static void SetStaticCharField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jchar val)
+		{
+			SetFieldValue(fieldID, null, (char)val);
+		}
+
+		internal static void SetStaticShortField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jshort val)
+		{
+			SetFieldValue(fieldID, null, (short)val);
+		}
+
+		internal static void SetStaticIntField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jint val)
+		{
+			SetFieldValue(fieldID, null, (int)val);
+		}
+
+		internal static void SetStaticLongField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jlong val)
+		{
+			SetFieldValue(fieldID, null, (long)val);
+		}
+
+		internal static void SetStaticFloatField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jfloat val)
+		{
+			SetFieldValue(fieldID, null, (float)val);
+		}
+
+		internal static void SetStaticDoubleField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jdouble val)
+		{
+			SetFieldValue(fieldID, null, (double)val);
+		}
+
+		internal static jstring NewString(JNIEnv* pEnv, jchar* unicode, int len)
+		{
+			return pEnv->MakeLocalRef(new String((char*)unicode, 0, len));
+		}
+
+		internal static jint GetStringLength(JNIEnv* pEnv, jstring str)
+		{
+			return ((string)pEnv->UnwrapRef(str)).Length;
+		}
+
+		internal static jchar* GetStringChars(JNIEnv* pEnv, jstring str, jboolean* isCopy)
+		{
+			string s = (string)pEnv->UnwrapRef(str);
+			if(isCopy != null)
+			{
+				*isCopy = JNI_TRUE;
+			}
+			return (jchar*)(void*)Marshal.StringToHGlobalUni(s);
+		}
+
+		internal static void ReleaseStringChars(JNIEnv* pEnv, jstring str, jchar* chars)
+		{
+			Marshal.FreeHGlobal((IntPtr)(void*)chars);
+		}
+
+		internal static jobject NewStringUTF(JNIEnv* pEnv, byte* psz)
+		{
+			return pEnv->MakeLocalRef(StringFromUTF8(psz));
+		}
+
+		internal static jint GetStringUTFLength(JNIEnv* pEnv, jstring str)
+		{
+			return StringUTF8Length((string)pEnv->UnwrapRef(str));
+		}
+
+		internal static byte* GetStringUTFChars(JNIEnv* pEnv, jstring str, jboolean* isCopy)
+		{
+			string s = (string)pEnv->UnwrapRef(str);
+			byte* buf = (byte*)JniMem.Alloc(StringUTF8Length(s) + 1);
+			int j = 0;
+			for(int i = 0; i < s.Length; i++)
+			{
+				char ch = s[i];
+				if((ch != 0) && (ch <= 0x7F))
+				{
+					buf[j++] = (byte)ch;
+				}
+				else if(ch <= 0x7FF)
+				{
+					buf[j++] = (byte)((ch >> 6) | 0xC0);
+					buf[j++] = (byte)((ch & 0x3F) | 0x80);
+				}
+				else
+				{
+					buf[j++] = (byte)((ch >> 12) | 0xE0);
+					buf[j++] = (byte)(((ch >> 6) & 0x3F) | 0x80);
+					buf[j++] = (byte)((ch & 0x3F) | 0x80);
+				}
+			}
+			buf[j] = 0;
+			if(isCopy != null)
+			{
+				*isCopy = JNI_TRUE;
+			}
+			return buf;
+		}
+
+		internal static void ReleaseStringUTFChars(JNIEnv* pEnv, jstring str, byte* chars)
+		{
+			JniMem.Free((IntPtr)(void*)chars);
+		}
+
+		internal static jsize GetArrayLength(JNIEnv* pEnv, jarray array)
+		{
+			return ((Array)pEnv->UnwrapRef(array)).Length;
+		}
+
+		internal static jobject NewObjectArray(JNIEnv* pEnv, jsize len, jclass clazz, jobject init)
+		{
+			try
+			{
+				// we want to support (non-primitive) value types so we can't cast to object[]
+				Array array = Array.CreateInstance(IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz)).TypeAsArrayType, len);
+				object o = pEnv->UnwrapRef(init);
+				if(o != null)
+				{
+					for(int i = 0; i < array.Length; i++)
+					{
+						array.SetValue(o, i);
+					}
+				}
+				return pEnv->MakeLocalRef(array);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.NegativeArraySizeException());
+				return IntPtr.Zero;
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static jobject GetObjectArrayElement(JNIEnv* pEnv, jarray array, jsize index)
+		{
+			try
+			{
+				// we want to support (non-primitive) value types so we can't cast to object[]
+				return pEnv->MakeLocalRef(((Array)pEnv->UnwrapRef(array)).GetValue(index));
+			}
+			catch(IndexOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static void SetObjectArrayElement(JNIEnv* pEnv, jarray array, jsize index, jobject val)
+		{
+			try
+			{
+				// we want to support (non-primitive) value types so we can't cast to object[]
+				((Array)pEnv->UnwrapRef(array)).SetValue(pEnv->UnwrapRef(val), index);
+			}
+			catch(IndexOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static jbooleanArray NewBooleanArray(JNIEnv* pEnv, jsize len)
+		{
+			try
+			{
+				return pEnv->MakeLocalRef(new bool[len]);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static jbyteArray NewByteArray(JNIEnv* pEnv, jsize len)
+		{
+			try
+			{
+				return pEnv->MakeLocalRef(new sbyte[len]);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static jcharArray NewCharArray(JNIEnv* pEnv, jsize len)
+		{
+			try
+			{
+				return pEnv->MakeLocalRef(new char[len]);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static jshortArray NewShortArray(JNIEnv* pEnv, jsize len)
+		{
+			try
+			{
+				return pEnv->MakeLocalRef(new short[len]);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static jintArray NewIntArray(JNIEnv* pEnv, jsize len)
+		{
+			try
+			{
+				return pEnv->MakeLocalRef(new int[len]);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static jlongArray NewLongArray(JNIEnv* pEnv, jsize len)
+		{
+			try
+			{
+				return pEnv->MakeLocalRef(new long[len]);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static jfloatArray NewFloatArray(JNIEnv* pEnv, jsize len)
+		{
+			try
+			{
+				return pEnv->MakeLocalRef(new float[len]);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static jdoubleArray NewDoubleArray(JNIEnv* pEnv, jsize len)
+		{
+			try
+			{
+				return pEnv->MakeLocalRef(new double[len]);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static jboolean* GetBooleanArrayElements(JNIEnv* pEnv, jbooleanArray array, jboolean* isCopy)
+		{
+			bool[] b = (bool[])pEnv->UnwrapRef(array);
+			jboolean* p = (jboolean*)(void*)JniMem.Alloc(b.Length * 1);
+			for(int i = 0; i < b.Length; i++)
+			{
+				p[i] = b[i] ? JNI_TRUE : JNI_FALSE;
+			}
+			if(isCopy != null)
+			{
+				*isCopy = JNI_TRUE;
+			}
+			return p;
+		}
+
+		internal static jbyte* GetByteArrayElements(JNIEnv* pEnv, jbyteArray array, jboolean* isCopy)
+		{
+			sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
+			jbyte* p = (jbyte*)(void*)JniMem.Alloc(b.Length * 1);
+			for(int i = 0; i < b.Length; i++)
+			{
+				p[i] = (jbyte)b[i];
+			}
+			if(isCopy != null)
+			{
+				*isCopy = JNI_TRUE;
+			}
+			return p;
+		}
+
+		internal static jchar* GetCharArrayElements(JNIEnv* pEnv, jcharArray array, jboolean* isCopy)
+		{
+			char[] b = (char[])pEnv->UnwrapRef(array);
+			IntPtr buf = JniMem.Alloc(b.Length * 2);
+			Marshal.Copy(b, 0, buf, b.Length);
+			if(isCopy != null)
+			{
+				*isCopy = JNI_TRUE;
+			}
+			return (jchar*)(void*)buf;
+		}
+
+		internal static jshort* GetShortArrayElements(JNIEnv* pEnv, jshortArray array, jboolean* isCopy)
+		{
+			short[] b = (short[])pEnv->UnwrapRef(array);
+			IntPtr buf = JniMem.Alloc(b.Length * 2);
+			Marshal.Copy(b, 0, buf, b.Length);
+			if(isCopy != null)
+			{
+				*isCopy = JNI_TRUE;
+			}
+			return (jshort*)(void*)buf;
+		}
+
+		internal static jint* GetIntArrayElements(JNIEnv* pEnv, jintArray array, jboolean* isCopy)
+		{
+			int[] b = (int[])pEnv->UnwrapRef(array);
+			IntPtr buf = JniMem.Alloc(b.Length * 4);
+			Marshal.Copy(b, 0, buf, b.Length);
+			if(isCopy != null)
+			{
+				*isCopy = JNI_TRUE;
+			}
+			return (jint*)(void*)buf;
+		}
+
+		internal static jlong* GetLongArrayElements(JNIEnv* pEnv, jlongArray array, jboolean* isCopy)
+		{
+			long[] b = (long[])pEnv->UnwrapRef(array);
+			IntPtr buf = JniMem.Alloc(b.Length * 8);
+			Marshal.Copy(b, 0, buf, b.Length);
+			if(isCopy != null)
+			{
+				*isCopy = JNI_TRUE;
+			}
+			return (jlong*)(void*)buf;
+		}
+
+		internal static jfloat* GetFloatArrayElements(JNIEnv* pEnv, jfloatArray array, jboolean* isCopy)
+		{
+			float[] b = (float[])pEnv->UnwrapRef(array);
+			IntPtr buf = JniMem.Alloc(b.Length * 4);
+			Marshal.Copy(b, 0, buf, b.Length);
+			if(isCopy != null)
+			{
+				*isCopy = JNI_TRUE;
+			}
+			return (jfloat*)(void*)buf;
+		}
+
+		internal static jdouble* GetDoubleArrayElements(JNIEnv* pEnv, jdoubleArray array, jboolean* isCopy)
+		{
+			double[] b = (double[])pEnv->UnwrapRef(array);
+			IntPtr buf = JniMem.Alloc(b.Length * 8);
+			Marshal.Copy(b, 0, buf, b.Length);
+			if(isCopy != null)
+			{
+				*isCopy = JNI_TRUE;
+			}
+			return (jdouble*)(void*)buf;
+		}
+
+		internal static void ReleaseBooleanArrayElements(JNIEnv* pEnv, jbooleanArray array, jboolean* elems, jint mode)
+		{
+			if(mode == 0 || mode == JNI_COMMIT)
+			{
+				bool[] b = (bool[])pEnv->UnwrapRef(array);
+				for(int i = 0; i < b.Length; i++)
+				{
+					b[i] = elems[i] != JNI_FALSE;
+				}
+			}
+			if(mode == 0 || mode == JNI_ABORT)
+			{
+				JniMem.Free((IntPtr)(void*)elems);
+			}
+		}
+
+		internal static void ReleaseByteArrayElements(JNIEnv* pEnv, jbyteArray array, jbyte* elems, jint mode)
+		{
+			if(mode == 0 || mode == JNI_COMMIT)
+			{
+				sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
+				for(int i = 0; i < b.Length; i++)
+				{
+					b[i] = (sbyte)elems[i];
+				}
+			}
+			if(mode == 0 || mode == JNI_ABORT)
+			{
+				JniMem.Free((IntPtr)(void*)elems);
+			}
+		}
+
+		internal static void ReleaseCharArrayElements(JNIEnv* pEnv, jcharArray array, jchar* elems, jint mode)
+		{
+			if(mode == 0 || mode == JNI_COMMIT)
+			{
+				char[] b = (char[])pEnv->UnwrapRef(array);
+				Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
+			}
+			if(mode == 0 || mode == JNI_ABORT)
+			{
+				JniMem.Free((IntPtr)(void*)elems);
+			}
+		}
+
+		internal static void ReleaseShortArrayElements(JNIEnv* pEnv, jshortArray array, jshort* elems, jint mode)
+		{
+			if(mode == 0 || mode == JNI_COMMIT)
+			{
+				short[] b = (short[])pEnv->UnwrapRef(array);
+				Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
+			}
+			if(mode == 0 || mode == JNI_ABORT)
+			{
+				JniMem.Free((IntPtr)(void*)elems);
+			}
+		}
+
+		internal static void ReleaseIntArrayElements(JNIEnv* pEnv, jintArray array, jint* elems, jint mode)
+		{
+			if(mode == 0 || mode == JNI_COMMIT)
+			{
+				int[] b = (int[])pEnv->UnwrapRef(array);
+				Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
+			}
+			if(mode == 0 || mode == JNI_ABORT)
+			{
+				JniMem.Free((IntPtr)(void*)elems);
+			}
+		}
+
+		internal static void ReleaseLongArrayElements(JNIEnv* pEnv, jlongArray array, jlong* elems, jint mode)
+		{
+			if(mode == 0 || mode == JNI_COMMIT)
+			{
+				long[] b = (long[])pEnv->UnwrapRef(array);
+				Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
+			}
+			if(mode == 0 || mode == JNI_ABORT)
+			{
+				JniMem.Free((IntPtr)(void*)elems);
+			}
+		}
+
+		internal static void ReleaseFloatArrayElements(JNIEnv* pEnv, jfloatArray array, jfloat* elems, jint mode)
+		{
+			if(mode == 0 || mode == JNI_COMMIT)
+			{
+				float[] b = (float[])pEnv->UnwrapRef(array);
+				Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
+			}
+			if(mode == 0 || mode == JNI_ABORT)
+			{
+				JniMem.Free((IntPtr)(void*)elems);
+			}
+		}
+
+		internal static void ReleaseDoubleArrayElements(JNIEnv* pEnv, jdoubleArray array, jdouble* elems, jint mode)
+		{
+			if(mode == 0 || mode == JNI_COMMIT)
+			{
+				double[] b = (double[])pEnv->UnwrapRef(array);
+				Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
+			}
+			if(mode == 0 || mode == JNI_ABORT)
+			{
+				JniMem.Free((IntPtr)(void*)elems);
+			}
+		}
+
+		internal static void GetBooleanArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				bool[] b = (bool[])pEnv->UnwrapRef(array);
+				sbyte* p = (sbyte*)(void*)buf;
+				for(int i = 0; i < len; i++)
+				{
+					*p++ = b[start + i] ? JNI_TRUE : JNI_FALSE;
+				}
+			}
+			catch(IndexOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void GetByteArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
+				sbyte* p = (sbyte*)(void*)buf;
+				for(int i = 0; i < len; i++)
+				{
+					*p++ = b[start + i];
+				}
+			}
+			catch(IndexOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void GetCharArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				char[] b = (char[])pEnv->UnwrapRef(array);
+				Marshal.Copy(b, start, buf, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void GetShortArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				short[] b = (short[])pEnv->UnwrapRef(array);
+				Marshal.Copy(b, start, buf, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void GetIntArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				int[] b = (int[])pEnv->UnwrapRef(array);
+				Marshal.Copy(b, start, buf, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void GetLongArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				long[] b = (long[])pEnv->UnwrapRef(array);
+				Marshal.Copy(b, start, buf, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void GetFloatArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				float[] b = (float[])pEnv->UnwrapRef(array);
+				Marshal.Copy(b, start, buf, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void GetDoubleArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				double[] b = (double[])pEnv->UnwrapRef(array);
+				Marshal.Copy(b, start, buf, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void SetBooleanArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				bool[] b = (bool[])pEnv->UnwrapRef(array);
+				sbyte* p = (sbyte*)(void*)buf;
+				for(int i = 0; i < len; i++)
+				{
+					b[start + i] = *p++ != JNI_FALSE;
+				}
+			}
+			catch(IndexOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void SetByteArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
+				sbyte* p = (sbyte*)(void*)buf;
+				for(int i = 0; i < len; i++)
+				{
+					b[start + i] = *p++;
+				}
+			}
+			catch(IndexOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void SetCharArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				char[] b = (char[])pEnv->UnwrapRef(array);
+				Marshal.Copy(buf, b, start, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void SetShortArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				short[] b = (short[])pEnv->UnwrapRef(array);
+				Marshal.Copy(buf, b, start, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void SetIntArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				int[] b = (int[])pEnv->UnwrapRef(array);
+				Marshal.Copy(buf, b, start, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void SetLongArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				long[] b = (long[])pEnv->UnwrapRef(array);
+				Marshal.Copy(buf, b, start, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void SetFloatArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				float[] b = (float[])pEnv->UnwrapRef(array);
+				Marshal.Copy(buf, b, start, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		internal static void SetDoubleArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+		{
+			try
+			{
+				double[] b = (double[])pEnv->UnwrapRef(array);
+				Marshal.Copy(buf, b, start, len);
+			}
+			catch(ArgumentOutOfRangeException)
+			{
+				SetPendingException(pEnv, JavaException.ArrayIndexOutOfBoundsException());
+			}
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		unsafe internal struct JNINativeMethod
+		{
+			public byte* name;
+			public byte* signature;
+			public void* fnPtr;
+		}
+
+		internal static int RegisterNatives(JNIEnv* pEnv, IntPtr clazz, JNINativeMethod* methods, int nMethods)
+		{
+			try
+			{
+				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+				wrapper.Finish();
+				for(int i = 0; i < nMethods; i++)
+				{
+					FieldInfo fi = wrapper.TypeAsTBD.GetField("jniptr/" + StringFromUTF8(methods[i].name) + StringFromUTF8(methods[i].signature).Replace('/', '.'), BindingFlags.Static | BindingFlags.NonPublic);
+					if(fi == null)
+					{
+						SetPendingException(pEnv, JavaException.NoSuchMethodError(StringFromUTF8(methods[i].name)));
+						return JNI_ERR;
+					}
+					fi.SetValue(null, (IntPtr)methods[i].fnPtr);
+				}
+				return JNI_OK;
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return JNI_ERR;
+			}
+		}
+
+		internal static int UnregisterNatives(JNIEnv* pEnv, IntPtr clazz)
+		{
+			try
+			{
+				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+				wrapper.Finish();
+				foreach(FieldInfo fi in wrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.NonPublic))
+				{
+					if(fi.Name.StartsWith("jniptr/"))
+					{
+						fi.SetValue(null, IntPtr.Zero);
+					}
+				}
+				return JNI_OK;
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, x);
+				return JNI_ERR;
+			}
+		}
+
+		internal static int MonitorEnter(JNIEnv* pEnv, IntPtr obj)
+		{
+			try
+			{
+				System.Threading.Monitor.Enter(pEnv->UnwrapRef(obj));
+				return JNI_OK;
+			}
+			catch(System.Threading.ThreadInterruptedException)
+			{
+				SetPendingException(pEnv, JavaException.InterruptedException());
+				return JNI_ERR;
+			}
+		}
+
+		internal static int MonitorExit(JNIEnv* pEnv, IntPtr obj)
+		{
+			try
+			{
+				System.Threading.Monitor.Exit(pEnv->UnwrapRef(obj));
+				return JNI_OK;
+			}
+			catch(System.Threading.SynchronizationLockException)
+			{
+				SetPendingException(pEnv, JavaException.IllegalMonitorStateException());
+				return JNI_ERR;
+			}
+		}
+
+		internal static int GetJavaVM(JNIEnv* pEnv, JavaVM **ppJavaVM)
+		{
+			*ppJavaVM = JavaVM.pJavaVM;
+			return JNI_OK;
+		}
+
+		internal static void GetStringRegion(JNIEnv* pEnv, IntPtr str, int start, int len, IntPtr buf)
+		{
+			string s = (string)pEnv->UnwrapRef(str);
+			if(s != null)
+			{
+				if(start < 0 || start > s.Length || s.Length - start < len)
+				{
+					SetPendingException(pEnv, JavaException.StringIndexOutOfBoundsException(""));
+					return;
+				}
+				else
+				{
+					char* p = (char*)(void*)buf;
+					// TODO isn't there a managed memcpy?
+					for(int i = 0; i < len; i++)
+					{
+						*p++ = s[start + i];
+					}
+					return;
+				}
+			}
+			else
+			{
+				SetPendingException(pEnv, JavaException.NullPointerException());
+			}
+		}
+
+		internal static void GetStringUTFRegion(JNIEnv* pEnv, IntPtr str, int start, int len, IntPtr buf)
+		{
+			string s = (string)pEnv->UnwrapRef(str);
+			if(s != null)
+			{
+				if(start < 0 || start > s.Length || s.Length - start < len)
+				{
+					SetPendingException(pEnv, JavaException.StringIndexOutOfBoundsException(""));
+					return;
+				}
+				else
+				{
+					byte* p = (byte*)(void*)buf;
+					for(int i = 0; i < len; i++)
+					{
+						char ch = s[start + i];
+						if((ch != 0) && (ch <= 0x7F))
 						{
-							mangledSig.Append("_1");
+							*p++ = (byte)ch;
+						}
+						else if(ch <= 0x7FF)
+						{
+							*p++ = (byte)((ch >> 6) | 0xC0);
+							*p++ = (byte)((ch & 0x3F) | 0x80);
 						}
 						else
 						{
-							mangledSig.Append(sig[i]);
+							*p++ = (byte)((ch >> 12) | 0xE0);
+							*p++ = (byte)(((ch >> 6) & 0x3F) | 0x80);
+							*p++ = (byte)((ch & 0x3F) | 0x80);
 						}
 					}
-					mangledSig.Append("_2");
+					return;
 				}
-				break;
-			case 'L':
-				sp += IntPtr.Size;
-				mangledSig.Append("L");
-				while(sig[++i] != ';')
-				{
-					if(sig[i] == '/')
-					{
-						mangledSig.Append("_");
-					}
-					else if(sig[i] == '_')
-					{
-						mangledSig.Append("_1");
-					}
-					else
-					{
-						mangledSig.Append(sig[i]);
-					}
-				}
-				mangledSig.Append("_2");
-				break;
-			case 'J':
-			case 'D':
-				mangledSig.Append(sig[i]);
-				sp += 8;
-				break;
-			case 'F':
-			case 'I':
-			case 'C':
-			case 'Z':
-			case 'S':
-			case 'B':
-				mangledSig.Append(sig[i]);
-				sp += 4;
-				break;
-			default:
-				Debug.Assert(false);
-				break;
+			}
+			else
+			{
+				SetPendingException(pEnv, JavaException.NullPointerException());
 			}
 		}
-		lock(JniHelper.JniLock)
-		{
-			string methodName = String.Format("Java_{0}_{1}", clazz.Replace("_", "_1").Replace('/', '_'), name.Replace("_", "_1"));
-			foreach(IntPtr p in loader.GetNativeLibraries())
-			{
-				IntPtr pfunc = JniHelper.ikvm_GetProcAddress(p, methodName, sp + 2 * IntPtr.Size);
-				if(pfunc != IntPtr.Zero)
-				{
-					return pfunc;
-				}
-			}
-			methodName = String.Format("Java_{0}_{1}__{2}", clazz.Replace("_", "_1").Replace('/', '_'), name.Replace("_", "_1"), mangledSig);
-			foreach(IntPtr p in loader.GetNativeLibraries())
-			{
-				IntPtr pfunc = JniHelper.ikvm_GetProcAddress(p, methodName, sp + 2 * IntPtr.Size);
-				if(pfunc != IntPtr.Zero)
-				{
-					return pfunc;
-				}
-			}
-		}
-		throw JavaException.UnsatisfiedLinkError("{0}.{1}{2}", clazz, name, sig);
-	}
 
-	public IntPtr MakeLocalRef(object obj)
-	{
-		if(obj == null)
+		private static int GetPrimitiveArrayElementSize(Array ar)
 		{
+			Type type = ar.GetType().GetElementType();
+			if(type == typeof(sbyte) || type == typeof(bool))
+			{
+				return 1;
+			}
+			else if(type == typeof(short) || type == typeof(char))
+			{
+				return 2;
+			}
+			else if(type == typeof(int) || type == typeof(float))
+			{
+				return 4;
+			}
+			else if(type == typeof(long) || type == typeof(double))
+			{
+				return 8;
+			}
+			else
+			{
+				JVM.CriticalFailure("invalid array type", null);
+				return 0;
+			}
+		}
+
+		internal static IntPtr GetPrimitiveArrayCritical(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
+		{
+			Array ar = (Array)pEnv->UnwrapRef(array);
+			int len = ar.Length * GetPrimitiveArrayElementSize(ar);
+			GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
+			try
+			{
+				IntPtr hglobal = JniMem.Alloc(len);
+				byte* pdst = (byte*)(void*)hglobal;
+				byte* psrc = (byte*)(void*)h.AddrOfPinnedObject();
+				// TODO isn't there a managed memcpy?
+				for(int i = 0; i < len; i++)
+				{
+					*pdst++ = *psrc++;
+				}
+				if(isCopy != IntPtr.Zero)
+				{
+					*((sbyte*)(void*)isCopy) = JNI_TRUE;
+				}
+				return hglobal;
+			}
+			finally
+			{
+				h.Free();
+			}		
+		}
+
+		internal static void ReleasePrimitiveArrayCritical(JNIEnv* pEnv, IntPtr array, IntPtr carray, int mode)
+		{
+			if(mode == 0 || mode == JNI_COMMIT)
+			{
+				Array ar = (Array)pEnv->UnwrapRef(array);
+				int len = ar.Length * GetPrimitiveArrayElementSize(ar);
+				GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
+				try
+				{
+					byte* pdst = (byte*)(void*)h.AddrOfPinnedObject();
+					byte* psrc = (byte*)(void*)carray;
+					// TODO isn't there a managed memcpy?
+					for(int i = 0; i < len; i++)
+					{
+						*pdst++ = *psrc++;
+					}
+				}
+				finally
+				{
+					h.Free();
+				}
+			}
+			if(mode == 0 || mode == JNI_ABORT)
+			{
+				JniMem.Free(carray);
+			}
+		}
+
+		internal static IntPtr GetStringCritical(JNIEnv* pEnv, IntPtr str, IntPtr isCopy)
+		{
+			string s = (string)pEnv->UnwrapRef(str);
+			if(s != null)
+			{
+				if(isCopy != IntPtr.Zero)
+				{
+					*((sbyte*)(void*)isCopy) = JNI_TRUE;
+				}
+				return Marshal.StringToHGlobalUni(s);		
+			}
+			SetPendingException(pEnv, JavaException.NullPointerException());
 			return IntPtr.Zero;
 		}
-		int i = quickLocalIndex & JNIEnv.LOCAL_REF_MASK;
-		if(i < quickLocals.Length)
+
+		internal static void ReleaseStringCritical(JNIEnv* pEnv, IntPtr str, IntPtr cstring)
 		{
-			quickLocals[i] = obj;
-			return (IntPtr)quickLocalIndex++;
+			Marshal.FreeHGlobal(cstring);
 		}
-		else if(i < JNIEnv.LOCAL_REF_BUCKET_SIZE)
+
+		internal static jweak NewWeakGlobalRef(JNIEnv* pEnv, jobject obj)
 		{
-			object[] tmp = new object[quickLocals.Length * 2];
-			Array.Copy(quickLocals, 0, tmp, 0, quickLocals.Length);
-			quickLocals = tmp;
-			object[][] localRefs = (object[][])pJNIEnv->localRefs.Target;
-			localRefs[pJNIEnv->localRefSlot] = quickLocals;
-			quickLocals[i] = obj;
-			return (IntPtr)quickLocalIndex++;
+			object o = pEnv->UnwrapRef(obj);
+			if(o == null)
+			{
+				return IntPtr.Zero;
+			}
+			lock(GlobalRefs.weakRefLock)
+			{
+				for(int i = 0; i < GlobalRefs.weakRefs.Length; i++)
+				{
+					if(!GlobalRefs.weakRefs[i].IsAllocated)
+					{
+						GlobalRefs.weakRefs[i] = GCHandle.Alloc(o, GCHandleType.WeakTrackResurrection);
+						return (IntPtr)(- (i | (1 << 30)));
+					}
+				}
+				int len = GlobalRefs.weakRefs.Length;
+				GCHandle[] tmp = new GCHandle[len * 2];
+				Array.Copy(GlobalRefs.weakRefs, 0, tmp, 0, len);
+				tmp[len] = GCHandle.Alloc(o, GCHandleType.WeakTrackResurrection);
+				GlobalRefs.weakRefs = tmp;
+				return (IntPtr)(- (len | (1 << 30)));
+			}
 		}
-		else
+
+		internal static void DeleteWeakGlobalRef(JNIEnv* pEnv, jweak obj)
 		{
-			// this can't happen, because LOCAL_REF_BUCKET_SIZE is larger than the maximum number of object
-			// references that can be required by a native method call (256 arguments + a class reference)
-			JVM.CriticalFailure("JniFrame.MakeLocalRef cannot spill into next slot", null);
-			return IntPtr.Zero;
+			int i = obj.ToInt32();
+			if(i < 0)
+			{
+				i = -i;
+				i -= (1 << 30);
+				lock(GlobalRefs.weakRefLock)
+				{
+					GlobalRefs.weakRefs[i].Free();
+				}
+			}
+			if(i > 0)
+			{
+				Debug.Assert(false, "local ref passed to DeleteWeakGlobalRef");
+			}
+		}
+
+		internal static sbyte ExceptionCheck(JNIEnv* pEnv)
+		{
+			return pEnv->UnwrapRef(pEnv->pendingException) != null ? JNI_TRUE : JNI_FALSE;
+		}
+
+		internal static void NotImplemented(JNIEnv* pEnv)
+		{
+			JVM.CriticalFailure("Unimplemented JNIEnv function called", null);
+		}
+
+		internal IntPtr MakeLocalRef(object obj)
+		{
+			if(obj == null)
+			{
+				return IntPtr.Zero;
+			}
+			object[][] localRefs = GetLocalRefs();
+			object[] active = localRefs[localRefSlot];
+			for(int i = 0; i < active.Length; i++)
+			{
+				if(active[i] == null)
+				{
+					active[i] = obj;
+					return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
+				}
+			}
+			if(active.Length < LOCAL_REF_BUCKET_SIZE)
+			{
+				int i = active.Length;
+				object[] tmp = new object[i * 2];
+				Array.Copy(active, 0, tmp, 0, i);
+				active = localRefs[localRefSlot] = tmp;
+				active[i] = obj;
+				return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
+			}
+			// if we get here, we're in a native method that most likely is leaking locals refs,
+			// so we're going to allocate a new bucket and increment localRefSlot, this means that
+			// any slots that become available in the previous bucket are not going to be reused,
+			// but since we're assuming that the method is leaking anyway, that isn't a problem
+			// (it's never a correctness issue, just a resource consumption issue)
+			localRefSlot++;
+			if(localRefSlot == localRefs.Length)
+			{
+				object[][] tmp = new object[localRefSlot * 2][];
+				Array.Copy(localRefs, 0, tmp, 0, localRefSlot);
+				this.localRefs.Target = localRefs = tmp;
+			}
+			if(localRefs[localRefSlot] == null)
+			{
+				localRefs[localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
+			}
+			localRefs[localRefSlot][0] = obj;
+			return (IntPtr)(localRefSlot << LOCAL_REF_SHIFT);
+		}
+
+		internal object UnwrapRef(IntPtr o)
+		{
+			int i = o.ToInt32();
+			if(i > 0)
+			{
+				object[][] localRefs = GetLocalRefs();
+				return localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK];
+			}
+			if(i < 0)
+			{
+				i = -i;
+				if((i & (1 << 30)) != 0)
+				{
+					lock(GlobalRefs.weakRefLock)
+					{
+						return GlobalRefs.weakRefs[i - (1 << 30)].Target;
+					}
+				}
+				else
+				{
+					lock(GlobalRefs.globalRefs)
+					{
+						return GlobalRefs.globalRefs[i - 1];
+					}
+				}
+			}
+			return null;
 		}
 	}
 
-	public object UnwrapLocalRef(IntPtr p)
+	class JniMem
 	{
-		return pJNIEnv->UnwrapRef(p);
+		internal static IntPtr Alloc(int cb)
+		{
+			// MONOBUG Marshal.AllocHGlobal returns a null pointer if we try to allocate zero bytes
+			if(cb == 0)
+			{
+				cb = 1;
+			}
+			return Marshal.AllocHGlobal(cb);
+		}
+
+		internal static void Free(IntPtr p)
+		{
+			Marshal.FreeHGlobal(p);
+		}
+	}
+
+	unsafe class TlsHack
+	{
+		[ThreadStatic]
+		internal static JNIEnv* pJNIEnv;
 	}
 }

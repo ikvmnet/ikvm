@@ -26,6 +26,9 @@ using System.Collections;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
+using IKVM.Attributes;
+using IKVM.Internal;
+using IKVM.Runtime;
 
 [Flags]
 enum MemberFlags : short
@@ -274,7 +277,7 @@ abstract class MethodWrapper : MemberWrapper
 		this.declaredExceptions = (string[])exceptions.Clone();
 	}
 
-	internal void SetDeclaredExceptions(MapXml.Throws[] throws)
+	internal void SetDeclaredExceptions(IKVM.Internal.MapXml.Throws[] throws)
 	{
 		if(throws != null)
 		{
@@ -1061,7 +1064,7 @@ class FieldWrapper : MemberWrapper
 		Debug.Assert(fieldType != null, this.DeclaringType.Name + "::" + this.name + " (" + this.sig+ ")");
 	}
 
-	// HACK used (indirectly thru NativeCode.java.lang.Field.getConstant) by netexp to find out if the
+	// HACK used (indirectly thru IKVM.NativeCode.java.lang.Field.getConstant) by netexp to find out if the
 	// field is a constant (and if it is, to get its value)
 	internal object GetConstant()
 	{
@@ -1074,7 +1077,7 @@ class FieldWrapper : MemberWrapper
 			object val = field.GetValue(null);
 			if(val != null && !(val is string))
 			{
-				return NativeCode.java.lang.reflect.JavaWrapper.Box(val);
+				return IKVM.NativeCode.java.lang.reflect.JavaWrapper.Box(val);
 			}
 			return val;
 		}

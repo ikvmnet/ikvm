@@ -27,6 +27,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections;
 using System.Text;
+using IKVM.Internal;
 
 using java.lang.reflect;
 using java.net;

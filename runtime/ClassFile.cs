@@ -24,8 +24,12 @@
 using System;
 using System.IO;
 using System.Collections;
+using IKVM.Attributes;
+using IKVM.Runtime;
+using IKVM.Internal;
+
 // MONOBUG mcs 1.0 still has problems resolving properties vs. type names
-using __Modifiers = Modifiers;
+using __Modifiers = IKVM.Attributes.Modifiers;
 
 class ClassFile
 {

@@ -27,6 +27,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using ICSharpCode.SharpZipLib.Zip;
+using IKVM.Internal;
 
 class Compiler
 {

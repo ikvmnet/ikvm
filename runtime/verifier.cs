@@ -25,6 +25,8 @@ using System;
 using System.IO;
 using System.Collections;
 using System.Diagnostics;
+using IKVM.Runtime;
+using IKVM.Internal;
 
 class Subroutine
 {

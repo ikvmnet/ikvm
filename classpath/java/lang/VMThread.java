@@ -4,12 +4,15 @@ package java.lang;
 // executing code in this class.
 final class VMThread
 {
-    private static cli.System.LocalDataStoreSlot localDataStoreSlot = cli.System.Threading.Thread.AllocateDataSlot();
+    private static final Object countLock = new Object();
+    private static int nonDaemonCount;
+    private static final cli.System.LocalDataStoreSlot localDataStoreSlot = cli.System.Threading.Thread.AllocateDataSlot();
     private cli.System.WeakReference nativeThreadReference;
 
     // Note: when this thread dies, this reference is *not* cleared
     volatile Thread thread;
     private volatile boolean running;
+    private volatile cli.System.Threading.Thread joinThread;
 
     private VMThread(Thread thread)
     {
@@ -61,6 +64,56 @@ final class VMThread
 	if(thread.vmThread != null)
 	{
 	    thread.die();
+	    nativeThreadReference.set_Target(null);
+	    if(!thread.daemon)
+	    {
+		synchronized(countLock)
+		{
+		    nonDaemonCount--;
+		}
+	    }
+	}
+    }
+
+    private static void jniDetach()
+    {
+	VMThread vmthread = Thread.currentThread().vmThread;
+	synchronized(vmthread)
+	{
+	    vmthread.cleanup();
+	    cli.System.Threading.Thread.SetData(localDataStoreSlot, null);
+	    if(vmthread.joinThread != null)
+	    {
+		vmthread.joinThread.Interrupt();
+	    }
+	}
+    }
+
+    private static void jniWaitUntilLastThread()
+    {
+	if(!Thread.currentThread().isDaemon())
+	{
+	    synchronized(countLock)
+	    {
+		nonDaemonCount--;
+	    }
+	}
+	for(;;)
+	{
+	    synchronized(countLock)
+	    {
+		if(nonDaemonCount == 0)
+		{
+		    return;
+		}
+	    }
+	    try
+	    {
+		Thread.sleep(1);
+	    }
+	    catch(InterruptedException x)
+	    {
+	    }
 	}
     }
 
@@ -104,32 +157,63 @@ final class VMThread
 
     void join(long ms, int ns) throws InterruptedException
     {
-	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
-	if(nativeThread != null)
+	cli.System.Threading.Thread nativeThread;
+	synchronized(this)
 	{
-	    if(ms == 0 && ns == 0)
+	    nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	    if(nativeThread == null)
 	    {
-		nativeThread.Join();
+		return;
 	    }
-	    else
+	    joinThread = cli.System.Threading.Thread.get_CurrentThread();
+	}
+	try
+	{
+	    if(false) throw new InterruptedException();
+	    try
 	    {
-		// if nanoseconds are specified, round up to one millisecond
-		if(ns != 0)
+		if(ms == 0 && ns == 0)
 		{
-		    nativeThread.Join(1);
+		    nativeThread.Join();
 		}
-		for(long iter = ms / Integer.MAX_VALUE; iter != 0; iter--)
+		else
 		{
-		    nativeThread.Join(Integer.MAX_VALUE);
+		    // if nanoseconds are specified, round up to one millisecond
+		    if(ns != 0)
+		    {
+			nativeThread.Join(1);
+		    }
+		    for(long iter = ms / Integer.MAX_VALUE; iter != 0; iter--)
+		    {
+			nativeThread.Join(Integer.MAX_VALUE);
+		    }
+		    nativeThread.Join((int)(ms % Integer.MAX_VALUE));
 		}
-		nativeThread.Join((int)(ms % Integer.MAX_VALUE));
 	    }
-	    // make sure the thread is marked as dead and removed from the thread group, before we
-	    // return from a successful join
-	    if(!nativeThread.get_IsAlive())
+	    finally
 	    {
-		cleanup();
+		synchronized(this)
+		{
+		    joinThread = null;
+		    // make sure that any pending interrupts (caused by the thread dying) are handled
+		    cli.System.Threading.Thread.Sleep(0);
+		}
 	    }
+	}
+	catch(InterruptedException x)
+	{
+	    // if native code detached the thread, we get interrupted
+	    // to signal that the thread we were waiting for died
+	    if(thread.vmThread != null)
+	    {
+		throw x;
+	    }
+	}
+	// make sure the thread is marked as dead and removed from the thread group, before we
+	// return from a successful join
+	if(!nativeThread.get_IsAlive())
+	{
+	    cleanup();
 	}
     }
 
@@ -160,6 +244,13 @@ final class VMThread
 	nativeThread.set_IsBackground(thread.daemon);
 	nativeSetPriority(thread.priority);
 	nativeThread.Start();
+	if(!thread.daemon)
+	{
+	    synchronized(countLock)
+	    {
+		nonDaemonCount++;
+	    }
+	}
     }
 
     void interrupt()
@@ -321,10 +412,18 @@ final class VMThread
 		    break;
 	    }
 	    javaThread = new Thread(vmThread, nativeThread.get_Name(), priority, nativeThread.get_IsBackground());
+	    if(!javaThread.daemon)
+	    {
+		synchronized(countLock)
+		{
+		    nonDaemonCount++;
+		}
+	    }
 	    vmThread.thread = javaThread;
 	    cli.System.Threading.Thread.SetData(localDataStoreSlot, javaThread);
 	    cli.System.Threading.Thread.SetData(cli.System.Threading.Thread.GetNamedDataSlot("ikvm-thread-hack"), new CleanupHack(javaThread));
-	    javaThread.group = ThreadGroup.root;
+	    ThreadGroup group = (ThreadGroup)cli.System.Threading.Thread.GetData(cli.System.Threading.Thread.GetNamedDataSlot("ikvm-thread-group"));
+	    javaThread.group = group == null ? ThreadGroup.root : group;
 	    javaThread.group.addThread(javaThread);
 	    InheritableThreadLocal.newChildThread(javaThread);
 	}
