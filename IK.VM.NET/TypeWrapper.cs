@@ -702,6 +702,12 @@ abstract class TypeWrapper
 				mce.EmitCall.Emit(ilGenerator);
 				ilGenerator.Emit(OpCodes.Ret);
 			}
+			else if((mce.Modifiers & Modifiers.Synthetic) != 0)
+			{
+				// NOTE we already generated a stub for this method (probably in the case right below here), so
+				// we need to add an additional MethodImpl to this stub, to implement this interface as well
+				typeBuilder.DefineMethodOverride((MethodInfo)mce.GetMethod(), (MethodInfo)ifmethod);
+			}
 		}
 		else
 		{
@@ -716,10 +722,7 @@ abstract class TypeWrapper
 				ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name + "." + md.Name + md.Signature);
 				exception.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false).EmitNewobj.Emit(ilGenerator);
 				ilGenerator.Emit(OpCodes.Throw);
-				// HACK we don't emit a MethodImpl, because interface methods can be implemented by private methods in the CLR,
-				// but this is not legal according to the ECMA specification (Partition II, section 11.2). Note that doing
-				// the right thing is more complicated, because we might need multiple MethodImpls for this one stub (if the class
-				// implements multiple interfaces with this method).
+				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
 				// NOTE because we are introducing a Miranda method, we must also update the corresponding wrapper.
 				// If we don't do this, subclasses might think they are introducing a new method, instead of overriding
 				// this one.
