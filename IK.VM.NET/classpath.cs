@@ -675,25 +675,6 @@ namespace NativeCode.java
 				}
 			}
 
-			public static long doubleToLongBits(double v)
-			{
-				if(double.IsNaN(v))
-				{
-					return 0x7ff8000000000000L;
-				}
-				return BitConverter.DoubleToInt64Bits(v);
-			}
-
-			public static long doubleToRawLongBits(double v)
-			{
-				return BitConverter.DoubleToInt64Bits(v);
-			}
-
-			public static double longBitsToDouble(long bits)
-			{
-				return BitConverter.Int64BitsToDouble(bits);
-			}
-
 			public static string toString(double d, bool isFloat)
 			{
 				StringBuilder sb = new StringBuilder();
@@ -706,28 +687,6 @@ namespace NativeCode.java
 					StringBufferHelper.append(sb, d);
 				}
 				return sb.ToString();
-			}
-		}
-
-		public class Float
-		{
-			public static float intBitsToFloat(int v)
-			{
-				return BitConverter.ToSingle(BitConverter.GetBytes(v), 0);
-			}
-
-			public static int floatToIntBits(float v)
-			{
-				if(float.IsNaN(v))
-				{
-					return 0x7fc00000;
-				}
-				return BitConverter.ToInt32(BitConverter.GetBytes(v), 0);
-			}
-
-			public static int floatToRawIntBits(float v)
-			{
-				return BitConverter.ToInt32(BitConverter.GetBytes(v), 0);
 			}
 		}
 

@@ -5,6 +5,8 @@ C:\ikvm\classpath\gnu\java\net\protocol\ikvmres\Handler.java
 C:\ikvm\classpath\java\io\FileDescriptor.java
 C:\ikvm\classpath\java\lang\Thread.java
 C:\ikvm\classpath\java\lang\VMClass.java
+C:\ikvm\classpath\java\lang\VMDouble.java
+C:\ikvm\classpath\java\lang\VMFloat.java
 C:\ikvm\classpath\java\lang\ObjectHelper.java
 C:\ikvm\classpath\java\lang\StringHelper.java
 C:\ikvm\classpath\java\lang\VMClassLoader.java
@@ -65,9 +67,7 @@ C:\classpath\gnu\java\lang\ArrayHelper.java
 C:\classpath\gnu\java\lang\CharData.java
 C:\classpath\gnu\java\lang\ClassHelper.java
 C:\classpath\gnu\java\lang\ClassLoaderHelper.java
-C:\classpath\gnu\java\lang\ExecutionStack.java
 C:\classpath\gnu\java\lang\MainThread.java
-C:\classpath\gnu\java\lang\StackFrame.java
 C:\classpath\gnu\java\lang\SystemClassLoader.java
 C:\classpath\gnu\java\lang\reflect\TypeSignature.java
 C:\classpath\gnu\java\locale\Calendar.java
@@ -1798,12 +1798,8 @@ C:\classpath\javax\transaction\UserTransaction.java
 C:\classpath\javax\transaction\xa\XAException.java
 C:\classpath\javax\transaction\xa\XAResource.java
 C:\classpath\javax\transaction\xa\Xid.java
-C:\classpath\vm\reference\gnu\vm\stack\StackFrame.java
-C:\classpath\vm\reference\gnu\vm\stack\StackTrace.java
 C:\classpath\vm\reference\java\io\VMObjectStreamClass.java
 C:\classpath\vm\reference\java\lang\Runtime.java
-C:\classpath\vm\reference\java\lang\VMDouble.java
-C:\classpath\vm\reference\java\lang\VMFloat.java
 C:\classpath\vm\reference\java\lang\VMObject.java
 C:\classpath\vm\reference\java\lang\VMSecurityManager.java
 C:\classpath\vm\reference\java\lang\VMString.java

@@ -87,6 +87,11 @@
                     Project = "{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}"
                     Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
                 />
+                <Reference
+                    Name = "OpenSystem.Java"
+                    Project = "{13A5BB9F-D5FB-4061-BB0C-A111BE84A978}"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                />
             </References>
         </Build>
         <Files>

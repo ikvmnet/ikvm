@@ -424,11 +424,12 @@ namespace ikvm.awt
 		private Graphics g;
 		private java.awt.Color jcolor;
 		private Color color = SystemColors.WindowText;
+		private Color bgcolor;
 		private java.awt.Font font;
 		private Font netfont;
 		private java.awt.Rectangle _clip;
 
-		public NetGraphics(Graphics g, java.awt.Font font, bool disposable)
+		public NetGraphics(Graphics g, java.awt.Font font, Color bgcolor, bool disposable)
 		{
 			if(font == null)
 			{
@@ -437,6 +438,7 @@ namespace ikvm.awt
 			this.g = g;
 			this.font = font;
 			netfont = NetFontFromJavaFont(font, g.DpiY);
+			this.bgcolor = bgcolor;
 			this.disposable = disposable;
 			if(!g.IsClipEmpty)
 			{
@@ -446,8 +448,10 @@ namespace ikvm.awt
 
 		public override void clearRect(int x, int y, int width, int height)
 		{
-			// TODO get the background color from somewhere
-			g.FillRectangle(SystemBrushes.Window, x, y, width, height);
+			using(SolidBrush b = new SolidBrush(bgcolor))
+			{
+				g.FillRectangle(b, x, y, width, height);
+			}
 		}
 
 		public override void clipRect(int param1, int param2, int param3, int param4)
@@ -470,7 +474,7 @@ namespace ikvm.awt
 			// TODO we need to actually recreate a new underlying Graphics object, but .NET doesn't
 			// seem to have a way of doing that, so we probably need access to the underlying surface.
 			// Sigh...
-			NetGraphics newg = new NetGraphics(g, font, false);
+			NetGraphics newg = new NetGraphics(g, font, bgcolor, false);
 			// TODO copy other attributes
 			return newg;
 		}
@@ -555,15 +559,18 @@ namespace ikvm.awt
 
 		public override void drawLine(int x1, int y1, int x2, int y2)
 		{
-			using(Pen p = new Pen(color))
+			using(Pen p = new Pen(color, 1))
 			{
-				// HACK DrawLine doesn't appear to draw the last pixel, so for single pixel lines, we add one
-				// TODO figure out if this applies to all lines
+				// HACK DrawLine doesn't appear to draw the last pixel, so for single pixel lines, we have
+				// a freaky workaround
 				if(x1 == x2 && y1 == y2)
 				{
-					x2++;
+					g.DrawLine(p, x1, y1, x1 + 0.01f, y2 + 0.01f);
 				}
-				g.DrawLine(p, x1, y1, x2, y2);
+				else
+				{
+					g.DrawLine(p, x1, y1, x2, y2);
+				}
 			}
 		}
 
@@ -1078,6 +1085,9 @@ namespace ikvm.awt
 			control.KeyDown += new KeyEventHandler(OnKeyDown);
 			control.KeyUp += new KeyEventHandler(OnKeyUp);
 			control.KeyPress += new KeyPressEventHandler(OnKeyPress);
+			control.MouseMove += new MouseEventHandler(OnMouseMove);
+			control.MouseDown += new MouseEventHandler(OnMouseDown);
+			control.MouseUp += new MouseEventHandler(OnMouseUp);
 		}
 
 		private static int MapKeyCode(Keys key)
@@ -1120,6 +1130,32 @@ namespace ikvm.awt
 			char keyChar = e.KeyChar;
 			int keyLocation = 0;
 			postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_TYPED, when, modifiers, keyCode, keyChar, keyLocation));
+		}
+
+		protected virtual void OnMouseMove(object sender, MouseEventArgs e)
+		{
+			// TODO set all this stuff...
+			long when = 0;
+			int modifiers = 0;
+			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_MOVED, when, modifiers, e.X, e.Y, 0, false));
+		}
+
+		protected virtual void OnMouseDown(object sender, MouseEventArgs e)
+		{
+			// TODO set all this stuff...
+			long when = 0;
+			int modifiers = 0;
+			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_PRESSED, when, modifiers, e.X, e.Y, e.Clicks, false));
+		}
+
+		protected virtual void OnMouseUp(object sender, MouseEventArgs e)
+		{
+			// TODO set all this stuff...
+			long when = 0;
+			int modifiers = 0;
+			// TODO set popupTrigger
+			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_RELEASED, when, modifiers, e.X, e.Y, e.Clicks, false));
+			// TODO send MOUSE_CLICKED if the mouse didn't move more than whatever the threshold is 
 		}
 
 		protected void postEvent(java.awt.AWTEvent evt)
@@ -1174,7 +1210,7 @@ namespace ikvm.awt
 
 		public virtual java.awt.Graphics getGraphics()
 		{
-			return new NetGraphics(control.CreateGraphics(), component.getFont(), true);
+			return new NetGraphics(control.CreateGraphics(), component.getFont(), control.BackColor, true);
 		}
 
 		public java.awt.Point getLocationOnScreen()
@@ -1454,7 +1490,7 @@ namespace ikvm.awt
 			// HACK for off-screen images we don't want ClearType or anti-aliasing
 			// TODO I'm sure Java 2D has a way to control text rendering quality, we should honor that
 			g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
-			return new NetGraphics(g, null, true);
+			return new NetGraphics(g, null, Color.White, true);
 		}
 
 		public override java.awt.image.ImageProducer getSource()
@@ -1952,7 +1988,7 @@ namespace ikvm.awt
 
 		public override java.awt.Graphics getGraphics()
 		{
-			NetGraphics g = new NetGraphics(control.CreateGraphics(), component.getFont(), true);
+			NetGraphics g = new NetGraphics(control.CreateGraphics(), component.getFont(), control.BackColor, true);
 			java.awt.Insets insets = ((java.awt.Frame)component).getInsets();
 			g.translate(-insets.left, -insets.top);
 			g.setClip(insets.left, insets.top, control.ClientRectangle.Width, control.ClientRectangle.Height);
