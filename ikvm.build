@@ -1,17 +1,10 @@
 <?xml version="1.0"?>
 <project name="ikvm" default="all">
-    <!--
-    NOTE because of the circular dependencies, we don't use NAnt dependencies,
-    but some predefined order, that hopefully makes sense.
-    Please note that, because of the circular dependencies, the BIN directory
-    needs to contain the IK.VM.NET.dll and classpath.dll binaries, before the project
-    can be built.
-    -->
     <target name="all">
-        <nant buildfile="ikvmc/ikvmc.build" />
-        <nant buildfile="netexp/netexp.build" />
-        <nant buildfile="ik.vm.jni/ik.vm.jni.build" />
         <nant buildfile="ik.vm.net/ik.vm.net.build" />
+        <nant buildfile="ik.vm.jni/ik.vm.jni.build" />
+        <nant buildfile="netexp/netexp.build" />
+        <nant buildfile="ikvmc/ikvmc.build" />
         <nant buildfile="classpath/classpath.build" />
         <nant buildfile="ikvm/ikvm.build" />
         <nant buildfile="awt/awt.build" />

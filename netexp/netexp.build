@@ -6,8 +6,7 @@
                 <includes name="*.cs" />
             </sources>
             <references>
-                <includes name="../bin/classpath.dll" asis="true" />
-                <includes name="../bin/IK.VM.NET.dll" asis="true" />
+                <includes name="../bin/SharpZipLib.dll" asis="true" />
             </references>
         </csc>
     </target>

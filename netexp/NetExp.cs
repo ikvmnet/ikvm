@@ -26,8 +26,7 @@ using System.Reflection;
 using System.IO;
 using System.Text;
 using System.Collections;
-using java.util.zip;
-using java.io;
+using ICSharpCode.SharpZipLib.Zip;
 
 public class NetExp
 {
@@ -46,9 +45,9 @@ public class NetExp
 		}
 		else
 		{
-			zipFile = new ZipOutputStream(new FileOutputStream(assembly.GetName().Name + ".jar"));
+			zipFile = new ZipOutputStream(new FileStream(assembly.GetName().Name + ".jar", FileMode.Create));
 			ProcessAssembly(assembly);
-			zipFile.close();
+			zipFile.Close();
 		}
 	}
 
@@ -312,16 +311,8 @@ public class NetExp
 
 	private static void WriteClass(string name, ClassFileWriter c)
 	{
-		zipFile.putNextEntry(new ZipEntry(name));
-		MemoryStream s = new MemoryStream();
-		c.Write(s);
-		byte[] buf = s.ToArray();
-		sbyte[] sbuf = new sbyte[buf.Length];
-		for(int i = 0; i < buf.Length; i++)
-		{
-			sbuf[i] = (sbyte)buf[i];
-		}
-		zipFile.write(sbuf, 0, sbuf.Length);
+		zipFile.PutNextEntry(new ZipEntry(name));
+		c.Write(zipFile);
 	}
 
 	private static void ProcessField(Type type, ClassFileWriter f, FieldInfo fi, Hashtable clashtable)

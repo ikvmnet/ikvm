@@ -25,8 +25,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Reflection;
-using java.io;
-using java.util.zip;
+using ICSharpCode.SharpZipLib.Zip;
 
 class Compiler : MarshalByRefObject
 {
@@ -163,6 +162,18 @@ class Compiler : MarshalByRefObject
 		return c.Compile(outputfile, assemblyname, main, target, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources);
 	}
 
+	private static byte[] ReadFromZip(ZipFile zf, ZipEntry ze)
+	{
+		byte[] buf = new byte[ze.Size];
+		int pos = 0;
+		Stream s = zf.GetInputStream(ze);
+		while(pos < buf.Length)
+		{
+			pos += s.Read(buf, pos, buf.Length - pos);
+		}
+		return buf;
+	}
+
 	private static void ProcessFile(ArrayList classes, Hashtable resources, string file)
 	{
 		if(file.ToLower().EndsWith(".class"))
@@ -177,44 +188,31 @@ class Compiler : MarshalByRefObject
 		else if(file.ToLower().EndsWith(".jar") || file.ToLower().EndsWith(".zip"))
 		{
 			ZipFile zf = new ZipFile(file);
-			java.util.Enumeration e = zf.entries();
-			while(e.hasMoreElements())
+			try
 			{
-				ZipEntry ze = (ZipEntry)e.nextElement();
-				if(ze.getName().ToLower().EndsWith(".class"))
+				foreach(ZipEntry ze in zf)
 				{
-					sbyte[] sbuf = new sbyte[ze.getSize()];
-					DataInputStream dis = new DataInputStream(zf.getInputStream(ze));
-					dis.readFully(sbuf);
-					dis.close();
-					byte[] buf = new byte[sbuf.Length];
-					for(int i = 0; i < buf.Length; i++)
+					if(ze.Name.ToLower().EndsWith(".class"))
 					{
-						buf[i] = (byte)sbuf[i];
-					}
-					classes.Add(buf);
-				}
-				else
-				{
-					// if it's not a class, we treat it as a resource
-					sbyte[] sbuf = new sbyte[ze.getSize()];
-					DataInputStream dis = new DataInputStream(zf.getInputStream(ze));
-					dis.readFully(sbuf);
-					dis.close();
-					byte[] buf = new byte[sbuf.Length];
-					for(int i = 0; i < buf.Length; i++)
-					{
-						buf[i] = (byte)sbuf[i];
-					}
-					if(resources.ContainsKey(ze.getName()))
-					{
-						Console.Error.WriteLine("Warning: skipping resource (name clash): " + ze.getName());
+						classes.Add(ReadFromZip(zf, ze));
 					}
 					else
 					{
-						resources.Add(ze.getName(), buf);
+						// if it's not a class, we treat it as a resource
+						if(resources.ContainsKey(ze.Name))
+						{
+							Console.Error.WriteLine("Warning: skipping resource (name clash): " + ze.Name);
+						}
+						else
+						{
+							resources.Add(ze.Name, ReadFromZip(zf, ze));
+						}
 					}
 				}
+			}
+			finally
+			{
+				zf.Close();
 			}
 		}
 		else
