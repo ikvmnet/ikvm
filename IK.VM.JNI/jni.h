@@ -24,8 +24,6 @@
 
 #pragma once
 
-#using "\ikvm\ik.vm.net\bin\debug\ik.vm.net.dll"
-
 using namespace System;
 using namespace System::Collections;
 using namespace System::Runtime::InteropServices;

@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="IK.VM.JNI"
 	ProjectGUID="{4D400F9D-68A1-4066-95F6-85AF0E58B710}"
 	Keyword="ManagedCProj">
@@ -49,7 +49,13 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -89,15 +95,32 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}"
+			Name="IK.VM.NET"/>
+	</References>
 	<Files>
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
 				RelativePath="AssemblyInfo.cpp">
+			</File>
+			<File
+				RelativePath="jni.cpp">
+			</File>
+			<File
+				RelativePath="jnienv.cpp">
 			</File>
 			<File
 				RelativePath="Stdafx.cpp">
@@ -114,24 +137,18 @@
 						UsePrecompiledHeader="1"/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath="jni.cpp">
-			</File>
-			<File
-				RelativePath="jnienv.cpp">
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
 			<File
-				RelativePath="Stdafx.h">
-			</File>
-			<File
 				RelativePath="jni.h">
 			</File>
 			<File
 				RelativePath="jnienv.h">
+			</File>
+			<File
+				RelativePath="Stdafx.h">
 			</File>
 		</Filter>
 		<Filter

@@ -58,7 +58,7 @@ namespace MapXml
 				{
 					Debug.Assert(Class == null && type != null);
 					Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
-					emitter = CodeEmitter.Create(opcode, Type.GetType(type, true).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null));
+					emitter = CodeEmitter.Create(opcode, ClassLoaderWrapper.GetType(type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null));
 				}
 				else
 				{
@@ -77,11 +77,11 @@ namespace MapXml
 						if(Sig != null)
 						{
 							Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
-							emitter = CodeEmitter.Create(opcode, Type.GetType(type, true).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null));
+							emitter = CodeEmitter.Create(opcode, ClassLoaderWrapper.GetType(type).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null));
 						}
 						else
 						{
-							emitter = CodeEmitter.Create(opcode, Type.GetType(type, true).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static));
+							emitter = CodeEmitter.Create(opcode, ClassLoaderWrapper.GetType(type).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static));
 						}
 					}
 				}
@@ -168,7 +168,7 @@ namespace MapXml
 				}
 				else
 				{
-					typeType = Type.GetType(type, true);
+					typeType = ClassLoaderWrapper.GetType(type);
 				}
 			}
 			ilgen.Emit(OpCodes.Isinst, typeType != null ? typeType : typeWrapper.Type);
@@ -288,7 +288,7 @@ namespace MapXml
 					Debug.Assert(Class == null ^ type == null);
 					if(type != null)
 					{
-						typeType = Type.GetType(type, true);
+						typeType = ClassLoaderWrapper.GetType(type);
 					}
 					else
 					{

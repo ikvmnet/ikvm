@@ -1,26 +1,40 @@
-Microsoft Visual Studio Solution File, Format Version 7.00
+Microsoft Visual Studio Solution File, Format Version 8.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.VM.NET", "IK.VM.NET\IK.VM.NET.csproj", "{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IK.VM.JNI", "IK.VM.JNI\IK.VM.JNI.vcproj", "{4D400F9D-68A1-4066-95F6-85AF0E58B710}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvm", "ikvm\ikvm.csproj", "{4FBAFF23-1E48-4977-8C50-30F87E70A8B5}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "netexp", "netexp\netexp.csproj", "{D2A9434D-59E4-43E9-8D9C-332AA138CEAD}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc", "ikvmc\ikvmc.csproj", "{4CA3F3DF-D2B7-4FA2-874C-BFC4B04286A2}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "awt", "awt\awt.csproj", "{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mapgen", "mapgen\mapgen.csproj", "{12059736-55DA-4191-B00E-5808244D1875}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSystem.Java", "OpenSystem.Java\OpenSystem.Java.csproj", "{13A5BB9F-D5FB-4061-BB0C-A111BE84A978}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
-		ConfigName.0 = Debug
-		ConfigName.1 = Release
-	EndGlobalSection
-	GlobalSection(ProjectDependencies) = postSolution
+		Debug = Debug
+		Release = Release
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
 		{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}.Debug.ActiveCfg = Debug|.NET
