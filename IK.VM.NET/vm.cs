@@ -295,7 +295,7 @@ public class JVM
 			}
 			if(s == mainClass && wrapper != null)
 			{
-				MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(loader, "main", "([Ljava.lang.String;)V"), false);
+				MethodWrapper mw = wrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(loader, "main", "([Ljava.lang.String;)V"), false);
 				if(mw == null)
 				{
 					Console.Error.WriteLine("Error: main method not found");

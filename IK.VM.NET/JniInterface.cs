@@ -33,7 +33,7 @@ public sealed class JniHelper
 	{
 		TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(NativeCode.java.lang.VMClass.getType(clazz));
 		wrapper.Finish();
-		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig.Replace('/', '.')), true);
+		MethodWrapper mw = wrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(wrapper.GetClassLoader(), name, sig.Replace('/', '.')), true);
 		if(mw != null)
 		{
 			if(mw.IsStatic == isStatic)

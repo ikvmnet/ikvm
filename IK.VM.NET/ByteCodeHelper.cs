@@ -192,7 +192,7 @@ public class ByteCodeHelper
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 		// TODO who checks that the arg types are loadable?
 		// TODO check accessibility
-		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig), false);
+		MethodWrapper mw = wrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(wrapper.GetClassLoader(), name, sig), false);
 		if(mw == null)
 		{
 			// TODO throw the appropriate exception
@@ -207,7 +207,7 @@ public class ByteCodeHelper
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 		// TODO who checks that the arg types are loadable?
 		// TODO check accessibility
-		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig), true);
+		MethodWrapper mw = wrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(wrapper.GetClassLoader(), name, sig), true);
 		if(mw == null)
 		{
 			// TODO throw the appropriate exception
@@ -222,7 +222,7 @@ public class ByteCodeHelper
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 		// TODO who checks that the arg types are loadable?
 		// TODO check accessibility
-		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(wrapper.GetClassLoader(), name, sig), true);
+		MethodWrapper mw = wrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(wrapper.GetClassLoader(), name, sig), true);
 		if(mw == null)
 		{
 			// TODO throw the appropriate exception

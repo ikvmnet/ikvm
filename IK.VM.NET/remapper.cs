@@ -66,7 +66,7 @@ namespace MapXml
 					if(Class != null)
 					{
 						Debug.Assert(Sig != null);
-						MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), Name, Sig), false);
+						MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), Name, Sig), false);
 						if(method != null)
 						{
 							emitter = CodeEmitter.Create(opcode, method.GetMethod());

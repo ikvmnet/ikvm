@@ -356,27 +356,31 @@ class ClassLoaderWrapper
 		TypeWrapper wrapper = (TypeWrapper)types[name];
 		if(wrapper == null)
 		{
-			TypeWrapper baseType;
-			if(type.IsInterface)
-			{
-				baseType = null;
-			}
-			else if(type.BaseType == null)
-			{
-				baseType = LoadClassByDottedName("java.lang.Object");
-			}
-			else
-			{
-				baseType = GetWrapperFromType(type.BaseType);
-			}
-			wrapper = new CompiledTypeWrapper(name, type, baseType);
+			wrapper = new CompiledTypeWrapper(name, type);
 			types.Add(name, wrapper);
 			typeToTypeWrapper[type] = wrapper;
+		}
+		else if(wrapper is RemappedTypeWrapper)
+		{
+			// When remapped types are loaded by their original name (e.g. System.Object)
+			// we end up here, and we make a CompiledTypeWrapper for it that reflects on
+			// the original type (note that you can never encounter these types anywhere,
+			// except when explicitly loaded with Class.forName)
+			name = type.FullName;
+			wrapper = (TypeWrapper)types[name];
+			if(wrapper == null)
+			{
+				// TODO instead of using CompiledTypeWrapper here, we probably should
+				// have a subclass that converts all instance methods to static methods (and
+				// makes the class appear final with only a private constructor)
+				wrapper = new CompiledTypeWrapper(name, type);
+				types.Add(name, wrapper);			
+			}
 		}
 		return wrapper;
 	}
 
-	internal virtual Type GetBootstrapTypeRaw(string name)
+	internal Type GetBootstrapTypeRaw(string name)
 	{
 		// TODO consider the thread safety aspects of this (if another thread triggers a load of an IKVM assembly,
 		// the collection enumerator will throw a version exception)
@@ -394,30 +398,9 @@ class ClassLoaderWrapper
 				return t;
 			}
 		}
-		// HACK for the time being we'll look into all loaded assemblies, this is to work around
-		// a bug caused by the fact that SigDecoderWrapper is used to parse signatures that contain .NET exported
-		// types (the Mauve test gnu.testlet.java.io.ObjectStreamClass.ProxyTest failed because
-		// it did a getDeclaredMethods on java.lang.VMClassLoader which has a method that returns a System.Reflection.Assembly)
-		foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
-		{
-			// we shouldn't look inside an AssemblyBuilder, because the type in there
-			// obviously aren't bootstrap types
-			if(!(a is AssemblyBuilder))
-			{
-				Type t = a.GetType(name);
-				if(t != null)
-				{
-					return t;
-				}
-				// HACK we might be looking for an inner classes
-				t = a.GetType(name.Replace('$', '+'));
-				if(t != null)
-				{
-					return t;
-				}
-			}
-		}
-		return null;
+		// HACK we also try mscorlib and this assembly (for the remapped types)
+		// TODO this should be fixed by making the map.xml type names for .NET types assembly qualified
+		return Type.GetType(name);
 	}
 
 	internal virtual TypeWrapper GetBootstrapType(string name)
@@ -897,38 +880,38 @@ class ClassLoaderWrapper
 				}
 				wrapper = GetWrapperFromType(elem);
 				// HACK this is a lame way of creating the array wrapper
-				if(elem.IsPrimitive)
+				if(wrapper.IsPrimitive)
 				{
 					string elemType;
-					if(elem == typeof(sbyte))
+					if(wrapper == PrimitiveTypeWrapper.BYTE)
 					{
 						elemType = "B";
 					}
-					else if(elem == typeof(bool))
+					else if(wrapper == PrimitiveTypeWrapper.BOOLEAN)
 					{
 						elemType = "Z";
 					}
-					else if(elem == typeof(short))
+					else if(wrapper == PrimitiveTypeWrapper.SHORT)
 					{
 						elemType = "S";
 					}
-					else if(elem == typeof(char))
+					else if(wrapper == PrimitiveTypeWrapper.CHAR)
 					{
 						elemType = "C";
 					}
-					else if(elem == typeof(int))
+					else if(wrapper == PrimitiveTypeWrapper.INT)
 					{
 						elemType = "I";
 					}
-					else if(elem == typeof(long))
+					else if(wrapper == PrimitiveTypeWrapper.LONG)
 					{
 						elemType = "J";
 					}
-					else if(elem == typeof(float))
+					else if(wrapper == PrimitiveTypeWrapper.FLOAT)
 					{
 						elemType = "F";
 					}
-					else if(elem == typeof(double))
+					else if(wrapper == PrimitiveTypeWrapper.DOUBLE)
 					{
 						elemType = "D";
 					}

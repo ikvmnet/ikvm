@@ -2643,7 +2643,7 @@ class Compiler
 			}
 			ilGenerator.Emit(OpCodes.Ldstr, message);
 			TypeWrapper type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(errorType);
-			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor(type.GetClassLoader(), "<init>", "(Ljava.lang.String;)V"), false);
+			MethodWrapper method = type.GetMethodWrapper(MethodDescriptor.FromNameSig(type.GetClassLoader(), "<init>", "(Ljava.lang.String;)V"), false);
 			method.EmitNewobj.Emit(ilGenerator);
 		}
 		else
@@ -2654,7 +2654,7 @@ class Compiler
 				Console.Error.WriteLine("\tat " + m.Method.ClassFile.Name + "." + m.Method.Name + m.Method.Signature);
 			}
 			TypeWrapper type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(errorType);
-			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor(type.GetClassLoader(), "<init>", "()V"), false);
+			MethodWrapper method = type.GetMethodWrapper(MethodDescriptor.FromNameSig(type.GetClassLoader(), "<init>", "()V"), false);
 			method.EmitNewobj.Emit(ilGenerator);
 		}
 		// we emit a call to ThrowHack instead of a throw instruction, because otherwise the verifier will know

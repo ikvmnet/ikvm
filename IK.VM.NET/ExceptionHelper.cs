@@ -649,7 +649,7 @@ public class ExceptionHelper
 		{
 			throwableWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Throwable");
 		}
-		return throwableWrapper.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), name, sig), true);
+		return throwableWrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), name, sig), true);
 	}
 
 	private static string toString_Virtual(Exception x)

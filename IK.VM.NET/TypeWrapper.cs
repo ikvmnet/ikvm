@@ -38,20 +38,16 @@ sealed class MethodDescriptor
 	private TypeWrapper retTypeWrapper;
 
 	internal MethodDescriptor(ClassLoaderWrapper classLoader, ClassFile.ConstantPoolItemFMI cpi)
-		: this(classLoader, cpi.Name, cpi.Signature)
+		: this(classLoader, cpi.Name, cpi.Signature, cpi.GetArgTypes(classLoader), cpi.GetRetType(classLoader))
 	{
-		argTypeWrappers = cpi.GetArgTypes(classLoader);
-		retTypeWrapper = cpi.GetRetType(classLoader);
 	}
 
 	internal MethodDescriptor(ClassLoaderWrapper classLoader, ClassFile.Method method)
-		: this(classLoader, method.Name, method.Signature)
+		: this(classLoader, method.Name, method.Signature, method.GetArgTypes(classLoader), method.GetRetType(classLoader))
 	{
-		argTypeWrappers = method.GetArgTypes(classLoader);
-		retTypeWrapper = method.GetRetType(classLoader);
 	}
 
-	internal MethodDescriptor(ClassLoaderWrapper classLoader, string name, string sig)
+	private MethodDescriptor(ClassLoaderWrapper classLoader, string name, string sig, TypeWrapper[] args, TypeWrapper ret)
 	{
 		Debug.Assert(classLoader != null);
 		// class name in the sig should be dotted
@@ -60,6 +56,8 @@ sealed class MethodDescriptor
 		this.classLoader = classLoader;
 		this.name = name;
 		this.sig = sig;
+		this.argTypeWrappers = args;
+		this.retTypeWrapper = ret;
 	}
 
 	internal string Name
@@ -171,17 +169,35 @@ sealed class MethodDescriptor
 		return name.GetHashCode() ^ sig.GetHashCode();
 	}
 
-	internal static string GetSigName(ParameterInfo param)
+	private static void CrackSig(ParameterInfo param, out string name, out TypeWrapper typeWrapper)
 	{
 		Type type = param.ParameterType;
 		if(type == typeof(object))
 		{
-			return GetSigNameFromCustomAttribute(param);
+			CrackSigFromCustomAttribute(param, out name, out typeWrapper);
 		}
-		return GetSigNameFromType(type);
+		else
+		{
+			name = GetSigNameFromType(type);
+			typeWrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+		}
 	}
 
-	internal static string GetSigName(FieldInfo field)
+	private static void CrackSig(MethodInfo method, out string name, out TypeWrapper typeWrapper)
+	{
+		Type type = method.ReturnType;
+		if(type == typeof(object))
+		{
+			CrackSigFromCustomAttribute(method, out name, out typeWrapper);
+		}
+		else
+		{
+			name = GetSigNameFromType(type);
+			typeWrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+		}
+	}
+
+	internal static string GetFieldSigName(FieldInfo field)
 	{
 		Type type = field.FieldType;
 		if(type == typeof(object))
@@ -191,14 +207,26 @@ sealed class MethodDescriptor
 		return GetSigNameFromType(type);
 	}
 
-	internal static string GetSigName(MethodInfo method)
+	private static void CrackSigFromCustomAttribute(ICustomAttributeProvider provider, out string name, out TypeWrapper typeWrapper)
 	{
-		Type type = method.ReturnType;
-		if(type == typeof(object))
+		object[] attribs = provider.GetCustomAttributes(typeof(GhostTypeAttribute), false);
+		if(attribs.Length == 1)
 		{
-			return GetSigNameFromCustomAttribute(method);
+			name = GetSigNameFromType(((GhostTypeAttribute)attribs[0]).Type);
+			typeWrapper = ClassLoaderWrapper.GetWrapperFromType(((GhostTypeAttribute)attribs[0]).Type);
 		}
-		return GetSigNameFromType(type);
+		attribs = provider.GetCustomAttributes(typeof(UnloadableTypeAttribute), false);
+		if(attribs.Length == 1)
+		{
+			name = "L" + ((UnloadableTypeAttribute)attribs[0]).Name + ";";
+			// TODO it might be loadable now, what do we do?
+			typeWrapper = new UnloadableTypeWrapper(((UnloadableTypeAttribute)attribs[0]).Name);
+		}
+		else
+		{
+			name = "Ljava.lang.Object;";
+			typeWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object");
+		}
 	}
 
 	private static string GetSigNameFromCustomAttribute(ICustomAttributeProvider provider)
@@ -276,21 +304,34 @@ sealed class MethodDescriptor
 	{
 		System.Text.StringBuilder sb = new System.Text.StringBuilder();
 		sb.Append('(');
-		foreach(ParameterInfo param in mb.GetParameters())
+		ParameterInfo[] parameters = mb.GetParameters();
+		TypeWrapper[] args = new TypeWrapper[parameters.Length];
+		for(int i = 0; i < parameters.Length; i++)
 		{
-			sb.Append(GetSigName(param));
+			string name;
+			CrackSig(parameters[i], out name, out args[i]);
+			sb.Append(name);
 		}
 		sb.Append(')');
 		if(mb is ConstructorInfo)
 		{
 			sb.Append('V');
-			return new MethodDescriptor(ClassLoaderWrapper.GetClassLoader(mb.DeclaringType), mb.IsStatic ? "<clinit>" : "<init>", sb.ToString());
+			return new MethodDescriptor(ClassLoaderWrapper.GetClassLoader(mb.DeclaringType), mb.IsStatic ? "<clinit>" : "<init>", sb.ToString(), args, PrimitiveTypeWrapper.VOID);
 		}
 		else
 		{
-			sb.Append(GetSigName((MethodInfo)mb));
-			return new MethodDescriptor(ClassLoaderWrapper.GetClassLoader(mb.DeclaringType), mb.Name, sb.ToString());
+			string name;
+			TypeWrapper ret;
+			CrackSig((MethodInfo)mb, out name, out ret);
+			sb.Append(name);
+			return new MethodDescriptor(ClassLoaderWrapper.GetClassLoader(mb.DeclaringType), mb.Name, sb.ToString(), args, ret);
 		}
+	}
+
+	internal static MethodDescriptor FromNameSig(ClassLoaderWrapper classLoader, string name, string sig)
+	{
+		// TODO why are we not resolving the signature here?
+		return new MethodDescriptor(classLoader, name, sig, null, null);
 	}
 }
 
@@ -300,7 +341,7 @@ class EmitHelper
 	{
 		TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
 		ilgen.Emit(OpCodes.Ldstr, message);
-		MethodDescriptor md = new MethodDescriptor(exception.GetClassLoader(), "<init>", "(Ljava.lang.String;)V");
+		MethodDescriptor md = MethodDescriptor.FromNameSig(exception.GetClassLoader(), "<init>", "(Ljava.lang.String;)V");
 		exception.GetMethodWrapper(md, false).EmitNewobj.Emit(ilgen);
 		ilgen.Emit(OpCodes.Throw);
 	}
@@ -1771,7 +1812,7 @@ class DynamicTypeWrapper : TypeWrapper
 					if(mb is ConstructorBuilder)
 					{
 						ilGenerator = ((ConstructorBuilder)mb).GetILGenerator();
-						if(basehasclinit && classFile.Methods[i].Name == "<clinit>" && classFile.Methods[i].Signature == "()V" && !classFile.IsInterface)
+						if(basehasclinit && classFile.Methods[i].IsClassInitializer && !classFile.IsInterface)
 						{
 							hasclinit = true;
 							EmitHelper.RunClassConstructor(ilGenerator, Type.BaseType);
@@ -1930,15 +1971,29 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					throw new InvalidOperationException("Internal error during finishing of " + wrapper.Name, x);
 				}
-				string message = String.Format("****** Exception during finishing of {0} ******", wrapper.Name);
-				message += "\r\n" + x;
-				message += "\r\n" + new StackTrace(x);
-				message += "\r\n" + new StackTrace(true);
-				System.Windows.Forms.MessageBox.Show(message, "IKVM.NET Internal Error");
-//				Console.WriteLine("****** Exception during finishing of {0} ******", wrapper.Name);
-//				Console.WriteLine(x);
-//				Console.WriteLine(new StackTrace(x));
-//				Console.WriteLine(new StackTrace(true));
+				// NOTE we use reflection to invoke MessageBox.Show, to make sure we run on Mono as well
+				Assembly winForms = Assembly.LoadWithPartialName("System.Windows.Forms");
+				Type messageBox = null;
+				if(winForms != null)
+				{
+					messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
+				}
+				if(messageBox != null)
+				{
+					string message = String.Format("****** Exception during finishing of {0} ******", wrapper.Name);
+					message += "\r\n" + x;
+					message += "\r\n" + new StackTrace(x);
+					message += "\r\n" + new StackTrace(true);
+					messageBox.InvokeMember("Show", BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.Public, null, null, new object[] { message, "IKVM.NET Internal Error" });
+					//System.Windows.Forms.MessageBox.Show(message, "IKVM.NET Internal Error");
+				}
+				else
+				{
+					Console.WriteLine("****** Exception during finishing of {0} ******", wrapper.Name);
+					Console.WriteLine(x);
+					Console.WriteLine(new StackTrace(x));
+					Console.WriteLine(new StackTrace(true));
+				}
 				// we bail out, because there is not much chance that we can continue to run after this
 				Environment.Exit(1);
 				return null;
@@ -2382,7 +2437,7 @@ class DynamicTypeWrapper : TypeWrapper
 						}
 					}
 				}
-				else if(m.Name == "<clinit>" && m.Signature == "()V")
+				else if(m.IsClassInitializer)
 				{
 					// NOTE we don't need to record the modifiers here, because they aren't visible from Java reflection
 					// (well they might be visible from JNI reflection, but that isn't important enough to justify the custom attribute)
@@ -2783,7 +2838,7 @@ class RemappedTypeWrapper : TypeWrapper
 				string sig = method.Sig;
 				Modifiers modifiers = (Modifiers)method.Modifiers;
 				bool isStatic = (modifiers & Modifiers.Static) != 0;
-				MethodDescriptor md = new MethodDescriptor(GetClassLoader(), name, sig);
+				MethodDescriptor md = MethodDescriptor.FromNameSig(GetClassLoader(), name, sig);
 				if(method.invokevirtual == null &&
 					method.invokespecial == null &&
 					method.invokestatic == null &&
@@ -2839,7 +2894,7 @@ class RemappedTypeWrapper : TypeWrapper
 						{
 							stype = method.redirect.Type;
 						}
-						MethodDescriptor redir = new MethodDescriptor(GetClassLoader(), name, sig);
+						MethodDescriptor redir = MethodDescriptor.FromNameSig(GetClassLoader(), name, sig);
 						BindingFlags binding = BindingFlags.Public | BindingFlags.NonPublic;
 						if(stype == "static")
 						{
@@ -2988,7 +3043,7 @@ class RemappedTypeWrapper : TypeWrapper
 			foreach(MapXml.Constructor constructor in classMap.Constructors)
 			{
 				Modifiers modifiers = (Modifiers)constructor.Modifiers;
-				MethodDescriptor md = new MethodDescriptor(GetClassLoader(), "<init>", constructor.Sig);
+				MethodDescriptor md = MethodDescriptor.FromNameSig(GetClassLoader(), "<init>", constructor.Sig);
 				if(constructor.invokespecial == null && constructor.newobj == null && constructor.redirect == null)
 				{
 					// TODO use a better way to get the method
@@ -3018,7 +3073,7 @@ class RemappedTypeWrapper : TypeWrapper
 						{
 							sig = constructor.redirect.Sig;
 						}
-						MethodDescriptor redir = new MethodDescriptor(GetClassLoader(), "<init>", sig);
+						MethodDescriptor redir = MethodDescriptor.FromNameSig(GetClassLoader(), "<init>", sig);
 						BindingFlags binding = BindingFlags.Public | BindingFlags.NonPublic;
 						if(constructor.redirect.Type == "static")
 						{
@@ -3040,7 +3095,7 @@ class RemappedTypeWrapper : TypeWrapper
 							TypeWrapper tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(constructor.redirect.Class);
 							if(tw is DynamicTypeWrapper)
 							{
-								MethodDescriptor md1 = new MethodDescriptor(GetClassLoader(), constructor.redirect.Name != null ? constructor.redirect.Name : "<init>", sig);
+								MethodDescriptor md1 = MethodDescriptor.FromNameSig(GetClassLoader(), constructor.redirect.Name != null ? constructor.redirect.Name : "<init>", sig);
 								MethodWrapper mw1 = tw.GetMethodWrapper(md1, false);
 								if(mw1 == null)
 								{
@@ -3138,7 +3193,7 @@ class RemappedTypeWrapper : TypeWrapper
 				{
 					stype = field.redirect.Type;
 				}
-				MethodDescriptor redir = new MethodDescriptor(GetClassLoader(), name, sig);
+				MethodDescriptor redir = MethodDescriptor.FromNameSig(GetClassLoader(), name, sig);
 				BindingFlags binding = BindingFlags.Public | BindingFlags.NonPublic;
 				if(stype == "static")
 				{
@@ -3508,7 +3563,7 @@ class NetExpTypeWrapper : TypeWrapper
 		FieldInfo field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 		if(!AttributeHelper.IsHideFromReflection(field))
 		{
-			return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(field.FieldType), field, MethodDescriptor.GetSigName(field), AttributeHelper.GetModifiers(field));
+			return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(field.FieldType), field, MethodDescriptor.GetFieldSigName(field), AttributeHelper.GetModifiers(field));
 		}
 		return null;
 	}
@@ -3652,8 +3707,25 @@ class CompiledTypeWrapper : TypeWrapper
 	private TypeWrapper[] innerclasses;
 
 	// TODO consider resolving the baseType lazily
-	internal CompiledTypeWrapper(string name, Type type, TypeWrapper baseType)
-		: base(GetModifiers(type), name, baseType, ClassLoaderWrapper.GetBootstrapClassLoader())
+	private static TypeWrapper GetBaseTypeWrapper(Type type)
+	{
+		if(type.IsInterface)
+		{
+			return null;
+		}
+		else if(type.BaseType == null)
+		{
+			// System.Object must appear to be derived from java.lang.Object
+			return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object");
+		}
+		else
+		{
+			return ClassLoaderWrapper.GetWrapperFromType(type.BaseType);
+		}
+	}
+
+	internal CompiledTypeWrapper(string name, Type type)
+		: base(GetModifiers(type), name, GetBaseTypeWrapper(type), ClassLoaderWrapper.GetBootstrapClassLoader())
 	{
 		Debug.Assert(!(type is TypeBuilder));
 		Debug.Assert(!type.IsArray);
@@ -3850,7 +3922,7 @@ class CompiledTypeWrapper : TypeWrapper
 				emitSet = CodeEmitter.Nop;
 			}
 		}
-		return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(fieldType), name, MethodDescriptor.GetSigName(field), modifiers, emitGet, emitSet);
+		return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(fieldType), name, MethodDescriptor.GetFieldSigName(field), modifiers, emitGet, emitSet);
 	}
 
 	protected override FieldWrapper GetFieldImpl(string fieldName)
@@ -4013,7 +4085,7 @@ class ArrayTypeWrapper : TypeWrapper
 		this.type = type;
 		if(mdClone == null)
 		{
-			mdClone = new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "clone", "()Ljava.lang.Object;");
+			mdClone = MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), "clone", "()Ljava.lang.Object;");
 		}
 		if(clone == null)
 		{

@@ -84,11 +84,6 @@
                     Project = "{13A5BB9F-D5FB-4061-BB0C-A111BE84A978}"
                     Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
                 />
-                <Reference
-                    Name = "System.Windows.Forms"
-                    AssemblyName = "System.Windows.Forms"
-                    HintPath = "..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Windows.Forms.dll"
-                />
             </References>
         </Build>
         <Files>

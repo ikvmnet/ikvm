@@ -1409,6 +1409,15 @@ class ClassFile
 			}
 		}
 
+		// Is this the <clinit>()V method?
+		internal bool IsClassInitializer
+		{
+			get
+			{
+				return Name == "<clinit>" && Signature == "()V";
+			}
+		}
+
 		internal string[] NetExpSigAttribute
 		{
 			get
