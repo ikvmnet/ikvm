@@ -8,7 +8,7 @@
     <property name="REFERENCE_API_NAME" value="JDK-1.5" />
 -->
     <property name="JAPI_HOME" value="c:\japi\japitools" />
-    <property name="IKVM_VERSION" value="0.11.0.0" />
+    <property name="IKVM_VERSION" value="0.12.0.0" />
 
     <target name="default">
 	<call target="status" />
