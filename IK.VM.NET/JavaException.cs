@@ -50,6 +50,11 @@ sealed class JavaException
 		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalAccessError"), new object[] { String.Format(s, args) });
 	}
 
+	internal static Exception IllegalAccessException(string s, params object[] args)
+	{
+		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalAccessException"), new object[] { String.Format(s, args) });
+	}
+
 	internal static Exception VerifyError(string s, params object[] args)
 	{
 		return (Exception)Activator.CreateInstance(Load("java.lang.VerifyError"), new object[] { String.Format(s, args) });

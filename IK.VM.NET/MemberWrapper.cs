@@ -939,12 +939,6 @@ class FieldWrapper : MemberWrapper
 		{
 			LookupField();
 		}
-		if(field.IsLiteral)
-		{
-			// NOTE this is illegal, but it will still run type initialization
-			// on a non-broken CLR GetValue on a literal will not trigger type initialization, but on Java it should
-			System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(field.DeclaringType.TypeHandle);
-		}
 		if(fieldType.IsGhost)
 		{
 			object temp = field.GetValue(obj);
@@ -957,7 +951,7 @@ class FieldWrapper : MemberWrapper
 		}
 		catch(FieldAccessException x)
 		{
-			throw JavaException.IllegalAccessError(x.Message);
+			throw JavaException.IllegalAccessException(x.Message);
 		}
 	}
 

@@ -30,6 +30,7 @@ using ICSharpCode.SharpZipLib.Zip;
 class Compiler
 {
 	private static string manifestMainClass;
+	private static int itemsProcessed;
 
 	private static ArrayList GetArgs(string[] args)
 	{
@@ -220,7 +221,7 @@ class Compiler
 				}
 			}
 		}
-		if(defaultName == null)
+		if(itemsProcessed == 0)
 		{
 			Console.Error.WriteLine("Error: at least one class or jar must be specified");
 			return 1;
@@ -284,6 +285,7 @@ class Compiler
 				{
 					byte[] b = new byte[fs.Length];
 					fs.Read(b, 0, b.Length);
+					itemsProcessed++;
 					classes.Add(b);
 				}
 				break;
@@ -297,6 +299,7 @@ class Compiler
 						if(ze.Name.ToLower().EndsWith(".class"))
 						{
 							classes.Add(ReadFromZip(zf, ze));
+							itemsProcessed++;
 						}
 						else
 						{
@@ -324,6 +327,7 @@ class Compiler
 							else
 							{
 								resources.Add(ze.Name, ReadFromZip(zf, ze));
+								itemsProcessed++;
 							}
 						}
 					}
@@ -352,6 +356,7 @@ class Compiler
 							string name = file.Substring(baseDir.FullName.Length + 1);
 							name = name.Replace('\\', '/');
 							resources.Add(name, b);
+							itemsProcessed++;
 						}
 					}
 					catch(UnauthorizedAccessException)

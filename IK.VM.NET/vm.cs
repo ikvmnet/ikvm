@@ -487,7 +487,7 @@ public class JVM
 			Environment.NewLine,
 			message,
 			x,
-			new StackTrace(x, true),
+			x != null ? new StackTrace(x, true).ToString() : "",
 			new StackTrace(true));
 		if(messageBox != null)
 		{

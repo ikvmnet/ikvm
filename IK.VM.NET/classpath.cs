@@ -312,23 +312,47 @@ namespace NativeCode.java
 
 				public static object GetValue(object fieldCookie, object o)
 				{
-					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-					object val = wrapper.GetValue(o);
-					if(wrapper.FieldTypeWrapper.IsPrimitive)
+					Profiler.Enter("Field.GetValue");
+					try
 					{
-						val = JavaWrapper.Box(val);
+						FieldWrapper wrapper = (FieldWrapper)fieldCookie;
+						object val = wrapper.GetValue(o);
+						if(wrapper.FieldTypeWrapper.IsPrimitive)
+						{
+							val = JavaWrapper.Box(val);
+						}
+						return val;
 					}
-					return val;
+					finally
+					{
+						Profiler.Leave("Field.GetValue");
+					}
 				}
 
 				public static void SetValue(object fieldCookie, object o, object v)
 				{
-					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-					if(wrapper.FieldTypeWrapper.IsPrimitive)
+					Profiler.Enter("Field.SetValue");
+					try
 					{
-						v = JavaWrapper.Unbox(v);
+						FieldWrapper wrapper = (FieldWrapper)fieldCookie;
+						if(wrapper.IsFinal)
+						{
+							// NOTE Java runs the class initializer when trying to set a final field
+							wrapper.DeclaringType.RunClassInit();
+							// NOTE even if the caller is the class itself, it still isn't legal
+							throw JavaException.IllegalAccessException("Field is final");
+						}
+						// TODO enforce accessibility (isAccessible() is false)
+						if(wrapper.FieldTypeWrapper.IsPrimitive)
+						{
+							v = JavaWrapper.Unbox(v);
+						}
+						wrapper.SetValue(o, v);
 					}
-					wrapper.SetValue(o, v);
+					finally
+					{
+						Profiler.Leave("Field.SetValue");
+					}
 				}
 			}
 		}
@@ -1047,76 +1071,92 @@ namespace NativeCode.java
 
 			public static object[] GetDeclaredMethods(object cwrapper, bool getMethods, bool publicOnly)
 			{
-				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				// we need to finish the type otherwise all methods will not be in the method map yet
-				wrapper.Finish();
-				// we need to look through the array for unloadable types, because we may not let them
-				// escape into the 'wild'
-				MethodWrapper[] methods = wrapper.GetMethods();
-				ArrayList list = new ArrayList();
-				for(int i = 0; i < methods.Length; i++)
+				Profiler.Enter("VMClass.GetDeclaredMethods");
+				try
 				{
-					// we don't want to expose "hideFromReflection" methods (one reason is that it would
-					// mess up the serialVersionUID computation)
-					if(!methods[i].IsHideFromReflection)
+					TypeWrapper wrapper = (TypeWrapper)cwrapper;
+					// we need to finish the type otherwise all methods will not be in the method map yet
+					wrapper.Finish();
+					// we need to look through the array for unloadable types, because we may not let them
+					// escape into the 'wild'
+					MethodWrapper[] methods = wrapper.GetMethods();
+					ArrayList list = new ArrayList();
+					for(int i = 0; i < methods.Length; i++)
 					{
-						if(methods[i].Name == "<clinit>")
+						// we don't want to expose "hideFromReflection" methods (one reason is that it would
+						// mess up the serialVersionUID computation)
+						if(!methods[i].IsHideFromReflection)
 						{
-							// not reported back
-						}
-						else if(publicOnly && !methods[i].IsPublic)
-						{
-							// caller is only asking for public methods, so we don't return this non-public method
-						}
-						else if((methods[i].Name == "<init>") != getMethods)
-						{
-							if(methods[i].ReturnType.IsUnloadable)
+							if(methods[i].Name == "<clinit>")
 							{
-								throw JavaException.NoClassDefFoundError(methods[i].ReturnType.Name);
+								// not reported back
 							}
-							TypeWrapper[] args = methods[i].GetParameters();
-							for(int j = 0; j < args.Length; j++)
+							else if(publicOnly && !methods[i].IsPublic)
 							{
-								if(args[j].IsUnloadable)
+								// caller is only asking for public methods, so we don't return this non-public method
+							}
+							else if((methods[i].Name == "<init>") != getMethods)
+							{
+								if(methods[i].ReturnType.IsUnloadable)
 								{
-									throw JavaException.NoClassDefFoundError(args[j].Name);
+									throw JavaException.NoClassDefFoundError(methods[i].ReturnType.Name);
 								}
+								TypeWrapper[] args = methods[i].GetParameters();
+								for(int j = 0; j < args.Length; j++)
+								{
+									if(args[j].IsUnloadable)
+									{
+										throw JavaException.NoClassDefFoundError(args[j].Name);
+									}
+								}
+								list.Add(methods[i]);
 							}
-							list.Add(methods[i]);
 						}
 					}
+					return (MethodWrapper[])list.ToArray(typeof(MethodWrapper));
 				}
-				return (MethodWrapper[])list.ToArray(typeof(MethodWrapper));
+				finally
+				{
+					Profiler.Leave("VMClass.GetDeclaredMethods");
+				}
 			}
 
 			public static object[] GetDeclaredFields(object cwrapper, bool publicOnly)
 			{
-				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				// we need to finish the type otherwise all fields will not be in the field map yet
-				wrapper.Finish();
-				// we need to look through the array for unloadable types, because we may not let them
-				// escape into the 'wild'
-				FieldWrapper[] fields = wrapper.GetFields();
-				if(publicOnly)
+				Profiler.Enter("VMClass.GetDeclaredFields");
+				try
 				{
-					ArrayList list = new ArrayList();
+					TypeWrapper wrapper = (TypeWrapper)cwrapper;
+					// we need to finish the type otherwise all fields will not be in the field map yet
+					wrapper.Finish();
+					// we need to look through the array for unloadable types, because we may not let them
+					// escape into the 'wild'
+					FieldWrapper[] fields = wrapper.GetFields();
+					if(publicOnly)
+					{
+						ArrayList list = new ArrayList();
+						for(int i = 0; i < fields.Length; i++)
+						{
+							if(fields[i].IsPublic)
+							{
+								list.Add(fields[i]);
+							}
+						}
+						fields = (FieldWrapper[])list.ToArray(typeof(FieldWrapper));
+					}
 					for(int i = 0; i < fields.Length; i++)
 					{
-						if(fields[i].IsPublic)
+						if(fields[i].FieldTypeWrapper.IsUnloadable)
 						{
-							list.Add(fields[i]);
+							throw JavaException.NoClassDefFoundError(fields[i].FieldTypeWrapper.Name);
 						}
 					}
-					fields = (FieldWrapper[])list.ToArray(typeof(FieldWrapper));
+					return fields;
 				}
-				for(int i = 0; i < fields.Length; i++)
+				finally
 				{
-					if(fields[i].FieldTypeWrapper.IsUnloadable)
-					{
-						throw JavaException.NoClassDefFoundError(fields[i].FieldTypeWrapper.Name);
-					}
+					Profiler.Leave("VMClass.GetDeclaredFields");
 				}
-				return fields;
 			}
 
 			public static object[] GetDeclaredClasses(object cwrapper, bool publicOnly)
@@ -1490,23 +1530,39 @@ namespace NativeCode.java
 
 			public static object allocateObject(object ois, object clazz)
 			{
-				TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
-				return NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsTBD);
+				Profiler.Enter("ObjectInputStream.allocateObject");
+				try
+				{
+					TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+					return NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsTBD);
+				}
+				finally
+				{
+					Profiler.Leave("ObjectInputStream.allocateObject");
+				}
 			}
 
 			public static void callConstructor(object ois, object clazz, object obj)
 			{
-				// TODO use TypeWrapper based reflection, instead of .NET reflection
-				TypeWrapper type = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
-				type.Finish();
-				MethodWrapper mw = type.GetMethodWrapper(MethodDescriptor.FromNameSig(type.GetClassLoader(), "<init>", "()V"), false);
-				if(mw == null)
+				Profiler.Enter("ObjectInputStream.callConstructor");
+				try
 				{
-					// TODO what should we do here?
-					throw new NotImplementedException();
+					// TODO use TypeWrapper based reflection, instead of .NET reflection
+					TypeWrapper type = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+					type.Finish();
+					MethodWrapper mw = type.GetMethodWrapper(MethodDescriptor.FromNameSig(type.GetClassLoader(), "<init>", "()V"), false);
+					if(mw == null)
+					{
+						// TODO what should we do here?
+						throw new NotImplementedException();
+					}
+					// TODO what about exceptions? (should they be unwrapped?)
+					mw.Invoke(obj, null, true);
 				}
-				// TODO what about exceptions? (should they be unwrapped?)
-				mw.Invoke(obj, null, true);
+				finally
+				{
+					Profiler.Leave("ObjectInputStream.callConstructor");
+				}
 			}
 		}
 	}

@@ -4348,8 +4348,61 @@ class RemappedTypeWrapper : TypeWrapper
 	}
 }
 
-// TODO CompiledTypeWrapper & DotNetTypeWrapper should have a common base class
-class CompiledTypeWrapper : TypeWrapper
+// TODO this is the base class of CompiledTypeWrapper (ikmvc compiled Java types)
+// and DotNetTypeWrapper (.NET types), it should have a better name.
+abstract class LazyTypeWrapper : TypeWrapper
+{
+	private bool membersPublished;
+
+	protected LazyTypeWrapper(Modifiers modifiers, string name, TypeWrapper baseTypeWrapper, ClassLoaderWrapper classLoader)
+		: base(modifiers, name, baseTypeWrapper, classLoader)
+	{
+	}
+
+	protected abstract void LazyPublishMembers();
+
+	protected sealed override FieldWrapper GetFieldImpl(string fieldName)
+	{
+		lock(this)
+		{
+			if(!membersPublished)
+			{
+				membersPublished = true;
+				LazyPublishMembers();
+				return GetFieldWrapper(fieldName);
+			}
+		}
+		return null;
+	}
+
+	protected sealed override MethodWrapper GetMethodImpl(MethodDescriptor md)
+	{
+		lock(this)
+		{
+			if(!membersPublished)
+			{
+				membersPublished = true;
+				LazyPublishMembers();
+				return GetMethodWrapper(md, false);
+			}
+		}
+		return null;
+	}
+
+	public sealed override void Finish()
+	{
+		lock(this)
+		{
+			if(!membersPublished)
+			{
+				membersPublished = true;
+				LazyPublishMembers();
+			}
+		}
+	}
+}
+
+class CompiledTypeWrapper : LazyTypeWrapper
 {
 	private readonly Type type;
 	private TypeWrapper[] interfaces;
@@ -4551,176 +4604,33 @@ class CompiledTypeWrapper : TypeWrapper
 		}
 	}
 
-	// TODO there is an inconsistency here, this method returns regular FieldWrappers for final fields, while
-	// GetFieldImpl returns a FieldWrapper that is aware of the getter method. Currently this isn't a problem,
-	// because this method is used for reflection (which doesn't care about accessibility) and GetFieldImpl is used for
-	// compiled code (which does care about accessibility).
-	internal override FieldWrapper[] GetFields()
+	protected override void LazyPublishMembers()
 	{
-		ArrayList list = new ArrayList();
-		FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-		for(int i = 0; i < fields.Length; i++)
+		MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+		foreach(MemberInfo m in members)
 		{
-			if(!AttributeHelper.IsHideFromReflection(fields[i]) && !fields[i].IsSpecialName)
+			if(!m.IsDefined(typeof(HideFromReflectionAttribute), false))
 			{
-				// if the field name is mangled (because its type is unloadable),
-				// chop off the mangled bit
-				string fieldName = fields[i].Name;
-				int idx = fieldName.IndexOf('/');
-				if(idx >= 0)
+				MethodBase method = m as MethodBase;
+				if(method != null)
 				{
-					fieldName = fieldName.Substring(0, idx);
-				}
-				list.Add(CreateFieldWrapper(AttributeHelper.GetModifiers(fields[i], false), fieldName, fields[i].FieldType, fields[i], null));
-			}
-		}
-		return (FieldWrapper[])list.ToArray(typeof(FieldWrapper));
-	}
-
-	private FieldWrapper CreateFieldWrapper(Modifiers modifiers, string name, Type fieldType, FieldInfo field, MethodInfo getter)
-	{
-		CodeEmitter emitGet;
-		CodeEmitter emitSet;
-		if((modifiers & Modifiers.Private) != 0)
-		{
-			// there is no way to emit code to access a private member, so we don't need to generate these
-			emitGet = CodeEmitter.InternalError;
-			emitSet = CodeEmitter.InternalError;
-		}
-		else if((modifiers & Modifiers.Static) != 0)
-		{
-			if(getter != null)
-			{
-				emitGet = CodeEmitter.Create(OpCodes.Call, getter);
-			}
-			else
-			{
-				// if field is a literal, we emit an ldc instead of a ldsfld
-				if(field.IsLiteral)
-				{
-					emitGet = CodeEmitter.CreateLoadConstantField(field);
+					AddMethod(CreateMethodWrapper(method));
 				}
 				else
 				{
-					emitGet = CodeEmitter.Create(OpCodes.Ldsfld, field);
+					FieldInfo field = m as FieldInfo;
+					if(field != null)
+					{
+						AddField(CreateFieldWrapper(field));
+					}
 				}
 			}
-			if(field != null && !field.IsLiteral)
-			{
-				emitSet = CodeEmitter.Create(OpCodes.Stsfld, field);
-			}
-			else
-			{
-				// TODO what happens when you try to set a final field?
-				// through reflection: java.lang.IllegalAccessException: Field is final
-				// through code: java.lang.IllegalAccessError: Field <class>.<field> is final
-				emitSet = CodeEmitter.Nop;
-			}
 		}
-		else
-		{
-			if(getter != null)
-			{
-				emitGet = CodeEmitter.Create(OpCodes.Callvirt, getter);
-			}
-			else
-			{
-				// TODO is it possible to have literal instance fields?
-				emitGet = CodeEmitter.Create(OpCodes.Ldfld, field);
-			}
-			if(field != null)
-			{
-				emitSet = CodeEmitter.Create(OpCodes.Stfld, field);
-			}
-			else
-			{
-				// TODO what happens when you try to set a final field through reflection?
-				// see above
-				emitSet = CodeEmitter.Nop;
-			}
-		}
-		return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(fieldType), name, MethodDescriptor.GetFieldSigName(field), modifiers, field, emitGet, emitSet);
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName)
+	private MethodWrapper CreateMethodWrapper(MethodBase mb)
 	{
-		// TODO this is a crappy implementation, just to get going, but it needs to be revisited
-		MemberInfo[] members = type.GetMember(fieldName, MemberTypes.Field | MemberTypes.Property, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-		if(members.Length > 2)
-		{
-			throw new NotImplementedException();
-		}
-		if(members.Length == 0)
-		{
-			return null;
-		}
-		if(members.Length == 2)
-		{
-			PropertyInfo prop;
-			FieldInfo field;
-			if(members[0] is PropertyInfo && !(members[1] is PropertyInfo))
-			{
-				prop = (PropertyInfo)members[0];
-				field = (FieldInfo)members[1];
-			}
-			else if(members[1] is PropertyInfo && !(members[0] is PropertyInfo))
-			{
-				prop = (PropertyInfo)members[1];
-				field = (FieldInfo)members[0];
-			}
-			else
-			{
-				// TODO what does this mean?
-				throw new InvalidOperationException();
-			}
-			Modifiers modifiers = AttributeHelper.GetModifiers(field, false);
-			MethodInfo getter = prop.GetGetMethod(true);
-			MethodInfo setter = prop.GetSetMethod(true);
-			if(getter == null || setter != null)
-			{
-				// TODO what does this mean?
-				throw new InvalidOperationException();
-			}
-			return CreateFieldWrapper(modifiers, field.Name, field.FieldType, field, getter);
-		}
-		else
-		{
-			FieldInfo fi = (FieldInfo)members[0];
-			return CreateFieldWrapper(AttributeHelper.GetModifiers(fi, false), fi.Name, fi.FieldType, fi, null);
-		}
-	}
-	
-	// TODO this is broken
-	internal override MethodWrapper[] GetMethods()
-	{
-		ArrayList list = new ArrayList();
-		MethodInfo[] methods = type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-		for(int i = 0; i < methods.Length; i++)
-		{
-			MethodWrapper mw = CreateMethodWrapper(MethodDescriptor.FromMethodBase(methods[i]), methods[i]);
-			if(mw != null)
-			{
-				list.Add(mw);
-			}
-		}
-		ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-		for(int i = 0; i < constructors.Length; i++)
-		{
-			MethodWrapper mw = CreateMethodWrapper(MethodDescriptor.FromMethodBase(constructors[i]), constructors[i]);
-			if(mw != null)
-			{
-				list.Add(mw);
-			}
-		}
-		return (MethodWrapper[])list.ToArray(typeof(MethodWrapper));
-	}
-
-	private MethodWrapper CreateMethodWrapper(MethodDescriptor md, MethodBase mb)
-	{
-		if(AttributeHelper.IsHideFromReflection(mb))
-		{
-			return null;
-		}
+		MethodDescriptor md = MethodDescriptor.FromMethodBase(mb);
 		MethodWrapper method = new MethodWrapper(this, md, mb, null, AttributeHelper.GetModifiers(mb, false), false);
 		if(IsGhost)
 		{
@@ -4745,57 +4655,76 @@ class CompiledTypeWrapper : TypeWrapper
 		return method;
 	}
 
-	private static bool IsBuilderType(Type type)
+	private FieldWrapper CreateFieldWrapper(FieldInfo field)
 	{
-		while(type.IsArray)
-		{
-			type = type.GetElementType();
-		}
-		return type is TypeBuilder;
-	}
+		MethodInfo getter = null;
+		Modifiers modifiers = AttributeHelper.GetModifiers(field, false);
 
-	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
-	{
-		// If the MethodDescriptor contains types that aren't compiled types, we can never have that method
-		// This check is important because Type.GetMethod throws an ArgumentException if one of the argument types
-		// is a TypeBuilder
-		for(int i = 0; i < md.ArgCount; i++)
+		// If the backing field is private, but the modifiers aren't, we've got a static final that
+		// has a property accessor method.
+		if(field.IsPrivate && ((modifiers & Modifiers.Private) == 0))
 		{
-			if(md.ArgTypeWrappers[i].IsUnloadable || IsBuilderType(md.ArgTypeWrappers[i].TypeAsTBD))
+			BindingFlags bindingFlags = BindingFlags.DeclaredOnly | BindingFlags.NonPublic | BindingFlags.Public;
+			bindingFlags |= field.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
+			PropertyInfo prop = field.DeclaringType.GetProperty(field.Name, bindingFlags, null, field.FieldType, Type.EmptyTypes, null);
+			Debug.Assert(prop != null);
+			if(prop != null)
 			{
-				return null;
+				getter = prop.GetGetMethod(true);
 			}
 		}
-		try
+
+		CodeEmitter emitGet;
+		CodeEmitter emitSet;
+		if((modifiers & Modifiers.Private) != 0)
 		{
-			// TODO this is a crappy implementation, just to get going, but it needs to be revisited
-			if(md.Name == "<init>")
+			// there is no way to emit code to access a private member, so we don't need to generate these
+			emitGet = CodeEmitter.InternalError;
+			emitSet = CodeEmitter.InternalError;
+		}
+		else if(field.IsLiteral)
+		{
+			if((modifiers & Modifiers.Static) == 0)
 			{
-				ConstructorInfo ci = type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, md.ArgTypes, null);
-				if(ci != null)
-				{
-					return CreateMethodWrapper(md, ci);
-				}
+				throw new InvalidOperationException("Invalid assembly, a non-static literal field was encountered.");
+			}
+			// if field is a literal, we must emit an ldc instead of a ldsfld
+			emitGet = CodeEmitter.CreateLoadConstantField(field);
+			// it is never legal to emit code to set a final field (from outside the class)
+			emitSet = CodeEmitter.InternalError;
+		}
+		else if((modifiers & Modifiers.Static) != 0)
+		{
+			if(getter != null)
+			{
+				emitGet = CodeEmitter.Create(OpCodes.Call, getter);
 			}
 			else
 			{
-				MethodInfo mi = type.GetMethod(md.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, CallingConventions.Standard, md.ArgTypes, null);
-				if(mi != null)
-				{
-					return CreateMethodWrapper(md, mi);
-				}
+				emitGet = CodeEmitter.Create(OpCodes.Ldsfld, field);
 			}
+			emitSet = CodeEmitter.Create(OpCodes.Stsfld, field);
 		}
-		catch
+		else
 		{
-			// HACK this is for debugging only (if the above check fails to detect funky types in the argument array)
-			foreach(TypeWrapper tw in md.ArgTypeWrappers)
+			if(getter != null)
 			{
-				Console.WriteLine(tw.Name);
+				emitGet = CodeEmitter.Create(OpCodes.Callvirt, getter);
 			}
-			throw;
+			else
+			{
+				emitGet = CodeEmitter.Create(OpCodes.Ldfld, field);
+			}
+			emitSet = CodeEmitter.Create(OpCodes.Stfld, field);
 		}
-		return null;
+		// if the field name is mangled (because its type is unloadable), chop off the mangled bit
+		string fieldName = field.Name;
+		int idx = fieldName.IndexOf('/');
+		if(idx >= 0)
+		{
+			fieldName = fieldName.Substring(0, idx);
+		}
+		return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(field.FieldType), fieldName, MethodDescriptor.GetFieldSigName(field), modifiers, field, emitGet, emitSet);
 	}
 
 	public override Type TypeAsTBD
@@ -4805,18 +4734,13 @@ class CompiledTypeWrapper : TypeWrapper
 			return type;
 		}
 	}
-
-	public override void Finish()
-	{
-	}
 }
 
-class DotNetTypeWrapper : TypeWrapper
+class DotNetTypeWrapper : LazyTypeWrapper
 {
 	private const string NamePrefix = "cli.";
 	private const string DelegateInterfaceSuffix = "$Method";
 	private readonly Type type;
-	private bool membersPublished;
 	private TypeWrapper[] innerClasses;
 	private TypeWrapper outerClass;
 
@@ -5017,7 +4941,7 @@ class DotNetTypeWrapper : TypeWrapper
 		return type.IsPublic || (type.IsNestedPublic && IsVisible(type.DeclaringType));
 	}
 
-	private void LazyPublishMembers()
+	protected override void LazyPublishMembers()
 	{
 		// special support for enums
 		if(type.IsEnum)
@@ -5476,51 +5400,11 @@ class DotNetTypeWrapper : TypeWrapper
 		}
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName)
-	{
-		lock(this)
-		{
-			if(!membersPublished)
-			{
-				membersPublished = true;
-				LazyPublishMembers();
-				return GetFieldWrapper(fieldName);
-			}
-		}
-		return null;
-	}
-
-	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
-	{
-		lock(this)
-		{
-			if(!membersPublished)
-			{
-				membersPublished = true;
-				LazyPublishMembers();
-				return GetMethodWrapper(md, false);
-			}
-		}
-		return null;
-	}
-
 	public override Type TypeAsTBD
 	{
 		get
 		{
 			return type;
-		}
-	}
-
-	public override void Finish()
-	{
-		lock(this)
-		{
-			if(!membersPublished)
-			{
-				membersPublished = true;
-				LazyPublishMembers();
-			}
 		}
 	}
 }
