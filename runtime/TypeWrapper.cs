@@ -131,16 +131,6 @@ class AttributeHelper
 	private static ConstructorInfo throwsAttribute;
 	private static ConstructorInfo sourceFileAttribute;
 	private static ConstructorInfo lineNumberTableAttribute;
-	private static ConstructorInfo methodImplAttribute;
-
-	internal static void SetMethodImplAttribute(MethodBuilder mb, System.Runtime.CompilerServices.MethodImplOptions options)
-	{
-		if(methodImplAttribute == null)
-		{
-			methodImplAttribute = typeof(System.Runtime.CompilerServices.MethodImplAttribute).GetConstructor(new Type[] { typeof(System.Runtime.CompilerServices.MethodImplOptions) });
-		}
-		mb.SetCustomAttribute(new CustomAttributeBuilder(methodImplAttribute, new object[] { options }));
-	}
 
 	internal static void SetEditorBrowsableNever(MethodBuilder mb)
 	{
@@ -2679,7 +2669,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			if((mw.Modifiers & (Modifiers.Synchronized | Modifiers.Static)) == Modifiers.Synchronized)
 			{
 				// note that constructors cannot be synchronized in Java
-				AttributeHelper.SetMethodImplAttribute((MethodBuilder)mb, System.Runtime.CompilerServices.MethodImplOptions.Synchronized);
+				MethodBuilder mbld = (MethodBuilder)mb;
+				mbld.SetImplementationFlags(mbld.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
 			}
 			return mb;
 		}
@@ -3271,7 +3262,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						}
 						else
 						{
-							ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
+							MethodBuilder mbld = (MethodBuilder)mb;
+							ILGenerator ilGenerator = mbld.GetILGenerator();
 							Tracer.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 							if(nativeMethods != null)
 							{
@@ -3282,7 +3274,12 @@ sealed class DynamicTypeWrapper : TypeWrapper
 									continue;
 								}
 							}
-							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref verifyError);
+							bool nonleaf = false;
+							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref verifyError, ref nonleaf);
+							if(nonleaf)
+							{
+								mbld.SetImplementationFlags(mbld.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
+							}
 						}
 					}
 				}
@@ -3930,6 +3927,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						setModifiers = true;
 					}
 					method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod());
+					((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
 					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
 					{
 						AddParameterNames(method, m);
@@ -4089,13 +4087,6 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							// assert that the method we're overriding is in fact virtual and not final!
 							Debug.Assert(baseMce.GetMethod().IsVirtual && !baseMce.GetMethod().IsFinal);
 							typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMce.GetMethod());
-						}
-						// HACK extremely lame hack!!! Eclipse 3.0 sucks and assumes that it will find this class
-						// in the stack trace, but since it contains only very small static methods by default
-						// the CLR will inline these methods.
-						if(wrapper.Name == "org.eclipse.ui.editors.text.EditorsUI")
-						{
-							mb.SetImplementationFlags(MethodImplAttributes.NoInlining);
 						}
 						// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
 						// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override

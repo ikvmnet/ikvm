@@ -73,6 +73,7 @@ class Compiler
 	private ExceptionTableEntry[] exceptions;
 	private ISymbolDocumentWriter symboldocument;
 	private System.IO.MemoryStream lineNumbers;
+	private bool nonleaf;
 
 	static Compiler()
 	{
@@ -701,6 +702,12 @@ class Compiler
 
 	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref string verifyError)
 	{
+		bool nonleaf = false;
+		Compile(clazz, mw, classFile, m, ilGenerator, ref verifyError, ref nonleaf);
+	}
+
+	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref string verifyError, ref bool nonleaf)
+	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
 		if(JVM.Debug)
@@ -818,6 +825,7 @@ class Compiler
 			ilGenerator.Emit(OpCodes.Br, - (ilGenerator.GetILOffset() + 5));
 			//ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
 			ilGenerator.Finish();
+			nonleaf = c.nonleaf;
 		}
 		finally
 		{
@@ -1448,12 +1456,14 @@ class Compiler
 						CastInterfaceArgs(method, cpi.GetArgTypes(), i, false, false);
 						method.EmitCall(ilGenerator);
 						method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
+						nonleaf = true;
 						break;
 					}
 					case NormalizedByteCode.__invokevirtual:
 					case NormalizedByteCode.__invokeinterface:
 					case NormalizedByteCode.__invokespecial:
 					{
+						nonleaf = true;
 						ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
 						int argcount = cpi.GetArgTypes().Length;
 						TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);

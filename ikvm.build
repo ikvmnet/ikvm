@@ -32,6 +32,7 @@
                 <includes name="bin/ikvmstub.exe" />
                 <includes name="bin/JVM.DLL" />
                 <includes name="tools/asmref.exe" />
+                <includes name="native/Release/ikvm-native.dll" />
             </fileset>
         </delete>
     </target>

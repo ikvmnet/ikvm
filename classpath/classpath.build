@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <project name="IKVM.GNU.Classpath.dll" default="IKVM.GNU.Classpath.dll">
-    <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath" />
+    <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-0.14" />
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property name="jikes.compiler" value="true" />
