@@ -574,7 +574,11 @@ type JNICALL JNIEnv::Get##Type##Field(jobject obj, jfieldID fieldID)\
 	return __unbox<cpptype>(VM::GetFieldValue((IntPtr)fieldID, UnwrapRef(obj)));\
 }
 
+#pragma warning (push)
+// stop the compiler from wanking about "forcing value to bool 'true' or 'false' (performance warning)"
+#pragma warning (disable : 4800)
 GET_SET_FIELD(Boolean,jboolean,bool)
+#pragma warning (pop)
 GET_SET_FIELD(Byte,jbyte,System::SByte)
 GET_SET_FIELD(Char,jchar,wchar_t)
 GET_SET_FIELD(Short,jshort,short)
@@ -866,7 +870,11 @@ void JNIEnv::Release##Type##ArrayElements(type##Array array, type *elems, jint m
 	}\
 }
 
+#pragma warning (push)
+// stop the compiler from wanking about "forcing value to bool 'true' or 'false' (performance warning)"
+#pragma warning (disable : 4800)
 GET_SET_ARRAY_ELEMENTS(Boolean,jboolean,bool)
+#pragma warning (pop)
 GET_SET_ARRAY_ELEMENTS(Byte,jbyte,System::SByte)
 GET_SET_ARRAY_ELEMENTS(Char,jchar,wchar_t)
 GET_SET_ARRAY_ELEMENTS(Short,jshort,short)

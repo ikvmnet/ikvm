@@ -171,7 +171,7 @@ namespace MapXml
 					typeType = ClassLoaderWrapper.GetType(type);
 				}
 			}
-			ilgen.Emit(OpCodes.Isinst, typeType != null ? typeType : typeWrapper.Type);
+			ilgen.Emit(opcode, typeType != null ? typeType : typeWrapper.Type);
 		}
 	}
 
@@ -187,6 +187,14 @@ namespace MapXml
 	public sealed class Castclass : TypeInstruction
 	{
 		public Castclass() : base(OpCodes.Castclass)
+		{
+		}
+	}
+
+	[XmlType("unbox")]
+	public sealed class Unbox : TypeInstruction
+	{
+		public Unbox() : base(OpCodes.Unbox)
 		{
 		}
 	}
@@ -346,6 +354,14 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("ldind_i4")]
+	public sealed class Ldind_i4 : Simple
+	{
+		public Ldind_i4() : base(OpCodes.Ldind_I4)
+		{
+		}
+	}
+
 	[XmlType("ret")]
 	public sealed class Ret : Simple
 	{
@@ -371,6 +387,7 @@ namespace MapXml
 		[XmlElement(typeof(Pop))]
 		[XmlElement(typeof(IsInst))]
 		[XmlElement(typeof(Castclass))]
+		[XmlElement(typeof(Unbox))]
 		[XmlElement(typeof(BrFalse))]
 		[XmlElement(typeof(BrTrue))]
 		[XmlElement(typeof(Br))]
@@ -382,6 +399,7 @@ namespace MapXml
 		[XmlElement(typeof(LdArg_1))]
 		[XmlElement(typeof(LdArg_2))]
 		[XmlElement(typeof(LdArg_3))]
+		[XmlElement(typeof(Ldind_i4))]
 		[XmlElement(typeof(Ret))]
 		[XmlElement(typeof(Throw))]
 		public Instruction[] invoke;

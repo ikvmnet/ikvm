@@ -2292,10 +2292,6 @@ class DynamicTypeWrapper : TypeWrapper
 					// NOTE we don't need to record the modifiers here, because only access modifiers are valid for
 					// constructors and we have a well defined (reversible) mapping from them
 					method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, args);
-					if(JVM.IsStaticCompiler)
-					{
-						AddParameterNames(method, m);
-					}
 					ParameterBuilder[] parameterBuilders = null;
 					if(JVM.IsStaticCompiler)
 					{
@@ -2556,7 +2552,7 @@ class DynamicTypeWrapper : TypeWrapper
 						{
 							for(int j = 0; j < localVars.Length; j++)
 							{
-								if(localVars[j].index == i)
+								if(localVars[j].index == i && parameterBuilders[i - bias] == null)
 								{
 									if(mb is MethodBuilder)
 									{

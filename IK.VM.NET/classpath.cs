@@ -926,6 +926,11 @@ namespace NativeCode.java
 			{
 				ClassLoaderWrapper.GetType("java.lang.System").GetField("out", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, printStream);
 			}
+
+			public static int identityHashCode(object o)
+			{
+				return RuntimeHelpers.GetHashCode(o);
+			}
 		}
 
 		public class VMClassLoader
@@ -1868,7 +1873,13 @@ namespace NativeCode.java
 					sbyte[][] list = new sbyte[addresses.Length][];
 					for(int i = 0; i < addresses.Length; i++)
 					{
-						list[i] = AddressToByteArray(addresses[i]);
+						byte[] address = addresses[i].GetAddressBytes();
+						sbyte[] sb = new sbyte[address.Length];
+						for(int j = 0; j < sb.Length; j++)
+						{
+							sb[j] = (sbyte)address[j];
+						}
+						list[i] = sb;
 					}
 					return list;
 				}
@@ -1907,25 +1918,6 @@ namespace NativeCode.java
 				}
 				return s;
 			}
-
-			public static sbyte[] AddressToByteArray(NetSystem.Net.IPAddress ipaddress)
-			{
-				// TODO check for correctness
-				int address = (int)ipaddress.Address;
-				return new sbyte[] { (sbyte)address, (sbyte)(address >> 8), (sbyte)(address >> 16), (sbyte)(address >> 24) };
-			}
-		}
-	}
-}
-
-namespace NativeCode.ikvm.lang
-{
-	// TODO instead of having these methods here, they should be defined as inlined CIL in map.xml
-	public class CIL
-	{
-		public static int unbox_int(object o)
-		{
-			return (int)o;
 		}
 	}
 }

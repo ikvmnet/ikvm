@@ -121,11 +121,13 @@ class Compiler
 					string spec = s.Substring(9);
 					if(Directory.Exists(spec))
 					{
-						Recurse(classes, resources, new DirectoryInfo(spec), "*");
+						DirectoryInfo dir = new DirectoryInfo(spec);
+						Recurse(classes, resources, dir, dir, "*");
 					}
 					else
 					{
-						Recurse(classes, resources, new DirectoryInfo(Path.GetDirectoryName(spec)), Path.GetFileName(spec));
+						DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec));
+						Recurse(classes, resources, dir, dir, Path.GetFileName(spec));
 					}
 				}
 				else if(s.StartsWith("-resource:"))
@@ -160,7 +162,7 @@ class Compiler
 				string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s));
 				foreach(string f in files)
 				{
-					ProcessFile(classes, resources, f);
+					ProcessFile(classes, resources, null, f);
 				}
 			}
 		}
@@ -210,7 +212,7 @@ class Compiler
 		return buf;
 	}
 
-	private static void ProcessFile(ArrayList classes, Hashtable resources, string file)
+	private static void ProcessFile(ArrayList classes, Hashtable resources, DirectoryInfo baseDir, string file)
 	{
 		switch(new FileInfo(file).Extension.ToLower())
 		{
@@ -253,20 +255,38 @@ class Compiler
 				}
 				break;
 			default:
-				Console.Error.WriteLine("Warning: Unknown file type: {0}", file);
+			{
+				if(baseDir == null)
+				{
+					Console.Error.WriteLine("Warning: Unknown file type: {0}", file);
+				}
+				else
+				{
+					// include as resource
+					using(FileStream fs = new FileStream(file, FileMode.Open))
+					{
+						byte[] b = new byte[fs.Length];
+						fs.Read(b, 0, b.Length);
+						// HACK very lame way to extract the resource name (by chopping off the base directory)
+						string name = file.Substring(baseDir.FullName.Length + 1);
+						name = name.Replace('\\', '/');
+						resources.Add(name, b);
+					}
+				}
 				break;
+			}
 		}
 	}
 
-	private static void Recurse(ArrayList classes, Hashtable resources, DirectoryInfo dir, string spec)
+	private static void Recurse(ArrayList classes, Hashtable resources, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
 	{
 		foreach(FileInfo file in dir.GetFiles(spec))
 		{
-			ProcessFile(classes, resources, file.FullName);
+			ProcessFile(classes, resources, baseDir, file.FullName);
 		}
 		foreach(DirectoryInfo sub in dir.GetDirectories())
 		{
-			Recurse(classes, resources, sub, spec);
+			Recurse(classes, resources, baseDir, sub, spec);
 		}
 	}
 }

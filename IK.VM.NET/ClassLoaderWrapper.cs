@@ -499,44 +499,58 @@ class ClassLoaderWrapper
 			}
 			throw JavaException.LinkageError("duplicate class definition: {0}", f.Name);
 		}
+		// mark the type as "loading in progress", so that we can detect circular dependencies.
 		types.Add(f.Name, null);
-		TypeWrapper type;
-		// TODO also figure out what should happen if LoadClassByDottedNameFast throws an exception (custom class loaders
-		// can throw whatever exception they want)
-		TypeWrapper baseType = LoadClassByDottedNameFast(f.SuperClass);
-		if(baseType == null)
+		try
 		{
-			throw JavaException.NoClassDefFoundError(f.SuperClass);
-		}
-		// if the base type isn't public, it must be in the same package
-		if(!baseType.IsPublic)
-		{
-			if(baseType.GetClassLoader() != this || f.PackageName != baseType.PackageName)
+			TypeWrapper type;
+			// TODO also figure out what should happen if LoadClassByDottedNameFast throws an exception (custom class loaders
+			// can throw whatever exception they want)
+			TypeWrapper baseType = LoadClassByDottedNameFast(f.SuperClass);
+			if(baseType == null)
 			{
-				throw JavaException.IllegalAccessError("Class {0} cannot access its superclass {1}", f.Name, baseType.Name);
+				throw JavaException.NoClassDefFoundError(f.SuperClass);
 			}
+			// if the base type isn't public, it must be in the same package
+			if(!baseType.IsPublic)
+			{
+				if(baseType.GetClassLoader() != this || f.PackageName != baseType.PackageName)
+				{
+					throw JavaException.IllegalAccessError("Class {0} cannot access its superclass {1}", f.Name, baseType.Name);
+				}
+			}
+			if(baseType.IsFinal)
+			{
+				throw JavaException.VerifyError("Cannot inherit from final class");
+			}
+			if(baseType.IsInterface)
+			{
+				throw JavaException.IncompatibleClassChangeError("Class {0} has interface {1} as superclass", f.Name, baseType.Name);
+			}
+			string dotnetType = f.NetExpTypeAttribute;
+			if(dotnetType != null)
+			{
+				type = new NetExpTypeWrapper(f, dotnetType, baseType);
+			}
+			else
+			{
+				type = new DynamicTypeWrapper(f, this, nativeMethods);
+				dynamicTypes.Add(type.Type.FullName, type);
+			}
+			Debug.Assert(types[f.Name] == null);
+			types[f.Name] = type;
+			return type;
 		}
-		if(baseType.IsFinal)
+		catch
 		{
-			throw JavaException.VerifyError("Cannot inherit from final class");
+			if(types[f.Name] == null)
+			{
+				// if loading the class fails, we remove the indicator that we're busy loading the class,
+				// because otherwise we get a ClassCircularityError if we try to load the class again.
+				types.Remove(f.Name);
+			}
+			throw;
 		}
-		if(baseType.IsInterface)
-		{
-			throw JavaException.IncompatibleClassChangeError("Class {0} has interface {1} as superclass", f.Name, baseType.Name);
-		}
-		string dotnetType = f.NetExpTypeAttribute;
-		if(dotnetType != null)
-		{
-			type = new NetExpTypeWrapper(f, dotnetType, baseType);
-		}
-		else
-		{
-			type = new DynamicTypeWrapper(f, this, nativeMethods);
-			dynamicTypes.Add(type.Type.FullName, type);
-		}
-		Debug.Assert(types[f.Name] == null);
-		types[f.Name] = type;
-		return type;
 	}
 
 	internal object GetJavaClassLoader()

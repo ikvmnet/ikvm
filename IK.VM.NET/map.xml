@@ -425,13 +425,6 @@
 		</class>
 	</remappings>
 	<nativeMethods>
-		<class name="java.lang.VMSystem">
-			<method name="identityHashCode" sig="(Ljava.lang.Object;)I">
-				<ldarg_0 />
-				<call type="System.Object" name="GetHashCode" />
-				<ret />
-			</method>
-		</class>
 		<class name="java.lang.Runtime">
 			<method name="execInternal" sig="([Ljava.lang.String;[Ljava.lang.String;Ljava.io.File;)Ljava.lang.Process;">
 				<ldarg_0 />
@@ -445,6 +438,14 @@
 		<class name="java.lang.StringHelper">
 			<method name="constructCaseInsensitiveOrder" sig="()Ljava.util.Comparator;">
 				<newobj class="java.lang.String$CaseInsensitiveComparator" name="&lt;init&gt;" sig="()V" />
+				<ret />
+			</method>
+		</class>
+		<class name="ikvm.lang.CIL">
+			<method name="unbox_int" sig="(Ljava.lang.Object;)I">
+				<ldarg_0 />
+				<unbox type="System.Int32" />
+				<ldind_i4 />
 				<ret />
 			</method>
 		</class>
