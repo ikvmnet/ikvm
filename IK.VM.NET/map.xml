@@ -169,7 +169,7 @@
 				<redirect name="get_Length" />
 			</method>
 			<method name="charAt" sig="(I)C" modifiers="public">
-				<redirect name="get_Chars" />
+				<redirect class="StringHelper" name="charAt" type="static"/>
 			</method>
 			<method name="substring" sig="(II)Ljava/lang/String;" modifiers="public">
 				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;II)Ljava/lang/String;" />

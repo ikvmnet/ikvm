@@ -3408,7 +3408,7 @@ sealed class MethodWrapper
 			}
 			if(nonVirtual)
 			{
-				throw new NotImplementedException("non-virtual reflective method invocation non implemented");
+				throw new NotImplementedException("non-virtual reflective method invocation not implemented");
 			}
 			MethodInfo method = (MethodInfo)this.originalMethod;
 			if(redirMethod != null)
@@ -3422,6 +3422,18 @@ sealed class MethodWrapper
 					args[0] = obj;
 					oldargs.CopyTo(args, 1);
 					obj = null;
+					// if we calling a remapped virtual method, we need to locate the proper helper method
+					if(IsRemappedVirtual)
+					{
+						Type[] argTypes = new Type[md.ArgTypes.Length + 1];
+						argTypes[0] = this.declaringType.Type;
+						md.ArgTypes.CopyTo(argTypes, 1);
+						method = ((RemappedTypeWrapper)this.DeclaringType).VirtualsHelperHack.GetMethod(md.Name, BindingFlags.Static | BindingFlags.Public, null, argTypes, null);
+					}
+				}
+				else if(IsRemappedVirtual)
+				{
+					throw new NotImplementedException("non-static remapped virtual invocation not implement");
 				}
 			}
 			else

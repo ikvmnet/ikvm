@@ -72,14 +72,14 @@ sealed class JavaException
 	{
 		// HACK if java.lang.ClassNotFoundException is not found, this method would recurse until the
 		// stack overflows, so in order to prevent that, we use this hack
+		if(classNotFound)
+		{
+			throw new BootstrapClassMissing();
+		}
 		if(JVM.IsStaticCompiler)
 		{
 			Console.WriteLine("ClassNotFound: " + s);
 			//Console.WriteLine(new System.Diagnostics.StackTrace(true));
-			if(classNotFound)
-			{
-				throw new BootstrapClassMissing();
-			}
 		}
 		try
 		{
@@ -131,6 +131,24 @@ sealed class JavaException
 	{
 		return (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.NegativeArraySizeException"));
 	}
+
+	internal static Exception ArrayStoreException(string s)
+	{
+		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.ArrayStoreException").GetConstructor(new Type[] { typeof(string) });
+		return (Exception)ci.Invoke(new object[] { s });
+	}
+
+	internal static Exception IndexOutOfBoundsException(string s)
+	{
+		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.IndexOutOfBoundsException").GetConstructor(new Type[] { typeof(string) });
+		return (Exception)ci.Invoke(new object[] { s });
+	}
+
+	internal static Exception StringIndexOutOfBoundsException(string s)
+	{
+		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.StringIndexOutOfBoundsException").GetConstructor(new Type[] { typeof(string) });
+		return (Exception)ci.Invoke(new object[] { s });
+ 	}
 
 	internal static Exception InvocationTargetException(Exception x)
 	{

@@ -51,7 +51,12 @@ public class StringHelper
 		{
 			data[i] = (byte)sdata[i];
 		}
-		return System.Text.Encoding.ASCII.GetString(data, offset, count);
+		try {
+			return System.Text.Encoding.ASCII.GetString(data, offset, count);
+		}
+		catch (Exception ex) {
+			return null;
+		}
 	}
 
 	public static string NewString(sbyte[] sdata, int hibyte, int offset, int count)
@@ -107,8 +112,13 @@ public class StringHelper
 		}
 		// TODO don't use reflection, but write a Java helper class and redirect this method there
 		Type t = ClassLoaderWrapper.GetType("gnu.java.io.EncodingManager");
-		object decoder = t.InvokeMember("getDecoder", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new object[] { charsetName });
-		return new String((char[])decoder.GetType().InvokeMember("convertToChars", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, decoder, new object[] { sdata, offset, count }));
+		try {
+			object decoder = t.InvokeMember("getDecoder", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new object[] { charsetName });
+			return new String((char[])decoder.GetType().InvokeMember("convertToChars", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, decoder, new object[] { sdata, offset, count }));
+		}
+		catch (TargetInvocationException ex) {
+			throw ExceptionHelper.MapExceptionFast(ex.InnerException);
+		}
 	}
 
 	public static string valueOf(bool b)
@@ -165,6 +175,16 @@ public class StringHelper
 	public static bool startsWith(string s, string prefix, int toffset)
 	{
 		return s.Substring(toffset).StartsWith(prefix);
+	}
+
+	public static char charAt(string s, int index)
+	{
+		try {
+			return s[index];
+		}
+		catch (IndexOutOfRangeException ex) {
+			throw JavaException.StringIndexOutOfBoundsException("");
+		}
 	}
 
 	public static void getChars(string s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 

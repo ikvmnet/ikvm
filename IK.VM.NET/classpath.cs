@@ -681,14 +681,38 @@ namespace NativeCode.java
 		{
 			public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
 			{
-				Array srcArray = (Array)src;
-				Array destArray = (Array)dest;
-				if(srcStart < 0 || (srcStart + len) > srcArray.Length ||
-					destStart < 0 || (destStart + len) > destArray.Length || len < 0)
-				{
+				if ((src == null) || (dest == null))
+					throw new NullReferenceException ();
+
+				if (!(src is Array) || !(dest is Array))
+					throw JavaException.ArrayStoreException ("source and destination must be an array");
+
+				Type eltype_src = src.GetType().GetElementType();
+				Type eltype_dst = dest.GetType().GetElementType();
+				bool prim_src = eltype_src.IsPrimitive;
+				bool prim_dst = eltype_dst.IsPrimitive;
+
+				if (prim_src && !prim_dst)
+					throw JavaException.ArrayStoreException ("source is an array of primitive type while destination is not");
+
+				if (!prim_src && prim_dst)
+					throw JavaException.ArrayStoreException ("destination is an array of primitive type while source is not");
+
+				if (prim_src && prim_dst && (eltype_src != eltype_dst))
+					throw JavaException.ArrayStoreException ("source and destination must be of the same primitive type");
+
+				try {
+					Array.Copy((Array)src, srcStart, (Array)dest, destStart, len);
+				}
+				catch (ArgumentOutOfRangeException) {
 					throw JavaException.ArrayIndexOutOfBoundsException();
 				}
-				Array.Copy(srcArray, srcStart, destArray, destStart, len);
+				catch (ArgumentException) {
+					throw JavaException.ArrayIndexOutOfBoundsException();
+				}
+				catch (InvalidCastException) {
+					throw JavaException.ArrayStoreException ("cast failed");
+				}
 			}
 
 			public static bool isWordsBigEndian()

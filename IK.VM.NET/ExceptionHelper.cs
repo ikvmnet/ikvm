@@ -109,7 +109,7 @@ public class ExceptionHelper
 						StackFrame frame = st.GetFrame(i);
 						MethodBase m = frame.GetMethod();
 						// TODO I may need more safety checks like these
-						if(m.DeclaringType == null || m.ReflectedType == null)
+						if(m == null || m.DeclaringType == null || m.ReflectedType == null)
 						{
 							continue;
 						}
@@ -619,86 +619,67 @@ public class ExceptionHelper
 		return ClassHelper.getName(x.GetType()) + ": " + message;
 	}
 
-	// below are some helper properties to support calling virtual methods on Throwable
+	// below are some helper methods to support calling virtual methods on Throwable
+	private static readonly object[] noargs = new object[0];
+	private static TypeWrapper throwableWrapper;
+	private static MethodWrapper toString_methodWrapper;
+	private static MethodWrapper getMessage_methodWrapper;
+	private static MethodWrapper getStackTrace_methodWrapper;
+	private static MethodWrapper getCause_methodWrapper;
+	private static MethodWrapper getLocalizedMessage_methodWrapper;
 
-	private delegate string toString_Delegate(Exception x);
-	private static toString_Delegate toString_Virtual_;
-
-	private static toString_Delegate toString_Virtual
+	private static MethodWrapper GetMethod(string name, string sig)
 	{
-		get
+		if(throwableWrapper == null)
 		{
-			if(toString_Virtual_ == null)
-			{
-				MethodInfo method = ClassLoaderWrapper.GetType("java.lang.Throwable$VirtualMethodsHelper").GetMethod("toString");
-				toString_Virtual_ = (toString_Delegate)Delegate.CreateDelegate(typeof(toString_Delegate), method);
-			}
-			return toString_Virtual_;
+			throwableWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Throwable");
 		}
+		return throwableWrapper.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), name, sig), true);
 	}
 
-	private delegate string getMessage_Delegate(Exception x);
-	private static getMessage_Delegate getMessage_Virtual_;
-
-	private static getMessage_Delegate getMessage_Virtual
+	private static string toString_Virtual(Exception x)
 	{
-		get
+		if(toString_methodWrapper == null)
 		{
-			if(getMessage_Virtual_ == null)
-			{
-				MethodInfo method = ClassLoaderWrapper.GetType("java.lang.Throwable$VirtualMethodsHelper").GetMethod("getMessage");
-				getMessage_Virtual_ = (getMessage_Delegate)Delegate.CreateDelegate(typeof(getMessage_Delegate), method);
-			}
-			return getMessage_Virtual_;
+			toString_methodWrapper = GetMethod("toString", "()Ljava/lang/String;");
 		}
+		return (string)toString_methodWrapper.Invoke(x, noargs, false);
 	}
 
-	private delegate StackTraceElement[] getStackTrace_Delegate(Exception x);
-	private static getStackTrace_Delegate getStackTrace_Virtual_;
-
-	private static getStackTrace_Delegate getStackTrace_Virtual
+	private static string getMessage_Virtual(Exception x)
 	{
-		get
+		if(getMessage_methodWrapper == null)
 		{
-			if(getStackTrace_Virtual_ == null)
-			{
-				MethodInfo method = ClassLoaderWrapper.GetType("java.lang.Throwable$VirtualMethodsHelper").GetMethod("getStackTrace");
-				getStackTrace_Virtual_ = (getStackTrace_Delegate)Delegate.CreateDelegate(typeof(getStackTrace_Delegate), method);
-			}
-			return getStackTrace_Virtual_;
+			getMessage_methodWrapper = GetMethod("getMessage", "()Ljava/lang/String;");
 		}
+		return (string)getMessage_methodWrapper.Invoke(x, noargs, false);
 	}
 
-	private delegate Exception getCause_Delegate(Exception x);
-	private static getCause_Delegate getCause_Virtual_;
-
-	private static getCause_Delegate getCause_Virtual
+	private static StackTraceElement[] getStackTrace_Virtual(Exception x)
 	{
-		get
+		if(getStackTrace_methodWrapper == null)
 		{
-			if(getCause_Virtual_ == null)
-			{
-				MethodInfo method = ClassLoaderWrapper.GetType("java.lang.Throwable$VirtualMethodsHelper").GetMethod("getCause");
-				getCause_Virtual_ = (getCause_Delegate)Delegate.CreateDelegate(typeof(getCause_Delegate), method);
-			}
-			return getCause_Virtual_;
+			getStackTrace_methodWrapper = GetMethod("getStackTrace", "()[Ljava/lang/StackTraceElement;");
 		}
+		return (StackTraceElement[])getStackTrace_methodWrapper.Invoke(x, noargs, false);
 	}
 
-	private delegate string getLocalizedMessage_Delegate(Exception x);
-	private static getLocalizedMessage_Delegate getLocalizedMessage_Virtual_;
-
-	private static getLocalizedMessage_Delegate getLocalizedMessage_Virtual
+	private static Exception getCause_Virtual(Exception x)
 	{
-		get
+		if(getCause_methodWrapper == null)
 		{
-			if(getLocalizedMessage_Virtual_ == null)
-			{
-				MethodInfo method = ClassLoaderWrapper.GetType("java.lang.Throwable$VirtualMethodsHelper").GetMethod("getLocalizedMessage");
-				getLocalizedMessage_Virtual_ = (getLocalizedMessage_Delegate)Delegate.CreateDelegate(typeof(getLocalizedMessage_Delegate), method);
-			}
-			return getLocalizedMessage_Virtual_;
+			getCause_methodWrapper = GetMethod("getCause", "()Ljava/lang/Throwable;");
 		}
+		return (Exception)getCause_methodWrapper.Invoke(x, noargs, false);
+	}
+
+	private static string getLocalizedMessage_Virtual(Exception x)
+	{
+		if(getLocalizedMessage_methodWrapper == null)
+		{
+			getLocalizedMessage_methodWrapper = GetMethod("getLocalizedMessage", "()Ljava/lang/String;");
+		}
+		return (string)getLocalizedMessage_methodWrapper.Invoke(x, noargs, false);
 	}
 
 	[StackTraceInfo(Hidden = true)]
