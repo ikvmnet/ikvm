@@ -113,6 +113,7 @@ public sealed class JniHelper
 
 	public static object FindClass(string javaName)
 	{
+		// TODO instead of using the bootstrap class loader, we need to use the system (aka application) class loader
 		TypeWrapper wrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(javaName.Replace('/', '.'));
 		wrapper.Finish();
 		return NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper);
@@ -126,6 +127,14 @@ public sealed class JniHelper
 	public static object GetClassFromType(Type type)
 	{
 		return NativeCode.java.lang.VMClass.getClassFromType(type);
+	}
+
+	public static object AllocObject(object clazz)
+	{
+		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+		wrapper.Finish();
+		// TODO if we're instantiating a remapping type, we need to use TypeAsBaseType (except for String)
+		return System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsTBD);
 	}
 }
 

@@ -148,4 +148,8 @@ public:
 	{
 		return JniHelper::GetClassFromType(type);
 	}
+	static Object* AllocObject(Object* clazz)
+	{
+		return JniHelper::AllocObject(clazz);
+	}
 };

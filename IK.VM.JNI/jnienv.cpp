@@ -234,18 +234,14 @@ jclass JNIEnv::FindClass(const char *utf)
 {
 	return (jclass)(void*)pLocalRefs->MakeLocalRef(VM::FindClass(StringFromUTF8(utf)));
 }
-#pragma unmanaged
 
 jobject JNIEnv::AllocObject(jclass cls)
 {
 	// wicked, I just realized that serialization should have a facility to construct uninitialized objects
 	// this can be implemented using FormatterServices.GetUninitializedObject, the only hitch is that this
 	// won't supports strings, so we may have to figure out a workaround for that, or decide just not to support it
-	assert(false);
-	_asm int 3
+	return (jobject)(void*)pLocalRefs->MakeLocalRef(VM::AllocObject(UnwrapRef(cls)));
 }
-
-#pragma managed
 
 jmethodID JNIEnv::FindMethodID(jclass cls, const char* name, const char* sig, bool isstatic)
 {
@@ -864,15 +860,15 @@ GET_SET_ARRAY_REGION(Long, jlong, __int64)
 GET_SET_ARRAY_REGION(Float, jfloat, float)
 GET_SET_ARRAY_REGION(Double, jdouble, double)
 
-
 #define GET_SET_ARRAY_ELEMENTS(Type,type,cpptype) \
 type* JNIEnv::Get##Type##ArrayElements(type##Array array, jboolean *isCopy)\
 {\
 	cpptype ar __gc[] = __try_cast<cpptype __gc[]>(UnwrapRef(array));\
 	type* p = new type[ar->Length];\
-	for(int i = 0; i < ar->Length; i++)\
+	if(ar->Length)\
 	{\
-		p[i] = ar[i];\
+		cpptype __pin* par = &ar[0];\
+		memcpy(p, par, ar->Length * sizeof(cpptype));\
 	}\
 	if(isCopy)\
 	{\
@@ -882,24 +878,16 @@ type* JNIEnv::Get##Type##ArrayElements(type##Array array, jboolean *isCopy)\
 }\
 void JNIEnv::Release##Type##ArrayElements(type##Array array, type *elems, jint mode)\
 {\
-	if(mode == 0)\
+	if(mode == 0 || mode == JNI_COMMIT)\
 	{\
 		cpptype ar __gc[] = __try_cast<cpptype __gc[]>(UnwrapRef(array));\
-		for(int i = 0; i < ar->Length; i++)\
+		if(ar->Length)\
 		{\
-			ar[i] = elems[i];\
-		}\
-		delete[] elems;\
-	}\
-	else if(mode == JNI_COMMIT)\
-	{\
-		cpptype ar __gc[] = __try_cast<cpptype __gc[]>(UnwrapRef(array));\
-		for(int i = 0; i < ar->Length; i++)\
-		{\
-			ar[i] = elems[i];\
+			cpptype __pin* p = &ar[0];\
+			memcpy(p, elems, ar->Length * sizeof(cpptype));\
 		}\
 	}\
-	else if(mode == JNI_ABORT)\
+	if(mode == 0 || mode == JNI_ABORT)\
 	{\
 		delete[] elems;\
 	}\
@@ -1051,36 +1039,46 @@ jint JNICALL JNIEnv::GetJavaVM(JavaVM **vm)
 }
 
 #pragma managed
+static jsize GetPrimitiveArrayElementSize(Array* ar)
+{
+	Type* type = ar->GetType()->GetElementType();
+	if(type == __typeof(System::SByte) || type == __typeof(System::Boolean))
+	{
+		return 1;
+	}
+	else if(type == __typeof(System::Int16) || type == __typeof(System::Char))
+	{
+		return 2;
+	}
+	else if(type == __typeof(System::Int32) || type == __typeof(System::Single))
+	{
+		return 4;
+	}
+	else if(type == __typeof(System::Int64) || type == __typeof(System::Double))
+	{
+		return 8;
+	}
+	else
+	{
+		assert(false);
+		return 1;
+	}
+}
+
 void* JNICALL JNIEnv::GetPrimitiveArrayCritical(jarray array, jboolean *isCopy)
 {
 	Array* ar = __try_cast<Array*>(UnwrapRef(array));
+	int len = ar->Length * GetPrimitiveArrayElementSize(ar);
 	GCHandle h = GCHandle::Alloc(ar, GCHandleType::Pinned);
 	try
 	{
-		int len;
-		Type* type = ar->GetType()->GetElementType();
-		if(type == __typeof(System::SByte) || type == __typeof(System::Boolean))
+		char* buf = new char[len];
+		if(!buf)
 		{
-			len = ar->Length;
-		}
-		else if(type == __typeof(System::Int16) || type == __typeof(System::Char))
-		{
-			len = ar->Length * 2;
-		}
-		else if(type == __typeof(System::Int32) || type == __typeof(System::Single))
-		{
-			len = ar->Length * 4;
-		}
-		else if(type == __typeof(System::Int64) || type == __typeof(System::Double))
-		{
-			len = ar->Length * 8;
-		}
-		else
-		{
+			// TODO throw OutOfMemoryError
 			assert(false);
 			return 0;
 		}
-		char* buf = new char[len];
 		memcpy(buf, (void*)h.AddrOfPinnedObject(), len);
 		if(isCopy)
 		{
@@ -1096,7 +1094,24 @@ void* JNICALL JNIEnv::GetPrimitiveArrayCritical(jarray array, jboolean *isCopy)
 
 void JNICALL JNIEnv::ReleasePrimitiveArrayCritical(jarray array, void *carray, jint mode)
 {
-	delete[] (char*)carray;
+	if(mode == 0 || mode == JNI_COMMIT)
+	{
+		Array* ar = __try_cast<Array*>(UnwrapRef(array));
+		int len = ar->Length * GetPrimitiveArrayElementSize(ar);
+		GCHandle h = GCHandle::Alloc(ar, GCHandleType::Pinned);
+		try
+		{
+			memcpy((void*)h.AddrOfPinnedObject(), carray, len);
+		}
+		__finally
+		{
+			h.Free();
+		}
+	}
+	if(mode == 0 || mode == JNI_ABORT)
+	{
+		delete[] (char*)carray;
+	}
 }
 #pragma unmanaged
 
