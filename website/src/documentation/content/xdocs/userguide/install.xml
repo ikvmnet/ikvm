@@ -37,7 +37,7 @@
         without having the dll's in the current directory, you must install them in the Global Assembly Cache.
         To do this in Windows,  access the Microsoft .NET Framework
         Configuration item in the Windows Control Panel, and add the assemblies to the Assembly Cache.
-        At minimum, you will want to install the IKVM.GNU.Classpath.dll and IKVM.Runtime.dll.
+        At a minimum, you will want to install the IKVM.GNU.Classpath.dll and IKVM.Runtime.dll.
         </p>
         </li>
         </ul>

@@ -74,7 +74,7 @@
                    </tr>
                     <tr>
                         <td>IKVM.GNU.Classpath.dll</td>
-                        <td>This is a compiled version of <fork href="ext:classpath">GNU Classpath</fork>, the Free Software Foundation's implementation of the Java class libraries, plus some additional IKVM.NET specific code. Note that GNU Classpath isn't part of IKVM.NET, but it is used by IK.VM.NET.</td>
+                        <td>This is a compiled version of <fork href="ext:classpath">GNU Classpath</fork>, the Free Software Foundation's implementation of the Java class libraries, plus some additional IKVM.NET specific code. Note that GNU Classpath isn't part of IKVM.NET, but it is used by IKVM.NET.</td>
                     </tr>
                     <tr>
                         <td>IKVM.JNI.CLR-Win32.dll</td>

@@ -2,7 +2,7 @@
 <!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
 <document> 
   <header> 
-    <title>IKVM.NET User Manual: Concepts</title> 
+    <title>IKVM.NET Concepts</title> 
     <authors><person name="Stephen Schaub" email="sschaub@bju.edu"/> 
     </authors> 
      <abstract>This section discusses several important concepts about
