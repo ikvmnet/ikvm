@@ -46,8 +46,16 @@ class IkvmresURLConnection extends URLConnection
 		{
 			String assembly = url.getHost();
 			String resource = url.getFile();
-			// TODO error handling
-			FieldInfo fi = Assembly.Load(assembly).GetLoadedModules()[0].GetField(resource);
+			Assembly asm = Assembly.Load(assembly);
+			if(asm == null)
+			{
+				throw new IOException("assembly " + assembly + " not found");
+			}
+			FieldInfo fi = asm.GetLoadedModules()[0].GetField(resource);
+			if(fi == null)
+			{
+				throw new IOException("resource " + resource + " not found in assembly " + assembly);
+			}
 			byte[] b = new byte[system.runtime.interopservices.Marshal.SizeOf(fi.get_FieldType())];
 			InitArray(b, fi);
 			inputStream = new ByteArrayInputStream(b);
@@ -91,13 +99,13 @@ public class Handler extends URLStreamHandler
 	protected void parseURL(URL url, String url_string, int start, int end)
 	{
 		int colon = url_string.indexOf(':', start);
-		String file = url_string.substring(start, colon);
-		String assembly = url_string.substring(colon + 1);
+		String assembly = url_string.substring(start, colon);
+		String file = url_string.substring(colon + 1);
 		setURL(url, "ikvmres", assembly, 0, file, null);
 	}
 
 	protected String toExternalForm(URL url)
 	{
-		return "ikvmres:" + url.getFile() + ":" + url.getHost();
+		return "ikvmres:" + url.getHost() + ":" + url.getFile();
 	}
 }

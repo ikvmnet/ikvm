@@ -441,6 +441,8 @@ namespace NativeCode.java
 				m.Invoke(properties, new string[] { "user.home", home });
 				m.Invoke(properties, new string[] { "user.dir", Environment.CurrentDirectory });
 				m.Invoke(properties, new string[] { "awt.toolkit", "ikvm.awt.NetToolkit, awt, Version=1.0, Culture=neutral, PublicKeyToken=null" });
+				// HACK we assume that the type of the properties object is the classpath assembly
+				m.Invoke(properties, new string[] { "gnu.classpath.home.url", "ikvmres:" + properties.GetType().Assembly.FullName + ":lib" });
 			}
 
 			public static string nativeGetLibname(string pathname, string libname)

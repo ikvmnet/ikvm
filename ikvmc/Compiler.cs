@@ -76,6 +76,7 @@ class Compiler : MarshalByRefObject
 			Console.Error.WriteLine("    -reference:<path>       Reference an assembly");
 			Console.Error.WriteLine("    -recurse:<filespec>     Recurse directory and include matching files");
 			Console.Error.WriteLine("    -nojni                  Do not generate JNI stub for native methods");
+			Console.Error.WriteLine("    -resource:<name>=<path> Include file as Java resource");
 			return 1;
 		}
 		ArrayList classes = new ArrayList();
@@ -119,6 +120,23 @@ class Compiler : MarshalByRefObject
 				{
 					string spec = s.Substring(9);
 					Recurse(classes, resources, new DirectoryInfo(Path.GetDirectoryName(spec)), Path.GetFileName(spec));
+				}
+				else if(s.StartsWith("-resource:"))
+				{
+					string[] spec = s.Substring(10).Split('=');
+					if(resources.ContainsKey(spec[0]))
+					{
+						Console.Error.WriteLine("Warning: skipping resource (name clash): " + spec[0]);
+					}
+					else
+					{
+						using(FileStream fs = new FileStream(spec[1], FileMode.Open))
+						{
+							byte[] b = new byte[fs.Length];
+							fs.Read(b, 0, b.Length);
+							resources.Add(spec[0], b);
+						}
+					}
 				}
 				else if(s == "-nojni")
 				{

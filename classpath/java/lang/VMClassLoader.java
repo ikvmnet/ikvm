@@ -141,7 +141,7 @@ final class VMClassLoader
 			Assembly assembly = findResourceAssembly(name);
 			if(assembly != null)
 			{
-				return new URL("ikvmres:" + name + ":" + assembly.get_FullName());
+				return new URL("ikvmres:" + assembly.get_FullName() + ":" + name);
 			}
 		}
 		catch(java.net.MalformedURLException x)
