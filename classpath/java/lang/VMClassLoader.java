@@ -45,6 +45,7 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.StringTokenizer;
 import java.lang.reflect.Constructor;
 import gnu.classpath.SystemProperties;
@@ -173,31 +174,34 @@ final class VMClassLoader
      */
     static Enumeration getResources(String name) throws IOException
     {
-	if(cli.System.Threading.Thread.GetData(nestedGetResourcesHack) != null)
-	{
-	    return gnu.java.util.EmptyEnumeration.getInstance();
-	}
-	cli.System.Threading.Thread.SetData(nestedGetResourcesHack, "");
-	try
-	{
-	    Assembly[] assemblies = findResourceAssemblies(name);
-	    java.util.Vector v = new java.util.Vector();
-	    for(int i = 0; i < assemblies.length; i++)
+        synchronized(nestedGetResourcesHack)
+        {
+	    if(cli.System.Threading.Thread.GetData(nestedGetResourcesHack) != null)
 	    {
-		v.addElement(new URL("ikvmres", assemblies[i].get_FullName(), -1, "/" + name));
+	        return gnu.java.util.EmptyEnumeration.getInstance();
 	    }
-	    Enumeration e = v.elements();
-	    ClassLoader bootstrap = getBootstrapClassLoader();
-	    if(bootstrap != null)
+	    cli.System.Threading.Thread.SetData(nestedGetResourcesHack, "");
+	    try
 	    {
-		e = new DoubleEnumeration(e, bootstrap.getResources(name));
+	        Assembly[] assemblies = findResourceAssemblies(name);
+	        java.util.Vector v = new java.util.Vector();
+	        for(int i = 0; i < assemblies.length; i++)
+	        {
+		    v.addElement(new URL("ikvmres", assemblies[i].get_FullName(), -1, "/" + name));
+	        }
+	        Enumeration e = v.elements();
+	        ClassLoader bootstrap = getBootstrapClassLoader();
+	        if(bootstrap != null)
+	        {
+		    e = new DoubleEnumeration(e, bootstrap.getResources(name));
+	        }
+	        return e;
 	    }
-	    return e;
-	}
-	finally
-	{
-	    cli.System.Threading.Thread.SetData(nestedGetResourcesHack, null);
-	}
+	    finally
+	    {
+	        cli.System.Threading.Thread.SetData(nestedGetResourcesHack, null);
+	    }
+        }
     }
 
     private static cli.System.LocalDataStoreSlot nestedGetResourcesHack = cli.System.Threading.Thread.AllocateDataSlot();
@@ -212,6 +216,14 @@ final class VMClassLoader
      */
     static Package getPackage(String name)
     {
+        Package[] packages = getPackagesImpl();
+        for(int i = 0; i < packages.length; i++)
+        {
+            if(packages[i].getName().equals(name))
+            {
+                return packages[i];
+            }
+        }
 	return null;
     }
 
@@ -224,8 +236,95 @@ final class VMClassLoader
      */
     static Package[] getPackages()
     {
-	return new Package[0];
+        return (Package[])getPackagesImpl().clone();
     }
+
+    private static boolean runningOnMono = Type.GetType("Mono.Runtime") != null;
+
+    private static Package[] getPackagesImpl()
+    {
+        // MONOBUG Assembly.GetTypes() on IKVM.GNU.Classpath dies
+        if(runningOnMono)
+        {
+            return new Package[0];
+        }
+        Package[] packages = packageCache;
+        if(packages == null)
+        {
+            ClassLoader boot = getBootstrapClassLoader();
+            if(boot != null)
+            {
+                synchronized(nestedGetResourcesHack)
+                {
+                    if(cli.System.Threading.Thread.GetData(nestedGetResourcesHack) != null)
+                    {
+                        return new Package[0];
+                    }
+                }
+            }
+            HashMap h = new HashMap();
+            Assembly[] assemblies = AppDomain.get_CurrentDomain().GetAssemblies();
+            for(int i = 0; i < assemblies.length; i++)
+            {
+                if(!(assemblies[i] instanceof cli.System.Reflection.Emit.AssemblyBuilder))
+                {
+                    Type[] types = assemblies[i].GetTypes();
+                    for(int j = 0; j < types.length; j++)
+                    {
+                        String name = getPackageName(types[j]);
+                        if(name != null)
+                        {
+                            // TODO fill out more package details
+                            h.put(name, new Package(name, null, null, null, null, null, null, null));
+                        }
+                    }
+                }
+            }
+            if(boot != null)
+            {
+                Package[] pkgboot;
+                synchronized(nestedGetResourcesHack)
+                {
+                    cli.System.Threading.Thread.SetData(nestedGetResourcesHack, "");
+                    try
+                    {
+                        pkgboot = boot.getPackages();
+                    }
+                    finally
+                    {
+                        cli.System.Threading.Thread.SetData(nestedGetResourcesHack, null);
+                    }
+                }
+                Collection c = h.values();
+                packages = new Package[c.size() + pkgboot.length];
+                c.toArray(packages);
+                VMSystem.arraycopy(pkgboot, 0, packages, c.size(), pkgboot.length);
+                // we don't cache the result, because we don't know when the bootstrap class loader loads a new package
+            }
+            else
+            {
+                Collection c = h.values();
+                packages = new Package[c.size()];
+                c.toArray(packages);
+                packageCache = packages;
+            }
+        }
+        return packages;        
+    }
+
+    private static volatile Package[] packageCache;
+
+    static
+    {
+        AppDomain.get_CurrentDomain().add_AssemblyLoad(new AssemblyLoadEventHandler(
+            new AssemblyLoadEventHandler.Method() {
+                public void Invoke(Object sender, AssemblyLoadEventArgs args) {
+                    packageCache = null;
+                }
+            }));
+    }
+
+    private static native String getPackageName(Type type);
 
     /**
      * Helper for java.lang.Integer, Byte, etc to get the TYPE class

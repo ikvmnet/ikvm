@@ -49,7 +49,6 @@ import cli.System.Net.Sockets.SocketType;
 import cli.System.Net.Sockets.ProtocolType;
 import cli.System.Net.Sockets.AddressFamily;
 import ikvm.lang.CIL;
-import ikvm.lang.ByteArrayHack;
 
 /**
 * This is the default socket implementation for datagram sockets.
@@ -166,7 +165,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             {
                 throw new SocketException("Invalid port");
             }
-            if(socket.SendTo(ByteArrayHack.cast(packet.getData()), packet.getOffset(), len, SocketFlags.wrap(SocketFlags.None), new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(packet.getAddress()), port)) != len)
+            if(socket.SendTo(packet.getData(), packet.getOffset(), len, SocketFlags.wrap(SocketFlags.None), new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(packet.getAddress()), port)) != len)
             {
                 throw new SocketException("Not all data was sent");
             }
@@ -211,7 +210,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            int length = socket.ReceiveFrom(ByteArrayHack.cast(data), packet.getOffset(), getDatagramPacketBufferLength(packet),
+            int length = socket.ReceiveFrom(data, packet.getOffset(), getDatagramPacketBufferLength(packet),
                             cli.System.Net.Sockets.SocketFlags.wrap(cli.System.Net.Sockets.SocketFlags.None), remoteEP);
             setDatagramPacketLength(packet, length);
         }

@@ -418,7 +418,7 @@ namespace IKVM.Attributes
 			this.val = val;
 		}
 
-		public ConstantValueAttribute(sbyte val)
+		public ConstantValueAttribute(byte val)
 		{
 			this.val = val;
 		}

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,8 +27,6 @@ using System.IO;
 using System.Text;
 using System.Collections;
 using ICSharpCode.SharpZipLib.Zip;
-using java.lang;
-using java.lang.reflect;
 using IKVM.Attributes;
 using IKVM.Internal;
 
@@ -79,6 +77,7 @@ public class NetExp
 		{
 			assembly = Assembly.LoadWithPartialName(args[0]);
 		}
+		int rc = 0;
 		if(assembly == null)
 		{
 			Console.Error.WriteLine("Error: Assembly \"{0}\" not found", args[0]);
@@ -94,12 +93,13 @@ public class NetExp
 			catch(System.Exception x)
 			{
 				java.lang.Throwable.instancehelper_printStackTrace(IKVM.Runtime.Util.MapException(x));
+				rc = 1;
 			}
 			zipFile.Close();
 		}
 		// FXBUG if we run a static initializer that starts a thread, we would never end,
 		// so we force an exit here
-		Environment.Exit(0);
+		Environment.Exit(rc);
 	}
 
 	private static void WriteClass(string name, ClassFileWriter c)
@@ -114,12 +114,12 @@ public class NetExp
 		{
 			if(t.IsPublic)
 			{
-				Class c;
+				java.lang.Class c;
 				try
 				{
-					c = Class.forName(t.AssemblyQualifiedName, false, null);
+					c = java.lang.Class.forName(t.AssemblyQualifiedName, false, null);
 				}
-				catch(ClassNotFoundException)
+				catch(java.lang.ClassNotFoundException)
 				{
 					// types that IKVM doesn't support don't show up
 					continue;
@@ -139,7 +139,7 @@ public class NetExp
 			Hashtable todo = privateClasses;
 			privateClasses = new Hashtable();
 			keepGoing = false;
-			foreach(Class c in todo.Values)
+			foreach(java.lang.Class c in todo.Values)
 			{
 				if(!done.ContainsKey(c.getName()))
 				{
@@ -151,7 +151,7 @@ public class NetExp
 		} while(keepGoing);
 	}
 
-	private static void ProcessClass(string assemblyName, Class c, Class outer)
+	private static void ProcessClass(string assemblyName, java.lang.Class c, java.lang.Class outer)
 	{
 		string name = c.getName().Replace('.', '/');
 		string super = null;
@@ -159,7 +159,7 @@ public class NetExp
 		{
 			super = c.getSuperclass().getName().Replace('.', '/');
 			// if the base class isn't public, we still need to export it (!)
-			if(!Modifier.isPublic(c.getSuperclass().getModifiers()))
+			if(!java.lang.reflect.Modifier.isPublic(c.getSuperclass().getModifiers()))
 			{
 				privateClasses[c.getSuperclass().getName()] = c.getSuperclass();
 			}
@@ -196,15 +196,15 @@ public class NetExp
 			}
 			innerClassesAttribute.Add(name, outer.getName().Replace('.', '/'), innername, (ushort)c.getModifiers());
 		}
-		Class[] interfaces = c.getInterfaces();
+		java.lang.Class[] interfaces = c.getInterfaces();
 		for(int i = 0; i < interfaces.Length; i++)
 		{
-			if(Modifier.isPublic(interfaces[i].getModifiers()))
+			if(java.lang.reflect.Modifier.isPublic(interfaces[i].getModifiers()))
 			{
 				f.AddInterface(interfaces[i].getName().Replace('.', '/'));
 			}
 		}
-		Class[] innerClasses = c.getDeclaredClasses();
+		java.lang.Class[] innerClasses = c.getDeclaredClasses();
 		for(int i = 0; i < innerClasses.Length; i++)
 		{
 			Modifiers mods = (Modifiers)innerClasses[i].getModifiers();
@@ -220,7 +220,7 @@ public class NetExp
 				ProcessClass(assemblyName, innerClasses[i], c);
 			}
 		}
-		Constructor[] constructors = c.getDeclaredConstructors();
+		java.lang.reflect.Constructor[] constructors = c.getDeclaredConstructors();
 		for(int i = 0; i < constructors.Length; i++)
 		{
 			Modifiers mods = (Modifiers)constructors[i].getModifiers();
@@ -250,7 +250,7 @@ public class NetExp
 				}
 			}
 		}
-		Method[] methods = c.getDeclaredMethods();
+		java.lang.reflect.Method[] methods = c.getDeclaredMethods();
 		for(int i = 0; i < methods.Length; i++)
 		{
 			Modifiers mods = (Modifiers)methods[i].getModifiers();
@@ -269,7 +269,7 @@ public class NetExp
 				}
 			}
 		}
-		Field[] fields = c.getDeclaredFields();
+		java.lang.reflect.Field[] fields = c.getDeclaredFields();
 		for(int i = 0; i < fields.Length; i++)
 		{
 			Modifiers mods = (Modifiers)fields[i].getModifiers();
@@ -340,12 +340,12 @@ public class NetExp
 		WriteClass(name + ".class", f);
 	}
 
-	private static void AddExceptions(ClassFileWriter f, FieldOrMethod m, Class[] exceptions)
+	private static void AddExceptions(ClassFileWriter f, FieldOrMethod m, java.lang.Class[] exceptions)
 	{
 		if(exceptions.Length > 0)
 		{
 			ExceptionsAttribute attrib = new ExceptionsAttribute(f);
-			foreach(Class x in exceptions)
+			foreach(java.lang.Class x in exceptions)
 			{
 				// TODO what happens if one of the exception types is non-public?
 				attrib.Add(x.getName().Replace('.', '/'));
@@ -354,7 +354,7 @@ public class NetExp
 		}
 	}
 
-	private static string MakeSig(Class[] args, Class ret)
+	private static string MakeSig(java.lang.Class[] args, java.lang.Class ret)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.Append('(');
@@ -367,7 +367,7 @@ public class NetExp
 		return sb.ToString();
 	}
 
-	private static string ClassToSig(Class c)
+	private static string ClassToSig(java.lang.Class c)
 	{
 		if(c.isPrimitive())
 		{

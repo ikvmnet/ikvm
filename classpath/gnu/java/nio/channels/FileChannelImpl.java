@@ -55,7 +55,6 @@ import java.nio.channels.WritableByteChannel;
 
 import cli.System.Console;
 import cli.System.IO.*;
-import ikvm.lang.ByteArrayHack;
 import ikvm.lang.CIL;
 
 /**
@@ -382,7 +381,7 @@ public final class FileChannelImpl extends FileChannel
 	try
 	{
 	    if(false) throw new cli.System.IO.IOException();
-	    int count = stream.Read(ByteArrayHack.cast(buf), offset, len);
+	    int count = stream.Read(buf, offset, len);
 	    if(count == 0)
 	    {
 		count = -1;
@@ -416,6 +415,7 @@ public final class FileChannelImpl extends FileChannel
 	{
 	    byte[] buffer = src.array();
 	    write(buffer, src.arrayOffset() + src.position(), len);
+            src.position(src.position() + len);
 	}
 	else
 	{
@@ -468,7 +468,7 @@ public final class FileChannelImpl extends FileChannel
 	{
             if(false) throw new cli.System.IO.IOException();
             if(false) throw new cli.System.ObjectDisposedException(null);
-	    stream.Write(ByteArrayHack.cast(buf), offset, len);
+	    stream.Write(buf, offset, len);
 	    // NOTE FileStream buffers the output, so we have to flush explicitly
 	    stream.Flush();
 	}
@@ -491,7 +491,7 @@ public final class FileChannelImpl extends FileChannel
         {
             if(false) throw new cli.System.IO.IOException();
             if(false) throw new cli.System.ObjectDisposedException(null);
-            stream.WriteByte(CIL.box_ubyte((byte)b));
+            stream.WriteByte((byte)b);
             // NOTE FileStream buffers the output, so we have to flush explicitly
             stream.Flush();
         }

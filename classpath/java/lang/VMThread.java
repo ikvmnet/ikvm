@@ -161,6 +161,15 @@ final class VMThread
 	}
     }
 
+    static void setThreadGroup(ThreadGroup group)
+    {
+        Thread javaThread = (Thread)cli.System.Threading.Thread.GetData(localDataStoreSlot);
+        if(javaThread == null)
+        {
+            newThread(group);
+        }
+    }
+
     static void create(Thread thread, long stacksize)
     {
 	VMThread vmThread = new VMThread(thread);
@@ -463,50 +472,56 @@ final class VMThread
 	}
     }
 
+    // this method creates a new java.lang.Thread instance for threads that were started outside
+    // of Java (either in .NET or in native code)
+    private static Thread newThread(ThreadGroup group)
+    {
+        cli.System.Threading.Thread nativeThread = cli.System.Threading.Thread.get_CurrentThread();
+        VMThread vmThread = new VMThread(null);
+        vmThread.nativeThreadReference = new cli.System.WeakReference(nativeThread);
+        vmThread.running = true;
+        int priority = Thread.NORM_PRIORITY;
+        switch(nativeThread.get_Priority().Value)
+        {
+            case cli.System.Threading.ThreadPriority.Lowest:
+                priority = Thread.MIN_PRIORITY;
+                break;
+            case cli.System.Threading.ThreadPriority.BelowNormal:
+                priority = 3;
+                break;
+            case cli.System.Threading.ThreadPriority.Normal:
+                priority = Thread.NORM_PRIORITY;
+                break;
+            case cli.System.Threading.ThreadPriority.AboveNormal:
+                priority = 7;
+                break;
+            case cli.System.Threading.ThreadPriority.Highest:
+                priority = Thread.MAX_PRIORITY;
+                break;
+        }
+        Thread javaThread = new Thread(vmThread, nativeThread.get_Name(), priority, nativeThread.get_IsBackground());
+        if(!javaThread.daemon)
+        {
+            synchronized(countLock)
+            {
+                nonDaemonCount++;
+            }
+        }
+        vmThread.thread = javaThread;
+        cli.System.Threading.Thread.SetData(localDataStoreSlot, javaThread);
+        cli.System.Threading.Thread.SetData(cli.System.Threading.Thread.GetNamedDataSlot("ikvm-thread-hack"), new CleanupHack(javaThread));
+        javaThread.group = group;
+        javaThread.group.addThread(javaThread);
+        InheritableThreadLocal.newChildThread(javaThread);
+        return javaThread;
+    }
+
     static Thread currentThread()
     {
-	Thread javaThread = (Thread)cli.System.Threading.Thread.GetData(localDataStoreSlot);
+        Thread javaThread = (Thread)cli.System.Threading.Thread.GetData(localDataStoreSlot);
 	if(javaThread == null)
 	{
-	    cli.System.Threading.Thread nativeThread = cli.System.Threading.Thread.get_CurrentThread();
-	    VMThread vmThread = new VMThread(null);
-	    vmThread.nativeThreadReference = new cli.System.WeakReference(nativeThread);
-	    vmThread.running = true;
-	    int priority = Thread.NORM_PRIORITY;
-	    switch(nativeThread.get_Priority().Value)
-	    {
-		case cli.System.Threading.ThreadPriority.Lowest:
-		    priority = Thread.MIN_PRIORITY;
-		    break;
-		case cli.System.Threading.ThreadPriority.BelowNormal:
-		    priority = 3;
-		    break;
-		case cli.System.Threading.ThreadPriority.Normal:
-		    priority = Thread.NORM_PRIORITY;
-		    break;
-		case cli.System.Threading.ThreadPriority.AboveNormal:
-		    priority = 7;
-		    break;
-		case cli.System.Threading.ThreadPriority.Highest:
-		    priority = Thread.MAX_PRIORITY;
-		    break;
-	    }
-	    javaThread = new Thread(vmThread, nativeThread.get_Name(), priority, nativeThread.get_IsBackground());
-	    if(!javaThread.daemon)
-	    {
-		synchronized(countLock)
-		{
-		    nonDaemonCount++;
-		}
-	    }
-	    vmThread.thread = javaThread;
-	    cli.System.Threading.Thread.SetData(localDataStoreSlot, javaThread);
-	    cli.System.Threading.Thread.SetData(cli.System.Threading.Thread.GetNamedDataSlot("ikvm-thread-hack"), new CleanupHack(javaThread));
-	    // HACK JNI code can attach native threads to any thread group
-	    ThreadGroup group = (ThreadGroup)cli.System.Threading.Thread.GetData(cli.System.Threading.Thread.GetNamedDataSlot("ikvm-thread-group"));
-	    javaThread.group = group == null ? ThreadGroup.root : group;
-	    javaThread.group.addThread(javaThread);
-	    InheritableThreadLocal.newChildThread(javaThread);
+            javaThread = newThread(ThreadGroup.root);
 	}
 	return javaThread;
     }

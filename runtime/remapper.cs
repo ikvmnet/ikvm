@@ -145,9 +145,9 @@ namespace IKVM.Internal.MapXml
 								}
 								if(tw.IsGhost)
 								{
-									tw.EmitConvStackToParameterType(ilgen, tw);
+									tw.EmitConvStackTypeToSignatureType(ilgen, tw);
 								}
-								temps[j] = ilgen.DeclareLocal(tw.TypeAsParameterType);
+								temps[j] = ilgen.DeclareLocal(tw.TypeAsSignatureType);
 								ilgen.Emit(OpCodes.Stloc, temps[j]);
 							}
 							for(int j = 0; j < temps.Length; j++)
@@ -672,8 +672,7 @@ namespace IKVM.Internal.MapXml
 		{
 			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
-			// we don't use fw.EmitGet because we don't want automatic boxing and whatever
-			ilgen.Emit(OpCodes.Ldfld, fw.GetField());
+			fw.EmitGet(ilgen);
 		}
 	}
 

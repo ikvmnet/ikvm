@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -504,8 +504,10 @@ class ClassLoaderWrapper
 	// for .NET to handle.
 	private TypeWrapper CreateArrayType(string name, TypeWrapper elementTypeWrapper, int dims)
 	{
+		Debug.Assert(new String('[', dims) + elementTypeWrapper.SigName == name);
+		Debug.Assert(!elementTypeWrapper.IsUnloadable && !elementTypeWrapper.IsVerifierType && !elementTypeWrapper.IsArray);
+		Debug.Assert(dims >= 1);
 		Type elementType = elementTypeWrapper.TypeAsArrayType;
-		Debug.Assert(!elementType.IsArray);
 		TypeWrapper wrapper;
 		lock(types.SyncRoot)
 		{
@@ -809,7 +811,7 @@ class ClassLoaderWrapper
 		Type[] types = new Type[wrappers.Length];
 		for(int i = 0; i < wrappers.Length; i++)
 		{
-			types[i] = wrappers[i].TypeAsParameterType;
+			types[i] = wrappers[i].TypeAsSignatureType;
 		}
 		return types;
 	}
@@ -986,11 +988,6 @@ class ClassLoaderWrapper
 					rank++;
 					elem = elem.GetElementType();
 				}
-				// HACK BYTE[]
-				//if(elem == typeof(byte))
-				//{
-				//	elem = typeof(sbyte);
-				//}
 				wrapper = GetWrapperFromType(elem);
 				return wrapper.MakeArrayType(rank);
 			}

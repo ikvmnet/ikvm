@@ -164,6 +164,13 @@ namespace IKVM.NativeCode.java
 									throw JavaException.IllegalArgumentException("primitive wrapper null");
 								}
 								argsCopy[i] = JVM.Library.unbox(args[i]);
+								// NOTE we depend on the fact that the .NET reflection parameter type
+								// widening rules are the same as in Java, but to have this work for byte
+								// we need to convert byte to sbyte.
+								if(argsCopy[i] is byte && argWrappers[i] != PrimitiveTypeWrapper.BYTE)
+								{
+									argsCopy[i] = (sbyte)(byte)argsCopy[i];
+								}
 							}
 							else
 							{
@@ -221,16 +228,6 @@ namespace IKVM.NativeCode.java
 					return VMClass.getWrapperFromClass(a).IsInSamePackageAs(VMClass.getWrapperFromClass(b));
 				}
 
-				public static object getClassFromFrame(NetSystem.Diagnostics.StackFrame frame)
-				{
-					Type type = frame.GetMethod().DeclaringType;
-					if(type == null)
-					{
-						return null;
-					}
-					return VMClass.getClassFromType(type);
-				}
-
 				public static object GetValue(object fieldCookie, object o)
 				{
 					Profiler.Enter("Field.GetValue");
@@ -272,6 +269,13 @@ namespace IKVM.NativeCode.java
 						if(wrapper.FieldTypeWrapper.IsPrimitive)
 						{
 							v = JVM.Library.unbox(v);
+							// NOTE we depend on the fact that the .NET reflection parameter type
+							// widening rules are the same as in Java, but to have this work for byte
+							// we need to convert byte to sbyte.
+							if(v is byte && wrapper.FieldTypeWrapper != PrimitiveTypeWrapper.BYTE)
+							{
+								v = (sbyte)(byte)v;
+							}
 						}
 						// if the field is an interface field, we must explicitly run <clinit>,
 						// because .NET reflection doesn't
@@ -291,9 +295,9 @@ namespace IKVM.NativeCode.java
 
 		public class VMRuntime
 		{
-			public static int nativeLoad(string filename)
+			public static int nativeLoad(string filename, object classLoader)
 			{
-				return IKVM.Runtime.JniHelper.LoadLibrary(filename);
+				return IKVM.Runtime.JniHelper.LoadLibrary(filename, ClassLoaderWrapper.GetClassLoaderWrapper(classLoader));
 			}
 		}
 
@@ -541,50 +545,6 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public class VMSecurityManager
-		{
-			public static object getClassContext()
-			{
-				ArrayList ar = new ArrayList();
-				NetSystem.Diagnostics.StackTrace st = new NetSystem.Diagnostics.StackTrace();
-				for(int i = 0; i < st.FrameCount; i++)
-				{
-					NetSystem.Diagnostics.StackFrame frame = st.GetFrame(i);
-					// HACK very insecure
-					// TODO handle reflection scenario
-					if(frame.GetMethod().Name != "getClassContext")
-					{
-						Type type = frame.GetMethod().DeclaringType;
-						if(type != null)
-						{
-							ar.Add(VMClass.getClassFromType(type));
-						}
-					}
-				}
-				return ar.ToArray(CoreClasses.java.lang.Class.Wrapper.TypeAsArrayType);
-			}
-
-			public static object currentClassLoader()
-			{
-				// TODO handle PrivilegedAction
-				NetSystem.Diagnostics.StackTrace st = new NetSystem.Diagnostics.StackTrace();
-				for(int i = 0; i < st.FrameCount; i++)
-				{
-					NetSystem.Diagnostics.StackFrame frame = st.GetFrame(i);
-					Type type = frame.GetMethod().DeclaringType;
-					if(type != null)
-					{
-						TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
-						if(wrapper != null && wrapper.GetClassLoader().GetJavaClassLoader() != null)
-						{
-							return wrapper.GetClassLoader().GetJavaClassLoader();
-						}
-					}
-				}
-				return null;
-			}
-		}
-
 		public class VMSystem
 		{
 			public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
@@ -722,6 +682,22 @@ namespace IKVM.NativeCode.java
 				{
 					Profiler.Leave("ClassLoader.defineClass");
 				}
+			}
+
+			public static string getPackageName(Type type)
+			{
+				// TODO consider optimizing this (by getting the type name without constructing the TypeWrapper)
+				string name = ClassLoaderWrapper.GetWrapperFromType(type).Name;
+				// if we process mscorlib and we encounter a primitive, the name will be null
+				if(name != null)
+				{
+					int dot = name.LastIndexOf('.');
+					if(dot > 0)
+					{
+						return name.Substring(0, dot);
+					}
+				}
+				return null;
 			}
 		}
 
@@ -1162,7 +1138,7 @@ namespace IKVM.NativeCode.java
 				GetFieldWrapperFromField(field).SetValue(obj, val);
 			}
 
-			public static void setByteNative(object field, object obj, sbyte val)
+			public static void setByteNative(object field, object obj, byte val)
 			{
 				GetFieldWrapperFromField(field).SetValue(obj, val);
 			}
@@ -1185,7 +1161,21 @@ namespace IKVM.NativeCode.java
 				// TODO calling currentClassLoader in SecurityManager results in null being returned, so we use our own
 				// version for now, don't know what the security implications of this are
 				// SECURITY
-				return NativeCode.java.lang.VMSecurityManager.currentClassLoader();
+				NetSystem.Diagnostics.StackTrace st = new NetSystem.Diagnostics.StackTrace();
+				for(int i = 0; i < st.FrameCount; i++)
+				{
+					NetSystem.Diagnostics.StackFrame frame = st.GetFrame(i);
+					Type type = frame.GetMethod().DeclaringType;
+					if(type != null)
+					{
+						TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
+						if(wrapper != null && wrapper.GetClassLoader().GetJavaClassLoader() != null)
+						{
+							return wrapper.GetClassLoader().GetJavaClassLoader();
+						}
+					}
+				}
+				return null;
 			}
 
 			public static object allocateObject(object ois, object clazz, object constructor_clazz, object constructor)
@@ -1223,9 +1213,9 @@ namespace IKVM.NativeCode.java
 	{
 		public class InetAddress
 		{
-			public static sbyte[] lookupInaddrAny()
+			public static byte[] lookupInaddrAny()
 			{
-				return new sbyte[] { 0, 0, 0, 0 };
+				return new byte[] { 0, 0, 0, 0 };
 			}
 
 			public static string getLocalHostname()
@@ -1234,23 +1224,17 @@ namespace IKVM.NativeCode.java
 				return NetSystem.Net.Dns.GetHostName();
 			}
 
-			public static sbyte[][] getHostByName(string name)
+			public static byte[][] getHostByName(string name)
 			{
 				// TODO error handling
 				try
 				{
 					NetSystem.Net.IPHostEntry he = NetSystem.Net.Dns.GetHostByName(name);
 					NetSystem.Net.IPAddress[] addresses = he.AddressList;
-					sbyte[][] list = new sbyte[addresses.Length][];
+					byte[][] list = new byte[addresses.Length][];
 					for(int i = 0; i < addresses.Length; i++)
 					{
-						byte[] address = addresses[i].GetAddressBytes();
-						sbyte[] sb = new sbyte[address.Length];
-						for(int j = 0; j < sb.Length; j++)
-						{
-							sb[j] = (sbyte)address[j];
-						}
-						list[i] = sb;
+						list[i] = addresses[i].GetAddressBytes();
 					}
 					return list;
 				}
@@ -1392,6 +1376,31 @@ namespace IKVM.NativeCode.gnu.classpath
 			return typeof(VMSystemProperties).Assembly.GetName().Version.ToString();
 		}
 	}
+
+	public class VMStackWalker
+	{
+		internal static volatile Assembly nonVirtualInvokeAssembly;
+
+		public static object getClassFromType(Type type)
+		{
+			return IKVM.NativeCode.java.lang.VMClass.getClassFromType(type);
+		}
+
+		public static object getClassLoaderFromType(Type type)
+		{
+			return IKVM.NativeCode.java.lang.VMClass.getClassLoaderFromType(type);
+		}
+
+		public static Type getJNIEnvType()
+		{
+			return typeof(IKVM.Runtime.JNIEnv);
+		}
+
+		public static Assembly getNonVirtualInvokeAssembly()
+		{
+			return nonVirtualInvokeAssembly;
+		}
+	}
 }
 
 namespace gnu.classpath
@@ -1401,11 +1410,11 @@ namespace gnu.classpath
 	public unsafe sealed class RawData
 	{
 		[HideFromJava]
-		private sbyte* pb;
+		private byte* pb;
 
 		public RawData(IntPtr p)
 		{
-			this.pb = (sbyte*)p;
+			this.pb = (byte*)p;
 		}
 
 		public IntPtr p()
@@ -1417,13 +1426,13 @@ namespace gnu.classpath
 		// security attribute isn't really needed, but to be extra safe we add the explicit link 
 		// demand to these dangerous methods.
 		[SecurityPermission(SecurityAction.LinkDemand, Unrestricted = true)]
-		public sbyte ReadByte(int index)
+		public byte ReadByte(int index)
 		{
 			return pb[index];
 		}
 
 		[SecurityPermission(SecurityAction.LinkDemand, Unrestricted = true)]
-		public void WriteByte(int index, sbyte b)
+		public void WriteByte(int index, byte b)
 		{
 			pb[index] = b;
 		}
@@ -1467,6 +1476,7 @@ namespace ikvm.@internal
 
 		void jniWaitUntilLastThread();
 		void jniDetach();
+		void setThreadGroup(object group);
 
 		object newConstructor(object clazz, object wrapper);
 		object newMethod(object clazz, object wrapper);

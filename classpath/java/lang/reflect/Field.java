@@ -39,6 +39,7 @@ exception statement from your version. */
 package java.lang.reflect;
 
 import cli.System.Diagnostics.StackFrame;
+import gnu.classpath.VMStackWalker;
 
 /**
  * The Field class represents a member variable of a class. It also allows
@@ -236,7 +237,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    return GetValue(fieldCookie, o);
 	}
 	private static native Object GetValue(Object fieldCookie, Object o);
@@ -262,7 +263,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    return ((Boolean)GetValue(fieldCookie, o)).booleanValue();
 	}
 
@@ -287,7 +288,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    return ((Byte)GetValue(fieldCookie, o)).byteValue();
 	}
 
@@ -310,7 +311,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    return ((Character)GetValue(fieldCookie, o)).charValue();
 	}
 
@@ -335,7 +336,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    return ((Short)GetValue(fieldCookie, o)).shortValue();
 	}
 
@@ -360,7 +361,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    return ((Integer)GetValue(fieldCookie, o)).intValue();
 	}
 
@@ -385,7 +386,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    return ((Long)GetValue(fieldCookie, o)).longValue();
 	}
 
@@ -410,7 +411,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    return ((Float)GetValue(fieldCookie, o)).floatValue();
 	}
 
@@ -436,7 +437,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    return ((Double)GetValue(fieldCookie, o)).doubleValue();
 	}
 
@@ -489,17 +490,16 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    SetValue(fieldCookie, o, value);
 	}
 	private static native void SetValue(Object fieldCookie, Object o, Object value);
 
-	static void checkAccess(int modifiers, Object o, Class declaringClass, StackFrame frame) throws IllegalAccessException
+	static void checkAccess(int modifiers, Object o, Class declaringClass, Class caller) throws IllegalAccessException
 	{
 	    // when we're invoking a constructor, modifiers will not be static, but o will be null.
 	    Class actualClass = Modifier.isStatic(modifiers) || o == null ? declaringClass : o.getClass();
 	    boolean declaringClassIsPublic = (Method.GetRealModifiers(declaringClass) & Modifier.PUBLIC) != 0;
-	    Class caller = getClassFromFrame(frame);
 	    if((!Modifier.isPublic(modifiers) || !declaringClassIsPublic) && declaringClass != caller)
 	    {
 		// if the caller is a global method, the class returned will be null
@@ -512,12 +512,13 @@ public final class Field extends AccessibleObject implements Member
 		}
 		else if(!isSamePackage(declaringClass, caller) || Modifier.isPrivate(modifiers))
 		{
-		    throw new IllegalAccessException();
+		    throw new IllegalAccessException("Class " + caller.getName() +
+                         " can not access a member of class " + declaringClass.getName() +
+                         " with modifiers \"" + Modifier.toString(modifiers & (Modifier.PRIVATE | Modifier.PROTECTED)) + "\"");
 		}
 	    }
 	}
 	private static native boolean isSamePackage(Class a, Class b);
-	private static native Class getClassFromFrame(StackFrame frame);
 
 	/**
 	 * Set this boolean Field. If the field is static, <code>o</code> will be
@@ -540,7 +541,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    SetValue(fieldCookie, o, new Boolean(value));
 	}
 
@@ -565,7 +566,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    SetValue(fieldCookie, o, new Byte(value));
 	}
 
@@ -590,7 +591,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    SetValue(fieldCookie, o, new Character(value));
 	}
 
@@ -615,7 +616,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    SetValue(fieldCookie, o, new Short(value));
 	}
 
@@ -640,7 +641,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    SetValue(fieldCookie, o, new Integer(value));
 	}
 
@@ -665,7 +666,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    SetValue(fieldCookie, o, new Long(value));
 	}
 
@@ -690,7 +691,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    SetValue(fieldCookie, o, new Float(value));
 	}
 
@@ -715,7 +716,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	    SetValue(fieldCookie, o, new Double(value));
 	}
 }

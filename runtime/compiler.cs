@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -175,8 +175,9 @@ class Compiler
 				{
 					tw = args[arg - 1];
 				}
-				if(v.type != VerifierTypeWrapper.UninitializedThis &&
-					(v.type != tw || tw.TypeAsLocalOrStackType != tw.TypeAsParameterType))
+				if(!tw.IsUnloadable &&
+					v.type != VerifierTypeWrapper.UninitializedThis &&
+					(v.type != tw || tw.TypeAsLocalOrStackType != tw.TypeAsSignatureType))
 				{
 					v.builder = ilGenerator.DeclareLocal(v.type.TypeAsLocalOrStackType);
 					if(JVM.Debug && v.name != null)
@@ -185,7 +186,7 @@ class Compiler
 					}
 					v.isArg = false;
 					ilGenerator.Emit(OpCodes.Ldarg_S, (byte)arg);
-					v.type.EmitConvParameterToStackType(ilGenerator);
+					tw.EmitConvSignatureTypeToStackType(ilGenerator);
 					ilGenerator.Emit(OpCodes.Stloc, v.builder);
 				}
 			}
@@ -1421,6 +1422,7 @@ class Compiler
 						// we must emit code to cast the stack value to the interface type
 						CastInterfaceArgs(method, cpi.GetArgTypes(), i, false, false);
 						method.EmitCall(ilGenerator);
+						method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
 						break;
 					}
 					case NormalizedByteCode.__invokevirtual:
@@ -1614,6 +1616,7 @@ class Compiler
 							{
 								method.EmitCallvirt(ilGenerator);
 							}
+							method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
 						}
 						break;
 					}
@@ -1631,12 +1634,12 @@ class Compiler
 							if(instr.NormalizedOpCode != NormalizedByteCode.__return)
 							{
 								TypeWrapper retTypeWrapper = mw.ReturnType;
-								retTypeWrapper.EmitConvStackToParameterType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
+								retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
 								if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
 								{
-									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsParameterType);
+									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsSignatureType);
 								}
-								local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
+								local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsSignatureType);
 								ilGenerator.Emit(OpCodes.Stloc, local);
 							}
 							Label label = ilGenerator.DefineLabel();
@@ -1660,14 +1663,14 @@ class Compiler
 							else
 							{
 								TypeWrapper retTypeWrapper = mw.ReturnType;
-								retTypeWrapper.EmitConvStackToParameterType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
+								retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
 								if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
 								{
-									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsParameterType);
+									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsSignatureType);
 								}
 								if(stackHeight != 1)
 								{
-									LocalBuilder local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
+									LocalBuilder local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsSignatureType);
 									ilGenerator.Emit(OpCodes.Stloc, local);
 									ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
 									ilGenerator.Emit(OpCodes.Ldloc, local);
@@ -2809,7 +2812,7 @@ class Compiler
 					}
 					else
 					{
-						LocalBuilder local = ilGenerator.DeclareLocal(args[i].TypeAsParameterType);
+						LocalBuilder local = ilGenerator.DeclareLocal(args[i].TypeAsSignatureType);
 						ilGenerator.Emit(OpCodes.Ldloca, local);
 						dh.Load(i);
 						ilGenerator.Emit(OpCodes.Stfld, args[i].GhostRefField);
@@ -2817,7 +2820,7 @@ class Compiler
 						// NOTE when the this argument is a value type, we need the address on the stack instead of the value
 						if(i != 0 || !instanceMethod)
 						{
-							ilGenerator.Emit(OpCodes.Ldobj, args[i].TypeAsParameterType);
+							ilGenerator.Emit(OpCodes.Ldobj, args[i].TypeAsSignatureType);
 						}
 					}
 				}
@@ -2843,7 +2846,7 @@ class Compiler
 						}
 						else if(ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsUnloadable)
 						{
-							ilGenerator.Emit(OpCodes.Castclass, args[i].TypeAsParameterType);
+							ilGenerator.Emit(OpCodes.Castclass, args[i].TypeAsSignatureType);
 						}
 					}
 				}
@@ -2925,16 +2928,14 @@ class Compiler
 							if(!write)
 							{
 								field.EmitGet(ilGenerator);
+								field.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilGenerator);
 								return;
 							}
 							else
 							{
 								TypeWrapper tw = field.FieldTypeWrapper;
 								TypeWrapper val = ma.GetRawStackTypeWrapper(i, 0);
-								if(!tw.IsUnloadable && (val.IsUnloadable || (tw.IsInterfaceOrInterfaceArray && !tw.IsGhost && !val.IsAssignableTo(tw))))
-								{
-									ilGenerator.Emit(OpCodes.Castclass, tw.TypeAsTBD);
-								}
+								tw.EmitConvStackTypeToSignatureType(ilGenerator, val);
 								field.EmitSet(ilGenerator);
 								return;
 							}
@@ -2972,6 +2973,10 @@ class Compiler
 			// NOTE we don't need to use TypeWrapper.EmitUnbox, because the return value cannot be null
 			ilgen.Emit(OpCodes.Unbox, typeWrapper.TypeAsTBD);
 			ilgen.Emit(OpCodes.Ldobj, typeWrapper.TypeAsTBD);
+			if(typeWrapper == PrimitiveTypeWrapper.BYTE)
+			{
+				ilgen.Emit(OpCodes.Conv_I1);
+			}
 		}
 		else
 		{
@@ -2989,7 +2994,7 @@ class Compiler
 		private ClassFile.ConstantPoolItemMI cpi;
 
 		internal DynamicMethodWrapper(ClassLoaderWrapper classLoader, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
-			: base(wrapper, null, null, null, null, null, Modifiers.Public, MemberFlags.None)
+			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
 		{
 			this.classLoader = classLoader;
 			this.wrapper = wrapper;

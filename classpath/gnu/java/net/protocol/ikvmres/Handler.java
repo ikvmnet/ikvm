@@ -81,20 +81,28 @@ class IkvmresURLConnection extends URLConnection
             }
 	    try
 	    {
-		ResourceReader r = new ResourceReader(s);
+		Object r;
+                try
+                {
+                    r = ResourceReader.class.getConstructor(new Class[] { cli.System.IO.Stream.class }).newInstance(new Object[] { s });
+                }
+                catch(Exception x)
+                {
+                    throw (IOException)new IOException().initCause(x);
+                }
 		try
 		{
-		    IEnumerator e = r.GetEnumerator();
+		    IEnumerator e = ((IEnumerable)r).GetEnumerator();
 		    if(!e.MoveNext())
 		    {
 			throw new IOException("invalid resource " + resource + " found in assembly " + assembly);
 		    }
-		    inputStream = new ByteArrayInputStream(ikvm.lang.ByteArrayHack.cast((cli.System.Byte[])((DictionaryEntry)e.get_Current()).get_Value()));
+		    inputStream = new ByteArrayInputStream((byte[])((DictionaryEntry)e.get_Current()).get_Value());
 		    connected = true;
 		}
 		finally
 		{
-		    r.Close();
+		    ((cli.System.IDisposable)r).Dispose();
 		}
 	    }
 	    finally

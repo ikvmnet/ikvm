@@ -724,9 +724,9 @@ class ClassFileWriter
 		if(constantValue != null)
 		{
 			ushort constantValueIndex;
-			if(constantValue is sbyte)
+			if(constantValue is byte)
 			{
-				constantValueIndex = AddInt((sbyte)constantValue);
+				constantValueIndex = AddInt((byte)constantValue);
 			}
 			else if(constantValue is bool)
 			{
@@ -744,17 +744,9 @@ class ClassFileWriter
 			{
 				constantValueIndex = AddInt((int)constantValue);
 			}
-			else if(constantValue is uint)
-			{
-				constantValueIndex = AddInt((int)(uint)constantValue);
-			}
 			else if(constantValue is long)
 			{
 				constantValueIndex = AddLong((long)constantValue);
-			}
-			else if(constantValue is ulong)
-			{
-				constantValueIndex = AddLong((long)(ulong)constantValue);
 			}
 			else if(constantValue is float)
 			{

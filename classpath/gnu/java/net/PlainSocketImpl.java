@@ -51,7 +51,6 @@ import cli.System.Net.Sockets.ProtocolType;
 import cli.System.Net.Sockets.AddressFamily;
 import cli.System.Net.Sockets.SocketShutdown;
 import ikvm.lang.CIL;
-import ikvm.lang.ByteArrayHack;
 
 /**
   * Unless the application installs its own SocketImplFactory, this is the
@@ -341,7 +340,7 @@ public class PlainSocketImpl extends SocketImpl
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            return socket.Receive(ByteArrayHack.cast(buf), offset, len, SocketFlags.wrap(SocketFlags.None));
+            return socket.Receive(buf, offset, len, SocketFlags.wrap(SocketFlags.None));
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
@@ -371,7 +370,7 @@ public class PlainSocketImpl extends SocketImpl
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            socket.Send(ByteArrayHack.cast(buf), offset, len, SocketFlags.wrap(SocketFlags.None));
+            socket.Send(buf, offset, len, SocketFlags.wrap(SocketFlags.None));
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
@@ -667,7 +666,7 @@ public class PlainSocketImpl extends SocketImpl
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
             byte[] oob = { (byte)data };
-            socket.Send(ByteArrayHack.cast(oob), SocketFlags.wrap(SocketFlags.OutOfBand));
+            socket.Send(oob, SocketFlags.wrap(SocketFlags.OutOfBand));
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {

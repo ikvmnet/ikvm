@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2004 Jeroen Frijters
+  Copyright (C) 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -43,12 +43,12 @@ public class CIL
     public static native Object box_long(long v);
     public static native Object box_double(double v);
 
-    public static native cli.System.Byte box_ubyte(byte v);
+    public static native cli.System.SByte box_sbyte(byte v);
     public static native cli.System.UInt16 box_ushort(short v);
     public static native cli.System.UInt32 box_uint(int v);
     public static native cli.System.UInt64 box_ulong(long v);
 
-    public static native byte unbox_ubyte(cli.System.Byte v);
+    public static native byte unbox_sbyte(cli.System.SByte v);
     public static native short unbox_ushort(cli.System.UInt16 v);
     public static native int unbox_uint(cli.System.UInt32 v);
     public static native long unbox_ulong(cli.System.UInt64 v);

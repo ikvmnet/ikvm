@@ -39,6 +39,7 @@ exception statement from your version. */
 package java.lang.reflect;
 
 import cli.System.Diagnostics.StackFrame;
+import gnu.classpath.VMStackWalker;
 
 /**
  * The Method class represents a member method of a class. It also allows
@@ -336,7 +337,7 @@ public final class Method extends AccessibleObject implements Member
 	throws IllegalAccessException, InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    Field.checkAccess(modifiers, o, declaringClass, new StackFrame(1));
+	    Field.checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
 	if(!Modifier.isStatic(modifiers))
 	{
 	    if(o == null)

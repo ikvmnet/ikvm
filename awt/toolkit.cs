@@ -56,6 +56,7 @@ namespace ikvm.awt
 
 	public class NetToolkit : gnu.java.awt.ClasspathToolkit
 	{
+		internal static System.Collections.ArrayList nativeQueue = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList());
 		private static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
 		private static volatile Form bogusForm;
 		private static Delegate createControlInstance;
@@ -372,7 +373,7 @@ namespace ikvm.awt
 			return img;
 		}
 
-		public override java.awt.Image createImage(sbyte[] imagedata, int imageoffset, int imagelength)
+		public override java.awt.Image createImage(byte[] imagedata, int imageoffset, int imagelength)
 		{
 			throw new NotImplementedException();
 		}
@@ -440,6 +441,42 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
+		public override bool nativeQueueEmpty()
+		{
+			return nativeQueue.Count == 0;
+		}
+
+		public override void wakeNativeQueue()
+		{
+			// TODO if we're blocking in iterateNativeQueue() we should release that thread
+		}
+
+		public override void iterateNativeQueue(java.awt.EventQueue locked, bool block)
+		{
+			lock(nativeQueue)
+			{
+				if(nativeQueue.Count > 0)
+				{
+					locked.postEvent((java.awt.AWTEvent)nativeQueue[0]);
+					nativeQueue.RemoveAt(0);
+					return;
+				}
+			}
+			if(block)
+			{
+				Monitor.Exit(locked);
+				try
+				{
+					//Application.DoEvents();
+					Thread.Sleep(100);
+				}
+				finally
+				{
+					Monitor.Enter(locked);
+				}
+			}
+		}
 	}
 
 	class NetFontPeer : gnu.java.awt.peer.ClasspathFontPeer
@@ -469,7 +506,7 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public override sbyte getBaselineFor(java.awt.Font param1, char param2)
+		public override byte getBaselineFor(java.awt.Font param1, char param2)
 		{
 			throw new NotImplementedException();
 		}
@@ -660,7 +697,7 @@ namespace ikvm.awt
 		
 		}
 
-		public override void drawBytes(sbyte[] param1, int param2, int param3, int param4, int param5)
+		public override void drawBytes(byte[] param1, int param2, int param3, int param4, int param5)
 		{
 		
 		}
@@ -1346,7 +1383,8 @@ namespace ikvm.awt
 
 		protected void postEvent(java.awt.AWTEvent evt)
 		{
-			getToolkit().getSystemEventQueue().postEvent(evt);
+			NetToolkit.nativeQueue.Add(evt);
+			//getToolkit().getSystemEventQueue().postEvent(evt);
 		}
 
 		public int checkImage(java.awt.Image img, int width, int height, java.awt.image.ImageObserver ob)
@@ -1743,7 +1781,7 @@ namespace ikvm.awt
 			Console.WriteLine("NetBufferedImage: setHints");
 		}
 
-		public void setPixels(int x, int y, int w, int h, ColorModel model, sbyte[] pixels, int off, int scansize)
+		public void setPixels(int x, int y, int w, int h, ColorModel model, byte[] pixels, int off, int scansize)
 		{
 			Console.WriteLine("NetBufferedImage: setPixels1");
 		}

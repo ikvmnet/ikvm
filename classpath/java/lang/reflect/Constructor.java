@@ -39,6 +39,7 @@ exception statement from your version. */
 package java.lang.reflect;
 
 import cli.System.Diagnostics.StackFrame;
+import gnu.classpath.VMStackWalker;
 
 /**
  * The Constructor class represents a constructor of a class. It also allows
@@ -259,7 +260,7 @@ public final class Constructor
 	InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    Field.checkAccess(modifiers, null, declaringClass, new StackFrame(1));
+	    Field.checkAccess(modifiers, null, declaringClass, VMStackWalker.getCallingClass());
         int mods = declaringClass.getModifiers() | Method.GetRealModifiers(declaringClass);
 	if(Modifier.isAbstract(mods) || Modifier.isInterface(mods))
 	{

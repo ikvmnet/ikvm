@@ -79,13 +79,19 @@ namespace IKVM.Runtime
 	public unsafe sealed class JNI
 	{
 		internal static bool jvmCreated;
+		internal static bool jvmDestroyed;
 		internal const string METHOD_PTR_FIELD_PREFIX = "__<jniptr/";
+
+		internal static bool IsSupportedJniVersion(jint version)
+		{
+			return version == JNIEnv.JNI_VERSION_1_1 || version == JNIEnv.JNI_VERSION_1_2 || version == JNIEnv.JNI_VERSION_1_4;
+		}
 
 		public static int CreateJavaVM(void* ppvm, void* ppenv, void* args)
 		{
 			JavaVMInitArgs* pInitArgs = (JavaVMInitArgs*)args;
 			// we don't support the JDK 1.1 JavaVMInitArgs
-			if(pInitArgs->version != JNIEnv.JNI_VERSION_1_2)
+			if(!IsSupportedJniVersion(pInitArgs->version) || pInitArgs->version == JNIEnv.JNI_VERSION_1_1)
 			{
 				return JNIEnv.JNI_EVERSION;
 			}
@@ -377,43 +383,11 @@ namespace IKVM.Runtime
 		[DllImport("ikvm-native")]
 		internal unsafe static extern void* ikvm_MarshalDelegate(Delegate d);
 
-		private static MethodBase FindCaller()
-		{
-			StackTrace st = new StackTrace();
-			for(int i = 0; i < st.FrameCount; i++)
-			{
-				StackFrame frame = st.GetFrame(i);
-				Type type = frame.GetMethod().DeclaringType;
-				if(type != null && type.Assembly != typeof(JniHelper).Assembly)
-				{
-					// TODO we need a more robust algorithm to find the "caller" (note that in addition to native methods,
-					// System.loadLibrary can also trigger executing native code)
-					ClassLoaderWrapper loader = ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader();
-					if(loader.GetJavaClassLoader() != null)
-					{
-						return frame.GetMethod();
-					}
-				}
-			}
-			return null;
-		}
-
 		private static ArrayList nativeLibraries = new ArrayList();
 		internal static readonly object JniLock = new object();
 
-		internal unsafe static int LoadLibrary(string filename)
+		internal unsafe static int LoadLibrary(string filename, ClassLoaderWrapper loader)
 		{
-			MethodBase m = FindCaller();
-			ClassLoaderWrapper loader;
-			if(m != null)
-			{
-				loader = ClassLoaderWrapper.GetWrapperFromType(m.DeclaringType).GetClassLoader();
-			}
-			else
-			{
-				loader = ClassLoaderWrapper.GetBootstrapClassLoader();
-				m = MethodBase.GetCurrentMethod();
-			}
 			lock(JniLock)
 			{
 				IntPtr p = ikvm_LoadLibrary(filename);
@@ -444,7 +418,7 @@ namespace IKVM.Runtime
 						ClassLoaderWrapper prevLoader = f.Enter(loader);
 						int version = ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
 						f.Leave(prevLoader);
-						if(!JavaVM.IsSupportedJniVersion(version))
+						if(!JNI.IsSupportedJniVersion(version))
 						{
 							throw JavaException.UnsatisfiedLinkError("Unsupported JNI version 0x{0:X} required by {1}", version, filename);
 						}
@@ -922,8 +896,13 @@ namespace IKVM.Runtime
 
 		internal static jint DestroyJavaVM(JavaVM* pJVM)
 		{
+			if(JNI.jvmDestroyed)
+			{
+				return JNIEnv.JNI_ERR;
+			}
+			JNI.jvmDestroyed = true;
 			JVM.Library.jniWaitUntilLastThread();
-			return JNIEnv.JNI_ERR;
+			return JNIEnv.JNI_OK;
 		}
 
 		internal static jint AttachCurrentThread(JavaVM* pJVM, void **penv, void *args)
@@ -935,7 +914,7 @@ namespace IKVM.Runtime
 		{
 			if(pAttachArgs != null)
 			{
-				if(pAttachArgs->version != JNIEnv.JNI_VERSION_1_2)
+				if(!JNI.IsSupportedJniVersion(pAttachArgs->version) || pAttachArgs->version == JNIEnv.JNI_VERSION_1_1)
 				{
 					*penv = null;
 					return JNIEnv.JNI_EVERSION;
@@ -950,22 +929,27 @@ namespace IKVM.Runtime
 			// NOTE if we're here, it is *very* likely that the thread was created by native code and not by managed code,
 			// but it's not impossible that the thread started life as a managed thread and if it did the changes to the
 			// thread we're making are somewhat dubious.
+			System.Threading.Thread.CurrentThread.IsBackground = asDaemon;
 			if(pAttachArgs != null)
 			{
 				if(pAttachArgs->name != null && System.Threading.Thread.CurrentThread.Name == null)
 				{
-					System.Threading.Thread.CurrentThread.Name = new String(pAttachArgs->name);
+					try
+					{
+						System.Threading.Thread.CurrentThread.Name = new String(pAttachArgs->name);
+					}
+					catch(InvalidOperationException)
+					{
+						// someone beat us to it...
+					}
 				}
 				// NOTE we're calling UnwrapRef on a null reference, but that's OK because group is a global reference
 				object threadGroup = p->UnwrapRef(pAttachArgs->group);
 				if(threadGroup != null)
 				{
-					// TODO instead of using a thread data slot to communicate the thread group, we should probably use
-					// another mechanism, this is probably a security issue.
-					System.Threading.Thread.SetData(System.Threading.Thread.GetNamedDataSlot("ikvm-thread-group"), threadGroup);
+					JVM.Library.setThreadGroup(threadGroup);
 				}
 			}
-			System.Threading.Thread.CurrentThread.IsBackground = asDaemon;
 			*penv = JNIEnv.CreateJNIEnv();
 			return JNIEnv.JNI_OK;
 		}
@@ -974,7 +958,8 @@ namespace IKVM.Runtime
 		{
 			if(TlsHack.pJNIEnv == null)
 			{
-				return JNIEnv.JNI_EDETACHED;
+				// the JDK allows detaching from an already detached thread
+				return JNIEnv.JNI_OK;
 			}
 			// TODO if we set Thread.IsBackground to false when we attached, now might be a good time to set it back to true.
 			JNIEnv.FreeJNIEnv();
@@ -982,14 +967,9 @@ namespace IKVM.Runtime
 			return JNIEnv.JNI_OK;
 		}
 
-		internal static bool IsSupportedJniVersion(jint version)
-		{
-			return version == JNIEnv.JNI_VERSION_1_1 || version == JNIEnv.JNI_VERSION_1_2 || version == JNIEnv.JNI_VERSION_1_4;
-		}
-
 		internal static jint GetEnv(JavaVM* pJVM, void **penv, jint version)
 		{
-			if(IsSupportedJniVersion(version))
+			if(JNI.IsSupportedJniVersion(version))
 			{
 				JNIEnv* p = TlsHack.pJNIEnv;
 				if(p != null)
@@ -1013,6 +993,8 @@ namespace IKVM.Runtime
 	[StructLayout(LayoutKind.Sequential)]
 	unsafe struct JNIEnv
 	{
+		// NOTE LOCAL_REF_BUCKET_SIZE must be at least 512 to allow all method arguments to fit
+		// in a single slot, because Frame.MakeLocalRef() doesn't support spilling into a new bucket
 		internal const int LOCAL_REF_SHIFT = 10;
 		internal const int LOCAL_REF_BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
 		internal const int LOCAL_REF_MASK = (LOCAL_REF_BUCKET_SIZE - 1);
@@ -1255,23 +1237,38 @@ namespace IKVM.Runtime
 			return ClassLoaderWrapper.GetSystemClassLoader();
 		}
 
-		internal static jclass FindClass(JNIEnv* pEnv, byte* name)
+		internal static jclass FindClass(JNIEnv* pEnv, byte* pszName)
 		{
 			try
 			{
-				TypeWrapper wrapper = FindNativeMethodClassLoader(pEnv).LoadClassByDottedName(new String((sbyte*)name).Replace('/', '.'));
+				string name = new String((sbyte*)pszName);
+				// don't allow dotted names!
+				if(name.IndexOf('.') >= 0)
+				{
+					SetPendingException(pEnv, JavaException.NoClassDefFoundError(name));
+					return IntPtr.Zero;
+				}
+				// spec doesn't say it, but Sun allows signature format class names (but not for primitives)
+				if(name.StartsWith("L") && name.EndsWith(";"))
+				{
+					name = name.Substring(1, name.Length - 2);
+				}
+				TypeWrapper wrapper = FindNativeMethodClassLoader(pEnv).LoadClassByDottedName(name.Replace('/', '.'));
 				wrapper.Finish();
 				// spec doesn't say it, but Sun runs the static initializer
 				wrapper.RunClassInit();
 				return pEnv->MakeLocalRef(wrapper.ClassObject);
 			}
-			catch(RetargetableJavaException x)
-			{
-				SetPendingException(pEnv, x.ToJava());
-				return IntPtr.Zero;
-			}
 			catch(Exception x)
 			{
+				if(x is RetargetableJavaException)
+				{
+					x = ((RetargetableJavaException)x).ToJava();
+				}
+				if(ClassLoaderWrapper.LoadClassCritical("java.lang.ClassNotFoundException").TypeAsTBD.IsInstanceOfType(x))
+				{
+					x = JavaException.NoClassDefFoundError(x.Message);
+				}
 				SetPendingException(pEnv, x);
 				return IntPtr.Zero;
 			}
@@ -1415,8 +1412,15 @@ namespace IKVM.Runtime
 			localRefs[pEnv->localRefSlot - 1] = null;
 			if(localRefs[pEnv->localRefSlot] == null)
 			{
-				// we can't use capacity, because the array length must be a power of two
-				localRefs[pEnv->localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
+				// we can't use capacity directly, because the array length must be a power of two
+				// and it can't be bigger than LOCAL_REF_BUCKET_SIZE
+				int r = 1;
+				capacity = Math.Min(capacity, LOCAL_REF_BUCKET_SIZE);
+				while(r < capacity)
+				{
+					r *= 2;
+				}
+				localRefs[pEnv->localRefSlot] = new object[r];
 			}
 			return JNI_OK;
 		}
@@ -1600,7 +1604,7 @@ namespace IKVM.Runtime
 			}
 			catch(Exception x)
 			{
-				if(x.GetType() == ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.InvocationTargetException").TypeAsExceptionType)
+				if(ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.InvocationTargetException").TypeAsExceptionType.IsInstanceOfType(x))
 				{
 					x = x.InnerException;
 				}
@@ -1621,6 +1625,8 @@ namespace IKVM.Runtime
 
 		internal static jboolean IsInstanceOf(JNIEnv* pEnv, jobject obj, jclass clazz)
 		{
+			// NOTE if clazz is an interface, this is still the right thing to do
+			// (i.e. if the object implements the interface, we return true)
 			object objClass = IKVM.Runtime.Util.GetClassFromObject(pEnv->UnwrapRef(obj));
 			TypeWrapper w1 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
 			TypeWrapper w2 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(objClass);
@@ -1680,7 +1686,7 @@ namespace IKVM.Runtime
 			object o = InvokeHelper(pEnv, obj, methodID, args, false);
 			if(o != null)
 			{
-				return (jbyte)(sbyte)o;
+				return (jbyte)(byte)o;
 			}
 			return 0;
 		}
@@ -1770,7 +1776,7 @@ namespace IKVM.Runtime
 			object o = InvokeHelper(pEnv, obj, methodID, args, true);
 			if(o != null)
 			{
-				return (jbyte)(sbyte)o;
+				return (jbyte)(byte)o;
 			}
 			return 0;
 		}
@@ -1851,7 +1857,6 @@ namespace IKVM.Runtime
 				{
 					if(fw.IsStatic == isstatic)
 					{
-						// TODO fw.Link()
 						return fw.Cookie;
 					}
 				}
@@ -1911,7 +1916,7 @@ namespace IKVM.Runtime
 
 		internal static jbyte GetByteField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
 		{
-			return (jbyte)(sbyte)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+			return (jbyte)(byte)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
 		}
 
 		internal static jchar GetCharField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
@@ -1956,7 +1961,7 @@ namespace IKVM.Runtime
 
 		internal static void SetByteField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jbyte val)
 		{
-			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (sbyte)val);
+			SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (byte)val);
 		}
 
 		internal static void SetCharField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jchar val)
@@ -2014,7 +2019,7 @@ namespace IKVM.Runtime
 			object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
 			if(o != null)
 			{
-				return (jbyte)(sbyte)o;
+				return (jbyte)(byte)o;
 			}
 			return 0;
 		}
@@ -2101,7 +2106,7 @@ namespace IKVM.Runtime
 
 		internal static jbyte GetStaticByteField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
 		{
-			return (jbyte)(sbyte)GetFieldValue(fieldID, null);
+			return (jbyte)(byte)GetFieldValue(fieldID, null);
 		}
 
 		internal static jchar GetStaticCharField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
@@ -2146,7 +2151,7 @@ namespace IKVM.Runtime
 
 		internal static void SetStaticByteField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jbyte val)
 		{
-			SetFieldValue(fieldID, null, (sbyte)val);
+			SetFieldValue(fieldID, null, (byte)val);
 		}
 
 		internal static void SetStaticCharField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jchar val)
@@ -2328,7 +2333,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				return pEnv->MakeLocalRef(new sbyte[len]);
+				return pEnv->MakeLocalRef(new byte[len]);
 			}
 			catch(Exception x)
 			{
@@ -2432,7 +2437,7 @@ namespace IKVM.Runtime
 
 		internal static jbyte* GetByteArrayElements(JNIEnv* pEnv, jbyteArray array, jboolean* isCopy)
 		{
-			sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
+			byte[] b = (byte[])pEnv->UnwrapRef(array);
 			jbyte* p = (jbyte*)(void*)JniMem.Alloc(b.Length * 1);
 			for(int i = 0; i < b.Length; i++)
 			{
@@ -2537,10 +2542,10 @@ namespace IKVM.Runtime
 		{
 			if(mode == 0 || mode == JNI_COMMIT)
 			{
-				sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
+				byte[] b = (byte[])pEnv->UnwrapRef(array);
 				for(int i = 0; i < b.Length; i++)
 				{
-					b[i] = (sbyte)elems[i];
+					b[i] = (byte)elems[i];
 				}
 			}
 			if(mode == 0 || mode == JNI_ABORT)
@@ -2648,8 +2653,8 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
-				sbyte* p = (sbyte*)(void*)buf;
+				byte[] b = (byte[])pEnv->UnwrapRef(array);
+				byte* p = (byte*)(void*)buf;
 				for(int i = 0; i < len; i++)
 				{
 					*p++ = b[start + i];
@@ -2760,8 +2765,8 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
-				sbyte* p = (sbyte*)(void*)buf;
+				byte[] b = (byte[])pEnv->UnwrapRef(array);
+				byte* p = (byte*)(void*)buf;
 				for(int i = 0; i < len; i++)
 				{
 					b[start + i] = *p++;
@@ -3023,19 +3028,19 @@ namespace IKVM.Runtime
 		private static int GetPrimitiveArrayElementSize(Array ar)
 		{
 			Type type = ar.GetType().GetElementType();
-			if(type == typeof(sbyte) || type == typeof(bool))
+			if(type == PrimitiveTypeWrapper.BYTE.TypeAsArrayType || type == PrimitiveTypeWrapper.BOOLEAN.TypeAsArrayType)
 			{
 				return 1;
 			}
-			else if(type == typeof(short) || type == typeof(char))
+			else if(type == PrimitiveTypeWrapper.SHORT.TypeAsArrayType || type == PrimitiveTypeWrapper.CHAR.TypeAsArrayType)
 			{
 				return 2;
 			}
-			else if(type == typeof(int) || type == typeof(float))
+			else if(type == PrimitiveTypeWrapper.INT.TypeAsArrayType || type == PrimitiveTypeWrapper.FLOAT.TypeAsArrayType)
 			{
 				return 4;
 			}
-			else if(type == typeof(long) || type == typeof(double))
+			else if(type == PrimitiveTypeWrapper.LONG.TypeAsArrayType || type == PrimitiveTypeWrapper.DOUBLE.TypeAsArrayType)
 			{
 				return 8;
 			}
@@ -3049,6 +3054,7 @@ namespace IKVM.Runtime
 		internal static IntPtr GetPrimitiveArrayCritical(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
 		{
 			Array ar = (Array)pEnv->UnwrapRef(array);
+			// TODO not 64-bit safe (len can overflow)
 			int len = ar.Length * GetPrimitiveArrayElementSize(ar);
 			GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
 			try
@@ -3078,6 +3084,7 @@ namespace IKVM.Runtime
 			if(mode == 0 || mode == JNI_COMMIT)
 			{
 				Array ar = (Array)pEnv->UnwrapRef(array);
+				// TODO not 64-bit safe (len can overflow)
 				int len = ar.Length * GetPrimitiveArrayElementSize(ar);
 				GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
 				try
@@ -3165,7 +3172,7 @@ namespace IKVM.Runtime
 			}
 		}
 
-		internal static sbyte ExceptionCheck(JNIEnv* pEnv)
+		internal static jboolean ExceptionCheck(JNIEnv* pEnv)
 		{
 			return pEnv->UnwrapRef(pEnv->pendingException) != null ? JNI_TRUE : JNI_FALSE;
 		}

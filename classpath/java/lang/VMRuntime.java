@@ -189,7 +189,7 @@ final class VMRuntime
      * @param filename the file to load
      * @return 0 on failure, nonzero on success
      */
-    static native int nativeLoad(String filename);
+    static native int nativeLoad(String filename, Object classLoader);
 
     /**
      * Map a system-independent "short name" to the full file name.

@@ -31,6 +31,7 @@ using System.Collections;
 using System.Xml;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Text;
 using IKVM.Attributes;
 using IKVM.Runtime;
 
@@ -99,7 +100,7 @@ namespace IKVM.Runtime
 			{
 				ArrayList list = new ArrayList();
 				string cmdline = Environment.CommandLine;
-				System.Text.StringBuilder sb = new System.Text.StringBuilder();
+				StringBuilder sb = new StringBuilder();
 				for(int i = 0; i < cmdline.Length;)
 				{
 					bool quoted = cmdline[i] == '"';
@@ -406,7 +407,7 @@ namespace IKVM.Internal
 			// but in order for ILDASM/ILASM round tripping to work reliably, we have
 			// to make sure that we don't produce resource names that'll cause ILDASM
 			// to generate invalid filenames.
-			System.Text.StringBuilder sb = new System.Text.StringBuilder("ikvm__", name.Length + 6);
+			StringBuilder sb = new StringBuilder("ikvm__", name.Length + 6);
 			foreach(char c in name)
 			{
 				if("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-+.()$#@~=&{}[]0123456789`".IndexOf(c) != -1)
@@ -1121,7 +1122,7 @@ namespace IKVM.Internal
 									typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class);
 									AttributeHelper.HideFromJava(typeWrapper.helperTypeBuilder);
 								}
-								helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.Public | MethodAttributes.Static, typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsParameterType, argTypes);
+								helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.Public | MethodAttributes.Static, typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsSignatureType, argTypes);
 								ILGenerator ilgen = helper.GetILGenerator();
 								foreach(IKVM.Internal.MapXml.Class c in specialCases)
 								{
@@ -1156,7 +1157,7 @@ namespace IKVM.Internal
 						{
 							MethodBuilder mbCore = null;
 							Type[] paramTypes = typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig);
-							Type retType = typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsParameterType;
+							Type retType = typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsSignatureType;
 
 							if(typeWrapper.shadowType.IsSealed && (m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) == 0)
 							{
@@ -1276,7 +1277,7 @@ namespace IKVM.Internal
 								{
 									if(instr is IKVM.Internal.MapXml.Ret)
 									{
-										this.ReturnType.EmitConvStackToParameterType(ilgen, null);
+										this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 									}
 									instr.Generate(context, ilgen);
 								}
@@ -1309,7 +1310,7 @@ namespace IKVM.Internal
 									}
 									ilgen.Emit(OpCodes.Call, baseMethod);
 								}
-								this.ReturnType.EmitConvStackToParameterType(ilgen, null);
+								this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 								ilgen.Emit(OpCodes.Ret);
 							}
 							ilgen.EmitLineNumberTable(mbCore);
@@ -1344,7 +1345,7 @@ namespace IKVM.Internal
 									ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
 								}
 								ilgen.Emit(OpCodes.Callvirt, mbCore);
-								this.ReturnType.EmitConvStackToParameterType(ilgen, null);
+								this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 								ilgen.Emit(OpCodes.Ret);
 								ilgen.MarkLabel(skip);
 								ilgen.Emit(OpCodes.Pop);
@@ -1370,7 +1371,7 @@ namespace IKVM.Internal
 									}
 									mw.Link();
 									mw.EmitCallvirt(ilgen);
-									this.ReturnType.EmitConvStackToParameterType(ilgen, null);
+									this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 									ilgen.Emit(OpCodes.Ret);
 									ilgen.MarkLabel(skip);
 									ilgen.Emit(OpCodes.Pop);
@@ -1385,7 +1386,7 @@ namespace IKVM.Internal
 								{
 									if(instr is IKVM.Internal.MapXml.Ret)
 									{
-										this.ReturnType.EmitConvStackToParameterType(ilgen, null);
+										this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 									}
 									instr.Generate(context, ilgen);
 								}
@@ -1428,7 +1429,7 @@ namespace IKVM.Internal
 									}
 									ilgen.Emit(OpCodes.Callvirt, overrideMethod);
 								}
-								this.ReturnType.EmitConvStackToParameterType(ilgen, null);
+								this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 								ilgen.Emit(OpCodes.Ret);
 							}
 							ilgen.EmitLineNumberTable(mbHelper);
@@ -1439,7 +1440,7 @@ namespace IKVM.Internal
 						{
 							RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
 							Type[] argTypes = new Type[paramTypes.Length + 1];
-							argTypes[0] = typeWrapper.TypeAsParameterType;
+							argTypes[0] = typeWrapper.TypeAsSignatureType;
 							this.GetParametersForDefineMethod().CopyTo(argTypes, 1);
 							MethodBuilder mb = typeWrapper.typeBuilder.DefineMethod("nonvirtualhelper/" + this.Name, MethodAttributes.Private | MethodAttributes.Static, this.ReturnTypeForDefineMethod, argTypes);
 							AttributeHelper.HideFromJava(mb);
@@ -1504,13 +1505,6 @@ namespace IKVM.Internal
 							mw.Link();
 							mw.EmitCall(ilgen);
 						}
-						if(!classLoader.RetTypeWrapperFromSig(redirSig).IsAssignableTo(this.ReturnType))
-						{
-							// NOTE we're passing a null context, this is safe because the return type
-							// should always be loadable
-							System.Diagnostics.Debug.Assert(!this.ReturnType.IsUnloadable);
-							this.ReturnType.EmitCheckcast(null, ilgen);
-						}
 					}
 				}
 
@@ -1570,7 +1564,7 @@ namespace IKVM.Internal
 								{
 									attr |= FieldAttributes.InitOnly;
 								}
-								FieldBuilder fb = tb.DefineField(f.Name, GetClassLoader().FieldTypeWrapperFromSig(f.Sig).TypeAsFieldType, attr);
+								FieldBuilder fb = tb.DefineField(f.Name, GetClassLoader().FieldTypeWrapperFromSig(f.Sig).TypeAsSignatureType, attr);
 								object constant;
 								if(f.Constant != null)
 								{
@@ -1650,27 +1644,31 @@ namespace IKVM.Internal
 						Hashtable methods = new Hashtable();
 						foreach(MethodInfo mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
 						{
-							ParameterInfo[] paramInfo = mi.GetParameters();
-							Type[] paramTypes = new Type[paramInfo.Length];
-							for(int i = 0; i < paramInfo.Length; i++)
+							string key = MakeMethodKey(mi);
+							if(!methods.ContainsKey(key))
 							{
-								paramTypes[i] = paramInfo[i].ParameterType;
+								ParameterInfo[] paramInfo = mi.GetParameters();
+								Type[] paramTypes = new Type[paramInfo.Length];
+								for(int i = 0; i < paramInfo.Length; i++)
+								{
+									paramTypes[i] = paramInfo[i].ParameterType;
+								}
+								MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot), mi.ReturnType, paramTypes);
+								AttributeHelper.HideFromJava(mb);
+								AttributeHelper.SetEditorBrowsableNever(mb);
+								ILGenerator ilgen = mb.GetILGenerator();
+								for(int i = 0; i < paramTypes.Length; i++)
+								{
+									ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+								}
+								if(!mi.IsStatic)
+								{
+									ilgen.Emit(OpCodes.Ldarg_S, (byte)paramTypes.Length);
+								}
+								ilgen.Emit(OpCodes.Call, mi);
+								ilgen.Emit(OpCodes.Ret);
+								methods[key] = mb;
 							}
-							MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot), mi.ReturnType, paramTypes);
-							AttributeHelper.HideFromJava(mb);
-							AttributeHelper.SetEditorBrowsableNever(mb);
-							ILGenerator ilgen = mb.GetILGenerator();
-							for(int i = 0; i < paramTypes.Length; i++)
-							{
-								ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
-							}
-							if(!mi.IsStatic)
-							{
-								ilgen.Emit(OpCodes.Ldarg_S, (byte)paramTypes.Length);
-							}
-							ilgen.Emit(OpCodes.Call, mi);
-							ilgen.Emit(OpCodes.Ret);
-							methods[mb.Name] = mb;
 						}
 						foreach(PropertyInfo pi in typeBuilder.BaseType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
 						{
@@ -1683,11 +1681,11 @@ namespace IKVM.Internal
 							PropertyBuilder pb = typeBuilder.DefineProperty(pi.Name, pi.Attributes, pi.PropertyType, paramTypes);
 							if(pi.CanRead)
 							{
-								pb.SetGetMethod((MethodBuilder)methods[pi.GetGetMethod().Name]);
+								pb.SetGetMethod((MethodBuilder)methods[MakeMethodKey(pi.GetGetMethod())]);
 							}
 							if(pi.CanWrite)
 							{
-								pb.SetSetMethod((MethodBuilder)methods[pi.GetSetMethod().Name]);
+								pb.SetSetMethod((MethodBuilder)methods[MakeMethodKey(pi.GetSetMethod())]);
 							}
 							AttributeHelper.SetEditorBrowsableNever(pb);
 						}
@@ -1698,6 +1696,20 @@ namespace IKVM.Internal
 					{
 						helperTypeBuilder.CreateType();
 					}
+				}
+
+				private static string MakeMethodKey(MethodInfo method)
+				{
+					StringBuilder sb = new StringBuilder();
+					sb.Append(method.ReturnType.AssemblyQualifiedName).Append(":").Append(method.Name);
+					ParameterInfo[] paramInfo = method.GetParameters();
+					Type[] paramTypes = new Type[paramInfo.Length];
+					for(int i = 0; i < paramInfo.Length; i++)
+					{
+						paramTypes[i] = paramInfo[i].ParameterType;
+						sb.Append(":").Append(paramInfo[i].ParameterType.AssemblyQualifiedName);
+					}
+					return sb.ToString();
 				}
 
 				private void CreateShadowInstanceOf(ICollection remappedTypes)

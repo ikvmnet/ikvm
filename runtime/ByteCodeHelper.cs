@@ -176,7 +176,7 @@ namespace IKVM.Runtime
 				}
 				if(!wrapper.IsAccessibleFrom(context))
 				{
-					throw JavaException.IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz);
+					throw JavaException.IllegalAccessError("Try to access class " + wrapper.Name + " from class " + context.Name);
 				}
 				wrapper.Finish();
 				return wrapper;
@@ -262,7 +262,7 @@ namespace IKVM.Runtime
 		public static object DynamicInvokevirtual(object obj, RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 		{
 			Profiler.Count("DynamicInvokevirtual");
-			return GetMethodWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false).Invoke(obj, args, true);
+			return GetMethodWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false).Invoke(obj, args, false);
 		}
 
 		[DebuggerStepThroughAttribute]

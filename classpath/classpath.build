@@ -1,8 +1,10 @@
 <?xml version="1.0"?>
 <project name="IKVM.GNU.Classpath.dll" default="IKVM.GNU.Classpath.dll">
-    <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-0.13" />
+    <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath" />
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
+    <property name="jikes.compiler" value="true" />
+    <property name="ecj.compiler" value="false" />
 
     <if propertytrue="nant.platform.win32">
         <property name="pathsep" value=";" />
@@ -25,22 +27,27 @@
 			<includes name="**.class"/>
 		</fileset>
 	</delete>
-        <property name="classpath" value=".${pathsep}${Classpath.dir}${pathsep}${Classpath.dir}/external/w3c_dom${pathsep}${Classpath.dir}/external/sax${pathsep}${Classpath.dir}/vm/reference${pathsep}mscorlib.jar${pathsep}System.jar" />
-        <exec program="jikes" commandline="-g -nowarn -classpath ${classpath} @allsources.lst"/>
+        <if propertytrue="jikes.compiler">
+            <property name="classpath" value=".${pathsep}${Classpath.dir}${pathsep}${Classpath.dir}/external/w3c_dom${pathsep}${Classpath.dir}/external/sax${pathsep}${Classpath.dir}/vm/reference${pathsep}mscorlib.jar${pathsep}System.jar" />
+            <exec program="jikes" commandline="-g -nowarn -classpath ${classpath} @allsources.lst"/>
+        </if>
+        <if propertytrue="ecj.compiler">
+            <exec program="ecj" commandline="-g -1.5 -nowarn -cp mscorlib.jar${pathsep}System.jar @allsources.lst"/>
+        </if>
     </target>
 
     <target name="IKVM.GNU.Classpath.dll" depends="classes">
-        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true" commandline="-version:0.10.0.1 ${signoption} -monoBugWorkaround -opt:fields -nojni -out:IKVM.GNU.Classpath.dll -remap:map.xml -exclude:exclude.lst -target:library -recurse:./*.class -recurse:${Classpath.dir}/*.class -recurse:${Classpath.dir}/*.properties -recurse:${Classpath.dir}/resource/*.properties mscorlib.jar System.jar System.Xml.jar -resource:lib/security/classpath.security=classpath.security" />
+        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true" commandline="-version:0.11.* ${signoption} -monoBugWorkaround -opt:fields -nojni -out:IKVM.GNU.Classpath.dll -remap:map.xml -exclude:exclude.lst -target:library -recurse:./*.class -recurse:${Classpath.dir}/*.class -recurse:${Classpath.dir}/resource/*.properties mscorlib.jar System.jar System.Xml.jar -resource:lib/security/classpath.security=classpath.security" />
         <copy file="IKVM.GNU.Classpath.dll" tofile="../bin/IKVM.GNU.Classpath.dll.new" />
         <if propertytrue="nant.platform.win32">
-			<call target="peverify-classpath"/>
-		</if>
+            <call target="peverify-classpath"/>
+        </if>
         <copy file="IKVM.GNU.Classpath.dll" todir="../bin" />
 	<delete file="../bin/IKVM.GNU.Classpath.dll.new" />
     </target>
 
-	<target name="peverify-classpath">
+    <target name="peverify-classpath">
         <exec program="peverify" commandline="../bin/IKVM.GNU.Classpath.dll.new" />
-	</target>
+    </target>
 
 </project>

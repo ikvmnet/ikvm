@@ -1117,7 +1117,19 @@ sealed class ClassFile
 					field = wrapper.GetFieldWrapper(Name, Signature);
 					if(field != null)
 					{
-						field.Link();
+						bool ok = false;
+						try
+						{
+							field.Link();
+							ok = true;
+						}
+						finally
+						{
+							if(!ok)
+							{
+								fieldTypeWrapper = null;
+							}
+						}
 					}
 				}
 			}
@@ -1569,7 +1581,7 @@ sealed class ClassFile
 									constantValue = (short)classFile.GetConstantPoolConstantInteger(index);
 									break;
 								case "B":
-									constantValue = (sbyte)classFile.GetConstantPoolConstantInteger(index);
+									constantValue = (byte)classFile.GetConstantPoolConstantInteger(index);
 									break;
 								case "C":
 									constantValue = (char)classFile.GetConstantPoolConstantInteger(index);

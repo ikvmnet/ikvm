@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -209,7 +209,7 @@ abstract class MethodWrapper : MemberWrapper
 		{
 			if(ghostMethod == null)
 			{
-				ghostMethod = DeclaringType.TypeAsParameterType.GetMethod(this.Name, this.GetParametersForDefineMethod());
+				ghostMethod = DeclaringType.TypeAsSignatureType.GetMethod(this.Name, this.GetParametersForDefineMethod());
 				if(ghostMethod == null)
 				{
 					throw new InvalidOperationException("Unable to resolve ghost method");
@@ -225,7 +225,7 @@ abstract class MethodWrapper : MemberWrapper
 
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
 		{
-			object wrapper = Activator.CreateInstance(DeclaringType.TypeAsParameterType);
+			object wrapper = Activator.CreateInstance(DeclaringType.TypeAsSignatureType);
 			DeclaringType.GhostRefField.SetValue(wrapper, obj);
 
 			ResolveGhostMethod();
@@ -245,7 +245,7 @@ abstract class MethodWrapper : MemberWrapper
 				Type[] types = new Type[parameterTypes.Length];
 				for(int i = 0; i < types.Length; i++)
 				{
-					types[i] = parameterTypes[i].TypeAsParameterType;
+					types[i] = parameterTypes[i].TypeAsSignatureType;
 				}
 				method = declaringType.TypeAsBaseType.GetMethod(method.Name, types);
 			}
@@ -383,7 +383,7 @@ abstract class MethodWrapper : MemberWrapper
 	{
 		get
 		{
-			return ReturnType.TypeAsParameterType;
+			return ReturnType.TypeAsSignatureType;
 		}
 	}
 
@@ -393,7 +393,7 @@ abstract class MethodWrapper : MemberWrapper
 		Type[] temp = new Type[wrappers.Length];
 		for(int i = 0; i < wrappers.Length; i++)
 		{
-			temp[i] = wrappers[i].TypeAsParameterType;
+			temp[i] = wrappers[i].TypeAsSignatureType;
 		}
 		return temp;
 	}
@@ -600,7 +600,12 @@ abstract class MethodWrapper : MemberWrapper
 					}
 				}
 			}
-			else if(nonVirtual && !method.IsStatic)
+			else if(nonVirtual &&
+				method.IsVirtual &&	// if the method isn't virtual, normal reflection will work
+				!method.IsFinal &&	// if the method is final, normal reflection will work
+				!method.DeclaringType.IsSealed && // if the type is sealed, normal reflection will work
+				!method.IsAbstract)	// if the method is abstract, it doesn't make sense, so we'll do a virtual call
+									// (Sun does a virtual call for interface methods and crashes for abstract methods)
 			{
 				Invoker invoker = NonvirtualInvokeHelper.GetInvoker(this);
 				try
@@ -683,6 +688,8 @@ abstract class MethodWrapper : MemberWrapper
 			AssemblyName name = new AssemblyName();
 			name.Name = "NonvirtualInvoker";
 			AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, ClassLoaderWrapper.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
+			// the stack walker needs access to this assembly to be able to quickly check for non-virtual invoke frames
+			IKVM.NativeCode.gnu.classpath.VMStackWalker.nonVirtualInvokeAssembly = ab;
 			if(ClassLoaderWrapper.IsSaveDebugImage)
 			{
 				module = ab.DefineDynamicModule("NonvirtualInvoker", "NonvirtualInvoker.dll");
@@ -747,7 +754,10 @@ abstract class MethodWrapper : MemberWrapper
 			}
 			else if(mw.ReturnType.IsGhost)
 			{
-				mw.ReturnType.EmitConvParameterToStackType(ilgen);
+				LocalBuilder local = ilgen.DeclareLocal(mw.ReturnType.TypeAsSignatureType);
+				ilgen.Emit(OpCodes.Stloc, local);
+				ilgen.Emit(OpCodes.Ldloca, local);
+				ilgen.Emit(OpCodes.Ldfld, mw.ReturnType.GhostRefField);
 			}
 			else if(mw.ReturnType.IsPrimitive)
 			{
@@ -780,7 +790,7 @@ abstract class MethodWrapper : MemberWrapper
 				{
 					if(!argTypes[i].IsUnloadable && argTypes[i].IsGhost)
 					{
-						object v = Activator.CreateInstance(argTypes[i].TypeAsParameterType);
+						object v = Activator.CreateInstance(argTypes[i].TypeAsSignatureType);
 						argTypes[i].GhostRefField.SetValue(v, args[i + 1]);
 						args[i + 1] = v;
 					}
@@ -798,7 +808,7 @@ abstract class MethodWrapper : MemberWrapper
 						{
 							this.args = (object[])args.Clone();
 						}
-						object v = Activator.CreateInstance(argTypes[i].TypeAsParameterType);
+						object v = Activator.CreateInstance(argTypes[i].TypeAsSignatureType);
 						argTypes[i].GhostRefField.SetValue(v, args[i]);
 						this.args[i] = v;
 					}
@@ -844,31 +854,11 @@ class SmartMethodWrapper : MethodWrapper
 	{
 	}
 	
-	protected void PostEmit(ILGenerator ilgen)
-	{
-		TypeWrapper retType = this.ReturnType;
-		if(!retType.IsUnloadable)
-		{
-			if(retType.IsNonPrimitiveValueType)
-			{
-				retType.EmitBox(ilgen);
-			}
-			else if(retType.IsGhost)
-			{
-				LocalBuilder local = ilgen.DeclareLocal(retType.TypeAsParameterType);
-				ilgen.Emit(OpCodes.Stloc, local);
-				ilgen.Emit(OpCodes.Ldloca, local);
-				ilgen.Emit(OpCodes.Ldfld, retType.GhostRefField);
-			}
-		}
-	}
-
 	internal sealed override void EmitCall(ILGenerator ilgen)
 	{
 		AssertLinked();
 		PreEmit(ilgen);
 		CallImpl(ilgen);
-		PostEmit(ilgen);
 	}
 
 	protected virtual void CallImpl(ILGenerator ilgen)
@@ -883,13 +873,13 @@ class SmartMethodWrapper : MethodWrapper
 		if(DeclaringType.IsNonPrimitiveValueType)
 		{
 			// callvirt isn't allowed on a value type
+			// TODO we need to check for a null reference
 			CallImpl(ilgen);
 		}
 		else
 		{
 			CallvirtImpl(ilgen);
 		}
-		PostEmit(ilgen);
 	}
 
 	protected virtual void CallvirtImpl(ILGenerator ilgen)
@@ -1282,91 +1272,32 @@ sealed class SimpleFieldWrapper : FieldWrapper
 
 	protected override void EmitGetImpl(ILGenerator ilgen)
 	{
-		if(FieldTypeWrapper.IsGhost)
+		if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
 		{
-			FieldInfo fi = GetField();
-			if(fi.IsStatic)
-			{
-				ilgen.Emit(OpCodes.Ldsflda, fi);
-			}
-			else
-			{
-				if(DeclaringType.IsNonPrimitiveValueType)
-				{
-					ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-				}
-				ilgen.Emit(OpCodes.Ldflda, fi);
-			}
-			if(IsVolatile)
-			{
-				ilgen.Emit(OpCodes.Volatile);
-			}
-			ilgen.Emit(OpCodes.Ldfld, FieldTypeWrapper.GhostRefField);
+			ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
 		}
-		else
+		if(IsVolatile)
 		{
-			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
-			{
-				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-			}
-			if(IsVolatile)
-			{
-				ilgen.Emit(OpCodes.Volatile);
-			}
-			ilgen.Emit(IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, GetField());
-			if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
-			{
-				FieldTypeWrapper.EmitBox(ilgen);
-			}
+			ilgen.Emit(OpCodes.Volatile);
 		}
+		ilgen.Emit(IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, GetField());
 	}
 
 	protected override void EmitSetImpl(ILGenerator ilgen)
 	{
-		if(FieldTypeWrapper.IsGhost)
+		FieldInfo fi = GetField();
+		if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
 		{
-			FieldInfo fi = GetField();
-			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
+			LocalBuilder temp = ilgen.DeclareLocal(fi.FieldType);
 			ilgen.Emit(OpCodes.Stloc, temp);
-			if(fi.IsStatic)
-			{
-				ilgen.Emit(OpCodes.Ldsflda, fi);
-			}
-			else
-			{
-				if(DeclaringType.IsNonPrimitiveValueType)
-				{
-					ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-				}
-				ilgen.Emit(OpCodes.Ldflda, fi);
-			}
+			ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
 			ilgen.Emit(OpCodes.Ldloc, temp);
-			if(IsVolatile)
-			{
-				ilgen.Emit(OpCodes.Volatile);
-			}
-			ilgen.Emit(OpCodes.Stfld, FieldTypeWrapper.GhostRefField);
 		}
-		else
+		if(IsVolatile)
 		{
-			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
-			{
-				FieldInfo fi = GetField();
-				LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
-				ilgen.Emit(OpCodes.Stloc, temp);
-				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-				ilgen.Emit(OpCodes.Ldloc, temp);
-			}
-			if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
-			{
-				FieldTypeWrapper.EmitUnbox(ilgen);
-			}
-			if(IsVolatile)
-			{
-				ilgen.Emit(OpCodes.Volatile);
-			}
-			ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, GetField());
+			ilgen.Emit(OpCodes.Volatile);
 		}
+		ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
 	}
 }
 
@@ -1381,7 +1312,7 @@ sealed class VolatileLongDoubleFieldWrapper : FieldWrapper
 		: base(declaringType, fieldType, name, sig, modifiers, fi)
 	{
 		Debug.Assert(IsVolatile);
-		Debug.Assert(fieldType == PrimitiveTypeWrapper.DOUBLE || fieldType == PrimitiveTypeWrapper.LONG);
+		Debug.Assert(sig == "J" || sig == "D");
 	}
 
 	protected override void EmitGetImpl(ILGenerator ilgen)
@@ -1460,88 +1391,30 @@ sealed class GetterFieldWrapper : FieldWrapper
 
 	protected override void EmitGetImpl(ILGenerator ilgen)
 	{
-		if(IsStatic)
+		if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
 		{
+			ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
 			ilgen.Emit(OpCodes.Call, getter);
 		}
 		else
 		{
-			if(DeclaringType.IsNonPrimitiveValueType)
-			{
-				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-				ilgen.Emit(OpCodes.Call, getter);
-			}
-			else
-			{
-				ilgen.Emit(getter.IsStatic ? OpCodes.Call : OpCodes.Callvirt, getter);
-			}
-		}
-		if(FieldTypeWrapper.IsUnloadable)
-		{
-			// no need to do anything
-		}
-		else if(FieldTypeWrapper.IsGhost)
-		{
-			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsFieldType);
-			ilgen.Emit(OpCodes.Stloc, temp);
-			ilgen.Emit(OpCodes.Ldloca, temp);
-			ilgen.Emit(OpCodes.Ldfld, FieldTypeWrapper.GhostRefField);
-		}
-		else if(FieldTypeWrapper.IsNonPrimitiveValueType)
-		{
-			FieldTypeWrapper.EmitBox(ilgen);
+			// NOTE we look at the static-ness of the getter method and not our own,
+			// because for instance fields we can still have a static getter method
+			ilgen.Emit(getter.IsStatic ? OpCodes.Call : OpCodes.Callvirt, getter);
 		}
 	}
 
 	protected override void EmitSetImpl(ILGenerator ilgen)
 	{
 		FieldInfo fi = GetField();
-		if(FieldTypeWrapper.IsUnloadable)
+		if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
 		{
-			LocalBuilder temp = ilgen.DeclareLocal(typeof(object));
+			LocalBuilder temp = ilgen.DeclareLocal(fi.FieldType);
 			ilgen.Emit(OpCodes.Stloc, temp);
-			if(DeclaringType.IsNonPrimitiveValueType)
-			{
-				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-			}
+			ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
 			ilgen.Emit(OpCodes.Ldloc, temp);
-			ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
 		}
-		else
-		{
-			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
-			ilgen.Emit(OpCodes.Stloc, temp);
-			if(FieldTypeWrapper.IsGhost)
-			{
-				if(fi.IsStatic)
-				{
-					ilgen.Emit(OpCodes.Ldsflda, fi);
-				}
-				else
-				{
-					if(DeclaringType.IsNonPrimitiveValueType)
-					{
-						ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-					}
-					ilgen.Emit(OpCodes.Ldflda, fi);
-				}
-				ilgen.Emit(OpCodes.Ldloc, temp);
-				ilgen.Emit(OpCodes.Stfld, FieldTypeWrapper.GhostRefField);
-			}
-			else
-			{
-				if(DeclaringType.IsNonPrimitiveValueType)
-				{
-					ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-				}
-				ilgen.Emit(OpCodes.Ldloc, temp);
-				if(FieldTypeWrapper.IsNonPrimitiveValueType)
-				{
-					FieldTypeWrapper.EmitUnbox(ilgen);
-				}
-				ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
-			}
-		}
+		ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
 	}
 }
 
@@ -1569,6 +1442,8 @@ sealed class ConstantFieldWrapper : FieldWrapper
 		}
 		else if(constant is int || 
 			constant is short ||
+			constant is ushort ||
+			constant is byte ||
 			constant is sbyte ||
 			constant is char ||
 			constant is bool)
@@ -1591,25 +1466,13 @@ sealed class ConstantFieldWrapper : FieldWrapper
 		{
 			ilgen.Emit(OpCodes.Ldc_I8, (long)constant);
 		}
-		else if(constant is byte)
-		{
-			ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
-			ilgen.Emit(OpCodes.Box, typeof(byte));
-		}
-		else if(constant is ushort)
-		{
-			ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
-			ilgen.Emit(OpCodes.Box, typeof(ushort));
-		}
 		else if(constant is uint)
 		{
 			ilgen.Emit(OpCodes.Ldc_I4, unchecked((int)((IConvertible)constant).ToUInt32(null)));
-			ilgen.Emit(OpCodes.Box, typeof(uint));
 		}
 		else if(constant is ulong)
 		{
 			ilgen.Emit(OpCodes.Ldc_I8, unchecked((long)(ulong)constant));
-			ilgen.Emit(OpCodes.Box, typeof(ulong));
 		}
 		else if(constant is Enum)
 		{
@@ -1617,12 +1480,10 @@ sealed class ConstantFieldWrapper : FieldWrapper
 			if(val is long)
 			{
 				ilgen.Emit(OpCodes.Ldc_I8, (long)constant);
-				ilgen.Emit(OpCodes.Box, constant.GetType());
 			}
 			else
 			{
 				ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
-				ilgen.Emit(OpCodes.Box, constant.GetType());
 			}
 		}
 		else
@@ -1635,6 +1496,7 @@ sealed class ConstantFieldWrapper : FieldWrapper
 	{
 		// when constant static final fields are updated, the JIT normally doesn't see that (because the
 		// constant value is inlined), so we emulate that behavior by emitting a Pop
+		// TODO can we have a constant instance field?
 		ilgen.Emit(OpCodes.Pop);
 	}
 

@@ -3,6 +3,9 @@
     <target name="JVM">
         <property overwrite="false" name="ilasm_signoption" value="" />
         <exec program="../tools/asmref.exe" useruntimeengine="true" commandline="mscorlib ../bin/IKVM.Runtime.dll ../bin/IKVM.GNU.Classpath.dll" output="jvm_h.il" />
-        <exec program="ilasm" commandline="/dll ${ilasm_signoption} /out:../bin/JVM.DLL jvm_h.il JVM.il" />
+        <exec program="ilasm" commandline="/dll ${ilasm_signoption} /out:../bin/JVM.DLL jvm_h.il jvm32.il JVM.il" />
+<!--
+        <exec program="ilasm" commandline="/x64 /dll ${ilasm_signoption} /out:../bin/JVM.DLL jvm_h.il jvm64.il JVM.il" />
+-->
     </target>
 </project>

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -472,7 +472,7 @@ abstract class TypeWrapper
 		this.name = name;
 		this.baseWrapper = baseWrapper;
 		this.classLoader = classLoader;
-		if(JVM.IsStaticCompiler)
+		if(IsUnloadable || IsVerifierType || JVM.IsStaticCompiler)
 		{
 			this.classObject = null;
 		}
@@ -486,7 +486,7 @@ abstract class TypeWrapper
 	{
 		get
 		{
-			Debug.Assert(!IsUnloadable);
+			Debug.Assert(!IsUnloadable && !IsVerifierType);
 			return classObject;
 		}
 	}
@@ -902,15 +902,7 @@ abstract class TypeWrapper
 		}
 	}
 
-	internal Type TypeAsFieldType
-	{
-		get
-		{
-			return TypeAsParameterType;
-		}
-	}
-
-	internal Type TypeAsParameterType
+	internal Type TypeAsSignatureType
 	{
 		get
 		{
@@ -991,13 +983,7 @@ abstract class TypeWrapper
 				}
 				return Type.GetType(type, true);
 			}
-			Type t = TypeAsTBD;
-			// HACK BYTE[]
-			//if(t == typeof(sbyte))
-			//{
-			//	return typeof(byte);
-			//}
-			return t;
+			return TypeAsTBD;
 		}
 	}
 
@@ -1337,9 +1323,31 @@ abstract class TypeWrapper
 		ilgen.Emit(OpCodes.Box, this.TypeAsTBD);
 	}
 
-	// NOTE sourceType is optional and only used for special types (e.g. interfaces),
+	internal void EmitConvSignatureTypeToStackType(ILGenerator ilgen)
+	{
+		if(IsUnloadable)
+		{
+		}
+		else if(this == PrimitiveTypeWrapper.BYTE)
+		{
+			ilgen.Emit(OpCodes.Conv_I1);
+		}
+		else if(IsNonPrimitiveValueType)
+		{
+			EmitBox(ilgen);
+		}
+		else if(IsGhost)
+		{
+			LocalBuilder local = ilgen.DeclareLocal(TypeAsSignatureType);
+			ilgen.Emit(OpCodes.Stloc, local);
+			ilgen.Emit(OpCodes.Ldloca, local);
+			ilgen.Emit(OpCodes.Ldfld, GhostRefField);
+		}
+	}
+
+	// NOTE sourceType is optional and only used for interfaces,
 	// it is *not* used to automatically downcast
-	internal void EmitConvStackToParameterType(ILGenerator ilgen, TypeWrapper sourceType)
+	internal void EmitConvStackTypeToSignatureType(ILGenerator ilgen, TypeWrapper sourceType)
 	{
 		if(!IsUnloadable)
 		{
@@ -1347,12 +1355,12 @@ abstract class TypeWrapper
 			{
 				LocalBuilder local1 = ilgen.DeclareLocal(TypeAsLocalOrStackType);
 				ilgen.Emit(OpCodes.Stloc, local1);
-				LocalBuilder local2 = ilgen.DeclareLocal(TypeAsParameterType);
+				LocalBuilder local2 = ilgen.DeclareLocal(TypeAsSignatureType);
 				ilgen.Emit(OpCodes.Ldloca, local2);
 				ilgen.Emit(OpCodes.Ldloc, local1);
 				ilgen.Emit(OpCodes.Stfld, GhostRefField);
 				ilgen.Emit(OpCodes.Ldloca, local2);
-				ilgen.Emit(OpCodes.Ldobj, TypeAsParameterType);
+				ilgen.Emit(OpCodes.Ldobj, TypeAsSignatureType);
 			}
 				// because of the way interface merging works, any reference is valid
 				// for any interface reference
@@ -1364,25 +1372,6 @@ abstract class TypeWrapper
 			{
 				EmitUnbox(ilgen);
 			}
-		}
-	}
-
-	internal void EmitConvParameterToStackType(ILGenerator ilgen)
-	{
-		if(IsUnloadable)
-		{
-			// nothing to do
-		}
-		else if(IsNonPrimitiveValueType)
-		{
-			EmitBox(ilgen);
-		}
-		else if(IsGhost)
-		{
-			LocalBuilder local = ilgen.DeclareLocal(TypeAsParameterType);
-			ilgen.Emit(OpCodes.Stloc, local);
-			ilgen.Emit(OpCodes.Ldloca, local);
-			ilgen.Emit(OpCodes.Ldfld, GhostRefField);
 		}
 	}
 
@@ -1599,7 +1588,7 @@ class UnloadableTypeWrapper : TypeWrapper
 
 class PrimitiveTypeWrapper : TypeWrapper
 {
-	internal static readonly PrimitiveTypeWrapper BYTE = new PrimitiveTypeWrapper(typeof(sbyte), "B");
+	internal static readonly PrimitiveTypeWrapper BYTE = new PrimitiveTypeWrapper(typeof(byte), "B");
 	internal static readonly PrimitiveTypeWrapper CHAR = new PrimitiveTypeWrapper(typeof(char), "C");
 	internal static readonly PrimitiveTypeWrapper DOUBLE = new PrimitiveTypeWrapper(typeof(double), "D");
 	internal static readonly PrimitiveTypeWrapper FLOAT = new PrimitiveTypeWrapper(typeof(float), "F");
@@ -1674,6 +1663,11 @@ class PrimitiveTypeWrapper : TypeWrapper
 
 	internal override void Finish(bool forDebugSave)
 	{
+	}
+
+	public override string ToString()
+	{
+		return "PrimitiveTypeWrapper[" + sigName + "]";
 	}
 }
 
@@ -2278,6 +2272,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					{
 						if(wrapper.IsGhost)
 						{
+							// TODO this is low priority, since the current Java class library doesn't define any ghost interfaces
+							// as inner classes
 							throw new NotImplementedException();
 						}
 						// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
@@ -2473,11 +2469,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			{
 				for(int i = 0; i < caller.Length; i++)
 				{
-					if(caller[i].TypeAsParameterType == typeof(sbyte[]) && callee[i].TypeAsParameterType == typeof(byte[]))
-					{
-						// special case for byte array cheating...
-					}
-					else if(!caller[i].IsAssignableTo(callee[i]))
+					if(!caller[i].IsAssignableTo(callee[i]))
 					{
 						return false;
 					}
@@ -2629,7 +2621,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			ClassFile.Field fld = classFile.Fields[GetFieldIndex(fw)];
 			string fieldName = fld.Name;
 			TypeWrapper typeWrapper = fw.FieldTypeWrapper;
-			Type type = typeWrapper.TypeAsFieldType;
+			Type type = typeWrapper.TypeAsSignatureType;
 			bool setNameSig = typeWrapper.IsUnloadable || typeWrapper.IsGhostArray;
 			if(setNameSig)
 			{
@@ -2905,15 +2897,15 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						TypeWrapper[] implementers = GetGhostImplementers(wrapper);
 						for(int i = 0; i < implementers.Length; i++)
 						{
-							mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, wrapper.TypeAsParameterType, new Type[] { implementers[i].TypeAsParameterType });
+							mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, wrapper.TypeAsSignatureType, new Type[] { implementers[i].TypeAsSignatureType });
 							AttributeHelper.HideFromJava(mb);
 							ilgen = mb.GetILGenerator();
-							local = ilgen.DeclareLocal(wrapper.TypeAsParameterType);
+							local = ilgen.DeclareLocal(wrapper.TypeAsSignatureType);
 							ilgen.Emit(OpCodes.Ldloca, local);
 							ilgen.Emit(OpCodes.Ldarg_0);
 							ilgen.Emit(OpCodes.Stfld, wrapper.GhostRefField);
 							ilgen.Emit(OpCodes.Ldloca, local);
-							ilgen.Emit(OpCodes.Ldobj, wrapper.TypeAsParameterType);			
+							ilgen.Emit(OpCodes.Ldobj, wrapper.TypeAsSignatureType);			
 							ilgen.Emit(OpCodes.Ret);
 						}
 						// Implement the "IsInstance" method
@@ -3005,12 +2997,12 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						ilgen.Emit(OpCodes.Castclass, wrapper.TypeAsBaseType);
 						ilgen.Emit(OpCodes.Pop);
 						ilgen.MarkLabel(end);
-						local = ilgen.DeclareLocal(wrapper.TypeAsParameterType);
+						local = ilgen.DeclareLocal(wrapper.TypeAsSignatureType);
 						ilgen.Emit(OpCodes.Ldloca, local);
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Stfld, wrapper.ghostRefField);
 						ilgen.Emit(OpCodes.Ldloca, local);
-						ilgen.Emit(OpCodes.Ldobj, wrapper.TypeAsParameterType);	
+						ilgen.Emit(OpCodes.Ldobj, wrapper.TypeAsSignatureType);	
 						ilgen.Emit(OpCodes.Ret);
 						// Add "ToObject" methods
 						mb = typeBuilder.DefineMethod("ToObject", MethodAttributes.Public, typeof(object), Type.EmptyTypes);
@@ -3252,15 +3244,15 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						// TODO do this for indirectly implemented interfaces (interfaces implemented by interfaces) as well
 						if(interfaces[i].IsGhost)
 						{
-							MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, interfaces[i].TypeAsParameterType, new Type[] { wrapper.TypeAsParameterType });
+							MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, interfaces[i].TypeAsSignatureType, new Type[] { wrapper.TypeAsSignatureType });
 							AttributeHelper.HideFromJava(mb);
 							ILGenerator ilgen = mb.GetILGenerator();
-							LocalBuilder local = ilgen.DeclareLocal(interfaces[i].TypeAsParameterType);
+							LocalBuilder local = ilgen.DeclareLocal(interfaces[i].TypeAsSignatureType);
 							ilgen.Emit(OpCodes.Ldloca, local);
 							ilgen.Emit(OpCodes.Ldarg_0);
 							ilgen.Emit(OpCodes.Stfld, interfaces[i].GhostRefField);
 							ilgen.Emit(OpCodes.Ldloca, local);
-							ilgen.Emit(OpCodes.Ldobj, interfaces[i].TypeAsParameterType);			
+							ilgen.Emit(OpCodes.Ldobj, interfaces[i].TypeAsSignatureType);
 							ilgen.Emit(OpCodes.Ret);
 						}
 						interfaces[i].ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet);
@@ -3321,13 +3313,13 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						if(f.ConstantValue != null)
 						{
 							FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal;
-							FieldBuilder fb = tbFields.DefineField(f.Name, typeWrapper.TypeAsFieldType, attribs);
+							FieldBuilder fb = tbFields.DefineField(f.Name, typeWrapper.TypeAsSignatureType, attribs);
 							fb.SetConstant(f.ConstantValue);
 						}
 						else
 						{
 							FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly;
-							FieldBuilder fb = tbFields.DefineField(f.Name, typeWrapper.TypeAsFieldType, attribs);
+							FieldBuilder fb = tbFields.DefineField(f.Name, typeWrapper.TypeAsSignatureType, attribs);
 							if(ilgenClinit == null)
 							{
 								ilgenClinit = tbFields.DefineTypeInitializer().GetILGenerator();
@@ -3406,14 +3398,14 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				Type[] argTypes = new Type[args.Length + instance + 1];
 				if(instance != 0)
 				{
-					argTypes[0] = wrapper.TypeAsParameterType;
+					argTypes[0] = wrapper.TypeAsSignatureType;
 				}
 				for(int i = 0; i < args.Length; i++)
 				{
-					argTypes[i + instance] = args[i].TypeAsParameterType;
+					argTypes[i + instance] = args[i].TypeAsSignatureType;
 				}
 				argTypes[argTypes.Length - 1] = typeof(RuntimeMethodHandle);
-				MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, mw.ReturnType.TypeAsParameterType, argTypes);
+				MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, mw.ReturnType.TypeAsSignatureType, argTypes);
 				JniBuilder.Generate(mb.GetILGenerator(), wrapper, mw, tb, classFile, m, args, true);
 				for(int i = 0; i < argTypes.Length - 1; i++)
 				{
@@ -3507,7 +3499,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				ilGenerator.Emit(OpCodes.Stloc, jnienv);
 				Label tryBlock = ilGenerator.BeginExceptionBlock();
 				TypeWrapper retTypeWrapper = mw.ReturnType;
-				if(!retTypeWrapper.IsPrimitive)
+				if(!retTypeWrapper.IsUnloadable && !retTypeWrapper.IsPrimitive)
 				{
 					// this one is for use after we return from "calli"
 					ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
@@ -3518,7 +3510,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				modargs[1] = typeof(IntPtr);
 				for(int i = 0; i < args.Length; i++)
 				{
-					modargs[i + 2] = args[i].TypeAsParameterType;
+					modargs[i + 2] = args[i].TypeAsSignatureType;
 				}
 				int add = 0;
 				if(!m.IsStatic)
@@ -3548,10 +3540,19 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					if(!args[j].IsPrimitive)
 					{
 						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-						ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(j + add));
 						if(args[j].IsNonPrimitiveValueType)
 						{
+							ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(j + add));
 							args[j].EmitBox(ilGenerator);
+						}
+						else if(args[j].IsGhost)
+						{
+							ilGenerator.Emit(OpCodes.Ldarga_S, (byte)(j + add));
+							ilGenerator.Emit(OpCodes.Ldfld, args[j].GhostRefField);
+						}
+						else
+						{
+							ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(j + add));
 						}
 						ilGenerator.Emit(OpCodes.Call, makeLocalRef);
 						modargs[j + 2] = typeof(IntPtr);
@@ -3562,7 +3563,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					}
 				}
 				ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
-				ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retTypeWrapper.IsPrimitive) ? retTypeWrapper.TypeAsParameterType : typeof(IntPtr), modargs);
+				ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retTypeWrapper.IsPrimitive) ? retTypeWrapper.TypeAsSignatureType : typeof(IntPtr), modargs);
 				LocalBuilder retValue = null;
 				if(retTypeWrapper != PrimitiveTypeWrapper.VOID)
 				{
@@ -3573,12 +3574,22 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							retTypeWrapper.EmitUnbox(ilGenerator);
 						}
-						else if(!retTypeWrapper.IsGhost)
+						else if(retTypeWrapper.IsGhost)
+						{
+							LocalBuilder ghost = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsSignatureType);
+							LocalBuilder obj = ilGenerator.DeclareLocal(typeof(object));
+							ilGenerator.Emit(OpCodes.Stloc, obj);
+							ilGenerator.Emit(OpCodes.Ldloca, ghost);
+							ilGenerator.Emit(OpCodes.Ldloc, obj);
+							ilGenerator.Emit(OpCodes.Stfld, retTypeWrapper.GhostRefField);
+							ilGenerator.Emit(OpCodes.Ldloc, ghost);
+						}
+						else
 						{
 							ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsTBD);
 						}
 					}
-					retValue = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
+					retValue = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsSignatureType);
 					ilGenerator.Emit(OpCodes.Stloc, retValue);
 				}
 				ilGenerator.BeginCatchBlock(typeof(object));
@@ -5069,7 +5080,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 		{
 			modifiers |= Modifiers.Final;
 		}
-		if(type.IsAbstract)
+		else if(type.IsAbstract) // we can't be abstract if we're final
 		{
 			modifiers |= Modifiers.Abstract;
 		}
@@ -5374,8 +5385,9 @@ sealed class DotNetTypeWrapper : TypeWrapper
 
 		internal override void EmitCall(ILGenerator ilgen)
 		{
-			// NOTE we don't support custom boxing rules for enums
-			ilgen.Emit(OpCodes.Box, ((DotNetTypeWrapper)DeclaringType).type);
+			// We don't actually need to do anything here!
+			// The compiler will insert a boxing operation after calling us and that will
+			// result in our argument being boxed (since that's still sitting on the stack).
 		}
 
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
@@ -5432,13 +5444,13 @@ sealed class DotNetTypeWrapper : TypeWrapper
 		}
 
 		// this method takes a boxed Enum and returns its value as a boxed primitive
-		// of the subset of Java primitives (i.e. sbyte, short, int, long)
+		// of the subset of Java primitives (i.e. byte, short, int, long)
 		internal static object GetEnumPrimitiveValue(object obj)
 		{
 			Type underlyingType = Enum.GetUnderlyingType(obj.GetType());
 			if(underlyingType == typeof(sbyte) || underlyingType == typeof(byte))
 			{
-				return unchecked((sbyte)((IConvertible)obj).ToInt32(null));
+				return unchecked((byte)((IConvertible)obj).ToInt32(null));
 			}
 			else if(underlyingType == typeof(short) || underlyingType == typeof(ushort))
 			{
@@ -5512,9 +5524,9 @@ sealed class DotNetTypeWrapper : TypeWrapper
 		if(type.IsEnum)
 		{
 			Type underlyingType = Enum.GetUnderlyingType(type);
-			if(underlyingType == typeof(byte))
+			if(underlyingType == typeof(sbyte))
 			{
-				underlyingType = typeof(sbyte);
+				underlyingType = typeof(byte);
 			}
 			else if(underlyingType == typeof(ushort))
 			{
@@ -5631,6 +5643,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 			// (otherwise the type appears abstract while it isn't)
 			if(!type.IsAbstract)
 			{
+				Hashtable clash = null;
 				Type[] interfaces = type.GetInterfaces();
 				for(int i = 0; i < interfaces.Length; i++)
 				{
@@ -5653,8 +5666,19 @@ sealed class DotNetTypeWrapper : TypeWrapper
 											continue;
 										}
 									}
-									// TODO handle name/signature clash
-									methodsList.Add(CreateMethodWrapper(name, sig, map.InterfaceMethods[j], true));
+									if(clash == null)
+									{
+										clash = new Hashtable();
+										foreach(MethodWrapper mw in methodsList)
+										{
+											clash.Add(mw.Name + mw.Signature, null);
+										}										
+									}
+									if(!clash.ContainsKey(name + sig))
+									{
+										clash.Add(name + sig, null);
+										methodsList.Add(CreateMethodWrapper(name, sig, map.InterfaceMethods[j], true));
+									}
 								}
 							}
 						}

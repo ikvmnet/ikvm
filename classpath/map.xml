@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?> 
 <!--
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -204,6 +204,17 @@
 			</constructor>
 			<constructor sig="(Ljava.lang.StringBuffer;)V" modifiers="public">
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="(Ljava.lang.StringBuffer;)Ljava.lang.String;" />
+			</constructor>
+			<constructor sig="(Ljava.lang.StringBuilder;)V" modifiers="public">
+				<alternateBody>
+					<ldarg_0 />
+					<ldfld class="java.lang.StringBuilder" name="value" sig="[C" />
+					<ldc_i4_0 />
+					<ldarg_0 />
+					<ldfld class="java.lang.StringBuilder" name="count" sig="I" />
+					<newobj type="System.String, mscorlib" name=".ctor" sig="([CII)V" />
+					<ret />
+				</alternateBody>
 			</constructor>
 			<constructor sig="([B)V" modifiers="public">
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([B)Ljava.lang.String;" />
@@ -644,7 +655,7 @@
 			<method name="unbox_byte" sig="(Ljava.lang.Object;)B">
 				<body>
 					<ldarg_0 />
-					<unbox type="System.SByte, mscorlib" />
+					<unbox type="System.Byte, mscorlib" />
 					<ldind_i1 />
 					<ret />
 				</body>
@@ -708,7 +719,7 @@
 			<method name="box_byte" sig="(B)Ljava.lang.Object;">
 				<body>
 					<ldarg_0 />
-					<box type="System.SByte, mscorlib" />
+					<box type="System.Byte, mscorlib" />
 					<ret />
 				</body>
 			</method>
@@ -761,7 +772,7 @@
 					<ret />
 				</body>
 			</method>
-			<method name="box_ubyte" sig="(B)Lcli.System.Byte;">
+			<method name="box_sbyte" sig="(B)Lcli.System.SByte;">
 				<body>
 					<ldarg_0 />
 					<ret />
@@ -785,7 +796,7 @@
 					<ret />
 				</body>
 			</method>
-			<method name="unbox_ubyte" sig="(Lcli.System.Byte;)B">
+			<method name="unbox_sbyte" sig="(Lcli.System.SByte;)B">
 				<body>
 					<ldarg_0 />
 					<ret />
@@ -804,20 +815,6 @@
 				</body>
 			</method>
 			<method name="unbox_ulong" sig="(Lcli.System.UInt64;)J">
-				<body>
-					<ldarg_0 />
-					<ret />
-				</body>
-			</method>
-		</class>
-		<class name="ikvm.lang.ByteArrayHack">
-			<method name="cast" sig="([B)[Lcli.System.Byte;">
-				<body>
-					<ldarg_0 />
-					<ret />
-				</body>
-			</method>
-			<method name="cast" sig="([Lcli.System.Byte;)[B">
 				<body>
 					<ldarg_0 />
 					<ret />
@@ -883,11 +880,8 @@
 			<method name="getDirectBufferAddress" sig="(Ljava.lang.Object;)Lcli.System.IntPtr;">
 				<body>
 					<ldarg_1 />
-					<castclass class="java.nio.ByteBuffer" />
-					<call class="java.nio.VMDirectByteBuffer" name="GetDirectBufferAddress" sig="(Ljava.nio.ByteBuffer;)Lcli.System.IntPtr;" />
-					<!-- LAME we need to unbox the return value -->
-					<unbox type="System.IntPtr, mscorlib" />
-					<ldobj type="System.IntPtr, mscorlib" />
+					<castclass class="java.nio.Buffer" />
+					<call class="java.nio.VMDirectByteBuffer" name="GetDirectBufferAddress" sig="(Ljava.nio.Buffer;)Lcli.System.IntPtr;" />
 					<ret />
 				</body>
 			</method>
@@ -909,7 +903,7 @@
 				</body>
 			</method>
 		</class>
-		<class name="java.nio.channels.Channels">
+		<class name="java.nio.channels.VMChannels">
 			<method name="newInputStream" sig="(Lgnu.java.nio.channels.FileChannelImpl;)Ljava.io.FileInputStream;">
 				<body>
 					<ldarg_0 />
@@ -938,7 +932,7 @@
 					<ldarg_0 />
 					<ldfld class="java.nio.Buffer" name="pos" sig="I" />
 					<call type="gnu.classpath.RawData" name="ReadByte" sig="(I)B" />
-					<stloc name="result" type="System.SByte, mscorlib" />
+					<stloc name="result" type="System.Byte, mscorlib" />
 					<ldarg_0 />
 					<ldarg_0 />
 					<ldfld class="java.nio.Buffer" name="pos" sig="I" />

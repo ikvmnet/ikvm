@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004 Jeroen Frijters
+  Copyright (C) 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -91,7 +91,7 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 
     public Object box(Object val)
     {
-        if(val instanceof cli.System.SByte)
+        if(val instanceof cli.System.Byte)
         {
             return new Byte(CIL.unbox_byte(val));
         }
@@ -189,12 +189,17 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
         VMThread.jniDetach();
     }
 
+    public void setThreadGroup(Object group)
+    {
+        VMThread.setThreadGroup((ThreadGroup)group);
+    }
+
     public native Object newDirectByteBuffer(cli.System.IntPtr address, int capacity);
     public native cli.System.IntPtr getDirectBufferAddress(Object buffer);
     
     public int getDirectBufferCapacity(Object buffer)
     {
-        return ((java.nio.ByteBuffer)buffer).capacity();
+        return ((java.nio.Buffer)buffer).capacity();
     }
 
     public void setProperties(cli.System.Collections.Hashtable props)

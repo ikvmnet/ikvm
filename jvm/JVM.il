@@ -23,12 +23,9 @@
 */
 .assembly JVM
 {
-  .ver 0:10:0:1
+  .ver 0:11:0:0
 }
 .module JVM.DLL
-.corflags 0x00000002
-.vtfixup [3] int32 fromunmanaged at VTable
-.data VTable = int32[3]
 
 .method public static int32 JNI_CreateJavaVM(void* ppvm, void* ppenv, void* args)
 {

@@ -42,6 +42,7 @@ public interface LibraryVMInterface
 
     void jniWaitUntilLastThread();
     void jniDetach();
+    void setThreadGroup(Object group);
 
     Object newConstructor(Object clazz, Object wrapper);
     Object newMethod(Object clazz, Object wrapper);
