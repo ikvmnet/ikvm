@@ -1382,7 +1382,7 @@ class ClassFile
 		internal Method(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
 		{
 			// vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
-			if(Name == "<clinit>")
+			if(Name == "<clinit>" && Signature == "()V")
 			{
 				access_flags &= Modifiers.Strictfp;
 				access_flags |= (Modifiers.Static | Modifiers.Private);

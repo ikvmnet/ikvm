@@ -777,6 +777,10 @@ class InstructionState
 
 	private void PushHelper(TypeWrapper type)
 	{
+		if(stackSize == stack.Length)
+		{
+			throw new VerifyError("Stack overflow");
+		}
 		stack[stackSize++] = type;
 	}
 

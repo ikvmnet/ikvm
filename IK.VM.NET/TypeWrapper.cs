@@ -53,15 +53,13 @@ sealed class MethodDescriptor
 
 	internal MethodDescriptor(ClassLoaderWrapper classLoader, string name, string sig)
 	{
-		if(classLoader == null)
-		{
-			throw new ArgumentNullException();
-		}
+		Debug.Assert(classLoader != null);
+		// class name in the sig should be dotted
+		Debug.Assert(sig.IndexOf('/') < 0);
+
 		this.classLoader = classLoader;
 		this.name = name;
 		this.sig = sig;
-		// class name in the sig should be dotted
-		Debug.Assert(sig.IndexOf('/') < 0);
 	}
 
 	internal string Name
@@ -145,7 +143,7 @@ sealed class MethodDescriptor
 		return name.GetHashCode() ^ sig.GetHashCode();
 	}
 
-	internal static string getSigName(Type type)
+	internal static string GetSigName(Type type)
 	{
 		if(type.IsValueType)
 		{
@@ -207,7 +205,7 @@ sealed class MethodDescriptor
 		sb.Append('(');
 		foreach(ParameterInfo param in mb.GetParameters())
 		{
-			sb.Append(getSigName(param.ParameterType));
+			sb.Append(GetSigName(param.ParameterType));
 		}
 		sb.Append(')');
 		if(mb is ConstructorInfo)
@@ -217,7 +215,7 @@ sealed class MethodDescriptor
 		}
 		else
 		{
-			sb.Append(getSigName(((MethodInfo)mb).ReturnType));
+			sb.Append(GetSigName(((MethodInfo)mb).ReturnType));
 			return new MethodDescriptor(ClassLoaderWrapper.GetClassLoader(mb.DeclaringType), mb.Name, sb.ToString());
 		}
 	}
@@ -433,7 +431,7 @@ abstract class TypeWrapper
 	{
 		get
 		{
-			return name[0] == '[';
+			return name != null && name[0] == '[';
 		}
 	}
 
@@ -443,9 +441,12 @@ abstract class TypeWrapper
 		get
 		{
 			int i = 0;
-			while(name[i] == '[')
+			if(name != null)
 			{
-				i++;
+				while(name[i] == '[')
+				{
+					i++;
+				}
 			}
 			return i;
 		}
@@ -654,13 +655,11 @@ abstract class TypeWrapper
 			{
 				return true;
 			}
-			if(index1 == -1 || index2 == -1)
+			if(index1 != index2)
 			{
 				return false;
 			}
-			string package1 = name.Substring(0, index1);
-			string package2 = wrapper.name.Substring(0, index2);
-			return package1 == package2;
+			return String.CompareOrdinal(name, 0, wrapper.name, 0, index1) == 0;
 		}
 		return false;
 	}
@@ -2081,25 +2080,10 @@ class DynamicTypeWrapper : TypeWrapper
 				TypeWrapper[] argTypeWrappers = m.GetArgTypes(wrapper.GetClassLoader());
 				TypeWrapper retTypeWrapper = m.GetRetType(wrapper.GetClassLoader());
 				Type[] args = new Type[argTypeWrappers.Length];
-				Type retType;
-				if(retTypeWrapper.IsUnloadable)
-				{
-					retType = typeof(object);
-				}
-				else
-				{
-					retType = retTypeWrapper.Type;
-				}
+				Type retType = retTypeWrapper.TypeOrUnloadableAsObject;
 				for(int i = 0; i < args.Length; i++)
 				{
-					if(argTypeWrappers[i].IsUnloadable)
-					{
-						args[i] = typeof(object);
-					}
-					else
-					{
-						args[i] = argTypeWrappers[i].Type;
-					}
+					args[i] = argTypeWrappers[i].TypeOrUnloadableAsObject;
 				}
 				bool setModifiers = false;
 				MethodAttributes attribs = 0;
@@ -2156,16 +2140,9 @@ class DynamicTypeWrapper : TypeWrapper
 				}
 				else if(m.Name == "<clinit>" && m.Signature == "()V")
 				{
-					// I think this is a CLR bug, the verifier requires static inititializes of interfaces to be public
-					// TODO report this bug
-					if(classFile.IsInterface)
-					{
-						attribs &= ~MethodAttributes.MemberAccessMask;
-						attribs |= MethodAttributes.Public;
-					}
 					// NOTE we don't need to record the modifiers here, because they aren't visible from Java reflection
 					// (well they might be visible from JNI reflection, but that isn't important enough to justify the custom attribute)
-					method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, args);
+					method = typeBuilder.DefineTypeInitializer();
 				}
 				else
 				{
@@ -2193,7 +2170,7 @@ class DynamicTypeWrapper : TypeWrapper
 							{
 								break;
 							}
-							// here are the complex rules for determining wether this method overrides the method we found
+							// here are the complex rules for determining whether this method overrides the method we found
 							// RULE 1: final methods may not be overriden
 							if(baseMce.IsFinal)
 							{
@@ -3214,7 +3191,7 @@ class NetExpTypeWrapper : TypeWrapper
 		FieldInfo field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 		if(!AttributeHelper.IsHideFromReflection(field))
 		{
-			return FieldWrapper.Create(this, field, MethodDescriptor.getSigName(field.FieldType), AttributeHelper.GetModifiers(field));
+			return FieldWrapper.Create(this, field, MethodDescriptor.GetSigName(field.FieldType), AttributeHelper.GetModifiers(field));
 		}
 		return null;
 	}
@@ -3511,7 +3488,7 @@ class CompiledTypeWrapper : TypeWrapper
 
 	private FieldWrapper CreateFieldWrapper(Modifiers modifiers, string name, Type fieldType, FieldInfo field, MethodInfo getter)
 	{
-		FieldWrapper fieldWrapper = new FieldWrapper(this, ClassLoaderWrapper.GetWrapperFromType(fieldType), name, MethodDescriptor.getSigName(fieldType), modifiers);
+		FieldWrapper fieldWrapper = new FieldWrapper(this, ClassLoaderWrapper.GetWrapperFromType(fieldType), name, MethodDescriptor.GetSigName(fieldType), modifiers);
 		if((modifiers & Modifiers.Static) != 0)
 		{
 			if(getter != null)
