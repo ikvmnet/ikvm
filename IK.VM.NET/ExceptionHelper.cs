@@ -136,7 +136,16 @@ public class ExceptionHelper
 						string fileName = frame.GetFileName();
 						if(fileName != null)
 						{
-							fileName = new System.IO.FileInfo(fileName).Name;
+							try
+							{
+								fileName = new System.IO.FileInfo(fileName).Name;
+							}
+							catch
+							{
+								// Mono returns "<unknown>" for frame.GetFileName() and the FileInfo constructor
+								// doesn't like that
+								fileName = null;
+							}
 						}
 						string className = ClassHelper.getName(frame.GetMethod().ReflectedType);
 						bool native = false;
