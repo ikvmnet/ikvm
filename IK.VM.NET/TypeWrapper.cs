@@ -221,6 +221,7 @@ sealed class MethodDescriptor
 
 abstract class TypeWrapper
 {
+	private static TypeWrapper java_lang_Object;
 	private ClassLoaderWrapper classLoader;
 	private string name;		// java name (e.g. java/lang/Object)
 	private Modifiers modifiers;
@@ -535,6 +536,10 @@ abstract class TypeWrapper
 
 	public bool IsSubTypeOf(TypeWrapper baseType)
 	{
+		// make sure IsSubTypeOf isn't used on primitives
+		Debug.Assert(!this.IsPrimitive);
+		Debug.Assert(!baseType.IsPrimitive);
+
 		if(baseType.IsInterface)
 		{
 			if(baseType == this)
@@ -542,6 +547,16 @@ abstract class TypeWrapper
 				return true;
 			}
 			return ImplementsInterface(baseType);
+		}
+		if(java_lang_Object == null)
+		{
+			// TODO cache java.lang.Object somewhere else
+			java_lang_Object = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Object");
+		}
+		// NOTE this isn't just an optimization, it is also required when this is an interface
+		if(baseType == java_lang_Object)
+		{
+			return true;
 		}
 		TypeWrapper subType = this;
 		while(subType != baseType)
@@ -561,7 +576,7 @@ abstract class TypeWrapper
 		{
 			return true;
 		}
-		if(wrapper.IsPrimitive)
+		if(this.IsPrimitive || wrapper.IsPrimitive)
 		{
 			return false;
 		}
