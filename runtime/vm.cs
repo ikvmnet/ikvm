@@ -126,12 +126,12 @@ public class JVM
 					if(IsUnix)
 					{
 						Tracer.Info(Tracer.Runtime, "Loading JNI provider: IKVM.JNI.Mono");
-						provider = Assembly.Load("IKVM.JNI.Mono").GetType("JNI", true);
+						provider = Assembly.LoadWithPartialName("IKVM.JNI.Mono").GetType("JNI", true);
 					}
 					else
 					{
 						Tracer.Info(Tracer.Runtime, "Loading JNI provider: IKVM.JNI.CLR-Win32");
-						provider = Assembly.Load("IKVM.JNI.CLR-Win32").GetType("JNI", true);
+						provider = Assembly.LoadWithPartialName("IKVM.JNI.CLR-Win32").GetType("JNI", true);
 					}
 				}
 				jniProvider = (IJniProvider)Activator.CreateInstance(provider);

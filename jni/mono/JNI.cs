@@ -14,6 +14,9 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 
+[assembly:AssemblyVersionAttribute("0.8.0.0")]
+//[assembly:AssemblyKeyFile("c:\\ikvm-key\\ikvm.snk")]
+
 public class VM
 {
 	public static Exception UnsatisfiedLinkError (string msg) {
