@@ -644,16 +644,44 @@ class Compiler
 						}
 						if(true)
 						{
-							ilGenerator.BeginCatchBlock(typeof(Exception));
+							bool mapSafe = IsMapSafeException(excType);
+							if(mapSafe)
+							{
+								ilGenerator.BeginCatchBlock(excType);
+							}
+							else
+							{
+								ilGenerator.BeginCatchBlock(typeof(Exception));
+							}
 							Label label = ilGenerator.DefineLabel();
 							LocalBuilder local = ilGenerator.DeclareLocal(excType);
 							// special case for catch(Throwable) (and finally), that produces less code and
 							// should be faster
-							if(excType == typeof(Exception))
+							if(mapSafe || excType == typeof(Exception))
 							{
-								ilGenerator.Emit(OpCodes.Call, mapExceptionFastMethod);
-								ilGenerator.Emit(OpCodes.Stloc, local);
-								ilGenerator.Emit(OpCodes.Leave, label);
+								Instruction handlerInstr = code[FindPcIndex(exceptions[j].handler_pc)];
+								if(handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
+									(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
+									!ma.IsAloadUsed(handlerInstr.NormalizedArg1)))
+								{
+									// if the exception isn't used then we don't need to do any mapping!
+									ilGenerator.Emit(OpCodes.Stloc, local);
+									ilGenerator.Emit(OpCodes.Leave, label);
+								}
+								else
+								{
+									if(mapSafe)
+									{
+										ilGenerator.Emit(OpCodes.Dup);
+									}
+									ilGenerator.Emit(OpCodes.Call, mapExceptionFastMethod);
+									if(mapSafe)
+									{
+										ilGenerator.Emit(OpCodes.Pop);
+									}
+									ilGenerator.Emit(OpCodes.Stloc, local);
+									ilGenerator.Emit(OpCodes.Leave, label);
+								}
 							}
 							else
 							{
@@ -1065,9 +1093,15 @@ class Compiler
 									}
 									if(typeof(Exception).IsAssignableFrom(t))
 									{
-										ilGenerator.Emit(OpCodes.Dup);
-										ilGenerator.Emit(OpCodes.Call, fillInStackTraceMethod);
-										ilGenerator.Emit(OpCodes.Pop);
+										// HACK if the next instruction isn't an athrow, we need to
+										// call fillInStackTrace, because the object might be used
+										// to print out a stack trace without ever being thrown
+										if(code[i + 1].NormalizedOpCode != NormalizedByteCode.__athrow)
+										{
+											ilGenerator.Emit(OpCodes.Dup);
+											ilGenerator.Emit(OpCodes.Call, fillInStackTraceMethod);
+											ilGenerator.Emit(OpCodes.Pop);
+										}
 									}
 									if(nontrivial)
 									{
@@ -2520,5 +2554,12 @@ class Compiler
 			exits.Add(bc);
 			return bc.Stub;
 		}
+	}
+
+	private bool IsMapSafeException(Type excType)
+	{
+		// HACK instead of the name, we should compare with a cache ref of the type (but beware of the
+		// fact that the Type identity changes when a TypeBuilder turns into a RuntimeType)
+		return excType.FullName == "java.lang.ClassNotFoundException";
 	}
 }

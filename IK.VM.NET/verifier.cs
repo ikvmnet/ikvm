@@ -1009,6 +1009,7 @@ class MethodAnalyzer
 	private InstructionState[] state;
 	private ArrayList[] callsites;
 	private string[] localTypes;
+	private bool[] aload_used;
 
 	internal MethodAnalyzer(ClassFile.Method.Code method, ClassLoaderWrapper classLoader)
 	{
@@ -1017,6 +1018,10 @@ class MethodAnalyzer
 		state = new InstructionState[method.Instructions.Length];
 		callsites = new ArrayList[method.Instructions.Length];
 		localTypes = new String[method.MaxLocals];
+		// HACK aload_used is used to track whether aload is ever used on a particular local (a very lame way of
+		// trying to determine if a local that contains an exception, is ever used)
+		// TODO we really need real liveness analyses for the locals
+		aload_used = new Boolean[method.MaxLocals];
 
 		// start by computing the initial state, the stack is empty and the locals contain the arguments
 		state[0] = new InstructionState(this, method.MaxLocals);
@@ -1119,6 +1124,7 @@ class MethodAnalyzer
 						switch(instr.NormalizedOpCode)
 						{
 							case NormalizedByteCode.__aload:
+								aload_used[instr.NormalizedArg1] = true;
 								s.PushObject(s.GetLocalObject(instr.NormalizedArg1));
 								break;
 							case NormalizedByteCode.__astore:
@@ -2232,5 +2238,10 @@ class MethodAnalyzer
 	internal string GetDeclaredLocalType(int local)
 	{
 		return localTypes[local];
+	}
+
+	internal bool IsAloadUsed(int local)
+	{
+		return aload_used[local];
 	}
 }
