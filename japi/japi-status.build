@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="japi-status" default="ikvm-japi-status.html">
 
-    <property name="REFERENCE_API_JAR" value="c:\j2re1.4.1\lib\rt.jar" />
+    <property name="REFERENCE_API_JARS" value="c:\j2re1.4.1\lib\rt.jar c:\j2re1.4.1\lib\jce.jar c:\j2re1.4.1\lib\jsse.jar" />
     <property name="REFERENCE_API_NAME" value="JDK-1.4.1" />
     <property name="JAPI_HOME" value="c:\japi\japitools" />
     <property name="IKVM_VERSION" value="0.9" />
@@ -16,11 +16,11 @@
     </target>
 
     <target name="jdk.japi" depends="japize">
-	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as ${REFERENCE_API_NAME} apis ${REFERENCE_API_JAR} +java +javax" />
+	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as ${REFERENCE_API_NAME} apis ${REFERENCE_API_JARS} +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
     </target>
 
     <target name="ikvm.japi" depends="IKVM.GNU.Classpath.jar,japize">
-	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis IKVM.GNU.Classpath.jar +java +javax" />
+	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis IKVM.GNU.Classpath.jar +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
     </target>
 
     <target name="IKVM.GNU.Classpath.jar">

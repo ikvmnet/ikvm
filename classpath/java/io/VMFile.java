@@ -25,8 +25,9 @@ package java.io;
 
 final class VMFile
 {
-    // TODO set this correctly
-    static boolean caseSensitive = true;
+    // HACK iff we run on unix, we assume a case sensitive file system
+    static final boolean IS_CASE_SENSITIVE = cli.System.Environment.get_OSVersion().toString().indexOf("Unix") >= 0;;
+    static final boolean IS_DOS_8_3 = false;
 
     private static long DateTimeToJavaLongTime(cli.System.DateTime datetime)
     {

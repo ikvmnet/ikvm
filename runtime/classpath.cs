@@ -1432,3 +1432,71 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 		}
 	}
 }
+
+namespace IKVM.NativeCode.gnu.java.nio.channels
+{
+	public class FileChannelImpl
+	{
+		private static readonly MethodInfo mono_1_0_Flush;
+		private static readonly MethodInfo mono_1_1_Flush;
+
+		static FileChannelImpl()
+		{
+			try
+			{
+				FlushFileBuffers(new IntPtr(-1));
+			}
+			catch(EntryPointNotFoundException)
+			{
+				// If we end up here, we're not running on Windows, so we'll try two Mono specific methods.
+				// The first one is using Mono.Posix, this is part of the documented public Mono API.
+				Type t = Type.GetType("Mono.Posix.Syscall, Mono.Posix");
+				if(t != null)
+				{
+					mono_1_1_Flush = t.GetMethod("fsync", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(int) }, new ParameterModifier[0]);
+				}
+				// HACK when we're running on Mono 1.0 we have to use an undocument internal method to flush the handle
+				if(mono_1_1_Flush == null)
+				{
+					t = Type.GetType("System.IO.MonoIO");
+					if(t != null)
+					{
+						mono_1_0_Flush = t.GetMethod("Flush", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(IntPtr), Type.GetType("System.IO.MonoIOError&") }, new ParameterModifier[0]);
+					}
+				}
+			}
+		}
+
+		// NOTE this method implements a platform specific way to flush the underlying OS file buffers to disk
+		public static bool flush(FileStream fs)
+		{
+			if(mono_1_0_Flush != null)
+			{
+				object[] args = new object[] { fs.Handle, null };
+				mono_1_0_Flush.Invoke(null, args);
+				return ((IConvertible)args[1]).ToInt32(null) == 0;
+			}
+			else if(mono_1_1_Flush != null)
+			{
+				object[] args = new object[] { fs.Handle.ToInt32() };
+				return (int)mono_1_1_Flush.Invoke(null, args) == 0;
+			}
+			else
+			{
+				try
+				{
+					return FlushFileBuffers(fs.Handle);
+				}
+				catch(EntryPointNotFoundException)
+				{
+					// we're apparently running on a alternate runtime, so we'll just pretend that flush succeeded
+					Tracer.Warning(Tracer.Runtime, "FlushFileBuffers/fsync not supported on this runtime");
+					return true;
+				}
+			}
+		}
+
+		[DllImport("kernel32")]
+		private extern static bool FlushFileBuffers(IntPtr handle);
+	}
+}

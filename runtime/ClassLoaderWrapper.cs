@@ -853,9 +853,11 @@ class ClassLoaderWrapper
 		{
 			if(systemClassLoader == null)
 			{
-				TypeWrapper tw = LoadClassCritical("java.lang.ClassLoader");
-				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("getSystemClassLoader", "()Ljava.lang.ClassLoader;"), false);
-				systemClassLoader = GetClassLoaderWrapper(mw.Invoke(null, new object[0], false));
+				TypeWrapper tw = LoadClassCritical("java.lang.System");
+				// We directly access the systemClassLoader field, because calling ClassLoader.getSystemClassLoader
+				// would cause a security check (and would require to be wrapped in a AccessController.doPriviledged()).
+				FieldWrapper fw = tw.GetFieldWrapper("systemClassLoader", "Ljava.lang.ClassLoader;");
+				systemClassLoader = GetClassLoaderWrapper(fw.GetValue(null));
 			}
 			return systemClassLoader;
 		}

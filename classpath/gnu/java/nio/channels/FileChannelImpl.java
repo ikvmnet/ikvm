@@ -531,7 +531,30 @@ public final class FileChannelImpl extends FileChannel
     {
 	if (!isOpen ())
 	    throw new ClosedChannelException ();
+
+	if (!stream.get_CanWrite())
+	    return;
+
+	try
+	{
+	    if (false) throw new cli.System.IO.IOException();
+	    stream.Flush();
+	}
+	catch(cli.System.IO.IOException x)
+	{
+	    throw new IOException(x.getMessage());
+	}
+
+	if (stream instanceof cli.System.IO.FileStream)
+	{
+	    if(!flush(((cli.System.IO.FileStream)stream)))
+	    {
+		throw new IOException();
+	    }
+	}
     }
+
+    private static native boolean flush(cli.System.IO.FileStream fs);
 
     public long transferTo (long position, long count, WritableByteChannel target)
 	throws IOException

@@ -5055,7 +5055,7 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 	}
 
 	internal DotNetTypeWrapper(Type type)
-		: base(GetModifiers(type), GetName(type), GetBaseTypeWrapper(type), ClassLoaderWrapper.GetSystemClassLoader())
+		: base(GetModifiers(type), GetName(type), GetBaseTypeWrapper(type), null)
 	{
 		Debug.Assert(!(type.IsByRef), type.FullName);
 		Debug.Assert(!(type.IsPointer), type.FullName);
@@ -5064,6 +5064,11 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		Debug.Assert(!(type.Module.IsDefined(typeof(JavaModuleAttribute), false)));
 
 		this.type = type;
+	}
+
+	internal override ClassLoaderWrapper GetClassLoader()
+	{
+		return ClassLoaderWrapper.GetSystemClassLoader();
 	}
 
 	private class DelegateMethodWrapper : MethodWrapper

@@ -413,12 +413,13 @@ namespace IKVM.Internal
 				{
 					args = new Type[] { typeof(string[]) };
 				}
-				MethodBuilder mainStub = this.ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, typeof(void), args);
+				MethodBuilder mainStub = this.ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, typeof(int), args);
 				if(apartmentAttributeType != null)
 				{
 					mainStub.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
 				}
 				ILGenerator ilgen = mainStub.GetILGenerator();
+				LocalBuilder rc = ilgen.DeclareLocal(typeof(int));
 				if(props.Count > 0)
 				{
 					ilgen.Emit(OpCodes.Newobj, typeof(Hashtable).GetConstructor(Type.EmptyTypes));
@@ -455,9 +456,12 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldloc, threadLocal);
 				ilgen.Emit(OpCodes.Ldloc, exceptionLocal);
 				ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadGroup").GetMethodWrapper(new MethodDescriptor("uncaughtException", "(Ljava.lang.Thread;Ljava.lang.Throwable;)V"), false).EmitCall(ilgen);
+				ilgen.Emit(OpCodes.Ldc_I4_1);
+				ilgen.Emit(OpCodes.Stloc, rc);
 				ilgen.BeginFinallyBlock();
 				ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("ExitMainThread", Type.EmptyTypes));
 				ilgen.EndExceptionBlock();
+				ilgen.Emit(OpCodes.Ldloc, rc);
 				ilgen.Emit(OpCodes.Ret);
 				assemblyBuilder.SetEntryPoint(mainStub, target);
 			}
