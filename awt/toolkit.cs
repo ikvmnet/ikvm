@@ -71,6 +71,12 @@ namespace ikvm.awt
 			// HACK I have no idea why this line is necessary...
 			IntPtr p = form.Handle;
 			bogusForm = form;
+			// HACK to make sure we can be aborted (Thread.Abort) we need to periodically
+			// fire an event (because otherwise we'll be blocking in unmanaged code and
+			// the Abort cannot be handled there).
+			System.Windows.Forms.Timer t = new System.Windows.Forms.Timer();
+			t.Interval = 100;
+			t.Start();
 			Application.Run();
 		}
 
