@@ -32,7 +32,6 @@ class ClassFile
 	private ConstantPoolItemClass this_cpi;
 	private ConstantPoolItemClass super_cpi;
 	private ConstantPoolItemClass[] interfaces;
-	private TypeWrapper[] interfaceTypeWrappers;
 	private Field[] fields;
 	private Method[] methods;
 	private Attribute[] attributes;
@@ -41,22 +40,6 @@ class ClassFile
 	private ClassFile outerClass;
 	private int majorVersion;
 	private static readonly char[] illegalcharacters = { '<', '>' };
-
-	internal class ClassFormatError : ApplicationException
-	{
-		internal ClassFormatError(string msg, params object[] p)
-			: base(string.Format(msg, p))
-		{
-		}
-	}
-
-	internal class UnsupportedClassVersionError : ClassFormatError
-	{
-		internal UnsupportedClassVersionError(string msg)
-			: base(msg)
-		{
-		}
-	}
 
 	internal ClassFile(byte[] buf, int offset, int length, string inputClassName)
 	{
@@ -69,19 +52,16 @@ class ClassFile
 			}
 			int minorVersion = br.ReadUInt16();
 			majorVersion = br.ReadUInt16();
-			if(majorVersion < 45 || majorVersion > 49)
+			if(majorVersion < 45 || majorVersion > 48)
 			{
 				throw new UnsupportedClassVersionError(majorVersion + "." + minorVersion);
 			}
-			if(majorVersion == 49)
-			{
-				Tracer.Warning(Tracer.Runtime, "WARNING: Support for JDK 1.5 is experimental");
-			}
+			Hashtable classCache = new Hashtable();
 			int constantpoolcount = br.ReadUInt16();
 			constantpool = new ConstantPoolItem[constantpoolcount];
 			for(int i = 1; i < constantpoolcount; i++)
 			{
-				constantpool[i] = ConstantPoolItem.Read(inputClassName, br);
+				constantpool[i] = ConstantPoolItem.Read(inputClassName, classCache, br);
 				// LONG and DOUBLE items take up two slots...
 				if(constantpool[i].IsWide)
 				{
@@ -148,6 +128,11 @@ class ClassFile
 			{
 				throw new ClassFormatError("{0} (Interfaces must have java.lang.Object as superclass)", Name);
 			}
+			// TODO are there any more checks we need to do on the class name?
+			if(Name.Length == 0 || Name[0] == '[')
+			{
+				throw new ClassFormatError("Bad name");
+			}
 			int interfaces_count = br.ReadUInt16();
 			interfaces = new ConstantPoolItemClass[interfaces_count];
 			Hashtable interfaceNames = new Hashtable();
@@ -175,7 +160,7 @@ class ClassFile
 			Hashtable fieldNameSigs = new Hashtable();
 			for(int i = 0; i < fields_count; i++)
 			{
-				fields[i] = new Field(this, br);
+				fields[i] = new Field(this, classCache, br);
 				string name = fields[i].Name;
 				// NOTE It's not in the vmspec (as far as I can tell), but Sun's VM doens't allow names that
 				// contain '<' or '>'
@@ -195,7 +180,7 @@ class ClassFile
 			Hashtable methodNameSigs = new Hashtable();
 			for(int i = 0; i < methods_count; i++)
 			{
-				methods[i] = new Method(this, br);
+				methods[i] = new Method(this, classCache, br);
 				string name = methods[i].Name;
 				string sig = methods[i].Signature;
 				if(name.Length == 0 || (name.IndexOfAny(illegalcharacters) != -1 && name != "<init>" && name != "<clinit>"))
@@ -266,23 +251,14 @@ class ClassFile
 		}
 	}
 
-	internal void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
+	internal void Link(TypeWrapper thisType)
 	{
 		for(int i = 1; i < constantpool.Length; i++)
 		{
 			if(constantpool[i] != null)
 			{
-				constantpool[i].LoadAllReferencedTypes(classLoader);
+				constantpool[i].Link(thisType);
 			}
-		}
-		for(int i = 0; i < fields.Length; i++)
-		{
-			fields[i].GetFieldType(classLoader);
-		}
-		for(int i = 0; i < methods.Length; i++)
-		{
-			methods[i].GetArgTypes(classLoader);
-			methods[i].GetRetType(classLoader);
 		}
 	}
 
@@ -339,10 +315,10 @@ class ClassFile
 		return (ConstantPoolItemFieldref)constantpool[index];
 	}
 
-	// NOTE this returns an FMI, because it used for both normal methods and interface methods
-	internal ConstantPoolItemFMI GetMethodref(int index)
+	// NOTE this returns an MI, because it used for both normal methods and interface methods
+	internal ConstantPoolItemMI GetMethodref(int index)
 	{
-		return (ConstantPoolItemFMI)constantpool[index];
+		return (ConstantPoolItemMI)constantpool[index];
 	}
 
 	private ConstantPoolItem GetConstantPoolItem(int index)
@@ -427,11 +403,6 @@ class ClassFile
 		}
 	}
 
-	internal TypeWrapper GetSuperTypeWrapper(ClassLoaderWrapper classLoader)
-	{
-		return super_cpi.GetClassType(classLoader);
-	}
-
 	internal string SuperClass
 	{
 		get
@@ -456,31 +427,11 @@ class ClassFile
 		}
 	}
 
-	internal TypeWrapper[] GetInterfaceTypeWrappers(ClassLoaderWrapper classLoader)
-	{
-		if(interfaceTypeWrappers == null)
-		{
-			TypeWrapper[] tw = new TypeWrapper[interfaces.Length];
-			for(int i = 0; i < tw.Length; i++)
-			{
-				tw[i] = interfaces[i].GetClassType(classLoader);
-			}
-			interfaceTypeWrappers = tw;
-		}
-		return interfaceTypeWrappers;
-	}
-
-	// TODO this is legacy and needs to be removed in the future
-	internal string[] Interfaces
+	internal ConstantPoolItemClass[] Interfaces
 	{
 		get
 		{
-			string[] s = new string[interfaces.Length];
-			for(int i = 0; i < s.Length; i++)
-			{
-				s[i] = interfaces[i].Name;
-			}
-			return s;
+			return interfaces;
 		}
 	}
 
@@ -513,7 +464,7 @@ class ClassFile
 		}
 	}
 
-	internal string NetExpAssemblyAttribute
+	internal string IKVMAssemblyAttribute
 	{
 		get
 		{
@@ -589,7 +540,7 @@ class ClassFile
 		{
 		}
 
-		internal virtual void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
+		internal virtual void Link(TypeWrapper thisType)
 		{
 		}
 
@@ -598,13 +549,13 @@ class ClassFile
 			throw new InvalidOperationException();
 		}
 
-		internal static ConstantPoolItem Read(string inputClassName, BigEndianBinaryReader br)
+		internal static ConstantPoolItem Read(string inputClassName, Hashtable classCache, BigEndianBinaryReader br)
 		{
 			byte tag = br.ReadByte();
 			switch((Constant)tag)
 			{
 				case Constant.Class:
-					return new ConstantPoolItemClass(br);
+					return new ConstantPoolItemClass(classCache, br);
 				case Constant.Double:
 					return new ConstantPoolItemDouble(br);
 				case Constant.Fieldref:
@@ -620,7 +571,7 @@ class ClassFile
 				case Constant.Methodref:
 					return new ConstantPoolItemMethodref(br);
 				case Constant.NameAndType:
-					return new ConstantPoolItemNameAndType(br);
+					return new ConstantPoolItemNameAndType(classCache, br);
 				case Constant.String:
 					return new ConstantPoolItemString(br);
 				case Constant.Utf8:
@@ -631,25 +582,22 @@ class ClassFile
 		}
 	}
 
-	private class ConstantPoolItemClass : ConstantPoolItem
+	internal class ConstantPoolItemClass : ConstantPoolItem
 	{
 		private ushort name_index;
 		private string name;
 		private TypeWrapper typeWrapper;
+		private Hashtable classCache;
 
-		internal ConstantPoolItemClass(BigEndianBinaryReader br)
+		internal ConstantPoolItemClass(Hashtable classCache, BigEndianBinaryReader br)
 		{
+			this.classCache = classCache;
 			name_index = br.ReadUInt16();
 		}
 
 		internal override void Resolve(ClassFile classFile)
 		{
 			name = ((ConstantPoolItemUtf8)classFile.GetConstantPoolItem(name_index)).DottifiedValue;;
-		}
-
-		internal override void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
-		{
-			GetClassType(classLoader);
 		}
 
 		internal string Name
@@ -664,7 +612,7 @@ class ClassFile
 		{
 			if(typeWrapper == null)
 			{
-				typeWrapper = LoadClassHelper(classLoader, name);
+				typeWrapper = LoadClassHelper(classLoader, classCache, name);
 			}
 			return typeWrapper;
 		}
@@ -675,11 +623,16 @@ class ClassFile
 		}
 	}
 
-	private static TypeWrapper LoadClassHelper(ClassLoaderWrapper classLoader, string name)
+	private static TypeWrapper LoadClassHelper(ClassLoaderWrapper classLoader, Hashtable classCache, string name)
 	{
 		try
 		{
-			TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(name);
+			TypeWrapper wrapper = (TypeWrapper)classCache[name];
+			if(wrapper != null)
+			{
+				return wrapper;
+			}
+			wrapper = classLoader.LoadClassByDottedNameFast(name);
 			if(wrapper == null)
 			{
 				Tracer.Error(Tracer.ClassLoading, "Class not found: {0}", name);
@@ -717,7 +670,7 @@ class ClassFile
 		}
 	}
 
-	private static TypeWrapper SigDecoderWrapper(ClassLoaderWrapper classLoader, ref int index, string sig)
+	private static TypeWrapper SigDecoderWrapper(ClassLoaderWrapper classLoader, Hashtable classCache, ref int index, string sig)
 	{
 		switch(sig[index++])
 		{
@@ -737,7 +690,7 @@ class ClassFile
 			{
 				int pos = index;
 				index = sig.IndexOf(';', index) + 1;
-				return LoadClassHelper(classLoader, sig.Substring(pos, index - pos - 1));
+				return LoadClassHelper(classLoader, classCache, sig.Substring(pos, index - pos - 1));
 			}
 			case 'S':
 				return PrimitiveTypeWrapper.SHORT;
@@ -760,7 +713,7 @@ class ClassFile
 					{
 						int pos = index;
 						index = sig.IndexOf(';', index) + 1;
-						return LoadClassHelper(classLoader, array + sig.Substring(pos, index - pos));
+						return LoadClassHelper(classLoader, classCache, array + sig.Substring(pos, index - pos));
 					}
 					case 'B':
 					case 'C':
@@ -770,7 +723,7 @@ class ClassFile
 					case 'J':
 					case 'S':
 					case 'Z':
-						return LoadClassHelper(classLoader, array + sig[index++]);
+						return LoadClassHelper(classLoader, classCache, array + sig[index++]);
 					default:
 						// TODO this should never happen, because ClassFile should validate the descriptors
 						throw new InvalidOperationException(sig.Substring(index));
@@ -782,7 +735,7 @@ class ClassFile
 		}
 	}
 
-	private static TypeWrapper[] ArgTypeWrapperListFromSig(ClassLoaderWrapper classLoader, string sig)
+	internal static TypeWrapper[] ArgTypeWrapperListFromSig(ClassLoaderWrapper classLoader, Hashtable classCache, string sig)
 	{
 		if(sig[1] == ')')
 		{
@@ -791,23 +744,23 @@ class ClassFile
 		ArrayList list = new ArrayList();
 		for(int i = 1; sig[i] != ')';)
 		{
-			list.Add(SigDecoderWrapper(classLoader, ref i, sig));
+			list.Add(SigDecoderWrapper(classLoader, classCache, ref i, sig));
 		}
 		TypeWrapper[] types = new TypeWrapper[list.Count];
 		list.CopyTo(types);
 		return types;
 	}
 
-	private static TypeWrapper FieldTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
+	internal static TypeWrapper FieldTypeWrapperFromSig(ClassLoaderWrapper classLoader, Hashtable classCache, string sig)
 	{
 		int index = 0;
-		return SigDecoderWrapper(classLoader, ref index, sig);
+		return SigDecoderWrapper(classLoader, classCache, ref index, sig);
 	}
 
-	private static TypeWrapper RetTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
+	internal static TypeWrapper RetTypeWrapperFromSig(ClassLoaderWrapper classLoader, Hashtable classCache, string sig)
 	{
 		int index = sig.IndexOf(')') + 1;
-		return SigDecoderWrapper(classLoader, ref index, sig);
+		return SigDecoderWrapper(classLoader, classCache, ref index, sig);
 	}
 
 	private class ConstantPoolItemDouble : ConstantPoolItem
@@ -845,7 +798,7 @@ class ClassFile
 	{
 		private ushort class_index;
 		private ushort name_and_type_index;
-		private ConstantPoolItemNameAndType name_and_type;
+		protected ConstantPoolItemNameAndType name_and_type;
 		private ConstantPoolItemClass clazz;
 
 		internal ConstantPoolItemFMI(BigEndianBinaryReader br)
@@ -888,6 +841,50 @@ class ClassFile
 		{
 			return clazz.GetClassType(classLoader);
 		}
+	}
+
+	internal class ConstantPoolItemFieldref : ConstantPoolItemFMI
+	{
+		private FieldWrapper field;
+
+		internal ConstantPoolItemFieldref(BigEndianBinaryReader br) : base(br)
+		{
+		}
+
+		internal TypeWrapper GetFieldType(ClassLoaderWrapper classLoader)
+		{
+			return name_and_type.GetFieldType(classLoader);
+		}
+
+		internal override void Link(TypeWrapper thisType)
+		{
+			ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+			GetFieldType(classLoader);
+			TypeWrapper wrapper = GetClassType(classLoader);
+			if(!wrapper.IsUnloadable)
+			{
+				field = wrapper.GetFieldWrapper(Name, GetFieldType(classLoader));
+				if(field != null)
+				{
+					field.Link();
+				}
+			}
+		}
+
+		internal FieldWrapper GetField()
+		{
+			return field;
+		}
+	}
+
+	internal class ConstantPoolItemMI : ConstantPoolItemFMI
+	{
+		protected MethodWrapper method;
+		protected MethodWrapper invokespecialMethod;
+
+		internal ConstantPoolItemMI(BigEndianBinaryReader br) : base(br)
+		{
+		}
 
 		internal TypeWrapper[] GetArgTypes(ClassLoaderWrapper classLoader)
 		{
@@ -899,30 +896,96 @@ class ClassFile
 			return name_and_type.GetRetType(classLoader);
 		}
 
-		internal TypeWrapper GetFieldType(ClassLoaderWrapper classLoader)
+		internal MethodWrapper GetMethod()
 		{
-			return name_and_type.GetFieldType(classLoader);
+			return method;
+		}
+
+		internal MethodWrapper GetMethodForInvokespecial()
+		{
+			return invokespecialMethod != null ? invokespecialMethod : method;
 		}
 	}
 
-	internal class ConstantPoolItemFieldref : ConstantPoolItemFMI
-	{
-		internal ConstantPoolItemFieldref(BigEndianBinaryReader br) : base(br)
-		{
-		}
-	}
-
-	internal class ConstantPoolItemMethodref : ConstantPoolItemFMI
+	internal class ConstantPoolItemMethodref : ConstantPoolItemMI
 	{
 		internal ConstantPoolItemMethodref(BigEndianBinaryReader br) : base(br)
 		{
 		}
+
+		internal override void Link(TypeWrapper thisType)
+		{
+			ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+			TypeWrapper wrapper = GetClassType(classLoader);
+			GetArgTypes(classLoader);
+			GetRetType(classLoader);
+			if(!wrapper.IsUnloadable)
+			{
+				MethodDescriptor md = new MethodDescriptor(Name, Signature);
+				method = wrapper.GetMethodWrapper(md, Name != "<init>");
+				if(method != null)
+				{
+					method.Link();
+				}
+				if(Name != "<init>" && 
+					(thisType.Modifiers & (Modifiers.Interface | Modifiers.Super)) == Modifiers.Super &&
+					thisType != wrapper && thisType.IsSubTypeOf(wrapper))
+				{
+					invokespecialMethod = thisType.BaseTypeWrapper.GetMethodWrapper(md, true);
+					if(invokespecialMethod != null)
+					{
+						invokespecialMethod.Link();
+					}
+				}
+			}
+		}
 	}
 
-	internal class ConstantPoolItemInterfaceMethodref : ConstantPoolItemFMI
+	internal class ConstantPoolItemInterfaceMethodref : ConstantPoolItemMI
 	{
 		internal ConstantPoolItemInterfaceMethodref(BigEndianBinaryReader br) : base(br)
 		{
+		}
+
+		private static MethodWrapper GetInterfaceMethod(TypeWrapper wrapper, MethodDescriptor md)
+		{
+			MethodWrapper method = wrapper.GetMethodWrapper(md, false);
+			if(method != null)
+			{
+				return method;
+			}
+			TypeWrapper[] interfaces = wrapper.Interfaces;
+			for(int i = 0; i < interfaces.Length; i++)
+			{
+				method = GetInterfaceMethod(interfaces[i], md);
+				if(method != null)
+				{
+					return method;
+				}
+			}
+			return null;
+		}
+
+		internal override void Link(TypeWrapper thisType)
+		{
+			ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+			TypeWrapper wrapper = GetClassType(classLoader);
+			GetArgTypes(classLoader);
+			GetRetType(classLoader);
+			if(!wrapper.IsUnloadable)
+			{
+				MethodDescriptor md = new MethodDescriptor(Name, Signature);
+				method = GetInterfaceMethod(wrapper, md);
+				if(method == null)
+				{
+					// NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
+					method = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(md, false);
+				}
+				if(method != null)
+				{
+					method.Link();
+				}
+			}
 		}
 	}
 
@@ -1003,7 +1066,7 @@ class ClassFile
 		}
 	}
 
-	private class ConstantPoolItemNameAndType : ConstantPoolItem
+	internal class ConstantPoolItemNameAndType : ConstantPoolItem
 	{
 		private ushort name_index;
 		private ushort descriptor_index;
@@ -1012,9 +1075,11 @@ class ClassFile
 		private TypeWrapper[] argTypeWrappers;
 		private TypeWrapper retTypeWrapper;
 		private TypeWrapper fieldTypeWrapper;
+		private Hashtable classCache;
 
-		internal ConstantPoolItemNameAndType(BigEndianBinaryReader br)
+		internal ConstantPoolItemNameAndType(Hashtable classCache, BigEndianBinaryReader br)
 		{
+			this.classCache = classCache;
 			name_index = br.ReadUInt16();
 			descriptor_index = br.ReadUInt16();
 		}
@@ -1027,19 +1092,6 @@ class ClassFile
 			ConstantPoolItemUtf8 descriptorUtf8 = (ConstantPoolItemUtf8)classFile.GetConstantPoolItem(descriptor_index);
 			descriptorUtf8.Resolve(classFile);
 			descriptor = descriptorUtf8.DottifiedValue;
-		}
-
-		internal override void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
-		{
-			if(descriptor[0] == '(')
-			{
-				GetArgTypes(classLoader);
-				GetRetType(classLoader);
-			}
-			else
-			{
-				GetFieldType(classLoader);
-			}
 		}
 
 		internal string Name
@@ -1062,7 +1114,7 @@ class ClassFile
 		{
 			if(argTypeWrappers == null)
 			{
-				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, descriptor);
+				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, classCache, descriptor);
 			}
 			return argTypeWrappers;
 		}
@@ -1071,7 +1123,7 @@ class ClassFile
 		{
 			if(retTypeWrapper == null)
 			{
-				retTypeWrapper = RetTypeWrapperFromSig(classLoader, descriptor);
+				retTypeWrapper = RetTypeWrapperFromSig(classLoader, classCache, descriptor);
 			}
 			return retTypeWrapper;
 		}
@@ -1080,7 +1132,7 @@ class ClassFile
 		{
 			if(fieldTypeWrapper == null)
 			{
-				fieldTypeWrapper = FieldTypeWrapperFromSig(classLoader, descriptor);
+				fieldTypeWrapper = FieldTypeWrapperFromSig(classLoader, classCache, descriptor);
 			}
 			return fieldTypeWrapper;
 		}
@@ -1183,8 +1235,7 @@ class ClassFile
 				int attribute_length = br.ReadInt32();
 				Attribute a = new Attribute();
 				a.name = name;
-				a.data = br.Duplicate();
-				br.Skip(attribute_length);
+				a.data = br.Section(attribute_length);
 				return a;
 			}
 			catch(InvalidCastException)
@@ -1226,10 +1277,12 @@ class ClassFile
 		private TypeWrapper[] argTypeWrappers;
 		private TypeWrapper retTypeWrapper;
 		private TypeWrapper fieldTypeWrapper;
+		private Hashtable classCache;
 
-		internal FieldOrMethod(ClassFile classFile, BigEndianBinaryReader br)
+		internal FieldOrMethod(ClassFile classFile, Hashtable classCache, BigEndianBinaryReader br)
 		{
 			this.classFile = classFile;
+			this.classCache = classCache;
 			access_flags = (Modifiers)br.ReadUInt16();
 			// TODO check that name is ConstantPoolItemUtf8
 			name_index = br.ReadUInt16();
@@ -1263,7 +1316,7 @@ class ClassFile
 		{
 			if(argTypeWrappers == null)
 			{
-				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, Signature);
+				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, classCache, Signature);
 			}
 			return argTypeWrappers;
 		}
@@ -1272,7 +1325,7 @@ class ClassFile
 		{
 			if(retTypeWrapper == null)
 			{
-				retTypeWrapper = RetTypeWrapperFromSig(classLoader, Signature);
+				retTypeWrapper = RetTypeWrapperFromSig(classLoader, classCache, Signature);
 			}
 			return retTypeWrapper;
 		}
@@ -1281,7 +1334,7 @@ class ClassFile
 		{
 			if(fieldTypeWrapper == null)
 			{
-				fieldTypeWrapper = FieldTypeWrapperFromSig(classLoader, Signature);
+				fieldTypeWrapper = FieldTypeWrapperFromSig(classLoader, classCache, Signature);
 			}
 			return fieldTypeWrapper;
 		}
@@ -1407,7 +1460,7 @@ class ClassFile
 	{
 		private object constantValue;
 
-		internal Field(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
+		internal Field(ClassFile classFile, Hashtable classCache, BigEndianBinaryReader br) : base(classFile, classCache, br)
 		{
 			if((IsPrivate && IsPublic) || (IsPrivate && IsProtected) || (IsPublic && IsProtected)
 				|| (IsFinal && IsVolatile)
@@ -1491,7 +1544,7 @@ class ClassFile
 	{
 		private Code code;
 
-		internal Method(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
+		internal Method(ClassFile classFile, Hashtable classCache, BigEndianBinaryReader br) : base(classFile, classCache, br)
 		{
 			// vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
 			if(Name == "<clinit>" && Signature == "()V")
@@ -1503,7 +1556,7 @@ class ClassFile
 			{
 				// LAMESPEC: vmspec 4.6 says that abstract methods can not be strictfp (and this makes sense), but
 				// javac (pre 1.5) is broken and marks abstract methods as strictfp (if you put the strictfp on the class)
-				if((Name == "<init>" && (IsStatic || IsSynchronized || IsFinal || IsAbstract))
+				if((Name == "<init>" && (IsStatic || IsSynchronized || IsFinal || IsAbstract || IsNative))
 					|| (IsPrivate && IsPublic) || (IsPrivate && IsProtected) || (IsPublic && IsProtected)
 					|| (IsAbstract && (IsFinal || IsNative || IsPrivate || IsStatic || IsSynchronized))
 					|| (classFile.IsInterface && (!IsPublic || !IsAbstract)))
@@ -1529,24 +1582,6 @@ class ClassFile
 			get
 			{
 				return Name == "<clinit>" && Signature == "()V";
-			}
-		}
-
-		internal string[] NetExpSigAttribute
-		{
-			get
-			{
-				Attribute attr = GetAttribute("IK.VM.NET.Sig");
-				if(attr != null)
-				{
-					string s = ClassFile.GetConstantPoolUtf8(attr.Data.ReadUInt16()).Value;
-					if(s.Length == 0)
-					{
-						return new string[0];
-					}
-					return s.Split('|');
-				}
-				return null;
 			}
 		}
 

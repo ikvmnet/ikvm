@@ -51,58 +51,6 @@ public class Starter
 		}
 	}
 
-	private class ExtClassLoader : URLClassLoader
-	{
-		private static URL[] GetClassPath()
-		{
-			string classpath = java.lang.System.getProperty("java.ext.dirs", "");
-			string[] s = classpath.Split(Path.PathSeparator);
-			ArrayList jars = new ArrayList();
-			for(int i = 0; i < s.Length; i++)
-			{
-				try
-				{
-					string[] files = Directory.GetFiles(s[i]);
-					for(int j = 0; j < files.Length; j++)
-					{
-						jars.Add(new java.io.File(files[j]).toURL());
-					}
-				}
-				catch(ArgumentException)
-				{
-					// ignore any malformed components
-				}
-			}
-			return (URL[])jars.ToArray(typeof(URL));
-		}
-
-		internal ExtClassLoader(java.lang.ClassLoader parent)
-			: base(GetClassPath(), parent)
-		{
-		}
-	}
-
-	public class AppClassLoader : URLClassLoader
-	{
-		private static URL[] GetClassPath()
-		{
-			string classpath = java.lang.System.getProperty("java.class.path", ".");
-			string[] s = classpath.Split(Path.PathSeparator);
-			URL[] urls = new URL[s.Length];
-			for(int i = 0; i < urls.Length; i++)
-			{
-				// TODO non-existing file/dir is treated as current directory, this obviously isn't correct
-				urls[i] = new java.io.File(s[i]).toURL();
-			}
-			return urls;
-		}
-
-		public AppClassLoader(java.lang.ClassLoader parent)
-			: base(GetClassPath(), new ExtClassLoader(parent))
-		{
-		}
-	}
-
 	public class PathClassLoader : URLClassLoader
 	{
 		private static URL[] GetClassPath(string classpath)
@@ -144,6 +92,7 @@ public class Starter
 
 		public override void run()
 		{
+			System.Threading.Thread.CurrentThread.Priority = System.Threading.ThreadPriority.AboveNormal;
 			Console.Error.WriteLine("Saving dynamic assembly...");
 			try
 			{
@@ -181,6 +130,7 @@ public class Starter
 		bool waitOnExit = false;
 		string mainClass = null;
 		string[] vmargs = null;
+		string bootclasspath = null;
 		for(int i = 0; i < args.Length; i++)
 		{
 			if(args[i][0] == '-')
@@ -234,7 +184,7 @@ public class Starter
 				}
 				else if(args[i].StartsWith("-Xbootclasspath:"))
 				{
-					java.lang.System.setProperty("ikvm.boot.class.path", args[i].Substring(16));
+					bootclasspath = args[i].Substring(16);
 				}
 				else if(args[i].StartsWith("-Xtrace:"))
 				{
@@ -287,8 +237,7 @@ public class Starter
 			java.lang.System.setProperty("gnu.classpath.home", new System.IO.FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName);
 			if(jar)
 			{
-				// TODO if there is no classpath, we're adding the current directory, but is this correct when running a jar?
-				java.lang.System.setProperty("java.class.path", mainClass + Path.PathSeparator + java.lang.System.getProperty("java.class.path"));
+				java.lang.System.setProperty("java.class.path", mainClass);
 				JarFile jf = new JarFile(mainClass);
 				try
 				{
@@ -304,35 +253,11 @@ public class Starter
 					return 1;
 				}
 			}
-			// NOTE we should use the default systemclassloader (gnu.java.lang.SystemClassLoader),
-			// but at the moment it is broken (doesn't implement findClass())
-			java.lang.System.setProperty("java.system.class.loader", typeof(AppClassLoader).AssemblyQualifiedName);
-			java.lang.ClassLoader loader = java.lang.ClassLoader.getSystemClassLoader();
-			string bootclasspath = java.lang.System.getProperty("ikvm.boot.class.path", "");
-			if(bootclasspath != "")
+			if(bootclasspath != null)
 			{
-				StringBuilder sb = new StringBuilder();
-				foreach(string part in bootclasspath.Split(Path.PathSeparator))
-				{
-					if(part.ToUpper().EndsWith(".DLL"))
-					{
-						Assembly.Load(part.Substring(0, part.Length - 4));
-					}
-					else
-					{
-						if(sb.Length > 0)
-						{
-							sb.Append(Path.PathSeparator);
-						}
-						sb.Append(part);
-					}
-				}
-				if(sb.Length > 0)
-				{
-					JVM.SetBootstrapClassLoader(new PathClassLoader(sb.ToString(), null));
-				}
+				JVM.SetBootstrapClassLoader(new PathClassLoader(bootclasspath, null));
 			}
-			java.lang.Class clazz = java.lang.Class.forName(mainClass, true, loader);
+			java.lang.Class clazz = java.lang.Class.forName(mainClass, true, java.lang.ClassLoader.getSystemClassLoader());
 			Method method = FindMainMethod(clazz);
 			if(method == null)
 			{

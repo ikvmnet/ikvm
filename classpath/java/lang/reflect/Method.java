@@ -83,6 +83,7 @@ public final class Method extends AccessibleObject implements Member
     /**
      * This class is uninstantiable.
      */
+    // TODO this method shouldn't be public
     public Method(Class declaringClass, Object methodCookie)
     {
 	this.declaringClass = declaringClass;

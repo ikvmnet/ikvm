@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -39,58 +39,9 @@ template<class T> T __unbox(Object* o)
 	return *(static_cast<T __gc*>(__try_cast<__box T*>(o)));
 }
 
-public __value class LocalRefStruct;
-
-// NOTE this __value type needs to have the *exact* same layout as the unmanaged JNIENv class
-//__nogc struct JNIEnvContainer
-//{
-//	void* pVtable;
-//	LocalRefStruct __nogc* pLocalRefStruct;
-//};
-
-[StructLayout(LayoutKind::Sequential)]
-__value struct LocalRefCache
-{
-	Object* loc1;
-	Object* loc2;
-	Object* loc3;
-	Object* loc4;
-	Object* loc5;
-	Object* loc6;
-	Object* loc7;
-	Object* loc8;
-	Object* loc9;
-	Object* loc10;
-};
-
-public __value class LocalRefStruct
-{
-	void* pPrevLocalRefCache;
-	int cookie;
-	LocalRefCache cache;
-	Object* overflow __gc[];
-	Exception* pendingException;
-public:
-
-	static JNIEnv* GetEnv();
-
-	static LocalRefStruct* Current();
-
-	IntPtr Enter();
-	void Leave();
-
-	__property Exception* get_PendingException();
-	__property void set_PendingException(Exception* exception);
-
-	IntPtr MakeLocalRef(Object* o);
-	void DeleteLocalRef(jobject o);
-	Object* UnwrapLocalRef(IntPtr localref);
-};
-
 public __gc class JNI : public IJniProvider
 {
 	static ArrayList* libs = new ArrayList();
-	static ArrayList* globalRefs = new ArrayList();
 	[DllImport("kernel32")]
 	[System::Security::SuppressUnmanagedCodeSecurityAttribute]
 	static HMODULE LoadLibrary(String* lpLibFileName);
@@ -103,9 +54,6 @@ public:
 	MethodInfo* GetJniFuncPtrMethod();
 
 	static IntPtr GetJniFuncPtr(String* name, String* sig, String* clazz);
-	static jobject MakeGlobalRef(Object* o);
-	static void DeleteGlobalRef(jobject o);
-	static Object* UnwrapGlobalRef(jobject o);
 };
 
 public __gc class VM
@@ -143,12 +91,49 @@ public:
 	{
 		return JniHelper::UnsatisfiedLinkError(msg);
 	}
-	static Object* GetClassFromType(Type* type)
+	static Object* GetObjectClass(Object* o)
 	{
-		return JniHelper::GetClassFromType(type);
+		return JniHelper::GetObjectClass(o);
+	}
+	static bool IsInstanceOf(Object* o, Object* clazz)
+	{
+		return JniHelper::IsInstanceOf(o, clazz);
+	}
+	static bool IsAssignableFrom(Object* sub, Object* sup)
+	{
+		return JniHelper::IsAssignableFrom(sub, sup);
+	}
+	static Object* GetSuperclass(Object* sub)
+	{
+		return JniHelper::GetSuperclass(sub);
 	}
 	static Object* AllocObject(Object* clazz)
 	{
 		return JniHelper::AllocObject(clazz);
+	}
+	static IntPtr MethodToCookie(Object* method)
+	{
+		return JniHelper::MethodToCookie(method);
+	}
+	static IntPtr FieldToCookie(Object* field)
+	{
+		return JniHelper::FieldToCookie(field);
+	}
+	static Object* CookieToMethod(IntPtr method)
+	{
+		return JniHelper::CookieToMethod(method);
+	}
+	static Object* CookieToField(IntPtr field)
+	{
+		return JniHelper::CookieToField(field);
+	}
+	static void FatalError(String* msg)
+	{
+		Console::Error->WriteLine(S"Fatal Error in JNI: {0}", msg);
+		JniHelper::FatalError(msg);
+	}
+	static Object* DefineClass(String* name, Object* loader, System::Byte array __gc[])
+	{
+		return JniHelper::DefineClass(name, loader, array);
 	}
 };

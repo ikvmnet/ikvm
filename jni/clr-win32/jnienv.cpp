@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,13 +27,12 @@
 #include "jni.h"
 #include <malloc.h>
 #include <stdarg.h>
+#include <vcclr.h>
 
 #define DEBUG
 #undef NDEBUG
 
 #include <assert.h>
-
-#define pLocalRefs (LocalRefStruct::Current())
 
 using namespace System;
 using namespace System::Runtime::InteropServices;
@@ -93,72 +92,215 @@ JNIEnv::~JNIEnv()
 {
 }
 
-Object* JNIEnv::UnwrapRef(jobject o)
+void JNIEnv::reserved0()
 {
-	int i = (int)o;
-	if(i >= 0)
-	{
-		return pLocalRefs->UnwrapLocalRef(i);
-	}
-	return JNI::UnwrapGlobalRef(o);
+	VM::FatalError("JNIEnv::reserved0");
+}
+
+void JNIEnv::reserved1()
+{
+	VM::FatalError("JNIEnv::reserved1");
+}
+
+void JNIEnv::reserved2()
+{
+	VM::FatalError("JNIEnv::reserved2");
+}
+
+void JNIEnv::reserved3()
+{
+	VM::FatalError("JNIEnv::reserved3");
 }
 
 jstring JNIEnv::NewStringUTF(const char *psz)
 {
-	return (jstring)(void*)pLocalRefs->MakeLocalRef(StringFromUTF8(psz));
+	return (jstring)MakeLocalRef(StringFromUTF8(psz));
 }
 
 jstring JNIEnv::NewString(const jchar *unicode, jsize len)
 {
-	return (jstring)(void*)pLocalRefs->MakeLocalRef(new String((__wchar_t*)unicode, 0, len));
+	return (jstring)MakeLocalRef(new String((__wchar_t*)unicode, 0, len));
+}
+
+static jsize StringUTFLength(String* s)
+{
+	jsize len = 0;
+	for(int i = 0; i < s->Length; i++)
+	{
+		jchar ch = s->Chars[i];
+		if ((ch != 0) && (ch <=0x7f))
+		{
+			len++;
+		}
+		else if (ch <= 0x7FF)
+		{
+			len += 2;
+		}
+		else
+		{
+			len += 3;
+		}
+	}
+	return len;
+}
+
+jsize JNICALL JNIEnv::GetStringUTFLength(jstring str)
+{
+	String* s = __try_cast<String*>(UnwrapRef(str));
+	if(s)
+	{
+		return StringUTFLength(s);
+	}
+	ThrowNew(FindClass("java/lang/NullPointerException"), "");
+	return 0;
 }
 
 const char* JNIEnv::GetStringUTFChars(jstring str, jboolean *isCopy)
 {
 	String* s = __try_cast<String*>(UnwrapRef(str));
-	// TODO for now we use the upper limit on the number of possible bytes needed
-	char *buf = new char[s->Length * 3 + 1];
-	// TODO if memory allocation fails, handle it by "throwing" OutOfMemoryError and returning null
-	int j = 0;
-	for(int i = 0, e = s->Length; i < e; i++)
+	if(s)
 	{
-		jchar ch = s->Chars[i];
-		if ((ch != 0) && (ch <=0x7f))
+		// TODO handle out of memory (what does the unmanaged new do?)
+		char *buf = new char[StringUTFLength(s) + 1];
+		int j = 0;
+		for(int i = 0; i < s->Length; i++)
 		{
-			buf[j++] = (char)ch;
+			jchar ch = s->Chars[i];
+			if ((ch != 0) && (ch <=0x7f))
+			{
+				buf[j++] = (char)ch;
+			}
+			else if (ch <= 0x7FF)
+			{
+				/* 11 bits or less. */
+				unsigned char high_five = ch >> 6;
+				unsigned char low_six = ch & 0x3F;
+				buf[j++] = high_five | 0xC0; /* 110xxxxx */
+				buf[j++] = low_six | 0x80;   /* 10xxxxxx */
+			}
+			else
+			{
+				/* possibly full 16 bits. */
+				char high_four = ch >> 12;
+				char mid_six = (ch >> 6) & 0x3F;
+				char low_six = ch & 0x3f;
+				buf[j++] = high_four | 0xE0; /* 1110xxxx */
+				buf[j++] = mid_six | 0x80;   /* 10xxxxxx */
+				buf[j++] = low_six | 0x80;   /* 10xxxxxx*/
+			}
 		}
-		else if (ch <= 0x7FF)
+		buf[j] = 0;
+		if(isCopy)
 		{
-			/* 11 bits or less. */
-			unsigned char high_five = ch >> 6;
-			unsigned char low_six = ch & 0x3F;
-			buf[j++] = high_five | 0xC0; /* 110xxxxx */
-			buf[j++] = low_six | 0x80;   /* 10xxxxxx */
+			*isCopy = JNI_TRUE;
+		}
+		return buf;
+	}
+	else
+	{
+		ThrowNew(FindClass("java/lang/NullPointerException"), "");
+		return 0;
+	}
+}
+
+void JNICALL JNIEnv::GetStringRegion(jstring str, jsize start, jsize len, jchar *buf)
+{
+	String* s = __try_cast<String*>(UnwrapRef(str));
+	if(s)
+	{
+		if(start > s->Length || s->Length - start < len)
+		{
+			ThrowNew(FindClass("java/lang/StringIndexOutOfBoundsException"), "");
+			return;
 		}
 		else
 		{
-			/* possibly full 16 bits. */
-			char high_four = ch >> 12;
-			char mid_six = (ch >> 6) & 0x3F;
-			char low_six = ch & 0x3f;
-			buf[j++] = high_four | 0xE0; /* 1110xxxx */
-			buf[j++] = mid_six | 0x80;   /* 10xxxxxx */
-			buf[j++] = low_six | 0x80;   /* 10xxxxxx*/
+			const wchar_t __pin* p = PtrToStringChars(s);
+			memcpy(buf, p, len);
+			return;
 		}
 	}
-	buf[j] = 0;
-	if(isCopy)
+	else
 	{
-		*isCopy = JNI_TRUE;
+		ThrowNew(FindClass("java/lang/NullPointerException"), "");
 	}
-
-	return buf;
 }
-#pragma unmanaged
 
+void JNICALL JNIEnv::GetStringUTFRegion(jstring str, jsize start, jsize len, char *buf)
+{
+	String* s = __try_cast<String*>(UnwrapRef(str));
+	if(s)
+	{
+		if(start > s->Length || s->Length - start < len)
+		{
+			ThrowNew(FindClass("java/lang/StringIndexOutOfBoundsException"), "");
+			return;
+		}
+		else
+		{
+			int j = 0;
+			for(jsize i = 0; i < len; i++)
+			{
+				jchar ch = s->Chars[start + i];
+				if ((ch != 0) && (ch <=0x7f))
+				{
+					buf[j++] = (char)ch;
+				}
+				else if (ch <= 0x7FF)
+				{
+					/* 11 bits or less. */
+					unsigned char high_five = ch >> 6;
+					unsigned char low_six = ch & 0x3F;
+					buf[j++] = high_five | 0xC0; /* 110xxxxx */
+					buf[j++] = low_six | 0x80;   /* 10xxxxxx */
+				}
+				else
+				{
+					/* possibly full 16 bits. */
+					char high_four = ch >> 12;
+					char mid_six = (ch >> 6) & 0x3F;
+					char low_six = ch & 0x3f;
+					buf[j++] = high_four | 0xE0; /* 1110xxxx */
+					buf[j++] = mid_six | 0x80;   /* 10xxxxxx */
+					buf[j++] = low_six | 0x80;   /* 10xxxxxx*/
+				}
+			}
+		}
+	}
+	else
+	{
+		ThrowNew(FindClass("java/lang/NullPointerException"), "");
+	}
+}
+
+const jchar* JNICALL JNIEnv::GetStringCritical(jstring str, jboolean *isCopy)
+{
+	String* s = __try_cast<String*>(UnwrapRef(str));
+	if(s)
+	{
+		// TODO handle out of memory (what does the unmanaged new do?)
+		jchar* cstring = new jchar[s->Length];
+		const wchar_t __pin* p = PtrToStringChars(s);
+		memcpy(cstring, p, s->Length * 2);
+		if(isCopy)
+		{
+			*isCopy = JNI_TRUE;
+		}
+		return cstring;		
+	}
+	ThrowNew(FindClass("java/lang/NullPointerException"), "");
+	return 0;
+}
+
+#pragma unmanaged
 void JNIEnv::ReleaseStringUTFChars(jstring str, const char* chars)
 {
 	delete[] chars;
+}
+
+void JNICALL JNIEnv::ReleaseStringCritical(jstring string, const jchar* cstring)
+{
+	delete[] cstring;
 }
 
 #pragma managed
@@ -176,31 +318,31 @@ jint JNIEnv::ThrowNew(jclass clazz, const char *msg)
 
 jint JNICALL JNIEnv::Throw(jthrowable obj)
 {
-	pLocalRefs->PendingException = __try_cast<Exception*>(UnwrapRef(obj));
+	// TODO once we implement PopLocalFrame, we need to make sure that pendingException isn't in the popped local frame
+	pendingException = (jthrowable)NewLocalRef(obj);
 	return JNI_OK;
 }
 
 jthrowable JNICALL JNIEnv::ExceptionOccurred()
 {
-	return (jthrowable)(void*)pLocalRefs->MakeLocalRef(pLocalRefs->PendingException);
+	return (jthrowable)NewLocalRef(pendingException);
 }
 
 void JNICALL JNIEnv::ExceptionDescribe()
 {
-	if(pLocalRefs->PendingException)
+	if(pendingException)
 	{
 		// when calling JNI methods there cannot be an exception pending, so we clear the exception
 		// temporarily, while we print it
-		jobject exception = ExceptionOccurred();
-		Exception* pException = pLocalRefs->PendingException;
-		pLocalRefs->PendingException = 0;
+		jthrowable exception = pendingException;
+		pendingException = 0;
 		jclass cls = FindClass("java/lang/Throwable");
 		if(cls)
 		{
 			jmethodID mid = GetMethodID(cls, "printStackTrace", "()V");
+			DeleteLocalRef(cls);
 			if(mid)
 			{
-				DeleteLocalRef(cls);
 				CallVoidMethod(exception, mid);
 			}
 			else
@@ -212,35 +354,24 @@ void JNICALL JNIEnv::ExceptionDescribe()
 		{
 			Console::Error->WriteLine(S"JNI internal error: java.lang.Throwable not found");
 		}
-		pLocalRefs->DeleteLocalRef(exception);
-		pLocalRefs->PendingException = pException;
+		pendingException = exception;
 	}
 }
 
 void JNICALL JNIEnv::ExceptionClear()
 {
-	pLocalRefs->PendingException = 0;
+	DeleteLocalRef(pendingException);
+	pendingException = 0;
 }
 
-#pragma unmanaged
-jclass JNICALL JNIEnv::DefineClass(const char *name, jobject loader, const jbyte *buf, jsize len)
-{
-	assert(false);
-	_asm int 3
-}
-
-#pragma managed
 jclass JNIEnv::FindClass(const char *utf)
 {
-	return (jclass)(void*)pLocalRefs->MakeLocalRef(VM::FindClass(StringFromUTF8(utf)));
+	return (jclass)MakeLocalRef(VM::FindClass(StringFromUTF8(utf)));
 }
 
 jobject JNIEnv::AllocObject(jclass cls)
 {
-	// wicked, I just realized that serialization should have a facility to construct uninitialized objects
-	// this can be implemented using FormatterServices.GetUninitializedObject, the only hitch is that this
-	// won't supports strings, so we may have to figure out a workaround for that, or decide just not to support it
-	return (jobject)(void*)pLocalRefs->MakeLocalRef(VM::AllocObject(UnwrapRef(cls)));
+	return MakeLocalRef(VM::AllocObject(UnwrapRef(cls)));
 }
 
 jmethodID JNIEnv::FindMethodID(jclass cls, const char* name, const char* sig, bool isstatic)
@@ -248,7 +379,6 @@ jmethodID JNIEnv::FindMethodID(jclass cls, const char* name, const char* sig, bo
 	jmethodID mid = (jmethodID)(void*)VM::GetMethodCookie(UnwrapRef(cls), StringFromUTF8(name), StringFromUTF8(sig), isstatic);
 	if(!mid)
 	{
-		//Console::WriteLine("Method not found: {0}{1} (static = {2})", StringFromUTF8(name), StringFromUTF8(sig), __box(isstatic));
 		// TODO set the exception message
 		ThrowNew(FindClass("java/lang/NoSuchMethodError"), "");
 		return 0;
@@ -286,9 +416,9 @@ static int GetMethodArgs(jmethodID methodID, char* sig)
 	return count;
 }
 
-Object* JNIEnv::InvokeHelper(jobject object, jmethodID methodID, jvalue* args)
+Object* JNIEnv::InvokeHelper(jobject object, jmethodID methodID, jvalue* args, bool nonVirtual)
 {
-	assert(!pLocalRefs->PendingException);
+	assert(!pendingException);
 	assert(methodID);
 
 	char sig[257];
@@ -329,102 +459,18 @@ Object* JNIEnv::InvokeHelper(jobject object, jmethodID methodID, jvalue* args)
 	}
 	try
 	{
-		return VM::InvokeMethod(methodID, UnwrapRef(object), argarray, false);
+		return VM::InvokeMethod(methodID, UnwrapRef(object), argarray, nonVirtual);
 	}
 	catch(Exception* x)
 	{
-		pLocalRefs->PendingException = x;
+		pendingException = (jthrowable)MakeLocalRef(x);
 		return 0;
 	}
-/*
-	MethodBase* m = __try_cast<MethodBase*>(GCHandle::op_Explicit((IntPtr)methodID->method).Target);
-	ParameterInfo* p __gc[] = m->GetParameters();
-	Object* argarray __gc[] = new Object*[p->Length];
-	for(int i = 0; i < p->Length; i++)
-	{
-		if(p[i]->ParameterType == __typeof(bool))
-		{
-			argarray[i] = __box(args[i].z != JNI_FALSE);
-		}
-		else if(p[i]->ParameterType == __typeof(char))
-		{
-			argarray[i] = __box((char)args[i].b);
-		}
-		else if(p[i]->ParameterType == __typeof(__wchar_t))
-		{
-			argarray[i] = __box((__wchar_t)args[i].c);
-		}
-		else if(p[i]->ParameterType == __typeof(short))
-		{
-			argarray[i] = __box((short)args[i].s);
-		}
-		else if(p[i]->ParameterType == __typeof(int))
-		{
-			argarray[i] = __box((int)args[i].i);
-		}
-		else if(p[i]->ParameterType == __typeof(__int64))
-		{
-			argarray[i] = __box((__int64)args[i].j);
-		}
-		else if(p[i]->ParameterType == __typeof(float))
-		{
-			argarray[i] = __box((float)args[i].f);
-		}
-		else if(p[i]->ParameterType == __typeof(double))
-		{
-			argarray[i] = __box((double)args[i].d);
-		}
-		else if(!p[i]->ParameterType->IsValueType)
-		{
-			// If we have an object specified but the method is static, we have been redirected to
-			// a static helper, so we have to adjust
-			if(i == 0 && object && m->IsStatic)
-			{
-				argarray[i] = UnwrapRef(object);
-				object = 0;
-				// HACK fix up the args ptr to correct for the missing first argument
-				args--;
-			}
-			else
-			{
-				argarray[i] = UnwrapRef(args[i].l);
-			}
-		}
-		else
-		{
-			// this can't happen, so it probably should be an assertion
-			assert(false);
-			throw new NotImplementedException(p[i]->ParameterType->FullName);
-		}
-	}
-	try
-	{
-		Object* obj = 0;
-		if(object)
-		{
-			obj = UnwrapRef(object);
-		}
-		if(m->IsConstructor)
-		{
-			return __try_cast<ConstructorInfo*>(m)->Invoke(argarray);
-		}
-		return m->Invoke(obj, argarray);
-	}
-	catch(TargetInvocationException* x)
-	{
-		// TODO remove this
-		Console::WriteLine(S"InvokeHelper: {0}", x);
-		// TODO retain stack trace information
-		//Console::WriteLine(S"LocalRefs = ", __box((int)pLocalRefs));
-		pLocalRefs->PendingException = x->InnerException;
-		return 0;
-	}
-*/
 }
 
 void JNICALL JNIEnv::CallStaticVoidMethodA(jclass cls, jmethodID methodID, jvalue* args)
 {
-	InvokeHelper(0, methodID, args);
+	InvokeHelper(0, methodID, args, false);
 }
 #pragma unmanaged
 
@@ -513,7 +559,7 @@ type JNIEnv::CallStatic##Type##Method(jclass clazz, jmethodID methodID, ...)\
 #define STATIC_METHOD_IMPL_MANAGED(Type,type,cpptype) \
 type JNICALL JNIEnv::CallStatic##Type##MethodA(jclass cls, jmethodID methodID, jvalue* args)\
 {\
-	Object* ret = InvokeHelper(0, methodID, args);\
+	Object* ret = InvokeHelper(0, methodID, args, false);\
 	if(ret)	return __unbox<cpptype>(ret);\
 	return 0;\
 }
@@ -540,7 +586,7 @@ STATIC_METHOD_IMPL_MANAGED(Double,jdouble,double)
 // special case for Object
 jobject JNICALL JNIEnv::CallStaticObjectMethodA(jclass cls, jmethodID methodID, jvalue* args)
 {
-	return (jobject)(void*)pLocalRefs->MakeLocalRef(InvokeHelper(0, methodID, args));
+	return MakeLocalRef(InvokeHelper(0, methodID, args, false));
 }
 
 #pragma unmanaged
@@ -568,6 +614,16 @@ void JNICALL JNIEnv::Set##Type##Field(jobject obj, jfieldID fieldID, type val)\
 type JNICALL JNIEnv::Get##Type##Field(jobject obj, jfieldID fieldID)\
 {\
 	return __unbox<cpptype>(VM::GetFieldValue((IntPtr)fieldID, UnwrapRef(obj)));\
+}\
+void JNICALL JNIEnv::SetStatic##Type##Field(jclass clazz, jfieldID fieldID, type val)\
+{\
+	/* // TODO consider checking that clazz is the right object */ \
+	VM::SetFieldValue((IntPtr)fieldID, 0, __box((cpptype)val));\
+}\
+type JNICALL JNIEnv::GetStatic##Type##Field(jclass clazz, jfieldID fieldID)\
+{\
+	/* // TODO consider checking that clazz is the right object */ \
+	return __unbox<cpptype>(VM::GetFieldValue((IntPtr)fieldID, 0));\
 }
 
 #pragma warning (push)
@@ -590,27 +646,20 @@ void JNICALL JNIEnv::SetObjectField(jobject obj, jfieldID fieldID, jobject val)
 
 jobject JNICALL JNIEnv::GetObjectField(jobject obj, jfieldID fieldID)
 {
-	return (jobject)(void*)pLocalRefs->MakeLocalRef(VM::GetFieldValue((IntPtr)fieldID, UnwrapRef(obj)));
+	return MakeLocalRef(VM::GetFieldValue((IntPtr)fieldID, UnwrapRef(obj)));
 }
-#pragma unmanaged
 
-void JNICALL JNIEnv::SetStaticObjectField(jclass cls, jfieldID fieldID, jobject value)
+void JNICALL JNIEnv::SetStaticObjectField(jclass clazz, jfieldID fieldID, jobject val)
 {
-	assert(false);
-	_asm int 3
+	VM::SetFieldValue((IntPtr)fieldID, 0, UnwrapRef(val));
 }
 
 jobject JNICALL JNIEnv::GetStaticObjectField(jclass clazz, jfieldID fieldID)
 {
-	assert(false);
-	_asm int 3
+	return MakeLocalRef(VM::GetFieldValue((IntPtr)fieldID, 0));
 }
 
-jlong JNICALL JNIEnv::GetStaticLongField(jclass clazz, jfieldID fieldID)
-{
-	assert(false);
-	_asm int 3
-}
+#pragma unmanaged
 
 #define METHOD_IMPL(Type,type) \
 type JNIEnv::Call##Type##Method(jobject obj, jmethodID methodID, ...) \
@@ -618,6 +667,14 @@ type JNIEnv::Call##Type##Method(jobject obj, jmethodID methodID, ...) \
 	va_list args;\
 	va_start(args, methodID);\
 	type ret = Call##Type##MethodV(obj, methodID, args);\
+	va_end(args);\
+	return ret;\
+}\
+type JNIEnv::CallNonvirtual##Type##Method(jobject obj, jclass clazz, jmethodID methodID, ...) \
+{\
+	va_list args;\
+	va_start(args, methodID);\
+	type ret = CallNonvirtual##Type##MethodV(obj, clazz, methodID, args);\
 	va_end(args);\
 	return ret;\
 }\
@@ -652,12 +709,50 @@ type JNICALL JNIEnv::Call##Type##MethodV(jobject obj, jmethodID methodID, va_lis
 		}\
 	}\
 	return Call##Type##MethodA(obj, methodID, argarray);\
+}\
+type JNICALL JNIEnv::CallNonvirtual##Type##MethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args)\
+{\
+	char sig[257];\
+	int argc = GetMethodArgs(methodID, sig);\
+	jvalue* argarray = (jvalue*)_alloca(argc * sizeof(jvalue));\
+	for(int i = 0; i < argc; i++)\
+	{\
+		switch(sig[i])\
+		{\
+		case 'Z':\
+		case 'B':\
+		case 'S':\
+		case 'C':\
+		case 'I':\
+			argarray[i].i = va_arg(args, int);\
+			break;\
+		case 'J':\
+			argarray[i].j = va_arg(args, __int64);\
+			break;\
+		case 'L':\
+			argarray[i].l = va_arg(args, jobject);\
+			break;\
+		case 'D':\
+			argarray[i].d = va_arg(args, double);\
+			break;\
+		case 'F':\
+			argarray[i].f = (float)va_arg(args, double);\
+			break;\
+		}\
+	}\
+	return CallNonvirtual##Type##MethodA(obj, clazz, methodID, argarray);\
 }
 
 #define METHOD_IMPL_MANAGED(Type,type,cpptype) \
 type JNICALL JNIEnv::Call##Type##MethodA(jobject obj, jmethodID methodID, jvalue* args)\
 {\
-	Object* ret = InvokeHelper(obj, methodID, args);\
+	Object* ret = InvokeHelper(obj, methodID, args, false);\
+	if(ret)	return __unbox<cpptype>(ret);\
+	return 0;\
+}\
+type JNICALL JNIEnv::CallNonvirtual##Type##MethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue* args)\
+{\
+	Object* ret = InvokeHelper(obj, methodID, args, true);\
 	if(ret)	return __unbox<cpptype>(ret);\
 	return 0;\
 }
@@ -685,7 +780,11 @@ METHOD_IMPL_MANAGED(Double,jdouble,double)
 // special case for Object, because we need to convert the reference to a localref
 jobject JNICALL JNIEnv::CallObjectMethodA(jobject obj, jmethodID methodID, jvalue* args)
 {
-	return (jobject)(void*)pLocalRefs->MakeLocalRef(InvokeHelper(obj, methodID, args));
+	return MakeLocalRef(InvokeHelper(obj, methodID, args, false));
+}
+jobject JNICALL JNIEnv::CallNonvirtualObjectMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+{
+	return MakeLocalRef(InvokeHelper(obj, methodID, args, true));
 }
 #pragma unmanaged
 
@@ -694,6 +793,14 @@ void JNIEnv::CallVoidMethod(jobject obj, jmethodID methodID, ...)
 	va_list args;
 	va_start(args, methodID);
 	CallVoidMethodV(obj, methodID, args);
+	va_end(args);
+}
+
+void JNIEnv::CallNonvirtualVoidMethod(jobject obj, jclass clazz, jmethodID methodID, ...)
+{
+	va_list args;
+	va_start(args, methodID);
+	CallNonvirtualVoidMethodV(obj, clazz, methodID, args);
 	va_end(args);
 }
 
@@ -730,26 +837,50 @@ void JNICALL JNIEnv::CallVoidMethodV(jobject obj, jmethodID methodID, va_list ar
 	CallVoidMethodA(obj, methodID, argarray);
 }
 
+void JNICALL JNIEnv::CallNonvirtualVoidMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args)
+{
+	char sig[257];
+	int argc = GetMethodArgs(methodID, sig);
+	jvalue* argarray = (jvalue*)_alloca(argc * sizeof(jvalue));
+	for(int i = 0; i < argc; i++)
+	{
+		switch(sig[i])
+		{
+		case 'Z':
+		case 'B':
+		case 'S':
+		case 'C':
+		case 'I':
+			argarray[i].i = va_arg(args, int);
+			break;
+		case 'J':
+			argarray[i].j = va_arg(args, __int64);
+			break;
+		case 'L':
+			argarray[i].l = va_arg(args, jobject);
+			break;
+		case 'D':
+			argarray[i].d = va_arg(args, double);
+			break;
+		case 'F':
+			argarray[i].f = (float)va_arg(args, double);
+			break;
+		}
+	}
+	CallNonvirtualVoidMethodA(obj, clazz, methodID, argarray);
+}
+
 #pragma managed
 void JNICALL JNIEnv::CallVoidMethodA(jobject obj, jmethodID methodID, jvalue* args)
 {
-	InvokeHelper(obj, methodID, args);
+	InvokeHelper(obj, methodID, args, false);
 }
-#pragma unmanaged
 
-void JNICALL JNIEnv::CallNonvirtualVoidMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args)
+void JNICALL JNIEnv::CallNonvirtualVoidMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
 {
-	assert(false);
-	_asm int 3
+	InvokeHelper(obj, methodID, args, true);
 }
 
-void JNICALL JNIEnv::CallNonvirtualVoidMethod(jobject obj, jclass clazz, jmethodID methodID, ...)
-{
-	assert(false);
-	_asm int 3
-}
-
-#pragma managed
 jsize JNIEnv::GetStringLength(jstring str)
 {
 	String* s = __try_cast<String*>(UnwrapRef(str));
@@ -781,30 +912,54 @@ jsize JNIEnv::GetArrayLength(jarray array)
 	Array* ar = __try_cast<Array*>(UnwrapRef(array));
 	return ar->Length;
 }
-#pragma unmanaged
+
+#define NEW_ARRAY(Type,type,cpptype) \
+type##Array JNIEnv::New##Type##Array(jsize len)\
+{\
+	try\
+	{\
+		return (type##Array)MakeLocalRef(new cpptype __gc[len]);\
+	}\
+	catch(OutOfMemoryException*)\
+	{\
+		ThrowNew(FindClass("java/lang/OutOfMemoryError"), "");\
+		return 0;\
+	}\
+}
+
+#pragma warning (push)
+// stop the compiler from wanking about "forcing value to bool 'true' or 'false' (performance warning)"
+#pragma warning (disable : 4800)
+NEW_ARRAY(Boolean, jboolean, bool)
+#pragma warning (pop)
+NEW_ARRAY(Byte, jbyte, System::SByte)
+NEW_ARRAY(Char, jchar, wchar_t)
+NEW_ARRAY(Short, jshort, short)
+NEW_ARRAY(Int, jint, int)
+NEW_ARRAY(Long, jlong, __int64)
+NEW_ARRAY(Float, jfloat, float)
+NEW_ARRAY(Double, jdouble, double)
 
 jobjectArray JNIEnv::NewObjectArray(jsize len, jclass clazz, jobject init)
 {
-	assert(false);
-	_asm int 3
-}
-
-jcharArray JNICALL JNIEnv::NewCharArray(jsize len)
-{
-	assert(false);
-	_asm int 3
-}
-
-jbyteArray JNICALL JNIEnv::NewByteArray(jsize len)
-{
-	assert(false);
-	_asm int 3
-}
-
-#pragma managed
-jintArray JNICALL JNIEnv::NewIntArray(jsize len)
-{
-	return (jintArray)(void*)pLocalRefs->MakeLocalRef(new int __gc[len]);
+	try
+	{
+		Object* ar __gc[] = new Object* __gc[len];
+		Object* o = UnwrapRef(init);
+		if(o)
+		{
+			for(jsize i = 0; i < len; i++)
+			{
+				ar[i] = o;
+			}
+		}
+		return (jobjectArray)MakeLocalRef(ar);
+	}
+	catch(OutOfMemoryException*)
+	{
+		ThrowNew(FindClass("java/lang/OutOfMemoryError"), "");
+		return 0;
+	}
 }
 
 void JNIEnv::SetObjectArrayElement(jobjectArray array, jsize index, jobject val)
@@ -826,7 +981,7 @@ jobject JNIEnv::GetObjectArrayElement(jobjectArray array, jsize index)
 		// TODO handle error
 		assert(false);
 	}
-	return (jobject)(void*)pLocalRefs->MakeLocalRef(ar[index]);
+	return MakeLocalRef(ar[index]);
 }
 
 #define GET_SET_ARRAY_REGION(Name, JavaType, ClrType) \
@@ -952,85 +1107,139 @@ jobject JNICALL JNIEnv::NewObjectV(jclass clazz, jmethodID methodID, va_list arg
 #pragma managed
 jobject JNICALL JNIEnv::NewObjectA(jclass clazz, jmethodID methodID, jvalue *args)
 {
-	return (jobject)(void*)pLocalRefs->MakeLocalRef(InvokeHelper(0, methodID, args));
+	return MakeLocalRef(InvokeHelper(0, methodID, args, false));
 }
 
 jclass JNICALL JNIEnv::GetObjectClass(jobject obj)
 {
-	if(obj == 0)
+	if(obj)
 	{
-		// TODO throw nullpointerexception
-		assert(false);
+		return (jclass)MakeLocalRef(VM::GetObjectClass(UnwrapRef(obj)));
 	}
-	return (jclass)(void*)pLocalRefs->MakeLocalRef(VM::GetClassFromType(UnwrapRef(obj)->GetType()));
+	ThrowNew(FindClass("java/lang/NullPointerException"), "");
+	return 0;
 }
-#pragma unmanaged
 
 jboolean JNICALL JNIEnv::IsInstanceOf(jobject obj, jclass clazz)
 {
-	assert(false);
-	_asm int 3
+	if(clazz)
+	{
+		return obj && VM::IsInstanceOf(UnwrapRef(obj), UnwrapRef(clazz));
+	}
+	ThrowNew(FindClass("java/lang/NullPointerException"), "");
+	return JNI_FALSE;
 }
 
 jboolean JNICALL JNIEnv::IsAssignableFrom(jclass sub, jclass sup)
 {
-	assert(false);
-	_asm int 3
-}
-
-#pragma managed
-jobject JNICALL JNIEnv::NewGlobalRef(jobject lobj)
-{
-	return JNI::MakeGlobalRef(UnwrapRef(lobj));
-}
-
-void JNICALL JNIEnv::DeleteGlobalRef(jobject gref)
-{
-	JNI::DeleteGlobalRef(gref);
-}
-
-void JNICALL JNIEnv::DeleteLocalRef(jobject obj)
-{
-	pLocalRefs->DeleteLocalRef(obj);
-}
-#pragma unmanaged
-
-jboolean JNICALL JNIEnv::IsSameObject(jobject obj1, jobject obj2)
-{
-	assert(false);
-	_asm int 3
+	if(sub && sup)
+	{
+		return VM::IsAssignableFrom(UnwrapRef(sub), UnwrapRef(sup));
+	}
+	ThrowNew(FindClass("java/lang/NullPointerException"), "");
+	return JNI_FALSE;
 }
 
 jclass JNICALL JNIEnv::GetSuperclass(jclass sub)
 {
-	assert(false);
-	_asm int 3
+	if(sub)
+	{
+		return (jclass)MakeLocalRef(VM::GetSuperclass(UnwrapRef(sub)));
+	}
+	ThrowNew(FindClass("java/lang/NullPointerException"), "");
+	return 0;
+}
+
+jobject JNICALL JNIEnv::NewLocalRef(jobject ref)
+{
+	return MakeLocalRef(UnwrapRef(ref));
+}
+
+jobject JNICALL JNIEnv::NewGlobalRef(jobject obj)
+{
+	if(!obj)
+	{
+		return 0;
+	}
+	// TODO search for an empty slot before adding it to the end...
+	return (jobject)-(GlobalRefs::globalRefs->Add(UnwrapRef(obj)) + 1);
+}
+
+void JNICALL JNIEnv::DeleteGlobalRef(jobject gref)
+{
+	int i = int(gref);
+	if(i < 0)
+	{
+		GlobalRefs::globalRefs->Item[(-i) - 1] = 0;
+		return;
+	}
+	if(i > 0)
+	{
+		DebugBreak();
+	}
+}
+
+void JNICALL JNIEnv::DeleteLocalRef(jobject obj)
+{
+	int i = (int)obj;
+	if(i > 0)
+	{
+		localRefs[i >> LOCAL_REF_SHIFT].DeleteLocalRef(i & LOCAL_REF_MASK);
+		return;
+	}
+	if(i < 0)
+	{
+		Console::WriteLine("bogus localref in DeleteLocalRef");
+		DebugBreak();
+	}
+}
+
+jboolean JNICALL JNIEnv::IsSameObject(jobject obj1, jobject obj2)
+{
+	return UnwrapRef(obj1) == UnwrapRef(obj2);
 }
 
 jint JNICALL JNIEnv::MonitorEnter(jobject obj)
 {
-	assert(false);
-	_asm int 3
+	Object* o = UnwrapRef(obj);
+	if(o)
+	{
+		try
+		{
+			System::Threading::Monitor::Enter(o);
+			return JNI_OK;
+		}
+		catch(System::Threading::ThreadInterruptedException*)
+		{
+			ThrowNew(FindClass("java/lang/InterruptedException"), "");
+			return JNI_ERR;
+		}
+	}
+	ThrowNew(FindClass("java/lang/NullPointerException"), "");
+	return JNI_ERR;
 }
 
 jint JNICALL JNIEnv::MonitorExit(jobject obj)
 {
-	assert(false);
-	_asm int 3
+	Object* o = UnwrapRef(obj);
+	if(o)
+	{
+		try
+		{
+			System::Threading::Monitor::Exit(o);
+			return JNI_OK;
+		}
+		catch(System::Threading::SynchronizationLockException*)
+		{
+			ThrowNew(FindClass("java/lang/IllegalMonitorStateException"), "");
+			return JNI_ERR;
+		}
+	}
+	ThrowNew(FindClass("java/lang/NullPointerException"), "");
+	return JNI_ERR;
 }
 
-jint JNICALL JNIEnv::RegisterNatives(jclass clazz, const JNINativeMethod *methods, jint nMethods)
-{
-	assert(false);
-	_asm int 3
-}
-
-jint JNICALL JNIEnv::UnregisterNatives(jclass clazz)
-{
-	assert(false);
-	_asm int 3
-}
-
+#pragma unmanaged
 jint JNICALL JNIEnv::GetJavaVM(JavaVM **vm)
 {
 	static JavaVM theVM;
@@ -1113,18 +1322,71 @@ void JNICALL JNIEnv::ReleasePrimitiveArrayCritical(jarray array, void *carray, j
 		delete[] (char*)carray;
 	}
 }
-#pragma unmanaged
 
-void JavaVM::reserved0() { assert(false); _asm int 3}
-void JavaVM::reserved1() { assert(false); _asm int 3}
-void JavaVM::reserved2() { assert(false); _asm int 3}
+jint JNICALL JNIEnv::GetVersion()
+{
+	// We implement (part of) JNI version 1.4
+	return JNI_VERSION_1_4;
+}
+
+jboolean JNICALL JNIEnv::ExceptionCheck()
+{
+	return pendingException != 0;
+}
+
+jmethodID JNICALL JNIEnv::FromReflectedMethod(jobject method)
+{
+	return (jmethodID)(void*)VM::MethodToCookie(UnwrapRef(method));
+}
+
+jfieldID JNICALL JNIEnv::FromReflectedField(jobject field)
+{
+	return (jfieldID)(void*)VM::FieldToCookie(UnwrapRef(field));
+}
+
+jobject JNICALL JNIEnv::ToReflectedMethod(jclass clazz, jmethodID methodID)
+{
+	return MakeLocalRef(VM::CookieToMethod(methodID));
+}
+
+jobject JNICALL JNIEnv::ToReflectedField(jclass clazz, jfieldID fieldID)
+{
+	return MakeLocalRef(VM::CookieToField(fieldID));
+}
+
+void JNICALL JNIEnv::FatalError(const char *msg)
+{
+	VM::FatalError(StringFromUTF8(msg));
+}
+
+jclass JNICALL JNIEnv::DefineClass(const char *name, jobject loader, const jbyte *buf, jsize len)
+{
+	System::Byte array __gc[] = new System::Byte __gc[len];
+	Marshal::Copy((void*)buf, array, 0, len);
+	return (jclass)MakeLocalRef(VM::DefineClass(StringFromUTF8(name), UnwrapRef(loader), array));
+}
+
+void JavaVM::reserved0()
+{
+	VM::FatalError("JavaVM::reserved0");
+}
+
+void JavaVM::reserved1()
+{
+	VM::FatalError("JavaVM::reserved1");
+}
+
+void JavaVM::reserved2()
+{
+	VM::FatalError("JavaVM::reserved2");
+}
 
 jint JavaVM::DestroyJavaVM()
 {
-	assert(false);
-	_asm int 3
+	return JNI_ERR;
 }
 
+#pragma unmanaged
 static void AttachCurrentThread_NotImplemented()
 {
 	assert(false);
@@ -1134,7 +1396,9 @@ static void AttachCurrentThread_NotImplemented()
 #pragma managed
 jint JavaVM::AttachCurrentThread(void **penv, void *args)
 {
+	// TODO do we need a new local ref frame?
 	// TODO for now we only support attaching to an existing thread
+	// TODO support args (JavaVMAttachArgs)
 	JNIEnv* p = LocalRefStruct::GetEnv();
 	if(p)
 	{
@@ -1175,99 +1439,15 @@ jint JavaVM::AttachCurrentThreadAsDaemon(void **penv, void *args)
 ////////////////////////////////////////////////////////////////////////////
 #pragma warning (disable : 4035)
 
-void JNIEnv::reserved0() { assert(false); _asm int 3}
-void JNIEnv::reserved1() { assert(false); _asm int 3}
-void JNIEnv::reserved2() { assert(false); _asm int 3}
+jint JNICALL JNIEnv::PushLocalFrame(jint capacity) { assert(false); _asm int 3} 
+jobject JNICALL JNIEnv::PopLocalFrame(jobject result) { assert(false); _asm int 3}
+jint JNICALL JNIEnv::EnsureLocalCapacity(jint capacity) { assert(false); _asm int 3} 
 
-void JNIEnv::reserved3() { assert(false); _asm int 3}
-jint JNICALL JNIEnv::GetVersion() { assert(false); _asm int 3}
-
-void JNIEnv::reserved4() { assert(false); _asm int 3}
-void JNIEnv::reserved5() { assert(false); _asm int 3}
-void JNIEnv::reserved6() { assert(false); _asm int 3}
-
-void JNIEnv::reserved7() { assert(false); _asm int 3}
-
-void JNICALL JNIEnv::FatalError(const char *msg) { assert(false); _asm int 3}
-void JNIEnv::reserved8() { assert(false); _asm int 3}
-void JNIEnv::reserved9() { assert(false); _asm int 3}
-
-void JNIEnv::reserved10() { assert(false); _asm int 3}
-void JNIEnv::reserved11() { assert(false); _asm int 3}
-
-jobject JNICALL JNIEnv::CallNonvirtualObjectMethod(jobject obj, jclass clazz, jmethodID methodID, ...) { assert(false); _asm int 3}
-jobject JNICALL JNIEnv::CallNonvirtualObjectMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args) { assert(false); _asm int 3}
-jobject JNICALL JNIEnv::CallNonvirtualObjectMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue * args) { assert(false); _asm int 3}
-
-jboolean JNICALL JNIEnv::CallNonvirtualBooleanMethod(jobject obj, jclass clazz, jmethodID methodID, ...) { assert(false); _asm int 3}
-jboolean JNICALL JNIEnv::CallNonvirtualBooleanMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args) { assert(false); _asm int 3}
-jboolean JNICALL JNIEnv::CallNonvirtualBooleanMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue * args) { assert(false); _asm int 3}
-
-jbyte JNICALL JNIEnv::CallNonvirtualByteMethod(jobject obj, jclass clazz, jmethodID methodID, ...) { assert(false); _asm int 3}
-jbyte JNICALL JNIEnv::CallNonvirtualByteMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args) { assert(false); _asm int 3}
-jbyte JNICALL JNIEnv::CallNonvirtualByteMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue *args) { assert(false); _asm int 3}
-
-jchar JNICALL JNIEnv::CallNonvirtualCharMethod(jobject obj, jclass clazz, jmethodID methodID, ...) { assert(false); _asm int 3}
-jchar JNICALL JNIEnv::CallNonvirtualCharMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args) { assert(false); _asm int 3}
-jchar JNICALL JNIEnv::CallNonvirtualCharMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue *args) { assert(false); _asm int 3}
-
-jshort JNICALL JNIEnv::CallNonvirtualShortMethod(jobject obj, jclass clazz, jmethodID methodID, ...) { assert(false); _asm int 3}
-jshort JNICALL JNIEnv::CallNonvirtualShortMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args) { assert(false); _asm int 3}
-jshort JNICALL JNIEnv::CallNonvirtualShortMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue *args) { assert(false); _asm int 3}
-
-jint JNICALL JNIEnv::CallNonvirtualIntMethod(jobject obj, jclass clazz, jmethodID methodID, ...) { assert(false); _asm int 3}
-jint JNICALL JNIEnv::CallNonvirtualIntMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args) { assert(false); _asm int 3}
-jint JNICALL JNIEnv::CallNonvirtualIntMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue *args) { assert(false); _asm int 3}
-
-jlong JNICALL JNIEnv::CallNonvirtualLongMethod(jobject obj, jclass clazz, jmethodID methodID, ...) { assert(false); _asm int 3}
-jlong JNICALL JNIEnv::CallNonvirtualLongMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args) { assert(false); _asm int 3}
-jlong JNICALL JNIEnv::CallNonvirtualLongMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue *args) { assert(false); _asm int 3}
-
-jfloat JNICALL JNIEnv::CallNonvirtualFloatMethod(jobject obj, jclass clazz, jmethodID methodID, ...) { assert(false); _asm int 3}
-jfloat JNICALL JNIEnv::CallNonvirtualFloatMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args) { assert(false); _asm int 3}
-jfloat JNICALL JNIEnv::CallNonvirtualFloatMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue *args) { assert(false); _asm int 3}
-
-jdouble JNICALL JNIEnv::CallNonvirtualDoubleMethod(jobject obj, jclass clazz, jmethodID methodID, ...) { assert(false); _asm int 3}
-jdouble JNICALL JNIEnv::CallNonvirtualDoubleMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args) { assert(false); _asm int 3}
-jdouble JNICALL JNIEnv::CallNonvirtualDoubleMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue *args) { assert(false); _asm int 3}
-
-void JNICALL JNIEnv::CallNonvirtualVoidMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue * args) { assert(false); _asm int 3}
-
-jboolean JNICALL JNIEnv::GetStaticBooleanField(jclass clazz, jfieldID fieldID) { assert(false); _asm int 3}
-jbyte JNICALL JNIEnv::GetStaticByteField(jclass clazz, jfieldID fieldID) { assert(false); _asm int 3}
-jchar JNICALL JNIEnv::GetStaticCharField(jclass clazz, jfieldID fieldID) { assert(false); _asm int 3}
-jshort JNICALL JNIEnv::GetStaticShortField(jclass clazz, jfieldID fieldID) { assert(false); _asm int 3}
-jint JNICALL JNIEnv::GetStaticIntField(jclass clazz, jfieldID fieldID) { assert(false); _asm int 3}
-jfloat JNICALL JNIEnv::GetStaticFloatField(jclass clazz, jfieldID fieldID) { assert(false); _asm int 3}
-jdouble JNICALL JNIEnv::GetStaticDoubleField(jclass clazz, jfieldID fieldID) { assert(false); _asm int 3}
-
-void JNICALL JNIEnv::SetStaticBooleanField(jclass clazz, jfieldID fieldID, jboolean value) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetStaticByteField(jclass clazz, jfieldID fieldID, jbyte value) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetStaticCharField(jclass clazz, jfieldID fieldID, jchar value) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetStaticShortField(jclass clazz, jfieldID fieldID, jshort value) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetStaticIntField(jclass clazz, jfieldID fieldID, jint value) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetStaticLongField(jclass clazz, jfieldID fieldID, jlong value) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetStaticFloatField(jclass clazz, jfieldID fieldID, jfloat value) { assert(false); _asm int 3}
-void JNICALL JNIEnv::SetStaticDoubleField(jclass clazz, jfieldID fieldID, jdouble value) { assert(false); _asm int 3}
-
-jsize JNICALL JNIEnv::GetStringUTFLength(jstring str) { assert(false); _asm int 3}
-
-jbooleanArray JNICALL JNIEnv::NewBooleanArray(jsize len) { assert(false); _asm int 3}
-jshortArray JNICALL JNIEnv::NewShortArray(jsize len) { assert(false); _asm int 3}
-jlongArray JNICALL JNIEnv::NewLongArray(jsize len) { assert(false); _asm int 3}
-jfloatArray JNICALL JNIEnv::NewFloatArray(jsize len) { assert(false); _asm int 3}
-jdoubleArray JNICALL JNIEnv::NewDoubleArray(jsize len) { assert(false); _asm int 3}
-
-void JNICALL JNIEnv::GetStringRegion(jstring str, jsize start, jsize len, jchar *buf) { assert(false); _asm int 3}
-void JNICALL JNIEnv::GetStringUTFRegion(jstring str, jsize start, jsize len, char *buf) { assert(false); _asm int 3}
-
-const jchar* JNICALL JNIEnv::GetStringCritical(jstring string, jboolean *isCopy) { assert(false); _asm int 3}
-void JNICALL JNIEnv::ReleaseStringCritical(jstring string, const jchar *cstring) { assert(false); _asm int 3}
+jint JNICALL JNIEnv::RegisterNatives(jclass clazz, const JNINativeMethod *methods, jint nMethods) {	assert(false); _asm int 3}
+jint JNICALL JNIEnv::UnregisterNatives(jclass clazz) { assert(false); _asm int 3}
 
 jweak JNICALL JNIEnv::NewWeakGlobalRef(jobject obj) { assert(false); _asm int 3}
 void JNICALL JNIEnv::DeleteWeakGlobalRef(jweak ref) { assert(false); _asm int 3}
-
-jboolean JNICALL JNIEnv::ExceptionCheck() { assert(false); _asm int 3}
 
 jobject JNICALL JNIEnv::NewDirectByteBuffer(void* address, jlong capacity) { assert(false); _asm int 3}
 void* JNICALL JNIEnv::GetDirectBufferAddress(jobject buf) { assert(false); _asm int 3}

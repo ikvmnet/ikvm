@@ -159,7 +159,7 @@ final class VMRuntime
      */
     static void traceMethodCalls(boolean on)
     {
-	// not supported
+	// TODO integrate with method tracing
     }
 
     /**
@@ -466,6 +466,18 @@ final class VMRuntime
 	p.setProperty("awt.toolkit", "ikvm.awt.NetToolkit, IKVM.AWT.WinForms");
 	// HACK since we cannot use URL here (it depends on the properties being set), we manually encode the spaces in the assembly name
         p.setProperty("gnu.classpath.home.url", "ikvmres://" + ((cli.System.String)(Object)cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName()).Replace(" ", "%20") + "/lib");
+
+	// read properties from app.config
+	cli.System.Collections.Specialized.NameValueCollection appSettings = cli.System.Configuration.ConfigurationSettings.get_AppSettings();
+	cli.System.Collections.IEnumerator keys = appSettings.GetEnumerator();
+	while(keys.MoveNext())
+	{
+	    String key = (String)keys.get_Current();
+	    if(key.startsWith("ikvm:"))
+	    {
+		p.setProperty(key.substring(5), appSettings.get_Item(key));
+	    }
+	}
     }
 
     // HACK we need a way to get the assembly version of ik.vm.net.dll

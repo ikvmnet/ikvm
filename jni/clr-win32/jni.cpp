@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -55,45 +55,6 @@ Type* JNI::GetLocalRefStructType()
 MethodInfo* JNI::GetJniFuncPtrMethod()
 {
 	return __typeof(JNI)->GetMethod("GetJniFuncPtr");
-}
-
-jobject JNI::MakeGlobalRef(Object* o)
-{
-	if(!o)
-	{
-		return 0;
-	}
-	// TODO search for an empty slot before adding it to the end...
-	return (jobject)-(globalRefs->Add(o) + 1);
-}
-
-void JNI::DeleteGlobalRef(jobject o)
-{
-	if(o)
-	{
-		int i = int(o);
-		if(i < 0)
-		{
-			globalRefs->Item[(-i) - 1] = 0;
-			return;
-		}
-		DebugBreak();
-	}
-}
-
-Object* JNI::UnwrapGlobalRef(jobject o)
-{
-	if(!o)
-	{
-		return 0;
-	}
-	int i = int(o);
-	if(i < 0)
-	{
-		return globalRefs->Item[(-i) - 1];
-	}
-	DebugBreak();
-	return 0;
 }
 
 IntPtr JNI::GetJniFuncPtr(String* method, String* sig, String* clazz)
@@ -196,134 +157,85 @@ IntPtr JNI::GetJniFuncPtr(String* method, String* sig, String* clazz)
 	throw VM::UnsatisfiedLinkError(methodName);
 }
 
-// NOTE we have only one global JNIEnv*, because allocating the JNIEnv is TLS proved too much of a headache,
-// we only keep the pointer to the current frame (LocalRefStruct) in a TLS variable
-static JNIEnv jniEnv;
-
 // If we put the ThreadStatic in LocalRefStruct we get an ExecutionEngineException (?!)
 __gc class TlsHack
 {
 public:
 	[ThreadStatic]
-	static void* currentLocalRefStruct;
+	static JNIEnv* pJNIEnv;
 };
 
 JNIEnv* LocalRefStruct::GetEnv()
 {
-	if(TlsHack::currentLocalRefStruct)
-	{
-		return &jniEnv;
-	}
-	return 0;
-}
-
-LocalRefStruct* LocalRefStruct::Current()
-{
-	return (LocalRefStruct*)TlsHack::currentLocalRefStruct;
+	return TlsHack::pJNIEnv;
 }
 
 IntPtr LocalRefStruct::Enter()
 {
-	pPrevLocalRefCache = TlsHack::currentLocalRefStruct;
+	pJNIEnv = TlsHack::pJNIEnv;
+	if(!pJNIEnv)
+	{
+		// TODO we should create a managed helper object that deletes JNIEnv when the thread dies
+		pJNIEnv = TlsHack::pJNIEnv = new JNIEnv();
+		pJNIEnv->pendingException = 0;
+		pJNIEnv->localRefSlot = 0;
+		localRefs = pJNIEnv->localRefs = new LocalRefListEntry __gc[32];
+	}
+	else
+	{
+		pPrevLocalRefCache = pJNIEnv->pActiveLocalRefCache;
+		localRefs = pJNIEnv->localRefs;
+	}
+
+	pJNIEnv->localRefSlot++;
+	if(pJNIEnv->localRefSlot >= 32)
+	{
+		// TODO instead of bailing out, we should grow the array
+		VM::FatalError("JNI nesting too deep");
+	}
+
 	// NOTE since this __value type can (should) only be allocated on the stack,
 	// it is "safe" to store the this pointer in a __nogc*, but the compiler
 	// doesn't know this, so we have to use a __pin* to bypass its checks.
 	LocalRefStruct __pin* pPinHack = this;
-	TlsHack::currentLocalRefStruct = pPinHack;
-	return (IntPtr)&jniEnv;
+	pJNIEnv->pActiveLocalRefCache = pPinHack;
+	localRefs[pJNIEnv->localRefSlot].static_list = &pPinHack->fastlocalrefs.loc1;
+	return (IntPtr)pJNIEnv;
 }
 
 void LocalRefStruct::Leave()
 {
-	TlsHack::currentLocalRefStruct = pPrevLocalRefCache;
-	if(pendingException)
+	Object* x = pJNIEnv->UnwrapRef(pJNIEnv->pendingException);
+	pJNIEnv->pendingException = 0;
+	pJNIEnv->pActiveLocalRefCache = pPrevLocalRefCache;
+	localRefs[pJNIEnv->localRefSlot].dynamic_list = 0;
+	// TODO figure out if it is legal to Leave a JNI method while PushLocalFrame is active (i.e. without the corresponding PopLocalFrame)
+	pJNIEnv->localRefSlot--;
+	if(x)
 	{
-		// TODO retain the stack trace of the exception object
-		throw pendingException;
+		throw x;
 	}
 }
 
-Exception* LocalRefStruct::get_PendingException()
+IntPtr LocalRefStruct::MakeLocalRef(Object* obj)
 {
-	return pendingException;
-}
-
-void LocalRefStruct::set_PendingException(Exception* exception)
-{
-	pendingException = exception;
-}
-
-IntPtr LocalRefStruct::MakeLocalRef(Object* o)
-{
-	if(o == 0)
+	if(obj == 0)
 	{
 		return 0;
 	}
-	Object** p = &cache.loc1;
-	for(int i = 0; i < 10; i++)
+	int i = localRefs[pJNIEnv->localRefSlot].MakeLocalRef(obj);
+	if(i >= 0)
 	{
-		if(p[i] == 0)
-		{
-			p[i] = o;
-			return i + 1;
-		}
+		return (pJNIEnv->localRefSlot << LOCAL_REF_SHIFT) + i;
 	}
-	if(!overflow)
-	{
-		// HACK we use a very large dynamic table size, because we don't yet support growing it
-		overflow = new Object* __gc[256];
-	}
-	for(int i = 0; i < overflow->Length; i++)
-	{
-		if(overflow[i] == 0)
-		{
-			overflow[i] = o;
-			return i + 11;
-		}
-	}
-	throw new NotImplementedException(S"Growing the localref table is not implemented");
-}
-
-void LocalRefStruct::DeleteLocalRef(jobject o)
-{
-	int i = (int)o;
-	if(i < 0)
-	{
-		Console::WriteLine("bogus localref in DeleteLocalRef");
-		DebugBreak();
-	}
-	if(i > 0)
-	{
-		if(i <= 10)
-		{
-			Object** p = &cache.loc1;
-			p[i - 1] = 0;
-		}
-		else
-		{
-			overflow[i - 11] = 0;
-		}
-	}
+	// TODO consider allocating a new slot (if we do this, the code in
+	// PushLocalFrame/PopLocalFrame (and Leave) must be fixed to take this into account)
+	VM::FatalError("Too many JNI local references");
+	return 0;
 }
 
 Object* LocalRefStruct::UnwrapLocalRef(IntPtr localref)
 {
-	if(localref == 0)
-	{
-		return 0;
-	}
-	if(int(localref) < 0)
-	{
-		Console::WriteLine("bogus localref in UnwrapLocalRef");
-		DebugBreak();
-	}
-	if(int(localref) <= 10)
-	{
-		Object** p = &cache.loc1;
-		return p[int(localref) - 1];
-	}
-	else
-	{
-		return overflow[int(localref) - 11];
-	}
+	int i = (int)localref;
+	return localRefs[i >> LOCAL_REF_SHIFT].UnwrapLocalRef(i & LOCAL_REF_MASK);
 }

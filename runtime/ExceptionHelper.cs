@@ -58,12 +58,12 @@ namespace NativeCode.java.lang
 		{
 			if(cause == throwable)
 			{
-				MethodWrapper mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava.lang.String;)V"), false);
+				MethodWrapper mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper(new MethodDescriptor("<init>", "(Ljava.lang.String;)V"), false);
 				mw.Invoke(throwable, new object[] { detailMessage }, true);
 			}
 			else
 			{
-				MethodWrapper mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava.lang.String;Ljava.lang.Throwable;)V"), false);
+				MethodWrapper mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper(new MethodDescriptor("<init>", "(Ljava.lang.String;Ljava.lang.Throwable;)V"), false);
 				mw.Invoke(throwable, new object[] { detailMessage, cause }, true);
 			}
 		}

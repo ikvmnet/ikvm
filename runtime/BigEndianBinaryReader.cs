@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -38,6 +38,13 @@ sealed class BigEndianBinaryReader
 	{
 		this.buf = buf;
 		this.pos = offset;
+	}
+
+	internal BigEndianBinaryReader Section(int length)
+	{
+		BigEndianBinaryReader br = new BigEndianBinaryReader(buf, pos);
+		pos += length;
+		return br;
 	}
 
 	internal BigEndianBinaryReader Duplicate()

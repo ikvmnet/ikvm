@@ -117,36 +117,20 @@ public sealed class NoPackagePrefixAttribute : Attribute
 {
 }
 
-[AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Method)]
-public sealed class UnloadableTypeAttribute : Attribute
-{
-	private string name;
-
-	public UnloadableTypeAttribute(string name)
-	{
-		this.name = name;
-	}
-
-	public string Name
-	{
-		get
-		{
-			return name;
-		}
-	}
-}
-
 [AttributeUsage(AttributeTargets.Struct)]
 public sealed class GhostInterfaceAttribute : Attribute
 {
 }
 
 // Whenever the VM or compiler generates a helper class/method/field, it should be marked
-// with this custom attribute, so that it can be hidden from Java reflection.
-// NOTE when this attribute is applied to a class, it means that instances of this class
-// will appear to be instances of the base class.
+// with this custom attribute, so that it can be hidden from Java.
 [AttributeUsage(AttributeTargets.All)]
-public sealed class HideFromReflectionAttribute : Attribute
+public sealed class HideFromJavaAttribute : Attribute
+{
+}
+
+[AttributeUsage(AttributeTargets.Method)]
+public sealed class MirandaMethodAttribute : Attribute
 {
 }
 
@@ -183,6 +167,35 @@ public sealed class ModifiersAttribute : Attribute
 		get
 		{
 			return modifiers;
+		}
+	}
+}
+
+[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Field)]
+public sealed class NameSigAttribute : Attribute
+{
+	private string name;
+	private string sig;
+
+	public NameSigAttribute(string name, string sig)
+	{
+		this.name = name;
+		this.sig = sig;
+	}
+
+	public string Name
+	{
+		get
+		{
+			return name;
+		}
+	}
+
+	public string Sig
+	{
+		get
+		{
+			return sig;
 		}
 	}
 }

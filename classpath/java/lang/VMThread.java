@@ -5,7 +5,6 @@ package java.lang;
 final class VMThread
 {
     private static cli.System.LocalDataStoreSlot localDataStoreSlot = cli.System.Threading.Thread.AllocateDataSlot();
-    private static cli.System.LocalDataStoreSlot cleanupDataStoreSlot = cli.System.Threading.Thread.AllocateNamedDataSlot("ikvm-thread-hack");
     private cli.System.WeakReference nativeThreadReference;
 
     // Note: when this thread dies, this reference is *not* cleared
@@ -324,7 +323,7 @@ final class VMThread
 	    javaThread = new Thread(vmThread, nativeThread.get_Name(), priority, nativeThread.get_IsBackground());
 	    vmThread.thread = javaThread;
 	    cli.System.Threading.Thread.SetData(localDataStoreSlot, javaThread);
-	    cli.System.Threading.Thread.SetData(cleanupDataStoreSlot, new CleanupHack(javaThread));
+	    cli.System.Threading.Thread.SetData(cli.System.Threading.Thread.GetNamedDataSlot("ikvm-thread-hack"), new CleanupHack(javaThread));
 	    javaThread.group = ThreadGroup.root;
 	    javaThread.group.addThread(javaThread);
 	    InheritableThreadLocal.newChildThread(javaThread);

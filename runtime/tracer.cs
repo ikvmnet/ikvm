@@ -45,6 +45,28 @@ public class Tracer
 
 	private readonly static ArrayList methodtraces = new ArrayList();
 
+	private class MyTextWriterTraceListener : TextWriterTraceListener
+	{
+		internal MyTextWriterTraceListener(System.IO.TextWriter tw)
+			: base(tw)
+		{
+		}
+
+		public override void Fail(string message)
+		{
+			this.WriteLine("Assert.Fail: " + message);
+			this.WriteLine(new StackTrace(true).ToString());
+			base.Fail(message);
+		}
+
+		public override void Fail(string message, string detailMessage)
+		{
+			this.WriteLine("Assert.Fail: " + message + ".\n" + detailMessage);
+			this.WriteLine(new StackTrace(true).ToString());
+			base.Fail(message, detailMessage);
+		}
+	}
+
 	static Tracer()
 	{
 		allTraceSwitches[Compiler.DisplayName] = Compiler;
@@ -54,7 +76,7 @@ public class Tracer
 		allTraceSwitches[Runtime.DisplayName] = Runtime;
 
 		Trace.AutoFlush = true;
-		Trace.Listeners.Add(new TextWriterTraceListener(Console.Error));
+		Trace.Listeners.Add(new MyTextWriterTraceListener(Console.Error));
 		/* If the app config file gives some method trace - add it */
 		string trace = ConfigurationSettings.AppSettings["Traced Methods"];
 		if(trace != null)

@@ -33,6 +33,38 @@ public abstract class CodeEmitter
 	public static readonly CodeEmitter Volatile = new OpCodeEmitter(OpCodes.Volatile);
 	public static readonly CodeEmitter InternalError = new InternalErrorEmitter();
 
+	private delegate void CodeEmitterDelegate(ILGenerator ilgen);
+
+	private class DelegateCodeEmitter : CodeEmitter
+	{
+		private CodeEmitterDelegate del;
+
+		internal DelegateCodeEmitter(CodeEmitterDelegate del)
+		{
+			this.del = del;
+		}
+
+		internal override void Emit(ILGenerator ilgen)
+		{
+			del(ilgen);
+		}
+	}
+
+	internal static CodeEmitter WrapCall(MethodWrapper wrapper)
+	{
+		return new DelegateCodeEmitter(new CodeEmitterDelegate(wrapper.EmitCall));
+	}
+
+	internal static CodeEmitter WrapCallvirt(MethodWrapper wrapper)
+	{
+		return new DelegateCodeEmitter(new CodeEmitterDelegate(wrapper.EmitCallvirt));
+	}
+
+	internal static CodeEmitter WrapNewobj(MethodWrapper wrapper)
+	{
+		return new DelegateCodeEmitter(new CodeEmitterDelegate(wrapper.EmitNewobj));
+	}
+
 	internal abstract void Emit(ILGenerator ilgen);
 
 	private class InternalErrorEmitter : CodeEmitter

@@ -2018,3 +2018,4 @@ sun/misc/Ref.java
 ../../classpath/vm/reference/java/lang/VMSystem.java
 ../../classpath/vm/reference/java/lang/VMThrowable.java
 ../../classpath/vm/reference/java/security/VMAccessController.java
+../../classpath/vm/reference/gnu/java/nio/VMPipe.java

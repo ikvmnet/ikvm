@@ -2,7 +2,7 @@
 <project name="IKVM.JNI.CLR-Win32" default="IKVM.JNI.CLR-Win32">
     <target name="IKVM.JNI.CLR-Win32">
 	<mkdir dir="release"/>
-        <cl outputdir="Release" pchfile="stdafx.h" options="/O2 /D WIN32 /D NDEBUG /D _WINDLL /D _MBCS /FD /EHsc /GS /Zc:wchar_t /Zc:forScope /W3 /nologo /c /Zi /clr /TP /FU ..\..\bin\IKVM.Runtime.dll">
+        <cl outputdir="Release" pchfile="stdafx.h" options="/O2 /D WIN32 /D NDEBUG /D _WINDLL /D _MBCS /FD /EHac /GS /Zc:wchar_t /Zc:forScope /W3 /nologo /c /Zi /clr /TP /FU ..\..\bin\IKVM.Runtime.dll">
             <sources>
                 <includes name="*.cpp"/>
             </sources>

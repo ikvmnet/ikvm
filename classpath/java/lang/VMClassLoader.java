@@ -44,8 +44,10 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.lang.reflect.Constructor;
 import gnu.java.lang.SystemClassLoader;
+import gnu.java.util.DoubleEnumeration;
 import cli.System.*;
 import cli.System.Reflection.*;
 
@@ -59,80 +61,77 @@ import cli.System.Reflection.*;
  */
 final class VMClassLoader
 {
-  /**
-   * Helper to define a class using a string of bytes. This assumes that
-   * the security checks have already been performed, if necessary.
-   * <strong>This method will be removed in a future version of GNU
-   * Classpath</strong>.
-   *
-   * @param name the name to give the class, or null if unknown
-   * @param data the data representing the classfile, in classfile format
-   * @param offset the offset into the data where the classfile starts
-   * @param len the length of the classfile data in the array
-   * @return the class that was defined
-   * @throws ClassFormatError if data is not in proper classfile format
-   * @deprecated Implement
-   * {@link #defineClass(ClassLoader, String, byte[], int, int, ProtectionDomain)}
-   *   instead.
-   */
-	static final Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len) throws ClassFormatError
-	{
-		return defineClass(cl, name, data, offset, len, null);
-	}
+    /**
+     * Helper to define a class using a string of bytes. This assumes that
+     * the security checks have already been performed, if necessary.
+     * <strong>This method will be removed in a future version of GNU
+     * Classpath</strong>.
+     *
+     * @param name the name to give the class, or null if unknown
+     * @param data the data representing the classfile, in classfile format
+     * @param offset the offset into the data where the classfile starts
+     * @param len the length of the classfile data in the array
+     * @return the class that was defined
+     * @throws ClassFormatError if data is not in proper classfile format
+     * @deprecated Implement
+     * {@link #defineClass(ClassLoader, String, byte[], int, int, ProtectionDomain)}
+     *   instead.
+     */
+    static final Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len) throws ClassFormatError
+    {
+	return defineClass(cl, name, data, offset, len, null);
+    }
 
-  /**
-   * Helper to define a class using a string of bytes. This assumes that
-   * the security checks have already been performed, if necessary.
-   *
-   * <strong>For backward compatibility, this just ignores the protection
-   * domain; that is the wrong behavior, and you should directly implement
-   * this method natively if you can.</strong>
-   *
-   * @param name the name to give the class, or null if unknown
-   * @param data the data representing the classfile, in classfile format
-   * @param offset the offset into the data where the classfile starts
-   * @param len the length of the classfile data in the array
-   * @param pd the protection domain
-   * @return the class that was defined
-   * @throws ClassFormatError if data is not in proper classfile format
-   */
-  static final native Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
-    throws ClassFormatError;
+    /**
+     * Helper to define a class using a string of bytes. This assumes that
+     * the security checks have already been performed, if necessary.
+     *
+     * @param name the name to give the class, or null if unknown
+     * @param data the data representing the classfile, in classfile format
+     * @param offset the offset into the data where the classfile starts
+     * @param len the length of the classfile data in the array
+     * @param pd the protection domain
+     * @return the class that was defined
+     * @throws ClassFormatError if data is not in proper classfile format
+     */
+    static final native Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
+	throws ClassFormatError;
 
-  /**
-   * Helper to resolve all references to other classes from this class.
-   *
-   * @param c the class to resolve
-   */
-	static final void resolveClass(Class c)
-	{
-		// TODO
-	}
+    /**
+     * Helper to resolve all references to other classes from this class.
+     *
+     * @param c the class to resolve
+     */
+    static final void resolveClass(Class c)
+    {
+    }
 
-  /**
-   * Helper to load a class from the bootstrap class loader.
-   *
-   * @param name the class name to load
-   * @param resolve whether to resolve it
-   * @return the class, loaded by the bootstrap classloader
-   */
-  static Class loadClass(String name, boolean resolve) throws ClassNotFoundException
-  {
-    return VMClass.loadBootstrapClass(name, false);
-  }
+    /**
+     * Helper to load a class from the bootstrap class loader.
+     *
+     * @param name the class name to load
+     * @param resolve whether to resolve it
+     * @return the class, loaded by the bootstrap classloader
+     */
+    static native Class loadClass(String name, boolean resolve) throws ClassNotFoundException;
 
-  /**
-   * Helper to load a resource from the bootstrap class loader.
-   *
-   * XXX - Not implemented yet; this requires native help.
-   *
-   * @param name the resource to find
-   * @return the URL to the resource
-   */
+    private static native ClassLoader getBootstrapClassLoader();
+
+    /**
+     * Helper to load a resource from the bootstrap class loader.
+     *
+     * @param name the resource to find
+     * @return the URL to the resource
+     */
     static URL getResource(String name)
     {
 	try
 	{
+	    Assembly assembly = findResourceAssembly(name);
+	    if(assembly != null)
+	    {
+		return new URL("ikvmres", assembly.get_FullName(), 0, "/" + name);
+	    }
 	    ClassLoader bootstrap = getBootstrapClassLoader();
 	    if(bootstrap != null)
 	    {
@@ -142,11 +141,6 @@ final class VMClassLoader
 		    return url;
 		}
 	    }
-	    Assembly assembly = findResourceAssembly(name);
-	    if(assembly != null)
-	    {
-		return new URL("ikvmres", assembly.get_FullName(), 0, "/" + name);
-	    }
 	}
 	catch(java.net.MalformedURLException x)
 	{
@@ -154,156 +148,213 @@ final class VMClassLoader
 	return null;
     }
     private static native Assembly findResourceAssembly(String name);
-    private static native ClassLoader getBootstrapClassLoader();
+    private static native Assembly[] findResourceAssemblies(String name);
 
-  /**
-   * Helper to get a list of resources from the bootstrap class loader.
-   *
-   * XXX - Not implemented yet; this requires native help.
-   *
-   * @param name the resource to find
-   * @return an enumeration of resources
-   * @throws IOException if one occurs
-   */
-  static Enumeration getResources(String name) throws IOException
-  {
-	  System.out.println("*** VMClassLoader.getResources: " + name);
-	// TODO
-	return new java.util.Vector(0).elements();
-	//return ClassLoader.getSystemResources(name);
-  }
+    /**
+     * Helper to get a list of resources from the bootstrap class loader.
+     *
+     * @param name the resource to find
+     * @return an enumeration of resources
+     * @throws IOException if one occurs
+     */
+    static Enumeration getResources(String name) throws IOException
+    {
+	if(nestedGetResourcesHack.get() != null)
+	{
+	    return gnu.java.util.EmptyEnumeration.getInstance();
+	}
+	nestedGetResourcesHack.set("");
+	try
+	{
+	    Assembly[] assemblies = findResourceAssemblies(name);
+	    java.util.Vector v = new java.util.Vector();
+	    for(int i = 0; i < assemblies.length; i++)
+	    {
+		v.addElement(new URL("ikvmres", assemblies[i].get_FullName(), 0, "/" + name));
+	    }
+	    Enumeration e = v.elements();
+	    ClassLoader bootstrap = getBootstrapClassLoader();
+	    if(bootstrap != null)
+	    {
+		e = new DoubleEnumeration(e, bootstrap.getResources(name));
+	    }
+	    return e;
+	}
+	finally
+	{
+	    nestedGetResourcesHack.set(null);
+	}
+    }
 
-  /**
-   * Helper to get a package from the bootstrap class loader.  The default
-   * implementation of returning null may be adequate, or you may decide
-   * that this needs some native help.
-   *
-   * @param name the name to find
-   * @return the named package, if it exists
-   */
-  static Package getPackage(String name)
-  {
-    return null;
-  }
+    private static ThreadLocal nestedGetResourcesHack = new ThreadLocal();
 
-  /**
-   * Helper to get all packages from the bootstrap class loader.  The default
-   * implementation of returning an empty array may be adequate, or you may
-   * decide that this needs some native help.
-   *
-   * @return all named packages, if any exist
-   */
-  static Package[] getPackages()
-  {
-    return new Package[0];
-  }
+    /**
+     * Helper to get a package from the bootstrap class loader.  The default
+     * implementation of returning null may be adequate, or you may decide
+     * that this needs some native help.
+     *
+     * @param name the name to find
+     * @return the named package, if it exists
+     */
+    static Package getPackage(String name)
+    {
+	return null;
+    }
 
-  /**
-   * Helper for java.lang.Integer, Byte, etc to get the TYPE class
-   * at initialization time. The type code is one of the chars that
-   * represents the primitive type as in JNI.
-   *
-   * <ul>
-   * <li>'Z' - boolean</li>
-   * <li>'B' - byte</li>
-   * <li>'C' - char</li>
-   * <li>'D' - double</li>
-   * <li>'F' - float</li>
-   * <li>'I' - int</li>
-   * <li>'J' - long</li>
-   * <li>'S' - short</li>
-   * <li>'V' - void</li>
-   * </ul>
-   *
-   * Note that this is currently a java version that converts the type code
-   * to a string and calls the native <code>getPrimitiveClass(String)</code>
-   * method for backwards compatibility with VMs that used old versions of
-   * GNU Classpath. Please replace this method with a native method
-   * <code>final static native Class getPrimitiveClass(char type);</code>
-   * if your VM supports it. <strong>The java version of this method and
-   * the String version of this method will disappear in a future version
-   * of GNU Classpath</strong>.
-   *
-   * @param type the primitive type
-   * @return a "bogus" class representing the primitive type
-   */
-	static native Class getPrimitiveClass(char type);
+    /**
+     * Helper to get all packages from the bootstrap class loader.  The default
+     * implementation of returning an empty array may be adequate, or you may
+     * decide that this needs some native help.
+     *
+     * @return all named packages, if any exist
+     */
+    static Package[] getPackages()
+    {
+	return new Package[0];
+    }
 
-  /**
-   * The system default for assertion status. This is used for all system
-   * classes (those with a null ClassLoader), as well as the initial value for
-   * every ClassLoader's default assertion status.
-   *
-   * XXX - Not implemented yet; this requires native help.
-   *
-   * @return the system-wide default assertion status
-   */
-  static final boolean defaultAssertionStatus()
-  {
-    return true;
-  }
+    /**
+     * Helper for java.lang.Integer, Byte, etc to get the TYPE class
+     * at initialization time. The type code is one of the chars that
+     * represents the primitive type as in JNI.
+     *
+     * <ul>
+     * <li>'Z' - boolean</li>
+     * <li>'B' - byte</li>
+     * <li>'C' - char</li>
+     * <li>'D' - double</li>
+     * <li>'F' - float</li>
+     * <li>'I' - int</li>
+     * <li>'J' - long</li>
+     * <li>'S' - short</li>
+     * <li>'V' - void</li>
+     * </ul>
+     *
+     * Note that this is currently a java version that converts the type code
+     * to a string and calls the native <code>getPrimitiveClass(String)</code>
+     * method for backwards compatibility with VMs that used old versions of
+     * GNU Classpath. Please replace this method with a native method
+     * <code>final static native Class getPrimitiveClass(char type);</code>
+     * if your VM supports it. <strong>The java version of this method and
+     * the String version of this method will disappear in a future version
+     * of GNU Classpath</strong>.
+     *
+     * @param type the primitive type
+     * @return a "bogus" class representing the primitive type
+     */
+    static native Class getPrimitiveClass(char type);
 
-  /**
-   * The system default for package assertion status. This is used for all
-   * ClassLoader's packageAssertionStatus defaults. It must be a map of
-   * package names to Boolean.TRUE or Boolean.FALSE, with the unnamed package
-   * represented as a null key.
-   *
-   * XXX - Not implemented yet; this requires native help.
-   *
-   * @return a (read-only) map for the default packageAssertionStatus
-   */
-  static final Map packageAssertionStatus()
-  {
-    return new HashMap();
-  }
+    /**
+     * The system default for assertion status. This is used for all system
+     * classes (those with a null ClassLoader), as well as the initial value for
+     * every ClassLoader's default assertion status.
+     *
+     * XXX - Not implemented yet; this requires native help.
+     *
+     * @return the system-wide default assertion status
+     */
+    static final boolean defaultAssertionStatus()
+    {
+	return true;
+    }
 
-  /**
-   * The system default for class assertion status. This is used for all
-   * ClassLoader's classAssertionStatus defaults. It must be a map of
-   * class names to Boolean.TRUE or Boolean.FALSE
-   *
-   * XXX - Not implemented yet; this requires native help.
-   *
-   * @return a (read-only) map for the default classAssertionStatus
-   */
-  static final Map classAssertionStatus()
-  {
-    return new HashMap();
-  }
+    /**
+     * The system default for package assertion status. This is used for all
+     * ClassLoader's packageAssertionStatus defaults. It must be a map of
+     * package names to Boolean.TRUE or Boolean.FALSE, with the unnamed package
+     * represented as a null key.
+     *
+     * XXX - Not implemented yet; this requires native help.
+     *
+     * @return a (read-only) map for the default packageAssertionStatus
+     */
+    static final Map packageAssertionStatus()
+    {
+	return new HashMap();
+    }
 
-  static ClassLoader getSystemClassLoader()
-  {
-    // This method is called as the initialization of systemClassLoader,
-    // so if there is a null value, this is the first call and we must check
-    // for java.system.class.loader.
-      String loader = System.getProperty("java.system.class.loader",
-                                           "gnu.java.lang.SystemClassLoader");
-      try
-          {
-	      // Give the new system class loader a null parent.
-	      Constructor c = Class.forName(loader).getConstructor
-		  ( new Class[] { ClassLoader.class } );
-	      return (ClassLoader) c.newInstance(new Object[1]);
-          }
-      catch (Exception e)
-          {
-	      try
-		  {
-		      System.err.println("Requested system classloader "
-					 + loader + " failed, trying "
-					 + "gnu.java.lang.SystemClassLoader");
-		      e.printStackTrace();
-		      // Fallback to gnu.java.lang.SystemClassLoader.
-		      return new SystemClassLoader(null);
-		  }
-	      catch (Exception e1)
-		  {
-		      throw (Error) new InternalError
-			  ("System class loader could not be found: " + e1)
-			  .initCause(e1);
-		  }
-          }
- 
-  }
+    /**
+     * The system default for class assertion status. This is used for all
+     * ClassLoader's classAssertionStatus defaults. It must be a map of
+     * class names to Boolean.TRUE or Boolean.FALSE
+     *
+     * XXX - Not implemented yet; this requires native help.
+     *
+     * @return a (read-only) map for the default classAssertionStatus
+     */
+    static final Map classAssertionStatus()
+    {
+	return new HashMap();
+    }
+
+    private static URL[] getExtClassLoaderUrls()
+    {
+	String classpath = java.lang.System.getProperty("java.ext.dirs", "");
+	java.util.StringTokenizer tok = new java.util.StringTokenizer(classpath, java.io.File.pathSeparator);
+	ArrayList list = new ArrayList();
+	while(tok.hasMoreTokens())
+	{
+	    try
+	    {
+		java.io.File f = new java.io.File(tok.nextToken());
+		java.io.File[] files = f.listFiles();
+		for(int i = 0; i < files.length; i++)
+		{
+		    list.add(files[i].toURL());
+		}
+	    }
+	    catch(Exception x)
+	    {
+	    }
+	}
+	URL[] urls = new URL[list.size()];
+	list.toArray(urls);
+	return urls;
+    }
+
+    private static URL[] getSystemClassLoaderUrls()
+    {
+	return crackClassPath(java.lang.System.getProperty("java.class.path", "."));
+    }
+
+    private static URL[] crackClassPath(String classpath)
+    {
+	java.util.StringTokenizer tok = new java.util.StringTokenizer(classpath, java.io.File.pathSeparator);
+	ArrayList list = new ArrayList();
+	while(tok.hasMoreTokens())
+	{
+	    try
+	    {
+		list.add(new java.io.File(tok.nextToken()).toURL());
+	    }
+	    catch(java.net.MalformedURLException x)
+	    {
+	    }
+	}
+	URL[] urls = new URL[list.size()];
+	list.toArray(urls);
+	return urls;
+    }
+
+    static ClassLoader getSystemClassLoader()
+    {
+	ClassLoader extClassLoader = new java.net.URLClassLoader(getExtClassLoaderUrls(), null);
+	ClassLoader systemClassLoader = new java.net.URLClassLoader(getSystemClassLoaderUrls(), extClassLoader);
+	String loader = System.getProperty("java.system.class.loader", null);
+	if(loader == null)
+	{
+	    return systemClassLoader;
+	}
+	try
+	{
+	    Constructor c = Class.forName(loader, false, systemClassLoader)
+		.getConstructor(new Class[] { ClassLoader.class });
+	    return (ClassLoader)c.newInstance(new Object[] { systemClassLoader });
+	}
+	catch(Exception e)
+	{
+	    System.err.println("Requested system classloader " + loader + " failed.");
+	    throw (Error)new Error("Requested system classloader " + loader + " failed.").initCause(e);
+	}
+    }
 }

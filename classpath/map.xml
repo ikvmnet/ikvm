@@ -124,6 +124,11 @@
 					<label name="end" />
 					<ret />
 				</alternateBody>
+				<nonvirtualAlternateBody>
+					<ldarg_0 />
+					<call class="java.lang.ObjectHelper" name="toStringSpecial" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
+					<ret />
+				</nonvirtualAlternateBody>
 			</method>
 			<method name="hashCode" sig="()I" modifiers="public">
 				<override name="GetHashCode" />
@@ -849,8 +854,8 @@
 			<code>
 				<castclass type="System.Threading.ThreadAbortException, mscorlib" />
 				<call type="System.Threading.ThreadAbortException, mscorlib" name="get_ExceptionState" sig="()Ljava.lang.Object;" />
-				<dup />
 				<isinst class="java.lang.ThreadDeath" />
+				<dup />
 				<brtrue name="end" />
 				<pop />
 				<newobj class="java.lang.ThreadDeath" name="&lt;init&gt;" sig="()V" />
@@ -859,8 +864,16 @@
 				<!-- TODO we should put an exception handler around the ResetAbort call, because it will throw a ThreadStateException
 				     if no Abort is pending (someone could have thrown the exception manually, or we could have called on a 
 				     previous handler that turned out not to be match for this exception type) -->
-				<castclass class="java.lang.ThreadDeath" />
-				<call type="System.Threading.Thread, mscorlib" name="ResetAbort" sig="()V" />
+				<stloc name="x" class="java.lang.ThreadDeath" />
+				<exceptionBlock>
+					<try>
+						<call type="System.Threading.Thread, mscorlib" name="ResetAbort" sig="()V" />
+					</try>
+					<catch type="System.Threading.ThreadStateException, mscorlib">
+						<!-- ignore the exception -->
+					</catch>
+				</exceptionBlock>
+				<ldloc name="x" />
 			</code>
 		</exception>
 		<!-- TODO make sure the originating method was from an IKVM.NET generated assembly, because if it was

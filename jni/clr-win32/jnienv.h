@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,6 +21,11 @@
   jeroen@frijters.net
   
 */
+
+#include <vcclr.h>
+
+using namespace System;
+using namespace System::Runtime::InteropServices;
 
 #pragma unmanaged
 
@@ -129,41 +134,171 @@ typedef union jvalue {
 	jobject  l;
 } jvalue;
 
-//public __value class LocalRefStruct;
-public __gc class System::Object;
+public __value class LocalRefStruct;
 
 #pragma managed
 
-class JNIEnv
+[StructLayout(LayoutKind::Sequential)]
+__value struct LocalRefCache
 {
-	//LocalRefStruct __nogc* pLocalRefs;
+	Object* loc1;
+	Object* loc2;
+	Object* loc3;
+	Object* loc4;
+	Object* loc5;
+	Object* loc6;
+	Object* loc7;
+	Object* loc8;
+	Object* loc9;
+	Object* loc10;
+};
 
-	System::Object __gc* UnwrapRef(jobject o);
-	jmethodID FindMethodID(jclass cls, const char* name, const char* sig, bool isstatic);
-	System::Object __gc* InvokeHelper(jobject object, jmethodID methodID, jvalue* args);
-	jfieldID FindFieldID(jclass cls, const char* name, const char* sig, bool isstatic);
+#define STATIC_LIST_SIZE 10
+#define BUCKET_SIZE (1 << LOCAL_REF_SHIFT)
+#define LOCAL_REF_SHIFT 10
+#define LOCAL_REF_MASK (BUCKET_SIZE - 1)
+
+__value struct LocalRefListEntry
+{
+	Object* __nogc* static_list;
+	Object* dynamic_list __gc[];
+
+	int MakeLocalRef(Object* o)
+	{
+		Object** p = static_list;
+		for(int i = 0; i < STATIC_LIST_SIZE; i++)
+		{
+			if(p[i] == 0)
+			{
+				p[i] = o;
+				return i;
+			}
+		}
+		if(!dynamic_list)
+		{
+			dynamic_list = new Object* __gc[32 - STATIC_LIST_SIZE];
+		}
+		for(int i = 0; i < dynamic_list->Length; i++)
+		{
+			if(dynamic_list[i] == 0)
+			{
+				dynamic_list[i] = o;
+				return i + STATIC_LIST_SIZE;
+			}
+		}
+		int newsize = (dynamic_list->Length + STATIC_LIST_SIZE) * 2 - STATIC_LIST_SIZE;
+		if(newsize > BUCKET_SIZE)
+		{
+			return -1;
+		}
+		Object* tmp __gc[] = dynamic_list;
+		dynamic_list = new Object* __gc[newsize];
+		Array::Copy(tmp, 0, dynamic_list, 0, tmp->Length);
+		dynamic_list[tmp->Length] = o;
+		return tmp->Length + STATIC_LIST_SIZE;
+	}
+
+	void DeleteLocalRef(unsigned int i)
+	{
+		if(i < STATIC_LIST_SIZE)
+		{
+			static_list[i] = 0;
+		}
+		else
+		{
+			dynamic_list[i - STATIC_LIST_SIZE] = 0;
+		}
+	}
+
+	Object* UnwrapLocalRef(unsigned int i)
+	{
+		if(i < STATIC_LIST_SIZE)
+		{
+			return static_list[i];
+		}
+		else
+		{
+			return dynamic_list[i - STATIC_LIST_SIZE];
+		}
+	}
+};
+
+__gc struct GlobalRefs
+{
+	static System::Collections::ArrayList* globalRefs = new System::Collections::ArrayList();
+};
+
+class JNIEnv;
+
+public __value class LocalRefStruct
+{
+	JNIEnv* pJNIEnv;
+	LocalRefStruct __nogc* pPrevLocalRefCache;
+	LocalRefCache fastlocalrefs;
+	LocalRefListEntry localRefs __gc[];
 
 public:
+	static JNIEnv* GetEnv();
+
+	IntPtr Enter();
+	void Leave();
+
+	IntPtr MakeLocalRef(Object* o);
+	Object* UnwrapLocalRef(IntPtr p);
+};
+
+class JNIEnv
+{
+public:
+	jobject MakeLocalRef(System::Object* obj)
+	{
+		return (jobject)(void*)pActiveLocalRefCache->MakeLocalRef(obj);
+	}
+
+	Object* JNIEnv::UnwrapRef(jobject o)
+	{
+		int i = (int)o;
+		if(i > 0)
+		{
+			return pActiveLocalRefCache->UnwrapLocalRef((void*)o);
+		}
+		if(i < 0)
+		{
+			return GlobalRefs::globalRefs->Item[(-i) - 1];
+		}
+		return 0;
+	}
+
+	jmethodID FindMethodID(jclass cls, const char* name, const char* sig, bool isstatic);
+	Object* InvokeHelper(jobject object, jmethodID methodID, jvalue* args, bool nonVirtual);
+	jfieldID FindFieldID(jclass cls, const char* name, const char* sig, bool isstatic);
+
+	int localRefSlot;
+	LocalRefStruct __nogc* pActiveLocalRefCache;
+	gcroot<LocalRefListEntry __gc[]> localRefs;
+	jthrowable pendingException;
+
 	JNIEnv();
 	~JNIEnv();
 
 	virtual void JNICALL reserved0();
 	virtual void JNICALL reserved1();
 	virtual void JNICALL reserved2();
-
 	virtual void JNICALL reserved3();
+
 	virtual jint JNICALL GetVersion();
 
 	virtual jclass JNICALL DefineClass(const char *name, jobject loader, const jbyte *buf, jsize len);
 	virtual jclass JNICALL FindClass(const char *name);
 
-	virtual void JNICALL reserved4();
-	virtual void JNICALL reserved5();
-	virtual void JNICALL reserved6();
+	virtual jmethodID JNICALL FromReflectedMethod(jobject method);
+	virtual jfieldID JNICALL FromReflectedField(jobject field);
+	virtual jobject JNICALL ToReflectedMethod(jclass clazz, jmethodID methodID);
 
 	virtual jclass JNICALL GetSuperclass(jclass sub);
 	virtual jboolean JNICALL IsAssignableFrom(jclass sub, jclass sup);
-	virtual void JNICALL reserved7();
+
+	virtual jobject JNICALL ToReflectedField(jclass clazz, jfieldID fieldID);
 
 	virtual jint JNICALL Throw(jthrowable obj);
 	virtual jint JNICALL ThrowNew(jclass clazz, const char *msg);
@@ -171,15 +306,17 @@ public:
 	virtual void JNICALL ExceptionDescribe();
 	virtual void JNICALL ExceptionClear();
 	virtual void JNICALL FatalError(const char *msg);
-	virtual void JNICALL reserved8();
-	virtual void JNICALL reserved9();
+
+	virtual jint JNICALL PushLocalFrame(jint capacity); 
+	virtual jobject JNICALL PopLocalFrame(jobject result);
 
 	virtual jobject JNICALL NewGlobalRef(jobject lobj);
 	virtual void JNICALL DeleteGlobalRef(jobject gref);
 	virtual void JNICALL DeleteLocalRef(jobject obj);
 	virtual jboolean JNICALL IsSameObject(jobject obj1, jobject obj2);
-	virtual void JNICALL reserved10();
-	virtual void JNICALL reserved11();
+
+	virtual jobject JNICALL NewLocalRef(jobject ref);
+	virtual jint JNICALL EnsureLocalCapacity(jint capacity); 
 
 	virtual jobject JNICALL AllocObject(jclass clazz);
 	virtual jobject JNICALL NewObject(jclass clazz, jmethodID methodID, ...);

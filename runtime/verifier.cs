@@ -26,23 +26,6 @@ using System.IO;
 using System.Collections;
 using System.Diagnostics;
 
-class VerifyError : ApplicationException
-{
-	internal int ByteCodeOffset;
-	internal string Class;
-	internal string Method;
-	internal string Signature;
-	internal string Instruction;
-
-	internal VerifyError()
-	{
-	}
-
-	internal VerifyError(string msg) : base(msg)
-	{
-	}
-}
-
 class Subroutine
 {
 	private int subroutineIndex;
@@ -948,6 +931,14 @@ class VerifierTypeWrapper : TypeWrapper
 	private int index;
 	private TypeWrapper underlyingType;
 
+	internal override System.Reflection.Assembly Assembly
+	{
+		get
+		{
+			return null;
+		}
+	}
+
 	public override string ToString()
 	{
 		return GetType().Name + "[" + Name + "," + index + "," + underlyingType + "]";
@@ -1006,9 +997,9 @@ class VerifierTypeWrapper : TypeWrapper
 		throw new InvalidOperationException("GetFieldImpl called on " + this);
 	}
 
-	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
+	internal override MethodWrapper GetMethodWrapper(MethodDescriptor md, bool inherit)
 	{
-		throw new InvalidOperationException("GetMethodImpl called on " + this);
+		throw new InvalidOperationException("GetMethodWrapper called on " + this);
 	}
 
 	internal override Type TypeAsTBD
@@ -1043,7 +1034,7 @@ class VerifierTypeWrapper : TypeWrapper
 		}
 	}
 
-	internal override void Finish()
+	internal override void Finish(bool forDebugSave)
 	{
 		throw new InvalidOperationException("Finish called on " + this);
 	}
@@ -1446,7 +1437,7 @@ class MethodAnalyzer
 							case NormalizedByteCode.__invokeinterface:
 							case NormalizedByteCode.__invokestatic:
 							{
-								ClassFile.ConstantPoolItemFMI cpi = GetMethodref(instr.Arg1);
+								ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
 								if((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface))
 								{
 									throw new VerifyError("Illegal constant pool index");
@@ -1476,7 +1467,7 @@ class MethodAnalyzer
 									{
 										TypeWrapper type = s.PopType();
 										if((VerifierTypeWrapper.IsNew(type) && ((VerifierTypeWrapper)type).UnderlyingType != cpi.GetClassType(classLoader)) ||
-											(type == VerifierTypeWrapper.UninitializedThis && cpi.GetClassType(classLoader) != method.Method.ClassFile.GetSuperTypeWrapper(classLoader) && cpi.GetClassType(classLoader) != wrapper) ||
+											(type == VerifierTypeWrapper.UninitializedThis && cpi.GetClassType(classLoader) != wrapper.BaseTypeWrapper && cpi.GetClassType(classLoader) != wrapper) ||
 											(!VerifierTypeWrapper.IsNew(type) && type != VerifierTypeWrapper.UninitializedThis))
 										{
 											// TODO oddly enough, Java fails verification for the class without
@@ -1512,9 +1503,13 @@ class MethodAnalyzer
 											// for invokespecial we also need to make sure we're calling ourself or a base class
 											if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
 											{
-												if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && !wrapper.IsAssignableTo(refType))
+												if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && !refType.IsSubTypeOf(wrapper))
 												{
-													throw new VerifyError("Incompatible object argument for invokespecial");
+													throw new VerifyError("Incompatible target object for invokespecial");
+												}
+												if(!targetType.IsUnloadable && !wrapper.IsSubTypeOf(targetType))
+												{
+													throw new VerifyError("Invokespecial cannot call subclass methods");
 												}
 											}
 										}
@@ -2130,29 +2125,13 @@ class MethodAnalyzer
 					}
 					catch(VerifyError x)
 					{
-						x.Class = method.Method.ClassFile.Name;
-						x.Method = method.Method.Name;
-						x.Signature = method.Method.Signature;
-						x.ByteCodeOffset = method.Instructions[i].PC;
 						string opcode = method.Instructions[i].OpCode.ToString();
 						if(opcode.StartsWith("__"))
 						{
 							opcode = opcode.Substring(2);
 						}
-						x.Instruction = opcode;
+						x.SetInfo(method.Instructions[i].PC, method.Method.ClassFile.Name, method.Method.Name, method.Method.Signature, opcode);
 						Tracer.Info(Tracer.Verifier, x.ToString());
-						/*
-						for(int j = 0; j < method.Instructions.Length; j++)
-						{
-							//state[j].DumpLocals();
-							//state[j].DumpStack();
-							if(state[j] != null)
-							{
-								state[j].DumpSubroutines();
-								Console.WriteLine("{0}: {1}", method.Instructions[j].PC, method.Instructions[j].OpCode.ToString());
-							}
-						}
-						*/
 						throw;
 					}
 				}
@@ -2409,12 +2388,12 @@ class MethodAnalyzer
 		return l1;
 	}
 
-	private ClassFile.ConstantPoolItemFMI GetMethodref(int index)
+	private ClassFile.ConstantPoolItemMI GetMethodref(int index)
 	{
 		try
 		{
-			ClassFile.ConstantPoolItemFMI item = method.Method.ClassFile.GetMethodref(index);
-			if(item != null && !(item is ClassFile.ConstantPoolItemFieldref))
+			ClassFile.ConstantPoolItemMI item = method.Method.ClassFile.GetMethodref(index);
+			if(item != null)
 			{
 				return item;
 			}

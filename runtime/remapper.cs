@@ -96,22 +96,23 @@ namespace MapXml
 					if(Class != null)
 					{
 						Debug.Assert(Sig != null);
-						MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), Name, Sig), false);
+						MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(new MethodDescriptor(Name, Sig), false);
 						if(method == null)
 						{
 							throw new InvalidOperationException("method not found: " + Class + "." + Name + Sig);
 						}
+						method.Link();
 						if(opcode.Value == OpCodes.Call.Value)
 						{
-							emitter = method.EmitCall;
+							emitter = CodeEmitter.WrapCall(method);
 						}
 						else if(opcode.Value == OpCodes.Callvirt.Value)
 						{
-							emitter = method.EmitCallvirt;
+							emitter = CodeEmitter.WrapCallvirt(method);
 						}
 						else if(opcode.Value == OpCodes.Newobj.Value)
 						{
-							emitter = method.EmitNewobj;
+							emitter = CodeEmitter.WrapNewobj(method);
 						}
 						else
 						{
@@ -119,7 +120,7 @@ namespace MapXml
 						}
 						// TODO this code is part of what Compiler.CastInterfaceArgs (in compiler.cs) does,
 						// it would be nice if we could avoid this duplication...
-						TypeWrapper[] argTypeWrappers = method.Descriptor.ArgTypeWrappers;
+						TypeWrapper[] argTypeWrappers = method.GetParameters();
 						for(int i = 0; i < argTypeWrappers.Length; i++)
 						{
 							if(argTypeWrappers[i].IsGhost)
@@ -262,8 +263,6 @@ namespace MapXml
 		{
 		}
 	
-		// TODO isinst is broken, because for Java types it returns true/false while for
-		// .NET types it returns null/reference.
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
 			base.Generate(context, ilgen);
@@ -273,9 +272,22 @@ namespace MapXml
 			}
 			else
 			{
-				// NOTE we pass a null context, but that shouldn't be a problem, because
-				// typeWrapper should never be an UnloadableTypeWrapper
-				typeWrapper.EmitInstanceOf(null, ilgen);
+				if(typeWrapper.IsGhost || typeWrapper.IsGhostArray)
+				{
+					ilgen.Emit(OpCodes.Dup);
+					// NOTE we pass a null context, but that shouldn't be a problem, because
+					// typeWrapper should never be an UnloadableTypeWrapper
+					typeWrapper.EmitInstanceOf(null, ilgen);
+					Label endLabel = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Brtrue_S, endLabel);
+					ilgen.Emit(OpCodes.Pop);
+					ilgen.Emit(OpCodes.Ldnull);
+					ilgen.MarkLabel(endLabel);
+				}
+				else
+				{
+					ilgen.Emit(OpCodes.Isinst, typeWrapper.TypeAsTBD);
+				}
 			}
 		}
 	}
@@ -590,7 +602,9 @@ namespace MapXml
 
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
-			ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, ClassLoaderWrapper.GetBootstrapClassLoader().FieldTypeWrapperFromSig(Sig)).EmitSet.Emit(ilgen);
+			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, ClassLoaderWrapper.GetBootstrapClassLoader().FieldTypeWrapperFromSig(Sig));
+			fw.Link();
+			fw.EmitSet(ilgen);
 		}
 	}
 
@@ -662,6 +676,37 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("exceptionBlock")]
+	public sealed class ExceptionBlock : Instruction
+	{
+		public InstructionList @try;
+		public CatchBlock @catch;
+		public InstructionList @finally;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			ilgen.BeginExceptionBlock();
+			@try.Emit(ilgen);
+			if(@catch != null)
+			{
+				ilgen.BeginCatchBlock(Type.GetType(@catch.type, true));
+				@catch.Emit(ilgen);
+			}
+			if(@finally != null)
+			{
+				ilgen.BeginFinallyBlock();
+				@finally.Emit(ilgen);
+			}
+			ilgen.EndExceptionBlock();
+		}
+	}
+
+	public class CatchBlock : InstructionList
+	{
+		[XmlAttribute("type")]
+		public string type;
+	}
+
 	public class InstructionList : CodeEmitter
 	{
 		[XmlElement(typeof(Ldstr))]
@@ -704,14 +749,18 @@ namespace MapXml
 		[XmlElement(typeof(Conv_U4))]
 		[XmlElement(typeof(Conv_U8))]
 		[XmlElement(typeof(Ldlen))]
+		[XmlElement(typeof(ExceptionBlock))]
 		public Instruction[] invoke;
 
 		internal sealed override void Emit(ILGenerator ilgen)
 		{
-			Hashtable context = new Hashtable();
-			for(int i = 0; i < invoke.Length; i++)
+			if(invoke != null)
 			{
-				invoke[i].Generate(context, ilgen);
+				Hashtable context = new Hashtable();
+				for(int i = 0; i < invoke.Length; i++)
+				{
+					invoke[i].Generate(context, ilgen);
+				}
 			}
 		}
 	}
@@ -765,6 +814,7 @@ namespace MapXml
 		public string Type;
 		public InstructionList body;
 		public InstructionList alternateBody;
+		public InstructionList nonvirtualAlternateBody;
 		public Redirect redirect;
 		public Override @override;
 		[XmlElement("throws", typeof(Throws))]

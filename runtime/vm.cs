@@ -205,9 +205,9 @@ public class JVM
 				if(f != null)
 				{
 					// to enhance error reporting we special case loading of netexp
-					// classes, to handle the case where the netexp type doesn't exist
+					// classes, to handle the case where the ikvmstub type doesn't exist
 					// (this happens when the .NET mscorlib.jar is used on Mono, for example)
-					string netexp = f.NetExpAssemblyAttribute;
+					string netexp = f.IKVMAssemblyAttribute;
 					if(netexp != null)
 					{
 						try
@@ -218,7 +218,8 @@ public class JVM
 						{
 							Console.Error.WriteLine("netexp assembly not found: {0}", netexp);
 						}
-						if(DotNetTypeWrapper.LoadDotNetTypeWrapper(name) == null)
+						// HACK create a new wrapper to see if the type is visible now
+						if(DotNetTypeWrapper.CreateDotNetTypeWrapper(name) == null)
 						{
 							return null;
 						}
@@ -300,51 +301,6 @@ public class JVM
 			}
 		}
 
-		private static void EmitRedirect(Type baseType, MethodDescriptor md, MapXml.Method m, ILGenerator ilgen)
-		{
-			string redirName = m.redirect.Name;
-			string redirSig = m.redirect.Sig;
-			if(redirName == null)
-			{
-				redirName = m.Name;
-			}
-			if(redirSig == null)
-			{
-				redirSig = m.Sig;
-			}
-			MethodDescriptor redir = MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), redirName, redirSig);
-			// HACK if the class name contains a comma, we assume it is a .NET type
-			if(m.redirect.Class == null || m.redirect.Class.IndexOf(',') >= 0)
-			{
-				// TODO better error handling
-				Type type = m.redirect.Class == null ? baseType : Type.GetType(m.redirect.Class, true);
-				Type[] redirParamTypes = redir.ArgTypesForDefineMethod;
-				MethodInfo mi = type.GetMethod(m.redirect.Name, redirParamTypes);
-				if(mi == null)
-				{
-					throw new InvalidOperationException();
-				}
-				ilgen.Emit(OpCodes.Call, mi);
-			}
-			else
-			{
-				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(m.redirect.Class);
-				MethodWrapper mw = tw.GetMethodWrapper(redir, false);
-				if(mw == null)
-				{
-					throw new InvalidOperationException("Missing redirect method: " + tw.Name + "." + redir.Name + redir.Signature);
-				}
-				mw.EmitCall.Emit(ilgen);
-			}
-			if(!redir.RetTypeWrapper.IsAssignableTo(md.RetTypeWrapper))
-			{
-				// NOTE we're passing a null context, this is safe because the return type
-				// should always be loadable
-				System.Diagnostics.Debug.Assert(!md.RetTypeWrapper.IsUnloadable);
-				md.RetTypeWrapper.EmitCheckcast(null, ilgen);
-			}
-		}
-
 		private class RemapperTypeWrapper : TypeWrapper
 		{
 			private TypeBuilder typeBuilder;
@@ -352,6 +308,14 @@ public class JVM
 			private Type shadowType;
 			private MapXml.Class classDef;
 			private TypeWrapper[] interfaceWrappers;
+
+			internal override Assembly Assembly
+			{
+				get
+				{
+					return typeBuilder.Assembly;
+				}
+			}
 
 			internal override bool IsRemapped
 			{
@@ -376,7 +340,7 @@ public class JVM
 				return ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
 			}
 
-			internal RemapperTypeWrapper(CompilerClassLoader classLoader, MapXml.Class c)
+			internal RemapperTypeWrapper(CompilerClassLoader classLoader, MapXml.Class c, MapXml.Root map)
 				: base((Modifiers)c.Modifiers, c.Name, GetBaseWrapper(c), classLoader)
 			{
 				classDef = c;
@@ -430,13 +394,13 @@ public class JVM
 					// FXBUG we would like to emit an attribute with a Type argument here, but that doesn't work because
 					// of a bug in SetCustomAttribute that causes type arguments to be serialized incorrectly (if the type
 					// is in the same assembly). Normally we use AttributeHelper.FreezeDry to get around this, but that doesn't
-					// work in this case (to attribute is emitted at all). So we work around by emitting a string instead
+					// work in this case (no attribute is emitted at all). So we work around by emitting a string instead
 					ConstructorInfo remappedClassAttribute = typeof(RemappedClassAttribute).GetConstructor(new Type[] { typeof(string), typeof(Type) });
 					classLoader.assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedClassAttribute, new object[] { name, shadowType }));
 
 					ConstructorInfo remappedTypeAttribute = typeof(RemappedTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
 					typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedTypeAttribute, new object[] { shadowType }));
-					AttributeHelper.HideFromReflection(typeBuilder);
+					AttributeHelper.HideFromJava(typeBuilder);
 				}
 
 				// HACK because of the above FXBUG that prevents us from making the type both abstract and sealed,
@@ -450,98 +414,247 @@ public class JVM
 					ilgen.Emit(OpCodes.Ldnull);
 					ilgen.Emit(OpCodes.Throw);
 				}
+
+				if(c.Constructors != null)
+				{
+					foreach(MapXml.Constructor m in c.Constructors)
+					{
+						AddMethod(new RemappedConstructorWrapper(this, m));
+					}
+				}
+
+				if(c.Methods != null)
+				{
+					// TODO we should also add methods from our super classes (e.g. Throwable should have Object's methods)
+					foreach(MapXml.Method m in c.Methods)
+					{
+						AddMethod(new RemappedMethodWrapper(this, m, map));
+					}
+				}
 			}
 
-			class RemappedMethodWrapper : MethodWrapper
+			abstract class RemappedMethodBaseWrapper : MethodWrapper
 			{
-				private MapXml.Method xmlMethod;
-				private MethodBuilder mbCore;
-				private MethodBuilder mbHelper;
-				private MapXml.Constructor xmlConstructor;
-				private ConstructorBuilder cbCore;
-				private MethodBuilder cbHelper;
-				private MethodInfo interfaceMethod;
-				private ArrayList overriders = new ArrayList();
-
-				private RemappedMethodWrapper(TypeWrapper typeWrapper, MethodDescriptor md, MethodBuilder mbCore, MethodBuilder mbHelper, Modifiers modifiers, MapXml.Method m)
-					: base(typeWrapper, md, mbCore, modifiers, false)
+				internal RemappedMethodBaseWrapper(RemapperTypeWrapper typeWrapper, MethodDescriptor md, Modifiers modifiers)
+					: base(typeWrapper, md, null, null, null, modifiers, MemberFlags.None)
 				{
-					this.xmlMethod = m;
-					this.mbCore = mbCore;
-					this.mbHelper = mbHelper;
+				}
 
-					this.EmitNewobj = CodeEmitter.InternalError;
-					if(mbCore != null)
+				internal abstract MethodBase DoLink();
+
+				internal abstract void Finish();
+
+				internal static void AddDeclaredExceptions(MethodBase mb, MapXml.Throws[] throws)
+				{
+					if(throws != null)
 					{
-						this.EmitCall = CodeEmitter.Create(OpCodes.Call, mbCore);
+						string[] exceptions = new string[throws.Length];
+						for(int i = 0; i < exceptions.Length; i++)
+						{
+							exceptions[i] = throws[i].Class;
+						}
+						AttributeHelper.SetThrowsAttribute(mb, exceptions);
 					}
-					else
-					{
-						this.EmitCall = CodeEmitter.InternalError;
-					}
+				}
+			}
+
+			sealed class RemappedConstructorWrapper : RemappedMethodBaseWrapper
+			{
+				private MapXml.Constructor m;
+				private MethodBuilder mbHelper;
+
+				internal RemappedConstructorWrapper(RemapperTypeWrapper typeWrapper, MapXml.Constructor m)
+					: base(typeWrapper, new MethodDescriptor("<init>", m.Sig), (Modifiers)m.Modifiers)
+				{
+					this.m = m;
+				}
+
+				internal override void EmitCall(ILGenerator ilgen)
+				{
+					ilgen.Emit(OpCodes.Call, (ConstructorInfo)GetMethod());
+				}
+
+				internal override void EmitNewobj(ILGenerator ilgen)
+				{
 					if(mbHelper != null)
 					{
-						this.EmitCallvirt = CodeEmitter.Create(OpCodes.Call, mbHelper);
+						ilgen.Emit(OpCodes.Call, mbHelper);
 					}
 					else
 					{
-						this.EmitCallvirt = CodeEmitter.InternalError;
+						ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)GetMethod());
 					}
 				}
 
-				private RemappedMethodWrapper(RemapperTypeWrapper typeWrapper, MethodDescriptor md, ConstructorBuilder cbCore, MethodBuilder cbHelper, Modifiers modifiers, MapXml.Constructor m)
-					: base(typeWrapper, md, cbCore, modifiers, false)
+				internal override MethodBase DoLink()
 				{
-					this.xmlConstructor = m;
-					this.cbCore = cbCore;
-					this.cbHelper = cbHelper;
-
-					this.EmitCallvirt = CodeEmitter.InternalError;
-					if(typeWrapper.shadowType.IsSealed)
-					{
-						this.EmitCall = CodeEmitter.InternalError;
-						this.EmitNewobj = CodeEmitter.Create(OpCodes.Call, cbHelper);
-					}
-					else
-					{
-						this.EmitCall = CodeEmitter.Create(OpCodes.Call, cbCore);
-						this.EmitNewobj = CodeEmitter.Create(OpCodes.Newobj, cbCore);
-					}
-				}
-
-				private RemappedMethodWrapper(RemapperTypeWrapper typeWrapper, MethodDescriptor md, MethodInfo interfaceMethod, Modifiers modifiers)
-					: base(typeWrapper, md, interfaceMethod, modifiers, false)
-				{
-					this.interfaceMethod = interfaceMethod;
-					this.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, interfaceMethod);
-					this.EmitCall = CodeEmitter.InternalError;
-					this.EmitNewobj = CodeEmitter.InternalError;
-				}
-
-				internal static RemappedMethodWrapper Create(RemapperTypeWrapper typeWrapper, MapXml.Constructor m, MapXml.Root map)
-				{
-					ConstructorBuilder cbCore = null;
-					MethodBuilder cbHelper = null;
 					MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers);
-					MethodDescriptor md = MethodDescriptor.FromNameSig(typeWrapper.GetClassLoader(), "<init>", m.Sig);
-					Type[] paramTypes = md.ArgTypesForDefineMethod;
+					MethodDescriptor md = new MethodDescriptor("<init>", m.Sig);
+					RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
+					Type[] paramTypes = typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig);
+
+					ConstructorBuilder cbCore = null;
 
 					if(typeWrapper.shadowType.IsSealed)
 					{
-						cbHelper = typeWrapper.typeBuilder.DefineMethod("newhelper", attr | MethodAttributes.Static, CallingConventions.Standard, typeWrapper.shadowType, paramTypes);
-						AddDeclaredExceptions(cbHelper, m.throws);
+						mbHelper = typeWrapper.typeBuilder.DefineMethod("newhelper", attr | MethodAttributes.Static, CallingConventions.Standard, typeWrapper.shadowType, paramTypes);
+						AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
+						AttributeHelper.SetNameSig(mbHelper, "<init>", m.Sig);
+						AddDeclaredExceptions(mbHelper, m.throws);
 					}
 					else
 					{
 						cbCore = typeWrapper.typeBuilder.DefineConstructor(attr, CallingConventions.Standard, paramTypes);
 						AddDeclaredExceptions(cbCore, m.throws);
 					}
-					return new RemappedMethodWrapper(typeWrapper, md, cbCore, cbHelper, (Modifiers)m.Modifiers, m);
+					return cbCore;
+				}
+				
+				internal override void Finish()
+				{
+					// TODO we should insert method tracing (if enabled)
+
+					Type[] paramTypes = this.GetParametersForDefineMethod();
+
+					ConstructorBuilder cbCore = GetMethod() as ConstructorBuilder;
+
+					if(cbCore != null)
+					{
+						ILGenerator ilgen = cbCore.GetILGenerator();
+						// TODO we need to support ghost (and other funky?) parameter types
+						if(m.body != null)
+						{
+							// TODO do we need return type conversion here?
+							m.body.Emit(ilgen);
+						}
+						else
+						{
+							ilgen.Emit(OpCodes.Ldarg_0);
+							for(int i = 0; i < paramTypes.Length; i++)
+							{
+								ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
+							}
+							if(m.redirect != null)
+							{
+								throw new NotImplementedException();
+							}
+							else
+							{
+								ConstructorInfo baseCon = DeclaringType.TypeAsTBD.GetConstructor(paramTypes);
+								if(baseCon == null)
+								{
+									// TODO better error handling
+									throw new InvalidOperationException("base class constructor not found: " + DeclaringType.Name + ".<init>" + m.Sig);
+								}
+								ilgen.Emit(OpCodes.Call, baseCon);
+							}
+							ilgen.Emit(OpCodes.Ret);
+						}
+					}
+
+					if(mbHelper != null)
+					{
+						ILGenerator ilgen = mbHelper.GetILGenerator();
+						if(m.redirect != null)
+						{
+							if(m.redirect.Type != "static" || m.redirect.Class == null || m.redirect.Name == null || m.redirect.Sig == null)
+							{
+								throw new NotImplementedException();
+							}
+							MethodDescriptor redir = new MethodDescriptor(m.redirect.Name, m.redirect.Sig);
+							Type[] redirParamTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(m.redirect.Sig);
+							for(int i = 0; i < redirParamTypes.Length; i++)
+							{
+								ilgen.Emit(OpCodes.Ldarg, (short)i);
+							}
+							// HACK if the class name contains a comma, we assume it is a .NET type
+							if(m.redirect.Class.IndexOf(',') >= 0)
+							{
+								Type type = Type.GetType(m.redirect.Class, true);
+								MethodInfo mi = type.GetMethod(m.redirect.Name, redirParamTypes);
+								if(mi == null)
+								{
+									throw new InvalidOperationException();
+								}
+								ilgen.Emit(OpCodes.Call, mi);
+							}
+							else
+							{
+								TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(m.redirect.Class);
+								MethodWrapper mw = tw.GetMethodWrapper(redir, false);
+								if(mw == null)
+								{
+									throw new InvalidOperationException();
+								}
+								mw.Link();
+								mw.EmitCall(ilgen);
+							}
+							// TODO we may need a cast here (or a stack to return type conversion)
+							ilgen.Emit(OpCodes.Ret);
+						}
+						else if(m.alternateBody != null)
+						{
+							m.alternateBody.Emit(ilgen);
+						}
+						else if(m.body != null)
+						{
+							// <body> doesn't make sense for helper constructors (which are actually factory methods)
+							throw new InvalidOperationException();
+						}
+						else
+						{
+							ConstructorInfo baseCon = DeclaringType.TypeAsTBD.GetConstructor(paramTypes);
+							if(baseCon == null)
+							{
+								// TODO better error handling
+								throw new InvalidOperationException("constructor not found: " + DeclaringType.Name + ".<init>" + m.Sig);
+							}
+							for(int i = 0; i < paramTypes.Length; i++)
+							{
+								ilgen.Emit(OpCodes.Ldarg, (short)i);
+							}
+							ilgen.Emit(OpCodes.Newobj, baseCon);
+							ilgen.Emit(OpCodes.Ret);
+						}
+					}
+				}
+			}
+
+			sealed class RemappedMethodWrapper : RemappedMethodBaseWrapper
+			{
+				private MapXml.Method m;
+				private MapXml.Root map;
+				private MethodBuilder mbHelper;
+				private ArrayList overriders = new ArrayList();
+
+				internal RemappedMethodWrapper(RemapperTypeWrapper typeWrapper, MapXml.Method m, MapXml.Root map)
+					: base(typeWrapper, new MethodDescriptor(m.Name, m.Sig), (Modifiers)m.Modifiers)
+				{
+					this.m = m;
+					this.map = map;
 				}
 
-				internal static RemappedMethodWrapper Create(RemapperTypeWrapper typeWrapper, MapXml.Method m, MapXml.Root map)
+				internal override void EmitCall(ILGenerator ilgen)
 				{
-					MethodDescriptor md = MethodDescriptor.FromNameSig(typeWrapper.GetClassLoader(), m.Name, m.Sig);
+					ilgen.Emit(OpCodes.Call, (MethodInfo)GetMethod());
+				}
+
+				internal override void EmitCallvirt(ILGenerator ilgen)
+				{
+					if(mbHelper != null)
+					{
+						ilgen.Emit(OpCodes.Call, mbHelper);
+					}
+					else
+					{
+						ilgen.Emit(OpCodes.Callvirt, (MethodInfo)GetMethod());
+					}
+				}
+
+				internal override MethodBase DoLink()
+				{
+					RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
+					MethodDescriptor md = new MethodDescriptor(m.Name, m.Sig);
 
 					if(typeWrapper.IsInterface)
 					{
@@ -549,7 +662,7 @@ public class JVM
 						{
 							throw new InvalidOperationException(typeWrapper.Name + "." + m.Name + m.Sig);
 						}
-						MethodInfo interfaceMethod = typeWrapper.shadowType.GetMethod(m.@override.Name, md.ArgTypesForDefineMethod);
+						MethodInfo interfaceMethod = typeWrapper.shadowType.GetMethod(m.@override.Name, typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig));
 						if(interfaceMethod == null)
 						{
 							throw new InvalidOperationException(typeWrapper.Name + "." + m.Name + m.Sig);
@@ -582,10 +695,10 @@ public class JVM
 						}
 						CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(RemappedInterfaceMethodAttribute).GetConstructor(new Type[] { typeof(string), typeof(string) }), new object[] { m.Name, m.@override.Name } );
 						typeWrapper.typeBuilder.SetCustomAttribute(cab);
-						RemappedMethodWrapper methodWrapper = new RemappedMethodWrapper(typeWrapper, md, interfaceMethod, (Modifiers)m.Modifiers);
+						MethodBuilder helper = null;
 						if(specialCases != null)
 						{
-							Type[] temp = md.ArgTypesForDefineMethod;
+							Type[] temp = typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig);
 							Type[] argTypes = new Type[temp.Length + 1];
 							temp.CopyTo(argTypes, 1);
 							argTypes[0] = typeWrapper.shadowType;
@@ -594,7 +707,7 @@ public class JVM
 								// FXBUG we use a nested helper class, because Reflection.Emit won't allow us to add a static method to the interface
 								typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class);
 							}
-							MethodBuilder helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.Public | MethodAttributes.Static, md.RetTypeForDefineMethod, argTypes);
+							helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.Public | MethodAttributes.Static, typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsParameterType, argTypes);
 							ILGenerator ilgen = helper.GetILGenerator();
 							foreach(MapXml.Class c in specialCases)
 							{
@@ -608,7 +721,9 @@ public class JVM
 								{
 									ilgen.Emit(OpCodes.Ldarg, (short)i);
 								}
-								tw.GetMethodWrapper(md, false).EmitCallvirt.Emit(ilgen);
+								MethodWrapper mw = tw.GetMethodWrapper(md, false);
+								mw.Link();
+								mw.EmitCallvirt(ilgen);
 								ilgen.Emit(OpCodes.Ret);
 								ilgen.MarkLabel(label);
 								ilgen.Emit(OpCodes.Pop);
@@ -617,301 +732,208 @@ public class JVM
 							{
 								ilgen.Emit(OpCodes.Ldarg, (short)i);
 							}
-							methodWrapper.EmitCallvirt.Emit(ilgen);
+							ilgen.Emit(OpCodes.Callvirt, interfaceMethod);
 							ilgen.Emit(OpCodes.Ret);
-							methodWrapper.EmitCallvirt = CodeEmitter.Create(OpCodes.Call, helper);
 						}
-						return methodWrapper;
-					}
-
-					MethodBuilder mbCore = null;
-					MethodBuilder mbHelper = null;
-					Type[] paramTypes = md.ArgTypesForDefineMethod;
-					Type retType = md.RetTypeForDefineMethod;
-
-					if(typeWrapper.shadowType.IsSealed && (m.Modifiers & MapXml.MapModifiers.Static) == 0)
-					{
-						// skip instance methods in sealed types, but we do need to add them to the overriders
-						if(typeWrapper.BaseTypeWrapper != null && (m.Modifiers & MapXml.MapModifiers.Private) == 0)
-						{
-							RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(md, true) as RemappedMethodWrapper;
-							if(baseMethod != null &&
-								!baseMethod.IsFinal &&
-								!baseMethod.IsPrivate &&
-								(baseMethod.xmlMethod.@override != null ||
-								baseMethod.xmlMethod.redirect != null ||
-								baseMethod.xmlMethod.body != null ||
-								baseMethod.xmlMethod.alternateBody != null))
-							{
-								baseMethod.overriders.Add(typeWrapper);
-							}
-						}
+						mbHelper = helper;
+						return interfaceMethod;
 					}
 					else
 					{
-						MethodInfo overrideMethod = null;
-						MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers);
-						if((m.Modifiers & MapXml.MapModifiers.Static) != 0)
+						MethodBuilder mbCore = null;
+						Type[] paramTypes = typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig);
+						Type retType = typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsParameterType;
+
+						if(typeWrapper.shadowType.IsSealed && (m.Modifiers & MapXml.MapModifiers.Static) == 0)
 						{
-							attr |= MethodAttributes.Static;
-						}
-						else if((m.Modifiers & MapXml.MapModifiers.Private) == 0 && (m.Modifiers & MapXml.MapModifiers.Final) == 0)
-						{
-							attr |= MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
-							if(typeWrapper.BaseTypeWrapper != null)
+							// skip instance methods in sealed types, but we do need to add them to the overriders
+							if(typeWrapper.BaseTypeWrapper != null && (m.Modifiers & MapXml.MapModifiers.Private) == 0)
 							{
 								RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(md, true) as RemappedMethodWrapper;
-								if(baseMethod != null)
+								if(baseMethod != null &&
+									!baseMethod.IsFinal &&
+									!baseMethod.IsPrivate &&
+									(baseMethod.m.@override != null ||
+									baseMethod.m.redirect != null ||
+									baseMethod.m.body != null ||
+									baseMethod.m.alternateBody != null))
 								{
 									baseMethod.overriders.Add(typeWrapper);
-									if(baseMethod.xmlMethod.@override != null)
+								}
+							}
+						}
+						else
+						{
+							MethodInfo overrideMethod = null;
+							MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers);
+							if((m.Modifiers & MapXml.MapModifiers.Static) != 0)
+							{
+								attr |= MethodAttributes.Static;
+							}
+							else if((m.Modifiers & MapXml.MapModifiers.Private) == 0 && (m.Modifiers & MapXml.MapModifiers.Final) == 0)
+							{
+								attr |= MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
+								if(typeWrapper.BaseTypeWrapper != null)
+								{
+									RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(md, true) as RemappedMethodWrapper;
+									if(baseMethod != null)
 									{
-										overrideMethod = typeWrapper.BaseTypeWrapper.TypeAsTBD.GetMethod(baseMethod.xmlMethod.@override.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, paramTypes, null);
-										if(overrideMethod == null)
+										baseMethod.overriders.Add(typeWrapper);
+										if(baseMethod.m.@override != null)
 										{
-											throw new InvalidOperationException();
+											overrideMethod = typeWrapper.BaseTypeWrapper.TypeAsTBD.GetMethod(baseMethod.m.@override.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, paramTypes, null);
+											if(overrideMethod == null)
+											{
+												throw new InvalidOperationException();
+											}
 										}
 									}
 								}
 							}
+							mbCore = typeWrapper.typeBuilder.DefineMethod(m.Name, attr, CallingConventions.Standard, retType, paramTypes);
+							if(overrideMethod != null)
+							{
+								typeWrapper.typeBuilder.DefineMethodOverride(mbCore, overrideMethod);
+							}
+							AddDeclaredExceptions(mbCore, m.throws);
 						}
-						mbCore = typeWrapper.typeBuilder.DefineMethod(m.Name, attr, CallingConventions.Standard, retType, paramTypes);
-						if(overrideMethod != null)
-						{
-							typeWrapper.typeBuilder.DefineMethodOverride(mbCore, overrideMethod);
-						}
-						AddDeclaredExceptions(mbCore, m.throws);
-					}
 
-					if((m.Modifiers & MapXml.MapModifiers.Static) == 0)
-					{
-						// instance methods must have an instancehelper method
-						MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.Static;
-						// NOTE instancehelpers for protected methods are made public,
-						// because cli.System.Object derived types can call protected methods
-						if((m.Modifiers & MapXml.MapModifiers.Protected) != 0)
+						if((m.Modifiers & MapXml.MapModifiers.Static) == 0)
 						{
-							attr &= ~MethodAttributes.MemberAccessMask;
-							attr |= MethodAttributes.Public;
-							// mark with specialname, so that tools (hopefully) won't show them
-							attr |= MethodAttributes.SpecialName;
+							// instance methods must have an instancehelper method
+							MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.Static;
+							// NOTE instancehelpers for protected methods are made public,
+							// because cli.System.Object derived types can call protected methods
+							if((m.Modifiers & MapXml.MapModifiers.Protected) != 0)
+							{
+								attr &= ~MethodAttributes.MemberAccessMask;
+								attr |= MethodAttributes.Public;
+								// mark with specialname, so that tools (hopefully) won't show them
+								attr |= MethodAttributes.SpecialName;
+							}
+							Type[] exParamTypes = new Type[paramTypes.Length + 1];
+							Array.Copy(paramTypes, 0, exParamTypes, 1, paramTypes.Length);
+							exParamTypes[0] = typeWrapper.shadowType;
+							mbHelper = typeWrapper.typeBuilder.DefineMethod("instancehelper_" + m.Name, attr, CallingConventions.Standard, retType, exParamTypes);
+							AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
+							AttributeHelper.SetNameSig(mbHelper, m.Name, m.Sig);
+							AddDeclaredExceptions(mbHelper, m.throws);
 						}
-						Type[] exParamTypes = new Type[paramTypes.Length + 1];
-						Array.Copy(paramTypes, 0, exParamTypes, 1, paramTypes.Length);
-						exParamTypes[0] = typeWrapper.shadowType;
-						mbHelper = typeWrapper.typeBuilder.DefineMethod("instancehelper_" + m.Name, attr, CallingConventions.Standard, retType, exParamTypes);
-						AddDeclaredExceptions(mbHelper, m.throws);
-					}
-
-					return new RemappedMethodWrapper(typeWrapper, md, mbCore, mbHelper, (Modifiers)m.Modifiers, m);
-				}
-
-				private static void AddDeclaredExceptions(MethodBase mb, MapXml.Throws[] throws)
-				{
-					if(throws != null)
-					{
-						string[] exceptions = new string[throws.Length];
-						for(int i = 0; i < exceptions.Length; i++)
-						{
-							exceptions[i] = throws[i].Class;
-						}
-						AttributeHelper.SetThrowsAttribute(mb, exceptions);
+						return mbCore;
 					}
 				}
 
-				internal void Finish()
+				internal override void Finish()
 				{
 					// TODO we should insert method tracing (if enabled)
-					if(xmlConstructor != null)
+					MethodDescriptor md = this.Descriptor;
+					Type[] paramTypes = this.GetParametersForDefineMethod();
+
+					MethodBuilder mbCore = GetMethod() as MethodBuilder;
+
+					// NOTE sealed types don't have instance methods (only instancehelpers)
+					if(mbCore != null)
 					{
-						System.Diagnostics.Debug.Assert(xmlMethod == null);
-
-						MapXml.Constructor m = xmlConstructor;
-						Type[] paramTypes = this.Descriptor.ArgTypesForDefineMethod;
-
-						if(cbCore != null)
+						ILGenerator ilgen = mbCore.GetILGenerator();
+						MethodInfo baseMethod = null;
+						if(m.@override != null)
 						{
-							ILGenerator ilgen = cbCore.GetILGenerator();
-							// TODO we need to support ghost (and other funky?) parameter types
-							if(m.body != null)
+							baseMethod = DeclaringType.TypeAsTBD.GetMethod(m.@override.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, paramTypes, null);
+							if(baseMethod == null)
 							{
-								// TODO do we need return type conversion here?
-								m.body.Emit(ilgen);
-							}
-							else
-							{
-								ilgen.Emit(OpCodes.Ldarg_0);
-								for(int i = 0; i < paramTypes.Length; i++)
-								{
-									ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
-								}
-								if(m.redirect != null)
-								{
-									throw new NotImplementedException();
-								}
-								else
-								{
-									ConstructorInfo baseCon = DeclaringType.TypeAsTBD.GetConstructor(paramTypes);
-									if(baseCon == null)
-									{
-										// TODO better error handling
-										throw new InvalidOperationException("base class constructor not found: " + DeclaringType.Name + ".<init>" + m.Sig);
-									}
-									ilgen.Emit(OpCodes.Call, baseCon);
-								}
-								ilgen.Emit(OpCodes.Ret);
-							}
-						}
-
-						if(cbHelper != null)
-						{
-							ILGenerator ilgen = cbHelper.GetILGenerator();
-							if(m.redirect != null)
-							{
-								if(m.redirect.Type != "static" || m.redirect.Class == null || m.redirect.Name == null || m.redirect.Sig == null)
-								{
-									throw new NotImplementedException();
-								}
-								MethodDescriptor redir = MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), m.redirect.Name, m.redirect.Sig);
-								Type[] redirParamTypes = redir.ArgTypesForDefineMethod;
-								for(int i = 0; i < redirParamTypes.Length; i++)
-								{
-									ilgen.Emit(OpCodes.Ldarg, (short)i);
-								}
-								// HACK if the class name contains a comma, we assume it is a .NET type
-								if(m.redirect.Class.IndexOf(',') >= 0)
-								{
-									Type type = Type.GetType(m.redirect.Class, true);
-									MethodInfo mi = type.GetMethod(m.redirect.Name, redirParamTypes);
-									if(mi == null)
-									{
-										throw new InvalidOperationException();
-									}
-									ilgen.Emit(OpCodes.Call, mi);
-								}
-								else
-								{
-									TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(m.redirect.Class);
-									MethodWrapper mw = tw.GetMethodWrapper(redir, false);
-									if(mw == null)
-									{
-										throw new InvalidOperationException();
-									}
-									mw.EmitCall.Emit(ilgen);
-								}
-								// TODO we may need a cast here (or a stack to return type conversion)
-								ilgen.Emit(OpCodes.Ret);
-							}
-							else if(m.alternateBody != null)
-							{
-								m.alternateBody.Emit(ilgen);
-							}
-							else if(m.body != null)
-							{
-								// <body> doesn't make sense for helper constructors (which are actually factory methods)
 								throw new InvalidOperationException();
 							}
-							else
+							((TypeBuilder)DeclaringType.TypeAsBaseType).DefineMethodOverride(mbCore, baseMethod);
+						}
+						// TODO we need to support ghost (and other funky?) parameter types
+						if(m.body != null)
+						{
+							// we manually walk the instruction list, because we need to special case the ret instructions
+							Hashtable context = new Hashtable();
+							foreach(MapXml.Instruction instr in m.body.invoke)
 							{
-								ConstructorInfo baseCon = DeclaringType.TypeAsTBD.GetConstructor(paramTypes);
-								if(baseCon == null)
+								if(instr is MapXml.Ret)
 								{
-									// TODO better error handling
-									throw new InvalidOperationException("constructor not found: " + DeclaringType.Name + ".<init>" + m.Sig);
+									this.ReturnType.EmitConvStackToParameterType(ilgen, null);
 								}
-								for(int i = 0; i < paramTypes.Length; i++)
-								{
-									ilgen.Emit(OpCodes.Ldarg, (short)i);
-								}
-								ilgen.Emit(OpCodes.Newobj, baseCon);
-								ilgen.Emit(OpCodes.Ret);
+								instr.Generate(context, ilgen);
 							}
 						}
-					}
-					else if(xmlMethod != null)
-					{
-						MapXml.Method m = xmlMethod;
-						MethodDescriptor md = this.Descriptor;
-						Type[] paramTypes = md.ArgTypesForDefineMethod;
-
-						// NOTE sealed types don't have instance methods (only instancehelpers)
-						if(mbCore != null)
+						else
 						{
-							ILGenerator ilgen = mbCore.GetILGenerator();
-							MethodInfo baseMethod = null;
-							if(m.@override != null)
+							int thisOffset = 0;
+							if((m.Modifiers & MapXml.MapModifiers.Static) == 0)
 							{
-								baseMethod = DeclaringType.TypeAsTBD.GetMethod(m.@override.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, paramTypes, null);
+								thisOffset = 1;
+								ilgen.Emit(OpCodes.Ldarg_0);
+							}
+							for(int i = 0; i < paramTypes.Length; i++)
+							{
+								ilgen.Emit(OpCodes.Ldarg, (short)(i + thisOffset));
+							}
+							if(m.redirect != null)
+							{
+								EmitRedirect(DeclaringType.TypeAsTBD, ilgen);
+							}
+							else
+							{
 								if(baseMethod == null)
 								{
-									throw new InvalidOperationException();
+									throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
 								}
-								((TypeBuilder)DeclaringType.TypeAsBaseType).DefineMethodOverride(mbCore, baseMethod);
+								ilgen.Emit(OpCodes.Call, baseMethod);
 							}
-							// TODO we need to support ghost (and other funky?) parameter types
-							if(m.body != null)
-							{
-								// we manually walk the instruction list, because we need to special case the ret instructions
-								Hashtable context = new Hashtable();
-								foreach(MapXml.Instruction instr in m.body.invoke)
-								{
-									if(instr is MapXml.Ret)
-									{
-										md.RetTypeWrapper.EmitConvStackToParameterType(ilgen, null);
-									}
-									instr.Generate(context, ilgen);
-								}
-							}
-							else
-							{
-								int thisOffset = 0;
-								if((m.Modifiers & MapXml.MapModifiers.Static) == 0)
-								{
-									thisOffset = 1;
-									ilgen.Emit(OpCodes.Ldarg_0);
-								}
-								for(int i = 0; i < paramTypes.Length; i++)
-								{
-									ilgen.Emit(OpCodes.Ldarg, (short)(i + thisOffset));
-								}
-								if(m.redirect != null)
-								{
-									EmitRedirect(DeclaringType.TypeAsTBD, md, m, ilgen);
-								}
-								else
-								{
-									if(baseMethod == null)
-									{
-										throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
-									}
-									ilgen.Emit(OpCodes.Call, baseMethod);
-								}
-								md.RetTypeWrapper.EmitConvStackToParameterType(ilgen, null);
-								ilgen.Emit(OpCodes.Ret);
-							}
+							this.ReturnType.EmitConvStackToParameterType(ilgen, null);
+							ilgen.Emit(OpCodes.Ret);
 						}
+					}
 
-						// NOTE static methods don't have helpers
-						if(mbHelper != null)
+					// NOTE static methods don't have helpers
+					if(mbHelper != null)
+					{
+						ILGenerator ilgen = mbHelper.GetILGenerator();
+						// check "this" for null
+						if(m.@override != null && m.redirect == null && m.body == null && m.alternateBody == null)
 						{
-							ILGenerator ilgen = mbHelper.GetILGenerator();
-							// check "this" for null
-							if(m.@override != null && m.redirect == null && m.body == null && m.alternateBody == null)
+							// we're going to be calling the overridden version, so we don't need the null check
+						}
+						else
+						{
+							ilgen.Emit(OpCodes.Ldarg_0);
+							EmitHelper.NullCheck(ilgen);
+						}
+						if(mbCore != null && 
+							(m.@override == null || m.redirect != null) &&
+							(m.Modifiers & MapXml.MapModifiers.Private) == 0 && (m.Modifiers & MapXml.MapModifiers.Final) == 0)
+						{
+							// TODO we should have a way to supress this for overridden methods
+							ilgen.Emit(OpCodes.Ldarg_0);
+							ilgen.Emit(OpCodes.Isinst, DeclaringType.TypeAsBaseType);
+							ilgen.Emit(OpCodes.Dup);
+							Label skip = ilgen.DefineLabel();
+							ilgen.Emit(OpCodes.Brfalse_S, skip);
+							for(int i = 0; i < paramTypes.Length; i++)
 							{
-								// we're going to be calling the overridden version, so we don't need the null check
+								ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
+							}
+							ilgen.Emit(OpCodes.Callvirt, mbCore);
+							this.ReturnType.EmitConvStackToParameterType(ilgen, null);
+							ilgen.Emit(OpCodes.Ret);
+							ilgen.MarkLabel(skip);
+							ilgen.Emit(OpCodes.Pop);
+						}
+						foreach(RemapperTypeWrapper overrider in overriders)
+						{
+							RemappedMethodWrapper mw = (RemappedMethodWrapper)overrider.GetMethodWrapper(md, false);
+							if(mw.m.redirect == null && mw.m.body == null && mw.m.alternateBody == null)
+							{
+								// the overridden method doesn't actually do anything special (that means it will end
+								// up calling the .NET method it overrides), so we don't need to special case this
 							}
 							else
 							{
 								ilgen.Emit(OpCodes.Ldarg_0);
-								EmitHelper.NullCheck(ilgen);
-							}
-							if(mbCore != null && 
-								(m.@override == null || m.redirect != null) &&
-								(m.Modifiers & MapXml.MapModifiers.Private) == 0 && (m.Modifiers & MapXml.MapModifiers.Final) == 0)
-							{
-								// TODO we should have a way to supress this for overridden methods
-								ilgen.Emit(OpCodes.Ldarg_0);
-								ilgen.Emit(OpCodes.Isinst, DeclaringType.TypeAsBaseType);
+								ilgen.Emit(OpCodes.Isinst, overrider.TypeAsTBD);
 								ilgen.Emit(OpCodes.Dup);
 								Label skip = ilgen.DefineLabel();
 								ilgen.Emit(OpCodes.Brfalse_S, skip);
@@ -919,90 +941,143 @@ public class JVM
 								{
 									ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
 								}
-								ilgen.Emit(OpCodes.Callvirt, mbCore);
-								md.RetTypeWrapper.EmitConvStackToParameterType(ilgen, null);
+								mw.Link();
+								mw.EmitCallvirt(ilgen);
+								this.ReturnType.EmitConvStackToParameterType(ilgen, null);
 								ilgen.Emit(OpCodes.Ret);
 								ilgen.MarkLabel(skip);
 								ilgen.Emit(OpCodes.Pop);
 							}
-							foreach(RemapperTypeWrapper overrider in overriders)
+						}
+						if(m.body != null || m.alternateBody != null)
+						{
+							MapXml.InstructionList body = m.alternateBody == null ? m.body : m.alternateBody;
+							// we manually walk the instruction list, because we need to special case the ret instructions
+							Hashtable context = new Hashtable();
+							foreach(MapXml.Instruction instr in body.invoke)
 							{
-								RemappedMethodWrapper mw = (RemappedMethodWrapper)overrider.GetMethodWrapper(md, false);
-								if(mw.xmlMethod.redirect == null && mw.xmlMethod.body == null && mw.xmlMethod.alternateBody == null)
+								if(instr is MapXml.Ret)
 								{
-									// the overridden method doesn't actually do anything special (that means it will end
-									// up calling the .NET method it overrides), so we don't need to special case this
+									this.ReturnType.EmitConvStackToParameterType(ilgen, null);
 								}
-								else
-								{
-									ilgen.Emit(OpCodes.Ldarg_0);
-									ilgen.Emit(OpCodes.Isinst, overrider.TypeAsTBD);
-									ilgen.Emit(OpCodes.Dup);
-									Label skip = ilgen.DefineLabel();
-									ilgen.Emit(OpCodes.Brfalse_S, skip);
-									for(int i = 0; i < paramTypes.Length; i++)
-									{
-										ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
-									}
-									mw.EmitCallvirt.Emit(ilgen);
-									md.RetTypeWrapper.EmitConvStackToParameterType(ilgen, null);
-									ilgen.Emit(OpCodes.Ret);
-									ilgen.MarkLabel(skip);
-									ilgen.Emit(OpCodes.Pop);
-								}
+								instr.Generate(context, ilgen);
 							}
-							if(m.body != null || m.alternateBody != null)
+						}
+						else
+						{
+							Type shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
+							for(int i = 0; i < paramTypes.Length + 1; i++)
 							{
-								MapXml.InstructionList body = m.alternateBody == null ? m.body : m.alternateBody;
-								// we manually walk the instruction list, because we need to special case the ret instructions
-								Hashtable context = new Hashtable();
-								foreach(MapXml.Instruction instr in body.invoke)
+								ilgen.Emit(OpCodes.Ldarg, (short)i);
+							}
+							if(m.redirect != null)
+							{
+								EmitRedirect(shadowType, ilgen);
+							}
+							else if(m.@override != null)
+							{
+								MethodInfo baseMethod = shadowType.GetMethod(m.@override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+								if(baseMethod == null)
 								{
-									if(instr is MapXml.Ret)
-									{
-										md.RetTypeWrapper.EmitConvStackToParameterType(ilgen, null);
-									}
-									instr.Generate(context, ilgen);
+									throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
 								}
+								ilgen.Emit(OpCodes.Callvirt, baseMethod);
 							}
 							else
 							{
-								Type shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
-								for(int i = 0; i < paramTypes.Length + 1; i++)
+								RemappedMethodWrapper baseMethod = DeclaringType.BaseTypeWrapper.GetMethodWrapper(md, true) as RemappedMethodWrapper;
+								if(baseMethod == null || baseMethod.m.@override == null)
 								{
-									ilgen.Emit(OpCodes.Ldarg, (short)i);
+									throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
 								}
-								if(m.redirect != null)
+								MethodInfo overrideMethod = shadowType.GetMethod(baseMethod.m.@override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+								if(overrideMethod == null)
 								{
-									EmitRedirect(shadowType, md, m, ilgen);
+									throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
 								}
-								else if(m.@override != null)
-								{
-									MethodInfo baseMethod = shadowType.GetMethod(m.@override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
-									if(baseMethod == null)
-									{
-										throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
-									}
-									ilgen.Emit(OpCodes.Callvirt, baseMethod);
-								}
-								else
-								{
-									RemappedMethodWrapper baseMethod = DeclaringType.BaseTypeWrapper.GetMethodWrapper(md, true) as RemappedMethodWrapper;
-									if(baseMethod == null || baseMethod.xmlMethod.@override == null)
-									{
-										throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
-									}
-									MethodInfo overrideMethod = shadowType.GetMethod(baseMethod.xmlMethod.@override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
-									if(overrideMethod == null)
-									{
-										throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
-									}
-									ilgen.Emit(OpCodes.Callvirt, overrideMethod);
-								}
-								md.RetTypeWrapper.EmitConvStackToParameterType(ilgen, null);
-								ilgen.Emit(OpCodes.Ret);
+								ilgen.Emit(OpCodes.Callvirt, overrideMethod);
 							}
+							this.ReturnType.EmitConvStackToParameterType(ilgen, null);
+							ilgen.Emit(OpCodes.Ret);
 						}
+					}
+
+					// do we need a helper for non-virtual reflection invocation?
+					if(m.nonvirtualAlternateBody != null || (m.@override != null && overriders.Count > 0))
+					{
+						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
+						Type[] argTypes = new Type[paramTypes.Length + 1];
+						argTypes[0] = typeWrapper.TypeAsParameterType;
+						this.GetParametersForDefineMethod().CopyTo(argTypes, 1);
+						MethodBuilder mb = typeWrapper.typeBuilder.DefineMethod("nonvirtualhelper/" + this.Name, MethodAttributes.Private | MethodAttributes.Static, this.ReturnTypeForDefineMethod, argTypes);
+						ILGenerator ilgen = mb.GetILGenerator();
+						if(m.nonvirtualAlternateBody != null)
+						{
+							m.nonvirtualAlternateBody.Emit(ilgen);
+						}
+						else
+						{
+							Type shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
+							MethodInfo baseMethod = shadowType.GetMethod(m.@override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+							if(baseMethod == null)
+							{
+								throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
+							}
+							ilgen.Emit(OpCodes.Ldarg_0);
+							for(int i = 0; i < paramTypes.Length; i++)
+							{
+								ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
+							}
+							ilgen.Emit(OpCodes.Call, baseMethod);
+							ilgen.Emit(OpCodes.Ret);
+						}
+					}
+				}
+
+				private void EmitRedirect(Type baseType, ILGenerator ilgen)
+				{
+					string redirName = m.redirect.Name;
+					string redirSig = m.redirect.Sig;
+					if(redirName == null)
+					{
+						redirName = m.Name;
+					}
+					if(redirSig == null)
+					{
+						redirSig = m.Sig;
+					}
+					ClassLoaderWrapper classLoader = ClassLoaderWrapper.GetBootstrapClassLoader();
+					MethodDescriptor redir = new MethodDescriptor(redirName, redirSig);
+					// HACK if the class name contains a comma, we assume it is a .NET type
+					if(m.redirect.Class == null || m.redirect.Class.IndexOf(',') >= 0)
+					{
+						// TODO better error handling
+						Type type = m.redirect.Class == null ? baseType : Type.GetType(m.redirect.Class, true);
+						Type[] redirParamTypes = classLoader.ArgTypeListFromSig(redirSig);
+						MethodInfo mi = type.GetMethod(m.redirect.Name, redirParamTypes);
+						if(mi == null)
+						{
+							throw new InvalidOperationException();
+						}
+						ilgen.Emit(OpCodes.Call, mi);
+					}
+					else
+					{
+						TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(m.redirect.Class);
+						MethodWrapper mw = tw.GetMethodWrapper(redir, false);
+						if(mw == null)
+						{
+							throw new InvalidOperationException("Missing redirect method: " + tw.Name + "." + redir.Name + redir.Signature);
+						}
+						mw.Link();
+						mw.EmitCall(ilgen);
+					}
+					if(!classLoader.RetTypeWrapperFromSig(redirSig).IsAssignableTo(this.ReturnType))
+					{
+						// NOTE we're passing a null context, this is safe because the return type
+						// should always be loadable
+						System.Diagnostics.Debug.Assert(!this.ReturnType.IsUnloadable);
+						this.ReturnType.EmitCheckcast(null, ilgen);
 					}
 				}
 			}
@@ -1032,23 +1107,7 @@ public class JVM
 					interfaceWrappers = TypeWrapper.EmptyArray;
 				}
 
-				if(c.Constructors != null)
-				{
-					foreach(MapXml.Constructor m in c.Constructors)
-					{
-						AddMethod(RemappedMethodWrapper.Create(this, m, map));
-					}
-				}
-
-				if(c.Methods != null)
-				{
-					// TODO we should also add methods from our super classes (e.g. Throwable should have Object's methods)
-					foreach(MapXml.Method m in c.Methods)
-					{
-						AddMethod(RemappedMethodWrapper.Create(this, m, map));
-					}
-				}
-
+				// TODO fields should be moved to the RemapperTypeWrapper constructor as well
 				if(c.Fields != null)
 				{
 					foreach(MapXml.Field f in c.Fields)
@@ -1056,7 +1115,7 @@ public class JVM
 						if(f.redirect != null)
 						{
 							TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(f.redirect.Class);
-							MethodDescriptor redir = MethodDescriptor.FromNameSig(GetClassLoader(), f.redirect.Name, f.redirect.Sig);
+							MethodDescriptor redir = new MethodDescriptor(f.redirect.Name, f.redirect.Sig);
 							MethodWrapper method = tw.GetMethodWrapper(redir, false);
 							if(method == null || !method.IsStatic)
 							{
@@ -1064,7 +1123,8 @@ public class JVM
 								throw new InvalidOperationException("remapping field: " + f.Name + f.Sig + " not found");
 							}
 							// TODO emit an static helper method that enables access to the field at runtime
-							AddField(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, null, method.EmitCall, CodeEmitter.InternalError));
+							method.Link();
+							AddField(FieldWrapper.Create1(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, null, CodeEmitter.WrapCall(method), CodeEmitter.InternalError));
 						}
 						else if((f.Modifiers & MapXml.MapModifiers.Static) != 0)
 						{
@@ -1091,12 +1151,11 @@ public class JVM
 										throw new NotImplementedException("remapped constant field of type: " + f.Sig);
 								}
 								fb.SetConstant(constant);
-								CodeEmitter getter = CodeEmitter.CreateLoadConstant(constant);
-								AddField(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, getter, CodeEmitter.InternalError, constant));
+								AddField(new FieldWrapper.ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant));
 							}
 							else
 							{
-								AddField(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Sig, (Modifiers)f.Modifiers));
+								AddField(FieldWrapper.Create3(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Sig, (Modifiers)f.Modifiers));
 							}
 						}
 						else
@@ -1111,7 +1170,15 @@ public class JVM
 
 			internal void Process3rdPass()
 			{
-				foreach(RemappedMethodWrapper m in GetMethods())
+				foreach(RemappedMethodBaseWrapper m in GetMethods())
+				{
+					m.Link();
+				}
+			}
+
+			internal void Process4thPass()
+			{
+				foreach(RemappedMethodBaseWrapper m in GetMethods())
 				{
 					m.Finish();
 				}
@@ -1141,6 +1208,11 @@ public class JVM
 				}
 			}
 
+			internal override MethodBase LinkMethod(MethodWrapper mw)
+			{
+				return ((RemappedMethodBaseWrapper)mw).DoLink();
+			}
+
 			internal override TypeWrapper DeclaringTypeWrapper
 			{
 				get
@@ -1150,19 +1222,13 @@ public class JVM
 				}
 			}
 
-			internal override void Finish()
+			internal override void Finish(bool forDebugSave)
 			{
 			}
 
 			protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 			{
 				// we don't resolve fields lazily
-				return null;
-			}
-
-			protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
-			{
-				// we don't resolve methods lazily
 				return null;
 			}
 
@@ -1225,7 +1291,7 @@ public class JVM
 			{
 				if(c.Shadows != null)
 				{
-					remapped.Add(c.Name, new RemapperTypeWrapper(this, c));
+					remapped.Add(c.Name, new RemapperTypeWrapper(this, c, map));
 				}
 			}
 
@@ -1244,10 +1310,17 @@ public class JVM
 
 		internal void FinishRemappedTypes()
 		{
-			// 3rd pass, implement methods/fields and bake the type
+			// 3rd pass, link the methods. Note that a side effect of the linking is the
+			// twiddling with the overriders array in the base methods, so we need to do this
+			// as a separate pass before we compile the methods
 			foreach(RemapperTypeWrapper typeWrapper in remapped.Values)
 			{
 				typeWrapper.Process3rdPass();
+			}
+			// 4th pass, implement methods/fields and bake the type
+			foreach(RemapperTypeWrapper typeWrapper in remapped.Values)
+			{
+				typeWrapper.Process4thPass();
 			}
 		}
 	}
@@ -1284,12 +1357,12 @@ public class JVM
 			{
 				f = new ClassFile(classes[i], 0, classes[i].Length, null);
 			}
-			catch(ClassFile.UnsupportedClassVersionError x)
+			catch(UnsupportedClassVersionError x)
 			{
 				Console.Error.WriteLine("Error: unsupported class file version: {0}", x.Message);
 				return;
 			}
-			catch(ClassFile.ClassFormatError x)
+			catch(ClassFormatError x)
 			{
 				Console.Error.WriteLine("Error: invalid class file: {0}", x.Message);
 				return;
@@ -1387,8 +1460,8 @@ public class JVM
 		// anonymous inner classes do not have a reference to their outer class
 		foreach(ClassFile classFile in h.Values)
 		{
-			// don't handle inner classes for NetExp types
-			if(classFile.NetExpAssemblyAttribute == null)
+			// don't handle inner classes for ikvmstub types
+			if(classFile.IKVMAssemblyAttribute == null)
 			{
 				ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
 				if(innerClasses != null)
@@ -1473,12 +1546,13 @@ public class JVM
 			}
 			if(s == mainClass && wrapper != null)
 			{
-				MethodWrapper mw = wrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(loader, "main", "([Ljava.lang.String;)V"), false);
+				MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor("main", "([Ljava.lang.String;)V"), false);
 				if(mw == null)
 				{
 					Console.Error.WriteLine("Error: main method not found");
 					return;
 				}
+				mw.Link();
 				MethodInfo method = mw.GetMethod() as MethodInfo;
 				if(method == null)
 				{
@@ -1534,32 +1608,49 @@ public class JVM
 
 	internal static void CriticalFailure(string message, Exception x)
 	{
-		Tracer.Error(Tracer.Runtime, "CRITICAL FAILURE: {0}", message);
-		// NOTE we use reflection to invoke MessageBox.Show, to make sure we run on Mono as well
-		Assembly winForms = IsUnix ? null : Assembly.LoadWithPartialName("System.Windows.Forms");
-		Type messageBox = null;
-		if(winForms != null)
+		try
 		{
-			messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
-		}
-		message = String.Format("****** Critical Failure: {1} ******{0}" +
+			Tracer.Error(Tracer.Runtime, "CRITICAL FAILURE: {0}", message);
+			// NOTE we use reflection to invoke MessageBox.Show, to make sure we run on Mono as well
+			Assembly winForms = IsUnix ? null : Assembly.LoadWithPartialName("System.Windows.Forms");
+			Type messageBox = null;
+			if(winForms != null)
+			{
+				messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
+			}
+			message = String.Format("****** Critical Failure: {1} ******{0}" +
 				"{2}{0}" + 
 				"{3}{0}" +
 				"{4}",
-			Environment.NewLine,
-			message,
-			x,
-			x != null ? new StackTrace(x, true).ToString() : "",
-			new StackTrace(true));
-		if(messageBox != null)
-		{
-			messageBox.InvokeMember("Show", BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.Public, null, null, new object[] { message, "IKVM.NET Critical Failure" });
+				Environment.NewLine,
+				message,
+				x,
+				x != null ? new StackTrace(x, true).ToString() : "",
+				new StackTrace(true));
+			if(messageBox != null)
+			{
+				try
+				{
+					messageBox.InvokeMember("Show", BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.Public, null, null, new object[] { message, "IKVM.NET Critical Failure" });
+				}
+				catch
+				{
+					Console.Error.WriteLine(message);
+				}
+			}
+			else
+			{
+				Console.Error.WriteLine(message);
+			}
 		}
-		else
+		catch(Exception ex)
 		{
-			Console.Error.WriteLine(message);
+			Console.Error.WriteLine(ex);
 		}
-		Environment.Exit(1);
+		finally
+		{
+			Environment.Exit(666);
+		}
 	}
 
 	private static void ser_UnknownElement(object sender, System.Xml.Serialization.XmlElementEventArgs e)

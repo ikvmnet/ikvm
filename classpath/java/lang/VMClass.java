@@ -40,9 +40,9 @@ abstract class VMClass
     }
 
     // HACK public because we want to create a delegate to call it
-    public static Object createClass(Object wrapper)
+    public static Object createClass(Object wrapper, Object protectionDomain)
     {
-	return new Class(wrapper);
+	return new Class(wrapper, (java.security.ProtectionDomain)protectionDomain);
     }
 
     // HACK we need a way to call ClassLoader.loadClass() from C#, so we need this helper method
@@ -200,7 +200,6 @@ abstract class VMClass
     private static native void initialize(Object wrapper);
 
     static native Class loadArrayClass(String name, Object classLoader);
-    static native Class loadBootstrapClass(String name, boolean initialize);
 
     static native void throwException(Throwable t);
 

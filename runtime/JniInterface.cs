@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Diagnostics;
 using System.Text;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -31,17 +32,25 @@ public sealed class JniHelper
 	// NOTE sig contains slashed class names
 	public static IntPtr GetMethodCookie(object clazz, string name, string sig, bool isStatic)
 	{
-		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
-		wrapper.Finish();
-		MethodWrapper mw = wrapper.GetMethodWrapper(MethodDescriptor.FromNameSig(wrapper.GetClassLoader(), name, sig.Replace('/', '.')), true);
-		if(mw != null)
+		try
 		{
-			if(mw.IsStatic == isStatic)
+			TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+			MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(name, sig.Replace('/', '.')), true);
+			if(mw != null)
 			{
-				return mw.Cookie;
+				if(mw.IsStatic == isStatic)
+				{
+					mw.Link();
+					return mw.Cookie;
+				}
 			}
+			return (IntPtr)0;
 		}
-		return (IntPtr)0;
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
 	}
 
 	// this method returns a simplified method argument descriptor.
@@ -51,89 +60,295 @@ public sealed class JniHelper
 	// "([Ljava.lang.String;)V" -> "L"
 	public static string GetMethodArgList(IntPtr cookie)
 	{
-		StringBuilder sb = new StringBuilder();
-		string s = MethodWrapper.FromCookie(cookie).Descriptor.Signature;
-		for(int i = 1;; i++)
+		try
 		{
-			switch(s[i])
+			StringBuilder sb = new StringBuilder();
+			string s = MethodWrapper.FromCookie(cookie).Signature;
+			for(int i = 1;; i++)
 			{
-				case '[':
-					while(s[i] == '[') i++;
-					if(s[i] == 'L')
-					{
+				switch(s[i])
+				{
+					case '[':
+						while(s[i] == '[') i++;
+						if(s[i] == 'L')
+						{
+							while(s[i] != ';') i++;
+						}
+						sb.Append('L');
+						break;
+					case 'L':
 						while(s[i] != ';') i++;
-					}
-					sb.Append('L');
-					break;
-				case 'L':
-					while(s[i] != ';') i++;
-					sb.Append('L');
-					break;
-				case ')':
-					return sb.ToString();
-				default:
-					sb.Append(s[i]);
-					break;
+						sb.Append('L');
+						break;
+					case ')':
+						return sb.ToString();
+					default:
+						sb.Append(s[i]);
+						break;
+				}
 			}
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
 		}
 	}
 
 	public static object InvokeMethod(IntPtr cookie, object obj, object[] args, bool nonVirtual)
 	{
-		return MethodWrapper.FromCookie(cookie).Invoke(obj, args, nonVirtual);
+		try
+		{
+			return MethodWrapper.FromCookie(cookie).Invoke(obj, args, nonVirtual);
+		}
+		catch(Exception x)
+		{
+			throw ExceptionHelper.MapExceptionFast(x);
+		}
 	}
 
 	// NOTE sig contains slashed class names
 	public static IntPtr GetFieldCookie(object clazz, string name, string sig, bool isStatic)
 	{
-		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
-		wrapper.Finish();
-		// TODO what about searching the base classes?
-		FieldWrapper fw = wrapper.GetFieldWrapper(name, wrapper.GetClassLoader().ExpressionTypeWrapper(sig.Replace('/', '.')));
-		if(fw != null)
+		try
 		{
-			if(fw.IsStatic == isStatic)
+			TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+			wrapper.Finish();
+			// TODO what about searching the base classes?
+			FieldWrapper fw = wrapper.GetFieldWrapper(name, wrapper.GetClassLoader().ExpressionTypeWrapper(sig.Replace('/', '.')));
+			if(fw != null)
 			{
-				return fw.Cookie;
+				if(fw.IsStatic == isStatic)
+				{
+					return fw.Cookie;
+				}
 			}
+			return (IntPtr)0;
 		}
-		return (IntPtr)0;
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
 	}
 
 	public static void SetFieldValue(IntPtr cookie, object obj, object val)
 	{
-		FieldWrapper.FromCookie(cookie).SetValue(obj, val);
+		try
+		{
+			FieldWrapper.FromCookie(cookie).SetValue(obj, val);
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
 	}
 
 	public static object GetFieldValue(IntPtr cookie, object obj)
 	{
-		return FieldWrapper.FromCookie(cookie).GetValue(obj);
+		try
+		{
+			return FieldWrapper.FromCookie(cookie).GetValue(obj);
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
 	}
 
 	public static object FindClass(string javaName)
 	{
-		// TODO instead of using the bootstrap class loader, we need to use the system (aka application) class loader
-		TypeWrapper wrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(javaName.Replace('/', '.'));
-		wrapper.Finish();
-		return NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper);
+		try
+		{
+			// TODO instead of using the bootstrap class loader, we need to use the system (aka application) class loader
+			TypeWrapper wrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(javaName.Replace('/', '.'));
+			wrapper.Finish();
+			return NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper);
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
 	}
 
 	public static Exception UnsatisfiedLinkError(string msg)
 	{
-		return JavaException.UnsatisfiedLinkError(msg);
+		try
+		{
+			return JavaException.UnsatisfiedLinkError(msg);
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
 	}
 
+	[Obsolete]
 	public static object GetClassFromType(Type type)
 	{
-		return NativeCode.java.lang.VMClass.getClassFromType(type);
+		try
+		{
+			return NativeCode.java.lang.VMClass.getClassFromType(type);
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
+	}
+
+	public static object GetObjectClass(object o)
+	{
+		try
+		{
+			return NativeCode.java.lang.VMClass.getClassFromType(o.GetType());
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
+	}
+
+	public static bool IsInstanceOf(object o, object clazz)
+	{
+		try
+		{
+			return IsAssignableFrom(clazz, GetObjectClass(o));
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
+	}
+
+	public static bool IsAssignableFrom(object sub, object sup)
+	{
+		try
+		{
+			TypeWrapper w1 = NativeCode.java.lang.VMClass.getWrapperFromClass(sub);
+			TypeWrapper w2 = NativeCode.java.lang.VMClass.getWrapperFromClass(sup);
+			return w2.IsAssignableTo(w1);
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
+	}
+	
+	public static object GetSuperclass(object clazz)
+	{
+		try
+		{
+			TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz).BaseTypeWrapper;
+			return wrapper == null ? null : NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper);
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
 	}
 
 	public static object AllocObject(object clazz)
 	{
-		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
-		wrapper.Finish();
-		// TODO add error handling (e.g. when trying to instantiate an interface or abstract class)
-		return System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
+		try
+		{
+			TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+			wrapper.Finish();
+			// TODO add error handling (e.g. when trying to instantiate an interface or abstract class)
+			return System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
+	}
+
+	public static IntPtr MethodToCookie(object method)
+	{
+		try
+		{
+			MethodWrapper mw = (MethodWrapper)method.GetType().GetField("methodCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(method);
+			return mw.Cookie;
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
+	}
+
+	public static IntPtr FieldToCookie(object field)
+	{
+		try
+		{
+			FieldWrapper fw = (FieldWrapper)field.GetType().GetField("fieldCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(field);
+			return fw.Cookie;
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
+	}
+
+	public static object CookieToMethod(IntPtr method)
+	{
+		try
+		{
+			MethodWrapper mw = MethodWrapper.FromCookie(method);
+			TypeWrapper tw;
+			if(mw.Name == "<init>")
+			{
+				tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.reflect.Constructor");
+			}
+			else
+			{
+				tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.reflect.Method");
+			}
+			object clazz = NativeCode.java.lang.VMClass.getClassFromWrapper(mw.DeclaringType);
+			return Activator.CreateInstance(tw.TypeAsTBD, new object[] { clazz, mw });
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
+	}
+
+	public static object CookieToField(IntPtr field)
+	{
+		try
+		{
+			FieldWrapper fw = FieldWrapper.FromCookie(field);
+			TypeWrapper tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.reflect.Field");
+			object clazz = NativeCode.java.lang.VMClass.getClassFromWrapper(fw.DeclaringType);
+			return Activator.CreateInstance(tw.TypeAsTBD, new object[] { clazz, fw });
+		}
+		catch
+		{
+			Debug.Assert(false);
+			throw;
+		}
+	}
+
+	public static void FatalError(string msg)
+	{
+		JVM.CriticalFailure(msg, null);
+	}
+
+	public static object DefineClass(string name, object classLoader, byte[] buf)
+	{
+		// TODO what should the protection domain be?
+		return NativeCode.java.lang.VMClassLoader.defineClass(classLoader, name, buf, 0, buf.Length, null);
 	}
 }
 

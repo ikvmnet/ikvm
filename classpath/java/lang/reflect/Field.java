@@ -502,6 +502,11 @@ public final class Field extends AccessibleObject implements Member
 	    Class caller = getClassFromFrame(frame);
 	    if((!Modifier.isPublic(modifiers) || !declaringClassIsPublic) && declaringClass != caller)
 	    {
+		// if the caller is a global method, the class returned will be null
+		if(caller == null)
+		{
+		    throw new IllegalAccessException();
+		}
 		if(Modifier.isProtected(modifiers) && actualClass.isAssignableFrom(caller))
 		{
 		}

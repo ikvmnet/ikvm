@@ -106,8 +106,6 @@ public final class FileChannelImpl extends FileChannel
     {
 	if(stream != null)
 	    throw new InternalError("FileChannelImpl already open");
-	if ((path == null) || path.equals(""))
-	    throw new IllegalArgumentException("Path cannot be null");
 	try
 	{
 	    int fileMode;

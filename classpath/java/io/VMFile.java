@@ -23,22 +23,10 @@
 */
 package java.io;
 
-import gnu.java.io.PlatformHelper;
-
 final class VMFile
 {
     // TODO set this correctly
     static boolean caseSensitive = true;
-
-    // On Windows, an absolute path can contain a bogus leading slash (and backslash?)
-    static String demangle(String path)
-    {
-	if(path.length() > 3 && (path.charAt(0) == '\\' || path.charAt(0) == '/') && path.charAt(2) == ':')
-	{
-	    return path.substring(1);
-	}
-	return path;
-    }
 
     private static long DateTimeToJavaLongTime(cli.System.DateTime datetime)
     {
@@ -55,7 +43,7 @@ final class VMFile
 	try
 	{
 	    // TODO what if "path" is a directory?
-	    return DateTimeToJavaLongTime(cli.System.IO.File.GetLastWriteTime(demangle(path)));
+	    return DateTimeToJavaLongTime(cli.System.IO.File.GetLastWriteTime(path));
 	}
 	catch(Throwable x)
 	{
@@ -67,7 +55,7 @@ final class VMFile
     {
 	try
 	{
-	    cli.System.IO.FileInfo fileInfo = new cli.System.IO.FileInfo(demangle(path));
+	    cli.System.IO.FileInfo fileInfo = new cli.System.IO.FileInfo(path);
 	    cli.System.IO.FileAttributes attr = fileInfo.get_Attributes();
 	    attr = cli.System.IO.FileAttributes.wrap(attr.Value | cli.System.IO.FileAttributes.ReadOnly);
 	    fileInfo.set_Attributes(attr);
@@ -83,7 +71,7 @@ final class VMFile
     {
 	try
 	{
-	    cli.System.IO.File.Open(demangle(path), cli.System.IO.FileMode.wrap(cli.System.IO.FileMode.CreateNew)).Close();
+	    cli.System.IO.File.Open(path, cli.System.IO.FileMode.wrap(cli.System.IO.FileMode.CreateNew)).Close();
 	    return true;
 	}
 	catch(Throwable x)
@@ -98,7 +86,7 @@ final class VMFile
 	// TODO error handling
 	try
 	{
-	    String[] l = cli.System.IO.Directory.GetFileSystemEntries(demangle(dirpath));
+	    String[] l = cli.System.IO.Directory.GetFileSystemEntries(dirpath);
 	    for(int i = 0; i < l.length; i++)
 	    {
 		int pos = l[i].lastIndexOf(cli.System.IO.Path.DirectorySeparatorChar);
@@ -119,7 +107,7 @@ final class VMFile
     {
 	try
 	{
-	    new cli.System.IO.FileInfo(demangle(targetpath)).MoveTo(demangle(destpath));
+	    new cli.System.IO.FileInfo(targetpath).MoveTo(destpath);
 	    return true;
 	}
 	catch(Throwable x)
@@ -133,7 +121,7 @@ final class VMFile
 	// TODO handle errors
 	try
 	{
-	    return new cli.System.IO.FileInfo(demangle(path)).get_Length();
+	    return new cli.System.IO.FileInfo(path).get_Length();
 	}
 	catch(Throwable x)
 	{
@@ -143,7 +131,6 @@ final class VMFile
 
     static boolean exists(String path)
     {
-	path = demangle(path);
 	try
 	{
 	    return cli.System.IO.File.Exists(path) || cli.System.IO.Directory.Exists(path);
@@ -183,7 +170,7 @@ final class VMFile
     {
 	try
 	{
-	    new cli.System.IO.FileInfo(demangle(path)).set_LastWriteTime(JavaLongTimeToDateTime(time));
+	    new cli.System.IO.FileInfo(path).set_LastWriteTime(JavaLongTimeToDateTime(time));
 	    return true;
 	}
 	catch(Throwable x)
@@ -194,7 +181,6 @@ final class VMFile
 
     static boolean mkdir(String path)
     {
-	path = demangle(path);
 	// TODO handle errors
 	if (!cli.System.IO.Directory.Exists(cli.System.IO.Directory.GetParent(path).get_FullName()) ||
 	    cli.System.IO.Directory.Exists(path))
@@ -210,7 +196,7 @@ final class VMFile
 	// TODO make sure semantics are the same
 	try
 	{
-	    return cli.System.IO.File.Exists(demangle(path));
+	    return cli.System.IO.File.Exists(path);
 	}
 	catch(Throwable x)
 	{
@@ -220,7 +206,6 @@ final class VMFile
 
     static boolean canWrite(String path)
     {
-	path = demangle(path);
 	try
 	{
 	    // HACK if file refers to a directory, we always return true
@@ -242,7 +227,6 @@ final class VMFile
 
     static boolean canRead(String path)
     {
-	path = demangle(path);
 	try
 	{
 	    // HACK if file refers to a directory, we always return true
@@ -268,7 +252,7 @@ final class VMFile
 	// TODO make sure semantics are the same
 	try
 	{
-	    return cli.System.IO.Directory.Exists(demangle(path));
+	    return cli.System.IO.Directory.Exists(path);
 	}
 	catch(Throwable x)
 	{
@@ -289,19 +273,63 @@ final class VMFile
 
     static boolean isHidden(String path)
     {
-	path = demangle(path);
-	if(cli.System.IO.Directory.Exists(path))
+	try
 	{
-	    return (new cli.System.IO.DirectoryInfo(path).get_Attributes().Value & cli.System.IO.FileAttributes.Hidden) != 0;
+	    if(cli.System.IO.Directory.Exists(path))
+	    {
+		return (new cli.System.IO.DirectoryInfo(path).get_Attributes().Value & cli.System.IO.FileAttributes.Hidden) != 0;
+	    }
+	    else
+	    {
+		return (new cli.System.IO.FileInfo(path).get_Attributes().Value & cli.System.IO.FileAttributes.Hidden) != 0;
+	    }
 	}
-	else
+	catch(Throwable x)
 	{
-	    return (new cli.System.IO.FileInfo(path).get_Attributes().Value & cli.System.IO.FileAttributes.Hidden) != 0;
+	    return false;
 	}
     }
 
     static String getName(String path)
     {
-	return new cli.System.IO.FileInfo(demangle(path)).get_Name();
+	return cli.System.IO.Path.GetFileName(path);
+    }
+
+    static String toCanonicalForm(String path) throws IOException
+    {
+	return getFileInfo(path).get_FullName();
+    }
+
+    private static cli.System.IO.FileInfo getFileInfo(String path) throws IOException
+    {
+	try
+	{
+	    if(false) throw new cli.System.Security.SecurityException();
+	    if(false) throw new cli.System.ArgumentException();
+	    if(false) throw new cli.System.UnauthorizedAccessException();
+	    if(false) throw new cli.System.IO.IOException();
+	    if(false) throw new cli.System.NotSupportedException();
+	    return new cli.System.IO.FileInfo(path);
+	}
+	catch(cli.System.Security.SecurityException x1)
+	{
+	    throw new IOException(x1.getMessage());
+	}
+	catch(cli.System.ArgumentException x2)
+	{
+	    throw new IOException(x2.getMessage());
+	}
+	catch(cli.System.UnauthorizedAccessException x3)
+	{
+	    throw new IOException(x3.getMessage());
+	}
+	catch(cli.System.IO.IOException x4)
+	{
+	    throw new IOException(x4.getMessage());
+	}
+	catch(cli.System.NotSupportedException x5)
+	{
+	    throw new IOException(x5.getMessage());
+	}
     }
 }

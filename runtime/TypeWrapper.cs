@@ -29,39 +29,17 @@ using System.Diagnostics;
 
 sealed class MethodDescriptor
 {
-	private ClassLoaderWrapper classLoader;
 	private string name;
 	private string sig;
-	private Type[] args;
-	private TypeWrapper[] argTypeWrappers;
-	private TypeWrapper retTypeWrapper;
 
-	internal MethodDescriptor(ClassLoaderWrapper classLoader, ClassFile.ConstantPoolItemFMI cpi)
-		: this(classLoader, cpi.Name, cpi.Signature, cpi.GetArgTypes(classLoader), cpi.GetRetType(classLoader))
+	internal MethodDescriptor(string name, string sig)
 	{
-	}
-
-	internal MethodDescriptor(ClassLoaderWrapper classLoader, ClassFile.Method method)
-		: this(classLoader, method.Name, method.Signature, method.GetArgTypes(classLoader), method.GetRetType(classLoader))
-	{
-	}
-
-	internal MethodDescriptor(ClassLoaderWrapper classLoader, string name, string sig, TypeWrapper[] args, TypeWrapper ret)
-	{
-		Debug.Assert(classLoader != null);
+		Debug.Assert(name != null && sig != null);
 		// class name in the sig should be dotted
 		Debug.Assert(sig.IndexOf('/') < 0);
 
-		if(name == null || sig == null)
-		{
-			throw new ArgumentNullException();
-		}
-
-		this.classLoader = classLoader;
 		this.name = name;
 		this.sig = sig;
-		this.argTypeWrappers = args;
-		this.retTypeWrapper = ret;
 	}
 
 	internal string Name
@@ -80,80 +58,8 @@ sealed class MethodDescriptor
 		}
 	}
 
-	internal int ArgCount
-	{
-		get
-		{
-			return ArgTypeWrappers.Length;
-		}
-	}
-
-	// NOTE this exposes potentially unfinished types!
-	internal Type[] ArgTypesForDefineMethod
-	{
-		get
-		{
-			if(args == null)
-			{
-				TypeWrapper[] wrappers = ArgTypeWrappers;
-				Type[] temp = new Type[wrappers.Length];
-				for(int i = 0; i < wrappers.Length; i++)
-				{
-					temp[i] = wrappers[i].TypeAsParameterType;
-				}
-				args = temp;
-			}
-			return args;
-		}
-	}
-
-	// NOTE this exposes potentially unfinished types!
-	// HACK this should not be used and all existing uses should be reworked
-	internal Type[] ArgTypesDontUse
-	{
-		get
-		{
-			return ArgTypesForDefineMethod;
-		}
-	}
-
-	internal TypeWrapper[] ArgTypeWrappers
-	{
-		get
-		{
-			if(argTypeWrappers == null)
-			{
-				argTypeWrappers = classLoader.ArgTypeWrapperListFromSig(sig);
-			}
-			return argTypeWrappers;
-		}
-	}
-
-	// NOTE this exposes a potentially unfinished type!
-	internal Type RetTypeForDefineMethod
-	{
-		get
-		{
-			return RetTypeWrapper.TypeAsParameterType;
-		}
-	}
-
-	internal TypeWrapper RetTypeWrapper
-	{
-		get
-		{
-			if(retTypeWrapper == null)
-			{
-				retTypeWrapper = classLoader.RetTypeWrapperFromSig(sig);
-			}
-			return retTypeWrapper;
-		}
-	}
-
 	public override bool Equals(object o)
 	{
-		// TODO instead of comparing the signature strings, we should compare the actual types
-		// (because, in the face of multiple class loaders, there can be multiple classes with the same name)
 		MethodDescriptor md = o as MethodDescriptor;
 		return md != null && md.name == name && md.sig == sig;
 	}
@@ -161,129 +67,6 @@ sealed class MethodDescriptor
 	public override int GetHashCode()
 	{
 		return name.GetHashCode() ^ sig.GetHashCode();
-	}
-
-	private static void CrackSig(ParameterInfo param, out string name, out TypeWrapper typeWrapper)
-	{
-		Type type = param.ParameterType;
-		if(type == typeof(object))
-		{
-			CrackSigFromCustomAttribute(param, out name, out typeWrapper);
-		}
-		else
-		{
-			if(type.IsByRef)
-			{
-				type = type.Assembly.GetType(type.GetElementType().FullName + "[]", true);
-				// TODO test type for unsupported types
-			}
-			name = TypeWrapper.GetSigNameFromType(type);
-			typeWrapper = ClassLoaderWrapper.GetWrapperFromType(type);
-		}
-	}
-
-	private static void CrackSig(MethodInfo method, out string name, out TypeWrapper typeWrapper)
-	{
-		Type type = method.ReturnType;
-		if(type == typeof(object))
-		{
-			CrackSigFromCustomAttribute(method, out name, out typeWrapper);
-		}
-		else
-		{
-			name = TypeWrapper.GetSigNameFromType(type);
-			typeWrapper = ClassLoaderWrapper.GetWrapperFromType(type);
-		}
-	}
-
-	internal static string GetFieldSigName(FieldInfo field)
-	{
-		Type type = field.FieldType;
-		if(type == typeof(object))
-		{
-			return GetSigNameFromCustomAttribute(field);
-		}
-		return TypeWrapper.GetSigNameFromType(type);
-	}
-
-	private static void CrackSigFromCustomAttribute(ICustomAttributeProvider provider, out string name, out TypeWrapper typeWrapper)
-	{
-		object[] attribs = provider.GetCustomAttributes(typeof(UnloadableTypeAttribute), false);
-		if(attribs.Length == 1)
-		{
-			string s = ((UnloadableTypeAttribute)attribs[0]).Name;
-			if(s.StartsWith("["))
-			{
-				name = s;
-			}
-			else
-			{
-				name = "L" + s + ";";
-			}
-			// TODO it might be loadable now, what do we do? I don't think we can try to load the type here,
-			// because that will cause Java code to run and that isn't allowed while we're finishing (which we
-			// might be doing when we get here).
-			typeWrapper = new UnloadableTypeWrapper(s);
-		}
-		else
-		{
-			name = "Ljava.lang.Object;";
-			typeWrapper = CoreClasses.java.lang.Object.Wrapper;
-		}
-	}
-
-	private static string GetSigNameFromCustomAttribute(ICustomAttributeProvider provider)
-	{
-		object[] attribs = provider.GetCustomAttributes(typeof(UnloadableTypeAttribute), false);
-		if(attribs.Length == 1)
-		{
-			string name = ((UnloadableTypeAttribute)attribs[0]).Name;
-			if(name.StartsWith("["))
-			{
-				return name;
-			}
-			else
-			{
-				return "L" + name + ";";
-			}
-		}
-		return "Ljava.lang.Object;";
-	}
-
-	// TODO ensure that FromMethodBase is only used on statically compiled Java types, and
-	// remove support for ByRef
-	internal static MethodDescriptor FromMethodBase(MethodBase mb)
-	{
-		System.Text.StringBuilder sb = new System.Text.StringBuilder();
-		sb.Append('(');
-		ParameterInfo[] parameters = mb.GetParameters();
-		TypeWrapper[] args = new TypeWrapper[parameters.Length];
-		for(int i = 0; i < parameters.Length; i++)
-		{
-			string name;
-			CrackSig(parameters[i], out name, out args[i]);
-			sb.Append(name);
-		}
-		sb.Append(')');
-		if(mb is ConstructorInfo)
-		{
-			sb.Append('V');
-			return new MethodDescriptor(ClassLoaderWrapper.GetClassLoader(mb.DeclaringType), mb.IsStatic ? "<clinit>" : "<init>", sb.ToString(), args, PrimitiveTypeWrapper.VOID);
-		}
-		else
-		{
-			string name;
-			TypeWrapper ret;
-			CrackSig((MethodInfo)mb, out name, out ret);
-			sb.Append(name);
-			return new MethodDescriptor(ClassLoaderWrapper.GetClassLoader(mb.DeclaringType), mb.Name, sb.ToString(), args, ret);
-		}
-	}
-
-	internal static MethodDescriptor FromNameSig(ClassLoaderWrapper classLoader, string name, string sig)
-	{
-		// TODO why are we not resolving the signature here?
-		return new MethodDescriptor(classLoader, name, sig, null, null);
 	}
 }
 
@@ -294,8 +77,10 @@ class EmitHelper
 	internal static void Throw(ILGenerator ilgen, string dottedClassName)
 	{
 		TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
-		MethodDescriptor md = MethodDescriptor.FromNameSig(exception.GetClassLoader(), "<init>", "()V");
-		exception.GetMethodWrapper(md, false).EmitNewobj.Emit(ilgen);
+		MethodDescriptor md = new MethodDescriptor("<init>", "()V");
+		MethodWrapper mw = exception.GetMethodWrapper(md, false);
+		mw.Link();
+		mw.EmitNewobj(ilgen);
 		ilgen.Emit(OpCodes.Throw);
 	}
 
@@ -303,8 +88,10 @@ class EmitHelper
 	{
 		TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
 		ilgen.Emit(OpCodes.Ldstr, message);
-		MethodDescriptor md = MethodDescriptor.FromNameSig(exception.GetClassLoader(), "<init>", "(Ljava.lang.String;)V");
-		exception.GetMethodWrapper(md, false).EmitNewobj.Emit(ilgen);
+		MethodDescriptor md = new MethodDescriptor("<init>", "(Ljava.lang.String;)V");
+		MethodWrapper mw = exception.GetMethodWrapper(md, false);
+		mw.Link();
+		mw.EmitNewobj(ilgen);
 		ilgen.Emit(OpCodes.Throw);
 	}
 
@@ -335,7 +122,7 @@ class EmitHelper
 class AttributeHelper
 {
 	private static CustomAttributeBuilder ghostInterfaceAttribute;
-	private static CustomAttributeBuilder hideFromReflectionAttribute;
+	private static CustomAttributeBuilder hideFromJavaAttribute;
 	private static CustomAttributeBuilder deprecatedAttribute;
 	private static ConstructorInfo implementsAttribute;
 	private static ConstructorInfo throwsAttribute;
@@ -405,45 +192,56 @@ class AttributeHelper
 		typeBuilder.SetCustomAttribute(ghostInterfaceAttribute);
 	}
 
-	internal static void HideFromReflection(TypeBuilder typeBuilder)
+	internal static void MirandaMethod(MethodBuilder mb)
 	{
-		if(hideFromReflectionAttribute == null)
-		{
-			hideFromReflectionAttribute = new CustomAttributeBuilder(typeof(HideFromReflectionAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
-		}
-		typeBuilder.SetCustomAttribute(hideFromReflectionAttribute);
+		CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(MirandaMethodAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+		mb.SetCustomAttribute(cab);
 	}
 
-	internal static void HideFromReflection(ConstructorBuilder cb)
+	internal static bool IsMirandaMethod(MethodInfo mi)
 	{
-		if(hideFromReflectionAttribute == null)
-		{
-			hideFromReflectionAttribute = new CustomAttributeBuilder(typeof(HideFromReflectionAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
-		}
-		cb.SetCustomAttribute(hideFromReflectionAttribute);
+		return mi.IsDefined(typeof(MirandaMethodAttribute), false);
 	}
 
-	internal static void HideFromReflection(MethodBuilder mb)
+	internal static void HideFromJava(TypeBuilder typeBuilder)
 	{
-		if(hideFromReflectionAttribute == null)
+		if(hideFromJavaAttribute == null)
 		{
-			hideFromReflectionAttribute = new CustomAttributeBuilder(typeof(HideFromReflectionAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+			hideFromJavaAttribute = new CustomAttributeBuilder(typeof(HideFromJavaAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 		}
-		mb.SetCustomAttribute(hideFromReflectionAttribute);
+		typeBuilder.SetCustomAttribute(hideFromJavaAttribute);
 	}
 
-	internal static void HideFromReflection(FieldBuilder fb)
+	internal static void HideFromJava(ConstructorBuilder cb)
 	{
-		if(hideFromReflectionAttribute == null)
+		if(hideFromJavaAttribute == null)
 		{
-			hideFromReflectionAttribute = new CustomAttributeBuilder(typeof(HideFromReflectionAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+			hideFromJavaAttribute = new CustomAttributeBuilder(typeof(HideFromJavaAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 		}
-		fb.SetCustomAttribute(hideFromReflectionAttribute);
+		cb.SetCustomAttribute(hideFromJavaAttribute);
 	}
 
-	internal static bool IsHideFromReflection(MemberInfo mi)
+	internal static void HideFromJava(MethodBuilder mb)
 	{
-		// NOTE all privatescope fields and methods are "hideFromReflection"
+		if(hideFromJavaAttribute == null)
+		{
+			hideFromJavaAttribute = new CustomAttributeBuilder(typeof(HideFromJavaAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+		}
+		mb.SetCustomAttribute(hideFromJavaAttribute);
+	}
+
+	internal static void HideFromJava(FieldBuilder fb)
+	{
+		if(hideFromJavaAttribute == null)
+		{
+			hideFromJavaAttribute = new CustomAttributeBuilder(typeof(HideFromJavaAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+		}
+		fb.SetCustomAttribute(hideFromJavaAttribute);
+	}
+
+	internal static bool IsHideFromJava(MemberInfo mi)
+	{
+		// NOTE all privatescope fields and methods are "hideFromJava"
 		// because Java cannot deal with the potential name clashes
 		FieldInfo fi = mi as FieldInfo;
 		if(fi != null && (fi.Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.PrivateScope)
@@ -455,7 +253,7 @@ class AttributeHelper
 		{
 			return true;
 		}
-		return mi.IsDefined(typeof(HideFromReflectionAttribute), false);
+		return mi.IsDefined(typeof(HideFromJavaAttribute), false);
 	}
 
 	internal static void SetImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper[] ifaceWrappers)
@@ -594,6 +392,26 @@ class AttributeHelper
 		tb.SetCustomAttribute(customAttributeBuilder);
 	}
 
+	internal static void SetNameSig(MethodBase mb, string name, string sig)
+	{
+		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeof(NameSigAttribute).GetConstructor(new Type[] { typeof(string), typeof(string) }), new object[] { name, sig });
+		MethodBuilder method = mb as MethodBuilder;
+		if(method != null)
+		{
+			method.SetCustomAttribute(customAttributeBuilder);
+		}
+		else
+		{
+			((ConstructorBuilder)mb).SetCustomAttribute(customAttributeBuilder);
+		}
+	}
+
+	internal static void SetNameSig(FieldBuilder fb, string name, string sig)
+	{
+		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeof(NameSigAttribute).GetConstructor(new Type[] { typeof(string), typeof(string) }), new object[] { name, sig });
+		fb.SetCustomAttribute(customAttributeBuilder);
+	}
+
 	internal static byte[] FreezeDryType(Type type)
 	{
 		System.IO.MemoryStream mem = new System.IO.MemoryStream();
@@ -602,12 +420,6 @@ class AttributeHelper
 		bw.Write(type.FullName);
 		bw.Write((short)0);
 		return mem.ToArray();
-	}
-
-	internal static void SetUnloadableType(FieldBuilder field, string name)
-	{
-		CustomAttributeBuilder attrib = new CustomAttributeBuilder(typeof(UnloadableTypeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { name });
-		field.SetCustomAttribute(attrib);
 	}
 
 	internal static void SetInnerClass(TypeBuilder typeBuilder, string innerClass, string outerClass, string name, Modifiers modifiers)
@@ -864,36 +676,45 @@ abstract class TypeWrapper
 
 	protected abstract FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType);
 
-	internal FieldWrapper GetFieldWrapper(string fieldName, TypeWrapper fieldType)
+//	internal FieldWrapper GetFieldWrapper(string fieldName, string fieldSig)
+//	{
+//	}
+
+	internal virtual FieldWrapper GetFieldWrapper(string fieldName, TypeWrapper fieldType)
 	{
-		string key = fieldName + fieldType.SigName;
-		FieldWrapper fae = (FieldWrapper)fields[key];
-		if(fae == null)
+		lock(fields.SyncRoot)
 		{
-			fae = GetFieldImpl(fieldName, fieldType);
+			string key = fieldName + fieldType.SigName;
+			FieldWrapper fae = (FieldWrapper)fields[key];
 			if(fae == null)
 			{
-				foreach(TypeWrapper iface in this.Interfaces)
+				fae = GetFieldImpl(fieldName, fieldType);
+				if(fae == null)
 				{
-					fae = iface.GetFieldWrapper(fieldName, fieldType);
-					if(fae != null)
+					foreach(TypeWrapper iface in this.Interfaces)
 					{
-						return fae;
+						fae = iface.GetFieldWrapper(fieldName, fieldType);
+						if(fae != null)
+						{
+							return fae;
+						}
 					}
+					if(baseWrapper != null)
+					{
+						return baseWrapper.GetFieldWrapper(fieldName, fieldType);
+					}
+					return null;
 				}
-				if(baseWrapper != null)
-				{
-					return baseWrapper.GetFieldWrapper(fieldName, fieldType);
-				}
-				return null;
+				fields[key] = fae;
 			}
-			fields[key] = fae;
+			return fae;
 		}
-		return fae;
 	}
 
 	// TODO figure out when it is safe to call this
 	// HACK for now we assume that the method hashtable has always been filled when this method is called (by java.lang.Class)
+	// UPDATE the above concerns should no longer apply, DynamicTypeWrappers now publish their methods eagerly and all
+	// others (derived from LazyTypeWrapper) override this method to do the publishing
 	internal virtual MethodWrapper[] GetMethods()
 	{
 		MethodWrapper[] wrappers = new MethodWrapper[methods.Count];
@@ -910,25 +731,14 @@ abstract class TypeWrapper
 		return wrappers;
 	}
 
-	protected abstract MethodWrapper GetMethodImpl(MethodDescriptor md);
-
-	internal MethodWrapper GetMethodWrapper(MethodDescriptor md, bool inherit)
+	internal virtual MethodWrapper GetMethodWrapper(MethodDescriptor md, bool inherit)
 	{
-		MethodWrapper mce = (MethodWrapper)methods[md];
-		if(mce == null)
+		MethodWrapper mw = (MethodWrapper)methods[md];
+		if(mw == null && inherit && baseWrapper != null)
 		{
-			mce = GetMethodImpl(md);
-			if(mce == null)
-			{
-				if(inherit && baseWrapper != null)
-				{
-					return baseWrapper.GetMethodWrapper(md, inherit);
-				}
-				return null;
-			}
-			methods[md] = mce;
+			mw = baseWrapper.GetMethodWrapper(md, inherit);
 		}
-		return mce;
+		return mw;
 	}
 
 	internal void AddMethod(MethodWrapper method)
@@ -973,6 +783,11 @@ abstract class TypeWrapper
 		}
 	}
 
+	internal abstract Assembly Assembly
+	{
+		get;
+	}
+
 	// returns true iff wrapper is allowed to access us
 	internal bool IsAccessibleFrom(TypeWrapper wrapper)
 	{
@@ -981,7 +796,10 @@ abstract class TypeWrapper
 
 	internal bool IsInSamePackageAs(TypeWrapper wrapper)
 	{
-		if(GetClassLoader() == wrapper.GetClassLoader())
+		if(GetClassLoader() == wrapper.GetClassLoader() &&
+			// Both types must also be in the same assembly, otherwise
+			// the packages are not accessible.
+			wrapper.Assembly == this.Assembly)
 		{
 			int index1 = name.LastIndexOf('.');
 			int index2 = wrapper.name.LastIndexOf('.');
@@ -1118,7 +936,13 @@ abstract class TypeWrapper
 				}
 				return Type.GetType(type, true);
 			}
-			return TypeAsTBD;
+			Type t = TypeAsTBD;
+			// HACK BYTE[]
+			//if(t == typeof(sbyte))
+			//{
+			//	return typeof(byte);
+			//}
+			return t;
 		}
 	}
 
@@ -1304,20 +1128,29 @@ abstract class TypeWrapper
 		get;
 	}
 
-	internal abstract void Finish();
-
-	private void ImplementInterfaceMethodStubImpl(MethodDescriptor md, MethodBase ifmethod, TypeBuilder typeBuilder, DynamicTypeWrapper wrapper)
+	internal void Finish()
 	{
-		// we're mangling the name to prevent subclasses from accidentally overriding this method
-		string mangledName = this.Name + "/" + ifmethod.Name;
-		MethodWrapper mce = wrapper.GetMethodWrapper(md, true);
-		if(mce != null && mce.HasUnloadableArgsOrRet)
+		Finish(false);
+	}
+
+	internal abstract void Finish(bool forDebugSave);
+
+	private void ImplementInterfaceMethodStubImpl(MethodWrapper ifmethod, TypeBuilder typeBuilder, DynamicTypeWrapper wrapper)
+	{
+		MethodDescriptor md = ifmethod.Descriptor;
+		// we're mangling the name to prevent subclasses from accidentally overriding this method and to
+		// prevent clashes with overloaded method stubs that are erased to the same signature (e.g. unloadable types and ghost arrays)
+		string mangledName = this.Name + "/" + ifmethod.Name + ifmethod.Signature;
+		MethodWrapper mce = null;
+		TypeWrapper lookup = wrapper;
+		while(lookup != null)
 		{
-			// TODO for now we make it seem as if the method isn't there, we should be emitting
-			// a stub that throws a NoClassDefFoundError
-			// NOTE AFAICT this can only happen when code explicitly messes around with the custom class loaders
-			// that violate the class loader rules.
-			mce = null;
+			mce = lookup.GetMethodWrapper(md, true);
+			if(mce == null || !mce.IsStatic)
+			{
+				break;
+			}
+			lookup = mce.DeclaringType.BaseTypeWrapper;
 		}
 		if(mce != null)
 		{
@@ -1327,43 +1160,43 @@ abstract class TypeWrapper
 				// it makes sense, so I hope the spec is wrong
 				// UPDATE unfortunately, according to Serge Lidin the spec is correct, and it is not allowed to have virtual privatescope
 				// methods. Sigh! So I have to use private methods and mangle the name
-				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
-				AttributeHelper.HideFromReflection(mb);
+				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+				AttributeHelper.HideFromJava(mb);
 				EmitHelper.Throw(mb.GetILGenerator(), "java.lang.IllegalAccessError", wrapper.Name + "." + md.Name + md.Signature);
-				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
+				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 				wrapper.HasIncompleteInterfaceImplementation = true;
 			}
-			else if(mce.GetMethod() == null || mce.RealName != ifmethod.Name)
+			else if(mce.GetMethod() == null || mce.RealName != ifmethod.RealName)
 			{
-				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
-				AttributeHelper.HideFromReflection(mb);
+				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+				AttributeHelper.HideFromJava(mb);
 				ILGenerator ilGenerator = mb.GetILGenerator();
 				ilGenerator.Emit(OpCodes.Ldarg_0);
-				int argc = md.ArgCount;
+				int argc = mce.GetParameters().Length;
 				for(int n = 0; n < argc; n++)
 				{
 					ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(n + 1));
 				}
-				mce.EmitCallvirt.Emit(ilGenerator);
+				mce.EmitCallvirt(ilGenerator);
 				ilGenerator.Emit(OpCodes.Ret);
-				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
+				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 			}
 			else if(mce.DeclaringType.TypeAsTBD.Assembly != typeBuilder.Assembly)
 			{
 				// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
 				// interface methods, so we have to generate a stub here that doesn't do anything but call the base
 				// implementation
-				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
-				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
-				AttributeHelper.HideFromReflection(mb);
+				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
+				AttributeHelper.HideFromJava(mb);
 				ILGenerator ilGenerator = mb.GetILGenerator();
 				ilGenerator.Emit(OpCodes.Ldarg_0);
-				int argc = md.ArgCount;
+				int argc = mce.GetParameters().Length;
 				for(int n = 0; n < argc; n++)
 				{
 					ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(n + 1));
 				}
-				mce.EmitCallvirt.Emit(ilGenerator);
+				mce.EmitCallvirt(ilGenerator);
 				ilGenerator.Emit(OpCodes.Ret);
 			}
 		}
@@ -1373,63 +1206,11 @@ abstract class TypeWrapper
 			{
 				// the type doesn't implement the interface method and isn't abstract either. The JVM allows this, but the CLR doesn't,
 				// so we have to create a stub method that throws an AbstractMethodError
-				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
-				AttributeHelper.HideFromReflection(mb);
+				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+				AttributeHelper.HideFromJava(mb);
 				EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + md.Name + md.Signature);
-				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
+				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 				wrapper.HasIncompleteInterfaceImplementation = true;
-			}
-			else
-			{
-				// because of a bug in the .NET 1.0 CLR, we have emit an abstract Miranda method, otherwise
-				// the class will not be loadable under some circumstances
-				// Example (compile with Jikes 1.18):
-				//interface __Shape
-				//{
-				//    public abstract __Rectangle getBounds();
-				//    public abstract __Rectangle2D getBounds2D();
-				//}
-				//
-				//abstract class __RectangularShape implements __Shape
-				//{
-				//    public __Rectangle getBounds()
-				//    {
-				//	     return null;
-				//    }
-				//}
-				//
-				//abstract class __Rectangle2D extends __RectangularShape
-				//{
-				//    public __Rectangle2D getBounds2D()
-				//    {
-				//        return null;
-				//    }
-				//}
-				//
-				//class __Rectangle extends __Rectangle2D implements __Shape
-				//{
-				//    public __Rectangle getBounds()
-				//    {
-				//        return null;
-				//    }
-				//
-				//    public __Rectangle2D getBounds2D()
-				//    {
-				//        return null;
-				//    }
-				//}
-				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
-				AttributeHelper.HideFromReflection(mb);
-				// NOTE because we are introducing a Miranda method, we must also update the corresponding wrapper.
-				// If we don't do this, subclasses might think they are introducing a new method, instead of overriding
-				// this one.
-				wrapper.AddMethod(MethodWrapper.Create(wrapper, md, mb, Modifiers.Public | Modifiers.Abstract, true));
-				// NOTE if the interface method name is remapped, we need to add an explicit methodoverride. Note that when this
-				// is required we always need to emit this stub, even if the above mentioned bug is fixed in the CLR
-				if(md.Name != ifmethod.Name)
-				{
-					typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
-				}
 			}
 		}
 	}
@@ -1438,42 +1219,17 @@ abstract class TypeWrapper
 	{
 		Debug.Assert(this.IsInterface);
 
-		// TODO interfaces that implement other interfaces need to be handled as well...
-
 		// make sure we don't do the same method twice
 		if(doneSet.ContainsKey(this))
 		{
 			return;
 		}
 		doneSet.Add(this, this);
-		Finish();
-		// NOTE for dynamic types it isn't legal to call Type.GetMethods() (because
-		// that might trigger finishing of types that are already in the process of
-		// being finished) and for RemappedTypeWrappers it makes no sense, so both
-		// of these (ab)use the methods hashtable to obtain a list of methods
-		// NOTE since the types have been finished, we know for sure that all methods
-		// are in fact in the methods cache
-		if(TypeAsTBD.Assembly is AssemblyBuilder || this.IsRemapped)
+		foreach(MethodWrapper method in GetMethods())
 		{
-			foreach(MethodWrapper method in methods.Values)
+			if(!method.IsStatic)
 			{
-				MethodBase ifmethod = method.GetMethod();
-				if(!ifmethod.IsStatic)
-				{
-					ImplementInterfaceMethodStubImpl(method.Descriptor, ifmethod, typeBuilder, wrapper);
-				}
-			}
-		}
-		else
-		{
-			MethodInfo[] methods = TypeAsBaseType.GetMethods();
-			for(int i = 0; i < methods.Length; i++)
-			{
-				MethodInfo ifmethod = methods[i];
-				if(!ifmethod.IsStatic)
-				{
-					ImplementInterfaceMethodStubImpl(MethodDescriptor.FromMethodBase(ifmethod), ifmethod, typeBuilder, wrapper);
-				}
+				ImplementInterfaceMethodStubImpl(method, typeBuilder, wrapper);
 			}
 		}
 		TypeWrapper[] interfaces = Interfaces;
@@ -1544,8 +1300,8 @@ abstract class TypeWrapper
 				ilgen.Emit(OpCodes.Ldloca, local2);
 				ilgen.Emit(OpCodes.Ldobj, TypeAsParameterType);
 			}
-			// because of the way interface merging works, any reference is valid
-			// for any interface reference
+				// because of the way interface merging works, any reference is valid
+				// for any interface reference
 			else if(IsInterfaceOrInterfaceArray && (sourceType == null || sourceType.IsUnloadable || !sourceType.IsAssignableTo(this)))
 			{
 				ilgen.Emit(OpCodes.Castclass, TypeAsTBD);
@@ -1690,6 +1446,17 @@ abstract class TypeWrapper
 			return DotNetTypeWrapper.GetName(type);
 		}
 	}
+
+	// NOTE don't call this method, call MethodWrapper.Link instead
+	internal virtual MethodBase LinkMethod(MethodWrapper mw)
+	{
+		return mw.GetMethod();
+	}
+
+	// NOTE don't call this method, call FieldWrapper.Link instead
+	internal virtual void LinkField(FieldWrapper fw)
+	{
+	}
 }
 
 class UnloadableTypeWrapper : TypeWrapper
@@ -1699,14 +1466,35 @@ class UnloadableTypeWrapper : TypeWrapper
 	{
 	}
 
+	internal override Assembly Assembly
+	{
+		get
+		{
+			return null;
+		}
+	}
+
+	internal override string SigName
+	{
+		get
+		{
+			string name = Name;
+			if(name.StartsWith("["))
+			{
+				return name;
+			}
+			return "L" + name + ";";
+		}
+	}
+
 	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 	{
 		throw new InvalidOperationException("GetFieldImpl called on UnloadableTypeWrapper: " + Name);
 	}
 
-	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
+	internal override MethodWrapper GetMethodWrapper(MethodDescriptor md, bool inherit)
 	{
-		throw new InvalidOperationException("GetMethodImpl called on UnloadableTypeWrapper: " + Name);
+		throw new InvalidOperationException("GetMethodWrapper called on UnloadableTypeWrapper: " + Name);
 	}
 
 	internal override Type TypeAsTBD
@@ -1741,7 +1529,7 @@ class UnloadableTypeWrapper : TypeWrapper
 		}
 	}
 
-	internal override void Finish()
+	internal override void Finish(bool forDebugSave)
 	{
 		throw new InvalidOperationException("Finish called on UnloadableTypeWrapper: " + Name);
 	}
@@ -1783,6 +1571,14 @@ class PrimitiveTypeWrapper : TypeWrapper
 		this.sigName = sigName;
 	}
 
+	internal override Assembly Assembly
+	{
+		get
+		{
+			return null;
+		}
+	}
+
 	internal override string SigName
 	{
 		get
@@ -1809,16 +1605,10 @@ class PrimitiveTypeWrapper : TypeWrapper
 		return null;
 	}
 
-	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
-	{
-		return null;
-	}
-
 	internal override TypeWrapper[] Interfaces
 	{
 		get
 		{
-			// TODO does a primitive implement any interfaces?
 			return TypeWrapper.EmptyArray;
 		}
 	}
@@ -1839,14 +1629,14 @@ class PrimitiveTypeWrapper : TypeWrapper
 		}
 	}
 
-	internal override void Finish()
+	internal override void Finish(bool forDebugSave)
 	{
 	}
 }
 
-class DynamicTypeWrapper : TypeWrapper
+sealed class DynamicTypeWrapper : TypeWrapper
 {
-	private DynamicImpl impl;
+	private volatile DynamicImpl impl;
 	private TypeWrapper[] interfaces;
 	private FieldInfo ghostRefField;
 	private MethodBuilder ghostIsInstanceMethod;
@@ -1858,47 +1648,61 @@ class DynamicTypeWrapper : TypeWrapper
 	private static Hashtable ghosts;
 	private static Hashtable nativeMethods;
 
+	private static TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, string name)
+	{
+		TypeWrapper tw = classLoader.LoadClassByDottedNameFast(name);
+		if(tw == null)
+		{
+			throw new NoClassDefFoundError(name);
+		}
+		return tw;
+	}
+
 	internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader)
-		: base(f.Modifiers, f.Name, f.IsInterface ? null : f.GetSuperTypeWrapper(classLoader), classLoader)
+		: base(f.Modifiers, f.Name, f.IsInterface ? null : LoadTypeWrapper(classLoader, f.SuperClass), classLoader)
 	{
 		Profiler.Count("DynamicTypeWrapper");
 		if(BaseTypeWrapper != null)
 		{
-			if(BaseTypeWrapper.IsUnloadable)
-			{
-				throw JavaException.NoClassDefFoundError(BaseTypeWrapper.Name);
-			}
 			if(!BaseTypeWrapper.IsAccessibleFrom(this))
 			{
-				throw JavaException.IllegalAccessError("Class {0} cannot access its superclass {1}", f.Name, BaseTypeWrapper.Name);
+				throw new IllegalAccessError("Class " + f.Name + " cannot access its superclass " + BaseTypeWrapper.Name);
 			}
 			if(BaseTypeWrapper.IsFinal)
 			{
-				throw JavaException.VerifyError("Cannot inherit from final class");
+				throw new VerifyError("Cannot inherit from final class");
 			}
 			if(BaseTypeWrapper.IsInterface)
 			{
-				throw JavaException.IncompatibleClassChangeError("Class {0} has interface {1} as superclass", f.Name, BaseTypeWrapper.Name);
-			}
-		}
-		interfaces = f.GetInterfaceTypeWrappers(classLoader);
-		for(int i = 0; i < interfaces.Length; i++)
-		{
-			if(interfaces[i].IsUnloadable)
-			{
-				throw JavaException.NoClassDefFoundError(interfaces[i].Name);
-			}
-			if(!interfaces[i].IsInterface)
-			{
-				throw JavaException.IncompatibleClassChangeError("Implementing class");
-			}
-			if(!interfaces[i].IsAccessibleFrom(this))
-			{
-				throw JavaException.IllegalAccessError("Class {0} cannot access its superinterface {1}", f.Name, interfaces[i].Name);
+				throw new IncompatibleClassChangeError("Class " + f.Name + " has interface " + BaseTypeWrapper.Name + " as superclass");
 			}
 		}
 
+		ClassFile.ConstantPoolItemClass[] interfaces = f.Interfaces;
+		this.interfaces = new TypeWrapper[interfaces.Length];
+		for(int i = 0; i < interfaces.Length; i++)
+		{
+			TypeWrapper iface = LoadTypeWrapper(classLoader, interfaces[i].Name);
+			if(!iface.IsAccessibleFrom(this))
+			{
+				throw new IllegalAccessError("Class " + f.Name + " cannot access its superinterface " + iface.Name);
+			}
+			if(!iface.IsInterface)
+			{
+				throw new IncompatibleClassChangeError("Implementing class");
+			}
+			this.interfaces[i] = iface;
+		}
+
 		impl = new JavaTypeImpl(f, this);
+	}
+
+	internal override Assembly Assembly
+	{
+		get
+		{
+			return GetClassLoader().ModuleBuilder.Assembly;
+		}
 	}
 
 	internal override FieldInfo GhostRefField
@@ -1920,11 +1724,6 @@ class DynamicTypeWrapper : TypeWrapper
 	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 	{
 		return impl.GetFieldImpl(fieldName, fieldType);
-	}
-
-	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
-	{
-		return impl.GetMethodImpl(md);
 	}
 
 	internal override TypeWrapper[] Interfaces
@@ -1967,14 +1766,14 @@ class DynamicTypeWrapper : TypeWrapper
 		}
 	}
 
-	internal override void Finish()
+	internal override void Finish(bool forDebugSave)
 	{
-		lock(GetType())
+		lock(this)
 		{
 			Profiler.Enter("DynamicTypeWrapper.Finish");
 			try
 			{
-				impl = impl.Finish();
+				impl = impl.Finish(forDebugSave);
 			}
 			finally
 			{
@@ -2112,7 +1911,9 @@ class DynamicTypeWrapper : TypeWrapper
 				else
 				{
 					TypeWrapper tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(map[i].dst);
-					tw.GetMethodWrapper(MethodDescriptor.FromNameSig(tw.GetClassLoader(), "<init>", "()V"), false).EmitNewobj.Emit(ilgen);
+					MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("<init>", "()V"), false);
+					mw.Link();
+					mw.EmitNewobj(ilgen);
 					ilgen.Emit(OpCodes.Ret);
 				}
 				ilgen.MarkLabel(label);
@@ -2185,14 +1986,15 @@ class DynamicTypeWrapper : TypeWrapper
 
 	private abstract class DynamicImpl
 	{
-		public abstract FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType);
-		public abstract MethodWrapper GetMethodImpl(MethodDescriptor md);
-		public abstract Type Type { get; }
+		internal abstract FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType);
+		internal abstract Type Type { get; }
 		internal abstract Type TypeAsBaseType { get; }
-		public abstract TypeWrapper[] InnerClasses { get; }
-		public abstract TypeWrapper DeclaringTypeWrapper { get; }
-		public abstract Modifiers ReflectiveModifiers { get; }
-		public abstract DynamicImpl Finish();
+		internal abstract TypeWrapper[] InnerClasses { get; }
+		internal abstract TypeWrapper DeclaringTypeWrapper { get; }
+		internal abstract Modifiers ReflectiveModifiers { get; }
+		internal abstract DynamicImpl Finish(bool forDebugSave);
+		internal abstract MethodBase LinkMethod(MethodWrapper mw);
+		internal abstract void LinkField(FieldWrapper fw);
 	}
 
 	private class JavaTypeImpl : DynamicImpl
@@ -2201,13 +2003,16 @@ class DynamicTypeWrapper : TypeWrapper
 		private readonly DynamicTypeWrapper wrapper;
 		private readonly TypeBuilder typeBuilder;
 		private MethodWrapper[] methods;
+		private MethodWrapper[] baseMethods;
 		private FieldWrapper[] fields;
 		private Hashtable methodLookup;
 		private Hashtable fieldLookup;
 		private bool finishing;
+		private bool finishingForDebugSave;
 		private FinishedTypeImpl finishedType;
 		private readonly TypeWrapper outerClassWrapper;
 		private readonly TypeBuilder typeBuilderGhostInterface;
+		private Hashtable memberclashtable;
 
 		internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper)
 		{
@@ -2215,111 +2020,196 @@ class DynamicTypeWrapper : TypeWrapper
 			this.classFile = f;
 			this.wrapper = wrapper;
 
-			TypeAttributes typeAttribs = 0;
-			if(f.IsAbstract)
+			// process all methods
+			methods = new MethodWrapper[classFile.Methods.Length];
+			baseMethods = new MethodWrapper[classFile.Methods.Length];
+			methodLookup = new Hashtable();
+			for(int i = 0; i < methods.Length; i++)
 			{
-				typeAttribs |= TypeAttributes.Abstract;
-			}
-			if(f.IsFinal)
-			{
-				typeAttribs |= TypeAttributes.Sealed;
-			}
-			TypeBuilder outer = null;
-			// only if requested, we compile inner classes as nested types, because it has a higher cost
-			// and doesn't buy us anything, unless we're compiling a library that could be used from C# (e.g.)
-			if(JVM.CompileInnerClassesAsNestedTypes)
-			{
-				if(f.OuterClass != null)
+				ClassFile.Method m = classFile.Methods[i];
+				MethodDescriptor md = new MethodDescriptor(m.Name, m.Signature);
+				if(wrapper.IsGhost)
 				{
-					if(!CheckInnerOuterNames(f.Name, f.OuterClass.Name))
+					methods[i] = new MethodWrapper.GhostMethodWrapper(wrapper, md, null, null, null, m.Modifiers, MemberFlags.None);
+				}
+				else if(m.Name == "<init>")
+				{
+					methods[i] = new SmartConstructorMethodWrapper(wrapper, md, null, null, m.Modifiers, MemberFlags.None);
+				}
+				else
+				{
+					bool explicitOverride = false;
+					if(!classFile.IsInterface && !m.IsStatic && !m.IsPrivate)
 					{
-						Tracer.Warning(Tracer.Compiler, "Incorrect InnerClasses attribute on {0}", f.Name);
+						baseMethods[i] = FindBaseMethod(md, out explicitOverride);
 					}
-					else
+					methods[i] = new SmartCallMethodWrapper(wrapper, md, null, null, null, m.Modifiers, explicitOverride ? MemberFlags.ExplicitOverride : MemberFlags.None, OpCodes.Call, OpCodes.Callvirt);
+				}
+				methodLookup[md] = i;
+				wrapper.AddMethod(methods[i]);
+			}
+			if(wrapper.IsAbstract && !wrapper.IsInterface)
+			{
+				ArrayList methodsArray = new ArrayList(methods);
+				ArrayList baseMethodsArray = new ArrayList(baseMethods);
+				AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
+				this.methods = (MethodWrapper[])methodsArray.ToArray(typeof(MethodWrapper));
+				this.baseMethods = (MethodWrapper[])baseMethodsArray.ToArray(typeof(MethodWrapper));
+			}
+
+			// from now on we shouldn't be throwing any exceptions (to be precise, after we've
+			// called ModuleBuilder.DefineType)
+			try
+			{
+				TypeAttributes typeAttribs = 0;
+				if(f.IsAbstract)
+				{
+					typeAttribs |= TypeAttributes.Abstract;
+				}
+				if(f.IsFinal)
+				{
+					typeAttribs |= TypeAttributes.Sealed;
+				}
+				TypeBuilder outer = null;
+				// only if requested, we compile inner classes as nested types, because it has a higher cost
+				// and doesn't buy us anything, unless we're compiling a library that could be used from C# (e.g.)
+				if(JVM.CompileInnerClassesAsNestedTypes)
+				{
+					if(f.OuterClass != null)
 					{
-						outerClassWrapper = wrapper.GetClassLoader().LoadClassByDottedName(f.OuterClass.Name);
-						if(outerClassWrapper is DynamicTypeWrapper)
+						if(!CheckInnerOuterNames(f.Name, f.OuterClass.Name))
 						{
-							outer = outerClassWrapper.TypeAsBuilder;
+							Tracer.Warning(Tracer.Compiler, "Incorrect InnerClasses attribute on {0}", f.Name);
+						}
+						else
+						{
+							outerClassWrapper = wrapper.GetClassLoader().LoadClassByDottedName(f.OuterClass.Name);
+							if(outerClassWrapper is DynamicTypeWrapper)
+							{
+								outer = outerClassWrapper.TypeAsBuilder;
+							}
 						}
 					}
 				}
-			}
-			if(f.IsPublic)
-			{
-				if(outer != null)
+				if(f.IsPublic)
 				{
-					typeAttribs |= TypeAttributes.NestedPublic;
-				}
-				else
-				{
-					typeAttribs |= TypeAttributes.Public;
-				}
-			}
-			else if(outer != null)
-			{
-				typeAttribs |= TypeAttributes.NestedAssembly;
-			}
-			if(f.IsInterface)
-			{
-				typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
-				if(outer != null)
-				{
-					if(wrapper.IsGhost)
+					if(outer != null)
 					{
-						throw new NotImplementedException();
-					}
-					// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
-					// (and broken by J# as well), so we'll just ignore it too.
-					typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs);
-				}
-				else
-				{
-					if(wrapper.IsGhost)
-					{
-						typeAttribs &= ~(TypeAttributes.Interface | TypeAttributes.Abstract);
-						typeAttribs |= TypeAttributes.Class | TypeAttributes.Sealed;
-						typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs, typeof(ValueType));
-						AttributeHelper.SetGhostInterface(typeBuilder);
-						AttributeHelper.SetModifiers(typeBuilder, wrapper.Modifiers);
-						wrapper.ghostRefField = typeBuilder.DefineField("__ref", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
-						AttributeHelper.HideFromReflection((FieldBuilder)wrapper.ghostRefField);
-						typeBuilderGhostInterface = typeBuilder.DefineNestedType("__Interface", TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.NestedPublic);
-						AttributeHelper.HideFromReflection(typeBuilderGhostInterface);
-						wrapper.ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object) });
-						wrapper.ghostIsInstanceArrayMethod = typeBuilder.DefineMethod("IsInstanceArray", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object), typeof(int) });
-						wrapper.ghostCastMethod = typeBuilder.DefineMethod("Cast", MethodAttributes.Public | MethodAttributes.Static, typeBuilder, new Type[] { typeof(object) });
-						wrapper.ghostCastArrayMethod = typeBuilder.DefineMethod("CastArray", MethodAttributes.Public | MethodAttributes.Static, typeof(void), new Type[] { typeof(object), typeof(int) });
+						typeAttribs |= TypeAttributes.NestedPublic;
 					}
 					else
 					{
-						typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs);
+						typeAttribs |= TypeAttributes.Public;
 					}
 				}
-			}
-			else
-			{
-				typeAttribs |= TypeAttributes.Class;
-				if(outer != null)
+				else if(outer != null)
 				{
-					// TODO in the CLR interfaces cannot contain nested types! (well, it works fine, but the spec says it isn't allowed)
-					typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
+					typeAttribs |= TypeAttributes.NestedAssembly;
+				}
+				if(f.IsInterface)
+				{
+					typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
+					if(outer != null)
+					{
+						if(wrapper.IsGhost)
+						{
+							throw new NotImplementedException();
+						}
+						// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
+						// (and broken by J# as well), so we'll just ignore it too.
+						typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs);
+					}
+					else
+					{
+						if(wrapper.IsGhost)
+						{
+							typeAttribs &= ~(TypeAttributes.Interface | TypeAttributes.Abstract);
+							typeAttribs |= TypeAttributes.Class | TypeAttributes.Sealed;
+							typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs, typeof(ValueType));
+							AttributeHelper.SetGhostInterface(typeBuilder);
+							AttributeHelper.SetModifiers(typeBuilder, wrapper.Modifiers);
+							wrapper.ghostRefField = typeBuilder.DefineField("__ref", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
+							AttributeHelper.HideFromJava((FieldBuilder)wrapper.ghostRefField);
+							typeBuilderGhostInterface = typeBuilder.DefineNestedType("__Interface", TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.NestedPublic);
+							AttributeHelper.HideFromJava(typeBuilderGhostInterface);
+							wrapper.ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object) });
+							wrapper.ghostIsInstanceArrayMethod = typeBuilder.DefineMethod("IsInstanceArray", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object), typeof(int) });
+							wrapper.ghostCastMethod = typeBuilder.DefineMethod("Cast", MethodAttributes.Public | MethodAttributes.Static, typeBuilder, new Type[] { typeof(object) });
+							wrapper.ghostCastArrayMethod = typeBuilder.DefineMethod("CastArray", MethodAttributes.Public | MethodAttributes.Static, typeof(void), new Type[] { typeof(object), typeof(int) });
+						}
+						else
+						{
+							typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs);
+						}
+					}
 				}
 				else
 				{
-					typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
+					typeAttribs |= TypeAttributes.Class;
+					if(outer != null)
+					{
+						// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
+						// (and broken by J# as well), so we'll just ignore it too.
+						typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
+					}
+					else
+					{
+						typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
+					}
+				}
+				TypeWrapper[] interfaces = wrapper.Interfaces;
+				for(int i = 0; i < interfaces.Length; i++)
+				{
+					// NOTE we're using TypeAsBaseType for the interfaces!
+					typeBuilder.AddInterfaceImplementation(interfaces[i].TypeAsBaseType);
+				}
+				AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
+				if(JVM.IsStaticCompiler && classFile.DeprecatedAttribute)
+				{
+					AttributeHelper.SetDeprecatedAttribute(typeBuilder);
 				}
 			}
-			TypeWrapper[] interfaces = wrapper.Interfaces;
-			for(int i = 0; i < interfaces.Length; i++)
+			catch(Exception x)
 			{
-				// NOTE we're using TypeAsBaseType for the interfaces!
-				typeBuilder.AddInterfaceImplementation(interfaces[i].TypeAsBaseType);
+				if(typeBuilder != null)
+				{
+					JVM.CriticalFailure("Exception during critical part of JavaTypeImpl construction", x);
+				}
+				throw;
 			}
-			AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
-			if(JVM.IsStaticCompiler && classFile.DeprecatedAttribute)
+		}
+
+		private void AddMirandaMethods(ArrayList methods, ArrayList baseMethods, TypeWrapper tw)
+		{
+			foreach(TypeWrapper iface in tw.Interfaces)
 			{
-				AttributeHelper.SetDeprecatedAttribute(typeBuilder);
+				AddMirandaMethods(methods, baseMethods, iface);
+				foreach(MethodWrapper ifmethod in iface.GetMethods())
+				{
+					// skip <clinit>
+					if(!ifmethod.IsStatic)
+					{
+						TypeWrapper lookup = wrapper;
+						while(lookup != null)
+						{
+							MethodWrapper mw = lookup.GetMethodWrapper(ifmethod.Descriptor, true);
+							if(mw == null)
+							{
+								mw = new SmartCallMethodWrapper(wrapper, ifmethod.Descriptor, null, null, null, Modifiers.Public | Modifiers.Abstract, MemberFlags.HideFromReflection, OpCodes.Call, OpCodes.Callvirt);
+								methodLookup[ifmethod.Descriptor] = methods.Count;
+								methods.Add(mw);
+								baseMethods.Add(ifmethod);
+								wrapper.AddMethod(mw);
+								break;
+							}
+							if(!mw.IsStatic)
+							{
+								break;
+							}
+							lookup = mw.DeclaringType.BaseTypeWrapper;
+						}
+					}
+				}
 			}
 		}
 
@@ -2390,14 +2280,69 @@ class DynamicTypeWrapper : TypeWrapper
 						{
 							throw new InvalidOperationException();
 						}
-						this.fields[i].EmitSet.Emit(ilGenerator);
+						this.fields[i].EmitSet(ilGenerator);
 					}
 				}
 			}
 		}
 
-		public override DynamicImpl Finish()
+		internal override MethodBase LinkMethod(MethodWrapper mw)
 		{
+			Debug.Assert(mw != null);
+			bool unloadableOverrideStub = false;
+			int index = (int)methodLookup[mw.Descriptor];
+			MethodWrapper baseMethod = baseMethods[index];
+			if(baseMethod != null)
+			{
+				baseMethod.Link();
+				// check the loader constraints
+				if(mw.ReturnType != baseMethod.ReturnType)
+				{
+					if(baseMethod.ReturnType.IsUnloadable || finishingForDebugSave)
+					{
+						if(!mw.ReturnType.IsUnloadable || (!baseMethod.ReturnType.IsUnloadable && finishingForDebugSave))
+						{
+							unloadableOverrideStub = true;
+						}
+					}
+					else
+					{
+						throw new LinkageError("Loader constraints violated");
+					}
+				}
+				TypeWrapper[] here = mw.GetParameters();
+				TypeWrapper[] there = baseMethod.GetParameters();
+				for(int i = 0; i < here.Length; i++)
+				{
+					if(here[i] != there[i])
+					{
+						if(there[i].IsUnloadable || finishingForDebugSave)
+						{
+							if(!here[i].IsUnloadable || (!there[i].IsUnloadable && finishingForDebugSave))
+							{
+								unloadableOverrideStub = true;
+							}
+						}
+						else
+						{
+							throw new LinkageError("Loader constraints violated");
+						}
+					}
+				}
+			}
+			Debug.Assert(mw.GetMethod() == null);
+			return GenerateMethod(index, unloadableOverrideStub);
+		}
+
+		internal override void LinkField(FieldWrapper fw)
+		{
+			Debug.Assert(fw != null);
+			// TODO
+		}
+
+		internal override DynamicImpl Finish(bool forDebugSave)
+		{
+			this.finishingForDebugSave = forDebugSave;
 			// NOTE if a finish is triggered during static compilation phase 1, it cannot be handled properly,
 			// so we bail out.
 			// (this should only happen during compilation of classpath.dll and is most likely caused by a bug somewhere)
@@ -2408,13 +2353,11 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 			if(wrapper.BaseTypeWrapper != null)
 			{
-				// make sure that the base type is already finished (because we need any Miranda methods it
-				// might introduce to be visible)
-				wrapper.BaseTypeWrapper.Finish();
+				wrapper.BaseTypeWrapper.Finish(forDebugSave);
 			}
 			if(outerClassWrapper != null)
 			{
-				outerClassWrapper.Finish();
+				outerClassWrapper.Finish(forDebugSave);
 			}
 			// NOTE there is a bug in the CLR (.NET 1.0 & 1.1 [1.2 is not yet available]) that
 			// causes the AppDomain.TypeResolve event to receive the incorrect type name for nested types.
@@ -2428,12 +2371,20 @@ class DynamicTypeWrapper : TypeWrapper
 			// turned up no other cases of the TypeResolve event firing.
 			for(int i = 0; i < wrapper.Interfaces.Length; i++)
 			{
-				wrapper.Interfaces[i].Finish();
+				wrapper.Interfaces[i].Finish(forDebugSave);
 			}
 			// make sure all classes are loaded, before we start finishing the type. During finishing, we
 			// may not run any Java code, because that might result in a request to finish the type that we
 			// are in the process of finishing, and this would be a problem.
-			classFile.LoadAllReferencedTypes(wrapper.GetClassLoader());
+			classFile.Link(wrapper);
+//			for(int i = 0; i < fields.Length; i++)
+//			{
+//				fields[i].Link();
+//			}
+			for(int i = 0; i < methods.Length; i++)
+			{
+				methods[i].Link();
+			}
 			// it is possible that the loading of the referenced classes triggered a finish of us,
 			// if that happens, we just return
 			if(finishedType != null)
@@ -2445,7 +2396,6 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				Debug.Assert(!finishing);
 				finishing = true;
-				Modifiers reflectiveModifiers = wrapper.Modifiers;
 				TypeWrapper declaringTypeWrapper = null;
 				TypeWrapper[] innerClassesTypeWrappers = TypeWrapper.EmptyArray;
 				// if we're an inner class, we need to attach an InnerClass attribute
@@ -2465,18 +2415,16 @@ class DynamicTypeWrapper : TypeWrapper
 							if(classFile.GetConstantPoolClassType(innerclasses[i].innerClass, wrapper.GetClassLoader()) == wrapper)
 							{
 								declaringTypeWrapper = classFile.GetConstantPoolClassType(innerclasses[i].outerClass, wrapper.GetClassLoader());
-								reflectiveModifiers = innerclasses[i].accessFlags;
 								AttributeHelper.SetInnerClass(typeBuilder,
 									classFile.GetConstantPoolClass(innerclasses[i].innerClass),
 									classFile.GetConstantPoolClass(innerclasses[i].outerClass),
 									innerclasses[i].name == 0 ? null : classFile.GetConstantPoolUtf8String(innerclasses[i].name),
-									reflectiveModifiers);
+									innerclasses[i].accessFlags);
 							}
 						}
 					}
 					innerClassesTypeWrappers = (TypeWrapper[])wrappers.ToArray(typeof(TypeWrapper));
 				}
-				//Console.WriteLine("finishing TypeFactory for " + classFile.Name);
 				if(fieldLookup == null)
 				{
 					fields = new FieldWrapper[classFile.Fields.Length];
@@ -2494,28 +2442,6 @@ class DynamicTypeWrapper : TypeWrapper
 						wrapper.AddField(fields[i]);
 					}
 				}
-				MethodDescriptor[] methodDescriptors = new MethodDescriptor[classFile.Methods.Length];
-				for(int i = 0; i < classFile.Methods.Length; i++)
-				{
-					methodDescriptors[i] = new MethodDescriptor(wrapper.GetClassLoader(), classFile.Methods[i]);
-				}
-				if(methodLookup == null)
-				{
-					methods = new MethodWrapper[classFile.Methods.Length];
-					methodLookup = new Hashtable();
-					for(int i = 0; i < classFile.Methods.Length; i++)
-					{
-						methodLookup[methodDescriptors[i]] = i;
-					}
-				}
-				for(int i = 0; i < methods.Length; i++)
-				{
-					if(methods[i] == null)
-					{
-						GenerateMethod(i);
-						wrapper.AddMethod(methods[i]);
-					}
-				}
 				if(typeBuilderGhostInterface != null)
 				{
 					// TODO consider adding methods from base interface and java.lang.Object as well
@@ -2524,8 +2450,8 @@ class DynamicTypeWrapper : TypeWrapper
 						// skip <clinit>
 						if(!methods[i].IsStatic)
 						{
-							TypeWrapper[] args = methods[i].Descriptor.ArgTypeWrappers;
-							MethodBuilder stub = typeBuilder.DefineMethod(methods[i].Name, MethodAttributes.Public, methods[i].Descriptor.RetTypeForDefineMethod, methods[i].Descriptor.ArgTypesForDefineMethod);
+							TypeWrapper[] args = methods[i].GetParameters();
+							MethodBuilder stub = typeBuilder.DefineMethod(methods[i].Name, MethodAttributes.Public, methods[i].ReturnTypeForDefineMethod, methods[i].GetParametersForDefineMethod());
 							AttributeHelper.SetModifiers(stub, methods[i].Modifiers);
 							ILGenerator ilgen = stub.GetILGenerator();
 							Label end = ilgen.DefineLabel();
@@ -2556,7 +2482,7 @@ class DynamicTypeWrapper : TypeWrapper
 									ilgen.Emit(OpCodes.Ldarg_S, (byte)(k + 1));
 								}
 								MethodWrapper mw = implementers[j].GetMethodWrapper(methods[i].Descriptor, true);
-								mw.EmitCallvirt.Emit(ilgen);
+								mw.EmitCallvirt(ilgen);
 								ilgen.Emit(OpCodes.Br, end);
 								ilgen.MarkLabel(label);
 							}
@@ -2578,7 +2504,7 @@ class DynamicTypeWrapper : TypeWrapper
 						for(int i = 0; i < implementers.Length; i++)
 						{
 							mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, wrapper.TypeAsParameterType, new Type[] { implementers[i].TypeAsParameterType });
-							AttributeHelper.HideFromReflection(mb);
+							AttributeHelper.HideFromJava(mb);
 							ilgen = mb.GetILGenerator();
 							local = ilgen.DeclareLocal(wrapper.TypeAsParameterType);
 							ilgen.Emit(OpCodes.Ldloca, local);
@@ -2590,7 +2516,7 @@ class DynamicTypeWrapper : TypeWrapper
 						}
 						// Implement the "IsInstance" method
 						mb = wrapper.ghostIsInstanceMethod;
-						AttributeHelper.HideFromReflection(mb);
+						AttributeHelper.HideFromJava(mb);
 						ilgen = mb.GetILGenerator();
 						Label end = ilgen.DefineLabel();
 						for(int i = 0; i < implementers.Length; i++)
@@ -2613,7 +2539,7 @@ class DynamicTypeWrapper : TypeWrapper
 						ilgen.Emit(OpCodes.Ret);
 						// Implement the "IsInstanceArray" method
 						mb = wrapper.ghostIsInstanceArrayMethod;
-						AttributeHelper.HideFromReflection(mb);
+						AttributeHelper.HideFromJava(mb);
 						ilgen = mb.GetILGenerator();
 						LocalBuilder localType = ilgen.DeclareLocal(typeof(Type));
 						ilgen.Emit(OpCodes.Ldarg_0);
@@ -2666,7 +2592,7 @@ class DynamicTypeWrapper : TypeWrapper
 						
 						// Implement the "Cast" method
 						mb = wrapper.ghostCastMethod;
-						AttributeHelper.HideFromReflection(mb);
+						AttributeHelper.HideFromJava(mb);
 						ilgen = mb.GetILGenerator();
 						end = ilgen.DefineLabel();
 						for(int i = 0; i < implementers.Length; i++)
@@ -2688,7 +2614,7 @@ class DynamicTypeWrapper : TypeWrapper
 						ilgen.Emit(OpCodes.Ret);
 						// Add "ToObject" methods
 						mb = typeBuilder.DefineMethod("ToObject", MethodAttributes.Public, typeof(object), Type.EmptyTypes);
-						AttributeHelper.HideFromReflection(mb);
+						AttributeHelper.HideFromJava(mb);
 						ilgen = mb.GetILGenerator();
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Ldfld, wrapper.GhostRefField);
@@ -2699,7 +2625,7 @@ class DynamicTypeWrapper : TypeWrapper
 						// cast is unsuccessful. Also, because of the complexity of this test, we call IsInstanceArray
 						// instead of reimplementing the check here.
 						mb = wrapper.ghostCastArrayMethod;
-						AttributeHelper.HideFromReflection(mb);
+						AttributeHelper.HideFromJava(mb);
 						ilgen = mb.GetILGenerator();
 						end = ilgen.DefineLabel();
 						ilgen.Emit(OpCodes.Ldarg_0);
@@ -2723,152 +2649,155 @@ class DynamicTypeWrapper : TypeWrapper
 					// we have to check for a null parent (interfaces have no parent).
 					while(parent != null && parent.IsAbstract)
 					{
-						MethodWrapper[] methods = parent.GetMethods();
-						for(int i = 0; i < methods.Length; i++)
+						foreach(MethodWrapper mw in parent.GetMethods())
 						{
-							MethodInfo mi = methods[i].GetMethod() as MethodInfo;
-							MethodDescriptor md = methods[i].Descriptor;
-							if(mi != null && mi.IsAbstract && wrapper.GetMethodWrapper(md, true).IsAbstract)
+							MethodInfo mi = mw.GetMethod() as MethodInfo;
+							if(mi != null && mi.IsAbstract && wrapper.GetMethodWrapper(mw.Descriptor, true).IsAbstract)
 							{
 								// NOTE in Sun's JRE 1.4.1 this method cannot be overridden by subclasses,
 								// but I think this is a bug, so we'll support it anyway.
-								MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Abstract|MethodAttributes.NewSlot), CallingConventions.Standard, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
-								AttributeHelper.SetModifiers(mb, methods[i].Modifiers);
-								EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + md.Name + md.Signature);
+								MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Abstract|MethodAttributes.NewSlot), CallingConventions.Standard, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+								AttributeHelper.HideFromJava(mb);
+								EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + mw.Name + mw.Signature);
 							}
 						}
 						parent = parent.BaseTypeWrapper;
 					}
 				}
-				bool basehasclinit = (wrapper.BaseTypeWrapper == null) ? false : wrapper.BaseTypeWrapper.TypeAsTBD.TypeInitializer != null;
+				bool basehasclinit = wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.TypeAsTBD.TypeInitializer != null;
 				bool hasclinit = false;
-				for(int i = 0; i < methods.Length; i++)
+				for(int i = 0; i < classFile.Methods.Length; i++)
 				{
-					ILGenerator ilGenerator;
+					ClassFile.Method m = classFile.Methods[i];
 					MethodBase mb = methods[i].GetMethod();
 					if(mb is ConstructorBuilder)
 					{
-						ilGenerator = ((ConstructorBuilder)mb).GetILGenerator();
-						if(basehasclinit && classFile.Methods[i].IsClassInitializer && !classFile.IsInterface)
+						ILGenerator ilGenerator = ((ConstructorBuilder)mb).GetILGenerator();
+						Tracer.EmitMethodTrace(ilGenerator, m.ClassFile.Name + "." + m.Name + m.Signature);
+						if(basehasclinit && m.IsClassInitializer && !classFile.IsInterface)
 						{
 							hasclinit = true;
 							// before we call the base class initializer, we need to set the non-final static ConstantValue fields
 							EmitConstantValueInitialization(ilGenerator);
 							EmitHelper.RunClassConstructor(ilGenerator, Type.BaseType);
 						}
-					}
-					else if(mb != null)
-					{
-						ilGenerator = ((MethodBuilder)mb).GetILGenerator();
+						Compiler.Compile(wrapper, m, ilGenerator);
 					}
 					else
 					{
-						// HACK methods that have unloadable types in the signature do not have an underlying method, so we end
-						// up here
-						// TODO I don't think the above is true anymore, this needs to be tested...
-						continue;
-					}
-					ClassFile.Method m = classFile.Methods[i];
-					Tracer.EmitMethodTrace(ilGenerator, m.ClassFile.Name + "." + m.Name + m.Signature);
-					if(m.IsAbstract)
-					{
-						// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
-						// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
-						if(!m.ClassFile.IsAbstract && !m.ClassFile.IsInterface)
+						if(m.IsAbstract)
 						{
-							EmitHelper.Throw(ilGenerator, "java.lang.AbstractMethodError", m.ClassFile.Name + "." + m.Name + m.Signature);
+							// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
+							// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
+							if(!m.ClassFile.IsAbstract && !m.ClassFile.IsInterface)
+							{
+								ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
+								Tracer.EmitMethodTrace(ilGenerator, m.ClassFile.Name + "." + m.Name + m.Signature);
+								EmitHelper.Throw(ilGenerator, "java.lang.AbstractMethodError", m.ClassFile.Name + "." + m.Name + m.Signature);
+							}
 						}
-					}
-					else if(m.IsNative)
-					{
-						Profiler.Enter("JavaTypeImpl.Finish.Native");
-						try
+						else if(m.IsNative)
 						{
-							// do we have a native implementation in map.xml?
-							if(nativeMethods != null)
+							Profiler.Enter("JavaTypeImpl.Finish.Native");
+							try
 							{
-								CodeEmitter opcodes = (CodeEmitter)nativeMethods[classFile.Name + "." + m.Name + m.Signature];
-								if(opcodes != null)
+								ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
+								Tracer.EmitMethodTrace(ilGenerator, m.ClassFile.Name + "." + m.Name + m.Signature);
+								// do we have a native implementation in map.xml?
+								if(nativeMethods != null)
 								{
-									opcodes.Emit(ilGenerator);
-									continue;
-								}
-							}
-							// see if there exists a NativeCode class for this type
-							Type nativeCodeType = Type.GetType("NativeCode." + classFile.Name.Replace('$', '+'));
-							MethodInfo nativeMethod = null;
-							TypeWrapper[] args = m.GetArgTypes(wrapper.GetClassLoader());
-							if(nativeCodeType != null)
-							{
-								TypeWrapper[] nargs = args;
-								if(!m.IsStatic)
-								{
-									nargs = new TypeWrapper[args.Length + 1];
-									args.CopyTo(nargs, 1);
-									nargs[0] = this.wrapper;
-								}
-								MethodInfo[] nativeCodeTypeMethods = nativeCodeType.GetMethods(BindingFlags.Static | BindingFlags.Public);
-								foreach(MethodInfo method in nativeCodeTypeMethods)
-								{
-									ParameterInfo[] param = method.GetParameters();
-									TypeWrapper[] match = new TypeWrapper[param.Length];
-									for(int j = 0; j < param.Length; j++)
+									CodeEmitter opcodes = (CodeEmitter)nativeMethods[classFile.Name + "." + m.Name + m.Signature];
+									if(opcodes != null)
 									{
-										match[j] = ClassLoaderWrapper.GetWrapperFromType(param[j].ParameterType);
-									}
-									if(m.Name == method.Name && IsCompatibleArgList(nargs, match))
-									{
-										// TODO instead of taking the first matching method, we should find the best one
-										nativeMethod = method;
-										break;
+										opcodes.Emit(ilGenerator);
+										continue;
 									}
 								}
-							}
-							if(nativeMethod != null)
-							{
-								int add = 0;
-								if(!m.IsStatic)
+								// see if there exists a NativeCode class for this type
+								Type nativeCodeType = Type.GetType("NativeCode." + classFile.Name.Replace('$', '+'));
+								MethodInfo nativeMethod = null;
+								TypeWrapper[] args = m.GetArgTypes(wrapper.GetClassLoader());
+								if(nativeCodeType != null)
 								{
-									ilGenerator.Emit(OpCodes.Ldarg_0);
-									add = 1;
+									TypeWrapper[] nargs = args;
+									if(!m.IsStatic)
+									{
+										nargs = new TypeWrapper[args.Length + 1];
+										args.CopyTo(nargs, 1);
+										nargs[0] = this.wrapper;
+									}
+									MethodInfo[] nativeCodeTypeMethods = nativeCodeType.GetMethods(BindingFlags.Static | BindingFlags.Public);
+									foreach(MethodInfo method in nativeCodeTypeMethods)
+									{
+										ParameterInfo[] param = method.GetParameters();
+										TypeWrapper[] match = new TypeWrapper[param.Length];
+										for(int j = 0; j < param.Length; j++)
+										{
+											match[j] = ClassLoaderWrapper.GetWrapperFromType(param[j].ParameterType);
+										}
+										if(m.Name == method.Name && IsCompatibleArgList(nargs, match))
+										{
+											// TODO instead of taking the first matching method, we should find the best one
+											nativeMethod = method;
+											break;
+										}
+									}
 								}
-								for(int j = 0; j < args.Length; j++)
+								if(nativeMethod != null)
 								{
-									ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(j + add));
-								}
-								ilGenerator.Emit(OpCodes.Call, nativeMethod);
-								TypeWrapper retTypeWrapper = m.GetRetType(wrapper.GetClassLoader());
-								if(!retTypeWrapper.TypeAsTBD.Equals(nativeMethod.ReturnType) && !retTypeWrapper.IsGhost)
-								{
-									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsTBD);
-								}
-								ilGenerator.Emit(OpCodes.Ret);
-							}
-							else
-							{
-								if(JVM.NoJniStubs)
-								{
-									// since NoJniStubs can only be set when we're statically compiling, it is safe to use the "compiler" trace switch
-									Tracer.Warning(Tracer.Compiler, "Native method not implemented: {0}.{1}.{2}", classFile.Name, m.Name, m.Signature);
-									EmitHelper.Throw(ilGenerator, "java.lang.UnsatisfiedLinkError", "Native method not implemented: " + classFile.Name + "." + m.Name + m.Signature);
+									int add = 0;
+									if(!m.IsStatic)
+									{
+										ilGenerator.Emit(OpCodes.Ldarg_0);
+										add = 1;
+									}
+									for(int j = 0; j < args.Length; j++)
+									{
+										ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(j + add));
+									}
+									ilGenerator.Emit(OpCodes.Call, nativeMethod);
+									TypeWrapper retTypeWrapper = methods[i].ReturnType;
+									if(!retTypeWrapper.TypeAsTBD.Equals(nativeMethod.ReturnType) && !retTypeWrapper.IsGhost)
+									{
+										ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsTBD);
+									}
+									ilGenerator.Emit(OpCodes.Ret);
 								}
 								else
 								{
-									JniBuilder.Generate(ilGenerator, wrapper, typeBuilder, m, args);
-									//JniProxyBuilder.Generate(ilGenerator, wrapper, typeBuilder, m, args);
+									if(JVM.NoJniStubs)
+									{
+										// since NoJniStubs can only be set when we're statically compiling, it is safe to use the "compiler" trace switch
+										Tracer.Warning(Tracer.Compiler, "Native method not implemented: {0}.{1}.{2}", classFile.Name, m.Name, m.Signature);
+										EmitHelper.Throw(ilGenerator, "java.lang.UnsatisfiedLinkError", "Native method not implemented: " + classFile.Name + "." + m.Name + m.Signature);
+									}
+									else
+									{
+										if(ClassLoaderWrapper.IsSaveDebugImage)
+										{
+											JniProxyBuilder.Generate(ilGenerator, wrapper, typeBuilder, m, args);
+										}
+										else
+										{
+											JniBuilder.Generate(ilGenerator, wrapper, typeBuilder, m, args);
+										}
+									}
 								}
 							}
+							finally
+							{
+								Profiler.Leave("JavaTypeImpl.Finish.Native");
+							}
 						}
-						finally
+						else
 						{
-							Profiler.Leave("JavaTypeImpl.Finish.Native");
+							ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
+							Tracer.EmitMethodTrace(ilGenerator, m.ClassFile.Name + "." + m.Name + m.Signature);
+							Compiler.Compile(wrapper, m, ilGenerator);
 						}
-					}
-					else
-					{
-						Compiler.Compile(wrapper, m, ilGenerator);
 					}
 				}
+				// NOTE non-final fields aren't allowed in interfaces so we don't have to initialize constant fields
 				if(!classFile.IsInterface)
 				{
 					// if we don't have a <clinit> we may need to inject one
@@ -2889,7 +2818,7 @@ class DynamicTypeWrapper : TypeWrapper
 						if(basehasclinit || hasconstantfields)
 						{
 							ConstructorBuilder cb = DefineClassInitializer();
-							AttributeHelper.HideFromReflection(cb);
+							AttributeHelper.HideFromJava(cb);
 							ILGenerator ilGenerator = cb.GetILGenerator();
 							EmitConstantValueInitialization(ilGenerator);
 							if(basehasclinit)
@@ -2910,10 +2839,11 @@ class DynamicTypeWrapper : TypeWrapper
 					for(int i = 0; i < interfaces.Length; i++)
 					{
 						// if we implement a ghost interface, add an implicit conversion to the ghost reference value type
+						// TODO do this for indirectly implemented interfaces (interfaces implemented by interfaces) as well
 						if(interfaces[i].IsGhost)
 						{
 							MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, interfaces[i].TypeAsParameterType, new Type[] { wrapper.TypeAsParameterType });
-							AttributeHelper.HideFromReflection(mb);
+							AttributeHelper.HideFromJava(mb);
 							ILGenerator ilgen = mb.GetILGenerator();
 							LocalBuilder local = ilgen.DeclareLocal(interfaces[i].TypeAsParameterType);
 							ilgen.Emit(OpCodes.Ldloca, local);
@@ -2936,6 +2866,33 @@ class DynamicTypeWrapper : TypeWrapper
 						}
 						baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
 					}
+					foreach(MethodWrapper mw in methods)
+					{
+						if(mw.Name != "<init>" && !mw.IsStatic && !mw.IsPrivate)
+						{
+							if(wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasIncompleteInterfaceImplementation)
+							{
+								Hashtable hashtable = null;
+								TypeWrapper tw = wrapper.BaseTypeWrapper;
+								while(tw.HasIncompleteInterfaceImplementation)
+								{
+									foreach(TypeWrapper iface in tw.Interfaces)
+									{
+										AddMethodOverride(mw, (MethodBuilder)mw.GetMethod(), iface, mw.Descriptor, ref hashtable, false);
+									}
+									tw = tw.BaseTypeWrapper;
+								}
+							}
+							if(true)
+							{
+								Hashtable hashtable = null;
+								foreach(TypeWrapper iface in wrapper.Interfaces)
+								{
+									AddMethodOverride(mw, (MethodBuilder)mw.GetMethod(), iface, mw.Descriptor, ref hashtable, true);
+								}
+							}
+						}
+					}
 				}
 
 				Type type;
@@ -2949,7 +2906,7 @@ class DynamicTypeWrapper : TypeWrapper
 					Profiler.Leave("TypeBuilder.CreateType");
 				}
 				ClassLoaderWrapper.SetWrapperForType(type, wrapper);
-				finishedType = new FinishedTypeImpl(type, typeBuilderGhostInterface != null ? typeBuilderGhostInterface.CreateType() : null, innerClassesTypeWrappers, declaringTypeWrapper, reflectiveModifiers);
+				finishedType = new FinishedTypeImpl(type, typeBuilderGhostInterface != null ? typeBuilderGhostInterface.CreateType() : null, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers);
 				return finishedType;
 			}
 			catch(Exception x)
@@ -2999,11 +2956,16 @@ class DynamicTypeWrapper : TypeWrapper
 				JniBuilder.Generate(mb.GetILGenerator(), wrapper, tb, m, args);
 				for(int i = 0; i < argTypes.Length; i++)
 				{
-					ilGenerator.Emit(OpCodes.Ldarg, (ushort)i);
+					ilGenerator.Emit(OpCodes.Ldarg, (short)i);
 				}
 				ilGenerator.Emit(OpCodes.Call, mb);
 				ilGenerator.Emit(OpCodes.Ret);
-				tb.CreateType();
+				Type type = tb.CreateType();
+				// HACK since we're creating a type in the dynamic assembly, we must also register its wrapper,
+				// because the ClassLoaderWrapper assumes that all dynamic types are in its hashtable,
+				// but note that this only registers it for reverse lookup (from Type -> TypeWrapper), this
+				// is necessary to make stack walking work.
+				ClassLoaderWrapper.SetWrapperForType(type, new CompiledTypeWrapper(type.FullName, type));
 			}
 		}
 
@@ -3123,7 +3085,7 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		public override TypeWrapper[] InnerClasses
+		internal override TypeWrapper[] InnerClasses
 		{
 			get
 			{
@@ -3131,7 +3093,7 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		public override TypeWrapper DeclaringTypeWrapper
+		internal override TypeWrapper DeclaringTypeWrapper
 		{
 			get
 			{
@@ -3139,15 +3101,29 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		public override Modifiers ReflectiveModifiers
+		internal override Modifiers ReflectiveModifiers
 		{
 			get
 			{
-				throw new InvalidOperationException("ReflectiveModifiers is only available for finished types");
+				ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
+				if(innerclasses != null)
+				{
+					for(int i = 0; i < innerclasses.Length; i++)
+					{
+						if(innerclasses[i].innerClass != 0)
+						{
+							if(classFile.GetConstantPoolClass(innerclasses[i].innerClass) == wrapper.Name)
+							{
+								return innerclasses[i].accessFlags;
+							}
+						}
+					}
+				}
+				return classFile.Modifiers;
 			}
 		}
 
-		public override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+		internal override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 		{
 			if(fieldLookup == null)
 			{
@@ -3171,6 +3147,39 @@ class DynamicTypeWrapper : TypeWrapper
 			return null;
 		}
 
+		private void UpdateClashTable()
+		{
+			lock(this)
+			{
+				if(memberclashtable == null)
+				{
+					memberclashtable = new Hashtable();
+					for(int i = 0; i < methods.Length; i++)
+					{
+						if(methods[i].IsLinked)
+						{
+							string key = GenerateClashKey("method", methods[i].RealName, methods[i].ReturnTypeForDefineMethod, methods[i].GetParametersForDefineMethod());
+							memberclashtable.Add(key, key);
+						}
+					}
+				}
+			}
+		}
+
+		private string GenerateClashKey(string type, string name, Type retOrFieldType, Type[] args)
+		{
+			System.Text.StringBuilder sb = new System.Text.StringBuilder(type);
+			sb.Append(':').Append(name).Append(':').Append(retOrFieldType.FullName);
+			if(args != null)
+			{
+				foreach(Type t in args)
+				{
+					sb.Append(':').Append(t.FullName);
+				}
+			}
+			return sb.ToString();
+		}
+
 		private void GenerateField(int i)
 		{
 			Profiler.Enter("JavaTypeImpl.GenerateField");
@@ -3181,10 +3190,12 @@ class DynamicTypeWrapper : TypeWrapper
 				string fieldName = fld.Name;
 				TypeWrapper typeWrapper = fld.GetFieldType(wrapper.GetClassLoader());
 				Type type = typeWrapper.TypeAsFieldType;
-				if(typeWrapper.IsUnloadable)
+				bool setNameSig = typeWrapper.IsUnloadable || typeWrapper.IsGhostArray;
+				if(setNameSig)
 				{
+					// TODO use clashtable
 					// the field name is mangled here, because otherwise it can (theoretically)
-					// conflict with another unloadable or object field
+					// conflict with another unloadable or object or ghost array field
 					// (fields can be overloaded on type)
 					fieldName += "/" + typeWrapper.Name;
 				}
@@ -3225,14 +3236,7 @@ class DynamicTypeWrapper : TypeWrapper
 					attribs |= FieldAttributes.Literal;
 					field = typeBuilder.DefineField(fieldName, type, attribs);
 					field.SetConstant(constantValue);
-					// NOTE even though you're not supposed to access a constant static final (the compiler is supposed
-					// to inline them), we have to support it (because it does happen, e.g. if the field becomes final
-					// after the referencing class was compiled)
-					CodeEmitter emitGet = CodeEmitter.CreateLoadConstant(constantValue);
-					// when non-blank final fields are updated, the JIT normally doesn't see that (because the
-					// constant value is inlined), so we emulate that behavior by emitting a Pop
-					CodeEmitter emitSet = CodeEmitter.Pop;
-					fields[i] = FieldWrapper.Create(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), fld.Name, fld.Signature, fld.Modifiers, field, emitGet, emitSet);
+					fields[i] = new FieldWrapper.ConstantFieldWrapper(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), fld.Name, fld.Signature, fld.Modifiers, field, constantValue);
 				}
 				else
 				{
@@ -3266,7 +3270,7 @@ class DynamicTypeWrapper : TypeWrapper
 						methodAttribs |= MethodAttributes.SpecialName;
 						// TODO we should ensure that the getter method name doesn't clash with an existing method
 						MethodBuilder getter = typeBuilder.DefineMethod("get_" + fld.Name, methodAttribs, CallingConventions.Standard, type, Type.EmptyTypes);
-						AttributeHelper.HideFromReflection(getter);
+						AttributeHelper.HideFromJava(getter);
 						ILGenerator ilgen = getter.GetILGenerator();
 						if(fld.IsVolatile)
 						{
@@ -3298,26 +3302,22 @@ class DynamicTypeWrapper : TypeWrapper
 						{
 							emitSet += CodeEmitter.Create(OpCodes.Stfld, field);
 						}
-						fields[i] = FieldWrapper.Create(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), fld.Name, fld.Signature, fld.Modifiers, field, emitGet, emitSet);
+						fields[i] = FieldWrapper.Create1(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), fld.Name, fld.Signature, fld.Modifiers, field, emitGet, emitSet);
 					}
 					else
 					{
-						fields[i] = FieldWrapper.Create(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), field, fld.Signature, fld.Modifiers);
+						fields[i] = FieldWrapper.Create3(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), field, fld.Signature, fld.Modifiers);
 					}
-				}
-				if(typeWrapper.IsUnloadable)
-				{
-					AttributeHelper.SetUnloadableType(field, typeWrapper.Name);
-				}
-				else if(typeWrapper.IsGhostArray)
-				{
-					// TODO we need to annotate the field so that we know the real type of the field (for reflection)
 				}
 				// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
 				// the Java modifiers
 				if(setModifiers)
 				{
 					AttributeHelper.SetModifiers(field, fld.Modifiers);
+				}
+				if(setNameSig)
+				{
+					AttributeHelper.SetNameSig(field, fld.Name, fld.Signature);
 				}
 				if(JVM.IsStaticCompiler && fld.DeprecatedAttribute)
 				{
@@ -3330,41 +3330,15 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		public override MethodWrapper GetMethodImpl(MethodDescriptor md)
-		{
-			if(methodLookup == null)
-			{
-				methods = new MethodWrapper[classFile.Methods.Length];
-				methodLookup = new Hashtable();
-				for(int i = 0; i < classFile.Methods.Length; i++)
-				{
-					Profiler.Count("DynamicMethod");
-					methodLookup[new MethodDescriptor(wrapper.GetClassLoader(), classFile.Methods[i])] = i;
-				}
-			}
-			object index = methodLookup[md];
-			if(index != null)
-			{
-				int i = (int)index;
-				if(methods[i] == null)
-				{
-					GenerateMethod(i);
-				}
-				return methods[i];
-			}
-			return null;
-		}
-
 		private ConstructorBuilder DefineClassInitializer()
 		{
 			// NOTE we don't need to record the modifiers here, because they aren't visible from Java reflection
-			// (well they might be visible from JNI reflection, but that isn't important enough to justify the custom attribute)
 			if(!classFile.IsFinal && !classFile.IsInterface)
 			{
 				// We create a field that the derived classes can access in their .cctor to trigger our .cctor
 				// (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
 				FieldBuilder field = typeBuilder.DefineField("__<clinit>", typeof(int), FieldAttributes.SpecialName | FieldAttributes.Public | FieldAttributes.Static);
-				AttributeHelper.HideFromReflection(field);
+				AttributeHelper.HideFromJava(field);
 			}
 			if(typeBuilder.IsInterface)
 			{
@@ -3375,55 +3349,113 @@ class DynamicTypeWrapper : TypeWrapper
 			return typeBuilder.DefineTypeInitializer();
 		}
 
-		private void GenerateMethod(int index)
+		// this finds the method that md is going to be overriding
+		private MethodWrapper FindBaseMethod(MethodDescriptor md, out bool explicitOverride)
 		{
+			Debug.Assert(!classFile.IsInterface);
+			Debug.Assert(md.Name != "<init>");
+
+			explicitOverride = false;
+			TypeWrapper tw = wrapper.BaseTypeWrapper;
+			while(tw != null)
+			{
+				// TODO we need to handle static methods (duh!)
+				MethodWrapper baseMethod = tw.GetMethodWrapper(md, true);
+				if(baseMethod == null)
+				{
+					return null;
+				}
+				// here are the complex rules for determining whether this method overrides the method we found
+				// RULE 1: final methods may not be overridden
+				if(baseMethod.IsFinal && !baseMethod.IsPrivate)
+				{
+					throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + tw.Name + " is overriden in " + wrapper.Name);
+				}
+				// RULE 2: public & protected methods can be overridden (package methods are handled by RULE 4)
+				// (by public, protected & *package* methods [even if they are in a different package])
+				if(baseMethod.IsPublic || baseMethod.IsProtected)
+				{
+					// if we already encountered a package method, we cannot override the base method of
+					// that package method
+					if(explicitOverride)
+					{
+						explicitOverride = false;
+						return null;
+					}
+					return baseMethod;
+				}
+				// RULE 3: private methods are ignored
+				if(!baseMethod.IsPrivate)
+				{
+					// RULE 4: package methods can only be overridden in the same package
+					if(baseMethod.DeclaringType.IsInSamePackageAs(wrapper))
+					{
+						return baseMethod;
+					}
+					// since we encountered a method with the same name/signature that we aren't overriding,
+					// we need to specify an explicit override
+					// NOTE we only do this if baseMethod isn't private, because if it is, Reflection.Emit
+					// will complain about the explicit MethodOverride (possibly a bug)
+					explicitOverride = true;
+				}
+				tw = baseMethod.DeclaringType.BaseTypeWrapper;
+			}
+			return null;
+		}
+
+		private string GenerateUniqueMethodName(string basename, MethodWrapper mw)
+		{
+			string name = basename;
+			string key = GenerateClashKey("method", name, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+			UpdateClashTable();
+			lock(memberclashtable.SyncRoot)
+			{
+				for(int clashcount = 0; memberclashtable.ContainsKey(key); clashcount++)
+				{
+					name = basename + "$" + clashcount;
+					key = GenerateClashKey("method", name, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+				}
+				memberclashtable.Add(key, key);
+			}
+			return name;
+		}
+
+		private MethodBase GenerateMethod(int index, bool unloadableOverrideStub)
+		{
+			methods[index].AssertLinked();
 			Profiler.Enter("JavaTypeImpl.GenerateMethod");
 			try
 			{
-				Debug.Assert(methods[index] == null);
-				// TODO things to consider when we support unloadable types on the argument list on return type:
-				// - later on, the method can be overriden by a class that does have access to the type, so
-				//   this should be detected and an appropriate override stub should be generated
-				// - overloading might conflict with the generalised argument list (unloadable types appear
-				//   as System.Object). The nicest way to solve this would be to emit a modreq attribute on the parameter,
-				//   but Reflection.Emit doesn't support this, so we'll probably have to use a name mangling scheme
-				MethodBase method;
-				ClassFile.Method m = classFile.Methods[index];
-				TypeWrapper[] argTypeWrappers = m.GetArgTypes(wrapper.GetClassLoader());
-				TypeWrapper retTypeWrapper = m.GetRetType(wrapper.GetClassLoader());
-				Type[] args = new Type[argTypeWrappers.Length];
-				Type retType = retTypeWrapper.TypeAsParameterType;
-				for(int i = 0; i < args.Length; i++)
+				if(index >= classFile.Methods.Length)
 				{
-					args[i] = argTypeWrappers[i].TypeAsParameterType;
+					// We're a Miranda method
+					Debug.Assert(baseMethods[index].DeclaringType.IsInterface);
+					string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index]);
+					// TODO if the interface is not public, we probably shouldn't make the Miranda method public
+					MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride, baseMethods[index].ReturnTypeForDefineMethod, baseMethods[index].GetParametersForDefineMethod());
+					AttributeHelper.MirandaMethod(mb);
+					if(unloadableOverrideStub || name != methods[index].Name)
+					{
+						// instead of creating an override stub, we created the Miranda method with the proper signature and
+						// decorate it with a NameSigAttribute that contains the real signature
+						AttributeHelper.SetNameSig(mb, methods[index].Name, methods[index].Signature);
+					}
+					// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
+					if(name != baseMethods[index].RealName)
+					{
+						typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index].GetMethod());
+					}
+					return mb;
+				}
+				ClassFile.Method m = classFile.Methods[index];
+				MethodBase method;
+				bool setNameSig = methods[index].ReturnType.IsUnloadable || methods[index].ReturnType.IsGhostArray;
+				foreach(TypeWrapper tw in methods[index].GetParameters())
+				{
+					setNameSig |= tw.IsUnloadable || tw.IsGhostArray;
 				}
 				bool setModifiers = m.IsNative;
 				MethodAttributes attribs = 0;
-				if(m.IsAbstract)
-				{
-					// only if the classfile is abstract, we make the CLR method abstract, otherwise,
-					// we have to generate a method that throws an AbstractMethodError (because the JVM
-					// allows abstract methods in non-abstract classes)
-					if(m.ClassFile.IsAbstract || m.ClassFile.IsInterface)
-					{
-						attribs |= MethodAttributes.Abstract;
-					}
-					else
-					{
-						setModifiers = true;
-					}
-				}
-				if(m.IsFinal)
-				{
-					if(!m.IsStatic && !m.IsPrivate)
-					{
-						attribs |= MethodAttributes.Final;
-					}
-					else
-					{
-						setModifiers = true;
-					}
-				}
 				if(m.IsPrivate)
 				{
 					attribs |= MethodAttributes.Private;
@@ -3440,19 +3472,21 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					attribs |= MethodAttributes.Assembly;
 				}
-				if(m.IsStatic)
-				{
-					attribs |= MethodAttributes.Static;
-				}
 				if(m.Name == "<init>")
 				{
-					// NOTE we don't need to record the modifiers here, because only access modifiers are valid for
-					// constructors and we have a well defined (reversible) mapping from them
-					method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, args);
-					ParameterBuilder[] parameterBuilders = null;
-					if(JVM.IsStaticCompiler)
+					if(setNameSig)
 					{
-						parameterBuilders = AddParameterNames(method, m);
+						// TODO we might have to mangle the signature to make it unique
+					}
+					// strictfp is the only modifier that a constructor can have
+					if(m.IsStrictfp)
+					{
+						setModifiers = true;
+					}
+					method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod());
+					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
+					{
+						AddParameterNames(method, m);
 					}
 				}
 				else if(m.IsClassInitializer)
@@ -3461,85 +3495,64 @@ class DynamicTypeWrapper : TypeWrapper
 				}
 				else
 				{
-					if(!m.IsPrivate && !m.IsStatic)
+					if(m.IsAbstract)
+					{
+						// only if the classfile is abstract, we make the CLR method abstract, otherwise,
+						// we have to generate a method that throws an AbstractMethodError (because the JVM
+						// allows abstract methods in non-abstract classes)
+						if(m.ClassFile.IsAbstract || m.ClassFile.IsInterface)
+						{
+							attribs |= MethodAttributes.Abstract;
+						}
+						else
+						{
+							setModifiers = true;
+						}
+					}
+					if(m.IsFinal)
+					{
+						if(!m.IsStatic && !m.IsPrivate)
+						{
+							attribs |= MethodAttributes.Final;
+						}
+						else
+						{
+							setModifiers = true;
+						}
+					}
+					if(m.IsStatic)
+					{
+						attribs |= MethodAttributes.Static;
+					}
+					else if(!m.IsPrivate)
 					{
 						attribs |= MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
 					}
 					string name = m.Name;
-					MethodDescriptor md = new MethodDescriptor(wrapper.GetClassLoader(), m);
+					MethodDescriptor md = methods[index].Descriptor;
 					// if a method is virtual, we need to find the method it overrides (if any), for several reasons:
 					// - if we're overriding a method that has a different name (e.g. some of the virtual methods
 					//   in System.Object [Equals <-> equals]) we need to add an explicit MethodOverride
 					// - if one of the base classes has a similar method that is private (or package) that we aren't
 					//   overriding, we need to specify an explicit MethodOverride
-					MethodBase baseMethod = null;
-					MethodWrapper baseMce = null;
-					bool explicitOverride = false;
+					MethodWrapper baseMce = baseMethods[index];
+					bool explicitOverride = methods[index].IsExplicitOverride;
 					if((attribs & MethodAttributes.Virtual) != 0 && !classFile.IsInterface)
 					{
-						TypeWrapper tw = wrapper.BaseTypeWrapper;
-						while(tw != null)
+						// make sure the base method is already defined
+						Debug.Assert(baseMce == null || baseMce.GetMethod() != null);
+						if(baseMce == null || baseMce.DeclaringType.IsInterface)
 						{
-							baseMce = tw.GetMethodWrapper(md, true);
-							if(baseMce == null)
-							{
-								break;
-							}
-							// here are the complex rules for determining whether this method overrides the method we found
-							// RULE 1: final methods may not be overridden
-							if(baseMce.IsFinal && !baseMce.IsPrivate)
-							{
-								// TODO make sure the VerifyError is translated into a java.lang.VerifyError
-								throw new VerifyError("final method " + baseMce.Name + baseMce.Descriptor.Signature + " in " + tw.Name + " is overriden in " + wrapper.Name);
-							}
-							// RULE 2: public & protected methods can be overridden (package methods are handled by RULE 4)
-							// (by public, protected & *package* methods [even if they are in a different package])
-							if(baseMce.IsPublic || baseMce.IsProtected)
-							{
-								// if we already encountered a package method, we cannot override the base method of
-								// that package method
-								if(explicitOverride)
-								{
-									explicitOverride = false;
-									break;
-								}
-								baseMethod = baseMce.GetMethod();
-								break;
-							}
-							// RULE 3: private methods are ignored
-							if(!baseMce.IsPrivate)
-							{
-								// RULE 4: package methods can only be overridden in the same package
-								if(baseMce.DeclaringType.IsInSamePackageAs(wrapper))
-								{
-									baseMethod = baseMce.GetMethod();
-									break;
-								}
-								// since we encountered a method with the same name/signature that we aren't overriding,
-								// we need to specify an explicit override
-								// NOTE we only do this if baseMce isn't private, because if it is, Reflection.Emit
-								// will complain about the explicit MethodOverride (possibly a bug)
-								explicitOverride = true;
-							}
-							tw = baseMce.DeclaringType.BaseTypeWrapper;
-						}
-						if(baseMethod == null)
-						{
-							// we need set NewSlot here, to prevent accidentally overriding methods
+							// we need to set NewSlot here, to prevent accidentally overriding methods
 							// (for example, if a Java class has a method "boolean Equals(object)", we don't want that method
 							// to override System.Object.Equals)
-							// Unless, of course, we're implementing an inherited interface method (the miranda method might not
-							// have been created at this point, because that happens during the finishing of our base class)
-							// TODO a better way to fix this would be to move Miranda method creation from Finish to GetMethodImpl
-							if(wrapper.BaseTypeWrapper == null || !IsInterfaceMethod(wrapper.BaseTypeWrapper, md))
-							{
-								attribs |= MethodAttributes.NewSlot;
-							}
+							attribs |= MethodAttributes.NewSlot;
 						}
 						else
 						{
-							// if we have a method overriding a more accessible method (yes, this does work), we need to make the
-							// method more accessible, because otherwise the CLR will complain that we're reducing access)
+							// if we have a method overriding a more accessible method (the JVM allows this), we need to make the
+							// method more accessible, because otherwise the CLR will complain that we're reducing access
+							MethodBase baseMethod = baseMce.GetMethod();
 							if((baseMethod.IsPublic && !m.IsPublic) ||
 								(baseMethod.IsFamily && !m.IsPublic && !m.IsProtected) ||
 								(!m.IsPublic && !m.IsProtected && !baseMce.DeclaringType.IsInSamePackageAs(wrapper)))
@@ -3553,22 +3566,22 @@ class DynamicTypeWrapper : TypeWrapper
 					MethodBuilder mb;
 					if(typeBuilderGhostInterface != null)
 					{
-						mb = typeBuilderGhostInterface.DefineMethod(name, attribs, retType, args);
+						mb = typeBuilderGhostInterface.DefineMethod(name, attribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 					}
 					else
 					{
 						bool needFinalize = false;
 						bool needDispatch = false;
-						if(baseMethod != null && md.Name == "finalize" && md.Signature == "()V")
+						if(baseMce != null && md.Name == "finalize" && md.Signature == "()V")
 						{
-							if(baseMethod.Name == "Finalize")
+							if(baseMce.RealName == "Finalize")
 							{
-								baseMethod = null;
+								//baseMethod = null;
 								attribs |= MethodAttributes.NewSlot;
 								needFinalize = true;
 								needDispatch = true;
 							}
-							else if(baseMethod.DeclaringType == CoreClasses.java.lang.Object.Wrapper.TypeAsBaseType)
+							else if(baseMce.DeclaringType == CoreClasses.java.lang.Object.Wrapper)
 							{
 								needFinalize = true;
 								needDispatch = true;
@@ -3579,7 +3592,25 @@ class DynamicTypeWrapper : TypeWrapper
 								needDispatch = false;
 							}
 						}
-						mb = typeBuilder.DefineMethod(name, attribs, retType, args);
+						if(unloadableOverrideStub)
+						{
+							attribs |= MethodAttributes.NewSlot;
+						}
+						if(setNameSig || memberclashtable != null)
+						{
+							name = GenerateUniqueMethodName(name, methods[index]);
+						}
+						mb = typeBuilder.DefineMethod(name, attribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+						if(unloadableOverrideStub)
+						{
+							GenerateUnloadableOverrideStub(baseMce, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+						}
+						else if(baseMce != null && (explicitOverride || baseMce.RealName != name))
+						{
+							// assert that the method we're overriding is in fact virtual and not final!
+							Debug.Assert(baseMce.GetMethod().IsVirtual && !baseMce.GetMethod().IsFinal);
+							typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMce.GetMethod());
+						}
 						// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
 						// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
 						if(needFinalize)
@@ -3592,8 +3623,10 @@ class DynamicTypeWrapper : TypeWrapper
 							{
 								attr |= MethodAttributes.Final;
 							}
+							// TODO if the Java class also defines a Finalize() method, we need to name the stub differently
+							// (and make it effectively appear hidden by the class's Finalize method)
 							MethodBuilder finalize = typeBuilder.DefineMethod("Finalize", attr, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
-							AttributeHelper.HideFromReflection(finalize);
+							AttributeHelper.HideFromJava(finalize);
 							ILGenerator ilgen = finalize.GetILGenerator();
 							if(needDispatch)
 							{
@@ -3611,52 +3644,12 @@ class DynamicTypeWrapper : TypeWrapper
 							ilgen.Emit(OpCodes.Ret);
 						}
 					}
-					ParameterBuilder[] parameterBuilders = null;
-					if(JVM.IsStaticCompiler)
+					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
 					{
-						parameterBuilders = AddParameterNames(mb, m);
-					}
-					if(setModifiers)
-					{
-						AttributeHelper.SetModifiers(mb, m.Modifiers);
-					}
-					// if we're public and we're overriding a method that is not public, then we might be also
-					// be implementing an interface method that has an IllegalAccessError stub
-					// Example:
-					//   class Base {
-					//     protected void Foo() {}
-					//   }
-					//   interface IFoo {
-					//     public void Foo();
-					//   }
-					//   class Derived extends Base implements IFoo {
-					//   }
-					//   class MostDerived extends Derived {
-					//     public void Foo() {} 
-					//   }
-					// TODO this implementation isn't correct. I need to find out what happens for the following:
-					//   class Base {
-					//     public void Foo() {}
-					//   }
-					//   interface IFoo {
-					//     public void Foo() {}
-					//   }
-					//   class Derived extends Base implements IFoo {
-					//   }
-					//   class MostDerived extends Derived {
-					//     protected void Foo() {}
-					//   }
-					if(wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasIncompleteInterfaceImplementation)
-					{
-						Hashtable hashtable = null;
-						TypeWrapper tw = wrapper.BaseTypeWrapper;
-						while(tw.HasIncompleteInterfaceImplementation)
+						AddParameterNames(mb, m);
+						if(setModifiers)
 						{
-							foreach(TypeWrapper iface in tw.Interfaces)
-							{
-								AddMethodOverride(typeBuilder, mb, iface, md, ref hashtable);
-							}
-							tw = tw.BaseTypeWrapper;
+							AttributeHelper.SetModifiers(mb, m.Modifiers);
 						}
 					}
 					method = mb;
@@ -3667,43 +3660,22 @@ class DynamicTypeWrapper : TypeWrapper
 						// we actually need to emit code to lock the Class object!
 						mb.SetImplementationFlags(method.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
 					}
-					if(baseMethod != null && (explicitOverride || baseMethod.Name != name))
-					{
-						// assert that the method we're overriding is in fact virtual and not final!
-						Debug.Assert(baseMethod.IsVirtual && !baseMethod.IsFinal);
-						typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod);
-					}
-				}
-				if(retTypeWrapper.IsUnloadable)
-				{
-					CustomAttributeBuilder attrib = new CustomAttributeBuilder(typeof(UnloadableTypeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { retTypeWrapper.Name });
-					// NOTE since DefineParameter(0, ...) throws an exception (bug in .NET, I believe),
-					// we attach the attribute to the method instead of the return value
-					((MethodBuilder)method).SetCustomAttribute(attrib);
-				}
-				for(int i = 0; i < argTypeWrappers.Length; i++)
-				{
-					if(argTypeWrappers[i].IsUnloadable)
-					{
-						CustomAttributeBuilder attrib = new CustomAttributeBuilder(typeof(UnloadableTypeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { argTypeWrappers[i].Name });
-						if(method is MethodBuilder)
-						{
-							((MethodBuilder)method).DefineParameter(i + 1, ParameterAttributes.None, null).SetCustomAttribute(attrib);
-						}
-						else
-						{
-							((ConstructorBuilder)method).DefineParameter(i + 1, ParameterAttributes.None, null).SetCustomAttribute(attrib);
-						}
-					}
 				}
 				string[] exceptions = m.ExceptionsAttribute;
-				AttributeHelper.SetThrowsAttribute(method, exceptions);
-				methods[index] = MethodWrapper.Create(wrapper, new MethodDescriptor(wrapper.GetClassLoader(), m), method, m.Modifiers, false);
 				methods[index].SetDeclaredExceptions(exceptions);
-				if(JVM.IsStaticCompiler && m.DeprecatedAttribute)
+				if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
 				{
-					AttributeHelper.SetDeprecatedAttribute(method);
+					AttributeHelper.SetThrowsAttribute(method, exceptions);
+					if(m.DeprecatedAttribute)
+					{
+						AttributeHelper.SetDeprecatedAttribute(method);
+					}
+					if(setNameSig)
+					{
+						AttributeHelper.SetNameSig(method, m.Name, m.Signature);
+					}
 				}
+				return method;
 			}
 			finally
 			{
@@ -3751,23 +3723,52 @@ class DynamicTypeWrapper : TypeWrapper
 			return null;
 		}
 
-		private static bool IsInterfaceMethod(TypeWrapper wrapper, MethodDescriptor md)
+		private void GenerateUnloadableOverrideStub(MethodWrapper baseMethod, MethodInfo target, Type targetRet, Type[] targetArgs)
 		{
-			while(wrapper != null)
+			Type stubret = baseMethod.ReturnTypeForDefineMethod;
+			Type[] stubargs = baseMethod.GetParametersForDefineMethod();
+			string name = GenerateUniqueMethodName(baseMethod.RealName + "/unloadablestub", baseMethod);
+			MethodBuilder overrideStub = typeBuilder.DefineMethod(name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, stubret, stubargs);
+			AttributeHelper.HideFromJava(overrideStub);
+			typeBuilder.DefineMethodOverride(overrideStub, (MethodInfo)baseMethod.GetMethod());
+			ILGenerator ilgen = overrideStub.GetILGenerator();
+			ilgen.Emit(OpCodes.Ldarg_0);
+			for(int i = 0; i < targetArgs.Length; i++)
 			{
-				foreach(TypeWrapper iface in wrapper.Interfaces)
+				ilgen.Emit(OpCodes.Ldarg_S, (byte)(i + 1));
+				if(targetArgs[i] != stubargs[i])
 				{
-					if(iface.GetMethodWrapper(md, false) != null || IsInterfaceMethod(iface, md))
-					{
-						return true;
-					}
+					ilgen.Emit(OpCodes.Castclass, targetArgs[i]);
 				}
-				wrapper = wrapper.BaseTypeWrapper;
+			}
+			ilgen.Emit(OpCodes.Callvirt, target);
+			if(targetRet != stubret)
+			{
+				ilgen.Emit(OpCodes.Castclass, stubret);
+			}
+			ilgen.Emit(OpCodes.Ret);
+		}
+
+		private static bool CheckRequireOverrideStub(MethodWrapper mw1, MethodWrapper mw2)
+		{
+			// TODO this is too late to generate LinkageErrors so we need to figure this out earlier
+			if(mw1.ReturnType != mw2.ReturnType  && !(mw1.ReturnType.IsUnloadable && mw2.ReturnType.IsUnloadable))
+			{
+				return true;
+			}
+			TypeWrapper[] args1 = mw1.GetParameters();
+			TypeWrapper[] args2 = mw2.GetParameters();
+			for(int i = 0; i < args1.Length; i++)
+			{
+				if(args1[i] != args2[i] && !(args1[i].IsUnloadable && args2[i].IsUnloadable))
+				{
+					return true;
+				}
 			}
 			return false;
 		}
 
-		private static void AddMethodOverride(TypeBuilder typeBuilder, MethodBuilder mb, TypeWrapper iface, MethodDescriptor md, ref Hashtable hashtable)
+		private void AddMethodOverride(MethodWrapper method, MethodBuilder mb, TypeWrapper iface, MethodDescriptor md, ref Hashtable hashtable, bool unloadableOnly)
 		{
 			if(hashtable != null && hashtable.ContainsKey(iface))
 			{
@@ -3781,15 +3782,22 @@ class DynamicTypeWrapper : TypeWrapper
 					hashtable = new Hashtable();
 				}
 				hashtable.Add(iface, iface);
-				typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
+				if(CheckRequireOverrideStub(method, mw))
+				{
+					GenerateUnloadableOverrideStub(mw, mb, method.ReturnTypeForDefineMethod, method.GetParametersForDefineMethod());
+				}
+				else if(!unloadableOnly)
+				{
+					typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
+				}
 			}
 			foreach(TypeWrapper iface2 in iface.Interfaces)
 			{
-				AddMethodOverride(typeBuilder, mb, iface2, md, ref hashtable);
+				AddMethodOverride(method, mb, iface2, md, ref hashtable, unloadableOnly);
 			}
 		}
 
-		public override Type Type
+		internal override Type Type
 		{
 			get
 			{
@@ -3814,7 +3822,7 @@ class DynamicTypeWrapper : TypeWrapper
 		private TypeWrapper declaringTypeWrapper;
 		private Modifiers reflectiveModifiers;
 
-		public FinishedTypeImpl(Type type, Type typeGhostInterface, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers)
+		internal FinishedTypeImpl(Type type, Type typeGhostInterface, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers)
 		{
 			this.type = type;
 			this.typeGhostInterface = typeGhostInterface;
@@ -3823,7 +3831,7 @@ class DynamicTypeWrapper : TypeWrapper
 			this.reflectiveModifiers = reflectiveModifiers;
 		}
 
-		public override TypeWrapper[] InnerClasses
+		internal override TypeWrapper[] InnerClasses
 		{
 			get
 			{
@@ -3832,7 +3840,7 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		public override TypeWrapper DeclaringTypeWrapper
+		internal override TypeWrapper DeclaringTypeWrapper
 		{
 			get
 			{
@@ -3841,7 +3849,7 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		public override Modifiers ReflectiveModifiers
+		internal override Modifiers ReflectiveModifiers
 		{
 			get
 			{
@@ -3849,17 +3857,12 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		public override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
+		internal override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 		{
 			return null;
 		}
 	
-		public override MethodWrapper GetMethodImpl(MethodDescriptor md)
-		{
-			return null;
-		}
-
-		public override Type Type
+		internal override Type Type
 		{
 			get
 			{
@@ -3875,9 +3878,22 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		public override DynamicImpl Finish()
+		internal override DynamicImpl Finish(bool forDebugSave)
 		{
 			return this;
+		}
+
+		internal override MethodBase LinkMethod(MethodWrapper mw)
+		{
+			// we should never be called, because all methods on a finished type are already linked
+			Debug.Assert(false);
+			return mw.GetMethod();
+		}
+
+		internal override void LinkField(FieldWrapper fw)
+		{
+			// we should never be called, because all fields on a finished type are already linked
+			Debug.Assert(false);
 		}
 	}
 
@@ -3915,6 +3931,18 @@ class DynamicTypeWrapper : TypeWrapper
 			base.EmitInstanceOf(context, ilgen);
 		}
 	}
+
+	internal override MethodBase LinkMethod(MethodWrapper mw)
+	{
+		mw.AssertLinked();
+		return impl.LinkMethod(mw);
+	}
+
+	internal override void LinkField(FieldWrapper fw)
+	{
+		fw.AssertLinked();
+		impl.LinkField(fw);
+	}
 }
 
 // TODO this is the base class of CompiledTypeWrapper (ikmvc compiled Java types)
@@ -3930,48 +3958,71 @@ abstract class LazyTypeWrapper : TypeWrapper
 
 	protected abstract void LazyPublishMembers();
 
+	private void Publish()
+	{
+		LazyPublishMembers();
+		foreach(MethodWrapper mw in GetMethods())
+		{
+			mw.Link();
+		}
+		foreach(FieldWrapper fw in GetFields())
+		{
+			fw.Link();
+		}
+	}
+
+	internal override MethodWrapper[] GetMethods()
+	{
+		lock(this)
+		{
+			if(!membersPublished)
+			{
+				membersPublished = true;
+				Publish();
+			}
+		}
+		return base.GetMethods();
+	}
+
+	internal override MethodWrapper GetMethodWrapper(MethodDescriptor md, bool inherit)
+	{
+		lock(this)
+		{
+			if(!membersPublished)
+			{
+				membersPublished = true;
+				Publish();
+			}
+		}
+		return base.GetMethodWrapper(md, inherit);
+	}
+
+	internal override FieldWrapper GetFieldWrapper(string fieldName, TypeWrapper fieldType)
+	{
+		lock(this)
+		{
+			if(!membersPublished)
+			{
+				membersPublished = true;
+				Publish();
+			}
+		}
+		return base.GetFieldWrapper (fieldName, fieldType);
+	}
+
 	protected sealed override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 	{
-		lock(this)
-		{
-			if(!membersPublished)
-			{
-				membersPublished = true;
-				LazyPublishMembers();
-				return GetFieldWrapper(fieldName, fieldType);
-			}
-		}
 		return null;
 	}
 
-	protected sealed override MethodWrapper GetMethodImpl(MethodDescriptor md)
+	internal sealed override void Finish(bool forDebugSave)
 	{
-		lock(this)
-		{
-			if(!membersPublished)
-			{
-				membersPublished = true;
-				LazyPublishMembers();
-				return GetMethodWrapper(md, false);
-			}
-		}
-		return null;
-	}
-
-	internal sealed override void Finish()
-	{
-		lock(this)
-		{
-			if(!membersPublished)
-			{
-				membersPublished = true;
-				LazyPublishMembers();
-			}
-		}
+		// NOTE the whole notion of "finishing" doesn't apply to .NET and statically compiled types,
+		// because instances of these types can be created without needing to involve the IKVM runtime
 	}
 }
 
-class CompiledTypeWrapper : LazyTypeWrapper
+sealed class CompiledTypeWrapper : LazyTypeWrapper
 {
 	private readonly Type type;
 	private TypeWrapper[] interfaces;
@@ -4086,6 +4137,14 @@ class CompiledTypeWrapper : LazyTypeWrapper
 		return modifiers;
 	}
 
+	internal override Assembly Assembly
+	{
+		get
+		{
+			return type.Assembly;
+		}
+	}
+
 	internal override TypeWrapper[] Interfaces
 	{
 		get
@@ -4126,7 +4185,7 @@ class CompiledTypeWrapper : LazyTypeWrapper
 				ArrayList wrappers = new ArrayList();
 				for(int i = 0; i < nestedTypes.Length; i++)
 				{
-					if(!nestedTypes[i].IsDefined(typeof(HideFromReflectionAttribute), false))
+					if(!AttributeHelper.IsHideFromJava(nestedTypes[i]))
 					{
 						wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
 					}
@@ -4194,6 +4253,130 @@ class CompiledTypeWrapper : LazyTypeWrapper
 		}
 	}
 
+	private void SigTypePatchUp(string sigtype, ref TypeWrapper type)
+	{
+		if(sigtype != type.SigName)
+		{
+			// if type is an array, we know that it is a ghost array, because arrays of unloadable are compiled
+			// as object (not as arrays of object)
+			if(type.IsArray)
+			{
+				type = GetClassLoader().FieldTypeWrapperFromSig(sigtype);
+			}
+			else
+			{
+				if(sigtype[0] == 'L')
+				{
+					sigtype = sigtype.Substring(1, sigtype.Length - 2);
+				}
+				type = new UnloadableTypeWrapper(sigtype);
+			}
+		}
+	}
+
+	private static void ParseSig(string sig, out string[] sigparam, out string sigret)
+	{
+		ArrayList list = new ArrayList();
+		int pos = 1;
+		for(;;)
+		{
+			switch(sig[pos])
+			{
+				case 'L':
+				{
+					int end = sig.IndexOf(';', pos) + 1;
+					list.Add(sig.Substring(pos, end - pos));
+					pos = end;
+					break;
+				}
+				case '[':
+				{
+					int skip = 1;
+					while(sig[pos + skip] == '[') skip++;
+					if(sig[pos + skip] == 'L')
+					{
+						int end = sig.IndexOf(';', pos) + 1;
+						list.Add(sig.Substring(pos, end - pos));
+						pos = end;
+					}
+					else
+					{
+						skip++;
+						list.Add(sig.Substring(pos, skip));
+						pos += skip;
+					}
+					break;
+				}
+				case ')':
+					sigparam = (string[])list.ToArray(typeof(string));
+					sigret = sig.Substring(pos + 1);
+					return;
+				default:
+					list.Add(sig.Substring(pos, 1));
+					pos++;
+					break;
+			}
+		}
+	}
+
+	private void GetNameSigFromMethodBase(MethodBase method, out string name, out string sig, out TypeWrapper retType, out TypeWrapper[] paramTypes)
+	{
+		retType = method is ConstructorInfo ? PrimitiveTypeWrapper.VOID : ClassLoaderWrapper.GetWrapperFromType(((MethodInfo)method).ReturnType);
+		ParameterInfo[] parameters = method.GetParameters();
+		paramTypes = new TypeWrapper[parameters.Length];
+		for(int i = 0; i < parameters.Length; i++)
+		{
+			paramTypes[i] = ClassLoaderWrapper.GetWrapperFromType(parameters[i].ParameterType);
+		}
+		if(method.IsDefined(typeof(NameSigAttribute), false))
+		{
+			NameSigAttribute attr = (NameSigAttribute)method.GetCustomAttributes(typeof(NameSigAttribute), false)[0];
+			name = attr.Name;
+			sig = attr.Sig;
+			string[] sigparams;
+			string sigret;
+			ParseSig(sig, out sigparams, out sigret);
+			// HACK newhelper methods have a return type, but it should be void
+			if(name == "<init>")
+			{
+				retType = PrimitiveTypeWrapper.VOID;
+			}
+			SigTypePatchUp(sigret, ref retType);
+			// if we have a remapped method, the paramTypes array contains an additional entry for "this" so we have
+			// to remove that
+			if(paramTypes.Length == sigparams.Length + 1)
+			{
+				TypeWrapper[] temp = paramTypes;
+				paramTypes = new TypeWrapper[sigparams.Length];
+				Array.Copy(temp, 1, paramTypes, 0, paramTypes.Length);
+			}
+			Debug.Assert(sigparams.Length == paramTypes.Length);
+			for(int i = 0; i < sigparams.Length; i++)
+			{
+				SigTypePatchUp(sigparams[i], ref paramTypes[i]);
+			}
+		}
+		else
+		{
+			if(method is ConstructorInfo)
+			{
+				name = method.IsStatic ? "<clinit>" : "<init>";
+			}
+			else
+			{
+				name = method.Name;
+			}
+			System.Text.StringBuilder sb = new System.Text.StringBuilder("(");
+			foreach(TypeWrapper tw in paramTypes)
+			{
+				sb.Append(tw.SigName);
+			}
+			sb.Append(")");
+			sb.Append(retType.SigName);
+			sig = sb.ToString();
+		}
+	}
+
 	protected override void LazyPublishMembers()
 	{
 		MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
@@ -4201,12 +4384,19 @@ class CompiledTypeWrapper : LazyTypeWrapper
 		{
 			foreach(MemberInfo m in members)
 			{
-				if(!m.IsDefined(typeof(HideFromReflectionAttribute), false))
+				if(!AttributeHelper.IsHideFromJava(m))
 				{
 					MethodBase method = m as MethodBase;
 					if(method != null)
 					{
-						AddMethod(MethodWrapper.Create(this, MethodDescriptor.FromMethodBase(method), method, AttributeHelper.GetModifiers(method, false), false));
+						string name;
+						string sig;
+						TypeWrapper retType;
+						TypeWrapper[] paramTypes;
+						GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes);
+						MethodInfo mi = method as MethodInfo;
+						bool miranda = mi != null ? AttributeHelper.IsMirandaMethod(mi) : false;
+						AddMethod(MethodWrapper.Create(this, new MethodDescriptor(name, sig), method, retType, paramTypes, AttributeHelper.GetModifiers(method, false), miranda));
 					}
 					else
 					{
@@ -4223,7 +4413,7 @@ class CompiledTypeWrapper : LazyTypeWrapper
 		{
 			foreach(MemberInfo m in members)
 			{
-				if(!m.IsDefined(typeof(HideFromReflectionAttribute), false))
+				if(!AttributeHelper.IsHideFromJava(m))
 				{
 					MethodBase method = m as MethodBase;
 					if(method != null &&
@@ -4249,60 +4439,116 @@ class CompiledTypeWrapper : LazyTypeWrapper
 				foreach(RemappedInterfaceMethodAttribute m in type.GetCustomAttributes(typeof(RemappedInterfaceMethodAttribute), false))
 				{
 					MethodInfo method = remappedType.GetMethod(m.MappedTo);
-					MethodInfo mbHelper = null;
+					MethodInfo mbHelper = method;
 					Modifiers modifiers = AttributeHelper.GetModifiers(method, false);
-					MethodDescriptor md = MethodDescriptor.FromMethodBase(method);
-					md = MethodDescriptor.FromNameSig(GetClassLoader(), m.Name, md.Signature);
+					string name;
+					string sig;
+					TypeWrapper retType;
+					TypeWrapper[] paramTypes;
+					GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes);
 					if(nestedHelper != null)
 					{
 						mbHelper = nestedHelper.GetMethod(m.Name);
+						if(mbHelper == null)
+						{
+							mbHelper = method;
+						}
 					}
-					MethodWrapper mw = new CompiledRemappedMethodWrapper(this, md, method, modifiers, false, mbHelper != null ? mbHelper : method);
-					mw.EmitCall = CodeEmitter.InternalError;
-					mw.EmitCallvirt = CodeEmitter.Create(mbHelper != null ? OpCodes.Call : OpCodes.Callvirt, mbHelper != null ? mbHelper : method);
-					mw.EmitNewobj = CodeEmitter.InternalError;
-					AddMethod(mw);
+					AddMethod(new CompiledRemappedMethodWrapper(this, new MethodDescriptor(m.Name, sig), method, retType, paramTypes, modifiers, false, mbHelper, null));
 				}
 			}
 		}
 	}
 
-	private class CompiledRemappedMethodWrapper : MethodWrapper
+	private class CompiledRemappedMethodWrapper : SmartMethodWrapper
 	{
-		private MethodBase mbHelper;
+		private MethodInfo mbHelper;
+		private MethodInfo mbNonvirtualHelper;
 
-		internal CompiledRemappedMethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase method, Modifiers modifiers, bool hideFromReflection, MethodBase mbHelper)
-			: base(declaringType, md, method, modifiers, hideFromReflection)
+		internal CompiledRemappedMethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection, MethodInfo mbHelper, MethodInfo mbNonvirtualHelper)
+			: base(declaringType, md, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
 		{
 			this.mbHelper = mbHelper;
+			this.mbNonvirtualHelper = mbNonvirtualHelper;
+		}
+
+		protected override void CallImpl(ILGenerator ilgen)
+		{
+			MethodBase mb = GetMethod();
+			MethodInfo mi = mb as MethodInfo;
+			if(mi != null)
+			{
+				ilgen.Emit(OpCodes.Call, mi);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Call, (ConstructorInfo)mb);
+			}
+		}
+
+		protected override void CallvirtImpl(ILGenerator ilgen)
+		{
+			Debug.Assert(!mbHelper.IsStatic || mbHelper.Name.StartsWith("instancehelper_") || mbHelper.DeclaringType.Name == "__Helper");
+			ilgen.Emit(mbHelper.IsStatic ? OpCodes.Call : OpCodes.Callvirt, mbHelper);
+		}
+
+		protected override void NewobjImpl(ILGenerator ilgen)
+		{
+			MethodBase mb = GetMethod();
+			MethodInfo mi = mb as MethodInfo;
+			if(mi != null)
+			{
+				Debug.Assert(mi.Name == "newhelper");
+				ilgen.Emit(OpCodes.Call, mi);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)mb);
+			}
 		}
 
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
 		{
-			return InvokeImpl(mbHelper, obj, args, nonVirtual);
+			MethodBase mb;
+			if(nonVirtual)
+			{
+				if(DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
+				{
+					mb = GetMethod();
+				}
+				else if(mbNonvirtualHelper != null)
+				{
+					mb = mbNonvirtualHelper;
+				}
+				else if(mbHelper != null)
+				{
+					mb = mbHelper;
+				}
+				else
+				{
+					// we can end up here if someone calls a constructor with nonVirtual set (which is pointless, but legal)
+					mb = GetMethod();
+				}
+			}
+			else
+			{
+				mb = mbHelper != null ? mbHelper : GetMethod();
+			}
+			return InvokeImpl(mb, obj, args, nonVirtual);
 		}
 	}
 
 	private MethodWrapper CreateRemappedMethodWrapper(MethodBase mb)
 	{
-		bool instancehelper = false;
 		Modifiers modifiers = AttributeHelper.GetModifiers(mb, false);
-		MethodDescriptor md = MethodDescriptor.FromMethodBase(mb);
-		MethodBase mbHelper = mb;
-		if(md.Name.StartsWith("instancehelper_"))
-		{
-			instancehelper = true;
-			string sig = md.Signature;
-			md = MethodDescriptor.FromNameSig(GetClassLoader(), md.Name.Substring(15), "(" + sig.Substring(sig.IndexOf(';') + 1));
-			modifiers &= ~Modifiers.Static;
-		}
-		else if(md.Name == "newhelper")
-		{
-			string sig = md.Signature;
-			md = MethodDescriptor.FromNameSig(GetClassLoader(), "<init>", sig.Substring(0, sig.LastIndexOf(')')) + ")V");
-			modifiers &= ~Modifiers.Static;
-		}
-		else if(!mb.IsStatic && !mb.IsConstructor)
+		string name;
+		string sig;
+		TypeWrapper retType;
+		TypeWrapper[] paramTypes;
+		GetNameSigFromMethodBase(mb, out name, out sig, out retType, out paramTypes);
+		MethodInfo mbHelper = mb as MethodInfo;
+		MethodInfo mbNonvirtualHelper = null;
+		if(!mb.IsStatic && !mb.IsConstructor)
 		{
 			ParameterInfo[] parameters = mb.GetParameters();
 			Type[] argTypes = new Type[parameters.Length + 1];
@@ -4311,74 +4557,14 @@ class CompiledTypeWrapper : LazyTypeWrapper
 			{
 				argTypes[i + 1] = parameters[i].ParameterType;
 			}
-			mbHelper = type.GetMethod("instancehelper_" + mb.Name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static, null, argTypes, null);
-			if(mbHelper == null)
+			MethodInfo helper = type.GetMethod("instancehelper_" + mb.Name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static, null, argTypes, null);
+			if(helper != null)
 			{
-				mbHelper = mb;
+				mbHelper = helper;
 			}
+			mbNonvirtualHelper = type.GetMethod("nonvirtualhelper/" + mb.Name, BindingFlags.NonPublic | BindingFlags.Static, null, argTypes, null);
 		}
-		MethodWrapper method = new CompiledRemappedMethodWrapper(this, md, mb, modifiers, false, mbHelper);
-		if(mb is ConstructorInfo)
-		{
-			method.EmitCallvirt = CodeEmitter.InternalError;
-			method.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)mb);
-			method.EmitNewobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)mb);
-		}
-		else
-		{
-			if(mb.IsStatic)
-			{
-				if(mb.Name == "newhelper")
-				{
-					method.EmitCall = CodeEmitter.InternalError;
-					method.EmitCallvirt = CodeEmitter.InternalError;
-					method.EmitNewobj = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mb);
-				}
-				else
-				{
-					if(instancehelper)
-					{
-						method.EmitCall = CodeEmitter.InternalError;
-						method.EmitCallvirt = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mb);
-						method.EmitNewobj = CodeEmitter.InternalError;
-					}
-					else
-					{
-						method.EmitCall = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mb);
-						method.EmitCallvirt = CodeEmitter.InternalError;
-						method.EmitNewobj = CodeEmitter.InternalError;
-					}
-				}
-			}
-			else
-			{
-				method.EmitCall = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mb);
-				if(mbHelper != mb)
-				{
-					method.EmitCallvirt = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mbHelper);
-				}
-				else
-				{
-					method.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)mb);
-				}
-				method.EmitNewobj = CodeEmitter.InternalError;
-			}
-			TypeWrapper retType = method.ReturnType;
-			if(!retType.IsUnloadable)
-			{
-				if(retType.IsNonPrimitiveValueType)
-				{
-					method.EmitCall += CodeEmitter.CreateEmitBoxCall(retType);
-					method.EmitCallvirt += CodeEmitter.CreateEmitBoxCall(retType);
-				}
-				else if(retType.IsGhost)
-				{
-					method.EmitCall += new MethodWrapper.GhostUnwrapper(retType);
-					method.EmitCallvirt += new MethodWrapper.GhostUnwrapper(retType);
-				}
-			}
-		}
-		return method;
+		return new CompiledRemappedMethodWrapper(this, new MethodDescriptor(name, sig), mb, retType, paramTypes, modifiers, false, mbHelper, mbNonvirtualHelper);
 	}
 
 	private FieldWrapper CreateFieldWrapper(FieldInfo field)
@@ -4386,7 +4572,7 @@ class CompiledTypeWrapper : LazyTypeWrapper
 		MethodInfo getter = null;
 		Modifiers modifiers = AttributeHelper.GetModifiers(field, false);
 
-		// If the backing field is private, but the modifiers aren't, we've got a static final that
+		// If the backing field is private, but the modifiers aren't, we've got a final field that
 		// has a property accessor method.
 		if(field.IsPrivate && ((modifiers & Modifiers.Private) == 0))
 		{
@@ -4444,13 +4630,15 @@ class CompiledTypeWrapper : LazyTypeWrapper
 			emitSet = CodeEmitter.Create(OpCodes.Stfld, field);
 		}
 		// if the field name is mangled (because its type is unloadable), chop off the mangled bit
-		string fieldName = field.Name;
-		int idx = fieldName.IndexOf('/');
-		if(idx >= 0)
+		string name = field.Name;
+		TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(field.FieldType);
+		if(field.IsDefined(typeof(NameSigAttribute), false))
 		{
-			fieldName = fieldName.Substring(0, idx);
+			NameSigAttribute attr = (NameSigAttribute)field.GetCustomAttributes(typeof(NameSigAttribute), false)[0];
+			name = attr.Name;
+			SigTypePatchUp(attr.Sig, ref type);
 		}
-		return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(field.FieldType), fieldName, MethodDescriptor.GetFieldSigName(field), modifiers, field, emitGet, emitSet);
+		return FieldWrapper.Create1(this, type, name, type.SigName, modifiers, field, emitGet, emitSet);
 	}
 
 	internal override bool IsGhost
@@ -4486,13 +4674,14 @@ class CompiledTypeWrapper : LazyTypeWrapper
 	}
 }
 
-class DotNetTypeWrapper : LazyTypeWrapper
+sealed class DotNetTypeWrapper : LazyTypeWrapper
 {
 	private const string NamePrefix = "cli.";
 	private const string DelegateInterfaceSuffix = "$Method";
 	private readonly Type type;
 	private TypeWrapper[] innerClasses;
 	private TypeWrapper outerClass;
+	private TypeWrapper[] interfaces;
 
 	private static Modifiers GetModifiers(Type type)
 	{
@@ -4571,8 +4760,10 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		return name.Replace('$', '+');
 	}
 
-	// this method should only be called once for each name, it doesn't do any caching or duplicate prevention
-	internal static TypeWrapper LoadDotNetTypeWrapper(string name)
+	// this method returns a new TypeWrapper instance for each invocation (doesn't prevent duplicates)
+	// the caller is responsible for making sure that only one TypeWrapper with the specified name escapes
+	// out into the world
+	internal static TypeWrapper CreateDotNetTypeWrapper(string name)
 	{
 		bool prefixed = name.StartsWith(NamePrefix);
 		if(prefixed)
@@ -4684,9 +4875,21 @@ class DotNetTypeWrapper : LazyTypeWrapper
 
 	private class DelegateMethodWrapper : MethodWrapper
 	{
-		internal DelegateMethodWrapper(TypeWrapper declaringType, MethodDescriptor md)
-			: base(declaringType, md, null, Modifiers.Public, false)
+		private ConstructorInfo delegateConstructor;
+		private MethodInfo method;
+
+		internal DelegateMethodWrapper(TypeWrapper declaringType, Type delegateType, TypeWrapper iface)
+			: base(declaringType, new MethodDescriptor("<init>", "(" + iface.SigName + ")V"), null, PrimitiveTypeWrapper.VOID, new TypeWrapper[] { iface }, Modifiers.Public, MemberFlags.None)
 		{
+			this.delegateConstructor = delegateType.GetConstructor(new Type[] { typeof(object), typeof(IntPtr) });
+			this.method = iface.TypeAsTBD.GetMethod("Invoke");
+		}
+
+		internal override void EmitNewobj(ILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Dup);
+			ilgen.Emit(OpCodes.Ldvirtftn, method);
+			ilgen.Emit(OpCodes.Newobj, delegateConstructor);
 		}
 
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
@@ -4696,14 +4899,65 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		}
 	}
 
-	private class ByRefMethodWrapper : MethodWrapper
+	private class ByRefMethodWrapper : SmartMethodWrapper
 	{
 		private bool[] byrefs;
+		private Type[] args;
 
-		internal ByRefMethodWrapper(bool[] byrefs, TypeWrapper declaringType, MethodDescriptor md, MethodBase method, Modifiers modifiers, bool hideFromReflection)
-			: base(declaringType, md, method, modifiers, hideFromReflection)
+		internal ByRefMethodWrapper(Type[] args, bool[] byrefs, TypeWrapper declaringType, MethodDescriptor md, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection)
+			: base(declaringType, md, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
 		{
+			this.args = args;
 			this.byrefs = byrefs;
+		}
+
+		protected override void CallImpl(ILGenerator ilgen)
+		{
+			MethodBase mb = GetMethod();
+			MethodInfo mi = mb as MethodInfo;
+			if(mi != null)
+			{
+				ilgen.Emit(OpCodes.Call, mi);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Call, (ConstructorInfo)mb);
+			}
+		}
+
+		protected override void CallvirtImpl(ILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Callvirt, (MethodInfo)GetMethod());
+		}
+
+		protected override void NewobjImpl(ILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)GetMethod());
+		}
+
+		protected override void PreEmit(ILGenerator ilgen)
+		{
+			LocalBuilder[] locals = new LocalBuilder[args.Length];
+			for(int i = args.Length - 1; i >= 0; i--)
+			{
+				Type type = args[i];
+				if(type.IsByRef)
+				{
+					type = type.Assembly.GetType(type.GetElementType().FullName + "[]", true);
+				}
+				locals[i] = ilgen.DeclareLocal(type);
+				ilgen.Emit(OpCodes.Stloc, locals[i]);
+			}
+			for(int i = 0; i < args.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldloc, locals[i]);
+				if(args[i].IsByRef)
+				{
+					ilgen.Emit(OpCodes.Ldc_I4_0);
+					ilgen.Emit(OpCodes.Ldelema, args[i].GetElementType());
+				}
+			}
+			base.PreEmit(ilgen);
 		}
 
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
@@ -4741,10 +4995,14 @@ class DotNetTypeWrapper : LazyTypeWrapper
 	private class EnumWrapMethodWrapper : MethodWrapper
 	{
 		internal EnumWrapMethodWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
-			: base(tw, MethodDescriptor.FromNameSig(tw.GetClassLoader(), "wrap", "(" + fieldType.SigName + ")" + tw.SigName), null, Modifiers.Static | Modifiers.Public, false)
+			: base(tw, new MethodDescriptor("wrap", "(" + fieldType.SigName + ")" + tw.SigName), null, tw, new TypeWrapper[] { fieldType }, Modifiers.Static | Modifiers.Public, MemberFlags.None)
+		{
+		}
+
+		internal override void EmitCall(ILGenerator ilgen)
 		{
 			// NOTE we don't support custom boxing rules for enums
-			EmitCall = CodeEmitter.Create(OpCodes.Box, tw.type);
+			ilgen.Emit(OpCodes.Box, ((DotNetTypeWrapper)DeclaringType).type);
 		}
 
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
@@ -4783,6 +5041,14 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		}
 	}
 
+	internal override Assembly Assembly
+	{
+		get
+		{
+			return type.Assembly;
+		}
+	}
+
 	protected override void LazyPublishMembers()
 	{
 		// special support for enums
@@ -4804,7 +5070,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 					{
 						name = "_" + name;
 					}
-					AddField(FieldWrapper.Create(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], CodeEmitter.CreateLoadConstantField(fields[i]), CodeEmitter.Pop));
+					AddField(FieldWrapper.Create1(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], CodeEmitter.CreateLoadConstantField(fields[i]), CodeEmitter.Pop));
 				}
 			}
 			AddField(new EnumValueFieldWrapper(this, fieldType));
@@ -4839,10 +5105,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 					TypeWrapper iface = GetClassLoader().LoadClassByDottedName(this.Name + DelegateInterfaceSuffix);
 					Debug.Assert(iface is CompiledTypeWrapper);
 					iface.Finish();
-					MethodDescriptor md = MethodDescriptor.FromNameSig(GetClassLoader(), "<init>", "(" + iface.SigName + ")V");
-					MethodWrapper method = new DelegateMethodWrapper(this, md);
-					method.EmitNewobj = new DelegateConstructorEmitter(type.GetConstructor(new Type[] { typeof(object), typeof(IntPtr) }), iface.TypeAsTBD.GetMethod("Invoke"));
-					AddMethod(method);
+					AddMethod(new DelegateMethodWrapper(this, type, iface));
 					innerClasses = new TypeWrapper[] { iface };
 				}
 			}
@@ -4878,7 +5141,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 
 			// HACK private interface implementations need to be published as well
 			// (otherwise the type appears abstract while it isn't)
-			if(!type.IsInterface)
+			if(!type.IsInterface && !type.IsAbstract)
 			{
 				Type[] interfaces = type.GetInterfaces();
 				for(int i = 0; i < interfaces.Length; i++)
@@ -4917,23 +5180,45 @@ class DotNetTypeWrapper : LazyTypeWrapper
 					{
 						if(!m.IsStatic && !m.IsFinal && (m.IsPublic || m.IsProtected) && m.Name != "<init>")
 						{
-							if(!h.ContainsKey(m.Descriptor.Name + m.Descriptor.Signature))
+							if(!h.ContainsKey(m.Name + m.Signature))
 							{
-								h.Add(m.Descriptor.Name + m.Descriptor.Signature, "");
-								MethodWrapper newmw = new MethodWrapper(this, m.Descriptor, m.GetMethod(), m.Modifiers | Modifiers.Final, false);
-								newmw.EmitNewobj = CodeEmitter.InternalError;
-								// we bind EmitCall to EmitCallvirt, because we always want to end up at the instancehelper method
-								// (EmitCall would go to our alter ego .NET type and that wouldn't be legal)
-								newmw.EmitCall = m.EmitCallvirt;
-								newmw.EmitCallvirt = m.EmitCallvirt;
+								h.Add(m.Name + m.Signature, "");
 								// TODO handle name/sig clash (what should we do?)
-								AddMethod(newmw);
+								AddMethod(new BaseFinalMethodWrapper(this, m));
 							}
 						}
 					}
 					baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
 				}
 			}
+		}
+	}
+
+	private class BaseFinalMethodWrapper : MethodWrapper
+	{
+		private MethodWrapper m;
+
+		internal BaseFinalMethodWrapper(DotNetTypeWrapper tw, MethodWrapper m)
+			: base(tw, m.Descriptor, m.GetMethod(), m.ReturnType, m.GetParameters(), m.Modifiers | Modifiers.Final, MemberFlags.None)
+		{
+			this.m = m;
+		}
+
+		internal override void EmitCall(ILGenerator ilgen)
+		{
+			// we direct EmitCall to EmitCallvirt, because we always want to end up at the instancehelper method
+			// (EmitCall would go to our alter ego .NET type and that wouldn't be legal)
+			m.EmitCallvirt(ilgen);
+		}
+
+		internal override void EmitCallvirt(ILGenerator ilgen)
+		{
+			m.EmitCallvirt(ilgen);
+		}
+
+		internal override object Invoke(object obj, object[] args, bool nonVirtual)
+		{
+			return m.Invoke(obj, args, nonVirtual);
 		}
 	}
 
@@ -4978,7 +5263,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 				name = "<init>";
 			}
 			sb.Append(ret.SigName);
-			return new MethodDescriptor(GetClassLoader(), name, sb.ToString(), args, ret);
+			return new MethodDescriptor(name, sb.ToString());
 		}
 		else
 		{
@@ -4989,7 +5274,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			}
 			TypeWrapper ret = ClassLoaderWrapper.GetWrapperFromType(type);
 			sb.Append(ret.SigName);
-			return new MethodDescriptor(GetClassLoader(), mb.Name, sb.ToString(), args, ret);
+			return new MethodDescriptor(mb.Name, sb.ToString());
 		}
 	}
 
@@ -4997,19 +5282,19 @@ class DotNetTypeWrapper : LazyTypeWrapper
 	{
 		get
 		{
-			// remapped type cannot be instantiated, so it wouldn't make sense to implement
-			// interfaces
-			if(ClassLoaderWrapper.IsRemappedType(type) && !IsInterface)
+			lock(this)
 			{
-				return TypeWrapper.EmptyArray;
+				if(interfaces == null)
+				{
+					Type[] interfaceTypes = type.GetInterfaces();
+					interfaces = new TypeWrapper[interfaceTypes.Length];
+					for(int i = 0; i < interfaces.Length; i++)
+					{
+						interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(interfaceTypes[i]);
+					}
+				}
+				return interfaces;
 			}
-			Type[] interfaces = type.GetInterfaces();
-			TypeWrapper[] interfaceWrappers = new TypeWrapper[interfaces.Length];
-			for(int i = 0; i < interfaces.Length; i++)
-			{
-				interfaceWrappers[i] = ClassLoaderWrapper.GetWrapperFromType(interfaces[i]);
-			}
-			return interfaceWrappers;
 		}
 	}
 
@@ -5097,10 +5382,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			}
 			else
 			{
-				// TODO what happens when you try to set a final field?
-				// through reflection: java.lang.IllegalAccessException: Field is final
-				// through code: java.lang.IllegalAccessError: Field <class>.<field> is final
-				emitSet = CodeEmitter.Nop;
+				emitSet = CodeEmitter.InternalError;
 			}
 		}
 		else
@@ -5111,7 +5393,6 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			}
 			else
 			{
-				// TODO is it possible to have literal instance fields?
 				emitGet = CodeEmitter.Create(OpCodes.Ldfld, field);
 			}
 			if(field != null)
@@ -5120,15 +5401,13 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			}
 			else
 			{
-				// TODO what happens when you try to set a final field through reflection?
-				// see above
-				emitSet = CodeEmitter.Nop;
+				emitSet = CodeEmitter.InternalError;
 			}
 		}
-		return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(fieldType), name, MethodDescriptor.GetFieldSigName(field), modifiers, field, emitGet, emitSet);
+		TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(fieldType);
+		return FieldWrapper.Create1(this, type, name, type.SigName, modifiers, field, emitGet, emitSet);
 	}
 
-	// TODO why doesn't this use the standard MethodWrapper.Create?
 	private MethodWrapper CreateMethodWrapper(MethodDescriptor md, MethodBase mb, bool privateInterfaceImplHack)
 	{
 		Modifiers mods = AttributeHelper.GetModifiers(mb, true);
@@ -5136,11 +5415,8 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			TypeAsBaseType.IsSubclassOf(CoreClasses.java.lang.Object.Wrapper.TypeAsBaseType))
 		{
 			// TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
-			MethodWrapper mw = new MethodWrapper(this, MethodDescriptor.FromNameSig(GetClassLoader(), "finalize", "()V"), mb, mods, false);
+			MethodWrapper mw = new SimpleCallMethodWrapper(this, new MethodDescriptor("finalize", "()V"), (MethodInfo)mb, null, null, mods, false, OpCodes.Call, OpCodes.Callvirt);
 			mw.SetDeclaredExceptions(new string[] { "java.lang.Throwable" });
-			mw.EmitCall = CodeEmitter.Create(OpCodes.Call, mb);
-			mw.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, mb);
-			mw.EmitNewobj = CodeEmitter.InternalError;
 			return mw;
 		}
 		ParameterInfo[] parameters = mb.GetParameters();
@@ -5165,98 +5441,26 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			mods &= ~Modifiers.Abstract;
 			mods |= Modifiers.Final;
 		}
-		if(hasByRefArgs && !(mb is ConstructorInfo) && !mb.IsStatic)
+		if(hasByRefArgs)
 		{
-			mods |= Modifiers.Final;
-		}
-		MethodWrapper method = hasByRefArgs ?
-			new ByRefMethodWrapper(byrefs, this, md, mb, mods, false) : new MethodWrapper(this, md, mb, mods, false);
-		if(mb is ConstructorInfo)
-		{
-			method.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)mb);
-			method.EmitNewobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)mb);
-			if(this.IsNonPrimitiveValueType)
+			if(!(mb is ConstructorInfo) && !mb.IsStatic)
 			{
-				// HACK after constructing a new object, we don't want the custom boxing rule to run
-				// (because that would turn "new IntPtr" into a null reference)
-				method.EmitNewobj += CodeEmitter.Create(OpCodes.Box, this.TypeAsTBD);
+				mods |= Modifiers.Final;
 			}
+			// TODO pass in the argument and return types
+			return new ByRefMethodWrapper(args, byrefs, this, md, mb, null, null, mods, false);
 		}
 		else
 		{
-			bool nonPrimitiveValueType = md.RetTypeWrapper.IsNonPrimitiveValueType;
-			method.EmitCall = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mb);
-			if(nonPrimitiveValueType)
+			if(mb is ConstructorInfo)
 			{
-				method.EmitCall += CodeEmitter.CreateEmitBoxCall(md.RetTypeWrapper);
+				// TODO pass in the argument and return types
+				return new SmartConstructorMethodWrapper(this, md, (ConstructorInfo)mb, null, mods, false);
 			}
-			if(!mb.IsStatic)
+			else
 			{
-				method.EmitCallvirt = CodeEmitter.Create(this.IsNonPrimitiveValueType ? OpCodes.Call : OpCodes.Callvirt, (MethodInfo)mb);
-				if(nonPrimitiveValueType)
-				{
-					method.EmitCallvirt += CodeEmitter.CreateEmitBoxCall(md.RetTypeWrapper);
-				}
-			}
-		}
-		if(hasByRefArgs)
-		{
-			method.EmitCall = new RefArgConverter(args) + method.EmitCall;
-			method.EmitCallvirt = new RefArgConverter(args) + method.EmitCallvirt;
-			method.EmitNewobj = new RefArgConverter(args) + method.EmitNewobj;
-		}
-		return method;
-	}
-
-	private class DelegateConstructorEmitter : CodeEmitter
-	{
-		private ConstructorInfo delegateConstructor;
-		private MethodInfo method;
-
-		internal DelegateConstructorEmitter(ConstructorInfo delegateConstructor, MethodInfo method)
-		{
-			this.delegateConstructor = delegateConstructor;
-			this.method = method;
-		}
-
-		internal override void Emit(ILGenerator ilgen)
-		{
-			ilgen.Emit(OpCodes.Dup);
-			ilgen.Emit(OpCodes.Ldvirtftn, method);
-			ilgen.Emit(OpCodes.Newobj, delegateConstructor);
-		}
-	}
-
-	private class RefArgConverter : CodeEmitter
-	{
-		private Type[] args;
-
-		internal RefArgConverter(Type[] args)
-		{
-			this.args = args;
-		}
-
-		internal override void Emit(ILGenerator ilgen)
-		{
-			LocalBuilder[] locals = new LocalBuilder[args.Length];
-			for(int i = args.Length - 1; i >= 0; i--)
-			{
-				Type type = args[i];
-				if(type.IsByRef)
-				{
-					type = type.Assembly.GetType(type.GetElementType().FullName + "[]", true);
-				}
-				locals[i] = ilgen.DeclareLocal(type);
-				ilgen.Emit(OpCodes.Stloc, locals[i]);
-			}
-			for(int i = 0; i < args.Length; i++)
-			{
-				ilgen.Emit(OpCodes.Ldloc, locals[i]);
-				if(args[i].IsByRef)
-				{
-					ilgen.Emit(OpCodes.Ldc_I4_0);
-					ilgen.Emit(OpCodes.Ldelema, args[i].GetElementType());
-				}
+				// TODO pass in the argument and return types
+				return new SmartCallMethodWrapper(this, md, (MethodInfo)mb, null, null, mods, false, OpCodes.Call, OpCodes.Callvirt);
 			}
 		}
 	}
@@ -5278,34 +5482,31 @@ class DotNetTypeWrapper : LazyTypeWrapper
 	}
 }
 
-class ArrayTypeWrapper : TypeWrapper
+sealed class ArrayTypeWrapper : TypeWrapper
 {
 	private static TypeWrapper[] interfaces;
-	private static MethodDescriptor mdClone;
 	private static MethodInfo clone;
-	private static CodeEmitter callclone;
 	private Type type;
 
 	internal ArrayTypeWrapper(Type type, Modifiers modifiers, string name, ClassLoaderWrapper classLoader)
 		: base(modifiers, name, CoreClasses.java.lang.Object.Wrapper, classLoader)
 	{
 		this.type = type;
-		if(mdClone == null)
-		{
-			mdClone = MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), "clone", "()Ljava.lang.Object;");
-		}
 		if(clone == null)
 		{
 			clone = typeof(Array).GetMethod("Clone");
 		}
-		MethodWrapper mw = new MethodWrapper(this, mdClone, clone, Modifiers.Public, true);
-		if(callclone == null)
-		{
-			callclone = CodeEmitter.Create(OpCodes.Callvirt, clone);
-		}
-		mw.EmitCall = callclone;
-		mw.EmitCallvirt = callclone;
+		MethodWrapper mw = new SimpleCallMethodWrapper(this, new MethodDescriptor("clone", "()Ljava.lang.Object;"), clone, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Public, true, OpCodes.Callvirt, OpCodes.Callvirt);
+		mw.Link();
 		AddMethod(mw);
+	}
+
+	internal override Assembly Assembly
+	{
+		get
+		{
+			return type.Assembly;
+		}
 	}
 
 	internal override string SigName
@@ -5361,11 +5562,6 @@ class ArrayTypeWrapper : TypeWrapper
 		return null;
 	}
 
-	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
-	{
-		return null;
-	}
-
 	private bool IsFinished
 	{
 		get
@@ -5379,10 +5575,11 @@ class ArrayTypeWrapper : TypeWrapper
 		}
 	}
 
-	internal override void Finish()
+	internal override void Finish(bool forDebugSave)
 	{
 		lock(this)
 		{
+			// TODO optimize this
 			if(!IsFinished)
 			{
 				TypeWrapper elementTypeWrapper = ElementTypeWrapper;
