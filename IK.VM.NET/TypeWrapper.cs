@@ -1325,7 +1325,7 @@ abstract class TypeWrapper
 				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
 				wrapper.HasIncompleteInterfaceImplementation = true;
 			}
-			else if(mce.RealName != ifmethod.Name)
+			else if(mce.GetMethod() == null || mce.RealName != ifmethod.Name)
 			{
 				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
 				AttributeHelper.HideFromReflection(mb);
