@@ -717,7 +717,10 @@ class DynamicTypeWrapper : TypeWrapper
 
 	public override void Finish()
 	{
-		impl = impl.Finish();
+		lock(GetType())
+		{
+			impl = impl.Finish();
+		}
 	}
 
 	private abstract class DynamicImpl

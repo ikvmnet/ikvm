@@ -54,11 +54,27 @@ namespace MapXml
 				{
 					string sig = Sig;
 					Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(sig);
+					// TODO use our own reflection, because the type might not have been finished
 					method = Type.GetType(Class, true).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
 				}
 				else
 				{
-					method = Type.GetType(Class, true).GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+					if(Type.GetType(Class, true).Assembly is AssemblyBuilder)
+					{
+						MethodWrapper[] methods = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethods();
+						for(int i = 0; i < methods.Length; i++)
+						{
+							if(methods[i].Name == name)
+							{
+								method = methods[i].GetMethod();
+								break;
+							}
+						}
+					}
+					else
+					{
+						method = Type.GetType(Class, true).GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+					}
 				}
 				if(method == null)
 				{
@@ -253,6 +269,30 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("ldarg_1")]
+	public sealed class LdArg_1 : Simple
+	{
+		public LdArg_1() : base(OpCodes.Ldarg_1)
+		{
+		}
+	}
+
+	[XmlType("ldarg_2")]
+	public sealed class LdArg_2 : Simple
+	{
+		public LdArg_2() : base(OpCodes.Ldarg_2)
+		{
+		}
+	}
+
+	[XmlType("ldarg_3")]
+	public sealed class LdArg_3 : Simple
+	{
+		public LdArg_3() : base(OpCodes.Ldarg_3)
+		{
+		}
+	}
+
 	[XmlType("ret")]
 	public sealed class Ret : Simple
 	{
@@ -276,6 +316,9 @@ namespace MapXml
 		[XmlElement(typeof(StLoc))]
 		[XmlElement(typeof(LdLoc))]
 		[XmlElement(typeof(LdArg_0))]
+		[XmlElement(typeof(LdArg_1))]
+		[XmlElement(typeof(LdArg_2))]
+		[XmlElement(typeof(LdArg_3))]
 		[XmlElement(typeof(Ret))]
 		public Instruction[] invoke;
 

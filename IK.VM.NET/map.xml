@@ -177,22 +177,25 @@
 				<redirect name="IndexOf" sig="(C)I" />
 			</method>
 			<method name="indexOf" sig="(II)I" modifiers="public">
-				<redirect name="IndexOf" sig="(CI)I" />
+				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;CI)I" />
 			</method>
 			<method name="indexOf" sig="(Ljava/lang/String;)I" modifiers="public">
 				<redirect name="IndexOf" />
 			</method>
 			<method name="indexOf" sig="(Ljava/lang/String;I)I" modifiers="public">
-				<redirect name="IndexOf" />
+				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;I)I" />
 			</method>
 			<method name="lastIndexOf" sig="(I)I" modifiers="public">
 				<redirect name="LastIndexOf" sig="(C)I" />
 			</method>
 			<method name="lastIndexOf" sig="(II)I" modifiers="public">
-				<redirect name="LastIndexOf" sig="(CI)I" />
+				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;CI)I" />
 			</method>
 			<method name="lastIndexOf" sig="(Ljava/lang/String;)I" modifiers="public">
 				<redirect name="LastIndexOf" />
+			</method>
+			<method name="lastIndexOf" sig="(Ljava/lang/String;I)I" modifiers="public">
+				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;I)I" />
 			</method>
 			<method name="toCharArray" sig="()[C" modifiers="public">
 				<redirect name="ToCharArray" />
@@ -449,6 +452,16 @@
 			<method name="identityHashCode" sig="(Ljava/lang/Object;)I">
 				<ldarg_0 />
 				<call class="System.Object" name="GetHashCode" />
+				<ret />
+			</method>
+		</class>
+		<class name="java.lang.Runtime">
+			<method name="execInternal" sig="([Ljava/lang/String;[Ljava/lang/String;Ljava/io/File;)Ljava/lang/Process;">
+				<ldarg_0 />
+				<ldarg_1 />
+				<ldarg_2 />
+				<ldarg_3 />
+				<call class="ikvm.lang.DotNetProcess" name="execInternal" />
 				<ret />
 			</method>
 		</class>

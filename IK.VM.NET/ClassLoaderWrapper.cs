@@ -32,6 +32,8 @@ using System.Diagnostics;
 
 class ClassLoaderWrapper
 {
+	private delegate object LoadClassDelegate(object classLoader, string className);
+	private static LoadClassDelegate loadClassDelegate;
 	private static bool arrayConstructionHack;
 	private static ArrayList ikvmAssemblies = new ArrayList();
 	private static Hashtable assemblyToClassLoaderWrapper = new Hashtable();
@@ -42,7 +44,6 @@ class ClassLoaderWrapper
 	private static Hashtable typeToTypeWrapper = new Hashtable();
 	private static ClassLoaderWrapper bootstrapClassLoader;
 	private object javaClassLoader;
-	private MethodInfo loadClassMethod;
 	private Hashtable types = new Hashtable();
 	private Hashtable nativeMethods;
 	// HACK moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
@@ -117,13 +118,9 @@ class ClassLoaderWrapper
 	internal void SetJavaClassLoader(object javaClassLoader)
 	{
 		this.javaClassLoader = javaClassLoader;
-		if(javaClassLoader != null)
+		if(javaClassLoader != null && loadClassDelegate == null)
 		{
-			loadClassMethod = javaClassLoader.GetType().GetMethod("loadClass", BindingFlags.Public | BindingFlags.Instance, null, CallingConventions.Standard, new Type[] { typeof(string) }, null);
-			if(loadClassMethod == null)
-			{
-				throw new InvalidOperationException();
-			}
+			loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), GetType("java.lang.Class"), "__loadClassHelper");
 		}
 	}
 
@@ -249,51 +246,29 @@ class ClassLoaderWrapper
 					throw JavaException.ClassNotFoundException(name);
 				}
 			}
-			// OPTIMIZE this should be optimized
-			try
+			// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
+			lock(javaClassLoader)
 			{
-				object clazz;
-				// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
-				lock(javaClassLoader)
+				Profiler.Enter("ClassLoader.loadClass");
+				try
 				{
-					Profiler.Enter("ClassLoader.loadClass");
-					try
-					{
-						clazz = loadClassMethod.Invoke(javaClassLoader, new object[] { name });
-					}
-					finally
-					{
-						Profiler.Leave("ClassLoader.loadClass");
-					}
+					type = (TypeWrapper)loadClassDelegate(javaClassLoader, name);
 				}
-				type = (TypeWrapper)clazz.GetType().GetField("wrapper", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clazz);
-				if(type == null)
+				finally
 				{
-					Type t = (Type)clazz.GetType().GetField("type", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(clazz);
-					ClassLoaderWrapper loader = GetClassLoader(t);
-					type = (TypeWrapper)loader.types[name];
-					if(type == null)
-					{
-						// this shouldn't be possible
-						throw new InvalidOperationException(name + ", this = " + javaClassLoader);
-					}
+					Profiler.Leave("ClassLoader.loadClass");
 				}
-				// NOTE we're caching types loaded by parent classloaders as well!
-				// TODO not sure if this is correct
-				if(type.GetClassLoader() != this)
-				{
-					if(types[name] != type)
-					{
-						types.Add(name, type);
-					}
-				}
-				return type;
 			}
-			catch(TargetInvocationException x)
+			// NOTE we're caching types loaded by parent classloaders as well!
+			// TODO not sure if this is correct
+			if(type.GetClassLoader() != this)
 			{
-				ExceptionHelper.MapExceptionFast(x);
-				throw x.InnerException;
+				if(types[name] != type)
+				{
+					types.Add(name, type);
+				}
 			}
+			return type;
 		}
 		finally
 		{

@@ -278,6 +278,30 @@ public class StringHelper
 		// TODO
 		return s.ToLower();
 	}
+
+	public static int indexOf(string s, char ch, int fromIndex)
+	{
+		// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
+		return s.IndexOf(ch, Math.Max(0, Math.Min(s.Length, fromIndex)));
+	}
+
+	public static int indexOf(string s, string o, int fromIndex)
+	{
+		// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
+		return s.IndexOf(o, Math.Max(0, Math.Min(s.Length, fromIndex)));
+	}
+
+	public static int lastIndexOf(string s, char ch, int fromIndex)
+	{
+		// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
+		return s.LastIndexOf(ch, Math.Max(0, Math.Min(s.Length - 1, fromIndex)));
+	}
+
+	public static int lastIndexOf(string s, string o, int fromIndex)
+	{
+		// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
+		return s.LastIndexOf(o, Math.Max(0, Math.Min(s.Length - 1, fromIndex)));
+	}
 }
 
 public class StringBufferHelper

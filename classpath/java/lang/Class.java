@@ -112,6 +112,7 @@ public final class Class implements Serializable
 
 	public static native Class getClassFromType(Type t);
 	private static native Type getTypeFromWrapper(Object clazz, Object wrapper);
+	private static native Object getWrapperFromType(Type t);
 
 	private Type getType()
 	{
@@ -120,6 +121,14 @@ public final class Class implements Serializable
 			type = getTypeFromWrapper(this, wrapper);
 		}
 		return type;
+	}
+	private Object getWrapper()
+	{
+		if(wrapper == null)
+		{
+			wrapper = getWrapperFromType(type);
+		}
+		return wrapper;
 	}
 
 	/**
@@ -230,6 +239,12 @@ public final class Class implements Serializable
 
 	static native Class loadBootstrapClass(String name, boolean initialize);
 	private static native void initializeType(Type type);
+
+	// HACK we need a way to call ClassLoader.loadClass() from C#, so we need this helper method
+	public static Object __loadClassHelper(Object loader, String name) throws java.lang.ClassNotFoundException
+	{
+		return ((ClassLoader)loader).loadClass(name).getWrapper();
+	}
 
 	/**
 	 * Get a new instance of this class by calling the no-argument constructor.

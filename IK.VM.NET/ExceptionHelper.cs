@@ -39,7 +39,9 @@ public class ExceptionHelper
 	private class ExceptionInfoHelper
 	{
 		private static readonly Exception CAUSE_NOT_SET = new Exception();
-		private ArrayList stackTrace = new ArrayList();
+		private StackTrace tracePart1;
+		private StackTrace tracePart2;
+		private ArrayList stackTrace;
 		private Exception cause;
 
 		[StackTraceInfo(Hidden = true)]
@@ -48,13 +50,8 @@ public class ExceptionHelper
 			Profiler.Enter("new ExceptionInfoHelper");
 			try
 			{
-				Append(new StackTrace(x, true));
-				bool chopFirst = stackTrace.Count != 0;
-				Append(new StackTrace(true));
-				if(chopFirst && stackTrace.Count > 0 && JVM.CleanStackTraces)
-				{
-					stackTrace.RemoveAt(0);
-				}
+				tracePart1 = new StackTrace(x, true);
+				tracePart2 = new StackTrace(true);
 				cause = x.InnerException;
 				if(cause == null)
 				{
@@ -88,8 +85,9 @@ public class ExceptionHelper
 
 		internal void ResetStackTrace()
 		{
-			stackTrace.Clear();
-			Append(new StackTrace(true));
+			stackTrace = null;
+			tracePart1 = new StackTrace(true);
+			tracePart2 = null;
 		}
 
 		private static bool IsPrivateScope(MethodBase mb)
@@ -238,11 +236,29 @@ public class ExceptionHelper
 		{
 			get
 			{
+				if(stackTrace == null)
+				{
+					stackTrace = new ArrayList();
+					Append(tracePart1);
+					if(tracePart2 != null)
+					{
+						bool chopFirst = stackTrace.Count != 0;
+						Append(tracePart2);
+						if(chopFirst && stackTrace.Count > 0 && JVM.CleanStackTraces)
+						{
+							stackTrace.RemoveAt(0);
+						}
+					}
+					tracePart1 = null;
+					tracePart2 = null;
+				}
 				return (StackTraceElement[])stackTrace.ToArray(typeof(StackTraceElement));
 			}
 			set
 			{
 				stackTrace = new ArrayList(value);
+				tracePart1 = null;
+				tracePart2 = null;
 			}
 		}
 	}
@@ -492,7 +508,7 @@ public class ExceptionHelper
 			{
 				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArrayIndexOutOfBoundsException"));
 			}
-				// HACK for String methods, we remap ArgumentOutOfRangeException to StringIndexOutOfBoundsException
+			// HACK for String methods, we remap ArgumentOutOfRangeException to StringIndexOutOfBoundsException
 			else if(type == typeof(ArgumentOutOfRangeException))
 			{
 				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.StringIndexOutOfBoundsException"));
@@ -559,9 +575,17 @@ public class ExceptionHelper
 			}
 			else if(type.FullName.StartsWith("System.") && type != typeof(TargetInvocationException))
 			{
-				// TODO this is just for debugging
-				Console.WriteLine("caught: {0}, handler: {1}", t.GetType().FullName, handler.FullName);
-				Console.WriteLine(t);
+				if(handler != typeof(Exception) && handler.FullName.StartsWith("System."))
+				{
+					// this is Java code explicitly handling a .NET exception (e.g. System.IO.IOException in java.io.FileDescriptor)
+					// so we don't need to print this
+				}
+				else
+				{
+					// TODO this is just for debugging
+					Console.WriteLine("caught: {0}, handler: {1}", t.GetType().FullName, handler.FullName);
+					Console.WriteLine(t);
+				}
 			}
 			if(!exceptions.ContainsKey(t))
 			{
