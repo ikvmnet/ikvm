@@ -238,7 +238,7 @@ class InstructionState
 			}
 			else if(type != null)
 			{
-				if(type[0] == 'L' || type[0] == '[' || type[0] == 'U' || type[0] == 'N')
+				if(type[0] == 'L' || type[0] == '[')
 				{
 					string baseType = s2.FindCommonBaseType(type, type2);
 					if(type != baseType)
@@ -877,18 +877,6 @@ class InstructionState
 		Console.WriteLine();
 	}
 
-	// this method ensures that no uninitialized object are in the locals for the current state
-	internal void CheckLocalsForUninitializedObjRefs()
-	{
-		for(int i = 0; i < locals.Length; i++)
-		{
-			if(locals[i] != null && (((locals[i])[0] == 'U') || ((locals[i])[0] == 'N')))
-			{
-				throw new VerifyError("uninitialized object ref in local (1)");
-			}
-		}
-	}
-
 	// this method ensures that no uninitialized object are in the current state
 	internal void CheckUninitializedObjRefs()
 	{
@@ -1108,7 +1096,6 @@ class MethodAnalyzer
 						{
 							if(method.ExceptionTable[j].start_pc <= method.Instructions[i].PC && method.ExceptionTable[j].end_pc > method.Instructions[i].PC)
 							{
-								state[i].CheckLocalsForUninitializedObjRefs();
 								// NOTE this used to be CopyLocalsAndSubroutines, but it doesn't (always) make
 								// sense to copy the subroutine state
 								// TODO figure out if there are circumstances under which it does make sense

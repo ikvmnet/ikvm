@@ -524,12 +524,20 @@ class Compiler
 							{
 								// TODO handle class not found
 								string t = ma.GetRawStackType(i, n);
-								if(t.Length > 1 && t[0] == 'N')
+								if(t.Length > 1 && (t[0] == 'N' || t[0] == 'U'))
 								{
-									// unitialized references aren't really there
-									continue;
+									if(t[0] == 'U')
+									{
+										// we're inside a constructor and the uninitialized this is passed into an exception block!
+										ilGenerator.Emit(OpCodes.Pop);
+										stack.Push("this");
+									}
+									else
+									{
+										// unitialized references (new objects) aren't really there
+									}
 								}
-								if(t == "Lnull")
+								else if(t == "Lnull")
 								{
 									stack.Push(null);
 								}
@@ -543,14 +551,18 @@ class Compiler
 							ilGenerator.BeginExceptionBlock();
 							while(stack.Count != 0)
 							{
-								LocalBuilder local = (LocalBuilder)stack.Pop();
-								if(local == null)
+								object o = stack.Pop();
+								if(o == null)
 								{
 									ilGenerator.Emit(OpCodes.Ldnull);
 								}
+								else if(o is string)	// HACK we use a string to signal "this"
+								{
+									ilGenerator.Emit(OpCodes.Ldarg_0);
+								}
 								else
 								{
-									ilGenerator.Emit(OpCodes.Ldloc, local);
+									ilGenerator.Emit(OpCodes.Ldloc, (LocalBuilder)o);
 								}
 							}
 						}
@@ -572,12 +584,17 @@ class Compiler
 								{
 									// TODO handle class not found
 									string t = ma.GetRawStackType(bc.TargetIndex, n);
-									if((t.Length > 1 && t[0] == 'N') || t == "Lnull")
+									if((t.Length > 1 && (t[0] == 'N' || t[0] == 'U')) || t == "Lnull")
 									{
+										if(t[0] == 'U')
+										{
+											// we're inside a constructor and the uninitialized this is passed into an exception block!
+											ilGenerator.Emit(OpCodes.Ldarg_0);
+										}
 										// unitialized references aren't really there, but at the push site we
 										// need to know that we have to skip this slot, so we push a null as well,
 										// and then at the push site we'll look at the stack type to figure out
-										// if it is a real null or an uniti
+										// if it is a real null or an unitialized references
 										bc.Stack.Push(null);
 									}
 									else
@@ -670,9 +687,15 @@ class Compiler
 										LocalBuilder local = (LocalBuilder)bc.Stack.Pop();
 										if(local == null)
 										{
-											if(ma.GetRawStackType(bc.TargetIndex, (stack - 1) - n) == "Lnull")
+											string t = ma.GetRawStackType(bc.TargetIndex, (stack - 1) - n);
+											if(t == "Lnull")
 											{
 												ilGenerator.Emit(OpCodes.Ldnull);
+											}
+											else if(t[0] == 'U')
+											{
+												// we're inside a constructor and the uninitialized this is passed into an exception block!
+												ilGenerator.Emit(OpCodes.Ldarg_0);
 											}
 											else
 											{

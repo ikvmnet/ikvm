@@ -371,4 +371,10 @@ public class StringBufferHelper
 	{
 		return thiz.Remove(start, end - start);
 	}
+
+	public static void getChars(StringBuilder thiz, int srcBegin, int srcEnd, char[] dst, int dstBegin)
+	{
+		string s = thiz.ToString(srcBegin, srcEnd - srcBegin);
+		s.CopyTo(0, dst, dstBegin, s.Length);
+	}
 }

@@ -352,6 +352,9 @@
 			<method name="charAt" sig="(I)C" modifiers="public">
 				<redirect name="get_Chars" />
 			</method>
+			<method name="getChars" sig="(II[CI)V" modifiers="public">
+				<redirect class="StringBufferHelper" type="static" sig="(Ljava/lang/StringBuffer;II[CI)V" />
+			</method>
 			<method name="substring" sig="(II)Ljava/lang/String;" modifiers="public">
 				<redirect class="StringBufferHelper" type="static" sig="(Ljava/lang/StringBuffer;II)Ljava/lang/String;" />
 			</method>
