@@ -744,6 +744,7 @@ class DynamicTypeWrapper : TypeWrapper
 		private Hashtable methodLookup;
 		private Hashtable fieldLookup;
 		private bool finishing;
+		private FinishedTypeImpl finishedType;
 		private Hashtable nativeMethods;
 
 		internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper, TypeWrapper baseWrapper, Hashtable nativeMethods)
@@ -811,273 +812,283 @@ class DynamicTypeWrapper : TypeWrapper
 				// might introduce to be visible)
 				baseWrapper.Finish();
 			}
-			if(finishing)
+			// make sure all classes are loaded, before we start finishing the type. During finishing, we
+			// may not run any Java code, because that might result in a request to finish the type that we
+			// are in the process of finishing, and this would be a problem.
+			classFile.LoadAllReferencedTypes(wrapper.GetClassLoader());
+			// it is possible that the loading of the referenced classes triggered a finish of us,
+			// if that happens, we just return
+			if(finishedType != null)
 			{
-				throw new InvalidOperationException("Finishing already in progress, for type " + classFile.Name);
+				return finishedType;
 			}
-			finishing = true;
-			//		Console.WriteLine("finishing TypeFactory for " + classFile.Name);
-			if(fieldLookup == null)
+			try
 			{
-				fields = new FieldWrapper[classFile.Fields.Length];
-				fieldLookup = new Hashtable();
-				for(int i = 0; i < classFile.Fields.Length; i++)
+				if(finishing)
 				{
-					fieldLookup[classFile.Fields[i].Name] = i;
+					throw new InvalidOperationException("Finishing already in progress, for type " + classFile.Name);
 				}
-			}
-			for(int i = 0; i < fields.Length; i++)
-			{
-				if(fields[i] == null)
+				finishing = true;
+				//Console.WriteLine("finishing TypeFactory for " + classFile.Name);
+				if(fieldLookup == null)
 				{
-					GenerateField(i);
-					wrapper.AddField(fields[i]);
+					fields = new FieldWrapper[classFile.Fields.Length];
+					fieldLookup = new Hashtable();
+					for(int i = 0; i < classFile.Fields.Length; i++)
+					{
+						fieldLookup[classFile.Fields[i].Name] = i;
+					}
 				}
-			}
-			MethodDescriptor[] methodDescriptors = new MethodDescriptor[classFile.Methods.Length];
-			for(int i = 0; i < classFile.Methods.Length; i++)
-			{
-				methodDescriptors[i] = new MethodDescriptor(wrapper.GetClassLoader(), classFile.Methods[i].Name, classFile.Methods[i].Signature);
-			}
-			if(methodLookup == null)
-			{
-				methods = new MethodWrapper[classFile.Methods.Length];
-				methodLookup = new Hashtable();
+				for(int i = 0; i < fields.Length; i++)
+				{
+					if(fields[i] == null)
+					{
+						GenerateField(i);
+						wrapper.AddField(fields[i]);
+					}
+				}
+				MethodDescriptor[] methodDescriptors = new MethodDescriptor[classFile.Methods.Length];
 				for(int i = 0; i < classFile.Methods.Length; i++)
 				{
-					methodLookup[methodDescriptors[i]] = i;
+					methodDescriptors[i] = new MethodDescriptor(wrapper.GetClassLoader(), classFile.Methods[i].Name, classFile.Methods[i].Signature);
 				}
-			}
-			for(int i = 0; i < methods.Length; i++)
-			{
-				if(methods[i] == null)
+				if(methodLookup == null)
 				{
-					GenerateMethod(i);
-					wrapper.AddMethod(methods[i]);
-				}
-			}
-			wrapper.BaseTypeWrapper.Finish();
-			bool basehasclinit = wrapper.BaseTypeWrapper.Type.GetConstructor(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public, null, CallingConventions.Any, Type.EmptyTypes, null) != null;
-			bool hasclinit = false;
-			for(int i = 0; i < methods.Length; i++)
-			{
-				ILGenerator ilGenerator;
-				MethodBase mb = methods[i].GetMethod();
-				if(mb is ConstructorBuilder)
-				{
-					ilGenerator = ((ConstructorBuilder)mb).GetILGenerator();
-					if(basehasclinit && classFile.Methods[i].Name == "<clinit>" && classFile.Methods[i].Signature == "()V" && !classFile.IsInterface)
+					methods = new MethodWrapper[classFile.Methods.Length];
+					methodLookup = new Hashtable();
+					for(int i = 0; i < classFile.Methods.Length; i++)
 					{
-						hasclinit = true;
-						ilGenerator.Emit(OpCodes.Ldtoken, Type.BaseType);
-						ilGenerator.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("RunClassConstructor"));
+						methodLookup[methodDescriptors[i]] = i;
 					}
 				}
-				else if(mb != null)
+				for(int i = 0; i < methods.Length; i++)
 				{
-					ilGenerator = ((MethodBuilder)mb).GetILGenerator();
-				}
-				else
-				{
-					// HACK methods that have unloadable types in the signature do not have an underlying method, so we end
-					// up here
-					continue;
-				}
-				ClassFile.Method m = classFile.Methods[i];
-				if(m.IsAbstract)
-				{
-					// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
-					// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
-					if(!m.ClassFile.IsAbstract && !m.ClassFile.IsInterface)
+					if(methods[i] == null)
 					{
-						TypeWrapper exceptionType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/AbstractMethodError");
-						MethodWrapper method = exceptionType.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false);
-						ilGenerator.Emit(OpCodes.Ldstr, m.ClassFile.Name + "." + m.Name + m.Signature);
-						method.EmitNewobj.Emit(ilGenerator);
-						ilGenerator.Emit(OpCodes.Throw);
+						GenerateMethod(i);
+						wrapper.AddMethod(methods[i]);
 					}
 				}
-				else if(m.IsNative)
+				wrapper.BaseTypeWrapper.Finish();
+				bool basehasclinit = wrapper.BaseTypeWrapper.Type.GetConstructor(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public, null, CallingConventions.Any, Type.EmptyTypes, null) != null;
+				bool hasclinit = false;
+				for(int i = 0; i < methods.Length; i++)
 				{
-					CustomAttributeBuilder methodFlags = new CustomAttributeBuilder(typeof(ModifiersAttribute).GetConstructor(new Type[] { typeof(Modifiers) }), new object[] { m.Modifiers });
+					ILGenerator ilGenerator;
+					MethodBase mb = methods[i].GetMethod();
 					if(mb is ConstructorBuilder)
 					{
-						((ConstructorBuilder)mb).SetCustomAttribute(methodFlags);
+						ilGenerator = ((ConstructorBuilder)mb).GetILGenerator();
+						if(basehasclinit && classFile.Methods[i].Name == "<clinit>" && classFile.Methods[i].Signature == "()V" && !classFile.IsInterface)
+						{
+							hasclinit = true;
+							ilGenerator.Emit(OpCodes.Ldtoken, Type.BaseType);
+							ilGenerator.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("RunClassConstructor"));
+						}
+					}
+					else if(mb != null)
+					{
+						ilGenerator = ((MethodBuilder)mb).GetILGenerator();
 					}
 					else
 					{
-						((MethodBuilder)mb).SetCustomAttribute(methodFlags);
+						// HACK methods that have unloadable types in the signature do not have an underlying method, so we end
+						// up here
+						continue;
 					}
-					// do we have a native implementation in map.xml?
-					if(nativeMethods != null)
+					ClassFile.Method m = classFile.Methods[i];
+					if(m.IsAbstract)
 					{
-						string key = classFile.Name.Replace('/', '.') + "." + m.Name + m.Signature;
-						CodeEmitter opcodes = (CodeEmitter)nativeMethods[key];
-						if(opcodes != null)
+						// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
+						// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
+						if(!m.ClassFile.IsAbstract && !m.ClassFile.IsInterface)
 						{
-							opcodes.Emit(ilGenerator);
-							continue;
-						}
-					}
-					// see if there exists a NativeCode class for this type
-					Type nativeCodeType = Type.GetType("NativeCode." + classFile.Name.Replace('/', '.'));
-					MethodInfo nativeMethod = null;
-					if(nativeCodeType != null)
-					{
-						// TODO use better resolution
-						nativeMethod = nativeCodeType.GetMethod(m.Name);
-					}
-					Type[] args = wrapper.GetClassLoader().ArgTypeListFromSig(m.Signature);
-					if(nativeMethod != null)
-					{
-						int add = 0;
-						if(!m.IsStatic)
-						{
-							ilGenerator.Emit(OpCodes.Ldarg_0);
-							add = 1;
-						}
-						for(int j = 0; j < args.Length; j++)
-						{
-							ilGenerator.Emit(OpCodes.Ldarg, j + add);
-						}
-						ilGenerator.Emit(OpCodes.Call, nativeMethod);
-						Type retType = wrapper.GetClassLoader().RetTypeFromSig(m.Signature);
-						if(!retType.Equals(nativeMethod.ReturnType))
-						{
-							ilGenerator.Emit(OpCodes.Castclass, retType);
-						}
-						ilGenerator.Emit(OpCodes.Ret);
-					}
-					else
-					{
-						if(JVM.NoJniStubs)
-						{
-							// TODO consider throwing a java.lang.UnsatisfiedLinkError here
-							//Console.WriteLine("Native method not implemented: " + classFile.Name + "." + m.Name + m.Signature);
-							ilGenerator.Emit(OpCodes.Ldstr, "Native method not implemented: " + classFile.Name + "." + m.Name + m.Signature);
-							ilGenerator.Emit(OpCodes.Newobj, typeof(NotImplementedException).GetConstructor(new Type[] { typeof(string) }));
+							TypeWrapper exceptionType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/AbstractMethodError");
+							MethodWrapper method = exceptionType.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false);
+							ilGenerator.Emit(OpCodes.Ldstr, m.ClassFile.Name + "." + m.Name + m.Signature);
+							method.EmitNewobj.Emit(ilGenerator);
 							ilGenerator.Emit(OpCodes.Throw);
-							continue;
 						}
-						FieldBuilder methodPtr = typeBuilder.DefineField(m.Name + "$Ptr", typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
-						Type localRefStructType = JVM.JniProvider.GetLocalRefStructType();
-						LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
-						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-						ilGenerator.Emit(OpCodes.Initobj, localRefStructType);
-						ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
-						Label oklabel = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Brtrue, oklabel);
-						ilGenerator.Emit(OpCodes.Ldstr, m.Name);
-						ilGenerator.Emit(OpCodes.Ldstr, m.Signature);
-						ilGenerator.Emit(OpCodes.Ldstr, classFile.Name);
-						ilGenerator.Emit(OpCodes.Call, JVM.JniProvider.GetJniFuncPtrMethod());
-						ilGenerator.Emit(OpCodes.Stsfld, methodPtr);
-						ilGenerator.MarkLabel(oklabel);
-						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-						ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("Enter"));
-						LocalBuilder jnienv = ilGenerator.DeclareLocal(typeof(IntPtr));
-						ilGenerator.Emit(OpCodes.Stloc, jnienv);
-						Label tryBlock = ilGenerator.BeginExceptionBlock();
-						Type retType = wrapper.GetClassLoader().RetTypeFromSig(m.Signature);
-						if(!retType.IsValueType && retType != typeof(void))
+					}
+					else if(m.IsNative)
+					{
+						CustomAttributeBuilder methodFlags = new CustomAttributeBuilder(typeof(ModifiersAttribute).GetConstructor(new Type[] { typeof(Modifiers) }), new object[] { m.Modifiers });
+						if(mb is ConstructorBuilder)
 						{
-							// this one is for use after we return from "calli"
-							ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-						}
-						ilGenerator.Emit(OpCodes.Ldloc, jnienv);
-						Type[] modargs = new Type[args.Length + 2];
-						modargs[0] = typeof(IntPtr);
-						modargs[1] = typeof(IntPtr);
-						args.CopyTo(modargs, 2);
-						int add = 0;
-						if(!m.IsStatic)
-						{
-							ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-							ilGenerator.Emit(OpCodes.Ldarg_0);
-							ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("MakeLocalRef"));
-							add = 1;
+							((ConstructorBuilder)mb).SetCustomAttribute(methodFlags);
 						}
 						else
 						{
-							ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-							ilGenerator.Emit(OpCodes.Ldtoken, this.Type);
-							ilGenerator.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle"));
-							ilGenerator.Emit(OpCodes.Call, typeof(NativeCode.java.lang.Class).GetMethod("getClassFromType"));
-							ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("MakeLocalRef"));
+							((MethodBuilder)mb).SetCustomAttribute(methodFlags);
 						}
-						for(int j = 0; j < args.Length; j++)
+						// do we have a native implementation in map.xml?
+						if(nativeMethods != null)
 						{
-							if(!args[j].IsValueType)
+							string key = classFile.Name.Replace('/', '.') + "." + m.Name + m.Signature;
+							CodeEmitter opcodes = (CodeEmitter)nativeMethods[key];
+							if(opcodes != null)
+							{
+								opcodes.Emit(ilGenerator);
+								continue;
+							}
+						}
+						// see if there exists a NativeCode class for this type
+						Type nativeCodeType = Type.GetType("NativeCode." + classFile.Name.Replace('/', '.'));
+						MethodInfo nativeMethod = null;
+						if(nativeCodeType != null)
+						{
+							// TODO use better resolution
+							nativeMethod = nativeCodeType.GetMethod(m.Name);
+						}
+						Type[] args = wrapper.GetClassLoader().ArgTypeListFromSig(m.Signature);
+						if(nativeMethod != null)
+						{
+							int add = 0;
+							if(!m.IsStatic)
+							{
+								ilGenerator.Emit(OpCodes.Ldarg_0);
+								add = 1;
+							}
+							for(int j = 0; j < args.Length; j++)
+							{
+								ilGenerator.Emit(OpCodes.Ldarg, j + add);
+							}
+							ilGenerator.Emit(OpCodes.Call, nativeMethod);
+							Type retType = wrapper.GetClassLoader().RetTypeFromSig(m.Signature);
+							if(!retType.Equals(nativeMethod.ReturnType))
+							{
+								ilGenerator.Emit(OpCodes.Castclass, retType);
+							}
+							ilGenerator.Emit(OpCodes.Ret);
+						}
+						else
+						{
+							if(JVM.NoJniStubs)
+							{
+								// TODO consider throwing a java.lang.UnsatisfiedLinkError here
+								//Console.WriteLine("Native method not implemented: " + classFile.Name + "." + m.Name + m.Signature);
+								ilGenerator.Emit(OpCodes.Ldstr, "Native method not implemented: " + classFile.Name + "." + m.Name + m.Signature);
+								ilGenerator.Emit(OpCodes.Newobj, typeof(NotImplementedException).GetConstructor(new Type[] { typeof(string) }));
+								ilGenerator.Emit(OpCodes.Throw);
+								continue;
+							}
+							FieldBuilder methodPtr = typeBuilder.DefineField(m.Name + "$Ptr", typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
+							Type localRefStructType = JVM.JniProvider.GetLocalRefStructType();
+							LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
+							ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+							ilGenerator.Emit(OpCodes.Initobj, localRefStructType);
+							ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
+							Label oklabel = ilGenerator.DefineLabel();
+							ilGenerator.Emit(OpCodes.Brtrue, oklabel);
+							ilGenerator.Emit(OpCodes.Ldstr, m.Name);
+							ilGenerator.Emit(OpCodes.Ldstr, m.Signature);
+							ilGenerator.Emit(OpCodes.Ldstr, classFile.Name);
+							ilGenerator.Emit(OpCodes.Call, JVM.JniProvider.GetJniFuncPtrMethod());
+							ilGenerator.Emit(OpCodes.Stsfld, methodPtr);
+							ilGenerator.MarkLabel(oklabel);
+							ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+							ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("Enter"));
+							LocalBuilder jnienv = ilGenerator.DeclareLocal(typeof(IntPtr));
+							ilGenerator.Emit(OpCodes.Stloc, jnienv);
+							Label tryBlock = ilGenerator.BeginExceptionBlock();
+							Type retType = wrapper.GetClassLoader().RetTypeFromSig(m.Signature);
+							if(!retType.IsValueType && retType != typeof(void))
+							{
+								// this one is for use after we return from "calli"
+								ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+							}
+							ilGenerator.Emit(OpCodes.Ldloc, jnienv);
+							Type[] modargs = new Type[args.Length + 2];
+							modargs[0] = typeof(IntPtr);
+							modargs[1] = typeof(IntPtr);
+							args.CopyTo(modargs, 2);
+							int add = 0;
+							if(!m.IsStatic)
 							{
 								ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-								ilGenerator.Emit(OpCodes.Ldarg, j + add);
+								ilGenerator.Emit(OpCodes.Ldarg_0);
 								ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("MakeLocalRef"));
-								modargs[j + 2] = typeof(IntPtr);
+								add = 1;
 							}
 							else
 							{
-								ilGenerator.Emit(OpCodes.Ldarg, j + add);
+								ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+								ilGenerator.Emit(OpCodes.Ldtoken, this.Type);
+								ilGenerator.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle"));
+								ilGenerator.Emit(OpCodes.Call, typeof(NativeCode.java.lang.Class).GetMethod("getClassFromType"));
+								ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("MakeLocalRef"));
 							}
-						}
-						ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
-						ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retType.IsValueType || retType == typeof(void)) ? retType : typeof(IntPtr), modargs);
-						LocalBuilder retValue = null;
-						if(retType != typeof(void))
-						{
-							if(!retType.IsValueType)
+							for(int j = 0; j < args.Length; j++)
 							{
-								ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("UnwrapLocalRef"));
-								ilGenerator.Emit(OpCodes.Castclass, retType);
+								if(!args[j].IsValueType)
+								{
+									ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+									ilGenerator.Emit(OpCodes.Ldarg, j + add);
+									ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("MakeLocalRef"));
+									modargs[j + 2] = typeof(IntPtr);
+								}
+								else
+								{
+									ilGenerator.Emit(OpCodes.Ldarg, j + add);
+								}
 							}
-							retValue = ilGenerator.DeclareLocal(retType);
-							ilGenerator.Emit(OpCodes.Stloc, retValue);
+							ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
+							ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retType.IsValueType || retType == typeof(void)) ? retType : typeof(IntPtr), modargs);
+							LocalBuilder retValue = null;
+							if(retType != typeof(void))
+							{
+								if(!retType.IsValueType)
+								{
+									ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("UnwrapLocalRef"));
+									ilGenerator.Emit(OpCodes.Castclass, retType);
+								}
+								retValue = ilGenerator.DeclareLocal(retType);
+								ilGenerator.Emit(OpCodes.Stloc, retValue);
+							}
+							ilGenerator.BeginCatchBlock(typeof(object));
+							ilGenerator.EmitWriteLine("*** exception in native code ***");
+							ilGenerator.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", new Type[] { typeof(object) }, null));
+							ilGenerator.Emit(OpCodes.Rethrow);
+							ilGenerator.BeginFinallyBlock();
+							ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+							ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("Leave"));
+							ilGenerator.EndExceptionBlock();
+							if(retType != typeof(void))
+							{
+								ilGenerator.Emit(OpCodes.Ldloc, retValue);
+							}
+							ilGenerator.Emit(OpCodes.Ret);
 						}
-						ilGenerator.BeginCatchBlock(typeof(object));
-						ilGenerator.EmitWriteLine("*** exception in native code ***");
-						ilGenerator.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", new Type[] { typeof(object) }, null));
-						ilGenerator.Emit(OpCodes.Rethrow);
-						ilGenerator.BeginFinallyBlock();
-						ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-						ilGenerator.Emit(OpCodes.Call, localRefStructType.GetMethod("Leave"));
-						ilGenerator.EndExceptionBlock();
-						if(retType != typeof(void))
-						{
-							ilGenerator.Emit(OpCodes.Ldloc, retValue);
-						}
-						ilGenerator.Emit(OpCodes.Ret);
+					}
+					else
+					{
+						Compiler.Compile(wrapper, m, ilGenerator, wrapper.GetClassLoader());
 					}
 				}
-				else
+				// if we don't have a <clinit> we need to inject one to call the base class <clinit>
+				if(basehasclinit && !hasclinit && !classFile.IsInterface)
 				{
-					Compiler.Compile(wrapper, m, ilGenerator, wrapper.GetClassLoader());
+					ILGenerator ilGenerator = typeBuilder.DefineConstructor(MethodAttributes.Private | MethodAttributes.Static, CallingConventions.Standard, Type.EmptyTypes).GetILGenerator();
+					ilGenerator.Emit(OpCodes.Ldtoken, Type.BaseType);
+					ilGenerator.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("RunClassConstructor"));
+					ilGenerator.Emit(OpCodes.Ret);
 				}
-			}
-			// if we don't have a <clinit> we need to inject one to call the base class <clinit>
-			if(basehasclinit && !hasclinit && !classFile.IsInterface)
-			{
-				ILGenerator ilGenerator = typeBuilder.DefineConstructor(MethodAttributes.Private | MethodAttributes.Static, CallingConventions.Standard, Type.EmptyTypes).GetILGenerator();
-				ilGenerator.Emit(OpCodes.Ldtoken, Type.BaseType);
-				ilGenerator.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("RunClassConstructor"));
-				ilGenerator.Emit(OpCodes.Ret);
-			}
 
-			if(!classFile.IsInterface)
-			{
-				// here we loop thru all the interfaces to explicitly implement any methods that we inherit from
-				// base types that may have a different name from the name in the interface
-				// (e.g. interface that has an equals() method that should override System.Object.Equals())
-				// also deals with interface methods that aren't implemented (generate a stub that throws AbstractMethodError)
-				// and with methods that aren't public (generate a stub that throws IllegalAccessError)
-				Hashtable doneSet = new Hashtable();
-				for(int i = 0; i < interfaces.Length; i++)
+				if(!classFile.IsInterface)
 				{
-					interfaces[i].ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet);
+					// here we loop thru all the interfaces to explicitly implement any methods that we inherit from
+					// base types that may have a different name from the name in the interface
+					// (e.g. interface that has an equals() method that should override System.Object.Equals())
+					// also deals with interface methods that aren't implemented (generate a stub that throws AbstractMethodError)
+					// and with methods that aren't public (generate a stub that throws IllegalAccessError)
+					Hashtable doneSet = new Hashtable();
+					for(int i = 0; i < interfaces.Length; i++)
+					{
+						interfaces[i].ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet);
+					}
+					wrapper.BaseTypeWrapper.ImplementOverrideStubsAndVirtuals(typeBuilder, wrapper, methodLookup);
 				}
-				wrapper.BaseTypeWrapper.ImplementOverrideStubsAndVirtuals(typeBuilder, wrapper, methodLookup);
-			}
 
-			try
-			{
 				Type type;
 				Profiler.Enter("TypeBuilder.CreateType");
 				try
@@ -1089,12 +1100,16 @@ class DynamicTypeWrapper : TypeWrapper
 					Profiler.Leave("TypeBuilder.CreateType");
 				}
 				ClassLoaderWrapper.SetWrapperForType(type, wrapper);
-				return new FinishedTypeImpl(type);
+				finishedType = new FinishedTypeImpl(type);
+				return finishedType;
 			}
-			catch
+			catch(Exception x)
 			{
-				Console.WriteLine("Exception caused by : " + wrapper.Name);
-				throw;
+				Console.WriteLine("****** Exception during finishing ******");
+				Console.WriteLine(x);
+				// we bail out, because there is not much chance that we can continue to run after this
+				Environment.Exit(1);
+				return null;
 			}
 		}
 

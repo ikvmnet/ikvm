@@ -1099,8 +1099,6 @@ namespace NativeCode.java
 					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
 				}
 				// we need to finish the type otherwise all methods will not be in the method map yet
-				// TODO since this can be called from Java code while finishing is in progress (finishing triggers
-				// class loading, which runs Java code which might call this method), we shouldn't finish here
 				wrapper.Finish();
 				return wrapper.GetMethods();
 			}
@@ -1113,8 +1111,6 @@ namespace NativeCode.java
 					wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
 				}
 				// we need to finish the type otherwise all fields will not be in the field map yet
-				// TODO since this can be called from Java code while finishing is in progress (finishing triggers
-				// class loading, which runs Java code which might call this method), we shouldn't finish here
 				wrapper.Finish();
 				return wrapper.GetFields();
 			}

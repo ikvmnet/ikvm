@@ -241,6 +241,17 @@ class ClassFile
 //		}
 	}
 
+	internal void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
+	{
+		for(int i = 1; i < constantpool.Length; i++)
+		{
+			if(constantpool[i] != null)
+			{
+				constantpool[i].LoadAllReferencedTypes(classLoader);
+			}
+		}
+	}
+
 	internal Modifiers Modifiers
 	{
 		get
@@ -458,6 +469,10 @@ class ClassFile
 		{
 		}
 
+		internal virtual void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
+		{
+		}
+
 		internal static ConstantPoolItem Read(string inputClassName, BigEndianBinaryReader br)
 		{
 			byte tag = br.ReadByte();
@@ -495,6 +510,7 @@ class ClassFile
 	{
 		private ushort name_index;
 		private string name;
+		private TypeWrapper typeWrapper;
 
 		internal ConstantPoolItemClass(BigEndianBinaryReader br)
 		{
@@ -506,12 +522,26 @@ class ClassFile
 			name = ((ConstantPoolItemUtf8)classFile.GetConstantPoolItem(name_index)).Value;;
 		}
 
+		internal override void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
+		{
+			GetClassType(classLoader);
+		}
+
 		internal string Name
 		{
 			get
 			{
 				return name;
 			}
+		}
+
+		internal TypeWrapper GetClassType(ClassLoaderWrapper classLoader)
+		{
+			if(typeWrapper == null)
+			{
+				typeWrapper = classLoader.LoadClassBySlashedName(name);
+			}
+			return typeWrapper;
 		}
 	}
 
@@ -582,6 +612,21 @@ class ClassFile
 			{
 				return clazz.Name;
 			}
+		}
+
+		internal TypeWrapper GetClassType(ClassLoaderWrapper classLoader)
+		{
+			return clazz.GetClassType(classLoader);
+		}
+
+		internal TypeWrapper[] GetArgTypes(ClassLoaderWrapper classLoader)
+		{
+			return name_and_type.GetArgTypes(classLoader);
+		}
+
+		internal TypeWrapper GetRetType(ClassLoaderWrapper classLoader)
+		{
+			return name_and_type.GetRetType(classLoader);
 		}
 	}
 
@@ -674,6 +719,9 @@ class ClassFile
 		private ushort descriptor_index;
 		private string name;
 		private string descriptor;
+		private TypeWrapper[] argTypeWrappers;
+		private TypeWrapper retTypeWrapper;
+		private TypeWrapper fieldTypeWrapper;
 
 		internal ConstantPoolItemNameAndType(BigEndianBinaryReader br)
 		{
@@ -691,6 +739,19 @@ class ClassFile
 			descriptor = descriptorUtf8.Value;
 		}
 
+		internal override void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
+		{
+			if(descriptor[0] == '(')
+			{
+				GetArgTypes(classLoader);
+				GetRetType(classLoader);
+			}
+			else
+			{
+				GetFieldType(classLoader);
+			}
+		}
+
 		internal string Name
 		{
 			get
@@ -705,6 +766,33 @@ class ClassFile
 			{
 				return descriptor;
 			}
+		}
+
+		internal TypeWrapper[] GetArgTypes(ClassLoaderWrapper classLoader)
+		{
+			if(argTypeWrappers == null)
+			{
+				argTypeWrappers = classLoader.ArgTypeWrapperListFromSig(descriptor);
+			}
+			return argTypeWrappers;
+		}
+
+		internal TypeWrapper GetRetType(ClassLoaderWrapper classLoader)
+		{
+			if(retTypeWrapper == null)
+			{
+				retTypeWrapper = classLoader.RetTypeWrapperFromSig(descriptor);
+			}
+			return retTypeWrapper;
+		}
+
+		internal TypeWrapper GetFieldType(ClassLoaderWrapper classLoader)
+		{
+			if(fieldTypeWrapper == null)
+			{
+				fieldTypeWrapper = classLoader.RetTypeWrapperFromSig("()" + descriptor);
+			}
+			return fieldTypeWrapper;
 		}
 	}
 
