@@ -181,6 +181,40 @@ public class JVM
 			}
 			h[name] = f;
 		}
+
+		// make sure all inner classes have a reference to their outer class
+		// note that you cannot use the InnerClasses attribute in the inner class for this, because
+		// anonymous inner classes do not have a reference to their outer class
+		foreach(ClassFile classFile in h.Values)
+		{
+			// don't handle inner classes for NetExp types
+			if(classFile.NetExpTypeAttribute == null)
+			{
+				ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
+				for(int j = 0; j < innerClasses.Length; j++)
+				{
+					if(innerClasses[j].outerClass != 0 && classFile.GetConstantPoolClass(innerClasses[j].outerClass) == classFile.Name)
+					{
+						string inner = classFile.GetConstantPoolClass(innerClasses[j].innerClass);
+						ClassFile innerClass = (ClassFile)h[inner.Replace('/', '.')];
+						if(innerClass != null)
+						{
+							if(innerClass.OuterClass != null)
+							{
+								Console.Error.WriteLine("Error: Inner class {0} has multiple outer classes", inner);
+								return;
+							}
+							innerClass.OuterClass = classFile;
+						}
+						else
+						{
+							Console.Error.WriteLine("Warning: inner class {0} missing", inner);
+						}
+					}
+				}
+			}
+		}
+
 		Console.WriteLine("Constructing compiler");
 		CompilerClassLoader loader = new CompilerClassLoader(path, assembly, h);
 		ClassLoaderWrapper.SetBootstrapClassLoader(loader);

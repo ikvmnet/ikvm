@@ -1171,6 +1171,11 @@ namespace NativeCode.java
 					{
 						return wrapper.Name.Replace('/', '.');
 					}
+					Object[] attribs = type.GetCustomAttributes(typeof(ClassNameAttribute), false);
+					if(attribs.Length == 1)
+					{
+						return ((ClassNameAttribute)attribs[0]).Name.Replace('/', '.');
+					}
 					return type.FullName;
 				}
 			}

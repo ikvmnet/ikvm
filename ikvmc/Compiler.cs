@@ -156,10 +156,16 @@ class Compiler : MarshalByRefObject
 			Console.Error.WriteLine("Error: -main:<class> must be specified when creating an executable");
 			return 1;
 		}
-		// HACK since we use Classpath's zip code, our VM is already running in this AppDomain, which means that
-		// it cannot be (ab)used to statically compile anymore, so we create a new AppDomain to run the compile in.
-		Compiler c = (Compiler)AppDomain.CreateDomain("Compiler").CreateInstanceAndUnwrap(Assembly.GetExecutingAssembly().FullName, "Compiler");
-		return c.Compile(outputfile, assemblyname, main, target, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources);
+		try
+		{
+			JVM.Compile(outputfile, assemblyname, main, target, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources);
+			return 0;
+		}
+		catch(Exception x)
+		{
+			Console.Error.WriteLine(x);
+			return 1;
+		}
 	}
 
 	private static byte[] ReadFromZip(ZipFile zf, ZipEntry ze)
@@ -230,20 +236,6 @@ class Compiler : MarshalByRefObject
 		foreach(DirectoryInfo sub in dir.GetDirectories())
 		{
 			Recurse(classes, resources, sub, spec);
-		}
-	}
-
-	public int Compile(string fileName, string assemblyName, string mainClass, System.Reflection.Emit.PEFileKinds target, byte[][] classes, string[] references, bool nojni, Hashtable resources)
-	{
-		try
-		{
-			JVM.Compile(fileName, assemblyName, mainClass, target, classes, references, nojni, resources);
-			return 0;
-		}
-		catch(Exception x)
-		{
-			Console.Error.WriteLine(x);
-			return 1;
 		}
 	}
 }

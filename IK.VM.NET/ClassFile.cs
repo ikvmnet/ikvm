@@ -58,6 +58,7 @@ class ClassFile
 	private Attribute[] attributes;
 	private string sourceFile;
 	private bool sourceFileCached;
+	private ClassFile outerClass;
 	private static readonly char[] illegalcharacters = { '<', '>' };
 
 	internal ClassFile(byte[] buf, int offset, int length, string inputClassName)
@@ -240,6 +241,18 @@ class ClassFile
 //			fs.Close();
 //			throw;
 //		}
+	}
+
+	internal ClassFile OuterClass
+	{
+		get
+		{
+			return outerClass;
+		}
+		set
+		{
+			outerClass = value;
+		}
 	}
 
 	internal void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)

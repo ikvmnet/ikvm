@@ -171,10 +171,23 @@ public class ModifiersAttribute : Attribute
 
 	public static Modifiers GetModifiers(Type type)
 	{
-		object[] customAttribute = type.GetCustomAttributes(typeof(ModifiersAttribute), false);
-		if(customAttribute.Length == 1)
+		// NOTE array types do not support GetCustomAttributes, but they also have some funny modifiers
+		if(type.IsArray)
 		{
-			return ((ModifiersAttribute)customAttribute[0]).Modifiers;
+			return ClassLoaderWrapper.GetWrapperFromType(type).Modifiers;
+		}
+		try
+		{
+			object[] customAttribute = type.GetCustomAttributes(typeof(ModifiersAttribute), false);
+			if(customAttribute.Length == 1)
+			{
+				return ((ModifiersAttribute)customAttribute[0]).Modifiers;
+			}
+		}
+		catch(Exception x)
+		{
+			// HACK this is just to find other types that don't support GetCustomAttributes
+			Console.WriteLine(x);
 		}
 		// only returns public, protected, private, final, static, abstract and interface (as per
 		// the documentation of Class.getModifiers())
@@ -232,6 +245,25 @@ public class ModifiersAttribute : Attribute
 	{
 		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeof(ModifiersAttribute).GetConstructor(new Type[] { typeof(Modifiers) }), new object[] { modifiers });
 		tb.SetCustomAttribute(customAttributeBuilder);
+	}
+}
+
+[AttributeUsage(AttributeTargets.Class)]
+public class ClassNameAttribute : Attribute
+{
+	private string name;
+
+	public ClassNameAttribute(string name)
+	{
+		this.name = name;
+	}
+
+	public string Name
+	{
+		get
+		{
+			return name;
+		}
 	}
 }
 

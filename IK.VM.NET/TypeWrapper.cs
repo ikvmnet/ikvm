@@ -1085,6 +1085,7 @@ class DynamicTypeWrapper : TypeWrapper
 		private bool finishing;
 		private FinishedTypeImpl finishedType;
 		private Hashtable nativeMethods;
+		private TypeWrapper outerClassWrapper;
 
 		internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper, TypeWrapper baseWrapper, TypeWrapper[] interfaces, Hashtable nativeMethods)
 		{
@@ -1104,24 +1105,75 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				typeAttribs |= TypeAttributes.Sealed;
 			}
+			TypeBuilder outer = null;
+			// if we're statically compiling, we compiler inner classes as nested types
+			if(JVM.IsStaticCompiler)
+			{
+				if(f.OuterClass != null)
+				{
+					outerClassWrapper = wrapper.GetClassLoader().LoadClassBySlashedName(f.OuterClass.Name);
+					if(outerClassWrapper is DynamicTypeWrapper)
+					{
+						outer = (TypeBuilder)outerClassWrapper.Type;
+					}
+				}
+			}
 			if(f.IsPublic)
 			{
-				typeAttribs |= TypeAttributes.Public;
+				if(outer != null)
+				{
+					typeAttribs |= TypeAttributes.NestedPublic;
+				}
+				else
+				{
+					typeAttribs |= TypeAttributes.Public;
+				}
+			}
+			else if(outer != null)
+			{
+				typeAttribs |= TypeAttributes.NestedAssembly;
 			}
 			if(f.IsInterface)
 			{
 				typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
-				typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(f.Name.Replace('/', '.'), typeAttribs);
+				if(outer != null)
+				{
+					typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name).Replace('/', '.'), typeAttribs);
+				}
+				else
+				{
+					typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(f.Name.Replace('/', '.'), typeAttribs);
+				}
 			}
 			else
 			{
 				typeAttribs |= TypeAttributes.Class;
-				typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(f.Name.Replace('/', '.'), typeAttribs, baseWrapper.Type);
+				if(outer != null)
+				{
+					typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name).Replace('/', '.'), typeAttribs, baseWrapper.Type);
+				}
+				else
+				{
+					typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(f.Name.Replace('/', '.'), typeAttribs, baseWrapper.Type);
+				}
 			}
 			for(int i = 0; i < interfaces.Length; i++)
 			{
 				typeBuilder.AddInterfaceImplementation(interfaces[i].Type);
 			}
+			if(outer != null)
+			{
+				typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(ClassNameAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { f.Name }));
+			}
+		}
+
+		private static string GetInnerClassName(string outer, string inner)
+		{
+			if(inner.Length <= (outer.Length + 1) || inner[outer.Length] != '$' || inner.IndexOf('$', outer.Length + 1) >= 0)
+			{
+				throw new InvalidOperationException(string.Format("Inner class name {0} is not well formed wrt outer class {1}", inner, outer));
+			}
+			return inner.Substring(outer.Length + 1);
 		}
 
 		public override DynamicImpl Finish()
@@ -1131,6 +1183,10 @@ class DynamicTypeWrapper : TypeWrapper
 				// make sure that the base type is already finished (because we need any Miranda methods it
 				// might introduce to be visible)
 				baseWrapper.Finish();
+			}
+			if(outerClassWrapper != null)
+			{
+				outerClassWrapper.Finish();
 			}
 			// make sure all classes are loaded, before we start finishing the type. During finishing, we
 			// may not run any Java code, because that might result in a request to finish the type that we
@@ -2841,8 +2897,13 @@ class CompiledTypeWrapper : TypeWrapper
 		{
 			if(innerclasses == null)
 			{
-				// TODO
-				throw new NotImplementedException();
+				Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+				TypeWrapper[] wrappers = new TypeWrapper[nestedTypes.Length];
+				for(int i = 0; i < nestedTypes.Length; i++)
+				{
+					wrappers[i] = ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]);
+				}
+				innerclasses = wrappers;
 			}
 			return innerclasses;
 		}
@@ -2852,8 +2913,12 @@ class CompiledTypeWrapper : TypeWrapper
 	{
 		get
 		{
-			// TODO
-			throw new NotImplementedException();
+			Type declaringType = type.DeclaringType;
+			if(declaringType != null)
+			{
+				return ClassLoaderWrapper.GetWrapperFromType(declaringType);
+			}
+			return null;
 		}
 	}
 

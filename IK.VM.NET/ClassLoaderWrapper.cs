@@ -320,6 +320,12 @@ class ClassLoaderWrapper
 			{
 				return t;
 			}
+			// HACK we might be looking for an inner classes
+			t = a.GetType(name.Replace('$', '+'));
+			if(t != null)
+			{
+				return t;
+			}
 		}
 		// HACK for the time being we'll look into all loaded assemblies, this is to work around
 		// a bug caused by the fact that SigDecoderWrapper is used to parse signatures that contain .NET exported
@@ -328,6 +334,12 @@ class ClassLoaderWrapper
 		foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
 		{
 			Type t = a.GetType(name);
+			if(t != null)
+			{
+				return t;
+			}
+			// HACK we might be looking for an inner classes
+			t = a.GetType(name.Replace('$', '+'));
 			if(t != null)
 			{
 				return t;
