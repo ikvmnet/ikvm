@@ -106,6 +106,10 @@ sealed class JavaException
 
 	internal static Exception NoClassDefFoundError(string s, params object[] args)
 	{
+		if(JVM.IsStaticCompilerPhase1)
+		{
+			Console.Error.WriteLine("NoClassDefFoundError: {0}", s);
+		}
 		s = String.Format(s, args);
 		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.NoClassDefFoundError").GetConstructor(new Type[] { typeof(string) });
 		return (Exception)ci.Invoke(new object[] { s });
