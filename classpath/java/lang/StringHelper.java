@@ -374,7 +374,7 @@ final class StringHelper
 	{
 	    return -1;
 	}
-	// Java allow fromIndex to be above the length of the string, .NET doesn't
+	// Java allows fromIndex to be above the length of the string, .NET doesn't
 	return s.LastIndexOf((char)ch, Math.min(len - 1, fromIndex));
     }
 
@@ -395,7 +395,12 @@ final class StringHelper
 	{
 	    return Math.min(len, fromIndex);
 	}
-	// Java allow fromIndex to be above the length of the string, .NET doesn't
+	// make sure we don't overflow if fromIndex is near Integer.MAX_VALUE
+	if((fromIndex + o.length() - 1) < 0) 
+	{ 
+	    fromIndex = len - 1; 
+	} 
+	// Java allows fromIndex to be above the length of the string, .NET doesn't
 	return s.LastIndexOf(o, Math.min(len - 1, fromIndex + o.length() - 1));
     }
 
@@ -457,9 +462,16 @@ final class StringHelper
     static boolean regionMatches(String s, boolean ignoreCase, int toffset,
 	String other, int ooffset, int len)
     {
-	if (toffset < 0 || ooffset < 0 || toffset + len > s.length()
-	    || ooffset + len > other.length())
+	// this explicit test is needed, because Integer.MIN_VALUE will underflow the while
+	if (len < 0)
+	{
+	    return true;
+	}
+	// be careful to avoid integer overflow
+	if (toffset < 0 || ooffset < 0 || s.length() - toffset < len || other.length() - ooffset < len)
+	{
 	    return false;
+	}
 	while (--len >= 0)
 	{
 	    char c1 = s.charAt(toffset++);
