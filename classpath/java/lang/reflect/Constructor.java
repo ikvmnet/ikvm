@@ -252,14 +252,6 @@ public final class Constructor
 		{
 			throw new InstantiationException();
 		}
-		// TODO check args and accessibility
-		try
-		{
-			return Method.Invoke(methodCookie, null, args);
-		}
-		catch(Throwable x)
-		{
-			throw new InvocationTargetException(x);
-		}
+		return Method.Invoke(methodCookie, null, args);
 	}
 }

@@ -158,6 +158,11 @@ public class StringHelper
 		return new String(c);
 	}
 
+	public static string valueOf(char[] c, int offset, int count)
+	{
+		return new String(c, offset, count);
+	}
+
 	public static string valueOf(object o)
 	{
 		if(o == null)
@@ -174,7 +179,11 @@ public class StringHelper
 
 	public static bool startsWith(string s, string prefix, int toffset)
 	{
-		return s.Substring(toffset).StartsWith(prefix);
+		if(toffset < 0)
+		{
+			return false;
+		}
+		return s.Substring(Math.Min(s.Length, toffset)).StartsWith(prefix);
 	}
 
 	public static char charAt(string s, int index)
@@ -217,6 +226,20 @@ public class StringHelper
 		return String.Compare(s1, s2, true);
 	}
 
+	public static int compareTo(string s1, string s2)
+	{
+		int len = Math.Min(s1.Length, s2.Length);
+		for(int i = 0; i < len; i++)
+		{
+			int diff = s1[i] - s2[i];
+			if(diff != 0)
+			{
+				return diff;
+			}
+		}
+		return s1.Length - s2.Length;
+	}
+
 	public static sbyte[] getBytes(string s)
 	{
 		byte[] data = System.Text.Encoding.ASCII.GetBytes(s);
@@ -239,6 +262,10 @@ public class StringHelper
 
 	public static void getBytes(string s, int srcBegin, int srcEnd, sbyte[] dst, int dstBegin)
 	{
+		if(srcBegin > srcEnd)
+		{
+			throw JavaException.ArrayIndexOutOfBoundsException();
+		}
 		for(int i = 0; i < (srcEnd - srcBegin); i++)
 		{
 			dst[i + dstBegin] = (sbyte)s[i + srcBegin];
@@ -312,14 +339,45 @@ public class StringHelper
 
 	public static int lastIndexOf(string s, char ch, int fromIndex)
 	{
-		// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
-		return s.LastIndexOf(ch, Math.Max(0, Math.Min(s.Length - 1, fromIndex)));
+		// start by dereferencing s, to make sure we throw a NullPointerException if s is null
+		int len = s.Length;
+		if(fromIndex  < 0)
+		{
+			return -1;
+		}
+		// Java allow fromIndex to be above the length of the string, .NET doesn't
+		return s.LastIndexOf(ch, Math.Min(len - 1, fromIndex));
+	}
+
+	public static int lastIndexOf(string s, string o)
+	{
+		return lastIndexOf(s, o, s.Length);
 	}
 
 	public static int lastIndexOf(string s, string o, int fromIndex)
 	{
-		// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
-		return s.LastIndexOf(o, Math.Max(0, Math.Min(s.Length - 1, fromIndex)));
+		// start by dereferencing s, to make sure we throw a NullPointerException if s is null
+		int len = s.Length;
+		if(fromIndex  < 0)
+		{
+			return -1;
+		}
+		if(o.Length == 0)
+		{
+			return Math.Min(len, fromIndex);
+		}
+		// Java allow fromIndex to be above the length of the string, .NET doesn't
+		return s.LastIndexOf(o, Math.Min(len - 1, fromIndex + o.Length - 1));
+	}
+
+	public static string concat(string s1, string s2)
+	{
+		s1 = s1.ToString();
+		if(s2.Length == 0)
+		{
+			return s1;
+		}
+		return String.Concat(s1, s2);
 	}
 }
 

@@ -53,24 +53,6 @@ public class ByteCodeHelper
 		return o;
 	}
 
-	public static void monitorenter(object o)
-	{
-		if(o == null)
-		{
-			throw new NullReferenceException();
-		}
-		System.Threading.Monitor.Enter(o);
-	}
-
-	public static void monitorexit(object o)
-	{
-		if(o == null)
-		{
-			throw new NullReferenceException();
-		}
-		System.Threading.Monitor.Exit(o);
-	}
-
 	public static object DynamicInvokeSpecialNew(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 	{
 		ClassLoaderWrapper classLoader = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type)).GetClassLoader();
@@ -86,5 +68,73 @@ public class ByteCodeHelper
 			throw new NotImplementedException("constructor missing");
 		}
 		return mw.Invoke(null, args, false);
+	}
+
+	public static int f2i(float f)
+	{
+		if(f <= int.MinValue)
+		{
+			return int.MinValue;
+		}
+		if(f >= int.MaxValue)
+		{
+			return int.MaxValue;
+		}
+		if(f != f)
+		{
+			return 0;
+		}
+		return (int)f;
+	}
+
+	public static long f2l(float f)
+	{
+		if(f <= long.MinValue)
+		{
+			return long.MinValue;
+		}
+		if(f >= long.MaxValue)
+		{
+			return long.MaxValue;
+		}
+		if(f != f)
+		{
+			return 0;
+		}
+		return (long)f;
+	}
+
+	public static int d2i(double d)
+	{
+		if(d <= int.MinValue)
+		{
+			return int.MinValue;
+		}
+		if(d >= int.MaxValue)
+		{
+			return int.MaxValue;
+		}
+		if(d != d)
+		{
+			return 0;
+		}
+		return (int)d;
+	}
+
+	public static long d2l(double d)
+	{
+		if(d <= long.MinValue)
+		{
+			return long.MinValue;
+		}
+		if(d >= long.MaxValue)
+		{
+			return long.MaxValue;
+		}
+		if(d != d)
+		{
+			return 0;
+		}
+		return (long)d;
 	}
 }

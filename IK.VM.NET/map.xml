@@ -138,6 +138,9 @@
 			<method name="hashCode" sig="()I" modifiers="public">
 				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;)I" />
 			</method>
+			<method name="toString" sig="()Ljava/lang/String;" modifiers="public">
+				<redirect name="ToString" />
+			</method>
 			<method name="valueOf" sig="(Z)Ljava/lang/String;" modifiers="public static">
 				<redirect class="StringHelper" />
 			</method>
@@ -159,6 +162,9 @@
 			<method name="valueOf" sig="([C)Ljava/lang/String;" modifiers="public static">
 				<redirect class="StringHelper" />
 			</method>
+			<method name="valueOf" sig="([CII)Ljava/lang/String;" modifiers="public static">
+				<redirect class="StringHelper" />
+			</method>
 			<method name="valueOf" sig="(Ljava/lang/Object;)Ljava/lang/String;" modifiers="public static">
 				<redirect class="StringHelper" />
 			</method>
@@ -169,7 +175,7 @@
 				<redirect name="get_Length" />
 			</method>
 			<method name="charAt" sig="(I)C" modifiers="public">
-				<redirect class="StringHelper" name="charAt" type="static"/>
+				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;I)C" />
 			</method>
 			<method name="substring" sig="(II)Ljava/lang/String;" modifiers="public">
 				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;II)Ljava/lang/String;" />
@@ -193,7 +199,7 @@
 				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;CI)I" />
 			</method>
 			<method name="lastIndexOf" sig="(Ljava/lang/String;)I" modifiers="public">
-				<redirect name="LastIndexOf" />
+				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)I" />
 			</method>
 			<method name="lastIndexOf" sig="(Ljava/lang/String;I)I" modifiers="public">
 				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;I)I" />
@@ -235,7 +241,7 @@
 				<redirect type="static" name="Intern" sig="(Ljava/lang/String;)Ljava/lang/String;" />
 			</method>
 			<method name="compareTo" sig="(Ljava/lang/String;)I" modifiers="public">
-				<redirect name="CompareTo" />
+				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)I" />
 			</method>
 			<method name="replace" sig="(CC)Ljava/lang/String;" modifiers="public">
 				<redirect name="Replace" />
@@ -262,7 +268,12 @@
 				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;II[BI)V" />
 			</method>
 			<method name="concat" sig="(Ljava/lang/String;)Ljava/lang/String;" modifiers="public">
-				<redirect class="System.String" type="static" name="Concat" sig="(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;" />
+				<redirect class="StringHelper" type="static" sig="(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;" />
+			</method>
+			<method name="copyValueOf" sig="([C)Ljava/lang/String;" modifiers="public static">
+				<invokestatic>
+					<newobj class="System.String" name=".ctor" sig="([C)V" />
+				</invokestatic>
 			</method>
 			<method name="copyValueOf" sig="([CII)Ljava/lang/String;" modifiers="public static">
 				<invokestatic>

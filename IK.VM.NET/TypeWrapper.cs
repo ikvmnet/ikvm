@@ -3767,9 +3767,13 @@ sealed class MethodWrapper
 			{
 				return method.Invoke(null, args);
 			}
+			catch(ArgumentException x1)
+			{
+				throw JavaException.IllegalArgumentException(x1.Message);
+			}
 			catch(TargetInvocationException x)
 			{
-				throw ExceptionHelper.MapExceptionFast(x.InnerException);
+				throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
 			}
 		}
 		else
@@ -3785,9 +3789,13 @@ sealed class MethodWrapper
 					{
 						return constructor.Invoke(args);
 					}
+					catch(ArgumentException x1)
+					{
+						throw JavaException.IllegalArgumentException(x1.Message);
+					}
 					catch(TargetInvocationException x)
 					{
-						throw ExceptionHelper.MapExceptionFast(x.InnerException);
+						throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
 					}
 				}
 				else
@@ -3840,9 +3848,13 @@ sealed class MethodWrapper
 			{
 				return method.Invoke(obj, args);
 			}
+			catch(ArgumentException x1)
+			{
+				throw JavaException.IllegalArgumentException(x1.Message);
+			}
 			catch(TargetInvocationException x)
 			{
-				throw ExceptionHelper.MapExceptionFast(x.InnerException);
+				throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
 			}
 		}
 	}

@@ -514,6 +514,11 @@ public class ExceptionHelper
 			{
 				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.NullPointerException"));
 			}
+			// HACK many of the String and Object methods throw ArgumentNullException where Java throws an NPE
+			else if(type == typeof(ArgumentNullException))
+			{
+				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.NullPointerException"));
+			}
 			else if(type == typeof(IndexOutOfRangeException))
 			{
 				t = (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArrayIndexOutOfBoundsException"));

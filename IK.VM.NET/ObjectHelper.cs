@@ -28,33 +28,25 @@ public class ObjectHelper
 {
 	public static void notify(object o)
 	{
-		if(o == null)
-		{
-			throw new NullReferenceException();
-		}
 		System.Threading.Monitor.Pulse(o);
 	}
 
 	public static void notifyAll(object o)
 	{
-		if(o == null)
-		{
-			throw new NullReferenceException();
-		}
 		System.Threading.Monitor.PulseAll(o);
 	}
 
 	public static void wait(object o)
 	{
-		if(o == null)
-		{
-			throw new NullReferenceException();
-		}
 		System.Threading.Monitor.Wait(o);
 	}
 
 	public static void wait(object o, long timeout)
 	{
+		if(timeout < 0)
+		{
+			throw JavaException.IllegalArgumentException("timeout < 0");
+		}
 		wait(o, timeout, 0);
 	}
 
@@ -63,6 +55,10 @@ public class ObjectHelper
 		if(o == null)
 		{
 			throw new NullReferenceException();
+		}
+		if(timeout < 0 || nanos < 0 || nanos > 999999)
+		{
+			throw JavaException.IllegalArgumentException("argument out of range");
 		}
 		if(timeout == 0 && nanos == 0)
 		{
@@ -78,7 +74,7 @@ public class ObjectHelper
 	{
 		if(!(o is java.lang.Cloneable))
 		{
-			throw (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.CloneNotSupportedException"));
+			throw JavaException.CloneNotSupportedException();
 		}
 	}
 
@@ -116,20 +112,28 @@ public class ObjectHelper
 		{
 			return toStringSpecial(o);
 		}
-		try
-		{
-			return o.ToString();
-		}
-		catch(NullReferenceException)
-		{
-			return o.GetType().FullName;
-		}
+		return o.ToString();
 	}
+
+	private delegate string toHexStringDelegate(int i);
+	private static toHexStringDelegate toHexString;
 
 	public static string toStringSpecial(object o)
 	{
-		// TODO hex string should be formatted differently
-		return NativeCode.java.lang.Class.getName(o.GetType()) + "@" + o.GetHashCode().ToString("X");
+		if(toHexString == null)
+		{
+			toHexString = (toHexStringDelegate)Delegate.CreateDelegate(typeof(toHexStringDelegate), ClassLoaderWrapper.GetType("java.lang.Integer").GetMethod("toHexString"));
+		}
+		int h;
+		if(o is string)
+		{
+			h = StringHelper.hashCode(o);
+		}
+		else
+		{
+			h = o.GetHashCode();
+		}
+		return NativeCode.java.lang.Class.getName(o.GetType()) + "@" + toHexString(h);
 	}
 
 	public static object getClass(object o)

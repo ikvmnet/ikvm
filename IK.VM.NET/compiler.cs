@@ -78,8 +78,8 @@ class Compiler
 	private static MethodInfo fillInStackTraceMethod = typeof(ExceptionHelper).GetMethod("fillInStackTrace");
 	private static MethodInfo getTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle");
 	private static MethodInfo multiANewArrayMethod = typeof(ByteCodeHelper).GetMethod("multianewarray");
-	private static MethodInfo monitorEnterMethod = typeof(ByteCodeHelper).GetMethod("monitorenter");
-	private static MethodInfo monitorExitMethod = typeof(ByteCodeHelper).GetMethod("monitorexit");
+	private static MethodInfo monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter");
+	private static MethodInfo monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit");
 	private static MethodInfo throwHack = typeof(ExceptionHelper).GetMethod("ThrowHack");
 	private static TypeWrapper java_lang_Throwable;
 	private TypeWrapper clazz;
@@ -2011,13 +2011,21 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Conv_I2);
 						break;
 					case NormalizedByteCode.__l2i:
-					case NormalizedByteCode.__f2i:
-					case NormalizedByteCode.__d2i:
 						ilGenerator.Emit(OpCodes.Conv_I4);
 						break;
-					case NormalizedByteCode.__i2l:
+					case NormalizedByteCode.__f2i:
+						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("f2i"));
+						break;
+					case NormalizedByteCode.__d2i:
+						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("d2i"));
+						break;
 					case NormalizedByteCode.__f2l:
+						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("f2l"));
+						break;
 					case NormalizedByteCode.__d2l:
+						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("d2l"));
+						break;
+					case NormalizedByteCode.__i2l:
 						ilGenerator.Emit(OpCodes.Conv_I8);
 						break;
 					case NormalizedByteCode.__i2f:

@@ -88,7 +88,7 @@ public class Thread implements Runnable
 
 	// note that nativeThread is only set for threads that have actually been started!
 	private system.threading.Thread nativeThread;
-	private static system.LocalDataStoreSlot localDataStoreSlot;
+	private static system.LocalDataStoreSlot localDataStoreSlot = system.threading.Thread.AllocateDataSlot();
 
 	/**
 	 * The group this thread belongs to. This is set to null by
@@ -311,16 +311,11 @@ public class Thread implements Runnable
 	 */
 	public static Thread currentThread()
 	{
-		if(localDataStoreSlot == null)
-		{
-			localDataStoreSlot = system.threading.Thread.AllocateDataSlot();
-		}
-		system.threading.Thread thread = system.threading.Thread.get_CurrentThread();
 		Thread javaThread = (Thread)system.threading.Thread.GetData(localDataStoreSlot);
 		if(javaThread == null)
 		{
 			// threads created outside of Java always run in the root thread group
-			javaThread = new Thread(ThreadGroup.root, thread);
+			javaThread = new Thread(ThreadGroup.root, system.threading.Thread.get_CurrentThread());
 			system.threading.Thread.SetData(localDataStoreSlot, javaThread);
 		}
 		return javaThread;
@@ -421,7 +416,7 @@ public class Thread implements Runnable
 						if(group != null)
 						{
 							group.removeThread(Thread.this);
-							// NOTE shouldn't we set group to null here?
+							group = null;
 						}
 					}
 				}
@@ -836,7 +831,10 @@ public class Thread implements Runnable
 	 */
 	public final void join(long ms, int ns) throws InterruptedException
 	{
-		joinInternal(nativeThread, ms, ns);
+		if(nativeThread != null)
+		{
+			joinInternal(nativeThread, ms, ns);
+		}
 	}
 	private static native void joinInternal(system.threading.Thread nativeThread, long ms, int ns) throws InterruptedException;
 

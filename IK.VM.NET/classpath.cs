@@ -260,7 +260,7 @@ namespace NativeCode.java
 					}
 					else
 					{
-						throw new NotImplementedException(o.GetType().FullName);
+						throw JavaException.IllegalArgumentException(type.FullName);
 					}
 				}
 			}
@@ -307,6 +307,7 @@ namespace NativeCode.java
 				[StackTraceInfo(Hidden = true)]
 				public static object Invoke(object methodCookie, object o, object[] args)
 				{
+					object[] argsCopy = new Object[args != null ? args.Length : 0];
 					MethodWrapper mw = (MethodWrapper)methodCookie;
 					mw.DeclaringType.Finish();
 					TypeWrapper[] argWrappers = mw.GetParameters();
@@ -314,10 +315,18 @@ namespace NativeCode.java
 					{
 						if(argWrappers[i].IsPrimitive)
 						{
-							args[i] = JavaWrapper.Unbox(args[i]);
+							if(args[i] == null)
+							{
+								throw JavaException.IllegalArgumentException("primitive wrapper null");
+							}
+							argsCopy[i] = JavaWrapper.Unbox(args[i]);
+						}
+						else
+						{
+							argsCopy[i] = args[i];
 						}
 					}
-					object retval = mw.Invoke(o, args, false);
+					object retval = mw.Invoke(o, argsCopy, false);
 					if(mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
 					{
 						retval = JavaWrapper.Box(retval);
@@ -545,6 +554,10 @@ namespace NativeCode.java
 
 			public static double IEEEremainder(double f1, double f2)
 			{
+				if(double.IsInfinity(f2) && !double.IsInfinity(f1))
+				{
+					return f1;
+				}
 				return NetSystem.Math.IEEERemainder(f1, f2);
 			}
 
@@ -600,6 +613,31 @@ namespace NativeCode.java
 
 			public static double atan2(double y, double x)
 			{
+				if(double.IsInfinity(y) && double.IsInfinity(x))
+				{
+					if(double.IsPositiveInfinity(y))
+					{
+						if(double.IsPositiveInfinity(x))
+						{
+							return NetSystem.Math.PI / 4.0;
+						}
+						else
+						{
+							return NetSystem.Math.PI * 3.0 / 4.0;
+						}
+					}
+					else
+					{
+						if(double.IsPositiveInfinity(x))
+						{
+							return - NetSystem.Math.PI / 4.0;
+						}
+						else
+						{
+							return - NetSystem.Math.PI * 3.0 / 4.0;
+						}
+					}
+				}
 				return NetSystem.Math.Atan2(y, x);
 			}
 		}
@@ -854,7 +892,14 @@ namespace NativeCode.java
 
 			public static void joinInternal(NetSystem.Threading.Thread nativeThread, long millis, int nanos)
 			{
-				nativeThread.Join(new TimeSpan(millis * 10000 + (nanos + 99) / 100));
+				if(millis == 0 && nanos == 0)
+				{
+					nativeThread.Join();
+				}
+				else
+				{
+					nativeThread.Join(new TimeSpan(millis * 10000 + (nanos + 99) / 100));
+				}
 			}
 		}
 

@@ -180,4 +180,9 @@ sealed class JavaException
 		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.NumberFormatException").GetConstructor(new Type[] { typeof(string) });
 		return (Exception)ci.Invoke(new object[] { s });
 	}
+
+	internal static Exception CloneNotSupportedException()
+	{
+		return (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.CloneNotSupportedException"));
+	}
 }

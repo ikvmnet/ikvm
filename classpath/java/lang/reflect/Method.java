@@ -242,15 +242,19 @@ public final class Method extends AccessibleObject implements Member
 	{
 		StringBuffer sb = new StringBuffer();
 		Modifier.toString(getModifiers(), sb).append(' ');
-		sb.append(getReturnType().getName()).append(' ');
+		classToString(sb, getReturnType());
+		sb.append(' ');
 		sb.append(getDeclaringClass().getName()).append('.');
 		sb.append(getName()).append('(');
 		Class[] c = getParameterTypes();
 		if (c.length > 0)
 		{
-			sb.append(c[0].getName());
+			classToString(sb, c[0]);
 			for (int i = 1; i < c.length; i++)
-				sb.append(',').append(c[i].getName());
+			{
+				sb.append(',');
+				classToString(sb, c[i]);
+			}
 		}
 		sb.append(')');
 		c = getExceptionTypes();
@@ -261,6 +265,21 @@ public final class Method extends AccessibleObject implements Member
 				sb.append(',').append(c[i].getName());
 		}
 		return sb.toString();
+	}
+
+	private static void classToString(StringBuffer sb, Class c)
+	{
+		int arrayrank = 0;
+		while(c.isArray())
+		{
+			arrayrank++;
+			c = c.getComponentType();
+		}
+		sb.append(c.getName());
+		for(; arrayrank > 0; arrayrank--)
+		{
+			sb.append("[]");
+		}
 	}
 
 	/**
@@ -308,14 +327,23 @@ public final class Method extends AccessibleObject implements Member
 		throws IllegalAccessException, InvocationTargetException
 	{
 		// TODO check args and accessibility
-		try
+		if(!Modifier.isStatic(getModifiers()))
 		{
-			return Invoke(methodCookie, o, args);
+			if(o == null)
+			{
+				throw new NullPointerException();
+			}
+			if(!getDeclaringClass().isInstance(o))
+			{
+				throw new IllegalArgumentException();
+			}
 		}
-		catch(Throwable x)
+		Class[] argTypes = getParameterTypes();
+		if((args == null && argTypes.length != 0) || (args != null && args.length != argTypes.length))
 		{
-			throw new InvocationTargetException(x);
+			throw new IllegalArgumentException();
 		}
+		return Invoke(methodCookie, o, args);
 	}
 
 	static native Object Invoke(Object methodCookie, Object o, Object[] args);
