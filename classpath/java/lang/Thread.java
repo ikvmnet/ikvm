@@ -115,7 +115,7 @@ public class Thread implements Runnable
   Throwable stillborn;
 
   /** The context classloader for this Thread. */
-  private ClassLoader contextClassLoader = ClassLoader.getSystemClassLoader();
+  private ClassLoader contextClassLoader;
 
   /** The next thread number to use. */
   private static int numAnonymousThreadsCreated = 0;
@@ -281,6 +281,7 @@ public class Thread implements Runnable
 
     priority = current.priority;
     daemon = current.daemon;
+    contextClassLoader = current.contextClassLoader;
 
     group.addThread(this);
     InheritableThreadLocal.newChildThread(this);
@@ -305,6 +306,7 @@ public class Thread implements Runnable
     this.name = name;
     this.priority = priority;
     this.daemon = daemon;
+    this.contextClassLoader = ClassLoader.getSystemClassLoader();
   }
 
   /**

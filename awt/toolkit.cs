@@ -712,6 +712,7 @@ namespace ikvm.awt
 			{
 				case "Monospaced":
 				case "Courier":
+				case "courier":
 					fam = FontFamily.GenericMonospace;
 					break;
 				case "Serif":
