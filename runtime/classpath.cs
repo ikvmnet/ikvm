@@ -813,11 +813,12 @@ namespace NativeCode.java
 		{
 			public static Assembly findResourceAssembly(string name)
 			{
+				name = JVM.MangleResourceName(name);
 				foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 				{
 					if(!(asm is NetSystem.Reflection.Emit.AssemblyBuilder))
 					{
-						if(asm.GetManifestResourceInfo("ikvm:" + name) != null)
+						if(asm.GetManifestResourceInfo(name) != null)
 						{
 							return asm;
 						}
@@ -828,12 +829,13 @@ namespace NativeCode.java
 
 			public static Assembly[] findResourceAssemblies(string name)
 			{
+				name = JVM.MangleResourceName(name);
 				ArrayList list = new ArrayList();
 				foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 				{
 					if(!(asm is NetSystem.Reflection.Emit.AssemblyBuilder))
 					{
-						if(asm.GetManifestResourceInfo("ikvm:" + name) != null)
+						if(asm.GetManifestResourceInfo(name) != null)
 						{
 							list.Add(asm);
 						}
@@ -1612,6 +1614,17 @@ namespace NativeCode.java
 				}
 				return array;
 			}
+		}
+	}
+}
+
+namespace NativeCode.gnu.java.net.protocol.ikvmres
+{
+	public class IkvmresURLConnection
+	{
+		public static string MangleResourceName(string name)
+		{
+			return JVM.MangleResourceName(name);
 		}
 	}
 }

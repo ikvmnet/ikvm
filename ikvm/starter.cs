@@ -125,8 +125,10 @@ public class Starter
 	{
 		Tracer.EnableTraceForDebug();
 		System.Threading.Thread.CurrentThread.Name = "main";
+		Hashtable props = new Hashtable();
 		bool jar = false;
 		bool saveAssembly = false;
+		bool saveAssemblyX = false;
 		bool waitOnExit = false;
 		string mainClass = null;
 		string[] vmargs = null;
@@ -142,6 +144,11 @@ public class Starter
 				else if(args[i] == "-Xsave")
 				{
 					saveAssembly = true;
+					JVM.PrepareForSaveDebugImage();
+				}
+				else if(args[i] == "-XXsave")
+				{
+					saveAssemblyX = true;
 					JVM.PrepareForSaveDebugImage();
 				}
 				else if(args[i] == "-Xtime")
@@ -176,11 +183,11 @@ public class Starter
 					{
 						keyvalue = new string[] { keyvalue[0], "" };
 					}
-					java.lang.System.setProperty(keyvalue[0], keyvalue[1]);
+					props[keyvalue[0]] = keyvalue[1];
 				}
 				else if(args[i] == "-cp" || args[i] == "-classpath")
 				{
-					java.lang.System.setProperty("java.class.path", args[++i]);
+					props["java.class.path"] = args[++i];
 				}
 				else if(args[i].StartsWith("-Xbootclasspath:"))
 				{
@@ -232,6 +239,10 @@ public class Starter
 		}
 		try
 		{
+			// HACK poke the properties into a special field in VMRuntime, so that they are copied into the
+			// defaultProperties collection.
+			Type vmruntime = typeof(java.lang.Runtime).Assembly.GetType("java.lang.VMRuntime");
+			vmruntime.GetField("props", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, props);
 			// HACK we take our own assembly location as the location of classpath (this is used by the Security infrastructure
 			// to find the classpath.security file)
 			java.lang.System.setProperty("gnu.classpath.home", new System.IO.FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName);
@@ -287,6 +298,13 @@ public class Starter
 				catch(InvocationTargetException x)
 				{
 					throw x.getCause();
+				}
+				finally
+				{
+					if(saveAssemblyX)
+					{
+						JVM.SaveDebugImage(clazz);
+					}
 				}
 			}
 		}

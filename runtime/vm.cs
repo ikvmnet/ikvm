@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Threading;
 using System.Resources;
 using System.Reflection.Emit;
 using System.Reflection;
@@ -105,6 +106,32 @@ public class JVM
 		{
 			return Environment.OSVersion.ToString().IndexOf("Unix") >= 0;
 		}
+	}
+	
+	internal static string MangleResourceName(string name)
+	{
+		// FXBUG there really shouldn't be any need to mangle the resource names,
+		// but in order for ILDASM/ILASM round tripping to work reliably, we have
+		// to make sure that we don't produce resource names that'll cause ILDASM
+		// to generate invalid filenames.
+		System.Text.StringBuilder sb = new System.Text.StringBuilder("ikvm__", name.Length + 6);
+		foreach(char c in name)
+		{
+			if("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-+.()$#@~=&{}[]0123456789`".IndexOf(c) != -1)
+			{
+				sb.Append(c);
+			}
+			else if(c == '/')
+			{
+				sb.Append('!');
+			}
+			else
+			{
+				sb.Append('%');
+				sb.Append(string.Format("{0:X4}", (int)c));
+			}
+		}
+		return sb.ToString();
 	}
 
 	private class CompilerClassLoader : ClassLoaderWrapper
@@ -230,7 +257,7 @@ public class JVM
 				byte[] buf = (byte[])d.Value;
 				if(buf.Length > 0)
 				{
-					IResourceWriter writer = moduleBuilder.DefineResource("ikvm:" + d.Key, "");
+					IResourceWriter writer = moduleBuilder.DefineResource(JVM.MangleResourceName((string)d.Key), "");
 					writer.AddResource("ikvm", buf);
 				}
 			}
@@ -1292,7 +1319,7 @@ public class JVM
 		}
 	}
 
-	public static void Compile(string path, string keyfilename, string version, bool targetIsModule, string assembly, string mainClass, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude, string remapfile)
+	public static void Compile(string path, string keyfilename, string version, bool targetIsModule, string assembly, string mainClass, ApartmentState apartment, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude, string remapfile)
 	{
 		Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", path, assembly);
 		isStaticCompiler = true;
@@ -1520,11 +1547,24 @@ public class JVM
 					return;
 				}
 				mw.Link();
-				MethodInfo method = mw.GetMethod() as MethodInfo;
+				MethodBuilder method = mw.GetMethod() as MethodBuilder;
 				if(method == null)
 				{
 					Console.Error.WriteLine("Error: redirected main method not supported");
 					return;
+				}
+				Type apartmentAttributeType = null;
+				if(apartment == ApartmentState.STA)
+				{
+					apartmentAttributeType = typeof(STAThreadAttribute);
+				}
+				else if(apartment == ApartmentState.MTA)
+				{
+					apartmentAttributeType = typeof(MTAThreadAttribute);
+				}
+				if(apartmentAttributeType != null)
+				{
+					method.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
 				}
 				loader.SetMain(method, target);
 				mainClass = null;

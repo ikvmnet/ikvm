@@ -25,6 +25,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using ICSharpCode.SharpZipLib.Zip;
 
 class Compiler
@@ -81,6 +82,7 @@ class Compiler
 		string defaultAssemblyName = null;
 		string remapfile = null;
 		bool nojni = false;
+		ApartmentState apartment = ApartmentState.STA;
 		ArrayList classesToExclude = new ArrayList();
 		ArrayList references = new ArrayList();
 		ArrayList arglist = GetArgs(args);
@@ -89,24 +91,27 @@ class Compiler
 			Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("options:");
-			Console.Error.WriteLine("    -out:<outputfile>       Specify the output filename");
-			Console.Error.WriteLine("    -assembly:<name>        Specify assembly name");
-			Console.Error.WriteLine("    -target:exe             Build a console executable");
-			Console.Error.WriteLine("    -target:winexe          Build a windows executable");
-			Console.Error.WriteLine("    -target:library         Build a library");
-			Console.Error.WriteLine("    -target:module          Build a module for use by the linker");
-			Console.Error.WriteLine("    -keyfile:keyfilename    Use keyfile to sign the assembly");
-			Console.Error.WriteLine("    -version:M.m.b.r        Assembly version");
-			Console.Error.WriteLine("    -main:<class>           Specify the class containing the main method");
-			Console.Error.WriteLine("    -reference:<filespec>   Reference an assembly");
-			Console.Error.WriteLine("    -recurse:<filespec>     Recurse directory and include matching files");
-			Console.Error.WriteLine("    -nojni                  Do not generate JNI stub for native methods");
-			Console.Error.WriteLine("    -resource:<name>=<path> Include file as Java resource");
-			Console.Error.WriteLine("    -exclude:<filename>     A file containing a list of classes to exclude");
-			Console.Error.WriteLine("    -debug                  Creates debugging information for the output file");
-			Console.Error.WriteLine("    -srcpath:<path>         Prepend path and package name to source file");
-			Console.Error.WriteLine("    -Xtrace:<string>        Displays all tracepoints with the given name");
-			Console.Error.WriteLine("    -Xmethodtrace:<string>  Builds method trace into the specified output methods");
+			Console.Error.WriteLine("    -out:<outputfile>          Specify the output filename");
+			Console.Error.WriteLine("    -assembly:<name>           Specify assembly name");
+			Console.Error.WriteLine("    -target:exe                Build a console executable");
+			Console.Error.WriteLine("    -target:winexe             Build a windows executable");
+			Console.Error.WriteLine("    -target:library            Build a library");
+			Console.Error.WriteLine("    -target:module             Build a module for use by the linker");
+			Console.Error.WriteLine("    -keyfile:keyfilename       Use keyfile to sign the assembly");
+			Console.Error.WriteLine("    -version:M.m.b.r           Assembly version");
+			Console.Error.WriteLine("    -main:<class>              Specify the class containing the main method");
+			Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly");
+			Console.Error.WriteLine("    -recurse:<filespec>        Recurse directory and include matching files");
+			Console.Error.WriteLine("    -nojni                     Do not generate JNI stub for native methods");
+			Console.Error.WriteLine("    -resource:<name>=<path>    Include file as Java resource");
+			Console.Error.WriteLine("    -exclude:<filename>        A file containing a list of classes to exclude");
+			Console.Error.WriteLine("    -debug                     Creates debugging information for the output file");
+			Console.Error.WriteLine("    -srcpath:<path>            Prepend path and package name to source file");
+			Console.Error.WriteLine("    -apartment:sta             (default) Mark main method with STAThreadAttribute");
+			Console.Error.WriteLine("    -apartment:mta             Mark main method with MTAThreadAttribute");
+			Console.Error.WriteLine("    -apartment:none            Don't mark main method with STAThreadAttribute");
+			Console.Error.WriteLine("    -Xtrace:<string>           Displays all tracepoints with the given name");
+			Console.Error.WriteLine("    -Xmethodtrace:<string>     Builds method trace into the specified output methods");
 			return 1;
 		}
 		foreach(string s in arglist)
@@ -149,6 +154,24 @@ class Compiler
 						case "-target:library":
 							target = System.Reflection.Emit.PEFileKinds.Dll;
 							guessFileKind = false;
+							break;
+						default:
+							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
+							break;
+					}
+				}
+				else if(s.StartsWith("-apartment:"))
+				{
+					switch(s)
+					{
+						case "-apartment:sta":
+							apartment = ApartmentState.STA;
+							break;
+						case "-apartment:mta":
+							apartment = ApartmentState.MTA;
+							break;
+						case "-apartment:none":
+							apartment = ApartmentState.Unknown;
 							break;
 						default:
 							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
@@ -327,7 +350,7 @@ class Compiler
 		}
 		try
 		{
-			JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)), remapfile);
+			JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, apartment, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)), remapfile);
 			return 0;
 		}
 		catch(Exception x)

@@ -37,6 +37,9 @@
 
 	JNIEXPORT void* JNICALL ikvm_GetProcAddress(HMODULE handle, char* name, jint argc)
 	{
+#ifdef _WIN64
+		return GetProcAddress(handle, name);
+#else
 		char buf[512];
 		if(strlen(name) > sizeof(buf) - 11)
 		{
@@ -44,6 +47,7 @@
 		}
 		wsprintf(buf, "_%s@%d", name, argc);
 		return GetProcAddress(handle, buf);
+#endif
 	}
 #else
 	#include <gmodule.h>

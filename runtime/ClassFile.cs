@@ -1575,7 +1575,8 @@ class ClassFile
 				}
 				// we add an additional nop instruction to make it easier for consumers of the code array
 				instructions[instructionIndex++].SetTermNop((ushort)(br.Position - basePosition));
-				this.instructions = instructions;
+				this.instructions = new Instruction[instructionIndex];
+				Array.Copy(instructions, 0, this.instructions, 0, instructionIndex);
 				ushort exception_table_length = br.ReadUInt16();
 				exception_table = new ExceptionTableEntry[exception_table_length];
 				for(int i = 0; i < exception_table_length; i++)

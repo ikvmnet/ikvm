@@ -417,7 +417,7 @@ public final class ExceptionHelper
 
     public static Throwable MapException(Throwable t, cli.System.Type handler)
     {
-	//Console.WriteLine("MapException: {0}, {1}", t, handler);
+	//cli.System.Console.WriteLine("MapException: {0}, {1}", t, handler);
 	//Console.WriteLine(new StackTrace(t));
 	Throwable org = t;
 

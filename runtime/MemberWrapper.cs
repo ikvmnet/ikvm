@@ -195,7 +195,7 @@ abstract class MethodWrapper : MemberWrapper
 			: base(declaringType, md, method, returnType, parameterTypes, modifiers, flags)
 		{
 			// make sure we weren't handed the ghostMethod in the wrapper value type
-			Debug.Assert(method.DeclaringType.IsInterface);
+			Debug.Assert(method == null || method.DeclaringType.IsInterface);
 		}
 
 		private void ResolveGhostMethod()
@@ -681,8 +681,16 @@ abstract class MethodWrapper : MemberWrapper
 			cache = new Hashtable(keygen, keygen);
 			AssemblyName name = new AssemblyName();
 			name.Name = "NonvirtualInvoker";
-			AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.Run);
-			module = ab.DefineDynamicModule("NonvirtualInvoker");
+			AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, ClassLoaderWrapper.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
+			if(ClassLoaderWrapper.IsSaveDebugImage)
+			{
+				module = ab.DefineDynamicModule("NonvirtualInvoker", "NonvirtualInvoker.dll");
+				ClassLoaderWrapper.RegisterForSaveDebug(ab);
+			}
+			else
+			{
+				module = ab.DefineDynamicModule("NonvirtualInvoker");
+			}
 		}
 
 		internal static Invoker GetInvoker(MethodWrapper mw)

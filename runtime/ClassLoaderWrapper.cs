@@ -51,6 +51,7 @@ class ClassLoaderWrapper
 	private static Assembly coreAssembly;	// this is the assembly that contains the remapped and core classes
 	private static Hashtable remappedTypes = new Hashtable();
 	private static int instanceCounter = 0;
+	private static ArrayList saveDebugAssemblies;
 	private int instanceId = System.Threading.Interlocked.Increment(ref instanceCounter);
 
 	// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
@@ -652,6 +653,22 @@ class ClassLoaderWrapper
 		AssemblyBuilder asm = ((AssemblyBuilder)moduleBuilder.Assembly);
 		asm.SetEntryPoint(main, PEFileKinds.ConsoleApplication);
 		asm.Save("ikvmdump.exe");
+		if(saveDebugAssemblies != null)
+		{
+			foreach(AssemblyBuilder ab in saveDebugAssemblies)
+			{
+				ab.Save(ab.GetName().Name + ".dll");
+			}
+		}
+	}
+
+	internal static void RegisterForSaveDebug(AssemblyBuilder ab)
+	{
+		if(saveDebugAssemblies == null)
+		{
+			saveDebugAssemblies = new ArrayList();
+		}
+		saveDebugAssemblies.Add(ab);
 	}
 
 	internal ModuleBuilder ModuleBuilder
@@ -672,7 +689,14 @@ class ClassLoaderWrapper
 	protected virtual ModuleBuilder CreateModuleBuilder()
 	{
 		AssemblyName name = new AssemblyName();
-		name.Name = "ikvm_dynamic_assembly__" + (this == GetBootstrapClassLoader() ? "bootstrap" : javaClassLoader);
+		if(saveDebugImage)
+		{
+			name.Name = "ikvmdump";
+		}
+		else
+		{
+			name.Name = "ikvm_dynamic_assembly__" + (this == GetBootstrapClassLoader() ? "bootstrap" : javaClassLoader);
+		}
 		AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true);
 		ModuleBuilder moduleBuilder = saveDebugImage ? assemblyBuilder.DefineDynamicModule(name.Name, "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
 		if(JVM.Debug)

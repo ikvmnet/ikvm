@@ -28,6 +28,34 @@ using System.Text;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
+// Java type JNI aliases
+using jboolean = System.SByte;
+using jbyte = System.SByte;
+using jchar = System.UInt16;
+using jshort = System.Int16;
+using jint = System.Int32;
+using jsize = System.Int32;
+using jlong = System.Int64;
+using jfloat = System.Single;
+using jdouble = System.Double;
+using jobject = System.IntPtr;
+using jstring = System.IntPtr;
+using jclass = System.IntPtr;
+using jarray = System.IntPtr;
+using jobjectArray = System.IntPtr;
+using jbooleanArray = System.IntPtr;
+using jbyteArray = System.IntPtr;
+using jcharArray = System.IntPtr;
+using jshortArray = System.IntPtr;
+using jintArray = System.IntPtr;
+using jlongArray = System.IntPtr;
+using jfloatArray = System.IntPtr;
+using jdoubleArray = System.IntPtr;
+using jthrowable = System.IntPtr;
+using jweak = System.IntPtr;
+using jmethodID = System.IntPtr;
+using jfieldID = System.IntPtr;
+
 sealed class JniHelper
 {
 	//[DllImport("ikvm-native", EntryPoint="_ikvm_LoadLibrary@4")]
@@ -134,104 +162,11 @@ sealed class JniHelper
 	}
 }
 
-[StructLayout(LayoutKind.Sequential)]
-struct LocalRefCache
-{
-	internal object loc1;
-	object loc2;
-	object loc3;
-	object loc4;
-	object loc5;
-	object loc6;
-	object loc7;
-	object loc8;
-	object loc9;
-	object loc10;
-}
-
-unsafe struct LocalRefListEntry
-{
-	internal const int STATIC_LIST_SIZE = 10;
-	internal const int LOCAL_REF_SHIFT = 10;
-	internal const int BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
-	internal const int LOCAL_REF_MASK = (BUCKET_SIZE - 1);
-
-	[StructLayout(LayoutKind.Explicit)]
-	internal struct Union
-	{
-		[FieldOffset(0)]
-		internal Object* static_list;
-		[FieldOffset(0)]
-		internal void* pv;
-	}
-	internal Union u;
-	internal object[] dynamic_list;
-
-	internal int MakeLocalRef(object o)
-	{
-		if(u.static_list != null)
-		{
-			for(int i = 0; i < STATIC_LIST_SIZE; i++)
-			{
-				if(u.static_list[i] == null)
-				{
-					u.static_list[i] = o;
-					return i;
-				}
-			}
-		} 
-		if(dynamic_list == null)
-		{
-			dynamic_list = new object[32 - STATIC_LIST_SIZE];
-		}
-		for(int i = 0; i < dynamic_list.Length; i++)
-		{
-			if(dynamic_list[i] == null)
-			{
-				dynamic_list[i] = o;
-				return i + STATIC_LIST_SIZE;
-			}
-		}
-		int newsize = (dynamic_list.Length + STATIC_LIST_SIZE) * 2 - STATIC_LIST_SIZE;
-		if(newsize > BUCKET_SIZE)
-		{
-			return -1;
-		}
-		object[] tmp = dynamic_list;
-		dynamic_list = new object[newsize];
-		Array.Copy(tmp, 0, dynamic_list, 0, tmp.Length);
-		dynamic_list[tmp.Length] = o;
-		return tmp.Length + STATIC_LIST_SIZE;
-	}
-
-	internal void DeleteLocalRef(int i)
-	{
-		if(i < STATIC_LIST_SIZE)
-		{
-			u.static_list[i] = null;
-		}
-		else
-		{
-			dynamic_list[i - STATIC_LIST_SIZE] = null;
-		}
-	}
-
-	internal object UnwrapLocalRef(int i)
-	{
-		if(i < STATIC_LIST_SIZE)
-		{
-			return u.static_list[i];
-		}
-		else
-		{
-			return dynamic_list[i - STATIC_LIST_SIZE];
-		}
-	}
-}
-
 class GlobalRefs
 {
 	internal static System.Collections.ArrayList globalRefs = new System.Collections.ArrayList();
+	internal static readonly object weakRefLock = new object();
+	internal static GCHandle[] weakRefs = new GCHandle[16];
 }
 
 unsafe class VtableBuilder
@@ -244,8 +179,9 @@ unsafe class VtableBuilder
 	delegate sbyte pf_sbyte(JNIEnv* pEnv);
 	delegate IntPtr pf_IntPtr_pbyte(JNIEnv* pEnv, byte* p);
 	delegate int pf_int(JNIEnv* pEnv);
-	delegate IntPtr pf_IntPtr_pbyte_IntPtr_pbyte_IntPtr(JNIEnv* pEnv, byte* p1, IntPtr p2, byte* p3, int p4);
+	delegate IntPtr pf_IntPtr_pbyte_IntPtr_psbyte_IntPtr(JNIEnv* pEnv, byte* p1, IntPtr p2, sbyte* p3, int p4);
 	delegate IntPtr pf_IntPtr_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+	delegate jchar* pf_pjchar_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
 	delegate int pf_int_IntPtr_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2);
 	delegate void pf_void_pbyte(JNIEnv* pEnv, byte* p1);
 	delegate IntPtr pf_IntPtr_IntPtr_pbyte_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2, byte* p3);
@@ -253,6 +189,7 @@ unsafe class VtableBuilder
 	delegate int pf_int_ppJavaVM(JNIEnv* pEnv, JavaVM** ppJavaVM);
 	delegate sbyte pf_sbyte_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
 	delegate short pf_short_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+	delegate ushort pf_ushort_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
 	delegate int pf_int_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
 	delegate long pf_long_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
 	delegate float pf_float_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
@@ -260,12 +197,14 @@ unsafe class VtableBuilder
 	delegate void pf_void_IntPtr_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3);
 	delegate void pf_void_IntPtr_IntPtr_sbyte(JNIEnv* pEnv, IntPtr p1, IntPtr p2, sbyte p3);
 	delegate void pf_void_IntPtr_IntPtr_short(JNIEnv* pEnv, IntPtr p1, IntPtr p2, short p3);
+	delegate void pf_void_IntPtr_IntPtr_ushort(JNIEnv* pEnv, IntPtr p1, IntPtr p2, ushort p3);
 	delegate void pf_void_IntPtr_IntPtr_int(JNIEnv* pEnv, IntPtr p1, IntPtr p2, int p3);
 	delegate void pf_void_IntPtr_IntPtr_long(JNIEnv* pEnv, IntPtr p1, IntPtr p2, long p3);
 	delegate void pf_void_IntPtr_IntPtr_float(JNIEnv* pEnv, IntPtr p1, IntPtr p2, float p3);
 	delegate void pf_void_IntPtr_IntPtr_double(JNIEnv* pEnv, IntPtr p1, IntPtr p2, double p3);
-	delegate IntPtr pf_IntPtr_pchar_int(JNIEnv* pEnv, char* p1, int p2);
+	delegate IntPtr pf_IntPtr_pjchar_int(JNIEnv* pEnv, jchar* p1, int p2);
 	delegate void pf_void_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
+	delegate void pf_void_IntPtr_pjchar(JNIEnv* pEnv, IntPtr p1, jchar* p2);
 	delegate IntPtr pf_IntPtr_int_IntPtr_IntPtr(JNIEnv* pEnv, int p1, IntPtr p2, IntPtr p3);
 	delegate IntPtr pf_IntPtr_IntPtr_int(JNIEnv* pEnv, IntPtr p1, int p2);
 	delegate void pf_void_IntPtr_int_IntPtr(JNIEnv* pEnv, IntPtr p1, int p2, IntPtr p3);
@@ -274,6 +213,7 @@ unsafe class VtableBuilder
 	delegate IntPtr pf_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
 	delegate sbyte pf_sbyte_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
 	delegate short pf_short_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
+	delegate ushort pf_ushort_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
 	delegate int pf_int_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
 	delegate long pf_long_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
 	delegate float pf_float_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
@@ -281,12 +221,31 @@ unsafe class VtableBuilder
 	delegate void pf_void_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, JNIEnv.jvalue* p3);
 	delegate IntPtr pf_IntPtr_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
 	delegate sbyte pf_sbyte_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+	delegate ushort pf_ushort_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
 	delegate short pf_short_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
 	delegate int pf_int_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
 	delegate long pf_long_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
 	delegate float pf_float_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
 	delegate double pf_double_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
 	delegate void pf_void_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv* pEnv, IntPtr p1, IntPtr p2, IntPtr p3, JNIEnv.jvalue* p4);
+	delegate byte* pf_pbyte_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+	delegate void pf_void_IntPtr_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2);
+	delegate jboolean* pf_pjboolean_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+	delegate jbyte* pf_pjbyte_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+	delegate jshort* pf_pjshort_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+	delegate jint* pf_pjint_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+	delegate jlong* pf_pjlong_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+	delegate jfloat* pf_pjfloat_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+	delegate jdouble* pf_pjdouble_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+	delegate void pf_void_IntPtr_pjboolean_int(JNIEnv* pEnv, IntPtr p1, jboolean* p2, int p3);
+	delegate void pf_void_IntPtr_pjbyte_int(JNIEnv* pEnv, IntPtr p1, jbyte* p2, int p3);
+	delegate void pf_void_IntPtr_pjchar_int(JNIEnv* pEnv, IntPtr p1, jchar* p2, int p3);
+	delegate void pf_void_IntPtr_pjshort_int(JNIEnv* pEnv, IntPtr p1, jshort* p2, int p3);
+	delegate void pf_void_IntPtr_pjint_int(JNIEnv* pEnv, IntPtr p1, jint* p2, int p3);
+	delegate void pf_void_IntPtr_pjlong_int(JNIEnv* pEnv, IntPtr p1, jlong* p2, int p3);
+	delegate void pf_void_IntPtr_pjfloat_int(JNIEnv* pEnv, IntPtr p1, jfloat* p2, int p3);
+	delegate void pf_void_IntPtr_pjdouble_int(JNIEnv* pEnv, IntPtr p1, jdouble* p2, int p3);
+	delegate int pf_int_int(JNIEnv* pEnv, int p1);
 
 	internal static void* vtable;
 
@@ -294,7 +253,7 @@ unsafe class VtableBuilder
 	{
 		// JNIEnv
 		void** pmcpp = JniHelper.ikvm_GetJNIEnvVTable();
-		void** p = (void**)Marshal.AllocHGlobal(IntPtr.Size * vtableDelegates.Length);
+		void** p = (void**)JniMem.Alloc(IntPtr.Size * vtableDelegates.Length);
 		for(int i = 0; i < vtableDelegates.Length; i++)
 		{
 			if(vtableDelegates[i] != null)
@@ -318,7 +277,7 @@ unsafe class VtableBuilder
 
 			new pf_int(JNIEnv.GetVersion), //virtual jint JNICALL GetVersion();
 
-			new pf_IntPtr_pbyte_IntPtr_pbyte_IntPtr(JNIEnv.DefineClass), //virtual jclass JNICALL DefineClass(const char *name, jobject loader, const jbyte *buf, jsize len);
+			new pf_IntPtr_pbyte_IntPtr_psbyte_IntPtr(JNIEnv.DefineClass), //virtual jclass JNICALL DefineClass(const char *name, jobject loader, const jbyte *buf, jsize len);
 			new pf_IntPtr_pbyte(JNIEnv.FindClass), //virtual jclass JNICALL FindClass(const char *name);
 
 			new pf_IntPtr_IntPtr(JNIEnv.FromReflectedMethod), //virtual jmethodID JNICALL FromReflectedMethod(jobject method);
@@ -337,8 +296,8 @@ unsafe class VtableBuilder
 			new pf_void(JNIEnv.ExceptionClear), //virtual void JNICALL ExceptionClear();
 			new pf_void_pbyte(JNIEnv.FatalError), //virtual void JNICALL FatalError(const char *msg);
 
-			new pf_void(JNIEnv.NotImplemented), //virtual jint JNICALL PushLocalFrame(jint capacity); 
-			new pf_void(JNIEnv.NotImplemented), //virtual jobject JNICALL PopLocalFrame(jobject result);
+			new pf_int_int(JNIEnv.PushLocalFrame), //virtual jint JNICALL PushLocalFrame(jint capacity); 
+			new pf_IntPtr_IntPtr(JNIEnv.PopLocalFrame), //virtual jobject JNICALL PopLocalFrame(jobject result);
 
 			new pf_IntPtr_IntPtr(JNIEnv.NewGlobalRef), //virtual jobject JNICALL NewGlobalRef(jobject lobj);
 			new pf_void_IntPtr(JNIEnv.DeleteGlobalRef), //virtual void JNICALL DeleteGlobalRef(jobject gref);
@@ -346,7 +305,7 @@ unsafe class VtableBuilder
 			new pf_sbyte_IntPtr_IntPtr(JNIEnv.IsSameObject), //virtual jboolean JNICALL IsSameObject(jobject obj1, jobject obj2);
 
 			new pf_IntPtr_IntPtr(JNIEnv.NewLocalRef), //virtual jobject JNICALL NewLocalRef(jobject ref);
-			new pf_void(JNIEnv.NotImplemented), //virtual jint JNICALL EnsureLocalCapacity(jint capacity);
+			new pf_int_int(JNIEnv.EnsureLocalCapacity), //virtual jint JNICALL EnsureLocalCapacity(jint capacity);
 
 			new pf_IntPtr_IntPtr(JNIEnv.AllocObject), //virtual jobject JNICALL AllocObject(jclass clazz);
 			null, //virtual jobject JNICALL NewObject(jclass clazz, jmethodID methodID, ...);
@@ -372,7 +331,7 @@ unsafe class VtableBuilder
 
 			null, //virtual jchar JNICALL CallCharMethod(jobject obj, jmethodID methodID, ...);
 			null, //virtual jchar JNICALL CallCharMethodV(jobject obj, jmethodID methodID, va_list args);
-			new pf_short_IntPtr_IntPtr_pjvalue(JNIEnv.CallCharMethodA), //virtual jchar JNICALL CallCharMethodA(jobject obj, jmethodID methodID, jvalue *args);
+			new pf_ushort_IntPtr_IntPtr_pjvalue(JNIEnv.CallCharMethodA), //virtual jchar JNICALL CallCharMethodA(jobject obj, jmethodID methodID, jvalue *args);
 
 			null, //virtual jshort JNICALL CallShortMethod(jobject obj, jmethodID methodID, ...);
 			null, //virtual jshort JNICALL CallShortMethodV(jobject obj, jmethodID methodID, va_list args);
@@ -412,7 +371,7 @@ unsafe class VtableBuilder
 
 			null, //virtual jchar JNICALL CallNonvirtualCharMethod(jobject obj, jclass clazz, jmethodID methodID, ...);
 			null, //virtual jchar JNICALL CallNonvirtualCharMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args);
-			new pf_short_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv.CallNonvirtualCharMethodA), //virtual jchar JNICALL CallNonvirtualCharMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue *args);
+			new pf_ushort_IntPtr_IntPtr_IntPtr_pjvalue(JNIEnv.CallNonvirtualCharMethodA), //virtual jchar JNICALL CallNonvirtualCharMethodA(jobject obj, jclass clazz, jmethodID methodID, jvalue *args);
 
 			null, //virtual jshort JNICALL CallNonvirtualShortMethod(jobject obj, jclass clazz, jmethodID methodID, ...);
 			null, //virtual jshort JNICALL CallNonvirtualShortMethodV(jobject obj, jclass clazz, jmethodID methodID, va_list args);
@@ -443,7 +402,7 @@ unsafe class VtableBuilder
 			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetObjectField), //virtual jobject JNICALL GetObjectField(jobject obj, jfieldID fieldID);
 			new pf_sbyte_IntPtr_IntPtr(JNIEnv.GetBooleanField), //virtual jboolean JNICALL GetBooleanField(jobject obj, jfieldID fieldID);
 			new pf_sbyte_IntPtr_IntPtr(JNIEnv.GetByteField), //virtual jbyte JNICALL GetByteField(jobject obj, jfieldID fieldID);
-			new pf_short_IntPtr_IntPtr(JNIEnv.GetCharField), //virtual jchar JNICALL GetCharField(jobject obj, jfieldID fieldID);
+			new pf_ushort_IntPtr_IntPtr(JNIEnv.GetCharField), //virtual jchar JNICALL GetCharField(jobject obj, jfieldID fieldID);
 			new pf_short_IntPtr_IntPtr(JNIEnv.GetShortField), //virtual jshort JNICALL GetShortField(jobject obj, jfieldID fieldID);
 			new pf_int_IntPtr_IntPtr(JNIEnv.GetIntField), //virtual jint JNICALL GetIntField(jobject obj, jfieldID fieldID);
 			new pf_long_IntPtr_IntPtr(JNIEnv.GetLongField), //virtual jlong JNICALL GetLongField(jobject obj, jfieldID fieldID);
@@ -453,7 +412,7 @@ unsafe class VtableBuilder
 			new pf_void_IntPtr_IntPtr_IntPtr(JNIEnv.SetObjectField), //virtual void JNICALL SetObjectField(jobject obj, jfieldID fieldID, jobject val);
 			new pf_void_IntPtr_IntPtr_sbyte(JNIEnv.SetBooleanField), //virtual void JNICALL SetBooleanField(jobject obj, jfieldID fieldID, jboolean val);
 			new pf_void_IntPtr_IntPtr_sbyte(JNIEnv.SetByteField), //virtual void JNICALL SetByteField(jobject obj, jfieldID fieldID, jbyte val);
-			new pf_void_IntPtr_IntPtr_short(JNIEnv.SetCharField), //virtual void JNICALL SetCharField(jobject obj, jfieldID fieldID, jchar val);
+			new pf_void_IntPtr_IntPtr_ushort(JNIEnv.SetCharField), //virtual void JNICALL SetCharField(jobject obj, jfieldID fieldID, jchar val);
 			new pf_void_IntPtr_IntPtr_short(JNIEnv.SetShortField), //virtual void JNICALL SetShortField(jobject obj, jfieldID fieldID, jshort val);
 			new pf_void_IntPtr_IntPtr_int(JNIEnv.SetIntField), //virtual void JNICALL SetIntField(jobject obj, jfieldID fieldID, jint val);
 			new pf_void_IntPtr_IntPtr_long(JNIEnv.SetLongField), //virtual void JNICALL SetLongField(jobject obj, jfieldID fieldID, jlong val);
@@ -476,7 +435,7 @@ unsafe class VtableBuilder
 
 			null, //virtual jchar JNICALL CallStaticCharMethod(jclass clazz, jmethodID methodID, ...);
 			null, //virtual jchar JNICALL CallStaticCharMethodV(jclass clazz, jmethodID methodID, va_list args);
-			new pf_short_IntPtr_IntPtr_pjvalue(JNIEnv.CallStaticCharMethodA), //virtual jchar JNICALL CallStaticCharMethodA(jclass clazz, jmethodID methodID, jvalue *args);
+			new pf_ushort_IntPtr_IntPtr_pjvalue(JNIEnv.CallStaticCharMethodA), //virtual jchar JNICALL CallStaticCharMethodA(jclass clazz, jmethodID methodID, jvalue *args);
 
 			null, //virtual jshort JNICALL CallStaticShortMethod(jclass clazz, jmethodID methodID, ...);
 			null, //virtual jshort JNICALL CallStaticShortMethodV(jclass clazz, jmethodID methodID, va_list args);
@@ -507,7 +466,7 @@ unsafe class VtableBuilder
 			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetStaticObjectField), //virtual jobject JNICALL GetObjectField(jobject obj, jfieldID fieldID);
 			new pf_sbyte_IntPtr_IntPtr(JNIEnv.GetStaticBooleanField), //virtual jboolean JNICALL GetBooleanField(jobject obj, jfieldID fieldID);
 			new pf_sbyte_IntPtr_IntPtr(JNIEnv.GetStaticByteField), //virtual jbyte JNICALL GetByteField(jobject obj, jfieldID fieldID);
-			new pf_short_IntPtr_IntPtr(JNIEnv.GetStaticCharField), //virtual jchar JNICALL GetCharField(jobject obj, jfieldID fieldID);
+			new pf_ushort_IntPtr_IntPtr(JNIEnv.GetStaticCharField), //virtual jchar JNICALL GetCharField(jobject obj, jfieldID fieldID);
 			new pf_short_IntPtr_IntPtr(JNIEnv.GetStaticShortField), //virtual jshort JNICALL GetShortField(jobject obj, jfieldID fieldID);
 			new pf_int_IntPtr_IntPtr(JNIEnv.GetStaticIntField), //virtual jint JNICALL GetIntField(jobject obj, jfieldID fieldID);
 			new pf_long_IntPtr_IntPtr(JNIEnv.GetStaticLongField), //virtual jlong JNICALL GetLongField(jobject obj, jfieldID fieldID);
@@ -517,22 +476,22 @@ unsafe class VtableBuilder
 			new pf_void_IntPtr_IntPtr_IntPtr(JNIEnv.SetStaticObjectField), //virtual void JNICALL SetObjectField(jobject obj, jfieldID fieldID, jobject val);
 			new pf_void_IntPtr_IntPtr_sbyte(JNIEnv.SetStaticBooleanField), //virtual void JNICALL SetBooleanField(jobject obj, jfieldID fieldID, jboolean val);
 			new pf_void_IntPtr_IntPtr_sbyte(JNIEnv.SetStaticByteField), //virtual void JNICALL SetByteField(jobject obj, jfieldID fieldID, jbyte val);
-			new pf_void_IntPtr_IntPtr_short(JNIEnv.SetStaticCharField), //virtual void JNICALL SetCharField(jobject obj, jfieldID fieldID, jchar val);
+			new pf_void_IntPtr_IntPtr_ushort(JNIEnv.SetStaticCharField), //virtual void JNICALL SetCharField(jobject obj, jfieldID fieldID, jchar val);
 			new pf_void_IntPtr_IntPtr_short(JNIEnv.SetStaticShortField), //virtual void JNICALL SetShortField(jobject obj, jfieldID fieldID, jshort val);
 			new pf_void_IntPtr_IntPtr_int(JNIEnv.SetStaticIntField), //virtual void JNICALL SetIntField(jobject obj, jfieldID fieldID, jint val);
 			new pf_void_IntPtr_IntPtr_long(JNIEnv.SetStaticLongField), //virtual void JNICALL SetLongField(jobject obj, jfieldID fieldID, jlong val);
 			new pf_void_IntPtr_IntPtr_float(JNIEnv.SetStaticFloatField), //virtual void JNICALL SetFloatField(jobject obj, jfieldID fieldID, jfloat val);
 			new pf_void_IntPtr_IntPtr_double(JNIEnv.SetStaticDoubleField), //virtual void JNICALL SetDoubleField(jobject obj, jfieldID fieldID, jdouble val);
 
-			new pf_IntPtr_pchar_int(JNIEnv.NewString), //virtual jstring JNICALL NewString(const jchar *unicode, jsize len);
+			new pf_IntPtr_pjchar_int(JNIEnv.NewString), //virtual jstring JNICALL NewString(const jchar *unicode, jsize len);
 			new pf_int_IntPtr(JNIEnv.GetStringLength), //virtual jsize JNICALL GetStringLength(jstring str);
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetStringChars), //virtual const jchar *JNICALL GetStringChars(jstring str, jboolean *isCopy);
-			new pf_void_IntPtr_IntPtr(JNIEnv.ReleaseStringChars), //virtual void JNICALL ReleaseStringChars(jstring str, const jchar *chars);
+			new pf_pjchar_IntPtr_pjboolean(JNIEnv.GetStringChars), //virtual const jchar *JNICALL GetStringChars(jstring str, jboolean *isCopy);
+			new pf_void_IntPtr_pjchar(JNIEnv.ReleaseStringChars), //virtual void JNICALL ReleaseStringChars(jstring str, const jchar *chars);
 
-			new pf_IntPtr_IntPtr(JNIEnv.NewStringUTF), //virtual jstring JNICALL NewStringUTF(const char *utf);
+			new pf_IntPtr_pbyte(JNIEnv.NewStringUTF), //virtual jstring JNICALL NewStringUTF(const char *utf);
 			new pf_int_IntPtr(JNIEnv.GetStringUTFLength), //virtual jsize JNICALL GetStringUTFLength(jstring str);
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetStringUTFChars), //virtual const char* JNICALL GetStringUTFChars(jstring str, jboolean *isCopy);
-			new pf_void_IntPtr_IntPtr(JNIEnv.ReleaseStringUTFChars), //virtual void JNICALL ReleaseStringUTFChars(jstring str, const char* chars);
+			new pf_pbyte_IntPtr_pjboolean(JNIEnv.GetStringUTFChars), //virtual const char* JNICALL GetStringUTFChars(jstring str, jboolean *isCopy);
+			new pf_void_IntPtr_pbyte(JNIEnv.ReleaseStringUTFChars), //virtual void JNICALL ReleaseStringUTFChars(jstring str, const char* chars);
 
 			new pf_int_IntPtr(JNIEnv.GetArrayLength), //virtual jsize JNICALL GetArrayLength(jarray array);
 
@@ -549,23 +508,23 @@ unsafe class VtableBuilder
 			new pf_IntPtr_int(JNIEnv.NewFloatArray), //virtual jfloatArray JNICALL NewFloatArray(jsize len);
 			new pf_IntPtr_int(JNIEnv.NewDoubleArray), //virtual jdoubleArray JNICALL NewDoubleArray(jsize len);
 
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetBooleanArrayElements), //virtual jboolean * JNICALL GetBooleanArrayElements(jbooleanArray array, jboolean *isCopy);
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetByteArrayElements), //virtual jbyte * JNICALL GetByteArrayElements(jbyteArray array, jboolean *isCopy);
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetCharArrayElements), //virtual jchar * JNICALL GetCharArrayElements(jcharArray array, jboolean *isCopy);
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetShortArrayElements), //virtual jshort * JNICALL GetShortArrayElements(jshortArray array, jboolean *isCopy);
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetIntArrayElements), //virtual jint * JNICALL GetIntArrayElements(jintArray array, jboolean *isCopy);
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetLongArrayElements), //virtual jlong * JNICALL GetLongArrayElements(jlongArray array, jboolean *isCopy);
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetFloatArrayElements), //virtual jfloat * JNICALL GetFloatArrayElements(jfloatArray array, jboolean *isCopy);
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetDoubleArrayElements), //virtual jdouble * JNICALL GetDoubleArrayElements(jdoubleArray array, jboolean *isCopy);
+			new pf_pjboolean_IntPtr_pjboolean(JNIEnv.GetBooleanArrayElements), //virtual jboolean * JNICALL GetBooleanArrayElements(jbooleanArray array, jboolean *isCopy);
+			new pf_pjbyte_IntPtr_pjboolean(JNIEnv.GetByteArrayElements), //virtual jbyte * JNICALL GetByteArrayElements(jbyteArray array, jboolean *isCopy);
+			new pf_pjchar_IntPtr_pjboolean(JNIEnv.GetCharArrayElements), //virtual jchar * JNICALL GetCharArrayElements(jcharArray array, jboolean *isCopy);
+			new pf_pjshort_IntPtr_pjboolean(JNIEnv.GetShortArrayElements), //virtual jshort * JNICALL GetShortArrayElements(jshortArray array, jboolean *isCopy);
+			new pf_pjint_IntPtr_pjboolean(JNIEnv.GetIntArrayElements), //virtual jint * JNICALL GetIntArrayElements(jintArray array, jboolean *isCopy);
+			new pf_pjlong_IntPtr_pjboolean(JNIEnv.GetLongArrayElements), //virtual jlong * JNICALL GetLongArrayElements(jlongArray array, jboolean *isCopy);
+			new pf_pjfloat_IntPtr_pjboolean(JNIEnv.GetFloatArrayElements), //virtual jfloat * JNICALL GetFloatArrayElements(jfloatArray array, jboolean *isCopy);
+			new pf_pjdouble_IntPtr_pjboolean(JNIEnv.GetDoubleArrayElements), //virtual jdouble * JNICALL GetDoubleArrayElements(jdoubleArray array, jboolean *isCopy);
 
-			new pf_void_IntPtr_IntPtr_int(JNIEnv.ReleaseBooleanArrayElements), //virtual void JNICALL ReleaseBooleanArrayElements(jbooleanArray array, jboolean *elems, jint mode);
-			new pf_void_IntPtr_IntPtr_int(JNIEnv.ReleaseByteArrayElements), //virtual void JNICALL ReleaseByteArrayElements(jbyteArray array, jbyte *elems, jint mode);
-			new pf_void_IntPtr_IntPtr_int(JNIEnv.ReleaseCharArrayElements), //virtual void JNICALL ReleaseCharArrayElements(jcharArray array, jchar *elems, jint mode);
-			new pf_void_IntPtr_IntPtr_int(JNIEnv.ReleaseShortArrayElements), //virtual void JNICALL ReleaseShortArrayElements(jshortArray array, jshort *elems, jint mode);
-			new pf_void_IntPtr_IntPtr_int(JNIEnv.ReleaseIntArrayElements), //virtual void JNICALL ReleaseIntArrayElements(jintArray array, jint *elems, jint mode);
-			new pf_void_IntPtr_IntPtr_int(JNIEnv.ReleaseLongArrayElements), //virtual void JNICALL ReleaseLongArrayElements(jlongArray array, jlong *elems, jint mode);
-			new pf_void_IntPtr_IntPtr_int(JNIEnv.ReleaseFloatArrayElements), //virtual void JNICALL ReleaseFloatArrayElements(jfloatArray array, jfloat *elems, jint mode);
-			new pf_void_IntPtr_IntPtr_int(JNIEnv.ReleaseDoubleArrayElements), //virtual void JNICALL ReleaseDoubleArrayElements(jdoubleArray array, jdouble *elems, jint mode);
+			new pf_void_IntPtr_pjboolean_int(JNIEnv.ReleaseBooleanArrayElements), //virtual void JNICALL ReleaseBooleanArrayElements(jbooleanArray array, jboolean *elems, jint mode);
+			new pf_void_IntPtr_pjbyte_int(JNIEnv.ReleaseByteArrayElements), //virtual void JNICALL ReleaseByteArrayElements(jbyteArray array, jbyte *elems, jint mode);
+			new pf_void_IntPtr_pjchar_int(JNIEnv.ReleaseCharArrayElements), //virtual void JNICALL ReleaseCharArrayElements(jcharArray array, jchar *elems, jint mode);
+			new pf_void_IntPtr_pjshort_int(JNIEnv.ReleaseShortArrayElements), //virtual void JNICALL ReleaseShortArrayElements(jshortArray array, jshort *elems, jint mode);
+			new pf_void_IntPtr_pjint_int(JNIEnv.ReleaseIntArrayElements), //virtual void JNICALL ReleaseIntArrayElements(jintArray array, jint *elems, jint mode);
+			new pf_void_IntPtr_pjlong_int(JNIEnv.ReleaseLongArrayElements), //virtual void JNICALL ReleaseLongArrayElements(jlongArray array, jlong *elems, jint mode);
+			new pf_void_IntPtr_pjfloat_int(JNIEnv.ReleaseFloatArrayElements), //virtual void JNICALL ReleaseFloatArrayElements(jfloatArray array, jfloat *elems, jint mode);
+			new pf_void_IntPtr_pjdouble_int(JNIEnv.ReleaseDoubleArrayElements), //virtual void JNICALL ReleaseDoubleArrayElements(jdoubleArray array, jdouble *elems, jint mode);
 
 			new pf_void_IntPtr_int_int_IntPtr(JNIEnv.GetBooleanArrayRegion), //virtual void JNICALL GetBooleanArrayRegion(jbooleanArray array, jsize start, jsize l, jboolean *buf);
 			new pf_void_IntPtr_int_int_IntPtr(JNIEnv.GetByteArrayRegion), //virtual void JNICALL GetByteArrayRegion(jbyteArray array, jsize start, jsize len, jbyte *buf);
@@ -602,8 +561,8 @@ unsafe class VtableBuilder
 			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetStringCritical), //virtual const jchar* JNICALL GetStringCritical(jstring string, jboolean *isCopy);
 			new pf_void_IntPtr_IntPtr(JNIEnv.ReleaseStringCritical), //virtual void JNICALL ReleaseStringCritical(jstring string, const jchar *cstring);
 
-			new pf_void(JNIEnv.NotImplemented), //virtual jweak JNICALL NewWeakGlobalRef(jobject obj);
-			new pf_void(JNIEnv.NotImplemented), //virtual void JNICALL DeleteWeakGlobalRef(jweak ref);
+			new pf_IntPtr_IntPtr(JNIEnv.NewWeakGlobalRef), //virtual jweak JNICALL NewWeakGlobalRef(jobject obj);
+			new pf_void_IntPtr(JNIEnv.DeleteWeakGlobalRef), //virtual void JNICALL DeleteWeakGlobalRef(jweak ref);
 
 			new pf_sbyte(JNIEnv.ExceptionCheck), //virtual jboolean JNICALL ExceptionCheck();
 
@@ -637,7 +596,7 @@ unsafe struct JavaVM
 
 	static JavaVM()
 	{
-		pJavaVM = (JavaVM*)(void*)Marshal.AllocHGlobal(IntPtr.Size * (1 + vtableDelegates.Length));
+		pJavaVM = (JavaVM*)(void*)JniMem.Alloc(IntPtr.Size * (1 + vtableDelegates.Length));
 #if __MonoCS__ 
 		// MONOBUG mcs requires this bogus fixed construct (and Microsoft doesn't allow it)
 		fixed(void** p = &pJavaVM->firstVtableEntry) { pJavaVM->vtable = p; }
@@ -707,6 +666,9 @@ unsafe struct JavaVM
 [StructLayout(LayoutKind.Sequential)]
 unsafe struct JNIEnv
 {
+	internal const int LOCAL_REF_SHIFT = 10;
+	internal const int LOCAL_REF_BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
+	internal const int LOCAL_REF_MASK = (LOCAL_REF_BUCKET_SIZE - 1);
 	internal const int JNI_OK = 0;
 	internal const int JNI_ERR = -1;
 	internal const int JNI_EDETACHED = -2;
@@ -719,15 +681,6 @@ unsafe struct JNIEnv
 	internal const sbyte JNI_TRUE = 1;
 	internal const sbyte JNI_FALSE = 0;
 	internal void* vtable;
-	[StructLayout(LayoutKind.Explicit)]
-		internal unsafe struct Union
-	{
-		[FieldOffset(0)]
-		internal JniFrame* activeFrame;
-		[FieldOffset(0)]
-		internal void* pFrame;
-	}
-	internal Union u;
 	internal GCHandle localRefs;
 	internal int localRefSlot;
 	internal IntPtr pendingException;
@@ -838,7 +791,7 @@ unsafe struct JNIEnv
 		}
 	}
 
-	internal static int GetMethodArgs(JNIEnv* pEnv, IntPtr method, byte* sig)
+	internal static jint GetMethodArgs(JNIEnv* pEnv, IntPtr method, byte* sig)
 	{
 		string s = GetMethodArgList(method);
 		for(int i = 0; i < s.Length; i++)
@@ -848,12 +801,12 @@ unsafe struct JNIEnv
 		return s.Length;
 	}
 
-	internal static int GetVersion(JNIEnv* pEnv)
+	internal static jint GetVersion(JNIEnv* pEnv)
 	{
 		return JNI_VERSION_1_4;
 	}
 
-	internal static IntPtr DefineClass(JNIEnv* pEnv, byte* name, IntPtr loader, byte* pbuf, int length)
+	internal static jclass DefineClass(JNIEnv* pEnv, byte* name, jobject loader, jbyte* pbuf, jint length)
 	{
 		byte[] buf = new byte[length];
 		Marshal.Copy((IntPtr)(void*)pbuf, buf, 0, length);
@@ -883,7 +836,7 @@ unsafe struct JNIEnv
 		return ClassLoaderWrapper.GetBootstrapClassLoader();
 	}
 
-	internal static IntPtr FindClass(JNIEnv* pEnv, byte* name)
+	internal static jclass FindClass(JNIEnv* pEnv, byte* name)
 	{
 		try
 		{
@@ -899,21 +852,21 @@ unsafe struct JNIEnv
 		}
 	}
 
-	internal static IntPtr FromReflectedMethod(JNIEnv* pEnv, IntPtr method)
+	internal static jmethodID FromReflectedMethod(JNIEnv* pEnv, jobject method)
 	{
 		object methodObj = pEnv->UnwrapRef(method);
 		MethodWrapper mw = (MethodWrapper)methodObj.GetType().GetField("methodCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(methodObj);
 		return mw.Cookie;
 	}
 
-	internal static IntPtr FromReflectedField(JNIEnv* pEnv, IntPtr field)
+	internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)
 	{
 		object fieldObj = pEnv->UnwrapRef(field);
 		FieldWrapper fw = (FieldWrapper)fieldObj.GetType().GetField("fieldCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(fieldObj);
 		return fw.Cookie;
 	}
 
-	internal static IntPtr ToReflectedMethod(JNIEnv* pEnv, IntPtr clazz_ignored, IntPtr method)
+	internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method)
 	{
 		MethodWrapper mw = MethodWrapper.FromCookie(method);
 		TypeWrapper tw;
@@ -929,20 +882,20 @@ unsafe struct JNIEnv
 		return pEnv->MakeLocalRef(Activator.CreateInstance(tw.TypeAsTBD, new object[] { clazz, mw }));
 	}
 
-	internal static IntPtr GetSuperclass(JNIEnv* pEnv, IntPtr sub)
+	internal static jclass GetSuperclass(JNIEnv* pEnv, jclass sub)
 	{
 		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(sub)).BaseTypeWrapper;
 		return pEnv->MakeLocalRef(wrapper == null ? null : NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper));
 	}
 
-	internal static sbyte IsAssignableFrom(JNIEnv* pEnv, IntPtr sub, IntPtr super)
+	internal static jboolean IsAssignableFrom(JNIEnv* pEnv, jclass sub, jclass super)
 	{
 		TypeWrapper w1 = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(sub));
 		TypeWrapper w2 = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(super));
 		return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
 	}
 
-	internal static IntPtr ToReflectedField(JNIEnv* pEnv, IntPtr clazz_ignored, IntPtr field)
+	internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field)
 	{
 		FieldWrapper fw = FieldWrapper.FromCookie(field);
 		TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Field");
@@ -956,20 +909,20 @@ unsafe struct JNIEnv
 		pEnv->pendingException = pEnv->MakeLocalRef(x);
 	}
 
-	internal static int Throw(JNIEnv* pEnv, IntPtr throwable)
+	internal static jint Throw(JNIEnv* pEnv, jthrowable throwable)
 	{
 		DeleteLocalRef(pEnv, pEnv->pendingException);
 		pEnv->pendingException = NewLocalRef(pEnv, throwable);
 		return JNI_OK;
 	}
 
-	internal static int ThrowNew(JNIEnv* pEnv, IntPtr clazz, byte* msg)
+	internal static jint ThrowNew(JNIEnv* pEnv, jclass clazz, byte* msg)
 	{
 		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
 		MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor("<init>", "(Ljava.lang.String;)V"), false);
 		if(mw != null)
 		{
-			int rc;
+			jint rc;
 			Exception exception;
 			try
 			{
@@ -992,7 +945,7 @@ unsafe struct JNIEnv
 		}
 	}
 
-	internal static IntPtr ExceptionOccurred(JNIEnv* pEnv)
+	internal static jthrowable ExceptionOccurred(JNIEnv* pEnv)
 	{
 		return NewLocalRef(pEnv, pEnv->pendingException);
 	}
@@ -1025,22 +978,70 @@ unsafe struct JNIEnv
 		JVM.CriticalFailure(StringFromUTF8(msg), null);
 	}
 
-	internal static IntPtr NewGlobalRef(JNIEnv* pEnv, IntPtr obj)
+	internal static jint PushLocalFrame(JNIEnv* pEnv, jint capacity)
 	{
-		if(obj == IntPtr.Zero)
+		object[][] localRefs = pEnv->GetLocalRefs();
+		pEnv->localRefSlot += 2;
+		if(pEnv->localRefSlot >= localRefs.Length)
+		{
+			object[][] tmp = new object[localRefs.Length * 2][];
+			Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
+			pEnv->localRefs.Target = localRefs = tmp;
+		}
+		// we use a null slot to mark the fact that we used PushLocalFrame
+		localRefs[pEnv->localRefSlot - 1] = null;
+		if(localRefs[pEnv->localRefSlot] == null)
+		{
+			// we can't use capacity, because the array length must be a power of two
+			localRefs[pEnv->localRefSlot] = new object[LOCAL_REF_BUCKET_SIZE];
+		}
+		return JNI_OK;
+	}
+
+	internal static jobject PopLocalFrame(JNIEnv* pEnv, jobject result)
+	{
+		object res = pEnv->UnwrapRef(result);
+		object[][] localRefs = pEnv->GetLocalRefs();
+		while(localRefs[pEnv->localRefSlot] != null)
+		{
+			localRefs[pEnv->localRefSlot] = null;
+			pEnv->localRefSlot--;
+		}
+		pEnv->localRefSlot--;
+		return pEnv->MakeLocalRef(res);
+	}
+
+	internal static jobject NewGlobalRef(JNIEnv* pEnv, jobject obj)
+	{
+		object o = pEnv->UnwrapRef(obj);
+		if(o == null)
 		{
 			return IntPtr.Zero;
 		}
-		// TODO search for an empty slot before adding it to the end...
-		return (IntPtr)(-(GlobalRefs.globalRefs.Add(pEnv->UnwrapRef(obj)) + 1));
+		lock(GlobalRefs.globalRefs)
+		{
+			int index = GlobalRefs.globalRefs.IndexOf(null);
+			if(index >= 0)
+			{
+				GlobalRefs.globalRefs[index] = o;
+			}
+			else
+			{
+				index = GlobalRefs.globalRefs.Add(o);
+			}
+			return (IntPtr)(-(index + 1));
+		}
 	}
 
-	internal static void DeleteGlobalRef(JNIEnv* pEnv, IntPtr obj)
+	internal static void DeleteGlobalRef(JNIEnv* pEnv, jobject obj)
 	{
 		int i = obj.ToInt32();
 		if(i < 0)
 		{
-			GlobalRefs.globalRefs[(-i) - 1] = null;
+			lock(GlobalRefs.globalRefs)
+			{
+				GlobalRefs.globalRefs[(-i) - 1] = null;
+			}
 			return;
 		}
 		if(i > 0)
@@ -1049,26 +1050,18 @@ unsafe struct JNIEnv
 		}
 	}
 
-	internal LocalRefListEntry[] GetLocalRefs()
+	internal object[][] GetLocalRefs()
 	{
-		// dereferencing a GCHandle is slow, so this is a small optimization
-		if(u.activeFrame != null)
-		{
-			return u.activeFrame->localRefs;
-		}
-		else
-		{
-			return (LocalRefListEntry[])localRefs.Target;
-		}
+		return (object[][])localRefs.Target;
 	}
 
-	internal static void DeleteLocalRef(JNIEnv* pEnv, IntPtr obj)
+	internal static void DeleteLocalRef(JNIEnv* pEnv, jobject obj)
 	{
 		int i = obj.ToInt32();
 		if(i > 0)
 		{
-			LocalRefListEntry[] localRefs = pEnv->GetLocalRefs();
-			localRefs[i >> LocalRefListEntry.LOCAL_REF_SHIFT].DeleteLocalRef(i & LocalRefListEntry.LOCAL_REF_MASK);
+			object[][] localRefs = pEnv->GetLocalRefs();
+			localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK] = null;
 			return;
 		}
 		if(i < 0)
@@ -1077,17 +1070,23 @@ unsafe struct JNIEnv
 		}
 	}
 
-	internal static sbyte IsSameObject(JNIEnv* pEnv, IntPtr obj1, IntPtr obj2)
+	internal static jboolean IsSameObject(JNIEnv* pEnv, jobject obj1, jobject obj2)
 	{
 		return pEnv->UnwrapRef(obj1) == pEnv->UnwrapRef(obj2) ? JNI_TRUE : JNI_FALSE;
 	}
 
-	internal static IntPtr NewLocalRef(JNIEnv* pEnv, IntPtr obj)
+	internal static jobject NewLocalRef(JNIEnv* pEnv, jobject obj)
 	{
 		return pEnv->MakeLocalRef(pEnv->UnwrapRef(obj));
 	}
 
-	internal static IntPtr AllocObject(JNIEnv* pEnv, IntPtr clazz)
+	internal static jint EnsureLocalCapacity(JNIEnv* pEnv, jint capacity)
+	{
+		// since we can dynamically grow the local ref table, we'll just return success for any number
+		return JNI_OK;
+	}
+
+	internal static jobject AllocObject(JNIEnv* pEnv, jclass clazz)
 	{
 		try
 		{
@@ -1104,25 +1103,29 @@ unsafe struct JNIEnv
 	}
 
 	[StructLayout(LayoutKind.Explicit)]
-	internal struct jvalue
+		internal struct jvalue
 	{
 		[FieldOffset(0)]
-		public sbyte b;
+		public jboolean z;
 		[FieldOffset(0)]
-		public short s;
+		public jbyte b;
 		[FieldOffset(0)]
-		public int i;
+		public jchar c;
 		[FieldOffset(0)]
-		public long j;
+		public jshort s;
 		[FieldOffset(0)]
-		public float f;
+		public jint i;
 		[FieldOffset(0)]
-		public double d;
+		public jlong j;
 		[FieldOffset(0)]
-		public IntPtr l;
+		public jfloat f;
+		[FieldOffset(0)]
+		public jdouble d;
+		[FieldOffset(0)]
+		public jobject l;
 	}
 
-	private static object InvokeHelper(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue *args, bool nonVirtual)
+	private static object InvokeHelper(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue *args, bool nonVirtual)
 	{
 		string sig = GetMethodArgList(methodID);
 		object[] argarray = new object[sig.Length];
@@ -1131,13 +1134,13 @@ unsafe struct JNIEnv
 			switch(sig[i])
 			{
 				case 'Z':
-					argarray[i] = args[i].b != 0;
+					argarray[i] = args[i].z != JNI_FALSE;
 					break;
 				case 'B':
 					argarray[i] = args[i].b;
 					break;
 				case 'C':
-					argarray[i] = (char)args[i].s;
+					argarray[i] = (char)args[i].c;
 					break;
 				case 'S':
 					argarray[i] = args[i].s;
@@ -1170,17 +1173,17 @@ unsafe struct JNIEnv
 		}
 	}
 
-	internal static IntPtr NewObjectA(JNIEnv* pEnv, IntPtr clazz, IntPtr methodID, jvalue *args)
+	internal static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 	{
 		return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false));
 	}
 
-	internal static IntPtr GetObjectClass(JNIEnv* pEnv, IntPtr obj)
+	internal static jclass GetObjectClass(JNIEnv* pEnv, jobject obj)
 	{
 		return pEnv->MakeLocalRef(NativeCode.java.lang.VMClass.getClassFromType(pEnv->UnwrapRef(obj).GetType()));
 	}
 
-	internal static sbyte IsInstanceOf(JNIEnv* pEnv, IntPtr obj, IntPtr clazz)
+	internal static jboolean IsInstanceOf(JNIEnv* pEnv, jobject obj, jclass clazz)
 	{
 		object objClass = NativeCode.java.lang.VMClass.getClassFromType(pEnv->UnwrapRef(obj).GetType());
 		TypeWrapper w1 = NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
@@ -1188,7 +1191,7 @@ unsafe struct JNIEnv
 		return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
 	}
 
-	private static IntPtr FindMethodID(JNIEnv* pEnv, IntPtr clazz, byte* name, byte* sig, bool isstatic)
+	private static jmethodID FindMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
 	{
 		try
 		{
@@ -1213,17 +1216,17 @@ unsafe struct JNIEnv
 		return IntPtr.Zero;
 	}
 
-	internal static IntPtr GetMethodID(JNIEnv* pEnv, IntPtr clazz, byte* name, byte* sig)
+	internal static jmethodID GetMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
 	{
 		return FindMethodID(pEnv, clazz, name, sig, false);
 	}
 
-	internal static IntPtr CallObjectMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue* args)
+	internal static jobject CallObjectMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
 	{
 		return pEnv->MakeLocalRef(InvokeHelper(pEnv, obj, methodID, args, false));
 	}
 
-	internal static sbyte CallBooleanMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue* args)
+	internal static jboolean CallBooleanMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, false);
 		if(o != null)
@@ -1233,87 +1236,87 @@ unsafe struct JNIEnv
 		return JNI_FALSE;
 	}
 
-	internal static sbyte CallByteMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue* args)
+	internal static jbyte CallByteMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, false);
 		if(o != null)
 		{
-			return (sbyte)o;
+			return (jbyte)(sbyte)o;
 		}
 		return 0;
 	}
 
-	internal static short CallCharMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue* args)
+	internal static jchar CallCharMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, false);
 		if(o != null)
 		{
-			return (short)(char)o;
+			return (jchar)(char)o;
 		}
 		return 0;
 	}
 
-	internal static short CallShortMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue* args)
+	internal static jshort CallShortMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, false);
 		if(o != null)
 		{
-			return (short)o;
+			return (jshort)(short)o;
 		}
 		return 0;
 	}
 
-	internal static int CallIntMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue* args)
+	internal static jint CallIntMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, false);
 		if(o != null)
 		{
-			return (int)o;
+			return (jint)(int)o;
 		}
 		return 0;
 	}
 
-	internal static long CallLongMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue* args)
+	internal static jlong CallLongMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, false);
 		if(o != null)
 		{
-			return (long)o;
+			return (jlong)(long)o;
 		}
 		return 0;
 	}
 
-	internal static float CallFloatMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue* args)
+	internal static jfloat CallFloatMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, false);
 		if(o != null)
 		{
-			return (float)o;
+			return (jfloat)(float)o;
 		}
 		return 0;
 	}
 
-	internal static double CallDoubleMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue* args)
+	internal static jdouble CallDoubleMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, false);
 		if(o != null)
 		{
-			return (double)o;
+			return (jdouble)(double)o;
 		}
 		return 0;
 	}
 
-	internal static void CallVoidMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr methodID, jvalue*  args)
+	internal static void CallVoidMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue*  args)
 	{
 		InvokeHelper(pEnv, obj, methodID, args, false);
 	}
 
-	internal static IntPtr CallNonvirtualObjectMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr clazz, IntPtr methodID, jvalue*  args)
+	internal static jobject CallNonvirtualObjectMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue*  args)
 	{
 		return pEnv->MakeLocalRef(InvokeHelper(pEnv, obj, methodID, args, true));
 	}
 
-	internal static sbyte CallNonvirtualBooleanMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr clazz, IntPtr methodID, jvalue*  args)
+	internal static jboolean CallNonvirtualBooleanMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue*  args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, true);
 		if(o != null)
@@ -1323,82 +1326,82 @@ unsafe struct JNIEnv
 		return JNI_FALSE;
 	}
 
-	internal static sbyte CallNonvirtualByteMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr clazz, IntPtr methodID, jvalue* args)
+	internal static jbyte CallNonvirtualByteMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, true);
 		if(o != null)
 		{
-			return (sbyte)o;
+			return (jbyte)(sbyte)o;
 		}
 		return 0;
 	}
 
-	internal static short CallNonvirtualCharMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr clazz, IntPtr methodID, jvalue* args)
+	internal static jchar CallNonvirtualCharMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, true);
 		if(o != null)
 		{
-			return (short)(char)o;
+			return (jchar)(char)o;
 		}
 		return 0;
 	}
 
-	internal static short CallNonvirtualShortMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr clazz, IntPtr methodID, jvalue* args)
+	internal static jshort CallNonvirtualShortMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, true);
 		if(o != null)
 		{
-			return (short)o;
+			return (jshort)(short)o;
 		}
 		return 0;
 	}
 
-	internal static int CallNonvirtualIntMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr clazz, IntPtr methodID, jvalue* args)
+	internal static jint CallNonvirtualIntMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, true);
 		if(o != null)
 		{
-			return (int)o;
+			return (jint)(int)o;
 		}
 		return 0;
 	}
 
-	internal static long CallNonvirtualLongMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr clazz, IntPtr methodID, jvalue* args)
+	internal static jlong CallNonvirtualLongMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, true);
 		if(o != null)
 		{
-			return (long)o;
+			return (jlong)(long)o;
 		}
 		return 0;
 	}
 
-	internal static float CallNonvirtualFloatMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr clazz, IntPtr methodID, jvalue* args)
+	internal static jfloat CallNonvirtualFloatMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, true);
 		if(o != null)
 		{
-			return (float)o;
+			return (jfloat)(float)o;
 		}
 		return 0;
 	}
 
-	internal static double CallNonvirtualDoubleMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr clazz, IntPtr methodID, jvalue* args)
+	internal static jdouble CallNonvirtualDoubleMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
 	{
 		object o = InvokeHelper(pEnv, obj, methodID, args, true);
 		if(o != null)
 		{
-			return (double)o;
+			return (jdouble)(double)o;
 		}
 		return 0;
 	}
 
-	internal static void CallNonvirtualVoidMethodA(JNIEnv* pEnv, IntPtr obj, IntPtr clazz, IntPtr methodID, jvalue*  args)
+	internal static void CallNonvirtualVoidMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
 	{
 		InvokeHelper(pEnv, obj, methodID, args, true);
 	}
 
-	private static IntPtr FindFieldID(JNIEnv* pEnv, IntPtr clazz, byte* name, byte* sig, bool isstatic)
+	private static jfieldID FindFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
 	{
 		try
 		{
@@ -1423,12 +1426,12 @@ unsafe struct JNIEnv
 		return IntPtr.Zero;
 	}
 
-	internal static IntPtr GetFieldID(JNIEnv* pEnv, IntPtr clazz, byte* name, byte* sig)
+	internal static jfieldID GetFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
 	{
 		return FindFieldID(pEnv, clazz, name, sig, false);
 	}
 
-	private static void SetFieldValue(IntPtr cookie, object obj, object val)
+	private static void SetFieldValue(jfieldID cookie, object obj, object val)
 	{
 		try
 		{
@@ -1441,7 +1444,7 @@ unsafe struct JNIEnv
 		}
 	}
 
-	private static object GetFieldValue(IntPtr cookie, object obj)
+	private static object GetFieldValue(jfieldID cookie, object obj)
 	{
 		try
 		{
@@ -1454,107 +1457,107 @@ unsafe struct JNIEnv
 		}
 	}
 
-	internal static IntPtr GetObjectField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID)
+	internal static jobject GetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
 	{
 		return pEnv->MakeLocalRef(GetFieldValue(fieldID, pEnv->UnwrapRef(obj)));
 	}
 
-	internal static sbyte GetBooleanField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID)
+	internal static jboolean GetBooleanField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
 	{
 		return ((bool)GetFieldValue(fieldID, pEnv->UnwrapRef(obj))) ? JNI_TRUE : JNI_FALSE;
 	}
 
-	internal static sbyte GetByteField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID)
+	internal static jbyte GetByteField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
 	{
-		return (sbyte)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		return (jbyte)(sbyte)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
 	}
 
-	internal static short GetCharField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID)
+	internal static jchar GetCharField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
 	{
-		return (short)(char)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		return (jchar)(char)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
 	}
 
-	internal static short GetShortField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID)
+	internal static jshort GetShortField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
 	{
-		return (short)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		return (jshort)(short)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
 	}
 
-	internal static int GetIntField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID)
+	internal static jint GetIntField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
 	{
-		return (int)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		return (jint)(int)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
 	}
 
-	internal static long GetLongField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID)
+	internal static jlong GetLongField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
 	{
-		return (long)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		return (jlong)(long)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
 	}
 
-	internal static float GetFloatField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID)
+	internal static jfloat GetFloatField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
 	{
-		return (float)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		return (jfloat)(float)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
 	}
 
-	internal static double GetDoubleField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID)
+	internal static jdouble GetDoubleField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
 	{
-		return (double)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
+		return (jdouble)(double)GetFieldValue(fieldID, pEnv->UnwrapRef(obj));
 	}
 
-	internal static void SetObjectField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID, IntPtr val)
+	internal static void SetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jobject val)
 	{
 		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), pEnv->UnwrapRef(val));
 	}
 
-	internal static void SetBooleanField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID, sbyte val)
+	internal static void SetBooleanField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jboolean val)
 	{
 		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), val != JNI_FALSE);
 	}
 
-	internal static void SetByteField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID, sbyte val)
+	internal static void SetByteField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jbyte val)
 	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), val);
+		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (sbyte)val);
 	}
 
-	internal static void SetCharField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID, short val)
+	internal static void SetCharField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jchar val)
 	{
 		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (char)val);
 	}
 
-	internal static void SetShortField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID, short val)
+	internal static void SetShortField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jshort val)
 	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), val);
+		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (short)val);
 	}
 
-	internal static void SetIntField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID, int val)
+	internal static void SetIntField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jint val)
 	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), val);
+		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (int)val);
 	}
 
-	internal static void SetLongField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID, long val)
+	internal static void SetLongField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jlong val)
 	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), val);
+		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (long)val);
 	}
 
-	internal static void SetFloatField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID, float val)
+	internal static void SetFloatField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jfloat val)
 	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), val);
+		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (float)val);
 	}
 
-	internal static void SetDoubleField(JNIEnv* pEnv, IntPtr obj, IntPtr fieldID, double val)
+	internal static void SetDoubleField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jdouble val)
 	{
-		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), val);
+		SetFieldValue(fieldID, pEnv->UnwrapRef(obj), (double)val);
 	}
 
-	internal static IntPtr GetStaticMethodID(JNIEnv* pEnv, IntPtr clazz, byte* name, byte* sig)
+	internal static jmethodID GetStaticMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
 	{
 		return FindMethodID(pEnv, clazz, name, sig, true);
 	}
 
-	internal static IntPtr CallStaticObjectMethodA(JNIEnv* pEnv, IntPtr clazz, IntPtr methodID, jvalue *args)
+	internal static jobject CallStaticObjectMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 	{
 		return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false));
 	}
 
-	internal static sbyte CallStaticBooleanMethodA(JNIEnv* pEnv, IntPtr clazz, IntPtr methodID, jvalue *args)
+	internal static jboolean CallStaticBooleanMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 	{
 		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
 		if(o != null)
@@ -1564,215 +1567,215 @@ unsafe struct JNIEnv
 		return JNI_FALSE;
 	}
 
-	internal static sbyte CallStaticByteMethodA(JNIEnv* pEnv, IntPtr clazz, IntPtr methodID, jvalue *args)
+	internal static jbyte CallStaticByteMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 	{
 		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
 		if(o != null)
 		{
-			return (sbyte)o;
+			return (jbyte)(sbyte)o;
 		}
 		return 0;
 	}
 
-	internal static short CallStaticCharMethodA(JNIEnv* pEnv, IntPtr clazz, IntPtr methodID, jvalue *args)
+	internal static jchar CallStaticCharMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 	{
 		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
 		if(o != null)
 		{
-			return (short)(char)o;
+			return (jchar)(char)o;
 		}
 		return 0;
 	}
 
-	internal static short CallStaticShortMethodA(JNIEnv* pEnv, IntPtr clazz, IntPtr methodID, jvalue *args)
+	internal static jshort CallStaticShortMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 	{
 		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
 		if(o != null)
 		{
-			return (short)o;
+			return (jshort)(short)o;
 		}
 		return 0;
 	}
 
-	internal static int CallStaticIntMethodA(JNIEnv* pEnv, IntPtr clazz, IntPtr methodID, jvalue *args)
+	internal static jint CallStaticIntMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 	{
 		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
 		if(o != null)
 		{
-			return (int)o;
+			return (jint)(int)o;
 		}
 		return 0;
 	}
 
-	internal static long CallStaticLongMethodA(JNIEnv* pEnv, IntPtr clazz, IntPtr methodID, jvalue *args)
+	internal static jlong CallStaticLongMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 	{
 		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
 		if(o != null)
 		{
-			return (long)o;
+			return (jlong)(long)o;
 		}
 		return 0;
 	}
 
-	internal static float CallStaticFloatMethodA(JNIEnv* pEnv, IntPtr clazz, IntPtr methodID, jvalue *args)
+	internal static jfloat CallStaticFloatMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 	{
 		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
 		if(o != null)
 		{
-			return (float)o;
+			return (jfloat)(float)o;
 		}
 		return 0;
 	}
 
-	internal static double CallStaticDoubleMethodA(JNIEnv* pEnv, IntPtr clazz, IntPtr methodID, jvalue *args)
+	internal static jdouble CallStaticDoubleMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 	{
 		object o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
 		if(o != null)
 		{
-			return (double)o;
+			return (jdouble)(double)o;
 		}
 		return 0;
 	}
 
-	internal static void CallStaticVoidMethodA(JNIEnv* pEnv, IntPtr cls, IntPtr methodID, jvalue * args)
+	internal static void CallStaticVoidMethodA(JNIEnv* pEnv, jclass cls, jmethodID methodID, jvalue * args)
 	{
 		InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
 	}
 
-	internal static IntPtr GetStaticFieldID(JNIEnv* pEnv, IntPtr clazz, byte* name, byte* sig)
+	internal static jfieldID GetStaticFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
 	{
 		return FindFieldID(pEnv, clazz, name, sig, true);
 	}
 
-	internal static IntPtr GetStaticObjectField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID)
+	internal static jobject GetStaticObjectField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
 	{
 		return pEnv->MakeLocalRef(GetFieldValue(fieldID, null));
 	}
 
-	internal static sbyte GetStaticBooleanField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID)
+	internal static jboolean GetStaticBooleanField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
 	{
 		return ((bool)GetFieldValue(fieldID, null)) ? JNI_TRUE : JNI_FALSE;
 	}
 
-	internal static sbyte GetStaticByteField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID)
+	internal static jbyte GetStaticByteField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
 	{
-		return (sbyte)GetFieldValue(fieldID, null);
+		return (jbyte)(sbyte)GetFieldValue(fieldID, null);
 	}
 
-	internal static short GetStaticCharField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID)
+	internal static jchar GetStaticCharField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
 	{
-		return (short)(char)GetFieldValue(fieldID, null);
+		return (jchar)(char)GetFieldValue(fieldID, null);
 	}
 
-	internal static short GetStaticShortField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID)
+	internal static jshort GetStaticShortField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
 	{
-		return (short)GetFieldValue(fieldID, null);
+		return (jshort)(short)GetFieldValue(fieldID, null);
 	}
 
-	internal static int GetStaticIntField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID)
+	internal static jint GetStaticIntField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
 	{
-		return (int)GetFieldValue(fieldID, null);
+		return (jint)(int)GetFieldValue(fieldID, null);
 	}
 
-	internal static long GetStaticLongField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID)
+	internal static jlong GetStaticLongField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
 	{
-		return (long)GetFieldValue(fieldID, null);
+		return (jlong)(long)GetFieldValue(fieldID, null);
 	}
 
-	internal static float GetStaticFloatField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID)
+	internal static jfloat GetStaticFloatField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
 	{
-		return (float)GetFieldValue(fieldID, null);
+		return (jfloat)(float)GetFieldValue(fieldID, null);
 	}
 
-	internal static double GetStaticDoubleField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID)
+	internal static jdouble GetStaticDoubleField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
 	{
-		return (double)GetFieldValue(fieldID, null);
+		return (jdouble)(double)GetFieldValue(fieldID, null);
 	}
 
-	internal static void SetStaticObjectField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID, IntPtr val)
+	internal static void SetStaticObjectField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jobject val)
 	{
 		SetFieldValue(fieldID, null, pEnv->UnwrapRef(val));
 	}
 
-	internal static void SetStaticBooleanField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID, sbyte val)
+	internal static void SetStaticBooleanField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jboolean val)
 	{
 		SetFieldValue(fieldID, null, val != JNI_FALSE);
 	}
 
-	internal static void SetStaticByteField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID, sbyte val)
+	internal static void SetStaticByteField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jbyte val)
 	{
-		SetFieldValue(fieldID, null, val);
+		SetFieldValue(fieldID, null, (sbyte)val);
 	}
 
-	internal static void SetStaticCharField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID, short val)
+	internal static void SetStaticCharField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jchar val)
 	{
 		SetFieldValue(fieldID, null, (char)val);
 	}
 
-	internal static void SetStaticShortField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID, short val)
+	internal static void SetStaticShortField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jshort val)
 	{
-		SetFieldValue(fieldID, null, val);
+		SetFieldValue(fieldID, null, (short)val);
 	}
 
-	internal static void SetStaticIntField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID, int val)
+	internal static void SetStaticIntField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jint val)
 	{
-		SetFieldValue(fieldID, null, val);
+		SetFieldValue(fieldID, null, (int)val);
 	}
 
-	internal static void SetStaticLongField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID, long val)
+	internal static void SetStaticLongField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jlong val)
 	{
-		SetFieldValue(fieldID, null, val);
+		SetFieldValue(fieldID, null, (long)val);
 	}
 
-	internal static void SetStaticFloatField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID, float val)
+	internal static void SetStaticFloatField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jfloat val)
 	{
-		SetFieldValue(fieldID, null, val);
+		SetFieldValue(fieldID, null, (float)val);
 	}
 
-	internal static void SetStaticDoubleField(JNIEnv* pEnv, IntPtr clazz, IntPtr fieldID, double val)
+	internal static void SetStaticDoubleField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jdouble val)
 	{
-		SetFieldValue(fieldID, null, val);
+		SetFieldValue(fieldID, null, (double)val);
 	}
 
-	internal static IntPtr NewString(JNIEnv* pEnv, char* unicode, int len)
+	internal static jstring NewString(JNIEnv* pEnv, jchar* unicode, int len)
 	{
-		return pEnv->MakeLocalRef(new String(unicode, 0, len));
+		return pEnv->MakeLocalRef(new String((char*)unicode, 0, len));
 	}
 
-	internal static int GetStringLength(JNIEnv* pEnv, IntPtr str)
+	internal static jint GetStringLength(JNIEnv* pEnv, jstring str)
 	{
 		return ((string)pEnv->UnwrapRef(str)).Length;
 	}
 
-	internal static IntPtr GetStringChars(JNIEnv* pEnv, IntPtr str, IntPtr isCopy)
+	internal static jchar* GetStringChars(JNIEnv* pEnv, jstring str, jboolean* isCopy)
 	{
 		string s = (string)pEnv->UnwrapRef(str);
-		if(isCopy != IntPtr.Zero)
+		if(isCopy != null)
 		{
-			*((sbyte*)(void*)isCopy) = JNI_TRUE;
+			*isCopy = JNI_TRUE;
 		}
-		return Marshal.StringToHGlobalUni(s);
+		return (jchar*)(void*)Marshal.StringToHGlobalUni(s);
 	}
 
-	internal static void ReleaseStringChars(JNIEnv* pEnv, IntPtr str, IntPtr chars)
+	internal static void ReleaseStringChars(JNIEnv* pEnv, jstring str, jchar* chars)
 	{
-		Marshal.FreeHGlobal(chars);
+		Marshal.FreeHGlobal((IntPtr)(void*)chars);
 	}
 
-	internal static IntPtr NewStringUTF(JNIEnv* pEnv, IntPtr psz)
+	internal static jobject NewStringUTF(JNIEnv* pEnv, byte* psz)
 	{
-		return pEnv->MakeLocalRef(StringFromUTF8((byte*)(void*)psz));
+		return pEnv->MakeLocalRef(StringFromUTF8(psz));
 	}
 
-	internal static int GetStringUTFLength(JNIEnv* pEnv, IntPtr str)
+	internal static jint GetStringUTFLength(JNIEnv* pEnv, jstring str)
 	{
 		return StringUTF8Length((string)pEnv->UnwrapRef(str));
 	}
 
-	internal static IntPtr GetStringUTFChars(JNIEnv* pEnv, IntPtr str, IntPtr isCopy)
+	internal static byte* GetStringUTFChars(JNIEnv* pEnv, jstring str, jboolean* isCopy)
 	{
 		string s = (string)pEnv->UnwrapRef(str);
-		byte* buf = (byte*)Marshal.AllocHGlobal(StringUTF8Length(s) + 1);
+		byte* buf = (byte*)JniMem.Alloc(StringUTF8Length(s) + 1);
 		int j = 0;
 		for(int i = 0; i < s.Length; i++)
 		{
@@ -1794,24 +1797,24 @@ unsafe struct JNIEnv
 			}
 		}
 		buf[j] = 0;
-		if(isCopy != IntPtr.Zero)
+		if(isCopy != null)
 		{
-			*((sbyte*)(void*)isCopy) = JNI_TRUE;
+			*isCopy = JNI_TRUE;
 		}
-		return (IntPtr)(void*)buf;
+		return buf;
 	}
 
-	internal static void ReleaseStringUTFChars(JNIEnv* pEnv, IntPtr str, IntPtr chars)
+	internal static void ReleaseStringUTFChars(JNIEnv* pEnv, jstring str, byte* chars)
 	{
-		Marshal.FreeHGlobal(chars);
+		JniMem.Free((IntPtr)(void*)chars);
 	}
 
-	internal static int GetArrayLength(JNIEnv* pEnv, IntPtr array)
+	internal static jsize GetArrayLength(JNIEnv* pEnv, jarray array)
 	{
 		return ((Array)pEnv->UnwrapRef(array)).Length;
 	}
 
-	internal static IntPtr NewObjectArray(JNIEnv* pEnv, int len, IntPtr clazz, IntPtr init)
+	internal static jobject NewObjectArray(JNIEnv* pEnv, jsize len, jclass clazz, jobject init)
 	{
 		// TODO if we want to support (non-primitive) value types we can't use the object[] cast
 		object[] array = (object[])Array.CreateInstance(NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz)).TypeAsArrayType, len);
@@ -1826,7 +1829,7 @@ unsafe struct JNIEnv
 		return pEnv->MakeLocalRef(array);
 	}
 
-	internal static IntPtr GetObjectArrayElement(JNIEnv* pEnv, IntPtr array, int index)
+	internal static jobject GetObjectArrayElement(JNIEnv* pEnv, jarray array, jsize index)
 	{
 		try
 		{
@@ -1840,7 +1843,7 @@ unsafe struct JNIEnv
 		}
 	}
 
-	internal static void SetObjectArrayElement(JNIEnv* pEnv, IntPtr array, int index, IntPtr val)
+	internal static void SetObjectArrayElement(JNIEnv* pEnv, jarray array, jsize index, jobject val)
 	{
 		try
 		{
@@ -1853,259 +1856,255 @@ unsafe struct JNIEnv
 		}
 	}
 
-	internal static IntPtr NewBooleanArray(JNIEnv* pEnv, int len)
+	internal static jbooleanArray NewBooleanArray(JNIEnv* pEnv, jsize len)
 	{
 		return pEnv->MakeLocalRef(new bool[len]);
 	}
 
-	internal static IntPtr NewByteArray(JNIEnv* pEnv, int len)
+	internal static jbyteArray NewByteArray(JNIEnv* pEnv, jsize len)
 	{
 		return pEnv->MakeLocalRef(new sbyte[len]);
 	}
 
-	internal static IntPtr NewCharArray(JNIEnv* pEnv, int len)
+	internal static jcharArray NewCharArray(JNIEnv* pEnv, jsize len)
 	{
 		return pEnv->MakeLocalRef(new char[len]);
 	}
 
-	internal static IntPtr NewShortArray(JNIEnv* pEnv, int len)
+	internal static jshortArray NewShortArray(JNIEnv* pEnv, jsize len)
 	{
 		return pEnv->MakeLocalRef(new short[len]);
 	}
 
-	internal static IntPtr NewIntArray(JNIEnv* pEnv, int len)
+	internal static jintArray NewIntArray(JNIEnv* pEnv, jsize len)
 	{
 		return pEnv->MakeLocalRef(new int[len]);
 	}
 
-	internal static IntPtr NewLongArray(JNIEnv* pEnv, int len)
+	internal static jlongArray NewLongArray(JNIEnv* pEnv, jsize len)
 	{
 		return pEnv->MakeLocalRef(new long[len]);
 	}
 
-	internal static IntPtr NewFloatArray(JNIEnv* pEnv, int len)
+	internal static jfloatArray NewFloatArray(JNIEnv* pEnv, jsize len)
 	{
 		return pEnv->MakeLocalRef(new float[len]);
 	}
 
-	internal static IntPtr NewDoubleArray(JNIEnv* pEnv, int len)
+	internal static jdoubleArray NewDoubleArray(JNIEnv* pEnv, jsize len)
 	{
 		return pEnv->MakeLocalRef(new double[len]);
 	}
 
-	internal static IntPtr GetBooleanArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
+	internal static jboolean* GetBooleanArrayElements(JNIEnv* pEnv, jbooleanArray array, jboolean* isCopy)
 	{
 		bool[] b = (bool[])pEnv->UnwrapRef(array);
-		IntPtr buf = Marshal.AllocHGlobal(b.Length * 1);
-		sbyte* p = (sbyte*)(void*)buf;
+		jboolean* p = (jboolean*)(void*)JniMem.Alloc(b.Length * 1);
 		for(int i = 0; i < b.Length; i++)
 		{
-			*p++ = b[i] ? JNI_TRUE : JNI_FALSE;
+			p[i] = b[i] ? JNI_TRUE : JNI_FALSE;
 		}
-		if(isCopy != IntPtr.Zero)
+		if(isCopy != null)
 		{
-			*((sbyte*)(void*)isCopy) = JNI_TRUE;
+			*isCopy = JNI_TRUE;
 		}
-		return buf;
+		return p;
 	}
 
-	internal static IntPtr GetByteArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
+	internal static jbyte* GetByteArrayElements(JNIEnv* pEnv, jbyteArray array, jboolean* isCopy)
 	{
 		sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
-		IntPtr buf = Marshal.AllocHGlobal(b.Length * 1);
-		sbyte* p = (sbyte*)(void*)buf;
+		jbyte* p = (jbyte*)(void*)JniMem.Alloc(b.Length * 1);
 		for(int i = 0; i < b.Length; i++)
 		{
-			*p++ = b[i];
+			p[i] = (jbyte)b[i];
 		}
-		if(isCopy != IntPtr.Zero)
+		if(isCopy != null)
 		{
-			*((sbyte*)(void*)isCopy) = JNI_TRUE;
+			*isCopy = JNI_TRUE;
 		}
-		return buf;
+		return p;
 	}
 
-	internal static IntPtr GetCharArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
+	internal static jchar* GetCharArrayElements(JNIEnv* pEnv, jcharArray array, jboolean* isCopy)
 	{
 		char[] b = (char[])pEnv->UnwrapRef(array);
-		IntPtr buf = Marshal.AllocHGlobal(b.Length * 2);
+		IntPtr buf = JniMem.Alloc(b.Length * 2);
 		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != IntPtr.Zero)
+		if(isCopy != null)
 		{
-			*((sbyte*)(void*)isCopy) = JNI_TRUE;
+			*isCopy = JNI_TRUE;
 		}
-		return buf;
+		return (jchar*)(void*)buf;
 	}
 
-	internal static IntPtr GetShortArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
+	internal static jshort* GetShortArrayElements(JNIEnv* pEnv, jshortArray array, jboolean* isCopy)
 	{
 		short[] b = (short[])pEnv->UnwrapRef(array);
-		IntPtr buf = Marshal.AllocHGlobal(b.Length * 2);
+		IntPtr buf = JniMem.Alloc(b.Length * 2);
 		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != IntPtr.Zero)
+		if(isCopy != null)
 		{
-			*((sbyte*)(void*)isCopy) = JNI_TRUE;
+			*isCopy = JNI_TRUE;
 		}
-		return buf;
+		return (jshort*)(void*)buf;
 	}
 
-	internal static IntPtr GetIntArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
+	internal static jint* GetIntArrayElements(JNIEnv* pEnv, jintArray array, jboolean* isCopy)
 	{
 		int[] b = (int[])pEnv->UnwrapRef(array);
-		IntPtr buf = Marshal.AllocHGlobal(b.Length * 4);
+		IntPtr buf = JniMem.Alloc(b.Length * 4);
 		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != IntPtr.Zero)
+		if(isCopy != null)
 		{
-			*((sbyte*)(void*)isCopy) = JNI_TRUE;
+			*isCopy = JNI_TRUE;
 		}
-		return buf;
+		return (jint*)(void*)buf;
 	}
 
-	internal static IntPtr GetLongArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
+	internal static jlong* GetLongArrayElements(JNIEnv* pEnv, jlongArray array, jboolean* isCopy)
 	{
 		long[] b = (long[])pEnv->UnwrapRef(array);
-		IntPtr buf = Marshal.AllocHGlobal(b.Length * 8);
+		IntPtr buf = JniMem.Alloc(b.Length * 8);
 		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != IntPtr.Zero)
+		if(isCopy != null)
 		{
-			*((sbyte*)(void*)isCopy) = JNI_TRUE;
+			*isCopy = JNI_TRUE;
 		}
-		return buf;
+		return (jlong*)(void*)buf;
 	}
 
-	internal static IntPtr GetFloatArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
+	internal static jfloat* GetFloatArrayElements(JNIEnv* pEnv, jfloatArray array, jboolean* isCopy)
 	{
 		float[] b = (float[])pEnv->UnwrapRef(array);
-		IntPtr buf = Marshal.AllocHGlobal(b.Length * 4);
+		IntPtr buf = JniMem.Alloc(b.Length * 4);
 		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != IntPtr.Zero)
+		if(isCopy != null)
 		{
-			*((sbyte*)(void*)isCopy) = JNI_TRUE;
+			*isCopy = JNI_TRUE;
 		}
-		return buf;
+		return (jfloat*)(void*)buf;
 	}
 
-	internal static IntPtr GetDoubleArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
+	internal static jdouble* GetDoubleArrayElements(JNIEnv* pEnv, jdoubleArray array, jboolean* isCopy)
 	{
 		double[] b = (double[])pEnv->UnwrapRef(array);
-		IntPtr buf = Marshal.AllocHGlobal(b.Length * 8);
+		IntPtr buf = JniMem.Alloc(b.Length * 8);
 		Marshal.Copy(b, 0, buf, b.Length);
-		if(isCopy != IntPtr.Zero)
+		if(isCopy != null)
 		{
-			*((sbyte*)(void*)isCopy) = JNI_TRUE;
+			*isCopy = JNI_TRUE;
 		}
-		return buf;
+		return (jdouble*)(void*)buf;
 	}
 
-	internal static void ReleaseBooleanArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr elems, int mode)
+	internal static void ReleaseBooleanArrayElements(JNIEnv* pEnv, jbooleanArray array, jboolean* elems, jint mode)
 	{
 		if(mode == 0 || mode == JNI_COMMIT)
 		{
 			bool[] b = (bool[])pEnv->UnwrapRef(array);
-			sbyte* p = (sbyte*)(void*)elems;
 			for(int i = 0; i < b.Length; i++)
 			{
-				b[i] = *p++ != JNI_FALSE;
+				b[i] = elems[i] != JNI_FALSE;
 			}
 		}
 		if(mode == 0 || mode == JNI_ABORT)
 		{
-			Marshal.FreeHGlobal(elems);
+			JniMem.Free((IntPtr)(void*)elems);
 		}
 	}
 
-	internal static void ReleaseByteArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr elems, int mode)
+	internal static void ReleaseByteArrayElements(JNIEnv* pEnv, jbyteArray array, jbyte* elems, jint mode)
 	{
 		if(mode == 0 || mode == JNI_COMMIT)
 		{
 			sbyte[] b = (sbyte[])pEnv->UnwrapRef(array);
-			sbyte* p = (sbyte*)(void*)elems;
 			for(int i = 0; i < b.Length; i++)
 			{
-				b[i] = *p++;
+				b[i] = (sbyte)elems[i];
 			}
 		}
 		if(mode == 0 || mode == JNI_ABORT)
 		{
-			Marshal.FreeHGlobal(elems);
+			JniMem.Free((IntPtr)(void*)elems);
 		}
 	}
 
-	internal static void ReleaseCharArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr elems, int mode)
+	internal static void ReleaseCharArrayElements(JNIEnv* pEnv, jcharArray array, jchar* elems, jint mode)
 	{
 		if(mode == 0 || mode == JNI_COMMIT)
 		{
 			char[] b = (char[])pEnv->UnwrapRef(array);
-			Marshal.Copy(elems, b, 0, b.Length);
+			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
 		}
 		if(mode == 0 || mode == JNI_ABORT)
 		{
-			Marshal.FreeHGlobal(elems);
+			JniMem.Free((IntPtr)(void*)elems);
 		}
 	}
 
-	internal static void ReleaseShortArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr elems, int mode)
+	internal static void ReleaseShortArrayElements(JNIEnv* pEnv, jshortArray array, jshort* elems, jint mode)
 	{
 		if(mode == 0 || mode == JNI_COMMIT)
 		{
 			short[] b = (short[])pEnv->UnwrapRef(array);
-			Marshal.Copy(elems, b, 0, b.Length);
+			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
 		}
 		if(mode == 0 || mode == JNI_ABORT)
 		{
-			Marshal.FreeHGlobal(elems);
+			JniMem.Free((IntPtr)(void*)elems);
 		}
 	}
 
-	internal static void ReleaseIntArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr elems, int mode)
+	internal static void ReleaseIntArrayElements(JNIEnv* pEnv, jintArray array, jint* elems, jint mode)
 	{
 		if(mode == 0 || mode == JNI_COMMIT)
 		{
 			int[] b = (int[])pEnv->UnwrapRef(array);
-			Marshal.Copy(elems, b, 0, b.Length);
+			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
 		}
 		if(mode == 0 || mode == JNI_ABORT)
 		{
-			Marshal.FreeHGlobal(elems);
+			JniMem.Free((IntPtr)(void*)elems);
 		}
 	}
 
-	internal static void ReleaseLongArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr elems, int mode)
+	internal static void ReleaseLongArrayElements(JNIEnv* pEnv, jlongArray array, jlong* elems, jint mode)
 	{
 		if(mode == 0 || mode == JNI_COMMIT)
 		{
 			long[] b = (long[])pEnv->UnwrapRef(array);
-			Marshal.Copy(elems, b, 0, b.Length);
+			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
 		}
 		if(mode == 0 || mode == JNI_ABORT)
 		{
-			Marshal.FreeHGlobal(elems);
+			JniMem.Free((IntPtr)(void*)elems);
 		}
 	}
 
-	internal static void ReleaseFloatArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr elems, int mode)
+	internal static void ReleaseFloatArrayElements(JNIEnv* pEnv, jfloatArray array, jfloat* elems, jint mode)
 	{
 		if(mode == 0 || mode == JNI_COMMIT)
 		{
 			float[] b = (float[])pEnv->UnwrapRef(array);
-			Marshal.Copy(elems, b, 0, b.Length);
+			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
 		}
 		if(mode == 0 || mode == JNI_ABORT)
 		{
-			Marshal.FreeHGlobal(elems);
+			JniMem.Free((IntPtr)(void*)elems);
 		}
 	}
 
-	internal static void ReleaseDoubleArrayElements(JNIEnv* pEnv, IntPtr array, IntPtr elems, int mode)
+	internal static void ReleaseDoubleArrayElements(JNIEnv* pEnv, jdoubleArray array, jdouble* elems, jint mode)
 	{
 		if(mode == 0 || mode == JNI_COMMIT)
 		{
 			double[] b = (double[])pEnv->UnwrapRef(array);
-			Marshal.Copy(elems, b, 0, b.Length);
+			Marshal.Copy((IntPtr)(void*)elems, b, 0, b.Length);
 		}
 		if(mode == 0 || mode == JNI_ABORT)
 		{
-			Marshal.FreeHGlobal(elems);
+			JniMem.Free((IntPtr)(void*)elems);
 		}
 	}
 
@@ -2222,7 +2221,7 @@ unsafe struct JNIEnv
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	internal struct JNINativeMethod
+		internal struct JNINativeMethod
 	{
 		public byte* name;
 		public byte* signature;
@@ -2411,7 +2410,7 @@ unsafe struct JNIEnv
 		GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
 		try
 		{
-			IntPtr hglobal = Marshal.AllocHGlobal(len);
+			IntPtr hglobal = JniMem.Alloc(len);
 			byte* pdst = (byte*)(void*)hglobal;
 			byte* psrc = (byte*)(void*)h.AddrOfPinnedObject();
 			// TODO isn't there a managed memcpy?
@@ -2455,7 +2454,7 @@ unsafe struct JNIEnv
 		}
 		if(mode == 0 || mode == JNI_ABORT)
 		{
-			Marshal.FreeHGlobal(carray);
+			JniMem.Free(carray);
 		}
 	}
 
@@ -2479,6 +2478,50 @@ unsafe struct JNIEnv
 		Marshal.FreeHGlobal(cstring);
 	}
 
+	internal static jweak NewWeakGlobalRef(JNIEnv* pEnv, jobject obj)
+	{
+		object o = pEnv->UnwrapRef(obj);
+		if(o == null)
+		{
+			return IntPtr.Zero;
+		}
+		lock(GlobalRefs.weakRefLock)
+		{
+			for(int i = 0; i < GlobalRefs.weakRefs.Length; i++)
+			{
+				if(!GlobalRefs.weakRefs[i].IsAllocated)
+				{
+					GlobalRefs.weakRefs[i] = GCHandle.Alloc(o, GCHandleType.WeakTrackResurrection);
+					return (IntPtr)(- (i | (1 << 30)));
+				}
+			}
+			int len = GlobalRefs.weakRefs.Length;
+			GCHandle[] tmp = new GCHandle[len * 2];
+			Array.Copy(GlobalRefs.weakRefs, 0, tmp, 0, len);
+			tmp[len] = GCHandle.Alloc(o, GCHandleType.WeakTrackResurrection);
+			GlobalRefs.weakRefs = tmp;
+			return (IntPtr)(- (len | (1 << 30)));
+		}
+	}
+
+	internal static void DeleteWeakGlobalRef(JNIEnv* pEnv, jweak obj)
+	{
+		int i = obj.ToInt32();
+		if(i < 0)
+		{
+			i = -i;
+			i -= (1 << 30);
+			lock(GlobalRefs.weakRefLock)
+			{
+				GlobalRefs.weakRefs[i].Free();
+			}
+		}
+		if(i > 0)
+		{
+			Debug.Assert(false, "local ref passed to DeleteWeakGlobalRef");
+		}
+	}
+
 	internal static sbyte ExceptionCheck(JNIEnv* pEnv)
 	{
 		return pEnv->UnwrapRef(pEnv->pendingException) != null ? JNI_TRUE : JNI_FALSE;
@@ -2495,11 +2538,24 @@ unsafe struct JNIEnv
 		{
 			return IntPtr.Zero;
 		}
-		LocalRefListEntry[] localRefs = GetLocalRefs();
-		int i = localRefs[localRefSlot].MakeLocalRef(obj);
-		if(i >= 0)
+		object[][] localRefs = GetLocalRefs();
+		object[] active = localRefs[localRefSlot];
+		for(int i = 0; i < active.Length; i++)
 		{
-			return (IntPtr)((localRefSlot << LocalRefListEntry.LOCAL_REF_SHIFT) + i);
+			if(active[i] == null)
+			{
+				active[i] = obj;
+				return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
+			}
+		}
+		if(active.Length < LOCAL_REF_BUCKET_SIZE)
+		{
+			int i = active.Length;
+			object[] tmp = new object[i * 2];
+			Array.Copy(active, 0, tmp, 0, i);
+			active = localRefs[localRefSlot] = tmp;
+			active[i] = obj;
+			return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + i);
 		}
 		// TODO consider allocating a new slot (if we do this, the code in
 		// PushLocalFrame/PopLocalFrame (and Leave) must be fixed to take this into account)
@@ -2512,14 +2568,46 @@ unsafe struct JNIEnv
 		int i = o.ToInt32();
 		if(i > 0)
 		{
-			LocalRefListEntry[] localRefs = GetLocalRefs();
-			return localRefs[i >> LocalRefListEntry.LOCAL_REF_SHIFT].UnwrapLocalRef(i & LocalRefListEntry.LOCAL_REF_MASK);
+			object[][] localRefs = GetLocalRefs();
+			return localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK];
 		}
 		if(i < 0)
 		{
-			return GlobalRefs.globalRefs[(-i) - 1];
+			i = -i;
+			if((i & (1 << 30)) != 0)
+			{
+				lock(GlobalRefs.weakRefLock)
+				{
+					return GlobalRefs.weakRefs[i - (1 << 30)].Target;
+				}
+			}
+			else
+			{
+				lock(GlobalRefs.globalRefs)
+				{
+					return GlobalRefs.globalRefs[i - 1];
+				}
+			}
 		}
 		return null;
+	}
+}
+
+class JniMem
+{
+	internal static IntPtr Alloc(int cb)
+	{
+		// MONOBUG Marshal.AllocHGlobal returns a null pointer if we try to allocate zero bytes
+		if(cb == 0)
+		{
+			cb = 1;
+		}
+		return Marshal.AllocHGlobal(cb);
+	}
+
+	internal static void Free(IntPtr p)
+	{
+		Marshal.FreeHGlobal(p);
 	}
 }
 
@@ -2529,59 +2617,51 @@ unsafe class TlsHack
 	internal static JNIEnv* pJNIEnv;
 }
 
-[StructLayout(LayoutKind.Sequential)]
 public unsafe struct JniFrame
 {
 	private JNIEnv* pJNIEnv;
-	private JniFrame* pPrevFrame;
-	private LocalRefCache fastlocalrefs;
-	internal LocalRefListEntry[] localRefs;
 	private RuntimeMethodHandle method;
-	// HACK since this isn't a blittable type and C# doesn't allow us to turn the this pointer into a JniFrame*, we need
-	// this hack to turn the address of a field into a pointer to the struct (it turns out that on the 1.1 CLR the address
-	// of the first field is not equal to the this pointer [for this particular struct])
-	private static readonly int jniFramePointerAdjustment = (int)new JNIEnv.Union().activeFrame->GetAddress();
-
-	private byte* GetAddress()
-	{
-		fixed(void* p = &pJNIEnv)
-		{
-			return (byte*)p;
-		}
-	}
+	private object[] quickLocals;
+	private int quickLocalIndex;
+	private int prevLocalRefSlot;
 
 	public IntPtr Enter(RuntimeMethodHandle method)
 	{
 		this.method = method;
 		pJNIEnv = TlsHack.pJNIEnv;
+		object[][] localRefs;
 		if(pJNIEnv == null)
 		{
 			// TODO when the thread dies, we're leaking the JNIEnv and the GCHandle
-			pJNIEnv = TlsHack.pJNIEnv = (JNIEnv*)Marshal.AllocHGlobal(sizeof(JNIEnv));
+			pJNIEnv = TlsHack.pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
 			pJNIEnv->vtable = VtableBuilder.vtable;
-			pJNIEnv->u.activeFrame = null;
-			localRefs = new LocalRefListEntry[32];
+			localRefs = new object[32][];
+			localRefs[0] = new object[JNIEnv.LOCAL_REF_BUCKET_SIZE];
+			// stuff something in the first entry to make sure we don't hand out a zero handle
+			// (a zero handle corresponds to a null reference)
+			localRefs[0][0] = "";
 			pJNIEnv->localRefs = GCHandle.Alloc(localRefs);
 			pJNIEnv->localRefSlot = 0;
 			pJNIEnv->pendingException = IntPtr.Zero;
 		}
 		else
 		{
-			localRefs = (LocalRefListEntry[])pJNIEnv->localRefs.Target;
+			localRefs = pJNIEnv->GetLocalRefs();
 		}
-		pPrevFrame = pJNIEnv->u.activeFrame;
-		pJNIEnv->u.pFrame = GetAddress() - jniFramePointerAdjustment;
+		prevLocalRefSlot = pJNIEnv->localRefSlot;
 		pJNIEnv->localRefSlot++;
 		if(pJNIEnv->localRefSlot >= localRefs.Length)
 		{
-			// TODO instead of bailing out, we should grow the array
-			JVM.CriticalFailure("JNI nesting too deep", null);
+			object[][] tmp = new object[localRefs.Length * 2][];
+			Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
+			pJNIEnv->localRefs.Target = localRefs = tmp;
 		}
-		fixed(void* p = &pPrevFrame)
+		if(localRefs[pJNIEnv->localRefSlot] == null)
 		{
-			// HACK we assume that the fastlocalrefs struct starts at &pPrevFrame + IntPtr.Size
-			localRefs[pJNIEnv->localRefSlot].u.pv = ((byte*)p) + IntPtr.Size;
+			localRefs[pJNIEnv->localRefSlot] = new object[32];
 		}
+		quickLocals = localRefs[pJNIEnv->localRefSlot];
+		quickLocalIndex = (pJNIEnv->localRefSlot << JNIEnv.LOCAL_REF_SHIFT);
 		return (IntPtr)(void*)pJNIEnv;
 	}
 
@@ -2589,11 +2669,15 @@ public unsafe struct JniFrame
 	{
 		Exception x = (Exception)pJNIEnv->UnwrapRef(pJNIEnv->pendingException);
 		pJNIEnv->pendingException = IntPtr.Zero;
-		pJNIEnv->u.activeFrame = pPrevFrame;
-		localRefs[pJNIEnv->localRefSlot].dynamic_list = null;
-		// TODO figure out if it is legal to Leave a JNI method while PushLocalFrame is active
-		// (i.e. without the corresponding PopLocalFrame)
-		pJNIEnv->localRefSlot--;
+		object[][] localRefs = pJNIEnv->GetLocalRefs();
+		while(pJNIEnv->localRefSlot != prevLocalRefSlot)
+		{
+			if(localRefs[pJNIEnv->localRefSlot] != null)
+			{
+				Array.Clear(localRefs[pJNIEnv->localRefSlot], 0, localRefs[pJNIEnv->localRefSlot].Length);
+			}
+			pJNIEnv->localRefSlot--;
+		}
 		if(x != null)
 		{
 			throw x;
@@ -2708,7 +2792,33 @@ public unsafe struct JniFrame
 
 	public IntPtr MakeLocalRef(object obj)
 	{
-		return pJNIEnv->MakeLocalRef(obj);
+		if(obj == null)
+		{
+			return IntPtr.Zero;
+		}
+		int i = quickLocalIndex & JNIEnv.LOCAL_REF_MASK;
+		if(i < quickLocals.Length)
+		{
+			quickLocals[i] = obj;
+			return (IntPtr)quickLocalIndex++;
+		}
+		else if(i < JNIEnv.LOCAL_REF_BUCKET_SIZE)
+		{
+			object[] tmp = new object[quickLocals.Length * 2];
+			Array.Copy(quickLocals, 0, tmp, 0, quickLocals.Length);
+			quickLocals = tmp;
+			object[][] localRefs = (object[][])pJNIEnv->localRefs.Target;
+			localRefs[pJNIEnv->localRefSlot] = quickLocals;
+			quickLocals[i] = obj;
+			return (IntPtr)quickLocalIndex++;
+		}
+		else
+		{
+			// this can't happen, because LOCAL_REF_BUCKET_SIZE is larger than the maximum number of object
+			// references that can be required by a native method call (256 arguments + a class reference)
+			JVM.CriticalFailure("JniFrame.MakeLocalRef cannot spill into next slot", null);
+			return IntPtr.Zero;
+		}
 	}
 
 	public object UnwrapLocalRef(IntPtr p)

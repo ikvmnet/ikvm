@@ -39,6 +39,9 @@ import cli.System.Diagnostics.ProcessStartInfo;
  */
 final class VMRuntime
 {
+    // HACK ikvm.exe sets this field to pass the properties set on the command line
+    private static cli.System.Collections.Hashtable props;
+
     /**
      * No instance is ever created.
      */
@@ -194,7 +197,6 @@ final class VMRuntime
     /**
      * Map a system-independent "short name" to the full file name, and append
      * it to the path.
-     * XXX This method is being replaced by System.mapLibraryName.
      *
      * @param pathname the path
      * @param libname the short version of the library name
@@ -206,14 +208,10 @@ final class VMRuntime
 	{
 	    return "lib" + libname + ".so";
 	}
-
-	// HACK this seems like a lame way of doing things, but in order to get Eclipse to work,
-	// we have append .dll to the libname here
-	if(!libname.toUpperCase().endsWith(".DLL"))
+	else
 	{
-	    libname += ".dll";
+	    return libname + ".dll";
 	}
-	return libname;
     }
 
     /**
@@ -411,20 +409,36 @@ final class VMRuntime
 	    classpath = ".";
 	}
 	p.setProperty("java.class.path", classpath);
-	String libraryPath = ".";
+	String libraryPath = null;
 	if(cli.System.Environment.get_OSVersion().ToString().indexOf("Unix") >= 0)
 	{
-	    String ldLibraryPath = cli.System.Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
-	    if (ldLibraryPath != null)
+	    libraryPath = cli.System.Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
+	}
+	else
+	{
+	    try
 	    {
-		libraryPath = ldLibraryPath;
+		libraryPath = new cli.System.IO.FileInfo(cli.System.Reflection.Assembly.GetEntryAssembly().get_Location()).get_DirectoryName();
+	    }
+	    catch(Throwable t)
+	    {
+		// ignore
+	    }
+	    if(libraryPath == null)
+	    {
+		libraryPath = ".";
 	    }
 	    else
 	    {
-		libraryPath = "";
+		libraryPath += cli.System.IO.Path.PathSeparator + ".";
 	    }
+	    libraryPath += cli.System.IO.Path.PathSeparator + cli.System.Environment.get_SystemDirectory() +
+		cli.System.IO.Path.PathSeparator + cli.System.Environment.GetEnvironmentVariable("PATH");
 	}
-	p.setProperty("java.library.path", libraryPath);
+	if(libraryPath != null)
+	{
+	    p.setProperty("java.library.path", libraryPath);
+	}
 	p.setProperty("java.io.tmpdir", cli.System.IO.Path.GetTempPath());
 	p.setProperty("java.compiler", "");
 	p.setProperty("java.ext.dirs", "");
@@ -477,6 +491,17 @@ final class VMRuntime
 	    {
 		p.setProperty(key.substring(5), appSettings.get_Item(key));
 	    }
+	}
+	// HACK set the properties that were specified on the ikvm.exe command line
+	if(props != null)
+	{
+	    cli.System.Collections.IEnumerator entries = ((cli.System.Collections.IEnumerable)props).GetEnumerator();
+	    while(entries.MoveNext())
+	    {
+		cli.System.Collections.DictionaryEntry de = (cli.System.Collections.DictionaryEntry)entries.get_Current();
+		p.setProperty((String)de.get_Key(), (String)de.get_Value());
+	    }
+	    props = null;
 	}
     }
 

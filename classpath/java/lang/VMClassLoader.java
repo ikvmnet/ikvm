@@ -159,11 +159,11 @@ final class VMClassLoader
      */
     static Enumeration getResources(String name) throws IOException
     {
-	if(nestedGetResourcesHack.get() != null)
+	if(cli.System.Threading.Thread.GetData(nestedGetResourcesHack) != null)
 	{
 	    return gnu.java.util.EmptyEnumeration.getInstance();
 	}
-	nestedGetResourcesHack.set("");
+	cli.System.Threading.Thread.SetData(nestedGetResourcesHack, "");
 	try
 	{
 	    Assembly[] assemblies = findResourceAssemblies(name);
@@ -182,11 +182,11 @@ final class VMClassLoader
 	}
 	finally
 	{
-	    nestedGetResourcesHack.set(null);
+	    cli.System.Threading.Thread.SetData(nestedGetResourcesHack, null);
 	}
     }
 
-    private static ThreadLocal nestedGetResourcesHack = new ThreadLocal();
+    private static final cli.System.LocalDataStoreSlot nestedGetResourcesHack = cli.System.Threading.Thread.AllocateDataSlot();
 
     /**
      * Helper to get a package from the bootstrap class loader.  The default

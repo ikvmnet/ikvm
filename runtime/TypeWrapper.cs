@@ -2772,7 +2772,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 										}
 										else
 										{
-											JniBuilder.Generate(ilGenerator, wrapper, methods[i], typeBuilder, classFile, m, args);
+											JniBuilder.Generate(ilGenerator, wrapper, methods[i], typeBuilder, classFile, m, args, false);
 										}
 									}
 								}
@@ -2918,6 +2918,11 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			private static ModuleBuilder mod;
 			private static int count;
 
+			static JniProxyBuilder()
+			{
+				mod = ((AssemblyBuilder)ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder.Assembly).DefineDynamicModule("jniproxy", "jniproxy.dll");
+			}
+
 			private static string Cleanup(string n)
 			{
 				n = n.Replace('\\', '_');
@@ -2930,27 +2935,25 @@ sealed class DynamicTypeWrapper : TypeWrapper
 
 			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args)
 			{
-				if(mod == null)
-				{
-					mod = ((AssemblyBuilder)ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder.Assembly).DefineDynamicModule("jniproxy", "jniproxy.dll");
-				}
 				TypeBuilder tb = mod.DefineType("class" + (count++), TypeAttributes.Public | TypeAttributes.Class);
 				int instance = m.IsStatic ? 0 : 1;
-				Type[] argTypes = new Type[args.Length + instance];
+				Type[] argTypes = new Type[args.Length + instance + 1];
 				if(instance != 0)
 				{
 					argTypes[0] = wrapper.TypeAsParameterType;
 				}
-				for(int i = instance; i < argTypes.Length + instance; i++)
+				for(int i = instance; i < argTypes.Length - 1 + instance; i++)
 				{
 					argTypes[i] = args[i].TypeAsParameterType;
 				}
+				argTypes[argTypes.Length - 1] = typeof(RuntimeMethodHandle);
 				MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, mw.ReturnType.TypeAsParameterType, argTypes);
-				JniBuilder.Generate(mb.GetILGenerator(), wrapper, mw, tb, classFile, m, args);
-				for(int i = 0; i < argTypes.Length; i++)
+				JniBuilder.Generate(mb.GetILGenerator(), wrapper, mw, tb, classFile, m, args, true);
+				for(int i = 0; i < argTypes.Length - 1; i++)
 				{
 					ilGenerator.Emit(OpCodes.Ldarg, (short)i);
 				}
+				ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
 				ilGenerator.Emit(OpCodes.Call, mb);
 				ilGenerator.Emit(OpCodes.Ret);
 				Type type = tb.CreateType();
@@ -2974,7 +2977,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			private static readonly MethodInfo getClassFromType = typeof(NativeCode.java.lang.VMClass).GetMethod("getClassFromType");
 			private static readonly MethodInfo writeLine = typeof(Console).GetMethod("WriteLine", new Type[] { typeof(object) }, null);
 
-			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args)
+			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args, bool thruProxy)
 			{
 				FieldBuilder methodPtr = typeBuilder.DefineField("jniptr/" + m.Name + m.Signature, typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
 				LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
@@ -2983,7 +2986,14 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
 				Label oklabel = ilGenerator.DefineLabel();
 				ilGenerator.Emit(OpCodes.Brtrue, oklabel);
-				ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
+				if(thruProxy)
+				{
+					ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(args.Length + (mw.IsStatic ? 0 : 1)));
+				}
+				else
+				{
+					ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
+				}
 				ilGenerator.Emit(OpCodes.Ldstr, classFile.Name.Replace('.', '/'));
 				ilGenerator.Emit(OpCodes.Ldstr, m.Name);
 				ilGenerator.Emit(OpCodes.Ldstr, m.Signature.Replace('.', '/'));
@@ -2991,7 +3001,14 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				ilGenerator.Emit(OpCodes.Stsfld, methodPtr);
 				ilGenerator.MarkLabel(oklabel);
 				ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
-				ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
+				if(thruProxy)
+				{
+					ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(args.Length + (mw.IsStatic ? 0 : 1)));
+				}
+				else
+				{
+					ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
+				}
 				ilGenerator.Emit(OpCodes.Call, enterLocalRefStruct);
 				LocalBuilder jnienv = ilGenerator.DeclareLocal(typeof(IntPtr));
 				ilGenerator.Emit(OpCodes.Stloc, jnienv);
@@ -5088,20 +5105,12 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 			}
 
 			// special case for delegate constructors!
-			if(!type.IsAbstract && type.IsSubclassOf(typeof(Delegate)))
+			if(IsDelegate)
 			{
-				// HACK non-public delegates do not get the special treatment (because they are likely to refer to
-				// non-public types in the arg list and they're not really useful anyway)
-				// NOTE we don't have to check in what assembly the type lives, because this is a DotNetTypeWrapper,
-				// we know that it is a different assembly.
-				if(IsVisible(type))
-				{
-					TypeWrapper iface = GetClassLoader().LoadClassByDottedName(this.Name + DelegateInterfaceSuffix);
-					Debug.Assert(iface is CompiledTypeWrapper);
-					iface.Finish();
-					AddMethod(new DelegateMethodWrapper(this, type, iface));
-					innerClasses = new TypeWrapper[] { iface };
-				}
+				TypeWrapper iface = InnerClasses[0];
+				Debug.Assert(iface is CompiledTypeWrapper);
+				iface.Finish();
+				AddMethod(new DelegateMethodWrapper(this, type, iface));
 			}
 
 			ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
@@ -5292,6 +5301,18 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		}
 	}
 
+	private bool IsDelegate
+	{
+		get
+		{
+			// HACK non-public delegates do not get the special treatment (because they are likely to refer to
+			// non-public types in the arg list and they're not really useful anyway)
+			// NOTE we don't have to check in what assembly the type lives, because this is a DotNetTypeWrapper,
+			// we know that it is a different assembly.
+			return !type.IsAbstract && type.IsSubclassOf(typeof(MulticastDelegate)) && IsVisible(type);
+		}
+	}
+
 	internal override TypeWrapper[] InnerClasses
 	{
 		get
@@ -5300,11 +5321,18 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 			{
 				if(innerClasses == null)
 				{
-					Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic);
-					innerClasses = new TypeWrapper[nestedTypes.Length];
-					for(int i = 0; i < nestedTypes.Length; i++)
+					if(IsDelegate)
 					{
-						innerClasses[i] = ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]);
+						innerClasses = new TypeWrapper[] { GetClassLoader().LoadClassByDottedName(Name + DelegateInterfaceSuffix) };
+					}
+					else
+					{
+						Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic);
+						innerClasses = new TypeWrapper[nestedTypes.Length];
+						for(int i = 0; i < nestedTypes.Length; i++)
+						{
+							innerClasses[i] = ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]);
+						}
 					}
 				}
 			}

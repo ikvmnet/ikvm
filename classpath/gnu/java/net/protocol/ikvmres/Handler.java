@@ -42,6 +42,8 @@ class IkvmresURLConnection extends URLConnection
 	doOutput = false;
     }
 
+    private static native String MangleResourceName(String name);
+
     public void connect() throws IOException
     {
 	if(!connected)
@@ -58,7 +60,7 @@ class IkvmresURLConnection extends URLConnection
 	    {
 		throw new IOException("assembly " + assembly + " not found");
 	    }
-	    Stream s = asm.GetManifestResourceStream("ikvm:" + resource);
+	    Stream s = asm.GetManifestResourceStream(MangleResourceName(resource));
 	    if(s == null)
 	    {
 		throw new IOException("resource " + resource + " not found in assembly " + assembly);
