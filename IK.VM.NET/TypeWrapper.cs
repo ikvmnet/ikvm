@@ -1569,6 +1569,8 @@ abstract class TypeWrapper
 		{
 			ilgen.Emit(OpCodes.Dup);
 			// TODO make sure we get the right "Cast" method and cache it
+			// NOTE for dynamic ghosts we don't end up here because DynamicTypeWrapper overrides this method,
+			// so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
 			ilgen.Emit(OpCodes.Call, TypeAsTBD.GetMethod("Cast"));
 			ilgen.Emit(OpCodes.Pop);
 		}
@@ -1609,6 +1611,8 @@ abstract class TypeWrapper
 		if(IsGhost)
 		{
 			// TODO make sure we get the right "IsInstance" method and cache it
+			// NOTE for dynamic ghosts we don't end up here because DynamicTypeWrapper overrides this method,
+			// so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
 			ilgen.Emit(OpCodes.Call, TypeAsTBD.GetMethod("IsInstance"));
 		}
 		else if(IsGhostArray)
@@ -1870,6 +1874,8 @@ class DynamicTypeWrapper : TypeWrapper
 	private DynamicImpl impl;
 	private TypeWrapper[] interfaces;
 	private FieldInfo ghostRefField;
+	private MethodBuilder ghostIsInstanceMethod;
+	private MethodBuilder ghostCastMethod;
 
 	internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader, Hashtable nativeMethods)
 		: base(f.Modifiers, f.Name, f.IsInterface ? null : f.GetSuperTypeWrapper(classLoader), classLoader)
@@ -2092,6 +2098,8 @@ class DynamicTypeWrapper : TypeWrapper
 						wrapper.ghostRefField = typeBuilder.DefineField("__ref", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
 						typeBuilderGhostInterface = typeBuilder.DefineNestedType("__Interface", TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.NestedPublic);
 						AttributeHelper.HideFromReflection(typeBuilderGhostInterface);
+						wrapper.ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object) });
+						wrapper.ghostCastMethod = typeBuilder.DefineMethod("Cast", MethodAttributes.Public | MethodAttributes.Static, typeBuilder, new Type[] { typeof(object) });
 					}
 					else
 					{
@@ -2387,8 +2395,8 @@ class DynamicTypeWrapper : TypeWrapper
 							ilgen.Emit(OpCodes.Ldobj, wrapper.TypeAsParameterType);			
 							ilgen.Emit(OpCodes.Ret);
 						}
-						// Add "IsInstance" method
-						mb = typeBuilder.DefineMethod("IsInstance", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object) });
+						// Implement the "IsInstance" method
+						mb = wrapper.ghostIsInstanceMethod;
 						AttributeHelper.HideFromReflection(mb);
 						ilgen = mb.GetILGenerator();
 						Label end = ilgen.DefineLabel();
@@ -2410,8 +2418,8 @@ class DynamicTypeWrapper : TypeWrapper
 						ilgen.Emit(OpCodes.Ceq);
 						ilgen.MarkLabel(end);
 						ilgen.Emit(OpCodes.Ret);
-						// Add "Cast" method
-						mb = typeBuilder.DefineMethod("Cast", MethodAttributes.Public | MethodAttributes.Static, wrapper.TypeAsParameterType, new Type[] { typeof(object) });
+						// Implement the "Cast" method
+						mb = wrapper.ghostCastMethod;
 						AttributeHelper.HideFromReflection(mb);
 						ilgen = mb.GetILGenerator();
 						end = ilgen.DefineLabel();
@@ -3543,6 +3551,32 @@ class DynamicTypeWrapper : TypeWrapper
 		public override DynamicImpl Finish()
 		{
 			return this;
+		}
+	}
+
+	internal override void EmitCheckcast(TypeWrapper context, ILGenerator ilgen)
+	{
+		if(IsGhost)
+		{
+			ilgen.Emit(OpCodes.Dup);
+			ilgen.Emit(OpCodes.Call, ghostCastMethod);
+			ilgen.Emit(OpCodes.Pop);
+		}
+		else
+		{
+			base.EmitCheckcast(context, ilgen);
+		}
+	}
+
+	internal override void EmitInstanceOf(TypeWrapper context, ILGenerator ilgen)
+	{
+		if(IsGhost)
+		{
+			ilgen.Emit(OpCodes.Call, ghostIsInstanceMethod);
+		}
+		else
+		{
+			base.EmitInstanceOf(context, ilgen);
 		}
 	}
 }
