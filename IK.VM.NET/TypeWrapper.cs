@@ -645,12 +645,11 @@ abstract class TypeWrapper
 	private void ImplementInterfaceMethodStubImpl(MethodDescriptor md, MethodBase ifmethod, TypeBuilder typeBuilder, TypeWrapper wrapper)
 	{
 		CustomAttributeBuilder methodFlags = new CustomAttributeBuilder(typeof(ModifiersAttribute).GetConstructor(new Type[] { typeof(Modifiers) }), new object[] { Modifiers.Synthetic });
-		// HACK we're mangling the name to prevent subclasses from overriding this method (I think it is a bug
-		// the CLR that it tries to override privatescope methods, by name)
-		string mangledName = ifmethod.Name + "$" + wrapper.Name;
 		MethodWrapper mce = wrapper.GetMethodWrapper(md, true);
 		if(mce != null)
 		{
+			// HACK we're mangling the name to prevent subclasses from overriding this method
+			string mangledName = this.Name + "$" + ifmethod.Name + "$" + wrapper.Name;
 			if(!mce.IsPublic)
 			{
 				// NOTE according to the ECMA spec it isn't legal for a privatescope method to be virtual, but this works and
@@ -717,7 +716,7 @@ abstract class TypeWrapper
 				ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name + "." + md.Name + md.Signature);
 				exception.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false).EmitNewobj.Emit(ilGenerator);
 				ilGenerator.Emit(OpCodes.Throw);
-				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
+				// NOTE we don't need a MethodImpl, because interface methods can be implemented by private methods, just fine
 				// NOTE because we are introducing a Miranda method, we must also update the corresponding wrapper.
 				// If we don't do this, subclasses might think they are introducing a new method, instead of overriding
 				// this one.
@@ -1176,6 +1175,7 @@ class DynamicTypeWrapper : TypeWrapper
 				typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
 				if(outer != null)
 				{
+					// TODO in the CLR interfaces cannot contain nested types!
 					typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name).Replace('/', '.'), typeAttribs);
 				}
 				else
@@ -1188,6 +1188,7 @@ class DynamicTypeWrapper : TypeWrapper
 				typeAttribs |= TypeAttributes.Class;
 				if(outer != null)
 				{
+					// TODO in the CLR interfaces cannot contain nested types!
 					typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name).Replace('/', '.'), typeAttribs, baseWrapper.Type);
 				}
 				else
