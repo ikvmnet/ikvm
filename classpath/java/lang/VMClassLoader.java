@@ -118,7 +118,7 @@ final class VMClassLoader
    */
   static Class loadClass(String name, boolean resolve) throws ClassNotFoundException
   {
-    return Class.loadBootstrapClass(name, false);
+    return VMClass.loadBootstrapClass(name, false);
   }
 
   /**
@@ -219,7 +219,7 @@ final class VMClassLoader
    */
 	static final Class getPrimitiveClass(char type)
 	{
-		return Class.getClassFromType(getPrimitiveType(type));
+		return VMClass.getClassFromType(getPrimitiveType(type));
 	}
 	
 	private static native system.Type getPrimitiveType(char type);

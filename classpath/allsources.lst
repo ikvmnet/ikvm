@@ -4,7 +4,7 @@ C:\ikvm\classpath\gnu\classpath\Configuration.java
 C:\ikvm\classpath\gnu\java\net\protocol\ikvmres\Handler.java
 C:\ikvm\classpath\java\io\FileDescriptor.java
 C:\ikvm\classpath\java\lang\Thread.java
-C:\ikvm\classpath\java\lang\Class.java
+C:\ikvm\classpath\java\lang\VMClass.java
 C:\ikvm\classpath\java\lang\StringHelper.java
 C:\ikvm\classpath\java\lang\VMClassLoader.java
 C:\ikvm\classpath\java\lang\reflect\Constructor.java
@@ -744,6 +744,7 @@ C:\classpath\java\lang\Boolean.java
 C:\classpath\java\lang\Byte.java
 C:\classpath\java\lang\Character.java
 C:\classpath\java\lang\CharSequence.java
+C:\classpath\java\lang\Class.java
 C:\classpath\java\lang\ClassCastException.java
 C:\classpath\java\lang\ClassCircularityError.java
 C:\classpath\java\lang\ClassFormatError.java
