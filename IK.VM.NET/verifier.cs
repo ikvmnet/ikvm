@@ -90,13 +90,13 @@ class InstructionState
 {
 	private static ArrayList empty = new ArrayList();
 	private MethodAnalyzer ma;
-	private ArrayList stack;			// each entry contains a string with a Java signature of the type
-	private string[] locals;			// each entry contains a string with a Java signature of the type
+	private ArrayList stack;			// each entry contains a TypeWrapper object
+	private TypeWrapper[] locals;		// each entry contains a TypeWrapper object
 	private ArrayList subroutines;
 	private int callsites;
 	internal bool changed = true;
 
-	private InstructionState(MethodAnalyzer ma, ArrayList stack, string[] locals, ArrayList subroutines, int callsites)
+	private InstructionState(MethodAnalyzer ma, ArrayList stack, TypeWrapper[] locals, ArrayList subroutines, int callsites)
 	{
 		this.ma = ma;
 		this.stack = stack;
@@ -109,18 +109,18 @@ class InstructionState
 	{
 		this.ma = ma;
 		this.stack = new ArrayList();
-		this.locals = new string[maxLocals];
+		this.locals = new TypeWrapper[maxLocals];
 		this.subroutines = new ArrayList();
 	}
 
 	internal InstructionState Copy()
 	{
-		return new InstructionState(ma, (ArrayList)stack.Clone(), (string[])locals.Clone(), CopySubroutines(subroutines), callsites);
+		return new InstructionState(ma, (ArrayList)stack.Clone(), (TypeWrapper[])locals.Clone(), CopySubroutines(subroutines), callsites);
 	}
 
 	internal InstructionState CopyLocals()
 	{
-		return new InstructionState(ma, new ArrayList(), (string[])locals.Clone(), new ArrayList(), callsites);
+		return new InstructionState(ma, new ArrayList(), (TypeWrapper[])locals.Clone(), new ArrayList(), callsites);
 	}
 
 	private ArrayList CopySubroutines(ArrayList l)
@@ -201,14 +201,20 @@ class InstructionState
 		s.changed = s1.changed;
 		for(int i = 0; i < s.stack.Count; i++)
 		{
-			string type = (string)s.stack[i];
-			if(type == (string)s2.stack[i])
+			TypeWrapper type = (TypeWrapper)s.stack[i];
+			if(type == s2.stack[i])
 			{
 				// perfect match, nothing to do
 			}
-			else if(type[0] == 'L' || type[0] == '[' || type[0] == 'U' || type[0] == 'N')
+			else if(!type.IsPrimitive)
 			{
-				string baseType = s.FindCommonBaseType(type, (string)s2.stack[i]);
+				TypeWrapper baseType = s.FindCommonBaseType(type, (TypeWrapper)s2.stack[i]);
+				if(baseType == VerifierTypeWrapper.Invalid)
+				{
+					Console.WriteLine("type = " + type);
+					Console.WriteLine("s2.stack[i] = " + s2.stack[i]);
+					throw new InvalidOperationException();
+				}
 				if(type != baseType)
 				{
 					s.stack[i] = baseType;
@@ -217,13 +223,13 @@ class InstructionState
 			}
 			else
 			{
-				throw new VerifyError(string.Format("cannot merge {0} and {1}", type, s2.stack[i]));
+				throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, ((TypeWrapper)s2.stack[i]).Name));
 			}
 		}
 		for(int i = 0; i < s.locals.Length; i++)
 		{
-			string type = s.locals[i];
-			string type2;
+			TypeWrapper type = s.locals[i];
+			TypeWrapper type2;
 			if(locals_modified == null || locals_modified[i])
 			{
 				type2 = s2.locals[i];
@@ -232,27 +238,11 @@ class InstructionState
 			{
 				type2 = s3.locals[i];
 			}
-			if(type == type2)
+			TypeWrapper baseType = s2.FindCommonBaseType(type, type2);
+			if(type != baseType)
 			{
-				// perfect match, nothing to do
-			}
-			else if(type != null)
-			{
-				if(type[0] == 'L' || type[0] == '[')
-				{
-					string baseType = s2.FindCommonBaseType(type, type2);
-					if(type != baseType)
-					{
-						s.locals[i] = baseType;
-						s.changed = true;
-					}
-				}
-				else
-				{
-					// mark the slot as invalid
-					s.locals[i] = null;
-					s.changed = true;
-				}
+				s.locals[i] = baseType;
+				s.changed = true;
 			}
 		}
 		s.MergeSubroutineHelper(s2);
@@ -309,149 +299,134 @@ class InstructionState
 		throw new VerifyError("inactive subroutine");
 	}
 
-	private bool IsSubType(string subType, string baseType)
+	internal TypeWrapper FindCommonBaseType(TypeWrapper type1, TypeWrapper type2)
 	{
-		if(subType == baseType)
-		{
-			return true;
-		}
-		if(subType.Length == 1 || baseType.Length == 1)
-		{
-			// primitives can never be subtypes of another type
-			return false;
-		}
-		if(baseType == "Ljava/lang/Object;")
-		{
-			return true;
-		}
-		if(baseType[0] == '[')
-		{
-			if(subType[0] != '[')
-			{
-				return false;
-			}
-			int subDepth = 0;
-			while(subType[subDepth] == '[')
-			{
-				subDepth++;
-			}
-			int baseDepth = 0;
-			while(baseType[baseDepth] == '[')
-			{
-				baseDepth++;
-			}
-			if(baseDepth > subDepth)
-			{
-				return false;
-			}
-			if(baseDepth < subDepth)
-			{
-				return baseType.EndsWith("[Ljava/lang/Object;");
-			}
-			if(subType[subDepth] == baseType[baseDepth])
-			{
-				if(subType[subDepth] != 'L')
-				{
-					return baseDepth == subDepth;
-				}
-				string baseElemType = baseType.Substring(baseDepth + 1, baseType.Length - baseDepth - 2);
-				if(baseElemType == "java/lang/Object")
-				{
-					return true;
-				}
-				if(baseDepth == subDepth)
-				{
-					string subElemType = subType.Substring(subDepth + 1, subType.Length - subDepth - 2);
-					return ma.classLoader.IsSubType(subElemType, baseElemType);
-				}
-			}
-			return false;
-		}
-		else if(subType[0] == '[')
-		{
-			return false;
-		}
-		return ma.classLoader.IsSubType(subType.Substring(1, subType.Length - 2), baseType.Substring(1, baseType.Length - 2));
-	}
-
-	internal string FindCommonBaseType(string type1, string type2)
-	{
-//		Console.WriteLine("FindCommonBaseType: {0} v {1}", type1, type2);
-		if(type1 == "Lnull")
-		{
-			return type2;
-		}
-		if(type2 == "Lnull")
-		{
-			return type1;
-		}
 		if(type1 == type2)
 		{
 			return type1;
 		}
-		if(type1 == null || type2 == null)
+		if(type1 == VerifierTypeWrapper.Null)
 		{
-			return null;
+			return type2;
 		}
-		if(type1.Length == 1 || type2.Length == 1)
+		if(type2 == VerifierTypeWrapper.Null)
 		{
-			return null;
+			return type1;
 		}
-		if(type1[0] == '[' || type2[0] == '[')
+		if(type1 == VerifierTypeWrapper.Invalid || type2 == VerifierTypeWrapper.Invalid)
 		{
-			int rank1 = 0;
-			while(type1[rank1] == '[')
+			return VerifierTypeWrapper.Invalid;
+		}
+		if(type1.IsPrimitive || type2.IsPrimitive)
+		{
+			return VerifierTypeWrapper.Invalid;
+		}
+		if(type1 == VerifierTypeWrapper.UninitializedThis || type2 == VerifierTypeWrapper.UninitializedThis)
+		{
+			return VerifierTypeWrapper.Invalid;
+		}
+		if(VerifierTypeWrapper.IsNew(type1) || VerifierTypeWrapper.IsNew(type2))
+		{
+			return VerifierTypeWrapper.Invalid;
+		}
+		if(VerifierTypeWrapper.IsRet(type1) || VerifierTypeWrapper.IsRet(type2))
+		{
+			return VerifierTypeWrapper.Invalid;
+		}
+		if(type1.ArrayRank > 0 && type2.ArrayRank > 0)
+		{
+			int rank = 1;
+			int rank1 = type1.ArrayRank - 1;
+			int rank2 = type2.ArrayRank - 1;
+			TypeWrapper elem1 = type1.ElementTypeWrapper;
+			TypeWrapper elem2 = type2.ElementTypeWrapper;
+			while(rank1 != 0 && rank2 != 0)
 			{
-				rank1++;
+				elem1 = elem1.ElementTypeWrapper;
+				elem2 = elem2.ElementTypeWrapper;
+				rank++;
+				rank1--;
+				rank2--;
 			}
-			int rank2 = 0;
-			while(type2[rank2] == '[')
+			TypeWrapper baseType = FindCommonBaseTypeHelper(elem1, elem2);
+			if(baseType == VerifierTypeWrapper.Invalid)
 			{
-				rank2++;
-			}
-			if(rank1 == 0 || rank2 == 0)
-			{
-				return "Ljava/lang/Object;";
-			}
-			if(rank1 != rank2)
-			{
-				if(rank1 > rank2)
+				// TODO cache java.lang.Object type somewhere
+				baseType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Object");
+				rank--;
+				if(rank == 0)
 				{
-					int temp = rank1;
-					rank1 = rank2;
-					rank2 = temp;
-					string temps = type1;
-					type1 = type2;
-					type2 = temps;
+					return baseType;
 				}
-				if(type1.EndsWith("Ljava/lang/Object;"))
-				{
-					return type1;
-				}
-				return "Ljava/lang/Object;";
 			}
-			else
-			{
-				if(type1[rank1] != type2[rank1])
-				{
-					// two different primitive arrays, or a primitive and a reference array
-					return "Ljava/lang/Object;";
-				}
-				return new String('[', rank1) + "L" + ma.classLoader.FindCommonBaseType(type1.Substring(1 + rank1, type1.Length - (2 + rank1)), type2.Substring(1 + rank2, type2.Length - (2 + rank2))) + ";";
-			}
+			// HACK load the array type
+			return baseType.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + "L" + baseType.Name + ";");
 		}
-		if(type1.StartsWith("Lret;") || type2.StartsWith("Lret;"))
-		{
-			return null;
-		}
-		return "L" + ma.classLoader.FindCommonBaseType(type1.Substring(1, type1.Length - 2), type2.Substring(1, type2.Length - 2)) + ";";
+		return FindCommonBaseTypeHelper(type1, type2);
 	}
 
-	private void SetLocal1(int index, string type)
+	private TypeWrapper FindCommonBaseTypeHelper(TypeWrapper t1, TypeWrapper t2)
 	{
-		if(index > 0 && (locals[index] == "D2" || locals[index] == "J2"))
+		if(t1 == t2)
 		{
-			locals[index - 1] = null;
+			return t1;
+		}
+		if(t1.IsInterface || t2.IsInterface)
+		{
+			// TODO I don't know how finding the common base for interfaces is defined, but
+			// for now I'm just doing the naive thing
+			// UPDATE according to a paper by Alessandro Coglio & Allen Goldberg titled
+			// "Type Safety in the JVM: Some Problems in Java 2 SDK 1.2 and Proposed Solutions"
+			// the common base of two interfaces is java/lang/Object, and there is special
+			// treatment for java/lang/Object types that allow it to be assigned to any interface
+			// type, the JVM's typesafety then depends on the invokeinterface instruction to make
+			// sure that the reference actually implements the interface.
+			// So strictly speaking, the code below isn't correct, but it works, so for now it stays in.
+			if(t1.ImplementsInterface(t2))
+			{
+				return t2;
+			}
+			if(t2.ImplementsInterface(t1))
+			{
+				return t1;
+			}
+			// TODO cache java.lang.Object type somewhere
+			return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Object");
+		}
+		Stack st1 = new Stack();
+		Stack st2 = new Stack();
+		while(t1 != null)
+		{
+			st1.Push(t1);
+			t1 = t1.BaseTypeWrapper;
+		}
+		while(t2 != null)
+		{
+			st2.Push(t2);
+			t2 = t2.BaseTypeWrapper;
+		}
+		TypeWrapper type = null;
+		for(;;)
+		{
+			t1 = st1.Count > 0 ? (TypeWrapper)st1.Pop() : null;
+			t2 = st2.Count > 0 ? (TypeWrapper)st2.Pop() : null;
+			if(t1 != t2)
+			{
+				return type;
+			}
+			type = t1;
+		}
+	}
+
+	private void SetLocal1(int index, TypeWrapper type)
+	{
+		if(index > 0 && (locals[index - 1] == PrimitiveTypeWrapper.DOUBLE || locals[index - 1] == PrimitiveTypeWrapper.LONG))
+		{
+			locals[index - 1] = VerifierTypeWrapper.Invalid;
+			foreach(Subroutine s in subroutines)
+			{
+				s.SetLocalModified(index - 1);
+			}
 		}
 		locals[index] = type;
 		foreach(Subroutine s in subroutines)
@@ -460,14 +435,18 @@ class InstructionState
 		}
 	}
 
-	private void SetLocal2(int index, string type)
+	private void SetLocal2(int index, TypeWrapper type)
 	{
-		if(index > 0 && (locals[index] == "D2" || locals[index] == "J2"))
+		if(index > 0 && (locals[index - 1] == PrimitiveTypeWrapper.DOUBLE || locals[index - 1] == PrimitiveTypeWrapper.LONG))
 		{
-			locals[index - 1] = null;
+			locals[index - 1] = VerifierTypeWrapper.Invalid;
+			foreach(Subroutine s in subroutines)
+			{
+				s.SetLocalModified(index - 1);
+			}
 		}
 		locals[index] = type;
-		locals[index + 1] = type[0] == 'D' ? "D2" : "J2";
+		locals[index + 1] = VerifierTypeWrapper.Invalid;
 		foreach(Subroutine s in subroutines)
 		{
 			s.SetLocalModified(index);
@@ -477,7 +456,7 @@ class InstructionState
 
 	internal void GetLocalInt(int index)
 	{
-		if(locals[index] != "I")
+		if(GetLocalType(index) != PrimitiveTypeWrapper.INT)
 		{
 			throw new VerifyError("Invalid local type");
 		}
@@ -485,25 +464,25 @@ class InstructionState
 
 	internal void SetLocalInt(int index)
 	{
-		SetLocal1(index, "I");
-	}
-
-	internal void SetLocalLong(int index)
-	{
-		SetLocal2(index, "J");
+		SetLocal1(index, PrimitiveTypeWrapper.INT);
 	}
 
 	internal void GetLocalLong(int index)
 	{
-		if(locals[index] != "J" || locals[index + 1] != "J2")
+		if(GetLocalType(index) != PrimitiveTypeWrapper.LONG)
 		{
 			throw new VerifyError("incorrect local type, not long");
 		}
 	}
 
+	internal void SetLocalLong(int index)
+	{
+		SetLocal2(index, PrimitiveTypeWrapper.LONG);
+	}
+
 	internal void GetLocalFloat(int index)
 	{
-		if(locals[index] != "F")
+		if(GetLocalType(index) != PrimitiveTypeWrapper.FLOAT)
 		{
 			throw new VerifyError("incorrect local type, not float");
 		}
@@ -511,241 +490,197 @@ class InstructionState
 
 	internal void SetLocalFloat(int index)
 	{
-		SetLocal1(index, "F");
-	}
-
-	internal void SetLocalDouble(int index)
-	{
-		SetLocal2(index, "D");
+		SetLocal1(index, PrimitiveTypeWrapper.FLOAT);
 	}
 
 	internal void GetLocalDouble(int index)
 	{
-		if(locals[index] != "D" || locals[index + 1] != "D2")
+		if(GetLocalType(index) != PrimitiveTypeWrapper.DOUBLE)
 		{
 			throw new VerifyError("incorrect local type, not double");
 		}
 	}
 
-	internal string GetLocalType(int index)
+	internal void SetLocalDouble(int index)
+	{
+		SetLocal2(index, PrimitiveTypeWrapper.DOUBLE);
+	}
+
+	internal TypeWrapper GetLocalType(int index)
 	{
 		return locals[index];
 	}
 
 	internal int GetLocalRet(int index)
 	{
-		string type = locals[index];
-		if(!type.StartsWith("Lret;"))
+		TypeWrapper type = GetLocalType(index);
+		if(VerifierTypeWrapper.IsRet(type))
 		{
-			throw new VerifyError("incorrect local type, not ret");
+			return ((VerifierTypeWrapper)type).Index;
 		}
-		return int.Parse(type.Substring(5));
+		throw new VerifyError("incorrect local type, not ret");
 	}
 
-	internal string GetLocalObject(int index)
+	internal void SetLocalType(int index, TypeWrapper type)
 	{
-		string s = locals[index];
-		if(s == null || (s[0] != 'L' && s[0] != '[' && s[0] != 'U' && s[0] != 'N') || s.StartsWith("Lret;"))
+		if(type == PrimitiveTypeWrapper.DOUBLE || type == PrimitiveTypeWrapper.LONG)
 		{
-			throw new VerifyError("incorrect local type, not object");
+			SetLocal2(index, type);
 		}
-		return s;
+		else
+		{
+			SetLocal1(index, type);
+		}
 	}
 
-	internal void SetLocalObject(int index, string type)
+	internal void PushType(TypeWrapper type)
 	{
-		if(type[0] != 'L' && type[0] != '[' && type[0] != 'U' && type[0] != 'N')
+		if(type.IsPrimitive)
 		{
-			throw new VerifyError("SetLocalObject");
-		}
-		SetLocal1(index, type);
-	}
-
-	internal void Push(string type)
-	{
-		if(type.Length == 1)
-		{
-			switch(type[0])
+			if(type == PrimitiveTypeWrapper.BOOLEAN ||
+				type == PrimitiveTypeWrapper.BYTE ||
+				type == PrimitiveTypeWrapper.CHAR ||
+				type == PrimitiveTypeWrapper.SHORT)
 			{
-				case 'Z':
-				case 'B':
-				case 'C':
-				case 'S':
-					type = "I";
-					break;
+				type = PrimitiveTypeWrapper.INT;
 			}
 		}
 		PushHelper(type);
 	}
 
-	internal void PushObject(string type)
-	{
-		if(type == null)
-		{
-			throw new VerifyError("PushObject null");
-		}
-		if(type[0] == 'L' || type[0] == '[' || type[0] == 'U' || type[0] == 'N')
-		{
-			PushHelper(type);
-			return;
-		}
-		throw new VerifyError("PushObject not object");
-	}
-
 	internal void PushInt()
 	{
-		PushHelper("I");
+		PushHelper(PrimitiveTypeWrapper.INT);
 	}
 
 	internal void PushLong()
 	{
-		PushHelper("J");
+		PushHelper(PrimitiveTypeWrapper.LONG);
 	}
 
 	internal void PushFloat()
 	{
-		PushHelper("F");
+		PushHelper(PrimitiveTypeWrapper.FLOAT);
 	}
 
 	internal void PushDouble()
 	{
-		PushHelper("D");
+		PushHelper(PrimitiveTypeWrapper.DOUBLE);
 	}
 
 	internal void PopInt()
 	{
-		Pop('I');
+		if(PopAnyType() != PrimitiveTypeWrapper.INT)
+		{
+			throw new VerifyError("Int expected on stack");
+		}
 	}
 
 	internal void PopFloat()
 	{
-		Pop('F');
+		if(PopAnyType() != PrimitiveTypeWrapper.FLOAT)
+		{
+			throw new VerifyError("Float expected on stack");
+		}
 	}
 
 	internal void PopDouble()
 	{
-		Pop('D');
+		if(PopAnyType() != PrimitiveTypeWrapper.DOUBLE)
+		{
+			throw new VerifyError("Double expected on stack");
+		}
 	}
 
 	internal void PopLong()
 	{
-		Pop('J');
-	}
-
-	internal string PopArray()
-	{
-		string s = PopHelper();
-		if(s[0] == '[' || s == "Lnull")
+		if(PopAnyType() != PrimitiveTypeWrapper.LONG)
 		{
-			return s;
-		}
-		throw new VerifyError("Array type expected");
-	}
-
-	internal string PopUninitializedObject(string type)
-	{
-		string s = PopHelper();
-		string u = s;
-		if(s[0] != 'U' && s[0] != 'N')
-		{
-			throw new VerifyError("Expecting to find unitialized object on stack");
-		}
-		s = s.Substring(s.IndexOf(';') + 1);
-		if(s != type)
-		{
-			if(IsSubType(s, type))
-			{
-				// OK
-			}
-			else
-			{
-				throw new VerifyError(string.Format("popped {0} and expected {1}", s, type));
-			}
-		}
-		return u;
-	}
-
-	internal void Pop(string type)
-	{
-		if(type.Length == 1)
-		{
-			switch(type[0])
-			{
-				case 'Z':
-				case 'B':
-				case 'C':
-				case 'S':
-					Pop('I');
-					return;
-			}
-		}
-		string s = PopHelper();
-		if(s != type)
-		{
-			if((type[0] == 'L' || type[0] == '[') && s == "Lnull")
-			{
-			}
-			else if(IsSubType(s, type))
-			{
-			}
-			else
-			{
-				throw new VerifyError(string.Format("popped {0} and expected {1}", s, type));
-			}
+			throw new VerifyError("Long expected on stack");
 		}
 	}
 
-	internal string PopObject(string type)
+	internal TypeWrapper PopArrayType()
 	{
-		string s = PopHelper();
-		if(s != type)
+		TypeWrapper type = PopAnyType();
+		if(type != VerifierTypeWrapper.Null && type.ArrayRank == 0)
 		{
-			if(s == "Lnull")
-			{
-				// null can be used as any type
-			}
-			else if(s[0] == 'N' || s[0] == 'U')
-			{
-				throw new VerifyError("Unexpected unitialized objref " + s);
-			}
-			else if(IsSubType(s, type))
-			{
-				// OK
-			}
-			else
-			{
-				throw new VerifyError(string.Format("popped {0} and expected {1}", s, type));
-			}
+			throw new VerifyError("Array reference expected on stack");
 		}
+		return type;
+	}
+
+	// null or an initialized object reference (or a subroutine return address)
+	internal TypeWrapper PopObjectType()
+	{
+		TypeWrapper type = PopType();
+		if(type.IsPrimitive || VerifierTypeWrapper.IsNew(type) || type == VerifierTypeWrapper.UninitializedThis)
+		{
+			throw new VerifyError("Expected object reference on stack");
+		}
+		return type;
+	}
+
+	// null or an initialized object reference derived from baseType (or baseType)
+	internal TypeWrapper PopObjectType(TypeWrapper baseType)
+	{
+		TypeWrapper type = PopObjectType();
+		// HACK because of the way interfaces references works, if baseType
+		// is an interface, any reference will be accepted
+		if(!baseType.IsInterface && !type.IsAssignableTo(baseType))
+		{
+			throw new VerifyError("Unexpected type " + type + " where " + baseType + " was expected");
+		}
+		return type;
+	}
+
+	internal TypeWrapper PopAnyType()
+	{
+		if(stack.Count == 0)
+		{
+			throw new VerifyError("Unable to pop operand off an empty stack");
+		}
+		TypeWrapper s = (TypeWrapper)stack[stack.Count - 1];
+		stack.RemoveAt(stack.Count - 1);
 		return s;
 	}
 
-	internal string PopAny()
+	// NOTE this can *not* be used to pop double or long
+	internal TypeWrapper PopType()
 	{
-		return PopHelper();
-	}
-
-	internal string Pop()
-	{
-		string type = PopHelper();
-		if(type == "D" || type == "J")
+		TypeWrapper type = PopAnyType();
+		if(type == PrimitiveTypeWrapper.DOUBLE || type == PrimitiveTypeWrapper.LONG)
 		{
 			throw new VerifyError("Attempt to split long or double on the stack");
 		}
 		return type;
 	}
 
-	internal string Pop2()
+	// this will accept null, a primitive type of the specified type or an initialized reference of the
+	// specified type or derived from it
+	// NOTE this can also be used to pop double or long
+	internal TypeWrapper PopType(TypeWrapper baseType)
 	{
-		string type = PopHelper();
-		if(type == "D" || type == "J")
+		if(baseType.IsPrimitive)
 		{
-			return type;
+			if(baseType == PrimitiveTypeWrapper.BOOLEAN ||
+				baseType == PrimitiveTypeWrapper.BYTE ||
+				baseType == PrimitiveTypeWrapper.CHAR ||
+				baseType == PrimitiveTypeWrapper.SHORT)
+			{
+				baseType = PrimitiveTypeWrapper.INT;
+			}
 		}
-		type = PopHelper();
-		if(type == "D" || type == "J")
+		TypeWrapper type = PopAnyType();
+		if(type != baseType && !type.IsAssignableTo(baseType))
 		{
-			throw new VerifyError("Attempt to split long or double on the stack");
+			// HACK because of the way interfaces references works, if baseType
+			// is an interface, any reference will be accepted
+			if(baseType.IsInterface && !type.IsPrimitive)
+			{
+				return type;
+			}
+			throw new VerifyError("Unexpected type " + type.Name + " where " + baseType.Name + " was expected");
 		}
 		return type;
 	}
@@ -755,70 +690,22 @@ class InstructionState
 		return stack.Count;
 	}
 
-	internal string GetStackSlot(int pos)
+	internal TypeWrapper GetStackSlot(int pos)
 	{
-		return (string)stack[stack.Count - 1 - pos];
+		return (TypeWrapper)stack[stack.Count - 1 - pos];
 	}
 
-	internal string Peek()
+	private void PushHelper(TypeWrapper type)
 	{
-		if(stack.Count == 0)
+		stack.Add(type);
+	}
+
+	internal void MarkInitialized(TypeWrapper type, TypeWrapper initType)
+	{
+		if(type == null || initType == null)
 		{
-			// return null, if the stack is empty
-			return null;
+			throw new InvalidOperationException();
 		}
-		return (string)stack[stack.Count - 1];
-	}
-
-	private string PopHelper()
-	{
-		if(stack.Count == 0)
-		{
-			throw new VerifyError("Unable to pop operand off an empty stack");
-		}
-		string s = (string)stack[stack.Count - 1];
-		stack.RemoveAt(stack.Count - 1);
-		return s;
-	}
-
-	private void PushHelper(string s)
-	{
-		if(s.IndexOf("L[") >= 0)
-		{
-			throw new VerifyError("Internal error: L[ type found");
-		}
-		stack.Add(s);
-	}
-
-	private string Pop(char type)
-	{
-		string s = PopHelper();
-		if(s[0] != type)
-		{
-			switch(type)
-			{
-				case 'I':
-					throw new VerifyError("Expecting to find int on stack");
-				case '[':
-					throw new VerifyError("Expecting to find array on stack");
-				case 'L':
-					throw new VerifyError("Expecting to find object on stack");
-				case 'F':
-					throw new VerifyError("Expecting to find float on stack");
-				case 'D':
-					throw new VerifyError("Expecting to find double on stack");
-				case 'J':
-					throw new VerifyError("Expecting to find long on stack");
-				default:
-					throw new VerifyError("Expecting to find " + type + " on stack");
-			}
-		}
-		return s;
-	}
-
-	internal void MarkInitialized(string type)
-	{
-		string initType = type.Substring(type.IndexOf(';') + 1);
 		for(int i = 0; i < locals.Length; i++)
 		{
 			if(locals[i] == type)
@@ -828,7 +715,7 @@ class InstructionState
 		}
 		for(int i = 0; i < stack.Count; i++)
 		{
-			if((string)stack[i] == type)
+			if(stack[i] == type)
 			{
 				stack[i] = initType;
 			}
@@ -882,146 +769,171 @@ class InstructionState
 	{
 		for(int i = 0; i < locals.Length; i++)
 		{
-			if(locals[i] != null && (((locals[i])[0] == 'U') || ((locals[i])[0] == 'N')))
+			TypeWrapper type = locals[i];
+			if(type == VerifierTypeWrapper.UninitializedThis || VerifierTypeWrapper.IsNew(type))
 			{
 				throw new VerifyError("uninitialized object ref in local (2)");
 			}
 		}
 		for(int i = 0; i < stack.Count; i++)
 		{
-			if((((string)stack[i])[0] == 'U') || (((string)stack[i])[0] == 'N'))
+			TypeWrapper type = (TypeWrapper)stack[i];
+			if(type == VerifierTypeWrapper.UninitializedThis || VerifierTypeWrapper.IsNew(type))
 			{
 				throw new VerifyError("uninitialized object ref on stack");
 			}
 		}
 	}
-
-	// this method ensures that no uninitialized objects, of the specified type are in the current state
-	internal void CheckUninitializedObjRefs(string type)
-	{
-		for(int i = 0; i < locals.Length; i++)
-		{
-			if(locals[i] == type)
-			{
-				throw new VerifyError("unininitialized " + type + " in locals");
-			}
-		}
-		for(int i = 0; i < stack.Count; i++)
-		{
-			if((string)stack[i] == type)
-			{
-				throw new VerifyError("uninitialized " + type + " on stack");
-			}
-		}
-	}
 }
 
-class SigEnumerator
+// this is a container for the special verifier TypeWrappers
+class VerifierTypeWrapper : TypeWrapper
 {
-	private string sig;
-	private int pos;
-	private int length;
+	internal static readonly TypeWrapper Invalid = null;
+	internal static readonly TypeWrapper Null = new VerifierTypeWrapper("null", 0, null);
+	internal static readonly TypeWrapper UninitializedThis = new VerifierTypeWrapper("this", 0, null);
 
-	internal SigEnumerator(string sig)
+	private int index;
+	private TypeWrapper underlyingType;
+
+	public override string ToString()
 	{
-		this.sig = sig;
-		pos = 1;
-		length = 0;
+		return GetType().Name + "[" + Name + "," + index + "," + underlyingType + "]";
 	}
 
-	internal bool MoveNext()
+	internal static TypeWrapper MakeNew(TypeWrapper type, int bytecodeIndex)
 	{
-		pos += length;
-		switch(sig[pos])
-		{
-			case 'L':
-			{
-				length = sig.IndexOf(';', pos) - pos + 1;
-				break;
-			}
-			case '[':
-			{
-				length = 0;
-				while(sig[pos + length] == '[') length++;
-				if(sig[pos + length] == 'L')
-				{
-					length = sig.IndexOf(';', pos) - pos;
-				}
-				length++;
-				break;
-			}
-			case ')':
-				length = 0;
-				return false;
-			default:
-				length = 1;
-				break;
-		}
-		return true;
+		return new VerifierTypeWrapper("new", bytecodeIndex, type);
 	}
 
-	internal string Current
+	internal static TypeWrapper MakeRet(int bytecodeIndex)
+	{
+		return new VerifierTypeWrapper("ret", bytecodeIndex, null);
+	}
+
+	internal static bool IsNew(TypeWrapper w)
+	{
+		return w != null && w.IsVerifierType && w.Name == "new";
+	}
+
+	internal static bool IsRet(TypeWrapper w)
+	{
+		return w != null && w.IsVerifierType && w.Name == "ret";
+	}
+
+	internal int Index
 	{
 		get
 		{
-			return sig.Substring(pos, length);
+			return index;
 		}
 	}
-}
 
-class ReverseSigEnumerator
-{
-	private string[] items;
-	private int pos;
-
-	internal ReverseSigEnumerator(string sig)
-	{
-		ArrayList ar = new ArrayList();
-		SigEnumerator se = new SigEnumerator(sig);
-		while(se.MoveNext())
-		{
-			ar.Add(se.Current);
-		}
-		items = new String[ar.Count];
-		ar.CopyTo(items);
-		pos = items.Length;
-	}
-
-	internal bool MoveNext()
-	{
-		pos--;
-		return pos >= 0;
-	}
-
-	internal string Current
+	internal TypeWrapper UnderlyingType
 	{
 		get
 		{
-			return items[pos];
+			return underlyingType;
 		}
+	}
+
+	private VerifierTypeWrapper(string name, int index, TypeWrapper underlyingType)
+		: base(Modifiers.Final | Modifiers.Interface, name, null, null)
+	{
+		this.index = index;
+		this.underlyingType = underlyingType;
+	}
+
+	protected override FieldWrapper GetFieldImpl(string fieldName)
+	{
+		throw new InvalidOperationException("GetFieldImpl called on " + this);
+	}
+
+	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
+	{
+		throw new InvalidOperationException("GetMethodImpl called on " + this);
+	}
+
+	public override Type Type
+	{
+		get
+		{
+			throw new InvalidOperationException("get_Type called on " + this);
+		}
+	}
+
+	public override bool IsInterface
+	{
+		get
+		{
+			throw new InvalidOperationException("get_IsInterface called on " + this);
+		}
+	}
+
+	public override TypeWrapper[] Interfaces
+	{
+		get
+		{
+			throw new InvalidOperationException("get_Interfaces called on " + this);
+		}
+	}
+
+	public override void Finish()
+	{
+		throw new InvalidOperationException("Finish called on " + this);
 	}
 }
 
 class MethodAnalyzer
 {
+	private static TypeWrapper java_lang_Throwable;
+	private static TypeWrapper java_lang_String;
+	private static TypeWrapper ByteArrayType;
+	private static TypeWrapper BooleanArrayType;
+	private static TypeWrapper ShortArrayType;
+	private static TypeWrapper CharArrayType;
+	private static TypeWrapper IntArrayType;
+	private static TypeWrapper FloatArrayType;
+	private static TypeWrapper DoubleArrayType;
+	private static TypeWrapper LongArrayType;
 	internal readonly ClassLoaderWrapper classLoader;
 	private ClassFile.Method.Code method;
 	private InstructionState[] state;
 	private ArrayList[] callsites;
-	private string[] localTypes;
+	private TypeWrapper[] localTypes;
 	private bool[] aload_used;
 
-	internal MethodAnalyzer(ClassFile.Method.Code method, ClassLoaderWrapper classLoader)
+	internal MethodAnalyzer(TypeWrapper wrapper, ClassFile.Method.Code method, ClassLoaderWrapper classLoader)
 	{
 		this.classLoader = classLoader;
 		this.method = method;
+		lock(GetType())
+		{
+			if(java_lang_Throwable == null)
+			{
+				java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Throwable");
+				java_lang_String = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/String");
+				ByteArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[B");
+				BooleanArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[Z");
+				ShortArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[S");
+				CharArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[C");
+				IntArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[I");
+				FloatArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[F");
+				DoubleArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[D");
+				LongArrayType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("[J");
+			}
+		}
 		state = new InstructionState[method.Instructions.Length];
 		callsites = new ArrayList[method.Instructions.Length];
-		localTypes = new String[method.MaxLocals];
+		localTypes = new TypeWrapper[method.MaxLocals];
 		// HACK aload_used is used to track whether aload is ever used on a particular local (a very lame way of
 		// trying to determine if a local that contains an exception, is ever used)
 		// TODO we really need real liveness analyses for the locals
 		aload_used = new Boolean[method.MaxLocals];
+
+		// HACK because types have to have identity, the subroutine return address and new types are cached here
+		Hashtable returnAddressTypes = new Hashtable();
+		Hashtable newTypes = new Hashtable();
 
 		// start by computing the initial state, the stack is empty and the locals contain the arguments
 		state[0] = new InstructionState(this, method.MaxLocals);
@@ -1031,56 +943,33 @@ class MethodAnalyzer
 			// this reference. If we're a constructor, the this reference is uninitialized.
 			if(method.Method.Name == "<init>")
 			{
-				state[0].SetLocalObject(arg++, "U0;L" + method.Method.ClassFile.Name + ";");
+				state[0].SetLocalType(arg++, VerifierTypeWrapper.UninitializedThis);
 			}
 			else
 			{
-				state[0].SetLocalObject(arg++, "L" + method.Method.ClassFile.Name + ";");
+				state[0].SetLocalType(arg++, wrapper);
 			}
 		}
-		string sig = method.Method.Signature;
-		for(int i = 1; sig[i] != ')'; i++)
+		// HACK articial scope to make "args" name reusable
+		if(true)
 		{
-			switch(sig[i])
+			TypeWrapper[] args = method.Method.GetArgTypes(classLoader);
+			for(int i = 0; i < args.Length; i++)
 			{
-				case 'D':
-					state[0].SetLocalDouble(arg);
-					arg += 2;
-					break;
-				case 'J':
-					state[0].SetLocalLong(arg);
-					arg += 2;
-					break;
-				case 'L':
+				TypeWrapper type = args[i];
+				if(type.IsPrimitive &&
+					(type == PrimitiveTypeWrapper.BOOLEAN ||
+					type == PrimitiveTypeWrapper.BYTE ||
+					type == PrimitiveTypeWrapper.CHAR ||
+					type == PrimitiveTypeWrapper.SHORT))
 				{
-					int pos = sig.IndexOf(';', i);
-					state[0].SetLocalObject(arg++, sig.Substring(i, pos - i + 1));
-					i = pos;
-					break;
+					type = PrimitiveTypeWrapper.INT;
 				}
-				case '[':
+				state[0].SetLocalType(arg++, type);
+				if(type == PrimitiveTypeWrapper.DOUBLE || type == PrimitiveTypeWrapper.LONG)
 				{
-					int start = i;
-					while(sig[i] == '[') i++;
-					if(sig[i] == 'L')
-					{
-						i = sig.IndexOf(';', i);
-					}
-					state[0].SetLocalObject(arg++, sig.Substring(start, i - start + 1));
-					break;
+					arg++;
 				}
-				case 'F':
-					state[0].SetLocalFloat(arg++);
-					break;
-				case 'Z':
-				case 'B':
-				case 'S':
-				case 'C':
-				case 'I':
-					state[0].SetLocalInt(arg++);
-					break;
-				default:
-					throw new NotImplementedException();
 			}
 		}
 		bool done = false;
@@ -1109,11 +998,13 @@ class MethodAnalyzer
 								int catch_type = method.ExceptionTable[j].catch_type;
 								if(catch_type == 0)
 								{
-									ex.PushObject("Ljava/lang/Throwable;");
+									ex.PushType(java_lang_Throwable);
 								}
 								else
 								{
-									ex.PushObject("L" + GetConstantPoolClass(catch_type) + ";");
+									// TODO if the exception type is unloadable we should consider pushing
+									// Throwable as the type and recording a loader constraint
+									ex.PushType(GetConstantPoolClassType(catch_type));
 								}
 								int idx = method.PcIndexMap[method.ExceptionTable[j].handler_pc];
 								state[idx] += ex;
@@ -1124,57 +1015,64 @@ class MethodAnalyzer
 						switch(instr.NormalizedOpCode)
 						{
 							case NormalizedByteCode.__aload:
+							{
 								aload_used[instr.NormalizedArg1] = true;
-								s.PushObject(s.GetLocalObject(instr.NormalizedArg1));
+								TypeWrapper type = s.GetLocalType(instr.NormalizedArg1);
+								if(type.IsPrimitive || type == VerifierTypeWrapper.Invalid)
+								{
+									throw new VerifyError("Object reference expected");
+								}
+								s.PushType(type);
 								break;
+							}
 							case NormalizedByteCode.__astore:
 							{
-								string type = s.Pop();
-								switch(type[0])
+								// NOTE since the reference can be uninitialized, we cannot use PopObjectType
+								TypeWrapper type = s.PopType();
+								if(type.IsPrimitive)
 								{
-									case 'L':
-									case '[':
-									case 'N':
-									case 'U':
-										s.SetLocalObject(instr.NormalizedArg1, type);
-										break;
-									default:
-										throw new VerifyError("Object reference expected");
+									throw new VerifyError("Object reference expected");
 								}
+								s.SetLocalType(instr.NormalizedArg1, type);
 								break;
 							}
 							case NormalizedByteCode.__aconst_null:
-								s.PushObject("Lnull");
+								s.PushType(VerifierTypeWrapper.Null);
 								break;
 							case NormalizedByteCode.__aaload:
 							{
 								s.PopInt();
-								string type = s.PopArray();
-								if(type == "Lnull")
+								TypeWrapper type = s.PopArrayType();
+								if(type == VerifierTypeWrapper.Null)
 								{
 									// if the array is null, we have use null as the element type, because
 									// otherwise the rest of the code will not verify correctly
-									s.PushObject(type);
+									s.PushType(VerifierTypeWrapper.Null);
 								}
 								else
 								{
-									s.PushObject(type.Substring(1));
+									type = type.ElementTypeWrapper;
+									if(type.IsPrimitive)
+									{
+										throw new VerifyError("Object array expected");
+									}
+									s.PushType(type);
 								}
 								break;
 							}
 							case NormalizedByteCode.__aastore:
-							{
-								string elem = s.PopObject("Ljava/lang/Object;");
+								s.PopObjectType();
 								s.PopInt();
-								string type = s.PopArray();
+								s.PopArrayType();
 								// TODO check that elem is assignable to the array
 								break;
-							}
 							case NormalizedByteCode.__baload:
 							{
 								s.PopInt();
-								string type = s.PopArray();
-								if(type[1] != 'B' && type[1] != 'Z' && type != "Lnull")
+								TypeWrapper type = s.PopArrayType();
+								if(type != VerifierTypeWrapper.Null &&
+									type != ByteArrayType &&
+									type != BooleanArrayType)
 								{
 									throw new VerifyError();
 								}
@@ -1185,8 +1083,10 @@ class MethodAnalyzer
 							{
 								s.PopInt();
 								s.PopInt();
-								string type = s.PopArray();
-								if(type[1] != 'B' && type[1] != 'Z' && type != "Lnull")
+								TypeWrapper type = s.PopArrayType();
+								if(type != VerifierTypeWrapper.Null &&
+									type != ByteArrayType &&
+									type != BooleanArrayType)
 								{
 									throw new VerifyError();
 								}
@@ -1194,66 +1094,66 @@ class MethodAnalyzer
 							}
 							case NormalizedByteCode.__caload:
 								s.PopInt();
-								s.PopObject("[C");
+								s.PopObjectType(CharArrayType);
 								s.PushInt();
 								break;
 							case NormalizedByteCode.__castore:
 								s.PopInt();
 								s.PopInt();
-								s.PopObject("[C");
+								s.PopObjectType(CharArrayType);
 								break;
 							case NormalizedByteCode.__saload:
 								s.PopInt();
-								s.PopObject("[S");
+								s.PopObjectType(ShortArrayType);
 								s.PushInt();
 								break;
 							case NormalizedByteCode.__sastore:
 								s.PopInt();
 								s.PopInt();
-								s.PopObject("[S");
+								s.PopObjectType(ShortArrayType);
 								break;
 							case NormalizedByteCode.__iaload:
 								s.PopInt();
-								s.PopObject("[I");
+								s.PopObjectType(IntArrayType);
 								s.PushInt();
 								break;
 							case NormalizedByteCode.__iastore:
 								s.PopInt();
 								s.PopInt();
-								s.PopObject("[I");
+								s.PopObjectType(IntArrayType);
 								break;
 							case NormalizedByteCode.__laload:
 								s.PopInt();
-								s.PopObject("[J");
+								s.PopObjectType(LongArrayType);
 								s.PushLong();
 								break;
 							case NormalizedByteCode.__lastore:
 								s.PopLong();
 								s.PopInt();
-								s.PopObject("[J");
+								s.PopObjectType(LongArrayType);
 								break;
 							case NormalizedByteCode.__daload:
 								s.PopInt();
-								s.PopObject("[D");
+								s.PopObjectType(DoubleArrayType);
 								s.PushDouble();
 								break;
 							case NormalizedByteCode.__dastore:
 								s.PopDouble();
 								s.PopInt();
-								s.PopObject("[D");
+								s.PopObjectType(DoubleArrayType);
 								break;
 							case NormalizedByteCode.__faload:
 								s.PopInt();
-								s.PopObject("[F");
+								s.PopObjectType(FloatArrayType);
 								s.PushFloat();
 								break;
 							case NormalizedByteCode.__fastore:
 								s.PopFloat();
 								s.PopInt();
-								s.PopObject("[F");
+								s.PopObjectType(FloatArrayType);
 								break;
 							case NormalizedByteCode.__arraylength:
-								s.PopArray();
+								s.PopArrayType();
 								s.PushInt();
 								break;
 							case NormalizedByteCode.__iconst:
@@ -1279,54 +1179,28 @@ class MethodAnalyzer
 							case NormalizedByteCode.__ifnonnull:
 							case NormalizedByteCode.__ifnull:
 								// TODO it might be legal to use an unitialized ref here
-								s.PopObject("Ljava/lang/Object;");
+								s.PopObjectType();
 								break;
 							case NormalizedByteCode.__if_acmpeq:
 							case NormalizedByteCode.__if_acmpne:
 								// TODO it might be legal to use an unitialized ref here
-								s.PopObject("Ljava/lang/Object;");
-								s.PopObject("Ljava/lang/Object;");
+								s.PopObjectType();
+								s.PopObjectType();
 								break;
 							case NormalizedByteCode.__getstatic:
-								s.Push((GetFieldref(instr.Arg1)).Signature);
+								s.PushType((GetFieldref(instr.Arg1)).GetFieldType(classLoader));
 								break;
 							case NormalizedByteCode.__putstatic:
-							{
-								// HACK because of the way interface merging works, if the
-								// type on the stack is Object, it can be assigned to anything
-								// (the compiler will emit a cast)
-								string type = (GetFieldref(instr.Arg1)).Signature;
-								if(type[0] == 'L' && s.Peek() == "Ljava/lang/Object;")
-								{
-									s.Pop();
-								}
-								else
-								{
-									s.Pop(type);
-								}
+								s.PopType(GetFieldref(instr.Arg1).GetFieldType(classLoader));
 								break;
-							}
 							case NormalizedByteCode.__getfield:
-								s.PopObject("L" + (GetFieldref(instr.Arg1)).Class + ";");
-								s.Push((GetFieldref(instr.Arg1)).Signature);
+								s.PopObjectType(GetFieldref(instr.Arg1).GetClassType(classLoader));
+								s.PushType(GetFieldref(instr.Arg1).GetFieldType(classLoader));
 								break;
 							case NormalizedByteCode.__putfield:
-							{
-								// HACK because of the way interface merging works, if the
-								// type on the stack is Object, it can be assigned to anything
-								// (the compiler will emit a cast)
-								string type = (GetFieldref(instr.Arg1)).Signature;
-								if(type[0] == 'L' && s.Peek() == "Ljava/lang/Object;")
-								{
-									s.Pop();
-								}
-								else
-								{
-									s.Pop(type);
-								}
-								s.PopObject("L" + (GetFieldref(instr.Arg1)).Class + ";");
+								s.PopType(GetFieldref(instr.Arg1).GetFieldType(classLoader));
+								s.PopObjectType(GetFieldref(instr.Arg1).GetClassType(classLoader));
 								break;
-							}
 							case NormalizedByteCode.__ldc:
 							{
 								object o = GetConstantPoolConstant(instr.Arg1);
@@ -1336,7 +1210,7 @@ class MethodAnalyzer
 								}
 								else if(o is string)
 								{
-									s.PushObject("Ljava/lang/String;");
+									s.PushType(java_lang_String);
 								}
 								else if(o is long)
 								{
@@ -1374,48 +1248,10 @@ class MethodAnalyzer
 								{
 									throw new VerifyError("Illegal call to internal method");
 								}
-								ReverseSigEnumerator rse = new ReverseSigEnumerator(cpi.Signature);
-								while(rse.MoveNext())
+								TypeWrapper[] args = cpi.GetArgTypes(classLoader);
+								for(int j = args.Length - 1; j >= 0; j--)
 								{
-									switch(rse.Current[0])
-									{
-										case 'Z':
-										case 'B':
-										case 'S':
-										case 'C':
-										case 'I':
-											s.PopInt();
-											break;
-										case 'J':
-											s.PopLong();
-											break;
-										case 'D':
-											s.PopDouble();
-											break;
-										case 'F':
-											s.PopFloat();
-											break;
-										case 'L':
-										{
-											// HACK if the return type is an interface, any object is legal
-											if(classLoader.RetTypeFromSig("()" + rse.Current).IsInterface)
-											{
-												// TODO implement support in the compiler for this condition (the code that
-												// is currently generated works, but isn't verifiable)
-												s.PopObject("Ljava/lang/Object;");
-											}
-											else
-											{
-												s.PopObject(rse.Current);
-											}
-											break;
-										}
-										case '[':
-											s.PopObject(rse.Current);
-											break;
-										default:
-											throw new NotImplementedException(rse.Current);
-									}
+									s.PopType(args[j]);
 								}
 								if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
 								{
@@ -1424,11 +1260,13 @@ class MethodAnalyzer
 								}
 								if(instr.NormalizedOpCode != NormalizedByteCode.__invokestatic)
 								{
+									// TODO we should verify that in a constructor, the base class constructor is actually called
 									if(cpi.Name == "<init>")
 									{
-										string type = s.PopUninitializedObject("L" + cpi.Class + ";");
-										if((type[0] == 'N' && !type.EndsWith("L" + cpi.Class + ";")) ||
-											(type[0] == 'U' && cpi.Class != method.Method.ClassFile.SuperClass && cpi.Class != method.Method.ClassFile.Name))
+										TypeWrapper type = s.PopType();
+										if((VerifierTypeWrapper.IsNew(type) && ((VerifierTypeWrapper)type).UnderlyingType != cpi.GetClassType(classLoader)) ||
+											(type == VerifierTypeWrapper.UninitializedThis && cpi.GetClassType(classLoader) != method.Method.ClassFile.GetSuperTypeWrapper(classLoader) && cpi.GetClassType(classLoader) != wrapper) ||
+											(!VerifierTypeWrapper.IsNew(type) && type != VerifierTypeWrapper.UninitializedThis))
 										{
 											// TODO oddly enough, Java fails verification for the class without
 											// even running the constructor, so maybe constructors are always
@@ -1439,63 +1277,27 @@ class MethodAnalyzer
 										}
 										// after the constructor invocation, the uninitialized reference, is now
 										// suddenly initialized
-										s.MarkInitialized(type);
+										if(type == VerifierTypeWrapper.UninitializedThis)
+										{
+											s.MarkInitialized(type, wrapper);
+										}
+										else
+										{
+											s.MarkInitialized(type, ((VerifierTypeWrapper)type).UnderlyingType);
+										}
 									}
 									else
 									{
 										// NOTE previously we checked the type here, but it turns out that
 										// the JVM throws an IncompatibleClassChangeError at runtime instead
 										// of a VerifyError if this doesn't match
-										s.PopObject("Ljava/lang/Object;");
-										/*
-										string type = cpi.Class;
-										if(type[0] != '[')
-										{
-											type = "L" + type + ";";
-										}
-										// invokeinterface is allowed on java/lang/Object (because merging interfaces is
-										// complicated), this will generate a runtime cast in the compiler
-										if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface &&
-											s.Peek() == "Ljava/lang/Object;")
-										{
-											s.PopAny();
-										}
-										else
-										{
-											// TODO if this fails it shouldn't generate a VerifyError, but instead
-											// an IncompatibleClassChangeError (at run time)
-											s.PopObject(type);
-										}
-										*/
+										s.PopObjectType();
 									}
 								}
-								string ret = cpi.Signature.Substring(cpi.Signature.IndexOf(')') + 1);
-								switch(ret[0])
+								TypeWrapper retType = cpi.GetRetType(classLoader);
+								if(retType != PrimitiveTypeWrapper.VOID)
 								{
-									case 'Z':
-									case 'B':
-									case 'S':
-									case 'C':
-									case 'I':
-										s.PushInt();
-										break;
-									case 'J':
-										s.PushLong();
-										break;
-									case 'D':
-										s.PushDouble();
-										break;
-									case 'F':
-										s.PushFloat();
-										break;
-									case 'L':
-									case '[':
-										s.PushObject(ret);
-										break;
-									case 'V':
-										break;
-									default:
-										throw new NotImplementedException(ret);
+									s.PushType(retType);
 								}
 								break;
 							}
@@ -1578,9 +1380,17 @@ class MethodAnalyzer
 								s.PushDouble();
 								break;
 							case NormalizedByteCode.__new:
+							{
 								// mark the type, so that we can ascertain that it is a "new object"
-								s.PushObject(string.Format("N{0};L{1};", instr.PC, GetConstantPoolClass(instr.Arg1)));
+								TypeWrapper type = (TypeWrapper)newTypes[instr.PC];
+								if(type == null)
+								{
+									type = VerifierTypeWrapper.MakeNew(GetConstantPoolClassType(instr.Arg1), instr.PC);
+									newTypes[instr.PC] = type;
+								}
+								s.PushType(type);
 								break;
+							}
 							case NormalizedByteCode.__multianewarray:
 							{
 								if(instr.Arg2 < 1)
@@ -1591,23 +1401,31 @@ class MethodAnalyzer
 								{
 									s.PopInt();
 								}
-								string type = GetConstantPoolClass(instr.Arg1);
-								if(!type.StartsWith(new String('[', instr.Arg2)))
+								TypeWrapper type = GetConstantPoolClassType(instr.Arg1);
+								if(type.ArrayRank < instr.Arg2)
 								{
 									throw new VerifyError("Illegal dimension argument");
 								}
-								s.PushObject(type);
+								s.PushType(type);
 								break;
 							}
 							case NormalizedByteCode.__anewarray:
 							{
 								s.PopInt();
-								string type = GetConstantPoolClass(instr.Arg1);
-								if(type[0] != '[')
+								TypeWrapper type = GetConstantPoolClassType(instr.Arg1);
+								string name = type.Name;
+								if(name[0] != '[')
 								{
-									type = "L" + type + ";";
+									name = "L" + name + ";";
 								}
-								s.PushObject("[" + type);
+								if(type.IsUnloadable)
+								{
+									s.PushType(new UnloadableTypeWrapper(name));
+								}
+								else
+								{
+									s.PushType(type.GetClassLoader().LoadClassBySlashedName("[" + name));
+								}
 								break;
 							}
 							case NormalizedByteCode.__newarray:
@@ -1615,28 +1433,28 @@ class MethodAnalyzer
 							switch(instr.Arg1)
 							{
 								case 4:
-									s.PushObject("[Z");
+									s.PushType(BooleanArrayType);
 									break;
 								case 5:
-									s.PushObject("[C");
+									s.PushType(CharArrayType);
 									break;
 								case 6:
-									s.PushObject("[F");
+									s.PushType(FloatArrayType);
 									break;
 								case 7:
-									s.PushObject("[D");
+									s.PushType(DoubleArrayType);
 									break;
 								case 8:
-									s.PushObject("[B");
+									s.PushType(ByteArrayType);
 									break;
 								case 9:
-									s.PushObject("[S");
+									s.PushType(ShortArrayType);
 									break;
 								case 10:
-									s.PushObject("[I");
+									s.PushType(IntArrayType);
 									break;
 								case 11:
-									s.PushObject("[J");
+									s.PushType(LongArrayType);
 									break;
 								default:
 									throw new VerifyError("Bad type");
@@ -1644,190 +1462,186 @@ class MethodAnalyzer
 								break;
 							case NormalizedByteCode.__swap:
 							{
-								string t1 = s.Pop();
-								string t2 = s.Pop();
-								s.Push(t1);
-								s.Push(t2);
+								TypeWrapper t1 = s.PopType();
+								TypeWrapper t2 = s.PopType();
+								s.PushType(t1);
+								s.PushType(t2);
 								break;
 							}
 							case NormalizedByteCode.__dup:
 							{
-								string t = s.Pop();
-								s.Push(t);
-								s.Push(t);
+								TypeWrapper t = s.PopType();
+								s.PushType(t);
+								s.PushType(t);
 								break;
 							}
 							case NormalizedByteCode.__dup2:
 							{
-								string t = s.PopAny();
-								if(t == "D" || t == "J")
+								TypeWrapper t = s.PopAnyType();
+								if(t == PrimitiveTypeWrapper.DOUBLE || t == PrimitiveTypeWrapper.LONG)
 								{
-									s.Push(t);
-									s.Push(t);
+									s.PushType(t);
+									s.PushType(t);
 								}
 								else
 								{
-									string t2 = s.Pop();
-									s.Push(t2);
-									s.Push(t);
-									s.Push(t2);
-									s.Push(t);
+									TypeWrapper t2 = s.PopType();
+									s.PushType(t2);
+									s.PushType(t);
+									s.PushType(t2);
+									s.PushType(t);
 								}
 								break;
 							}
 							case NormalizedByteCode.__dup_x1:
 							{
-								string value1 = s.Pop();
-								string value2 = s.Pop();
-								s.Push(value1);
-								s.Push(value2);
-								s.Push(value1);
+								TypeWrapper value1 = s.PopType();
+								TypeWrapper value2 = s.PopType();
+								s.PushType(value1);
+								s.PushType(value2);
+								s.PushType(value1);
 								break;
 							}
 							case NormalizedByteCode.__dup2_x1:
 							{
-								string value1 = s.PopAny();
-								if(value1 == "D" || value1 == "J")
+								TypeWrapper value1 = s.PopAnyType();
+								if(value1 == PrimitiveTypeWrapper.DOUBLE || value1 == PrimitiveTypeWrapper.LONG)
 								{
-									string value2 = s.Pop();
-									s.Push(value1);
-									s.Push(value2);
-									s.Push(value1);
+									TypeWrapper value2 = s.PopType();
+									s.PushType(value1);
+									s.PushType(value2);
+									s.PushType(value1);
 								}
 								else
 								{
-									string value2 = s.Pop();
-									string value3 = s.Pop();
-									s.Push(value2);
-									s.Push(value1);
-									s.Push(value3);
-									s.Push(value2);
-									s.Push(value1);
+									TypeWrapper value2 = s.PopType();
+									TypeWrapper value3 = s.PopType();
+									s.PushType(value2);
+									s.PushType(value1);
+									s.PushType(value3);
+									s.PushType(value2);
+									s.PushType(value1);
 								}
 								break;
 							}
 							case NormalizedByteCode.__dup_x2:
 							{
-								string value1 = s.Pop();
-								string value2 = s.Pop();
-								string value3 = s.Pop();
-								s.Push(value1);
-								s.Push(value3);
-								s.Push(value2);
-								s.Push(value1);
+								TypeWrapper value1 = s.PopType();
+								TypeWrapper value2 = s.PopType();
+								TypeWrapper value3 = s.PopType();
+								s.PushType(value1);
+								s.PushType(value3);
+								s.PushType(value2);
+								s.PushType(value1);
 								break;
 							}
 							case NormalizedByteCode.__dup2_x2:
 							{
-								string value1 = s.PopAny();
-								if(value1 == "D" || value1 == "J")
+								TypeWrapper value1 = s.PopAnyType();
+								if(value1 == PrimitiveTypeWrapper.DOUBLE || value1 == PrimitiveTypeWrapper.LONG)
 								{
-									string value2 = s.PopAny();
-									if(value2 == "D" || value2 == "J")
+									TypeWrapper value2 = s.PopAnyType();
+									if(value2 == PrimitiveTypeWrapper.DOUBLE || value2 == PrimitiveTypeWrapper.LONG)
 									{
 										// Form 4
-										s.Push(value1);
-										s.Push(value2);
-										s.Push(value1);
+										s.PushType(value1);
+										s.PushType(value2);
+										s.PushType(value1);
 									}
 									else
 									{
 										// Form 2
-										string value3 = s.Pop();
-										s.Push(value1);
-										s.Push(value3);
-										s.Push(value2);
-										s.Push(value1);
+										TypeWrapper value3 = s.PopType();
+										s.PushType(value1);
+										s.PushType(value3);
+										s.PushType(value2);
+										s.PushType(value1);
 									}
 								}
 								else
 								{
-									string value2 = s.Pop();
-									string value3 = s.PopAny();
-									if(value3 == "D" || value3 == "J")
+									TypeWrapper value2 = s.PopType();
+									TypeWrapper value3 = s.PopAnyType();
+									if(value3 == PrimitiveTypeWrapper.DOUBLE || value3 == PrimitiveTypeWrapper.LONG)
 									{
 										// Form 3
-										s.Push(value2);
-										s.Push(value1);
-										s.Push(value3);
-										s.Push(value2);
-										s.Push(value1);
+										s.PushType(value2);
+										s.PushType(value1);
+										s.PushType(value3);
+										s.PushType(value2);
+										s.PushType(value1);
 									}
 									else
 									{
 										// Form 4
-										string value4 = s.Pop();
-										s.Push(value2);
-										s.Push(value1);
-										s.Push(value4);
-										s.Push(value3);
-										s.Push(value2);
-										s.Push(value1);
+										TypeWrapper value4 = s.PopType();
+										s.PushType(value2);
+										s.PushType(value1);
+										s.PushType(value4);
+										s.PushType(value3);
+										s.PushType(value2);
+										s.PushType(value1);
 									}
 								}
 								break;
 							}
 							case NormalizedByteCode.__pop:
-								s.Pop();
+								s.PopType();
 								break;
 							case NormalizedByteCode.__pop2:
-								s.Pop2();
+							{
+								TypeWrapper type = s.PopAnyType();
+								if(type != PrimitiveTypeWrapper.DOUBLE && type != PrimitiveTypeWrapper.LONG)
+								{
+									s.PopType();
+								}
 								break;
+							}
 							case NormalizedByteCode.__monitorenter:
 							case NormalizedByteCode.__monitorexit:
 								// TODO is this allowed to be an uninitialized object?
-								s.PopObject("Ljava/lang/Object;");
+								s.PopObjectType();
 								break;
 							case NormalizedByteCode.__return:
-								if(method.Method.Signature.Substring(method.Method.Signature.IndexOf(')') + 1) != "V")
+								if(method.Method.GetRetType(classLoader) != PrimitiveTypeWrapper.VOID)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}
 								break;
 							case NormalizedByteCode.__areturn:
+								s.PopObjectType(method.Method.GetRetType(classLoader));
+								break;
+							case NormalizedByteCode.__ireturn:
 							{
-								// HACK if the return type is an interface, any object is legal
-								if(classLoader.RetTypeFromSig(method.Method.Signature).IsInterface)
+								s.PopInt();
+								TypeWrapper retType = method.Method.GetRetType(classLoader);
+								if(retType != PrimitiveTypeWrapper.BOOLEAN &&
+									retType != PrimitiveTypeWrapper.BYTE &&
+									retType != PrimitiveTypeWrapper.CHAR &&
+									retType != PrimitiveTypeWrapper.SHORT &&
+									retType != PrimitiveTypeWrapper.INT)
 								{
-									s.PopObject("Ljava/lang/Object;");
-								}
-								else
-								{
-									s.PopObject(method.Method.Signature.Substring(method.Method.Signature.IndexOf(')') + 1));
+									throw new VerifyError("Wrong return type in function");
 								}
 								break;
 							}
-							case NormalizedByteCode.__ireturn:
-								s.PopInt();
-								switch(method.Method.Signature.Substring(method.Method.Signature.IndexOf(')') + 1))
-								{
-									case "Z":
-									case "B":
-									case "S":
-									case "C":
-									case "I":
-										break;
-									default:
-										throw new VerifyError("Wrong return type in function");
-								}
-								break;
 							case NormalizedByteCode.__lreturn:
 								s.PopLong();
-								if(method.Method.Signature.Substring(method.Method.Signature.IndexOf(')') + 1) != "J")
+								if(method.Method.GetRetType(classLoader) != PrimitiveTypeWrapper.LONG)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}
 								break;
 							case NormalizedByteCode.__freturn:
 								s.PopFloat();
-								if(method.Method.Signature.Substring(method.Method.Signature.IndexOf(')') + 1) != "F")
+								if(method.Method.GetRetType(classLoader) != PrimitiveTypeWrapper.FLOAT)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}
 								break;
 							case NormalizedByteCode.__dreturn:
 								s.PopDouble();
-								if(method.Method.Signature.Substring(method.Method.Signature.IndexOf(')') + 1) != "D")
+								if(method.Method.GetRetType(classLoader) != PrimitiveTypeWrapper.DOUBLE)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}
@@ -1887,25 +1701,18 @@ class MethodAnalyzer
 								s.PushInt();
 								break;
 							case NormalizedByteCode.__checkcast:
-							{
-								s.PopObject("Ljava/lang/Object;");
-								string type = GetConstantPoolClass(instr.Arg1);
-								if(type[0] != '[')
-								{
-									type = "L" + type + ";";
-								}
-								s.PushObject(type);
+								s.PopObjectType();
+								s.PushType(GetConstantPoolClassType(instr.Arg1));
 								break;
-							}
 							case NormalizedByteCode.__instanceof:
-								s.PopObject("Ljava/lang/Object;");
+								s.PopObjectType();
 								s.PushInt();
 								break;
 							case NormalizedByteCode.__iinc:
 								s.GetLocalInt(instr.Arg1);
 								break;
 							case NormalizedByteCode.__athrow:
-								s.PopObject("Ljava/lang/Throwable;");
+								s.PopObjectType(java_lang_Throwable);
 								break;
 							case NormalizedByteCode.__lookupswitch:
 								s.PopInt();
@@ -2043,8 +1850,14 @@ class MethodAnalyzer
 								case NormalizedByteCode.__jsr:
 								{
 									int index = method.PcIndexMap[instr.PC + instr.Arg1];
-									s.Push("Lret;" + index);
 									s.SetSubroutineId(index);
+									TypeWrapper retAddressType = (TypeWrapper)returnAddressTypes[index];
+									if(retAddressType == null)
+									{
+										retAddressType = VerifierTypeWrapper.MakeRet(index);
+										returnAddressTypes[index] = retAddressType;
+									}
+									s.PushType(retAddressType);
 									state[index] += s;
 									AddCallSite(index, i);
 									break;
@@ -2087,20 +1900,27 @@ class MethodAnalyzer
 						// HACK track the local types (but only for object references)
 						for(int j = 0; j < localTypes.Length ; j++)
 						{
-							string l = s.GetLocalType(j);
-							if(l != null && (l[0] == 'U' || l[0] == 'N' || l[0] == 'L' || l[0] == '[') && !l.StartsWith("Lret;"))
+							TypeWrapper l = s.GetLocalType(j);
+							if(l != VerifierTypeWrapper.Invalid)
 							{
-								if(l[0] == 'U' || l[0] == 'N')
+								if(l == VerifierTypeWrapper.UninitializedThis)
 								{
-									l = l.Substring(l.IndexOf(';') + 1);
+									localTypes[j] = wrapper;
 								}
-								if(localTypes[j] == null)
+								else if(VerifierTypeWrapper.IsNew(l))
 								{
-									localTypes[j] = l;
+									localTypes[j] = ((VerifierTypeWrapper)l).UnderlyingType;
 								}
-								else
+								else if(!VerifierTypeWrapper.IsRet(l) && !l.IsPrimitive)
 								{
-									localTypes[j] = s.FindCommonBaseType(localTypes[j], l);
+									if(localTypes[j] == VerifierTypeWrapper.Invalid)
+									{
+										localTypes[j] = l;
+									}
+									else
+									{
+										localTypes[j] = s.FindCommonBaseType(localTypes[j], l);
+									}
 								}
 							}
 						}
@@ -2117,6 +1937,7 @@ class MethodAnalyzer
 							opcode = opcode.Substring(2);
 						}
 						x.Instruction = opcode;
+						Console.WriteLine(x);
 						/*
 						for(int j = 0; j < method.Instructions.Length; j++)
 						{
@@ -2201,6 +2022,21 @@ class MethodAnalyzer
 		throw new VerifyError("Illegal constant pool index");
 	}
 
+	private TypeWrapper GetConstantPoolClassType(int index)
+	{
+		try
+		{
+			return method.Method.ClassFile.GetConstantPoolClassType(index, classLoader);
+		}
+		catch(InvalidCastException)
+		{
+		}
+		catch(IndexOutOfRangeException)
+		{
+		}
+		throw new VerifyError("Illegal constant pool index");
+	}
+
 	private void AddCallSite(int subroutineIndex, int callSiteIndex)
 	{
 		if(callsites[subroutineIndex] == null)
@@ -2225,17 +2061,17 @@ class MethodAnalyzer
 		return state[index].GetStackHeight();
 	}
 
-	internal string GetRawStackType(int index, int pos)
+	internal TypeWrapper GetRawStackTypeWrapper(int index, int pos)
 	{
 		return state[index].GetStackSlot(pos);
 	}
 
-	internal string GetLocalType(int index, int local)
+	internal TypeWrapper GetLocalTypeWrapper(int index, int local)
 	{
 		return state[index].GetLocalType(local);
 	}
 
-	internal string GetDeclaredLocalType(int local)
+	internal TypeWrapper GetDeclaredLocalTypeWrapper(int local)
 	{
 		return localTypes[local];
 	}

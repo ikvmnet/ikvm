@@ -1100,7 +1100,25 @@ namespace NativeCode.java
 				}
 				// we need to finish the type otherwise all methods will not be in the method map yet
 				wrapper.Finish();
-				return wrapper.GetMethods();
+				// we need to look through the array for unloadable types, because we may not let them
+				// escape into the 'wild'
+				MethodWrapper[] methods = wrapper.GetMethods();
+				for(int i = 0; i < methods.Length; i++)
+				{
+					if(methods[i].ReturnType.IsUnloadable)
+					{
+						throw JavaException.NoClassDefFoundError(methods[i].ReturnType.Name);
+					}
+					TypeWrapper[] args = methods[i].GetParameters();
+					for(int j = 0; j < args.Length; j++)
+					{
+						if(args[j].IsUnloadable)
+						{
+							throw JavaException.NoClassDefFoundError(args[j].Name);
+						}
+					}
+				}
+				return methods;
 			}
 
 			public static object[] GetDeclaredFields(Type type, object cwrapper)
@@ -1112,7 +1130,17 @@ namespace NativeCode.java
 				}
 				// we need to finish the type otherwise all fields will not be in the field map yet
 				wrapper.Finish();
-				return wrapper.GetFields();
+				// we need to look through the array for unloadable types, because we may not let them
+				// escape into the 'wild'
+				FieldWrapper[] fields = wrapper.GetFields();
+				for(int i = 0; i < fields.Length; i++)
+				{
+					if(fields[i].FieldTypeWrapper.IsUnloadable)
+					{
+						throw JavaException.NoClassDefFoundError(fields[i].FieldTypeWrapper.Name);
+					}
+				}
+				return fields;
 			}
 
 			public static object[] GetDeclaredClasses(Type type, object cwrapper)

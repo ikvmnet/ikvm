@@ -35,6 +35,25 @@ public class IKVMAssemblyAttribute : Attribute
 {
 }
 
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.ReturnValue)]
+public class UnloadableTypeAttribute : Attribute
+{
+	private string name;
+
+	public UnloadableTypeAttribute(string name)
+	{
+		this.name = name;
+	}
+
+	public string Name
+	{
+		get
+		{
+			return name;
+		}
+	}
+}
+
 [AttributeUsage(AttributeTargets.All)]
 public class ModifiersAttribute : Attribute
 {

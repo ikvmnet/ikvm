@@ -128,9 +128,9 @@ class ClassLoaderWrapper
 	{
 		nativeMethods = new Hashtable();
 		// TODO interfaces have java/lang/Object as the base type (do they really?)
-		types["java.lang.Cloneable"] = new RemappedTypeWrapper(ModifiersAttribute.GetModifiers(typeof(java.lang.Cloneable)), "java/lang/Cloneable", typeof(java.lang.Cloneable), new TypeWrapper[0], null);
+		types["java.lang.Cloneable"] = new RemappedTypeWrapper(this, ModifiersAttribute.GetModifiers(typeof(java.lang.Cloneable)), "java/lang/Cloneable", typeof(java.lang.Cloneable), new TypeWrapper[0], null);
 		typeToTypeWrapper.Add(typeof(java.lang.Cloneable), types["java.lang.Cloneable"]);
-		types["java.io.Serializable"] = new RemappedTypeWrapper(ModifiersAttribute.GetModifiers(typeof(java.io.Serializable)), "java/io/Serializable", typeof(java.io.Serializable), new TypeWrapper[0], null);
+		types["java.io.Serializable"] = new RemappedTypeWrapper(this, ModifiersAttribute.GetModifiers(typeof(java.io.Serializable)), "java/io/Serializable", typeof(java.io.Serializable), new TypeWrapper[0], null);
 		typeToTypeWrapper.Add(typeof(java.io.Serializable), types["java.io.Serializable"]);
 		MapXml.Root map = null;
 		using(Stream s = Assembly.GetExecutingAssembly().GetManifestResourceStream("map.xml"))
@@ -151,7 +151,7 @@ class ClassLoaderWrapper
 			string name = c.Name;
 			Modifiers modifiers = (Modifiers)c.Modifiers;
 			// TODO specify interfaces
-			TypeWrapper tw = new RemappedTypeWrapper(modifiers, name.Replace('.', '/'), Type.GetType(c.Type, true), new TypeWrapper[0], baseWrapper);
+			TypeWrapper tw = new RemappedTypeWrapper(this, modifiers, name.Replace('.', '/'), Type.GetType(c.Type, true), new TypeWrapper[0], baseWrapper);
 			types.Add(name, tw);
 			typeToTypeWrapper.Add(tw.Type, tw);
 		}
@@ -365,7 +365,7 @@ class ClassLoaderWrapper
 			MethodDescriptor mdClone = new MethodDescriptor(GetBootstrapClassLoader(), "clone", "()Ljava/lang/Object;");
 			Modifiers modifiers = Modifiers.Final | Modifiers.Public;
 			// TODO copy accessibility from element type
-			wrapper = new RemappedTypeWrapper(modifiers, name, array, interfaces, GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object"));
+			wrapper = new RemappedTypeWrapper(this, modifiers, name, array, interfaces, GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object"));
 			MethodInfo clone = typeof(Array).GetMethod("Clone");
 			MethodWrapper mw = new MethodWrapper(wrapper, mdClone, clone, Modifiers.Public);
 			mw.EmitCall = CodeEmitter.Create(OpCodes.Callvirt, clone);
@@ -415,7 +415,7 @@ class ClassLoaderWrapper
 		}
 		else
 		{
-			type = new DynamicTypeWrapper(f.Name, f, baseType, this, nativeMethods);
+			type = new DynamicTypeWrapper(f, this, nativeMethods);
 			dynamicTypes.Add(f.Name.Replace('/', '.'), type);
 		}
 		types.Add(f.Name.Replace('/', '.'), type);
@@ -526,19 +526,18 @@ class ClassLoaderWrapper
 		return moduleBuilder;
 	}
 
-	internal Type ExpressionType(string type)
+	internal TypeWrapper ExpressionTypeWrapper(string type)
 	{
-		// HACK to ease the burden of the compiler, we support the Lret pseudo type here
 		if(type.StartsWith("Lret;"))
 		{
-			return typeof(int);
+			throw new InvalidOperationException("ExpressionTypeWrapper for Lret; requested");
 		}
 		if(type == "Lnull")
 		{
-			throw new InvalidOperationException("ExpressionType for Lnull requested");
+			throw new InvalidOperationException("ExpressionTypeWrapper for Lnull requested");
 		}
 		int index = 0;
-		return SigDecoder(ref index, type);
+		return SigDecoderWrapper(ref index, type);
 	}
 
 	// NOTE: this will ignore anything following the sig marker (so that it can be used to decode method signatures)
@@ -713,66 +712,6 @@ class ClassLoaderWrapper
 		return types;
 	}
 
-	// subType and baseType are Java class name (e.g. java/lang/Object)
-	internal bool IsSubType(string subType, string baseType)
-	{
-		return LoadClassBySlashedName(subType).IsSubTypeOf(LoadClassBySlashedName(baseType));
-	}
-
-	internal string FindCommonBaseType(string type1, string type2)
-	{
-		TypeWrapper t1 = LoadClassBySlashedName(type1);
-		TypeWrapper t2 = LoadClassBySlashedName(type2);
-		if(t1 == t2)
-		{
-			return type1;
-		}
-		if(t1.IsInterface || t2.IsInterface)
-		{
-			// TODO I don't know how finding the common base for interfaces is defined, but
-			// for now I'm just doing the naive thing
-			// UPDATE according to a paper by Alessandro Coglio & Allen Goldberg titled
-			// "Type Safety in the JVM: Some Problems in Java 2 SDK 1.2 and Proposed Solutions"
-			// the common base of two interfaces is java/lang/Object, and there is special
-			// treatment for java/lang/Object types that allow it to be assigned to any interface
-			// type, the JVM's typesafety then depends on the invokeinterface instruction to make
-			// sure that the reference actually implements the interface.
-			// So strictly speaking, the code below isn't correct, but it works, so for now it stays in.
-			if(t1.ImplementsInterface(t2))
-			{
-				return t2.Name;
-			}
-			if(t2.ImplementsInterface(t1))
-			{
-				return t1.Name;
-			}
-			return "java/lang/Object";
-		}
-		Stack st1 = new Stack();
-		Stack st2 = new Stack();
-		while(t1 != null)
-		{
-			st1.Push(t1);
-			t1 = t1.BaseTypeWrapper;
-		}
-		while(t2 != null)
-		{
-			st2.Push(t2);
-			t2 = t2.BaseTypeWrapper;
-		}
-		TypeWrapper type = null;
-		for(;;)
-		{
-			t1 = st1.Count > 0 ? (TypeWrapper)st1.Pop() : null;
-			t2 = st2.Count > 0 ? (TypeWrapper)st2.Pop() : null;
-			if(t1 != t2)
-			{
-				return type.Name;
-			}
-			type = t1;
-		}
-	}
-
 	internal static ClassLoaderWrapper GetBootstrapClassLoader()
 	{
 		if(bootstrapClassLoader == null)
@@ -821,7 +760,26 @@ class ClassLoaderWrapper
 	internal static TypeWrapper GetWrapperFromTypeFast(Type type)
 	{
 		Debug.Assert(!(type is TypeBuilder));
-		return (TypeWrapper)typeToTypeWrapper[type];
+		TypeWrapper wrapper = (TypeWrapper)typeToTypeWrapper[type];
+		if(wrapper == null && type.IsArray)
+		{
+			// it might be an array of a dynamically compiled Java type
+			int rank = 1;
+			Type elem = type.GetElementType();
+			while(elem.IsArray)
+			{
+				rank++;
+				elem = elem.GetElementType();
+			}
+			wrapper = (TypeWrapper)typeToTypeWrapper[elem];
+			if(wrapper != null)
+			{
+				// HACK this is a lame way of creating the array wrapper
+				wrapper = wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + "L" + wrapper.Name + ";");
+				typeToTypeWrapper[type] = wrapper;
+			}
+		}
+		return wrapper;
 	}
 
 	internal static TypeWrapper GetWrapperFromType(Type type)

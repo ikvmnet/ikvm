@@ -34,6 +34,22 @@ sealed class MethodDescriptor
 	private string sig;
 	private Type[] args;
 	private Type ret;
+	private TypeWrapper[] argTypeWrappers;
+	private TypeWrapper retTypeWrapper;
+
+	internal MethodDescriptor(ClassLoaderWrapper classLoader, ClassFile.ConstantPoolItemFMI cpi)
+		: this(classLoader, cpi.Name, cpi.Signature)
+	{
+		argTypeWrappers = cpi.GetArgTypes(classLoader);
+		retTypeWrapper = cpi.GetRetType(classLoader);
+	}
+
+	internal MethodDescriptor(ClassLoaderWrapper classLoader, ClassFile.Method method)
+		: this(classLoader, method.Name, method.Signature)
+	{
+		argTypeWrappers = method.GetArgTypes(classLoader);
+		retTypeWrapper = method.GetRetType(classLoader);
+	}
 
 	internal MethodDescriptor(ClassLoaderWrapper classLoader, string name, string sig)
 	{
@@ -76,6 +92,18 @@ sealed class MethodDescriptor
 		}
 	}
 
+	internal TypeWrapper[] ArgTypeWrappers
+	{
+		get
+		{
+			if(argTypeWrappers == null)
+			{
+				argTypeWrappers = classLoader.ArgTypeWrapperListFromSig(sig);
+			}
+			return argTypeWrappers;
+		}
+	}
+
 	internal Type RetType
 	{
 		get
@@ -85,6 +113,18 @@ sealed class MethodDescriptor
 				ret = classLoader.RetTypeFromSig(sig);
 			}
 			return ret;
+		}
+	}
+
+	internal TypeWrapper RetTypeWrapper
+	{
+		get
+		{
+			if(retTypeWrapper == null)
+			{
+				retTypeWrapper = classLoader.RetTypeWrapperFromSig(sig);
+			}
+			return retTypeWrapper;
 		}
 	}
 
@@ -196,6 +236,51 @@ abstract class TypeWrapper
 		this.classLoader = classLoader;
 	}
 
+	public override string ToString()
+	{
+		return GetType().Name + "[" + name + "]";
+	}
+
+	// NOTE for non-array types this returns 0
+	internal int ArrayRank
+	{
+		get
+		{
+			int i = 0;
+			while(name[i] == '[')
+			{
+				i++;
+			}
+			return i;
+		}
+	}
+
+	internal virtual bool IsPrimitive
+	{
+		get
+		{
+			return false;
+		}
+	}
+
+	internal bool IsUnloadable
+	{
+		get
+		{
+			// NOTE we abuse modifiers to note unloadable classes
+			return modifiers == Modifiers.Synthetic;
+		}
+	}
+
+	internal bool IsVerifierType
+	{
+		get
+		{
+			// NOTE we abuse modifiers to note verifier types
+			return modifiers == (Modifiers.Final | Modifiers.Interface);
+		}
+	}
+
 	internal Modifiers Modifiers
 	{
 		get
@@ -235,6 +320,7 @@ abstract class TypeWrapper
 
 	protected abstract FieldWrapper GetFieldImpl(string fieldName);
 
+	// TODO this shouldn't just be based on the name, fields can be overloaded on type
 	public FieldWrapper GetFieldWrapper(string fieldName)
 	{
 		FieldWrapper fae = (FieldWrapper)fields[fieldName];
@@ -364,11 +450,65 @@ abstract class TypeWrapper
 		get;
 	}
 
+	internal Type TypeOrUnloadableAsObject
+	{
+		get
+		{
+			if(IsUnloadable)
+			{
+				return typeof(object);
+			}
+			// HACK as a convenience to the compiler, we replace return address types with typeof(int)
+			if(VerifierTypeWrapper.IsRet(this))
+			{
+				return typeof(int);
+			}
+			return Type;
+		}
+	}
+
 	public TypeWrapper BaseTypeWrapper
 	{
 		get
 		{
 			return baseWrapper;
+		}
+	}
+
+	internal TypeWrapper ElementTypeWrapper
+	{
+		get
+		{
+			if(name[0] != '[')
+			{
+				throw new InvalidOperationException();
+			}
+			// TODO consider caching the element type
+			switch(name[1])
+			{
+				case '[':
+					return classLoader.LoadClassBySlashedName(name.Substring(1));
+				case 'L':
+					return classLoader.LoadClassBySlashedName(name.Substring(2, name.Length - 3));
+				case 'Z':
+					return PrimitiveTypeWrapper.BOOLEAN;
+				case 'B':
+					return PrimitiveTypeWrapper.BYTE;
+				case 'S':
+					return PrimitiveTypeWrapper.SHORT;
+				case 'C':
+					return PrimitiveTypeWrapper.CHAR;
+				case 'I':
+					return PrimitiveTypeWrapper.INT;
+				case 'J':
+					return PrimitiveTypeWrapper.LONG;
+				case 'F':
+					return PrimitiveTypeWrapper.FLOAT;
+				case 'D':
+					return PrimitiveTypeWrapper.DOUBLE;
+				default:
+					throw new InvalidOperationException(name);
+			}
 		}
 	}
 
@@ -413,6 +553,40 @@ abstract class TypeWrapper
 			}
 		}
 		return true;
+	}
+
+	internal bool IsAssignableTo(TypeWrapper wrapper)
+	{
+		if(this == wrapper)
+		{
+			return true;
+		}
+		if(wrapper.IsPrimitive)
+		{
+			return false;
+		}
+		if(this == VerifierTypeWrapper.Null)
+		{
+			return true;
+		}
+		int rank1 = this.ArrayRank;
+		int rank2 = wrapper.ArrayRank;
+		if(rank1 > 0 && rank2 > 0)
+		{
+			rank1--;
+			rank2--;
+			TypeWrapper elem1 = this.ElementTypeWrapper;
+			TypeWrapper elem2 = wrapper.ElementTypeWrapper;
+			while(rank1 != 0 && rank2 != 0)
+			{
+				elem1 = elem1.ElementTypeWrapper;
+				elem2 = elem2.ElementTypeWrapper;
+				rank1--;
+				rank2--;
+			}
+			return elem1.IsSubTypeOf(elem2);
+		}
+		return this.IsSubTypeOf(wrapper);
 	}
 
 	public abstract bool IsInterface
@@ -608,6 +782,53 @@ abstract class TypeWrapper
 	}
 }
 
+class UnloadableTypeWrapper : TypeWrapper
+{
+	internal UnloadableTypeWrapper(string name)
+		: base(Modifiers.Synthetic, name, null, null)
+	{
+	}
+
+	protected override FieldWrapper GetFieldImpl(string fieldName)
+	{
+		throw new InvalidOperationException("GetFieldImpl called on UnloadableTypeWrapper");
+	}
+
+	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
+	{
+		throw new InvalidOperationException("GetMethodImpl called on UnloadableTypeWrapper");
+	}
+
+	public override Type Type
+	{
+		get
+		{
+			throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper");
+		}
+	}
+
+	public override bool IsInterface
+	{
+		get
+		{
+			throw new InvalidOperationException("get_IsInterface called on UnloadableTypeWrapper");
+		}
+	}
+
+	public override TypeWrapper[] Interfaces
+	{
+		get
+		{
+			throw new InvalidOperationException("get_Interfaces called on UnloadableTypeWrapper");
+		}
+	}
+
+	public override void Finish()
+	{
+		throw new InvalidOperationException("Finish called on UnloadableTypeWrapper");
+	}
+}
+
 class PrimitiveTypeWrapper : TypeWrapper
 {
 	internal static readonly PrimitiveTypeWrapper BYTE = new PrimitiveTypeWrapper(typeof(sbyte));
@@ -626,6 +847,14 @@ class PrimitiveTypeWrapper : TypeWrapper
 		: base(Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null, null, ClassLoaderWrapper.GetBootstrapClassLoader())
 	{
 		this.type = type;
+	}
+
+	internal override bool IsPrimitive
+	{
+		get
+		{
+			return true;
+		}
 	}
 
 	public override Type Type
@@ -673,12 +902,47 @@ class DynamicTypeWrapper : TypeWrapper
 	private DynamicImpl impl;
 	private TypeWrapper[] interfaces;
 
-	internal DynamicTypeWrapper(string name, ClassFile f, TypeWrapper baseType, ClassLoaderWrapper classLoader, Hashtable nativeMethods)
-		: base(f.Modifiers, name, baseType, classLoader)
+	internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader, Hashtable nativeMethods)
+		: base(f.Modifiers, f.Name, f.GetSuperTypeWrapper(classLoader), classLoader)
 	{
-		JavaTypeImpl impl = new JavaTypeImpl(f, this, baseType, nativeMethods);
-		this.impl = impl;
-		interfaces = impl.GetInterfaces();
+		if(BaseTypeWrapper.IsUnloadable)
+		{
+			throw JavaException.NoClassDefFoundError(BaseTypeWrapper.Name);
+		}
+		// if the base type isn't public, it must be in the same package
+		if(!BaseTypeWrapper.IsPublic)
+		{
+			if(BaseTypeWrapper.GetClassLoader() != classLoader || f.PackageName != BaseTypeWrapper.PackageName)
+			{
+				throw JavaException.IllegalAccessError("Class {0} cannot access its superclass {1}", f.Name, BaseTypeWrapper.Name);
+			}
+		}
+		if(BaseTypeWrapper.IsFinal)
+		{
+			throw JavaException.VerifyError("Cannot inherit from final class");
+		}
+		if(BaseTypeWrapper.IsInterface)
+		{
+			throw JavaException.IncompatibleClassChangeError("Class {0} has interface {1} as superclass", f.Name, BaseTypeWrapper.Name);
+		}
+		interfaces = f.GetInterfaceTypeWrappers(classLoader);
+		for(int i = 0; i < interfaces.Length; i++)
+		{
+			if(interfaces[i].IsUnloadable)
+			{
+				throw JavaException.NoClassDefFoundError(interfaces[i].Name);
+			}
+			if(!interfaces[i].IsInterface)
+			{
+				throw JavaException.IncompatibleClassChangeError("Implementing class");
+			}
+			if(!interfaces[i].IsAccessibleFrom(this))
+			{
+				throw JavaException.IllegalAccessError("Class {0} cannot access its superinterface {1}", f.Name, interfaces[i].Name);
+			}
+		}
+
+		impl = new JavaTypeImpl(f, this, BaseTypeWrapper, interfaces, nativeMethods);
 	}
 
 	protected override FieldWrapper GetFieldImpl(string fieldName)
@@ -747,12 +1011,13 @@ class DynamicTypeWrapper : TypeWrapper
 		private FinishedTypeImpl finishedType;
 		private Hashtable nativeMethods;
 
-		internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper, TypeWrapper baseWrapper, Hashtable nativeMethods)
+		internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper, TypeWrapper baseWrapper, TypeWrapper[] interfaces, Hashtable nativeMethods)
 		{
-			//		Console.WriteLine("constructing JavaTypeImpl for " + f.Name);
+			//Console.WriteLine("constructing JavaTypeImpl for " + f.Name);
 			this.classFile = f;
 			this.wrapper = wrapper;
 			this.baseWrapper = baseWrapper;
+			this.interfaces = interfaces;
 			this.nativeMethods = nativeMethods;
 
 			TypeAttributes typeAttribs = 0;
@@ -768,21 +1033,6 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				typeAttribs |= TypeAttributes.Public;
 			}
-			interfaces = new TypeWrapper[f.Interfaces.Length];
-			for(int i = 0; i < f.Interfaces.Length; i++)
-			{
-				interfaces[i] = wrapper.GetClassLoader().LoadClassBySlashedName(f.Interfaces[i]);
-				if(!interfaces[i].IsInterface)
-				{
-					throw JavaException.IncompatibleClassChangeError("Implementing class");
-				}
-				if(!interfaces[i].IsAccessibleFrom(wrapper))
-				{
-					throw JavaException.IllegalAccessError("Class {0} cannot access its superinterface {1}", wrapper.Name, interfaces[i].Name);
-				}
-			}
-			// NOTE we call DefineType after all the interfaces have been resolved, because otherwise
-			// we end up with a .NET type that cannot be completed
 			if(f.IsInterface)
 			{
 				typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
@@ -797,11 +1047,6 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				typeBuilder.AddInterfaceImplementation(interfaces[i].Type);
 			}
-		}
-
-		internal TypeWrapper[] GetInterfaces()
-		{
-			return interfaces;
 		}
 
 		public override DynamicImpl Finish()
@@ -850,7 +1095,7 @@ class DynamicTypeWrapper : TypeWrapper
 				MethodDescriptor[] methodDescriptors = new MethodDescriptor[classFile.Methods.Length];
 				for(int i = 0; i < classFile.Methods.Length; i++)
 				{
-					methodDescriptors[i] = new MethodDescriptor(wrapper.GetClassLoader(), classFile.Methods[i].Name, classFile.Methods[i].Signature);
+					methodDescriptors[i] = new MethodDescriptor(wrapper.GetClassLoader(), classFile.Methods[i]);
 				}
 				if(methodLookup == null)
 				{
@@ -1149,21 +1394,17 @@ class DynamicTypeWrapper : TypeWrapper
 		{
 			FieldBuilder field;
 			ClassFile.Field fld = classFile.Fields[i];
-			Type type = null;
-			try
+			TypeWrapper typeWrapper = fld.GetFieldType(wrapper.GetClassLoader());
+			Type type;
+			if(typeWrapper.IsUnloadable)
 			{
-				type = wrapper.GetClassLoader().ExpressionType(fld.Signature);
+				// TODO the field name should be mangled here, because otherwise it might conflict with another field
+				// with the same name and a different unloadable type (or java.lang.Object as its type)
+				type = typeof(object);
 			}
-			catch(Exception x)
+			else
 			{
-				if(x.GetType().FullName == "java.lang.ClassNotFoundException")
-				{
-					// TODO set fields[i] to a special FieldWrapper that does the appropriate thing (whatever that may be)
-					fields[i] = new FieldWrapper(this.wrapper, fld.Name, fld.Signature, fld.Modifiers);
-					Console.Error.WriteLine("Type " + fld.Signature + " of field " + fld.Name + " in class " + classFile.Name + " is unloadable");
-					return;
-				}
-				throw;
+				type = typeWrapper.Type;
 			}
 			FieldAttributes attribs = 0;
 			MethodAttributes methodAttribs = 0;
@@ -1294,6 +1535,11 @@ class DynamicTypeWrapper : TypeWrapper
 					fields[i] = FieldWrapper.Create(wrapper, field, fld.Signature, fld.Modifiers);
 				}
 			}
+			if(typeWrapper.IsUnloadable)
+			{
+				CustomAttributeBuilder attrib = new CustomAttributeBuilder(typeof(UnloadableTypeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { typeWrapper.Name });
+				field.SetCustomAttribute(attrib);
+			}
 			// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
 			// the Java modifiers
 			if(setModifiers)
@@ -1310,7 +1556,7 @@ class DynamicTypeWrapper : TypeWrapper
 				methodLookup = new Hashtable();
 				for(int i = 0; i < classFile.Methods.Length; i++)
 				{
-					methodLookup[new MethodDescriptor(wrapper.GetClassLoader(), classFile.Methods[i].Name, classFile.Methods[i].Signature)] = i;
+					methodLookup[new MethodDescriptor(wrapper.GetClassLoader(), classFile.Methods[i])] = i;
 				}
 			}
 			object index = methodLookup[md];
@@ -1332,25 +1578,36 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				throw new InvalidOperationException();
 			}
+			// TODO things to consider when we support unloadable types on the argument list on return type:
+			// - later on, the method can be overriden by a class that does have access to the type, so
+			//   this should be detected and an appropriate override stub should be generated
+			// - overloading might conflict with the generalised argument list (unloadable types appear
+			//   as System.Object). The nicest way to solve this would be to emit a modreq attribute on the parameter,
+			//   but Reflection.Emit doesn't support this, so we'll probably have to use a name mangling scheme
 			MethodBase method;
 			ClassFile.Method m = classFile.Methods[index];
-			Type[] args = null;
-			Type retType = null;
-			try
+			TypeWrapper[] argTypeWrappers = m.GetArgTypes(wrapper.GetClassLoader());
+			TypeWrapper retTypeWrapper = m.GetRetType(wrapper.GetClassLoader());
+			Type[] args = new Type[argTypeWrappers.Length];
+			Type retType;
+			if(retTypeWrapper.IsUnloadable)
 			{
-				args = wrapper.GetClassLoader().ArgTypeListFromSig(m.Signature);
-				retType = wrapper.GetClassLoader().RetTypeFromSig(m.Signature);
+				retType = typeof(object);
 			}
-			catch(Exception x)
+			else
 			{
-				if(x.GetType().FullName == "java.lang.ClassNotFoundException")
+				retType = retTypeWrapper.Type;
+			}
+			for(int i = 0; i < args.Length; i++)
+			{
+				if(argTypeWrappers[i].IsUnloadable)
 				{
-					// TODO set methods[i] to a special MethodWrapper that does the appropriate thing (whatever that may be)
-					methods[index] = new MethodWrapper(this.wrapper, new MethodDescriptor(wrapper.GetClassLoader(), m.Name, m.Signature), null, m.Modifiers);
-					Console.Error.WriteLine("Type " + x.Message + " of method " + m.Name + m.Signature + " in class " + classFile.Name + " is unloadable");
-					return;
+					args[i] = typeof(object);
 				}
-				throw;
+				else
+				{
+					args[i] = argTypeWrappers[i].Type;
+				}
 			}
 			MethodAttributes attribs = 0;
 			if(m.IsAbstract)
@@ -1412,7 +1669,7 @@ class DynamicTypeWrapper : TypeWrapper
 					attribs |= MethodAttributes.Virtual;
 				}
 				string name = m.Name;
-				MethodDescriptor md = new MethodDescriptor(wrapper.GetClassLoader(), name, m.Signature);
+				MethodDescriptor md = new MethodDescriptor(wrapper.GetClassLoader(), m);
 				// if a method is virtual, we need to find the method it overrides (if any), for several reasons:
 				// - if we're overriding a method that has a different name (e.g. some of the virtual methods
 				//   in System.Object [Equals <-> equals]) we need to add an explicit MethodOverride
@@ -1506,7 +1763,27 @@ class DynamicTypeWrapper : TypeWrapper
 					typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod);
 				}
 			}
-			methods[index] = MethodWrapper.Create(wrapper, new MethodDescriptor(wrapper.GetClassLoader(), m.Name, m.Signature), method, method, m.Modifiers);
+			if(retTypeWrapper.IsUnloadable)
+			{
+				CustomAttributeBuilder attrib = new CustomAttributeBuilder(typeof(UnloadableTypeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { retTypeWrapper.Name });
+				((MethodBuilder)method).DefineParameter(0, ParameterAttributes.None, null).SetCustomAttribute(attrib);
+			}
+			for(int i = 0; i < argTypeWrappers.Length; i++)
+			{
+				if(argTypeWrappers[i].IsUnloadable)
+				{
+					CustomAttributeBuilder attrib = new CustomAttributeBuilder(typeof(UnloadableTypeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { argTypeWrappers[i].Name });
+					if(method is MethodBuilder)
+					{
+						((MethodBuilder)method).DefineParameter(i + 1, ParameterAttributes.None, null).SetCustomAttribute(attrib);
+					}
+					else
+					{
+						((ConstructorBuilder)method).DefineParameter(i + 1, ParameterAttributes.None, null).SetCustomAttribute(attrib);
+					}
+				}
+			}
+			methods[index] = MethodWrapper.Create(wrapper, new MethodDescriptor(wrapper.GetClassLoader(), m), method, method, m.Modifiers);
 		}
 
 		public override Type Type
@@ -1568,8 +1845,8 @@ class RemappedTypeWrapper : TypeWrapper
 	private Type virtualsInterface;
 	private Type virtualsHelperHack;
 
-	public RemappedTypeWrapper(Modifiers modifiers, string name, Type type, TypeWrapper[] interfaces, TypeWrapper baseType)
-		: base(modifiers, name, baseType, ClassLoaderWrapper.GetBootstrapClassLoader())
+	public RemappedTypeWrapper(ClassLoaderWrapper classLoader, Modifiers modifiers, string name, Type type, TypeWrapper[] interfaces, TypeWrapper baseType)
+		: base(modifiers, name, baseType, classLoader)
 	{
 		this.type = type;
 		this.interfaces = interfaces;
@@ -1709,9 +1986,8 @@ class RemappedTypeWrapper : TypeWrapper
 					{
 						if(method.@override != null)
 						{
-							MethodDescriptor redir = new MethodDescriptor(GetClassLoader(), method.@override.Name, sig);
 							BindingFlags binding = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-							overrideMethod = type.GetMethod(redir.Name, binding, null, CallingConventions.Standard, redir.ArgTypes, null);
+							overrideMethod = type.GetMethod(method.@override.Name, binding, null, CallingConventions.Standard, GetClassLoader().ArgTypeListFromSig(sig), null);
 							if(overrideMethod == null)
 							{
 								throw new InvalidOperationException("Override method not found: " + Name + "." + name + sig);
@@ -2908,13 +3184,13 @@ sealed class MethodWrapper
 	{
 		get
 		{
-			return declaringType.GetClassLoader().RetTypeWrapperFromSig(md.Signature);
+			return md.RetTypeWrapper;
 		}
 	}
 
 	internal TypeWrapper[] GetParameters()
 	{
-		return declaringType.GetClassLoader().ArgTypeWrapperListFromSig(md.Signature);
+		return md.ArgTypeWrappers;
 	}
 
 	internal Modifiers Modifiers
@@ -3139,7 +3415,16 @@ sealed class FieldWrapper
 	{
 		get
 		{
-			return declaringType.GetClassLoader().ExpressionType(sig);
+			return FieldTypeWrapper.Type;
+		}
+	}
+
+	internal TypeWrapper FieldTypeWrapper
+	{
+		get
+		{
+			// HACK
+			return declaringType.GetClassLoader().RetTypeWrapperFromSig("()" + sig);
 		}
 	}
 

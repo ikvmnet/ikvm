@@ -81,6 +81,7 @@ class Compiler
 	private static MethodInfo monitorEnterMethod = typeof(ByteCodeHelper).GetMethod("monitorenter");
 	private static MethodInfo monitorExitMethod = typeof(ByteCodeHelper).GetMethod("monitorexit");
 	private static MethodInfo throwHack = typeof(ExceptionHelper).GetMethod("ThrowHack");
+	private static TypeWrapper java_lang_Throwable;
 	private TypeWrapper clazz;
 	private ClassFile.Method.Code m;
 	private ILGenerator ilGenerator;
@@ -105,17 +106,8 @@ class Compiler
 			}
 		}
 		Profiler.Enter("MethodAnalyzer");
-		ma = new MethodAnalyzer(m, classLoader);
+		ma = new MethodAnalyzer(clazz, m, classLoader);
 		Profiler.Leave("MethodAnalyzer");
-		// HACK force types of locals to be loaded, so we don't run into a problem later (GetLocal cannot handle an unloadable type)
-		for(int i = 0; i < m.MaxLocals; i++)
-		{
-			string t = ma.GetDeclaredLocalType(i);
-			if(t != null && t != "Lnull")
-			{
-				classLoader.ExpressionType(t);
-			}
-		}
 		ArrayList ar = new ArrayList(m.ExceptionTable);
 //		Console.WriteLine("before processing:");
 //		foreach(ExceptionTableEntry e in ar)
@@ -360,29 +352,26 @@ class Compiler
 
 	private struct DupHelper
 	{
-		private ClassLoaderWrapper classLoader;
 		private ILGenerator ilgen;
 		private bool[] isnull;
 		private LocalBuilder[] locals;
 
-		internal DupHelper(ClassLoaderWrapper classLoader, ILGenerator ilgen, int count)
+		internal DupHelper(ILGenerator ilgen, int count)
 		{
-			this.classLoader = classLoader;
 			this.ilgen = ilgen;
 			isnull = new bool[count];
 			locals = new LocalBuilder[count];
 		}
 
-		internal DupHelper SetType(int i, string type)
+		internal DupHelper SetType(int i, TypeWrapper type)
 		{
-			if(type == "Lnull")
+			if(type == VerifierTypeWrapper.Null)
 			{
 				isnull[i] = true;
 			}
-			else if(type[0] != 'N')
+			else if(!VerifierTypeWrapper.IsNew(type))
 			{
-				// TODO handle class not found
-				locals[i] = ilgen.DeclareLocal(classLoader.ExpressionType(type));
+				locals[i] = ilgen.DeclareLocal(type.TypeOrUnloadableAsObject);
 			}
 			return this;
 		}
@@ -438,21 +427,6 @@ class Compiler
 				Console.WriteLine("java.lang.VerifyError: " + msg);
 			}
 			return;
-		}
-		catch(Exception x1)
-		{
-			// HACK because the verifier currently cannot deal with unloadable classes, we have
-			// to work around it by just generating code to throw a verify error
-			if(x1.GetType().FullName == "java.lang.ClassNotFoundException")
-			{
-				Type verifyError = ClassLoaderWrapper.GetType("java.lang.VerifyError");
-				string msg = string.Format("{0}.{1}{2} cannot be verified due to unloadable class {3}", clazz.Name, m.Name, m.Signature, x1.Message);
-				ilGenerator.Emit(OpCodes.Ldstr, msg);
-				ilGenerator.Emit(OpCodes.Newobj, verifyError.GetConstructor(new Type[] { typeof(string) }));
-				ilGenerator.Emit(OpCodes.Throw);
-				return;
-			}
-			throw;
 		}
 		Profiler.Enter("Compile");
 		c.Compile(0, 0, null);
@@ -546,28 +520,24 @@ class Compiler
 							int stackHeight = ma.GetStackHeight(i);
 							for(int n = 0; n < stackHeight; n++)
 							{
-								// TODO handle class not found
-								string t = ma.GetRawStackType(i, n);
-								if(t.Length > 1 && (t[0] == 'N' || t[0] == 'U'))
+								TypeWrapper t = ma.GetRawStackTypeWrapper(i, n);
+								if(VerifierTypeWrapper.IsNew(t))
 								{
-									if(t[0] == 'U')
-									{
-										// we're inside a constructor and the uninitialized this is passed into an exception block!
-										ilGenerator.Emit(OpCodes.Pop);
-										stack.Push("this");
-									}
-									else
-									{
-										// unitialized references (new objects) aren't really there
-									}
+									// unitialized references (new objects) aren't really there
 								}
-								else if(t == "Lnull")
+								else if(t == VerifierTypeWrapper.UninitializedThis)
+								{
+									// we're inside a constructor and the uninitialized this is passed into an exception block!
+									ilGenerator.Emit(OpCodes.Pop);
+									stack.Push("this");
+								}
+								else if(t == VerifierTypeWrapper.Null)
 								{
 									stack.Push(null);
 								}
 								else
 								{
-									LocalBuilder local = ilGenerator.DeclareLocal(classLoader.ExpressionType(t));
+									LocalBuilder local = ilGenerator.DeclareLocal(t.TypeOrUnloadableAsObject);
 									stack.Push(local);
 									ilGenerator.Emit(OpCodes.Stloc, local);
 								}
@@ -606,24 +576,32 @@ class Compiler
 								int stack = ma.GetStackHeight(bc.TargetIndex);
 								for(int n = 0; n < stack; n++)
 								{
-									// TODO handle class not found
-									string t = ma.GetRawStackType(bc.TargetIndex, n);
-									if((t.Length > 1 && (t[0] == 'N' || t[0] == 'U')) || t == "Lnull")
+									TypeWrapper t = ma.GetRawStackTypeWrapper(bc.TargetIndex, n);
+									if(VerifierTypeWrapper.IsNew(t))
 									{
-										if(t[0] == 'U')
-										{
-											// we're inside a constructor and the uninitialized this is passed into an exception block!
-											ilGenerator.Emit(OpCodes.Ldarg_0);
-										}
 										// unitialized references aren't really there, but at the push site we
 										// need to know that we have to skip this slot, so we push a null as well,
 										// and then at the push site we'll look at the stack type to figure out
 										// if it is a real null or an unitialized references
 										bc.Stack.Push(null);
 									}
+									else if(t == VerifierTypeWrapper.UninitializedThis)
+									{
+										// we're inside a constructor and the uninitialized this is passed into an exception block!
+										ilGenerator.Emit(OpCodes.Ldarg_0);
+										// unitialized references aren't really there, but at the push site we
+										// need to know that we have to skip this slot, so we push a null as well,
+										// and then at the push site we'll look at the stack type to figure out
+										// if it is a real null or an unitialized references
+										bc.Stack.Push(null);
+									}
+									else if(t == VerifierTypeWrapper.Null)
+									{
+										bc.Stack.Push(null);
+									}
 									else
 									{
-										LocalBuilder local = ilGenerator.DeclareLocal(classLoader.ExpressionType(t));
+										LocalBuilder local = ilGenerator.DeclareLocal(t.TypeOrUnloadableAsObject);
 										bc.Stack.Push(local);
 										ilGenerator.Emit(OpCodes.Stloc, local);
 									}
@@ -739,12 +717,12 @@ class Compiler
 										LocalBuilder local = (LocalBuilder)bc.Stack.Pop();
 										if(local == null)
 										{
-											string t = ma.GetRawStackType(bc.TargetIndex, (stack - 1) - n);
-											if(t == "Lnull")
+											TypeWrapper t = ma.GetRawStackTypeWrapper(bc.TargetIndex, (stack - 1) - n);
+											if(t == VerifierTypeWrapper.Null)
 											{
 												ilGenerator.Emit(OpCodes.Ldnull);
 											}
-											else if(t[0] == 'U')
+											else if(t == VerifierTypeWrapper.UninitializedThis)
 											{
 												// we're inside a constructor and the uninitialized this is passed into an exception block!
 												ilGenerator.Emit(OpCodes.Ldarg_0);
@@ -780,7 +758,7 @@ class Compiler
 						}
 						else
 						{
-							EmitPlaceholder(cpi.Signature);
+							EmitPlaceholder(cpi.GetFieldType(classLoader));
 						}
 						break;
 					}
@@ -790,9 +768,9 @@ class Compiler
 						FieldWrapper field = GetField(cpi, true, null, true);
 						if(field != null)
 						{
-							// because of the way interface merging works, an object reference is valid
+							// because of the way interface merging works, any reference is valid
 							// for any interface reference
-							if(field.FieldType != typeof(object) && ma.GetRawStackType(i, 0) == "Ljava/lang/Object;")
+							if(field.FieldTypeWrapper.IsInterface && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(field.FieldTypeWrapper))
 							{
 								ilGenerator.Emit(OpCodes.Castclass, field.FieldType);
 							}
@@ -807,8 +785,8 @@ class Compiler
 					case NormalizedByteCode.__getfield:
 					{
 						ClassFile.ConstantPoolItemFieldref cpi = m.Method.ClassFile.GetFieldref(instr.Arg1);
-						TypeWrapper thisType = LoadClass(SigTypeToClassName(ma.GetRawStackType(i, 0), cpi.Class));
-						if(thisType != null)
+						TypeWrapper thisType = SigTypeToClassName(ma.GetRawStackTypeWrapper(i, 0), cpi.GetClassType(classLoader));
+						if(!thisType.IsUnloadable)
 						{
 							FieldWrapper field = GetField(cpi, false, thisType, false);
 							if(field != null)
@@ -818,21 +796,21 @@ class Compiler
 							}
 						}
 						ilGenerator.Emit(OpCodes.Pop);
-						EmitPlaceholder(cpi.Signature);
+						EmitPlaceholder(cpi.GetFieldType(classLoader));
 						break;
 					}
 					case NormalizedByteCode.__putfield:
 					{
 						ClassFile.ConstantPoolItemFieldref cpi = m.Method.ClassFile.GetFieldref(instr.Arg1);
-						TypeWrapper thisType = LoadClass(SigTypeToClassName(ma.GetRawStackType(i, 1), cpi.Class));
-						if(thisType != null)
+						TypeWrapper thisType = SigTypeToClassName(ma.GetRawStackTypeWrapper(i, 1), cpi.GetClassType(classLoader));
+						if(!thisType.IsUnloadable)
 						{
 							FieldWrapper field = GetField(cpi, false, thisType, true);
 							if(field != null)
 							{
-								// because of the way interface merging works, an object reference is valid
+								// because of the way interface merging works, any reference is valid
 								// for any interface reference
-								if(field.FieldType != typeof(object) && ma.GetRawStackType(i, 0) == "Ljava/lang/Object;")
+								if(field.FieldTypeWrapper.IsInterface && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(field.FieldTypeWrapper))
 								{
 									ilGenerator.Emit(OpCodes.Castclass, field.FieldType);
 								}
@@ -954,12 +932,12 @@ class Compiler
 						}
 						else
 						{
-							SigEnumerator sig = new SigEnumerator(cpi.Signature);
-							while(sig.MoveNext())
+							int argcount = cpi.GetArgTypes(classLoader).Length;
+							for(int j = 0; j < argcount; j++)
 							{
 								ilGenerator.Emit(OpCodes.Pop);
 							}
-							EmitPlaceholder(cpi.Signature.Substring(cpi.Signature.LastIndexOf(')') + 1));
+							EmitPlaceholder(cpi.GetRetType(classLoader));
 						}
 						break;
 					}
@@ -972,50 +950,42 @@ class Compiler
 
 						// TODO invokespecial should check for null "this" reference
 						ClassFile.ConstantPoolItemFMI cpi = m.Method.ClassFile.GetMethodref(instr.Arg1);
-						SigEnumerator sig = new SigEnumerator(cpi.Signature);
-						int argcount = 0;
-						while(sig.MoveNext())
-						{
-							argcount++;
-						}
-						string type = ma.GetRawStackType(i, argcount);
-						TypeWrapper thisType = LoadClass(SigTypeToClassName(type, cpi.Class));
+						int argcount = cpi.GetArgTypes(classLoader).Length;
+						TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
+						TypeWrapper thisType = SigTypeToClassName(type, cpi.GetClassType(classLoader));
 						// invokeinterface needs to have special support for downcasting to the interface (because
 						// the verifier may not be able to merge two interfaces, but the resulting code would still be valid)
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface &&
 							thisType == ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Object"))
 						{
-							thisType = LoadClass(cpi.Class);
-							if(thisType != null)
+							thisType = cpi.GetClassType(classLoader);
+							DupHelper dup = new DupHelper(ilGenerator, argcount);
+							for(int k = 0; k < argcount; k++)
 							{
-								DupHelper dup = new DupHelper(classLoader, ilGenerator, argcount);
-								for(int k = 0; k < argcount; k++)
-								{
-									dup.SetType(k, ma.GetRawStackType(i, k));
-								}
-								for(int k = 0; k < argcount; k++)
-								{
-									dup.Store(k);
-								}
-								// TODO this IncompatibleClassChangeError check should also be applied
-								// for other locations where we can "consume" an object reference in the
-								// place of an interface reference (putstatic / putfield / arguments for invoke*).
-								// TODO it turns out that when an interface ref is expected, *any* type will be accepted!
-								ilGenerator.Emit(OpCodes.Dup);
-								Label label = ilGenerator.DefineLabel();
-								ilGenerator.Emit(OpCodes.Brfalse_S, label);
-								ilGenerator.Emit(OpCodes.Isinst, thisType.Type);
-								ilGenerator.Emit(OpCodes.Dup);
-								ilGenerator.Emit(OpCodes.Brtrue_S, label);
-								EmitError("java.lang.IncompatibleClassChangeError", null);
-								ilGenerator.MarkLabel(label);
-								for(int k = argcount - 1; k >= 0; k--)
-								{
-									dup.Load(k);
-								}
+								dup.SetType(k, ma.GetRawStackTypeWrapper(i, k));
+							}
+							for(int k = 0; k < argcount; k++)
+							{
+								dup.Store(k);
+							}
+							// TODO this IncompatibleClassChangeError check should also be applied
+							// for other locations where we can "consume" an object reference in the
+							// place of an interface reference (putstatic / putfield / arguments for invoke*).
+							// TODO it turns out that when an interface ref is expected, *any* type will be accepted!
+							ilGenerator.Emit(OpCodes.Dup);
+							Label label = ilGenerator.DefineLabel();
+							ilGenerator.Emit(OpCodes.Brfalse_S, label);
+							ilGenerator.Emit(OpCodes.Isinst, thisType.Type);
+							ilGenerator.Emit(OpCodes.Dup);
+							ilGenerator.Emit(OpCodes.Brtrue_S, label);
+							EmitError("java.lang.IncompatibleClassChangeError", null);
+							ilGenerator.MarkLabel(label);
+							for(int k = argcount - 1; k >= 0; k--)
+							{
+								dup.Load(k);
 							}
 						}
-						else if(thisType != null && !thisType.IsSubTypeOf(LoadClass(cpi.Class)))
+						else if(thisType != null && !thisType.IsSubTypeOf(cpi.GetClassType(classLoader)))
 						{
 							EmitError("java.lang.IncompatibleClassChangeError", null);
 							thisType = null;
@@ -1025,7 +995,7 @@ class Compiler
 						{
 							if(cpi.Name == "<init>")
 							{
-								if(type[0] == 'N')
+								if(VerifierTypeWrapper.IsNew(type))
 								{
 									if(thisType != null && (thisType.IsAbstract || thisType.IsInterface))
 									{
@@ -1043,7 +1013,7 @@ class Compiler
 									bool[] localsfix = new bool[m.MaxLocals];
 									for(int j = 0; j < stackfix.Length; j++)
 									{
-										if(ma.GetRawStackType(i, argcount + 1 + j) == type)
+										if(ma.GetRawStackTypeWrapper(i, argcount + 1 + j) == type)
 										{
 											stackfix[j] = true;
 											if(trivcount == j)
@@ -1061,7 +1031,7 @@ class Compiler
 									}
 									for(int j = 0; j < localsfix.Length; j++)
 									{
-										if(ma.GetLocalType(i, j) == type)
+										if(ma.GetLocalTypeWrapper(i, j) == type)
 										{
 											localsfix[j] = true;
 											nontrivial = true;
@@ -1079,19 +1049,11 @@ class Compiler
 										}
 										ilGenerator.Emit(OpCodes.Ldnull);
 									}
-									// TODO it is probably a better idea to do this in the constructor for each class
-									// derived from java.lang.Throwable, but if we do move this to the constructor, we
-									// should still call it here for non-Java exceptions (that aren't derived from Throwable)
-									Type t = ExpressionType(type.Substring(type.IndexOf(';') + 1));
-									if(t == null)
+									if(java_lang_Throwable == null)
 									{
-										// If the type couldn't be loaded, we continue we object to make sure
-										// the code remains verifiable (the ExpressionType call above already generated
-										// code to throw an exception, but the remaing code still needs to be verifiable,
-										// even though it is unreachable).
-										t = typeof(object);
+										java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Throwable");
 									}
-									if(typeof(Exception).IsAssignableFrom(t))
+									if(thisType.IsSubTypeOf(java_lang_Throwable))
 									{
 										// HACK if the next instruction isn't an athrow, we need to
 										// call fillInStackTrace, because the object might be used
@@ -1108,21 +1070,24 @@ class Compiler
 										// this could be done a little more efficiently, but since in practice this
 										// code never runs (for code compiled from Java source) it doesn't
 										// really matter
-										LocalBuilder newobj = ilGenerator.DeclareLocal(t);
+										LocalBuilder newobj = ilGenerator.DeclareLocal(thisType.Type);
 										ilGenerator.Emit(OpCodes.Stloc, newobj);
 										LocalBuilder[] tempstack = new LocalBuilder[stackfix.Length];
 										for(int j = 0; j < stackfix.Length; j++)
 										{
 											if(!stackfix[j])
 											{
-												string stacktype = ma.GetRawStackType(i, argcount + 1 + j);
+												TypeWrapper stacktype = ma.GetRawStackTypeWrapper(i, argcount + 1 + j);
 												// it could be another new object reference (not from current invokespecial <init>
 												// instruction)
-												if(stacktype[0] != 'N')
+												if(stacktype == VerifierTypeWrapper.Null)
 												{
-													// TODO handle Lnull stack entries
-													// TODO handle class not found
-													LocalBuilder lb = ilGenerator.DeclareLocal(classLoader.ExpressionType(stacktype));
+													// TODO handle null stack entries
+													throw new NotImplementedException();
+												}
+												else if(!VerifierTypeWrapper.IsNew(stacktype))
+												{
+													LocalBuilder lb = ilGenerator.DeclareLocal(stacktype.TypeOrUnloadableAsObject);
 													ilGenerator.Emit(OpCodes.Stloc, lb);
 													tempstack[j] = lb;
 												}
@@ -1201,7 +1166,7 @@ class Compiler
 									{
 										ilGenerator.Emit(OpCodes.Pop);
 									}
-									EmitPlaceholder(cpi.Signature.Substring(cpi.Signature.LastIndexOf(')') + 1));
+									EmitPlaceholder(cpi.GetRetType(classLoader));
 								}
 							}
 						}
@@ -1217,7 +1182,7 @@ class Compiler
 								{
 									ilGenerator.Emit(OpCodes.Pop);
 								}
-								EmitPlaceholder(cpi.Signature.Substring(cpi.Signature.LastIndexOf(')') + 1));
+								EmitPlaceholder(cpi.GetRetType(classLoader));
 							}
 						}
 						break;
@@ -1235,14 +1200,13 @@ class Compiler
 							ReturnCookie rc = new ReturnCookie();
 							if(instr.NormalizedOpCode != NormalizedByteCode.__return)
 							{
-								// TODO handle class not found
-								Type retType = classLoader.RetTypeFromSig(m.Method.Signature);
-								rc.Local = ilGenerator.DeclareLocal(retType);
-								// because of the way interface merging works, an object reference is valid
+								TypeWrapper retTypeWrapper = m.Method.GetRetType(classLoader);
+								rc.Local = ilGenerator.DeclareLocal(retTypeWrapper.TypeOrUnloadableAsObject);
+								// because of the way interface merging works, any reference is valid
 								// for any interface reference
-								if(retType.IsInterface && m.Method.Signature.Substring(m.Method.Signature.LastIndexOf(')') + 1) != ma.GetRawStackType(i, 0))
+								if(retTypeWrapper.IsInterface && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(retTypeWrapper))
 								{
-									ilGenerator.Emit(OpCodes.Castclass, retType);
+									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
 								}
 								ilGenerator.Emit(OpCodes.Stloc, rc.Local);
 							}
@@ -1266,17 +1230,16 @@ class Compiler
 							}
 							else
 							{
-								// TODO handle class not found
-								Type retType = classLoader.RetTypeFromSig(m.Method.Signature);
-								// because of the way interface merging works, an object reference is valid
+								TypeWrapper retTypeWrapper = m.Method.GetRetType(classLoader);
+								// because of the way interface merging works, any reference is valid
 								// for any interface reference
-								if(retType.IsInterface && m.Method.Signature.Substring(m.Method.Signature.LastIndexOf(')') + 1) != ma.GetRawStackType(i, 0))
+								if(retTypeWrapper.IsInterface && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(retTypeWrapper))
 								{
-									ilGenerator.Emit(OpCodes.Castclass, retType);
+									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
 								}
 								if(stackHeight != 1)
 								{
-									LocalBuilder local = ilGenerator.DeclareLocal(retType);
+									LocalBuilder local = ilGenerator.DeclareLocal(retTypeWrapper.TypeOrUnloadableAsObject);
 									ilGenerator.Emit(OpCodes.Stloc, local);
 									for(int j = 1; j < stackHeight; j++)
 									{
@@ -1291,17 +1254,17 @@ class Compiler
 					}
 					case NormalizedByteCode.__aload:
 					{
-						string type = ma.GetLocalType(i, instr.NormalizedArg1);
-						if(type == "Lnull")
+						TypeWrapper type = ma.GetLocalTypeWrapper(i, instr.NormalizedArg1);
+						if(type == VerifierTypeWrapper.Null)
 						{
 							// if the local is known to be null, we just emit a null
 							ilGenerator.Emit(OpCodes.Ldnull);
 						}
-						else if(type[0] == 'N')
+						else if(VerifierTypeWrapper.IsNew(type))
 						{
 							// since new objects aren't represented on the stack, we don't need to do anything here
 						}
-						else if(type[0] == 'U')
+						else if(type == VerifierTypeWrapper.UninitializedThis)
 						{
 							// any unitialized reference has to be the this reference
 							// TODO when we get support for overwriting the this reference, this code
@@ -1315,10 +1278,9 @@ class Compiler
 							{
 								// HACK since, for now, all locals are of type object, we've got to cast them to the proper type
 								// UPDATE the above is no longer true, we now have at least some idea of the type of the local
-								if(type != ma.GetDeclaredLocalType(instr.NormalizedArg1))
+								if(type != ma.GetDeclaredLocalTypeWrapper(instr.NormalizedArg1) && !type.IsUnloadable)
 								{
-									// TODO handle class not found
-									ilGenerator.Emit(OpCodes.Castclass, classLoader.ExpressionType(ma.GetLocalType(i, instr.NormalizedArg1)));
+									ilGenerator.Emit(OpCodes.Castclass, type.Type);
 								}
 							}
 						}
@@ -1326,13 +1288,13 @@ class Compiler
 					}
 					case NormalizedByteCode.__astore:
 					{
-						string type = ma.GetRawStackType(i, 0);
+						TypeWrapper type = ma.GetRawStackTypeWrapper(i, 0);
 						// HACK we use "int" to track the return address of a jsr
-						if(type.StartsWith("Lret;"))
+						if(VerifierTypeWrapper.IsRet(type))
 						{
 							Store(instr, typeof(int));
 						}
-						else if(type[0] == 'N')
+						else if(VerifierTypeWrapper.IsNew(type))
 						{
 							// NOTE new objects aren't really on the stack, so we can't copy them into the local.
 							// We do store a null in the local, to prevent it from retaining an unintentional reference
@@ -1340,7 +1302,7 @@ class Compiler
 							ilGenerator.Emit(OpCodes.Ldnull);
 							Store(instr, typeof(object));
 						}
-						else if(type[0] == 'U')
+						else if(type == VerifierTypeWrapper.UninitializedThis)
 						{
 							// any unitialized reference, is always the this reference, we don't store anything
 							// here (because CLR wont allow unitialized references in locals) and then when
@@ -1379,8 +1341,8 @@ class Compiler
 						break;
 					case NormalizedByteCode.__new:
 					{
-						TypeWrapper wrapper = LoadClass(instr.MethodCode.Method.ClassFile.GetConstantPoolClass(instr.Arg1));
-						if(wrapper != null && (wrapper.IsAbstract || wrapper.IsInterface))
+						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
+						if(!wrapper.IsUnloadable && (wrapper.IsAbstract || wrapper.IsInterface))
 						{
 							EmitError("java.lang.InstantiationError", wrapper.Name);
 						}
@@ -1389,8 +1351,13 @@ class Compiler
 					}
 					case NormalizedByteCode.__multianewarray:
 					{
-						TypeWrapper wrapper = LoadClass(instr.MethodCode.Method.ClassFile.GetConstantPoolClass(instr.Arg1));
-						if(wrapper != null)
+						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
+						if(wrapper.IsUnloadable)
+						{
+							// TODO
+							throw new NotImplementedException();
+						}
+						else
 						{
 							LocalBuilder localArray = ilGenerator.DeclareLocal(typeof(int[]));
 							LocalBuilder localInt = ilGenerator.DeclareLocal(typeof(int));
@@ -1415,8 +1382,13 @@ class Compiler
 					}
 					case NormalizedByteCode.__anewarray:
 					{
-						TypeWrapper wrapper = LoadClass(instr.MethodCode.Method.ClassFile.GetConstantPoolClass(instr.Arg1));
-						if(wrapper != null)
+						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
+						if(wrapper.IsUnloadable)
+						{
+							// TODO
+							throw new NotImplementedException();
+						}
+						else
 						{
 							ilGenerator.Emit(OpCodes.Newarr, wrapper.Type);
 						}
@@ -1455,8 +1427,13 @@ class Compiler
 						break;
 					case NormalizedByteCode.__checkcast:
 					{
-						TypeWrapper wrapper = LoadClass(instr.MethodCode.Method.ClassFile.GetConstantPoolClass(instr.Arg1));
-						if(wrapper != null)
+						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
+						if(wrapper.IsUnloadable)
+						{
+							// TODO
+							throw new NotImplementedException();
+						}
+						else
 						{
 							ilGenerator.Emit(OpCodes.Castclass, wrapper.Type);
 						}
@@ -1464,8 +1441,13 @@ class Compiler
 					}
 					case NormalizedByteCode.__instanceof:
 					{
-						TypeWrapper wrapper = LoadClass(instr.MethodCode.Method.ClassFile.GetConstantPoolClass(instr.Arg1));
-						if(wrapper != null)
+						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
+						if(wrapper.IsUnloadable)
+						{
+							// TODO
+							throw new NotImplementedException();
+						}
+						else
 						{
 							ilGenerator.Emit(OpCodes.Isinst, wrapper.Type);
 							ilGenerator.Emit(OpCodes.Ldnull);
@@ -1818,9 +1800,9 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Shr);
 						break;
 					case NormalizedByteCode.__swap:
-						new DupHelper(classLoader, ilGenerator, 2)
-							.SetType(0, ma.GetRawStackType(i, 0))
-							.SetType(1, ma.GetRawStackType(i, 1))
+						new DupHelper(ilGenerator, 2)
+							.SetType(0, ma.GetRawStackTypeWrapper(i, 0))
+							.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
 							.Store(0)
 							.Store(1)
 							.Load(0)
@@ -1828,23 +1810,23 @@ class Compiler
 						break;
 					case NormalizedByteCode.__dup:
 						// if the TOS contains a "new" object, it isn't really there, so we wont dup it either
-						if(ma.GetRawStackType(i, 0)[0] != 'N')
+						if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
 						{
 							ilGenerator.Emit(OpCodes.Dup);
 						}
 						break;
 					case NormalizedByteCode.__dup2:
 					{
-						string type1 = ma.GetRawStackType(i, 0);
-						if(type1 == "D" || type1 == "J")
+						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
+						if(type1 == PrimitiveTypeWrapper.DOUBLE || type1 == PrimitiveTypeWrapper.LONG)
 						{
 							ilGenerator.Emit(OpCodes.Dup);
 						}
 						else
 						{
-							new DupHelper(classLoader, ilGenerator, 2)
+							new DupHelper(ilGenerator, 2)
 								.SetType(0, type1)
-								.SetType(1, ma.GetRawStackType(i, 1))
+								.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
 								.Store(0)
 								.Store(1)
 								.Load(1)
@@ -1855,9 +1837,9 @@ class Compiler
 						break;
 					}
 					case NormalizedByteCode.__dup_x1:
-						new DupHelper(classLoader, ilGenerator, 2)
-							.SetType(0, ma.GetRawStackType(i, 0))
-							.SetType(1, ma.GetRawStackType(i, 1))
+						new DupHelper(ilGenerator, 2)
+							.SetType(0, ma.GetRawStackTypeWrapper(i, 0))
+							.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
 							.Store(0)
 							.Store(1)
 							.Load(0)
@@ -1866,12 +1848,12 @@ class Compiler
 						break;
 					case NormalizedByteCode.__dup2_x1:
 					{
-						string type1 = ma.GetRawStackType(i, 0);
-						if(type1 == "D" || type1 == "J")
+						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
+						if(type1 == PrimitiveTypeWrapper.DOUBLE || type1 == PrimitiveTypeWrapper.LONG)
 						{
-							new DupHelper(classLoader, ilGenerator, 2)
+							new DupHelper(ilGenerator, 2)
 								.SetType(0, type1)
-								.SetType(1, ma.GetRawStackType(i, 1))
+								.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
 								.Store(0)
 								.Store(1)
 								.Load(0)
@@ -1880,10 +1862,10 @@ class Compiler
 						}
 						else
 						{
-							new DupHelper(classLoader, ilGenerator, 3)
+							new DupHelper(ilGenerator, 3)
 								.SetType(0, type1)
-								.SetType(1, ma.GetRawStackType(i, 1))
-								.SetType(2, ma.GetRawStackType(i, 2))
+								.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
+								.SetType(2, ma.GetRawStackTypeWrapper(i, 2))
 								.Store(0)
 								.Store(1)
 								.Store(2)
@@ -1897,14 +1879,14 @@ class Compiler
 					}
 					case NormalizedByteCode.__dup2_x2:
 					{
-						string type1 = ma.GetRawStackType(i, 0);
-						string type2 = ma.GetRawStackType(i, 1);
-						if(type1 == "D" || type1 == "J")
+						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
+						TypeWrapper type2 = ma.GetRawStackTypeWrapper(i, 1);
+						if(type1 == PrimitiveTypeWrapper.DOUBLE || type1 == PrimitiveTypeWrapper.LONG)
 						{
-							if(type2 == "D" || type2 == "J")
+							if(type2 == PrimitiveTypeWrapper.DOUBLE || type2 == PrimitiveTypeWrapper.LONG)
 							{
 								// Form 4
-								new DupHelper(classLoader, ilGenerator, 2)
+								new DupHelper(ilGenerator, 2)
 									.SetType(0, type1)
 									.SetType(1, type2)
 									.Store(0)
@@ -1916,10 +1898,10 @@ class Compiler
 							else
 							{
 								// Form 2
-								new DupHelper(classLoader, ilGenerator, 3)
+								new DupHelper(ilGenerator, 3)
 									.SetType(0, type1)
 									.SetType(1, type2)
-									.SetType(2, ma.GetRawStackType(i, 2))
+									.SetType(2, ma.GetRawStackTypeWrapper(i, 2))
 									.Store(0)
 									.Store(1)
 									.Store(2)
@@ -1931,11 +1913,11 @@ class Compiler
 						}
 						else
 						{
-							string type3 = ma.GetRawStackType(i, 2);
-							if(type3 == "D" || type3 == "J")
+							TypeWrapper type3 = ma.GetRawStackTypeWrapper(i, 2);
+							if(type3 == PrimitiveTypeWrapper.DOUBLE || type3 == PrimitiveTypeWrapper.LONG)
 							{
 								// Form 3
-								new DupHelper(classLoader, ilGenerator, 3)
+								new DupHelper(ilGenerator, 3)
 									.SetType(0, type1)
 									.SetType(1, type2)
 									.SetType(2, type3)
@@ -1951,11 +1933,11 @@ class Compiler
 							else
 							{
 								// Form 1
-								new DupHelper(classLoader, ilGenerator, 4)
+								new DupHelper(ilGenerator, 4)
 									.SetType(0, type1)
 									.SetType(1, type2)
 									.SetType(2, type3)
-									.SetType(3, ma.GetRawStackType(i, 3))
+									.SetType(3, ma.GetRawStackTypeWrapper(i, 3))
 									.Store(0)
 									.Store(1)
 									.Store(2)
@@ -1971,10 +1953,10 @@ class Compiler
 						break;
 					}
 					case NormalizedByteCode.__dup_x2:
-						new DupHelper(classLoader, ilGenerator, 3)
-							.SetType(0, ma.GetRawStackType(i, 0))
-							.SetType(1, ma.GetRawStackType(i, 1))
-							.SetType(2, ma.GetRawStackType(i, 2))
+						new DupHelper(ilGenerator, 3)
+							.SetType(0, ma.GetRawStackTypeWrapper(i, 0))
+							.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
+							.SetType(2, ma.GetRawStackTypeWrapper(i, 2))
 							.Store(0)
 							.Store(1)
 							.Store(2)
@@ -1985,18 +1967,18 @@ class Compiler
 						break;
 					case NormalizedByteCode.__pop2:
 					{
-						string type1 = ma.GetRawStackType(i, 0);
-						if(type1 == "D" || type1 == "J")
+						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
+						if(type1 == PrimitiveTypeWrapper.DOUBLE || type1 == PrimitiveTypeWrapper.LONG)
 						{
 							ilGenerator.Emit(OpCodes.Pop);
 						}
 						else
 						{
-							if(type1[0] != 'N')
+							if(!VerifierTypeWrapper.IsNew(type1))
 							{
 								ilGenerator.Emit(OpCodes.Pop);
 							}
-							if(ma.GetRawStackType(i, 1)[0] != 'N')
+							if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 1)))
 							{
 								ilGenerator.Emit(OpCodes.Pop);
 							}
@@ -2005,7 +1987,7 @@ class Compiler
 					}
 					case NormalizedByteCode.__pop:
 						// if the TOS is a new object, it isn't really there, so we don't need to pop it
-						if(ma.GetRawStackType(i, 0)[0] != 'N')
+						if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
 						{
 							ilGenerator.Emit(OpCodes.Pop);
 						}
@@ -2088,8 +2070,8 @@ class Compiler
 					{
 						// NOTE using a OpCodes.Switch here is not efficient, because 99 out of a 100 cases
 						// there are either one or two call sites.
-						string subid = ma.GetLocalType(i, instr.Arg1);
-						int[] callsites = ma.GetCallSites(int.Parse(subid.Substring("Lret;".Length)));
+						int subid = ((VerifierTypeWrapper)ma.GetLocalTypeWrapper(i, instr.Arg1)).Index;
+						int[] callsites = ma.GetCallSites(subid);
 						for(int j = 0; j < callsites.Length - 1; j++)
 						{
 							Load(instr, typeof(int));
@@ -2144,8 +2126,14 @@ class Compiler
 
 	private FieldWrapper GetField(ClassFile.ConstantPoolItemFieldref cpi, bool isStatic, TypeWrapper thisType, bool write)
 	{
-		TypeWrapper wrapper = LoadClass(cpi.Class);
-		if(wrapper != null)
+		TypeWrapper wrapper = cpi.GetClassType(classLoader);
+		if(wrapper.IsUnloadable)
+		{
+			// TODO instead of this NoClassDefFoundError, we should return a dynamic FieldWrapper that
+			// dynamically tries to get/set the field
+			EmitError("java.lang.NoClassDefFoundError", wrapper.Name);
+		}
+		else
 		{
 			FieldWrapper field = wrapper.GetFieldWrapper(cpi.Name);
 			if(field != null)
@@ -2164,15 +2152,7 @@ class Compiler
 						}
 						else
 						{
-							// HACK for the time being we handle fields of an unloadable type here
-							if(field.EmitGet == null && field.EmitSet == null)
-							{
-								EmitError("java.lang.NoClassDefFoundError", "Field " + cpi.Class + "." + cpi.Name + " is is of the unloadable type " + cpi.Signature);
-							}
-							else
-							{
-								return field;
-							}
+							return field;
 						}
 					}
 					else
@@ -2216,8 +2196,14 @@ class Compiler
 	{
 		// TODO when there is an error resolving a call to the super class constructor (in the constructor of this type),
 		// we cannot use EmitError, because that will yield an invalid constructor (that doesn't call the superclass constructor)
-		TypeWrapper wrapper = LoadClass(cpi.Class);
-		if(wrapper != null)
+		TypeWrapper wrapper = cpi.GetClassType(classLoader);
+		if(wrapper.IsUnloadable)
+		{
+			// TODO instead of this NoClassDefFoundError, we should return a dynamic MethodWrapper that
+			// dynamically calls the method
+			EmitError("java.lang.NoClassDefFoundError", wrapper.Name);
+		}
+		else
 		{
 			if(wrapper.IsInterface != (invoke == NormalizedByteCode.__invokeinterface))
 			{
@@ -2229,7 +2215,7 @@ class Compiler
 				{
 					wrapper = thisType.BaseTypeWrapper;
 				}
-				MethodDescriptor md = new MethodDescriptor(classLoader, cpi.Name, cpi.Signature);
+				MethodDescriptor md = new MethodDescriptor(classLoader, cpi);
 				MethodWrapper method = null;
 				if(invoke == NormalizedByteCode.__invokeinterface)
 				{
@@ -2262,15 +2248,7 @@ class Compiler
 							(method.IsPrivate && clazz == method.DeclaringType) ||
 							(!(method.IsPublic || method.IsPrivate) && clazz.IsInSamePackageAs(method.DeclaringType)))
 						{
-							// HACK for the time being we handle methods with an unloadable type in the sig here
-							if(method.EmitCall == null && method.EmitCallvirt == null && method.EmitNewobj == null)
-							{
-								EmitError("java.lang.NoClassDefFoundError", "Method " + cpi.Class + "." + cpi.Name + cpi.Signature + " has an unloadable type in its signature");
-							}
-							else
-							{
-								return method;
-							}
+							return method;
 						}
 						else
 						{
@@ -2279,7 +2257,7 @@ class Compiler
 							// (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
 							if(!method.IsStatic && cpi.Name == "clone" && wrapper.Type == typeof(object) && thisType.Type.IsArray)
 							{
-								method = thisType.GetMethodWrapper(new MethodDescriptor(classLoader, cpi.Name, cpi.Signature), false);
+								method = thisType.GetMethodWrapper(new MethodDescriptor(classLoader, cpi), false);
 								if(method != null && method.IsPublic)
 								{
 									return method;
@@ -2312,8 +2290,8 @@ class Compiler
 				Console.Error.WriteLine("\tat " + m.Method.ClassFile.Name + "." + m.Method.Name + m.Method.Signature);
 			}
 			ilGenerator.Emit(OpCodes.Ldstr, message);
-			TypeWrapper type = classLoader.LoadClassByDottedName(errorType);
-			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor(classLoader, "<init>", "(Ljava/lang/String;)V"), false);
+			TypeWrapper type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(errorType);
+			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor(type.GetClassLoader(), "<init>", "(Ljava/lang/String;)V"), false);
 			method.EmitNewobj.Emit(ilGenerator);
 		}
 		else
@@ -2323,8 +2301,8 @@ class Compiler
 				Console.Error.WriteLine(errorType);
 				Console.Error.WriteLine("\tat " + m.Method.ClassFile.Name + "." + m.Method.Name + m.Method.Signature);
 			}
-			TypeWrapper type = classLoader.LoadClassByDottedName(errorType);
-			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor(classLoader, "<init>", "()V"), false);
+			TypeWrapper type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(errorType);
+			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor(type.GetClassLoader(), "<init>", "()V"), false);
 			method.EmitNewobj.Emit(ilGenerator);
 		}
 		// we emit a call to ThrowHack instead of a throw instruction, because otherwise the verifier will know
@@ -2332,7 +2310,9 @@ class Compiler
 		ilGenerator.Emit(OpCodes.Call, throwHack);
 	}
 
-	private TypeWrapper LoadClass(string classname)
+	// TODO since I no longer use LoadClass, I need to go back to each instruction and add a check to make sure
+	// the class is accessible from this class
+	private TypeWrapper unused__LoadClass(string classname)
 	{
 		try
 		{
@@ -2353,74 +2333,55 @@ class Compiler
 		}
 	}
 
-	private Type ExpressionType(string type)
+	// TODO this method should have a better name
+	private TypeWrapper SigTypeToClassName(TypeWrapper type, TypeWrapper nullType)
 	{
-		try
+		if(type == VerifierTypeWrapper.UninitializedThis)
 		{
-			return classLoader.ExpressionType(type);
+			return clazz;
 		}
-		catch(Exception)
+		else if(VerifierTypeWrapper.IsNew(type))
 		{
-			// TODO we should freeze the exception here, instead of always throwing a NoClassDefFoundError
-			EmitError("java.lang.NoClassDefFoundError", type);
-			return null;
+			return ((VerifierTypeWrapper)type).UnderlyingType;
 		}
-	}
-
-	private static string SigTypeToClassName(string type, string nullType)
-	{
-		switch(type[0])
+		else if(type == VerifierTypeWrapper.Null)
 		{
-			case 'N':
-			case 'U':
-			{
-				string chop = type.Substring(type.IndexOf(';') + 2);
-				return chop.Substring(0, chop.Length - 1);
-			}
-			case 'L':
-				if(type == "Lnull")
-				{
-					return nullType;
-				}
-				else
-				{
-					return type.Substring(1, type.Length - 2);
-				}
-			case '[':
-				return type;
-			default:
-				throw new InvalidOperationException();
+			return nullType;
+		}
+		else
+		{
+			return type;
 		}
 	}
 
-	private void EmitPlaceholder(string sig)
+	private void EmitPlaceholder(TypeWrapper type)
 	{
-		switch(sig[0])
+		if(type == PrimitiveTypeWrapper.BOOLEAN ||
+			type == PrimitiveTypeWrapper.BYTE ||
+			type == PrimitiveTypeWrapper.SHORT ||
+			type == PrimitiveTypeWrapper.CHAR ||
+			type == PrimitiveTypeWrapper.INT)
 		{
-			case 'L':
-			case '[':
-				ilGenerator.Emit(OpCodes.Ldnull);
-				break;
-			case 'Z':
-			case 'B':
-			case 'S':
-			case 'C':
-			case 'I':
-				ilGenerator.Emit(OpCodes.Ldc_I4_0);
-				break;
-			case 'J':
-				ilGenerator.Emit(OpCodes.Ldc_I8, 0L);
-				break;
-			case 'F':
-				ilGenerator.Emit(OpCodes.Ldc_R4, 0.0f);
-				break;
-			case 'D':
-				ilGenerator.Emit(OpCodes.Ldc_R8, 0.0);
-				break;
-			case 'V':
-				break;
-			default:
-				throw new InvalidOperationException();
+			ilGenerator.Emit(OpCodes.Ldc_I4_0);
+		}
+		else if(type == PrimitiveTypeWrapper.LONG)
+		{
+			ilGenerator.Emit(OpCodes.Ldc_I8, 0L);
+		}
+		else if(type == PrimitiveTypeWrapper.FLOAT)
+		{
+			ilGenerator.Emit(OpCodes.Ldc_R4, 0.0f);
+		}
+		else if(type == PrimitiveTypeWrapper.DOUBLE)
+		{
+			ilGenerator.Emit(OpCodes.Ldc_R4, 0.0f);
+		}
+		else if(type == PrimitiveTypeWrapper.VOID)
+		{
+		}
+		else
+		{
+			ilGenerator.Emit(OpCodes.Ldnull);
 		}
 	}
 
@@ -2499,11 +2460,10 @@ class Compiler
 		else
 		{
 			name = "Obj" + index;
-			string t = ma.GetDeclaredLocalType(index);
-			if(t != null && t != "Lnull")
+			TypeWrapper t = ma.GetDeclaredLocalTypeWrapper(index);
+			if(!t.IsUnloadable && t != VerifierTypeWrapper.Null)
 			{
-				// TODO handle class not found
-				type = classLoader.ExpressionType(t);
+				type = t.Type;
 			}
 		}
 		LocalBuilder lb = (LocalBuilder)locals[name];

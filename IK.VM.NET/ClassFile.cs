@@ -49,9 +49,10 @@ class ClassFile
 {
 	private ConstantPoolItem[] constantpool;
 	private Modifiers access_flags;
-	private string name;
-	private string supername;
-	private string[] interfaces;
+	private ConstantPoolItemClass this_cpi;
+	private ConstantPoolItemClass super_cpi;
+	private ConstantPoolItemClass[] interfaces;
+	private TypeWrapper[] interfaceTypeWrappers;
 	private Field[] fields;
 	private Method[] methods;
 	private Attribute[] attributes;
@@ -114,7 +115,7 @@ class ClassFile
 			int this_class = br.ReadUInt16();
 			try
 			{
-				name = ((ConstantPoolItemClass)constantpool[this_class]).Name;
+				this_cpi = (ConstantPoolItemClass)constantpool[this_class];
 			}
 			catch(Exception)
 			{
@@ -127,7 +128,7 @@ class ClassFile
 			{
 				try
 				{
-					supername = ((ConstantPoolItemClass)constantpool[super_class]).Name;
+					super_cpi = (ConstantPoolItemClass)constantpool[super_class];
 				}
 				catch(Exception)
 				{
@@ -141,12 +142,12 @@ class ClassFile
 					throw JavaException.ClassFormatError("{0} (Bad superclass index)", Name);
 				}
 			}
-			if(IsInterface && (super_class == 0 || supername != "java/lang/Object"))
+			if(IsInterface && (super_class == 0 || super_cpi.Name != "java/lang/Object"))
 			{
 				throw JavaException.ClassFormatError("{0} (Interfaces must have java.lang.Object as superclass)", Name);
 			}
 			int interfaces_count = br.ReadUInt16();
-			interfaces = new string[interfaces_count];
+			interfaces = new ConstantPoolItemClass[interfaces_count];
 			Hashtable interfaceNames = new Hashtable();
 			for(int i = 0; i < interfaces_count; i++)
 			{
@@ -160,7 +161,7 @@ class ClassFile
 				{
 					throw JavaException.ClassFormatError("{0} (Interface name has bad constant type)", Name);
 				}
-				interfaces[i] = ((ConstantPoolItemClass)GetConstantPoolItem(index)).Name;
+				interfaces[i] = (ConstantPoolItemClass)GetConstantPoolItem(index);
 				if(interfaceNames.ContainsKey(interfaces[i]))
 				{
 					throw JavaException.ClassFormatError("{0} (Repetitive interface name)", Name);
@@ -321,6 +322,11 @@ class ClassFile
 		return ((ConstantPoolItemClass)constantpool[index]).Name;
 	}
 
+	internal TypeWrapper GetConstantPoolClassType(int index, ClassLoaderWrapper classLoader)
+	{
+		return ((ConstantPoolItemClass)constantpool[index]).GetClassType(classLoader);
+	}
+
 	private string GetConstantPoolString(int index)
 	{
 		return ((ConstantPoolItemString)constantpool[index]).Value;
@@ -364,7 +370,7 @@ class ClassFile
 	{
 		get
 		{
-			return name;
+			return this_cpi.Name;
 		}
 	}
 
@@ -372,6 +378,7 @@ class ClassFile
 	{
 		get
 		{
+			string name = Name;
 			int index = name.LastIndexOf('/');
 			if(index == -1)
 			{
@@ -381,11 +388,16 @@ class ClassFile
 		}
 	}
 
+	internal TypeWrapper GetSuperTypeWrapper(ClassLoaderWrapper classLoader)
+	{
+		return super_cpi.GetClassType(classLoader);
+	}
+
 	internal string SuperClass
 	{
 		get
 		{
-			return supername;
+			return super_cpi.Name;
 		}
 	}
 
@@ -405,11 +417,31 @@ class ClassFile
 		}
 	}
 
+	internal TypeWrapper[] GetInterfaceTypeWrappers(ClassLoaderWrapper classLoader)
+	{
+		if(interfaceTypeWrappers == null)
+		{
+			TypeWrapper[] tw = new TypeWrapper[interfaces.Length];
+			for(int i = 0; i < tw.Length; i++)
+			{
+				tw[i] = interfaces[i].GetClassType(classLoader);
+			}
+			interfaceTypeWrappers = tw;
+		}
+		return interfaceTypeWrappers;
+	}
+
+	// TODO this is legacy and needs to be removed in the future
 	internal string[] Interfaces
 	{
 		get
 		{
-			return interfaces;
+			string[] s = new string[interfaces.Length];
+			for(int i = 0; i < s.Length; i++)
+			{
+				s[i] = interfaces[i].Name;
+			}
+			return s;
 		}
 	}
 
@@ -539,10 +571,111 @@ class ClassFile
 		{
 			if(typeWrapper == null)
 			{
-				typeWrapper = classLoader.LoadClassBySlashedName(name);
+				typeWrapper = LoadClassHelper(classLoader, name);
 			}
 			return typeWrapper;
 		}
+	}
+
+	private static TypeWrapper LoadClassHelper(ClassLoaderWrapper classLoader, string name)
+	{
+		try
+		{
+			return classLoader.LoadClassBySlashedName(name);
+		}
+		catch(Exception)
+		{
+			// TODO consider what to do with this error, may be a command line switch?
+			// TODO it might not be a good idea to catch .NET system exceptions here
+			return new UnloadableTypeWrapper(name);
+		}
+	}
+
+	private static TypeWrapper SigDecoderWrapper(ClassLoaderWrapper classLoader, ref int index, string sig)
+	{
+		switch(sig[index++])
+		{
+			case 'B':
+				return PrimitiveTypeWrapper.BYTE;
+			case 'C':
+				return PrimitiveTypeWrapper.CHAR;
+			case 'D':
+				return PrimitiveTypeWrapper.DOUBLE;
+			case 'F':
+				return PrimitiveTypeWrapper.FLOAT;
+			case 'I':
+				return PrimitiveTypeWrapper.INT;
+			case 'J':
+				return PrimitiveTypeWrapper.LONG;
+			case 'L':
+			{
+				int pos = index;
+				index = sig.IndexOf(';', index) + 1;
+				return LoadClassHelper(classLoader, sig.Substring(pos, index - pos - 1));
+			}
+			case 'S':
+				return PrimitiveTypeWrapper.SHORT;
+			case 'Z':
+				return PrimitiveTypeWrapper.BOOLEAN;
+			case 'V':
+				return PrimitiveTypeWrapper.VOID;
+			case '[':
+			{
+				// TODO this can be optimized
+				string array = "[";
+				while(sig[index] == '[')
+				{
+					index++;
+					array += "[";
+				}
+				switch(sig[index])
+				{
+					case 'L':
+					{
+						int pos = index;
+						index = sig.IndexOf(';', index) + 1;
+						return LoadClassHelper(classLoader, array + sig.Substring(pos, index - pos));
+					}
+					case 'B':
+					case 'C':
+					case 'D':
+					case 'F':
+					case 'I':
+					case 'J':
+					case 'S':
+					case 'Z':
+						return LoadClassHelper(classLoader, array + sig[index++]);
+					default:
+						// TODO this should never happen, because ClassFile should validate the descriptors
+						throw new InvalidOperationException(sig.Substring(index));
+				}
+			}
+			default:
+				// TODO this should never happen, because ClassFile should validate the descriptors
+				throw new InvalidOperationException(sig.Substring(index));
+		}
+	}
+
+	private static TypeWrapper[] ArgTypeWrapperListFromSig(ClassLoaderWrapper classLoader, string sig)
+	{
+		if(sig[1] == ')')
+		{
+			return new TypeWrapper[0];
+		}
+		ArrayList list = new ArrayList();
+		for(int i = 1; sig[i] != ')';)
+		{
+			list.Add(SigDecoderWrapper(classLoader, ref i, sig));
+		}
+		TypeWrapper[] types = new TypeWrapper[list.Count];
+		list.CopyTo(types);
+		return types;
+	}
+
+	private static TypeWrapper RetTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
+	{
+		int index = sig.IndexOf(')') + 1;
+		return SigDecoderWrapper(classLoader, ref index, sig);
 	}
 
 	private class ConstantPoolItemDouble : ConstantPoolItem
@@ -627,6 +760,11 @@ class ClassFile
 		internal TypeWrapper GetRetType(ClassLoaderWrapper classLoader)
 		{
 			return name_and_type.GetRetType(classLoader);
+		}
+
+		internal TypeWrapper GetFieldType(ClassLoaderWrapper classLoader)
+		{
+			return name_and_type.GetFieldType(classLoader);
 		}
 	}
 
@@ -772,7 +910,7 @@ class ClassFile
 		{
 			if(argTypeWrappers == null)
 			{
-				argTypeWrappers = classLoader.ArgTypeWrapperListFromSig(descriptor);
+				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, descriptor);
 			}
 			return argTypeWrappers;
 		}
@@ -781,7 +919,7 @@ class ClassFile
 		{
 			if(retTypeWrapper == null)
 			{
-				retTypeWrapper = classLoader.RetTypeWrapperFromSig(descriptor);
+				retTypeWrapper = RetTypeWrapperFromSig(classLoader, descriptor);
 			}
 			return retTypeWrapper;
 		}
@@ -790,7 +928,8 @@ class ClassFile
 		{
 			if(fieldTypeWrapper == null)
 			{
-				fieldTypeWrapper = classLoader.RetTypeWrapperFromSig("()" + descriptor);
+				// HACK
+				fieldTypeWrapper = RetTypeWrapperFromSig(classLoader, "()" + descriptor);
 			}
 			return fieldTypeWrapper;
 		}
@@ -920,6 +1059,9 @@ class ClassFile
 		private ushort name_index;
 		private ushort descriptor_index;
 		private Attribute[] attributes;
+		private TypeWrapper[] argTypeWrappers;
+		private TypeWrapper retTypeWrapper;
+		private TypeWrapper fieldTypeWrapper;
 
 		internal FieldOrMethod(ClassFile classFile, BigEndianBinaryReader br)
 		{
@@ -951,6 +1093,34 @@ class ClassFile
 			{
 				return classFile.GetConstantPoolUtf8(descriptor_index);
 			}
+		}
+
+		internal TypeWrapper[] GetArgTypes(ClassLoaderWrapper classLoader)
+		{
+			if(argTypeWrappers == null)
+			{
+				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, Signature);
+			}
+			return argTypeWrappers;
+		}
+
+		internal TypeWrapper GetRetType(ClassLoaderWrapper classLoader)
+		{
+			if(retTypeWrapper == null)
+			{
+				retTypeWrapper = RetTypeWrapperFromSig(classLoader, Signature);
+			}
+			return retTypeWrapper;
+		}
+
+		internal TypeWrapper GetFieldType(ClassLoaderWrapper classLoader)
+		{
+			if(fieldTypeWrapper == null)
+			{
+				// HACK
+				fieldTypeWrapper = RetTypeWrapperFromSig(classLoader, "()" + Signature);
+			}
+			return fieldTypeWrapper;
 		}
 
 		internal Modifiers Modifiers
