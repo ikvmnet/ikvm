@@ -219,6 +219,18 @@ sealed class MethodDescriptor
 	}
 }
 
+class EmitHelper
+{
+	internal static void Throw(ILGenerator ilgen, string dottedClassName, string message)
+	{
+		TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
+		ilgen.Emit(OpCodes.Ldstr, message);
+		MethodDescriptor md = new MethodDescriptor(exception.GetClassLoader(), "<init>", "(Ljava/lang/String;)V");
+		exception.GetMethodWrapper(md, false).EmitNewobj.Emit(ilgen);
+		ilgen.Emit(OpCodes.Throw);
+	}
+}
+
 abstract class TypeWrapper
 {
 	private static TypeWrapper java_lang_Object;
@@ -228,6 +240,7 @@ abstract class TypeWrapper
 	protected Hashtable methods = new Hashtable();
 	private Hashtable fields = new Hashtable();
 	private TypeWrapper baseWrapper;
+	private bool hasIncompleteInterfaceImplementation;
 
 	public TypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper, ClassLoaderWrapper classLoader)
 	{
@@ -240,6 +253,18 @@ abstract class TypeWrapper
 	public override string ToString()
 	{
 		return GetType().Name + "[" + name + "]";
+	}
+
+	internal bool HasIncompleteInterfaceImplementation
+	{
+		get
+		{
+			return hasIncompleteInterfaceImplementation || (baseWrapper != null && baseWrapper.HasIncompleteInterfaceImplementation);
+		}
+		set
+		{
+			hasIncompleteInterfaceImplementation = value;
+		}
 	}
 
 	internal bool IsArray
@@ -644,12 +669,12 @@ abstract class TypeWrapper
 
 	private void ImplementInterfaceMethodStubImpl(MethodDescriptor md, MethodBase ifmethod, TypeBuilder typeBuilder, TypeWrapper wrapper)
 	{
+		// HACK we're mangling the name to prevent subclasses from overriding this method
+		string mangledName = this.Name + "$" + ifmethod.Name + "$" + wrapper.Name;
 		CustomAttributeBuilder methodFlags = new CustomAttributeBuilder(typeof(ModifiersAttribute).GetConstructor(new Type[] { typeof(Modifiers) }), new object[] { Modifiers.Synthetic });
 		MethodWrapper mce = wrapper.GetMethodWrapper(md, true);
 		if(mce != null)
 		{
-			// HACK we're mangling the name to prevent subclasses from overriding this method
-			string mangledName = this.Name + "$" + ifmethod.Name + "$" + wrapper.Name;
 			if(!mce.IsPublic)
 			{
 				// NOTE according to the ECMA spec it isn't legal for a privatescope method to be virtual, but this works and
@@ -658,12 +683,9 @@ abstract class TypeWrapper
 				// methods. Sigh! So I have to use private methods and mangle the name
 				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetType, md.ArgTypes);
 				mb.SetCustomAttribute(methodFlags);
-				ILGenerator ilGenerator = mb.GetILGenerator();
-				TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/IllegalAccessError");
-				ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name + "." + md.Name + md.Signature);
-				exception.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false).EmitNewobj.Emit(ilGenerator);
-				ilGenerator.Emit(OpCodes.Throw);
+				EmitHelper.Throw(mb.GetILGenerator(), "java.lang.IllegalAccessError", wrapper.Name + "." + md.Name + md.Signature);
 				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
+				wrapper.HasIncompleteInterfaceImplementation = true;
 			}
 			else if(mce.GetMethod().Name != ifmethod.Name)
 			{
@@ -702,12 +724,6 @@ abstract class TypeWrapper
 				mce.EmitCall.Emit(ilGenerator);
 				ilGenerator.Emit(OpCodes.Ret);
 			}
-			else if((mce.Modifiers & Modifiers.Synthetic) != 0)
-			{
-				// NOTE we already generated a stub for this method (probably in the case right below here), so
-				// we need to add an additional MethodImpl to this stub, to implement this interface as well
-				typeBuilder.DefineMethodOverride((MethodInfo)mce.GetMethod(), (MethodInfo)ifmethod);
-			}
 		}
 		else
 		{
@@ -715,18 +731,11 @@ abstract class TypeWrapper
 			{
 				// the type doesn't implement the interface method and isn't abstract either. The JVM allows this, but the CLR doesn't,
 				// so we have to create a stub method that throws an AbstractMethodError
-				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual, md.RetType, md.ArgTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, md.RetType, md.ArgTypes);
 				mb.SetCustomAttribute(methodFlags);
-				ILGenerator ilGenerator = mb.GetILGenerator();
-				TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/AbstractMethodError");
-				ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name + "." + md.Name + md.Signature);
-				exception.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false).EmitNewobj.Emit(ilGenerator);
-				ilGenerator.Emit(OpCodes.Throw);
+				EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + md.Name + md.Signature);
 				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
-				// NOTE because we are introducing a Miranda method, we must also update the corresponding wrapper.
-				// If we don't do this, subclasses might think they are introducing a new method, instead of overriding
-				// this one.
-				wrapper.AddMethod(MethodWrapper.Create(wrapper, md, mb, mb, Modifiers.Synthetic | Modifiers.Public | Modifiers.Abstract));
+				wrapper.HasIncompleteInterfaceImplementation = true;
 			}
 			else
 			{
@@ -767,7 +776,7 @@ abstract class TypeWrapper
 				//        return null;
 				//    }
 				//}
-				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract, md.RetType, md.ArgTypes);
+				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract, md.RetType, md.ArgTypes);
 				mb.SetCustomAttribute(methodFlags);
 				// NOTE because we are introducing a Miranda method, we must also update the corresponding wrapper.
 				// If we don't do this, subclasses might think they are introducing a new method, instead of overriding
@@ -1323,12 +1332,7 @@ class DynamicTypeWrapper : TypeWrapper
 								// but I think this is a bug, so we'll support it anyway.
 								MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Abstract|MethodAttributes.NewSlot), CallingConventions.Standard, md.RetType, md.ArgTypes);
 								ModifiersAttribute.SetModifiers(mb, methods[i].Modifiers);
-								ILGenerator ilGenerator = mb.GetILGenerator();
-								TypeWrapper exceptionType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/AbstractMethodError");
-								MethodWrapper method = exceptionType.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false);
-								ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name + "." + md.Name + md.Signature);
-								method.EmitNewobj.Emit(ilGenerator);
-								ilGenerator.Emit(OpCodes.Throw);
+								EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + md.Name + md.Signature);
 							}
 						}
 						parent = parent.BaseTypeWrapper;
@@ -1367,11 +1371,7 @@ class DynamicTypeWrapper : TypeWrapper
 						// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
 						if(!m.ClassFile.IsAbstract && !m.ClassFile.IsInterface)
 						{
-							TypeWrapper exceptionType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/AbstractMethodError");
-							MethodWrapper method = exceptionType.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false);
-							ilGenerator.Emit(OpCodes.Ldstr, m.ClassFile.Name + "." + m.Name + m.Signature);
-							method.EmitNewobj.Emit(ilGenerator);
-							ilGenerator.Emit(OpCodes.Throw);
+							EmitHelper.Throw(ilGenerator, "java.lang.AbstractMethodError", m.ClassFile.Name + "." + m.Name + m.Signature);
 						}
 					}
 					else if(m.IsNative)
@@ -1429,11 +1429,8 @@ class DynamicTypeWrapper : TypeWrapper
 						{
 							if(JVM.NoJniStubs)
 							{
-								// TODO consider throwing a java.lang.UnsatisfiedLinkError here
 								//Console.WriteLine("Native method not implemented: " + classFile.Name + "." + m.Name + m.Signature);
-								ilGenerator.Emit(OpCodes.Ldstr, "Native method not implemented: " + classFile.Name + "." + m.Name + m.Signature);
-								ilGenerator.Emit(OpCodes.Newobj, typeof(NotImplementedException).GetConstructor(new Type[] { typeof(string) }));
-								ilGenerator.Emit(OpCodes.Throw);
+								EmitHelper.Throw(ilGenerator, "java.lang.UnsatisfiedLinkError", "Native method not implemented: " + classFile.Name + "." + m.Name + m.Signature);
 								continue;
 							}
 							FieldBuilder methodPtr = typeBuilder.DefineField(m.Name + "$Ptr", typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
@@ -1552,6 +1549,17 @@ class DynamicTypeWrapper : TypeWrapper
 					for(int i = 0; i < interfaces.Length; i++)
 					{
 						interfaces[i].ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet);
+					}
+					// if any of our base classes has an incomplete interface implementation we need to look through all
+					// the base class interfaces to see if we've got an implementation now
+					TypeWrapper baseTypeWrapper = wrapper.BaseTypeWrapper;
+					while(baseTypeWrapper.HasIncompleteInterfaceImplementation)
+					{
+						for(int i = 0; i < baseTypeWrapper.Interfaces.Length; i++)
+						{
+							baseTypeWrapper.Interfaces[i].ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet);
+						}
+						baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
 					}
 					wrapper.BaseTypeWrapper.ImplementOverrideStubsAndVirtuals(typeBuilder, wrapper, methodLookup);
 				}
@@ -2054,11 +2062,11 @@ class DynamicTypeWrapper : TypeWrapper
 				//   class MostDerived extends Derived {
 				//     public void Foo() {} 
 				//   }
-				if(baseMethod != null && !baseMethod.IsPublic && m.IsPublic)
+				if(m.IsPublic && baseWrapper != null && baseWrapper.HasIncompleteInterfaceImplementation)
 				{
 					Hashtable hashtable = null;
 					TypeWrapper tw = baseWrapper;
-					while(tw != baseMce.DeclaringType)
+					while(tw.HasIncompleteInterfaceImplementation)
 					{
 						foreach(TypeWrapper iface in tw.Interfaces)
 						{
