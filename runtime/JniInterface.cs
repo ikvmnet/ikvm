@@ -30,16 +30,22 @@ using System.Runtime.InteropServices;
 
 sealed class JniHelper
 {
+	//[DllImport("ikvm-native", EntryPoint="_ikvm_LoadLibrary@4")]
 	[DllImport("ikvm-native")]
 	private static extern IntPtr ikvm_LoadLibrary(string filename);
+	//[DllImport("ikvm-native", EntryPoint="_ikvm_FreeLibrary@4")]
 	[DllImport("ikvm-native")]
 	private static extern void ikvm_FreeLibrary(IntPtr handle);
+	//[DllImport("ikvm-native", EntryPoint="_ikvm_GetProcAddress@12")]
 	[DllImport("ikvm-native")]
 	internal static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
+	//[DllImport("ikvm-native", EntryPoint="_ikvm_CallOnLoad@12")]
 	[DllImport("ikvm-native")]
 	private unsafe static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
+	//[DllImport("ikvm-native", EntryPoint="_ikvm_GetJNIEnvVTable@0")]
 	[DllImport("ikvm-native")]
 	internal unsafe static extern void** ikvm_GetJNIEnvVTable();
+	//[DllImport("ikvm-native", EntryPoint="_ikvm_MarshalDelegate@4")]
 	[DllImport("ikvm-native")]
 	internal unsafe static extern void* ikvm_MarshalDelegate(Delegate d);
 
@@ -163,14 +169,17 @@ unsafe struct LocalRefListEntry
 
 	internal int MakeLocalRef(object o)
 	{
-		for(int i = 0; i < STATIC_LIST_SIZE; i++)
+		if(u.static_list != null)
 		{
-			if(u.static_list[i] == null)
+			for(int i = 0; i < STATIC_LIST_SIZE; i++)
 			{
-				u.static_list[i] = o;
-				return i;
+				if(u.static_list[i] == null)
+				{
+					u.static_list[i] = o;
+					return i;
+				}
 			}
-		}
+		} 
 		if(dynamic_list == null)
 		{
 			dynamic_list = new object[32 - STATIC_LIST_SIZE];
@@ -1040,12 +1049,26 @@ unsafe struct JNIEnv
 		}
 	}
 
+	internal LocalRefListEntry[] GetLocalRefs()
+	{
+		// dereferencing a GCHandle is slow, so this is a small optimization
+		if(u.activeFrame != null)
+		{
+			return u.activeFrame->localRefs;
+		}
+		else
+		{
+			return (LocalRefListEntry[])localRefs.Target;
+		}
+	}
+
 	internal static void DeleteLocalRef(JNIEnv* pEnv, IntPtr obj)
 	{
 		int i = obj.ToInt32();
 		if(i > 0)
 		{
-			pEnv->u.activeFrame->localRefs[i >> LocalRefListEntry.LOCAL_REF_SHIFT].DeleteLocalRef(i & LocalRefListEntry.LOCAL_REF_MASK);
+			LocalRefListEntry[] localRefs = pEnv->GetLocalRefs();
+			localRefs[i >> LocalRefListEntry.LOCAL_REF_SHIFT].DeleteLocalRef(i & LocalRefListEntry.LOCAL_REF_MASK);
 			return;
 		}
 		if(i < 0)
@@ -2468,7 +2491,20 @@ unsafe struct JNIEnv
 
 	internal IntPtr MakeLocalRef(object obj)
 	{
-		return u.activeFrame->MakeLocalRef(obj);
+		if(obj == null)
+		{
+			return IntPtr.Zero;
+		}
+		LocalRefListEntry[] localRefs = GetLocalRefs();
+		int i = localRefs[localRefSlot].MakeLocalRef(obj);
+		if(i >= 0)
+		{
+			return (IntPtr)((localRefSlot << LocalRefListEntry.LOCAL_REF_SHIFT) + i);
+		}
+		// TODO consider allocating a new slot (if we do this, the code in
+		// PushLocalFrame/PopLocalFrame (and Leave) must be fixed to take this into account)
+		JVM.CriticalFailure("Too many JNI local references", null);
+		return IntPtr.Zero;
 	}
 
 	internal object UnwrapRef(IntPtr o)
@@ -2476,7 +2512,8 @@ unsafe struct JNIEnv
 		int i = o.ToInt32();
 		if(i > 0)
 		{
-			return u.activeFrame->UnwrapLocalRef(o);
+			LocalRefListEntry[] localRefs = GetLocalRefs();
+			return localRefs[i >> LocalRefListEntry.LOCAL_REF_SHIFT].UnwrapLocalRef(i & LocalRefListEntry.LOCAL_REF_MASK);
 		}
 		if(i < 0)
 		{
@@ -2671,24 +2708,11 @@ public unsafe struct JniFrame
 
 	public IntPtr MakeLocalRef(object obj)
 	{
-		if(obj == null)
-		{
-			return IntPtr.Zero;
-		}
-		int i = localRefs[pJNIEnv->localRefSlot].MakeLocalRef(obj);
-		if(i >= 0)
-		{
-			return (IntPtr)((pJNIEnv->localRefSlot << LocalRefListEntry.LOCAL_REF_SHIFT) + i);
-		}
-		// TODO consider allocating a new slot (if we do this, the code in
-		// PushLocalFrame/PopLocalFrame (and Leave) must be fixed to take this into account)
-		JVM.CriticalFailure("Too many JNI local references", null);
-		return IntPtr.Zero;
+		return pJNIEnv->MakeLocalRef(obj);
 	}
 
 	public object UnwrapLocalRef(IntPtr p)
 	{
-		int i = p.ToInt32();
-		return localRefs[i >> LocalRefListEntry.LOCAL_REF_SHIFT].UnwrapLocalRef(i & LocalRefListEntry.LOCAL_REF_MASK);
+		return pJNIEnv->UnwrapRef(p);
 	}
 }
