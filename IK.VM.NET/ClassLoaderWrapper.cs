@@ -301,7 +301,7 @@ class ClassLoaderWrapper
 			}
 			wrapper = new CompiledTypeWrapper(name.Replace('.', '/'), type, baseType);
 			types.Add(name, wrapper);
-			// TODO shouldn't we add the <type,wrapper> to the typeToTypeWrapper hashtable?
+			typeToTypeWrapper[type] = wrapper;
 		}
 		return wrapper;
 	}
@@ -785,24 +785,7 @@ class ClassLoaderWrapper
 		TypeWrapper wrapper = (TypeWrapper)typeToTypeWrapper[type];
 		if(wrapper == null)
 		{
-			if(type.IsArray)
-			{
-				// it might be an array of a dynamically compiled Java type
-				int rank = 1;
-				Type elem = type.GetElementType();
-				while(elem.IsArray)
-				{
-					rank++;
-					elem = elem.GetElementType();
-				}
-				wrapper = (TypeWrapper)typeToTypeWrapper[elem];
-				if(wrapper != null)
-				{
-					// HACK this is a lame way of creating the array wrapper
-					wrapper = wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + "L" + wrapper.Name + ";");
-				}
-			}
-			else if(type.IsPrimitive)
+			if(type.IsPrimitive)
 			{
 				if(type == typeof(sbyte))
 				{
@@ -856,6 +839,67 @@ class ClassLoaderWrapper
 		TypeWrapper wrapper = GetWrapperFromTypeFast(type);
 		if(wrapper == null)
 		{
+			if(type.IsArray)
+			{
+				// it might be an array of a dynamically compiled Java type
+				int rank = 1;
+				Type elem = type.GetElementType();
+				while(elem.IsArray)
+				{
+					rank++;
+					elem = elem.GetElementType();
+				}
+				wrapper = (TypeWrapper)typeToTypeWrapper[elem];
+				if(wrapper != null)
+				{
+					// HACK this is a lame way of creating the array wrapper
+					if(elem.IsPrimitive)
+					{
+						string elemType;
+						if(elem == typeof(sbyte))
+						{
+							elemType = "B";
+						}
+						else if(elem == typeof(bool))
+						{
+							elemType = "Z";
+						}
+						else if(elem == typeof(short))
+						{
+							elemType = "S";
+						}
+						else if(elem == typeof(char))
+						{
+							elemType = "C";
+						}
+						else if(elem == typeof(int))
+						{
+							elemType = "I";
+						}
+						else if(elem == typeof(long))
+						{
+							elemType = "J";
+						}
+						else if(elem == typeof(float))
+						{
+							elemType = "F";
+						}
+						else if(elem == typeof(double))
+						{
+							elemType = "D";
+						}
+						else
+						{
+							throw new InvalidOperationException();
+						}
+						wrapper = wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + elemType);
+					}
+					else
+					{
+						wrapper = wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + "L" + wrapper.Name + ";");
+					}
+				}
+			}
 			// if the wrapper doesn't already exist, that must mean that the type
 			// is a .NET type (or a pre-compiled Java class), which means that it
 			// was "loaded" by the bootstrap classloader
