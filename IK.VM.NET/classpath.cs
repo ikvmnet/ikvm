@@ -404,7 +404,12 @@ namespace NativeCode.java
 
 			public static string nativeGetLibname(string pathname, string libname)
 			{
-				// TODO
+				// HACK this seems like a lame way of doing things, but in order to get Eclipse to work,
+				// we have append .dll to the libname here
+				if(!libname.ToUpper().EndsWith(".DLL"))
+				{
+					libname += ".dll";
+				}
 				return libname;
 			}
 
