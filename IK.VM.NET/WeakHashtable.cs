@@ -1,18 +1,26 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Collections;
 
 // TODO implement this properly, instead of this quick hack
 public class WeakHashtable : IDictionary
 {
-	private struct KeyValue
-	{
-		public WeakReference Key;
-		public object Value;
-	}
-	private KeyValue[] items = new KeyValue[101];
+	private GCHandle[] keys = new GCHandle[101];
+	private object[] values = new object[101];
 
 	public WeakHashtable()
 	{
+	}
+
+	~WeakHashtable()
+	{
+		foreach(GCHandle h in keys)
+		{
+			if(h.IsAllocated)
+			{
+				h.Free();
+			}
+		}
 	}
 
 	IEnumerator IEnumerable.GetEnumerator()
@@ -40,7 +48,7 @@ public class WeakHashtable : IDictionary
 		lock(this)
 		{
 			int index = FindKey(key);
-			return index != -1 && items[index].Key != null && items[index].Key.Target != null;
+			return index != -1 && keys[index].IsAllocated && keys[index].Target != null;
 		}
 	}
 
@@ -54,19 +62,23 @@ public class WeakHashtable : IDictionary
 		lock(this)
 		{
 			int index = FindKey(key);
-			if(index != -1 && items[index].Key != null && items[index].Key.Target != null)
+			if(index != -1 && keys[index].IsAllocated && keys[index].Target != null)
 			{
 				throw new ArgumentException();
 			}
-			int newSize = items.Length;
+			int newSize = keys.Length;
 			while(index == -1)
 			{
 				Rehash(newSize);
-				newSize = items.Length * 2 - 1;
+				newSize = keys.Length * 2 - 1;
 				index = FindKey(key);
 			}
-			items[index].Key = new WeakReference(key);
-			items[index].Value = value;
+			if(keys[index].IsAllocated)
+			{
+				keys[index].Free();
+			}
+			keys[index] = GCHandle.Alloc(key, GCHandleType.Weak);
+			values[index] = value;
 		}
 	}
 
@@ -83,15 +95,15 @@ public class WeakHashtable : IDictionary
 	// table is too full to contain the key
 	private int FindKey(object key)
 	{
-		int start = key.GetHashCode() % items.Length;
-		int end = (start + 5) % items.Length;
-		for(int index = start; ; index = (index + 1) % items.Length)
+		int start = key.GetHashCode() % keys.Length;
+		int end = (start + 5) % keys.Length;
+		for(int index = start; ; index = (index + 1) % keys.Length)
 		{
-			if(items[index].Key == null)
+			if(!keys[index].IsAllocated)
 			{
 				return index;
 			}
-			if(key.Equals(items[index].Key.Target))
+			if(key.Equals(keys[index].Target))
 			{
 				return index;
 			}
@@ -104,14 +116,16 @@ public class WeakHashtable : IDictionary
 
 	private void Rehash(int newSize)
 	{
-		KeyValue[] curr = items;
+		GCHandle[] currKeys = keys;
+		object[] currValues = values;
 	restart:
-		items = new KeyValue[newSize];
-		for(int i = 0; i < curr.Length; i++)
+		keys = new GCHandle[newSize];
+		values = new object[newSize];
+		for(int i = 0; i < currKeys.Length; i++)
 		{
-			if(curr[i].Key != null)
+			if(currKeys[i].IsAllocated)
 			{
-				object key = curr[i].Key.Target;
+				object key = currKeys[i].Target;
 				if(key != null)
 				{
 					int index = FindKey(key);
@@ -120,8 +134,12 @@ public class WeakHashtable : IDictionary
 						newSize = newSize * 2 - 1;
 						goto restart;
 					}
-					items[index].Key = new WeakReference(key);
-					items[index].Value = curr[i].Value;
+					keys[index] = currKeys[i];
+					values[index] = currValues[i];
+				}
+				else
+				{
+					currKeys[i].Free();
 				}
 			}
 		}
@@ -136,7 +154,7 @@ public class WeakHashtable : IDictionary
 				int index = FindKey(key);
 				if(index >= 0)
 				{
-					return items[index].Value;
+					return values[index];
 				}
 				return null;
 			}
@@ -146,15 +164,19 @@ public class WeakHashtable : IDictionary
 			lock(this)
 			{
 				int index = FindKey(key);
-				int newSize = items.Length;
+				int newSize = keys.Length;
 				while(index == -1)
 				{
 					Rehash(newSize);
-					newSize = items.Length * 2 - 1;
+					newSize = keys.Length * 2 - 1;
 					index = FindKey(key);
 				}
-				items[index].Key = new WeakReference(key);
-				items[index].Value = value;
+				if(keys[index].IsAllocated)
+				{
+					keys[index].Free();
+				}
+				keys[index] = GCHandle.Alloc(key, GCHandleType.Weak);
+				values[index] = value;
 			}
 		}
 	}
