@@ -109,63 +109,63 @@ class Compiler
 		ma = new MethodAnalyzer(clazz, m, classLoader);
 		Profiler.Leave("MethodAnalyzer");
 		ArrayList ar = new ArrayList(m.ExceptionTable);
-//		Console.WriteLine("before processing:");
-//		foreach(ExceptionTableEntry e in ar)
-//		{
-//			Console.WriteLine("{0} to {1} handler {2}", e.start_pc, e.end_pc, e.handler_pc);
-//		}
+		//		Console.WriteLine("before processing:");
+		//		foreach(ExceptionTableEntry e in ar)
+		//		{
+		//			Console.WriteLine("{0} to {1} handler {2}", e.start_pc, e.end_pc, e.handler_pc);
+		//		}
 		// TODO it's very bad practice to mess with ExceptionTableEntrys that are owned by the Method, yet we
 		// do that here, should be changed to use our own ETE class (which should also contain the ordinal, instead
 		// of the one in ClassFile.cs)
 		// OPTIMIZE there must be a more efficient algorithm to do this...
-	restart:
-		for(int i = 0; i < ar.Count; i++)
-		{
-			ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
-			for(int j = i + 1; j < ar.Count; j++)
+		restart:
+			for(int i = 0; i < ar.Count; i++)
 			{
-				ExceptionTableEntry ej = (ExceptionTableEntry)ar[j];
-				if(ei.start_pc <= ej.start_pc && ei.end_pc > ej.start_pc)
+				ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
+				for(int j = i + 1; j < ar.Count; j++)
 				{
-					// try1.j
-					if(ej.end_pc > ei.end_pc)
+					ExceptionTableEntry ej = (ExceptionTableEntry)ar[j];
+					if(ei.start_pc <= ej.start_pc && ei.end_pc > ej.start_pc)
 					{
-						ExceptionTableEntry emi = new ExceptionTableEntry();
-						emi.start_pc = ej.start_pc;
-						emi.end_pc = ei.end_pc;
-						emi.catch_type = ei.catch_type;
-						emi.handler_pc = ei.handler_pc;
-						ExceptionTableEntry emj = new ExceptionTableEntry();
-						emj.start_pc = ej.start_pc;
-						emj.end_pc = ei.end_pc;
-						emj.catch_type = ej.catch_type;
-						emj.handler_pc = ej.handler_pc;
-						ei.end_pc = emi.start_pc;
-						ej.start_pc = emj.end_pc;
-						ar.Insert(j, emj);
-						ar.Insert(i + 1, emi);
-						goto restart;
-					}
-					else if(ej.end_pc < ei.end_pc)	// try2.j
-					{
-						ExceptionTableEntry emi = new ExceptionTableEntry();
-						emi.start_pc = ej.start_pc;
-						emi.end_pc = ej.end_pc;
-						emi.catch_type = ei.catch_type;
-						emi.handler_pc = ei.handler_pc;
-						ExceptionTableEntry eei = new ExceptionTableEntry();
-						eei.start_pc = ej.end_pc;
-						eei.end_pc = ei.end_pc;
-						eei.catch_type = ei.catch_type;
-						eei.handler_pc = ei.handler_pc;
-						ei.end_pc = emi.start_pc;
-						ar.Insert(i + 1, eei);
-						ar.Insert(i + 1, emi);
-						goto restart;
+						// try1.j
+						if(ej.end_pc > ei.end_pc)
+						{
+							ExceptionTableEntry emi = new ExceptionTableEntry();
+							emi.start_pc = ej.start_pc;
+							emi.end_pc = ei.end_pc;
+							emi.catch_type = ei.catch_type;
+							emi.handler_pc = ei.handler_pc;
+							ExceptionTableEntry emj = new ExceptionTableEntry();
+							emj.start_pc = ej.start_pc;
+							emj.end_pc = ei.end_pc;
+							emj.catch_type = ej.catch_type;
+							emj.handler_pc = ej.handler_pc;
+							ei.end_pc = emi.start_pc;
+							ej.start_pc = emj.end_pc;
+							ar.Insert(j, emj);
+							ar.Insert(i + 1, emi);
+							goto restart;
+						}
+						else if(ej.end_pc < ei.end_pc)	// try2.j
+						{
+							ExceptionTableEntry emi = new ExceptionTableEntry();
+							emi.start_pc = ej.start_pc;
+							emi.end_pc = ej.end_pc;
+							emi.catch_type = ei.catch_type;
+							emi.handler_pc = ei.handler_pc;
+							ExceptionTableEntry eei = new ExceptionTableEntry();
+							eei.start_pc = ej.end_pc;
+							eei.end_pc = ei.end_pc;
+							eei.catch_type = ei.catch_type;
+							eei.handler_pc = ei.handler_pc;
+							ei.end_pc = emi.start_pc;
+							ar.Insert(i + 1, eei);
+							ar.Insert(i + 1, emi);
+							goto restart;
+						}
 					}
 				}
 			}
-		}
 		// __jsr inside a try block (to a PC outside the try block) causes the try
 		// block to be broken into two blocks surrounding the __jsr
 		// This is actually pretty common. Take, for example, the following code:
@@ -186,29 +186,29 @@ class Compiler
 		//			}
 		//		}
 		//	}
-	restart_jsr:
-		for(int i = 0; i < ar.Count; i++)
-		{
-			ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
-			for(int j = FindPcIndex(ei.start_pc), e = FindPcIndex(ei.end_pc); j < e; j++)
+		restart_jsr:
+			for(int i = 0; i < ar.Count; i++)
 			{
-				if(m.Instructions[j].NormalizedOpCode == NormalizedByteCode.__jsr)
+				ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
+				for(int j = FindPcIndex(ei.start_pc), e = FindPcIndex(ei.end_pc); j < e; j++)
 				{
-					int targetPC = m.Instructions[j].NormalizedArg1 + m.Instructions[j].PC;
-					if(targetPC < ei.start_pc || targetPC >= ei.end_pc)
+					if(m.Instructions[j].NormalizedOpCode == NormalizedByteCode.__jsr)
 					{
-						ExceptionTableEntry en = new ExceptionTableEntry();
-						en.catch_type = ei.catch_type;
-						en.handler_pc = ei.handler_pc;
-						en.start_pc = (ushort)m.Instructions[j + 1].PC;
-						en.end_pc = ei.end_pc;
-						ei.end_pc = (ushort)m.Instructions[j].PC;
-						ar.Insert(i + 1, en);
-						goto restart_jsr;
+						int targetPC = m.Instructions[j].NormalizedArg1 + m.Instructions[j].PC;
+						if(targetPC < ei.start_pc || targetPC >= ei.end_pc)
+						{
+							ExceptionTableEntry en = new ExceptionTableEntry();
+							en.catch_type = ei.catch_type;
+							en.handler_pc = ei.handler_pc;
+							en.start_pc = (ushort)m.Instructions[j + 1].PC;
+							en.end_pc = ei.end_pc;
+							ei.end_pc = (ushort)m.Instructions[j].PC;
+							ar.Insert(i + 1, en);
+							goto restart_jsr;
+						}
 					}
 				}
 			}
-		}
 		// Split try blocks at branch targets (branches from outside the try block)
 		for(int i = 0; i < ar.Count; i++)
 		{
@@ -223,11 +223,11 @@ class Compiler
 					{
 						case NormalizedByteCode.__lookupswitch:
 							// TODO if the switch branches out of the try block, that should be handled too
-//							for(int j = 0; j < instr.Values.Length; j++)
-//							{
-//								state[FindPcIndex(instr.PC + instr.TargetOffsets[j])] += s;
-//							}
-//							state[FindPcIndex(instr.PC + instr.DefaultOffset)] += s;
+							//							for(int j = 0; j < instr.Values.Length; j++)
+							//							{
+							//								state[FindPcIndex(instr.PC + instr.TargetOffsets[j])] += s;
+							//							}
+							//							state[FindPcIndex(instr.PC + instr.DefaultOffset)] += s;
 							break;
 						case NormalizedByteCode.__ifeq:
 						case NormalizedByteCode.__ifne:
@@ -297,11 +297,11 @@ class Compiler
 				i--;
 			}
 		}
-//		Console.WriteLine("after processing:");
-//		foreach(ExceptionTableEntry e in ar)
-//		{
-//			Console.WriteLine("{0} to {1} handler {2}", e.start_pc, e.end_pc, e.handler_pc);
-//		}
+		//		Console.WriteLine("after processing:");
+		//		foreach(ExceptionTableEntry e in ar)
+		//		{
+		//			Console.WriteLine("{0} to {1} handler {2}", e.start_pc, e.end_pc, e.handler_pc);
+		//		}
 
 		exceptions = new ExceptionTableEntry[ar.Count];
 		ar.CopyTo(exceptions, 0);
@@ -826,49 +826,49 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Ldnull);
 						break;
 					case NormalizedByteCode.__iconst:
-						switch(instr.NormalizedArg1)
-						{
-							case -1:
-								ilGenerator.Emit(OpCodes.Ldc_I4_M1);
-								break;
-							case 0:
-								ilGenerator.Emit(OpCodes.Ldc_I4_0);
-								break;
-							case 1:
-								ilGenerator.Emit(OpCodes.Ldc_I4_1);
-								break;
-							case 2:
-								ilGenerator.Emit(OpCodes.Ldc_I4_2);
-								break;
-							case 3:
-								ilGenerator.Emit(OpCodes.Ldc_I4_3);
-								break;
-							case 4:
-								ilGenerator.Emit(OpCodes.Ldc_I4_4);
-								break;
-							case 5:
-								ilGenerator.Emit(OpCodes.Ldc_I4_5);
-								break;
-							case 6:
-								ilGenerator.Emit(OpCodes.Ldc_I4_6);
-								break;
-							case 7:
-								ilGenerator.Emit(OpCodes.Ldc_I4_7);
-								break;
-							case 8:
-								ilGenerator.Emit(OpCodes.Ldc_I4_8);
-								break;
-							default:
-								if(instr.NormalizedArg1 >= -128 && instr.NormalizedArg1 <= 127)
-								{
-									ilGenerator.Emit(OpCodes.Ldc_I4_S, (sbyte)instr.NormalizedArg1);
-								}
-								else
-								{
-									ilGenerator.Emit(OpCodes.Ldc_I4, instr.NormalizedArg1);
-								}
-								break;
-						}
+					switch(instr.NormalizedArg1)
+					{
+						case -1:
+							ilGenerator.Emit(OpCodes.Ldc_I4_M1);
+							break;
+						case 0:
+							ilGenerator.Emit(OpCodes.Ldc_I4_0);
+							break;
+						case 1:
+							ilGenerator.Emit(OpCodes.Ldc_I4_1);
+							break;
+						case 2:
+							ilGenerator.Emit(OpCodes.Ldc_I4_2);
+							break;
+						case 3:
+							ilGenerator.Emit(OpCodes.Ldc_I4_3);
+							break;
+						case 4:
+							ilGenerator.Emit(OpCodes.Ldc_I4_4);
+							break;
+						case 5:
+							ilGenerator.Emit(OpCodes.Ldc_I4_5);
+							break;
+						case 6:
+							ilGenerator.Emit(OpCodes.Ldc_I4_6);
+							break;
+						case 7:
+							ilGenerator.Emit(OpCodes.Ldc_I4_7);
+							break;
+						case 8:
+							ilGenerator.Emit(OpCodes.Ldc_I4_8);
+							break;
+						default:
+							if(instr.NormalizedArg1 >= -128 && instr.NormalizedArg1 <= 127)
+							{
+								ilGenerator.Emit(OpCodes.Ldc_I4_S, (sbyte)instr.NormalizedArg1);
+							}
+							else
+							{
+								ilGenerator.Emit(OpCodes.Ldc_I4, instr.NormalizedArg1);
+							}
+							break;
+					}
 						break;
 					case NormalizedByteCode.__lconst_0:
 						ilGenerator.Emit(OpCodes.Ldc_I8, 0L);
@@ -985,7 +985,7 @@ class Compiler
 								dup.Load(k);
 							}
 						}
-						else if(thisType != null && !thisType.IsSubTypeOf(cpi.GetClassType(classLoader)))
+						else if(!thisType.IsUnloadable && !thisType.IsSubTypeOf(cpi.GetClassType(classLoader)))
 						{
 							EmitError("java.lang.IncompatibleClassChangeError", null);
 							thisType = null;
@@ -997,11 +997,11 @@ class Compiler
 							{
 								if(VerifierTypeWrapper.IsNew(type))
 								{
-									if(thisType != null && (thisType.IsAbstract || thisType.IsInterface))
+									if(!thisType.IsUnloadable && (thisType.IsAbstract || thisType.IsInterface))
 									{
 										// the CLR gets confused when we do a newobj on an abstract class,
 										// so we set method to null, to basically just comment out the constructor
-										// call (the InstantionError was already emitted at the "new" bytecode)
+										// call (the InstantiationError was already emitted at the "new" bytecode)
 										method = null;
 									}
 									// we have to construct a list of all the unitialized references to the object
@@ -1146,11 +1146,11 @@ class Compiler
 										ilGenerator.Emit(OpCodes.Ldnull);
 										ilGenerator.Emit(OpCodes.Throw);
 										return;
-//										for(int j = 0; j < argcount + 1; j++)
-//										{
-//											ilGenerator.Emit(OpCodes.Pop);
-//										}
-//										EmitPlaceholder(cpi.Signature.Substring(cpi.Signature.LastIndexOf(')') + 1));
+										//										for(int j = 0; j < argcount + 1; j++)
+										//										{
+										//											ilGenerator.Emit(OpCodes.Pop);
+										//										}
+										//										EmitPlaceholder(cpi.Signature.Substring(cpi.Signature.LastIndexOf(')') + 1));
 									}
 								}
 							}
@@ -1360,7 +1360,7 @@ class Compiler
 						else
 						{
 							LocalBuilder localArray = ilGenerator.DeclareLocal(typeof(int[]));
-							LocalBuilder localInt = ilGenerator.DeclareLocal(typeof(int));
+								LocalBuilder localInt = ilGenerator.DeclareLocal(typeof(int));
 							ilGenerator.Emit(OpCodes.Ldc_I4, instr.Arg2);
 							ilGenerator.Emit(OpCodes.Newarr, typeof(int));
 							ilGenerator.Emit(OpCodes.Stloc, localArray);
@@ -2192,19 +2192,72 @@ class Compiler
 		return null;
 	}
 
+	private class DynamicNewEmitter : CodeEmitter
+	{
+		private ClassLoaderWrapper classLoader;
+		private TypeWrapper wrapper;
+		private ClassFile.ConstantPoolItemFMI cpi;
+
+		internal DynamicNewEmitter(ClassLoaderWrapper classLoader, TypeWrapper wrapper, ClassFile.ConstantPoolItemFMI cpi)
+		{
+			this.classLoader = classLoader;
+			this.wrapper = wrapper;
+			this.cpi = cpi;
+		}
+
+		internal override void Emit(ILGenerator ilGenerator)
+		{
+			TypeWrapper[] args = cpi.GetArgTypes(classLoader);
+			LocalBuilder argarray = ilGenerator.DeclareLocal(typeof(object[]));
+				LocalBuilder val = ilGenerator.DeclareLocal(typeof(object));
+			ilGenerator.Emit(OpCodes.Ldc_I4, args.Length);
+			ilGenerator.Emit(OpCodes.Newarr, typeof(object));
+			ilGenerator.Emit(OpCodes.Stloc, argarray);
+			for(int i = args.Length - 1; i >= 0; i--)
+			{
+				if(args[i].IsPrimitive)
+				{
+					ilGenerator.Emit(OpCodes.Box, args[i].Type);
+				}
+				ilGenerator.Emit(OpCodes.Stloc, val);
+				ilGenerator.Emit(OpCodes.Ldloc, argarray);
+				ilGenerator.Emit(OpCodes.Ldc_I4, i);
+				ilGenerator.Emit(OpCodes.Ldloc, val);
+				ilGenerator.Emit(OpCodes.Stelem_Ref);
+			}
+			ilGenerator.Emit(OpCodes.Ldtoken, wrapper.Type);
+			ilGenerator.Emit(OpCodes.Ldstr, cpi.Class);
+			ilGenerator.Emit(OpCodes.Ldstr, cpi.Name);
+			ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
+			ilGenerator.Emit(OpCodes.Ldloc, argarray);
+			ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicInvokeSpecialNew"));
+			if(!cpi.GetClassType(classLoader).IsUnloadable)
+			{
+				ilGenerator.Emit(OpCodes.Castclass, cpi.GetClassType(classLoader).Type);
+			}
+		}
+	}
+
 	private MethodWrapper GetMethod(ClassFile.ConstantPoolItemFMI cpi, TypeWrapper thisType, NormalizedByteCode invoke)
 	{
 		// TODO when there is an error resolving a call to the super class constructor (in the constructor of this type),
 		// we cannot use EmitError, because that will yield an invalid constructor (that doesn't call the superclass constructor)
-		TypeWrapper wrapper = cpi.GetClassType(classLoader);
-		if(wrapper.IsUnloadable)
+		if(IsUnloadable(cpi))
 		{
-			// TODO instead of this NoClassDefFoundError, we should return a dynamic MethodWrapper that
-			// dynamically calls the method
-			EmitError("java.lang.NoClassDefFoundError", wrapper.Name);
+			MethodWrapper dummy = new MethodWrapper(null, null, null, Modifiers.Synthetic);
+			if(invoke == NormalizedByteCode.__invokespecial)
+			{
+				dummy.EmitNewobj = new DynamicNewEmitter(classLoader, clazz, cpi);
+			}
+			else
+			{
+				throw new NotImplementedException();
+			}
+			return dummy;
 		}
 		else
 		{
+			TypeWrapper wrapper = cpi.GetClassType(classLoader);
 			if(wrapper.IsInterface != (invoke == NormalizedByteCode.__invokeinterface))
 			{
 				EmitError("java.lang.IncompatibleClassChangeError", null);
@@ -2521,5 +2574,22 @@ class Compiler
 		// HACK instead of the name, we should compare with a cache ref of the type (but beware of the
 		// fact that the Type identity changes when a TypeBuilder turns into a RuntimeType)
 		return excType.FullName == "java.lang.ClassNotFoundException";
+	}
+
+	private bool IsUnloadable(ClassFile.ConstantPoolItemFMI cpi)
+	{
+		if(cpi.GetClassType(classLoader).IsUnloadable || cpi.GetRetType(classLoader).IsUnloadable)
+		{
+			return true;
+		}
+		TypeWrapper[] args = cpi.GetArgTypes(classLoader);
+		for(int i = 0; i < args.Length; i++)
+		{
+			if(args[i].IsUnloadable)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }

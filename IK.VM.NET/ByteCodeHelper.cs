@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Reflection;
 
 public class ByteCodeHelper
 {
@@ -68,5 +69,27 @@ public class ByteCodeHelper
 			throw new NullReferenceException();
 		}
 		System.Threading.Monitor.Exit(o);
+	}
+
+	public static object DynamicInvokeSpecialNew(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
+	{
+		ClassLoaderWrapper classLoader = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type)).GetClassLoader();
+		// TODO we should catch ClassNotFoundException and throw a NoClassDefError instead
+		TypeWrapper wrapper = classLoader.LoadClassBySlashedName(clazz);
+		wrapper.Finish();
+		// TODO who checks that the arg types are loadable?
+		// TODO instead of getting the constructor from the type, we should use the (future) reflection support in MethodWrapper
+		//MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(classLoader, name, sig), false);
+		// TODO handle error, check access, etc.
+		ConstructorInfo constructor = wrapper.Type.GetConstructor(classLoader.ArgTypeListFromSig(sig));
+		try
+		{
+			return constructor.Invoke(args);
+		}
+		catch(TargetInvocationException x)
+		{
+			ExceptionHelper.MapExceptionFast(x);
+			throw x.InnerException;
+		}
 	}
 }
