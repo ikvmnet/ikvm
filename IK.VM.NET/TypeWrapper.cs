@@ -2060,6 +2060,8 @@ class DynamicTypeWrapper : TypeWrapper
 			this.map = map;
 		}
 
+		// this method doesn't work on Mono yet, so we use a Type based approach instead
+#if USE_TYPEHANDLE_EXCEPTION_MAPPING
 		internal override void Emit(ILGenerator ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldarg_0);
@@ -2097,6 +2099,40 @@ class DynamicTypeWrapper : TypeWrapper
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ret);
 		}
+#else // USE_TYPEHANDLE_EXCEPTION_MAPPING
+		internal override void Emit(ILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Ldarg_0);
+			ilgen.Emit(OpCodes.Callvirt, typeof(Object).GetMethod("GetType"));
+			MethodInfo GetTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle");
+			for(int i = 0; i < map.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Ldtoken, Type.GetType(map[i].src));
+				ilgen.Emit(OpCodes.Call, GetTypeFromHandle);
+				ilgen.Emit(OpCodes.Ceq);
+				Label label = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Brfalse_S, label);
+				ilgen.Emit(OpCodes.Pop);
+				if(map[i].code != null)
+				{
+					ilgen.Emit(OpCodes.Ldarg_0);
+					map[i].code.Emit(ilgen);
+					ilgen.Emit(OpCodes.Ret);
+				}
+				else
+				{
+					TypeWrapper tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(map[i].dst);
+					tw.GetMethodWrapper(MethodDescriptor.FromNameSig(tw.GetClassLoader(), "<init>", "()V"), false).EmitNewobj.Emit(ilgen);
+					ilgen.Emit(OpCodes.Ret);
+				}
+				ilgen.MarkLabel(label);
+			}
+			ilgen.Emit(OpCodes.Pop);
+			ilgen.Emit(OpCodes.Ldarg_0);
+			ilgen.Emit(OpCodes.Ret);
+		}
+#endif // USE_TYPEHANDLE_EXCEPTION_MAPPING
 	}
 
 	internal static void LoadNativeMethods(MapXml.Root map)

@@ -538,6 +538,7 @@ class Compiler
 	{
 		// NOTE Stub gets used for both the push stub (inside the exception block) as well as the pop stub (outside the block)
 		internal Label Stub;
+		internal Label TargetLabel;
 		internal bool ContentOnStack;
 		internal readonly int TargetPC;
 		internal DupHelper dh;
@@ -689,6 +690,7 @@ class Compiler
 		{
 			if(args[i].IsUnloadable)
 			{
+				Profiler.Count("EmitDynamicCast");
 				ilGenerator.Emit(OpCodes.Ldarg, (ushort)(i + (m.IsStatic ? 0 : 1)));
 				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 				ilGenerator.Emit(OpCodes.Ldstr, args[i].Name);
@@ -724,20 +726,24 @@ class Compiler
 			ilGenerator.Emit(OpCodes.Stloc, monitor);
 			ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
 			ilGenerator.BeginExceptionBlock();
-			c.Compile(new Block(c, 0, int.MaxValue, -1, exits));
+			Block b = new Block(c, 0, int.MaxValue, -1, exits, true);
+			c.Compile(b);
+			b.Leave();
 			ilGenerator.BeginFinallyBlock();
 			ilGenerator.Emit(OpCodes.Ldloc, monitor);
 			ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
 			ilGenerator.EndExceptionBlock();
-			foreach(ReturnCookie rc in exits)
-			{
-				rc.EmitRet(ilGenerator);
-			}
+			b.LeaveStubs(new Block(c, 0, int.MaxValue, -1, null, false));
 		}
 		else
 		{
-			c.Compile(new Block(c, 0, int.MaxValue, -1, null));
+			Block b = new Block(c, 0, int.MaxValue, -1, null, false);
+			c.Compile(b);
+			b.Leave();
 		}
+		// HACK because of the bogus Leave instruction that Reflection.Emit generates, this location
+		// sometimes appears reachable (it isn't), so we emit a bogus branch to keep the verifier happy.
+		ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
 		Profiler.Leave("Compile");
 	}
 
@@ -747,11 +753,12 @@ class Compiler
 		private ILGenerator ilgen;
 		private int begin;
 		private int end;
-		private ArrayList exits;
 		private int exceptionIndex;
+		private ArrayList exits;
+		private bool nested;
 		private object[] labels;
 
-		internal Block(Compiler compiler, int begin, int end, int exceptionIndex, ArrayList exits)
+		internal Block(Compiler compiler, int begin, int end, int exceptionIndex, ArrayList exits, bool nested)
 		{
 			this.compiler = compiler;
 			this.ilgen = compiler.ilGenerator;
@@ -759,6 +766,7 @@ class Compiler
 			this.end = end;
 			this.exceptionIndex = exceptionIndex;
 			this.exits = exits;
+			this.nested = nested;
 			labels = new object[compiler.m.Instructions.Length];
 		}
 
@@ -776,6 +784,17 @@ class Compiler
 			{
 				return exceptionIndex;
 			}
+		}
+
+		internal void SetBackwardBranchLabel(int instructionIndex, BranchCookie bc)
+		{
+			// NOTE we're overwriting the label that is already there
+			labels[instructionIndex] = bc.Stub;
+			if(exits == null)
+			{
+				exits = new ArrayList();
+			}
+			exits.Add(bc);
 		}
 
 		internal Label GetLabel(int targetPC)
@@ -814,6 +833,11 @@ class Compiler
 			}
 		}
 
+		internal bool HasLabel(int instructionIndex)
+		{
+			return labels[instructionIndex] != null;
+		}
+
 		internal void MarkLabel(int instructionIndex)
 		{
 			object label = labels[instructionIndex];
@@ -836,64 +860,77 @@ class Compiler
 
 		internal void Leave()
 		{
-			for(int i = 0; i < exits.Count; i++)
+			if(exits != null)
 			{
-				object exit = exits[i];
-				BranchCookie bc = exit as BranchCookie;
-				if(bc != null && bc.ContentOnStack)
+				for(int i = 0; i < exits.Count; i++)
 				{
-					bc.ContentOnStack = false;
-					ilgen.MarkLabel(bc.Stub);
-					int stack = bc.dh.Count;
-					for(int n = 0; n < stack; n++)
+					object exit = exits[i];
+					BranchCookie bc = exit as BranchCookie;
+					if(bc != null && bc.ContentOnStack)
 					{
-						bc.dh.Store(n);
+						bc.ContentOnStack = false;
+						ilgen.MarkLabel(bc.Stub);
+						int stack = bc.dh.Count;
+						for(int n = 0; n < stack; n++)
+						{
+							bc.dh.Store(n);
+						}
+						if(bc.TargetPC == -1)
+						{
+							ilgen.Emit(OpCodes.Br, bc.TargetLabel);
+						}
+						else
+						{
+							bc.Stub = ilgen.DefineLabel();
+							ilgen.Emit(OpCodes.Leave, bc.Stub);
+						}
 					}
-					bc.Stub = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Leave, bc.Stub);
 				}
 			}
 		}
 
 		internal void LeaveStubs(Block newBlock)
 		{
-			for(int i = 0; i < exits.Count; i++)
+			if(exits != null)
 			{
-				object exit = exits[i];
-				ReturnCookie rc = exit as ReturnCookie;
-				if(rc != null)
+				for(int i = 0; i < exits.Count; i++)
 				{
-					if(newBlock.exits == null)
+					object exit = exits[i];
+					ReturnCookie rc = exit as ReturnCookie;
+					if(rc != null)
 					{
-						rc.EmitRet(ilgen);
-					}
-					else
-					{
-						newBlock.exits.Add(rc);
-					}
-				}
-				else
-				{
-					BranchCookie bc = exit as BranchCookie;
-					if(bc != null)
-					{
-						Debug.Assert(!bc.ContentOnStack);
-						// if the target is within the new block, we handle it, otherwise we
-						// defer the cookie to our caller
-						if(newBlock.IsInRange(bc.TargetPC))
+						if(newBlock.exits == null)
 						{
-							bc.ContentOnStack = true;
-							ilgen.MarkLabel(bc.Stub);
-							int stack = bc.dh.Count;
-							for(int n = stack - 1; n >= 0; n--)
-							{
-								bc.dh.Load(n);
-							}
-							ilgen.Emit(OpCodes.Br, newBlock.GetLabel(bc.TargetPC));
+							rc.EmitRet(ilgen);
 						}
 						else
 						{
-							newBlock.exits.Add(bc);
+							newBlock.exits.Add(rc);
+						}
+					}
+					else
+					{
+						BranchCookie bc = exit as BranchCookie;
+						if(bc != null && bc.TargetPC != -1)
+						{
+							Debug.Assert(!bc.ContentOnStack);
+							// if the target is within the new block, we handle it, otherwise we
+							// defer the cookie to our caller
+							if(newBlock.IsInRange(bc.TargetPC))
+							{
+								bc.ContentOnStack = true;
+								ilgen.MarkLabel(bc.Stub);
+								int stack = bc.dh.Count;
+								for(int n = stack - 1; n >= 0; n--)
+								{
+									bc.dh.Load(n);
+								}
+								ilgen.Emit(OpCodes.Br, newBlock.GetLabel(bc.TargetPC));
+							}
+							else
+							{
+								newBlock.exits.Add(bc);
+							}
 						}
 					}
 				}
@@ -909,7 +946,7 @@ class Compiler
 		{
 			get
 			{
-				return exits != null;
+				return nested;
 			}
 		}
 	}
@@ -956,6 +993,7 @@ class Compiler
 		int exceptionIndex = 0;
 		Instruction[] code = m.Instructions;
 		Stack blockStack = new Stack();
+		bool instructionIsForwardReachable = true;
 		for(int i = 0; i < code.Length; i++)
 		{
 			Instruction instr = code[i];
@@ -1045,6 +1083,7 @@ class Compiler
 					{
 						if(exceptionTypeWrapper.IsUnloadable)
 						{
+							Profiler.Count("EmitDynamicGetTypeAsExceptionType");
 							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 							ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
 							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetTypeAsExceptionType"));
@@ -1079,9 +1118,35 @@ class Compiler
 				prevBlock.LeaveStubs(block);
 			}
 
+			// if there was a forward branch to this instruction, it is forward reachable
+			instructionIsForwardReachable |= block.HasLabel(i);
+
 			// TODO for now, every instruction has an associated label, I'm not sure it's worthwhile,
 			// but it could be optimized
 			block.MarkLabel(i);
+
+			// if the instruction is only backward reachable, ECMA says it must have an empty stack,
+			// so we move the stack to locals
+			if(!instructionIsForwardReachable && ma.IsReachable(i))
+			{
+				int stackHeight = ma.GetStackHeight(i);
+				if(stackHeight != 0)
+				{
+					BranchCookie bc = new BranchCookie(ilGenerator, stackHeight, -1);
+					bc.ContentOnStack = true;
+					bc.TargetLabel = ilGenerator.DefineLabel();
+					ilGenerator.MarkLabel(bc.TargetLabel);
+					for(int j = 0; j < stackHeight; j++)
+					{
+						bc.dh.SetType(j, ma.GetRawStackTypeWrapper(i, j));
+					}
+					for(int j = stackHeight - 1; j >= 0; j--)
+					{
+						bc.dh.Load(j);
+					}
+					block.SetBackwardBranchLabel(i, bc);
+				}
+			}
 
 			// if we're entering an exception block, we need to setup the exception block and
 			// transfer the stack into it
@@ -1107,7 +1172,7 @@ class Compiler
 					ilGenerator.BeginExceptionBlock();
 				}
 				blockStack.Push(block);
-				block = new Block(this, exceptions[exceptionIndex].start_pc, exceptions[exceptionIndex].end_pc, exceptionIndex, new ArrayList());
+				block = new Block(this, exceptions[exceptionIndex].start_pc, exceptions[exceptionIndex].end_pc, exceptionIndex, new ArrayList(), true);
 				block.MarkLabel(i);
 			}
 
@@ -1198,6 +1263,7 @@ class Compiler
 								TypeWrapper tw = cf.GetConstantPoolClassType(constant, classLoader);
 								if(tw.IsUnloadable)
 								{
+									Profiler.Count("EmitDynamicClassLiteral");
 									ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 									ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
 									ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicClassLiteral"));
@@ -1590,6 +1656,7 @@ class Compiler
 						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
 						if(wrapper.IsUnloadable)
 						{
+							Profiler.Count("EmitDynamicNewCheckOnly");
 							// this is here to make sure we throw the exception in the right location (before
 							// evaluating the constructor arguments)
 							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
@@ -1625,6 +1692,7 @@ class Compiler
 						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
 						if(wrapper.IsUnloadable)
 						{
+							Profiler.Count("EmitDynamicMultianewarray");
 							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 							ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 							ilGenerator.Emit(OpCodes.Ldloc, localArray);
@@ -1649,6 +1717,7 @@ class Compiler
 						TypeWrapper wrapper = instr.MethodCode.Method.ClassFile.GetConstantPoolClassType(instr.Arg1, classLoader);
 						if(wrapper.IsUnloadable)
 						{
+							Profiler.Count("EmitDynamicNewarray");
 							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 							ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicNewarray"));
@@ -1730,6 +1799,7 @@ class Compiler
 						TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 1);
 						if(tw.IsUnloadable)
 						{
+							Profiler.Count("EmitDynamicAaload");
 							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 							ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
 							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicAaload"));
@@ -1799,6 +1869,7 @@ class Compiler
 						TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 2);
 						if(tw.IsUnloadable)
 						{
+							Profiler.Count("EmitDynamicAastore");
 							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 							ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
 							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicAastore"));
@@ -2458,8 +2529,10 @@ class Compiler
 					case NormalizedByteCode.__areturn:
 					case NormalizedByteCode.__return:
 					case NormalizedByteCode.__athrow:
+						instructionIsForwardReachable = false;
 						break;
 					default:
+						instructionIsForwardReachable = true;
 						Debug.Assert(ma.IsReachable(i + 1));
 						// don't fall through end of try block
 						if(m.Instructions[i + 1].PC == block.End)
@@ -2658,17 +2731,21 @@ class Compiler
 			switch(bytecode)
 			{
 				case NormalizedByteCode.__getfield:
+					Profiler.Count("EmitDynamicGetfield");
 					ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetfield"));
 					EmitReturnTypeConversion(ilGenerator, fieldTypeWrapper);
 					break;
 				case NormalizedByteCode.__putfield:
+					Profiler.Count("EmitDynamicPutfield");
 					ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicPutfield"));
 					break;
 				case NormalizedByteCode.__getstatic:
+					Profiler.Count("EmitDynamicGetstatic");
 					ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetstatic"));
 					EmitReturnTypeConversion(ilGenerator, fieldTypeWrapper);
 					break;
 				case NormalizedByteCode.__putstatic:
+					Profiler.Count("EmitDynamicPutstatic");
 					ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicPutstatic"));
 					break;
 			}
@@ -2781,6 +2858,7 @@ class Compiler
 
 		internal override void Emit(ILGenerator ilGenerator)
 		{
+			Profiler.Count("EmitDynamicInvokeEmitter");
 			TypeWrapper[] args = cpi.GetArgTypes(classLoader);
 			LocalBuilder argarray = ilGenerator.DeclareLocal(typeof(object[]));
 				LocalBuilder val = ilGenerator.DeclareLocal(typeof(object));
