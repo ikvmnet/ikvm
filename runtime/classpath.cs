@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -412,19 +412,93 @@ namespace IKVM.NativeCode.java
 
 			public static double parseDouble(string s)
 			{
+				if(s.Length == 0) goto error;
+				int first = 0;
+				while(s[first] <= ' ')
+				{
+					first++;
+					if(first == s.Length) goto error;
+				}
+				int last = s.Length - 1;
+				while(s[last] <= ' ')
+				{
+					last--;
+					if(first > last) goto error;
+				}
+				bool sign = false;
+				if(s[first] == '-')
+				{
+					sign = true;
+					first++;
+					if(first > last) goto error;
+				}
+				else if(s[first] == '+')
+				{
+					first++;
+					if(first > last) goto error;
+				}
+				if(last - first == 7 && string.CompareOrdinal(s, first, "Infinity", 0, 8) == 0)
+				{
+					return sign ? double.NegativeInfinity : double.PositiveInfinity;
+				}
+				if(last - first == 2 && string.CompareOrdinal(s, first, "NaN", 0, 3) == 0)
+				{
+					return double.NaN;
+				}
+				// Java allows 'f' or 'd' at the end
+				if("dfDF".IndexOf(s[last]) >= 0)
+				{
+					last--;
+					if(first > last) goto error;
+				}
+				bool dot = false;
+				bool exp = false;
+				for(int i = first; i <= last; i++)
+				{
+					char c = s[i];
+					if(c >= '0' && c <= '9')
+					{
+						// ok
+					}
+					else if(c == '.')
+					{
+						if(dot || exp) goto error;
+						dot = true;
+					}
+					else if(c == 'e' || c == 'E')
+					{
+						if(i == first || i == last || exp) goto error;
+						if(s[i + 1] == '-' || s[i + 1] == '+')
+						{
+							i++;
+							if(i == last) goto error;
+						}
+						exp = true;
+					}
+					else goto error;
+				}
+				if(first != 0 || last != s.Length - 1)
+				{
+					s = s.Substring(first, last - first + 1);
+				}
 				try
 				{
-					if(s.Trim() == "+Infinity")
-					{
-						return double.PositiveInfinity;
-					}
-					// TODO I doubt that this is correct
-					return double.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
+					// I doubt that this is fully correct, but since we don't implement FP properly,
+					// we can probably get away with this as well.
+					double d = double.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
+					return sign ? -d : d;
+				}
+				catch(OverflowException)
+				{
+					return sign ? double.NegativeInfinity : double.PositiveInfinity;
 				}
 				catch(FormatException x)
 				{
-					throw JavaException.NumberFormatException(x.Message);
+					// this can't happen, since we already validated the format of the string
+					System.Diagnostics.Debug.Fail(x.ToString());
 				}
+				error:
+				throw JavaException.NumberFormatException("For input string: \"{0}\"", s);
 			}
 
 			public static string toString(double d, bool isFloat)

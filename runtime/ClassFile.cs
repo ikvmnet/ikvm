@@ -50,6 +50,12 @@ sealed class ClassFile
 	private string ikvmAssembly;
 	private InnerClass[] innerClasses;
 
+	private class SupportedVersions
+	{
+		internal static readonly int Minimum = 45;
+		internal static readonly int Maximum = Environment.GetEnvironmentVariable("IKVM_EXPERIMENTAL_JDK_5_0") == null ? 48 : 49;
+	}
+
 	internal ClassFile(byte[] buf, int offset, int length, string inputClassName, bool allowJavaLangObject)
 	{
 		try
@@ -61,7 +67,7 @@ sealed class ClassFile
 			}
 			int minorVersion = br.ReadUInt16();
 			majorVersion = br.ReadUInt16();
-			if(majorVersion < 45 || majorVersion > 48)
+			if(majorVersion < SupportedVersions.Minimum || majorVersion > SupportedVersions.Maximum)
 			{
 				throw new UnsupportedClassVersionError(inputClassName + " (" + majorVersion + "." + minorVersion + ")");
 			}

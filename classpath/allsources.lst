@@ -1,5 +1,6 @@
 ikvm/internal/LibraryVMInterface.java
 ikvm/lang/CIL.java
+ikvm/lang/ByteArrayHack.java
 gnu/classpath/Configuration.java
 gnu/classpath/RawData.java
 gnu/classpath/VMSystemProperties.java
@@ -2490,6 +2491,7 @@ sun/misc/Ref.java
 ../../classpath-0.13/vm/reference/gnu/java/nio/VMPipe.java
 ../../classpath-0.13/vm/reference/gnu/java/nio/VMSelector.java
 ../../classpath-0.13/vm/reference/java/io/VMObjectStreamClass.java
+../../classpath-0.13/vm/reference/java/lang/VMCompiler.java
 ../../classpath-0.13/vm/reference/java/lang/VMObject.java
 ../../classpath-0.13/vm/reference/java/lang/VMSecurityManager.java
 ../../classpath-0.13/vm/reference/java/lang/VMString.java
