@@ -593,14 +593,28 @@ namespace IKVM.Internal
 				// We distribute the properties in 128 nested classes, because peverify has some very
 				// non-linear algorithms and is extremely slow with 32768 properties in a single class.
 				// (it also helps make the overhead a little smaller.)
+				bool runningOnMono = Type.GetType("Mono.Runtime") != null;
 				TypeBuilder tb = ModuleBuilder.DefineType("MonoBugWorkaround", TypeAttributes.NotPublic);
 				TypeBuilder[] nested = new TypeBuilder[128];
 				for(int i = 0; i < nested.Length; i++)
 				{
 					nested[i] = tb.DefineNestedType(i.ToString(), TypeAttributes.NestedPrivate);
+					MethodBuilder getter = null;
 					for(int j = 0; j < 32768 / nested.Length; j++)
 					{
-						nested[i].DefineProperty(j.ToString(), PropertyAttributes.None, typeof(int), Type.EmptyTypes);
+						PropertyBuilder pb = nested[i].DefineProperty(j.ToString(), PropertyAttributes.None, typeof(int), Type.EmptyTypes);
+						// MONOBUG sigh, another Mono bug, if the property has no methods, Mono crashes
+						if(runningOnMono)
+						{
+							if(getter == null)
+							{
+								getter = nested[i].DefineMethod("get", MethodAttributes.Private, typeof(int), Type.EmptyTypes);
+								ILGenerator ilgen = getter.GetILGenerator();
+								ilgen.Emit(OpCodes.Ldc_I4_0);
+								ilgen.Emit(OpCodes.Ret);
+							}
+							pb.SetGetMethod(getter);
+						}
 					}
 				}
 				tb.CreateType();
