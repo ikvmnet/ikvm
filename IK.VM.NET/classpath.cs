@@ -174,24 +174,48 @@ namespace NativeCode.java
 
 			internal class JavaWrapper
 			{
-				private static Type java_lang_Integer = ClassLoaderWrapper.GetType("java.lang.Integer");
-				private static Type java_lang_Short = ClassLoaderWrapper.GetType("java.lang.Short");
+				private static Type java_lang_Byte = ClassLoaderWrapper.GetType("java.lang.Byte");
 				private static Type java_lang_Boolean = ClassLoaderWrapper.GetType("java.lang.Boolean");
+				private static Type java_lang_Short = ClassLoaderWrapper.GetType("java.lang.Short");
+				private static Type java_lang_Character = ClassLoaderWrapper.GetType("java.lang.Character");
+				private static Type java_lang_Integer = ClassLoaderWrapper.GetType("java.lang.Integer");
 				private static Type java_lang_Long = ClassLoaderWrapper.GetType("java.lang.Long");
+				private static Type java_lang_Float = ClassLoaderWrapper.GetType("java.lang.Float");
+				private static Type java_lang_Double = ClassLoaderWrapper.GetType("java.lang.Double");
 
 				internal static object Box(object o)
 				{
-					if(o is int)
+					if(o is sbyte)
 					{
-						return Activator.CreateInstance(java_lang_Integer, new object[] { o });
+						return Activator.CreateInstance(java_lang_Byte, new object[] { o });
 					}
 					else if(o is bool)
 					{
 						return Activator.CreateInstance(java_lang_Boolean, new object[] { o });
 					}
+					else if(o is short)
+					{
+						return Activator.CreateInstance(java_lang_Short, new object[] { o });
+					}
+					else if(o is char)
+					{
+						return Activator.CreateInstance(java_lang_Character, new object[] { o });
+					}
+					else if(o is int)
+					{
+						return Activator.CreateInstance(java_lang_Integer, new object[] { o });
+					}
 					else if(o is long)
 					{
 						return Activator.CreateInstance(java_lang_Long, new object[] { o });
+					}
+					else if(o is float)
+					{
+						return Activator.CreateInstance(java_lang_Float, new object[] { o });
+					}
+					else if(o is double)
+					{
+						return Activator.CreateInstance(java_lang_Double, new object[] { o });
 					}
 					else
 					{
@@ -202,9 +226,9 @@ namespace NativeCode.java
 				internal static object Unbox(object o)
 				{
 					Type type = o.GetType();
-					if(type == java_lang_Integer)
+					if(type == java_lang_Byte)
 					{
-						return java_lang_Integer.GetMethod("intValue").Invoke(o, new object[0]);
+						return java_lang_Byte.GetMethod("byteValue").Invoke(o, new object[0]);
 					}
 					else if(type == java_lang_Boolean)
 					{
@@ -214,9 +238,25 @@ namespace NativeCode.java
 					{
 						return java_lang_Short.GetMethod("shortValue").Invoke(o, new object[0]);
 					}
+					else if(type == java_lang_Character)
+					{
+						return java_lang_Character.GetMethod("charValue").Invoke(o, new object[0]);
+					}
+					else if(type == java_lang_Integer)
+					{
+						return java_lang_Integer.GetMethod("intValue").Invoke(o, new object[0]);
+					}
 					else if(type == java_lang_Long)
 					{
 						return java_lang_Long.GetMethod("longValue").Invoke(o, new object[0]);
+					}
+					else if(type == java_lang_Float)
+					{
+						return java_lang_Float.GetMethod("floatValue").Invoke(o, new object[0]);
+					}
+					else if(type == java_lang_Double)
+					{
+						return java_lang_Double.GetMethod("doubleValue").Invoke(o, new object[0]);
 					}
 					else
 					{
@@ -308,19 +348,13 @@ namespace NativeCode.java
 
 				public static object GetValue(object fieldCookie, object o)
 				{
+					// TODO this is a very lame implementation, no where near correct
 					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
 					wrapper.DeclaringType.Finish();
 					FieldInfo fi = wrapper.DeclaringType.Type.GetField(wrapper.Name, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 					if(fi.FieldType.IsValueType)
 					{
-						if(fi.FieldType == typeof(long))
-						{
-							return Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.Long"), new object[] { fi.GetValue(o) });
-						}
-						else
-						{
-							throw new NotImplementedException("GetValue: " + fi.FieldType.FullName);
-						}
+						return JavaWrapper.Box(fi.GetValue(o));
 					}
 					return fi.GetValue(o);
 				}
@@ -333,7 +367,7 @@ namespace NativeCode.java
 					FieldInfo fi = wrapper.DeclaringType.Type.GetField(wrapper.Name, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 					if(fi.FieldType.IsValueType)
 					{
-						throw new NotImplementedException("SetValue: " + fi.FieldType.FullName);
+						v = JavaWrapper.Unbox(v);
 					}
 					fi.SetValue(o, v);
 				}
@@ -1395,6 +1429,22 @@ namespace NativeCode.java
 			}
 		}
 
+		public class VMObjectStreamClass
+		{
+			public static bool hasClassInitializer(object clazz)
+			{
+				Type type = NativeCode.java.lang.Class.getType(clazz);
+				if(type.TypeInitializer != null)
+				{
+					if(ModifiersAttribute.GetModifiers(type.TypeInitializer) != Modifiers.Synthetic)
+					{
+						return true;
+					}
+				}
+				return false;
+			}
+		}
+
 		public class ObjectInputStream
 		{
 			public static object currentClassLoader(object sm)
@@ -1403,13 +1453,6 @@ namespace NativeCode.java
 				// version for now, don't know what the security implications of this are
 				// SECURITY
 				return NativeCode.java.lang.VMSecurityManager.currentClassLoader();
-			}
-
-			public static void callReadMethod(object ois, object obj, object clazz)
-			{
-				Type type = NativeCode.java.lang.Class.getType(clazz);
-				MethodInfo mi = type.GetMethod("readObject", BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { ois.GetType() }, null);
-				mi.Invoke(obj, new object[] { ois });
 			}
 
 			public static object allocateObject(object ois, object clazz)
@@ -1422,143 +1465,6 @@ namespace NativeCode.java
 			{
 				Type type = NativeCode.java.lang.Class.getType(clazz);
 				type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null).Invoke(obj, null);
-			}
-
-			public static void setBooleanField(object ois, object obj, object clazz, string field_name, bool val)
-			{
-				SetFieldValue(obj, clazz, field_name, val);
-			}
-
-			public static void setByteField(object ois, object obj, object clazz, string field_name, sbyte val)
-			{
-				SetFieldValue(obj, clazz, field_name, val);
-			}
-
-			public static void setCharField(object ois, object obj, object clazz, string field_name, char val)
-			{
-				SetFieldValue(obj, clazz, field_name, val);
-			}
-
-			public static void setDoubleField(object ois, object obj, object clazz, string field_name, double val)
-			{
-				SetFieldValue(obj, clazz, field_name, val);
-			}
-
-			public static void setFloatField(object ois, object obj, object clazz, string field_name, float val)
-			{
-				SetFieldValue(obj, clazz, field_name, val);
-			}
-
-			public static void setIntField(object ois, object obj, object clazz, string field_name, int val)
-			{
-				SetFieldValue(obj, clazz, field_name, val);
-			}
-
-			public static void setLongField(object ois, object obj, object clazz, string field_name, long val)
-			{
-				SetFieldValue(obj, clazz, field_name, val);
-			}
-
-			public static void setShortField(object ois, object obj, object clazz, string field_name, short val)
-			{
-				SetFieldValue(obj, clazz, field_name, val);
-			}
-
-			public static void setObjectField(object ois, object obj, object clazz, string field_name, string type_code, object val)
-			{
-				SetFieldValue(obj, clazz, field_name, val);
-			}
-
-			private static void SetFieldValue(object obj, object clazz, string field_name, object val)
-			{
-				// TODO support overloaded field name
-				Type type = NativeCode.java.lang.Class.getType(clazz);
-//				while(type != null)
-				{
-					FieldInfo fi = type.GetField(field_name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-					if(fi != null)
-					{
-						fi.SetValue(obj, val);
-						return;
-					}
-					// NOTE if not found, we're moving up the hierarchy, even though I'd expect GetField to do that, it doesn't, at least
-					// not for private fields
-//					type = type.BaseType;
-				}
-				throw new InvalidOperationException("SetFieldValue: field not found, field_name = " + field_name + ", obj = " + obj);
-			}
-		}
-
-		public class ObjectOutputStream
-		{
-			public static void callWriteMethod(object oos, object obj)
-			{
-				Type type = obj.GetType();
-				MethodInfo mi = type.GetMethod("writeObject", BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { oos.GetType() }, null);
-				mi.Invoke(obj, new object[] { oos });
-			}
-
-			public static bool getBooleanField(object oos, object obj, object clazz, string field_name)
-			{
-				return (bool)GetFieldValue(obj, clazz, field_name);
-			}
-
-			public static sbyte getByteField(object oos, object obj, object clazz, string field_name)
-			{
-				return (sbyte)GetFieldValue(obj, clazz, field_name);
-			}
-
-			public static char getCharField(object oos, object obj, object clazz, string field_name)
-			{
-				return (char)GetFieldValue(obj, clazz, field_name);
-			}
-
-			public static double getDoubleField(object oos, object obj, object clazz, string field_name)
-			{
-				return (double)GetFieldValue(obj, clazz, field_name);
-			}
-
-			public static float getFloatField(object oos, object obj, object clazz, string field_name)
-			{
-				return (float)GetFieldValue(obj, clazz, field_name);
-			}
-
-			public static int getIntField(object oos, object obj, object clazz, string field_name)
-			{
-				return (int)GetFieldValue(obj, clazz, field_name);
-			}
-
-			public static long getLongField(object oos, object obj, object clazz, string field_name)
-			{
-				return (long)GetFieldValue(obj, clazz, field_name);
-			}
-
-			public static short getShortField(object oos, object obj, object clazz, string field_name)
-			{
-				return (short)GetFieldValue(obj, clazz, field_name);
-			}
-
-			public static object getObjectField(object oos, object obj, object clazz, string field_name, string type_code)
-			{
-				return GetFieldValue(obj, clazz, field_name);
-			}
-
-			private static object GetFieldValue(object obj, object clazz, string field_name)
-			{
-				// TODO support overloaded field name
-				Type type = NativeCode.java.lang.Class.getType(clazz);
-//				while(type != null)
-				{
-					FieldInfo fi = type.GetField(field_name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-					if(fi != null)
-					{
-						return fi.GetValue(obj);
-					}
-					// NOTE if not found, we're moving up the hierarchy, even though I'd expect GetField to do that, it doesn't, at least
-					// not for private fields
-//					type = type.BaseType;
-				}
-				throw new InvalidOperationException("GetFieldValue: field not found, field_name = " + field_name + ", obj = " + obj);
 			}
 		}
 	}

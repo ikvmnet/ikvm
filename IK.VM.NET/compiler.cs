@@ -926,8 +926,9 @@ class Compiler
 						MethodWrapper method = GetMethod(cpi, null, NormalizedByteCode.__invokestatic);
 						if(method != null)
 						{
-							// TODO if the stack values don't match the argument types (for interface argument types)
+							// if the stack values don't match the argument types (for interface argument types)
 							// we must emit code to cast the stack value to the interface type
+							CastInterfaceArgs(cpi.GetArgTypes(classLoader), i);
 							method.EmitCall.Emit(ilGenerator);
 						}
 						else
@@ -945,60 +946,47 @@ class Compiler
 					case NormalizedByteCode.__invokeinterface:
 					case NormalizedByteCode.__invokespecial:
 					{
-						// TODO if the stack values don't match the argument types (for interface argument types)
-						// we must emit code to cast the stack value to the interface type
-
-						// TODO invokespecial should check for null "this" reference
 						ClassFile.ConstantPoolItemFMI cpi = m.Method.ClassFile.GetMethodref(instr.Arg1);
 						int argcount = cpi.GetArgTypes(classLoader).Length;
 						TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
 						TypeWrapper thisType = SigTypeToClassName(type, cpi.GetClassType(classLoader));
-						// invokeinterface needs to have special support for downcasting to the interface (because
-						// the verifier may not be able to merge two interfaces, but the resulting code would still be valid)
-						if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface &&
-							thisType == ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/Object"))
+
+						// if the stack values don't match the argument types (for interface argument types)
+						// we must emit code to cast the stack value to the interface type
+						TypeWrapper[] args;
+						if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
 						{
-							thisType = cpi.GetClassType(classLoader);
-							DupHelper dup = new DupHelper(ilGenerator, argcount);
-							for(int k = 0; k < argcount; k++)
-							{
-								dup.SetType(k, ma.GetRawStackTypeWrapper(i, k));
-							}
-							for(int k = 0; k < argcount; k++)
-							{
-								dup.Store(k);
-							}
-							// TODO this IncompatibleClassChangeError check should also be applied
-							// for other locations where we can "consume" an object reference in the
-							// place of an interface reference (putstatic / putfield / arguments for invoke*).
-							// TODO it turns out that when an interface ref is expected, *any* type will be accepted!
-							ilGenerator.Emit(OpCodes.Dup);
-							Label label = ilGenerator.DefineLabel();
-							ilGenerator.Emit(OpCodes.Brfalse_S, label);
-							ilGenerator.Emit(OpCodes.Isinst, thisType.Type);
-							ilGenerator.Emit(OpCodes.Dup);
-							ilGenerator.Emit(OpCodes.Brtrue_S, label);
-							EmitError("java.lang.IncompatibleClassChangeError", null);
-							ilGenerator.MarkLabel(label);
-							for(int k = argcount - 1; k >= 0; k--)
-							{
-								dup.Load(k);
-							}
-						}
-						else if(!thisType.IsUnloadable && !thisType.IsSubTypeOf(cpi.GetClassType(classLoader)))
-						{
-							EmitError("java.lang.IncompatibleClassChangeError", null);
-							thisType = null;
-						}
-						MethodWrapper method = (thisType != null) ? GetMethod(cpi, thisType, instr.NormalizedOpCode) : null;
-						CodeEmitter emit = null;
-						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
-						{
-							emit = method.EmitCall;
+							// for invokeinterface, the this reference is included in the argument list
+							// because it may also need to be cast
+							TypeWrapper[] methodArgs = cpi.GetArgTypes(classLoader);
+							args = new TypeWrapper[methodArgs.Length + 1];
+							methodArgs.CopyTo(args, 1);
+							args[0] = thisType;
 						}
 						else
 						{
-							emit = method.EmitCallvirt;
+							args = cpi.GetArgTypes(classLoader);
+
+							if(!thisType.IsUnloadable && !thisType.IsSubTypeOf(cpi.GetClassType(classLoader)))
+							{
+								EmitError("java.lang.IncompatibleClassChangeError", null);
+								thisType = null;
+							}
+						}
+						CastInterfaceArgs(args, i);
+
+						MethodWrapper method = (thisType != null) ? GetMethod(cpi, thisType, instr.NormalizedOpCode) : null;
+						CodeEmitter emit = null;
+						if(method != null)
+						{
+							if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
+							{
+								emit = method.EmitCall;
+							}
+							else
+							{
+								emit = method.EmitCallvirt;
+							}
 						}
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
 						{
@@ -2111,6 +2099,47 @@ class Compiler
 						}
 						break;
 				}
+			}
+		}
+	}
+
+	private void CastInterfaceArgs(TypeWrapper[] args, int instructionIndex)
+	{
+		// TODO handle unloadable types
+		bool needsCast = false;
+
+		for(int i = 0; i < args.Length; i++)
+		{
+			if(args[i].IsInterface)
+			{
+				if(!ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsAssignableTo(args[i]))
+				{
+					needsCast = true;
+					break;
+				}
+			}
+		}
+
+		if(needsCast)
+		{
+			// OPTIMIZE if the first n arguments don't need a cast, they can be left on the stack
+			DupHelper dh = new DupHelper(ilGenerator, args.Length);
+			for(int i = 0; i < args.Length; i++)
+			{
+				dh.SetType(i, args[i]);
+			}
+			// TODO instead of an InvalidCastException, the castclass should throw a IncompatibleClassChangeError
+			for(int i = args.Length - 1; i >= 0; i--)
+			{
+				if(args[i].IsInterface && !ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsAssignableTo(args[i]))
+				{
+					ilGenerator.Emit(OpCodes.Castclass, args[i].Type);
+				}
+				dh.Store(i);
+			}
+			for(int i = 0; i < args.Length; i++)
+			{
+				dh.Load(i);
 			}
 		}
 	}
