@@ -1920,50 +1920,6 @@ namespace NativeCode.java
 				return new sbyte[] { (sbyte)address, (sbyte)(address >> 8), (sbyte)(address >> 16), (sbyte)(address >> 24) };
 			}
 		}
-
-		public class PlainSocketImpl
-		{
-			public static sbyte[] getLocalAddress(NetSystem.Net.Sockets.Socket socket)
-			{
-				return InetAddress.AddressToByteArray(((System.Net.IPEndPoint)socket.LocalEndPoint).Address);
-			}
-		}
-
-		public class PlainDatagramSocketImpl
-		{
-			// TODO this method lives here, because UdpClient.Receive has a ByRef parameter and NetExp doesn't support that
-			// I have to figure out a way to support ref parameters from Java
-			public static void receive(object obj, object packet)
-			{
-				sbyte[] data = (sbyte[])packet.GetType().InvokeMember("getData", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, packet, new object[0]);
-				int length = (int)packet.GetType().InvokeMember("getLength", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, packet, new object[0]);
-				object s = obj.GetType().GetField("socket", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(obj);
-				NetSystem.Net.Sockets.UdpClient socket = (NetSystem.Net.Sockets.UdpClient)s;
-				NetSystem.Net.IPEndPoint remoteEP = new NetSystem.Net.IPEndPoint(0, 0);
-				byte[] buf = socket.Receive(ref remoteEP);
-				for(int i = 0; i < Math.Min(length, buf.Length); i++)
-				{
-					data[i] = (sbyte)buf[i];
-				}
-				packet.GetType().InvokeMember("setLength", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, packet, new object[] { buf.Length });
-				long remoteIP = remoteEP.Address.Address;
-				string remote = (remoteIP & 0xff) + "." + ((remoteIP >> 8) & 0xff) + "." + ((remoteIP >> 16) & 0xff) + "." + ((remoteIP >> 24) & 0xff);
-				object remoteAddress = ClassLoaderWrapper.GetType("java.net.InetAddress").GetMethod("getByName").Invoke(null, new object[] { remote });
-				packet.GetType().InvokeMember("setAddress", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, packet, new object[] { remoteAddress });
-				packet.GetType().InvokeMember("setPort", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, packet, new object[] { remoteEP.Port });
-			}
-		}
-	}
-}
-
-namespace NativeCode.gnu.java.net.protocol.ikvmres
-{
-	public class IkvmresURLConnection
-	{
-		public static void InitArray(sbyte[] buf, FieldInfo field)
-		{
-			NetSystem.Runtime.CompilerServices.RuntimeHelpers.InitializeArray(buf, field.FieldHandle);
-		}
 	}
 }
 

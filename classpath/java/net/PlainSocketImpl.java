@@ -439,7 +439,11 @@ class PlainSocketImpl extends SocketImpl
 		}
 	}
 
-	private static native byte[] getLocalAddress(system.net.sockets.Socket socket);
+	private static byte[] getLocalAddress(system.net.sockets.Socket socket)
+	{
+	    int address = (int)((system.net.IPEndPoint)socket.get_LocalEndPoint()).get_Address().get_Address();
+	    return new byte[] { (byte)address, (byte)(address >> 8), (byte)(address >> 16), (byte)(address >> 24) };
+	}
 
 	/**
 	 * Returns an InputStream object for reading from this socket.  This will

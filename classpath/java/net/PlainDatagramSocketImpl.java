@@ -179,7 +179,34 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 *
 	 * @exception IOException IOException If an error occurs
 	 */
-	protected native void receive(DatagramPacket packet) throws IOException;
+	protected void receive(DatagramPacket packet) throws IOException
+	{
+	    try
+	    {
+		if(false) throw new system.net.sockets.SocketException();
+		byte[] data = packet.getData();
+		int length = packet.getLength();
+		system.net.IPEndPoint[] remoteEP = new system.net.IPEndPoint[] {
+		    new system.net.IPEndPoint(0, 0)
+		};
+		byte[] buf = socket.Receive(remoteEP);
+		System.arraycopy(buf, 0, data, 0, Math.min(length, buf.length));
+		// I think the spec says that the Length property of DatagramPacket
+		// contains the number of bytes in the network packet (even if
+		// the buffer was smaller than the network packet)
+		packet.setLength(buf.length);
+		int remoteIP = (int)remoteEP[0].get_Address().get_Address();
+		byte[] ipv4 = new byte[] { (byte)remoteIP, (byte)(remoteIP >> 8), (byte)(remoteIP >> 16), (byte)(remoteIP >> 24) };
+		InetAddress remoteAddress = InetAddress.getByAddress(ipv4);
+		packet.setAddress(remoteAddress);
+		packet.setPort(remoteEP[0].get_Port());
+	    }
+	    catch(system.net.sockets.SocketException x)
+	    {
+		// TODO error handling
+		throw new IOException(x.get_Message());
+	    }
+	}
 
 	/*************************************************************************/
 

@@ -57,12 +57,11 @@ class IkvmresURLConnection extends URLConnection
 				throw new IOException("resource " + resource + " not found in assembly " + assembly);
 			}
 			byte[] b = new byte[system.runtime.interopservices.Marshal.SizeOf(fi.get_FieldType())];
-			InitArray(b, fi);
+			system.runtime.compilerservices.RuntimeHelpers.InitializeArray((system.Array)(Object)b, fi.get_FieldHandle());
 			inputStream = new ByteArrayInputStream(b);
 			connected = true;
 		}
 	}
-	private static native void InitArray(byte[] buf, FieldInfo field);
 
 	public InputStream getInputStream() throws IOException
 	{
