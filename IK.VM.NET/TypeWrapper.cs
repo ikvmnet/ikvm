@@ -469,7 +469,7 @@ abstract class TypeWrapper
 		}
 		else
 		{
-			if(!wrapper.IsAbstract)
+			if(!wrapper.IsAbstract || true)
 			{
 				// the type doesn't implement the interface method and isn't abstract either. The JVM allows this, but the CLR doesn't,
 				// so we have to create a stub method that throws an AbstractMethodError

@@ -72,9 +72,13 @@ sealed class JavaException
 	{
 		// HACK if java.lang.ClassNotFoundException is not found, this method would recurse until the
 		// stack overflows, so in order to prevent that, we use this hack
-		if(JVM.IsStaticCompiler && classNotFound)
+		if(JVM.IsStaticCompiler)
 		{
-			throw new BootstrapClassMissing();
+			Console.WriteLine("ClassNotFound: " + s);
+			if(classNotFound)
+			{
+				throw new BootstrapClassMissing();
+			}
 		}
 		try
 		{

@@ -91,7 +91,7 @@ public class JVM
 		{
 			AssemblyName name = new AssemblyName();
 			name.Name = assembly;
-			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.Save);
+			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
 			CustomAttributeBuilder ikvmAssemblyAttr = new CustomAttributeBuilder(typeof(IKVMAssemblyAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 			assemblyBuilder.SetCustomAttribute(ikvmAssemblyAttr);
 			moduleBuilder = assemblyBuilder.DefineDynamicModule(path, JVM.Debug);
