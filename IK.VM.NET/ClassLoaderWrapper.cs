@@ -253,7 +253,7 @@ class ClassLoaderWrapper
 	{
 		if(name == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		Profiler.Enter("LoadClassByDottedName");
 		try

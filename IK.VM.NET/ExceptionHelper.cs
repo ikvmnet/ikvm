@@ -281,7 +281,7 @@ public class ExceptionHelper
 	{
 		if(x == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		Type type = ClassLoaderWrapper.GetType("java.lang.System");
 		object err = type.GetProperty("err").GetValue(null, null);
@@ -292,7 +292,7 @@ public class ExceptionHelper
 	{
 		if(x == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		StringBuilder sb = new StringBuilder();
 		sb.Append(toString_Virtual(x)).Append(Environment.NewLine);
@@ -354,7 +354,7 @@ public class ExceptionHelper
 	{
 		if(x == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		if(cause == x)
 		{
@@ -374,7 +374,7 @@ public class ExceptionHelper
 	{
 		if(x == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions[x];
 		if(eih == null)
@@ -388,7 +388,7 @@ public class ExceptionHelper
 	{
 		if(x == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		ExceptionInfoHelper ei = (ExceptionInfoHelper)exceptions[x];
 		if(ei == null)
@@ -402,13 +402,13 @@ public class ExceptionHelper
 	{
 		if(x == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		for(int i = 0; i < stackTrace.Length; i++)
 		{
 			if(stackTrace[i] == null)
 			{
-				throw new NullReferenceException();
+				throw JavaException.NullPointerException();
 			}
 		}
 		ExceptionInfoHelper ei = (ExceptionInfoHelper)exceptions[x];
@@ -450,7 +450,7 @@ public class ExceptionHelper
 	{
 		if(x == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		string message = x.Message;
 		if(message == NULL_STRING)
@@ -464,7 +464,7 @@ public class ExceptionHelper
 	{
 		if(x == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		return getMessage_Virtual(x);
 	}
@@ -474,7 +474,7 @@ public class ExceptionHelper
 	{
 		if(x == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions[x];
 		if(eih == null)
@@ -624,7 +624,7 @@ public class ExceptionHelper
 	{
 		if(x == null)
 		{
-			throw new NullReferenceException();
+			throw JavaException.NullPointerException();
 		}
 		string message = getLocalizedMessage_Virtual(x);
 		if(message == null)

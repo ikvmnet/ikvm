@@ -204,4 +204,11 @@ sealed class JavaException
 		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.ClassCircularityError").GetConstructor(new Type[] { typeof(string) });
 		return (Exception)ci.Invoke(new object[] { s });
 	}
+
+	internal static Exception NullPointerException()
+	{
+		// TODO if we ever stop remapping exceptions generated in non-Java code, this needs to use
+		// reflection to get a real java.lang.NullPointerException
+		return new NullReferenceException();
+	}
 }

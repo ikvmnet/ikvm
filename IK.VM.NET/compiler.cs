@@ -1493,12 +1493,9 @@ class Compiler
 							Label end = ilGenerator.DefineLabel();
 							for(int j = 0; j < implementerTypes.Length; j++)
 							{
-								if(implementerTypes[j] != wrapper.Type)
-								{
-									ilGenerator.Emit(OpCodes.Dup);
-									ilGenerator.Emit(OpCodes.Isinst, implementerTypes[j]);
-									ilGenerator.Emit(OpCodes.Brtrue, end);
-								}
+								ilGenerator.Emit(OpCodes.Dup);
+								ilGenerator.Emit(OpCodes.Isinst, implementerTypes[j]);
+								ilGenerator.Emit(OpCodes.Brtrue, end);
 							}
 							ilGenerator.Emit(OpCodes.Castclass, wrapper.Type);
 							ilGenerator.MarkLabel(end);
@@ -1537,8 +1534,11 @@ class Compiler
 								ilGenerator.Emit(OpCodes.Br, end);
 								ilGenerator.MarkLabel(label);
 							}
-							ilGenerator.Emit(OpCodes.Pop);
+							ilGenerator.Emit(OpCodes.Isinst, wrapper.Type);
+							ilGenerator.Emit(OpCodes.Ldnull);
+							ilGenerator.Emit(OpCodes.Ceq);
 							ilGenerator.Emit(OpCodes.Ldc_I4_0);
+							ilGenerator.Emit(OpCodes.Ceq);
 							ilGenerator.MarkLabel(end);
 						}
 						else

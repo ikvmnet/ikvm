@@ -181,11 +181,6 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "StringHelper.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "TypeWrapper.cs"
                     SubType = "Code"
                     BuildAction = "Compile"

@@ -331,7 +331,17 @@ class AttributeHelper
 		{
 			implementsAttribute = typeof(ImplementsAttribute).GetConstructor(new Type[] { typeof(Type) });
 		}
-		typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(implementsAttribute, new object[] { iface }));
+		// HACK because SetCustomAttribute(CustomAttributeBuilder) incorrectly always stores the assembly qualified name
+		// we have our own version for when the type lives in the same assembly as the attribute. If we don't do this
+		// ikvmc will have problems accessing this attribute when it uses Assembly.LoadFrom to load an assembly.
+		if(typeBuilder.Assembly.Equals(iface.Assembly))
+		{
+			typeBuilder.SetCustomAttribute(implementsAttribute, FreezeDryType(iface));
+		}
+		else
+		{
+			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(implementsAttribute, new object[] { iface }));
+		}
 	}
 
 	internal static Modifiers GetModifiers(MethodBase mb)

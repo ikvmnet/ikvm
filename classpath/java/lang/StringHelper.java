@@ -291,6 +291,119 @@ public final class StringHelper
 	}
     }
 
+    public static String substring(String s, int off, int end)
+    {
+	return ((system.String)(Object)s).Substring(off, end - off);
+    }
+
+    public static boolean startsWith(String si, String prefix, int toffset)
+    {
+	if(toffset < 0)
+	{
+	    return false;
+	}
+	system.String s = (system.String)(Object)si;
+	s = (system.String)(Object)s.Substring(Math.min(s.get_Length(), toffset));
+	return s.StartsWith(prefix);
+    }
+
+    public static char charAt(String s, int index)
+    {
+	try 
+	{
+	    return ((system.String)(Object)s).get_Chars(index);
+	}
+	// NOTE the System.IndexOutOfRangeException thrown by get_Chars, is translated by our
+	// exception handling code to an ArrayIndexOutOfBoundsException, so we catch that.
+	catch (ArrayIndexOutOfBoundsException x) 
+	{
+	    throw new StringIndexOutOfBoundsException();
+	}
+    }
+
+    public static void getChars(String s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 
+    {
+	((system.String)(Object)s).CopyTo(srcBegin, dst, dstBegin, srcEnd - srcBegin);
+    }
+
+    // this exposes the package accessible "count" field (for use by StringBuffer)
+    static int GetCountField(String s)
+    {
+	return s.length();
+    }
+
+    // this exposes the package accessible "value" field (for use by StringBuffer)
+    static char[] GetValueField(String s)
+    {
+	return s.toCharArray();
+    }
+
+    // this exposes the package accessible "offset" field (for use by StringBuffer)
+    static int GetOffsetField(String s)
+    {
+	return 0;
+    }
+
+    public static int indexOf(String si, char ch, int fromIndex)
+    {
+	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
+	system.String s = (system.String)(Object)si;
+	return s.IndexOf(ch, Math.max(0, Math.min(s.get_Length(), fromIndex)));
+    }
+
+    public static int indexOf(String si, String o, int fromIndex)
+    {
+	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
+	system.String s = (system.String)(Object)si;
+	return s.IndexOf(o, Math.max(0, Math.min(s.get_Length(), fromIndex)));
+    }
+
+    public static int lastIndexOf(String si, char ch, int fromIndex)
+    {
+	system.String s = (system.String)(Object)si;
+	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
+	int len = s.get_Length();
+	if(fromIndex  < 0)
+	{
+	    return -1;
+	}
+	// Java allow fromIndex to be above the length of the string, .NET doesn't
+	return s.LastIndexOf(ch, Math.min(len - 1, fromIndex));
+    }
+
+    public static int lastIndexOf(String s, String o)
+    {
+	return lastIndexOf(s, o, s.length());
+    }
+
+    public static int lastIndexOf(String si, String o, int fromIndex)
+    {
+	system.String s = (system.String)(Object)si;
+	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
+	int len = s.get_Length();
+	if(fromIndex  < 0)
+	{
+	    return -1;
+	}
+	if(o.length() == 0)
+	{
+	    return Math.min(len, fromIndex);
+	}
+	// Java allow fromIndex to be above the length of the string, .NET doesn't
+	return s.LastIndexOf(o, Math.min(len - 1, fromIndex + o.length() - 1));
+    }
+
+    public static String concat(String s1, String s2)
+    {
+	// null check
+	s1 = s1.toString();
+	if(s2.length() == 0)
+	{
+	    return s1;
+	}
+	return system.String.Concat(s1, s2);
+    }
+
     public static void getBytes(String s, int srcBegin, int srcEnd, byte dst[], int dstBegin)
     {
 	if (srcBegin < 0 || srcBegin > srcEnd || srcEnd > s.length())

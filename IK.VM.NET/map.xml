@@ -202,46 +202,46 @@
 				<redirect name="get_Length" />
 			</method>
 			<method name="charAt" sig="(I)C" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;I)C" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;I)C" />
 			</method>
 			<method name="substring" sig="(II)Ljava.lang.String;" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;II)Ljava.lang.String;" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II)Ljava.lang.String;" />
 			</method>
 			<method name="indexOf" sig="(I)I" modifiers="public">
 				<redirect name="IndexOf" sig="(C)I" />
 			</method>
 			<method name="indexOf" sig="(II)I" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;CI)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;CI)I" />
 			</method>
 			<method name="indexOf" sig="(Ljava.lang.String;)I" modifiers="public">
 				<redirect name="IndexOf" />
 			</method>
 			<method name="indexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
 			</method>
 			<method name="lastIndexOf" sig="(I)I" modifiers="public">
 				<redirect name="LastIndexOf" sig="(C)I" />
 			</method>
 			<method name="lastIndexOf" sig="(II)I" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;CI)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;CI)I" />
 			</method>
 			<method name="lastIndexOf" sig="(Ljava.lang.String;)I" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
 			</method>
 			<method name="lastIndexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
 			</method>
 			<method name="toCharArray" sig="()[C" modifiers="public">
 				<redirect name="ToCharArray" />
 			</method>
 			<method name="getChars" sig="(II[CI)V" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;II[CI)V" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II[CI)V" />
 			</method>
 			<method name="startsWith" sig="(Ljava.lang.String;)Z" modifiers="public">
 				<redirect name="StartsWith" />
 			</method>
 			<method name="startsWith" sig="(Ljava.lang.String;I)Z" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)Z" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)Z" />
 			</method>
 			<method name="endsWith" sig="(Ljava.lang.String;)Z" modifiers="public">
 				<redirect name="EndsWith" />
@@ -280,7 +280,7 @@
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)[B" />
 			</method>
 			<method name="subSequence" sig="(II)Ljava.lang.CharSequence;" modifiers="public">
-				<redirect class="StringHelper" type="static" name="substring" sig="(Ljava.lang.String;II)Ljava.lang.String;" />
+				<redirect class="java.lang.StringHelper" type="static" name="substring" sig="(Ljava.lang.String;II)Ljava.lang.String;" />
 			</method>
 			<method name="trim" sig="()Ljava.lang.String;" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
@@ -295,7 +295,7 @@
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II[BI)V" />
 			</method>
 			<method name="concat" sig="(Ljava.lang.String;)Ljava.lang.String;" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" />
 			</method>
 			<method name="copyValueOf" sig="([C)Ljava.lang.String;" modifiers="public static">
 				<invokestatic>
@@ -314,7 +314,7 @@
 				NOTE only reading fields can be redirected
 			-->
 			<field name="count" sig="I" modifiers="">
-				<redirect class="StringHelper" type="static" name="GetCountField" sig="(Ljava.lang.String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" name="GetCountField" sig="(Ljava.lang.String;)I" />
 			</field>
 			<!-- Making a new char array instead of directly accessing the contents of the string, probably isn't
 				as efficient as the coder of this construct wished for, but hey ;-) At least it works...
@@ -322,13 +322,13 @@
 				NOTE since StringBuffer is remapped to StringBuilder now, these might not be needed anymore
 			-->
 			<method name="zeroBasedStringValue" sig="(Ljava.lang.String;)[C" modifiers="static">
-				<redirect class="StringHelper" name="GetValueField" />
+				<redirect class="java.lang.StringHelper" name="GetValueField" />
 			</method>
 			<field name="value" sig="[C" modifiers="">
-				<redirect class="StringHelper" type="static" name="GetValueField" sig="(Ljava.lang.String;)[C" />
+				<redirect class="java.lang.StringHelper" type="static" name="GetValueField" sig="(Ljava.lang.String;)[C" />
 			</field>
 			<field name="offset" sig="I" modifiers="">
-				<redirect class="StringHelper" type="static" name="GetOffsetField" sig="(Ljava.lang.String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" name="GetOffsetField" sig="(Ljava.lang.String;)I" />
 			</field>
 		</class>
 		<class name="java.lang.Throwable" type="System.Exception" modifiers="public">

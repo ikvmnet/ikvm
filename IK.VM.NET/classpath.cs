@@ -760,7 +760,7 @@ namespace NativeCode.java
 				}
 				catch(ArgumentNullException)
 				{
-					throw new NullReferenceException();
+					throw JavaException.NullPointerException();
 				}
 				catch(OverflowException)
 				{
@@ -784,7 +784,7 @@ namespace NativeCode.java
 				}
 				catch(ArgumentNullException)
 				{
-					throw new NullReferenceException();
+					throw JavaException.NullPointerException();
 				}
 				catch(OverflowException)
 				{
@@ -808,7 +808,7 @@ namespace NativeCode.java
 				}
 				catch(ArgumentNullException)
 				{
-					throw new NullReferenceException();
+					throw JavaException.NullPointerException();
 				}
 				catch(OverflowException)
 				{
@@ -829,7 +829,7 @@ namespace NativeCode.java
 				}
 				catch(ArgumentNullException)
 				{
-					throw new NullReferenceException();
+					throw JavaException.NullPointerException();
 				}
 				catch(OverflowException)
 				{
@@ -845,31 +845,42 @@ namespace NativeCode.java
 			{
 				if(src != dest)
 				{
-					// NOTE side effect is null check for src and dest
-					Type type_src = src.GetType();
-					Type type_dst = dest.GetType();
-					if(type_src != type_dst)
+					// NOTE side effect of GetTypeHandle call is null check for src and dest (it
+					// throws an ArgumentNullException)
+					// Since constructing a Type object is expensive, we use Type.GetTypeHandle and
+					// hope that it is implemented in a such a way that it is more efficient than
+					// Object.GetType()
+					try
 					{
-						if(len >= 0)
+						RuntimeTypeHandle type_src = Type.GetTypeHandle(src);
+						RuntimeTypeHandle type_dst = Type.GetTypeHandle(dest);
+						if(type_src.Value != type_dst.Value)
 						{
-							try
+							if(len >= 0)
 							{
-								// since Java strictly defines what happens when an ArrayStoreException occurs during copying
-								// and .NET doesn't, we have to do it by hand
-								Object[] src1 = (Object[])src;
-								Object[] dst1 = (Object[])dest;
-								for(; len > 0; len--)
+								try
 								{
-									dst1[destStart++] = src1[srcStart++];
+									// since Java strictly defines what happens when an ArrayStoreException occurs during copying
+									// and .NET doesn't, we have to do it by hand
+									Object[] src1 = (Object[])src;
+									Object[] dst1 = (Object[])dest;
+									for(; len > 0; len--)
+									{
+										dst1[destStart++] = src1[srcStart++];
+									}
+									return;
 								}
-								return;
+								catch(InvalidCastException)
+								{
+									throw JavaException.ArrayStoreException("cast failed");
+								}
 							}
-							catch(InvalidCastException)
-							{
-								throw JavaException.ArrayStoreException("cast failed");
-							}
+							throw JavaException.ArrayIndexOutOfBoundsException();
 						}
-						throw JavaException.ArrayIndexOutOfBoundsException();
+					}
+					catch(ArgumentNullException)
+					{
+						throw JavaException.NullPointerException();
 					}
 				}
 				try 
@@ -878,7 +889,7 @@ namespace NativeCode.java
 				}
 				catch(ArgumentNullException)
 				{
-					throw new NullReferenceException();
+					throw JavaException.NullPointerException();
 				}
 				catch(ArgumentException) 
 				{
