@@ -455,7 +455,7 @@ abstract class TypeWrapper
 	{
 		get
 		{
-			return !IsPrimitive && Type.IsValueType;
+			return this != VerifierTypeWrapper.Null && !IsPrimitive && Type.IsValueType;
 		}
 	}
 
@@ -699,9 +699,13 @@ abstract class TypeWrapper
 	{
 		get
 		{
+			if(this == VerifierTypeWrapper.Null)
+			{
+				return VerifierTypeWrapper.Null;
+			}
 			if(name[0] != '[')
 			{
-				throw new InvalidOperationException();
+				throw new InvalidOperationException(name);
 			}
 			// TODO consider caching the element type
 			switch(name[1])

@@ -164,6 +164,7 @@ public final class FileDescriptor
 		    fileAccess = FileAccess.Write;
 		    break;
 		case APPEND:
+		case APPEND|WRITE:
 		    fileMode = FileMode.Append;
 		    fileAccess = FileAccess.Write;
 		    break;

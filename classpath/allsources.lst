@@ -221,13 +221,6 @@ C:\classpath\gnu\java\net\protocol\jar\JarURLConnection.java
 C:\classpath\gnu\java\nio\DatagramChannelImpl.java
 C:\classpath\gnu\java\nio\FileChannelImpl.java
 C:\classpath\gnu\java\nio\FileLockImpl.java
-C:\classpath\gnu\java\nio\MappedByteFileBuffer.java
-C:\classpath\gnu\java\nio\MappedCharFileBuffer.java
-C:\classpath\gnu\java\nio\MappedDoubleFileBuffer.java
-C:\classpath\gnu\java\nio\MappedFloatFileBuffer.java
-C:\classpath\gnu\java\nio\MappedIntFileBuffer.java
-C:\classpath\gnu\java\nio\MappedLongFileBuffer.java
-C:\classpath\gnu\java\nio\MappedShortFileBuffer.java
 C:\classpath\gnu\java\nio\PipeImpl.java
 C:\classpath\gnu\java\nio\SelectionKeyImpl.java
 C:\classpath\gnu\java\nio\SelectorImpl.java
@@ -908,6 +901,13 @@ C:\classpath\java\nio\LongBuffer.java
 C:\classpath\java\nio\LongBufferImpl.java
 C:\classpath\java\nio\LongViewBufferImpl.java
 C:\classpath\java\nio\MappedByteBuffer.java
+C:\classpath\java\nio\MappedByteFileBuffer.java
+C:\classpath\java\nio\MappedCharFileBuffer.java
+C:\classpath\java\nio\MappedDoubleFileBuffer.java
+C:\classpath\java\nio\MappedFloatFileBuffer.java
+C:\classpath\java\nio\MappedIntFileBuffer.java
+C:\classpath\java\nio\MappedLongFileBuffer.java
+C:\classpath\java\nio\MappedShortFileBuffer.java
 C:\classpath\java\nio\ReadOnlyBufferException.java
 C:\classpath\java\nio\ShortBuffer.java
 C:\classpath\java\nio\ShortBufferImpl.java
@@ -1718,6 +1718,7 @@ C:\classpath\javax\swing\table\AbstractTableModel.java
 C:\classpath\javax\swing\table\DefaultTableCellRenderer.java
 C:\classpath\javax\swing\table\DefaultTableColumnModel.java
 C:\classpath\javax\swing\table\DefaultTableModel.java
+C:\classpath\javax\swing\table\JTableHeader.java
 C:\classpath\javax\swing\table\TableCellEditor.java
 C:\classpath\javax\swing\table\TableCellRenderer.java
 C:\classpath\javax\swing\table\TableColumn.java
