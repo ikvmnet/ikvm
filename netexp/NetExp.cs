@@ -74,7 +74,7 @@ public class NetExp
 			ProcessPrivateClasses(assembly);
 			zipFile.Close();
 		}
-		// HACK if we run on the "classpath" assembly, the awt thread gets started,
+		// FXBUG if we run a static initializer that starts a thread, we would never end,
 		// so we force an exit here
 		Environment.Exit(0);
 	}

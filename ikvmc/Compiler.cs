@@ -58,7 +58,14 @@ class Compiler
 		return arglist;
 	}
 
-	static int Main(string[] args)
+	static void Main(string[] args)
+	{
+		// FXBUG if we run a static initializer that starts a thread, we would never end,
+		// so we force an exit here
+		Environment.Exit(RealMain(args));
+	}
+
+	static int RealMain(string[] args)
 	{
 		AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
 		System.Threading.Thread.CurrentThread.Name = "compiler";
