@@ -401,6 +401,9 @@ public final class Class implements Serializable
 	{
 		if (isPrimitive())
 			return null;
+		String name = getName();
+		if (name.startsWith("java.") || name.startsWith("gnu.java."))
+			return null;
 		ClassLoader loader = getClassLoader0(getType());
 		// Check if we may get the classloader
 		SecurityManager sm = System.getSecurityManager();

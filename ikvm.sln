@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc", "ikvmc\ikvmc.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "awt", "awt\awt.csproj", "{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mapgen", "mapgen\mapgen.csproj", "{12059736-55DA-4191-B00E-5808244D1875}"
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ConfigName.0 = Debug
@@ -43,6 +45,10 @@ Global
 		{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}.Debug.Build.0 = Debug|.NET
 		{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}.Release.ActiveCfg = Release|.NET
 		{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}.Release.Build.0 = Release|.NET
+		{12059736-55DA-4191-B00E-5808244D1875}.Debug.ActiveCfg = Debug|.NET
+		{12059736-55DA-4191-B00E-5808244D1875}.Debug.Build.0 = Debug|.NET
+		{12059736-55DA-4191-B00E-5808244D1875}.Release.ActiveCfg = Release|.NET
+		{12059736-55DA-4191-B00E-5808244D1875}.Release.Build.0 = Release|.NET
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

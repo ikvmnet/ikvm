@@ -56,7 +56,7 @@ public class Starter
 		private static URL[] GetClassPath()
 		{
 			string classpath = java.lang.System.getProperty("java.ext.dirs", "");
-			string[] s = classpath.Split(';');
+			string[] s = classpath.Split(Path.PathSeparator);
 			ArrayList jars = new ArrayList();
 			for(int i = 0; i < s.Length; i++)
 			{
@@ -87,7 +87,7 @@ public class Starter
 		private static URL[] GetClassPath()
 		{
 			string classpath = java.lang.System.getProperty("java.class.path", ".");
-			string[] s = classpath.Split(';');
+			string[] s = classpath.Split(Path.PathSeparator);
 			URL[] urls = new URL[s.Length];
 			for(int i = 0; i < urls.Length; i++)
 			{
@@ -107,7 +107,7 @@ public class Starter
 	{
 		private static URL[] GetClassPath(string classpath)
 		{
-			string[] s = classpath.Split(';');
+			string[] s = classpath.Split(Path.PathSeparator);
 			URL[] urls = new URL[s.Length];
 			for(int i = 0; i < urls.Length; i++)
 			{
@@ -219,7 +219,7 @@ public class Starter
 			if(jar)
 			{
 				// TODO if there is no classpath, we're adding the current directory, but is this correct when running a jar?
-				java.lang.System.setProperty("java.class.path", mainClass + ";" + java.lang.System.getProperty("java.class.path"));
+				java.lang.System.setProperty("java.class.path", mainClass + Path.PathSeparator + java.lang.System.getProperty("java.class.path"));
 				JarFile jf = new JarFile(mainClass);
 				try
 				{
@@ -244,7 +244,7 @@ public class Starter
 			if(bootclasspath != "")
 			{
 				StringBuilder sb = new StringBuilder();
-				foreach(string part in bootclasspath.Split(';'))
+				foreach(string part in bootclasspath.Split(Path.PathSeparator))
 				{
 					if(part.ToUpper().EndsWith(".DLL"))
 					{
@@ -254,7 +254,7 @@ public class Starter
 					{
 						if(sb.Length > 0)
 						{
-							sb.Append(';');
+							sb.Append(Path.PathSeparator);
 						}
 						sb.Append(part);
 					}
