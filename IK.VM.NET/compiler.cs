@@ -374,7 +374,7 @@ class Compiler
 			{
 				// new objects aren't really there on the stack
 			}
-			else if(type.IsNonPrimitiveValueType)
+			else if(!type.IsUnloadable && type.IsNonPrimitiveValueType)
 			{
 				locals[i] = ilgen.DeclareLocal(typeof(object));
 			}
@@ -949,6 +949,7 @@ class Compiler
 						ClassFile.ConstantPoolItemFMI cpi = m.Method.ClassFile.GetMethodref(instr.Arg1);
 						// HACK special case for calls to System.arraycopy, if the array arguments on the stack
 						// are of a known array type, we can redirect to an optimized version of arraycopy.
+						// TODO make sure that the java.lang.System we're referring to is in the bootstrap class loader
 						if(cpi.Class == "java.lang.System" &&
 							cpi.Name == "arraycopy" &&
 							cpi.Signature == "(Ljava.lang.Object;ILjava.lang.Object;II)V")
@@ -982,13 +983,15 @@ class Compiler
 								break;
 							}
 						}
-						MethodWrapper method = GetMethod(cpi, null, NormalizedByteCode.__invokestatic);
-						if(method != null)
+						CodeEmitter emitNewobj;
+						CodeEmitter emitCall;
+						CodeEmitter emitCallvirt;
+						if(GetMethodCallEmitter(cpi, null, NormalizedByteCode.__invokestatic, out emitNewobj, out emitCall, out emitCallvirt))
 						{
 							// if the stack values don't match the argument types (for interface argument types)
 							// we must emit code to cast the stack value to the interface type
 							CastInterfaceArgs(cpi.GetArgTypes(classLoader), i, false, false);
-							method.EmitCall.Emit(ilGenerator);
+							emitCall.Emit(ilGenerator);
 						}
 						else
 						{
@@ -1028,17 +1031,19 @@ class Compiler
 							CastInterfaceArgs(args, i, true, instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && type != VerifierTypeWrapper.UninitializedThis);
 						}
 
-						MethodWrapper method = (thisType != null) ? GetMethod(cpi, thisType, instr.NormalizedOpCode) : null;
+						CodeEmitter emitNewobj = null;
+						CodeEmitter emitCall = null;
+						CodeEmitter emitCallvirt = null;
 						CodeEmitter emit = null;
-						if(method != null)
+						if(thisType != null && GetMethodCallEmitter(cpi, thisType, instr.NormalizedOpCode, out emitNewobj, out emitCall, out emitCallvirt))
 						{
 							if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
 							{
-								emit = method.EmitCall;
+								emit = emitCall;
 							}
 							else
 							{
-								emit = method.EmitCallvirt;
+								emit = emitCallvirt;
 							}
 						}
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
@@ -1048,9 +1053,9 @@ class Compiler
 								if(!thisType.IsUnloadable && (thisType.IsAbstract || thisType.IsInterface))
 								{
 									// the CLR gets confused when we do a newobj on an abstract class,
-									// so we set method to null, to basically just comment out the constructor
+									// so we set the emitter to null, to basically just comment out the constructor
 									// call (the InstantiationError was already emitted at the "new" bytecode)
-									method = null;
+									emitNewobj = null;
 								}
 								// we have to construct a list of all the unitialized references to the object
 								// we're about to create on the stack, so that we can reconstruct the stack after
@@ -1085,9 +1090,9 @@ class Compiler
 										nontrivial = true;
 									}
 								}
-								if(method != null)
+								if(emitNewobj != null)
 								{
-									method.EmitNewobj.Emit(ilGenerator);
+									emitNewobj.Emit(ilGenerator);
 								}
 								else
 								{
@@ -1178,9 +1183,9 @@ class Compiler
 							}
 							else
 							{
-								if(method != null)
+								if(emitCall != null)
 								{
-									method.EmitCall.Emit(ilGenerator);
+									emitCall.Emit(ilGenerator);
 								}
 								else
 								{
@@ -2253,14 +2258,17 @@ class Compiler
 	// NOTE despite its name this also handles value type args
 	private void CastInterfaceArgs(TypeWrapper[] args, int instructionIndex, bool instanceMethod, bool checkThisForNull)
 	{
-		// TODO handle unloadable types
 		bool needsCast = checkThisForNull;
 
 		if(!needsCast)
 		{
 			for(int i = 0; i < args.Length; i++)
 			{
-				if(args[i].IsInterface)
+				if(args[i].IsUnloadable)
+				{
+					// nothing to do, callee will (eventually) do the cast
+				}
+				else if(args[i].IsInterface)
 				{
 					if(!ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsAssignableTo(args[i]))
 					{
@@ -2268,7 +2276,7 @@ class Compiler
 						break;
 					}
 				}
-				if(args[i].IsNonPrimitiveValueType)
+				else if(args[i].IsNonPrimitiveValueType)
 				{
 					needsCast = true;
 					break;
@@ -2287,7 +2295,9 @@ class Compiler
 			// TODO instead of an InvalidCastException, the castclass should throw a IncompatibleClassChangeError
 			for(int i = args.Length - 1; i >= 0; i--)
 			{
-				if(args[i].IsInterface && !ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsAssignableTo(args[i]))
+				if(!args[i].IsUnloadable && 
+					args[i].IsInterface &&
+					!ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsAssignableTo(args[i]))
 				{
 					ilGenerator.Emit(OpCodes.Castclass, args[i].Type);
 				}
@@ -2304,7 +2314,7 @@ class Compiler
 			for(int i = 0; i < args.Length; i++)
 			{
 				dh.Load(i);
-				if(args[i].IsNonPrimitiveValueType)
+				if(!args[i].IsUnloadable && args[i].IsNonPrimitiveValueType)
 				{
 					ilGenerator.Emit(OpCodes.Unbox, args[i].Type);
 					if(i != 0 || !instanceMethod)
@@ -2430,23 +2440,16 @@ class Compiler
 		}
 	}
 
-	private MethodWrapper GetMethod(ClassFile.ConstantPoolItemFMI cpi, TypeWrapper thisType, NormalizedByteCode invoke)
+	private bool GetMethodCallEmitter(ClassFile.ConstantPoolItemFMI cpi, TypeWrapper thisType, NormalizedByteCode invoke, out CodeEmitter emitNewobj, out CodeEmitter emitCall, out CodeEmitter emitCallvirt)
 	{
 		// TODO when there is an error resolving a call to the super class constructor (in the constructor of this type),
 		// we cannot use EmitError, because that will yield an invalid constructor (that doesn't call the superclass constructor)
 		if(IsUnloadable(cpi))
 		{
-			MethodWrapper dummy = new MethodWrapper(null, null, null, null, 0, true);
-			if(invoke == NormalizedByteCode.__invokespecial)
-			{
-				dummy.EmitNewobj = new DynamicNewEmitter(classLoader, clazz, cpi);
-			}
-			else
-			{
-				dummy.EmitCall = CodeEmitter.NoClassDefFoundError(cpi.Signature);
-				dummy.EmitCallvirt = CodeEmitter.NoClassDefFoundError(cpi.Signature);
-			}
-			return dummy;
+			emitNewobj = new DynamicNewEmitter(classLoader, clazz, cpi);
+			emitCall = CodeEmitter.NoClassDefFoundError(cpi.Signature);
+			emitCallvirt = CodeEmitter.NoClassDefFoundError(cpi.Signature);
+			return true;
 		}
 		else
 		{
@@ -2494,7 +2497,10 @@ class Compiler
 							(method.IsPrivate && clazz == method.DeclaringType) ||
 							(!(method.IsPublic || method.IsPrivate) && clazz.IsInSamePackageAs(method.DeclaringType)))
 						{
-							return method;
+							emitNewobj = method.EmitNewobj;
+							emitCall = method.EmitCall;
+							emitCallvirt = method.EmitCallvirt;
+							return true;
 						}
 						else
 						{
@@ -2506,7 +2512,10 @@ class Compiler
 								method = thisType.GetMethodWrapper(new MethodDescriptor(classLoader, cpi), false);
 								if(method != null && method.IsPublic)
 								{
-									return method;
+									emitNewobj = method.EmitNewobj;
+									emitCall = method.EmitCall;
+									emitCallvirt = method.EmitCallvirt;
+									return true;
 								}
 							}
 							EmitError("java.lang.IllegalAccessError", "Try to access method " + method.DeclaringType.Name + "." + cpi.Name + cpi.Signature + " from class " + clazz.Name);
@@ -2523,7 +2532,10 @@ class Compiler
 				}
 			}
 		}
-		return null;
+		emitNewobj = null;
+		emitCall = null;
+		emitCallvirt = null;
+		return false;
 	}
 
 	private void EmitError(string errorType, string message)
