@@ -90,8 +90,7 @@ public class ByteCodeHelper
 	{
 		TypeWrapper caller = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type));
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
-		// TODO take sig into account
-		FieldWrapper field = wrapper.GetFieldWrapper(name);
+		FieldWrapper field = wrapper.GetFieldWrapper(name, caller.GetClassLoader().ExpressionTypeWrapper(sig));
 		if(field == null)
 		{
 			throw JavaException.NoSuchFieldError(clazz + "." + name);

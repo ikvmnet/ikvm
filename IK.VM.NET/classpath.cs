@@ -537,6 +537,11 @@ namespace NativeCode.java
 					{
 						s += ".0";
 					}
+					// make sure -0.0 renders correctly
+					if(d == 0.0 && BitConverter.DoubleToInt64Bits(d) < 0)
+					{
+						return "-" + s;
+					}
 					return s;
 				}
 				else

@@ -89,8 +89,8 @@ public sealed class JniHelper
 	{
 		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
 		wrapper.Finish();
-		// TODO GetFieldWrapper should take sig (what about searching the base classes?)
-		FieldWrapper fw = wrapper.GetFieldWrapper(name);
+		// TODO what about searching the base classes?
+		FieldWrapper fw = wrapper.GetFieldWrapper(name, wrapper.GetClassLoader().ExpressionTypeWrapper(sig.Replace('/', '.')));
 		if(fw != null)
 		{
 			if(fw.IsStatic == isStatic)

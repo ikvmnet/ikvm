@@ -849,24 +849,24 @@ abstract class TypeWrapper
 		return classLoader;
 	}
 
-	protected abstract FieldWrapper GetFieldImpl(string fieldName);
+	protected abstract FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType);
 
-	// TODO this shouldn't just be based on the name, fields can be overloaded on type
-	public FieldWrapper GetFieldWrapper(string fieldName)
+	public FieldWrapper GetFieldWrapper(string fieldName, TypeWrapper fieldType)
 	{
-		FieldWrapper fae = (FieldWrapper)fields[fieldName];
+		string key = fieldName + fieldType.SigName;
+		FieldWrapper fae = (FieldWrapper)fields[key];
 		if(fae == null)
 		{
-			fae = GetFieldImpl(fieldName);
+			fae = GetFieldImpl(fieldName, fieldType);
 			if(fae == null)
 			{
 				if(baseWrapper != null)
 				{
-					return baseWrapper.GetFieldWrapper(fieldName);
+					return baseWrapper.GetFieldWrapper(fieldName, fieldType);
 				}
 				return null;
 			}
-			fields[fieldName] = fae;
+			fields[key] = fae;
 		}
 		return fae;
 	}
@@ -919,7 +919,7 @@ abstract class TypeWrapper
 	public void AddField(FieldWrapper field)
 	{
 		Debug.Assert(field != null);
-		fields[field.Name] = field;
+		fields[field.Name + field.FieldTypeWrapper.SigName] = field;
 	}
 
 	public string Name
@@ -1724,7 +1724,7 @@ class UnloadableTypeWrapper : TypeWrapper
 	{
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName)
+	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 	{
 		throw new InvalidOperationException("GetFieldImpl called on UnloadableTypeWrapper: " + Name);
 	}
@@ -1829,7 +1829,7 @@ class PrimitiveTypeWrapper : TypeWrapper
 		}
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName)
+	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 	{
 		return null;
 	}
@@ -1936,9 +1936,9 @@ class DynamicTypeWrapper : TypeWrapper
 		}
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName)
+	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 	{
-		return impl.GetFieldImpl(fieldName);
+		return impl.GetFieldImpl(fieldName, fieldType);
 	}
 
 	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
@@ -2004,7 +2004,7 @@ class DynamicTypeWrapper : TypeWrapper
 
 	private abstract class DynamicImpl
 	{
-		public abstract FieldWrapper GetFieldImpl(string fieldName);
+		public abstract FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType);
 		public abstract MethodWrapper GetMethodImpl(MethodDescriptor md);
 		public abstract Type Type { get; }
 		internal abstract Type TypeAsBaseType { get; }
@@ -2290,7 +2290,7 @@ class DynamicTypeWrapper : TypeWrapper
 					fieldLookup = new Hashtable();
 					for(int i = 0; i < classFile.Fields.Length; i++)
 					{
-						fieldLookup[classFile.Fields[i].Name] = i;
+						fieldLookup[classFile.Fields[i].Name + classFile.Fields[i].Signature] = i;
 					}
 				}
 				for(int i = 0; i < fields.Length; i++)
@@ -2881,7 +2881,7 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		public override FieldWrapper GetFieldImpl(string fieldName)
+		public override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 		{
 			if(fieldLookup == null)
 			{
@@ -2889,10 +2889,10 @@ class DynamicTypeWrapper : TypeWrapper
 				fieldLookup = new Hashtable();
 				for(int i = 0; i < classFile.Fields.Length; i++)
 				{
-					fieldLookup[classFile.Fields[i].Name] = i;
+					fieldLookup[classFile.Fields[i].Name + classFile.Fields[i].Signature] = i;
 				}
 			}
-			object index = fieldLookup[fieldName];
+			object index = fieldLookup[fieldName + fieldType.SigName];
 			if(index != null)
 			{
 				int i = (int)index;
@@ -3522,7 +3522,7 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		public override FieldWrapper GetFieldImpl(string fieldName)
+		public override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 		{
 			return null;
 		}
@@ -4325,7 +4325,7 @@ class RemappedTypeWrapper : TypeWrapper
 		}
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName)
+	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 	{
 		return null;
 	}
@@ -4361,7 +4361,7 @@ abstract class LazyTypeWrapper : TypeWrapper
 
 	protected abstract void LazyPublishMembers();
 
-	protected sealed override FieldWrapper GetFieldImpl(string fieldName)
+	protected sealed override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 	{
 		lock(this)
 		{
@@ -4369,7 +4369,7 @@ abstract class LazyTypeWrapper : TypeWrapper
 			{
 				membersPublished = true;
 				LazyPublishMembers();
-				return GetFieldWrapper(fieldName);
+				return GetFieldWrapper(fieldName, fieldType);
 			}
 		}
 		return null;
@@ -5487,7 +5487,7 @@ class ArrayTypeWrapper : TypeWrapper
 		}
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName)
+	protected override FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType)
 	{
 		return null;
 	}
