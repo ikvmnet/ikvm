@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <project name="classpath.dll" default="classpath.dll">
-    <property name="Classpath.dir" value="/classpath-0.04" />
+    <property name="Classpath.dir" value="/classpath" />
 
     <target name="jars">
         <!-- TODO
