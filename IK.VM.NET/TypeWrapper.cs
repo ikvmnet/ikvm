@@ -1065,6 +1065,7 @@ abstract class TypeWrapper
 			switch(name[1])
 			{
 				case '[':
+					// TODO are we allowed to trigger class loading here?
 					return classLoader.LoadClassByDottedName(name.Substring(1));
 				case 'L':
 					return classLoader.LoadClassByDottedName(name.Substring(2, name.Length - 3));
@@ -3837,43 +3838,41 @@ class CompiledTypeWrapper : TypeWrapper
 		this.type = type;
 	}
 
-	internal static Modifiers GetModifiers(Type type)
+	private static Modifiers GetModifiers(Type type)
 	{
-		try
+		object[] customAttribute = type.GetCustomAttributes(typeof(ModifiersAttribute), false);
+		if(customAttribute.Length == 1)
 		{
-			object[] customAttribute = type.GetCustomAttributes(typeof(ModifiersAttribute), false);
-			if(customAttribute.Length == 1)
-			{
-				return ((ModifiersAttribute)customAttribute[0]).Modifiers;
-			}
-		}
-		catch(Exception x)
-		{
-			// HACK this is just to find other types that don't support GetCustomAttributes
-			Console.WriteLine(x);
+			return ((ModifiersAttribute)customAttribute[0]).Modifiers;
 		}
 		// only returns public, protected, private, final, static, abstract and interface (as per
 		// the documentation of Class.getModifiers())
 		Modifiers modifiers = 0;
-		if(type.IsPublic || type.IsNestedPublic)
+		if(type.IsPublic)
 		{
 			modifiers |= Modifiers.Public;
 		}
-		if(type.IsNestedPrivate)
+		// TODO do we really need to look for nested attributes? I think all inner classes will have the ModifiersAttribute.
+		else if(type.IsNestedPublic)
 		{
-			modifiers |= Modifiers.Private;
+			modifiers |= Modifiers.Public | Modifiers.Static;
 		}
-		if(type.IsNestedFamily || type.IsNestedFamORAssem)
+		else if(type.IsNestedPrivate)
 		{
-			modifiers |= Modifiers.Protected;
+			modifiers |= Modifiers.Private | Modifiers.Static;
 		}
+		else if(type.IsNestedFamily || type.IsNestedFamORAssem)
+		{
+			modifiers |= Modifiers.Protected | Modifiers.Static;
+		}
+		else if(type.IsNestedAssembly || type.IsNestedFamANDAssem)
+		{
+			modifiers |= Modifiers.Static;
+		}
+
 		if(type.IsSealed)
 		{
 			modifiers |= Modifiers.Final;
-		}
-		if(type.DeclaringType != null)
-		{
-			modifiers |= Modifiers.Static;
 		}
 		if(type.IsAbstract)
 		{
@@ -4229,12 +4228,41 @@ class DotNetTypeWrapper : TypeWrapper
 
 	private static Modifiers GetModifiers(Type type)
 	{
-		Modifiers mods = CompiledTypeWrapper.GetModifiers(type);
-		if(ClassLoaderWrapper.IsRemappedType(type) && !type.IsInterface)
+		Modifiers modifiers = 0;
+		if(type.IsPublic)
 		{
-			mods |= Modifiers.Final;
+			modifiers |= Modifiers.Public;
 		}
-		return mods;
+		else if(type.IsNestedPublic)
+		{
+			modifiers |= Modifiers.Public | Modifiers.Static;
+		}
+		else if(type.IsNestedPrivate)
+		{
+			modifiers |= Modifiers.Private | Modifiers.Static;
+		}
+		else if(type.IsNestedFamily || type.IsNestedFamORAssem)
+		{
+			modifiers |= Modifiers.Protected | Modifiers.Static;
+		}
+		else if(type.IsNestedAssembly || type.IsNestedFamANDAssem)
+		{
+			modifiers |= Modifiers.Static;
+		}
+
+		if(type.IsSealed || (ClassLoaderWrapper.IsRemappedType(type) && !type.IsInterface))
+		{
+			modifiers |= Modifiers.Final;
+		}
+		if(type.IsAbstract)
+		{
+			modifiers |= Modifiers.Abstract;
+		}
+		if(type.IsInterface)
+		{
+			modifiers |= Modifiers.Interface;
+		}
+		return modifiers;
 	}
 
 	// NOTE when this is called on a remapped type, the "warped" underlying type name is returned.

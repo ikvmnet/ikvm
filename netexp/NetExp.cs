@@ -25,6 +25,7 @@ using System;
 using System.Reflection;
 using System.IO;
 using System.Text;
+using System.Collections;
 using ICSharpCode.SharpZipLib.Zip;
 using java.lang;
 using java.lang.reflect;
@@ -32,6 +33,7 @@ using java.lang.reflect;
 public class NetExp
 {
 	private static ZipOutputStream zipFile;
+	private static Hashtable privateClasses = new Hashtable();
 
 	public static void Main(string[] args)
 	{
@@ -75,6 +77,7 @@ public class NetExp
 				ProcessClass(assembly.FullName, Class.forName("java.lang.Comparable"), null);
 			}
 			ProcessAssembly(assembly);
+			ProcessPrivateClasses(assembly);
 			zipFile.Close();
 		}
 		// HACK if we run on the "classpath" assembly, the awt thread gets started,
@@ -99,6 +102,27 @@ public class NetExp
 		}
 	}
 
+	private static void ProcessPrivateClasses(Assembly assembly)
+	{
+		Hashtable done = new Hashtable();
+		bool keepGoing;
+		do
+		{
+			Hashtable todo = privateClasses;
+			privateClasses = new Hashtable();
+			keepGoing = false;
+			foreach(Class c in todo.Values)
+			{
+				if(!done.ContainsKey(c.getName()))
+				{
+					keepGoing = true;
+					done.Add(c.getName(), null);
+					ProcessClass(assembly.FullName, c, c.getDeclaringClass());
+				}
+			}
+		} while(keepGoing);
+	}
+
 	private static void ProcessClass(string assemblyName, Class c, Class outer)
 	{
 		string name = c.getName().Replace('.', '/');
@@ -107,6 +131,11 @@ public class NetExp
 		if(c.getSuperclass() != null)
 		{
 			super = c.getSuperclass().getName().Replace('.', '/');
+			// if the base class isn't public, we still need to export it (!)
+			if(!Modifier.isPublic(c.getSuperclass().getModifiers()))
+			{
+				privateClasses[c.getSuperclass().getName()] = c.getSuperclass();
+			}
 		}
 		if(c.isInterface())
 		{
