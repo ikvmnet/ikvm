@@ -33,10 +33,6 @@ using NetSystem = System;
 
 namespace java.lang
 {
-	public interface Cloneable
-	{
-	}
-
 	// TODO should be serializable
 	public sealed class StackTraceElement
 	{
@@ -145,13 +141,6 @@ namespace java.lang
 			}
 			return o.GetHashCode();
 		}
-	}
-}
-
-namespace java.io
-{
-	public interface Serializable
-	{
 	}
 }
 

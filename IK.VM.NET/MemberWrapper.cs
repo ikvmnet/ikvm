@@ -185,27 +185,22 @@ sealed class MethodWrapper : MemberWrapper
 
 	internal class GhostCallEmitter : CodeEmitter
 	{
-		private Type[] args;
-		private Type[] implementerTypes;
+		private MethodDescriptor md;
+		private TypeWrapper[] implementers;
 		private CodeEmitter[] methods;
 
 		internal GhostCallEmitter(TypeWrapper type, MethodDescriptor md, MethodBase method)
 		{
-			args = md.ArgTypes;
-			TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(type);
-			implementerTypes = new Type[implementers.Length + 1];
+			this.md = md;
+			implementers = ClassLoaderWrapper.GetGhostImplementers(type);
 			methods = new CodeEmitter[implementers.Length + 1];
-			implementerTypes[0] = type.Type;
+			implementers[0] = type;
 			methods[0] = CodeEmitter.Create(OpCodes.Callvirt, method);
-			for(int i = 0; i < implementers.Length; i++)
-			{
-				implementerTypes[i + 1] = implementers[i].Type;
-				methods[i + 1] = implementers[i].GetMethodWrapper(md, true).EmitCallvirt;
-			}
 		}
 
 		internal override void Emit(ILGenerator ilgen)
 		{
+			Type[] args = md.ArgTypes;
 			LocalBuilder[] argLocals = new LocalBuilder[args.Length];
 			for(int i = args.Length - 1; i >= 0; i--)
 			{
@@ -213,16 +208,23 @@ sealed class MethodWrapper : MemberWrapper
 				ilgen.Emit(OpCodes.Stloc, argLocals[i]);
 			}
 			Label end = ilgen.DefineLabel();
-			for(int i = 0; i < implementerTypes.Length; i++)
+			for(int i = 0; i < implementers.Length; i++)
 			{
 				ilgen.Emit(OpCodes.Dup);
-				ilgen.Emit(OpCodes.Isinst, implementerTypes[i]);
+				ilgen.Emit(OpCodes.Isinst, implementers[i].Type);
 				Label label = ilgen.DefineLabel();
 				ilgen.Emit(OpCodes.Brfalse_S, label);
-				ilgen.Emit(OpCodes.Castclass, implementerTypes[i]);
+				ilgen.Emit(OpCodes.Castclass, implementers[i].Type);
 				for(int j = 0; j < args.Length; j++)
 				{
 					ilgen.Emit(OpCodes.Ldloc, argLocals[j]);
+				}
+				if(methods[i] == null)
+				{
+					// NOTE this needs to be done lazily, because otherwise any the first implementer
+					// of a ghost interface will trigger GetMethodWrapper calls to itself, before it is
+					// constructed.
+					methods[i] = implementers[i].GetMethodWrapper(md, true).EmitCallvirt;
 				}
 				methods[i].Emit(ilgen);
 				ilgen.Emit(OpCodes.Br, end);

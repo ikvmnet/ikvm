@@ -144,11 +144,6 @@ class ClassLoaderWrapper
 	internal void LoadRemappedTypes()
 	{
 		nativeMethods = new Hashtable();
-		// NOTE interfaces do *not* have java.lang.Object as the base type (even though they do in the class file)
-		types["java.lang.Cloneable"] = new RemappedTypeWrapper(this, Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.Cloneable", typeof(java.lang.Cloneable), TypeWrapper.EmptyArray, null);
-		typeToTypeWrapper.Add(typeof(java.lang.Cloneable), types["java.lang.Cloneable"]);
-		types["java.io.Serializable"] = new RemappedTypeWrapper(this, Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.io.Serializable", typeof(java.io.Serializable), TypeWrapper.EmptyArray, null);
-		typeToTypeWrapper.Add(typeof(java.io.Serializable), types["java.io.Serializable"]);
 		MapXml.Root map = MapXmlGenerator.Generate();
 		foreach(MapXml.Class c in map.remappings)
 		{
