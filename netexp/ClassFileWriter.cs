@@ -511,6 +511,53 @@ class FieldOrMethod
 	}
 }
 
+class CodeAttribute : ClassFileAttribute
+{
+	private ClassFileWriter classFile;
+	private ushort max_stack;
+	private ushort max_locals;
+	private byte[] code;
+
+	public CodeAttribute(ClassFileWriter classFile)
+		: base(classFile.AddUtf8("Code"))
+	{
+		this.classFile = classFile;
+	}
+
+	public ushort MaxStack
+	{
+		get { return max_stack; }
+		set { max_stack = value; }
+	}
+
+	public ushort MaxLocals
+	{
+		get { return max_locals; }
+		set { max_locals = value; }
+	}
+
+	public byte[] ByteCode
+	{
+		get { return code; }
+		set { code = value; }
+	}
+
+	public override void Write(BigEndianStream bes)
+	{
+		base.Write(bes);
+		bes.WriteUInt32((uint)(2 + 2 + 4 + code.Length + 2 + 2));
+		bes.WriteUInt16(max_stack);
+		bes.WriteUInt16(max_locals);
+		bes.WriteUInt32((uint)code.Length);
+		for(int i = 0; i < code.Length; i++)
+		{
+			bes.WriteByte(code[i]);
+		}
+		bes.WriteUInt16(0);	// no exceptions
+		bes.WriteUInt16(0); // no attributes
+	}
+}
+
 class ClassFileWriter
 {
 	private ArrayList cplist = new ArrayList();

@@ -24,7 +24,7 @@
 		</fileset>
 	</delete>
         <property name="classpath" value=".${pathsep}${Classpath.dir}${pathsep}${Classpath.dir}/vm/reference${pathsep}mscorlib.jar${pathsep}System.jar" />
-        <exec program="jikes" commandline="-g -classpath ${classpath} @allsources.lst"/>
+        <exec program="jikes" commandline="-g -nowarn -classpath ${classpath} @allsources.lst"/>
     </target>
 
     <target name="classpath.dll" depends="classes">

@@ -142,13 +142,19 @@ public class NetExp
 		{
 			super = "java/lang/Object";
 		}
-		ClassFileWriter f = new ClassFileWriter((Modifiers)c.getModifiers(), name, super);
+		ClassFileWriter f = new ClassFileWriter((Modifiers)c.getModifiers() & ~Modifiers.Static, name, super);
 		f.AddStringAttribute("IKVM.NET.Assembly", assemblyName);
 		InnerClassesAttribute innerClassesAttribute = null;
 		if(outer != null)
 		{
 			innerClassesAttribute = new InnerClassesAttribute(f);
-			innerClassesAttribute.Add(name, outer.getName().Replace('.', '/'), null, (ushort)Modifiers.Public);
+			string innername = name;
+			int idx = name.LastIndexOf('$');
+			if(idx >= 0)
+			{
+				innername = innername.Substring(idx + 1);
+			}
+			innerClassesAttribute.Add(name, outer.getName().Replace('.', '/'), innername, (ushort)c.getModifiers());
 		}
 		Class[] interfaces = c.getInterfaces();
 		for(int i = 0; i < interfaces.Length; i++)
@@ -181,7 +187,13 @@ public class NetExp
 			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
 				// TODO what happens if one of the argument types is non-public?
-				f.AddMethod(mods | Modifiers.Native, "<init>", MakeSig(constructors[i].getParameterTypes(), java.lang.Void.TYPE));
+				java.lang.Class[] args = constructors[i].getParameterTypes();
+				FieldOrMethod m = f.AddMethod(mods, "<init>", MakeSig(args, java.lang.Void.TYPE));
+				CodeAttribute code = new CodeAttribute(f);
+				code.MaxLocals = (ushort)(args.Length + 1);
+				code.MaxStack = 0;
+				code.ByteCode = new byte[] { 177 };
+				m.AddAttribute(code);
 			}
 		}
 		Method[] methods = c.getDeclaredMethods();

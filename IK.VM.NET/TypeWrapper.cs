@@ -860,6 +860,14 @@ abstract class TypeWrapper
 			fae = GetFieldImpl(fieldName, fieldType);
 			if(fae == null)
 			{
+				foreach(TypeWrapper iface in this.Interfaces)
+				{
+					fae = iface.GetFieldWrapper(fieldName, fieldType);
+					if(fae != null)
+					{
+						return fae;
+					}
+				}
 				if(baseWrapper != null)
 				{
 					return baseWrapper.GetFieldWrapper(fieldName, fieldType);
