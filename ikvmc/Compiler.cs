@@ -74,7 +74,7 @@ class Compiler
 			Console.Error.WriteLine("    -target:winexe          Build a windows executable");
 			Console.Error.WriteLine("    -target:library         Build a library");
 			Console.Error.WriteLine("    -main:<class>           Required (for executables)");
-			Console.Error.WriteLine("    -reference:<path>       Reference an assembly");
+			Console.Error.WriteLine("    -reference:<filespec>   Reference an assembly");
 			Console.Error.WriteLine("    -recurse:<filespec>     Recurse directory and include matching files");
 			Console.Error.WriteLine("    -nojni                  Do not generate JNI stub for native methods");
 			Console.Error.WriteLine("    -resource:<name>=<path> Include file as Java resource");
@@ -117,7 +117,12 @@ class Compiler
 				}
 				else if(s.StartsWith("-reference:"))
 				{
-					references.Add(s.Substring(11));
+					string path = Path.GetDirectoryName(s.Substring(11));
+					string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s.Substring(11)));
+					foreach(string f in files)
+					{
+						references.Add(f);
+					}
 				}
 				else if(s.StartsWith("-recurse:"))
 				{
