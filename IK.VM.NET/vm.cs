@@ -333,6 +333,12 @@ public class JVM
 			target = PEFileKinds.Dll;
 		}
 
+		if(target == PEFileKinds.Dll && mainClass != null)
+		{
+			Console.Error.WriteLine("Error: main class cannot be specified for library or module");
+			return;
+		}
+
 		if(target != PEFileKinds.Dll && mainClass == null)
 		{
 			Console.Error.WriteLine("Error: no main method found");
