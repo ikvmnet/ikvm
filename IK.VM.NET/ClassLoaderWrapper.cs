@@ -237,7 +237,10 @@ class ClassLoaderWrapper
 						return GetCompiledTypeWrapper(t);
 					}
 				}
-				type = GetBootstrapType(name);
+				if(name != "")
+				{
+					type = GetBootstrapType(name);
+				}
 				if(type != null)
 				{
 					return type;

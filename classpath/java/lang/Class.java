@@ -650,8 +650,6 @@ public final class Class implements Serializable
 	 */
 	public Method[] getMethods()
 	{
-		// TODO the equals & hashCode for Method ignore the return type, but for this method the return type is significant.
-		// check if Method is correct or if it can be fixed
 		java.util.HashMap map = new java.util.HashMap();
 		Method[] methods;
 		Class[] interfaces = getInterfaces();
@@ -660,7 +658,7 @@ public final class Class implements Serializable
 			methods = interfaces[i].getMethods();
 			for(int j = 0; j < methods.length; j++)
 			{
-				map.put(methods[j], "");
+				map.put(new MethodKey(methods[j]), methods[j]);
 			}
 		}
 		if(getSuperclass() != null)
@@ -668,7 +666,7 @@ public final class Class implements Serializable
 			methods = getSuperclass().getMethods();
 			for(int i = 0; i < methods.length; i++)
 			{
-				map.put(methods[i], "");
+				map.put(new MethodKey(methods[i]), methods[i]);
 			}
 		}
 		methods = getDeclaredMethods();
@@ -676,12 +674,57 @@ public final class Class implements Serializable
 		{
 			if(Modifier.isPublic(methods[i].getModifiers()))
 			{
-				map.put(methods[i], "");
+				map.put(new MethodKey(methods[i]), methods[i]);
 			}
 		}
 		methods = new Method[map.size()];
-		map.keySet().toArray(methods);
+		map.values().toArray(methods);
 		return methods;
+	}
+
+	private static final class MethodKey
+	{
+		private String name;
+		private Class[] params;
+		private Class returnType;
+		private int hash;
+
+		MethodKey(Method m)
+		{
+			name = m.getName();
+			params = m.getParameterTypes();
+			returnType = m.getReturnType();
+			hash = name.hashCode() ^ returnType.hashCode();
+			for(int i = 0; i < params.length; i++)
+			{
+				hash ^= params[i].hashCode();
+			}
+		}
+
+		public boolean equals(Object o)
+		{
+			if(o instanceof MethodKey)
+			{
+				MethodKey m = (MethodKey)o;
+				if(m.name.equals(name) && m.params.length == params.length && m.returnType == returnType)
+				{
+					for(int i = 0; i < params.length; i++)
+					{
+						if(m.params[i] != params[i])
+						{
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+			return false;
+		}
+
+		public int hashCode()
+		{
+			return hash;
+		}
 	}
 
 	/**
@@ -731,14 +774,14 @@ public final class Class implements Serializable
 	{
 		// TODO security
 		Field[] fields = getDeclaredFields();
-	outer:
-		for(int i = 0; i < fields.length; i++)
-		{
-			if(Modifier.isPublic(fields[i].getModifiers()) && fields[i].getName().equals(name))
+		outer:
+			for(int i = 0; i < fields.length; i++)
 			{
-				return fields[i];
+				if(Modifier.isPublic(fields[i].getModifiers()) && fields[i].getName().equals(name))
+				{
+					return fields[i];
+				}
 			}
-		}
 		Class superclass = getSuperclass();
 		if(superclass != null)
 		{
@@ -772,6 +815,16 @@ public final class Class implements Serializable
 	public Method getMethod(String name, Class[] args) throws NoSuchMethodException
 	{
 		// TODO security
+		Method m = getMethodHelper(name, args);
+		if(m != null)
+		{
+			return m;
+		}
+		throw new NoSuchMethodException(name);
+	}
+
+	private Method getMethodHelper(String name, Class[] args)
+	{
 		Method[] methods = getDeclaredMethods();
 	outer:
 		for(int i = 0; i < methods.length; i++)
@@ -792,12 +845,29 @@ public final class Class implements Serializable
 				}
 			}
 		}
-		Class superclass = getSuperclass();
-		if(superclass != null)
+		if(!isInterface())
 		{
-			return superclass.getMethod(name, args);
+			Class superclass = getSuperclass();
+			while(superclass != null)
+			{
+				Method m = superclass.getMethodHelper(name, args);
+				if(m != null)
+				{
+					return m;
+				}
+				superclass = superclass.getSuperclass();
+			}
 		}
-		throw new NoSuchMethodException(name);
+		Class[] interfaces = getInterfaces();
+		for(int i = 0; i < interfaces.length; i++)
+		{
+			Method m = interfaces[i].getMethodHelper(name, args);
+			if(m != null)
+			{
+				return m;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -819,25 +889,25 @@ public final class Class implements Serializable
 	{
 		// TODO security
 		Constructor[] constructors = getDeclaredConstructors();
-	outer:
-		for(int i = 0; i < constructors.length; i++)
-		{
-			if(Modifier.isPublic(constructors[i].getModifiers()))
+		outer:
+			for(int i = 0; i < constructors.length; i++)
 			{
-				Class[] otherArgs = constructors[i].getParameterTypes();
-				if((args == null && otherArgs.length == 0) || (args != null && args.length == otherArgs.length))
+				if(Modifier.isPublic(constructors[i].getModifiers()))
 				{
-					for(int j = 0; j < otherArgs.length; j++)
+					Class[] otherArgs = constructors[i].getParameterTypes();
+					if((args == null && otherArgs.length == 0) || (args != null && args.length == otherArgs.length))
 					{
-						if(args[j] != otherArgs[j])
+						for(int j = 0; j < otherArgs.length; j++)
 						{
-							continue outer;
+							if(args[j] != otherArgs[j])
+							{
+								continue outer;
+							}
 						}
+						return constructors[i];
 					}
-					return constructors[i];
 				}
 			}
-		}
 		throw new NoSuchMethodException("<init>");
 	}
 
@@ -905,21 +975,15 @@ public final class Class implements Serializable
 	public Method[] getDeclaredMethods()
 	{
 		// TODO check security
-		Object[] methodCookies = GetDeclaredMethods(type, wrapper);
-		java.util.ArrayList list = new java.util.ArrayList();
+		Object[] methodCookies = GetDeclaredMethods(type, wrapper, true);
+		Method[] methods = new Method[methodCookies.length];
 		for(int i = 0; i < methodCookies.length; i++)
 		{
-			Method m = new Method(this, methodCookies[i]);
-			if(!m.getName().equals("<init>") && !m.getName().equals("<clinit>"))
-			{
-				list.add(m);
-			}
+			methods[i] = new Method(this, methodCookies[i]);
 		}
-		Method[] methods = new Method[list.size()];
-		list.toArray(methods);
 		return methods;
 	}
-	private static native Object[] GetDeclaredMethods(Type type, Object wrapper);
+	private static native Object[] GetDeclaredMethods(Type type, Object wrapper, boolean methods);
 
 	/**
 	 * Get all the declared constructors of this class. This returns an array of
@@ -936,18 +1000,12 @@ public final class Class implements Serializable
 	public Constructor[] getDeclaredConstructors()
 	{
 		// TODO check security
-		Object[] methodCookies = GetDeclaredMethods(type, wrapper);
-		java.util.ArrayList list = new java.util.ArrayList();
+		Object[] methodCookies = GetDeclaredMethods(type, wrapper, false);
+		Constructor[] constructors = new Constructor[methodCookies.length];
 		for(int i = 0; i < methodCookies.length; i++)
 		{
-			Constructor c = new Constructor(this, methodCookies[i]);
-			if(c.getName().equals("<init>"))
-			{
-				list.add(c);
-			}
+			constructors[i] = new Constructor(this, methodCookies[i]);
 		}
-		Constructor[] constructors = new Constructor[list.size()];
-		list.toArray(constructors);
 		return constructors;
 	}
 
@@ -1003,25 +1061,25 @@ public final class Class implements Serializable
 		throws NoSuchMethodException
 	{
 		Method[] methods = getDeclaredMethods();
-	outer:
-		for(int i = 0; i < methods.length; i++)
-		{
-			if(methods[i].getName().equals(name))
+		outer:
+			for(int i = 0; i < methods.length; i++)
 			{
-				Class[] otherArgs = methods[i].getParameterTypes();
-				if((args == null && otherArgs.length == 0) || args.length == otherArgs.length)
+				if(methods[i].getName().equals(name))
 				{
-					for(int j = 0; j < otherArgs.length; j++)
+					Class[] otherArgs = methods[i].getParameterTypes();
+					if((args == null && otherArgs.length == 0) || args.length == otherArgs.length)
 					{
-						if(args[j] != otherArgs[j])
+						for(int j = 0; j < otherArgs.length; j++)
 						{
-							continue outer;
+							if(args[j] != otherArgs[j])
+							{
+								continue outer;
+							}
 						}
+						return methods[i];
 					}
-					return methods[i];
 				}
 			}
-		}
 		throw new NoSuchMethodException(name);
 	}
 
@@ -1044,22 +1102,22 @@ public final class Class implements Serializable
 	{
 		// TODO security check
 		Constructor[] constructors = getDeclaredConstructors();
-	outer:
-		for(int i = 0; i < constructors.length; i++)
-		{
-			Class[] otherArgs = constructors[i].getParameterTypes();
-			if((args == null && otherArgs.length == 0) || (args != null && args.length == otherArgs.length))
+		outer:
+			for(int i = 0; i < constructors.length; i++)
 			{
-				for(int j = 0; j < otherArgs.length; j++)
+				Class[] otherArgs = constructors[i].getParameterTypes();
+				if((args == null && otherArgs.length == 0) || (args != null && args.length == otherArgs.length))
 				{
-					if(otherArgs[j] != args[j])
+					for(int j = 0; j < otherArgs.length; j++)
 					{
-						continue outer;
+						if(otherArgs[j] != args[j])
+						{
+							continue outer;
+						}
 					}
+					return constructors[i];
 				}
-				return constructors[i];
 			}
-		}
 		throw new NoSuchMethodException("<init>");
 	}
 

@@ -1186,7 +1186,7 @@ namespace NativeCode.java
 				return ClassLoaderWrapper.GetClassLoader(type).GetJavaClassLoader();
 			}
 
-			public static object[] GetDeclaredMethods(Type type, object cwrapper)
+			public static object[] GetDeclaredMethods(Type type, object cwrapper, bool getMethods)
 			{
 				TypeWrapper wrapper = (TypeWrapper)cwrapper;
 				if(wrapper == null)
@@ -1198,32 +1198,36 @@ namespace NativeCode.java
 				// we need to look through the array for unloadable types, because we may not let them
 				// escape into the 'wild'
 				MethodWrapper[] methods = wrapper.GetMethods();
+				ArrayList list = new ArrayList();
 				for(int i = 0; i < methods.Length; i++)
 				{
 					// we don't want to expose synthetics methods (one reason is that it would
 					// mess up the serialVersionUID computation)
-					if((methods[i].Modifiers & Modifiers.Synthetic) != 0)
+					if((methods[i].Modifiers & Modifiers.Synthetic) == 0)
 					{
-						MethodWrapper[] newmethods = new MethodWrapper[methods.Length - 1];
-						Array.Copy(methods, 0, newmethods, 0, i);
-						Array.Copy(methods, i + 1, newmethods, i, methods.Length - 1 - i);
-						methods = newmethods;
-						continue;
-					}
-					if(methods[i].ReturnType.IsUnloadable)
-					{
-						throw JavaException.NoClassDefFoundError(methods[i].ReturnType.Name);
-					}
-					TypeWrapper[] args = methods[i].GetParameters();
-					for(int j = 0; j < args.Length; j++)
-					{
-						if(args[j].IsUnloadable)
+						if(methods[i].ReturnType.IsUnloadable)
 						{
-							throw JavaException.NoClassDefFoundError(args[j].Name);
+							throw JavaException.NoClassDefFoundError(methods[i].ReturnType.Name);
+						}
+						TypeWrapper[] args = methods[i].GetParameters();
+						for(int j = 0; j < args.Length; j++)
+						{
+							if(args[j].IsUnloadable)
+							{
+								throw JavaException.NoClassDefFoundError(args[j].Name);
+							}
+						}
+						if(methods[i].Name == "<clinit>")
+						{
+							// not reported back
+						}
+						else if((methods[i].Name == "<init>") != getMethods)
+						{
+							list.Add(methods[i]);
 						}
 					}
 				}
-				return methods;
+				return (MethodWrapper[])list.ToArray(typeof(MethodWrapper));
 			}
 
 			public static object[] GetDeclaredFields(Type type, object cwrapper)

@@ -106,7 +106,7 @@ public final class Constructor
 	 */
 	public String getName()
 	{
-		return Method.GetName(methodCookie);
+		return clazz.getName();
 	}
 
 	/**
