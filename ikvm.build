@@ -24,6 +24,7 @@
                 <includes name="bin/ik.vm.net.dll" />
                 <includes name="bin/ikvm.exe" />
                 <includes name="bin/ikvmc.exe" />
+		<includes name="bin/Mono.IKVM.JNI.dll" />
                 <includes name="bin/netexp.exe" />
                 <includes name="bin/OpenSystem.Java.dll" />
             </fileset>
