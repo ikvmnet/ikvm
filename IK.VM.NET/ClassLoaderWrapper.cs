@@ -305,7 +305,24 @@ class ClassLoaderWrapper
 				// HACK if the name contains a comma, we assume it is an assembly qualified name
 				if(name.IndexOf(',') != -1)
 				{
+					// NOTE even though we search all loaded assemblies below, we still need to do this,
+					// because this call might actually trigger the load of an assembly.
 					Type t = Type.GetType(name);
+					if(t == null)
+					{
+						// HACK we explicitly try all loaded assemblies, to support assemblies
+						// that aren't loaded in the "Load" context.
+						string typeName = name.Substring(0, name.IndexOf(','));
+						foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+						{
+							t = asm.GetType(typeName);
+							if(t != null && t.AssemblyQualifiedName == name)
+							{
+								break;
+							}
+							t = null;
+						}
+					}
 					if(t != null)
 					{
 						if(t.Assembly.IsDefined(typeof(JavaAssemblyAttribute), false))

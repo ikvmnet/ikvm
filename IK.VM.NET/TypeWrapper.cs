@@ -4055,6 +4055,57 @@ class DotNetTypeWrapper : TypeWrapper
 		this.type = type;
 	}
 
+	private class DelegateMethodWrapper : MethodWrapper
+	{
+		internal DelegateMethodWrapper(TypeWrapper declaringType, MethodDescriptor md)
+			: base(declaringType, md, null, null, Modifiers.Public, false)
+		{
+		}
+
+		internal override object Invoke(object obj, object[] args, bool nonVirtual)
+		{
+			// TODO map exceptions
+			return Delegate.CreateDelegate(DeclaringType.Type, args[0], "Invoke");
+		}
+	}
+
+	private class ByRefMethodWrapper : MethodWrapper
+	{
+		private bool[] byrefs;
+
+		internal ByRefMethodWrapper(bool[] byrefs, TypeWrapper declaringType, MethodDescriptor md, MethodBase originalMethod, MethodBase method, Modifiers modifiers, bool hideFromReflection)
+			: base(declaringType, md, originalMethod, method, modifiers, hideFromReflection)
+		{
+			this.byrefs = byrefs;
+		}
+
+		internal override object Invoke(object obj, object[] args, bool nonVirtual)
+		{
+			object[] newargs = (object[])args.Clone();
+			for(int i = 0; i < newargs.Length; i++)
+			{
+				if(byrefs[i])
+				{
+					newargs[i] = ((Array)args[i]).GetValue(0);
+				}
+			}
+			try
+			{
+				return base.Invoke(obj, newargs, nonVirtual);
+			}
+			finally
+			{
+				for(int i = 0; i < newargs.Length; i++)
+				{
+					if(byrefs[i])
+					{
+						((Array)args[i]).SetValue(newargs[i], 0);
+					}
+				}
+			}
+		}
+	}
+
 	private void LazyPublishMembers()
 	{
 		// special support for enums
@@ -4105,8 +4156,7 @@ class DotNetTypeWrapper : TypeWrapper
 				Debug.Assert(iface is CompiledTypeWrapper);
 				iface.Finish();
 				MethodDescriptor md = MethodDescriptor.FromNameSig(GetClassLoader(), "<init>", "(" + iface.SigName + ")V");
-				// TODO set method flags
-				MethodWrapper method = new MethodWrapper(this, md, null, null, Modifiers.Public, false);
+				MethodWrapper method = new DelegateMethodWrapper(this, md);
 				method.EmitNewobj = new DelegateConstructorEmitter(type.GetConstructor(new Type[] { typeof(object), typeof(IntPtr) }), iface.Type.GetMethod("Invoke"));
 				AddMethod(method);
 				innerClasses = new TypeWrapper[] { iface };
@@ -4158,6 +4208,12 @@ class DotNetTypeWrapper : TypeWrapper
 			if(type.IsByRef)
 			{
 				type = type.Assembly.GetType(type.GetElementType().FullName + "[]", true);
+				if(mb.IsAbstract)
+				{
+					// Since we cannot override methods with byref arguments, we don't report abstract
+					// methods with byref args.
+					return null;
+				}
 			}
 			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
 			args[i + bias] = tw;
@@ -4187,7 +4243,7 @@ class DotNetTypeWrapper : TypeWrapper
 		else
 		{
 			Type type = ((MethodInfo)mb).ReturnType;
-			if(type.IsPointer)
+			if(type.IsPointer || type.IsByRef)
 			{
 				return null;
 			}
@@ -4332,11 +4388,17 @@ class DotNetTypeWrapper : TypeWrapper
 		ParameterInfo[] parameters = mb.GetParameters();
 		Type[] args = new Type[parameters.Length];
 		bool hasByRefArgs = false;
+		bool[] byrefs = null;
 		for(int i = 0; i < parameters.Length; i++)
 		{
 			args[i] = parameters[i].ParameterType;
 			if(parameters[i].ParameterType.IsByRef)
 			{
+				if(byrefs == null)
+				{
+					byrefs = new bool[args.Length];
+				}
+				byrefs[i] = true;
 				hasByRefArgs = true;
 			}
 		}
@@ -4347,7 +4409,12 @@ class DotNetTypeWrapper : TypeWrapper
 			mods |= Modifiers.Static;
 			mods &= ~Modifiers.Final;
 		}
-		MethodWrapper method = new MethodWrapper(this, md, mb, null, mods, false);
+		if(hasByRefArgs && !(mb is ConstructorInfo) && !mb.IsStatic)
+		{
+			mods |= Modifiers.Final;
+		}
+		MethodWrapper method = hasByRefArgs ?
+			new ByRefMethodWrapper(byrefs, this, md, mb, null, mods, false) : new MethodWrapper(this, md, mb, null, mods, false);
 		if(mb is ConstructorInfo)
 		{
 			if(isRemapped)

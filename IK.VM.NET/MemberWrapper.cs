@@ -135,7 +135,7 @@ class MemberWrapper
 	}
 }
 
-sealed class MethodWrapper : MemberWrapper
+class MethodWrapper : MemberWrapper
 {
 	private MethodDescriptor md;
 	private MethodBase originalMethod;
@@ -419,7 +419,7 @@ sealed class MethodWrapper : MemberWrapper
 		}
 	}
 
-	internal object Invoke(object obj, object[] args, bool nonVirtual)
+	internal virtual object Invoke(object obj, object[] args, bool nonVirtual)
 	{
 		// TODO instead of looking up the method using reflection, we should use the method object passed into the
 		// constructor

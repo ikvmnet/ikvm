@@ -36,9 +36,25 @@ public class NetExp
 	public static void Main(string[] args)
 	{
 		Assembly assembly = null;
-		if(new FileInfo(args[0]).Exists)
+		FileInfo file = new FileInfo(args[0]);
+		if(file.Exists)
 		{
-			assembly = Assembly.LoadFrom(args[0]);
+			try
+			{
+				// If the same assembly can be found in the "Load" context, we prefer to use that
+				// http://blogs.gotdotnet.com/suzcook/permalink.aspx/d5c5e14a-3612-4af1-a9b7-0a144c8dbf16
+				// We use AssemblyName.FullName, because otherwise the assembly will be loaded in the
+				// "LoadFrom" context using the path inside the AssemblyName object.
+				assembly = Assembly.Load(AssemblyName.GetAssemblyName(args[0]).FullName);
+				Console.Error.WriteLine("Warning: Assembly loaded from {0} instead", assembly.Location);
+			}
+			catch
+			{
+			}
+			if(assembly == null)
+			{
+				assembly = Assembly.LoadFrom(args[0]);
+			}
 		}
 		else
 		{
@@ -53,7 +69,7 @@ public class NetExp
 			zipFile = new ZipOutputStream(new FileStream(assembly.GetName().Name + ".jar", FileMode.Create));
 			// HACK if we're doing the "classpath" assembly, also include the remapped types
 			// java.lang.Object and java.lang.Throwable are automatic, because of the $OverrideStub
-			if(args[0] == "classpath")
+			if(assembly.GetType("java.lang.Object$OverrideStub") != null)
 			{
 				ProcessClass(assembly.FullName, Class.forName("java.lang.String"), null);
 				ProcessClass(assembly.FullName, Class.forName("java.lang.Comparable"), null);
@@ -72,23 +88,13 @@ public class NetExp
 		c.Write(zipFile);
 	}
 
-	private class MyClassLoader : ClassLoader
-	{
-		public Class loadClass(Type type)
-		{
-			return base.loadClass(type.AssemblyQualifiedName);
-		}
-	}
-
 	private static void ProcessAssembly(Assembly assembly)
 	{
-		// HACK we use our own class loader to prevent class initialization
-		MyClassLoader loader = new MyClassLoader();
 		foreach(Type t in assembly.GetTypes())
 		{
 			if(t.IsPublic)
 			{
-				ProcessClass(assembly.FullName, loader.loadClass(t), null);
+				ProcessClass(assembly.FullName, Class.forName(t.AssemblyQualifiedName, false, null), null);
 			}
 		}
 	}
@@ -159,8 +165,9 @@ public class NetExp
 			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
 				object constantValue = null;
-				// HACK we only look for constants on static final fields, to trigger less static initializers
-				if((mods & (Modifiers.Final | Modifiers.Static)) == (Modifiers.Final | Modifiers.Static))
+				// HACK we only look for constants on potential constant fields, to trigger less static initializers
+				if((mods & (Modifiers.Final | Modifiers.Static)) == (Modifiers.Final | Modifiers.Static) &&
+					(fields[i].getType().isPrimitive() || fields[i].getType() == Class.forName("java.lang.String")))
 				{
 					// HACK we use a non-standard API to get constant value
 					// NOTE we can't use Field.get() because that will run the static initializer and
