@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+#define FUZZ_HACK
+
 using System;
 using System.IO;
 using System.Collections;
@@ -36,8 +38,8 @@ class ClassFile
 	private ConstantPoolItem[] constantpool;
 	private string[] utf8_cp;
 	private Modifiers access_flags;
-	private ConstantPoolItemClass this_cpi;
-	private ConstantPoolItemClass super_cpi;
+	private ushort this_class;
+	private ushort super_class;
 	private ConstantPoolItemClass[] interfaces;
 	private Field[] fields;
 	private Method[] methods;
@@ -47,7 +49,6 @@ class ClassFile
 	private bool deprecated;
 	private string ikvmAssembly;
 	private InnerClass[] innerClasses;
-	private static readonly char[] illegalcharacters = { '<', '>' };
 
 	internal ClassFile(byte[] buf, int offset, int length, string inputClassName, bool allowJavaLangObject)
 	{
@@ -56,13 +57,13 @@ class ClassFile
 			BigEndianBinaryReader br = new BigEndianBinaryReader(buf, offset, length);
 			if(br.ReadUInt32() != 0xCAFEBABE)
 			{
-				throw new ClassFormatError("Bad magic number");
+				throw new ClassFormatError("{0} (Bad magic number)", inputClassName);
 			}
 			int minorVersion = br.ReadUInt16();
 			majorVersion = br.ReadUInt16();
 			if(majorVersion < 45 || majorVersion > 48)
 			{
-				throw new UnsupportedClassVersionError(majorVersion + "." + minorVersion);
+				throw new UnsupportedClassVersionError(inputClassName + " (" + majorVersion + "." + minorVersion + ")");
 			}
 			int constantpoolcount = br.ReadUInt16();
 			constantpool = new ConstantPoolItem[constantpoolcount];
@@ -105,7 +106,7 @@ class ClassFile
 						constantpool[i] = new ConstantPoolItemString(br);
 						break;
 					case Constant.Utf8:
-						utf8_cp[i] = br.ReadString();
+						utf8_cp[i] = br.ReadString(inputClassName);
 						break;
 					default:
 						throw new ClassFormatError("{0} (Illegal constant pool type 0x{1:X})", inputClassName, tag);
@@ -118,6 +119,12 @@ class ClassFile
 					try
 					{
 						constantpool[i].Resolve(this);
+					}
+					catch(ClassFormatError x)
+					{
+						// HACK at this point we don't yet have the class name, so any exceptions throw
+						// are missing the class name
+						throw new ClassFormatError("{0} ({1})", inputClassName, x.Message);
 					}
 					catch(IndexOutOfRangeException)
 					{
@@ -137,28 +144,14 @@ class ClassFile
 			{
 				throw new ClassFormatError("{0} (Illegal class modifiers 0x{1:X})", inputClassName, access_flags);
 			}
-			int this_class = br.ReadUInt16();
-			try
-			{
-				this_cpi = (ConstantPoolItemClass)constantpool[this_class];
-			}
-			catch(Exception)
-			{
-				throw new ClassFormatError("{0} (Class name has bad constant pool index)", inputClassName);
-			}
-			int super_class = br.ReadUInt16();
+			this_class = br.ReadUInt16();
+			ValidateConstantPoolItemClass(inputClassName, this_class);
+			super_class = br.ReadUInt16();
 			// NOTE for convenience we allow parsing java/lang/Object (which has no super class), so
 			// we check for super_class != 0
 			if(super_class != 0)
 			{
-				try
-				{
-					super_cpi = (ConstantPoolItemClass)constantpool[super_class];
-				}
-				catch(Exception)
-				{
-					throw new ClassFormatError("{0} (Bad superclass constant pool index)", inputClassName);
-				}
+				ValidateConstantPoolItemClass(inputClassName, super_class);
 			}
 			else
 			{
@@ -167,12 +160,13 @@ class ClassFile
 					throw new ClassFormatError("{0} (Bad superclass index)", Name);
 				}
 			}
-			if(IsInterface && (super_class == 0 || super_cpi.Name != "java.lang.Object"))
+			if(IsInterface && (super_class == 0 || this.SuperClass != "java.lang.Object"))
 			{
 				throw new ClassFormatError("{0} (Interfaces must have java.lang.Object as superclass)", Name);
 			}
-			// TODO are there any more checks we need to do on the class name?
-			if(Name.Length == 0 || Name[0] == '[')
+			// most checks are already done by ConstantPoolItemClass.Resolve, but since it allows
+			// array types, we do need to check for that
+			if(this.Name[0] == '[')
 			{
 				throw new ClassFormatError("Bad name");
 			}
@@ -206,9 +200,7 @@ class ClassFile
 			{
 				fields[i] = new Field(this, br);
 				string name = fields[i].Name;
-				// NOTE It's not in the vmspec (as far as I can tell), but Sun's VM doesn't allow names that
-				// contain '<' or '>'
-				if(name.Length == 0 || name.IndexOfAny(illegalcharacters) != -1)
+				if(!IsValidIdentifier(name))
 				{
 					throw new ClassFormatError("{0} (Illegal field name \"{1}\")", Name, name);
 				}
@@ -229,7 +221,7 @@ class ClassFile
 				methods[i] = new Method(this, br);
 				string name = methods[i].Name;
 				string sig = methods[i].Signature;
-				if(name.Length == 0 || (name.IndexOfAny(illegalcharacters) != -1 && name != "<init>" && name != "<clinit>"))
+				if(!IsValidIdentifier(name) && name != "<init>" && name != "<clinit>")
 				{
 					throw new ClassFormatError("{0} (Illegal method name \"{1}\")", Name, name);
 				}
@@ -253,10 +245,14 @@ class ClassFile
 				{
 					case "Deprecated":
 						deprecated = true;
+#if FUZZ_HACK
+						br.Skip(br.ReadUInt32());
+#else
 						if(br.ReadUInt32() != 0)
 						{
 							throw new ClassFormatError("Deprecated attribute has non-zero length");
 						}
+#endif
 						break;
 					case "SourceFile":
 						if(br.ReadUInt32() != 2)
@@ -266,7 +262,15 @@ class ClassFile
 						sourceFile = GetConstantPoolUtf8String(br.ReadUInt16());
 						break;
 					case "InnerClasses":
+#if FUZZ_HACK
+						// Sun totally ignores the length of InnerClasses attribute,
+						// so when we're running Fuzz this shows up as lots of differences.
+						// To get rid off these differences define the FUZZ_HACK symbol.
+						BigEndianBinaryReader rdr = br;
+						br.ReadUInt32();
+#else
 						BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
+#endif
 						ushort count = rdr.ReadUInt16();
 						innerClasses = new InnerClass[count];
 						for(int j = 0; j < innerClasses.Length; j++)
@@ -275,7 +279,29 @@ class ClassFile
 							innerClasses[j].outerClass = rdr.ReadUInt16();
 							innerClasses[j].name = rdr.ReadUInt16();
 							innerClasses[j].accessFlags = (Modifiers)rdr.ReadUInt16();
+							if(innerClasses[j].innerClass != 0 && !(GetConstantPoolItem(innerClasses[j].innerClass) is ConstantPoolItemClass))
+							{
+								throw new ClassFormatError("{0} (inner_class_info_index has bad constant pool index)", this.Name);
+							}
+							if(innerClasses[j].outerClass != 0 && !(GetConstantPoolItem(innerClasses[j].outerClass) is ConstantPoolItemClass))
+							{
+								throw new ClassFormatError("{0} (outer_class_info_index has bad constant pool index)", this.Name);
+							}
+							if(innerClasses[j].name != 0 && utf8_cp[innerClasses[j].name] == null)
+							{
+								throw new ClassFormatError("{0} (inner class name has bad constant pool index)", this.Name);
+							}
+							if(innerClasses[j].innerClass == innerClasses[j].outerClass)
+							{
+								throw new ClassFormatError("{0} (Class is both inner and outer class)", this.Name);
+							}
 						}
+#if !FUZZ_HACK
+						if(!rdr.IsAtEnd)
+						{
+							throw new ClassFormatError("{0} (InnerClasses attribute has wrong length)", this.Name);
+						}
+#endif
 						break;
 					case "IKVM.NET.Assembly":
 						if(br.ReadUInt32() != 2)
@@ -294,17 +320,147 @@ class ClassFile
 				throw new ClassFormatError("Extra bytes at the end of the class file");
 			}
 		}
+		catch(OverflowException)
+		{
+			throw new ClassFormatError("Truncated class file (or section)");
+		}
 		catch(IndexOutOfRangeException)
 		{
-			throw new ClassFormatError("Truncated class file");
+			// TODO we should throw more specific errors
+			throw new ClassFormatError("Unspecified class file format error");
 		}
-//		catch(Exception)
+//		catch(Exception x)
 //		{
+//			Console.WriteLine(x);
 //			FileStream fs = File.Create(inputClassName + ".broken");
 //			fs.Write(buf, offset, length);
 //			fs.Close();
 //			throw;
 //		}
+	}
+
+	private void ValidateConstantPoolItemClass(string classFile, ushort index)
+	{
+		if(index >= constantpool.Length || !(constantpool[index] is ConstantPoolItemClass))
+		{
+			throw new ClassFormatError("{0} (Bad constant pool index #{1})", classFile, index);
+		}
+	}
+
+	private static bool IsValidIdentifier(string name)
+	{
+		if(name.Length == 0)
+		{
+			return false;
+		}
+		if(!Char.IsLetter(name[0]) && name[0] != '$' && name[0] != '_')
+		{
+			return false;
+		}
+		for(int i = 1; i < name.Length; i++)
+		{
+			if(!Char.IsLetterOrDigit(name[i]) && name[i] != '$' && name[i] != '_')
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static bool IsValidFieldSig(string sig)
+	{
+		return IsValidFieldSigImpl(sig, 0, sig.Length);
+	}
+
+	private static bool IsValidFieldSigImpl(string sig, int start, int end)
+	{
+		if(start >= end)
+		{
+			return false;
+		}
+		switch(sig[start])
+		{
+			case 'L':
+				// TODO we might consider doing more checking here
+				return sig.IndexOf(';', start + 1) == end - 1;
+			case '[':
+				while(sig[start] == '[')
+				{
+					start++;
+					if(start == end)
+					{
+						return false;
+					}
+				}
+				return IsValidFieldSigImpl(sig, start, end);
+			case 'B':
+			case 'Z':
+			case 'C':
+			case 'S':
+			case 'I':
+			case 'J':
+			case 'F':
+			case 'D':
+				return start == end - 1;
+			default:
+				return false;
+		}
+	}
+
+	private static bool IsValidMethodSig(string sig)
+	{
+		if(sig.Length < 3 || sig[0] != '(')
+		{
+			return false;
+		}
+		int end = sig.IndexOf(')');
+		if(end == -1)
+		{
+			return false;
+		}
+		if(!sig.EndsWith(")V") && !IsValidFieldSigImpl(sig, end + 1, sig.Length))
+		{
+			return false;
+		}
+		for(int i = 1; i < end; i++)
+		{
+			switch(sig[i])
+			{
+				case 'B':
+				case 'Z':
+				case 'C':
+				case 'S':
+				case 'I':
+				case 'J':
+				case 'F':
+				case 'D':
+					break;
+				case 'L':
+					i = sig.IndexOf(';', i);
+					break;
+				case '[':
+					while(sig[i] == '[')
+					{
+						i++;
+					}
+					if("BZCSIJFDL".IndexOf(sig[i]) == -1)
+					{
+						return false;
+					}
+					if(sig[i] == 'L')
+					{
+						i = sig.IndexOf(';', i);
+					}
+					break;
+				default:
+					return false;
+			}
+			if(i == -1 || i >= end)
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	internal int MajorVersion
@@ -415,14 +571,21 @@ class ClassFile
 		return ((ConstantPoolItemClass)constantpool[index]).GetClassType();
 	}
 
-	private string GetConstantPoolString(int index)
-	{
-		return ((ConstantPoolItemString)constantpool[index]).Value;
-	}
-
 	internal string GetConstantPoolUtf8String(int index)
 	{
-		return utf8_cp[index];
+		string s = utf8_cp[index];
+		if(s == null)
+		{
+			if(this_class == 0)
+			{
+				throw new ClassFormatError("Bad constant pool index #{0}", index);
+			}
+			else
+			{
+				throw new ClassFormatError("{0} (Bad constant pool index #{1})", this.Name, index);
+			}
+		}
+		return s;
 	}
 
 	internal ConstantType GetConstantPoolConstantType(int index)
@@ -459,7 +622,7 @@ class ClassFile
 	{
 		get
 		{
-			return this_cpi.Name;
+			return GetConstantPoolClass(this_class);
 		}
 	}
 
@@ -467,7 +630,7 @@ class ClassFile
 	{
 		get
 		{
-			return super_cpi.Name;
+			return GetConstantPoolClass(super_class);
 		}
 	}
 
@@ -574,7 +737,45 @@ class ClassFile
 
 		internal override void Resolve(ClassFile classFile)
 		{
-			name = classFile.GetConstantPoolUtf8String(name_index).Replace('/', '.');
+			name = classFile.GetConstantPoolUtf8String(name_index);
+			if(name.Length > 0)
+			{
+				char prev = name[0];
+				if(Char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[')
+				{
+					int skip = 1;
+					int end = name.Length;
+					if(prev == '[')
+					{
+						// TODO optimize this
+						if(!IsValidFieldSig(name))
+						{
+							goto barf;
+						}
+						while(name[skip] == '[')
+						{
+							skip++;
+						}
+						if(name.EndsWith(";"))
+						{
+							end--;
+						}
+					}
+					for(int i = skip; i < end; i++)
+					{
+						char c = name[i];
+						if(!Char.IsLetterOrDigit(c) && c != '$' && c != '_' && (c != '/' || prev == '/'))
+						{
+							goto barf;
+						}
+						prev = c;
+					}
+					name = name.Replace('/', '.');
+					return;
+				}
+			}
+			barf:
+			throw new ClassFormatError("Invalid class name \"{0}\"", name);
 		}
 
 		internal override void Link(TypeWrapper thisType, Hashtable classCache)
@@ -771,12 +972,13 @@ class ClassFile
 		}
 	}
 
-	internal class ConstantPoolItemFMI : ConstantPoolItem
+	internal abstract class ConstantPoolItemFMI : ConstantPoolItem
 	{
 		private ushort class_index;
 		private ushort name_and_type_index;
-		protected ConstantPoolItemNameAndType name_and_type;
 		private ConstantPoolItemClass clazz;
+		private string name;
+		private string descriptor;
 
 		internal ConstantPoolItemFMI(BigEndianBinaryReader br)
 		{
@@ -786,13 +988,23 @@ class ClassFile
 
 		internal override void Resolve(ClassFile classFile)
 		{
-			name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
+			ConstantPoolItemNameAndType name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
 			clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(class_index);
+			// if the constant pool items referred to were strings, GetConstantPoolItem returns null
+			if(name_and_type == null || clazz == null)
+			{
+				throw new ClassFormatError("Bad index in constant pool");
+			}
+			name = classFile.GetConstantPoolUtf8String(name_and_type.name_index);
+			descriptor = classFile.GetConstantPoolUtf8String(name_and_type.descriptor_index);
+			Validate(name, descriptor);
+			descriptor = descriptor.Replace('/', '.');
 		}
+
+		protected abstract void Validate(string name, string descriptor);
 
 		internal override void Link(TypeWrapper thisType, Hashtable classCache)
 		{
-			name_and_type.Link(thisType, classCache);
 			clazz.Link(thisType, classCache);
 		}
 
@@ -800,7 +1012,7 @@ class ClassFile
 		{
 			get
 			{
-				return name_and_type.Name;
+				return name;
 			}
 		}
 
@@ -808,7 +1020,7 @@ class ClassFile
 		{
 			get
 			{
-				return name_and_type.Type;
+				return descriptor;
 			}
 		}
 
@@ -829,26 +1041,44 @@ class ClassFile
 	internal class ConstantPoolItemFieldref : ConstantPoolItemFMI
 	{
 		private FieldWrapper field;
+		private TypeWrapper fieldTypeWrapper;
 
 		internal ConstantPoolItemFieldref(BigEndianBinaryReader br) : base(br)
 		{
 		}
 
+		protected override void Validate(string name, string descriptor)
+		{
+			if(!IsValidFieldSig(descriptor))
+			{
+				throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
+			}
+			if(!IsValidIdentifier(name))
+			{
+				throw new ClassFormatError("Invalid field name \"{0}\"", name);
+			}
+		}
+
 		internal TypeWrapper GetFieldType()
 		{
-			return name_and_type.GetFieldType();
+			return fieldTypeWrapper;
 		}
 
 		internal override void Link(TypeWrapper thisType, Hashtable classCache)
 		{
 			base.Link(thisType, classCache);
-			TypeWrapper wrapper = GetClassType();
-			if(!wrapper.IsUnloadable)
+			if(fieldTypeWrapper == null)
 			{
-				field = wrapper.GetFieldWrapper(Name, Signature);
-				if(field != null)
+				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+				fieldTypeWrapper = FieldTypeWrapperFromSig(classLoader, classCache, this.Signature);
+				TypeWrapper wrapper = GetClassType();
+				if(!wrapper.IsUnloadable)
 				{
-					field.Link();
+					field = wrapper.GetFieldWrapper(Name, Signature);
+					if(field != null)
+					{
+						field.Link();
+					}
 				}
 			}
 		}
@@ -861,6 +1091,8 @@ class ClassFile
 
 	internal class ConstantPoolItemMI : ConstantPoolItemFMI
 	{
+		private TypeWrapper[] argTypeWrappers;
+		private TypeWrapper retTypeWrapper;
 		protected MethodWrapper method;
 		protected MethodWrapper invokespecialMethod;
 
@@ -868,14 +1100,44 @@ class ClassFile
 		{
 		}
 
+		protected override void Validate(string name, string descriptor)
+		{
+			if(!IsValidMethodSig(descriptor))
+			{
+				throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
+			}
+			if(name == "<init>" || name == "<clinit>")
+			{
+				if(!descriptor.EndsWith("V"))
+				{
+					throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
+				}
+			}
+			else if(!IsValidIdentifier(name))
+			{
+				throw new ClassFormatError("Invalid method name \"{0}\"", name);
+			}
+		}
+
+		internal override void Link(TypeWrapper thisType, Hashtable classCache)
+		{
+			base.Link(thisType, classCache);
+			if(argTypeWrappers == null)
+			{
+				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, classCache, this.Signature);
+				retTypeWrapper = RetTypeWrapperFromSig(classLoader, classCache, this.Signature);
+			}
+		}
+
 		internal TypeWrapper[] GetArgTypes()
 		{
-			return name_and_type.GetArgTypes();
+			return argTypeWrappers;
 		}
 
 		internal TypeWrapper GetRetType()
 		{
-			return name_and_type.GetRetType();
+			return retTypeWrapper;
 		}
 
 		internal MethodWrapper GetMethod()
@@ -1038,76 +1300,13 @@ class ClassFile
 
 	internal class ConstantPoolItemNameAndType : ConstantPoolItem
 	{
-		private ushort name_index;
-		private ushort descriptor_index;
-		private string name;
-		private string descriptor;
-		private TypeWrapper[] argTypeWrappers;
-		private TypeWrapper retTypeWrapper;
-		private TypeWrapper fieldTypeWrapper;
+		internal ushort name_index;
+		internal ushort descriptor_index;
 
 		internal ConstantPoolItemNameAndType(BigEndianBinaryReader br)
 		{
 			name_index = br.ReadUInt16();
 			descriptor_index = br.ReadUInt16();
-		}
-
-		internal override void Resolve(ClassFile classFile)
-		{
-			name = classFile.GetConstantPoolUtf8String(name_index).Replace('/', '.');
-			descriptor = classFile.GetConstantPoolUtf8String(descriptor_index).Replace('/', '.');
-		}
-
-		internal override void Link(TypeWrapper thisType, Hashtable classCache)
-		{
-			if(descriptor[0] == '(')
-			{
-				if(argTypeWrappers == null)
-				{
-					ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-					argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, classCache, descriptor);
-					retTypeWrapper = RetTypeWrapperFromSig(classLoader, classCache, descriptor);
-				}
-			}
-			else
-			{
-				if(fieldTypeWrapper == null)
-				{
-					ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-					fieldTypeWrapper = FieldTypeWrapperFromSig(classLoader, classCache, descriptor);
-				}
-			}
-		}
-
-		internal string Name
-		{
-			get
-			{
-				return name;
-			}
-		}
-
-		internal string Type
-		{
-			get
-			{
-				return descriptor;
-			}
-		}
-
-		internal TypeWrapper[] GetArgTypes()
-		{
-			return argTypeWrappers;
-		}
-
-		internal TypeWrapper GetRetType()
-		{
-			return retTypeWrapper;
-		}
-
-		internal TypeWrapper GetFieldType()
-		{
-			return fieldTypeWrapper;
 		}
 	}
 
@@ -1155,7 +1354,7 @@ class ClassFile
 		NameAndType = 12
 	}
 
-	internal class FieldOrMethod
+	internal abstract class FieldOrMethod
 	{
 		protected Modifiers access_flags;
 		private string name;
@@ -1166,9 +1365,12 @@ class ClassFile
 		{
 			access_flags = (Modifiers)br.ReadUInt16();
 			name = classFile.GetConstantPoolUtf8String(br.ReadUInt16());
-			// TODO validate the descriptor
-			descriptor = classFile.GetConstantPoolUtf8String(br.ReadUInt16()).Replace('/', '.');
+			descriptor = classFile.GetConstantPoolUtf8String(br.ReadUInt16());
+			ValidateSig(classFile, descriptor);
+			descriptor = descriptor.Replace('/', '.');
 		}
+
+		protected abstract void ValidateSig(ClassFile classFile, string descriptor);
 
 		internal string Name
 		{
@@ -1302,10 +1504,14 @@ class ClassFile
 				{
 					case "Deprecated":
 						deprecated = true;
+#if FUZZ_HACK
+						br.Skip(br.ReadUInt32());
+#else
 						if(br.ReadUInt32() != 0)
 						{
 							throw new ClassFormatError("Deprecated attribute has non-zero length");
 						}
+#endif
 						break;
 					case "ConstantValue":
 					{
@@ -1374,6 +1580,14 @@ class ClassFile
 			}
 		}
 
+		protected override void ValidateSig(ClassFile classFile, string descriptor)
+		{
+			if(!IsValidFieldSig(descriptor))
+			{
+				throw new ClassFormatError("{0} (Field \"{1}\" has invalid signature \"{2}\")", classFile.Name, this.Name, descriptor);
+			}
+		}
+
 		internal object ConstantValue
 		{
 			get
@@ -1415,22 +1629,34 @@ class ClassFile
 				{
 					case "Deprecated":
 						deprecated = true;
+#if FUZZ_HACK
+						br.Skip(br.ReadUInt32());
+#else
 						if(br.ReadUInt32() != 0)
 						{
-							throw new ClassFormatError("Deprecated attribute has non-zero length");
+							throw new ClassFormatError("{0} (Deprecated attribute has non-zero length)", classFile.Name);
 						}
+#endif
 						break;
 					case "Code":
+					{
 						if(!code.IsEmpty)
 						{
-							throw new ClassFormatError("Duplicate Code attribute");
+							throw new ClassFormatError("{0} (Duplicate Code attribute)", classFile.Name);
 						}
-						code.Read(classFile, this, br.Section(br.ReadUInt32()));
+						BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
+						code.Read(classFile, this, rdr);
+						if(!rdr.IsAtEnd)
+						{
+							throw new ClassFormatError("{0} (Code attribute has wrong length)", classFile.Name);
+						}
 						break;
+					}
 					case "Exceptions":
+					{
 						if(exceptions != null)
 						{
-							throw new ClassFormatError("Duplicate Exceptions attribute");
+							throw new ClassFormatError("{0} (Duplicate Exceptions attribute)", classFile.Name);
 						}
 						BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
 						ushort count = rdr.ReadUInt16();
@@ -1439,7 +1665,12 @@ class ClassFile
 						{
 							exceptions[j] = classFile.GetConstantPoolClass(rdr.ReadUInt16());
 						}
+						if(!rdr.IsAtEnd)
+						{
+							throw new ClassFormatError("{0} (Exceptions attribute has wrong length)", classFile.Name);
+						}
 						break;
+					}
 					default:
 						br.Skip(br.ReadUInt32());
 						break;
@@ -1456,8 +1687,23 @@ class ClassFile
 			{
 				if(code.IsEmpty)
 				{
+#if FUZZ_HACK
+					if(this.Name == "<clinit>")
+					{
+						code.verifyError = string.Format("Class {0}, method {1} signature {2}: No Code attribute", classFile.Name, this.Name, this.Signature);
+						return;
+					}
+#endif
 					throw new ClassFormatError("Method has no Code attribute");
 				}
+			}
+		}
+
+		protected override void ValidateSig(ClassFile classFile, string descriptor)
+		{
+			if(!IsValidMethodSig(descriptor))
+			{
+				throw new ClassFormatError("{0} (Method \"{1}\" has invalid signature \"{2}\")", classFile.Name, this.Name, descriptor);
 			}
 		}
 
@@ -1483,6 +1729,14 @@ class ClassFile
 			get
 			{
 				return exceptions;
+			}
+		}
+
+		internal string VerifyError
+		{
+			get
+			{
+				return code.verifyError;
 			}
 		}
 
@@ -1554,6 +1808,7 @@ class ClassFile
 
 		private struct Code
 		{
+			internal string verifyError;
 			internal ushort max_stack;
 			internal ushort max_locals;
 			internal Instruction[] instructions;
@@ -1568,15 +1823,28 @@ class ClassFile
 				max_stack = br.ReadUInt16();
 				max_locals = br.ReadUInt16();
 				uint code_length = br.ReadUInt32();
+				if(code_length > 65536)
+				{
+					throw new ClassFormatError("{0} (Invalid Code length {1})", classFile.Name, code_length);
+				}
 				Instruction[] instructions = new Instruction[code_length + 1];
 				int basePosition = br.Position;
 				int instructionIndex = 0;
-				while(br.Position - basePosition < code_length)
+				try
 				{
-					instructions[instructionIndex++].Read((ushort)(br.Position - basePosition), br);
+					BigEndianBinaryReader rdr = br.Section(code_length);
+					while(!rdr.IsAtEnd)
+					{
+						instructions[instructionIndex++].Read((ushort)(rdr.Position - basePosition), rdr);
+					}
+					// we add an additional nop instruction to make it easier for consumers of the code array
+					instructions[instructionIndex++].SetTermNop((ushort)(rdr.Position - basePosition));
 				}
-				// we add an additional nop instruction to make it easier for consumers of the code array
-				instructions[instructionIndex++].SetTermNop((ushort)(br.Position - basePosition));
+				catch(ClassFormatError x)
+				{
+					// any class format errors in the code block are actually verify errors
+					verifyError = x.Message;
+				}
 				this.instructions = new Instruction[instructionIndex];
 				Array.Copy(instructions, 0, this.instructions, 0, instructionIndex);
 				ushort exception_table_length = br.ReadUInt16();
@@ -1609,6 +1877,14 @@ class ClassFile
 								{
 									lineNumberTable[j].start_pc = rdr.ReadUInt16();
 									lineNumberTable[j].line_number = rdr.ReadUInt16();
+									if(lineNumberTable[j].start_pc >= code_length)
+									{
+										throw new ClassFormatError("{0} (LineNumberTable has invalid pc)", classFile.Name);
+									}
+								}
+								if(!rdr.IsAtEnd)
+								{
+									throw new ClassFormatError("{0} (LineNumberTable attribute has wrong length)", classFile.Name);
 								}
 							}
 							break;
@@ -1626,6 +1902,8 @@ class ClassFile
 									localVariableTable[j].descriptor = classFile.GetConstantPoolUtf8String(rdr.ReadUInt16()).Replace('/', '.');
 									localVariableTable[j].index = rdr.ReadUInt16();
 								}
+								// NOTE we're intentionally not checking that we're at the end of the section
+								// (optional attributes shouldn't cause ClassFormatError)
 							}
 							else
 							{
@@ -1683,6 +1961,10 @@ class ClassFile
 				}
 				argmap = new int[args.Count];
 				args.CopyTo(argmap);
+				if(args.Count > max_locals)
+				{
+					throw new ClassFormatError("{0} (Arguments can't fit into locals)", classFile.Name);
+				}
 			}
 
 			internal bool IsEmpty
@@ -1748,9 +2030,11 @@ class ClassFile
 						break;
 					case ByteCodeMode.Constant_2_1_1:
 						arg1 = br.ReadUInt16();
-						// TODO validate these
-						br.ReadByte();	// count
-						br.ReadByte();	// unused
+						arg2 = br.ReadByte();
+						if(br.ReadByte() != 0)
+						{
+							throw new ClassFormatError("invokeinterface filler must be zero");
+						}
 						break;
 					case ByteCodeMode.Immediate_1:
 						arg1 = br.ReadSByte();
@@ -1776,10 +2060,9 @@ class ClassFile
 						this.arg1 = default_offset;
 						int low = br.ReadInt32();
 						int high = br.ReadInt32();
-						if(low > high)
+						if(low > high || high > 16384L + low)
 						{
-							// TODO is this the right exception?
-							throw new ClassFormatError("Incorrect tableswitch (low > high)");
+							throw new ClassFormatError("Incorrect tableswitch");
 						}
 						SwitchEntry[] entries = new SwitchEntry[high - low + 1];
 						for(int i = low; i <= high; i++)
@@ -1799,10 +2082,9 @@ class ClassFile
 						int default_offset = br.ReadInt32();
 						this.arg1 = default_offset;
 						int count = br.ReadInt32();
-						if(count < 0)
+						if(count < 0 || count > 16384)
 						{
-							// TODO is this the right exception?
-							throw new ClassFormatError("Incorrect lookupswitch (npairs < 0)");
+							throw new ClassFormatError("Incorrect lookupswitch");
 						}
 						SwitchEntry[] entries = new SwitchEntry[count];
 						for(int i = 0; i < count; i++)

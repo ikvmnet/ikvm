@@ -79,7 +79,7 @@ final class VMClassLoader
      * {@link #defineClass(ClassLoader, String, byte[], int, int, ProtectionDomain)}
      *   instead.
      */
-    static Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len) throws ClassFormatError
+    static Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len)
     {
 	return defineClass(cl, name, data, offset, len, null);
     }
@@ -96,8 +96,20 @@ final class VMClassLoader
      * @return the class that was defined
      * @throws ClassFormatError if data is not in proper classfile format
      */
-    static native Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
-	throws ClassFormatError;
+    static Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
+    {
+        try
+        {
+            return defineClassImpl(cl, name, data, offset, len, pd);
+        }
+        catch(ClassNotFoundException x)
+        {
+            throw new NoClassDefFoundError(x.getMessage());
+        }
+    }
+
+    private static native Class defineClassImpl(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
+        throws ClassNotFoundException;
 
     /**
      * Helper to resolve all references to other classes from this class.
@@ -132,7 +144,7 @@ final class VMClassLoader
 	    Assembly assembly = findResourceAssembly(name);
 	    if(assembly != null)
 	    {
-		return new URL("ikvmres", assembly.get_FullName(), 0, "/" + name);
+		return new URL("ikvmres", assembly.get_FullName(), -1, "/" + name);
 	    }
 	    ClassLoader bootstrap = getBootstrapClassLoader();
 	    if(bootstrap != null)
@@ -172,7 +184,7 @@ final class VMClassLoader
 	    java.util.Vector v = new java.util.Vector();
 	    for(int i = 0; i < assemblies.length; i++)
 	    {
-		v.addElement(new URL("ikvmres", assemblies[i].get_FullName(), 0, "/" + name));
+		v.addElement(new URL("ikvmres", assemblies[i].get_FullName(), -1, "/" + name));
 	    }
 	    Enumeration e = v.elements();
 	    ClassLoader bootstrap = getBootstrapClassLoader();

@@ -1842,7 +1842,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		public static void Compile(string path, string keyfilename, string version, bool targetIsModule, string assembly, string mainClass, ApartmentState apartment, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude, string remapfile, Hashtable props, bool noglobbing, bool nostacktraceinfo)
+		public static int Compile(string path, string keyfilename, string version, bool targetIsModule, string assembly, string mainClass, ApartmentState apartment, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude, string remapfile, Hashtable props, bool noglobbing, bool nostacktraceinfo)
 		{
 			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", path, assembly);
 			isStaticCompiler = true;
@@ -1856,14 +1856,14 @@ namespace IKVM.Internal
 					if(reference == null)
 					{
 						Console.Error.WriteLine("Error: reference not found: {0}", r);
-						return;
+						return 1;
 					}
 					Tracer.Info(Tracer.Compiler, "Loaded reference assembly: {0}", reference.FullName);
 				}
 				catch(Exception x)
 				{
 					Console.Error.WriteLine("Error: invalid reference: {0} ({1})", r, x.Message);
-					return;
+					return 1;
 				}
 			}
 			Hashtable h = new Hashtable();
@@ -1878,12 +1878,12 @@ namespace IKVM.Internal
 				catch(UnsupportedClassVersionError x)
 				{
 					Console.Error.WriteLine("Error: unsupported class file version: {0}", x.Message);
-					return;
+					return 1;
 				}
 				catch(ClassFormatError x)
 				{
 					Console.Error.WriteLine("Error: invalid class file: {0}", x.Message);
-					return;
+					return 1;
 				}
 				string name = f.Name;
 				bool excluded = false;
@@ -1926,19 +1926,19 @@ namespace IKVM.Internal
 			if(target == PEFileKinds.Dll && mainClass != null)
 			{
 				Console.Error.WriteLine("Error: main class cannot be specified for library or module");
-				return;
+				return 1;
 			}
 
 			if(target != PEFileKinds.Dll && mainClass == null)
 			{
 				Console.Error.WriteLine("Error: no main method found");
-				return;
+				return 1;
 			}
 
 			if(target == PEFileKinds.Dll && props.Count != 0)
 			{
 				Console.Error.WriteLine("Error: properties cannot be specified for library or module");
-				return;
+				return 1;
 			}
 
 			if(path == null)
@@ -1970,13 +1970,13 @@ namespace IKVM.Internal
 			if(target == PEFileKinds.Dll && !path.ToLower().EndsWith(".dll") && !targetIsModule)
 			{
 				Console.Error.WriteLine("Error: library output file must end with .dll");
-				return;
+				return 1;
 			}
 
 			if(target != PEFileKinds.Dll && !path.ToLower().EndsWith(".exe"))
 			{
 				Console.Error.WriteLine("Error: executable output file must end with .exe");
-				return;
+				return 1;
 			}
 
 			// make sure all inner classes have a reference to their outer class
@@ -2001,7 +2001,7 @@ namespace IKVM.Internal
 									if(innerClass.OuterClass != null)
 									{
 										Console.Error.WriteLine("Error: inner class {0} has multiple outer classes", inner);
-										return;
+										return 1;
 									}
 									innerClass.OuterClass = classFile;
 								}
@@ -2042,7 +2042,7 @@ namespace IKVM.Internal
 				if(classpath == null)
 				{
 					Console.Error.WriteLine("Error: bootstrap classes missing and IKVM.GNU.Classpath.dll not found");
-					return;
+					return 1;
 				}
 				Console.Error.WriteLine("Warning: bootstrap classes are missing, automatically adding reference to {0}", classpath.Location);
 				Console.Error.WriteLine("  (to avoid this warning add \"-reference:{0}\" to the command line)", classpath.Location);
@@ -2083,26 +2083,26 @@ namespace IKVM.Internal
 				if(wrapper == null)
 				{
 					Console.Error.WriteLine("Error: main class not found");
-					return;
+					return 1;
 				}
 				MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor("main", "([Ljava.lang.String;)V"), false);
 				if(mw == null)
 				{
 					Console.Error.WriteLine("Error: main method not found");
-					return;
+					return 1;
 				}
 				mw.Link();
 				MethodInfo method = mw.GetMethod() as MethodInfo;
 				if(method == null)
 				{
 					Console.Error.WriteLine("Error: redirected main method not supported");
-					return;
+					return 1;
 				}
 				if(method.DeclaringType.Assembly != loader.ModuleBuilder.Assembly
 					&& (!method.IsPublic || !method.DeclaringType.IsPublic))
 				{
 					Console.Error.WriteLine("Error: external main method must be public and in a public class");
-					return;
+					return 1;
 				}
 				Type apartmentAttributeType = null;
 				if(apartment == ApartmentState.STA)
@@ -2136,6 +2136,7 @@ namespace IKVM.Internal
 			Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
 			loader.AddResources(resources);
 			loader.Save();
+			return 0;
 		}
 
 		public static void PrepareForSaveDebugImage()

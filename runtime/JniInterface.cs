@@ -1190,7 +1190,7 @@ namespace IKVM.Runtime
 				Marshal.Copy((IntPtr)(void*)pbuf, buf, 0, length);
 				// TODO what should the protection domain be?
 				// NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
-				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClassLoader.defineClass(pEnv->UnwrapRef(loader), name != null ? new String((sbyte*)name) : null, buf, 0, buf.Length, null));
+				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClassLoader.defineClassImpl(pEnv->UnwrapRef(loader), name != null ? new String((sbyte*)name) : null, buf, 0, buf.Length, null));
 			}
 			catch(Exception x)
 			{

@@ -88,7 +88,7 @@ public final class Field extends AccessibleObject implements Member
 	    this.declaringClass = declaringClass;
 	    this.fieldCookie = fieldCookie;
 	    modifiers = GetModifiers(fieldCookie);
-	    classIsPublic = (declaringClass.getModifiers() & Modifier.PUBLIC) != 0;
+	    classIsPublic = (Method.GetRealModifiers(declaringClass) & Modifier.PUBLIC) != 0;
 	}
         private static native int GetModifiers(Object fieldCookie);
 
@@ -498,7 +498,7 @@ public final class Field extends AccessibleObject implements Member
 	{
 	    // when we're invoking a constructor, modifiers will not be static, but o will be null.
 	    Class actualClass = Modifier.isStatic(modifiers) || o == null ? declaringClass : o.getClass();
-	    boolean declaringClassIsPublic = (declaringClass.getModifiers() & Modifier.PUBLIC) != 0;
+	    boolean declaringClassIsPublic = (Method.GetRealModifiers(declaringClass) & Modifier.PUBLIC) != 0;
 	    Class caller = getClassFromFrame(frame);
 	    if((!Modifier.isPublic(modifiers) || !declaringClassIsPublic) && declaringClass != caller)
 	    {

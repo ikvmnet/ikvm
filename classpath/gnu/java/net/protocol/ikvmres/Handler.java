@@ -24,7 +24,6 @@
 
 package gnu.java.net.protocol.ikvmres;
 
-import cli.System.IO.*;
 import cli.System.Resources.*;
 import cli.System.Reflection.*;
 import cli.System.Collections.*;
@@ -52,19 +51,34 @@ class IkvmresURLConnection extends URLConnection
 	    String resource = url.getFile();
 	    if(assembly == null || resource == null || !resource.startsWith("/"))
 	    {
-		throw new IOException("Malformed ikvmres url");
+		throw new MalformedURLException(url.toString());
 	    }
 	    resource = resource.substring(1);
-	    Assembly asm = Assembly.Load(assembly);
-	    if(asm == null)
-	    {
-		throw new IOException("assembly " + assembly + " not found");
-	    }
-	    Stream s = asm.GetManifestResourceStream(MangleResourceName(resource));
-	    if(s == null)
-	    {
-		throw new IOException("resource " + resource + " not found in assembly " + assembly);
-	    }
+            cli.System.IO.Stream s;
+            try
+            {
+                if(false) throw new cli.System.IO.FileNotFoundException();
+                if(false) throw new cli.System.BadImageFormatException();
+                if(false) throw new cli.System.Security.SecurityException();
+                Assembly asm = Assembly.Load(assembly);
+                s = asm.GetManifestResourceStream(MangleResourceName(resource));
+                if(s == null)
+                {
+                    throw new FileNotFoundException("resource " + resource + " not found in assembly " + assembly);
+                }
+            }
+            catch(cli.System.IO.FileNotFoundException x)
+            {
+                throw (IOException)new FileNotFoundException(assembly).initCause(x);
+            }
+            catch(cli.System.BadImageFormatException x1)
+            {
+                throw (IOException)new IOException().initCause(x1);
+            }
+            catch(cli.System.Security.SecurityException x2)
+            {
+                throw (IOException)new IOException().initCause(x2);
+            }
 	    try
 	    {
 		ResourceReader r = new ResourceReader(s);
@@ -141,18 +155,52 @@ public class Handler extends URLStreamHandler
 	    // NOTE originally I wanted to use java.net.URI to handling parsing and constructing of these things,
 	    // but it turns out that URI uses regex and that depends on resource loading...
 	    url_string = url_string.substring(start, end);
-	    if(!url_string.startsWith("//"))
+	    if(url_string.startsWith("//"))
 	    {
-		throw new gnu.java.net.URLParseError("ikvmres: URLs must start with //");
-	    }
-	    int slash = url_string.indexOf('/', 2);
-	    if(slash == -1)
-	    {
-		throw new gnu.java.net.URLParseError("ikvmres: URLs must contain path");
-	    }
-	    String assembly = unquote(url_string.substring(2, slash));
-	    String file = unquote(url_string.substring(slash));
-	    setURL(url, "ikvmres", assembly, 0, file, null);
+	        int slash = url_string.indexOf('/', 2);
+	        if(slash == -1)
+	        {
+		    throw new gnu.java.net.URLParseError("ikvmres: URLs must contain path");
+	        }
+	        String assembly = unquote(url_string.substring(2, slash));
+	        String file = unquote(url_string.substring(slash));
+	        setURL(url, "ikvmres", assembly, -1, file, null);
+            }
+            else if(url_string.startsWith("/"))
+            {
+                setURL(url, "ikvmres", url.getHost(), -1, url_string, null);
+            }
+            else
+            {
+                String[] baseparts = ((cli.System.String)(Object)url.getFile()).Split(new char[] { '/' });
+                String[] relparts = ((cli.System.String)(Object)url_string).Split(new char[] { '/' });
+                String[] target = new String[baseparts.length + relparts.length - 1];
+                for(int i = 1; i < baseparts.length; i++)
+                {
+                    target[i - 1] = baseparts[i];
+                }
+                int p = baseparts.length - 2;
+                for(int i = 0; i < relparts.length; i++)
+                {
+                    if(relparts[i].equals("."))
+                    {
+                    }
+                    else if(relparts[i].equals(".."))
+                    {
+                        p = Math.max(0, p - 1);
+                    }
+                    else
+                    {
+                        target[p++] = relparts[i];
+                    }
+                }
+                StringBuffer file = new StringBuffer();
+                for(int i = 0; i < p; i++)
+                {
+                    file.append('/').append(target[i]);
+                }
+                setURL(url, "ikvmres", url.getHost(), -1, file.toString(), null);
+            }
 	}
 	catch(URISyntaxException x)
 	{

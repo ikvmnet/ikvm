@@ -410,6 +410,26 @@ namespace IKVM.Attributes
 	{
 		private object val;
 
+		public ConstantValueAttribute(bool val)
+		{
+			this.val = val;
+		}
+
+		public ConstantValueAttribute(sbyte val)
+		{
+			this.val = val;
+		}
+
+		public ConstantValueAttribute(short val)
+		{
+			this.val = val;
+		}
+
+		public ConstantValueAttribute(char val)
+		{
+			this.val = val;
+		}
+
 		public ConstantValueAttribute(int val)
 		{
 			this.val = val;

@@ -131,12 +131,17 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             socket.Bind(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(addr), port));
             localPort = ((IPEndPoint)socket.get_LocalEndPoint()).get_Port();
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw new BindException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -154,6 +159,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         try		
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             int len = packet.getLength();
             int port = packet.getPort();
             if(port < 1 || port > 65535)
@@ -168,6 +174,10 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -200,6 +210,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             int length = socket.ReceiveFrom(ByteArrayHack.cast(data), packet.getOffset(), getDatagramPacketBufferLength(packet),
                             cli.System.Net.Sockets.SocketFlags.wrap(cli.System.Net.Sockets.SocketFlags.None), remoteEP);
             setDatagramPacketLength(packet, length);
@@ -212,6 +223,10 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             {
                 throw PlainSocketImpl.convertSocketExceptionToIOException(x);
             }
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
         int remoteIP = (int)((cli.System.Net.IPEndPoint)remoteEP[0]).get_Address().get_Address();
         byte[] ipv4 = new byte[] { (byte)remoteIP, (byte)(remoteIP >> 8), (byte)(remoteIP >> 16), (byte)(remoteIP >> 24) };
@@ -239,6 +254,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ArgumentException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), new MulticastOption(new cli.System.Net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr))));
         }
         catch(cli.System.Net.Sockets.SocketException x)
@@ -248,6 +264,10 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         catch(cli.System.ArgumentException x1)
         {
             throw new IOException(x1.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -266,6 +286,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ArgumentException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), new MulticastOption(new cli.System.Net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr))));
         }
         catch(cli.System.Net.Sockets.SocketException x)
@@ -275,6 +296,10 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         catch(cli.System.ArgumentException x1)
         {
             throw new IOException(x1.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -289,7 +314,20 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected byte getTTL() throws IOException
     {
-        return (byte)CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive)));
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            return (byte)CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive)));
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /*************************************************************************/
@@ -303,7 +341,20 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected void setTTL(byte ttl) throws IOException
     {
-        socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ttl & 0xff);
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ttl & 0xff);
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /*************************************************************************/
@@ -317,7 +368,20 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected int getTimeToLive() throws IOException
     {
-        return CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive)));
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            return CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive)));
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /*************************************************************************/
@@ -331,7 +395,20 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected void setTimeToLive(int ttl) throws IOException
     {
-        socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ttl);
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ttl);
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /*************************************************************************/
@@ -350,6 +427,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
                 case SocketOptions.SO_REUSEADDR:
@@ -369,6 +447,10 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw new SocketException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -404,6 +486,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
                 case SocketOptions.SO_REUSEADDR:
@@ -428,6 +511,10 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw new SocketException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 

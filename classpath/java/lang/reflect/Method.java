@@ -88,9 +88,10 @@ public final class Method extends AccessibleObject implements Member
 	this.declaringClass = declaringClass;
 	this.methodCookie = methodCookie;
 	modifiers = GetModifiers(methodCookie);
-	classIsPublic = (declaringClass.getModifiers() & Modifier.PUBLIC) != 0;
+	classIsPublic = (GetRealModifiers(declaringClass) & Modifier.PUBLIC) != 0;
     }
     static native int GetModifiers(Object methodCookie);
+    static native int GetRealModifiers(Object clazz);
 
     /**
      * Gets the class that declared this method, or the class where this method

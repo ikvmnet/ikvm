@@ -89,7 +89,7 @@ public final class Constructor
 	this.declaringClass = declaringClass;
 	this.methodCookie = methodCookie;
 	modifiers = Method.GetModifiers(methodCookie);
-	classIsPublic = (declaringClass.getModifiers() & Modifier.PUBLIC) != 0;
+	classIsPublic = (Method.GetRealModifiers(declaringClass) & Modifier.PUBLIC) != 0;
     }
 
     /**
@@ -260,7 +260,8 @@ public final class Constructor
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
 	    Field.checkAccess(modifiers, null, declaringClass, new StackFrame(1));
-	if(Modifier.isAbstract(declaringClass.getModifiers()))
+        int mods = declaringClass.getModifiers() | Method.GetRealModifiers(declaringClass);
+	if(Modifier.isAbstract(mods) || Modifier.isInterface(mods))
 	{
 	    throw new InstantiationException();
 	}

@@ -1850,6 +1850,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			try
 			{
 				impl = impl.Finish(forDebugSave);
+				// call Finish again to get the verify error for doomed types
+				impl.Finish(forDebugSave);
 			}
 			finally
 			{
@@ -2797,6 +2799,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						parent = parent.BaseTypeWrapper;
 					}
 				}
+				string verifyError = null;
 				bool basehasclinit = wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasStaticInitializer;
 				bool hasclinit = false;
 				for(int i = 0; i < classFile.Methods.Length; i++)
@@ -2814,7 +2817,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							EmitConstantValueInitialization(ilGenerator);
 							EmitHelper.RunClassConstructor(ilGenerator, Type.BaseType);
 						}
-						Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator);
+						Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref verifyError);
 					}
 					else
 					{
@@ -2935,7 +2938,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 									continue;
 								}
 							}
-							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator);
+							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref verifyError);
 						}
 					}
 				}
@@ -3048,8 +3051,15 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					Profiler.Leave("TypeBuilder.CreateType");
 				}
 				ClassLoaderWrapper.SetWrapperForType(type, wrapper);
-				finishedType = new FinishedTypeImpl(type, typeBuilderGhostInterface != null ? typeBuilderGhostInterface.CreateType() : null, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers);
-				return finishedType;
+				if(verifyError != null)
+				{
+					return new DoomedTypeImpl(verifyError);
+				}
+				else
+				{
+					finishedType = new FinishedTypeImpl(type, typeBuilderGhostInterface != null ? typeBuilderGhostInterface.CreateType() : null, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers);
+					return finishedType;
+				}
 			}
 			catch(Exception x)
 			{
@@ -3482,10 +3492,6 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					// and ikvmstub has to export them, so we have to add a custom attribute.
 					if(constantValue != null)
 					{
-						if(constantValue is bool)
-						{
-							constantValue = ((bool)constantValue) ? 1 : 0;
-						}
 						CustomAttributeBuilder constantValueAttrib = new CustomAttributeBuilder(typeof(ConstantValueAttribute).GetConstructor(new Type[] { constantValue.GetType() }), new object[] { constantValue });
 						field.SetCustomAttribute(constantValueAttrib);
 					}
@@ -4040,6 +4046,79 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			get
 			{
 				return typeBuilderGhostInterface != null ? typeBuilderGhostInterface : typeBuilder;
+			}
+		}
+	}
+	
+	private class DoomedTypeImpl : DynamicImpl
+	{
+		private string message;
+
+		internal DoomedTypeImpl(string message)
+		{
+			this.message = message;
+		}
+
+		internal override TypeWrapper DeclaringTypeWrapper
+		{
+			get
+			{
+				return null;
+			}
+		}
+
+		internal override DynamicImpl Finish(bool forDebugSave)
+		{
+			if(!forDebugSave)
+			{
+				throw new VerifyError(message);
+			}
+			return this;
+		}
+
+		internal override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
+		{
+			return null;
+		}
+
+		internal override TypeWrapper[] InnerClasses
+		{
+			get
+			{
+				return null;
+			}
+		}
+
+		internal override void LinkField(FieldWrapper fw)
+		{
+		}
+
+		internal override MethodBase LinkMethod(MethodWrapper mw)
+		{
+			return null;
+		}
+
+		internal override Modifiers ReflectiveModifiers
+		{
+			get
+			{
+				return (Modifiers)0;
+			}
+		}
+
+		internal override Type Type
+		{
+			get
+			{
+				return null;
+			}
+		}
+
+		internal override Type TypeAsBaseType
+		{
+			get
+			{
+				return null;
 			}
 		}
 	}
@@ -5261,7 +5340,7 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		}
 	}
 
-	private class EnumValueFieldWrapper : FieldWrapper
+	internal class EnumValueFieldWrapper : FieldWrapper
 	{
 		// NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
 		internal EnumValueFieldWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
@@ -5273,7 +5352,26 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		{
 			DotNetTypeWrapper tw = (DotNetTypeWrapper)this.DeclaringType;
 			ilgen.Emit(OpCodes.Unbox, tw.type);
-			ilgen.Emit(OpCodes.Ldobj, tw.type);
+			// FXBUG the .NET 1.1 verifier doesn't understand that ldobj on an enum that has an underlying type
+			// of byte or short that the resulting type on the stack is an int32, so we have to
+			// to it the hard way. Note that this is fixed in Whidbey.
+			Type underlyingType = Enum.GetUnderlyingType(tw.type);
+			if(underlyingType == typeof(sbyte) || underlyingType == typeof(byte))
+			{
+				ilgen.Emit(OpCodes.Ldind_I1);
+			}
+			else if(underlyingType == typeof(short) || underlyingType == typeof(ushort))
+			{
+				ilgen.Emit(OpCodes.Ldind_I2);
+			}
+			else if(underlyingType == typeof(int) || underlyingType == typeof(uint))
+			{
+				ilgen.Emit(OpCodes.Ldind_I4);
+			}
+			else if(underlyingType == typeof(long) || underlyingType == typeof(ulong))
+			{
+				ilgen.Emit(OpCodes.Ldind_I8);
+			}
 		}
 
 		protected override void EmitSetImpl(ILGenerator ilgen)
@@ -5289,16 +5387,44 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 			f.SetValue(obj, val);
 		}
 
-		internal override object GetValue(object obj)
+		// this method takes a boxed Enum and returns its value as a boxed primitive
+		// of the subset of Java primitives (i.e. sbyte, short, int, long)
+		internal static object GetEnumPrimitiveValue(object obj)
 		{
-			if(FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
+			Type underlyingType = Enum.GetUnderlyingType(obj.GetType());
+			if(underlyingType == typeof(sbyte) || underlyingType == typeof(byte))
 			{
-				return ((IConvertible)obj).ToInt64(null);
+				return unchecked((sbyte)((IConvertible)obj).ToInt32(null));
 			}
-			else
+			else if(underlyingType == typeof(short) || underlyingType == typeof(ushort))
+			{
+				return unchecked((short)((IConvertible)obj).ToInt32(null));
+			}
+			else if(underlyingType == typeof(int))
 			{
 				return ((IConvertible)obj).ToInt32(null);
 			}
+			else if(underlyingType == typeof(uint))
+			{
+				return unchecked((int)((IConvertible)obj).ToUInt32(null));
+			}
+			else if(underlyingType == typeof(long))
+			{
+				return ((IConvertible)obj).ToInt64(null);
+			}
+			else if(underlyingType == typeof(ulong))
+			{
+				return unchecked((long)((IConvertible)obj).ToUInt64(null));
+			}
+			else
+			{
+				throw new InvalidOperationException();
+			}
+		}
+
+		internal override object GetValue(object obj)
+		{
+			return GetEnumPrimitiveValue(obj);
 		}
 	}
 
@@ -5339,8 +5465,24 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		// special support for enums
 		if(type.IsEnum)
 		{
-			// TODO handle unsigned underlying type
-			TypeWrapper fieldType = ClassLoaderWrapper.GetWrapperFromType(Enum.GetUnderlyingType(type));
+			Type underlyingType = Enum.GetUnderlyingType(type);
+			if(underlyingType == typeof(byte))
+			{
+				underlyingType = typeof(sbyte);
+			}
+			else if(underlyingType == typeof(ushort))
+			{
+				underlyingType = typeof(short);
+			}
+			else if(underlyingType == typeof(uint))
+			{
+				underlyingType = typeof(int);
+			}
+			else if(underlyingType == typeof(ulong))
+			{
+				underlyingType = typeof(long);
+			}
+			TypeWrapper fieldType = ClassLoaderWrapper.GetWrapperFromType(underlyingType);
 			FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
 			for(int i = 0; i < fields.Length; i++)
 			{
@@ -5355,15 +5497,7 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 					{
 						name = "_" + name;
 					}
-					object val;
-					if(fieldType == PrimitiveTypeWrapper.LONG)
-					{
-						val = ((IConvertible)fields[i].GetValue(null)).ToInt64(null);
-					}
-					else
-					{
-						val = ((IConvertible)fields[i].GetValue(null)).ToInt32(null);
-					}
+					object val = EnumValueFieldWrapper.GetEnumPrimitiveValue(fields[i].GetValue(null));
 					AddField(new ConstantFieldWrapper(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val));
 				}
 			}

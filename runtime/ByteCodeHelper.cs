@@ -185,6 +185,15 @@ namespace IKVM.Runtime
 			{
 				throw x.ToJava();
 			}
+			catch(Exception x)
+			{
+				// HACK we need to convert a ClassNotFoundException into a NoClassDefFoundError
+				if(x.GetType().FullName == "java.lang.ClassNotFoundException")
+				{
+					throw JavaException.NoClassDefFoundError(x.Message);
+				}
+				throw;
+			}
 		}
 
 		[DebuggerStepThroughAttribute]

@@ -676,7 +676,7 @@ class Compiler
 		}
 	}
 
-	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator)
+	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref string verifyError)
 	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
@@ -747,6 +747,10 @@ class Compiler
 			// because in Java the method is only verified if it is actually called,
 			// we generate code here to throw the VerificationError
 			EmitHelper.Throw(ilGenerator, "java.lang.VerifyError", x.Message);
+			if(verifyError == null)
+			{
+				verifyError = x.Message;
+			}
 			return;
 		}
 		Profiler.Enter("Compile");
@@ -1704,18 +1708,15 @@ class Compiler
 					case NormalizedByteCode.__astore:
 					{
 						TypeWrapper type = ma.GetRawStackTypeWrapper(i, 0);
-						// HACK we use "int" to track the return address of a jsr
+						// NOTE we use "int" to track the return address of a jsr
 						if(VerifierTypeWrapper.IsRet(type))
 						{
 							StoreLocal(instr);
 						}
 						else if(VerifierTypeWrapper.IsNew(type))
 						{
-							// NOTE new objects aren't really on the stack, so we can't copy them into the local.
-							// We do store a null in the local, to prevent it from retaining an unintentional reference
-							// to whatever object reference happens to be there
-							ilGenerator.Emit(OpCodes.Ldnull);
-							StoreLocal(instr);
+							// new objects aren't really on the stack, so we can't copy them into the local
+							// (and the local doesn't exist anyway)
 						}
 						else if(type == VerifierTypeWrapper.UninitializedThis)
 						{

@@ -110,6 +110,7 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             int timeout = ((Integer)getOption(SO_TIMEOUT)).intValue();
             if(timeout != 0 && !socket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
                 cli.System.Net.Sockets.SelectMode.wrap(cli.System.Net.Sockets.SelectMode.SelectRead)))
@@ -129,6 +130,10 @@ public class PlainSocketImpl extends SocketImpl
         {
             throw convertSocketExceptionToIOException(x);
         }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /**
@@ -144,11 +149,16 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             return socket.get_Available();
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -166,12 +176,17 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             socket.Bind(new IPEndPoint(getAddressFromInetAddress(addr), port));
             this.address = addr;
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw new BindException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -195,11 +210,16 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             socket.Close();
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -216,6 +236,7 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             socket.Connect(new IPEndPoint(getAddressFromInetAddress(addr), port));
             this.address = addr;
             this.port = port;
@@ -224,6 +245,10 @@ public class PlainSocketImpl extends SocketImpl
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw new ConnectException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -259,11 +284,16 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             socket = new cli.System.Net.Sockets.Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Stream), ProtocolType.wrap(ProtocolType.Tcp));
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -282,12 +312,17 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             socket.Listen(queuelen);
             localport = ((IPEndPoint)socket.get_LocalEndPoint()).get_Port();
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -305,11 +340,21 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             return socket.Receive(ByteArrayHack.cast(buf), offset, len, SocketFlags.wrap(SocketFlags.None));
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
+            if(x.get_ErrorCode() == 10058) //WSAESHUTDOWN
+            {
+                // the socket was shutdown, so we have to return EOF
+                return -1;
+            }
             throw convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -325,11 +370,16 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             socket.Send(ByteArrayHack.cast(buf), offset, len, SocketFlags.wrap(SocketFlags.None));
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -349,6 +399,7 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
                 case SocketOptions.TCP_NODELAY:
@@ -383,6 +434,10 @@ public class PlainSocketImpl extends SocketImpl
         {
             throw new SocketException(x.getMessage());
         }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     static void setCommonSocketOption(cli.System.Net.Sockets.Socket socket, int option_id, Object val) throws SocketException
@@ -390,6 +445,7 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
                 case SocketOptions.SO_TIMEOUT:
@@ -414,6 +470,10 @@ public class PlainSocketImpl extends SocketImpl
         {
             throw new SocketException(x.getMessage());
         }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /**
@@ -432,6 +492,7 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
                 case SocketOptions.TCP_NODELAY:
@@ -457,6 +518,10 @@ public class PlainSocketImpl extends SocketImpl
         {
             throw new SocketException(x.getMessage());
         }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     static Object getCommonSocketOption(cli.System.Net.Sockets.Socket socket, int option_id) throws SocketException
@@ -464,6 +529,7 @@ public class PlainSocketImpl extends SocketImpl
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
                 case SocketOptions.SO_TIMEOUT:
@@ -490,6 +556,10 @@ public class PlainSocketImpl extends SocketImpl
         catch(cli.System.Net.Sockets.SocketException x)
         {
             throw new SocketException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
         }
     }
 
@@ -583,29 +653,66 @@ public class PlainSocketImpl extends SocketImpl
 
     protected boolean supportsUrgentData()
     {
-        // This method has to be overwritten by socket classes that support
-        // sending urgent data.
         return true;
     }
 
-    public void sendUrgentData(int data)
+    public void sendUrgentData(int data) throws IOException
     {
-        // Send one byte of urgent data on the socket. The byte to be sent is
-        // the lowest eight bits of the data parameter.
-        // The urgent byte is sent after any preceding writes to the socket
-        // OutputStream and before any future writes to the OutputStream.
-        byte[] oob = { (byte)data };
-        socket.Send(ByteArrayHack.cast(oob), SocketFlags.wrap(SocketFlags.OutOfBand));
+        try
+        {
+            // Send one byte of urgent data on the socket. The byte to be sent is
+            // the lowest eight bits of the data parameter.
+            // The urgent byte is sent after any preceding writes to the socket
+            // OutputStream and before any future writes to the OutputStream.
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            byte[] oob = { (byte)data };
+            socket.Send(ByteArrayHack.cast(oob), SocketFlags.wrap(SocketFlags.OutOfBand));
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
-    public void shutdownInput()
+    public void shutdownInput() throws IOException
     {
-        socket.Shutdown(SocketShutdown.wrap(SocketShutdown.Receive));
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            socket.Shutdown(SocketShutdown.wrap(SocketShutdown.Receive));
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
-    public void shutdownOutput()
+    public void shutdownOutput() throws IOException
     {
-        socket.Shutdown(SocketShutdown.wrap(SocketShutdown.Send));
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            socket.Shutdown(SocketShutdown.wrap(SocketShutdown.Send));
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /**

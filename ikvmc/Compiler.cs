@@ -430,8 +430,7 @@ class Compiler
 		}
 		try
 		{
-			JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, apartment, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)), remapfile, props, noglobbing, nostacktraceinfo);
-			return 0;
+			return JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, apartment, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)), remapfile, props, noglobbing, nostacktraceinfo);
 		}
 		catch(Exception x)
 		{

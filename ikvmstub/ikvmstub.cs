@@ -86,8 +86,15 @@ public class NetExp
 		else
 		{
 			zipFile = new ZipOutputStream(new FileStream(assembly.GetName().Name + ".jar", FileMode.Create));
-			ProcessAssembly(assembly);
-			ProcessPrivateClasses(assembly);
+			try
+			{
+				ProcessAssembly(assembly);
+				ProcessPrivateClasses(assembly);
+			}
+			catch(System.Exception x)
+			{
+				java.lang.Throwable.instancehelper_printStackTrace(IKVM.Runtime.Util.MapException(x));
+			}
 			zipFile.Close();
 		}
 		// FXBUG if we run a static initializer that starts a thread, we would never end,

@@ -1084,6 +1084,10 @@ abstract class FieldWrapper : MemberWrapper
 			{
 				ReflectionOnConstant.IssueWarning(field);
 				val = field.GetValue(null);
+				if(val is Enum)
+				{
+					val = DotNetTypeWrapper.EnumValueFieldWrapper.GetEnumPrimitiveValue(val);
+				}
 			}
 			else
 			{
@@ -1597,23 +1601,19 @@ sealed class ConstantFieldWrapper : FieldWrapper
 	{
 		// NOTE even though you're not supposed to access a constant static final (the compiler is supposed
 		// to inline them), we have to support it (because it does happen, e.g. if the field becomes final
-		// after the referencing class was compiled)
+		// after the referencing class was compiled, or when we're accessing an unsigned primitive .NET field)
 		object v = GetValue(null);
 		if(v == null)
 		{
 			ilgen.Emit(OpCodes.Ldnull);
 		}
 		else if(constant is int || 
-			constant is short || constant is ushort ||
-			constant is byte || constant is sbyte ||
+			constant is short ||
+			constant is sbyte ||
 			constant is char ||
 			constant is bool)
 		{
 			ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
-		}
-		else if(constant is uint)
-		{
-			ilgen.Emit(OpCodes.Ldc_I4, unchecked((int)((IConvertible)constant).ToUInt32(null)));
 		}
 		else if(constant is string)
 		{
@@ -1631,9 +1631,39 @@ sealed class ConstantFieldWrapper : FieldWrapper
 		{
 			ilgen.Emit(OpCodes.Ldc_I8, (long)constant);
 		}
+		else if(constant is byte)
+		{
+			ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
+			ilgen.Emit(OpCodes.Box, typeof(byte));
+		}
+		else if(constant is ushort)
+		{
+			ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
+			ilgen.Emit(OpCodes.Box, typeof(ushort));
+		}
+		else if(constant is uint)
+		{
+			ilgen.Emit(OpCodes.Ldc_I4, unchecked((int)((IConvertible)constant).ToUInt32(null)));
+			ilgen.Emit(OpCodes.Box, typeof(uint));
+		}
 		else if(constant is ulong)
 		{
 			ilgen.Emit(OpCodes.Ldc_I8, unchecked((long)(ulong)constant));
+			ilgen.Emit(OpCodes.Box, typeof(ulong));
+		}
+		else if(constant is Enum)
+		{
+			object val = DotNetTypeWrapper.EnumValueFieldWrapper.GetEnumPrimitiveValue(constant);
+			if(val is long)
+			{
+				ilgen.Emit(OpCodes.Ldc_I8, (long)constant);
+				ilgen.Emit(OpCodes.Box, constant.GetType());
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
+				ilgen.Emit(OpCodes.Box, constant.GetType());
+			}
 		}
 		else
 		{

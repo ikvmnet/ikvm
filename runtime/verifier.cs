@@ -80,9 +80,10 @@ class InstructionState
 	private Hashtable[] localStoreSites;
 	private ArrayList subroutines;
 	private int callsites;
+	private bool unitializedThis;
 	internal bool changed = true;
 
-	private InstructionState(TypeWrapper[] stack, int stackSize, TypeWrapper[] locals, Hashtable[] localStoreSites, ArrayList subroutines, int callsites)
+	private InstructionState(TypeWrapper[] stack, int stackSize, TypeWrapper[] locals, Hashtable[] localStoreSites, ArrayList subroutines, int callsites, bool unitializedThis)
 	{
 		this.stack = stack;
 		this.stackSize = stackSize;
@@ -90,6 +91,7 @@ class InstructionState
 		this.localStoreSites = localStoreSites;
 		this.subroutines = subroutines;
 		this.callsites = callsites;
+		this.unitializedThis = unitializedThis;
 	}
 
 	internal InstructionState(int maxLocals, int maxStack)
@@ -101,7 +103,7 @@ class InstructionState
 
 	internal InstructionState Copy()
 	{
-		return new InstructionState((TypeWrapper[])stack.Clone(), stackSize, (TypeWrapper[])locals.Clone(), (Hashtable[])localStoreSites.Clone(), CopySubroutines(subroutines), callsites);
+		return new InstructionState((TypeWrapper[])stack.Clone(), stackSize, (TypeWrapper[])locals.Clone(), (Hashtable[])localStoreSites.Clone(), CopySubroutines(subroutines), callsites, unitializedThis);
 	}
 
 	internal void CopyTo(InstructionState target)
@@ -112,12 +114,13 @@ class InstructionState
 		localStoreSites.CopyTo(target.localStoreSites, 0);
 		target.subroutines = CopySubroutines(subroutines);
 		target.callsites = callsites;
+		target.unitializedThis = unitializedThis;
 		target.changed = true;
 	}
 
 	internal InstructionState CopyLocalsAndSubroutines()
 	{
-		return new InstructionState(new TypeWrapper[stack.Length], 0, (TypeWrapper[])locals.Clone(), (Hashtable[])localStoreSites.Clone(), CopySubroutines(subroutines), callsites);
+		return new InstructionState(new TypeWrapper[stack.Length], 0, (TypeWrapper[])locals.Clone(), (Hashtable[])localStoreSites.Clone(), CopySubroutines(subroutines), callsites, unitializedThis);
 	}
 
 	private ArrayList CopySubroutines(ArrayList l)
@@ -276,6 +279,11 @@ class InstructionState
 				s.changed = true;
 			}
 		}
+		if(!s.unitializedThis && s2.unitializedThis)
+		{
+			s.unitializedThis = true;
+			s.changed = true;
+		}
 		s.MergeSubroutineHelper(s2);
 		if(s3 != null)
 		{
@@ -308,6 +316,19 @@ class InstructionState
 			h[de.Key] = de.Value;
 		}
 		return h;
+	}
+
+	internal void SetUnitializedThis(bool state)
+	{
+		unitializedThis = state;
+	}
+
+	internal void CheckUninitializedThis()
+	{
+		if(unitializedThis)
+		{
+			throw new VerifyError("Base class constructor wasn't called");
+		}
 	}
 
 	internal void AddCallSite()
@@ -568,8 +589,8 @@ class InstructionState
 
 	internal void SetLocalInt(int index, int instructionIndex)
 	{
-		SetLocalStoreSite(index, instructionIndex);
 		SetLocal1(index, PrimitiveTypeWrapper.INT);
+		SetLocalStoreSite(index, instructionIndex);
 	}
 
 	internal void GetLocalLong(int index, ref Hashtable readers)
@@ -582,8 +603,8 @@ class InstructionState
 
 	internal void SetLocalLong(int index, int instructionIndex)
 	{
-		SetLocalStoreSite(index, instructionIndex);
 		SetLocal2(index, PrimitiveTypeWrapper.LONG);
+		SetLocalStoreSite(index, instructionIndex);
 	}
 
 	internal void GetLocalFloat(int index, ref Hashtable readers)
@@ -596,8 +617,8 @@ class InstructionState
 
 	internal void SetLocalFloat(int index, int instructionIndex)
 	{
-		SetLocalStoreSite(index, instructionIndex);
 		SetLocal1(index, PrimitiveTypeWrapper.FLOAT);
+		SetLocalStoreSite(index, instructionIndex);
 	}
 
 	internal void GetLocalDouble(int index, ref Hashtable readers)
@@ -610,8 +631,8 @@ class InstructionState
 
 	internal void SetLocalDouble(int index, int instructionIndex)
 	{
-		SetLocalStoreSite(index, instructionIndex);
 		SetLocal2(index, PrimitiveTypeWrapper.DOUBLE);
+		SetLocalStoreSite(index, instructionIndex);
 	}
 
 	internal TypeWrapper GetLocalType(int index, ref Hashtable readers)
@@ -657,7 +678,6 @@ class InstructionState
 
 	internal void SetLocalType(int index, TypeWrapper type, int instructionIndex)
 	{
-		SetLocalStoreSite(index, instructionIndex);
 		if(type.IsWidePrimitive)
 		{
 			SetLocal2(index, type);
@@ -666,6 +686,7 @@ class InstructionState
 		{
 			SetLocal1(index, type);
 		}
+		SetLocalStoreSite(index, instructionIndex);
 	}
 
 	internal void PushType(TypeWrapper type)
@@ -909,7 +930,7 @@ class InstructionState
 		for(int i = 0; i < locals.Length; i++)
 		{
 			TypeWrapper type = locals[i];
-			if(type == VerifierTypeWrapper.UninitializedThis || VerifierTypeWrapper.IsNew(type))
+			if(VerifierTypeWrapper.IsNew(type))
 			{
 				throw new VerifyError("uninitialized object ref in local (2)");
 			}
@@ -917,7 +938,7 @@ class InstructionState
 		for(int i = 0; i < stackSize; i++)
 		{
 			TypeWrapper type = stack[i];
-			if(type == VerifierTypeWrapper.UninitializedThis || VerifierTypeWrapper.IsNew(type))
+			if(VerifierTypeWrapper.IsNew(type))
 			{
 				throw new VerifyError("uninitialized object ref on stack");
 			}
@@ -1114,6 +1135,11 @@ class MethodAnalyzer
 
 	internal MethodAnalyzer(TypeWrapper wrapper, MethodWrapper mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader)
 	{
+		if(method.VerifyError != null)
+		{
+			throw new VerifyError(method.VerifyError);
+		}
+
 		this.classLoader = classLoader;
 		this.classFile = classFile;
 		this.method = method;
@@ -1126,7 +1152,27 @@ class MethodAnalyzer
 		Hashtable returnAddressTypes = new Hashtable();
 		Hashtable newTypes = new Hashtable();
 
-		// TODO we should ensure that exception blocks and handlers start and end at instruction boundaries (note: wide prefix)
+		try
+		{
+			int end_pc = method.Instructions[method.Instructions.Length - 1].PC;
+			// ensure that exception blocks and handlers start and end at instruction boundaries
+			for(int i = 0; i < method.ExceptionTable.Length; i++)
+			{
+				int start = method.PcIndexMap[method.ExceptionTable[i].start_pc];
+				int end = method.PcIndexMap[method.ExceptionTable[i].end_pc];
+				int handler = method.PcIndexMap[method.ExceptionTable[i].handler_pc];
+				if((start > end && end != -1) || start == -1 ||
+					(end == -1 && method.ExceptionTable[i].end_pc != end_pc) ||
+					handler == -1)
+				{
+					throw new IndexOutOfRangeException();
+				}
+			}
+		}
+		catch(IndexOutOfRangeException)
+		{
+			throw new VerifyError(string.Format("Illegal exception table (class: {0}, method: {1}, signature: {2}", classFile.Name, method.Name, method.Signature));
+		}
 
 		// start by computing the initial state, the stack is empty and the locals contain the arguments
 		state[0] = new InstructionState(method.MaxLocals, method.MaxStack);
@@ -1137,6 +1183,7 @@ class MethodAnalyzer
 			if(method.Name == "<init>")
 			{
 				state[0].SetLocalType(firstNonArgLocalIndex++, VerifierTypeWrapper.UninitializedThis, -1);
+				state[0].SetUnitializedThis(true);
 			}
 			else
 			{
@@ -1532,12 +1579,21 @@ class MethodAnalyzer
 								}
 								if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
 								{
-									// TODO check arg (should match signature)
-									// error: "Inconsistent args size"
+									int argcount = args.Length + 1;
+									for(int j = 0; j < args.Length; j++)
+									{
+										if(args[j].IsWidePrimitive)
+										{
+											argcount++;
+										}
+									}
+									if(instr.Arg2 != argcount)
+									{
+										throw new VerifyError("Inconsistent args size");
+									}
 								}
 								if(instr.NormalizedOpCode != NormalizedByteCode.__invokestatic)
 								{
-									// TODO we should verify that in a constructor, the base class constructor is actually called
 									if(cpi.Name == "<init>")
 									{
 										TypeWrapper type = s.PopType();
@@ -1557,6 +1613,7 @@ class MethodAnalyzer
 										if(type == VerifierTypeWrapper.UninitializedThis)
 										{
 											s.MarkInitialized(type, wrapper, i);
+											s.SetUnitializedThis(false);
 										}
 										else
 										{
@@ -1913,9 +1970,14 @@ class MethodAnalyzer
 								break;
 							case NormalizedByteCode.__return:
 								// mw is null if we're called from IsSideEffectFreeStaticInitializer
-								if(mw != null && mw.ReturnType != PrimitiveTypeWrapper.VOID)
+								if(mw != null)
 								{
-									throw new VerifyError("Wrong return type in function");
+									if(mw.ReturnType != PrimitiveTypeWrapper.VOID)
+									{
+										throw new VerifyError("Wrong return type in function");
+									}
+									// if we're a constructor, make sure we called the base class constructor
+									s.CheckUninitializedThis();
 								}
 								break;
 							case NormalizedByteCode.__areturn:
@@ -2524,21 +2586,6 @@ class MethodAnalyzer
 		throw new VerifyError("Illegal constant pool index");
 	}
 
-	private string GetConstantPoolClass(int index)
-	{
-		try
-		{
-			return classFile.GetConstantPoolClass(index);
-		}
-		catch(InvalidCastException)
-		{
-		}
-		catch(IndexOutOfRangeException)
-		{
-		}
-		throw new VerifyError("Illegal constant pool index");
-	}
-
 	private TypeWrapper GetConstantPoolClassType(int index)
 	{
 		try
@@ -2549,6 +2596,9 @@ class MethodAnalyzer
 		{
 		}
 		catch(IndexOutOfRangeException)
+		{
+		}
+		catch(NullReferenceException)
 		{
 		}
 		throw new VerifyError("Illegal constant pool index");

@@ -416,7 +416,7 @@ enum ByteCodeFlags : byte
 
 struct ByteCodeMetaData
 {
-	private static ByteCodeMetaData[] data = new ByteCodeMetaData[202];
+	private static ByteCodeMetaData[] data = new ByteCodeMetaData[256];
 	private ByteCodeMode reg;
 	private ByteCodeModeWide wide;
 	private NormalizedByteCode normbc;

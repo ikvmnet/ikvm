@@ -68,9 +68,16 @@ namespace IKVM.NativeCode.java
 				{
 					if(dim >= 0)
 					{
-						TypeWrapper wrapper = VMClass.getWrapperFromClass(clazz);
-						wrapper.Finish();
-						return NetSystem.Array.CreateInstance(wrapper.TypeAsArrayType, dim);
+						try
+						{
+							TypeWrapper wrapper = VMClass.getWrapperFromClass(clazz);
+							wrapper.Finish();
+							return NetSystem.Array.CreateInstance(wrapper.TypeAsArrayType, dim);
+						}
+						catch(RetargetableJavaException x)
+						{
+							throw x.ToJava();
+						}
 					}
 					throw JavaException.NegativeArraySizeException();
 				}
@@ -83,13 +90,18 @@ namespace IKVM.NativeCode.java
 					MethodWrapper wrapper = (MethodWrapper)methodCookie;
 					return wrapper.Name;
 				}
-				
+
 				public static int GetModifiers(object methodCookie)
 				{
 					MethodWrapper wrapper = (MethodWrapper)methodCookie;
 					return (int)wrapper.Modifiers;
 				}
 
+				public static int GetRealModifiers(object clazz)
+				{
+					return (int)VMClass.getWrapperFromClass(clazz).Modifiers;
+				}
+				
 				public static object GetReturnType(object methodCookie)
 				{
 					MethodWrapper wrapper = (MethodWrapper)methodCookie;
@@ -612,7 +624,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public static object defineClass(object classLoader, string name, byte[] data, int offset, int length, object protectionDomain)
+			public static object defineClassImpl(object classLoader, string name, byte[] data, int offset, int length, object protectionDomain)
 			{
 				Profiler.Enter("ClassLoader.defineClass");
 				try
@@ -808,7 +820,14 @@ namespace IKVM.NativeCode.java
 			public static void initialize(object cwrapper)
 			{
 				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				wrapper.Finish();
+				try
+				{
+					wrapper.Finish();
+				}
+				catch(RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
 				wrapper.RunClassInit();
 			}
 
@@ -828,13 +847,13 @@ namespace IKVM.NativeCode.java
 				try
 				{
 					TypeWrapper wrapper = (TypeWrapper)cwrapper;
+					wrapper.Finish();
 					// we need to look through the array for unloadable types, because we may not let them
 					// escape into the 'wild'
 					MethodWrapper[] methods = wrapper.GetMethods();
 					ArrayList list = new ArrayList();
 					for(int i = 0; i < methods.Length; i++)
 					{
-						methods[i].Link();
 						// we don't want to expose "hideFromReflection" methods (one reason is that it would
 						// mess up the serialVersionUID computation)
 						if(!methods[i].IsHideFromReflection)
@@ -1032,7 +1051,7 @@ namespace IKVM.NativeCode.java
 					Modifiers mask = Modifiers.Public | Modifiers.Protected | Modifiers.Private | Modifiers.Final |
 						Modifiers.Static | Modifiers.Abstract | Modifiers.Interface;
 					return (int)(modifiers & mask);
-				}				
+				}
 				catch(RetargetableJavaException x)
 				{
 					throw x.ToJava();
@@ -1048,7 +1067,14 @@ namespace IKVM.NativeCode.java
 			public static bool hasClassInitializer(object clazz)
 			{
 				TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
-				wrapper.Finish();
+				try
+				{
+					wrapper.Finish();
+				}
+				catch(RetargetableJavaException x)
+				{
+					x.ToJava();
+				}
 				Type type = wrapper.TypeAsTBD;
 				if(!type.IsArray && type.TypeInitializer != null)
 				{
@@ -1136,6 +1162,10 @@ namespace IKVM.NativeCode.java
 					// TODO do we need error handling?
 					mw.Invoke(obj, null, false);
 					return obj;
+				}
+				catch(RetargetableJavaException x)
+				{
+					throw x.ToJava();
 				}
 				finally
 				{

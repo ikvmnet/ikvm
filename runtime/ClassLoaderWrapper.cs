@@ -187,7 +187,8 @@ class ClassLoaderWrapper
 	{
 		lock(nameClashHash.SyncRoot)
 		{
-			if(nameClashHash.ContainsKey(name))
+			// FXBUG the 1.1 CLR doesn't like type names that end with a period.
+			if(nameClashHash.ContainsKey(name) || name.EndsWith("."))
 			{
 				if(JVM.IsStaticCompiler)
 				{
@@ -226,6 +227,13 @@ class ClassLoaderWrapper
 			lock(types.SyncRoot)
 			{
 				type = (TypeWrapper)types[name];
+				if(type == null && types.ContainsKey(name))
+				{
+					// NOTE this can also happen if we (incorrectly) trigger a load of this class during
+					// the loading of the base class, so we print a trace message here.
+					Tracer.Error(Tracer.ClassLoading, "**** ClassCircularityError: {0} ****", name);
+					throw new ClassCircularityError(name);
+				}
 			}
 			if(type != null)
 			{
@@ -554,13 +562,6 @@ class ClassLoaderWrapper
 		{
 			if(types.ContainsKey(f.Name))
 			{
-				if(types[f.Name] == null)
-				{
-					// NOTE this can also happen if we (incorrectly) trigger a load of this class during
-					// the loading of the base class, so we print a warning here.
-					Tracer.Warning(Tracer.ClassLoading, "**** ClassCircularityError: {0} ****", f.Name);
-					throw new ClassCircularityError(f.Name);
-				}
 				throw new LinkageError("duplicate class definition: " + f.Name);
 			}
 			// mark the type as "loading in progress", so that we can detect circular dependencies.

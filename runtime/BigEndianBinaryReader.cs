@@ -48,6 +48,14 @@ sealed class BigEndianBinaryReader
 		return br;
 	}
 
+	internal bool IsAtEnd
+	{
+		get
+		{
+			return pos == end;
+		}
+	}
+
 	internal int Position
 	{
 		get
@@ -131,17 +139,17 @@ sealed class BigEndianBinaryReader
 		return BitConverter.ToSingle(BitConverter.GetBytes(ReadInt32()), 0);
 	}
 
-	internal string ReadString()
+	internal string ReadString(string classFile)
 	{
 		int len = ReadUInt16();
 		if(end - pos < len)
 		{
-			throw new ClassFormatError("Truncated class file");
+			throw new ClassFormatError("{0} (Truncated class file)", classFile);
 		}
 		// special code path for ASCII strings (which occur *very* frequently)
 		for(int j = 0; j < len; j++)
 		{
-			if(buf[pos + j] >= 128)
+			if(buf[pos + j] == 0 || buf[pos + j] >= 128)
 			{
 				// NOTE we *cannot* use System.Text.UTF8Encoding, because this is *not* compatible
 				// (esp. for embedded nulls)
@@ -156,7 +164,7 @@ sealed class BigEndianBinaryReader
 						case 0:
 							if(c == 0)
 							{
-								throw new ClassFormatError("Illegal UTF8 string in constant pool");
+								throw new ClassFormatError("{0} (Illegal UTF8 string in constant pool)", classFile);
 							}
 							break;
 						case 1: case 2: case 3: case 4: case 5: case 6: case 7:
@@ -167,7 +175,7 @@ sealed class BigEndianBinaryReader
 							char2 = buf[pos + ++i];
 							if((char2 & 0xc0) != 0x80)
 							{
-								throw new ClassFormatError("Illegal UTF8 string in constant pool");
+								throw new ClassFormatError("{0} (Illegal UTF8 string in constant pool)", classFile);
 							}
 							c = (((c & 0x1F) << 6) | (char2 & 0x3F));
 							break;
@@ -177,12 +185,12 @@ sealed class BigEndianBinaryReader
 							char3 = buf[pos + ++i];
 							if((char2 & 0xc0) != 0x80 || (char3 & 0xc0) != 0x80)
 							{
-								throw new ClassFormatError("Illegal UTF8 string in constant pool");
+								throw new ClassFormatError("{0} (Illegal UTF8 string in constant pool)", classFile);
 							}
 							c = (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
 							break;
 						default:
-							throw new ClassFormatError("Illegal UTF8 string in constant pool");
+							throw new ClassFormatError("{0} (Illegal UTF8 string in constant pool)", classFile);
 					}
 					ch[l++] = (char)c;
 				}
