@@ -541,7 +541,8 @@ namespace IKVM.Runtime
 
 		public static void VerboseCastFailure(RuntimeTypeHandle typeHandle, object obj)
 		{
-			throw IKVM.Internal.JVM.Library.newClassCastException(String.Format("Object of type \"{0}\" cannot be cast to \"{1}\"", obj.GetType().AssemblyQualifiedName, Type.GetTypeFromHandle(typeHandle).AssemblyQualifiedName));
+			string msg = String.Format("Object of type \"{0}\" cannot be cast to \"{1}\"", obj.GetType().AssemblyQualifiedName, Type.GetTypeFromHandle(typeHandle).AssemblyQualifiedName);
+			throw IKVM.Internal.JVM.Library.newClassCastException(msg);
 		}
 	}
 }
