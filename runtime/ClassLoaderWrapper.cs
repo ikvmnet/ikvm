@@ -160,6 +160,7 @@ class ClassLoaderWrapper
 		{
 			if(loadClassDelegate == null)
 			{
+				// LIBREFLECT
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
 				tw.Finish();
 				loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), tw.TypeAsTBD, "loadClassHelper");
@@ -872,6 +873,7 @@ class ClassLoaderWrapper
 		{
 			if(systemClassLoader == null)
 			{
+				// LIBREFLECT
 				TypeWrapper tw = LoadClassCritical("java.lang.System");
 				// We directly access the systemClassLoader field, because calling ClassLoader.getSystemClassLoader
 				// would cause a security check (and would require to be wrapped in a AccessController.doPriviledged()).

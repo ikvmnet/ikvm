@@ -492,6 +492,7 @@ abstract class MethodWrapper : MemberWrapper
 		}
 	}
 
+	[HideFromJava]
 	internal virtual object Invoke(object obj, object[] args, bool nonVirtual)
 	{
 		AssertLinked();
@@ -539,6 +540,7 @@ abstract class MethodWrapper : MemberWrapper
 
 	private delegate object Invoker(IntPtr pFunc, object obj, object[] args);
 
+	[HideFromJava]
 	internal object InvokeImpl(MethodBase method, object obj, object[] args, bool nonVirtual)
 	{
 		Debug.Assert(!(method is MethodBuilder || method is ConstructorBuilder));
@@ -1633,29 +1635,9 @@ sealed class ConstantFieldWrapper : FieldWrapper
 		{
 			ilgen.Emit(OpCodes.Ldc_I8, unchecked((long)(ulong)constant));
 		}
-		else if(constant is Enum)
-		{
-			Type underlying = Enum.GetUnderlyingType(constant.GetType());
-			if(underlying == typeof(long))
-			{
-				ilgen.Emit(OpCodes.Ldc_I8, ((IConvertible)constant).ToInt64(null));
-			}
-			if(underlying == typeof(ulong))
-			{
-				ilgen.Emit(OpCodes.Ldc_I8, unchecked((long)((IConvertible)constant).ToUInt64(null)));
-			}
-			else if(underlying == typeof(uint))
-			{
-				ilgen.Emit(OpCodes.Ldc_I4, unchecked((int)((IConvertible)constant).ToUInt32(null)));
-			}
-			else
-			{
-				ilgen.Emit(OpCodes.Ldc_I4, ((IConvertible)constant).ToInt32(null));
-			}
-		}
 		else
 		{
-			throw new NotImplementedException(constant.GetType().FullName);
+			throw new InvalidOperationException(constant.GetType().FullName);
 		}
 	}
 

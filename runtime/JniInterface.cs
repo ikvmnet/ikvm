@@ -917,6 +917,7 @@ namespace IKVM.Runtime
 
 		internal static jint DestroyJavaVM(JavaVM* pJVM)
 		{
+			// LIBREFLECT
 			TypeWrapper vmthread = ClassLoaderWrapper.LoadClassCritical("java.lang.VMThread");
 			vmthread.GetMethodWrapper(new MethodDescriptor("jniWaitUntilLastThread", "()V"), false).Invoke(null, new object[0], false);
 			return JNIEnv.JNI_ERR;
@@ -974,6 +975,7 @@ namespace IKVM.Runtime
 			}
 			// TODO if we set Thread.IsBackground to false when we attached, now might be a good time to set it back to true.
 			JNIEnv.FreeJNIEnv();
+			// LIBREFLECT
 			TypeWrapper vmthread = ClassLoaderWrapper.LoadClassCritical("java.lang.VMThread");
 			vmthread.GetMethodWrapper(new MethodDescriptor("jniDetach", "()V"), false).Invoke(null, new object[0], false);
 			return JNIEnv.JNI_OK;
@@ -1282,10 +1284,12 @@ namespace IKVM.Runtime
 			TypeWrapper tw;
 			if(mw.Name == "<init>")
 			{
+				// LIBREFLECT
 				tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Constructor");
 			}
 			else
 			{
+				// LIBREFLECT
 				tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Method");
 			}
 			object clazz = IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(mw.DeclaringType);
@@ -1308,6 +1312,7 @@ namespace IKVM.Runtime
 		internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field)
 		{
 			FieldWrapper fw = FieldWrapper.FromCookie(field);
+			// LIBREFLECT
 			TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Field");
 			object clazz = IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(fw.DeclaringType);
 			return pEnv->MakeLocalRef(Activator.CreateInstance(tw.TypeAsTBD, new object[] { clazz, fw }));
@@ -1368,9 +1373,7 @@ namespace IKVM.Runtime
 				SetPendingException(pEnv, null);
 				try
 				{
-					MethodWrapper mw = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable").GetMethodWrapper(new MethodDescriptor("printStackTrace", "()V"), false);
-					// Sun always prints 'Exception in thread "..." '
-					mw.Invoke(x, new object[0], false);
+					ExceptionHelper.printStackTrace(x);
 				}
 				catch(Exception ex)
 				{
@@ -2926,7 +2929,7 @@ namespace IKVM.Runtime
 			{
 				if(start < 0 || start > s.Length || s.Length - start < len)
 				{
-					SetPendingException(pEnv, JavaException.StringIndexOutOfBoundsException(""));
+					SetPendingException(pEnv, JavaException.StringIndexOutOfBoundsException());
 					return;
 				}
 				else
@@ -2953,7 +2956,7 @@ namespace IKVM.Runtime
 			{
 				if(start < 0 || start > s.Length || s.Length - start < len)
 				{
-					SetPendingException(pEnv, JavaException.StringIndexOutOfBoundsException(""));
+					SetPendingException(pEnv, JavaException.StringIndexOutOfBoundsException());
 					return;
 				}
 				else
@@ -3146,6 +3149,7 @@ namespace IKVM.Runtime
 					SetPendingException(pEnv, JavaException.IllegalArgumentException("capacity"));
 					return IntPtr.Zero;
 				}
+				// LIBREFLECT
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.nio.VMDirectByteBuffer");
 				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("NewDirectByteBuffer", "(Lcli.System.IntPtr;I)Ljava.nio.ByteBuffer;"), false);
 				return pEnv->MakeLocalRef(mw.Invoke(null, new object[] { address, (int)capacity }, false));
@@ -3161,6 +3165,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
+				// LIBREFLECT
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.nio.VMDirectByteBuffer");
 				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("GetDirectBufferAddress", "(Ljava.nio.ByteBuffer;)Lcli.System.IntPtr;"), false);
 				return (IntPtr)mw.Invoke(null, new object[] { pEnv->UnwrapRef(buf) }, false);
@@ -3176,6 +3181,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
+				// LIBREFLECT
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.nio.Buffer");
 				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("capacity", "()I"), false);
 				return (jlong)(long)(int)mw.Invoke(pEnv->UnwrapRef(buf), new object[0], false);

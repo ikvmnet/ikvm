@@ -147,19 +147,29 @@ final class VMFile
 	// TODO handle errors
 	try
 	{
-	    if(cli.System.IO.Directory.Exists(path)) 
-	    {
-		cli.System.IO.Directory.Delete(path);
-	    } 
-	    else if(cli.System.IO.File.Exists(path)) 
-	    {
-		cli.System.IO.File.Delete(path);
-	    } 
-	    else 
-	    {
-		return false;
-	    }
-	    return true;
+            cli.System.IO.FileSystemInfo fileInfo;
+            if(cli.System.IO.Directory.Exists(path))
+            {
+                fileInfo = new cli.System.IO.DirectoryInfo(path);
+            }
+            else if(cli.System.IO.File.Exists(path))
+            {
+                fileInfo = new cli.System.IO.FileInfo(path);
+            }
+            else
+            {
+                return false;
+            }
+            cli.System.IO.FileAttributes attr = fileInfo.get_Attributes();
+            // We need to be able to delete read-only files/dirs too, so we clear
+            // the read-only attribute, if set.
+            if((attr.Value & cli.System.IO.FileAttributes.ReadOnly) != 0)
+            {
+                attr = cli.System.IO.FileAttributes.wrap(attr.Value & ~cli.System.IO.FileAttributes.ReadOnly);
+                fileInfo.set_Attributes(attr);
+            }
+            fileInfo.Delete();
+            return true;
 	}
 	catch(Throwable x)
 	{
@@ -209,21 +219,21 @@ final class VMFile
     {
 	try
 	{
-	    // HACK if file refers to a directory, we always return true
-	    if(cli.System.IO.Directory.Exists(path))
-	    {
-		return true;
-	    }
-	    new cli.System.IO.FileInfo(path).Open(
-		cli.System.IO.FileMode.wrap(cli.System.IO.FileMode.Open),
-		cli.System.IO.FileAccess.wrap(cli.System.IO.FileAccess.Write),
-		cli.System.IO.FileShare.wrap(cli.System.IO.FileShare.ReadWrite)).Close();
-	    return true;
+            cli.System.IO.FileInfo fileInfo = new cli.System.IO.FileInfo(path);
+            cli.System.IO.FileAttributes attr = fileInfo.get_Attributes();
+            // Like the JDK we'll only look at the read-only attribute and not
+            // the security permissions associated with the file or directory.
+            return (attr.Value & cli.System.IO.FileAttributes.ReadOnly) == 0;
 	}
 	catch(Throwable x)
 	{
 	    return false;
 	}
+    }
+
+    static boolean canWriteDirectory(File dir)
+    {
+        return canWrite(dir.getPath());
     }
 
     static boolean canRead(String path)

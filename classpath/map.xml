@@ -810,6 +810,49 @@
 				</body>
 			</method>
 		</class>
+		<class name="java.lang.VMClass">
+			<method name="createField" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.reflect.Field;">
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<newobj class="java.lang.reflect.Field" name="&lt;init&gt;" sig="(Ljava.lang.Class;Ljava.lang.Object;)V" />
+					<ret />
+				</body>
+			</method>
+			<method name="createMethod" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.reflect.Method;">
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<newobj class="java.lang.reflect.Method" name="&lt;init&gt;" sig="(Ljava.lang.Class;Ljava.lang.Object;)V" />
+					<ret />
+				</body>
+			</method>
+			<method name="createConstructor" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.reflect.Constructor;">
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<newobj class="java.lang.reflect.Constructor" name="&lt;init&gt;" sig="(Ljava.lang.Class;Ljava.lang.Object;)V" />
+					<ret />
+				</body>
+			</method>
+		</class>
+		<class name="gnu.java.net.PlainDatagramSocketImpl">
+			<method name="setDatagramPacketLength" sig="(Ljava.net.DatagramPacket;I)V">
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<stfld class="java.net.DatagramPacket" name="length" sig="I" />
+					<ret />
+				</body>
+			</method>
+			<method name="getDatagramPacketBufferLength" sig="(Ljava.net.DatagramPacket;)I">
+				<body>
+					<ldarg_0 />
+					<ldfld class="java.net.DatagramPacket" name="maxlen" sig="I" />
+					<ret />
+				</body>
+			</method>
+		</class>
 		<class name="java.nio.DirectByteBufferImpl">
 			<method name="get" sig="()B">
 				<body>

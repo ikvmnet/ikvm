@@ -90,7 +90,7 @@ public final class ExceptionHelper
 	{
 	    // HACK shouldn't there be a better way to determine whether a method is privatescope?
 	    return !mb.get_IsPrivate() && !mb.get_IsFamily() && !mb.get_IsFamilyAndAssembly() &&
-		    !mb.get_IsFamilyOrAssembly() && !mb.get_IsPublic();
+		    !mb.get_IsFamilyOrAssembly() && !mb.get_IsPublic() && !mb.get_IsAssembly();
 	}
 
 	StackTraceElement[] get_StackTrace(Throwable t)

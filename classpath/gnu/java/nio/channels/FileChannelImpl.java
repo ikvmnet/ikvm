@@ -246,7 +246,10 @@ public final class FileChannelImpl extends FileChannel
 	try
 	{
 	    if(false) throw new cli.System.IO.IOException();
-	    stream.SetLength(size);
+            if(size < stream.get_Length())
+            {
+	        stream.SetLength(size);
+            }
 	}
 	catch(cli.System.IO.IOException x)
 	{

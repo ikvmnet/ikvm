@@ -644,9 +644,7 @@ namespace IKVM.Internal
 					{
 						return null;
 					}
-					// NOTE we cannot use CoreClasses.java_lang_Object here, because that would trigger a load
-					// of java.lang.String and java.lang.Throwable before we've got the remapping set up.
-					return ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
+					return CoreClasses.java.lang.Object.Wrapper;
 				}
 
 				internal RemapperTypeWrapper(CompilerClassLoader classLoader, IKVM.Internal.MapXml.Class c, IKVM.Internal.MapXml.Root map)

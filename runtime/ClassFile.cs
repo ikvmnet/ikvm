@@ -1613,7 +1613,7 @@ class ClassFile
 							}
 							break;
 						case "LocalVariableTable":
-							if(JVM.Debug)
+							if(JVM.Debug || JVM.IsStaticCompiler)
 							{
 								BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
 								int count = rdr.ReadUInt16();

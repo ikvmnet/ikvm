@@ -154,6 +154,7 @@ class ExceptionHelper
 
 	static ExceptionHelper()
 	{
+		// LIBREFLECT
 		TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.ExceptionHelper");
 		tw.Finish();
 		Type exceptionHelper = tw.TypeAsTBD;
@@ -174,6 +175,7 @@ class ExceptionHelper
 	}
 
 	// HACK this is used in ClassFile.cs and MemberWrapper.cs
+	[HideFromJava]
 	internal static Exception MapExceptionFast(Exception x)
 	{
 		try

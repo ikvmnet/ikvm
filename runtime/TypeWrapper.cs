@@ -3482,6 +3482,10 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					// and ikvmstub has to export them, so we have to add a custom attribute.
 					if(constantValue != null)
 					{
+						if(constantValue is bool)
+						{
+							constantValue = ((bool)constantValue) ? 1 : 0;
+						}
 						CustomAttributeBuilder constantValueAttrib = new CustomAttributeBuilder(typeof(ConstantValueAttribute).GetConstructor(new Type[] { constantValue.GetType() }), new object[] { constantValue });
 						field.SetCustomAttribute(constantValueAttrib);
 					}
@@ -5317,7 +5321,16 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 					{
 						name = "_" + name;
 					}
-					AddField(new ConstantFieldWrapper(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], null));
+					object val;
+					if(fieldType == PrimitiveTypeWrapper.LONG)
+					{
+						val = ((IConvertible)fields[i].GetValue(null)).ToInt64(null);
+					}
+					else
+					{
+						val = ((IConvertible)fields[i].GetValue(null)).ToInt32(null);
+					}
+					AddField(new ConstantFieldWrapper(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val));
 				}
 			}
 			AddField(new EnumValueFieldWrapper(this, fieldType));

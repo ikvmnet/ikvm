@@ -142,7 +142,7 @@ abstract class VMClass
 	Field[] fields = new Field[fieldCookies.length];
 	for(int i = 0; i < fields.length; i++)
 	{
-	    fields[i] = new Field(clazz, fieldCookies[i]);
+	    fields[i] = createField(clazz, fieldCookies[i]);
 	}
 	return fields;
     }
@@ -154,7 +154,7 @@ abstract class VMClass
 	Method[] methods = new Method[methodCookies.length];
 	for(int i = 0; i < methodCookies.length; i++)
 	{
-	    methods[i] = new Method(clazz, methodCookies[i]);
+	    methods[i] = createMethod(clazz, methodCookies[i]);
 	}
 	return methods;
     }
@@ -166,10 +166,15 @@ abstract class VMClass
 	Constructor[] constructors = new Constructor[methodCookies.length];
 	for(int i = 0; i < methodCookies.length; i++)
 	{
-	    constructors[i] = new Constructor(clazz, methodCookies[i]);
+	    constructors[i] = createConstructor(clazz, methodCookies[i]);
 	}
 	return constructors;
     }
+
+    // these methods live in map.xml to access package accessible constructors
+    private static native Field createField(Class declaringClass, Object fieldCookie);
+    private static native Method createMethod(Class declaringClass, Object methodCookie);
+    private static native Constructor createConstructor(Class declaringClass, Object methodCookie);
 
     static ClassLoader getClassLoader(Class clazz)
     {

@@ -224,11 +224,6 @@ sealed class JavaException
 		return (Exception)Activator.CreateInstance(Load("java.lang.UnsatisfiedLinkError"), new object[] { String.Format(s, args) });
 	}
 
-	internal static Exception IllegalStateException(string s, params object[] args)
-	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalStateException"), new object[] { String.Format(s, args) });
-	}
-
 	internal static Exception IllegalArgumentException(string s, params object[] args)
 	{
 		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalArgumentException"), new object[] { String.Format(s, args) });
@@ -249,19 +244,14 @@ sealed class JavaException
 		return (Exception)Activator.CreateInstance(Load("java.lang.IndexOutOfBoundsException"), new object[] { s });
 	}
 
-	internal static Exception StringIndexOutOfBoundsException(string s)
+	internal static Exception StringIndexOutOfBoundsException()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.StringIndexOutOfBoundsException"), new object[] { s });
+		return (Exception)Activator.CreateInstance(Load("java.lang.StringIndexOutOfBoundsException"));
 	}
 
 	internal static Exception InvocationTargetException(Exception x)
 	{
 		return (Exception)Activator.CreateInstance(Load("java.lang.reflect.InvocationTargetException"), new object[] { x });
-	}
-
-	internal static Exception IOException(string s, params object[] args)
-	{
-		return (Exception)Activator.CreateInstance(Load("java.io.IOException"), new object[] { String.Format(s, args) });
 	}
 
 	internal static Exception UnknownHostException(string s, params object[] args)

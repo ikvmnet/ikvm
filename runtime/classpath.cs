@@ -76,6 +76,7 @@ namespace IKVM.NativeCode.java
 
 			internal class JavaWrapper
 			{
+				// LIBREFLECT
 				private static Type java_lang_Byte = ClassLoaderWrapper.LoadClassCritical("java.lang.Byte").TypeAsTBD;
 				private static Type java_lang_Boolean = ClassLoaderWrapper.LoadClassCritical("java.lang.Boolean").TypeAsTBD;
 				private static Type java_lang_Short = ClassLoaderWrapper.LoadClassCritical("java.lang.Short").TypeAsTBD;
@@ -91,10 +92,6 @@ namespace IKVM.NativeCode.java
 					{
 						return Activator.CreateInstance(java_lang_Byte, new object[] { o });
 					}
-					else if(o is byte)
-					{
-						return Activator.CreateInstance(java_lang_Byte, new object[] { (sbyte)(byte)o });
-					}
 					else if(o is bool)
 					{
 						return Activator.CreateInstance(java_lang_Boolean, new object[] { o });
@@ -102,10 +99,6 @@ namespace IKVM.NativeCode.java
 					else if(o is short)
 					{
 						return Activator.CreateInstance(java_lang_Short, new object[] { o });
-					}
-					else if(o is ushort)
-					{
-						return Activator.CreateInstance(java_lang_Short, new object[] { (short)(ushort)o });
 					}
 					else if(o is char)
 					{
@@ -115,17 +108,9 @@ namespace IKVM.NativeCode.java
 					{
 						return Activator.CreateInstance(java_lang_Integer, new object[] { o });
 					}
-					else if(o is uint)
-					{
-						return Activator.CreateInstance(java_lang_Integer, new object[] { (int)(uint)o });
-					}
 					else if(o is long)
 					{
 						return Activator.CreateInstance(java_lang_Long, new object[] { o });
-					}
-					else if(o is ulong)
-					{
-						return Activator.CreateInstance(java_lang_Long, new object[] { (long)(ulong)o });
 					}
 					else if(o is float)
 					{
@@ -135,41 +120,9 @@ namespace IKVM.NativeCode.java
 					{
 						return Activator.CreateInstance(java_lang_Double, new object[] { o });
 					}
-					else if(o is Enum)
-					{
-						Type enumType = Enum.GetUnderlyingType(o.GetType());
-						if(enumType == typeof(byte) || enumType == typeof(sbyte))
-						{
-							return JavaWrapper.Box((sbyte)((IConvertible)o).ToInt32(null));
-						}
-						else if(enumType == typeof(short) || enumType == typeof(ushort))
-						{
-							return JavaWrapper.Box((short)((IConvertible)o).ToInt32(null));
-						}
-						else if(enumType == typeof(int))
-						{
-							return JavaWrapper.Box(((IConvertible)o).ToInt32(null));
-						}
-						else if(enumType == typeof(uint))
-						{
-							return JavaWrapper.Box(unchecked((int)((IConvertible)o).ToUInt32(null)));
-						}
-						else if(enumType == typeof(long))
-						{
-							return JavaWrapper.Box(((IConvertible)o).ToInt64(null));
-						}
-						else if(enumType == typeof(ulong))
-						{
-							return JavaWrapper.Box(unchecked((long)((IConvertible)o).ToUInt64(null)));
-						}
-						else
-						{
-							throw new InvalidOperationException();
-						}
-					}
 					else
 					{
-						throw new NotImplementedException(o.GetType().FullName);
+						throw new InvalidOperationException();
 					}
 				}
 
@@ -178,6 +131,7 @@ namespace IKVM.NativeCode.java
 					Type type = o.GetType();
 					if(type == java_lang_Byte)
 					{
+						// LIBREFLECT
 						return java_lang_Byte.GetMethod("byteValue").Invoke(o, new object[0]);
 					}
 					else if(type == java_lang_Boolean)
@@ -297,6 +251,12 @@ namespace IKVM.NativeCode.java
 								argsCopy[i] = args[i];
 							}
 						}
+						// if the method is an interface method, we must explicitly run <clinit>,
+						// because .NET reflection doesn't
+						if(mw.DeclaringType.IsInterface)
+						{
+							mw.DeclaringType.RunClassInit();
+						}
 						object retval = mw.Invoke(o, argsCopy, false);
 						if(mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
 						{
@@ -358,6 +318,12 @@ namespace IKVM.NativeCode.java
 					try
 					{
 						FieldWrapper wrapper = (FieldWrapper)fieldCookie;
+						// if the field is an interface field, we must explicitly run <clinit>,
+						// because .NET reflection doesn't
+						if(wrapper.DeclaringType.IsInterface)
+						{
+							wrapper.DeclaringType.RunClassInit();
+						}
 						object val = wrapper.GetValue(o);
 						if(wrapper.FieldTypeWrapper.IsPrimitive)
 						{
@@ -387,6 +353,12 @@ namespace IKVM.NativeCode.java
 						if(wrapper.FieldTypeWrapper.IsPrimitive)
 						{
 							v = JavaWrapper.Unbox(v);
+						}
+						// if the field is an interface field, we must explicitly run <clinit>,
+						// because .NET reflection doesn't
+						if(wrapper.DeclaringType.IsInterface)
+						{
+							wrapper.DeclaringType.RunClassInit();
 						}
 						wrapper.SetValue(o, v);
 					}
@@ -805,6 +777,7 @@ namespace IKVM.NativeCode.java
 			{
 				if(createClass == null)
 				{
+					// LIBREFLECT
 					TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
 					tw.Finish();
 					createClass = (CreateClassDelegate)Delegate.CreateDelegate(typeof(CreateClassDelegate), tw.TypeAsTBD.GetMethod("createClass", BindingFlags.Static | BindingFlags.Public));
@@ -876,6 +849,7 @@ namespace IKVM.NativeCode.java
 			{
 				if(getWrapper == null)
 				{
+					// LIBREFLECT
 					TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
 					tw.Finish();
 					getWrapper = (LookupDelegate)Delegate.CreateDelegate(typeof(LookupDelegate), tw.TypeAsTBD.GetMethod("getWrapperFromClass", BindingFlags.Static | BindingFlags.Public));
@@ -1220,6 +1194,7 @@ namespace IKVM.NativeCode.java
 			private static FieldWrapper GetFieldWrapperFromField(object field)
 			{
 				// TODO optimize this
+				// LIBREFLECT
 				return (FieldWrapper)field.GetType().GetField("fieldCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(field);
 			}
 

@@ -30,7 +30,7 @@ namespace CoreClasses.java.lang
 		// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 		// (we don't want the classes to be loaded prematurely, because they might not be available then)
 		static Object() {}
-		internal static TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
+		internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
 	}
 
 	sealed class String
@@ -39,7 +39,7 @@ namespace CoreClasses.java.lang
 		// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 		// (we don't want the classes to be loaded prematurely, because they might not be available then)
 		static String() {}
-		internal static TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.String");
+		internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.String");
 	}
 
 	sealed class Class
@@ -48,7 +48,7 @@ namespace CoreClasses.java.lang
 		// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 		// (we don't want the classes to be loaded prematurely, because they might not be available then)
 		static Class() {}
-		internal static TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Class");
+		internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Class");
 	}
 
 	sealed class Throwable
@@ -57,6 +57,6 @@ namespace CoreClasses.java.lang
 		// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 		// (we don't want the classes to be loaded prematurely, because they might not be available then)
 		static Throwable() {}
-		internal static TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable");
+		internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable");
 	}
 }

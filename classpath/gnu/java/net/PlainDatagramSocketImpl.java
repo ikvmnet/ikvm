@@ -155,7 +155,12 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             int len = packet.getLength();
-            if(socket.SendTo(ByteArrayHack.cast(packet.getData()), len, SocketFlags.wrap(SocketFlags.None), new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(packet.getAddress()), packet.getPort())) != len)
+            int port = packet.getPort();
+            if(port < 1 || port > 65535)
+            {
+                throw new SocketException("Invalid port");
+            }
+            if(socket.SendTo(ByteArrayHack.cast(packet.getData()), packet.getOffset(), len, SocketFlags.wrap(SocketFlags.None), new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(packet.getAddress()), port)) != len)
             {
                 throw new SocketException("Not all data was sent");
             }
@@ -187,27 +192,37 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected void receive(DatagramPacket packet) throws IOException
     {
+        byte[] data = packet.getData();
+        cli.System.Net.EndPoint[] remoteEP = new cli.System.Net.EndPoint[] 
+            {
+                new cli.System.Net.IPEndPoint(0, 0)
+            };
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
-            byte[] data = packet.getData();
-            cli.System.Net.EndPoint[] remoteEP = new cli.System.Net.EndPoint[] 
-                {
-                    new cli.System.Net.IPEndPoint(0, 0)
-                };
-            int length = socket.ReceiveFrom(ByteArrayHack.cast(data), remoteEP);
-            packet.setLength(length);
-            int remoteIP = (int)((cli.System.Net.IPEndPoint)remoteEP[0]).get_Address().get_Address();
-            byte[] ipv4 = new byte[] { (byte)remoteIP, (byte)(remoteIP >> 8), (byte)(remoteIP >> 16), (byte)(remoteIP >> 24) };
-            InetAddress remoteAddress = InetAddress.getByAddress(ipv4);
-            packet.setAddress(remoteAddress);
-            packet.setPort(((cli.System.Net.IPEndPoint)remoteEP[0]).get_Port());
+            int length = socket.ReceiveFrom(ByteArrayHack.cast(data), packet.getOffset(), getDatagramPacketBufferLength(packet),
+                            cli.System.Net.Sockets.SocketFlags.wrap(cli.System.Net.Sockets.SocketFlags.None), remoteEP);
+            setDatagramPacketLength(packet, length);
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
-            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            // If the buffer size was too small for the packet, ReceiveFrom receives the part of the packet
+            // that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
+            if(x.get_ErrorCode() != 10040) //WSAEMSGSIZE
+            {
+                throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            }
         }
+        int remoteIP = (int)((cli.System.Net.IPEndPoint)remoteEP[0]).get_Address().get_Address();
+        byte[] ipv4 = new byte[] { (byte)remoteIP, (byte)(remoteIP >> 8), (byte)(remoteIP >> 16), (byte)(remoteIP >> 24) };
+        InetAddress remoteAddress = InetAddress.getByAddress(ipv4);
+        packet.setAddress(remoteAddress);
+        packet.setPort(((cli.System.Net.IPEndPoint)remoteEP[0]).get_Port());
     }
+
+    // these methods live in map.xml, because we need to access the package accessible fields in DatagramPacket
+    private static native void setDatagramPacketLength(DatagramPacket packet, int length);
+    private static native int getDatagramPacketBufferLength(DatagramPacket packet);
 
     /*************************************************************************/
 

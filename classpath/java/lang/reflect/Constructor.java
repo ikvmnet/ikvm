@@ -84,8 +84,7 @@ public final class Constructor
     /**
      * This class is instantiated by java.lang.Class
      */
-    // TODO this constructor shouldn't be public (but it needs to be accessible to java.lang.Class)
-    public Constructor(Class declaringClass, Object methodCookie)
+    Constructor(Class declaringClass, Object methodCookie)
     {
 	this.declaringClass = declaringClass;
 	this.methodCookie = methodCookie;

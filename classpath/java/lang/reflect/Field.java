@@ -83,7 +83,7 @@ public final class Field extends AccessibleObject implements Member
 	/**
 	 * This class is uninstantiable except natively.
 	 */
-	public Field(Class declaringClass, Object fieldCookie)
+	Field(Class declaringClass, Object fieldCookie)
 	{
 	    this.declaringClass = declaringClass;
 	    this.fieldCookie = fieldCookie;
