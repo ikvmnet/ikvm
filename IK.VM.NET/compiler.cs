@@ -1320,7 +1320,7 @@ class Compiler
 							{
 								// HACK since, for now, all locals are of type object, we've got to cast them to the proper type
 								// UPDATE the above is no longer true, we now have at least some idea of the type of the local
-								if(type != ma.GetDeclaredLocalTypeWrapper(instr.NormalizedArg1) && !type.IsUnloadable && !type.IsNonPrimitiveValueType)
+								if(type != ma.GetDeclaredLocalTypeWrapper(instr.NormalizedArg1) && !type.IsUnloadable && !type.IsGhost && !type.IsNonPrimitiveValueType)
 								{
 									ilGenerator.Emit(OpCodes.Castclass, type.Type);
 								}
@@ -1482,6 +1482,27 @@ class Compiler
 							// TODO
 							throw new NotImplementedException();
 						}
+						else if(wrapper.IsGhost)
+						{
+							TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(wrapper);
+							Type[] implementerTypes = new Type[implementers.Length];
+							for(int j = 0; j < implementers.Length; j++)
+							{
+								implementerTypes[j] = implementers[j].Type;
+							}
+							Label end = ilGenerator.DefineLabel();
+							for(int j = 0; j < implementerTypes.Length; j++)
+							{
+								if(implementerTypes[j] != wrapper.Type)
+								{
+									ilGenerator.Emit(OpCodes.Dup);
+									ilGenerator.Emit(OpCodes.Isinst, implementerTypes[j]);
+									ilGenerator.Emit(OpCodes.Brtrue, end);
+								}
+							}
+							ilGenerator.Emit(OpCodes.Castclass, wrapper.Type);
+							ilGenerator.MarkLabel(end);
+						}
 						else
 						{
 							ilGenerator.Emit(OpCodes.Castclass, wrapper.Type);
@@ -1495,6 +1516,30 @@ class Compiler
 						{
 							// TODO
 							throw new NotImplementedException();
+						}
+						else if(wrapper.IsGhost)
+						{
+							TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(wrapper);
+							Type[] implementerTypes = new Type[implementers.Length];
+							for(int j = 0; j < implementers.Length; j++)
+							{
+								implementerTypes[j] = implementers[j].Type;
+							}
+							Label end = ilGenerator.DefineLabel();
+							for(int j = 0; j < implementerTypes.Length; j++)
+							{
+								ilGenerator.Emit(OpCodes.Dup);
+								ilGenerator.Emit(OpCodes.Isinst, implementerTypes[j]);
+								Label label = ilGenerator.DefineLabel();
+								ilGenerator.Emit(OpCodes.Brfalse_S, label);
+								ilGenerator.Emit(OpCodes.Pop);
+								ilGenerator.Emit(OpCodes.Ldc_I4_1);
+								ilGenerator.Emit(OpCodes.Br, end);
+								ilGenerator.MarkLabel(label);
+							}
+							ilGenerator.Emit(OpCodes.Pop);
+							ilGenerator.Emit(OpCodes.Ldc_I4_0);
+							ilGenerator.MarkLabel(end);
 						}
 						else
 						{
@@ -2662,9 +2707,9 @@ class Compiler
 		{
 			name = "Obj" + index;
 			TypeWrapper t = ma.GetDeclaredLocalTypeWrapper(index);
-			if(!t.IsUnloadable && t != VerifierTypeWrapper.Null)
+			if(t != VerifierTypeWrapper.Null)
 			{
-				type = t.Type;
+				type = t.TypeOrUnloadableAsObject;
 			}
 		}
 		LocalBuilder lb = (LocalBuilder)locals[name];

@@ -283,6 +283,14 @@ public final class StringHelper
 	return new String(data, offset, count);
     }
 
+    public static String NewString(StringBuffer sb)
+    {
+	synchronized(sb)
+	{
+	    return new String(sb.value, 0, sb.count);
+	}
+    }
+
     public static void getBytes(String s, int srcBegin, int srcEnd, byte dst[], int dstBegin)
     {
 	if (srcBegin < 0 || srcBegin > srcEnd || srcEnd > s.length())

@@ -30,12 +30,12 @@ namespace OpenSystem.Java
 	// NOTE when this attribute is applied to a class, it means that instances of this class
 	// will appear to be instances of the base class.
 	[AttributeUsage(AttributeTargets.All)]
-	public class HideFromReflectionAttribute : Attribute
+	public sealed class HideFromReflectionAttribute : Attribute
 	{
 	}
 
 	[AttributeUsage(AttributeTargets.Assembly)]
-	public class JavaAssemblyAttribute : Attribute
+	public sealed class JavaAssemblyAttribute : Attribute
 	{
 	}
 
@@ -58,7 +58,7 @@ namespace OpenSystem.Java
 	}
 
 	[AttributeUsage(AttributeTargets.All)]
-	public class ModifiersAttribute : Attribute
+	public sealed class ModifiersAttribute : Attribute
 	{
 		private Modifiers modifiers;
 
@@ -77,7 +77,7 @@ namespace OpenSystem.Java
 	}
 
 	[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method, AllowMultiple = true)]
-	public class ThrowsAttribute : Attribute
+	public sealed class ThrowsAttribute : Attribute
 	{
 		private string className;
 
@@ -97,7 +97,7 @@ namespace OpenSystem.Java
 	}
 
 	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = true)]
-	public class ImplementsAttribute : Attribute
+	public sealed class ImplementsAttribute : Attribute
 	{
 		private Type type;
 
@@ -116,7 +116,7 @@ namespace OpenSystem.Java
 	}
 
 	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
-	public class InnerClassAttribute : Attribute
+	public sealed class InnerClassAttribute : Attribute
 	{
 		private string innerClassName;
 		private string outerClassName;

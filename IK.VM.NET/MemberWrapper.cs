@@ -154,7 +154,14 @@ sealed class MethodWrapper : MemberWrapper
 			throw new InvalidOperationException();
 		}
 		MethodWrapper wrapper = new MethodWrapper(declaringType, md, originalMethod, method, modifiers, hideFromReflection);
-		CreateEmitters(originalMethod, method, ref wrapper.EmitCall, ref wrapper.EmitCallvirt, ref wrapper.EmitNewobj);
+		if(declaringType.IsGhost)
+		{
+			wrapper.EmitCallvirt = new GhostCallEmitter(declaringType, md, originalMethod);
+		}
+		else
+		{
+			CreateEmitters(originalMethod, method, ref wrapper.EmitCall, ref wrapper.EmitCallvirt, ref wrapper.EmitNewobj);
+		}
 		TypeWrapper retType = md.RetTypeWrapper;
 		if(!retType.IsUnloadable && retType.IsNonPrimitiveValueType)
 		{
@@ -174,6 +181,56 @@ sealed class MethodWrapper : MemberWrapper
 			}
 		}
 		return wrapper;
+	}
+
+	internal class GhostCallEmitter : CodeEmitter
+	{
+		private Type[] args;
+		private Type[] implementerTypes;
+		private CodeEmitter[] methods;
+
+		internal GhostCallEmitter(TypeWrapper type, MethodDescriptor md, MethodBase method)
+		{
+			args = md.ArgTypes;
+			TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(type);
+			implementerTypes = new Type[implementers.Length + 1];
+			methods = new CodeEmitter[implementers.Length + 1];
+			implementerTypes[0] = type.Type;
+			methods[0] = CodeEmitter.Create(OpCodes.Callvirt, method);
+			for(int i = 0; i < implementers.Length; i++)
+			{
+				implementerTypes[i + 1] = implementers[i].Type;
+				methods[i + 1] = implementers[i].GetMethodWrapper(md, true).EmitCallvirt;
+			}
+		}
+
+		internal override void Emit(ILGenerator ilgen)
+		{
+			LocalBuilder[] argLocals = new LocalBuilder[args.Length];
+			for(int i = args.Length - 1; i >= 0; i--)
+			{
+				argLocals[i] = ilgen.DeclareLocal(args[i]);
+				ilgen.Emit(OpCodes.Stloc, argLocals[i]);
+			}
+			Label end = ilgen.DefineLabel();
+			for(int i = 0; i < implementerTypes.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Isinst, implementerTypes[i]);
+				Label label = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Brfalse_S, label);
+				ilgen.Emit(OpCodes.Castclass, implementerTypes[i]);
+				for(int j = 0; j < args.Length; j++)
+				{
+					ilgen.Emit(OpCodes.Ldloc, argLocals[j]);
+				}
+				methods[i].Emit(ilgen);
+				ilgen.Emit(OpCodes.Br, end);
+				ilgen.MarkLabel(label);
+			}
+			EmitHelper.Throw(ilgen, "java.lang.IncompatibleClassChangeError", "ghost interface not implemented");
+			ilgen.MarkLabel(end);
+		}
 	}
 
 	internal static void CreateEmitters(MethodBase originalMethod, MethodBase method, ref CodeEmitter call, ref CodeEmitter callvirt, ref CodeEmitter newobj)

@@ -25,8 +25,8 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 
-[AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.ReturnValue)]
-public class UnloadableTypeAttribute : Attribute
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Method)]
+public sealed class UnloadableTypeAttribute : Attribute
 {
 	private string name;
 
@@ -44,8 +44,27 @@ public class UnloadableTypeAttribute : Attribute
 	}
 }
 
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Method)]
+public sealed class GhostTypeAttribute : Attribute
+{
+	private Type type;
+
+	public GhostTypeAttribute(Type type)
+	{
+		this.type = type;
+	}
+
+	public Type Type
+	{
+		get
+		{
+			return type;
+		}
+	}
+}
+
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Property | AttributeTargets.Class)]
-public class StackTraceInfoAttribute : Attribute
+public sealed class StackTraceInfoAttribute : Attribute
 {
 	private bool hidden;
 	private string className;

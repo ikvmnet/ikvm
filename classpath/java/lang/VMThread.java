@@ -210,6 +210,8 @@ final class VMThread
 	if(javaThread == null)
 	{
 	    // threads created outside of Java always run in the root thread group
+	    // TODO if the thread dies, it needs to be removed from the root ThreadGroup   
+	    // and any other threads waiting to join it, should be released.
 	    system.threading.Thread nativeThread = system.threading.Thread.get_CurrentThread();
 	    VMThread vmThread = new VMThread(null);
 	    vmThread.nativeThread = nativeThread;

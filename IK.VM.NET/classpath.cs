@@ -677,16 +677,36 @@ namespace NativeCode.java
 
 			public static string toString(double d, bool isFloat)
 			{
-				StringBuilder sb = new StringBuilder();
 				if(isFloat)
 				{
-					StringBufferHelper.append(sb, (float)d);
+					float f = (float)d;
+					// TODO this is not correct, we need to use the Java algorithm of converting a float to string
+					if(float.IsNaN(f))
+					{
+						return "NaN";
+					}
+					if(float.IsNegativeInfinity(f))
+					{
+						return "-Infinity";
+					}
+					if(float.IsPositiveInfinity(f))
+					{
+						return "Infinity";
+					}
+					// HACK really lame hack to apprioximate the Java behavior a little bit
+					string s = f.ToString(System.Globalization.CultureInfo.InvariantCulture);
+					if(s.IndexOf('.') == -1)
+					{
+						s += ".0";
+					}
+					return s;
 				}
 				else
 				{
-					StringBufferHelper.append(sb, d);
+					StringBuilder sb = new StringBuilder();
+					DoubleToString.append(sb, d);
+					return sb.ToString();
 				}
-				return sb.ToString();
 			}
 		}
 

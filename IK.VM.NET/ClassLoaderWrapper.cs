@@ -47,6 +47,7 @@ class ClassLoaderWrapper
 	private object javaClassLoader;
 	private Hashtable types = new Hashtable();
 	private Hashtable nativeMethods;
+	private static Hashtable ghosts = new Hashtable();	// ghosts can only exist in the bootrap class loader
 	// HACK moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
 	// so for the time being, we share one dynamic assembly among all classloaders
 	private static ModuleBuilder moduleBuilder;
@@ -129,6 +130,17 @@ class ClassLoaderWrapper
 		}
 	}
 
+	internal static bool IsGhost(TypeWrapper wrapper)
+	{
+		string name = wrapper.Name;
+		return wrapper.GetClassLoader() == bootstrapClassLoader && name != null && ghosts.ContainsKey(name);
+	}
+
+	internal static TypeWrapper[] GetGhostImplementers(TypeWrapper wrapper)
+	{
+		return (TypeWrapper[])((ArrayList)ghosts[wrapper.Name]).ToArray(typeof(TypeWrapper));
+	}
+
 	internal void LoadRemappedTypes()
 	{
 		nativeMethods = new Hashtable();
@@ -156,6 +168,30 @@ class ClassLoaderWrapper
 			TypeWrapper tw = new RemappedTypeWrapper(this, modifiers, name, type, new TypeWrapper[0], baseWrapper);
 			types.Add(name, tw);
 			typeToTypeWrapper.Add(tw.Type, tw);
+		}
+		// find the ghost interfaces
+		foreach(MapXml.Class c in map.remappings)
+		{
+			if(c.Interfaces != null)
+			{
+				// NOTE we don't support intefaces that inherit from other interfaces
+				// (actually, if they are explicitly listed it would probably work)
+				TypeWrapper typeWrapper = (TypeWrapper)types[c.Name];
+				foreach(MapXml.Interface iface in c.Interfaces)
+				{
+					TypeWrapper ifaceWrapper = (TypeWrapper)types[iface.Name];
+					if(ifaceWrapper == null || !ifaceWrapper.Type.IsAssignableFrom(typeWrapper.Type))
+					{
+						ArrayList list = (ArrayList)ghosts[iface.Name];
+						if(list == null)
+						{
+							list = new ArrayList();
+							ghosts[iface.Name] = list;
+						}
+						list.Add(typeWrapper);
+					}
+				}
+			}
 		}
 	}
 

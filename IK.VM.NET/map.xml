@@ -123,6 +123,7 @@
 		</class>
 		<class name="java.lang.String" type="System.String" modifiers="public final">
 			<implements class="java.lang.Comparable" />
+			<implements class="java.lang.CharSequence" />
 			<implements class="java.io.Serializable" />
 			<constructor sig="()V" modifiers="public">
 				<!-- TODO -->
@@ -141,7 +142,7 @@
 				<redirect class="System.String" name="Copy" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="(Ljava.lang.StringBuffer;)V" modifiers="public">
-				<redirect class="System.Text.StringBuilder" name="ToString" sig="()Ljava.lang.String;" />
+				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="(Ljava.lang.StringBuffer;)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="([B)V" modifiers="public">
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([B)Ljava.lang.String;" />
@@ -279,7 +280,7 @@
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)[B" />
 			</method>
 			<method name="subSequence" sig="(II)Ljava.lang.CharSequence;" modifiers="public">
-				<redirect class="StringHelper" type="static" sig="(Ljava.lang.String;II)Ljava.lang.Object;" />
+				<redirect class="StringHelper" type="static" name="substring" sig="(Ljava.lang.String;II)Ljava.lang.String;" />
 			</method>
 			<method name="trim" sig="()Ljava.lang.String;" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
@@ -330,137 +331,8 @@
 				<redirect class="StringHelper" type="static" name="GetOffsetField" sig="(Ljava.lang.String;)I" />
 			</field>
 		</class>
-		<!-- TODO it is incorrect to map StringBuffer to StringBuilder, because StringBuffer is thread safe, puke! -->
-		<class name="java.lang.StringBuffer" type="System.Text.StringBuilder" modifiers="public final">
-			<constructor sig="()V" modifiers="public" />
-			<constructor sig="(Ljava.lang.String;)V" modifiers="public" />
-			<constructor sig="(I)V" modifiers="public" />
-			<method name="length" sig="()I" modifiers="public">
-				<redirect name="get_Length" />
-			</method>
-			<method name="setLength" sig="(I)V" modifiers="public">
-				<redirect name="set_Length" />
-			</method>
-			<method name="ensureCapacity" sig="(I)V" modifiers="public">
-				<invokevirtual>
-					<call type="System.Text.StringBuilder" name="EnsureCapacity" />
-					<pop />
-				</invokevirtual>
-				<invokespecial>
-					<call type="System.Text.StringBuilder" name="EnsureCapacity" />
-					<pop />
-				</invokespecial>
-			</method>
-			<method name="capacity" sig="()I" modifiers="public">
-				<redirect name="get_Capacity" />
-			</method>
-			<method name="indexOf" sig="(Ljava.lang.String;)I" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.String;)I" />
-			</method>
-			<method name="indexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.String;I)I" />
-			</method>
-			<method name="lastIndexOf" sig="(Ljava.lang.String;)I" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.String;)I" />
-			</method>
-			<method name="lastIndexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.String;I)I" />
-			</method>
-			<method name="append" sig="(Ljava.lang.Object;)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.Object;)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="append" sig="(Ljava.lang.String;)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.String;)Ljava.lang.StringBuffer;" />
-			</method>
-			<!-- NOTE we're redirecting to append(Object), because StringBuilder doesn't have an Append(StringBuilder) -->
-			<method name="append" sig="(Ljava.lang.StringBuffer;)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.Object;)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="append" sig="(Z)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Z)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="append" sig="(C)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Append" />
-			</method>
-			<method name="append" sig="(I)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Append" />
-			</method>
-			<method name="append" sig="(J)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Append" />
-			</method>
-			<method name="append" sig="(F)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;F)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="append" sig="(D)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;D)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="append" sig="([C)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Append" />
-			</method>
-			<method name="append" sig="([CII)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Append" />
-			</method>
-			<method name="insert" sig="(IZ)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Insert" />
-			</method>
-			<method name="insert" sig="(IC)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Insert" />
-			</method>
-			<method name="insert" sig="(I[C)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Insert" />
-			</method>
-			<method name="insert" sig="(I[CII)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Insert" />
-			</method>
-			<!-- TODO insert double should use our own version that formats the double correctly -->
-			<method name="insert" sig="(ID)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Insert" />
-			</method>
-			<!-- TODO insert float should use our own version that formats the float correctly -->
-			<method name="insert" sig="(IF)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Insert" />
-			</method>
-			<method name="insert" sig="(II)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Insert" />
-			</method>
-			<method name="insert" sig="(ILjava.lang.Object;)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;ILjava.lang.Object;)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="insert" sig="(ILjava.lang.String;)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;ILjava.lang.String;)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="insert" sig="(IJ)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect name="Insert" />
-			</method>
-			<method name="replace" sig="(IILjava.lang.String;)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;IILjava.lang.String;)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="reverse" sig="()Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="delete" sig="(II)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;II)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="deleteCharAt" sig="(I)Ljava.lang.StringBuffer;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;I)Ljava.lang.StringBuffer;" />
-			</method>
-			<method name="setCharAt" sig="(IC)V" modifiers="public">
-				<redirect name="set_Chars" />
-			</method>
-			<method name="charAt" sig="(I)C" modifiers="public">
-				<redirect name="get_Chars" />
-			</method>
-			<method name="getChars" sig="(II[CI)V" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;II[CI)V" />
-			</method>
-			<method name="substring" sig="(II)Ljava.lang.String;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;II)Ljava.lang.String;" />
-			</method>
-			<method name="substring" sig="(I)Ljava.lang.String;" modifiers="public">
-				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;I)Ljava.lang.String;" />
-			</method>
-		</class>
 		<class name="java.lang.Throwable" type="System.Exception" modifiers="public">
+			<implements class="java.io.Serializable" />
 			<constructor sig="()V" modifiers="public">
 				<invokespecial>
 					<call type="ExceptionHelper" name="get_NullString" />

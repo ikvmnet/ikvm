@@ -143,7 +143,52 @@ sealed class MethodDescriptor
 		return name.GetHashCode() ^ sig.GetHashCode();
 	}
 
-	internal static string GetSigName(Type type)
+	internal static string GetSigName(ParameterInfo param)
+	{
+		Type type = param.ParameterType;
+		if(type == typeof(object))
+		{
+			return GetSigNameFromCustomAttribute(param);
+		}
+		return GetSigNameFromType(type);
+	}
+
+	internal static string GetSigName(FieldInfo field)
+	{
+		Type type = field.FieldType;
+		if(type == typeof(object))
+		{
+			return GetSigNameFromCustomAttribute(field);
+		}
+		return GetSigNameFromType(type);
+	}
+
+	internal static string GetSigName(MethodInfo method)
+	{
+		Type type = method.ReturnType;
+		if(type == typeof(object))
+		{
+			return GetSigNameFromCustomAttribute(method);
+		}
+		return GetSigNameFromType(type);
+	}
+
+	private static string GetSigNameFromCustomAttribute(ICustomAttributeProvider provider)
+	{
+		object[] attribs = provider.GetCustomAttributes(typeof(GhostTypeAttribute), false);
+		if(attribs.Length == 1)
+		{
+			return GetSigNameFromType(((GhostTypeAttribute)attribs[0]).Type);
+		}
+		attribs = provider.GetCustomAttributes(typeof(UnloadableTypeAttribute), false);
+		if(attribs.Length == 1)
+		{
+			return "L" + ((UnloadableTypeAttribute)attribs[0]).Name + ";";
+		}
+		return "Ljava.lang.Object;";
+	}
+
+	private static string GetSigNameFromType(Type type)
 	{
 		if(type.IsValueType)
 		{
@@ -205,7 +250,7 @@ sealed class MethodDescriptor
 		sb.Append('(');
 		foreach(ParameterInfo param in mb.GetParameters())
 		{
-			sb.Append(GetSigName(param.ParameterType));
+			sb.Append(GetSigName(param));
 		}
 		sb.Append(')');
 		if(mb is ConstructorInfo)
@@ -215,7 +260,7 @@ sealed class MethodDescriptor
 		}
 		else
 		{
-			sb.Append(GetSigName(((MethodInfo)mb).ReturnType));
+			sb.Append(GetSigName((MethodInfo)mb));
 			return new MethodDescriptor(ClassLoaderWrapper.GetClassLoader(mb.DeclaringType), mb.Name, sb.ToString());
 		}
 	}
@@ -243,6 +288,7 @@ class AttributeHelper
 {
 	private static CustomAttributeBuilder hideFromReflectionAttribute;
 	private static ConstructorInfo implementsAttribute;
+	private static ConstructorInfo ghostTypeAttribute;
 
 	internal static void HideFromReflection(ConstructorBuilder cb)
 	{
@@ -392,6 +438,42 @@ class AttributeHelper
 		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(typeof(ModifiersAttribute).GetConstructor(new Type[] { typeof(Modifiers) }), new object[] { modifiers });
 		tb.SetCustomAttribute(customAttributeBuilder);
 	}
+
+	internal static void SetGhostType(ParameterBuilder pb, Type type)
+	{
+		if(ghostTypeAttribute == null)
+		{
+			ghostTypeAttribute = typeof(GhostTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
+		}
+		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ghostTypeAttribute, new object[] { type });
+		pb.SetCustomAttribute(customAttributeBuilder);
+	}
+
+	internal static void SetGhostType(MethodBuilder mb, Type type)
+	{
+		if(ghostTypeAttribute == null)
+		{
+			ghostTypeAttribute = typeof(GhostTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
+		}
+		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ghostTypeAttribute, new object[] { type });
+		mb.SetCustomAttribute(customAttributeBuilder);
+	}
+
+	internal static void SetGhostType(FieldBuilder fb, Type type)
+	{
+		if(ghostTypeAttribute == null)
+		{
+			ghostTypeAttribute = typeof(GhostTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
+		}
+		CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ghostTypeAttribute, new object[] { type });
+		fb.SetCustomAttribute(customAttributeBuilder);
+	}
+
+	internal static void SetUnloadableType(FieldBuilder field, string name)
+	{
+		CustomAttributeBuilder attrib = new CustomAttributeBuilder(typeof(UnloadableTypeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { name });
+		field.SetCustomAttribute(attrib);
+	}
 }
 
 abstract class TypeWrapper
@@ -434,6 +516,17 @@ abstract class TypeWrapper
 		set
 		{
 			hasIncompleteInterfaceImplementation = value;
+		}
+	}
+
+	// a ghost is an interface that appears to be implemented by a .NET type
+	// (e.g. System.String (aka java.lang.String) appears to implement java.lang.CharSequence,
+	// so java.lang.CharSequence is a ghost)
+	internal bool IsGhost
+	{
+		get
+		{
+			return ClassLoaderWrapper.IsGhost(this);
 		}
 	}
 
@@ -679,11 +772,12 @@ abstract class TypeWrapper
 		get;
 	}
 
+	// TODO this should really be named TypeAsLocalArgOrStackType (or something like that)
 	internal Type TypeOrUnloadableAsObject
 	{
 		get
 		{
-			if(IsUnloadable)
+			if(IsUnloadable || IsGhost)
 			{
 				return typeof(object);
 			}
@@ -1636,7 +1730,7 @@ class DynamicTypeWrapper : TypeWrapper
 								}
 								ilGenerator.Emit(OpCodes.Call, nativeMethod);
 								TypeWrapper retTypeWrapper = m.GetRetType(wrapper.GetClassLoader());
-								if(!retTypeWrapper.Type.Equals(nativeMethod.ReturnType))
+								if(!retTypeWrapper.Type.Equals(nativeMethod.ReturnType) && !retTypeWrapper.IsGhost)
 								{
 									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
 								}
@@ -1894,16 +1988,11 @@ class DynamicTypeWrapper : TypeWrapper
 				FieldBuilder field;
 				ClassFile.Field fld = classFile.Fields[i];
 				TypeWrapper typeWrapper = fld.GetFieldType(wrapper.GetClassLoader());
-				Type type;
+				Type type = typeWrapper.TypeOrUnloadableAsObject;
 				if(typeWrapper.IsUnloadable)
 				{
 					// TODO the field name should be mangled here, because otherwise it might conflict with another field
 					// with the same name and a different unloadable type (or java.lang.Object as its type)
-					type = typeof(object);
-				}
-				else
-				{
-					type = typeWrapper.Type;
 				}
 				FieldAttributes attribs = 0;
 				MethodAttributes methodAttribs = 0;
@@ -2023,8 +2112,11 @@ class DynamicTypeWrapper : TypeWrapper
 				}
 				if(typeWrapper.IsUnloadable)
 				{
-					CustomAttributeBuilder attrib = new CustomAttributeBuilder(typeof(UnloadableTypeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { typeWrapper.Name });
-					field.SetCustomAttribute(attrib);
+					AttributeHelper.SetUnloadableType(field, typeWrapper.Name);
+				}
+				if(typeWrapper.IsGhost)
+				{
+					AttributeHelper.SetGhostType(field, typeWrapper.Type);
 				}
 				// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
 				// the Java modifiers
@@ -2142,12 +2234,29 @@ class DynamicTypeWrapper : TypeWrapper
 					{
 						AddParameterNames(method, m);
 					}
+					ParameterBuilder[] parameterBuilders = null;
+					if(JVM.IsStaticCompiler)
+					{
+						parameterBuilders = AddParameterNames(method, m);
+					}
+					for(int i = 0; i < argTypeWrappers.Length; i++)
+					{
+						if(argTypeWrappers[i].IsGhost)
+						{
+							ParameterBuilder pb = (parameterBuilders != null) ? parameterBuilders[i] : null;
+							if(pb == null)
+							{
+								pb = ((ConstructorBuilder)method).DefineParameter(i + 1, ParameterAttributes.None, null);
+							}
+							AttributeHelper.SetGhostType(pb, argTypeWrappers[i].Type);
+						}
+					}
 				}
 				else if(m.Name == "<clinit>" && m.Signature == "()V")
 				{
 					// NOTE we don't need to record the modifiers here, because they aren't visible from Java reflection
 					// (well they might be visible from JNI reflection, but that isn't important enough to justify the custom attribute)
-					// HACK because Peverify (in Whidbey) is complaining about private methods in interfaces, I'm making them public for the time being
+					// HACK because Peverify is complaining about private methods in interfaces, I'm making them public for the time being
 					method = typeBuilder.DefineConstructor(MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
 					//method = typeBuilder.DefineTypeInitializer();
 				}
@@ -2259,9 +2368,26 @@ class DynamicTypeWrapper : TypeWrapper
 						}
 					}
 					MethodBuilder mb = typeBuilder.DefineMethod(name, attribs, retType, args);
+					ParameterBuilder[] parameterBuilders = null;
 					if(JVM.IsStaticCompiler)
 					{
-						AddParameterNames(mb, m);
+						parameterBuilders = AddParameterNames(mb, m);
+					}
+					for(int i = 0; i < argTypeWrappers.Length; i++)
+					{
+						if(argTypeWrappers[i].IsGhost)
+						{
+							ParameterBuilder pb = (parameterBuilders != null) ? parameterBuilders[i] : null;
+							if(pb == null)
+							{
+								pb = mb.DefineParameter(i + 1, ParameterAttributes.None, null);
+							}
+							AttributeHelper.SetGhostType(pb, argTypeWrappers[i].Type);
+						}
+					}
+					if(retTypeWrapper.IsGhost)
+					{
+						AttributeHelper.SetGhostType(mb, retTypeWrapper.Type);
 					}
 					if(setModifiers)
 					{
@@ -2349,7 +2475,7 @@ class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		private static void AddParameterNames(MethodBase mb, ClassFile.Method m)
+		private static ParameterBuilder[] AddParameterNames(MethodBase mb, ClassFile.Method m)
 		{
 			if(m.CodeAttribute != null)
 			{
@@ -2361,6 +2487,7 @@ class DynamicTypeWrapper : TypeWrapper
 					{
 						bias = 0;
 					}
+					ParameterBuilder[] parameterBuilders = new ParameterBuilder[m.CodeAttribute.ArgMap.Length - bias];
 					for(int i = bias; i < m.CodeAttribute.ArgMap.Length; i++)
 					{
 						if(m.CodeAttribute.ArgMap[i] != -1)
@@ -2371,19 +2498,21 @@ class DynamicTypeWrapper : TypeWrapper
 								{
 									if(mb is MethodBuilder)
 									{
-										((MethodBuilder)mb).DefineParameter(m.CodeAttribute.ArgMap[i] + 1 - bias, ParameterAttributes.None, localVars[j].name);
+										parameterBuilders[i - bias] = ((MethodBuilder)mb).DefineParameter(m.CodeAttribute.ArgMap[i] + 1 - bias, ParameterAttributes.None, localVars[j].name);
 									}
 									else if(mb is ConstructorBuilder)
 									{
-										((ConstructorBuilder)mb).DefineParameter(m.CodeAttribute.ArgMap[i], ParameterAttributes.None, localVars[j].name);
+										parameterBuilders[i - bias] = ((ConstructorBuilder)mb).DefineParameter(m.CodeAttribute.ArgMap[i], ParameterAttributes.None, localVars[j].name);
 									}
 									break;
 								}
 							}
 						}
 					}
+					return parameterBuilders;
 				}
 			}
+			return null;
 		}
 
 		private static bool IsInterfaceMethod(TypeWrapper wrapper, MethodDescriptor md)
@@ -3247,7 +3376,7 @@ class NetExpTypeWrapper : TypeWrapper
 		FieldInfo field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 		if(!AttributeHelper.IsHideFromReflection(field))
 		{
-			return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(field.FieldType), field, MethodDescriptor.GetSigName(field.FieldType), AttributeHelper.GetModifiers(field));
+			return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(field.FieldType), field, MethodDescriptor.GetSigName(field), AttributeHelper.GetModifiers(field));
 		}
 		return null;
 	}
@@ -3589,7 +3718,7 @@ class CompiledTypeWrapper : TypeWrapper
 				emitSet = CodeEmitter.Nop;
 			}
 		}
-		return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(fieldType), name, MethodDescriptor.GetSigName(fieldType), modifiers, emitGet, emitSet);
+		return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(fieldType), name, MethodDescriptor.GetSigName(field), modifiers, emitGet, emitSet);
 	}
 
 	protected override FieldWrapper GetFieldImpl(string fieldName)
@@ -3670,17 +3799,24 @@ class CompiledTypeWrapper : TypeWrapper
 			return null;
 		}
 		MethodWrapper method = new MethodWrapper(this, md, mb, null, AttributeHelper.GetModifiers(mb), false);
-		if(mb is ConstructorInfo)
+		if(IsGhost)
 		{
-			method.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)mb);
-			method.EmitNewobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)mb);
+			method.EmitCallvirt = new MethodWrapper.GhostCallEmitter(this, md, mb);
 		}
 		else
 		{
-			method.EmitCall = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mb);
-			if(!mb.IsStatic)
+			if(mb is ConstructorInfo)
 			{
-				method.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)mb);
+				method.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)mb);
+				method.EmitNewobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)mb);
+			}
+			else
+			{
+				method.EmitCall = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mb);
+				if(!mb.IsStatic)
+				{
+					method.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)mb);
+				}
 			}
 		}
 		return method;

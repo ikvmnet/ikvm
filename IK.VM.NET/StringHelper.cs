@@ -23,7 +23,6 @@
 */
 using System;
 using System.Text;
-using System.Reflection;
 
 public class StringHelper
 {
@@ -69,12 +68,6 @@ public class StringHelper
 	public static int GetOffsetField(string s)
 	{
 		return 0;
-	}
-
-	public static object subSequence(string s, int offset, int count)
-	{
-		// TODO
-		throw new NotImplementedException();
 	}
 
 	public static int indexOf(string s, char ch, int fromIndex)
@@ -130,168 +123,5 @@ public class StringHelper
 			return s1;
 		}
 		return String.Concat(s1, s2);
-	}
-}
-
-public class StringBufferHelper
-{
-	private delegate string toHexStringDelegate(int i);
-	private static toHexStringDelegate toHexString;
-
-	public static int indexOf(StringBuilder thiz, string s)
-	{
-		return thiz.ToString().IndexOf(s);
-	}
-
-	public static int indexOf(StringBuilder thiz, string s, int off)
-	{
-		return thiz.ToString().IndexOf(s, off);
-	}
-
-	public static int lastIndexOf(StringBuilder thiz, string s)
-	{
-		// TODO make sure this is correct
-		return thiz.ToString().LastIndexOf(s);
-	}
-
-	public static int lastIndexOf(StringBuilder thiz, string s, int fromIndex)
-	{
-		// TODO make sure this is correct
-		return thiz.ToString().LastIndexOf(s, fromIndex);
-	}
-
-	public static StringBuilder append(StringBuilder thiz, object o)
-	{
-		if(o == null)
-		{
-			return thiz.Append("null");
-		}
-		if(o is Array)
-		{
-			if(toHexString == null)
-			{
-				toHexString = (toHexStringDelegate)Delegate.CreateDelegate(typeof(toHexStringDelegate), ClassLoaderWrapper.GetType("java.lang.Integer").GetMethod("toHexString"));
-			}
-			return thiz.Append(NativeCode.java.lang.VMClass.getName(o.GetType()) + "@" + toHexString(o.GetHashCode()));
-		}
-		return thiz.Append(o);
-	}
-
-	public static StringBuilder append(StringBuilder thiz, string s)
-	{
-		if(s == null)
-		{
-			s = "null";
-		}
-		return thiz.Append(s);
-	}
-
-	public static StringBuilder append(StringBuilder thiz, bool b)
-	{
-		if(b)
-		{
-			return thiz.Append("true");
-		}
-		else
-		{
-			return thiz.Append("false");
-		}
-	}
-
-	public static StringBuilder append(StringBuilder thiz, float f)
-	{
-		// TODO this is not correct, we need to use the Java algorithm of converting a float to string
-		if(float.IsNaN(f))
-		{
-			thiz.Append("NaN");
-			return thiz;
-		}
-		if(float.IsNegativeInfinity(f))
-		{
-			thiz.Append("-Infinity");
-			return thiz;
-		}
-		if(float.IsPositiveInfinity(f))
-		{
-			thiz.Append("Infinity");
-			return thiz;
-		}
-		// HACK really lame hack to apprioximate the Java behavior a little bit
-		string s = f.ToString(System.Globalization.CultureInfo.InvariantCulture);
-		thiz.Append(s);
-		if(s.IndexOf('.') == -1)
-		{
-			thiz.Append(".0");
-		}
-		return thiz;
-	}
-
-	public static StringBuilder append(StringBuilder thiz, double d)
-	{
-		DoubleToString.append(thiz, d);
-		return thiz;
-	}
-
-	public static StringBuilder insert(StringBuilder thiz, int index, string s)
-	{
-		if(s == null)
-		{
-			s = "null";
-		}
-		return thiz.Insert(index, s);
-	}
-
-	public static StringBuilder insert(StringBuilder thiz, int index, object o)
-	{
-		if(o == null)
-		{
-			o = "null";
-		}
-		return thiz.Insert(index, o);
-	}
-
-	public static string substring(StringBuilder thiz, int start, int end)
-	{
-		return thiz.ToString(start, end - start);
-	}
-
-	public static string substring(StringBuilder thiz, int start)
-	{
-		return thiz.ToString(start, thiz.Length - start);
-	}
-
-	public static StringBuilder replace(StringBuilder thiz, int start, int end, string str)
-	{
-		// OPTIMIZE this could be done a little more efficient
-		thiz.Remove(start, end - start);
-		thiz.Insert(start, str);
-		return thiz;
-	}
-
-	public static StringBuilder delete(StringBuilder thiz, int start, int end)
-	{
-		return thiz.Remove(start, end - start);
-	}
-
-	public static StringBuilder deleteCharAt(StringBuilder thiz, int pos)
-	{
-		return thiz.Remove(pos, 1);
-	}
-
-	public static StringBuilder reverse(StringBuilder thiz)
-	{
-		for(int i = (thiz.Length / 2) - 1; i >=0; i--)
-		{
-			char c = thiz[i];
-			thiz[i] = thiz[thiz.Length - 1 - i];
-			thiz[thiz.Length - 1 - i] = c;
-		}
-		return thiz;
-	}
-
-	public static void getChars(StringBuilder thiz, int srcBegin, int srcEnd, char[] dst, int dstBegin)
-	{
-		string s = thiz.ToString(srcBegin, srcEnd - srcBegin);
-		s.CopyTo(0, dst, dstBegin, s.Length);
 	}
 }
