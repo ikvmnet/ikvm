@@ -77,7 +77,7 @@ public final class Constructor
     extends AccessibleObject implements Member
 {
     private Class declaringClass;
-    private Object methodCookie;
+    Object methodCookie;
     private int modifiers;
     private boolean classIsPublic;
   

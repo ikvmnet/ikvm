@@ -584,7 +584,7 @@ abstract class MethodWrapper : MemberWrapper
 					}
 					catch(TargetInvocationException x)
 					{
-						throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
+						throw JavaException.InvocationTargetException(IKVM.Runtime.Util.MapException(x.InnerException));
 					}
 				}
 				else if(!method.DeclaringType.IsInstanceOfType(obj))
@@ -620,7 +620,7 @@ abstract class MethodWrapper : MemberWrapper
 				}
 				catch(TargetInvocationException x)
 				{
-					throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
+					throw JavaException.InvocationTargetException(IKVM.Runtime.Util.MapException(x.InnerException));
 				}
 			}
 		}
@@ -641,7 +641,7 @@ abstract class MethodWrapper : MemberWrapper
 		}
 		catch(TargetInvocationException x)
 		{
-			throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
+			throw JavaException.InvocationTargetException(IKVM.Runtime.Util.MapException(x.InnerException));
 		}
 	}
 
@@ -1097,7 +1097,7 @@ abstract class FieldWrapper : MemberWrapper
 			}
 			if(val != null && !(val is string))
 			{
-				return IKVM.NativeCode.java.lang.reflect.JavaWrapper.Box(val);
+				return JVM.Library.box(val);
 			}
 			return val;
 		}

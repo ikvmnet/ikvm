@@ -917,9 +917,7 @@ namespace IKVM.Runtime
 
 		internal static jint DestroyJavaVM(JavaVM* pJVM)
 		{
-			// LIBREFLECT
-			TypeWrapper vmthread = ClassLoaderWrapper.LoadClassCritical("java.lang.VMThread");
-			vmthread.GetMethodWrapper(new MethodDescriptor("jniWaitUntilLastThread", "()V"), false).Invoke(null, new object[0], false);
+			JVM.Library.jniWaitUntilLastThread();
 			return JNIEnv.JNI_ERR;
 		}
 
@@ -975,9 +973,7 @@ namespace IKVM.Runtime
 			}
 			// TODO if we set Thread.IsBackground to false when we attached, now might be a good time to set it back to true.
 			JNIEnv.FreeJNIEnv();
-			// LIBREFLECT
-			TypeWrapper vmthread = ClassLoaderWrapper.LoadClassCritical("java.lang.VMThread");
-			vmthread.GetMethodWrapper(new MethodDescriptor("jniDetach", "()V"), false).Invoke(null, new object[0], false);
+			JVM.Library.jniDetach();
 			return JNIEnv.JNI_OK;
 		}
 
@@ -1266,34 +1262,26 @@ namespace IKVM.Runtime
 
 		internal static jmethodID FromReflectedMethod(JNIEnv* pEnv, jobject method)
 		{
-			object methodObj = pEnv->UnwrapRef(method);
-			MethodWrapper mw = (MethodWrapper)methodObj.GetType().GetField("methodCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(methodObj);
-			return mw.Cookie;
+			return ((MethodWrapper)JVM.Library.getWrapperFromMethodOrConstructor(pEnv->UnwrapRef(method))).Cookie;
 		}
 
 		internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)
 		{
-			object fieldObj = pEnv->UnwrapRef(field);
-			FieldWrapper fw = (FieldWrapper)fieldObj.GetType().GetField("fieldCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(fieldObj);
-			return fw.Cookie;
+			return ((FieldWrapper)JVM.Library.getWrapperFromField(pEnv->UnwrapRef(field))).Cookie;
 		}
 
 		internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method)
 		{
 			MethodWrapper mw = MethodWrapper.FromCookie(method);
-			TypeWrapper tw;
+			object clazz = IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(mw.DeclaringType);
 			if(mw.Name == "<init>")
 			{
-				// LIBREFLECT
-				tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Constructor");
+				return pEnv->MakeLocalRef(JVM.Library.newConstructor(clazz, mw));
 			}
 			else
 			{
-				// LIBREFLECT
-				tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Method");
+				return pEnv->MakeLocalRef(JVM.Library.newMethod(clazz, mw));
 			}
-			object clazz = IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(mw.DeclaringType);
-			return pEnv->MakeLocalRef(Activator.CreateInstance(tw.TypeAsTBD, new object[] { clazz, mw }));
 		}
 
 		internal static jclass GetSuperclass(JNIEnv* pEnv, jclass sub)
@@ -1312,16 +1300,14 @@ namespace IKVM.Runtime
 		internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field)
 		{
 			FieldWrapper fw = FieldWrapper.FromCookie(field);
-			// LIBREFLECT
-			TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.Field");
 			object clazz = IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(fw.DeclaringType);
-			return pEnv->MakeLocalRef(Activator.CreateInstance(tw.TypeAsTBD, new object[] { clazz, fw }));
+			return pEnv->MakeLocalRef(JVM.Library.newField(clazz, fw));
 		}
 
 		private static void SetPendingException(JNIEnv* pEnv, Exception x)
 		{
 			DeleteLocalRef(pEnv, pEnv->pendingException);
-			pEnv->pendingException = x == null ? IntPtr.Zero : pEnv->MakeLocalRef(ExceptionHelper.MapExceptionFast(x));
+			pEnv->pendingException = x == null ? IntPtr.Zero : pEnv->MakeLocalRef(Util.MapException(x));
 		}
 
 		internal static jint Throw(JNIEnv* pEnv, jthrowable throwable)
@@ -1373,7 +1359,7 @@ namespace IKVM.Runtime
 				SetPendingException(pEnv, null);
 				try
 				{
-					ExceptionHelper.printStackTrace(x);
+					JVM.Library.printStackTrace(x);
 				}
 				catch(Exception ex)
 				{
@@ -1591,7 +1577,7 @@ namespace IKVM.Runtime
 				{
 					x = x.InnerException;
 				}
-				SetPendingException(pEnv, ExceptionHelper.MapExceptionFast(x));
+				SetPendingException(pEnv, Util.MapException(x));
 				return null;
 			}
 		}
@@ -3149,14 +3135,11 @@ namespace IKVM.Runtime
 					SetPendingException(pEnv, JavaException.IllegalArgumentException("capacity"));
 					return IntPtr.Zero;
 				}
-				// LIBREFLECT
-				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.nio.VMDirectByteBuffer");
-				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("NewDirectByteBuffer", "(Lcli.System.IntPtr;I)Ljava.nio.ByteBuffer;"), false);
-				return pEnv->MakeLocalRef(mw.Invoke(null, new object[] { address, (int)capacity }, false));
+				return pEnv->MakeLocalRef(JVM.Library.newDirectByteBuffer(address, (int)capacity));
 			}
 			catch(Exception x)
 			{
-				SetPendingException(pEnv, ExceptionHelper.MapExceptionFast(x));
+				SetPendingException(pEnv, Util.MapException(x));
 				return IntPtr.Zero;
 			}
 		}
@@ -3165,14 +3148,11 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				// LIBREFLECT
-				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.nio.VMDirectByteBuffer");
-				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("GetDirectBufferAddress", "(Ljava.nio.ByteBuffer;)Lcli.System.IntPtr;"), false);
-				return (IntPtr)mw.Invoke(null, new object[] { pEnv->UnwrapRef(buf) }, false);
+				return JVM.Library.getDirectBufferAddress(pEnv->UnwrapRef(buf));
 			}
 			catch(Exception x)
 			{
-				SetPendingException(pEnv, ExceptionHelper.MapExceptionFast(x));
+				SetPendingException(pEnv, Util.MapException(x));
 				return IntPtr.Zero;
 			}
 		}
@@ -3181,14 +3161,11 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				// LIBREFLECT
-				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.nio.Buffer");
-				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("capacity", "()I"), false);
-				return (jlong)(long)(int)mw.Invoke(pEnv->UnwrapRef(buf), new object[0], false);
+				return (jlong)(long)JVM.Library.getDirectBufferCapacity(pEnv->UnwrapRef(buf));
 			}
 			catch(Exception x)
 			{
-				SetPendingException(pEnv, ExceptionHelper.MapExceptionFast(x));
+				SetPendingException(pEnv, Util.MapException(x));
 				return 0;
 			}
 		}

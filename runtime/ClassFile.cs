@@ -648,7 +648,7 @@ class ClassFile
 					}
 					Tracer.Error(Tracer.ClassLoading, "ClassLoader chain: {0}", sb);
 				}
-				x = ExceptionHelper.MapExceptionFast(x);
+				x = IKVM.Runtime.Util.MapException(x);
 				Tracer.Error(Tracer.ClassLoading, x.ToString() + Environment.NewLine + x.StackTrace);
 			}
 			return new UnloadableTypeWrapper(name);

@@ -279,6 +279,12 @@ namespace IKVM.Runtime
 			TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
 			return wrapper.TypeAsTBD.IsDefined(typeof(ObsoleteAttribute), false);
 		}
+
+		[HideFromJava]
+		public static Exception MapException(Exception x)
+		{
+			return IKVM.Internal.JVM.Library.mapException(x);
+		}
 	}
 }
 
@@ -292,6 +298,20 @@ namespace IKVM.Internal
 		private static bool noStackTraceInfo;
 		private static bool compilationPhase1;
 		private static string sourcePath;
+		private static ikvm.@internal.LibraryVMInterface lib;
+
+		internal static ikvm.@internal.LibraryVMInterface Library
+		{
+			get
+			{
+				if(lib == null)
+				{
+					Type type = ClassLoaderWrapper.LoadClassCritical("java.lang.LibraryVMInterfaceImpl").TypeAsTBD;
+					lib = (ikvm.@internal.LibraryVMInterface)Activator.CreateInstance(type, true);
+				}
+				return lib;
+			}
+		}
 
 		public static bool Debug
 		{
@@ -317,7 +337,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		public static bool NoJniStubs
+		internal static bool NoJniStubs
 		{
 			get
 			{
@@ -325,7 +345,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		public static bool NoStackTraceInfo
+		internal static bool NoStackTraceInfo
 		{
 			get
 			{
@@ -333,7 +353,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		public static bool IsStaticCompiler
+		internal static bool IsStaticCompiler
 		{
 			get
 			{
@@ -341,7 +361,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		public static bool IsStaticCompilerPhase1
+		internal static bool IsStaticCompilerPhase1
 		{
 			get
 			{
@@ -349,7 +369,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		public static bool CompileInnerClassesAsNestedTypes
+		internal static bool CompileInnerClassesAsNestedTypes
 		{
 			get
 			{
@@ -520,7 +540,7 @@ namespace IKVM.Internal
 				}
 				ilgen.Emit(OpCodes.Call, m);
 				ilgen.BeginCatchBlock(typeof(Exception));
-				ClassLoaderWrapper.LoadClassCritical("java.lang.ExceptionHelper").GetMethodWrapper(new MethodDescriptor("MapExceptionFast", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;"), false).EmitCall(ilgen);
+				ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Util).GetMethod("MapException", new Type[] { typeof(Exception) }));
 				LocalBuilder exceptionLocal = ilgen.DeclareLocal(typeof(Exception));
 				ilgen.Emit(OpCodes.Stloc, exceptionLocal);
 				TypeWrapper threadTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Thread");
@@ -2040,6 +2060,7 @@ namespace IKVM.Internal
 			}
 
 			ClassLoaderWrapper.PublishLibraryImplementationHelperType(typeof(gnu.classpath.RawData));
+			ClassLoaderWrapper.PublishLibraryImplementationHelperType(typeof(ikvm.@internal.LibraryVMInterface));
 
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
 			ArrayList allwrappers = new ArrayList();

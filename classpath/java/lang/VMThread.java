@@ -75,7 +75,7 @@ final class VMThread
 	}
     }
 
-    private static void jniDetach()
+    static void jniDetach()
     {
 	VMThread vmthread = Thread.currentThread().vmThread;
 	synchronized(vmthread)
@@ -89,7 +89,7 @@ final class VMThread
 	}
     }
 
-    private static void jniWaitUntilLastThread()
+    static void jniWaitUntilLastThread()
     {
 	if(!Thread.currentThread().isDaemon())
 	{

@@ -76,7 +76,7 @@ import cli.System.Diagnostics.StackFrame;
 public final class Method extends AccessibleObject implements Member
 {
     private Class declaringClass;
-    private Object methodCookie;
+    Object methodCookie;
     private int modifiers;
     private boolean classIsPublic;
 

@@ -1,3 +1,4 @@
+ikvm/internal/LibraryVMInterface.java
 ikvm/lang/CIL.java
 gnu/classpath/Configuration.java
 gnu/classpath/RawData.java
@@ -7,6 +8,7 @@ gnu/java/net/protocol/ikvmres/Handler.java
 gnu/java/net/PlainSocketImpl.java
 gnu/java/net/PlainDatagramSocketImpl.java
 java/io/VMFile.java
+java/lang/LibraryVMInterfaceImpl.java
 java/lang/VMThread.java
 java/lang/VMClass.java
 java/lang/VMDouble.java

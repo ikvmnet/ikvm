@@ -32,26 +32,6 @@ abstract class VMClass
 {
     private VMClass() {}
 
-    // NOTE this is used in classpath.cs to go from a Class object to a TypeWrapper
-    // HACK public because we want to create a delegate to call it
-    public static Object getWrapperFromClass(Object c)
-    {
-	return ((Class)c).vmdata;
-    }
-
-    // HACK public because we want to create a delegate to call it
-    public static Object createClass(Object wrapper, Object protectionDomain)
-    {
-	return new Class(wrapper, (java.security.ProtectionDomain)protectionDomain);
-    }
-
-    // HACK we need a way to call ClassLoader.loadClass() from C#, so we need this helper method
-    // and its public because we want to create a delegate to call it
-    public static Object loadClassHelper(Object loader, String name) throws java.lang.ClassNotFoundException
-    {
-	return ((ClassLoader)loader).loadClass(name).vmdata;
-    }
-    
     static boolean isInstance(Class clazz, Object o)
     {
 	return o != null && clazz.isAssignableFrom(o.getClass());
@@ -171,10 +151,10 @@ abstract class VMClass
 	return constructors;
     }
 
-    // these methods live in map.xml to access package accessible constructors
-    private static native Field createField(Class declaringClass, Object fieldCookie);
-    private static native Method createMethod(Class declaringClass, Object methodCookie);
-    private static native Constructor createConstructor(Class declaringClass, Object methodCookie);
+    // the implementations for these methods live in map.xml to access package accessible constructors
+    static native Field createField(Class declaringClass, Object fieldCookie);
+    static native Method createMethod(Class declaringClass, Object methodCookie);
+    static native Constructor createConstructor(Class declaringClass, Object methodCookie);
 
     static ClassLoader getClassLoader(Class clazz)
     {

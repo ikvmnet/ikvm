@@ -34,8 +34,6 @@ using IKVM.Internal;
 
 class ClassLoaderWrapper
 {
-	private delegate object LoadClassDelegate(object classLoader, string className);
-	private static LoadClassDelegate loadClassDelegate;
 	private static bool arrayConstructionHack;
 	private static object arrayConstructionLock = new object();
 	private static Hashtable javaClassLoaderToClassLoaderWrapper = new Hashtable();
@@ -156,16 +154,6 @@ class ClassLoaderWrapper
 	internal void SetJavaClassLoader(object javaClassLoader)
 	{
 		this.javaClassLoader = javaClassLoader;
-		if(javaClassLoader != null)
-		{
-			if(loadClassDelegate == null)
-			{
-				// LIBREFLECT
-				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
-				tw.Finish();
-				loadClassDelegate = (LoadClassDelegate)Delegate.CreateDelegate(typeof(LoadClassDelegate), tw.TypeAsTBD, "loadClassHelper");
-			}
-		}
 	}
 
 	internal static bool IsRemappedType(Type type)
@@ -368,7 +356,7 @@ class ClassLoaderWrapper
 				Profiler.Enter("ClassLoader.loadClass");
 				try
 				{
-					type = (TypeWrapper)loadClassDelegate(javaClassLoader, name);
+					type = (TypeWrapper)JVM.Library.loadClass(javaClassLoader, name);
 				}
 				finally
 				{
@@ -869,19 +857,11 @@ class ClassLoaderWrapper
 		{
 			return GetBootstrapClassLoader();
 		}
-		lock(typeof(ClassLoaderWrapper))
+		if(systemClassLoader == null)
 		{
-			if(systemClassLoader == null)
-			{
-				// LIBREFLECT
-				TypeWrapper tw = LoadClassCritical("java.lang.System");
-				// We directly access the systemClassLoader field, because calling ClassLoader.getSystemClassLoader
-				// would cause a security check (and would require to be wrapped in a AccessController.doPriviledged()).
-				FieldWrapper fw = tw.GetFieldWrapper("systemClassLoader", "Ljava.lang.ClassLoader;");
-				systemClassLoader = GetClassLoaderWrapper(fw.GetValue(null));
-			}
-			return systemClassLoader;
+			systemClassLoader = GetClassLoaderWrapper(JVM.Library.getSystemClassLoader());
 		}
+		return systemClassLoader;
 	}
 	
 	internal static ClassLoaderWrapper GetClassLoaderWrapper(object javaClassLoader)

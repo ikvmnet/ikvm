@@ -345,6 +345,14 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("ldobj")]
+	public sealed class Ldobj : TypeInstruction
+	{
+		public Ldobj() : base(OpCodes.Ldobj)
+		{
+		}
+	}
+
 	[XmlType("unbox")]
 	public sealed class Unbox : TypeInstruction
 	{
@@ -867,6 +875,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Pop))]
 		[XmlElement(typeof(IsInst))]
 		[XmlElement(typeof(Castclass))]
+		[XmlElement(typeof(Ldobj))]
 		[XmlElement(typeof(Unbox))]
 		[XmlElement(typeof(Box))]
 		[XmlElement(typeof(BrFalse))]

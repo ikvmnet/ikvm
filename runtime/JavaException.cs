@@ -32,14 +32,6 @@ abstract class RetargetableJavaException : ApplicationException
 	{
 	}
 
-	protected static Type Load(string clazz)
-	{
-		Tracer.Info(Tracer.Runtime, "Loading exception class: {0}", clazz);
-		TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(clazz);
-		tw.Finish();
-		return tw.TypeAsTBD;
-	}
-
 	internal abstract Exception ToJava();
 }
 
@@ -51,7 +43,7 @@ class LinkageError : RetargetableJavaException
 
 	internal override Exception ToJava()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.LinkageError"), new object[] { Message });
+		return JVM.Library.newLinkageError(Message);
 	}
 }
 
@@ -97,7 +89,7 @@ class VerifyError : LinkageError
 
 	internal override Exception ToJava()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.VerifyError"), new object[] { Message });
+		return JVM.Library.newVerifyError(Message);
 	}
 }
 
@@ -109,7 +101,7 @@ class ClassNotFoundException : RetargetableJavaException
 
 	internal override Exception ToJava()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.ClassNotFoundException"), new object[] { Message });
+		return JVM.Library.newClassNotFoundException(Message);
 	}
 }
 
@@ -121,7 +113,7 @@ class ClassCircularityError : LinkageError
 
 	internal override Exception ToJava()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.ClassCircularityError"), new object[] { Message });
+		return JVM.Library.newClassCircularityError(Message);
 	}
 }
 
@@ -133,7 +125,7 @@ class NoClassDefFoundError : LinkageError
 
 	internal override Exception ToJava()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.NoClassDefFoundError"), new object[] { Message });
+		return JVM.Library.newNoClassDefFoundError(Message);
 	}
 }
 
@@ -145,7 +137,7 @@ class IncompatibleClassChangeError : LinkageError
 
 	internal override Exception ToJava()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.IncompatibleClassChangeError"), new object[] { Message });
+		return JVM.Library.newIncompatibleClassChangeError(Message);
 	}
 }
 
@@ -157,7 +149,7 @@ class IllegalAccessError : IncompatibleClassChangeError
 
 	internal override Exception ToJava()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalAccessError"), new object[] { Message });
+		return JVM.Library.newIllegalAccessError(Message);
 	}
 }
 
@@ -170,7 +162,7 @@ internal class ClassFormatError : LinkageError
 
 	internal override Exception ToJava()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.ClassFormatError"), new object[] { Message });
+		return JVM.Library.newClassFormatError(Message);
 	}
 }
 
@@ -183,7 +175,7 @@ internal class UnsupportedClassVersionError : ClassFormatError
 
 	internal override Exception ToJava()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.UnsupportedClassVersionError"), new object[] { Message });
+		return JVM.Library.newUnsupportedClassVersionError(Message);
 	}
 }
 
@@ -191,123 +183,113 @@ sealed class JavaException
 {
 	private JavaException() {}
 
-	private static Type Load(string clazz)
-	{
-		Tracer.Info(Tracer.Runtime, "Loading exception class: {0}", clazz);
-		TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(clazz);
-		tw.Finish();
-		return tw.TypeAsTBD;
-	}
-
 	internal static Exception IllegalAccessError(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalAccessError"), new object[] { String.Format(s, args) });
+		return JVM.Library.newIllegalAccessError(string.Format(s, args));
 	}
 
 	internal static Exception IllegalAccessException(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalAccessException"), new object[] { String.Format(s, args) });
+		return JVM.Library.newIllegalAccessException(string.Format(s, args));
 	}
 
 	internal static Exception IncompatibleClassChangeError(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.IncompatibleClassChangeError"), new object[] { String.Format(s, args) });
+		return JVM.Library.newIncompatibleClassChangeError(string.Format(s, args));
 	}
 
 	internal static Exception NoClassDefFoundError(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.NoClassDefFoundError"), new object[] { String.Format(s, args) });
+		return JVM.Library.newNoClassDefFoundError(string.Format(s, args));
 	}
 
 	internal static Exception UnsatisfiedLinkError(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.UnsatisfiedLinkError"), new object[] { String.Format(s, args) });
+		return JVM.Library.newUnsatisfiedLinkError(string.Format(s, args));
 	}
 
 	internal static Exception IllegalArgumentException(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalArgumentException"), new object[] { String.Format(s, args) });
+		return JVM.Library.newIllegalArgumentException(string.Format(s, args));
 	}
 
 	internal static Exception NegativeArraySizeException()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.NegativeArraySizeException"));
+		return JVM.Library.newNegativeArraySizeException();
 	}
 
 	internal static Exception ArrayStoreException()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.ArrayStoreException"));
+		return JVM.Library.newArrayStoreException();
 	}
 
 	internal static Exception IndexOutOfBoundsException(string s)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.IndexOutOfBoundsException"), new object[] { s });
+		return JVM.Library.newIndexOutOfBoundsException(s);
 	}
 
 	internal static Exception StringIndexOutOfBoundsException()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.StringIndexOutOfBoundsException"));
+		return JVM.Library.newStringIndexOutOfBoundsException();
 	}
 
 	internal static Exception InvocationTargetException(Exception x)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.reflect.InvocationTargetException"), new object[] { x });
+		return JVM.Library.newInvocationTargetException(x);
 	}
 
 	internal static Exception UnknownHostException(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.net.UnknownHostException"), new object[] { String.Format(s, args) });
+		return JVM.Library.newUnknownHostException(string.Format(s, args));
 	}
 
 	internal static Exception ArrayIndexOutOfBoundsException()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.ArrayIndexOutOfBoundsException"));
+		return JVM.Library.newArrayIndexOutOfBoundsException();
 	}
 
 	internal static Exception NumberFormatException(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.NumberFormatException"), new object[] { String.Format(s, args) });
+		return JVM.Library.newNumberFormatException(string.Format(s, args));
 	}
 
 	internal static Exception NullPointerException()
 	{
-		// if we ever stop remapping exceptions generated in non-Java code, this needs to use
-		// reflection to get a real java.lang.NullPointerException
-		return new NullReferenceException();
+		return JVM.Library.newNullPointerException();
 	}
 
 	internal static Exception ClassCastException(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.ClassCastException"), new object[] { String.Format(s, args) });
+		return JVM.Library.newClassCastException(string.Format(s, args));
 	}
 
 	internal static Exception NoSuchFieldError(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.NoSuchFieldError"), new object[] { String.Format(s, args) });
+		return JVM.Library.newNoSuchFieldError(string.Format(s, args));
 	}
 
 	internal static Exception NoSuchMethodError(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.NoSuchMethodError"), new object[] { String.Format(s, args) });
+		return JVM.Library.newNoSuchMethodError(string.Format(s, args));
 	}
 
 	internal static Exception InstantiationError(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.InstantiationError"), new object[] { String.Format(s, args) });
+		return JVM.Library.newInstantiationError(string.Format(s, args));
 	}
 
 	internal static Exception InstantiationException(string s, params object[] args)
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.InstantiationException"), new object[] { String.Format(s, args) });
+		return JVM.Library.newInstantiationException(string.Format(s, args));
 	}
 
 	internal static Exception InterruptedException()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.InterruptedException"));
+		return JVM.Library.newInterruptedException();
 	}
 
 	internal static Exception IllegalMonitorStateException()
 	{
-		return (Exception)Activator.CreateInstance(Load("java.lang.IllegalMonitorStateException"));
+		return JVM.Library.newIllegalMonitorStateException();
 	}
 }

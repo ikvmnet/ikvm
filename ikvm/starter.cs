@@ -341,7 +341,7 @@ public class Starter
 		catch(System.Exception x)
 		{
 			java.lang.Thread thread = java.lang.Thread.currentThread();
-			thread.getThreadGroup().uncaughtException(thread, java.lang.ExceptionHelper.MapExceptionFast(x));
+			thread.getThreadGroup().uncaughtException(thread, IKVM.Runtime.Util.MapException(x));
 		}
 		finally
 		{

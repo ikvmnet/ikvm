@@ -74,101 +74,6 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			internal class JavaWrapper
-			{
-				// LIBREFLECT
-				private static Type java_lang_Byte = ClassLoaderWrapper.LoadClassCritical("java.lang.Byte").TypeAsTBD;
-				private static Type java_lang_Boolean = ClassLoaderWrapper.LoadClassCritical("java.lang.Boolean").TypeAsTBD;
-				private static Type java_lang_Short = ClassLoaderWrapper.LoadClassCritical("java.lang.Short").TypeAsTBD;
-				private static Type java_lang_Character = ClassLoaderWrapper.LoadClassCritical("java.lang.Character").TypeAsTBD;
-				private static Type java_lang_Integer = ClassLoaderWrapper.LoadClassCritical("java.lang.Integer").TypeAsTBD;
-				private static Type java_lang_Long = ClassLoaderWrapper.LoadClassCritical("java.lang.Long").TypeAsTBD;
-				private static Type java_lang_Float = ClassLoaderWrapper.LoadClassCritical("java.lang.Float").TypeAsTBD;
-				private static Type java_lang_Double = ClassLoaderWrapper.LoadClassCritical("java.lang.Double").TypeAsTBD;
-
-				internal static object Box(object o)
-				{
-					if(o is sbyte)
-					{
-						return Activator.CreateInstance(java_lang_Byte, new object[] { o });
-					}
-					else if(o is bool)
-					{
-						return Activator.CreateInstance(java_lang_Boolean, new object[] { o });
-					}
-					else if(o is short)
-					{
-						return Activator.CreateInstance(java_lang_Short, new object[] { o });
-					}
-					else if(o is char)
-					{
-						return Activator.CreateInstance(java_lang_Character, new object[] { o });
-					}
-					else if(o is int)
-					{
-						return Activator.CreateInstance(java_lang_Integer, new object[] { o });
-					}
-					else if(o is long)
-					{
-						return Activator.CreateInstance(java_lang_Long, new object[] { o });
-					}
-					else if(o is float)
-					{
-						return Activator.CreateInstance(java_lang_Float, new object[] { o });
-					}
-					else if(o is double)
-					{
-						return Activator.CreateInstance(java_lang_Double, new object[] { o });
-					}
-					else
-					{
-						throw new InvalidOperationException();
-					}
-				}
-
-				internal static object Unbox(object o)
-				{
-					Type type = o.GetType();
-					if(type == java_lang_Byte)
-					{
-						// LIBREFLECT
-						return java_lang_Byte.GetMethod("byteValue").Invoke(o, new object[0]);
-					}
-					else if(type == java_lang_Boolean)
-					{
-						return java_lang_Boolean.GetMethod("booleanValue").Invoke(o, new object[0]);
-					}
-					else if(type == java_lang_Short)
-					{
-						return java_lang_Short.GetMethod("shortValue").Invoke(o, new object[0]);
-					}
-					else if(type == java_lang_Character)
-					{
-						return java_lang_Character.GetMethod("charValue").Invoke(o, new object[0]);
-					}
-					else if(type == java_lang_Integer)
-					{
-						return java_lang_Integer.GetMethod("intValue").Invoke(o, new object[0]);
-					}
-					else if(type == java_lang_Long)
-					{
-						return java_lang_Long.GetMethod("longValue").Invoke(o, new object[0]);
-					}
-					else if(type == java_lang_Float)
-					{
-						return java_lang_Float.GetMethod("floatValue").Invoke(o, new object[0]);
-					}
-					else if(type == java_lang_Double)
-					{
-						return java_lang_Double.GetMethod("doubleValue").Invoke(o, new object[0]);
-					}
-					else
-					{
-						throw JavaException.IllegalArgumentException(type.FullName);
-					}
-				}
-			}
-
 			public class Method
 			{
 				public static String GetName(object methodCookie)
@@ -244,7 +149,7 @@ namespace IKVM.NativeCode.java
 								{
 									throw JavaException.IllegalArgumentException("primitive wrapper null");
 								}
-								argsCopy[i] = JavaWrapper.Unbox(args[i]);
+								argsCopy[i] = JVM.Library.unbox(args[i]);
 							}
 							else
 							{
@@ -260,7 +165,7 @@ namespace IKVM.NativeCode.java
 						object retval = mw.Invoke(o, argsCopy, false);
 						if(mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
 						{
-							retval = JavaWrapper.Box(retval);
+							retval = JVM.Library.box(retval);
 						}
 						return retval;
 					}
@@ -327,7 +232,7 @@ namespace IKVM.NativeCode.java
 						object val = wrapper.GetValue(o);
 						if(wrapper.FieldTypeWrapper.IsPrimitive)
 						{
-							val = JavaWrapper.Box(val);
+							val = JVM.Library.box(val);
 						}
 						return val;
 					}
@@ -352,7 +257,7 @@ namespace IKVM.NativeCode.java
 						}
 						if(wrapper.FieldTypeWrapper.IsPrimitive)
 						{
-							v = JavaWrapper.Unbox(v);
+							v = JVM.Library.unbox(v);
 						}
 						// if the field is an interface field, we must explicitly run <clinit>,
 						// because .NET reflection doesn't
@@ -754,10 +659,6 @@ namespace IKVM.NativeCode.java
 		public class VMClass
 		{
 			private static Hashtable map = new Hashtable();
-			private delegate object LookupDelegate(object o);
-			private delegate object CreateClassDelegate(object o, object pd);
-			private static CreateClassDelegate createClass;
-			private static LookupDelegate getWrapper;
 
 			internal static object LockObject
 			{
@@ -775,23 +676,7 @@ namespace IKVM.NativeCode.java
 			// NOTE when you call this method, you must own the VMClass.LockObject monitor
 			internal static object CreateClassInstance(TypeWrapper wrapper, object protectionDomain)
 			{
-				if(createClass == null)
-				{
-					// LIBREFLECT
-					TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
-					tw.Finish();
-					createClass = (CreateClassDelegate)Delegate.CreateDelegate(typeof(CreateClassDelegate), tw.TypeAsTBD.GetMethod("createClass", BindingFlags.Static | BindingFlags.Public));
-					// HACK to make sure we don't run into any problems creating class objects for classes that
-					// participate in the VMClass static initialization, we first do a bogus call to initialize
-					// the machinery (I ran into this when running ikvmstub on IKVM.GNU.Classpath.dll)
-					createClass(null, null);
-					object o = map[wrapper];
-					if(o != null)
-					{
-						return o;
-					}
-				}
-				object clazz = createClass(wrapper, protectionDomain);
+				object clazz = JVM.Library.newClass(wrapper, protectionDomain);
 				map.Add(wrapper, clazz);
 				return clazz;
 			}
@@ -847,14 +732,7 @@ namespace IKVM.NativeCode.java
 
 			internal static TypeWrapper getWrapperFromClass(object clazz)
 			{
-				if(getWrapper == null)
-				{
-					// LIBREFLECT
-					TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.VMClass");
-					tw.Finish();
-					getWrapper = (LookupDelegate)Delegate.CreateDelegate(typeof(LookupDelegate), tw.TypeAsTBD.GetMethod("getWrapperFromClass", BindingFlags.Static | BindingFlags.Public));
-				}
-				return (TypeWrapper)getWrapper(clazz);
+				return (TypeWrapper)JVM.Library.getWrapperFromClass(clazz);
 			}
 
 			internal static object getClassFromWrapper(TypeWrapper wrapper)
@@ -1175,27 +1053,16 @@ namespace IKVM.NativeCode.java
 				TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
 				wrapper.Finish();
 				Type type = wrapper.TypeAsTBD;
-				try
+				if(!type.IsArray && type.TypeInitializer != null)
 				{
-					if(!type.IsArray && type.TypeInitializer != null)
-					{
-						return !AttributeHelper.IsHideFromJava(type.TypeInitializer);
-					}
-					return false;
+					return !AttributeHelper.IsHideFromJava(type.TypeInitializer);
 				}
-				catch(Exception x)
-				{
-					Console.WriteLine(type.FullName);
-					Console.WriteLine(x);
-					return false;
-				}
+				return false;
 			}
 
 			private static FieldWrapper GetFieldWrapperFromField(object field)
 			{
-				// TODO optimize this
-				// LIBREFLECT
-				return (FieldWrapper)field.GetType().GetField("fieldCookie", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(field);
+				return (FieldWrapper)JVM.Library.getWrapperFromField(field);
 			}
 
 			public static void setDoubleNative(object field, object obj, double val)
@@ -1519,5 +1386,65 @@ namespace gnu.classpath
 					pb[--dst_offset] = pb[--src_offset];
 			}
 		}
+	}
+}
+
+namespace ikvm.@internal
+{
+	public interface LibraryVMInterface
+	{
+		object loadClass(object classLoader, string name);
+		object newClass(object wrapper, object protectionDomain);
+		object getWrapperFromClass(object clazz);
+		object getWrapperFromField(object field);
+		object getWrapperFromMethodOrConstructor(object methodOrConstructor);
+
+		object getSystemClassLoader();
+
+		object box(object val);
+		object unbox(object val);
+
+		Exception mapException(Exception t);
+		void printStackTrace(Exception t);
+
+		void jniWaitUntilLastThread();
+		void jniDetach();
+
+		object newConstructor(object clazz, object wrapper);
+		object newMethod(object clazz, object wrapper);
+		object newField(object clazz, object wrapper);
+
+		object newDirectByteBuffer(IntPtr address, int capacity);
+		IntPtr getDirectBufferAddress(object buffer);
+		int getDirectBufferCapacity(object buffer);
+
+		Exception newIllegalAccessError(string msg);
+		Exception newIllegalAccessException(string msg);
+		Exception newIncompatibleClassChangeError(string msg);
+		Exception newLinkageError(string msg);
+		Exception newVerifyError(string msg);
+		Exception newClassCircularityError(string msg);
+		Exception newClassFormatError(string msg);
+		Exception newUnsupportedClassVersionError(string msg);
+		Exception newNoClassDefFoundError(string msg);
+		Exception newClassNotFoundException(string msg);
+		Exception newUnsatisfiedLinkError(string msg);
+		Exception newIllegalArgumentException(string msg);
+		Exception newNegativeArraySizeException();
+		Exception newArrayStoreException();
+		Exception newIndexOutOfBoundsException(string msg);
+		Exception newStringIndexOutOfBoundsException();
+		Exception newInvocationTargetException(Exception t);
+		Exception newUnknownHostException(string msg);
+		Exception newArrayIndexOutOfBoundsException();
+		Exception newNumberFormatException(string msg);
+		Exception newNullPointerException();
+		Exception newClassCastException(string msg);
+		Exception newNoSuchFieldError(string msg);
+		Exception newNoSuchMethodError(string msg);
+		Exception newInstantiationError(string msg);
+		Exception newInstantiationException(string msg);
+		Exception newInterruptedException();
+		Exception newIllegalMonitorStateException();
 	}
 }
