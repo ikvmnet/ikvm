@@ -37,7 +37,7 @@ public final class FileDescriptor
 	{
 	}
 
-	private FileDescriptor(Stream stream)
+	public FileDescriptor(Stream stream)
 	{
 		this.stream = stream;
 	}
