@@ -165,7 +165,17 @@
 					<ret />
 				</alternateBody>
 			</constructor>
-			<constructor sig="([C)V" modifiers="public" />
+			<constructor sig="([C)V" modifiers="public">
+                <alternateBody>
+					<!-- force a NullPointerException if the array is null -->
+					<ldarg_0 />
+					<ldlen />
+					<pop />
+					<ldarg_0 />
+					<newobj type="System.String, mscorlib" name=".ctor" sig="([C)V" />
+					<ret />
+				</alternateBody>
+			</constructor>
 			<constructor sig="([CII)V" modifiers="public" />
 			<!-- Package private constructor, that we redirect to static helper -->
 			<constructor sig="([CIIZ)V" modifiers="">
