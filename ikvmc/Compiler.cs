@@ -33,7 +33,6 @@ using IKVM.Internal;
 class Compiler
 {
 	private static string manifestMainClass;
-	private static int itemsProcessed;
 	private static ArrayList classes = new ArrayList();
 	private static Hashtable resources = new Hashtable();
 
@@ -403,11 +402,6 @@ class Compiler
 				}
 			}
 		}
-		if(itemsProcessed == 0)
-		{
-			Console.Error.WriteLine("Error: at least one class or jar must be specified");
-			return 1;
-		}
 		if(assemblyname == null)
 		{
 			string basename = outputfile == null ? defaultAssemblyName : new FileInfo(outputfile).Name;
@@ -473,7 +467,6 @@ class Compiler
 				if(ze.Name.ToLower().EndsWith(".class"))
 				{
 					classes.Add(ReadFromZip(zf, ze));
-					itemsProcessed++;
 				}
 				else
 				{
@@ -501,7 +494,6 @@ class Compiler
 					else
 					{
 						resources.Add(ze.Name, ReadFromZip(zf, ze));
-						itemsProcessed++;
 					}
 				}
 			}
@@ -521,7 +513,6 @@ class Compiler
 				{
 					byte[] b = new byte[fs.Length];
 					fs.Read(b, 0, b.Length);
-					itemsProcessed++;
 					classes.Add(b);
 				}
 				break;
@@ -555,7 +546,6 @@ class Compiler
 							string name = file.Substring(baseDir.FullName.Length);
 							name = name.Replace('\\', '/');
 							resources.Add(name, b);
-							itemsProcessed++;
 						}
 					}
 					catch(UnauthorizedAccessException)

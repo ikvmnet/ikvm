@@ -2076,38 +2076,44 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Loading class {0} failed due to:", s);
 					Console.Error.WriteLine(x);
 				}
-				if(s == mainClass && wrapper != null)
-				{
-					MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor("main", "([Ljava.lang.String;)V"), false);
-					if(mw == null)
-					{
-						Console.Error.WriteLine("Error: main method not found");
-						return;
-					}
-					mw.Link();
-					MethodBuilder method = mw.GetMethod() as MethodBuilder;
-					if(method == null)
-					{
-						Console.Error.WriteLine("Error: redirected main method not supported");
-						return;
-					}
-					Type apartmentAttributeType = null;
-					if(apartment == ApartmentState.STA)
-					{
-						apartmentAttributeType = typeof(STAThreadAttribute);
-					}
-					else if(apartment == ApartmentState.MTA)
-					{
-						apartmentAttributeType = typeof(MTAThreadAttribute);
-					}
-					loader.SetMain(method, target, props, noglobbing, apartmentAttributeType);
-					mainClass = null;
-				}
 			}
 			if(mainClass != null)
 			{
-				Console.Error.WriteLine("Error: main class not found");
-				return;
+				TypeWrapper wrapper = loader.LoadClassByDottedNameFast(mainClass);
+				if(wrapper == null)
+				{
+					Console.Error.WriteLine("Error: main class not found");
+					return;
+				}
+				MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor("main", "([Ljava.lang.String;)V"), false);
+				if(mw == null)
+				{
+					Console.Error.WriteLine("Error: main method not found");
+					return;
+				}
+				mw.Link();
+				MethodInfo method = mw.GetMethod() as MethodInfo;
+				if(method == null)
+				{
+					Console.Error.WriteLine("Error: redirected main method not supported");
+					return;
+				}
+				if(method.DeclaringType.Assembly != loader.ModuleBuilder.Assembly
+					&& (!method.IsPublic || !method.DeclaringType.IsPublic))
+				{
+					Console.Error.WriteLine("Error: external main method must be public and in a public class");
+					return;
+				}
+				Type apartmentAttributeType = null;
+				if(apartment == ApartmentState.STA)
+				{
+					apartmentAttributeType = typeof(STAThreadAttribute);
+				}
+				else if(apartment == ApartmentState.MTA)
+				{
+					apartmentAttributeType = typeof(MTAThreadAttribute);
+				}
+				loader.SetMain(method, target, props, noglobbing, apartmentAttributeType);
 			}
 			compilationPhase1 = false;
 			if(map != null)
