@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -220,6 +220,12 @@ namespace IKVM.Runtime
 		public static bool DynamicInstanceOf(object obj, RuntimeTypeHandle type, string clazz)
 		{
 			Profiler.Count("DynamicInstanceOf");
+			// NOTE it's important that we don't try to load the class if obj == null
+			// (to be compatible with Sun)
+			if(obj == null)
+			{
+				return false;
+			}
 			TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 			TypeWrapper other = ClassLoaderWrapper.GetWrapperFromType(obj.GetType());
 			return other.IsAssignableTo(wrapper);
