@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -30,119 +30,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using OpenSystem.Java;
 using NetSystem = System;
-
-namespace java.lang
-{
-	// TODO should be serializable
-	public sealed class StackTraceElement
-	{
-		private static readonly long serialVersionUID = 6992337162326171013L;
-		private string fileName;
-		private int lineNumber;
-		private string className;
-		private string methodName;
-		[NonSerialized]
-		private bool isNative;
-
-		internal long bogus_method_to_prevent_warning()
-		{
-			return serialVersionUID;
-		}
-
-		internal StackTraceElement(string fileName, int lineNumber, string className, string methodName, bool isNative)
-		{
-			this.fileName = fileName;
-			this.lineNumber = lineNumber;
-			this.className = className;
-			this.methodName = methodName;
-			this.isNative = isNative;
-		}
-
-		public string getFileName()
-		{
-			return fileName;
-		}
-
-		public int getLineNumber()
-		{
-			return lineNumber;
-		}
-
-		public string getClassName()
-		{
-			return className;
-		}
-
-		public string getMethodName()
-		{
-			return methodName;
-		}
-
-		public bool isNativeMethod()
-		{
-			return isNative;
-		}
-
-		public override string ToString()
-		{
-			StringBuilder sb = new StringBuilder();
-			if(className != null)
-			{
-				sb.Append(className);
-				if(methodName != null)
-				{
-					sb.Append('.');
-				}
-			}
-			if(methodName != null)
-			{
-				sb.Append(methodName);
-			}
-			sb.Append('(');
-			if(fileName != null)
-			{
-				sb.Append(fileName);
-			}
-			else
-			{
-				sb.Append(isNative ? "Native Method" : "Unknown Source");
-			}
-			if(lineNumber >= 0)
-			{
-				sb.Append(':').Append(lineNumber);
-			}
-			sb.Append(')');
-			return sb.ToString();
-		}
-
-		public override bool Equals(object o)
-		{
-			if(o != null && o.GetType() == GetType())
-			{
-				StackTraceElement ste = (StackTraceElement)o;
-				return ste.className == className &&
-					ste.fileName == fileName &&
-					ste.lineNumber == lineNumber &&
-					ste.methodName == methodName;
-			}
-			return false;
-		}
-
-		public override int GetHashCode()
-		{
-			return GetHashCode(className) ^ GetHashCode(fileName) ^ GetHashCode(methodName) ^ lineNumber;
-		}
-
-		private static int GetHashCode(string o)
-		{
-			if(o == null)
-			{
-				return 0;
-			}
-			return o.GetHashCode();
-		}
-	}
-}
 
 namespace NativeCode.java
 {
@@ -453,168 +340,33 @@ namespace NativeCode.java
 			}
 		}
 
-		public class Runtime
+		public class VMRuntime
 		{
-			public static void insertSystemProperties(object properties)
+			public static string getVersion()
 			{
-				MethodInfo m = properties.GetType().GetMethod("setProperty");
-				// TODO set all these properties to something useful
-				m.Invoke(properties, new string[] { "java.version", "1.4" });
-				m.Invoke(properties, new string[] { "java.vendor", "Jeroen Frijters" });
-				m.Invoke(properties, new string[] { "java.vendor.url", "http://ikvm.net/" });
-				// HACK using the Assembly.Location property isn't correct
-				m.Invoke(properties, new string[] { "java.home", new FileInfo(typeof(Runtime).Assembly.Location).DirectoryName });
-				m.Invoke(properties, new string[] { "java.vm.specification.version", "1.0" });
-				m.Invoke(properties, new string[] { "java.vm.specification.vendor", "Sun Microsystems Inc." });
-				m.Invoke(properties, new string[] { "java.vm.specification.name", "Java Virtual Machine Specification" });
-				m.Invoke(properties, new string[] { "java.vm.version", typeof(Runtime).Assembly.GetName().Version.ToString() });
-				m.Invoke(properties, new string[] { "java.vm.vendor", "Jeroen Frijters" });
-				m.Invoke(properties, new string[] { "java.vm.name", "IKVM.NET" });
-				m.Invoke(properties, new string[] { "java.specification.version", "1.4" });
-				m.Invoke(properties, new string[] { "java.specification.vendor", "Sun Microsystems Inc." });
-				m.Invoke(properties, new string[] { "java.specification.name", "Java Platform API Specification" });
-				m.Invoke(properties, new string[] { "java.class.version", "48.0" });
-				string classpath = Environment.GetEnvironmentVariable("CLASSPATH");
-				if(classpath == null)
-				{
-					classpath = ".";
-				}
-				m.Invoke(properties, new string[] { "java.class.path", classpath });
-				string libraryPath = ".";
-				if(Environment.OSVersion.ToString().IndexOf("Unix") >= 0)
-				{
-					string ldLibraryPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
-					if (ldLibraryPath != null)
-					{
-						libraryPath = ldLibraryPath;
-					}
-					else
-					{
-						libraryPath = "";
-					}
-				}
-				m.Invoke(properties, new string[] { "java.library.path", libraryPath });
-				m.Invoke(properties, new string[] { "java.io.tmpdir", Path.GetTempPath() });
-				m.Invoke(properties, new string[] { "java.compiler", "" });
-				m.Invoke(properties, new string[] { "java.ext.dirs", "" });
-				// NOTE os.name *must* contain "Windows" when running on Windows, because Classpath tests on that
-				string osname = Environment.OSVersion.ToString();
-				string osver = Environment.OSVersion.Version.ToString();
-				// HACK if the osname contains the version, we remove it
-				osname = osname.Replace(osver, "").Trim();
-				m.Invoke(properties, new string[] { "os.name", osname });
-				string arch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
-				if(arch == null)
-				{
-					// TODO get this info from somewhere else
-					arch = "x86";
-				}
-				m.Invoke(properties, new string[] { "os.arch", arch });
-				m.Invoke(properties, new string[] { "os.version", osver });
-				m.Invoke(properties, new string[] { "file.separator", Path.DirectorySeparatorChar.ToString() });
-				m.Invoke(properties, new string[] { "file.encoding", "8859_1" });
-				m.Invoke(properties, new string[] { "path.separator", Path.PathSeparator.ToString() });
-				m.Invoke(properties, new string[] { "line.separator", Environment.NewLine });
-				m.Invoke(properties, new string[] { "user.name", Environment.UserName });
-				string home = Environment.GetEnvironmentVariable("USERPROFILE");
-				if(home == null)
-				{
-					// maybe we're on *nix
-					home = Environment.GetEnvironmentVariable("HOME");
-					if(home == null)
-					{
-						// TODO may be there is a better way
-						// NOTE on MS .NET this doesn't return the correct path
-						// (it returns "C:\Documents and Settings\username\My Documents", but we really need
-						// "C:\Documents and Settings\username" to be compatible with Sun)
-						home = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-					}
-				}
-				m.Invoke(properties, new string[] { "user.home", home });
-				m.Invoke(properties, new string[] { "user.dir", Environment.CurrentDirectory });
-				m.Invoke(properties, new string[] { "awt.toolkit", "ikvm.awt.NetToolkit, awt, Version=1.0, Culture=neutral, PublicKeyToken=null" });
-				// HACK we assume that the type of the properties object is the classpath assembly
-				m.Invoke(properties, new string[] { "gnu.classpath.home.url", "ikvmres:" + properties.GetType().Assembly.FullName + ":lib" });
+				return typeof(VMRuntime).Assembly.GetName().Version.ToString();
 			}
 
-			public static string nativeGetLibname(string pathname, string libname)
-			{
-				if(Environment.OSVersion.ToString().IndexOf("Unix") >= 0)
-				{
-					return "lib" + libname + ".so";
-				}
+//			public static string nativeGetLibname(string pathname, string libname)
+//			{
+//				if(Environment.OSVersion.ToString().IndexOf("Unix") >= 0)
+//				{
+//					return "lib" + libname + ".so";
+//				}
+//
+//				// HACK this seems like a lame way of doing things, but in order to get Eclipse to work,
+//				// we have append .dll to the libname here
+//				if(!libname.ToUpper().EndsWith(".DLL"))
+//				{
+//					libname += ".dll";
+//				}
+//				return libname;
+//			}
 
-				// HACK this seems like a lame way of doing things, but in order to get Eclipse to work,
-				// we have append .dll to the libname here
-				if(!libname.ToUpper().EndsWith(".DLL"))
-				{
-					libname += ".dll";
-				}
-				return libname;
-			}
-
-			public static int nativeLoad(object obj, string filename)
+			public static int nativeLoad(string filename)
 			{
 				// TODO native libraries somehow need to be scoped by class loader
 				return JVM.JniProvider.LoadNativeLibrary(filename);
-			}
-
-			public static void gc(object obj)
-			{
-				NetSystem.GC.Collect();
-			}
-
-			public static void runFinalization(object obj)
-			{
-				NetSystem.GC.WaitForPendingFinalizers();
-			}
-
-			public static void runFinalizersOnExitInternal(bool b)
-			{
-				// the CLR always runs the finalizers, so we can ignore this
-			}
-
-			public static void exitInternal(object obj, int rc)
-			{
-				NetSystem.Environment.Exit(rc);
-			}
-
-			public static int availableProcessors(object obj)
-			{
-				string s = NetSystem.Environment.GetEnvironmentVariable("NUMBER_OF_PROCESSORS");
-				if(s != null)
-				{
-					return int.Parse(s);
-				}
-				return 1;
-			}
-
-			public static long freeMemory(object obj)
-			{
-				// TODO figure out if there is anything meaningful we can return here
-				return 10 * 1024 * 1024;
-			}
-
-			public static long maxMemory(object obj)
-			{
-				// spec says: If there is no inherent limit then the value Long.MAX_VALUE will be returned.
-				return long.MaxValue;
-			}
-
-			public static long totalMemory(object obj)
-			{
-				// NOTE this really is a bogus number, but we have to return something
-				return NetSystem.GC.GetTotalMemory(false);
-			}
-
-			public static void traceInstructions(object obj, bool b)
-			{
-				// not supported
-			}
-
-			public static void traceMethodCalls(object obj, bool b)
-			{
-				// not supported
 			}
 		}
 

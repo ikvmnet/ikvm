@@ -147,6 +147,24 @@ class MethodWrapper : MemberWrapper
 	internal CodeEmitter EmitCallvirt;
 	internal CodeEmitter EmitNewobj;
 
+	private class GhostUnwrapper : CodeEmitter
+	{
+		private TypeWrapper type;
+
+		internal GhostUnwrapper(TypeWrapper type)
+		{
+			this.type = type;
+		}
+
+		internal override void Emit(ILGenerator ilgen)
+		{
+			LocalBuilder local = ilgen.DeclareLocal(type.TypeAsParameterType);
+			ilgen.Emit(OpCodes.Stloc, local);
+			ilgen.Emit(OpCodes.Ldloca, local);
+			ilgen.Emit(OpCodes.Ldfld, type.GhostRefField);
+		}
+	}
+
 	// TODO creation of MethodWrappers should be cleaned up (and every instance should support Invoke())
 	internal static MethodWrapper Create(TypeWrapper declaringType, MethodDescriptor md, MethodBase originalMethod, MethodBase method, Modifiers modifiers, bool hideFromReflection)
 	{
@@ -164,10 +182,18 @@ class MethodWrapper : MemberWrapper
 			CreateEmitters(originalMethod, method, ref wrapper.EmitCall, ref wrapper.EmitCallvirt, ref wrapper.EmitNewobj);
 		}
 		TypeWrapper retType = md.RetTypeWrapper;
-		if(!retType.IsUnloadable && retType.IsNonPrimitiveValueType)
+		if(!retType.IsUnloadable)
 		{
-			wrapper.EmitCall += CodeEmitter.CreateEmitBoxCall(retType);
-			wrapper.EmitCallvirt += CodeEmitter.CreateEmitBoxCall(retType);
+			if(retType.IsNonPrimitiveValueType)
+			{
+				wrapper.EmitCall += CodeEmitter.CreateEmitBoxCall(retType);
+				wrapper.EmitCallvirt += CodeEmitter.CreateEmitBoxCall(retType);
+			}
+			else if(retType.IsGhost)
+			{
+				wrapper.EmitCall += new GhostUnwrapper(retType);
+				wrapper.EmitCallvirt += new GhostUnwrapper(retType);
+			}
 		}
 		if(declaringType.IsNonPrimitiveValueType)
 		{
@@ -554,6 +580,36 @@ class MethodWrapper : MemberWrapper
 	}
 }
 
+// This class tests if reflection on a constant field triggers the class constructor to run
+// (it shouldn't run, but on .NET 1.0 & 1.1 it does)
+class ReflectionOnConstant
+{
+	private static bool isBroken;
+
+	static ReflectionOnConstant()
+	{
+		typeof(Helper).GetField("foo", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+	}
+
+	internal static bool IsBroken
+	{
+		get
+		{
+			return isBroken;
+		}
+	}
+
+	private class Helper
+	{
+		internal const int foo = 1;
+
+		static Helper()
+		{
+			isBroken = true;
+		}
+	}
+}
+
 class FieldWrapper : MemberWrapper
 {
 	private string name;
@@ -589,9 +645,9 @@ class FieldWrapper : MemberWrapper
 		TypeWrapper java_lang_String = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.String");
 		if(field != null && (fieldType.IsPrimitive || fieldType == java_lang_String) && field.IsLiteral)
 		{
-			// NOTE .NET BUG this causes the type initializer to run and we don't want that.
+			// NOTE .NET (1.0 & 1.1) BUG this causes the type initializer to run and we don't want that.
 			// TODO may need to find a workaround, for now we just spit out a warning (only shows up during netexp)
-			if(field.DeclaringType.TypeInitializer != null)
+			if(field.DeclaringType.TypeInitializer != null && ReflectionOnConstant.IsBroken)
 			{
 				// HACK lame way to support a command line switch to suppress this warning
 				if(Environment.CommandLine.IndexOf("-noTypeInitWarning") == -1)

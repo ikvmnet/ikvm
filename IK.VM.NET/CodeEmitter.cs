@@ -431,6 +431,11 @@ class ReturnCastEmitter : CodeEmitter
 	private TypeWrapper type;
 	private string className;
 
+	internal ReturnCastEmitter(TypeWrapper type)
+	{
+		this.type = type;
+	}
+
 	internal ReturnCastEmitter(string className)
 	{
 		this.className = className;
@@ -451,7 +456,7 @@ class ReturnCastEmitter : CodeEmitter
 			ilgen.Emit(OpCodes.Ldloc, local1);
 			ilgen.Emit(OpCodes.Stfld, type.GhostRefField);
 			ilgen.Emit(OpCodes.Ldloca, local2);
-			ilgen.Emit(OpCodes.Ldobj, type.TypeAsParameterType);			
+			ilgen.Emit(OpCodes.Ldobj, type.TypeAsParameterType);
 		}
 		else if(type.TypeAsParameterType != typeof(object))
 		{

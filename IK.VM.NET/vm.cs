@@ -39,6 +39,7 @@ public class JVM
 	private static bool logClassLoadFailures = false;
 	private static bool logVerifyErrors = true;		// TODO provide ikvm command line switch
 	private static IJniProvider jniProvider;
+	private static bool compilationPhase1;
 
 	public static bool Debug
 	{
@@ -68,6 +69,14 @@ public class JVM
 		}
 	}
 
+	public static bool IsStaticCompilerPhase1
+	{
+		get
+		{
+			return compilationPhase1;
+		}
+	}
+
 	public static bool CompileInnerClassesAsNestedTypes
 	{
 		get
@@ -84,7 +93,7 @@ public class JVM
 	{
 		get
 		{
-			return logClassLoadFailures || isStaticCompiler;
+			return logClassLoadFailures;
 		}
 		set
 		{
@@ -101,14 +110,6 @@ public class JVM
 		set
 		{
 			logVerifyErrors = value;
-		}
-	}
-
-	public static bool CleanStackTraces
-	{
-		get
-		{
-			return true;
 		}
 	}
 
@@ -162,11 +163,11 @@ public class JVM
 			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
 			CustomAttributeBuilder ikvmAssemblyAttr = new CustomAttributeBuilder(typeof(JavaAssemblyAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 			assemblyBuilder.SetCustomAttribute(ikvmAssemblyAttr);
-			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(path, JVM.Debug);
+			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(assembly, path, JVM.Debug);
 			if(JVM.Debug)
 			{
 				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, true });
-				moduleBuilder.SetCustomAttribute(debugAttr);
+				assemblyBuilder.SetCustomAttribute(debugAttr);
 			}
 			return moduleBuilder;
 		}
@@ -179,6 +180,25 @@ public class JVM
 				ClassFile f = (ClassFile)classes[name];
 				if(f != null)
 				{
+					// to enhance error reporting we special case loading of netexp
+					// classes, to handle the case where the netexp type doesn't exist
+					// (this happens when the .NET mscorlib.jar is used on Mono, for example)
+					string netexp = f.NetExpAssemblyAttribute;
+					if(netexp != null)
+					{
+						try
+						{
+							Assembly.Load(netexp);
+						}
+						catch(Exception)
+						{
+							Console.Error.WriteLine("netexp assembly not found: {0}", netexp);
+						}
+						if(DotNetTypeWrapper.LoadDotNetTypeWrapper(name) == null)
+						{
+							throw new TypeLoadException(name);
+						}
+					}
 					type = DefineClass(f);
 				}
 			}
@@ -211,7 +231,7 @@ public class JVM
 		}
 	}
 
-	public static void Compile(string path, string assembly, string mainClass, PEFileKinds target, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude)
+	public static void Compile(string path, string assembly, string mainClass, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude)
 	{
 		isStaticCompiler = true;
 		noJniStubs = nojni;
@@ -231,14 +251,9 @@ public class JVM
 				if(Regex.IsMatch(name, classesToExclude[j]))
 				{
 					excluded = true;
-					//Console.WriteLine("Excluding: {0} on rule {1}", name, (String)classesToExclude[j]);
 					break;
 				}
 			}
-//			if (!excluded)
-//				Console.WriteLine("Adding: {0}", name);
-//			else
-//				Console.WriteLine("Not Adding: {0}", name);
 			if(h.ContainsKey(name))
 			{
 				Console.Error.WriteLine("Duplicate class name: {0}", name);
@@ -247,7 +262,48 @@ public class JVM
 			if(!excluded)
 			{
 				h[name] = f;
+				if(mainClass == null && (guessFileKind || target != PEFileKinds.Dll))
+				{
+					foreach(ClassFile.Method m in f.Methods)
+					{
+						if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
+						{
+							Console.Error.WriteLine("Note: found main method in class: {0}", f.Name);
+							mainClass = f.Name;
+							break;
+						}
+					}
+				}
 			}
+		}
+
+		if(guessFileKind && mainClass == null)
+		{
+			target = PEFileKinds.Dll;
+		}
+
+		if(target != PEFileKinds.Dll && mainClass == null)
+		{
+			Console.Error.WriteLine("Error: no main method found");
+			return;
+		}
+
+		if(path == null)
+		{
+			path = assembly + (target == PEFileKinds.Dll ? ".dll" : ".exe");
+			Console.Error.WriteLine("Note: output file is: {0}", path);
+		}
+
+		if(target == PEFileKinds.Dll && !path.ToLower().EndsWith(".dll"))
+		{
+			Console.Error.WriteLine("Error: library output file must end with .dll");
+			return;
+		}
+
+		if(target != PEFileKinds.Dll && !path.ToLower().EndsWith(".exe"))
+		{
+			Console.Error.WriteLine("Error: executable output file must end with .exe");
+			return;
 		}
 
 		// make sure all inner classes have a reference to their outer class
@@ -271,7 +327,7 @@ public class JVM
 							{
 								if(innerClass.OuterClass != null)
 								{
-									Console.Error.WriteLine("Error: Inner class {0} has multiple outer classes", inner);
+									Console.Error.WriteLine("Error: inner class {0} has multiple outer classes", inner);
 									return;
 								}
 								innerClass.OuterClass = classFile;
@@ -289,8 +345,23 @@ public class JVM
 		Console.WriteLine("Constructing compiler");
 		CompilerClassLoader loader = new CompilerClassLoader(path, assembly, h);
 		ClassLoaderWrapper.SetBootstrapClassLoader(loader);
+		compilationPhase1 = true;
 		Console.WriteLine("Loading remapped types (1)");
 		loader.LoadRemappedTypes();
+		// Do a sanity check to make sure some of the bootstrap classes are available
+		if(loader.LoadClassByDottedNameFast("java.lang.Object") == null ||
+			loader.LoadClassByDottedNameFast("java.lang.String") == null ||
+			loader.LoadClassByDottedNameFast("java.lang.NullPointerException") == null)
+		{
+			Assembly classpath = Assembly.LoadWithPartialName("classpath");
+			if(classpath == null)
+			{
+				Console.Error.WriteLine("Error: bootstrap classes missing and classpath.dll not found");
+				return;
+			}
+			Console.Error.WriteLine("Warning: bootstrap classes are missing, automatically adding reference to {0}", classpath.Location);
+			Console.Error.WriteLine("  (to avoid this warning add \"-reference:{0}\" to the command line)", classpath.Location);
+		}
 		Console.WriteLine("Compiling class files (1)");
 		foreach(string s in h.Keys)
 		{
@@ -298,6 +369,11 @@ public class JVM
 			try
 			{
 				wrapper = loader.LoadClassByDottedName(s);
+			}
+			catch(TypeLoadException x)
+			{
+				// this should only happen for netexp types (we throw the exception ourselves in GetTypeWrapperCompilerHook)
+				Console.Error.WriteLine("Class not found: {0}", x.Message);
 			}
 			catch(Exception x)
 			{
@@ -327,6 +403,7 @@ public class JVM
 			Console.Error.WriteLine("Error: main class not found");
 			return;
 		}
+		compilationPhase1 = false;
 		Console.WriteLine("Loading remapped types (2)");
 		loader.LoadRemappedTypesStep2();
 		Console.WriteLine("Compiling class files (2)");

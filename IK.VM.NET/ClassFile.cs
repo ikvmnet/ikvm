@@ -347,33 +347,34 @@ class ClassFile
 		return GetConstantPoolUtf8(index).Value;
 	}
 
-	internal object GetConstantPoolConstant(int index)
+	internal ConstantType GetConstantPoolConstantType(int index)
 	{
-		ConstantPoolItem cpi = constantpool[index];
-		if(cpi is ConstantPoolItemDouble)
-		{
-			return ((ConstantPoolItemDouble)cpi).Value;
-		}
-		else if(cpi is ConstantPoolItemFloat)
-		{
-			return ((ConstantPoolItemFloat)cpi).Value;
-		}
-		else if(cpi is ConstantPoolItemInteger)
-		{
-			return ((ConstantPoolItemInteger)cpi).Value;
-		}
-		else if(cpi is ConstantPoolItemLong)
-		{
-			return ((ConstantPoolItemLong)cpi).Value;
-		}
-		else if(cpi is ConstantPoolItemString)
-		{
-			return ((ConstantPoolItemString)cpi).Value;
-		}
-		else
-		{
-			return null;
-		}
+		return constantpool[index].GetConstantType();
+	}
+
+	internal double GetConstantPoolConstantDouble(int index)
+	{
+		return ((ConstantPoolItemDouble)constantpool[index]).Value;
+	}
+
+	internal float GetConstantPoolConstantFloat(int index)
+	{
+		return ((ConstantPoolItemFloat)constantpool[index]).Value;
+	}
+
+	internal int GetConstantPoolConstantInteger(int index)
+	{
+		return ((ConstantPoolItemInteger)constantpool[index]).Value;
+	}
+
+	internal long GetConstantPoolConstantLong(int index)
+	{
+		return ((ConstantPoolItemLong)constantpool[index]).Value;
+	}
+
+	internal string GetConstantPoolConstantString(int index)
+	{
+		return ((ConstantPoolItemString)constantpool[index]).Value;
 	}
 
 	internal string Name
@@ -536,6 +537,15 @@ class ClassFile
 		}
 	}
 
+	internal enum ConstantType
+	{
+		Integer,
+		Long,
+		Float,
+		Double,
+		String
+	}
+
 	internal abstract class ConstantPoolItem
 	{
 		internal virtual bool IsWide
@@ -552,6 +562,11 @@ class ClassFile
 
 		internal virtual void LoadAllReferencedTypes(ClassLoaderWrapper classLoader)
 		{
+		}
+
+		internal virtual ConstantType GetConstantType()
+		{
+			throw new InvalidOperationException();
 		}
 
 		internal static ConstantPoolItem Read(string inputClassName, BigEndianBinaryReader br)
@@ -757,6 +772,11 @@ class ClassFile
 			d = br.ReadDouble();
 		}
 
+		internal override ConstantType GetConstantType()
+		{
+			return ConstantType.Double;
+		}
+
 		internal double Value
 		{
 			get
@@ -868,6 +888,11 @@ class ClassFile
 			v = br.ReadSingle();
 		}
 
+		internal override ConstantType GetConstantType()
+		{
+			return ConstantType.Float;
+		}
+
 		internal float Value
 		{
 			get
@@ -886,6 +911,11 @@ class ClassFile
 			v = br.ReadInt32();
 		}
 
+		internal override ConstantType GetConstantType()
+		{
+			return ConstantType.Integer;
+		}
+
 		internal int Value
 		{
 			get
@@ -902,6 +932,11 @@ class ClassFile
 		internal ConstantPoolItemLong(BigEndianBinaryReader br)
 		{
 			l = br.ReadInt64();
+		}
+
+		internal override ConstantType GetConstantType()
+		{
+			return ConstantType.Long;
 		}
 
 		internal long Value
@@ -1020,6 +1055,11 @@ class ClassFile
 			ConstantPoolItemUtf8 utf8 = (ConstantPoolItemUtf8)classFile.GetConstantPoolItem(string_index);
 			utf8.Resolve(classFile);
 			s = utf8.Value;
+		}
+
+		internal override ConstantType GetConstantType()
+		{
+			return ConstantType.String;
 		}
 
 		internal string Value
@@ -1330,57 +1370,65 @@ class ClassFile
 			{
 				throw JavaException.ClassFormatError("{0} (Illegal field modifiers: 0x{1:X})", classFile.Name, access_flags);
 			}
-			Attribute attr = GetAttribute("ConstantValue");
-			if(attr != null)
+			// spec (4.7.2) says we should silently ignore ConstantValue attribute on non-static fields
+			// NOTE a field doesn't have to be final to have a constant value!
+			if(IsStatic)
 			{
-				ushort index = attr.Data.ReadUInt16();
-				try
+				Attribute attr = GetAttribute("ConstantValue");
+				if(attr != null)
 				{
-					object o = classFile.GetConstantPoolConstant(index);
-					if(o == null)
+					ushort index = attr.Data.ReadUInt16();
+					try
+					{
+						switch(Signature)
+						{
+							case "I":
+								constantValue = classFile.GetConstantPoolConstantInteger(index);
+								break;
+							case "S":
+								constantValue = (short)classFile.GetConstantPoolConstantInteger(index);
+								break;
+							case "B":
+								constantValue = (sbyte)classFile.GetConstantPoolConstantInteger(index);
+								break;
+							case "C":
+								constantValue = (char)classFile.GetConstantPoolConstantInteger(index);
+								break;
+							case "Z":
+								constantValue = classFile.GetConstantPoolConstantInteger(index) != 0;
+								break;
+							case "J":
+								constantValue = classFile.GetConstantPoolConstantLong(index);
+								break;
+							case "F":
+								constantValue = classFile.GetConstantPoolConstantFloat(index);
+								break;
+							case "D":
+								constantValue = classFile.GetConstantPoolConstantDouble(index);
+								break;
+							case "Ljava.lang.String;":
+								constantValue = classFile.GetConstantPoolConstantString(index);
+								break;
+							default:
+								throw JavaException.ClassFormatError("{0} (Invalid signature for constant)", classFile.Name);
+						}
+					}
+					catch(InvalidCastException)
 					{
 						throw JavaException.ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
 					}
-					switch(Signature)
+					catch(IndexOutOfRangeException)
 					{
-						case "I":
-							constantValue = (int)o;
-							break;
-						case "S":
-							constantValue = (short)(int)o;
-							break;
-						case "B":
-							constantValue = (sbyte)(int)o;
-							break;
-						case "C":
-							constantValue = (char)(int)o;
-							break;
-						case "Z":
-							constantValue = ((int)o) != 0;
-							break;
-						case "J":
-							constantValue = (long)o;
-							break;
-						case "F":
-							constantValue = (float)o;
-							break;
-						case "D":
-							constantValue = (double)o;
-							break;
-						case "Ljava.lang.String;":
-							constantValue = (string)o;
-							break;
-						default:
-							throw JavaException.ClassFormatError("{0} (Invalid signature for constant)", classFile.Name);
+						throw JavaException.ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
 					}
-				}
-				catch(InvalidCastException)
-				{
-					throw JavaException.ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
-				}
-				catch(IndexOutOfRangeException)
-				{
-					throw JavaException.ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
+					catch(InvalidOperationException)
+					{
+						throw JavaException.ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
+					}
+					catch(NullReferenceException)
+					{
+						throw JavaException.ClassFormatError("{0} (Bad index into constant pool)", classFile.Name);
+					}
 				}
 			}
 		}

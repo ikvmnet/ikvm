@@ -53,6 +53,7 @@ class ClassLoaderWrapper
 	private static ModuleBuilder moduleBuilder;
 	private static bool saveDebugImage;
 	private static Hashtable nameClashHash = new Hashtable();
+	private static TypeWrapper[] mappedExceptions;
 	private static int instanceCounter = 0;
 	private int instanceId = System.Threading.Interlocked.Increment(ref instanceCounter);
 
@@ -210,6 +211,54 @@ class ClassLoaderWrapper
 		list.Add(implementer);
 	}
 
+	private class ExceptionMapEmitter : CodeEmitter
+	{
+		private MapXml.ExceptionMapping[] map;
+
+		internal ExceptionMapEmitter(MapXml.ExceptionMapping[] map)
+		{
+			this.map = map;
+		}
+
+		internal override void Emit(ILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Ldarg_0);
+			ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeHandle"));
+			LocalBuilder typehandle = ilgen.DeclareLocal(typeof(RuntimeTypeHandle));
+			ilgen.Emit(OpCodes.Stloc, typehandle);
+			ilgen.Emit(OpCodes.Ldloca, typehandle);
+			MethodInfo get_Value = typeof(RuntimeTypeHandle).GetMethod("get_Value");
+			ilgen.Emit(OpCodes.Call, get_Value);
+			for(int i = 0; i < map.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Ldtoken, Type.GetType(map[i].src));
+				ilgen.Emit(OpCodes.Stloc, typehandle);
+				ilgen.Emit(OpCodes.Ldloca, typehandle);
+				ilgen.Emit(OpCodes.Call, get_Value);
+				Label label = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Bne_Un_S, label);
+				ilgen.Emit(OpCodes.Pop);
+				if(map[i].code != null)
+				{
+					ilgen.Emit(OpCodes.Ldarg_0);
+					map[i].code.Emit(ilgen);
+					ilgen.Emit(OpCodes.Ret);
+				}
+				else
+				{
+					TypeWrapper tw = GetBootstrapClassLoader().LoadClassByDottedName(map[i].dst);
+					tw.GetMethodWrapper(MethodDescriptor.FromNameSig(tw.GetClassLoader(), "<init>", "()V"), false).EmitNewobj.Emit(ilgen);
+					ilgen.Emit(OpCodes.Ret);
+				}
+				ilgen.MarkLabel(label);
+			}
+			ilgen.Emit(OpCodes.Pop);
+			ilgen.Emit(OpCodes.Ldarg_0);
+			ilgen.Emit(OpCodes.Ret);
+		}
+	}
+
 	internal void LoadRemappedTypesStep2()
 	{
 		MapXml.Root map = MapXmlGenerator.Generate();
@@ -224,10 +273,29 @@ class ClassLoaderWrapper
 				nativeMethods[className + "." + methodName + methodSig] = method;
 			}
 		}
+		mappedExceptions = new TypeWrapper[map.exceptionMappings.Length];
+		for(int i = 0; i < mappedExceptions.Length; i++)
+		{
+			mappedExceptions[i] = LoadClassByDottedName(map.exceptionMappings[i].dst);
+		}
+		// HACK we've got a hardcoded location for the exception mapping method that is generated from the xml mapping
+		nativeMethods["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
 		foreach(MapXml.Class c in map.remappings)
 		{
 			((RemappedTypeWrapper)types[c.Name]).LoadRemappings(c);
 		}
+	}
+
+	internal static bool IsMapSafeException(TypeWrapper tw)
+	{
+		for(int i = 0; i < mappedExceptions.Length; i++)
+		{
+			if(mappedExceptions[i].IsSubTypeOf(tw))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	// This mangles type names, to enable different class loaders loading classes with the same names.
@@ -553,6 +621,14 @@ class ClassLoaderWrapper
 			}
 			throw JavaException.LinkageError("duplicate class definition: {0}", f.Name);
 		}
+		string dotnetAssembly = f.NetExpAssemblyAttribute;
+		if(dotnetAssembly != null)
+		{
+			// HACK only the bootstrap classloader can define .NET types (but for convenience, we do
+			// allow other class loaders to call DefineClass for them)
+			// TODO reconsider this, it might be a better idea to only allow netexp generated jars on the bootclasspath
+			return GetBootstrapClassLoader().DefineNetExpType(f.Name, dotnetAssembly);
+		}
 		// mark the type as "loading in progress", so that we can detect circular dependencies.
 		types.Add(f.Name, null);
 		try
@@ -581,26 +657,9 @@ class ClassLoaderWrapper
 			{
 				throw JavaException.IncompatibleClassChangeError("Class {0} has interface {1} as superclass", f.Name, baseType.Name);
 			}
-			string dotnetAssembly = f.NetExpAssemblyAttribute;
-			if(dotnetAssembly != null)
-			{
-				// The sole purpose of the netexp class is to let us load the assembly that the class lives in,
-				// once we've done that, all types in it become visible.
-				Assembly.Load(dotnetAssembly);
-				types.Remove(f.Name);
-				type = GetBootstrapClassLoader().LoadClassByDottedNameFast(f.Name);
-				if(type == null)
-				{
-					throw JavaException.NoClassDefFoundError("{0} (loaded through NetExp class)", f.Name);
-				}
-				return type;
-			}
-			else
-			{
-				type = new DynamicTypeWrapper(f, this, nativeMethods);
-				Debug.Assert(!dynamicTypes.ContainsKey(type.Type.FullName));
-				dynamicTypes.Add(type.Type.FullName, type);
-			}
+			type = new DynamicTypeWrapper(f, this, nativeMethods);
+			Debug.Assert(!dynamicTypes.ContainsKey(type.Type.FullName));
+			dynamicTypes.Add(type.Type.FullName, type);
 			Debug.Assert(types[f.Name] == null);
 			types[f.Name] = type;
 			return type;
@@ -615,6 +674,36 @@ class ClassLoaderWrapper
 			}
 			throw;
 		}
+	}
+
+	private TypeWrapper DefineNetExpType(string name, string assembly)
+	{
+		Debug.Assert(this == GetBootstrapClassLoader());
+		// we need to check if we've already got it, because other classloaders than the bootstrap classloader may
+		// "define" NetExp types, there is a potential race condition if multiple classloaders try to define the
+		// same type simultaneously.
+		TypeWrapper type = (TypeWrapper)types[name];
+		if(type != null)
+		{
+			return type;
+		}
+		// The sole purpose of the netexp class is to let us load the assembly that the class lives in,
+		// once we've done that, all types in it become visible.
+		try
+		{
+			Assembly.Load(assembly);
+		}
+		catch(Exception x)
+		{
+			throw JavaException.NoClassDefFoundError("{0} ({1})", name, x.Message);
+		}
+		type = DotNetTypeWrapper.LoadDotNetTypeWrapper(name);
+		if(type == null)
+		{
+			throw JavaException.NoClassDefFoundError("{0} not found in {1}", name, assembly);
+		}
+		types.Add(name, type);
+		return type;
 	}
 
 	internal object GetJavaClassLoader()
@@ -722,7 +811,7 @@ class ClassLoaderWrapper
 		if(JVM.Debug)
 		{
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, true });
-			moduleBuilder.SetCustomAttribute(debugAttr);
+			assemblyBuilder.SetCustomAttribute(debugAttr);
 		}
 		return moduleBuilder;
 	}

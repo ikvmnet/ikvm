@@ -29,6 +29,8 @@ using ICSharpCode.SharpZipLib.Zip;
 
 class Compiler
 {
+	private static string manifestMainClass;
+
 	private static ArrayList GetArgs(string[] args)
 	{
 		ArrayList arglist = new ArrayList();
@@ -56,9 +58,11 @@ class Compiler
 	static int Main(string[] args)
 	{
 		System.Reflection.Emit.PEFileKinds target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
+		bool guessFileKind = true;
 		string assemblyname = null;
 		string outputfile = null;
 		string main = null;
+		string defaultName = null;
 		bool nojni = false;
 		ArrayList classesToExclude = new ArrayList();
 		ArrayList references = new ArrayList();
@@ -68,12 +72,12 @@ class Compiler
 			Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("options:");
-			Console.Error.WriteLine("    -out:<outputfile>       Required");
-			Console.Error.WriteLine("    -assembly:<outputfile>  Optionally used to specify assembly name");
+			Console.Error.WriteLine("    -out:<outputfile>       Specify the output filename");
+			Console.Error.WriteLine("    -assembly:<name>        Specify assembly name");
 			Console.Error.WriteLine("    -target:exe             Build a console executable");
 			Console.Error.WriteLine("    -target:winexe          Build a windows executable");
 			Console.Error.WriteLine("    -target:library         Build a library");
-			Console.Error.WriteLine("    -main:<class>           Required (for executables)");
+			Console.Error.WriteLine("    -main:<class>           Specify the class containing the main method");
 			Console.Error.WriteLine("    -reference:<filespec>   Reference an assembly");
 			Console.Error.WriteLine("    -recurse:<filespec>     Recurse directory and include matching files");
 			Console.Error.WriteLine("    -nojni                  Do not generate JNI stub for native methods");
@@ -102,12 +106,18 @@ class Compiler
 					{
 						case "-target:exe":
 							target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
+							guessFileKind = false;
 							break;
 						case "-target:winexe":
 							target = System.Reflection.Emit.PEFileKinds.WindowApplication;
+							guessFileKind = false;
 							break;
 						case "-target:library":
 							target = System.Reflection.Emit.PEFileKinds.Dll;
+							guessFileKind = false;
+							break;
+						default:
+							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
 							break;
 					}
 				}
@@ -169,44 +179,63 @@ class Compiler
 				}
 				else
 				{
-					Console.Error.WriteLine("Warning: Unrecognized option: {0}", s);
+					Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
 				}
 			}
 			else
 			{
+				if(defaultName == null)
+				{
+					defaultName = Path.GetFileName(s);
+				}
 				string path = Path.GetDirectoryName(s);
 				string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s));
+				if(files.Length == 0)
+				{
+					Console.Error.WriteLine("Error: file not found: {0}", s);
+					return 1;
+				}
 				foreach(string f in files)
 				{
 					ProcessFile(classes, resources, null, f);
 				}
 			}
 		}
-		if(outputfile == null)
+		if(defaultName == null)
 		{
-			Console.Error.WriteLine("Error: -out:<outputfile> must be specified");
+			Console.Error.WriteLine("Error: at least one class or jar must be specified");
 			return 1;
 		}
 		if(assemblyname == null)
 		{
-			int idx = outputfile.LastIndexOf('.');
+			string basename = outputfile == null ? defaultName : outputfile;
+			int idx = basename.LastIndexOf('.');
 			if(idx > 0)
 			{
-				assemblyname = outputfile.Substring(0, idx);
+				assemblyname = basename.Substring(0, idx);
 			}
 			else
 			{
-				assemblyname = outputfile;
+				assemblyname = basename;
 			}
 		}
-		if(target != System.Reflection.Emit.PEFileKinds.Dll && main == null)
+		if(outputfile != null && guessFileKind)
 		{
-			Console.Error.WriteLine("Error: -main:<class> must be specified when creating an executable");
-			return 1;
+			if(outputfile.ToLower().EndsWith(".dll"))
+			{
+				target = System.Reflection.Emit.PEFileKinds.Dll;
+			}
+			guessFileKind = false;
 		}
+		if(main == null && manifestMainClass != null)
+		{
+			Console.Error.WriteLine("Note: using main class {0} based on jar manifest", manifestMainClass);
+			main = manifestMainClass;
+		}
+		// TODO add support for taking default main class from jar manifest
 		try
 		{
-			JVM.Compile(outputfile, assemblyname, main, target, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)));
+			JVM.Compile(outputfile, assemblyname, main, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)));
 			return 0;
 		}
 		catch(Exception x)
@@ -251,6 +280,23 @@ class Compiler
 						{
 							classes.Add(ReadFromZip(zf, ze));
 						}
+						else if(ze.Name == "META-INF/MANIFEST.MF" && manifestMainClass == null)
+						{
+							// read main class from manifest
+							// TODO find out if we can use other information from manifest
+							using(StreamReader rdr = new StreamReader(zf.GetInputStream(ze)))
+							{
+								string line;
+								while((line = rdr.ReadLine()) != null)
+								{
+									if(line.StartsWith("Main-Class: "))
+									{
+										manifestMainClass = line.Substring(12);
+										break;
+									}
+								}
+							}
+						}
 						else
 						{
 							// if it's not a class, we treat it as a resource
@@ -274,7 +320,7 @@ class Compiler
 			{
 				if(baseDir == null)
 				{
-					Console.Error.WriteLine("Warning: Unknown file type: {0}", file);
+					Console.Error.WriteLine("Warning: unknown file type: {0}", file);
 				}
 				else
 				{
@@ -293,7 +339,7 @@ class Compiler
 					}
 					catch(UnauthorizedAccessException)
 					{
-						Console.Error.WriteLine("Warning: Error reading file {0}: Access Denied", file);
+						Console.Error.WriteLine("Warning: error reading file {0}: Access Denied", file);
 					}
 				}
 				break;
@@ -333,7 +379,7 @@ class Compiler
 		} 
 		catch(FileNotFoundException) 
 		{
-			Console.Error.WriteLine("Warning: Could not find exclusion file '{0}'", filename);
+			Console.Error.WriteLine("Warning: could not find exclusion file '{0}'", filename);
 		}
 	}
 }

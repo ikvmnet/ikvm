@@ -201,7 +201,24 @@ final class VMThread
 
     /*native*/ void nativeStop(Throwable t)
     {
-	nativeThread.Abort(t);
+	// NOTE we allow ThreadDeath to be thrown in every thread, but any other exception
+	// is ignored, except if we're throwing it on the current Thread. This is done
+	// to allow exception handlers to be type specific, otherwise every exception handler
+	// would have to catch ThreadAbortException and look inside it to see if it contains
+	// the real exception that we wish to handle.
+	// I hope we can get away with this behavior, because Thread.stop() is deprecated
+	// anyway. Note that we do allow arbitrary exceptions to be thrown on the current
+	// thread, since this is harmless (because it isn't wrapped) and also because it
+	// provides some real value, because it is the only way you can throw checked
+	// exceptions from Java.
+	if(currentThread().vmThread == this)
+	{
+	    VMClass.throwException(t);
+	}
+	else if(t instanceof ThreadDeath)
+	{
+	    nativeThread.Abort(t);
+	}
     }
 
     /*native*/ static Thread currentThread()
@@ -215,6 +232,7 @@ final class VMThread
 	    cli.System.Threading.Thread nativeThread = cli.System.Threading.Thread.get_CurrentThread();
 	    VMThread vmThread = new VMThread(null);
 	    vmThread.nativeThread = nativeThread;
+	    vmThread.running = true;
 	    int priority = Thread.NORM_PRIORITY;
 	    switch(nativeThread.get_Priority().Value)
 	    {

@@ -53,6 +53,11 @@ sealed class MethodDescriptor
 		// class name in the sig should be dotted
 		Debug.Assert(sig.IndexOf('/') < 0);
 
+		if(name == null || sig == null)
+		{
+			throw new ArgumentNullException();
+		}
+
 		this.classLoader = classLoader;
 		this.name = name;
 		this.sig = sig;
@@ -1521,6 +1526,55 @@ abstract class TypeWrapper
 
 		ilgen.Emit(OpCodes.Box, this.Type);
 	}
+
+	// NOTE sourceType is only used for special types (e.g. interfaces), it is *not* used to automatically
+	// downcast
+	internal void EmitConvStackToParameterType(ILGenerator ilgen, TypeWrapper sourceType)
+	{
+		if(!IsUnloadable)
+		{
+			// because of the way interface merging works, any reference is valid
+			// for any interface reference
+			if(IsInterfaceOrInterfaceArray && (sourceType.IsUnloadable || !sourceType.IsAssignableTo(this)))
+			{
+				ilgen.Emit(OpCodes.Castclass, Type);
+			}
+			else if(IsNonPrimitiveValueType)
+			{
+				EmitUnbox(ilgen);
+			}
+			else if(IsGhost)
+			{
+				LocalBuilder local1 = ilgen.DeclareLocal(TypeAsLocalOrStackType);
+				ilgen.Emit(OpCodes.Stloc, local1);
+				LocalBuilder local2 = ilgen.DeclareLocal(TypeAsParameterType);
+				ilgen.Emit(OpCodes.Ldloca, local2);
+				ilgen.Emit(OpCodes.Ldloc, local1);
+				ilgen.Emit(OpCodes.Stfld, GhostRefField);
+				ilgen.Emit(OpCodes.Ldloca, local2);
+				ilgen.Emit(OpCodes.Ldobj, TypeAsParameterType);
+			}
+		}
+	}
+
+	internal void EmitConvParameterToStackType(ILGenerator ilgen)
+	{
+		if(IsUnloadable)
+		{
+			// nothing to do
+		}
+		else if(IsNonPrimitiveValueType)
+		{
+			EmitBox(ilgen);
+		}
+		else if(IsGhost)
+		{
+			LocalBuilder local = ilgen.DeclareLocal(TypeAsParameterType);
+			ilgen.Emit(OpCodes.Stloc, local);
+			ilgen.Emit(OpCodes.Ldloca, local);
+			ilgen.Emit(OpCodes.Ldfld, GhostRefField);
+		}
+	}
 }
 
 class UnloadableTypeWrapper : TypeWrapper
@@ -1950,8 +2004,57 @@ class DynamicTypeWrapper : TypeWrapper
 			return false;
 		}
 
+		private void EmitConstantValueInitialization(ILGenerator ilGenerator)
+		{
+			ClassFile.Field[] fields = classFile.Fields;
+			for(int i = 0; i < fields.Length; i++)
+			{
+				ClassFile.Field f = fields[i];
+				if(f.IsStatic && !f.IsFinal)
+				{
+					object constant = f.ConstantValue;
+					if(constant != null)
+					{
+						if(constant is int)
+						{
+							ilGenerator.Emit(OpCodes.Ldc_I4, (int)constant);
+						}
+						else if(constant is long)
+						{
+							ilGenerator.Emit(OpCodes.Ldc_I8, (long)constant);
+						}
+						else if(constant is double)
+						{
+							ilGenerator.Emit(OpCodes.Ldc_R8, (double)constant);
+						}
+						else if(constant is float)
+						{
+							ilGenerator.Emit(OpCodes.Ldc_R4, (float)constant);
+						}
+						else if(constant is string)
+						{
+							ilGenerator.Emit(OpCodes.Ldstr, (string)constant);
+						}
+						else
+						{
+							throw new InvalidOperationException();
+						}
+						this.fields[i].EmitSet.Emit(ilGenerator);
+					}
+				}
+			}
+		}
+
 		public override DynamicImpl Finish()
 		{
+			// NOTE if a finish is triggered during static compilation phase 1, it cannot be handled properly,
+			// so we bail out.
+			// (this should only happen during compilation of classpath.dll and is most likely caused by a bug somewhere)
+			if(JVM.IsStaticCompilerPhase1)
+			{
+				Console.Error.WriteLine("Internal Error: Finish triggered during phase 1 of compilation.");
+				Environment.Exit(1);
+			}
 			if(wrapper.BaseTypeWrapper != null)
 			{
 				// make sure that the base type is already finished (because we need any Miranda methods it
@@ -2227,6 +2330,8 @@ class DynamicTypeWrapper : TypeWrapper
 						if(basehasclinit && classFile.Methods[i].IsClassInitializer && !classFile.IsInterface)
 						{
 							hasclinit = true;
+							// before we call the base class initializer, we need to set the non-final static ConstantValue fields
+							EmitConstantValueInitialization(ilGenerator);
 							EmitHelper.RunClassConstructor(ilGenerator, Type.BaseType);
 						}
 					}
@@ -2341,14 +2446,33 @@ class DynamicTypeWrapper : TypeWrapper
 				}
 				if(!classFile.IsInterface)
 				{
-					// if we don't have a <clinit> we need to inject one, to call the base class <clinit>
-					if(basehasclinit && !hasclinit)
+					// if we don't have a <clinit> we may need to inject one
+					if(!hasclinit)
 					{
-						ConstructorBuilder cb = DefineClassInitializer();
-						AttributeHelper.HideFromReflection(cb);
-						ILGenerator ilGenerator = cb.GetILGenerator();
-						EmitHelper.RunClassConstructor(ilGenerator, Type.BaseType);
-						ilGenerator.Emit(OpCodes.Ret);
+						bool hasconstantfields = false;
+						if(!basehasclinit)
+						{
+							foreach(ClassFile.Field f in classFile.Fields)
+							{
+								if(f.IsStatic && !f.IsFinal && f.ConstantValue != null)
+								{
+									hasconstantfields = true;
+									break;
+								}
+							}
+						}
+						if(basehasclinit || hasconstantfields)
+						{
+							ConstructorBuilder cb = DefineClassInitializer();
+							AttributeHelper.HideFromReflection(cb);
+							ILGenerator ilGenerator = cb.GetILGenerator();
+							EmitConstantValueInitialization(ilGenerator);
+							if(basehasclinit)
+							{
+								EmitHelper.RunClassConstructor(ilGenerator, Type.BaseType);
+							}
+							ilGenerator.Emit(OpCodes.Ret);
+						}
 					}
 
 					// here we loop thru all the interfaces to explicitly implement any methods that we inherit from
@@ -3922,8 +4046,15 @@ class RemappedTypeWrapper : TypeWrapper
 					// instead of creating another one, because creating a new type breaks compatibility with pre-compiled code
 					try
 					{
-						virtualsInterface = ClassLoaderWrapper.GetType(Name + "$VirtualMethods");
-						virtualsHelperHack = ClassLoaderWrapper.GetType(Name + "$VirtualMethodsHelper");
+						TypeWrapper twInterface = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(Name + "$VirtualMethods");
+						TypeWrapper twHelper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(Name + "$VirtualMethodsHelper");
+						if(twInterface != null && twHelper != null)
+						{
+							twInterface.Finish();
+							twHelper.Finish();
+							virtualsInterface = twInterface.Type;
+							virtualsHelperHack = twHelper.Type;
+						}
 					}
 					catch(Exception)
 					{
@@ -4742,7 +4873,7 @@ class DotNetTypeWrapper : TypeWrapper
 				if(md != null)
 				{
 					// TODO handle name/signature clash
-					AddMethod(CreateMethodWrapper(md, constructors[i], isRemapped));
+					AddMethod(CreateMethodWrapper(md, constructors[i], isRemapped, false));
 				}
 			}
 
@@ -4759,7 +4890,33 @@ class DotNetTypeWrapper : TypeWrapper
 					if(md != null)
 					{
 						// TODO handle name/signature clash
-						AddMethod(CreateMethodWrapper(md, methods[i], isRemapped));
+						AddMethod(CreateMethodWrapper(md, methods[i], isRemapped, false));
+					}
+				}
+			}
+
+			// HACK private interface implementations need to be published as well
+			// (otherwise the type appears abstract while it isn't)
+			if(!isRemapped && !type.IsInterface)
+			{
+				Type[] interfaces = type.GetInterfaces();
+				for(int i = 0; i < interfaces.Length; i++)
+				{
+					if(interfaces[i].IsPublic)
+					{
+						InterfaceMapping map = type.GetInterfaceMap(interfaces[i]);
+						for(int j = 0; j < map.InterfaceMethods.Length; j++)
+						{
+							if(!map.TargetMethods[j].IsPublic && map.TargetMethods[j].DeclaringType == type)
+							{
+								MethodDescriptor md = MakeMethodDescriptor(map.InterfaceMethods[j], false);
+								if(md != null)
+								{
+									// TODO handle name/signature clash
+									AddMethod(CreateMethodWrapper(md, map.InterfaceMethods[j], false, true));
+								}
+							}
+						}
 					}
 				}
 			}
@@ -4963,7 +5120,7 @@ class DotNetTypeWrapper : TypeWrapper
 	}
 
 	// TODO why doesn't this use the standard MethodWrapper.Create?
-	private MethodWrapper CreateMethodWrapper(MethodDescriptor md, MethodBase mb, bool isRemapped)
+	private MethodWrapper CreateMethodWrapper(MethodDescriptor md, MethodBase mb, bool isRemapped, bool privateInterfaceImplHack)
 	{
 		ParameterInfo[] parameters = mb.GetParameters();
 		Type[] args = new Type[parameters.Length];
@@ -4988,6 +5145,11 @@ class DotNetTypeWrapper : TypeWrapper
 			// all methods are static and final doesn't make sense
 			mods |= Modifiers.Static;
 			mods &= ~Modifiers.Final;
+		}
+		if(privateInterfaceImplHack)
+		{
+			mods &= ~Modifiers.Abstract;
+			mods |= Modifiers.Final;
 		}
 		if(hasByRefArgs && !(mb is ConstructorInfo) && !mb.IsStatic)
 		{

@@ -1331,30 +1331,27 @@ class MethodAnalyzer
 								break;
 							case NormalizedByteCode.__ldc:
 							{
-								object o = GetConstantPoolConstant(instr.Arg1);
-								if(o is int)
+								switch(GetConstantPoolConstantType(instr.Arg1))
 								{
-									s.PushInt();
-								}
-								else if(o is string)
-								{
-									s.PushType(java_lang_String);
-								}
-								else if(o is long)
-								{
-									s.PushLong();
-								}
-								else if(o is float)
-								{
-									s.PushFloat();
-								}
-								else if(o is double)
-								{
-									s.PushDouble();
-								}
-								else
-								{
-									throw new InvalidOperationException(o.GetType().FullName);
+									case ClassFile.ConstantType.Double:
+										s.PushDouble();
+										break;
+									case ClassFile.ConstantType.Float:
+										s.PushFloat();
+										break;
+									case ClassFile.ConstantType.Integer:
+										s.PushInt();
+										break;
+									case ClassFile.ConstantType.Long:
+										s.PushLong();
+										break;
+									case ClassFile.ConstantType.String:
+										s.PushType(java_lang_String);
+										break;
+									default:
+										// NOTE this is not a VerifyError, because it cannot happen (unless we have
+										// a bug in ClassFile.GetConstantPoolConstantType)
+										throw new InvalidOperationException();
 								}
 								break;
 							}
@@ -2146,14 +2143,23 @@ class MethodAnalyzer
 		throw new VerifyError("Illegal constant pool index");
 	}
 
-	private object GetConstantPoolConstant(int index)
+	private ClassFile.ConstantType GetConstantPoolConstantType(int index)
 	{
 		try
 		{
-			return method.Method.ClassFile.GetConstantPoolConstant(index);
+			return method.Method.ClassFile.GetConstantPoolConstantType(index);
 		}
 		catch(IndexOutOfRangeException)
 		{
+			// constant pool index out of range
+		}
+		catch(InvalidOperationException)
+		{
+			// specified constant pool entry doesn't contain a constant
+		}
+		catch(NullReferenceException)
+		{
+			// specified constant pool entry is empty (entry 0 or the filler following a wide entry)
 		}
 		throw new VerifyError("Illegal constant pool index");
 	}

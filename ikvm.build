@@ -3,11 +3,29 @@
     <target name="all">
         <nant buildfile="OpenSystem.Java/OpenSystem.Java.build" />
         <nant buildfile="IK.VM.NET/ik.vm.net.build" />
-        <nant buildfile="IK.VM.JNI/ik.vm.jni.build" />
+        <if propertytrue="nant.platform.win32">
+            <nant buildfile="IK.VM.JNI/ik.vm.jni.build" />
+        </if>
         <nant buildfile="ikvmc/ikvmc.build" />
         <nant buildfile="classpath/classpath.build" />
         <nant buildfile="ikvm/ikvm.build" />
-        <nant buildfile="awt/awt.build" />
+        <if propertytrue="nant.platform.win32">
+            <nant buildfile="awt/awt.build" />
+        </if>
         <nant buildfile="netexp/netexp.build" />
+    </target>
+    <target name="clean">
+        <delete failonerror="false">
+	    <fileset>
+                <includes name="bin/awt.dll" />
+                <includes name="bin/classpath.dll" />
+                <includes name="bin/ik.vm.jni.dll" />
+                <includes name="bin/ik.vm.net.dll" />
+                <includes name="bin/ikvm.exe" />
+                <includes name="bin/ikvmc.exe" />
+                <includes name="bin/netexp.exe" />
+                <includes name="bin/OpenSystem.Java.dll" />
+            </fileset>
+        </delete>
     </target>
 </project>

@@ -29,19 +29,6 @@ using System.Diagnostics.SymbolStore;
 using ExceptionTableEntry = ClassFile.Method.ExceptionTableEntry;
 using Instruction = ClassFile.Method.Instruction;
 
-class ReturnCookie
-{
-	public Label Stub;
-	public LocalBuilder Local;
-}
-
-class BranchCookie
-{
-	public Label Stub;
-	public int TargetIndex;
-	public Stack Stack = new Stack();
-}
-
 class ExceptionSorter : IComparer
 {
 	public int Compare(object x, object y)
@@ -73,9 +60,9 @@ class ExceptionSorter : IComparer
 
 class Compiler
 {
-	private static MethodInfo mapExceptionMethod = typeof(ExceptionHelper).GetMethod("MapException");
-	private static MethodInfo mapExceptionFastMethod = typeof(ExceptionHelper).GetMethod("MapExceptionFast");
-	private static MethodInfo fillInStackTraceMethod = typeof(ExceptionHelper).GetMethod("fillInStackTrace");
+	private static CodeEmitter mapExceptionMethod;
+	private static CodeEmitter mapExceptionFastMethod;
+	private static CodeEmitter fillInStackTraceMethod;
 	private static MethodInfo getTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle");
 	private static MethodInfo multiANewArrayMethod = typeof(ByteCodeHelper).GetMethod("multianewarray");
 	private static MethodInfo monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter");
@@ -84,6 +71,7 @@ class Compiler
 	private static MethodInfo objectToStringMethod = typeof(object).GetMethod("ToString");
 	private static TypeWrapper java_lang_Object;
 	private static TypeWrapper java_lang_Throwable;
+	private static TypeWrapper java_lang_ThreadDeath;
 	private TypeWrapper clazz;
 	private ClassFile.Method.Code m;
 	private ILGenerator ilGenerator;
@@ -92,6 +80,18 @@ class Compiler
 	private Hashtable locals = new Hashtable();
 	private ClassFile.Method.ExceptionTableEntry[] exceptions;
 	private ISymbolDocumentWriter symboldocument;
+
+	static Compiler()
+	{
+		ClassLoaderWrapper loader = ClassLoaderWrapper.GetBootstrapClassLoader();
+		TypeWrapper exceptionHelper = loader.LoadClassByDottedName("java.lang.ExceptionHelper");
+		mapExceptionMethod = exceptionHelper.GetMethodWrapper(MethodDescriptor.FromNameSig(loader, "MapException", "(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;"), false).EmitCall;
+		mapExceptionFastMethod = exceptionHelper.GetMethodWrapper(MethodDescriptor.FromNameSig(loader, "MapExceptionFast", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;"), false).EmitCall;
+		fillInStackTraceMethod = exceptionHelper.GetMethodWrapper(MethodDescriptor.FromNameSig(loader, "fillInStackTrace", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;"), false).EmitCall;
+		java_lang_Throwable = loader.LoadClassByDottedName("java.lang.Throwable");
+		java_lang_Object = loader.LoadClassByDottedName("java.lang.Object");
+		java_lang_ThreadDeath = loader.LoadClassByDottedName("java.lang.ThreadDeath");
+	}
 
 	private Compiler(TypeWrapper clazz, ClassFile.Method.Code m, ILGenerator ilGenerator, ClassLoaderWrapper classLoader)
 	{
@@ -121,6 +121,7 @@ class Compiler
 		// do that here, should be changed to use our own ETE class (which should also contain the ordinal, instead
 		// of the one in ClassFile.cs)
 		// OPTIMIZE there must be a more efficient algorithm to do this...
+		// TODO we should ensure that exception blocks and handlers start and end at instruction boundaries (note: wide prefix)
 		restart:
 			for(int i = 0; i < ar.Count; i++)
 			{
@@ -298,6 +299,30 @@ class Compiler
 				ar.RemoveAt(i);
 				i--;
 			}
+			else
+			{
+				// exception blocks that only contain harmless instructions (i.e. instructions that will *never* throw an exception)
+				// are also filtered out (to improve the quality of the generated code)
+				// NOTE we don't remove exception handlers that could catch ThreadDeath, because that can be thrown
+				// asynchronously (and thus appear on any instruction). This is particularly important to ensure that
+				// we run finally blocks when a thread is killed.
+				if(ei.catch_type != 0 &&
+					!java_lang_ThreadDeath.IsAssignableTo(m.Method.ClassFile.GetConstantPoolClassType(ei.catch_type, classLoader)))
+				{
+					int start = FindPcIndex(ei.start_pc);
+					int end = FindPcIndex(ei.end_pc);
+					for(int j = start; j < end; j++)
+					{
+						if(ByteCodeMetaData.CanThrowException(m.Instructions[j].OpCode))
+						{
+							goto next;
+						}
+					}
+					ar.RemoveAt(i);
+					i--;
+				}
+			}
+		next:;
 		}
 		//		Console.WriteLine("after processing:");
 		//		foreach(ExceptionTableEntry e in ar)
@@ -324,14 +349,14 @@ class Compiler
 					exceptions[j].start_pc < exceptions[i].end_pc &&
 					exceptions[i].end_pc < exceptions[j].end_pc)
 				{
-					throw new Exception("Partially overlapping try blocks is broken");
+					throw new InvalidOperationException("Partially overlapping try blocks is broken");
 				}
 				// check that we didn't destroy the ordering, when sorting
 				if(exceptions[i].start_pc <= exceptions[j].start_pc &&
 					exceptions[i].end_pc >= exceptions[j].end_pc &&
 					exceptions[i].ordinal < exceptions[j].ordinal)
 				{
-					throw new Exception("Non recursive try blocks is broken");
+					throw new InvalidOperationException("Non recursive try blocks is broken");
 				}
 			}
 			// make sure __jsr doesn't jump out of try block
@@ -342,13 +367,38 @@ class Compiler
 					int targetPC = m.Instructions[j].NormalizedArg1 + m.Instructions[j].PC;
 					if(targetPC < exceptions[i].start_pc || targetPC >= exceptions[i].end_pc)
 					{
-						Console.WriteLine("i = " + i);
-						Console.WriteLine("j = " + j);
-						Console.WriteLine("targetPC = " + targetPC);
-						throw new Exception("Try block splitting around __jsr is broken");
+						throw new InvalidOperationException("Try block splitting around __jsr is broken");
 					}
 				}
 			}
+		}
+	}
+
+	private class ReturnCookie
+	{
+		internal Label Stub;
+		internal LocalBuilder Local;
+	}
+
+	private class BranchCookie
+	{
+		// NOTE Stub gets used for both the push stub (inside the exception block) as well as the pop stub (outside the block)
+		internal Label Stub;
+		internal bool ContentOnStack;
+		internal readonly int TargetPC;
+		internal DupHelper dh;
+
+		internal BranchCookie(ILGenerator ilgen, int stackHeight, int targetPC)
+		{
+			this.Stub = ilgen.DefineLabel();
+			this.TargetPC = targetPC;
+			this.dh = new DupHelper(ilgen, stackHeight);
+		}
+
+		internal BranchCookie(Label label, int targetPC)
+		{
+			this.Stub = label;
+			this.TargetPC = targetPC;
 		}
 	}
 
@@ -372,7 +422,15 @@ class Compiler
 			locals = new LocalBuilder[count];
 		}
 
-		internal DupHelper SetType(int i, TypeWrapper type)
+		internal int Count
+		{
+			get
+			{
+				return types.Length;
+			}
+		}
+
+		internal void SetType(int i, TypeWrapper type)
 		{
 			if(type == VerifierTypeWrapper.Null)
 			{
@@ -393,10 +451,9 @@ class Compiler
 				types[i] = StackType.Other;
 				locals[i] = ilgen.DeclareLocal(type.TypeAsLocalOrStackType);
 			}
-			return this;
 		}
 
-		internal DupHelper Load(int i)
+		internal void Load(int i)
 		{
 			switch(types[i])
 			{
@@ -415,10 +472,9 @@ class Compiler
 				default:
 					throw new InvalidOperationException();
 			}
-			return this;
 		}
 
-		internal DupHelper Store(int i)
+		internal void Store(int i)
 		{
 			switch(types[i])
 			{
@@ -435,7 +491,6 @@ class Compiler
 				default:
 					throw new InvalidOperationException();
 			}
-			return this;
 		}
 	}
 
@@ -466,8 +521,7 @@ class Compiler
 			// we generate code here to throw the VerificationError
 			string msg = string.Format("(class: {0}, method: {1}, signature: {2}, offset: {3}, instruction: {4}) {5}", x.Class, x.Method, x.Signature, x.ByteCodeOffset, x.Instruction, x.Message);
 			EmitHelper.Throw(ilGenerator, "java.lang.VerifyError", msg);
-			// TODO
-			if(true || JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler)
 			{
 				Console.Error.WriteLine("Warning: VerifyError: " + msg);
 			}
@@ -494,7 +548,7 @@ class Compiler
 			rangeBegin = exceptions[exceptionIndex - 1].start_pc;
 			rangeEnd = exceptions[exceptionIndex - 1].end_pc;
 		}
-		object[] labels = new object[m.Instructions[m.Instructions.Length - 1].PC];
+		object[] labels = new object[m.Instructions.Length];
 		// used to track instructions that are 'live'
 		bool[] inuse = new bool[m.Instructions.Length];
 		// used to track instructions that have been compiled
@@ -516,42 +570,38 @@ class Compiler
 				done[i] = true;
 				Instruction instr = code[i];
 
-				// make sure we didn't branch into a try block
-				// NOTE this check is not strict enough
-				// UPDATE since we're now splitting try blocks around branch targets, this shouldn't be possible anymore
-				if(exceptionIndex < exceptions.Length &&
-					instr.PC > exceptions[exceptionIndex].start_pc &&
-					instr.PC < exceptions[exceptionIndex].end_pc)
+				if(symboldocument != null)
 				{
-					throw new NotImplementedException("branch into try block not implemented: " + clazz.Name + "." + m.Method.Name + m.Method.Signature + " (index = " + exceptionIndex + ", pc = " + instr.PC + ")");
-				}
-
-				// TODO for now, every instruction has an associated label, optimize this
-				if(true)
-				{
-					object label = labels[instr.PC];
-					if(label == null)
+					// TODO this needs to be done better
+					ClassFile.Method.LineNumberTableEntry[] table = m.LineNumberTableAttribute;
+					if(table != null)
 					{
-						label = ilGenerator.DefineLabel();
-						labels[instr.PC] = label;
-					}
-					ilGenerator.MarkLabel((Label)label);
-					if(symboldocument != null)
-					{
-						// TODO this needs to be done better
-						ClassFile.Method.LineNumberTableEntry[] table = m.LineNumberTableAttribute;
-						if(table != null)
+						for(int j = 0; j < table.Length; j++)
 						{
-							for(int j = 0; j < table.Length; j++)
+							if(table[j].start_pc == instr.PC && table[j].line_number != 0)
 							{
-								if(table[j].start_pc == instr.PC && table[j].line_number != 0)
-								{
-									ilGenerator.MarkSequencePoint(symboldocument, table[j].line_number, 0, table[j].line_number + 1, 0);
-									break;
-								}
+								// HACK this nop is a workaround for a bizarre bug in System.Diagnostics.StackTrace
+								// that causes it to report the incorrect line number sometimes...
+								ilGenerator.Emit(OpCodes.Nop);
+								ilGenerator.MarkSequencePoint(symboldocument, table[j].line_number, 0, table[j].line_number + 1, 0);
+								break;
 							}
 						}
 					}
+				}
+				if(true)
+				{
+					// TODO for now, every instruction has an associated label, optimize this
+					// NOTE labels are local to the current block, this is needed because the same JVM instruction
+					// can actually be compiled into several CLR instruction (in the case of exception block boundaries,
+					// each boundary has its own stack hoisting code).
+					object label = labels[i];
+					if(label == null)
+					{
+						label = ilGenerator.DefineLabel();
+						labels[i] = label;
+					}
+					ilGenerator.MarkLabel((Label)label);
 				}
 
 				// handle the try block here
@@ -559,50 +609,20 @@ class Compiler
 				{
 					if(exceptions[j].start_pc == instr.PC)
 					{
-						if(ma.GetStackHeight(i) != 0)
+						int stackHeight = ma.GetStackHeight(i);
+						if(stackHeight != 0)
 						{
-							Stack stack = new Stack();
-							int stackHeight = ma.GetStackHeight(i);
-							for(int n = 0; n < stackHeight; n++)
+							// TODO instead of creating new locals for each block, we should reuse them
+							DupHelper dh = new DupHelper(ilGenerator, stackHeight);
+							for(int k = 0; k < stackHeight; k++)
 							{
-								TypeWrapper t = ma.GetRawStackTypeWrapper(i, n);
-								if(VerifierTypeWrapper.IsNew(t))
-								{
-									// unitialized references (new objects) aren't really there
-								}
-								else if(t == VerifierTypeWrapper.UninitializedThis)
-								{
-									// we're inside a constructor and the uninitialized this is passed into an exception block!
-									ilGenerator.Emit(OpCodes.Pop);
-									stack.Push("this");
-								}
-								else if(t == VerifierTypeWrapper.Null)
-								{
-									stack.Push(null);
-								}
-								else
-								{
-									LocalBuilder local = ilGenerator.DeclareLocal(t.TypeAsLocalOrStackType);
-									stack.Push(local);
-									ilGenerator.Emit(OpCodes.Stloc, local);
-								}
+								dh.SetType(k, ma.GetRawStackTypeWrapper(i, k));
+								dh.Store(k);
 							}
 							ilGenerator.BeginExceptionBlock();
-							while(stack.Count != 0)
+							for(int k = stackHeight - 1; k >= 0; k--)
 							{
-								object o = stack.Pop();
-								if(o == null)
-								{
-									ilGenerator.Emit(OpCodes.Ldnull);
-								}
-								else if(o is string)	// HACK we use a string to signal "this"
-								{
-									ilGenerator.Emit(OpCodes.Ldarg_0);
-								}
-								else
-								{
-									ilGenerator.Emit(OpCodes.Ldloc, (LocalBuilder)o);
-								}
+								dh.Load(k);
 							}
 						}
 						else
@@ -617,62 +637,33 @@ class Compiler
 							BranchCookie bc = exit as BranchCookie;
 							if(bc != null)
 							{
-								ilGenerator.MarkLabel(bc.Stub);
-								int stack = ma.GetStackHeight(bc.TargetIndex);
-								for(int n = 0; n < stack; n++)
+								if(bc.ContentOnStack)
 								{
-									TypeWrapper t = ma.GetRawStackTypeWrapper(bc.TargetIndex, n);
-									if(VerifierTypeWrapper.IsNew(t))
+									bc.ContentOnStack = false;
+									ilGenerator.MarkLabel(bc.Stub);
+									int stack = bc.dh.Count;
+									for(int n = 0; n < stack; n++)
 									{
-										// unitialized references aren't really there, but at the push site we
-										// need to know that we have to skip this slot, so we push a null as well,
-										// and then at the push site we'll look at the stack type to figure out
-										// if it is a real null or an unitialized references
-										bc.Stack.Push(null);
+										bc.dh.Store(n);
 									}
-									else if(t == VerifierTypeWrapper.UninitializedThis)
-									{
-										// we're inside a constructor and the uninitialized this is passed into an exception block!
-										ilGenerator.Emit(OpCodes.Ldarg_0);
-										// unitialized references aren't really there, but at the push site we
-										// need to know that we have to skip this slot, so we push a null as well,
-										// and then at the push site we'll look at the stack type to figure out
-										// if it is a real null or an unitialized references
-										bc.Stack.Push(null);
-									}
-									else if(t == VerifierTypeWrapper.Null)
-									{
-										bc.Stack.Push(null);
-									}
-									else
-									{
-										LocalBuilder local = ilGenerator.DeclareLocal(t.TypeAsLocalOrStackType);
-										bc.Stack.Push(local);
-										ilGenerator.Emit(OpCodes.Stloc, local);
-									}
+									bc.Stub = ilGenerator.DefineLabel();
+									ilGenerator.Emit(OpCodes.Leave, bc.Stub);
 								}
-								bc.Stub = ilGenerator.DefineLabel();
-								ilGenerator.Emit(OpCodes.Leave, bc.Stub);
 							}
 						}
-						TypeWrapper exceptionTypeWrapper = null;
-						Type excType;
+						TypeWrapper exceptionTypeWrapper;
 						if(exceptions[j].catch_type == 0)
 						{
-							excType = typeof(Exception);
+							exceptionTypeWrapper = java_lang_Throwable;
 						}
 						else
 						{
-							TypeWrapper tw = m.Method.ClassFile.GetConstantPoolClassType(exceptions[j].catch_type, classLoader);
-							if(tw.IsUnloadable)
-							{
-								exceptionTypeWrapper = tw;
-							}
-							excType = tw.TypeAsExceptionType;
+							exceptionTypeWrapper = m.Method.ClassFile.GetConstantPoolClassType(exceptions[j].catch_type, classLoader);
 						}
+						Type excType = exceptionTypeWrapper.TypeAsExceptionType;
+						bool mapSafe = !exceptionTypeWrapper.IsUnloadable && ClassLoaderWrapper.IsMapSafeException(exceptionTypeWrapper);
 						if(true)
 						{
-							bool mapSafe = IsMapSafeException(excType);
 							if(mapSafe)
 							{
 								ilGenerator.BeginCatchBlock(excType);
@@ -681,20 +672,20 @@ class Compiler
 							{
 								ilGenerator.BeginCatchBlock(typeof(Exception));
 							}
-							Label label = ilGenerator.DefineLabel();
-							LocalBuilder local = ilGenerator.DeclareLocal(excType);
+							BranchCookie bc = new BranchCookie(ilGenerator, 1, exceptions[j].handler_pc);
+							newExits.Add(bc);
+							Instruction handlerInstr = code[FindPcIndex(exceptions[j].handler_pc)];
+							bool unusedException = handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
+									(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
+									!ma.IsAloadUsed(handlerInstr.NormalizedArg1));
 							// special case for catch(Throwable) (and finally), that produces less code and
 							// should be faster
 							if(mapSafe || excType == typeof(Exception))
 							{
-								Instruction handlerInstr = code[FindPcIndex(exceptions[j].handler_pc)];
-								if(handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
-									(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
-									!ma.IsAloadUsed(handlerInstr.NormalizedArg1)))
+								if(unusedException)
 								{
-									// if the exception isn't used then we don't need to do any mapping!
-									ilGenerator.Emit(OpCodes.Stloc, local);
-									ilGenerator.Emit(OpCodes.Leave, label);
+									// we must still have an item on the stack, even though it isn't used!
+									bc.dh.SetType(0, VerifierTypeWrapper.Null);
 								}
 								else
 								{
@@ -702,43 +693,50 @@ class Compiler
 									{
 										ilGenerator.Emit(OpCodes.Dup);
 									}
-									ilGenerator.Emit(OpCodes.Call, mapExceptionFastMethod);
+									mapExceptionFastMethod.Emit(ilGenerator);
 									if(mapSafe)
 									{
 										ilGenerator.Emit(OpCodes.Pop);
 									}
-									ilGenerator.Emit(OpCodes.Stloc, local);
-									ilGenerator.Emit(OpCodes.Leave, label);
+									bc.dh.SetType(0, exceptionTypeWrapper);
+									bc.dh.Store(0);
 								}
+								ilGenerator.Emit(OpCodes.Leave, bc.Stub);
 							}
 							else
 							{
-								if(exceptionTypeWrapper != null)
+								if(exceptionTypeWrapper.IsUnloadable)
 								{
 									ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
 									ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
 									ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetTypeAsExceptionType"));
-									ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
+									mapExceptionMethod.Emit(ilGenerator);
 								}
 								else
 								{
 									ilGenerator.Emit(OpCodes.Ldtoken, excType);
 									ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
-									ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
+									mapExceptionMethod.Emit(ilGenerator);
 									ilGenerator.Emit(OpCodes.Castclass, excType);
 								}
-								ilGenerator.Emit(OpCodes.Stloc, local);
-								ilGenerator.Emit(OpCodes.Ldloc, local);
+								if(unusedException)
+								{
+									// we must still have an item on the stack, even though it isn't used!
+									bc.dh.SetType(0, VerifierTypeWrapper.Null);
+								}
+								else
+								{
+									bc.dh.SetType(0, exceptionTypeWrapper);
+									ilGenerator.Emit(OpCodes.Dup);
+									bc.dh.Store(0);
+								}
 								Label rethrow = ilGenerator.DefineLabel();
 								ilGenerator.Emit(OpCodes.Brfalse, rethrow);
-								ilGenerator.Emit(OpCodes.Leave, label);
+								ilGenerator.Emit(OpCodes.Leave, bc.Stub);
 								ilGenerator.MarkLabel(rethrow);
 								ilGenerator.Emit(OpCodes.Rethrow);
 							}
 							ilGenerator.EndExceptionBlock();
-							ilGenerator.MarkLabel(label);
-							ilGenerator.Emit(OpCodes.Ldloc, local);
-							ilGenerator.Emit(OpCodes.Br, GetLabel(labels, exceptions[j].handler_pc, inuse, rangeBegin, rangeEnd, exits));
 						}
 						for(int k = 0; k < newExits.Count; k++)
 						{
@@ -757,12 +755,7 @@ class Compiler
 								}
 								else
 								{
-									ReturnCookie rc1 = new ReturnCookie();
-									rc1.Local = rc.Local;
-									rc1.Stub = ilGenerator.DefineLabel();
-									ilGenerator.MarkLabel(rc.Stub);
-									ilGenerator.Emit(OpCodes.Leave, rc1.Stub);
-									exits.Add(rc1);
+									exits.Add(rc);
 								}
 							}
 							else
@@ -770,35 +763,24 @@ class Compiler
 								BranchCookie bc = exit as BranchCookie;
 								if(bc != null)
 								{
-									ilGenerator.MarkLabel(bc.Stub);
-									int stack = ma.GetStackHeight(bc.TargetIndex);
-									for(int n = 0; n < stack; n++)
+									System.Diagnostics.Debug.Assert(!bc.ContentOnStack);
+									// if the target is within the current range, we handle it, otherwise we
+									// defer the cookie to our caller
+									if(rangeBegin <= bc.TargetPC && bc.TargetPC < rangeEnd)
 									{
-										LocalBuilder local = (LocalBuilder)bc.Stack.Pop();
-										if(local == null)
+										bc.ContentOnStack = true;
+										ilGenerator.MarkLabel(bc.Stub);
+										int stack = bc.dh.Count;
+										for(int n = 0; n < stack; n++)
 										{
-											TypeWrapper t = ma.GetRawStackTypeWrapper(bc.TargetIndex, (stack - 1) - n);
-											if(t == VerifierTypeWrapper.Null)
-											{
-												ilGenerator.Emit(OpCodes.Ldnull);
-											}
-											else if(t == VerifierTypeWrapper.UninitializedThis)
-											{
-												// we're inside a constructor and the uninitialized this is passed into an exception block!
-												ilGenerator.Emit(OpCodes.Ldarg_0);
-											}
-											else
-											{
-												// if the type is not Lnull, it means it was an unitialized object reference,
-												// which don't really exist on our stack
-											}
+											bc.dh.Load(n);
 										}
-										else
-										{
-											ilGenerator.Emit(OpCodes.Ldloc, local);
-										}
+										ilGenerator.Emit(OpCodes.Br, GetLabel(labels, bc.TargetPC, inuse, rangeBegin, rangeEnd, exits));
 									}
-									ilGenerator.Emit(OpCodes.Br, GetLabel(labels, code[bc.TargetIndex].PC, inuse, rangeBegin, rangeEnd, exits));
+									else
+									{
+										exits.Add(bc);
+									}
 								}
 							}
 						}
@@ -885,30 +867,27 @@ class Compiler
 						break;
 					case NormalizedByteCode.__ldc:
 					{
-						object o = instr.MethodCode.Method.ClassFile.GetConstantPoolConstant(instr.Arg1);
-						if(o is string)
+						ClassFile cf = instr.MethodCode.Method.ClassFile;
+						int constant = instr.Arg1;
+						switch(cf.GetConstantPoolConstantType(constant))
 						{
-							ilGenerator.Emit(OpCodes.Ldstr, (string)o);
-						}
-						else if(o is float)
-						{
-							ilGenerator.Emit(OpCodes.Ldc_R4, (float)o);
-						}
-						else if(o is double)
-						{
-							ilGenerator.Emit(OpCodes.Ldc_R8, (double)o);
-						}
-						else if(o is int)
-						{
-							ilGenerator.Emit(OpCodes.Ldc_I4, (int)o);
-						}
-						else if(o is long)
-						{
-							ilGenerator.Emit(OpCodes.Ldc_I8, (long)o);
-						}
-						else
-						{
-							throw new NotImplementedException(o.GetType().Name);
+							case ClassFile.ConstantType.Double:
+								ilGenerator.Emit(OpCodes.Ldc_R8, cf.GetConstantPoolConstantDouble(constant));
+								break;
+							case ClassFile.ConstantType.Float:
+								ilGenerator.Emit(OpCodes.Ldc_R4, cf.GetConstantPoolConstantFloat(constant));
+								break;
+							case ClassFile.ConstantType.Integer:
+								ilGenerator.Emit(OpCodes.Ldc_I4, cf.GetConstantPoolConstantInteger(constant));
+								break;
+							case ClassFile.ConstantType.Long:
+								ilGenerator.Emit(OpCodes.Ldc_I8, cf.GetConstantPoolConstantLong(constant));
+								break;
+							case ClassFile.ConstantType.String:
+								ilGenerator.Emit(OpCodes.Ldstr, cf.GetConstantPoolConstantString(constant));
+								break;
+							default:
+								throw new InvalidOperationException();
 						}
 						break;
 					}
@@ -1076,10 +1055,6 @@ class Compiler
 									}
 									ilGenerator.Emit(OpCodes.Ldnull);
 								}
-								if(java_lang_Throwable == null)
-								{
-									java_lang_Throwable = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Throwable");
-								}
 								if(!thisType.IsUnloadable && thisType.IsSubTypeOf(java_lang_Throwable))
 								{
 									// HACK if the next instruction isn't an athrow, we need to
@@ -1088,7 +1063,7 @@ class Compiler
 									if(code[i + 1].NormalizedOpCode != NormalizedByteCode.__athrow)
 									{
 										ilGenerator.Emit(OpCodes.Dup);
-										ilGenerator.Emit(OpCodes.Call, fillInStackTraceMethod);
+										fillInStackTraceMethod.Emit(ilGenerator);
 										ilGenerator.Emit(OpCodes.Pop);
 									}
 								}
@@ -1212,20 +1187,8 @@ class Compiler
 							if(instr.NormalizedOpCode != NormalizedByteCode.__return)
 							{
 								TypeWrapper retTypeWrapper = m.Method.GetRetType(classLoader);
-								rc.Local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsLocalOrStackType);
-								if(!retTypeWrapper.IsUnloadable)
-								{
-									// because of the way interface merging works, any reference is valid
-									// for any interface reference
-									if(retTypeWrapper.IsInterfaceOrInterfaceArray && !ma.GetRawStackTypeWrapper(i, 0).IsAssignableTo(retTypeWrapper))
-									{
-										ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
-									}
-									if(retTypeWrapper.IsNonPrimitiveValueType)
-									{
-										retTypeWrapper.EmitUnbox(ilGenerator);
-									}
-								}
+								rc.Local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
+								retTypeWrapper.EmitConvStackToParameterType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
 								ilGenerator.Emit(OpCodes.Stloc, rc.Local);
 							}
 							rc.Stub = ilGenerator.DefineLabel();
@@ -1249,43 +1212,16 @@ class Compiler
 							else
 							{
 								TypeWrapper retTypeWrapper = m.Method.GetRetType(classLoader);
-								if(!retTypeWrapper.IsUnloadable)
-								{
-									TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 0);
-									if(!tw.IsUnloadable)
-									{
-										// because of the way interface merging works, any reference is valid
-										// for any interface reference
-										if(retTypeWrapper.IsInterfaceOrInterfaceArray && !tw.IsAssignableTo(retTypeWrapper))
-										{
-											ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
-										}
-										if(retTypeWrapper.IsNonPrimitiveValueType)
-										{
-											retTypeWrapper.EmitUnbox(ilGenerator);
-										}
-									}
-								}
+								retTypeWrapper.EmitConvStackToParameterType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
 								if(stackHeight != 1)
 								{
-									LocalBuilder local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsLocalOrStackType);
+									LocalBuilder local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
 									ilGenerator.Emit(OpCodes.Stloc, local);
 									for(int j = 1; j < stackHeight; j++)
 									{
 										ilGenerator.Emit(OpCodes.Pop);
 									}
 									ilGenerator.Emit(OpCodes.Ldloc, local);
-								}
-								if(!retTypeWrapper.IsUnloadable && retTypeWrapper.IsGhost)
-								{
-									LocalBuilder local1 = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsLocalOrStackType);
-									ilGenerator.Emit(OpCodes.Stloc, local1);
-									LocalBuilder local2 = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
-									ilGenerator.Emit(OpCodes.Ldloca, local2);
-									ilGenerator.Emit(OpCodes.Ldloc, local1);
-									ilGenerator.Emit(OpCodes.Stfld, retTypeWrapper.GhostRefField);
-									ilGenerator.Emit(OpCodes.Ldloca, local2);
-									ilGenerator.Emit(OpCodes.Ldobj, retTypeWrapper.TypeAsParameterType);
 								}
 								ilGenerator.Emit(OpCodes.Ret);
 							}
@@ -1325,25 +1261,10 @@ class Compiler
 							}
 							else
 							{
-								if(type.IsUnloadable)
-								{
-									// nothing to do
-								}
-								else if(type.IsNonPrimitiveValueType)
-								{
-									// HACK we're boxing the arguments when they are loaded, this is inconsistent
-									// with the way locals are treated, so we probably should only box the arguments
-									// once (on method entry)
-									type.EmitBox(ilGenerator);
-								}
-								else if(type.IsGhost)
-								{
-									// HACK instead creating an extra local, we should just take the address of the original argument
-									LocalBuilder local = ilGenerator.DeclareLocal(type.TypeAsParameterType);
-									ilGenerator.Emit(OpCodes.Stloc, local);
-									ilGenerator.Emit(OpCodes.Ldloca, local);
-									ilGenerator.Emit(OpCodes.Ldfld, type.GhostRefField);
-								}
+								// HACK we're boxing the arguments when they are loaded, this is inconsistent
+								// with the way locals are treated, so we probably should only box the arguments
+								// once (on method entry)
+								type.EmitConvParameterToStackType(ilGenerator);
 							}
 						}
 						break;
@@ -1366,8 +1287,8 @@ class Compiler
 						}
 						else if(type == VerifierTypeWrapper.UninitializedThis)
 						{
-							// any unitialized reference, is always the this reference, we don't store anything
-							// here (because CLR wont allow unitialized references in locals) and then when
+							// any unitialized reference is always the this reference, we don't store anything
+							// here (because CLR won't allow unitialized references in locals) and then when
 							// the unitialized ref is loaded we redirect to the this reference
 							ilGenerator.Emit(OpCodes.Pop);
 						}
@@ -1375,11 +1296,9 @@ class Compiler
 						{
 							if(instr.NormalizedArg1 < m.ArgMap.Length)
 							{
-								if(!type.IsUnloadable && type != VerifierTypeWrapper.Null &&
-									(type.IsNonPrimitiveValueType || type.IsGhost))
+								if(type != VerifierTypeWrapper.Null)
 								{
-									// TODO we must support IsNonPrimitiveValueType and IsGhost types here (for 
-									throw new NotImplementedException();
+									type.EmitConvStackToParameterType(ilGenerator, type);
 								}
 							}
 							Store(instr, typeof(object));
@@ -2017,14 +1936,16 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Shr);
 						break;
 					case NormalizedByteCode.__swap:
-						new DupHelper(ilGenerator, 2)
-							.SetType(0, ma.GetRawStackTypeWrapper(i, 0))
-							.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
-							.Store(0)
-							.Store(1)
-							.Load(0)
-							.Load(1);
+					{
+						DupHelper dh = new DupHelper(ilGenerator, 2);
+						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+						dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+						dh.Store(0);
+						dh.Store(1);
+						dh.Load(0);
+						dh.Load(1);
 						break;
+					}
 					case NormalizedByteCode.__dup:
 						// if the TOS contains a "new" object, it isn't really there, so we don't dup it
 						if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
@@ -2041,56 +1962,58 @@ class Compiler
 						}
 						else
 						{
-							new DupHelper(ilGenerator, 2)
-								.SetType(0, type1)
-								.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
-								.Store(0)
-								.Store(1)
-								.Load(1)
-								.Load(0)
-								.Load(1)
-								.Load(0);
+							DupHelper dh = new DupHelper(ilGenerator, 2);
+							dh.SetType(0, type1);
+							dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+							dh.Store(0);
+							dh.Store(1);
+							dh.Load(1);
+							dh.Load(0);
+							dh.Load(1);
+							dh.Load(0);
 						}
 						break;
 					}
 					case NormalizedByteCode.__dup_x1:
-						new DupHelper(ilGenerator, 2)
-							.SetType(0, ma.GetRawStackTypeWrapper(i, 0))
-							.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
-							.Store(0)
-							.Store(1)
-							.Load(0)
-							.Load(1)
-							.Load(0);
+					{
+						DupHelper dh = new DupHelper(ilGenerator, 2);
+						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+						dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+						dh.Store(0);
+						dh.Store(1);
+						dh.Load(0);
+						dh.Load(1);
+						dh.Load(0);
 						break;
+					}
 					case NormalizedByteCode.__dup2_x1:
 					{
 						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
 						if(type1.IsWidePrimitive)
 						{
-							new DupHelper(ilGenerator, 2)
-								.SetType(0, type1)
-								.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
-								.Store(0)
-								.Store(1)
-								.Load(0)
-								.Load(1)
-								.Load(0);
+							DupHelper dh = new DupHelper(ilGenerator, 2);
+							dh.SetType(0, type1);
+							dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+							dh.Store(0);
+							dh.Store(1);
+							dh.Load(0);
+							dh.Load(1);
+							dh.Load(0);
 						}
 						else
 						{
-							new DupHelper(ilGenerator, 3)
-								.SetType(0, type1)
-								.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
-								.SetType(2, ma.GetRawStackTypeWrapper(i, 2))
-								.Store(0)
-								.Store(1)
-								.Store(2)
-								.Load(1)
-								.Load(0)
-								.Load(2)
-								.Load(1)
-								.Load(0);
+							DupHelper dh = new DupHelper(ilGenerator, 3);
+							dh.SetType(0, type1);
+							dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+							dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
+							dh.Store(0);
+							dh.Store(1);
+							dh.Store(2);
+							dh.Load(1);
+							dh.Load(0);
+							dh.Load(2);
+							dh.Load(1);
+							dh.Load(0);
 						}
 						break;
 					}
@@ -2103,29 +2026,29 @@ class Compiler
 							if(type2.IsWidePrimitive)
 							{
 								// Form 4
-								new DupHelper(ilGenerator, 2)
-									.SetType(0, type1)
-									.SetType(1, type2)
-									.Store(0)
-									.Store(1)
-									.Load(0)
-									.Load(1)
-									.Load(0);
+								DupHelper dh = new DupHelper(ilGenerator, 2);
+								dh.SetType(0, type1);
+								dh.SetType(1, type2);
+								dh.Store(0);
+								dh.Store(1);
+								dh.Load(0);
+								dh.Load(1);
+								dh.Load(0);
 							}
 							else
 							{
 								// Form 2
-								new DupHelper(ilGenerator, 3)
-									.SetType(0, type1)
-									.SetType(1, type2)
-									.SetType(2, ma.GetRawStackTypeWrapper(i, 2))
-									.Store(0)
-									.Store(1)
-									.Store(2)
-									.Load(0)
-									.Load(2)
-									.Load(1)
-									.Load(0);
+								DupHelper dh = new DupHelper(ilGenerator, 3);
+								dh.SetType(0, type1);
+								dh.SetType(1, type2);
+								dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
+								dh.Store(0);
+								dh.Store(1);
+								dh.Store(2);
+								dh.Load(0);
+								dh.Load(2);
+								dh.Load(1);
+								dh.Load(0);
 							}
 						}
 						else
@@ -2134,54 +2057,56 @@ class Compiler
 							if(type3.IsWidePrimitive)
 							{
 								// Form 3
-								new DupHelper(ilGenerator, 3)
-									.SetType(0, type1)
-									.SetType(1, type2)
-									.SetType(2, type3)
-									.Store(0)
-									.Store(1)
-									.Store(2)
-									.Load(1)
-									.Load(0)
-									.Load(2)
-									.Load(1)
-									.Load(0);
+								DupHelper dh = new DupHelper(ilGenerator, 3);
+								dh.SetType(0, type1);
+								dh.SetType(1, type2);
+								dh.SetType(2, type3);
+								dh.Store(0);
+								dh.Store(1);
+								dh.Store(2);
+								dh.Load(1);
+								dh.Load(0);
+								dh.Load(2);
+								dh.Load(1);
+								dh.Load(0);
 							}
 							else
 							{
 								// Form 1
-								new DupHelper(ilGenerator, 4)
-									.SetType(0, type1)
-									.SetType(1, type2)
-									.SetType(2, type3)
-									.SetType(3, ma.GetRawStackTypeWrapper(i, 3))
-									.Store(0)
-									.Store(1)
-									.Store(2)
-									.Store(3)
-									.Load(1)
-									.Load(0)
-									.Load(3)
-									.Load(2)
-									.Load(1)
-									.Load(0);
+								DupHelper dh = new DupHelper(ilGenerator, 4);
+								dh.SetType(0, type1);
+								dh.SetType(1, type2);
+								dh.SetType(2, type3);
+								dh.SetType(3, ma.GetRawStackTypeWrapper(i, 3));
+								dh.Store(0);
+								dh.Store(1);
+								dh.Store(2);
+								dh.Store(3);
+								dh.Load(1);
+								dh.Load(0);
+								dh.Load(3);
+								dh.Load(2);
+								dh.Load(1);
+								dh.Load(0);
 							}
 						}
 						break;
 					}
 					case NormalizedByteCode.__dup_x2:
-						new DupHelper(ilGenerator, 3)
-							.SetType(0, ma.GetRawStackTypeWrapper(i, 0))
-							.SetType(1, ma.GetRawStackTypeWrapper(i, 1))
-							.SetType(2, ma.GetRawStackTypeWrapper(i, 2))
-							.Store(0)
-							.Store(1)
-							.Store(2)
-							.Load(0)
-							.Load(2)
-							.Load(1)
-							.Load(0);
+					{
+						DupHelper dh = new DupHelper(ilGenerator, 3);
+						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+						dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+						dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
+						dh.Store(0);
+						dh.Store(1);
+						dh.Store(2);
+						dh.Load(0);
+						dh.Load(2);
+						dh.Load(1);
+						dh.Load(0);
 						break;
+					}
 					case NormalizedByteCode.__pop2:
 					{
 						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
@@ -2331,6 +2256,7 @@ class Compiler
 						// don't fall through end of try block
 						if(m.Instructions[i + 1].PC == rangeEnd)
 						{
+							// TODO instead of emitting a branch to the leave stub, it would be more efficient to put the leave stub here
 							ilGenerator.Emit(OpCodes.Br, GetLabel(labels, m.Instructions[i + 1].PC, inuse, rangeBegin, rangeEnd, exits));
 						}
 						else
@@ -2733,10 +2659,6 @@ class Compiler
 						}
 						else
 						{
-							if(java_lang_Object == null)
-							{
-								java_lang_Object = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object");
-							}
 							// HACK special case for incorrect invocation of Object.clone(), because this could mean
 							// we're calling clone() on an array
 							// (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
@@ -2984,32 +2906,39 @@ class Compiler
 
 	private Label GetLabel(object[] labels, int targetPC, bool[] inuse, int rangeBegin, int rangeEnd, ArrayList exits)
 	{
+		int targetIndex = FindPcIndex(targetPC);
 		if(rangeBegin <= targetPC && targetPC < rangeEnd)
 		{
-			inuse[FindPcIndex(targetPC)] = true;
-			object l = labels[targetPC];
+			inuse[targetIndex] = true;
+			object l = labels[targetIndex];
 			if(l == null)
 			{
 				l = ilGenerator.DefineLabel();
-				labels[targetPC] = l;
+				labels[targetIndex] = l;
 			}
 			return (Label)l;
 		}
 		else
 		{
-			BranchCookie bc = new BranchCookie();
-			bc.TargetIndex = FindPcIndex(targetPC);
-			bc.Stub = ilGenerator.DefineLabel();
-			exits.Add(bc);
-			return bc.Stub;
+			object l = labels[targetIndex];
+			if(l == null)
+			{
+				// if we're branching out of the current exception block, we need to indirect this thru a stub
+				// that saves the stack and uses leave to leave the exception block (to another stub that recovers
+				// the stack)
+				int stackHeight = ma.GetStackHeight(targetIndex);
+				BranchCookie bc = new BranchCookie(ilGenerator, stackHeight, targetPC);
+				bc.ContentOnStack = true;
+				for(int i = 0; i < stackHeight; i++)
+				{
+					bc.dh.SetType(i, ma.GetRawStackTypeWrapper(targetIndex, i));
+				}
+				exits.Add(bc);
+				l = bc;
+				labels[targetIndex] = l;
+			}
+			return ((BranchCookie)l).Stub;
 		}
-	}
-
-	private bool IsMapSafeException(Type excType)
-	{
-		// HACK instead of the name, we should compare with a cache ref of the type (but beware of the
-		// fact that the Type identity changes when a TypeBuilder turns into a RuntimeType)
-		return excType.FullName == "java.lang.ClassNotFoundException";
 	}
 
 	private bool IsUnloadable(ClassFile.ConstantPoolItemFMI cpi)

@@ -133,6 +133,21 @@ public class Starter
 		}
 	}
 
+	private class SaveAssemblyShutdownHook : java.lang.Thread
+	{
+		private java.lang.Class clazz;
+
+		internal SaveAssemblyShutdownHook(java.lang.Class clazz)
+		{
+			this.clazz = clazz;
+		}
+
+		public override void run()
+		{
+			JVM.SaveDebugImage(clazz);
+		}
+	}
+
 	[StackTraceInfo(Hidden = true, EatFrames = 1)]
 	[STAThread]	// NOTE this is here because otherwise SWT's RegisterDragDrop (a COM thing) doesn't work
 	static int Main(string[] args)
@@ -279,50 +294,63 @@ public class Starter
 				}
 			}
 			java.lang.Class clazz = loader.loadClass(mainClass);
-			Method method = clazz.getMethod("main", new java.lang.Class[] { java.lang.Class.forName("[Ljava.lang.String;") });
-			if(!Modifier.isPublic(method.getModifiers()))
+			if(saveAssembly)
 			{
-				Console.Error.WriteLine("Main method not public.");
-				return 1;
+				java.lang.Runtime.getRuntime().addShutdownHook(new SaveAssemblyShutdownHook(clazz));
 			}
-			if(!Modifier.isStatic(method.getModifiers()))
+			// NOTE Sun's JRE runs the static initializer even if the main method doesn't exist, so we do the same.
+			System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(NativeCode.java.lang.VMClass.getType(clazz).TypeHandle);
+			Method method = FindMainMethod(clazz);
+			if(method == null)
 			{
 				throw new java.lang.NoSuchMethodError("main");
 			}
-			try
+			else if(!Modifier.isPublic(method.getModifiers()))
+			{
+				Console.Error.WriteLine("Main method not public.");
+			}
+			else
 			{
 				try
 				{
 					method.invoke(null, new object[] { vmargs });
+					return 0;
 				}
-				finally
+				catch(InvocationTargetException x)
 				{
-					if(saveAssembly)
-					{
-						// TODO it would be nice to wait for other threads to exit
-						// TODO consider using a Shutdown hook!
-						JVM.SaveDebugImage(clazz);
-						saveAssembly = false;
-					}
+					throw x.getCause();
 				}
 			}
-			catch(InvocationTargetException x)
-			{
-				throw x.getCause();
-			}
-			if(saveAssembly)
-			{
-				// TODO it would be nice to wait for other threads to exit
-				// TODO consider using a Shutdown hook!
-				JVM.SaveDebugImage(clazz);
-			}
-			return 0;
 		}
 		catch(System.Exception x)
 		{
 			java.lang.Thread thread = java.lang.Thread.currentThread();
 			thread.getThreadGroup().uncaughtException(thread, ExceptionHelper.MapExceptionFast(x));
-			return 1;
 		}
+		finally
+		{
+			// TODO the current thread should be removed from its ThreadGroup and signaled
+		}
+		return 1;
+	}
+
+	private static Method FindMainMethod(java.lang.Class clazz)
+	{
+		while(clazz != null)
+		{
+			foreach(Method m in clazz.getDeclaredMethods())
+			{
+				if(m.getName() == "main" && m.getReturnType() == java.lang.Void.TYPE)
+				{
+					java.lang.Class[] parameters = m.getParameterTypes();
+					if(parameters.Length == 1 && parameters[0] == java.lang.Class.forName("[Ljava.lang.String;"))
+					{
+						return m;
+					}
+				}
+			}
+			clazz = clazz.getSuperclass();
+		}
+		return null;
 	}
 }

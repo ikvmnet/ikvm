@@ -547,10 +547,21 @@ namespace MapXml
 		public InstructionList Box;
 	}
 
+	[XmlType("exception")]
+	public class ExceptionMapping
+	{
+		[XmlAttribute]
+		public string src;
+		[XmlAttribute]
+		public string dst;
+		public InstructionList code;
+	}
+
 	[XmlRoot("root")]
 	public class Root
 	{
 		public Class[] remappings;
 		public Class[] nativeMethods;
+		public ExceptionMapping[] exceptionMappings;
 	}
 }

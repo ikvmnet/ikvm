@@ -326,8 +326,6 @@
 			</field>
 			<!-- Making a new char array instead of directly accessing the contents of the string, probably isn't
 				as efficient as the coder of this construct wished for, but hey ;-) At least it works...
-				TODO we should probably make StringBuffer a native class, to make it perform better
-				NOTE since StringBuffer is remapped to StringBuilder now, these might not be needed anymore
 			-->
 			<method name="zeroBasedStringValue" sig="(Ljava.lang.String;)[C" modifiers="static">
 				<redirect class="java.lang.StringHelper" name="GetValueField" />
@@ -344,20 +342,20 @@
 			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-3042686055658047285" />
 			<constructor sig="()V" modifiers="public">
 				<invokespecial>
-					<call type="ExceptionHelper, ik.vm.net" name="get_NullString" />
+					<call class="java.lang.ExceptionHelper" name="get_NullString" sig="()Ljava.lang.String;" />
 					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
 				</invokespecial>
 			</constructor>
 			<constructor sig="(Ljava.lang.String;)V" modifiers="public">
 				<invokespecial>
-					<call type="ExceptionHelper, ik.vm.net" name="FilterMessage" />
+					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
 				</invokespecial>
 			</constructor>
 			<constructor sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" modifiers="public">
 				<invokespecial>
 					<stloc name="x" type="System.Exception" />
-					<call type="ExceptionHelper, ik.vm.net" name="FilterMessage" />
+					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 					<ldloc name="x" />
 					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
 				</invokespecial>
@@ -366,70 +364,48 @@
 				<invokespecial>
 					<stloc name="x" type="System.Exception" />
 					<ldloc name="x" />
-					<call type="ExceptionHelper, ik.vm.net" name="GetMessageFromCause" />
+					<call class="java.lang.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
 					<ldloc name="x" />
 					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
 				</invokespecial>
 			</constructor>
 			<method type="virtual" name="printStackTrace" sig="()V" modifiers="public">
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)V" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
 			</method>
 			<method type="virtual" name="printStackTrace" sig="(Ljava.io.PrintStream;)V" modifiers="public">
-				<!-- NOTE both printStackTrace(Ljava.io.PrintStream;)V & printStackTrace(Ljava.io.PrintWriter;)V redirect
-					to the same method, this is not a bug -->
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;Ljava.lang.Object;)V" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintStream;)V" type="static" />
 			</method>
 			<method type="virtual" name="printStackTrace" sig="(Ljava.io.PrintWriter;)V" modifiers="public">
-				<!-- NOTE both printStackTrace(Ljava.io.PrintStream;)V & printStackTrace(Ljava.io.PrintWriter;)V redirect
-					to the same method, this is not a bug -->
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;Ljava.lang.Object;)V" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" type="static" />
 			</method>
 			<method type="virtual" name="getMessage" sig="()Ljava.lang.String;" modifiers="public">
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
 			</method>
 			<method type="virtual" name="getLocalizedMessage" sig="()Ljava.lang.String;" modifiers="public">
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
 			</method>
 			<method type="virtual" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" modifiers="public">
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
 			</method>
 			<method type="virtual" name="initCause" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public">
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
 			</method>
 			<method type="virtual" name="getCause" sig="()Ljava.lang.Throwable;" modifiers="public">
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" type="static" />
 			</method>
 			<method type="virtual" name="getStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="public">
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" type="static" />
 			</method>
 			<method type="virtual" name="setStackTrace" sig="([Ljava.lang.StackTraceElement;)V" modifiers="public">
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" type="static" />
 			</method>
 			<method type="virtual" name="toString" sig="()Ljava.lang.String;" modifiers="public">
-				<redirect class="ExceptionHelper, ik.vm.net" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
 			</method>
 		</class>
 		<class name="java.lang.Comparable" type="System.IComparable" modifiers="public abstract interface">
 			<method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public abstract">
 				<override name="CompareTo" />
-			</method>
-		</class>
-		<!-- TODO java.lang.StackTraceElement shouldn't be here, but it should be represented by a different TypeWrapper (that can take
-			a .NET type and present it as a Java type -->
-		<class name="java.lang.StackTraceElement" type="java.lang.StackTraceElement" modifiers="public final">
-			<method name="getFileName" sig="()Ljava.lang.String;" modifiers="public" />
-			<method name="getLineNumber" sig="()I" modifiers="public" />
-			<method name="getClassName" sig="()Ljava.lang.String;" modifiers="public" />
-			<method name="getMethodName" sig="()Ljava.lang.String;" modifiers="public" />
-			<method name="isNativeMethod" sig="()Z" modifiers="public" />
-			<method name="toString" sig="()Ljava.lang.String;" modifiers="public">
-				<redirect name="ToString" />
-			</method>
-			<method name="equals" sig="(Ljava.lang.Object;)Z" modifiers="public">
-				<redirect name="Equals" />
-			</method>
-			<method name="hashCode" sig="()I" modifiers="public">
-				<redirect name="GetHashCode" />
 			</method>
 		</class>
 		<!-- TODO support "oneway" attribute (don't associate System.IntPtr with gnu.classpath.RawData -->
@@ -448,16 +424,6 @@
 		</class>
 	</remappings>
 	<nativeMethods>
-		<class name="java.lang.Runtime">
-			<method name="execInternal" sig="([Ljava.lang.String;[Ljava.lang.String;Ljava.io.File;)Ljava.lang.Process;">
-				<ldarg_0 />
-				<ldarg_1 />
-				<ldarg_2 />
-				<ldarg_3 />
-				<call class="ikvm.lang.DotNetProcess" name="execInternal" sig="(Ljava.lang.Runtime;[Ljava.lang.String;[Ljava.lang.String;Ljava.io.File;)Ljava.lang.Process;" />
-				<ret />
-			</method>
-		</class>
 		<class name="java.lang.StringHelper">
 			<method name="constructCaseInsensitiveOrder" sig="()Ljava.util.Comparator;">
 				<newobj class="java.lang.String$CaseInsensitiveComparator" name="&lt;init&gt;" sig="()V" />
@@ -483,4 +449,55 @@
 			</method>
 		</class>
 	</nativeMethods>
+	<exceptionMappings>
+		<exception src="System.NullReferenceException, mscorlib" dst="java.lang.NullPointerException" />
+		<!-- many of the String and Object methods throw ArgumentNullException where Java throws an NPE -->
+		<exception src="System.ArgumentNullException, mscorlib" dst="java.lang.NullPointerException" />
+		<exception src="System.IndexOutOfRangeException, mscorlib" dst="java.lang.ArrayIndexOutOfBoundsException" />
+		<!-- HACK for String methods, we remap ArgumentOutOfRangeException to StringIndexOutOfBoundsException -->
+		<exception src="System.ArgumentOutOfRangeException, mscorlib" dst="java.lang.StringIndexOutOfBoundsException" />
+		<exception src="System.InvalidCastException, mscorlib" dst="java.lang.ClassCastException" />
+		<!-- NOTE we "map" to java.lang.Error, because that is the base class of all possible mappings -->
+		<exception src="System.TypeInitializationException, mscorlib" dst="java.lang.Error">
+			<code>
+				<call type="System.Exception, mscorlib" name="get_InnerException" sig="()Ljava.lang.Throwable;" />
+				<call class="java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+				<dup />
+				<isinst class="java.lang.Error" />
+				<brtrue name="end" />
+				<newobj class="java.lang.ExceptionInInitializerError" name="&lt;init&gt;" sig="(Ljava.lang.Throwable;)V" />
+				<label name="end" />
+			</code>
+		</exception>
+		<exception src="System.Threading.SynchronizationLockException, mscorlib" dst="java.lang.IllegalMonitorStateException" />
+		<exception src="System.Threading.ThreadInterruptedException, mscorlib" dst="java.lang.InterruptedException" />
+		<exception src="System.OutOfMemoryException, mscorlib" dst="java.lang.OutOfMemoryError" />
+		<exception src="System.DivideByZeroException, mscorlib" dst="java.lang.ArithmeticException">
+			<code>
+				<pop />
+				<ldstr value="/ by zero" />
+				<newobj class="java.lang.ArithmeticException" name="&lt;init&gt;" sig="(Ljava.lang.String;)V" />
+			</code>
+		</exception>
+		<exception src="System.ArrayTypeMismatchException, mscorlib" dst="java.lang.ArrayStoreException" />
+		<exception src="System.StackOverflowException, mscorlib" dst="java.lang.StackOverflowError" />
+		<exception src="System.Security.VerificationException, mscorlib" dst="java.lang.VerifyError" />
+		<exception src="System.Threading.ThreadAbortException, mscorlib" dst="java.lang.ThreadDeath">
+			<code>
+				<castclass type="System.Threading.ThreadAbortException, mscorlib" />
+				<call type="System.Threading.ThreadAbortException, mscorlib" name="get_ExceptionState" sig="()Ljava.lang.Object" />
+				<isinst type="System.Exception, mscorlib" />
+				<dup />
+				<brtrue name="end" />
+				<pop />
+				<newobj class="java.lang.ThreadDeath" name="&lt;init&gt;" sig="()V" />
+				<label name="end" />
+				<!-- NOTE ResetAbort clears the ExceptionState of the ThreadAbortException (why?) -->
+				<call type="System.Threading.Thread" name="ResetAbort" sig="()V" />
+			</code>
+		</exception>
+		<!-- TODO make sure the originating method was from an IKVM.NET generated assembly, because if it was
+	    generated by non-Java code, this remapping is obviously bogus. -->
+		<exception src="System.OverflowException, mscorlib" dst="java.lang.NegativeArraySizeException" />
+	</exceptionMappings>
 </root>
