@@ -1053,4 +1053,13 @@ class ClassLoaderWrapper
 			return (IntPtr[])nativeLibraries.ToArray(typeof(IntPtr));
 		}
 	}
+
+	public override string ToString()
+	{
+		if(javaClassLoader == null)
+		{
+			return "null";
+		}
+		return String.Format("{0}@{1:X}", GetWrapperFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
+	}
 }

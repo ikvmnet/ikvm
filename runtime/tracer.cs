@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004 Jeroen Frijters
+  Copyright (C) 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -41,6 +41,7 @@ namespace IKVM.Internal
 		public readonly static TraceSwitch ClassLoading = new TraceSwitch("classloading", "Class loading");
 		public readonly static TraceSwitch Verifier = new TraceSwitch("verifier", "Bytecode Verifier");
 		public readonly static TraceSwitch Runtime = new TraceSwitch("runtime", "Miscellaneous runtime events");
+		public readonly static TraceSwitch Jni = new TraceSwitch("jni", "JNI");
 		//	public readonly static TraceSwitch Methods = new TraceSwitch("methods", "Method Trace");
 		private readonly static Hashtable allTraceSwitches = new Hashtable();
 
@@ -78,6 +79,7 @@ namespace IKVM.Internal
 			allTraceSwitches[ClassLoading.DisplayName] = ClassLoading;
 			allTraceSwitches[Verifier.DisplayName] = Verifier;
 			allTraceSwitches[Runtime.DisplayName] = Runtime;
+			allTraceSwitches[Jni.DisplayName] = Jni;
 
 			Trace.AutoFlush = true;
 			Trace.Listeners.Add(new MyTextWriterTraceListener(Console.Error));

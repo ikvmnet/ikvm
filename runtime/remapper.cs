@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1042,6 +1042,8 @@ namespace IKVM.Internal.MapXml
 		public string Type;
 		[XmlAttribute("deprecated")]
 		public bool Deprecated;
+		[XmlAttribute("hidefromjava")]
+		public bool HideFromJava;
 		public InstructionList body;
 		public InstructionList alternateBody;
 		public InstructionList nonvirtualAlternateBody;

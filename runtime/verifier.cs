@@ -952,7 +952,7 @@ class VerifierTypeWrapper : TypeWrapper
 	internal static readonly TypeWrapper Invalid = null;
 	internal static readonly TypeWrapper Null = new VerifierTypeWrapper("null", 0, null);
 	internal static readonly TypeWrapper UninitializedThis = new VerifierTypeWrapper("this", 0, null);
-	internal static readonly TypeWrapper Unloadable = new UnloadableTypeWrapper("verifier");
+	internal static readonly TypeWrapper Unloadable = new UnloadableTypeWrapper("<verifier>");
 
 	private int index;
 	private TypeWrapper underlyingType;
