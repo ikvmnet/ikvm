@@ -544,11 +544,171 @@
 		</class>
 		<!-- This is where the "native" helper methods start -->
 		<class name="ikvm.lang.CIL">
+			<method name="unbox_byte" sig="(Ljava.lang.Object;)B">
+				<body>
+					<ldarg_0 />
+					<unbox type="System.SByte, mscorlib" />
+					<ldind_i1 />
+					<ret />
+				</body>
+			</method>
+			<method name="unbox_boolean" sig="(Ljava.lang.Object;)Z">
+				<body>
+					<ldarg_0 />
+					<unbox type="System.Boolean, mscorlib" />
+					<ldind_i1 />
+					<ret />
+				</body>
+			</method>
+			<method name="unbox_short" sig="(Ljava.lang.Object;)S">
+				<body>
+					<ldarg_0 />
+					<unbox type="System.Int16, mscorlib" />
+					<ldind_i2 />
+					<ret />
+				</body>
+			</method>
+			<method name="unbox_char" sig="(Ljava.lang.Object;)C">
+				<body>
+					<ldarg_0 />
+					<unbox type="System.Char, mscorlib" />
+					<ldind_i2 />
+					<ret />
+				</body>
+			</method>
 			<method name="unbox_int" sig="(Ljava.lang.Object;)I">
 				<body>
 					<ldarg_0 />
 					<unbox type="System.Int32, mscorlib" />
 					<ldind_i4 />
+					<ret />
+				</body>
+			</method>
+			<method name="unbox_float" sig="(Ljava.lang.Object;)F">
+				<body>
+					<ldarg_0 />
+					<unbox type="System.Single, mscorlib" />
+					<ldind_r4 />
+					<ret />
+				</body>
+			</method>
+			<method name="unbox_long" sig="(Ljava.lang.Object;)J">
+				<body>
+					<ldarg_0 />
+					<unbox type="System.Int64, mscorlib" />
+					<ldind_i8 />
+					<ret />
+				</body>
+			</method>
+			<method name="unbox_double" sig="(Ljava.lang.Object;)D">
+				<body>
+					<ldarg_0 />
+					<unbox type="System.Double, mscorlib" />
+					<ldind_r8 />
+					<ret />
+				</body>
+			</method>
+			<method name="box_byte" sig="(B)Ljava.lang.Object;">
+				<body>
+					<ldarg_0 />
+					<box type="System.SByte, mscorlib" />
+					<ret />
+				</body>
+			</method>
+			<method name="box_boolean" sig="(Z)Ljava.lang.Object;">
+				<body>
+					<ldarg_0 />
+					<box type="System.Boolean, mscorlib" />
+					<ret />
+				</body>
+			</method>
+			<method name="box_short" sig="(S)Ljava.lang.Object;">
+				<body>
+					<ldarg_0 />
+					<box type="System.Int16, mscorlib" />
+					<ret />
+				</body>
+			</method>
+			<method name="box_char" sig="(C)Ljava.lang.Object;">
+				<body>
+					<ldarg_0 />
+					<box type="System.Char, mscorlib" />
+					<ret />
+				</body>
+			</method>
+			<method name="box_int" sig="(I)Ljava.lang.Object;">
+				<body>
+					<ldarg_0 />
+					<box type="System.Int32, mscorlib" />
+					<ret />
+				</body>
+			</method>
+			<method name="box_float" sig="(F)Ljava.lang.Object;">
+				<body>
+					<ldarg_0 />
+					<box type="System.Single, mscorlib" />
+					<ret />
+				</body>
+			</method>
+			<method name="box_long" sig="(J)Ljava.lang.Object;">
+				<body>
+					<ldarg_0 />
+					<box type="System.Int64, mscorlib" />
+					<ret />
+				</body>
+			</method>
+			<method name="box_double" sig="(D)Ljava.lang.Object;">
+				<body>
+					<ldarg_0 />
+					<box type="System.Double, mscorlib" />
+					<ret />
+				</body>
+			</method>
+			<method name="box_ubyte" sig="(B)Lcli.System.Byte;">
+				<body>
+					<ldarg_0 />
+					<ret />
+				</body>
+			</method>
+			<method name="box_ushort" sig="(S)Lcli.System.UInt16;">
+				<body>
+					<ldarg_0 />
+					<ret />
+				</body>
+			</method>
+			<method name="box_uint" sig="(I)Lcli.System.UInt32;">
+				<body>
+					<ldarg_0 />
+					<ret />
+				</body>
+			</method>
+			<method name="box_ulong" sig="(J)Lcli.System.UInt64;">
+				<body>
+					<ldarg_0 />
+					<ret />
+				</body>
+			</method>
+			<method name="unbox_ubyte" sig="(Lcli.System.Byte;)B">
+				<body>
+					<ldarg_0 />
+					<ret />
+				</body>
+			</method>
+			<method name="unbox_ushort" sig="(Lcli.System.UInt16;)S">
+				<body>
+					<ldarg_0 />
+					<ret />
+				</body>
+			</method>
+			<method name="unbox_uint" sig="(Lcli.System.UInt32;)I">
+				<body>
+					<ldarg_0 />
+					<ret />
+				</body>
+			</method>
+			<method name="unbox_ulong" sig="(Lcli.System.UInt64;)J">
+				<body>
+					<ldarg_0 />
 					<ret />
 				</body>
 			</method>

@@ -56,6 +56,7 @@ import java.nio.channels.WritableByteChannel;
 import cli.System.Console;
 import cli.System.IO.*;
 import ikvm.lang.ByteArrayHack;
+import ikvm.lang.CIL;
 
 /**
  * This file is not user visible !
@@ -478,8 +479,7 @@ public final class FileChannelImpl extends FileChannel
   
     public void write (int b) throws IOException
     {
-	// HACK we can't call WriteByte because it takes a cli.System.Byte
-	write(new byte[] { (byte)b }, 0, 1);
+	stream.WriteByte(CIL.box_ubyte((byte)b));
     }
 
     public long write(ByteBuffer[] srcs, int offset, int length)

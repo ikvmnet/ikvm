@@ -132,8 +132,8 @@ public sealed class JniHelper
 	{
 		TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
 		wrapper.Finish();
-		// TODO if we're instantiating a remapping type, we need to use TypeAsBaseType (except for String)
-		return System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsTBD);
+		// TODO add error handling (e.g. when trying to instantiate an interface or abstract class)
+		return System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
 	}
 }
 

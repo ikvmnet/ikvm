@@ -498,10 +498,50 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("ldind_i1")]
+	public sealed class Ldind_i1 : Simple
+	{
+		public Ldind_i1() : base(OpCodes.Ldind_I1)
+		{
+		}
+	}
+
+	[XmlType("ldind_i2")]
+	public sealed class Ldind_i2 : Simple
+	{
+		public Ldind_i2() : base(OpCodes.Ldind_I2)
+		{
+		}
+	}
+
 	[XmlType("ldind_i4")]
 	public sealed class Ldind_i4 : Simple
 	{
 		public Ldind_i4() : base(OpCodes.Ldind_I4)
+		{
+		}
+	}
+
+	[XmlType("ldind_i8")]
+	public sealed class Ldind_i8 : Simple
+	{
+		public Ldind_i8() : base(OpCodes.Ldind_I8)
+		{
+		}
+	}
+
+	[XmlType("ldind_r4")]
+	public sealed class Ldind_r4 : Simple
+	{
+		public Ldind_r4() : base(OpCodes.Ldind_R4)
+		{
+		}
+	}
+
+	[XmlType("ldind_r8")]
+	public sealed class Ldind_r8 : Simple
+	{
+		public Ldind_r8() : base(OpCodes.Ldind_R8)
 		{
 		}
 	}
@@ -546,6 +586,38 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("conv_u1")]
+	public sealed class Conv_U1 : Simple
+	{
+		public Conv_U1() : base(OpCodes.Conv_U1)
+		{
+		}
+	}
+
+	[XmlType("conv_u2")]
+	public sealed class Conv_U2 : Simple
+	{
+		public Conv_U2() : base(OpCodes.Conv_U2)
+		{
+		}
+	}
+
+	[XmlType("conv_u4")]
+	public sealed class Conv_U4 : Simple
+	{
+		public Conv_U4() : base(OpCodes.Conv_U4)
+		{
+		}
+	}
+
+	[XmlType("conv_u8")]
+	public sealed class Conv_U8 : Simple
+	{
+		public Conv_U8() : base(OpCodes.Conv_U8)
+		{
+		}
+	}
+
 	public class InstructionList : CodeEmitter
 	{
 		[XmlElement(typeof(Ldstr))]
@@ -568,12 +640,21 @@ namespace MapXml
 		[XmlElement(typeof(LdArg_1))]
 		[XmlElement(typeof(LdArg_2))]
 		[XmlElement(typeof(LdArg_3))]
+		[XmlElement(typeof(Ldind_i1))]
+		[XmlElement(typeof(Ldind_i2))]
 		[XmlElement(typeof(Ldind_i4))]
+		[XmlElement(typeof(Ldind_i8))]
+		[XmlElement(typeof(Ldind_r4))]
+		[XmlElement(typeof(Ldind_r8))]
 		[XmlElement(typeof(Ret))]
 		[XmlElement(typeof(Throw))]
 		[XmlElement(typeof(Ldnull))]
 		[XmlElement(typeof(Stsfld))]
 		[XmlElement(typeof(Ldc_I4_0))]
+		[XmlElement(typeof(Conv_U1))]
+		[XmlElement(typeof(Conv_U2))]
+		[XmlElement(typeof(Conv_U4))]
+		[XmlElement(typeof(Conv_U8))]
 		public Instruction[] invoke;
 
 		internal sealed override void Emit(ILGenerator ilgen)

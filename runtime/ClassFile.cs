@@ -1501,9 +1501,11 @@ class ClassFile
 			}
 			else
 			{
+				// LAMESPEC: vmspec 4.6 says that abstract methods can not be strictfp (and this makes sense), but
+				// javac (pre 1.5) is broken and marks abstract methods as strictfp (if you put the strictfp on the class)
 				if((Name == "<init>" && (IsStatic || IsSynchronized || IsFinal || IsAbstract))
 					|| (IsPrivate && IsPublic) || (IsPrivate && IsProtected) || (IsPublic && IsProtected)
-					|| (IsAbstract && (IsFinal || IsNative || IsPrivate || IsStatic || IsStrictfp || IsSynchronized))
+					|| (IsAbstract && (IsFinal || IsNative || IsPrivate || IsStatic || IsSynchronized))
 					|| (classFile.IsInterface && (!IsPublic || !IsAbstract)))
 				{
 					throw new ClassFormatError("{0} (Illegal method modifiers: 0x{1:X})", classFile.Name, access_flags);

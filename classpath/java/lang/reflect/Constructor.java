@@ -79,6 +79,7 @@ public final class Constructor
     private Class declaringClass;
     private Object methodCookie;
     private int modifiers;
+    private boolean classIsPublic;
   
     /**
      * This class is instantiated by java.lang.Class
@@ -89,6 +90,7 @@ public final class Constructor
 	this.declaringClass = declaringClass;
 	this.methodCookie = methodCookie;
 	modifiers = Method.GetModifiers(methodCookie);
+	classIsPublic = (declaringClass.getModifiers() & Modifier.PUBLIC) != 0;
     }
 
     /**
@@ -260,7 +262,7 @@ public final class Constructor
 	throws InstantiationException, IllegalAccessException,
 	InvocationTargetException
     {
-	if(!isAccessible() && !Modifier.isPublic(modifiers))
+	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
 	    Field.checkAccess(modifiers, declaringClass, new StackFrame(1));
 	if(Modifier.isAbstract(declaringClass.getModifiers()))
 	{

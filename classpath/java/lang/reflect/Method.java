@@ -78,6 +78,7 @@ public final class Method extends AccessibleObject implements Member
     private Class declaringClass;
     private Object methodCookie;
     private int modifiers;
+    private boolean classIsPublic;
 
     /**
      * This class is uninstantiable.
@@ -87,6 +88,7 @@ public final class Method extends AccessibleObject implements Member
 	this.declaringClass = declaringClass;
 	this.methodCookie = methodCookie;
 	modifiers = GetModifiers(methodCookie);
+	classIsPublic = (declaringClass.getModifiers() & Modifier.PUBLIC) != 0;
     }
     static native int GetModifiers(Object methodCookie);
 
@@ -321,7 +323,7 @@ public final class Method extends AccessibleObject implements Member
 	throws IllegalAccessException, InvocationTargetException
     {
 	// TODO check args
-	if(!isAccessible() && !Modifier.isPublic(modifiers))
+	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
 	    Field.checkAccess(modifiers, declaringClass, new StackFrame(1));
 	if(!Modifier.isStatic(getModifiers()))
 	{

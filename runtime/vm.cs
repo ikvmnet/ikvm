@@ -463,7 +463,7 @@ public class JVM
 				private ArrayList overriders = new ArrayList();
 
 				private RemappedMethodWrapper(TypeWrapper typeWrapper, MethodDescriptor md, MethodBuilder mbCore, MethodBuilder mbHelper, Modifiers modifiers, MapXml.Method m)
-					: base(typeWrapper, md, /*TODO*/mbCore, mbCore, modifiers, false)
+					: base(typeWrapper, md, mbCore, modifiers, false)
 				{
 					this.xmlMethod = m;
 					this.mbCore = mbCore;
@@ -489,7 +489,7 @@ public class JVM
 				}
 
 				private RemappedMethodWrapper(RemapperTypeWrapper typeWrapper, MethodDescriptor md, ConstructorBuilder cbCore, MethodBuilder cbHelper, Modifiers modifiers, MapXml.Constructor m)
-					: base(typeWrapper, md, /*TODO*/cbCore, cbCore, modifiers, false)
+					: base(typeWrapper, md, cbCore, modifiers, false)
 				{
 					this.xmlConstructor = m;
 					this.cbCore = cbCore;
@@ -509,7 +509,7 @@ public class JVM
 				}
 
 				private RemappedMethodWrapper(RemapperTypeWrapper typeWrapper, MethodDescriptor md, MethodInfo interfaceMethod, Modifiers modifiers)
-					: base(typeWrapper, md, interfaceMethod, null, modifiers, false)
+					: base(typeWrapper, md, interfaceMethod, modifiers, false)
 				{
 					this.interfaceMethod = interfaceMethod;
 					this.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, interfaceMethod);
@@ -1362,6 +1362,7 @@ public class JVM
 		{
 			Tracer.Info(Tracer.Compiler, "Loading remapped types (1) from {0}", remapfile);
 			System.Xml.Serialization.XmlSerializer ser = new System.Xml.Serialization.XmlSerializer(typeof(MapXml.Root));
+			ser.UnknownElement += new System.Xml.Serialization.XmlElementEventHandler(ser_UnknownElement);
 			using(FileStream fs = File.Open(remapfile, FileMode.Open))
 			{
 				map = (MapXml.Root)ser.Deserialize(fs);
@@ -1493,6 +1494,12 @@ public class JVM
 		{
 			Console.Error.WriteLine(message);
 		}
+		Environment.Exit(1);
+	}
+
+	private static void ser_UnknownElement(object sender, System.Xml.Serialization.XmlElementEventArgs e)
+	{
+		Console.Error.WriteLine("Unknown element {0} in XML mapping file, line {1}, column {2}", e.Element.Name, e.LineNumber, e.LinePosition);
 		Environment.Exit(1);
 	}
 }

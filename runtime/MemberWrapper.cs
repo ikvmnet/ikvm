@@ -137,8 +137,7 @@ class MemberWrapper
 class MethodWrapper : MemberWrapper
 {
 	private MethodDescriptor md;
-	private MethodBase originalMethod;
-	private MethodBase redirMethod;
+	private MethodBase method;
 	private string[] declaredExceptions;
 	internal CodeEmitter EmitCall;
 	internal CodeEmitter EmitCallvirt;
@@ -162,19 +161,59 @@ class MethodWrapper : MemberWrapper
 		}
 	}
 
-	// TODO creation of MethodWrappers should be cleaned up (and every instance should support Invoke())
-	internal static MethodWrapper Create(TypeWrapper declaringType, MethodDescriptor md, MethodBase originalMethod, MethodBase method, Modifiers modifiers, bool hideFromReflection)
+	internal static MethodWrapper Create(TypeWrapper declaringType, MethodDescriptor md, MethodBase method, Modifiers modifiers, bool hideFromReflection)
 	{
-		Debug.Assert(method != null);
+		Debug.Assert(declaringType != null && md != null && method != null);
 
-		MethodWrapper wrapper = new MethodWrapper(declaringType, md, originalMethod, method, modifiers, hideFromReflection);
+		MethodWrapper wrapper = new MethodWrapper(declaringType, md, method, modifiers, hideFromReflection);
 		if(declaringType.IsGhost)
 		{
-			wrapper.EmitCallvirt = new GhostCallEmitter(declaringType, md, originalMethod);
+			wrapper.EmitCall = CodeEmitter.InternalError;
+			wrapper.EmitCallvirt = new GhostCallEmitter(declaringType, md, method);
+			wrapper.EmitNewobj = CodeEmitter.InternalError;
 		}
 		else
 		{
-			CreateEmitters(originalMethod, method, ref wrapper.EmitCall, ref wrapper.EmitCallvirt, ref wrapper.EmitNewobj);
+			if(method is ConstructorInfo)
+			{
+				wrapper.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)method);
+				wrapper.EmitCallvirt = CodeEmitter.InternalError;
+				wrapper.EmitNewobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)method);
+			}
+			else
+			{
+				if(md.Name == "<init>")
+				{
+					// we're a redirected constructor (which means that the class is final),
+					// so EmitCall isn't available. This also means that we won't be able to invoke
+					// the constructor using reflection (on an existing instance).
+					wrapper.EmitCall = CodeEmitter.InternalError;
+					wrapper.EmitCallvirt = CodeEmitter.InternalError;
+					wrapper.EmitNewobj = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
+				}
+				else
+				{
+					wrapper.EmitCall = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
+					if(method.IsStatic)
+					{
+						// because of redirection, it can be legal to call a static method with invokevirtual
+						if(!wrapper.IsStatic)
+						{
+							// we don't do a null pointer check on "this", the callee is responsible for that
+							wrapper.EmitCallvirt = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
+						}
+						else
+						{
+							wrapper.EmitCallvirt = CodeEmitter.InternalError;
+						}
+					}
+					else
+					{
+						wrapper.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)method);
+					}
+					wrapper.EmitNewobj = CodeEmitter.InternalError;
+				}
+			}
 		}
 		TypeWrapper retType = md.RetTypeWrapper;
 		if(!retType.IsUnloadable)
@@ -229,48 +268,12 @@ class MethodWrapper : MemberWrapper
 		}
 	}
 
-	internal static void CreateEmitters(MethodBase originalMethod, MethodBase method, ref CodeEmitter call, ref CodeEmitter callvirt, ref CodeEmitter newobj)
-	{
-		if(method is ConstructorInfo)
-		{
-			call = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)method);
-			callvirt = null;
-			newobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)method);
-		}
-		else
-		{
-			call = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
-			if(originalMethod != null && originalMethod != method)
-			{
-				// if we're calling a virtual method that is redirected, that overrides an already
-				// existing method, we have to call it virtually, instead of redirecting
-				callvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)originalMethod);
-			}
-			else if(method.IsStatic)
-			{
-				// because of redirection, it can be legal to call a static method with invokevirtual
-				callvirt = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
-			}
-			else
-			{
-				callvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)method);
-			}
-			newobj = CodeEmitter.Create(OpCodes.Call, (MethodInfo)method);
-		}
-	}
-
-	internal MethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase originalMethod, MethodBase method, Modifiers modifiers, bool hideFromReflection)
+	internal MethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase method, Modifiers modifiers, bool hideFromReflection)
 		: base(declaringType, modifiers, hideFromReflection)
 	{
 		Profiler.Count("MethodWrapper");
-		if(method != originalMethod)
-		{
-			redirMethod = method;
-			Debug.Assert(!(method is MethodBuilder));
-		}
 		this.md = md;
-		// NOTE originalMethod may be null
-		this.originalMethod = originalMethod;
+		this.method = method;
 	}
 
 	internal void SetDeclaredExceptions(string[] exceptions)
@@ -354,10 +357,12 @@ class MethodWrapper : MemberWrapper
 		{
 			return (string[])declaredExceptions.Clone();
 		}
-		// NOTE if originalMethod is a MethodBuilder, GetCustomAttributes doesn't work
-		if(originalMethod != null && !(originalMethod is MethodBuilder))
+		// NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
+		// the method had any declared exceptions, the declaredExceptions field would have
+		// been set)
+		if(!(method is MethodBuilder))
 		{
-			object[] attributes = originalMethod.GetCustomAttributes(typeof(ThrowsAttribute), false);
+			object[] attributes = method.GetCustomAttributes(typeof(ThrowsAttribute), false);
 			if(attributes.Length == 1)
 			{
 				return ((ThrowsAttribute)attributes[0]).Classes;
@@ -368,17 +373,17 @@ class MethodWrapper : MemberWrapper
 
 	// we expose the underlying MethodBase object,
 	// for Java types, this is the method that contains the compiled Java bytecode
-	// for remapped types, this is the method that underlies the remapped method
+	// for remapped types, this is the mbCore method (not the helper)
 	internal MethodBase GetMethod()
 	{
-		return originalMethod;
+		return method;
 	}
 
 	internal string RealName
 	{
 		get
 		{
-			return originalMethod.Name;
+			return method.Name;
 		}
 	}
 
@@ -432,93 +437,184 @@ class MethodWrapper : MemberWrapper
 
 	internal virtual object Invoke(object obj, object[] args, bool nonVirtual)
 	{
-		// TODO if any of the parameters is a ghost, convert the passed in reference to a ghost value type
-		// TODO instead of looking up the method using reflection, we should use the method object passed into the
-		// constructor
+		// if we've still got the builder object, we need to replace it with the real thing before we can call it
+		if(method is MethodBuilder)
+		{
+			bool found = false;
+			int token = ((MethodBuilder)method).GetToken().Token;
+			ModuleBuilder module = (ModuleBuilder)((MethodBuilder)method).GetModule();
+			foreach(MethodInfo mi in this.DeclaringType.TypeAsTBD.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance))
+			{
+				if(module.GetMethodToken(mi).Token == token)
+				{
+					found = true;
+					method = mi;
+					break;
+				}
+			}
+			if(!found)
+			{
+				throw new InvalidOperationException("Failed to fixate method: " + this.DeclaringType.Name + "." + this.Name + this.Descriptor.Signature);
+			}
+		}
+		if(method is ConstructorBuilder)
+		{
+			bool found = false;
+			int token = ((ConstructorBuilder)method).GetToken().Token;
+			ModuleBuilder module = (ModuleBuilder)((ConstructorBuilder)method).GetModule();
+			foreach(ConstructorInfo ci in this.DeclaringType.TypeAsTBD.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+			{
+				if(module.GetConstructorToken(ci).Token == token)
+				{
+					found = true;
+					method = ci;
+					break;
+				}
+			}
+			if(!found)
+			{
+				throw new InvalidOperationException("Failed to fixate constructor: " + this.DeclaringType.Name + "." + this.Name + this.Descriptor.Signature);
+			}
+		}
+		return InvokeImpl(method, obj, args, nonVirtual);
+	}
+
+	internal object InvokeImpl(MethodBase method, object obj, object[] args, bool nonVirtual)
+	{
+		Debug.Assert(!(method is MethodBuilder || method is ConstructorBuilder));
+
 		if(IsStatic)
 		{
-			MethodInfo method = this.originalMethod != null && !(this.originalMethod is MethodBuilder) ? (MethodInfo)this.originalMethod : DeclaringType.TypeAsTBD.GetMethod(md.Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypesDontUse, null);
-			try
-			{
-				return method.Invoke(null, args);
-			}
-			catch(ArgumentException x1)
-			{
-				throw JavaException.IllegalArgumentException(x1.Message);
-			}
-			catch(TargetInvocationException x)
-			{
-				throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
-			}
+			// Java allows bogus 'obj' to be specified for static methods
+			obj = null;
 		}
 		else
 		{
-			// calling <init> without an instance means that we're constructing a new instance
-			// NOTE this means that we cannot detect a NullPointerException when calling <init>
 			if(md.Name == "<init>")
 			{
-				ConstructorInfo constructor = this.originalMethod != null && !(this.originalMethod is ConstructorBuilder) ? (ConstructorInfo)this.originalMethod : DeclaringType.TypeAsTBD.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, CallingConventions.Standard, md.ArgTypesDontUse, null);
-				try
+				if(method is MethodInfo)
 				{
+					Debug.Assert(method.IsStatic);
+					// we're dealing with a constructor on a remapped type, if obj is supplied, it means
+					// that we should call the constructor on an already existing instance, but that isn't
+					// possible with remapped types
 					if(obj != null)
 					{
-						return constructor.Invoke(obj, args);
+						// the type of this exception is a bit random (note that this can only happen through JNI reflection or
+						// if there is a bug in serialization [which uses the ObjectInputStream.callConstructor() in classpath.cs)
+						throw JavaException.IncompatibleClassChangeError("Remapped type {0} doesn't support constructor invocation on an existing instance", DeclaringType.Name);
 					}
-					else
+				}
+				else if(obj == null)
+				{
+					// calling <init> without an instance means that we're constructing a new instance
+					// NOTE this means that we cannot detect a NullPointerException when calling <init> (does JNI require this?)
+					try
 					{
-						return constructor.Invoke(args);
+						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, null, args);
+						object o = ((ConstructorInfo)method).Invoke(proc.GetArgs());
+						// since we just constructed an instance, it can't possibly be a ghost
+						return o;
 					}
-				}
-				catch(ArgumentException x1)
-				{
-					throw JavaException.IllegalArgumentException(x1.Message);
-				}
-				catch(TargetInvocationException x)
-				{
-					throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
+					catch(ArgumentException x1)
+					{
+						throw JavaException.IllegalArgumentException(x1.Message);
+					}
+					catch(TargetInvocationException x)
+					{
+						throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
+					}
 				}
 			}
-			if(nonVirtual)
+			else if(nonVirtual && !method.IsStatic)
 			{
+				// TODO figure out how to implement this (one way would be to generate some code on the fly)
 				throw new NotImplementedException("non-virtual reflective method invocation not implemented");
 			}
-			MethodInfo method = (MethodInfo)this.originalMethod;
-			if(redirMethod != null)
+		}
+		try
+		{
+			InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, args);
+			object o = method.Invoke(proc.GetObj(), proc.GetArgs());
+			TypeWrapper retType = md.RetTypeWrapper;
+			if(!retType.IsUnloadable && retType.IsGhost)
 			{
-				method = (MethodInfo)redirMethod;
-				if(method.IsStatic)
+				o = md.RetTypeWrapper.GhostRefField.GetValue(o);
+			}
+			return o;
+		}
+		catch(ArgumentException x1)
+		{
+			throw JavaException.IllegalArgumentException(x1.Message);
+		}
+		catch(TargetInvocationException x)
+		{
+			throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
+		}
+	}
+
+	private struct InvokeArgsProcessor
+	{
+		private object obj;
+		private object[] args;
+
+		internal InvokeArgsProcessor(MethodWrapper mw, MethodBase method, object original_obj, object[] original_args)
+		{
+			TypeWrapper[] argTypes = mw.md.ArgTypeWrappers;
+
+			if(!mw.IsStatic && mw.DeclaringType.IsGhost)
+			{
+				object o = Activator.CreateInstance(mw.DeclaringType.TypeAsParameterType);
+				mw.DeclaringType.GhostRefField.SetValue(o, original_obj);
+				original_obj = o;
+			}
+
+			if(!mw.IsStatic && method.IsStatic && mw.md.Name != "<init>")
+			{
+				// we've been redirected to a static method, so we have to copy the 'obj' into the args
+				args = new object[original_args.Length + 1];
+				args[0] = original_obj;
+				original_args.CopyTo(args, 1);
+				this.obj = null;
+				this.args = args;
+				for(int i = 0; i < argTypes.Length; i++)
 				{
-					// we've been redirected to a static method, so we have to copy the this into the args
-					object[] oldargs = args;
-					args = new object[args.Length + 1];
-					args[0] = obj;
-					oldargs.CopyTo(args, 1);
-					obj = null;
+					if(!argTypes[i].IsUnloadable && argTypes[i].IsGhost)
+					{
+						object v = Activator.CreateInstance(argTypes[i].TypeAsParameterType);
+						argTypes[i].GhostRefField.SetValue(v, args[i + 1]);
+						args[i + 1] = v;
+					}
 				}
 			}
 			else
 			{
-				if(method is MethodBuilder || method == null)
+				this.obj = original_obj;
+				this.args = original_args;
+				for(int i = 0; i < argTypes.Length; i++)
 				{
-					method = DeclaringType.TypeAsTBD.GetMethod(md.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, md.ArgTypesDontUse, null);
+					if(!argTypes[i].IsUnloadable && argTypes[i].IsGhost)
+					{
+						if(this.args == original_args)
+						{
+							this.args = (object[])args.Clone();
+						}
+						object v = Activator.CreateInstance(argTypes[i].TypeAsParameterType);
+						argTypes[i].GhostRefField.SetValue(v, args[i]);
+						this.args[i] = v;
+					}
 				}
-				if(method == null)
-				{
-					throw new NotImplementedException("method not found: " + this.DeclaringType.Name + "." + md.Name + md.Signature);
-				}
 			}
-			try
-			{
-				return method.Invoke(obj, args);
-			}
-			catch(ArgumentException x1)
-			{
-				throw JavaException.IllegalArgumentException(x1.Message);
-			}
-			catch(TargetInvocationException x)
-			{
-				throw JavaException.InvocationTargetException(ExceptionHelper.MapExceptionFast(x.InnerException));
-			}
+		}
+
+		internal object GetObj()
+		{
+			return obj;
+		}
+
+		internal object[] GetArgs()
+		{
+			return args;
 		}
 	}
 }

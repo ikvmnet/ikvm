@@ -1423,7 +1423,7 @@ abstract class TypeWrapper
 				// NOTE because we are introducing a Miranda method, we must also update the corresponding wrapper.
 				// If we don't do this, subclasses might think they are introducing a new method, instead of overriding
 				// this one.
-				wrapper.AddMethod(MethodWrapper.Create(wrapper, md, mb, mb, Modifiers.Public | Modifiers.Abstract, true));
+				wrapper.AddMethod(MethodWrapper.Create(wrapper, md, mb, Modifiers.Public | Modifiers.Abstract, true));
 				// NOTE if the interface method name is remapped, we need to add an explicit methodoverride. Note that when this
 				// is required we always need to emit this stub, even if the above mentioned bug is fixed in the CLR
 				if(md.Name != ifmethod.Name)
@@ -3691,7 +3691,7 @@ class DynamicTypeWrapper : TypeWrapper
 				}
 				string[] exceptions = m.ExceptionsAttribute;
 				AttributeHelper.SetThrowsAttribute(method, exceptions);
-				methods[index] = MethodWrapper.Create(wrapper, new MethodDescriptor(wrapper.GetClassLoader(), m), method, method, m.Modifiers, false);
+				methods[index] = MethodWrapper.Create(wrapper, new MethodDescriptor(wrapper.GetClassLoader(), m), method, m.Modifiers, false);
 				methods[index].SetDeclaredExceptions(exceptions);
 				if(JVM.IsStaticCompiler && m.DeprecatedAttribute)
 				{
@@ -4195,7 +4195,7 @@ class CompiledTypeWrapper : LazyTypeWrapper
 					MethodBase method = m as MethodBase;
 					if(method != null)
 					{
-						AddMethod(CreateMethodWrapper(method));
+						AddMethod(MethodWrapper.Create(this, MethodDescriptor.FromMethodBase(method), method, AttributeHelper.GetModifiers(method, false), false));
 					}
 					else
 					{
@@ -4240,7 +4240,7 @@ class CompiledTypeWrapper : LazyTypeWrapper
 					Modifiers modifiers = AttributeHelper.GetModifiers(method, false);
 					MethodDescriptor md = MethodDescriptor.FromMethodBase(method);
 					md = MethodDescriptor.FromNameSig(GetClassLoader(), m.Name, md.Signature);
-					MethodWrapper mw = new MethodWrapper(this, md, method, null, modifiers, false);
+					MethodWrapper mw = new MethodWrapper(this, md, method, modifiers, false);
 					mw.EmitCall = CodeEmitter.InternalError;
 					mw.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, method);
 					mw.EmitNewobj = CodeEmitter.InternalError;
@@ -4250,11 +4250,28 @@ class CompiledTypeWrapper : LazyTypeWrapper
 		}
 	}
 
+	private class CompiledRemappedMethodWrapper : MethodWrapper
+	{
+		private MethodBase mbHelper;
+
+		internal CompiledRemappedMethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase method, Modifiers modifiers, bool hideFromReflection, MethodBase mbHelper)
+			: base(declaringType, md, method, modifiers, hideFromReflection)
+		{
+			this.mbHelper = mbHelper;
+		}
+
+		internal override object Invoke(object obj, object[] args, bool nonVirtual)
+		{
+			return InvokeImpl(mbHelper, obj, args, nonVirtual);
+		}
+	}
+
 	private MethodWrapper CreateRemappedMethodWrapper(MethodBase mb)
 	{
 		bool instancehelper = false;
 		Modifiers modifiers = AttributeHelper.GetModifiers(mb, false);
 		MethodDescriptor md = MethodDescriptor.FromMethodBase(mb);
+		MethodBase mbHelper = mb;
 		if(md.Name.StartsWith("instancehelper_"))
 		{
 			instancehelper = true;
@@ -4268,7 +4285,22 @@ class CompiledTypeWrapper : LazyTypeWrapper
 			md = MethodDescriptor.FromNameSig(GetClassLoader(), "<init>", sig.Substring(0, sig.LastIndexOf(')')) + ")V");
 			modifiers &= ~Modifiers.Static;
 		}
-		MethodWrapper method = new MethodWrapper(this, md, mb, null, modifiers, false);
+		else if(!mb.IsStatic && !mb.IsConstructor)
+		{
+			ParameterInfo[] parameters = mb.GetParameters();
+			Type[] argTypes = new Type[parameters.Length + 1];
+			argTypes[0] = remappedType;
+			for(int i = 0; i < parameters.Length; i++)
+			{
+				argTypes[i + 1] = parameters[i].ParameterType;
+			}
+			mbHelper = type.GetMethod("instancehelper_" + mb.Name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static, null, argTypes, null);
+			if(mbHelper == null)
+			{
+				mbHelper = mb;
+			}
+		}
+		MethodWrapper method = new CompiledRemappedMethodWrapper(this, md, mb, modifiers, false, mbHelper);
 		if(mb is ConstructorInfo)
 		{
 			method.EmitCallvirt = CodeEmitter.InternalError;
@@ -4304,56 +4336,13 @@ class CompiledTypeWrapper : LazyTypeWrapper
 			else
 			{
 				method.EmitCall = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mb);
-				ParameterInfo[] parameters = mb.GetParameters();
-				Type[] argTypes = new Type[parameters.Length + 1];
-				argTypes[0] = remappedType;
-				for(int i = 0; i < parameters.Length; i++)
+				if(mbHelper != mb)
 				{
-					argTypes[i + 1] = parameters[i].ParameterType;
-				}
-				MethodInfo helper = type.GetMethod("instancehelper_" + mb.Name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static, null, argTypes, null);
-				if(helper != null)
-				{
-					method.EmitCallvirt = CodeEmitter.Create(OpCodes.Call, helper);
+					method.EmitCallvirt = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mbHelper);
 				}
 				else
 				{
 					method.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)mb);
-				}
-				method.EmitNewobj = CodeEmitter.InternalError;
-			}
-		}
-		return method;
-	}
-
-	private MethodWrapper CreateMethodWrapper(MethodBase mb)
-	{
-		MethodDescriptor md = MethodDescriptor.FromMethodBase(mb);
-		MethodWrapper method = new MethodWrapper(this, md, mb, null, AttributeHelper.GetModifiers(mb, false), false);
-		if(IsGhost)
-		{
-			method.EmitCall = CodeEmitter.InternalError;
-			method.EmitCallvirt = new MethodWrapper.GhostCallEmitter(this, md, mb);
-			method.EmitNewobj = CodeEmitter.InternalError;
-		}
-		else
-		{
-			if(mb is ConstructorInfo)
-			{
-				method.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)mb);
-				method.EmitCallvirt = CodeEmitter.InternalError;
-				method.EmitNewobj = CodeEmitter.Create(OpCodes.Newobj, (ConstructorInfo)mb);
-			}
-			else
-			{
-				method.EmitCall = CodeEmitter.Create(OpCodes.Call, (MethodInfo)mb);
-				if(!mb.IsStatic)
-				{
-					method.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, (MethodInfo)mb);
-				}
-				else
-				{
-					method.EmitCallvirt = CodeEmitter.InternalError;
 				}
 				method.EmitNewobj = CodeEmitter.InternalError;
 			}
@@ -4661,7 +4650,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 	private class DelegateMethodWrapper : MethodWrapper
 	{
 		internal DelegateMethodWrapper(TypeWrapper declaringType, MethodDescriptor md)
-			: base(declaringType, md, null, null, Modifiers.Public, false)
+			: base(declaringType, md, null, Modifiers.Public, false)
 		{
 		}
 
@@ -4676,8 +4665,8 @@ class DotNetTypeWrapper : LazyTypeWrapper
 	{
 		private bool[] byrefs;
 
-		internal ByRefMethodWrapper(bool[] byrefs, TypeWrapper declaringType, MethodDescriptor md, MethodBase originalMethod, MethodBase method, Modifiers modifiers, bool hideFromReflection)
-			: base(declaringType, md, originalMethod, method, modifiers, hideFromReflection)
+		internal ByRefMethodWrapper(bool[] byrefs, TypeWrapper declaringType, MethodDescriptor md, MethodBase method, Modifiers modifiers, bool hideFromReflection)
+			: base(declaringType, md, method, modifiers, hideFromReflection)
 		{
 			this.byrefs = byrefs;
 		}
@@ -4735,7 +4724,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			CodeEmitter setter = CodeEmitter.Pop + CodeEmitter.Pop;
 			FieldWrapper fw = FieldWrapper.Create(this, fieldType, "Value", fieldType.SigName, Modifiers.Public | Modifiers.Final, null, getter, setter);
 			AddField(fw);
-			MethodWrapper mw = new MethodWrapper(this, MethodDescriptor.FromNameSig(GetClassLoader(), "wrap", "(" + fieldType.SigName + ")" + this.SigName), null, null, Modifiers.Static | Modifiers.Public, false);
+			MethodWrapper mw = new MethodWrapper(this, MethodDescriptor.FromNameSig(GetClassLoader(), "wrap", "(" + fieldType.SigName + ")" + this.SigName), null, Modifiers.Static | Modifiers.Public, false);
 			// NOTE we don't support custom boxing rules for enums
 			mw.EmitCall = CodeEmitter.Create(OpCodes.Box, type);
 			AddMethod(mw);
@@ -4850,7 +4839,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 							if(!h.ContainsKey(m.Descriptor.Name + m.Descriptor.Signature))
 							{
 								h.Add(m.Descriptor.Name + m.Descriptor.Signature, "");
-								MethodWrapper newmw = new MethodWrapper(this, m.Descriptor, m.GetMethod(), m.GetMethod(), m.Modifiers | Modifiers.Final, false);
+								MethodWrapper newmw = new MethodWrapper(this, m.Descriptor, m.GetMethod(), m.Modifiers | Modifiers.Final, false);
 								newmw.EmitNewobj = CodeEmitter.InternalError;
 								// we bind EmitCall to EmitCallvirt, because we always want to end up at the instancehelper method
 								// (EmitCall would go to our alter ego .NET type and that wouldn't be legal)
@@ -5066,7 +5055,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			TypeAsBaseType.IsSubclassOf(CoreClasses.java.lang.Object.Wrapper.TypeAsBaseType))
 		{
 			// TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
-			MethodWrapper mw = new MethodWrapper(this, MethodDescriptor.FromNameSig(GetClassLoader(), "finalize", "()V"), mb, null, mods, false);
+			MethodWrapper mw = new MethodWrapper(this, MethodDescriptor.FromNameSig(GetClassLoader(), "finalize", "()V"), mb, mods, false);
 			mw.SetDeclaredExceptions(new string[] { "java.lang.Throwable" });
 			mw.EmitCall = CodeEmitter.Create(OpCodes.Call, mb);
 			mw.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, mb);
@@ -5100,7 +5089,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 			mods |= Modifiers.Final;
 		}
 		MethodWrapper method = hasByRefArgs ?
-			new ByRefMethodWrapper(byrefs, this, md, mb, null, mods, false) : new MethodWrapper(this, md, mb, null, mods, false);
+			new ByRefMethodWrapper(byrefs, this, md, mb, mods, false) : new MethodWrapper(this, md, mb, mods, false);
 		if(mb is ConstructorInfo)
 		{
 			method.EmitCall = CodeEmitter.Create(OpCodes.Call, (ConstructorInfo)mb);
@@ -5228,7 +5217,7 @@ class ArrayTypeWrapper : TypeWrapper
 		{
 			clone = typeof(Array).GetMethod("Clone");
 		}
-		MethodWrapper mw = new MethodWrapper(this, mdClone, clone, null, Modifiers.Public, true);
+		MethodWrapper mw = new MethodWrapper(this, mdClone, clone, Modifiers.Public, true);
 		if(callclone == null)
 		{
 			callclone = CodeEmitter.Create(OpCodes.Callvirt, clone);
