@@ -443,7 +443,7 @@ class ClassLoaderWrapper
 			}
 			Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
 			// TODO taking the publicness from the .NET isn't 100% correct, we really should look at the wrapper
-			if(elementType.IsPublic)
+			if(elementType.IsPublic || elementType.IsNestedPublic)
 			{
 				modifiers |= Modifiers.Public;
 			}
