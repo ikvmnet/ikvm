@@ -193,9 +193,7 @@ class Compiler
 				ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
 				for(int j = FindPcIndex(ei.start_pc), e = FindPcIndex(ei.end_pc); j < e; j++)
 				{
-					// TODO we probably should handle other branches here as well...
-					if(m.Instructions[j].NormalizedOpCode == NormalizedByteCode.__jsr
-						|| m.Instructions[j].NormalizedOpCode == NormalizedByteCode.__goto)
+					if(m.Instructions[j].NormalizedOpCode == NormalizedByteCode.__jsr)
 					{
 						int targetPC = m.Instructions[j].NormalizedArg1 + m.Instructions[j].PC;
 						if(targetPC < ei.start_pc || targetPC >= ei.end_pc)
@@ -273,8 +271,7 @@ class Compiler
 		for(int i = 0; i < ar.Count; i++)
 		{
 			ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
-			// TODO verify that we don't need to start at j = 0
-			for(int j = i; j < ar.Count; j++)
+			for(int j = 0; j < ar.Count; j++)
 			{
 				ExceptionTableEntry ej = (ExceptionTableEntry)ar[j];
 				if(ej.handler_pc > ei.start_pc && ej.handler_pc < ei.end_pc)
