@@ -146,7 +146,7 @@ public class ExceptionHelper
 							if(methodFlagAttribs.Length == 1)
 							{
 								ModifiersAttribute modifiersAttrib = (ModifiersAttribute)methodFlagAttribs[0];
-								if(modifiersAttrib.IsSynthetic)
+								if((modifiersAttrib.Modifiers & Modifiers.Synthetic) != 0)
 								{
 									continue;
 								}

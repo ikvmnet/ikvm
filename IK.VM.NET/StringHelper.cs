@@ -54,7 +54,7 @@ public class StringHelper
 		try {
 			return System.Text.Encoding.ASCII.GetString(data, offset, count);
 		}
-		catch (Exception ex) {
+		catch {
 			return null;
 		}
 	}
@@ -182,7 +182,7 @@ public class StringHelper
 		try {
 			return s[index];
 		}
-		catch (IndexOutOfRangeException ex) {
+		catch (IndexOutOfRangeException) {
 			throw JavaException.StringIndexOutOfBoundsException("");
 		}
 	}

@@ -173,4 +173,11 @@ sealed class JavaException
 	{
 		return (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArrayIndexOutOfBoundsException"));
 	}
+
+	internal static Exception NumberFormatException(string s, params object[] args)
+	{
+		s = String.Format(s, args);
+		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.lang.NumberFormatException").GetConstructor(new Type[] { typeof(string) });
+		return (Exception)ci.Invoke(new object[] { s });
+	}
 }

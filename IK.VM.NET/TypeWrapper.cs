@@ -1707,7 +1707,7 @@ class DynamicTypeWrapper : TypeWrapper
 							// NOTE we don't need to test for our method being private, because if it is
 							// we'll never get here (because private methods aren't virtual)
 							// TODO make sure the VerifyError is translated into a java.lang.VerifyError
-							throw new VerifyError();
+							throw new VerifyError("final method " + baseMce.Name + baseMce.Descriptor.Signature + " in " + tw.Name + " is overriden in " + wrapper.Name);
 						}
 						// RULE 2: public & protected methods can be overridden (package methods are handled by RULE 4)
 						// (by public, protected & *package* methods [even if they are in a different package])
@@ -2517,10 +2517,9 @@ class NetExpTypeWrapper : TypeWrapper
 		// HACK this is a totally broken quick & dirty implementation
 		// TODO clean this up, add error checking and whatnot
 		FieldInfo field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-		Modifiers modifiers = ModifiersAttribute.GetModifiers(field);
-		if(modifiers != Modifiers.Synthetic)
+		if(!ModifiersAttribute.IsSynthetic(field))
 		{
-			return FieldWrapper.Create(this, field, MethodDescriptor.getSigName(field.FieldType), modifiers);
+			return FieldWrapper.Create(this, field, MethodDescriptor.getSigName(field.FieldType), ModifiersAttribute.GetModifiers(field));
 		}
 		return null;
 	}
@@ -2673,10 +2672,9 @@ class CompiledTypeWrapper : TypeWrapper
 		FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 		for(int i = 0; i < fields.Length; i++)
 		{
-			Modifiers modifiers = ModifiersAttribute.GetModifiers(fields[i]);
-			if(modifiers != Modifiers.Synthetic)
+			if(!ModifiersAttribute.IsSynthetic(fields[i]))
 			{
-				list.Add(CreateFieldWrapper(modifiers, fields[i].Name, fields[i].FieldType, fields[i], null));
+				list.Add(CreateFieldWrapper(ModifiersAttribute.GetModifiers(fields[i]), fields[i].Name, fields[i].FieldType, fields[i], null));
 			}
 		}
 		return (FieldWrapper[])list.ToArray(typeof(FieldWrapper));
@@ -2806,8 +2804,7 @@ class CompiledTypeWrapper : TypeWrapper
 
 	private MethodWrapper CreateMethodWrapper(MethodDescriptor md, MethodBase mb)
 	{
-		Modifiers modifiers = ModifiersAttribute.GetModifiers(mb);
-		if(modifiers == Modifiers.Synthetic)
+		if(ModifiersAttribute.IsSynthetic(mb))
 		{
 			return null;
 		}
@@ -3516,7 +3513,7 @@ sealed class FieldWrapper
 
 	internal FieldWrapper(TypeWrapper declaringType, string name, string sig, Modifiers modifiers)
 	{
-		if(modifiers == Modifiers.Synthetic)
+		if((modifiers & Modifiers.Synthetic) != 0)
 		{
 			throw new InvalidOperationException();
 		}

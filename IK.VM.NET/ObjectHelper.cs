@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Reflection;
 
 public class ObjectHelper
 {
@@ -101,7 +102,12 @@ public class ObjectHelper
 		//   }
 		// One way of implementing this is by calling the clone method thru reflection, not very fast, but
 		// since this is an uncommon scenario, we might be able to get away with it
-		throw new NotImplementedException("virtual clone invocation not implemented");
+		MethodInfo clone = o.GetType().GetMethod("clone", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Type.EmptyTypes, null);
+		if(clone != null)
+		{
+			return clone.Invoke(o, new object[0]);
+		}
+		return typeof(object).GetType().InvokeMember("MemberwiseClone", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.NonPublic, null, o, new object[0]);
 	}
 
 	public static string toStringVirtual(object o)
