@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<project name="tools" default="tools">
+    <target name="tools">
+        <csc target="exe" output="asmref.exe" optimize="true">
+            <sources>
+                <includes name="asmref.cs" />
+            </sources>
+        </csc>
+    </target>
+</project>

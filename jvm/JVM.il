@@ -21,21 +21,39 @@
   jeroen@frijters.net
   
 */
+.assembly JVM {}
+.module JVM.DLL
+.corflags 0x00000002
+.vtfixup [3] int32 fromunmanaged at VTable
+.data VTable = int32[3]
 
-package gnu.java.net.protocol.ftp;
-
-import java.net.*;
-import java.io.*;
-
-public class Handler extends URLStreamHandler
+.method public static int32 JNI_CreateJavaVM(void* ppvm, void* ppenv, void* args)
 {
-    protected URLConnection openConnection(URL url) throws IOException
-    {
-	throw new IOException("ftp protocol not implemented");
-    }
+  .vtentry 1:1
+  .export [1] as JNI_CreateJavaVM
+  ldarg.0
+  ldarg.1
+  ldarg.2
+  call int32 [IKVM.Runtime]IKVM.Runtime.JNI::CreateJavaVM(void*, void*, void*)
+  ret
+}
 
-    protected void parseURL(URL url, String url_string, int start, int end)
-    {
-	throw new gnu.java.net.URLParseError("ftp protocol not implemented");
-    }
+.method public static int32 JNI_GetDefaultJavaVMInitArgs(void *vm_args)
+{
+  .vtentry 1:2
+  .export [2] as JNI_GetDefaultJavaVMInitArgs
+  ldarg.0
+  call int32 [IKVM.Runtime]IKVM.Runtime.JNI::GetDefaultJavaVMInitArgs(void*)
+  ret
+}
+
+.method public static int32 JNI_GetCreatedJavaVMs(void* ppvmBuf, int32 bufLen, int32* nVMs)
+{
+  .vtentry 1:3
+  .export [3] as JNI_GetCreatedJavaVMs
+  ldarg.0
+  ldarg.1
+  ldarg.2
+  call int32 [IKVM.Runtime]IKVM.Runtime.JNI::GetCreatedJavaVMs(void*, int32, int32*)
+  ret
 }

@@ -895,6 +895,22 @@
 				</body>
 			</method>
 		</class>
+		<class name="java.nio.channels.Channels">
+			<method name="newInputStream" sig="(Lgnu.java.nio.channels.FileChannelImpl;)Ljava.io.FileInputStream;">
+				<body>
+					<ldarg_0 />
+					<newobj class="java.io.FileInputStream" name="&lt;init&gt;" sig="(Lgnu.java.nio.channels.FileChannelImpl;)V" />
+					<ret />
+				</body>
+			</method>
+			<method name="newOutputStream" sig="(Lgnu.java.nio.channels.FileChannelImpl;)Ljava.io.FileOutputStream;">
+				<body>
+					<ldarg_0 />
+					<newobj class="java.io.FileOutputStream" name="&lt;init&gt;" sig="(Lgnu.java.nio.channels.FileChannelImpl;)V" />
+					<ret />
+				</body>
+			</method>
+		</class>
 		<class name="java.nio.DirectByteBufferImpl">
 			<method name="get" sig="()B">
 				<body>

@@ -3782,20 +3782,54 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							if(baseMce.RealName == "Finalize")
 							{
-								//baseMethod = null;
+								// We're overriding Finalize (that was renamed to finalize by DotNetTypeWrapper)
+								// in a non-Java base class.
 								attribs |= MethodAttributes.NewSlot;
 								needFinalize = true;
 								needDispatch = true;
 							}
 							else if(baseMce.DeclaringType == CoreClasses.java.lang.Object.Wrapper)
 							{
+								// This type is the first type in the hierarchy to introduce a finalize method
+								// (other than the one in java.lang.Object obviously), so we need to override
+								// the real Finalize method and emit a dispatch call to our finalize method.
 								needFinalize = true;
 								needDispatch = true;
 							}
 							else if(m.IsFinal)
 							{
+								// One of our base classes already has a  finalize method, so we already are
+								// hooked into the real Finalize, but we need to override it again, to make it
+								// final (so that non-Java types cannot override it either).
 								needFinalize = true;
 								needDispatch = false;
+								// If the base class finalize was optimized away, we need a dispatch call after all.
+								Type baseFinalizeType = typeBuilder.BaseType.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null).DeclaringType;
+								if(baseFinalizeType == typeof(object))
+								{
+									needDispatch = true;
+								}
+							}
+							else
+							{
+								// One of our base classes already has a finalize method, but it may have been an empty
+								// method so that the hookup to the real Finalize was optimized away, we need to check
+								// for that.
+								Type baseFinalizeType = typeBuilder.BaseType.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null).DeclaringType;
+								if(baseFinalizeType == typeof(object))
+								{
+									needFinalize = true;
+									needDispatch = true;
+								}
+							}
+							if(needFinalize &&
+								(!m.IsFinal || classFile.IsFinal) &&
+								m.Instructions.Length > 0 &&
+								m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__return)
+							{
+								// we've got an empty finalize method, so we don't need to override the real finalizer
+								// (not having a finalizer makes a huge perf difference)
+								needFinalize = false;
 							}
 						}
 						if(unloadableOverrideStub)
@@ -3811,7 +3845,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							GenerateUnloadableOverrideStub(baseMce, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 						}
-						else if(baseMce != null && (explicitOverride || baseMce.RealName != name))
+						else if(baseMce != null && (explicitOverride || baseMce.RealName != name) && !needFinalize)
 						{
 							// assert that the method we're overriding is in fact virtual and not final!
 							Debug.Assert(baseMce.GetMethod().IsVirtual && !baseMce.GetMethod().IsFinal);
@@ -5578,7 +5612,17 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 					interfaces = new TypeWrapper[interfaceTypes.Length];
 					for(int i = 0; i < interfaces.Length; i++)
 					{
-						interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(interfaceTypes[i]);
+						if(interfaceTypes[i].DeclaringType != null &&
+							interfaceTypes[i].IsDefined(typeof(HideFromJavaAttribute), false) &&
+							interfaceTypes[i].Name == "__Interface")
+						{
+							// we have to return the declaring type for ghost interfaces
+							interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(interfaceTypes[i].DeclaringType);
+						}
+						else
+						{
+							interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(interfaceTypes[i]);
+						}
 					}
 				}
 				return interfaces;

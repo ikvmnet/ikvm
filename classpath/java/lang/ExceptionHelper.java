@@ -171,6 +171,7 @@ public final class ExceptionHelper
 		    (System_Reflection_MethodBase.IsAssignableFrom(m.get_DeclaringType())
 		    || m.get_DeclaringType().get_FullName().startsWith("java.lang.ExceptionHelper")
 		    || m.get_DeclaringType().get_FullName().equals("System.RuntimeMethodHandle")
+                    || m.get_DeclaringType().get_FullName().equals("java.lang.LibraryVMInterfaceImpl")
 		    || IsHideFromJava(m)
 		    || IsPrivateScope(m))) // NOTE we assume that privatescope methods are always stubs that we should exclude
 		{

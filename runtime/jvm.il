@@ -21,8 +21,6 @@
   jeroen@frijters.net
   
 */
-.assembly extern mscorlib {}
-.assembly extern IKVM.Runtime {}
 .assembly JVM {}
 .module JVM.DLL
 .corflags 0x00000002

@@ -1,15 +1,17 @@
 <?xml version="1.0"?>
 <project name="ikvm" default="all">
     <target name="all">
+        <nant buildfile="tools/tools.build" />
         <nant buildfile="runtime/runtime.build" />
         <nant buildfile="native/native.build" />
         <nant buildfile="ikvmc/ikvmc.build" />
         <nant buildfile="classpath/classpath.build" />
         <nant buildfile="ikvm/ikvm.build" />
+        <nant buildfile="ikvmstub/ikvmstub.build" />
         <if propertytrue="nant.platform.win32">
             <nant buildfile="awt/awt.build" />
+            <nant buildfile="jvm/jvm.build" />
         </if>
-        <nant buildfile="ikvmstub/ikvmstub.build" />
     </target>
     <target name="clean">
         <delete failonerror="false">
@@ -22,6 +24,8 @@
                 <includes name="bin/ikvm.exe" />
                 <includes name="bin/ikvmc.exe" />
                 <includes name="bin/ikvmstub.exe" />
+                <includes name="bin/JVM.DLL" />
+                <includes name="tools/asmref.exe" />
             </fileset>
         </delete>
     </target>
