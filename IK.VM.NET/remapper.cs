@@ -665,6 +665,8 @@ namespace MapXml
 		public string Type;
 		[XmlAttribute("modifiers")]
 		public MapModifiers Modifiers;
+		[XmlAttribute("oneway")]
+		public bool OneWay;
 		[XmlElement("constructor")]
 		public Constructor[] Constructors;
 		[XmlElement("method")]

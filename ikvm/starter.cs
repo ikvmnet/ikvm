@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -152,6 +152,7 @@ public class Starter
 			catch(Exception x)
 			{
 				Console.Error.WriteLine(x);
+				Console.Error.WriteLine(new System.Diagnostics.StackTrace(x, true));
 				System.Diagnostics.Debug.Assert(false, x.ToString());
 			}
 		}

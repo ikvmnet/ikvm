@@ -611,7 +611,7 @@ class FieldWrapper : MemberWrapper
 	{
 		// NOTE only pritimives and string can be literals in Java (because the other "primitives" (like uint),
 		// are treated as NonPrimitiveValueTypes)
-		if(field != null && (fieldType.IsPrimitive || fieldType == CoreClasses.java_lang_String) && field.IsLiteral)
+		if(field != null && (fieldType.IsPrimitive || fieldType == CoreClasses.java.lang.String.Wrapper) && field.IsLiteral)
 		{
 			ReflectionOnConstant.IssueWarning(field);
 			object val = field.GetValue(null);

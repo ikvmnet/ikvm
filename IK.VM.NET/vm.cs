@@ -88,6 +88,14 @@ public class JVM
 		}
 	}
 
+	internal static bool IsUnix
+	{
+		get
+		{
+			return Environment.OSVersion.ToString().IndexOf("Unix") >= 0;
+		}
+	}
+
 	public static IJniProvider JniProvider
 	{
 		get
@@ -103,7 +111,7 @@ public class JVM
 				}
 				else
 				{
-					if(Environment.OSVersion.ToString().IndexOf("Unix") >= 0)
+					if(IsUnix)
 					{
 						Tracer.Info(Tracer.Runtime, "Loading JNI provider: Mono.IKVM.JNI");
 						provider = Assembly.Load("Mono.IKVM.JNI").GetType("JNI", true);
@@ -404,16 +412,19 @@ public class JVM
 					AttributeHelper.SetModifiers(typeBuilder, (Modifiers)c.Modifiers);
 				}
 
-				// FXBUG we would like to emit an attribute with a Type argument here, but that doesn't work because
-				// of a bug in SetCustomAttribute that causes type arguments to be serialized incorrectly (if the type
-				// is in the same assembly). Normally we use AttributeHelper.FreezeDry to get around this, but that doesn't
-				// work in this case (to attribute is emitted at all). So we work around by emitting a string instead
-				ConstructorInfo remappedClassAttribute = typeof(RemappedClassAttribute).GetConstructor(new Type[] { typeof(string), typeof(Type) });
-				classLoader.assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedClassAttribute, new object[] { name, equivalencyType }));
+				if(!c.OneWay)
+				{
+					// FXBUG we would like to emit an attribute with a Type argument here, but that doesn't work because
+					// of a bug in SetCustomAttribute that causes type arguments to be serialized incorrectly (if the type
+					// is in the same assembly). Normally we use AttributeHelper.FreezeDry to get around this, but that doesn't
+					// work in this case (to attribute is emitted at all). So we work around by emitting a string instead
+					ConstructorInfo remappedClassAttribute = typeof(RemappedClassAttribute).GetConstructor(new Type[] { typeof(string), typeof(Type) });
+					classLoader.assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedClassAttribute, new object[] { name, equivalencyType }));
 
-				ConstructorInfo remappedTypeAttribute = typeof(RemappedTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
-				typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedTypeAttribute, new object[] { equivalencyType }));
-				AttributeHelper.HideFromReflection(typeBuilder);
+					ConstructorInfo remappedTypeAttribute = typeof(RemappedTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
+					typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedTypeAttribute, new object[] { equivalencyType }));
+					AttributeHelper.HideFromReflection(typeBuilder);
+				}
 
 				// HACK because of the above FXBUG that prevents us from making the type both abstract and sealed,
 				// we need to emit a private constructor (otherwise reflection will automatically generate a public
@@ -1432,7 +1443,7 @@ public class JVM
 	{
 		Tracer.Error(Tracer.Runtime, "CRITICAL FAILURE: {0}", message);
 		// NOTE we use reflection to invoke MessageBox.Show, to make sure we run on Mono as well
-		Assembly winForms = Assembly.LoadWithPartialName("System.Windows.Forms");
+		Assembly winForms = IsUnix ? null : Assembly.LoadWithPartialName("System.Windows.Forms");
 		Type messageBox = null;
 		if(winForms != null)
 		{

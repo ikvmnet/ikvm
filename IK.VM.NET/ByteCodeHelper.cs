@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,9 +23,11 @@
 */
 using System;
 using System.Reflection;
+using System.Diagnostics;
 
 public class ByteCodeHelper
 {
+	[DebuggerStepThroughAttribute]
 	public static object multianewarray(RuntimeTypeHandle typeHandle, int[] lengths)
 	{
 		for(int i = 0; i < lengths.Length; i++)
@@ -54,6 +56,7 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static object DynamicMultianewarray(RuntimeTypeHandle type, string clazz, int[] lengths)
 	{
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
@@ -61,6 +64,7 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static object DynamicNewarray(int length, RuntimeTypeHandle type, string clazz)
 	{
 		if(length < 0)
@@ -72,6 +76,7 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static void DynamicAastore(object arrayref, int index, object val, RuntimeTypeHandle type, string clazz)
 	{
 		// TODO do we need to load the type here?
@@ -79,6 +84,7 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static object DynamicAaload(object arrayref, int index, RuntimeTypeHandle type, string clazz)
 	{
 		// TODO do we need to load the type here?
@@ -111,24 +117,28 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static object DynamicGetfield(object obj, string name, string sig, RuntimeTypeHandle type, string clazz)
 	{
 		return GetFieldWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false).GetValue(obj);
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static object DynamicGetstatic(string name, string sig, RuntimeTypeHandle type, string clazz)
 	{
 		return GetFieldWrapper(null, type, clazz, name, sig, true).GetValue(null);
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static void DynamicPutfield(object obj, object val, string name, string sig, RuntimeTypeHandle type, string clazz)
 	{
 		GetFieldWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false).SetValue(obj, val);
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static void DynamicPutstatic(object val, string name, string sig, RuntimeTypeHandle type, string clazz)
 	{
 		GetFieldWrapper(null, type, clazz, name, sig, true).SetValue(null, val);
@@ -136,6 +146,7 @@ public class ByteCodeHelper
 
 	// the sole purpose of this method is to check whether the clazz can be instantiated (but not to actually do it)
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static void DynamicNewCheckOnly(RuntimeTypeHandle type, string clazz)
 	{
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
@@ -164,12 +175,14 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static object DynamicClassLiteral(RuntimeTypeHandle type, string clazz)
 	{
 		return NativeCode.java.lang.VMClass.getClassFromWrapper(LoadTypeWrapper(type, clazz));
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static object DynamicCast(object obj, RuntimeTypeHandle type, string clazz)
 	{
 		if(!DynamicInstanceOf(obj, type, clazz))
@@ -180,6 +193,7 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static bool DynamicInstanceOf(object obj, RuntimeTypeHandle type, string clazz)
 	{
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
@@ -188,6 +202,7 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static object DynamicInvokeSpecialNew(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 	{
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
@@ -203,6 +218,7 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static object DynamicInvokestatic(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 	{
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
@@ -218,6 +234,7 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static object DynamicInvokevirtual(object obj, RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 	{
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
@@ -233,6 +250,7 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
+	[DebuggerStepThroughAttribute]
 	public static Type DynamicGetTypeAsExceptionType(RuntimeTypeHandle type, string clazz)
 	{
 		TypeWrapper tw = LoadTypeWrapper(type, clazz);
@@ -240,6 +258,7 @@ public class ByteCodeHelper
 		return tw.TypeAsExceptionType;
 	}
 
+	[DebuggerStepThroughAttribute]
 	public static int f2i(float f)
 	{
 		if(f <= int.MinValue)
@@ -257,6 +276,7 @@ public class ByteCodeHelper
 		return (int)f;
 	}
 
+	[DebuggerStepThroughAttribute]
 	public static long f2l(float f)
 	{
 		if(f <= long.MinValue)
@@ -274,6 +294,7 @@ public class ByteCodeHelper
 		return (long)f;
 	}
 
+	[DebuggerStepThroughAttribute]
 	public static int d2i(double d)
 	{
 		if(d <= int.MinValue)
@@ -291,6 +312,7 @@ public class ByteCodeHelper
 		return (int)d;
 	}
 
+	[DebuggerStepThroughAttribute]
 	public static long d2l(double d)
 	{
 		if(d <= long.MinValue)

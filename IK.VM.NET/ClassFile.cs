@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -718,6 +718,99 @@ class ClassFile
 		}
 	}
 
+	private static TypeWrapper SigDecoderWrapper(ClassLoaderWrapper classLoader, ref int index, string sig)
+	{
+		switch(sig[index++])
+		{
+			case 'B':
+				return PrimitiveTypeWrapper.BYTE;
+			case 'C':
+				return PrimitiveTypeWrapper.CHAR;
+			case 'D':
+				return PrimitiveTypeWrapper.DOUBLE;
+			case 'F':
+				return PrimitiveTypeWrapper.FLOAT;
+			case 'I':
+				return PrimitiveTypeWrapper.INT;
+			case 'J':
+				return PrimitiveTypeWrapper.LONG;
+			case 'L':
+			{
+				int pos = index;
+				index = sig.IndexOf(';', index) + 1;
+				return LoadClassHelper(classLoader, sig.Substring(pos, index - pos - 1));
+			}
+			case 'S':
+				return PrimitiveTypeWrapper.SHORT;
+			case 'Z':
+				return PrimitiveTypeWrapper.BOOLEAN;
+			case 'V':
+				return PrimitiveTypeWrapper.VOID;
+			case '[':
+			{
+				// TODO this can be optimized
+				string array = "[";
+				while(sig[index] == '[')
+				{
+					index++;
+					array += "[";
+				}
+				switch(sig[index])
+				{
+					case 'L':
+					{
+						int pos = index;
+						index = sig.IndexOf(';', index) + 1;
+						return LoadClassHelper(classLoader, array + sig.Substring(pos, index - pos));
+					}
+					case 'B':
+					case 'C':
+					case 'D':
+					case 'F':
+					case 'I':
+					case 'J':
+					case 'S':
+					case 'Z':
+						return LoadClassHelper(classLoader, array + sig[index++]);
+					default:
+						// TODO this should never happen, because ClassFile should validate the descriptors
+						throw new InvalidOperationException(sig.Substring(index));
+				}
+			}
+			default:
+				// TODO this should never happen, because ClassFile should validate the descriptors
+				throw new InvalidOperationException(sig.Substring(index));
+		}
+	}
+
+	private static TypeWrapper[] ArgTypeWrapperListFromSig(ClassLoaderWrapper classLoader, string sig)
+	{
+		if(sig[1] == ')')
+		{
+			return TypeWrapper.EmptyArray;
+		}
+		ArrayList list = new ArrayList();
+		for(int i = 1; sig[i] != ')';)
+		{
+			list.Add(SigDecoderWrapper(classLoader, ref i, sig));
+		}
+		TypeWrapper[] types = new TypeWrapper[list.Count];
+		list.CopyTo(types);
+		return types;
+	}
+
+	private static TypeWrapper FieldTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
+	{
+		int index = 0;
+		return SigDecoderWrapper(classLoader, ref index, sig);
+	}
+
+	private static TypeWrapper RetTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
+	{
+		int index = sig.IndexOf(')') + 1;
+		return SigDecoderWrapper(classLoader, ref index, sig);
+	}
+
 	private class ConstantPoolItemDouble : ConstantPoolItem
 	{
 		private double d;
@@ -970,7 +1063,7 @@ class ClassFile
 		{
 			if(argTypeWrappers == null)
 			{
-				argTypeWrappers = classLoader.ArgTypeWrapperListFromSig(descriptor);
+				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, descriptor);
 			}
 			return argTypeWrappers;
 		}
@@ -979,7 +1072,7 @@ class ClassFile
 		{
 			if(retTypeWrapper == null)
 			{
-				retTypeWrapper = classLoader.RetTypeWrapperFromSig(descriptor);
+				retTypeWrapper = RetTypeWrapperFromSig(classLoader, descriptor);
 			}
 			return retTypeWrapper;
 		}
@@ -988,7 +1081,7 @@ class ClassFile
 		{
 			if(fieldTypeWrapper == null)
 			{
-				fieldTypeWrapper = classLoader.FieldTypeWrapperFromSig(descriptor);
+				fieldTypeWrapper = FieldTypeWrapperFromSig(classLoader, descriptor);
 			}
 			return fieldTypeWrapper;
 		}
@@ -1171,7 +1264,7 @@ class ClassFile
 		{
 			if(argTypeWrappers == null)
 			{
-				argTypeWrappers = classLoader.ArgTypeWrapperListFromSig(Signature);
+				argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, Signature);
 			}
 			return argTypeWrappers;
 		}
@@ -1180,7 +1273,7 @@ class ClassFile
 		{
 			if(retTypeWrapper == null)
 			{
-				retTypeWrapper = classLoader.RetTypeWrapperFromSig(Signature);
+				retTypeWrapper = RetTypeWrapperFromSig(classLoader, Signature);
 			}
 			return retTypeWrapper;
 		}
@@ -1189,7 +1282,7 @@ class ClassFile
 		{
 			if(fieldTypeWrapper == null)
 			{
-				fieldTypeWrapper = classLoader.FieldTypeWrapperFromSig(Signature);
+				fieldTypeWrapper = FieldTypeWrapperFromSig(classLoader, Signature);
 			}
 			return fieldTypeWrapper;
 		}

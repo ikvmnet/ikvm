@@ -563,7 +563,7 @@ namespace NativeCode.java
 						ar.Add(VMClass.getClassFromType(frame.GetMethod().DeclaringType));
 					}
 				}
-				return ar.ToArray(CoreClasses.java_lang_Class.TypeAsArrayType);
+				return ar.ToArray(CoreClasses.java.lang.Class.Wrapper.TypeAsArrayType);
 			}
 
 			public static object currentClassLoader()
@@ -774,7 +774,7 @@ namespace NativeCode.java
 			public static void setOut(object printStream)
 			{
 				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
-				FieldWrapper fw = tw.GetFieldWrapper("in", ClassLoaderWrapper.LoadClassCritical("java.io.PrintStream"));
+				FieldWrapper fw = tw.GetFieldWrapper("out", ClassLoaderWrapper.LoadClassCritical("java.io.PrintStream"));
 				fw.SetValue(null, printStream);
 			}
 

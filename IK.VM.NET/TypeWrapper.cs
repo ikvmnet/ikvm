@@ -229,7 +229,7 @@ sealed class MethodDescriptor
 		else
 		{
 			name = "Ljava.lang.Object;";
-			typeWrapper = CoreClasses.java_lang_Object;
+			typeWrapper = CoreClasses.java.lang.Object.Wrapper;
 		}
 	}
 
@@ -1245,7 +1245,7 @@ abstract class TypeWrapper
 			return ImplementsInterface(baseType);
 		}
 		// NOTE this isn't just an optimization, it is also required when this is an interface
-		if(baseType == CoreClasses.java_lang_Object)
+		if(baseType == CoreClasses.java.lang.Object.Wrapper)
 		{
 			return true;
 		}
@@ -3185,18 +3185,15 @@ class DynamicTypeWrapper : TypeWrapper
 				}
 				else
 				{
-					if(fld.IsFinal)
+					bool isWrappedFinal = fld.IsFinal && (fld.IsPublic || fld.IsProtected) && !wrapper.IsInterface;
+					if(isWrappedFinal)
 					{
-						// final doesn't make sense for private fields, so if the field is private we ignore final
-						if(!fld.IsPrivate && !wrapper.IsInterface)
-						{
-							// NOTE blank final fields get converted into a read-only property with a private field backing store
-							// we used to make the field privatescope, but that really serves no purpose (and it hinders serialization,
-							// which uses .NET reflection to get at the field)
-							attribs &= ~FieldAttributes.FieldAccessMask;
-							attribs |= FieldAttributes.Private;
-							setModifiers = true;
-						}
+						// NOTE blank final fields get converted into a read-only property with a private field backing store
+						// we used to make the field privatescope, but that really serves no purpose (and it hinders serialization,
+						// which uses .NET reflection to get at the field)
+						attribs &= ~FieldAttributes.FieldAccessMask;
+						attribs |= FieldAttributes.Private;
+						setModifiers = true;
 					}
 					field = typeBuilder.DefineField(fieldName, type, attribs);
 					if(fld.IsTransient)
@@ -3209,7 +3206,7 @@ class DynamicTypeWrapper : TypeWrapper
 						// TODO the field should be marked as modreq(IsVolatile), but Reflection.Emit doesn't have a way of doing this
 						setModifiers = true;
 					}
-					if(fld.IsFinal && !fld.IsPrivate && !wrapper.IsInterface)
+					if(isWrappedFinal)
 					{
 						methodAttribs |= MethodAttributes.SpecialName;
 						// TODO we should ensure that the getter method name doesn't clash with an existing method
@@ -3518,7 +3515,7 @@ class DynamicTypeWrapper : TypeWrapper
 								needFinalize = true;
 								needDispatch = true;
 							}
-							else if(baseMethod.DeclaringType == CoreClasses.java_lang_Object.TypeAsBaseType)
+							else if(baseMethod.DeclaringType == CoreClasses.java.lang.Object.Wrapper.TypeAsBaseType)
 							{
 								needFinalize = true;
 								needDispatch = true;
@@ -3949,7 +3946,7 @@ class CompiledTypeWrapper : LazyTypeWrapper
 		else if(type.BaseType == null)
 		{
 			// System.Object must appear to be derived from java.lang.Object
-			return CoreClasses.java_lang_Object;
+			return CoreClasses.java.lang.Object.Wrapper;
 		}
 		else
 		{
@@ -3962,7 +3959,7 @@ class CompiledTypeWrapper : LazyTypeWrapper
 				}
 				else
 				{
-					return CoreClasses.java_lang_Object;
+					return CoreClasses.java.lang.Object.Wrapper;
 				}
 			}
 			return ClassLoaderWrapper.GetWrapperFromType(type.BaseType);
@@ -4950,7 +4947,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 	{
 		Modifiers mods = AttributeHelper.GetModifiers(mb, true);
 		if(md.Name == "Finalize" && md.Signature == "()V" && !mb.IsStatic &&
-			TypeAsBaseType.IsSubclassOf(CoreClasses.java_lang_Object.TypeAsBaseType))
+			TypeAsBaseType.IsSubclassOf(CoreClasses.java.lang.Object.Wrapper.TypeAsBaseType))
 		{
 			// TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
 			MethodWrapper mw = new MethodWrapper(this, MethodDescriptor.FromNameSig(GetClassLoader(), "finalize", "()V"), mb, null, mods, false);
@@ -5109,7 +5106,7 @@ class ArrayTypeWrapper : TypeWrapper
 	private Type type;
 
 	internal ArrayTypeWrapper(Type type, Modifiers modifiers, string name, ClassLoaderWrapper classLoader)
-		: base(modifiers, name, CoreClasses.java_lang_Object, classLoader)
+		: base(modifiers, name, CoreClasses.java.lang.Object.Wrapper, classLoader)
 	{
 		this.type = type;
 		if(mdClone == null)

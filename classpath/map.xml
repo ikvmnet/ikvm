@@ -527,8 +527,9 @@
 				<override name="CompareTo" />
 			</method>
 		</class>
-		<!-- TODO support "oneway" attribute (don't associate System.IntPtr with gnu.classpath.RawData -->
 		<class name="gnu.classpath.RawData" type="System.IntPtr, mscorlib" oneway="true">
+			<!-- TODO custom boxing isn't support for non-oneway remapped types, but since this is the only
+			     type that has a custom boxing rule, this isn't yet as issue -->
 			<box>
 				<!-- We special case boxing, to "box" IntPtr.Zero as null -->
 				<dup />

@@ -52,6 +52,15 @@ final class VMThread
 	    // being called while we're cleaning up. To be safe all code in
 	    // VMThread be unstoppable.
 	    running = false;
+	    cleanup();
+	}
+    }
+
+    // notify Thread that it is dead, this method can safely be called multiple times
+    private synchronized void cleanup()
+    {
+	if(thread.vmThread != null)
+	{
 	    thread.die();
 	}
     }
@@ -63,28 +72,25 @@ final class VMThread
 	thread.vmThread = vmThread;
     }
 
-    String getName()
+    synchronized String getName()
     {
 	return thread.name;
     }
 
-    void setName(String name)
+    synchronized void setName(String name)
     {
 	thread.name = name;
     }
 
-    void setPriority(int priority)
+    synchronized void setPriority(int priority)
     {
 	thread.priority = priority;
 	nativeSetPriority(priority);
     }
 
-    int getPriority()
+    synchronized int getPriority()
     {
-	synchronized(thread)
-	{
-	    return thread.priority;
-	}
+        return thread.priority;
     }
 
     boolean isDaemon()
@@ -103,13 +109,11 @@ final class VMThread
 	return new cli.System.TimeSpan(Math.min(ms, Long.MAX_VALUE / 10000) * 10000 + (ns + 99) / 100);
     }
 
-    synchronized void join(long ms, int ns) throws InterruptedException
+    void join(long ms, int ns) throws InterruptedException
     {
 	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
 	if(nativeThread != null)
 	{
-	    // TODO if we're joining a thread that has a CleanupHack object, we should coordinate with the CleanupHack,
-	    // to make sure there is no race between join returning and the thread being removed from the thread group.
 	    if(ms == 0 && ns == 0)
 	    {
 		nativeThread.Join();
@@ -118,12 +122,18 @@ final class VMThread
 	    {
 		nativeThread.Join(makeTimeSpan(ms, ns));
 	    }
+	    // make sure the thread is marked as dead and removed from the thread group, before we
+	    // return from a successful join
+	    if(!nativeThread.get_IsAlive())
+	    {
+		cleanup();
+	    }
 	}
     }
 
     void stop(Throwable t)
     {
-	// Note: we assume that we own the lock on thread
+	// NOTE we assume that we own the lock on thread
 	// (i.e. that Thread.stop() is synchronized)
 	if(running)
 	    nativeStop(t);
@@ -270,7 +280,11 @@ final class VMThread
 
 	protected void finalize()
 	{
-	    thread.die();
+	    VMThread vmThread = thread.vmThread;
+	    if(vmThread != null)
+	    {
+		vmThread.cleanup();
+	    }
 	}
     }
 
@@ -317,23 +331,37 @@ final class VMThread
 
     static void yield()
     {
-	cli.System.Threading.Thread.Sleep(0);
+	try
+	{
+	    if(false) throw new InterruptedException();
+	    cli.System.Threading.Thread.Sleep(0);
+	}
+	catch(InterruptedException x)
+	{
+	    // since we "consumed" the interrupt, we have to interrupt ourself again
+	    cli.System.Threading.Thread.get_CurrentThread().Interrupt();
+	}
     }
 
     static void sleep(long ms, int ns) throws InterruptedException
     {
-	cli.System.Threading.Thread.Sleep(makeTimeSpan(ms, ns));
+	// NOTE strangely, sleep(0) doesn't trigger a pending interrupt
+	if(ms == 0 && ns == 0)
+	{
+	    yield();
+	}
+	else
+	{
+	    cli.System.Threading.Thread.Sleep(makeTimeSpan(ms, ns));
+	}
     }
 
     static boolean interrupted()
     {
 	try
 	{
-	    synchronized(currentThread())
-	    {
-		if(false) throw new InterruptedException();
-		cli.System.Threading.Thread.Sleep(0);
-	    }
+	    if(false) throw new InterruptedException();
+	    cli.System.Threading.Thread.Sleep(0);
 	    return false;
 	}
 	catch(InterruptedException x)
@@ -363,7 +391,7 @@ final class VMThread
 	}
 	catch(InterruptedException x1)
 	{
-	    // Since we "consumed" the interrupt, we have to interrupt ourself again
+	    // since we "consumed" the interrupt, we have to interrupt ourself again
 	    cli.System.Threading.Thread.get_CurrentThread().Interrupt();
 	    return true;
 	}

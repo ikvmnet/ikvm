@@ -639,7 +639,15 @@ class ClassLoaderWrapper
 			}
 			foreach(TypeWrapper t in l)
 			{
-				t.Finish();
+				try
+				{
+					t.Finish();
+				}
+				catch(Exception x)
+				{
+					Console.Error.WriteLine(x);
+					Console.Error.WriteLine(new StackTrace(x, true));
+				}
 			}
 		}
 	}

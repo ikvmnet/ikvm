@@ -78,7 +78,6 @@ class Compiler
 	private ILGenerator ilGenerator;
 	private ClassLoaderWrapper classLoader;
 	private MethodAnalyzer ma;
-	private Hashtable locals = new Hashtable();
 	private ClassFile.Method.ExceptionTableEntry[] exceptions;
 	private ISymbolDocumentWriter symboldocument;
 
@@ -88,9 +87,9 @@ class Compiler
 		mapExceptionMethod = exceptionHelper.GetMethodWrapper(MethodDescriptor.FromNameSig(exceptionHelper.GetClassLoader(), "MapException", "(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;"), false).EmitCall;
 		mapExceptionFastMethod = exceptionHelper.GetMethodWrapper(MethodDescriptor.FromNameSig(exceptionHelper.GetClassLoader(), "MapExceptionFast", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;"), false).EmitCall;
 		fillInStackTraceMethod = exceptionHelper.GetMethodWrapper(MethodDescriptor.FromNameSig(exceptionHelper.GetClassLoader(), "fillInStackTrace", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;"), false).EmitCall;
-		java_lang_Throwable = CoreClasses.java_lang_Throwable;
-		java_lang_Object = CoreClasses.java_lang_Object;
-		java_lang_Class = CoreClasses.java_lang_Class;
+		java_lang_Throwable = CoreClasses.java.lang.Throwable.Wrapper;
+		java_lang_Object = CoreClasses.java.lang.Object.Wrapper;
+		java_lang_Class = CoreClasses.java.lang.Class.Wrapper;
 		java_lang_ThreadDeath = ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadDeath");
 	}
 
@@ -105,7 +104,7 @@ class Compiler
 			string sourcefile = m.Method.ClassFile.SourceFileAttribute;
 			if(sourcefile != null)
 			{
-				this.symboldocument = classLoader.ModuleBuilder.DefineDocument(sourcefile, Guid.Empty, Guid.Empty, Guid.Empty);
+				this.symboldocument = classLoader.ModuleBuilder.DefineDocument(sourcefile, SymLanguageType.Java, Guid.Empty, SymDocumentType.Text);
 			}
 		}
 		Profiler.Enter("MethodAnalyzer");
@@ -691,7 +690,13 @@ class Compiler
 							{
 								// HACK this nop is a workaround for a bizarre bug in System.Diagnostics.StackTrace
 								// that causes it to report the incorrect line number sometimes...
-								ilGenerator.Emit(OpCodes.Nop);
+								// BUT, make sure we don't put a nop at the start of the method, because if there
+								// is no line number information on the first instruction, VS.NET refuses to step into
+								// the method.
+								if(instr.PC > 0)
+								{
+									ilGenerator.Emit(OpCodes.Nop);
+								}
 								ilGenerator.MarkSequencePoint(symboldocument, table[j].line_number, 0, table[j].line_number + 1, 0);
 								break;
 							}
@@ -783,10 +788,11 @@ class Compiler
 							}
 							BranchCookie bc = new BranchCookie(ilGenerator, 1, exceptions[j].handler_pc);
 							newExits.Add(bc);
-							Instruction handlerInstr = code[FindPcIndex(exceptions[j].handler_pc)];
+							int handlerIndex = FindPcIndex(exceptions[j].handler_pc);
+							Instruction handlerInstr = code[handlerIndex];
 							bool unusedException = handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
 									(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
-									!ma.IsAloadUsed(handlerInstr.NormalizedArg1));
+									ma.GetLocalVar(handlerIndex) == null);
 							// special case for catch(Throwable) (and finally), that produces less code and
 							// should be faster
 							if(mapSafe || excType == typeof(Exception))
@@ -1120,7 +1126,6 @@ class Compiler
 									int trivcount = 0;
 									bool nontrivial = false;
 									bool[] stackfix = new bool[ma.GetStackHeight(i) - (argcount + 1)];
-									bool[] localsfix = new bool[m.MaxLocals];
 									for(int j = 0; j < stackfix.Length; j++)
 									{
 										if(ma.GetRawStackTypeWrapper(i, argcount + 1 + j) == type)
@@ -1139,11 +1144,10 @@ class Compiler
 											}
 										}
 									}
-									for(int j = 0; j < localsfix.Length; j++)
+									for(int j = 0; !nontrivial && j < m.MaxLocals; j++)
 									{
 										if(ma.GetLocalTypeWrapper(i, j) == type)
 										{
-											localsfix[j] = true;
 											nontrivial = true;
 										}
 									}
@@ -1165,7 +1169,7 @@ class Compiler
 										// this could be done a little more efficiently, but since in practice this
 										// code never runs (for code compiled from Java source) it doesn't
 										// really matter
-										LocalBuilder newobj = ilGenerator.DeclareLocal(thisType.TypeAsTBD);
+										LocalBuilder newobj = ilGenerator.DeclareLocal(thisType.TypeAsLocalOrStackType);
 										ilGenerator.Emit(OpCodes.Stloc, newobj);
 										LocalBuilder[] tempstack = new LocalBuilder[stackfix.Length];
 										for(int j = 0; j < stackfix.Length; j++)
@@ -1199,12 +1203,18 @@ class Compiler
 												ilGenerator.Emit(OpCodes.Ldloc, tempstack[j]);
 											}
 										}
-										for(int j = 0; j < localsfix.Length; j++)
+										LocalVar[] locals = ma.GetLocalVarsForInvokeSpecial(i);
+										for(int j = 0; j < locals.Length; j++)
 										{
-											if(localsfix[j])
+											if(locals[j] != null)
 											{
+												if(locals[j].builder == null)
+												{
+													// for invokespecial the resulting type can never be null
+													locals[j].builder = ilGenerator.DeclareLocal(locals[j].type.TypeAsLocalOrStackType);
+												}
 												ilGenerator.Emit(OpCodes.Ldloc, newobj);
-												ilGenerator.Emit(OpCodes.Stloc, GetLocal(typeof(object), j));
+												ilGenerator.Emit(OpCodes.Stloc, locals[j].builder);
 											}
 										}
 									}
@@ -1268,7 +1278,10 @@ class Compiler
 								int stackHeight = ma.GetStackHeight(i);
 								if(instr.NormalizedOpCode == NormalizedByteCode.__return)
 								{
-									ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
+									if(stackHeight != 0)
+									{
+										ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
+									}
 									ilGenerator.Emit(OpCodes.Ret);
 								}
 								else
@@ -1312,17 +1325,8 @@ class Compiler
 							}
 							else
 							{
-								Load(instr, typeof(object));
-								if(instr.NormalizedArg1 >= m.ArgMap.Length)
-								{
-									// HACK since, for now, all locals are of type object, we've got to cast them to the proper type
-									// UPDATE the above is no longer true, we now have at least some idea of the type of the local
-									if(type != ma.GetDeclaredLocalTypeWrapper(instr.NormalizedArg1) && !type.IsUnloadable && !type.IsGhost && !type.IsNonPrimitiveValueType)
-									{
-										ilGenerator.Emit(OpCodes.Castclass, type.TypeAsTBD);
-									}
-								}
-								else
+								LoadLocal(instr);
+								if(instr.NormalizedArg1 < m.ArgMap.Length)
 								{
 									// HACK we're boxing the arguments when they are loaded, this is inconsistent
 									// with the way locals are treated, so we probably should only box the arguments
@@ -1338,7 +1342,7 @@ class Compiler
 							// HACK we use "int" to track the return address of a jsr
 							if(VerifierTypeWrapper.IsRet(type))
 							{
-								Store(instr, typeof(int));
+								StoreLocal(instr);
 							}
 							else if(VerifierTypeWrapper.IsNew(type))
 							{
@@ -1346,7 +1350,7 @@ class Compiler
 								// We do store a null in the local, to prevent it from retaining an unintentional reference
 								// to whatever object reference happens to be there
 								ilGenerator.Emit(OpCodes.Ldnull);
-								Store(instr, typeof(object));
+								StoreLocal(instr);
 							}
 							else if(type == VerifierTypeWrapper.UninitializedThis)
 							{
@@ -1379,33 +1383,33 @@ class Compiler
 										ilGenerator.Emit(OpCodes.Castclass, args[arg].TypeAsParameterType);
 									}
 								}
-								Store(instr, typeof(object));
+								StoreLocal(instr);
 							}
 							break;
 						}
 						case NormalizedByteCode.__iload:
-							Load(instr, typeof(int));
+							LoadLocal(instr);
 							break;
 						case NormalizedByteCode.__istore:
-							Store(instr, typeof(int));
+							StoreLocal(instr);
 							break;
 						case NormalizedByteCode.__lload:
-							Load(instr, typeof(long));
+							LoadLocal(instr);
 							break;
 						case NormalizedByteCode.__lstore:
-							Store(instr, typeof(long));
+							StoreLocal(instr);
 							break;
 						case NormalizedByteCode.__fload:
-							Load(instr, typeof(float));
+							LoadLocal(instr);
 							break;
 						case NormalizedByteCode.__fstore:
-							Store(instr, typeof(float));
+							StoreLocal(instr);
 							break;
 						case NormalizedByteCode.__dload:
-							Load(instr, typeof(double));
+							LoadLocal(instr);
 							break;
 						case NormalizedByteCode.__dstore:
-							Store(instr, typeof(double));
+							StoreLocal(instr);
 							break;
 						case NormalizedByteCode.__new:
 						{
@@ -2188,10 +2192,10 @@ class Compiler
 							ilGenerator.Emit(OpCodes.Br, GetLabel(labels, instr.PC + instr.DefaultOffset, inuse, rangeBegin, rangeEnd, exits));
 							break;
 						case NormalizedByteCode.__iinc:
-							Load(instr, typeof(int));
+							LoadLocal(instr);
 							ilGenerator.Emit(OpCodes.Ldc_I4, instr.Arg2);
 							ilGenerator.Emit(OpCodes.Add);
-							Store(instr, typeof(int));
+							StoreLocal(instr);
 							break;
 						case NormalizedByteCode.__i2b:
 							ilGenerator.Emit(OpCodes.Conv_I1);
@@ -2253,7 +2257,7 @@ class Compiler
 							int[] callsites = ma.GetCallSites(subid);
 							for(int j = 0; j < callsites.Length - 1; j++)
 							{
-								Load(instr, typeof(int));
+								LoadLocal(instr);
 								ilGenerator.Emit(OpCodes.Ldc_I4, j);
 								ilGenerator.Emit(OpCodes.Beq, GetLabel(labels, m.Instructions[callsites[j] + 1].PC, inuse, rangeBegin, rangeEnd, exits));
 							}
@@ -2747,13 +2751,12 @@ class Compiler
 		return m.PcIndexMap[target];
 	}
 
-	private void Load(ClassFile.Method.Instruction instr, Type type)
+	private void LoadLocal(ClassFile.Method.Instruction instr)
 	{
 		// TODO this check will become more complex, once we support changing the type of an argument 'local'
 		if(instr.NormalizedArg1 >= m.ArgMap.Length)
 		{
-			// OPTIMIZE use short form when possible
-			ilGenerator.Emit(OpCodes.Ldloc, GetLocal(type, instr.NormalizedArg1));
+			ilGenerator.Emit(OpCodes.Ldloc, GetLocal(FindPcIndex(instr.PC)));
 		}
 		else
 		{
@@ -2786,12 +2789,21 @@ class Compiler
 		}
 	}
 
-	private void Store(ClassFile.Method.Instruction instr, Type type)
+	private void StoreLocal(ClassFile.Method.Instruction instr)
 	{
 		// TODO this check will become more complex, once we support changing the type of an argument 'local'
 		if(instr.NormalizedArg1 >= m.ArgMap.Length)
 		{
-			ilGenerator.Emit(OpCodes.Stloc, GetLocal(type, instr.NormalizedArg1));
+			LocalBuilder local = GetLocal(FindPcIndex(instr.PC));
+			if(local == null)
+			{
+				// dead store
+				ilGenerator.Emit(OpCodes.Pop);
+			}
+			else
+			{
+				ilGenerator.Emit(OpCodes.Stloc, local);
+			}
 		}
 		else
 		{
@@ -2807,47 +2819,22 @@ class Compiler
 		}
 	}
 
-	private LocalBuilder GetLocal(Type type, int index)
+	private LocalBuilder GetLocal(int instructionIndex)
 	{
-		string name;
-		if(type.IsValueType)
+		LocalVar v = ma.GetLocalVar(instructionIndex);
+		if(v == null)
 		{
-			name = type.Name + index;
+			return null;
 		}
-		else
+		if(v.builder == null && v.type != VerifierTypeWrapper.Null)
 		{
-			name = "Obj" + index;
-			TypeWrapper t = ma.GetDeclaredLocalTypeWrapper(index);
-			if(t != VerifierTypeWrapper.Null)
+			v.builder = ilGenerator.DeclareLocal(v.type.TypeAsLocalOrStackType);
+			if(JVM.Debug && v.name != null)
 			{
-				type = t.TypeAsLocalOrStackType;
+				v.builder.SetLocalSymInfo(v.name);
 			}
 		}
-		LocalBuilder lb = (LocalBuilder)locals[name];
-		if(lb == null)
-		{
-			lb = ilGenerator.DeclareLocal(type);
-			locals[name] = lb;
-			// the local variable table is disabled, because we need to have
-			// better support for overloaded indexes to make this usefull
-			if(JVM.Debug && false)
-			{
-				// TODO this should be done better
-				ClassFile.Method.LocalVariableTableEntry[] table = m.LocalVariableTableAttribute;
-				if(table != null)
-				{
-					for(int i = 0; i < table.Length; i++)
-					{
-						if(table[i].index == index)
-						{
-							lb.SetLocalSymInfo(table[i].name);
-							break;
-						}
-					}
-				}
-			}
-		}
-		return lb;
+		return v.builder;
 	}
 
 	private Label GetLabel(object[] labels, int targetPC, bool[] inuse, int rangeBegin, int rangeEnd, ArrayList exits)
