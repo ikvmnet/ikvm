@@ -1467,7 +1467,7 @@ class ClassFile
 			{
 				if((Name == "<init>" && (IsStatic || IsSynchronized || IsFinal || IsAbstract))
 					|| (IsPrivate && IsPublic) || (IsPrivate && IsProtected) || (IsPublic && IsProtected)
-					|| (IsAbstract && (IsFinal || IsNative || IsPrivate || IsStatic || IsStrict || IsSynchronized))
+					|| (IsAbstract && (IsFinal || IsNative || IsPrivate || IsStatic || IsStrictfp || IsSynchronized))
 					|| (classFile.IsInterface && (!IsPublic || !IsAbstract)))
 				{
 					throw JavaException.ClassFormatError("{0} (Illegal method modifiers: 0x{1:X})", classFile.Name, access_flags);
@@ -1477,7 +1477,7 @@ class ClassFile
 			// and if it is not abstract or native, it must have a Code attribute
 		}
 
-		internal bool IsStrict
+		internal bool IsStrictfp
 		{
 			get
 			{

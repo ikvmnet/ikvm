@@ -501,7 +501,7 @@ internal class DoubleToString
 				i = i%100 >= 50 ? (i/100) + 1 : i/100;
 				appendFractDigits(s, i, 1);
 				s.Append('E');
-				append(s,mag);
+				s.Append(mag);
 			}
 		}
 	}
