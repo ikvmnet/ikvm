@@ -386,12 +386,12 @@ public abstract class CodeEmitter
 	}
 }
 
-class CastEmitter : CodeEmitter
+class ReturnCastEmitter : CodeEmitter
 {
 	private Type type;
 	private string className;
 
-	internal CastEmitter(string className)
+	internal ReturnCastEmitter(string className)
 	{
 		this.className = className;
 	}
@@ -400,7 +400,7 @@ class CastEmitter : CodeEmitter
 	{
 		if(type == null)
 		{
-			type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(className).TypeOrUnloadableAsObject;
+			type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(className).TypeAsParameterType;
 		}
 		if(type != typeof(object))
 		{

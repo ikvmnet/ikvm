@@ -206,7 +206,7 @@ class MethodWrapper : MemberWrapper
 			LocalBuilder[] argLocals = new LocalBuilder[args.Length];
 			for(int i = args.Length - 1; i >= 0; i--)
 			{
-				argLocals[i] = ilgen.DeclareLocal(args[i].TypeOrUnloadableAsObject);
+				argLocals[i] = ilgen.DeclareLocal(args[i].TypeAsLocalOrStackType);
 				ilgen.Emit(OpCodes.Stloc, argLocals[i]);
 			}
 			Label end = ilgen.DefineLabel();

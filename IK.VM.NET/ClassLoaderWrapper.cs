@@ -132,13 +132,17 @@ class ClassLoaderWrapper
 
 	internal static bool IsGhost(TypeWrapper wrapper)
 	{
-		string name = wrapper.Name;
-		return wrapper.GetClassLoader() == bootstrapClassLoader && name != null && ghosts.ContainsKey(name);
+		return wrapper.IsInterface && wrapper.GetClassLoader() == bootstrapClassLoader && ghosts.ContainsKey(wrapper.Name);
 	}
 
 	internal static TypeWrapper[] GetGhostImplementers(TypeWrapper wrapper)
 	{
-		return (TypeWrapper[])((ArrayList)ghosts[wrapper.Name]).ToArray(typeof(TypeWrapper));
+		ArrayList list = (ArrayList)ghosts[wrapper.Name];
+		if(list == null)
+		{
+			return TypeWrapper.EmptyArray;
+		}
+		return (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
 	}
 
 	internal static bool IsRemappedType(Type type)

@@ -68,7 +68,7 @@ public class ByteCodeHelper
 			throw JavaException.NegativeArraySizeException();
 		}
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
-		return Array.CreateInstance(wrapper.TypeOrUnloadableAsObject, length);
+		return Array.CreateInstance(wrapper.TypeAsArrayType, length);
 	}
 
 	[StackTraceInfo(Hidden = true)]

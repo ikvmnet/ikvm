@@ -966,8 +966,7 @@ abstract class TypeWrapper
 		}
 	}
 
-	// TODO this should really be named TypeAsLocalArgOrStackType (or something like that)
-	internal Type TypeOrUnloadableAsObject
+	internal Type TypeAsFieldType
 	{
 		get
 		{
@@ -985,10 +984,70 @@ abstract class TypeWrapper
 				}
 				return Type.GetType(type, true);
 			}
+			return Type;
+		}
+	}
+
+	internal Type TypeAsParameterType
+	{
+		get
+		{
+			return TypeAsFieldType;
+		}
+	}
+
+	internal Type TypeAsBaseType
+	{
+		get
+		{
+			return Type;
+		}
+	}
+
+	internal Type TypeAsLocalOrStackType
+	{
+		get
+		{
 			// HACK as a convenience to the compiler, we replace return address types with typeof(int)
 			if(VerifierTypeWrapper.IsRet(this))
 			{
 				return typeof(int);
+			}
+			if(IsUnloadable || IsGhost || IsNonPrimitiveValueType)
+			{
+				return typeof(object);
+			}
+			if(IsGhostArray)
+			{
+				int rank = ArrayRank;
+				string type = "System.Object";
+				for(int i = 0; i < rank; i++)
+				{
+					type += "[]";
+				}
+				return Type.GetType(type, true);
+			}
+			return Type;
+		}
+	}
+
+	internal Type TypeAsArrayType
+	{
+		get
+		{
+			// TODO if ghosts are ever compiled as value types (for fields), we need special treatment here,
+			// otherwise array covariance breaks down
+			return TypeAsFieldType;
+		}
+	}
+
+	internal Type TypeAsExceptionType
+	{
+		get
+		{
+			if(IsUnloadable)
+			{
+				return typeof(Exception);
 			}
 			return Type;
 		}
@@ -1696,12 +1755,12 @@ class DynamicTypeWrapper : TypeWrapper
 				typeAttribs |= TypeAttributes.Class;
 				if(outer != null)
 				{
-					// TODO in the CLR interfaces cannot contain nested types!
-					typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs, wrapper.BaseTypeWrapper.Type);
+					// TODO in the CLR interfaces cannot contain nested types! (well, it works fine, but the spec says it isn't allowed)
+					typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
 				}
 				else
 				{
-					typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs, wrapper.BaseTypeWrapper.Type);
+					typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
 				}
 			}
 			TypeWrapper[] interfaces = wrapper.Interfaces;
@@ -2105,7 +2164,7 @@ class DynamicTypeWrapper : TypeWrapper
 				modargs[1] = typeof(IntPtr);
 				for(int i = 0; i < args.Length; i++)
 				{
-					modargs[i + 2] = args[i].TypeOrUnloadableAsObject;
+					modargs[i + 2] = args[i].TypeAsParameterType;
 				}
 				int add = 0;
 				if(!m.IsStatic)
@@ -2159,7 +2218,7 @@ class DynamicTypeWrapper : TypeWrapper
 							ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.Type);
 						}
 					}
-					retValue = ilGenerator.DeclareLocal(retTypeWrapper.TypeOrUnloadableAsObject);
+					retValue = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsParameterType);
 					ilGenerator.Emit(OpCodes.Stloc, retValue);
 				}
 				ilGenerator.BeginCatchBlock(typeof(object));
@@ -2233,12 +2292,15 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				FieldBuilder field;
 				ClassFile.Field fld = classFile.Fields[i];
+				string fieldName = fld.Name;
 				TypeWrapper typeWrapper = fld.GetFieldType(wrapper.GetClassLoader());
-				Type type = typeWrapper.TypeOrUnloadableAsObject;
+				Type type = typeWrapper.TypeAsFieldType;
 				if(typeWrapper.IsUnloadable)
 				{
-					// TODO the field name should be mangled here, because otherwise it might conflict with another field
-					// with the same name and a different unloadable type (or java.lang.Object as its type)
+					// the field name is mangled here, because otherwise it can (theoretically)
+					// conflict with another unloadable or object field
+					// (fields can be overloaded on type)
+					fieldName += "/" + typeWrapper.Name;
 				}
 				FieldAttributes attribs = 0;
 				MethodAttributes methodAttribs = 0;
@@ -2275,7 +2337,7 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					Profiler.Count("Static Final Constant");
 					attribs |= FieldAttributes.Literal;
-					field = typeBuilder.DefineField(fld.Name, type, attribs);
+					field = typeBuilder.DefineField(fieldName, type, attribs);
 					field.SetConstant(constantValue);
 					// NOTE even though you're not supposed to access a constant static final (the compiler is supposed
 					// to inline them), we have to support it (because it does happen, e.g. if the field becomes final
@@ -2301,7 +2363,7 @@ class DynamicTypeWrapper : TypeWrapper
 							setModifiers = true;
 						}
 					}
-					field = typeBuilder.DefineField(fld.Name, type, attribs);
+					field = typeBuilder.DefineField(fieldName, type, attribs);
 					if(fld.IsTransient)
 					{
 						CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(typeof(NonSerializedAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
@@ -2419,10 +2481,10 @@ class DynamicTypeWrapper : TypeWrapper
 				TypeWrapper[] argTypeWrappers = m.GetArgTypes(wrapper.GetClassLoader());
 				TypeWrapper retTypeWrapper = m.GetRetType(wrapper.GetClassLoader());
 				Type[] args = new Type[argTypeWrappers.Length];
-				Type retType = retTypeWrapper.TypeOrUnloadableAsObject;
+				Type retType = retTypeWrapper.TypeAsParameterType;
 				for(int i = 0; i < args.Length; i++)
 				{
-					args[i] = argTypeWrappers[i].TypeOrUnloadableAsObject;
+					args[i] = argTypeWrappers[i].TypeAsParameterType;
 				}
 				bool setModifiers = false;
 				MethodAttributes attribs = 0;
@@ -2995,7 +3057,7 @@ class RemappedTypeWrapper : TypeWrapper
 							{
 								ret = ret.Substring(1, ret.Length - 2);
 							}
-							retcast = new CastEmitter(ret);
+							retcast = new ReturnCastEmitter(ret);
 						}
 						if(BaseTypeWrapper != null && !Type.IsSealed)
 						{
@@ -3198,7 +3260,7 @@ class RemappedTypeWrapper : TypeWrapper
 							{
 								ret = ret.Substring(1, ret.Length - 2);
 							}
-							retcast = new CastEmitter(ret);
+							retcast = new ReturnCastEmitter(ret);
 						}
 						CodeEmitter ignore = null;
 						MethodWrapper.CreateEmitters(null, redirect, ref ignore, ref ignore, ref newopc);
@@ -3276,11 +3338,11 @@ class RemappedTypeWrapper : TypeWrapper
 				{
 					if(fieldSig[0] == 'L')
 					{
-						getter += new CastEmitter(fieldSig.Substring(1, fieldSig.Length - 2));
+						getter += new ReturnCastEmitter(fieldSig.Substring(1, fieldSig.Length - 2));
 					}
 					else if(fieldSig[0] == '[')
 					{
-						getter += new CastEmitter(fieldSig);
+						getter += new ReturnCastEmitter(fieldSig);
 					}
 					else
 					{
@@ -3752,7 +3814,15 @@ class CompiledTypeWrapper : TypeWrapper
 		{
 			if(!AttributeHelper.IsHideFromReflection(fields[i]))
 			{
-				list.Add(CreateFieldWrapper(AttributeHelper.GetModifiers(fields[i]), fields[i].Name, fields[i].FieldType, fields[i], null));
+				// if the field name is mangled (because its type is unloadable),
+				// chop off the mangled bit
+				string fieldName = fields[i].Name;
+				int idx = fieldName.IndexOf('/');
+				if(idx >= 0)
+				{
+					fieldName = fieldName.Substring(0, idx);
+				}
+				list.Add(CreateFieldWrapper(AttributeHelper.GetModifiers(fields[i]), fieldName, fields[i].FieldType, fields[i], null));
 			}
 		}
 		return (FieldWrapper[])list.ToArray(typeof(FieldWrapper));

@@ -375,13 +375,9 @@ class Compiler
 			{
 				// new objects aren't really there on the stack
 			}
-			else if(!type.IsUnloadable && type.IsNonPrimitiveValueType)
-			{
-				locals[i] = ilgen.DeclareLocal(typeof(object));
-			}
 			else
 			{
-				locals[i] = ilgen.DeclareLocal(type.TypeOrUnloadableAsObject);
+				locals[i] = ilgen.DeclareLocal(type.TypeAsLocalOrStackType);
 			}
 			return this;
 		}
@@ -556,7 +552,7 @@ class Compiler
 								}
 								else
 								{
-									LocalBuilder local = ilGenerator.DeclareLocal(t.TypeOrUnloadableAsObject);
+									LocalBuilder local = ilGenerator.DeclareLocal(t.TypeAsLocalOrStackType);
 									stack.Push(local);
 									ilGenerator.Emit(OpCodes.Stloc, local);
 								}
@@ -620,7 +616,7 @@ class Compiler
 									}
 									else
 									{
-										LocalBuilder local = ilGenerator.DeclareLocal(t.TypeOrUnloadableAsObject);
+										LocalBuilder local = ilGenerator.DeclareLocal(t.TypeAsLocalOrStackType);
 										bc.Stack.Push(local);
 										ilGenerator.Emit(OpCodes.Stloc, local);
 									}
@@ -642,7 +638,7 @@ class Compiler
 							{
 								exceptionTypeWrapper = tw;
 							}
-							excType = tw.TypeOrUnloadableAsObject;
+							excType = tw.TypeAsExceptionType;
 						}
 						if(true)
 						{
@@ -1082,7 +1078,7 @@ class Compiler
 											}
 											else if(!VerifierTypeWrapper.IsNew(stacktype))
 											{
-												LocalBuilder lb = ilGenerator.DeclareLocal(stacktype.TypeOrUnloadableAsObject);
+												LocalBuilder lb = ilGenerator.DeclareLocal(stacktype.TypeAsLocalOrStackType);
 												ilGenerator.Emit(OpCodes.Stloc, lb);
 												tempstack[j] = lb;
 											}
@@ -1180,7 +1176,7 @@ class Compiler
 							if(instr.NormalizedOpCode != NormalizedByteCode.__return)
 							{
 								TypeWrapper retTypeWrapper = m.Method.GetRetType(classLoader);
-								rc.Local = ilGenerator.DeclareLocal(retTypeWrapper.TypeOrUnloadableAsObject);
+								rc.Local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsLocalOrStackType);
 								if(!retTypeWrapper.IsUnloadable)
 								{
 									// because of the way interface merging works, any reference is valid
@@ -1234,7 +1230,7 @@ class Compiler
 								}
 								if(stackHeight != 1)
 								{
-									LocalBuilder local = ilGenerator.DeclareLocal(retTypeWrapper.TypeOrUnloadableAsObject);
+									LocalBuilder local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsLocalOrStackType);
 									ilGenerator.Emit(OpCodes.Stloc, local);
 									for(int j = 1; j < stackHeight; j++)
 									{
@@ -1384,7 +1380,7 @@ class Compiler
 						}
 						else
 						{
-							Type type = wrapper.TypeOrUnloadableAsObject;
+							Type type = wrapper.TypeAsArrayType;
 							ilGenerator.Emit(OpCodes.Ldtoken, type);
 							ilGenerator.Emit(OpCodes.Ldloc, localArray);
 							ilGenerator.Emit(OpCodes.Call, multiANewArrayMethod);
@@ -1403,7 +1399,7 @@ class Compiler
 						}
 						else
 						{
-							// HACK we use TypeOrUnloadableAsObject here, to make sure that Ghost implementers can be
+							// NOTE for ghost types we create object arrays to make sure that Ghost implementers can be
 							// stored in ghost arrays, but this has the unintended consequence that ghost arrays can
 							// contain *any* reference type (because they are compiled as Object arrays). We could
 							// modify aastore to emit code to check for this, but this would have an huge performance
@@ -1413,7 +1409,7 @@ class Compiler
 							// is unfortunate, but I think we can live with this minor incompatibility.
 							// NOTE that this does not break type safety, because when the incorrect object is eventually
 							// used as the ghost interface type it will generate a ClassCastException.
-							ilGenerator.Emit(OpCodes.Newarr, wrapper.TypeOrUnloadableAsObject);
+							ilGenerator.Emit(OpCodes.Newarr, wrapper.TypeAsArrayType);
 						}
 						break;
 					}
@@ -2886,7 +2882,7 @@ class Compiler
 			TypeWrapper t = ma.GetDeclaredLocalTypeWrapper(index);
 			if(t != VerifierTypeWrapper.Null)
 			{
-				type = t.TypeOrUnloadableAsObject;
+				type = t.TypeAsLocalOrStackType;
 			}
 		}
 		LocalBuilder lb = (LocalBuilder)locals[name];
