@@ -308,7 +308,13 @@ public class JVM
 					return;
 				}
 				loader.SetMain(method, target);
+				mainClass = null;
 			}
+		}
+		if(mainClass != null)
+		{
+			Console.Error.WriteLine("Error: main class not found");
+			return;
 		}
 		Console.WriteLine("Loading remapped types (2)");
 		loader.LoadRemappedTypesStep2();

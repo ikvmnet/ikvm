@@ -96,6 +96,25 @@ namespace OpenSystem.Java
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = true)]
+	public class ImplementsAttribute : Attribute
+	{
+		private Type type;
+
+		public ImplementsAttribute(Type type)
+		{
+			this.type = type;
+		}
+
+		public Type Type
+		{
+			get
+			{
+				return type;
+			}
+		}
+	}
+
 	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
 	public class InnerClassAttribute : Attribute
 	{

@@ -242,6 +242,7 @@ class EmitHelper
 class AttributeHelper
 {
 	private static CustomAttributeBuilder hideFromReflectionAttribute;
+	private static ConstructorInfo implementsAttribute;
 
 	internal static void HideFromReflection(ConstructorBuilder cb)
 	{
@@ -278,6 +279,15 @@ class AttributeHelper
 		return mi.IsDefined(typeof(HideFromReflectionAttribute), false);
 	}
 
+	internal static void ImplementsAttribute(TypeBuilder typeBuilder, Type iface)
+	{
+		if(implementsAttribute == null)
+		{
+			implementsAttribute = typeof(ImplementsAttribute).GetConstructor(new Type[] { typeof(Type) });
+		}
+		typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(implementsAttribute, new object[] { iface }));
+	}
+
 	internal static Modifiers GetModifiers(MethodBase mb)
 	{
 		object[] customAttribute = mb.GetCustomAttributes(typeof(ModifiersAttribute), false);
@@ -300,7 +310,7 @@ class AttributeHelper
 		}
 		// NOTE Java doesn't support non-virtual methods, but we set the Final modifier for
 		// non-virtual methods to approximate the semantics
-		if(mb.IsFinal || (!mb.IsStatic && !mb.IsVirtual))
+		if(mb.IsFinal || (!mb.IsStatic && !mb.IsVirtual && !mb.IsConstructor))
 		{
 			modifiers |= Modifiers.Final;
 		}
@@ -1387,6 +1397,7 @@ class DynamicTypeWrapper : TypeWrapper
 			for(int i = 0; i < interfaces.Length; i++)
 			{
 				typeBuilder.AddInterfaceImplementation(interfaces[i].Type);
+				AttributeHelper.ImplementsAttribute(typeBuilder, interfaces[i].Type);
 			}
 		}
 
@@ -3443,25 +3454,16 @@ class CompiledTypeWrapper : TypeWrapper
 		{
 			if(interfaces == null)
 			{
-				// TODO instead of getting the interfaces list from Type, we should use a custom
-				// attribute to list the implemented interfaces (alternatively, we could check the assembly
-				// of each interface to make sure it is from an IKVM compiled assembly, but even if the
-				// interfaces doesn't come from an IKVM assembly we still must call GetWrapperFromTypeFast
-				// to handle remapped interfaces.
-				Type[] ifaces = type.GetInterfaces();
+				// NOTE instead of getting the interfaces list from Type, we use a custom
+				// attribute to list the implemented interfaces, because Java reflection only
+				// reports the interfaces *directly* implemented by the type, not the inherited
+				// interfaces. This is significant for serialVersionUID calculation (for example).
+				object[] attribs = type.GetCustomAttributes(typeof(ImplementsAttribute), false);
 				ArrayList wrappers = new ArrayList();
-				for(int i = 0; i < ifaces.Length; i++)
+				for(int i = 0; i < attribs.Length; i++)
 				{
-					// HACK if the interface wrapper isn't found, we'll just ignore it (this happens for
-					// example for Throwable derived classes, which seem to implement ISerializable [because System.Exception does],
-					// but we cannot find a wrapper for this type)
-					try
-					{
-						wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(ifaces[i]));
-					}
-					catch(Exception)
-					{
-					}
+					ImplementsAttribute impl = (ImplementsAttribute)attribs[i];
+					wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(impl.Type));
 				}
 				interfaces = (TypeWrapper[])wrappers.ToArray(typeof(TypeWrapper));
 			}
