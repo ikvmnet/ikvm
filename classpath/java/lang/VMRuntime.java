@@ -195,14 +195,12 @@ final class VMRuntime
     static native int nativeLoad(String filename);
 
     /**
-     * Map a system-independent "short name" to the full file name, and append
-     * it to the path.
+     * Map a system-independent "short name" to the full file name.
      *
-     * @param pathname the path
      * @param libname the short version of the library name
      * @return the full filename
      */
-    static String nativeGetLibname(String pathname, String libname)
+    static String mapLibraryName(String libname)
     {
 	if(cli.System.Environment.get_OSVersion().ToString().indexOf("Unix") >= 0)
 	{
@@ -291,13 +289,9 @@ final class VMRuntime
 	private DotNetProcess(cli.System.Diagnostics.Process proc)
 	{
 	    this.proc = proc;
-	    // TODO enable this when Channels.new[Out|in]putStream is working
-	    //stdin = Channels.newOutputStream(new FileChannelImpl(proc.get_StandardInput().get_BaseStream()));
-	    //stdout = Channels.newInputStream(new FileChannelImpl(proc.get_StandardOutput().get_BaseStream()));
-	    //stderr = Channels.newInputStream(new FileChannelImpl(proc.get_StandardError().get_BaseStream()));
-	    stdin = new gnu.java.nio.ChannelOutputStream(new FileChannelImpl(proc.get_StandardInput().get_BaseStream()));
-	    stdout = new gnu.java.nio.ChannelInputStream(new FileChannelImpl(proc.get_StandardOutput().get_BaseStream()));
-	    stderr = new gnu.java.nio.ChannelInputStream(new FileChannelImpl(proc.get_StandardError().get_BaseStream()));
+	    stdin = Channels.newOutputStream(new FileChannelImpl(proc.get_StandardInput().get_BaseStream()));
+	    stdout = Channels.newInputStream(new FileChannelImpl(proc.get_StandardOutput().get_BaseStream()));
+	    stderr = Channels.newInputStream(new FileChannelImpl(proc.get_StandardError().get_BaseStream()));
 	}
 
 	public OutputStream getOutputStream()
@@ -342,169 +336,4 @@ final class VMRuntime
 	    }
 	}
     }
-
-
-    /**
-     * Get the system properties. This is done here, instead of in System,
-     * because of the bootstrap sequence. Note that the native code should
-     * not try to use the Java I/O classes yet, as they rely on the properties
-     * already existing. The only safe method to use to insert these default
-     * system properties is {@link Properties#setProperty(String, String)}.
-     *
-     * <p>These properties MUST include:
-     * <dl>
-     * <dt>java.version         <dd>Java version number
-     * <dt>java.vendor          <dd>Java vendor specific string
-     * <dt>java.vendor.url      <dd>Java vendor URL
-     * <dt>java.home            <dd>Java installation directory
-     * <dt>java.vm.specification.version <dd>VM Spec version
-     * <dt>java.vm.specification.vendor  <dd>VM Spec vendor
-     * <dt>java.vm.specification.name    <dd>VM Spec name
-     * <dt>java.vm.version      <dd>VM implementation version
-     * <dt>java.vm.vendor       <dd>VM implementation vendor
-     * <dt>java.vm.name         <dd>VM implementation name
-     * <dt>java.specification.version    <dd>Java Runtime Environment version
-     * <dt>java.specification.vendor     <dd>Java Runtime Environment vendor
-     * <dt>java.specification.name       <dd>Java Runtime Environment name
-     * <dt>java.class.version   <dd>Java class version number
-     * <dt>java.class.path      <dd>Java classpath
-     * <dt>java.library.path    <dd>Path for finding Java libraries
-     * <dt>java.io.tmpdir       <dd>Default temp file path
-     * <dt>java.compiler        <dd>Name of JIT to use
-     * <dt>java.ext.dirs        <dd>Java extension path
-     * <dt>os.name              <dd>Operating System Name
-     * <dt>os.arch              <dd>Operating System Architecture
-     * <dt>os.version           <dd>Operating System Version
-     * <dt>file.separator       <dd>File separator ("/" on Unix)
-     * <dt>path.separator       <dd>Path separator (":" on Unix)
-     * <dt>line.separator       <dd>Line separator ("\n" on Unix)
-     * <dt>user.name            <dd>User account name
-     * <dt>user.home            <dd>User home directory
-     * <dt>user.dir             <dd>User's current working directory
-     * </dl>
-     *
-     * @param p the Properties object to insert the system properties into
-     */
-    static void insertSystemProperties(Properties p)
-    {
-	p.setProperty("java.version", "1.4");
-	p.setProperty("java.vendor", "Jeroen Frijters");
-	p.setProperty("java.vendor.url", "http://ikvm.net/");
-	// HACK using the Assembly.Location property isn't correct
-	cli.System.Reflection.Assembly asm = cli.System.Reflection.Assembly.GetExecutingAssembly();
-	p.setProperty("java.home", new cli.System.IO.FileInfo(asm.get_Location()).get_DirectoryName());
-	p.setProperty("java.vm.specification.version", "1.0");
-	p.setProperty("java.vm.specification.vendor", "Sun Microsystems Inc.");
-	p.setProperty("java.vm.specification.name", "Java Virtual Machine Specification");
-	p.setProperty("java.vm.version", getVersion());
-	p.setProperty("java.vm.vendor", "Jeroen Frijters");
-	p.setProperty("java.vm.name", "IKVM.NET");
-	p.setProperty("java.specification.version", "1.4");
-	p.setProperty("java.specification.vendor", "Sun Microsystems Inc.");
-	p.setProperty("java.specification.name", "Java Platform API Specification");
-	p.setProperty("java.class.version", "48.0");
-	String classpath = cli.System.Environment.GetEnvironmentVariable("CLASSPATH");
-	if(classpath == null)
-	{
-	    classpath = ".";
-	}
-	p.setProperty("java.class.path", classpath);
-	String libraryPath = null;
-	if(cli.System.Environment.get_OSVersion().ToString().indexOf("Unix") >= 0)
-	{
-	    libraryPath = cli.System.Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
-	}
-	else
-	{
-	    try
-	    {
-		libraryPath = new cli.System.IO.FileInfo(cli.System.Reflection.Assembly.GetEntryAssembly().get_Location()).get_DirectoryName();
-	    }
-	    catch(Throwable t)
-	    {
-		// ignore
-	    }
-	    if(libraryPath == null)
-	    {
-		libraryPath = ".";
-	    }
-	    else
-	    {
-		libraryPath += cli.System.IO.Path.PathSeparator + ".";
-	    }
-	    libraryPath += cli.System.IO.Path.PathSeparator + cli.System.Environment.get_SystemDirectory() +
-		cli.System.IO.Path.PathSeparator + cli.System.Environment.GetEnvironmentVariable("PATH");
-	}
-	if(libraryPath != null)
-	{
-	    p.setProperty("java.library.path", libraryPath);
-	}
-	p.setProperty("java.io.tmpdir", cli.System.IO.Path.GetTempPath());
-	p.setProperty("java.compiler", "");
-	p.setProperty("java.ext.dirs", "");
-	// NOTE os.name *must* contain "Windows" when running on Windows, because Classpath tests on that
-	String osname = cli.System.Environment.get_OSVersion().ToString();
-	String osver = cli.System.Environment.get_OSVersion().get_Version().ToString();
-	// HACK if the osname contains the version, we remove it
-	osname = ((cli.System.String)(Object)osname).Replace(osver, "").trim();
-	p.setProperty("os.name", osname);
-	String arch = cli.System.Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
-	if(arch == null)
-	{
-	    // TODO get this info from somewhere else
-	    arch = "x86";
-	}
-	p.setProperty("os.arch", arch);
-	p.setProperty("os.version", osver);
-	p.setProperty("file.separator", "" + cli.System.IO.Path.DirectorySeparatorChar);
-	p.setProperty("file.encoding", "8859_1");
-	p.setProperty("path.separator", "" + cli.System.IO.Path.PathSeparator);
-	p.setProperty("line.separator", cli.System.Environment.get_NewLine());
-	p.setProperty("user.name", cli.System.Environment.get_UserName());
-	String home = cli.System.Environment.GetEnvironmentVariable("USERPROFILE");
-	if(home == null)
-	{
-	    // maybe we're on *nix
-	    home = cli.System.Environment.GetEnvironmentVariable("HOME");
-	    if(home == null)
-	    {
-		// TODO maybe there is a better way
-		// NOTE on MS .NET this doesn't return the correct path
-		// (it returns "C:\\Documents and Settings\\username\\My Documents", but we really need
-		// "C:\\Documents and Settings\\username" to be compatible with Sun, that's why we use %USERPROFILE% if it exists)
-		home = cli.System.Environment.GetFolderPath(cli.System.Environment.SpecialFolder.wrap(cli.System.Environment.SpecialFolder.Personal));
-	    }
-	}
-	p.setProperty("user.home", home);
-	p.setProperty("user.dir", cli.System.Environment.get_CurrentDirectory());
-	p.setProperty("awt.toolkit", "ikvm.awt.NetToolkit, IKVM.AWT.WinForms");
-	// HACK since we cannot use URL here (it depends on the properties being set), we manually encode the spaces in the assembly name
-        p.setProperty("gnu.classpath.home.url", "ikvmres://" + ((cli.System.String)(Object)cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName()).Replace(" ", "%20") + "/lib");
-
-	// read properties from app.config
-	cli.System.Collections.Specialized.NameValueCollection appSettings = cli.System.Configuration.ConfigurationSettings.get_AppSettings();
-	cli.System.Collections.IEnumerator keys = appSettings.GetEnumerator();
-	while(keys.MoveNext())
-	{
-	    String key = (String)keys.get_Current();
-	    if(key.startsWith("ikvm:"))
-	    {
-		p.setProperty(key.substring(5), appSettings.get_Item(key));
-	    }
-	}
-	// set the properties that were specified with IKVM.Runtime.Startup.SetProperties()
-	if(props != null)
-	{
-	    cli.System.Collections.IEnumerator entries = ((cli.System.Collections.IEnumerable)props).GetEnumerator();
-	    while(entries.MoveNext())
-	    {
-		cli.System.Collections.DictionaryEntry de = (cli.System.Collections.DictionaryEntry)entries.get_Current();
-		p.setProperty((String)de.get_Key(), (String)de.get_Value());
-	    }
-	    props = null;
-	}
-    }
-
-    // HACK we need a way to get the assembly version of ik.vm.net.dll
-    static native String getVersion();
 } // class VMRuntime

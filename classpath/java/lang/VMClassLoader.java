@@ -47,7 +47,7 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.lang.reflect.Constructor;
-import gnu.java.lang.SystemClassLoader;
+import gnu.classpath.SystemProperties;
 import gnu.java.util.DoubleEnumeration;
 import cli.System.*;
 import cli.System.Reflection.*;
@@ -255,7 +255,7 @@ final class VMClassLoader
      */
     static boolean defaultAssertionStatus()
     {
-	return Boolean.valueOf(ClassLoader.getSystemProperty("ikvm.assert.default", "false")).booleanValue();
+	return Boolean.valueOf(SystemProperties.getProperty("ikvm.assert.default", "false")).booleanValue();
     }
 
     /**
@@ -271,7 +271,7 @@ final class VMClassLoader
 	if(packageAssertionMap == null)
 	{
 	    HashMap m = new HashMap();
-	    String enable = ClassLoader.getSystemProperty("ikvm.assert.enable", null);
+	    String enable = SystemProperties.getProperty("ikvm.assert.enable", null);
 	    if(enable != null)
 	    {
 		StringTokenizer st = new StringTokenizer(enable, ":");
@@ -280,7 +280,7 @@ final class VMClassLoader
 		    m.put(st.nextToken(), Boolean.TRUE);
 		}
 	    }
-	    String disable = ClassLoader.getSystemProperty("ikvm.assert.disable", null);
+	    String disable = SystemProperties.getProperty("ikvm.assert.disable", null);
 	    if(disable != null)
 	    {
 		StringTokenizer st = new StringTokenizer(disable, ":");

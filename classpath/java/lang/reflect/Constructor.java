@@ -132,10 +132,7 @@ public final class Constructor
      */
     public Class[] getParameterTypes()
     {
-	Object[] params = Method.GetParameterTypes(methodCookie);
-	Class[] paramsClass = new Class[params.length];
-	System.arraycopy(params, 0, paramsClass, 0, params.length);
-	return paramsClass;
+	return Method.GetParameterTypesHelper(methodCookie);
     }
 
     /**

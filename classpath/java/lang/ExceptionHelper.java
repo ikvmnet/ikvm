@@ -25,6 +25,7 @@ package java.lang;
 
 import java.io.*;
 import java.lang.reflect.*;
+import gnu.classpath.SystemProperties;
 
 public final class ExceptionHelper
 {
@@ -33,8 +34,7 @@ public final class ExceptionHelper
     // able to distinguish it from a user specified blank string
     private static final String NULL_STRING = new String();
     private static final java.util.WeakHashMap exceptions = new java.util.WeakHashMap();
-    // We access Runtime.defaultProperties directly, to prevent problems should an exception occur during library bootstrap
-    private static final boolean cleanStackTrace = Runtime.defaultProperties.getProperty("ikvm.cleanstacktrace", "1").equals("1");
+    private static final boolean cleanStackTrace = SystemProperties.getProperty("ikvm.cleanstacktrace", "1").equals("1");
     private static cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
     private static cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
 

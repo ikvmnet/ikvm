@@ -51,6 +51,8 @@ public interface LibraryVMInterface
     cli.System.IntPtr getDirectBufferAddress(Object buffer);
     int getDirectBufferCapacity(Object buffer);
 
+    void setProperties(cli.System.Collections.Hashtable props);
+
     Throwable newIllegalAccessError(String msg);
     Throwable newIllegalAccessException(String msg);
     Throwable newIncompatibleClassChangeError(String msg);

@@ -1,3 +1,5 @@
+gnu/classpath/VMSystemProperties.java
+../../classpath/gnu/classpath/SystemProperties.java
 ikvm/internal/LibraryVMInterface.java
 ikvm/lang/CIL.java
 gnu/classpath/Configuration.java
@@ -348,7 +350,6 @@ sun/misc/Ref.java
 ../../classpath/gnu/java/rmi/server/UnicastRemoteStub.java
 ../../classpath/gnu/java/rmi/server/UnicastServer.java
 ../../classpath/gnu/java/rmi/server/UnicastServerRef.java
-../../classpath/gnu/java/security/action/GetPropertyAction.java
 ../../classpath/gnu/java/security/action/GetSecurityPropertyAction.java
 ../../classpath/gnu/java/security/action/SetAccessibleAction.java
 ../../classpath/gnu/java/security/ber/BER.java

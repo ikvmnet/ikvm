@@ -100,6 +100,4 @@ public interface Configuration
    * Name of default AWT peer library.
    */
   String default_awt_peer_toolkit = "gnu.java.awt.peer.gtk.GTKToolkit";
-
-  boolean JAVA_LANG_SYSTEM_EXPLICIT_INITIALIZATION = false;
 }

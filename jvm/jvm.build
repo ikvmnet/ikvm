@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
 <project name="JVM" default="JVM">
     <target name="JVM">
-        <exec program="../tools/asmref.exe" useruntimeengine="true" commandline="mscorlib" output="jvm_h1.il" />
-        <exec program="../tools/asmref.exe" useruntimeengine="true" commandline="../bin/IKVM.Runtime.dll" output="jvm_h2.il" />
-        <exec program="ilasm" commandline="/dll /out:../bin/JVM.DLL jvm_h1.il jvm_h2.il JVM.il" />
+        <exec program="../tools/asmref.exe" useruntimeengine="true" commandline="mscorlib ../bin/IKVM.Runtime.dll ../bin/IKVM.GNU.Classpath.dll" output="jvm_h.il" />
+        <exec program="ilasm" commandline="/dll /out:../bin/JVM.DLL jvm_h.il JVM.il" />
     </target>
 </project>

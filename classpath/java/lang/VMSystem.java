@@ -90,16 +90,6 @@ final class VMSystem
     }
 
     /**
-     * Detect big-endian systems.
-     *
-     * @return true if the system is big-endian.
-     */
-    static boolean isWordsBigEndian()
-    {
-	return !cli.System.BitConverter.IsLittleEndian;
-    }
-
-    /**
      * Convert a library name to its platform-specific variant.
      *
      * @param libname the library name, as used in <code>loadLibrary</code>

@@ -279,11 +279,6 @@ namespace IKVM.NativeCode.java
 
 		public class VMRuntime
 		{
-			public static string getVersion()
-			{
-				return typeof(VMRuntime).Assembly.GetName().Version.ToString();
-			}
-
 			public static int nativeLoad(string filename)
 			{
 				return IKVM.Runtime.JniHelper.LoadLibrary(filename);
@@ -1123,7 +1118,7 @@ namespace IKVM.NativeCode.java
 				return NativeCode.java.lang.VMSecurityManager.currentClassLoader();
 			}
 
-			public static object allocateObject(object ois, object clazz)
+			public static object allocateObject(object ois, object clazz, object constructor_clazz, object constructor)
 			{
 				Profiler.Enter("ObjectInputStream.allocateObject");
 				try
@@ -1136,39 +1131,15 @@ namespace IKVM.NativeCode.java
 					}
 					wrapper.Finish();
 					// TODO do we need error handling? (e.g. when trying to instantiate an interface or abstract class)
-					return NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
+					object obj = NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
+					MethodWrapper mw = (MethodWrapper)JVM.Library.getWrapperFromMethodOrConstructor(constructor);
+					// TODO do we need error handling?
+					mw.Invoke(obj, null, false);
+					return obj;
 				}
 				finally
 				{
 					Profiler.Leave("ObjectInputStream.allocateObject");
-				}
-			}
-
-			public static void callConstructor(object ois, object clazz, object obj)
-			{
-				Profiler.Enter("ObjectInputStream.callConstructor");
-				try
-				{
-					TypeWrapper type = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
-					// if we're trying to deserialize a string as a TC_OBJECT, we already have an initialized emtpy string
-					// so there is no need to call the constructor (which wouldn't work anyway).
-					if(!(obj is string))
-					{
-						MethodWrapper mw = type.GetMethodWrapper(new MethodDescriptor("<init>", "()V"), false);
-						if(mw == null)
-						{
-							// TODO what should we do here?
-							throw new NotImplementedException();
-						}
-						// TODO instead of calling link, we should probably Finish the wrapper
-						mw.Link();
-						// TODO what about exceptions? (should they be unwrapped?)
-						mw.Invoke(obj, null, false);
-					}
-				}
-				finally
-				{
-					Profiler.Leave("ObjectInputStream.callConstructor");
 				}
 			}
 		}
@@ -1338,6 +1309,17 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 	}
 }
 
+namespace IKVM.NativeCode.gnu.classpath
+{
+	public class VMSystemProperties
+	{
+		public static string getVersion()
+		{
+			return typeof(VMSystemProperties).Assembly.GetName().Version.ToString();
+		}
+	}
+}
+
 namespace gnu.classpath
 {
 	// This type lives here, because we don't want unverifiable code in IKVM.GNU.Classpath
@@ -1419,6 +1401,8 @@ namespace ikvm.@internal
 		object newDirectByteBuffer(IntPtr address, int capacity);
 		IntPtr getDirectBufferAddress(object buffer);
 		int getDirectBufferCapacity(object buffer);
+
+		void setProperties(System.Collections.Hashtable props);
 
 		Exception newIllegalAccessError(string msg);
 		Exception newIllegalAccessException(string msg);

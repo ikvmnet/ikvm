@@ -86,7 +86,7 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 
     public Object getSystemClassLoader()
     {
-        return System.systemClassLoader;
+        return ClassLoader.StaticData.systemClassLoader;
     }
 
     public Object box(Object val)
@@ -195,6 +195,11 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
     public int getDirectBufferCapacity(Object buffer)
     {
         return ((java.nio.ByteBuffer)buffer).capacity();
+    }
+
+    public void setProperties(cli.System.Collections.Hashtable props)
+    {
+        gnu.classpath.VMSystemProperties.props = props;
     }
 
     public Throwable newIllegalAccessError(String msg)

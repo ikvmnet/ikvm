@@ -31,6 +31,11 @@
 {
   .vtentry 1:1
   .export [1] as JNI_CreateJavaVM
+
+  // Make sure that the correct IKVM.GNU.Classpath assembly is loaded
+  ldtoken [IKVM.GNU.Classpath]java.lang.Object
+  pop
+
   ldarg.0
   ldarg.1
   ldarg.2

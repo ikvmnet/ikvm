@@ -155,8 +155,7 @@ namespace IKVM.Runtime
 
 		public static void SetProperties(System.Collections.Hashtable props)
 		{
-			Type vmruntime = Type.GetType("java.lang.VMRuntime, IKVM.GNU.Classpath");
-			vmruntime.GetField("props", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, props.Clone());
+			IKVM.Internal.JVM.Library.setProperties(props);
 		}
 
 		public static void EnterMainThread()
@@ -165,11 +164,6 @@ namespace IKVM.Runtime
 			{
 				Thread.CurrentThread.Name = "main";
 			}
-			// HACK initialize java.lang.System first
-			// (Ideally GNU Classpath wouldn't have circular initialization dependencies, but
-			// it's hard to get support for that from the community).
-			Type system = Type.GetType("java.lang.System, IKVM.GNU.Classpath");
-			System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(system.TypeHandle);
 		}
 
 		public static void ExitMainThread()
@@ -219,8 +213,7 @@ namespace IKVM.Runtime
 			{
 				throw new ArgumentException("field");
 			}
-			// HACK we use reflection to extract the fieldCookie from the java.lang.reflect.Field object
-			return (FieldWrapper)field.GetType().GetField("fieldCookie", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(field);
+			return (FieldWrapper)IKVM.Internal.JVM.Library.getWrapperFromField(field);
 		}
 
 		public static object GetFieldConstantValue(object field)
@@ -244,8 +237,7 @@ namespace IKVM.Runtime
 			{
 				throw new ArgumentException("method");
 			}
-			// HACK we use reflection to extract the methodCookie from the java.lang.reflect.Method object
-			MethodWrapper mw = (MethodWrapper)method.GetType().GetField("methodCookie", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(method);
+			MethodWrapper mw = (MethodWrapper)IKVM.Internal.JVM.Library.getWrapperFromMethodOrConstructor(method);
 			MethodBase mb = mw.GetMethod();
 			return mb != null && mb.IsDefined(typeof(ObsoleteAttribute), false);
 		}
@@ -260,8 +252,7 @@ namespace IKVM.Runtime
 			{
 				throw new ArgumentException("constructor");
 			}
-			// HACK we use reflection to extract the methodCookie from the java.lang.reflect.Constructor object
-			MethodWrapper mw = (MethodWrapper)constructor.GetType().GetField("methodCookie", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(constructor);
+			MethodWrapper mw = (MethodWrapper)IKVM.Internal.JVM.Library.getWrapperFromMethodOrConstructor(constructor);
 			MethodBase mb = mw.GetMethod();
 			return mb != null && mb.IsDefined(typeof(ObsoleteAttribute), false);
 		}

@@ -144,12 +144,24 @@ public final class Method extends AccessibleObject implements Member
      */
     public Class[] getParameterTypes()
     {
-	Object[] params = GetParameterTypes(methodCookie);
-	Class[] paramsClass = new Class[params.length];
-	System.arraycopy(params, 0, paramsClass, 0, params.length);
-	return paramsClass;
+	return GetParameterTypesHelper(methodCookie);
     }
-    static native Object[] GetParameterTypes(Object methodCookie);
+
+    static Class[] GetParameterTypesHelper(Object methodCookie)
+    {
+        Object[] params = GetParameterTypes(methodCookie);
+        Class[] paramsClass = new Class[params.length];
+        // NOTE don't use System.arraycopy because we don't want to initialize System
+        // (it causes problems when gnu.java.io.EncodingManager initializes before
+        // System is initialized.)
+        for(int i = 0; i < params.length; i++)
+        {
+            paramsClass[i] = (Class)params[i];
+        }
+        return paramsClass;
+    }
+
+    private static native Object[] GetParameterTypes(Object methodCookie);
 
     /**
      * Get the exception types this method says it throws, in no particular

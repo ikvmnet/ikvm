@@ -115,8 +115,6 @@ namespace IKVM.Runtime
 					return JNIEnv.JNI_ERR;
 				}
 			}
-			// HACK make sure the Java library is loaded
-			Assembly.Load("IKVM.GNU.Classpath");
 
 			Startup.SetProperties(props);
 
