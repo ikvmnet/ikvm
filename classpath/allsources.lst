@@ -1,6 +1,7 @@
 ikvm/lang/CIL.java
 gnu/classpath/Configuration.java
 gnu/java/nio/channels/FileChannelImpl.java
+gnu/java/net/protocol/ftp/Handler.java
 gnu/java/net/protocol/ikvmres/Handler.java
 gnu/java/net/PlainSocketImpl.java
 gnu/java/net/PlainDatagramSocketImpl.java
