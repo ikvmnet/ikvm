@@ -28,11 +28,138 @@ using System.Reflection.Emit;
 using System.Reflection;
 using System.IO;
 using System.Collections;
+using System.Collections.Specialized;
 using System.Xml;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using IKVM.Attributes;
 using IKVM.Runtime;
+
+namespace IKVM.Runtime
+{
+	public class Startup
+	{
+		public static string[] Glob(string arg)
+		{
+			if(IKVM.Internal.JVM.IsUnix)
+			{
+				return new string[] { arg };
+			}
+			try
+			{
+				string dir = Path.GetDirectoryName(arg);
+				if(dir == "")
+				{
+					dir = null;
+				}
+				ArrayList list = new ArrayList();
+				foreach(FileSystemInfo fsi in new DirectoryInfo(dir == null ? Environment.CurrentDirectory : dir).GetFileSystemInfos(Path.GetFileName(arg)))
+				{
+					list.Add(dir != null ? Path.Combine(dir, fsi.Name) : fsi.Name);
+				}
+				if(list.Count == 0)
+				{
+					return new string[] { arg };
+				}
+				return (string[])list.ToArray(typeof(string));
+			}
+			catch
+			{
+				return new string[] { arg };
+			}
+		}
+
+		public static string[] Glob()
+		{
+			if(IKVM.Internal.JVM.IsUnix)
+			{
+				return Environment.GetCommandLineArgs();
+			}
+			else
+			{
+				return Glob(1);
+			}
+		}
+
+		public static string[] Glob(int skip)
+		{
+			if(IKVM.Internal.JVM.IsUnix)
+			{
+				string[] args = Environment.GetCommandLineArgs();
+				string[] vmargs = new string[args.Length - skip];
+				Array.Copy(args, skip, vmargs, 0, args.Length - skip);
+				return vmargs;
+			}
+			else
+			{
+				ArrayList list = new ArrayList();
+				string cmdline = Environment.CommandLine;
+				System.Text.StringBuilder sb = new System.Text.StringBuilder();
+				for(int i = 0; i < cmdline.Length;)
+				{
+					bool quoted = cmdline[i] == '"';
+				cont_arg:
+					while(i < cmdline.Length && cmdline[i] != ' ' && cmdline[i] != '"')
+					{
+						sb.Append(cmdline[i++]);
+					}
+					if(i < cmdline.Length && cmdline[i] == '"')
+					{
+						if(quoted && i > 1 && cmdline[i - 1] == '"')
+						{
+							sb.Append('"');
+						}
+						i++;
+						while(i < cmdline.Length && cmdline[i] != '"')
+						{
+							sb.Append(cmdline[i++]);
+						}
+						if(i < cmdline.Length && cmdline[i] == '"')
+						{
+							i++;
+						}
+						if(i < cmdline.Length && cmdline[i] != ' ')
+						{
+							goto cont_arg;
+						}
+					}
+					while(i < cmdline.Length && cmdline[i] == ' ')
+					{
+						i++;
+					}
+					if(skip > 0)
+					{
+						skip--;
+					}
+					else
+					{
+						if(quoted)
+						{
+							list.Add(sb.ToString());
+						}
+						else
+						{
+							list.AddRange(Glob(sb.ToString()));
+						}
+					}
+					sb.Length = 0;
+				}
+				return (string[])list.ToArray(typeof(string));
+			}
+		}
+
+		public static void SetProperties(System.Collections.Specialized.StringDictionary props)
+		{
+			Type vmruntime = Type.GetType("java.lang.VMRuntime, IKVM.GNU.Classpath");
+			System.Collections.Hashtable h = new System.Collections.Hashtable();
+			foreach(DictionaryEntry de in props)
+			{
+				h.Add(de.Key, de.Value);
+			}
+			vmruntime.GetField("props", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, h);
+		}
+	}
+}
 
 namespace IKVM.Internal
 {
@@ -228,15 +355,61 @@ namespace IKVM.Internal
 				return type;
 			}
 
-			internal void SetMain(MethodInfo m, PEFileKinds target)
+			internal void SetMain(MethodInfo m, PEFileKinds target, StringDictionary props, bool noglobbing, Type apartmentAttributeType)
 			{
-				assemblyBuilder.SetEntryPoint(m, target);
+				if(noglobbing && props.Count == 0)
+				{
+					if(apartmentAttributeType != null)
+					{
+						((MethodBuilder)m).SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
+					}
+					assemblyBuilder.SetEntryPoint(m, target);
+				}
+				else
+				{
+					Type[] args = Type.EmptyTypes;
+					if(noglobbing)
+					{
+						args = new Type[] { typeof(string[]) };
+					}
+					MethodBuilder mainStub = this.ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, typeof(void), args);
+					if(apartmentAttributeType != null)
+					{
+						mainStub.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
+					}
+					ILGenerator ilgen = mainStub.GetILGenerator();
+					if(props.Count > 0)
+					{
+						ilgen.Emit(OpCodes.Newobj, typeof(StringDictionary).GetConstructor(Type.EmptyTypes));
+						foreach(DictionaryEntry de in props)
+						{
+							ilgen.Emit(OpCodes.Dup);
+							ilgen.Emit(OpCodes.Ldstr, (string)de.Key);
+							ilgen.Emit(OpCodes.Ldstr, (string)de.Value);
+							ilgen.Emit(OpCodes.Callvirt, typeof(StringDictionary).GetMethod("Add"));
+						}
+						ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("SetProperties"));
+					}
+					if(noglobbing)
+					{
+						ilgen.Emit(OpCodes.Ldarg_0);
+					}
+					else
+					{
+						ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("Glob", Type.EmptyTypes));
+					}
+					ilgen.Emit(OpCodes.Call, m);
+					ilgen.Emit(OpCodes.Ret);
+					assemblyBuilder.SetEntryPoint(mainStub, target);
+				}
 			}
 
 			internal void Save()
 			{
 				Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
 				FinishAll();
+
+				ModuleBuilder.CreateGlobalFunctions();
 
 				if(targetIsModule)
 				{
@@ -1323,7 +1496,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		public static void Compile(string path, string keyfilename, string version, bool targetIsModule, string assembly, string mainClass, ApartmentState apartment, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude, string remapfile)
+		public static void Compile(string path, string keyfilename, string version, bool targetIsModule, string assembly, string mainClass, ApartmentState apartment, PEFileKinds target, bool guessFileKind, byte[][] classes, string[] references, bool nojni, Hashtable resources, string[] classesToExclude, string remapfile, StringDictionary props, bool noglobbing)
 		{
 			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", path, assembly);
 			isStaticCompiler = true;
@@ -1412,6 +1585,12 @@ namespace IKVM.Internal
 			if(target != PEFileKinds.Dll && mainClass == null)
 			{
 				Console.Error.WriteLine("Error: no main method found");
+				return;
+			}
+
+			if(target == PEFileKinds.Dll && props.Count != 0)
+			{
+				Console.Error.WriteLine("Error: properties cannot be specified for library or module");
 				return;
 			}
 
@@ -1566,11 +1745,7 @@ namespace IKVM.Internal
 					{
 						apartmentAttributeType = typeof(MTAThreadAttribute);
 					}
-					if(apartmentAttributeType != null)
-					{
-						method.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
-					}
-					loader.SetMain(method, target);
+					loader.SetMain(method, target, props, noglobbing, apartmentAttributeType);
 					mainClass = null;
 				}
 			}

@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Text;
 using System.Reflection;
@@ -91,7 +92,7 @@ namespace IKVM.Runtime
 			{
 				return JNIEnv.JNI_ERR;
 			}
-			Hashtable props = new Hashtable();
+			StringDictionary props = new StringDictionary();
 			for(int i = 0; i < pInitArgs->nOptions; i++)
 			{
 				string option = new String(pInitArgs->options[i].optionString);
@@ -114,12 +115,9 @@ namespace IKVM.Runtime
 				}
 			}
 			// HACK make sure the Java library is loaded
-			Assembly javalib = Assembly.Load("IKVM.GNU.Classpath");
+			Assembly.Load("IKVM.GNU.Classpath");
 
-			// HACK poke the properties into a special field in VMRuntime, so that they are copied into the
-			// defaultProperties collection.
-			Type vmruntime = javalib.GetType("java.lang.VMRuntime");
-			vmruntime.GetField("props", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, props);
+			Startup.SetProperties(props);
 
 			*((void**)ppvm) = JavaVM.pJavaVM;
 			return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)ppenv, null);
@@ -1049,7 +1047,7 @@ namespace IKVM.Runtime
 		internal static JNIEnv* CreateJNIEnv()
 		{
 			JNIEnv* pJNIEnv = TlsHack.pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
-			System.Threading.Thread.SetData(cleanupHelperDataSlot, new JNIEnvCleanupHelper(pJNIEnv));
+			//System.Threading.Thread.SetData(cleanupHelperDataSlot, new JNIEnvCleanupHelper(pJNIEnv));
 			pJNIEnv->vtable = VtableBuilder.vtable;
 			object[][] localRefs = new object[32][];
 			localRefs[0] = new object[JNIEnv.LOCAL_REF_BUCKET_SIZE];

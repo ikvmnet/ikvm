@@ -622,9 +622,12 @@ class InstructionState
 			{
 				readers = new Hashtable();
 			}
-			foreach(int store in localStoreSites[index].Keys)
+			if(localStoreSites[index] != null)
 			{
-				readers[store] = "";
+				foreach(int store in localStoreSites[index].Keys)
+				{
+					readers[store] = "";
+				}
 			}
 			return locals[index];
 		}
@@ -1140,7 +1143,8 @@ class MethodAnalyzer
 				state[0].SetLocalType(firstNonArgLocalIndex++, wrapper, -1);
 			}
 		}
-		TypeWrapper[] argTypeWrappers = mw.GetParameters();
+		// mw can be null when we're invoked from IsSideEffectFreeStaticInitializer
+		TypeWrapper[] argTypeWrappers = mw == null ? TypeWrapper.EmptyArray : mw.GetParameters();
 		for(int i = 0; i < argTypeWrappers.Length; i++)
 		{
 			TypeWrapper type = argTypeWrappers[i];
@@ -1383,10 +1387,76 @@ class MethodAnalyzer
 								s.PopObjectType();
 								break;
 							case NormalizedByteCode.__getstatic:
-								s.PushType((GetFieldref(instr.Arg1)).GetFieldType());
+								// special support for when we're being called from IsSideEffectFreeStaticInitializer
+								if(mw == null)
+								{
+									switch(GetFieldref(instr.Arg1).Signature[0])
+									{
+										case 'B':
+										case 'Z':
+										case 'C':
+										case 'S':
+										case 'I':
+											s.PushInt();
+											break;
+										case 'F':
+											s.PushFloat();
+											break;
+										case 'D':
+											s.PushDouble();
+											break;
+										case 'J':
+											s.PushLong();
+											break;
+										case 'L':
+										case '[':
+											throw new VerifyError();
+										default:
+											throw new InvalidOperationException();
+									}
+								}
+								else
+								{
+									s.PushType((GetFieldref(instr.Arg1)).GetFieldType());
+								}
 								break;
 							case NormalizedByteCode.__putstatic:
-								s.PopType(GetFieldref(instr.Arg1).GetFieldType());
+								// special support for when we're being called from IsSideEffectFreeStaticInitializer
+								if(mw == null)
+								{
+									switch(GetFieldref(instr.Arg1).Signature[0])
+									{
+										case 'B':
+										case 'Z':
+										case 'C':
+										case 'S':
+										case 'I':
+											s.PopInt();
+											break;
+										case 'F':
+											s.PopFloat();
+											break;
+										case 'D':
+											s.PopDouble();
+											break;
+										case 'J':
+											s.PopLong();
+											break;
+										case 'L':
+										case '[':
+											if(s.PopAnyType() != VerifierTypeWrapper.Null)
+											{
+												throw new VerifyError();
+											}
+											break;
+										default:
+											throw new InvalidOperationException();
+									}
+								}
+								else
+								{
+									s.PopType(GetFieldref(instr.Arg1).GetFieldType());
+								}
 								break;
 							case NormalizedByteCode.__getfield:
 								s.PopObjectType(GetFieldref(instr.Arg1).GetClassType());
@@ -1837,7 +1907,8 @@ class MethodAnalyzer
 								s.PopObjectType();
 								break;
 							case NormalizedByteCode.__return:
-								if(mw.ReturnType != PrimitiveTypeWrapper.VOID)
+								// mw is null if we're called from IsSideEffectFreeStaticInitializer
+								if(mw != null && mw.ReturnType != PrimitiveTypeWrapper.VOID)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}
@@ -2319,7 +2390,7 @@ class MethodAnalyzer
 				{
 					local = l;
 				}
-				else
+				else if(local != l)
 				{
 					// If we've already defined a LocalVar and we find another one, then we merge them
 					// together.
@@ -2357,13 +2428,10 @@ class MethodAnalyzer
 			LocalVar v = (LocalVar)localByStoreSite[store + ":" + localIndex];
 			if(v == null)
 			{
-				// TODO does this ever happen?
 				localByStoreSite[store + ":" + localIndex] = local;
 			}
 			else if(v != local)
 			{
-				// TODO does this ever happen?
-				Console.WriteLine("merging...");
 				local = MergeLocals(locals, localByStoreSite, local, v);
 			}
 		}
@@ -2371,6 +2439,7 @@ class MethodAnalyzer
 
 	private static LocalVar MergeLocals(ArrayList locals, Hashtable localByStoreSite, LocalVar l1, LocalVar l2)
 	{
+		Debug.Assert(l1 != l2);
 		Debug.Assert(l1.local == l2.local);
 		for(int i = 0; i < locals.Count; i++)
 		{

@@ -477,6 +477,14 @@ abstract class TypeWrapper
 		}
 	}
 
+	internal virtual bool HasStaticInitializer
+	{
+		get
+		{
+			return false;
+		}
+	}
+
 	// a ghost is an interface that appears to be implemented by a .NET type
 	// (e.g. System.String (aka java.lang.String) appears to implement java.lang.CharSequence,
 	// so java.lang.CharSequence is a ghost)
@@ -1645,6 +1653,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 	private MethodBuilder ghostIsInstanceArrayMethod;
 	private MethodBuilder ghostCastMethod;
 	private MethodBuilder ghostCastArrayMethod;
+	private bool hasStaticInitializer;
 	private static TypeWrapper[] mappedExceptions;
 	private static bool[] mappedExceptionsAllSubClasses;
 	private static Hashtable ghosts;
@@ -1697,6 +1706,14 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		}
 
 		impl = new JavaTypeImpl(f, this);
+	}
+
+	internal override bool HasStaticInitializer
+	{
+		get
+		{
+			return hasStaticInitializer;
+		}
 	}
 
 	internal override Assembly Assembly
@@ -2024,12 +2041,27 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			this.wrapper = wrapper;
 
 			// process all methods
+			bool hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
 			methods = new MethodWrapper[classFile.Methods.Length];
 			baseMethods = new MethodWrapper[classFile.Methods.Length];
 			methodLookup = new Hashtable();
 			for(int i = 0; i < methods.Length; i++)
 			{
 				ClassFile.Method m = classFile.Methods[i];
+				if(m.IsClassInitializer)
+				{
+					if(JVM.IsStaticCompiler)
+					{
+						if(!IsSideEffectFreeStaticInitializer(m))
+						{
+							hasclinit = true;
+						}
+					}
+					else
+					{
+						hasclinit = true;
+					}
+				}
 				MethodDescriptor md = new MethodDescriptor(m.Name, m.Signature);
 				if(wrapper.IsGhost)
 				{
@@ -2051,6 +2083,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				methodLookup[md] = i;
 				wrapper.AddMethod(methods[i]);
 			}
+			wrapper.hasStaticInitializer = hasclinit;
 			if(wrapper.IsAbstract && !wrapper.IsInterface)
 			{
 				ArrayList methodsArray = new ArrayList(methods);
@@ -2072,6 +2105,10 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				if(f.IsFinal)
 				{
 					typeAttribs |= TypeAttributes.Sealed;
+				}
+				if(!hasclinit)
+				{
+					typeAttribs |= TypeAttributes.BeforeFieldInit;
 				}
 				TypeBuilder outer = null;
 				// only if requested, we compile inner classes as nested types, because it has a higher cost
@@ -2179,6 +2216,55 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					JVM.CriticalFailure("Exception during critical part of JavaTypeImpl construction", x);
 				}
 				throw;
+			}
+		}
+
+		private bool IsSideEffectFreeStaticInitializer(ClassFile.Method m)
+		{
+			if(m.ExceptionTable.Length != 0)
+			{
+				return false;
+			}
+			for(int i = 0; i < m.Instructions.Length; i++)
+			{
+				ByteCode bc = m.Instructions[i].OpCode;
+				if(bc == ByteCode.__getstatic || bc == ByteCode.__putstatic)
+				{
+					ClassFile.ConstantPoolItemFieldref fld = classFile.GetFieldref(m.Instructions[i].Arg1);
+					if(fld.Class != classFile.Name)
+					{
+						return false;
+					}
+					// don't allow getstatic to load non-primitive fields, because that would
+					// cause the verifier to try to load the type
+					if(bc == ByteCode.__getstatic && "L[".IndexOf(fld.Signature[0]) != -1)
+					{
+						return false;
+					}
+				}
+				else if(bc == ByteCode.__areturn ||
+					bc == ByteCode.__ireturn ||
+					bc == ByteCode.__lreturn ||
+					bc == ByteCode.__freturn ||
+					bc == ByteCode.__dreturn)
+				{
+					return false;
+				}
+				else if(ByteCodeMetaData.CanThrowException(bc))
+				{
+					return false;
+				}
+			}
+			// the method needs to be verifiable to be side effect free, since we already analysed it,
+			// we know that the verifier won't try to load any types (which isn't allowed at this time)
+			try
+			{
+				new MethodAnalyzer(wrapper, null, classFile, m, null);
+				return true;
+			}
+			catch(VerifyError)
+			{
+				return false;
 			}
 		}
 
@@ -2665,7 +2751,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						parent = parent.BaseTypeWrapper;
 					}
 				}
-				bool basehasclinit = wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.TypeAsTBD.TypeInitializer != null;
+				bool basehasclinit = wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasStaticInitializer;
 				bool hasclinit = false;
 				for(int i = 0; i < classFile.Methods.Length; i++)
 				{
@@ -3352,8 +3438,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 
 		private ConstructorBuilder DefineClassInitializer()
 		{
-			// NOTE we don't need to record the modifiers here, because they aren't visible from Java reflection
-			if(!classFile.IsFinal && !classFile.IsInterface)
+			if(!classFile.IsFinal && !classFile.IsInterface && wrapper.HasStaticInitializer)
 			{
 				// We create a field that the derived classes can access in their .cctor to trigger our .cctor
 				// (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
@@ -3366,6 +3451,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				// the class constructor public
 				return typeBuilder.DefineConstructor(MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
 			}
+			// NOTE we don't need to record the modifiers here, because they aren't visible from Java reflection
 			return typeBuilder.DefineTypeInitializer();
 		}
 
@@ -4152,6 +4238,14 @@ sealed class CompiledTypeWrapper : LazyTypeWrapper
 			modifiers |= Modifiers.Interface;
 		}
 		return modifiers;
+	}
+
+	internal override bool HasStaticInitializer
+	{
+		get
+		{
+			return type.GetField("__<clinit>", BindingFlags.NonPublic | BindingFlags.Static) != null;
+		}
 	}
 
 	internal override Assembly Assembly

@@ -492,7 +492,7 @@ final class VMRuntime
 		p.setProperty(key.substring(5), appSettings.get_Item(key));
 	    }
 	}
-	// HACK set the properties that were specified on the ikvm.exe command line
+	// set the properties that were specified with IKVM.Runtime.Startup.SetProperties()
 	if(props != null)
 	{
 	    cli.System.Collections.IEnumerator entries = ((cli.System.Collections.IEnumerable)props).GetEnumerator();

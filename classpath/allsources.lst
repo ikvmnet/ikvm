@@ -228,7 +228,6 @@ sun/misc/Ref.java
 ../../classpath/gnu/java/math/MPN.java
 ../../classpath/gnu/java/net/HeaderFieldHelper.java
 ../../classpath/gnu/java/net/URLParseError.java
-../../classpath/gnu/java/net/content/text/plain.java
 ../../classpath/gnu/java/net/protocol/file/Connection.java
 ../../classpath/gnu/java/net/protocol/file/Handler.java
 ../../classpath/gnu/java/net/protocol/http/Connection.java

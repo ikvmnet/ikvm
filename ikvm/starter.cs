@@ -26,8 +26,10 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections;
+using System.Collections.Specialized;
 using System.Text;
 using IKVM.Internal;
+using IKVM.Runtime;
 
 using java.lang.reflect;
 using java.net;
@@ -126,7 +128,7 @@ public class Starter
 	{
 		Tracer.EnableTraceForDebug();
 		System.Threading.Thread.CurrentThread.Name = "main";
-		Hashtable props = new Hashtable();
+		StringDictionary props = new StringDictionary();
 		bool jar = false;
 		bool saveAssembly = false;
 		bool saveAssemblyX = false;
@@ -211,8 +213,7 @@ public class Starter
 			else
 			{
 				mainClass = args[i];
-				vmargs = new string[args.Length - (i + 1)];
-				System.Array.Copy(args, i + 1, vmargs, 0, vmargs.Length);
+				vmargs = Startup.Glob(i + 2);
 				break;
 			}
 		}
@@ -224,14 +225,14 @@ public class Starter
 			Console.Error.WriteLine("          (to execute a jar file)");
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("where options include:");
-			Console.Error.WriteLine("    -? -help          display this message");
+			Console.Error.WriteLine("    -? -help          Display this message");
 			Console.Error.WriteLine("    -cp -classpath <directories and zip/jar files separated by {0}>", Path.PathSeparator);
-			Console.Error.WriteLine("                      set search path for application classes and resources");
-			Console.Error.WriteLine("    -D<name>=<value>  set a system property");
-			Console.Error.WriteLine("    -Xsave            save the generated assembly (for debugging)");
-			Console.Error.WriteLine("    -Xtime            time the execution");
+			Console.Error.WriteLine("                      Set search path for application classes and resources");
+			Console.Error.WriteLine("    -D<name>=<value>  Set a system property");
+			Console.Error.WriteLine("    -Xsave            Save the generated assembly (for debugging)");
+			Console.Error.WriteLine("    -Xtime            Time the execution");
 			Console.Error.WriteLine("    -Xbootclasspath:<directories and zip/jar files separated by {0}>", Path.PathSeparator);
-			Console.Error.WriteLine("                      set search path for bootstrap classes and resources");
+			Console.Error.WriteLine("                      Set search path for bootstrap classes and resources");
 			Console.Error.WriteLine("    -Xtrace:<string>  Displays all tracepoints with the given name");
 			Console.Error.WriteLine("    -Xmethodtrace:<string>  Builds method trace into the specified output methods");
 			Console.Error.WriteLine("    -Xwait            Keep process hanging around after exit");
@@ -240,10 +241,7 @@ public class Starter
 		}
 		try
 		{
-			// HACK poke the properties into a special field in VMRuntime, so that they are copied into the
-			// defaultProperties collection.
-			Type vmruntime = typeof(java.lang.Runtime).Assembly.GetType("java.lang.VMRuntime");
-			vmruntime.GetField("props", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, props);
+			Startup.SetProperties(props);
 			// HACK we take our own assembly location as the location of classpath (this is used by the Security infrastructure
 			// to find the classpath.security file)
 			java.lang.System.setProperty("gnu.classpath.home", new System.IO.FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName);

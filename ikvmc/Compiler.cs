@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections;
+using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -83,10 +84,12 @@ class Compiler
 		string defaultAssemblyName = null;
 		string remapfile = null;
 		bool nojni = false;
+		bool noglobbing = false;
 		ApartmentState apartment = ApartmentState.STA;
 		ArrayList classesToExclude = new ArrayList();
 		ArrayList references = new ArrayList();
 		ArrayList arglist = GetArgs(args);
+		StringDictionary props = new StringDictionary();
 		if(arglist.Count == 0)
 		{
 			Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
@@ -111,6 +114,8 @@ class Compiler
 			Console.Error.WriteLine("    -apartment:sta             (default) Mark main method with STAThreadAttribute");
 			Console.Error.WriteLine("    -apartment:mta             Mark main method with MTAThreadAttribute");
 			Console.Error.WriteLine("    -apartment:none            Don't mark main method with STAThreadAttribute");
+			Console.Error.WriteLine("    -noglobbing                Don't glob the arguments");
+			Console.Error.WriteLine("    -D<name>=<value>           Set a system property (at runtime)");
 			Console.Error.WriteLine("    -Xtrace:<string>           Displays all tracepoints with the given name");
 			Console.Error.WriteLine("    -Xmethodtrace:<string>     Builds method trace into the specified output methods");
 			return 1;
@@ -178,6 +183,19 @@ class Compiler
 							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
 							break;
 					}
+				}
+				else if(s == "-noglobbing")
+				{
+					noglobbing = true;
+				}
+				else if(s.StartsWith("-D"))
+				{
+					string[] keyvalue = s.Substring(2).Split('=');
+					if(keyvalue.Length != 2)
+					{
+						keyvalue = new string[] { keyvalue[0], "" };
+					}
+					props[keyvalue[0]] = keyvalue[1];
 				}
 				else if(s.StartsWith("-main:"))
 				{
@@ -351,7 +369,7 @@ class Compiler
 		}
 		try
 		{
-			JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, apartment, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)), remapfile);
+			JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, apartment, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)), remapfile, props, noglobbing);
 			return 0;
 		}
 		catch(Exception x)
