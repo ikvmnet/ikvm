@@ -38,19 +38,19 @@ namespace NativeCode.java
 		{
 			public class Proxy
 			{
-				// NOTE not used, only here to shut up ikvmc during compilation of classpath.dll
+				// NOTE not used, only here to shut up ikvmc during compilation of IKVM.GNU.Classpath.dll
 				public static object getProxyClass0(object o1, object o2)
 				{
 					throw new InvalidOperationException();
 				}
 				
-				// NOTE not used, only here to shut up ikvmc during compilation of classpath.dll
+				// NOTE not used, only here to shut up ikvmc during compilation of IKVM.GNU.Classpath.dll
 				public static object getProxyData0(object o1, object o2)
 				{
 					throw new InvalidOperationException();
 				}
 				
-				// NOTE not used, only here to shut up ikvmc during compilation of classpath.dll
+				// NOTE not used, only here to shut up ikvmc during compilation of IKVM.GNU.Classpath.dll
 				public static object generateProxyClass0(object o1, object o2)
 				{
 					throw new InvalidOperationException();
@@ -912,7 +912,7 @@ namespace NativeCode.java
 					createClass = (LookupDelegate)Delegate.CreateDelegate(typeof(LookupDelegate), tw.TypeAsTBD.GetMethod("createClass", BindingFlags.Static | BindingFlags.Public));
 					// HACK to make sure we don't run into any problems creating class objects for classes that
 					// participate in the VMClass static initialization, we first do a bogus call to initialize
-					// the machinery (I ran into this when running netexp on classpath.dll)
+					// the machinery (I ran into this when running ikvmstub on IKVM.GNU.Classpath.dll)
 					createClass(null);
 					lock(map.SyncRoot)
 					{

@@ -125,13 +125,13 @@ public class JVM
 				{
 					if(IsUnix)
 					{
-						Tracer.Info(Tracer.Runtime, "Loading JNI provider: Mono.IKVM.JNI");
-						provider = Assembly.Load("Mono.IKVM.JNI").GetType("JNI", true);
+						Tracer.Info(Tracer.Runtime, "Loading JNI provider: IKVM.JNI.Mono");
+						provider = Assembly.Load("IKVM.JNI.Mono").GetType("JNI", true);
 					}
 					else
 					{
-						Tracer.Info(Tracer.Runtime, "Loading JNI provider: ik.vm.jni");
-						provider = Assembly.Load("ik.vm.jni").GetType("JNI", true);
+						Tracer.Info(Tracer.Runtime, "Loading JNI provider: IKVM.JNI.CLR-Win32");
+						provider = Assembly.Load("IKVM.JNI.CLR-Win32").GetType("JNI", true);
 					}
 				}
 				jniProvider = (IJniProvider)Activator.CreateInstance(provider);
@@ -1371,10 +1371,10 @@ public class JVM
 		// Do a sanity check to make sure some of the bootstrap classes are available
 		if(loader.LoadClassByDottedNameFast("java.lang.Object") == null)
 		{
-			Assembly classpath = Assembly.LoadWithPartialName("classpath");
+			Assembly classpath = Assembly.LoadWithPartialName("IKVM.GNU.Classpath");
 			if(classpath == null)
 			{
-				Console.Error.WriteLine("Error: bootstrap classes missing and classpath.dll not found");
+				Console.Error.WriteLine("Error: bootstrap classes missing and IKVM.GNU.Classpath.dll not found");
 				return;
 			}
 			Console.Error.WriteLine("Warning: bootstrap classes are missing, automatically adding reference to {0}", classpath.Location);

@@ -463,7 +463,7 @@ final class VMRuntime
 	}
 	p.setProperty("user.home", home);
 	p.setProperty("user.dir", cli.System.Environment.get_CurrentDirectory());
-	p.setProperty("awt.toolkit", "ikvm.awt.NetToolkit, awt, Version=1.0, Culture=neutral, PublicKeyToken=null");
+	p.setProperty("awt.toolkit", "ikvm.awt.NetToolkit, IKVM.AWT.WinForms");
 	// HACK since we cannot use URL here (it depends on the properties being set), we manually encode the spaces in the assembly name
         p.setProperty("gnu.classpath.home.url", "ikvmres://" + ((cli.System.String)(Object)cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName()).Replace(" ", "%20") + "/lib");
     }

@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc", "ikvmc\ikvmc.csproj
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "awt", "awt\awt.csproj", "{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.AWT.WinForms", "awt\IKVM.AWT.WinForms.csproj", "{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
@@ -53,10 +53,6 @@ Global
 		{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}.Debug.Build.0 = Debug|.NET
 		{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}.Release.ActiveCfg = Release|.NET
 		{E00A0FA2-1FD7-4DD9-8C06-7202CE366102}.Release.Build.0 = Release|.NET
-		{13A5BB9F-D5FB-4061-BB0C-A111BE84A978}.Debug.ActiveCfg = Debug|.NET
-		{13A5BB9F-D5FB-4061-BB0C-A111BE84A978}.Debug.Build.0 = Debug|.NET
-		{13A5BB9F-D5FB-4061-BB0C-A111BE84A978}.Release.ActiveCfg = Release|.NET
-		{13A5BB9F-D5FB-4061-BB0C-A111BE84A978}.Release.Build.0 = Release|.NET
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

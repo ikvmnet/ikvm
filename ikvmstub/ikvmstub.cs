@@ -196,7 +196,7 @@ public class NetExp
 				code.MaxLocals = (ushort)(args.Length + 1);
 				code.MaxStack = 3;
 				ushort index1 = f.AddClass("java/lang/UnsatisfiedLinkError");
-				ushort index2 = f.AddString("Netexp generated stubs can only be used on IKVM.NET");
+				ushort index2 = f.AddString("ikvmstub generated stubs can only be used on IKVM.NET");
 				ushort index3 = f.AddMethodRef("java/lang/UnsatisfiedLinkError", "<init>", "(Ljava/lang/String;)V");
 				code.ByteCode = new byte[] {
 					187, (byte)(index1 >> 8), (byte)index1,	// new java/lang/UnsatisfiedLinkError
