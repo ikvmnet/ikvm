@@ -238,17 +238,28 @@ class ClassLoaderWrapper
 				{
 					dims++;
 				}
+				if(name[dims] == 'L')
+				{
+					if(!name.EndsWith(";") || name.Length <= dims + 2 || name[dims + 1] == '[')
+					{
+						// malformed class name
+						return null;
+					}
+					string elemClass = name.Substring(dims + 1, name.Length - dims - 2);
+					type = LoadClassByDottedNameFast(elemClass);
+					if(type != null)
+					{
+						type = type.GetClassLoader().CreateArrayType(name, type.TypeAsArrayType, dims);
+					}
+					return type;
+				}
+				if(name.Length != dims + 1)
+				{
+					// malformed class name
+					return null;
+				}
 				switch(name[dims])
 				{
-					case 'L':
-					{
-						type = LoadClassByDottedNameFast(name.Substring(dims + 1, name.IndexOf(';', dims) - dims - 1));
-						if(type != null)
-						{
-							type = type.GetClassLoader().CreateArrayType(name, type.TypeAsArrayType, dims);
-						}
-						return type;
-					}
 					case 'B':
 						return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BYTE.TypeAsArrayType, dims);
 					case 'C':
