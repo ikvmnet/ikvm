@@ -47,48 +47,93 @@ namespace IKVM.Attributes
 
 	public sealed class LineNumberTableAttribute : Attribute
 	{
-		private ushort[] table;
-		private byte[] wideTable;
+		private byte[] table;
 
-		public LineNumberTableAttribute(ushort[] table)
+		public LineNumberTableAttribute(byte[] table)
 		{
 			this.table = table;
 		}
 
-		public LineNumberTableAttribute(byte[] table)
+		/**
+		 * packed integer format:
+		 * ----------------------
+		 * 
+		 * First byte:
+		 * 00 - 7F      Single byte integer (0 - 127)
+		 * 80 - BF      Double byte integer (0 - 16383)
+		 * C0 - DF      Triple byte integer (0 - 4194303)
+		 * E0 - FE      Reserved
+		 * FF           Five byte integer
+		 */
+		internal static void WritePackedInteger(System.IO.MemoryStream stream, uint val)
 		{
-			this.wideTable = table;
+			if(val < 128)
+			{
+				stream.WriteByte((byte)val);
+			}
+			else if(val < 16384)
+			{
+				stream.WriteByte((byte)(0x80 + (val >> 8)));
+				stream.WriteByte((byte)val);
+			}
+			else if(val < 4194304)
+			{
+				stream.WriteByte((byte)(0xC0 + (val >> 16)));
+				stream.WriteByte((byte)(val >> 8));
+				stream.WriteByte((byte)val);
+			}
+			else
+			{
+				stream.WriteByte(0xFF);
+				stream.WriteByte((byte)(val >> 24));
+				stream.WriteByte((byte)(val >> 16));
+				stream.WriteByte((byte)(val >>  8));
+				stream.WriteByte((byte)(val >>  0));
+			}
+		}
+
+		private int ReadPackedInteger(ref int position)
+		{
+			byte b = table[position++];
+			if(b < 128)
+			{
+				return b;
+			}
+			else if((b & 0xC0) == 0x80)
+			{
+				return ((b & 0x7F) << 8) + table[position++];
+			}
+			else if((b & 0xE0) == 0xC0)
+			{
+				int val = ((b & 0x3F) << 16);
+				val += (table[position++] << 8);
+				val += table[position++];
+				return val;
+			}
+			else if(b == 0xFF)
+			{
+				int val = table[position++] << 24;
+				val += table[position++] << 16;
+				val += table[position++] <<  8;
+				val += table[position++] <<  0;
+				return val;
+			}
+			else
+			{
+				throw new InvalidProgramException();
+			}
 		}
 
 		public int GetLineNumber(int ilOffset)
 		{
 			int line = -1;
-			if(table != null)
+			for(int i = 0; i < table.Length;)
 			{
-				for(int i = 0; i < table.Length; i += 2)
+				if(ReadPackedInteger(ref i) > ilOffset)
 				{
-					if(table[i + 0] > ilOffset)
-					{
-						return line;
-					}
-					line = table[i + 1];
+					return line;
 				}
-			}
-			else
-			{
-				for(int i = 0; i < wideTable.Length; i += 6)
-				{
-					int offset =
-						(wideTable[i + 0] << 0) +
-						(wideTable[i + 1] << 8) +
-						(wideTable[i + 2] << 16) +
-						(wideTable[i + 3] << 24);
-					if(offset > ilOffset)
-					{
-						return line;
-					}
-					line = wideTable[i + 4] + (wideTable[i + 5] << 8);
-				}
+				line = ReadPackedInteger(ref i);
 			}
 			return line;
 		}

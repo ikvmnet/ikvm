@@ -961,6 +961,13 @@ class ClassLoaderWrapper
 		typeToTypeWrapper.Add(type, wrapper);
 	}
 
+	internal static void PublishLibraryImplementationHelperType(Type type)
+	{
+		CompiledTypeWrapper typeWrapper = new CompiledTypeWrapper(type.FullName, type);
+		SetWrapperForType(type, typeWrapper);
+		GetBootstrapClassLoader().types[type.FullName] = typeWrapper;
+	}
+
 	internal static TypeWrapper LoadClassCritical(string name)
 	{
 		try

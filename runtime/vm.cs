@@ -1147,6 +1147,7 @@ namespace IKVM.Internal
 								Array.Copy(paramTypes, 0, exParamTypes, 1, paramTypes.Length);
 								exParamTypes[0] = typeWrapper.shadowType;
 								mbHelper = typeWrapper.typeBuilder.DefineMethod("instancehelper_" + m.Name, attr, CallingConventions.Standard, retType, exParamTypes);
+								AttributeHelper.SetEditorBrowsableNever(mbHelper);
 								AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
 								AttributeHelper.SetNameSig(mbHelper, m.Name, m.Sig);
 								AddDeclaredExceptions(mbHelper, m.throws);
@@ -1555,6 +1556,57 @@ namespace IKVM.Internal
 					CreateShadowInstanceOf(remappedTypes);
 					CreateShadowCheckCast(remappedTypes);
 
+					if(!shadowType.IsInterface)
+					{
+						// For all inherited methods, we emit a method that hide the inherited method and
+						// annotate it with EditorBrowsableAttribute(EditorBrowsableState.Never) to make
+						// sure the inherited methods don't show up in Intellisense.
+						Hashtable methods = new Hashtable();
+						foreach(MethodInfo mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
+						{
+							ParameterInfo[] paramInfo = mi.GetParameters();
+							Type[] paramTypes = new Type[paramInfo.Length];
+							for(int i = 0; i < paramInfo.Length; i++)
+							{
+								paramTypes[i] = paramInfo[i].ParameterType;
+							}
+							MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot), mi.ReturnType, paramTypes);
+							AttributeHelper.HideFromJava(mb);
+							AttributeHelper.SetEditorBrowsableNever(mb);
+							ILGenerator ilgen = mb.GetILGenerator();
+							for(int i = 0; i < paramTypes.Length; i++)
+							{
+								ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+							}
+							if(!mi.IsStatic)
+							{
+								ilgen.Emit(OpCodes.Ldarg_S, (byte)paramTypes.Length);
+							}
+							ilgen.Emit(OpCodes.Call, mi);
+							ilgen.Emit(OpCodes.Ret);
+							methods[mb.Name] = mb;
+						}
+						foreach(PropertyInfo pi in typeBuilder.BaseType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
+						{
+							ParameterInfo[] paramInfo = pi.GetIndexParameters();
+							Type[] paramTypes = new Type[paramInfo.Length];
+							for(int i = 0; i < paramInfo.Length; i++)
+							{
+								paramTypes[i] = paramInfo[i].ParameterType;
+							}
+							PropertyBuilder pb = typeBuilder.DefineProperty(pi.Name, pi.Attributes, pi.PropertyType, paramTypes);
+							if(pi.CanRead)
+							{
+								pb.SetGetMethod((MethodBuilder)methods[pi.GetGetMethod().Name]);
+							}
+							if(pi.CanWrite)
+							{
+								pb.SetSetMethod((MethodBuilder)methods[pi.GetSetMethod().Name]);
+							}
+							AttributeHelper.SetEditorBrowsableNever(pb);
+						}
+					}
+
 					typeBuilder.CreateType();
 					if(helperTypeBuilder != null)
 					{
@@ -1570,8 +1622,9 @@ namespace IKVM.Internal
 						return;
 					}
 					MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
-					MethodBuilder mb = typeBuilder.DefineMethod("shadow/instanceof", attr, typeof(bool), new Type[] { typeof(object) });
+					MethodBuilder mb = typeBuilder.DefineMethod("__<instanceof>", attr, typeof(bool), new Type[] { typeof(object) });
 					AttributeHelper.HideFromJava(mb);
+					AttributeHelper.SetEditorBrowsableNever(mb);
 					ILGenerator ilgen = mb.GetILGenerator();
 
 					ilgen.Emit(OpCodes.Ldarg_0);
@@ -1618,8 +1671,9 @@ namespace IKVM.Internal
 						return;
 					}
 					MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
-					MethodBuilder mb = typeBuilder.DefineMethod("shadow/checkcast", attr, shadowType, new Type[] { typeof(object) });
+					MethodBuilder mb = typeBuilder.DefineMethod("__<checkcast>", attr, shadowType, new Type[] { typeof(object) });
 					AttributeHelper.HideFromJava(mb);
+					AttributeHelper.SetEditorBrowsableNever(mb);
 					ILGenerator ilgen = mb.GetILGenerator();
 
 					Label fail = ilgen.DefineLabel();
@@ -1986,6 +2040,9 @@ namespace IKVM.Internal
 				// we need to scan again for remapped types, now that we've loaded the core library
 				ClassLoaderWrapper.LoadRemappedTypes();
 			}
+
+			ClassLoaderWrapper.PublishLibraryImplementationHelperType(typeof(gnu.classpath.RawData));
+
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
 			ArrayList allwrappers = new ArrayList();
 			foreach(string s in h.Keys)

@@ -437,6 +437,14 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("blt_un")]
+	public sealed class Blt_Un : Branch
+	{
+		public Blt_Un() : base(OpCodes.Blt_Un)
+		{
+		}
+	}
+
 	[XmlType("label")]
 	public sealed class BrLabel : Instruction
 	{
@@ -505,6 +513,18 @@ namespace IKVM.Internal.MapXml
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldloc, (LocalBuilder)context[Name]);
+		}
+	}
+
+	[XmlType("ldarga")]
+	public sealed class LdArga : Instruction
+	{
+		[XmlAttribute("argNum")]
+		public ushort ArgNum;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Ldarga, ArgNum);
 		}
 	}
 
@@ -588,6 +608,14 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("stind_i1")]
+	public sealed class Stind_i1 : Simple
+	{
+		public Stind_i1() : base(OpCodes.Stind_I1)
+		{
+		}
+	}
+
 	[XmlType("ret")]
 	public sealed class Ret : Simple
 	{
@@ -601,6 +629,62 @@ namespace IKVM.Internal.MapXml
 	{
 		public Throw() : base(OpCodes.Throw)
 		{
+		}
+	}
+
+	[XmlType("ldflda")]
+	public sealed class Ldflda : Instruction
+	{
+		[XmlAttribute("class")]
+		public string Class;
+		[XmlAttribute("name")]
+		public string Name;
+		[XmlAttribute("sig")]
+		public string Sig;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
+			fw.Link();
+			ilgen.Emit(OpCodes.Ldflda, fw.GetField());
+		}
+	}
+
+	[XmlType("ldfld")]
+	public sealed class Ldfld : Instruction
+	{
+		[XmlAttribute("class")]
+		public string Class;
+		[XmlAttribute("name")]
+		public string Name;
+		[XmlAttribute("sig")]
+		public string Sig;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
+			fw.Link();
+			// we don't use fw.EmitGet because we don't want automatic boxing and whatever
+			ilgen.Emit(OpCodes.Ldfld, fw.GetField());
+		}
+	}
+
+	[XmlType("stfld")]
+	public sealed class Stfld : Instruction
+	{
+		[XmlAttribute("class")]
+		public string Class;
+		[XmlAttribute("name")]
+		public string Name;
+		[XmlAttribute("sig")]
+		public string Sig;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
+			fw.Link();
+			// we don't use fw.EmitSet because we don't want automatic unboxing and whatever
+			ilgen.Emit(OpCodes.Stfld, fw.GetField());
 		}
 	}
 
@@ -618,7 +702,8 @@ namespace IKVM.Internal.MapXml
 		{
 			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
-			fw.EmitSet(ilgen);
+			// we don't use fw.EmitSet because we don't want automatic unboxing and whatever
+			ilgen.Emit(OpCodes.Stsfld, fw.GetField());
 		}
 	}
 
@@ -654,6 +739,14 @@ namespace IKVM.Internal.MapXml
 	public sealed class Ldc_I4_M1 : Simple
 	{
 		public Ldc_I4_M1() : base(OpCodes.Ldc_I4_M1)
+		{
+		}
+	}
+
+	[XmlType("conv_i")]
+	public sealed class Conv_I : Simple
+	{
+		public Conv_I() : base(OpCodes.Conv_I)
 		{
 		}
 	}
@@ -714,6 +807,26 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("unaligned")]
+	public sealed class Unaligned : Instruction
+	{
+		[XmlAttribute("alignment")]
+		public int Alignment;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Unaligned, (byte)Alignment);
+		}
+	}
+
+	[XmlType("cpblk")]
+	public sealed class Cpblk : Simple
+	{
+		public Cpblk() : base(OpCodes.Cpblk)
+		{
+		}
+	}
+
 	[XmlType("exceptionBlock")]
 	public sealed class ExceptionBlock : Instruction
 	{
@@ -762,10 +875,12 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Bge_Un))]
 		[XmlElement(typeof(Ble_Un))]
 		[XmlElement(typeof(Blt))]
+		[XmlElement(typeof(Blt_Un))]
 		[XmlElement(typeof(BrLabel))]
 		[XmlElement(typeof(NewObj))]
 		[XmlElement(typeof(StLoc))]
 		[XmlElement(typeof(LdLoc))]
+		[XmlElement(typeof(LdArga))]
 		[XmlElement(typeof(LdArg_0))]
 		[XmlElement(typeof(LdArg_1))]
 		[XmlElement(typeof(LdArg_2))]
@@ -776,14 +891,19 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Ldind_i8))]
 		[XmlElement(typeof(Ldind_r4))]
 		[XmlElement(typeof(Ldind_r8))]
+		[XmlElement(typeof(Stind_i1))]
 		[XmlElement(typeof(Ret))]
 		[XmlElement(typeof(Throw))]
 		[XmlElement(typeof(Ldnull))]
+		[XmlElement(typeof(Ldflda))]
+		[XmlElement(typeof(Ldfld))]
+		[XmlElement(typeof(Stfld))]
 		[XmlElement(typeof(Stsfld))]
 		[XmlElement(typeof(Ldc_I4))]
 		[XmlElement(typeof(Ldc_I4_0))]
 		[XmlElement(typeof(Ldc_I4_1))]
 		[XmlElement(typeof(Ldc_I4_M1))]
+		[XmlElement(typeof(Conv_I))]
 		[XmlElement(typeof(Conv_U1))]
 		[XmlElement(typeof(Conv_U2))]
 		[XmlElement(typeof(Conv_U4))]
@@ -792,6 +912,8 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(ExceptionBlock))]
 		[XmlElement(typeof(Add))]
 		[XmlElement(typeof(Mul))]
+		[XmlElement(typeof(Unaligned))]
+		[XmlElement(typeof(Cpblk))]
 		public Instruction[] invoke;
 
 		internal void Generate(Hashtable context, ILGenerator ilgen)

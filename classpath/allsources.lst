@@ -1,5 +1,6 @@
 ikvm/lang/CIL.java
 gnu/classpath/Configuration.java
+gnu/classpath/RawData.java
 gnu/java/nio/channels/FileChannelImpl.java
 gnu/java/net/protocol/ftp/Handler.java
 gnu/java/net/protocol/ikvmres/Handler.java
@@ -20,10 +21,10 @@ java/lang/ref/Reference.java
 java/lang/reflect/Constructor.java
 java/lang/reflect/Method.java
 java/lang/reflect/Field.java
+java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
 java/util/VMTimeZone.java
 sun/misc/Ref.java
-../../classpath/gnu/classpath/RawData.java
 ../../classpath/gnu/classpath/ServiceFactory.java
 ../../classpath/gnu/classpath/ServiceProviderLoadingAction.java
 ../../classpath/gnu/java/awt/BitMaskExtent.java

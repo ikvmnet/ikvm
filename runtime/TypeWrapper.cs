@@ -129,11 +129,29 @@ class AttributeHelper
 	private static CustomAttributeBuilder ghostInterfaceAttribute;
 	private static CustomAttributeBuilder hideFromJavaAttribute;
 	private static CustomAttributeBuilder deprecatedAttribute;
+	private static CustomAttributeBuilder editorBrowsableNever;
 	private static ConstructorInfo implementsAttribute;
 	private static ConstructorInfo throwsAttribute;
 	private static ConstructorInfo sourceFileAttribute;
 	private static ConstructorInfo lineNumberTableAttribute;
-	private static ConstructorInfo wideLineNumberTableAttribute;
+
+	internal static void SetEditorBrowsableNever(MethodBuilder mb)
+	{
+		if(editorBrowsableNever == null)
+		{
+			editorBrowsableNever = new CustomAttributeBuilder(typeof(System.ComponentModel.EditorBrowsableAttribute).GetConstructor(new Type[] { typeof(System.ComponentModel.EditorBrowsableState) }), new object[] { System.ComponentModel.EditorBrowsableState.Never });
+		}
+		mb.SetCustomAttribute(editorBrowsableNever);
+	}
+
+	internal static void SetEditorBrowsableNever(PropertyBuilder pb)
+	{
+		if(editorBrowsableNever == null)
+		{
+			editorBrowsableNever = new CustomAttributeBuilder(typeof(System.ComponentModel.EditorBrowsableAttribute).GetConstructor(new Type[] { typeof(System.ComponentModel.EditorBrowsableState) }), new object[] { System.ComponentModel.EditorBrowsableState.Never });
+		}
+		pb.SetCustomAttribute(editorBrowsableNever);
+	}
 
 	internal static void SetDeprecatedAttribute(MethodBase mb)
 	{
@@ -450,25 +468,9 @@ class AttributeHelper
 
 	internal static void SetLineNumberTable(MethodBase mb, byte[] table)
 	{
-		if(wideLineNumberTableAttribute == null)
-		{
-			wideLineNumberTableAttribute = typeof(LineNumberTableAttribute).GetConstructor(new Type[] { typeof(byte[]) });
-		}
-		if(mb is ConstructorBuilder)
-		{
-			((ConstructorBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(wideLineNumberTableAttribute, new object[] { table }));
-		}
-		else
-		{
-			((MethodBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(wideLineNumberTableAttribute, new object[] { table }));
-		}
-	}
-
-	internal static void SetLineNumberTable(MethodBase mb, ushort[] table)
-	{
 		if(lineNumberTableAttribute == null)
 		{
-			lineNumberTableAttribute = typeof(LineNumberTableAttribute).GetConstructor(new Type[] { typeof(ushort[]) });
+			lineNumberTableAttribute = typeof(LineNumberTableAttribute).GetConstructor(new Type[] { typeof(byte[]) });
 		}
 		if(mb is ConstructorBuilder)
 		{
@@ -2192,7 +2194,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs, typeof(ValueType));
 							AttributeHelper.SetGhostInterface(typeBuilder);
 							AttributeHelper.SetModifiers(typeBuilder, wrapper.Modifiers);
-							wrapper.ghostRefField = typeBuilder.DefineField("__ref", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
+							wrapper.ghostRefField = typeBuilder.DefineField("__<ref>", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
 							AttributeHelper.HideFromJava((FieldBuilder)wrapper.ghostRefField);
 							typeBuilderGhostInterface = typeBuilder.DefineNestedType("__Interface", TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.NestedPublic);
 							AttributeHelper.HideFromJava(typeBuilderGhostInterface);
@@ -2924,6 +2926,15 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
 							Tracer.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
+							if(nativeMethods != null)
+							{
+								CodeEmitter opcodes = (CodeEmitter)nativeMethods[classFile.Name + "." + m.Name + m.Signature];
+								if(opcodes != null)
+								{
+									opcodes.Emit(ilGenerator);
+									continue;
+								}
+							}
 							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator);
 						}
 					}
@@ -3151,7 +3162,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					ilGenerator.Emit(OpCodes.Call, monitorEnter);
 					ilGenerator.BeginExceptionBlock();
 				}
-				FieldBuilder methodPtr = typeBuilder.DefineField("__<jniptr/" + m.Name + m.Signature + ">", typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
+				FieldBuilder methodPtr = typeBuilder.DefineField(JNI.METHOD_PTR_FIELD_PREFIX + m.Name + m.Signature + ">", typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
 				LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
 				ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 				ilGenerator.Emit(OpCodes.Initobj, localRefStructType);
@@ -4454,7 +4465,7 @@ sealed class CompiledTypeWrapper : LazyTypeWrapper
 		{
 			if(ghostRefField == null)
 			{
-				ghostRefField = type.GetField("__ref");
+				ghostRefField = type.GetField("__<ref>");
 			}
 			return ghostRefField;
 		}
@@ -5724,7 +5735,7 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		if(IsRemapped)
 		{
 			TypeWrapper shadow = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
-			MethodInfo method = shadow.TypeAsBaseType.GetMethod("shadow/instanceof");
+			MethodInfo method = shadow.TypeAsBaseType.GetMethod("__<instanceof>");
 			if(method != null)
 			{
 				ilgen.Emit(OpCodes.Call, method);
@@ -5741,7 +5752,7 @@ sealed class DotNetTypeWrapper : LazyTypeWrapper
 		if(IsRemapped)
 		{
 			TypeWrapper shadow = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
-			MethodInfo method = shadow.TypeAsBaseType.GetMethod("shadow/checkcast");
+			MethodInfo method = shadow.TypeAsBaseType.GetMethod("__<checkcast>");
 			if(method != null)
 			{
 				ilgen.Emit(OpCodes.Call, method);

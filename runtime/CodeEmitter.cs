@@ -35,7 +35,7 @@ class CountingILGenerator
 	private ArrayList locals = new ArrayList();
 	private Stack exceptionStack = new Stack();
 	private bool inFinally;
-	private ArrayList linenums;
+	private System.IO.MemoryStream linenums;
 #if LABELCHECK
 	private Hashtable labels = new Hashtable();
 #endif
@@ -319,17 +319,17 @@ class CountingILGenerator
 	{
 		if(linenums == null)
 		{
-			linenums = new ArrayList();
+			linenums = new System.IO.MemoryStream();
 		}
-		linenums.Add((ushort)offset);
-		linenums.Add(line);
+		IKVM.Attributes.LineNumberTableAttribute.WritePackedInteger(linenums, (uint)offset);
+		IKVM.Attributes.LineNumberTableAttribute.WritePackedInteger(linenums, line);
 	}
 
 	internal void EmitLineNumberTable(MethodBase mb)
 	{
 		if(!IKVM.Internal.JVM.NoStackTraceInfo && linenums != null)
 		{
-			AttributeHelper.SetLineNumberTable(mb, (ushort[])linenums.ToArray(typeof(ushort)));
+			AttributeHelper.SetLineNumberTable(mb, linenums.ToArray());
 		}
 	}
 

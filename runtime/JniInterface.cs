@@ -79,6 +79,7 @@ namespace IKVM.Runtime
 	public unsafe sealed class JNI
 	{
 		internal static bool jvmCreated;
+		internal const string METHOD_PTR_FIELD_PREFIX = "__<jniptr/";
 
 		public static int CreateJavaVM(void* ppvm, void* ppenv, void* args)
 		{
@@ -540,6 +541,8 @@ namespace IKVM.Runtime
 		delegate void pf_void_IntPtr_pjfloat_int(JNIEnv* pEnv, IntPtr p1, jfloat* p2, int p3);
 		delegate void pf_void_IntPtr_pjdouble_int(JNIEnv* pEnv, IntPtr p1, jdouble* p2, int p3);
 		delegate int pf_int_int(JNIEnv* pEnv, int p1);
+		delegate IntPtr pf_IntPtr_IntPtr_long(JNIEnv* pEnv, IntPtr p1, long p2);
+		delegate long pf_long_IntPtr(JNIEnv* pEnv, IntPtr p1);
 
 		internal static void* vtable;
 
@@ -860,9 +863,9 @@ namespace IKVM.Runtime
 
 			new pf_sbyte(JNIEnv.ExceptionCheck), //virtual jboolean JNICALL ExceptionCheck();
 
-			new pf_void(JNIEnv.NotImplemented), //virtual jobject JNICALL NewDirectByteBuffer(void* address, jlong capacity);
-			new pf_void(JNIEnv.NotImplemented), //virtual void* JNICALL GetDirectBufferAddress(jobject buf);
-			new pf_void(JNIEnv.NotImplemented)  //virtual jlong JNICALL GetDirectBufferCapacity(jobject buf);
+			new pf_IntPtr_IntPtr_long(JNIEnv.NewDirectByteBuffer), //virtual jobject JNICALL NewDirectByteBuffer(void* address, jlong capacity);
+			new pf_IntPtr_IntPtr(JNIEnv.GetDirectBufferAddress), //virtual void* JNICALL GetDirectBufferAddress(jobject buf);
+			new pf_long_IntPtr(JNIEnv.GetDirectBufferCapacity)  //virtual jlong JNICALL GetDirectBufferCapacity(jobject buf);
 		};
 	}
 
@@ -2866,7 +2869,7 @@ namespace IKVM.Runtime
 				wrapper.Finish();
 				foreach(FieldInfo fi in wrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.NonPublic))
 				{
-					if(fi.Name.StartsWith("jniptr/"))
+					if(fi.Name.StartsWith(JNI.METHOD_PTR_FIELD_PREFIX))
 					{
 						fi.SetValue(null, IntPtr.Zero);
 					}
@@ -3132,9 +3135,54 @@ namespace IKVM.Runtime
 			return pEnv->UnwrapRef(pEnv->pendingException) != null ? JNI_TRUE : JNI_FALSE;
 		}
 
-		internal static void NotImplemented(JNIEnv* pEnv)
+		internal static jobject NewDirectByteBuffer(JNIEnv* pEnv, IntPtr address, jlong capacity)
 		{
-			JVM.CriticalFailure("Unimplemented JNIEnv function called", null);
+			try
+			{
+				if(capacity < 0 || capacity > int.MaxValue)
+				{
+					SetPendingException(pEnv, JavaException.IllegalArgumentException("capacity"));
+					return IntPtr.Zero;
+				}
+				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.nio.VMDirectByteBuffer");
+				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("NewDirectByteBuffer", "(Lcli.System.IntPtr;I)Ljava.nio.ByteBuffer;"), false);
+				return pEnv->MakeLocalRef(mw.Invoke(null, new object[] { address, (int)capacity }, false));
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, ExceptionHelper.MapExceptionFast(x));
+				return IntPtr.Zero;
+			}
+		}
+
+		internal static IntPtr GetDirectBufferAddress(JNIEnv* pEnv, jobject buf)
+		{
+			try
+			{
+				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.nio.VMDirectByteBuffer");
+				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("GetDirectBufferAddress", "(Ljava.nio.ByteBuffer;)Lcli.System.IntPtr;"), false);
+				return (IntPtr)mw.Invoke(null, new object[] { pEnv->UnwrapRef(buf) }, false);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, ExceptionHelper.MapExceptionFast(x));
+				return IntPtr.Zero;
+			}
+		}
+		
+		internal static jlong GetDirectBufferCapacity(JNIEnv* pEnv, jobject buf)
+		{
+			try
+			{
+				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.nio.Buffer");
+				MethodWrapper mw = tw.GetMethodWrapper(new MethodDescriptor("capacity", "()I"), false);
+				return (jlong)(long)(int)mw.Invoke(pEnv->UnwrapRef(buf), new object[0], false);
+			}
+			catch(Exception x)
+			{
+				SetPendingException(pEnv, ExceptionHelper.MapExceptionFast(x));
+				return 0;
+			}
 		}
 
 		internal IntPtr MakeLocalRef(object obj)

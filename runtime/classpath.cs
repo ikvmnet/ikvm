@@ -28,6 +28,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Security.Permissions;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;
@@ -1490,5 +1491,58 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 
 		[DllImport("kernel32")]
 		private extern static bool FlushFileBuffers(IntPtr handle);
+	}
+}
+
+namespace gnu.classpath
+{
+	// This type lives here, because we don't want unverifiable code in IKVM.GNU.Classpath
+	// (as that would prevents us from verifying it during the build process).
+	public unsafe sealed class RawData
+	{
+		[HideFromJava]
+		private sbyte* pb;
+
+		public RawData(IntPtr p)
+		{
+			this.pb = (sbyte*)p;
+		}
+
+		public IntPtr p()
+		{
+			return new IntPtr(pb);
+		}
+
+		// NOTE the IKVM.Runtime doesn't have the AllowPartiallyTrustedCallersAttribute so this
+		// security attribute isn't really needed, but to be extra safe we add the explicit link 
+		// demand to these dangerous methods.
+		[SecurityPermission(SecurityAction.LinkDemand, Unrestricted = true)]
+		public sbyte ReadByte(int index)
+		{
+			return pb[index];
+		}
+
+		[SecurityPermission(SecurityAction.LinkDemand, Unrestricted = true)]
+		public void WriteByte(int index, sbyte b)
+		{
+			pb[index] = b;
+		}
+
+		[SecurityPermission(SecurityAction.LinkDemand, Unrestricted = true)]
+		public void MoveMemory(int dst_offset, int src_offset, int count)
+		{
+			if(dst_offset < src_offset)
+			{
+				while(count-- > 0)
+					pb[dst_offset++] = pb[src_offset++];
+			}
+			else
+			{
+				dst_offset += count;
+				src_offset += count;
+				while(count-- > 0)
+					pb[--dst_offset] = pb[--src_offset];
+			}
+		}
 	}
 }

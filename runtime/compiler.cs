@@ -70,8 +70,7 @@ class Compiler
 	private MethodAnalyzer ma;
 	private ExceptionTableEntry[] exceptions;
 	private ISymbolDocumentWriter symboldocument;
-	private ushort[] lineNumbers;
-	private byte[] wideLineNumbers;
+	private System.IO.MemoryStream lineNumbers;
 
 	static Compiler()
 	{
@@ -143,11 +142,7 @@ class Compiler
 		this.symboldocument = symboldocument;
 		if(m.LineNumberTableAttribute != null && !JVM.NoStackTraceInfo)
 		{
-			this.lineNumbers = new ushort[m.LineNumberTableAttribute.Length * 2];
-			for(int i = 0; i < m.LineNumberTableAttribute.Length; i++)
-			{
-				this.lineNumbers[i * 2 + 1] = m.LineNumberTableAttribute[i].line_number;
-			}
+			this.lineNumbers = new System.IO.MemoryStream(m.LineNumberTableAttribute.Length * 2);
 		}
 
 		Profiler.Enter("MethodAnalyzer");
@@ -796,11 +791,7 @@ class Compiler
 			}
 			if(c.lineNumbers != null)
 			{
-				AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.lineNumbers);
-			}
-			if(c.wideLineNumbers != null)
-			{
-				AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.wideLineNumbers);
+				AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.lineNumbers.ToArray());
 			}
 			// HACK because of the bogus Leave instruction that Reflection.Emit generates, this location
 			// sometimes appears reachable (it isn't), so we emit a bogus branch to keep the verifier happy.
@@ -1284,7 +1275,7 @@ class Compiler
 			}
 
 			ClassFile.Method.LineNumberTableEntry[] table = m.LineNumberTableAttribute;
-			if(table != null && (symboldocument != null || lineNumbers != null || wideLineNumbers != null))
+			if(table != null && (symboldocument != null || lineNumbers != null))
 			{
 				for(int j = 0; j < table.Length; j++)
 				{
@@ -1298,31 +1289,8 @@ class Compiler
 						}
 						if(lineNumbers != null)
 						{
-							int iloffset = ilGenerator.GetILOffset();
-							if(iloffset > 65535)
-							{
-								wideLineNumbers = new byte[lineNumbers.Length * 3];
-								for(int k = 0; k < lineNumbers.Length / 2; k++)
-								{
-									wideLineNumbers[k * 6 + 0] = (byte)(lineNumbers[k * 2 + 0] >> 0);
-									wideLineNumbers[k * 6 + 1] = (byte)(lineNumbers[k * 2 + 0] >> 8);
-									wideLineNumbers[k * 6 + 4] = (byte)(lineNumbers[k * 2 + 1] >> 0);
-									wideLineNumbers[k * 6 + 5] = (byte)(lineNumbers[k * 2 + 1] >> 8);
-								}
-								lineNumbers = null;
-							}
-							else
-							{
-								lineNumbers[j * 2 + 0] = (ushort)iloffset;
-							}
-						}
-						if(wideLineNumbers != null)
-						{
-							int iloffset = ilGenerator.GetILOffset();
-							wideLineNumbers[j * 6 + 0] = (byte)(iloffset >>  0);
-							wideLineNumbers[j * 6 + 1] = (byte)(iloffset >>  8);
-							wideLineNumbers[j * 6 + 2] = (byte)(iloffset >> 16);
-							wideLineNumbers[j * 6 + 3] = (byte)(iloffset >> 24);
+							LineNumberTableAttribute.WritePackedInteger(lineNumbers, (uint)ilGenerator.GetILOffset());
+							LineNumberTableAttribute.WritePackedInteger(lineNumbers, table[j].line_number);
 						}
 						break;
 					}

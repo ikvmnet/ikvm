@@ -39,7 +39,6 @@ package java.lang;
 
 import java.util.Locale;
 import java.io.UnsupportedEncodingException;
-import java.io.CharConversionException;
 import gnu.java.io.EncodingManager;
 import gnu.java.lang.CharData;
 
@@ -238,16 +237,8 @@ final class StringHelper
     {
 	if (offset < 0 || count < 0 || data.length - offset < count)
 	    throw new StringIndexOutOfBoundsException();
-	try
-	{
-	    // XXX Consider using java.nio here.
-	    return new String(EncodingManager.getDecoder(encoding)
-		.convertToChars(data, offset, count));
-	}
-	catch (CharConversionException cce)
-	{
-	    throw new Error(cce);
-	}
+	// XXX Consider using java.nio here.
+	return new String(EncodingManager.getDecoder(encoding).convertToChars(data, offset, count));
     }
 
     static String NewString(byte[] data, String encoding)
@@ -260,16 +251,8 @@ final class StringHelper
     {
 	if (offset < 0 || count < 0 || data.length - offset < count)
 	    throw new StringIndexOutOfBoundsException();
-	try
-	{
-	    // XXX Consider using java.nio here.
-	    return new String(EncodingManager.getDecoder()
-		.convertToChars(data, offset, count));
-	}
-	catch (CharConversionException cce)
-	{
-	    throw new Error(cce);
-	}
+	// XXX Consider using java.nio here.
+	return new String(EncodingManager.getDecoder().convertToChars(data, offset, count));
     }
 
     static String NewString(byte[] data)
@@ -414,30 +397,14 @@ final class StringHelper
 
     static byte[] getBytes(String s, String enc) throws UnsupportedEncodingException
     {
-	try
-	{
-	    // XXX Consider using java.nio here.
-	    return EncodingManager.getEncoder(enc)
-		.convertToBytes(s.toCharArray());
-	}
-	catch (CharConversionException e)
-	{
-	    return null;
-	}
+	// XXX Consider using java.nio here.
+	return EncodingManager.getEncoder(enc).convertToBytes(s.toCharArray());
     }
 
     static byte[] getBytes(String s)
     {
-	try
-	{
-	    // XXX Consider using java.nio here.
-	    return EncodingManager.getEncoder()
-		.convertToBytes(s.toCharArray());
-	}
-	catch (CharConversionException e)
-	{
-	    return null;
-	}
+	// XXX Consider using java.nio here.
+	return EncodingManager.getEncoder().convertToBytes(s.toCharArray());
     }
 
     static boolean regionMatches(String s, int toffset, String other, int ooffset, int len)
