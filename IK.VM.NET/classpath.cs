@@ -156,6 +156,7 @@ namespace NativeCode.java
 				{
 					if(dim >= 0)
 					{
+						// TODO handle ghost types
 						return NetSystem.Array.CreateInstance(VMClass.getType(clazz), dim);
 					}
 					throw JavaException.NegativeArraySizeException();

@@ -1476,6 +1476,32 @@ class Compiler
 							ilGenerator.Emit(OpCodes.Castclass, wrapper.Type);
 							ilGenerator.MarkLabel(end);
 						}
+						else if(wrapper.IsGhostArray)
+						{
+							string brackets = "[]";
+							TypeWrapper element = wrapper.ElementTypeWrapper;
+							while(element.IsArray)
+							{
+								brackets += "[]";
+								element = wrapper.ElementTypeWrapper;
+							}
+							TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(element);
+							Type[] implementerTypes = new Type[implementers.Length];
+							for(int j = 0; j < implementers.Length; j++)
+							{
+								implementerTypes[j] = implementers[j].Type.Module.GetType(implementers[j].Type.FullName + brackets);
+							}
+							Label end = ilGenerator.DefineLabel();
+							for(int j = 0; j < implementerTypes.Length; j++)
+							{
+								ilGenerator.Emit(OpCodes.Dup);
+								ilGenerator.Emit(OpCodes.Isinst, implementerTypes[j]);
+								ilGenerator.Emit(OpCodes.Brtrue, end);
+							}
+							// TODO once we "fix" array instantiation this should ever occur
+							ilGenerator.Emit(OpCodes.Castclass, wrapper.Type);
+							ilGenerator.MarkLabel(end);
+						}
 						else
 						{
 							ilGenerator.Emit(OpCodes.Castclass, wrapper.Type);
@@ -1511,6 +1537,41 @@ class Compiler
 								ilGenerator.Emit(OpCodes.Br, end);
 								ilGenerator.MarkLabel(label);
 							}
+							ilGenerator.Emit(OpCodes.Isinst, wrapper.Type);
+							ilGenerator.Emit(OpCodes.Ldnull);
+							ilGenerator.Emit(OpCodes.Ceq);
+							ilGenerator.Emit(OpCodes.Ldc_I4_0);
+							ilGenerator.Emit(OpCodes.Ceq);
+							ilGenerator.MarkLabel(end);
+						}
+						else if(wrapper.IsGhostArray)
+						{
+							string brackets = "[]";
+							TypeWrapper element = wrapper.ElementTypeWrapper;
+							while(element.IsArray)
+							{
+								brackets += "[]";
+								element = wrapper.ElementTypeWrapper;
+							}
+							TypeWrapper[] implementers = ClassLoaderWrapper.GetGhostImplementers(element);
+							Type[] implementerTypes = new Type[implementers.Length];
+							for(int j = 0; j < implementers.Length; j++)
+							{
+								implementerTypes[j] = implementers[j].Type.Module.GetType(implementers[j].Type.FullName + brackets);
+							}
+							Label end = ilGenerator.DefineLabel();
+							for(int j = 0; j < implementerTypes.Length; j++)
+							{
+								ilGenerator.Emit(OpCodes.Dup);
+								ilGenerator.Emit(OpCodes.Isinst, implementerTypes[j]);
+								Label label = ilGenerator.DefineLabel();
+								ilGenerator.Emit(OpCodes.Brfalse_S, label);
+								ilGenerator.Emit(OpCodes.Pop);
+								ilGenerator.Emit(OpCodes.Ldc_I4_1);
+								ilGenerator.Emit(OpCodes.Br, end);
+								ilGenerator.MarkLabel(label);
+							}
+							// TODO once we "fix" array instantiation this should ever occur
 							ilGenerator.Emit(OpCodes.Isinst, wrapper.Type);
 							ilGenerator.Emit(OpCodes.Ldnull);
 							ilGenerator.Emit(OpCodes.Ceq);
