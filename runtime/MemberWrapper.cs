@@ -37,7 +37,8 @@ enum MemberFlags : short
 {
 	None = 0,
 	HideFromReflection = 1,
-	ExplicitOverride = 2
+	ExplicitOverride = 2,
+	LiteralField = 4
 }
 
 class MemberWrapper
@@ -46,11 +47,6 @@ class MemberWrapper
 	private TypeWrapper declaringType;
 	private Modifiers modifiers;
 	private MemberFlags flags;
-
-	protected MemberWrapper(TypeWrapper declaringType, Modifiers modifiers, bool hideFromReflection)
-		: this(declaringType, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
-	{
-	}
 
 	protected MemberWrapper(TypeWrapper declaringType, Modifiers modifiers, MemberFlags flags)
 	{
@@ -118,6 +114,19 @@ class MemberWrapper
 		get
 		{
 			return (flags & MemberFlags.ExplicitOverride) != 0;
+		}
+	}
+
+	internal bool IsLiteralField
+	{
+		get
+		{
+			return (flags & MemberFlags.LiteralField) != 0;
+		}
+		set
+		{
+			flags &= ~MemberFlags.LiteralField;
+			flags |= value ? MemberFlags.LiteralField : MemberFlags.None;
 		}
 	}
 
@@ -1049,7 +1058,7 @@ abstract class FieldWrapper : MemberWrapper
 	private TypeWrapper fieldType;
 
 	internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field)
-		: base(declaringType, modifiers, false)
+		: base(declaringType, modifiers, field != null && field.IsLiteral ? MemberFlags.LiteralField : MemberFlags.None)
 	{
 		Debug.Assert(name != null);
 		Debug.Assert(sig != null);
@@ -1214,6 +1223,7 @@ abstract class FieldWrapper : MemberWrapper
 		}
 		// TODO instead of looking up the field by name, we should use the Token to find it.
 		field = DeclaringType.TypeAsTBD.GetField(name, bindings);
+		this.IsLiteralField = field.IsLiteral;
 		Debug.Assert(field != null);
 	}
 
@@ -1249,10 +1259,13 @@ abstract class FieldWrapper : MemberWrapper
 		{
 			LookupField();
 		}
-		if(field.IsLiteral)
+		// FieldInfo.IsLiteral is expensive, so we have our own flag
+		// TODO we might be able to ensure that we always use ConstantFieldWrapper for literal fields,
+		// in that case the we could simply remove the check altogether.
+		if(IsLiteralField)
 		{
 			// on a non-broken CLR GetValue on a literal will not trigger type initialization, but on Java it should
-			System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(field.DeclaringType.TypeHandle);
+			DeclaringType.RunClassInit();
 		}
 		object val = field.GetValue(obj);
 		if(fieldType.IsGhost)

@@ -841,7 +841,7 @@
 				<body>
 					<ldarg_0 />
 					<ldarg_1 />
-					<newobj class="java.lang.reflect.Field" name="&lt;init&gt;" sig="(Ljava.lang.Class;Ljava.lang.Object;)V" />
+					<call class="java.lang.reflect.VMFieldImpl" name="newField" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.reflect.Field;" />
 					<ret />
 				</body>
 			</method>
@@ -876,7 +876,8 @@
 			<method name="getWrapperFromField" sig="(Ljava.lang.reflect.Field;)Ljava.lang.Object;">
 				<body>
 					<ldarg_0 />
-					<ldfld class="java.lang.reflect.Field" name="fieldCookie" sig="Ljava.lang.Object;" />
+					<ldfld class="java.lang.reflect.Field" name="impl" sig="Lgnu.java.lang.reflect.VMField;" />
+					<ldfld class="gnu.java.lang.reflect.VMField" name="fieldCookie" sig="Ljava.lang.Object;" />
 					<ret />
 				</body>
 			</method>

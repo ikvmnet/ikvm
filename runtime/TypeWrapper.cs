@@ -3503,7 +3503,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				// because the ClassLoaderWrapper assumes that all dynamic types are in its hashtable,
 				// but note that this only registers it for reverse lookup (from Type -> TypeWrapper), this
 				// is necessary to make stack walking work.
-				ClassLoaderWrapper.SetWrapperForType(type, new CompiledTypeWrapper(type.FullName, type));
+				ClassLoaderWrapper.SetWrapperForType(type, CompiledTypeWrapper.newInstance(type.FullName, type));
 			}
 		}
 
@@ -4477,14 +4477,188 @@ sealed class DynamicTypeWrapper : TypeWrapper
 	}
 }
 
-sealed class CompiledTypeWrapper : TypeWrapper
+class CompiledTypeWrapper : TypeWrapper
 {
 	private readonly Type type;
 	private TypeWrapper[] interfaces;
 	private TypeWrapper[] innerclasses;
-	private FieldInfo ghostRefField;
-	private Type typeAsBaseType;
-	private Type remappedType;
+
+	internal static CompiledTypeWrapper newInstance(string name, Type type)
+	{
+		// TODO since ghost and remapped types can only exist in the core library assembly, we probably
+		// should be able to remove the Type.IsDefined() tests in most cases
+		if(type.IsValueType && type.IsDefined(typeof(GhostInterfaceAttribute), false))
+		{
+			return new CompiledGhostTypeWrapper(name, type);
+		}
+		else if(type.IsDefined(typeof(RemappedTypeAttribute), false))
+		{
+			return new CompiledRemappedTypeWrapper(name, type);
+		}
+		else
+		{
+			return new CompiledTypeWrapper(name, type);
+		}
+	}
+
+	private sealed class CompiledRemappedTypeWrapper : CompiledTypeWrapper
+	{
+		private readonly Type remappedType;
+
+		internal CompiledRemappedTypeWrapper(string name, Type type)
+			: base(name, type)
+		{
+			object[] attribs = type.GetCustomAttributes(typeof(RemappedTypeAttribute), false);
+			if(attribs.Length != 1)
+			{
+				throw new InvalidOperationException();
+			}
+			remappedType = ((RemappedTypeAttribute)attribs[0]).Type;
+		}
+
+		internal override Type TypeAsTBD
+		{
+			get
+			{
+				return remappedType;
+			}
+		}
+
+		internal override bool IsRemapped
+		{
+			get
+			{
+				return true;
+			}
+		}
+
+		protected override void LazyPublishMembers()
+		{
+			ArrayList methods = new ArrayList();
+			ArrayList fields = new ArrayList();
+			MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+			foreach(MemberInfo m in members)
+			{
+				if(!AttributeHelper.IsHideFromJava(m))
+				{
+					MethodBase method = m as MethodBase;
+					if(method != null &&
+						(remappedType.IsSealed || !m.Name.StartsWith("instancehelper_")) &&
+						(!remappedType.IsSealed || method.IsStatic))
+					{
+						methods.Add(CreateRemappedMethodWrapper(method));
+					}
+					else
+					{
+						FieldInfo field = m as FieldInfo;
+						if(field != null)
+						{
+							fields.Add(CreateFieldWrapper(field));
+						}
+					}
+				}
+			}
+			// if we're a remapped interface, we need to get the methods from the real interface
+			if(remappedType.IsInterface)
+			{
+				Type nestedHelper = type.GetNestedType("__Helper", BindingFlags.Public | BindingFlags.Static);
+				foreach(RemappedInterfaceMethodAttribute m in type.GetCustomAttributes(typeof(RemappedInterfaceMethodAttribute), false))
+				{
+					MethodInfo method = remappedType.GetMethod(m.MappedTo);
+					MethodInfo mbHelper = method;
+					Modifiers modifiers = AttributeHelper.GetModifiers(method, false);
+					string name;
+					string sig;
+					TypeWrapper retType;
+					TypeWrapper[] paramTypes;
+					GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes);
+					if(nestedHelper != null)
+					{
+						mbHelper = nestedHelper.GetMethod(m.Name);
+						if(mbHelper == null)
+						{
+							mbHelper = method;
+						}
+					}
+					methods.Add(new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null));
+				}
+			}
+			SetMethods((MethodWrapper[])methods.ToArray(typeof(MethodWrapper)));
+			SetFields((FieldWrapper[])fields.ToArray(typeof(FieldWrapper)));
+		}
+
+		private MethodWrapper CreateRemappedMethodWrapper(MethodBase mb)
+		{
+			Modifiers modifiers = AttributeHelper.GetModifiers(mb, false);
+			string name;
+			string sig;
+			TypeWrapper retType;
+			TypeWrapper[] paramTypes;
+			GetNameSigFromMethodBase(mb, out name, out sig, out retType, out paramTypes);
+			MethodInfo mbHelper = mb as MethodInfo;
+			MethodInfo mbNonvirtualHelper = null;
+			if(!mb.IsStatic && !mb.IsConstructor)
+			{
+				ParameterInfo[] parameters = mb.GetParameters();
+				Type[] argTypes = new Type[parameters.Length + 1];
+				argTypes[0] = remappedType;
+				for(int i = 0; i < parameters.Length; i++)
+				{
+					argTypes[i + 1] = parameters[i].ParameterType;
+				}
+				MethodInfo helper = type.GetMethod("instancehelper_" + mb.Name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static, null, argTypes, null);
+				if(helper != null)
+				{
+					mbHelper = helper;
+				}
+				mbNonvirtualHelper = type.GetMethod("nonvirtualhelper/" + mb.Name, BindingFlags.NonPublic | BindingFlags.Static, null, argTypes, null);
+			}
+			return new CompiledRemappedMethodWrapper(this, name, sig, mb, retType, paramTypes, modifiers, false, mbHelper, mbNonvirtualHelper);
+		}
+	}
+
+	private sealed class CompiledGhostTypeWrapper : CompiledTypeWrapper
+	{
+		private FieldInfo ghostRefField;
+		private Type typeAsBaseType;
+
+		internal CompiledGhostTypeWrapper(string name, Type type)
+			: base(name, type)
+		{
+		}
+
+		internal override Type TypeAsBaseType
+		{
+			get
+			{
+				if(typeAsBaseType == null)
+				{
+					typeAsBaseType = type.GetNestedType("__Interface");
+				}
+				return typeAsBaseType;
+			}
+		}
+
+		internal override FieldInfo GhostRefField
+		{
+			get
+			{
+				if(ghostRefField == null)
+				{
+					ghostRefField = type.GetField("__<ref>");
+				}
+				return ghostRefField;
+			}
+		}
+
+		internal override bool IsGhost
+		{
+			get
+			{
+				return true;
+			}
+		}
+	}
 
 	internal static string GetName(Type type)
 	{
@@ -4534,18 +4708,11 @@ sealed class CompiledTypeWrapper : TypeWrapper
 		return ClassLoaderWrapper.IsCoreAssemblyType(type) ? ClassLoaderWrapper.GetBootstrapClassLoader() : ClassLoaderWrapper.GetSystemClassLoader();
 	}
 
-	internal CompiledTypeWrapper(string name, Type type)
+	private CompiledTypeWrapper(string name, Type type)
 		: base(GetModifiers(type), name, GetBaseTypeWrapper(type), GetClassLoader(type), null)
 	{
 		Debug.Assert(!(type is TypeBuilder));
 		Debug.Assert(!type.IsArray);
-
-		object[] attribs = type.GetCustomAttributes(typeof(RemappedTypeAttribute), false);
-		if(attribs.Length == 1)
-		{
-			this.typeAsBaseType = type;
-			this.remappedType = ((RemappedTypeAttribute)attribs[0]).Type;
-		}
 
 		this.type = type;
 	}
@@ -4647,6 +4814,7 @@ sealed class CompiledTypeWrapper : TypeWrapper
 	{
 		get
 		{
+			// TODO why are we caching this?
 			if(innerclasses == null)
 			{
 				Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
@@ -4694,30 +4862,7 @@ sealed class CompiledTypeWrapper : TypeWrapper
 	{
 		get
 		{
-			if(typeAsBaseType == null)
-			{
-				if(IsGhost)
-				{
-					typeAsBaseType = type.GetNestedType("__Interface");
-				}
-				else
-				{
-					typeAsBaseType = type;
-				}
-			}
-			return typeAsBaseType;
-		}
-	}
-
-	internal override FieldInfo GhostRefField
-	{
-		get
-		{
-			if(ghostRefField == null)
-			{
-				ghostRefField = type.GetField("__<ref>");
-			}
-			return ghostRefField;
+			return type;
 		}
 	}
 
@@ -4850,81 +4995,29 @@ sealed class CompiledTypeWrapper : TypeWrapper
 		ArrayList methods = new ArrayList();
 		ArrayList fields = new ArrayList();
 		MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-		if(remappedType == null)
+		foreach(MemberInfo m in members)
 		{
-			foreach(MemberInfo m in members)
+			if(!AttributeHelper.IsHideFromJava(m))
 			{
-				if(!AttributeHelper.IsHideFromJava(m))
+				MethodBase method = m as MethodBase;
+				if(method != null)
 				{
-					MethodBase method = m as MethodBase;
-					if(method != null)
-					{
-						string name;
-						string sig;
-						TypeWrapper retType;
-						TypeWrapper[] paramTypes;
-						GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes);
-						MethodInfo mi = method as MethodInfo;
-						bool miranda = mi != null ? AttributeHelper.IsMirandaMethod(mi) : false;
-						methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, AttributeHelper.GetModifiers(method, false), miranda));
-					}
-					else
-					{
-						FieldInfo field = m as FieldInfo;
-						if(field != null)
-						{
-							fields.Add(CreateFieldWrapper(field));
-						}
-					}
-				}
-			}
-		}
-		else
-		{
-			foreach(MemberInfo m in members)
-			{
-				if(!AttributeHelper.IsHideFromJava(m))
-				{
-					MethodBase method = m as MethodBase;
-					if(method != null &&
-						(remappedType.IsSealed || !m.Name.StartsWith("instancehelper_")) &&
-						(!remappedType.IsSealed || method.IsStatic))
-					{
-						methods.Add(CreateRemappedMethodWrapper(method));
-					}
-					else
-					{
-						FieldInfo field = m as FieldInfo;
-						if(field != null)
-						{
-							fields.Add(CreateFieldWrapper(field));
-						}
-					}
-				}
-			}
-			// if we're a remapped interface, we need to get the methods from the real interface
-			if(remappedType.IsInterface)
-			{
-				Type nestedHelper = type.GetNestedType("__Helper", BindingFlags.Public | BindingFlags.Static);
-				foreach(RemappedInterfaceMethodAttribute m in type.GetCustomAttributes(typeof(RemappedInterfaceMethodAttribute), false))
-				{
-					MethodInfo method = remappedType.GetMethod(m.MappedTo);
-					MethodInfo mbHelper = method;
-					Modifiers modifiers = AttributeHelper.GetModifiers(method, false);
 					string name;
 					string sig;
 					TypeWrapper retType;
 					TypeWrapper[] paramTypes;
 					GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes);
-					if(nestedHelper != null)
+					MethodInfo mi = method as MethodInfo;
+					bool miranda = mi != null ? AttributeHelper.IsMirandaMethod(mi) : false;
+					methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, AttributeHelper.GetModifiers(method, false), miranda));
+				}
+				else
+				{
+					FieldInfo field = m as FieldInfo;
+					if(field != null)
 					{
-						mbHelper = nestedHelper.GetMethod(m.Name);
-						if(mbHelper == null)
-						{
-							mbHelper = method;
-						}
+						fields.Add(CreateFieldWrapper(field));
 					}
-					methods.Add(new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null));
 				}
 			}
 		}
@@ -5010,35 +5103,6 @@ sealed class CompiledTypeWrapper : TypeWrapper
 		}
 	}
 
-	private MethodWrapper CreateRemappedMethodWrapper(MethodBase mb)
-	{
-		Modifiers modifiers = AttributeHelper.GetModifiers(mb, false);
-		string name;
-		string sig;
-		TypeWrapper retType;
-		TypeWrapper[] paramTypes;
-		GetNameSigFromMethodBase(mb, out name, out sig, out retType, out paramTypes);
-		MethodInfo mbHelper = mb as MethodInfo;
-		MethodInfo mbNonvirtualHelper = null;
-		if(!mb.IsStatic && !mb.IsConstructor)
-		{
-			ParameterInfo[] parameters = mb.GetParameters();
-			Type[] argTypes = new Type[parameters.Length + 1];
-			argTypes[0] = remappedType;
-			for(int i = 0; i < parameters.Length; i++)
-			{
-				argTypes[i + 1] = parameters[i].ParameterType;
-			}
-			MethodInfo helper = type.GetMethod("instancehelper_" + mb.Name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static, null, argTypes, null);
-			if(helper != null)
-			{
-				mbHelper = helper;
-			}
-			mbNonvirtualHelper = type.GetMethod("nonvirtualhelper/" + mb.Name, BindingFlags.NonPublic | BindingFlags.Static, null, argTypes, null);
-		}
-		return new CompiledRemappedMethodWrapper(this, name, sig, mb, retType, paramTypes, modifiers, false, mbHelper, mbNonvirtualHelper);
-	}
-
 	private FieldWrapper CreateFieldWrapper(FieldInfo field)
 	{
 		Modifiers modifiers = AttributeHelper.GetModifiers(field, false);
@@ -5071,27 +5135,11 @@ sealed class CompiledTypeWrapper : TypeWrapper
 		}
 	}
 
-	internal override bool IsGhost
-	{
-		get
-		{
-			return type.IsDefined(typeof(GhostInterfaceAttribute), false);
-		}
-	}
-
-	internal override bool IsRemapped
-	{
-		get
-		{
-			return remappedType != null;
-		}
-	}
-
 	internal override Type TypeAsTBD
 	{
 		get
 		{
-			return remappedType != null ? remappedType : type;
+			return type;
 		}
 	}
 
@@ -5250,7 +5298,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 				TypeBuilder typeBuilder = moduleBuilder.DefineType(NamePrefix + name, TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract);
 				AttributeHelper.SetInnerClass(typeBuilder, NamePrefix + name, NamePrefix + delegateType.FullName, "Method", Modifiers.Public | Modifiers.Interface | Modifiers.Static | Modifiers.Abstract);
 				typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual, CallingConventions.Standard, invoke.ReturnType, args);
-				return new CompiledTypeWrapper(NamePrefix + name, typeBuilder.CreateType());
+				return CompiledTypeWrapper.newInstance(NamePrefix + name, typeBuilder.CreateType());
 			}
 		}
 		return null;

@@ -188,7 +188,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public class Field
+			public class VMFieldImpl
 			{
 				public static string GetName(object fieldCookie)
 				{
@@ -215,6 +215,11 @@ namespace IKVM.NativeCode.java
 					return VMClass.getWrapperFromClass(a).IsInSamePackageAs(VMClass.getWrapperFromClass(b));
 				}
 
+				public static void RunClassInit(object clazz)
+				{
+					VMClass.getWrapperFromClass(clazz).RunClassInit();
+				}
+
 				public static object GetValue(object fieldCookie, object o)
 				{
 					Profiler.Enter("Field.GetValue");
@@ -235,24 +240,12 @@ namespace IKVM.NativeCode.java
 					}
 				}
 
-				public static void SetValue(object fieldCookie, object o, object v, bool accessible)
+				public static void SetValue(object fieldCookie, object o, object v)
 				{
 					Profiler.Enter("Field.SetValue");
 					try
 					{
 						FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-						if(wrapper.IsFinal)
-						{
-							// NOTE Java runs the class initializer when trying to set a final field
-							wrapper.DeclaringType.RunClassInit();
-							// Starting with JDK 1.5, it is legal to change final instance fields
-							// (see JSR-133)
-							if(wrapper.IsStatic || !accessible)
-							{
-								// NOTE even if the caller is the class itself, it still isn't legal
-								throw JavaException.IllegalAccessException("Field is final");
-							}
-						}
 						// if the field is an interface field, we must explicitly run <clinit>,
 						// because .NET reflection doesn't
 						if(wrapper.DeclaringType.IsInterface)

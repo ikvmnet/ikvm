@@ -260,7 +260,7 @@ public final class Constructor
 	InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    Field.checkAccess(modifiers, null, declaringClass, VMStackWalker.getCallingClass());
+	    VMFieldImpl.checkAccess(modifiers, null, declaringClass, VMStackWalker.getCallingClass());
         int mods = declaringClass.getModifiers() | Method.GetRealModifiers(declaringClass);
 	if(Modifier.isAbstract(mods) || Modifier.isInterface(mods))
 	{

@@ -1,5 +1,5 @@
 /* java.lang.reflect.Field - reflection of Java fields
-   Copyright (C) 1998, 2001 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2001, 2005 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -38,9 +38,8 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
-import cli.System.Diagnostics.StackFrame;
 import gnu.classpath.VMStackWalker;
-import ikvm.lang.CIL;
+import gnu.java.lang.reflect.VMField;
 
 /**
  * The Field class represents a member variable of a class. It also allows
@@ -66,6 +65,7 @@ import ikvm.lang.CIL;
  *
  * @author John Keiser
  * @author Eric Blake <ebb9@email.byu.edu>
+ * @author Jeroen Frijters
  * @see Member
  * @see Class
  * @see Class#getField(String)
@@ -77,612 +77,16 @@ import ikvm.lang.CIL;
  */
 public final class Field extends AccessibleObject implements Member
 {
-	private Class declaringClass;
-        // package accessible (actually "assembly") to allow map.xml implementation
-        // of LibraryVMInterfaceImpl.getWrapperFromField() to access it.
-	Object fieldCookie;
-	private int modifiers;
-        private boolean classIsPublic;
-        private FieldImpl impl;
-
-    private static native Object GetValue(Object fieldCookie, Object o);
-    private static native void SetValue(Object fieldCookie, Object o, Object value, boolean accessible);
-
-    abstract static class FieldImpl
-    {
-        private Object fieldCookie;
-
-        FieldImpl(Object fieldCookie)
-        {
-            this.fieldCookie = fieldCookie;
-        }
-
-        final Object getImpl(Object obj)
-        {
-            return Field.GetValue(fieldCookie, obj);
-        }
-
-        final void setImpl(Object obj, Object val, boolean accessible)
-        {
-            Field.SetValue(fieldCookie, obj, val, accessible);
-        }
-
-        abstract Object get(Object obj);
-
-        boolean getBoolean(Object obj)
-        {
-            throw new IllegalArgumentException();
-        }
-        byte getByte(Object obj)
-        {
-            throw new IllegalArgumentException();
-        }
-        char getChar(Object obj)
-        {
-            throw new IllegalArgumentException();
-        }
-        short getShort(Object obj)
-        {
-            throw new IllegalArgumentException();
-        }
-        int getInt(Object obj)
-        {
-            throw new IllegalArgumentException();
-        }
-        float getFloat(Object obj)
-        {
-            throw new IllegalArgumentException();
-        }
-        long getLong(Object obj)
-        {
-            throw new IllegalArgumentException();
-        }
-        double getDouble(Object obj)
-        {
-            throw new IllegalArgumentException();
-        }
-
-        abstract void set(Object obj, Object val, boolean accessible);
-
-        void setBoolean(Object obj, boolean val, boolean accessible)
-        {
-            throw new IllegalArgumentException();
-        }
-        void setByte(Object obj, byte val, boolean accessible)
-        {
-            throw new IllegalArgumentException();
-        }
-        void setChar(Object obj, char val, boolean accessible)
-        {
-            throw new IllegalArgumentException();
-        }
-        void setShort(Object obj, short val, boolean accessible)
-        {
-            throw new IllegalArgumentException();
-        }
-        void setInt(Object obj, int val, boolean accessible)
-        {
-            throw new IllegalArgumentException();
-        }
-        void setFloat(Object obj, float val, boolean accessible)
-        {
-            throw new IllegalArgumentException();
-        }
-        void setLong(Object obj, long val, boolean accessible)
-        {
-            throw new IllegalArgumentException();
-        }
-        void setDouble(Object obj, double val, boolean accessible)
-        {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    final static class ObjectFieldImpl extends FieldImpl
-    {
-        ObjectFieldImpl(Object fieldCookie)
-        {
-            super(fieldCookie);
-        }
-
-        Object get(Object obj)
-        {
-            return getImpl(obj);
-        }
-
-        void set(Object obj, Object val, boolean accessible)
-        {
-            setImpl(obj, val, accessible);
-        }
-    }
-
-    final static class BooleanFieldImpl extends FieldImpl
-    {
-        BooleanFieldImpl(Object fieldCookie)
-        {
-            super(fieldCookie);
-        }
-
-        Object get(Object obj)
-        {
-            return getBoolean(obj) ? Boolean.TRUE : Boolean.FALSE;
-        }
-
-        boolean getBoolean(Object obj)
-        {
-            return CIL.unbox_boolean(getImpl(obj));
-        }
-
-        void set(Object obj, Object val, boolean accessible)
-        {
-            if(! (val instanceof Boolean))
-              throw new IllegalArgumentException();
-            setBoolean(obj, ((Boolean)val).booleanValue(), accessible);
-        }
-
-        void setBoolean(Object obj, boolean val, boolean accessible)
-        {
-            setImpl(obj, CIL.box_boolean(val), accessible);
-        }
-    }
-
-    final static class ByteFieldImpl extends FieldImpl
-    {
-        ByteFieldImpl(Object fieldCookie)
-        {
-            super(fieldCookie);
-        }
-
-        Object get(Object obj)
-        {
-            return new Byte(getByte(obj));
-        }
-
-        byte getByte(Object obj)
-        {
-            return CIL.unbox_byte(getImpl(obj));
-        }
-
-        short getShort(Object obj)
-        {
-            return getByte(obj);
-        }
-
-        int getInt(Object obj)
-        {
-            return getByte(obj);
-        }
-
-        float getFloat(Object obj)
-        {
-            return getByte(obj);
-        }
-
-        long getLong(Object obj)
-        {
-            return getByte(obj);
-        }
-
-        double getDouble(Object obj)
-        {
-            return getByte(obj);
-        }
-
-        void set(Object obj, Object val, boolean accessible)
-        {
-            if(! (val instanceof Byte))
-              throw new IllegalArgumentException();
-            setByte(obj, ((Byte)val).byteValue(), accessible);
-        }
-
-        void setByte(Object obj, byte val, boolean accessible)
-        {
-            setImpl(obj, CIL.box_byte(val), accessible);
-        }
-    }
-
-    final static class CharFieldImpl extends FieldImpl
-    {
-        CharFieldImpl(Object fieldCookie)
-        {
-            super(fieldCookie);
-        }
-
-        Object get(Object obj)
-        {
-            return new Character(getChar(obj));
-        }
-
-        char getChar(Object obj)
-        {
-            return CIL.unbox_char(getImpl(obj));
-        }
-
-        int getInt(Object obj)
-        {
-            return getChar(obj);
-        }
-
-        float getFloat(Object obj)
-        {
-            return getChar(obj);
-        }
-
-        long getLong(Object obj)
-        {
-            return getChar(obj);
-        }
-
-        double getDouble(Object obj)
-        {
-            return getChar(obj);
-        }
-
-        void set(Object obj, Object val, boolean accessible)
-        {
-            if(! (val instanceof Character))
-              throw new IllegalArgumentException();
-            setChar(obj, ((Character)val).charValue(), accessible);
-        }
-
-        void setChar(Object obj, char val, boolean accessible)
-        {
-            setImpl(obj, CIL.box_char(val), accessible);
-        }
-    }
-
-    final static class ShortFieldImpl extends FieldImpl
-    {
-        ShortFieldImpl(Object fieldCookie)
-        {
-            super(fieldCookie);
-        }
-
-        Object get(Object obj)
-        {
-            return new Short(getShort(obj));
-        }
-
-        short getShort(Object obj)
-        {
-            return CIL.unbox_short(getImpl(obj));
-        }
-
-        int getInt(Object obj)
-        {
-            return getShort(obj);
-        }
-
-        float getFloat(Object obj)
-        {
-            return getShort(obj);
-        }
-
-        long getLong(Object obj)
-        {
-            return getShort(obj);
-        }
-
-        double getDouble(Object obj)
-        {
-            return getShort(obj);
-        }
-
-        void set(Object obj, Object val, boolean accessible)
-        {
-            if(! (val instanceof Short
-                 || val instanceof Byte))
-              throw new IllegalArgumentException();
-            setShort(obj, ((Number)val).shortValue(), accessible);
-        }
-
-        void setShort(Object obj, short val, boolean accessible)
-        {
-            setImpl(obj, CIL.box_short(val), accessible);
-        }
-
-        void setByte(Object obj, byte val, boolean accessible)
-        {
-            setShort(obj, val, accessible);
-        }
-    }
-
-    final static class IntFieldImpl extends FieldImpl
-    {
-        IntFieldImpl(Object fieldCookie)
-        {
-            super(fieldCookie);
-        }
-
-        Object get(Object obj)
-        {
-            return new Integer(getInt(obj));
-        }
-
-        int getInt(Object obj)
-        {
-            return CIL.unbox_int(getImpl(obj));
-        }
-
-        float getFloat(Object obj)
-        {
-            return getInt(obj);
-        }
-
-        long getLong(Object obj)
-        {
-            return getInt(obj);
-        }
-
-        double getDouble(Object obj)
-        {
-            return getInt(obj);
-        }
-
-        void set(Object obj, Object val, boolean accessible)
-        {
-            if (val instanceof Integer
-               || val instanceof Byte
-               || val instanceof Short)
-              setInt(obj, ((Number)val).intValue(), accessible);
-            else if (val instanceof Character)
-              setInt(obj, ((Character)val).charValue(), accessible);
-            else
-              throw new IllegalArgumentException();
-        }
-
-        void setInt(Object obj, int val, boolean accessible)
-        {
-            setImpl(obj, CIL.box_int(val), accessible);
-        }
-
-        void setByte(Object obj, byte val, boolean accessible)
-        {
-            setInt(obj, val, accessible);
-        }
-
-        void setChar(Object obj, char val, boolean accessible)
-        {
-            setInt(obj, val, accessible);
-        }
-
-        void setShort(Object obj, short val, boolean accessible)
-        {
-            setInt(obj, val, accessible);
-        }
-    }
-
-    final static class FloatFieldImpl extends FieldImpl
-    {
-        FloatFieldImpl(Object fieldCookie)
-        {
-            super(fieldCookie);
-        }
-
-        Object get(Object obj)
-        {
-            return new Float(getFloat(obj));
-        }
-
-        float getFloat(Object obj)
-        {
-            return CIL.unbox_float(getImpl(obj));
-        }
-
-        double getDouble(Object obj)
-        {
-            return getFloat(obj);
-        }
-
-        void set(Object obj, Object val, boolean accessible)
-        {
-            if (val instanceof Float
-               || val instanceof Byte
-               || val instanceof Short
-               || val instanceof Integer
-               || val instanceof Long)
-              setFloat(obj, ((Number)val).floatValue(), accessible);
-            else if (val instanceof Character)
-              setFloat(obj, ((Character)val).charValue(), accessible);
-            else
-              throw new IllegalArgumentException();
-        }
-
-        void setFloat(Object obj, float val, boolean accessible)
-        {
-            setImpl(obj, CIL.box_float(val), accessible);
-        }
-
-        void setByte(Object obj, byte val, boolean accessible)
-        {
-            setFloat(obj, val, accessible);
-        }
-
-        void setChar(Object obj, char val, boolean accessible)
-        {
-            setFloat(obj, val, accessible);
-        }
-
-        void setShort(Object obj, short val, boolean accessible)
-        {
-            setFloat(obj, val, accessible);
-        }
-
-        void setInt(Object obj, int val, boolean accessible)
-        {
-            setFloat(obj, val, accessible);
-        }
-
-        void setLong(Object obj, long val, boolean accessible)
-        {
-            setFloat(obj, val, accessible);
-        }
-    }
-
-    final static class LongFieldImpl extends FieldImpl
-    {
-        LongFieldImpl(Object fieldCookie)
-        {
-            super(fieldCookie);
-        }
-
-        Object get(Object obj)
-        {
-            return new Long(getLong(obj));
-        }
-
-        long getLong(Object obj)
-        {
-            return CIL.unbox_long(getImpl(obj));
-        }
-
-        float getFloat(Object obj)
-        {
-            return getLong(obj);
-        }
-
-        double getDouble(Object obj)
-        {
-            return getLong(obj);
-        }
-
-        void set(Object obj, Object val, boolean accessible)
-        {
-            if (val instanceof Long
-               || val instanceof Byte
-               || val instanceof Short
-               || val instanceof Integer)
-              setLong(obj, ((Number)val).longValue(), accessible);
-            else if (val instanceof Character)
-              setLong(obj, ((Character)val).charValue(), accessible);
-            else
-              throw new IllegalArgumentException();
-        }
-
-        void setLong(Object obj, long val, boolean accessible)
-        {
-            setImpl(obj, CIL.box_long(val), accessible);
-        }
-
-        void setByte(Object obj, byte val, boolean accessible)
-        {
-            setLong(obj, val, accessible);
-        }
-
-        void setChar(Object obj, char val, boolean accessible)
-        {
-            setLong(obj, val, accessible);
-        }
-
-        void setShort(Object obj, short val, boolean accessible)
-        {
-            setLong(obj, val, accessible);
-        }
-
-        void setInt(Object obj, int val, boolean accessible)
-        {
-            setLong(obj, val, accessible);
-        }
-    }
-
-    final static class DoubleFieldImpl extends FieldImpl
-    {
-        DoubleFieldImpl(Object fieldCookie)
-        {
-            super(fieldCookie);
-        }
-
-        Object get(Object obj)
-        {
-            return new Double(getDouble(obj));
-        }
-
-        double getDouble(Object obj)
-        {
-            return CIL.unbox_double(getImpl(obj));
-        }
-
-        void set(Object obj, Object val, boolean accessible)
-        {
-            if (val instanceof Double
-                || val instanceof Byte
-                || val instanceof Short
-                || val instanceof Integer
-                || val instanceof Float
-                || val instanceof Long)
-              setDouble(obj, ((Number)val).doubleValue(), accessible);
-            else if (val instanceof Character)
-              setDouble(obj, ((Character)val).charValue(), accessible);
-            else
-              throw new IllegalArgumentException();
-        }
-
-        void setDouble(Object obj, double val, boolean accessible)
-        {
-            setImpl(obj, CIL.box_double(val), accessible);
-        }
-
-        void setByte(Object obj, byte val, boolean accessible)
-        {
-            setDouble(obj, val, accessible);
-        }
-
-        void setChar(Object obj, char val, boolean accessible)
-        {
-            setDouble(obj, val, accessible);
-        }
-
-        void setShort(Object obj, short val, boolean accessible)
-        {
-            setDouble(obj, val, accessible);
-        }
-
-        void setInt(Object obj, int val, boolean accessible)
-        {
-            setDouble(obj, val, accessible);
-        }
-
-        void setFloat(Object obj, float val, boolean accessible)
-        {
-            setDouble(obj, val, accessible);
-        }
-
-        void setLong(Object obj, long val, boolean accessible)
-        {
-            setDouble(obj, val, accessible);
-        }
-    }
+    // package accessible to allow VM to access it
+    VMField impl;
 
 	/**
 	 * This class is uninstantiable except natively.
 	 */
-	Field(Class declaringClass, Object fieldCookie)
+	Field(VMField impl)
 	{
-	    this.declaringClass = declaringClass;
-	    this.fieldCookie = fieldCookie;
-	    modifiers = GetModifiers(fieldCookie);
-	    classIsPublic = (Method.GetRealModifiers(declaringClass) & Modifier.PUBLIC) != 0;
-            Class type = getType();
-            if (type == Boolean.TYPE)
-              impl = new BooleanFieldImpl(fieldCookie);
-            else if (type == Byte.TYPE)
-              impl = new ByteFieldImpl(fieldCookie);
-            else if (type == Character.TYPE)
-              impl = new CharFieldImpl(fieldCookie);
-            else if (type == Short.TYPE)
-              impl = new ShortFieldImpl(fieldCookie);
-            else if (type == Integer.TYPE)
-              impl = new IntFieldImpl(fieldCookie);
-            else if (type == Float.TYPE)
-              impl = new FloatFieldImpl(fieldCookie);
-            else if (type == Long.TYPE)
-              impl = new LongFieldImpl(fieldCookie);
-            else if (type == Double.TYPE)
-              impl = new DoubleFieldImpl(fieldCookie);
-            else
-              impl = new ObjectFieldImpl(fieldCookie);
+            this.impl = impl;
 	}
-        private static native int GetModifiers(Object fieldCookie);
 
 	/**
 	 * Gets the class that declared this field, or the class where this field
@@ -691,7 +95,7 @@ public final class Field extends AccessibleObject implements Member
 	 */
 	public Class getDeclaringClass()
 	{
-		return declaringClass;
+	    return impl.getDeclaringClass();
 	}
 
 	/**
@@ -700,10 +104,8 @@ public final class Field extends AccessibleObject implements Member
 	 */
 	public String getName()
 	{
-		return GetName(fieldCookie);
+	    return impl.getName();
 	}
-	private static native String GetName(Object fieldCookie);
-
 
 	/**
 	 * Gets the modifiers this field uses.  Use the <code>Modifier</code>
@@ -716,7 +118,7 @@ public final class Field extends AccessibleObject implements Member
 	 */
 	public int getModifiers()
 	{
-	    return modifiers;
+	    return impl.getModifiers();
 	}
 
 	/**
@@ -725,9 +127,8 @@ public final class Field extends AccessibleObject implements Member
 	 */
 	public Class getType()
 	{
-		return (Class)GetFieldType(fieldCookie);
+            return impl.getType();
 	}
-	private static native Object GetFieldType(Object fieldCookie);
 
 	/**
 	 * Compare two objects to see if they are semantically equivalent.
@@ -746,7 +147,7 @@ public final class Field extends AccessibleObject implements Member
 		if(!getName().equals(f.getName()))
 			return false;
 
-		if(declaringClass != f.declaringClass)
+		if(getDeclaringClass() != f.getDeclaringClass())
 			return false;
 
 		if(getType() != f.getType())
@@ -827,10 +228,8 @@ public final class Field extends AccessibleObject implements Member
 	public Object get(Object o)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+	    if(impl.needsAccessCheck(isAccessible()))
+		impl.checkAccess(o, VMStackWalker.getCallingClass());
 	    return impl.get(o);
 	}
 
@@ -854,10 +253,8 @@ public final class Field extends AccessibleObject implements Member
 	public boolean getBoolean(Object o)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             return impl.getBoolean(o);
 	}
 
@@ -881,10 +278,8 @@ public final class Field extends AccessibleObject implements Member
 	public byte getByte(Object o)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             return impl.getByte(o);
 	}
 
@@ -906,10 +301,8 @@ public final class Field extends AccessibleObject implements Member
 	public char getChar(Object o)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             return impl.getChar(o);
 	}
 
@@ -933,10 +326,8 @@ public final class Field extends AccessibleObject implements Member
 	public short getShort(Object o)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             return impl.getShort(o);
 	}
 
@@ -960,10 +351,8 @@ public final class Field extends AccessibleObject implements Member
 	public int getInt(Object o)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             return impl.getInt(o);
 	}
 
@@ -987,10 +376,8 @@ public final class Field extends AccessibleObject implements Member
 	public long getLong(Object o)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             return impl.getLong(o);
 	}
 
@@ -1014,10 +401,8 @@ public final class Field extends AccessibleObject implements Member
 	public float getFloat(Object o)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             return impl.getFloat(o);
 	}
 
@@ -1042,10 +427,8 @@ public final class Field extends AccessibleObject implements Member
 	public double getDouble(Object o)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             return impl.getDouble(o);
 	}
 
@@ -1097,37 +480,10 @@ public final class Field extends AccessibleObject implements Member
 	public void set(Object o, Object value)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             impl.set(o, value, isAccessible());
 	}
-
-	static void checkAccess(int modifiers, Object o, Class declaringClass, Class caller) throws IllegalAccessException
-	{
-	    // when we're invoking a constructor, modifiers will not be static, but o will be null.
-	    Class actualClass = Modifier.isStatic(modifiers) || o == null ? declaringClass : o.getClass();
-	    boolean declaringClassIsPublic = (Method.GetRealModifiers(declaringClass) & Modifier.PUBLIC) != 0;
-	    if((!Modifier.isPublic(modifiers) || !declaringClassIsPublic) && declaringClass != caller)
-	    {
-		// if the caller is a global method, the class returned will be null
-		if(caller == null)
-		{
-		    throw new IllegalAccessException();
-		}
-		if(Modifier.isProtected(modifiers) && actualClass.isAssignableFrom(caller))
-		{
-		}
-		else if(!isSamePackage(declaringClass, caller) || Modifier.isPrivate(modifiers))
-		{
-		    throw new IllegalAccessException("Class " + caller.getName() +
-                         " can not access a member of class " + declaringClass.getName() +
-                         " with modifiers \"" + Modifier.toString(modifiers & (Modifier.PRIVATE | Modifier.PROTECTED)) + "\"");
-		}
-	    }
-	}
-	private static native boolean isSamePackage(Class a, Class b);
 
 	/**
 	 * Set this boolean Field. If the field is static, <code>o</code> will be
@@ -1149,10 +505,8 @@ public final class Field extends AccessibleObject implements Member
 	public void setBoolean(Object o, boolean value)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             impl.setBoolean(o, value, isAccessible());
 	}
 
@@ -1176,10 +530,8 @@ public final class Field extends AccessibleObject implements Member
 	public void setByte(Object o, byte value)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             impl.setByte(o, value, isAccessible());
 	}
 
@@ -1203,10 +555,8 @@ public final class Field extends AccessibleObject implements Member
 	public void setChar(Object o, char value)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             impl.setChar(o, value, isAccessible());
 	}
 
@@ -1230,10 +580,8 @@ public final class Field extends AccessibleObject implements Member
 	public void setShort(Object o, short value)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             impl.setShort(o, value, isAccessible());
 	}
 
@@ -1257,10 +605,8 @@ public final class Field extends AccessibleObject implements Member
 	public void setInt(Object o, int value)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             impl.setInt(o, value, isAccessible());
 	}
 
@@ -1284,10 +630,8 @@ public final class Field extends AccessibleObject implements Member
 	public void setLong(Object o, long value)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             impl.setLong(o, value, isAccessible());
 	}
 
@@ -1311,10 +655,8 @@ public final class Field extends AccessibleObject implements Member
 	public void setFloat(Object o, float value)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             impl.setFloat(o, value, isAccessible());
 	}
 
@@ -1338,10 +680,8 @@ public final class Field extends AccessibleObject implements Member
 	public void setDouble(Object o, double value)
 		throws IllegalAccessException
 	{
-	    if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-		checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
-            if(o != null && !declaringClass.isInstance(o))
-                throw new IllegalArgumentException();
+            if(impl.needsAccessCheck(isAccessible()))
+                impl.checkAccess(o, VMStackWalker.getCallingClass());
             impl.setDouble(o, value, isAccessible());
 	}
 }

@@ -433,7 +433,7 @@ class ClassLoaderWrapper
 			{
 				// since this type was compiled from Java source, we have to look for our
 				// attributes
-				wrapper = new CompiledTypeWrapper(name, type);
+				wrapper = CompiledTypeWrapper.newInstance(name, type);
 			}
 			else
 			{
@@ -1012,7 +1012,7 @@ class ClassLoaderWrapper
 
 	internal static void PublishLibraryImplementationHelperType(Type type)
 	{
-		CompiledTypeWrapper typeWrapper = new CompiledTypeWrapper(type.FullName, type);
+		CompiledTypeWrapper typeWrapper = CompiledTypeWrapper.newInstance(type.FullName, type);
 		SetWrapperForType(type, typeWrapper);
 		GetBootstrapClassLoader().types[type.FullName] = typeWrapper;
 	}

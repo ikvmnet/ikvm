@@ -3129,6 +3129,7 @@ gnu/classpath/Configuration.java
 gnu/classpath/RawData.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
+gnu/java/lang/reflect/VMField.java
 gnu/java/net/PlainDatagramSocketImpl.java
 gnu/java/net/PlainSocketImpl.java
 gnu/java/net/protocol/ikvmres/Handler.java
@@ -3142,6 +3143,7 @@ java/lang/ref/Reference.java
 java/lang/reflect/Constructor.java
 java/lang/reflect/Field.java
 java/lang/reflect/Method.java
+java/lang/reflect/VMFieldImpl.java
 java/lang/StringHelper.java
 java/lang/VMClass.java
 java/lang/VMClassLoader.java
