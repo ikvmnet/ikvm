@@ -227,12 +227,7 @@ namespace IKVM.NativeCode.java
 						{
 							wrapper.DeclaringType.RunClassInit();
 						}
-						object val = wrapper.GetValue(o);
-						if(wrapper.FieldTypeWrapper.IsPrimitive)
-						{
-							val = JVM.Library.box(val);
-						}
-						return val;
+						return wrapper.GetValue(o);
 					}
 					finally
 					{
@@ -256,17 +251,6 @@ namespace IKVM.NativeCode.java
 							{
 								// NOTE even if the caller is the class itself, it still isn't legal
 								throw JavaException.IllegalAccessException("Field is final");
-							}
-						}
-						if(wrapper.FieldTypeWrapper.IsPrimitive)
-						{
-							v = JVM.Library.unbox(v);
-							// NOTE we depend on the fact that the .NET reflection parameter type
-							// widening rules are the same as in Java, but to have this work for byte
-							// we need to convert byte to sbyte.
-							if(v is byte && wrapper.FieldTypeWrapper != PrimitiveTypeWrapper.BYTE)
-							{
-								v = (sbyte)(byte)v;
 							}
 						}
 						// if the field is an interface field, we must explicitly run <clinit>,
@@ -1032,14 +1016,16 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public static int GetModifiers(Object cwrapper)
+			public static int GetModifiers(Object cwrapper, bool ignoreInnerClassesAttribute)
 			{
 				try
 				{
 					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					// NOTE we don't return the modifiers from the TypeWrapper, because for inner classes
-					// the reflected modifiers are different from the physical ones
-					Modifiers modifiers = wrapper.ReflectiveModifiers;
+					// NOTE unless ignoreInnerClassesAttribute is true, we don't return the modifiers from
+					// the TypeWrapper, because for inner classes the reflected modifiers are different
+					// from the physical ones
+					Modifiers modifiers = ignoreInnerClassesAttribute ?
+						wrapper.Modifiers : wrapper.ReflectiveModifiers;
 					// only returns public, protected, private, final, static, abstract and interface (as per
 					// the documentation of Class.getModifiers())
 					Modifiers mask = Modifiers.Public | Modifiers.Protected | Modifiers.Private | Modifiers.Final |
