@@ -783,21 +783,67 @@ class ClassLoaderWrapper
 	{
 		Debug.Assert(!(type is TypeBuilder));
 		TypeWrapper wrapper = (TypeWrapper)typeToTypeWrapper[type];
-		if(wrapper == null && type.IsArray)
+		if(wrapper == null)
 		{
-			// it might be an array of a dynamically compiled Java type
-			int rank = 1;
-			Type elem = type.GetElementType();
-			while(elem.IsArray)
+			if(type.IsArray)
 			{
-				rank++;
-				elem = elem.GetElementType();
+				// it might be an array of a dynamically compiled Java type
+				int rank = 1;
+				Type elem = type.GetElementType();
+				while(elem.IsArray)
+				{
+					rank++;
+					elem = elem.GetElementType();
+				}
+				wrapper = (TypeWrapper)typeToTypeWrapper[elem];
+				if(wrapper != null)
+				{
+					// HACK this is a lame way of creating the array wrapper
+					wrapper = wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + "L" + wrapper.Name + ";");
+				}
 			}
-			wrapper = (TypeWrapper)typeToTypeWrapper[elem];
+			else if(type.IsPrimitive)
+			{
+				if(type == typeof(sbyte))
+				{
+					wrapper = PrimitiveTypeWrapper.BYTE;
+				}
+				else if(type == typeof(char))
+				{
+					wrapper = PrimitiveTypeWrapper.CHAR;
+				}
+				else if(type == typeof(double))
+				{
+					wrapper = PrimitiveTypeWrapper.DOUBLE;
+				}
+				else if(type == typeof(float))
+				{
+					wrapper = PrimitiveTypeWrapper.FLOAT;
+				}
+				else if(type == typeof(int))
+				{
+					wrapper = PrimitiveTypeWrapper.INT;
+				}
+				else if(type == typeof(long))
+				{
+					wrapper = PrimitiveTypeWrapper.LONG;
+				}
+				else if(type == typeof(short))
+				{
+					wrapper = PrimitiveTypeWrapper.SHORT;
+				}
+				else if(type == typeof(bool))
+				{
+					wrapper = PrimitiveTypeWrapper.BOOLEAN;
+				}
+			}
+			else if(type == typeof(void))
+			{
+				wrapper = PrimitiveTypeWrapper.VOID;
+			}
+			// if we found it, store it in the map
 			if(wrapper != null)
 			{
-				// HACK this is a lame way of creating the array wrapper
-				wrapper = wrapper.GetClassLoader().LoadClassBySlashedName(new String('[', rank) + "L" + wrapper.Name + ";");
 				typeToTypeWrapper[type] = wrapper;
 			}
 		}
@@ -815,45 +861,6 @@ class ClassLoaderWrapper
 			// was "loaded" by the bootstrap classloader
 			// TODO think up a scheme to deal with .NET types that have the same name. Since all .NET types
 			// appear in the boostrap classloader, we need to devise a scheme to mangle the class name
-			if(type.IsPrimitive || type == typeof(void))
-			{
-				if(type == typeof(void))
-				{
-					return PrimitiveTypeWrapper.VOID;
-				}
-				else if(type == typeof(sbyte))
-				{
-					return PrimitiveTypeWrapper.BYTE;
-				}
-				else if(type == typeof(char))
-				{
-					return PrimitiveTypeWrapper.CHAR;
-				}
-				else if(type == typeof(double))
-				{
-					return PrimitiveTypeWrapper.DOUBLE;
-				}
-				else if(type == typeof(float))
-				{
-					return PrimitiveTypeWrapper.FLOAT;
-				}
-				else if(type == typeof(int))
-				{
-					return PrimitiveTypeWrapper.INT;
-				}
-				else if(type == typeof(long))
-				{
-					return PrimitiveTypeWrapper.LONG;
-				}
-				else if(type == typeof(short))
-				{
-					return PrimitiveTypeWrapper.SHORT;
-				}
-				else if(type == typeof(bool))
-				{
-					return PrimitiveTypeWrapper.BOOLEAN;
-				}
-			}
 			wrapper = GetBootstrapClassLoader().GetCompiledTypeWrapper(type);
 		}
 		return wrapper;
