@@ -100,7 +100,7 @@ public final class ExceptionHelper
 		{
 		    stackTrace = new cli.System.Collections.ArrayList();
 		    int skip1 = 0;
-		    if(t instanceof NullPointerException && tracePart1.get_FrameCount() > 0)
+		    if(cleanStackTrace && t instanceof NullPointerException && tracePart1.get_FrameCount() > 0)
 		    {
 			// HACK if a NullPointerException originated inside an instancehelper method,
 			// we assume that the reference the method was called on was really the one that was null,
@@ -115,20 +115,23 @@ public final class ExceptionHelper
 		    if(tracePart2 != null)
 		    {
 			int skip = 0;
-			while(tracePart2.get_FrameCount() > skip && 
-			    tracePart2.GetFrame(skip).GetMethod().get_DeclaringType().get_FullName().startsWith("java.lang.ExceptionHelper"))
+			if(cleanStackTrace)
 			{
-			    skip++;
-			}
-			if(tracePart1.get_FrameCount() > 0 &&
-			    tracePart2.get_FrameCount() > skip &&
-			    tracePart1.GetFrame(tracePart1.get_FrameCount() - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
-			{
-			    skip++;
+			    while(tracePart2.get_FrameCount() > skip && 
+				tracePart2.GetFrame(skip).GetMethod().get_DeclaringType().get_FullName().startsWith("java.lang.ExceptionHelper"))
+			    {
+				skip++;
+			    }
+			    if(tracePart1.get_FrameCount() > 0 &&
+				tracePart2.get_FrameCount() > skip &&
+				tracePart1.GetFrame(tracePart1.get_FrameCount() - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
+			    {
+				skip++;
+			    }
 			}
 			Append(stackTrace, tracePart2, skip);
 		    }
-		    if(stackTrace.get_Count() > 0)
+		    if(cleanStackTrace && stackTrace.get_Count() > 0)
 		    {
 			StackTraceElement elem = (StackTraceElement)stackTrace.get_Item(stackTrace.get_Count() - 1);
 			if(elem.getClassName().equals("java.lang.reflect.Method"))
