@@ -165,6 +165,11 @@ namespace IKVM.Runtime
 			{
 				Thread.CurrentThread.Name = "main";
 			}
+			// HACK initialize java.lang.System first
+			// (Ideally GNU Classpath wouldn't have circular initialization dependencies, but
+			// it's hard to get support for that from the community).
+			Type system = Type.GetType("java.lang.System, IKVM.GNU.Classpath");
+			System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(system.TypeHandle);
 		}
 
 		public static void ExitMainThread()
