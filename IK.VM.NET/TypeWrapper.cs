@@ -220,17 +220,20 @@ sealed class MethodDescriptor
 			name = GetSigNameFromType(((GhostTypeAttribute)attribs[0]).Type);
 			typeWrapper = ClassLoaderWrapper.GetWrapperFromType(((GhostTypeAttribute)attribs[0]).Type);
 		}
-		attribs = provider.GetCustomAttributes(typeof(UnloadableTypeAttribute), false);
-		if(attribs.Length == 1)
-		{
-			name = "L" + ((UnloadableTypeAttribute)attribs[0]).Name + ";";
-			// TODO it might be loadable now, what do we do?
-			typeWrapper = new UnloadableTypeWrapper(((UnloadableTypeAttribute)attribs[0]).Name);
-		}
 		else
 		{
-			name = "Ljava.lang.Object;";
-			typeWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object");
+			attribs = provider.GetCustomAttributes(typeof(UnloadableTypeAttribute), false);
+			if(attribs.Length == 1)
+			{
+				name = "L" + ((UnloadableTypeAttribute)attribs[0]).Name + ";";
+				// TODO it might be loadable now, what do we do?
+				typeWrapper = new UnloadableTypeWrapper(((UnloadableTypeAttribute)attribs[0]).Name);
+			}
+			else
+			{
+				name = "Ljava.lang.Object;";
+				typeWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.Object");
+			}
 		}
 	}
 

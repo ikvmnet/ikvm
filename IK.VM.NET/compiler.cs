@@ -2394,7 +2394,14 @@ class Compiler
 							{
 								TypeWrapper tw = field.FieldTypeWrapper;
 								int stackpos = (bytecode == NormalizedByteCode.__putstatic) ? 0 : 1;
-								if(!tw.IsUnloadable && tw.IsInterfaceOrInterfaceArray && !tw.IsGhost && !ma.GetRawStackTypeWrapper(i, stackpos).IsAssignableTo(tw))
+								TypeWrapper obj = ma.GetRawStackTypeWrapper(i, stackpos);
+								// NOTE since we support putfield on an unitialized this, we need to substitute
+								// that, if we encounter it.
+								if(obj == VerifierTypeWrapper.UninitializedThis)
+								{
+									obj = this.clazz;
+								}
+								if(!tw.IsUnloadable && tw.IsInterfaceOrInterfaceArray && !tw.IsGhost && !obj.IsAssignableTo(tw))
 								{
 									ilGenerator.Emit(OpCodes.Castclass, tw.Type);
 								}

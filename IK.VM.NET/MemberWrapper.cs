@@ -192,7 +192,9 @@ class MethodWrapper : MemberWrapper
 		internal GhostCallEmitter(TypeWrapper type, MethodDescriptor md, MethodBase method)
 		{
 			this.md = md;
-			implementers = ClassLoaderWrapper.GetGhostImplementers(type);
+			TypeWrapper[] imps = ClassLoaderWrapper.GetGhostImplementers(type);
+			implementers = new TypeWrapper[imps.Length + 1];
+			imps.CopyTo(implementers, 1);
 			methods = new CodeEmitter[implementers.Length + 1];
 			implementers[0] = type;
 			methods[0] = CodeEmitter.Create(OpCodes.Callvirt, method);
