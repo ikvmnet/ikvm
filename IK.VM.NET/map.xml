@@ -97,6 +97,7 @@
 		</class>
 		<class name="java.lang.String" type="System.String" modifiers="public final">
 			<implements class="java.lang.Comparable" />
+			<implements class="java.io.Serializable" />
 			<constructor sig="()V" modifiers="public">
 				<!-- TODO -->
 				<newobj>

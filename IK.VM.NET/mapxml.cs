@@ -773,11 +773,17 @@ obj584.Type = "static";
 obj580.redirect = obj584;
 obj561[2] = obj580;
 obj150.Fields = obj561;
-MapXml.Interface[] obj589 = new MapXml.Interface[1];
+MapXml.Interface[] obj589 = new MapXml.Interface[2];
+
 MapXml.Interface obj590 = new MapXml.Interface();
 obj590.Name = "java.lang.Comparable";
 obj589[0] = obj590;
+MapXml.Interface obj590a = new MapXml.Interface();
+obj590a.Name = "java.io.Serializable";
+obj589[1] = obj590a;
+
 obj150.Interfaces = obj589;
+
 obj1[1] = obj150;
 MapXml.Class obj592 = new MapXml.Class();
 obj592.Name = "java.lang.StringBuffer";

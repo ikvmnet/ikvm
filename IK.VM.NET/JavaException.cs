@@ -150,4 +150,9 @@ sealed class JavaException
 		ConstructorInfo ci = ClassLoaderWrapper.GetType("java.net.UnknownHostException").GetConstructor(new Type[] { typeof(string) });
 		return (Exception)ci.Invoke(new object[] { s });
 	}
+
+	internal static Exception ArrayIndexOutOfBoundsException()
+	{
+		return (Exception)Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.ArrayIndexOutOfBoundsException"));
+	}
 }

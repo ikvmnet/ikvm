@@ -1328,7 +1328,9 @@ class DynamicTypeWrapper : TypeWrapper
 				// if we don't have a <clinit> we need to inject one to call the base class <clinit>
 				if(basehasclinit && !hasclinit && !classFile.IsInterface)
 				{
-					ILGenerator ilGenerator = typeBuilder.DefineConstructor(MethodAttributes.Private | MethodAttributes.Static, CallingConventions.Standard, Type.EmptyTypes).GetILGenerator();
+					ConstructorBuilder cb = typeBuilder.DefineConstructor(MethodAttributes.Private | MethodAttributes.Static, CallingConventions.Standard, Type.EmptyTypes);
+					ModifiersAttribute.SetModifiers(cb, Modifiers.Synthetic);
+					ILGenerator ilGenerator = cb.GetILGenerator();
 					ilGenerator.Emit(OpCodes.Ldtoken, Type.BaseType);
 					ilGenerator.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("RunClassConstructor"));
 					ilGenerator.Emit(OpCodes.Ret);
