@@ -1700,9 +1700,17 @@ class BakedTypeCleanupHack
 				"m_fieldType",
 			});
 
+	private static bool IsSupportedVersion
+	{
+		get
+		{
+			return Environment.Version.Major == 1 && Environment.Version.Minor == 1 && Environment.Version.Build == 4322;
+		}
+	}
+
 	private static FieldInfo[] GetFieldList(Type type, string[] list)
 	{
-		if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
+		if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage || !IsSupportedVersion)
 		{
 			// if we're going to be saving the image, we cannot bash the MethodBuilder fields,
 			// because the data is required to generated the PE file.

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -432,6 +432,11 @@ namespace ikvm.awt
 		}
 
 		public override gnu.java.awt.peer.ClasspathTextLayoutPeer getClasspathTextLayoutPeer(java.text.AttributedString str, java.awt.font.FontRenderContext ctxt)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override RobotPeer createRobot(java.awt.GraphicsDevice param)
 		{
 			throw new NotImplementedException();
 		}
