@@ -60,11 +60,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 
 	/**
-	 * Option id for the IP_TTL (time to live) value.
-	 */
-	private static final int IP_TTL = 0x1E61; // 7777
-
-	/**
 	 * This is the actual underlying socket
 	 */
 	private cli.System.Net.Sockets.Socket socket = new cli.System.Net.Sockets.Socket(
@@ -270,12 +265,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	protected byte getTTL() throws IOException
 	{
-		Object obj = getOption(IP_TTL);
-
-		if (!(obj instanceof Integer))
-			throw new IOException("Internal Error");
-
-		return(((Integer)obj).byteValue());
+	    return (byte)CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive)));
 	}
 
 	/*************************************************************************/
@@ -289,7 +279,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	protected void setTTL(byte ttl) throws IOException
 	{
-		setOption(IP_TTL, new Integer(ttl & 0xFF));
+	    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ttl & 0xff);
 	}
 
 	/*************************************************************************/
@@ -303,12 +293,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	protected int getTimeToLive() throws IOException
 	{
-		Object obj = getOption(IP_TTL);
-
-		if (!(obj instanceof Integer))
-			throw new IOException("Internal Error");
-
-		return(((Integer)obj).intValue());
+	    return CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive)));
 	}
 
 	/*************************************************************************/
@@ -322,86 +307,105 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	protected void setTimeToLive(int ttl) throws IOException
 	{
-		setOption(IP_TTL, new Integer(ttl));
+	    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ttl);
 	}
 
 	/*************************************************************************/
 
-	/**
-	 * Retrieves the value of an option on the socket
-	 *
-	 * @param option_id The identifier of the option to retrieve
-	 *
-	 * @return The value of the option
-	 *
-	 * @exception SocketException If an error occurs
-	 */
-	public Object getOption(int option_id) throws SocketException
+    /**
+     * Retrieves the value of an option on the socket
+     *
+     * @param option_id The identifier of the option to retrieve
+     *
+     * @return The value of the option
+     *
+     * @exception SocketException If an error occurs
+     */
+    public Object getOption(int option_id) throws SocketException
+    {
+	try
 	{
-		try
-		{
-			if(false) throw new cli.System.Net.Sockets.SocketException();
-			switch(option_id)
-			{
-				case IP_TTL:
-					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive))));
-				case SocketOptions.SO_TIMEOUT:
-				        return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout))));
-				case SocketOptions.SO_BINDADDR:
-					try
-					{
-						return InetAddress.getByAddress(PlainSocketImpl.getLocalAddress(socket));
-					}
-					catch(UnknownHostException x)
-					{
-						throw new SocketException(x.getMessage());
-					}
-				default:
-					throw new Error("getOption(" + option_id + ") not implemented");
-			}
-		}
-		catch(cli.System.Net.Sockets.SocketException x)
-		{
-			throw new SocketException(x.getMessage());
-		}
+	    if(false) throw new cli.System.Net.Sockets.SocketException();
+	    switch(option_id)
+	    {
+		case SocketOptions.SO_REUSEADDR:
+		    return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress))) != 0);
+		case SocketOptions.SO_BROADCAST:
+		    return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast))) != 0);
+		case SocketOptions.IP_MULTICAST_IF:
+		    return getInetAddressFromInt(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface))));
+		case SocketOptions.IP_MULTICAST_IF2:
+		    throw new SocketException("SocketOptions.IP_MULTICAST_IF2 not implemented");
+		case SocketOptions.IP_MULTICAST_LOOP:
+		    return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback))) != 0);
+		default:
+		    return PlainSocketImpl.getCommonSocketOption(socket, option_id);
+	    }
 	}
+	catch(cli.System.Net.Sockets.SocketException x)
+	{
+	    throw new SocketException(x.getMessage());
+	}
+    }
+
+    private static InetAddress getInetAddressFromInt(int i) throws SocketException
+    {
+	byte[] b = new byte[4];
+	b[0] = (byte)(i >>  0);
+	b[1] = (byte)(i >>  8);
+	b[2] = (byte)(i >> 16);
+	b[3] = (byte)(i >> 24);
+	try
+	{
+	    return InetAddress.getByAddress(b);
+	}
+	catch(UnknownHostException x)
+	{
+	    throw new SocketException(x.getMessage());
+	}
+    }
 
 	/*************************************************************************/
 
-	/**
-	 * Sets the value of an option on the socket
-	 *
-	 * @param option_id The identifier of the option to set
-	 * @param val The value of the option to set
-	 *
-	 * @exception SocketException If an error occurs
-	 */
-	public void setOption(int option_id, Object val) throws SocketException
+   /**
+    * Sets the value of an option on the socket
+    *
+    * @param option_id The identifier of the option to set
+    * @param val The value of the option to set
+    *
+    * @exception SocketException If an error occurs
+    */
+    public void setOption(int option_id, Object val) throws SocketException
+    {
+	try
 	{
-	    try
+	    if(false) throw new cli.System.Net.Sockets.SocketException();
+	    switch(option_id)
 	    {
-		    if(false) throw new cli.System.Net.Sockets.SocketException();
-		    switch(option_id)
-		    {
-			    case IP_TTL:
-				    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ((Integer)val).intValue());
-				    break;
-			    case SocketOptions.SO_TIMEOUT:
-				    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout), ((Integer)val).intValue());
-				    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendTimeout), ((Integer)val).intValue());
-				    break;
-			    case SocketOptions.SO_REUSEADDR:
-				    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress), ((Boolean)val).booleanValue() ? 1 : 0);
-				    break;
-			    default:
-				    throw new Error("setOption(" + option_id + ") not implemented");
-		    }
-	    }
-	    catch(cli.System.Net.Sockets.SocketException x)
-	    {
-		    throw new SocketException(x.getMessage());
+		case SocketOptions.SO_REUSEADDR:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress), ((Boolean)val).booleanValue() ? 1 : 0);
+		    break;
+		case SocketOptions.SO_BROADCAST:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast), ((Boolean)val).booleanValue() ? 1 : 0);
+		    break;
+		case SocketOptions.IP_MULTICAST_IF:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress((InetAddress)val));
+		    break;
+		case SocketOptions.IP_MULTICAST_IF2:
+		    throw new SocketException("SocketOptions.IP_MULTICAST_IF2 not implemented");
+		case SocketOptions.IP_MULTICAST_LOOP:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback), ((Boolean)val).booleanValue() ? 1 : 0);
+		    break;
+		default:
+		    PlainSocketImpl.setCommonSocketOption(socket, option_id, val);
+		    break;
 	    }
 	}
+	catch(cli.System.Net.Sockets.SocketException x)
+	{
+	    throw new SocketException(x.getMessage());
+	}
+    }
 
 	public int peekData(DatagramPacket packet)
 	{

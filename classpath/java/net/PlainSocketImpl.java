@@ -320,125 +320,158 @@ public class PlainSocketImpl extends SocketImpl
 	 *
 	 * @exception SocketException If an error occurs
 	 */
-	public void setOption(int option_id, Object val) throws SocketException
+    public void setOption(int option_id, Object val) throws SocketException
+    {
+	try
 	{
-		try
+	    if(false) throw new cli.System.Net.Sockets.SocketException();
+	    switch(option_id)
+	    {
+		case SocketOptions.TCP_NODELAY:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Tcp), SocketOptionName.wrap(SocketOptionName.NoDelay), ((Boolean)val).booleanValue() ? 1 : 0);
+		    break;
+		case SocketOptions.SO_KEEPALIVE:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.KeepAlive), ((Boolean)val).booleanValue() ? 1 : 0);
+		    break;
+		case SocketOptions.SO_LINGER:
 		{
-			if(false) throw new cli.System.Net.Sockets.SocketException();
-			switch(option_id)
-			{
-				case SocketOptions.TCP_NODELAY:
-					socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Tcp), SocketOptionName.wrap(SocketOptionName.NoDelay), ((Boolean)val).booleanValue() ? 1 : 0);
-					break;
-				case SocketOptions.SO_KEEPALIVE:
-					socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.KeepAlive), ((Boolean)val).booleanValue() ? 1 : 0);
-					break;
-				case SocketOptions.SO_TIMEOUT:
-					socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout), ((Integer)val).intValue());
-					socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendTimeout), ((Integer)val).intValue());
-					break;
-				case SocketOptions.SO_LINGER:
-				{
-					cli.System.Net.Sockets.LingerOption linger;
-					if(val instanceof Boolean)
-					{
-						linger = new cli.System.Net.Sockets.LingerOption(false, 0);
-					}
-					else
-					{
-						linger = new cli.System.Net.Sockets.LingerOption(true, ((Integer)val).intValue());
-					}
-					socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Linger), linger);
-					break;
-				}
-				case SocketOptions.SO_OOBINLINE:
-					socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline), ((Boolean)val).booleanValue() ? 1 : 0);
-					break;
-				case SocketOptions.SO_SNDBUF:
-					socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer), ((Integer)val).intValue());
-					break;
-				case SocketOptions.SO_RCVBUF:
-					socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveBuffer), ((Integer)val).intValue());
-					break;
-				case SocketOptions.SO_REUSEADDR:
-					socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress), ((Boolean)val).booleanValue() ? 1 : 0);
-					break;
-				case SocketOptions.IP_TOS:
-					socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.TypeOfService), ((Integer)val).intValue());
-					break;
-				default:
-					throw new Error("Socket.setOption(" + option_id + ") not implemented");
-			}
+		    cli.System.Net.Sockets.LingerOption linger;
+		    if(val instanceof Boolean)
+		    {
+			linger = new cli.System.Net.Sockets.LingerOption(false, 0);
+		    }
+		    else
+		    {
+			linger = new cli.System.Net.Sockets.LingerOption(true, ((Integer)val).intValue());
+		    }
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Linger), linger);
+		    break;
 		}
-		catch(cli.System.Net.Sockets.SocketException x)
-		{
-			// TODO error handling
-			throw new SocketException(x.getMessage());
-		}
+		case SocketOptions.SO_OOBINLINE:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline), ((Boolean)val).booleanValue() ? 1 : 0);
+		    break;
+		default:
+		    setCommonSocketOption(socket, option_id, val);
+		    break;
+	    }
 	}
+	catch(cli.System.Net.Sockets.SocketException x)
+	{
+	    // TODO error handling
+	    throw new SocketException(x.getMessage());
+	}
+    }
 
-	/**
-	 * Returns the current setting of the specified option.  The Object returned
-	 * will be an Integer for options that have integer values.  The option_id
-	 * is one of the defined constants in this interface.
-	 *
-	 * @param option_id The option identifier
-	 *
-	 * @return The current value of the option
-	 *
-	 * @exception SocketException If an error occurs
-	 */
-	public Object getOption(int option_id) throws SocketException
+    static void setCommonSocketOption(cli.System.Net.Sockets.Socket socket, int option_id, Object val) throws SocketException
+    {
+	try
 	{
-		try
-		{
-			if(false) throw new cli.System.Net.Sockets.SocketException();
-			switch(option_id)
-			{
-				case SocketOptions.SO_BINDADDR:
-					try
-					{
-						return InetAddress.getByAddress(getLocalAddress(socket));
-					}
-					catch(UnknownHostException x)
-					{
-						throw new SocketException(x.getMessage());
-					}
-				case SocketOptions.TCP_NODELAY:
-					return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Tcp), SocketOptionName.wrap(SocketOptionName.NoDelay))) != 0);
-				case SocketOptions.SO_KEEPALIVE:
-					return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.KeepAlive))) != 0);
-				case SocketOptions.SO_TIMEOUT:
-					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout))));
-				case SocketOptions.SO_LINGER:
-				{
-					cli.System.Net.Sockets.LingerOption linger = (cli.System.Net.Sockets.LingerOption)socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Linger));
-					if(linger.get_Enabled())
-					{
-						return new Integer(linger.get_LingerTime());
-					}
-					return Boolean.FALSE;
-				}
-				case SocketOptions.SO_OOBINLINE:
-					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline))));
-				case SocketOptions.SO_SNDBUF:
-					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer))));
-				case SocketOptions.SO_RCVBUF:
-					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveBuffer))));
-				case SocketOptions.SO_REUSEADDR:
-					return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress))) != 0);
-				case SocketOptions.IP_TOS:
-					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.TypeOfService))));
-				default:
-					throw new Error("Socket.getOption(" + option_id + ") not implemented");
-			}
-		}
-		catch(cli.System.Net.Sockets.SocketException x)
-		{
-			// TODO error handling
-			throw new SocketException(x.getMessage());
-		}
+	    if(false) throw new cli.System.Net.Sockets.SocketException();
+	    switch(option_id)
+	    {
+		case SocketOptions.SO_TIMEOUT:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout), ((Integer)val).intValue());
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendTimeout), ((Integer)val).intValue());
+		    break;
+		case SocketOptions.SO_SNDBUF:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer), ((Integer)val).intValue());
+		    break;
+		case SocketOptions.SO_RCVBUF:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveBuffer), ((Integer)val).intValue());
+		    break;
+		case SocketOptions.IP_TOS:
+		    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.TypeOfService), ((Integer)val).intValue());
+		    break;
+		case SocketOptions.SO_BINDADDR:	// read-only
+		default:
+		    throw new SocketException("Invalid socket option: " + option_id);
+	    }
 	}
+	catch(cli.System.Net.Sockets.SocketException x)
+	{
+	    // TODO error handling
+	    throw new SocketException(x.getMessage());
+	}
+    }
+
+    /**
+     * Returns the current setting of the specified option.  The Object returned
+     * will be an Integer for options that have integer values.  The option_id
+     * is one of the defined constants in this interface.
+     *
+     * @param option_id The option identifier
+     *
+     * @return The current value of the option
+     *
+     * @exception SocketException If an error occurs
+     */
+    public Object getOption(int option_id) throws SocketException
+    {
+	try
+	{
+	    if(false) throw new cli.System.Net.Sockets.SocketException();
+	    switch(option_id)
+	    {
+		case SocketOptions.TCP_NODELAY:
+		    return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Tcp), SocketOptionName.wrap(SocketOptionName.NoDelay))) != 0);
+		case SocketOptions.SO_KEEPALIVE:
+		    return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.KeepAlive))) != 0);
+		case SocketOptions.SO_LINGER:
+		{
+		    cli.System.Net.Sockets.LingerOption linger = (cli.System.Net.Sockets.LingerOption)socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Linger));
+		    if(linger.get_Enabled())
+		    {
+			return new Integer(linger.get_LingerTime());
+		    }
+		    return Boolean.FALSE;
+		}
+		case SocketOptions.SO_OOBINLINE:
+		    return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline))));
+		default:
+		    return getCommonSocketOption(socket, option_id);
+	    }
+	}
+	catch(cli.System.Net.Sockets.SocketException x)
+	{
+	    // TODO error handling
+	    throw new SocketException(x.getMessage());
+	}
+    }
+
+    static Object getCommonSocketOption(cli.System.Net.Sockets.Socket socket, int option_id) throws SocketException
+    {
+	try
+	{
+	    if(false) throw new cli.System.Net.Sockets.SocketException();
+	    switch(option_id)
+	    {
+		case SocketOptions.SO_TIMEOUT:
+		    return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout))));
+		case SocketOptions.SO_SNDBUF:
+		    return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer))));
+		case SocketOptions.SO_RCVBUF:
+		    return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveBuffer))));
+		case SocketOptions.IP_TOS:
+		    return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.TypeOfService))));
+		case SocketOptions.SO_BINDADDR:
+		    try
+		    {
+			return InetAddress.getByAddress(getLocalAddress(socket));
+		    }
+		    catch(UnknownHostException x)
+		    {
+			throw new SocketException(x.getMessage());
+		    }
+		default:
+		    throw new SocketException("Invalid socket option: " + option_id);
+	    }
+	}
+	catch(cli.System.Net.Sockets.SocketException x)
+	{
+	    // TODO error handling
+	    throw new SocketException(x.getMessage());
+	}
+    }
 
 	static byte[] getLocalAddress(cli.System.Net.Sockets.Socket socket)
 	{
