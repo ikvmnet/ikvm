@@ -262,7 +262,19 @@ public class JVM
 		noJniStubs = nojni;
 		foreach(string r in references)
 		{
-			Assembly.LoadFrom(r);
+			try
+			{
+				if(Assembly.LoadFrom(r) == null)
+				{
+					Console.Error.WriteLine("Error: reference not found: {0}", r);
+					return;
+				}
+			}
+			catch(Exception x)
+			{
+				Console.Error.WriteLine("Error: invalid reference: {0} ({1})", r, x.Message);
+				return;
+			}
 		}
 		Hashtable h = new Hashtable();
 		Console.WriteLine("Parsing class files");

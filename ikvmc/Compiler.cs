@@ -139,8 +139,14 @@ class Compiler
 				}
 				else if(s.StartsWith("-reference:"))
 				{
-					string path = Path.GetDirectoryName(s.Substring(11));
-					string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s.Substring(11)));
+					string r = s.Substring(11);
+					string path = Path.GetDirectoryName(r);
+					string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(r));
+					if(files.Length == 0)
+					{
+						Console.Error.WriteLine("Error: reference not found: {0}", r);
+						return 1;
+					}
 					foreach(string f in files)
 					{
 						references.Add(f);
