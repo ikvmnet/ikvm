@@ -312,14 +312,6 @@ namespace IKVM.NativeCode.java
 
 			public class Field
 			{
-				// HACK this is used by netexp to query the constant value of a field
-				public static object getConstant(object field)
-				{
-					// HACK we use reflection to extract the fieldCookie from the java.lang.reflect.Field object
-					FieldWrapper wrapper = (FieldWrapper)field.GetType().GetField("fieldCookie", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(field);
-					return wrapper.GetConstant();
-				}
-
 				public static string GetName(object fieldCookie)
 				{
 					FieldWrapper wrapper = (FieldWrapper)fieldCookie;

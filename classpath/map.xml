@@ -194,13 +194,13 @@
 			<constructor sig="([B)V" modifiers="public">
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([B)Ljava.lang.String;" />
 			</constructor>
-			<constructor sig="([BI)V" modifiers="public">
+			<constructor sig="([BI)V" modifiers="public" deprecated="true">
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BI)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="([BII)V" modifiers="public">
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BII)Ljava.lang.String;" />
 			</constructor>
-			<constructor sig="([BIII)V" modifiers="public">
+			<constructor sig="([BIII)V" modifiers="public" deprecated="true">
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIII)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="([BLjava.lang.String;)V" modifiers="public">
@@ -389,7 +389,7 @@
 			<method name="regionMatches" sig="(ILjava.lang.String;II)Z" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;ILjava.lang.String;II)Z" />
 			</method>
-			<method name="getBytes" sig="(II[BI)V" modifiers="public">
+			<method name="getBytes" sig="(II[BI)V" modifiers="public" deprecated="true">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II[BI)V" />
 			</method>
 			<method name="concat" sig="(Ljava.lang.String;)Ljava.lang.String;" modifiers="public">

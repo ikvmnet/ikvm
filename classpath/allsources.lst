@@ -20,10 +20,6 @@ java/lang/ref/Reference.java
 java/lang/reflect/Constructor.java
 java/lang/reflect/Method.java
 java/lang/reflect/Field.java
-java/net/PlainSocketImpl.java
-java/net/PlainDatagramSocketImpl.java
-java/net/SocketInputStream.java
-java/net/SocketOutputStream.java
 java/security/VMAccessController.java
 java/util/VMTimeZone.java
 sun/misc/Ref.java

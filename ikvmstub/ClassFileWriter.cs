@@ -419,6 +419,20 @@ class ClassFileAttribute
 	}
 }
 
+class DeprecatedAttribute : ClassFileAttribute
+{
+	internal DeprecatedAttribute(ClassFileWriter classFile)
+		: base(classFile.AddUtf8("Deprecated"))
+	{
+	}
+
+	public override void Write(BigEndianStream bes)
+	{
+		base.Write(bes);
+		bes.WriteUInt32(0);
+	}
+}
+
 class ConstantValueAttribute : ClassFileAttribute
 {
 	private ushort constant_index;

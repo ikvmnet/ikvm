@@ -359,4 +359,40 @@ namespace IKVM.Attributes
 			}
 		}
 	}
+
+	[AttributeUsage(AttributeTargets.Field)]
+	public sealed class ConstantValueAttribute : Attribute
+	{
+		private object val;
+
+		public ConstantValueAttribute(int val)
+		{
+			this.val = val;
+		}
+
+		public ConstantValueAttribute(long val)
+		{
+			this.val = val;
+		}
+
+		public ConstantValueAttribute(float val)
+		{
+			this.val = val;
+		}
+
+		public ConstantValueAttribute(double val)
+		{
+			this.val = val;
+		}
+
+		public ConstantValueAttribute(string val)
+		{
+			this.val = val;
+		}
+
+		public object GetConstantValue()
+		{
+			return val;
+		}
+	}
 }

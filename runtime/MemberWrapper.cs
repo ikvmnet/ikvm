@@ -1068,17 +1068,31 @@ abstract class FieldWrapper : MemberWrapper
 		Debug.Assert(fieldType != null, this.DeclaringType.Name + "::" + this.name + " (" + this.sig+ ")");
 	}
 
-	// HACK used (indirectly thru IKVM.NativeCode.java.lang.Field.getConstant) by netexp to find out if the
+	// HACK used (thru IKVM.Runtime.Util.GetFieldConstantValue) by ikvmstub to find out if the
 	// field is a constant (and if it is, to get its value)
 	internal object GetConstant()
 	{
 		AssertLinked();
 		// NOTE only pritimives and string can be literals in Java (because the other "primitives" (like uint),
 		// are treated as NonPrimitiveValueTypes)
-		if(field != null && (fieldType.IsPrimitive || fieldType == CoreClasses.java.lang.String.Wrapper) && field.IsLiteral)
+		if(field != null && (fieldType.IsPrimitive || fieldType == CoreClasses.java.lang.String.Wrapper))
 		{
-			ReflectionOnConstant.IssueWarning(field);
-			object val = field.GetValue(null);
+			object val = null;
+			if(field.IsLiteral)
+			{
+				ReflectionOnConstant.IssueWarning(field);
+				val = field.GetValue(null);
+			}
+			else
+			{
+				// In Java, instance fields can also have a ConstantValue attribute so we emulate that
+				// with ConstantValueAttribute (for consumption by ikvmstub only)
+				object[] attrib = field.GetCustomAttributes(typeof(ConstantValueAttribute), false);
+				if(attrib.Length == 1)
+				{
+					val = ((ConstantValueAttribute)attrib[0]).GetConstantValue();
+				}
+			}
 			if(val != null && !(val is string))
 			{
 				return IKVM.NativeCode.java.lang.reflect.JavaWrapper.Box(val);

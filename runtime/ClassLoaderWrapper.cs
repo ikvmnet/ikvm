@@ -453,18 +453,28 @@ class ClassLoaderWrapper
 		{
 			if(!(a is AssemblyBuilder))
 			{
-				Type t = a.GetType(name);
-				if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
-				{
-					return t;
-				}
-				// HACK we might be looking for an inner classes
-				t = a.GetType(name.Replace('$', '+'));
-				if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+				Type t = GetJavaTypeFromAssembly(a, name);
+				if(t != null)
 				{
 					return t;
 				}
 			}
+		}
+		return null;
+	}
+
+	private static Type GetJavaTypeFromAssembly(Assembly a, string name)
+	{
+		Type t = a.GetType(name);
+		if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+		{
+			return t;
+		}
+		// HACK we might be looking for an inner classes
+		t = a.GetType(name.Replace('$', '+'));
+		if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+		{
+			return t;
 		}
 		return null;
 	}
@@ -577,7 +587,7 @@ class ClassLoaderWrapper
 		}
 	}
 
-	private TypeWrapper DefineNetExpType(string name, string assembly)
+	private TypeWrapper DefineNetExpType(string name, string assemblyName)
 	{
 		Debug.Assert(this == GetBootstrapClassLoader());
 		lock(types.SyncRoot)
@@ -592,18 +602,27 @@ class ClassLoaderWrapper
 			}
 			// The sole purpose of the netexp class is to let us load the assembly that the class lives in,
 			// once we've done that, all types in it become visible.
+			Assembly asm;
 			try
 			{
-				Assembly.Load(assembly);
+				asm = Assembly.Load(assemblyName);
 			}
 			catch(Exception x)
 			{
 				throw new NoClassDefFoundError(name + " (" + x.Message + ")");
 			}
+			// pre-compiled Java types can also live in a netexp referenced assembly,
+			// so we have to explicitly check for those
+			// (DotNetTypeWrapper.CreateDotNetTypeWrapper will refuse to return Java types).
+			Type t = GetJavaTypeFromAssembly(asm, name);
+			if(t != null)
+			{
+				return GetWrapperFromBootstrapType(t);
+			}
 			type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
 			if(type == null)
 			{
-				throw new NoClassDefFoundError(name + " not found in " + assembly);
+				throw new NoClassDefFoundError(name + " not found in " + assemblyName);
 			}
 			types.Add(name, type);
 			return type;
@@ -707,7 +726,7 @@ class ClassLoaderWrapper
 			name.Name = "ikvm_dynamic_assembly__" + (this == GetBootstrapClassLoader() ? "bootstrap" : javaClassLoader);
 		}
 		AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true);
-		ModuleBuilder moduleBuilder = saveDebugImage ? assemblyBuilder.DefineDynamicModule(name.Name, "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
+		ModuleBuilder moduleBuilder = saveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
 		CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
 		assemblyBuilder.SetCustomAttribute(debugAttr);
 		return moduleBuilder;

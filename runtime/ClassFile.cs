@@ -1372,13 +1372,6 @@ class ClassFile
 						break;
 				}
 			}
-			// spec (4.7.2) says we should silently ignore ConstantValue attribute on non-static fields
-			// NOTE a field doesn't have to be final to have a constant value!
-			if(!IsStatic)
-			{
-				// TODO is this needed?
-				constantValue = null;
-			}
 		}
 
 		internal object ConstantValue

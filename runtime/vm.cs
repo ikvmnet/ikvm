@@ -208,6 +208,77 @@ namespace IKVM.Runtime
 			}
 			return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetWrapperFromType(t));
 		}
+
+		private static FieldWrapper GetFieldWrapperFromField(object field)
+		{
+			if(field == null)
+			{
+				throw new ArgumentNullException("field");
+			}
+			if(field.GetType().FullName != "java.lang.reflect.Field")
+			{
+				throw new ArgumentException("field");
+			}
+			// HACK we use reflection to extract the fieldCookie from the java.lang.reflect.Field object
+			return (FieldWrapper)field.GetType().GetField("fieldCookie", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(field);
+		}
+
+		public static object GetFieldConstantValue(object field)
+		{
+			return GetFieldWrapperFromField(field).GetConstant();
+		}
+
+		public static bool IsFieldDeprecated(object field)
+		{
+			FieldInfo fi = GetFieldWrapperFromField(field).GetField();
+			return fi != null && fi.IsDefined(typeof(ObsoleteAttribute), false);
+		}
+
+		public static bool IsMethodDeprecated(object method)
+		{
+			if(method == null)
+			{
+				throw new ArgumentNullException("method");
+			}
+			if(method.GetType().FullName != "java.lang.reflect.Method")
+			{
+				throw new ArgumentException("method");
+			}
+			// HACK we use reflection to extract the methodCookie from the java.lang.reflect.Method object
+			MethodWrapper mw = (MethodWrapper)method.GetType().GetField("methodCookie", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(method);
+			MethodBase mb = mw.GetMethod();
+			return mb != null && mb.IsDefined(typeof(ObsoleteAttribute), false);
+		}
+
+		public static bool IsConstructorDeprecated(object constructor)
+		{
+			if(constructor == null)
+			{
+				throw new ArgumentNullException("constructor");
+			}
+			if(constructor.GetType().FullName != "java.lang.reflect.Constructor")
+			{
+				throw new ArgumentException("constructor");
+			}
+			// HACK we use reflection to extract the methodCookie from the java.lang.reflect.Constructor object
+			MethodWrapper mw = (MethodWrapper)constructor.GetType().GetField("methodCookie", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(constructor);
+			MethodBase mb = mw.GetMethod();
+			return mb != null && mb.IsDefined(typeof(ObsoleteAttribute), false);
+		}
+
+		public static bool IsClassDeprecated(object clazz)
+		{
+			if(clazz == null)
+			{
+				throw new ArgumentNullException("clazz");
+			}
+			if(clazz.GetType().FullName != "java.lang.Class")
+			{
+				throw new ArgumentException("clazz");
+			}
+			TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+			return wrapper.TypeAsTBD.IsDefined(typeof(ObsoleteAttribute), false);
+		}
 	}
 }
 
@@ -626,6 +697,11 @@ namespace IKVM.Internal
 						AttributeHelper.SetSourceFile(typeBuilder, IKVM.Internal.MapXml.Root.filename);
 					}
 
+					if(c.Deprecated)
+					{
+						AttributeHelper.SetDeprecatedAttribute(typeBuilder);
+					}
+
 					if(baseIsSealed)
 					{
 						AttributeHelper.SetModifiers(typeBuilder, (Modifiers)c.Modifiers);
@@ -742,11 +818,19 @@ namespace IKVM.Internal
 							AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
 							AttributeHelper.SetNameSig(mbHelper, "<init>", m.Sig);
 							AddDeclaredExceptions(mbHelper, m.throws);
+							if(m.Deprecated)
+							{
+								AttributeHelper.SetDeprecatedAttribute(mbHelper);
+							}
 						}
 						else
 						{
 							cbCore = typeWrapper.typeBuilder.DefineConstructor(attr, CallingConventions.Standard, paramTypes);
 							AddDeclaredExceptions(cbCore, m.throws);
+							if(m.Deprecated)
+							{
+								AttributeHelper.SetDeprecatedAttribute(cbCore);
+							}
 						}
 						return cbCore;
 					}
@@ -1040,6 +1124,10 @@ namespace IKVM.Internal
 									typeWrapper.typeBuilder.DefineMethodOverride(mbCore, overrideMethod);
 								}
 								AddDeclaredExceptions(mbCore, m.throws);
+								if(m.Deprecated)
+								{
+									AttributeHelper.SetDeprecatedAttribute(mbCore);
+								}
 							}
 
 							if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) == 0)
@@ -1062,6 +1150,10 @@ namespace IKVM.Internal
 								AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
 								AttributeHelper.SetNameSig(mbHelper, m.Name, m.Sig);
 								AddDeclaredExceptions(mbHelper, m.throws);
+								if(m.Deprecated)
+								{
+									AttributeHelper.SetDeprecatedAttribute(mbHelper);
+								}
 							}
 							return mbCore;
 						}
@@ -1411,6 +1503,10 @@ namespace IKVM.Internal
 								else
 								{
 									AddField(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Name, f.Sig, (Modifiers)f.Modifiers));
+								}
+								if(f.Deprecated)
+								{
+									AttributeHelper.SetDeprecatedAttribute(fb);
 								}
 							}
 							else

@@ -1,18 +1,28 @@
 <?xml version="1.0"?>
-<project name="japi-status" default="ikvm-japi-status.html">
+<project name="japi-status" default="default">
 
-    <property name="REFERENCE_API_JARS" value="c:\j2re1.4.1\lib\rt.jar c:\j2re1.4.1\lib\jce.jar c:\j2re1.4.1\lib\jsse.jar" />
-    <property name="REFERENCE_API_NAME" value="JDK-1.4.1" />
+    <property name="REFERENCE_API_JARS" value="c:\j2sdk1.4.0\jre\lib\rt.jar c:\j2sdk1.4.0\jre\lib\jce.jar c:\j2sdk1.4.0\jre\lib\jsse.jar" />
+    <property name="REFERENCE_API_NAME" value="JDK-1.4" />
+<!--
+    <property name="REFERENCE_API_JARS" value="c:\jdk1.5\jre\lib\rt.jar c:\jdk1.5\jre\lib\jce.jar c:\jdk1.5\jre\lib\jsse.jar" />
+    <property name="REFERENCE_API_NAME" value="JDK-1.5" />
+-->
     <property name="JAPI_HOME" value="c:\japi\japitools" />
     <property name="IKVM_VERSION" value="0.9" />
 
-    <target name="ikvm-japi-status.html" depends="japi.diff">
-	<exec program="perl" commandline="${JAPI_HOME}/bin/japiohtml japi.diff" output="ikvm-japi-status.html" />
+    <target name="default">
+	<call target="status" />
 	<call target="clean" />
     </target>
 
+    <target name="status" depends="japi.diff">
+	<exec program="perl" commandline="${JAPI_HOME}/bin/japiohtml japi1.diff" output="IKVM-${IKVM_VERSION}-vs-${REFERENCE_API_NAME}.html" />
+	<exec program="perl" commandline="${JAPI_HOME}/bin/japiohtml japi2.diff" output="${REFERENCE_API_NAME}-vs-IKVM-${IKVM_VERSION}.html" />
+    </target>
+
     <target name="japi.diff" depends="jdk.japi,ikvm.japi">
-        <exec program="perl" commandline="${JAPI_HOME}/bin/japicompat -j -o japi.diff ${REFERENCE_API_NAME}.japi IKVM-${IKVM_VERSION}.japi" />
+        <exec program="perl" commandline="${JAPI_HOME}/bin/japicompat -v -j -o japi1.diff IKVM-${IKVM_VERSION}.japi ${REFERENCE_API_NAME}.japi" />
+        <exec program="perl" commandline="${JAPI_HOME}/bin/japicompat -v -j -o japi2.diff ${REFERENCE_API_NAME}.japi IKVM-${IKVM_VERSION}.japi" />
     </target>
 
     <target name="jdk.japi" depends="japize">
@@ -35,7 +45,8 @@
         <delete failonerror="false">
 	    <fileset>
                 <includes name="IKVM.GNU.Classpath.jar" />
-                <includes name="japi.diff" />
+                <includes name="japi1.diff" />
+                <includes name="japi2.diff" />
                 <includes name="${REFERENCE_API_NAME}.japi" />
                 <includes name="IKVM-${IKVM_VERSION}.japi" />
 		<includes name="../bin/japize.exe" />

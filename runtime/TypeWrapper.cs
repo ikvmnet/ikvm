@@ -3058,7 +3058,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 
 			static JniProxyBuilder()
 			{
-				mod = ((AssemblyBuilder)ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder.Assembly).DefineDynamicModule("jniproxy", "jniproxy.dll");
+				mod = ((AssemblyBuilder)ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder.Assembly).DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
 			}
 
 			private static string Cleanup(string n)
@@ -3151,11 +3151,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					ilGenerator.Emit(OpCodes.Call, monitorEnter);
 					ilGenerator.BeginExceptionBlock();
 				}
-				FieldBuilder methodPtr = wrapper.TypeAsBuilder.DefineField("jniptr/" + m.Name + m.Signature, typeof(IntPtr), FieldAttributes.Static | (thruProxy ? FieldAttributes.Assembly : FieldAttributes.PrivateScope));
-				if(thruProxy)
-				{
-					AttributeHelper.HideFromJava(methodPtr);
-				}
+				FieldBuilder methodPtr = typeBuilder.DefineField("__<jniptr/" + m.Name + m.Signature + ">", typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
 				LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
 				ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 				ilGenerator.Emit(OpCodes.Initobj, localRefStructType);
@@ -3470,6 +3466,13 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					{
 						// TODO the field should be marked as modreq(IsVolatile), but Reflection.Emit doesn't have a way of doing this
 						setModifiers = true;
+					}
+					// Instance fields can also have a ConstantValue attribute (and are inlined by the compiler),
+					// and ikvmstub has to export them, so we have to add a custom attribute.
+					if(constantValue != null)
+					{
+						CustomAttributeBuilder constantValueAttrib = new CustomAttributeBuilder(typeof(ConstantValueAttribute).GetConstructor(new Type[] { constantValue.GetType() }), new object[] { constantValue });
+						field.SetCustomAttribute(constantValueAttrib);
 					}
 					if(isWrappedFinal)
 					{

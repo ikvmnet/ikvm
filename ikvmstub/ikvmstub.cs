@@ -173,6 +173,10 @@ public class NetExp
 		}
 		ClassFileWriter f = new ClassFileWriter(classmods, name, super);
 		f.AddStringAttribute("IKVM.NET.Assembly", assemblyName);
+		if(IKVM.Runtime.Util.IsClassDeprecated(c))
+		{
+			f.AddAttribute(new DeprecatedAttribute(f));
+		}
 		InnerClassesAttribute innerClassesAttribute = null;
 		if(outer != null)
 		{
@@ -233,6 +237,10 @@ public class NetExp
 				};
 				m.AddAttribute(code);
 				AddExceptions(f, m, constructors[i].getExceptionTypes());
+				if(IKVM.Runtime.Util.IsConstructorDeprecated(constructors[i]))
+				{
+					m.AddAttribute(new DeprecatedAttribute(f));
+				}
 			}
 		}
 		Method[] methods = c.getDeclaredMethods();
@@ -248,69 +256,74 @@ public class NetExp
 				// TODO what happens if one of the argument types (or the return type) is non-public?
 				FieldOrMethod m = f.AddMethod(mods, methods[i].getName(), MakeSig(methods[i].getParameterTypes(), methods[i].getReturnType()));
 				AddExceptions(f, m, methods[i].getExceptionTypes());
+				if(IKVM.Runtime.Util.IsMethodDeprecated(methods[i]))
+				{
+					m.AddAttribute(new DeprecatedAttribute(f));
+				}
 			}
 		}
 		Field[] fields = c.getDeclaredFields();
 		for(int i = 0; i < fields.Length; i++)
 		{
 			Modifiers mods = (Modifiers)fields[i].getModifiers();
-			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
+			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0 ||
+				// Include serialVersionUID field, to make Japitools comparison more acurate
+				((mods & (Modifiers.Static | Modifiers.Final)) == (Modifiers.Static | Modifiers.Final) &&
+				fields[i].getName() == "serialVersionUID" && fields[i].getType() == java.lang.Long.TYPE))
 			{
-				object constantValue = null;
-				// HACK we only look for constants on potential constant fields, to trigger less static initializers
-				if((mods & (Modifiers.Final | Modifiers.Static)) == (Modifiers.Final | Modifiers.Static) &&
-					(fields[i].getType().isPrimitive() || fields[i].getType() == Class.forName("java.lang.String")))
+				// HACK we use the IKVM runtime API to get constant value
+				// NOTE we can't use Field.get() because that will run the static initializer and
+				// also won't allow us to see the difference between constants and blank final fields.
+				object constantValue = IKVM.Runtime.Util.GetFieldConstantValue(fields[i]);
+				if(constantValue != null)
 				{
-					// HACK we use a non-standard API to get constant value
-					// NOTE we can't use Field.get() because that will run the static initializer and
-					// also won't allow us to see the difference between constants and blank final fields.
-					constantValue = IKVM.NativeCode.java.lang.reflect.Field.getConstant(fields[i]);
-					if(constantValue != null)
+					if(constantValue is java.lang.Boolean)
 					{
-						if(constantValue is java.lang.Boolean)
-						{
-							constantValue = ((java.lang.Boolean)constantValue).booleanValue();
-						}
-						else if(constantValue is java.lang.Byte)
-						{
-							constantValue = ((java.lang.Byte)constantValue).byteValue();
-						}
-						else if(constantValue is java.lang.Short)
-						{
-							constantValue = ((java.lang.Short)constantValue).shortValue();
-						}
-						else if(constantValue is java.lang.Character)
-						{
-							constantValue = ((java.lang.Character)constantValue).charValue();
-						}
-						else if(constantValue is java.lang.Integer)
-						{
-							constantValue = ((java.lang.Integer)constantValue).intValue();
-						}
-						else if(constantValue is java.lang.Long)
-						{
-							constantValue = ((java.lang.Long)constantValue).longValue();
-						}
-						else if(constantValue is java.lang.Float)
-						{
-							constantValue = ((java.lang.Float)constantValue).floatValue();
-						}
-						else if(constantValue is java.lang.Double)
-						{
-							constantValue = ((java.lang.Double)constantValue).doubleValue();
-						}
-						else if(constantValue is string)
-						{
-							// no conversion needed
-						}
-						else
-						{
-							throw new InvalidOperationException();
-						}
+						constantValue = ((java.lang.Boolean)constantValue).booleanValue();
+					}
+					else if(constantValue is java.lang.Byte)
+					{
+						constantValue = ((java.lang.Byte)constantValue).byteValue();
+					}
+					else if(constantValue is java.lang.Short)
+					{
+						constantValue = ((java.lang.Short)constantValue).shortValue();
+					}
+					else if(constantValue is java.lang.Character)
+					{
+						constantValue = ((java.lang.Character)constantValue).charValue();
+					}
+					else if(constantValue is java.lang.Integer)
+					{
+						constantValue = ((java.lang.Integer)constantValue).intValue();
+					}
+					else if(constantValue is java.lang.Long)
+					{
+						constantValue = ((java.lang.Long)constantValue).longValue();
+					}
+					else if(constantValue is java.lang.Float)
+					{
+						constantValue = ((java.lang.Float)constantValue).floatValue();
+					}
+					else if(constantValue is java.lang.Double)
+					{
+						constantValue = ((java.lang.Double)constantValue).doubleValue();
+					}
+					else if(constantValue is string)
+					{
+						// no conversion needed
+					}
+					else
+					{
+						throw new InvalidOperationException();
 					}
 				}
 				// TODO what happens if the field type is non-public?
-				f.AddField(mods, fields[i].getName(), ClassToSig(fields[i].getType()), constantValue);
+				FieldOrMethod fld = f.AddField(mods, fields[i].getName(), ClassToSig(fields[i].getType()), constantValue);
+				if(IKVM.Runtime.Util.IsFieldDeprecated(fields[i]))
+				{
+					fld.AddAttribute(new DeprecatedAttribute(f));
+				}
 			}
 		}
 		if(innerClassesAttribute != null)
