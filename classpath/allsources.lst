@@ -3,7 +3,6 @@ C:\ikvm\classpath\ikvm\lang\CIL.java
 C:\ikvm\classpath\gnu\classpath\Configuration.java
 C:\ikvm\classpath\gnu\java\net\protocol\ikvmres\Handler.java
 C:\ikvm\classpath\java\io\FileDescriptor.java
-C:\ikvm\classpath\java\lang\Thread.java
 C:\ikvm\classpath\java\lang\VMThread.java
 C:\ikvm\classpath\java\lang\VMClass.java
 C:\ikvm\classpath\java\lang\VMDouble.java
@@ -803,6 +802,7 @@ C:\classpath\java\lang\String.java
 C:\classpath\java\lang\StringBuffer.java
 C:\classpath\java\lang\StringIndexOutOfBoundsException.java
 C:\classpath\java\lang\System.java
+C:\classpath\java\lang\Thread.java
 C:\classpath\java\lang\ThreadDeath.java
 C:\classpath\java\lang\ThreadGroup.java
 C:\classpath\java\lang\ThreadLocal.java
