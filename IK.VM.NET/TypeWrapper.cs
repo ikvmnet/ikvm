@@ -242,6 +242,14 @@ abstract class TypeWrapper
 		return GetType().Name + "[" + name + "]";
 	}
 
+	internal bool IsArray
+	{
+		get
+		{
+			return name[0] == '[';
+		}
+	}
+
 	// NOTE for non-array types this returns 0
 	internal int ArrayRank
 	{

@@ -118,9 +118,9 @@ class InstructionState
 		return new InstructionState(ma, (ArrayList)stack.Clone(), (TypeWrapper[])locals.Clone(), CopySubroutines(subroutines), callsites);
 	}
 
-	internal InstructionState CopyLocals()
+	internal InstructionState CopyLocalsAndSubroutines()
 	{
-		return new InstructionState(ma, new ArrayList(), (TypeWrapper[])locals.Clone(), new ArrayList(), callsites);
+		return new InstructionState(ma, new ArrayList(), (TypeWrapper[])locals.Clone(), CopySubroutines(subroutines), callsites);
 	}
 
 	private ArrayList CopySubroutines(ArrayList l)
@@ -140,6 +140,32 @@ class InstructionState
 
 	private void MergeSubroutineHelper(InstructionState s2)
 	{
+		ArrayList ss1 = subroutines;
+		subroutines = new ArrayList();
+		foreach(Subroutine ss2 in s2.subroutines)
+		{
+			foreach(Subroutine ss in ss1)
+			{
+				if(ss.SubroutineIndex == ss2.SubroutineIndex)
+				{
+					subroutines.Add(ss);
+					for(int i = 0; i < ss.LocalsModified.Length; i++)
+					{
+						if(ss2.LocalsModified[i] && !ss.LocalsModified[i])
+						{
+							ss.LocalsModified[i] = true;
+							changed = true;
+						}
+					}
+				}
+			}
+		}
+		if(ss1.Count != subroutines.Count)
+		{
+			changed = true;
+		}
+
+		/*
 		foreach(Subroutine ss2 in s2.subroutines)
 		{
 			bool found = false;
@@ -164,6 +190,7 @@ class InstructionState
 				changed = true;
 			}
 		}
+		*/
 		if(s2.callsites > callsites)
 		{
 			//Console.WriteLine("s2.callsites = {0}, callsites = {1}", s2.callsites, callsites);
@@ -211,9 +238,18 @@ class InstructionState
 				TypeWrapper baseType = s.FindCommonBaseType(type, (TypeWrapper)s2.stack[i]);
 				if(baseType == VerifierTypeWrapper.Invalid)
 				{
-					Console.WriteLine("type = " + type);
-					Console.WriteLine("s2.stack[i] = " + s2.stack[i]);
-					throw new InvalidOperationException();
+					// if we never return from a subroutine, it is legal to merge to subroutine flows
+					// (this is from the Mauve test subr.pass.mergeok)
+					if(VerifierTypeWrapper.IsRet(type) && VerifierTypeWrapper.IsRet((TypeWrapper)s2.stack[i]))
+					{
+						baseType = VerifierTypeWrapper.Invalid;
+					}
+					else
+					{
+						Console.WriteLine("type = " + type);
+						Console.WriteLine("s2.stack[i] = " + s2.stack[i]);
+						throw new InvalidOperationException();
+					}
 				}
 				if(type != baseType)
 				{
@@ -280,7 +316,9 @@ class InstructionState
 			{
 				// TODO i'm not 100% sure about this, but I think we need to clear
 				// the subroutines here (because when you return you can never "become" inside a subroutine)
-				subroutines.Clear();
+				// UPDATE the above is incorrect, we only need to remove the subroutine we're actually
+				// returning from
+				subroutines.Remove(s);
 				return s.LocalsModified;
 			}
 		}
@@ -420,37 +458,51 @@ class InstructionState
 
 	private void SetLocal1(int index, TypeWrapper type)
 	{
-		if(index > 0 && (locals[index - 1] == PrimitiveTypeWrapper.DOUBLE || locals[index - 1] == PrimitiveTypeWrapper.LONG))
+		try
 		{
-			locals[index - 1] = VerifierTypeWrapper.Invalid;
+			if(index > 0 && (locals[index - 1] == PrimitiveTypeWrapper.DOUBLE || locals[index - 1] == PrimitiveTypeWrapper.LONG))
+			{
+				locals[index - 1] = VerifierTypeWrapper.Invalid;
+				foreach(Subroutine s in subroutines)
+				{
+					s.SetLocalModified(index - 1);
+				}
+			}
+			locals[index] = type;
 			foreach(Subroutine s in subroutines)
 			{
-				s.SetLocalModified(index - 1);
+				s.SetLocalModified(index);
 			}
 		}
-		locals[index] = type;
-		foreach(Subroutine s in subroutines)
+		catch(IndexOutOfRangeException)
 		{
-			s.SetLocalModified(index);
+			throw new VerifyError("Illegal local variable number");
 		}
 	}
 
 	private void SetLocal2(int index, TypeWrapper type)
 	{
-		if(index > 0 && (locals[index - 1] == PrimitiveTypeWrapper.DOUBLE || locals[index - 1] == PrimitiveTypeWrapper.LONG))
+		try
 		{
-			locals[index - 1] = VerifierTypeWrapper.Invalid;
+			if(index > 0 && (locals[index - 1] == PrimitiveTypeWrapper.DOUBLE || locals[index - 1] == PrimitiveTypeWrapper.LONG))
+			{
+				locals[index - 1] = VerifierTypeWrapper.Invalid;
+				foreach(Subroutine s in subroutines)
+				{
+					s.SetLocalModified(index - 1);
+				}
+			}
+			locals[index] = type;
+			locals[index + 1] = VerifierTypeWrapper.Invalid;
 			foreach(Subroutine s in subroutines)
 			{
-				s.SetLocalModified(index - 1);
+				s.SetLocalModified(index);
+				s.SetLocalModified(index + 1);
 			}
 		}
-		locals[index] = type;
-		locals[index + 1] = VerifierTypeWrapper.Invalid;
-		foreach(Subroutine s in subroutines)
+		catch(IndexOutOfRangeException)
 		{
-			s.SetLocalModified(index);
-			s.SetLocalModified(index + 1);
+			throw new VerifyError("Illegal local variable number");
 		}
 	}
 
@@ -508,7 +560,14 @@ class InstructionState
 
 	internal TypeWrapper GetLocalType(int index)
 	{
-		return locals[index];
+		try
+		{
+			return locals[index];
+		}
+		catch(IndexOutOfRangeException)
+		{
+			throw new VerifyError("Illegal local variable number");
+		}
 	}
 
 	internal int GetLocalRet(int index)
@@ -1010,7 +1069,10 @@ class MethodAnalyzer
 								// sense to copy the subroutine state
 								// TODO figure out if there are circumstances under which it does make sense
 								// to copy the active subroutine state
-								InstructionState ex = state[i].CopyLocals();
+								// UPDATE subroutines must be copied as well, but I think I now have a better
+								// understanding of subroutine merges, so the problems that triggered the previous
+								// change here hopefully won't arise anymore
+								InstructionState ex = state[i].CopyLocalsAndSubroutines();
 								int catch_type = method.ExceptionTable[j].catch_type;
 								if(catch_type == 0)
 								{
@@ -1034,7 +1096,7 @@ class MethodAnalyzer
 							{
 								aload_used[instr.NormalizedArg1] = true;
 								TypeWrapper type = s.GetLocalType(instr.NormalizedArg1);
-								if(type.IsPrimitive || type == VerifierTypeWrapper.Invalid)
+								if(type == VerifierTypeWrapper.Invalid || type.IsPrimitive)
 								{
 									throw new VerifyError("Object reference expected");
 								}
@@ -1954,7 +2016,10 @@ class MethodAnalyzer
 							opcode = opcode.Substring(2);
 						}
 						x.Instruction = opcode;
-						Console.WriteLine(x);
+						if(JVM.LogVerifyErrors)
+						{
+							Console.Error.WriteLine(x);
+						}
 						/*
 						for(int j = 0; j < method.Instructions.Length; j++)
 						{

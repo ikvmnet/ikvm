@@ -923,6 +923,41 @@ class Compiler
 					case NormalizedByteCode.__invokestatic:
 					{
 						ClassFile.ConstantPoolItemFMI cpi = m.Method.ClassFile.GetMethodref(instr.Arg1);
+						// HACK special case for calls to System.arraycopy, if the array arguments on the stack
+						// are of a known array type, we can redirect to an optimized version of arraycopy.
+						if(cpi.Class == "java/lang/System" &&
+							cpi.Name == "arraycopy" &&
+							cpi.Signature == "(Ljava/lang/Object;ILjava/lang/Object;II)V")
+						{
+							TypeWrapper t1 = ma.GetRawStackTypeWrapper(i, 2);
+							TypeWrapper t2 = ma.GetRawStackTypeWrapper(i, 4);
+							if(t1.IsArray && t1 == t2)
+							{
+								switch(t1.Name[1])
+								{
+									case 'J':
+									case 'D':
+										ilGenerator.Emit(OpCodes.Call, typeof(NativeCode.java.lang.VMSystem).GetMethod("arraycopy_primitive_8"));
+										break;
+									case 'I':
+									case 'F':
+										ilGenerator.Emit(OpCodes.Call, typeof(NativeCode.java.lang.VMSystem).GetMethod("arraycopy_primitive_4"));
+										break;
+									case 'S':
+									case 'C':
+										ilGenerator.Emit(OpCodes.Call, typeof(NativeCode.java.lang.VMSystem).GetMethod("arraycopy_primitive_2"));
+										break;
+									case 'B':
+									case 'Z':
+										ilGenerator.Emit(OpCodes.Call, typeof(NativeCode.java.lang.VMSystem).GetMethod("arraycopy_primitive_1"));
+										break;
+									default:
+										ilGenerator.Emit(OpCodes.Call, typeof(NativeCode.java.lang.VMSystem).GetMethod("arraycopy"));
+										break;
+								}
+								break;
+							}
+						}
 						MethodWrapper method = GetMethod(cpi, null, NormalizedByteCode.__invokestatic);
 						if(method != null)
 						{

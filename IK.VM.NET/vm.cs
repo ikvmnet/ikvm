@@ -35,6 +35,7 @@ public class JVM
 	private static bool noJniStubs = false;
 	private static bool isStaticCompiler = false;
 	private static bool logClassLoadFailures = false;
+	private static bool logVerifyErrors = true;		// TODO provide ikvm command line switch
 	private static IJniProvider jniProvider;
 
 	public static bool Debug
@@ -74,6 +75,18 @@ public class JVM
 		set
 		{
 			logClassLoadFailures = value;
+		}
+	}
+
+	public static bool LogVerifyErrors
+	{
+		get
+		{
+			return logVerifyErrors;
+		}
+		set
+		{
+			logVerifyErrors = value;
 		}
 	}
 
