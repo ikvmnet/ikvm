@@ -1345,12 +1345,8 @@ abstract class TypeWrapper
 				// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
 				// interface methods, so we have to generate a stub here that doesn't do anything but call the base
 				// implementation
-				if(mce.IsAbstract)
-				{
-					// TODO figure out what to do here
-					throw new NotImplementedException();
-				}
-				MethodBuilder mb = typeBuilder.DefineMethod(md.Name, MethodAttributes.Public | MethodAttributes.Virtual, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
+				MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.Private | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final, md.RetTypeForDefineMethod, md.ArgTypesForDefineMethod);
+				typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod);
 				AttributeHelper.HideFromReflection(mb);
 				ILGenerator ilGenerator = mb.GetILGenerator();
 				ilGenerator.Emit(OpCodes.Ldarg_0);
@@ -1359,7 +1355,7 @@ abstract class TypeWrapper
 				{
 					ilGenerator.Emit(OpCodes.Ldarg_S, (byte)(n + 1));
 				}
-				mce.EmitCall.Emit(ilGenerator);
+				mce.EmitCallvirt.Emit(ilGenerator);
 				ilGenerator.Emit(OpCodes.Ret);
 			}
 		}
