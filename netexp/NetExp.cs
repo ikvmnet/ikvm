@@ -87,13 +87,37 @@ public class NetExp
 	{
 		// is there a way to generically convert a boxed enum to its boxed underlying value?
 		Type underlyingType = Enum.GetUnderlyingType(o.GetType());
-		if(underlyingType == typeof(int))
+		if (underlyingType == typeof(long))
+		{
+			o = (long)o;
+		}	
+		else if(underlyingType == typeof(int))
 		{
 			o = (int)o;
 		}
 		else if(underlyingType == typeof(short))
 		{
 			o = (short)o;
+		}
+		else if (underlyingType == typeof(sbyte))
+		{
+			o = (sbyte)o;
+		}
+		else if (underlyingType == typeof(ulong))
+		{
+			o = (ulong)o;
+		}		
+		else if (underlyingType == typeof(uint))
+		{
+			o = (uint)o;
+		}
+		else if (underlyingType == typeof(ushort))
+		{
+			o = (ushort)o;
+		}
+		else if (underlyingType == typeof(byte))
+		{
+			o = (byte)o;
 		}
 		else
 		{
@@ -338,6 +362,10 @@ public class NetExp
 			{
 				v = (int)(byte)v;
 			}
+			else if (v is sbyte)
+			{
+				v = (int)(sbyte)v;
+			}
 			else if(v is char)
 			{
 				v = (int)(char)v;
@@ -346,11 +374,15 @@ public class NetExp
 			{
 				v = (int)(short)v;
 			}
+			else if(v is ushort)
+			{
+				v = (int)(ushort)v;
+			}
 			else if(v is bool)
 			{
 				v = ((bool)v) ? 1 : 0;
 			}
-			else if(v is int || v is long || v is float || v is double || v is string)
+			else if(v is int || v is uint || v is ulong || v is long || v is float || v is double || v is string)
 			{
 			}
 			else

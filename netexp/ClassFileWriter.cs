@@ -572,9 +572,17 @@ class ClassFileWriter
 			{
 				constantValueIndex = AddInt((int)constantValue);
 			}
+			else if(constantValue is uint)
+			{
+				constantValueIndex = AddInt((int)(uint)constantValue);
+			}
 			else if(constantValue is long)
 			{
 				constantValueIndex = AddLong((long)constantValue);
+			}
+			else if(constantValue is ulong)
+			{
+				constantValueIndex = AddLong((long)(ulong)constantValue);
 			}
 			else if(constantValue is float)
 			{
@@ -590,7 +598,7 @@ class ClassFileWriter
 			}
 			else
 			{
-				throw new InvalidOperationException();
+				throw new InvalidOperationException(constantValue.GetType ().FullName);
 			}
 			field.AddAttribute(new ConstantValueAttribute(AddUtf8("ConstantValue"), constantValueIndex));
 		}
