@@ -354,14 +354,21 @@ class Compiler
 
 	private struct DupHelper
 	{
+		private enum StackType : byte
+		{
+			Null,
+			New,
+			UnitializedThis,
+			Other
+		}
 		private ILGenerator ilgen;
-		private bool[] isnull;
+		private StackType[] types;
 		private LocalBuilder[] locals;
 
 		internal DupHelper(ILGenerator ilgen, int count)
 		{
 			this.ilgen = ilgen;
-			isnull = new bool[count];
+			types = new StackType[count];
 			locals = new LocalBuilder[count];
 		}
 
@@ -369,14 +376,21 @@ class Compiler
 		{
 			if(type == VerifierTypeWrapper.Null)
 			{
-				isnull[i] = true;
+				types[i] = StackType.Null;
 			}
 			else if(VerifierTypeWrapper.IsNew(type))
 			{
 				// new objects aren't really there on the stack
+				types[i] = StackType.New;
+			}
+			else if(type == VerifierTypeWrapper.UninitializedThis)
+			{
+				// uninitialized references cannot be stored in a local, but we can reload them
+				types[i] = StackType.UnitializedThis;
 			}
 			else
 			{
+				types[i] = StackType.Other;
 				locals[i] = ilgen.DeclareLocal(type.TypeAsLocalOrStackType);
 			}
 			return this;
@@ -384,26 +398,42 @@ class Compiler
 
 		internal DupHelper Load(int i)
 		{
-			if(isnull[i])
+			switch(types[i])
 			{
-				ilgen.Emit(OpCodes.Ldnull);
-			}
-			else if(locals[i] != null)
-			{
-				ilgen.Emit(OpCodes.Ldloc, locals[i]);
+				case StackType.Null:
+					ilgen.Emit(OpCodes.Ldnull);
+					break;
+				case StackType.New:
+					// new objects aren't really there on the stack
+					break;
+				case StackType.UnitializedThis:
+					ilgen.Emit(OpCodes.Ldarg_0);
+					break;
+				case StackType.Other:
+					ilgen.Emit(OpCodes.Ldloc, locals[i]);
+					break;
+				default:
+					throw new InvalidOperationException();
 			}
 			return this;
 		}
 
 		internal DupHelper Store(int i)
 		{
-			if(isnull[i])
+			switch(types[i])
 			{
-				ilgen.Emit(OpCodes.Pop);
-			}
-			else if(locals[i] != null)
-			{
-				ilgen.Emit(OpCodes.Stloc, locals[i]);
+				case StackType.Null:
+				case StackType.UnitializedThis:
+					ilgen.Emit(OpCodes.Pop);
+					break;
+				case StackType.New:
+					// new objects aren't really there on the stack
+					break;
+				case StackType.Other:
+					ilgen.Emit(OpCodes.Stloc, locals[i]);
+					break;
+				default:
+					throw new InvalidOperationException();
 			}
 			return this;
 		}
@@ -687,7 +717,7 @@ class Compiler
 								{
 									ilGenerator.Emit(OpCodes.Ldtoken, clazz.Type);
 									ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
-									ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetType"));
+									ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetTypeAsExceptionType"));
 									ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
 								}
 								else
@@ -833,25 +863,25 @@ class Compiler
 					}
 						break;
 					case NormalizedByteCode.__lconst_0:
-						ilGenerator.Emit(OpCodes.Ldc_I8, 0L);
+						ilGenerator.Emit(OpCodes.Ldc_I4_0);
+						ilGenerator.Emit(OpCodes.Conv_I8);
 						break;
 					case NormalizedByteCode.__lconst_1:
-						ilGenerator.Emit(OpCodes.Ldc_I8, 1L);
+						ilGenerator.Emit(OpCodes.Ldc_I4_1);
+						ilGenerator.Emit(OpCodes.Conv_I8);
 						break;
 					case NormalizedByteCode.__fconst_0:
+					case NormalizedByteCode.__dconst_0:
+						// floats are stored as native size on the stack, so both R4 and R8 are the same
 						ilGenerator.Emit(OpCodes.Ldc_R4, 0.0f);
 						break;
 					case NormalizedByteCode.__fconst_1:
+					case NormalizedByteCode.__dconst_1:
+						// floats are stored as native size on the stack, so both R4 and R8 are the same
 						ilGenerator.Emit(OpCodes.Ldc_R4, 1.0f);
 						break;
 					case NormalizedByteCode.__fconst_2:
 						ilGenerator.Emit(OpCodes.Ldc_R4, 2.0f);
-						break;
-					case NormalizedByteCode.__dconst_0:
-						ilGenerator.Emit(OpCodes.Ldc_R8, 0.0d);
-						break;
-					case NormalizedByteCode.__dconst_1:
-						ilGenerator.Emit(OpCodes.Ldc_R8, 1.0d);
 						break;
 					case NormalizedByteCode.__ldc:
 					{
@@ -1193,8 +1223,7 @@ class Compiler
 									}
 									if(retTypeWrapper.IsNonPrimitiveValueType)
 									{
-										ilGenerator.Emit(OpCodes.Unbox, retTypeWrapper.Type);
-										ilGenerator.Emit(OpCodes.Ldobj, retTypeWrapper.Type);
+										retTypeWrapper.EmitUnbox(ilGenerator);
 									}
 								}
 								ilGenerator.Emit(OpCodes.Stloc, rc.Local);
@@ -1233,8 +1262,7 @@ class Compiler
 										}
 										if(retTypeWrapper.IsNonPrimitiveValueType)
 										{
-											ilGenerator.Emit(OpCodes.Unbox, retTypeWrapper.Type);
-											ilGenerator.Emit(OpCodes.Ldobj, retTypeWrapper.Type);
+											retTypeWrapper.EmitUnbox(ilGenerator);
 										}
 									}
 								}
@@ -1248,7 +1276,7 @@ class Compiler
 									}
 									ilGenerator.Emit(OpCodes.Ldloc, local);
 								}
-								if(retTypeWrapper.IsGhost)
+								if(!retTypeWrapper.IsUnloadable && retTypeWrapper.IsGhost)
 								{
 									LocalBuilder local1 = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsLocalOrStackType);
 									ilGenerator.Emit(OpCodes.Stloc, local1);
@@ -1306,7 +1334,7 @@ class Compiler
 									// HACK we're boxing the arguments when they are loaded, this is inconsistent
 									// with the way locals are treated, so we probably should only box the arguments
 									// once (on method entry)
-									ilGenerator.Emit(OpCodes.Box, type.Type);
+									type.EmitBox(ilGenerator);
 								}
 								else if(type.IsGhost)
 								{
@@ -1606,16 +1634,20 @@ class Compiler
 							ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
 							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicAaload"));
 						}
-						else if(tw.ElementTypeWrapper.IsNonPrimitiveValueType)
-						{
-							Type t = tw.ElementTypeWrapper.Type;
-							ilGenerator.Emit(OpCodes.Ldelema, t);
-							ilGenerator.Emit(OpCodes.Ldobj, t);
-							ilGenerator.Emit(OpCodes.Box, t);
-						}
 						else
 						{
-							ilGenerator.Emit(OpCodes.Ldelem_Ref);
+							TypeWrapper elem = tw.ElementTypeWrapper;
+							if(elem.IsNonPrimitiveValueType)
+							{
+								Type t = elem.Type;
+								ilGenerator.Emit(OpCodes.Ldelema, t);
+								ilGenerator.Emit(OpCodes.Ldobj, t);
+								elem.EmitBox(ilGenerator);
+							}
+							else
+							{
+								ilGenerator.Emit(OpCodes.Ldelem_Ref);
+							}
 						}
 						break;
 					}
@@ -1671,20 +1703,23 @@ class Compiler
 							ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
 							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicAastore"));
 						}
-						else if(tw.ElementTypeWrapper.IsNonPrimitiveValueType)
-						{
-							Type t = tw.ElementTypeWrapper.Type;
-							LocalBuilder local = ilGenerator.DeclareLocal(typeof(object));
-							ilGenerator.Emit(OpCodes.Stloc, local);
-							ilGenerator.Emit(OpCodes.Ldelema, t);
-							ilGenerator.Emit(OpCodes.Ldloc, local);
-							ilGenerator.Emit(OpCodes.Unbox, t);
-							ilGenerator.Emit(OpCodes.Ldobj, t);
-							ilGenerator.Emit(OpCodes.Stobj, t);
-						}
 						else
 						{
-							ilGenerator.Emit(OpCodes.Stelem_Ref);
+							TypeWrapper elem = tw.ElementTypeWrapper;
+							if(elem.IsNonPrimitiveValueType)
+							{
+								Type t = elem.Type;
+								LocalBuilder local = ilGenerator.DeclareLocal(typeof(object));
+								ilGenerator.Emit(OpCodes.Stloc, local);
+								ilGenerator.Emit(OpCodes.Ldelema, t);
+								ilGenerator.Emit(OpCodes.Ldloc, local);
+								elem.EmitUnbox(ilGenerator);
+								ilGenerator.Emit(OpCodes.Stobj, t);
+							}
+							else
+							{
+								ilGenerator.Emit(OpCodes.Stelem_Ref);
+							}
 						}
 						break;
 					}
@@ -1991,7 +2026,7 @@ class Compiler
 							.Load(1);
 						break;
 					case NormalizedByteCode.__dup:
-						// if the TOS contains a "new" object, it isn't really there, so we wont dup it either
+						// if the TOS contains a "new" object, it isn't really there, so we don't dup it
 						if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
 						{
 							ilGenerator.Emit(OpCodes.Dup);
@@ -2000,7 +2035,7 @@ class Compiler
 					case NormalizedByteCode.__dup2:
 					{
 						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
-						if(type1 == PrimitiveTypeWrapper.DOUBLE || type1 == PrimitiveTypeWrapper.LONG)
+						if(type1.IsWidePrimitive)
 						{
 							ilGenerator.Emit(OpCodes.Dup);
 						}
@@ -2031,7 +2066,7 @@ class Compiler
 					case NormalizedByteCode.__dup2_x1:
 					{
 						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
-						if(type1 == PrimitiveTypeWrapper.DOUBLE || type1 == PrimitiveTypeWrapper.LONG)
+						if(type1.IsWidePrimitive)
 						{
 							new DupHelper(ilGenerator, 2)
 								.SetType(0, type1)
@@ -2063,9 +2098,9 @@ class Compiler
 					{
 						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
 						TypeWrapper type2 = ma.GetRawStackTypeWrapper(i, 1);
-						if(type1 == PrimitiveTypeWrapper.DOUBLE || type1 == PrimitiveTypeWrapper.LONG)
+						if(type1.IsWidePrimitive)
 						{
-							if(type2 == PrimitiveTypeWrapper.DOUBLE || type2 == PrimitiveTypeWrapper.LONG)
+							if(type2.IsWidePrimitive)
 							{
 								// Form 4
 								new DupHelper(ilGenerator, 2)
@@ -2096,7 +2131,7 @@ class Compiler
 						else
 						{
 							TypeWrapper type3 = ma.GetRawStackTypeWrapper(i, 2);
-							if(type3 == PrimitiveTypeWrapper.DOUBLE || type3 == PrimitiveTypeWrapper.LONG)
+							if(type3.IsWidePrimitive)
 							{
 								// Form 3
 								new DupHelper(ilGenerator, 3)
@@ -2150,7 +2185,7 @@ class Compiler
 					case NormalizedByteCode.__pop2:
 					{
 						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
-						if(type1 == PrimitiveTypeWrapper.DOUBLE || type1 == PrimitiveTypeWrapper.LONG)
+						if(type1.IsWidePrimitive)
 						{
 							ilGenerator.Emit(OpCodes.Pop);
 						}
@@ -2355,7 +2390,7 @@ class Compiler
 			DupHelper dh = new DupHelper(ilGenerator, args.Length);
 			for(int i = 0; i < args.Length; i++)
 			{
-				dh.SetType(i, args[i]);
+				dh.SetType(i, ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i));
 			}
 			// TODO instead of an InvalidCastException, the castclass should throw a IncompatibleClassChangeError
 			for(int i = args.Length - 1; i >= 0; i--)
@@ -2398,10 +2433,13 @@ class Compiler
 					dh.Load(i);
 					if(!args[i].IsUnloadable && args[i].IsNonPrimitiveValueType)
 					{
-						ilGenerator.Emit(OpCodes.Unbox, args[i].Type);
 						if(i != 0 || !instanceMethod)
 						{
-							ilGenerator.Emit(OpCodes.Ldobj, args[i].Type);
+							args[i].EmitUnbox(ilGenerator);
+						}
+						else
+						{
+							ilGenerator.Emit(OpCodes.Unbox, args[i].Type);
 						}
 					}
 				}
@@ -2612,6 +2650,7 @@ class Compiler
 		}
 		else if(typeWrapper.IsPrimitive)
 		{
+			// NOTE we don't need to use TypeWrapper.EmitUnbox, because the return value cannot be null
 			ilgen.Emit(OpCodes.Unbox, typeWrapper.Type);
 			ilgen.Emit(OpCodes.Ldobj, typeWrapper.Type);
 		}
@@ -2808,17 +2847,14 @@ class Compiler
 
 	private void EmitPlaceholder(TypeWrapper type)
 	{
-		if(type == PrimitiveTypeWrapper.BOOLEAN ||
-			type == PrimitiveTypeWrapper.BYTE ||
-			type == PrimitiveTypeWrapper.SHORT ||
-			type == PrimitiveTypeWrapper.CHAR ||
-			type == PrimitiveTypeWrapper.INT)
+		if(type.IsIntOnStackPrimitive)
 		{
 			ilGenerator.Emit(OpCodes.Ldc_I4_0);
 		}
 		else if(type == PrimitiveTypeWrapper.LONG)
 		{
-			ilGenerator.Emit(OpCodes.Ldc_I8, 0L);
+			ilGenerator.Emit(OpCodes.Ldc_I4_0);
+			ilGenerator.Emit(OpCodes.Conv_I8);
 		}
 		else if(type == PrimitiveTypeWrapper.FLOAT)
 		{
@@ -2826,6 +2862,7 @@ class Compiler
 		}
 		else if(type == PrimitiveTypeWrapper.DOUBLE)
 		{
+			// NOTE since floating point numbers are stored as native size float on the stack, we can use Ldc_R4 here
 			ilGenerator.Emit(OpCodes.Ldc_R4, 0.0f);
 		}
 		else if(type == PrimitiveTypeWrapper.VOID)

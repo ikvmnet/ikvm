@@ -142,6 +142,7 @@ class MethodWrapper : MemberWrapper
 	private MethodBase redirMethod;
 	private bool isRemappedVirtual;
 	private bool isRemappedOverride;
+	private string[] declaredExceptions;
 	internal CodeEmitter EmitCall;
 	internal CodeEmitter EmitCallvirt;
 	internal CodeEmitter EmitNewobj;
@@ -165,13 +166,15 @@ class MethodWrapper : MemberWrapper
 		TypeWrapper retType = md.RetTypeWrapper;
 		if(!retType.IsUnloadable && retType.IsNonPrimitiveValueType)
 		{
-			wrapper.EmitCall += CodeEmitter.Create(OpCodes.Box, retType.Type);
-			wrapper.EmitCallvirt += CodeEmitter.Create(OpCodes.Box, retType.Type);
+			wrapper.EmitCall += CodeEmitter.CreateEmitBoxCall(retType);
+			wrapper.EmitCallvirt += CodeEmitter.CreateEmitBoxCall(retType);
 		}
 		if(declaringType.IsNonPrimitiveValueType)
 		{
 			if(method is ConstructorInfo)
 			{
+				// HACK after constructing a new object, we don't want the custom boxing rule to run
+				// (because that would turn "new IntPtr" into a null reference)
 				wrapper.EmitNewobj += CodeEmitter.Create(OpCodes.Box, declaringType.Type);
 			}
 			else
@@ -249,6 +252,27 @@ class MethodWrapper : MemberWrapper
 		this.originalMethod = originalMethod;
 	}
 
+	internal void SetDeclaredExceptions(string[] exceptions)
+	{
+		if(exceptions == null)
+		{
+			exceptions = new string[0];
+		}
+		this.declaredExceptions = (string[])exceptions.Clone();
+	}
+
+	internal void SetDeclaredExceptions(MapXml.Throws[] throws)
+	{
+		if(throws != null)
+		{
+			declaredExceptions = new string[throws.Length];
+			for(int i = 0; i < throws.Length; i++)
+			{
+				declaredExceptions[i] = throws[i].Class;
+			}
+		}
+	}
+
 	internal static MethodWrapper FromCookie(IntPtr cookie)
 	{
 		return (MethodWrapper)FromCookieImpl(cookie);
@@ -302,6 +326,34 @@ class MethodWrapper : MemberWrapper
 		return md.ArgTypeWrappers;
 	}
 
+	internal TypeWrapper[] GetExceptions()
+	{
+		// remapped types and dynamically compiled types have declaredExceptions set
+		if(declaredExceptions != null)
+		{
+			TypeWrapper[] wrappers = new TypeWrapper[declaredExceptions.Length];
+			for(int i = 0; i < declaredExceptions.Length; i++)
+			{
+				// TODO if the type isn't found, put in an unloadable
+				wrappers[i] = DeclaringType.GetClassLoader().LoadClassByDottedName(declaredExceptions[i]);
+			}
+			return wrappers;
+		}
+		// NOTE if originalMethod is a MethodBuilder, GetCustomAttributes doesn't work
+		if(originalMethod != null && !(originalMethod is MethodBuilder))
+		{
+			object[] exceptions = originalMethod.GetCustomAttributes(typeof(ThrowsAttribute), false);
+			TypeWrapper[] wrappers = new TypeWrapper[exceptions.Length];
+			for(int i = 0; i < exceptions.Length; i++)
+			{
+				// TODO if the type isn't found, put in an unloadable
+				wrappers[i] = DeclaringType.GetClassLoader().LoadClassByDottedName(((ThrowsAttribute)exceptions[i]).ClassName);
+			}
+			return wrappers;
+		}
+		return TypeWrapper.EmptyArray;
+	}
+
 	// IsRemappedOverride (only possible for remapped types) indicates whether the method in the
 	// remapped type overrides (i.e. replaces) the method from the underlying type
 	// Example: System.Object.ToString() is overriden by java.lang.Object.toString(),
@@ -339,6 +391,14 @@ class MethodWrapper : MemberWrapper
 	internal MethodBase GetMethod()
 	{
 		return originalMethod;
+	}
+
+	internal string RealName
+	{
+		get
+		{
+			return originalMethod.Name;
+		}
 	}
 
 	// this returns the Java method's attributes in .NET terms (e.g. used to create stubs for this method)
@@ -494,7 +554,7 @@ class MethodWrapper : MemberWrapper
 	}
 }
 
-sealed class FieldWrapper : MemberWrapper
+class FieldWrapper : MemberWrapper
 {
 	private string name;
 	private string sig;
@@ -717,12 +777,25 @@ sealed class FieldWrapper : MemberWrapper
 		return new FieldWrapper(declaringType, fieldType, name, sig, modifiers, fi, getter, setter);
 	}
 
+	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo fi, CodeEmitter getter, CodeEmitter setter, object constant)
+	{
+		if(constant != null)
+		{
+			return new ConstantFieldWrapper(declaringType, fieldType, name, sig, modifiers, fi, getter, setter, constant);
+		}
+		else
+		{
+			return new FieldWrapper(declaringType, fieldType, name, sig, modifiers, fi, getter, setter);
+		}
+	}
+
 	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string sig, Modifiers modifiers)
 	{
 		CodeEmitter emitGet = null;
 		CodeEmitter emitSet = null;
 		if(declaringType.IsNonPrimitiveValueType)
 		{
+			// NOTE all that ValueTypeFieldSetter does, is unbox the boxed value type that contains the field that we are setting
 			emitSet = new ValueTypeFieldSetter(declaringType.Type, fieldType.Type);
 			emitGet = CodeEmitter.Create(OpCodes.Unbox, declaringType.Type);
 		}
@@ -749,8 +822,7 @@ sealed class FieldWrapper : MemberWrapper
 		}
 		if(fieldType.IsNonPrimitiveValueType)
 		{
-			emitSet += CodeEmitter.Create(OpCodes.Unbox, fieldType.Type);
-			emitSet += CodeEmitter.Create(OpCodes.Ldobj, fieldType.Type);
+			emitSet += CodeEmitter.CreateEmitUnboxCall(fieldType);
 		}
 		if((modifiers & Modifiers.Volatile) != 0)
 		{
@@ -777,7 +849,7 @@ sealed class FieldWrapper : MemberWrapper
 		}
 		if(fieldType.IsNonPrimitiveValueType)
 		{
-			emitGet += CodeEmitter.Create(OpCodes.Box, fieldType.Type);
+			emitGet += CodeEmitter.CreateEmitBoxCall(fieldType);
 		}
 		return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, fi, emitGet, emitSet);
 	}
@@ -794,6 +866,7 @@ sealed class FieldWrapper : MemberWrapper
 			bindings |= BindingFlags.Instance;
 		}
 		field = DeclaringType.Type.GetField(name, bindings);
+		Debug.Assert(field != null);
 	}
 
 	internal void SetValue(object obj, object val)
@@ -812,7 +885,7 @@ sealed class FieldWrapper : MemberWrapper
 		field.SetValue(obj, val);
 	}
 
-	internal object GetValue(object obj)
+	internal virtual object GetValue(object obj)
 	{
 		// TODO this is a broken implementation (for one thing, it needs to support redirection)
 		if(field == null || field is FieldBuilder)
@@ -825,5 +898,23 @@ sealed class FieldWrapper : MemberWrapper
 			val = fieldType.GhostRefField.GetValue(val);
 		}
 		return val;
+	}
+
+	// NOTE this type is only used for remapped fields, dynamically compiled classes are always finished before we
+	// allow reflection (so we can look at the underlying field in that case)
+	private class ConstantFieldWrapper : FieldWrapper
+	{
+		private object constant;
+
+		internal ConstantFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, CodeEmitter emitGet, CodeEmitter emitSet, object constant)
+			: base(declaringType, fieldType, name, sig, modifiers, field, emitGet, emitSet)
+		{
+			this.constant = constant;
+		}
+
+		internal override object GetValue(object obj)
+		{
+			return constant;
+		}
 	}
 }

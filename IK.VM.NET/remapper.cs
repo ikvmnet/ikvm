@@ -25,6 +25,14 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("ldnull")]
+	public sealed class Ldnull : Simple
+	{
+		public Ldnull() : base(OpCodes.Ldnull)
+		{
+		}
+	}
+
 	[XmlType("call")]
 	public class Call : Instruction
 	{
@@ -195,6 +203,14 @@ namespace MapXml
 	public sealed class Unbox : TypeInstruction
 	{
 		public Unbox() : base(OpCodes.Unbox)
+		{
+		}
+	}
+
+	[XmlType("box")]
+	public sealed class Box : TypeInstruction
+	{
+		public Box() : base(OpCodes.Box)
 		{
 		}
 	}
@@ -388,6 +404,7 @@ namespace MapXml
 		[XmlElement(typeof(IsInst))]
 		[XmlElement(typeof(Castclass))]
 		[XmlElement(typeof(Unbox))]
+		[XmlElement(typeof(Box))]
 		[XmlElement(typeof(BrFalse))]
 		[XmlElement(typeof(BrTrue))]
 		[XmlElement(typeof(Br))]
@@ -402,6 +419,7 @@ namespace MapXml
 		[XmlElement(typeof(Ldind_i4))]
 		[XmlElement(typeof(Ret))]
 		[XmlElement(typeof(Throw))]
+		[XmlElement(typeof(Ldnull))]
 		public Instruction[] invoke;
 
 		internal sealed override void Emit(ILGenerator ilgen)
@@ -414,6 +432,12 @@ namespace MapXml
 		}
 	}
 
+	public class Throws
+	{
+		[XmlAttribute("class")]
+		public string Class;
+	}
+
 	public class Constructor
 	{
 		[XmlAttribute("sig")]
@@ -423,6 +447,8 @@ namespace MapXml
 		public InstructionList invokespecial;
 		public InstructionList newobj;
 		public Redirect redirect;
+		[XmlElement("throws", typeof(Throws))]
+		public Throws[] throws;
 	}
 
 	public class Redirect
@@ -458,6 +484,8 @@ namespace MapXml
 		public InstructionList invokestatic;
 		public Redirect redirect;
 		public Override @override;
+		[XmlElement("throws", typeof(Throws))]
+		public Throws[] throws;
 	}
 
 	public class Field
@@ -468,6 +496,8 @@ namespace MapXml
 		public string Sig;
 		[XmlAttribute("modifiers")]
 		public MapModifiers Modifiers;
+		[XmlAttribute("constant")]
+		public string Constant;
 		public Redirect redirect;
 	}
 
@@ -484,6 +514,8 @@ namespace MapXml
 		Public = Modifiers.Public,
 		[XmlEnum("protected")]
 		Protected = Modifiers.Protected,
+		[XmlEnum("private")]
+		Private = Modifiers.Private,
 		[XmlEnum("final")]
 		Final = Modifiers.Final,
 		[XmlEnum("interface")]
@@ -511,6 +543,8 @@ namespace MapXml
 		public Field[] Fields;
 		[XmlElement("implements")]
 		public Interface[] Interfaces;
+		[XmlElement("box")]
+		public InstructionList Box;
 	}
 
 	[XmlRoot("root")]

@@ -131,6 +131,8 @@ typedef union jvalue {
 //public __value class LocalRefStruct;
 public __gc class System::Object;
 
+#pragma managed
+
 class JNIEnv
 {
 	//LocalRefStruct __nogc* pLocalRefs;

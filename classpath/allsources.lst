@@ -12,6 +12,7 @@ C:\ikvm\classpath\java\lang\VMFloat.java
 C:\ikvm\classpath\java\lang\ObjectHelper.java
 C:\ikvm\classpath\java\lang\StringHelper.java
 C:\ikvm\classpath\java\lang\VMClassLoader.java
+C:\ikvm\classpath\java\lang\ref\Reference.java
 C:\ikvm\classpath\java\lang\reflect\Constructor.java
 C:\ikvm\classpath\java\lang\reflect\Method.java
 C:\ikvm\classpath\java\lang\reflect\Field.java
@@ -25,7 +26,6 @@ C:\classpath\gnu\java\awt\BitMaskExtent.java
 C:\classpath\gnu\java\awt\Buffers.java
 C:\classpath\gnu\java\awt\ComponentDataBlitOp.java
 C:\classpath\gnu\java\awt\EventModifier.java
-C:\classpath\gnu\java\awt\image\GdkPixbufDecoder.java
 C:\classpath\gnu\java\awt\image\ImageDecoder.java
 C:\classpath\gnu\java\awt\image\XBMDecoder.java
 C:\classpath\gnu\java\beans\BeanInfoEmbryo.java
@@ -215,12 +215,9 @@ C:\classpath\gnu\java\locale\LocaleInformation_zh_TW.java
 C:\classpath\gnu\java\math\MPN.java
 C:\classpath\gnu\java\net\HeaderFieldHelper.java
 C:\classpath\gnu\java\net\content\text\plain.java
-C:\classpath\gnu\java\net\protocol\file\FileURLConnection.java
 C:\classpath\gnu\java\net\protocol\file\Handler.java
 C:\classpath\gnu\java\net\protocol\http\Handler.java
-C:\classpath\gnu\java\net\protocol\http\HttpURLConnection.java
 C:\classpath\gnu\java\net\protocol\jar\Handler.java
-C:\classpath\gnu\java\net\protocol\jar\JarURLConnection.java
 C:\classpath\gnu\java\nio\DatagramChannelImpl.java
 C:\classpath\gnu\java\nio\DatagramChannelSelectionKey.java
 C:\classpath\gnu\java\nio\FileLockImpl.java
@@ -827,7 +824,6 @@ C:\classpath\java\lang\VerifyError.java
 C:\classpath\java\lang\VirtualMachineError.java
 C:\classpath\java\lang\Void.java
 C:\classpath\java\lang\ref\PhantomReference.java
-C:\classpath\java\lang\ref\Reference.java
 C:\classpath\java\lang\ref\ReferenceQueue.java
 C:\classpath\java\lang\ref\SoftReference.java
 C:\classpath\java\lang\ref\WeakReference.java

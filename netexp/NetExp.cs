@@ -102,6 +102,7 @@ public class NetExp
 		}
 	}
 
+	// TODO private classes should also be done handled for interfaces, fields and method arguments/return type
 	private static void ProcessPrivateClasses(Assembly assembly)
 	{
 		Hashtable done = new Hashtable();
@@ -149,6 +150,14 @@ public class NetExp
 			innerClassesAttribute = new InnerClassesAttribute(f);
 			innerClassesAttribute.Add(name, outer.getName().Replace('.', '/'), null, (ushort)Modifiers.Public);
 		}
+		Class[] interfaces = c.getInterfaces();
+		for(int i = 0; i < interfaces.Length; i++)
+		{
+			if(Modifier.isPublic(interfaces[i].getModifiers()))
+			{
+				f.AddInterface(interfaces[i].getName().Replace('.', '/'));
+			}
+		}
 		Class[] innerClasses = c.getDeclaredClasses();
 		for(int i = 0; i < innerClasses.Length; i++)
 		{
@@ -171,6 +180,7 @@ public class NetExp
 			Modifiers mods = (Modifiers)constructors[i].getModifiers();
 			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
+				// TODO what happens if one of the argument types is non-public?
 				f.AddMethod(mods | Modifiers.Native, "<init>", MakeSig(constructors[i].getParameterTypes(), java.lang.Void.TYPE));
 			}
 		}
@@ -184,7 +194,19 @@ public class NetExp
 				{
 					mods |= Modifiers.Native;
 				}
-				f.AddMethod(mods, methods[i].getName(), MakeSig(methods[i].getParameterTypes(), methods[i].getReturnType()));
+				// TODO what happens if one of the argument types (or the return type) is non-public?
+				FieldOrMethod m = f.AddMethod(mods, methods[i].getName(), MakeSig(methods[i].getParameterTypes(), methods[i].getReturnType()));
+				Class[] exceptions = methods[i].getExceptionTypes();
+				if(exceptions.Length > 0)
+				{
+					ExceptionsAttribute attrib = new ExceptionsAttribute(f);
+					foreach(Class x in exceptions)
+					{
+						// TODO what happens if one of the exception types is non-public?
+						attrib.Add(x.getName().Replace('.', '/'));
+					}
+					m.AddAttribute(attrib);
+				}
 			}
 		}
 		Field[] fields = c.getDeclaredFields();
@@ -246,6 +268,7 @@ public class NetExp
 						}
 					}
 				}
+				// TODO what happens if the field type is non-public?
 				f.AddField(mods, fields[i].getName(), ClassToSig(fields[i].getType()), constantValue);
 			}
 		}

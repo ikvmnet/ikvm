@@ -484,7 +484,7 @@ class InstructionState
 	{
 		try
 		{
-			if(index > 0 && (locals[index - 1] == PrimitiveTypeWrapper.DOUBLE || locals[index - 1] == PrimitiveTypeWrapper.LONG))
+			if(index > 0 && locals[index - 1] != VerifierTypeWrapper.Invalid && locals[index - 1].IsWidePrimitive)
 			{
 				locals[index - 1] = VerifierTypeWrapper.Invalid;
 				if(subroutines != null)
@@ -514,7 +514,7 @@ class InstructionState
 	{
 		try
 		{
-			if(index > 0 && (locals[index - 1] == PrimitiveTypeWrapper.DOUBLE || locals[index - 1] == PrimitiveTypeWrapper.LONG))
+			if(index > 0 && locals[index - 1] != VerifierTypeWrapper.Invalid && locals[index - 1].IsWidePrimitive)
 			{
 				locals[index - 1] = VerifierTypeWrapper.Invalid;
 				if(subroutines != null)
@@ -618,7 +618,7 @@ class InstructionState
 
 	internal void SetLocalType(int index, TypeWrapper type)
 	{
-		if(type == PrimitiveTypeWrapper.DOUBLE || type == PrimitiveTypeWrapper.LONG)
+		if(type.IsWidePrimitive)
 		{
 			SetLocal2(index, type);
 		}
@@ -630,15 +630,9 @@ class InstructionState
 
 	internal void PushType(TypeWrapper type)
 	{
-		if(type.IsPrimitive)
+		if(type.IsIntOnStackPrimitive)
 		{
-			if(type == PrimitiveTypeWrapper.BOOLEAN ||
-				type == PrimitiveTypeWrapper.BYTE ||
-				type == PrimitiveTypeWrapper.CHAR ||
-				type == PrimitiveTypeWrapper.SHORT)
-			{
-				type = PrimitiveTypeWrapper.INT;
-			}
+			type = PrimitiveTypeWrapper.INT;
 		}
 		PushHelper(type);
 	}
@@ -751,7 +745,7 @@ class InstructionState
 	internal TypeWrapper PopType()
 	{
 		TypeWrapper type = PopAnyType();
-		if(type == PrimitiveTypeWrapper.DOUBLE || type == PrimitiveTypeWrapper.LONG)
+		if(type.IsWidePrimitive)
 		{
 			throw new VerifyError("Attempt to split long or double on the stack");
 		}
@@ -763,15 +757,9 @@ class InstructionState
 	// NOTE this can also be used to pop double or long
 	internal TypeWrapper PopType(TypeWrapper baseType)
 	{
-		if(baseType.IsPrimitive)
+		if(baseType.IsIntOnStackPrimitive)
 		{
-			if(baseType == PrimitiveTypeWrapper.BOOLEAN ||
-				baseType == PrimitiveTypeWrapper.BYTE ||
-				baseType == PrimitiveTypeWrapper.CHAR ||
-				baseType == PrimitiveTypeWrapper.SHORT)
-			{
-				baseType = PrimitiveTypeWrapper.INT;
-			}
+			baseType = PrimitiveTypeWrapper.INT;
 		}
 		TypeWrapper type = PopAnyType();
 		if(VerifierTypeWrapper.IsNew(type) || type == VerifierTypeWrapper.UninitializedThis)
@@ -1085,16 +1073,12 @@ class MethodAnalyzer
 			for(int i = 0; i < args.Length; i++)
 			{
 				TypeWrapper type = args[i];
-				if(type.IsPrimitive &&
-					(type == PrimitiveTypeWrapper.BOOLEAN ||
-					type == PrimitiveTypeWrapper.BYTE ||
-					type == PrimitiveTypeWrapper.CHAR ||
-					type == PrimitiveTypeWrapper.SHORT))
+				if(type.IsIntOnStackPrimitive)
 				{
 					type = PrimitiveTypeWrapper.INT;
 				}
 				state[0].SetLocalType(arg++, type);
-				if(type == PrimitiveTypeWrapper.DOUBLE || type == PrimitiveTypeWrapper.LONG)
+				if(type.IsWidePrimitive)
 				{
 					arg++;
 				}
@@ -1641,7 +1625,7 @@ class MethodAnalyzer
 							case NormalizedByteCode.__dup2:
 							{
 								TypeWrapper t = s.PopAnyType();
-								if(t == PrimitiveTypeWrapper.DOUBLE || t == PrimitiveTypeWrapper.LONG)
+								if(t.IsWidePrimitive)
 								{
 									s.PushType(t);
 									s.PushType(t);
@@ -1668,7 +1652,7 @@ class MethodAnalyzer
 							case NormalizedByteCode.__dup2_x1:
 							{
 								TypeWrapper value1 = s.PopAnyType();
-								if(value1 == PrimitiveTypeWrapper.DOUBLE || value1 == PrimitiveTypeWrapper.LONG)
+								if(value1.IsWidePrimitive)
 								{
 									TypeWrapper value2 = s.PopType();
 									s.PushType(value1);
@@ -1701,10 +1685,10 @@ class MethodAnalyzer
 							case NormalizedByteCode.__dup2_x2:
 							{
 								TypeWrapper value1 = s.PopAnyType();
-								if(value1 == PrimitiveTypeWrapper.DOUBLE || value1 == PrimitiveTypeWrapper.LONG)
+								if(value1.IsWidePrimitive)
 								{
 									TypeWrapper value2 = s.PopAnyType();
-									if(value2 == PrimitiveTypeWrapper.DOUBLE || value2 == PrimitiveTypeWrapper.LONG)
+									if(value2.IsWidePrimitive)
 									{
 										// Form 4
 										s.PushType(value1);
@@ -1725,7 +1709,7 @@ class MethodAnalyzer
 								{
 									TypeWrapper value2 = s.PopType();
 									TypeWrapper value3 = s.PopAnyType();
-									if(value3 == PrimitiveTypeWrapper.DOUBLE || value3 == PrimitiveTypeWrapper.LONG)
+									if(value3.IsWidePrimitive)
 									{
 										// Form 3
 										s.PushType(value2);
@@ -1754,7 +1738,7 @@ class MethodAnalyzer
 							case NormalizedByteCode.__pop2:
 							{
 								TypeWrapper type = s.PopAnyType();
-								if(type != PrimitiveTypeWrapper.DOUBLE && type != PrimitiveTypeWrapper.LONG)
+								if(!type.IsWidePrimitive)
 								{
 									s.PopType();
 								}
@@ -1779,11 +1763,7 @@ class MethodAnalyzer
 							{
 								s.PopInt();
 								TypeWrapper retType = method.Method.GetRetType(classLoader);
-								if(retType != PrimitiveTypeWrapper.BOOLEAN &&
-									retType != PrimitiveTypeWrapper.BYTE &&
-									retType != PrimitiveTypeWrapper.CHAR &&
-									retType != PrimitiveTypeWrapper.SHORT &&
-									retType != PrimitiveTypeWrapper.INT)
+								if(!retType.IsIntOnStackPrimitive)
 								{
 									throw new VerifyError("Wrong return type in function");
 								}

@@ -497,6 +497,14 @@ class ClassFile
 		}
 	}
 
+	internal bool DeprecatedAttribute
+	{
+		get
+		{
+			return GetAttribute("Deprecated") != null;
+		}
+	}
+
 	internal struct InnerClass
 	{
 		internal int innerClass;		// ConstantPoolItemClass
@@ -1300,6 +1308,14 @@ class ClassFile
 				return classFile;
 			}
 		}
+
+		internal bool DeprecatedAttribute
+		{
+			get
+			{
+				return GetAttribute("Deprecated") != null;
+			}
+		}
 	}
 
 	internal class Field : FieldOrMethod
@@ -1452,6 +1468,26 @@ class ClassFile
 					}
 				}
 				return code;
+			}
+		}
+
+		internal string[] ExceptionsAttribute
+		{
+			get
+			{
+				Attribute attr = GetAttribute("Exceptions");
+				if(attr != null)
+				{
+					BigEndianBinaryReader rdr = attr.Data;
+					ushort count = rdr.ReadUInt16();
+					string[] exceptions = new string[count];
+					for(int i = 0; i < count; i++)
+					{
+						exceptions[i] = ClassFile.GetConstantPoolClass(rdr.ReadUInt16());
+					}
+					return exceptions;
+				}
+				return null;
 			}
 		}
 

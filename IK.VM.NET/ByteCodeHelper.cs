@@ -232,11 +232,11 @@ public class ByteCodeHelper
 	}
 
 	[StackTraceInfo(Hidden = true)]
-	public static Type DynamicGetType(RuntimeTypeHandle type, string clazz)
+	public static Type DynamicGetTypeAsExceptionType(RuntimeTypeHandle type, string clazz)
 	{
 		TypeWrapper tw = LoadTypeWrapper(type, clazz);
 		tw.Finish();
-		return tw.Type;
+		return tw.TypeAsExceptionType;
 	}
 
 	public static int f2i(float f)

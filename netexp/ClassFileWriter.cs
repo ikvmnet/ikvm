@@ -451,6 +451,34 @@ class InnerClassesAttribute : ClassFileAttribute
 	}
 }
 
+class ExceptionsAttribute : ClassFileAttribute
+{
+	private ClassFileWriter classFile;
+	private ArrayList classes = new ArrayList();
+
+	internal ExceptionsAttribute(ClassFileWriter classFile)
+		: base(classFile.AddUtf8("Exceptions"))
+	{
+		this.classFile = classFile;
+	}
+
+	internal void Add(string exceptionClass)
+	{
+		classes.Add(classFile.AddClass(exceptionClass));
+	}
+
+	public override void Write(BigEndianStream bes)
+	{
+		base.Write(bes);
+		bes.WriteUInt32((uint)(2 + 2 * classes.Count));
+		bes.WriteUInt16((ushort)classes.Count);
+		foreach(ushort idx in classes)
+		{
+			bes.WriteUInt16(idx);
+		}
+	}
+}
+
 class FieldOrMethod
 {
 	private Modifiers access_flags;
@@ -490,6 +518,7 @@ class ClassFileWriter
 	private ArrayList fields = new ArrayList();
 	private ArrayList methods = new ArrayList();
 	private ArrayList attribs = new ArrayList();
+	private ArrayList interfaces = new ArrayList();
 	private Modifiers access_flags;
 	private ushort this_class;
 	private ushort super_class;
@@ -553,6 +582,11 @@ class ClassFileWriter
 	private ushort AddString(string s)
 	{
 		return Add(new ConstantPoolItemString(AddUtf8(s)));
+	}
+
+	public void AddInterface(string name)
+	{
+		interfaces.Add(AddClass(name));
 	}
 
 	public FieldOrMethod AddMethod(Modifiers access, string name, string signature)
@@ -651,7 +685,11 @@ class ClassFileWriter
 		bes.WriteUInt16(this_class);
 		bes.WriteUInt16(super_class);
 		// interfaces count
-		bes.WriteUInt16(0);
+		bes.WriteUInt16((ushort)interfaces.Count);
+		for(int i = 0; i < interfaces.Count; i++)
+		{
+			bes.WriteUInt16((ushort)interfaces[i]);
+		}
 		// fields count
 		bes.WriteUInt16((ushort)fields.Count);
 		for(int i = 0; i < fields.Count; i++)

@@ -33,6 +33,7 @@
 				<redirect class="System.Threading.Monitor, mscorlib" name="Pulse" sig="(Ljava.lang.Object;)V" type="static" />
 			</method>
 			<method name="wait" sig="()V" modifiers="public final">
+				<throws class="java.lang.InterruptedException" />
 				<invokespecial>
 					<call type="System.Threading.Monitor, mscorlib" name="Wait" sig="(Ljava.lang.Object;)Z" />
 					<!-- For some reason, Wait returns a boolean -->
@@ -45,9 +46,11 @@
 				</invokevirtual>
 			</method>
 			<method name="wait" sig="(J)V" modifiers="public final">
+				<throws class="java.lang.InterruptedException" />
 				<redirect class="java.lang.ObjectHelper" name="wait" sig="(Ljava.lang.Object;J)V" type="static" />
 			</method>
 			<method name="wait" sig="(JI)V" modifiers="public final">
+				<throws class="java.lang.InterruptedException" />
 				<redirect class="java.lang.ObjectHelper" name="wait" sig="(Ljava.lang.Object;JI)V" type="static" />
 			</method>
 			<method name="getClass" sig="()Ljava.lang.Class;" modifiers="public final">
@@ -64,6 +67,7 @@
 				<!--redirect class="ObjectHelper" name="getClass" sig="(Ljava.lang.Object;)Ljava.lang.Object;" type="static" /-->
 			</method>
 			<method name="clone" sig="()Ljava.lang.Object;" modifiers="protected">
+				<throws class="java.lang.CloneNotSupportedException" />
 				<invokespecial>
 					<!-- TODO if we already know statically that the type implements java.lang.Cloneable this check can be omitted -->
 					<dup />
@@ -117,6 +121,7 @@
 				<override name="Equals" />
 			</method>
 			<method name="finalize" sig="()V" modifiers="protected">
+				<throws class="java.lang.Throwable" />
 				<override name="Finalize" />
 			</method>
 		</class>
@@ -124,6 +129,7 @@
 			<implements class="java.lang.Comparable" />
 			<implements class="java.lang.CharSequence" />
 			<implements class="java.io.Serializable" />
+			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-6849794470754667710" />
 			<constructor sig="()V" modifiers="public">
 				<!-- TODO -->
 				<newobj>
@@ -156,9 +162,11 @@
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIII)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="([BLjava.lang.String;)V" modifiers="public">
+				<throws class="java.io.UnsupportedEncodingException" />
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BLjava.lang.String;)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="([BIILjava.lang.String;)V" modifiers="public">
+				<throws class="java.io.UnsupportedEncodingException" />
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIILjava.lang.String;)Ljava.lang.String;" />
 			</constructor>
 			<method name="hashCode" sig="()I" modifiers="public">
@@ -276,6 +284,7 @@
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)[B" />
 			</method>
 			<method name="getBytes" sig="(Ljava.lang.String;)[B" modifiers="public">
+				<throws class="java.io.UnsupportedEncodingException" />
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)[B" />
 			</method>
 			<method name="subSequence" sig="(II)Ljava.lang.CharSequence;" modifiers="public">
@@ -332,6 +341,7 @@
 		</class>
 		<class name="java.lang.Throwable" type="System.Exception" modifiers="public">
 			<implements class="java.io.Serializable" />
+			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-3042686055658047285" />
 			<constructor sig="()V" modifiers="public">
 				<invokespecial>
 					<call type="ExceptionHelper, ik.vm.net" name="get_NullString" />
@@ -421,6 +431,20 @@
 			<method name="hashCode" sig="()I" modifiers="public">
 				<redirect name="GetHashCode" />
 			</method>
+		</class>
+		<!-- TODO support "oneway" attribute (don't associate System.IntPtr with gnu.classpath.RawData -->
+		<class name="gnu.classpath.RawData" type="System.IntPtr" oneway="true">
+			<box>
+				<!-- We special case boxing, to "box" IntPtr.Zero as null -->
+				<dup />
+				<brfalse name="null" />
+				<box type="System.IntPtr" />
+				<br name="end" />
+				<label name="null" />
+				<pop />
+				<ldnull />
+				<label name="end" />
+			</box>
 		</class>
 	</remappings>
 	<nativeMethods>

@@ -150,6 +150,27 @@ namespace NativeCode.java
 	{
 		namespace reflect
 		{
+			public class Proxy
+			{
+				// NOTE not used, only here to shut up ikvmc during compilation of classpath.dll
+				public static object getProxyClass0(object o1, object o2)
+				{
+					throw new InvalidOperationException();
+				}
+				
+				// NOTE not used, only here to shut up ikvmc during compilation of classpath.dll
+				public static object getProxyData0(object o1, object o2)
+				{
+					throw new InvalidOperationException();
+				}
+				
+				// NOTE not used, only here to shut up ikvmc during compilation of classpath.dll
+				public static object generateProxyClass0(object o1, object o2)
+				{
+					throw new InvalidOperationException();
+				}
+			}
+
 			public class Array
 			{
 				public static object createObjectArray(object clazz, int dim)
@@ -339,8 +360,15 @@ namespace NativeCode.java
 				public static object[] GetExceptionTypes(object methodCookie)
 				{
 					MethodWrapper wrapper = (MethodWrapper)methodCookie;
-					// TODO
-					return new object[0];
+					wrapper.DeclaringType.Finish();
+					TypeWrapper[] exceptions = wrapper.GetExceptions();
+					object[] exceptionClasses = new object[exceptions.Length];
+					for(int i = 0; i < exceptions.Length; i++)
+					{
+						// TODO check for unloadable types
+						exceptionClasses[i] = VMClass.getClassFromWrapper(exceptions[i]);
+					}
+					return exceptionClasses;
 				}
 
 				[StackTraceInfo(Hidden = true)]
@@ -1896,7 +1924,7 @@ namespace NativeCode.java
 				return new sbyte[] { 0, 0, 0, 0 };
 			}
 
-			public static string getLocalHostName()
+			public static string getLocalHostname()
 			{
 				// TODO error handling
 				return NetSystem.Net.Dns.GetHostName();
@@ -1956,6 +1984,74 @@ namespace NativeCode.java
 					}
 				}
 				return s;
+			}
+		}
+	}
+
+	namespace nio
+	{
+		namespace channels
+		{
+			// HACK this is a rubbish implementation
+			public class FileChannelImpl
+			{
+				private static Stream GetStream(object o)
+				{
+					object fd = o.GetType().GetField("fd", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(o);
+					return (Stream)fd.GetType().GetField("stream", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(fd);
+				}
+
+				public static long implPosition(object thiz)
+				{
+					// TODO map exceptions
+					return GetStream(thiz).Position;
+				}
+
+				public static object implPosition(object thiz, long newPosition)
+				{
+					// TODO map exceptions
+					GetStream(thiz).Position = newPosition;
+					// why are we returning thiz?
+					return thiz;
+				}
+
+				public static object implTruncate(object thiz, long size)
+				{
+					throw new NotImplementedException();
+				}
+  
+				public static IntPtr nio_mmap_file(object thiz, long pos, long size, int mode)
+				{
+					throw new NotImplementedException();
+				}
+
+				public static void nio_unmmap_file(object thiz, IntPtr map_address, int size)
+				{
+					throw new NotImplementedException();
+				}
+
+				public static void nio_msync(object thiz, IntPtr map_address, int length)
+				{
+				}
+
+				public static long size(object thiz)
+				{
+					// TODO map exceptions
+					return GetStream(thiz).Length;
+				}
+
+				public static int implRead(object thiz, byte[] buffer, int offset, int length)
+				{
+					// TODO map exceptions
+					return GetStream(thiz).Read(buffer, offset, length);
+				}
+
+				public static int implWrite(object thiz, byte[] buffer, int offset, int length)
+				{
+					// TODO map exceptions
+					GetStream(thiz).Write(buffer, offset, length);
+					return length;
+				}
 			}
 		}
 	}

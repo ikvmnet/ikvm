@@ -209,6 +209,46 @@ public abstract class CodeEmitter
 		}
 	}
 
+	private class EmitUnboxCallCodeEmitter : CodeEmitter
+	{
+		private TypeWrapper wrapper;
+
+		internal EmitUnboxCallCodeEmitter(TypeWrapper wrapper)
+		{
+			this.wrapper = wrapper;
+		}
+
+		internal override void Emit(ILGenerator ilgen)
+		{
+			wrapper.EmitUnbox(ilgen);
+		}
+	}
+
+	internal static CodeEmitter CreateEmitUnboxCall(TypeWrapper wrapper)
+	{
+		return new EmitUnboxCallCodeEmitter(wrapper);
+	}
+
+	private class EmitBoxCallCodeEmitter : CodeEmitter
+	{
+		private TypeWrapper wrapper;
+
+		internal EmitBoxCallCodeEmitter(TypeWrapper wrapper)
+		{
+			this.wrapper = wrapper;
+		}
+
+		internal override void Emit(ILGenerator ilgen)
+		{
+			wrapper.EmitBox(ilgen);
+		}
+	}
+
+	internal static CodeEmitter CreateEmitBoxCall(TypeWrapper wrapper)
+	{
+		return new EmitBoxCallCodeEmitter(wrapper);
+	}
+
 	private class OpCodeEmitter : CodeEmitter
 	{
 		private OpCode opcode;
