@@ -2260,7 +2260,8 @@ class Compiler
 				}
 				else if(args[i].IsInterface)
 				{
-					if(!ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsAssignableTo(args[i]))
+					TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
+					if(!tw.IsUnloadable && !tw.IsAssignableTo(args[i]))
 					{
 						needsCast = true;
 						break;
