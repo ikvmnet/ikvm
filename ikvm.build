@@ -6,6 +6,9 @@
         <if propertytrue="nant.platform.win32">
             <nant buildfile="IK.VM.JNI/ik.vm.jni.build" />
         </if>
+	<if propertytrue="nant.platform.unix">
+	    <nant buildfile="Mono.IKVM.JNI/Mono.IKVM.JNI.build" />
+	</if>    
         <nant buildfile="ikvmc/ikvmc.build" />
         <nant buildfile="classpath/classpath.build" />
         <nant buildfile="ikvm/ikvm.build" />
