@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -178,7 +178,7 @@ public class Starter
 				}
 				else if(args[i] == "-version")
 				{
-					Console.WriteLine("CLR version: {0}", Environment.Version);
+					Console.WriteLine("CLR version: {0} ({1} bit)", Environment.Version, IntPtr.Size * 8);
 					foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 					{
 						Console.WriteLine("{0}: {1}", asm.GetName().Name, asm.GetName().Version);

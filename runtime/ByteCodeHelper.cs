@@ -207,7 +207,9 @@ namespace IKVM.Runtime
 		public static object DynamicCast(object obj, RuntimeTypeHandle type, string clazz)
 		{
 			Profiler.Count("DynamicCast");
-			if(!DynamicInstanceOf(obj, type, clazz))
+			// NOTE it's important that we don't try to load the class if obj == null
+			// (to be compatible with Sun)
+			if(obj != null && !DynamicInstanceOf(obj, type, clazz))
 			{
 				throw JavaException.ClassCastException(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()).Name);
 			}

@@ -1,5 +1,5 @@
 /* FileChannelImpl.java -- 
-   Copyright (C) 2002, 2004 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2004, 2005 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -237,10 +237,6 @@ public final class FileChannelImpl extends FileChannel
     {
 	if(stream == null)
 	    throw new IOException("Invalid FileChannelImpl");
-
-	if (size < 0)
-	    throw new IllegalArgumentException("Length cannot be less than zero " +
-		size);
 
 	try
 	{
@@ -521,7 +517,7 @@ public final class FileChannelImpl extends FileChannel
     public MappedByteBuffer mapImpl (char mode, long position, int size) throws IOException
     {
 	// TODO
-	throw new Error("not implemented");
+	throw new IOException("not implemented");
     }
 
     public MappedByteBuffer map (FileChannel.MapMode mode,
@@ -581,44 +577,120 @@ public final class FileChannelImpl extends FileChannel
 
     private static native boolean flush(cli.System.IO.FileStream fs);
 
-    public long transferTo (long position, long count, WritableByteChannel target)
-	throws IOException
+    // like transferTo, but with a count of less than 2Gbytes
+    private int smallTransferTo (long position, int count, 
+        WritableByteChannel target)
+        throws IOException
     {
-	if (position < 0
-	    || count < 0)
-	    throw new IllegalArgumentException ();
+        ByteBuffer buffer;
+        try
+        {
+            // Try to use a mapped buffer if we can.  If this fails for
+            // any reason we'll fall back to using a ByteBuffer.
+            buffer = map (MapMode.READ_ONLY, position, count);
+        }
+        catch (IOException e)
+        {
+            buffer = ByteBuffer.allocate (count);
+            read (buffer, position);
+            buffer.flip();
+        }
 
-	if (!isOpen ())
-	    throw new ClosedChannelException ();
-
-	if ((mode & READ) == 0)
-	    throw new NonReadableChannelException ();
-   
-	// XXX: count needs to be casted from long to int. Dataloss ?
-	ByteBuffer buffer = ByteBuffer.allocate ((int) count);
-	read (buffer, position);
-	buffer.flip();
-	return target.write (buffer);
+        return target.write (buffer);
     }
 
-    public long transferFrom (ReadableByteChannel src, long position, long count)
-	throws IOException
+    public long transferTo (long position, long count, 
+        WritableByteChannel target)
+        throws IOException
     {
-	if (position < 0
-	    || count < 0)
-	    throw new IllegalArgumentException ();
+        if (position < 0
+            || count < 0)
+            throw new IllegalArgumentException ();
 
-	if (!isOpen ())
-	    throw new ClosedChannelException ();
+        if (!isOpen ())
+            throw new ClosedChannelException ();
 
-	if ((mode & WRITE) == 0)
-	    throw new NonWritableChannelException ();
+        if ((mode & READ) == 0)
+            throw new NonReadableChannelException ();
+   
+        final int pageSize = 65536;
+        long total = 0;
 
-	// XXX: count needs to be casted from long to int. Dataloss ?
-	ByteBuffer buffer = ByteBuffer.allocate ((int) count);
-	src.read (buffer);
-	buffer.flip();
-	return write (buffer, position);
+        while (count > 0)
+        {
+            int transferred 
+                = smallTransferTo (position, (int)Math.min (count, pageSize), 
+                target);
+            if (transferred < 0)
+                break;
+            total += transferred;
+            position += transferred;
+            count -= transferred;
+        }
+
+        return total;
+    }
+
+    // like transferFrom, but with a count of less than 2Gbytes
+    private int smallTransferFrom (ReadableByteChannel src, long position, 
+        int count)
+        throws IOException
+    {
+        ByteBuffer buffer = null;
+
+        if (src instanceof FileChannel)
+        {
+            try
+            {
+                // Try to use a mapped buffer if we can.  If this fails
+                // for any reason we'll fall back to using a ByteBuffer.
+                buffer = ((FileChannel)src).map (MapMode.READ_ONLY, position, 
+                    count);
+            }
+            catch (IOException e)
+            {
+            }
+        }
+
+        if (buffer == null)
+        {
+            buffer = ByteBuffer.allocate ((int) count);
+            src.read (buffer);
+            buffer.flip();
+        }
+
+        return write (buffer, position);
+    }
+
+    public long transferFrom (ReadableByteChannel src, long position, 
+        long count)
+        throws IOException
+    {
+        if (position < 0
+            || count < 0)
+            throw new IllegalArgumentException ();
+
+        if (!isOpen ())
+            throw new ClosedChannelException ();
+
+        if ((mode & WRITE) == 0)
+            throw new NonWritableChannelException ();
+
+        final int pageSize = 65536;
+        long total = 0;
+
+        while (count > 0)
+        {
+            int transferred = smallTransferFrom (src, position, 
+                (int)Math.min (count, pageSize));
+            if (transferred < 0)
+                break;
+            total += transferred;
+            position += transferred;
+            count -= transferred;
+        }
+
+        return total;
     }
 
     public FileLock tryLock (long position, long size, boolean shared)
