@@ -1268,7 +1268,7 @@ sealed class SimpleFieldWrapper : FieldWrapper
 			ilgen.Emit(OpCodes.Volatile);
 		}
 		ilgen.Emit(IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, GetField());
-		if(FieldTypeWrapper.IsNonPrimitiveValueType)
+		if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
 		{
 			FieldTypeWrapper.EmitBox(ilgen);
 		}
@@ -1276,7 +1276,7 @@ sealed class SimpleFieldWrapper : FieldWrapper
 
 	protected override void EmitSetImpl(ILGenerator ilgen)
 	{
-		if(FieldTypeWrapper.IsNonPrimitiveValueType)
+		if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
 		{
 			FieldTypeWrapper.EmitUnbox(ilgen);
 		}
@@ -1435,7 +1435,7 @@ sealed class NonPrimitiveValueTypeFieldWrapper : FieldWrapper
 			ilgen.Emit(OpCodes.Volatile);
 		}
 		ilgen.Emit(IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, GetField());
-		if(FieldTypeWrapper.IsNonPrimitiveValueType)
+		if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
 		{
 			FieldTypeWrapper.EmitBox(ilgen);
 		}
@@ -1451,7 +1451,7 @@ sealed class NonPrimitiveValueTypeFieldWrapper : FieldWrapper
 			ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
 			ilgen.Emit(OpCodes.Ldloc, temp);
 		}
-		if(FieldTypeWrapper.IsNonPrimitiveValueType)
+		if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
 		{
 			FieldTypeWrapper.EmitUnbox(ilgen);
 		}
