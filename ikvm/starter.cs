@@ -89,6 +89,7 @@ public class Starter
 		private java.lang.Class clazz;
 
 		internal SaveAssemblyShutdownHook(java.lang.Class clazz)
+			: base("SaveAssemblyShutdownHook")
 		{
 			this.clazz = clazz;
 		}
@@ -113,6 +114,11 @@ public class Starter
 
 	private class WaitShutdownHook : java.lang.Thread
 	{
+		internal WaitShutdownHook()
+			: base("WaitShutdownHook")
+		{
+		}
+
 		public override void run()
 		{
 			Console.Error.WriteLine("IKVM runtime terminated. Waiting for Ctrl+C...");
@@ -127,8 +133,10 @@ public class Starter
 	static int Main(string[] args)
 	{
 		Tracer.EnableTraceForDebug();
-		System.Threading.Thread.CurrentThread.Name = "main";
 		StringDictionary props = new StringDictionary();
+		// HACK we take our own assembly location as the location of classpath (this is used by the Security infrastructure
+		// to find the classpath.security file)
+		props["gnu.classpath.home"] = new System.IO.FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName;
 		bool jar = false;
 		bool saveAssembly = false;
 		bool saveAssemblyX = false;
@@ -241,13 +249,14 @@ public class Starter
 		}
 		try
 		{
-			Startup.SetProperties(props);
-			// HACK we take our own assembly location as the location of classpath (this is used by the Security infrastructure
-			// to find the classpath.security file)
-			java.lang.System.setProperty("gnu.classpath.home", new System.IO.FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName);
 			if(jar)
 			{
-				java.lang.System.setProperty("java.class.path", mainClass);
+				props["java.class.path"] = mainClass;
+			}
+			Startup.SetProperties(props);
+			Startup.EnterMainThread();
+			if(jar)
+			{
 				JarFile jf = new JarFile(mainClass);
 				try
 				{
@@ -314,12 +323,7 @@ public class Starter
 		}
 		finally
 		{
-			// FXBUG when the main thread ends, it doesn't actually die, it stays around to manage the lifetime
-			// of the CLR, but in doing so it also keeps alive the thread local storage for this thread and we
-			// use the TLS as a hack to track when the thread dies (if the object stored in the TLS is finalized,
-			// we know the thread is dead). So to make that work for the main thread, we explicitly clear the TLS
-			// slot that contains our hack object.
-			System.Threading.Thread.SetData(System.Threading.Thread.GetNamedDataSlot("ikvm-thread-hack"), null);
+			Startup.ExitMainThread();
 		}
 		return 1;
 	}

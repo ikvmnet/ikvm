@@ -800,12 +800,12 @@ class Compiler
 		private bool nested;
 		private object[] labels;
 
-		internal Block(Compiler compiler, int begin, int end, int exceptionIndex, ArrayList exits, bool nested)
+		internal Block(Compiler compiler, int beginPC, int endPC, int exceptionIndex, ArrayList exits, bool nested)
 		{
 			this.compiler = compiler;
 			this.ilgen = compiler.ilGenerator;
-			this.begin = begin;
-			this.end = end;
+			this.begin = beginPC;
+			this.end = endPC;
 			this.exceptionIndex = exceptionIndex;
 			this.exits = exits;
 			this.nested = nested;
@@ -1114,84 +1114,81 @@ class Compiler
 				}
 				Type excType = exceptionTypeWrapper.TypeAsExceptionType;
 				bool mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException;
-				if(true)
+				if(mapSafe)
 				{
-					if(mapSafe)
-					{
-						ilGenerator.BeginCatchBlock(excType);
-					}
-					else
-					{
-						ilGenerator.BeginCatchBlock(typeof(Exception));
-					}
-					BranchCookie bc = new BranchCookie(ilGenerator, 1, exc.handler_pc);
-					prevBlock.AddExitHack(bc);
-					int handlerIndex = FindPcIndex(exc.handler_pc);
-					Instruction handlerInstr = code[handlerIndex];
-					bool unusedException = handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
-						(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
-						ma.GetLocalVar(handlerIndex) == null);
-					// special case for catch(Throwable) (and finally), that produces less code and
-					// should be faster
-					if(mapSafe || excType == typeof(Exception))
-					{
-						if(unusedException)
-						{
-							// we must still have an item on the stack, even though it isn't used!
-							bc.dh.SetType(0, VerifierTypeWrapper.Null);
-						}
-						else
-						{
-							if(mapSafe)
-							{
-								ilGenerator.Emit(OpCodes.Dup);
-							}
-							mapExceptionFastMethod.EmitCall(ilGenerator);
-							if(mapSafe)
-							{
-								ilGenerator.Emit(OpCodes.Pop);
-							}
-							bc.dh.SetType(0, exceptionTypeWrapper);
-							bc.dh.Store(0);
-						}
-						ilGenerator.Emit(OpCodes.Leave, bc.Stub);
-					}
-					else
-					{
-						if(exceptionTypeWrapper.IsUnloadable)
-						{
-							Profiler.Count("EmitDynamicGetTypeAsExceptionType");
-							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-							ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
-							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetTypeAsExceptionType"));
-							mapExceptionMethod.EmitCall(ilGenerator);
-						}
-						else
-						{
-							ilGenerator.Emit(OpCodes.Ldtoken, excType);
-							ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
-							mapExceptionMethod.EmitCall(ilGenerator);
-							ilGenerator.Emit(OpCodes.Castclass, excType);
-						}
-						if(unusedException)
-						{
-							// we must still have an item on the stack, even though it isn't used!
-							bc.dh.SetType(0, VerifierTypeWrapper.Null);
-						}
-						else
-						{
-							bc.dh.SetType(0, exceptionTypeWrapper);
-							ilGenerator.Emit(OpCodes.Dup);
-							bc.dh.Store(0);
-						}
-						Label rethrow = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Brfalse, rethrow);
-						ilGenerator.Emit(OpCodes.Leave, bc.Stub);
-						ilGenerator.MarkLabel(rethrow);
-						ilGenerator.Emit(OpCodes.Rethrow);
-					}
-					ilGenerator.EndExceptionBlock();
+					ilGenerator.BeginCatchBlock(excType);
 				}
+				else
+				{
+					ilGenerator.BeginCatchBlock(typeof(Exception));
+				}
+				BranchCookie bc = new BranchCookie(ilGenerator, 1, exc.handler_pc);
+				prevBlock.AddExitHack(bc);
+				int handlerIndex = FindPcIndex(exc.handler_pc);
+				Instruction handlerInstr = code[handlerIndex];
+				bool unusedException = handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
+					(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
+					ma.GetLocalVar(handlerIndex) == null);
+				// special case for catch(Throwable) (and finally), that produces less code and
+				// should be faster
+				if(mapSafe || excType == typeof(Exception))
+				{
+					if(unusedException)
+					{
+						// we must still have an item on the stack, even though it isn't used!
+						bc.dh.SetType(0, VerifierTypeWrapper.Null);
+					}
+					else
+					{
+						if(mapSafe)
+						{
+							ilGenerator.Emit(OpCodes.Dup);
+						}
+						mapExceptionFastMethod.EmitCall(ilGenerator);
+						if(mapSafe)
+						{
+							ilGenerator.Emit(OpCodes.Pop);
+						}
+						bc.dh.SetType(0, exceptionTypeWrapper);
+						bc.dh.Store(0);
+					}
+					ilGenerator.Emit(OpCodes.Leave, bc.Stub);
+				}
+				else
+				{
+					if(exceptionTypeWrapper.IsUnloadable)
+					{
+						Profiler.Count("EmitDynamicGetTypeAsExceptionType");
+						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+						ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
+						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetTypeAsExceptionType"));
+						mapExceptionMethod.EmitCall(ilGenerator);
+					}
+					else
+					{
+						ilGenerator.Emit(OpCodes.Ldtoken, excType);
+						ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
+						mapExceptionMethod.EmitCall(ilGenerator);
+						ilGenerator.Emit(OpCodes.Castclass, excType);
+					}
+					if(unusedException)
+					{
+						// we must still have an item on the stack, even though it isn't used!
+						bc.dh.SetType(0, VerifierTypeWrapper.Null);
+					}
+					else
+					{
+						bc.dh.SetType(0, exceptionTypeWrapper);
+						ilGenerator.Emit(OpCodes.Dup);
+						bc.dh.Store(0);
+					}
+					Label rethrow = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Brfalse, rethrow);
+					ilGenerator.Emit(OpCodes.Leave, bc.Stub);
+					ilGenerator.MarkLabel(rethrow);
+					ilGenerator.Emit(OpCodes.Rethrow);
+				}
+				ilGenerator.EndExceptionBlock();
 				prevBlock.LeaveStubs(block);
 			}
 
@@ -2735,7 +2732,7 @@ class Compiler
 			}
 			for(int i = args.Length - 1; i >= 0; i--)
 			{
-				if(!args[i].IsUnloadable)
+				if(!args[i].IsUnloadable && !args[i].IsGhost)
 				{
 					TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
 					if(tw.IsUnloadable || (args[i].IsInterfaceOrInterfaceArray && !tw.IsAssignableTo(args[i])))

@@ -534,6 +534,10 @@ namespace IKVM.NativeCode.java
 			{
 				try
 				{
+					if(s.Trim() == "+Infinity")
+					{
+						return double.PositiveInfinity;
+					}
 					// TODO I doubt that this is correct
 					return double.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
 				}

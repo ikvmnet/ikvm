@@ -1581,6 +1581,10 @@ namespace IKVM.Runtime
 			}
 			catch(Exception x)
 			{
+				if(x.GetType() == ClassLoaderWrapper.LoadClassCritical("java.lang.reflect.InvocationTargetException").TypeAsExceptionType)
+				{
+					x = x.InnerException;
+				}
 				SetPendingException(pEnv, ExceptionHelper.MapExceptionFast(x));
 				return null;
 			}
@@ -2880,12 +2884,12 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				System.Threading.Monitor.Enter(pEnv->UnwrapRef(obj));
+				ByteCodeHelper.monitorenter(pEnv->UnwrapRef(obj));
 				return JNI_OK;
 			}
-			catch(System.Threading.ThreadInterruptedException)
+			catch(Exception x)
 			{
-				SetPendingException(pEnv, JavaException.InterruptedException());
+				SetPendingException(pEnv, x);
 				return JNI_ERR;
 			}
 		}
@@ -2897,9 +2901,9 @@ namespace IKVM.Runtime
 				System.Threading.Monitor.Exit(pEnv->UnwrapRef(obj));
 				return JNI_OK;
 			}
-			catch(System.Threading.SynchronizationLockException)
+			catch(Exception x)
 			{
-				SetPendingException(pEnv, JavaException.IllegalMonitorStateException());
+				SetPendingException(pEnv, x);
 				return JNI_ERR;
 			}
 		}

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -206,8 +206,9 @@ namespace ikvm.awt
 
 		protected override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
 		{
-			throw new NotImplementedException();
+			return new NetDialogPeer(target, (Form)CreateControl(typeof(Form)));
 		}
+
 		protected override java.awt.peer.MenuBarPeer createMenuBar(java.awt.MenuBar target)
 		{
 			throw new NotImplementedException();
@@ -291,16 +292,33 @@ namespace ikvm.awt
 
 		public override java.awt.Image getImage(URL url)
 		{
-			throw new NotImplementedException();
+			// TODO extremely lame...
+			System.IO.MemoryStream mem = new System.IO.MemoryStream();
+			java.io.InputStream inS = url.openStream();
+			int b;
+			while((b = inS.read()) >= 0)
+			{
+				mem.WriteByte((byte)b);
+			}
+			try
+			{
+				mem.Position = 0;
+				return new NetBufferedImage(new Bitmap(Image.FromStream(mem)));
+			}
+			catch
+			{
+				return new NoImage();
+			}
 		}
 
 		public override java.awt.Image createImage(string filename)
 		{
-			throw new NotImplementedException();
+			return getImage(filename);
 		}
+
 		public override java.awt.Image createImage(URL url)
 		{
-			throw new NotImplementedException();
+			return getImage(url);
 		}
 
 		public override bool prepareImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
@@ -329,7 +347,12 @@ namespace ikvm.awt
 
 		public override java.awt.Image createImage(java.awt.image.ImageProducer producer)
 		{
-			throw new NotImplementedException();
+			NetProducerImage img = new NetProducerImage(producer);
+			if(producer != null)
+			{
+				producer.startProduction(img);
+			}
+			return img;
 		}
 
 		public override java.awt.Image createImage(sbyte[] imagedata, int imageoffset, int imagelength)
@@ -661,6 +684,10 @@ namespace ikvm.awt
 			{
 				g.DrawImage(((NetBufferedImage)img).bitmap, x, y);
 			}
+			else if(img is NetProducerImage)
+			{
+				Console.WriteLine("TODO: Draw NetProducerImage");
+			}
 			else
 			{
 				throw new NotImplementedException();
@@ -892,6 +919,11 @@ namespace ikvm.awt
 
 		public override void setColor(java.awt.Color color)
 		{
+			if(color == null)
+			{
+				// TODO is this the correct default color?
+				color = java.awt.SystemColor.controlText;
+			}
 			this.jcolor = color;
 			this.color = Color.FromArgb(color.getRGB());
 		}
@@ -1557,7 +1589,7 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public VolatileImage createVolatileImage(int width, int height)
+		public java.awt.image.VolatileImage createVolatileImage(int width, int height)
 		{
 			throw new NotImplementedException();
 		}
@@ -1636,6 +1668,81 @@ namespace ikvm.awt
 				}
 			}
 			return new java.awt.image.MemoryImageSource(bitmap.Width, bitmap.Height, pix, 0, bitmap.Width);
+		}
+	}
+
+	class NetProducerImage : java.awt.Image, java.awt.image.ImageConsumer
+	{
+		private java.awt.image.ImageProducer source;
+
+		internal NetProducerImage(java.awt.image.ImageProducer source)
+		{
+			this.source = source;
+		}
+
+		public override void flush()
+		{
+
+		}
+
+		public override java.awt.Graphics getGraphics()
+		{
+			return null;
+		}
+
+		public override int getHeight(ImageObserver param)
+		{
+			return 0;
+		}
+
+		public override int getWidth(ImageObserver param)
+		{
+			return 0;
+		}
+
+		public override object getProperty(string param, ImageObserver obs)
+		{
+			return null;
+		}
+
+		public override ImageProducer getSource()
+		{
+			return null;
+		}
+
+		public void setHints(int hintflags)
+		{
+			Console.WriteLine("NetBufferedImage: setHints");
+		}
+
+		public void setPixels(int x, int y, int w, int h, ColorModel model, sbyte[] pixels, int off, int scansize)
+		{
+			Console.WriteLine("NetBufferedImage: setPixels1");
+		}
+
+		void java.awt.image.ImageConsumer.setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize)
+		{
+			Console.WriteLine("NetBufferedImage: setPixels2");
+		}
+
+		public void setDimensions(int width, int height)
+		{
+			Console.WriteLine("NetBufferedImage: setDimensions");
+		}
+
+		public void imageComplete(int status)
+		{
+			Console.WriteLine("NetBufferedImage: imageComplete");
+		}
+
+		public void setColorModel(ColorModel model)
+		{
+			Console.WriteLine("NetBufferedImage: setColorModel");
+		}
+
+		public void setProperties(Hashtable props)
+		{
+			Console.WriteLine("NetBufferedImage: setProperties");
 		}
 	}
 
@@ -1825,9 +1932,16 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+		
+		private void setCaretPositionImpl(int pos)
+		{
+			((TextBox)control).SelectionStart = pos;
+			((TextBox)control).SelectionLength = 0;
+		}
+
 		public void setCaretPosition(int pos)
 		{
-			throw new NotImplementedException();
+			control.Invoke(new SetInt(setCaretPositionImpl), new object[] { pos });
 		}
 		public long filterEvents(long filter)
 		{
@@ -2171,6 +2285,29 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 		public void setMaximizedBounds(java.awt.Rectangle r)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	class NetDialogPeer : NetWindowPeer, DialogPeer
+	{
+		internal NetDialogPeer(java.awt.Dialog target, Form form)
+			: base(target, form)
+		{
+		}
+
+		private void setTitleImpl(string title)
+		{
+			control.Text = title;
+		}
+
+		public void setTitle(string title)
+		{
+			control.Invoke(new SetString(setTitleImpl), new object[] { title });
+		}
+
+		public void setResizable(bool resizable)
 		{
 			throw new NotImplementedException();
 		}

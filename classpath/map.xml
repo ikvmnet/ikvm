@@ -614,21 +614,6 @@
 				<override name="CompareTo" />
 			</method>
 		</class>
-		<class name="gnu.classpath.RawData" shadows="System.IntPtr, mscorlib" scope="private">
-			<!-- TODO custom boxing isn't support for non-private remapped types, but since this is the only
-			     type that has a custom boxing rule, this isn't yet an issue -->
-			<box>
-				<!-- We special case boxing, to "box" IntPtr.Zero as null -->
-				<dup />
-				<brfalse name="null" />
-				<box type="System.IntPtr, mscorlib" />
-				<br name="end" />
-				<label name="null" />
-				<pop />
-				<ldnull />
-				<label name="end" />
-			</box>
-		</class>
 		<!-- This is where the "native" helper methods start -->
 		<class name="ikvm.lang.CIL">
 			<method name="unbox_byte" sig="(Ljava.lang.Object;)B">

@@ -158,6 +158,24 @@ namespace IKVM.Runtime
 			}
 			vmruntime.GetField("props", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, h);
 		}
+
+		public static void EnterMainThread()
+		{
+			if(Thread.CurrentThread.Name == null)
+			{
+				Thread.CurrentThread.Name = "main";
+			}
+		}
+
+		public static void ExitMainThread()
+		{
+			// FXBUG when the main thread ends, it doesn't actually die, it stays around to manage the lifetime
+			// of the CLR, but in doing so it also keeps alive the thread local storage for this thread and we
+			// use the TLS as a hack to track when the thread dies (if the object stored in the TLS is finalized,
+			// we know the thread is dead). So to make that work for the main thread, we explicitly clear the TLS
+			// slot that contains our hack object.
+			Thread.SetData(Thread.GetNamedDataSlot("ikvm-thread-hack"), null);
+		}
 	}
 }
 
@@ -357,51 +375,58 @@ namespace IKVM.Internal
 
 			internal void SetMain(MethodInfo m, PEFileKinds target, StringDictionary props, bool noglobbing, Type apartmentAttributeType)
 			{
-				if(noglobbing && props.Count == 0)
+				Type[] args = Type.EmptyTypes;
+				if(noglobbing)
 				{
-					if(apartmentAttributeType != null)
+					args = new Type[] { typeof(string[]) };
+				}
+				MethodBuilder mainStub = this.ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, typeof(void), args);
+				if(apartmentAttributeType != null)
+				{
+					mainStub.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
+				}
+				ILGenerator ilgen = mainStub.GetILGenerator();
+				if(props.Count > 0)
+				{
+					ilgen.Emit(OpCodes.Newobj, typeof(StringDictionary).GetConstructor(Type.EmptyTypes));
+					foreach(DictionaryEntry de in props)
 					{
-						((MethodBuilder)m).SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
+						ilgen.Emit(OpCodes.Dup);
+						ilgen.Emit(OpCodes.Ldstr, (string)de.Key);
+						ilgen.Emit(OpCodes.Ldstr, (string)de.Value);
+						ilgen.Emit(OpCodes.Callvirt, typeof(StringDictionary).GetMethod("Add"));
 					}
-					assemblyBuilder.SetEntryPoint(m, target);
+					ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("SetProperties"));
+				}
+				ilgen.BeginExceptionBlock();
+				ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("EnterMainThread"));
+				if(noglobbing)
+				{
+					ilgen.Emit(OpCodes.Ldarg_0);
 				}
 				else
 				{
-					Type[] args = Type.EmptyTypes;
-					if(noglobbing)
-					{
-						args = new Type[] { typeof(string[]) };
-					}
-					MethodBuilder mainStub = this.ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, typeof(void), args);
-					if(apartmentAttributeType != null)
-					{
-						mainStub.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
-					}
-					ILGenerator ilgen = mainStub.GetILGenerator();
-					if(props.Count > 0)
-					{
-						ilgen.Emit(OpCodes.Newobj, typeof(StringDictionary).GetConstructor(Type.EmptyTypes));
-						foreach(DictionaryEntry de in props)
-						{
-							ilgen.Emit(OpCodes.Dup);
-							ilgen.Emit(OpCodes.Ldstr, (string)de.Key);
-							ilgen.Emit(OpCodes.Ldstr, (string)de.Value);
-							ilgen.Emit(OpCodes.Callvirt, typeof(StringDictionary).GetMethod("Add"));
-						}
-						ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("SetProperties"));
-					}
-					if(noglobbing)
-					{
-						ilgen.Emit(OpCodes.Ldarg_0);
-					}
-					else
-					{
-						ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("Glob", Type.EmptyTypes));
-					}
-					ilgen.Emit(OpCodes.Call, m);
-					ilgen.Emit(OpCodes.Ret);
-					assemblyBuilder.SetEntryPoint(mainStub, target);
+					ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("Glob", Type.EmptyTypes));
 				}
+				ilgen.Emit(OpCodes.Call, m);
+				ilgen.BeginCatchBlock(typeof(Exception));
+				ClassLoaderWrapper.LoadClassCritical("java.lang.ExceptionHelper").GetMethodWrapper(new MethodDescriptor("MapExceptionFast", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;"), false).EmitCall(ilgen);
+				LocalBuilder exceptionLocal = ilgen.DeclareLocal(typeof(Exception));
+				ilgen.Emit(OpCodes.Stloc, exceptionLocal);
+				TypeWrapper threadTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Thread");
+				LocalBuilder threadLocal = ilgen.DeclareLocal(threadTypeWrapper.TypeAsLocalOrStackType);
+				threadTypeWrapper.GetMethodWrapper(new MethodDescriptor("currentThread", "()Ljava.lang.Thread;"), false).EmitCall(ilgen);
+				ilgen.Emit(OpCodes.Stloc, threadLocal);
+				ilgen.Emit(OpCodes.Ldloc, threadLocal);
+				threadTypeWrapper.GetMethodWrapper(new MethodDescriptor("getThreadGroup", "()Ljava.lang.ThreadGroup;"), false).EmitCallvirt(ilgen);
+				ilgen.Emit(OpCodes.Ldloc, threadLocal);
+				ilgen.Emit(OpCodes.Ldloc, exceptionLocal);
+				ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadGroup").GetMethodWrapper(new MethodDescriptor("uncaughtException", "(Ljava.lang.Thread;Ljava.lang.Throwable;)V"), false).EmitCall(ilgen);
+				ilgen.BeginFinallyBlock();
+				ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("ExitMainThread", Type.EmptyTypes));
+				ilgen.EndExceptionBlock();
+				ilgen.Emit(OpCodes.Ret);
+				assemblyBuilder.SetEntryPoint(mainStub, target);
 			}
 
 			internal void Save()

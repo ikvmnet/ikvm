@@ -1867,7 +1867,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			this.map = map;
 		}
 
-		// this method doesn't work on Mono yet, so we use a Type based approach instead
+		// MONOBUG this method doesn't work on Mono yet, so we use a Type based approach instead
 #if USE_TYPEHANDLE_EXCEPTION_MAPPING
 		internal override void Emit(ILGenerator ilgen)
 		{
@@ -3062,9 +3062,9 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				{
 					argTypes[0] = wrapper.TypeAsParameterType;
 				}
-				for(int i = instance; i < argTypes.Length - 1 + instance; i++)
+				for(int i = 0; i < args.Length; i++)
 				{
-					argTypes[i] = args[i].TypeAsParameterType;
+					argTypes[i + instance] = args[i].TypeAsParameterType;
 				}
 				argTypes[argTypes.Length - 1] = typeof(RuntimeMethodHandle);
 				MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, mw.ReturnType.TypeAsParameterType, argTypes);
@@ -3095,10 +3095,49 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			private static readonly MethodInfo unwrapLocalRef = localRefStructType.GetMethod("UnwrapLocalRef");
 			private static readonly MethodInfo getClassFromTypeHandle = typeof(ByteCodeHelper).GetMethod("GetClassFromTypeHandle");
 			private static readonly MethodInfo writeLine = typeof(Console).GetMethod("WriteLine", new Type[] { typeof(object) }, null);
+			private static readonly MethodInfo monitorEnter = typeof(ByteCodeHelper).GetMethod("monitorenter");
+			private static readonly MethodInfo monitorExit = typeof(System.Threading.Monitor).GetMethod("Exit", new Type[] { typeof(object) });
 
 			internal static void Generate(ILGenerator ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args, bool thruProxy)
 			{
-				FieldBuilder methodPtr = typeBuilder.DefineField("jniptr/" + m.Name + m.Signature, typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
+				LocalBuilder syncObject = null;
+				FieldInfo classObjectField;
+				if(thruProxy)
+				{
+					classObjectField = typeBuilder.DefineField("__<classObject>", typeof(object), FieldAttributes.Static | FieldAttributes.Private);
+				}
+				else
+				{
+					classObjectField = wrapper.ClassObjectField;
+				}
+				if(m.IsSynchronized)
+				{
+					if(m.IsStatic)
+					{
+						ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
+						Label label = ilGenerator.DefineLabel();
+						ilGenerator.Emit(OpCodes.Brtrue_S, label);
+						ilGenerator.Emit(OpCodes.Ldtoken, wrapper.TypeAsTBD);
+						ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandle);
+						ilGenerator.Emit(OpCodes.Stsfld, classObjectField);
+						ilGenerator.MarkLabel(label);
+						ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
+					}
+					else
+					{
+						ilGenerator.Emit(OpCodes.Ldarg_0);
+					}
+					ilGenerator.Emit(OpCodes.Dup);
+					syncObject = ilGenerator.DeclareLocal(typeof(object));
+					ilGenerator.Emit(OpCodes.Stloc, syncObject);
+					ilGenerator.Emit(OpCodes.Call, monitorEnter);
+					ilGenerator.BeginExceptionBlock();
+				}
+				FieldBuilder methodPtr = wrapper.TypeAsBuilder.DefineField("jniptr/" + m.Name + m.Signature, typeof(IntPtr), FieldAttributes.Static | (thruProxy ? FieldAttributes.Assembly : FieldAttributes.PrivateScope));
+				if(thruProxy)
+				{
+					AttributeHelper.HideFromJava(methodPtr);
+				}
 				LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
 				ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 				ilGenerator.Emit(OpCodes.Initobj, localRefStructType);
@@ -3158,16 +3197,6 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				{
 					ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 
-					FieldInfo classObjectField;
-					if(thruProxy)
-					{
-						classObjectField = typeBuilder.DefineField("__<classObject>", typeof(object), FieldAttributes.Static | FieldAttributes.Private);
-					}
-					else
-					{
-						classObjectField = wrapper.ClassObjectField;
-					}
-
 					ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
 					Label label = ilGenerator.DefineLabel();
 					ilGenerator.Emit(OpCodes.Brtrue_S, label);
@@ -3225,6 +3254,13 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
 				ilGenerator.Emit(OpCodes.Call, leaveLocalRefStruct);
 				ilGenerator.EndExceptionBlock();
+				if(m.IsSynchronized)
+				{
+					ilGenerator.BeginFinallyBlock();
+					ilGenerator.Emit(OpCodes.Ldloc, syncObject);
+					ilGenerator.Emit(OpCodes.Call, monitorExit);
+					ilGenerator.EndExceptionBlock();
+				}
 				if(retTypeWrapper != PrimitiveTypeWrapper.VOID)
 				{
 					ilGenerator.Emit(OpCodes.Ldloc, retValue);
