@@ -360,7 +360,7 @@ class MethodWrapper : MemberWrapper
 		// NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
 		// the method had any declared exceptions, the declaredExceptions field would have
 		// been set)
-		if(!(method is MethodBuilder))
+		if(method != null && !(method is MethodBuilder))
 		{
 			object[] attributes = method.GetCustomAttributes(typeof(ThrowsAttribute), false);
 			if(attributes.Length == 1)
