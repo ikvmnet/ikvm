@@ -236,63 +236,25 @@ namespace IKVM.Runtime
 					mb = new StackFrame(1).GetMethod();
 				}
 				ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
-				StringBuilder mangledSig = new StringBuilder();
 				int sp = 0;
 				for(int i = 1; sig[i] != ')'; i++)
 				{
 					switch(sig[i])
 					{
 						case '[':
-							mangledSig.Append("_3");
 							sp += IntPtr.Size;
-							while(sig[++i] == '[')
-							{
-								mangledSig.Append("_3");
-							}
-							mangledSig.Append(sig[i]);
+							while(sig[++i] == '[');
 							if(sig[i] == 'L')
 							{
-								while(sig[++i] != ';')
-								{
-									if(sig[i] == '/')
-									{
-										mangledSig.Append("_");
-									}
-									else if(sig[i] == '_')
-									{
-										mangledSig.Append("_1");
-									}
-									else
-									{
-										mangledSig.Append(sig[i]);
-									}
-								}
-								mangledSig.Append("_2");
+								while(sig[++i] != ';');
 							}
 							break;
 						case 'L':
 							sp += IntPtr.Size;
-							mangledSig.Append("L");
-							while(sig[++i] != ';')
-							{
-								if(sig[i] == '/')
-								{
-									mangledSig.Append("_");
-								}
-								else if(sig[i] == '_')
-								{
-									mangledSig.Append("_1");
-								}
-								else
-								{
-									mangledSig.Append(sig[i]);
-								}
-							}
-							mangledSig.Append("_2");
+							while(sig[++i] != ';');
 							break;
 						case 'J':
 						case 'D':
-							mangledSig.Append(sig[i]);
 							sp += 8;
 							break;
 						case 'F':
@@ -301,7 +263,6 @@ namespace IKVM.Runtime
 						case 'Z':
 						case 'S':
 						case 'B':
-							mangledSig.Append(sig[i]);
 							sp += 4;
 							break;
 						default:
@@ -309,10 +270,13 @@ namespace IKVM.Runtime
 							break;
 					}
 				}
+				string mangledClass = JniMangle(clazz);
+				string mangledName = JniMangle(name);
+				string mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
+				string shortMethodName = String.Format("Java_{0}_{1}", mangledClass, mangledName);
+				string longMethodName = String.Format("Java_{0}_{1}__{2}", mangledClass, mangledName, mangledSig);
 				lock(JniHelper.JniLock)
 				{
-					string shortMethodName = String.Format("Java_{0}_{1}", clazz.Replace("_", "_1").Replace('/', '_'), name.Replace("_", "_1"));
-					string longMethodName = String.Format("Java_{0}_{1}__{2}", clazz.Replace("_", "_1").Replace('/', '_'), name.Replace("_", "_1"), mangledSig);
 					foreach(IntPtr p in loader.GetNativeLibraries())
 					{
 						IntPtr pfunc = JniHelper.ikvm_GetProcAddress(p, shortMethodName, sp + 2 * IntPtr.Size);
@@ -328,6 +292,39 @@ namespace IKVM.Runtime
 					}
 				}
 				throw JavaException.UnsatisfiedLinkError("{0}.{1}{2}", clazz, name, sig);
+			}
+
+			private static string JniMangle(string name)
+			{
+				StringBuilder sb = new StringBuilder();
+				foreach(char c in name)
+				{
+					if(c == '/')
+					{
+						sb.Append('_');
+					}
+					else if(c == '_')
+					{
+						sb.Append("_1");
+					}
+					else if(c == ';')
+					{
+						sb.Append("_2");
+					}
+					else if(c == '[')
+					{
+						sb.Append("_3");
+					}
+					else if((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+					{
+						sb.Append(c);
+					}
+					else
+					{
+						sb.Append(String.Format("_0{0:x4}", (int)c));
+					}
+				}
+				return sb.ToString();
 			}
 
 			public IntPtr MakeLocalRef(object obj)

@@ -138,7 +138,7 @@ class IllegalAccessError : IncompatibleClassChangeError
 internal class ClassFormatError : LinkageError
 {
 	internal ClassFormatError(string msg, params object[] p)
-		: base(string.Format(msg, p))
+		: base(JavaException.Format(msg, p))
 	{
 	}
 
@@ -165,34 +165,43 @@ sealed class JavaException
 {
 	private JavaException() {}
 
+	internal static string Format(string s, object[] args)
+	{
+		if(args == null || args.Length == 0)
+		{
+			return s;
+		}
+		return String.Format(s, args);
+	}
+
 	internal static Exception IllegalAccessError(string s, params object[] args)
 	{
-		return JVM.Library.newIllegalAccessError(string.Format(s, args));
+		return JVM.Library.newIllegalAccessError(Format(s, args));
 	}
 
 	internal static Exception IllegalAccessException(string s, params object[] args)
 	{
-		return JVM.Library.newIllegalAccessException(string.Format(s, args));
+		return JVM.Library.newIllegalAccessException(Format(s, args));
 	}
 
 	internal static Exception IncompatibleClassChangeError(string s, params object[] args)
 	{
-		return JVM.Library.newIncompatibleClassChangeError(string.Format(s, args));
+		return JVM.Library.newIncompatibleClassChangeError(Format(s, args));
 	}
 
 	internal static Exception NoClassDefFoundError(string s, params object[] args)
 	{
-		return JVM.Library.newNoClassDefFoundError(string.Format(s, args));
+		return JVM.Library.newNoClassDefFoundError(Format(s, args));
 	}
 
 	internal static Exception UnsatisfiedLinkError(string s, params object[] args)
 	{
-		return JVM.Library.newUnsatisfiedLinkError(string.Format(s, args));
+		return JVM.Library.newUnsatisfiedLinkError(Format(s, args));
 	}
 
 	internal static Exception IllegalArgumentException(string s, params object[] args)
 	{
-		return JVM.Library.newIllegalArgumentException(string.Format(s, args));
+		return JVM.Library.newIllegalArgumentException(Format(s, args));
 	}
 
 	internal static Exception NegativeArraySizeException()
@@ -222,7 +231,7 @@ sealed class JavaException
 
 	internal static Exception UnknownHostException(string s, params object[] args)
 	{
-		return JVM.Library.newUnknownHostException(string.Format(s, args));
+		return JVM.Library.newUnknownHostException(Format(s, args));
 	}
 
 	internal static Exception ArrayIndexOutOfBoundsException()
@@ -232,7 +241,7 @@ sealed class JavaException
 
 	internal static Exception NumberFormatException(string s, params object[] args)
 	{
-		return JVM.Library.newNumberFormatException(string.Format(s, args));
+		return JVM.Library.newNumberFormatException(Format(s, args));
 	}
 
 	internal static Exception NullPointerException()
@@ -242,27 +251,27 @@ sealed class JavaException
 
 	internal static Exception ClassCastException(string s, params object[] args)
 	{
-		return JVM.Library.newClassCastException(string.Format(s, args));
+		return JVM.Library.newClassCastException(Format(s, args));
 	}
 
 	internal static Exception NoSuchFieldError(string s, params object[] args)
 	{
-		return JVM.Library.newNoSuchFieldError(string.Format(s, args));
+		return JVM.Library.newNoSuchFieldError(Format(s, args));
 	}
 
 	internal static Exception NoSuchMethodError(string s, params object[] args)
 	{
-		return JVM.Library.newNoSuchMethodError(string.Format(s, args));
+		return JVM.Library.newNoSuchMethodError(Format(s, args));
 	}
 
 	internal static Exception InstantiationError(string s, params object[] args)
 	{
-		return JVM.Library.newInstantiationError(string.Format(s, args));
+		return JVM.Library.newInstantiationError(Format(s, args));
 	}
 
 	internal static Exception InstantiationException(string s, params object[] args)
 	{
-		return JVM.Library.newInstantiationException(string.Format(s, args));
+		return JVM.Library.newInstantiationException(Format(s, args));
 	}
 
 	internal static Exception InterruptedException()

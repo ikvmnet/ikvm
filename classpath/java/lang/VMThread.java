@@ -119,20 +119,27 @@ final class VMThread
 
     static void jniDetach()
     {
-	VMThread vmthread = Thread.currentThread().vmThread;
-	synchronized(vmthread)
-	{
-	    vmthread.cleanup();
-            __tls_javaThread = null;
-            __tls_cleanup = null;
-            VMThread joinWaiter = vmthread.firstJoinWaiter;
-            while(joinWaiter != null)
-            {
-                VMThread next = joinWaiter.nextJoinWaiter;
-                joinWaiter.interrupt();
-                joinWaiter = next;
-            }
-	}
+        // If this thread never called Thread.currentThread(), we don't need
+        // to clean up, because the Java Thread object doesn't exist and nobody
+        // can possibly be waiting on us.
+        Thread javaThread = __tls_javaThread;
+        if(javaThread != null)
+        {
+	    VMThread vmthread = javaThread.vmThread;
+	    synchronized(vmthread)
+	    {
+	        vmthread.cleanup();
+                __tls_javaThread = null;
+                __tls_cleanup = null;
+                VMThread joinWaiter = vmthread.firstJoinWaiter;
+                while(joinWaiter != null)
+                {
+                    VMThread next = joinWaiter.nextJoinWaiter;
+                    joinWaiter.interrupt();
+                    joinWaiter = next;
+                }
+	    }
+        }
     }
 
     static void jniWaitUntilLastThread()
