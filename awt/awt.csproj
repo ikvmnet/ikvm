@@ -83,14 +83,19 @@
                     HintPath = "..\..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.0.3705\System.Drawing.dll"
                 />
                 <Reference
-                    Name = "IK.VM.NET"
-                    Project = "{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}"
-                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                    Name = "ik.vm.net"
+                    AssemblyName = "ik.vm.net"
+                    HintPath = "..\bin\ik.vm.net.dll"
                 />
                 <Reference
                     Name = "classpath"
                     AssemblyName = "classpath"
-                    HintPath = "..\classpath\classpath.dll"
+                    HintPath = "..\bin\classpath.dll"
+                />
+                <Reference
+                    Name = "OpenSystem.Java"
+                    AssemblyName = "OpenSystem.Java"
+                    HintPath = "..\bin\OpenSystem.Java.dll"
                 />
             </References>
         </Build>

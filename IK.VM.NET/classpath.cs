@@ -411,7 +411,20 @@ namespace NativeCode.java
 					classpath = ".";
 				}
 				m.Invoke(properties, new string[] { "java.class.path", classpath });
-				m.Invoke(properties, new string[] { "java.library.path", "." });
+				string libraryPath = ".";
+				if(Environment.OSVersion.ToString().IndexOf("Unix") >= 0)
+				{
+					string ldLibraryPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
+					if (ldLibraryPath != null)
+					{
+						libraryPath = ldLibraryPath;
+					}
+					else
+					{
+						libraryPath = "";
+					}
+				}
+				m.Invoke(properties, new string[] { "java.library.path", libraryPath });
 				m.Invoke(properties, new string[] { "java.io.tmpdir", Path.GetTempPath() });
 				m.Invoke(properties, new string[] { "java.compiler", "" });
 				m.Invoke(properties, new string[] { "java.ext.dirs", "" });

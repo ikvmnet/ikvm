@@ -112,7 +112,14 @@ public class JVM
 				}
 				else
 				{
-					provider = Assembly.Load("ik.vm.jni").GetType("JNI", true);
+					if(Environment.OSVersion.ToString().IndexOf("Unix") >= 0)
+					{
+						provider = Assembly.Load("Mono.IKVM.JNI").GetType("JNI", true);
+					}
+					else
+					{
+						provider = Assembly.Load("ik.vm.jni").GetType("JNI", true);
+					}
 				}
 				jniProvider = (IJniProvider)Activator.CreateInstance(provider);
 			}
