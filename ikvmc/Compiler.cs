@@ -344,6 +344,11 @@ class Compiler
 		if(assemblyname == null)
 		{
 			string basename = outputfile == null ? defaultAssemblyName : new FileInfo(outputfile).Name;
+			if(basename == null)
+			{
+				Console.Error.WriteLine("Error: no output file specified");
+				return 1;
+			}
 			int idx = basename.LastIndexOf('.');
 			if(idx > 0)
 			{

@@ -335,12 +335,36 @@ namespace IKVM.Runtime
 			return (long)d;
 		}
 
+		[DebuggerStepThroughAttribute]
+		public static void monitorenter(object obj)
+		{
+			bool interruptPending = false;
+			for(;;)
+			{
+				try
+				{
+					System.Threading.Monitor.Enter(obj);
+					if(interruptPending)
+					{
+						System.Threading.Thread.CurrentThread.Interrupt();
+					}
+					return;
+				}
+				catch(System.Threading.ThreadInterruptedException)
+				{
+					interruptPending = true;
+				}
+			}
+		}
+
 		// This is used by static JNI and synchronized methods that need a class object
+		[DebuggerStepThroughAttribute]
 		public static object GetClassFromTypeHandle(RuntimeTypeHandle typeHandle)
 		{
 			return IKVM.NativeCode.java.lang.VMClass.getClassFromType(Type.GetTypeFromHandle(typeHandle));
 		}
 
+		[DebuggerStepThroughAttribute]
 		public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
 		{
 			if(src != dest)
@@ -420,6 +444,7 @@ namespace IKVM.Runtime
 			}
 		}
 		
+		[DebuggerStepThroughAttribute]
 		public static void arraycopy_primitive_8(Array src, int srcStart, Array dest, int destStart, int len)
 		{
 			try 
@@ -444,6 +469,7 @@ namespace IKVM.Runtime
 			}
 		}
 
+		[DebuggerStepThroughAttribute]
 		public static void arraycopy_primitive_4(Array src, int srcStart, Array dest, int destStart, int len)
 		{
 			try 
@@ -468,6 +494,7 @@ namespace IKVM.Runtime
 			}
 		}
 
+		[DebuggerStepThroughAttribute]
 		public static void arraycopy_primitive_2(Array src, int srcStart, Array dest, int destStart, int len)
 		{
 			try 
@@ -492,6 +519,7 @@ namespace IKVM.Runtime
 			}
 		}
 
+		[DebuggerStepThroughAttribute]
 		public static void arraycopy_primitive_1(Array src, int srcStart, Array dest, int destStart, int len)
 		{
 			try 

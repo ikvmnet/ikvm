@@ -2003,6 +2003,15 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		}
 	}
 
+	// NOTE can only be used if the type hasn't been finished yet!
+	internal FieldInfo ClassObjectField
+	{
+		get
+		{
+			return ((JavaTypeImpl)impl).ClassObjectField;
+		}
+	}
+
 	private abstract class DynamicImpl
 	{
 		internal abstract FieldWrapper GetFieldImpl(string fieldName, TypeWrapper fieldType);
@@ -2033,6 +2042,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		private readonly TypeBuilder typeBuilderGhostInterface;
 		private Hashtable memberclashtable;
 		private Hashtable classCache = new Hashtable();
+		private FieldInfo classObjectField;
 
 		internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper)
 		{
@@ -2371,6 +2381,22 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						}
 						this.fields[i].EmitSet(ilGenerator);
 					}
+				}
+			}
+		}
+
+		internal FieldInfo ClassObjectField
+		{
+			get
+			{
+				lock(this)
+				{
+					if(classObjectField == null)
+					{
+						classObjectField = typeBuilder.DefineField("__<classObject>", CoreClasses.java.lang.Class.Wrapper.TypeAsFieldType, FieldAttributes.Private | FieldAttributes.Static);
+						AttributeHelper.HideFromJava((FieldBuilder)classObjectField);
+					}
+					return classObjectField;
 				}
 			}
 		}
@@ -3027,7 +3053,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				return n;
 			}
 
-			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args)
+			internal static void Generate(ILGenerator ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args)
 			{
 				TypeBuilder tb = mod.DefineType("class" + (count++), TypeAttributes.Public | TypeAttributes.Class);
 				int instance = m.IsStatic ? 0 : 1;
@@ -3070,7 +3096,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			private static readonly MethodInfo getClassFromTypeHandle = typeof(ByteCodeHelper).GetMethod("GetClassFromTypeHandle");
 			private static readonly MethodInfo writeLine = typeof(Console).GetMethod("WriteLine", new Type[] { typeof(object) }, null);
 
-			internal static void Generate(ILGenerator ilGenerator, TypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args, bool thruProxy)
+			internal static void Generate(ILGenerator ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args, bool thruProxy)
 			{
 				FieldBuilder methodPtr = typeBuilder.DefineField("jniptr/" + m.Name + m.Signature, typeof(IntPtr), FieldAttributes.Static | FieldAttributes.PrivateScope);
 				LocalBuilder localRefStruct = ilGenerator.DeclareLocal(localRefStructType);
@@ -3131,8 +3157,26 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				else
 				{
 					ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
+
+					FieldInfo classObjectField;
+					if(thruProxy)
+					{
+						classObjectField = typeBuilder.DefineField("__<classObject>", CoreClasses.java.lang.Class.Wrapper.TypeAsFieldType, FieldAttributes.Static | FieldAttributes.Private);
+					}
+					else
+					{
+						classObjectField = wrapper.ClassObjectField;
+					}
+
+					ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
+					Label label = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Brtrue_S, label);
 					ilGenerator.Emit(OpCodes.Ldtoken, wrapper.TypeAsTBD);
 					ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandle);
+					ilGenerator.Emit(OpCodes.Stsfld, classObjectField);
+					ilGenerator.MarkLabel(label);
+					ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
+
 					ilGenerator.Emit(OpCodes.Call, makeLocalRef);
 				}
 				for(int j = 0; j < args.Length; j++)
@@ -3759,13 +3803,6 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						}
 					}
 					method = mb;
-					// since Java constructors aren't allowed to be synchronized, we only check this here
-					if(m.IsSynchronized && !m.IsStatic)
-					{
-						// NOTE for static methods we cannot get by with setting the MethodImplAttributes.Synchronized flag,
-						// we actually need to emit code to lock the Class object!
-						mb.SetImplementationFlags(method.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
-					}
 				}
 				string[] exceptions = m.ExceptionsAttribute;
 				methods[index].SetDeclaredExceptions(exceptions);

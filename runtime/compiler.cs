@@ -74,7 +74,7 @@ class Compiler
 		getTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle");
 		getClassFromTypeHandleMethod = typeof(ByteCodeHelper).GetMethod("GetClassFromTypeHandle");
 		multiANewArrayMethod = typeof(ByteCodeHelper).GetMethod("multianewarray");
-		monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter");
+		monitorEnterMethod = typeof(ByteCodeHelper).GetMethod("monitorenter");
 		monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit");
 		objectToStringMethod = typeof(object).GetMethod("ToString");
 		f2iMethod = typeof(ByteCodeHelper).GetMethod("f2i");
@@ -669,7 +669,7 @@ class Compiler
 		}
 	}
 
-	internal static void Compile(TypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator)
+	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator)
 	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
@@ -741,12 +741,24 @@ class Compiler
 		Profiler.Enter("Compile");
 		try
 		{
-			if(m.IsStatic && m.IsSynchronized)
+			if(m.IsSynchronized)
 			{
 				ArrayList exits = new ArrayList();
-				// TODO consider caching the Class object in a static field
-				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-				ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandleMethod);
+				if(m.IsStatic)
+				{
+					ilGenerator.Emit(OpCodes.Ldsfld, clazz.ClassObjectField);
+					Label label = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Brtrue_S, label);
+					ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+					ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandleMethod);
+					ilGenerator.Emit(OpCodes.Stsfld, clazz.ClassObjectField);
+					ilGenerator.MarkLabel(label);
+					ilGenerator.Emit(OpCodes.Ldsfld, clazz.ClassObjectField);
+				}
+				else
+				{
+					ilGenerator.Emit(OpCodes.Ldarg_0);
+				}
 				ilGenerator.Emit(OpCodes.Dup);
 				LocalBuilder monitor = ilGenerator.DeclareLocal(typeof(object));
 				ilGenerator.Emit(OpCodes.Stloc, monitor);
