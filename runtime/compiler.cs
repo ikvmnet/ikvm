@@ -1348,10 +1348,10 @@ class Compiler
 						CodeEmitter emitNewobj;
 						CodeEmitter emitCall;
 						CodeEmitter emitCallvirt;
-						GetMethodCallEmitter(cpi, null, NormalizedByteCode.__invokestatic, out emitNewobj, out emitCall, out emitCallvirt);
+						MethodWrapper method = GetMethodCallEmitter(cpi, null, NormalizedByteCode.__invokestatic, out emitNewobj, out emitCall, out emitCallvirt);
 						// if the stack values don't match the argument types (for interface argument types)
 						// we must emit code to cast the stack value to the interface type
-						CastInterfaceArgs(cpi.GetArgTypes(classLoader), i, false, false);
+						CastInterfaceArgs(method, cpi.GetArgTypes(classLoader), i, false, false);
 						emitCall.Emit(ilGenerator);
 						break;
 					}
@@ -1364,12 +1364,18 @@ class Compiler
 						TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
 						TypeWrapper thisType = SigTypeToClassName(type, cpi.GetClassType(classLoader));
 
+						CodeEmitter emitNewobj = null;
+						CodeEmitter emitCall = null;
+						CodeEmitter emitCallvirt = null;
+						CodeEmitter emit = null;
+						MethodWrapper method = GetMethodCallEmitter(cpi, thisType, instr.NormalizedOpCode, out emitNewobj, out emitCall, out emitCallvirt);
+
 						// if the stack values don't match the argument types (for interface argument types)
 						// we must emit code to cast the stack value to the interface type
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>" && VerifierTypeWrapper.IsNew(type))
 						{
 							TypeWrapper[] args = cpi.GetArgTypes(classLoader);
-							CastInterfaceArgs(args, i, false, false);
+							CastInterfaceArgs(method, args, i, false, false);
 						}
 						else
 						{
@@ -1385,14 +1391,9 @@ class Compiler
 							{
 								args[0] = thisType;
 							}
-							CastInterfaceArgs(args, i, true, instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && type != VerifierTypeWrapper.UninitializedThis);
+							CastInterfaceArgs(method, args, i, true, instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && type != VerifierTypeWrapper.UninitializedThis);
 						}
 
-						CodeEmitter emitNewobj = null;
-						CodeEmitter emitCall = null;
-						CodeEmitter emitCallvirt = null;
-						CodeEmitter emit = null;
-						GetMethodCallEmitter(cpi, thisType, instr.NormalizedOpCode, out emitNewobj, out emitCall, out emitCallvirt);
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
 						{
 							emit = emitCall;
@@ -2626,7 +2627,7 @@ class Compiler
 	}
 
 	// NOTE despite its name this also handles value type args
-	private void CastInterfaceArgs(TypeWrapper[] args, int instructionIndex, bool instanceMethod, bool checkThisForNull)
+	private void CastInterfaceArgs(MethodWrapper method, TypeWrapper[] args, int instructionIndex, bool instanceMethod, bool checkThisForNull)
 	{
 		bool needsCast = checkThisForNull;
 
@@ -2703,15 +2704,24 @@ class Compiler
 			{
 				if(!args[i].IsUnloadable && args[i].IsGhost)
 				{
-					LocalBuilder local = ilGenerator.DeclareLocal(args[i].TypeAsParameterType);
-					ilGenerator.Emit(OpCodes.Ldloca, local);
-					dh.Load(i);
-					ilGenerator.Emit(OpCodes.Stfld, args[i].GhostRefField);
-					ilGenerator.Emit(OpCodes.Ldloca, local);
-					// NOTE when the this argument is a value type, we need the address on the stack instead of the value
-					if(i != 0 || !instanceMethod)
+					if(i == 0 && instanceMethod && !method.DeclaringType.IsInterface)
 					{
-						ilGenerator.Emit(OpCodes.Ldobj, args[i].TypeAsParameterType);
+						// we're calling a java.lang.Object method through a ghost interface reference,
+						// no ghost handling is needed
+						dh.Load(i);
+					}
+					else
+					{
+						LocalBuilder local = ilGenerator.DeclareLocal(args[i].TypeAsParameterType);
+						ilGenerator.Emit(OpCodes.Ldloca, local);
+						dh.Load(i);
+						ilGenerator.Emit(OpCodes.Stfld, args[i].GhostRefField);
+						ilGenerator.Emit(OpCodes.Ldloca, local);
+						// NOTE when the this argument is a value type, we need the address on the stack instead of the value
+						if(i != 0 || !instanceMethod)
+						{
+							ilGenerator.Emit(OpCodes.Ldobj, args[i].TypeAsParameterType);
+						}
 					}
 				}
 				else
@@ -2938,7 +2948,7 @@ class Compiler
 		}
 	}
 
-	private void GetMethodCallEmitter(ClassFile.ConstantPoolItemFMI cpi, TypeWrapper thisType, NormalizedByteCode invoke, out CodeEmitter emitNewobj, out CodeEmitter emitCall, out CodeEmitter emitCallvirt)
+	private MethodWrapper GetMethodCallEmitter(ClassFile.ConstantPoolItemFMI cpi, TypeWrapper thisType, NormalizedByteCode invoke, out CodeEmitter emitNewobj, out CodeEmitter emitCall, out CodeEmitter emitCallvirt)
 	{
 		TypeWrapper wrapper = cpi.GetClassType(classLoader);
 		if(wrapper.IsUnloadable || (thisType != null && thisType.IsUnloadable))
@@ -2955,7 +2965,7 @@ class Compiler
 				emitCall = CodeEmitter.InternalError;
 			}
 			emitCallvirt = new DynamicInvokeEmitter(classLoader, clazz, cpi, cpi.GetRetType(classLoader), typeof(ByteCodeHelper).GetMethod("DynamicInvokevirtual"));
-			return;
+			return null;
 		}
 		else
 		{
@@ -3009,7 +3019,7 @@ class Compiler
 							emitNewobj = method.EmitNewobj;
 							emitCall = method.EmitCall;
 							emitCallvirt = method.EmitCallvirt;
-							return;
+							return method;
 						}
 						else
 						{
@@ -3024,7 +3034,7 @@ class Compiler
 									emitNewobj = method.EmitNewobj;
 									emitCall = method.EmitCall;
 									emitCallvirt = method.EmitCallvirt;
-									return;
+									return method;
 								}
 							}
 							throw new IllegalAccessError("Try to access method " + method.DeclaringType.Name + "." + cpi.Name + cpi.Signature + " from class " + clazz.Name);
