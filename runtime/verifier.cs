@@ -1012,7 +1012,7 @@ class VerifierTypeWrapper : TypeWrapper
 	}
 
 	private VerifierTypeWrapper(string name, int index, TypeWrapper underlyingType)
-		: base(TypeWrapper.VerifierTypeModifiersHack, name, null, null)
+		: base(TypeWrapper.VerifierTypeModifiersHack, name, null, null, null)
 	{
 		this.index = index;
 		this.underlyingType = underlyingType;

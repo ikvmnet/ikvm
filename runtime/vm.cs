@@ -188,9 +188,9 @@ namespace IKVM.Runtime
 			Type t = o.GetType();
 			if(t.IsPrimitive || (ClassLoaderWrapper.IsRemappedType(t) && !t.IsSealed))
 			{
-				return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(DotNetTypeWrapper.GetWrapperFromDotNetType(t));
+				return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
 			}
-			return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetWrapperFromType(t));
+			return ClassLoaderWrapper.GetWrapperFromType(t).ClassObject;
 		}
 
 		public static object GetClassFromTypeHandle(RuntimeTypeHandle handle)
@@ -198,9 +198,9 @@ namespace IKVM.Runtime
 			Type t = Type.GetTypeFromHandle(handle);
 			if(t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t))
 			{
-				return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(DotNetTypeWrapper.GetWrapperFromDotNetType(t));
+				return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
 			}
-			return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(ClassLoaderWrapper.GetWrapperFromType(t));
+			return ClassLoaderWrapper.GetWrapperFromType(t).ClassObject;
 		}
 
 		private static FieldWrapper GetFieldWrapperFromField(object field)
@@ -297,8 +297,19 @@ namespace IKVM.Internal
 			{
 				if(lib == null)
 				{
-					Type type = ClassLoaderWrapper.LoadClassCritical("java.lang.LibraryVMInterfaceImpl").TypeAsTBD;
-					lib = (ikvm.@internal.LibraryVMInterface)Activator.CreateInstance(type, true);
+					foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+					{
+						Type type = asm.GetType("java.lang.LibraryVMInterfaceImpl");
+						if(type != null)
+						{
+							lib = (ikvm.@internal.LibraryVMInterface)Activator.CreateInstance(type, true);
+							break;
+						}
+					}
+					if(lib == null && !IsStaticCompiler)
+					{
+						JVM.CriticalFailure("Unable to find java.lang.LibraryVMInterfaceImpl", null);
+					}
 				}
 				return lib;
 			}
@@ -487,7 +498,7 @@ namespace IKVM.Internal
 								return null;
 							}
 						}
-						type = DefineClass(f);
+						type = DefineClass(f, null);
 					}
 				}
 				return type;
@@ -659,7 +670,7 @@ namespace IKVM.Internal
 				}
 
 				internal RemapperTypeWrapper(CompilerClassLoader classLoader, IKVM.Internal.MapXml.Class c, IKVM.Internal.MapXml.Root map)
-					: base((Modifiers)c.Modifiers, c.Name, GetBaseWrapper(c), classLoader)
+					: base((Modifiers)c.Modifiers, c.Name, GetBaseWrapper(c), classLoader, null)
 				{
 					classDef = c;
 					bool baseIsSealed = false;

@@ -200,7 +200,7 @@ namespace IKVM.Runtime
 		public static object DynamicClassLiteral(RuntimeTypeHandle type, string clazz)
 		{
 			Profiler.Count("DynamicClassLiteral");
-			return IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(LoadTypeWrapper(type, clazz));
+			return LoadTypeWrapper(type, clazz).ClassObject;
 		}
 
 		[DebuggerStepThroughAttribute]

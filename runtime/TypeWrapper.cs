@@ -491,12 +491,13 @@ abstract class TypeWrapper
 	private readonly Hashtable methods = new Hashtable();
 	private readonly Hashtable fields = new Hashtable();
 	private readonly TypeWrapper baseWrapper;
+	private readonly object classObject;
 	private bool hasIncompleteInterfaceImplementation;
 	internal static readonly TypeWrapper[] EmptyArray = new TypeWrapper[0];
 	internal const Modifiers UnloadableModifiersHack = Modifiers.Final | Modifiers.Interface | Modifiers.Private;
 	internal const Modifiers VerifierTypeModifiersHack = Modifiers.Final | Modifiers.Interface;
 
-	internal TypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper, ClassLoaderWrapper classLoader)
+	internal TypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper, ClassLoaderWrapper classLoader, object protectionDomain)
 	{
 		Profiler.Count("TypeWrapper");
 		// class name should be dotted or null for primitives
@@ -506,6 +507,23 @@ abstract class TypeWrapper
 		this.name = name;
 		this.baseWrapper = baseWrapper;
 		this.classLoader = classLoader;
+		if(JVM.IsStaticCompiler)
+		{
+			this.classObject = null;
+		}
+		else
+		{
+			this.classObject = JVM.Library.newClass(this, protectionDomain);
+		}
+	}
+
+	internal object ClassObject
+	{
+		get
+		{
+			Debug.Assert(!IsUnloadable);
+			return classObject;
+		}
 	}
 
 	public override string ToString()
@@ -1505,7 +1523,7 @@ abstract class TypeWrapper
 class UnloadableTypeWrapper : TypeWrapper
 {
 	internal UnloadableTypeWrapper(string name)
-		: base(TypeWrapper.UnloadableModifiersHack, name, null, null)
+		: base(TypeWrapper.UnloadableModifiersHack, name, null, null, null)
 	{
 	}
 
@@ -1608,7 +1626,7 @@ class PrimitiveTypeWrapper : TypeWrapper
 	private readonly string sigName;
 
 	private PrimitiveTypeWrapper(Type type, string sigName)
-		: base(Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null, null, null)
+		: base(Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null, null, null, null)
 	{
 		this.type = type;
 		this.sigName = sigName;
@@ -1702,8 +1720,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		return tw;
 	}
 
-	internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader)
-		: base(f.Modifiers, f.Name, f.IsInterface ? null : LoadTypeWrapper(classLoader, f.SuperClass), classLoader)
+	internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader, object protectionDomain)
+		: base(f.Modifiers, f.Name, f.IsInterface ? null : LoadTypeWrapper(classLoader, f.SuperClass), classLoader, protectionDomain)
 	{
 		Profiler.Count("DynamicTypeWrapper");
 		if(BaseTypeWrapper != null)
@@ -4261,7 +4279,7 @@ abstract class LazyTypeWrapper : TypeWrapper
 	private bool membersPublished;
 
 	protected LazyTypeWrapper(Modifiers modifiers, string name, TypeWrapper baseTypeWrapper, ClassLoaderWrapper classLoader)
-		: base(modifiers, name, baseTypeWrapper, classLoader)
+		: base(modifiers, name, baseTypeWrapper, classLoader, null)
 	{
 	}
 
@@ -5960,8 +5978,9 @@ sealed class ArrayTypeWrapper : TypeWrapper
 	private static MethodInfo clone;
 	private Type type;
 
+	// TODO what's the protection domain of an array type?
 	internal ArrayTypeWrapper(Type type, Modifiers modifiers, string name, ClassLoaderWrapper classLoader)
-		: base(modifiers, name, CoreClasses.java.lang.Object.Wrapper, classLoader)
+		: base(modifiers, name, CoreClasses.java.lang.Object.Wrapper, classLoader, null)
 	{
 		this.type = type;
 		if(clone == null)

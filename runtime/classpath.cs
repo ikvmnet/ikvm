@@ -111,7 +111,7 @@ namespace IKVM.NativeCode.java
 					{
 						retType = wrapper.DeclaringType.GetClassLoader().FieldTypeWrapperFromSig(retType.SigName);
 					}
-					return VMClass.getClassFromWrapper(retType);
+					return retType.ClassObject;
 				}
 
 				public static object[] GetParameterTypes(object methodCookie)
@@ -127,7 +127,7 @@ namespace IKVM.NativeCode.java
 						{
 							paramType = wrapper.DeclaringType.GetClassLoader().FieldTypeWrapperFromSig(paramType.SigName);
 						}
-						parameterClasses[i] = VMClass.getClassFromWrapper(paramType);
+						parameterClasses[i] = paramType.ClassObject;
 					}
 					return parameterClasses;
 				}
@@ -213,7 +213,7 @@ namespace IKVM.NativeCode.java
 					{
 						fieldType = wrapper.DeclaringType.GetClassLoader().FieldTypeWrapperFromSig(fieldType.SigName);
 					}
-					return VMClass.getClassFromWrapper(fieldType);
+					return fieldType.ClassObject;
 				}
 
 				public static bool isSamePackage(object a, object b)
@@ -582,7 +582,7 @@ namespace IKVM.NativeCode.java
 					TypeWrapper type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
 					if(type != null)
 					{
-						return VMClass.getClassFromWrapper(type);
+						return type.ClassObject;
 					}
 					return null;
 				}
@@ -602,23 +602,23 @@ namespace IKVM.NativeCode.java
 				switch(type)
 				{
 					case 'Z':
-						return VMClass.getClassFromWrapper(PrimitiveTypeWrapper.BOOLEAN);
+						return PrimitiveTypeWrapper.BOOLEAN.ClassObject;
 					case 'B':
-						return VMClass.getClassFromWrapper(PrimitiveTypeWrapper.BYTE);
+						return PrimitiveTypeWrapper.BYTE.ClassObject;
 					case 'C':
-						return VMClass.getClassFromWrapper(PrimitiveTypeWrapper.CHAR);
+						return PrimitiveTypeWrapper.CHAR.ClassObject;
 					case 'D':
-						return VMClass.getClassFromWrapper(PrimitiveTypeWrapper.DOUBLE);
+						return PrimitiveTypeWrapper.DOUBLE.ClassObject;
 					case 'F':
-						return VMClass.getClassFromWrapper(PrimitiveTypeWrapper.FLOAT);
+						return PrimitiveTypeWrapper.FLOAT.ClassObject;
 					case 'I':
-						return VMClass.getClassFromWrapper(PrimitiveTypeWrapper.INT);
+						return PrimitiveTypeWrapper.INT.ClassObject;
 					case 'J':
-						return VMClass.getClassFromWrapper(PrimitiveTypeWrapper.LONG);
+						return PrimitiveTypeWrapper.LONG.ClassObject;
 					case 'S':
-						return VMClass.getClassFromWrapper(PrimitiveTypeWrapper.SHORT);
+						return PrimitiveTypeWrapper.SHORT.ClassObject;
 					case 'V':
-						return VMClass.getClassFromWrapper(PrimitiveTypeWrapper.VOID);
+						return PrimitiveTypeWrapper.VOID.ClassObject;
 					default:
 						throw new InvalidOperationException();
 				}
@@ -636,22 +636,8 @@ namespace IKVM.NativeCode.java
 						{
 							throw new NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
 						}
-						lock(VMClass.LockObject)
-						{
-							TypeWrapper type = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader).DefineClass(classFile);
-							try
-							{
-								return VMClass.CreateClassInstance(type, protectionDomain);
-							}
-							catch(Exception x)
-							{
-								// this is a critical failure, because otherwise we would open the window to a situation
-								// where a Type exists without a Class and then if getClass() was called on an instance
-								// of that type, a new Class would be created without the proper protectionDomain
-								JVM.CriticalFailure("Unable to create Class", x);
-								throw;
-							}
-						}
+						TypeWrapper type = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader).DefineClass(classFile, protectionDomain);
+						return type.ClassObject;
 					}
 					catch(RetargetableJavaException x)
 					{
@@ -667,27 +653,9 @@ namespace IKVM.NativeCode.java
 
 		public class VMClass
 		{
-			private static Hashtable map = new Hashtable();
-
-			internal static object LockObject
-			{
-				get
-				{
-					return map.SyncRoot;
-				}
-			}
-
 			public static void throwException(Exception e)
 			{
 				throw e;
-			}
-
-			// NOTE when you call this method, you must own the VMClass.LockObject monitor
-			internal static object CreateClassInstance(TypeWrapper wrapper, object protectionDomain)
-			{
-				object clazz = JVM.Library.newClass(wrapper, protectionDomain);
-				map.Add(wrapper, clazz);
-				return clazz;
 			}
 
 			public static bool IsAssignableFrom(object w1, object w2)
@@ -710,7 +678,7 @@ namespace IKVM.NativeCode.java
 				TypeWrapper baseWrapper = ((TypeWrapper)wrapper).BaseTypeWrapper;
 				if(baseWrapper != null)
 				{
-					return getClassFromWrapper(baseWrapper);
+					return baseWrapper.ClassObject;
 				}
 				return null;
 			}
@@ -720,7 +688,7 @@ namespace IKVM.NativeCode.java
 				TypeWrapper typeWrapper = (TypeWrapper)wrapper;
 				if(typeWrapper.IsArray)
 				{
-					return getClassFromWrapper(typeWrapper.ElementTypeWrapper);
+					return typeWrapper.ElementTypeWrapper.ClassObject;
 				}
 				return null;
 			}
@@ -731,7 +699,7 @@ namespace IKVM.NativeCode.java
 				{
 					ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader);
 					TypeWrapper type = classLoaderWrapper.LoadClassByDottedName(name);
-					return VMClass.getClassFromWrapper(type);
+					return type.ClassObject;
 				}
 				catch(RetargetableJavaException x)
 				{
@@ -744,20 +712,6 @@ namespace IKVM.NativeCode.java
 				return (TypeWrapper)JVM.Library.getWrapperFromClass(clazz);
 			}
 
-			internal static object getClassFromWrapper(TypeWrapper wrapper)
-			{
-				NetSystem.Diagnostics.Debug.Assert(!wrapper.IsUnloadable);
-				lock(VMClass.LockObject)
-				{
-					object clazz = map[wrapper];
-					if(clazz == null)
-					{
-						clazz = CreateClassInstance(wrapper, null);
-					}
-					return clazz;
-				}
-			}
-
 			internal static object getClassFromType(Type type)
 			{
 				TypeWrapper.AssertFinished(type);
@@ -765,7 +719,7 @@ namespace IKVM.NativeCode.java
 				{
 					return null;
 				}
-				return getClassFromWrapper(ClassLoaderWrapper.GetWrapperFromType(type));
+				return ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
 			}
 
 			public static string GetName(object wrapper)
@@ -985,7 +939,7 @@ namespace IKVM.NativeCode.java
 						{
 							throw JavaException.NoClassDefFoundError(wrappers[i].Name);
 						}
-						innerclasses[i] = getClassFromWrapper(wrappers[i]);
+						innerclasses[i] = wrappers[i].ClassObject;
 					}
 					return innerclasses;
 				}
@@ -1011,7 +965,7 @@ namespace IKVM.NativeCode.java
 					{
 						throw JavaException.NoClassDefFoundError(declaring.Name);
 					}
-					return getClassFromWrapper(declaring);
+					return declaring.ClassObject;
 				}
 				catch(RetargetableJavaException x)
 				{
@@ -1028,7 +982,7 @@ namespace IKVM.NativeCode.java
 					object[] interfaces = new object[interfaceWrappers.Length];
 					for(int i = 0; i < interfaces.Length; i++)
 					{
-						interfaces[i] = getClassFromWrapper(interfaceWrappers[i]);
+						interfaces[i] = interfaceWrappers[i].ClassObject;
 					}
 					return interfaces;
 				}

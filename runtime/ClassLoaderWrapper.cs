@@ -83,29 +83,25 @@ class ClassLoaderWrapper
 	{
 		Debug.Assert(coreAssembly == null);
 
-		// HACK we need to find the "core" library, to figure out the remapped types
-		// TODO this approach fails if the core library was compiled as a module (ikvmc always generates an assembly
-		// and the assembly attributes end up on the assemblies main module that is deleted when ikvmc finishes)
-		foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+		// if we're compiling the core, impl will be null
+		object impl = JVM.Library;
+
+		if(impl != null)
 		{
-			object[] remapped = asm.GetCustomAttributes(typeof(RemappedClassAttribute), false);
+			coreAssembly = impl.GetType().Assembly;
+
+			object[] remapped = coreAssembly.GetCustomAttributes(typeof(RemappedClassAttribute), false);
 			if(remapped.Length > 0)
 			{
-				coreAssembly = asm;
 				foreach(RemappedClassAttribute r in remapped)
 				{
 					Tracer.Info(Tracer.Runtime, "Remapping type {0} to {1}", r.RemappedType, r.Name);
 					remappedTypes.Add(r.RemappedType, r.Name);
 				}
-				break;
 			}
-		}
-		if(coreAssembly == null)
-		{
-			Tracer.Info(Tracer.Compiler, "Unable to find core library");
-			if(!JVM.IsStaticCompiler)
+			else
 			{
-				JVM.CriticalFailure("Unable to find core library", null);
+				JVM.CriticalFailure("Failed to find core classes in core library", null);
 			}
 		}
 	}
@@ -548,7 +544,7 @@ class ClassLoaderWrapper
 		}
 	}
 
-	internal TypeWrapper DefineClass(ClassFile f)
+	internal TypeWrapper DefineClass(ClassFile f, object protectionDomain)
 	{
 		string dotnetAssembly = f.IKVMAssemblyAttribute;
 		if(dotnetAssembly != null)
@@ -568,7 +564,7 @@ class ClassLoaderWrapper
 			types.Add(f.Name, null);
 			try
 			{
-				TypeWrapper type = new DynamicTypeWrapper(f, this);
+				TypeWrapper type = new DynamicTypeWrapper(f, this, protectionDomain);
 				Debug.Assert(!dynamicTypes.ContainsKey(type.TypeAsTBD.FullName));
 				dynamicTypes.Add(type.TypeAsTBD.FullName, type);
 				Debug.Assert(types[f.Name] == null);

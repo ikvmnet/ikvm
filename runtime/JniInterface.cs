@@ -1243,7 +1243,12 @@ namespace IKVM.Runtime
 				wrapper.Finish();
 				// spec doesn't say it, but Sun runs the static initializer
 				wrapper.RunClassInit();
-				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper));
+				return pEnv->MakeLocalRef(wrapper.ClassObject);
+			}
+			catch(RetargetableJavaException x)
+			{
+				SetPendingException(pEnv, x.ToJava());
+				return IntPtr.Zero;
 			}
 			catch(Exception x)
 			{
@@ -1265,7 +1270,7 @@ namespace IKVM.Runtime
 		internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method)
 		{
 			MethodWrapper mw = MethodWrapper.FromCookie(method);
-			object clazz = IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(mw.DeclaringType);
+			object clazz = mw.DeclaringType.ClassObject;
 			if(mw.Name == "<init>")
 			{
 				return pEnv->MakeLocalRef(JVM.Library.newConstructor(clazz, mw));
@@ -1279,7 +1284,7 @@ namespace IKVM.Runtime
 		internal static jclass GetSuperclass(JNIEnv* pEnv, jclass sub)
 		{
 			TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(sub)).BaseTypeWrapper;
-			return pEnv->MakeLocalRef(wrapper == null ? null : IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(wrapper));
+			return pEnv->MakeLocalRef(wrapper == null ? null : wrapper.ClassObject);
 		}
 
 		internal static jboolean IsAssignableFrom(JNIEnv* pEnv, jclass sub, jclass super)
@@ -1292,7 +1297,7 @@ namespace IKVM.Runtime
 		internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field)
 		{
 			FieldWrapper fw = FieldWrapper.FromCookie(field);
-			object clazz = IKVM.NativeCode.java.lang.VMClass.getClassFromWrapper(fw.DeclaringType);
+			object clazz = fw.DeclaringType.ClassObject;
 			return pEnv->MakeLocalRef(JVM.Library.newField(clazz, fw));
 		}
 
@@ -1322,6 +1327,11 @@ namespace IKVM.Runtime
 					wrapper.Finish();
 					exception = (Exception)mw.Invoke(null, new object[] { new String((sbyte*)msg) }, false);
 					rc = JNI_OK;
+				}
+				catch(RetargetableJavaException x)
+				{
+					exception = x.ToJava();
+					rc = JNI_ERR;
 				}
 				catch(Exception x)
 				{
@@ -1492,6 +1502,11 @@ namespace IKVM.Runtime
 				wrapper.Finish();
 				return pEnv->MakeLocalRef(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType));
 			}
+			catch(RetargetableJavaException x)
+			{
+				SetPendingException(pEnv, x.ToJava());
+				return IntPtr.Zero;
+			}
 			catch(Exception x)
 			{
 				SetPendingException(pEnv, x);
@@ -1609,6 +1624,10 @@ namespace IKVM.Runtime
 					}
 				}
 				SetPendingException(pEnv, JavaException.NoSuchMethodError("{0}{1}", md.Name, md.Signature));
+			}
+			catch(RetargetableJavaException x)
+			{
+				SetPendingException(pEnv, x.ToJava());
 			}
 			catch(Exception x)
 			{
@@ -1818,6 +1837,10 @@ namespace IKVM.Runtime
 					}
 				}
 				SetPendingException(pEnv, JavaException.NoSuchFieldError(StringFromUTF8(name)));
+			}
+			catch(RetargetableJavaException x)
+			{
+				SetPendingException(pEnv, x.ToJava());
 			}
 			catch(Exception x)
 			{
@@ -2836,6 +2859,11 @@ namespace IKVM.Runtime
 				}
 				return JNI_OK;
 			}
+			catch(RetargetableJavaException x)
+			{
+				SetPendingException(pEnv, x.ToJava());
+				return JNI_ERR;
+			}
 			catch(Exception x)
 			{
 				SetPendingException(pEnv, x);
@@ -2858,6 +2886,11 @@ namespace IKVM.Runtime
 					}
 				}
 				return JNI_OK;
+			}
+			catch(RetargetableJavaException x)
+			{
+				SetPendingException(pEnv, x.ToJava());
+				return JNI_ERR;
 			}
 			catch(Exception x)
 			{
