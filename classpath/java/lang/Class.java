@@ -306,11 +306,12 @@ public final class Class implements Serializable
 	 */
 	public boolean isAssignableFrom(Class c)
 	{
-		// TODO this needs to be implemented by the "native" code, because
+		// this needs to be implemented by the "native" code, because
 		// remapped types can appear to implement interfaces that they don't
 		// actually implement
-		return getType().IsAssignableFrom(c.getType());
+		return IsAssignableFrom(getWrapper(), c.getWrapper());
 	}
+	private static native boolean IsAssignableFrom(Object w1, Object w2);
 
 	/**
 	 * Check whether this class is an interface or not.  Array types are not
@@ -472,8 +473,11 @@ public final class Class implements Serializable
 	 */
 	public Class getComponentType()
 	{
-		return getClassFromType(getType().GetElementType());
+		// .NET array types can have unfinished element types, but we don't
+		// want to expose those, so we may need to finish the type
+		return (Class)getComponentClassFromWrapper(getWrapper());
 	}
+	private static native Object getComponentClassFromWrapper(Object wrapper);
 
 	/**
 	 * Get the modifiers of this class.  These can be decoded using Modifier,
