@@ -1026,7 +1026,7 @@ abstract class TypeWrapper
 			{
 				return false;
 			}
-			return String.CompareOrdinal(name, skip1, wrapper.name, skip2, index1) == 0;
+			return String.CompareOrdinal(name, skip1, wrapper.name, skip2, index1 - skip1) == 0;
 		}
 		return false;
 	}

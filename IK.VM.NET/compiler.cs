@@ -1118,6 +1118,12 @@ class Compiler
 				prevBlock.LeaveStubs(block);
 			}
 
+			if(!ma.IsReachable(i))
+			{
+				// skip any unreachable instructions
+				continue;
+			}
+
 			// if there was a forward branch to this instruction, it is forward reachable
 			instructionIsForwardReachable |= block.HasLabel(i);
 
@@ -1127,7 +1133,7 @@ class Compiler
 
 			// if the instruction is only backward reachable, ECMA says it must have an empty stack,
 			// so we move the stack to locals
-			if(!instructionIsForwardReachable && ma.IsReachable(i))
+			if(!instructionIsForwardReachable)
 			{
 				int stackHeight = ma.GetStackHeight(i);
 				if(stackHeight != 0)
@@ -1150,6 +1156,8 @@ class Compiler
 
 			// if we're entering an exception block, we need to setup the exception block and
 			// transfer the stack into it
+			// Note that an exception block that *starts* at an unreachable instruction,
+			// is completely unreachable, because it is impossible to branch into an exception block.
 			for(; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].start_pc == instr.PC; exceptionIndex++)
 			{
 				int stackHeight = ma.GetStackHeight(i);
@@ -1192,12 +1200,6 @@ class Compiler
 						}
 					}
 				}
-			}
-
-			if(!ma.IsReachable(i))
-			{
-				// skip any unreachable instructions
-				continue;
 			}
 
 			try

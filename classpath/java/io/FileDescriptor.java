@@ -345,6 +345,8 @@ public final class FileDescriptor
 	{
 	    if(false) throw new cli.System.IO.IOException();
 	    stream.Write(ByteArrayHack.cast(buf), offset, len);
+	    // NOTE FileStream buffers the output, so we have to flush explicitly
+	    stream.Flush();
 	}
 	catch(cli.System.IO.IOException x)
 	{

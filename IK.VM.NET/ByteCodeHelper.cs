@@ -59,6 +59,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static object DynamicMultianewarray(RuntimeTypeHandle type, string clazz, int[] lengths)
 	{
+		Profiler.Count("DynamicMultianewarray");
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 		return multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
 	}
@@ -67,6 +68,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static object DynamicNewarray(int length, RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicNewarray");
 		if(length < 0)
 		{
 			throw JavaException.NegativeArraySizeException();
@@ -79,6 +81,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static void DynamicAastore(object arrayref, int index, object val, RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicAastore");
 		// TODO do we need to load the type here?
 		((Array)arrayref).SetValue(val, index);
 	}
@@ -87,6 +90,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static object DynamicAaload(object arrayref, int index, RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicAaload");
 		// TODO do we need to load the type here?
 		return ((Array)arrayref).GetValue(index);
 	}
@@ -120,6 +124,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static object DynamicGetfield(object obj, string name, string sig, RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicGetfield");
 		return GetFieldWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false).GetValue(obj);
 	}
 
@@ -127,6 +132,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static object DynamicGetstatic(string name, string sig, RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicGetstatic");
 		return GetFieldWrapper(null, type, clazz, name, sig, true).GetValue(null);
 	}
 
@@ -134,6 +140,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static void DynamicPutfield(object obj, object val, string name, string sig, RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicPutfield");
 		GetFieldWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false).SetValue(obj, val);
 	}
 
@@ -141,6 +148,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static void DynamicPutstatic(object val, string name, string sig, RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicPutstatic");
 		GetFieldWrapper(null, type, clazz, name, sig, true).SetValue(null, val);
 	}
 
@@ -149,6 +157,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static void DynamicNewCheckOnly(RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicNewCheckOnly");
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 		if(wrapper.IsAbstract || wrapper.IsInterface)
 		{
@@ -178,6 +187,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static object DynamicClassLiteral(RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicClassLiteral");
 		return NativeCode.java.lang.VMClass.getClassFromWrapper(LoadTypeWrapper(type, clazz));
 	}
 
@@ -185,6 +195,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static object DynamicCast(object obj, RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicCast");
 		if(!DynamicInstanceOf(obj, type, clazz))
 		{
 			throw JavaException.ClassCastException(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()).Name);
@@ -196,6 +207,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static bool DynamicInstanceOf(object obj, RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicInstanceOf");
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 		TypeWrapper other = ClassLoaderWrapper.GetWrapperFromType(obj.GetType());
 		return other.IsAssignableTo(wrapper);
@@ -205,6 +217,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static object DynamicInvokeSpecialNew(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 	{
+		Profiler.Count("DynamicInvokeSpecialNew");
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 		// TODO who checks that the arg types are loadable?
 		// TODO check accessibility
@@ -221,6 +234,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static object DynamicInvokestatic(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 	{
+		Profiler.Count("DynamicInvokestatic");
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 		// TODO who checks that the arg types are loadable?
 		// TODO check accessibility
@@ -237,6 +251,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static object DynamicInvokevirtual(object obj, RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 	{
+		Profiler.Count("DynamicInvokevirtual");
 		TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 		// TODO who checks that the arg types are loadable?
 		// TODO check accessibility
@@ -253,6 +268,7 @@ public class ByteCodeHelper
 	[DebuggerStepThroughAttribute]
 	public static Type DynamicGetTypeAsExceptionType(RuntimeTypeHandle type, string clazz)
 	{
+		Profiler.Count("DynamicGetTypeAsExceptionType");
 		TypeWrapper tw = LoadTypeWrapper(type, clazz);
 		tw.Finish();
 		return tw.TypeAsExceptionType;

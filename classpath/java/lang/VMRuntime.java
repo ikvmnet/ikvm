@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003 Jeroen Frijters
+  Copyright (C) 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -230,7 +230,7 @@ final class VMRuntime
      * @return the newly created process
      * @throws NullPointerException if cmd or env have null elements
      */
-    static Process exec(String[] cmd, String[] env, File dir)
+    static Process exec(String[] cmd, String[] env, File dir) throws java.io.IOException
     {
 	StringBuilder sb = new StringBuilder();
 	for(int i = 1; i < cmd.length; i++)
@@ -268,8 +268,20 @@ final class VMRuntime
 		si.get_EnvironmentVariables().set_Item(env[i].substring(0, pos), env[i].substring(pos + 1));
 	    }
 	}
-	// TODO map the exceptions
-	return new DotNetProcess(cli.System.Diagnostics.Process.Start(si));
+	try
+	{
+	    if(false) throw new cli.System.ComponentModel.Win32Exception();
+	    if(false) throw new cli.System.InvalidOperationException();
+	    return new DotNetProcess(cli.System.Diagnostics.Process.Start(si));
+	}
+	catch(cli.System.ComponentModel.Win32Exception x1)
+	{
+	    throw new java.io.IOException(x1.getMessage());
+	}
+	catch(cli.System.InvalidOperationException x2)
+	{
+	    throw new java.io.IOException(x2.getMessage());
+	}
     }
 
     private static class DotNetProcess extends Process
@@ -439,17 +451,17 @@ final class VMRuntime
 	    home = cli.System.Environment.GetEnvironmentVariable("HOME");
 	    if(home == null)
 	    {
-		// TODO may be there is a better way
+		// TODO maybe there is a better way
 		// NOTE on MS .NET this doesn't return the correct path
 		// (it returns "C:\\Documents and Settings\\username\\My Documents", but we really need
-		// "C:\\Documents and Settings\\username" to be compatible with Sun)
+		// "C:\\Documents and Settings\\username" to be compatible with Sun, that's why we use %USERPROFILE% if it exists)
 		home = cli.System.Environment.GetFolderPath(cli.System.Environment.SpecialFolder.wrap(cli.System.Environment.SpecialFolder.Personal));
 	    }
 	}
 	p.setProperty("user.home", home);
 	p.setProperty("user.dir", cli.System.Environment.get_CurrentDirectory());
 	p.setProperty("awt.toolkit", "ikvm.awt.NetToolkit, awt, Version=1.0, Culture=neutral, PublicKeyToken=null");
-	// HACK since we cannot use URL here, we manually encode the assembly name
+	// HACK since we cannot use URL here (it depends on the properties being set), we manually encode the spaces in the assembly name
         p.setProperty("gnu.classpath.home.url", "ikvmres://" + cli.System.String.Replace(cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName(), " ", "%20") + "/lib");
     }
 

@@ -23,6 +23,8 @@ java/net/SocketInputStream.java
 java/net/SocketOutputStream.java
 sun/misc/Ref.java
 ../../classpath/gnu/classpath/RawData.java
+../../classpath/gnu/classpath/ServiceFactory.java
+../../classpath/gnu/classpath/ServiceProviderLoadingAction.java
 ../../classpath/gnu/java/awt/BitMaskExtent.java
 ../../classpath/gnu/java/awt/BitwiseXORComposite.java
 ../../classpath/gnu/java/awt/Buffers.java
@@ -277,6 +279,7 @@ sun/misc/Ref.java
 ../../classpath/gnu/java/rmi/server/ProtocolConstants.java
 ../../classpath/gnu/java/rmi/server/RMIDefaultSocketFactory.java
 ../../classpath/gnu/java/rmi/server/RMIHashes.java
+../../classpath/gnu/java/rmi/server/RMIIncomingThread.java
 ../../classpath/gnu/java/rmi/server/RMIObjectInputStream.java
 ../../classpath/gnu/java/rmi/server/RMIObjectOutputStream.java
 ../../classpath/gnu/java/rmi/server/RMIVoidValue.java
@@ -1414,6 +1417,8 @@ sun/misc/Ref.java
 ../../classpath/javax/accessibility/AccessibleTableModelChange.java
 ../../classpath/javax/accessibility/AccessibleText.java
 ../../classpath/javax/accessibility/AccessibleValue.java
+../../classpath/javax/imageio/spi/RegisterableService.java
+../../classpath/javax/imageio/spi/ServiceRegistry.java
 ../../classpath/javax/naming/AuthenticationException.java
 ../../classpath/javax/naming/AuthenticationNotSupportedException.java
 ../../classpath/javax/naming/BinaryRefAddr.java

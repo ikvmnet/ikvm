@@ -158,6 +158,18 @@ public class Starter
 		}
 	}
 
+	private class WaitShutdownHook : java.lang.Thread
+	{
+		public override void run()
+		{
+			Console.Error.WriteLine("IKVM runtime terminated. Waiting for Ctrl+C...");
+			for(;;)
+			{
+				System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite);
+			}
+		}
+	}
+
 	[StackTraceInfo(Hidden = true, EatFrames = 1)]
 	[STAThread]	// NOTE this is here because otherwise SWT's RegisterDragDrop (a COM thing) doesn't work
 	static int Main(string[] args)
@@ -166,6 +178,7 @@ public class Starter
 		System.Threading.Thread.CurrentThread.Name = "main";
 		bool jar = false;
 		bool saveAssembly = false;
+		bool waitOnExit = false;
 		string mainClass = null;
 		string[] vmargs = null;
 		for(int i = 0; i < args.Length; i++)
@@ -184,6 +197,10 @@ public class Starter
 				else if(args[i] == "-Xtime")
 				{
 					new Timer();
+				}
+				else if(args[i] == "-Xwait")
+				{
+					waitOnExit = true;
 				}
 				else if(args[i] == "-jar")
 				{
@@ -255,6 +272,7 @@ public class Starter
 			Console.Error.WriteLine("                      set search path for bootstrap classes and resources");
 			Console.Error.WriteLine("    -Xtrace:<string>  Displays all tracepoints with the given name");
 			Console.Error.WriteLine("    -Xmethodtrace:<string>  Builds method trace into the specified output methods");
+			Console.Error.WriteLine("    -Xwait            Keep process hanging around after exit");
 			return 1;
 		}
 		try
@@ -324,6 +342,10 @@ public class Starter
 				if(saveAssembly)
 				{
 					java.lang.Runtime.getRuntime().addShutdownHook(new SaveAssemblyShutdownHook(clazz));
+				}
+				if(waitOnExit)
+				{
+					java.lang.Runtime.getRuntime().addShutdownHook(new WaitShutdownHook());
 				}
 				try
 				{
