@@ -1241,8 +1241,8 @@ public class JVM
 			}
 			if(h.ContainsKey(name))
 			{
-				Console.Error.WriteLine("Error: duplicate class name: {0}", name);
-				return;
+				Console.Error.WriteLine("Warning: duplicate class name: {0}", name);
+				excluded = true;
 			}
 			if(!excluded)
 			{

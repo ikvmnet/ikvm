@@ -1516,7 +1516,10 @@ class MethodAnalyzer
 										if(instr.NormalizedOpCode != NormalizedByteCode.__invokeinterface)
 										{
 											TypeWrapper refType = s.PopObjectType();
-											if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && !refType.IsAssignableTo(cpi.GetClassType(classLoader)))
+											TypeWrapper targetType = cpi.GetClassType(classLoader);
+											if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && 
+												!targetType.IsUnloadable &&
+												!refType.IsAssignableTo(targetType))
 											{
 												throw new VerifyError("Incompatible object argument for function call");
 											}
