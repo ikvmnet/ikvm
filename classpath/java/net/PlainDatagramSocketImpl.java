@@ -41,6 +41,7 @@ package java.net;
 import java.io.IOException;
 import system.net.*;
 import system.net.sockets.*;
+import ikvm.lang.CIL;
 
 /**
 * This is the default socket implementation for datagram sockets.
@@ -67,10 +68,23 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 * Instance Variables
 	 */
 
+	private static class MyUdpClient extends UdpClient
+	{
+		MyUdpClient(system.net.IPEndPoint ep)
+		{
+			super(ep);
+		}
+
+		system.net.sockets.Socket getSocket()
+		{
+			return super.get_Client();
+		}
+	}
+
 	/**
 	 * This is the actual underlying socket
 	 */
-	private UdpClient socket;
+	private MyUdpClient socket;
 
 	/*************************************************************************/
 
@@ -123,7 +137,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	protected void bind(int port, InetAddress addr) throws SocketException
 	{
 		// TODO error handling
-		socket = new UdpClient(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(addr), port));
+		socket = new MyUdpClient(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(addr), port));
 	}
 
 	/*************************************************************************/
@@ -178,8 +192,16 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	protected void join(InetAddress addr) throws IOException
 	{
-		System.out.println("PlainDatagramSocketImpl.join not implemented");
-		throw new IOException("join not implemented");
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			socket.JoinMulticastGroup(new system.net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr)));
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	/*************************************************************************/
@@ -193,8 +215,16 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	protected void leave(InetAddress addr) throws IOException
 	{
-		System.out.println("PlainDatagramSocketImpl.leave not implemented");
-		throw new IOException("leave not implemented");
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			socket.DropMulticastGroup(new system.net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr)));
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	/*************************************************************************/
@@ -227,7 +257,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	protected void setTTL(byte ttl) throws IOException
 	{
-		setOption(IP_TTL, new Integer(ttl));
+		setOption(IP_TTL, new Integer(ttl & 0xFF));
 	}
 
 	/*************************************************************************/
@@ -276,8 +306,21 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	public Object getOption(int option_id) throws SocketException
 	{
-		// TODO
-		return null;
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			switch(option_id)
+			{
+				case IP_TTL:
+					return new Integer(CIL.unbox_int(socket.getSocket().GetSocketOption(SocketOptionLevel.IP, SocketOptionName.IpTimeToLive)));
+				default:
+					throw new Error("getOption(" + option_id + ") not implemented");
+			}
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			throw new SocketException(x.get_Message());
+		}
 	}
 
 	/*************************************************************************/
@@ -292,7 +335,22 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
 	 */
 	public void setOption(int option_id, Object val) throws SocketException
 	{
-		// TODO
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			switch(option_id)
+			{
+				case IP_TTL:
+					socket.getSocket().SetSocketOption(SocketOptionLevel.IP, SocketOptionName.IpTimeToLive, ((Integer)val).intValue());
+					break;
+				default:
+					throw new Error("getOption(" + option_id + ") not implemented");
+			}
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			throw new SocketException(x.get_Message());
+		}
 	}
 
 	public int peekData(DatagramPacket packet)

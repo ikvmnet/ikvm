@@ -1835,7 +1835,7 @@ namespace NativeCode.java
 					sbyte[][] list = new sbyte[addresses.Length][];
 					for(int i = 0; i < addresses.Length; i++)
 					{
-						list[i] = AddressToByteArray((int)addresses[i].Address);
+						list[i] = AddressToByteArray(addresses[i]);
 					}
 					return list;
 				}
@@ -1847,13 +1847,39 @@ namespace NativeCode.java
 
 			public static string getHostByAddr(byte[] address)
 			{
-				return NetSystem.Net.Dns.GetHostByAddress(string.Format("{0}.{1}.{2}.{3}", address[0], address[1], address[2], address[3])).HostName;
+				string s = NetSystem.Net.Dns.GetHostByAddress(string.Format("{0}.{1}.{2}.{3}", address[0], address[1], address[2], address[3])).HostName;
+				try
+				{
+					NetSystem.Net.Dns.GetHostByName(s);
+				}
+				catch(NetSystem.Net.Sockets.SocketException)
+				{
+					// BUG .NET framework bug
+					// HACK if GetHostByAddress returns a netbios name, it appends the default DNS suffix, but if the
+					// machine's netbios name isn't the same as the DNS hostname, this might result in an unresolvable
+					// name, if that happens we chop of the DNS suffix.
+					int idx = s.IndexOf('.');
+					if(idx > 0)
+					{
+						return s.Substring(0, idx);
+					}
+				}
+				return s;
 			}
 
-			private static sbyte[] AddressToByteArray(int address)
+			public static sbyte[] AddressToByteArray(NetSystem.Net.IPAddress ipaddress)
 			{
 				// TODO check for correctness
+				int address = (int)ipaddress.Address;
 				return new sbyte[] { (sbyte)address, (sbyte)(address >> 8), (sbyte)(address >> 16), (sbyte)(address >> 24) };
+			}
+		}
+
+		public class PlainSocketImpl
+		{
+			public static sbyte[] getLocalAddress(NetSystem.Net.Sockets.Socket socket)
+			{
+				return InetAddress.AddressToByteArray(((System.Net.IPEndPoint)socket.LocalEndPoint).Address);
 			}
 		}
 
@@ -1891,6 +1917,18 @@ namespace NativeCode.gnu.java.net.protocol.ikvmres
 		public static void InitArray(sbyte[] buf, FieldInfo field)
 		{
 			NetSystem.Runtime.CompilerServices.RuntimeHelpers.InitializeArray(buf, field.FieldHandle);
+		}
+	}
+}
+
+namespace NativeCode.ikvm.lang
+{
+	// TODO instead of having these methods here, they should be defined as inlined CIL in map.xml
+	public class CIL
+	{
+		public static int unbox_int(object o)
+		{
+			return (int)o;
 		}
 	}
 }

@@ -43,6 +43,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 import system.net.*;
 import system.net.sockets.*;
+import ikvm.lang.CIL;
 
 /**
   * Unless the application installs its own SocketImplFactory, this is the
@@ -77,15 +78,23 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	protected void accept(SocketImpl impl) throws IOException
 	{
-		// TODO catch .NET exceptions
-		system.net.sockets.Socket accept = socket.Accept();
-		((PlainSocketImpl)impl).socket = accept;
-		IPEndPoint remoteEndPoint = ((IPEndPoint)accept.get_RemoteEndPoint());
-		long remoteIP = remoteEndPoint.get_Address().get_Address();
-		String remote = (remoteIP & 0xff) + "." + ((remoteIP >> 8) & 0xff) + "." + ((remoteIP >> 16) & 0xff) + "." + ((remoteIP >> 24) & 0xff);
-		impl.address = InetAddress.getByName(remote);
-		impl.port = remoteEndPoint.get_Port();
-		impl.localport = ((IPEndPoint)accept.get_LocalEndPoint()).get_Port();
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			system.net.sockets.Socket accept = socket.Accept();
+			((PlainSocketImpl)impl).socket = accept;
+			IPEndPoint remoteEndPoint = ((IPEndPoint)accept.get_RemoteEndPoint());
+			long remoteIP = remoteEndPoint.get_Address().get_Address();
+			String remote = (remoteIP & 0xff) + "." + ((remoteIP >> 8) & 0xff) + "." + ((remoteIP >> 16) & 0xff) + "." + ((remoteIP >> 24) & 0xff);
+			impl.address = InetAddress.getByName(remote);
+			impl.port = remoteEndPoint.get_Port();
+			impl.localport = ((IPEndPoint)accept.get_LocalEndPoint()).get_Port();
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	/**
@@ -98,8 +107,16 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	protected int available() throws IOException
 	{
-		// TODO catch .NET exceptions
-		return socket.get_Available();
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			return socket.get_Available();
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	/**
@@ -113,8 +130,17 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	protected void bind(InetAddress addr, int port) throws IOException
 	{
-		// TODO catch .NET exceptions
-		socket.Bind(new IPEndPoint(getAddressFromInetAddress(addr), port));
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			socket.Bind(new IPEndPoint(getAddressFromInetAddress(addr), port));
+			this.address = addr;
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	static long getAddressFromInetAddress(InetAddress addr)
@@ -134,8 +160,16 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	protected void close() throws IOException
 	{
-		// TODO catch .NET exceptions
-		socket.Close();
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			socket.Close();
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	/**
@@ -148,8 +182,19 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	protected void connect(InetAddress addr, int port) throws IOException
 	{
-		// TODO error handling
-		socket.Connect(new IPEndPoint(getAddressFromInetAddress(addr), port));
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			socket.Connect(new IPEndPoint(getAddressFromInetAddress(addr), port));
+			this.address = addr;
+			this.port = port;
+			this.localport = ((IPEndPoint)socket.get_LocalEndPoint()).get_Port();
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	/**
@@ -162,9 +207,7 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	protected void connect(String hostname, int port) throws IOException
 	{
-		// TODO error handling
-		InetAddress addr = InetAddress.getByName(hostname);
-		connect(addr, port);
+		connect(InetAddress.getByName(hostname), port);
 	}
 
 	/**
@@ -184,7 +227,16 @@ class PlainSocketImpl extends SocketImpl
 			System.out.println("NOTE: PlainSocketImpl.create(false) not implemented");
 			throw new IOException("PlainSocketImpl.create(false) not implemented");
 		}
-		socket = new system.net.sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			socket = new system.net.sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	/**
@@ -199,9 +251,17 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	protected void listen(int queuelen) throws IOException
 	{
-		// TODO error handling
-		socket.Listen(queuelen);
-		localport = ((IPEndPoint)socket.get_LocalEndPoint()).get_Port();
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			socket.Listen(queuelen);
+			localport = ((IPEndPoint)socket.get_LocalEndPoint()).get_Port();
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	/**
@@ -215,8 +275,16 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	protected int read(byte[] buf, int offset, int len) throws IOException
 	{
-		// TODO error handling
-		return socket.Receive(buf, offset, len, SocketFlags.None);
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			return socket.Receive(buf, offset, len, SocketFlags.None);
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	/**
@@ -228,8 +296,16 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	protected void write(byte[] buf, int offset, int len) throws IOException
 	{
-		// TODO error handling
-		socket.Send(buf, offset, len, SocketFlags.None);
+		try
+		{
+			if(false) throw new system.net.sockets.SocketException();
+			socket.Send(buf, offset, len, SocketFlags.None);
+		}
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new IOException(x.get_Message());
+		}
 	}
 
 	/**
@@ -245,14 +321,59 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	public void setOption(int option_id, Object val) throws SocketException
 	{
-		switch(option_id)
+		try
 		{
-			case 0x1006:
-				// TODO set the timeout
-				return;
+			if(false) throw new system.net.sockets.SocketException();
+			switch(option_id)
+			{
+				case SocketOptions.TCP_NODELAY:
+					socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, ((Boolean)val).booleanValue() ? 1 : 0);
+					break;
+				case SocketOptions.SO_KEEPALIVE:
+					socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, ((Boolean)val).booleanValue() ? 1 : 0);
+					break;
+				case SocketOptions.SO_TIMEOUT:
+					socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, ((Integer)val).intValue());
+					socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, ((Integer)val).intValue());
+					break;
+				case SocketOptions.SO_LINGER:
+				{
+					system.net.sockets.LingerOption linger;
+					if(val instanceof Boolean)
+					{
+						linger = new system.net.sockets.LingerOption(false, 0);
+					}
+					else
+					{
+						linger = new system.net.sockets.LingerOption(true, ((Integer)val).intValue());
+					}
+					socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Linger, linger);
+					break;
+				}
+				case SocketOptions.SO_OOBINLINE:
+					socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.OutOfBandInline, ((Boolean)val).booleanValue() ? 1 : 0);
+					break;
+				case SocketOptions.SO_SNDBUF:
+					socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer, ((Integer)val).intValue());
+					break;
+				case SocketOptions.SO_RCVBUF:
+					socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveBuffer, ((Integer)val).intValue());
+					break;
+				case SocketOptions.SO_REUSEADDR:
+					socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, ((Boolean)val).booleanValue() ? 1 : 0);
+					break;
+				case SocketOptions.IP_TOS:
+					socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, ((Integer)val).intValue());
+					break;
+				default:
+					throw new Error("Socket.setOption(" + option_id + ") not implemented");
+			}
 		}
-		// TODO
-		System.out.println("setOption: " + option_id);
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new SocketException(x.get_Message());
+		}
 	}
 
 	/**
@@ -268,16 +389,57 @@ class PlainSocketImpl extends SocketImpl
 	 */
 	public Object getOption(int option_id) throws SocketException
 	{
-		switch(option_id)
+		try
 		{
-			case 0x1006:
-				// TODO get the timeout from somewhere
-				return new Integer(0);
+			if(false) throw new system.net.sockets.SocketException();
+			switch(option_id)
+			{
+				case SocketOptions.SO_BINDADDR:
+					try
+					{
+						return InetAddress.getByAddress(getLocalAddress(socket));
+					}
+					catch(UnknownHostException x)
+					{
+						throw new SocketException(x.getMessage());
+					}
+				case SocketOptions.TCP_NODELAY:
+					return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay)) != 0);
+				case SocketOptions.SO_KEEPALIVE:
+					return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive)) != 0);
+				case SocketOptions.SO_TIMEOUT:
+					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout)));
+				case SocketOptions.SO_LINGER:
+				{
+					system.net.sockets.LingerOption linger = (system.net.sockets.LingerOption)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Linger);
+					if(linger.get_Enabled())
+					{
+						return new Integer(linger.get_LingerTime());
+					}
+					return Boolean.FALSE;
+				}
+				case SocketOptions.SO_OOBINLINE:
+					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.OutOfBandInline)));
+				case SocketOptions.SO_SNDBUF:
+					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer)));
+				case SocketOptions.SO_RCVBUF:
+					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveBuffer)));
+				case SocketOptions.SO_REUSEADDR:
+					return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress)) != 0);
+				case SocketOptions.IP_TOS:
+					return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService)));
+				default:
+					throw new Error("Socket.getOption(" + option_id + ") not implemented");
+			}
 		}
-		// TODO
-		System.out.println("getOption: " + option_id);
-		return null;
+		catch(system.net.sockets.SocketException x)
+		{
+			// TODO error handling
+			throw new SocketException(x.get_Message());
+		}
 	}
+
+	private static native byte[] getLocalAddress(system.net.sockets.Socket socket);
 
 	/**
 	 * Returns an InputStream object for reading from this socket.  This will

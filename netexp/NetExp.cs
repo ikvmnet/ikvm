@@ -464,6 +464,11 @@ public class NetExp
 		string sep = "";
 		for(int i = 0; i < parameters.Length; i++)
 		{
+			if(parameters[i].ParameterType.IsByRef)
+			{
+				// Java doesn't support byref parameters
+				return;
+			}
 			sb.Append(SigType(parameters[i].ParameterType));
 			nativesig.Append(sep).Append(parameters[i].ParameterType.AssemblyQualifiedName);
 			sep = "|";
