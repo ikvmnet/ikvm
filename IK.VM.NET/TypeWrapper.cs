@@ -1280,6 +1280,33 @@ class DynamicTypeWrapper : TypeWrapper
 					}
 				}
 				wrapper.BaseTypeWrapper.Finish();
+				// if we're not abstract make sure we don't inherit any abstract methods
+				if(!wrapper.IsAbstract)
+				{
+					TypeWrapper parent = wrapper.BaseTypeWrapper;
+					// if parent is not abstract, the .NET implementation will never have abstract methods (only
+					// stubs that throw AbstractMethodError)
+					while(parent.IsAbstract)
+					{
+						MethodWrapper[] methods = parent.GetMethods();
+						for(int i = 0; i < methods.Length; i++)
+						{
+							MethodInfo mi = methods[i].GetMethod() as MethodInfo;
+							MethodDescriptor md = methods[i].Descriptor;
+							if(mi != null && mi.IsAbstract && wrapper.GetMethodWrapper(md, true).IsAbstract)
+							{
+								MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Abstract|MethodAttributes.NewSlot), CallingConventions.Standard, md.RetType, md.ArgTypes);
+								ILGenerator ilGenerator = mb.GetILGenerator();
+								TypeWrapper exceptionType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassBySlashedName("java/lang/AbstractMethodError");
+								MethodWrapper method = exceptionType.GetMethodWrapper(new MethodDescriptor(ClassLoaderWrapper.GetBootstrapClassLoader(), "<init>", "(Ljava/lang/String;)V"), false);
+								ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name + "." + md.Name + md.Signature);
+								method.EmitNewobj.Emit(ilGenerator);
+								ilGenerator.Emit(OpCodes.Throw);
+							}
+						}
+						parent = parent.BaseTypeWrapper;
+					}
+				}
 				bool basehasclinit = wrapper.BaseTypeWrapper.Type.GetConstructor(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public, null, CallingConventions.Any, Type.EmptyTypes, null) != null;
 				bool hasclinit = false;
 				for(int i = 0; i < methods.Length; i++)
@@ -3157,6 +3184,16 @@ class CompiledTypeWrapper : TypeWrapper
 
 	protected override MethodWrapper GetMethodImpl(MethodDescriptor md)
 	{
+		// If the MethodDescriptor contains types that aren't compiled types, we can never have that method
+		// This check is important because Type.GetMethod throws an ArgumentException if one of the argument types
+		// is a TypeBuilder
+		for(int i = 0; i < md.ArgTypes.Length; i++)
+		{
+			if(md.ArgTypes[i] is TypeBuilder)
+			{
+				return null;
+			}
+		}
 		// TODO this is a crappy implementation, just to get going, but it needs to be revisited
 		if(md.Name == "<init>")
 		{
