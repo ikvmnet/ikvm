@@ -664,10 +664,7 @@ class ClassFile
 			TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(name);
 			if(wrapper == null)
 			{
-				if(JVM.LogClassLoadFailures)
-				{
-					Console.Error.WriteLine("Class not found: {0}", name);
-				}
+				Tracer.Error(Tracer.ClassLoading, "Class not found: {0}", name);
 				wrapper = new UnloadableTypeWrapper(name);
 			}
 			return wrapper;
@@ -675,7 +672,7 @@ class ClassFile
 		catch(Exception x)
 		{
 			// TODO it might not be a good idea to catch .NET system exceptions here
-			if(JVM.LogClassLoadFailures)
+			if(Tracer.ClassLoading.TraceError)
 			{
 				object cl = classLoader.GetJavaClassLoader();
 				if(cl != null)
@@ -693,9 +690,10 @@ class ClassFile
 						sep = " -> ";
 						cl = type.InvokeMember("getParent", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.Instance, null, cl, new object[0]);
 					}
-					Console.Error.WriteLine("ClassLoader chain: {0}", sb);
+					Tracer.Error(Tracer.ClassLoading, "ClassLoader chain: {0}", sb);
 				}
-				ExceptionHelper.printStackTrace(ExceptionHelper.MapExceptionFast(x));
+				x = ExceptionHelper.MapExceptionFast(x);
+				Tracer.Error(Tracer.ClassLoading, x.ToString() + Environment.NewLine + x.StackTrace);
 			}
 			return new UnloadableTypeWrapper(name);
 		}

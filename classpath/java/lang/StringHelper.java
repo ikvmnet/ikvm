@@ -43,12 +43,11 @@ import java.io.CharConversionException;
 import gnu.java.io.EncodingManager;
 import gnu.java.lang.CharData;
 
-public final class StringHelper
+final class StringHelper
 {
-    private static final java.util.Comparator CASE_INSENSITIVE_ORDER = constructCaseInsensitiveOrder();
     private StringHelper() {}
 
-    public static boolean equalsIgnoreCase(String s1, String s2)
+    static boolean equalsIgnoreCase(String s1, String s2)
     {
 	int len = s1.length();
 	if(s2 == null || len != s2.length())
@@ -68,7 +67,7 @@ public final class StringHelper
 	return true;
     }
 
-    public static int compareTo(String s1, String s2)
+    static int compareTo(String s1, String s2)
     {
 	int len = Math.min(s1.length(), s2.length());
 	for(int i = 0; i < len; i++)
@@ -82,7 +81,7 @@ public final class StringHelper
 	return s1.length() - s2.length();
     }
 
-    public static int compareToIgnoreCase(String s1, String s2)
+    static int compareToIgnoreCase(String s1, String s2)
     {
 	int len = Math.min(s1.length(), s2.length());
 	for(int i = 0; i < len; i++)
@@ -95,12 +94,12 @@ public final class StringHelper
 	return s1.length() - s2.length();
     }
 
-    public static String toLowerCase(String s)
+    static String toLowerCase(String s)
     {
 	return toLowerCase(s, Locale.getDefault());
     }
 
-    public static String toLowerCase(String s, Locale loc)
+    static String toLowerCase(String s, Locale loc)
     {
 	// First, see if the current string is already lower case.
 	boolean turkish = "tr".equals(loc.getLanguage());
@@ -125,12 +124,12 @@ public final class StringHelper
 	return s;
     }
 
-    public static String toUpperCase(String s)
+    static String toUpperCase(String s)
     {
 	return toUpperCase(s, Locale.getDefault());
     }
 
-    public static String toUpperCase(String s, Locale loc)
+    static String toUpperCase(String s, Locale loc)
     {
 	// First, see how many characters we have to grow by, as well as if the
 	// current string is already upper case.
@@ -217,7 +216,7 @@ public final class StringHelper
     private static final char[] upperExpand = CharData.UPPER_EXPAND.toCharArray();
     private static final char[] upperSpecial = CharData.UPPER_SPECIAL.toCharArray();
 
-    public static String NewString(byte[] ascii, int hibyte, int offset, int count)
+    static String NewString(byte[] ascii, int hibyte, int offset, int count)
     {
 	if (offset < 0 || count < 0 || offset + count > ascii.length)
 	    throw new StringIndexOutOfBoundsException();
@@ -229,12 +228,12 @@ public final class StringHelper
 	return new String(value);
     }
 
-    public static String NewString(byte[] ascii, int hibyte)
+    static String NewString(byte[] ascii, int hibyte)
     {
 	return NewString(ascii, hibyte, 0, ascii.length);
     }
 
-    public static String NewString(byte[] data, int offset, int count, String encoding)
+    static String NewString(byte[] data, int offset, int count, String encoding)
 	throws UnsupportedEncodingException
     {
 	if (offset < 0 || count < 0 || offset + count > data.length)
@@ -251,13 +250,13 @@ public final class StringHelper
 	}
     }
 
-    public static String NewString(byte[] data, String encoding)
+    static String NewString(byte[] data, String encoding)
 	throws UnsupportedEncodingException
     {
 	return NewString(data, 0, data.length, encoding);
     }
 
-    public static String NewString(byte[] data, int offset, int count)
+    static String NewString(byte[] data, int offset, int count)
     {
 	if (offset < 0 || count < 0 || offset + count > data.length)
 	    throw new StringIndexOutOfBoundsException();
@@ -273,17 +272,17 @@ public final class StringHelper
 	}
     }
 
-    public static String NewString(byte[] data)
+    static String NewString(byte[] data)
     {
 	return NewString(data, 0, data.length);
     }
 
-    public static String NewString(char[] data, int offset, int count, boolean dont_copy)
+    static String NewString(char[] data, int offset, int count, boolean dont_copy)
     {
 	return new String(data, offset, count);
     }
 
-    public static String NewString(StringBuffer sb)
+    static String NewString(StringBuffer sb)
     {
 	synchronized(sb)
 	{
@@ -291,12 +290,12 @@ public final class StringHelper
 	}
     }
 
-    public static String substring(String s, int off, int end)
+    static String substring(String s, int off, int end)
     {
 	return cli.System.String.Substring(s, off, end - off);
     }
 
-    public static boolean startsWith(String s, String prefix, int toffset)
+    static boolean startsWith(String s, String prefix, int toffset)
     {
 	if(toffset < 0)
 	{
@@ -306,7 +305,7 @@ public final class StringHelper
 	return cli.System.String.StartsWith(s, prefix);
     }
 
-    public static char charAt(String s, int index)
+    static char charAt(String s, int index)
     {
 	try 
 	{
@@ -320,7 +319,7 @@ public final class StringHelper
 	}
     }
 
-    public static void getChars(String s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 
+    static void getChars(String s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 
     {
 	cli.System.String.CopyTo(s, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
@@ -343,19 +342,19 @@ public final class StringHelper
 	return 0;
     }
 
-    public static int indexOf(String s, char ch, int fromIndex)
+    static int indexOf(String s, char ch, int fromIndex)
     {
 	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
 	return cli.System.String.IndexOf(s, ch, Math.max(0, Math.min(s.length(), fromIndex)));
     }
 
-    public static int indexOf(String s, String o, int fromIndex)
+    static int indexOf(String s, String o, int fromIndex)
     {
 	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
 	return cli.System.String.IndexOf(s, o, Math.max(0, Math.min(s.length(), fromIndex)));
     }
 
-    public static int lastIndexOf(String s, char ch, int fromIndex)
+    static int lastIndexOf(String s, char ch, int fromIndex)
     {
 	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
 	int len = s.length();
@@ -367,12 +366,12 @@ public final class StringHelper
 	return cli.System.String.LastIndexOf(s, ch, Math.min(len - 1, fromIndex));
     }
 
-    public static int lastIndexOf(String s, String o)
+    static int lastIndexOf(String s, String o)
     {
 	return lastIndexOf(s, o, s.length());
     }
 
-    public static int lastIndexOf(String s, String o, int fromIndex)
+    static int lastIndexOf(String s, String o, int fromIndex)
     {
 	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
 	int len = s.length();
@@ -388,7 +387,7 @@ public final class StringHelper
 	return cli.System.String.LastIndexOf(s, o, Math.min(len - 1, fromIndex + o.length() - 1));
     }
 
-    public static String concat(String s1, String s2)
+    static String concat(String s1, String s2)
     {
 	// null check
 	s1 = s1.toString();
@@ -399,7 +398,7 @@ public final class StringHelper
 	return cli.System.String.Concat(s1, s2);
     }
 
-    public static void getBytes(String s, int srcBegin, int srcEnd, byte dst[], int dstBegin)
+    static void getBytes(String s, int srcBegin, int srcEnd, byte dst[], int dstBegin)
     {
 	if (srcBegin < 0 || srcBegin > srcEnd || srcEnd > s.length())
 	    throw new StringIndexOutOfBoundsException();
@@ -408,7 +407,7 @@ public final class StringHelper
 	    dst[dstBegin++] = (byte)s.charAt(srcBegin++);
     }
 
-    public static byte[] getBytes(String s, String enc) throws UnsupportedEncodingException
+    static byte[] getBytes(String s, String enc) throws UnsupportedEncodingException
     {
 	try
 	{
@@ -422,7 +421,7 @@ public final class StringHelper
 	}
     }
 
-    public static byte[] getBytes(String s)
+    static byte[] getBytes(String s)
     {
 	try
 	{
@@ -436,12 +435,12 @@ public final class StringHelper
 	}
     }
 
-    public static boolean regionMatches(String s, int toffset, String other, int ooffset, int len)
+    static boolean regionMatches(String s, int toffset, String other, int ooffset, int len)
     {
 	return regionMatches(s, false, toffset, other, ooffset, len);
     }
 
-    public static boolean regionMatches(String s, boolean ignoreCase, int toffset,
+    static boolean regionMatches(String s, boolean ignoreCase, int toffset,
 	String other, int ooffset, int len)
     {
 	if (toffset < 0 || ooffset < 0 || toffset + len > s.length()
@@ -463,7 +462,7 @@ public final class StringHelper
 	return true;
     }
 
-    public static String trim(String s)
+    static String trim(String s)
     {
 	int limit = s.length();
 	if (limit == 0 || (s.charAt(0) > '\u0020'
@@ -479,52 +478,52 @@ public final class StringHelper
 	return s.substring(begin - 1, end + 1);
     }
 
-    public static String valueOf(boolean b)
+    static String valueOf(boolean b)
     {
 	return b ? "true" : "false";
     }
 
-    public static String valueOf(int i)
+    static String valueOf(int i)
     {
 	return Integer.toString(i, 10);
     }
 
-    public static String valueOf(long l)
+    static String valueOf(long l)
     {
 	return Long.toString(l);
     }
 
-    public static String valueOf(char c)
+    static String valueOf(char c)
     {
 	return cli.System.String.__new(c, 1);
     }
 
-    public static String valueOf(float f)
+    static String valueOf(float f)
     {
 	return Float.toString(f);
     }
 
-    public static String valueOf(double d)
+    static String valueOf(double d)
     {
 	return Double.toString(d);
     }
 
-    public static String valueOf(char[] c)
+    static String valueOf(char[] c)
     {
 	return new String(c);
     }
 
-    public static String valueOf(char[] c, int offset, int count)
+    static String valueOf(char[] c, int offset, int count)
     {
 	return new String(c, offset, count);
     }
 
-    public static String valueOf(Object o)
+    static String valueOf(Object o)
     {
 	return o == null ? "null" : o.toString();
     }
 
-    public static int hashCode(String s)
+    static int hashCode(String s)
     {
 	int h = 0;
 	int len = s.length();
@@ -534,11 +533,4 @@ public final class StringHelper
 	}
 	return h;
     }
-
-    public static java.util.Comparator getCaseInsensitiveOrder()
-    {
-	return CASE_INSENSITIVE_ORDER;
-    }
-
-    private static native java.util.Comparator constructCaseInsensitiveOrder();
 }

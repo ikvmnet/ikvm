@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,6 +24,88 @@
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
+
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class ExceptionIsUnsafeForMappingAttribute : Attribute
+{
+}
+
+[AttributeUsage(AttributeTargets.Method)]
+public sealed class RemappedInterfaceMethodAttribute : Attribute
+{
+	private string name;
+	private string mappedTo;
+
+	public RemappedInterfaceMethodAttribute(string name, string mappedTo)
+	{
+		this.name = name;
+		this.mappedTo = mappedTo;
+	}
+
+	public string Name
+	{
+		get
+		{
+			return name;
+		}
+	}
+
+	public string MappedTo
+	{
+		get
+		{
+			return mappedTo;
+		}
+	}
+}
+
+[AttributeUsage(AttributeTargets.Assembly)]
+public sealed class RemappedClassAttribute : Attribute
+{
+	private string name;
+	private Type remappedType;
+
+	public RemappedClassAttribute(string name, Type remappedType)
+	{
+		this.name = name;
+		this.remappedType = remappedType;
+	}
+
+	public string Name
+	{
+		get
+		{
+			return name;
+		}
+	}
+
+	public Type RemappedType
+	{
+		get
+		{
+			return remappedType;
+		}
+	}
+}
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
+public sealed class RemappedTypeAttribute : Attribute
+{
+	private Type type;
+
+	public RemappedTypeAttribute(Type type)
+	{
+		this.type = type;
+	}
+
+	public Type Type
+	{
+		get
+		{
+			return type;
+		}
+	}
+}
 
 [AttributeUsage(AttributeTargets.Module)]
 public sealed class JavaModuleAttribute : Attribute

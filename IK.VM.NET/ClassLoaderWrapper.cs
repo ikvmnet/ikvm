@@ -1,6 +1,5 @@
-#define DEBUG
 /*
-  Copyright (C) 2002 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -45,14 +44,13 @@ class ClassLoaderWrapper
 	private static ClassLoaderWrapper bootstrapClassLoader;
 	private object javaClassLoader;
 	private Hashtable types = new Hashtable();
-	private Hashtable nativeMethods;
-	private static Hashtable ghosts = new Hashtable();	// ghosts can only exist in the bootrap class loader
 	// HACK moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
 	// so for the time being, we share one dynamic assembly among all classloaders
 	private static ModuleBuilder moduleBuilder;
 	private static bool saveDebugImage;
 	private static Hashtable nameClashHash = new Hashtable();
-	private static TypeWrapper[] mappedExceptions;
+	private static Assembly coreAssembly;	// this is the assembly that contains the remapped and core classes
+	private static Hashtable remappedTypes = new Hashtable();
 	private static int instanceCounter = 0;
 	private int instanceId = System.Threading.Interlocked.Increment(ref instanceCounter);
 
@@ -67,34 +65,52 @@ class ClassLoaderWrapper
 	static ClassLoaderWrapper()
 	{
 		AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
+		LoadRemappedTypes();
+	}
+
+	internal static void LoadRemappedTypes()
+	{
+		Debug.Assert(coreAssembly == null);
+
+		// HACK we need to find the "core" library, to figure out the remapped types
+		foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+		{
+			object[] remapped = asm.GetCustomAttributes(typeof(RemappedClassAttribute), false);
+			if(remapped.Length > 0)
+			{
+				coreAssembly = asm;
+				foreach(RemappedClassAttribute r in remapped)
+				{
+					Tracer.Info(Tracer.Runtime, "Remapping type {0} to {1}", r.RemappedType, r.Name);
+					remappedTypes.Add(r.RemappedType, r.Name);
+				}
+				break;
+			}
+		}
+		if(coreAssembly == null)
+		{
+			Tracer.Info(Tracer.Compiler, "Unable to find core library");
+			if(!JVM.IsStaticCompiler)
+			{
+				JVM.CriticalFailure("Unable to find core library", null);
+			}
+		}
 	}
 
 	private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
 	{
-		//Console.WriteLine("OnTypeResolve: " + args.Name);
+		Tracer.Info(Tracer.ClassLoading, "OnTypeResolve: {0} (arrayConstructionHack = {1})", args.Name, arrayConstructionHack);
 		if(arrayConstructionHack)
 		{
 			return null;
 		}
-		try
+		TypeWrapper type = (TypeWrapper)dynamicTypes[args.Name];
+		if(type == null)
 		{
-			TypeWrapper type = (TypeWrapper)dynamicTypes[args.Name];
-			if(type == null)
-			{
-				return null;
-			}
-			type.Finish();
-			return type.TypeAsTBD.Assembly;
+			return null;
 		}
-		catch(Exception x)
-		{
-			// TODO don't catch the exception here... But, the problem is that Type.GetType() swallows all exceptions
-			// that occur here, unless throwOnError is set, but in some (most?) cases you don't want the exception if it only
-			// means that the class cannot be found...
-			Console.WriteLine(x);
-			Console.WriteLine(new StackTrace(true));
-			throw;
-		}
+		type.Finish();
+		return type.TypeAsTBD.Assembly;
 	}
 
 	internal ClassLoaderWrapper(object javaClassLoader)
@@ -114,174 +130,28 @@ class ClassLoaderWrapper
 		}
 	}
 
-	internal static bool IsGhost(TypeWrapper wrapper)
-	{
-		return wrapper.IsInterface && wrapper.GetClassLoader() == bootstrapClassLoader && ghosts.ContainsKey(wrapper.Name);
-	}
-
-	internal static TypeWrapper[] GetGhostImplementers(TypeWrapper wrapper)
-	{
-		ArrayList list = (ArrayList)ghosts[wrapper.Name];
-		if(list == null)
-		{
-			return TypeWrapper.EmptyArray;
-		}
-		return (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
-	}
-
 	internal static bool IsRemappedType(Type type)
 	{
-		return typeToTypeWrapper[type] is RemappedTypeWrapper;
+		TypeWrapper tw = (TypeWrapper)typeToTypeWrapper[type];
+		return (tw != null && tw.IsRemapped) || remappedTypes.ContainsKey(type);
 	}
 
-	internal void LoadRemappedTypes()
+	internal void SetRemappedType(Type type, TypeWrapper tw)
 	{
-		nativeMethods = new Hashtable();
-		MapXml.Root map = MapXmlGenerator.Generate();
-		foreach(MapXml.Class c in map.remappings)
-		{
-			TypeWrapper baseWrapper = null;
-			// HACK need to resolve the base type or put it in the XML
-			if(c.Type != "System.Object")
-			{
-				baseWrapper = (TypeWrapper)types["java.lang.Object"];
-			}
-			string name = c.Name;
-			Modifiers modifiers = (Modifiers)c.Modifiers;
-			Type type = Type.GetType(c.Type, true);
-			if(type.IsInterface)
-			{
-				baseWrapper = null;
-			}
-			TypeWrapper tw = new RemappedTypeWrapper(this, modifiers, name, type, new TypeWrapper[0], baseWrapper);
-			Debug.Assert(!types.ContainsKey(name));
-			types.Add(name, tw);
-			Debug.Assert(!typeToTypeWrapper.ContainsKey(tw.TypeAsTBD));
-			typeToTypeWrapper.Add(tw.TypeAsTBD, tw);
-		}
-		// find the ghost interfaces
-		foreach(MapXml.Class c in map.remappings)
-		{
-			if(c.Interfaces != null)
-			{
-				// NOTE we don't support interfaces that inherit from other interfaces
-				// (actually, if they are explicitly listed it would probably work)
-				TypeWrapper typeWrapper = (TypeWrapper)types[c.Name];
-				foreach(MapXml.Interface iface in c.Interfaces)
-				{
-					TypeWrapper ifaceWrapper = (TypeWrapper)types[iface.Name];
-					if(ifaceWrapper == null || !ifaceWrapper.TypeAsTBD.IsAssignableFrom(typeWrapper.TypeAsTBD))
-					{
-						AddGhost(iface.Name, typeWrapper);
-					}
-				}
-			}
-		}
-		// we manually add the array ghost interfaces
-		TypeWrapper array = GetWrapperFromType(typeof(Array));
-		AddGhost("java.io.Serializable", array);
-		AddGhost("java.lang.Cloneable", array);
+		Debug.Assert(!types.ContainsKey(tw.Name));
+		types.Add(tw.Name, tw);
+		Debug.Assert(!typeToTypeWrapper.ContainsKey(type));
+		typeToTypeWrapper.Add(type, tw);
 	}
 
-	private void AddGhost(string interfaceName, TypeWrapper implementer)
+	// HACK return the TypeWrapper if it is already loaded
+	// (this exists solely for DynamicTypeWrapper.SetupGhosts)
+	internal TypeWrapper GetLoadedClass(string name)
 	{
-		ArrayList list = (ArrayList)ghosts[interfaceName];
-		if(list == null)
-		{
-			list = new ArrayList();
-			ghosts[interfaceName] = list;
-		}
-		list.Add(implementer);
+		return (TypeWrapper)types[name];
 	}
 
-	private class ExceptionMapEmitter : CodeEmitter
-	{
-		private MapXml.ExceptionMapping[] map;
-
-		internal ExceptionMapEmitter(MapXml.ExceptionMapping[] map)
-		{
-			this.map = map;
-		}
-
-		internal override void Emit(ILGenerator ilgen)
-		{
-			ilgen.Emit(OpCodes.Ldarg_0);
-			ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeHandle"));
-			LocalBuilder typehandle = ilgen.DeclareLocal(typeof(RuntimeTypeHandle));
-			ilgen.Emit(OpCodes.Stloc, typehandle);
-			ilgen.Emit(OpCodes.Ldloca, typehandle);
-			MethodInfo get_Value = typeof(RuntimeTypeHandle).GetMethod("get_Value");
-			ilgen.Emit(OpCodes.Call, get_Value);
-			for(int i = 0; i < map.Length; i++)
-			{
-				ilgen.Emit(OpCodes.Dup);
-				ilgen.Emit(OpCodes.Ldtoken, Type.GetType(map[i].src));
-				ilgen.Emit(OpCodes.Stloc, typehandle);
-				ilgen.Emit(OpCodes.Ldloca, typehandle);
-				ilgen.Emit(OpCodes.Call, get_Value);
-				Label label = ilgen.DefineLabel();
-				ilgen.Emit(OpCodes.Bne_Un_S, label);
-				ilgen.Emit(OpCodes.Pop);
-				if(map[i].code != null)
-				{
-					ilgen.Emit(OpCodes.Ldarg_0);
-					map[i].code.Emit(ilgen);
-					ilgen.Emit(OpCodes.Ret);
-				}
-				else
-				{
-					TypeWrapper tw = GetBootstrapClassLoader().LoadClassByDottedName(map[i].dst);
-					tw.GetMethodWrapper(MethodDescriptor.FromNameSig(tw.GetClassLoader(), "<init>", "()V"), false).EmitNewobj.Emit(ilgen);
-					ilgen.Emit(OpCodes.Ret);
-				}
-				ilgen.MarkLabel(label);
-			}
-			ilgen.Emit(OpCodes.Pop);
-			ilgen.Emit(OpCodes.Ldarg_0);
-			ilgen.Emit(OpCodes.Ret);
-		}
-	}
-
-	internal void LoadRemappedTypesStep2()
-	{
-		MapXml.Root map = MapXmlGenerator.Generate();
-		// native methods
-		foreach(MapXml.Class c in map.nativeMethods)
-		{
-			string className = c.Name;
-			foreach(MapXml.Method method in c.Methods)
-			{
-				string methodName = method.Name;
-				string methodSig = method.Sig;
-				nativeMethods[className + "." + methodName + methodSig] = method;
-			}
-		}
-		mappedExceptions = new TypeWrapper[map.exceptionMappings.Length];
-		for(int i = 0; i < mappedExceptions.Length; i++)
-		{
-			mappedExceptions[i] = LoadClassByDottedName(map.exceptionMappings[i].dst);
-		}
-		// HACK we've got a hardcoded location for the exception mapping method that is generated from the xml mapping
-		nativeMethods["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
-		foreach(MapXml.Class c in map.remappings)
-		{
-			((RemappedTypeWrapper)types[c.Name]).LoadRemappings(c);
-		}
-	}
-
-	internal static bool IsMapSafeException(TypeWrapper tw)
-	{
-		for(int i = 0; i < mappedExceptions.Length; i++)
-		{
-			if(mappedExceptions[i].IsSubTypeOf(tw))
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
-	// This mangles type names, to enable different class loaders loading classes with the same names.
+	// FXBUG This mangles type names, to enable different class loaders loading classes with the same names.
 	// We used to support this by using an assembly per class loader instance, but because
 	// of the CLR TypeResolve bug, we put all types in a single assembly for now.
 	internal string MangleTypeName(string name)
@@ -292,7 +162,7 @@ class ClassLoaderWrapper
 			{
 				if(JVM.IsStaticCompiler)
 				{
-					Console.Error.WriteLine("WARNING: Class name clash: " + name);
+					Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", name);
 				}
 				return name + "\\\\" + instanceId;
 			}
@@ -601,7 +471,7 @@ class ClassLoaderWrapper
 			{
 				// NOTE this can also happen if we (incorrectly) trigger a load of this class during
 				// the loading of the base class, so we print a warning here.
-				Console.Error.WriteLine("**** ClassCircularityError: {0} ****", f.Name);
+				Tracer.Warning(Tracer.ClassLoading, "**** ClassCircularityError: {0} ****", f.Name);
 				throw JavaException.ClassCircularityError("{0}", f.Name);
 			}
 			throw JavaException.LinkageError("duplicate class definition: {0}", f.Name);
@@ -642,7 +512,7 @@ class ClassLoaderWrapper
 			{
 				throw JavaException.IncompatibleClassChangeError("Class {0} has interface {1} as superclass", f.Name, baseType.Name);
 			}
-			type = new DynamicTypeWrapper(f, this, nativeMethods);
+			type = new DynamicTypeWrapper(f, this);
 			Debug.Assert(!dynamicTypes.ContainsKey(type.TypeAsTBD.FullName));
 			dynamicTypes.Add(type.TypeAsTBD.FullName, type);
 			Debug.Assert(types[f.Name] == null);
@@ -723,7 +593,7 @@ class ClassLoaderWrapper
 		asm.Save("ikvmdump.exe");
 	}
 
-	// this version isn't used at the moment, because multi assembly type references are broken in the CLR
+	// FXBUG this version isn't used at the moment, because multi assembly type references are broken in the CLR
 	internal static void SaveDebugImage__MultiAssemblyVersion(object mainClass)
 	{
 		// HACK we iterate 3 times, in the hopes that that will be enough. We really should let FinishAll return a boolean whether
@@ -921,8 +791,6 @@ class ClassLoaderWrapper
 		if(bootstrapClassLoader == null)
 		{
 			bootstrapClassLoader = new ClassLoaderWrapper(null);
-			bootstrapClassLoader.LoadRemappedTypes();
-			bootstrapClassLoader.LoadRemappedTypesStep2();
 		}
 		return bootstrapClassLoader;
 	}
@@ -1007,6 +875,14 @@ class ClassLoaderWrapper
 			{
 				wrapper = PrimitiveTypeWrapper.VOID;
 			}
+			else // maybe it's a remapped type
+			{
+				string name = (string)remappedTypes[type];
+				if(name != null)
+				{
+					return LoadClassCritical(name);
+				}
+			}
 			// if we found it, store it in the map
 			if(wrapper != null)
 			{
@@ -1019,10 +895,12 @@ class ClassLoaderWrapper
 
 	internal static TypeWrapper GetWrapperFromType(Type type)
 	{
+		//Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
 		TypeWrapper.AssertFinished(type);
 		TypeWrapper wrapper = GetWrapperFromTypeFast(type);
 		if(wrapper == null)
 		{
+			Debug.Assert(type != typeof(object) && type != typeof(string));
 			if(type.IsArray)
 			{
 				// it might be an array of a dynamically compiled Java type

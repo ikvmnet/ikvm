@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003 Jeroen Frijters
+  Copyright (C) 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages

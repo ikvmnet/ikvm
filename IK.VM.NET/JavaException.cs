@@ -69,7 +69,7 @@ sealed class JavaException
 	{
 		if(JVM.IsStaticCompilerPhase1)
 		{
-			Console.Error.WriteLine("ClassNotFoundException: {0}", s);
+			Tracer.Warning(Tracer.Compiler, "ClassNotFoundException: {0}", s);
 		}
 		return (Exception)Activator.CreateInstance(Load("java.lang.ClassNotFoundException"), new object[] { String.Format(s, args) });
 	}
@@ -78,7 +78,7 @@ sealed class JavaException
 	{
 		if(JVM.IsStaticCompilerPhase1)
 		{
-			Console.Error.WriteLine("NoClassDefFoundError: {0}", s);
+			Tracer.Warning(Tracer.Compiler, "NoClassDefFoundError: {0}", s);
 		}
 		return (Exception)Activator.CreateInstance(Load("java.lang.NoClassDefFoundError"), new object[] { String.Format(s, args) });
 	}

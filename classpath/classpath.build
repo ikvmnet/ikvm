@@ -28,7 +28,7 @@
     </target>
 
     <target name="classpath.dll" depends="classes">
-        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true" commandline="-nojni -noTypeInitWarning -out:classpath.dll -exclude:exclude.lst -target:library -recurse:./*.class -recurse:${Classpath.dir}/*.class -recurse:${Classpath.dir}/*.properties mscorlib.jar System.jar System.Xml.jar -resource:lib/security/classpath.security=classpath.security" />
+        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true" commandline="-nojni -out:classpath.dll -remap:map.xml -exclude:exclude.lst -target:library -recurse:./*.class -recurse:${Classpath.dir}/*.class -recurse:${Classpath.dir}/*.properties mscorlib.jar System.jar System.Xml.jar -resource:lib/security/classpath.security=classpath.security" />
         <copy file="classpath.dll" tofile="../bin/classpath.dll.new" />
         <exec program="peverify" commandline="../bin/classpath.dll.new" />
         <copy file="classpath.dll" todir="../bin" />

@@ -387,11 +387,7 @@ class Compiler
 
 		internal void Emit(ILGenerator ilgen, ClassFile.Method m)
 		{
-			if(JVM.IsStaticCompiler)
-			{
-				Console.Error.WriteLine(type.Name + ": " + Message);
-				Console.Error.WriteLine("\tat " + m.ClassFile.Name + "." + m.Name + m.Signature);
-			}
+			Tracer.Warning(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", type.Name, Message, m.ClassFile.Name, m.Name, m.Signature);
 			ilgen.Emit(OpCodes.Ldstr, Message);
 			MethodWrapper method = type.GetMethodWrapper(MethodDescriptor.FromNameSig(type.GetClassLoader(), "<init>", "(Ljava.lang.String;)V"), false);
 			method.EmitNewobj.Emit(ilgen);
@@ -594,10 +590,6 @@ class Compiler
 			// we generate code here to throw the VerificationError
 			string msg = string.Format("(class: {0}, method: {1}, signature: {2}, offset: {3}, instruction: {4}) {5}", x.Class, x.Method, x.Signature, x.ByteCodeOffset, x.Instruction, x.Message);
 			EmitHelper.Throw(ilGenerator, "java.lang.VerifyError", msg);
-			if(JVM.IsStaticCompiler)
-			{
-				Console.Error.WriteLine("Warning: VerifyError: " + msg);
-			}
 			return;
 		}
 		Profiler.Enter("Compile");
@@ -734,7 +726,7 @@ class Compiler
 							exceptionTypeWrapper = m.Method.ClassFile.GetConstantPoolClassType(exceptions[j].catch_type, classLoader);
 						}
 						Type excType = exceptionTypeWrapper.TypeAsExceptionType;
-						bool mapSafe = !exceptionTypeWrapper.IsUnloadable && ClassLoaderWrapper.IsMapSafeException(exceptionTypeWrapper);
+						bool mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException;
 						if(true)
 						{
 							if(mapSafe)
@@ -2337,10 +2329,7 @@ class Compiler
 			if(checkThisForNull)
 			{
 				dh.Load(0);
-				// I think this is the most efficient way to generate a NullReferenceException if the
-				// reference is null
-				ilGenerator.Emit(OpCodes.Ldvirtftn, objectToStringMethod);
-				ilGenerator.Emit(OpCodes.Pop);
+				EmitHelper.NullCheck(ilGenerator);
 			}
 			for(int i = 0; i < args.Length; i++)
 			{

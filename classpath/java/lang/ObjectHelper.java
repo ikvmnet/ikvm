@@ -23,16 +23,11 @@
 */
 package java.lang;
 
-public class ObjectHelper
+class ObjectHelper
 {
     private ObjectHelper() {}
 
-    public static void wait(Object o, long timeout)
-    {
-	wait(o, timeout, 0);
-    }
-
-    public static void wait(Object o, long timeout, int nanos)
+    static void wait(Object o, long timeout, int nanos)
     {
 	if(o == null)
 	{
@@ -53,7 +48,7 @@ public class ObjectHelper
 	}
     }
 
-    public static String toStringSpecial(Object o)
+    static String toStringSpecial(Object o)
     {
 	return o.getClass().getName() + '@' + Integer.toHexString(o.hashCode());
     }

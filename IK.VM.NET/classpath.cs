@@ -1560,6 +1560,7 @@ namespace NativeCode.java
 				{
 					TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
 					wrapper.Finish();
+					// TODO if we're instantiating a remapping type, we need to use TypeAsBaseType (except for String)
 					return NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsTBD);
 				}
 				finally
@@ -1667,7 +1668,7 @@ namespace NativeCode.java
 				}
 				catch(NetSystem.Net.Sockets.SocketException)
 				{
-					// BUG .NET framework bug
+					// FXBUG .NET framework bug
 					// HACK if GetHostByAddress returns a netbios name, it appends the default DNS suffix, but if the
 					// machine's netbios name isn't the same as the DNS hostname, this might result in an unresolvable
 					// name, if that happens we chop of the DNS suffix.

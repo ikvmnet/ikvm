@@ -159,15 +159,6 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "map.xml"
-                    BuildAction = "None"
-                />
-                <File
-                    RelPath = "mapxml.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "MemberWrapper.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -184,6 +175,11 @@
                 />
                 <File
                     RelPath = "remapper.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "tracer.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

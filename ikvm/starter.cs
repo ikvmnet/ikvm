@@ -161,6 +161,7 @@ public class Starter
 	[STAThread]	// NOTE this is here because otherwise SWT's RegisterDragDrop (a COM thing) doesn't work
 	static int Main(string[] args)
 	{
+		Tracer.EnableTraceForDebug();
 		System.Threading.Thread.CurrentThread.Name = "main";
 		bool jar = false;
 		bool saveAssembly = false;
@@ -213,9 +214,13 @@ public class Starter
 				{
 					java.lang.System.setProperty("ikvm.boot.class.path", args[i].Substring(16));
 				}
-				else if(args[i] == "-Xlogclf")
+				else if(args[i].StartsWith("-Xtrace:"))
 				{
-					JVM.LogClassLoadFailures = true;
+					Tracer.SetTraceLevel(args[i].Substring(8));
+				}
+				else if(args[i].StartsWith("-Xmethodtrace:"))
+				{
+					Tracer.HandleMethodTrace(args[i].Substring(14));
 				}
 				else
 				{
@@ -247,7 +252,8 @@ public class Starter
 			Console.Error.WriteLine("    -Xtime            time the execution");
 			Console.Error.WriteLine("    -Xbootclasspath:<directories and zip/jar files separated by {0}>", Path.PathSeparator);
 			Console.Error.WriteLine("                      set search path for bootstrap classes and resources");
-			Console.Error.WriteLine("    -Xlogclf          log class load failures");
+			Console.Error.WriteLine("    -Xtrace:<string>  Displays all tracepoints with the given name");
+			Console.Error.WriteLine("    -Xmethodtrace:<string>  Builds method trace into the specified output methods");
 			return 1;
 		}
 		try

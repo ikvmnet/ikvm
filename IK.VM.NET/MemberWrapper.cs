@@ -140,8 +140,6 @@ class MethodWrapper : MemberWrapper
 	private MethodDescriptor md;
 	private MethodBase originalMethod;
 	private MethodBase redirMethod;
-	private bool isRemappedVirtual;
-	private bool isRemappedOverride;
 	private string[] declaredExceptions;
 	internal CodeEmitter EmitCall;
 	internal CodeEmitter EmitCallvirt;
@@ -371,37 +369,6 @@ class MethodWrapper : MemberWrapper
 		return new string[0];
 	}
 
-	// IsRemappedOverride (only possible for remapped types) indicates whether the method in the
-	// remapped type overrides (i.e. replaces) the method from the underlying type
-	// Example: System.Object.ToString() is overriden by java.lang.Object.toString(),
-	//          because java.lang.Object's toString() does something different from
-	//          System.Object's ToString().
-	internal bool IsRemappedOverride
-	{
-		get
-		{
-			return isRemappedOverride;
-		}
-		set
-		{
-			isRemappedOverride = value;
-		}
-	}
-
-	// IsRemappedVirtual (only possible for remapped types) indicates that the method is virtual,
-	// but doesn't really exist in the underlying type (there is no vtable slot to reuse)
-	internal bool IsRemappedVirtual
-	{
-		get
-		{
-			return isRemappedVirtual;
-		}
-		set
-		{
-			isRemappedVirtual = value;
-		}
-	}
-
 	// we expose the underlying MethodBase object,
 	// for Java types, this is the method that contains the compiled Java bytecode
 	// for remapped types, this is the method that underlies the remapped method
@@ -530,18 +497,6 @@ class MethodWrapper : MemberWrapper
 					args[0] = obj;
 					oldargs.CopyTo(args, 1);
 					obj = null;
-					// if we calling a remapped virtual method, we need to locate the proper helper method
-					if(IsRemappedVirtual)
-					{
-						Type[] argTypes = new Type[md.ArgTypes.Length + 1];
-						argTypes[0] = this.DeclaringType.TypeAsTBD;
-						md.ArgTypes.CopyTo(argTypes, 1);
-						method = ((RemappedTypeWrapper)this.DeclaringType).VirtualsHelperHack.GetMethod(md.Name, BindingFlags.Static | BindingFlags.Public, null, argTypes, null);
-					}
-				}
-				else if(IsRemappedVirtual)
-				{
-					throw new NotImplementedException("non-static remapped virtual invocation not implement");
 				}
 			}
 			else
@@ -593,13 +548,13 @@ class ReflectionOnConstant
 
 	internal static void IssueWarning(FieldInfo field)
 	{
-		// NOTE .NET (1.0 & 1.1) BUG FieldInfo.GetValue() on a literal causes the type initializer to run and
+		// FXBUG .NET (1.0 & 1.1)
+		// FieldInfo.GetValue() on a literal causes the type initializer to run and
 		// we don't want that.
 		// TODO may need to find a workaround, for now we just spit out a warning
 		if(ReflectionOnConstant.IsBroken && field.DeclaringType.TypeInitializer != null)
 		{
-			// HACK lame way to support a command line switch to suppress this warning
-			if(Environment.CommandLine.IndexOf("-noTypeInitWarning") == -1)
+			if(Tracer.FxBug.TraceWarning)
 			{
 				if(warnOnce == null)
 				{
@@ -608,7 +563,7 @@ class ReflectionOnConstant
 				if(!warnOnce.ContainsKey(field.DeclaringType.FullName))
 				{
 					warnOnce.Add(field.DeclaringType.FullName, null);
-					Console.Error.WriteLine("Warning: Running type initializer for {0} due to CLR bug", field.DeclaringType.FullName);
+					Tracer.Warning(Tracer.FxBug, "Running type initializer for {0} due to CLR bug", field.DeclaringType.FullName);
 				}
 			}
 		}

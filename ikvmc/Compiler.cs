@@ -60,6 +60,8 @@ class Compiler
 
 	static int Main(string[] args)
 	{
+		System.Threading.Thread.CurrentThread.Name = "compiler";
+		Tracer.EnableTraceForDebug();
 		System.Reflection.Emit.PEFileKinds target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
 		bool guessFileKind = true;
 		string assemblyname = null;
@@ -68,7 +70,8 @@ class Compiler
 		string keyfile = null;
 		bool targetIsModule = false;
 		string main = null;
-		string defaultName = null;
+		string defaultAssemblyName = null;
+		string remapfile = null;
 		bool nojni = false;
 		ArrayList classesToExclude = new ArrayList();
 		ArrayList references = new ArrayList();
@@ -93,6 +96,8 @@ class Compiler
 			Console.Error.WriteLine("    -resource:<name>=<path> Include file as Java resource");
 			Console.Error.WriteLine("    -exclude:<filename>     A file containing a list of classes to exclude");
 			Console.Error.WriteLine("    -debug                  Creates debugging information for the output file");
+			Console.Error.WriteLine("    -Xtrace:<string>        Displays all tracepoints with the given name");
+			Console.Error.WriteLine("    -Xmethodtrace:<string>  Builds method trace into the specified output methods");
 			return 1;
 		}
 		foreach(string s in arglist)
@@ -102,6 +107,14 @@ class Compiler
 				if(s.StartsWith("-out:"))
 				{
 					outputfile = s.Substring(5);
+				}
+				else if(s.StartsWith("-Xtrace:"))
+				{
+					Tracer.SetTraceLevel(s.Substring(8));
+				}
+				else if(s.StartsWith("-Xmethodtrace:"))
+				{
+					Tracer.HandleMethodTrace(s.Substring(14));
 				}
 				else if(s.StartsWith("-assembly:"))
 				{
@@ -203,6 +216,10 @@ class Compiler
 				{
 					JVM.Debug = true;
 				}
+				else if(s.StartsWith("-remap:"))
+				{
+					remapfile = s.Substring(7);
+				}
 				else
 				{
 					Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
@@ -210,9 +227,9 @@ class Compiler
 			}
 			else
 			{
-				if(defaultName == null)
+				if(defaultAssemblyName == null)
 				{
-					defaultName = Path.GetFileName(s);
+					defaultAssemblyName = new FileInfo(Path.GetFileName(s)).Name;
 				}
 				string path = Path.GetDirectoryName(s);
 				string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s));
@@ -234,7 +251,7 @@ class Compiler
 		}
 		if(assemblyname == null)
 		{
-			string basename = outputfile == null ? defaultName : outputfile;
+			string basename = outputfile == null ? defaultAssemblyName : new FileInfo(outputfile).Name;
 			int idx = basename.LastIndexOf('.');
 			if(idx > 0)
 			{
@@ -260,7 +277,7 @@ class Compiler
 		}
 		try
 		{
-			JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)));
+			JVM.Compile(outputfile, keyfile, version, targetIsModule, assemblyname, main, target, guessFileKind, (byte[][])classes.ToArray(typeof(byte[])), (string[])references.ToArray(typeof(string)), nojni, resources, (string[])classesToExclude.ToArray(typeof(string)), remapfile);
 			return 0;
 		}
 		catch(Exception x)

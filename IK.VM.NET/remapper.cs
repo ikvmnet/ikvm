@@ -77,7 +77,22 @@ namespace MapXml
 						MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(MethodDescriptor.FromNameSig(ClassLoaderWrapper.GetBootstrapClassLoader(), Name, Sig), false);
 						if(method != null)
 						{
-							emitter = CodeEmitter.Create(opcode, method.GetMethod());
+							if(opcode.Value == OpCodes.Call.Value)
+							{
+								emitter = method.EmitCall;
+							}
+							else if(opcode.Value == OpCodes.Callvirt.Value)
+							{
+								emitter = method.EmitCallvirt;
+							}
+							else if(opcode.Value == OpCodes.Newobj.Value)
+							{
+								emitter = method.EmitNewobj;
+							}
+							else
+							{
+								throw new InvalidOperationException();
+							}
 						}
 					}
 					else
@@ -184,6 +199,8 @@ namespace MapXml
 		{
 		}
 	
+		// TODO isinst is broken, because for Java types it returns true/false while for
+		// .NET types it returns null/reference.
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
 			base.Generate(context, ilgen);
@@ -442,6 +459,30 @@ namespace MapXml
 		}
 	}
 
+	[XmlType("stsfld")]
+	public sealed class Stsfld : Instruction
+	{
+		[XmlAttribute("class")]
+		public string Class;
+		[XmlAttribute("name")]
+		public string Name;
+		[XmlAttribute("sig")]
+		public string Sig;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, ClassLoaderWrapper.GetBootstrapClassLoader().RetTypeWrapperFromSig("()" + Sig)).EmitSet.Emit(ilgen);
+		}
+	}
+
+	[XmlType("ldc_i4_0")]
+	public sealed class Ldc_I4_0 : Simple
+	{
+		public Ldc_I4_0() : base(OpCodes.Ldc_I4_0)
+		{
+		}
+	}
+
 	public class InstructionList : CodeEmitter
 	{
 		[XmlElement(typeof(Ldstr))]
@@ -468,6 +509,8 @@ namespace MapXml
 		[XmlElement(typeof(Ret))]
 		[XmlElement(typeof(Throw))]
 		[XmlElement(typeof(Ldnull))]
+		[XmlElement(typeof(Stsfld))]
+		[XmlElement(typeof(Ldc_I4_0))]
 		public Instruction[] invoke;
 
 		internal sealed override void Emit(ILGenerator ilgen)
@@ -492,8 +535,8 @@ namespace MapXml
 		public string Sig;
 		[XmlAttribute("modifiers")]
 		public MapModifiers Modifiers;
-		public InstructionList invokespecial;
-		public InstructionList newobj;
+		public InstructionList body;
+		public InstructionList alternateBody;
 		public Redirect redirect;
 		[XmlElement("throws", typeof(Throws))]
 		public Throws[] throws;
@@ -517,7 +560,7 @@ namespace MapXml
 		public string Name;
 	}
 
-	public class Method : InstructionList
+	public class Method
 	{
 		[XmlAttribute("name")]
 		public string Name;
@@ -527,9 +570,8 @@ namespace MapXml
 		public MapModifiers Modifiers;
 		[XmlAttribute("type")]
 		public string Type;
-		public InstructionList invokevirtual;
-		public InstructionList invokespecial;
-		public InstructionList invokestatic;
+		public InstructionList body;
+		public InstructionList alternateBody;
 		public Redirect redirect;
 		public Override @override;
 		[XmlElement("throws", typeof(Throws))]
@@ -593,6 +635,8 @@ namespace MapXml
 		public Interface[] Interfaces;
 		[XmlElement("box")]
 		public InstructionList Box;
+		[XmlElement("clinit")]
+		public Method Clinit;
 	}
 
 	[XmlType("exception")]

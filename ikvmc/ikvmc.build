@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="ikvmc" default="ikvmc">
     <target name="ikvmc">
-        <csc target="exe" output="../bin/ikvmc.exe">
+        <csc target="exe" output="../bin/ikvmc.exe" define="TRACE">
             <sources>
                 <includes name="*.cs" />
             </sources>

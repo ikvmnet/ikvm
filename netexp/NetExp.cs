@@ -37,6 +37,7 @@ public class NetExp
 
 	public static void Main(string[] args)
 	{
+		Tracer.EnableTraceForDebug();
 		Assembly assembly = null;
 		FileInfo file = new FileInfo(args[0]);
 		if(file.Exists)
@@ -69,13 +70,6 @@ public class NetExp
 		else
 		{
 			zipFile = new ZipOutputStream(new FileStream(assembly.GetName().Name + ".jar", FileMode.Create));
-			// HACK if we're doing the "classpath" assembly, also include the remapped types
-			// java.lang.Object and java.lang.Throwable are automatic, because of the $OverrideStub
-			if(assembly.GetType("java.lang.Object$OverrideStub") != null)
-			{
-				ProcessClass(assembly.FullName, Class.forName("java.lang.String"), null);
-				ProcessClass(assembly.FullName, Class.forName("java.lang.Comparable"), null);
-			}
 			ProcessAssembly(assembly);
 			ProcessPrivateClasses(assembly);
 			zipFile.Close();
@@ -127,7 +121,6 @@ public class NetExp
 	private static void ProcessClass(string assemblyName, Class c, Class outer)
 	{
 		string name = c.getName().Replace('.', '/');
-		//Console.WriteLine(name);
 		string super = null;
 		if(c.getSuperclass() != null)
 		{

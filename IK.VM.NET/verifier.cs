@@ -955,7 +955,7 @@ class VerifierTypeWrapper : TypeWrapper
 		throw new InvalidOperationException("GetMethodImpl called on " + this);
 	}
 
-	public override Type TypeAsTBD
+	internal override Type TypeAsTBD
 	{
 		get
 		{
@@ -963,7 +963,7 @@ class VerifierTypeWrapper : TypeWrapper
 		}
 	}
 
-	public override TypeWrapper[] Interfaces
+	internal override TypeWrapper[] Interfaces
 	{
 		get
 		{
@@ -971,7 +971,7 @@ class VerifierTypeWrapper : TypeWrapper
 		}
 	}
 
-	public override TypeWrapper[] InnerClasses
+	internal override TypeWrapper[] InnerClasses
 	{
 		get
 		{
@@ -979,7 +979,7 @@ class VerifierTypeWrapper : TypeWrapper
 		}
 	}
 
-	public override TypeWrapper DeclaringTypeWrapper
+	internal override TypeWrapper DeclaringTypeWrapper
 	{
 		get
 		{
@@ -987,7 +987,7 @@ class VerifierTypeWrapper : TypeWrapper
 		}
 	}
 
-	public override void Finish()
+	internal override void Finish()
 	{
 		throw new InvalidOperationException("Finish called on " + this);
 	}
@@ -2077,10 +2077,7 @@ class MethodAnalyzer
 							opcode = opcode.Substring(2);
 						}
 						x.Instruction = opcode;
-						if(JVM.LogVerifyErrors)
-						{
-							Console.Error.WriteLine(x);
-						}
+						Tracer.Info(Tracer.Verifier, x.ToString());
 						/*
 						for(int j = 0; j < method.Instructions.Length; j++)
 						{

@@ -451,28 +451,3 @@ class ReturnCastEmitter : CodeEmitter
 		}
 	}
 }
-
-class VirtualEmitter : CodeEmitter
-{
-	private MethodDescriptor md;
-	private RemappedTypeWrapper wrapper;
-	private MethodInfo method;
-
-	internal VirtualEmitter(MethodDescriptor md, RemappedTypeWrapper wrapper)
-	{
-		this.md = md;
-		this.wrapper = wrapper;
-	}
-
-	internal override void Emit(ILGenerator ilgen)
-	{
-		if(method == null)
-		{
-			Type[] args = new Type[md.ArgTypes.Length + 1];
-			md.ArgTypes.CopyTo(args, 1);
-			args[0] = wrapper.TypeAsTBD;
-			method = wrapper.VirtualsHelperHack.GetMethod(md.Name, BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, args, null);
-		}
-		ilgen.Emit(OpCodes.Call, method);
-	}
-}

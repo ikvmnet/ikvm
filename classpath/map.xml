@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?> 
 <!--
-  Copyright (C) 2002, 2003 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,102 +27,130 @@
 		<class name="java.lang.Object" type="System.Object, mscorlib" modifiers="public">
 			<constructor sig="()V" modifiers="public" />
 			<method name="notifyAll" sig="()V" modifiers="public final">
-				<redirect class="System.Threading.Monitor, mscorlib" name="PulseAll" sig="(Ljava.lang.Object;)V" type="static" />
+				<body>
+					<ldarg_0 />
+					<call type="System.Threading.Monitor, mscorlib" name="PulseAll" sig="(Ljava.lang.Object;)V" />
+					<ret />
+				</body>
 			</method>
 			<method name="notify" sig="()V" modifiers="public final">
-				<redirect class="System.Threading.Monitor, mscorlib" name="Pulse" sig="(Ljava.lang.Object;)V" type="static" />
+				<body>
+					<ldarg_0 />
+					<call type="System.Threading.Monitor, mscorlib" name="Pulse" sig="(Ljava.lang.Object;)V" />
+					<ret />
+				</body>
 			</method>
 			<method name="wait" sig="()V" modifiers="public final">
 				<throws class="java.lang.InterruptedException" />
-				<invokespecial>
+				<body>
+					<ldarg_0 />
 					<call type="System.Threading.Monitor, mscorlib" name="Wait" sig="(Ljava.lang.Object;)Z" />
 					<!-- For some reason, Wait returns a boolean -->
 					<pop />
-				</invokespecial>
-				<invokevirtual>
-					<call type="System.Threading.Monitor, mscorlib" name="Wait" sig="(Ljava.lang.Object;)Z" />
-					<!-- For some reason, Wait returns a boolean -->
-					<pop />
-				</invokevirtual>
+					<ret />
+				</body>
 			</method>
 			<method name="wait" sig="(J)V" modifiers="public final">
 				<throws class="java.lang.InterruptedException" />
-				<redirect class="java.lang.ObjectHelper" name="wait" sig="(Ljava.lang.Object;J)V" type="static" />
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<ldc_i4_0 />
+					<call class="java.lang.ObjectHelper" name="wait" sig="(Ljava.lang.Object;JI)V" />
+					<ret />
+				</body>
 			</method>
 			<method name="wait" sig="(JI)V" modifiers="public final">
 				<throws class="java.lang.InterruptedException" />
-				<redirect class="java.lang.ObjectHelper" name="wait" sig="(Ljava.lang.Object;JI)V" type="static" />
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<ldarg_2 />
+					<call class="java.lang.ObjectHelper" name="wait" sig="(Ljava.lang.Object;JI)V" />
+					<ret />
+				</body>
 			</method>
 			<method name="getClass" sig="()Ljava.lang.Class;" modifiers="public final">
-				<invokespecial>
+				<body>
+					<ldarg_0 />
 					<call type="System.Object, mscorlib" name="GetType" />
 					<call type="NativeCode.java.lang.VMClass" name="getClassFromType" />
 					<castclass class="java.lang.Class" />
-				</invokespecial>
-				<invokevirtual>
-					<call type="System.Object, mscorlib" name="GetType" />
-					<call type="NativeCode.java.lang.VMClass" name="getClassFromType" />
-					<castclass class="java.lang.Class" />
-				</invokevirtual>
-				<!--redirect class="ObjectHelper" name="getClass" sig="(Ljava.lang.Object;)Ljava.lang.Object;" type="static" /-->
+					<ret />
+				</body>
 			</method>
 			<method name="clone" sig="()Ljava.lang.Object;" modifiers="protected">
 				<throws class="java.lang.CloneNotSupportedException" />
-				<invokespecial>
-					<!-- TODO if we already know statically that the type implements java.lang.Cloneable this check can be omitted -->
-					<dup />
+				<body>
+					<ldarg_0 />
 					<isinst class="java.lang.Cloneable" />
 					<brtrue name="ok" />
 					<newobj class="java.lang.CloneNotSupportedException" name="&lt;init&gt;" sig="()V" />
 					<throw />
-					<!--call type="ObjectHelper" name="throwCloneNotSupportedException" /-->
 					<label name="ok" />
+					<ldarg_0 />
 					<call type="System.Object, mscorlib" name="MemberwiseClone" />
-				</invokespecial>
-				<invokevirtual>
-					<call type="ObjectHelper" name="virtualclone" />
-				</invokevirtual>
+					<ret />
+				</body>
+				<alternateBody>
+					<ldarg_0 />
+					<isinst type="System.Array, mscorlib" />
+					<dup />
+					<brtrue name="ok" />
+					<newobj class="java.lang.CloneNotSupportedException" name="&lt;init&gt;" sig="()V" />
+					<throw />
+					<label name="ok" />
+					<call type="System.Array, mscorlib" name="Clone" sig="()Ljava.lang.Object;" />
+					<ret />
+				</alternateBody>
 			</method>
-			<!-- virtual methods -->
-			<!-- TODO every object that doesn't override toString or hashCode will now be called through these
-				conditional constructs, this is unnecessary (and not very efficient), so I need to figure out a way
-				to prevent this -->
 			<method name="toString" sig="()Ljava.lang.String;" modifiers="public">
 				<override name="ToString" />
-				<invokespecial>
+				<body>
+					<ldarg_0 />
 					<call class="java.lang.ObjectHelper" name="toStringSpecial" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
-				</invokespecial>
-				<invokevirtual>
-					<dup />
+					<ret />
+				</body>
+				<alternateBody>
+					<ldarg_0 />
 					<isinst type="System.Array, mscorlib" />
 					<brfalse name="skip" />
+					<ldarg_0 />
 					<call class="java.lang.ObjectHelper" name="toStringSpecial" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
 					<br name="end" />
 					<label name="skip" />
+					<ldarg_0 />
 					<callvirt type="System.Object, mscorlib" name="ToString" />
 					<label name="end" />
-				</invokevirtual>
+					<ret />
+				</alternateBody>
 			</method>
 			<method name="hashCode" sig="()I" modifiers="public">
 				<override name="GetHashCode" />
-				<invokevirtual>
-					<dup />
-					<isinst type="System.String, mscorlib" />
-					<brfalse name="skip" />
-					<castclass type="System.String, mscorlib" />
-					<call class="java.lang.StringHelper" name="hashCode" sig="(Ljava.lang.String;)I" />
-					<br name="end" />
-					<label name="skip" />
-					<callvirt type="System.Object, mscorlib" name="GetHashCode" />
-					<label name="end" />
-				</invokevirtual>
 			</method>
 			<method name="equals" sig="(Ljava.lang.Object;)Z" modifiers="public">
 				<override name="Equals" />
 			</method>
 			<method name="finalize" sig="()V" modifiers="protected">
 				<throws class="java.lang.Throwable" />
-				<override name="Finalize" />
+				<!-- NOTE we don't override Finalize, because that would be bad for performance,
+					 instead, the compiler contains a hack to lazily override Finalize when a class
+					 overrides our finalize
+					 TODO consider adding code to constructor (in debug builds) to detect that someone
+					 has overriden our finalize from another .NET language (if no intermediate Java base class
+					 has overriden finalize, the lazy override of Object.Finalize hasn't kicked in and finalize
+					 will never be called)
+				-->
+				<body>
+					<ldarg_0 />
+					<call type="System.Object, mscorlib" name="Finalize" />
+					<ret />
+				</body>
+				<alternateBody>
+					<!-- if code in the java.lang package explicitly invokes finalize on a non java.lang.Object
+						 derived object	we just ignore it -->
+					<ret />
+				</alternateBody>
 			</method>
 		</class>
 		<class name="java.lang.String" type="System.String, mscorlib" modifiers="public final">
@@ -131,11 +159,11 @@
 			<implements class="java.io.Serializable" />
 			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-6849794470754667710" />
 			<constructor sig="()V" modifiers="public">
-				<!-- TODO -->
-				<newobj>
+				<alternateBody>
 					<ldstr value="" />
 					<call type="System.String, mscorlib" name="Copy" />
-				</newobj>
+					<ret />
+				</alternateBody>
 			</constructor>
 			<constructor sig="([C)V" modifiers="public" />
 			<constructor sig="([CII)V" modifiers="public" />
@@ -170,11 +198,14 @@
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIILjava.lang.String;)Ljava.lang.String;" />
 			</constructor>
 			<method name="hashCode" sig="()I" modifiers="public">
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)I" />
+				<body>
+					<ldarg_0 />
+					<call class="java.lang.StringHelper" name="hashCode" sig="(Ljava.lang.String;)I" />
+					<ret />
+				</body>
 			</method>
-			<method name="toString" sig="()Ljava.lang.String;" modifiers="public">
-				<redirect name="ToString" />
-			</method>
+			<!-- we have a toString here to make sure that toString shows up as a declared method in reflection -->
+			<method name="toString" sig="()Ljava.lang.String;" modifiers="public" />
 			<method name="valueOf" sig="(Z)Ljava.lang.String;" modifiers="public static">
 				<redirect class="java.lang.StringHelper" />
 			</method>
@@ -306,18 +337,22 @@
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" />
 			</method>
 			<method name="copyValueOf" sig="([C)Ljava.lang.String;" modifiers="public static">
-				<invokestatic>
+				<body>
+					<ldarg_0 />
 					<newobj type="System.String, mscorlib" name=".ctor" sig="([C)V" />
-				</invokestatic>
+					<ret />
+				</body>
 			</method>
 			<method name="copyValueOf" sig="([CII)Ljava.lang.String;" modifiers="public static">
-				<invokestatic>
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<ldarg_2 />
 					<newobj type="System.String, mscorlib" name=".ctor" sig="([CII)V" />
-				</invokestatic>
+					<ret />
+				</body>
 			</method>
-			<field name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" modifiers="public static final">
-				<redirect class="java.lang.StringHelper" type="static" name="getCaseInsensitiveOrder" sig="()Ljava.util.Comparator;" />
-			</field>
+			<field name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" modifiers="public static final" />
 			<!-- NOTE we're redirecting fields to static methods here!
 				NOTE only reading fields can be redirected
 			-->
@@ -328,46 +363,67 @@
 				as efficient as the coder of this construct wished for, but hey ;-) At least it works...
 			-->
 			<method name="zeroBasedStringValue" sig="(Ljava.lang.String;)[C" modifiers="static">
-				<redirect class="java.lang.StringHelper" name="GetValueField" />
+				<body>
+					<ldarg_0 />
+					<call type="System.String, mscorlib" name="ToCharArray" sig="()[C" />
+					<ret />
+				</body>
 			</method>
+			<!-- NOTE value and offset aren't used anymore in Classpath's StringBuffer, so we should drop them -->
 			<field name="value" sig="[C" modifiers="">
 				<redirect class="java.lang.StringHelper" type="static" name="GetValueField" sig="(Ljava.lang.String;)[C" />
 			</field>
 			<field name="offset" sig="I" modifiers="">
 				<redirect class="java.lang.StringHelper" type="static" name="GetOffsetField" sig="(Ljava.lang.String;)I" />
 			</field>
+			<!-- TODO mark this method as BeforeFieldInit (and benchmark to see if that is faster) -->
+			<clinit>
+				<body>
+					<newobj class="java.lang.String$CaseInsensitiveComparator" name="&lt;init&gt;" sig="()V" />
+					<stsfld class="java.lang.String" name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" />
+					<ret />
+				</body>
+			</clinit>
 		</class>
 		<class name="java.lang.Throwable" type="System.Exception, mscorlib" modifiers="public">
 			<implements class="java.io.Serializable" />
 			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-3042686055658047285" />
 			<constructor sig="()V" modifiers="public">
-				<invokespecial>
+				<body>
+					<ldarg_0 />
 					<call class="java.lang.ExceptionHelper" name="get_NullString" sig="()Ljava.lang.String;" />
 					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;)V" />
-				</invokespecial>
+					<ret />
+				</body>
 			</constructor>
 			<constructor sig="(Ljava.lang.String;)V" modifiers="public">
-				<invokespecial>
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
 					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;)V" />
-				</invokespecial>
+					<ret />
+				</body>
 			</constructor>
 			<constructor sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" modifiers="public">
-				<invokespecial>
-					<stloc name="x" type="System.Exception, mscorlib" />
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
 					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
-					<ldloc name="x" />
+					<ldarg_2 />
 					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
-				</invokespecial>
+					<ret />
+				</body>
 			</constructor>
 			<constructor sig="(Ljava.lang.Throwable;)V" modifiers="public">
-				<invokespecial>
-					<stloc name="x" type="System.Exception, mscorlib" />
-					<ldloc name="x" />
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
 					<call class="java.lang.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
-					<ldloc name="x" />
+					<ldarg_1 />
 					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
-				</invokespecial>
+					<ret />
+				</body>
 			</constructor>
 			<method type="virtual" name="printStackTrace" sig="()V" modifiers="public">
 				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
@@ -424,28 +480,28 @@
 		</class>
 	</remappings>
 	<nativeMethods>
-		<class name="java.lang.StringHelper">
-			<method name="constructCaseInsensitiveOrder" sig="()Ljava.util.Comparator;">
-				<newobj class="java.lang.String$CaseInsensitiveComparator" name="&lt;init&gt;" sig="()V" />
-				<ret />
-			</method>
-		</class>
 		<class name="ikvm.lang.CIL">
 			<method name="unbox_int" sig="(Ljava.lang.Object;)I">
-				<ldarg_0 />
-				<unbox type="System.Int32, mscorlib" />
-				<ldind_i4 />
-				<ret />
+				<body>
+					<ldarg_0 />
+					<unbox type="System.Int32, mscorlib" />
+					<ldind_i4 />
+					<ret />
+				</body>
 			</method>
 		</class>
 		<class name="ikvm.lang.ByteArrayHack">
 			<method name="cast" sig="([B)[Lcli.System.Byte;">
-				<ldarg_0 />
-				<ret />
+				<body>
+					<ldarg_0 />
+					<ret />
+				</body>
 			</method>
 			<method name="cast" sig="([Lcli.System.Byte;)[B">
-				<ldarg_0 />
-				<ret />
+				<body>
+					<ldarg_0 />
+					<ret />
+				</body>
 			</method>
 		</class>
 	</nativeMethods>
@@ -485,14 +541,18 @@
 		<exception src="System.Threading.ThreadAbortException, mscorlib" dst="java.lang.ThreadDeath">
 			<code>
 				<castclass type="System.Threading.ThreadAbortException, mscorlib" />
-				<call type="System.Threading.ThreadAbortException, mscorlib" name="get_ExceptionState" sig="()Ljava.lang.Object" />
-				<isinst type="System.Exception, mscorlib" />
+				<call type="System.Threading.ThreadAbortException, mscorlib" name="get_ExceptionState" sig="()Ljava.lang.Object;" />
 				<dup />
+				<isinst class="java.lang.ThreadDeath" />
 				<brtrue name="end" />
 				<pop />
 				<newobj class="java.lang.ThreadDeath" name="&lt;init&gt;" sig="()V" />
 				<label name="end" />
-				<!-- NOTE ResetAbort clears the ExceptionState of the ThreadAbortException (why?) -->
+				<!-- NOTE we do this last because ResetAbort clears the ExceptionState of the ThreadAbortException (why?) -->
+				<!-- TODO we should put an exception handler around the ResetAbort call, because it will throw a ThreadStateException
+				     if no Abort is pending (someone could have thrown the exception manually, or we could have called on a 
+				     previous handler that turned out not to be match for this exception type) -->
+				<castclass class="java.lang.ThreadDeath" />
 				<call type="System.Threading.Thread, mscorlib" name="ResetAbort" sig="()V" />
 			</code>
 		</exception>

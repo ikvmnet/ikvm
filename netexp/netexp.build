@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="netexp" default="netexp">
     <target name="netexp">
-        <csc target="exe" output="../bin/netexp.exe">
+        <csc target="exe" output="../bin/netexp.exe" define="TRACE">
             <sources>
                 <includes name="*.cs" />
             </sources>
