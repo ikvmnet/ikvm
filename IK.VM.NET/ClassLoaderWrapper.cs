@@ -132,14 +132,7 @@ class ClassLoaderWrapper
 		typeToTypeWrapper.Add(typeof(java.lang.Cloneable), types["java.lang.Cloneable"]);
 		types["java.io.Serializable"] = new RemappedTypeWrapper(this, ModifiersAttribute.GetModifiers(typeof(java.io.Serializable)), "java/io/Serializable", typeof(java.io.Serializable), new TypeWrapper[0], null);
 		typeToTypeWrapper.Add(typeof(java.io.Serializable), types["java.io.Serializable"]);
-		MapXml.Root map = null;
-		using(Stream s = Assembly.GetExecutingAssembly().GetManifestResourceStream("map.xml"))
-		{
-			// TODO the XmlSerializer generates a bunch of C# code and compiles that. This is very slow, we probably
-			// shouldn't use it.
-			System.Xml.Serialization.XmlSerializer ser = new System.Xml.Serialization.XmlSerializer(typeof(MapXml.Root));
-			map = (MapXml.Root)ser.Deserialize(s);
-		}
+		MapXml.Root map = MapXmlGenerator.Generate();
 		foreach(MapXml.Class c in map.remappings)
 		{
 			TypeWrapper baseWrapper = null;

@@ -143,7 +143,12 @@
                 />
                 <File
                     RelPath = "map.xml"
-                    BuildAction = "EmbeddedResource"
+                    BuildAction = "None"
+                />
+                <File
+                    RelPath = "mapxml.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
                 />
                 <File
                     RelPath = "ObjectHelper.cs"
