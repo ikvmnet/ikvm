@@ -1435,7 +1435,8 @@ class DynamicTypeWrapper : TypeWrapper
 								}
 							}
 							ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
-							ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retType.IsValueType || retType == typeof(void)) ? retType : typeof(IntPtr), modargs);
+							Type returnType =(retType.IsValueType || retType == typeof(void)) ? retType : typeof(IntPtr);
+							ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, returnType, modargs);
 							LocalBuilder retValue = null;
 							if(retType != typeof(void))
 							{
