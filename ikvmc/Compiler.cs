@@ -27,7 +27,7 @@ using System.IO;
 using System.Reflection;
 using ICSharpCode.SharpZipLib.Zip;
 
-class Compiler : MarshalByRefObject
+class Compiler
 {
 	private static ArrayList GetArgs(string[] args)
 	{
@@ -119,7 +119,14 @@ class Compiler : MarshalByRefObject
 				else if(s.StartsWith("-recurse:"))
 				{
 					string spec = s.Substring(9);
-					Recurse(classes, resources, new DirectoryInfo(Path.GetDirectoryName(spec)), Path.GetFileName(spec));
+					if(Directory.Exists(spec))
+					{
+						Recurse(classes, resources, new DirectoryInfo(spec), "*");
+					}
+					else
+					{
+						Recurse(classes, resources, new DirectoryInfo(Path.GetDirectoryName(spec)), Path.GetFileName(spec));
+					}
 				}
 				else if(s.StartsWith("-resource:"))
 				{
@@ -149,7 +156,12 @@ class Compiler : MarshalByRefObject
 			}
 			else
 			{
-				ProcessFile(classes, resources, s);
+				string path = Path.GetDirectoryName(s);
+				string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(s));
+				foreach(string f in files)
+				{
+					ProcessFile(classes, resources, f);
+				}
 			}
 		}
 		if(outputfile == null)
@@ -200,48 +212,49 @@ class Compiler : MarshalByRefObject
 
 	private static void ProcessFile(ArrayList classes, Hashtable resources, string file)
 	{
-		if(file.ToLower().EndsWith(".class"))
+		switch(new FileInfo(file).Extension.ToLower())
 		{
-			using(FileStream fs = new FileStream(file, FileMode.Open))
-			{
-				byte[] b = new byte[fs.Length];
-				fs.Read(b, 0, b.Length);
-				classes.Add(b);
-			}
-		}
-		else if(file.ToLower().EndsWith(".jar") || file.ToLower().EndsWith(".zip"))
-		{
-			ZipFile zf = new ZipFile(file);
-			try
-			{
-				foreach(ZipEntry ze in zf)
+			case ".class":
+				using(FileStream fs = new FileStream(file, FileMode.Open))
 				{
-					if(ze.Name.ToLower().EndsWith(".class"))
+					byte[] b = new byte[fs.Length];
+					fs.Read(b, 0, b.Length);
+					classes.Add(b);
+				}
+				break;
+			case ".jar":
+			case ".zip":
+				ZipFile zf = new ZipFile(file);
+				try
+				{
+					foreach(ZipEntry ze in zf)
 					{
-						classes.Add(ReadFromZip(zf, ze));
-					}
-					else
-					{
-						// if it's not a class, we treat it as a resource
-						if(resources.ContainsKey(ze.Name))
+						if(ze.Name.ToLower().EndsWith(".class"))
 						{
-							Console.Error.WriteLine("Warning: skipping resource (name clash): " + ze.Name);
+							classes.Add(ReadFromZip(zf, ze));
 						}
 						else
 						{
-							resources.Add(ze.Name, ReadFromZip(zf, ze));
+							// if it's not a class, we treat it as a resource
+							if(resources.ContainsKey(ze.Name))
+							{
+								Console.Error.WriteLine("Warning: skipping resource (name clash): " + ze.Name);
+							}
+							else
+							{
+								resources.Add(ze.Name, ReadFromZip(zf, ze));
+							}
 						}
 					}
 				}
-			}
-			finally
-			{
-				zf.Close();
-			}
-		}
-		else
-		{
-			Console.Error.WriteLine("Warning: Unknown file type: {0}", file);
+				finally
+				{
+					zf.Close();
+				}
+				break;
+			default:
+				Console.Error.WriteLine("Warning: Unknown file type: {0}", file);
+				break;
 		}
 	}
 

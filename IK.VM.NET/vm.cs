@@ -137,16 +137,19 @@ public class JVM
 
 		protected override ModuleBuilder CreateModuleBuilder()
 		{
-			AssemblyName name = new AssemblyName();
-			name.Name = assembly;
-			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
-			CustomAttributeBuilder ikvmAssemblyAttr = new CustomAttributeBuilder(typeof(IKVMAssemblyAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
-			assemblyBuilder.SetCustomAttribute(ikvmAssemblyAttr);
-			moduleBuilder = assemblyBuilder.DefineDynamicModule(path, JVM.Debug);
-			if(JVM.Debug)
+			if(moduleBuilder == null)
 			{
-				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, true });
-				moduleBuilder.SetCustomAttribute(debugAttr);
+				AssemblyName name = new AssemblyName();
+				name.Name = assembly;
+				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave);
+				CustomAttributeBuilder ikvmAssemblyAttr = new CustomAttributeBuilder(typeof(IKVMAssemblyAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+				assemblyBuilder.SetCustomAttribute(ikvmAssemblyAttr);
+				moduleBuilder = assemblyBuilder.DefineDynamicModule(path, JVM.Debug);
+				if(JVM.Debug)
+				{
+					CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, true });
+					moduleBuilder.SetCustomAttribute(debugAttr);
+				}
 			}
 			return moduleBuilder;
 		}
@@ -178,6 +181,11 @@ public class JVM
 
 		internal void AddResources(Hashtable resources)
 		{
+			if(moduleBuilder == null)
+			{
+				// this happens if the module contains no clases
+				CreateModuleBuilder();
+			}
 			foreach(DictionaryEntry d in resources)
 			{
 				byte[] buf = (byte[])d.Value;
@@ -194,6 +202,10 @@ public class JVM
 	{
 		isStaticCompiler = true;
 		noJniStubs = nojni;
+		foreach(string r in references)
+		{
+			Assembly.LoadFrom(r);
+		}
 		Hashtable h = new Hashtable();
 		Console.WriteLine("Parsing class files");
 		for(int i = 0; i < classes.Length; i++)
@@ -244,10 +256,6 @@ public class JVM
 		Console.WriteLine("Constructing compiler");
 		CompilerClassLoader loader = new CompilerClassLoader(path, assembly, h);
 		ClassLoaderWrapper.SetBootstrapClassLoader(loader);
-		foreach(string r in references)
-		{
-			Assembly.LoadFrom(r);
-		}
 		Console.WriteLine("Loading remapped types (1)");
 		loader.LoadRemappedTypes();
 		Console.WriteLine("Compiling class files (1)");

@@ -1913,6 +1913,7 @@ class DynamicTypeWrapper : TypeWrapper
 				{
 					attribs |= MethodAttributes.Virtual;
 				}
+				bool setModifiers = false;
 				string name = m.Name;
 				MethodDescriptor md = new MethodDescriptor(wrapper.GetClassLoader(), m);
 				// if a method is virtual, we need to find the method it overrides (if any), for several reasons:
@@ -1924,10 +1925,11 @@ class DynamicTypeWrapper : TypeWrapper
 				bool explicitOverride = false;
 				if((attribs & MethodAttributes.Virtual) != 0 && !classFile.IsInterface)
 				{
+					MethodWrapper baseMce = null;
 					TypeWrapper tw = baseWrapper;
 					while(tw != null)
 					{
-						MethodWrapper baseMce = tw.GetMethodWrapper(md, true);
+						baseMce = tw.GetMethodWrapper(md, true);
 						if(baseMce == null)
 						{
 							break;
@@ -1993,8 +1995,23 @@ class DynamicTypeWrapper : TypeWrapper
 						// to override System.Object.Equals)
 						attribs |= MethodAttributes.NewSlot;
 					}
+					// if we have a method overriding a more accessible method (yes, this does work), we need to make the
+					// method more accessible, because otherwise the CLR will complain that we're reducing access)
+					if(baseMethod != null && 
+						((baseMethod.IsPublic && !m.IsPublic) ||
+						(baseMethod.IsFamily && !m.IsPublic && !m.IsProtected) ||
+						(!m.IsPublic && !m.IsProtected && !baseMce.DeclaringType.IsInSamePackageAs(wrapper))))
+					{
+						attribs &= ~MethodAttributes.MemberAccessMask;
+						attribs |= baseMethod.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+						setModifiers = true;
+					}
 				}
 				MethodBuilder mb = typeBuilder.DefineMethod(name, attribs, retType, args);
+				if(setModifiers)
+				{
+					ModifiersAttribute.SetModifiers(mb, m.Modifiers);
+				}
 				method = mb;
 				// since Java constructors (and static intializers) aren't allowed to be synchronized, we only check this here
 				if(m.IsSynchronized)

@@ -371,10 +371,4 @@ public final class FileDescriptor
 		// TODO might need to implement this
 		return 0;
 	}
-
-	long getNativeFd()
-	{
-		throw new Error("getNativeFd not supported");
-	}
-
 } // class FileDescriptor
