@@ -176,7 +176,7 @@ class ClassLoaderWrapper
 		{
 			if(c.Interfaces != null)
 			{
-				// NOTE we don't support intefaces that inherit from other interfaces
+				// NOTE we don't support interfaces that inherit from other interfaces
 				// (actually, if they are explicitly listed it would probably work)
 				TypeWrapper typeWrapper = (TypeWrapper)types[c.Name];
 				foreach(MapXml.Interface iface in c.Interfaces)
@@ -184,17 +184,26 @@ class ClassLoaderWrapper
 					TypeWrapper ifaceWrapper = (TypeWrapper)types[iface.Name];
 					if(ifaceWrapper == null || !ifaceWrapper.Type.IsAssignableFrom(typeWrapper.Type))
 					{
-						ArrayList list = (ArrayList)ghosts[iface.Name];
-						if(list == null)
-						{
-							list = new ArrayList();
-							ghosts[iface.Name] = list;
-						}
-						list.Add(typeWrapper);
+						AddGhost(iface.Name, typeWrapper);
 					}
 				}
 			}
 		}
+		// we manually add the array ghost interfaces
+		TypeWrapper array = GetWrapperFromType(typeof(Array));
+		AddGhost("java.io.Serializable", array);
+		AddGhost("java.lang.Cloneable", array);
+	}
+
+	private void AddGhost(string interfaceName, TypeWrapper implementer)
+	{
+		ArrayList list = (ArrayList)ghosts[interfaceName];
+		if(list == null)
+		{
+			list = new ArrayList();
+			ghosts[interfaceName] = list;
+		}
+		list.Add(implementer);
 	}
 
 	internal void LoadRemappedTypesStep2()
