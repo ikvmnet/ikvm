@@ -131,23 +131,34 @@ public class StringHelper
 		}
 		return String.Concat(s1, s2);
 	}
-
-//	private static object CASE_INSENSITIVE_ORDER;
-//
-//	public static object GetCaseInsensitiveOrder()
-//	{
-//		if(CASE_INSENSITIVE_ORDER == null)
-//		{
-//			CASE_INSENSITIVE_ORDER = Activator.CreateInstance(ClassLoaderWrapper.GetType("java.lang.String$CaseInsensitiveComparator"), true);
-//		}
-//		return CASE_INSENSITIVE_ORDER;
-//	}
 }
 
 public class StringBufferHelper
 {
 	private delegate string toHexStringDelegate(int i);
 	private static toHexStringDelegate toHexString;
+
+	public static int indexOf(StringBuilder thiz, string s)
+	{
+		return thiz.ToString().IndexOf(s);
+	}
+
+	public static int indexOf(StringBuilder thiz, string s, int off)
+	{
+		return thiz.ToString().IndexOf(s, off);
+	}
+
+	public static int lastIndexOf(StringBuilder thiz, string s)
+	{
+		// TODO make sure this is correct
+		return thiz.ToString().LastIndexOf(s);
+	}
+
+	public static int lastIndexOf(StringBuilder thiz, string s, int fromIndex)
+	{
+		// TODO make sure this is correct
+		return thiz.ToString().LastIndexOf(s, fromIndex);
+	}
 
 	public static StringBuilder append(StringBuilder thiz, object o)
 	{
@@ -230,6 +241,15 @@ public class StringBufferHelper
 		return thiz.Insert(index, s);
 	}
 
+	public static StringBuilder insert(StringBuilder thiz, int index, object o)
+	{
+		if(o == null)
+		{
+			o = "null";
+		}
+		return thiz.Insert(index, o);
+	}
+
 	public static string substring(StringBuilder thiz, int start, int end)
 	{
 		return thiz.ToString(start, end - start);
@@ -251,6 +271,22 @@ public class StringBufferHelper
 	public static StringBuilder delete(StringBuilder thiz, int start, int end)
 	{
 		return thiz.Remove(start, end - start);
+	}
+
+	public static StringBuilder deleteCharAt(StringBuilder thiz, int pos)
+	{
+		return thiz.Remove(pos, 1);
+	}
+
+	public static StringBuilder reverse(StringBuilder thiz)
+	{
+		for(int i = (thiz.Length / 2) - 1; i >=0; i--)
+		{
+			char c = thiz[i];
+			thiz[i] = thiz[thiz.Length - 1 - i];
+			thiz[thiz.Length - 1 - i] = c;
+		}
+		return thiz;
 	}
 
 	public static void getChars(StringBuilder thiz, int srcBegin, int srcEnd, char[] dst, int dstBegin)

@@ -354,11 +354,27 @@
 			<method name="capacity" sig="()I" modifiers="public">
 				<redirect name="get_Capacity" />
 			</method>
+			<method name="indexOf" sig="(Ljava.lang.String;)I" modifiers="public">
+				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.String;)I" />
+			</method>
+			<method name="indexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
+				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.String;I)I" />
+			</method>
+			<method name="lastIndexOf" sig="(Ljava.lang.String;)I" modifiers="public">
+				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.String;)I" />
+			</method>
+			<method name="lastIndexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
+				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.String;I)I" />
+			</method>
 			<method name="append" sig="(Ljava.lang.Object;)Ljava.lang.StringBuffer;" modifiers="public">
 				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.Object;)Ljava.lang.StringBuffer;" />
 			</method>
 			<method name="append" sig="(Ljava.lang.String;)Ljava.lang.StringBuffer;" modifiers="public">
 				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.String;)Ljava.lang.StringBuffer;" />
+			</method>
+			<!-- NOTE we're redirecting to append(Object), because StringBuilder doesn't have an Append(StringBuilder) -->
+			<method name="append" sig="(Ljava.lang.StringBuffer;)Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Ljava.lang.Object;)Ljava.lang.StringBuffer;" />
 			</method>
 			<method name="append" sig="(Z)Ljava.lang.StringBuffer;" modifiers="public">
 				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;Z)Ljava.lang.StringBuffer;" />
@@ -384,17 +400,49 @@
 			<method name="append" sig="([CII)Ljava.lang.StringBuffer;" modifiers="public">
 				<redirect name="Append" />
 			</method>
+			<method name="insert" sig="(IZ)Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect name="Insert" />
+			</method>
 			<method name="insert" sig="(IC)Ljava.lang.StringBuffer;" modifiers="public">
 				<redirect name="Insert" />
+			</method>
+			<method name="insert" sig="(I[C)Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect name="Insert" />
+			</method>
+			<method name="insert" sig="(I[CII)Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect name="Insert" />
+			</method>
+			<!-- TODO insert double should use our own version that formats the double correctly -->
+			<method name="insert" sig="(ID)Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect name="Insert" />
+			</method>
+			<!-- TODO insert float should use our own version that formats the float correctly -->
+			<method name="insert" sig="(IF)Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect name="Insert" />
+			</method>
+			<method name="insert" sig="(II)Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect name="Insert" />
+			</method>
+			<method name="insert" sig="(ILjava.lang.Object;)Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;ILjava.lang.Object;)Ljava.lang.StringBuffer;" />
 			</method>
 			<method name="insert" sig="(ILjava.lang.String;)Ljava.lang.StringBuffer;" modifiers="public">
 				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;ILjava.lang.String;)Ljava.lang.StringBuffer;" />
 			</method>
+			<method name="insert" sig="(IJ)Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect name="Insert" />
+			</method>
 			<method name="replace" sig="(IILjava.lang.String;)Ljava.lang.StringBuffer;" modifiers="public">
 				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;IILjava.lang.String;)Ljava.lang.StringBuffer;" />
 			</method>
+			<method name="reverse" sig="()Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;)Ljava.lang.StringBuffer;" />
+			</method>
 			<method name="delete" sig="(II)Ljava.lang.StringBuffer;" modifiers="public">
 				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;II)Ljava.lang.StringBuffer;" />
+			</method>
+			<method name="deleteCharAt" sig="(I)Ljava.lang.StringBuffer;" modifiers="public">
+				<redirect class="StringBufferHelper" type="static" sig="(Ljava.lang.StringBuffer;I)Ljava.lang.StringBuffer;" />
 			</method>
 			<method name="setCharAt" sig="(IC)V" modifiers="public">
 				<redirect name="set_Chars" />
