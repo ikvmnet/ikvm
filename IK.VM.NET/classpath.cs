@@ -681,8 +681,14 @@ namespace NativeCode.java
 		{
 			public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
 			{
-				// TODO
-				Array.Copy((Array)src, srcStart, (Array)dest, destStart, len);
+				Array srcArray = (Array)src;
+				Array destArray = (Array)dest;
+				if(srcStart < 0 || (srcStart + len) > srcArray.Length ||
+					destStart < 0 || (destStart + len) > destArray.Length || len < 0)
+				{
+					throw JavaException.ArrayIndexOutOfBoundsException();
+				}
+				Array.Copy(srcArray, srcStart, destArray, destStart, len);
 			}
 
 			public static bool isWordsBigEndian()
@@ -845,6 +851,18 @@ namespace NativeCode.java
 				return clazz;
 			}
 
+			public static bool IsAssignableFrom(Object w1, Object w2)
+			{
+				return ((TypeWrapper)w2).IsAssignableTo((TypeWrapper)w1);
+			}
+
+			public static object getComponentClassFromWrapper(object wrapper)
+			{
+				TypeWrapper elementWrapper = ((TypeWrapper)wrapper).ElementTypeWrapper;
+				elementWrapper.Finish();
+				return getClassFromWrapper(elementWrapper);
+			}
+
 			public static Type getTypeFromWrapper(object clazz, object wrapper)
 			{
 				((TypeWrapper)wrapper).Finish();
@@ -961,6 +979,19 @@ namespace NativeCode.java
 						return name.Replace('/', '.');
 					}
 					type = ((TypeWrapper)wrapperType).Type;
+				}
+				if(wrapperType == null)
+				{
+					wrapperType = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
+				}
+				if(wrapperType != null)
+				{
+					string name = ((TypeWrapper)wrapperType).Name;
+					// HACK name is null for primitives
+					if(name != null)
+					{
+						return name.Replace('/', '.');
+					}
 				}
 				if(type.IsValueType)
 				{
@@ -1103,6 +1134,16 @@ namespace NativeCode.java
 				MethodWrapper[] methods = wrapper.GetMethods();
 				for(int i = 0; i < methods.Length; i++)
 				{
+					// we don't want to expose synthetics methods (one reason is that it would
+					// mess up the serialVersionUID computation)
+					if(methods[i].Modifiers == Modifiers.Synthetic)
+					{
+						MethodWrapper[] newmethods = new MethodWrapper[methods.Length - 1];
+						Array.Copy(methods, 0, newmethods, 0, i);
+						Array.Copy(methods, i + 1, newmethods, i, methods.Length - 1 - i);
+						methods = newmethods;
+						continue;
+					}
 					if(methods[i].ReturnType.IsUnloadable)
 					{
 						throw JavaException.NoClassDefFoundError(methods[i].ReturnType.Name);
@@ -1434,14 +1475,23 @@ namespace NativeCode.java
 			public static bool hasClassInitializer(object clazz)
 			{
 				Type type = NativeCode.java.lang.Class.getType(clazz);
-				if(type.TypeInitializer != null)
+				try
 				{
-					if(ModifiersAttribute.GetModifiers(type.TypeInitializer) != Modifiers.Synthetic)
+					if(!type.IsArray && type.TypeInitializer != null)
 					{
-						return true;
+						if(ModifiersAttribute.GetModifiers(type.TypeInitializer) != Modifiers.Synthetic)
+						{
+							return true;
+						}
 					}
+					return false;
 				}
-				return false;
+				catch(Exception x)
+				{
+					Console.WriteLine(type.FullName);
+					Console.WriteLine(x);
+					return false;
+				}
 			}
 		}
 
