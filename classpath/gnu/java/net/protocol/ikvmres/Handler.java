@@ -160,9 +160,19 @@ public class Handler extends URLStreamHandler
 
     protected String toExternalForm(URL url)
     {
-	// NOTE originally I wanted to use java.net.URI to handling parsing and constructing of these things,
+	// NOTE originally I wanted to use java.net.URI to handle parsing and constructing of these things,
 	// but it turns out that URI uses regex and that depends on resource loading...
 	return "ikvmres://" + quote(url.getHost(), RFC2396_REG_NAME) + quote(url.getFile(), RFC2396_PATH_SEGMENTS);
+    }
+
+    protected InetAddress getHostAddress(URL url)
+    {
+	return null;
+    }
+
+    protected boolean hostsEqual(URL url1, URL url2)
+    {
+	return false;
     }
 
     private static String quote (String str, String legalCharacters)

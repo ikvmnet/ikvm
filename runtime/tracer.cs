@@ -132,12 +132,21 @@ public class Tracer
 		}
 	}
 
+	private static void WriteLine(string message, object[] p)
+	{
+		if(p.Length > 0)
+		{
+			message = string.Format(message, p);
+		}
+		Trace.WriteLine(string.Format("[{0:HH':'mm':'ss'.'fffff} {1}] {2}", DateTime.Now, Thread.CurrentThread.Name, message));
+	}
+
 	[Conditional("TRACE")]
 	public static void Info(TraceSwitch traceSwitch, string message, params object[] p)
 	{
 		if(traceSwitch.TraceInfo)
 		{
-			Trace.WriteLine(string.Format("[{0:HH':'mm':'ss'.'fffff} {1}] {2}", DateTime.Now, Thread.CurrentThread.Name, string.Format(message, p)));
+			WriteLine(message, p);
 		}
 	}
 
@@ -152,7 +161,7 @@ public class Tracer
 	{
 		if(traceSwitch.TraceWarning)
 		{
-			Trace.WriteLine(string.Format("[{0:HH':'mm':'ss'.'fffff} {1}] {2}", DateTime.Now, Thread.CurrentThread.Name, string.Format(message, p)));
+			WriteLine(message, p);
 		}
 	}
 
@@ -161,7 +170,7 @@ public class Tracer
 	{
 		if(traceSwitch.TraceError)
 		{
-			Trace.WriteLine(string.Format("[{0:HH':'mm':'ss'.'fffff} {1}] {2}", DateTime.Now, Thread.CurrentThread.Name, string.Format(message, p)));
+			WriteLine(message, p);
 		}
 	}
 

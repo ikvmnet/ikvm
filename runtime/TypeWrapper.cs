@@ -501,7 +501,7 @@ class AttributeHelper
 		}
 		// NOTE Java doesn't support non-virtual methods, but we set the Final modifier for
 		// non-virtual methods to approximate the semantics
-		if((mb.IsFinal || !mb.IsVirtual) && !mb.IsStatic && !mb.IsConstructor)
+		if((mb.IsFinal || (!mb.IsVirtual && !mb.IsPrivate && !assemblyIsPrivate)) && !mb.IsStatic && !mb.IsConstructor)
 		{
 			modifiers |= Modifiers.Final;
 		}
@@ -1854,6 +1854,7 @@ class DynamicTypeWrapper : TypeWrapper
 	private MethodBuilder ghostCastMethod;
 	private MethodBuilder ghostCastArrayMethod;
 	private static TypeWrapper[] mappedExceptions;
+	private static bool[] mappedExceptionsAllSubClasses;
 	private static Hashtable ghosts;
 	private static Hashtable nativeMethods;
 
@@ -2155,7 +2156,8 @@ class DynamicTypeWrapper : TypeWrapper
 			{
 				for(int i = 0; i < mappedExceptions.Length; i++)
 				{
-					if(mappedExceptions[i].IsSubTypeOf(this))
+					if(mappedExceptions[i].IsSubTypeOf(this) ||
+						(mappedExceptionsAllSubClasses[i] && this.IsSubTypeOf(mappedExceptions[i])))
 					{
 						return true;
 					}
@@ -2167,10 +2169,17 @@ class DynamicTypeWrapper : TypeWrapper
 
 	internal static void LoadMappedExceptions(MapXml.Root map)
 	{
+		mappedExceptionsAllSubClasses = new bool[map.exceptionMappings.Length];
 		mappedExceptions = new TypeWrapper[map.exceptionMappings.Length];
 		for(int i = 0; i < mappedExceptions.Length; i++)
 		{
-			mappedExceptions[i] = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(map.exceptionMappings[i].dst);
+			string dst = map.exceptionMappings[i].dst;
+			if(dst[0] == '*')
+			{
+				mappedExceptionsAllSubClasses[i] = true;
+				dst = dst.Substring(1);
+			}
+			mappedExceptions[i] = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dst);
 		}
 	}
 
@@ -3478,10 +3487,8 @@ class DynamicTypeWrapper : TypeWrapper
 							}
 							// here are the complex rules for determining whether this method overrides the method we found
 							// RULE 1: final methods may not be overridden
-							if(baseMce.IsFinal)
+							if(baseMce.IsFinal && !baseMce.IsPrivate)
 							{
-								// NOTE we don't need to test for our method being private, because if it is
-								// we'll never get here (because private methods aren't virtual)
 								// TODO make sure the VerifyError is translated into a java.lang.VerifyError
 								throw new VerifyError("final method " + baseMce.Name + baseMce.Descriptor.Signature + " in " + tw.Name + " is overriden in " + wrapper.Name);
 							}
@@ -3746,12 +3753,16 @@ class DynamicTypeWrapper : TypeWrapper
 
 		private static bool IsInterfaceMethod(TypeWrapper wrapper, MethodDescriptor md)
 		{
-			foreach(TypeWrapper iface in wrapper.Interfaces)
+			while(wrapper != null)
 			{
-				if(iface.GetMethodWrapper(md, false) != null || IsInterfaceMethod(iface, md))
+				foreach(TypeWrapper iface in wrapper.Interfaces)
 				{
-					return true;
+					if(iface.GetMethodWrapper(md, false) != null || IsInterfaceMethod(iface, md))
+					{
+						return true;
+					}
 				}
+				wrapper = wrapper.BaseTypeWrapper;
 			}
 			return false;
 		}
@@ -4234,15 +4245,21 @@ class CompiledTypeWrapper : LazyTypeWrapper
 			// if we're a remapped interface, we need to get the methods from the real interface
 			if(remappedType.IsInterface)
 			{
+				Type nestedHelper = type.GetNestedType("__Helper", BindingFlags.Public | BindingFlags.Static);
 				foreach(RemappedInterfaceMethodAttribute m in type.GetCustomAttributes(typeof(RemappedInterfaceMethodAttribute), false))
 				{
 					MethodInfo method = remappedType.GetMethod(m.MappedTo);
+					MethodInfo mbHelper = null;
 					Modifiers modifiers = AttributeHelper.GetModifiers(method, false);
 					MethodDescriptor md = MethodDescriptor.FromMethodBase(method);
 					md = MethodDescriptor.FromNameSig(GetClassLoader(), m.Name, md.Signature);
-					MethodWrapper mw = new MethodWrapper(this, md, method, modifiers, false);
+					if(nestedHelper != null)
+					{
+						mbHelper = nestedHelper.GetMethod(m.Name);
+					}
+					MethodWrapper mw = new CompiledRemappedMethodWrapper(this, md, method, modifiers, false, mbHelper != null ? mbHelper : method);
 					mw.EmitCall = CodeEmitter.InternalError;
-					mw.EmitCallvirt = CodeEmitter.Create(OpCodes.Callvirt, method);
+					mw.EmitCallvirt = CodeEmitter.Create(mbHelper != null ? OpCodes.Call : OpCodes.Callvirt, mbHelper != null ? mbHelper : method);
 					mw.EmitNewobj = CodeEmitter.InternalError;
 					AddMethod(mw);
 				}
@@ -4486,7 +4503,11 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		}
 		else if(type.IsNestedPublic)
 		{
-			modifiers |= Modifiers.Public | Modifiers.Static;
+			modifiers |= Modifiers.Static;
+			if(IsVisible(type))
+			{
+				modifiers |= Modifiers.Public;
+			}
 		}
 		else if(type.IsNestedPrivate)
 		{
@@ -4712,7 +4733,7 @@ class DotNetTypeWrapper : LazyTypeWrapper
 		}
 	}
 
-	private static bool IsVisible(Type type)
+	internal static bool IsVisible(Type type)
 	{
 		return type.IsPublic || (type.IsNestedPublic && IsVisible(type.DeclaringType));
 	}

@@ -207,7 +207,7 @@ public class NetExp
 				java.lang.Class[] args = constructors[i].getParameterTypes();
 				FieldOrMethod m = f.AddMethod(mods, "<init>", MakeSig(args, java.lang.Void.TYPE));
 				CodeAttribute code = new CodeAttribute(f);
-				code.MaxLocals = (ushort)(args.Length + 1);
+				code.MaxLocals = (ushort)(args.Length * 2 + 1);
 				code.MaxStack = 3;
 				ushort index1 = f.AddClass("java/lang/UnsatisfiedLinkError");
 				ushort index2 = f.AddString("ikvmstub generated stubs can only be used on IKVM.NET");

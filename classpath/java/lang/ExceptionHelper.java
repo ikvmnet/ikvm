@@ -456,11 +456,7 @@ public final class ExceptionHelper
 	}
 	else
 	{
-	    // TODO we need to use getCauseForSerialization, but Classpath 0.09 has a bug that
-	    // causes infinite recursion if we try to save a reference to this here (which
-	    // happens if cause was uninitialized [it gets set to 'this' to signal that])
-	    cause = eih.get_Cause();
-	    //cause = eih.getCauseForSerialization(t);
+	    cause = eih.getCauseForSerialization(t);
 	}
 	fields.put("cause", cause);
 	fields.put("stackTrace", t.getStackTrace());
@@ -479,7 +475,8 @@ public final class ExceptionHelper
 	    throw new IOException(x.getMessage());
 	}
 	initThrowable(t, fields.get("detailMessage", null), fields.get("cause", null));
-	setStackTrace(t, (StackTraceElement[])fields.get("stackTrace", null));
+	StackTraceElement[] stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
+	setStackTrace(t, stackTrace == null ? new StackTraceElement[0] : stackTrace);
     }
 
     private static native void initThrowable(Object throwable, Object detailMessage, Object cause);

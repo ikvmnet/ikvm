@@ -343,7 +343,13 @@
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
 			</method>
 			<method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public">
-				<redirect name="CompareTo" />
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<castclass type="System.String, mscorlib" />
+					<call class="java.lang.StringHelper" name="compareTo" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
+					<ret />
+				</body>
 			</method>
 			<method name="replace" sig="(CC)Ljava.lang.String;" modifiers="public">
 				<redirect name="Replace" />
@@ -812,8 +818,10 @@
 		<!-- HACK for String methods, we remap ArgumentOutOfRangeException to StringIndexOutOfBoundsException -->
 		<exception src="System.ArgumentOutOfRangeException, mscorlib" dst="java.lang.StringIndexOutOfBoundsException" />
 		<exception src="System.InvalidCastException, mscorlib" dst="java.lang.ClassCastException" />
-		<!-- NOTE we "map" to java.lang.Error, because that is the base class of all possible mappings -->
-		<exception src="System.TypeInitializationException, mscorlib" dst="java.lang.Error">
+		<!-- NOTE we "map" to java.lang.Error, because that is the base class of all possible mappings.
+			The * in front of the class name means that all subclasses can be thrown as well.
+		 -->
+		<exception src="System.TypeInitializationException, mscorlib" dst="*java.lang.Error">
 			<code>
 				<call type="System.Exception, mscorlib" name="get_InnerException" sig="()Ljava.lang.Throwable;" />
 				<call class="java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />

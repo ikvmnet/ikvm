@@ -691,7 +691,7 @@ class Compiler
 			if(args[i].IsUnloadable)
 			{
 				Profiler.Count("EmitDynamicCast");
-				ilGenerator.Emit(OpCodes.Ldarg, (ushort)(i + (m.IsStatic ? 0 : 1)));
+				ilGenerator.Emit(OpCodes.Ldarg, (short)(i + (m.IsStatic ? 0 : 1)));
 				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 				ilGenerator.Emit(OpCodes.Ldstr, args[i].Name);
 				ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicCast"));
@@ -3106,7 +3106,7 @@ class Compiler
 					}
 					else
 					{
-						ilGenerator.Emit(OpCodes.Ldarg, (ushort)i);
+						ilGenerator.Emit(OpCodes.Ldarg, (short)i);
 					}
 					break;
 			}
@@ -3147,7 +3147,7 @@ class Compiler
 			}
 			else
 			{
-				ilGenerator.Emit(OpCodes.Starg, (ushort)i);
+				ilGenerator.Emit(OpCodes.Starg, (short)i);
 			}
 		}
 		else if(v.type == VerifierTypeWrapper.Null)

@@ -1341,7 +1341,15 @@ namespace NativeCode.java
 				Profiler.Enter("ObjectInputStream.allocateObject");
 				try
 				{
-					return JniHelper.AllocObject(clazz);
+					TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+					// if we're trying to deserialize a string as a TC_OBJECT, just return an emtpy string (Sun does the same)
+					if(wrapper == CoreClasses.java.lang.String.Wrapper)
+					{
+						return "";
+					}
+					wrapper.Finish();
+					// TODO do we need error handling? (e.g. when trying to instantiate an interface or abstract class)
+					return NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
 				}
 				finally
 				{
@@ -1355,15 +1363,20 @@ namespace NativeCode.java
 				try
 				{
 					TypeWrapper type = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
-					type.Finish();
-					MethodWrapper mw = type.GetMethodWrapper(MethodDescriptor.FromNameSig(type.GetClassLoader(), "<init>", "()V"), false);
-					if(mw == null)
+					// if we're trying to deserialize a string as a TC_OBJECT, we already have an initialized emtpy string
+					// so there is no need to call the constructor (which wouldn't work anyway).
+					if(!(obj is string))
 					{
-						// TODO what should we do here?
-						throw new NotImplementedException();
+						type.Finish();
+						MethodWrapper mw = type.GetMethodWrapper(MethodDescriptor.FromNameSig(type.GetClassLoader(), "<init>", "()V"), false);
+						if(mw == null)
+						{
+							// TODO what should we do here?
+							throw new NotImplementedException();
+						}
+						// TODO what about exceptions? (should they be unwrapped?)
+						mw.Invoke(obj, null, true);
 					}
-					// TODO what about exceptions? (should they be unwrapped?)
-					mw.Invoke(obj, null, true);
 				}
 				finally
 				{
@@ -1459,6 +1472,27 @@ namespace NativeCode.java
 					}
 				}
 				return s;
+			}
+		}
+	}
+
+	namespace security
+	{
+		public class VMAccessController
+		{
+			public static object[][] getStack()
+			{
+				NetSystem.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace(1);
+				object[][] array = new object[2][];
+				array[0] = (object[])Array.CreateInstance(CoreClasses.java.lang.Class.Wrapper.TypeAsArrayType, trace.FrameCount);
+				array[1] = new string[trace.FrameCount];
+				for(int i = 0; i < trace.FrameCount; i++)
+				{
+					MethodBase mb = trace.GetFrame(i).GetMethod();
+					array[0][i] = NativeCode.java.lang.VMClass.getClassFromType(mb.DeclaringType);
+					array[1][i] = mb.Name;
+				}
+				return array;
 			}
 		}
 	}

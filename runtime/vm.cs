@@ -340,7 +340,7 @@ public class JVM
 			{
 				// NOTE we're passing a null context, this is safe because the return type
 				// should always be loadable
-				Debug.CompareTo(!md.RetTypeWrapper.IsUnloadable);
+				System.Diagnostics.Debug.Assert(!md.RetTypeWrapper.IsUnloadable);
 				md.RetTypeWrapper.EmitCheckcast(null, ilgen);
 			}
 		}
@@ -348,6 +348,7 @@ public class JVM
 		private class RemapperTypeWrapper : TypeWrapper
 		{
 			private TypeBuilder typeBuilder;
+			private TypeBuilder helperTypeBuilder;
 			private Type shadowType;
 			private MapXml.Class classDef;
 			private TypeWrapper[] interfaceWrappers;
@@ -517,7 +518,7 @@ public class JVM
 					this.EmitNewobj = CodeEmitter.InternalError;
 				}
 
-				internal static RemappedMethodWrapper Create(RemapperTypeWrapper typeWrapper, MapXml.Constructor m)
+				internal static RemappedMethodWrapper Create(RemapperTypeWrapper typeWrapper, MapXml.Constructor m, MapXml.Root map)
 				{
 					ConstructorBuilder cbCore = null;
 					MethodBuilder cbHelper = null;
@@ -538,7 +539,7 @@ public class JVM
 					return new RemappedMethodWrapper(typeWrapper, md, cbCore, cbHelper, (Modifiers)m.Modifiers, m);
 				}
 
-				internal static RemappedMethodWrapper Create(RemapperTypeWrapper typeWrapper, MapXml.Method m)
+				internal static RemappedMethodWrapper Create(RemapperTypeWrapper typeWrapper, MapXml.Method m, MapXml.Root map)
 				{
 					MethodDescriptor md = MethodDescriptor.FromNameSig(typeWrapper.GetClassLoader(), m.Name, m.Sig);
 
@@ -558,9 +559,69 @@ public class JVM
 							// TODO we need a place to stick the declared exceptions
 							throw new NotImplementedException();
 						}
+						// if any of the remapped types has a body for this interface method, we need a helper method
+						// to special invocation through this interface for that type
+						ArrayList specialCases = null;
+						foreach(MapXml.Class c in map.assembly)
+						{
+							if(c.Methods != null)
+							{
+								foreach(MapXml.Method mm in c.Methods)
+								{
+									if(mm.Name == m.Name && mm.Sig == m.Sig && mm.body != null)
+									{
+										if(specialCases == null)
+										{
+											specialCases = new ArrayList();
+										}
+										specialCases.Add(c);
+										break;
+									}
+								}
+							}
+						}
 						CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(RemappedInterfaceMethodAttribute).GetConstructor(new Type[] { typeof(string), typeof(string) }), new object[] { m.Name, m.@override.Name } );
 						typeWrapper.typeBuilder.SetCustomAttribute(cab);
-						return new RemappedMethodWrapper(typeWrapper, md, interfaceMethod, (Modifiers)m.Modifiers);
+						RemappedMethodWrapper methodWrapper = new RemappedMethodWrapper(typeWrapper, md, interfaceMethod, (Modifiers)m.Modifiers);
+						if(specialCases != null)
+						{
+							Type[] temp = md.ArgTypesForDefineMethod;
+							Type[] argTypes = new Type[temp.Length + 1];
+							temp.CopyTo(argTypes, 1);
+							argTypes[0] = typeWrapper.shadowType;
+							if(typeWrapper.helperTypeBuilder == null)
+							{
+								// FXBUG we use a nested helper class, because Reflection.Emit won't allow us to add a static method to the interface
+								typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class);
+							}
+							MethodBuilder helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.Public | MethodAttributes.Static, md.RetTypeForDefineMethod, argTypes);
+							ILGenerator ilgen = helper.GetILGenerator();
+							foreach(MapXml.Class c in specialCases)
+							{
+								TypeWrapper tw = typeWrapper.GetClassLoader().LoadClassByDottedName(c.Name);
+								ilgen.Emit(OpCodes.Ldarg_0);
+								ilgen.Emit(OpCodes.Isinst, tw.TypeAsTBD);
+								ilgen.Emit(OpCodes.Dup);
+								Label label = ilgen.DefineLabel();
+								ilgen.Emit(OpCodes.Brfalse_S, label);
+								for(int i = 1; i < argTypes.Length; i++)
+								{
+									ilgen.Emit(OpCodes.Ldarg, (short)i);
+								}
+								tw.GetMethodWrapper(md, false).EmitCallvirt.Emit(ilgen);
+								ilgen.Emit(OpCodes.Ret);
+								ilgen.MarkLabel(label);
+								ilgen.Emit(OpCodes.Pop);
+							}
+							for(int i = 0; i < argTypes.Length; i++)
+							{
+								ilgen.Emit(OpCodes.Ldarg, (short)i);
+							}
+							methodWrapper.EmitCallvirt.Emit(ilgen);
+							ilgen.Emit(OpCodes.Ret);
+							methodWrapper.EmitCallvirt = CodeEmitter.Create(OpCodes.Call, helper);
+						}
+						return methodWrapper;
 					}
 
 					MethodBuilder mbCore = null;
@@ -946,7 +1007,7 @@ public class JVM
 				}
 			}
 
-			internal void Process2ndPass()
+			internal void Process2ndPass(MapXml.Root map)
 			{
 				MapXml.Class c = classDef;
 				TypeBuilder tb = typeBuilder;
@@ -975,7 +1036,7 @@ public class JVM
 				{
 					foreach(MapXml.Constructor m in c.Constructors)
 					{
-						AddMethod(RemappedMethodWrapper.Create(this, m));
+						AddMethod(RemappedMethodWrapper.Create(this, m, map));
 					}
 				}
 
@@ -984,7 +1045,7 @@ public class JVM
 					// TODO we should also add methods from our super classes (e.g. Throwable should have Object's methods)
 					foreach(MapXml.Method m in c.Methods)
 					{
-						AddMethod(RemappedMethodWrapper.Create(this, m));
+						AddMethod(RemappedMethodWrapper.Create(this, m, map));
 					}
 				}
 
@@ -1074,6 +1135,10 @@ public class JVM
 				}
 
 				typeBuilder.CreateType();
+				if(helperTypeBuilder != null)
+				{
+					helperTypeBuilder.CreateType();
+				}
 			}
 
 			internal override TypeWrapper DeclaringTypeWrapper
@@ -1172,7 +1237,7 @@ public class JVM
 				if(c.Shadows != null)
 				{
 					RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
-					typeWrapper.Process2ndPass();
+					typeWrapper.Process2ndPass(map);
 				}
 			}
 		}

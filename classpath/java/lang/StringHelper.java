@@ -218,7 +218,7 @@ final class StringHelper
 
     static String NewString(byte[] ascii, int hibyte, int offset, int count)
     {
-	if (offset < 0 || count < 0 || offset + count > ascii.length)
+	if (offset < 0 || count < 0 || ascii.length - offset < count)
 	    throw new StringIndexOutOfBoundsException();
 	char[] value = new char[count];
 	hibyte <<= 8;
@@ -236,7 +236,7 @@ final class StringHelper
     static String NewString(byte[] data, int offset, int count, String encoding)
 	throws UnsupportedEncodingException
     {
-	if (offset < 0 || count < 0 || offset + count > data.length)
+	if (offset < 0 || count < 0 || data.length - offset < count)
 	    throw new StringIndexOutOfBoundsException();
 	try
 	{
@@ -258,7 +258,7 @@ final class StringHelper
 
     static String NewString(byte[] data, int offset, int count)
     {
-	if (offset < 0 || count < 0 || offset + count > data.length)
+	if (offset < 0 || count < 0 || data.length - offset < count)
 	    throw new StringIndexOutOfBoundsException();
 	try
 	{
@@ -297,7 +297,7 @@ final class StringHelper
 
     static boolean startsWith(cli.System.String s, String prefix, int toffset)
     {
-	if(toffset < 0)
+	if(toffset < 0 || toffset > s.get_Length())
 	{
 	    return false;
 	}

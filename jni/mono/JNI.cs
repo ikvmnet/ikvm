@@ -14,7 +14,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-[assembly:AssemblyVersionAttribute("0.8.0.0")]
+[assembly:AssemblyVersionAttribute("0.9.*")]
 //[assembly:AssemblyKeyFile("c:\\ikvm-key\\ikvm.snk")]
 
 public class VM

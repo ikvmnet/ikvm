@@ -202,6 +202,10 @@ public class Starter
 				{
 					waitOnExit = true;
 				}
+				else if(args[i] == "-Xbreak")
+				{
+					System.Diagnostics.Debugger.Break();
+				}
 				else if(args[i] == "-jar")
 				{
 					jar = true;
@@ -273,6 +277,7 @@ public class Starter
 			Console.Error.WriteLine("    -Xtrace:<string>  Displays all tracepoints with the given name");
 			Console.Error.WriteLine("    -Xmethodtrace:<string>  Builds method trace into the specified output methods");
 			Console.Error.WriteLine("    -Xwait            Keep process hanging around after exit");
+			Console.Error.WriteLine("    -Xbreak           Trigger a user defined breakpoint");
 			return 1;
 		}
 		try

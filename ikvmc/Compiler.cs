@@ -221,6 +221,30 @@ class Compiler
 				else if(s.StartsWith("-version:"))
 				{
 					version = s.Substring(9);
+					if(version.EndsWith(".*"))
+					{
+						version = version.Substring(0, version.Length - 1);
+						int count = version.Split('.').Length;
+						// NOTE this is the published algorithm for generating automatic build and revision numbers
+						// (see AssemblyVersionAttribute constructor docs), but it turns out that the revision
+						// number is off an hour (on my system)...
+						DateTime now = DateTime.Now;
+						int seconds = (int)(now.TimeOfDay.TotalSeconds / 2);
+						int days = (int)(now - new DateTime(2000, 1, 1)).TotalDays;
+						if(count == 3)
+						{
+							version += days + "." + seconds;
+						}
+						else if(count == 4)
+						{
+							version += seconds;
+						}
+						else
+						{
+							Console.Error.WriteLine("Error: Invalid version specified: {0}*", version);
+							return 1;
+						}
+					}
 				}
 				else if(s.StartsWith("-keyfile:"))
 				{
