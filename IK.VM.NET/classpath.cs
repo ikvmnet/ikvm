@@ -817,6 +817,14 @@ namespace NativeCode.java
 			private static ConstructorInfo classConstructor;
 			private static MethodInfo getTypeMethod;
 
+			public static object loadArrayClass(string name, object classLoader)
+			{
+				ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader);
+				TypeWrapper type = classLoaderWrapper.LoadClassByDottedName(name);
+				type.Finish();
+				return getClassFromType(type.Type);
+			}
+
 			public static object loadBootstrapClass(string name, bool initialize)
 			{
 				TypeWrapper type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(name);
@@ -930,7 +938,9 @@ namespace NativeCode.java
 						{
 							// if this type is an override stub (e.g. java.lang.Object), we need to return the
 							// class object for the parent type
-							if(type.IsDefined(typeof(OverrideStubTypeAttribute), false))
+							// NOTE we first check if type isn't an array, because Type.IsDefined throws an exception
+							// when called on an array type (?)
+							if(!type.IsArray && type.IsDefined(typeof(OverrideStubTypeAttribute), false))
 							{
 								clazz = getClassFromType(type.BaseType);
 								map.Add(type, clazz);

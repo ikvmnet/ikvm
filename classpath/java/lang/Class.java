@@ -215,19 +215,12 @@ public final class Class implements Serializable
 				initializeType(c.getType());
 			}
 			return c;
-/*
-			// Check if we may get the system classloader
-			SecurityManager sm = System.getSecurityManager();
-			if (sm != null)
-			{
-				// Get the calling class and classloader
-				Class c = VMSecurityManager.getClassContext()[1];
-				ClassLoader cl = c.getClassLoader();
-				if (cl != null && cl != ClassLoader.systemClassLoader)
-					sm.checkPermission(new RuntimePermission("getClassLoader"));
-			}
-			classloader = ClassLoader.systemClassLoader;
-*/			
+		}
+		// if "name" is an array, we shouldn't pass it to the classloader (note that the bootstrapclassloader
+		// can handle arrays, so the code above doesn't need this check)
+		if(name.startsWith("["))
+		{
+			return loadArrayClass(name, classloader);
 		}
 		Class c = classloader.loadClass(name, initialize);
 		if(initialize)
@@ -237,6 +230,7 @@ public final class Class implements Serializable
 		return c;
 	}
 
+	private static native Class loadArrayClass(String name, Object classLoader);
 	static native Class loadBootstrapClass(String name, boolean initialize);
 	private static native void initializeType(Type type);
 
