@@ -1390,10 +1390,22 @@ class MethodAnalyzer
 									}
 									else
 									{
-										// NOTE previously we checked the type here, but it turns out that
-										// the JVM throws an IncompatibleClassChangeError at runtime instead
-										// of a VerifyError if this doesn't match
-										s.PopObjectType();
+										// for invokespecial we need to make sure we're calling ourself or a base class
+										if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
+										{
+											TypeWrapper refType = s.PopObjectType();
+											if(refType != VerifierTypeWrapper.Null && !wrapper.IsAssignableTo(refType))
+											{
+												throw new VerifyError("Incompatible object argument for invokespecial");
+											}
+										}
+										else
+										{
+											// NOTE previously we checked the type here, but it turns out that
+											// the JVM throws an IncompatibleClassChangeError at runtime instead
+											// of a VerifyError if this doesn't match
+											s.PopObjectType();
+										}
 									}
 								}
 								TypeWrapper retType = cpi.GetRetType(classLoader);

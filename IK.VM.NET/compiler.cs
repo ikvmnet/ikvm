@@ -81,6 +81,7 @@ class Compiler
 	private static MethodInfo monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter");
 	private static MethodInfo monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit");
 	private static MethodInfo throwHack = typeof(ExceptionHelper).GetMethod("ThrowHack");
+	private static MethodInfo objectToStringMethod = typeof(object).GetMethod("ToString");
 	private static TypeWrapper java_lang_Throwable;
 	private TypeWrapper clazz;
 	private ClassFile.Method.Code m;
@@ -971,7 +972,7 @@ class Compiler
 						{
 							// if the stack values don't match the argument types (for interface argument types)
 							// we must emit code to cast the stack value to the interface type
-							CastInterfaceArgs(cpi.GetArgTypes(classLoader), i, false);
+							CastInterfaceArgs(cpi.GetArgTypes(classLoader), i, false, false);
 							method.EmitCall.Emit(ilGenerator);
 						}
 						else
@@ -996,32 +997,21 @@ class Compiler
 
 						// if the stack values don't match the argument types (for interface argument types)
 						// we must emit code to cast the stack value to the interface type
-						TypeWrapper[] args;
 						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>" && VerifierTypeWrapper.IsNew(type))
 						{
-							args = cpi.GetArgTypes(classLoader);
+							TypeWrapper[] args = cpi.GetArgTypes(classLoader);
+							CastInterfaceArgs(args, i, true, false);
 						}
 						else
-//						if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
 						{
 							// for invokeinterface, the this reference is included in the argument list
 							// because it may also need to be cast
 							TypeWrapper[] methodArgs = cpi.GetArgTypes(classLoader);
-							args = new TypeWrapper[methodArgs.Length + 1];
+							TypeWrapper[] args = new TypeWrapper[methodArgs.Length + 1];
 							methodArgs.CopyTo(args, 1);
 							args[0] = thisType;
+							CastInterfaceArgs(args, i, true, instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && type != VerifierTypeWrapper.UninitializedThis);
 						}
-//						else
-//						{
-//							args = cpi.GetArgTypes(classLoader);
-//
-//							if(!thisType.IsUnloadable && !thisType.IsSubTypeOf(cpi.GetClassType(classLoader)))
-//							{
-//								EmitError("java.lang.IncompatibleClassChangeError", null);
-//								thisType = null;
-//							}
-//						}
-						CastInterfaceArgs(args, i, true);
 
 						MethodWrapper method = (thisType != null) ? GetMethod(cpi, thisType, instr.NormalizedOpCode) : null;
 						CodeEmitter emit = null;
@@ -2201,25 +2191,28 @@ class Compiler
 	}
 
 	// NOTE despite its name this also handles value type args
-	private void CastInterfaceArgs(TypeWrapper[] args, int instructionIndex, bool instanceMethod)
+	private void CastInterfaceArgs(TypeWrapper[] args, int instructionIndex, bool instanceMethod, bool checkThisForNull)
 	{
 		// TODO handle unloadable types
-		bool needsCast = false;
+		bool needsCast = checkThisForNull;
 
-		for(int i = 0; i < args.Length; i++)
+		if(!needsCast)
 		{
-			if(args[i].IsInterface)
+			for(int i = 0; i < args.Length; i++)
 			{
-				if(!ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsAssignableTo(args[i]))
+				if(args[i].IsInterface)
+				{
+					if(!ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsAssignableTo(args[i]))
+					{
+						needsCast = true;
+						break;
+					}
+				}
+				if(args[i].IsNonPrimitiveValueType)
 				{
 					needsCast = true;
 					break;
 				}
-			}
-			if(args[i].IsNonPrimitiveValueType)
-			{
-				needsCast = true;
-				break;
 			}
 		}
 
@@ -2239,6 +2232,14 @@ class Compiler
 					ilGenerator.Emit(OpCodes.Castclass, args[i].Type);
 				}
 				dh.Store(i);
+			}
+			if(checkThisForNull)
+			{
+				dh.Load(0);
+				// I think this is the most efficient way to generate a NullReferenceException if the
+				// reference is null
+				ilGenerator.Emit(OpCodes.Ldvirtftn, objectToStringMethod);
+				ilGenerator.Emit(OpCodes.Pop);
 			}
 			for(int i = 0; i < args.Length; i++)
 			{
