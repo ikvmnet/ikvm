@@ -1596,7 +1596,6 @@ sun/misc/Ref.java
 ../../classpath/javax/swing/SwingConstants.java
 ../../classpath/javax/swing/SwingUtilities.java
 ../../classpath/javax/swing/Timer.java
-../../classpath/javax/swing/ToggleButtonModel.java
 ../../classpath/javax/swing/ToolTipManager.java
 ../../classpath/javax/swing/UIDefaults.java
 ../../classpath/javax/swing/UIManager.java
@@ -1707,7 +1706,6 @@ sun/misc/Ref.java
 ../../classpath/javax/swing/plaf/basic/BasicBorders.java
 ../../classpath/javax/swing/plaf/basic/BasicButtonUI.java
 ../../classpath/javax/swing/plaf/basic/BasicCheckBoxUI.java
-../../classpath/javax/swing/plaf/basic/BasicDefaults.java
 ../../classpath/javax/swing/plaf/basic/BasicGraphicsUtils.java
 ../../classpath/javax/swing/plaf/basic/BasicIconFactory.java
 ../../classpath/javax/swing/plaf/basic/BasicLabelUI.java
