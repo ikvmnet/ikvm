@@ -39,8 +39,8 @@ using Instruction = ClassFile.Method.Instruction;
 
 class Compiler
 {
-	private static MethodWrapper mapExceptionMethod;
-	private static MethodWrapper mapExceptionFastMethod;
+	private static MethodInfo mapExceptionMethod;
+	private static MethodInfo mapExceptionFastMethod;
 	private static MethodWrapper fillInStackTraceMethod;
 	private static MethodInfo getTypeFromHandleMethod;
 	private static MethodInfo getClassFromTypeHandleMethod;
@@ -62,6 +62,7 @@ class Compiler
 	private static TypeWrapper java_lang_Class;
 	private static TypeWrapper java_lang_Throwable;
 	private static TypeWrapper java_lang_ThreadDeath;
+	private static TypeWrapper cli_System_Exception;
 	private TypeWrapper clazz;
 	private MethodWrapper mw;
 	private ClassFile classFile;
@@ -91,17 +92,28 @@ class Compiler
 		arraycopy_primitive_2Method = typeof(ByteCodeHelper).GetMethod("arraycopy_primitive_2");
 		arraycopy_primitive_1Method = typeof(ByteCodeHelper).GetMethod("arraycopy_primitive_1");
 		arraycopyMethod = typeof(ByteCodeHelper).GetMethod("arraycopy");
-		TypeWrapper exceptionHelper = ClassLoaderWrapper.LoadClassCritical("java.lang.ExceptionHelper");
-		mapExceptionMethod = exceptionHelper.GetMethodWrapper("MapException", "(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;", false);
-		mapExceptionMethod.Link();
-		mapExceptionFastMethod = exceptionHelper.GetMethodWrapper("MapExceptionFast", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
-		mapExceptionFastMethod.Link();
-		fillInStackTraceMethod = exceptionHelper.GetMethodWrapper("fillInStackTrace", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
-		fillInStackTraceMethod.Link();
 		java_lang_Throwable = CoreClasses.java.lang.Throwable.Wrapper;
+		cli_System_Exception = ClassLoaderWrapper.LoadClassCritical("cli.System.Exception");
 		java_lang_Object = CoreClasses.java.lang.Object.Wrapper;
 		java_lang_Class = CoreClasses.java.lang.Class.Wrapper;
 		java_lang_ThreadDeath = ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadDeath");
+		// HACK we need to special case core compilation, because the __<map> methods are HideFromJava
+		if(java_lang_Throwable.TypeAsBaseType is TypeBuilder)
+		{
+			MethodWrapper mw = java_lang_Throwable.GetMethodWrapper("__<map>", "(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;", false);
+			mw.Link();
+			mapExceptionMethod = (MethodInfo)mw.GetMethod();
+			mw = java_lang_Throwable.GetMethodWrapper("__<map>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
+			mw.Link();
+			mapExceptionFastMethod = (MethodInfo)mw.GetMethod();
+		}
+		else
+		{
+			mapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { typeof(Exception), typeof(Type) });
+			mapExceptionFastMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { typeof(Exception) });
+		}
+		fillInStackTraceMethod = java_lang_Throwable.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", false);
+		fillInStackTraceMethod.Link();
 	}
 
 	private class ExceptionSorter : IComparer
@@ -483,6 +495,14 @@ class Compiler
 			method.Link();
 			method.EmitNewobj(ilgen);
 			ilgen.Emit(OpCodes.Throw);
+		}
+	}
+
+	private sealed class NoClassDefFoundError : EmitException
+	{
+		internal NoClassDefFoundError(string message)
+			: base(message, ClassLoaderWrapper.LoadClassCritical("java.lang.NoClassDefFoundError"))
+		{
 		}
 	}
 
@@ -1160,7 +1180,7 @@ class Compiler
 						{
 							ilGenerator.Emit(OpCodes.Dup);
 						}
-						mapExceptionFastMethod.EmitCall(ilGenerator);
+						ilGenerator.Emit(OpCodes.Call, mapExceptionFastMethod);
 						if(mapSafe)
 						{
 							ilGenerator.Emit(OpCodes.Pop);
@@ -1178,13 +1198,13 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 						ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
 						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetTypeAsExceptionType"));
-						mapExceptionMethod.EmitCall(ilGenerator);
+						ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
 					}
 					else
 					{
 						ilGenerator.Emit(OpCodes.Ldtoken, excType);
 						ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
-						mapExceptionMethod.EmitCall(ilGenerator);
+						ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
 						ilGenerator.Emit(OpCodes.Castclass, excType);
 					}
 					if(unusedException)
@@ -1359,6 +1379,10 @@ class Compiler
 								TypeWrapper tw = classFile.GetConstantPoolClassType(constant);
 								if(tw.IsUnloadable)
 								{
+									if(JVM.DisableDynamicBinding)
+									{
+										throw new NoClassDefFoundError(tw.Name);
+									}
 									Profiler.Count("EmitDynamicClassLiteral");
 									ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 									ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
@@ -1505,7 +1529,14 @@ class Compiler
 									if(code[i + 1].NormalizedOpCode != NormalizedByteCode.__athrow)
 									{
 										ilGenerator.Emit(OpCodes.Dup);
-										fillInStackTraceMethod.EmitCall(ilGenerator);
+										if(thisType.IsSubTypeOf(cli_System_Exception))
+										{
+											fillInStackTraceMethod.EmitCallvirt(ilGenerator);
+										}
+										else
+										{
+											fillInStackTraceMethod.EmitCall(ilGenerator);
+										}
 										ilGenerator.Emit(OpCodes.Pop);
 									}
 								}
@@ -1754,6 +1785,10 @@ class Compiler
 						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 						if(wrapper.IsUnloadable)
 						{
+							if(JVM.DisableDynamicBinding)
+							{
+								throw new NoClassDefFoundError(wrapper.Name);
+							}
 							Profiler.Count("EmitDynamicNewCheckOnly");
 							// this is here to make sure we throw the exception in the right location (before
 							// evaluating the constructor arguments)
@@ -1790,6 +1825,10 @@ class Compiler
 						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 						if(wrapper.IsUnloadable)
 						{
+							if(JVM.DisableDynamicBinding)
+							{
+								throw new NoClassDefFoundError(wrapper.Name);
+							}
 							Profiler.Count("EmitDynamicMultianewarray");
 							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 							ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
@@ -1815,6 +1854,10 @@ class Compiler
 						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
 						if(wrapper.IsUnloadable)
 						{
+							if(JVM.DisableDynamicBinding)
+							{
+								throw new NoClassDefFoundError(wrapper.Name);
+							}
 							Profiler.Count("EmitDynamicNewarray");
 							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 							ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
@@ -1897,6 +1940,10 @@ class Compiler
 						TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 1);
 						if(tw.IsUnloadable)
 						{
+							if(JVM.DisableDynamicBinding)
+							{
+								throw new NoClassDefFoundError(tw.Name);
+							}
 							Profiler.Count("EmitDynamicAaload");
 							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 							ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
@@ -1967,6 +2014,10 @@ class Compiler
 						TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 2);
 						if(tw.IsUnloadable)
 						{
+							if(JVM.DisableDynamicBinding)
+							{
+								throw new NoClassDefFoundError(tw.Name);
+							}
 							Profiler.Count("EmitDynamicAastore");
 							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 							ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
@@ -2865,6 +2916,10 @@ class Compiler
 		TypeWrapper wrapper = cpi.GetClassType();
 		if(wrapper.IsUnloadable)
 		{
+			if(JVM.DisableDynamicBinding)
+			{
+				throw new NoClassDefFoundError(wrapper.Name);
+			}
 			TypeWrapper fieldTypeWrapper = cpi.GetFieldType();
 			if(write && !fieldTypeWrapper.IsUnloadable && fieldTypeWrapper.IsPrimitive)
 			{
@@ -3055,6 +3110,10 @@ class Compiler
 		TypeWrapper wrapper = cpi.GetClassType();
 		if(wrapper.IsUnloadable || (thisType != null && thisType.IsUnloadable))
 		{
+			if(JVM.DisableDynamicBinding)
+			{
+				throw new NoClassDefFoundError(wrapper.Name);
+			}
 			return new DynamicMethodWrapper(classLoader, clazz, cpi);
 		}
 		else

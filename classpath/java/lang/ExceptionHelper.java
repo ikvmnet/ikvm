@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2004 Jeroen Frijters
+  Copyright (C) 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,7 +27,7 @@ import java.io.*;
 import java.lang.reflect.*;
 import gnu.classpath.SystemProperties;
 
-public final class ExceptionHelper
+final class ExceptionHelper
 {
     // the contents of the NULL_STRING should be empty (because when the exception propagates to other .NET code
     // it will return that text as the Message property), but it *must* be a copy, because we need to be
@@ -123,6 +123,15 @@ public final class ExceptionHelper
 			    {
 				skip++;
 			    }
+                            if(tracePart2.get_FrameCount() > skip)
+                            {
+                                cli.System.Reflection.MethodBase mb = tracePart2.GetFrame(skip).GetMethod();
+                                if(mb.get_DeclaringType().get_FullName().equals("java.lang.Throwable") &&
+                                    mb.get_Name().equals("fillInStackTrace"))
+                                {
+                                    skip++;
+                                }
+                            }
 			    if(tracePart1.get_FrameCount() > 0 &&
 				tracePart2.get_FrameCount() > skip &&
 				tracePart1.GetFrame(tracePart1.get_FrameCount() - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
@@ -167,17 +176,18 @@ public final class ExceptionHelper
 		{
 		    continue;
 		}
-		if(cleanStackTrace &&
+                String methodName = GetMethodName(m);
+                String className = getClassNameFromType(m.get_DeclaringType());
+                if(cleanStackTrace &&
 		    (System_Reflection_MethodBase.IsAssignableFrom(m.get_DeclaringType())
-		    || m.get_DeclaringType().get_FullName().startsWith("java.lang.ExceptionHelper")
-		    || m.get_DeclaringType().get_FullName().equals("System.RuntimeMethodHandle")
-                    || m.get_DeclaringType().get_FullName().equals("java.lang.LibraryVMInterfaceImpl")
+		    || className.startsWith("java.lang.ExceptionHelper")
+		    || className.equals("cli.System.RuntimeMethodHandle")
+                    || className.equals("java.lang.LibraryVMInterfaceImpl")
 		    || IsHideFromJava(m)
 		    || IsPrivateScope(m))) // NOTE we assume that privatescope methods are always stubs that we should exclude
 		{
 		    continue;
 		}
-		String methodName = GetMethodName(frame.GetMethod());
 		int lineNumber = frame.GetFileLineNumber();
 		if(lineNumber == 0)
 		{
@@ -201,7 +211,6 @@ public final class ExceptionHelper
 		{
 		    fileName = GetFileName(frame);
 		}
-		String className = getClassNameFromType(frame.GetMethod().get_DeclaringType());
 		stackTrace.Add(new StackTraceElement(fileName, lineNumber, className, methodName, IsNative(m)));
 	    }
 	}
@@ -218,17 +227,17 @@ public final class ExceptionHelper
     private static native void initThrowable(Object throwable, Object detailMessage, Object cause);
     private static native Throwable MapExceptionImpl(Throwable t);
 
-    public static void printStackTrace(Throwable x)
+    static void printStackTrace(Throwable x)
     {
 	printStackTrace(x, System.err);
     }
 
-    public static void printStackTrace(Throwable x, java.io.PrintStream printStream)
+    static void printStackTrace(Throwable x, java.io.PrintStream printStream)
     {
 	printStream.print(buildStackTrace(x));
     }
 
-    public static void printStackTrace(Throwable x, java.io.PrintWriter printWriter)
+    static void printStackTrace(Throwable x, java.io.PrintWriter printWriter)
     {
 	printWriter.print(buildStackTrace(x));
     }
@@ -292,7 +301,7 @@ public final class ExceptionHelper
 	return sb.toString();
     }
 
-    public static Throwable initCause(Throwable x, Throwable cause)
+    static Throwable initCause(Throwable x, Throwable cause)
     {
 	if(x == null)
 	{
@@ -312,7 +321,7 @@ public final class ExceptionHelper
 	return x;
     }
 
-    public static Throwable getCause(Throwable x)
+    static Throwable getCause(Throwable x)
     {
 	if(x == null)
 	{
@@ -326,7 +335,7 @@ public final class ExceptionHelper
 	return eih.get_Cause();
     }
 
-    public static StackTraceElement[] getStackTrace(Throwable x)
+    static StackTraceElement[] getStackTrace(Throwable x)
     {
 	if(x == null)
 	{
@@ -340,7 +349,7 @@ public final class ExceptionHelper
 	return ei.get_StackTrace(x);
     }
 
-    public static void setStackTrace(Throwable x, StackTraceElement[] stackTrace)
+    static void setStackTrace(Throwable x, StackTraceElement[] stackTrace)
     {
 	if(x == null)
 	{
@@ -362,12 +371,12 @@ public final class ExceptionHelper
 	ei.set_StackTrace(stackTrace);
     }
 
-    public static String get_NullString()
+    static String get_NullString()
     {
 	return NULL_STRING;
     }
 
-    public static String FilterMessage(String message)
+    static String FilterMessage(String message)
     {
 	if(message == null)
 	{
@@ -376,7 +385,7 @@ public final class ExceptionHelper
 	return message;
     }
 
-    public static String GetMessageFromCause(Throwable cause)
+    static String GetMessageFromCause(Throwable cause)
     {
 	if(cause == null)
 	{
@@ -385,7 +394,7 @@ public final class ExceptionHelper
 	return cause.toString();
     }
 
-    public static String getMessage(Throwable x)
+    static String getMessage(Throwable x)
     {
 	String message = getMessageFromCliException(x);
 	if(message == NULL_STRING)
@@ -395,12 +404,12 @@ public final class ExceptionHelper
 	return message;
     }
 
-    public static String getLocalizedMessage(Throwable x)
+    static String getLocalizedMessage(Throwable x)
     {
 	return x.getMessage();
     }
 
-    public static Throwable fillInStackTrace(Throwable x)
+    static Throwable fillInStackTrace(Throwable x)
     {
 	if(x == null)
 	{
@@ -419,7 +428,7 @@ public final class ExceptionHelper
 	return x;
     }
 
-    public static String toString(Throwable x)
+    static String toString(Throwable x)
     {
 	String message = x.getLocalizedMessage();
 	if(message == null)
@@ -429,7 +438,7 @@ public final class ExceptionHelper
 	return x.getClass().getName() + ": " + message;
     }
 
-    public static Throwable MapExceptionFast(Throwable t)
+    static Throwable MapExceptionFast(Throwable t)
     {
 	if(exceptions.containsKey(t))
 	{
@@ -438,7 +447,7 @@ public final class ExceptionHelper
 	return MapException(t, System_Exception);
     }
 
-    public static Throwable MapException(Throwable t, cli.System.Type handler)
+    static Throwable MapException(Throwable t, cli.System.Type handler)
     {
 	//cli.System.Console.WriteLine("MapException: {0}, {1}", t, handler);
 	//Console.WriteLine(new StackTrace(t));
