@@ -41,6 +41,7 @@ See http://xml.apache.org/forrest/linking.html for more info
   </devguide>
   <contributing label="Contributing" href="">
     <forum label="Mailing Lists" href="http://sourceforge.net/mail/?group_id=69637" />
+    <reportbug label="Report Bugs" href="http://sourceforge.net/tracker/?group_id=69637" />
     <cvs label="CVS Repository" href="http://sourceforge.net/cvs/?group_id=69637" />
   </contributing>
 

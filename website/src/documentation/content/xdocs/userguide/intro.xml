@@ -12,7 +12,7 @@
       <title>Introduction</title>
       <p>IKVM.NET is a Java Virtual Machine (JVM) for the .NET and Mono runtimes. At a time when most people in the computer industry consider Java and 
         .NET as mutually exclusive technologies, IKVM.NET stands in the unique position of bringing them together. 
-        Initially born out of frustration with the limitations of tools like JUMP and J#, IKVM.NET was created when Jeroen Fritjers set out to 
+        Initially born out of frustration with the limitations of tools like JUMP and J#, IKVM.NET was created when Jeroen Frijters set out to 
         create a way to migrate an existing Java<sup>TM</sup> database application 
         to .NET<sup>TM</sup>.
         </p>
