@@ -170,6 +170,7 @@ namespace IKVM.Runtime
 			internal void Leave(ClassLoaderWrapper prev)
 			{
 				pJNIEnv->classLoader.Target = prev;
+				Leave();
 			}
 
 			public IntPtr Enter(RuntimeMethodHandle method)
@@ -427,9 +428,16 @@ namespace IKVM.Runtime
 					{
 						Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
 						JNI.Frame f = new JNI.Frame();
+						int version;
 						ClassLoaderWrapper prevLoader = f.Enter(loader);
-						int version = ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
-						f.Leave(prevLoader);
+						try
+						{
+							version = ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
+						}
+						finally
+						{
+							f.Leave(prevLoader);
+						}
 						if(!JNI.IsSupportedJniVersion(version))
 						{
 							throw JavaException.UnsatisfiedLinkError("Unsupported JNI version 0x{0:X} required by {1}", version, filename);

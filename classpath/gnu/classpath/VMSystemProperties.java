@@ -141,7 +141,12 @@ public class VMSystemProperties
             // TODO get this info from somewhere else
             arch = "x86";
         }
+        if(arch.equals("AMD64"))
+        {
+            arch = "amd64";
+        }
         p.setProperty("os.arch", arch);
+        p.setProperty("sun.arch.data.model", "" + (cli.System.IntPtr.get_Size() * 8));
         p.setProperty("file.separator", "" + cli.System.IO.Path.DirectorySeparatorChar);
         p.setProperty("file.encoding", "8859_1");
         p.setProperty("path.separator", "" + cli.System.IO.Path.PathSeparator);

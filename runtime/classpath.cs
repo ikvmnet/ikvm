@@ -1310,29 +1310,36 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 		// NOTE this method implements a platform specific way to flush the underlying OS file buffers to disk
 		public static bool flush(FileStream fs)
 		{
-			if(mono_1_0_Flush != null)
+			try
 			{
-				object[] args = new object[] { fs.Handle, null };
-				mono_1_0_Flush.Invoke(null, args);
-				return ((IConvertible)args[1]).ToInt32(null) == 0;
-			}
-			else if(mono_1_1_Flush != null)
-			{
-				object[] args = new object[] { fs.Handle.ToInt32() };
-				return (int)mono_1_1_Flush.Invoke(null, args) == 0;
-			}
-			else
-			{
-				try
+				if(mono_1_0_Flush != null)
 				{
-					return FlushFileBuffers(fs.Handle);
+					object[] args = new object[] { fs.Handle, null };
+					mono_1_0_Flush.Invoke(null, args);
+					return ((IConvertible)args[1]).ToInt32(null) == 0;
 				}
-				catch(TypeLoadException)
+				else if(mono_1_1_Flush != null)
 				{
-					// we're apparently running on a alternate runtime, so we'll just pretend that flush succeeded
-					Tracer.Warning(Tracer.Runtime, "FlushFileBuffers/fsync not supported on this runtime");
-					return true;
+					object[] args = new object[] { fs.Handle.ToInt32() };
+					return (int)mono_1_1_Flush.Invoke(null, args) == 0;
 				}
+				else
+				{
+					try
+					{
+						return FlushFileBuffers(fs.Handle);
+					}
+					catch(TypeLoadException)
+					{
+						// we're apparently running on an alternate runtime, so we'll just pretend that flush succeeded
+						Tracer.Warning(Tracer.Runtime, "FlushFileBuffers/fsync not supported on this runtime");
+						return true;
+					}
+				}
+			}
+			finally
+			{
+				GC.KeepAlive(fs);
 			}
 		}
 

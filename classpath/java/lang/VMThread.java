@@ -389,7 +389,14 @@ final class VMThread
 	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
 	if(nativeThread != null)
 	{
-	    nativeThread.Suspend();
+            try
+            {
+                if(false) throw new cli.System.Threading.ThreadStateException();
+                nativeThread.Suspend();
+            }
+            catch(cli.System.Threading.ThreadStateException x)
+            {
+            }
 	}
     }
 
@@ -398,8 +405,15 @@ final class VMThread
 	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
 	if(nativeThread != null)
 	{
-	    nativeThread.Resume();
-	}
+            try
+            {
+                if(false) throw new cli.System.Threading.ThreadStateException();
+                nativeThread.Resume();
+            }
+            catch(cli.System.Threading.ThreadStateException x)
+            {
+            }
+        }
     }
 
     void nativeSetPriority(int priority)
@@ -451,12 +465,27 @@ final class VMThread
 	    cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
 	    if(nativeThread != null)
 	    {
-		nativeThread.Abort(t);
-		int suspend = cli.System.Threading.ThreadState.Suspended | cli.System.Threading.ThreadState.SuspendRequested;
-		if((nativeThread.get_ThreadState().Value & suspend) != 0)
-		{
-		    nativeThread.Resume();
-		}
+                try
+                {
+                    if(false) throw new cli.System.Threading.ThreadStateException();
+                    nativeThread.Abort(t);
+                }
+                catch(cli.System.Threading.ThreadStateException x)
+                {
+                    // .NET 2.0 throws a ThreadStateException if the target thread is currently suspended
+                }
+                try
+                {
+                    if(false) throw new cli.System.Threading.ThreadStateException();
+                    int suspend = cli.System.Threading.ThreadState.Suspended | cli.System.Threading.ThreadState.SuspendRequested;
+                    while((nativeThread.get_ThreadState().Value & suspend) != 0)
+                    {
+                        nativeThread.Resume();
+                    }
+                }
+                catch(cli.System.Threading.ThreadStateException x)
+                {
+                }
 	    }
 	}
     }
