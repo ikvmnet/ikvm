@@ -111,7 +111,7 @@ namespace IKVM.Internal.MapXml
 				if(Class != null)
 				{
 					Debug.Assert(Sig != null);
-					MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(new MethodDescriptor(Name, Sig), false);
+					MethodWrapper method = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).GetMethodWrapper(Name, Sig, false);
 					if(method == null)
 					{
 						throw new InvalidOperationException("method not found: " + Class + "." + Name + Sig);
@@ -759,10 +759,26 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("conv_i1")]
+	public sealed class Conv_I1 : Simple
+	{
+		public Conv_I1() : base(OpCodes.Conv_I1)
+		{
+		}
+	}
+
 	[XmlType("conv_u1")]
 	public sealed class Conv_U1 : Simple
 	{
 		public Conv_U1() : base(OpCodes.Conv_U1)
+		{
+		}
+	}
+
+	[XmlType("conv_i2")]
+	public sealed class Conv_I2 : Simple
+	{
+		public Conv_I2() : base(OpCodes.Conv_I2)
 		{
 		}
 	}
@@ -775,10 +791,26 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("conv_i4")]
+	public sealed class Conv_I4 : Simple
+	{
+		public Conv_I4() : base(OpCodes.Conv_I4)
+		{
+		}
+	}
+
 	[XmlType("conv_u4")]
 	public sealed class Conv_U4 : Simple
 	{
 		public Conv_U4() : base(OpCodes.Conv_U4)
+		{
+		}
+	}
+
+	[XmlType("conv_i8")]
+	public sealed class Conv_I8 : Simple
+	{
+		public Conv_I8() : base(OpCodes.Conv_I8)
 		{
 		}
 	}
@@ -913,9 +945,13 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Ldc_I4_1))]
 		[XmlElement(typeof(Ldc_I4_M1))]
 		[XmlElement(typeof(Conv_I))]
+		[XmlElement(typeof(Conv_I1))]
 		[XmlElement(typeof(Conv_U1))]
+		[XmlElement(typeof(Conv_I2))]
 		[XmlElement(typeof(Conv_U2))]
+		[XmlElement(typeof(Conv_I4))]
 		[XmlElement(typeof(Conv_U4))]
+		[XmlElement(typeof(Conv_I8))]
 		[XmlElement(typeof(Conv_U8))]
 		[XmlElement(typeof(Ldlen))]
 		[XmlElement(typeof(ExceptionBlock))]

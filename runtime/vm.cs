@@ -547,13 +547,13 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Stloc, exceptionLocal);
 				TypeWrapper threadTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Thread");
 				LocalBuilder threadLocal = ilgen.DeclareLocal(threadTypeWrapper.TypeAsLocalOrStackType);
-				threadTypeWrapper.GetMethodWrapper(new MethodDescriptor("currentThread", "()Ljava.lang.Thread;"), false).EmitCall(ilgen);
+				threadTypeWrapper.GetMethodWrapper("currentThread", "()Ljava.lang.Thread;", false).EmitCall(ilgen);
 				ilgen.Emit(OpCodes.Stloc, threadLocal);
 				ilgen.Emit(OpCodes.Ldloc, threadLocal);
-				threadTypeWrapper.GetMethodWrapper(new MethodDescriptor("getThreadGroup", "()Ljava.lang.ThreadGroup;"), false).EmitCallvirt(ilgen);
+				threadTypeWrapper.GetMethodWrapper("getThreadGroup", "()Ljava.lang.ThreadGroup;", false).EmitCallvirt(ilgen);
 				ilgen.Emit(OpCodes.Ldloc, threadLocal);
 				ilgen.Emit(OpCodes.Ldloc, exceptionLocal);
-				ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadGroup").GetMethodWrapper(new MethodDescriptor("uncaughtException", "(Ljava.lang.Thread;Ljava.lang.Throwable;)V"), false).EmitCall(ilgen);
+				ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadGroup").GetMethodWrapper("uncaughtException", "(Ljava.lang.Thread;Ljava.lang.Throwable;)V", false).EmitCall(ilgen);
 				ilgen.Emit(OpCodes.Ldc_I4_1);
 				ilgen.Emit(OpCodes.Stloc, rc);
 				ilgen.BeginFinallyBlock();
@@ -752,11 +752,13 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Throw);
 					}
 
+					ArrayList methods = new ArrayList();
+
 					if(c.Constructors != null)
 					{
 						foreach(IKVM.Internal.MapXml.Constructor m in c.Constructors)
 						{
-							AddMethod(new RemappedConstructorWrapper(this, m));
+							methods.Add(new RemappedConstructorWrapper(this, m));
 						}
 					}
 
@@ -765,15 +767,17 @@ namespace IKVM.Internal
 						// TODO we should also add methods from our super classes (e.g. Throwable should have Object's methods)
 						foreach(IKVM.Internal.MapXml.Method m in c.Methods)
 						{
-							AddMethod(new RemappedMethodWrapper(this, m, map));
+							methods.Add(new RemappedMethodWrapper(this, m, map));
 						}
 					}
+
+					SetMethods((MethodWrapper[])methods.ToArray(typeof(MethodWrapper)));
 				}
 
 				abstract class RemappedMethodBaseWrapper : MethodWrapper
 				{
-					internal RemappedMethodBaseWrapper(RemapperTypeWrapper typeWrapper, MethodDescriptor md, Modifiers modifiers)
-						: base(typeWrapper, md, null, null, null, modifiers, MemberFlags.None)
+					internal RemappedMethodBaseWrapper(RemapperTypeWrapper typeWrapper, string name, string sig, Modifiers modifiers)
+						: base(typeWrapper, name, sig, null, null, null, modifiers, MemberFlags.None)
 					{
 					}
 
@@ -801,7 +805,7 @@ namespace IKVM.Internal
 					private MethodBuilder mbHelper;
 
 					internal RemappedConstructorWrapper(RemapperTypeWrapper typeWrapper, IKVM.Internal.MapXml.Constructor m)
-						: base(typeWrapper, new MethodDescriptor("<init>", m.Sig), (Modifiers)m.Modifiers)
+						: base(typeWrapper, "<init>", m.Sig, (Modifiers)m.Modifiers)
 					{
 						this.m = m;
 					}
@@ -826,7 +830,6 @@ namespace IKVM.Internal
 					internal override MethodBase DoLink()
 					{
 						MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers);
-						MethodDescriptor md = new MethodDescriptor("<init>", m.Sig);
 						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
 						Type[] paramTypes = typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig);
 
@@ -907,7 +910,6 @@ namespace IKVM.Internal
 								{
 									throw new NotImplementedException();
 								}
-								MethodDescriptor redir = new MethodDescriptor(m.redirect.Name, m.redirect.Sig);
 								Type[] redirParamTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(m.redirect.Sig);
 								for(int i = 0; i < redirParamTypes.Length; i++)
 								{
@@ -927,7 +929,7 @@ namespace IKVM.Internal
 								else
 								{
 									TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(m.redirect.Class);
-									MethodWrapper mw = tw.GetMethodWrapper(redir, false);
+									MethodWrapper mw = tw.GetMethodWrapper(m.redirect.Name, m.redirect.Sig, false);
 									if(mw == null)
 									{
 										throw new InvalidOperationException();
@@ -975,7 +977,7 @@ namespace IKVM.Internal
 					private ArrayList overriders = new ArrayList();
 
 					internal RemappedMethodWrapper(RemapperTypeWrapper typeWrapper, IKVM.Internal.MapXml.Method m, IKVM.Internal.MapXml.Root map)
-						: base(typeWrapper, new MethodDescriptor(m.Name, m.Sig), (Modifiers)m.Modifiers)
+						: base(typeWrapper, m.Name, m.Sig, (Modifiers)m.Modifiers)
 					{
 						this.m = m;
 						this.map = map;
@@ -1001,7 +1003,6 @@ namespace IKVM.Internal
 					internal override MethodBase DoLink()
 					{
 						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
-						MethodDescriptor md = new MethodDescriptor(m.Name, m.Sig);
 
 						if(typeWrapper.IsInterface)
 						{
@@ -1069,7 +1070,7 @@ namespace IKVM.Internal
 									{
 										ilgen.Emit(OpCodes.Ldarg, (short)i);
 									}
-									MethodWrapper mw = tw.GetMethodWrapper(md, false);
+									MethodWrapper mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
 									mw.Link();
 									mw.EmitCallvirt(ilgen);
 									ilgen.Emit(OpCodes.Ret);
@@ -1097,7 +1098,7 @@ namespace IKVM.Internal
 								// skip instance methods in sealed types, but we do need to add them to the overriders
 								if(typeWrapper.BaseTypeWrapper != null && (m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Private) == 0)
 								{
-									RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(md, true) as RemappedMethodWrapper;
+									RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(m.Name, m.Sig, true) as RemappedMethodWrapper;
 									if(baseMethod != null &&
 										!baseMethod.IsFinal &&
 										!baseMethod.IsPrivate &&
@@ -1123,7 +1124,7 @@ namespace IKVM.Internal
 									attr |= MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
 									if(typeWrapper.BaseTypeWrapper != null)
 									{
-										RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(md, true) as RemappedMethodWrapper;
+										RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(m.Name, m.Sig, true) as RemappedMethodWrapper;
 										if(baseMethod != null)
 										{
 											baseMethod.overriders.Add(typeWrapper);
@@ -1183,7 +1184,6 @@ namespace IKVM.Internal
 					internal override void Finish()
 					{
 						// TODO we should insert method tracing (if enabled)
-						MethodDescriptor md = this.Descriptor;
 						Type[] paramTypes = this.GetParametersForDefineMethod();
 
 						MethodBuilder mbCore = GetMethod() as MethodBuilder;
@@ -1286,7 +1286,7 @@ namespace IKVM.Internal
 							}
 							foreach(RemapperTypeWrapper overrider in overriders)
 							{
-								RemappedMethodWrapper mw = (RemappedMethodWrapper)overrider.GetMethodWrapper(md, false);
+								RemappedMethodWrapper mw = (RemappedMethodWrapper)overrider.GetMethodWrapper(Name, Signature, false);
 								if(mw.m.redirect == null && mw.m.body == null && mw.m.alternateBody == null)
 								{
 									// the overridden method doesn't actually do anything special (that means it will end
@@ -1351,7 +1351,7 @@ namespace IKVM.Internal
 								}
 								else
 								{
-									RemappedMethodWrapper baseMethod = DeclaringType.BaseTypeWrapper.GetMethodWrapper(md, true) as RemappedMethodWrapper;
+									RemappedMethodWrapper baseMethod = DeclaringType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true) as RemappedMethodWrapper;
 									if(baseMethod == null || baseMethod.m.@override == null)
 									{
 										throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
@@ -1415,7 +1415,6 @@ namespace IKVM.Internal
 							redirSig = m.Sig;
 						}
 						ClassLoaderWrapper classLoader = ClassLoaderWrapper.GetBootstrapClassLoader();
-						MethodDescriptor redir = new MethodDescriptor(redirName, redirSig);
 						// HACK if the class name contains a comma, we assume it is a .NET type
 						if(m.redirect.Class == null || m.redirect.Class.IndexOf(',') >= 0)
 						{
@@ -1432,10 +1431,10 @@ namespace IKVM.Internal
 						else
 						{
 							TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(m.redirect.Class);
-							MethodWrapper mw = tw.GetMethodWrapper(redir, false);
+							MethodWrapper mw = tw.GetMethodWrapper(redirName, redirSig, false);
 							if(mw == null)
 							{
-								throw new InvalidOperationException("Missing redirect method: " + tw.Name + "." + redir.Name + redir.Signature);
+								throw new InvalidOperationException("Missing redirect method: " + tw.Name + "." + redirName + redirSig);
 							}
 							mw.Link();
 							mw.EmitCall(ilgen);
@@ -1475,6 +1474,8 @@ namespace IKVM.Internal
 						interfaceWrappers = TypeWrapper.EmptyArray;
 					}
 
+					ArrayList fields = new ArrayList();
+
 					// TODO fields should be moved to the RemapperTypeWrapper constructor as well
 					if(c.Fields != null)
 					{
@@ -1483,8 +1484,7 @@ namespace IKVM.Internal
 							if(f.redirect != null)
 							{
 								TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(f.redirect.Class);
-								MethodDescriptor redir = new MethodDescriptor(f.redirect.Name, f.redirect.Sig);
-								MethodWrapper method = tw.GetMethodWrapper(redir, false);
+								MethodWrapper method = tw.GetMethodWrapper(f.redirect.Name, f.redirect.Sig, false);
 								if(method == null || !method.IsStatic)
 								{
 									// TODO better error handling
@@ -1492,7 +1492,7 @@ namespace IKVM.Internal
 								}
 								// TODO emit an static helper method that enables access to the field at runtime
 								method.Link();
-								AddField(new GetterFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), null, f.Name, f.Sig, (Modifiers)f.Modifiers, (MethodInfo)method.GetMethod()));
+								fields.Add(new GetterFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), null, f.Name, f.Sig, (Modifiers)f.Modifiers, (MethodInfo)method.GetMethod()));
 							}
 							else if((f.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) != 0)
 							{
@@ -1519,11 +1519,11 @@ namespace IKVM.Internal
 											throw new NotImplementedException("remapped constant field of type: " + f.Sig);
 									}
 									fb.SetConstant(constant);
-									AddField(new ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant));
+									fields.Add(new ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant));
 								}
 								else
 								{
-									AddField(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Name, f.Sig, (Modifiers)f.Modifiers));
+									fields.Add(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Name, f.Sig, (Modifiers)f.Modifiers));
 								}
 								if(f.Deprecated)
 								{
@@ -1538,6 +1538,7 @@ namespace IKVM.Internal
 							}
 						}
 					}
+					SetFields((FieldWrapper[])fields.ToArray(typeof(FieldWrapper)));
 				}
 
 				internal void Process3rdPass()
@@ -1752,12 +1753,6 @@ namespace IKVM.Internal
 
 				internal override void Finish(bool forDebugSave)
 				{
-				}
-
-				protected override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
-				{
-					// we don't resolve fields lazily
-					return null;
 				}
 
 				internal override TypeWrapper[] InnerClasses
@@ -2096,7 +2091,7 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: main class not found");
 					return 1;
 				}
-				MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor("main", "([Ljava.lang.String;)V"), false);
+				MethodWrapper mw = wrapper.GetMethodWrapper("main", "([Ljava.lang.String;)V", false);
 				if(mw == null)
 				{
 					Console.Error.WriteLine("Error: main method not found");

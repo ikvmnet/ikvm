@@ -23,7 +23,7 @@
 			<includes name="**.class"/>
 		</fileset>
 	</delete>
-        <property name="classpath" value=".${pathsep}${Classpath.dir}${pathsep}${Classpath.dir}/vm/reference${pathsep}mscorlib.jar${pathsep}System.jar" />
+        <property name="classpath" value=".${pathsep}${Classpath.dir}${pathsep}${Classpath.dir}/external/w3c_dom${pathsep}${Classpath.dir}/external/sax${pathsep}${Classpath.dir}/vm/reference${pathsep}mscorlib.jar${pathsep}System.jar" />
         <exec program="jikes" commandline="-g -nowarn -classpath ${classpath} @allsources.lst"/>
     </target>
 

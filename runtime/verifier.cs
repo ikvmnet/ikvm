@@ -1018,14 +1018,9 @@ class VerifierTypeWrapper : TypeWrapper
 		this.underlyingType = underlyingType;
 	}
 
-	protected override FieldWrapper GetFieldImpl(string fieldName, string fieldSig)
+	protected override void LazyPublishMembers()
 	{
-		throw new InvalidOperationException("GetFieldImpl called on " + this);
-	}
-
-	internal override MethodWrapper GetMethodWrapper(MethodDescriptor md, bool inherit)
-	{
-		throw new InvalidOperationException("GetMethodWrapper called on " + this);
+		throw new InvalidOperationException("LazyPublishMembers called on " + this);
 	}
 
 	internal override Type TypeAsTBD

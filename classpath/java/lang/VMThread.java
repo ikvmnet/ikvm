@@ -12,7 +12,10 @@ final class VMThread
     // Note: when this thread dies, this reference is *not* cleared
     volatile Thread thread;
     private volatile boolean running;
-    private volatile cli.System.Threading.Thread joinThread;
+    private volatile boolean interruptableWait;
+    private volatile boolean interruptPending;
+    private VMThread firstJoinWaiter;
+    private VMThread nextJoinWaiter;
 
     private VMThread(Thread thread)
     {
@@ -75,6 +78,44 @@ final class VMThread
 	}
     }
 
+    private synchronized void addJoinWaiter(VMThread waiter)
+    {
+        if(waiter != this)
+        {
+            waiter.nextJoinWaiter = firstJoinWaiter;
+            firstJoinWaiter = waiter;
+        }
+    }
+
+    private synchronized void removeJoinWaiter(VMThread waiter)
+    {
+        if(waiter == this)
+        {
+            // we never link ourself
+        }
+        else if(firstJoinWaiter == waiter)
+        {
+            firstJoinWaiter = waiter.nextJoinWaiter;
+            waiter.nextJoinWaiter = null;
+        }
+        else
+        {
+            VMThread prev = firstJoinWaiter;
+            VMThread curr = prev.nextJoinWaiter;
+            while(curr != null)
+            {
+                if(curr == waiter)
+                {
+                    prev.nextJoinWaiter = waiter.nextJoinWaiter;
+                    waiter.nextJoinWaiter = null;
+                    break;
+                }
+                prev = curr;
+                curr = curr.nextJoinWaiter;
+            }
+        }
+    }
+
     static void jniDetach()
     {
 	VMThread vmthread = Thread.currentThread().vmThread;
@@ -82,10 +123,13 @@ final class VMThread
 	{
 	    vmthread.cleanup();
 	    cli.System.Threading.Thread.SetData(localDataStoreSlot, null);
-	    if(vmthread.joinThread != null)
-	    {
-		vmthread.joinThread.Interrupt();
-	    }
+            VMThread joinWaiter = vmthread.firstJoinWaiter;
+            while(joinWaiter != null)
+            {
+                VMThread next = joinWaiter.nextJoinWaiter;
+                joinWaiter.interrupt();
+                joinWaiter = next;
+            }
 	}
     }
 
@@ -157,47 +201,43 @@ final class VMThread
 
     void join(long ms, int ns) throws InterruptedException
     {
-	cli.System.Threading.Thread nativeThread;
-	synchronized(this)
+	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	if(nativeThread == null)
 	{
-	    nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
-	    if(nativeThread == null)
-	    {
-		return;
-	    }
-	    joinThread = cli.System.Threading.Thread.get_CurrentThread();
+	    return;
 	}
 	try
 	{
-	    if(false) throw new InterruptedException();
+            VMThread current = currentThread().vmThread;
+	    enterInterruptableWait();
 	    try
 	    {
-		if(ms == 0 && ns == 0)
-		{
-		    nativeThread.Join();
-		}
-		else
-		{
-		    // if nanoseconds are specified, round up to one millisecond
-		    if(ns != 0)
+                addJoinWaiter(current);
+                if(thread.vmThread != null)
+                {
+		    if(ms == 0 && ns == 0)
 		    {
-			nativeThread.Join(1);
+		        nativeThread.Join();
 		    }
-		    for(long iter = ms / Integer.MAX_VALUE; iter != 0; iter--)
+		    else
 		    {
-			nativeThread.Join(Integer.MAX_VALUE);
+		        // if nanoseconds are specified, round up to one millisecond
+		        if(ns != 0)
+		        {
+			    nativeThread.Join(1);
+		        }
+		        for(long iter = ms / Integer.MAX_VALUE; iter != 0; iter--)
+		        {
+			    nativeThread.Join(Integer.MAX_VALUE);
+		        }
+		        nativeThread.Join((int)(ms % Integer.MAX_VALUE));
 		    }
-		    nativeThread.Join((int)(ms % Integer.MAX_VALUE));
-		}
+                }
 	    }
 	    finally
 	    {
-		synchronized(this)
-		{
-		    joinThread = null;
-		    // make sure that any pending interrupts (caused by the thread dying) are handled
-		    cli.System.Threading.Thread.Sleep(0);
-		}
+                removeJoinWaiter(current);
+                leaveInterruptableWait();
 	    }
 	}
 	catch(InterruptedException x)
@@ -253,41 +293,78 @@ final class VMThread
 	}
     }
 
-    void interrupt()
+    private static void enterInterruptableWait() throws InterruptedException
     {
-	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
-	if(nativeThread != null)
-	{
-	    nativeThread.Interrupt();
-	}
+        VMThread vmthread = currentThread().vmThread;
+        synchronized(vmthread)
+        {
+            if(vmthread.interruptPending)
+            {
+                vmthread.interruptPending = false;
+                throw new InterruptedException();
+            }
+            vmthread.interruptableWait = true;
+        }
+    }
+
+    private static void leaveInterruptableWait() throws InterruptedException
+    {
+        cli.System.Threading.ThreadInterruptedException dotnetInterrupt = null;
+        for(;;)
+        {
+            try
+            {
+                if(false) throw new cli.System.Threading.ThreadInterruptedException();
+                VMThread vmthread = currentThread().vmThread;
+                synchronized(vmthread)
+                {
+                    vmthread.interruptableWait = false;
+                    if(vmthread.interruptPending)
+                    {
+                        vmthread.interruptPending = false;
+                        throw new InterruptedException();
+                    }
+                }
+                break;
+            }
+            catch(cli.System.Threading.ThreadInterruptedException x)
+            {
+                dotnetInterrupt = x;
+            }
+        }
+        if(dotnetInterrupt != null)
+        {
+            VMClass.throwException(dotnetInterrupt);
+        }
+    }
+
+    synchronized void interrupt()
+    {
+        interruptPending = true;
+        if(interruptableWait)
+        {
+            cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	    if(nativeThread != null)
+	    {
+	        nativeThread.Interrupt();
+	    }
+        }
+    }
+
+    static boolean interrupted()
+    {
+        VMThread thread = currentThread().vmThread;
+        synchronized(thread)
+        {
+            boolean state = thread.interruptPending;
+            thread.interruptPending = false;
+            return state;
+        }
     }
 
     boolean isInterrupted()
     {
-	// NOTE special case for current thread, because then we can use the .NET interrupted status
-	if(thread == currentThread())
-	{
-	    try
-	    {
-		if(false) throw new InterruptedException();
-		cli.System.Threading.Thread.Sleep(0);
-		return false;
-	    }
-	    catch(InterruptedException x)
-	    {
-		// because we "consumed" the interrupt, we need to interrupt ourself again
-		cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
-		if(nativeThread != null)
-		{
-		    nativeThread.Interrupt();
-		}
-		return true;
-	    }
-	}
-	// HACK since quering the interrupted state of another thread is inherently racy, I hope
-	// we can get away with always returning false, because I have no idea how to obtain this
-	// information from the .NET runtime
-	return false;
+	return interruptPending;
     }
 
     void suspend()
@@ -436,16 +513,7 @@ final class VMThread
 
     static void yield()
     {
-	try
-	{
-	    if(false) throw new InterruptedException();
-	    cli.System.Threading.Thread.Sleep(0);
-	}
-	catch(InterruptedException x)
-	{
-	    // since we "consumed" the interrupt, we have to interrupt ourself again
-	    cli.System.Threading.Thread.get_CurrentThread().Interrupt();
-	}
+	cli.System.Threading.Thread.Sleep(0);
     }
 
     static void sleep(long ms, int ns) throws InterruptedException
@@ -458,30 +526,24 @@ final class VMThread
 	}
 	else
 	{
-	    // if nanoseconds are specified, round up to one millisecond
-	    if(ns != 0)
-	    {
-		cli.System.Threading.Thread.Sleep(1);
-	    }
-	    for(long iter = ms / Integer.MAX_VALUE; iter != 0; iter--)
-	    {
-		cli.System.Threading.Thread.Sleep(Integer.MAX_VALUE);
-	    }
-	    cli.System.Threading.Thread.Sleep((int)(ms % Integer.MAX_VALUE));
-	}
-    }
-
-    static boolean interrupted()
-    {
-	try
-	{
-	    if(false) throw new InterruptedException();
-	    cli.System.Threading.Thread.Sleep(0);
-	    return false;
-	}
-	catch(InterruptedException x)
-	{
-	    return true;
+            enterInterruptableWait();
+            try
+            {
+	        // if nanoseconds are specified, round up to one millisecond
+	        if(ns != 0)
+	        {
+		    cli.System.Threading.Thread.Sleep(1);
+	        }
+	        for(long iter = ms / Integer.MAX_VALUE; iter != 0; iter--)
+	        {
+		    cli.System.Threading.Thread.Sleep(Integer.MAX_VALUE);
+	        }
+	        cli.System.Threading.Thread.Sleep((int)(ms % Integer.MAX_VALUE));
+            }
+            finally
+            {
+                leaveInterruptableWait();
+            }
 	}
     }
 
@@ -503,5 +565,34 @@ final class VMThread
 	{
 	    return false;
 	}
+    }
+
+    // this implements java.lang.Object.wait(long timeout, int nanos) (via map.xml)
+    static void objectWait(Object o, long timeout, int nanos) throws InterruptedException
+    {
+        if(o == null)
+        {
+            throw new NullPointerException();
+        }
+        if(timeout < 0 || nanos < 0 || nanos > 999999)
+        {
+            throw new IllegalArgumentException("argument out of range");
+        }
+        enterInterruptableWait();
+        try
+        {
+            if((timeout == 0 && nanos == 0) || timeout > 922337203685476L)
+            {
+                cli.System.Threading.Monitor.Wait(o);
+            }
+            else
+            {
+                cli.System.Threading.Monitor.Wait(o, new cli.System.TimeSpan(timeout * 10000 + (nanos + 99) / 100));
+            }
+        }
+        finally
+        {
+            leaveInterruptableWait();
+        }
     }
 }

@@ -74,11 +74,11 @@ class Compiler
 
 	static Compiler()
 	{
-		getTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle");
+		getTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(RuntimeTypeHandle) }, null);
 		getClassFromTypeHandleMethod = typeof(ByteCodeHelper).GetMethod("GetClassFromTypeHandle");
 		multiANewArrayMethod = typeof(ByteCodeHelper).GetMethod("multianewarray");
-		monitorEnterMethod = typeof(ByteCodeHelper).GetMethod("monitorenter");
-		monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit");
+		monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
+		monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		objectToStringMethod = typeof(object).GetMethod("ToString");
 		f2iMethod = typeof(ByteCodeHelper).GetMethod("f2i");
 		d2iMethod = typeof(ByteCodeHelper).GetMethod("d2i");
@@ -90,11 +90,11 @@ class Compiler
 		arraycopy_primitive_1Method = typeof(ByteCodeHelper).GetMethod("arraycopy_primitive_1");
 		arraycopyMethod = typeof(ByteCodeHelper).GetMethod("arraycopy");
 		TypeWrapper exceptionHelper = ClassLoaderWrapper.LoadClassCritical("java.lang.ExceptionHelper");
-		mapExceptionMethod = exceptionHelper.GetMethodWrapper(new MethodDescriptor("MapException", "(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;"), false);
+		mapExceptionMethod = exceptionHelper.GetMethodWrapper("MapException", "(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;", false);
 		mapExceptionMethod.Link();
-		mapExceptionFastMethod = exceptionHelper.GetMethodWrapper(new MethodDescriptor("MapExceptionFast", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;"), false);
+		mapExceptionFastMethod = exceptionHelper.GetMethodWrapper("MapExceptionFast", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
 		mapExceptionFastMethod.Link();
-		fillInStackTraceMethod = exceptionHelper.GetMethodWrapper(new MethodDescriptor("fillInStackTrace", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;"), false);
+		fillInStackTraceMethod = exceptionHelper.GetMethodWrapper("fillInStackTrace", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
 		fillInStackTraceMethod.Link();
 		java_lang_Throwable = CoreClasses.java.lang.Throwable.Wrapper;
 		java_lang_Object = CoreClasses.java.lang.Object.Wrapper;
@@ -476,7 +476,7 @@ class Compiler
 		{
 			Tracer.Error(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", type.Name, Message, classFile.Name, m.Name, m.Signature);
 			ilgen.Emit(OpCodes.Ldstr, Message);
-			MethodWrapper method = type.GetMethodWrapper(new MethodDescriptor("<init>", "(Ljava.lang.String;)V"), false);
+			MethodWrapper method = type.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
 			method.Link();
 			method.EmitNewobj(ilgen);
 			ilgen.Emit(OpCodes.Throw);
@@ -756,24 +756,17 @@ class Compiler
 		Profiler.Enter("Compile");
 		try
 		{
-			if(m.IsSynchronized)
+			if(m.IsSynchronized && m.IsStatic)
 			{
 				ArrayList exits = new ArrayList();
-				if(m.IsStatic)
-				{
-					ilGenerator.Emit(OpCodes.Ldsfld, clazz.ClassObjectField);
-					Label label = ilGenerator.DefineLabel();
-					ilGenerator.Emit(OpCodes.Brtrue_S, label);
-					ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-					ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandleMethod);
-					ilGenerator.Emit(OpCodes.Stsfld, clazz.ClassObjectField);
-					ilGenerator.MarkLabel(label);
-					ilGenerator.Emit(OpCodes.Ldsfld, clazz.ClassObjectField);
-				}
-				else
-				{
-					ilGenerator.Emit(OpCodes.Ldarg_0);
-				}
+				ilGenerator.Emit(OpCodes.Ldsfld, clazz.ClassObjectField);
+				Label label = ilGenerator.DefineLabel();
+				ilGenerator.Emit(OpCodes.Brtrue_S, label);
+				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+				ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandleMethod);
+				ilGenerator.Emit(OpCodes.Stsfld, clazz.ClassObjectField);
+				ilGenerator.MarkLabel(label);
+				ilGenerator.Emit(OpCodes.Ldsfld, clazz.ClassObjectField);
 				ilGenerator.Emit(OpCodes.Dup);
 				LocalBuilder monitor = ilGenerator.DeclareLocal(typeof(object));
 				ilGenerator.Emit(OpCodes.Stloc, monitor);
@@ -1503,7 +1496,7 @@ class Compiler
 								method.EmitNewobj(ilGenerator);
 								if(!thisType.IsUnloadable && thisType.IsSubTypeOf(java_lang_Throwable))
 								{
-									// HACK if the next instruction isn't an athrow, we need to
+									// if the next instruction isn't an athrow, we need to
 									// call fillInStackTrace, because the object might be used
 									// to print out a stack trace without ever being thrown
 									if(code[i + 1].NormalizedOpCode != NormalizedByteCode.__athrow)
@@ -1530,8 +1523,9 @@ class Compiler
 											// instruction)
 											if(stacktype == VerifierTypeWrapper.Null)
 											{
-												// TODO handle null stack entries
-												throw new NotImplementedException();
+												// NOTE we abuse the newobj local as a cookie to signal null!
+												tempstack[j] = newobj;
+												ilGenerator.Emit(OpCodes.Pop);
 											}
 											else if(!VerifierTypeWrapper.IsNew(stacktype))
 											{
@@ -1549,7 +1543,15 @@ class Compiler
 										}
 										else if(tempstack[j] != null)
 										{
-											ilGenerator.Emit(OpCodes.Ldloc, tempstack[j]);
+											// NOTE we abuse the newobj local as a cookie to signal null!
+											if(tempstack[j] == newobj)
+											{
+												ilGenerator.Emit(OpCodes.Ldnull);
+											}
+											else
+											{
+												ilGenerator.Emit(OpCodes.Ldloc, tempstack[j]);
+											}
 										}
 									}
 									LocalVar[] locals = ma.GetLocalVarsForInvokeSpecial(i);
@@ -2514,19 +2516,40 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Throw);
 						break;
 					case NormalizedByteCode.__lookupswitch:
-						// TODO use OpCodes.Switch
-						for(int j = 0; j < instr.SwitchEntryCount; j++)
+						// for tableswitch we can use the CIL switch opcode, which is more
+						// compact (and could theoretically be faster)
+						if(instr.OpCode == ByteCode.__tableswitch)
 						{
-							ilGenerator.Emit(OpCodes.Dup);
-							EmitLdc_I4(instr.GetSwitchValue(j));
-							Label label = ilGenerator.DefineLabel();
-							ilGenerator.Emit(OpCodes.Bne_Un_S, label);
-							ilGenerator.Emit(OpCodes.Pop);
-							ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j)));
-							ilGenerator.MarkLabel(label);
+							// note that a tableswitch always has at least one entry
+							// (otherwise it would have failed verification)
+							Label[] labels = new Label[instr.SwitchEntryCount];
+							for(int j = 0; j < labels.Length; j++)
+							{
+								labels[j] = block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j));
+							}
+							if(instr.GetSwitchValue(0) != 0)
+							{
+								EmitLdc_I4(instr.GetSwitchValue(0));
+								ilGenerator.Emit(OpCodes.Sub);
+							}
+							ilGenerator.Emit(OpCodes.Switch, labels);
+							ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
 						}
-						ilGenerator.Emit(OpCodes.Pop);
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
+						else
+						{
+							for(int j = 0; j < instr.SwitchEntryCount; j++)
+							{
+								ilGenerator.Emit(OpCodes.Dup);
+								EmitLdc_I4(instr.GetSwitchValue(j));
+								Label label = ilGenerator.DefineLabel();
+								ilGenerator.Emit(OpCodes.Bne_Un_S, label);
+								ilGenerator.Emit(OpCodes.Pop);
+								ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j)));
+								ilGenerator.MarkLabel(label);
+							}
+							ilGenerator.Emit(OpCodes.Pop);
+							ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
+						}
 						break;
 					case NormalizedByteCode.__iinc:
 						LoadLocal(instr);
@@ -2966,7 +2989,7 @@ class Compiler
 		private ClassFile.ConstantPoolItemMI cpi;
 
 		internal DynamicMethodWrapper(ClassLoaderWrapper classLoader, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
-			: base(wrapper, null, null, null, null, Modifiers.Public, MemberFlags.None)
+			: base(wrapper, null, null, null, null, null, Modifiers.Public, MemberFlags.None)
 		{
 			this.classLoader = classLoader;
 			this.wrapper = wrapper;
@@ -3054,13 +3077,13 @@ class Compiler
 						}
 						else
 						{
-							// HACK special case for incorrect invocation of Object.clone(), because this could mean
+							// NOTE special case for incorrect invocation of Object.clone(), because this could mean
 							// we're calling clone() on an array
 							// (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
 							if(wrapper == java_lang_Object && thisType.IsArray && cpi.Name == "clone")
 							{
 								// NOTE since thisType is an array, we can be sure that the method is already linked
-								method = thisType.GetMethodWrapper(new MethodDescriptor(cpi.Name, cpi.Signature), false);
+								method = thisType.GetMethodWrapper(cpi.Name, cpi.Signature, false);
 								if(method != null && method.IsPublic)
 								{
 									return method;

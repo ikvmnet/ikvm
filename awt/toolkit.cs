@@ -72,7 +72,7 @@ namespace ikvm.awt
 				// HACK I have no idea why this line is necessary...
 				IntPtr p = form.Handle;
 				bogusForm = form;
-				// HACK to make sure we can be aborted (Thread.Abort) we need to periodically
+				// FXBUG to make sure we can be aborted (Thread.Abort) we need to periodically
 				// fire an event (because otherwise we'll be blocking in unmanaged code and
 				// the Abort cannot be handled there).
 				System.Windows.Forms.Timer t = new System.Windows.Forms.Timer();
@@ -333,10 +333,16 @@ namespace ikvm.awt
 			return getImage(url);
 		}
 
+		const int ERROR = java.awt.image.ImageObserver.__Fields.ERROR;
+		const int WIDTH = java.awt.image.ImageObserver.__Fields.WIDTH;
+		const int HEIGHT = java.awt.image.ImageObserver.__Fields.HEIGHT;
+		const int FRAMEBITS = java.awt.image.ImageObserver.__Fields.FRAMEBITS;
+		const int ALLBITS = java.awt.image.ImageObserver.__Fields.ALLBITS;
+
 		public override bool prepareImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
 		{
 			// HACK for now we call checkImage to obtain the status and fire the observer
-			return (checkImage(image, width, height, observer) & 32) != 0;
+			return (checkImage(image, width, height, observer) & ALLBITS) != 0;
 		}
 
 		public override int checkImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
@@ -345,16 +351,15 @@ namespace ikvm.awt
 			{
 				if(observer != null)
 				{
-					observer.imageUpdate(image, 64, 0, 0, -1, -1);
+					observer.imageUpdate(image, ERROR, 0, 0, -1, -1);
 				}
-				return 64; // ERROR
+				return ERROR;
 			}
 			if(observer != null)
 			{
-				observer.imageUpdate(image, 1 + 2 + 16 + 32, 0, 0, image.getWidth(null), image.getHeight(null));
+				observer.imageUpdate(image, WIDTH + HEIGHT + FRAMEBITS + ALLBITS, 0, 0, image.getWidth(null), image.getHeight(null));
 			}
-			// HACK we cannot use the constants defined in the interface from C#, so we hardcode the flags
-			return 1 + 2 + 16 + 32; // WIDTH + HEIGHT + FRAMEBITS + ALLBITS
+			return WIDTH + HEIGHT + FRAMEBITS + ALLBITS;
 		}
 
 		public override java.awt.Image createImage(java.awt.image.ImageProducer producer)

@@ -216,6 +216,11 @@ class ClassLoaderWrapper
 		{
 			throw new NullReferenceException();
 		}
+		// .NET 1.1 has a limit of 1024 characters for type names
+		if(name.Length >= 1024)
+		{
+			return null;
+		}
 		Profiler.Enter("LoadClassByDottedName");
 		try
 		{
@@ -407,43 +412,50 @@ class ClassLoaderWrapper
 		Debug.Assert(!(type.Assembly is AssemblyBuilder), "!(type.Assembly is AssemblyBuilder)", type.FullName);
 		// only the bootstrap classloader can own compiled types
 		Debug.Assert(this == GetBootstrapClassLoader(), "this == GetBootstrapClassLoader()", type.FullName);
-		TypeWrapper wrapper = null;
-		if(type.Module.IsDefined(typeof(JavaModuleAttribute), false))
+		bool javaType = type.Module.IsDefined(typeof(JavaModuleAttribute), false);
+		string name;
+		if(javaType)
 		{
-			lock(types.SyncRoot)
-			{
-				string name = CompiledTypeWrapper.GetName(type);
-				wrapper = (TypeWrapper)types[name];
-				if(wrapper == null)
-				{
-					// since this type was compiled from Java source, we have to look for our
-					// attributes
-					wrapper = new CompiledTypeWrapper(name, type);
-					Debug.Assert(wrapper.Name == name, "wrapper.Name == name", type.FullName);
-					Debug.Assert(!types.ContainsKey(wrapper.Name), wrapper.Name, type.FullName);
-					types.Add(wrapper.Name, wrapper);
-					Debug.Assert(!typeToTypeWrapper.ContainsKey(type), "!typeToTypeWrapper.ContainsKey(type)", type.FullName);
-					typeToTypeWrapper.Add(type, wrapper);
-				}
-			}
+			name = CompiledTypeWrapper.GetName(type);
 		}
 		else
 		{
+			name = DotNetTypeWrapper.GetName(type);
+		}
+		TypeWrapper wrapper;
+		lock(types.SyncRoot)
+		{
+			wrapper = (TypeWrapper)types[name];
+		}
+		if(wrapper == null)
+		{
+			if(javaType)
+			{
+				// since this type was compiled from Java source, we have to look for our
+				// attributes
+				wrapper = new CompiledTypeWrapper(name, type);
+			}
+			else
+			{
+				// since this type was not compiled from Java source, we don't need to
+				// look for our attributes, but we do need to filter unrepresentable
+				// stuff (and transform some other stuff)
+				wrapper = new DotNetTypeWrapper(type);
+			}
+			Debug.Assert(wrapper.Name == name, "wrapper.Name == name", type.FullName);
 			lock(types.SyncRoot)
 			{
-				string name = DotNetTypeWrapper.GetName(type);
-				wrapper = (TypeWrapper)types[name];
-				if(wrapper == null)
+				// another thread may have beaten us to it and in that
+				// case we don't want to overwrite the previous one
+				TypeWrapper race = (TypeWrapper)types[name];
+				if(race == null)
 				{
-					// since this type was not compiled from Java source, we don't need to
-					// look for our attributes, but we do need to filter unrepresentable
-					// stuff (and transform some other stuff)
-					wrapper = new DotNetTypeWrapper(type);
-					Debug.Assert(wrapper.Name == name, "wrapper.Name == name", type.FullName);
-					Debug.Assert(!types.ContainsKey(wrapper.Name), wrapper.Name, type.FullName);
-					types.Add(wrapper.Name, wrapper);
-					Debug.Assert(!typeToTypeWrapper.ContainsKey(type), "!typeToTypeWrapper.ContainsKey(type)", type.FullName);
+					types.Add(name, wrapper);
 					typeToTypeWrapper.Add(type, wrapper);
+				}
+				else
+				{
+					wrapper = race;
 				}
 			}
 		}
@@ -488,59 +500,79 @@ class ClassLoaderWrapper
 		return null;
 	}
 
+	// NOTE this method can actually return null if the resulting array type name would be too long
+	// for .NET to handle.
 	private TypeWrapper CreateArrayType(string name, TypeWrapper elementTypeWrapper, int dims)
 	{
 		Type elementType = elementTypeWrapper.TypeAsArrayType;
 		Debug.Assert(!elementType.IsArray);
+		TypeWrapper wrapper;
 		lock(types.SyncRoot)
 		{
-			TypeWrapper wrapper = (TypeWrapper)types[name];
-			if(wrapper == null)
+			wrapper = (TypeWrapper)types[name];
+		}
+		if(wrapper == null)
+		{
+			String netname = elementType.FullName + "[]";
+			for(int i = 1; i < dims; i++)
 			{
-				String netname = "[]";
-				for(int i = 1; i < dims; i++)
+				netname += "[]";
+			}
+			// .NET 1.1 has a limit of 1024 characters for type names
+			if(netname.Length >= 1024)
+			{
+				return null;
+			}
+			Type array;
+			if(elementType.Module is ModuleBuilder)
+			{
+				// FXBUG ModuleBuilder.GetType() is broken (I think), it fires a TypeResolveEvent when
+				// you try to construct an array type from an unfinished type. I don't think it should
+				// do that. We have to work around that by setting a global flag (yuck) to prevent us
+				// from responding to the TypeResolveEvent.
+				lock(arrayConstructionLock)
 				{
-					netname += "[]";
-				}
-				Type array;
-				if(elementType.Module is ModuleBuilder)
-				{
-					// FXBUG ModuleBuilder.GetType() is broken (I think), it fires a TypeResolveEvent when
-					// you try to construct an array type from an unfinished type. I don't think it should
-					// do that. We have to work around that by setting a global flag (yuck) to prevent us
-					// from responding to the TypeResolveEvent.
-					lock(arrayConstructionLock)
+					arrayConstructionHack = true;
+					try
 					{
-						arrayConstructionHack = true;
-						try
-						{
-							array = ((ModuleBuilder)elementType.Module).GetType(elementType.FullName + netname);
-						}
-						finally
-						{
-							arrayConstructionHack = false;
-						}
+						array = ((ModuleBuilder)elementType.Module).GetType(netname);
+					}
+					finally
+					{
+						arrayConstructionHack = false;
+					}
+				}
+			}
+			else
+			{
+				array = elementType.Assembly.GetType(netname, true);
+			}
+			Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
+			Modifiers reflectiveModifiers = modifiers;
+			modifiers |= elementTypeWrapper.Modifiers & Modifiers.Public;
+			reflectiveModifiers |= elementTypeWrapper.ReflectiveModifiers & Modifiers.AccessMask;
+			wrapper = new ArrayTypeWrapper(array, modifiers, reflectiveModifiers, name, this);
+			lock(types.SyncRoot)
+			{
+				// another thread may have beaten us to it and in that
+				// case we don't want to overwrite the previous one
+				TypeWrapper race = (TypeWrapper)types[name];
+				if(race == null)
+				{
+					types.Add(name, wrapper);
+					if(!(elementType is TypeBuilder) && !wrapper.IsGhostArray)
+					{
+						Debug.Assert(!typeToTypeWrapper.ContainsKey(array), name);
+						typeToTypeWrapper.Add(array, wrapper);
 					}
 				}
 				else
 				{
-					array = elementType.Assembly.GetType(elementType.FullName + netname, true);
-				}
-				Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
-				Modifiers reflectiveModifiers = modifiers;
-				modifiers |= elementTypeWrapper.Modifiers & Modifiers.Public;
-				reflectiveModifiers |= elementTypeWrapper.ReflectiveModifiers & Modifiers.AccessMask;
-				wrapper = new ArrayTypeWrapper(array, modifiers, reflectiveModifiers, name, this);
-				Debug.Assert(!types.ContainsKey(name));
-				types.Add(name, wrapper);
-				if(!(elementType is TypeBuilder) && !wrapper.IsGhostArray)
-				{
-					Debug.Assert(!typeToTypeWrapper.ContainsKey(array), name);
-					typeToTypeWrapper.Add(array, wrapper);
+					wrapper = race;
 				}
 			}
-			return wrapper;
 		}
+		return wrapper;
 	}
 
 	internal TypeWrapper DefineClass(ClassFile f, object protectionDomain)
@@ -561,16 +593,33 @@ class ClassLoaderWrapper
 			}
 			// mark the type as "loading in progress", so that we can detect circular dependencies.
 			types.Add(f.Name, null);
-			try
+		}
+		try
+		{
+			TypeWrapper type = new DynamicTypeWrapper(f, this, protectionDomain);
+			lock(types.SyncRoot)
 			{
-				TypeWrapper type = new DynamicTypeWrapper(f, this, protectionDomain);
-				Debug.Assert(!dynamicTypes.ContainsKey(type.TypeAsTBD.FullName));
-				dynamicTypes.Add(type.TypeAsTBD.FullName, type);
-				Debug.Assert(types[f.Name] == null);
-				types[f.Name] = type;
-				return type;
+				// in very extreme conditions another thread may have beaten us to it
+				// and loaded a class with the same name, in that case we'll leak
+				// the defined DynamicTypeWrapper (or rather the Reflection.Emit
+				// defined type).
+				TypeWrapper race = (TypeWrapper)types[f.Name];
+				if(race == null)
+				{
+					Debug.Assert(!dynamicTypes.ContainsKey(type.TypeAsTBD.FullName));
+					dynamicTypes.Add(type.TypeAsTBD.FullName, type);
+					types[f.Name] = type;
+				}
+				else
+				{
+					type = race;
+				}
 			}
-			catch
+			return type;
+		}
+		catch
+		{
+			lock(types.SyncRoot)
 			{
 				if(types[f.Name] == null)
 				{
@@ -578,51 +627,63 @@ class ClassLoaderWrapper
 					// because otherwise we get a ClassCircularityError if we try to load the class again.
 					types.Remove(f.Name);
 				}
-				throw;
 			}
+			throw;
 		}
 	}
 
 	private TypeWrapper DefineNetExpType(string name, string assemblyName)
 	{
 		Debug.Assert(this == GetBootstrapClassLoader());
+		TypeWrapper type;
 		lock(types.SyncRoot)
 		{
 			// we need to check if we've already got it, because other classloaders than the bootstrap classloader may
 			// "define" NetExp types, there is a potential race condition if multiple classloaders try to define the
 			// same type simultaneously.
-			TypeWrapper type = (TypeWrapper)types[name];
+			type = (TypeWrapper)types[name];
 			if(type != null)
 			{
 				return type;
 			}
-			// The sole purpose of the netexp class is to let us load the assembly that the class lives in,
-			// once we've done that, all types in it become visible.
-			Assembly asm;
-			try
-			{
-				asm = Assembly.Load(assemblyName);
-			}
-			catch(Exception x)
-			{
-				throw new NoClassDefFoundError(name + " (" + x.Message + ")");
-			}
-			// pre-compiled Java types can also live in a netexp referenced assembly,
-			// so we have to explicitly check for those
-			// (DotNetTypeWrapper.CreateDotNetTypeWrapper will refuse to return Java types).
-			Type t = GetJavaTypeFromAssembly(asm, name);
-			if(t != null)
-			{
-				return GetWrapperFromBootstrapType(t);
-			}
-			type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
-			if(type == null)
-			{
-				throw new NoClassDefFoundError(name + " not found in " + assemblyName);
-			}
-			types.Add(name, type);
-			return type;
 		}
+		// The sole purpose of the netexp class is to let us load the assembly that the class lives in,
+		// once we've done that, all types in it become visible.
+		Assembly asm;
+		try
+		{
+			asm = Assembly.Load(assemblyName);
+		}
+		catch(Exception x)
+		{
+			throw new NoClassDefFoundError(name + " (" + x.Message + ")");
+		}
+		// pre-compiled Java types can also live in a netexp referenced assembly,
+		// so we have to explicitly check for those
+		// (DotNetTypeWrapper.CreateDotNetTypeWrapper will refuse to return Java types).
+		Type t = GetJavaTypeFromAssembly(asm, name);
+		if(t != null)
+		{
+			return GetWrapperFromBootstrapType(t);
+		}
+		type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
+		if(type == null)
+		{
+			throw new NoClassDefFoundError(name + " not found in " + assemblyName);
+		}
+		lock(types.SyncRoot)
+		{
+			TypeWrapper race = (TypeWrapper)types[name];
+			if(race == null)
+			{
+				types.Add(name, type);
+			}
+			else
+			{
+				type = race;
+			}
+		}
+		return type;
 	}
 
 	internal object GetJavaClassLoader()

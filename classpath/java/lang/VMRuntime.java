@@ -39,9 +39,6 @@ import cli.System.Diagnostics.ProcessStartInfo;
  */
 final class VMRuntime
 {
-    // HACK ikvm.exe sets this field to pass the properties set on the command line
-    private static cli.System.Collections.Hashtable props;
-
     /**
      * No instance is ever created.
      */
@@ -49,7 +46,7 @@ final class VMRuntime
     {
     }
 
-    static
+    static void enableShutdownHooks()
     {
 	cli.System.AppDomain.get_CurrentDomain().add_ProcessExit(new cli.System.EventHandler(new cli.System.EventHandler.Method() {
 	    public void Invoke(Object sender, cli.System.EventArgs e) {
@@ -311,8 +308,18 @@ final class VMRuntime
 
 	public int waitFor() throws InterruptedException
 	{
-	    proc.WaitForExit();
-	    return proc.get_ExitCode();
+            // to be interruptable we have to use polling
+            for(;;)
+            {
+                if(Thread.interrupted())
+                {
+                    throw new InterruptedException();
+                }
+	        if(proc.WaitForExit(100))
+                {
+	            return proc.get_ExitCode();
+                }
+            }
 	}
 
 	public int exitValue()

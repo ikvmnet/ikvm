@@ -1317,7 +1317,7 @@ namespace IKVM.Runtime
 		internal static jint ThrowNew(JNIEnv* pEnv, jclass clazz, byte* msg)
 		{
 			TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
-			MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor("<init>", "(Ljava.lang.String;)V"), false);
+			MethodWrapper mw = wrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
 			if(mw != null)
 			{
 				jint rc;
@@ -1613,8 +1613,7 @@ namespace IKVM.Runtime
 			{
 				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
 				wrapper.Finish();
-				MethodDescriptor md = new MethodDescriptor(StringFromUTF8(name), StringFromUTF8(sig).Replace('/', '.'));
-				MethodWrapper mw = wrapper.GetMethodWrapper(md, true);
+				MethodWrapper mw = wrapper.GetMethodWrapper(StringFromUTF8(name), StringFromUTF8(sig).Replace('/', '.'), true);
 				if(mw != null)
 				{
 					if(mw.IsStatic == isstatic)
@@ -1623,7 +1622,7 @@ namespace IKVM.Runtime
 						return mw.Cookie;
 					}
 				}
-				SetPendingException(pEnv, JavaException.NoSuchMethodError("{0}{1}", md.Name, md.Signature));
+				SetPendingException(pEnv, JavaException.NoSuchMethodError("{0}{1}", StringFromUTF8(name), StringFromUTF8(sig).Replace('/', '.')));
 			}
 			catch(RetargetableJavaException x)
 			{
@@ -2903,7 +2902,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				ByteCodeHelper.monitorenter(pEnv->UnwrapRef(obj));
+				System.Threading.Monitor.Enter(pEnv->UnwrapRef(obj));
 				return JNI_OK;
 			}
 			catch(Exception x)

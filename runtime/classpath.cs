@@ -792,6 +792,11 @@ namespace IKVM.NativeCode.java
 
 			public static object getClassLoaderFromType(Type type)
 			{
+				// global methods have no type
+				if(type == null)
+				{
+					return JVM.Library.getSystemClassLoader();
+				}
 				return ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader().GetJavaClassLoader();
 			}
 

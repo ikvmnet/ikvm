@@ -175,9 +175,8 @@ class CountingILGenerator
 
 	internal void Emit(OpCode opcode, Label[] labels)
 	{
-		offset += opcode.Size;
+		offset += 5 + labels.Length * 4;
 		ilgen.Emit(opcode, labels);
-		throw new NotImplementedException();
 	}
 
 	internal void Emit(OpCode opcode, LocalBuilder local)

@@ -44,9 +44,10 @@
 				<throws class="java.lang.InterruptedException" />
 				<body>
 					<ldarg_0 />
-					<call type="System.Threading.Monitor, mscorlib" name="Wait" sig="(Ljava.lang.Object;)Z" />
-					<!-- For some reason, Wait returns a boolean -->
-					<pop />
+					<ldc_i4_0 />
+					<conv_i8 />
+					<ldc_i4_0 />
+					<call class="java.lang.VMThread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
 					<ret />
 				</body>
 			</method>
@@ -56,7 +57,7 @@
 					<ldarg_0 />
 					<ldarg_1 />
 					<ldc_i4_0 />
-					<call class="java.lang.ObjectHelper" name="wait" sig="(Ljava.lang.Object;JI)V" />
+					<call class="java.lang.VMThread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
 					<ret />
 				</body>
 			</method>
@@ -66,7 +67,7 @@
 					<ldarg_0 />
 					<ldarg_1 />
 					<ldarg_2 />
-					<call class="java.lang.ObjectHelper" name="wait" sig="(Ljava.lang.Object;JI)V" />
+					<call class="java.lang.VMThread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
 					<ret />
 				</body>
 			</method>
@@ -103,11 +104,24 @@
 					<ret />
 				</alternateBody>
 			</method>
+			<method name="toStringImpl" sig="(Ljava.lang.Object;)Ljava.lang.String;" modifiers="private static">
+				<body>
+					<ldarg_0 />
+					<callvirt class="java.lang.Object" name="getClass" sig="()Ljava.lang.Class;" />
+					<call class="java.lang.Class" name="getName" sig="()Ljava.lang.String;" />
+					<ldstr value="@" />
+					<ldarg_0 />
+					<callvirt class="java.lang.Object" name="hashCode" sig="()I" />
+					<call class="java.lang.Integer" name="toHexString" sig="(I)Ljava.lang.String;" />
+					<call type="System.String, mscorlib" name="Concat" sig="(Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" />
+					<ret />
+				</body>
+			</method>
 			<method name="toString" sig="()Ljava.lang.String;" modifiers="public">
 				<override name="ToString" />
 				<body>
 					<ldarg_0 />
-					<call class="java.lang.ObjectHelper" name="toStringSpecial" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
+					<call class="java.lang.Object" name="toStringImpl" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
 					<ret />
 				</body>
 				<alternateBody>
@@ -115,7 +129,7 @@
 					<isinst type="System.Array, mscorlib" />
 					<brfalse name="skip" />
 					<ldarg_0 />
-					<call class="java.lang.ObjectHelper" name="toStringSpecial" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
+					<call class="java.lang.Object" name="toStringImpl" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
 					<br name="end" />
 					<label name="skip" />
 					<ldarg_0 />
@@ -125,7 +139,7 @@
 				</alternateBody>
 				<nonvirtualAlternateBody>
 					<ldarg_0 />
-					<call class="java.lang.ObjectHelper" name="toStringSpecial" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
+					<call class="java.lang.Object" name="toStringImpl" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
 					<ret />
 				</nonvirtualAlternateBody>
 			</method>
@@ -934,7 +948,7 @@
 					<ldloc name="result" />
 					<ret />
 					<label name="err" />
-					<newobj class="java.nio.BufferOverflowException" name="&lt;init&gt;" sig="()V" />
+					<newobj class="java.nio.BufferUnderflowException" name="&lt;init&gt;" sig="()V" />
 					<throw />
 				</body>
 			</method>
@@ -1027,7 +1041,6 @@
 			</code>
 		</exception>
 		<exception src="System.Threading.SynchronizationLockException, mscorlib" dst="java.lang.IllegalMonitorStateException" />
-		<exception src="System.Threading.ThreadInterruptedException, mscorlib" dst="java.lang.InterruptedException" />
 		<exception src="System.OutOfMemoryException, mscorlib" dst="java.lang.OutOfMemoryError" />
 		<exception src="System.DivideByZeroException, mscorlib" dst="java.lang.ArithmeticException">
 			<code>

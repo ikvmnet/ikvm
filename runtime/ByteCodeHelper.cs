@@ -227,7 +227,7 @@ namespace IKVM.Runtime
 		{
 			TypeWrapper caller = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(type));
 			TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
-			MethodWrapper mw = wrapper.GetMethodWrapper(new MethodDescriptor(name, sig), false);
+			MethodWrapper mw = wrapper.GetMethodWrapper(name, sig, false);
 			if(mw == null)
 			{
 				throw JavaException.NoSuchMethodError(clazz + "." + name + sig);
@@ -342,28 +342,6 @@ namespace IKVM.Runtime
 				return 0;
 			}
 			return (long)d;
-		}
-
-		[DebuggerStepThroughAttribute]
-		public static void monitorenter(object obj)
-		{
-			bool interruptPending = false;
-			for(;;)
-			{
-				try
-				{
-					System.Threading.Monitor.Enter(obj);
-					if(interruptPending)
-					{
-						System.Threading.Thread.CurrentThread.Interrupt();
-					}
-					return;
-				}
-				catch(System.Threading.ThreadInterruptedException)
-				{
-					interruptPending = true;
-				}
-			}
 		}
 
 		// This is used by static JNI and synchronized methods that need a class object

@@ -10,6 +10,10 @@ public class VMSystemProperties
 
     static void preInit(Properties p)
     {
+        String[] culture = ((cli.System.String)(Object)cli.System.Globalization.CultureInfo.get_CurrentCulture().get_Name()).Split(new char[] { '-' });        
+        p.setProperty("user.language", culture[0]);
+        p.setProperty("user.region", culture.length > 1 ? culture[1] : "");
+        p.setProperty("user.variant", culture.length > 2 ? culture[2] : "");
         p.setProperty("java.version", "1.4");
         p.setProperty("java.vendor", "Jeroen Frijters");
         p.setProperty("java.vendor.url", "http://ikvm.net/");

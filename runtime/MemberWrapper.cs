@@ -171,7 +171,9 @@ class MemberWrapper
 
 abstract class MethodWrapper : MemberWrapper
 {
-	private MethodDescriptor md;
+	internal static readonly MethodWrapper[] EmptyArray  = new MethodWrapper[0];
+	private string name;
+	private string sig;
 	private MethodBase method;
 	private string[] declaredExceptions;
 	private TypeWrapper returnTypeWrapper;
@@ -196,8 +198,8 @@ abstract class MethodWrapper : MemberWrapper
 	{
 		private MethodInfo ghostMethod;
 
-		internal GhostMethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
-			: base(declaringType, md, method, returnType, parameterTypes, modifiers, flags)
+		internal GhostMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
+			: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
 		{
 			// make sure we weren't handed the ghostMethod in the wrapper value type
 			Debug.Assert(method == null || method.DeclaringType.IsInterface);
@@ -231,9 +233,9 @@ abstract class MethodWrapper : MemberWrapper
 		}
 	}
 
-	internal static MethodWrapper Create(TypeWrapper declaringType, MethodDescriptor md, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection)
+	internal static MethodWrapper Create(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection)
 	{
-		Debug.Assert(declaringType != null && md != null && method != null);
+		Debug.Assert(declaringType != null && name!= null && sig != null && method != null);
 
 		if(declaringType.IsGhost)
 		{
@@ -247,23 +249,24 @@ abstract class MethodWrapper : MemberWrapper
 				}
 				method = declaringType.TypeAsBaseType.GetMethod(method.Name, types);
 			}
-			return new GhostMethodWrapper(declaringType, md, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None);
+			return new GhostMethodWrapper(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None);
 		}
 		else if(method is ConstructorInfo)
 		{
-			return new SmartConstructorMethodWrapper(declaringType, md, (ConstructorInfo)method, parameterTypes, modifiers, hideFromReflection);
+			return new SmartConstructorMethodWrapper(declaringType, name, sig, (ConstructorInfo)method, parameterTypes, modifiers, hideFromReflection);
 		}
 		else
 		{
-			return new SmartCallMethodWrapper(declaringType, md, (MethodInfo)method, returnType, parameterTypes, modifiers, hideFromReflection, OpCodes.Call, method.IsStatic ? OpCodes.Call : OpCodes.Callvirt);
+			return new SmartCallMethodWrapper(declaringType, name, sig, (MethodInfo)method, returnType, parameterTypes, modifiers, hideFromReflection, SimpleOpCode.Call, method.IsStatic ? SimpleOpCode.Call : SimpleOpCode.Callvirt);
 		}
 	}
 
-	internal MethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
+	internal MethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
 		: base(declaringType, modifiers, flags)
 	{
 		Profiler.Count("MethodWrapper");
-		this.md = md;
+		this.name = name;
+		this.sig = sig;
 		this.method = method;
 		Debug.Assert(((returnType == null) == (parameterTypes == null)) || (returnType == PrimitiveTypeWrapper.VOID));
 		this.returnTypeWrapper = returnType;
@@ -296,19 +299,11 @@ abstract class MethodWrapper : MemberWrapper
 		return (MethodWrapper)FromCookieImpl(cookie);
 	}
 
-	internal MethodDescriptor Descriptor
-	{
-		get
-		{
-			return md;
-		}
-	}
-
 	internal string Name
 	{
 		get
 		{
-			return md.Name;
+			return name;
 		}
 	}
 
@@ -316,7 +311,7 @@ abstract class MethodWrapper : MemberWrapper
 	{
 		get
 		{
-			return md.Signature;
+			return sig;
 		}
 	}
 
@@ -336,7 +331,6 @@ abstract class MethodWrapper : MemberWrapper
 			{
 				Debug.Assert(returnTypeWrapper == null || returnTypeWrapper == PrimitiveTypeWrapper.VOID);
 				ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
-				string sig = md.Signature;
 				// TODO we need to use the actual classCache here
 				System.Collections.Hashtable classCache = new System.Collections.Hashtable();
 				returnTypeWrapper = ClassFile.RetTypeWrapperFromSig(loader, classCache, sig);
@@ -469,7 +463,7 @@ abstract class MethodWrapper : MemberWrapper
 			attribs |= MethodAttributes.Family;
 		}
 		// constructors aren't virtual
-		if(!IsStatic && !IsPrivate && md.Name != "<init>")
+		if(!IsStatic && !IsPrivate && name != "<init>")
 		{
 			attribs |= MethodAttributes.Virtual;
 		}
@@ -552,7 +546,7 @@ abstract class MethodWrapper : MemberWrapper
 		}
 		else
 		{
-			if(md.Name == "<init>")
+			if(name == "<init>")
 			{
 				if(method is MethodInfo)
 				{
@@ -774,7 +768,7 @@ abstract class MethodWrapper : MemberWrapper
 		{
 			TypeWrapper[] argTypes = mw.GetParameters();
 
-			if(!mw.IsStatic && method.IsStatic && mw.md.Name != "<init>")
+			if(!mw.IsStatic && method.IsStatic && mw.Name != "<init>")
 			{
 				// we've been redirected to a static method, so we have to copy the 'obj' into the args
 				args = new object[original_args.Length + 1];
@@ -822,12 +816,27 @@ abstract class MethodWrapper : MemberWrapper
 			return args;
 		}
 	}
+
+	internal static OpCode SimpleOpCodeToOpCode(SimpleOpCode opc)
+	{
+		switch(opc)
+		{
+			case SimpleOpCode.Call:
+				return OpCodes.Call;
+			case SimpleOpCode.Callvirt:
+				return OpCodes.Callvirt;
+			case SimpleOpCode.Newobj:
+				return OpCodes.Newobj;
+			default:
+				throw new InvalidOperationException();
+		}
+	}
 }
 
 class SmartMethodWrapper : MethodWrapper
 {
-	internal SmartMethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
-		: base(declaringType, md, method, returnType, parameterTypes, modifiers, flags)
+	internal SmartMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
+		: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
 	{
 	}
 
@@ -895,9 +904,7 @@ class SmartMethodWrapper : MethodWrapper
 		NewobjImpl(ilgen);
 		if(DeclaringType.IsNonPrimitiveValueType)
 		{
-			// HACK after constructing a new object, we don't want the custom boxing rule to run
-			// (because that would turn "new IntPtr" into a null reference)
-			ilgen.Emit(OpCodes.Box, DeclaringType.TypeAsTBD);
+			DeclaringType.EmitBox(ilgen);
 		}
 	}
 
@@ -907,13 +914,20 @@ class SmartMethodWrapper : MethodWrapper
 	}
 }
 
+enum SimpleOpCode : byte
+{
+	Call,
+	Callvirt,
+	Newobj
+}
+
 sealed class SimpleCallMethodWrapper : MethodWrapper
 {
-	private OpCode call;
-	private OpCode callvirt;
+	private SimpleOpCode call;
+	private SimpleOpCode callvirt;
 
-	internal SimpleCallMethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection, OpCode call, OpCode callvirt)
-		: base(declaringType, md, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
+	internal SimpleCallMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection, SimpleOpCode call, SimpleOpCode callvirt)
+		: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
 	{
 		this.call = call;
 		this.callvirt = callvirt;
@@ -921,27 +935,27 @@ sealed class SimpleCallMethodWrapper : MethodWrapper
 
 	internal override void EmitCall(ILGenerator ilgen)
 	{
-		ilgen.Emit(call, (MethodInfo)GetMethod());
+		ilgen.Emit(SimpleOpCodeToOpCode(call), (MethodInfo)GetMethod());
 	}
 
 	internal override void EmitCallvirt(ILGenerator ilgen)
 	{
-		ilgen.Emit(callvirt, (MethodInfo)GetMethod());
+		ilgen.Emit(SimpleOpCodeToOpCode(callvirt), (MethodInfo)GetMethod());
 	}
 }
 
 sealed class SmartCallMethodWrapper : SmartMethodWrapper
 {
-	private OpCode call;
-	private OpCode callvirt;
+	private SimpleOpCode call;
+	private SimpleOpCode callvirt;
 
-	internal SmartCallMethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection, OpCode call, OpCode callvirt)
-		: this(declaringType, md, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None, call, callvirt)
+	internal SmartCallMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection, SimpleOpCode call, SimpleOpCode callvirt)
+		: this(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None, call, callvirt)
 	{
 	}
 
-	internal SmartCallMethodWrapper(TypeWrapper declaringType, MethodDescriptor md, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags, OpCode call, OpCode callvirt)
-		: base(declaringType, md, method, returnType, parameterTypes, modifiers, flags)
+	internal SmartCallMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags, SimpleOpCode call, SimpleOpCode callvirt)
+		: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
 	{
 		this.call = call;
 		this.callvirt = callvirt;
@@ -949,24 +963,24 @@ sealed class SmartCallMethodWrapper : SmartMethodWrapper
 
 	protected override void CallImpl(ILGenerator ilgen)
 	{
-		ilgen.Emit(call, (MethodInfo)GetMethod());
+		ilgen.Emit(SimpleOpCodeToOpCode(call), (MethodInfo)GetMethod());
 	}
 
 	protected override void CallvirtImpl(ILGenerator ilgen)
 	{
-		ilgen.Emit(callvirt, (MethodInfo)GetMethod());
+		ilgen.Emit(SimpleOpCodeToOpCode(callvirt), (MethodInfo)GetMethod());
 	}
 }
 
 sealed class SmartConstructorMethodWrapper : SmartMethodWrapper
 {
-	internal SmartConstructorMethodWrapper(TypeWrapper declaringType, MethodDescriptor md, ConstructorInfo method, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
-		: base(declaringType, md, method, PrimitiveTypeWrapper.VOID, parameterTypes, modifiers, flags)
+	internal SmartConstructorMethodWrapper(TypeWrapper declaringType, string name, string sig, ConstructorInfo method, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
+		: base(declaringType, name, sig, method, PrimitiveTypeWrapper.VOID, parameterTypes, modifiers, flags)
 	{
 	}
 
-	internal SmartConstructorMethodWrapper(TypeWrapper declaringType, MethodDescriptor md, ConstructorInfo method, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection)
-		: base(declaringType, md, method, PrimitiveTypeWrapper.VOID, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
+	internal SmartConstructorMethodWrapper(TypeWrapper declaringType, string name, string sig, ConstructorInfo method, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection)
+		: base(declaringType, name, sig, method, PrimitiveTypeWrapper.VOID, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
 	{
 	}
 
@@ -1037,6 +1051,7 @@ sealed class ReflectionOnConstant
 
 abstract class FieldWrapper : MemberWrapper
 {
+	internal static readonly FieldWrapper[] EmptyArray  = new FieldWrapper[0];
 	private string name;
 	private string sig;
 	private FieldInfo field;
@@ -1045,7 +1060,6 @@ abstract class FieldWrapper : MemberWrapper
 	internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field)
 		: base(declaringType, modifiers, false)
 	{
-		Debug.Assert(fieldType != null);
 		Debug.Assert(name != null);
 		Debug.Assert(sig != null);
 		this.name = name;
@@ -1070,12 +1084,12 @@ abstract class FieldWrapper : MemberWrapper
 		Debug.Assert(fieldType != null, this.DeclaringType.Name + "::" + this.name + " (" + this.sig+ ")");
 	}
 
-	// HACK used (thru IKVM.Runtime.Util.GetFieldConstantValue) by ikvmstub to find out if the
+	// NOTE used (thru IKVM.Runtime.Util.GetFieldConstantValue) by ikvmstub to find out if the
 	// field is a constant (and if it is, to get its value)
 	internal object GetConstant()
 	{
 		AssertLinked();
-		// NOTE only pritimives and string can be literals in Java (because the other "primitives" (like uint),
+		// only pritimives and string can be literals in Java (because the other "primitives" (like uint),
 		// are treated as NonPrimitiveValueTypes)
 		if(field != null && (fieldType.IsPrimitive || fieldType == CoreClasses.java.lang.String.Wrapper))
 		{
@@ -1121,6 +1135,14 @@ abstract class FieldWrapper : MemberWrapper
 		}
 	}
 
+	internal string Signature
+	{
+		get
+		{
+			return sig;
+		}
+	}
+
 	internal TypeWrapper FieldTypeWrapper
 	{
 		get
@@ -1157,7 +1179,7 @@ abstract class FieldWrapper : MemberWrapper
 				fieldType = ClassFile.FieldTypeWrapperFromSig(this.DeclaringType.GetClassLoader(), classCache, sig);
 				try
 				{
-					this.DeclaringType.LinkField(this);
+					field = this.DeclaringType.LinkField(this);
 				}
 				catch
 				{
@@ -1180,35 +1202,12 @@ abstract class FieldWrapper : MemberWrapper
 
 	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
 	{
-		if(fieldType.IsUnloadable)
+		// volatile long & double field accesses must be made atomic
+		if((modifiers & Modifiers.Volatile) != 0 && (sig == "J" || sig == "D"))
 		{
-			// TODO we might need to emit code to check the type dynamically
-			// TODO the fact that the type is unloadable now, doesn't mean it will be unloadable when a method
-			// that accesses this field is compiled, that means that that method may need to emit a cast
+			return new VolatileLongDoubleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
 		}
-		else
-		{
-			if(fieldType.IsGhost)
-			{
-				return new GhostFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
-			}
-			if((modifiers & Modifiers.Volatile) != 0)
-			{
-				// long & double field accesses must be made atomic
-				if(fi.FieldType == typeof(long) || fi.FieldType == typeof(double))
-				{
-					return new VolatileLongDoubleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
-				}
-			}
-		}
-		if(declaringType.IsNonPrimitiveValueType)
-		{
-			return new NonPrimitiveValueTypeFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
-		}
-		else
-		{
-			return new SimpleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
-		}
+		return new SimpleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
 	}
 
 	private void LookupField()
@@ -1278,35 +1277,96 @@ sealed class SimpleFieldWrapper : FieldWrapper
 	internal SimpleFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
 		: base(declaringType, fieldType, name, sig, modifiers, fi)
 	{
-		Debug.Assert(!declaringType.IsNonPrimitiveValueType);
-		Debug.Assert(!fieldType.IsGhost);
-		Debug.Assert(fieldType != PrimitiveTypeWrapper.DOUBLE || fieldType != PrimitiveTypeWrapper.LONG || !IsVolatile);
+		Debug.Assert(!(fieldType == PrimitiveTypeWrapper.DOUBLE || fieldType == PrimitiveTypeWrapper.LONG) || !IsVolatile);
 	}
 
 	protected override void EmitGetImpl(ILGenerator ilgen)
 	{
-		if(IsVolatile)
+		if(FieldTypeWrapper.IsGhost)
 		{
-			ilgen.Emit(OpCodes.Volatile);
+			FieldInfo fi = GetField();
+			if(fi.IsStatic)
+			{
+				ilgen.Emit(OpCodes.Ldsflda, fi);
+			}
+			else
+			{
+				if(DeclaringType.IsNonPrimitiveValueType)
+				{
+					ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+				}
+				ilgen.Emit(OpCodes.Ldflda, fi);
+			}
+			if(IsVolatile)
+			{
+				ilgen.Emit(OpCodes.Volatile);
+			}
+			ilgen.Emit(OpCodes.Ldfld, FieldTypeWrapper.GhostRefField);
 		}
-		ilgen.Emit(IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, GetField());
-		if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
+		else
 		{
-			FieldTypeWrapper.EmitBox(ilgen);
+			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
+			{
+				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+			}
+			if(IsVolatile)
+			{
+				ilgen.Emit(OpCodes.Volatile);
+			}
+			ilgen.Emit(IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, GetField());
+			if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
+			{
+				FieldTypeWrapper.EmitBox(ilgen);
+			}
 		}
 	}
 
 	protected override void EmitSetImpl(ILGenerator ilgen)
 	{
-		if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
+		if(FieldTypeWrapper.IsGhost)
 		{
-			FieldTypeWrapper.EmitUnbox(ilgen);
+			FieldInfo fi = GetField();
+			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
+			ilgen.Emit(OpCodes.Stloc, temp);
+			if(fi.IsStatic)
+			{
+				ilgen.Emit(OpCodes.Ldsflda, fi);
+			}
+			else
+			{
+				if(DeclaringType.IsNonPrimitiveValueType)
+				{
+					ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+				}
+				ilgen.Emit(OpCodes.Ldflda, fi);
+			}
+			ilgen.Emit(OpCodes.Ldloc, temp);
+			if(IsVolatile)
+			{
+				ilgen.Emit(OpCodes.Volatile);
+			}
+			ilgen.Emit(OpCodes.Stfld, FieldTypeWrapper.GhostRefField);
 		}
-		if(IsVolatile)
+		else
 		{
-			ilgen.Emit(OpCodes.Volatile);
+			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
+			{
+				FieldInfo fi = GetField();
+				LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
+				ilgen.Emit(OpCodes.Stloc, temp);
+				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
+				ilgen.Emit(OpCodes.Ldloc, temp);
+			}
+			if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
+			{
+				FieldTypeWrapper.EmitUnbox(ilgen);
+			}
+			if(IsVolatile)
+			{
+				ilgen.Emit(OpCodes.Volatile);
+			}
+			ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, GetField());
 		}
-		ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, GetField());
 	}
 }
 
@@ -1380,111 +1440,6 @@ sealed class VolatileLongDoubleFieldWrapper : FieldWrapper
 	}
 }
 
-sealed class GhostFieldWrapper : FieldWrapper
-{
-	internal GhostFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
-		: base(declaringType, fieldType, name, sig, modifiers, fi)
-	{
-		Debug.Assert(fieldType.IsGhost);
-	}
-
-	protected override void EmitGetImpl(ILGenerator ilgen)
-	{
-		FieldInfo fi = GetField();
-		if(fi.IsStatic)
-		{
-			ilgen.Emit(OpCodes.Ldsflda, fi);
-		}
-		else
-		{
-			if(DeclaringType.IsNonPrimitiveValueType)
-			{
-				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-			}
-			ilgen.Emit(OpCodes.Ldflda, fi);
-		}
-		if(IsVolatile)
-		{
-			ilgen.Emit(OpCodes.Volatile);
-		}
-		ilgen.Emit(OpCodes.Ldfld, FieldTypeWrapper.GhostRefField);
-	}
-
-	protected override void EmitSetImpl(ILGenerator ilgen)
-	{
-		FieldInfo fi = GetField();
-		LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
-		ilgen.Emit(OpCodes.Stloc, temp);
-		if(fi.IsStatic)
-		{
-			ilgen.Emit(OpCodes.Ldsflda, fi);
-		}
-		else
-		{
-			if(DeclaringType.IsNonPrimitiveValueType)
-			{
-				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-			}
-			ilgen.Emit(OpCodes.Ldflda, fi);
-		}
-		ilgen.Emit(OpCodes.Ldloc, temp);
-		if(IsVolatile)
-		{
-			ilgen.Emit(OpCodes.Volatile);
-		}
-		ilgen.Emit(OpCodes.Stfld, FieldTypeWrapper.GhostRefField);
-	}
-}
-
-sealed class NonPrimitiveValueTypeFieldWrapper : FieldWrapper
-{
-	internal NonPrimitiveValueTypeFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
-		: base(declaringType, fieldType, name, sig, modifiers, fi)
-	{
-		Debug.Assert(declaringType.IsNonPrimitiveValueType);
-		Debug.Assert(!fieldType.IsGhost);
-		Debug.Assert(fieldType != PrimitiveTypeWrapper.DOUBLE || fieldType != PrimitiveTypeWrapper.LONG || !IsVolatile);
-	}
-
-	protected override void EmitGetImpl(ILGenerator ilgen)
-	{
-		if(!IsStatic)
-		{
-			ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-		}
-		if(IsVolatile)
-		{
-			ilgen.Emit(OpCodes.Volatile);
-		}
-		ilgen.Emit(IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, GetField());
-		if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
-		{
-			FieldTypeWrapper.EmitBox(ilgen);
-		}
-	}
-
-	protected override void EmitSetImpl(ILGenerator ilgen)
-	{
-		if(!IsStatic)
-		{
-			FieldInfo fi = GetField();
-			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsLocalOrStackType);
-			ilgen.Emit(OpCodes.Stloc, temp);
-			ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
-			ilgen.Emit(OpCodes.Ldloc, temp);
-		}
-		if(!FieldTypeWrapper.IsUnloadable && FieldTypeWrapper.IsNonPrimitiveValueType)
-		{
-			FieldTypeWrapper.EmitUnbox(ilgen);
-		}
-		if(IsVolatile)
-		{
-			ilgen.Emit(OpCodes.Volatile);
-		}
-		ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, GetField());
-	}
-}
-
 sealed class GetterFieldWrapper : FieldWrapper
 {
 	private MethodInfo getter;
@@ -1495,6 +1450,11 @@ sealed class GetterFieldWrapper : FieldWrapper
 	{
 		Debug.Assert(!IsVolatile);
 
+		this.getter = getter;
+	}
+
+	internal void SetGetter(MethodInfo getter)
+	{
 		this.getter = getter;
 	}
 

@@ -278,7 +278,7 @@ public class NetExp
 				((mods & (Modifiers.Static | Modifiers.Final)) == (Modifiers.Static | Modifiers.Final) &&
 				fields[i].getName() == "serialVersionUID" && fields[i].getType() == java.lang.Long.TYPE))
 			{
-				// HACK we use the IKVM runtime API to get constant value
+				// we use the IKVM runtime API to get constant value
 				// NOTE we can't use Field.get() because that will run the static initializer and
 				// also won't allow us to see the difference between constants and blank final fields.
 				object constantValue = IKVM.Runtime.Util.GetFieldConstantValue(fields[i]);

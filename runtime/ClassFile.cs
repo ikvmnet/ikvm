@@ -770,7 +770,7 @@ class ClassFile
 						}
 						prev = c;
 					}
-					name = name.Replace('/', '.');
+					name = String.Intern(name.Replace('/', '.'));
 					return;
 				}
 			}
@@ -995,10 +995,10 @@ class ClassFile
 			{
 				throw new ClassFormatError("Bad index in constant pool");
 			}
-			name = classFile.GetConstantPoolUtf8String(name_and_type.name_index);
+			name = String.Intern(classFile.GetConstantPoolUtf8String(name_and_type.name_index));
 			descriptor = classFile.GetConstantPoolUtf8String(name_and_type.descriptor_index);
 			Validate(name, descriptor);
-			descriptor = descriptor.Replace('/', '.');
+			descriptor = String.Intern(descriptor.Replace('/', '.'));
 		}
 
 		protected abstract void Validate(string name, string descriptor);
@@ -1163,8 +1163,7 @@ class ClassFile
 			TypeWrapper wrapper = GetClassType();
 			if(!wrapper.IsUnloadable)
 			{
-				MethodDescriptor md = new MethodDescriptor(Name, Signature);
-				method = wrapper.GetMethodWrapper(md, Name != "<init>");
+				method = wrapper.GetMethodWrapper(Name, Signature, Name != "<init>");
 				if(method != null)
 				{
 					method.Link();
@@ -1173,7 +1172,7 @@ class ClassFile
 					(thisType.Modifiers & (__Modifiers.Interface | __Modifiers.Super)) == __Modifiers.Super &&
 					thisType != wrapper && thisType.IsSubTypeOf(wrapper))
 				{
-					invokespecialMethod = thisType.BaseTypeWrapper.GetMethodWrapper(md, true);
+					invokespecialMethod = thisType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true);
 					if(invokespecialMethod != null)
 					{
 						invokespecialMethod.Link();
@@ -1189,9 +1188,9 @@ class ClassFile
 		{
 		}
 
-		private static MethodWrapper GetInterfaceMethod(TypeWrapper wrapper, MethodDescriptor md)
+		private static MethodWrapper GetInterfaceMethod(TypeWrapper wrapper, string name, string sig)
 		{
-			MethodWrapper method = wrapper.GetMethodWrapper(md, false);
+			MethodWrapper method = wrapper.GetMethodWrapper(name, sig, false);
 			if(method != null)
 			{
 				return method;
@@ -1199,7 +1198,7 @@ class ClassFile
 			TypeWrapper[] interfaces = wrapper.Interfaces;
 			for(int i = 0; i < interfaces.Length; i++)
 			{
-				method = GetInterfaceMethod(interfaces[i], md);
+				method = GetInterfaceMethod(interfaces[i], name, sig);
 				if(method != null)
 				{
 					return method;
@@ -1214,12 +1213,11 @@ class ClassFile
 			TypeWrapper wrapper = GetClassType();
 			if(!wrapper.IsUnloadable)
 			{
-				MethodDescriptor md = new MethodDescriptor(Name, Signature);
-				method = GetInterfaceMethod(wrapper, md);
+				method = GetInterfaceMethod(wrapper, Name, Signature);
 				if(method == null)
 				{
 					// NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
-					method = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(md, false);
+					method = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(Name, Signature, false);
 				}
 				if(method != null)
 				{
@@ -1364,10 +1362,10 @@ class ClassFile
 		internal FieldOrMethod(ClassFile classFile, BigEndianBinaryReader br)
 		{
 			access_flags = (Modifiers)br.ReadUInt16();
-			name = classFile.GetConstantPoolUtf8String(br.ReadUInt16());
+			name = String.Intern(classFile.GetConstantPoolUtf8String(br.ReadUInt16()));
 			descriptor = classFile.GetConstantPoolUtf8String(br.ReadUInt16());
 			ValidateSig(classFile, descriptor);
-			descriptor = descriptor.Replace('/', '.');
+			descriptor = String.Intern(descriptor.Replace('/', '.'));
 		}
 
 		protected abstract void ValidateSig(ClassFile classFile, string descriptor);
