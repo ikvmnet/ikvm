@@ -340,18 +340,20 @@ public abstract class CodeEmitter
 		return new LongCodeEmitter(opcode, l);
 	}
 
-	private class NoClassDefHackEmitter : CodeEmitter
+	private class ThrowEmitter : CodeEmitter
 	{
+		private string className;
 		private string msg;
 
-		internal NoClassDefHackEmitter(string msg)
+		internal ThrowEmitter(string className, string msg)
 		{
+			this.className = className;
 			this.msg = msg;
 		}
 
 		internal override void Emit(ILGenerator ilGenerator)
 		{
-			EmitHelper.Throw(ilGenerator, "java.lang.NoClassDefFoundError", msg);
+			EmitHelper.Throw(ilGenerator, className, msg);
 		}
 	}
 
@@ -359,7 +361,12 @@ public abstract class CodeEmitter
 	// that tries to load the class and do whatever needs to be done dynamically.
 	internal static CodeEmitter NoClassDefFoundError(string msg)
 	{
-		return new NoClassDefHackEmitter(msg);
+		return new ThrowEmitter("java.lang.NoClassDefFoundError", msg);
+	}
+
+	internal static CodeEmitter Throw(string className, string msg)
+	{
+		return new ThrowEmitter(className, msg);
 	}
 }
 

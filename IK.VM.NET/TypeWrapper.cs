@@ -1931,14 +1931,14 @@ class DynamicTypeWrapper : TypeWrapper
 					attribs |= FieldAttributes.Literal;
 					field = typeBuilder.DefineField(fld.Name, type, attribs);
 					field.SetConstant(constantValue);
-					fields[i] = FieldWrapper.Create(wrapper, field, fld);
 					// NOTE even though you're not supposed to access a constant static final (the compiler is supposed
 					// to inline them), we have to support it (because it does happen, e.g. if the field becomes final
 					// after the referencing class was compiled)
-					fields[i].EmitGet = CodeEmitter.CreateLoadConstant(constantValue);
+					CodeEmitter emitGet = CodeEmitter.CreateLoadConstant(constantValue);
 					// when non-blank final fields are updated, the JIT normally doesn't see that (because the
 					// constant value is inlined), so we emulate that behavior by emitting a Pop
-					fields[i].EmitSet = CodeEmitter.Pop;
+					CodeEmitter emitSet = CodeEmitter.Pop;
+					fields[i] = FieldWrapper.Create(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), fld.Name, fld.Signature, fld.Modifiers, emitGet, emitSet);
 				}
 				else
 				{
@@ -1989,12 +1989,25 @@ class DynamicTypeWrapper : TypeWrapper
 						ilgen.Emit(OpCodes.Ret);
 						PropertyBuilder pb = typeBuilder.DefineProperty(fld.Name, PropertyAttributes.None, type, Type.EmptyTypes);
 						pb.SetGetMethod(getter);
-						fields[i] = FieldWrapper.Create(wrapper, field, fld);
-						fields[i].EmitGet = CodeEmitter.Create(OpCodes.Call, getter);
+						CodeEmitter emitGet = CodeEmitter.Create(OpCodes.Call, getter);
+						CodeEmitter emitSet = null;
+						if(fld.IsVolatile)
+						{
+							emitSet += CodeEmitter.Volatile;
+						}
+						if(fld.IsStatic)
+						{
+							emitSet += CodeEmitter.Create(OpCodes.Stsfld, field);
+						}
+						else
+						{
+							emitSet += CodeEmitter.Create(OpCodes.Stfld, field);
+						}
+						fields[i] = FieldWrapper.Create(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), fld.Name, fld.Signature, fld.Modifiers, emitGet, emitSet);
 					}
 					else
 					{
-						fields[i] = FieldWrapper.Create(wrapper, field, fld);
+						fields[i] = FieldWrapper.Create(wrapper, fld.GetFieldType(wrapper.GetClassLoader()), field, fld.Signature, fld.Modifiers);
 					}
 				}
 				if(typeWrapper.IsUnloadable)
@@ -2828,18 +2841,26 @@ class RemappedTypeWrapper : TypeWrapper
 				{
 					throw new InvalidOperationException("remapping method: " + name + sig + " not found");
 				}
-				FieldWrapper fw = new FieldWrapper(this, null, fieldName, fieldSig, modifiers);
-				fw.EmitGet = CodeEmitter.Create(OpCodes.Call, method);
-				fw.EmitSet = null;
+				CodeEmitter getter = CodeEmitter.Create(OpCodes.Call, method);
 				// ensure that return type for redirected method matches with field type, or emit a castclass
 				if(!field.redirect.Sig.EndsWith(fieldSig))
 				{
 					if(fieldSig[0] == 'L')
 					{
-						fieldSig = fieldSig.Substring(1, fieldSig.Length - 2);
+						getter += new CastEmitter(fieldSig.Substring(1, fieldSig.Length - 2));
 					}
-					fw.EmitGet += new CastEmitter(fieldSig);
+					else if(fieldSig[0] == '[')
+					{
+						getter += new CastEmitter(fieldSig);
+					}
+					else
+					{
+						throw new InvalidOperationException("invalid field sig: " + fieldSig);
+					}
 				}
+				CodeEmitter setter = CodeEmitter.Throw("java.lang.IllegalAccessError", "Redirected field " + this.Name + "." + fieldName + " is read-only");
+				// HACK we abuse RetTypeWrapperFromSig
+				FieldWrapper fw = FieldWrapper.Create(this, GetClassLoader().RetTypeWrapperFromSig("()" + fieldSig), fieldName, fieldSig, modifiers, getter, setter);
 				AddField(fw);
 			}
 		}
@@ -3170,7 +3191,7 @@ class NetExpTypeWrapper : TypeWrapper
 		FieldInfo field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 		if(!AttributeHelper.IsHideFromReflection(field))
 		{
-			return FieldWrapper.Create(this, field, MethodDescriptor.GetSigName(field.FieldType), AttributeHelper.GetModifiers(field));
+			return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(field.FieldType), field, MethodDescriptor.GetSigName(field.FieldType), AttributeHelper.GetModifiers(field));
 		}
 		return null;
 	}
@@ -3467,60 +3488,61 @@ class CompiledTypeWrapper : TypeWrapper
 
 	private FieldWrapper CreateFieldWrapper(Modifiers modifiers, string name, Type fieldType, FieldInfo field, MethodInfo getter)
 	{
-		FieldWrapper fieldWrapper = new FieldWrapper(this, ClassLoaderWrapper.GetWrapperFromType(fieldType), name, MethodDescriptor.GetSigName(fieldType), modifiers);
+		CodeEmitter emitGet;
+		CodeEmitter emitSet;
 		if((modifiers & Modifiers.Static) != 0)
 		{
 			if(getter != null)
 			{
-				fieldWrapper.EmitGet = CodeEmitter.Create(OpCodes.Call, getter);
+				emitGet = CodeEmitter.Create(OpCodes.Call, getter);
 			}
 			else
 			{
 				// if field is a literal, we emit an ldc instead of a ldsfld
 				if(field.IsLiteral)
 				{
-					fieldWrapper.EmitGet = CodeEmitter.CreateLoadConstant(field.GetValue(null));
+					emitGet = CodeEmitter.CreateLoadConstant(field.GetValue(null));
 				}
 				else
 				{
-					fieldWrapper.EmitGet = CodeEmitter.Create(OpCodes.Ldsfld, field);
+					emitGet = CodeEmitter.Create(OpCodes.Ldsfld, field);
 				}
 			}
 			if(field != null && !field.IsLiteral)
 			{
-				fieldWrapper.EmitSet = CodeEmitter.Create(OpCodes.Stsfld, field);
+				emitSet = CodeEmitter.Create(OpCodes.Stsfld, field);
 			}
 			else
 			{
 				// TODO what happens when you try to set a final field?
 				// through reflection: java.lang.IllegalAccessException: Field is final
 				// through code: java.lang.IllegalAccessError: Field <class>.<field> is final
-				fieldWrapper.EmitSet = CodeEmitter.Nop;
+				emitSet = CodeEmitter.Nop;
 			}
 		}
 		else
 		{
 			if(getter != null)
 			{
-				fieldWrapper.EmitGet = CodeEmitter.Create(OpCodes.Callvirt, getter);
+				emitGet = CodeEmitter.Create(OpCodes.Callvirt, getter);
 			}
 			else
 			{
 				// TODO is it possible to have literal instance fields?
-				fieldWrapper.EmitGet = CodeEmitter.Create(OpCodes.Ldfld, field);
+				emitGet = CodeEmitter.Create(OpCodes.Ldfld, field);
 			}
 			if(field != null)
 			{
-				fieldWrapper.EmitSet = CodeEmitter.Create(OpCodes.Stfld, field);
+				emitSet = CodeEmitter.Create(OpCodes.Stfld, field);
 			}
 			else
 			{
 				// TODO what happens when you try to set a final field through reflection?
 				// see above
-				fieldWrapper.EmitSet = CodeEmitter.Nop;
+				emitSet = CodeEmitter.Nop;
 			}
 		}
-		return fieldWrapper;
+		return FieldWrapper.Create(this, ClassLoaderWrapper.GetWrapperFromType(fieldType), name, MethodDescriptor.GetSigName(fieldType), modifiers, emitGet, emitSet);
 	}
 
 	protected override FieldWrapper GetFieldImpl(string fieldName)

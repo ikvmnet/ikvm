@@ -36,6 +36,7 @@ class MemberWrapper
 
 	protected MemberWrapper(TypeWrapper declaringType, Modifiers modifiers, bool hideFromReflection)
 	{
+		Debug.Assert(declaringType != null);
 		this.declaringType = declaringType;
 		this.modifiers = modifiers;
 		this.hideFromReflection = hideFromReflection;
@@ -467,21 +468,24 @@ sealed class FieldWrapper : MemberWrapper
 {
 	private string name;
 	private string sig;
-	internal CodeEmitter EmitGet;
-	internal CodeEmitter EmitSet;
+	internal readonly CodeEmitter EmitGet;
+	internal readonly CodeEmitter EmitSet;
 	private FieldInfo field;
 	private TypeWrapper fieldType;
 
-	internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers)
+	private FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, CodeEmitter emitGet, CodeEmitter emitSet)
 		: base(declaringType, modifiers, false)
 	{
+		Debug.Assert(fieldType != null);
+		Debug.Assert(name != null);
+		Debug.Assert(sig != null);
+		Debug.Assert(emitGet != null);
+		Debug.Assert(emitSet != null);
 		this.name = name;
 		this.sig = sig;
-		if(fieldType == null)
-		{
-			fieldType = DeclaringType.GetClassLoader().RetTypeWrapperFromSig("()" + sig);
-		}
 		this.fieldType = fieldType;
+		this.EmitGet = emitGet;
+		this.EmitSet = emitSet;
 	}
 
 	internal static FieldWrapper FromCookie(IntPtr cookie)
@@ -624,62 +628,59 @@ sealed class FieldWrapper : MemberWrapper
 		}
 	}
 
-	internal static FieldWrapper Create(TypeWrapper declaringType, FieldInfo fi, ClassFile.Field fld)
+	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, CodeEmitter getter, CodeEmitter setter)
 	{
-		return Create(declaringType, fld.GetFieldType(declaringType.GetClassLoader()), fi, fld.Signature, fld.Modifiers);
-	}
-
-	internal static FieldWrapper Create(TypeWrapper declaringType, FieldInfo fi, string sig, Modifiers modifiers)
-	{
-		return Create(declaringType, null, fi, sig, modifiers);
+		return new FieldWrapper(declaringType, fieldType, name, sig, modifiers, getter, setter);
 	}
 
 	internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string sig, Modifiers modifiers)
 	{
-		FieldWrapper field = new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers);
+		CodeEmitter emitGet = null;
+		CodeEmitter emitSet = null;
 		if(declaringType.IsNonPrimitiveValueType)
 		{
-			field.EmitSet = new ValueTypeFieldSetter(declaringType.Type, field.FieldType);
-			field.EmitGet = CodeEmitter.Create(OpCodes.Unbox, declaringType.Type);
+			emitSet = new ValueTypeFieldSetter(declaringType.Type, fieldType.Type);
+			emitGet = CodeEmitter.Create(OpCodes.Unbox, declaringType.Type);
 		}
-		if(field.FieldTypeWrapper.IsUnloadable)
+		if(fieldType.IsUnloadable)
 		{
-			field.EmitGet += CodeEmitter.NoClassDefFoundError(field.FieldTypeWrapper.Name);
-			field.EmitSet += CodeEmitter.NoClassDefFoundError(field.FieldTypeWrapper.Name);
-			return field;
+			emitGet += CodeEmitter.NoClassDefFoundError(fieldType.Name);
+			emitSet += CodeEmitter.NoClassDefFoundError(fieldType.Name);
+			return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, emitGet, emitSet);
 		}
-		if(field.FieldTypeWrapper.IsNonPrimitiveValueType)
+		if(fieldType.IsNonPrimitiveValueType)
 		{
-			field.EmitSet += CodeEmitter.Create(OpCodes.Unbox, field.FieldTypeWrapper.Type);
-			field.EmitSet += CodeEmitter.Create(OpCodes.Ldobj, field.FieldTypeWrapper.Type);
+			emitSet += CodeEmitter.Create(OpCodes.Unbox, fieldType.Type);
+			emitSet += CodeEmitter.Create(OpCodes.Ldobj, fieldType.Type);
 		}
-		if(field.IsVolatile)
+		if((modifiers & Modifiers.Volatile) != 0)
 		{
 			// long & double field accesses must be made atomic
 			if(fi.FieldType == typeof(long) || fi.FieldType == typeof(double))
 			{
-				field.EmitGet = new VolatileLongDoubleGetter(fi);
-				field.EmitSet = new VolatileLongDoubleSetter(fi);
-				return field;
+				// TODO shouldn't we use += here (for volatile fields inside of value types)?
+				emitGet = new VolatileLongDoubleGetter(fi);
+				emitSet = new VolatileLongDoubleSetter(fi);
+				return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, emitGet, emitSet);
 			}
-			field.EmitGet += CodeEmitter.Volatile;
-			field.EmitSet += CodeEmitter.Volatile;
+			emitGet += CodeEmitter.Volatile;
+			emitSet += CodeEmitter.Volatile;
 		}
-		if(field.IsStatic)
+		if((modifiers & Modifiers.Static) != 0)
 		{
-			field.EmitGet += CodeEmitter.Create(OpCodes.Ldsfld, fi);
-			field.EmitSet += CodeEmitter.Create(OpCodes.Stsfld, fi);
+			emitGet += CodeEmitter.Create(OpCodes.Ldsfld, fi);
+			emitSet += CodeEmitter.Create(OpCodes.Stsfld, fi);
 		}
 		else
 		{
-			field.EmitGet += CodeEmitter.Create(OpCodes.Ldfld, fi);
-			field.EmitSet += CodeEmitter.Create(OpCodes.Stfld, fi);
+			emitGet += CodeEmitter.Create(OpCodes.Ldfld, fi);
+			emitSet += CodeEmitter.Create(OpCodes.Stfld, fi);
 		}
-		if(field.FieldTypeWrapper.IsNonPrimitiveValueType)
+		if(fieldType.IsNonPrimitiveValueType)
 		{
-			field.EmitGet += CodeEmitter.Create(OpCodes.Box, field.FieldTypeWrapper.Type);
+			emitGet += CodeEmitter.Create(OpCodes.Box, fieldType.Type);
 		}
-		return field;
+		return new FieldWrapper(declaringType, fieldType, fi.Name, sig, modifiers, emitGet, emitSet);
 	}
 
 	private void LookupField()
