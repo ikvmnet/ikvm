@@ -68,7 +68,9 @@ namespace IKVM.NativeCode.java
 				{
 					if(dim >= 0)
 					{
-						return NetSystem.Array.CreateInstance(VMClass.getWrapperFromClass(clazz).TypeAsArrayType, dim);
+						TypeWrapper wrapper = VMClass.getWrapperFromClass(clazz);
+						wrapper.Finish();
+						return NetSystem.Array.CreateInstance(wrapper.TypeAsArrayType, dim);
 					}
 					throw JavaException.NegativeArraySizeException();
 				}
