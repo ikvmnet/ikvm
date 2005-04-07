@@ -2980,10 +2980,6 @@ class Compiler
 		}
 		else
 		{
-			if(!wrapper.IsAccessibleFrom(clazz))
-			{
-				throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
-			}
 			TypeWrapper thisType = null;
 			if(bytecode == NormalizedByteCode.__getfield)
 			{
@@ -3144,11 +3140,7 @@ class Compiler
 		}
 		else
 		{
-			if(!wrapper.IsAccessibleFrom(clazz))
-			{
-				throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
-			}
-			else if(wrapper.IsInterface != (invoke == NormalizedByteCode.__invokeinterface))
+			if(wrapper.IsInterface != (invoke == NormalizedByteCode.__invokeinterface))
 			{
 				throw new IncompatibleClassChangeError("invokeinterface on non-interface");
 			}

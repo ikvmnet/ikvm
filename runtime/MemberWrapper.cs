@@ -95,7 +95,7 @@ class MemberWrapper
 
 	internal bool IsAccessibleFrom(TypeWrapper caller, TypeWrapper instance)
 	{
-		return IsPublic ||
+		return (DeclaringType.IsPublic && IsPublic) ||
 			caller == DeclaringType ||
 			(IsProtected && (IsStatic ? caller.IsSubTypeOf(DeclaringType) : instance.IsSubTypeOf(caller))) ||
 			(!IsPrivate && caller.IsInSamePackageAs(DeclaringType));
