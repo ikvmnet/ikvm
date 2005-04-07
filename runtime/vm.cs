@@ -301,7 +301,13 @@ namespace IKVM.Internal
 						Type type = asm.GetType("java.lang.LibraryVMInterfaceImpl");
 						if(type != null)
 						{
-							lib = (ikvm.@internal.LibraryVMInterface)Activator.CreateInstance(type, true);
+							lib = Activator.CreateInstance(type, true) as ikvm.@internal.LibraryVMInterface;
+							if(lib == null)
+							{
+								// If the "as" fails, this is most likely due to an IKVM.GNU.Classpath.dll version
+								// that was linked against an incompatible version of IKVM.Runtime.dll.
+								JVM.CriticalFailure("Incompatible core library version", null);
+							}
 							break;
 						}
 					}
