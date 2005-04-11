@@ -34,6 +34,7 @@ using IKVM.Runtime;
 using IKVM.Internal;
 
 using NetSystem = System;
+using RawData = gnu.classpath.RawData;
 
 namespace IKVM.NativeCode.java
 {
@@ -1256,6 +1257,7 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 {
 	public class FileChannelImpl
 	{
+		internal static readonly bool runningOnWindows;
 		private static readonly MethodInfo mono_1_0_Flush;
 		private static readonly MethodInfo mono_1_1_Flush;
 
@@ -1264,9 +1266,11 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 			try
 			{
 				FlushFileBuffers(new IntPtr(-1));
+				runningOnWindows = true;
 			}
 			catch(TypeLoadException)
 			{
+				runningOnWindows = false;
 				// If we end up here, we're not running on Windows, so we'll try two Mono specific methods.
 				// TODO convert this to Mono.Unix
 				Type t = Type.GetType("Mono.Posix.Syscall, Mono.Posix");
@@ -1324,6 +1328,111 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 
 		[DllImport("kernel32")]
 		private extern static bool FlushFileBuffers(IntPtr handle);
+
+		public static RawData mapViewOfFile(FileStream fs, bool writeable, bool copy_on_write, long position, int size)
+		{
+			try
+			{
+				if(runningOnWindows)
+				{
+					const uint PAGE_READONLY = 2;
+					const uint PAGE_READWRITE = 4;
+					const uint PAGE_WRITECOPY = 8;
+					IntPtr hFileMapping = CreateFileMapping(fs.Handle, IntPtr.Zero, 
+						copy_on_write ? PAGE_WRITECOPY : (writeable ? PAGE_READWRITE : PAGE_READONLY),
+						0, (uint)size, null);
+					if(hFileMapping == IntPtr.Zero)
+					{
+						return null;
+					}
+					const uint FILE_MAP_WRITE = 2;
+					const uint FILE_MAP_READ = 4;
+					const uint FILE_MAP_COPY = 1;
+					IntPtr p = MapViewOfFile(hFileMapping,
+						copy_on_write ? FILE_MAP_COPY : (writeable ? FILE_MAP_WRITE : FILE_MAP_READ),
+						(uint)(position >> 32), (uint)position, (uint)size);
+					CloseHandle(hFileMapping);
+					if(p == IntPtr.Zero)
+					{
+						return null;
+					}
+					return new RawData(p);
+				}
+				else
+				{
+					return new RawData(ikvm_mmap(fs.Handle, writeable, copy_on_write, position, size));
+				}
+			}
+			finally
+			{
+				GC.KeepAlive(fs);
+			}
+		}
+
+		[DllImport("ikvm-native")]
+		private extern static IntPtr ikvm_mmap(IntPtr handle, bool writeable, bool copy_on_write, long position, int size);
+
+		[DllImport("kernel32")]
+		private extern static bool CloseHandle(IntPtr handle);
+
+		[DllImport("kernel32")]
+		private extern static IntPtr CreateFileMapping(IntPtr hFile, IntPtr lpAttributes, uint flProtect, uint dwMaximumSizeHigh, uint dwMaximumSizeLow, string lpName);
+		
+		[DllImport("kernel32")]
+		private extern static IntPtr MapViewOfFile(IntPtr hFileMapping, uint dwDesiredAccess, uint dwFileOffsetHigh, uint dwFileOffsetLow, uint dwNumberOfBytesToMap);
+	}
+}
+
+namespace IKVM.NativeCode.java.nio
+{
+	public class MappedByteBufferImpl
+	{
+		public static void unmapImpl(object thiz)
+		{
+			IntPtr address = JVM.Library.getDirectBufferAddress(thiz);
+			if(gnu.java.nio.channels.FileChannelImpl.runningOnWindows)
+			{
+				UnmapViewOfFile(address);
+			}
+			else
+			{
+				ikvm_munmap(address, JVM.Library.getDirectBufferCapacity(thiz));
+			}
+		}
+
+		[DllImport("ikvm-native")]
+		private extern static int ikvm_munmap(IntPtr address, int size);
+
+		[DllImport("ikvm-native")]
+		private extern static int ikvm_msync(IntPtr address, int size);
+
+		[DllImport("kernel32")]
+		private extern static bool UnmapViewOfFile(IntPtr lpBaseAddress);
+
+		[DllImport("kernel32")]
+		private extern static bool FlushViewOfFile(IntPtr lpBaseAddress, uint dwNumberOfBytesToFlush);
+
+		public static bool isLoadedImpl(object thiz)
+		{
+			return false;
+		}
+
+		public static void loadImpl(object thiz)
+		{
+		}
+
+		public static void forceImpl(object thiz)
+		{
+			IntPtr address = JVM.Library.getDirectBufferAddress(thiz);
+			if(gnu.java.nio.channels.FileChannelImpl.runningOnWindows)
+			{
+				FlushViewOfFile(address, 0);
+			}
+			else
+			{
+				ikvm_msync(address, JVM.Library.getDirectBufferCapacity(thiz));
+			}
+		}
 	}
 }
 

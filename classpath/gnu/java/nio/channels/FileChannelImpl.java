@@ -55,7 +55,7 @@ import java.nio.channels.WritableByteChannel;
 
 import cli.System.Console;
 import cli.System.IO.*;
-import ikvm.lang.CIL;
+import gnu.classpath.RawData;
 
 /**
  * This file is not user visible !
@@ -138,7 +138,7 @@ public final class FileChannelImpl extends FileChannel
 	    if(false) throw new cli.System.UnauthorizedAccessException();
 	    if(false) throw new cli.System.ArgumentException();
 	    if(false) throw new cli.System.NotSupportedException();
-	    return new cli.System.IO.FileStream(demanglePath(path), FileMode.wrap(fileMode), FileAccess.wrap(fileAccess), FileShare.wrap(FileShare.ReadWrite), 1, false);
+	    return new FileStream(demanglePath(path), FileMode.wrap(fileMode), FileAccess.wrap(fileAccess), FileShare.wrap(FileShare.ReadWrite), 1, false);
 	}
 	catch(cli.System.Security.SecurityException x1)
 	{
@@ -514,11 +514,21 @@ public final class FileChannelImpl extends FileChannel
 	return result;
     }
 				   
-    public MappedByteBuffer mapImpl (char mode, long position, int size) throws IOException
+    private MappedByteBuffer mapImpl (char mode, long position, int size) throws IOException
     {
-	// TODO
-	throw new IOException("not implemented");
+        if (! (stream instanceof FileStream))
+            throw new IllegalArgumentException("only file streams can be mapped");
+
+        RawData address = mapViewOfFile((FileStream)stream, mode != 'r', mode == 'c', position, size);
+        if (address == null)
+            throw new IOException("file mapping failed");
+        return createMappedByteBufferImpl(address, size, mode == 'r');
     }
+
+    private static native RawData mapViewOfFile(FileStream stream, boolean writeable, boolean copy_on_write, long position, int size);
+
+    // implementation in map.xml to bypass Java access checking
+    private static native MappedByteBuffer createMappedByteBufferImpl(RawData address, int size, boolean readonly);
 
     public MappedByteBuffer map (FileChannel.MapMode mode,
 	long position, long size)
@@ -566,16 +576,16 @@ public final class FileChannelImpl extends FileChannel
 	    throw new IOException(x.getMessage());
 	}
 
-	if (stream instanceof cli.System.IO.FileStream)
+	if (stream instanceof FileStream)
 	{
-	    if(!flush(((cli.System.IO.FileStream)stream)))
+	    if(!flush(((FileStream)stream)))
 	    {
 		throw new IOException();
 	    }
 	}
     }
 
-    private static native boolean flush(cli.System.IO.FileStream fs);
+    private static native boolean flush(FileStream fs);
 
     // like transferTo, but with a count of less than 2Gbytes
     private int smallTransferTo (long position, int count, 

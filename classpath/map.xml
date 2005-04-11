@@ -929,6 +929,17 @@
 				</body>
 			</method>
 		</class>
+		<class name="gnu.java.nio.channels.FileChannelImpl">
+			<method name="createMappedByteBufferImpl" sig="(Lgnu.classpath.RawData;IZ)Ljava.nio.MappedByteBuffer;">
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<ldarg_2 />
+					<newobj class="java.nio.MappedByteBufferImpl" name="&lt;init&gt;" sig="(Lgnu.classpath.RawData;IZ)V" />
+					<ret />
+				</body>
+			</method>
+		</class>
 		<class name="java.nio.channels.VMChannels">
 			<method name="newInputStream" sig="(Lgnu.java.nio.channels.FileChannelImpl;)Ljava.io.FileInputStream;">
 				<body>
