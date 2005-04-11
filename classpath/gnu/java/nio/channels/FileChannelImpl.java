@@ -544,8 +544,10 @@ public final class FileChannelImpl extends FileChannel
 	else if (mode == MapMode.READ_WRITE || mode == MapMode.PRIVATE)
 	{
 	    nmode = mode == MapMode.READ_WRITE ? '+' : 'c';
-	    if ((this.mode & (READ|WRITE)) != (READ|WRITE))
-		throw new NonWritableChannelException();
+            if ((this.mode & READ) == 0)
+                throw new NonReadableChannelException();
+            if ((this.mode & WRITE) == 0)
+                throw new NonWritableChannelException();
 	}
 	else
 	    throw new IllegalArgumentException ();

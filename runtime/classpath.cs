@@ -1360,7 +1360,15 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 				}
 				else
 				{
-					return new RawData(ikvm_mmap(fs.Handle, writeable, copy_on_write, position, size));
+					IntPtr p = ikvm_mmap(fs.Handle, writeable, copy_on_write, position, size);
+					// HACK ikvm_mmap should really be changed to return a null pointer on failure,
+					// instead of whatever MAP_FAILED is defined to on the particular system we're running on,
+					// common values for MAP_FAILED are 0 and -1, so we test for these.
+					if(p == IntPtr.Zero || p == new IntPtr(-1))
+					{
+						return null;
+					}
+					return new RawData(p);
 				}
 			}
 			finally
