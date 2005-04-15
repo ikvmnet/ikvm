@@ -1922,15 +1922,20 @@ namespace IKVM.Internal
 				Tracer.Info(Tracer.Compiler, "Emit remapped types");
 
 				// 1st pass, put all types in remapped to make them loadable
+				bool hasRemappedTypes = false;
 				foreach(IKVM.Internal.MapXml.Class c in map.assembly)
 				{
 					if(c.Shadows != null)
 					{
 						remapped.Add(c.Name, new RemapperTypeWrapper(this, c, map));
+						hasRemappedTypes = true;
 					}
 				}
 
-				DynamicTypeWrapper.SetupGhosts(map);
+				if(hasRemappedTypes)
+				{
+					DynamicTypeWrapper.SetupGhosts(map);
+				}
 
 				// 2nd pass, resolve interfaces, publish methods/fields
 				foreach(IKVM.Internal.MapXml.Class c in map.assembly)
@@ -1986,6 +1991,11 @@ namespace IKVM.Internal
 			public bool enableTls;
 		}
 
+		private static bool IsSigned(Assembly asm)
+		{
+			return asm.GetName().GetPublicKey().Length != 0;
+		}
+
 		public static int Compile(CompilerOptions options)
 		{
 			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", options.path, options.assembly);
@@ -1994,6 +2004,7 @@ namespace IKVM.Internal
 			noStackTraceInfo = options.nostacktraceinfo;
 			monoBugWorkaround = options.monoBugWorkaround;
 			isTlsEnabled = options.enableTls;
+			bool allReferencesAreStrongNamed = IsSigned(typeof(JVM).Assembly);
 			foreach(string r in options.references)
 			{
 				try
@@ -2004,6 +2015,7 @@ namespace IKVM.Internal
 						Console.Error.WriteLine("Error: reference not found: {0}", r);
 						return 1;
 					}
+					allReferencesAreStrongNamed &= IsSigned(reference);
 					Tracer.Info(Tracer.Compiler, "Loaded reference assembly: {0}", reference.FullName);
 				}
 				catch(Exception x)
@@ -2194,9 +2206,16 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: bootstrap classes missing and IKVM.GNU.Classpath.dll not found");
 					return 1;
 				}
+				allReferencesAreStrongNamed &= IsSigned(classpath);
 				Console.Error.WriteLine("Note: automatically adding reference to \"{0}\"", classpath.Location);
 				// we need to scan again for remapped types, now that we've loaded the core library
 				ClassLoaderWrapper.LoadRemappedTypes();
+			}
+
+			if((options.keycontainer != null || options.keyfilename != null) && !allReferencesAreStrongNamed)
+			{
+				Console.Error.WriteLine("Error: all referenced assemblies must be strong named, to be able to sign the output assembly");
+				return 1;
 			}
 
 			ClassLoaderWrapper.PublishLibraryImplementationHelperType(typeof(gnu.classpath.RawData));
@@ -2290,7 +2309,7 @@ namespace IKVM.Internal
 						tw.TypeAsBuilder.SetCustomAttribute(typeof(ExceptionIsUnsafeForMappingAttribute).GetConstructor(Type.EmptyTypes), new byte[0]);
 					}
 				}
-				DynamicTypeWrapper.LoadNativeMethods(map);
+				DynamicTypeWrapper.LoadMapXml(map);
 				Tracer.Info(Tracer.Compiler, "Loading remapped types (2)");
 				loader.FinishRemappedTypes();
 			}

@@ -1068,6 +1068,16 @@ namespace IKVM.Internal.MapXml
 		public Redirect redirect;
 	}
 
+	public class Property
+	{
+		[XmlAttribute("name")]
+		public string Name;
+		[XmlAttribute("sig")]
+		public string Sig;
+		public Method getter;
+		public Method setter;
+	}
+
 	public class Interface
 	{
 		[XmlAttribute("class")]
@@ -1120,6 +1130,8 @@ namespace IKVM.Internal.MapXml
 		public Method[] Methods;
 		[XmlElement("field")]
 		public Field[] Fields;
+		[XmlElement("property")]
+		public Property[] Properties;
 		[XmlElement("implements")]
 		public Interface[] Interfaces;
 		[XmlElement("clinit")]

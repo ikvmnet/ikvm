@@ -1845,7 +1845,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 	private static TypeWrapper[] mappedExceptions;
 	private static bool[] mappedExceptionsAllSubClasses;
 	private static Hashtable ghosts;
-	private static Hashtable nativeMethods;
+	private static Hashtable mapxml;
 
 	private static TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, string name)
 	{
@@ -2112,24 +2112,28 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		}
 	}
 
-	internal static void LoadNativeMethods(IKVM.Internal.MapXml.Root map)
+	internal static void LoadMapXml(IKVM.Internal.MapXml.Root map)
 	{
-		nativeMethods = new Hashtable();
+		mapxml = new Hashtable();
 		// HACK we've got a hardcoded location for the exception mapping method that is generated from the xml mapping
-		nativeMethods["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
+		mapxml["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
 		foreach(IKVM.Internal.MapXml.Class c in map.assembly)
 		{
 			// HACK if it is not a remapped type, we assume it is a container for native methods
 			if(c.Shadows == null)
 			{
 				string className = c.Name;
-				foreach(IKVM.Internal.MapXml.Method method in c.Methods)
+				mapxml[className] = c;
+				if(c.Methods != null)
 				{
-					if(method.body != null)
+					foreach(IKVM.Internal.MapXml.Method method in c.Methods)
 					{
-						string methodName = method.Name;
-						string methodSig = method.Sig;
-						nativeMethods[className + "." + methodName + methodSig] = method.body;
+						if(method.body != null)
+						{
+							string methodName = method.Name;
+							string methodSig = method.Sig;
+							mapxml[className + "." + methodName + methodSig] = method.body;
+						}
 					}
 				}
 			}
@@ -2157,17 +2161,20 @@ sealed class DynamicTypeWrapper : TypeWrapper
 
 	internal static void LoadMappedExceptions(IKVM.Internal.MapXml.Root map)
 	{
-		mappedExceptionsAllSubClasses = new bool[map.exceptionMappings.Length];
-		mappedExceptions = new TypeWrapper[map.exceptionMappings.Length];
-		for(int i = 0; i < mappedExceptions.Length; i++)
+		if(map.exceptionMappings != null)
 		{
-			string dst = map.exceptionMappings[i].dst;
-			if(dst[0] == '*')
+			mappedExceptionsAllSubClasses = new bool[map.exceptionMappings.Length];
+			mappedExceptions = new TypeWrapper[map.exceptionMappings.Length];
+			for(int i = 0; i < mappedExceptions.Length; i++)
 			{
-				mappedExceptionsAllSubClasses[i] = true;
-				dst = dst.Substring(1);
+				string dst = map.exceptionMappings[i].dst;
+				if(dst[0] == '*')
+				{
+					mappedExceptionsAllSubClasses[i] = true;
+					dst = dst.Substring(1);
+				}
+				mappedExceptions[i] = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dst);
 			}
-			mappedExceptions[i] = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dst);
 		}
 	}
 
@@ -3175,9 +3182,9 @@ sealed class DynamicTypeWrapper : TypeWrapper
 								ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
 								Tracer.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 								// do we have a native implementation in map.xml?
-								if(nativeMethods != null)
+								if(mapxml != null)
 								{
-									CodeEmitter opcodes = (CodeEmitter)nativeMethods[classFile.Name + "." + m.Name + m.Signature];
+									CodeEmitter opcodes = (CodeEmitter)mapxml[classFile.Name + "." + m.Name + m.Signature];
 									if(opcodes != null)
 									{
 										opcodes.Emit(ilGenerator);
@@ -3265,9 +3272,9 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							MethodBuilder mbld = (MethodBuilder)mb;
 							ILGenerator ilGenerator = mbld.GetILGenerator();
 							Tracer.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
-							if(nativeMethods != null)
+							if(mapxml != null)
 							{
-								CodeEmitter opcodes = (CodeEmitter)nativeMethods[classFile.Name + "." + m.Name + m.Signature];
+								CodeEmitter opcodes = (CodeEmitter)mapxml[classFile.Name + "." + m.Name + m.Signature];
 								if(opcodes != null)
 								{
 									opcodes.Emit(ilGenerator);
@@ -3418,6 +3425,16 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					}
 				}
 
+				// See if there is any additional metadata
+				if(mapxml != null)
+				{
+					IKVM.Internal.MapXml.Class clazz = (IKVM.Internal.MapXml.Class)mapxml[classFile.Name];
+					if(clazz != null && clazz.Properties != null)
+					{
+						PublishProperties(clazz);
+					}
+				}
+
 				Type type;
 				Profiler.Enter("TypeBuilder.CreateType");
 				try
@@ -3452,6 +3469,126 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			finally
 			{
 				Profiler.Leave("JavaTypeImpl.Finish.Core");
+			}
+		}
+
+		private static MethodAttributes GetPropertyMethodAttributes(MethodWrapper mw, bool final)
+		{
+			MethodAttributes attribs = (MethodAttributes)0;
+			if(mw.IsStatic)
+			{
+				attribs |= MethodAttributes.Static;
+			}
+			else
+			{
+				// NOTE in order for IntelliSense to consider the property a "real" property,
+				// the getter and setter methods need to have substantially the same method attributes,
+				// so we may need to look at our peer to determine whether we should be final
+				// or not (and vice versa).
+				attribs |= MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
+				if(final)
+				{
+					attribs |= MethodAttributes.Final;
+				}
+			}
+			// TODO what happens if accessibility doesn't match our peer?
+			if(mw.IsPublic)
+			{
+				attribs |= MethodAttributes.Public;
+			}
+			else if(mw.IsProtected)
+			{
+				attribs |= MethodAttributes.FamORAssem;
+			}
+			else if(mw.IsPrivate)
+			{
+				attribs |= MethodAttributes.Private;
+			}
+			else
+			{
+				attribs |= MethodAttributes.Assembly;
+			}
+			return attribs;
+		}
+
+		private void PublishProperties(IKVM.Internal.MapXml.Class clazz)
+		{
+			foreach(IKVM.Internal.MapXml.Property prop in clazz.Properties)
+			{
+				TypeWrapper typeWrapper = ClassFile.FieldTypeWrapperFromSig(wrapper.GetClassLoader(), classCache, prop.Sig);
+				PropertyBuilder propbuilder = typeBuilder.DefineProperty(prop.Name, PropertyAttributes.None, typeWrapper.TypeAsSignatureType, Type.EmptyTypes);
+				MethodWrapper getter = null;
+				MethodWrapper setter = null;
+				if(prop.getter != null)
+				{
+					getter = wrapper.GetMethodWrapper(prop.getter.Name, prop.getter.Sig, true);
+				}
+				if(prop.setter != null)
+				{
+					setter = wrapper.GetMethodWrapper(prop.setter.Name, prop.setter.Sig, true);
+				}
+				bool final = (getter != null && getter.IsFinal) || (setter != null && setter.IsFinal);
+				if(prop.getter != null)
+				{
+					MethodWrapper mw = getter;
+					if(mw == null || mw.GetParameters().Length != 0 || mw.ReturnType != typeWrapper)
+					{
+						Console.Error.WriteLine("Warning: ignoring invalid property getter for {0}::{1}", clazz.Name, prop.Name);
+					}
+					else
+					{
+						MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+						if(mb == null || mb.DeclaringType != typeBuilder || (!mb.IsFinal && final))
+						{
+							mb = typeBuilder.DefineMethod("<propget>" + prop.Name, GetPropertyMethodAttributes(mw, final), typeWrapper.TypeAsSignatureType, Type.EmptyTypes);
+							AttributeHelper.HideFromJava(mb);
+							ILGenerator ilgen = new CountingILGenerator(mb.GetILGenerator());
+							if(mw.IsStatic)
+							{
+								mw.EmitCall(ilgen);
+							}
+							else
+							{
+								ilgen.Emit(OpCodes.Ldarg_0);
+								mw.EmitCallvirt(ilgen);
+							}
+							ilgen.Emit(OpCodes.Ret);
+						}
+						propbuilder.SetGetMethod(mb);
+					}
+				}
+				if(prop.setter != null)
+				{
+					MethodWrapper mw = setter;
+					if(mw == null || mw.GetParameters().Length != 1 || mw.GetParameters()[0] != typeWrapper
+						|| mw.ReturnType != PrimitiveTypeWrapper.VOID)
+					{
+						Console.Error.WriteLine("Warning: ignoring invalid property setter for {0}::{1}", clazz.Name, prop.Name);
+					}
+					else
+					{
+						MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+						if(mb == null || mb.DeclaringType != typeBuilder || (!mb.IsFinal && final))
+						{
+							mb = typeBuilder.DefineMethod("<propset>" + prop.Name, GetPropertyMethodAttributes(mw, final), typeof(void), new Type[] { typeWrapper.TypeAsSignatureType });
+							AttributeHelper.HideFromJava(mb);
+							ILGenerator ilgen = new CountingILGenerator(mb.GetILGenerator());
+							if(mw.IsStatic)
+							{
+								ilgen.Emit(OpCodes.Ldarg_0);
+								mw.EmitCall(ilgen);
+							}
+							else
+							{
+								ilgen.Emit(OpCodes.Ldarg_0);
+								ilgen.Emit(OpCodes.Ldarg_1);
+								mw.EmitCallvirt(ilgen);
+							}
+							ilgen.Emit(OpCodes.Ret);
+						}
+						propbuilder.SetSetMethod(mb);
+					}
+				}
 			}
 		}
 

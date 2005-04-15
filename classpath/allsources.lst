@@ -659,6 +659,7 @@
 ../../classpath/gnu/java/nio/ChannelReader.java
 ../../classpath/gnu/java/nio/charset/ISO_8859_1.java
 ../../classpath/gnu/java/nio/charset/Provider.java
+../../classpath/gnu/java/nio/charset/UnicodeLittle.java
 ../../classpath/gnu/java/nio/charset/US_ASCII.java
 ../../classpath/gnu/java/nio/charset/UTF_16.java
 ../../classpath/gnu/java/nio/charset/UTF_16BE.java
@@ -3241,6 +3242,8 @@ java/lang/VMFloat.java
 java/lang/VMRuntime.java
 java/lang/VMSystem.java
 java/lang/VMThread.java
+java/net/VMInetAddress.java
+java/net/VMNetworkInterface.java
 java/nio/channels/VMChannels.java
 java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
