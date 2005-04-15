@@ -335,6 +335,7 @@ namespace ikvm.awt
 		}
 
 		const int ERROR = java.awt.image.ImageObserver.__Fields.ERROR;
+		const int ABORT = java.awt.image.ImageObserver.__Fields.ABORT;
 		const int WIDTH = java.awt.image.ImageObserver.__Fields.WIDTH;
 		const int HEIGHT = java.awt.image.ImageObserver.__Fields.HEIGHT;
 		const int FRAMEBITS = java.awt.image.ImageObserver.__Fields.FRAMEBITS;
@@ -343,7 +344,7 @@ namespace ikvm.awt
 		public override bool prepareImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
 		{
 			// HACK for now we call checkImage to obtain the status and fire the observer
-			return (checkImage(image, width, height, observer) & ALLBITS) != 0;
+			return (checkImage(image, width, height, observer) & (ALLBITS | ERROR | ABORT)) != 0;
 		}
 
 		public override int checkImage(java.awt.Image image, int width, int height, java.awt.image.ImageObserver observer)
@@ -352,9 +353,9 @@ namespace ikvm.awt
 			{
 				if(observer != null)
 				{
-					observer.imageUpdate(image, ERROR, 0, 0, -1, -1);
+					observer.imageUpdate(image, ERROR | ABORT, 0, 0, -1, -1);
 				}
-				return ERROR;
+				return ERROR | ABORT;
 			}
 			if(observer != null)
 			{
@@ -587,11 +588,19 @@ namespace ikvm.awt
 	{
 		public override int getWidth(java.awt.image.ImageObserver observer)
 		{
+			if(observer != null)
+			{
+				observer.imageUpdate(this, java.awt.image.ImageObserver.__Fields.ERROR | java.awt.image.ImageObserver.__Fields.ABORT, 0, 0, -1, -1);
+			}
 			return -1;
 		}
 
 		public override int getHeight(java.awt.image.ImageObserver observer)
 		{
+			if(observer != null)
+			{
+				observer.imageUpdate(this, java.awt.image.ImageObserver.__Fields.ERROR | java.awt.image.ImageObserver.__Fields.ABORT, 0, 0, -1, -1);
+			}
 			return -1;
 		}
 
@@ -608,6 +617,10 @@ namespace ikvm.awt
 
 		public override object getProperty(string name, java.awt.image.ImageObserver observer)
 		{
+			if(observer != null)
+			{
+				observer.imageUpdate(this, java.awt.image.ImageObserver.__Fields.ERROR | java.awt.image.ImageObserver.__Fields.ABORT, 0, 0, -1, -1);
+			}
 			return null;
 		}
 
