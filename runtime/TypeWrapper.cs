@@ -3511,27 +3511,57 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			return attribs;
 		}
 
+		private static bool CheckPropertyArgs(Type[] args1, Type[] args2)
+		{
+			if(args1.Length == args2.Length)
+			{
+				for(int i = 0; i < args1.Length; i++)
+				{
+					if(args1[i] != args2[i])
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+
 		private void PublishProperties(IKVM.Internal.MapXml.Class clazz)
 		{
 			foreach(IKVM.Internal.MapXml.Property prop in clazz.Properties)
 			{
-				TypeWrapper typeWrapper = ClassFile.FieldTypeWrapperFromSig(wrapper.GetClassLoader(), classCache, prop.Sig);
-				PropertyBuilder propbuilder = typeBuilder.DefineProperty(prop.Name, PropertyAttributes.None, typeWrapper.TypeAsSignatureType, Type.EmptyTypes);
+				TypeWrapper typeWrapper = ClassFile.RetTypeWrapperFromSig(wrapper.GetClassLoader(), classCache, prop.Sig);
+				TypeWrapper[] propargs = ClassFile.ArgTypeWrapperListFromSig(wrapper.GetClassLoader(), classCache, prop.Sig);
+				Type[] indexer = new Type[propargs.Length];
+				for(int i = 0; i < propargs.Length; i++)
+				{
+					indexer[i] = propargs[i].TypeAsSignatureType;
+				}
+				PropertyBuilder propbuilder = typeBuilder.DefineProperty(prop.Name, PropertyAttributes.None, typeWrapper.TypeAsSignatureType, indexer);
 				MethodWrapper getter = null;
 				MethodWrapper setter = null;
 				if(prop.getter != null)
 				{
 					getter = wrapper.GetMethodWrapper(prop.getter.Name, prop.getter.Sig, true);
+					if(getter == null)
+					{
+						Console.Error.WriteLine("Warning: getter not found for {0}::{1}", clazz.Name, prop.Name);
+					}
 				}
 				if(prop.setter != null)
 				{
 					setter = wrapper.GetMethodWrapper(prop.setter.Name, prop.setter.Sig, true);
+					if(setter == null)
+					{
+						Console.Error.WriteLine("Warning: setter not found for {0}::{1}", clazz.Name, prop.Name);
+					}
 				}
 				bool final = (getter != null && getter.IsFinal) || (setter != null && setter.IsFinal);
-				if(prop.getter != null)
+				if(getter != null)
 				{
 					MethodWrapper mw = getter;
-					if(mw == null || mw.GetParameters().Length != 0 || mw.ReturnType != typeWrapper)
+					if(!CheckPropertyArgs(mw.GetParametersForDefineMethod(), indexer) || mw.ReturnType != typeWrapper)
 					{
 						Console.Error.WriteLine("Warning: ignoring invalid property getter for {0}::{1}", clazz.Name, prop.Name);
 					}
@@ -3540,16 +3570,24 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						MethodBuilder mb = mw.GetMethod() as MethodBuilder;
 						if(mb == null || mb.DeclaringType != typeBuilder || (!mb.IsFinal && final))
 						{
-							mb = typeBuilder.DefineMethod("<propget>" + prop.Name, GetPropertyMethodAttributes(mw, final), typeWrapper.TypeAsSignatureType, Type.EmptyTypes);
+							mb = typeBuilder.DefineMethod(GenerateUniqueMethodName("get_" + prop.Name, mw), GetPropertyMethodAttributes(mw, final), typeWrapper.TypeAsSignatureType, indexer);
 							AttributeHelper.HideFromJava(mb);
 							ILGenerator ilgen = new CountingILGenerator(mb.GetILGenerator());
 							if(mw.IsStatic)
 							{
+								for(int i = 0; i < indexer.Length; i++)
+								{
+									ilgen.Emit(OpCodes.Ldarg, i);
+								}
 								mw.EmitCall(ilgen);
 							}
 							else
 							{
 								ilgen.Emit(OpCodes.Ldarg_0);
+								for(int i = 0; i < indexer.Length; i++)
+								{
+									ilgen.Emit(OpCodes.Ldarg, i + 1);
+								}
 								mw.EmitCallvirt(ilgen);
 							}
 							ilgen.Emit(OpCodes.Ret);
@@ -3557,11 +3595,13 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						propbuilder.SetGetMethod(mb);
 					}
 				}
-				if(prop.setter != null)
+				if(setter != null)
 				{
 					MethodWrapper mw = setter;
-					if(mw == null || mw.GetParameters().Length != 1 || mw.GetParameters()[0] != typeWrapper
-						|| mw.ReturnType != PrimitiveTypeWrapper.VOID)
+					Type[] args = new Type[indexer.Length + 1];
+					indexer.CopyTo(args, 0);
+					args[args.Length - 1] = typeWrapper.TypeAsSignatureType;
+					if(!CheckPropertyArgs(args, mw.GetParametersForDefineMethod()))
 					{
 						Console.Error.WriteLine("Warning: ignoring invalid property setter for {0}::{1}", clazz.Name, prop.Name);
 					}
@@ -3570,18 +3610,24 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						MethodBuilder mb = mw.GetMethod() as MethodBuilder;
 						if(mb == null || mb.DeclaringType != typeBuilder || (!mb.IsFinal && final))
 						{
-							mb = typeBuilder.DefineMethod("<propset>" + prop.Name, GetPropertyMethodAttributes(mw, final), typeof(void), new Type[] { typeWrapper.TypeAsSignatureType });
+							mb = typeBuilder.DefineMethod(GenerateUniqueMethodName("set_" + prop.Name, mw), GetPropertyMethodAttributes(mw, final), mw.ReturnTypeForDefineMethod, args);
 							AttributeHelper.HideFromJava(mb);
 							ILGenerator ilgen = new CountingILGenerator(mb.GetILGenerator());
 							if(mw.IsStatic)
 							{
-								ilgen.Emit(OpCodes.Ldarg_0);
+								for(int i = 0; i <= indexer.Length; i++)
+								{
+									ilgen.Emit(OpCodes.Ldarg, i);
+								}
 								mw.EmitCall(ilgen);
 							}
 							else
 							{
 								ilgen.Emit(OpCodes.Ldarg_0);
-								ilgen.Emit(OpCodes.Ldarg_1);
+								for(int i = 0; i <= indexer.Length; i++)
+								{
+									ilgen.Emit(OpCodes.Ldarg, i + 1);
+								}
 								mw.EmitCallvirt(ilgen);
 							}
 							ilgen.Emit(OpCodes.Ret);
@@ -3992,7 +4038,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			{
 				for(int clashcount = 0; memberclashtable.ContainsKey(key); clashcount++)
 				{
-					name = basename + "$" + clashcount;
+					name = basename + "_" + clashcount;
 					key = GenerateClashKey("method", name, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
 				}
 				memberclashtable.Add(key, key);

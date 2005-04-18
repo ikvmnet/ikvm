@@ -37,10 +37,20 @@ exception statement from your version. */
 
 package java.lang;
 
-import java.util.Locale;
-import java.io.UnsupportedEncodingException;
-import gnu.java.io.EncodingManager;
+import gnu.classpath.SystemProperties;
 import gnu.java.lang.CharData;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.util.Locale;
 
 final class StringHelper
 {
@@ -110,7 +120,7 @@ final class StringHelper
 	    {
 		// Now we perform the conversion. Fortunately, there are no multi-character
 		// lowercase expansions in Unicode 3.0.0.
-		char[] newStr = (char[])s.toCharArray();
+		char[] newStr = s.toCharArray();
 		for(; i < len; i++)
 		{
 		    ch = newStr[i];
@@ -232,13 +242,35 @@ final class StringHelper
 	return NewString(ascii, hibyte, 0, ascii.length);
     }
 
+    private static Charset getCharset(String encoding) throws UnsupportedEncodingException
+    {
+        try
+        {
+            return Charset.forName(encoding);
+        }
+        catch(IllegalCharsetNameException e)
+        {
+            throw (UnsupportedEncodingException)new UnsupportedEncodingException("Encoding: " + encoding + " not found.").initCause(e);
+        }
+        catch(UnsupportedCharsetException e)
+        {
+            throw (UnsupportedEncodingException)new UnsupportedEncodingException("Encoding: " + encoding + " not found.").initCause(e);
+        }
+    }
+
     static String NewString(byte[] data, int offset, int count, String encoding)
 	throws UnsupportedEncodingException
     {
 	if (offset < 0 || count < 0 || data.length - offset < count)
 	    throw new StringIndexOutOfBoundsException();
-	// XXX Consider using java.nio here.
-	return new String(EncodingManager.getDecoder(encoding).convertToChars(data, offset, count));
+
+        CharsetDecoder csd = getCharset(encoding).newDecoder();
+        csd.onMalformedInput(CodingErrorAction.REPLACE);
+        csd.onUnmappableCharacter(CodingErrorAction.REPLACE);
+        CharBuffer out = CharBuffer.allocate(count * (int)csd.maxCharsPerByte());
+        csd.decode(ByteBuffer.wrap(data, offset, count), out, true);
+        csd.flush(out);
+        return out.flip().toString();
     }
 
     static String NewString(byte[] data, String encoding)
@@ -249,10 +281,14 @@ final class StringHelper
 
     static String NewString(byte[] data, int offset, int count)
     {
-	if (offset < 0 || count < 0 || data.length - offset < count)
-	    throw new StringIndexOutOfBoundsException();
-	// XXX Consider using java.nio here.
-	return new String(EncodingManager.getDecoder().convertToChars(data, offset, count));
+        try
+        {
+            return NewString(data, offset, count, SystemProperties.getProperty("file.encoding"));
+        }
+        catch(UnsupportedEncodingException e)
+        {
+            throw new Error(e);
+        }
     }
 
     static String NewString(byte[] data)
@@ -397,14 +433,37 @@ final class StringHelper
 
     static byte[] getBytes(String s, String enc) throws UnsupportedEncodingException
     {
-	// XXX Consider using java.nio here.
-	return EncodingManager.getEncoder(enc).convertToBytes(s.toCharArray());
+        try 
+        {
+            CharsetEncoder cse = getCharset(enc).newEncoder();
+            cse.onMalformedInput(CodingErrorAction.REPLACE);
+            cse.onUnmappableCharacter(CodingErrorAction.REPLACE);
+            char[] value = s.toCharArray();
+            ByteBuffer bbuf = cse.encode(CharBuffer.wrap(value, 0, value.length));
+            if(bbuf.hasArray())
+                return bbuf.array();
+
+            // Doubt this will happen. But just in case.
+            byte[] bytes = new byte[bbuf.remaining()];
+            bbuf.get(bytes);
+            return bytes;
+        }
+        catch(CharacterCodingException e)
+        {
+            throw new Error(e);
+        }
     }
 
     static byte[] getBytes(String s)
     {
-	// XXX Consider using java.nio here.
-	return EncodingManager.getEncoder().convertToBytes(s.toCharArray());
+        try 
+        {
+            return getBytes(s, SystemProperties.getProperty("file.encoding"));
+        }
+        catch(UnsupportedEncodingException e)
+        {
+            throw new Error(e);
+        }
     }
 
     static boolean regionMatches(String s, int toffset, String other, int ooffset, int len)

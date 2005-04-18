@@ -378,12 +378,8 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public class Double
+		public class VMDouble
 		{
-			public static void initIDs()
-			{
-			}
-
 			public static double parseDouble(string s)
 			{
 				if(s.Length == 0) goto error;
@@ -1108,31 +1104,9 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public class ObjectInputStream
+		public class VMObjectInputStream
 		{
-			public static object currentClassLoader(object sm)
-			{
-				// TODO calling currentClassLoader in SecurityManager results in null being returned, so we use our own
-				// version for now, don't know what the security implications of this are
-				// SECURITY
-				NetSystem.Diagnostics.StackTrace st = new NetSystem.Diagnostics.StackTrace();
-				for(int i = 0; i < st.FrameCount; i++)
-				{
-					NetSystem.Diagnostics.StackFrame frame = st.GetFrame(i);
-					Type type = frame.GetMethod().DeclaringType;
-					if(type != null)
-					{
-						TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
-						if(wrapper != null && wrapper.GetClassLoader().GetJavaClassLoader() != null)
-						{
-							return wrapper.GetClassLoader().GetJavaClassLoader();
-						}
-					}
-				}
-				return null;
-			}
-
-			public static object allocateObject(object ois, object clazz, object constructor_clazz, object constructor)
+			public static object allocateObject(object clazz, object constructor_clazz, object constructor)
 			{
 				Profiler.Enter("ObjectInputStream.allocateObject");
 				try

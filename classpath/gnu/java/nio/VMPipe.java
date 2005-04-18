@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2005 Jeroen Frijters
+  Copyright (C) 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,32 +21,15 @@
   jeroen@frijters.net
   
 */
+package gnu.java.nio;
 
-package java.lang;
+import java.nio.channels.spi.SelectorProvider;
 
-import cli.System.BitConverter;
-
-final class VMDouble
+final class VMPipe
 {
-    static double longBitsToDouble(long v)
+    static void init(PipeImpl self, SelectorProvider provider) throws java.io.IOException
     {
-	return BitConverter.Int64BitsToDouble(v);
+        // TODO
+        throw new Error("Not implemented");
     }
-
-    static long doubleToLongBits(double v)
-    {
-	if(Double.isNaN(v))
-	{
-	    return 0x7ff8000000000000L;
-	}
-	return BitConverter.DoubleToInt64Bits(v);
-    }
-
-    static long doubleToRawLongBits(double v)
-    {
-	return BitConverter.DoubleToInt64Bits(v);
-    }
-
-    static native String toString(double d, boolean isFloat);
-    static native double parseDouble(String s);
 }

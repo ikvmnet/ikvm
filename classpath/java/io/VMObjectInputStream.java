@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2005 Jeroen Frijters
+  Copyright (C) 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,32 +21,26 @@
   jeroen@frijters.net
   
 */
+package java.io;
 
-package java.lang;
+import gnu.classpath.VMStackWalker;
+import java.lang.reflect.Constructor;
 
-import cli.System.BitConverter;
-
-final class VMDouble
+final class VMObjectInputStream
 {
-    static double longBitsToDouble(long v)
+    // TODO move this to ObjectInputStream
+    static ClassLoader currentClassLoader(SecurityManager sm)
     {
-	return BitConverter.Int64BitsToDouble(v);
+        Class[] stack = VMStackWalker.getClassContext();
+        for (int i = 0; i < stack.length; i++)
+        {
+            ClassLoader loader = stack[i].getClassLoader();
+            if (loader != null)
+                return loader;
+        }
+        return null;
     }
 
-    static long doubleToLongBits(double v)
-    {
-	if(Double.isNaN(v))
-	{
-	    return 0x7ff8000000000000L;
-	}
-	return BitConverter.DoubleToInt64Bits(v);
-    }
-
-    static long doubleToRawLongBits(double v)
-    {
-	return BitConverter.DoubleToInt64Bits(v);
-    }
-
-    static native String toString(double d, boolean isFloat);
-    static native double parseDouble(String s);
+    static native Object allocateObject(Class clazz, Class constr_clazz, Constructor constructor)
+        throws InstantiationException;
 }
