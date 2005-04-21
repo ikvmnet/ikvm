@@ -95,12 +95,6 @@ abstract class VMClass
     }
     private static native Object getComponentClassFromWrapper(Object wrapper);
 
-    // HACK temporarily have the old signature (until my Classpath Class change is checked in)
-    static int getModifiers(Class clazz)
-    {
-        return getModifiers(clazz, false);
-    }
-
     static int getModifiers(Class clazz, boolean ignoreInnerClassesAttribute)
     {
 	return GetModifiers(clazz.vmdata, ignoreInnerClassesAttribute);
