@@ -24,6 +24,12 @@
 -->
 <root>
 	<assembly>
+		<attribute type="System.Reflection.AssemblyCopyrightAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+			<parameter>This software is licensed under the GNU General Public License + GNU Classpath exception.
+			See http://www.gnu.org/software/classpath/license.html for details.
+			Copyright (C) 1998-2005 Free Software Foundation, Inc.
+			Copyright (C) 2002-2005 Jeroen Frijters</parameter>
+		</attribute>
 		<class name="java.lang.Object" shadows="System.Object, mscorlib" modifiers="public">
 			<constructor sig="()V" modifiers="public" />
 			<method name="notifyAll" sig="()V" modifiers="public final">
@@ -1047,6 +1053,27 @@
 					<throw />
 				</body>
 			</method>
+		</class>
+		<class name="java.lang.VMClassLoader">
+			<field name="__tls_nestedGetResourcesHack" sig="Z">
+				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+			</field>
+		</class>
+		<class name="java.lang.VMThread">
+			<field name="__tls_javaThread" sig="Ljava.lang.Thread;">
+				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+			</field>
+			<field name="__tls_cleanup" sig="Ljava.lang.Object;">
+				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+			</field>
+		</class>
+		<class name="java.security.VMAccessController">
+			<field name="__tls_contexts" sig="Ljava.util.LinkedList;">
+				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+			</field>
+			<field name="__tls_inGetContext" sig="Z">
+				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+			</field>
 		</class>
 	</assembly>
 	<exceptionMappings>

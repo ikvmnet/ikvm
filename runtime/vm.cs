@@ -283,10 +283,8 @@ namespace IKVM.Internal
 		private static bool noJniStubs;
 		private static bool isStaticCompiler;
 		private static bool noStackTraceInfo;
-		private static bool isTlsEnabled;
 		private static bool compilationPhase1;
 		private static string sourcePath;
-		private static bool monoBugWorkaround;
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static ikvm.@internal.LibraryVMInterface lib;
 
@@ -396,18 +394,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static bool IsTlsEnabled
-		{
-			get
-			{
-				return isTlsEnabled;
-			}
-			set
-			{
-				isTlsEnabled = value;
-			}
-		}
-
 		internal static bool CompileInnerClassesAsNestedTypes
 		{
 			get
@@ -466,6 +452,7 @@ namespace IKVM.Internal
 			private string version;
 			private bool targetIsModule;
 			private AssemblyBuilder assemblyBuilder;
+			private IKVM.Internal.MapXml.Attribute[] assemblyAttributes;
 
 			internal CompilerClassLoader(string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
 				: base(null)
@@ -533,7 +520,7 @@ namespace IKVM.Internal
 							}
 							catch(Exception)
 							{
-								Console.Error.WriteLine("netexp assembly not found: {0}", netexp);
+								Console.Error.WriteLine("ikvmstub assembly not found: {0}", netexp);
 							}
 							// HACK create a new wrapper to see if the type is visible now
 							if(DotNetTypeWrapper.CreateDotNetTypeWrapper(name) == null)
@@ -607,60 +594,10 @@ namespace IKVM.Internal
 				assemblyBuilder.SetEntryPoint(mainStub, target);
 			}
 
-			private void MonoBugWorkaround()
-			{
-				// Mono 1.0.5 (and earlier) and 1.1.3 (and earlier) have bug in the metadata routines.
-				// Zoltan says:
-				// The size calculation for the MethodSematics:Association metadata column was wrong,
-				// it was based on the size of the Method table, so when the number of methods in the
-				// dll exceeded some number, all the tables after the MethodSematics table had the
-				// wrong address. This means the only workaround for this bug is to emit
-				// like 32768 dummy Events or Properties, or decrease the size of the Method table to
-				// below 32768 by dropping some classes.
-				// ---
-				// We distribute the properties in 128 nested classes, because peverify has some very
-				// non-linear algorithms and is extremely slow with 32768 properties in a single class.
-				// (it also helps make the overhead a little smaller.)
-				bool runningOnMono = Type.GetType("Mono.Runtime") != null;
-				TypeBuilder tb = ModuleBuilder.DefineType("MonoBugWorkaround", TypeAttributes.NotPublic);
-				TypeBuilder[] nested = new TypeBuilder[128];
-				for(int i = 0; i < nested.Length; i++)
-				{
-					nested[i] = tb.DefineNestedType(i.ToString(), TypeAttributes.NestedPrivate);
-					MethodBuilder getter = null;
-					for(int j = 0; j < 32768 / nested.Length; j++)
-					{
-						PropertyBuilder pb = nested[i].DefineProperty(j.ToString(), PropertyAttributes.None, typeof(int), Type.EmptyTypes);
-						// MONOBUG sigh, another Mono bug, if the property has no methods, Mono crashes
-						if(runningOnMono)
-						{
-							if(getter == null)
-							{
-								getter = nested[i].DefineMethod("get", MethodAttributes.Private, typeof(int), Type.EmptyTypes);
-								ILGenerator ilgen = getter.GetILGenerator();
-								ilgen.Emit(OpCodes.Ldc_I4_0);
-								ilgen.Emit(OpCodes.Ret);
-							}
-							pb.SetGetMethod(getter);
-						}
-					}
-				}
-				tb.CreateType();
-				for(int i = 0; i < nested.Length; i++)
-				{
-					nested[i].CreateType();
-				}
-			}
-
 			internal void Save()
 			{
 				Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
 				FinishAll();
-
-				if(monoBugWorkaround)
-				{
-					MonoBugWorkaround();
-				}
 
 				ModuleBuilder.CreateGlobalFunctions();
 
@@ -1116,7 +1053,7 @@ namespace IKVM.Internal
 							// if any of the remapped types has a body for this interface method, we need a helper method
 							// to special invocation through this interface for that type
 							ArrayList specialCases = null;
-							foreach(IKVM.Internal.MapXml.Class c in map.assembly)
+							foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 							{
 								if(c.Methods != null)
 								{
@@ -1921,9 +1858,11 @@ namespace IKVM.Internal
 			{
 				Tracer.Info(Tracer.Compiler, "Emit remapped types");
 
+				assemblyAttributes = map.assembly.Attributes;
+
 				// 1st pass, put all types in remapped to make them loadable
 				bool hasRemappedTypes = false;
-				foreach(IKVM.Internal.MapXml.Class c in map.assembly)
+				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 				{
 					if(c.Shadows != null)
 					{
@@ -1938,7 +1877,7 @@ namespace IKVM.Internal
 				}
 
 				// 2nd pass, resolve interfaces, publish methods/fields
-				foreach(IKVM.Internal.MapXml.Class c in map.assembly)
+				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 				{
 					if(c.Shadows != null)
 					{
@@ -1961,6 +1900,14 @@ namespace IKVM.Internal
 				foreach(RemapperTypeWrapper typeWrapper in remapped.Values)
 				{
 					typeWrapper.Process4thPass(remapped.Values);
+				}
+
+				if(assemblyAttributes != null)
+				{
+					foreach(IKVM.Internal.MapXml.Attribute attr in assemblyAttributes)
+					{
+						((AssemblyBuilder)this.ModuleBuilder.Assembly).SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+					}
 				}
 			}
 		}
@@ -1987,8 +1934,6 @@ namespace IKVM.Internal
 			public bool noglobbing;
 			public bool nostacktraceinfo;
 			public bool removeUnusedFields;
-			public bool monoBugWorkaround;
-			public bool enableTls;
 		}
 
 		private static bool IsSigned(Assembly asm)
@@ -2002,8 +1947,6 @@ namespace IKVM.Internal
 			isStaticCompiler = true;
 			noJniStubs = options.nojni;
 			noStackTraceInfo = options.nostacktraceinfo;
-			monoBugWorkaround = options.monoBugWorkaround;
-			isTlsEnabled = options.enableTls;
 			bool allReferencesAreStrongNamed = IsSigned(typeof(JVM).Assembly);
 			foreach(string r in options.references)
 			{

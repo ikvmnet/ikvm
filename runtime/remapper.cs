@@ -1000,6 +1000,8 @@ namespace IKVM.Internal.MapXml
 		public Redirect redirect;
 		[XmlElement("throws", typeof(Throws))]
 		public Throws[] throws;
+		[XmlElement("attribute")]
+		public Attribute[] Attributes;
 	}
 
 	public class Redirect
@@ -1051,6 +1053,8 @@ namespace IKVM.Internal.MapXml
 		public Override @override;
 		[XmlElement("throws", typeof(Throws))]
 		public Throws[] throws;
+		[XmlElement("attribute")]
+		public Attribute[] Attributes;
 	}
 
 	public class Field
@@ -1066,6 +1070,8 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("deprecated")]
 		public bool Deprecated;
 		public Redirect redirect;
+		[XmlElement("attribute")]
+		public Attribute[] Attributes;
 	}
 
 	public class Property
@@ -1076,6 +1082,8 @@ namespace IKVM.Internal.MapXml
 		public string Sig;
 		public Method getter;
 		public Method setter;
+		[XmlElement("attribute")]
+		public Attribute[] Attributes;
 	}
 
 	public class Interface
@@ -1111,6 +1119,40 @@ namespace IKVM.Internal.MapXml
 		Private = 1
 	}
 
+	public class Element
+	{
+		[XmlText]
+		public string Value;
+	}
+
+	public class Param
+	{
+		[XmlText]
+		public string Value;
+		[XmlAttribute("name")]
+		public string Name;
+		[XmlAttribute("sig")]
+		public string Sig;		// optional (for object type args)
+		[XmlElement("element")]
+		public Element[] Elements;
+	}
+
+	public class Attribute
+	{
+		[XmlAttribute("type")]
+		public string Type;
+		[XmlAttribute("class")]
+		public string Class;
+		[XmlAttribute("sig")]
+		public string Sig;
+		[XmlElement("parameter")]
+		public Param[] Params;
+		[XmlElement("property")]
+		public Param[] Properties;
+		[XmlElement("field")]
+		public Param[] Fields;
+	}
+
 	[XmlType("class")]
 	public class Class
 	{
@@ -1136,6 +1178,16 @@ namespace IKVM.Internal.MapXml
 		public Interface[] Interfaces;
 		[XmlElement("clinit")]
 		public Method Clinit;
+		[XmlElement("attribute")]
+		public Attribute[] Attributes;
+	}
+
+	public class Assembly
+	{
+		[XmlElement("class")]
+		public Class[] Classes;
+		[XmlElement("attribute")]
+		public Attribute[] Attributes;
 	}
 
 	[XmlType("exception")]
@@ -1162,7 +1214,8 @@ namespace IKVM.Internal.MapXml
 			}
 		}
 
-		public Class[] assembly;
+		[XmlElement("assembly")]
+		public Assembly assembly;
 		public ExceptionMapping[] exceptionMappings;
 	}
 }

@@ -132,6 +132,159 @@ class AttributeHelper
 	private static ConstructorInfo sourceFileAttribute;
 	private static ConstructorInfo lineNumberTableAttribute;
 
+	private static object ParseValue(TypeWrapper tw, string val)
+	{
+		if(tw == CoreClasses.java.lang.String.Wrapper)
+		{
+			return val;
+		}
+		else if(tw.TypeAsTBD.IsEnum)
+		{
+			return Enum.Parse(tw.TypeAsTBD, val);
+		}
+		else if(tw.TypeAsTBD == typeof(Type))
+		{
+			return Type.GetType(val, true);
+		}
+		else if(tw == PrimitiveTypeWrapper.BOOLEAN)
+		{
+			return bool.Parse(val);
+		}
+		else if(tw == PrimitiveTypeWrapper.BYTE)
+		{
+			return (byte)sbyte.Parse(val);
+		}
+		else if(tw == PrimitiveTypeWrapper.CHAR)
+		{
+			return char.Parse(val);
+		}
+		else if(tw == PrimitiveTypeWrapper.SHORT)
+		{
+			return short.Parse(val);
+		}
+		else if(tw == PrimitiveTypeWrapper.INT)
+		{
+			return int.Parse(val);
+		}
+		else if(tw == PrimitiveTypeWrapper.FLOAT)
+		{
+			return float.Parse(val);
+		}
+		else if(tw == PrimitiveTypeWrapper.LONG)
+		{
+			return long.Parse(val);
+		}
+		else if(tw == PrimitiveTypeWrapper.DOUBLE)
+		{
+			return double.Parse(val);
+		}
+		else
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	internal static CustomAttributeBuilder CreateCustomAttribute(IKVM.Internal.MapXml.Attribute attr)
+	{
+		// TODO add error handling
+		TypeWrapper[] twargs = ClassFile.ArgTypeWrapperListFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Sig);
+		Type[] argTypes = new Type[twargs.Length];
+		object[] args = new object[argTypes.Length];
+		for(int i = 0; i < twargs.Length; i++)
+		{
+			argTypes[i] = twargs[i].TypeAsSignatureType;
+			TypeWrapper tw = twargs[i];
+			if(tw == CoreClasses.java.lang.Object.Wrapper)
+			{
+				tw = ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Params[i].Sig);
+			}
+			if(tw.IsArray)
+			{
+				Array arr = Array.CreateInstance(tw.ElementTypeWrapper.TypeAsArrayType, attr.Params[i].Elements.Length);
+				for(int j = 0; j < arr.Length; j++)
+				{
+					arr.SetValue(ParseValue(tw.ElementTypeWrapper, attr.Params[i].Elements[j].Value), j);
+				}
+				args[i] = arr;
+			}
+			else
+			{
+				args[i] = ParseValue(tw, attr.Params[i].Value);
+			}
+		}
+		if(attr.Type != null)
+		{
+			Type t = Type.GetType(attr.Type, true);
+			ConstructorInfo ci = t.GetConstructor(argTypes);
+			PropertyInfo[] namedProperties;
+			object[] propertyValues;
+			if(attr.Properties != null)
+			{
+				namedProperties = new PropertyInfo[attr.Properties.Length];
+				propertyValues = new object[attr.Properties.Length];
+				for(int i = 0; i < namedProperties.Length; i++)
+				{
+					namedProperties[i] = t.GetProperty(attr.Properties[i].Name);
+					propertyValues[i] = ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Properties[i].Sig), attr.Properties[i].Value);
+				}
+			}
+			else
+			{
+				namedProperties = new PropertyInfo[0];
+				propertyValues = new object[0];
+			}
+			FieldInfo[] namedFields;
+			object[] fieldValues;
+			if(attr.Fields != null)
+			{
+				namedFields = new FieldInfo[attr.Fields.Length];
+				fieldValues = new object[attr.Fields.Length];
+				for(int i = 0; i < namedFields.Length; i++)
+				{
+					namedFields[i] = t.GetField(attr.Fields[i].Name);
+					fieldValues[i] = ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Fields[i].Sig), attr.Fields[i].Value);
+				}
+			}
+			else
+			{
+				namedFields = new FieldInfo[0];
+				fieldValues = new object[0];
+			}
+			return new CustomAttributeBuilder(ci, args, namedProperties, propertyValues, namedFields, fieldValues);
+		}
+		else
+		{
+			if(attr.Properties != null)
+			{
+				throw new NotImplementedException("Setting property values on Java attributes is not implemented");
+			}
+			TypeWrapper t = ClassLoaderWrapper.LoadClassCritical(attr.Class);
+			MethodWrapper mw = t.GetMethodWrapper("<init>", attr.Sig, false);
+			mw.Link();
+			ConstructorInfo ci = (ConstructorInfo)mw.GetMethod();
+			FieldInfo[] namedFields;
+			object[] fieldValues;
+			if(attr.Fields != null)
+			{
+				namedFields = new FieldInfo[attr.Fields.Length];
+				fieldValues = new object[attr.Fields.Length];
+				for(int i = 0; i < namedFields.Length; i++)
+				{
+					FieldWrapper fw = t.GetFieldWrapper(attr.Fields[i].Name, attr.Fields[i].Sig);
+					fw.Link();
+					namedFields[i] = fw.GetField();
+					fieldValues[i] = ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Fields[i].Sig), attr.Fields[i].Value);
+				}
+			}
+			else
+			{
+				namedFields = new FieldInfo[0];
+				fieldValues = new object[0];
+			}
+			return new CustomAttributeBuilder(ci, args, namedFields, fieldValues);
+		}
+	}
+
 	internal static void SetEditorBrowsableNever(MethodBuilder mb)
 	{
 		if(editorBrowsableNever == null)
@@ -2015,7 +2168,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		ghosts = new Hashtable();
 
 		// find the ghost interfaces
-		foreach(IKVM.Internal.MapXml.Class c in map.assembly)
+		foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 		{
 			if(c.Shadows != null && c.Interfaces != null)
 			{
@@ -2117,13 +2270,13 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		mapxml = new Hashtable();
 		// HACK we've got a hardcoded location for the exception mapping method that is generated from the xml mapping
 		mapxml["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
-		foreach(IKVM.Internal.MapXml.Class c in map.assembly)
+		foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 		{
 			// HACK if it is not a remapped type, we assume it is a container for native methods
 			if(c.Shadows == null)
 			{
 				string className = c.Name;
-				mapxml[className] = c;
+				mapxml.Add(className, c);
 				if(c.Methods != null)
 				{
 					foreach(IKVM.Internal.MapXml.Method method in c.Methods)
@@ -2132,7 +2285,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							string methodName = method.Name;
 							string methodSig = method.Sig;
-							mapxml[className + "." + methodName + methodSig] = method.body;
+							mapxml.Add(className + "." + methodName + methodSig, method.body);
 						}
 					}
 				}
@@ -2775,11 +2928,6 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					setModifiers = true;
 				}
 				field = typeBuilder.DefineField(fieldName, type, attribs);
-				if(JVM.IsTlsEnabled && fieldName.StartsWith("__tls_"))
-				{
-					CustomAttributeBuilder threadStaticAttrib = new CustomAttributeBuilder(typeof(ThreadStaticAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
-					field.SetCustomAttribute(threadStaticAttrib);
-				}
 				if(fld.IsTransient)
 				{
 					CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(typeof(NonSerializedAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
@@ -3247,7 +3395,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 									{
 										// since NoJniStubs can only be set when we're statically compiling, it is safe to use the "compiler" trace switch
 										Tracer.Warning(Tracer.Compiler, "Native method not implemented: {0}.{1}.{2}", classFile.Name, m.Name, m.Signature);
-										EmitHelper.Throw(ilGenerator, "java.lang.UnsatisfiedLinkError", "Native method not implemented: " + classFile.Name + "." + m.Name + m.Signature);
+										EmitHelper.Throw(ilGenerator, "java.lang.UnsatisfiedLinkError", "Native method not implemented (compiled with -nojni): " + classFile.Name + "." + m.Name + m.Signature);
 									}
 									else
 									{
@@ -3429,9 +3577,85 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				if(mapxml != null)
 				{
 					IKVM.Internal.MapXml.Class clazz = (IKVM.Internal.MapXml.Class)mapxml[classFile.Name];
-					if(clazz != null && clazz.Properties != null)
+					if(clazz != null)
 					{
-						PublishProperties(clazz);
+						if(clazz.Attributes != null)
+						{
+							PublishAttributes(clazz);
+						}
+						if(clazz.Properties != null)
+						{
+							PublishProperties(clazz);
+						}
+						if(clazz.Fields != null)
+						{
+							foreach(IKVM.Internal.MapXml.Field field in clazz.Fields)
+							{
+								if(field.Attributes != null)
+								{
+									foreach(FieldWrapper fw in fields)
+									{
+										if(fw.Name == field.Name && fw.Signature == field.Sig)
+										{
+											FieldBuilder fb = fw.GetField() as FieldBuilder;
+											if(fb != null)
+											{
+												foreach(IKVM.Internal.MapXml.Attribute attr in field.Attributes)
+												{
+													fb.SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						if(clazz.Constructors != null)
+						{
+							foreach(IKVM.Internal.MapXml.Constructor constructor in clazz.Constructors)
+							{
+								if(constructor.Attributes != null)
+								{
+									foreach(MethodWrapper mw in methods)
+									{
+										if(mw.Name == "<init>" && mw.Signature == constructor.Sig)
+										{
+											ConstructorBuilder mb = mw.GetMethod() as ConstructorBuilder;
+											if(mb != null)
+											{
+												foreach(IKVM.Internal.MapXml.Attribute attr in constructor.Attributes)
+												{
+													mb.SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						if(clazz.Methods != null)
+						{
+							foreach(IKVM.Internal.MapXml.Method method in clazz.Methods)
+							{
+								if(method.Attributes != null)
+								{
+									foreach(MethodWrapper mw in methods)
+									{
+										if(mw.Name == method.Name && mw.Signature == method.Sig)
+										{
+											MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+											if(mb != null)
+											{
+												foreach(IKVM.Internal.MapXml.Attribute attr in method.Attributes)
+												{
+													mb.SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+												}
+											}
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 
@@ -3527,6 +3751,14 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			return false;
 		}
 
+		private void PublishAttributes(IKVM.Internal.MapXml.Class clazz)
+		{
+			foreach(IKVM.Internal.MapXml.Attribute attr in clazz.Attributes)
+			{
+				typeBuilder.SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+			}
+		}
+
 		private void PublishProperties(IKVM.Internal.MapXml.Class clazz)
 		{
 			foreach(IKVM.Internal.MapXml.Property prop in clazz.Properties)
@@ -3539,6 +3771,13 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					indexer[i] = propargs[i].TypeAsSignatureType;
 				}
 				PropertyBuilder propbuilder = typeBuilder.DefineProperty(prop.Name, PropertyAttributes.None, typeWrapper.TypeAsSignatureType, indexer);
+				if(prop.Attributes != null)
+				{
+					foreach(IKVM.Internal.MapXml.Attribute attr in prop.Attributes)
+					{
+						propbuilder.SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+					}
+				}
 				MethodWrapper getter = null;
 				MethodWrapper setter = null;
 				if(prop.getter != null)
@@ -5945,7 +6184,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 
 			// HACK private interface implementations need to be published as well
 			// (otherwise the type appears abstract while it isn't)
-			if(!type.IsAbstract)
+			if(!type.IsInterface)
 			{
 				Hashtable clash = null;
 				Type[] interfaces = type.GetInterfaces();
