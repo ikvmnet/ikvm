@@ -470,45 +470,6 @@ namespace IKVM.NativeCode.java
 				error:
 				throw JavaException.NumberFormatException("For input string: \"{0}\"", s);
 			}
-
-			public static string toString(double d, bool isFloat)
-			{
-				if(isFloat)
-				{
-					float f = (float)d;
-					// TODO this is not correct, we need to use the Java algorithm of converting a float to string
-					if(float.IsNaN(f))
-					{
-						return "NaN";
-					}
-					if(float.IsNegativeInfinity(f))
-					{
-						return "-Infinity";
-					}
-					if(float.IsPositiveInfinity(f))
-					{
-						return "Infinity";
-					}
-					// HACK really lame hack to apprioximate the Java behavior a little bit
-					string s = f.ToString(System.Globalization.CultureInfo.InvariantCulture);
-					if(s.IndexOf('.') == -1)
-					{
-						s += ".0";
-					}
-					// make sure -0.0 renders correctly
-					if(d == 0.0 && BitConverter.DoubleToInt64Bits(d) < 0)
-					{
-						return "-" + s;
-					}
-					return s;
-				}
-				else
-				{
-					StringBuilder sb = new StringBuilder();
-					DoubleToString.append(sb, d);
-					return sb.ToString();
-				}
-			}
 		}
 
 		public class VMSystem

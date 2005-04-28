@@ -47,6 +47,40 @@ final class VMDouble
 	return BitConverter.DoubleToInt64Bits(v);
     }
 
-    static native String toString(double d, boolean isFloat);
+    static String toString(double d, boolean isFloat)
+    {
+        if(isFloat)
+        {
+            float f = (float)d;
+            // TODO this is not correct, we need to use the Java algorithm of converting a float to string
+            if(Float.isNaN(f))
+            {
+                return "NaN";
+            }
+            if(Float.isInfinite(f))
+            {
+                return f < 0f ? "-Infinity" : "Infinity";
+            }
+            // HACK really lame hack to apprioximate the Java behavior a little bit
+            String s = ((cli.System.IConvertible)ikvm.lang.CIL.box_float(f)).ToString(cli.System.Globalization.CultureInfo.get_InvariantCulture());
+            if(s.indexOf('.') == -1)
+            {
+                s += ".0";
+            }
+            // make sure -0.0 renders correctly
+            if(d == 0.0 && BitConverter.DoubleToInt64Bits(d) < 0)
+            {
+                return "-" + s;
+            }
+            return s;
+        }
+        else
+        {
+            StringBuffer sb = new StringBuffer();
+            DoubleToString.append(sb, d);
+            return sb.toString();
+        }
+    }
+
     static native double parseDouble(String s);
 }

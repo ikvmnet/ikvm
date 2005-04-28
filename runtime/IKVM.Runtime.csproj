@@ -136,11 +136,6 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "DoubleToString.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "ExceptionHelper.cs"
                     SubType = "Code"
                     BuildAction = "Compile"

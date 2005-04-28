@@ -3200,6 +3200,7 @@ ikvm/internal/LibraryVMInterface.java
 ikvm/lang/CIL.java
 java/io/VMFile.java
 java/io/VMObjectInputStream.java
+java/lang/DoubleToString.java
 java/lang/ExceptionHelper.java
 java/lang/LibraryVMInterfaceImpl.java
 java/lang/ref/Reference.java
