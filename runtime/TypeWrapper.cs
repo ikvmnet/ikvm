@@ -4070,7 +4070,20 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					}
 				}
 				ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
-				ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, (retTypeWrapper.IsPrimitive) ? retTypeWrapper.TypeAsSignatureType : typeof(IntPtr), modargs);
+				Type realRetType;
+				if(retTypeWrapper == PrimitiveTypeWrapper.BOOLEAN)
+				{
+					realRetType = typeof(byte);
+				}
+				else if(retTypeWrapper.IsPrimitive)
+				{
+					realRetType = retTypeWrapper.TypeAsSignatureType;
+				}
+				else
+				{
+					realRetType = typeof(IntPtr);
+				}
+				ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, realRetType, modargs);
 				LocalBuilder retValue = null;
 				if(retTypeWrapper != PrimitiveTypeWrapper.VOID)
 				{
