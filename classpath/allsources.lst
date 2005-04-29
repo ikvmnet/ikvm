@@ -3194,6 +3194,7 @@ gnu/java/net/PlainDatagramSocketImpl.java
 gnu/java/net/PlainSocketImpl.java
 gnu/java/net/protocol/ikvmres/Handler.java
 gnu/java/nio/channels/FileChannelImpl.java
+gnu/java/nio/charset/iconv/IconvProvider.java
 gnu/java/nio/VMPipe.java
 gnu/java/nio/VMSelector.java
 ikvm/internal/LibraryVMInterface.java
