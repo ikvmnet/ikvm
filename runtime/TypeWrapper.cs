@@ -4495,6 +4495,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 								}
 							}
 							if(needFinalize &&
+								!m.IsAbstract && !m.IsNative &&
 								(!m.IsFinal || classFile.IsFinal) &&
 								m.Instructions.Length > 0 &&
 								m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__return)
