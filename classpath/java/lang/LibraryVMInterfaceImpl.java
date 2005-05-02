@@ -207,6 +207,11 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
         gnu.classpath.VMSystemProperties.props = props;
     }
 
+    public boolean runFinalizersOnExit()
+    {
+        return VMRuntime.runFinalizersOnExitFlag;
+    }
+
     public Throwable newIllegalAccessError(String msg)
     {
         return new IllegalAccessError(msg);

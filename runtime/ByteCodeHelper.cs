@@ -552,5 +552,10 @@ namespace IKVM.Runtime
 			string msg = String.Format("Object of type \"{0}\" cannot be cast to \"{1}\"", obj.GetType().AssemblyQualifiedName, Type.GetTypeFromHandle(typeHandle).AssemblyQualifiedName);
 			throw IKVM.Internal.JVM.Library.newClassCastException(msg);
 		}
+
+		public static bool SkipFinalizer()
+		{
+			return Environment.HasShutdownStarted && !IKVM.Internal.JVM.Library.runFinalizersOnExit();
+		}
 	}
 }

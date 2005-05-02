@@ -1433,6 +1433,8 @@ namespace ikvm.@internal
 
 		void setProperties(System.Collections.Hashtable props);
 
+		bool runFinalizersOnExit();
+
 		Exception newIllegalAccessError(string msg);
 		Exception newIllegalAccessException(string msg);
 		Exception newIncompatibleClassChangeError(string msg);

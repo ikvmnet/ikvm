@@ -54,6 +54,8 @@ public interface LibraryVMInterface
 
     void setProperties(cli.System.Collections.Hashtable props);
 
+    boolean runFinalizersOnExit();
+
     Throwable newIllegalAccessError(String msg);
     Throwable newIllegalAccessException(String msg);
     Throwable newIncompatibleClassChangeError(String msg);

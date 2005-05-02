@@ -4541,6 +4541,9 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							MethodBuilder finalize = typeBuilder.DefineMethod("Finalize", attr, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
 							AttributeHelper.HideFromJava(finalize);
 							ILGenerator ilgen = finalize.GetILGenerator();
+							ilgen.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("SkipFinalizer"));
+							Label skip = ilgen.DefineLabel();
+							ilgen.Emit(OpCodes.Brtrue_S, skip);
 							if(needDispatch)
 							{
 								ilgen.BeginExceptionBlock();
@@ -4554,6 +4557,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 								ilgen.Emit(OpCodes.Ldarg_0);
 								ilgen.Emit(OpCodes.Call, baseFinalize);
 							}
+							ilgen.MarkLabel(skip);
 							ilgen.Emit(OpCodes.Ret);
 						}
 					}

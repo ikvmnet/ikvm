@@ -169,8 +169,10 @@ final class VMRuntime
      */
     static void runFinalizersOnExit(boolean value)
     {
-	// the CLR always runs the finalizers, so we can ignore this
+        runFinalizersOnExitFlag = value;
     }
+    // the default is not the run finalizers on exit
+    static volatile boolean runFinalizersOnExitFlag;
 
     /**
      * Native method that actually shuts down the virtual machine.
