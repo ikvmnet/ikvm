@@ -58,7 +58,11 @@ class MemberWrapper
 
 	~MemberWrapper()
 	{
-		if(handle.IsAllocated)
+		// NOTE when we're being unloaded, we shouldn't clean up the handle, because JNI
+		// code running in a finalize can use this handle later on (since finalization is
+		// unordered). Note that this isn't a leak since the AppDomain is going away anyway.
+		if(!(AppDomain.CurrentDomain.IsFinalizingForUnload() || Environment.HasShutdownStarted)
+			&& handle.IsAllocated)
 		{
 			handle.Free();
 		}
