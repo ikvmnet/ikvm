@@ -1055,7 +1055,7 @@ namespace IKVM.Runtime
 				// NOTE when we're not the default AppDomain and we're being unloaded,
 				// we're leaking the JNIEnv (but since JNI outside of the default AppDomain isn't currently supported,
 				// I can live with that).
-				if(!(AppDomain.CurrentDomain.IsFinalizingForUnload() || Environment.HasShutdownStarted))
+				if(!Environment.HasShutdownStarted)
 				{
 					if(pJNIEnv->localRefs.IsAllocated)
 					{
@@ -1073,7 +1073,12 @@ namespace IKVM.Runtime
 		internal static JNIEnv* CreateJNIEnv()
 		{
 			JNIEnv* pJNIEnv = TlsHack.pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
-			System.Threading.Thread.SetData(cleanupHelperDataSlot, new JNIEnvCleanupHelper(pJNIEnv));
+			// don't touch the LocalDataStore slot when we're being unloaded
+			// (it may have been finalized already)
+			if(!Environment.HasShutdownStarted)
+			{
+				System.Threading.Thread.SetData(cleanupHelperDataSlot, new JNIEnvCleanupHelper(pJNIEnv));
+			}
 			pJNIEnv->vtable = VtableBuilder.vtable;
 			object[][] localRefs = new object[32][];
 			localRefs[0] = new object[JNIEnv.LOCAL_REF_BUCKET_SIZE];
@@ -1092,7 +1097,7 @@ namespace IKVM.Runtime
 		{
 			// don't touch the LocalDataStore slot when we're being unloaded
 			// (it may have been finalized already)
-			if(!(AppDomain.CurrentDomain.IsFinalizingForUnload() || Environment.HasShutdownStarted))
+			if(!Environment.HasShutdownStarted)
 			{
 				// the cleanup helper will eventually free the JNIEnv
 				System.Threading.Thread.SetData(cleanupHelperDataSlot, null);

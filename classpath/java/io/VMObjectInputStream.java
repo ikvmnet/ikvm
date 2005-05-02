@@ -28,8 +28,7 @@ import java.lang.reflect.Constructor;
 
 final class VMObjectInputStream
 {
-    // TODO move this to ObjectInputStream
-    static ClassLoader currentClassLoader(SecurityManager sm)
+    static ClassLoader currentClassLoader()
     {
         Class[] stack = VMStackWalker.getClassContext();
         for (int i = 0; i < stack.length; i++)

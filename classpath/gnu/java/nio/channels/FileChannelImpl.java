@@ -41,6 +41,7 @@ package gnu.java.nio.channels;
 import gnu.classpath.Configuration;
 import gnu.java.nio.FileLockImpl;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -85,9 +86,9 @@ public final class FileChannelImpl extends FileChannel
     }
 
     /* Open a file.  MODE is a combination of the above mode flags. */
-    public FileChannelImpl (String path, int mode) throws FileNotFoundException
+    public FileChannelImpl (File path, int mode) throws FileNotFoundException
     {
-	stream = open (path, mode);
+	stream = open (path.getPath(), mode);
 	this.mode = mode;
     }
 
