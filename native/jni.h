@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004 Jeroen Frijters
+  Copyright (C) 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -64,10 +64,10 @@ typedef signed char jbyte;
 typedef unsigned short jchar;
 typedef short jshort;
 typedef int jint;
-#ifdef __GNUC__
-	typedef long long int jlong;
-#else
+#ifdef _MSC_VER
 	typedef __int64 jlong;
+#else
+	typedef long long int jlong;
 #endif
 typedef float jfloat;
 typedef double jdouble;
