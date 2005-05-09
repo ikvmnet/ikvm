@@ -100,7 +100,7 @@ class MemberWrapper
 	{
 		return (DeclaringType.IsPublic && IsPublic) ||
 			caller == DeclaringType ||
-			(IsProtected && (IsStatic ? caller.IsSubTypeOf(DeclaringType) : instance.IsSubTypeOf(caller))) ||
+			((IsPublic || IsProtected) && (IsStatic ? caller.IsSubTypeOf(DeclaringType) : instance.IsSubTypeOf(caller))) ||
 			(!IsPrivate && caller.IsInSamePackageAs(DeclaringType));
 	}
 
