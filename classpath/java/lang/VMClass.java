@@ -163,20 +163,11 @@ abstract class VMClass
     }
     private static native ClassLoader getClassLoader0(Object wrapper);
 
-    static Class forName(String name) throws ClassNotFoundException
+    static Class forName(String name)
     {
-	// if we ever get back to using a separate assembly for each class loader, it
-	// might be faster to use Assembly.GetCallingAssembly here...
-	cli.System.Diagnostics.StackFrame frame = new cli.System.Diagnostics.StackFrame(1);
-	// HACK a lame way to deal with potential inlining of this method (or Class.forName)
-	if(frame.GetMethod().get_Name().equals("forName"))
-	{
-	    frame = new cli.System.Diagnostics.StackFrame(2);
-	}
-	ClassLoader cl = getClassLoaderFromType(frame.GetMethod().get_DeclaringType());
-	return Class.forName(name, true, cl);
+        // we return null to use the java.lang.Class implementation
+        return null;
     }
-    private static native ClassLoader getClassLoaderFromType(Type type);
 
     static void initialize(Class clazz)
     {
