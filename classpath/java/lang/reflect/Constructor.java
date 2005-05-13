@@ -205,7 +205,9 @@ public final class Constructor
     public String toString()
     {
 	StringBuffer sb = new StringBuffer();
-	Modifier.toString(getModifiers(), sb).append(' ');
+	Modifier.toString(getModifiers(), sb);
+	if (sb.length() > 0)
+	    sb.append(' ');
 	sb.append(getDeclaringClass().getName()).append('(');
 	Class[] c = getParameterTypes();
 	if (c.length > 0)
