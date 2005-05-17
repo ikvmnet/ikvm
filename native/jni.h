@@ -110,12 +110,12 @@ struct JNIEnv_methods
 
 	jmethodID (JNICALL *FromReflectedMethod)(JNIEnv* pEnv, jobject method);
 	jfieldID (JNICALL *FromReflectedField)(JNIEnv* pEnv, jobject field);
-	jobject (JNICALL *ToReflectedMethod)(JNIEnv* pEnv, jclass clazz, jmethodID methodID);
+	jobject (JNICALL *ToReflectedMethod)(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jboolean isStatic);
 
 	jclass (JNICALL *GetSuperclass)(JNIEnv* pEnv, jclass sub);
 	jboolean (JNICALL *IsAssignableFrom)(JNIEnv* pEnv, jclass sub, jclass sup);
 
-	jobject (JNICALL *ToReflectedField)(JNIEnv* pEnv, jclass clazz, jfieldID fieldID);
+	jobject (JNICALL *ToReflectedField)(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jboolean isStatic);
 
 	jint (JNICALL *Throw)(JNIEnv* pEnv, jthrowable obj);
 	jint (JNICALL *ThrowNew)(JNIEnv* pEnv, jclass clazz, const char *msg);

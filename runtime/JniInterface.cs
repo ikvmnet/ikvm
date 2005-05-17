@@ -231,11 +231,6 @@ namespace IKVM.Runtime
 			public static IntPtr GetFuncPtr(RuntimeMethodHandle method, string clazz, string name, string sig)
 			{
 				MethodBase mb = MethodBase.GetMethodFromHandle(method);
-				// MONOBUG Mono 1.0 doesn't implement MethodBase.GetMethodFromHandle
-				if(mb == null)
-				{
-					mb = new StackFrame(1).GetMethod();
-				}
 				ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
 				int sp = 0;
 				for(int i = 1; sig[i] != ')'; i++)
@@ -542,6 +537,7 @@ namespace IKVM.Runtime
 		delegate int pf_int_int(JNIEnv* pEnv, int p1);
 		delegate IntPtr pf_IntPtr_IntPtr_long(JNIEnv* pEnv, IntPtr p1, long p2);
 		delegate long pf_long_IntPtr(JNIEnv* pEnv, IntPtr p1);
+		delegate IntPtr pf_IntPtr_IntPtr_IntPtr_sbyte(JNIEnv* pEnv, IntPtr p1, IntPtr p2, sbyte p3);
 
 		internal static void* vtable;
 
@@ -579,12 +575,12 @@ namespace IKVM.Runtime
 
 			new pf_IntPtr_IntPtr(JNIEnv.FromReflectedMethod), //virtual jmethodID JNICALL FromReflectedMethod(jobject method);
 			new pf_IntPtr_IntPtr(JNIEnv.FromReflectedField), //virtual jfieldID JNICALL FromReflectedField(jobject field);
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.ToReflectedMethod), //virtual jobject JNICALL ToReflectedMethod(jclass clazz, jmethodID methodID);
+			new pf_IntPtr_IntPtr_IntPtr_sbyte(JNIEnv.ToReflectedMethod), //virtual jobject JNICALL ToReflectedMethod(jclass clazz, jmethodID methodID, jboolean isStatic);
 
 			new pf_IntPtr_IntPtr(JNIEnv.GetSuperclass), //virtual jclass JNICALL GetSuperclass(jclass sub);
 			new pf_sbyte_IntPtr_IntPtr(JNIEnv.IsAssignableFrom), //virtual jboolean JNICALL IsAssignableFrom(jclass sub, jclass sup);
 
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.ToReflectedField), //virtual jobject JNICALL ToReflectedField(jclass clazz, jfieldID fieldID);
+			new pf_IntPtr_IntPtr_IntPtr_sbyte(JNIEnv.ToReflectedField), //virtual jobject JNICALL ToReflectedField(jclass clazz, jfieldID fieldID, jboolean isStatic);
 
 			new pf_int_IntPtr(JNIEnv.Throw), //virtual jint JNICALL Throw(jthrowable obj);
 			new pf_int_IntPtr_pbyte(JNIEnv.ThrowNew), //virtual jint JNICALL ThrowNew(jclass clazz, const char *msg);
@@ -1248,32 +1244,10 @@ namespace IKVM.Runtime
 			if(pEnv->currentMethod.Value != IntPtr.Zero)
 			{
 				MethodBase mb = MethodBase.GetMethodFromHandle(pEnv->currentMethod);
-				if(mb != null)
+				ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
+				if(loader.GetJavaClassLoader() != null)
 				{
-					ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
-					if(loader.GetJavaClassLoader() != null)
-					{
-						return loader;
-					}
-				}
-				else
-				{
-					// MONOBUG Mono 1.0 doesn't implement MethodBase.GetMethodFromHandle, so we do a stack walk
-					// to try and find the caller
-					StackTrace st = new StackTrace();
-					for(int i = 0; i < st.FrameCount; i++)
-					{
-						StackFrame frame = st.GetFrame(i);
-						Type type = frame.GetMethod().DeclaringType;
-						if(type != null && frame.GetMethod().MethodHandle.Value == pEnv->currentMethod.Value)
-						{
-							ClassLoaderWrapper loader = ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader();
-							if(loader.GetJavaClassLoader() != null)
-							{
-								return loader;
-							}
-						}
-					}
+					return loader;
 				}
 			}
 			if(pEnv->classLoader.Target != null)
@@ -1330,7 +1304,7 @@ namespace IKVM.Runtime
 			return ((FieldWrapper)JVM.Library.getWrapperFromField(pEnv->UnwrapRef(field))).Cookie;
 		}
 
-		internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method)
+		internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method, jboolean isStatic)
 		{
 			MethodWrapper mw = MethodWrapper.FromCookie(method);
 			object clazz = mw.DeclaringType.ClassObject;
@@ -1357,7 +1331,7 @@ namespace IKVM.Runtime
 			return w1.IsAssignableTo(w2) ? JNI_TRUE : JNI_FALSE;
 		}
 
-		internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field)
+		internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field, jboolean isStatic)
 		{
 			FieldWrapper fw = FieldWrapper.FromCookie(field);
 			object clazz = fw.DeclaringType.ClassObject;
@@ -3206,8 +3180,7 @@ namespace IKVM.Runtime
 			{
 				for(int i = 0; i < GlobalRefs.weakRefs.Length; i++)
 				{
-					// MONOBUG GCHandle.IsAllocated is horribly broken, so we also check the value of the handle
-					if(!GlobalRefs.weakRefs[i].IsAllocated || (IntPtr)GlobalRefs.weakRefs[i] == IntPtr.Zero)
+					if(!GlobalRefs.weakRefs[i].IsAllocated)
 					{
 						GlobalRefs.weakRefs[i] = GCHandle.Alloc(o, GCHandleType.WeakTrackResurrection);
 						return (IntPtr)(- (i | (1 << 30)));

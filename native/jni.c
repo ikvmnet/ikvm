@@ -195,12 +195,12 @@ static void* JNIEnv_vtable[] =
 
 	0, // jmethodID JNICALL FromReflectedMethod(jobject method);
 	0, // jfieldID JNICALL FromReflectedField(jobject field);
-	0, // jobject JNICALL ToReflectedMethod(jclass clazz, jmethodID methodID);
+	0, // jobject JNICALL ToReflectedMethod(jclass clazz, jmethodID methodID, jboolean isStatic);
 
 	0, // jclass JNICALL GetSuperclass(jclass sub);
 	0, // jboolean JNICALL IsAssignableFrom(jclass sub, jclass sup);
 
-	0, // jobject JNICALL ToReflectedField(jclass clazz, jfieldID fieldID);
+	0, // jobject JNICALL ToReflectedField(jclass clazz, jfieldID fieldID, jboolean isStatic);
 
 	0, // jint JNICALL Throw(jthrowable obj);
 	0, // jint JNICALL ThrowNew(jclass clazz, const char *msg);

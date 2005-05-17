@@ -38,7 +38,8 @@ enum MemberFlags : short
 	None = 0,
 	HideFromReflection = 1,
 	ExplicitOverride = 2,
-	LiteralField = 4
+	LiteralField = 4,
+	MirandaMethod = 8
 }
 
 class MemberWrapper
@@ -56,16 +57,25 @@ class MemberWrapper
 		this.flags = flags;
 	}
 
+	// NOTE since we don't support unloading code, there is no need to have a finalizer
+#if CLASS_GC
 	~MemberWrapper()
 	{
-		// NOTE when we're being unloaded, we shouldn't clean up the handle, because JNI
-		// code running in a finalize can use this handle later on (since finalization is
+		// NOTE when the AppDomain is being unloaded, we shouldn't clean up the handle, because
+		// JNI code running in a finalize can use this handle later on (since finalization is
 		// unordered). Note that this isn't a leak since the AppDomain is going away anyway.
 		if(!Environment.HasShutdownStarted && handle.IsAllocated)
 		{
-			handle.Free();
+			FreeHandle();
 		}
 	}
+
+	private void FreeHandle()
+	{
+		// this has a LinkDemand, so it has to be in a separate method
+		handle.Free();
+	}
+#endif
 
 	internal IntPtr Cookie
 	{
@@ -73,8 +83,7 @@ class MemberWrapper
 		{
 			lock(this)
 			{
-				// MONOBUG GCHandle.IsAllocated is horribly broken, so we also check the value of the handle
-				if(!handle.IsAllocated || (IntPtr)handle == IntPtr.Zero)
+				if(!handle.IsAllocated)
 				{
 					handle = System.Runtime.InteropServices.GCHandle.Alloc(this, System.Runtime.InteropServices.GCHandleType.Weak);
 				}
@@ -130,6 +139,14 @@ class MemberWrapper
 		{
 			flags &= ~MemberFlags.LiteralField;
 			flags |= value ? MemberFlags.LiteralField : MemberFlags.None;
+		}
+	}
+
+	internal bool IsMirandaMethod
+	{
+		get
+		{
+			return (flags & MemberFlags.MirandaMethod) != 0;
 		}
 	}
 
@@ -246,7 +263,7 @@ abstract class MethodWrapper : MemberWrapper
 		}
 	}
 
-	internal static MethodWrapper Create(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection)
+	internal static MethodWrapper Create(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
 	{
 		Debug.Assert(declaringType != null && name!= null && sig != null && method != null);
 
@@ -262,15 +279,15 @@ abstract class MethodWrapper : MemberWrapper
 				}
 				method = declaringType.TypeAsBaseType.GetMethod(method.Name, types);
 			}
-			return new GhostMethodWrapper(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None);
+			return new GhostMethodWrapper(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags);
 		}
 		else if(method is ConstructorInfo)
 		{
-			return new SmartConstructorMethodWrapper(declaringType, name, sig, (ConstructorInfo)method, parameterTypes, modifiers, hideFromReflection);
+			return new SmartConstructorMethodWrapper(declaringType, name, sig, (ConstructorInfo)method, parameterTypes, modifiers, flags);
 		}
 		else
 		{
-			return new SmartCallMethodWrapper(declaringType, name, sig, (MethodInfo)method, returnType, parameterTypes, modifiers, hideFromReflection, SimpleOpCode.Call, method.IsStatic ? SimpleOpCode.Call : SimpleOpCode.Callvirt);
+			return new SmartCallMethodWrapper(declaringType, name, sig, (MethodInfo)method, returnType, parameterTypes, modifiers, flags, SimpleOpCode.Call, method.IsStatic ? SimpleOpCode.Call : SimpleOpCode.Callvirt);
 		}
 	}
 
@@ -929,8 +946,8 @@ sealed class SimpleCallMethodWrapper : MethodWrapper
 	private SimpleOpCode call;
 	private SimpleOpCode callvirt;
 
-	internal SimpleCallMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection, SimpleOpCode call, SimpleOpCode callvirt)
-		: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
+	internal SimpleCallMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags, SimpleOpCode call, SimpleOpCode callvirt)
+		: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
 	{
 		this.call = call;
 		this.callvirt = callvirt;
@@ -951,11 +968,6 @@ sealed class SmartCallMethodWrapper : SmartMethodWrapper
 {
 	private SimpleOpCode call;
 	private SimpleOpCode callvirt;
-
-	internal SmartCallMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection, SimpleOpCode call, SimpleOpCode callvirt)
-		: this(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None, call, callvirt)
-	{
-	}
 
 	internal SmartCallMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags, SimpleOpCode call, SimpleOpCode callvirt)
 		: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
@@ -979,11 +991,6 @@ sealed class SmartConstructorMethodWrapper : SmartMethodWrapper
 {
 	internal SmartConstructorMethodWrapper(TypeWrapper declaringType, string name, string sig, ConstructorInfo method, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
 		: base(declaringType, name, sig, method, PrimitiveTypeWrapper.VOID, parameterTypes, modifiers, flags)
-	{
-	}
-
-	internal SmartConstructorMethodWrapper(TypeWrapper declaringType, string name, string sig, ConstructorInfo method, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection)
-		: base(declaringType, name, sig, method, PrimitiveTypeWrapper.VOID, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
 	{
 	}
 
