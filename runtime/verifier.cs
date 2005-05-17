@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1790,12 +1790,7 @@ class MethodAnalyzer
 								TypeWrapper type = GetConstantPoolClassType(instr.Arg1);
 								if(type.IsUnloadable)
 								{
-									string name = type.Name;
-									if(name[0] != '[')
-									{
-										name = "L" + name + ";";
-									}
-									s.PushType(new UnloadableTypeWrapper(name));
+									s.PushType(new UnloadableTypeWrapper("[" + type.SigName));
 								}
 								else
 								{
