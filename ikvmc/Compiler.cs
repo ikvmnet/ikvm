@@ -464,7 +464,11 @@ class Compiler
 		{
 			foreach(ZipEntry ze in zf)
 			{
-				if(ze.Name.ToLower().EndsWith(".class"))
+				if(ze.IsDirectory)
+				{
+					// skip
+				}
+				else if(ze.Name.ToLower().EndsWith(".class"))
 				{
 					classes.Add(ReadFromZip(zf, ze));
 				}
