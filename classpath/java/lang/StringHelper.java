@@ -309,6 +309,27 @@ final class StringHelper
 	}
     }
 
+    static String NewString(int[] codePoints, int offset, int count)
+    {
+        cli.System.Text.StringBuilder sb = new cli.System.Text.StringBuilder(count);
+        for(int i = 0; i < count; i++)
+        {
+            int ch = codePoints[i + offset];
+            if(ch < 0 || ch > 0x10ffff)
+                throw new IllegalArgumentException();
+            if(ch < 0x10000)
+            {
+                sb.Append((char)ch);
+            }
+            else
+            {
+                sb.Append((char)(0xd800 + ((ch - 0x10000) >> 10)));
+                sb.Append((char)(0xdc00 + (ch & 0x3ff)));
+            }
+        }
+        return sb.ToString();
+    }
+
     static String substring(cli.System.String s, int off, int end)
     {
 	return s.Substring(off, end - off);
@@ -571,5 +592,102 @@ final class StringHelper
 	    h = h * 31 + s.get_Chars(i);
 	}
 	return h;
+    }
+
+    static String replace(String s, CharSequence oldValue, CharSequence newValue)
+    {
+        String s1 = oldValue.toString();
+        String s2 = newValue.toString();
+        if(s1.length() > 0)
+        {
+            return ((cli.System.String)(Object)s).Replace(s1, s2);
+        }
+        cli.System.Text.StringBuilder sb = new cli.System.Text.StringBuilder((s.length() + 1) * (s2.length() + 1));
+        for(int i = 0; i < s.length(); i++)
+        {
+            sb.Append(s2).Append(s.charAt(i));
+        }
+        sb.Append(s2);
+        return sb.ToString();
+    }
+
+    static boolean contains(String s, CharSequence seq)
+    {
+        return ((cli.System.String)(Object)s).IndexOf(seq.toString()) != -1;
+    }
+
+    static boolean contentEquals(String s, CharSequence seq)
+    {
+        return s.equals(seq.toString());
+    }
+
+    static int codePointAt(String s, int index)
+    {
+        char c1 = s.charAt(index++);
+        if(c1 >= 0xd800 && c1 <= 0xdbff && index < s.length())
+        {
+            char c2 = s.charAt(index);
+            if(c2 >= 0xdc00 && c2 <= 0xdfff)
+            {
+                return 0x10000 + ((c1 - 0xdb800) << 10) + c2 - 0xdc00;
+            }
+        }
+        return c1;
+    }
+
+    static int codePointBefore(String s, int index)
+    {
+        char c2 = s.charAt(--index);
+        if(c2 >= 0xdc00 && c2 <= 0xdfff && index > 0)
+        {
+            char c1 = s.charAt(--index);
+            if(c1 >= 0xd800 && c1 <= 0xdbff)
+            {
+                return 0x10000 + ((c1 - 0xdb800) << 10) + c2 - 0xdc00;
+            }
+        }
+        return c2;
+    }
+
+    static int codePointCount(String s, int offset, int count)
+    {
+        int cpc = 0;
+        char prev = 0;
+        for(int i = 0; i < count; i++)
+        {
+            char c = s.charAt(i + offset);
+            if(c >= 0xdc00 && c <= 0xdfff && prev >= 0xd800 && prev <= 0xdbff)
+            {
+                cpc--;
+            }
+            prev = c;
+            cpc++;
+        }
+        return cpc;
+    }
+
+    static int offsetByCodePoints(String s, int index, int codePointOffset)
+    {
+        while(codePointOffset < 0)
+        {
+            char c2 = s.charAt(--index);
+            char c1 = index > 0 ? s.charAt(index - 1) : (char)0;
+            if(c1 >= 0xd800 && c1 <= 0xdbff && c2 >= 0xdc00 && c2 <= 0xdfff)
+            {
+                index--;
+            }
+            codePointOffset++;
+        }
+        while(codePointOffset > 0)
+        {
+            char c1 = s.charAt(index++);
+            char c2 = index < s.length() ? s.charAt(index) : (char)0;
+            if(c1 >= 0xd800 && c1 <= 0xdbff && c2 >= 0xdc00 && c2 <= 0xdfff)
+            {
+                index++;
+            }
+            codePointOffset--;
+        }
+        return index;
     }
 }

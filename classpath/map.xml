@@ -242,6 +242,9 @@
 				<throws class="java.io.UnsupportedEncodingException" />
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIILjava.lang.String;)Ljava.lang.String;" />
 			</constructor>
+			<constructor sig="([III)V" modifiers="public">
+				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([III)Ljava.lang.String;" />
+			</constructor>
 			<method name="hashCode" sig="()I" modifiers="public">
 				<redirect class="java.lang.StringHelper" name="hashCode" type="static" sig="(Lcli.System.String;)I" />
 			</method>
@@ -426,6 +429,24 @@
 			<method name="concat" sig="(Ljava.lang.String;)Ljava.lang.String;" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" />
 			</method>
+			<method name="contains" sig="(Ljava.lang.CharSequence;)Z" modifiers="public">
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.CharSequence;)Z" />
+			</method>
+			<method name="codePointAt" sig="(I)I" modifiers="public">
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;I)I" />
+			</method>
+			<method name="codePointBefore" sig="(I)I" modifiers="public">
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;I)I" />
+			</method>
+			<method name="codePointCount" sig="(II)I" modifiers="public">
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II)I" />
+			</method>
+			<method name="offsetByCodePoints" sig="(II)I" modifiers="public">
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II)I" />
+			</method>
+			<method name="contentEquals" sig="(Ljava.lang.CharSequence;)Z" modifiers="public">
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.CharSequence;)Z" />
+			</method>
 			<method name="contentEquals" sig="(Ljava.lang.StringBuffer;)Z" modifiers="public">
 				<body>
 					<ldarg_0 />
@@ -434,6 +455,9 @@
 					<callvirt type="System.String, mscorlib" name="Equals" sig="(Ljava.lang.String;)Z" />
 					<ret />
 				</body>
+			</method>
+			<method name="replace" sig="(Ljava.lang.CharSequence;Ljava.lang.CharSequence;)Ljava.lang.String;" modifiers="public">
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.CharSequence;Ljava.lang.CharSequence;)Ljava.lang.String;" />
 			</method>
 			<method name="matches" sig="(Ljava.lang.String;)Z" modifiers="public">
 				<body>
