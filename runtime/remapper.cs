@@ -676,6 +676,24 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("ldsfld")]
+	public sealed class Ldsfld : Instruction
+	{
+		[XmlAttribute("class")]
+		public string Class;
+		[XmlAttribute("name")]
+		public string Name;
+		[XmlAttribute("sig")]
+		public string Sig;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
+			fw.Link();
+			fw.EmitGet(ilgen);
+		}
+	}
+
 	[XmlType("stfld")]
 	public sealed class Stfld : Instruction
 	{
@@ -937,6 +955,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Ldnull))]
 		[XmlElement(typeof(Ldflda))]
 		[XmlElement(typeof(Ldfld))]
+		[XmlElement(typeof(Ldsfld))]
 		[XmlElement(typeof(Stfld))]
 		[XmlElement(typeof(Stsfld))]
 		[XmlElement(typeof(Ldc_I4))]
