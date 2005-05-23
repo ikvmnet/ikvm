@@ -565,6 +565,9 @@
 			<implements class="java.io.Serializable" />
 			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-3042686055658047285" />
 			<field name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" modifiers="private static final" />
+			<field name="suppressFillInStackTrace" sig="Z" modifiers="private static">
+				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+			</field>
 			<clinit>
 				<body>
 					<call class="java.lang.ExceptionHelper" name="getPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
@@ -572,20 +575,48 @@
 					<ret />
 				</body>
 			</clinit>
-			<method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public static" hidefromjava="true">
+			<method name="__&lt;suppressFillInStackTrace&gt;" sig="()V" modifiers="public static" hidefromjava="true">
+				<attribute type="System.ComponentModel.EditorBrowsableAttribute, System, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+					<parameter>Never</parameter>
+				</attribute>
 				<body>
-					<ldarg_0 />
-					<call class="java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+					<ldc_i4_1 />
+					<stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
 					<ret />
-				</body>				
+				</body>
 			</method>
-			<method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;" modifiers="public static" hidefromjava="true">
+			<method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" modifiers="public static" hidefromjava="true">
+				<attribute type="System.ComponentModel.EditorBrowsableAttribute, System, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+					<parameter>Never</parameter>
+				</attribute>
 				<body>
 					<ldarg_0 />
 					<ldarg_1 />
-					<call class="java.lang.ExceptionHelper" name="MapException" sig="(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;" />
+					<call class="java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" />
 					<ret />
-				</body>				
+				</body>
+			</method>
+			<method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;" modifiers="public static" hidefromjava="true">
+				<attribute type="System.ComponentModel.EditorBrowsableAttribute, System, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+					<parameter>Never</parameter>
+				</attribute>
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<ldarg_2 />
+					<call class="java.lang.ExceptionHelper" name="MapException" sig="(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;" />
+					<ret />
+				</body>
+			</method>
+			<method name="__&lt;unmap&gt;" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public static" hidefromjava="true">
+				<attribute type="System.ComponentModel.EditorBrowsableAttribute, System, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+					<parameter>Never</parameter>
+				</attribute>
+				<body>
+					<ldarg_0 />
+					<call class="java.lang.ExceptionHelper" name="UnmapException" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+					<ret />
+				</body>
 			</method>
 			<method name="readObject" sig="(Ljava.io.ObjectInputStream;)V" modifiers="private">
 				<throws class="java.io.IOException" />
@@ -610,6 +641,16 @@
 					<ldarg_0 />
 					<call class="java.lang.ExceptionHelper" name="get_NullString" sig="()Ljava.lang.String;" />
 					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;)V" />
+					<!-- Start fillInStackTrace call -->
+					<ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
+					<ldc_i4_0 />
+					<stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
+					<brtrue name="skipFillInStackTrace" />
+					<ldarg_0 />
+					<callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
+					<pop />
+					<label name="skipFillInStackTrace" />
+					<!-- End fillInStackTrace call -->
 					<ret />
 				</body>
 			</constructor>
@@ -619,6 +660,16 @@
 					<ldarg_1 />
 					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;)V" />
+					<!-- Start fillInStackTrace call -->
+					<ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
+					<ldc_i4_0 />
+					<stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
+					<brtrue name="skipFillInStackTrace" />
+					<ldarg_0 />
+					<callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
+					<pop />
+					<label name="skipFillInStackTrace" />
+					<!-- End fillInStackTrace call -->
 					<ret />
 				</body>
 			</constructor>
@@ -629,6 +680,16 @@
 					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 					<ldarg_2 />
 					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+					<!-- Start fillInStackTrace call -->
+					<ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
+					<ldc_i4_0 />
+					<stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
+					<brtrue name="skipFillInStackTrace" />
+					<ldarg_0 />
+					<callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
+					<pop />
+					<label name="skipFillInStackTrace" />
+					<!-- End fillInStackTrace call -->
 					<ldarg_2 />
 					<brtrue name="skip" />
 					<ldarg_0 />
@@ -646,6 +707,16 @@
 					<call class="java.lang.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
 					<ldarg_1 />
 					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+					<!-- Start fillInStackTrace call -->
+					<ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
+					<ldc_i4_0 />
+					<stsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
+					<brtrue name="skipFillInStackTrace" />
+					<ldarg_0 />
+					<callvirt class="java.lang.Throwable" name="fillInStackTrace" sig="()Ljava.lang.Throwable;" />
+					<pop />
+					<label name="skipFillInStackTrace" />
+					<!-- End fillInStackTrace call -->
 					<ldarg_1 />
 					<brtrue name="skip" />
 					<ldarg_0 />
@@ -1114,7 +1185,8 @@
 		<exception src="System.TypeInitializationException, mscorlib" dst="*java.lang.Error">
 			<code>
 				<call type="System.Exception, mscorlib" name="get_InnerException" sig="()Ljava.lang.Throwable;" />
-				<call class="java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+				<ldc_i4_1 />
+				<call class="java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" />
 				<dup />
 				<isinst class="java.lang.Error" />
 				<brtrue name="end" />

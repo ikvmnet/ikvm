@@ -66,6 +66,8 @@ class ClassLoaderWrapper
 
 	static ClassLoaderWrapper()
 	{
+		// TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
+		// we should handle that by disabling dynamic class loading
 		AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
 		typeToTypeWrapper[PrimitiveTypeWrapper.BOOLEAN.TypeAsTBD] = PrimitiveTypeWrapper.BOOLEAN;
 		typeToTypeWrapper[PrimitiveTypeWrapper.BYTE.TypeAsTBD] = PrimitiveTypeWrapper.BYTE;

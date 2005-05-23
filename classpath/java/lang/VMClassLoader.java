@@ -236,15 +236,8 @@ final class VMClassLoader
         return (Package[])getPackagesImpl().clone();
     }
 
-    private static boolean runningOnMono = Type.GetType("Mono.Runtime") != null;
-
     private static Package[] getPackagesImpl()
     {
-        // MONOBUG Assembly.GetTypes() on IKVM.GNU.Classpath dies
-        if(runningOnMono)
-        {
-            return new Package[0];
-        }
         Package[] packages = packageCache;
         if(packages == null)
         {
@@ -294,15 +287,20 @@ final class VMClassLoader
                 Collection c = h.values();
                 packages = new Package[c.size()];
                 c.toArray(packages);
-                packageCache = packages;
+                if(enablePackageCaching)
+                {
+                    packageCache = packages;
+                }
             }
         }
         return packages;        
     }
 
     private static volatile Package[] packageCache;
+    private static final boolean enablePackageCaching;
 
-    static
+    private static void hookUpAssemblyLoadEvent()
+        throws cli.System.Security.SecurityException
     {
         AppDomain.get_CurrentDomain().add_AssemblyLoad(new AssemblyLoadEventHandler(
             new AssemblyLoadEventHandler.Method() {
@@ -310,6 +308,24 @@ final class VMClassLoader
                     packageCache = null;
                 }
             }));
+    }
+
+    static
+    {
+        boolean enable = false;
+        try
+        {
+            // add_AssemblyLoad has a LinkDemand, so we need to do it in
+            // a seperate method
+            hookUpAssemblyLoadEvent();
+            enable = true;
+        }
+        catch(cli.System.Security.SecurityException _)
+        {
+            // if we don't have the ControlAppDomain permission we can't hook
+            // the event, so we don't enable package caching
+        }
+        enablePackageCaching = enable;
     }
 
     private static native String getPackageName(Type type);
@@ -410,6 +426,15 @@ final class VMClassLoader
 
     static ClassLoader getSystemClassLoader()
     {
+        if("".equals(SystemProperties.getProperty("java.class.path")) &&
+            "".equals(SystemProperties.getProperty("java.ext.dirs")))
+        {
+            // to support running in partial trust (without file access) we special
+            // case the "no class path" scenario (because the default code will assume
+            // a "." class path and fail when it tries to convert the URL to a file path)
+            return ClassLoader.createAuxiliarySystemClassLoader(
+                ClassLoader.createSystemClassLoader(new URL[0], null));
+        }
 	return ClassLoader.defaultGetSystemClassLoader();
     }
 }

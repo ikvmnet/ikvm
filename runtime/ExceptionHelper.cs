@@ -144,5 +144,10 @@ namespace IKVM.NativeCode.java.lang
 			}
 			return null;
 		}
+
+		public static Type getTypeFromObject(object o)
+		{
+			return o.GetType();
+		}
 	}
 }

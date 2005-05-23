@@ -32,6 +32,8 @@ using System.Xml;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Security;
+using System.Security.Permissions;
 using IKVM.Attributes;
 using IKVM.Runtime;
 
@@ -279,7 +281,7 @@ namespace IKVM.Internal
 {
 	public class JVM
 	{
-		private static bool debug;
+		private static bool debug = System.Diagnostics.Debugger.IsAttached;
 		private static bool noJniStubs;
 		private static bool isStaticCompiler;
 		private static bool noStackTraceInfo;
@@ -288,18 +290,66 @@ namespace IKVM.Internal
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static ikvm.@internal.LibraryVMInterface lib;
 
+		internal static Version SafeGetAssemblyVersion(Assembly asm)
+		{
+			// Assembly.GetName().Version requires FileIOPermission,
+			// so we parse the FullName manually :-(
+			string name = asm.FullName;
+			int start = name.IndexOf(", Version=");
+			if(start >= 0)
+			{
+				start += 10;
+				int end = name.IndexOf(',', start);
+				if(end >= 0)
+				{
+					return new Version(name.Substring(start, end - start));
+				}
+			}
+			return new Version();
+		}
+
+		internal static string SafeGetEnvironmentVariable(string name)
+		{
+			try
+			{
+				return Environment.GetEnvironmentVariable(name);
+			}
+			catch(SecurityException)
+			{
+				return null;
+			}
+		}
+
+		private static Assembly[] UnsafeGetAssemblies()
+		{
+			new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
+			return AppDomain.CurrentDomain.GetAssemblies();
+		}
+
+		private static Type UnsafeGetType(Assembly asm, string name)
+		{
+			new ReflectionPermission(ReflectionPermissionFlag.MemberAccess | ReflectionPermissionFlag.TypeInformation).Assert();
+			return asm.GetType(name);
+		}
+
+		private static object UnsafeCreateInstance(Type type)
+		{
+			new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
+			return Activator.CreateInstance(type, true);
+		}
+
 		internal static ikvm.@internal.LibraryVMInterface Library
 		{
 			get
 			{
 				if(lib == null)
 				{
-					foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+					foreach(Assembly asm in UnsafeGetAssemblies())
 					{
-						Type type = asm.GetType("java.lang.LibraryVMInterfaceImpl");
+						Type type = UnsafeGetType(asm, "java.lang.LibraryVMInterfaceImpl");
 						if(type != null)
 						{
-							lib = Activator.CreateInstance(type, true) as ikvm.@internal.LibraryVMInterface;
+							lib = UnsafeCreateInstance(type) as ikvm.@internal.LibraryVMInterface;
 							if(lib == null)
 							{
 								// If the "as" fails, this is most likely due to an IKVM.GNU.Classpath.dll version
@@ -615,7 +665,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal void AddResources(Hashtable resources)
+			internal void AddResources(Hashtable resources, bool compressedResources)
 			{
 				Tracer.Info(Tracer.Compiler, "CompilerClassLoader adding resources...");
 				ModuleBuilder moduleBuilder = this.ModuleBuilder;
@@ -625,7 +675,7 @@ namespace IKVM.Internal
 					if(buf.Length > 0)
 					{
 						IResourceWriter writer = moduleBuilder.DefineResource(JVM.MangleResourceName((string)d.Key), "");
-						writer.AddResource("ikvm", buf);
+						writer.AddResource(compressedResources ? "lz" : "ikvm", buf);
 					}
 				}
 			}
@@ -738,6 +788,13 @@ namespace IKVM.Internal
 					}
 					string name = c.Name.Replace('/', '.');
 					typeBuilder = classLoader.ModuleBuilder.DefineType(name, attrs, baseIsSealed ? typeof(object) : baseType);
+					if(c.Attributes != null)
+					{
+						foreach(IKVM.Internal.MapXml.Attribute custattr in c.Attributes)
+						{
+							AttributeHelper.SetCustomAttribute(typeBuilder, custattr);
+						}
+					}
 					if(baseInterface != null)
 					{
 						typeBuilder.AddInterfaceImplementation(baseInterface);
@@ -868,6 +925,13 @@ namespace IKVM.Internal
 						if(typeWrapper.shadowType.IsSealed)
 						{
 							mbHelper = typeWrapper.typeBuilder.DefineMethod("newhelper", attr | MethodAttributes.Static, CallingConventions.Standard, typeWrapper.shadowType, paramTypes);
+							if(m.Attributes != null)
+							{
+								foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
+								{
+									AttributeHelper.SetCustomAttribute(mbHelper, custattr);
+								}
+							}
 							AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
 							AttributeHelper.SetNameSig(mbHelper, "<init>", m.Sig);
 							AddDeclaredExceptions(mbHelper, m.throws);
@@ -879,6 +943,13 @@ namespace IKVM.Internal
 						else
 						{
 							cbCore = typeWrapper.typeBuilder.DefineConstructor(attr, CallingConventions.Standard, paramTypes);
+							if(m.Attributes != null)
+							{
+								foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
+								{
+									AttributeHelper.SetCustomAttribute(cbCore, custattr);
+								}
+							}
 							AddDeclaredExceptions(cbCore, m.throws);
 							if(m.Deprecated)
 							{
@@ -1087,6 +1158,13 @@ namespace IKVM.Internal
 									AttributeHelper.HideFromJava(typeWrapper.helperTypeBuilder);
 								}
 								helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.Public | MethodAttributes.Static, typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsSignatureType, argTypes);
+								if(m.Attributes != null)
+								{
+									foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
+									{
+										AttributeHelper.SetCustomAttribute(helper, custattr);
+									}
+								}
 								ILGenerator ilgen = helper.GetILGenerator();
 								foreach(IKVM.Internal.MapXml.Class c in specialCases)
 								{
@@ -1170,6 +1248,13 @@ namespace IKVM.Internal
 									}
 								}
 								mbCore = typeWrapper.typeBuilder.DefineMethod(m.Name, attr, CallingConventions.Standard, retType, paramTypes);
+								if(m.Attributes != null)
+								{
+									foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
+									{
+										AttributeHelper.SetCustomAttribute(mbCore, custattr);
+									}
+								}
 								if(overrideMethod != null)
 								{
 									typeWrapper.typeBuilder.DefineMethodOverride(mbCore, overrideMethod);
@@ -1202,6 +1287,13 @@ namespace IKVM.Internal
 								Array.Copy(paramTypes, 0, exParamTypes, 1, paramTypes.Length);
 								exParamTypes[0] = typeWrapper.shadowType;
 								mbHelper = typeWrapper.typeBuilder.DefineMethod("instancehelper_" + m.Name, attr, CallingConventions.Standard, retType, exParamTypes);
+								if(m.Attributes != null)
+								{
+									foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
+									{
+										AttributeHelper.SetCustomAttribute(mbHelper, custattr);
+									}
+								}
 								AttributeHelper.SetEditorBrowsableNever(mbHelper);
 								AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
 								AttributeHelper.SetNameSig(mbHelper, m.Name, m.Sig);
@@ -1415,6 +1507,13 @@ namespace IKVM.Internal
 							argTypes[0] = typeWrapper.TypeAsSignatureType;
 							this.GetParametersForDefineMethod().CopyTo(argTypes, 1);
 							MethodBuilder mb = typeWrapper.typeBuilder.DefineMethod("nonvirtualhelper/" + this.Name, MethodAttributes.Private | MethodAttributes.Static, this.ReturnTypeForDefineMethod, argTypes);
+							if(m.Attributes != null)
+							{
+								foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
+								{
+									AttributeHelper.SetCustomAttribute(mb, custattr);
+								}
+							}
 							AttributeHelper.HideFromJava(mb);
 							ILGenerator ilgen = mb.GetILGenerator();
 							if(m.nonvirtualAlternateBody != null)
@@ -1537,6 +1636,13 @@ namespace IKVM.Internal
 									attr |= FieldAttributes.InitOnly;
 								}
 								FieldBuilder fb = tb.DefineField(f.Name, GetClassLoader().FieldTypeWrapperFromSig(f.Sig).TypeAsSignatureType, attr);
+								if(f.Attributes != null)
+								{
+									foreach(IKVM.Internal.MapXml.Attribute custattr in f.Attributes)
+									{
+										AttributeHelper.SetCustomAttribute(fb, custattr);
+									}
+								}
 								object constant;
 								if(f.Constant != null)
 								{
@@ -1613,8 +1719,9 @@ namespace IKVM.Internal
 						// For all inherited methods, we emit a method that hide the inherited method and
 						// annotate it with EditorBrowsableAttribute(EditorBrowsableState.Never) to make
 						// sure the inherited methods don't show up in Intellisense.
+						// TODO if the original method has a LinkDemand, we should copy that
 						Hashtable methods = new Hashtable();
-						foreach(MethodInfo mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
+						foreach(MethodInfo mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy))
 						{
 							string key = MakeMethodKey(mi);
 							if(!methods.ContainsKey(key))
@@ -1906,7 +2013,7 @@ namespace IKVM.Internal
 				{
 					foreach(IKVM.Internal.MapXml.Attribute attr in assemblyAttributes)
 					{
-						((AssemblyBuilder)this.ModuleBuilder.Assembly).SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+						AttributeHelper.SetCustomAttribute(((AssemblyBuilder)this.ModuleBuilder.Assembly), attr);
 					}
 				}
 			}
@@ -1934,6 +2041,7 @@ namespace IKVM.Internal
 			public bool noglobbing;
 			public bool nostacktraceinfo;
 			public bool removeUnusedFields;
+			public bool compressedResources;
 		}
 
 		private static bool IsSigned(Assembly asm)
@@ -1947,7 +2055,9 @@ namespace IKVM.Internal
 			isStaticCompiler = true;
 			noJniStubs = options.nojni;
 			noStackTraceInfo = options.nostacktraceinfo;
-			bool allReferencesAreStrongNamed = IsSigned(typeof(JVM).Assembly);
+			Assembly runtimeAssembly = typeof(JVM).Assembly;
+			AssemblyName runtimeAssemblyName = runtimeAssembly.GetName();
+			bool allReferencesAreStrongNamed = IsSigned(runtimeAssembly);
 			foreach(string r in options.references)
 			{
 				try
@@ -1960,6 +2070,32 @@ namespace IKVM.Internal
 					}
 					allReferencesAreStrongNamed &= IsSigned(reference);
 					Tracer.Info(Tracer.Compiler, "Loaded reference assembly: {0}", reference.FullName);
+					// if it's an IKVM compiled assembly, make sure that it was compiled
+					// against same version of the runtime
+					foreach(AssemblyName asmref in reference.GetReferencedAssemblies())
+					{
+						if(asmref.Name == runtimeAssemblyName.Name)
+						{
+							if(IsSigned(runtimeAssembly))
+							{
+								if(asmref.FullName != runtimeAssemblyName.FullName)
+								{
+									Console.Error.WriteLine("Error: referenced assembly {0} was compiled with an incompatible IKVM.Runtime version ({1})", r, asmref.Version);
+									Console.Error.WriteLine("   (current runtime is {0})", runtimeAssemblyName.FullName);
+									return 1;
+								}
+							}
+							else
+							{
+								if(asmref.GetPublicKey() != null && asmref.GetPublicKey().Length != 0)
+								{
+									Console.Error.WriteLine("Error: referenced assembly {0} was compiled with an incompatible (signed) IKVM.Runtime version", r);
+									Console.Error.WriteLine("   (current runtime is {0})", runtimeAssemblyName.FullName);
+									return 1;
+								}
+							}
+						}
+					}
 				}
 				catch(Exception x)
 				{
@@ -2190,7 +2326,8 @@ namespace IKVM.Internal
 				}
 				catch(NoClassDefFoundError x)
 				{
-					Console.Error.WriteLine("Warning: unable to compile class \"{0}\" (missing class \"{1}\")", s, x.Message);
+					Console.Error.WriteLine("Warning: unable to compile class \"{0}\"", s);
+					Console.Error.WriteLine("    (missing class \"{0}\")", x.Message);
 				}
 			}
 			if(options.mainClass != null)
@@ -2257,7 +2394,7 @@ namespace IKVM.Internal
 				loader.FinishRemappedTypes();
 			}
 			Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
-			loader.AddResources(options.resources);
+			loader.AddResources(options.resources, options.compressedResources);
 			loader.Save();
 			return 0;
 		}
@@ -2282,13 +2419,14 @@ namespace IKVM.Internal
 			try
 			{
 				Tracer.Error(Tracer.Runtime, "CRITICAL FAILURE: {0}", message);
-				// NOTE we use reflection to invoke MessageBox.Show, to make sure we run on Mono as well
-				Assembly winForms = IsUnix ? null : Assembly.LoadWithPartialName("System.Windows.Forms");
+				// NOTE we use reflection to invoke MessageBox.Show, to make sure we run in environments where WinForms isn't available
+				Assembly winForms = IsUnix ? null : Assembly.Load("System.Windows.Forms, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
 				Type messageBox = null;
 				if(winForms != null)
 				{
 					messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
 				}
+				new ReflectionPermission(ReflectionPermissionFlag.MemberAccess | ReflectionPermissionFlag.TypeInformation).Assert();
 				message = String.Format("****** Critical Failure: {1} ******{0}" +
 					"{2}{0}" + 
 					"{3}{0}" +
@@ -2298,11 +2436,13 @@ namespace IKVM.Internal
 					x,
 					x != null ? new StackTrace(x, true).ToString() : "",
 					new StackTrace(true));
+				CodeAccessPermission.RevertAssert();
 				if(messageBox != null)
 				{
 					try
 					{
-						messageBox.InvokeMember("Show", BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.Public, null, null, new object[] { message, "IKVM.NET Critical Failure" });
+						Version ver = SafeGetAssemblyVersion(typeof(JVM).Assembly);
+						messageBox.InvokeMember("Show", BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.Public, null, null, new object[] { message, "IKVM.NET " + ver + " Critical Failure" });
 					}
 					catch
 					{

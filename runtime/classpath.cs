@@ -28,6 +28,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Security;
 using System.Security.Permissions;
 using IKVM.Attributes;
 using IKVM.Runtime;
@@ -175,7 +176,16 @@ namespace IKVM.NativeCode.java
 						{
 							mw.DeclaringType.RunClassInit();
 						}
-						object retval = mw.Invoke(o, argsCopy, false);
+						object retval;
+						try
+						{
+							retval = mw.Invoke(o, argsCopy, false);
+						}
+						catch(MethodAccessException)
+						{
+							// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
+							throw JavaException.IllegalAccessException("System.MethodAccessException for {0}.{1}", mw.DeclaringType.Name, mw.Name);
+						}
 						if(mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
 						{
 							retval = JVM.Library.box(retval);
@@ -233,7 +243,15 @@ namespace IKVM.NativeCode.java
 						{
 							wrapper.DeclaringType.RunClassInit();
 						}
-						return wrapper.GetValue(o);
+						try
+						{
+							return wrapper.GetValue(o);
+						}
+						catch(FieldAccessException)
+						{
+							// this can happen if we're accessing a non-public field and the call stack doesn't have ReflectionPermission.MemberAccess
+							throw JavaException.IllegalAccessException("System.FieldAccessException for {0}.{1}", wrapper.DeclaringType.Name, wrapper.Name);
+						}
 					}
 					finally
 					{
@@ -253,7 +271,15 @@ namespace IKVM.NativeCode.java
 						{
 							wrapper.DeclaringType.RunClassInit();
 						}
-						wrapper.SetValue(o, v);
+						try
+						{
+							wrapper.SetValue(o, v);
+						}
+						catch(FieldAccessException)
+						{
+							// this can happen if we're accessing a non-public field and the call stack doesn't have ReflectionPermission.MemberAccess
+							throw JavaException.IllegalAccessException("System.FieldAccessException for {0}.{1}", wrapper.DeclaringType.Name, wrapper.Name);
+						}
 					}
 					finally
 					{
@@ -767,27 +793,6 @@ namespace IKVM.NativeCode.java
 				return ((TypeWrapper)wrapper).GetClassLoader().GetJavaClassLoader();
 			}
 
-			public static object getClassLoaderFromType(Type type)
-			{
-				// global methods have no type
-				if(type == null)
-				{
-					return JVM.Library.getSystemClassLoader();
-				}
-				else if(type.Module is System.Reflection.Emit.ModuleBuilder)
-				{
-					return ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader().GetJavaClassLoader();
-				}
-				else if(ClassLoaderWrapper.IsCoreAssemblyType(type))
-				{
-					return null;
-				}
-				else
-				{
-					return JVM.Library.getSystemClassLoader();
-				}
-			}
-
 			public static object[] GetDeclaredMethods(object cwrapper, bool getMethods, bool publicOnly)
 			{
 				Profiler.Enter("VMClass.GetDeclaredMethods");
@@ -1218,7 +1223,7 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 					const uint FILE_MAP_COPY = 1;
 					IntPtr p = MapViewOfFile(hFileMapping,
 						copy_on_write ? FILE_MAP_COPY : (writeable ? FILE_MAP_WRITE : FILE_MAP_READ),
-						(uint)(position >> 32), (uint)position, (uint)size);
+						(uint)(position >> 32), (uint)position, new IntPtr(size));
 					CloseHandle(hFileMapping);
 					if(p == IntPtr.Zero)
 					{
@@ -1255,7 +1260,7 @@ namespace IKVM.NativeCode.gnu.java.nio.channels
 		private extern static IntPtr CreateFileMapping(IntPtr hFile, IntPtr lpAttributes, uint flProtect, uint dwMaximumSizeHigh, uint dwMaximumSizeLow, string lpName);
 		
 		[DllImport("kernel32")]
-		private extern static IntPtr MapViewOfFile(IntPtr hFileMapping, uint dwDesiredAccess, uint dwFileOffsetHigh, uint dwFileOffsetLow, uint dwNumberOfBytesToMap);
+		private extern static IntPtr MapViewOfFile(IntPtr hFileMapping, uint dwDesiredAccess, uint dwFileOffsetHigh, uint dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);
 	}
 }
 
@@ -1286,7 +1291,7 @@ namespace IKVM.NativeCode.java.nio
 		private extern static bool UnmapViewOfFile(IntPtr lpBaseAddress);
 
 		[DllImport("kernel32")]
-		private extern static bool FlushViewOfFile(IntPtr lpBaseAddress, uint dwNumberOfBytesToFlush);
+		private extern static bool FlushViewOfFile(IntPtr lpBaseAddress, IntPtr dwNumberOfBytesToFlush);
 
 		public static bool isLoadedImpl(object thiz)
 		{
@@ -1302,7 +1307,7 @@ namespace IKVM.NativeCode.java.nio
 			IntPtr address = JVM.Library.getDirectBufferAddress(thiz);
 			if(gnu.java.nio.channels.FileChannelImpl.runningOnWindows)
 			{
-				FlushViewOfFile(address, 0);
+				FlushViewOfFile(address, IntPtr.Zero);
 			}
 			else
 			{
@@ -1318,7 +1323,7 @@ namespace IKVM.NativeCode.gnu.classpath
 	{
 		public static string getVersion()
 		{
-			return typeof(VMSystemProperties).Assembly.GetName().Version.ToString();
+			return JVM.SafeGetAssemblyVersion(typeof(VMSystemProperties).Assembly).ToString();
 		}
 	}
 
@@ -1333,7 +1338,23 @@ namespace IKVM.NativeCode.gnu.classpath
 
 		public static object getClassLoaderFromType(Type type)
 		{
-			return IKVM.NativeCode.java.lang.VMClass.getClassLoaderFromType(type);
+			// global methods have no type
+			if(type == null)
+			{
+				return JVM.Library.getSystemClassLoader();
+			}
+			else if(type.Module is System.Reflection.Emit.ModuleBuilder)
+			{
+				return ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader().GetJavaClassLoader();
+			}
+			else if(ClassLoaderWrapper.IsCoreAssemblyType(type))
+			{
+				return null;
+			}
+			else
+			{
+				return JVM.Library.getSystemClassLoader();
+			}
 		}
 
 		public static Type getJNIEnvType()
@@ -1352,6 +1373,7 @@ namespace gnu.classpath
 {
 	// This type lives here, because we don't want unverifiable code in IKVM.GNU.Classpath
 	// (as that would prevents us from verifying it during the build process).
+	[SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
 	public unsafe sealed class RawData
 	{
 		[HideFromJava]
@@ -1367,22 +1389,16 @@ namespace gnu.classpath
 			return new IntPtr(pb);
 		}
 
-		// NOTE the IKVM.Runtime doesn't have the AllowPartiallyTrustedCallersAttribute so this
-		// security attribute isn't really needed, but to be extra safe we add the explicit link 
-		// demand to these dangerous methods.
-		[SecurityPermission(SecurityAction.LinkDemand, Unrestricted = true)]
 		public byte ReadByte(int index)
 		{
 			return pb[index];
 		}
 
-		[SecurityPermission(SecurityAction.LinkDemand, Unrestricted = true)]
 		public void WriteByte(int index, byte b)
 		{
 			pb[index] = b;
 		}
 
-		[SecurityPermission(SecurityAction.LinkDemand, Unrestricted = true)]
 		public void MoveMemory(int dst_offset, int src_offset, int count)
 		{
 			if(dst_offset < src_offset)

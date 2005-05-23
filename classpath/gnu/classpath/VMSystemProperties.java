@@ -8,6 +8,19 @@ public class VMSystemProperties
 
     private static native String getVersion();
 
+    private static String GetEnvironmentVariable(String name)
+    {
+        try
+        {
+            if(false) throw new cli.System.Security.SecurityException();
+            return cli.System.Environment.GetEnvironmentVariable(name);
+        }
+        catch(cli.System.Security.SecurityException _)
+        {
+            return null;
+        }
+    }
+
     static void preInit(Properties p)
     {
         String[] culture = ((cli.System.String)(Object)cli.System.Globalization.CultureInfo.get_CurrentCulture().get_Name()).Split(new char[] { '-' });        
@@ -17,9 +30,19 @@ public class VMSystemProperties
         p.setProperty("java.version", "1.4");
         p.setProperty("java.vendor", "Jeroen Frijters");
         p.setProperty("java.vendor.url", "http://ikvm.net/");
-        // HACK using the Assembly.Location property isn't correct
-        cli.System.Reflection.Assembly asm = cli.System.Reflection.Assembly.GetExecutingAssembly();
-        p.setProperty("java.home", new cli.System.IO.FileInfo(asm.get_Location()).get_DirectoryName());
+        try
+        {
+            if(false) throw new cli.System.Security.SecurityException();
+            // HACK using the Assembly.Location property isn't correct
+            cli.System.Reflection.Assembly asm = cli.System.Reflection.Assembly.GetExecutingAssembly();
+            p.setProperty("java.home", new cli.System.IO.FileInfo(asm.get_Location()).get_DirectoryName());
+        }
+        catch(cli.System.Security.SecurityException _)
+        {
+            // when we're running in partial trust, we may not be allowed file access
+            // TODO we may need to set some other value here
+            p.setProperty("java.home", ".");
+        }
         p.setProperty("java.vm.specification.version", "1.0");
         p.setProperty("java.vm.specification.vendor", "Sun Microsystems Inc.");
         p.setProperty("java.vm.specification.name", "Java Virtual Machine Specification");
@@ -30,16 +53,24 @@ public class VMSystemProperties
         p.setProperty("java.specification.vendor", "Sun Microsystems Inc.");
         p.setProperty("java.specification.name", "Java Platform API Specification");
         p.setProperty("java.class.version", "48.0");
-        String classpath = cli.System.Environment.GetEnvironmentVariable("CLASSPATH");
-        if(classpath == null)
+        try
         {
-            classpath = ".";
+            if(false) throw new cli.System.Security.SecurityException();
+            String classpath = cli.System.Environment.GetEnvironmentVariable("CLASSPATH");
+            if(classpath == null)
+            {
+                classpath = ".";
+            }
+            p.setProperty("java.class.path", classpath);
         }
-        p.setProperty("java.class.path", classpath);
+        catch(cli.System.Security.SecurityException _)
+        {
+            p.setProperty("java.class.path", "");
+        }
         String libraryPath = null;
         if(cli.System.Environment.get_OSVersion().ToString().indexOf("Unix") >= 0)
         {
-            libraryPath = cli.System.Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
+            libraryPath = GetEnvironmentVariable("LD_LIBRARY_PATH");
         }
         else
         {
@@ -59,14 +90,39 @@ public class VMSystemProperties
             {
                 libraryPath += cli.System.IO.Path.PathSeparator + ".";
             }
-            libraryPath += cli.System.IO.Path.PathSeparator + cli.System.Environment.get_SystemDirectory() +
-                cli.System.IO.Path.PathSeparator + cli.System.Environment.GetEnvironmentVariable("PATH");
+            try
+            {
+                if(false) throw new cli.System.Security.SecurityException();
+                libraryPath += cli.System.IO.Path.PathSeparator + cli.System.Environment.get_SystemDirectory();
+            }
+            catch(cli.System.Security.SecurityException _)
+            {
+                // ignore
+            }
+            try
+            {
+                if(false) throw new cli.System.Security.SecurityException();
+                libraryPath += cli.System.IO.Path.PathSeparator + cli.System.Environment.GetEnvironmentVariable("PATH");
+            }
+            catch(cli.System.Security.SecurityException _)
+            {
+                // ignore
+            }
         }
         if(libraryPath != null)
         {
             p.setProperty("java.library.path", libraryPath);
         }
-        p.setProperty("java.io.tmpdir", cli.System.IO.Path.GetTempPath());
+        try
+        {
+            if(false) throw new cli.System.Security.SecurityException();
+            p.setProperty("java.io.tmpdir", cli.System.IO.Path.GetTempPath());
+        }
+        catch(cli.System.Security.SecurityException _)
+        {
+            // TODO should we set another value?
+            p.setProperty("java.io.tmpdir", ".");
+        }
         p.setProperty("java.compiler", "");
         p.setProperty("java.ext.dirs", "");
         // NOTE os.name *must* contain "Windows" when running on Windows, because Classpath tests on that
@@ -135,7 +191,7 @@ public class VMSystemProperties
         }
         p.setProperty("os.name", osname);
         p.setProperty("os.version", osver);
-        String arch = cli.System.Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
+        String arch = GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
         if(arch == null)
         {
             // TODO get this info from somewhere else
@@ -151,23 +207,47 @@ public class VMSystemProperties
         p.setProperty("file.encoding", "8859_1");
         p.setProperty("path.separator", "" + cli.System.IO.Path.PathSeparator);
         p.setProperty("line.separator", cli.System.Environment.get_NewLine());
-        p.setProperty("user.name", cli.System.Environment.get_UserName());
-        String home = cli.System.Environment.GetEnvironmentVariable("USERPROFILE");
+        try
+        {
+            if(false) throw new cli.System.Security.SecurityException();
+            p.setProperty("user.name", cli.System.Environment.get_UserName());
+        }
+        catch(cli.System.Security.SecurityException _)
+        {
+            p.setProperty("user.name", "(unknown)");
+        }
+        String home = GetEnvironmentVariable("USERPROFILE");
         if(home == null)
         {
             // maybe we're on *nix
-            home = cli.System.Environment.GetEnvironmentVariable("HOME");
+            home = GetEnvironmentVariable("HOME");
             if(home == null)
             {
                 // TODO maybe there is a better way
                 // NOTE on MS .NET this doesn't return the correct path
                 // (it returns "C:\\Documents and Settings\\username\\My Documents", but we really need
                 // "C:\\Documents and Settings\\username" to be compatible with Sun, that's why we use %USERPROFILE% if it exists)
-                home = cli.System.Environment.GetFolderPath(cli.System.Environment.SpecialFolder.wrap(cli.System.Environment.SpecialFolder.Personal));
+                try
+                {
+                    if(false) throw new cli.System.Security.SecurityException();
+                    home = cli.System.Environment.GetFolderPath(cli.System.Environment.SpecialFolder.wrap(cli.System.Environment.SpecialFolder.Personal));
+                }
+                catch(cli.System.Security.SecurityException _)
+                {
+                    home = ".";
+                }
             }
         }
         p.setProperty("user.home", home);
-        p.setProperty("user.dir", cli.System.Environment.get_CurrentDirectory());
+        try
+        {
+            if(false) throw new cli.System.Security.SecurityException();
+            p.setProperty("user.dir", cli.System.Environment.get_CurrentDirectory());
+        }
+        catch(cli.System.Security.SecurityException _)
+        {
+            p.setProperty("user.dir", ".");
+        }
         p.setProperty("awt.toolkit", "ikvm.awt.NetToolkit, IKVM.AWT.WinForms");
         // HACK since we cannot use URL here (it depends on the properties being set), we manually encode the spaces in the assembly name
         p.setProperty("gnu.classpath.home.url", "ikvmres://" + ((cli.System.String)(Object)cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName()).Replace(" ", "%20") + "/lib");

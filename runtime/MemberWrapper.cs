@@ -253,6 +253,7 @@ abstract class MethodWrapper : MemberWrapper
 			ilgen.Emit(OpCodes.Call, ghostMethod);
 		}
 
+		[HideFromJava]
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
 		{
 			object wrapper = Activator.CreateInstance(DeclaringType.TypeAsSignatureType);

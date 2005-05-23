@@ -171,7 +171,7 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 
     public Throwable mapException(Throwable t)
     {
-        return ExceptionHelper.MapExceptionFast(t);
+        return ExceptionHelper.MapExceptionFast(t, true);
     }
 
     public void printStackTrace(Throwable t)

@@ -37,17 +37,32 @@ final class ExceptionHelper
     private static final boolean cleanStackTrace = SystemProperties.getProperty("ikvm.cleanstacktrace", "1").equals("1");
     private static cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
     private static cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
+    private static final Throwable NOT_REMAPPED = new cli.System.Exception();
 
-    private static class ExceptionInfoHelper
+    private static final class ExceptionInfoHelper
     {
 	private static final Throwable CAUSE_NOT_SET = new cli.System.Exception();
 	private cli.System.Diagnostics.StackTrace tracePart1;
 	private cli.System.Diagnostics.StackTrace tracePart2;
 	private cli.System.Collections.ArrayList stackTrace;
 	private Throwable cause;
+        private cli.System.WeakReference original;
 
-	ExceptionInfoHelper(Throwable x)
+        ExceptionInfoHelper()
+        {
+            cause = CAUSE_NOT_SET;
+        }
+
+	ExceptionInfoHelper(Throwable x, Throwable org)
 	{
+            if(org != null)
+            {
+                // TODO to prevent a memory leak, we must use a WeakReference here, but it is not
+                // actually correct because it will allow the original to be collected to early.
+                // This problem will be resolved when we move the state for Java exceptions into
+                // java.lang.Throwable.
+                original = new cli.System.WeakReference(org);
+            }
 	    tracePart1 = new cli.System.Diagnostics.StackTrace(x, true);
 	    tracePart2 = new cli.System.Diagnostics.StackTrace(true);
 	    cause = getInnerException(x);
@@ -56,6 +71,24 @@ final class ExceptionHelper
 		cause = CAUSE_NOT_SET;
 	    }
 	}
+
+        void captureStack(Throwable x)
+        {
+            if(tracePart1 == null && tracePart2 == null && stackTrace == null)
+            {
+                tracePart1 = new cli.System.Diagnostics.StackTrace(x, true);
+                tracePart2 = new cli.System.Diagnostics.StackTrace(true);
+            }
+        }
+
+        Throwable getOriginal()
+        {
+            if(original != null)
+            {
+                return (Throwable)original.get_Target();
+            }
+            return null;
+        }
 
 	Throwable getCauseForSerialization(Throwable t)
 	{
@@ -82,8 +115,8 @@ final class ExceptionHelper
 	void ResetStackTrace()
 	{
 	    stackTrace = null;
-	    tracePart1 = new cli.System.Diagnostics.StackTrace(true);
-	    tracePart2 = null;
+            tracePart1 = null;
+            tracePart2 = new cli.System.Diagnostics.StackTrace(true);
 	}
 
 	private static boolean IsPrivateScope(cli.System.Reflection.MethodBase mb)
@@ -100,19 +133,22 @@ final class ExceptionHelper
 		if(stackTrace == null)
 		{
 		    stackTrace = new cli.System.Collections.ArrayList();
-		    int skip1 = 0;
-		    if(cleanStackTrace && t instanceof NullPointerException && tracePart1.get_FrameCount() > 0)
-		    {
-			// HACK if a NullPointerException originated inside an instancehelper method,
-			// we assume that the reference the method was called on was really the one that was null,
-			// so we filter it.
-			if(tracePart1.GetFrame(0).GetMethod().get_Name().startsWith("instancehelper_") &&
-			    !GetMethodName(tracePart1.GetFrame(0).GetMethod()).startsWith("instancehelper_"))
-			{
-			    skip1 = 1;
-			}
-		    }
-		    Append(stackTrace, tracePart1, skip1);
+                    if(tracePart1 != null)
+                    {
+		        int skip1 = 0;
+		        if(cleanStackTrace && t instanceof NullPointerException && tracePart1.get_FrameCount() > 0)
+		        {
+			    // HACK if a NullPointerException originated inside an instancehelper method,
+			    // we assume that the reference the method was called on was really the one that was null,
+			    // so we filter it.
+			    if(tracePart1.GetFrame(0).GetMethod().get_Name().startsWith("instancehelper_") &&
+			        !GetMethodName(tracePart1.GetFrame(0).GetMethod()).startsWith("instancehelper_"))
+			    {
+			        skip1 = 1;
+			    }
+		        }
+		        Append(stackTrace, tracePart1, skip1);
+                    }
 		    if(tracePart2 != null)
 		    {
 			int skip = 0;
@@ -127,12 +163,38 @@ final class ExceptionHelper
                             {
                                 cli.System.Reflection.MethodBase mb = tracePart2.GetFrame(skip).GetMethod();
                                 if(mb.get_DeclaringType().get_FullName().equals("java.lang.Throwable") &&
-                                    mb.get_Name().equals("fillInStackTrace"))
+                                    mb.get_Name().endsWith("fillInStackTrace"))
                                 {
-                                    skip++;
+                                    while(tracePart2.get_FrameCount() > skip)
+                                    {
+                                        mb = tracePart2.GetFrame(skip).GetMethod();
+                                        if(!mb.get_DeclaringType().get_FullName().equals("java.lang.Throwable")
+                                            || !mb.get_Name().endsWith("fillInStackTrace"))
+                                        {
+                                            break;
+                                        }
+                                        skip++;
+                                    }
+                                    cli.System.Type exceptionType = getTypeFromObject(t);
+                                    while(tracePart2.get_FrameCount() > skip)
+                                    {
+                                        mb = tracePart2.GetFrame(skip).GetMethod();
+                                        if(!mb.get_Name().equals(".ctor")
+                                            || !mb.get_DeclaringType().IsAssignableFrom(exceptionType))
+                                        {
+                                            break;
+                                        }
+                                        skip++;
+                                    }
                                 }
                             }
-			    if(tracePart1.get_FrameCount() > 0 &&
+                            // skip java.lang.Throwable.__<map>
+                            while(tracePart2.get_FrameCount() > skip && IsHideFromJava(tracePart2.GetFrame(skip).GetMethod()))
+                            {
+                                skip++;
+                            }
+			    if(tracePart1 != null &&
+                                tracePart1.get_FrameCount() > 0 &&
 				tracePart2.get_FrameCount() > skip &&
 				tracePart1.GetFrame(tracePart1.get_FrameCount() - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
 			    {
@@ -183,6 +245,7 @@ final class ExceptionHelper
 		    || className.startsWith("java.lang.ExceptionHelper")
 		    || className.equals("cli.System.RuntimeMethodHandle")
                     || className.equals("java.lang.LibraryVMInterfaceImpl")
+                    || (className.equals("java.lang.Throwable") && m.get_Name().equals("instancehelper_fillInStackTrace"))
 		    || IsHideFromJava(m)
 		    || IsPrivateScope(m))) // NOTE we assume that privatescope methods are always stubs that we should exclude
 		{
@@ -216,16 +279,18 @@ final class ExceptionHelper
 	}
     }
 
-    private static native boolean IsHideFromJava(cli.System.Reflection.MethodBase mb);
-    private static native cli.System.Exception getInnerException(Throwable t);
-    private static native String getMessageFromCliException(Throwable t);
-    private static native boolean IsNative(cli.System.Reflection.MethodBase mb);
-    private static native String GetMethodName(cli.System.Reflection.MethodBase mb);
-    private static native String getClassNameFromType(cli.System.Type type);
-    private static native int GetLineNumber(cli.System.Diagnostics.StackFrame frame);
-    private static native String GetFileName(cli.System.Diagnostics.StackFrame frame);
-    private static native void initThrowable(Object throwable, Object detailMessage, Object cause);
-    private static native Throwable MapExceptionImpl(Throwable t);
+    // NOTE these should all be private, but they're used from the inner class and we don't want the accessor methods
+    static native boolean IsHideFromJava(cli.System.Reflection.MethodBase mb);
+    static native cli.System.Exception getInnerException(Throwable t);
+    static native String getMessageFromCliException(Throwable t);
+    static native boolean IsNative(cli.System.Reflection.MethodBase mb);
+    static native String GetMethodName(cli.System.Reflection.MethodBase mb);
+    static native String getClassNameFromType(cli.System.Type type);
+    static native int GetLineNumber(cli.System.Diagnostics.StackFrame frame);
+    static native String GetFileName(cli.System.Diagnostics.StackFrame frame);
+    static native void initThrowable(Object throwable, Object detailMessage, Object cause);
+    static native Throwable MapExceptionImpl(Throwable t);
+    static native cli.System.Type getTypeFromObject(Object o);
 
     static void printStackTrace(Throwable x)
     {
@@ -311,10 +376,17 @@ final class ExceptionHelper
 	{
 	    throw new IllegalArgumentException("Cause cannot be self");
 	}
+        // HACK since the compiler abuses initCause(null) to trigger creation
+        // of an ExceptionInfoHelper for explicitly created non-Java exceptions,
+        // we allow that
+        if(x instanceof cli.System.Exception && cause != null)
+        {
+            throw new IllegalStateException("Throwable cause already initialized");
+        }
 	ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(x);
 	if(eih == null)
 	{
-	    eih = new ExceptionInfoHelper(x);
+	    eih = new ExceptionInfoHelper();
 	    exceptions.put(x, eih);
 	}
 	eih.set_Cause(cause);
@@ -365,7 +437,7 @@ final class ExceptionHelper
 	ExceptionInfoHelper ei = (ExceptionInfoHelper)exceptions.get(x);
 	if(ei == null)
 	{
-	    ei = new ExceptionInfoHelper(x);
+	    ei = new ExceptionInfoHelper();
 	    exceptions.put(x, ei);
 	}
 	ei.set_StackTrace(stackTrace);
@@ -418,13 +490,10 @@ final class ExceptionHelper
 	ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(x);
 	if(eih == null)
 	{
-	    eih = new ExceptionInfoHelper(x);
+	    eih = new ExceptionInfoHelper();
 	    exceptions.put(x, eih);
 	}
-	else
-	{
-	    eih.ResetStackTrace();
-	}
+        eih.ResetStackTrace();
 	return x;
     }
 
@@ -438,33 +507,101 @@ final class ExceptionHelper
 	return x.getClass().getName() + ": " + message;
     }
 
-    static Throwable MapExceptionFast(Throwable t)
+    static Throwable UnmapException(Throwable t)
     {
-	if(exceptions.containsKey(t))
-	{
-	    return t;
-	}
-	return MapException(t, System_Exception);
+        if(!(t instanceof cli.System.Exception))
+        {
+            ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(t);
+            if(eih != null)
+            {
+                Throwable org = eih.getOriginal();
+                if(org != null)
+                {
+                    t = org;
+                }
+            }
+        }
+        return t;
     }
 
-    static Throwable MapException(Throwable t, cli.System.Type handler)
+    static Throwable MapExceptionFast(Throwable t, boolean remap)
     {
-	//cli.System.Console.WriteLine("MapException: {0}, {1}", t, handler);
-	//Console.WriteLine(new StackTrace(t));
-	Throwable org = t;
+        return MapException(t, null, remap);
+    }
 
-	t = MapExceptionImpl(t);
+    static Throwable MapException(Throwable t, cli.System.Type handler, boolean remap)
+    {
+        Throwable org = t;
+        boolean nonJavaException = t instanceof cli.System.Exception;
+        if(nonJavaException && remap)
+        {
+            Object obj = exceptions.get(t);
+            if(obj instanceof ExceptionInfoHelper)
+            {
+                // we don't need to capture the stack later
+                nonJavaException = false;
+            }
+            else
+            {
+                Throwable remapped = (Throwable)obj;
+                if(remapped == null)
+                {
+                    remapped = MapExceptionImpl(t);
+                    if(remapped == t)
+                    {
+                        exceptions.put(t, NOT_REMAPPED);
+                    }
+                    else
+                    {
+                        exceptions.put(t, remapped);
+                        t = remapped;
+                    }
+                }
+                else
+                {
+                    t = remapped == NOT_REMAPPED ? t : remapped;
+                }
+            }
+        }
 
-	if(!exceptions.containsKey(t))
-	{
-	    exceptions.put(t, new ExceptionInfoHelper(org));
-	    Throwable inner = getInnerException(org);
-	    if(inner != null && !exceptions.containsKey(inner))
-	    {
-		exceptions.put(inner, new ExceptionInfoHelper(inner));
-	    }
-	}
-	return handler.IsInstanceOfType(t) ? t : null;
+        if(handler == null || isInstanceOfType(t, handler, remap))
+        {
+            if(t != org || nonJavaException)
+            {
+                // the exception is escaping into the wild for the first time,
+                // so we have to capture the stack trace
+                exceptions.put(t, new ExceptionInfoHelper(org, t != org ? org : null));
+                Throwable inner = getInnerException(org);
+                if(inner != null && !exceptions.containsKey(inner))
+                {
+                    exceptions.put(inner, new ExceptionInfoHelper(inner, null));
+                }
+            }
+            else
+            {
+                ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(t);
+                if(eih == null)
+                {
+                    eih = new ExceptionInfoHelper(t, null);
+                    exceptions.put(t, eih);
+                }
+                else
+                {
+                    eih.captureStack(t);
+                }
+            }
+            return t;
+        }
+        return null;
+    }
+
+    private static boolean isInstanceOfType(Throwable t, cli.System.Type type, boolean remap)
+    {
+        if(!remap && type == System_Exception)
+        {
+            return t instanceof cli.System.Exception;
+        }
+        return type.IsInstanceOfType(t);
     }
 
     static ObjectStreamField[] getPersistentFields()

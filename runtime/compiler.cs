@@ -41,7 +41,9 @@ class Compiler
 {
 	private static MethodInfo mapExceptionMethod;
 	private static MethodInfo mapExceptionFastMethod;
-	private static MethodWrapper fillInStackTraceMethod;
+	private static MethodInfo unmapExceptionMethod;
+	private static MethodWrapper initCauseMethod;
+	private static MethodInfo suppressFillInStackTraceMethod;
 	private static MethodInfo getTypeFromHandleMethod;
 	private static MethodInfo getClassFromTypeHandleMethod;
 	private static MethodInfo multiANewArrayMethod;
@@ -103,20 +105,27 @@ class Compiler
 		// HACK we need to special case core compilation, because the __<map> methods are HideFromJava
 		if(java_lang_Throwable.TypeAsBaseType is TypeBuilder)
 		{
-			MethodWrapper mw = java_lang_Throwable.GetMethodWrapper("__<map>", "(Ljava.lang.Throwable;Lcli.System.Type;)Ljava.lang.Throwable;", false);
+			MethodWrapper mw = java_lang_Throwable.GetMethodWrapper("__<map>", "(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;", false);
 			mw.Link();
 			mapExceptionMethod = (MethodInfo)mw.GetMethod();
-			mw = java_lang_Throwable.GetMethodWrapper("__<map>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
+			mw = java_lang_Throwable.GetMethodWrapper("__<map>", "(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;", false);
 			mw.Link();
 			mapExceptionFastMethod = (MethodInfo)mw.GetMethod();
+			mw = java_lang_Throwable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
+			mw.Link();
+			suppressFillInStackTraceMethod = (MethodInfo)mw.GetMethod();
+			mw = java_lang_Throwable.GetMethodWrapper("__<unmap>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
+			mw.Link();
+			unmapExceptionMethod = (MethodInfo)mw.GetMethod();
 		}
 		else
 		{
-			mapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { typeof(Exception), typeof(Type) });
-			mapExceptionFastMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { typeof(Exception) });
+			mapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { typeof(Exception), typeof(Type), typeof(bool) });
+			mapExceptionFastMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<map>", new Type[] { typeof(Exception), typeof(bool) });
+			suppressFillInStackTraceMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
+			unmapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { typeof(Exception) });
 		}
-		fillInStackTraceMethod = java_lang_Throwable.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", false);
-		fillInStackTraceMethod.Link();
+		initCauseMethod = java_lang_Throwable.GetMethodWrapper("initCause", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
 	}
 
 	private class ExceptionSorter : IComparer
@@ -1150,16 +1159,19 @@ class Compiler
 				}
 
 				TypeWrapper exceptionTypeWrapper;
+				bool remap;
 				if(exc.catch_type == 0)
 				{
 					exceptionTypeWrapper = java_lang_Throwable;
+					remap = true;
 				}
 				else
 				{
 					exceptionTypeWrapper = classFile.GetConstantPoolClassType(exc.catch_type);
+					remap = !exceptionTypeWrapper.IsSubTypeOf(cli_System_Exception);
 				}
 				Type excType = exceptionTypeWrapper.TypeAsExceptionType;
-				bool mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException;
+				bool mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException && !exceptionTypeWrapper.IsRemapped;
 				if(mapSafe)
 				{
 					ilGenerator.BeginCatchBlock(excType);
@@ -1177,7 +1189,7 @@ class Compiler
 					ma.GetLocalVar(handlerIndex) == null);
 				// special case for catch(Throwable) (and finally), that produces less code and
 				// should be faster
-				if(mapSafe || excType == typeof(Exception))
+				if(mapSafe || exceptionTypeWrapper == java_lang_Throwable)
 				{
 					if(unusedException)
 					{
@@ -1190,6 +1202,7 @@ class Compiler
 						{
 							ilGenerator.Emit(OpCodes.Dup);
 						}
+						ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
 						ilGenerator.Emit(OpCodes.Call, mapExceptionFastMethod);
 						if(mapSafe)
 						{
@@ -1208,12 +1221,14 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 						ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
 						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetTypeAsExceptionType"));
+						ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
 						ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
 					}
 					else
 					{
 						ilGenerator.Emit(OpCodes.Ldtoken, excType);
 						ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
+						ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
 						ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
 						ilGenerator.Emit(OpCodes.Castclass, excType);
 					}
@@ -1546,25 +1561,32 @@ class Compiler
 										nontrivial = true;
 									}
 								}
-								method.EmitNewobj(ilGenerator);
 								if(!thisType.IsUnloadable && thisType.IsSubTypeOf(java_lang_Throwable))
 								{
-									// if the next instruction isn't an athrow, we need to
-									// call fillInStackTrace, because the object might be used
-									// to print out a stack trace without ever being thrown
-									if(code[i + 1].NormalizedOpCode != NormalizedByteCode.__athrow)
+									// if the next instruction is an athrow and the exception type
+									// doesn't override fillInStackTrace, we can suppress the call
+									// to fillInStackTrace from the constructor (and this is
+									// a huge perf win)
+									// NOTE we also can't call suppressFillInStackTrace for non-Java
+									// exceptions (because then the suppress flag won't be cleared),
+									// but this case is handled by the "is fillInStackTrace overridden?"
+									// test, because cli.System.Exception overrides fillInStackTrace.
+									if(code[i + 1].NormalizedOpCode == NormalizedByteCode.__athrow
+										&& thisType.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == java_lang_Throwable)
 									{
-										ilGenerator.Emit(OpCodes.Dup);
-										if(thisType.IsSubTypeOf(cli_System_Exception))
-										{
-											fillInStackTraceMethod.EmitCallvirt(ilGenerator);
-										}
-										else
-										{
-											fillInStackTraceMethod.EmitCall(ilGenerator);
-										}
-										ilGenerator.Emit(OpCodes.Pop);
+										ilGenerator.Emit(OpCodes.Call, suppressFillInStackTraceMethod);
 									}
+								}
+								method.EmitNewobj(ilGenerator);
+								if(!thisType.IsUnloadable && thisType.IsSubTypeOf(cli_System_Exception))
+								{
+									// HACK we call Throwable.initCause(null) to force creation of an ExceptionInfoHelper
+									// (which disables future remapping of the exception) and to prevent others from
+									// setting the cause.
+									ilGenerator.Emit(OpCodes.Dup);
+									ilGenerator.Emit(OpCodes.Ldnull);
+									initCauseMethod.EmitCallvirt(ilGenerator);
+									ilGenerator.Emit(OpCodes.Pop);
 								}
 								if(nontrivial)
 								{
@@ -2597,6 +2619,8 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
 						break;
 					case NormalizedByteCode.__athrow:
+						// TODO we shouldn't call unmap when we know it isn't needed
+						ilGenerator.Emit(OpCodes.Call, unmapExceptionMethod);
 						ilGenerator.Emit(OpCodes.Throw);
 						break;
 					case NormalizedByteCode.__lookupswitch:

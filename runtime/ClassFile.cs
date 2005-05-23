@@ -53,7 +53,7 @@ sealed class ClassFile
 	private class SupportedVersions
 	{
 		internal static readonly int Minimum = 45;
-		internal static readonly int Maximum = Environment.GetEnvironmentVariable("IKVM_EXPERIMENTAL_JDK_5_0") == null ? 48 : 49;
+		internal static readonly int Maximum = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_JDK_5_0") == null ? 48 : 49;
 	}
 
 	internal ClassFile(byte[] buf, int offset, int length, string inputClassName, bool allowJavaLangObject)
@@ -865,7 +865,7 @@ sealed class ClassFile
 		catch(Exception x)
 		{
 			// TODO it might not be a good idea to catch .NET system exceptions here
-			if(Tracer.ClassLoading.TraceError)
+			if(!JVM.IsStaticCompiler && Tracer.ClassLoading.TraceError)
 			{
 				object cl = classLoader.GetJavaClassLoader();
 				if(cl != null)

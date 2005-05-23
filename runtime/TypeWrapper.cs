@@ -26,6 +26,8 @@ using System.Collections;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
+using System.Security;
+using System.Security.Permissions;
 using IKVM.Runtime;
 using IKVM.Attributes;
 using IKVM.Internal;
@@ -35,7 +37,7 @@ using ILGenerator = CountingILGenerator;
 class EmitHelper
 {
 	private static MethodInfo objectToString = typeof(object).GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-	private static MethodInfo verboseCastFailure = Environment.GetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : typeof(ByteCodeHelper).GetMethod("VerboseCastFailure");
+	private static MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : typeof(ByteCodeHelper).GetMethod("VerboseCastFailure");
 
 	internal static void Throw(ILGenerator ilgen, string dottedClassName)
 	{
@@ -184,12 +186,100 @@ class AttributeHelper
 		}
 	}
 
-	internal static CustomAttributeBuilder CreateCustomAttribute(IKVM.Internal.MapXml.Attribute attr)
+	private static bool IsCodeAccessSecurityAttribute(IKVM.Internal.MapXml.Attribute attr, out SecurityAction action, out PermissionSet pset)
+	{
+		action = SecurityAction.Deny;
+		pset = null;
+		if(attr.Type != null)
+		{
+			Type t = Type.GetType(attr.Type, true);
+			if(typeof(CodeAccessSecurityAttribute).IsAssignableFrom(t))
+			{
+				Type[] argTypes;
+				object[] args;
+				GetAttributeArgsAndTypes(attr, out argTypes, out args);
+				ConstructorInfo ci = t.GetConstructor(argTypes);
+				CodeAccessSecurityAttribute attrib = ci.Invoke(args) as CodeAccessSecurityAttribute;
+				if(attr.Properties != null)
+				{
+					foreach(IKVM.Internal.MapXml.Param prop in attr.Properties)
+					{
+						PropertyInfo pi = t.GetProperty(prop.Name);
+						pi.SetValue(attrib, ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), prop.Sig), prop.Value), null);
+					}
+				}
+				action = attrib.Action;
+				pset = new PermissionSet(PermissionState.None);
+				pset.AddPermission(attrib.CreatePermission());
+				return true;
+			}
+		}
+		return false;
+	}
+
+	internal static void SetCustomAttribute(TypeBuilder tb, IKVM.Internal.MapXml.Attribute attr)
+	{
+		SecurityAction action;
+		PermissionSet pset;
+		if(IsCodeAccessSecurityAttribute(attr, out action, out pset))
+		{
+			tb.AddDeclarativeSecurity(action, pset);
+		}
+		else
+		{
+			tb.SetCustomAttribute(CreateCustomAttribute(attr));
+		}
+	}
+
+	internal static void SetCustomAttribute(FieldBuilder fb, IKVM.Internal.MapXml.Attribute attr)
+	{
+		fb.SetCustomAttribute(CreateCustomAttribute(attr));
+	}
+
+	internal static void SetCustomAttribute(MethodBuilder mb, IKVM.Internal.MapXml.Attribute attr)
+	{
+		SecurityAction action;
+		PermissionSet pset;
+		if(IsCodeAccessSecurityAttribute(attr, out action, out pset))
+		{
+			mb.AddDeclarativeSecurity(action, pset);
+		}
+		else
+		{
+			mb.SetCustomAttribute(CreateCustomAttribute(attr));
+		}
+	}
+
+	internal static void SetCustomAttribute(ConstructorBuilder cb, IKVM.Internal.MapXml.Attribute attr)
+	{
+		SecurityAction action;
+		PermissionSet pset;
+		if(IsCodeAccessSecurityAttribute(attr, out action, out pset))
+		{
+			cb.AddDeclarativeSecurity(action, pset);
+		}
+		else
+		{
+			cb.SetCustomAttribute(CreateCustomAttribute(attr));
+		}
+	}
+
+	internal static void SetCustomAttribute(PropertyBuilder pb, IKVM.Internal.MapXml.Attribute attr)
+	{
+		pb.SetCustomAttribute(CreateCustomAttribute(attr));
+	}
+
+	internal static void SetCustomAttribute(AssemblyBuilder ab, IKVM.Internal.MapXml.Attribute attr)
+	{
+		ab.SetCustomAttribute(CreateCustomAttribute(attr));
+	}
+
+	private static void GetAttributeArgsAndTypes(IKVM.Internal.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
 	{
 		// TODO add error handling
 		TypeWrapper[] twargs = ClassFile.ArgTypeWrapperListFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Sig);
-		Type[] argTypes = new Type[twargs.Length];
-		object[] args = new object[argTypes.Length];
+		argTypes = new Type[twargs.Length];
+		args = new object[argTypes.Length];
 		for(int i = 0; i < twargs.Length; i++)
 		{
 			argTypes[i] = twargs[i].TypeAsSignatureType;
@@ -212,9 +302,21 @@ class AttributeHelper
 				args[i] = ParseValue(tw, attr.Params[i].Value);
 			}
 		}
+	}
+
+	private static CustomAttributeBuilder CreateCustomAttribute(IKVM.Internal.MapXml.Attribute attr)
+	{
+		// TODO add error handling
+		Type[] argTypes;
+		object[] args;
+		GetAttributeArgsAndTypes(attr, out argTypes, out args);
 		if(attr.Type != null)
 		{
 			Type t = Type.GetType(attr.Type, true);
+			if(typeof(CodeAccessSecurityAttribute).IsAssignableFrom(t))
+			{
+				throw new NotImplementedException("CodeAccessSecurityAttribute support not implemented");
+			}
 			ConstructorInfo ci = t.GetConstructor(argTypes);
 			PropertyInfo[] namedProperties;
 			object[] propertyValues;
@@ -376,7 +478,7 @@ class AttributeHelper
 
 	internal static bool IsMirandaMethod(MethodInfo mi)
 	{
-		return mi.IsDefined(typeof(MirandaMethodAttribute), false);
+		return mi.IsAbstract && mi.IsDefined(typeof(MirandaMethodAttribute), false);
 	}
 
 	internal static void HideFromJava(TypeBuilder typeBuilder)
@@ -1387,7 +1489,11 @@ abstract class TypeWrapper
 		}
 		if(mce != null)
 		{
-			if(!mce.IsPublic)
+			if(mce.IsMirandaMethod && mce.DeclaringType == wrapper)
+			{
+				// Miranda methods already have a methodimpl (if needed) to implement the correct interface method
+			}
+			else if(!mce.IsPublic)
 			{
 				// NOTE according to the ECMA spec it isn't legal for a privatescope method to be virtual, but this works and
 				// it makes sense, so I hope the spec is wrong
@@ -1708,6 +1814,12 @@ class UnloadableTypeWrapper : TypeWrapper
 			{
 				warningHashtable = new Hashtable();
 			}
+			if(name.StartsWith("["))
+			{
+				int skip = 1;
+				while(name[skip++] == '[');
+				name = name.Substring(skip, name.Length - skip - 1);
+			}
 			if(!warningHashtable.ContainsKey(name))
 			{
 				warningHashtable.Add(name, name);
@@ -1935,6 +2047,11 @@ class BakedTypeCleanupHack
 			// because the data is required to generated the PE file.
 			return null;
 		}
+		if(!SecurityManager.IsGranted(new SecurityPermission(SecurityPermissionFlag.Assertion)) ||
+			!SecurityManager.IsGranted(new ReflectionPermission(ReflectionPermissionFlag.MemberAccess)))
+		{
+			return null;
+		}
 		FieldInfo[] fields = new FieldInfo[list.Length];
 		for(int i = 0; i < list.Length; i++)
 		{
@@ -1959,15 +2076,19 @@ class BakedTypeCleanupHack
 					ConstructorBuilder cb = mw.GetMethod() as ConstructorBuilder;
 					if(cb != null)
 					{
+						new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
 						mb = (MethodBuilder)m_methodBuilder.GetValue(cb);
+						CodeAccessPermission.RevertAssert();
 					}
 				}
 				if(mb != null)
 				{
+					new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
 					foreach(FieldInfo fi in methodBuilderFields)
 					{
 						fi.SetValue(mb, null);
 					}
+					CodeAccessPermission.RevertAssert();
 				}
 			}
 			foreach(FieldWrapper fw in wrapper.GetFields())
@@ -1975,10 +2096,12 @@ class BakedTypeCleanupHack
 				FieldBuilder fb = fw.GetField() as FieldBuilder;
 				if(fb != null)
 				{
+					new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
 					foreach(FieldInfo fi in fieldBuilderFields)
 					{
 						fi.SetValue(fb, null);
 					}
+					CodeAccessPermission.RevertAssert();
 				}
 			}
 		}
@@ -2231,6 +2354,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 
 		internal override void Emit(ILGenerator ilgen)
 		{
+			MethodWrapper mwSuppressFillInStackTrace = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
+			mwSuppressFillInStackTrace.Link();
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Callvirt, typeof(Object).GetMethod("GetType"));
 			MethodInfo GetTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle");
@@ -2246,6 +2371,8 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				if(map[i].code != null)
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
+					// TODO we should manually walk the instruction list and add a suppressFillInStackTrace call
+					// before each newobj that instantiates an exception
 					map[i].code.Emit(ilgen);
 					ilgen.Emit(OpCodes.Ret);
 				}
@@ -2254,6 +2381,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					TypeWrapper tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(map[i].dst);
 					MethodWrapper mw = tw.GetMethodWrapper("<init>", "()V", false);
 					mw.Link();
+					mwSuppressFillInStackTrace.EmitCall(ilgen);
 					mw.EmitNewobj(ilgen);
 					ilgen.Emit(OpCodes.Ret);
 				}
@@ -2667,7 +2795,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							MethodWrapper mw = GetMethodWrapperDuringCtor(lookup, methods, ifmethod.Name, ifmethod.Signature);
 							if(mw == null)
 							{
-								mw = new SmartCallMethodWrapper(wrapper, ifmethod.Name, ifmethod.Signature, null, null, null, Modifiers.Public | Modifiers.Abstract, MemberFlags.HideFromReflection, SimpleOpCode.Call, SimpleOpCode.Callvirt);
+								mw = new SmartCallMethodWrapper(wrapper, ifmethod.Name, ifmethod.Signature, null, null, null, Modifiers.Public | Modifiers.Abstract, MemberFlags.HideFromReflection | MemberFlags.MirandaMethod, SimpleOpCode.Call, SimpleOpCode.Callvirt);
 								methods.Add(mw);
 								baseMethods.Add(ifmethod);
 								break;
@@ -3602,7 +3730,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 											{
 												foreach(IKVM.Internal.MapXml.Attribute attr in field.Attributes)
 												{
-													fb.SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+													AttributeHelper.SetCustomAttribute(fb, attr);
 												}
 											}
 										}
@@ -3625,7 +3753,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 											{
 												foreach(IKVM.Internal.MapXml.Attribute attr in constructor.Attributes)
 												{
-													mb.SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+													AttributeHelper.SetCustomAttribute(mb, attr);
 												}
 											}
 										}
@@ -3648,7 +3776,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 											{
 												foreach(IKVM.Internal.MapXml.Attribute attr in method.Attributes)
 												{
-													mb.SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+													AttributeHelper.SetCustomAttribute(mb, attr);
 												}
 											}
 										}
@@ -3755,7 +3883,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 		{
 			foreach(IKVM.Internal.MapXml.Attribute attr in clazz.Attributes)
 			{
-				typeBuilder.SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+				AttributeHelper.SetCustomAttribute(typeBuilder, attr);
 			}
 		}
 
@@ -3775,7 +3903,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				{
 					foreach(IKVM.Internal.MapXml.Attribute attr in prop.Attributes)
 					{
-						propbuilder.SetCustomAttribute(AttributeHelper.CreateCustomAttribute(attr));
+						AttributeHelper.SetCustomAttribute(propbuilder, attr);
 					}
 				}
 				MethodWrapper getter = null;
@@ -4363,7 +4491,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					}
 					method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod());
 					((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
-					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
+					if(JVM.IsStaticCompiler || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
 					{
 						AddParameterNames(method, m);
 					}
@@ -4561,7 +4689,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							ilgen.Emit(OpCodes.Ret);
 						}
 					}
-					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
+					if(JVM.IsStaticCompiler || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
 					{
 						AddParameterNames(mb, m);
 						if(setModifiers)
@@ -5449,7 +5577,8 @@ class CompiledTypeWrapper : TypeWrapper
 					GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes);
 					MethodInfo mi = method as MethodInfo;
 					bool miranda = mi != null ? AttributeHelper.IsMirandaMethod(mi) : false;
-					methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, AttributeHelper.GetModifiers(method, false), miranda));
+					MemberFlags flags = miranda ? MemberFlags.MirandaMethod | MemberFlags.HideFromReflection : MemberFlags.None;
+					methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, AttributeHelper.GetModifiers(method, false), flags));
 				}
 				else
 				{
@@ -5512,6 +5641,7 @@ class CompiledTypeWrapper : TypeWrapper
 			}
 		}
 
+		[HideFromJava]
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
 		{
 			MethodBase mb;
@@ -5712,6 +5842,13 @@ sealed class DotNetTypeWrapper : TypeWrapper
 		Type type = LoadTypeFromLoadedAssemblies(name);
 		if(type != null)
 		{
+			// SECURITY we never expose types from IKVM.Runtime, because doing so would lead to a security hole,
+			// since the reflection implementation lives inside this assembly, all internal members would
+			// be accessible through Java reflection.
+			if(type.Assembly == typeof(DotNetTypeWrapper).Assembly)
+			{
+				return null;
+			}
 			if(Whidbey.IsGenericTypeDefinition(type))
 			{
 				return null;
@@ -5837,6 +5974,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 			ilgen.Emit(OpCodes.Newobj, delegateConstructor);
 		}
 
+		[HideFromJava]
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
 		{
 			// TODO map exceptions
@@ -5905,6 +6043,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 			base.PreEmit(ilgen);
 		}
 
+		[HideFromJava]
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
 		{
 			object[] newargs = (object[])args.Clone();
@@ -5951,6 +6090,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 			// result in our argument being boxed (since that's still sitting on the stack).
 		}
 
+		[HideFromJava]
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
 		{
 			return Enum.ToObject(DeclaringType.TypeAsTBD, ((IConvertible)args[0]).ToInt64(null));
@@ -6067,6 +6207,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 			ilgen.Emit(OpCodes.Box, DeclaringType.TypeAsTBD);
 		}
 
+		[HideFromJava]
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
 		{
 			if(obj == null)
@@ -6300,6 +6441,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 			m.EmitCallvirt(ilgen);
 		}
 
+		[HideFromJava]
 		internal override object Invoke(object obj, object[] args, bool nonVirtual)
 		{
 			return m.Invoke(obj, args, nonVirtual);
@@ -6516,7 +6658,7 @@ sealed class DotNetTypeWrapper : TypeWrapper
 			TypeAsBaseType.IsSubclassOf(CoreClasses.java.lang.Object.Wrapper.TypeAsBaseType))
 		{
 			// TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
-			MethodWrapper mw = new SimpleCallMethodWrapper(this, "finalize", "()V", (MethodInfo)mb, null, null, mods, false, SimpleOpCode.Call, SimpleOpCode.Callvirt);
+			MethodWrapper mw = new SimpleCallMethodWrapper(this, "finalize", "()V", (MethodInfo)mb, null, null, mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
 			mw.SetDeclaredExceptions(new string[] { "java.lang.Throwable" });
 			return mw;
 		}
@@ -6556,12 +6698,12 @@ sealed class DotNetTypeWrapper : TypeWrapper
 			if(mb is ConstructorInfo)
 			{
 				// TODO pass in the argument and return types
-				return new SmartConstructorMethodWrapper(this, name, sig, (ConstructorInfo)mb, null, mods, false);
+				return new SmartConstructorMethodWrapper(this, name, sig, (ConstructorInfo)mb, null, mods, MemberFlags.None);
 			}
 			else
 			{
 				// TODO pass in the argument and return types
-				return new SmartCallMethodWrapper(this, name, sig, (MethodInfo)mb, null, null, mods, false, SimpleOpCode.Call, SimpleOpCode.Callvirt);
+				return new SmartCallMethodWrapper(this, name, sig, (MethodInfo)mb, null, null, mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
 			}
 		}
 	}
@@ -6648,7 +6790,7 @@ sealed class ArrayTypeWrapper : TypeWrapper
 		{
 			clone = typeof(Array).GetMethod("Clone", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		}
-		MethodWrapper mw = new SimpleCallMethodWrapper(this, "clone", "()Ljava.lang.Object;", clone, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Public, true, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
+		MethodWrapper mw = new SimpleCallMethodWrapper(this, "clone", "()Ljava.lang.Object;", clone, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
 		mw.Link();
 		SetMethods(new MethodWrapper[] { mw });
 		SetFields(FieldWrapper.EmptyArray);
