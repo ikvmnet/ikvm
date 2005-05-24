@@ -3213,6 +3213,10 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							TypeWrapper[] args = methods[i].GetParameters();
 							MethodBuilder stub = typeBuilder.DefineMethod(methods[i].Name, MethodAttributes.Public, methods[i].ReturnTypeForDefineMethod, methods[i].GetParametersForDefineMethod());
+							if((JVM.IsStaticCompiler && classFile.IsPublic) || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
+							{
+								AddParameterNames(stub, methods[i].Signature);
+							}
 							AttributeHelper.SetModifiers(stub, methods[i].Modifiers);
 							ILGenerator ilgen = stub.GetILGenerator();
 							Label end = ilgen.DefineLabel();
@@ -4497,7 +4501,7 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					}
 					method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod());
 					((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
-					if(JVM.IsStaticCompiler || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
+					if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
 					{
 						AddParameterNames(method, m);
 					}
@@ -4695,13 +4699,13 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							ilgen.Emit(OpCodes.Ret);
 						}
 					}
-					if(JVM.IsStaticCompiler || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
+					if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
 					{
 						AddParameterNames(mb, m);
-						if(setModifiers)
-						{
-							AttributeHelper.SetModifiers(mb, m.Modifiers);
-						}
+					}
+					if((JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage) && setModifiers)
+					{
+						AttributeHelper.SetModifiers(mb, m.Modifiers);
 					}
 					method = mb;
 				}
@@ -4761,7 +4765,141 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				}
 				return parameterBuilders;
 			}
-			return null;
+			else
+			{
+				return AddParameterNames(mb, m.Signature);
+			}
+		}
+
+		private static ParameterBuilder[] AddParameterNames(MethodBase mb, string sig)
+		{
+			ArrayList names = new ArrayList();
+			for(int i = 1; sig[i] != ')'; i++)
+			{
+				if(sig[i] == 'L')
+				{
+					i++;
+					int end = sig.IndexOf(';', i);
+					names.Add(GetParameterName(sig.Substring(i, end - i)));
+					i = end;
+				}
+				else if(sig[i] == '[')
+				{
+					while(sig[++i] == '[');
+					if(sig[i] == 'L')
+					{
+						i++;
+						int end = sig.IndexOf(';', i);
+						names.Add(GetParameterName(sig.Substring(i, end - i)) + "arr");
+						i = end;
+					}
+					else
+					{
+						switch(sig[i])
+						{
+							case 'B':
+							case 'Z':
+								names.Add("barr");
+								break;
+							case 'C':
+								names.Add("charr");
+								break;
+							case 'S':
+								names.Add("sarr");
+								break;
+							case 'I':
+								names.Add("iarr");
+								break;
+							case 'J':
+								names.Add("larr");
+								break;
+							case 'F':
+								names.Add("farr");
+								break;
+							case 'D':
+								names.Add("darr");
+								break;
+						}
+					}
+				}
+				else
+				{
+					switch(sig[i])
+					{
+						case 'B':
+						case 'Z':
+							names.Add("b");
+							break;
+						case 'C':
+							names.Add("ch");
+							break;
+						case 'S':
+							names.Add("s");
+							break;
+						case 'I':
+							names.Add("i");
+							break;
+						case 'J':
+							names.Add("l");
+							break;
+						case 'F':
+							names.Add("f");
+							break;
+						case 'D':
+							names.Add("d");
+							break;
+					}
+				}
+			}
+			ParameterBuilder[] parameterBuilders = new ParameterBuilder[names.Count];
+			Hashtable clashes = new Hashtable();
+			for(int i = 0; i < names.Count; i++)
+			{
+				string name = (string)names[i];
+				if(names.IndexOf(name, i + 1) >= 0 || clashes.ContainsKey(name))
+				{
+					int clash = 1;
+					if(clashes.ContainsKey(name))
+					{
+						clash = (int)clashes[name] + 1;
+					}
+					clashes[name] = clash;
+					name += clash;
+				}
+				if(mb is MethodBuilder)
+				{
+					parameterBuilders[i] = ((MethodBuilder)mb).DefineParameter(i + 1, ParameterAttributes.None, name);
+				}
+				else if(mb is ConstructorBuilder)
+				{
+					parameterBuilders[i] = ((ConstructorBuilder)mb).DefineParameter(i + 1, ParameterAttributes.None, name);
+				}
+			}
+			return parameterBuilders;
+		}
+
+		private static string GetParameterName(string type)
+		{
+			if(type == "java.lang.String")
+			{
+				return "str";
+			}
+			else if(type == "java.lang.Object")
+			{
+				return "obj";
+			}
+			else
+			{
+				System.Text.StringBuilder sb = new System.Text.StringBuilder();
+				for(int i = type.LastIndexOf('.') + 1; i < type.Length; i++)
+				{
+					if(char.IsUpper(type, i))
+					{
+						sb.Append(char.ToLower(type[i]));
+					}
+				}
+				return sb.ToString();
+			}
 		}
 
 		private void GenerateUnloadableOverrideStub(MethodWrapper baseMethod, MethodInfo target, Type targetRet, Type[] targetArgs)
