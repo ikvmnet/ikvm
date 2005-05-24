@@ -46,23 +46,15 @@ final class ExceptionHelper
 	private cli.System.Diagnostics.StackTrace tracePart2;
 	private cli.System.Collections.ArrayList stackTrace;
 	private Throwable cause;
-        private cli.System.WeakReference original;
+        private Throwable original;
 
         ExceptionInfoHelper()
         {
             cause = CAUSE_NOT_SET;
         }
 
-	ExceptionInfoHelper(Throwable x, Throwable org)
+	ExceptionInfoHelper(Throwable x)
 	{
-            if(org != null)
-            {
-                // TODO to prevent a memory leak, we must use a WeakReference here, but it is not
-                // actually correct because it will allow the original to be collected to early.
-                // This problem will be resolved when we move the state for Java exceptions into
-                // java.lang.Throwable.
-                original = new cli.System.WeakReference(org);
-            }
 	    tracePart1 = new cli.System.Diagnostics.StackTrace(x, true);
 	    tracePart2 = new cli.System.Diagnostics.StackTrace(true);
 	    cause = getInnerException(x);
@@ -83,11 +75,14 @@ final class ExceptionHelper
 
         Throwable getOriginal()
         {
-            if(original != null)
-            {
-                return (Throwable)original.get_Target();
-            }
-            return null;
+            Throwable org = original;
+            original = null;
+            return org;
+        }
+
+        void setOriginal(Throwable org)
+        {
+            original = org;
         }
 
 	Throwable getCauseForSerialization(Throwable t)
@@ -557,9 +552,9 @@ final class ExceptionHelper
                         t = remapped;
                     }
                 }
-                else
+                else if(remapped != NOT_REMAPPED)
                 {
-                    t = remapped == NOT_REMAPPED ? t : remapped;
+                    t = remapped;
                 }
             }
         }
@@ -568,13 +563,26 @@ final class ExceptionHelper
         {
             if(t != org || nonJavaException)
             {
-                // the exception is escaping into the wild for the first time,
-                // so we have to capture the stack trace
-                exceptions.put(t, new ExceptionInfoHelper(org, t != org ? org : null));
-                Throwable inner = getInnerException(org);
-                if(inner != null && !exceptions.containsKey(inner))
+                ExceptionInfoHelper eih = t != org ? (ExceptionInfoHelper)exceptions.get(t) : null;
+                if(eih == null)
                 {
-                    exceptions.put(inner, new ExceptionInfoHelper(inner, null));
+                    // the exception is escaping into the wild for the first time,
+                    // so we have to capture the stack trace
+                    eih = new ExceptionInfoHelper(org);
+                    if(t != org)
+                    {
+                        eih.setOriginal(org);
+                    }
+                    exceptions.put(t, eih);
+                    Throwable inner = getInnerException(org);
+                    if(inner != null && !exceptions.containsKey(inner))
+                    {
+                        exceptions.put(inner, new ExceptionInfoHelper(inner));
+                    }
+                }
+                else
+                {
+                    eih.setOriginal(org);
                 }
             }
             else
@@ -582,7 +590,7 @@ final class ExceptionHelper
                 ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(t);
                 if(eih == null)
                 {
-                    eih = new ExceptionInfoHelper(t, null);
+                    eih = new ExceptionInfoHelper(t);
                     exceptions.put(t, eih);
                 }
                 else

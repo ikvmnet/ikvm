@@ -243,12 +243,14 @@
 ../../classpath/gnu/CORBA/recursiveTypeCode.java
 ../../classpath/gnu/CORBA/Restricted_ORB.java
 ../../classpath/gnu/CORBA/Simple_delegate.java
+../../classpath/gnu/CORBA/ServiceDetailHolder.java
 ../../classpath/gnu/CORBA/streamRequest.java
 ../../classpath/gnu/CORBA/stringTypeCode.java
 ../../classpath/gnu/CORBA/stubFinder.java
 ../../classpath/gnu/CORBA/TypeCodeHelper.java
 ../../classpath/gnu/CORBA/typeNamer.java
 ../../classpath/gnu/CORBA/Unexpected.java
+../../classpath/gnu/CORBA/universalHolder.java
 ../../classpath/gnu/CORBA/Version.java
 ../../classpath/gnu/CORBA/WCharHolder.java
 ../../classpath/gnu/CORBA/WStringHolder.java
@@ -2889,6 +2891,7 @@
 ../../classpath/org/omg/CORBA/DoubleHolder.java
 ../../classpath/org/omg/CORBA/DoubleSeqHelper.java
 ../../classpath/org/omg/CORBA/DoubleSeqHolder.java
+../../classpath/org/omg/CORBA/DynamicImplementation.java
 ../../classpath/org/omg/CORBA/DynAny.java
 ../../classpath/org/omg/CORBA/DynAnyPackage/Invalid.java
 ../../classpath/org/omg/CORBA/DynAnyPackage/InvalidSeq.java
@@ -2968,6 +2971,12 @@
 ../../classpath/org/omg/CORBA/PUBLIC_MEMBER.java
 ../../classpath/org/omg/CORBA/Request.java
 ../../classpath/org/omg/CORBA/SetOverrideType.java
+../../classpath/org/omg/CORBA/ServerRequest.java
+../../classpath/org/omg/CORBA/ServiceDetail.java
+../../classpath/org/omg/CORBA/ServiceDetailHelper.java
+../../classpath/org/omg/CORBA/ServiceInformation.java
+../../classpath/org/omg/CORBA/ServiceInformationHelper.java
+../../classpath/org/omg/CORBA/ServiceInformationHolder.java
 ../../classpath/org/omg/CORBA/ShortHolder.java
 ../../classpath/org/omg/CORBA/ShortSeqHelper.java
 ../../classpath/org/omg/CORBA/ShortSeqHolder.java
