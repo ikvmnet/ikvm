@@ -804,11 +804,6 @@ namespace IKVM.Internal
 						AttributeHelper.SetSourceFile(typeBuilder, IKVM.Internal.MapXml.Root.filename);
 					}
 
-					if(c.Deprecated)
-					{
-						AttributeHelper.SetDeprecatedAttribute(typeBuilder);
-					}
-
 					if(baseIsSealed)
 					{
 						AttributeHelper.SetModifiers(typeBuilder, (Modifiers)c.Modifiers);
@@ -932,13 +927,10 @@ namespace IKVM.Internal
 									AttributeHelper.SetCustomAttribute(mbHelper, custattr);
 								}
 							}
+							SetParameters(mbHelper, m.Params);
 							AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
 							AttributeHelper.SetNameSig(mbHelper, "<init>", m.Sig);
 							AddDeclaredExceptions(mbHelper, m.throws);
-							if(m.Deprecated)
-							{
-								AttributeHelper.SetDeprecatedAttribute(mbHelper);
-							}
 						}
 						else
 						{
@@ -950,11 +942,8 @@ namespace IKVM.Internal
 									AttributeHelper.SetCustomAttribute(cbCore, custattr);
 								}
 							}
+							SetParameters(cbCore, m.Params);
 							AddDeclaredExceptions(cbCore, m.throws);
-							if(m.Deprecated)
-							{
-								AttributeHelper.SetDeprecatedAttribute(cbCore);
-							}
 						}
 						return cbCore;
 					}
@@ -1165,6 +1154,7 @@ namespace IKVM.Internal
 										AttributeHelper.SetCustomAttribute(helper, custattr);
 									}
 								}
+								SetParameters(helper, m.Params);
 								ILGenerator ilgen = helper.GetILGenerator();
 								foreach(IKVM.Internal.MapXml.Class c in specialCases)
 								{
@@ -1255,19 +1245,12 @@ namespace IKVM.Internal
 										AttributeHelper.SetCustomAttribute(mbCore, custattr);
 									}
 								}
+								SetParameters(mbCore, m.Params);
 								if(overrideMethod != null)
 								{
 									typeWrapper.typeBuilder.DefineMethodOverride(mbCore, overrideMethod);
 								}
 								AddDeclaredExceptions(mbCore, m.throws);
-								if(m.Deprecated)
-								{
-									AttributeHelper.SetDeprecatedAttribute(mbCore);
-								}
-								if(m.HideFromJava)
-								{
-									AttributeHelper.HideFromJava(mbCore);
-								}
 							}
 
 							if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) == 0)
@@ -1294,18 +1277,26 @@ namespace IKVM.Internal
 										AttributeHelper.SetCustomAttribute(mbHelper, custattr);
 									}
 								}
-								AttributeHelper.SetEditorBrowsableNever(mbHelper);
+								IKVM.Internal.MapXml.Param[] parameters;
+								if(m.Params == null)
+								{
+									parameters = new IKVM.Internal.MapXml.Param[1];
+								}
+								else
+								{
+									parameters = new IKVM.Internal.MapXml.Param[m.Params.Length + 1];
+									m.Params.CopyTo(parameters, 1);
+								}
+								parameters[0] = new IKVM.Internal.MapXml.Param();
+								parameters[0].Name = "this";
+								SetParameters(mbHelper, parameters);
+								if(!typeWrapper.IsFinal)
+								{
+									AttributeHelper.SetEditorBrowsableNever(mbHelper);
+								}
 								AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
 								AttributeHelper.SetNameSig(mbHelper, m.Name, m.Sig);
 								AddDeclaredExceptions(mbHelper, m.throws);
-								if(m.Deprecated)
-								{
-									AttributeHelper.SetDeprecatedAttribute(mbHelper);
-								}
-								if(m.HideFromJava)
-								{
-									AttributeHelper.HideFromJava(mbHelper);
-								}
 							}
 							return mbCore;
 						}
@@ -1514,6 +1505,7 @@ namespace IKVM.Internal
 									AttributeHelper.SetCustomAttribute(mb, custattr);
 								}
 							}
+							SetParameters(mb, m.Params);
 							AttributeHelper.HideFromJava(mb);
 							ILGenerator ilgen = mb.GetILGenerator();
 							if(m.nonvirtualAlternateBody != null)
@@ -1575,6 +1567,28 @@ namespace IKVM.Internal
 							}
 							mw.Link();
 							mw.EmitCall(ilgen);
+						}
+					}
+				}
+
+				private static void SetParameters(MethodBuilder mb, IKVM.Internal.MapXml.Param[] parameters)
+				{
+					if(parameters != null)
+					{
+						for(int i = 0; i < parameters.Length; i++)
+						{
+							mb.DefineParameter(i + 1, ParameterAttributes.None, parameters[i].Name);
+						}
+					}
+				}
+
+				private static void SetParameters(ConstructorBuilder cb, IKVM.Internal.MapXml.Param[] parameters)
+				{
+					if(parameters != null)
+					{
+						for(int i = 0; i < parameters.Length; i++)
+						{
+							cb.DefineParameter(i + 1, ParameterAttributes.None, parameters[i].Name);
 						}
 					}
 				}
@@ -1661,10 +1675,6 @@ namespace IKVM.Internal
 								else
 								{
 									fields.Add(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Name, f.Sig, (Modifiers)f.Modifiers));
-								}
-								if(f.Deprecated)
-								{
-									AttributeHelper.SetDeprecatedAttribute(fb);
 								}
 							}
 							else

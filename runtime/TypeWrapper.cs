@@ -2654,9 +2654,15 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							typeBuilderGhostInterface = typeBuilder.DefineNestedType("__Interface", TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.NestedPublic);
 							AttributeHelper.HideFromJava(typeBuilderGhostInterface);
 							wrapper.ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object) });
+							wrapper.ghostIsInstanceMethod.DefineParameter(1, ParameterAttributes.None, "obj");
 							wrapper.ghostIsInstanceArrayMethod = typeBuilder.DefineMethod("IsInstanceArray", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object), typeof(int) });
+							wrapper.ghostIsInstanceArrayMethod.DefineParameter(1, ParameterAttributes.None, "obj");
+							wrapper.ghostIsInstanceArrayMethod.DefineParameter(2, ParameterAttributes.None, "rank");
 							wrapper.ghostCastMethod = typeBuilder.DefineMethod("Cast", MethodAttributes.Public | MethodAttributes.Static, typeBuilder, new Type[] { typeof(object) });
+							wrapper.ghostCastMethod.DefineParameter(1, ParameterAttributes.None, "obj");
 							wrapper.ghostCastArrayMethod = typeBuilder.DefineMethod("CastArray", MethodAttributes.Public | MethodAttributes.Static, typeof(void), new Type[] { typeof(object), typeof(int) });
+							wrapper.ghostCastArrayMethod.DefineParameter(1, ParameterAttributes.None, "obj");
+							wrapper.ghostCastArrayMethod.DefineParameter(2, ParameterAttributes.None, "rank");
 						}
 						else
 						{

@@ -1012,8 +1012,8 @@ namespace IKVM.Internal.MapXml
 		public string Sig;
 		[XmlAttribute("modifiers")]
 		public MapModifiers Modifiers;
-		[XmlAttribute("deprecated")]
-		public bool Deprecated;
+		[XmlElement("parameter")]
+		public Param[] Params;
 		public InstructionList body;
 		public InstructionList alternateBody;
 		public Redirect redirect;
@@ -1061,10 +1061,8 @@ namespace IKVM.Internal.MapXml
 		public MapModifiers Modifiers;
 		[XmlAttribute("type")]
 		public string Type;
-		[XmlAttribute("deprecated")]
-		public bool Deprecated;
-		[XmlAttribute("hidefromjava")]
-		public bool HideFromJava;
+		[XmlElement("parameter")]
+		public Param[] Params;
 		public InstructionList body;
 		public InstructionList alternateBody;
 		public InstructionList nonvirtualAlternateBody;
@@ -1086,8 +1084,6 @@ namespace IKVM.Internal.MapXml
 		public MapModifiers Modifiers;
 		[XmlAttribute("constant")]
 		public string Constant;
-		[XmlAttribute("deprecated")]
-		public bool Deprecated;
 		public Redirect redirect;
 		[XmlElement("attribute")]
 		public Attribute[] Attributes;
@@ -1183,8 +1179,6 @@ namespace IKVM.Internal.MapXml
 		public MapModifiers Modifiers;
 		[XmlAttribute("scope")]
 		public Scope scope;
-		[XmlAttribute("deprecated")]
-		public bool Deprecated;
 		[XmlElement("constructor")]
 		public Constructor[] Constructors;
 		[XmlElement("method")]

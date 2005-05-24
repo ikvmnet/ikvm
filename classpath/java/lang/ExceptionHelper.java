@@ -640,17 +640,9 @@ final class ExceptionHelper
 	s.writeFields();	    
     }
 
-    static void readObject(Throwable t, ObjectInputStream s) throws IOException
+    static void readObject(Throwable t, ObjectInputStream s) throws IOException, ClassNotFoundException
     {
-	ObjectInputStream.GetField fields = null;
-	try
-	{
-	    fields = s.readFields();
-	}
-	catch(ClassNotFoundException x)
-	{
-	    throw new IOException(x.getMessage());
-	}
+	ObjectInputStream.GetField fields = s.readFields();
 	initThrowable(t, fields.get("detailMessage", null), fields.get("cause", null));
 	StackTraceElement[] stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
 	setStackTrace(t, stackTrace == null ? new StackTraceElement[0] : stackTrace);
