@@ -170,7 +170,7 @@ namespace ikvm.awt
 
 		protected override java.awt.peer.CheckboxPeer createCheckbox(java.awt.Checkbox target)
 		{
-			throw new NotImplementedException();
+			return new NetCheckboxPeer(target, (CheckBox)CreateControl(typeof(CheckBox)));
 		}
 
 		protected override java.awt.peer.ScrollbarPeer createScrollbar(java.awt.Scrollbar target)
@@ -190,7 +190,7 @@ namespace ikvm.awt
 
 		protected override java.awt.peer.ChoicePeer createChoice(java.awt.Choice target)
 		{
-			throw new NotImplementedException();
+			return new NetChoicePeer(target, (ComboBox)CreateControl(typeof(ComboBox)));
 		}
 
 		protected override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
@@ -430,7 +430,7 @@ namespace ikvm.awt
 
 		public override java.awt.GraphicsEnvironment getLocalGraphicsEnvironment()
 		{
-			throw new NotImplementedException();
+			return new NetGraphicsEnvironment();
 		}
 
 		public override gnu.java.awt.peer.ClasspathTextLayoutPeer getClasspathTextLayoutPeer(java.text.AttributedString str, java.awt.font.FontRenderContext ctxt)
@@ -477,6 +477,62 @@ namespace ikvm.awt
 					Monitor.Enter(locked);
 				}
 			}
+		}
+	}
+
+	class NetGraphicsEnvironment : java.awt.GraphicsEnvironment
+	{
+		public override java.awt.Graphics2D createGraphics(BufferedImage bi)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.Font[] getAllFonts()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override string[] getAvailableFontFamilyNames()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override string[] getAvailableFontFamilyNames(Locale l)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.GraphicsDevice getDefaultScreenDevice()
+		{
+			return new NetGraphicsDevice();
+		}
+
+		public override java.awt.GraphicsDevice[] getScreenDevices()
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	class NetGraphicsDevice : java.awt.GraphicsDevice
+	{
+		public override java.awt.GraphicsConfiguration[] getConfigurations()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.GraphicsConfiguration getDefaultConfiguration()
+		{
+			return new NetGraphicsConfiguration();
+		}
+
+		public override string getIDstring()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override int getType()
+		{
+			throw new NotImplementedException();
 		}
 	}
 
@@ -1263,11 +1319,15 @@ namespace ikvm.awt
 		internal readonly Control control;
 		private int offsetX;
 		private int offsetY;
+		private Point mouseDown;
+		private long lastClick;
+		private int clickCount;
 
 		public NetComponentPeer(java.awt.Component component, Control control)
 		{
 			this.control = control;
 			this.component = component;
+			control.TabStop = false;
 			java.awt.Container parent = component.getParent();
 			if(parent != null && !(this is java.awt.peer.LightweightPeer))
 			{
@@ -1324,6 +1384,10 @@ namespace ikvm.awt
 			control.MouseMove += new MouseEventHandler(OnMouseMove);
 			control.MouseDown += new MouseEventHandler(OnMouseDown);
 			control.MouseUp += new MouseEventHandler(OnMouseUp);
+			control.MouseEnter += new EventHandler(OnMouseEnter);
+			control.MouseLeave += new EventHandler(OnMouseLeave);
+			control.GotFocus += new EventHandler(OnGotFocus);
+			control.LostFocus += new EventHandler(OnLostFocus);
 		}
 
 		private static int MapKeyCode(Keys key)
@@ -1335,63 +1399,162 @@ namespace ikvm.awt
 			}
 		}
 
+		private static int GetModifiers(Keys keys)
+		{
+			int modifiers = 0;
+			if((keys & Keys.Shift) != 0)
+			{
+				modifiers |= java.awt.@event.KeyEvent.SHIFT_DOWN_MASK;
+			}
+			if((keys & Keys.Control) != 0)
+			{
+				modifiers |= java.awt.@event.KeyEvent.CTRL_DOWN_MASK;
+			}
+			if((keys & Keys.Alt) != 0)
+			{
+				modifiers |= java.awt.@event.KeyEvent.ALT_DOWN_MASK;
+			}
+			if((Control.MouseButtons & MouseButtons.Left) != 0)
+			{
+				modifiers |= java.awt.@event.KeyEvent.BUTTON1_DOWN_MASK;
+			}
+			if((Control.MouseButtons & MouseButtons.Middle) != 0)
+			{
+				modifiers |= java.awt.@event.KeyEvent.BUTTON2_DOWN_MASK;
+			}
+			if((Control.MouseButtons & MouseButtons.Right) != 0)
+			{
+				modifiers |= java.awt.@event.KeyEvent.BUTTON3_DOWN_MASK;
+			}
+			return modifiers;
+		}
+
 		protected virtual void OnKeyDown(object sender, KeyEventArgs e)
 		{
-			// TODO set all this stuff...
-			long when = 0;
-			int modifiers = 0;
+			long when = java.lang.System.currentTimeMillis();
+			int modifiers = GetModifiers(e.Modifiers);
 			int keyCode = MapKeyCode(e.KeyCode);
+			// TODO set keyChar
 			char keyChar = ' ';
-			int keyLocation = 0;
+			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_STANDARD;
 			postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_PRESSED, when, modifiers, keyCode, keyChar, keyLocation));
 		}
 
 		protected virtual void OnKeyUp(object sender, KeyEventArgs e)
 		{
-			// TODO set all this stuff...
-			long when = 0;
-			int modifiers = 0;
+			long when = java.lang.System.currentTimeMillis();
+			int modifiers = GetModifiers(e.Modifiers);
 			int keyCode = MapKeyCode(e.KeyCode);
+			// TODO set keyChar
 			char keyChar = ' ';
-			int keyLocation = 0;
+			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_STANDARD;
 			postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_RELEASED, when, modifiers, keyCode, keyChar, keyLocation));
 		}
 
 		protected virtual void OnKeyPress(object sender, KeyPressEventArgs e)
 		{
-			// TODO set all this stuff...
-			long when = 0;
-			int modifiers = 0;
-			int keyCode = 0;
+			long when = java.lang.System.currentTimeMillis();
+			int modifiers = GetModifiers(Control.ModifierKeys);
+			int keyCode = java.awt.@event.KeyEvent.VK_UNDEFINED;
 			char keyChar = e.KeyChar;
-			int keyLocation = 0;
+			int keyLocation = java.awt.@event.KeyEvent.KEY_LOCATION_STANDARD;
 			postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_TYPED, when, modifiers, keyCode, keyChar, keyLocation));
 		}
 
 		protected virtual void OnMouseMove(object sender, MouseEventArgs e)
 		{
-			// TODO set all this stuff...
-			long when = 0;
-			int modifiers = 0;
-			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_MOVED, when, modifiers, e.X, e.Y, 0, false));
+			long when = java.lang.System.currentTimeMillis();
+			int modifiers = GetModifiers(Control.ModifierKeys);
+			if((e.Button & (MouseButtons.Left | MouseButtons.Right)) != 0)
+			{
+				postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_DRAGGED, when, modifiers, e.X, e.Y, 0, false));
+			}
+			else
+			{
+				postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_MOVED, when, modifiers, e.X, e.Y, 0, false));
+			}
+		}
+
+		private static int GetButton(MouseEventArgs e)
+		{
+			if((e.Button & MouseButtons.Left) != 0)
+			{
+				return java.awt.@event.MouseEvent.BUTTON1;
+			}
+			else if((e.Button & MouseButtons.Middle) != 0)
+			{
+				return java.awt.@event.MouseEvent.BUTTON2;
+			}
+			else if((e.Button & MouseButtons.Right) != 0)
+			{
+				return java.awt.@event.MouseEvent.BUTTON3;
+			}
+			else
+			{
+				return java.awt.@event.MouseEvent.NOBUTTON;
+			}
+		}
+
+		private static bool IsWithinDoubleClickRectangle(Point p, int x, int y)
+		{
+			return Math.Abs(x - p.X) <= SystemInformation.DoubleClickSize.Width / 2 &&
+				Math.Abs(y - p.Y) <= SystemInformation.DoubleClickSize.Height / 2;
 		}
 
 		protected virtual void OnMouseDown(object sender, MouseEventArgs e)
 		{
-			// TODO set all this stuff...
-			long when = 0;
-			int modifiers = 0;
-			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_PRESSED, when, modifiers, e.X, e.Y, e.Clicks, false));
+			long when = java.lang.System.currentTimeMillis();
+			if(when > lastClick + SystemInformation.DoubleClickTime
+				|| !IsWithinDoubleClickRectangle(mouseDown, e.X, e.Y))
+			{
+				clickCount = 0;
+			}
+			clickCount++;
+			lastClick = when;
+			mouseDown = new Point(e.X, e.Y);
+			int modifiers = GetModifiers(Control.ModifierKeys);
+			int button = GetButton(e);
+			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_PRESSED, when, modifiers, e.X, e.Y, clickCount, false, button));
 		}
 
 		protected virtual void OnMouseUp(object sender, MouseEventArgs e)
 		{
-			// TODO set all this stuff...
-			long when = 0;
-			int modifiers = 0;
-			// TODO set popupTrigger
-			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_RELEASED, when, modifiers, e.X, e.Y, e.Clicks, false));
-			// TODO send MOUSE_CLICKED if the mouse didn't move more than whatever the threshold is 
+			long when = java.lang.System.currentTimeMillis();
+			int modifiers = GetModifiers(Control.ModifierKeys);
+			int button = GetButton(e);
+			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_RELEASED, when, modifiers, e.X, e.Y, clickCount, (e.Button & MouseButtons.Right) != 0, button));
+			if(mouseDown.X == e.X && mouseDown.Y == e.Y)
+			{
+				postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_CLICKED, when, modifiers, e.X, e.Y, clickCount, false, button));
+			}
+		}
+
+		private void OnMouseEnter(object sender, EventArgs e)
+		{
+			long when = java.lang.System.currentTimeMillis();
+			int modifiers = GetModifiers(Control.ModifierKeys);
+			int x = Control.MousePosition.X;
+			int y = Control.MousePosition.Y;
+			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_ENTERED, when, modifiers, x, y, 0, false));
+		}
+
+		private void OnMouseLeave(object sender, EventArgs e)
+		{
+			long when = java.lang.System.currentTimeMillis();
+			int modifiers = GetModifiers(Control.ModifierKeys);
+			int x = Control.MousePosition.X;
+			int y = Control.MousePosition.Y;
+			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_EXITED, when, modifiers, x, y, 0, false));
+		}
+
+		private void OnGotFocus(object sender, EventArgs e)
+		{
+			postEvent(new java.awt.@event.FocusEvent(component, java.awt.@event.FocusEvent.FOCUS_GAINED));
+		}
+
+		private void OnLostFocus(object sender, EventArgs e)
+		{
+			postEvent(new java.awt.@event.FocusEvent(component, java.awt.@event.FocusEvent.FOCUS_LOST));
 		}
 
 		protected void postEvent(java.awt.AWTEvent evt)
@@ -1483,16 +1646,23 @@ namespace ikvm.awt
 				java.awt.Graphics g = component.getGraphics();
 				try
 				{
-					component.update(g);
+					switch(e.getID())
+					{
+						case java.awt.@event.PaintEvent.UPDATE:
+							component.update(g);
+							break;
+						case java.awt.@event.PaintEvent.PAINT:
+							component.paint(g);
+							break;
+						default:
+							Console.WriteLine("Unknown PaintEvent: {0}", e.getID());
+							break;
+					}
 				}
 				finally
 				{
 					g.dispose();
 				}
-			}
-			else
-			{
-				Console.WriteLine("NOTE: NetComponentPeer.handleEvent not implemented: " + e);
 			}
 		}
 
@@ -1589,6 +1759,33 @@ namespace ikvm.awt
 				case java.awt.Cursor.DEFAULT_CURSOR:
 					control.Cursor = Cursors.Default;
 					break;
+				case java.awt.Cursor.HAND_CURSOR:
+					control.Cursor = Cursors.Hand;
+					break;
+				case java.awt.Cursor.CROSSHAIR_CURSOR:
+					control.Cursor = Cursors.Cross;
+					break;
+				case java.awt.Cursor.E_RESIZE_CURSOR:
+					control.Cursor = Cursors.SizeWE;
+					break;
+				case java.awt.Cursor.MOVE_CURSOR:
+					control.Cursor = Cursors.SizeAll;
+					break;
+				case java.awt.Cursor.N_RESIZE_CURSOR:
+				case java.awt.Cursor.S_RESIZE_CURSOR:
+					control.Cursor = Cursors.SizeNS;
+					break;
+				case java.awt.Cursor.NE_RESIZE_CURSOR:
+				case java.awt.Cursor.SW_RESIZE_CURSOR:
+					control.Cursor = Cursors.SizeNESW;
+					break;
+				case java.awt.Cursor.NW_RESIZE_CURSOR:
+				case java.awt.Cursor.SE_RESIZE_CURSOR:
+					control.Cursor = Cursors.SizeNWSE;
+					break;
+				case java.awt.Cursor.TEXT_CURSOR:
+					control.Cursor = Cursors.IBeam;
+					break;
 				default:
 					Console.WriteLine("setCursor not implement for: " + cursor);
 					break;
@@ -1645,7 +1842,7 @@ namespace ikvm.awt
 
 		public void setEventMask (long mask)
 		{
-			Console.WriteLine("NOTE: NetComponentPeer.setEventMask not implemented");
+			//Console.WriteLine("NOTE: NetComponentPeer.setEventMask not implemented");
 		}
 
 		public bool isObscured()
@@ -2036,6 +2233,63 @@ namespace ikvm.awt
 		}
 	}
 
+	class NetChoicePeer : NetComponentPeer, ChoicePeer
+	{
+		public NetChoicePeer(java.awt.Choice target, ComboBox combobox)
+			: base(target, combobox)
+		{
+		}
+
+		public void add(string str, int i)
+		{
+			// TODO:  Add NetChoicePeer.add implementation
+		}
+
+		public void addItem(string str, int i)
+		{
+			// TODO:  Add NetChoicePeer.addItem implementation
+		}
+
+		public void select(int i)
+		{
+			// TODO:  Add NetChoicePeer.select implementation
+		}
+
+		public void removeAll()
+		{
+			// TODO:  Add NetChoicePeer.removeAll implementation
+		}
+
+		public void remove(int i)
+		{
+			// TODO:  Add NetChoicePeer.remove implementation
+		}
+	}
+
+
+	class NetCheckboxPeer : NetComponentPeer, CheckboxPeer
+	{
+		public NetCheckboxPeer(java.awt.Checkbox target, CheckBox checkbox)
+			: base(target, checkbox)
+		{
+		}
+
+		public void setCheckboxGroup(java.awt.CheckboxGroup cg)
+		{
+			// TODO:  Add NetCheckboxPeer.setCheckboxGroup implementation
+		}
+
+		public void setState(bool b)
+		{
+			// TODO:  Add NetCheckboxPeer.setState implementation
+		}
+
+		public void setLabel(string str)
+		{
+			// TODO:  Add NetCheckboxPeer.setLabel implementation
+		}
+	}
+
 	class NetLabelPeer : NetComponentPeer, LabelPeer
 	{
 		public NetLabelPeer(java.awt.Label jlabel, Label label)
@@ -2094,6 +2348,7 @@ namespace ikvm.awt
 		public NetTextFieldPeer(java.awt.TextField textField, TextBox textBox)
 			: base(textField, textBox)
 		{
+			setEchoCharacter(textField.getEchoChar());
 		}
 
 		public java.awt.Dimension minimumSize(int len)
@@ -2122,12 +2377,13 @@ namespace ikvm.awt
 
 		public void setEchoChar(char echo_char)
 		{
-			throw new NotImplementedException();
+			setEchoCharacter(echo_char);
 		}
 
 		public void setEchoCharacter(char echo_char)
 		{
-			throw new NotImplementedException();
+			// TODO use control.Invoke
+			((TextBox)control).PasswordChar = echo_char;
 		}
 	}
 
@@ -2164,11 +2420,11 @@ namespace ikvm.awt
 		}
 		public java.awt.Dimension minimumSize(int rows, int cols)
 		{
-			throw new NotImplementedException();
+			return getMinimumSize(rows, cols);
 		}
 		public java.awt.Dimension getMinimumSize(int rows, int cols)
 		{
-			throw new NotImplementedException();
+			return new java.awt.Dimension(0, 0);
 		}
 		public java.awt.Dimension preferredSize(int rows, int cols)
 		{
@@ -2193,6 +2449,8 @@ namespace ikvm.awt
 
 	class NetContainerPeer : NetComponentPeer, ContainerPeer
 	{
+		private java.awt.Insets _insets = new java.awt.Insets(0, 0, 0, 0);
+
 		public NetContainerPeer(java.awt.Container awtcontainer, ContainerControl container)
 			: base(awtcontainer, container)
 		{
@@ -2200,23 +2458,20 @@ namespace ikvm.awt
 
 		public java.awt.Insets insets()
 		{
-			throw new NotImplementedException();
+			return getInsets();
 		}
 
 		public virtual java.awt.Insets getInsets()
 		{
-			Console.WriteLine("NOTE: NetContainerPeer.getInsets not implemented");
-			return new java.awt.Insets(0, 0, 0, 0);
+			return _insets;
 		}
 
 		public void beginValidate()
 		{
-			Console.WriteLine("NOTE: NetContainerPeer.beginValidate not implemented");
 		}
 
 		public void endValidate()
 		{
-			Console.WriteLine("NOTE: NetContainerPeer.endValidate not implemented");
 		}
 		public void beginLayout()
 		{
