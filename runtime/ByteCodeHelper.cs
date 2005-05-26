@@ -24,6 +24,7 @@
 using System;
 using System.Reflection;
 using System.Diagnostics;
+using IKVM.Attributes;
 
 namespace IKVM.Runtime
 {
@@ -547,6 +548,7 @@ namespace IKVM.Runtime
 			}
 		}
 
+		[HideFromJava]
 		public static void VerboseCastFailure(RuntimeTypeHandle typeHandle, object obj)
 		{
 			string msg = String.Format("Object of type \"{0}\" cannot be cast to \"{1}\"", obj.GetType().AssemblyQualifiedName, Type.GetTypeFromHandle(typeHandle).AssemblyQualifiedName);

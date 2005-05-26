@@ -184,6 +184,7 @@
 ../../classpath/gnu/classpath/ServiceProviderLoadingAction.java
 ../../classpath/gnu/classpath/SystemProperties.java
 ../../classpath/gnu/CORBA/aliasTypeCode.java
+../../classpath/gnu/CORBA/Asynchron.java
 ../../classpath/gnu/CORBA/BigDecimalHelper.java
 ../../classpath/gnu/CORBA/binaryReply.java
 ../../classpath/gnu/CORBA/bufferedResponseHandler.java
@@ -2886,6 +2887,7 @@
 ../../classpath/org/omg/CORBA/Current.java
 ../../classpath/org/omg/CORBA/CurrentOperations.java
 ../../classpath/org/omg/CORBA/DATA_CONVERSION.java
+../../classpath/org/omg/CORBA/DefinitionKind.java
 ../../classpath/org/omg/CORBA/DomainManager.java
 ../../classpath/org/omg/CORBA/DomainManagerOperations.java
 ../../classpath/org/omg/CORBA/DoubleHolder.java
@@ -2912,6 +2914,7 @@
 ../../classpath/org/omg/CORBA/FREE_MEM.java
 ../../classpath/org/omg/CORBA/IDLEntity.java
 ../../classpath/org/omg/CORBA/IDLType.java
+../../classpath/org/omg/CORBA/IDLTypeOperations.java
 ../../classpath/org/omg/CORBA/IMP_LIMIT.java
 ../../classpath/org/omg/CORBA/INITIALIZE.java
 ../../classpath/org/omg/CORBA/INTERNAL.java
@@ -2922,6 +2925,8 @@
 ../../classpath/org/omg/CORBA/INV_OBJREF.java
 ../../classpath/org/omg/CORBA/INV_POLICY.java
 ../../classpath/org/omg/CORBA/INVALID_TRANSACTION.java
+../../classpath/org/omg/CORBA/IRObject.java
+../../classpath/org/omg/CORBA/IRObjectOperations.java
 ../../classpath/org/omg/CORBA/LongHolder.java
 ../../classpath/org/omg/CORBA/LongLongSeqHelper.java
 ../../classpath/org/omg/CORBA/LongLongSeqHolder.java

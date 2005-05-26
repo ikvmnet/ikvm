@@ -27,6 +27,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Drawing;
 using System.ComponentModel;
+using System.Reflection;
 using java.awt.datatransfer;
 using java.awt.image;
 using java.awt.peer;
@@ -58,7 +59,7 @@ namespace ikvm.awt
 	{
 		internal static System.Collections.ArrayList nativeQueue = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList());
 		private static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
-		private static volatile Form bogusForm;
+		internal static volatile Form bogusForm;
 		private static Delegate createControlInstance;
 		private int resolution;
 
@@ -280,7 +281,7 @@ namespace ikvm.awt
 
 		public override java.awt.FontMetrics getFontMetrics(java.awt.Font font)
 		{
-			return new NetFontMetrics(font, NetGraphics.NetFontFromJavaFont(font, getScreenResolution()), null, null);
+			return new NetFontMetrics(font, getScreenResolution());
 		}
 
 		public override void sync()
@@ -532,7 +533,7 @@ namespace ikvm.awt
 
 		public override int getType()
 		{
-			throw new NotImplementedException();
+			return TYPE_RASTER_SCREEN;
 		}
 	}
 
@@ -742,6 +743,7 @@ namespace ikvm.awt
 			// seem to have a way of doing that, so we probably need access to the underlying surface.
 			// Sigh...
 			NetGraphics newg = new NetGraphics(g, font, bgcolor, false);
+			disposable = false;
 			// TODO copy other attributes
 			return newg;
 		}
@@ -752,6 +754,7 @@ namespace ikvm.awt
 			{
 				disposable = false;
 				g.Dispose();
+				g = null;
 			}
 			netfont.Dispose();
 		}
@@ -1025,12 +1028,12 @@ namespace ikvm.awt
 
 		public override java.awt.FontMetrics getFontMetrics(java.awt.Font f)
 		{
-			return new NetFontMetrics(f, NetFontFromJavaFont(f, g.DpiY), g, null);
+			return new NetFontMetrics(f, g.DpiY);
 		}
 
 		public override java.awt.FontMetrics getFontMetrics()
 		{
-			return new NetFontMetrics(font, netfont, g, null);
+			return new NetFontMetrics(font, g.DpiY);
 		}
 
 		public override bool hitClip(int param1, int param2, int param3, int param4)
@@ -1237,20 +1240,31 @@ namespace ikvm.awt
 
 	class NetFontMetrics : java.awt.FontMetrics
 	{
-		private Font netFont;
-		private Graphics g;
-		private Control c;
+		private float dpi;
 
-		public NetFontMetrics(java.awt.Font f, Font netFont, Graphics g, Control c) : base(f)
+		public NetFontMetrics(java.awt.Font font, float dpi) : base(font)
 		{
-			this.netFont = netFont;
-			this.g = g;
-			this.c = c;
+			this.dpi = dpi;
+		}
+
+		private Font RealizeFont()
+		{
+			if(dpi == 0)
+			{
+				using(Graphics g = NetToolkit.bogusForm.CreateGraphics())
+				{
+					dpi = g.DpiY;
+				}
+			}
+			return NetGraphics.NetFontFromJavaFont(getFont(), dpi);
 		}
 
 		public override int getHeight()
 		{
-			return netFont.Height;
+			using(Font f = RealizeFont())
+			{
+				return f.Height;
+			}
 		}
 
 		public override int getLeading()
@@ -1278,38 +1292,29 @@ namespace ikvm.awt
 
 		public override int getAscent()
 		{
-			int ascent = netFont.FontFamily.GetCellAscent(netFont.Style);
-			return (int)Math.Round(netFont.Size * ascent / netFont.FontFamily.GetEmHeight(netFont.Style));
+			using(Font f = RealizeFont())
+			{
+				int ascent = f.FontFamily.GetCellAscent(f.Style);
+				return (int)Math.Round(f.Size * ascent / f.FontFamily.GetEmHeight(f.Style));
+			}
 		}
 
 		public override int getDescent()
 		{
-			int descent = netFont.FontFamily.GetCellDescent(netFont.Style);
-			return (int)Math.Round(netFont.Size * descent / netFont.FontFamily.GetEmHeight(netFont.Style));
+			using(Font f = RealizeFont())
+			{
+				int descent = f.FontFamily.GetCellDescent(f.Style);
+				return (int)Math.Round(f.Size * descent / f.FontFamily.GetEmHeight(f.Style));
+			}
 		}
 
 		public override int stringWidth(string s)
 		{
-			if(g != null)
+			using(Font f = RealizeFont())
+			using(Graphics g = NetToolkit.bogusForm.CreateGraphics())
 			{
-				try
-				{
-					return (int)Math.Round(g.MeasureString(s, netFont).Width);
-				}
-				catch(ObjectDisposedException)
-				{
-					g = null;
-				}
+				return (int)Math.Round(g.MeasureString(s, f).Width);
 			}
-			if(c != null)
-			{
-				using(Graphics g1 = c.CreateGraphics())
-				{
-					return (int)Math.Round(g1.MeasureString(s, netFont).Width);
-				}
-			}
-			// as a last resort, we make a lame guess
-			return s.Length * getHeight() / 2;
 		}
 	}
 
@@ -1606,12 +1611,7 @@ namespace ikvm.awt
 
 		public java.awt.FontMetrics getFontMetrics(java.awt.Font f)
 		{
-			// HACK this is a very heavy weight way to determine DPI, it should be possible
-			// to do this without creating a Graphics object
-			using(Graphics g = control.CreateGraphics())
-			{
-				return new NetFontMetrics(f, NetGraphics.NetFontFromJavaFont(f, g.DpiY), null, control);
-			}
+			return new NetFontMetrics(f, 0);
 		}
 
 		public virtual java.awt.Graphics getGraphics()
@@ -1621,7 +1621,9 @@ namespace ikvm.awt
 
 		public java.awt.Point getLocationOnScreen()
 		{
-			throw new NotImplementedException();
+			// TODO use control.Invoke
+			Point p = control.PointToScreen(new Point(0, 0));
+			return new java.awt.Point(p.X, p.Y);
 		}
 
 		public java.awt.Dimension getMinimumSize()
@@ -2071,7 +2073,7 @@ namespace ikvm.awt
 
 		public override java.awt.GraphicsDevice getDevice()
 		{
-			throw new NotImplementedException();
+			return new NetGraphicsDevice();
 		}
 
 		public override java.awt.ImageCapabilities getImageCapabilities()
@@ -2561,12 +2563,9 @@ namespace ikvm.awt
 
 		private void Resize(object sender, EventArgs e)
 		{
-			// TODO I have no clue what I should do here...
 			Rectangle r = control.Bounds;
-			component.setBounds(r.X, r.Y, r.Width, r.Height);
-			component.invalidate();
+			component.GetType().InvokeMember("setBoundsCallback", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.NonPublic, null, component, new object[] { r.X, r.Y, r.Width, r.Height });
 			component.validate();
-			postEvent(new java.awt.@event.ComponentEvent(component, java.awt.@event.ComponentEvent.COMPONENT_RESIZED));
 		}
 
 		public override java.awt.Graphics getGraphics()
