@@ -9,6 +9,8 @@
             <references>
                 <includes name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
                 <includes name="../bin/IKVM.Runtime.dll" asis="true" />
+                <includes name="System.Windows.Forms.dll" asis="true" />
+                <includes name="System.Drawing.dll" asis="true" />
             </references>
         </csc>
     </target>
