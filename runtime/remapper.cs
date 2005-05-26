@@ -1150,6 +1150,8 @@ namespace IKVM.Internal.MapXml
 		public string Sig;		// optional (for object type args)
 		[XmlElement("element")]
 		public Element[] Elements;
+		[XmlElement("attribute")]
+		public Attribute[] Attributes;
 	}
 
 	public class Attribute

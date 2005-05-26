@@ -236,6 +236,11 @@ class AttributeHelper
 		fb.SetCustomAttribute(CreateCustomAttribute(attr));
 	}
 
+	internal static void SetCustomAttribute(ParameterBuilder pb, IKVM.Internal.MapXml.Attribute attr)
+	{
+		pb.SetCustomAttribute(CreateCustomAttribute(attr));
+	}
+
 	internal static void SetCustomAttribute(MethodBuilder mb, IKVM.Internal.MapXml.Attribute attr)
 	{
 		SecurityAction action;
@@ -3213,9 +3218,10 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							TypeWrapper[] args = methods[i].GetParameters();
 							MethodBuilder stub = typeBuilder.DefineMethod(methods[i].Name, MethodAttributes.Public, methods[i].ReturnTypeForDefineMethod, methods[i].GetParametersForDefineMethod());
-							if((JVM.IsStaticCompiler && classFile.IsPublic) || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
+							IKVM.Internal.MapXml.Param[] parameters = GetXmlMapParameters(classFile.Name, methods[i].Name, methods[i].Signature);
+							if((JVM.IsStaticCompiler && classFile.IsPublic) || parameters != null || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
 							{
-								AddParameterNames(stub, methods[i].Signature);
+								AddParameterNames(stub, methods[i].Signature, parameters);
 							}
 							AttributeHelper.SetModifiers(stub, methods[i].Modifiers);
 							ILGenerator ilgen = stub.GetILGenerator();
@@ -4501,9 +4507,10 @@ sealed class DynamicTypeWrapper : TypeWrapper
 					}
 					method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod());
 					((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
-					if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
+					IKVM.Internal.MapXml.Param[] parameters = GetXmlMapParameters(classFile.Name, m.Name, m.Signature);
+					if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || parameters != null || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
 					{
-						AddParameterNames(method, m);
+						AddParameterNames(method, m, parameters);
 					}
 				}
 				else if(m.IsClassInitializer)
@@ -4699,9 +4706,10 @@ sealed class DynamicTypeWrapper : TypeWrapper
 							ilgen.Emit(OpCodes.Ret);
 						}
 					}
-					if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
+					IKVM.Internal.MapXml.Param[] parameters = GetXmlMapParameters(classFile.Name, m.Name, m.Signature);
+					if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || parameters != null || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
 					{
-						AddParameterNames(mb, m);
+						AddParameterNames(mb, m, parameters);
 					}
 					if((JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage) && setModifiers)
 					{
@@ -4731,7 +4739,39 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			}
 		}
 
-		private static ParameterBuilder[] AddParameterNames(MethodBase mb, ClassFile.Method m)
+		private static IKVM.Internal.MapXml.Param[] GetXmlMapParameters(string classname, string method, string sig)
+		{
+			if(mapxml != null)
+			{
+				IKVM.Internal.MapXml.Class clazz = (IKVM.Internal.MapXml.Class)mapxml[classname];
+				if(clazz != null)
+				{
+					if(method == "<init>" && clazz.Constructors != null)
+					{
+						for(int i = 0; i < clazz.Constructors.Length; i++)
+						{
+							if(clazz.Constructors[i].Sig == sig)
+							{
+								return clazz.Constructors[i].Params;
+							}
+						}
+					}
+					else if(clazz.Methods != null)
+					{
+						for(int i = 0; i < clazz.Methods.Length; i++)
+						{
+							if(clazz.Methods[i].Name == method && clazz.Methods[i].Sig == sig)
+							{
+								return clazz.Methods[i].Params;
+							}
+						}
+					}
+				}
+			}
+			return null;
+		}
+
+		private static ParameterBuilder[] AddParameterNames(MethodBase mb, ClassFile.Method m, IKVM.Internal.MapXml.Param[] xmlparams)
 		{
 			ClassFile.Method.LocalVariableTableEntry[] localVars = m.LocalVariableTableAttribute;
 			if(localVars != null)
@@ -4750,13 +4790,27 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							if(localVars[j].index == i && parameterBuilders[i - bias] == null)
 							{
+								string name = localVars[j].name;
+								if(xmlparams != null && xmlparams[i - bias].Name != null)
+								{
+									name = xmlparams[i - bias].Name;
+								}
+								ParameterBuilder pb;
 								if(mb is MethodBuilder)
 								{
-									parameterBuilders[i - bias] = ((MethodBuilder)mb).DefineParameter(m.ArgMap[i] + 1 - bias, ParameterAttributes.None, localVars[j].name);
+									pb = ((MethodBuilder)mb).DefineParameter(m.ArgMap[i] + 1 - bias, ParameterAttributes.None, name);
 								}
-								else if(mb is ConstructorBuilder)
+								else
 								{
-									parameterBuilders[i - bias] = ((ConstructorBuilder)mb).DefineParameter(m.ArgMap[i], ParameterAttributes.None, localVars[j].name);
+									pb = ((ConstructorBuilder)mb).DefineParameter(m.ArgMap[i], ParameterAttributes.None, name);
+								}
+								parameterBuilders[i - bias] = pb;
+								if(xmlparams != null && xmlparams[i - bias].Attributes != null)
+								{
+									for(int k = 0; k < xmlparams[i - bias].Attributes.Length; k++)
+									{
+										AttributeHelper.SetCustomAttribute(pb, xmlparams[i - bias].Attributes[k]);
+									}
 								}
 								break;
 							}
@@ -4767,11 +4821,11 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			}
 			else
 			{
-				return AddParameterNames(mb, m.Signature);
+				return AddParameterNames(mb, m.Signature, xmlparams);
 			}
 		}
 
-		private static ParameterBuilder[] AddParameterNames(MethodBase mb, string sig)
+		private static ParameterBuilder[] AddParameterNames(MethodBase mb, string sig, IKVM.Internal.MapXml.Param[] xmlparams)
 		{
 			ArrayList names = new ArrayList();
 			for(int i = 1; sig[i] != ')'; i++)
@@ -4856,6 +4910,11 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			for(int i = 0; i < names.Count; i++)
 			{
 				string name = (string)names[i];
+				if(xmlparams != null && xmlparams[i].Name != null)
+				{
+					name = xmlparams[i].Name;
+				}
+				ParameterBuilder pb;
 				if(names.IndexOf(name, i + 1) >= 0 || clashes.ContainsKey(name))
 				{
 					int clash = 1;
@@ -4868,11 +4927,19 @@ sealed class DynamicTypeWrapper : TypeWrapper
 				}
 				if(mb is MethodBuilder)
 				{
-					parameterBuilders[i] = ((MethodBuilder)mb).DefineParameter(i + 1, ParameterAttributes.None, name);
+					pb = ((MethodBuilder)mb).DefineParameter(i + 1, ParameterAttributes.None, name);
 				}
-				else if(mb is ConstructorBuilder)
+				else
 				{
-					parameterBuilders[i] = ((ConstructorBuilder)mb).DefineParameter(i + 1, ParameterAttributes.None, name);
+					pb = ((ConstructorBuilder)mb).DefineParameter(i + 1, ParameterAttributes.None, name);
+				}
+				parameterBuilders[i] = pb;
+				if(xmlparams != null && xmlparams[i].Attributes != null)
+				{
+					for(int k = 0; k < xmlparams[i].Attributes.Length; k++)
+					{
+						AttributeHelper.SetCustomAttribute(pb, xmlparams[i].Attributes[k]);
+					}
 				}
 			}
 			return parameterBuilders;

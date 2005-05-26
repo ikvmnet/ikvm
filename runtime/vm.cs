@@ -1577,7 +1577,14 @@ namespace IKVM.Internal
 					{
 						for(int i = 0; i < parameters.Length; i++)
 						{
-							mb.DefineParameter(i + 1, ParameterAttributes.None, parameters[i].Name);
+							ParameterBuilder pb = mb.DefineParameter(i + 1, ParameterAttributes.None, parameters[i].Name);
+							if(parameters[i].Attributes != null)
+							{
+								for(int j = 0; j < parameters[i].Attributes.Length; j++)
+								{
+									AttributeHelper.SetCustomAttribute(pb, parameters[i].Attributes[j]);
+								}
+							}
 						}
 					}
 				}
@@ -1588,7 +1595,14 @@ namespace IKVM.Internal
 					{
 						for(int i = 0; i < parameters.Length; i++)
 						{
-							cb.DefineParameter(i + 1, ParameterAttributes.None, parameters[i].Name);
+							ParameterBuilder pb = cb.DefineParameter(i + 1, ParameterAttributes.None, parameters[i].Name);
+							if(parameters[i].Attributes != null)
+							{
+								for(int j = 0; j < parameters[i].Attributes.Length; j++)
+								{
+									AttributeHelper.SetCustomAttribute(pb, parameters[i].Attributes[j]);
+								}
+							}
 						}
 					}
 				}
