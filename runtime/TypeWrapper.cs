@@ -186,6 +186,39 @@ class AttributeHelper
 		}
 	}
 
+	private static void SetPropertiesAndFields(Attribute attrib, IKVM.Internal.MapXml.Attribute attr)
+	{
+		Type t = attrib.GetType();
+		if(attr.Properties != null)
+		{
+			foreach(IKVM.Internal.MapXml.Param prop in attr.Properties)
+			{
+				PropertyInfo pi = t.GetProperty(prop.Name);
+				pi.SetValue(attrib, ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), prop.Sig), prop.Value), null);
+			}
+		}
+		if(attr.Fields != null)
+		{
+			foreach(IKVM.Internal.MapXml.Param field in attr.Fields)
+			{
+				FieldInfo fi = t.GetField(field.Name);
+				fi.SetValue(attrib, ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), field.Sig), field.Value));
+			}
+		}
+	}
+
+	internal static Attribute InstantiatePseudoCustomAttribute(IKVM.Internal.MapXml.Attribute attr)
+	{
+		Type t = Type.GetType(attr.Type, true);
+		Type[] argTypes;
+		object[] args;
+		GetAttributeArgsAndTypes(attr, out argTypes, out args);
+		ConstructorInfo ci = t.GetConstructor(argTypes);
+		Attribute attrib = ci.Invoke(args) as Attribute;
+		SetPropertiesAndFields(attrib, attr);
+		return attrib;
+	}
+
 	private static bool IsCodeAccessSecurityAttribute(IKVM.Internal.MapXml.Attribute attr, out SecurityAction action, out PermissionSet pset)
 	{
 		action = SecurityAction.Deny;
@@ -200,14 +233,7 @@ class AttributeHelper
 				GetAttributeArgsAndTypes(attr, out argTypes, out args);
 				ConstructorInfo ci = t.GetConstructor(argTypes);
 				CodeAccessSecurityAttribute attrib = ci.Invoke(args) as CodeAccessSecurityAttribute;
-				if(attr.Properties != null)
-				{
-					foreach(IKVM.Internal.MapXml.Param prop in attr.Properties)
-					{
-						PropertyInfo pi = t.GetProperty(prop.Name);
-						pi.SetValue(attrib, ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), prop.Sig), prop.Value), null);
-					}
-				}
+				SetPropertiesAndFields(attrib, attr);
 				action = attrib.Action;
 				pset = new PermissionSet(PermissionState.None);
 				pset.AddPermission(attrib.CreatePermission());
@@ -215,6 +241,20 @@ class AttributeHelper
 			}
 		}
 		return false;
+	}
+
+	private static bool IsPseudoCustomAttribute(Type type)
+	{
+		// why is there no .NET API for this?
+		return type == typeof(System.Reflection.AssemblyAlgorithmIdAttribute)
+			|| type == typeof(System.Reflection.AssemblyFlagsAttribute)
+			|| type == typeof(System.Runtime.InteropServices.DllImportAttribute)
+			|| type == typeof(System.Runtime.InteropServices.FieldOffsetAttribute)
+			|| type == typeof(System.Runtime.InteropServices.InAttribute)
+			|| type == typeof(System.Runtime.InteropServices.MarshalAsAttribute)
+			|| type == typeof(System.Runtime.CompilerServices.MethodImplAttribute)
+			|| type == typeof(System.Runtime.InteropServices.OutAttribute)
+			|| type == typeof(System.Runtime.InteropServices.StructLayoutAttribute);
 	}
 
 	internal static void SetCustomAttribute(TypeBuilder tb, IKVM.Internal.MapXml.Attribute attr)
@@ -321,6 +361,10 @@ class AttributeHelper
 			if(typeof(CodeAccessSecurityAttribute).IsAssignableFrom(t))
 			{
 				throw new NotImplementedException("CodeAccessSecurityAttribute support not implemented");
+			}
+			if(IsPseudoCustomAttribute(t))
+			{
+				throw new NotImplementedException(string.Format("Pseudo Custom Attribute {0} support not implemented", t.FullName));
 			}
 			ConstructorInfo ci = t.GetConstructor(argTypes);
 			PropertyInfo[] namedProperties;
@@ -3468,6 +3512,10 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						}
 						else if(m.IsNative)
 						{
+							if((mb.Attributes & MethodAttributes.PinvokeImpl) != 0)
+							{
+								continue;
+							}
 							Profiler.Enter("JavaTypeImpl.Finish.Native");
 							try
 							{
@@ -4658,7 +4706,49 @@ sealed class DynamicTypeWrapper : TypeWrapper
 						{
 							name = GenerateUniqueMethodName(name, methods[index]);
 						}
-						mb = typeBuilder.DefineMethod(name, attribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+						System.Runtime.InteropServices.DllImportAttribute dllimport = GetDllImportAttribute(methods[index]);
+						if(dllimport != null)
+						{
+							// TODO dllimport.PreserveSig should use mb.SetImplementationFlags(MethodImplAttributes.PreserveSig)
+							// NOTE there doesn't seem to be a way to support BestFitMapping, SetLastError and ThrowOnUnmappableChar
+							System.Runtime.InteropServices.CallingConvention nativeCallConv = dllimport.CallingConvention;
+							if((int)nativeCallConv == 0)
+							{
+								nativeCallConv = System.Runtime.InteropServices.CallingConvention.Winapi;
+							}
+							System.Runtime.InteropServices.CharSet nativeCharSet = dllimport.CharSet;
+							if((int)nativeCharSet == 0)
+							{
+								nativeCharSet = System.Runtime.InteropServices.CharSet.Auto;
+							}
+							if(dllimport.EntryPoint != null)
+							{
+								mb = typeBuilder.DefinePInvokeMethod(name,
+									dllimport.Value,
+									dllimport.EntryPoint,
+									attribs | MethodAttributes.PinvokeImpl,
+									CallingConventions.Standard,
+									methods[index].ReturnTypeForDefineMethod,
+									methods[index].GetParametersForDefineMethod(),
+									nativeCallConv,
+									nativeCharSet);
+							}
+							else
+							{
+								mb = typeBuilder.DefinePInvokeMethod(name,
+									dllimport.Value,
+									attribs | MethodAttributes.PinvokeImpl,
+									CallingConventions.Standard,
+									methods[index].ReturnTypeForDefineMethod,
+									methods[index].GetParametersForDefineMethod(),
+									nativeCallConv,
+									nativeCharSet);
+							}
+						}
+						else
+						{
+							mb = typeBuilder.DefineMethod(name, attribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+						}
 						if(unloadableOverrideStub)
 						{
 							GenerateUnloadableOverrideStub(baseMce, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
@@ -4737,6 +4827,39 @@ sealed class DynamicTypeWrapper : TypeWrapper
 			{
 				Profiler.Leave("JavaTypeImpl.GenerateMethod");
 			}
+		}
+
+		private System.Runtime.InteropServices.DllImportAttribute GetDllImportAttribute(MethodWrapper mw)
+		{
+			if(mapxml != null && (mw.Modifiers & Modifiers.Native) != 0)
+			{
+				IKVM.Internal.MapXml.Class clazz = (IKVM.Internal.MapXml.Class)mapxml[mw.DeclaringType.Name];
+				if(clazz != null && clazz.Methods != null)
+				{
+					foreach(IKVM.Internal.MapXml.Method m in clazz.Methods)
+					{
+						if(m.Name == mw.Name && m.Sig == mw.Signature)
+						{
+							if(m.Attributes != null)
+							{
+								foreach(IKVM.Internal.MapXml.Attribute attr in m.Attributes)
+								{
+									if(Type.GetType(attr.Type) == typeof(System.Runtime.InteropServices.DllImportAttribute))
+									{
+										// HACK now remove the element from the array
+										ArrayList list = new ArrayList(m.Attributes);
+										list.Remove(attr);
+										m.Attributes = (IKVM.Internal.MapXml.Attribute[])list.ToArray(typeof(IKVM.Internal.MapXml.Attribute));
+										return (System.Runtime.InteropServices.DllImportAttribute)AttributeHelper.InstantiatePseudoCustomAttribute(attr);
+									}
+								}
+							}
+							break;
+						}
+					}
+				}
+			}
+			return null;
 		}
 
 		private static IKVM.Internal.MapXml.Param[] GetXmlMapParameters(string classname, string method, string sig)
