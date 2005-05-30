@@ -489,7 +489,7 @@ namespace IKVM.Internal
 			}
 			return sb.ToString();
 		}
-
+#if !NO_STATIC_COMPILER
 		private class CompilerClassLoader : ClassLoaderWrapper
 		{
 			private Hashtable classes;
@@ -517,6 +517,11 @@ namespace IKVM.Internal
 				this.keyfilename = keyfilename;
 				this.keycontainer = keycontainer;
 				Tracer.Info(Tracer.Compiler, "Instantiate CompilerClassLoader for {0}", assemblyName);
+			}
+
+			protected override TypeWrapper CreateDynamicTypeWrapper(ClassFile f, ClassLoaderWrapper loader, object protectionDomain)
+			{
+				return new AotTypeWrapper(f, loader);
 			}
 
 			protected override ModuleBuilder CreateModuleBuilder()
@@ -2004,7 +2009,7 @@ namespace IKVM.Internal
 
 				if(hasRemappedTypes)
 				{
-					DynamicTypeWrapper.SetupGhosts(map);
+					AotTypeWrapper.SetupGhosts(map);
 				}
 
 				// 2nd pass, resolve interfaces, publish methods/fields
@@ -2402,7 +2407,7 @@ namespace IKVM.Internal
 			compilationPhase1 = false;
 			if(map != null)
 			{
-				DynamicTypeWrapper.LoadMappedExceptions(map);
+				AotTypeWrapper.LoadMappedExceptions(map);
 				// mark all exceptions that are unsafe for mapping with a custom attribute,
 				// so that at runtime we can quickly assertain if an exception type can be
 				// caught without filtering
@@ -2413,7 +2418,7 @@ namespace IKVM.Internal
 						tw.TypeAsBuilder.SetCustomAttribute(typeof(ExceptionIsUnsafeForMappingAttribute).GetConstructor(Type.EmptyTypes), new byte[0]);
 					}
 				}
-				DynamicTypeWrapper.LoadMapXml(map);
+				AotTypeWrapper.LoadMapXml(map);
 				Tracer.Info(Tracer.Compiler, "Loading remapped types (2)");
 				loader.FinishRemappedTypes();
 			}
@@ -2422,7 +2427,7 @@ namespace IKVM.Internal
 			loader.Save();
 			return 0;
 		}
-
+#endif
 		public static void PrepareForSaveDebugImage()
 		{
 			ClassLoaderWrapper.PrepareForSaveDebugImage();

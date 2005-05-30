@@ -600,7 +600,7 @@ class ClassLoaderWrapper
 		}
 		try
 		{
-			TypeWrapper type = new DynamicTypeWrapper(f, this, protectionDomain);
+			TypeWrapper type = CreateDynamicTypeWrapper(f, this, protectionDomain);
 			lock(types.SyncRoot)
 			{
 				// in very extreme conditions another thread may have beaten us to it
@@ -634,6 +634,11 @@ class ClassLoaderWrapper
 			}
 			throw;
 		}
+	}
+
+	protected virtual TypeWrapper CreateDynamicTypeWrapper(ClassFile f, ClassLoaderWrapper loader, object protectionDomain)
+	{
+		return new DynamicTypeWrapper(f, loader, protectionDomain);
 	}
 
 	private TypeWrapper DefineNetExpType(string name, string assemblyName)
