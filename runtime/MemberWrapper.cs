@@ -313,18 +313,6 @@ abstract class MethodWrapper : MemberWrapper
 		this.declaredExceptions = (string[])exceptions.Clone();
 	}
 
-	internal void SetDeclaredExceptions(IKVM.Internal.MapXml.Throws[] throws)
-	{
-		if(throws != null)
-		{
-			declaredExceptions = new string[throws.Length];
-			for(int i = 0; i < throws.Length; i++)
-			{
-				declaredExceptions[i] = throws[i].Class;
-			}
-		}
-	}
-
 	internal static MethodWrapper FromCookie(IntPtr cookie)
 	{
 		return (MethodWrapper)FromCookieImpl(cookie);

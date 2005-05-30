@@ -2864,7 +2864,6 @@
 ../../classpath/org/omg/CORBA/BAD_CONTEXT.java
 ../../classpath/org/omg/CORBA/BAD_INV_ORDER.java
 ../../classpath/org/omg/CORBA/BAD_OPERATION.java
-../../classpath/org/omg/CORBA/BAD_OPERATION.java
 ../../classpath/org/omg/CORBA/BAD_PARAM.java
 ../../classpath/org/omg/CORBA/BAD_POLICY.java
 ../../classpath/org/omg/CORBA/BAD_POLICY_TYPE.java
