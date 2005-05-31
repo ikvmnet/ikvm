@@ -81,18 +81,26 @@ public final class FileChannelImpl extends FileChannel
     private Stream stream;
     private int mode;
 
-    public FileChannelImpl ()
+    /* Open a file.  MODE is a combination of the above mode flags. */
+    public static FileChannelImpl create(File file, int mode)
+        throws FileNotFoundException
     {
+        return new FileChannelImpl(file, mode);
     }
 
-    /* Open a file.  MODE is a combination of the above mode flags. */
-    public FileChannelImpl (File path, int mode) throws FileNotFoundException
+    private FileChannelImpl(File file, int mode)
+        throws FileNotFoundException
     {
-	stream = open (path.getPath(), mode);
+	stream = open(file.getPath(), mode);
 	this.mode = mode;
     }
 
-    public FileChannelImpl(Stream stream)
+    public static FileChannelImpl create(Stream stream)
+    {
+        return new FileChannelImpl(stream);
+    }
+
+    private FileChannelImpl(Stream stream)
     {
 	this.stream = stream;
 	mode = (stream.get_CanRead() ? READ : 0) | (stream.get_CanWrite() ? WRITE : 0);

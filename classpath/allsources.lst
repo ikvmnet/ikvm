@@ -245,6 +245,8 @@
 ../../classpath/gnu/CORBA/Restricted_ORB.java
 ../../classpath/gnu/CORBA/Simple_delegate.java
 ../../classpath/gnu/CORBA/ServiceDetailHolder.java
+../../classpath/gnu/CORBA/ServiceRequestAdapter.java
+../../classpath/gnu/CORBA/streamReadyHolder.java
 ../../classpath/gnu/CORBA/streamRequest.java
 ../../classpath/gnu/CORBA/stringTypeCode.java
 ../../classpath/gnu/CORBA/stubFinder.java
@@ -2904,6 +2906,7 @@
 ../../classpath/org/omg/CORBA/DynSequence.java
 ../../classpath/org/omg/CORBA/DynStruct.java
 ../../classpath/org/omg/CORBA/DynUnion.java
+../../classpath/org/omg/CORBA/DynValue.java
 ../../classpath/org/omg/CORBA/Environment.java
 ../../classpath/org/omg/CORBA/ExceptionList.java
 ../../classpath/org/omg/CORBA/FixedHolder.java
@@ -2969,6 +2972,7 @@
 ../../classpath/org/omg/CORBA/portable/ServantObject.java
 ../../classpath/org/omg/CORBA/portable/Streamable.java
 ../../classpath/org/omg/CORBA/portable/UnknownException.java
+../../classpath/org/omg/CORBA/portable/ValueBase.java
 ../../classpath/org/omg/CORBA/Principal.java
 ../../classpath/org/omg/CORBA/PrincipalHolder.java
 ../../classpath/org/omg/CORBA/PRIVATE_MEMBER.java
@@ -3003,11 +3007,14 @@
 ../../classpath/org/omg/CORBA/ULongSeqHolder.java
 ../../classpath/org/omg/CORBA/UnionMember.java
 ../../classpath/org/omg/CORBA/UNKNOWN.java
+../../classpath/org/omg/CORBA/UnknownUserException.java
 ../../classpath/org/omg/CORBA/UNSUPPORTED_POLICY.java
 ../../classpath/org/omg/CORBA/UNSUPPORTED_POLICY_VALUE.java
 ../../classpath/org/omg/CORBA/UserException.java
 ../../classpath/org/omg/CORBA/UShortSeqHelper.java
 ../../classpath/org/omg/CORBA/UShortSeqHolder.java
+../../classpath/org/omg/CORBA/ValueBaseHelper.java
+../../classpath/org/omg/CORBA/ValueBaseHolder.java
 ../../classpath/org/omg/CORBA/ValueMember.java
 ../../classpath/org/omg/CORBA/VM_ABSTRACT.java
 ../../classpath/org/omg/CORBA/VM_CUSTOM.java

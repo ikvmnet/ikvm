@@ -288,9 +288,9 @@ final class VMRuntime
 	private DotNetProcess(cli.System.Diagnostics.Process proc)
 	{
 	    this.proc = proc;
-	    stdin = Channels.newOutputStream(new FileChannelImpl(proc.get_StandardInput().get_BaseStream()));
-	    stdout = Channels.newInputStream(new FileChannelImpl(proc.get_StandardOutput().get_BaseStream()));
-	    stderr = Channels.newInputStream(new FileChannelImpl(proc.get_StandardError().get_BaseStream()));
+	    stdin = Channels.newOutputStream(FileChannelImpl.create(proc.get_StandardInput().get_BaseStream()));
+	    stdout = Channels.newInputStream(FileChannelImpl.create(proc.get_StandardOutput().get_BaseStream()));
+	    stderr = Channels.newInputStream(FileChannelImpl.create(proc.get_StandardError().get_BaseStream()));
 	}
 
 	public OutputStream getOutputStream()
