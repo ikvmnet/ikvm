@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<project name="ecj" default="all">
+   <target name="checkout">
+     <exec program="cvs" commandline="-z3 -d:pserver:anonymous@dev.eclipse.org:/home/eclipse co org.eclipse.jdt.core" />
+   </target>
+   <target name="allsources">
+     <exec program="cmd" commandline="/c dir /s/b org.eclipse.jdt.core\batch\*.java > allsources.lst" />
+     <exec program="cmd" commandline="/c dir /s/b org.eclipse.jdt.core\compiler\*.java >> allsources.lst" />
+   </target>
+   <target name="classes">
+     <exec program="../bin/ikvmstub.exe" commandline="IKVM.GNU.Classpath" useruntimeengine="true" />
+     <exec program="jikes" commandline="-nowarn -classpath IKVM.GNU.Classpath.jar;org.eclipse.jdt.core/compiler;org.eclipse.jdt.core/batch @allsources.lst" />
+     <delete file="IKVM.GNU.Classpath.jar" />
+   </target>
+   <target name="ecj">
+     <exec program="../bin/ikvmc.exe" commandline="-out:ecj.exe -main:org.eclipse.jdt.internal.compiler.batch.Main -recurse:org.eclipse.jdt.core/batch/*.class -recurse:org.eclipse.jdt.core/compiler/*.class -recurse:org.eclipse.jdt.core/batch/*.properties -recurse:org.eclipse.jdt.core/compiler/*.properties -recurse:org.eclipse.jdt.core/compiler/*.rsc" useruntimeengine="true" />
+     <copy file="../bin/IKVM.Runtime.dll" todir="." />
+     <copy file="../bin/IKVM.GNU.Classpath.dll" todir="." />
+   </target>
+
+   <target name="all">
+     <call target="checkout" />
+     <call target="allsources" />
+     <call target="classes" />
+     <call target="ecj" />
+   </target>
+
+   <target name="clean">
+     <delete failonerror="false" file="allsources.lst" />
+     <delete failonerror="false" file="ecj.exe" />
+     <delete failonerror="false" file="IKVM.GNU.Classpath.dll" />
+     <delete failonerror="false" file="IKVM.Runtime.dll" />
+     <delete failonerror="false" dir="org.eclipse.jdt.core" />
+   </target>
+</project>
