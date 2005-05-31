@@ -1164,12 +1164,13 @@
 			</method>
 		</class>
 		<class name="gnu.java.nio.channels.FileChannelImpl">
-			<method name="createMappedByteBufferImpl" sig="(Lgnu.classpath.RawData;IZ)Ljava.nio.MappedByteBuffer;">
+			<method name="createMappedByteBufferImpl" sig="(Lgnu.classpath.RawData;IZZ)Ljava.nio.MappedByteBuffer;">
 				<body>
 					<ldarg_0 />
 					<ldarg_1 />
 					<ldarg_2 />
-					<newobj class="java.nio.MappedByteBufferImpl" name="&lt;init&gt;" sig="(Lgnu.classpath.RawData;IZ)V" />
+					<ldarg_3 />
+					<call class="java.nio.MappedByteBufferImpl" name="create" sig="(Lgnu.classpath.RawData;IZZ)Ljava.nio.MappedByteBufferImpl;" />
 					<ret />
 				</body>
 			</method>
@@ -1302,6 +1303,61 @@
 			<field name="__tls_inGetContext" sig="Z">
 				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
 			</field>
+		</class>
+		<class name="gnu.java.nio.channels.FileChannelImpl$Win32">
+			<method name="FlushFileBuffers" sig="(Lcli.System.IntPtr;)I">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+					<parameter>kernel32</parameter>
+				</attribute>
+			</method>
+			<method name="CloseHandle" sig="(Lcli.System.IntPtr;)I">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+					<parameter>kernel32</parameter>
+				</attribute>
+			</method>
+			<method name="CreateFileMapping" sig="(Lcli.System.IntPtr;Lcli.System.IntPtr;IIILjava.lang.String;)Lcli.System.IntPtr;">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+					<parameter>kernel32</parameter>
+					<field name="SetLastError" sig="Z">true</field>
+				</attribute>
+			</method>
+			<method name="MapViewOfFile" sig="(Lcli.System.IntPtr;IIILcli.System.IntPtr;)Lcli.System.IntPtr;">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+					<parameter>kernel32</parameter>
+					<field name="SetLastError" sig="Z">true</field>
+				</attribute>
+			</method>
+		</class>
+		<class name="gnu.java.nio.channels.FileChannelImpl$Posix">
+			<method name="ikvm_mmap" sig="(Lcli.System.IntPtr;BBJI)Lcli.System.IntPtr;">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+					<parameter>ikvm-native</parameter>
+				</attribute>
+			</method>
+		</class>
+		<class name="java.nio.MappedByteBufferImpl$Win32">
+			<method name="UnmapViewOfFile" sig="(Lcli.System.IntPtr;)I">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+					<parameter>kernel32</parameter>
+				</attribute>
+			</method>
+			<method name="FlushViewOfFile" sig="(Lcli.System.IntPtr;Lcli.System.IntPtr;)I">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+					<parameter>kernel32</parameter>
+				</attribute>
+			</method>
+		</class>
+		<class name="java.nio.MappedByteBufferImpl$Posix">
+			<method name="ikvm_munmap" sig="(Lcli.System.IntPtr;I)I">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+					<parameter>ikvm-native</parameter>
+				</attribute>
+			</method>
+			<method name="ikvm_msync" sig="(Lcli.System.IntPtr;I)I">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+					<parameter>ikvm-native</parameter>
+				</attribute>
+			</method>
 		</class>
 	</assembly>
 	<exceptionMappings>

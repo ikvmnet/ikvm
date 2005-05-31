@@ -1558,7 +1558,6 @@
 ../../classpath/java/nio/LongBufferImpl.java
 ../../classpath/java/nio/LongViewBufferImpl.java
 ../../classpath/java/nio/MappedByteBuffer.java
-../../classpath/java/nio/MappedByteBufferImpl.java
 ../../classpath/java/nio/ReadOnlyBufferException.java
 ../../classpath/java/nio/ShortBuffer.java
 ../../classpath/java/nio/ShortBufferImpl.java
@@ -3119,6 +3118,7 @@ java/lang/VMThread.java
 java/net/VMInetAddress.java
 java/net/VMNetworkInterface.java
 java/nio/channels/VMChannels.java
+java/nio/MappedByteBufferImpl.java
 java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
 java/util/LocaleData.java
