@@ -37,7 +37,28 @@
     </target>
 
     <target name="IKVM.GNU.Classpath.dll" depends="classes">
-        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true" commandline="-version:0.15.* ${signoption} -compressresources -opt:fields -out:IKVM.GNU.Classpath.dll -remap:map.xml -exclude:exclude.lst -target:library -recurse:./*.class -recurse:${Classpath.dir}/*.class -recurse:${Classpath.dir}/resource/*.properties mscorlib.jar System.jar System.Xml.jar -resource:lib/security/classpath.security=classpath.security" />
+        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true">
+          <arg value="-version:0.15.*" />
+          <arg value="${signoption}" />
+          <arg value="-compressresources" />
+          <arg value="-opt:fields" />
+          <arg value="-out:IKVM.GNU.Classpath.dll" />
+          <arg value="-remap:map.xml" />
+          <arg value="-exclude:exclude.lst" />
+          <arg value="-target:library" />
+          <arg value="-recurse:./*.class" />
+          <arg value="-recurse:${Classpath.dir}/*.class" />
+          <arg value="-recurse:${Classpath.dir}/resource/*.properties" />
+          <arg value="-recurse:${Classpath.dir}/resource/javax.*" />
+          <arg value="-recurse:${Classpath.dir}/resource/org.xml.*" />
+          <arg value="mscorlib.jar" />
+          <arg value="System.jar" />
+          <arg value="System.Xml.jar" />
+          <arg value="-resource:lib/security/classpath.security=classpath.security" />
+          <environment>
+            <option name="IKVM_EXPERIMENTAL_JDK_5_0" value="1" />
+          </environment>
+        </exec>
         <copy file="IKVM.GNU.Classpath.dll" tofile="../bin/IKVM.GNU.Classpath.dll.new" />
         <if propertytrue="nant.platform.win32">
             <call target="peverify-classpath"/>

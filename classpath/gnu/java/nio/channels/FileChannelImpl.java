@@ -199,7 +199,7 @@ public abstract class FileChannelImpl extends FileChannel
             	MethodInfo mono_1_1_Flush = t.GetMethod("fsync", flags, null, new Type[] { Type.GetType("System.Int32") }, new ParameterModifier[0]);
                 if(mono_1_1_Flush != null)
                 {
-		    Object[] args = new Object[] { fs.get_Handle().ToInt32() };
+		    Object[] args = new Object[] { ikvm.lang.CIL.box_int(fs.get_Handle().ToInt32()) };
 		    return ikvm.lang.CIL.unbox_int(mono_1_1_Flush.Invoke(null, args)) == 0;
                 }
             }
@@ -214,7 +214,7 @@ public abstract class FileChannelImpl extends FileChannel
     public static FileChannelImpl create(File file, int mode)
         throws FileNotFoundException
     {
-        return win32 ? new Win32(file, mode) : new Posix(file, mode);
+        return win32 ? new Win32(file, mode) : (FileChannelImpl)new Posix(file, mode);
     }
 
     FileChannelImpl(File file, int mode)
@@ -226,7 +226,7 @@ public abstract class FileChannelImpl extends FileChannel
 
     public static FileChannelImpl create(Stream stream)
     {
-        return win32 ? new Win32(stream) : new Posix(stream);
+        return win32 ? new Win32(stream) : (FileChannelImpl)new Posix(stream);
     }
 
     private FileChannelImpl(Stream stream)

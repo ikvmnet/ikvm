@@ -118,7 +118,7 @@ class MappedByteBufferImpl extends MappedByteBuffer
     static MappedByteBufferImpl create(RawData address, int size, boolean readOnly, boolean win32)
         throws IOException
     {
-        return win32 ? new Win32(address, size, readOnly) : new Posix(address, size, readOnly);
+        return win32 ? new Win32(address, size, readOnly) : (MappedByteBufferImpl)new Posix(address, size, readOnly);
     }
   
     MappedByteBufferImpl(RawData address, int size, boolean readOnly)
