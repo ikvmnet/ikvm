@@ -1745,7 +1745,7 @@ namespace IKVM.Internal
 
 					if(!shadowType.IsInterface)
 					{
-						// For all inherited methods, we emit a method that hide the inherited method and
+						// For all inherited methods, we emit a method that hides the inherited method and
 						// annotate it with EditorBrowsableAttribute(EditorBrowsableState.Never) to make
 						// sure the inherited methods don't show up in Intellisense.
 						// TODO if the original method has a LinkDemand, we should copy that
@@ -1761,7 +1761,7 @@ namespace IKVM.Internal
 								{
 									paramTypes[i] = paramInfo[i].ParameterType;
 								}
-								MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot), mi.ReturnType, paramTypes);
+								MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & (MethodAttributes.MemberAccessMask | MethodAttributes.SpecialName | MethodAttributes.Static), mi.ReturnType, paramTypes);
 								AttributeHelper.HideFromJava(mb);
 								AttributeHelper.SetEditorBrowsableNever(mb);
 								ILGenerator ilgen = mb.GetILGenerator();
@@ -1786,7 +1786,7 @@ namespace IKVM.Internal
 							{
 								paramTypes[i] = paramInfo[i].ParameterType;
 							}
-							PropertyBuilder pb = typeBuilder.DefineProperty(pi.Name, pi.Attributes, pi.PropertyType, paramTypes);
+							PropertyBuilder pb = typeBuilder.DefineProperty(pi.Name, PropertyAttributes.None, pi.PropertyType, paramTypes);
 							if(pi.CanRead)
 							{
 								pb.SetGetMethod((MethodBuilder)methods[MakeMethodKey(pi.GetGetMethod())]);
