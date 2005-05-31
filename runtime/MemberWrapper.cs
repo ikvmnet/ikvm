@@ -105,12 +105,16 @@ class MemberWrapper
 		}
 	}
 
-	internal bool IsAccessibleFrom(TypeWrapper caller, TypeWrapper instance)
+	internal bool IsAccessibleFrom(TypeWrapper referencedType, TypeWrapper caller, TypeWrapper instance)
 	{
-		return (DeclaringType.IsPublic && IsPublic) ||
-			caller == DeclaringType ||
-			((IsPublic || IsProtected) && (IsStatic ? caller.IsSubTypeOf(DeclaringType) : instance.IsSubTypeOf(caller))) ||
-			(!IsPrivate && caller.IsInSamePackageAs(DeclaringType));
+		if(referencedType.IsAccessibleFrom(caller))
+		{
+			return IsPublic ||
+				caller == DeclaringType ||
+				(IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsSubTypeOf(caller))) ||
+				(!IsPrivate && caller.IsInSamePackageAs(DeclaringType));
+		}
+		return false;
 	}
 
 	internal bool IsHideFromReflection

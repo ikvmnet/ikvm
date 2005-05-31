@@ -108,7 +108,7 @@ namespace IKVM.Runtime
 			{
 				throw JavaException.IncompatibleClassChangeError(clazz + "." + name);
 			}
-			if(field.IsAccessibleFrom(caller, thisType))
+			if(field.IsAccessibleFrom(wrapper, caller, thisType))
 			{
 				return field;
 			}
@@ -246,7 +246,7 @@ namespace IKVM.Runtime
 			{
 				throw JavaException.IncompatibleClassChangeError(clazz + "." + name);
 			}
-			if(mw.IsAccessibleFrom(caller, thisType == null ? wrapper : thisType))
+			if(mw.IsAccessibleFrom(wrapper, caller, thisType))
 			{
 				return mw;
 			}

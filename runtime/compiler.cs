@@ -3020,7 +3020,7 @@ class Compiler
 				CheckLoaderConstraints(cpi, field);
 				if(field.IsStatic == isStatic)
 				{
-					if(field.IsAccessibleFrom(clazz, thisType))
+					if(field.IsAccessibleFrom(cpi.GetClassType(), clazz, thisType))
 					{
 						// are we trying to mutate a final field? (they are read-only from outside of the defining class)
 						if(write && field.IsFinal && (isStatic ? clazz != wrapper : clazz != thisType))
@@ -3180,7 +3180,7 @@ class Compiler
 						{
 							throw new AbstractMethodError(cpi.Class + "." + cpi.Name + cpi.Signature);
 						}
-						else if(method.IsAccessibleFrom(clazz, thisType))
+						else if(method.IsAccessibleFrom(cpi.GetClassType(), clazz, thisType))
 						{
 							return method;
 						}
