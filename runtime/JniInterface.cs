@@ -899,12 +899,12 @@ namespace IKVM.Runtime
 		{
 			JNI.jvmCreated = true;
 			pJavaVM = (JavaVM*)(void*)JniMem.Alloc(IntPtr.Size * (1 + vtableDelegates.Length));
-#if __MonoCS__ 
-		// MONOBUG mcs requires this bogus fixed construct (and Microsoft doesn't allow it)
-		fixed(void** p = &pJavaVM->firstVtableEntry) { pJavaVM->vtable = p; }
-#else
+//#if __MonoCS__ 
+//		// MONOBUG mcs requires this bogus fixed construct (and Microsoft doesn't allow it)
+//		fixed(void** p = &pJavaVM->firstVtableEntry) { pJavaVM->vtable = p; }
+//#else
 			pJavaVM->vtable = &pJavaVM->firstVtableEntry;
-#endif
+//#endif
 			for(int i = 0; i < vtableDelegates.Length; i++)
 			{
 				pJavaVM->vtable[i] = JniHelper.ikvm_MarshalDelegate(vtableDelegates[i]);

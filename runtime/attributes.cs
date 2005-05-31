@@ -386,7 +386,7 @@ namespace IKVM.Attributes
 		{
 			get
 			{
-				return OuterClassName;
+				return outerClassName;
 			}
 		}
 

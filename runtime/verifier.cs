@@ -1122,7 +1122,6 @@ class MethodAnalyzer
 	private static TypeWrapper FloatArrayType;
 	private static TypeWrapper DoubleArrayType;
 	private static TypeWrapper LongArrayType;
-	private ClassLoaderWrapper classLoader;
 	private ClassFile classFile;
 	private ClassFile.Method method;
 	private InstructionState[] state;
@@ -1150,7 +1149,6 @@ class MethodAnalyzer
 			throw new VerifyError(method.VerifyError);
 		}
 
-		this.classLoader = classLoader;
 		this.classFile = classFile;
 		this.method = method;
 		state = new InstructionState[method.Instructions.Length];

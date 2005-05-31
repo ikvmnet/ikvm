@@ -2326,7 +2326,6 @@ class DynamicTypeWrapper : TypeWrapper
 		private MethodWrapper[] methods;
 		private MethodWrapper[] baseMethods;
 		private FieldWrapper[] fields;
-		private bool finishing;
 		private bool finishingForDebugSave;
 		private FinishedTypeImpl finishedType;
 		private readonly TypeWrapper outerClassWrapper;
@@ -2984,8 +2983,6 @@ class DynamicTypeWrapper : TypeWrapper
 			Profiler.Enter("JavaTypeImpl.Finish.Core");
 			try
 			{
-				Debug.Assert(!finishing);
-				finishing = true;
 				TypeWrapper declaringTypeWrapper = null;
 				TypeWrapper[] innerClassesTypeWrappers = TypeWrapper.EmptyArray;
 				// if we're an inner class, we need to attach an InnerClass attribute
@@ -3370,16 +3367,6 @@ class DynamicTypeWrapper : TypeWrapper
 				mod = ((AssemblyBuilder)ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder.Assembly).DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
 			}
 
-			private static string Cleanup(string n)
-			{
-				n = n.Replace('\\', '_');
-				n = n.Replace('[', '_');
-				n = n.Replace(']', '_');
-				n = n.Replace('+', '_');
-				n = n.Replace(',', '_');
-				return n;
-			}
-
 			internal static void Generate(ILGenerator ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args)
 			{
 				TypeBuilder tb = mod.DefineType("class" + (count++), TypeAttributes.Public | TypeAttributes.Class);
@@ -3487,7 +3474,6 @@ class DynamicTypeWrapper : TypeWrapper
 				ilGenerator.Emit(OpCodes.Call, enterLocalRefStruct);
 				LocalBuilder jnienv = ilGenerator.DeclareLocal(typeof(IntPtr));
 				ilGenerator.Emit(OpCodes.Stloc, jnienv);
-				Label tryBlock = ilGenerator.BeginExceptionBlock();
 				TypeWrapper retTypeWrapper = mw.ReturnType;
 				if(!retTypeWrapper.IsUnloadable && !retTypeWrapper.IsPrimitive)
 				{

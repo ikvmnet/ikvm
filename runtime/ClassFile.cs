@@ -21,17 +21,12 @@
   jeroen@frijters.net
   
 */
-#define FUZZ_HACK
-
 using System;
 using System.IO;
 using System.Collections;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;
-
-// MONOBUG mcs 1.0 still has problems resolving properties vs. type names
-using __Modifiers = IKVM.Attributes.Modifiers;
 
 sealed class ClassFile
 {
@@ -251,14 +246,7 @@ sealed class ClassFile
 				{
 					case "Deprecated":
 						deprecated = true;
-#if FUZZ_HACK
 						br.Skip(br.ReadUInt32());
-#else
-						if(br.ReadUInt32() != 0)
-						{
-							throw new ClassFormatError("Deprecated attribute has non-zero length");
-						}
-#endif
 						break;
 					case "SourceFile":
 						if(br.ReadUInt32() != 2)
@@ -268,15 +256,11 @@ sealed class ClassFile
 						sourceFile = GetConstantPoolUtf8String(br.ReadUInt16());
 						break;
 					case "InnerClasses":
-#if FUZZ_HACK
 						// Sun totally ignores the length of InnerClasses attribute,
-						// so when we're running Fuzz this shows up as lots of differences.
-						// To get rid off these differences define the FUZZ_HACK symbol.
+						// so when we're running Fuzz this used to show up as lots of differences,
+						// now we do the same.
 						BigEndianBinaryReader rdr = br;
 						br.ReadUInt32();
-#else
-						BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
-#endif
 						ushort count = rdr.ReadUInt16();
 						innerClasses = new InnerClass[count];
 						for(int j = 0; j < innerClasses.Length; j++)
@@ -302,12 +286,6 @@ sealed class ClassFile
 								throw new ClassFormatError("{0} (Class is both inner and outer class)", this.Name);
 							}
 						}
-#if !FUZZ_HACK
-						if(!rdr.IsAtEnd)
-						{
-							throw new ClassFormatError("{0} (InnerClasses attribute has wrong length)", this.Name);
-						}
-#endif
 						break;
 					case "IKVM.NET.Assembly":
 						if(br.ReadUInt32() != 2)
@@ -1221,7 +1199,7 @@ sealed class ClassFile
 					method.Link();
 				}
 				if(Name != "<init>" && 
-					(thisType.Modifiers & (__Modifiers.Interface | __Modifiers.Super)) == __Modifiers.Super &&
+					(thisType.Modifiers & (Modifiers.Interface | Modifiers.Super)) == Modifiers.Super &&
 					thisType != wrapper && thisType.IsSubTypeOf(wrapper))
 				{
 					invokespecialMethod = thisType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true);
@@ -1554,14 +1532,7 @@ sealed class ClassFile
 				{
 					case "Deprecated":
 						deprecated = true;
-#if FUZZ_HACK
 						br.Skip(br.ReadUInt32());
-#else
-						if(br.ReadUInt32() != 0)
-						{
-							throw new ClassFormatError("Deprecated attribute has non-zero length");
-						}
-#endif
 						break;
 					case "ConstantValue":
 					{
@@ -1679,14 +1650,7 @@ sealed class ClassFile
 				{
 					case "Deprecated":
 						deprecated = true;
-#if FUZZ_HACK
 						br.Skip(br.ReadUInt32());
-#else
-						if(br.ReadUInt32() != 0)
-						{
-							throw new ClassFormatError("{0} (Deprecated attribute has non-zero length)", classFile.Name);
-						}
-#endif
 						break;
 					case "Code":
 					{
@@ -1737,13 +1701,11 @@ sealed class ClassFile
 			{
 				if(code.IsEmpty)
 				{
-#if FUZZ_HACK
 					if(this.Name == "<clinit>")
 					{
 						code.verifyError = string.Format("Class {0}, method {1} signature {2}: No Code attribute", classFile.Name, this.Name, this.Signature);
 						return;
 					}
-#endif
 					throw new ClassFormatError("Method has no Code attribute");
 				}
 			}

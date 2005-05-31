@@ -49,8 +49,6 @@ class Compiler
 	private static MethodInfo multiANewArrayMethod;
 	private static MethodInfo monitorEnterMethod;
 	private static MethodInfo monitorExitMethod;
-	private static MethodInfo objectToStringMethod;
-	private static MethodInfo keepAliveMethod;
 	private static MethodInfo f2iMethod;
 	private static MethodInfo d2iMethod;
 	private static MethodInfo f2lMethod;
@@ -71,7 +69,6 @@ class Compiler
 	private ClassFile classFile;
 	private ClassFile.Method m;
 	private ILGenerator ilGenerator;
-	private ClassLoaderWrapper classLoader;
 	private MethodAnalyzer ma;
 	private ExceptionTableEntry[] exceptions;
 	private ISymbolDocumentWriter symboldocument;
@@ -85,8 +82,6 @@ class Compiler
 		multiANewArrayMethod = typeof(ByteCodeHelper).GetMethod("multianewarray");
 		monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
-		objectToStringMethod = typeof(object).GetMethod("ToString");
-		keepAliveMethod = typeof(GC).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		f2iMethod = typeof(ByteCodeHelper).GetMethod("f2i");
 		d2iMethod = typeof(ByteCodeHelper).GetMethod("d2i");
 		f2lMethod = typeof(ByteCodeHelper).GetMethod("f2l");
@@ -164,7 +159,6 @@ class Compiler
 		this.classFile = classFile;
 		this.m = m;
 		this.ilGenerator = ilGenerator;
-		this.classLoader = classLoader;
 		this.symboldocument = symboldocument;
 		if(m.LineNumberTableAttribute != null && !JVM.NoStackTraceInfo)
 		{
@@ -3093,14 +3087,12 @@ class Compiler
 		private static readonly MethodInfo dynamicInvokestatic = typeof(ByteCodeHelper).GetMethod("DynamicInvokestatic");
 		private static readonly MethodInfo dynamicInvokevirtual = typeof(ByteCodeHelper).GetMethod("DynamicInvokevirtual");
 		private static readonly MethodInfo dynamicInvokeSpecialNew = typeof(ByteCodeHelper).GetMethod("DynamicInvokeSpecialNew");
-		private ClassLoaderWrapper classLoader;
 		private TypeWrapper wrapper;
 		private ClassFile.ConstantPoolItemMI cpi;
 
-		internal DynamicMethodWrapper(ClassLoaderWrapper classLoader, TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
+		internal DynamicMethodWrapper(TypeWrapper wrapper, ClassFile.ConstantPoolItemMI cpi)
 			: base(wrapper, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
 		{
-			this.classLoader = classLoader;
 			this.wrapper = wrapper;
 			this.cpi = cpi;
 		}
@@ -3160,7 +3152,7 @@ class Compiler
 			{
 				throw new NoClassDefFoundError(wrapper.Name);
 			}
-			return new DynamicMethodWrapper(classLoader, clazz, cpi);
+			return new DynamicMethodWrapper(clazz, cpi);
 		}
 		else
 		{
@@ -3327,22 +3319,5 @@ class Compiler
 			}
 			ilGenerator.Emit(OpCodes.Stloc, v.builder);
 		}
-	}
-
-	private bool IsUnloadable(ClassFile.ConstantPoolItemMI cpi)
-	{
-		if(cpi.GetClassType().IsUnloadable || cpi.GetRetType().IsUnloadable)
-		{
-			return true;
-		}
-		TypeWrapper[] args = cpi.GetArgTypes();
-		for(int i = 0; i < args.Length; i++)
-		{
-			if(args[i].IsUnloadable)
-			{
-				return true;
-			}
-		}
-		return false;
 	}
 }

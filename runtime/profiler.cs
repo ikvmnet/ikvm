@@ -40,6 +40,8 @@ class Profiler
 
 	~Profiler()
 	{
+		// get rid off the warning that "instance" is unused
+		instance.Equals(null);
 		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "Event", "Count", "Time (ms)");
 		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "-----", "-----", "---------");
 		long totalTime = 0;

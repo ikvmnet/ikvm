@@ -804,11 +804,11 @@ abstract class MethodWrapper : MemberWrapper
 			if(!mw.IsStatic && method.IsStatic && mw.Name != "<init>")
 			{
 				// we've been redirected to a static method, so we have to copy the 'obj' into the args
-				args = new object[original_args.Length + 1];
-				args[0] = original_obj;
-				original_args.CopyTo(args, 1);
+				object[] nargs = new object[original_args.Length + 1];
+				nargs[0] = original_obj;
+				original_args.CopyTo(nargs, 1);
 				this.obj = null;
-				this.args = args;
+				this.args = nargs;
 				for(int i = 0; i < argTypes.Length; i++)
 				{
 					if(!argTypes[i].IsUnloadable && argTypes[i].IsGhost)
