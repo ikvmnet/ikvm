@@ -30,7 +30,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Configuration;
 
-using ILGenerator = CountingILGenerator;
+using ILGenerator = IKVM.Internal.CountingILGenerator;
 
 namespace IKVM.Internal
 {

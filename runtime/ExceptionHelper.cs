@@ -27,6 +27,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Collections;
 using IKVM.Attributes;
+using IKVM.Internal;
 using NetSystem = System;
 
 namespace IKVM.NativeCode.java.lang

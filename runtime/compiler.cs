@@ -31,11 +31,11 @@ using IKVM.Runtime;
 using IKVM.Attributes;
 using IKVM.Internal;
 
-using ILGenerator = CountingILGenerator;
+using ILGenerator = IKVM.Internal.CountingILGenerator;
 
-using ExceptionTableEntry = ClassFile.Method.ExceptionTableEntry;
-using LocalVariableTableEntry = ClassFile.Method.LocalVariableTableEntry;
-using Instruction = ClassFile.Method.Instruction;
+using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
+using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
+using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 
 class Compiler
 {

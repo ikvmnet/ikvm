@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004 Jeroen Frijters
+  Copyright (C) 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,41 +22,50 @@
   
 */
 
-namespace CoreClasses.java.lang
+namespace IKVM.Internal
 {
-	sealed class Object
+	public sealed class CoreClasses
 	{
-		private Object() {}
-		// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-		// (we don't want the classes to be loaded prematurely, because they might not be available then)
-		static Object() {}
-		internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
-	}
+		public sealed class java
+		{
+			public sealed class lang
+			{
+				public sealed class Object
+				{
+					private Object() {}
+					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+					// (we don't want the classes to be loaded prematurely, because they might not be available then)
+					static Object() {}
+					public static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
+				}
 
-	sealed class String
-	{
-		private String() {}
-		// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-		// (we don't want the classes to be loaded prematurely, because they might not be available then)
-		static String() {}
-		internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.String");
-	}
+				public sealed class String
+				{
+					private String() {}
+					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+					// (we don't want the classes to be loaded prematurely, because they might not be available then)
+					static String() {}
+					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.String");
+				}
 
-	sealed class Class
-	{
-		private Class() {}
-		// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-		// (we don't want the classes to be loaded prematurely, because they might not be available then)
-		static Class() {}
-		internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Class");
-	}
+				public sealed class Class
+				{
+					private Class() {}
+					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+					// (we don't want the classes to be loaded prematurely, because they might not be available then)
+					static Class() {}
+					public static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Class");
+				}
 
-	sealed class Throwable
-	{
-		private Throwable() {}
-		// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-		// (we don't want the classes to be loaded prematurely, because they might not be available then)
-		static Throwable() {}
-		internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable");
+				public sealed class Throwable
+				{
+					private Throwable() {}
+					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+					// (we don't want the classes to be loaded prematurely, because they might not be available then)
+					static Throwable() {}
+					public static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable");
+				}
+			}
+		}
 	}
 }

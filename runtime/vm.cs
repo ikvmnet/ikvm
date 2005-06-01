@@ -36,8 +36,9 @@ using System.Security;
 using System.Security.Permissions;
 using IKVM.Attributes;
 using IKVM.Runtime;
+using IKVM.Internal;
 
-using ILGenerator = CountingILGenerator;
+using ILGenerator = IKVM.Internal.CountingILGenerator;
 
 namespace IKVM.Runtime
 {

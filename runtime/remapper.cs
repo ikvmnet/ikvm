@@ -31,7 +31,7 @@ using System.Reflection.Emit;
 using System.Diagnostics;
 using IKVM.Attributes;
 
-using ILGenerator = CountingILGenerator;
+using ILGenerator = IKVM.Internal.CountingILGenerator;
 
 namespace IKVM.Internal.MapXml
 {

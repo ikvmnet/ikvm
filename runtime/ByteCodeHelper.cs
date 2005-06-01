@@ -25,6 +25,7 @@ using System;
 using System.Reflection;
 using System.Diagnostics;
 using IKVM.Attributes;
+using IKVM.Internal;
 
 namespace IKVM.Runtime
 {
