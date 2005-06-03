@@ -3475,6 +3475,7 @@ namespace IKVM.Internal
 					ilGenerator.Emit(OpCodes.Call, enterLocalRefStruct);
 					LocalBuilder jnienv = ilGenerator.DeclareLocal(typeof(IntPtr));
 					ilGenerator.Emit(OpCodes.Stloc, jnienv);
+					ilGenerator.BeginExceptionBlock();
 					TypeWrapper retTypeWrapper = mw.ReturnType;
 					if(!retTypeWrapper.IsUnloadable && !retTypeWrapper.IsPrimitive)
 					{
