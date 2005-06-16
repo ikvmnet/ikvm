@@ -730,9 +730,10 @@ namespace IKVM.Internal
 				ArrayList l = new ArrayList(dynamicTypes.Values);
 				foreach(TypeWrapper tw in l)
 				{
-					Tracer.Info(Tracer.Runtime, "Finishing {0} for debug image", tw.TypeAsTBD.FullName);
+					string name = tw.TypeAsTBD.FullName;
+					Tracer.Info(Tracer.Runtime, "Finishing {0}", name);
 					tw.Finish(true);
-					dynamicTypes.Remove(tw.TypeAsTBD.FullName);
+					dynamicTypes.Remove(name);
 				}
 			}
 		}

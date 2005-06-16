@@ -2055,6 +2055,7 @@ namespace IKVM.Internal
 			public string keyfilename;
 			public string keycontainer;
 			public string version;
+			public string fileversion;
 			public bool targetIsModule;
 			public string assembly;
 			public string mainClass;
@@ -2425,6 +2426,12 @@ namespace IKVM.Internal
 			}
 			Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
 			loader.AddResources(options.resources, options.compressedResources);
+			if(options.fileversion != null)
+			{
+				CustomAttributeBuilder filever = new CustomAttributeBuilder(typeof(AssemblyFileVersionAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { options.fileversion });
+				((AssemblyBuilder)loader.ModuleBuilder.Assembly).SetCustomAttribute(filever);
+			}
+			((AssemblyBuilder)loader.ModuleBuilder.Assembly).DefineVersionInfoResource();
 			loader.Save();
 			return 0;
 		}

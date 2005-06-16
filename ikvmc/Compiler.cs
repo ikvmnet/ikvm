@@ -97,6 +97,7 @@ class Compiler
 			Console.Error.WriteLine("    -keyfile:<keyfilename>     Use keyfile to sign the assembly");
 			Console.Error.WriteLine("    -key:<keycontainer>        Use keycontainer to sign the assembly");
 			Console.Error.WriteLine("    -version:<M.m.b.r>         Assembly version");
+			Console.Error.WriteLine("    -fileversion:<version>     File version");
 			Console.Error.WriteLine("    -main:<class>              Specify the class containing the main method");
 			Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly (short form -r:<filespec>)");
 			Console.Error.WriteLine("    -recurse:<filespec>        Recurse directory and include matching files");
@@ -331,6 +332,10 @@ class Compiler
 							return 1;
 						}
 					}
+				}
+				else if(s.StartsWith("-fileversion:"))
+				{
+					options.fileversion = s.Substring(13);
 				}
 				else if(s.StartsWith("-keyfile:"))
 				{
