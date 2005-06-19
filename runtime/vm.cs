@@ -2077,7 +2077,8 @@ namespace IKVM.Internal
 
 		private static bool IsSigned(Assembly asm)
 		{
-			return asm.GetName().GetPublicKey().Length != 0;
+			byte[] key = asm.GetName().GetPublicKey();
+			return key != null && key.Length != 0;
 		}
 
 		public static int Compile(CompilerOptions options)
