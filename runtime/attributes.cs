@@ -54,41 +54,69 @@ namespace IKVM.Attributes
 			this.table = table;
 		}
 
-		/**
-		 * packed integer format:
-		 * ----------------------
-		 * 
-		 * First byte:
-		 * 00 - 7F      Single byte integer (0 - 127)
-		 * 80 - BF      Double byte integer (0 - 16383)
-		 * C0 - DF      Triple byte integer (0 - 4194303)
-		 * E0 - FE      Reserved
-		 * FF           Five byte integer
-		 */
-		internal static void WritePackedInteger(System.IO.MemoryStream stream, uint val)
+		internal class LineNumberWriter
 		{
-			if(val < 128)
+			private System.IO.MemoryStream stream;
+			private int prevILOffset;
+			private int prevLineNum;
+
+			internal LineNumberWriter(int estimatedCount)
 			{
-				stream.WriteByte((byte)val);
+				stream = new System.IO.MemoryStream(estimatedCount * 2);
 			}
-			else if(val < 16384)
+
+			internal void AddMapping(int ilOffset, int linenumber)
 			{
-				stream.WriteByte((byte)(0x80 + (val >> 8)));
-				stream.WriteByte((byte)val);
+				WritePackedInteger(ilOffset - prevILOffset);
+				WritePackedInteger(linenumber - prevLineNum);
+				prevILOffset = ilOffset;
+				prevLineNum = linenumber;
 			}
-			else if(val < 4194304)
+
+			internal byte[] ToArray()
 			{
-				stream.WriteByte((byte)(0xC0 + (val >> 16)));
-				stream.WriteByte((byte)(val >> 8));
-				stream.WriteByte((byte)val);
+				return stream.ToArray();
 			}
-			else
+
+			/*
+			 * packed integer format:
+			 * ----------------------
+			 * 
+			 * First byte:
+			 * 00 - 7F      Single byte integer (-64 - 63)
+			 * 80 - BF      Double byte integer (-8192 - 8191)
+			 * C0 - DF      Triple byte integer (-2097152 - 2097151)
+			 * E0 - FE      Reserved
+			 * FF           Five byte integer
+			 */
+			private void WritePackedInteger(int val)
 			{
-				stream.WriteByte(0xFF);
-				stream.WriteByte((byte)(val >> 24));
-				stream.WriteByte((byte)(val >> 16));
-				stream.WriteByte((byte)(val >>  8));
-				stream.WriteByte((byte)(val >>  0));
+				if(val >= -64 && val < 64)
+				{
+					val += 64;
+					stream.WriteByte((byte)val);
+				}
+				else if(val >= -8192 && val < 8192)
+				{
+					val += 8192;
+					stream.WriteByte((byte)(0x80 + (val >> 8)));
+					stream.WriteByte((byte)val);
+				}
+				else if(val >= -2097152 && val < 2097152)
+				{
+					val += 2097152;
+					stream.WriteByte((byte)(0xC0 + (val >> 16)));
+					stream.WriteByte((byte)(val >> 8));
+					stream.WriteByte((byte)val);
+				}
+				else
+				{
+					stream.WriteByte(0xFF);
+					stream.WriteByte((byte)(val >> 24));
+					stream.WriteByte((byte)(val >> 16));
+					stream.WriteByte((byte)(val >>  8));
+					stream.WriteByte((byte)(val >>  0));
+				}
 			}
 		}
 
@@ -97,18 +125,18 @@ namespace IKVM.Attributes
 			byte b = table[position++];
 			if(b < 128)
 			{
-				return b;
+				return b - 64;
 			}
 			else if((b & 0xC0) == 0x80)
 			{
-				return ((b & 0x7F) << 8) + table[position++];
+				return ((b & 0x7F) << 8) + table[position++] - 8192;
 			}
 			else if((b & 0xE0) == 0xC0)
 			{
 				int val = ((b & 0x3F) << 16);
 				val += (table[position++] << 8);
 				val += table[position++];
-				return val;
+				return val - 2097152;
 			}
 			else if(b == 0xFF)
 			{
@@ -126,14 +154,19 @@ namespace IKVM.Attributes
 
 		public int GetLineNumber(int ilOffset)
 		{
+			int prevILOffset = 0;
+			int prevLineNum = 0;
 			int line = -1;
 			for(int i = 0; i < table.Length;)
 			{
-				if(ReadPackedInteger(ref i) > ilOffset)
+				int currILOffset = ReadPackedInteger(ref i) + prevILOffset;
+				if(currILOffset > ilOffset)
 				{
 					return line;
 				}
-				line = ReadPackedInteger(ref i);
+				line = ReadPackedInteger(ref i) + prevLineNum;
+				prevILOffset = currILOffset;
+				prevLineNum = line;
 			}
 			return line;
 		}

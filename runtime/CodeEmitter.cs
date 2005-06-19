@@ -37,7 +37,7 @@ namespace IKVM.Internal
 		private ArrayList locals = new ArrayList();
 		private Stack exceptionStack = new Stack();
 		private bool inFinally;
-		private System.IO.MemoryStream linenums;
+		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
 #if LABELCHECK
 	private Hashtable labels = new Hashtable();
 #endif
@@ -320,10 +320,9 @@ namespace IKVM.Internal
 		{
 			if(linenums == null)
 			{
-				linenums = new System.IO.MemoryStream();
+				linenums = new IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter(32);
 			}
-			IKVM.Attributes.LineNumberTableAttribute.WritePackedInteger(linenums, (uint)offset);
-			IKVM.Attributes.LineNumberTableAttribute.WritePackedInteger(linenums, line);
+			linenums.AddMapping(offset, line);
 		}
 
 		internal void EmitLineNumberTable(MethodBase mb)

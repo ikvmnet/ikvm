@@ -72,7 +72,7 @@ class Compiler
 	private MethodAnalyzer ma;
 	private ExceptionTableEntry[] exceptions;
 	private ISymbolDocumentWriter symboldocument;
-	private System.IO.MemoryStream lineNumbers;
+	private LineNumberTableAttribute.LineNumberWriter lineNumbers;
 	private bool nonleaf;
 
 	static Compiler()
@@ -162,7 +162,7 @@ class Compiler
 		this.symboldocument = symboldocument;
 		if(m.LineNumberTableAttribute != null && !JVM.NoStackTraceInfo)
 		{
-			this.lineNumbers = new System.IO.MemoryStream(m.LineNumberTableAttribute.Length * 2);
+			this.lineNumbers = new LineNumberTableAttribute.LineNumberWriter(m.LineNumberTableAttribute.Length);
 		}
 
 		Profiler.Enter("MethodAnalyzer");
@@ -1328,8 +1328,7 @@ class Compiler
 						}
 						if(lineNumbers != null)
 						{
-							LineNumberTableAttribute.WritePackedInteger(lineNumbers, (uint)ilGenerator.GetILOffset());
-							LineNumberTableAttribute.WritePackedInteger(lineNumbers, table[j].line_number);
+							lineNumbers.AddMapping(ilGenerator.GetILOffset(), table[j].line_number);
 						}
 						break;
 					}
