@@ -40,6 +40,8 @@ package java.lang;
 import java.util.Properties;
 
 import java.io.*;
+import cli.System.Collections.IDictionary;
+import cli.System.Collections.IDictionaryEnumerator;
 
 /**
  * VMSystem is a package-private helper class for System that the
@@ -182,5 +184,17 @@ final class VMSystem
     static String getenv(String name)
     {
 	return cli.System.Environment.GetEnvironmentVariable(name);
+    }
+
+    static java.util.List environ()
+    {
+	java.util.ArrayList list = new java.util.ArrayList();
+        IDictionary env = cli.System.Environment.GetEnvironmentVariables();
+        IDictionaryEnumerator e = env.GetEnumerator();
+        for(int i = 0; e.MoveNext(); i++)
+        {
+            list.add(e.get_Key() + "=" + e.get_Value());
+        }
+        return list;
     }
 }

@@ -993,6 +993,20 @@ namespace IKVM.NativeCode.java
 					throw x.ToJava();
 				}
 			}
+
+			public static string GetClassSignature(object cwrapper)
+			{
+				try
+				{
+					TypeWrapper wrapper = (TypeWrapper)cwrapper;
+					// TODO
+					return null;
+				}
+				catch(RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
+			}
 		}
 	}
 

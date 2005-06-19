@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,8 +23,10 @@
 */
 package java.lang;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import cli.System.Type;
 
@@ -184,4 +186,66 @@ abstract class VMClass
 	return IsArray(clazz.vmdata);
     }
     private static native boolean IsArray(Object wrapper);
+
+  /* TODO: implement these 1.5 methods */
+  static Object cast(Object obj, Class k) { throw new Error(); }
+  static boolean isSynthetic(Class clazz) { throw new Error(); }
+  static boolean isAnnotation(Class clazz) { throw new Error(); }
+  static boolean isEnum(Class clazz) { throw new Error(); }
+
+  static String getSimpleName(Class clazz)
+  {
+    if (isArray(clazz))
+      {
+	return getSimpleName(getComponentType(clazz)) + "[]";
+      }
+    String fullName = getName(clazz);
+    return fullName.substring(fullName.lastIndexOf(".") + 1);
+  }
+
+  static Object[] getEnumConstants(Class clazz)
+  {
+    if (isEnum(clazz))
+      {
+        throw new Error("Not implemented");
+      }
+    else
+      {
+	return null;
+      }
+  }
+
+  static Annotation[] getDeclaredAnnotations(Class clazz) { throw new Error("Not implemented"); }
+
+  static String getCanonicalName(Class clazz)
+  {
+    if (isArray(clazz))
+      {
+	String componentName = getCanonicalName(getComponentType(clazz));
+	if (componentName != null)
+	  return componentName + "[]";
+      }
+    if (isMemberClass(clazz))
+      {
+	String memberName = getCanonicalName(getDeclaringClass(clazz));
+	if (memberName != null)
+	  return memberName + "." + getSimpleName(clazz);
+      }
+    if (isLocalClass(clazz) || isAnonymousClass(clazz))
+      return null;
+    return getName(clazz);
+  }
+
+  static String getClassSignature(Class clazz)
+  {
+    return GetClassSignature(clazz.vmdata);
+  }
+  private static native String GetClassSignature(Object wrapper);
+
+  static Class getEnclosingClass(Class clazz) { throw new Error("Not implemented"); }
+  static Constructor getEnclosingConstructor(Class clazz) { throw new Error("Not implemented"); }
+  static Method getEnclosingMethod(Class clazz) { throw new Error("Not implemented"); }
+  static boolean isAnonymousClass(Class clazz) { throw new Error("Not implemented"); }
+  static boolean isLocalClass(Class clazz) { throw new Error("Not implemented"); }
+  static boolean isMemberClass(Class clazz) { throw new Error("Not implemented"); }
 }
