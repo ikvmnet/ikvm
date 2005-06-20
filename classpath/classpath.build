@@ -1,14 +1,26 @@
 <?xml version="1.0"?>
-<project name="IKVM.GNU.Classpath.dll" default="IKVM.GNU.Classpath.dll">
-    <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath" />
+<project name="IKVM.GNU.Classpath.dll" default="HEAD">
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
-    <property name="jikes.compiler" value="true" />
-    <property name="ecj.compiler" value="false" />
-
     <if propertytrue="nant.platform.win32">
         <property name="pathsep" value=";" />
     </if>
+    <property name="jikes.compiler" value="false" />
+    <property name="ecj.compiler" value="false" />
+
+    <target name="HEAD">
+        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath" />
+        <property name="allsources" value="allsources.lst" />
+        <property name="jikes.compiler" value="true" />
+        <call target="IKVM.GNU.Classpath.dll" />
+    </target>
+
+    <target name="generics">
+        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-generics" />
+        <property name="allsources" value="allsources-generics.lst" />
+        <property name="ecj.compiler" value="true" />
+        <call target="IKVM.GNU.Classpath.dll" />
+    </target>
 
     <target name="jars">
         <!-- TODO
@@ -29,10 +41,10 @@
 	</delete>
         <if propertytrue="jikes.compiler">
             <property name="classpath" value=".${pathsep}${Classpath.dir}${pathsep}${Classpath.dir}/external/w3c_dom${pathsep}${Classpath.dir}/external/sax${pathsep}${Classpath.dir}/vm/reference${pathsep}mscorlib.jar${pathsep}System.jar" />
-            <exec program="jikes" commandline="-g -nowarn -classpath ${classpath} @allsources.lst"/>
+            <exec program="jikes" commandline="-g -nowarn -classpath ${classpath} @${allsources}"/>
         </if>
         <if propertytrue="ecj.compiler">
-            <exec program="ecj" commandline="-g -1.5 -nowarn -cp mscorlib.jar${pathsep}System.jar @allsources.lst"/>
+            <exec program="ecj" commandline="-g -1.5 -nowarn -cp mscorlib.jar${pathsep}System.jar @${allsources}"/>
         </if>
     </target>
 
