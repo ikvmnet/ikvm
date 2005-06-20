@@ -251,7 +251,7 @@ public final class Method extends AccessibleObject implements Member
     public String toString()
     {
 	StringBuffer sb = new StringBuffer();
-	Modifier.toString(getModifiers(), sb);
+	sb.append(Modifier.toString(getModifiers()));
 	if (sb.length() > 0)
 	    sb.append(' ');
 	classToString(sb, getReturnType());

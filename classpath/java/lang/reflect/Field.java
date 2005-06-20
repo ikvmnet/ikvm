@@ -178,7 +178,7 @@ public final class Field extends AccessibleObject implements Member
 	public String toString()
 	{
 		StringBuffer sb = new StringBuffer();
-		Modifier.toString(getModifiers(), sb).append(' ');
+		sb.append(Modifier.toString(getModifiers())).append(' ');
 		sb.append(getType().getName()).append(' ');
 		sb.append(getDeclaringClass().getName()).append('.');
 		sb.append(getName());
