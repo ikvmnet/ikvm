@@ -153,6 +153,10 @@ public class NetExp
 
 	private static void AddToExportList(java.lang.Class c)
 	{
+		while(c.isArray())
+		{
+			c = c.getComponentType();
+		}
 		privateClasses[c.getName()] = c;
 	}
 
@@ -213,7 +217,6 @@ public class NetExp
 			if(java.lang.reflect.Modifier.isPublic(interfaces[i].getModifiers()))
 			{
 				f.AddInterface(interfaces[i].getName().Replace('.', '/'));
-				// TODO we should also export generic types in method and field signatures
 				if(IsGenericType(interfaces[i]))
 				{
 					AddToExportList(interfaces[i]);
@@ -244,6 +247,13 @@ public class NetExp
 			{
 				// TODO what happens if one of the argument types is non-public?
 				java.lang.Class[] args = constructors[i].getParameterTypes();
+				foreach(java.lang.Class arg in args)
+				{
+					if(IsGenericType(arg))
+					{
+						AddToExportList(arg);
+					}
+				}
 				FieldOrMethod m = f.AddMethod(mods, "<init>", MakeSig(args, java.lang.Void.TYPE));
 				CodeAttribute code = new CodeAttribute(f);
 				code.MaxLocals = (ushort)(args.Length * 2 + 1);
@@ -277,7 +287,20 @@ public class NetExp
 					mods |= Modifiers.Native;
 				}
 				// TODO what happens if one of the argument types (or the return type) is non-public?
-				FieldOrMethod m = f.AddMethod(mods, methods[i].getName(), MakeSig(methods[i].getParameterTypes(), methods[i].getReturnType()));
+				java.lang.Class[] args = methods[i].getParameterTypes();
+				foreach(java.lang.Class arg in args)
+				{
+					if(IsGenericType(arg))
+					{
+						AddToExportList(arg);
+					}
+				}
+				java.lang.Class retType = methods[i].getReturnType();
+				if(IsGenericType(retType))
+				{
+					AddToExportList(retType);
+				}
+				FieldOrMethod m = f.AddMethod(mods, methods[i].getName(), MakeSig(args, retType));
 				AddExceptions(f, m, methods[i].getExceptionTypes());
 				if(IKVM.Runtime.Util.IsMethodDeprecated(methods[i]))
 				{
@@ -342,7 +365,12 @@ public class NetExp
 					}
 				}
 				// TODO what happens if the field type is non-public?
-				FieldOrMethod fld = f.AddField(mods, fields[i].getName(), ClassToSig(fields[i].getType()), constantValue);
+				java.lang.Class fieldType = fields[i].getType();
+				if(IsGenericType(fieldType))
+				{
+					AddToExportList(fieldType);
+				}
+				FieldOrMethod fld = f.AddField(mods, fields[i].getName(), ClassToSig(fieldType), constantValue);
 				if(IKVM.Runtime.Util.IsFieldDeprecated(fields[i]))
 				{
 					fld.AddAttribute(new DeprecatedAttribute(f));

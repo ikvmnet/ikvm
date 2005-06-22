@@ -6272,6 +6272,7 @@ namespace IKVM.Internal
 		// out into the world
 		internal static TypeWrapper CreateDotNetTypeWrapper(string name)
 		{
+			string origname = name;
 			bool prefixed = name.StartsWith(NamePrefix);
 			if(prefixed)
 			{
@@ -6310,10 +6311,10 @@ namespace IKVM.Internal
 						args[i] = parameters[i].ParameterType;
 					}
 					ModuleBuilder moduleBuilder = ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
-					TypeBuilder typeBuilder = moduleBuilder.DefineType(NamePrefix + name, TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract);
-					AttributeHelper.SetInnerClass(typeBuilder, NamePrefix + name, NamePrefix + delegateType.FullName, "Method", Modifiers.Public | Modifiers.Interface | Modifiers.Static | Modifiers.Abstract);
+					TypeBuilder typeBuilder = moduleBuilder.DefineType(origname, TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract);
+					AttributeHelper.SetInnerClass(typeBuilder, origname, MangleTypeName(delegateType.FullName), "Method", Modifiers.Public | Modifiers.Interface | Modifiers.Static | Modifiers.Abstract);
 					typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual, CallingConventions.Standard, invoke.ReturnType, args);
-					return CompiledTypeWrapper.newInstance(NamePrefix + name, typeBuilder.CreateType());
+					return CompiledTypeWrapper.newInstance(origname, typeBuilder.CreateType());
 				}
 			}
 			return null;
