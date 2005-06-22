@@ -6187,21 +6187,84 @@ namespace IKVM.Internal
 
 		private static string MangleTypeName(string name)
 		{
-			// TODO a fully reversible name mangling should be used (all characters not supported by Java should be escaped)
-			return NamePrefix + name.Replace('+', '$');
+			System.Text.StringBuilder sb = new System.Text.StringBuilder(NamePrefix, NamePrefix.Length + name.Length);
+			int quoteMode = 0;
+			for(int i = 0; i < name.Length; i++)
+			{
+				char c = name[i];
+				if(c == '[')
+				{
+					// TODO we shouldn't go to quote mode if the '[' was escaped (i.e. preceded by a backslash)
+					quoteMode++;
+				}
+				if(c == ']')
+				{
+					quoteMode--;
+				}
+				if(c == '+')
+				{
+					sb.Append('$');
+				}
+				else if("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".IndexOf(c) != -1
+					|| (c == '.' && quoteMode == 0))
+				{
+					sb.Append(c);
+				}
+				else
+				{
+					sb.Append('_');
+					sb.Append(string.Format("{0:X4}", (int)c));
+				}
+			}
+			return sb.ToString();
 		}
 
+		// NOTE if the name is not a valid mangled type name, no demangling is done and the
+		// original string is returned
 		private static string DemangleTypeName(string name)
 		{
 			Debug.Assert(name.StartsWith(NamePrefix));
-			// TODO a fully reversible name mangling should be used (all characters not supported by Java should be escaped)
-			name = name.Substring(NamePrefix.Length);
-			if(name.EndsWith(DelegateInterfaceSuffix))
+			System.Text.StringBuilder sb = new System.Text.StringBuilder(name.Length - NamePrefix.Length);
+			int end = name.Length;
+			bool hasDelegateSuffix = name.EndsWith(DelegateInterfaceSuffix);
+			if(hasDelegateSuffix)
 			{
-				// HACK if we're a delegate nested type, don't replace the $ sign
-				return name;
+				end -= DelegateInterfaceSuffix.Length;
 			}
-			return name.Replace('$', '+');
+			// TODO we should enforce canonical form
+			for(int i = NamePrefix.Length; i < end; i++)
+			{
+				char c = name[i];
+				if(c == '$')
+				{
+					sb.Append('+');
+				}
+				else if(c == '_')
+				{
+					if(i + 5 > end)
+					{
+						return name;
+					}
+					int digit0 = "0123456789ABCDEF".IndexOf(name[++i]);
+					int digit1 = "0123456789ABCDEF".IndexOf(name[++i]);
+					int digit2 = "0123456789ABCDEF".IndexOf(name[++i]);
+					int digit3 = "0123456789ABCDEF".IndexOf(name[++i]);
+					if(digit0 == -1 || digit1 == -1 || digit2 == -1 || digit3 == -1)
+					{
+						return name;
+					}
+					sb.Append((char)((digit0 << 12) + (digit1 << 8) + (digit2 << 4) + digit3));
+				}
+				else
+				{
+					sb.Append(c);
+				}
+			}
+			if(hasDelegateSuffix)
+			{
+				sb.Append(DelegateInterfaceSuffix);
+			}
+			return sb.ToString();
 		}
 
 		// this method returns a new TypeWrapper instance for each invocation (doesn't prevent duplicates)

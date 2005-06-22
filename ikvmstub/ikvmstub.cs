@@ -151,6 +151,17 @@ public class NetExp
 		} while(keepGoing);
 	}
 
+	private static void AddToExportList(java.lang.Class c)
+	{
+		privateClasses[c.getName()] = c;
+	}
+
+	private static bool IsGenericType(java.lang.Class c)
+	{
+		// HACK huge hack, we look for the backtick
+		return c.getName().IndexOf("_0060") > 0;
+	}
+
 	private static void ProcessClass(string assemblyName, java.lang.Class c, java.lang.Class outer)
 	{
 		string name = c.getName().Replace('.', '/');
@@ -161,7 +172,7 @@ public class NetExp
 			// if the base class isn't public, we still need to export it (!)
 			if(!java.lang.reflect.Modifier.isPublic(c.getSuperclass().getModifiers()))
 			{
-				privateClasses[c.getSuperclass().getName()] = c.getSuperclass();
+				AddToExportList(c.getSuperclass());
 			}
 		}
 		if(c.isInterface())
@@ -202,6 +213,11 @@ public class NetExp
 			if(java.lang.reflect.Modifier.isPublic(interfaces[i].getModifiers()))
 			{
 				f.AddInterface(interfaces[i].getName().Replace('.', '/'));
+				// TODO we should also export generic types in method and field signatures
+				if(IsGenericType(interfaces[i]))
+				{
+					AddToExportList(interfaces[i]);
+				}
 			}
 		}
 		java.lang.Class[] innerClasses = c.getDeclaredClasses();
