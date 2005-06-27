@@ -6189,31 +6189,39 @@ namespace IKVM.Internal
 		{
 			System.Text.StringBuilder sb = new System.Text.StringBuilder(NamePrefix, NamePrefix.Length + name.Length);
 			int quoteMode = 0;
+			bool escape = false;
 			for(int i = 0; i < name.Length; i++)
 			{
 				char c = name[i];
-				if(c == '[')
+				if(c == '[' && !escape)
 				{
-					// TODO we shouldn't go to quote mode if the '[' was escaped (i.e. preceded by a backslash)
 					quoteMode++;
 				}
-				if(c == ']')
+				if(c == ']' && !escape)
 				{
 					quoteMode--;
 				}
-				if(c == '+')
+				if(c == '+' && !escape && (sb.Length == 0 || sb[sb.Length - 1] != '$'))
 				{
 					sb.Append('$');
 				}
-				else if("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".IndexOf(c) != -1
+				else if("_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".IndexOf(c) != -1
 					|| (c == '.' && quoteMode == 0))
 				{
 					sb.Append(c);
 				}
 				else
 				{
-					sb.Append('_');
+					sb.Append("$$");
 					sb.Append(string.Format("{0:X4}", (int)c));
+				}
+				if(c == '\\')
+				{
+					escape = !escape;
+				}
+				else
+				{
+					escape = false;
 				}
 			}
 			return sb.ToString();
@@ -6237,23 +6245,27 @@ namespace IKVM.Internal
 				char c = name[i];
 				if(c == '$')
 				{
-					sb.Append('+');
-				}
-				else if(c == '_')
-				{
-					if(i + 5 > end)
+					if(i + 1 < end && name[i + 1] != '$')
 					{
-						return name;
+						sb.Append('+');
 					}
-					int digit0 = "0123456789ABCDEF".IndexOf(name[++i]);
-					int digit1 = "0123456789ABCDEF".IndexOf(name[++i]);
-					int digit2 = "0123456789ABCDEF".IndexOf(name[++i]);
-					int digit3 = "0123456789ABCDEF".IndexOf(name[++i]);
-					if(digit0 == -1 || digit1 == -1 || digit2 == -1 || digit3 == -1)
+					else
 					{
-						return name;
+						i++;
+						if(i + 5 > end)
+						{
+							return name;
+						}
+						int digit0 = "0123456789ABCDEF".IndexOf(name[++i]);
+						int digit1 = "0123456789ABCDEF".IndexOf(name[++i]);
+						int digit2 = "0123456789ABCDEF".IndexOf(name[++i]);
+						int digit3 = "0123456789ABCDEF".IndexOf(name[++i]);
+						if(digit0 == -1 || digit1 == -1 || digit2 == -1 || digit3 == -1)
+						{
+							return name;
+						}
+						sb.Append((char)((digit0 << 12) + (digit1 << 8) + (digit2 << 4) + digit3));
 					}
-					sb.Append((char)((digit0 << 12) + (digit1 << 8) + (digit2 << 4) + digit3));
 				}
 				else
 				{

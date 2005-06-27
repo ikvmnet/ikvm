@@ -484,16 +484,25 @@ namespace IKVM.Internal
 
 		private static Type GetJavaTypeFromAssembly(Assembly a, string name)
 		{
-			Type t = a.GetType(name);
-			if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+			try
 			{
-				return t;
+				Type t = a.GetType(name);
+				if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+				{
+					return t;
+				}
+				// HACK we might be looking for an inner classes
+				t = a.GetType(name.Replace('$', '+'));
+				if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+				{
+					return t;
+				}
 			}
-			// HACK we might be looking for an inner classes
-			t = a.GetType(name.Replace('$', '+'));
-			if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+			catch(ArgumentException x)
 			{
-				return t;
+				// we can end up here because we replace the $ with a plus sign
+				// (or client code did a Class.forName() on an invalid name)
+				Tracer.Info(Tracer.Runtime, x.Message);
 			}
 			return null;
 		}
