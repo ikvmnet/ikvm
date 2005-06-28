@@ -484,7 +484,6 @@
 ../../classpath/gnu/java/nio/charset/Windows1257.java
 ../../classpath/gnu/java/nio/charset/Windows1258.java
 ../../classpath/gnu/java/nio/DatagramChannelImpl.java
-../../classpath/gnu/java/nio/DatagramChannelSelectionKey.java
 ../../classpath/gnu/java/nio/FileLockImpl.java
 ../../classpath/gnu/java/nio/InputStreamChannel.java
 ../../classpath/gnu/java/nio/NIOConstants.java
@@ -493,13 +492,9 @@
 ../../classpath/gnu/java/nio/NIOSocket.java
 ../../classpath/gnu/java/nio/OutputStreamChannel.java
 ../../classpath/gnu/java/nio/PipeImpl.java
-../../classpath/gnu/java/nio/SelectionKeyImpl.java
-../../classpath/gnu/java/nio/SelectorImpl.java
 ../../classpath/gnu/java/nio/SelectorProviderImpl.java
 ../../classpath/gnu/java/nio/ServerSocketChannelImpl.java
-../../classpath/gnu/java/nio/ServerSocketChannelSelectionKey.java
 ../../classpath/gnu/java/nio/SocketChannelImpl.java
-../../classpath/gnu/java/nio/SocketChannelSelectionKey.java
 ../../classpath/gnu/java/rmi/dgc/DGCImpl.java
 ../../classpath/gnu/java/rmi/dgc/DGCImpl_Skel.java
 ../../classpath/gnu/java/rmi/dgc/DGCImpl_Stub.java
@@ -3251,8 +3246,12 @@ gnu/java/net/PlainSocketImpl.java
 gnu/java/net/protocol/ikvmres/Handler.java
 gnu/java/nio/channels/FileChannelImpl.java
 gnu/java/nio/charset/iconv/IconvProvider.java
+gnu/java/nio/DatagramChannelSelectionKey.java
+gnu/java/nio/SelectionKeyImpl.java
+gnu/java/nio/SelectorImpl.java
+gnu/java/nio/ServerSocketChannelSelectionKey.java
+gnu/java/nio/SocketChannelSelectionKey.java
 gnu/java/nio/VMPipe.java
-gnu/java/nio/VMSelector.java
 ikvm/internal/LibraryVMInterface.java
 ikvm/lang/CIL.java
 java/io/VMFile.java

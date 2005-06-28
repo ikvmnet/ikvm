@@ -741,5 +741,8 @@ public class PlainSocketImpl extends SocketImpl
 	inChannelOperation = b;
     }
     
-    public int getNativeFD() { throw new NoSuchMethodError("Not supported"); }
+    public cli.System.Net.Sockets.Socket getSocket()
+    {
+        return socket;
+    }
 }

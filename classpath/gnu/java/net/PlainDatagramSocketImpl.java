@@ -535,5 +535,8 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         throw new InternalError ("PlainDatagramSocketImpl::leaveGroup is not implemented");
     }
 
-    public int getNativeFD() { throw new NoSuchMethodError("Not supported"); }
+    public cli.System.Net.Sockets.Socket getSocket()
+    {
+        return socket;
+    }
 } // class PlainDatagramSocketImpl
