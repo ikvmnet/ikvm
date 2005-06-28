@@ -142,9 +142,12 @@ namespace IKVM.Runtime
 				{
 					*((void**)ppvmBuf) = JavaVM.pJavaVM;
 				}
-				*nVMs = 1;
+				if(nVMs != null)
+				{
+					*nVMs = 1;
+				}
 			}
-			else
+			else if(nVMs != null)
 			{
 				*nVMs = 0;
 			}

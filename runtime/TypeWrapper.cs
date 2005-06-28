@@ -3718,7 +3718,7 @@ namespace IKVM.Internal
 					// RULE 1: final methods may not be overridden
 					if(baseMethod.IsFinal && !baseMethod.IsPrivate)
 					{
-						throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + tw.Name + " is overriden in " + wrapper.Name);
+						throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overriden in " + wrapper.Name);
 					}
 					// RULE 2: public & protected methods can be overridden (package methods are handled by RULE 4)
 					// (by public, protected & *package* methods [even if they are in a different package])
