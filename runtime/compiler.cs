@@ -746,6 +746,8 @@ class Compiler
 					if(firstLine > 0)
 					{
 						ilGenerator.MarkSequencePoint(symboldocument, firstLine, 0, firstLine + 1, 0);
+						// FXBUG emit an extra nop to workaround Whidbey June CTP dynamic debugging bug
+						ilGenerator.Emit(OpCodes.Nop);
 					}
 				}
 			}
