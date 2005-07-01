@@ -45,7 +45,7 @@ public interface Configuration
 {
   // TODO
   String CLASSPATH_HOME = "";
-  String CLASSPATH_VERSION = "0.15+cvs";
+  String CLASSPATH_VERSION = "0.16";
 
 
   /**
