@@ -2995,6 +2995,7 @@
 ../../classpath/org/omg/CORBA/PolicyListHelper.java
 ../../classpath/org/omg/CORBA/PolicyListHolder.java
 ../../classpath/org/omg/CORBA/PolicyOperations.java
+../../classpath/org/omg/CORBA/PolicyTypeHelper.java
 ../../classpath/org/omg/CORBA/portable/ApplicationException.java
 ../../classpath/org/omg/CORBA/portable/BoxedValueHelper.java
 ../../classpath/org/omg/CORBA/portable/CustomValue.java
@@ -3087,6 +3088,7 @@
 ../../classpath/org/omg/CosNaming/BindingIterator.java
 ../../classpath/org/omg/CosNaming/BindingIteratorHelper.java
 ../../classpath/org/omg/CosNaming/BindingIteratorHolder.java
+../../classpath/org/omg/CosNaming/BindingIteratorOperations.java
 ../../classpath/org/omg/CosNaming/BindingListHelper.java
 ../../classpath/org/omg/CosNaming/BindingListHolder.java
 ../../classpath/org/omg/CosNaming/BindingType.java
@@ -3136,8 +3138,13 @@
 ../../classpath/org/omg/CosNaming/_NamingContextExtStub.java
 ../../classpath/org/omg/CosNaming/_NamingContextImplBase.java
 ../../classpath/org/omg/CosNaming/_NamingContextStub.java
+../../classpath/org/omg/Dynamic/Parameter.java
 ../../classpath/org/omg/DynamicAny/DynAnyFactoryPackage/InconsistentTypeCode.java
 ../../classpath/org/omg/DynamicAny/DynAnyFactoryPackage/InconsistentTypeCodeHelper.java
+../../classpath/org/omg/DynamicAny/DynAnyPackage/InvalidValue.java
+../../classpath/org/omg/DynamicAny/DynAnyPackage/InvalidValueHelper.java
+../../classpath/org/omg/DynamicAny/DynAnyPackage/TypeMismatch.java
+../../classpath/org/omg/DynamicAny/DynAnyPackage/TypeMismatchHelper.java
 ../../classpath/org/omg/IOP/Codec.java
 ../../classpath/org/omg/IOP/CodecFactory.java
 ../../classpath/org/omg/IOP/CodecFactoryHelper.java
@@ -3152,6 +3159,7 @@
 ../../classpath/org/omg/IOP/CodecPackage/TypeMismatch.java
 ../../classpath/org/omg/IOP/CodecPackage/TypeMismatchHelper.java
 ../../classpath/org/omg/IOP/CodeSets.java
+../../classpath/org/omg/IOP/ComponentIdHelper.java
 ../../classpath/org/omg/IOP/Encoding.java
 ../../classpath/org/omg/IOP/ENCODING_CDR_ENCAPS.java
 ../../classpath/org/omg/IOP/IOR.java
@@ -3217,6 +3225,8 @@
 ../../classpath/org/omg/PortableServer/POAPackage/ObjectAlreadyActiveHelper.java
 ../../classpath/org/omg/PortableServer/POAPackage/ObjectNotActive.java
 ../../classpath/org/omg/PortableServer/POAPackage/ObjectNotActiveHelper.java
+../../classpath/org/omg/PortableServer/POAPackage/ServantAlreadyActive.java
+../../classpath/org/omg/PortableServer/POAPackage/ServantAlreadyActiveHelper.java
 ../../classpath/org/omg/PortableServer/POAPackage/ServantNotActive.java
 ../../classpath/org/omg/PortableServer/POAPackage/ServantNotActiveHelper.java
 ../../classpath/org/omg/PortableServer/POAPackage/WrongAdapter.java
