@@ -395,15 +395,11 @@ namespace IKVM.Attributes
 	public sealed class InnerClassAttribute : Attribute
 	{
 		private string innerClassName;
-		private string outerClassName;
-		private string name;
 		private Modifiers modifiers;
 
-		public InnerClassAttribute(string innerClassName, string outerClassName, string name, Modifiers modifiers)
+		public InnerClassAttribute(string innerClassName, Modifiers modifiers)
 		{
 			this.innerClassName = innerClassName;
-			this.outerClassName = outerClassName;
-			this.name = name;
 			this.modifiers = modifiers;
 		}
 
@@ -412,23 +408,6 @@ namespace IKVM.Attributes
 			get
 			{
 				return innerClassName;
-			}
-		}
-
-		public string OuterClassName
-		{
-			get
-			{
-				return outerClassName;
-			}
-		}
-
-		// NOTE returns null for anonymous inner classes
-		public string Name
-		{
-			get
-			{
-				return name;
 			}
 		}
 

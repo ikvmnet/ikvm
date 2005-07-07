@@ -544,6 +544,11 @@ namespace IKVM.Internal
 				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, assemblyDir);
 				ModuleBuilder moduleBuilder;
 				moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, JVM.Debug);
+				if(!JVM.NoStackTraceInfo)
+				{
+					CustomAttributeBuilder sourceFileAttr = new CustomAttributeBuilder(typeof(SourceFileAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { null });
+					moduleBuilder.SetCustomAttribute(sourceFileAttr);
+				}
 				CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeof(JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 				moduleBuilder.SetCustomAttribute(ikvmModuleAttr);
 				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });

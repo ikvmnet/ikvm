@@ -732,10 +732,10 @@ namespace IKVM.Internal
 			return mem.ToArray();
 		}
 
-		internal static void SetInnerClass(TypeBuilder typeBuilder, string innerClass, string outerClass, string name, Modifiers modifiers)
+		internal static void SetInnerClass(TypeBuilder typeBuilder, string innerClass, Modifiers modifiers)
 		{
-			Type[] argTypes = new Type[] { typeof(string), typeof(string), typeof(string), typeof(Modifiers) };
-			object[] args = new object[] { innerClass, outerClass, name, modifiers };
+			Type[] argTypes = new Type[] { typeof(string), typeof(Modifiers) };
+			object[] args = new object[] { innerClass, modifiers };
 			ConstructorInfo ci = typeof(InnerClassAttribute).GetConstructor(argTypes);
 			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ci, args);
 			typeBuilder.SetCustomAttribute(customAttributeBuilder);
@@ -2507,9 +2507,19 @@ namespace IKVM.Internal
 					{
 						AttributeHelper.SetDeprecatedAttribute(typeBuilder);
 					}
-					if(f.SourceFileAttribute != null && !JVM.NoStackTraceInfo)
+					if(!JVM.NoStackTraceInfo)
 					{
-						AttributeHelper.SetSourceFile(typeBuilder, f.SourceFileAttribute);
+						if(f.SourceFileAttribute != null)
+						{
+							if(f.SourceFileAttribute != typeBuilder.Name + ".java")
+							{
+								AttributeHelper.SetSourceFile(typeBuilder, f.SourceFileAttribute);
+							}
+						}
+						else
+						{
+							AttributeHelper.SetSourceFile(typeBuilder, null);
+						}
 					}
 				}
 				catch(Exception x)
@@ -3003,11 +3013,12 @@ namespace IKVM.Internal
 								if(classFile.GetConstantPoolClassType(innerclasses[i].innerClass) == wrapper)
 								{
 									declaringTypeWrapper = classFile.GetConstantPoolClassType(innerclasses[i].outerClass);
-									AttributeHelper.SetInnerClass(typeBuilder,
-										classFile.GetConstantPoolClass(innerclasses[i].innerClass),
-										classFile.GetConstantPoolClass(innerclasses[i].outerClass),
-										innerclasses[i].name == 0 ? null : classFile.GetConstantPoolUtf8String(innerclasses[i].name),
-										innerclasses[i].accessFlags);
+									string inner = classFile.GetConstantPoolClass(innerclasses[i].innerClass);
+									if(inner == classFile.Name && inner == declaringTypeWrapper.Name + "$" + typeBuilder.Name)
+									{
+										inner = null;
+									}
+									AttributeHelper.SetInnerClass(typeBuilder, inner, innerclasses[i].accessFlags);
 								}
 							}
 						}
@@ -5611,7 +5622,12 @@ namespace IKVM.Internal
 			Object[] attribs = type.GetCustomAttributes(typeof(InnerClassAttribute), false);
 			if(attribs.Length == 1)
 			{
-				return ((InnerClassAttribute)attribs[0]).InnerClassName;
+				string name = ((InnerClassAttribute)attribs[0]).InnerClassName;
+				if(name != null)
+				{
+					return name;
+				}
+				return GetName(type.DeclaringType) + "$" + type.Name;
 			}
 			return type.FullName;
 		}
@@ -6324,7 +6340,7 @@ namespace IKVM.Internal
 					}
 					ModuleBuilder moduleBuilder = ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
 					TypeBuilder typeBuilder = moduleBuilder.DefineType(origname, TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract);
-					AttributeHelper.SetInnerClass(typeBuilder, origname, MangleTypeName(delegateType.FullName), "Method", Modifiers.Public | Modifiers.Interface | Modifiers.Static | Modifiers.Abstract);
+					AttributeHelper.SetInnerClass(typeBuilder, origname, Modifiers.Public | Modifiers.Interface | Modifiers.Static | Modifiers.Abstract);
 					typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual, CallingConventions.Standard, invoke.ReturnType, args);
 					return CompiledTypeWrapper.newInstance(origname, typeBuilder.CreateType());
 				}

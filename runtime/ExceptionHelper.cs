@@ -142,6 +142,10 @@ namespace IKVM.NativeCode.java.lang
 				{
 					return ((SourceFileAttribute)attr[0]).SourceFile;
 				}
+				if(mb.DeclaringType.Module.IsDefined(typeof(SourceFileAttribute), false))
+				{
+					return mb.DeclaringType.Name + ".java";
+				}
 			}
 			return null;
 		}
