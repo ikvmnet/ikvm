@@ -2717,8 +2717,7 @@ namespace IKVM.Internal
 					{
 						if(classObjectField == null)
 						{
-							classObjectField = typeBuilder.DefineField("__<classObject>", typeof(object), FieldAttributes.Private | FieldAttributes.Static);
-							AttributeHelper.HideFromJava((FieldBuilder)classObjectField);
+							classObjectField = typeBuilder.DefineField("__<classObject>", typeof(object), FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.SpecialName);
 						}
 						return classObjectField;
 					}
@@ -3236,10 +3235,9 @@ namespace IKVM.Internal
 						{
 							// if we implement a ghost interface, add an implicit conversion to the ghost reference value type
 							// TODO do this for indirectly implemented interfaces (interfaces implemented by interfaces) as well
-							if(interfaces[i].IsGhost)
+							if(JVM.IsStaticCompiler && interfaces[i].IsGhost && wrapper.IsPublic)
 							{
 								MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, interfaces[i].TypeAsSignatureType, new Type[] { wrapper.TypeAsSignatureType });
-								AttributeHelper.HideFromJava(mb);
 								ILGenerator ilgen = mb.GetILGenerator();
 								LocalBuilder local = ilgen.DeclareLocal(interfaces[i].TypeAsSignatureType);
 								ilgen.Emit(OpCodes.Ldloca, local);
@@ -3430,7 +3428,7 @@ namespace IKVM.Internal
 					FieldInfo classObjectField;
 					if(thruProxy)
 					{
-						classObjectField = typeBuilder.DefineField("__<classObject>", typeof(object), FieldAttributes.Static | FieldAttributes.Private);
+						classObjectField = typeBuilder.DefineField("__<classObject>", typeof(object), FieldAttributes.Static | FieldAttributes.Private | FieldAttributes.SpecialName);
 					}
 					else
 					{
@@ -3697,7 +3695,6 @@ namespace IKVM.Internal
 					// We create a field that the derived classes can access in their .cctor to trigger our .cctor
 					// (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
 					FieldBuilder field = typeBuilder.DefineField("__<clinit>", typeof(int), FieldAttributes.SpecialName | FieldAttributes.Family | FieldAttributes.Static);
-					AttributeHelper.HideFromJava(field);
 				}
 				if(typeBuilder.IsInterface)
 				{
@@ -5212,7 +5209,6 @@ namespace IKVM.Internal
 					for(int i = 0; i < implementers.Length; i++)
 					{
 						mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, new Type[] { implementers[i].TypeAsSignatureType });
-						AttributeHelper.HideFromJava(mb);
 						ilgen = mb.GetILGenerator();
 						local = ilgen.DeclareLocal(TypeAsSignatureType);
 						ilgen.Emit(OpCodes.Ldloca, local);
@@ -5365,7 +5361,6 @@ namespace IKVM.Internal
 				AttributeHelper.SetGhostInterface(typeBuilder);
 				AttributeHelper.SetModifiers(typeBuilder, Modifiers);
 				ghostRefField = typeBuilder.DefineField("__<ref>", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
-				AttributeHelper.HideFromJava((FieldBuilder)ghostRefField);
 				typeBuilderGhostInterface = typeBuilder.DefineNestedType("__Interface", TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.NestedPublic);
 				AttributeHelper.HideFromJava(typeBuilderGhostInterface);
 				ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object) });
@@ -5961,22 +5956,36 @@ namespace IKVM.Internal
 					MethodBase method = m as MethodBase;
 					if(method != null)
 					{
-						string name;
-						string sig;
-						TypeWrapper retType;
-						TypeWrapper[] paramTypes;
-						GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes);
-						MethodInfo mi = method as MethodInfo;
-						bool miranda = mi != null ? AttributeHelper.IsMirandaMethod(mi) : false;
-						MemberFlags flags = miranda ? MemberFlags.MirandaMethod | MemberFlags.HideFromReflection : MemberFlags.None;
-						methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, AttributeHelper.GetModifiers(method, false), flags));
+						if(method.IsSpecialName && method.Name == "op_Implicit")
+						{
+							// skip
+						}
+						else
+						{
+							string name;
+							string sig;
+							TypeWrapper retType;
+							TypeWrapper[] paramTypes;
+							GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes);
+							MethodInfo mi = method as MethodInfo;
+							bool miranda = mi != null ? AttributeHelper.IsMirandaMethod(mi) : false;
+							MemberFlags flags = miranda ? MemberFlags.MirandaMethod | MemberFlags.HideFromReflection : MemberFlags.None;
+							methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, AttributeHelper.GetModifiers(method, false), flags));
+						}
 					}
 					else
 					{
 						FieldInfo field = m as FieldInfo;
 						if(field != null)
 						{
-							fields.Add(CreateFieldWrapper(field));
+							if(field.IsSpecialName && field.Name.StartsWith("__<"))
+							{
+								// skip
+							}
+							else
+							{
+								fields.Add(CreateFieldWrapper(field));
+							}
 						}
 					}
 				}
