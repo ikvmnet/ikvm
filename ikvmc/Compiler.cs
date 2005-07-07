@@ -122,6 +122,8 @@ class Compiler
 			Console.Error.WriteLine("    -Xtrace:<string>           Displays all tracepoints with the given name");
 			Console.Error.WriteLine("    -Xmethodtrace:<string>     Build tracing into the specified output methods");
 			Console.Error.WriteLine("    -compressresources         Compress resources");
+			Console.Error.WriteLine("    -strictfinalfieldsemantics Don't allow final fields to be modified outside");
+			Console.Error.WriteLine("                               of initializer methods");
 			return 1;
 		}
 		foreach(string s in arglist)
@@ -369,6 +371,10 @@ class Compiler
 				{
 					compressResources = true;
 					options.compressedResources = true;
+				}
+				else if(s == "-strictfinalfieldsemantics")
+				{
+					options.strictFinalFieldSemantics = true;
 				}
 				else
 				{

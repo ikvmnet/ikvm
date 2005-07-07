@@ -3018,7 +3018,8 @@ class Compiler
 					if(field.IsAccessibleFrom(cpi.GetClassType(), clazz, thisType))
 					{
 						// are we trying to mutate a final field? (they are read-only from outside of the defining class)
-						if(write && field.IsFinal && (isStatic ? clazz != wrapper : clazz != thisType))
+						if(write && field.IsFinal
+							&& ((isStatic ? clazz != wrapper : clazz != thisType) || (JVM.StrictFinalFieldSemantics && (isStatic ? m.Name != "<clinit>" : m.Name != "<init>"))))
 						{
 							throw new IllegalAccessError("Field " + field.DeclaringType.Name + "." + field.Name + " is final");
 						}

@@ -290,6 +290,7 @@ namespace IKVM.Internal
 		private static string sourcePath;
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static ikvm.@internal.LibraryVMInterface lib;
+		private static bool strictFinalFieldSemantics;
 
 		internal static Version SafeGetAssemblyVersion(Assembly asm)
 		{
@@ -366,6 +367,14 @@ namespace IKVM.Internal
 					}
 				}
 				return lib;
+			}
+		}
+
+		public static bool StrictFinalFieldSemantics
+		{
+			get
+			{
+				return strictFinalFieldSemantics;
 			}
 		}
 
@@ -2078,6 +2087,7 @@ namespace IKVM.Internal
 			public bool nostacktraceinfo;
 			public bool removeUnusedFields;
 			public bool compressedResources;
+			public bool strictFinalFieldSemantics;
 		}
 
 		private static bool IsSigned(Assembly asm)
@@ -2092,6 +2102,7 @@ namespace IKVM.Internal
 			isStaticCompiler = true;
 			noJniStubs = options.nojni;
 			noStackTraceInfo = options.nostacktraceinfo;
+			strictFinalFieldSemantics = options.strictFinalFieldSemantics;
 			Assembly runtimeAssembly = typeof(JVM).Assembly;
 			AssemblyName runtimeAssemblyName = runtimeAssembly.GetName();
 			bool allReferencesAreStrongNamed = IsSigned(runtimeAssembly);

@@ -2398,7 +2398,8 @@ namespace IKVM.Internal
 					{
 						fields[i] = new ConstantFieldWrapper(wrapper, null, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue);
 					}
-					else if(fld.IsFinal && (fld.IsPublic || fld.IsProtected) && !wrapper.IsInterface)
+					else if(fld.IsFinal && (JVM.IsStaticCompiler && (fld.IsPublic || fld.IsProtected))
+						&& !wrapper.IsInterface && (!JVM.StrictFinalFieldSemantics || wrapper.Name == "java.lang.System"))
 					{
 						fields[i] = new GetterFieldWrapper(wrapper, null, null, fld.Name, fld.Signature, fld.Modifiers, null);
 					}
@@ -2860,14 +2861,10 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					bool isWrappedFinal = false;
-					if(fld.IsFinal && (fld.IsPublic || fld.IsProtected))
+					bool isWrappedFinal = fw is GetterFieldWrapper;
+					if(fld.IsFinal)
 					{
-						if(wrapper.IsInterface)
-						{
-							attribs |= FieldAttributes.InitOnly;
-						}
-						else
+						if(isWrappedFinal)
 						{
 							// NOTE public/protected blank final fields get converted into a read-only property with a private field
 							// backing store
@@ -2876,12 +2873,15 @@ namespace IKVM.Internal
 							attribs &= ~FieldAttributes.FieldAccessMask;
 							attribs |= FieldAttributes.Private;
 							setModifiers = true;
-							isWrappedFinal = true;
 						}
-					}
-					else if(fld.IsFinal)
-					{
-						setModifiers = true;
+						else if(wrapper.IsInterface || JVM.StrictFinalFieldSemantics)
+						{
+							attribs |= FieldAttributes.InitOnly;
+						}
+						else
+						{
+							setModifiers = true;
+						}
 					}
 					field = typeBuilder.DefineField(fieldName, type, attribs);
 					if(fld.IsTransient)
