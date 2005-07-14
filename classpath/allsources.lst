@@ -180,6 +180,9 @@
 ../../classpath/external/w3c_dom/org/w3c/dom/xpath/XPathNamespace.java
 ../../classpath/external/w3c_dom/org/w3c/dom/xpath/XPathNSResolver.java
 ../../classpath/external/w3c_dom/org/w3c/dom/xpath/XPathResult.java
+../../classpath/gnu/classpath/debug/Component.java
+../../classpath/gnu/classpath/debug/PreciseFilter.java
+../../classpath/gnu/classpath/debug/SystemLogger.java
 ../../classpath/gnu/classpath/ServiceFactory.java
 ../../classpath/gnu/classpath/ServiceProviderLoadingAction.java
 ../../classpath/gnu/classpath/SystemProperties.java
@@ -2624,6 +2627,7 @@
 ../../classpath/javax/swing/plaf/metal/MetalCheckBoxUI.java
 ../../classpath/javax/swing/plaf/metal/MetalComboBoxUI.java
 ../../classpath/javax/swing/plaf/metal/MetalDesktopIconUI.java
+../../classpath/javax/swing/plaf/metal/MetalIconFactory.java
 ../../classpath/javax/swing/plaf/metal/MetalInternalFrameUI.java
 ../../classpath/javax/swing/plaf/metal/MetalLabelUI.java
 ../../classpath/javax/swing/plaf/metal/MetalLookAndFeel.java
