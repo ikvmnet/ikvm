@@ -27,7 +27,7 @@ public class VMSystemProperties
         p.setProperty("user.language", culture[0]);
         p.setProperty("user.region", culture.length > 1 ? culture[1] : "");
         p.setProperty("user.variant", culture.length > 2 ? culture[2] : "");
-        p.setProperty("java.version", "1.4");
+        p.setProperty("java.version", "1.4.1");
         p.setProperty("java.vendor", "Jeroen Frijters");
         p.setProperty("java.vendor.url", "http://ikvm.net/");
         try

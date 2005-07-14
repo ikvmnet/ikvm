@@ -226,6 +226,24 @@ public class Starter
 				{
 					Tracer.HandleMethodTrace(args[i].Substring(14));
 				}
+				else if(args[i].StartsWith("-Xms")
+					|| args[i].StartsWith("-Xmx")
+					|| args[i].StartsWith("-Xss")
+					|| args[i] == "-Xmixed"
+					|| args[i] == "-Xint"
+					|| args[i] == "-Xnoclassgc"
+					|| args[i] == "-Xincgc"
+					|| args[i] == "-Xbatch"
+					|| args[i] == "-Xfuture"
+					|| args[i] == "-Xrs"
+					|| args[i] == "-Xcheck:jni"
+					|| args[i] == "-Xshare:off"
+					|| args[i] == "-Xshare:auto"
+					|| args[i] == "-Xshare:on"
+					)
+				{
+					Console.Error.WriteLine("Unsupported option ignored: {0}", args[i]);
+				}
 				else
 				{
 					Console.Error.WriteLine("{0}: illegal argument", args[i]);
