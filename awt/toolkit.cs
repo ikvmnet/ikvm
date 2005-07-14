@@ -479,6 +479,11 @@ namespace ikvm.awt
 				}
 			}
 		}
+
+		public override gnu.java.awt.peer.EmbeddedWindowPeer createEmbeddedWindow(gnu.java.awt.EmbeddedWindow ew)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetGraphicsEnvironment : java.awt.GraphicsEnvironment

@@ -211,6 +211,8 @@ public final class SelectorImpl extends AbstractSelector
                         // TODO we should somehow support waking up in response to Thread.interrupt()
                         Socket.Select(read, write, null, Integer.MAX_VALUE);
                     } while(read.get_Count() == 0 && write.get_Count() == 0);
+                    // TODO result should be set correctly
+                    result = read.get_Count() + write.get_Count();
                 }
                 else
                 {
@@ -224,6 +226,8 @@ public final class SelectorImpl extends AbstractSelector
                         Socket.Select(read, write, null, microSeconds);
                         timeout -= microSeconds / 1000;
                     } while(timeout > 0 && read.get_Count() == 0 && write.get_Count() == 0);
+                    // TODO result should be set correctly
+                    result = read.get_Count() + write.get_Count();
                 }
               }
             finally
