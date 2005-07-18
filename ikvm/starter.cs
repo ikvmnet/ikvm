@@ -183,6 +183,7 @@ public class Starter
 					{
 						Console.WriteLine("{0}: {1}", asm.GetName().Name, asm.GetName().Version);
 					}
+					Console.WriteLine("GNU Classpath version: {0}", java.lang.System.getProperty("gnu.classpath.version"));
 					return 0;
 				}
 				else if(args[i].StartsWith("-D"))
