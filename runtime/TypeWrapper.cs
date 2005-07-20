@@ -788,7 +788,7 @@ namespace IKVM.Internal
 			Debug.Assert(name == null || name.IndexOf('/') < 0);
 
 			this.modifiers = modifiers;
-			this.name = name;
+			this.name = name == null ? null : String.Intern(name);
 			this.baseWrapper = baseWrapper;
 			this.classLoader = classLoader;
 			if(IsUnloadable || IsVerifierType || JVM.IsStaticCompiler)

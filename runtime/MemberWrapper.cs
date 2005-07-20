@@ -301,8 +301,8 @@ namespace IKVM.Internal
 			: base(declaringType, modifiers, flags)
 		{
 			Profiler.Count("MethodWrapper");
-			this.name = name;
-			this.sig = sig;
+			this.name = String.Intern(name);
+			this.sig = String.Intern(sig);
 			this.method = method;
 			Debug.Assert(((returnType == null) == (parameterTypes == null)) || (returnType == PrimitiveTypeWrapper.VOID));
 			this.returnTypeWrapper = returnType;
@@ -1066,8 +1066,8 @@ namespace IKVM.Internal
 		{
 			Debug.Assert(name != null);
 			Debug.Assert(sig != null);
-			this.name = name;
-			this.sig = sig;
+			this.name = String.Intern(name);
+			this.sig = String.Intern(sig);
 			this.fieldType = fieldType;
 			this.field = field;
 		}

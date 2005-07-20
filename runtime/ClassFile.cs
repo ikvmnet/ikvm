@@ -189,7 +189,7 @@ namespace IKVM.Internal
 					interfaces[i] = cpi;
 					for(int j = 0; j < i; j++)
 					{
-						if(interfaces[j].Name == cpi.Name)
+						if(ReferenceEquals(interfaces[j].Name, cpi.Name))
 						{
 							throw new ClassFormatError("{0} (Repetitive interface name)", Name);
 						}
@@ -197,7 +197,6 @@ namespace IKVM.Internal
 				}
 				int fields_count = br.ReadUInt16();
 				fields = new Field[fields_count];
-				Hashtable fieldNameSigs = new Hashtable();
 				for(int i = 0; i < fields_count; i++)
 				{
 					fields[i] = new Field(this, br);
@@ -206,18 +205,16 @@ namespace IKVM.Internal
 					{
 						throw new ClassFormatError("{0} (Illegal field name \"{1}\")", Name, name);
 					}
-					try
+					for(int j = 0; j < i; j++)
 					{
-						fieldNameSigs.Add(name + fields[i].Signature, null);
-					}
-					catch(ArgumentException)
-					{
-						throw new ClassFormatError("{0} (Repetitive field name/signature)", Name);
+						if(ReferenceEquals(fields[j].Name, name) && ReferenceEquals(fields[j].Signature, fields[i].Signature))
+						{
+							throw new ClassFormatError("{0} (Repetitive field name/signature)", Name);
+						}
 					}
 				}
 				int methods_count = br.ReadUInt16();
 				methods = new Method[methods_count];
-				Hashtable methodNameSigs = new Hashtable();
 				for(int i = 0; i < methods_count; i++)
 				{
 					methods[i] = new Method(this, br);
@@ -231,13 +228,12 @@ namespace IKVM.Internal
 					{
 						throw new ClassFormatError("{0} (Method \"{1}\" has illegal signature \"{2}\")", Name, name, sig);
 					}
-					try
+					for(int j = 0; j < i; j++)
 					{
-						methodNameSigs.Add(name + sig, null);
-					}
-					catch(ArgumentException)
-					{
-						throw new ClassFormatError("{0} (Repetitive method name/signature)", Name);
+						if(ReferenceEquals(methods[j].Name, name) && ReferenceEquals(methods[j].Signature, sig))
+						{
+							throw new ClassFormatError("{0} (Repetitive method name/signature)", Name);
+						}
 					}
 				}
 				int attributes_count = br.ReadUInt16();
@@ -300,6 +296,9 @@ namespace IKVM.Internal
 							break;
 					}
 				}
+				// now that we've constructed the high level objects, the utf8 table isn't needed anymore
+				// TODO remove utf8_cp field from ClassFile object
+				utf8_cp = null;
 				if(br.Position != offset + length)
 				{
 					throw new ClassFormatError("Extra bytes at the end of the class file");
