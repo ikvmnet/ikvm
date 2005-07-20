@@ -74,6 +74,7 @@ class Compiler
 	private ISymbolDocumentWriter symboldocument;
 	private LineNumberTableAttribute.LineNumberWriter lineNumbers;
 	private bool nonleaf;
+	private LocalBuilder[] tempLocals = new LocalBuilder[32];
 
 	static Compiler()
 	{
@@ -217,6 +218,49 @@ class Compiler
 		// of the one in ClassFile.cs)
 
 		ArrayList ar = new ArrayList(m.ExceptionTable);
+
+		// This optimization removes the recursive exception handlers that Java compiler place around
+		// the exit of a synchronization block to be "safe" in the face of asynchronous exceptions.
+		// (see http://weblog.ikvm.net/PermaLink.aspx?guid=3af9548e-4905-4557-8809-65a205ce2cd6)
+		// We can safely remove them since the code we generate for this construct isn't async safe anyway,
+		// but there is another reason why this optimization may be slightly controversial. In some
+		// pathological cases it can cause observable differences, where the Sun JVM would spin in an
+		// infinite loop, but we will throw an exception. However, the perf benefit is large enough to
+		// warrant this "incompatibility".
+		// Note that there is also code in the exception handler handling code that detects these bytecode
+		// sequences to try to compile them into a fault block, instead of an exception handler.
+		for(int i = 0; i < ar.Count; i++)
+		{
+			ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
+			if(ei.start_pc == ei.handler_pc && ei.catch_type == 0)
+			{
+				int index = FindPcIndex(ei.start_pc);
+				if(index + 2 < m.Instructions.Length
+					&& FindPcIndex(ei.end_pc) == index + 2
+					&& m.Instructions[index].NormalizedOpCode == NormalizedByteCode.__aload
+					&& m.Instructions[index + 1].NormalizedOpCode == NormalizedByteCode.__monitorexit
+					&& m.Instructions[index + 2].NormalizedOpCode == NormalizedByteCode.__athrow)
+				{
+					// this is the async exception guard that Jikes and the Eclipse Java Compiler produce
+					ar.RemoveAt(i);
+					i--;
+				}
+				else if(index + 4 < m.Instructions.Length
+					&& FindPcIndex(ei.end_pc) == index + 3
+					&& m.Instructions[index].NormalizedOpCode == NormalizedByteCode.__astore
+					&& m.Instructions[index + 1].NormalizedOpCode == NormalizedByteCode.__aload
+					&& m.Instructions[index + 2].NormalizedOpCode == NormalizedByteCode.__monitorexit
+					&& m.Instructions[index + 3].NormalizedOpCode == NormalizedByteCode.__aload
+					&& m.Instructions[index + 4].NormalizedOpCode == NormalizedByteCode.__athrow
+					&& m.Instructions[index].NormalizedArg1 == m.Instructions[index + 3].NormalizedArg1)
+				{
+					// this is the async exception guard that javac produces
+					ar.RemoveAt(i);
+					i--;
+				}
+			}
+		}
+
 		restart:
 			for(int i = 0; i < ar.Count; i++)
 			{
@@ -483,6 +527,58 @@ class Compiler
 		}
 	}
 
+	private LocalBuilder UnsafeAllocTempLocal(Type type)
+	{
+		int free = -1;
+		for(int i = 0; i < tempLocals.Length; i++)
+		{
+			LocalBuilder lb = tempLocals[i];
+			if(lb == null)
+			{
+				if(free == -1)
+				{
+					free = i;
+				}
+			}
+			else if(lb.LocalType == type)
+			{
+				return lb;
+			}
+		}
+		LocalBuilder lb1 = ilGenerator.DeclareLocal(type);
+		if(free != -1)
+		{
+			tempLocals[free] = lb1;
+		}
+		return lb1;
+	}
+
+	private LocalBuilder AllocTempLocal(Type type)
+	{
+		for(int i = 0; i < tempLocals.Length; i++)
+		{
+			LocalBuilder lb = tempLocals[i];
+			if(lb != null && lb.LocalType == type)
+			{
+				tempLocals[i] = null;
+				return lb;
+			}
+		}
+		return ilGenerator.DeclareLocal(type);
+	}
+
+	private void ReleaseTempLocal(LocalBuilder lb)
+	{
+		for(int i = 0; i < tempLocals.Length; i++)
+		{
+			if(tempLocals[i] == null)
+			{
+				tempLocals[i] = lb;
+				break;
+			}
+		}
+	}
+
 	private class EmitException : ApplicationException
 	{
 		private TypeWrapper type;
@@ -599,11 +695,11 @@ class Compiler
 		internal readonly int TargetPC;
 		internal DupHelper dh;
 
-		internal BranchCookie(ILGenerator ilgen, int stackHeight, int targetPC)
+		internal BranchCookie(Compiler compiler, int stackHeight, int targetPC)
 		{
-			this.Stub = ilgen.DefineLabel();
+			this.Stub = compiler.ilGenerator.DefineLabel();
 			this.TargetPC = targetPC;
-			this.dh = new DupHelper(ilgen, stackHeight);
+			this.dh = new DupHelper(compiler, stackHeight);
 		}
 
 		internal BranchCookie(Label label, int targetPC)
@@ -622,15 +718,26 @@ class Compiler
 			UnitializedThis,
 			Other
 		}
-		private ILGenerator ilgen;
+		private Compiler compiler;
 		private StackType[] types;
 		private LocalBuilder[] locals;
 
-		internal DupHelper(ILGenerator ilgen, int count)
+		internal DupHelper(Compiler compiler, int count)
 		{
-			this.ilgen = ilgen;
+			this.compiler = compiler;
 			types = new StackType[count];
 			locals = new LocalBuilder[count];
+		}
+
+		internal void Release()
+		{
+			foreach(LocalBuilder lb in locals)
+			{
+				if(lb != null)
+				{
+					compiler.ReleaseTempLocal(lb);
+				}
+			}
 		}
 
 		internal int Count
@@ -660,7 +767,7 @@ class Compiler
 			else
 			{
 				types[i] = StackType.Other;
-				locals[i] = ilgen.DeclareLocal(type.TypeAsLocalOrStackType);
+				locals[i] = compiler.AllocTempLocal(type.TypeAsLocalOrStackType);
 			}
 		}
 
@@ -669,16 +776,16 @@ class Compiler
 			switch(types[i])
 			{
 				case StackType.Null:
-					ilgen.Emit(OpCodes.Ldnull);
+					compiler.ilGenerator.Emit(OpCodes.Ldnull);
 					break;
 				case StackType.New:
 					// new objects aren't really there on the stack
 					break;
 				case StackType.UnitializedThis:
-					ilgen.Emit(OpCodes.Ldarg_0);
+					compiler.ilGenerator.Emit(OpCodes.Ldarg_0);
 					break;
 				case StackType.Other:
-					ilgen.Emit(OpCodes.Ldloc, locals[i]);
+					compiler.ilGenerator.Emit(OpCodes.Ldloc, locals[i]);
 					break;
 				default:
 					throw new InvalidOperationException();
@@ -691,13 +798,13 @@ class Compiler
 			{
 				case StackType.Null:
 				case StackType.UnitializedThis:
-					ilgen.Emit(OpCodes.Pop);
+					compiler.ilGenerator.Emit(OpCodes.Pop);
 					break;
 				case StackType.New:
 					// new objects aren't really there on the stack
 					break;
 				case StackType.Other:
-					ilgen.Emit(OpCodes.Stloc, locals[i]);
+					compiler.ilGenerator.Emit(OpCodes.Stloc, locals[i]);
 					break;
 				default:
 					throw new InvalidOperationException();
@@ -912,7 +1019,7 @@ class Compiler
 					// that saves the stack and uses leave to leave the exception block (to another stub that recovers
 					// the stack)
 					int stackHeight = compiler.ma.GetStackHeight(targetIndex);
-					BranchCookie bc = new BranchCookie(ilgen, stackHeight, targetPC);
+					BranchCookie bc = new BranchCookie(compiler, stackHeight, targetPC);
 					bc.ContentOnStack = true;
 					for(int i = 0; i < stackHeight; i++)
 					{
@@ -1079,6 +1186,29 @@ class Compiler
 		}
 	}
 
+	private bool IsGuardedBlock(Stack blockStack, int instructionIndex, int instructionCount)
+	{
+		int start_pc = m.Instructions[instructionIndex].PC;
+		int end_pc = m.Instructions[instructionIndex + instructionCount].PC;
+		for(int i = 0; i < exceptions.Length; i++)
+		{
+			ExceptionTableEntry e = exceptions[i];
+			if(e.end_pc > start_pc && e.start_pc < end_pc)
+			{
+				foreach(Block block in blockStack)
+				{
+					if(block.ExceptionIndex == i)
+					{
+						goto next;
+					}
+				}
+				return true;
+			}
+		next:;
+		}
+		return false;
+	}
+
 	private void Compile(Block block)
 	{
 		int[] scope = null;
@@ -1154,98 +1284,136 @@ class Compiler
 				{
 				}
 
-				TypeWrapper exceptionTypeWrapper;
-				bool remap;
-				if(exc.catch_type == 0)
-				{
-					exceptionTypeWrapper = java_lang_Throwable;
-					remap = true;
-				}
-				else
-				{
-					exceptionTypeWrapper = classFile.GetConstantPoolClassType(exc.catch_type);
-					remap = !exceptionTypeWrapper.IsSubTypeOf(cli_System_Exception);
-				}
-				Type excType = exceptionTypeWrapper.TypeAsExceptionType;
-				bool mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException && !exceptionTypeWrapper.IsRemapped;
-				if(mapSafe)
-				{
-					ilGenerator.BeginCatchBlock(excType);
-				}
-				else
-				{
-					ilGenerator.BeginCatchBlock(typeof(Exception));
-				}
-				BranchCookie bc = new BranchCookie(ilGenerator, 1, exc.handler_pc);
-				prevBlock.AddExitHack(bc);
 				int handlerIndex = FindPcIndex(exc.handler_pc);
-				Instruction handlerInstr = code[handlerIndex];
-				bool unusedException = handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
-					(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
-					ma.GetLocalVar(handlerIndex) == null);
-				// special case for catch(Throwable) (and finally), that produces less code and
-				// should be faster
-				if(mapSafe || exceptionTypeWrapper == java_lang_Throwable)
+
+				if(exc.catch_type == 0
+					&& handlerIndex + 2 < m.Instructions.Length
+					&& m.Instructions[handlerIndex].NormalizedOpCode == NormalizedByteCode.__aload
+					&& m.Instructions[handlerIndex + 1].NormalizedOpCode == NormalizedByteCode.__monitorexit
+					&& m.Instructions[handlerIndex + 2].NormalizedOpCode == NormalizedByteCode.__athrow
+					&& !IsGuardedBlock(blockStack, handlerIndex, 3))
 				{
-					if(unusedException)
-					{
-						// we must still have an item on the stack, even though it isn't used!
-						bc.dh.SetType(0, VerifierTypeWrapper.Null);
-					}
-					else
-					{
-						if(mapSafe)
-						{
-							ilGenerator.Emit(OpCodes.Dup);
-						}
-						ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
-						ilGenerator.Emit(OpCodes.Call, mapExceptionFastMethod);
-						if(mapSafe)
-						{
-							ilGenerator.Emit(OpCodes.Pop);
-						}
-						bc.dh.SetType(0, exceptionTypeWrapper);
-						bc.dh.Store(0);
-					}
-					ilGenerator.Emit(OpCodes.Leave, bc.Stub);
+					// this is the Jikes & Eclipse Java Compiler synchronization block exit
+					ilGenerator.BeginFaultBlock();
+					LoadLocal(m.Instructions[handlerIndex]);
+					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
+					ilGenerator.EndExceptionBlock();
+					// HACK to keep the verifier happy we need this bogus jump
+					// (because of the bogus Leave that Ref.Emit ends the try block with)
+					ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
+				}
+				else if(exc.catch_type == 0
+					&& handlerIndex + 3 < m.Instructions.Length
+					&& m.Instructions[handlerIndex].NormalizedOpCode == NormalizedByteCode.__astore
+					&& m.Instructions[handlerIndex + 1].NormalizedOpCode == NormalizedByteCode.__aload
+					&& m.Instructions[handlerIndex + 2].NormalizedOpCode == NormalizedByteCode.__monitorexit
+					&& m.Instructions[handlerIndex + 3].NormalizedOpCode == NormalizedByteCode.__aload
+					&& m.Instructions[handlerIndex + 4].NormalizedOpCode == NormalizedByteCode.__athrow
+					&& !IsGuardedBlock(blockStack, handlerIndex, 5))
+				{
+					// this is the javac synchronization block exit
+					ilGenerator.BeginFaultBlock();
+					LoadLocal(m.Instructions[handlerIndex + 1]);
+					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
+					ilGenerator.EndExceptionBlock();
+					// HACK to keep the verifier happy we need this bogus jump
+					// (because of the bogus Leave that Ref.Emit ends the try block with)
+					ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
 				}
 				else
 				{
-					if(exceptionTypeWrapper.IsUnloadable)
+					TypeWrapper exceptionTypeWrapper;
+					bool remap;
+					if(exc.catch_type == 0)
 					{
-						Profiler.Count("EmitDynamicGetTypeAsExceptionType");
-						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-						ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
-						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetTypeAsExceptionType"));
-						ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
-						ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
+						exceptionTypeWrapper = java_lang_Throwable;
+						remap = true;
 					}
 					else
 					{
-						ilGenerator.Emit(OpCodes.Ldtoken, excType);
-						ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
-						ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
-						ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
-						ilGenerator.Emit(OpCodes.Castclass, excType);
+						exceptionTypeWrapper = classFile.GetConstantPoolClassType(exc.catch_type);
+						remap = !exceptionTypeWrapper.IsSubTypeOf(cli_System_Exception);
 					}
-					if(unusedException)
+					Type excType = exceptionTypeWrapper.TypeAsExceptionType;
+					bool mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException && !exceptionTypeWrapper.IsRemapped;
+					if(mapSafe)
 					{
-						// we must still have an item on the stack, even though it isn't used!
-						bc.dh.SetType(0, VerifierTypeWrapper.Null);
+						ilGenerator.BeginCatchBlock(excType);
 					}
 					else
 					{
-						bc.dh.SetType(0, exceptionTypeWrapper);
-						ilGenerator.Emit(OpCodes.Dup);
-						bc.dh.Store(0);
+						ilGenerator.BeginCatchBlock(typeof(Exception));
 					}
-					Label rethrow = ilGenerator.DefineLabel();
-					ilGenerator.Emit(OpCodes.Brfalse, rethrow);
-					ilGenerator.Emit(OpCodes.Leave, bc.Stub);
-					ilGenerator.MarkLabel(rethrow);
-					ilGenerator.Emit(OpCodes.Rethrow);
+					BranchCookie bc = new BranchCookie(this, 1, exc.handler_pc);
+					prevBlock.AddExitHack(bc);
+					Instruction handlerInstr = code[handlerIndex];
+					bool unusedException = handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
+						(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
+						ma.GetLocalVar(handlerIndex) == null);
+					// special case for catch(Throwable) (and finally), that produces less code and
+					// should be faster
+					if(mapSafe || exceptionTypeWrapper == java_lang_Throwable)
+					{
+						if(unusedException)
+						{
+							// we must still have an item on the stack, even though it isn't used!
+							bc.dh.SetType(0, VerifierTypeWrapper.Null);
+						}
+						else
+						{
+							if(mapSafe)
+							{
+								ilGenerator.Emit(OpCodes.Dup);
+							}
+							ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+							ilGenerator.Emit(OpCodes.Call, mapExceptionFastMethod);
+							if(mapSafe)
+							{
+								ilGenerator.Emit(OpCodes.Pop);
+							}
+							bc.dh.SetType(0, exceptionTypeWrapper);
+							bc.dh.Store(0);
+						}
+						ilGenerator.Emit(OpCodes.Leave, bc.Stub);
+					}
+					else
+					{
+						if(exceptionTypeWrapper.IsUnloadable)
+						{
+							Profiler.Count("EmitDynamicGetTypeAsExceptionType");
+							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+							ilGenerator.Emit(OpCodes.Ldstr, exceptionTypeWrapper.Name);
+							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetTypeAsExceptionType"));
+							ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+							ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
+						}
+						else
+						{
+							ilGenerator.Emit(OpCodes.Ldtoken, excType);
+							ilGenerator.Emit(OpCodes.Call, getTypeFromHandleMethod);
+							ilGenerator.Emit(remap ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+							ilGenerator.Emit(OpCodes.Call, mapExceptionMethod);
+							ilGenerator.Emit(OpCodes.Castclass, excType);
+						}
+						if(unusedException)
+						{
+							// we must still have an item on the stack, even though it isn't used!
+							bc.dh.SetType(0, VerifierTypeWrapper.Null);
+						}
+						else
+						{
+							bc.dh.SetType(0, exceptionTypeWrapper);
+							ilGenerator.Emit(OpCodes.Dup);
+							bc.dh.Store(0);
+						}
+						Label rethrow = ilGenerator.DefineLabel();
+						ilGenerator.Emit(OpCodes.Brfalse, rethrow);
+						ilGenerator.Emit(OpCodes.Leave, bc.Stub);
+						ilGenerator.MarkLabel(rethrow);
+						ilGenerator.Emit(OpCodes.Rethrow);
+					}
+					ilGenerator.EndExceptionBlock();
 				}
-				ilGenerator.EndExceptionBlock();
 				prevBlock.LeaveStubs(block);
 			}
 
@@ -1269,7 +1437,7 @@ class Compiler
 				int stackHeight = ma.GetStackHeight(i);
 				if(stackHeight != 0)
 				{
-					BranchCookie bc = new BranchCookie(ilGenerator, stackHeight, -1);
+					BranchCookie bc = new BranchCookie(this, stackHeight, -1);
 					bc.ContentOnStack = true;
 					bc.TargetLabel = ilGenerator.DefineLabel();
 					ilGenerator.MarkLabel(bc.TargetLabel);
@@ -1294,7 +1462,7 @@ class Compiler
 				int stackHeight = ma.GetStackHeight(i);
 				if(stackHeight != 0)
 				{
-					DupHelper dh = new DupHelper(ilGenerator, stackHeight);
+					DupHelper dh = new DupHelper(this, stackHeight);
 					for(int k = 0; k < stackHeight; k++)
 					{
 						dh.SetType(k, ma.GetRawStackTypeWrapper(i, k));
@@ -1305,6 +1473,7 @@ class Compiler
 					{
 						dh.Load(k);
 					}
+					dh.Release();
 				}
 				else
 				{
@@ -1714,7 +1883,7 @@ class Compiler
 								{
 									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsSignatureType);
 								}
-								local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsSignatureType);
+								local = UnsafeAllocTempLocal(retTypeWrapper.TypeAsSignatureType);
 								ilGenerator.Emit(OpCodes.Stloc, local);
 							}
 							Label label = ilGenerator.DefineLabel();
@@ -1745,10 +1914,11 @@ class Compiler
 								}
 								if(stackHeight != 1)
 								{
-									LocalBuilder local = ilGenerator.DeclareLocal(retTypeWrapper.TypeAsSignatureType);
+									LocalBuilder local = AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
 									ilGenerator.Emit(OpCodes.Stloc, local);
 									ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
 									ilGenerator.Emit(OpCodes.Ldloc, local);
+									ReleaseTempLocal(local);
 								}
 								ilGenerator.Emit(OpCodes.Ret);
 							}
@@ -1852,8 +2022,8 @@ class Compiler
 					}
 					case NormalizedByteCode.__multianewarray:
 					{
-						LocalBuilder localArray = ilGenerator.DeclareLocal(typeof(int[]));
-						LocalBuilder localInt = ilGenerator.DeclareLocal(typeof(int));
+						LocalBuilder localArray = UnsafeAllocTempLocal(typeof(int[]));
+						LocalBuilder localInt = UnsafeAllocTempLocal(typeof(int));
 						EmitLdc_I4(instr.Arg2);
 						ilGenerator.Emit(OpCodes.Newarr, typeof(int));
 						ilGenerator.Emit(OpCodes.Stloc, localArray);
@@ -2072,7 +2242,7 @@ class Compiler
 							if(elem.IsNonPrimitiveValueType)
 							{
 								Type t = elem.TypeAsTBD;
-								LocalBuilder local = ilGenerator.DeclareLocal(typeof(object));
+								LocalBuilder local = UnsafeAllocTempLocal(typeof(object));
 								ilGenerator.Emit(OpCodes.Stloc, local);
 								ilGenerator.Emit(OpCodes.Ldelema, t);
 								ilGenerator.Emit(OpCodes.Ldloc, local);
@@ -2102,8 +2272,8 @@ class Compiler
 						break;
 					case NormalizedByteCode.__lcmp:
 					{
-						LocalBuilder value1 = ilGenerator.DeclareLocal(typeof(long));
-						LocalBuilder value2 = ilGenerator.DeclareLocal(typeof(long));
+						LocalBuilder value1 = AllocTempLocal(typeof(long));
+						LocalBuilder value2 = AllocTempLocal(typeof(long));
 						ilGenerator.Emit(OpCodes.Stloc, value2);
 						ilGenerator.Emit(OpCodes.Stloc, value1);
 						ilGenerator.Emit(OpCodes.Ldloc, value1);
@@ -2123,12 +2293,14 @@ class Compiler
 						ilGenerator.MarkLabel(res0);
 						ilGenerator.Emit(OpCodes.Ldc_I4_0);
 						ilGenerator.MarkLabel(end);
+						ReleaseTempLocal(value1);
+						ReleaseTempLocal(value2);
 						break;
 					}
 					case NormalizedByteCode.__fcmpl:
 					{
-						LocalBuilder value1 = ilGenerator.DeclareLocal(typeof(float));
-						LocalBuilder value2 = ilGenerator.DeclareLocal(typeof(float));
+						LocalBuilder value1 = AllocTempLocal(typeof(float));
+						LocalBuilder value2 = AllocTempLocal(typeof(float));
 						ilGenerator.Emit(OpCodes.Stloc, value2);
 						ilGenerator.Emit(OpCodes.Stloc, value1);
 						ilGenerator.Emit(OpCodes.Ldloc, value1);
@@ -2148,12 +2320,14 @@ class Compiler
 						ilGenerator.MarkLabel(res0);
 						ilGenerator.Emit(OpCodes.Ldc_I4_0);
 						ilGenerator.MarkLabel(end);
+						ReleaseTempLocal(value1);
+						ReleaseTempLocal(value2);
 						break;
 					}
 					case NormalizedByteCode.__fcmpg:
 					{
-						LocalBuilder value1 = ilGenerator.DeclareLocal(typeof(float));
-						LocalBuilder value2 = ilGenerator.DeclareLocal(typeof(float));
+						LocalBuilder value1 = AllocTempLocal(typeof(float));
+						LocalBuilder value2 = AllocTempLocal(typeof(float));
 						ilGenerator.Emit(OpCodes.Stloc, value2);
 						ilGenerator.Emit(OpCodes.Stloc, value1);
 						ilGenerator.Emit(OpCodes.Ldloc, value1);
@@ -2173,12 +2347,14 @@ class Compiler
 						ilGenerator.MarkLabel(res0);
 						ilGenerator.Emit(OpCodes.Ldc_I4_0);
 						ilGenerator.MarkLabel(end);
+						ReleaseTempLocal(value1);
+						ReleaseTempLocal(value2);
 						break;
 					}
 					case NormalizedByteCode.__dcmpl:
 					{
-						LocalBuilder value1 = ilGenerator.DeclareLocal(typeof(double));
-						LocalBuilder value2 = ilGenerator.DeclareLocal(typeof(double));
+						LocalBuilder value1 = AllocTempLocal(typeof(double));
+						LocalBuilder value2 = AllocTempLocal(typeof(double));
 						ilGenerator.Emit(OpCodes.Stloc, value2);
 						ilGenerator.Emit(OpCodes.Stloc, value1);
 						ilGenerator.Emit(OpCodes.Ldloc, value1);
@@ -2198,12 +2374,14 @@ class Compiler
 						ilGenerator.MarkLabel(res0);
 						ilGenerator.Emit(OpCodes.Ldc_I4_0);
 						ilGenerator.MarkLabel(end);
+						ReleaseTempLocal(value1);
+						ReleaseTempLocal(value2);
 						break;
 					}
 					case NormalizedByteCode.__dcmpg:
 					{
-						LocalBuilder value1 = ilGenerator.DeclareLocal(typeof(double));
-						LocalBuilder value2 = ilGenerator.DeclareLocal(typeof(double));
+						LocalBuilder value1 = AllocTempLocal(typeof(double));
+						LocalBuilder value2 = AllocTempLocal(typeof(double));
 						ilGenerator.Emit(OpCodes.Stloc, value2);
 						ilGenerator.Emit(OpCodes.Stloc, value1);
 						ilGenerator.Emit(OpCodes.Ldloc, value1);
@@ -2223,6 +2401,8 @@ class Compiler
 						ilGenerator.MarkLabel(res0);
 						ilGenerator.Emit(OpCodes.Ldc_I4_0);
 						ilGenerator.MarkLabel(end);
+						ReleaseTempLocal(value1);
+						ReleaseTempLocal(value2);
 						break;
 					}
 					case NormalizedByteCode.__if_icmpeq:
@@ -2410,13 +2590,14 @@ class Compiler
 						break;
 					case NormalizedByteCode.__swap:
 					{
-						DupHelper dh = new DupHelper(ilGenerator, 2);
+						DupHelper dh = new DupHelper(this, 2);
 						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
 						dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
 						dh.Store(0);
 						dh.Store(1);
 						dh.Load(0);
 						dh.Load(1);
+						dh.Release();
 						break;
 					}
 					case NormalizedByteCode.__dup:
@@ -2435,7 +2616,7 @@ class Compiler
 						}
 						else
 						{
-							DupHelper dh = new DupHelper(ilGenerator, 2);
+							DupHelper dh = new DupHelper(this, 2);
 							dh.SetType(0, type1);
 							dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
 							dh.Store(0);
@@ -2444,12 +2625,13 @@ class Compiler
 							dh.Load(0);
 							dh.Load(1);
 							dh.Load(0);
+							dh.Release();
 						}
 						break;
 					}
 					case NormalizedByteCode.__dup_x1:
 					{
-						DupHelper dh = new DupHelper(ilGenerator, 2);
+						DupHelper dh = new DupHelper(this, 2);
 						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
 						dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
 						dh.Store(0);
@@ -2457,6 +2639,7 @@ class Compiler
 						dh.Load(0);
 						dh.Load(1);
 						dh.Load(0);
+						dh.Release();
 						break;
 					}
 					case NormalizedByteCode.__dup2_x1:
@@ -2464,7 +2647,7 @@ class Compiler
 						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
 						if(type1.IsWidePrimitive)
 						{
-							DupHelper dh = new DupHelper(ilGenerator, 2);
+							DupHelper dh = new DupHelper(this, 2);
 							dh.SetType(0, type1);
 							dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
 							dh.Store(0);
@@ -2472,10 +2655,11 @@ class Compiler
 							dh.Load(0);
 							dh.Load(1);
 							dh.Load(0);
+							dh.Release();
 						}
 						else
 						{
-							DupHelper dh = new DupHelper(ilGenerator, 3);
+							DupHelper dh = new DupHelper(this, 3);
 							dh.SetType(0, type1);
 							dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
 							dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
@@ -2487,6 +2671,7 @@ class Compiler
 							dh.Load(2);
 							dh.Load(1);
 							dh.Load(0);
+							dh.Release();
 						}
 						break;
 					}
@@ -2499,7 +2684,7 @@ class Compiler
 							if(type2.IsWidePrimitive)
 							{
 								// Form 4
-								DupHelper dh = new DupHelper(ilGenerator, 2);
+								DupHelper dh = new DupHelper(this, 2);
 								dh.SetType(0, type1);
 								dh.SetType(1, type2);
 								dh.Store(0);
@@ -2507,11 +2692,12 @@ class Compiler
 								dh.Load(0);
 								dh.Load(1);
 								dh.Load(0);
+								dh.Release();
 							}
 							else
 							{
 								// Form 2
-								DupHelper dh = new DupHelper(ilGenerator, 3);
+								DupHelper dh = new DupHelper(this, 3);
 								dh.SetType(0, type1);
 								dh.SetType(1, type2);
 								dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
@@ -2522,6 +2708,7 @@ class Compiler
 								dh.Load(2);
 								dh.Load(1);
 								dh.Load(0);
+								dh.Release();
 							}
 						}
 						else
@@ -2530,7 +2717,7 @@ class Compiler
 							if(type3.IsWidePrimitive)
 							{
 								// Form 3
-								DupHelper dh = new DupHelper(ilGenerator, 3);
+								DupHelper dh = new DupHelper(this, 3);
 								dh.SetType(0, type1);
 								dh.SetType(1, type2);
 								dh.SetType(2, type3);
@@ -2542,11 +2729,12 @@ class Compiler
 								dh.Load(2);
 								dh.Load(1);
 								dh.Load(0);
+								dh.Release();
 							}
 							else
 							{
 								// Form 1
-								DupHelper dh = new DupHelper(ilGenerator, 4);
+								DupHelper dh = new DupHelper(this, 4);
 								dh.SetType(0, type1);
 								dh.SetType(1, type2);
 								dh.SetType(2, type3);
@@ -2561,13 +2749,14 @@ class Compiler
 								dh.Load(2);
 								dh.Load(1);
 								dh.Load(0);
+								dh.Release();
 							}
 						}
 						break;
 					}
 					case NormalizedByteCode.__dup_x2:
 					{
-						DupHelper dh = new DupHelper(ilGenerator, 3);
+						DupHelper dh = new DupHelper(this, 3);
 						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
 						dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
 						dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
@@ -2578,6 +2767,7 @@ class Compiler
 						dh.Load(2);
 						dh.Load(1);
 						dh.Load(0);
+						dh.Release();
 						break;
 					}
 					case NormalizedByteCode.__pop2:
@@ -2871,7 +3061,7 @@ class Compiler
 		if(needsCast)
 		{
 			// OPTIMIZE if the first n arguments don't need a cast, they can be left on the stack
-			DupHelper dh = new DupHelper(ilGenerator, args.Length);
+			DupHelper dh = new DupHelper(this, args.Length);
 			for(int i = 0; i < args.Length; i++)
 			{
 				TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
@@ -2911,11 +3101,12 @@ class Compiler
 					}
 					else
 					{
-						LocalBuilder local = ilGenerator.DeclareLocal(args[i].TypeAsSignatureType);
+						LocalBuilder local = AllocTempLocal(args[i].TypeAsSignatureType);
 						ilGenerator.Emit(OpCodes.Ldloca, local);
 						dh.Load(i);
 						ilGenerator.Emit(OpCodes.Stfld, args[i].GhostRefField);
 						ilGenerator.Emit(OpCodes.Ldloca, local);
+						ReleaseTempLocal(local);
 						// NOTE when the this argument is a value type, we need the address on the stack instead of the value
 						if(i != 0 || !instanceMethod)
 						{
@@ -2950,6 +3141,7 @@ class Compiler
 					}
 				}
 			}
+			dh.Release();
 		}
 	}
 

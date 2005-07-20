@@ -78,6 +78,7 @@ namespace IKVM.Internal
 
 		internal void BeginFaultBlock()
 		{
+			inFinally = true;
 			offset += 5;
 			ilgen.BeginFaultBlock();
 		}
