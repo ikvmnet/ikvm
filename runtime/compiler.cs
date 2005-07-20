@@ -365,6 +365,7 @@ class Compiler
 				{
 					switch(m.Instructions[j].NormalizedOpCode)
 					{
+						case NormalizedByteCode.__tableswitch:
 						case NormalizedByteCode.__lookupswitch:
 							// start at -1 to have an opportunity to handle the default offset
 							for(int k = -1; k < m.Instructions[j].SwitchEntryCount; k++)
@@ -465,7 +466,7 @@ class Compiler
 						int end = FindPcIndex(ei.end_pc);
 						for(int j = start; j < end; j++)
 						{
-							if(ByteCodeMetaData.CanThrowException(m.Instructions[j].OpCode))
+							if(ByteCodeMetaData.CanThrowException(m.Instructions[j].NormalizedOpCode))
 							{
 								goto next;
 							}
@@ -2808,41 +2809,37 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Call, unmapExceptionMethod);
 						ilGenerator.Emit(OpCodes.Throw);
 						break;
+					case NormalizedByteCode.__tableswitch:
+					{
+						// note that a tableswitch always has at least one entry
+						// (otherwise it would have failed verification)
+						Label[] labels = new Label[instr.SwitchEntryCount];
+						for(int j = 0; j < labels.Length; j++)
+						{
+							labels[j] = block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j));
+						}
+						if(instr.GetSwitchValue(0) != 0)
+						{
+							EmitLdc_I4(instr.GetSwitchValue(0));
+							ilGenerator.Emit(OpCodes.Sub);
+						}
+						ilGenerator.Emit(OpCodes.Switch, labels);
+						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
+						break;
+					}
 					case NormalizedByteCode.__lookupswitch:
-						// for tableswitch we can use the CIL switch opcode, which is more
-						// compact (and could theoretically be faster)
-						if(instr.OpCode == ByteCode.__tableswitch)
+						for(int j = 0; j < instr.SwitchEntryCount; j++)
 						{
-							// note that a tableswitch always has at least one entry
-							// (otherwise it would have failed verification)
-							Label[] labels = new Label[instr.SwitchEntryCount];
-							for(int j = 0; j < labels.Length; j++)
-							{
-								labels[j] = block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j));
-							}
-							if(instr.GetSwitchValue(0) != 0)
-							{
-								EmitLdc_I4(instr.GetSwitchValue(0));
-								ilGenerator.Emit(OpCodes.Sub);
-							}
-							ilGenerator.Emit(OpCodes.Switch, labels);
-							ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
-						}
-						else
-						{
-							for(int j = 0; j < instr.SwitchEntryCount; j++)
-							{
-								ilGenerator.Emit(OpCodes.Dup);
-								EmitLdc_I4(instr.GetSwitchValue(j));
-								Label label = ilGenerator.DefineLabel();
-								ilGenerator.Emit(OpCodes.Bne_Un_S, label);
-								ilGenerator.Emit(OpCodes.Pop);
-								ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j)));
-								ilGenerator.MarkLabel(label);
-							}
+							ilGenerator.Emit(OpCodes.Dup);
+							EmitLdc_I4(instr.GetSwitchValue(j));
+							Label label = ilGenerator.DefineLabel();
+							ilGenerator.Emit(OpCodes.Bne_Un_S, label);
 							ilGenerator.Emit(OpCodes.Pop);
-							ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
+							ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j)));
+							ilGenerator.MarkLabel(label);
 						}
+						ilGenerator.Emit(OpCodes.Pop);
+						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
 						break;
 					case NormalizedByteCode.__iinc:
 						LoadLocal(instr);
@@ -2926,6 +2923,7 @@ class Compiler
 				// mark next instruction as inuse
 				switch(instr.NormalizedOpCode)
 				{
+					case NormalizedByteCode.__tableswitch:
 					case NormalizedByteCode.__lookupswitch:
 					case NormalizedByteCode.__goto:
 					case NormalizedByteCode.__jsr:

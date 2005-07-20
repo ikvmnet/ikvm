@@ -351,6 +351,7 @@ enum NormalizedByteCode : byte
 	__goto = 167,
 	__jsr = 168,
 	__ret = 169,
+	__tableswitch = 170,
 	__lookupswitch = 171,
 	__ireturn = 172,
 	__lreturn = 173,
@@ -489,9 +490,10 @@ struct ByteCodeMetaData
 		return data[(int)bc].wide;
 	}
 
-	internal static bool CanThrowException(ByteCode bc)
+	internal static bool CanThrowException(NormalizedByteCode bc)
 	{
-		return (data[(int)bc].flags & ByteCodeFlags.CannotThrow) == 0;
+		// special case __iconst, because that's the only normalized opcode that doesn't correspond to a real opcode
+		return bc != NormalizedByteCode.__iconst && (data[(int)bc].flags & ByteCodeFlags.CannotThrow) == 0;
 	}
 
 	static ByteCodeMetaData()
@@ -666,7 +668,7 @@ struct ByteCodeMetaData
 		new ByteCodeMetaData(ByteCode.__goto, ByteCodeMode.Branch_2, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__jsr, ByteCodeMode.Branch_2, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__ret, ByteCodeMode.Local_1, ByteCodeModeWide.Local_2, true);
-		new ByteCodeMetaData(ByteCode.__tableswitch, NormalizedByteCode.__lookupswitch, ByteCodeMode.Tableswitch, ByteCodeModeWide.Unused, true);
+		new ByteCodeMetaData(ByteCode.__tableswitch, ByteCodeMode.Tableswitch, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__lookupswitch, ByteCodeMode.Lookupswitch, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__ireturn, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__lreturn, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
@@ -695,7 +697,7 @@ struct ByteCodeMetaData
 		new ByteCodeMetaData(ByteCode.__wide, NormalizedByteCode.__nop, ByteCodeMode.WidePrefix, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__multianewarray, ByteCodeMode.Constant_2_Immediate_1, ByteCodeModeWide.Unused, false);
 		new ByteCodeMetaData(ByteCode.__ifnull, ByteCodeMode.Branch_2, ByteCodeModeWide.Unused, true);
-		new ByteCodeMetaData(ByteCode.__ifnonnull, ByteCodeMode.Branch_2, ByteCodeModeWide.Unused, false);
+		new ByteCodeMetaData(ByteCode.__ifnonnull, ByteCodeMode.Branch_2, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__goto_w, NormalizedByteCode.__goto, ByteCodeMode.Branch_4, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__jsr_w, NormalizedByteCode.__jsr, ByteCodeMode.Branch_4, ByteCodeModeWide.Unused, true);
 	}

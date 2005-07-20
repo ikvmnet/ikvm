@@ -2541,8 +2541,8 @@ namespace IKVM.Internal
 				}
 				for(int i = 0; i < m.Instructions.Length; i++)
 				{
-					ByteCode bc = m.Instructions[i].OpCode;
-					if(bc == ByteCode.__getstatic || bc == ByteCode.__putstatic)
+					NormalizedByteCode bc = m.Instructions[i].NormalizedOpCode;
+					if(bc == NormalizedByteCode.__getstatic || bc == NormalizedByteCode.__putstatic)
 					{
 						ClassFile.ConstantPoolItemFieldref fld = classFile.GetFieldref(m.Instructions[i].Arg1);
 						if(fld.Class != classFile.Name)
@@ -2551,16 +2551,16 @@ namespace IKVM.Internal
 						}
 						// don't allow getstatic to load non-primitive fields, because that would
 						// cause the verifier to try to load the type
-						if(bc == ByteCode.__getstatic && "L[".IndexOf(fld.Signature[0]) != -1)
+						if(bc == NormalizedByteCode.__getstatic && "L[".IndexOf(fld.Signature[0]) != -1)
 						{
 							return false;
 						}
 					}
-					else if(bc == ByteCode.__areturn ||
-						bc == ByteCode.__ireturn ||
-						bc == ByteCode.__lreturn ||
-						bc == ByteCode.__freturn ||
-						bc == ByteCode.__dreturn)
+					else if(bc == NormalizedByteCode.__areturn ||
+						bc == NormalizedByteCode.__ireturn ||
+						bc == NormalizedByteCode.__lreturn ||
+						bc == NormalizedByteCode.__freturn ||
+						bc == NormalizedByteCode.__dreturn)
 					{
 						return false;
 					}

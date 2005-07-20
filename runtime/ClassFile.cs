@@ -2000,7 +2000,6 @@ namespace IKVM.Internal
 			internal struct Instruction
 			{
 				private ushort pc;
-				private ByteCode opcode;
 				private NormalizedByteCode normopcode;
 				private int arg1;
 				private short arg2;
@@ -2016,7 +2015,7 @@ namespace IKVM.Internal
 				{
 					// TODO what happens if we already have exactly the maximum number of instructions?
 					this.pc = pc;
-					this.opcode = ByteCode.__nop;
+					this.normopcode = NormalizedByteCode.__nop;
 				}
 
 				internal void Read(ushort pc, BigEndianBinaryReader br)
@@ -2127,9 +2126,8 @@ namespace IKVM.Internal
 						default:
 							throw new ClassFormatError("Invalid opcode: {0}", bc);
 					}
-					this.opcode = bc;
 					this.normopcode = ByteCodeMetaData.GetNormalizedByteCode(bc);
-					arg1 = ByteCodeMetaData.GetArg(opcode, arg1);
+					arg1 = ByteCodeMetaData.GetArg(bc, arg1);
 				}
 
 				internal int PC
@@ -2137,14 +2135,6 @@ namespace IKVM.Internal
 					get
 					{
 						return pc;
-					}
-				}
-
-				internal ByteCode OpCode
-				{
-					get
-					{
-						return opcode;
 					}
 				}
 

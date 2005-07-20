@@ -2084,6 +2084,7 @@ class MethodAnalyzer
 							case NormalizedByteCode.__athrow:
 								s.PopObjectType(CoreClasses.java.lang.Throwable.Wrapper);
 								break;
+							case NormalizedByteCode.__tableswitch:
 							case NormalizedByteCode.__lookupswitch:
 								s.PopInt();
 								break;
@@ -2176,6 +2177,7 @@ class MethodAnalyzer
 							// another big switch to handle the opcode targets
 							switch(instr.NormalizedOpCode)
 							{
+								case NormalizedByteCode.__tableswitch:
 								case NormalizedByteCode.__lookupswitch:
 									for(int j = 0; j < instr.SwitchEntryCount; j++)
 									{
@@ -2270,7 +2272,7 @@ class MethodAnalyzer
 					}
 					catch(VerifyError x)
 					{
-						string opcode = instructions[i].OpCode.ToString();
+						string opcode = instructions[i].NormalizedOpCode.ToString();
 						if(opcode.StartsWith("__"))
 						{
 							opcode = opcode.Substring(2);
