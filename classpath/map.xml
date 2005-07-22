@@ -1382,14 +1382,8 @@
 		 -->
 		<exception src="System.TypeInitializationException, mscorlib" dst="*java.lang.Error">
 			<code>
-				<call type="System.Exception, mscorlib" name="get_InnerException" sig="()Ljava.lang.Throwable;" />
-				<ldc_i4_1 />
-				<call class="java.lang.ExceptionHelper" name="MapExceptionFast" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" />
-				<dup />
-				<isinst class="java.lang.Error" />
-				<brtrue name="end" />
-				<newobj class="java.lang.ExceptionInInitializerError" name="&lt;init&gt;" sig="(Ljava.lang.Throwable;)V" />
-				<label name="end" />
+				<castclass type="System.TypeInitializationException, mscorlib" />
+				<call class="java.lang.ExceptionHelper" name="MapTypeInitializeException" sig="(Lcli.System.TypeInitializationException;)Ljava.lang.Throwable;" />
 			</code>
 		</exception>
 		<exception src="System.Threading.SynchronizationLockException, mscorlib" dst="java.lang.IllegalMonitorStateException" />

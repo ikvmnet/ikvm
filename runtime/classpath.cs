@@ -1025,6 +1025,7 @@ namespace IKVM.NativeCode.java
 				{
 					x.ToJava();
 				}
+				wrapper.RunClassInit();
 				Type type = wrapper.TypeAsTBD;
 				if(!type.IsArray && type.TypeInitializer != null)
 				{

@@ -38,6 +38,7 @@ final class ExceptionHelper
     private static cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
     private static cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
     private static final Throwable NOT_REMAPPED = new cli.System.Exception();
+    private static final java.util.Hashtable failedTypes = new java.util.Hashtable();
 
     private static final class ExceptionInfoHelper
     {
@@ -530,6 +531,10 @@ final class ExceptionHelper
         boolean nonJavaException = t instanceof cli.System.Exception;
         if(nonJavaException && remap)
         {
+            if(t instanceof cli.System.TypeInitializationException)
+            {
+                return MapTypeInitializeException((cli.System.TypeInitializationException)t);
+            }
             Object obj = exceptions.get(t);
             if(obj instanceof ExceptionInfoHelper)
             {
@@ -646,5 +651,22 @@ final class ExceptionHelper
 	initThrowable(t, fields.get("detailMessage", null), fields.get("cause", null));
 	StackTraceElement[] stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
 	setStackTrace(t, stackTrace == null ? new StackTraceElement[0] : stackTrace);
+    }
+
+    static Throwable MapTypeInitializeException(cli.System.TypeInitializationException t)
+    {
+        // TODO we should handle the stack traces better
+        String type = t.get_TypeName();
+        if(failedTypes.containsKey(type))
+        {
+            return new NoClassDefFoundError();
+        }
+        failedTypes.put(type, type);
+        Throwable r = MapExceptionFast(t.get_InnerException(), true);
+        if(r instanceof Error)
+        {
+            return r;
+        }
+        return new ExceptionInInitializerError(r);
     }
 }

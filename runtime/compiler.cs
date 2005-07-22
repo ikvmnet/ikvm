@@ -1348,9 +1348,9 @@ class Compiler
 					BranchCookie bc = new BranchCookie(this, 1, exc.handler_pc);
 					prevBlock.AddExitHack(bc);
 					Instruction handlerInstr = code[handlerIndex];
-					bool unusedException = handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
+					bool unusedException = mapSafe && (handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
 						(handlerInstr.NormalizedOpCode == NormalizedByteCode.__astore &&
-						ma.GetLocalVar(handlerIndex) == null);
+						ma.GetLocalVar(handlerIndex) == null));
 					// special case for catch(Throwable) (and finally), that produces less code and
 					// should be faster
 					if(mapSafe || exceptionTypeWrapper == java_lang_Throwable)
