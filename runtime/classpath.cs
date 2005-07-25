@@ -653,10 +653,32 @@ namespace IKVM.NativeCode.java
 				return null;
 			}
 
-			public static object makeArrayClass(object clazz, int rank)
+			public static object findLoadedClass(object javaClassLoader, string name)
 			{
-				TypeWrapper tw = VMClass.getWrapperFromClass(clazz);
-				return tw.MakeArrayType(rank).ClassObject;
+				ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderWrapper(javaClassLoader);
+				TypeWrapper wrapper = loader.GetLoadedClass(name);
+				if(wrapper != null)
+				{
+					return wrapper.ClassObject;
+				}
+				// For compatibility with Sun's JDK 1.4, we also find array variations of already loaded classes
+				if(name.StartsWith("[") && name.EndsWith(";"))
+				{
+					int rank = 1;
+					while(name[rank] == '[')
+					{
+						rank++;
+					}
+					if(name[rank] == 'L')
+					{
+						wrapper = loader.GetLoadedClass(name.Substring(rank + 1, name.Length - (rank + 2)));
+						if(wrapper != null)
+						{
+							return wrapper.MakeArrayType(rank).ClassObject;
+						}
+					}
+				}
+				return null;
 			}
 		}
 

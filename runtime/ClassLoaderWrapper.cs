@@ -33,14 +33,27 @@ using IKVM.Runtime;
 
 namespace IKVM.Internal
 {
+	class IdentityProvider : IHashCodeProvider, IComparer
+	{
+		public int GetHashCode(object obj)
+		{
+			return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+		}
+
+		public int Compare(object x, object y)
+		{
+			return x == y ? 0 : 1;
+		}
+	}
+
 	class ClassLoaderWrapper
 	{
 		private static bool arrayConstructionHack;
-		private static object arrayConstructionLock = new object();
-		private static Hashtable javaClassLoaderToClassLoaderWrapper = new Hashtable();
-		private static Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
-		// TODO typeToTypeWrapper should be an identity hashtable
-		private static Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable());
+		private static readonly object arrayConstructionLock = new object();
+		private static readonly IdentityProvider identityProvider = new IdentityProvider();
+		private static readonly Hashtable javaClassLoaderToClassLoaderWrapper = new Hashtable(identityProvider, identityProvider);
+		private static readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
+		private static readonly Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable(identityProvider, identityProvider));
 		private static ClassLoaderWrapper bootstrapClassLoader;
 		private static ClassLoaderWrapper systemClassLoader;
 		private object javaClassLoader;
@@ -170,7 +183,7 @@ namespace IKVM.Internal
 		}
 
 		// HACK return the TypeWrapper if it is already loaded
-		// (this exists solely for DynamicTypeWrapper.SetupGhosts)
+		// (this exists solely for DynamicTypeWrapper.SetupGhosts and VMClassLoader.findLoadedClass)
 		internal TypeWrapper GetLoadedClass(string name)
 		{
 			lock(types.SyncRoot)
@@ -384,19 +397,6 @@ namespace IKVM.Internal
 					finally
 					{
 						Profiler.Leave("ClassLoader.loadClass");
-					}
-				}
-				// NOTE we're caching types loaded by parent classloaders as well!
-				// TODO this isn't correct, but it gives us a huge perf gain,
-				// if we don't do this, Eclipse startup time goes from 52 seconds to 1 minute 30 seconds!
-				if(type.GetClassLoader() != this)
-				{
-					lock(types.SyncRoot)
-					{
-						if(!types.ContainsKey(name))
-						{
-							types.Add(name, type);
-						}
 					}
 				}
 				return type;
