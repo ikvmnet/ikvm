@@ -66,6 +66,12 @@ class VMDirectByteBuffer
         r.WriteByte(index, value);
     }
 
+    static void put(RawData r, int index, byte[] src, int offset, int length)
+    {
+        IntPtr address = new IntPtr(r.p().ToInt64() + index);
+        Marshal.Copy(src, offset, address, length);
+    }
+
     static void shiftDown(RawData r, int dst_offset, int src_offset, int count)
     {
         r.MoveMemory(dst_offset, src_offset, count);
