@@ -437,4 +437,30 @@ final class VMClassLoader
         }
 	return ClassLoader.defaultGetSystemClassLoader();
     }
+
+    /**
+     * If the VM wants to keep its own cache, this method can be replaced.
+     */
+    static Class findLoadedClass(ClassLoader cl, String name)
+    {
+        if(name.startsWith("[") && name.endsWith(";"))
+        {
+            int rank = 1;
+            while(name.charAt(rank) == '[')
+            {
+                rank++;
+            }
+            if(name.charAt(rank) == 'L')
+            {
+                Class c = (Class)cl.loadedClasses.get(name.substring(rank + 1, name.length() - 1));
+                if(c != null)
+                {
+                    return makeArrayClass(c, rank);
+                }
+            }
+        }
+        return (Class)cl.loadedClasses.get(name);
+    }
+
+    private static native Class makeArrayClass(Class c, int rank);
 }

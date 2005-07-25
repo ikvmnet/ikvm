@@ -652,6 +652,12 @@ namespace IKVM.NativeCode.java
 				}
 				return null;
 			}
+
+			public static object makeArrayClass(object clazz, int rank)
+			{
+				TypeWrapper tw = VMClass.getWrapperFromClass(clazz);
+				return tw.MakeArrayType(rank).ClassObject;
+			}
 		}
 
 		public class VMClass
