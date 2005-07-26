@@ -43,27 +43,6 @@ namespace IKVM.NativeCode.java
 	{
 		namespace reflect
 		{
-			public class Proxy
-			{
-				// NOTE not used, only here to shut up ikvmc during compilation of IKVM.GNU.Classpath.dll
-				public static object getProxyClass0(object o1, object o2)
-				{
-					throw new InvalidOperationException();
-				}
-				
-				// NOTE not used, only here to shut up ikvmc during compilation of IKVM.GNU.Classpath.dll
-				public static object getProxyData0(object o1, object o2)
-				{
-					throw new InvalidOperationException();
-				}
-				
-				// NOTE not used, only here to shut up ikvmc during compilation of IKVM.GNU.Classpath.dll
-				public static object generateProxyClass0(object o1, object o2)
-				{
-					throw new InvalidOperationException();
-				}
-			}
-
 			public class Array
 			{
 				public static object createObjectArray(object clazz, int dim)

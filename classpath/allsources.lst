@@ -3349,6 +3349,7 @@ java/lang/reflect/Constructor.java
 java/lang/reflect/Field.java
 java/lang/reflect/Method.java
 java/lang/reflect/VMFieldImpl.java
+java/lang/reflect/VMProxy.java
 java/lang/StringHelper.java
 java/lang/VMClass.java
 java/lang/VMClassLoader.java
