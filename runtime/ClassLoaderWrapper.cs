@@ -192,6 +192,42 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
+		{
+			if(tw.IsUnloadable || tw.IsPrimitive)
+				return tw;
+
+			lock(types.SyncRoot)
+			{
+				object existing = types[tw.Name];
+				if(existing != tw)
+				{
+					if(existing != null)
+					{
+						throw new LinkageError("duplicate class definition: " + tw.Name);
+					}
+					if(tw.IsArray)
+					{
+						TypeWrapper elem = tw;
+						// TODO there should be a way to get the ultimate element type
+						// without creating all the intermediate types
+						while(elem.IsArray)
+						{
+							elem = elem.ElementTypeWrapper;
+						}
+						RegisterInitiatingLoader(elem);
+					}
+					// NOTE if types.ContainsKey(tw.Name) is true (i.e. the value is null),
+					// we currently have a DefineClass in progress on another thread and we've
+					// beaten that thread to the punch by loading the class from a parent class
+					// loader instead. This is ok as DefineClass will throw a LinkageError when
+					// it is done.
+					types[tw.Name] = tw;
+				}
+			}
+			return tw;
+		}
+
 		// FXBUG This mangles type names, to enable different class loaders loading classes with the same names.
 		// We used to support this by using an assembly per class loader instance, but because
 		// of the CLR TypeResolve bug, we put all types in a single assembly for now.
@@ -276,7 +312,7 @@ namespace IKVM.Internal
 						{
 							type = type.GetClassLoader().CreateArrayType(name, type, dims);
 						}
-						return type;
+						return RegisterInitiatingLoader(type);
 					}
 					if(name.Length != dims + 1)
 					{
@@ -286,21 +322,21 @@ namespace IKVM.Internal
 					switch(name[dims])
 					{
 						case 'B':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BYTE, dims);
+							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BYTE, dims));
 						case 'C':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.CHAR, dims);
+							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.CHAR, dims));
 						case 'D':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE, dims);
+							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE, dims));
 						case 'F':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.FLOAT, dims);
+							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.FLOAT, dims));
 						case 'I':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.INT, dims);
+							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.INT, dims));
 						case 'J':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.LONG, dims);
+							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.LONG, dims));
 						case 'S':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.SHORT, dims);
+							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.SHORT, dims));
 						case 'Z':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN, dims);
+							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN, dims));
 						default:
 							return null;
 					}
@@ -332,7 +368,7 @@ namespace IKVM.Internal
 						{
 							if(t.Module.IsDefined(typeof(JavaModuleAttribute), false))
 							{
-								return GetWrapperFromType(t);
+								return RegisterInitiatingLoader(GetWrapperFromType(t));
 							}
 							else
 							{
@@ -350,7 +386,7 @@ namespace IKVM.Internal
 						Type t = GetBootstrapTypeRaw(name);
 						if(t != null)
 						{
-							return GetWrapperFromBootstrapType(t);
+							return RegisterInitiatingLoader(GetWrapperFromBootstrapType(t));
 						}
 						type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
 						if(type != null)
@@ -399,7 +435,7 @@ namespace IKVM.Internal
 						Profiler.Leave("ClassLoader.loadClass");
 					}
 				}
-				return type;
+				return RegisterInitiatingLoader(type);
 			}
 			finally
 			{
@@ -626,7 +662,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						type = race;
+						throw new LinkageError("duplicate class definition: " + f.Name);
 					}
 				}
 				return type;

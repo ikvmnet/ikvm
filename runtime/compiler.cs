@@ -813,13 +813,13 @@ class Compiler
 		}
 	}
 
-	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref string verifyError)
+	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator)
 	{
 		bool nonleaf = false;
-		Compile(clazz, mw, classFile, m, ilGenerator, ref verifyError, ref nonleaf);
+		Compile(clazz, mw, classFile, m, ilGenerator, ref nonleaf);
 	}
 
-	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref string verifyError, ref bool nonleaf)
+	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref bool nonleaf)
 	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
@@ -892,10 +892,6 @@ class Compiler
 			// because in Java the method is only verified if it is actually called,
 			// we generate code here to throw the VerificationError
 			EmitHelper.Throw(ilGenerator, "java.lang.VerifyError", x.Message);
-			if(verifyError == null)
-			{
-				verifyError = x.Message;
-			}
 			return;
 		}
 		Profiler.Enter("Compile");
@@ -1166,7 +1162,7 @@ class Compiler
 	{
 		if(cpi.GetFieldType() != fw.FieldTypeWrapper && !fw.FieldTypeWrapper.IsUnloadable)
 		{
-			throw new LinkageError("Loader constraints violated: " + fw.Name);
+			throw new LinkageError("Loader constraints violated: " + fw.DeclaringType.Name + "." + fw.Name);
 		}
 	}
 
@@ -1174,7 +1170,7 @@ class Compiler
 	{
 		if(cpi.GetRetType() != mw.ReturnType && !mw.ReturnType.IsUnloadable)
 		{
-			throw new LinkageError("Loader constraints violated: " + mw.Name + mw.Signature);
+			throw new LinkageError("Loader constraints violated (return type): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
 		}
 		TypeWrapper[] here = cpi.GetArgTypes();
 		TypeWrapper[] there = mw.GetParameters();
@@ -1182,7 +1178,7 @@ class Compiler
 		{
 			if(here[i] != there[i] && !there[i].IsUnloadable)
 			{
-				throw new LinkageError("Loader constraints violated: " + mw.Name + mw.Signature);
+				throw new LinkageError("Loader constraints violated (arg " + i + "): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
 			}
 		}
 	}

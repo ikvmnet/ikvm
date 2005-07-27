@@ -648,7 +648,7 @@ namespace IKVM.NativeCode.java
 					{
 						rank++;
 					}
-					if(name[rank] == 'L')
+					if(name[rank] == 'L' && name[rank + 1] != '[')
 					{
 						wrapper = loader.GetLoadedClass(name.Substring(rank + 1, name.Length - (rank + 2)));
 						if(wrapper != null)
@@ -658,6 +658,23 @@ namespace IKVM.NativeCode.java
 					}
 				}
 				return null;
+			}
+
+			public static void registerInitiatingLoader(object javaClassLoader, object clazz)
+			{
+				ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderWrapper(javaClassLoader);
+				TypeWrapper tw = VMClass.getWrapperFromClass(clazz);
+				if(tw.GetClassLoader() != loader)
+				{
+					try
+					{
+						loader.RegisterInitiatingLoader(tw);
+					}
+					catch(RetargetableJavaException x)
+					{
+						throw x.ToJava();
+					}
+				}
 			}
 		}
 

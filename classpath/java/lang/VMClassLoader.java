@@ -441,4 +441,5 @@ final class VMClassLoader
     static final boolean USE_VM_CACHE = true;
 
     static native Class findLoadedClass(ClassLoader cl, String name);
+    static native void registerInitiatingLoader(ClassLoader cl, Class c);
 }

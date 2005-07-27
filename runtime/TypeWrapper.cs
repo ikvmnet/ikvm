@@ -2168,7 +2168,7 @@ namespace IKVM.Internal
 				}
 				if(BaseTypeWrapper.IsFinal)
 				{
-					throw new VerifyError("Cannot inherit from final class");
+					throw new VerifyError("Class " + f.Name + " extends final class " + BaseTypeWrapper.Name);
 				}
 				if(BaseTypeWrapper.IsInterface)
 				{
@@ -2283,8 +2283,6 @@ namespace IKVM.Internal
 				try
 				{
 					impl = impl.Finish(forDebugSave);
-					// call Finish again to get the verify error for doomed types
-					impl.Finish(forDebugSave);
 				}
 				finally
 				{
@@ -3049,7 +3047,6 @@ namespace IKVM.Internal
 							parent = parent.BaseTypeWrapper;
 						}
 					}
-					string verifyError = null;
 					bool basehasclinit = wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasStaticInitializer;
 					bool hasclinit = false;
 					for(int i = 0; i < classFile.Methods.Length; i++)
@@ -3067,7 +3064,7 @@ namespace IKVM.Internal
 								EmitConstantValueInitialization(ilGenerator);
 								EmitHelper.RunClassConstructor(ilGenerator, Type.BaseType);
 							}
-							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref verifyError);
+							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator);
 						}
 						else
 						{
@@ -3184,7 +3181,7 @@ namespace IKVM.Internal
 									continue;
 								}
 								bool nonleaf = false;
-								Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref verifyError, ref nonleaf);
+								Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
 								if(nonleaf)
 								{
 									mbld.SetImplementationFlags(mbld.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
@@ -3345,16 +3342,9 @@ namespace IKVM.Internal
 						Profiler.Leave("TypeBuilder.CreateType");
 					}
 					ClassLoaderWrapper.SetWrapperForType(type, wrapper);
-					if(verifyError != null)
-					{
-						return new DoomedTypeImpl(verifyError);
-					}
-					else
-					{
-						wrapper.FinishGhostStep2();
-						finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers);
-						return finishedType;
-					}
+					wrapper.FinishGhostStep2();
+					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers);
+					return finishedType;
 				}
 				catch(Exception x)
 				{
@@ -3921,7 +3911,7 @@ namespace IKVM.Internal
 								// method more accessible, because otherwise the CLR will complain that we're reducing access
 								MethodBase baseMethod = baseMce.GetMethod();
 								if((baseMethod.IsPublic && !m.IsPublic) ||
-									(baseMethod.IsFamily && !m.IsPublic && !m.IsProtected) ||
+									((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && !m.IsPublic && !m.IsProtected) ||
 									(!m.IsPublic && !m.IsProtected && !baseMce.DeclaringType.IsInSamePackageAs(wrapper)))
 								{
 									attribs &= ~MethodAttributes.MemberAccessMask;
@@ -4158,67 +4148,6 @@ namespace IKVM.Internal
 			}
 		}
 	
-		private class DoomedTypeImpl : DynamicImpl
-		{
-			private string message;
-
-			internal DoomedTypeImpl(string message)
-			{
-				this.message = message;
-			}
-
-			internal override TypeWrapper DeclaringTypeWrapper
-			{
-				get
-				{
-					return null;
-				}
-			}
-
-			internal override DynamicImpl Finish(bool forDebugSave)
-			{
-				if(!forDebugSave)
-				{
-					throw new VerifyError(message);
-				}
-				return this;
-			}
-
-			internal override TypeWrapper[] InnerClasses
-			{
-				get
-				{
-					return null;
-				}
-			}
-
-			internal override FieldInfo LinkField(FieldWrapper fw)
-			{
-				return null;
-			}
-
-			internal override MethodBase LinkMethod(MethodWrapper mw)
-			{
-				return null;
-			}
-
-			internal override Modifiers ReflectiveModifiers
-			{
-				get
-				{
-					return (Modifiers)0;
-				}
-			}
-
-			internal override Type Type
-			{
-				get
-				{
-					return null;
-				}
-			}
-		}
-
 		private class FinishedTypeImpl : DynamicImpl
 		{
 			private Type type;
