@@ -655,18 +655,23 @@ final class ExceptionHelper
 
     static Throwable MapTypeInitializeException(cli.System.TypeInitializationException t)
     {
-        // TODO we should handle the stack traces better
+        Throwable r;
         String type = t.get_TypeName();
         if(failedTypes.containsKey(type))
         {
-            return new NoClassDefFoundError();
+            r = new NoClassDefFoundError();
         }
-        failedTypes.put(type, type);
-        Throwable r = MapExceptionFast(t.get_InnerException(), true);
-        if(r instanceof Error)
+        else
         {
-            return r;
+            failedTypes.put(type, type);
+            r = MapExceptionFast(t.get_InnerException(), true);
+            if(!(r instanceof Error))
+            {
+                r = new ExceptionInInitializerError(r);
+            }
         }
-        return new ExceptionInInitializerError(r);
+        // transplant the stack trace
+        setStackTrace(r, new ExceptionInfoHelper(t).get_StackTrace(t));
+        return r;
     }
 }
