@@ -2372,6 +2372,16 @@ namespace IKVM.Internal
 						allwrappers.Add(wrapper);
 					}
 				}
+				catch(IllegalAccessError x)
+				{
+					Console.Error.WriteLine("Warning: unable to compile class \"{0}\"", s);
+					Console.Error.WriteLine("    (illegal access error \"{0}\")", x.Message);
+				}
+				catch(VerifyError x)
+				{
+					Console.Error.WriteLine("Warning: unable to compile class \"{0}\"", s);
+					Console.Error.WriteLine("    (verification error \"{0}\")", x.Message);
+				}
 				catch(NoClassDefFoundError x)
 				{
 					Console.Error.WriteLine("Warning: unable to compile class \"{0}\"", s);
