@@ -15,8 +15,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Classpath; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307 USA.
+Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+02110-1301 USA.
 
 Linking this library statically or dynamically with other modules is
 making a combined work based on this library.  Thus, the terms and
@@ -85,7 +85,7 @@ public abstract class FileChannelImpl extends FileChannel
 
     private static final boolean win32 = runningOnWindows();
 
-    private Stream stream;
+    private volatile Stream stream;
     private int mode;
 
     private static boolean runningOnWindows()
@@ -438,12 +438,14 @@ public abstract class FileChannelImpl extends FileChannel
     {
 	if(stream != null)
 	{
-	    // HACK don't close stdin because that throws a NotSupportedException (bug in System.IO.__ConsoleStream)
-	    if(stream != in.stream)
+            Stream local = stream;
+            stream = null;
+            // HACK don't close stdin because that throws a NotSupportedException (bug in System.IO.__ConsoleStream)
+	    if(local != in.stream)
 	    {
 		try
 		{
-		    stream.Close();
+		    local.Close();
 		    if(false) throw new cli.System.IO.IOException();
 		}
 		catch(cli.System.IO.IOException x)
@@ -451,7 +453,6 @@ public abstract class FileChannelImpl extends FileChannel
 		    throw new IOException(x.getMessage());
 		}
 	    }
-	    stream = null;
 	}
     }
 
@@ -472,8 +473,8 @@ public abstract class FileChannelImpl extends FileChannel
 	throws IOException
     {
 	if (position < 0)
-	    throw new IllegalArgumentException ();
-	long oldPosition = implPosition ();
+            throw new IllegalArgumentException ("position: " + position);
+        long oldPosition = implPosition ();
 	position (position);
 	int result = read(dst);
 	position (oldPosition);
@@ -565,7 +566,7 @@ public abstract class FileChannelImpl extends FileChannel
 	throws IOException
     {
 	if (position < 0)
-	    throw new IllegalArgumentException ();
+            throw new IllegalArgumentException ("position: " + position);
 
 	if (!isOpen ())
 	    throw new ClosedChannelException ();
@@ -688,11 +689,12 @@ public abstract class FileChannelImpl extends FileChannel
                 throw new NonWritableChannelException();
 	}
 	else
-	    throw new IllegalArgumentException ();
+            throw new IllegalArgumentException ("mode: " + mode);
     
 	if (position < 0 || size < 0 || size > Integer.MAX_VALUE)
-	    throw new IllegalArgumentException ();
-	return mapImpl(nmode, position, (int) size);
+            throw new IllegalArgumentException ("position: " + position
+                                                + ", size: " + size);
+        return mapImpl(nmode, position, (int) size);
     }
 
     /**
@@ -755,7 +757,8 @@ public abstract class FileChannelImpl extends FileChannel
     {
         if (position < 0
             || count < 0)
-            throw new IllegalArgumentException ();
+            throw new IllegalArgumentException ("position: " + position
+                                                + ", count: " + count);
 
         if (!isOpen ())
             throw new ClosedChannelException ();
@@ -818,7 +821,8 @@ public abstract class FileChannelImpl extends FileChannel
     {
         if (position < 0
             || count < 0)
-            throw new IllegalArgumentException ();
+            throw new IllegalArgumentException ("position: " + position
+                                                + ", count: " + count);
 
         if (!isOpen ())
             throw new ClosedChannelException ();
@@ -843,28 +847,36 @@ public abstract class FileChannelImpl extends FileChannel
         return total;
     }
 
+    // Shared sanity checks between lock and tryLock methods.
+    private void lockCheck(long position, long size, boolean shared)
+        throws IOException
+    {
+        if (position < 0
+            || size < 0)
+            throw new IllegalArgumentException ("position: " + position
+                + ", size: " + size);
+
+        if (!isOpen ())
+            throw new ClosedChannelException();
+
+        if (shared && ((mode & READ) == 0))
+            throw new NonReadableChannelException();
+	
+        if (!shared && ((mode & WRITE) == 0))
+            throw new NonWritableChannelException();
+    }
+
     public FileLock tryLock (long position, long size, boolean shared)
 	throws IOException
     {
-	if (position < 0
-	    || size < 0)
-	    throw new IllegalArgumentException ();
-
-	if (!isOpen ())
-	    throw new ClosedChannelException ();
-
-	if (shared && (mode & READ) == 0)
-	    throw new NonReadableChannelException ();
-	
-	if (!shared && (mode & WRITE) == 0)
-	    throw new NonWritableChannelException ();
+        lockCheck(position, size, shared);
 	
 	boolean completed = false;
     
 	try
 	{
 	    begin();
-	    boolean lockable = lock(position, size, shared, true);
+	    boolean lockable = lock(position, size, shared, false);
 	    completed = true;
             return (lockable
                 ? new FileLockImpl(this, position, size, shared)
@@ -888,11 +900,40 @@ public abstract class FileChannelImpl extends FileChannel
 
 	try
 	{
-	    if(false) throw new cli.System.IO.IOException();
 	    if(false) throw new cli.System.ArgumentOutOfRangeException();
-	    // TODO if wait is false, we shouldn't block...
-	    ((FileStream)stream).Lock(position, size);
-	    return true;
+            int backoff = 5;
+            for(;;)
+            {
+                try
+                {
+                    if(false) throw new cli.System.IO.IOException();
+                    ((FileStream)stream).Lock(position, size);
+                    return true;
+                }
+                catch(cli.System.IO.IOException x)
+                {
+                    if(!wait)
+                    {
+                        return false;
+                    }
+                    try
+                    {
+                        Thread.sleep(backoff);
+                        backoff *= 2;
+                        if(backoff > 1000)
+                        {
+                            backoff = 40;
+                        }
+                    }
+                    catch(InterruptedException _)
+                    {
+                        // SPECNOTE The API spec says that an interrupt lock
+                        // throws a FileLockInterruptedException, but in
+                        // reality Sun returns null from lock (at least on Windows).
+                        return false;
+                    }
+                }
+            }
 	}
 	catch(ClassCastException c)
 	{
@@ -902,28 +943,19 @@ public abstract class FileChannelImpl extends FileChannel
 	{
 	    throw new IOException(x1.getMessage());
 	}
-	catch(cli.System.IO.IOException x)
-	{
-	    throw new IOException(x.getMessage());
-	}
 	// TODO map al the other exceptions as well...	
     }
   
     public FileLock lock (long position, long size, boolean shared)
 	throws IOException
     {
-	if (position < 0
-	    || size < 0)
-	    throw new IllegalArgumentException ();
-
-	if (!isOpen ())
-	    throw new ClosedChannelException ();
+        lockCheck(position, size, shared);
 
 	boolean completed = false;
 
 	try
 	{
-	    boolean lockable = lock(position, size, shared, false);
+	    boolean lockable = lock(position, size, shared, true);
 	    completed = true;
 	    return (lockable
 		? new FileLockImpl(this, position, size, shared)
@@ -948,7 +980,7 @@ public abstract class FileChannelImpl extends FileChannel
 	throws IOException
     {
 	if (newPosition < 0)
-	    throw new IllegalArgumentException ();
+            throw new IllegalArgumentException ("newPostition: " + newPosition);
 
 	if (!isOpen ())
 	    throw new ClosedChannelException ();
@@ -963,7 +995,7 @@ public abstract class FileChannelImpl extends FileChannel
 	throws IOException
     {
 	if (size < 0)
-	    throw new IllegalArgumentException ();
+            throw new IllegalArgumentException ("size: " + size);
 
 	if (!isOpen ())
 	    throw new ClosedChannelException ();
@@ -971,7 +1003,8 @@ public abstract class FileChannelImpl extends FileChannel
 	if ((mode & WRITE) == 0)
 	    throw new NonWritableChannelException ();
 
-	implTruncate (size);
+        if (size < size ())
+            implTruncate (size);
 	return this;
     }
 }
