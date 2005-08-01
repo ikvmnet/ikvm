@@ -659,23 +659,6 @@ namespace IKVM.NativeCode.java
 				}
 				return null;
 			}
-
-			public static void registerInitiatingLoader(object javaClassLoader, object clazz)
-			{
-				ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderWrapper(javaClassLoader);
-				TypeWrapper tw = VMClass.getWrapperFromClass(clazz);
-				if(tw.GetClassLoader() != loader)
-				{
-					try
-					{
-						loader.RegisterInitiatingLoader(tw);
-					}
-					catch(RetargetableJavaException x)
-					{
-						throw x.ToJava();
-					}
-				}
-			}
 		}
 
 		public class VMClass
@@ -720,12 +703,17 @@ namespace IKVM.NativeCode.java
 				return null;
 			}
 
-			public static object loadArrayClass(string name, object classLoader)
+			public static object forName(string name, bool initialize, object classLoader)
 			{
 				try
 				{
 					ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader);
 					TypeWrapper type = classLoaderWrapper.LoadClassByDottedName(name);
+					if(initialize && !type.IsArray)
+					{
+						type.Finish();
+						type.RunClassInit();
+					}
 					return type.ClassObject;
 				}
 				catch(RetargetableJavaException x)
@@ -798,20 +786,6 @@ namespace IKVM.NativeCode.java
 				return typeWrapper.Name;
 			}
 	
-			public static void initialize(object cwrapper)
-			{
-				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				try
-				{
-					wrapper.Finish();
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-				wrapper.RunClassInit();
-			}
-
 			public static object getClassLoader0(object wrapper)
 			{
 				return ((TypeWrapper)wrapper).GetClassLoader().GetJavaClassLoader();

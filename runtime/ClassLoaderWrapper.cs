@@ -434,8 +434,10 @@ namespace IKVM.Internal
 					{
 						Profiler.Leave("ClassLoader.loadClass");
 					}
+					// NOTE to be safe, we register the initiating loader,
+					// while we're holding the lock on the class loader object
+					return RegisterInitiatingLoader(type);
 				}
-				return RegisterInitiatingLoader(type);
 			}
 			finally
 			{

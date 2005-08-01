@@ -165,19 +165,7 @@ abstract class VMClass
     }
     private static native ClassLoader getClassLoader0(Object wrapper);
 
-    static Class forName(String name)
-    {
-        // we return null to use the java.lang.Class implementation
-        return null;
-    }
-
-    static void initialize(Class clazz)
-    {
-	initialize(clazz.vmdata);
-    }
-    private static native void initialize(Object wrapper);
-
-    static native Class loadArrayClass(String name, Object classLoader);
+    static native Class forName(String name, boolean initialize, ClassLoader loader);
 
     static native void throwException(Throwable t);
 
