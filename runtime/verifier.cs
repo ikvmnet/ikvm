@@ -1520,7 +1520,8 @@ class MethodAnalyzer
 							case NormalizedByteCode.__putfield:
 								s.PopType(GetFieldref(instr.Arg1).GetFieldType());
 								// putfield is allowed to access the unintialized this
-								if(s.PeekType() == VerifierTypeWrapper.UninitializedThis)
+								if(s.PeekType() == VerifierTypeWrapper.UninitializedThis
+									&& wrapper.IsAssignableTo(GetFieldref(instr.Arg1).GetClassType()))
 								{
 									s.PopType();
 								}
