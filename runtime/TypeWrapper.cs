@@ -1521,6 +1521,35 @@ namespace IKVM.Internal
 			}
 			if(mce != null)
 			{
+				if(mce.DeclaringType != wrapper)
+				{
+					// check the loader constraints
+					bool error = false;
+					if(mce.ReturnType != ifmethod.ReturnType)
+					{
+						// TODO handle unloadable
+						error = true;
+					}
+					TypeWrapper[] mceparams = mce.GetParameters();
+					TypeWrapper[] ifparams = ifmethod.GetParameters();
+					for(int i = 0; i < mceparams.Length; i++)
+					{
+						if(mceparams[i] != ifparams[i])
+						{
+							// TODO handle unloadable
+							error = true;
+							break;
+						}
+					}
+					if(error)
+					{
+						MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+						AttributeHelper.HideFromJava(mb);
+						EmitHelper.Throw(mb.GetILGenerator(), "java.lang.LinkageError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
+						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
+						return;
+					}
+				}
 				if(mce.IsMirandaMethod && mce.DeclaringType == wrapper)
 				{
 					// Miranda methods already have a methodimpl (if needed) to implement the correct interface method

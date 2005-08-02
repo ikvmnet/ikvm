@@ -468,7 +468,15 @@ namespace IKVM.Internal
 			{
 				wrapper = (TypeWrapper)types[name];
 			}
-			if(wrapper == null)
+			if(wrapper != null)
+			{
+				if(wrapper.TypeAsTBD != type)
+				{
+					string msg = String.Format("\nTypename \"{0}\" is imported from multiple assemblies:\n{1}\n{2}\n", type.FullName, wrapper.Assembly.FullName, type.Assembly.FullName);
+					JVM.CriticalFailure(msg, null);
+				}
+			}
+			else
 			{
 				if(javaType)
 				{

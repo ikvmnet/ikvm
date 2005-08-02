@@ -618,16 +618,23 @@ namespace IKVM.NativeCode.java
 
 			public static string getPackageName(Type type)
 			{
-				// TODO consider optimizing this (by getting the type name without constructing the TypeWrapper)
-				string name = ClassLoaderWrapper.GetWrapperFromType(type).Name;
-				// if we process mscorlib and we encounter a primitive, the name will be null
-				if(name != null)
+				string name;
+				if(type.Assembly is System.Reflection.Emit.AssemblyBuilder)
 				{
-					int dot = name.LastIndexOf('.');
-					if(dot > 0)
-					{
-						return name.Substring(0, dot);
-					}
+					name = ClassLoaderWrapper.GetWrapperFromType(type).Name;
+				}
+				else if(type.Module.IsDefined(typeof(JavaModuleAttribute), false))
+				{
+					name = CompiledTypeWrapper.GetName(type);
+				}
+				else
+				{
+					name = DotNetTypeWrapper.GetName(type);
+				}
+				int dot = name.LastIndexOf('.');
+				if(dot > 0)
+				{
+					return name.Substring(0, dot);
 				}
 				return null;
 			}
