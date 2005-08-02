@@ -1414,7 +1414,7 @@ class Compiler
 				prevBlock.LeaveStubs(block);
 			}
 
-			if(!ma.IsReachable(i))
+			if(!instr.IsReachable)
 			{
 				// skip any unreachable instructions
 				continue;
@@ -2903,16 +2903,63 @@ class Compiler
 						int[] callsites = ma.GetCallSites(subid);
 						for(int j = 0; j < callsites.Length - 1; j++)
 						{
-							LoadLocal(instr);
-							EmitLdc_I4(j);
-							ilGenerator.Emit(OpCodes.Beq, block.GetLabel(m.Instructions[callsites[j] + 1].PC));
+							if(m.Instructions[callsites[j]].IsReachable)
+							{
+								LoadLocal(instr);
+								EmitLdc_I4(j);
+								ilGenerator.Emit(OpCodes.Beq, block.GetLabel(m.Instructions[callsites[j] + 1].PC));
+							}
 						}
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(m.Instructions[callsites[callsites.Length - 1] + 1].PC));
+						if(m.Instructions[callsites[callsites.Length - 1]].IsReachable)
+						{
+							ilGenerator.Emit(OpCodes.Br, block.GetLabel(m.Instructions[callsites[callsites.Length - 1] + 1].PC));
+						}
 						break;
 					}
 					case NormalizedByteCode.__nop:
 						ilGenerator.Emit(OpCodes.Nop);
 						break;
+					case NormalizedByteCode.__static_error:
+					{
+						TypeWrapper exceptionType;
+						switch(instr.HardError)
+						{
+							case HardError.AbstractMethodError:
+								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.AbstractMethodError");
+								break;
+							case HardError.IllegalAccessError:
+								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.IllegalAccessError");
+								break;
+							case HardError.IncompatibleClassChangeError:
+								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.IncompatibleClassChangeError");
+								break;
+							case HardError.InstantiationError:
+								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.InstantiationError");
+								break;
+							case HardError.LinkageError:
+								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.LinkageError");
+								break;
+							case HardError.NoClassDefFoundError:
+								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoClassDefFoundError");
+								break;
+							case HardError.NoSuchFieldError:
+								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchFieldError");
+								break;
+							case HardError.NoSuchMethodError:
+								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchMethodError");
+								break;
+							default:
+								throw new InvalidOperationException();
+						}
+						string message = ma.GetErrorMessage(instr.HardErrorMessageId);
+						Tracer.Error(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", exceptionType.Name, message, classFile.Name, m.Name, m.Signature);
+						ilGenerator.Emit(OpCodes.Ldstr, message);
+						MethodWrapper method = exceptionType.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+						method.Link();
+						method.EmitNewobj(ilGenerator);
+						ilGenerator.Emit(OpCodes.Throw);
+						break;
+					}
 					default:
 						throw new NotImplementedException(instr.NormalizedOpCode.ToString());
 				}
@@ -2931,11 +2978,12 @@ class Compiler
 					case NormalizedByteCode.__areturn:
 					case NormalizedByteCode.__return:
 					case NormalizedByteCode.__athrow:
+					case NormalizedByteCode.__static_error:
 						instructionIsForwardReachable = false;
 						break;
 					default:
 						instructionIsForwardReachable = true;
-						Debug.Assert(ma.IsReachable(i + 1));
+						Debug.Assert(m.Instructions[i + 1].IsReachable);
 						// don't fall through end of try block
 						if(m.Instructions[i + 1].PC == block.End)
 						{

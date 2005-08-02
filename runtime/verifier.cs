@@ -27,6 +27,7 @@ using System.Collections;
 using System.Diagnostics;
 using IKVM.Runtime;
 using IKVM.Internal;
+using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 
 class Subroutine
 {
@@ -1129,6 +1130,7 @@ class MethodAnalyzer
 	private LocalVar[/*instructionIndex*/] localVars;
 	private LocalVar[/*instructionIndex*/][/*localIndex*/] invokespecialLocalVars;
 	private LocalVar[/*index*/] allLocalVars;
+	private ArrayList errorMessages;
 
 	static MethodAnalyzer()
 	{
@@ -2284,7 +2286,185 @@ class MethodAnalyzer
 				}
 			}
 		}
-		
+
+		// Now we do another pass to find "hard error" instructions and compute final reachability
+		done = false;
+		instructions[0].flags |= InstructionFlags.Reachable;
+		while(!done)
+		{
+			done = true;
+			bool didjsr = false;
+			for(int i = 0; i < instructions.Length; i++)
+			{
+				if((instructions[i].flags & (InstructionFlags.Reachable | InstructionFlags.Processed)) == InstructionFlags.Reachable)
+				{
+					done = false;
+					instructions[i].flags |= InstructionFlags.Processed;
+					switch(instructions[i].NormalizedOpCode)
+					{
+						case NormalizedByteCode.__invokeinterface:
+						case NormalizedByteCode.__invokespecial:
+						case NormalizedByteCode.__invokestatic:
+						case NormalizedByteCode.__invokevirtual:
+						{
+							ClassFile.ConstantPoolItemMI cpi = GetMethodref(instructions[i].Arg1);
+							if((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (instructions[i].NormalizedOpCode == NormalizedByteCode.__invokeinterface))
+							{
+								throw new VerifyError("Illegal constant pool index");
+							}
+							if(instructions[i].NormalizedOpCode != NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
+							{
+								throw new VerifyError("Must call initializers using invokespecial");
+							}
+							if(cpi.Name == "<clinit>")
+							{
+								throw new VerifyError("Illegal call to internal method");
+							}
+							NormalizedByteCode invoke = instructions[i].NormalizedOpCode;
+							TypeWrapper thisType;
+							if(invoke == NormalizedByteCode.__invokestatic)
+							{
+								thisType = null;
+							}
+							else
+							{
+								thisType = SigTypeToClassName(GetRawStackTypeWrapper(i, cpi.GetArgTypes().Length), cpi.GetClassType(), wrapper);
+							}
+							MethodWrapper targetMethod = invoke == NormalizedByteCode.__invokespecial ? cpi.GetMethodForInvokespecial() : cpi.GetMethod();
+							if(targetMethod != null)
+							{
+								string errmsg = CheckLoaderConstraints(cpi, targetMethod);
+								if(errmsg != null)
+								{
+									instructions[i].SetHardError(HardError.LinkageError, AllocErrorMessage(errmsg));
+								}
+								else if(targetMethod.IsStatic == (invoke == NormalizedByteCode.__invokestatic))
+								{
+									if(targetMethod.IsAbstract && invoke == NormalizedByteCode.__invokespecial)
+									{
+										instructions[i].SetHardError(HardError.AbstractMethodError, AllocErrorMessage(cpi.Class + "." + cpi.Name + cpi.Signature));
+									}
+									else if(targetMethod.IsAccessibleFrom(cpi.GetClassType(), wrapper, thisType))
+									{
+										break;
+									}
+									else
+									{
+										// NOTE special case for incorrect invocation of Object.clone(), because this could mean
+										// we're calling clone() on an array
+										// (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
+										if(cpi.GetClassType() == CoreClasses.java.lang.Object.Wrapper && thisType.IsArray && cpi.Name == "clone")
+										{
+											// NOTE since thisType is an array, we can be sure that the method is already linked
+											targetMethod = thisType.GetMethodWrapper(cpi.Name, cpi.Signature, false);
+											if(targetMethod != null && targetMethod.IsPublic)
+											{
+												break;
+											}
+										}
+										instructions[i].SetHardError(HardError.IllegalAccessError, AllocErrorMessage("Try to access method " + targetMethod.DeclaringType.Name + "." + cpi.Name + cpi.Signature + " from class " + wrapper.Name));
+									}
+								}
+								else
+								{
+									instructions[i].SetHardError(HardError.IncompatibleClassChangeError, AllocErrorMessage("static call to non-static method (or v.v.)"));
+								}
+							}
+							else
+							{
+								instructions[i].SetHardError(HardError.NoSuchMethodError, AllocErrorMessage(cpi.Class + "." + cpi.Name + cpi.Signature));
+							}
+							break;
+						}
+						default:
+							break;
+					}
+					// mark the exception handlers reachable from this instruction
+					for(int j = 0; j < method.ExceptionTable.Length; j++)
+					{
+						if(method.ExceptionTable[j].start_pc <= instructions[i].PC && method.ExceptionTable[j].end_pc > instructions[i].PC)
+						{
+							instructions[method.PcIndexMap[method.ExceptionTable[j].handler_pc]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+						}
+					}
+					// mark the successor instructions
+					switch(instructions[i].NormalizedOpCode)
+					{
+						case NormalizedByteCode.__tableswitch:
+						case NormalizedByteCode.__lookupswitch:
+							for(int j = 0; j < instructions[i].SwitchEntryCount; j++)
+							{
+								instructions[method.PcIndexMap[instructions[i].PC + instructions[i].GetSwitchTargetOffset(j)]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							}
+							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].DefaultOffset]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							break;
+						case NormalizedByteCode.__goto:
+							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							break;
+						case NormalizedByteCode.__ifeq:
+						case NormalizedByteCode.__ifne:
+						case NormalizedByteCode.__iflt:
+						case NormalizedByteCode.__ifge:
+						case NormalizedByteCode.__ifgt:
+						case NormalizedByteCode.__ifle:
+						case NormalizedByteCode.__if_icmpeq:
+						case NormalizedByteCode.__if_icmpne:
+						case NormalizedByteCode.__if_icmplt:
+						case NormalizedByteCode.__if_icmpge:
+						case NormalizedByteCode.__if_icmpgt:
+						case NormalizedByteCode.__if_icmple:
+						case NormalizedByteCode.__if_acmpeq:
+						case NormalizedByteCode.__if_acmpne:
+						case NormalizedByteCode.__ifnull:
+						case NormalizedByteCode.__ifnonnull:
+							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							instructions[i + 1].flags |= InstructionFlags.Reachable;
+							break;
+						case NormalizedByteCode.__jsr:
+							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							didjsr = true;
+							break;
+						case NormalizedByteCode.__ret:
+							// Note that we can't handle ret here, because we might encounter the ret
+							// before having seen all the corresponding jsr instructions, so we can't
+							// update all the call sites.
+							// We handle ret in the loop below.
+							break;
+						case NormalizedByteCode.__ireturn:
+						case NormalizedByteCode.__lreturn:
+						case NormalizedByteCode.__freturn:
+						case NormalizedByteCode.__dreturn:
+						case NormalizedByteCode.__areturn:
+						case NormalizedByteCode.__return:
+						case NormalizedByteCode.__athrow:
+						case NormalizedByteCode.__static_error:
+							break;
+						default:
+							instructions[i + 1].flags |= InstructionFlags.Reachable;
+							break;
+					}
+				}
+			}
+			if(didjsr)
+			{
+				for(int i = 0; i < instructions.Length; i++)
+				{
+					if(instructions[i].NormalizedOpCode == NormalizedByteCode.__ret)
+					{
+						int subroutineIndex = state[i].GetLocalRet(instructions[i].Arg1, ref localStoreReaders[i]);
+						int[] cs = GetCallSites(subroutineIndex);
+						for(int j = 0; j < cs.Length; j++)
+						{
+							if(instructions[cs[j]].IsReachable)
+							{
+								instructions[cs[j] + 1].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							}
+						}
+					}
+				}
+			}
+		}
+
 		// now that we've done the code flow analysis, we can do a liveness analysis on the local variables
 		Hashtable/*<string,LocalVar>*/ localByStoreSite = new Hashtable();
 		ArrayList/*<LocalVar>*/ locals = new ArrayList();
@@ -2301,7 +2481,7 @@ class MethodAnalyzer
 			// if we're emitting debug info, we need to keep dead stores as well...
 			for(int i = 0; i < instructions.Length; i++)
 			{
-				if(IsReachable(i) && IsStoreLocal(instructions[i].NormalizedOpCode))
+				if(instructions[i].IsReachable && IsStoreLocal(instructions[i].NormalizedOpCode))
 				{
 					if(!localByStoreSite.ContainsKey(i + ":" + instructions[i].NormalizedArg1))
 					{
@@ -2403,6 +2583,59 @@ class MethodAnalyzer
 			}
 		}
 		this.allLocalVars = (LocalVar[])locals.ToArray(typeof(LocalVar));
+	}
+
+	// TODO this method should have a better name
+	private TypeWrapper SigTypeToClassName(TypeWrapper type, TypeWrapper nullType, TypeWrapper wrapper)
+	{
+		if(type == VerifierTypeWrapper.UninitializedThis)
+		{
+			return wrapper;
+		}
+		else if(VerifierTypeWrapper.IsNew(type))
+		{
+			return ((VerifierTypeWrapper)type).UnderlyingType;
+		}
+		else if(type == VerifierTypeWrapper.Null)
+		{
+			return nullType;
+		}
+		else
+		{
+			return type;
+		}
+	}
+
+	private int AllocErrorMessage(string message)
+	{
+		if(errorMessages == null)
+		{
+			errorMessages = new ArrayList();
+		}
+		return errorMessages.Add(message);
+	}
+
+	internal string GetErrorMessage(int messageId)
+	{
+		return (string)errorMessages[messageId];
+	}
+
+	private string CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, MethodWrapper mw)
+	{
+		if(cpi.GetRetType() != mw.ReturnType && !mw.ReturnType.IsUnloadable)
+		{
+			return "Loader constraints violated (return type): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;
+		}
+		TypeWrapper[] here = cpi.GetArgTypes();
+		TypeWrapper[] there = mw.GetParameters();
+		for(int i = 0; i < here.Length; i++)
+		{
+			if(here[i] != there[i] && !there[i].IsUnloadable)
+			{
+				return "Loader constraints violated (arg " + i + "): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;
+			}
+		}
+		return null;
 	}
 
 	private static bool IsLoadLocal(NormalizedByteCode bc)
@@ -2659,10 +2892,5 @@ class MethodAnalyzer
 	internal LocalVar[] GetAllLocalVars()
 	{
 		return allLocalVars;
-	}
-
-	internal bool IsReachable(int instructionIndex)
-	{
-		return state[instructionIndex] != null;
 	}
 }

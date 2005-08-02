@@ -379,6 +379,7 @@ enum NormalizedByteCode : byte
 	__multianewarray = 197,
 	__ifnull = 198,
 	__ifnonnull = 199,
+	__static_error = 254	// not a real instruction, this signals an instruction that is compiled as an exception
 }
 
 enum ByteCodeMode : byte

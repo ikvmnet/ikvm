@@ -29,6 +29,18 @@ using IKVM.Runtime;
 
 namespace IKVM.Internal
 {
+	enum HardError : short
+	{
+		NoClassDefFoundError,
+		IllegalAccessError,
+		InstantiationError,
+		IncompatibleClassChangeError,
+		NoSuchFieldError,
+		AbstractMethodError,
+		NoSuchMethodError,
+		LinkageError
+	}
+
 	sealed class ClassFile
 	{
 		private ConstantPoolItem[] constantpool;
@@ -1997,10 +2009,19 @@ namespace IKVM.Internal
 				internal int ordinal;
 			}
 
+			[Flags]
+			internal enum InstructionFlags : byte
+			{
+				Reachable = 1,
+				Processed = 2,
+				BranchTarget = 4
+			}
+
 			internal struct Instruction
 			{
 				private ushort pc;
 				private NormalizedByteCode normopcode;
+				internal InstructionFlags flags;
 				private int arg1;
 				private short arg2;
 				private SwitchEntry[] switch_entries;
@@ -2009,6 +2030,37 @@ namespace IKVM.Internal
 				{
 					internal int value;
 					internal int target_offset;
+				}
+
+				internal void SetHardError(HardError error, int messageId)
+				{
+					normopcode = NormalizedByteCode.__static_error;
+					arg2 = (short)error;
+					arg1 = messageId;
+				}
+
+				internal HardError HardError
+				{
+					get
+					{
+						return (HardError)arg2;
+					}
+				}
+
+				internal int HardErrorMessageId
+				{
+					get
+					{
+						return arg1;
+					}
+				}
+
+				internal bool IsReachable
+				{
+					get
+					{
+						return (flags & InstructionFlags.Reachable) != 0;
+					}
 				}
 
 				internal void SetTermNop(ushort pc)
