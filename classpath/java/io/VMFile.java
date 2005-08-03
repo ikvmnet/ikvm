@@ -193,7 +193,9 @@ final class VMFile
     static boolean mkdir(String path)
     {
 	// TODO handle errors
-	if (!cli.System.IO.Directory.Exists(cli.System.IO.Directory.GetParent(path).get_FullName()) ||
+        cli.System.IO.DirectoryInfo parent = cli.System.IO.Directory.GetParent(path);
+	if (parent == null ||
+            !cli.System.IO.Directory.Exists(parent.get_FullName()) ||
 	    cli.System.IO.Directory.Exists(path))
 	{
 	    return false;
