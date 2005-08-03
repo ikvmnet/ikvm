@@ -2102,10 +2102,8 @@ namespace IKVM.Internal
 
 		private static FieldInfo[] GetFieldList(Type type, string[] list)
 		{
-			if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage || !IsSupportedVersion)
+			if(JVM.SafeGetEnvironmentVariable("IKVM_DISABLE_TYPEBUILDER_HACK") != null || !IsSupportedVersion)
 			{
-				// if we're going to be saving the image, we cannot bash the MethodBuilder fields,
-				// because the data is required to generated the PE file.
 				return null;
 			}
 			if(!SecurityManager.IsGranted(new SecurityPermission(SecurityPermissionFlag.Assertion)) ||
@@ -2356,7 +2354,7 @@ namespace IKVM.Internal
 			private FieldWrapper[] fields;
 			private bool finishingForDebugSave;
 			private FinishedTypeImpl finishedType;
-			private readonly TypeWrapper outerClassWrapper;
+			private readonly DynamicTypeWrapper outerClassWrapper;
 			private Hashtable memberclashtable;
 			private Hashtable classCache = new Hashtable();
 			private FieldInfo classObjectField;
@@ -2459,18 +2457,70 @@ namespace IKVM.Internal
 					// and doesn't buy us anything, unless we're compiling a library that could be used from C# (e.g.)
 					if(JVM.CompileInnerClassesAsNestedTypes)
 					{
-						if(f.OuterClass != null)
+						string outerClassName = getOuterClassName();
+						if(outerClassName != null)
 						{
-							if(!CheckInnerOuterNames(f.Name, f.OuterClass.Name))
+							if(!CheckInnerOuterNames(f.Name, outerClassName))
 							{
 								Tracer.Warning(Tracer.Compiler, "Incorrect InnerClasses attribute on {0}", f.Name);
 							}
 							else
 							{
-								outerClassWrapper = wrapper.GetClassLoader().LoadClassByDottedName(f.OuterClass.Name);
-								if(outerClassWrapper is DynamicTypeWrapper)
+								try
 								{
-									outer = outerClassWrapper.TypeAsBuilder;
+									outerClassWrapper = wrapper.GetClassLoader().LoadClassByDottedNameFast(outerClassName) as DynamicTypeWrapper;
+								}
+								catch(Exception x) // TODO should we be catching Exception here?
+								{
+									Tracer.Warning(Tracer.Compiler, "Unable to load outer class {0} for innner class {1} ({2}: {3})", outerClassName, f.Name, x.GetType().Name, x.Message);
+								}
+								if(outerClassWrapper != null)
+								{
+									// make sure the relationship is reciprocal (otherwise we run the risk of
+									// baking the outer type before the inner type)
+									lock(outerClassWrapper)
+									{
+										if(outerClassWrapper.impl is JavaTypeImpl)
+										{
+											ClassFile outerClassFile = ((JavaTypeImpl)outerClassWrapper.impl).classFile;
+											ClassFile.InnerClass[] outerInnerClasses = outerClassFile.InnerClasses;
+											if(outerInnerClasses == null)
+											{
+												outerClassWrapper = null;
+											}
+											else
+											{
+												bool ok = false;
+												for(int i = 0; i < outerInnerClasses.Length; i++)
+												{
+													if(outerInnerClasses[i].outerClass != 0
+														&& outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name
+														&& outerInnerClasses[i].innerClass != 0
+														&& outerClassFile.GetConstantPoolClass(outerInnerClasses[i].innerClass) == f.Name)
+													{
+														ok = true;
+														break;
+													}
+												}
+												if(!ok)
+												{
+													outerClassWrapper = null;
+												}
+											}
+										}
+										else
+										{
+											outerClassWrapper = null;
+										}
+									}
+									if(outerClassWrapper != null)
+									{
+										outer = outerClassWrapper.TypeAsBuilder;
+									}
+									else
+									{
+										Tracer.Warning(Tracer.Compiler, "Non-reciprocal inner class {0}", f.Name);
+									}
 								}
 							}
 						}
@@ -2558,6 +2608,24 @@ namespace IKVM.Internal
 					}
 					throw;
 				}
+			}
+
+			private string getOuterClassName()
+			{
+				ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
+				if(innerClasses != null)
+				{
+					for(int j = 0; j < innerClasses.Length; j++)
+					{
+						if(innerClasses[j].outerClass != 0
+							&& innerClasses[j].innerClass != 0
+							&& classFile.GetConstantPoolClass(innerClasses[j].innerClass) == classFile.Name)
+						{
+							return classFile.GetConstantPoolClass(innerClasses[j].outerClass);
+						}
+					}
+				}
+				return null;
 			}
 
 			private bool IsSideEffectFreeStaticInitializer(ClassFile.Method m)
@@ -2969,14 +3037,6 @@ namespace IKVM.Internal
 			internal override DynamicImpl Finish(bool forDebugSave)
 			{
 				this.finishingForDebugSave = forDebugSave;
-				// NOTE if a finish is triggered during static compilation phase 1, it cannot be handled properly,
-				// so we bail out.
-				// (this should only happen during compilation of classpath.dll and is most likely caused by a bug somewhere)
-				if(JVM.IsStaticCompilerPhase1)
-				{
-					JVM.CriticalFailure("Finish triggered during phase 1 of compilation.", null);
-					return null;
-				}
 				if(wrapper.BaseTypeWrapper != null)
 				{
 					wrapper.BaseTypeWrapper.Finish(forDebugSave);
@@ -3364,7 +3424,6 @@ namespace IKVM.Internal
 						{
 							tbFields.CreateType();
 						}
-						BakedTypeCleanupHack.Process(wrapper);
 					}
 					finally
 					{
@@ -3372,6 +3431,7 @@ namespace IKVM.Internal
 					}
 					ClassLoaderWrapper.SetWrapperForType(type, wrapper);
 					wrapper.FinishGhostStep2();
+					BakedTypeCleanupHack.Process(wrapper);
 					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers);
 					return finishedType;
 				}

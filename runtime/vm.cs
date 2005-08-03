@@ -513,10 +513,12 @@ namespace IKVM.Internal
 			private bool targetIsModule;
 			private AssemblyBuilder assemblyBuilder;
 			private IKVM.Internal.MapXml.Attribute[] assemblyAttributes;
+			private CompilerOptions options;
 
-			internal CompilerClassLoader(string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
+			internal CompilerClassLoader(CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
 				: base(null)
 			{
+				this.options = options;
 				this.classes = classes;
 				this.assemblyName = assemblyName;
 				FileInfo assemblyPath = new FileInfo(path);
@@ -575,9 +577,20 @@ namespace IKVM.Internal
 					{
 						return type;
 					}
-					ClassFile f = (ClassFile)classes[name];
-					if(f != null)
+					byte[] classdef = (byte[])classes[name];
+					if(classdef != null)
 					{
+						classes.Remove(name);
+						ClassFile f;
+						try
+						{
+							f = new ClassFile(classdef, 0, classdef.Length, name);
+						}
+						catch(ClassFormatError x)
+						{
+							Console.Error.WriteLine("Warning: class format error: {0}", x.Message);
+							return null;
+						}
 						// to enhance error reporting we special case loading of netexp
 						// classes, to handle the case where the ikvmstub type doesn't exist
 						// (this happens when the .NET mscorlib.jar is used on Mono, for example)
@@ -595,8 +608,13 @@ namespace IKVM.Internal
 							// HACK create a new wrapper to see if the type is visible now
 							if(DotNetTypeWrapper.CreateDotNetTypeWrapper(name) == null)
 							{
+								Console.Error.WriteLine("Warning: ikvmstub class \"{0}\" refers to non-existing type", name);
 								return null;
 							}
+						}
+						if(options.removeUnusedFields)
+						{
+							f.RemoveUnusedFields();
 						}
 						type = DefineClass(f, null);
 					}
@@ -2155,10 +2173,27 @@ namespace IKVM.Internal
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
 			for(int i = 0; i < options.classes.Length; i++)
 			{
-				ClassFile f;
+				string name;
 				try
 				{
-					f = new ClassFile(options.classes[i], 0, options.classes[i].Length, null, true);
+					if(options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+					{
+						ClassFile f = new ClassFile(options.classes[i], 0, options.classes[i].Length, null);
+						name = f.Name;
+						foreach(ClassFile.Method m in f.Methods)
+						{
+							if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
+							{
+								Console.Error.WriteLine("Note: found main method in class \"{0}\"", f.Name);
+								options.mainClass = f.Name;
+								break;
+							}
+						}
+					}
+					else
+					{
+						name = ClassFile.GetClassName(options.classes[i], 0, options.classes[i].Length);
+					}
 				}
 				catch(UnsupportedClassVersionError x)
 				{
@@ -2170,7 +2205,6 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: invalid class file: {0}", x.Message);
 					return 1;
 				}
-				string name = f.Name;
 				bool excluded = false;
 				for(int j = 0; j < options.classesToExclude.Length; j++)
 				{
@@ -2187,25 +2221,10 @@ namespace IKVM.Internal
 				}
 				if(!excluded)
 				{
-					if(options.removeUnusedFields)
-					{
-						f.RemoveUnusedFields();
-					}
-					h[name] = f;
-					if(options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
-					{
-						foreach(ClassFile.Method m in f.Methods)
-						{
-							if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
-							{
-								Console.Error.WriteLine("Note: found main method in class \"{0}\"", f.Name);
-								options.mainClass = f.Name;
-								break;
-							}
-						}
-					}
+					h[name] = options.classes[i];
 				}
 			}
+			options.classes = null;
 
 			if(options.guessFileKind && options.mainClass == null)
 			{
@@ -2268,44 +2287,8 @@ namespace IKVM.Internal
 				return 1;
 			}
 
-			// make sure all inner classes have a reference to their outer class
-			// note that you cannot use the InnerClasses attribute in the inner class for this, because
-			// anonymous inner classes do not have a reference to their outer class
-			foreach(ClassFile classFile in h.Values)
-			{
-				// don't handle inner classes for ikvmstub types
-				if(classFile.IKVMAssemblyAttribute == null)
-				{
-					ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
-					if(innerClasses != null)
-					{
-						for(int j = 0; j < innerClasses.Length; j++)
-						{
-							if(innerClasses[j].outerClass != 0 && classFile.GetConstantPoolClass(innerClasses[j].outerClass) == classFile.Name)
-							{
-								string inner = classFile.GetConstantPoolClass(innerClasses[j].innerClass);
-								ClassFile innerClass = (ClassFile)h[inner];
-								if(innerClass != null)
-								{
-									if(innerClass.OuterClass != null)
-									{
-										Console.Error.WriteLine("Error: inner class {0} has multiple outer classes", inner);
-										return 1;
-									}
-									innerClass.OuterClass = classFile;
-								}
-								else
-								{
-									Console.Error.WriteLine("Warning: inner class {0} missing", inner);
-								}
-							}
-						}
-					}
-				}
-			}
-
 			Tracer.Info(Tracer.Compiler, "Constructing compiler");
-			CompilerClassLoader loader = new CompilerClassLoader(options.path, options.keyfilename, options.keycontainer, options.version, options.targetIsModule, options.assembly, h);
+			CompilerClassLoader loader = new CompilerClassLoader(options, options.path, options.keyfilename, options.keycontainer, options.version, options.targetIsModule, options.assembly, h);
 			ClassLoaderWrapper.SetBootstrapClassLoader(loader);
 			compilationPhase1 = true;
 			IKVM.Internal.MapXml.Root map = null;
@@ -2350,25 +2333,17 @@ namespace IKVM.Internal
 
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
 			ArrayList allwrappers = new ArrayList();
-			foreach(string s in h.Keys)
+			foreach(string s in new ArrayList(h.Keys))
 			{
-				TypeWrapper wrapper = null;
 				try
 				{
-					wrapper = loader.LoadClassByDottedNameFast(s);
-					if(wrapper == null)
+					TypeWrapper wrapper = loader.LoadClassByDottedNameFast(s);
+					if(wrapper != null)
 					{
-						// this should only happen for netexp types (because the other classes must exist, after all we just parsed them)
-						ClassFile c = h[s] as ClassFile;
-						if(c == null || c.IKVMAssemblyAttribute == null)
+						if(map == null)
 						{
-							Console.Error.WriteLine("Error: loading class \"{0}\" failed for unknown reason", s);
-							return 1;
+							wrapper.Finish();
 						}
-						Console.Error.WriteLine("Warning: ikvmstub class \"{0}\" refers to non-existing type", s);
-					}
-					else
-					{
 						allwrappers.Add(wrapper);
 					}
 				}

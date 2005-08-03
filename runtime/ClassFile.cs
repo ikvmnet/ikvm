@@ -52,7 +52,6 @@ namespace IKVM.Internal
 		private Field[] fields;
 		private Method[] methods;
 		private string sourceFile;
-		private ClassFile outerClass;
 		private ushort majorVersion;
 		private bool deprecated;
 		private string ikvmAssembly;
@@ -64,7 +63,69 @@ namespace IKVM.Internal
 			internal static readonly int Maximum = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_JDK_5_0") == null ? 48 : 49;
 		}
 
-		internal ClassFile(byte[] buf, int offset, int length, string inputClassName, bool allowJavaLangObject)
+		// This method parses just enough of the class file to obtain its name, it doesn't
+		// validate the class file structure, but it may throw a ClassFormatError if it
+		// encounters bogus data
+		internal static string GetClassName(byte[] buf, int offset, int length)
+		{
+			const string inputClassName = "(unknown)";
+			BigEndianBinaryReader br = new BigEndianBinaryReader(buf, offset, length);
+			if(br.ReadUInt32() != 0xCAFEBABE)
+			{
+				throw new ClassFormatError("{0} (Bad magic number)", inputClassName);
+			}
+			int minorVersion = br.ReadUInt16();
+			int majorVersion = br.ReadUInt16();
+			if(majorVersion < SupportedVersions.Minimum || majorVersion > SupportedVersions.Maximum)
+			{
+				throw new UnsupportedClassVersionError(inputClassName + " (" + majorVersion + "." + minorVersion + ")");
+			}
+			int constantpoolcount = br.ReadUInt16();
+			int[] cpclass = new int[constantpoolcount];
+			string[] utf8_cp = new string[constantpoolcount];
+			for(int i = 1; i < constantpoolcount; i++)
+			{
+				Constant tag = (Constant)br.ReadByte();
+				switch(tag)
+				{
+					case Constant.Class:
+						cpclass[i] = br.ReadUInt16();
+						break;
+					case Constant.Double:
+					case Constant.Long:
+						br.Skip(8);
+						i++;
+						break;
+					case Constant.Fieldref:
+					case Constant.InterfaceMethodref:
+					case Constant.Methodref:
+					case Constant.NameAndType:
+					case Constant.Float:
+					case Constant.Integer:
+						br.Skip(4);
+						break;
+					case Constant.String:
+						br.Skip(2);
+						break;
+					case Constant.Utf8:
+						utf8_cp[i] = br.ReadString(inputClassName);
+						break;
+					default:
+						throw new ClassFormatError("{0} (Illegal constant pool type 0x{1:X})", inputClassName, tag);
+				}
+			}
+			br.ReadUInt16(); // access_flags
+			try
+			{
+				return String.Intern(utf8_cp[cpclass[br.ReadUInt16()]].Replace('/', '.'));
+			}
+			catch(Exception x)
+			{
+				throw new ClassFormatError("{0}: {1}", x.GetType().Name, x.Message);
+			}
+		}
+
+		internal ClassFile(byte[] buf, int offset, int length, string inputClassName)
 		{
 			try
 			{
@@ -161,19 +222,7 @@ namespace IKVM.Internal
 				this_class = br.ReadUInt16();
 				ValidateConstantPoolItemClass(inputClassName, this_class);
 				super_class = br.ReadUInt16();
-				// NOTE for convenience we allow parsing java/lang/Object (which has no super class), so
-				// we check for super_class != 0
-				if(super_class != 0)
-				{
-					ValidateConstantPoolItemClass(inputClassName, super_class);
-				}
-				else
-				{
-					if(this.Name != "java.lang.Object" || !allowJavaLangObject)
-					{
-						throw new ClassFormatError("{0} (Bad superclass index)", Name);
-					}
-				}
+				ValidateConstantPoolItemClass(inputClassName, super_class);
 				if(IsInterface && (super_class == 0 || this.SuperClass != "java.lang.Object"))
 				{
 					throw new ClassFormatError("{0} (Interfaces must have java.lang.Object as superclass)", Name);
@@ -464,20 +513,6 @@ namespace IKVM.Internal
 			get
 			{
 				return majorVersion;
-			}
-		}
-
-		// NOTE this property is only used when statically compiling
-		// (and it is set by the static compiler's class loader in vm.cs)
-		internal ClassFile OuterClass
-		{
-			get
-			{
-				return outerClass;
-			}
-			set
-			{
-				outerClass = value;
 			}
 		}
 

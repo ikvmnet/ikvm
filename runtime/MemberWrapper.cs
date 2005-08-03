@@ -1306,7 +1306,7 @@ namespace IKVM.Internal
 			FieldInfo fi = GetField();
 			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
 			{
-				LocalBuilder temp = ilgen.DeclareLocal(fi.FieldType);
+				LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsSignatureType);
 				ilgen.Emit(OpCodes.Stloc, temp);
 				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
 				ilgen.Emit(OpCodes.Ldloc, temp);
@@ -1348,13 +1348,13 @@ namespace IKVM.Internal
 				}
 				ilgen.Emit(OpCodes.Ldflda, fi);
 			}
-			if(fi.FieldType == typeof(double))
+			if(FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE)
 			{
 				ilgen.Emit(OpCodes.Call, volatileReadDouble);
 			}
 			else
 			{
-				Debug.Assert(fi.FieldType == typeof(long));
+				Debug.Assert(FieldTypeWrapper == PrimitiveTypeWrapper.LONG);
 				ilgen.Emit(OpCodes.Call, volatileReadLong);
 			}
 		}
@@ -1362,7 +1362,7 @@ namespace IKVM.Internal
 		protected override void EmitSetImpl(ILGenerator ilgen)
 		{
 			FieldInfo fi = GetField();
-			LocalBuilder temp = ilgen.DeclareLocal(fi.FieldType);
+			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsSignatureType);
 			ilgen.Emit(OpCodes.Stloc, temp);
 			if(fi.IsStatic)
 			{
@@ -1377,13 +1377,13 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldflda, fi);
 			}
 			ilgen.Emit(OpCodes.Ldloc, temp);
-			if(fi.FieldType == typeof(double))
+			if(FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE)
 			{
 				ilgen.Emit(OpCodes.Call, volatileWriteDouble);
 			}
 			else
 			{
-				Debug.Assert(fi.FieldType == typeof(long));
+				Debug.Assert(FieldTypeWrapper == PrimitiveTypeWrapper.LONG);
 				ilgen.Emit(OpCodes.Call, volatileWriteLong);
 			}
 		}
@@ -1427,7 +1427,7 @@ namespace IKVM.Internal
 			FieldInfo fi = GetField();
 			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
 			{
-				LocalBuilder temp = ilgen.DeclareLocal(fi.FieldType);
+				LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsSignatureType);
 				ilgen.Emit(OpCodes.Stloc, temp);
 				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
 				ilgen.Emit(OpCodes.Ldloc, temp);

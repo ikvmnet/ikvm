@@ -597,7 +597,7 @@ namespace IKVM.NativeCode.java
 				{
 					try
 					{
-						ClassFile classFile = new ClassFile(data, offset, length, name, false);
+						ClassFile classFile = new ClassFile(data, offset, length, name);
 						if(name != null && classFile.Name != name)
 						{
 							throw new NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");

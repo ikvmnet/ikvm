@@ -142,6 +142,12 @@ namespace IKVM.Internal
 			{
 				return null;
 			}
+			// During static compilation, a TypeResolve event should never trigger a finish.
+			if(JVM.IsStaticCompilerPhase1)
+			{
+				JVM.CriticalFailure("Finish triggered during phase 1 of compilation.", null);
+				return null;
+			}
 			try
 			{
 				type.Finish();
