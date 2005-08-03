@@ -35,7 +35,6 @@ using IKVM.Runtime;
 using IKVM.Internal;
 
 using NetSystem = System;
-using RawData = gnu.classpath.RawData;
 
 namespace IKVM.NativeCode.java
 {
@@ -1203,12 +1202,12 @@ namespace gnu.classpath
 	// This type lives here, because we don't want unverifiable code in IKVM.GNU.Classpath
 	// (as that would prevents us from verifying it during the build process).
 	[SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
-	public unsafe sealed class RawData
+	public unsafe sealed class Pointer
 	{
 		[HideFromJava]
 		private byte* pb;
 
-		public RawData(IntPtr p)
+		public Pointer(IntPtr p)
 		{
 			this.pb = (byte*)p;
 		}

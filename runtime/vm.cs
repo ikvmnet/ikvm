@@ -2328,7 +2328,7 @@ namespace IKVM.Internal
 				return 1;
 			}
 
-			ClassLoaderWrapper.PublishLibraryImplementationHelperType(typeof(gnu.classpath.RawData));
+			ClassLoaderWrapper.PublishLibraryImplementationHelperType(typeof(gnu.classpath.Pointer));
 			ClassLoaderWrapper.PublishLibraryImplementationHelperType(typeof(ikvm.@internal.LibraryVMInterface));
 
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");

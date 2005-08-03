@@ -38,7 +38,7 @@ exception statement from your version. */
 
 package java.nio;
 
-import gnu.classpath.RawData;
+import gnu.classpath.Pointer;
 import cli.System.IntPtr;
 
 import java.io.IOException;
@@ -49,7 +49,7 @@ class MappedByteBufferImpl extends MappedByteBuffer
 
     final static class Win32 extends MappedByteBufferImpl
     {
-        Win32(RawData address, int size, boolean readOnly)
+        Win32(Pointer address, int size, boolean readOnly)
             throws IOException
         {
             super(address, size, readOnly);
@@ -83,7 +83,7 @@ class MappedByteBufferImpl extends MappedByteBuffer
 
     final static class Posix extends MappedByteBufferImpl
     {
-        Posix(RawData address, int size, boolean readOnly)
+        Posix(Pointer address, int size, boolean readOnly)
             throws IOException
         {
             super(address, size, readOnly);
@@ -115,13 +115,13 @@ class MappedByteBufferImpl extends MappedByteBuffer
 	private static native int ikvm_msync(IntPtr address, int size);
     }
 
-    static MappedByteBufferImpl create(RawData address, int size, boolean readOnly, boolean win32)
+    static MappedByteBufferImpl create(Pointer address, int size, boolean readOnly, boolean win32)
         throws IOException
     {
         return win32 ? new Win32(address, size, readOnly) : (MappedByteBufferImpl)new Posix(address, size, readOnly);
     }
   
-    MappedByteBufferImpl(RawData address, int size, boolean readOnly)
+    MappedByteBufferImpl(Pointer address, int size, boolean readOnly)
         throws IOException
     {
         super(size, size, 0, -1);

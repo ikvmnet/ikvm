@@ -61,7 +61,7 @@ import cli.System.Type;
 import cli.System.Reflection.MethodInfo;
 import cli.System.Reflection.ParameterModifier;
 import cli.System.Reflection.BindingFlags;
-import gnu.classpath.RawData;
+import gnu.classpath.Pointer;
 
 /**
  * This file is not user visible !
@@ -108,7 +108,7 @@ public abstract class FileChannelImpl extends FileChannel
             super(stream);
         }
 
-        RawData mapViewOfFile(FileStream fs, boolean writeable, boolean copy_on_write, long position, int size)
+        Pointer mapViewOfFile(FileStream fs, boolean writeable, boolean copy_on_write, long position, int size)
             throws IOException
         {
             try
@@ -136,7 +136,7 @@ public abstract class FileChannelImpl extends FileChannel
                     int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
                     throw new IOException("Win32 error " + err);
                 }
-                return new RawData(p);                
+                return new Pointer(p);                
             }
             finally
             {
@@ -176,7 +176,7 @@ public abstract class FileChannelImpl extends FileChannel
             super(stream);
         }
 
-        RawData mapViewOfFile(FileStream fs, boolean writeable, boolean copy_on_write, long position, int size)
+        Pointer mapViewOfFile(FileStream fs, boolean writeable, boolean copy_on_write, long position, int size)
         {
             IntPtr p = ikvm_mmap(fs.get_Handle(), (byte)(writeable ? 1 : 0), (byte)(copy_on_write ? 1 : 0), position, size);
             cli.System.GC.KeepAlive(fs);
@@ -187,7 +187,7 @@ public abstract class FileChannelImpl extends FileChannel
             {
                 return null;
             }
-            return new RawData(p);
+            return new Pointer(p);
         }
         
         boolean flush(FileStream fs)
@@ -658,16 +658,16 @@ public abstract class FileChannelImpl extends FileChannel
         if (! (stream instanceof FileStream))
             throw new IllegalArgumentException("only file streams can be mapped");
 
-        RawData address = mapViewOfFile((FileStream)stream, mode != 'r', mode == 'c', position, size);
+        Pointer address = mapViewOfFile((FileStream)stream, mode != 'r', mode == 'c', position, size);
         if (address == null)
             throw new IOException("file mapping failed");
         return createMappedByteBufferImpl(address, size, mode == 'r', win32);
     }
 
-    abstract RawData mapViewOfFile(FileStream stream, boolean writeable, boolean copy_on_write, long position, int size) throws IOException;
+    abstract Pointer mapViewOfFile(FileStream stream, boolean writeable, boolean copy_on_write, long position, int size) throws IOException;
 
     // implementation in map.xml to bypass Java access checking
-    private static native MappedByteBuffer createMappedByteBufferImpl(RawData address, int size, boolean readonly, boolean win32);
+    private static native MappedByteBuffer createMappedByteBufferImpl(Pointer address, int size, boolean readonly, boolean win32);
 
     public MappedByteBuffer map (FileChannel.MapMode mode,
 	long position, long size)

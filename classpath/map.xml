@@ -1173,13 +1173,13 @@
 			</method>
 		</class>
 		<class name="gnu.java.nio.channels.FileChannelImpl">
-			<method name="createMappedByteBufferImpl" sig="(Lgnu.classpath.RawData;IZZ)Ljava.nio.MappedByteBuffer;">
+			<method name="createMappedByteBufferImpl" sig="(Lgnu.classpath.Pointer;IZZ)Ljava.nio.MappedByteBuffer;">
 				<body>
 					<ldarg_0 />
 					<ldarg_1 />
 					<ldarg_2 />
 					<ldarg_3 />
-					<call class="java.nio.MappedByteBufferImpl" name="create" sig="(Lgnu.classpath.RawData;IZZ)Ljava.nio.MappedByteBufferImpl;" />
+					<call class="java.nio.MappedByteBufferImpl" name="create" sig="(Lgnu.classpath.Pointer;IZZ)Ljava.nio.MappedByteBufferImpl;" />
 					<ret />
 				</body>
 			</method>
@@ -1209,10 +1209,10 @@
 					<ldfld class="java.nio.Buffer" name="pos" sig="I" />
 					<ble_un name="err" />
 					<ldarg_0 />
-					<ldfld class="java.nio.DirectByteBufferImpl" name="address" sig="Lgnu.classpath.RawData;" />
+					<ldfld class="java.nio.DirectByteBufferImpl" name="address" sig="Lgnu.classpath.Pointer;" />
 					<ldarg_0 />
 					<ldfld class="java.nio.Buffer" name="pos" sig="I" />
-					<call type="gnu.classpath.RawData" name="ReadByte" sig="(I)B" />
+					<call type="gnu.classpath.Pointer" name="ReadByte" sig="(I)B" />
 					<stloc name="result" type="System.Byte, mscorlib" />
 					<ldarg_0 />
 					<ldarg_0 />
@@ -1235,11 +1235,11 @@
 					<ldfld class="java.nio.Buffer" name="pos" sig="I" />
 					<ble_un name="err" />
 					<ldarg_0 />
-					<ldfld class="java.nio.DirectByteBufferImpl" name="address" sig="Lgnu.classpath.RawData;" />
+					<ldfld class="java.nio.DirectByteBufferImpl" name="address" sig="Lgnu.classpath.Pointer;" />
 					<ldarg_0 />
 					<ldfld class="java.nio.Buffer" name="pos" sig="I" />
 					<ldarg_1 />
-					<call type="gnu.classpath.RawData" name="WriteByte" sig="(IB)V" />
+					<call type="gnu.classpath.Pointer" name="WriteByte" sig="(IB)V" />
 					<ldarg_0 />
 					<ldarg_0 />
 					<ldfld class="java.nio.Buffer" name="pos" sig="I" />
@@ -1260,9 +1260,9 @@
 					<ldarg_1 />
 					<ble_un name="err" />
 					<ldarg_0 />
-					<ldfld class="java.nio.DirectByteBufferImpl" name="address" sig="Lgnu.classpath.RawData;" />
+					<ldfld class="java.nio.DirectByteBufferImpl" name="address" sig="Lgnu.classpath.Pointer;" />
 					<ldarg_1 />
-					<call type="gnu.classpath.RawData" name="ReadByte" sig="(I)B" />
+					<call type="gnu.classpath.Pointer" name="ReadByte" sig="(I)B" />
 					<ret />
 					<label name="err" />
 					<ldarg_1 />
@@ -1278,10 +1278,10 @@
 					<ldarg_1 />
 					<ble_un name="err" />
 					<ldarg_0 />
-					<ldfld class="java.nio.DirectByteBufferImpl" name="address" sig="Lgnu.classpath.RawData;" />
+					<ldfld class="java.nio.DirectByteBufferImpl" name="address" sig="Lgnu.classpath.Pointer;" />
 					<ldarg_1 />
 					<ldarg_2 />
-					<call type="gnu.classpath.RawData" name="WriteByte" sig="(IB)V" />
+					<call type="gnu.classpath.Pointer" name="WriteByte" sig="(IB)V" />
 					<ldarg_0 />
 					<ret />
 					<label name="err" />

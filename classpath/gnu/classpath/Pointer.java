@@ -1,10 +1,10 @@
 package gnu.classpath;
 
 // NOTE this class isn't actually used (only during compilation)
-// at runtime, gnu.classpath.RawData in IKVM.Runtime is used instead
-public final class RawData
+// at runtime, gnu.classpath.Pointer in IKVM.Runtime is used instead
+public final class Pointer
 {
-    public RawData(cli.System.IntPtr p)
+    public Pointer(cli.System.IntPtr p)
     {
     }
 

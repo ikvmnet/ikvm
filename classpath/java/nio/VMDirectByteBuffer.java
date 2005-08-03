@@ -23,7 +23,7 @@
 */
 package java.nio;
 
-import gnu.classpath.RawData;
+import gnu.classpath.Pointer;
 import cli.System.IntPtr;
 import cli.System.Runtime.InteropServices.Marshal;
 
@@ -32,7 +32,7 @@ class VMDirectByteBuffer
     // this method is used by JNI.NewDirectByteBuffer
     static ByteBuffer NewDirectByteBuffer(IntPtr p, int capacity)
     {
-        return new DirectByteBufferImpl.ReadWrite(null, new RawData(p), capacity, capacity, 0);
+        return new DirectByteBufferImpl.ReadWrite(null, new Pointer(p), capacity, capacity, 0);
     }
 
     static IntPtr GetDirectBufferAddress(Buffer buf)
@@ -40,45 +40,45 @@ class VMDirectByteBuffer
         return buf.address != null ? buf.address.p() : IntPtr.Zero;
     }
 
-    static RawData allocate(int capacity)
+    static Pointer allocate(int capacity)
     {
-        return new RawData(Marshal.AllocHGlobal(capacity));
+        return new Pointer(Marshal.AllocHGlobal(capacity));
     }
 
-    static void free(RawData r)
+    static void free(Pointer r)
     {
         Marshal.FreeHGlobal(r.p());
     }
 
-    static byte get(RawData r, int index)
+    static byte get(Pointer r, int index)
     {
         return r.ReadByte(index);
     }
 
-    static void get(RawData r, int index, byte[] dst, int offset, int length)
+    static void get(Pointer r, int index, byte[] dst, int offset, int length)
     {
         IntPtr address = new IntPtr(r.p().ToInt64() + index);
         Marshal.Copy(address, dst, offset, length);
     }
 
-    static void put(RawData r, int index, byte value)
+    static void put(Pointer r, int index, byte value)
     {
         r.WriteByte(index, value);
     }
 
-    static void put(RawData r, int index, byte[] src, int offset, int length)
+    static void put(Pointer r, int index, byte[] src, int offset, int length)
     {
         IntPtr address = new IntPtr(r.p().ToInt64() + index);
         Marshal.Copy(src, offset, address, length);
     }
 
-    static void shiftDown(RawData r, int dst_offset, int src_offset, int count)
+    static void shiftDown(Pointer r, int dst_offset, int src_offset, int count)
     {
         r.MoveMemory(dst_offset, src_offset, count);
     }
 
-    static RawData adjustAddress(RawData r, int pos)
+    static Pointer adjustAddress(Pointer r, int pos)
     {
-        return new RawData(new IntPtr(r.p().ToInt64() + pos));
+        return new Pointer(new IntPtr(r.p().ToInt64() + pos));
     }
 }
