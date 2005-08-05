@@ -1728,6 +1728,10 @@ namespace IKVM.Internal
 				{
 					EmitUnbox(ilgen);
 				}
+				else if(sourceType != null && sourceType.IsUnloadable)
+				{
+					ilgen.Emit(OpCodes.Castclass, TypeAsSignatureType);
+				}
 			}
 		}
 

@@ -1620,7 +1620,15 @@ class MethodAnalyzer
 								}
 								else
 								{
-									s.PushType((GetFieldref(instr.Arg1)).GetFieldType());
+									ClassFile.ConstantPoolItemFieldref cpi = GetFieldref(instr.Arg1);
+									if(cpi.GetField() != null && cpi.GetField().FieldTypeWrapper.IsUnloadable)
+									{
+										s.PushType(cpi.GetField().FieldTypeWrapper);
+									}
+									else
+									{
+										s.PushType(cpi.GetFieldType());
+									}
 								}
 								break;
 							case NormalizedByteCode.__putstatic:
@@ -1662,9 +1670,19 @@ class MethodAnalyzer
 								}
 								break;
 							case NormalizedByteCode.__getfield:
+							{
 								s.PopObjectType(GetFieldref(instr.Arg1).GetClassType());
-								s.PushType(GetFieldref(instr.Arg1).GetFieldType());
+								ClassFile.ConstantPoolItemFieldref cpi = GetFieldref(instr.Arg1);
+								if(cpi.GetField() != null && cpi.GetField().FieldTypeWrapper.IsUnloadable)
+								{
+									s.PushType(cpi.GetField().FieldTypeWrapper);
+								}
+								else
+								{
+									s.PushType(cpi.GetFieldType());
+								}
 								break;
+							}
 							case NormalizedByteCode.__putfield:
 								s.PopType(GetFieldref(instr.Arg1).GetFieldType());
 								// putfield is allowed to access the unintialized this
@@ -1743,7 +1761,14 @@ class MethodAnalyzer
 								TypeWrapper retType = cpi.GetRetType();
 								if(retType != PrimitiveTypeWrapper.VOID)
 								{
-									s.PushType(retType);
+									if(cpi.GetMethod() != null && cpi.GetMethod().ReturnType.IsUnloadable)
+									{
+										s.PushType(cpi.GetMethod().ReturnType);
+									}
+									else
+									{
+										s.PushType(retType);
+									}
 								}
 								break;
 							}
@@ -2970,13 +2995,31 @@ class MethodAnalyzer
 			// We're being called from IsSideEffectFreeStaticInitializer,
 			// no further checks are possible (nor needed).
 		}
-		else if(cpi.GetClassType().IsUnloadable)
+		else if(cpi.GetClassType().IsUnloadable || (thisType != null && thisType.IsUnloadable))
 		{
 			if(JVM.DisableDynamicBinding)
 			{
 				instr.SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(cpi.GetClassType().Name));
 				return;
 			}
+			switch(instr.NormalizedOpCode)
+			{
+				case NormalizedByteCode.__getstatic:
+					instr.PatchOpCode(NormalizedByteCode.__dynamic_getstatic);
+					break;
+				case NormalizedByteCode.__putstatic:
+					instr.PatchOpCode(NormalizedByteCode.__dynamic_putstatic);
+					break;
+				case NormalizedByteCode.__getfield:
+					instr.PatchOpCode(NormalizedByteCode.__dynamic_getfield);
+					break;
+				case NormalizedByteCode.__putfield:
+					instr.PatchOpCode(NormalizedByteCode.__dynamic_putfield);
+					break;
+				default:
+					throw new InvalidOperationException();
+			}
+			return;
 		}
 		else
 		{

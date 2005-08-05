@@ -1396,10 +1396,30 @@ class Compiler
 			switch(instr.NormalizedOpCode)
 			{
 				case NormalizedByteCode.__getstatic:
-				case NormalizedByteCode.__putstatic:
 				case NormalizedByteCode.__getfield:
+				{
+					ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
+					FieldWrapper field = cpi.GetField();
+					field.EmitGet(ilGenerator);
+					field.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilGenerator);
+					break;
+				}
+				case NormalizedByteCode.__putstatic:
 				case NormalizedByteCode.__putfield:
-					GetPutField(instr, i);
+				{
+					ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
+					FieldWrapper field = cpi.GetField();
+					TypeWrapper tw = field.FieldTypeWrapper;
+					TypeWrapper val = ma.GetRawStackTypeWrapper(i, 0);
+					tw.EmitConvStackTypeToSignatureType(ilGenerator, val);
+					field.EmitSet(ilGenerator);
+					break;
+				}
+				case NormalizedByteCode.__dynamic_getstatic:
+				case NormalizedByteCode.__dynamic_putstatic:
+				case NormalizedByteCode.__dynamic_getfield:
+				case NormalizedByteCode.__dynamic_putfield:
+					DynamicGetPutField(instr, i);
 					break;
 				case NormalizedByteCode.__aconst_null:
 					ilGenerator.Emit(OpCodes.Ldnull);
@@ -1835,7 +1855,7 @@ class Compiler
 					else
 					{
 						LocalVar v = LoadLocal(instr);
-						if(!type.IsUnloadable && !v.type.IsUnloadable && !v.type.IsAssignableTo(type))
+						if(!type.IsUnloadable && (v.type.IsUnloadable || !v.type.IsAssignableTo(type)))
 						{
 							type.EmitCheckcast(type, ilGenerator);
 						}
@@ -2896,6 +2916,18 @@ class Compiler
 	private void CastInterfaceArgs(MethodWrapper method, TypeWrapper[] args, int instructionIndex, bool instanceMethod, bool checkThisForNull)
 	{
 		bool needsCast = checkThisForNull;
+		bool dynamic;
+		switch(m.Instructions[instructionIndex].NormalizedOpCode)
+		{
+			case NormalizedByteCode.__dynamic_invokeinterface:
+			case NormalizedByteCode.__dynamic_invokestatic:
+			case NormalizedByteCode.__dynamic_invokevirtual:
+				dynamic = true;
+				break;
+			default:
+				dynamic = false;
+				break;
+		}
 
 		if(!needsCast)
 		{
@@ -2974,7 +3006,7 @@ class Compiler
 			}
 			for(int i = 0; i < args.Length; i++)
 			{
-				if(!args[i].IsUnloadable && args[i].IsGhost)
+				if(!args[i].IsUnloadable && args[i].IsGhost && !dynamic)
 				{
 					if(i == 0 && instanceMethod && !method.DeclaringType.IsInterface)
 					{
@@ -3000,7 +3032,7 @@ class Compiler
 				else
 				{
 					dh.Load(i);
-					if(!args[i].IsUnloadable)
+					if(!args[i].IsUnloadable && !dynamic)
 					{
 						if(args[i].IsNonPrimitiveValueType)
 						{
@@ -3028,63 +3060,43 @@ class Compiler
 		}
 	}
 
-	private void GetPutField(Instruction instr, int i)
+	private void DynamicGetPutField(Instruction instr, int i)
 	{
 		NormalizedByteCode bytecode = instr.NormalizedOpCode;
 		ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
-		bool write = (bytecode == NormalizedByteCode.__putfield || bytecode == NormalizedByteCode.__putstatic);
+		bool write = (bytecode == NormalizedByteCode.__dynamic_putfield || bytecode == NormalizedByteCode.__dynamic_putstatic);
 		TypeWrapper wrapper = cpi.GetClassType();
-		if(wrapper.IsUnloadable)
+		TypeWrapper fieldTypeWrapper = cpi.GetFieldType();
+		if(write && !fieldTypeWrapper.IsUnloadable && fieldTypeWrapper.IsPrimitive)
 		{
-			TypeWrapper fieldTypeWrapper = cpi.GetFieldType();
-			if(write && !fieldTypeWrapper.IsUnloadable && fieldTypeWrapper.IsPrimitive)
-			{
-				ilGenerator.Emit(OpCodes.Box, fieldTypeWrapper.TypeAsTBD);
-			}
-			ilGenerator.Emit(OpCodes.Ldstr, cpi.Name);
-			ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
-			ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-			ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-			switch(bytecode)
-			{
-				case NormalizedByteCode.__getfield:
-					Profiler.Count("EmitDynamicGetfield");
-					ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetfield"));
-					EmitReturnTypeConversion(ilGenerator, fieldTypeWrapper);
-					break;
-				case NormalizedByteCode.__putfield:
-					Profiler.Count("EmitDynamicPutfield");
-					ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicPutfield"));
-					break;
-				case NormalizedByteCode.__getstatic:
-					Profiler.Count("EmitDynamicGetstatic");
-					ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetstatic"));
-					EmitReturnTypeConversion(ilGenerator, fieldTypeWrapper);
-					break;
-				case NormalizedByteCode.__putstatic:
-					Profiler.Count("EmitDynamicPutstatic");
-					ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicPutstatic"));
-					break;
-			}
-			return;
+			ilGenerator.Emit(OpCodes.Box, fieldTypeWrapper.TypeAsTBD);
 		}
-		else
+		ilGenerator.Emit(OpCodes.Ldstr, cpi.Name);
+		ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
+		ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+		ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
+		switch(bytecode)
 		{
-			FieldWrapper field = cpi.GetField();
-			if(write)
-			{
-				TypeWrapper tw = field.FieldTypeWrapper;
-				TypeWrapper val = ma.GetRawStackTypeWrapper(i, 0);
-				tw.EmitConvStackTypeToSignatureType(ilGenerator, val);
-				field.EmitSet(ilGenerator);
-				return;
-			}
-			else
-			{
-				field.EmitGet(ilGenerator);
-				field.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilGenerator);
-				return;
-			}
+			case NormalizedByteCode.__dynamic_getfield:
+				Profiler.Count("EmitDynamicGetfield");
+				ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetfield"));
+				EmitReturnTypeConversion(ilGenerator, fieldTypeWrapper);
+				break;
+			case NormalizedByteCode.__dynamic_putfield:
+				Profiler.Count("EmitDynamicPutfield");
+				ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicPutfield"));
+				break;
+			case NormalizedByteCode.__dynamic_getstatic:
+				Profiler.Count("EmitDynamicGetstatic");
+				ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicGetstatic"));
+				EmitReturnTypeConversion(ilGenerator, fieldTypeWrapper);
+				break;
+			case NormalizedByteCode.__dynamic_putstatic:
+				Profiler.Count("EmitDynamicPutstatic");
+				ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicPutstatic"));
+				break;
+			default:
+				throw new InvalidOperationException();
 		}
 	}
 

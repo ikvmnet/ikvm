@@ -379,6 +379,10 @@ enum NormalizedByteCode : byte
 	__ifnull = 198,
 	__ifnonnull = 199,
 	// This is where the pseudo-bytecodes start
+	__dynamic_getstatic = 246,
+	__dynamic_putstatic = 247,
+	__dynamic_getfield = 248,
+	__dynamic_putfield = 249,
 	__dynamic_invokeinterface = 250,
 	__dynamic_invokestatic = 251,
 	__dynamic_invokevirtual = 252,
@@ -503,6 +507,10 @@ struct ByteCodeMetaData
 			case NormalizedByteCode.__dynamic_invokeinterface:
 			case NormalizedByteCode.__dynamic_invokestatic:
 			case NormalizedByteCode.__dynamic_invokevirtual:
+			case NormalizedByteCode.__dynamic_getstatic:
+			case NormalizedByteCode.__dynamic_putstatic:
+			case NormalizedByteCode.__dynamic_getfield:
+			case NormalizedByteCode.__dynamic_putfield:
 			case NormalizedByteCode.__clone_array:
 			case NormalizedByteCode.__static_error:
 				return true;
