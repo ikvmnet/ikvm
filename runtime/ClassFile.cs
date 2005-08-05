@@ -2098,6 +2098,11 @@ namespace IKVM.Internal
 					}
 				}
 
+				internal void PatchOpCode(NormalizedByteCode bc)
+				{
+					this.normopcode = bc;
+				}
+
 				internal void SetTermNop(ushort pc)
 				{
 					// TODO what happens if we already have exactly the maximum number of instructions?

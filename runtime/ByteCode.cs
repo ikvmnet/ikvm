@@ -233,7 +233,6 @@ enum NormalizedByteCode : byte
 {
 	__nop = 0,
 	__aconst_null = 1,
-	__iconst = 255,
 	__lconst_0 = 9,
 	__lconst_1 = 10,
 	__fconst_0 = 11,
@@ -379,7 +378,13 @@ enum NormalizedByteCode : byte
 	__multianewarray = 197,
 	__ifnull = 198,
 	__ifnonnull = 199,
-	__static_error = 254	// not a real instruction, this signals an instruction that is compiled as an exception
+	// This is where the pseudo-bytecodes start
+	__dynamic_invokeinterface = 250,
+	__dynamic_invokestatic = 251,
+	__dynamic_invokevirtual = 252,
+	__clone_array = 253,
+	__static_error = 254,	// not a real instruction, this signals an instruction that is compiled as an exception
+	__iconst = 255
 }
 
 enum ByteCodeMode : byte
@@ -493,8 +498,19 @@ struct ByteCodeMetaData
 
 	internal static bool CanThrowException(NormalizedByteCode bc)
 	{
-		// special case __iconst, because that's the only normalized opcode that doesn't correspond to a real opcode
-		return bc != NormalizedByteCode.__iconst && (data[(int)bc].flags & ByteCodeFlags.CannotThrow) == 0;
+		switch(bc)
+		{
+			case NormalizedByteCode.__dynamic_invokeinterface:
+			case NormalizedByteCode.__dynamic_invokestatic:
+			case NormalizedByteCode.__dynamic_invokevirtual:
+			case NormalizedByteCode.__clone_array:
+			case NormalizedByteCode.__static_error:
+				return true;
+			case NormalizedByteCode.__iconst:
+				return false;
+			default:
+				return (data[(int)bc].flags & ByteCodeFlags.CannotThrow) == 0;
+		}
 	}
 
 	static ByteCodeMetaData()

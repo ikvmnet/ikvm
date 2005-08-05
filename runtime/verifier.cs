@@ -800,6 +800,14 @@ class InstructionState
 		return stack[stackSize - 1];
 	}
 
+	internal void MultiPopAnyType(int count)
+	{
+		while(count-- != 0)
+		{
+			PopAnyType();
+		}
+	}
+
 	internal TypeWrapper PopAnyType()
 	{
 		if(stackSize == 0)
@@ -862,6 +870,11 @@ class InstructionState
 	internal TypeWrapper GetStackSlot(int pos)
 	{
 		return stack[stackSize - 1 - pos];
+	}
+
+	internal TypeWrapper GetStackByIndex(int index)
+	{
+		return stack[index];
 	}
 
 	private void PushHelper(TypeWrapper type)
@@ -959,6 +972,139 @@ class InstructionState
 				throw new VerifyError("uninitialized object ref on stack");
 			}
 		}
+	}
+}
+
+struct StackState
+{
+	private InstructionState state;
+	private int sp;
+
+	internal StackState(InstructionState state)
+	{
+		this.state = state;
+		sp = state.GetStackHeight();
+	}
+
+	internal TypeWrapper PeekType()
+	{
+		if(sp == 0)
+		{
+			throw new VerifyError("Unable to pop operand off an empty stack");
+		}
+		return state.GetStackByIndex(sp - 1);
+	}
+
+	internal TypeWrapper PopAnyType()
+	{
+		if(sp == 0)
+		{
+			throw new VerifyError("Unable to pop operand off an empty stack");
+		}
+		return state.GetStackByIndex(--sp);
+	}
+
+	internal TypeWrapper PopType(TypeWrapper baseType)
+	{
+		if(baseType.IsIntOnStackPrimitive)
+		{
+			baseType = PrimitiveTypeWrapper.INT;
+		}
+		TypeWrapper type = PopAnyType();
+		if(VerifierTypeWrapper.IsNew(type) || type == VerifierTypeWrapper.UninitializedThis)
+		{
+			throw new VerifyError("Expecting to find object/array on stack");
+		}
+		if(type != baseType &&
+			!((type.IsUnloadable && !baseType.IsPrimitive) || (baseType.IsUnloadable && !type.IsPrimitive) ||
+			type.IsAssignableTo(baseType)))
+		{
+			// HACK because of the way interfaces references works, if baseType
+			// is an interface or array of interfaces, any reference will be accepted
+			if(baseType.IsInterfaceOrInterfaceArray && !type.IsPrimitive)
+			{
+				return type;
+			}
+			throw new VerifyError("Unexpected type " + type.Name + " where " + baseType.Name + " was expected");
+		}
+		return type;
+	}
+
+	// NOTE this can *not* be used to pop double or long
+	internal TypeWrapper PopType()
+	{
+		TypeWrapper type = PopAnyType();
+		if(type.IsWidePrimitive)
+		{
+			throw new VerifyError("Attempt to split long or double on the stack");
+		}
+		return type;
+	}
+
+	internal void PopInt()
+	{
+		if(PopAnyType() != PrimitiveTypeWrapper.INT)
+		{
+			throw new VerifyError("Int expected on stack");
+		}
+	}
+
+	internal void PopFloat()
+	{
+		if(PopAnyType() != PrimitiveTypeWrapper.FLOAT)
+		{
+			throw new VerifyError("Float expected on stack");
+		}
+	}
+
+	internal void PopDouble()
+	{
+		if(PopAnyType() != PrimitiveTypeWrapper.DOUBLE)
+		{
+			throw new VerifyError("Double expected on stack");
+		}
+	}
+
+	internal void PopLong()
+	{
+		if(PopAnyType() != PrimitiveTypeWrapper.LONG)
+		{
+			throw new VerifyError("Long expected on stack");
+		}
+	}
+
+	internal TypeWrapper PopArrayType()
+	{
+		TypeWrapper type = PopAnyType();
+		if(!VerifierTypeWrapper.IsNullOrUnloadable(type) && type.ArrayRank == 0)
+		{
+			throw new VerifyError("Array reference expected on stack");
+		}
+		return type;
+	}
+
+	// either null or an initialized object reference
+	internal TypeWrapper PopObjectType()
+	{
+		TypeWrapper type = PopAnyType();
+		if(type.IsPrimitive || VerifierTypeWrapper.IsNew(type) || type == VerifierTypeWrapper.UninitializedThis)
+		{
+			throw new VerifyError("Expected object reference on stack");
+		}
+		return type;
+	}
+
+	// null or an initialized object reference derived from baseType (or baseType)
+	internal TypeWrapper PopObjectType(TypeWrapper baseType)
+	{
+		TypeWrapper type = PopObjectType();
+		// HACK because of the way interfaces references works, if baseType
+		// is an interface or array of interfaces, any reference will be accepted
+		if(!baseType.IsUnloadable && !baseType.IsInterfaceOrInterfaceArray && !(type.IsUnloadable || type.IsAssignableTo(baseType)))
+		{
+			throw new VerifyError("Unexpected type " + type + " where " + baseType + " was expected");
+		}
+		return type;
 	}
 }
 
@@ -1071,7 +1217,7 @@ class VerifierTypeWrapper : TypeWrapper
 		}
 	}
 
-	internal override void Finish(bool forDebugSave)
+	internal override void Finish()
 	{
 		throw new InvalidOperationException("Finish called on " + this);
 	}
@@ -1571,97 +1717,26 @@ class MethodAnalyzer
 							case NormalizedByteCode.__invokestatic:
 							{
 								ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
-								if((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface))
-								{
-									throw new VerifyError("Illegal constant pool index");
-								}
-								if(instr.NormalizedOpCode != NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
-								{
-									throw new VerifyError("Must call initializers using invokespecial");
-								}
-								if(cpi.Name == "<clinit>")
-								{
-									throw new VerifyError("Illegal call to internal method");
-								}
-								TypeWrapper[] args = cpi.GetArgTypes();
-								for(int j = args.Length - 1; j >= 0; j--)
-								{
-									s.PopType(args[j]);
-								}
-								if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
-								{
-									int argcount = args.Length + 1;
-									for(int j = 0; j < args.Length; j++)
-									{
-										if(args[j].IsWidePrimitive)
-										{
-											argcount++;
-										}
-									}
-									if(instr.Arg2 != argcount)
-									{
-										throw new VerifyError("Inconsistent args size");
-									}
-								}
+								s.MultiPopAnyType(cpi.GetArgTypes().Length);
 								if(instr.NormalizedOpCode != NormalizedByteCode.__invokestatic)
 								{
+									TypeWrapper type = s.PopType();
 									if(cpi.Name == "<init>")
 									{
-										TypeWrapper type = s.PopType();
-										if((VerifierTypeWrapper.IsNew(type) && ((VerifierTypeWrapper)type).UnderlyingType != cpi.GetClassType()) ||
-											(type == VerifierTypeWrapper.UninitializedThis && cpi.GetClassType() != wrapper.BaseTypeWrapper && cpi.GetClassType() != wrapper) ||
-											(!VerifierTypeWrapper.IsNew(type) && type != VerifierTypeWrapper.UninitializedThis))
-										{
-											// TODO oddly enough, Java fails verification for the class without
-											// even running the constructor, so maybe constructors are always
-											// verified...
-											// NOTE when a constructor isn't verifiable, the static initializer
-											// doesn't run either (or so I believe)
-											throw new VerifyError("Call to wrong initialization method");
-										}
-										// after the constructor invocation, the uninitialized reference, is now
-										// suddenly initialized
+										// after we've invoked the constructor, the uninitialized references
+										// are now initialized
 										if(type == VerifierTypeWrapper.UninitializedThis)
 										{
 											s.MarkInitialized(type, wrapper, i);
 											s.SetUnitializedThis(false);
 										}
-										else
+										else if(VerifierTypeWrapper.IsNew(type))
 										{
 											s.MarkInitialized(type, ((VerifierTypeWrapper)type).UnderlyingType, i);
 										}
-									}
-									else
-									{
-										if(instr.NormalizedOpCode != NormalizedByteCode.__invokeinterface)
+										else
 										{
-											TypeWrapper refType = s.PopObjectType();
-											TypeWrapper targetType = cpi.GetClassType();
-											if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && 
-												!targetType.IsUnloadable &&
-												!refType.IsAssignableTo(targetType))
-											{
-												throw new VerifyError("Incompatible object argument for function call");
-											}
-											// for invokespecial we also need to make sure we're calling ourself or a base class
-											if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
-											{
-												if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && !refType.IsSubTypeOf(wrapper))
-												{
-													throw new VerifyError("Incompatible target object for invokespecial");
-												}
-												if(!targetType.IsUnloadable && !wrapper.IsSubTypeOf(targetType))
-												{
-													throw new VerifyError("Invokespecial cannot call subclass methods");
-												}
-											}
-										}
-										else /* __invokeinterface */
-										{
-											// NOTE previously we checked the type here, but it turns out that
-											// the JVM throws an IncompatibleClassChangeError at runtime instead
-											// of a VerifyError if this doesn't match
-											s.PopObjectType();
+											// This is a VerifyError, but it will be caught by our second pass
 										}
 									}
 								}
@@ -2204,22 +2279,10 @@ class MethodAnalyzer
 								case NormalizedByteCode.__if_acmpne:
 								case NormalizedByteCode.__ifnull:
 								case NormalizedByteCode.__ifnonnull:
-									if(instr.Arg1 < 0)
-									{
-										// backward branches cannot have uninitialized objects on
-										// the stack or in local variables
-										s.CheckUninitializedObjRefs();
-									}
 									state[i + 1] += s;
 									state[method.PcIndexMap[instr.PC + instr.Arg1]] += s;
 									break;
 								case NormalizedByteCode.__goto:
-									if(instr.Arg1 < 0)
-									{
-										// backward branches cannot have uninitialized objects on
-										// the stack or in local variables
-										s.CheckUninitializedObjRefs();
-									}
 									state[method.PcIndexMap[instr.PC + instr.Arg1]] += s;
 									break;
 								case NormalizedByteCode.__jsr:
@@ -2300,79 +2363,124 @@ class MethodAnalyzer
 				{
 					done = false;
 					instructions[i].flags |= InstructionFlags.Processed;
+					StackState stack = new StackState(state[i]);
 					switch(instructions[i].NormalizedOpCode)
 					{
 						case NormalizedByteCode.__invokeinterface:
 						case NormalizedByteCode.__invokespecial:
 						case NormalizedByteCode.__invokestatic:
 						case NormalizedByteCode.__invokevirtual:
+							VerifyInvoke(wrapper, ref instructions[i], stack);
+							break;
+						case NormalizedByteCode.__getfield:
+						case NormalizedByteCode.__putfield:
+						case NormalizedByteCode.__getstatic:
+						case NormalizedByteCode.__putstatic:
+							VerifyFieldAccess(wrapper, mw, ref instructions[i], stack);
+							break;
+						case NormalizedByteCode.__ldc:
+							if(classFile.GetConstantPoolConstantType(instructions[i].Arg1) == ClassFile.ConstantType.Class)
+							{
+								TypeWrapper tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+								if(tw.IsUnloadable && JVM.DisableDynamicBinding)
+								{
+									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
+								}
+							}
+							break;
+						case NormalizedByteCode.__new:
 						{
-							ClassFile.ConstantPoolItemMI cpi = GetMethodref(instructions[i].Arg1);
-							if((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (instructions[i].NormalizedOpCode == NormalizedByteCode.__invokeinterface))
+							TypeWrapper tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+							if(tw.IsUnloadable)
 							{
-								throw new VerifyError("Illegal constant pool index");
+								if(JVM.DisableDynamicBinding)
+								{
+									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
+								}
 							}
-							if(instructions[i].NormalizedOpCode != NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
+							else if(!tw.IsAccessibleFrom(wrapper))
 							{
-								throw new VerifyError("Must call initializers using invokespecial");
+								instructions[i].SetHardError(HardError.IllegalAccessError, AllocErrorMessage("Try to access class " + tw.Name + " from class " + wrapper.Name));
 							}
-							if(cpi.Name == "<clinit>")
+							else if(tw.IsAbstract)
 							{
-								throw new VerifyError("Illegal call to internal method");
+								instructions[i].SetHardError(HardError.InstantiationError, AllocErrorMessage(tw.Name));
 							}
-							NormalizedByteCode invoke = instructions[i].NormalizedOpCode;
-							TypeWrapper thisType;
-							if(invoke == NormalizedByteCode.__invokestatic)
+							break;
+						}
+						case NormalizedByteCode.__multianewarray:
+						case NormalizedByteCode.__anewarray:
+						{
+							TypeWrapper tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+							if(tw.IsUnloadable)
 							{
-								thisType = null;
+								if(JVM.DisableDynamicBinding)
+								{
+									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
+								}
+							}
+							else if(!tw.IsAccessibleFrom(wrapper))
+							{
+								instructions[i].SetHardError(HardError.IllegalAccessError, AllocErrorMessage("Try to access class " + tw.Name + " from class " + wrapper.Name));
+							}
+							break;
+						}
+						case NormalizedByteCode.__checkcast:
+						case NormalizedByteCode.__instanceof:
+						{
+							TypeWrapper tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+							if(tw.IsUnloadable)
+							{
+								// If the type is unloadable, we always generate the dynamic code
+								// (regardless of JVM.DisableDynamicBinding), because at runtime,
+								// null references should always pass thru without attempting
+								// to load the type (for Sun compatibility).
+							}
+							else if(!tw.IsAccessibleFrom(wrapper))
+							{
+								instructions[i].SetHardError(HardError.IllegalAccessError, AllocErrorMessage("Try to access class " + tw.Name + " from class " + wrapper.Name));
+							}
+							break;
+						}
+						case NormalizedByteCode.__aaload:
+						{
+							stack.PopInt();
+							TypeWrapper tw = stack.PopArrayType();
+							if(tw == VerifierTypeWrapper.Null)
+							{
+							}
+							else if(tw.IsUnloadable)
+							{
+								if(JVM.DisableDynamicBinding)
+								{
+									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
+								}
 							}
 							else
 							{
-								thisType = SigTypeToClassName(GetRawStackTypeWrapper(i, cpi.GetArgTypes().Length), cpi.GetClassType(), wrapper);
+								tw = tw.ElementTypeWrapper;
+								if(tw.IsPrimitive)
+								{
+									throw new VerifyError("Object array expected");
+								}
 							}
-							MethodWrapper targetMethod = invoke == NormalizedByteCode.__invokespecial ? cpi.GetMethodForInvokespecial() : cpi.GetMethod();
-							if(targetMethod != null)
+							break;
+						}
+						case NormalizedByteCode.__aastore:
+						{
+							stack.PopObjectType();
+							stack.PopInt();
+							TypeWrapper tw = stack.PopArrayType();
+							if(tw.IsUnloadable)
 							{
-								string errmsg = CheckLoaderConstraints(cpi, targetMethod);
-								if(errmsg != null)
+								if(JVM.DisableDynamicBinding)
 								{
-									instructions[i].SetHardError(HardError.LinkageError, AllocErrorMessage(errmsg));
-								}
-								else if(targetMethod.IsStatic == (invoke == NormalizedByteCode.__invokestatic))
-								{
-									if(targetMethod.IsAbstract && invoke == NormalizedByteCode.__invokespecial)
-									{
-										instructions[i].SetHardError(HardError.AbstractMethodError, AllocErrorMessage(cpi.Class + "." + cpi.Name + cpi.Signature));
-									}
-									else if(targetMethod.IsAccessibleFrom(cpi.GetClassType(), wrapper, thisType))
-									{
-										break;
-									}
-									else
-									{
-										// NOTE special case for incorrect invocation of Object.clone(), because this could mean
-										// we're calling clone() on an array
-										// (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
-										if(cpi.GetClassType() == CoreClasses.java.lang.Object.Wrapper && thisType.IsArray && cpi.Name == "clone")
-										{
-											// NOTE since thisType is an array, we can be sure that the method is already linked
-											targetMethod = thisType.GetMethodWrapper(cpi.Name, cpi.Signature, false);
-											if(targetMethod != null && targetMethod.IsPublic)
-											{
-												break;
-											}
-										}
-										instructions[i].SetHardError(HardError.IllegalAccessError, AllocErrorMessage("Try to access method " + targetMethod.DeclaringType.Name + "." + cpi.Name + cpi.Signature + " from class " + wrapper.Name));
-									}
-								}
-								else
-								{
-									instructions[i].SetHardError(HardError.IncompatibleClassChangeError, AllocErrorMessage("static call to non-static method (or v.v.)"));
+									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
 								}
 							}
 							else
 							{
-								instructions[i].SetHardError(HardError.NoSuchMethodError, AllocErrorMessage(cpi.Class + "." + cpi.Name + cpi.Signature));
+								// TODO do we need any other tests?
 							}
 							break;
 						}
@@ -2392,13 +2500,30 @@ class MethodAnalyzer
 					{
 						case NormalizedByteCode.__tableswitch:
 						case NormalizedByteCode.__lookupswitch:
+						{
+							bool hasbackbranch = false;
 							for(int j = 0; j < instructions[i].SwitchEntryCount; j++)
 							{
+								hasbackbranch |= instructions[i].GetSwitchTargetOffset(j) < 0;
 								instructions[method.PcIndexMap[instructions[i].PC + instructions[i].GetSwitchTargetOffset(j)]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							}
+							hasbackbranch |= instructions[i].DefaultOffset < 0;
 							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].DefaultOffset]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							if(hasbackbranch)
+							{
+								// backward branches cannot have uninitialized objects on
+								// the stack or in local variables
+								state[i].CheckUninitializedObjRefs();
+							}
 							break;
+						}
 						case NormalizedByteCode.__goto:
+							if(instructions[i].Arg1 < 0)
+							{
+								// backward branches cannot have uninitialized objects on
+								// the stack or in local variables
+								state[i].CheckUninitializedObjRefs();
+							}
 							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							break;
 						case NormalizedByteCode.__ifeq:
@@ -2417,10 +2542,17 @@ class MethodAnalyzer
 						case NormalizedByteCode.__if_acmpne:
 						case NormalizedByteCode.__ifnull:
 						case NormalizedByteCode.__ifnonnull:
+							if(instructions[i].Arg1 < 0)
+							{
+								// backward branches cannot have uninitialized objects on
+								// the stack or in local variables
+								state[i].CheckUninitializedObjRefs();
+							}
 							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							instructions[i + 1].flags |= InstructionFlags.Reachable;
 							break;
 						case NormalizedByteCode.__jsr:
+							// TODO should we check for unitialized objects?
 							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							didjsr = true;
 							break;
@@ -2583,6 +2715,300 @@ class MethodAnalyzer
 			}
 		}
 		this.allLocalVars = (LocalVar[])locals.ToArray(typeof(LocalVar));
+	}
+
+	private void VerifyInvoke(TypeWrapper wrapper, ref ClassFile.Method.Instruction instr, StackState stack)
+	{
+		ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
+		if((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface))
+		{
+			throw new VerifyError("Illegal constant pool index");
+		}
+		if(instr.NormalizedOpCode != NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
+		{
+			throw new VerifyError("Must call initializers using invokespecial");
+		}
+		if(cpi.Name == "<clinit>")
+		{
+			throw new VerifyError("Illegal call to internal method");
+		}
+		NormalizedByteCode invoke = instr.NormalizedOpCode;
+		TypeWrapper[] args = cpi.GetArgTypes();
+		for(int j = args.Length - 1; j >= 0; j--)
+		{
+			stack.PopType(args[j]);
+		}
+		if(invoke == NormalizedByteCode.__invokeinterface)
+		{
+			int argcount = args.Length + 1;
+			for(int j = 0; j < args.Length; j++)
+			{
+				if(args[j].IsWidePrimitive)
+				{
+					argcount++;
+				}
+			}
+			if(instr.Arg2 != argcount)
+			{
+				throw new VerifyError("Inconsistent args size");
+			}
+		}
+		TypeWrapper thisType;
+		if(invoke == NormalizedByteCode.__invokestatic)
+		{
+			thisType = null;
+		}
+		else
+		{
+			thisType = SigTypeToClassName(stack.PeekType(), cpi.GetClassType(), wrapper);
+			if(cpi.Name == "<init>")
+			{
+				TypeWrapper type = stack.PopType();
+				if((VerifierTypeWrapper.IsNew(type) && ((VerifierTypeWrapper)type).UnderlyingType != cpi.GetClassType()) ||
+					(type == VerifierTypeWrapper.UninitializedThis && cpi.GetClassType() != wrapper.BaseTypeWrapper && cpi.GetClassType() != wrapper) ||
+					(!VerifierTypeWrapper.IsNew(type) && type != VerifierTypeWrapper.UninitializedThis))
+				{
+					// TODO oddly enough, Java fails verification for the class without
+					// even running the constructor, so maybe constructors are always
+					// verified...
+					// NOTE when a constructor isn't verifiable, the static initializer
+					// doesn't run either (or so I believe)
+					throw new VerifyError("Call to wrong initialization method");
+				}
+			}
+			else
+			{
+				if(invoke != NormalizedByteCode.__invokeinterface)
+				{
+					TypeWrapper refType = stack.PopObjectType();
+					TypeWrapper targetType = cpi.GetClassType();
+					if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && 
+						!targetType.IsUnloadable &&
+						!refType.IsAssignableTo(targetType))
+					{
+						throw new VerifyError("Incompatible object argument for function call");
+					}
+					// for invokespecial we also need to make sure we're calling ourself or a base class
+					if(invoke == NormalizedByteCode.__invokespecial)
+					{
+						if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) && !refType.IsSubTypeOf(wrapper))
+						{
+							throw new VerifyError("Incompatible target object for invokespecial");
+						}
+						if(!targetType.IsUnloadable && !wrapper.IsSubTypeOf(targetType))
+						{
+							throw new VerifyError("Invokespecial cannot call subclass methods");
+						}
+					}
+				}
+				else /* __invokeinterface */
+				{
+					// NOTE previously we checked the type here, but it turns out that
+					// the JVM throws an IncompatibleClassChangeError at runtime instead
+					// of a VerifyError if this doesn't match
+					stack.PopObjectType();
+				}
+			}
+		}
+
+		if(cpi.GetClassType().IsUnloadable || (thisType != null && thisType.IsUnloadable))
+		{
+			if(JVM.DisableDynamicBinding)
+			{
+				instr.SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(cpi.GetClassType().Name));
+			}
+			else
+			{
+				switch(invoke)
+				{
+					case NormalizedByteCode.__invokeinterface:
+						instr.PatchOpCode(NormalizedByteCode.__dynamic_invokeinterface);
+						break;
+					case NormalizedByteCode.__invokestatic:
+						instr.PatchOpCode(NormalizedByteCode.__dynamic_invokestatic);
+						break;
+					case NormalizedByteCode.__invokevirtual:
+						instr.PatchOpCode(NormalizedByteCode.__dynamic_invokevirtual);
+						break;
+					case NormalizedByteCode.__invokespecial:
+						instr.SetHardError(HardError.LinkageError, AllocErrorMessage("Base class no longer loadable"));
+						break;
+					default:
+						throw new InvalidOperationException();
+				}
+			}
+		}
+		else if(cpi.GetClassType().IsInterface != (invoke == NormalizedByteCode.__invokeinterface))
+		{
+			instr.SetHardError(HardError.IncompatibleClassChangeError, AllocErrorMessage("invokeinterface on non-interface"));
+		}
+		else
+		{
+			MethodWrapper targetMethod = invoke == NormalizedByteCode.__invokespecial ? cpi.GetMethodForInvokespecial() : cpi.GetMethod();
+			if(targetMethod != null)
+			{
+				string errmsg = CheckLoaderConstraints(cpi, targetMethod);
+				if(errmsg != null)
+				{
+					instr.SetHardError(HardError.LinkageError, AllocErrorMessage(errmsg));
+				}
+				else if(targetMethod.IsStatic == (invoke == NormalizedByteCode.__invokestatic))
+				{
+					if(targetMethod.IsAbstract && invoke == NormalizedByteCode.__invokespecial)
+					{
+						instr.SetHardError(HardError.AbstractMethodError, AllocErrorMessage(cpi.Class + "." + cpi.Name + cpi.Signature));
+					}
+					else if(targetMethod.IsAccessibleFrom(cpi.GetClassType(), wrapper, thisType))
+					{
+						return;
+					}
+					else
+					{
+						// NOTE special case for incorrect invocation of Object.clone(), because this could mean
+						// we're calling clone() on an array
+						// (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
+						if(cpi.GetClassType() == CoreClasses.java.lang.Object.Wrapper && thisType.IsArray && cpi.Name == "clone")
+						{
+							// Patch the instruction, so that the compiler doesn't need to do this test again.
+							instr.PatchOpCode(NormalizedByteCode.__clone_array);
+							return;
+						}
+						instr.SetHardError(HardError.IllegalAccessError, AllocErrorMessage("Try to access method " + targetMethod.DeclaringType.Name + "." + cpi.Name + cpi.Signature + " from class " + wrapper.Name));
+					}
+				}
+				else
+				{
+					instr.SetHardError(HardError.IncompatibleClassChangeError, AllocErrorMessage("static call to non-static method (or v.v.)"));
+				}
+			}
+			else
+			{
+				instr.SetHardError(HardError.NoSuchMethodError, AllocErrorMessage(cpi.Class + "." + cpi.Name + cpi.Signature));
+			}
+		}
+	}
+
+	private void VerifyFieldAccess(TypeWrapper wrapper, MethodWrapper mw, ref ClassFile.Method.Instruction instr, StackState stack)
+	{
+		ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
+		bool isStatic;
+		bool write;
+		TypeWrapper thisType;
+		switch(instr.NormalizedOpCode)
+		{
+			case NormalizedByteCode.__getfield:
+				isStatic = false;
+				write = false;
+				thisType = SigTypeToClassName(stack.PopObjectType(GetFieldref(instr.Arg1).GetClassType()), cpi.GetClassType(), wrapper);
+				break;
+			case NormalizedByteCode.__putfield:
+				stack.PopType(GetFieldref(instr.Arg1).GetFieldType());
+				isStatic = false;
+				write = true;
+				// putfield is allowed to access the unintialized this
+				if(stack.PeekType() == VerifierTypeWrapper.UninitializedThis
+					&& wrapper.IsAssignableTo(GetFieldref(instr.Arg1).GetClassType()))
+				{
+					thisType = wrapper;
+				}
+				else
+				{
+					thisType = SigTypeToClassName(stack.PopObjectType(GetFieldref(instr.Arg1).GetClassType()), cpi.GetClassType(), wrapper);
+				}
+				break;
+			case NormalizedByteCode.__getstatic:
+				isStatic = true;
+				write = false;
+				thisType = null;
+				break;
+			case NormalizedByteCode.__putstatic:
+				// special support for when we're being called from IsSideEffectFreeStaticInitializer
+				if(mw == null)
+				{
+					switch(GetFieldref(instr.Arg1).Signature[0])
+					{
+						case 'B':
+						case 'Z':
+						case 'C':
+						case 'S':
+						case 'I':
+							stack.PopInt();
+							break;
+						case 'F':
+							stack.PopFloat();
+							break;
+						case 'D':
+							stack.PopDouble();
+							break;
+						case 'J':
+							stack.PopLong();
+							break;
+						case 'L':
+						case '[':
+							if(stack.PopAnyType() != VerifierTypeWrapper.Null)
+							{
+								throw new VerifyError();
+							}
+							break;
+						default:
+							throw new InvalidOperationException();
+					}
+				}
+				else
+				{
+					stack.PopType(GetFieldref(instr.Arg1).GetFieldType());
+				}
+				isStatic = true;
+				write = true;
+				thisType = null;
+				break;
+			default:
+				throw new InvalidOperationException();
+		}
+		if(mw == null)
+		{
+			// We're being called from IsSideEffectFreeStaticInitializer,
+			// no further checks are possible (nor needed).
+		}
+		else if(cpi.GetClassType().IsUnloadable)
+		{
+			if(JVM.DisableDynamicBinding)
+			{
+				instr.SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(cpi.GetClassType().Name));
+				return;
+			}
+		}
+		else
+		{
+			FieldWrapper field = cpi.GetField();
+			if(field == null)
+			{
+				instr.SetHardError(HardError.NoSuchFieldError, AllocErrorMessage(cpi.Class + "." + cpi.Name));
+				return;
+			}
+			if(cpi.GetFieldType() != field.FieldTypeWrapper && !field.FieldTypeWrapper.IsUnloadable)
+			{
+				instr.SetHardError(HardError.LinkageError, AllocErrorMessage("Loader constraints violated: " + field.DeclaringType.Name + "." + field.Name));
+				return;
+			}
+			if(field.IsStatic != isStatic)
+			{
+				instr.SetHardError(HardError.IncompatibleClassChangeError, AllocErrorMessage("Static field access to non-static field (or v.v.)"));
+				return;
+			}
+			if(!field.IsAccessibleFrom(cpi.GetClassType(), wrapper, thisType))
+			{
+				instr.SetHardError(HardError.IllegalAccessError, AllocErrorMessage("Try to access field " + field.DeclaringType.Name + "." + field.Name + " from class " + wrapper.Name));
+				return;
+			}
+			// are we trying to mutate a final field? (they are read-only from outside of the defining class)
+			if(write && field.IsFinal
+				&& ((isStatic ? wrapper != cpi.GetClassType() : wrapper != thisType) || (JVM.StrictFinalFieldSemantics && (isStatic ? (mw != null && mw.Name != "<clinit>") : (mw == null || mw.Name != "<init>")))))
+			{
+				instr.SetHardError(HardError.IllegalAccessError, AllocErrorMessage("Field " + field.DeclaringType.Name + "." + field.Name + " is final"));
+				return;
+			}
+		}
 	}
 
 	// TODO this method should have a better name

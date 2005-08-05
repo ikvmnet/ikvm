@@ -291,6 +291,7 @@ namespace IKVM.Internal
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static ikvm.@internal.LibraryVMInterface lib;
 		private static bool strictFinalFieldSemantics;
+		private static bool finishingForDebugSave;
 
 		internal static Version SafeGetAssemblyVersion(Assembly asm)
 		{
@@ -451,6 +452,18 @@ namespace IKVM.Internal
 			get
 			{
 				return compilationPhase1;
+			}
+		}
+
+		internal static bool FinishingForDebugSave
+		{
+			get
+			{
+				return finishingForDebugSave;
+			}
+			set
+			{
+				finishingForDebugSave = value;
 			}
 		}
 
@@ -1969,7 +1982,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal override void Finish(bool forDebugSave)
+				internal override void Finish()
 				{
 				}
 

@@ -580,91 +580,6 @@ class Compiler
 		}
 	}
 
-	private class EmitException : ApplicationException
-	{
-		private TypeWrapper type;
-
-		internal EmitException(string message, TypeWrapper type)
-			: base(message)
-		{
-			this.type = type;
-		}
-
-		internal void Emit(ILGenerator ilgen, ClassFile classFile, ClassFile.Method m)
-		{
-			Tracer.Error(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", type.Name, Message, classFile.Name, m.Name, m.Signature);
-			ilgen.Emit(OpCodes.Ldstr, Message);
-			MethodWrapper method = type.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
-			method.Link();
-			method.EmitNewobj(ilgen);
-			ilgen.Emit(OpCodes.Throw);
-		}
-	}
-
-	private sealed class NoClassDefFoundError : EmitException
-	{
-		internal NoClassDefFoundError(string message)
-			: base(message, ClassLoaderWrapper.LoadClassCritical("java.lang.NoClassDefFoundError"))
-		{
-		}
-	}
-
-	private sealed class IllegalAccessError : EmitException
-	{
-		internal IllegalAccessError(string message)
-			: base(message, ClassLoaderWrapper.LoadClassCritical("java.lang.IllegalAccessError"))
-		{
-		}
-	}
-
-	private sealed class InstantiationError : EmitException
-	{
-		internal InstantiationError(string message)
-			: base(message, ClassLoaderWrapper.LoadClassCritical("java.lang.InstantiationError"))
-		{
-		}
-	}
-
-	private sealed class IncompatibleClassChangeError : EmitException
-	{
-		internal IncompatibleClassChangeError(string message)
-			: base(message, ClassLoaderWrapper.LoadClassCritical("java.lang.IncompatibleClassChangeError"))
-		{
-		}
-	}
-
-	private sealed class NoSuchFieldError : EmitException
-	{
-		internal NoSuchFieldError(string message)
-			: base(message, ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchFieldError"))
-		{
-		}
-	}
-
-	private sealed class AbstractMethodError : EmitException
-	{
-		internal AbstractMethodError(string message)
-			: base(message, ClassLoaderWrapper.LoadClassCritical("java.lang.AbstractMethodError"))
-		{
-		}
-	}
-	
-	private sealed class NoSuchMethodError : EmitException
-	{
-		internal NoSuchMethodError(string message)
-			: base(message, ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchMethodError"))
-		{
-		}
-	}
-
-	private sealed class LinkageError : EmitException
-	{
-		internal LinkageError(string message)
-			: base(message, ClassLoaderWrapper.LoadClassCritical("java.lang.LinkageError"))
-		{
-		}
-	}
-
 	private sealed class ReturnCookie
 	{
 		private Label stub;
@@ -1158,31 +1073,6 @@ class Compiler
 		}
 	}
 
-	private void CheckLoaderConstraints(ClassFile.ConstantPoolItemFieldref cpi, FieldWrapper fw)
-	{
-		if(cpi.GetFieldType() != fw.FieldTypeWrapper && !fw.FieldTypeWrapper.IsUnloadable)
-		{
-			throw new LinkageError("Loader constraints violated: " + fw.DeclaringType.Name + "." + fw.Name);
-		}
-	}
-
-	private void CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, MethodWrapper mw)
-	{
-		if(cpi.GetRetType() != mw.ReturnType && !mw.ReturnType.IsUnloadable)
-		{
-			throw new LinkageError("Loader constraints violated (return type): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
-		}
-		TypeWrapper[] here = cpi.GetArgTypes();
-		TypeWrapper[] there = mw.GetParameters();
-		for(int i = 0; i < here.Length; i++)
-		{
-			if(here[i] != there[i] && !there[i].IsUnloadable)
-			{
-				throw new LinkageError("Loader constraints violated (arg " + i + "): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
-			}
-		}
-	}
-
 	private bool IsGuardedBlock(Stack blockStack, int instructionIndex, int instructionCount)
 	{
 		int start_pc = m.Instructions[instructionIndex].PC;
@@ -1329,7 +1219,7 @@ class Compiler
 					else
 					{
 						exceptionTypeWrapper = classFile.GetConstantPoolClassType(exc.catch_type);
-						remap = !exceptionTypeWrapper.IsSubTypeOf(cli_System_Exception);
+						remap = exceptionTypeWrapper.IsUnloadable || !exceptionTypeWrapper.IsSubTypeOf(cli_System_Exception);
 					}
 					Type excType = exceptionTypeWrapper.TypeAsExceptionType;
 					bool mapSafe = !exceptionTypeWrapper.IsUnloadable && !exceptionTypeWrapper.IsMapUnsafeException && !exceptionTypeWrapper.IsRemapped;
@@ -1503,334 +1393,297 @@ class Compiler
 				}
 			}
 
-			try
+			switch(instr.NormalizedOpCode)
 			{
-				switch(instr.NormalizedOpCode)
+				case NormalizedByteCode.__getstatic:
+				case NormalizedByteCode.__putstatic:
+				case NormalizedByteCode.__getfield:
+				case NormalizedByteCode.__putfield:
+					GetPutField(instr, i);
+					break;
+				case NormalizedByteCode.__aconst_null:
+					ilGenerator.Emit(OpCodes.Ldnull);
+					break;
+				case NormalizedByteCode.__iconst:
+					EmitLdc_I4(instr.NormalizedArg1);
+					break;
+				case NormalizedByteCode.__lconst_0:
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.Emit(OpCodes.Conv_I8);
+					break;
+				case NormalizedByteCode.__lconst_1:
+					ilGenerator.Emit(OpCodes.Ldc_I4_1);
+					ilGenerator.Emit(OpCodes.Conv_I8);
+					break;
+				case NormalizedByteCode.__fconst_0:
+				case NormalizedByteCode.__dconst_0:
+					// floats are stored as native size on the stack, so both R4 and R8 are the same
+					ilGenerator.Emit(OpCodes.Ldc_R4, 0.0f);
+					break;
+				case NormalizedByteCode.__fconst_1:
+				case NormalizedByteCode.__dconst_1:
+					// floats are stored as native size on the stack, so both R4 and R8 are the same
+					ilGenerator.Emit(OpCodes.Ldc_R4, 1.0f);
+					break;
+				case NormalizedByteCode.__fconst_2:
+					ilGenerator.Emit(OpCodes.Ldc_R4, 2.0f);
+					break;
+				case NormalizedByteCode.__ldc:
 				{
-					case NormalizedByteCode.__getstatic:
-					case NormalizedByteCode.__putstatic:
-					case NormalizedByteCode.__getfield:
-					case NormalizedByteCode.__putfield:
-						GetPutField(instr, i);
-						break;
-					case NormalizedByteCode.__aconst_null:
-						ilGenerator.Emit(OpCodes.Ldnull);
-						break;
-					case NormalizedByteCode.__iconst:
-						EmitLdc_I4(instr.NormalizedArg1);
-						break;
-					case NormalizedByteCode.__lconst_0:
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.Emit(OpCodes.Conv_I8);
-						break;
-					case NormalizedByteCode.__lconst_1:
-						ilGenerator.Emit(OpCodes.Ldc_I4_1);
-						ilGenerator.Emit(OpCodes.Conv_I8);
-						break;
-					case NormalizedByteCode.__fconst_0:
-					case NormalizedByteCode.__dconst_0:
-						// floats are stored as native size on the stack, so both R4 and R8 are the same
-						ilGenerator.Emit(OpCodes.Ldc_R4, 0.0f);
-						break;
-					case NormalizedByteCode.__fconst_1:
-					case NormalizedByteCode.__dconst_1:
-						// floats are stored as native size on the stack, so both R4 and R8 are the same
-						ilGenerator.Emit(OpCodes.Ldc_R4, 1.0f);
-						break;
-					case NormalizedByteCode.__fconst_2:
-						ilGenerator.Emit(OpCodes.Ldc_R4, 2.0f);
-						break;
-					case NormalizedByteCode.__ldc:
+					int constant = instr.Arg1;
+					switch(classFile.GetConstantPoolConstantType(constant))
 					{
-						int constant = instr.Arg1;
-						switch(classFile.GetConstantPoolConstantType(constant))
+						case ClassFile.ConstantType.Double:
+							ilGenerator.Emit(OpCodes.Ldc_R8, classFile.GetConstantPoolConstantDouble(constant));
+							break;
+						case ClassFile.ConstantType.Float:
+							ilGenerator.Emit(OpCodes.Ldc_R4, classFile.GetConstantPoolConstantFloat(constant));
+							break;
+						case ClassFile.ConstantType.Integer:
+							EmitLdc_I4(classFile.GetConstantPoolConstantInteger(constant));
+							break;
+						case ClassFile.ConstantType.Long:
+							ilGenerator.Emit(OpCodes.Ldc_I8, classFile.GetConstantPoolConstantLong(constant));
+							break;
+						case ClassFile.ConstantType.String:
+							ilGenerator.Emit(OpCodes.Ldstr, classFile.GetConstantPoolConstantString(constant));
+							break;
+						case ClassFile.ConstantType.Class:
 						{
-							case ClassFile.ConstantType.Double:
-								ilGenerator.Emit(OpCodes.Ldc_R8, classFile.GetConstantPoolConstantDouble(constant));
-								break;
-							case ClassFile.ConstantType.Float:
-								ilGenerator.Emit(OpCodes.Ldc_R4, classFile.GetConstantPoolConstantFloat(constant));
-								break;
-							case ClassFile.ConstantType.Integer:
-								EmitLdc_I4(classFile.GetConstantPoolConstantInteger(constant));
-								break;
-							case ClassFile.ConstantType.Long:
-								ilGenerator.Emit(OpCodes.Ldc_I8, classFile.GetConstantPoolConstantLong(constant));
-								break;
-							case ClassFile.ConstantType.String:
-								ilGenerator.Emit(OpCodes.Ldstr, classFile.GetConstantPoolConstantString(constant));
-								break;
-							case ClassFile.ConstantType.Class:
+							TypeWrapper tw = classFile.GetConstantPoolClassType(constant);
+							if(tw.IsUnloadable)
 							{
-								TypeWrapper tw = classFile.GetConstantPoolClassType(constant);
-								if(tw.IsUnloadable)
-								{
-									if(JVM.DisableDynamicBinding)
-									{
-										throw new NoClassDefFoundError(tw.Name);
-									}
-									Profiler.Count("EmitDynamicClassLiteral");
-									ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-									ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
-									ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicClassLiteral"));
-								}
-								else
-								{
-									ilGenerator.Emit(OpCodes.Ldtoken, tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
-									ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandleMethod);
-								}
-								java_lang_Class.EmitCheckcast(clazz, ilGenerator);
-								break;
-							}
-							default:
-								throw new InvalidOperationException();
-						}
-						break;
-					}
-					case NormalizedByteCode.__invokestatic:
-					{
-						ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
-						// HACK special case for calls to System.arraycopy, if the array arguments on the stack
-						// are of a known array type, we can redirect to an optimized version of arraycopy.
-						// Note that we also have to handle VMSystem.arraycopy, because StringBuffer directly calls
-						// this method to avoid prematurely initialising System.
-						if((cpi.Class == "java.lang.System" || cpi.Class == "java.lang.VMSystem")&&
-							cpi.Name == "arraycopy" &&
-							cpi.Signature == "(Ljava.lang.Object;ILjava.lang.Object;II)V" &&
-							cpi.GetClassType().GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())
-						{
-							TypeWrapper dst_type = ma.GetRawStackTypeWrapper(i, 2);
-							TypeWrapper src_type = ma.GetRawStackTypeWrapper(i, 4);
-							if(dst_type.IsArray && dst_type == src_type)
-							{
-								switch(dst_type.Name[1])
-								{
-									case 'J':
-									case 'D':
-										ilGenerator.Emit(OpCodes.Call, arraycopy_primitive_8Method);
-										break;
-									case 'I':
-									case 'F':
-										ilGenerator.Emit(OpCodes.Call, arraycopy_primitive_4Method);
-										break;
-									case 'S':
-									case 'C':
-										ilGenerator.Emit(OpCodes.Call, arraycopy_primitive_2Method);
-										break;
-									case 'B':
-									case 'Z':
-										ilGenerator.Emit(OpCodes.Call, arraycopy_primitive_1Method);
-										break;
-									default:
-										// TODO once the verifier tracks actual types (i.e. it knows that
-										// a particular reference is the result of a "new" opcode) we can
-										// use the fast version if the exact destination type is known
-										// (in that case the "dst_type == src_type" above should
-										// be changed to "src_type.IsAssignableTo(dst_type)".
-										TypeWrapper elemtw = dst_type.ElementTypeWrapper;
-										// note that IsFinal returns true for array types, so we have to be careful!
-										if(!elemtw.IsArray && elemtw.IsFinal)
-										{
-											ilGenerator.Emit(OpCodes.Call, arraycopy_fastMethod);
-										}
-										else
-										{
-											ilGenerator.Emit(OpCodes.Call, arraycopyMethod);
-										}
-										break;
-								}
-								break;
-							}
-						}
-						MethodWrapper method = GetMethodCallEmitter(cpi, null, NormalizedByteCode.__invokestatic);
-						// if the stack values don't match the argument types (for interface argument types)
-						// we must emit code to cast the stack value to the interface type
-						CastInterfaceArgs(method, cpi.GetArgTypes(), i, false, false);
-						method.EmitCall(ilGenerator);
-						method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
-						nonleaf = true;
-						break;
-					}
-					case NormalizedByteCode.__invokevirtual:
-					case NormalizedByteCode.__invokeinterface:
-					case NormalizedByteCode.__invokespecial:
-					{
-						nonleaf = true;
-						ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
-						int argcount = cpi.GetArgTypes().Length;
-						TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
-						TypeWrapper thisType = SigTypeToClassName(type, cpi.GetClassType());
-
-						MethodWrapper method = GetMethodCallEmitter(cpi, thisType, instr.NormalizedOpCode);
-
-						// if the stack values don't match the argument types (for interface argument types)
-						// we must emit code to cast the stack value to the interface type
-						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>" && VerifierTypeWrapper.IsNew(type))
-						{
-							TypeWrapper[] args = cpi.GetArgTypes();
-							CastInterfaceArgs(method, args, i, false, false);
-						}
-						else
-						{
-							// the this reference is included in the argument list because it may also need to be cast
-							TypeWrapper[] methodArgs = cpi.GetArgTypes();
-							TypeWrapper[] args = new TypeWrapper[methodArgs.Length + 1];
-							methodArgs.CopyTo(args, 1);
-							if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
-							{
-								args[0] = cpi.GetClassType();
+								Profiler.Count("EmitDynamicClassLiteral");
+								ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+								ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
+								ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicClassLiteral"));
 							}
 							else
 							{
-								args[0] = thisType;
+								ilGenerator.Emit(OpCodes.Ldtoken, tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
+								ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandleMethod);
 							}
-							CastInterfaceArgs(method, args, i, true, instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && type != VerifierTypeWrapper.UninitializedThis);
+							java_lang_Class.EmitCheckcast(clazz, ilGenerator);
+							break;
 						}
-
-						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
+						default:
+							throw new InvalidOperationException();
+					}
+					break;
+				}
+				case NormalizedByteCode.__dynamic_invokestatic:
+				case NormalizedByteCode.__invokestatic:
+				{
+					ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
+					// HACK special case for calls to System.arraycopy, if the array arguments on the stack
+					// are of a known array type, we can redirect to an optimized version of arraycopy.
+					// Note that we also have to handle VMSystem.arraycopy, because StringBuffer directly calls
+					// this method to avoid prematurely initialising System.
+					if((cpi.Class == "java.lang.System" || cpi.Class == "java.lang.VMSystem")&&
+						cpi.Name == "arraycopy" &&
+						cpi.Signature == "(Ljava.lang.Object;ILjava.lang.Object;II)V" &&
+						cpi.GetClassType().GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())
+					{
+						TypeWrapper dst_type = ma.GetRawStackTypeWrapper(i, 2);
+						TypeWrapper src_type = ma.GetRawStackTypeWrapper(i, 4);
+						if(!dst_type.IsUnloadable && dst_type.IsArray && dst_type == src_type)
 						{
-							if(VerifierTypeWrapper.IsNew(type))
+							switch(dst_type.Name[1])
 							{
-								// we have to construct a list of all the unitialized references to the object
-								// we're about to create on the stack, so that we can reconstruct the stack after
-								// the "newobj" instruction
-								int trivcount = 0;
-								bool nontrivial = false;
-								bool[] stackfix = new bool[ma.GetStackHeight(i) - (argcount + 1)];
-								for(int j = 0; j < stackfix.Length; j++)
-								{
-									if(ma.GetRawStackTypeWrapper(i, argcount + 1 + j) == type)
+								case 'J':
+								case 'D':
+									ilGenerator.Emit(OpCodes.Call, arraycopy_primitive_8Method);
+									break;
+								case 'I':
+								case 'F':
+									ilGenerator.Emit(OpCodes.Call, arraycopy_primitive_4Method);
+									break;
+								case 'S':
+								case 'C':
+									ilGenerator.Emit(OpCodes.Call, arraycopy_primitive_2Method);
+									break;
+								case 'B':
+								case 'Z':
+									ilGenerator.Emit(OpCodes.Call, arraycopy_primitive_1Method);
+									break;
+								default:
+									// TODO once the verifier tracks actual types (i.e. it knows that
+									// a particular reference is the result of a "new" opcode) we can
+									// use the fast version if the exact destination type is known
+									// (in that case the "dst_type == src_type" above should
+									// be changed to "src_type.IsAssignableTo(dst_type)".
+									TypeWrapper elemtw = dst_type.ElementTypeWrapper;
+									// note that IsFinal returns true for array types, so we have to be careful!
+									if(!elemtw.IsArray && elemtw.IsFinal)
 									{
-										stackfix[j] = true;
-										if(trivcount == j)
-										{
-											trivcount++;
-										}
-										else
-										{
-											// if there is other stuff on the stack between the new object
-											// references, we need to do more work to construct the proper stack
-											// layout after the newobj instruction
-											nontrivial = true;
-										}
-									}
-								}
-								for(int j = 0; !nontrivial && j < m.MaxLocals; j++)
-								{
-									if(ma.GetLocalTypeWrapper(i, j) == type)
-									{
-										nontrivial = true;
-									}
-								}
-								if(!thisType.IsUnloadable && thisType.IsSubTypeOf(java_lang_Throwable))
-								{
-									// if the next instruction is an athrow and the exception type
-									// doesn't override fillInStackTrace, we can suppress the call
-									// to fillInStackTrace from the constructor (and this is
-									// a huge perf win)
-									// NOTE we also can't call suppressFillInStackTrace for non-Java
-									// exceptions (because then the suppress flag won't be cleared),
-									// but this case is handled by the "is fillInStackTrace overridden?"
-									// test, because cli.System.Exception overrides fillInStackTrace.
-									if(code[i + 1].NormalizedOpCode == NormalizedByteCode.__athrow
-										&& thisType.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == java_lang_Throwable)
-									{
-										ilGenerator.Emit(OpCodes.Call, suppressFillInStackTraceMethod);
-									}
-								}
-								method.EmitNewobj(ilGenerator);
-								if(!thisType.IsUnloadable && thisType.IsSubTypeOf(cli_System_Exception))
-								{
-									// HACK we call Throwable.initCause(null) to force creation of an ExceptionInfoHelper
-									// (which disables future remapping of the exception) and to prevent others from
-									// setting the cause.
-									ilGenerator.Emit(OpCodes.Dup);
-									ilGenerator.Emit(OpCodes.Ldnull);
-									initCauseMethod.EmitCallvirt(ilGenerator);
-									ilGenerator.Emit(OpCodes.Pop);
-								}
-								if(nontrivial)
-								{
-									// this could be done a little more efficiently, but since in practice this
-									// code never runs (for code compiled from Java source) it doesn't
-									// really matter
-									LocalBuilder newobj = ilGenerator.DeclareLocal(thisType.TypeAsLocalOrStackType);
-									ilGenerator.Emit(OpCodes.Stloc, newobj);
-									LocalBuilder[] tempstack = new LocalBuilder[stackfix.Length];
-									for(int j = 0; j < stackfix.Length; j++)
-									{
-										if(!stackfix[j])
-										{
-											TypeWrapper stacktype = ma.GetRawStackTypeWrapper(i, argcount + 1 + j);
-											// it could be another new object reference (not from current invokespecial <init>
-											// instruction)
-											if(stacktype == VerifierTypeWrapper.Null)
-											{
-												// NOTE we abuse the newobj local as a cookie to signal null!
-												tempstack[j] = newobj;
-												ilGenerator.Emit(OpCodes.Pop);
-											}
-											else if(!VerifierTypeWrapper.IsNew(stacktype))
-											{
-												LocalBuilder lb = ilGenerator.DeclareLocal(stacktype.TypeAsLocalOrStackType);
-												ilGenerator.Emit(OpCodes.Stloc, lb);
-												tempstack[j] = lb;
-											}
-										}
-									}
-									for(int j = stackfix.Length - 1; j >= 0; j--)
-									{
-										if(stackfix[j])
-										{
-											ilGenerator.Emit(OpCodes.Ldloc, newobj);
-										}
-										else if(tempstack[j] != null)
-										{
-											// NOTE we abuse the newobj local as a cookie to signal null!
-											if(tempstack[j] == newobj)
-											{
-												ilGenerator.Emit(OpCodes.Ldnull);
-											}
-											else
-											{
-												ilGenerator.Emit(OpCodes.Ldloc, tempstack[j]);
-											}
-										}
-									}
-									LocalVar[] locals = ma.GetLocalVarsForInvokeSpecial(i);
-									for(int j = 0; j < locals.Length; j++)
-									{
-										if(locals[j] != null)
-										{
-											if(locals[j].builder == null)
-											{
-												// for invokespecial the resulting type can never be null
-												locals[j].builder = ilGenerator.DeclareLocal(locals[j].type.TypeAsLocalOrStackType);
-											}
-											ilGenerator.Emit(OpCodes.Ldloc, newobj);
-											ilGenerator.Emit(OpCodes.Stloc, locals[j].builder);
-										}
-									}
-								}
-								else
-								{
-									if(trivcount == 0)
-									{
-										ilGenerator.Emit(OpCodes.Pop);
+										ilGenerator.Emit(OpCodes.Call, arraycopy_fastMethod);
 									}
 									else
 									{
-										for(int j = 1; j < trivcount; j++)
-										{
-											ilGenerator.Emit(OpCodes.Dup);
-										}
+										ilGenerator.Emit(OpCodes.Call, arraycopyMethod);
+									}
+									break;
+							}
+							break;
+						}
+					}
+					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
+					// if the stack values don't match the argument types (for interface argument types)
+					// we must emit code to cast the stack value to the interface type
+					CastInterfaceArgs(method, cpi.GetArgTypes(), i, false, false);
+					method.EmitCall(ilGenerator);
+					method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
+					nonleaf = true;
+					break;
+				}
+				case NormalizedByteCode.__dynamic_invokeinterface:
+				case NormalizedByteCode.__dynamic_invokevirtual:
+				case NormalizedByteCode.__invokevirtual:
+				case NormalizedByteCode.__invokeinterface:
+				case NormalizedByteCode.__invokespecial:
+				{
+					nonleaf = true;
+					ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
+					int argcount = cpi.GetArgTypes().Length;
+					TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
+					TypeWrapper thisType = SigTypeToClassName(type, cpi.GetClassType());
+
+					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
+
+					// if the stack values don't match the argument types (for interface argument types)
+					// we must emit code to cast the stack value to the interface type
+					if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>" && VerifierTypeWrapper.IsNew(type))
+					{
+						TypeWrapper[] args = cpi.GetArgTypes();
+						CastInterfaceArgs(method, args, i, false, false);
+					}
+					else
+					{
+						// the this reference is included in the argument list because it may also need to be cast
+						TypeWrapper[] methodArgs = cpi.GetArgTypes();
+						TypeWrapper[] args = new TypeWrapper[methodArgs.Length + 1];
+						methodArgs.CopyTo(args, 1);
+						if(instr.NormalizedOpCode == NormalizedByteCode.__invokeinterface)
+						{
+							args[0] = cpi.GetClassType();
+						}
+						else
+						{
+							args[0] = thisType;
+						}
+						CastInterfaceArgs(method, args, i, true, instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && type != VerifierTypeWrapper.UninitializedThis);
+					}
+
+					if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
+					{
+						if(VerifierTypeWrapper.IsNew(type))
+						{
+							// we have to construct a list of all the unitialized references to the object
+							// we're about to create on the stack, so that we can reconstruct the stack after
+							// the "newobj" instruction
+							int trivcount = 0;
+							bool nontrivial = false;
+							bool[] stackfix = new bool[ma.GetStackHeight(i) - (argcount + 1)];
+							for(int j = 0; j < stackfix.Length; j++)
+							{
+								if(ma.GetRawStackTypeWrapper(i, argcount + 1 + j) == type)
+								{
+									stackfix[j] = true;
+									if(trivcount == j)
+									{
+										trivcount++;
+									}
+									else
+									{
+										// if there is other stuff on the stack between the new object
+										// references, we need to do more work to construct the proper stack
+										// layout after the newobj instruction
+										nontrivial = true;
 									}
 								}
 							}
-							else
+							for(int j = 0; !nontrivial && j < m.MaxLocals; j++)
 							{
-								Debug.Assert(type == VerifierTypeWrapper.UninitializedThis);
-								method.EmitCall(ilGenerator);
+								if(ma.GetLocalTypeWrapper(i, j) == type)
+								{
+									nontrivial = true;
+								}
+							}
+							if(!thisType.IsUnloadable && thisType.IsSubTypeOf(java_lang_Throwable))
+							{
+								// if the next instruction is an athrow and the exception type
+								// doesn't override fillInStackTrace, we can suppress the call
+								// to fillInStackTrace from the constructor (and this is
+								// a huge perf win)
+								// NOTE we also can't call suppressFillInStackTrace for non-Java
+								// exceptions (because then the suppress flag won't be cleared),
+								// but this case is handled by the "is fillInStackTrace overridden?"
+								// test, because cli.System.Exception overrides fillInStackTrace.
+								if(code[i + 1].NormalizedOpCode == NormalizedByteCode.__athrow
+									&& thisType.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == java_lang_Throwable)
+								{
+									ilGenerator.Emit(OpCodes.Call, suppressFillInStackTraceMethod);
+								}
+							}
+							method.EmitNewobj(ilGenerator);
+							if(!thisType.IsUnloadable && thisType.IsSubTypeOf(cli_System_Exception))
+							{
+								// HACK we call Throwable.initCause(null) to force creation of an ExceptionInfoHelper
+								// (which disables future remapping of the exception) and to prevent others from
+								// setting the cause.
+								ilGenerator.Emit(OpCodes.Dup);
+								ilGenerator.Emit(OpCodes.Ldnull);
+								initCauseMethod.EmitCallvirt(ilGenerator);
+								ilGenerator.Emit(OpCodes.Pop);
+							}
+							if(nontrivial)
+							{
+								// this could be done a little more efficiently, but since in practice this
+								// code never runs (for code compiled from Java source) it doesn't
+								// really matter
+								LocalBuilder newobj = ilGenerator.DeclareLocal(thisType.TypeAsLocalOrStackType);
+								ilGenerator.Emit(OpCodes.Stloc, newobj);
+								LocalBuilder[] tempstack = new LocalBuilder[stackfix.Length];
+								for(int j = 0; j < stackfix.Length; j++)
+								{
+									if(!stackfix[j])
+									{
+										TypeWrapper stacktype = ma.GetRawStackTypeWrapper(i, argcount + 1 + j);
+										// it could be another new object reference (not from current invokespecial <init>
+										// instruction)
+										if(stacktype == VerifierTypeWrapper.Null)
+										{
+											// NOTE we abuse the newobj local as a cookie to signal null!
+											tempstack[j] = newobj;
+											ilGenerator.Emit(OpCodes.Pop);
+										}
+										else if(!VerifierTypeWrapper.IsNew(stacktype))
+										{
+											LocalBuilder lb = ilGenerator.DeclareLocal(stacktype.TypeAsLocalOrStackType);
+											ilGenerator.Emit(OpCodes.Stloc, lb);
+											tempstack[j] = lb;
+										}
+									}
+								}
+								for(int j = stackfix.Length - 1; j >= 0; j--)
+								{
+									if(stackfix[j])
+									{
+										ilGenerator.Emit(OpCodes.Ldloc, newobj);
+									}
+									else if(tempstack[j] != null)
+									{
+										// NOTE we abuse the newobj local as a cookie to signal null!
+										if(tempstack[j] == newobj)
+										{
+											ilGenerator.Emit(OpCodes.Ldnull);
+										}
+										else
+										{
+											ilGenerator.Emit(OpCodes.Ldloc, tempstack[j]);
+										}
+									}
+								}
 								LocalVar[] locals = ma.GetLocalVarsForInvokeSpecial(i);
 								for(int j = 0; j < locals.Length; j++)
 								{
@@ -1841,812 +1694,842 @@ class Compiler
 											// for invokespecial the resulting type can never be null
 											locals[j].builder = ilGenerator.DeclareLocal(locals[j].type.TypeAsLocalOrStackType);
 										}
-										ilGenerator.Emit(OpCodes.Ldarg_0);
+										ilGenerator.Emit(OpCodes.Ldloc, newobj);
 										ilGenerator.Emit(OpCodes.Stloc, locals[j].builder);
+									}
+								}
+							}
+							else
+							{
+								if(trivcount == 0)
+								{
+									ilGenerator.Emit(OpCodes.Pop);
+								}
+								else
+								{
+									for(int j = 1; j < trivcount; j++)
+									{
+										ilGenerator.Emit(OpCodes.Dup);
 									}
 								}
 							}
 						}
 						else
 						{
-							if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
+							Debug.Assert(type == VerifierTypeWrapper.UninitializedThis);
+							method.EmitCall(ilGenerator);
+							LocalVar[] locals = ma.GetLocalVarsForInvokeSpecial(i);
+							for(int j = 0; j < locals.Length; j++)
 							{
-								method.EmitCall(ilGenerator);
-							}
-							else
-							{
-								method.EmitCallvirt(ilGenerator);
-							}
-							method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
-						}
-						break;
-					}
-					case NormalizedByteCode.__return:
-					case NormalizedByteCode.__areturn:
-					case NormalizedByteCode.__ireturn:
-					case NormalizedByteCode.__lreturn:
-					case NormalizedByteCode.__freturn:
-					case NormalizedByteCode.__dreturn:
-					{
-						if(block.IsNested)
-						{
-							// if we're inside an exception block, copy TOS to local, emit "leave" and push item onto our "todo" list
-							LocalBuilder local = null;
-							if(instr.NormalizedOpCode != NormalizedByteCode.__return)
-							{
-								TypeWrapper retTypeWrapper = mw.ReturnType;
-								retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
-								if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+								if(locals[j] != null)
 								{
-									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsSignatureType);
+									if(locals[j].builder == null)
+									{
+										// for invokespecial the resulting type can never be null
+										locals[j].builder = ilGenerator.DeclareLocal(locals[j].type.TypeAsLocalOrStackType);
+									}
+									ilGenerator.Emit(OpCodes.Ldarg_0);
+									ilGenerator.Emit(OpCodes.Stloc, locals[j].builder);
 								}
-								local = UnsafeAllocTempLocal(retTypeWrapper.TypeAsSignatureType);
+							}
+						}
+					}
+					else
+					{
+						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
+						{
+							method.EmitCall(ilGenerator);
+						}
+						else
+						{
+							method.EmitCallvirt(ilGenerator);
+						}
+						method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
+					}
+					break;
+				}
+				case NormalizedByteCode.__clone_array:
+					ilGenerator.Emit(OpCodes.Callvirt, ArrayTypeWrapper.CloneMethod);
+					break;
+				case NormalizedByteCode.__return:
+				case NormalizedByteCode.__areturn:
+				case NormalizedByteCode.__ireturn:
+				case NormalizedByteCode.__lreturn:
+				case NormalizedByteCode.__freturn:
+				case NormalizedByteCode.__dreturn:
+				{
+					if(block.IsNested)
+					{
+						// if we're inside an exception block, copy TOS to local, emit "leave" and push item onto our "todo" list
+						LocalBuilder local = null;
+						if(instr.NormalizedOpCode != NormalizedByteCode.__return)
+						{
+							TypeWrapper retTypeWrapper = mw.ReturnType;
+							retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
+							if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+							{
+								ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsSignatureType);
+							}
+							local = UnsafeAllocTempLocal(retTypeWrapper.TypeAsSignatureType);
+							ilGenerator.Emit(OpCodes.Stloc, local);
+						}
+						Label label = ilGenerator.DefineLabel();
+						// NOTE leave automatically discards any junk that may be on the stack
+						ilGenerator.Emit(OpCodes.Leave, label);
+						block.AddExitHack(new ReturnCookie(label, local));
+					}
+					else
+					{
+						// if there is junk on the stack (other than the return value), we must pop it off
+						// because in .NET this is invalid (unlike in Java)
+						int stackHeight = ma.GetStackHeight(i);
+						if(instr.NormalizedOpCode == NormalizedByteCode.__return)
+						{
+							if(stackHeight != 0)
+							{
+								ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
+							}
+							ilGenerator.Emit(OpCodes.Ret);
+						}
+						else
+						{
+							TypeWrapper retTypeWrapper = mw.ReturnType;
+							retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
+							if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+							{
+								ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsSignatureType);
+							}
+							if(stackHeight != 1)
+							{
+								LocalBuilder local = AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
 								ilGenerator.Emit(OpCodes.Stloc, local);
-							}
-							Label label = ilGenerator.DefineLabel();
-							// NOTE leave automatically discards any junk that may be on the stack
-							ilGenerator.Emit(OpCodes.Leave, label);
-							block.AddExitHack(new ReturnCookie(label, local));
-						}
-						else
-						{
-							// if there is junk on the stack (other than the return value), we must pop it off
-							// because in .NET this is invalid (unlike in Java)
-							int stackHeight = ma.GetStackHeight(i);
-							if(instr.NormalizedOpCode == NormalizedByteCode.__return)
-							{
-								if(stackHeight != 0)
-								{
-									ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
-								}
-								ilGenerator.Emit(OpCodes.Ret);
-							}
-							else
-							{
-								TypeWrapper retTypeWrapper = mw.ReturnType;
-								retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
-								if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
-								{
-									ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsSignatureType);
-								}
-								if(stackHeight != 1)
-								{
-									LocalBuilder local = AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
-									ilGenerator.Emit(OpCodes.Stloc, local);
-									ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
-									ilGenerator.Emit(OpCodes.Ldloc, local);
-									ReleaseTempLocal(local);
-								}
-								ilGenerator.Emit(OpCodes.Ret);
-							}
-						}
-						break;
-					}
-					case NormalizedByteCode.__aload:
-					{
-						TypeWrapper type = ma.GetLocalTypeWrapper(i, instr.NormalizedArg1);
-						if(type == VerifierTypeWrapper.Null)
-						{
-							// if the local is known to be null, we just emit a null
-							ilGenerator.Emit(OpCodes.Ldnull);
-						}
-						else if(VerifierTypeWrapper.IsNew(type))
-						{
-							// since new objects aren't represented on the stack, we don't need to do anything here
-						}
-						else if(type == VerifierTypeWrapper.UninitializedThis)
-						{
-							// any unitialized this reference has to be loaded from arg 0
-							// NOTE if the method overwrites the this references, it will always end up in
-							// a different local (due to the way the local variable liveness analysis works),
-							// so we don't have to worry about that.
-							ilGenerator.Emit(OpCodes.Ldarg_0);
-						}
-						else
-						{
-							LocalVar v = LoadLocal(instr);
-							if(!type.IsUnloadable && !v.type.IsUnloadable && !v.type.IsAssignableTo(type))
-							{
-								type.EmitCheckcast(type, ilGenerator);
-							}
-						}
-						break;
-					}
-					case NormalizedByteCode.__astore:
-					{
-						TypeWrapper type = ma.GetRawStackTypeWrapper(i, 0);
-						// NOTE we use "int" to track the return address of a jsr
-						if(VerifierTypeWrapper.IsRet(type))
-						{
-							StoreLocal(instr);
-						}
-						else if(VerifierTypeWrapper.IsNew(type))
-						{
-							// new objects aren't really on the stack, so we can't copy them into the local
-							// (and the local doesn't exist anyway)
-						}
-						else if(type == VerifierTypeWrapper.UninitializedThis)
-						{
-							// any unitialized reference is always the this reference, we don't store anything
-							// here (because CLR won't allow unitialized references in locals) and then when
-							// the unitialized ref is loaded we redirect to the this reference
-							ilGenerator.Emit(OpCodes.Pop);
-						}
-						else
-						{
-							StoreLocal(instr);
-						}
-						break;
-					}
-					case NormalizedByteCode.__iload:
-					case NormalizedByteCode.__lload:
-					case NormalizedByteCode.__fload:
-					case NormalizedByteCode.__dload:
-						LoadLocal(instr);
-						break;
-					case NormalizedByteCode.__istore:
-					case NormalizedByteCode.__lstore:
-					case NormalizedByteCode.__fstore:
-					case NormalizedByteCode.__dstore:
-						StoreLocal(instr);
-						break;
-					case NormalizedByteCode.__new:
-					{
-						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
-						if(wrapper.IsUnloadable)
-						{
-							if(JVM.DisableDynamicBinding)
-							{
-								throw new NoClassDefFoundError(wrapper.Name);
-							}
-							Profiler.Count("EmitDynamicNewCheckOnly");
-							// this is here to make sure we throw the exception in the right location (before
-							// evaluating the constructor arguments)
-							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-							ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicNewCheckOnly"));
-						}
-						else if(!wrapper.IsAccessibleFrom(clazz))
-						{
-							throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
-						}
-						else if(wrapper.IsAbstract)
-						{
-							throw new InstantiationError(wrapper.Name);
-						}
-						// we don't do anything here, the call to <init> will be converted into a newobj instruction
-						break;
-					}
-					case NormalizedByteCode.__multianewarray:
-					{
-						LocalBuilder localArray = UnsafeAllocTempLocal(typeof(int[]));
-						LocalBuilder localInt = UnsafeAllocTempLocal(typeof(int));
-						EmitLdc_I4(instr.Arg2);
-						ilGenerator.Emit(OpCodes.Newarr, typeof(int));
-						ilGenerator.Emit(OpCodes.Stloc, localArray);
-						for(int j = 1; j <= instr.Arg2; j++)
-						{
-							ilGenerator.Emit(OpCodes.Stloc, localInt);
-							ilGenerator.Emit(OpCodes.Ldloc, localArray);
-							EmitLdc_I4(instr.Arg2 - j);
-							ilGenerator.Emit(OpCodes.Ldloc, localInt);
-							ilGenerator.Emit(OpCodes.Stelem_I4);
-						}
-						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
-						if(wrapper.IsUnloadable)
-						{
-							if(JVM.DisableDynamicBinding)
-							{
-								throw new NoClassDefFoundError(wrapper.Name);
-							}
-							Profiler.Count("EmitDynamicMultianewarray");
-							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-							ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-							ilGenerator.Emit(OpCodes.Ldloc, localArray);
-							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicMultianewarray"));
-						}
-						else
-						{
-							if(!wrapper.IsAccessibleFrom(clazz))
-							{
-								throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
-							}
-							Type type = wrapper.TypeAsArrayType;
-							ilGenerator.Emit(OpCodes.Ldtoken, type);
-							ilGenerator.Emit(OpCodes.Ldloc, localArray);
-							ilGenerator.Emit(OpCodes.Call, multiANewArrayMethod);
-							ilGenerator.Emit(OpCodes.Castclass, type);
-						}
-						break;
-					}
-					case NormalizedByteCode.__anewarray:
-					{
-						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
-						if(wrapper.IsUnloadable)
-						{
-							if(JVM.DisableDynamicBinding)
-							{
-								throw new NoClassDefFoundError(wrapper.Name);
-							}
-							Profiler.Count("EmitDynamicNewarray");
-							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-							ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
-							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicNewarray"));
-						}
-						else
-						{
-							if(!wrapper.IsAccessibleFrom(clazz))
-							{
-								throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
-							}
-							// NOTE for ghost types we create object arrays to make sure that Ghost implementers can be
-							// stored in ghost arrays, but this has the unintended consequence that ghost arrays can
-							// contain *any* reference type (because they are compiled as Object arrays). We could
-							// modify aastore to emit code to check for this, but this would have an huge performance
-							// cost for all object arrays.
-							// Oddly, while the JVM accepts any reference for any other interface typed references, in the
-							// case of aastore it does check that the object actually implements the interface. This
-							// is unfortunate, but I think we can live with this minor incompatibility.
-							// Note that this does not break type safety, because when the incorrect object is eventually
-							// used as the ghost interface type it will generate a ClassCastException.
-							ilGenerator.Emit(OpCodes.Newarr, wrapper.TypeAsArrayType);
-						}
-						break;
-					}
-					case NormalizedByteCode.__newarray:
-					switch(instr.Arg1)
-					{
-						case 4:
-							ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.BOOLEAN.TypeAsArrayType);
-							break;
-						case 5:
-							ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.CHAR.TypeAsArrayType);
-							break;
-						case 6:
-							ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.FLOAT.TypeAsArrayType);
-							break;
-						case 7:
-							ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.DOUBLE.TypeAsArrayType);
-							break;
-						case 8:
-							ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.BYTE.TypeAsArrayType);
-							break;
-						case 9:
-							ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.SHORT.TypeAsArrayType);
-							break;
-						case 10:
-							ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.INT.TypeAsArrayType);
-							break;
-						case 11:
-							ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.LONG.TypeAsArrayType);
-							break;
-						default:
-							// this can't happen, the verifier would have caught it
-							throw new InvalidOperationException();
-					}
-						break;
-					case NormalizedByteCode.__checkcast:
-					{
-						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
-						if(!wrapper.IsUnloadable && !wrapper.IsAccessibleFrom(clazz))
-						{
-							throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
-						}
-						wrapper.EmitCheckcast(clazz, ilGenerator);
-						break;
-					}
-					case NormalizedByteCode.__instanceof:
-					{
-						TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
-						if(!wrapper.IsUnloadable && !wrapper.IsAccessibleFrom(clazz))
-						{
-							throw new IllegalAccessError("Try to access class " + wrapper.Name + " from class " + clazz.Name);
-						}
-						wrapper.EmitInstanceOf(clazz, ilGenerator);
-						break;
-					}
-					case NormalizedByteCode.__aaload:
-					{
-						TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 1);
-						if(tw.IsUnloadable)
-						{
-							if(JVM.DisableDynamicBinding)
-							{
-								throw new NoClassDefFoundError(tw.Name);
-							}
-							Profiler.Count("EmitDynamicAaload");
-							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-							ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
-							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicAaload"));
-						}
-						else
-						{
-							TypeWrapper elem = tw.ElementTypeWrapper;
-							if(elem.IsNonPrimitiveValueType)
-							{
-								Type t = elem.TypeAsTBD;
-								ilGenerator.Emit(OpCodes.Ldelema, t);
-								ilGenerator.Emit(OpCodes.Ldobj, t);
-								elem.EmitBox(ilGenerator);
-							}
-							else
-							{
-								ilGenerator.Emit(OpCodes.Ldelem_Ref);
-							}
-						}
-						break;
-					}
-					case NormalizedByteCode.__baload:
-						// NOTE both the JVM and the CLR use signed bytes for boolean arrays (how convenient!)
-						ilGenerator.Emit(OpCodes.Ldelem_I1);
-						break;
-					case NormalizedByteCode.__bastore:
-						ilGenerator.Emit(OpCodes.Stelem_I1);
-						break;
-					case NormalizedByteCode.__caload:
-						ilGenerator.Emit(OpCodes.Ldelem_U2);
-						break;
-					case NormalizedByteCode.__castore:
-						ilGenerator.Emit(OpCodes.Stelem_I2);
-						break;
-					case NormalizedByteCode.__saload:
-						ilGenerator.Emit(OpCodes.Ldelem_I2);
-						break;
-					case NormalizedByteCode.__sastore:
-						ilGenerator.Emit(OpCodes.Stelem_I2);
-						break;
-					case NormalizedByteCode.__iaload:
-						ilGenerator.Emit(OpCodes.Ldelem_I4);
-						break;
-					case NormalizedByteCode.__iastore:
-						ilGenerator.Emit(OpCodes.Stelem_I4);
-						break;
-					case NormalizedByteCode.__laload:
-						ilGenerator.Emit(OpCodes.Ldelem_I8);
-						break;
-					case NormalizedByteCode.__lastore:
-						ilGenerator.Emit(OpCodes.Stelem_I8);
-						break;
-					case NormalizedByteCode.__faload:
-						ilGenerator.Emit(OpCodes.Ldelem_R4);
-						break;
-					case NormalizedByteCode.__fastore:
-						ilGenerator.Emit(OpCodes.Stelem_R4);
-						break;
-					case NormalizedByteCode.__daload:
-						ilGenerator.Emit(OpCodes.Ldelem_R8);
-						break;
-					case NormalizedByteCode.__dastore:
-						ilGenerator.Emit(OpCodes.Stelem_R8);
-						break;
-					case NormalizedByteCode.__aastore:
-					{
-						TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 2);
-						if(tw.IsUnloadable)
-						{
-							if(JVM.DisableDynamicBinding)
-							{
-								throw new NoClassDefFoundError(tw.Name);
-							}
-							Profiler.Count("EmitDynamicAastore");
-							ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-							ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
-							ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicAastore"));
-						}
-						else
-						{
-							TypeWrapper elem = tw.ElementTypeWrapper;
-							if(elem.IsNonPrimitiveValueType)
-							{
-								Type t = elem.TypeAsTBD;
-								LocalBuilder local = UnsafeAllocTempLocal(typeof(object));
-								ilGenerator.Emit(OpCodes.Stloc, local);
-								ilGenerator.Emit(OpCodes.Ldelema, t);
+								ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
 								ilGenerator.Emit(OpCodes.Ldloc, local);
-								elem.EmitUnbox(ilGenerator);
-								ilGenerator.Emit(OpCodes.Stobj, t);
+								ReleaseTempLocal(local);
 							}
-							else
-							{
-								// NOTE for verifiability it is expressly *not* required that the
-								// value matches the array type, so we don't need to handle interface
-								// references here.
-								ilGenerator.Emit(OpCodes.Stelem_Ref);
-							}
+							ilGenerator.Emit(OpCodes.Ret);
 						}
-						break;
 					}
-					case NormalizedByteCode.__arraylength:
-						if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+					break;
+				}
+				case NormalizedByteCode.__aload:
+				{
+					TypeWrapper type = ma.GetLocalTypeWrapper(i, instr.NormalizedArg1);
+					if(type == VerifierTypeWrapper.Null)
+					{
+						// if the local is known to be null, we just emit a null
+						ilGenerator.Emit(OpCodes.Ldnull);
+					}
+					else if(VerifierTypeWrapper.IsNew(type))
+					{
+						// since new objects aren't represented on the stack, we don't need to do anything here
+					}
+					else if(type == VerifierTypeWrapper.UninitializedThis)
+					{
+						// any unitialized this reference has to be loaded from arg 0
+						// NOTE if the method overwrites the this references, it will always end up in
+						// a different local (due to the way the local variable liveness analysis works),
+						// so we don't have to worry about that.
+						ilGenerator.Emit(OpCodes.Ldarg_0);
+					}
+					else
+					{
+						LocalVar v = LoadLocal(instr);
+						if(!type.IsUnloadable && !v.type.IsUnloadable && !v.type.IsAssignableTo(type))
 						{
-							ilGenerator.Emit(OpCodes.Castclass, typeof(Array));
-							ilGenerator.Emit(OpCodes.Callvirt, typeof(Array).GetMethod("get_Length"));
+							type.EmitCheckcast(type, ilGenerator);
+						}
+					}
+					break;
+				}
+				case NormalizedByteCode.__astore:
+				{
+					TypeWrapper type = ma.GetRawStackTypeWrapper(i, 0);
+					// NOTE we use "int" to track the return address of a jsr
+					if(VerifierTypeWrapper.IsRet(type))
+					{
+						StoreLocal(instr);
+					}
+					else if(VerifierTypeWrapper.IsNew(type))
+					{
+						// new objects aren't really on the stack, so we can't copy them into the local
+						// (and the local doesn't exist anyway)
+					}
+					else if(type == VerifierTypeWrapper.UninitializedThis)
+					{
+						// any unitialized reference is always the this reference, we don't store anything
+						// here (because CLR won't allow unitialized references in locals) and then when
+						// the unitialized ref is loaded we redirect to the this reference
+						ilGenerator.Emit(OpCodes.Pop);
+					}
+					else
+					{
+						StoreLocal(instr);
+					}
+					break;
+				}
+				case NormalizedByteCode.__iload:
+				case NormalizedByteCode.__lload:
+				case NormalizedByteCode.__fload:
+				case NormalizedByteCode.__dload:
+					LoadLocal(instr);
+					break;
+				case NormalizedByteCode.__istore:
+				case NormalizedByteCode.__lstore:
+				case NormalizedByteCode.__fstore:
+				case NormalizedByteCode.__dstore:
+					StoreLocal(instr);
+					break;
+				case NormalizedByteCode.__new:
+				{
+					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
+					if(wrapper.IsUnloadable)
+					{
+						Profiler.Count("EmitDynamicNewCheckOnly");
+						// this is here to make sure we throw the exception in the right location (before
+						// evaluating the constructor arguments)
+						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
+						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicNewCheckOnly"));
+					}
+					// we don't do anything here, the call to <init> will be converted into a newobj instruction
+					break;
+				}
+				case NormalizedByteCode.__multianewarray:
+				{
+					LocalBuilder localArray = UnsafeAllocTempLocal(typeof(int[]));
+					LocalBuilder localInt = UnsafeAllocTempLocal(typeof(int));
+					EmitLdc_I4(instr.Arg2);
+					ilGenerator.Emit(OpCodes.Newarr, typeof(int));
+					ilGenerator.Emit(OpCodes.Stloc, localArray);
+					for(int j = 1; j <= instr.Arg2; j++)
+					{
+						ilGenerator.Emit(OpCodes.Stloc, localInt);
+						ilGenerator.Emit(OpCodes.Ldloc, localArray);
+						EmitLdc_I4(instr.Arg2 - j);
+						ilGenerator.Emit(OpCodes.Ldloc, localInt);
+						ilGenerator.Emit(OpCodes.Stelem_I4);
+					}
+					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
+					if(wrapper.IsUnloadable)
+					{
+						Profiler.Count("EmitDynamicMultianewarray");
+						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
+						ilGenerator.Emit(OpCodes.Ldloc, localArray);
+						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicMultianewarray"));
+					}
+					else
+					{
+						Type type = wrapper.TypeAsArrayType;
+						ilGenerator.Emit(OpCodes.Ldtoken, type);
+						ilGenerator.Emit(OpCodes.Ldloc, localArray);
+						ilGenerator.Emit(OpCodes.Call, multiANewArrayMethod);
+						ilGenerator.Emit(OpCodes.Castclass, type);
+					}
+					break;
+				}
+				case NormalizedByteCode.__anewarray:
+				{
+					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
+					if(wrapper.IsUnloadable)
+					{
+						Profiler.Count("EmitDynamicNewarray");
+						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
+						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicNewarray"));
+					}
+					else
+					{
+						// NOTE for ghost types we create object arrays to make sure that Ghost implementers can be
+						// stored in ghost arrays, but this has the unintended consequence that ghost arrays can
+						// contain *any* reference type (because they are compiled as Object arrays). We could
+						// modify aastore to emit code to check for this, but this would have an huge performance
+						// cost for all object arrays.
+						// Oddly, while the JVM accepts any reference for any other interface typed references, in the
+						// case of aastore it does check that the object actually implements the interface. This
+						// is unfortunate, but I think we can live with this minor incompatibility.
+						// Note that this does not break type safety, because when the incorrect object is eventually
+						// used as the ghost interface type it will generate a ClassCastException.
+						ilGenerator.Emit(OpCodes.Newarr, wrapper.TypeAsArrayType);
+					}
+					break;
+				}
+				case NormalizedByteCode.__newarray:
+				switch(instr.Arg1)
+				{
+					case 4:
+						ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.BOOLEAN.TypeAsArrayType);
+						break;
+					case 5:
+						ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.CHAR.TypeAsArrayType);
+						break;
+					case 6:
+						ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.FLOAT.TypeAsArrayType);
+						break;
+					case 7:
+						ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.DOUBLE.TypeAsArrayType);
+						break;
+					case 8:
+						ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.BYTE.TypeAsArrayType);
+						break;
+					case 9:
+						ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.SHORT.TypeAsArrayType);
+						break;
+					case 10:
+						ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.INT.TypeAsArrayType);
+						break;
+					case 11:
+						ilGenerator.Emit(OpCodes.Newarr, PrimitiveTypeWrapper.LONG.TypeAsArrayType);
+						break;
+					default:
+						// this can't happen, the verifier would have caught it
+						throw new InvalidOperationException();
+				}
+					break;
+				case NormalizedByteCode.__checkcast:
+				{
+					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
+					wrapper.EmitCheckcast(clazz, ilGenerator);
+					break;
+				}
+				case NormalizedByteCode.__instanceof:
+				{
+					TypeWrapper wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
+					wrapper.EmitInstanceOf(clazz, ilGenerator);
+					break;
+				}
+				case NormalizedByteCode.__aaload:
+				{
+					TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 1);
+					if(tw.IsUnloadable)
+					{
+						Profiler.Count("EmitDynamicAaload");
+						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+						ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
+						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicAaload"));
+					}
+					else
+					{
+						TypeWrapper elem = tw.ElementTypeWrapper;
+						if(elem.IsNonPrimitiveValueType)
+						{
+							Type t = elem.TypeAsTBD;
+							ilGenerator.Emit(OpCodes.Ldelema, t);
+							ilGenerator.Emit(OpCodes.Ldobj, t);
+							elem.EmitBox(ilGenerator);
 						}
 						else
 						{
-							ilGenerator.Emit(OpCodes.Ldlen);
+							ilGenerator.Emit(OpCodes.Ldelem_Ref);
 						}
-						break;
-					case NormalizedByteCode.__lcmp:
-					{
-						LocalBuilder value1 = AllocTempLocal(typeof(long));
-						LocalBuilder value2 = AllocTempLocal(typeof(long));
-						ilGenerator.Emit(OpCodes.Stloc, value2);
-						ilGenerator.Emit(OpCodes.Stloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value2);
-						Label res1 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Bgt_S, res1);
-						ilGenerator.Emit(OpCodes.Ldloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value2);
-						Label res0 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Beq_S, res0);
-						ilGenerator.Emit(OpCodes.Ldc_I4_M1);
-						Label end = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Br_S, end);
-						ilGenerator.MarkLabel(res1);
-						ilGenerator.Emit(OpCodes.Ldc_I4_1);
-						ilGenerator.Emit(OpCodes.Br_S, end);
-						ilGenerator.MarkLabel(res0);
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.MarkLabel(end);
-						ReleaseTempLocal(value1);
-						ReleaseTempLocal(value2);
-						break;
 					}
-					case NormalizedByteCode.__fcmpl:
+					break;
+				}
+				case NormalizedByteCode.__baload:
+					// NOTE both the JVM and the CLR use signed bytes for boolean arrays (how convenient!)
+					ilGenerator.Emit(OpCodes.Ldelem_I1);
+					break;
+				case NormalizedByteCode.__bastore:
+					ilGenerator.Emit(OpCodes.Stelem_I1);
+					break;
+				case NormalizedByteCode.__caload:
+					ilGenerator.Emit(OpCodes.Ldelem_U2);
+					break;
+				case NormalizedByteCode.__castore:
+					ilGenerator.Emit(OpCodes.Stelem_I2);
+					break;
+				case NormalizedByteCode.__saload:
+					ilGenerator.Emit(OpCodes.Ldelem_I2);
+					break;
+				case NormalizedByteCode.__sastore:
+					ilGenerator.Emit(OpCodes.Stelem_I2);
+					break;
+				case NormalizedByteCode.__iaload:
+					ilGenerator.Emit(OpCodes.Ldelem_I4);
+					break;
+				case NormalizedByteCode.__iastore:
+					ilGenerator.Emit(OpCodes.Stelem_I4);
+					break;
+				case NormalizedByteCode.__laload:
+					ilGenerator.Emit(OpCodes.Ldelem_I8);
+					break;
+				case NormalizedByteCode.__lastore:
+					ilGenerator.Emit(OpCodes.Stelem_I8);
+					break;
+				case NormalizedByteCode.__faload:
+					ilGenerator.Emit(OpCodes.Ldelem_R4);
+					break;
+				case NormalizedByteCode.__fastore:
+					ilGenerator.Emit(OpCodes.Stelem_R4);
+					break;
+				case NormalizedByteCode.__daload:
+					ilGenerator.Emit(OpCodes.Ldelem_R8);
+					break;
+				case NormalizedByteCode.__dastore:
+					ilGenerator.Emit(OpCodes.Stelem_R8);
+					break;
+				case NormalizedByteCode.__aastore:
+				{
+					TypeWrapper tw = ma.GetRawStackTypeWrapper(i, 2);
+					if(tw.IsUnloadable)
 					{
-						LocalBuilder value1 = AllocTempLocal(typeof(float));
-						LocalBuilder value2 = AllocTempLocal(typeof(float));
-						ilGenerator.Emit(OpCodes.Stloc, value2);
-						ilGenerator.Emit(OpCodes.Stloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value2);
-						Label res1 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Bgt_S, res1);
-						ilGenerator.Emit(OpCodes.Ldloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value2);
-						Label res0 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Beq_S, res0);
-						ilGenerator.Emit(OpCodes.Ldc_I4_M1);
-						Label end = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Br_S, end);
-						ilGenerator.MarkLabel(res1);
-						ilGenerator.Emit(OpCodes.Ldc_I4_1);
-						ilGenerator.Emit(OpCodes.Br_S, end);
-						ilGenerator.MarkLabel(res0);
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.MarkLabel(end);
-						ReleaseTempLocal(value1);
-						ReleaseTempLocal(value2);
-						break;
+						Profiler.Count("EmitDynamicAastore");
+						ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
+						ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
+						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicAastore"));
 					}
-					case NormalizedByteCode.__fcmpg:
+					else
 					{
-						LocalBuilder value1 = AllocTempLocal(typeof(float));
-						LocalBuilder value2 = AllocTempLocal(typeof(float));
-						ilGenerator.Emit(OpCodes.Stloc, value2);
-						ilGenerator.Emit(OpCodes.Stloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value2);
-						Label resm1 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Blt_S, resm1);
-						ilGenerator.Emit(OpCodes.Ldloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value2);
-						Label res0 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Beq_S, res0);
-						ilGenerator.Emit(OpCodes.Ldc_I4_1);
-						Label end = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Br_S, end);
-						ilGenerator.MarkLabel(resm1);
-						ilGenerator.Emit(OpCodes.Ldc_I4_M1);
-						ilGenerator.Emit(OpCodes.Br_S, end);
-						ilGenerator.MarkLabel(res0);
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.MarkLabel(end);
-						ReleaseTempLocal(value1);
-						ReleaseTempLocal(value2);
-						break;
+						TypeWrapper elem = tw.ElementTypeWrapper;
+						if(elem.IsNonPrimitiveValueType)
+						{
+							Type t = elem.TypeAsTBD;
+							LocalBuilder local = UnsafeAllocTempLocal(typeof(object));
+							ilGenerator.Emit(OpCodes.Stloc, local);
+							ilGenerator.Emit(OpCodes.Ldelema, t);
+							ilGenerator.Emit(OpCodes.Ldloc, local);
+							elem.EmitUnbox(ilGenerator);
+							ilGenerator.Emit(OpCodes.Stobj, t);
+						}
+						else
+						{
+							// NOTE for verifiability it is expressly *not* required that the
+							// value matches the array type, so we don't need to handle interface
+							// references here.
+							ilGenerator.Emit(OpCodes.Stelem_Ref);
+						}
 					}
-					case NormalizedByteCode.__dcmpl:
+					break;
+				}
+				case NormalizedByteCode.__arraylength:
+					if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
 					{
-						LocalBuilder value1 = AllocTempLocal(typeof(double));
-						LocalBuilder value2 = AllocTempLocal(typeof(double));
-						ilGenerator.Emit(OpCodes.Stloc, value2);
-						ilGenerator.Emit(OpCodes.Stloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value2);
-						Label res1 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Bgt_S, res1);
-						ilGenerator.Emit(OpCodes.Ldloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value2);
-						Label res0 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Beq_S, res0);
-						ilGenerator.Emit(OpCodes.Ldc_I4_M1);
-						Label end = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Br_S, end);
-						ilGenerator.MarkLabel(res1);
-						ilGenerator.Emit(OpCodes.Ldc_I4_1);
-						ilGenerator.Emit(OpCodes.Br_S, end);
-						ilGenerator.MarkLabel(res0);
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.MarkLabel(end);
-						ReleaseTempLocal(value1);
-						ReleaseTempLocal(value2);
-						break;
+						ilGenerator.Emit(OpCodes.Castclass, typeof(Array));
+						ilGenerator.Emit(OpCodes.Callvirt, typeof(Array).GetMethod("get_Length"));
 					}
-					case NormalizedByteCode.__dcmpg:
+					else
 					{
-						LocalBuilder value1 = AllocTempLocal(typeof(double));
-						LocalBuilder value2 = AllocTempLocal(typeof(double));
-						ilGenerator.Emit(OpCodes.Stloc, value2);
-						ilGenerator.Emit(OpCodes.Stloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value2);
-						Label resm1 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Blt, resm1);
-						ilGenerator.Emit(OpCodes.Ldloc, value1);
-						ilGenerator.Emit(OpCodes.Ldloc, value2);
-						Label res0 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Beq, res0);
-						ilGenerator.Emit(OpCodes.Ldc_I4_1);
-						Label end = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Br, end);
-						ilGenerator.MarkLabel(resm1);
-						ilGenerator.Emit(OpCodes.Ldc_I4_M1);
-						ilGenerator.Emit(OpCodes.Br, end);
-						ilGenerator.MarkLabel(res0);
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.MarkLabel(end);
-						ReleaseTempLocal(value1);
-						ReleaseTempLocal(value2);
-						break;
+						ilGenerator.Emit(OpCodes.Ldlen);
 					}
-					case NormalizedByteCode.__if_icmpeq:
-						ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__if_icmpne:
-						ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__if_icmple:
-						ilGenerator.Emit(OpCodes.Ble, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__if_icmplt:
-						ilGenerator.Emit(OpCodes.Blt, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__if_icmpge:
-						ilGenerator.Emit(OpCodes.Bge, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__if_icmpgt:
-						ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__ifle:
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.Emit(OpCodes.Ble, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__iflt:
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.Emit(OpCodes.Blt, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__ifge:
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.Emit(OpCodes.Bge, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__ifgt:
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__ifne:
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__ifeq:
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__ifnonnull:
-						ilGenerator.Emit(OpCodes.Brtrue, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__ifnull:
-						ilGenerator.Emit(OpCodes.Brfalse, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__if_acmpeq:
-						ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__if_acmpne:
-						ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__goto:
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					case NormalizedByteCode.__ineg:
-					case NormalizedByteCode.__lneg:
-					case NormalizedByteCode.__fneg:
-					case NormalizedByteCode.__dneg:
-						ilGenerator.Emit(OpCodes.Neg);
-						break;
-					case NormalizedByteCode.__iadd:
-					case NormalizedByteCode.__ladd:
-					case NormalizedByteCode.__fadd:
-					case NormalizedByteCode.__dadd:
-						ilGenerator.Emit(OpCodes.Add);
-						break;
-					case NormalizedByteCode.__isub:
-					case NormalizedByteCode.__lsub:
-					case NormalizedByteCode.__fsub:
-					case NormalizedByteCode.__dsub:
-						ilGenerator.Emit(OpCodes.Sub);
-						break;
-					case NormalizedByteCode.__ixor:
-					case NormalizedByteCode.__lxor:
-						ilGenerator.Emit(OpCodes.Xor);
-						break;
-					case NormalizedByteCode.__ior:
-					case NormalizedByteCode.__lor:
-						ilGenerator.Emit(OpCodes.Or);
-						break;
-					case NormalizedByteCode.__iand:
-					case NormalizedByteCode.__land:
-						ilGenerator.Emit(OpCodes.And);
-						break;
-					case NormalizedByteCode.__imul:
-					case NormalizedByteCode.__lmul:
-					case NormalizedByteCode.__fmul:
-					case NormalizedByteCode.__dmul:
-						ilGenerator.Emit(OpCodes.Mul);
-						break;
-					case NormalizedByteCode.__idiv:
-					case NormalizedByteCode.__ldiv:
+					break;
+				case NormalizedByteCode.__lcmp:
+				{
+					LocalBuilder value1 = AllocTempLocal(typeof(long));
+					LocalBuilder value2 = AllocTempLocal(typeof(long));
+					ilGenerator.Emit(OpCodes.Stloc, value2);
+					ilGenerator.Emit(OpCodes.Stloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value2);
+					Label res1 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Bgt_S, res1);
+					ilGenerator.Emit(OpCodes.Ldloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value2);
+					Label res0 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Beq_S, res0);
+					ilGenerator.Emit(OpCodes.Ldc_I4_M1);
+					Label end = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Br_S, end);
+					ilGenerator.MarkLabel(res1);
+					ilGenerator.Emit(OpCodes.Ldc_I4_1);
+					ilGenerator.Emit(OpCodes.Br_S, end);
+					ilGenerator.MarkLabel(res0);
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.MarkLabel(end);
+					ReleaseTempLocal(value1);
+					ReleaseTempLocal(value2);
+					break;
+				}
+				case NormalizedByteCode.__fcmpl:
+				{
+					LocalBuilder value1 = AllocTempLocal(typeof(float));
+					LocalBuilder value2 = AllocTempLocal(typeof(float));
+					ilGenerator.Emit(OpCodes.Stloc, value2);
+					ilGenerator.Emit(OpCodes.Stloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value2);
+					Label res1 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Bgt_S, res1);
+					ilGenerator.Emit(OpCodes.Ldloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value2);
+					Label res0 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Beq_S, res0);
+					ilGenerator.Emit(OpCodes.Ldc_I4_M1);
+					Label end = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Br_S, end);
+					ilGenerator.MarkLabel(res1);
+					ilGenerator.Emit(OpCodes.Ldc_I4_1);
+					ilGenerator.Emit(OpCodes.Br_S, end);
+					ilGenerator.MarkLabel(res0);
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.MarkLabel(end);
+					ReleaseTempLocal(value1);
+					ReleaseTempLocal(value2);
+					break;
+				}
+				case NormalizedByteCode.__fcmpg:
+				{
+					LocalBuilder value1 = AllocTempLocal(typeof(float));
+					LocalBuilder value2 = AllocTempLocal(typeof(float));
+					ilGenerator.Emit(OpCodes.Stloc, value2);
+					ilGenerator.Emit(OpCodes.Stloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value2);
+					Label resm1 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Blt_S, resm1);
+					ilGenerator.Emit(OpCodes.Ldloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value2);
+					Label res0 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Beq_S, res0);
+					ilGenerator.Emit(OpCodes.Ldc_I4_1);
+					Label end = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Br_S, end);
+					ilGenerator.MarkLabel(resm1);
+					ilGenerator.Emit(OpCodes.Ldc_I4_M1);
+					ilGenerator.Emit(OpCodes.Br_S, end);
+					ilGenerator.MarkLabel(res0);
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.MarkLabel(end);
+					ReleaseTempLocal(value1);
+					ReleaseTempLocal(value2);
+					break;
+				}
+				case NormalizedByteCode.__dcmpl:
+				{
+					LocalBuilder value1 = AllocTempLocal(typeof(double));
+					LocalBuilder value2 = AllocTempLocal(typeof(double));
+					ilGenerator.Emit(OpCodes.Stloc, value2);
+					ilGenerator.Emit(OpCodes.Stloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value2);
+					Label res1 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Bgt_S, res1);
+					ilGenerator.Emit(OpCodes.Ldloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value2);
+					Label res0 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Beq_S, res0);
+					ilGenerator.Emit(OpCodes.Ldc_I4_M1);
+					Label end = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Br_S, end);
+					ilGenerator.MarkLabel(res1);
+					ilGenerator.Emit(OpCodes.Ldc_I4_1);
+					ilGenerator.Emit(OpCodes.Br_S, end);
+					ilGenerator.MarkLabel(res0);
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.MarkLabel(end);
+					ReleaseTempLocal(value1);
+					ReleaseTempLocal(value2);
+					break;
+				}
+				case NormalizedByteCode.__dcmpg:
+				{
+					LocalBuilder value1 = AllocTempLocal(typeof(double));
+					LocalBuilder value2 = AllocTempLocal(typeof(double));
+					ilGenerator.Emit(OpCodes.Stloc, value2);
+					ilGenerator.Emit(OpCodes.Stloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value2);
+					Label resm1 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Blt, resm1);
+					ilGenerator.Emit(OpCodes.Ldloc, value1);
+					ilGenerator.Emit(OpCodes.Ldloc, value2);
+					Label res0 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Beq, res0);
+					ilGenerator.Emit(OpCodes.Ldc_I4_1);
+					Label end = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Br, end);
+					ilGenerator.MarkLabel(resm1);
+					ilGenerator.Emit(OpCodes.Ldc_I4_M1);
+					ilGenerator.Emit(OpCodes.Br, end);
+					ilGenerator.MarkLabel(res0);
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.MarkLabel(end);
+					ReleaseTempLocal(value1);
+					ReleaseTempLocal(value2);
+					break;
+				}
+				case NormalizedByteCode.__if_icmpeq:
+					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__if_icmpne:
+					ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__if_icmple:
+					ilGenerator.Emit(OpCodes.Ble, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__if_icmplt:
+					ilGenerator.Emit(OpCodes.Blt, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__if_icmpge:
+					ilGenerator.Emit(OpCodes.Bge, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__if_icmpgt:
+					ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__ifle:
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.Emit(OpCodes.Ble, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__iflt:
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.Emit(OpCodes.Blt, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__ifge:
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.Emit(OpCodes.Bge, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__ifgt:
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__ifne:
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__ifeq:
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__ifnonnull:
+					ilGenerator.Emit(OpCodes.Brtrue, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__ifnull:
+					ilGenerator.Emit(OpCodes.Brfalse, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__if_acmpeq:
+					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__if_acmpne:
+					ilGenerator.Emit(OpCodes.Bne_Un, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__goto:
+					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				case NormalizedByteCode.__ineg:
+				case NormalizedByteCode.__lneg:
+				case NormalizedByteCode.__fneg:
+				case NormalizedByteCode.__dneg:
+					ilGenerator.Emit(OpCodes.Neg);
+					break;
+				case NormalizedByteCode.__iadd:
+				case NormalizedByteCode.__ladd:
+				case NormalizedByteCode.__fadd:
+				case NormalizedByteCode.__dadd:
+					ilGenerator.Emit(OpCodes.Add);
+					break;
+				case NormalizedByteCode.__isub:
+				case NormalizedByteCode.__lsub:
+				case NormalizedByteCode.__fsub:
+				case NormalizedByteCode.__dsub:
+					ilGenerator.Emit(OpCodes.Sub);
+					break;
+				case NormalizedByteCode.__ixor:
+				case NormalizedByteCode.__lxor:
+					ilGenerator.Emit(OpCodes.Xor);
+					break;
+				case NormalizedByteCode.__ior:
+				case NormalizedByteCode.__lor:
+					ilGenerator.Emit(OpCodes.Or);
+					break;
+				case NormalizedByteCode.__iand:
+				case NormalizedByteCode.__land:
+					ilGenerator.Emit(OpCodes.And);
+					break;
+				case NormalizedByteCode.__imul:
+				case NormalizedByteCode.__lmul:
+				case NormalizedByteCode.__fmul:
+				case NormalizedByteCode.__dmul:
+					ilGenerator.Emit(OpCodes.Mul);
+					break;
+				case NormalizedByteCode.__idiv:
+				case NormalizedByteCode.__ldiv:
+				{
+					// we need to special case dividing by -1, because the CLR div instruction
+					// throws an OverflowException when dividing Int32.MinValue by -1, and
+					// Java just silently overflows
+					ilGenerator.Emit(OpCodes.Dup);
+					ilGenerator.Emit(OpCodes.Ldc_I4_M1);
+					if(instr.NormalizedOpCode == NormalizedByteCode.__ldiv)
 					{
-						// we need to special case dividing by -1, because the CLR div instruction
-						// throws an OverflowException when dividing Int32.MinValue by -1, and
-						// Java just silently overflows
+						ilGenerator.Emit(OpCodes.Conv_I8);
+					}
+					Label label = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Bne_Un_S, label);
+					ilGenerator.Emit(OpCodes.Pop);
+					ilGenerator.Emit(OpCodes.Neg);
+					Label label2 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Br_S, label2);
+					ilGenerator.MarkLabel(label);
+					ilGenerator.Emit(OpCodes.Div);
+					ilGenerator.MarkLabel(label2);
+					break;
+				}
+				case NormalizedByteCode.__fdiv:
+				case NormalizedByteCode.__ddiv:
+					ilGenerator.Emit(OpCodes.Div);
+					break;
+				case NormalizedByteCode.__irem:
+				case NormalizedByteCode.__lrem:
+				{
+					// we need to special case taking the remainder of dividing by -1,
+					// because the CLR rem instruction throws an OverflowException when
+					// taking the remainder of dividing Int32.MinValue by -1, and
+					// Java just silently overflows
+					ilGenerator.Emit(OpCodes.Dup);
+					ilGenerator.Emit(OpCodes.Ldc_I4_M1);
+					if(instr.NormalizedOpCode == NormalizedByteCode.__lrem)
+					{
+						ilGenerator.Emit(OpCodes.Conv_I8);
+					}
+					Label label = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Bne_Un_S, label);
+					ilGenerator.Emit(OpCodes.Pop);
+					ilGenerator.Emit(OpCodes.Pop);
+					ilGenerator.Emit(OpCodes.Ldc_I4_0);
+					if(instr.NormalizedOpCode == NormalizedByteCode.__lrem)
+					{
+						ilGenerator.Emit(OpCodes.Conv_I8);
+					}
+					Label label2 = ilGenerator.DefineLabel();
+					ilGenerator.Emit(OpCodes.Br_S, label2);
+					ilGenerator.MarkLabel(label);
+					ilGenerator.Emit(OpCodes.Rem);
+					ilGenerator.MarkLabel(label2);
+					break;
+				}
+				case NormalizedByteCode.__frem:
+				case NormalizedByteCode.__drem:
+					ilGenerator.Emit(OpCodes.Rem);
+					break;
+				case NormalizedByteCode.__ishl:
+					EmitLdc_I4(31);
+					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.Emit(OpCodes.Shl);
+					break;
+				case NormalizedByteCode.__lshl:
+					EmitLdc_I4(63);
+					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.Emit(OpCodes.Shl);
+					break;
+				case NormalizedByteCode.__iushr:
+					EmitLdc_I4(31);
+					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.Emit(OpCodes.Shr_Un);
+					break;
+				case NormalizedByteCode.__lushr:
+					EmitLdc_I4(63);
+					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.Emit(OpCodes.Shr_Un);
+					break;
+				case NormalizedByteCode.__ishr:
+					EmitLdc_I4(31);
+					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.Emit(OpCodes.Shr);
+					break;
+				case NormalizedByteCode.__lshr:
+					EmitLdc_I4(63);
+					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.Emit(OpCodes.Shr);
+					break;
+				case NormalizedByteCode.__swap:
+				{
+					DupHelper dh = new DupHelper(this, 2);
+					dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+					dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+					dh.Store(0);
+					dh.Store(1);
+					dh.Load(0);
+					dh.Load(1);
+					dh.Release();
+					break;
+				}
+				case NormalizedByteCode.__dup:
+					// if the TOS contains a "new" object, it isn't really there, so we don't dup it
+					if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
+					{
 						ilGenerator.Emit(OpCodes.Dup);
-						ilGenerator.Emit(OpCodes.Ldc_I4_M1);
-						if(instr.NormalizedOpCode == NormalizedByteCode.__ldiv)
-						{
-							ilGenerator.Emit(OpCodes.Conv_I8);
-						}
-						Label label = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Bne_Un_S, label);
-						ilGenerator.Emit(OpCodes.Pop);
-						ilGenerator.Emit(OpCodes.Neg);
-						Label label2 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Br_S, label2);
-						ilGenerator.MarkLabel(label);
-						ilGenerator.Emit(OpCodes.Div);
-						ilGenerator.MarkLabel(label2);
-						break;
 					}
-					case NormalizedByteCode.__fdiv:
-					case NormalizedByteCode.__ddiv:
-						ilGenerator.Emit(OpCodes.Div);
-						break;
-					case NormalizedByteCode.__irem:
-					case NormalizedByteCode.__lrem:
+					break;
+				case NormalizedByteCode.__dup2:
+				{
+					TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
+					if(type1.IsWidePrimitive)
 					{
-						// we need to special case taking the remainder of dividing by -1,
-						// because the CLR rem instruction throws an OverflowException when
-						// taking the remainder of dividing Int32.MinValue by -1, and
-						// Java just silently overflows
 						ilGenerator.Emit(OpCodes.Dup);
-						ilGenerator.Emit(OpCodes.Ldc_I4_M1);
-						if(instr.NormalizedOpCode == NormalizedByteCode.__lrem)
-						{
-							ilGenerator.Emit(OpCodes.Conv_I8);
-						}
-						Label label = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Bne_Un_S, label);
-						ilGenerator.Emit(OpCodes.Pop);
-						ilGenerator.Emit(OpCodes.Pop);
-						ilGenerator.Emit(OpCodes.Ldc_I4_0);
-						if(instr.NormalizedOpCode == NormalizedByteCode.__lrem)
-						{
-							ilGenerator.Emit(OpCodes.Conv_I8);
-						}
-						Label label2 = ilGenerator.DefineLabel();
-						ilGenerator.Emit(OpCodes.Br_S, label2);
-						ilGenerator.MarkLabel(label);
-						ilGenerator.Emit(OpCodes.Rem);
-						ilGenerator.MarkLabel(label2);
-						break;
 					}
-					case NormalizedByteCode.__frem:
-					case NormalizedByteCode.__drem:
-						ilGenerator.Emit(OpCodes.Rem);
-						break;
-					case NormalizedByteCode.__ishl:
-						EmitLdc_I4(31);
-						ilGenerator.Emit(OpCodes.And);
-						ilGenerator.Emit(OpCodes.Shl);
-						break;
-					case NormalizedByteCode.__lshl:
-						EmitLdc_I4(63);
-						ilGenerator.Emit(OpCodes.And);
-						ilGenerator.Emit(OpCodes.Shl);
-						break;
-					case NormalizedByteCode.__iushr:
-						EmitLdc_I4(31);
-						ilGenerator.Emit(OpCodes.And);
-						ilGenerator.Emit(OpCodes.Shr_Un);
-						break;
-					case NormalizedByteCode.__lushr:
-						EmitLdc_I4(63);
-						ilGenerator.Emit(OpCodes.And);
-						ilGenerator.Emit(OpCodes.Shr_Un);
-						break;
-					case NormalizedByteCode.__ishr:
-						EmitLdc_I4(31);
-						ilGenerator.Emit(OpCodes.And);
-						ilGenerator.Emit(OpCodes.Shr);
-						break;
-					case NormalizedByteCode.__lshr:
-						EmitLdc_I4(63);
-						ilGenerator.Emit(OpCodes.And);
-						ilGenerator.Emit(OpCodes.Shr);
-						break;
-					case NormalizedByteCode.__swap:
+					else
 					{
 						DupHelper dh = new DupHelper(this, 2);
-						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+						dh.SetType(0, type1);
+						dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+						dh.Store(0);
+						dh.Store(1);
+						dh.Load(1);
+						dh.Load(0);
+						dh.Load(1);
+						dh.Load(0);
+						dh.Release();
+					}
+					break;
+				}
+				case NormalizedByteCode.__dup_x1:
+				{
+					DupHelper dh = new DupHelper(this, 2);
+					dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+					dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+					dh.Store(0);
+					dh.Store(1);
+					dh.Load(0);
+					dh.Load(1);
+					dh.Load(0);
+					dh.Release();
+					break;
+				}
+				case NormalizedByteCode.__dup2_x1:
+				{
+					TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
+					if(type1.IsWidePrimitive)
+					{
+						DupHelper dh = new DupHelper(this, 2);
+						dh.SetType(0, type1);
 						dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
 						dh.Store(0);
 						dh.Store(1);
 						dh.Load(0);
 						dh.Load(1);
+						dh.Load(0);
 						dh.Release();
-						break;
 					}
-					case NormalizedByteCode.__dup:
-						// if the TOS contains a "new" object, it isn't really there, so we don't dup it
-						if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
-						{
-							ilGenerator.Emit(OpCodes.Dup);
-						}
-						break;
-					case NormalizedByteCode.__dup2:
+					else
 					{
-						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
-						if(type1.IsWidePrimitive)
-						{
-							ilGenerator.Emit(OpCodes.Dup);
-						}
-						else
-						{
-							DupHelper dh = new DupHelper(this, 2);
-							dh.SetType(0, type1);
-							dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
-							dh.Store(0);
-							dh.Store(1);
-							dh.Load(1);
-							dh.Load(0);
-							dh.Load(1);
-							dh.Load(0);
-							dh.Release();
-						}
-						break;
-					}
-					case NormalizedByteCode.__dup_x1:
-					{
-						DupHelper dh = new DupHelper(this, 2);
-						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+						DupHelper dh = new DupHelper(this, 3);
+						dh.SetType(0, type1);
 						dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+						dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
 						dh.Store(0);
 						dh.Store(1);
+						dh.Store(2);
+						dh.Load(1);
 						dh.Load(0);
+						dh.Load(2);
 						dh.Load(1);
 						dh.Load(0);
 						dh.Release();
-						break;
 					}
-					case NormalizedByteCode.__dup2_x1:
+					break;
+				}
+				case NormalizedByteCode.__dup2_x2:
+				{
+					TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
+					TypeWrapper type2 = ma.GetRawStackTypeWrapper(i, 1);
+					if(type1.IsWidePrimitive)
 					{
-						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
-						if(type1.IsWidePrimitive)
+						if(type2.IsWidePrimitive)
 						{
+							// Form 4
 							DupHelper dh = new DupHelper(this, 2);
 							dh.SetType(0, type1);
-							dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+							dh.SetType(1, type2);
 							dh.Store(0);
 							dh.Store(1);
 							dh.Load(0);
@@ -2656,10 +2539,31 @@ class Compiler
 						}
 						else
 						{
+							// Form 2
 							DupHelper dh = new DupHelper(this, 3);
 							dh.SetType(0, type1);
-							dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+							dh.SetType(1, type2);
 							dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
+							dh.Store(0);
+							dh.Store(1);
+							dh.Store(2);
+							dh.Load(0);
+							dh.Load(2);
+							dh.Load(1);
+							dh.Load(0);
+							dh.Release();
+						}
+					}
+					else
+					{
+						TypeWrapper type3 = ma.GetRawStackTypeWrapper(i, 2);
+						if(type3.IsWidePrimitive)
+						{
+							// Form 3
+							DupHelper dh = new DupHelper(this, 3);
+							dh.SetType(0, type1);
+							dh.SetType(1, type2);
+							dh.SetType(2, type3);
 							dh.Store(0);
 							dh.Store(1);
 							dh.Store(2);
@@ -2670,336 +2574,273 @@ class Compiler
 							dh.Load(0);
 							dh.Release();
 						}
-						break;
-					}
-					case NormalizedByteCode.__dup2_x2:
-					{
-						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
-						TypeWrapper type2 = ma.GetRawStackTypeWrapper(i, 1);
-						if(type1.IsWidePrimitive)
-						{
-							if(type2.IsWidePrimitive)
-							{
-								// Form 4
-								DupHelper dh = new DupHelper(this, 2);
-								dh.SetType(0, type1);
-								dh.SetType(1, type2);
-								dh.Store(0);
-								dh.Store(1);
-								dh.Load(0);
-								dh.Load(1);
-								dh.Load(0);
-								dh.Release();
-							}
-							else
-							{
-								// Form 2
-								DupHelper dh = new DupHelper(this, 3);
-								dh.SetType(0, type1);
-								dh.SetType(1, type2);
-								dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
-								dh.Store(0);
-								dh.Store(1);
-								dh.Store(2);
-								dh.Load(0);
-								dh.Load(2);
-								dh.Load(1);
-								dh.Load(0);
-								dh.Release();
-							}
-						}
 						else
 						{
-							TypeWrapper type3 = ma.GetRawStackTypeWrapper(i, 2);
-							if(type3.IsWidePrimitive)
-							{
-								// Form 3
-								DupHelper dh = new DupHelper(this, 3);
-								dh.SetType(0, type1);
-								dh.SetType(1, type2);
-								dh.SetType(2, type3);
-								dh.Store(0);
-								dh.Store(1);
-								dh.Store(2);
-								dh.Load(1);
-								dh.Load(0);
-								dh.Load(2);
-								dh.Load(1);
-								dh.Load(0);
-								dh.Release();
-							}
-							else
-							{
-								// Form 1
-								DupHelper dh = new DupHelper(this, 4);
-								dh.SetType(0, type1);
-								dh.SetType(1, type2);
-								dh.SetType(2, type3);
-								dh.SetType(3, ma.GetRawStackTypeWrapper(i, 3));
-								dh.Store(0);
-								dh.Store(1);
-								dh.Store(2);
-								dh.Store(3);
-								dh.Load(1);
-								dh.Load(0);
-								dh.Load(3);
-								dh.Load(2);
-								dh.Load(1);
-								dh.Load(0);
-								dh.Release();
-							}
+							// Form 1
+							DupHelper dh = new DupHelper(this, 4);
+							dh.SetType(0, type1);
+							dh.SetType(1, type2);
+							dh.SetType(2, type3);
+							dh.SetType(3, ma.GetRawStackTypeWrapper(i, 3));
+							dh.Store(0);
+							dh.Store(1);
+							dh.Store(2);
+							dh.Store(3);
+							dh.Load(1);
+							dh.Load(0);
+							dh.Load(3);
+							dh.Load(2);
+							dh.Load(1);
+							dh.Load(0);
+							dh.Release();
 						}
-						break;
 					}
-					case NormalizedByteCode.__dup_x2:
-					{
-						DupHelper dh = new DupHelper(this, 3);
-						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
-						dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
-						dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
-						dh.Store(0);
-						dh.Store(1);
-						dh.Store(2);
-						dh.Load(0);
-						dh.Load(2);
-						dh.Load(1);
-						dh.Load(0);
-						dh.Release();
-						break;
-					}
-					case NormalizedByteCode.__pop2:
-					{
-						TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
-						if(type1.IsWidePrimitive)
-						{
-							ilGenerator.Emit(OpCodes.Pop);
-						}
-						else
-						{
-							if(!VerifierTypeWrapper.IsNew(type1))
-							{
-								ilGenerator.Emit(OpCodes.Pop);
-							}
-							if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 1)))
-							{
-								ilGenerator.Emit(OpCodes.Pop);
-							}
-						}
-						break;
-					}
-					case NormalizedByteCode.__pop:
-						// if the TOS is a new object, it isn't really there, so we don't need to pop it
-						if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
-						{
-							ilGenerator.Emit(OpCodes.Pop);
-						}
-						break;
-					case NormalizedByteCode.__monitorenter:
-						ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
-						break;
-					case NormalizedByteCode.__monitorexit:
-						ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
-						break;
-					case NormalizedByteCode.__athrow:
-						// TODO we shouldn't call unmap when we know it isn't needed
-						ilGenerator.Emit(OpCodes.Call, unmapExceptionMethod);
-						ilGenerator.Emit(OpCodes.Throw);
-						break;
-					case NormalizedByteCode.__tableswitch:
-					{
-						// note that a tableswitch always has at least one entry
-						// (otherwise it would have failed verification)
-						Label[] labels = new Label[instr.SwitchEntryCount];
-						for(int j = 0; j < labels.Length; j++)
-						{
-							labels[j] = block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j));
-						}
-						if(instr.GetSwitchValue(0) != 0)
-						{
-							EmitLdc_I4(instr.GetSwitchValue(0));
-							ilGenerator.Emit(OpCodes.Sub);
-						}
-						ilGenerator.Emit(OpCodes.Switch, labels);
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
-						break;
-					}
-					case NormalizedByteCode.__lookupswitch:
-						for(int j = 0; j < instr.SwitchEntryCount; j++)
-						{
-							ilGenerator.Emit(OpCodes.Dup);
-							EmitLdc_I4(instr.GetSwitchValue(j));
-							Label label = ilGenerator.DefineLabel();
-							ilGenerator.Emit(OpCodes.Bne_Un_S, label);
-							ilGenerator.Emit(OpCodes.Pop);
-							ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j)));
-							ilGenerator.MarkLabel(label);
-						}
-						ilGenerator.Emit(OpCodes.Pop);
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
-						break;
-					case NormalizedByteCode.__iinc:
-						LoadLocal(instr);
-						EmitLdc_I4(instr.Arg2);
-						ilGenerator.Emit(OpCodes.Add);
-						StoreLocal(instr);
-						break;
-					case NormalizedByteCode.__i2b:
-						ilGenerator.Emit(OpCodes.Conv_I1);
-						break;
-					case NormalizedByteCode.__i2c:
-						ilGenerator.Emit(OpCodes.Conv_U2);
-						break;
-					case NormalizedByteCode.__i2s:
-						ilGenerator.Emit(OpCodes.Conv_I2);
-						break;
-					case NormalizedByteCode.__l2i:
-						ilGenerator.Emit(OpCodes.Conv_I4);
-						break;
-					case NormalizedByteCode.__f2i:
-						ilGenerator.Emit(OpCodes.Call, f2iMethod);
-						break;
-					case NormalizedByteCode.__d2i:
-						ilGenerator.Emit(OpCodes.Call, d2iMethod);
-						break;
-					case NormalizedByteCode.__f2l:
-						ilGenerator.Emit(OpCodes.Call, f2lMethod);
-						break;
-					case NormalizedByteCode.__d2l:
-						ilGenerator.Emit(OpCodes.Call, d2lMethod);
-						break;
-					case NormalizedByteCode.__i2l:
-						ilGenerator.Emit(OpCodes.Conv_I8);
-						break;
-					case NormalizedByteCode.__i2f:
-					case NormalizedByteCode.__l2f:
-					case NormalizedByteCode.__d2f:
-						ilGenerator.Emit(OpCodes.Conv_R4);
-						break;
-					case NormalizedByteCode.__i2d:
-					case NormalizedByteCode.__l2d:
-					case NormalizedByteCode.__f2d:
-						ilGenerator.Emit(OpCodes.Conv_R8);
-						break;
-					case NormalizedByteCode.__jsr:
-					{
-						int index = FindPcIndex(instr.PC + instr.Arg1);
-						int[] callsites = ma.GetCallSites(index);
-						for(int j = 0; j < callsites.Length; j++)
-						{
-							if(callsites[j] == i)
-							{
-								EmitLdc_I4(j);
-								break;
-							}
-						}
-						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.Arg1));
-						break;
-					}
-					case NormalizedByteCode.__ret:
-					{
-						// NOTE using a OpCodes.Switch here is not efficient, because 99 out of a 100 cases
-						// there are either one or two call sites.
-						int subid = ((VerifierTypeWrapper)ma.GetLocalTypeWrapper(i, instr.Arg1)).Index;
-						int[] callsites = ma.GetCallSites(subid);
-						for(int j = 0; j < callsites.Length - 1; j++)
-						{
-							if(m.Instructions[callsites[j]].IsReachable)
-							{
-								LoadLocal(instr);
-								EmitLdc_I4(j);
-								ilGenerator.Emit(OpCodes.Beq, block.GetLabel(m.Instructions[callsites[j] + 1].PC));
-							}
-						}
-						if(m.Instructions[callsites[callsites.Length - 1]].IsReachable)
-						{
-							ilGenerator.Emit(OpCodes.Br, block.GetLabel(m.Instructions[callsites[callsites.Length - 1] + 1].PC));
-						}
-						break;
-					}
-					case NormalizedByteCode.__nop:
-						ilGenerator.Emit(OpCodes.Nop);
-						break;
-					case NormalizedByteCode.__static_error:
-					{
-						TypeWrapper exceptionType;
-						switch(instr.HardError)
-						{
-							case HardError.AbstractMethodError:
-								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.AbstractMethodError");
-								break;
-							case HardError.IllegalAccessError:
-								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.IllegalAccessError");
-								break;
-							case HardError.IncompatibleClassChangeError:
-								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.IncompatibleClassChangeError");
-								break;
-							case HardError.InstantiationError:
-								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.InstantiationError");
-								break;
-							case HardError.LinkageError:
-								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.LinkageError");
-								break;
-							case HardError.NoClassDefFoundError:
-								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoClassDefFoundError");
-								break;
-							case HardError.NoSuchFieldError:
-								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchFieldError");
-								break;
-							case HardError.NoSuchMethodError:
-								exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchMethodError");
-								break;
-							default:
-								throw new InvalidOperationException();
-						}
-						string message = ma.GetErrorMessage(instr.HardErrorMessageId);
-						Tracer.Error(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", exceptionType.Name, message, classFile.Name, m.Name, m.Signature);
-						ilGenerator.Emit(OpCodes.Ldstr, message);
-						MethodWrapper method = exceptionType.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
-						method.Link();
-						method.EmitNewobj(ilGenerator);
-						ilGenerator.Emit(OpCodes.Throw);
-						break;
-					}
-					default:
-						throw new NotImplementedException(instr.NormalizedOpCode.ToString());
+					break;
 				}
-				// mark next instruction as inuse
-				switch(instr.NormalizedOpCode)
+				case NormalizedByteCode.__dup_x2:
 				{
-					case NormalizedByteCode.__tableswitch:
-					case NormalizedByteCode.__lookupswitch:
-					case NormalizedByteCode.__goto:
-					case NormalizedByteCode.__jsr:
-					case NormalizedByteCode.__ret:
-					case NormalizedByteCode.__ireturn:
-					case NormalizedByteCode.__lreturn:
-					case NormalizedByteCode.__freturn:
-					case NormalizedByteCode.__dreturn:
-					case NormalizedByteCode.__areturn:
-					case NormalizedByteCode.__return:
-					case NormalizedByteCode.__athrow:
-					case NormalizedByteCode.__static_error:
-						instructionIsForwardReachable = false;
-						break;
-					default:
-						instructionIsForwardReachable = true;
-						Debug.Assert(m.Instructions[i + 1].IsReachable);
-						// don't fall through end of try block
-						if(m.Instructions[i + 1].PC == block.End)
-						{
-							// TODO instead of emitting a branch to the leave stub, it would be more efficient to put the leave stub here
-							ilGenerator.Emit(OpCodes.Br, block.GetLabel(m.Instructions[i + 1].PC));
-						}
-						break;
+					DupHelper dh = new DupHelper(this, 3);
+					dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+					dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
+					dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
+					dh.Store(0);
+					dh.Store(1);
+					dh.Store(2);
+					dh.Load(0);
+					dh.Load(2);
+					dh.Load(1);
+					dh.Load(0);
+					dh.Release();
+					break;
 				}
+				case NormalizedByteCode.__pop2:
+				{
+					TypeWrapper type1 = ma.GetRawStackTypeWrapper(i, 0);
+					if(type1.IsWidePrimitive)
+					{
+						ilGenerator.Emit(OpCodes.Pop);
+					}
+					else
+					{
+						if(!VerifierTypeWrapper.IsNew(type1))
+						{
+							ilGenerator.Emit(OpCodes.Pop);
+						}
+						if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 1)))
+						{
+							ilGenerator.Emit(OpCodes.Pop);
+						}
+					}
+					break;
+				}
+				case NormalizedByteCode.__pop:
+					// if the TOS is a new object, it isn't really there, so we don't need to pop it
+					if(!VerifierTypeWrapper.IsNew(ma.GetRawStackTypeWrapper(i, 0)))
+					{
+						ilGenerator.Emit(OpCodes.Pop);
+					}
+					break;
+				case NormalizedByteCode.__monitorenter:
+					ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
+					break;
+				case NormalizedByteCode.__monitorexit:
+					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
+					break;
+				case NormalizedByteCode.__athrow:
+					// TODO we shouldn't call unmap when we know it isn't needed
+					if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+					{
+						ilGenerator.Emit(OpCodes.Castclass, typeof(Exception));
+					}
+					ilGenerator.Emit(OpCodes.Call, unmapExceptionMethod);
+					ilGenerator.Emit(OpCodes.Throw);
+					break;
+				case NormalizedByteCode.__tableswitch:
+				{
+					// note that a tableswitch always has at least one entry
+					// (otherwise it would have failed verification)
+					Label[] labels = new Label[instr.SwitchEntryCount];
+					for(int j = 0; j < labels.Length; j++)
+					{
+						labels[j] = block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j));
+					}
+					if(instr.GetSwitchValue(0) != 0)
+					{
+						EmitLdc_I4(instr.GetSwitchValue(0));
+						ilGenerator.Emit(OpCodes.Sub);
+					}
+					ilGenerator.Emit(OpCodes.Switch, labels);
+					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
+					break;
+				}
+				case NormalizedByteCode.__lookupswitch:
+					for(int j = 0; j < instr.SwitchEntryCount; j++)
+					{
+						ilGenerator.Emit(OpCodes.Dup);
+						EmitLdc_I4(instr.GetSwitchValue(j));
+						Label label = ilGenerator.DefineLabel();
+						ilGenerator.Emit(OpCodes.Bne_Un_S, label);
+						ilGenerator.Emit(OpCodes.Pop);
+						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j)));
+						ilGenerator.MarkLabel(label);
+					}
+					ilGenerator.Emit(OpCodes.Pop);
+					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.DefaultOffset));
+					break;
+				case NormalizedByteCode.__iinc:
+					LoadLocal(instr);
+					EmitLdc_I4(instr.Arg2);
+					ilGenerator.Emit(OpCodes.Add);
+					StoreLocal(instr);
+					break;
+				case NormalizedByteCode.__i2b:
+					ilGenerator.Emit(OpCodes.Conv_I1);
+					break;
+				case NormalizedByteCode.__i2c:
+					ilGenerator.Emit(OpCodes.Conv_U2);
+					break;
+				case NormalizedByteCode.__i2s:
+					ilGenerator.Emit(OpCodes.Conv_I2);
+					break;
+				case NormalizedByteCode.__l2i:
+					ilGenerator.Emit(OpCodes.Conv_I4);
+					break;
+				case NormalizedByteCode.__f2i:
+					ilGenerator.Emit(OpCodes.Call, f2iMethod);
+					break;
+				case NormalizedByteCode.__d2i:
+					ilGenerator.Emit(OpCodes.Call, d2iMethod);
+					break;
+				case NormalizedByteCode.__f2l:
+					ilGenerator.Emit(OpCodes.Call, f2lMethod);
+					break;
+				case NormalizedByteCode.__d2l:
+					ilGenerator.Emit(OpCodes.Call, d2lMethod);
+					break;
+				case NormalizedByteCode.__i2l:
+					ilGenerator.Emit(OpCodes.Conv_I8);
+					break;
+				case NormalizedByteCode.__i2f:
+				case NormalizedByteCode.__l2f:
+				case NormalizedByteCode.__d2f:
+					ilGenerator.Emit(OpCodes.Conv_R4);
+					break;
+				case NormalizedByteCode.__i2d:
+				case NormalizedByteCode.__l2d:
+				case NormalizedByteCode.__f2d:
+					ilGenerator.Emit(OpCodes.Conv_R8);
+					break;
+				case NormalizedByteCode.__jsr:
+				{
+					int index = FindPcIndex(instr.PC + instr.Arg1);
+					int[] callsites = ma.GetCallSites(index);
+					for(int j = 0; j < callsites.Length; j++)
+					{
+						if(callsites[j] == i)
+						{
+							EmitLdc_I4(j);
+							break;
+						}
+					}
+					ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.Arg1));
+					break;
+				}
+				case NormalizedByteCode.__ret:
+				{
+					// NOTE using a OpCodes.Switch here is not efficient, because 99 out of a 100 cases
+					// there are either one or two call sites.
+					int subid = ((VerifierTypeWrapper)ma.GetLocalTypeWrapper(i, instr.Arg1)).Index;
+					int[] callsites = ma.GetCallSites(subid);
+					for(int j = 0; j < callsites.Length - 1; j++)
+					{
+						if(m.Instructions[callsites[j]].IsReachable)
+						{
+							LoadLocal(instr);
+							EmitLdc_I4(j);
+							ilGenerator.Emit(OpCodes.Beq, block.GetLabel(m.Instructions[callsites[j] + 1].PC));
+						}
+					}
+					if(m.Instructions[callsites[callsites.Length - 1]].IsReachable)
+					{
+						ilGenerator.Emit(OpCodes.Br, block.GetLabel(m.Instructions[callsites[callsites.Length - 1] + 1].PC));
+					}
+					break;
+				}
+				case NormalizedByteCode.__nop:
+					ilGenerator.Emit(OpCodes.Nop);
+					break;
+				case NormalizedByteCode.__static_error:
+				{
+					TypeWrapper exceptionType;
+					switch(instr.HardError)
+					{
+						case HardError.AbstractMethodError:
+							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.AbstractMethodError");
+							break;
+						case HardError.IllegalAccessError:
+							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.IllegalAccessError");
+							break;
+						case HardError.IncompatibleClassChangeError:
+							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.IncompatibleClassChangeError");
+							break;
+						case HardError.InstantiationError:
+							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.InstantiationError");
+							break;
+						case HardError.LinkageError:
+							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.LinkageError");
+							break;
+						case HardError.NoClassDefFoundError:
+							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoClassDefFoundError");
+							break;
+						case HardError.NoSuchFieldError:
+							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchFieldError");
+							break;
+						case HardError.NoSuchMethodError:
+							exceptionType = ClassLoaderWrapper.LoadClassCritical("java.lang.NoSuchMethodError");
+							break;
+						default:
+							throw new InvalidOperationException();
+					}
+					string message = ma.GetErrorMessage(instr.HardErrorMessageId);
+					Tracer.Error(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", exceptionType.Name, message, classFile.Name, m.Name, m.Signature);
+					ilGenerator.Emit(OpCodes.Ldstr, message);
+					MethodWrapper method = exceptionType.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+					method.Link();
+					method.EmitNewobj(ilGenerator);
+					ilGenerator.Emit(OpCodes.Throw);
+					break;
+				}
+				default:
+					throw new NotImplementedException(instr.NormalizedOpCode.ToString());
 			}
-			catch(EmitException x)
+			// mark next instruction as inuse
+			switch(instr.NormalizedOpCode)
 			{
-				x.Emit(ilGenerator, classFile, m);
-				// mark the next instruction as not forward reachable,
-				// this will cause the stack to be loaded from locals
-				// (which is needed for the code to be verifiable)
-				instructionIsForwardReachable = false;
+				case NormalizedByteCode.__tableswitch:
+				case NormalizedByteCode.__lookupswitch:
+				case NormalizedByteCode.__goto:
+				case NormalizedByteCode.__jsr:
+				case NormalizedByteCode.__ret:
+				case NormalizedByteCode.__ireturn:
+				case NormalizedByteCode.__lreturn:
+				case NormalizedByteCode.__freturn:
+				case NormalizedByteCode.__dreturn:
+				case NormalizedByteCode.__areturn:
+				case NormalizedByteCode.__return:
+				case NormalizedByteCode.__athrow:
+				case NormalizedByteCode.__static_error:
+					instructionIsForwardReachable = false;
+					break;
+				default:
+					instructionIsForwardReachable = true;
+					Debug.Assert(m.Instructions[i + 1].IsReachable);
+					// don't fall through end of try block
+					if(m.Instructions[i + 1].PC == block.End)
+					{
+						// TODO instead of emitting a branch to the leave stub, it would be more efficient to put the leave stub here
+						ilGenerator.Emit(OpCodes.Br, block.GetLabel(m.Instructions[i + 1].PC));
+					}
+					break;
 			}
 		}
 	}
@@ -3195,10 +3036,6 @@ class Compiler
 		TypeWrapper wrapper = cpi.GetClassType();
 		if(wrapper.IsUnloadable)
 		{
-			if(JVM.DisableDynamicBinding)
-			{
-				throw new NoClassDefFoundError(wrapper.Name);
-			}
 			TypeWrapper fieldTypeWrapper = cpi.GetFieldType();
 			if(write && !fieldTypeWrapper.IsUnloadable && fieldTypeWrapper.IsPrimitive)
 			{
@@ -3233,61 +3070,20 @@ class Compiler
 		}
 		else
 		{
-			TypeWrapper thisType = null;
-			if(bytecode == NormalizedByteCode.__getfield)
-			{
-				thisType = SigTypeToClassName(ma.GetRawStackTypeWrapper(i, 0), cpi.GetClassType());
-			}
-			else if(bytecode == NormalizedByteCode.__putfield)
-			{
-				thisType = SigTypeToClassName(ma.GetRawStackTypeWrapper(i, 1), cpi.GetClassType());
-			}
-			bool isStatic = (bytecode == NormalizedByteCode.__putstatic || bytecode == NormalizedByteCode.__getstatic);
 			FieldWrapper field = cpi.GetField();
-			if(field != null)
+			if(write)
 			{
-				CheckLoaderConstraints(cpi, field);
-				if(field.IsStatic == isStatic)
-				{
-					if(field.IsAccessibleFrom(cpi.GetClassType(), clazz, thisType))
-					{
-						// are we trying to mutate a final field? (they are read-only from outside of the defining class)
-						if(write && field.IsFinal
-							&& ((isStatic ? clazz != wrapper : clazz != thisType) || (JVM.StrictFinalFieldSemantics && (isStatic ? m.Name != "<clinit>" : m.Name != "<init>"))))
-						{
-							throw new IllegalAccessError("Field " + field.DeclaringType.Name + "." + field.Name + " is final");
-						}
-						else
-						{
-							if(!write)
-							{
-								field.EmitGet(ilGenerator);
-								field.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilGenerator);
-								return;
-							}
-							else
-							{
-								TypeWrapper tw = field.FieldTypeWrapper;
-								TypeWrapper val = ma.GetRawStackTypeWrapper(i, 0);
-								tw.EmitConvStackTypeToSignatureType(ilGenerator, val);
-								field.EmitSet(ilGenerator);
-								return;
-							}
-						}
-					}
-					else
-					{
-						throw new IllegalAccessError("Try to access field " + field.DeclaringType.Name + "." + field.Name + " from class " + clazz.Name);
-					}
-				}
-				else
-				{
-					throw new IncompatibleClassChangeError("Static field access to non-static field (or v.v.)");
-				}
+				TypeWrapper tw = field.FieldTypeWrapper;
+				TypeWrapper val = ma.GetRawStackTypeWrapper(i, 0);
+				tw.EmitConvStackTypeToSignatureType(ilGenerator, val);
+				field.EmitSet(ilGenerator);
+				return;
 			}
 			else
 			{
-				throw new NoSuchFieldError(cpi.Class + "." + cpi.Name);
+				field.EmitGet(ilGenerator);
+				field.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilGenerator);
+				return;
 			}
 		}
 	}
@@ -3379,66 +3175,22 @@ class Compiler
 		}
 	}
 
-	private MethodWrapper GetMethodCallEmitter(ClassFile.ConstantPoolItemMI cpi, TypeWrapper thisType, NormalizedByteCode invoke)
+	private MethodWrapper GetMethodCallEmitter(ClassFile.ConstantPoolItemMI cpi, NormalizedByteCode invoke)
 	{
-		TypeWrapper wrapper = cpi.GetClassType();
-		if(wrapper.IsUnloadable || (thisType != null && thisType.IsUnloadable))
+		switch(invoke)
 		{
-			if(JVM.DisableDynamicBinding)
-			{
-				throw new NoClassDefFoundError(wrapper.Name);
-			}
-			return new DynamicMethodWrapper(clazz, cpi);
-		}
-		else
-		{
-			if(wrapper.IsInterface != (invoke == NormalizedByteCode.__invokeinterface))
-			{
-				throw new IncompatibleClassChangeError("invokeinterface on non-interface");
-			}
-			else
-			{
-				MethodWrapper method = invoke == NormalizedByteCode.__invokespecial ? cpi.GetMethodForInvokespecial() : cpi.GetMethod();
-				if(method != null)
-				{
-					CheckLoaderConstraints(cpi, method);
-					if(method.IsStatic == (invoke == NormalizedByteCode.__invokestatic))
-					{
-						if(method.IsAbstract && invoke == NormalizedByteCode.__invokespecial)
-						{
-							throw new AbstractMethodError(cpi.Class + "." + cpi.Name + cpi.Signature);
-						}
-						else if(method.IsAccessibleFrom(cpi.GetClassType(), clazz, thisType))
-						{
-							return method;
-						}
-						else
-						{
-							// NOTE special case for incorrect invocation of Object.clone(), because this could mean
-							// we're calling clone() on an array
-							// (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
-							if(wrapper == java_lang_Object && thisType.IsArray && cpi.Name == "clone")
-							{
-								// NOTE since thisType is an array, we can be sure that the method is already linked
-								method = thisType.GetMethodWrapper(cpi.Name, cpi.Signature, false);
-								if(method != null && method.IsPublic)
-								{
-									return method;
-								}
-							}
-							throw new IllegalAccessError("Try to access method " + method.DeclaringType.Name + "." + cpi.Name + cpi.Signature + " from class " + clazz.Name);
-						}
-					}
-					else
-					{
-						throw new IncompatibleClassChangeError("static call to non-static method (or v.v.)");
-					}
-				}
-				else
-				{
-					throw new NoSuchMethodError(cpi.Class + "." + cpi.Name + cpi.Signature);
-				}
-			}
+			case NormalizedByteCode.__invokespecial:
+				return cpi.GetMethodForInvokespecial();
+			case NormalizedByteCode.__invokeinterface:
+			case NormalizedByteCode.__invokestatic:
+			case NormalizedByteCode.__invokevirtual:
+				return cpi.GetMethod();
+			case NormalizedByteCode.__dynamic_invokeinterface:
+			case NormalizedByteCode.__dynamic_invokestatic:
+			case NormalizedByteCode.__dynamic_invokevirtual:
+				return new DynamicMethodWrapper(clazz, cpi);
+			default:
+				throw new InvalidOperationException();
 		}
 	}
 

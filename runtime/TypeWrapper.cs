@@ -1496,12 +1496,7 @@ namespace IKVM.Internal
 			get;
 		}
 
-		internal void Finish()
-		{
-			Finish(false);
-		}
-
-		internal abstract void Finish(bool forDebugSave);
+		internal abstract void Finish();
 
 		private void ImplementInterfaceMethodStubImpl(MethodWrapper ifmethod, TypeBuilder typeBuilder, DynamicTypeWrapper wrapper)
 		{
@@ -1964,7 +1959,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override void Finish(bool forDebugSave)
+		internal override void Finish()
 		{
 			throw new InvalidOperationException("Finish called on UnloadableTypeWrapper: " + Name);
 		}
@@ -2059,7 +2054,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override void Finish(bool forDebugSave)
+		internal override void Finish()
 		{
 		}
 
@@ -2302,14 +2297,14 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override void Finish(bool forDebugSave)
+		internal override void Finish()
 		{
 			lock(this)
 			{
 				Profiler.Enter("DynamicTypeWrapper.Finish");
 				try
 				{
-					impl = impl.Finish(forDebugSave);
+					impl = impl.Finish();
 				}
 				finally
 				{
@@ -2339,7 +2334,7 @@ namespace IKVM.Internal
 			internal abstract TypeWrapper[] InnerClasses { get; }
 			internal abstract TypeWrapper DeclaringTypeWrapper { get; }
 			internal abstract Modifiers ReflectiveModifiers { get; }
-			internal abstract DynamicImpl Finish(bool forDebugSave);
+			internal abstract DynamicImpl Finish();
 			internal abstract MethodBase LinkMethod(MethodWrapper mw);
 			internal abstract FieldInfo LinkField(FieldWrapper fw);
 		}
@@ -2352,7 +2347,6 @@ namespace IKVM.Internal
 			private MethodWrapper[] methods;
 			private MethodWrapper[] baseMethods;
 			private FieldWrapper[] fields;
-			private bool finishingForDebugSave;
 			private FinishedTypeImpl finishedType;
 			private readonly DynamicTypeWrapper outerClassWrapper;
 			private Hashtable memberclashtable;
@@ -2843,9 +2837,9 @@ namespace IKVM.Internal
 					// check the loader constraints
 					if(mw.ReturnType != baseMethod.ReturnType)
 					{
-						if(baseMethod.ReturnType.IsUnloadable || finishingForDebugSave)
+						if(baseMethod.ReturnType.IsUnloadable || JVM.FinishingForDebugSave)
 						{
-							if(!mw.ReturnType.IsUnloadable || (!baseMethod.ReturnType.IsUnloadable && finishingForDebugSave))
+							if(!mw.ReturnType.IsUnloadable || (!baseMethod.ReturnType.IsUnloadable && JVM.FinishingForDebugSave))
 							{
 								unloadableOverrideStub = true;
 							}
@@ -2861,9 +2855,9 @@ namespace IKVM.Internal
 					{
 						if(here[i] != there[i])
 						{
-							if(there[i].IsUnloadable || finishingForDebugSave)
+							if(there[i].IsUnloadable || JVM.FinishingForDebugSave)
 							{
-								if(!here[i].IsUnloadable || (!there[i].IsUnloadable && finishingForDebugSave))
+								if(!here[i].IsUnloadable || (!there[i].IsUnloadable && JVM.FinishingForDebugSave))
 								{
 									unloadableOverrideStub = true;
 								}
@@ -3034,16 +3028,15 @@ namespace IKVM.Internal
 				return field;
 			}
 
-			internal override DynamicImpl Finish(bool forDebugSave)
+			internal override DynamicImpl Finish()
 			{
-				this.finishingForDebugSave = forDebugSave;
 				if(wrapper.BaseTypeWrapper != null)
 				{
-					wrapper.BaseTypeWrapper.Finish(forDebugSave);
+					wrapper.BaseTypeWrapper.Finish();
 				}
 				if(outerClassWrapper != null)
 				{
-					outerClassWrapper.Finish(forDebugSave);
+					outerClassWrapper.Finish();
 				}
 				// NOTE there is a bug in the CLR (.NET 1.0 & 1.1 [1.2 is not yet available]) that
 				// causes the AppDomain.TypeResolve event to receive the incorrect type name for nested types.
@@ -3057,7 +3050,7 @@ namespace IKVM.Internal
 				// turned up no other cases of the TypeResolve event firing.
 				for(int i = 0; i < wrapper.Interfaces.Length; i++)
 				{
-					wrapper.Interfaces[i].Finish(forDebugSave);
+					wrapper.Interfaces[i].Finish();
 				}
 				// make sure all classes are loaded, before we start finishing the type. During finishing, we
 				// may not run any Java code, because that might result in a request to finish the type that we
@@ -3868,7 +3861,7 @@ namespace IKVM.Internal
 						Debug.Assert(baseMethods[index].DeclaringType.IsInterface);
 						string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index]);
 						// TODO if the interface is not public, we probably shouldn't make the Miranda method public
-						MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride, baseMethods[index].ReturnTypeForDefineMethod, baseMethods[index].GetParametersForDefineMethod());
+						MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 						AttributeHelper.MirandaMethod(mb);
 						if(unloadableOverrideStub || name != methods[index].Name)
 						{
@@ -4069,20 +4062,23 @@ namespace IKVM.Internal
 									needFinalize = false;
 								}
 							}
-							if(unloadableOverrideStub)
-							{
-								attribs |= MethodAttributes.NewSlot;
-							}
 							if(setNameSig || memberclashtable != null)
 							{
+								// TODO we really should make sure that the name we generate doesn't already exist in a
+								// base class (not in the Java method namespace, but in the CLR method namespace)
 								name = GenerateUniqueMethodName(name, methods[index]);
+							}
+							bool needMethodImpl = baseMce != null && (explicitOverride || baseMce.RealName != name) && !needFinalize;
+							if(unloadableOverrideStub || needMethodImpl)
+							{
+								attribs |= MethodAttributes.NewSlot;
 							}
 							mb = typeBuilder.DefineMethod(name, attribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 							if(unloadableOverrideStub)
 							{
 								GenerateUnloadableOverrideStub(baseMce, mb, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 							}
-							else if(baseMce != null && (explicitOverride || baseMce.RealName != name) && !needFinalize)
+							else if(needMethodImpl)
 							{
 								// assert that the method we're overriding is in fact virtual and not final!
 								Debug.Assert(baseMce.GetMethod().IsVirtual && !baseMce.GetMethod().IsFinal);
@@ -4286,7 +4282,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal override DynamicImpl Finish(bool forDebugSave)
+			internal override DynamicImpl Finish()
 			{
 				return this;
 			}
@@ -6139,7 +6135,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override void Finish(bool forDebugSave)
+		internal override void Finish()
 		{
 		}
 	}
@@ -7250,7 +7246,7 @@ namespace IKVM.Internal
 			EmitHelper.Castclass(ilgen, type);
 		}
 
-		internal override void Finish(bool forDebugSave)
+		internal override void Finish()
 		{
 			// TODO instead of linking here, we should just pre-link in LazyPublishMembers
 			foreach(MethodWrapper mw in GetMethods())
@@ -7278,13 +7274,21 @@ namespace IKVM.Internal
 			this.reflectiveModifiers = reflectiveModifiers;
 		}
 
+		internal static MethodInfo CloneMethod
+		{
+			get
+			{
+				if(clone == null)
+				{
+					clone = typeof(Array).GetMethod("Clone", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+				}
+				return clone;
+			}
+		}
+
 		protected override void LazyPublishMembers()
 		{
-			if(clone == null)
-			{
-				clone = typeof(Array).GetMethod("Clone", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-			}
-			MethodWrapper mw = new SimpleCallMethodWrapper(this, "clone", "()Ljava.lang.Object;", clone, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
+			MethodWrapper mw = new SimpleCallMethodWrapper(this, "clone", "()Ljava.lang.Object;", CloneMethod, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
 			mw.Link();
 			SetMethods(new MethodWrapper[] { mw });
 			SetFields(FieldWrapper.EmptyArray);
@@ -7367,7 +7371,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override void Finish(bool forDebugSave)
+		internal override void Finish()
 		{
 			lock(this)
 			{

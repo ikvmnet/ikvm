@@ -786,6 +786,7 @@ namespace IKVM.Internal
 
 		internal static void FinishAll()
 		{
+			JVM.FinishingForDebugSave = true;
 			while(dynamicTypes.Count > 0)
 			{
 				ArrayList l = new ArrayList(dynamicTypes.Values);
@@ -793,7 +794,7 @@ namespace IKVM.Internal
 				{
 					string name = tw.TypeAsTBD.FullName;
 					Tracer.Info(Tracer.Runtime, "Finishing {0}", name);
-					tw.Finish(true);
+					tw.Finish();
 					dynamicTypes.Remove(name);
 				}
 			}
