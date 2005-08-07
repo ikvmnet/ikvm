@@ -960,6 +960,8 @@
 ../../classpath/java/awt/datatransfer/Clipboard.java
 ../../classpath/java/awt/datatransfer/ClipboardOwner.java
 ../../classpath/java/awt/datatransfer/DataFlavor.java
+../../classpath/java/awt/datatransfer/FlavorEvent.java
+../../classpath/java/awt/datatransfer/FlavorListener.java
 ../../classpath/java/awt/datatransfer/FlavorMap.java
 ../../classpath/java/awt/datatransfer/FlavorTable.java
 ../../classpath/java/awt/datatransfer/MimeTypeParseException.java

@@ -786,7 +786,7 @@ class InstructionState
 		// is an interface or array of interfaces, any reference will be accepted
 		if(!baseType.IsUnloadable && !baseType.IsInterfaceOrInterfaceArray && !(type.IsUnloadable || type.IsAssignableTo(baseType)))
 		{
-			throw new VerifyError("Unexpected type " + type + " where " + baseType + " was expected");
+			throw new VerifyError("Unexpected type " + type.Name + " where " + baseType.Name + " was expected");
 		}
 		return type;
 	}
