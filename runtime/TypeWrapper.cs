@@ -3450,38 +3450,47 @@ namespace IKVM.Internal
 
 				static JniProxyBuilder()
 				{
-					mod = ((AssemblyBuilder)ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder.Assembly).DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
+					AssemblyName name = new AssemblyName();
+					name.Name = "jniproxy";
+					AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, ClassLoaderWrapper.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
+					ClassLoaderWrapper.RegisterForSaveDebug(ab);
+					mod = ab.DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
+					CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeof(JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+					mod.SetCustomAttribute(ikvmModuleAttr);					
 				}
 
 				internal static void Generate(ILGenerator ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args)
 				{
-					TypeBuilder tb = mod.DefineType("class" + (count++), TypeAttributes.Public | TypeAttributes.Class);
+					TypeBuilder tb = mod.DefineType("__<jni>" + (count++), TypeAttributes.Public | TypeAttributes.Class);
 					int instance = m.IsStatic ? 0 : 1;
 					Type[] argTypes = new Type[args.Length + instance + 1];
 					if(instance != 0)
 					{
-						argTypes[0] = wrapper.TypeAsSignatureType;
+						argTypes[0] = typeof(object);
 					}
 					for(int i = 0; i < args.Length; i++)
 					{
-						argTypes[i + instance] = args[i].TypeAsSignatureType;
+						// NOTE we take a shortcut here by assuming that all "special" types (i.e. ghost or value types)
+						// are public and so we can get away with replacing all other types with object.
+						argTypes[i + instance] = (args[i].IsPrimitive || args[i].IsGhost || args[i].IsNonPrimitiveValueType) ? args[i].TypeAsSignatureType : typeof(object);
 					}
 					argTypes[argTypes.Length - 1] = typeof(RuntimeMethodHandle);
-					MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, mw.ReturnType.TypeAsSignatureType, argTypes);
+					Type retType = (mw.ReturnType.IsPrimitive || mw.ReturnType.IsGhost || mw.ReturnType.IsNonPrimitiveValueType) ? mw.ReturnType.TypeAsSignatureType : typeof(object);
+					MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, retType, argTypes);
+					AttributeHelper.HideFromJava(mb);
 					JniBuilder.Generate(mb.GetILGenerator(), wrapper, mw, tb, classFile, m, args, true);
+					tb.CreateType();
 					for(int i = 0; i < argTypes.Length - 1; i++)
 					{
 						ilGenerator.Emit(OpCodes.Ldarg, (short)i);
 					}
 					ilGenerator.Emit(OpCodes.Ldtoken, (MethodInfo)mw.GetMethod());
 					ilGenerator.Emit(OpCodes.Call, mb);
+					if(!mw.ReturnType.IsPrimitive && !mw.ReturnType.IsGhost && !mw.ReturnType.IsNonPrimitiveValueType)
+					{
+						ilGenerator.Emit(OpCodes.Castclass, mw.ReturnType.TypeAsSignatureType);
+					}
 					ilGenerator.Emit(OpCodes.Ret);
-					Type type = tb.CreateType();
-					// HACK since we're creating a type in the dynamic assembly, we must also register its wrapper,
-					// because the ClassLoaderWrapper assumes that all dynamic types are in its hashtable,
-					// but note that this only registers it for reverse lookup (from Type -> TypeWrapper), this
-					// is necessary to make stack walking work.
-					ClassLoaderWrapper.SetWrapperForType(type, CompiledTypeWrapper.newInstance(type.FullName, type));
 				}
 			}
 
