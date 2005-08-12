@@ -105,6 +105,8 @@ class Compiler
 			Console.Error.WriteLine("    -resource:<name>=<path>    Include file as Java resource");
 			Console.Error.WriteLine("    -exclude:<filename>        A file containing a list of classes to exclude");
 			Console.Error.WriteLine("    -debug                     Generate debug info for the output file");
+			Console.Error.WriteLine("                               (Note that this also causes the compiler to");
+			Console.Error.WriteLine("                               generated somewhat less efficient CIL code.)");
 			Console.Error.WriteLine("    -srcpath:<path>            Prepend path and package name to source file");
 			Console.Error.WriteLine("    -apartment:sta             (default) Apply STAThreadAttribute to main");
 			Console.Error.WriteLine("    -apartment:mta             Apply MTAThreadAttribute to main");
