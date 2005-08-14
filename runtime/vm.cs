@@ -1658,7 +1658,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal void Process2ndPass(IKVM.Internal.MapXml.Root map)
+				internal void Process2ndPassStep1(IKVM.Internal.MapXml.Root map)
 				{
 					IKVM.Internal.MapXml.Class c = classDef;
 					TypeBuilder tb = typeBuilder;
@@ -1682,6 +1682,13 @@ namespace IKVM.Internal
 					{
 						interfaceWrappers = TypeWrapper.EmptyArray;
 					}
+				}
+
+				internal void Process2ndPassStep2(IKVM.Internal.MapXml.Root map)
+				{
+					IKVM.Internal.MapXml.Class c = classDef;
+					TypeBuilder tb = typeBuilder;
+					bool baseIsSealed = shadowType.IsSealed;
 
 					ArrayList fields = new ArrayList();
 
@@ -1735,7 +1742,7 @@ namespace IKVM.Internal
 											throw new NotImplementedException("remapped constant field of type: " + f.Sig);
 									}
 									fb.SetConstant(constant);
-									fields.Add(new ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant));
+									fields.Add(new ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant, MemberFlags.LiteralField));
 								}
 								else
 								{
@@ -1990,7 +1997,7 @@ namespace IKVM.Internal
 				{
 					get
 					{
-						return null;
+						return TypeWrapper.EmptyArray;
 					}
 				}
 
@@ -2064,7 +2071,15 @@ namespace IKVM.Internal
 					if(c.Shadows != null)
 					{
 						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
-						typeWrapper.Process2ndPass(map);
+						typeWrapper.Process2ndPassStep1(map);
+					}
+				}
+				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
+				{
+					if(c.Shadows != null)
+					{
+						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
+						typeWrapper.Process2ndPassStep2(map);
 					}
 				}
 			}

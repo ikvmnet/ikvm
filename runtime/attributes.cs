@@ -276,8 +276,8 @@ namespace IKVM.Attributes
 	{
 	}
 
-	[AttributeUsage(AttributeTargets.Method)]
-	public sealed class MirandaMethodAttribute : Attribute
+	[AttributeUsage(AttributeTargets.Method | AttributeTargets.Property)]
+	public sealed class HideFromReflectionAttribute : Attribute
 	{
 	}
 

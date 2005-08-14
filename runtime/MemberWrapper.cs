@@ -40,7 +40,8 @@ namespace IKVM.Internal
 		HideFromReflection = 1,
 		ExplicitOverride = 2,
 		LiteralField = 4,
-		MirandaMethod = 8
+		MirandaMethod = 8,
+		AccessStub = 16
 	}
 
 	class MemberWrapper
@@ -49,11 +50,15 @@ namespace IKVM.Internal
 		private TypeWrapper declaringType;
 		private Modifiers modifiers;
 		private MemberFlags flags;
+		private string name;
+		private string sig;
 
-		protected MemberWrapper(TypeWrapper declaringType, Modifiers modifiers, MemberFlags flags)
+		protected MemberWrapper(TypeWrapper declaringType, string name, string sig, Modifiers modifiers, MemberFlags flags)
 		{
 			Debug.Assert(declaringType != null);
 			this.declaringType = declaringType;
+			this.name = String.Intern(name);
+			this.sig = String.Intern(sig);
 			this.modifiers = modifiers;
 			this.flags = flags;
 		}
@@ -106,6 +111,22 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal string Name
+		{
+			get
+			{
+				return name;
+			}
+		}
+
+		internal string Signature
+		{
+			get
+			{
+				return sig;
+			}
+		}
+
 		internal bool IsAccessibleFrom(TypeWrapper referencedType, TypeWrapper caller, TypeWrapper instance)
 		{
 			if(referencedType.IsAccessibleFrom(caller))
@@ -152,6 +173,14 @@ namespace IKVM.Internal
 			get
 			{
 				return (flags & MemberFlags.MirandaMethod) != 0;
+			}
+		}
+
+		internal bool IsAccessStub
+		{
+			get
+			{
+				return (flags & MemberFlags.AccessStub) != 0;
 			}
 		}
 
@@ -207,8 +236,6 @@ namespace IKVM.Internal
 	abstract class MethodWrapper : MemberWrapper
 	{
 		internal static readonly MethodWrapper[] EmptyArray  = new MethodWrapper[0];
-		private string name;
-		private string sig;
 		private MethodBase method;
 		private string[] declaredExceptions;
 		private TypeWrapper returnTypeWrapper;
@@ -298,11 +325,9 @@ namespace IKVM.Internal
 		}
 
 		internal MethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
-			: base(declaringType, modifiers, flags)
+			: base(declaringType, name, sig, modifiers, flags)
 		{
 			Profiler.Count("MethodWrapper");
-			this.name = String.Intern(name);
-			this.sig = String.Intern(sig);
 			this.method = method;
 			Debug.Assert(((returnType == null) == (parameterTypes == null)) || (returnType == PrimitiveTypeWrapper.VOID));
 			this.returnTypeWrapper = returnType;
@@ -323,22 +348,6 @@ namespace IKVM.Internal
 			return (MethodWrapper)FromCookieImpl(cookie);
 		}
 
-		internal string Name
-		{
-			get
-			{
-				return name;
-			}
-		}
-
-		internal string Signature
-		{
-			get
-			{
-				return sig;
-			}
-		}
-
 		internal bool IsLinked
 		{
 			get
@@ -357,8 +366,8 @@ namespace IKVM.Internal
 					ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
 					// TODO we need to use the actual classCache here
 					System.Collections.Hashtable classCache = new System.Collections.Hashtable();
-					returnTypeWrapper = ClassFile.RetTypeWrapperFromSig(loader, classCache, sig);
-					parameterTypeWrappers = ClassFile.ArgTypeWrapperListFromSig(loader, classCache, sig);
+					returnTypeWrapper = ClassFile.RetTypeWrapperFromSig(loader, classCache, Signature);
+					parameterTypeWrappers = ClassFile.ArgTypeWrapperListFromSig(loader, classCache, Signature);
 					if(method == null)
 					{
 						try
@@ -487,7 +496,7 @@ namespace IKVM.Internal
 				attribs |= MethodAttributes.Family;
 			}
 			// constructors aren't virtual
-			if(!IsStatic && !IsPrivate && name != "<init>")
+			if(!IsStatic && !IsPrivate && Name != "<init>")
 			{
 				attribs |= MethodAttributes.Virtual;
 			}
@@ -570,7 +579,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				if(name == "<init>")
+				if(Name == "<init>")
 				{
 					if(method is MethodInfo)
 					{
@@ -712,8 +721,6 @@ namespace IKVM.Internal
 				AssemblyName name = new AssemblyName();
 				name.Name = "NonvirtualInvoker";
 				AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, ClassLoaderWrapper.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
-				// the stack walker needs access to this assembly to be able to quickly check for non-virtual invoke frames
-				IKVM.NativeCode.gnu.classpath.VMStackWalker.nonVirtualInvokeAssembly = ab;
 				if(ClassLoaderWrapper.IsSaveDebugImage)
 				{
 					module = ab.DefineDynamicModule("NonvirtualInvoker", "NonvirtualInvoker.dll");
@@ -744,6 +751,7 @@ namespace IKVM.Internal
 				// TODO we need to support byref arguments...
 				TypeBuilder typeBuilder = module.DefineType("class" + cache.Count);
 				MethodBuilder methodBuilder = typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Static, typeof(object), new Type[] { typeof(IntPtr), typeof(object), typeof(object[]) });
+				AttributeHelper.HideFromJava(methodBuilder);
 				ILGenerator ilgen = methodBuilder.GetILGenerator();
 				ilgen.Emit(OpCodes.Ldarg_1);
 				TypeWrapper[] paramTypes = mw.GetParameters();
@@ -1056,20 +1064,21 @@ namespace IKVM.Internal
 	abstract class FieldWrapper : MemberWrapper
 	{
 		internal static readonly FieldWrapper[] EmptyArray  = new FieldWrapper[0];
-		private string name;
-		private string sig;
 		private FieldInfo field;
 		private TypeWrapper fieldType;
 
-		internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field)
-			: base(declaringType, modifiers, field != null && field.IsLiteral ? MemberFlags.LiteralField : MemberFlags.None)
+		internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, MemberFlags flags)
+			: base(declaringType, name, sig, modifiers, flags)
 		{
 			Debug.Assert(name != null);
 			Debug.Assert(sig != null);
-			this.name = String.Intern(name);
-			this.sig = String.Intern(sig);
 			this.fieldType = fieldType;
 			this.field = field;
+		}
+
+		internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field)
+			: this(declaringType, fieldType, name, sig, modifiers, field, field != null && field.IsLiteral ? MemberFlags.LiteralField : MemberFlags.None)
+		{
 		}
 
 		internal FieldInfo GetField()
@@ -1083,9 +1092,9 @@ namespace IKVM.Internal
 		{
 			if(fieldType == null)
 			{
-				Tracer.Error(Tracer.Runtime, "AssertLinked failed: " + this.DeclaringType.Name + "::" + this.name + " (" + this.sig + ")");
+				Tracer.Error(Tracer.Runtime, "AssertLinked failed: " + this.DeclaringType.Name + "::" + this.Name + " (" + this.Signature + ")");
 			}
-			Debug.Assert(fieldType != null, this.DeclaringType.Name + "::" + this.name + " (" + this.sig+ ")");
+			Debug.Assert(fieldType != null, this.DeclaringType.Name + "::" + this.Name + " (" + this.Signature+ ")");
 		}
 
 		// NOTE used (thru IKVM.Runtime.Util.GetFieldConstantValue) by ikvmstub to find out if the
@@ -1131,22 +1140,6 @@ namespace IKVM.Internal
 			return (FieldWrapper)FromCookieImpl(cookie);
 		}
 
-		internal string Name
-		{
-			get
-			{
-				return name;
-			}
-		}
-
-		internal string Signature
-		{
-			get
-			{
-				return sig;
-			}
-		}
-
 		internal TypeWrapper FieldTypeWrapper
 		{
 			get
@@ -1180,7 +1173,7 @@ namespace IKVM.Internal
 				{
 					// TODO we need to use the actual classCache here
 					System.Collections.Hashtable classCache = new System.Collections.Hashtable();
-					fieldType = ClassFile.FieldTypeWrapperFromSig(this.DeclaringType.GetClassLoader(), classCache, sig);
+					fieldType = ClassFile.FieldTypeWrapperFromSig(this.DeclaringType.GetClassLoader(), classCache, Signature);
 					try
 					{
 						field = this.DeclaringType.LinkField(this);
@@ -1226,7 +1219,7 @@ namespace IKVM.Internal
 				bindings |= BindingFlags.Instance;
 			}
 			// TODO instead of looking up the field by name, we should use the Token to find it.
-			field = DeclaringType.TypeAsTBD.GetField(name, bindings);
+			field = DeclaringType.TypeAsTBD.GetField(Name, bindings);
 			this.IsLiteralField = field.IsLiteral;
 			Debug.Assert(field != null);
 		}
@@ -1440,8 +1433,8 @@ namespace IKVM.Internal
 	{
 		private object constant;
 
-		internal ConstantFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant)
-			: base(declaringType, fieldType, name, sig, modifiers, field)
+		internal ConstantFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant, MemberFlags flags)
+			: base(declaringType, fieldType, name, sig, modifiers, field, flags)
 		{
 			Debug.Assert(IsStatic);
 			this.constant = constant;
@@ -1523,6 +1516,146 @@ namespace IKVM.Internal
 				constant = GetField().GetValue(null);
 			}
 			return constant;
+		}
+	}
+
+	// This type is used during AOT compilation only!
+	sealed class AotAccessStubFieldWrapper : FieldWrapper
+	{
+		private FieldWrapper basefield;
+		private MethodBuilder getter;
+		private MethodBuilder setter;
+
+		internal AotAccessStubFieldWrapper(TypeWrapper wrapper, FieldWrapper basefield)
+			: base(wrapper, null, basefield.Name, basefield.Signature, basefield.Modifiers, null, MemberFlags.AccessStub | MemberFlags.HideFromReflection)
+		{
+			this.basefield = basefield;
+		}
+
+		internal void DoLink(TypeBuilder typeBuilder)
+		{
+			if(basefield.IsLiteralField)
+			{
+				FieldAttributes attribs = basefield.IsPublic ? FieldAttributes.Public : FieldAttributes.FamORAssem;
+				attribs |= FieldAttributes.Static | FieldAttributes.Literal;
+				FieldBuilder fb = typeBuilder.DefineField(Name, basefield.FieldTypeWrapper.TypeAsSignatureType, attribs);
+				AttributeHelper.HideFromReflection(fb);
+				fb.SetConstant(basefield.GetValue(null));
+			}
+			else
+			{
+				PropertyBuilder pb = typeBuilder.DefineProperty(Name, PropertyAttributes.None, basefield.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
+				AttributeHelper.HideFromReflection(pb);
+				MethodAttributes attribs = basefield.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+				if(basefield.IsStatic)
+				{
+					attribs |= MethodAttributes.Static;
+				}
+				getter = typeBuilder.DefineMethod("get_" + Name, attribs, basefield.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
+				AttributeHelper.HideFromJava(getter);
+				pb.SetGetMethod(getter);
+				ILGenerator ilgen = getter.GetILGenerator();
+				if(!basefield.IsStatic)
+				{
+					ilgen.Emit(OpCodes.Ldarg_0);
+				}
+				basefield.EmitGet(ilgen);
+				ilgen.Emit(OpCodes.Ret);
+				if(!basefield.IsFinal)
+				{
+					setter = typeBuilder.DefineMethod("set_" + Name, attribs, null, new Type[] { basefield.FieldTypeWrapper.TypeAsSignatureType });
+					AttributeHelper.HideFromJava(setter);
+					pb.SetSetMethod(setter);
+					ilgen = setter.GetILGenerator();
+					ilgen.Emit(OpCodes.Ldarg_0);
+					if(!basefield.IsStatic)
+					{
+						ilgen.Emit(OpCodes.Ldarg_1);
+					}
+					basefield.EmitSet(ilgen);
+					ilgen.Emit(OpCodes.Ret);
+				}
+			}
+		}
+
+		protected override void EmitGetImpl(CountingILGenerator ilgen)
+		{
+			if(basefield.IsLiteralField)
+			{
+				basefield.EmitGet(ilgen);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Call, getter);
+			}
+		}
+
+		protected override void EmitSetImpl(CountingILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, setter);
+		}
+
+		internal override object GetValue(object obj)
+		{
+			// We're MemberFlags.HideFromReflection, so we should never be called
+			throw new InvalidOperationException();
+		}
+
+		internal override void SetValue(object obj, object val)
+		{
+			// We're MemberFlags.HideFromReflection, so we should never be called
+			throw new InvalidOperationException();
+		}
+	}
+
+	sealed class CompiledAccessStubFieldWrapper : FieldWrapper
+	{
+		private MethodInfo getter;
+		private MethodInfo setter;
+
+		private static Modifiers GetModifiers(PropertyInfo property)
+		{
+			// NOTE we only support the subset of modifiers that is expected for "access stub" properties
+			MethodInfo getter = property.GetGetMethod(true);
+			Modifiers modifiers = getter.IsPublic ? Modifiers.Public : Modifiers.Protected;
+			if(!property.CanWrite)
+			{
+				modifiers |= Modifiers.Final;
+			}
+			if(getter.IsStatic)
+			{
+				modifiers |= Modifiers.Static;
+			}
+			return modifiers;
+		}
+
+		internal CompiledAccessStubFieldWrapper(TypeWrapper wrapper, PropertyInfo property)
+			: base(wrapper, ClassLoaderWrapper.GetWrapperFromType(property.PropertyType), property.Name, ClassLoaderWrapper.GetWrapperFromType(property.PropertyType).SigName, GetModifiers(property), null, MemberFlags.AccessStub | MemberFlags.HideFromReflection)
+		{
+			this.getter = property.GetGetMethod(true);
+			this.setter = property.GetSetMethod(true);
+		}
+
+		protected override void EmitGetImpl(CountingILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, getter);
+		}
+
+		protected override void EmitSetImpl(CountingILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Call, setter);
+		}
+
+		internal override object GetValue(object obj)
+		{
+			// We're MemberFlags.HideFromReflection, so we should never be called
+			throw new InvalidOperationException();
+		}
+
+		internal override void SetValue(object obj, object val)
+		{
+			// We're MemberFlags.HideFromReflection, so we should never be called
+			throw new InvalidOperationException();
 		}
 	}
 }

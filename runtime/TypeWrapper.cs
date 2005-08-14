@@ -502,15 +502,37 @@ namespace IKVM.Internal
 			typeBuilder.SetCustomAttribute(ghostInterfaceAttribute);
 		}
 
-		internal static void MirandaMethod(MethodBuilder mb)
+		internal static void HideFromReflection(MethodBuilder mb)
 		{
-			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(MirandaMethodAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(HideFromReflectionAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 			mb.SetCustomAttribute(cab);
 		}
 
-		internal static bool IsMirandaMethod(MethodInfo mi)
+		internal static void HideFromReflection(FieldBuilder fb)
 		{
-			return mi.IsAbstract && mi.IsDefined(typeof(MirandaMethodAttribute), false);
+			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(HideFromReflectionAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+			fb.SetCustomAttribute(cab);
+		}
+
+		internal static void HideFromReflection(PropertyBuilder pb)
+		{
+			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(HideFromReflectionAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+			pb.SetCustomAttribute(cab);
+		}
+
+		internal static bool IsHideFromReflection(MethodInfo mi)
+		{
+			return mi.IsDefined(typeof(HideFromReflectionAttribute), false);
+		}
+
+		internal static bool IsHideFromReflection(FieldInfo fi)
+		{
+			return fi.IsDefined(typeof(HideFromReflectionAttribute), false);
+		}
+
+		internal static bool IsHideFromReflection(PropertyInfo pi)
+		{
+			return pi.IsDefined(typeof(HideFromReflectionAttribute), false);
 		}
 
 		internal static void HideFromJava(TypeBuilder typeBuilder)
@@ -2403,13 +2425,35 @@ namespace IKVM.Internal
 					}
 				}
 				wrapper.hasStaticInitializer = hasclinit;
-				if(wrapper.IsAbstract && !wrapper.IsInterface)
+				if(!wrapper.IsInterface)
 				{
-					ArrayList methodsArray = new ArrayList(methods);
-					ArrayList baseMethodsArray = new ArrayList(baseMethods);
-					AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
-					this.methods = (MethodWrapper[])methodsArray.ToArray(typeof(MethodWrapper));
-					this.baseMethods = (MethodWrapper[])baseMethodsArray.ToArray(typeof(MethodWrapper));
+					ArrayList methodsArray = null;
+					ArrayList baseMethodsArray = null;
+					if(wrapper.IsAbstract)
+					{
+						methodsArray = new ArrayList(methods);
+						baseMethodsArray = new ArrayList(baseMethods);
+						AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
+					}
+					if(wrapper.IsPublic && JVM.IsStaticCompiler)
+					{
+						TypeWrapper baseTypeWrapper = wrapper.BaseTypeWrapper;
+						while(baseTypeWrapper != null && !baseTypeWrapper.IsPublic)
+						{
+							if(methodsArray == null)
+							{
+								methodsArray = new ArrayList(methods);
+								baseMethodsArray = new ArrayList(baseMethods);
+							}
+							AddAccessStubMethods(methodsArray, baseMethodsArray, baseTypeWrapper);
+							baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
+						}
+					}
+					if(methodsArray != null)
+					{
+						this.methods = (MethodWrapper[])methodsArray.ToArray(typeof(MethodWrapper));
+						this.baseMethods = (MethodWrapper[])baseMethodsArray.ToArray(typeof(MethodWrapper));
+					}
 				}
 				wrapper.SetMethods(methods);
 
@@ -2419,7 +2463,7 @@ namespace IKVM.Internal
 					ClassFile.Field fld = classFile.Fields[i];
 					if(fld.IsStatic && fld.IsFinal && fld.ConstantValue != null)
 					{
-						fields[i] = new ConstantFieldWrapper(wrapper, null, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue);
+						fields[i] = new ConstantFieldWrapper(wrapper, null, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.LiteralField);
 					}
 					else if(fld.IsFinal && (JVM.IsStaticCompiler && (fld.IsPublic || fld.IsProtected))
 						&& !wrapper.IsInterface && (!JVM.StrictFinalFieldSemantics || wrapper.Name == "java.lang.System"))
@@ -2430,6 +2474,12 @@ namespace IKVM.Internal
 					{
 						fields[i] = FieldWrapper.Create(wrapper, null, null, fld.Name, fld.Signature, fld.Modifiers);
 					}
+				}
+				if(!wrapper.IsInterface && wrapper.IsPublic && JVM.IsStaticCompiler)
+				{
+					ArrayList fieldsArray = new ArrayList(fields);
+					AddAccessStubFields(fieldsArray, wrapper);
+					fields = (FieldWrapper[])fieldsArray.ToArray(typeof(FieldWrapper));
 				}
 				wrapper.SetFields(fields);
 
@@ -2675,6 +2725,18 @@ namespace IKVM.Internal
 				}
 			}
 
+			private static bool ContainsMemberWrapper(ArrayList members, string name, string sig)
+			{
+				foreach(MemberWrapper mw in members)
+				{
+					if(mw.Name == name && mw.Signature == sig)
+					{
+						return true;
+					}
+				}
+				return false;
+			}
+
 			private MethodWrapper GetMethodWrapperDuringCtor(TypeWrapper lookup, ArrayList methods, string name, string sig)
 			{
 				if(lookup == wrapper)
@@ -2731,6 +2793,44 @@ namespace IKVM.Internal
 						}
 					}
 				}
+			}
+
+			private void AddAccessStubMethods(ArrayList methods, ArrayList baseMethods, TypeWrapper tw)
+			{
+				foreach(MethodWrapper mw in tw.GetMethods())
+				{
+					if((mw.IsPublic || mw.IsProtected)
+						&& mw.Name != "<init>"
+						&& !ContainsMemberWrapper(methods, mw.Name, mw.Signature))
+					{
+						MethodWrapper stub = new SmartCallMethodWrapper(wrapper, mw.Name, mw.Signature, null, null, null, mw.Modifiers, MemberFlags.HideFromReflection | MemberFlags.AccessStub, SimpleOpCode.Call, SimpleOpCode.Callvirt);
+						methods.Add(stub);
+						baseMethods.Add(mw);
+					}
+				}
+			}
+
+			private void AddAccessStubFields(ArrayList fields, TypeWrapper tw)
+			{
+				do
+				{
+					if(!tw.IsPublic)
+					{
+						foreach(FieldWrapper fw in tw.GetFields())
+						{
+							if((fw.IsPublic || fw.IsProtected)
+								&& !ContainsMemberWrapper(fields, fw.Name, fw.Signature))
+							{
+								fields.Add(new AotAccessStubFieldWrapper(wrapper, fw));
+							}
+						}
+					}
+					foreach(TypeWrapper iface in tw.Interfaces)
+					{
+						AddAccessStubFields(fields, iface);
+					}
+					tw = tw.BaseTypeWrapper;
+				} while(tw != null && !tw.IsPublic);
 			}
 
 			private static bool CheckInnerOuterNames(string inner, string outer)
@@ -2898,7 +2998,11 @@ namespace IKVM.Internal
 
 			internal override FieldInfo LinkField(FieldWrapper fw)
 			{
-				Debug.Assert(fw != null);
+				if(fw.IsAccessStub)
+				{
+					((AotAccessStubFieldWrapper)fw).DoLink(typeBuilder);
+					return null;
+				}
 				FieldBuilder field;
 				ClassFile.Field fld = classFile.Fields[GetFieldIndex(fw)];
 				string fieldName = fld.Name;
@@ -3375,7 +3479,7 @@ namespace IKVM.Internal
 					// If we're an interface that has public/protected fields, we create an inner class
 					// to expose these fields to C# (which stubbornly refuses to see fields in interfaces).
 					TypeBuilder tbFields = null;
-					if(JVM.IsStaticCompiler && classFile.IsInterface && !wrapper.IsGhost && classFile.Fields.Length > 0)
+					if(JVM.IsStaticCompiler && classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0)
 					{
 						// TODO handle name clash
 						tbFields = typeBuilder.DefineNestedType("__Fields", TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed);
@@ -3870,24 +3974,66 @@ namespace IKVM.Internal
 				{
 					if(index >= classFile.Methods.Length)
 					{
-						// We're a Miranda method
-						Debug.Assert(baseMethods[index].DeclaringType.IsInterface);
-						string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index]);
-						// TODO if the interface is not public, we probably shouldn't make the Miranda method public
-						MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
-						AttributeHelper.MirandaMethod(mb);
-						if(unloadableOverrideStub || name != methods[index].Name)
+						if(methods[index].IsMirandaMethod)
 						{
-							// instead of creating an override stub, we created the Miranda method with the proper signature and
-							// decorate it with a NameSigAttribute that contains the real signature
-							AttributeHelper.SetNameSig(mb, methods[index].Name, methods[index].Signature);
+							// We're a Miranda method
+							Debug.Assert(baseMethods[index].DeclaringType.IsInterface);
+							string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index]);
+							MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+							AttributeHelper.HideFromReflection(mb);
+							if(unloadableOverrideStub || name != methods[index].Name)
+							{
+								// instead of creating an override stub, we created the Miranda method with the proper signature and
+								// decorate it with a NameSigAttribute that contains the real signature
+								AttributeHelper.SetNameSig(mb, methods[index].Name, methods[index].Signature);
+							}
+							// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
+							if(name != baseMethods[index].RealName)
+							{
+								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index].GetMethod());
+							}
+							return mb;
 						}
-						// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
-						if(name != baseMethods[index].RealName)
+						else if(methods[index].IsAccessStub)
 						{
-							typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index].GetMethod());
+							MethodAttributes stubattribs = baseMethods[index].IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+							if(baseMethods[index].IsStatic)
+							{
+								stubattribs |= MethodAttributes.Static;
+							}
+							else
+							{
+								stubattribs |= MethodAttributes.CheckAccessOnOverride | MethodAttributes.Virtual;
+								if(baseMethods[index].IsAbstract)
+								{
+									stubattribs |= MethodAttributes.Abstract;
+								}
+								if(baseMethods[index].IsFinal)
+								{
+									// NOTE final methods still need to be virtual, because a subclass may need this method to
+									// implement an interface method
+									stubattribs |= MethodAttributes.Final | MethodAttributes.NewSlot;
+								}
+							}
+							MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, stubattribs, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+							AttributeHelper.HideFromReflection(mb);
+							if(!baseMethods[index].IsAbstract)
+							{
+								ILGenerator ilgen = mb.GetILGenerator();
+								int argc = methods[index].GetParametersForDefineMethod().Length + (methods[index].IsStatic ? 0 : 1);
+								for(int i = 0; i < argc; i++)
+								{
+									ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
+								}
+								baseMethods[index].EmitCall(ilgen);
+								ilgen.Emit(OpCodes.Ret);
+							}
+							return mb;
 						}
-						return mb;
+						else
+						{
+							throw new InvalidOperationException();
+						}
 					}
 					ClassFile.Method m = classFile.Methods[index];
 					MethodBase method;
@@ -5995,8 +6141,8 @@ namespace IKVM.Internal
 							TypeWrapper[] paramTypes;
 							GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes);
 							MethodInfo mi = method as MethodInfo;
-							bool miranda = mi != null ? AttributeHelper.IsMirandaMethod(mi) : false;
-							MemberFlags flags = miranda ? MemberFlags.MirandaMethod | MemberFlags.HideFromReflection : MemberFlags.None;
+							bool hideFromReflection = mi != null ? AttributeHelper.IsHideFromReflection(mi) : false;
+							MemberFlags flags = hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None;
 							methods.Add(MethodWrapper.Create(this, name, sig, method, retType, paramTypes, AttributeHelper.GetModifiers(method, false), flags));
 						}
 					}
@@ -6012,6 +6158,19 @@ namespace IKVM.Internal
 							else
 							{
 								fields.Add(CreateFieldWrapper(field));
+							}
+						}
+						else
+						{
+							PropertyInfo property = m as PropertyInfo;
+							if(property != null)
+							{
+								// Only AccessStub properties (marked by HideFromReflectionAttribute)
+								// are considered here
+								if(AttributeHelper.IsHideFromReflection(property))
+								{
+									fields.Add(new CompiledAccessStubFieldWrapper(this, property));
+								}
 							}
 						}
 					}
@@ -6124,7 +6283,12 @@ namespace IKVM.Internal
 			}
 			else if(field.IsLiteral)
 			{
-				return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers, field, null);
+				MemberFlags flags = MemberFlags.LiteralField;
+				if(AttributeHelper.IsHideFromReflection(field))
+				{
+					flags |= MemberFlags.HideFromReflection;
+				}
+				return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers, field, null, flags);
 			}
 			else
 			{
@@ -6761,7 +6925,7 @@ namespace IKVM.Internal
 							name = "_" + name;
 						}
 						object val = EnumValueFieldWrapper.GetEnumPrimitiveValue(fields[i].GetValue(null));
-						fieldsList.Add(new ConstantFieldWrapper(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val));
+						fieldsList.Add(new ConstantFieldWrapper(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val, MemberFlags.LiteralField));
 					}
 				}
 				fieldsList.Add(new EnumValueFieldWrapper(this, fieldType));
@@ -7146,7 +7310,7 @@ namespace IKVM.Internal
 			TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(fieldType);
 			if(field.IsLiteral)
 			{
-				return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers, field, null);
+				return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers, field, null, MemberFlags.LiteralField);
 			}
 			else
 			{

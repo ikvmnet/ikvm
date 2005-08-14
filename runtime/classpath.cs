@@ -858,25 +858,24 @@ namespace IKVM.NativeCode.java
 					// we need to finish the type otherwise all fields will not be in the field map yet
 					wrapper.Finish();
 					FieldWrapper[] fields = wrapper.GetFields();
-					if(publicOnly)
-					{
-						ArrayList list = new ArrayList();
-						for(int i = 0; i < fields.Length; i++)
-						{
-							if(fields[i].IsPublic)
-							{
-								list.Add(fields[i]);
-							}
-						}
-						fields = (FieldWrapper[])list.ToArray(typeof(FieldWrapper));
-					}
-					// we need to look through the array for unloadable types, because we may not let them
-					// escape into the 'wild'
+					ArrayList list = new ArrayList();
 					for(int i = 0; i < fields.Length; i++)
 					{
-						fields[i].FieldTypeWrapper.EnsureLoadable(wrapper.GetClassLoader());
+						if(fields[i].IsHideFromReflection)
+						{
+							// skip
+						}
+						else if(publicOnly && !fields[i].IsPublic)
+						{
+							// caller is only asking for public field, so we don't return this non-public field
+						}
+						else
+						{
+							fields[i].FieldTypeWrapper.EnsureLoadable(wrapper.GetClassLoader());
+							list.Add(fields[i]);
+						}
 					}
-					return fields;
+					return (FieldWrapper[])list.ToArray(typeof(FieldWrapper));
 				}
 				catch(RetargetableJavaException x)
 				{
@@ -1157,8 +1156,6 @@ namespace IKVM.NativeCode.gnu.classpath
 
 	public class VMStackWalker
 	{
-		internal static volatile Assembly nonVirtualInvokeAssembly;
-
 		public static object getClassFromType(Type type)
 		{
 			return IKVM.NativeCode.java.lang.VMClass.getClassFromType(type);
@@ -1190,9 +1187,10 @@ namespace IKVM.NativeCode.gnu.classpath
 			return typeof(IKVM.Runtime.JNIEnv);
 		}
 
-		public static Assembly getNonVirtualInvokeAssembly()
+		public static bool isHideFromJava(MethodBase mb)
 		{
-			return nonVirtualInvokeAssembly;
+			return mb.IsDefined(typeof(HideFromJavaAttribute), false)
+				|| mb.IsDefined(typeof(HideFromReflectionAttribute), false);
 		}
 	}
 }

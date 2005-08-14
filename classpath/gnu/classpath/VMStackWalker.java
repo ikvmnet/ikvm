@@ -25,6 +25,7 @@ package gnu.classpath;
 
 import cli.System.Diagnostics.StackFrame;
 import cli.System.Diagnostics.StackTrace;
+import cli.System.Reflection.MethodBase;
 
 public final class VMStackWalker
 {
@@ -42,10 +43,14 @@ public final class VMStackWalker
         {
             StackFrame frame = stack.GetFrame(i);
             // TODO handle reflection scenarios
-            cli.System.Type type = frame.GetMethod().get_DeclaringType();
-            if(type != null)
+            MethodBase method = frame.GetMethod();
+            if(!isHideFromJava(method))
             {
-                list.add(getClassFromType(type));
+                cli.System.Type type = method.get_DeclaringType();
+                if(type != null)
+                {
+                    list.add(getClassFromType(type));
+                }
             }
         }
         Class[] classes = new Class[list.size()];
@@ -55,11 +60,18 @@ public final class VMStackWalker
 
     public static Class getCallingClass()
     {
-        StackFrame frame = new StackFrame(SKIP_FRAMES);
-        cli.System.Type type = frame.GetMethod().get_DeclaringType();
+        int skip = SKIP_FRAMES;
+        StackFrame frame = new StackFrame(skip++);
+        MethodBase method = frame.GetMethod();
+        while(isHideFromJava(method))
+        {
+            frame = new StackFrame(skip++);
+            method = frame.GetMethod();
+        }
+        cli.System.Type type = method.get_DeclaringType();
         if(isReflectionCaller(type))
         {
-            type = getRealCaller(new StackTrace(SKIP_FRAMES + 1));
+            type = getRealCaller(new StackTrace(skip));
         }
         if(type != null)
         {
@@ -70,11 +82,18 @@ public final class VMStackWalker
 
     public static ClassLoader getCallingClassLoader()
     {
-        StackFrame frame = new StackFrame(SKIP_FRAMES);
-        cli.System.Type type = frame.GetMethod().get_DeclaringType();
+        int skip = SKIP_FRAMES;
+        StackFrame frame = new StackFrame(skip++);
+        MethodBase method = frame.GetMethod();
+        while(isHideFromJava(method))
+        {
+            frame = new StackFrame(skip++);
+            method = frame.GetMethod();
+        }
+        cli.System.Type type = method.get_DeclaringType();
         if(isReflectionCaller(type))
         {
-            type = getRealCaller(new StackTrace(SKIP_FRAMES + 1));
+            type = getRealCaller(new StackTrace(skip));
         }
         if(type != null)
         {
@@ -89,7 +108,7 @@ public final class VMStackWalker
         {
             cli.System.Reflection.Assembly asm = type.get_Assembly();
             // if we're being called by mscorlib, that means that reflection was used
-            return asm == mscorlib || asm == getNonVirtualInvokeAssembly();
+            return asm == mscorlib;
         }
         return false;
     }
@@ -109,6 +128,10 @@ public final class VMStackWalker
                 {
                     return null;
                 }
+                while(isHideFromJava(stack.GetFrame(i).GetMethod()))
+                {
+                    type = stack.GetFrame(++i).GetMethod().get_DeclaringType();
+                }
                 // If the reflection method was invoked by reflection, continue going up the stack.
                 if(isReflectionCaller(type))
                 {
@@ -122,6 +145,6 @@ public final class VMStackWalker
 
     private static native Object getClassFromType(cli.System.Type type);
     private static native Object getClassLoaderFromType(cli.System.Type type);
-    private static native cli.System.Reflection.Assembly getNonVirtualInvokeAssembly();
     private static native cli.System.Type getJNIEnvType();
+    private static native boolean isHideFromJava(MethodBase mb);
 }

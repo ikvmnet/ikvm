@@ -88,7 +88,8 @@ namespace IKVM.NativeCode.java.lang
 
 		public static bool IsHideFromJava(MethodBase mb)
 		{
-			return mb.IsDefined(typeof(HideFromJavaAttribute), false);
+			return mb.IsDefined(typeof(HideFromJavaAttribute), false)
+				|| mb.IsDefined(typeof(HideFromReflectionAttribute), false);
 		}
 
 		public static string getClassNameFromType(Type type)
