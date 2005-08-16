@@ -1534,6 +1534,7 @@ namespace IKVM.Internal
 
 		internal void DoLink(TypeBuilder typeBuilder)
 		{
+			basefield.Link();
 			if(basefield.IsLiteralField)
 			{
 				FieldAttributes attribs = basefield.IsPublic ? FieldAttributes.Public : FieldAttributes.FamORAssem;
