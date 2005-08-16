@@ -52,13 +52,53 @@ namespace ikvm.awt
 		public UndecoratedForm()
 		{
 			this.FormBorderStyle = FormBorderStyle.None;
+			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
+		}
+
+		protected override void OnPaintBackground(PaintEventArgs pevent)
+		{
+		}
+	}
+
+	class MyForm : Form
+	{
+		public MyForm()
+		{
+			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
+		}
+
+		protected override void OnPaintBackground(PaintEventArgs pevent)
+		{
+		}
+	}
+
+	class MyControl : Control
+	{
+		public MyControl()
+		{
+			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
+		}
+
+		protected override void OnPaintBackground(PaintEventArgs pevent)
+		{
+		}
+	}
+
+	class MyContainerControl : ContainerControl
+	{
+		public MyContainerControl()
+		{
+			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
+		}
+
+		protected override void OnPaintBackground(PaintEventArgs pevent)
+		{
 		}
 	}
 
 	public class NetToolkit : gnu.java.awt.ClasspathToolkit
 	{
-		internal static System.Collections.ArrayList nativeQueue = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList());
-		private static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
+		internal static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
 		internal static volatile Form bogusForm;
 		private static Delegate createControlInstance;
 		private int resolution;
@@ -196,17 +236,17 @@ namespace ikvm.awt
 
 		protected override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
 		{
-			return new NetFramePeer(target, (Form)CreateControl(typeof(Form)));
+			return new NetFramePeer(target, (Form)CreateControl(typeof(MyForm)));
 		}
 
 		protected override java.awt.peer.CanvasPeer createCanvas(java.awt.Canvas target)
 		{
-			return new NewCanvasPeer(target, (Control)CreateControl(typeof(Control)));
+			return new NewCanvasPeer(target, (Control)CreateControl(typeof(MyControl)));
 		}
 
 		protected override java.awt.peer.PanelPeer createPanel(java.awt.Panel target)
 		{
-			return new NetPanelPeer(target, (ContainerControl)CreateControl(typeof(ContainerControl)));
+			return new NetPanelPeer(target, (ContainerControl)CreateControl(typeof(MyContainerControl)));
 		}
 
 		protected override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
@@ -216,7 +256,7 @@ namespace ikvm.awt
 
 		protected override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
 		{
-			return new NetDialogPeer(target, (Form)CreateControl(typeof(Form)));
+			return new NetDialogPeer(target, (Form)CreateControl(typeof(MyForm)));
 		}
 
 		protected override java.awt.peer.MenuBarPeer createMenuBar(java.awt.MenuBar target)
@@ -442,42 +482,6 @@ namespace ikvm.awt
 		public override RobotPeer createRobot(java.awt.GraphicsDevice param)
 		{
 			throw new NotImplementedException();
-		}
-
-		public override bool nativeQueueEmpty()
-		{
-			return nativeQueue.Count == 0;
-		}
-
-		public override void wakeNativeQueue()
-		{
-			// TODO if we're blocking in iterateNativeQueue() we should release that thread
-		}
-
-		public override void iterateNativeQueue(java.awt.EventQueue locked, bool block)
-		{
-			lock(nativeQueue)
-			{
-				if(nativeQueue.Count > 0)
-				{
-					locked.postEvent((java.awt.AWTEvent)nativeQueue[0]);
-					nativeQueue.RemoveAt(0);
-					return;
-				}
-			}
-			if(block)
-			{
-				Monitor.Exit(locked);
-				try
-				{
-					//Application.DoEvents();
-					Thread.Sleep(100);
-				}
-				finally
-				{
-					Monitor.Enter(locked);
-				}
-			}
 		}
 
 		public override gnu.java.awt.peer.EmbeddedWindowPeer createEmbeddedWindow(gnu.java.awt.EmbeddedWindow ew)
@@ -1379,10 +1383,19 @@ namespace ikvm.awt
 
 		private void OnPaint(object sender, PaintEventArgs e)
 		{
-			// TODO figure out if we need an update or a paint
-			java.awt.Rectangle rect = new java.awt.Rectangle(e.ClipRectangle.X, e.ClipRectangle.Y, e.ClipRectangle.Width, e.ClipRectangle.Height);
-			//postEvent(new java.awt.@event.PaintEvent(component, java.awt.@event.PaintEvent.UPDATE, rect));
-			postEvent(new java.awt.@event.PaintEvent(component, java.awt.@event.PaintEvent.PAINT, rect));
+			if(!e.ClipRectangle.IsEmpty)
+			{
+				int x = 0;
+				int y = 0;
+				if(component is java.awt.Frame)
+				{
+					java.awt.Insets insets = ((java.awt.Frame)component).getInsets();
+					x = insets.left;
+					y = insets.top;
+				}
+				java.awt.Rectangle rect = new java.awt.Rectangle(e.ClipRectangle.X + x, e.ClipRectangle.Y + y, e.ClipRectangle.Width, e.ClipRectangle.Height);
+				postEvent(new java.awt.@event.PaintEvent(component, java.awt.@event.PaintEvent.UPDATE, rect));
+			}
 		}
 
 		private void Setup()
@@ -1569,8 +1582,7 @@ namespace ikvm.awt
 
 		protected void postEvent(java.awt.AWTEvent evt)
 		{
-			NetToolkit.nativeQueue.Add(evt);
-			//getToolkit().getSystemEventQueue().postEvent(evt);
+			NetToolkit.eventQueue.postEvent(evt);
 		}
 
 		public int checkImage(java.awt.Image img, int width, int height, java.awt.image.ImageObserver ob)
@@ -1653,6 +1665,9 @@ namespace ikvm.awt
 				java.awt.Graphics g = component.getGraphics();
 				try
 				{
+					java.awt.Rectangle r = ((java.awt.@event.PaintEvent)e).getUpdateRect();
+					r = r.intersection(g.getClipRect());
+					g.setClip(r);
 					switch(e.getID())
 					{
 						case java.awt.@event.PaintEvent.UPDATE:
@@ -1711,9 +1726,8 @@ namespace ikvm.awt
 		public void repaint(long tm, int x, int y, int width, int height)
 		{
 			// TODO do something with the tm parameter
-			Rectangle rect = new Rectangle(x, y, width, height);
-			rect.Offset(offsetX, offsetY);
-			control.Invoke(new SetRectangle(control.Invalidate), new object[] { rect });
+			java.awt.Rectangle rect = new java.awt.Rectangle(x, y, width, height);
+			postEvent(new java.awt.@event.PaintEvent(component, java.awt.@event.PaintEvent.UPDATE, rect));
 		}
 
 		public void requestFocus()
@@ -2566,11 +2580,27 @@ namespace ikvm.awt
 			postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_CLOSING));
 		}
 
+		private class ValidateHelper : java.lang.Runnable
+		{
+			private java.awt.Component comp;
+
+			internal ValidateHelper(java.awt.Component comp)
+			{
+				this.comp = comp;
+			}
+
+			public void run()
+			{
+				comp.validate();
+			}
+		}
+
 		private void Resize(object sender, EventArgs e)
 		{
 			Rectangle r = control.Bounds;
 			component.GetType().InvokeMember("setBoundsCallback", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.NonPublic, null, component, new object[] { r.X, r.Y, r.Width, r.Height });
-			component.validate();
+			// HACK we somehow need to trigger a validate and I don't know how, so for now I'll use invokeLater
+			java.awt.EventQueue.invokeLater(new ValidateHelper(component));
 		}
 
 		public override java.awt.Graphics getGraphics()

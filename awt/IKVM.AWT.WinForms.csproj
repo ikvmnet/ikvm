@@ -100,7 +100,7 @@
                 />
                 <File
                     RelPath = "toolkit.cs"
-                    SubType = "Form"
+                    SubType = "Component"
                     BuildAction = "Compile"
                 />
             </Include>
