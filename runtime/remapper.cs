@@ -1061,6 +1061,8 @@ namespace IKVM.Internal.MapXml
 		public string Sig;
 		[XmlAttribute("modifiers")]
 		public MapModifiers Modifiers;
+		[XmlAttribute("attributes")]
+		public MethodAttributes MethodAttributes;
 		[XmlAttribute("type")]
 		public string Type;
 		[XmlElement("parameter")]

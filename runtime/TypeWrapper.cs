@@ -1403,6 +1403,7 @@ namespace IKVM.Internal
 
 		internal TypeWrapper MakeArrayType(int rank)
 		{
+			Debug.Assert(rank != 0);
 			// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
 			return GetClassLoader().LoadClassByDottedNameFast(new String('[', rank) + this.SigName);
 		}
@@ -5280,6 +5281,83 @@ namespace IKVM.Internal
 					}
 					if(clazz.Methods != null)
 					{
+						// HACK this isn't the right place to do this, but for now it suffices
+						foreach(IKVM.Internal.MapXml.Method method in clazz.Methods)
+						{
+							// are we adding a new method?
+							if(GetMethodWrapper(method.Name, method.Sig, false) == null)
+							{
+								bool setmodifiers = false;
+								MethodAttributes attribs = method.MethodAttributes;
+								Modifiers modifiers = (Modifiers)method.Modifiers;
+								if((modifiers & Modifiers.Public) != 0)
+								{
+									attribs |= MethodAttributes.Public;
+								}
+								else if((modifiers & Modifiers.Protected) != 0)
+								{
+									attribs |= MethodAttributes.FamORAssem;
+								}
+								else if((modifiers & Modifiers.Private) != 0)
+								{
+									attribs |= MethodAttributes.Private;
+								}
+								else
+								{
+									attribs |= MethodAttributes.Assembly;
+								}
+								if((modifiers & Modifiers.Static) != 0)
+								{
+									attribs |= MethodAttributes.Static;
+									if((modifiers & Modifiers.Final) != 0)
+									{
+										setmodifiers = true;
+									}
+								}
+								else if(method.Name != "<init>")
+								{
+									attribs |= MethodAttributes.Virtual;
+									if((modifiers & Modifiers.Final) != 0)
+									{
+										attribs |= MethodAttributes.Final;
+									}
+									else if((modifiers & Modifiers.Abstract) != 0)
+									{
+										attribs |= MethodAttributes.Abstract;
+									}
+								}
+								if((modifiers & Modifiers.Synchronized) != 0)
+								{
+									throw new NotImplementedException();
+								}
+								if(method.Name == "<init>")
+								{
+									throw new NotImplementedException();
+								}
+								Hashtable classCache = new Hashtable();
+								Type returnType = ClassFile.RetTypeWrapperFromSig(GetClassLoader(), classCache, method.Sig).TypeAsSignatureType;
+								TypeWrapper[] parameterTypeWrappers = ClassFile.ArgTypeWrapperListFromSig(GetClassLoader(), classCache, method.Sig);
+								Type[] parameterTypes = new Type[parameterTypeWrappers.Length];
+								for(int i = 0; i < parameterTypeWrappers.Length; i++)
+								{
+									parameterTypes[i] = parameterTypeWrappers[i].TypeAsSignatureType;
+								}
+								MethodBuilder mb = typeBuilder.DefineMethod(method.Name, attribs, returnType, parameterTypes);
+								if(setmodifiers)
+								{
+									AttributeHelper.SetModifiers(mb, modifiers);
+								}
+								ILGenerator ilgen = mb.GetILGenerator();
+								method.body.Emit(ilgen);
+								if(method.Attributes != null)
+								{
+									foreach(IKVM.Internal.MapXml.Attribute attr in method.Attributes)
+									{
+										AttributeHelper.SetCustomAttribute(mb, attr);
+									}
+								}
+							}
+						}
 						foreach(IKVM.Internal.MapXml.Method method in clazz.Methods)
 						{
 							if(method.Attributes != null)

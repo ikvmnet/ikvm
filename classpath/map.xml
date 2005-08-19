@@ -908,6 +908,18 @@
 				<override name="CompareTo" />
 			</method>
 		</class>
+		<!-- Here we are adding methods to existing classes -->
+		<class name="java.lang.Class">
+			<method name="op_Implicit" sig="(Lcli.System.Type;)Ljava.lang.Class;" modifiers="public static" attributes="SpecialName">
+				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+				<body>
+					<ldarg_0 />
+					<call type="IKVM.Runtime.Util" name="GetFriendlyClassFromType" sig="(Lcli.System.Type;)Ljava.lang.Object;" />
+					<castclass class="java.lang.Class" />
+					<ret />
+				</body>
+			</method>
+		</class>
 		<!-- This is where the "native" helper methods start -->
 		<class name="ikvm.lang.CIL">
 			<method name="unbox_byte" sig="(Ljava.lang.Object;)B">

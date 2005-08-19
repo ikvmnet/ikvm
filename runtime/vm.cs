@@ -202,6 +202,27 @@ namespace IKVM.Runtime
 			return ClassLoaderWrapper.GetWrapperFromType(t).ClassObject;
 		}
 
+		public static object GetFriendlyClassFromType(Type type)
+		{
+			int rank = 0;
+			while(type.IsArray)
+			{
+				type = type.GetElementType();
+				rank++;
+			}
+			if(type.DeclaringType != null
+				&& type.DeclaringType.IsDefined(typeof(GhostInterfaceAttribute), false))
+			{
+				type = type.DeclaringType;
+			}
+			TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+			if(rank > 0)
+			{
+				wrapper = wrapper.MakeArrayType(rank);
+			}
+			return wrapper.ClassObject;
+		}
+
 		private static FieldWrapper GetFieldWrapperFromField(object field)
 		{
 			if(field == null)
