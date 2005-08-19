@@ -1921,6 +1921,31 @@ namespace ikvm.awt
 			// TODO
 			return true;
 		}
+
+		public java.awt.Rectangle getBounds()
+		{
+			Rectangle r = control.Bounds;
+			return new java.awt.Rectangle(r.X, r.Y, r.Width, r.Height);
+		}
+
+		public void setBounds(int x, int y, int width, int height, int z)
+		{
+			control.Bounds = new Rectangle(x, y, width, height);
+		}
+
+		public void reparent(java.awt.peer.ContainerPeer parent)
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool isReparentSupported()
+		{
+			return false;
+		}
+
+		public void layout()
+		{
+		}
 	}
 
 	// HACK Classpath should have a working BufferedImage, but currently it doesn't, until then, we
@@ -2104,6 +2129,11 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
+		public override VolatileImage createCompatibleVolatileImage(int i1, int i2, int i3)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetButtonPeer : NetComponentPeer, ButtonPeer
@@ -2249,6 +2279,11 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 		public java.awt.Rectangle getCharacterBounds(int pos)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.im.InputMethodRequests getInputMethodRequests()
 		{
 			throw new NotImplementedException();
 		}
@@ -2506,6 +2541,21 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
+		public bool isRestackSupported()
+		{
+			return false;
+		}
+
+		public void cancelPendingPaint(int x, int y, int width, int height)
+		{
+			throw new NotImplementedException();
+		}
+  
+		public void restack()
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetPanelPeer : NetContainerPeer, PanelPeer
@@ -2556,6 +2606,16 @@ namespace ikvm.awt
 		{
 			((Form)control).Activate();
 		}
+
+		public void updateAlwaysOnTop()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool requestWindowFocus()
+		{
+			return control.Focus();
+		}
 	}
 
 	class NetFramePeer : NetWindowPeer, FramePeer
@@ -2597,10 +2657,16 @@ namespace ikvm.awt
 
 		private void Resize(object sender, EventArgs e)
 		{
-			Rectangle r = control.Bounds;
-			component.GetType().InvokeMember("setBoundsCallback", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.NonPublic, null, component, new object[] { r.X, r.Y, r.Width, r.Height });
-			// HACK we somehow need to trigger a validate and I don't know how, so for now I'll use invokeLater
-			java.awt.EventQueue.invokeLater(new ValidateHelper(component));
+			if(component.getWidth() != control.Bounds.Width
+				|| component.getHeight() != control.Bounds.Height)
+			{
+				component.setSize(control.Bounds.Width, control.Bounds.Height);
+			}
+			if(component.getX() != control.Bounds.X
+				|| component.getY() != control.Bounds.Y)
+			{
+				component.setLocation(control.Bounds.X, control.Bounds.Y);
+			}
 		}
 
 		public override java.awt.Graphics getGraphics()
@@ -2655,6 +2721,12 @@ namespace ikvm.awt
 		public void setMaximizedBounds(java.awt.Rectangle r)
 		{
 			throw new NotImplementedException();
+		}
+
+		public void setBoundsPrivate(int x, int y, int width, int height)
+		{
+			// TODO use control.Invoke
+			control.Bounds = new Rectangle(x, y, width, height);
 		}
 	}
 
