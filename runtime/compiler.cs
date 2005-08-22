@@ -844,7 +844,7 @@ class Compiler
 			}
 			if(c.lineNumbers != null)
 			{
-				AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.lineNumbers.ToArray());
+				AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.lineNumbers);
 			}
 			// HACK because of the bogus Leave instruction that Reflection.Emit generates, this location
 			// sometimes appears reachable (it isn't), so we emit a bogus branch to keep the verifier happy.

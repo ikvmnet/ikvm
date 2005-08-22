@@ -133,7 +133,8 @@ namespace IKVM.Internal
 		private static ConstructorInfo implementsAttribute;
 		private static ConstructorInfo throwsAttribute;
 		private static ConstructorInfo sourceFileAttribute;
-		private static ConstructorInfo lineNumberTableAttribute;
+		private static ConstructorInfo lineNumberTableAttribute1;
+		private static ConstructorInfo lineNumberTableAttribute2;
 
 		private static object ParseValue(TypeWrapper tw, string val)
 		{
@@ -772,19 +773,35 @@ namespace IKVM.Internal
 			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(sourceFileAttribute, new object[] { filename }));
 		}
 
-		internal static void SetLineNumberTable(MethodBase mb, byte[] table)
+		internal static void SetLineNumberTable(MethodBase mb, IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter writer)
 		{
-			if(lineNumberTableAttribute == null)
+			object arg;
+			ConstructorInfo con;
+			if(writer.Count == 1)
 			{
-				lineNumberTableAttribute = typeof(LineNumberTableAttribute).GetConstructor(new Type[] { typeof(byte[]) });
-			}
-			if(mb is ConstructorBuilder)
-			{
-				((ConstructorBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(lineNumberTableAttribute, new object[] { table }));
+				if(lineNumberTableAttribute2 == null)
+				{
+					lineNumberTableAttribute2 = typeof(LineNumberTableAttribute).GetConstructor(new Type[] { typeof(ushort) });
+				}
+				con = lineNumberTableAttribute2;
+				arg = (ushort)writer.LineNo;
 			}
 			else
 			{
-				((MethodBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(lineNumberTableAttribute, new object[] { table }));
+				if(lineNumberTableAttribute1 == null)
+				{
+					lineNumberTableAttribute1 = typeof(LineNumberTableAttribute).GetConstructor(new Type[] { typeof(byte[]) });
+				}
+				con = lineNumberTableAttribute1;
+				arg = writer.ToArray();
+			}
+			if(mb is ConstructorBuilder)
+			{
+				((ConstructorBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(con, new object[] { arg }));
+			}
+			else
+			{
+				((MethodBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(con, new object[] { arg }));
 			}
 		}
 	}

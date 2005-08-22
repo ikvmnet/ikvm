@@ -49,6 +49,13 @@ namespace IKVM.Attributes
 	{
 		private byte[] table;
 
+		public LineNumberTableAttribute(ushort lineno)
+		{
+			LineNumberWriter w = new LineNumberWriter(1);
+			w.AddMapping(0, lineno);
+			table = w.ToArray();
+		}
+
 		public LineNumberTableAttribute(byte[] table)
 		{
 			this.table = table;
@@ -59,6 +66,7 @@ namespace IKVM.Attributes
 			private System.IO.MemoryStream stream;
 			private int prevILOffset;
 			private int prevLineNum;
+			private int count;
 
 			internal LineNumberWriter(int estimatedCount)
 			{
@@ -67,10 +75,75 @@ namespace IKVM.Attributes
 
 			internal void AddMapping(int ilOffset, int linenumber)
 			{
-				WritePackedInteger(ilOffset - prevILOffset);
-				WritePackedInteger(linenumber - prevLineNum);
+				if(count == 0)
+				{
+					if(ilOffset == 0 && linenumber != 0)
+					{
+						prevLineNum = linenumber;
+						count++;
+						WritePackedInteger(linenumber - (64 + 50));
+						return;
+					}
+					else
+					{
+						prevLineNum = linenumber & ~3;
+						WritePackedInteger(((-prevLineNum / 4) - (64 + 50)));
+					}
+				}
+				bool pc_overflow;
+				bool lineno_overflow;
+				byte lead;
+				int deltaPC = ilOffset - prevILOffset;
+				if(deltaPC >= 0 && deltaPC < 31)
+				{
+					lead = (byte)deltaPC;
+					pc_overflow = false;
+				}
+				else
+				{
+					lead = (byte)31;
+					pc_overflow = true;
+				}
+				int deltaLineNo = linenumber - prevLineNum;
+				const int bias = 2;
+				if(deltaLineNo >= -bias && deltaLineNo < 7 - bias)
+				{
+					lead |= (byte)((deltaLineNo + bias) << 5);
+					lineno_overflow = false;
+				}
+				else
+				{
+					lead |= (byte)(7 << 5);
+					lineno_overflow = true;
+				}
+				stream.WriteByte(lead);
+				if(pc_overflow)
+				{
+					WritePackedInteger(deltaPC - (64 + 31));
+				}
+				if(lineno_overflow)
+				{
+					WritePackedInteger(deltaLineNo);
+				}
 				prevILOffset = ilOffset;
 				prevLineNum = linenumber;
+				count++;
+			}
+
+			internal int Count
+			{
+				get
+				{
+					return count;
+				}
+			}
+
+			internal int LineNo
+			{
+				get
+				{
+					return prevLineNum;
+				}
 			}
 
 			internal byte[] ToArray()
@@ -154,17 +227,38 @@ namespace IKVM.Attributes
 
 		public int GetLineNumber(int ilOffset)
 		{
+			int i = 0;
 			int prevILOffset = 0;
-			int prevLineNum = 0;
-			int line = -1;
-			for(int i = 0; i < table.Length;)
+			int prevLineNum = ReadPackedInteger(ref i) + (64 + 50);
+			int line;
+			if(prevLineNum > 0)
 			{
-				int currILOffset = ReadPackedInteger(ref i) + prevILOffset;
+				line = prevLineNum;
+			}
+			else
+			{
+				prevLineNum = 4 * -prevLineNum;
+				line = -1;
+			}
+			while(i < table.Length)
+			{
+				byte lead = table[i++];
+				int deltaPC = lead & 31;
+				int deltaLineNo = (lead >> 5) - 2;
+				if(deltaPC == 31)
+				{
+					deltaPC = ReadPackedInteger(ref i) + (64 + 31);
+				}
+				if(deltaLineNo == 5)
+				{
+					deltaLineNo = ReadPackedInteger(ref i);
+				}
+				int currILOffset = prevILOffset + deltaPC;
 				if(currILOffset > ilOffset)
 				{
 					return line;
 				}
-				line = ReadPackedInteger(ref i) + prevLineNum;
+				line = prevLineNum + deltaLineNo;
 				prevILOffset = currILOffset;
 				prevLineNum = line;
 			}

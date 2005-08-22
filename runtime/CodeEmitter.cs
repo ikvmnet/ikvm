@@ -330,7 +330,7 @@ namespace IKVM.Internal
 		{
 			if(!IKVM.Internal.JVM.NoStackTraceInfo && linenums != null)
 			{
-				AttributeHelper.SetLineNumberTable(mb, linenums.ToArray());
+				AttributeHelper.SetLineNumberTable(mb, linenums);
 			}
 		}
 
