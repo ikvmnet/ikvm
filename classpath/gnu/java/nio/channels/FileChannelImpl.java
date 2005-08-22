@@ -440,18 +440,20 @@ public abstract class FileChannelImpl extends FileChannel
 	{
             Stream local = stream;
             stream = null;
-            // HACK don't close stdin because that throws a NotSupportedException (bug in System.IO.__ConsoleStream)
-	    if(local != in.stream)
+	    try
 	    {
-		try
-		{
-		    local.Close();
-		    if(false) throw new cli.System.IO.IOException();
-		}
-		catch(cli.System.IO.IOException x)
-		{
-		    throw new IOException(x.getMessage());
-		}
+		local.Close();
+                if(false) throw new cli.System.IO.IOException();
+                if(false) throw new cli.System.NotSupportedException();
+	    }
+            catch(cli.System.NotSupportedException _)
+            {
+                // FXBUG ignore this, there's a bug in System.IO.__ConsoleStream,
+                // it throws this exception when you try to close it.
+            }
+            catch(cli.System.IO.IOException x)
+	    {
+		throw new IOException(x.getMessage());
 	    }
 	}
     }
