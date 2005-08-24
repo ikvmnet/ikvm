@@ -887,9 +887,8 @@ namespace IKVM.Internal
 				}
 				return wrapper;
 			}
-			catch(Exception x)
+			catch(RetargetableJavaException x)
 			{
-				// TODO it might not be a good idea to catch .NET system exceptions here
 				if(!JVM.IsStaticCompiler && Tracer.ClassLoading.TraceError)
 				{
 					object cl = classLoader.GetJavaClassLoader();
@@ -914,8 +913,8 @@ namespace IKVM.Internal
 						}
 						Tracer.Error(Tracer.ClassLoading, "ClassLoader chain: {0}", sb);
 					}
-					x = IKVM.Runtime.Util.MapException(x);
-					Tracer.Error(Tracer.ClassLoading, x.ToString() + Environment.NewLine + x.StackTrace);
+					Exception m = IKVM.Runtime.Util.MapException(x.ToJava());
+					Tracer.Error(Tracer.ClassLoading, m.ToString() + Environment.NewLine + m.StackTrace);
 				}
 				return new UnloadableTypeWrapper(name);
 			}

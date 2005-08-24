@@ -270,10 +270,6 @@ namespace IKVM.Internal
 
 		internal TypeWrapper LoadClassByDottedNameFast(string name)
 		{
-			if(name == null)
-			{
-				throw new NullReferenceException();
-			}
 			// .NET 1.1 has a limit of 1024 characters for type names
 			if(name.Length >= 1024)
 			{
@@ -435,6 +431,10 @@ namespace IKVM.Internal
 					try
 					{
 						type = (TypeWrapper)JVM.Library.loadClass(javaClassLoader, name);
+					}
+					catch(Exception x)
+					{
+						throw new ClassLoadingException(IKVM.Runtime.Util.MapException(x));
 					}
 					finally
 					{

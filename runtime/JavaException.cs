@@ -39,6 +39,23 @@ abstract class RetargetableJavaException : ApplicationException
 	internal abstract Exception ToJava();
 }
 
+// NOTE this is not a Java exception, but instead it wraps a Java exception that
+// was thrown by a class loader. It is used so ClassFile.LoadClassHelper() can catch
+// Java exceptions and turn them into UnloadableTypeWrappers without inadvertantly
+// hiding exceptions caused by coding errors in the IKVM code.
+class ClassLoadingException : RetargetableJavaException
+{
+	internal ClassLoadingException(Exception x)
+		: base(x.Message, x)
+	{
+	}
+
+	internal override Exception ToJava()
+	{
+		return InnerException;
+	}
+}
+
 class LinkageError : RetargetableJavaException
 {
 	internal LinkageError(string msg) : base(msg)
