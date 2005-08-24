@@ -1912,7 +1912,12 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 						ilGenerator.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicNewCheckOnly"));
 					}
-					// we don't do anything here, the call to <init> will be converted into a newobj instruction
+					else if(wrapper != clazz)
+					{
+						// trigger cctor (as the spec requires)
+						wrapper.EmitRunClassConstructor(ilGenerator);
+					}
+					// we don't actually allocate the object here, the call to <init> will be converted into a newobj instruction
 					break;
 				}
 				case NormalizedByteCode.__multianewarray:

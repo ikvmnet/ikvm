@@ -1442,6 +1442,10 @@ namespace IKVM.Internal
 
 		protected override void EmitGetImpl(ILGenerator ilgen)
 		{
+			// Reading a field should trigger the cctor, but since we're inlining the value
+			// we have to trigger it explicitly
+			DeclaringType.EmitRunClassConstructor(ilgen);
+
 			// NOTE even though you're not supposed to access a constant static final (the compiler is supposed
 			// to inline them), we have to support it (because it does happen, e.g. if the field becomes final
 			// after the referencing class was compiled, or when we're accessing an unsigned primitive .NET field)

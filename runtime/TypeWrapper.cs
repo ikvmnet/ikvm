@@ -59,21 +59,6 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Throw);
 		}
 
-		internal static void RunClassConstructor(ILGenerator ilgen, Type type)
-		{
-			// NOTE we're *not* running the .cctor if the class is not a Java class
-			// NOTE this is a potential versioning problem, if the base class lives in another assembly and doesn't
-			// have a <clinit> now, a newer version that does have a <clinit> will not have it's <clinit> called by us.
-			// A possible solution would be to use RuntimeHelpers.RunClassConstructor when "type" is a Java type and
-			// lives in another assembly as the caller (which we don't know at the moment).
-			FieldInfo field = type.GetField("__<clinit>", BindingFlags.Static | BindingFlags.NonPublic);
-			if(field != null)
-			{
-				ilgen.Emit(OpCodes.Ldsfld, field);
-				ilgen.Emit(OpCodes.Pop);
-			}
-		}
-
 		internal static void NullCheck(ILGenerator ilgen)
 		{
 			// I think this is the most efficient way to generate a NullReferenceException if the
@@ -1899,6 +1884,10 @@ namespace IKVM.Internal
 		{
 			return fw.GetField();
 		}
+
+		internal virtual void EmitRunClassConstructor(ILGenerator ilgen)
+		{
+		}
 	}
 
 	class UnloadableTypeWrapper : TypeWrapper
@@ -2381,6 +2370,7 @@ namespace IKVM.Internal
 			internal abstract DynamicImpl Finish();
 			internal abstract MethodBase LinkMethod(MethodWrapper mw);
 			internal abstract FieldInfo LinkField(FieldWrapper fw);
+			internal abstract void EmitRunClassConstructor(ILGenerator ilgen);
 		}
 
 		private class JavaTypeImpl : DynamicImpl
@@ -2396,6 +2386,7 @@ namespace IKVM.Internal
 			private Hashtable memberclashtable;
 			private Hashtable classCache = new Hashtable();
 			private FieldInfo classObjectField;
+			private MethodBuilder clinitMethod;
 
 			internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper)
 			{
@@ -2664,6 +2655,32 @@ namespace IKVM.Internal
 						{
 							AttributeHelper.SetSourceFile(typeBuilder, null);
 						}
+					}
+					if(!classFile.IsInterface && hasclinit)
+					{
+						// We create a empty method that we can use to trigger our .cctor
+						// (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
+						MethodAttributes attribs = MethodAttributes.Static | MethodAttributes.SpecialName;
+						if(classFile.IsAbstract)
+						{
+							bool hasfields = false;
+							// If we have any public static fields, the cctor trigger must (and may) be public as well
+							foreach(ClassFile.Field fld in classFile.Fields)
+							{
+								if(fld.IsPublic && fld.IsStatic)
+								{
+									hasfields = true;
+									break;
+								}
+							}
+							attribs |= hasfields ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+						}
+						else
+						{
+							attribs |= MethodAttributes.Public;
+						}
+						clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
+						clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
 					}
 				}
 				catch(Exception x)
@@ -3154,6 +3171,14 @@ namespace IKVM.Internal
 				return field;
 			}
 
+			internal override void EmitRunClassConstructor(ILGenerator ilgen)
+			{
+				if(clinitMethod != null)
+				{
+					ilgen.Emit(OpCodes.Call, clinitMethod);
+				}
+			}
+
 			internal override DynamicImpl Finish()
 			{
 				if(wrapper.BaseTypeWrapper != null)
@@ -3270,7 +3295,7 @@ namespace IKVM.Internal
 								hasclinit = true;
 								// before we call the base class initializer, we need to set the non-final static ConstantValue fields
 								EmitConstantValueInitialization(ilGenerator);
-								EmitHelper.RunClassConstructor(ilGenerator, Type.BaseType);
+								wrapper.BaseTypeWrapper.EmitRunClassConstructor(ilGenerator);
 							}
 							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator);
 						}
@@ -3423,7 +3448,7 @@ namespace IKVM.Internal
 								EmitConstantValueInitialization(ilGenerator);
 								if(basehasclinit)
 								{
-									EmitHelper.RunClassConstructor(ilGenerator, Type.BaseType);
+									wrapper.BaseTypeWrapper.EmitRunClassConstructor(ilGenerator);
 								}
 								ilGenerator.Emit(OpCodes.Ret);
 							}
@@ -3897,12 +3922,6 @@ namespace IKVM.Internal
 
 			private ConstructorBuilder DefineClassInitializer()
 			{
-				if(!classFile.IsFinal && !classFile.IsInterface && wrapper.HasStaticInitializer)
-				{
-					// We create a field that the derived classes can access in their .cctor to trigger our .cctor
-					// (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
-					FieldBuilder field = typeBuilder.DefineField("__<clinit>", typeof(int), FieldAttributes.SpecialName | FieldAttributes.Family | FieldAttributes.Static);
-				}
 				if(typeBuilder.IsInterface)
 				{
 					// LAMESPEC the ECMA spec says (part. I, sect. 8.5.3.2) that all interface members must be public, so we make
@@ -4416,6 +4435,7 @@ namespace IKVM.Internal
 			private TypeWrapper[] innerclasses;
 			private TypeWrapper declaringTypeWrapper;
 			private Modifiers reflectiveModifiers;
+			private MethodInfo clinitMethod;
 
 			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers)
 			{
@@ -4423,6 +4443,7 @@ namespace IKVM.Internal
 				this.innerclasses = innerclasses;
 				this.declaringTypeWrapper = declaringTypeWrapper;
 				this.reflectiveModifiers = reflectiveModifiers;
+				this.clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 			}
 
 			internal override TypeWrapper[] InnerClasses
@@ -4456,6 +4477,14 @@ namespace IKVM.Internal
 				get
 				{
 					return type;
+				}
+			}
+
+			internal override void EmitRunClassConstructor(CountingILGenerator ilgen)
+			{
+				if(clinitMethod != null)
+				{
+					ilgen.Emit(OpCodes.Call, clinitMethod);
 				}
 			}
 
@@ -4713,6 +4742,11 @@ namespace IKVM.Internal
 		{
 			fw.AssertLinked();
 			return impl.LinkField(fw);
+		}
+
+		internal override void EmitRunClassConstructor(CountingILGenerator ilgen)
+		{
+			impl.EmitRunClassConstructor(ilgen);
 		}
 	}
 
@@ -5699,6 +5733,7 @@ namespace IKVM.Internal
 		private readonly Type type;
 		private TypeWrapper[] interfaces;
 		private TypeWrapper[] innerclasses;
+		private MethodInfo clinitMethod;
 
 		internal static CompiledTypeWrapper newInstance(string name, Type type)
 		{
@@ -5990,7 +6025,9 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return type.GetField("__<clinit>", BindingFlags.NonPublic | BindingFlags.Static) != null;
+				// trigger LazyPublishMembers
+				GetMethods();
+				return clinitMethod != null;
 			}
 		}
 
@@ -6214,6 +6251,7 @@ namespace IKVM.Internal
 
 		protected override void LazyPublishMembers()
 		{
+			clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 			ArrayList methods = new ArrayList();
 			ArrayList fields = new ArrayList();
 			MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
@@ -6224,7 +6262,8 @@ namespace IKVM.Internal
 					MethodBase method = m as MethodBase;
 					if(method != null)
 					{
-						if(method.IsSpecialName && method.Name == "op_Implicit")
+						if(method.IsSpecialName && 
+							(method.Name == "op_Implicit" || method.Name.StartsWith("__<")))
 						{
 							// skip
 						}
@@ -6409,6 +6448,16 @@ namespace IKVM.Internal
 
 		internal override void Finish()
 		{
+		}
+
+		internal override void EmitRunClassConstructor(ILGenerator ilgen)
+		{
+			// trigger LazyPublishMembers
+			GetMethods();
+			if(clinitMethod != null)
+			{
+				ilgen.Emit(OpCodes.Call, clinitMethod);
+			}
 		}
 	}
 

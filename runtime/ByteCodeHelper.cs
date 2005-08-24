@@ -164,6 +164,7 @@ namespace IKVM.Runtime
 			{
 				throw JavaException.InstantiationError(clazz);
 			}
+			wrapper.RunClassInit();
 		}
 
 		private static TypeWrapper LoadTypeWrapper(RuntimeTypeHandle type, string clazz)
