@@ -6474,7 +6474,7 @@ namespace IKVM.Internal
 	sealed class DotNetTypeWrapper : TypeWrapper
 	{
 		private const string NamePrefix = "cli.";
-		private const string DelegateInterfaceSuffix = "$Method";
+		internal const string DelegateInterfaceSuffix = "$Method";
 		private readonly Type type;
 		private TypeWrapper[] innerClasses;
 		private TypeWrapper outerClass;
@@ -6667,19 +6667,23 @@ namespace IKVM.Internal
 				Type delegateType = LoadTypeFromLoadedAssemblies(name.Substring(0, name.Length - DelegateInterfaceSuffix.Length));
 				if(delegateType != null && IsDelegate(delegateType))
 				{
-					MethodInfo invoke = delegateType.GetMethod("Invoke");
-					ParameterInfo[] parameters = invoke.GetParameters();
-					Type[] args = new Type[parameters.Length];
-					for(int i = 0; i < args.Length; i++)
+					if(prefixed || delegateType.IsDefined(typeof(NoPackagePrefixAttribute), false) || delegateType.Assembly.IsDefined(typeof(NoPackagePrefixAttribute), false))
 					{
-						// we know there aren't any unsupported parameter types, because IsDelegate() returned true
-						args[i] = parameters[i].ParameterType;
+						MethodInfo invoke = delegateType.GetMethod("Invoke");
+						ParameterInfo[] parameters = invoke.GetParameters();
+						Type[] args = new Type[parameters.Length];
+						for(int i = 0; i < args.Length; i++)
+						{
+							// we know there aren't any unsupported parameter types, because IsDelegate() returned true
+							args[i] = parameters[i].ParameterType;
+						}
+						ModuleBuilder moduleBuilder = ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
+						TypeBuilder typeBuilder = moduleBuilder.DefineType(origname.Substring(NamePrefix.Length), TypeAttributes.NotPublic | TypeAttributes.Interface | TypeAttributes.Abstract);
+						AttributeHelper.HideFromJava(typeBuilder);
+						AttributeHelper.SetModifiers(typeBuilder, Modifiers.Public | Modifiers.Interface | Modifiers.Abstract);
+						typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual, CallingConventions.Standard, invoke.ReturnType, args);
+						return CompiledTypeWrapper.newInstance(origname, typeBuilder.CreateType());
 					}
-					ModuleBuilder moduleBuilder = ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
-					TypeBuilder typeBuilder = moduleBuilder.DefineType(origname, TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract);
-					AttributeHelper.SetInnerClass(typeBuilder, origname, Modifiers.Public | Modifiers.Interface | Modifiers.Static | Modifiers.Abstract);
-					typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual, CallingConventions.Standard, invoke.ReturnType, args);
-					return CompiledTypeWrapper.newInstance(origname, typeBuilder.CreateType());
 				}
 			}
 			return null;
@@ -6689,18 +6693,19 @@ namespace IKVM.Internal
 		{
 			foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
 			{
-				// HACK we also look inside Java assemblies, because precompiled delegate interfaces might have ended up there
 				if(!(a is AssemblyBuilder))
 				{
 					Type t = a.GetType(name);
-					if(t != null)
+					if(t != null
+						&& !t.Module.IsDefined(typeof(JavaModuleAttribute), false))
 					{
 						return t;
 					}
 					// HACK we might be looking for an inner classes
 					// (if we remove the mangling of NoPackagePrefix types from GetName, we don't need this anymore)
 					t = a.GetType(name.Replace('$', '+'));
-					if(t != null)
+					if(t != null
+						&& !t.Module.IsDefined(typeof(JavaModuleAttribute), false))
 					{
 						return t;
 					}

@@ -2386,6 +2386,23 @@ namespace IKVM.Internal
 			{
 				try
 				{
+					// HACK skip synthetic delegate inner classes
+					// (we don't want to generate the unused interfaces)
+					if(s.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
+					{
+						byte[] buf = (byte[])h[s];
+						try
+						{
+							ClassFile c = new ClassFile(buf, 0, buf.Length, s);
+							if(c.IKVMAssemblyAttribute != null)
+							{
+								continue;
+							}
+						}
+						catch
+						{
+						}
+					}
 					TypeWrapper wrapper = loader.LoadClassByDottedNameFast(s);
 					if(wrapper != null)
 					{

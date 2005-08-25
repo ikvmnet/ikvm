@@ -549,13 +549,17 @@ namespace IKVM.Internal
 			try
 			{
 				Type t = a.GetType(name);
-				if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+				if(t != null
+					&& t.Module.IsDefined(typeof(JavaModuleAttribute), false)
+					&& !AttributeHelper.IsHideFromJava(t))
 				{
 					return t;
 				}
 				// HACK we might be looking for an inner classes
 				t = a.GetType(name.Replace('$', '+'));
-				if(t != null && t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+				if(t != null
+					&& t.Module.IsDefined(typeof(JavaModuleAttribute), false)
+					&& !AttributeHelper.IsHideFromJava(t))
 				{
 					return t;
 				}
