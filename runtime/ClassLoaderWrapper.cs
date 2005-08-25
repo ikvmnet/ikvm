@@ -200,7 +200,7 @@ namespace IKVM.Internal
 
 		internal TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
 		{
-			if(tw.IsUnloadable || tw.IsPrimitive)
+			if(tw == null || tw.IsUnloadable || tw.IsPrimitive)
 				return tw;
 
 			lock(types.SyncRoot)
