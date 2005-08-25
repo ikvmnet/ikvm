@@ -1919,14 +1919,7 @@ namespace IKVM.Internal
 
 		internal override TypeWrapper EnsureLoadable(ClassLoaderWrapper loader)
 		{
-			TypeWrapper tw = null;
-			try
-			{
-				tw = loader.LoadClassByDottedNameFast(this.Name);
-			}
-			catch
-			{
-			}
+			TypeWrapper tw = loader.LoadClassByDottedNameFast(this.Name);
 			if(tw == null)
 			{
 				throw new NoClassDefFoundError(this.Name);
@@ -2527,7 +2520,7 @@ namespace IKVM.Internal
 								{
 									outerClassWrapper = wrapper.GetClassLoader().LoadClassByDottedNameFast(outerClassName) as DynamicTypeWrapper;
 								}
-								catch(Exception x) // TODO should we be catching Exception here?
+								catch(RetargetableJavaException x)
 								{
 									Tracer.Warning(Tracer.Compiler, "Unable to load outer class {0} for innner class {1} ({2}: {3})", outerClassName, f.Name, x.GetType().Name, x.Message);
 								}

@@ -2411,6 +2411,11 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Warning: unable to compile class \"{0}\"", s);
 					Console.Error.WriteLine("    (missing class \"{0}\")", x.Message);
 				}
+				catch(RetargetableJavaException x)
+				{
+					Console.Error.WriteLine("Warning: unable to compile class \"{0}\"", s);
+					Console.Error.WriteLine("    ({0}: \"{1}\")", x.GetType().Name, x.Message);
+				}
 			}
 			if(options.mainClass != null)
 			{
@@ -2419,7 +2424,7 @@ namespace IKVM.Internal
 				{
 					wrapper = loader.LoadClassByDottedNameFast(options.mainClass);
 				}
-				catch(NoClassDefFoundError)
+				catch(RetargetableJavaException)
 				{
 				}
 				if(wrapper == null)

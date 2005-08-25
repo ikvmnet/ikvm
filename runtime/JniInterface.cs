@@ -1276,7 +1276,12 @@ namespace IKVM.Runtime
 				{
 					name = name.Substring(1, name.Length - 2);
 				}
-				TypeWrapper wrapper = FindNativeMethodClassLoader(pEnv).LoadClassByDottedName(name.Replace('/', '.'));
+				TypeWrapper wrapper = FindNativeMethodClassLoader(pEnv).LoadClassByDottedNameFast(name.Replace('/', '.'));
+				if(wrapper == null)
+				{
+					SetPendingException(pEnv, JavaException.NoClassDefFoundError(name));
+					return IntPtr.Zero;
+				}
 				wrapper.Finish();
 				// spec doesn't say it, but Sun runs the static initializer
 				wrapper.RunClassInit();
@@ -1287,10 +1292,6 @@ namespace IKVM.Runtime
 				if(x is RetargetableJavaException)
 				{
 					x = ((RetargetableJavaException)x).ToJava();
-				}
-				if(ClassLoaderWrapper.LoadClassCritical("java.lang.ClassNotFoundException").TypeAsTBD.IsInstanceOfType(x))
-				{
-					x = JavaException.NoClassDefFoundError(x.Message);
 				}
 				SetPendingException(pEnv, x);
 				return IntPtr.Zero;

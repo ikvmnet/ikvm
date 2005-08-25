@@ -186,13 +186,7 @@ namespace IKVM.Runtime
 			}
 			catch(RetargetableJavaException x)
 			{
-				Exception r = x.ToJava();
-				// HACK we need to convert a ClassNotFoundException into a NoClassDefFoundError
-				if(r.GetType().FullName == "java.lang.ClassNotFoundException")
-				{
-					throw JavaException.NoClassDefFoundError(r.Message);
-				}
-				throw r;
+				throw x.ToJava();
 			}
 		}
 

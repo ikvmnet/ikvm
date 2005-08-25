@@ -260,7 +260,7 @@ namespace IKVM.Internal
 
 		internal TypeWrapper LoadClassByDottedName(string name)
 		{
-			TypeWrapper type = LoadClassByDottedNameFast(name);
+			TypeWrapper type = LoadClassByDottedNameFast(name, true);
 			if(type != null)
 			{
 				return type;
@@ -269,6 +269,11 @@ namespace IKVM.Internal
 		}
 
 		internal TypeWrapper LoadClassByDottedNameFast(string name)
+		{
+			return LoadClassByDottedNameFast(name, false);
+		}
+
+		private TypeWrapper LoadClassByDottedNameFast(string name, bool throwClassNotFoundException)
 		{
 			// .NET 1.1 has a limit of 1024 characters for type names
 			if(name.Length >= 1024)
@@ -378,7 +383,7 @@ namespace IKVM.Internal
 								// (for remapped types as well, because netexp uses this way of
 								// loading types, we need the remapped types to appear in their
 								// .NET "warped" form).
-								return LoadClassByDottedName(DotNetTypeWrapper.GetName(t));
+								return LoadClassByDottedNameFast(DotNetTypeWrapper.GetName(t), throwClassNotFoundException);
 							}
 						}
 					}
@@ -434,6 +439,11 @@ namespace IKVM.Internal
 					}
 					catch(Exception x)
 					{
+						if(!throwClassNotFoundException
+							&& LoadClassCritical("java.lang.ClassNotFoundException").TypeAsBaseType.IsInstanceOfType(x))
+						{
+							return null;
+						}
 						throw new ClassLoadingException(IKVM.Runtime.Util.MapException(x));
 					}
 					finally
