@@ -2381,7 +2381,7 @@ class MethodAnalyzer
 		while(!done)
 		{
 			done = true;
-			bool didjsr = false;
+			bool didJsrOrRet = false;
 			for(int i = 0; i < instructions.Length; i++)
 			{
 				if((instructions[i].flags & (InstructionFlags.Reachable | InstructionFlags.Processed)) == InstructionFlags.Reachable)
@@ -2579,13 +2579,14 @@ class MethodAnalyzer
 						case NormalizedByteCode.__jsr:
 							// TODO should we check for unitialized objects?
 							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
-							didjsr = true;
+							didJsrOrRet = true;
 							break;
 						case NormalizedByteCode.__ret:
 							// Note that we can't handle ret here, because we might encounter the ret
 							// before having seen all the corresponding jsr instructions, so we can't
 							// update all the call sites.
 							// We handle ret in the loop below.
+							didJsrOrRet = true;
 							break;
 						case NormalizedByteCode.__ireturn:
 						case NormalizedByteCode.__lreturn:
@@ -2602,11 +2603,12 @@ class MethodAnalyzer
 					}
 				}
 			}
-			if(didjsr)
+			if(didJsrOrRet)
 			{
 				for(int i = 0; i < instructions.Length; i++)
 				{
-					if(instructions[i].NormalizedOpCode == NormalizedByteCode.__ret)
+					if(instructions[i].NormalizedOpCode == NormalizedByteCode.__ret
+						&& instructions[i].IsReachable)
 					{
 						int subroutineIndex = state[i].GetLocalRet(instructions[i].Arg1, ref localStoreReaders[i]);
 						int[] cs = GetCallSites(subroutineIndex);

@@ -287,7 +287,7 @@ class Compiler
 					{
 						try
 						{
-							using(FileStream fs = new FileStream(spec[1], FileMode.Open))
+							using(FileStream fs = new FileStream(spec[1], FileMode.Open, FileAccess.Read))
 							{
 								byte[] b = new byte[fs.Length];
 								fs.Read(b, 0, b.Length);
@@ -545,7 +545,7 @@ class Compiler
 		switch(new FileInfo(file).Extension.ToLower())
 		{
 			case ".class":
-				using(FileStream fs = new FileStream(file, FileMode.Open))
+				using(FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read))
 				{
 					byte[] b = new byte[fs.Length];
 					fs.Read(b, 0, b.Length);
@@ -574,7 +574,7 @@ class Compiler
 					// include as resource
 					try 
 					{
-						using(FileStream fs = new FileStream(file, FileMode.Open))
+						using(FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read))
 						{
 							byte[] b = new byte[fs.Length];
 							fs.Read(b, 0, b.Length);
