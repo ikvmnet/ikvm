@@ -1563,7 +1563,7 @@ namespace IKVM.Internal
 					}
 					if(error)
 					{
-						MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+						MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
 						AttributeHelper.HideFromJava(mb);
 						EmitHelper.Throw(mb.GetILGenerator(), "java.lang.LinkageError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
 						typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
@@ -1580,7 +1580,7 @@ namespace IKVM.Internal
 					// it makes sense, so I hope the spec is wrong
 					// UPDATE unfortunately, according to Serge Lidin the spec is correct, and it is not allowed to have virtual privatescope
 					// methods. Sigh! So I have to use private methods and mangle the name
-					MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+					MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
 					AttributeHelper.HideFromJava(mb);
 					EmitHelper.Throw(mb.GetILGenerator(), "java.lang.IllegalAccessError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
 					typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
@@ -1588,7 +1588,7 @@ namespace IKVM.Internal
 				}
 				else if(mce.GetMethod() == null || mce.RealName != ifmethod.RealName)
 				{
-					MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+					MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
 					AttributeHelper.HideFromJava(mb);
 					ILGenerator ilGenerator = mb.GetILGenerator();
 					ilGenerator.Emit(OpCodes.Ldarg_0);
@@ -1606,7 +1606,7 @@ namespace IKVM.Internal
 					// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
 					// interface methods, so we have to generate a stub here that doesn't do anything but call the base
 					// implementation
-					MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+					MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
 					typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 					AttributeHelper.HideFromJava(mb);
 					ILGenerator ilGenerator = mb.GetILGenerator();
@@ -1626,7 +1626,7 @@ namespace IKVM.Internal
 				{
 					// the type doesn't implement the interface method and isn't abstract either. The JVM allows this, but the CLR doesn't,
 					// so we have to create a stub method that throws an AbstractMethodError
-					MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
+					MethodBuilder mb = typeBuilder.DefineMethod(mangledName, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final, ifmethod.ReturnTypeForDefineMethod, ifmethod.GetParametersForDefineMethod());
 					AttributeHelper.HideFromJava(mb);
 					EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + ifmethod.Name + ifmethod.Signature);
 					typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
@@ -3046,7 +3046,7 @@ namespace IKVM.Internal
 					fieldName += "/" + typeWrapper.Name;
 				}
 				FieldAttributes attribs = 0;
-				MethodAttributes methodAttribs = 0;
+				MethodAttributes methodAttribs = MethodAttributes.HideBySig;
 				bool setModifiers = false;
 				if(fld.IsPrivate)
 				{
@@ -3460,7 +3460,7 @@ namespace IKVM.Internal
 							// TODO do this for indirectly implemented interfaces (interfaces implemented by interfaces) as well
 							if(JVM.IsStaticCompiler && interfaces[i].IsGhost && wrapper.IsPublic)
 							{
-								MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, interfaces[i].TypeAsSignatureType, new Type[] { wrapper.TypeAsSignatureType });
+								MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, interfaces[i].TypeAsSignatureType, new Type[] { wrapper.TypeAsSignatureType });
 								ILGenerator ilgen = mb.GetILGenerator();
 								LocalBuilder local = ilgen.DeclareLocal(interfaces[i].TypeAsSignatureType);
 								ilgen.Emit(OpCodes.Ldloca, local);
@@ -4009,7 +4009,7 @@ namespace IKVM.Internal
 							// We're a Miranda method
 							Debug.Assert(baseMethods[index].DeclaringType.IsInterface);
 							string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index]);
-							MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
+							MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 							AttributeHelper.HideFromReflection(mb);
 							if(unloadableOverrideStub || name != methods[index].Name)
 							{
@@ -4027,6 +4027,7 @@ namespace IKVM.Internal
 						else if(methods[index].IsAccessStub)
 						{
 							MethodAttributes stubattribs = baseMethods[index].IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+							stubattribs |= MethodAttributes.HideBySig;
 							if(baseMethods[index].IsStatic)
 							{
 								stubattribs |= MethodAttributes.Static;
@@ -4073,7 +4074,7 @@ namespace IKVM.Internal
 						setNameSig |= tw.IsUnloadable || tw.IsGhostArray;
 					}
 					bool setModifiers = false;
-					MethodAttributes attribs = 0;
+					MethodAttributes attribs = MethodAttributes.HideBySig;
 					if(m.IsNative)
 					{
 						if(wrapper.IsPInvokeMethod(m))
@@ -4278,7 +4279,7 @@ namespace IKVM.Internal
 							if(needFinalize)
 							{
 								MethodInfo baseFinalize = typeBuilder.BaseType.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-								MethodAttributes attr = MethodAttributes.Virtual;
+								MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.Virtual;
 								// make sure we don't reduce accessibility
 								attr |= baseFinalize.IsPublic ? MethodAttributes.Public : MethodAttributes.Family;
 								if(m.IsFinal)
@@ -5077,7 +5078,7 @@ namespace IKVM.Internal
 
 		private static MethodAttributes GetPropertyMethodAttributes(MethodWrapper mw, bool final)
 		{
-			MethodAttributes attribs = (MethodAttributes)0;
+			MethodAttributes attribs = MethodAttributes.HideBySig;
 			if(mw.IsStatic)
 			{
 				attribs |= MethodAttributes.Static;
@@ -5503,7 +5504,7 @@ namespace IKVM.Internal
 					TypeWrapper[] implementers = GetGhostImplementers(this);
 					for(int i = 0; i < implementers.Length; i++)
 					{
-						mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, new Type[] { implementers[i].TypeAsSignatureType });
+						mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, new Type[] { implementers[i].TypeAsSignatureType });
 						ilgen = mb.GetILGenerator();
 						local = ilgen.DeclareLocal(TypeAsSignatureType);
 						ilgen.Emit(OpCodes.Ldloca, local);
@@ -5610,7 +5611,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldobj, TypeAsSignatureType);	
 					ilgen.Emit(OpCodes.Ret);
 					// Add "ToObject" methods
-					mb = typeBuilder.DefineMethod("ToObject", MethodAttributes.Public, typeof(object), Type.EmptyTypes);
+					mb = typeBuilder.DefineMethod("ToObject", MethodAttributes.HideBySig | MethodAttributes.Public, typeof(object), Type.EmptyTypes);
 					AttributeHelper.HideFromJava(mb);
 					ilgen = mb.GetILGenerator();
 					ilgen.Emit(OpCodes.Ldarg_0);
@@ -5658,14 +5659,14 @@ namespace IKVM.Internal
 				ghostRefField = typeBuilder.DefineField("__<ref>", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
 				typeBuilderGhostInterface = typeBuilder.DefineNestedType("__Interface", TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.NestedPublic);
 				AttributeHelper.HideFromJava(typeBuilderGhostInterface);
-				ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object) });
+				ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object) });
 				ghostIsInstanceMethod.DefineParameter(1, ParameterAttributes.None, "obj");
-				ghostIsInstanceArrayMethod = typeBuilder.DefineMethod("IsInstanceArray", MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object), typeof(int) });
+				ghostIsInstanceArrayMethod = typeBuilder.DefineMethod("IsInstanceArray", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object), typeof(int) });
 				ghostIsInstanceArrayMethod.DefineParameter(1, ParameterAttributes.None, "obj");
 				ghostIsInstanceArrayMethod.DefineParameter(2, ParameterAttributes.None, "rank");
-				ghostCastMethod = typeBuilder.DefineMethod("Cast", MethodAttributes.Public | MethodAttributes.Static, typeBuilder, new Type[] { typeof(object) });
+				ghostCastMethod = typeBuilder.DefineMethod("Cast", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeBuilder, new Type[] { typeof(object) });
 				ghostCastMethod.DefineParameter(1, ParameterAttributes.None, "obj");
-				ghostCastArrayMethod = typeBuilder.DefineMethod("CastArray", MethodAttributes.Public | MethodAttributes.Static, typeof(void), new Type[] { typeof(object), typeof(int) });
+				ghostCastArrayMethod = typeBuilder.DefineMethod("CastArray", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeof(void), new Type[] { typeof(object), typeof(int) });
 				ghostCastArrayMethod.DefineParameter(1, ParameterAttributes.None, "obj");
 				ghostCastArrayMethod.DefineParameter(2, ParameterAttributes.None, "rank");
 				return typeBuilder;

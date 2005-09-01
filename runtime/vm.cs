@@ -1218,7 +1218,7 @@ namespace IKVM.Internal
 									typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class);
 									AttributeHelper.HideFromJava(typeWrapper.helperTypeBuilder);
 								}
-								helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.Public | MethodAttributes.Static, typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsSignatureType, argTypes);
+								helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsSignatureType, argTypes);
 								if(m.Attributes != null)
 								{
 									foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
@@ -1284,7 +1284,7 @@ namespace IKVM.Internal
 							else
 							{
 								MethodInfo overrideMethod = null;
-								MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers);
+								MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.HideBySig;
 								if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) != 0)
 								{
 									attr |= MethodAttributes.Static;
@@ -1328,7 +1328,7 @@ namespace IKVM.Internal
 							if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) == 0)
 							{
 								// instance methods must have an instancehelper method
-								MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.Static;
+								MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.HideBySig | MethodAttributes.Static;
 								// NOTE instancehelpers for protected methods are made public,
 								// because cli.System.Object derived types can call protected methods
 								if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Protected) != 0)

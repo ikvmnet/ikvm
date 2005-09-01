@@ -474,6 +474,8 @@ namespace IKVM.Runtime
 		delegate IntPtr pf_IntPtr_pbyte_IntPtr_psbyte_IntPtr(JNIEnv* pEnv, byte* p1, IntPtr p2, sbyte* p3, int p4);
 		delegate IntPtr pf_IntPtr_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p1, IntPtr p2);
 		delegate jchar* pf_pjchar_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
+		delegate void pf_void_IntPtr_pvoid_int(JNIEnv* pEnv, IntPtr p1, void* p2, int p3);
+		delegate void* pf_pvoid_IntPtr_pjboolean(JNIEnv* pEnv, IntPtr p1, jboolean* p2);
 		delegate int pf_int_IntPtr_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2);
 		delegate void pf_void_pbyte(JNIEnv* pEnv, byte* p1);
 		delegate IntPtr pf_IntPtr_IntPtr_pbyte_pbyte(JNIEnv* pEnv, IntPtr p1, byte* p2, byte* p3);
@@ -851,11 +853,11 @@ namespace IKVM.Runtime
 			new pf_void_IntPtr_int_int_IntPtr(JNIEnv.GetStringRegion), //virtual void JNICALL GetStringRegion(jstring str, jsize start, jsize len, jchar *buf);
 			new pf_void_IntPtr_int_int_IntPtr(JNIEnv.GetStringUTFRegion), //virtual void JNICALL GetStringUTFRegion(jstring str, jsize start, jsize len, char *buf);
 
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetPrimitiveArrayCritical), //virtual void* JNICALL GetPrimitiveArrayCritical(jarray array, jboolean *isCopy);
-			new pf_void_IntPtr_IntPtr_int(JNIEnv.ReleasePrimitiveArrayCritical), //virtual void JNICALL ReleasePrimitiveArrayCritical(jarray array, void *carray, jint mode);
+			new pf_pvoid_IntPtr_pjboolean(JNIEnv.GetPrimitiveArrayCritical), //virtual void* JNICALL GetPrimitiveArrayCritical(jarray array, jboolean *isCopy);
+			new pf_void_IntPtr_pvoid_int(JNIEnv.ReleasePrimitiveArrayCritical), //virtual void JNICALL ReleasePrimitiveArrayCritical(jarray array, void *carray, jint mode);
 
-			new pf_IntPtr_IntPtr_IntPtr(JNIEnv.GetStringCritical), //virtual const jchar* JNICALL GetStringCritical(jstring string, jboolean *isCopy);
-			new pf_void_IntPtr_IntPtr(JNIEnv.ReleaseStringCritical), //virtual void JNICALL ReleaseStringCritical(jstring string, const jchar *cstring);
+			new pf_pjchar_IntPtr_pjboolean(JNIEnv.GetStringCritical), //virtual const jchar* JNICALL GetStringCritical(jstring string, jboolean *isCopy);
+			new pf_void_IntPtr_pjchar(JNIEnv.ReleaseStringCritical), //virtual void JNICALL ReleaseStringCritical(jstring string, const jchar *cstring);
 
 			new pf_IntPtr_IntPtr(JNIEnv.NewWeakGlobalRef), //virtual jweak JNICALL NewWeakGlobalRef(jobject obj);
 			new pf_void_IntPtr(JNIEnv.DeleteWeakGlobalRef), //virtual void JNICALL DeleteWeakGlobalRef(jweak ref);
@@ -1035,6 +1037,8 @@ namespace IKVM.Runtime
 		internal IntPtr pendingException;
 		internal RuntimeMethodHandle currentMethod;
 		internal GCHandle classLoader;
+		internal GCHandle criticalArrayHandle1;
+		internal GCHandle criticalArrayHandle2;
 		private static LocalDataStoreSlot cleanupHelperDataSlot = System.Threading.Thread.AllocateDataSlot();
 
 		unsafe class JNIEnvCleanupHelper
@@ -1064,6 +1068,14 @@ namespace IKVM.Runtime
 					{
 						pJNIEnv->classLoader.Free();
 					}
+					if(pJNIEnv->criticalArrayHandle1.IsAllocated)
+					{
+						pJNIEnv->criticalArrayHandle1.Free();
+					}
+					if(pJNIEnv->criticalArrayHandle2.IsAllocated)
+					{
+						pJNIEnv->criticalArrayHandle2.Free();
+					}
 					JniMem.Free((IntPtr)(void*)pJNIEnv);
 				}
 			}
@@ -1089,6 +1101,8 @@ namespace IKVM.Runtime
 			pJNIEnv->pendingException = IntPtr.Zero;
 			pJNIEnv->currentMethod = new RuntimeMethodHandle();
 			pJNIEnv->classLoader = GCHandle.Alloc(null);
+			pJNIEnv->criticalArrayHandle1 = GCHandle.Alloc(null, GCHandleType.Pinned);
+			pJNIEnv->criticalArrayHandle2 = GCHandle.Alloc(null, GCHandleType.Pinned);
 			return pJNIEnv;
 		}
 
@@ -3096,9 +3110,27 @@ namespace IKVM.Runtime
 			}
 		}
 
-		internal static IntPtr GetPrimitiveArrayCritical(JNIEnv* pEnv, IntPtr array, IntPtr isCopy)
+		internal static void* GetPrimitiveArrayCritical(JNIEnv* pEnv, jarray array, jboolean* isCopy)
 		{
 			Array ar = (Array)pEnv->UnwrapRef(array);
+			if(pEnv->criticalArrayHandle1.Target == null)
+			{
+				pEnv->criticalArrayHandle1.Target = ar;
+				if(isCopy != null)
+				{
+					*isCopy = JNI_FALSE;
+				}
+				return (void*)pEnv->criticalArrayHandle1.AddrOfPinnedObject();
+			}
+			if(pEnv->criticalArrayHandle2.Target == null)
+			{
+				pEnv->criticalArrayHandle2.Target = ar;
+				if(isCopy != null)
+				{
+					*isCopy = JNI_FALSE;
+				}
+				return (void*)pEnv->criticalArrayHandle2.AddrOfPinnedObject();
+			}
 			// TODO not 64-bit safe (len can overflow)
 			int len = ar.Length * GetPrimitiveArrayElementSize(ar);
 			GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
@@ -3112,11 +3144,11 @@ namespace IKVM.Runtime
 				{
 					*pdst++ = *psrc++;
 				}
-				if(isCopy != IntPtr.Zero)
+				if(isCopy != null)
 				{
-					*((sbyte*)(void*)isCopy) = JNI_TRUE;
+					*isCopy = JNI_TRUE;
 				}
-				return hglobal;
+				return (void*)hglobal;
 			}
 			finally
 			{
@@ -3124,11 +3156,29 @@ namespace IKVM.Runtime
 			}		
 		}
 
-		internal static void ReleasePrimitiveArrayCritical(JNIEnv* pEnv, IntPtr array, IntPtr carray, int mode)
+		internal static void ReleasePrimitiveArrayCritical(JNIEnv* pEnv, jarray array, void* carray, jint mode)
 		{
+			Array ar = (Array)pEnv->UnwrapRef(array);
+			if(pEnv->criticalArrayHandle1.Target == ar
+				&& (void*)pEnv->criticalArrayHandle1.AddrOfPinnedObject() == carray)
+			{
+				if(mode == 0 || mode == JNI_ABORT)
+				{
+					pEnv->criticalArrayHandle1.Target = null;
+				}
+				return;
+			}
+			if(pEnv->criticalArrayHandle2.Target == ar
+				&& (void*)pEnv->criticalArrayHandle2.AddrOfPinnedObject() == carray)
+			{
+				if(mode == 0 || mode == JNI_ABORT)
+				{
+					pEnv->criticalArrayHandle2.Target = null;
+				}
+				return;
+			}
 			if(mode == 0 || mode == JNI_COMMIT)
 			{
-				Array ar = (Array)pEnv->UnwrapRef(array);
 				// TODO not 64-bit safe (len can overflow)
 				int len = ar.Length * GetPrimitiveArrayElementSize(ar);
 				GCHandle h = GCHandle.Alloc(ar, GCHandleType.Pinned);
@@ -3149,28 +3199,28 @@ namespace IKVM.Runtime
 			}
 			if(mode == 0 || mode == JNI_ABORT)
 			{
-				JniMem.Free(carray);
+				JniMem.Free((IntPtr)carray);
 			}
 		}
 
-		internal static IntPtr GetStringCritical(JNIEnv* pEnv, IntPtr str, IntPtr isCopy)
+		internal static jchar* GetStringCritical(JNIEnv* pEnv, jstring str, jboolean* isCopy)
 		{
 			string s = (string)pEnv->UnwrapRef(str);
 			if(s != null)
 			{
-				if(isCopy != IntPtr.Zero)
+				if(isCopy != null)
 				{
-					*((sbyte*)(void*)isCopy) = JNI_TRUE;
+					*isCopy = JNI_TRUE;
 				}
-				return Marshal.StringToHGlobalUni(s);		
+				return (jchar*)(void*)Marshal.StringToHGlobalUni(s);		
 			}
 			SetPendingException(pEnv, JavaException.NullPointerException());
-			return IntPtr.Zero;
+			return null;
 		}
 
-		internal static void ReleaseStringCritical(JNIEnv* pEnv, IntPtr str, IntPtr cstring)
+		internal static void ReleaseStringCritical(JNIEnv* pEnv, jstring str, jchar* cstring)
 		{
-			Marshal.FreeHGlobal(cstring);
+			Marshal.FreeHGlobal((IntPtr)(void*)cstring);
 		}
 
 		internal static jweak NewWeakGlobalRef(JNIEnv* pEnv, jobject obj)

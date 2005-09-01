@@ -474,7 +474,7 @@ namespace IKVM.Internal
 		// this returns the Java method's attributes in .NET terms (e.g. used to create stubs for this method)
 		internal MethodAttributes GetMethodAttributes()
 		{
-			MethodAttributes attribs = 0;
+			MethodAttributes attribs = MethodAttributes.HideBySig;
 			if(IsStatic)
 			{
 				attribs |= MethodAttributes.Static;
@@ -1552,6 +1552,7 @@ namespace IKVM.Internal
 				PropertyBuilder pb = typeBuilder.DefineProperty(Name, PropertyAttributes.None, basefield.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
 				AttributeHelper.HideFromReflection(pb);
 				MethodAttributes attribs = basefield.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+				attribs |= MethodAttributes.HideBySig;
 				if(basefield.IsStatic)
 				{
 					attribs |= MethodAttributes.Static;
