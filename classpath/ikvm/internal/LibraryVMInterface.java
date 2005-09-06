@@ -32,6 +32,9 @@ public interface LibraryVMInterface
     Object getWrapperFromField(Object field);
     Object getWrapperFromMethodOrConstructor(Object methodOrConstructor);
 
+    Object getWrapperFromClassLoader(Object classLoader);
+    void setWrapperForClassLoader(Object classLoader, Object wrapper);
+
     Object getSystemClassLoader();
 
     Object box(Object val);

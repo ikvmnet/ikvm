@@ -33,27 +33,13 @@ using IKVM.Runtime;
 
 namespace IKVM.Internal
 {
-	class IdentityProvider : IHashCodeProvider, IComparer
-	{
-		public int GetHashCode(object obj)
-		{
-			return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
-		}
-
-		public int Compare(object x, object y)
-		{
-			return x == y ? 0 : 1;
-		}
-	}
-
 	class ClassLoaderWrapper
 	{
 		private static bool arrayConstructionHack;
 		private static readonly object arrayConstructionLock = new object();
-		private static readonly IdentityProvider identityProvider = new IdentityProvider();
-		private static readonly Hashtable javaClassLoaderToClassLoaderWrapper = new Hashtable(identityProvider, identityProvider);
+		private static readonly object wrapperLock = new object();
 		private static readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
-		private static readonly Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable(identityProvider, identityProvider));
+		private static readonly Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable());
 		private static ClassLoaderWrapper bootstrapClassLoader;
 		private static ClassLoaderWrapper systemClassLoader;
 		private object javaClassLoader;
@@ -1026,13 +1012,13 @@ namespace IKVM.Internal
 			{
 				return GetBootstrapClassLoader();
 			}
-			lock(javaClassLoaderToClassLoaderWrapper.SyncRoot)
+			lock(wrapperLock)
 			{
-				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)javaClassLoaderToClassLoaderWrapper[javaClassLoader];
+				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(javaClassLoader);
 				if(wrapper == null)
 				{
 					wrapper = new ClassLoaderWrapper(javaClassLoader);
-					javaClassLoaderToClassLoaderWrapper[javaClassLoader] = wrapper;
+					JVM.Library.setWrapperForClassLoader(javaClassLoader, wrapper);
 				}
 				return wrapper;
 			}

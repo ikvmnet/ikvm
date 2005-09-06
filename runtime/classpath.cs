@@ -1253,6 +1253,9 @@ namespace ikvm.@internal
 		object getWrapperFromField(object field);
 		object getWrapperFromMethodOrConstructor(object methodOrConstructor);
 
+		object getWrapperFromClassLoader(object classLoader);
+		void setWrapperForClassLoader(object classLoader, object wrapper);
+
 		object getSystemClassLoader();
 
 		object box(object val);

@@ -84,6 +84,16 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
         }
     }
 
+    public Object getWrapperFromClassLoader(Object classLoader)
+    {
+        return ((ClassLoader)classLoader).vmdata;
+    }
+
+    public void setWrapperForClassLoader(Object classLoader, Object wrapper)
+    {
+        ((ClassLoader)classLoader).vmdata = wrapper;
+    }
+
     public Object getSystemClassLoader()
     {
         return ClassLoader.StaticData.systemClassLoader;
