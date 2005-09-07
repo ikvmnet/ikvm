@@ -34,6 +34,11 @@ namespace IKVM.NativeCode.java.lang
 {
 	public class ExceptionHelper
 	{
+		public static string SafeGetEnvironmentVariable(string name)
+		{
+			return JVM.SafeGetEnvironmentVariable(name);
+		}
+
 		public static Exception getInnerException(Exception t)
 		{
 			return t.InnerException;

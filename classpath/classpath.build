@@ -9,7 +9,7 @@
     <property name="ecj.compiler" value="true" />
 
     <target name="HEAD">
-        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath" />
+        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-0.18" />
         <property name="allsources" value="allsources.lst" />
         <call target="IKVM.GNU.Classpath.dll" />
     </target>
@@ -48,7 +48,7 @@
 
     <target name="IKVM.GNU.Classpath.dll" depends="classes">
         <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true">
-          <arg value="-version:0.19.*" />
+          <arg value="-version:0.20.0.0" />
           <arg value="${signoption}" />
           <arg value="-compressresources" />
           <arg value="-opt:fields" />

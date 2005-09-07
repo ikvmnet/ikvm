@@ -34,7 +34,7 @@ final class ExceptionHelper
     // able to distinguish it from a user specified blank string
     private static final String NULL_STRING = new String();
     private static final java.util.WeakHashMap exceptions = new java.util.WeakHashMap();
-    private static final boolean cleanStackTrace = SystemProperties.getProperty("ikvm.cleanstacktrace", "1").equals("1");
+    private static final boolean cleanStackTrace = SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
     private static cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
     private static cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
     private static final Throwable NOT_REMAPPED = new cli.System.Exception();
@@ -287,6 +287,8 @@ final class ExceptionHelper
     static native void initThrowable(Object throwable, Object detailMessage, Object cause);
     static native Throwable MapExceptionImpl(Throwable t);
     static native cli.System.Type getTypeFromObject(Object o);
+
+    private static native String SafeGetEnvironmentVariable(String name);
 
     static void printStackTrace(Throwable x)
     {
