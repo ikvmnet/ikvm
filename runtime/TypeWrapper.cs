@@ -4153,6 +4153,10 @@ namespace IKVM.Internal
 						if(m.IsStatic)
 						{
 							attribs |= MethodAttributes.Static;
+							if(m.IsSynchronized)
+							{
+								setModifiers = true;
+							}
 						}
 						else if(!m.IsPrivate)
 						{
