@@ -178,7 +178,20 @@ namespace IKVM.Internal.MapXml
 				}
 				else
 				{
-					Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
+					Type[] argTypes;
+					if(Sig.StartsWith("("))
+					{
+						argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
+					}
+					else
+					{
+						string[] types = Sig.Split(';');
+						argTypes = new Type[types.Length];
+						for(int i = 0; i < types.Length; i++)
+						{
+							argTypes[i] = Type.GetType(types[i]);
+						}
+					}
 					MethodInfo mi = Type.GetType(type, true).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
 					if(mi == null)
 					{
@@ -886,6 +899,14 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("ceq")]
+	public sealed class Ceq : Simple
+	{
+		public Ceq() : base(OpCodes.Ceq)
+		{
+		}
+	}
+
 	[XmlType("exceptionBlock")]
 	public sealed class ExceptionBlock : Instruction
 	{
@@ -979,6 +1000,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Mul))]
 		[XmlElement(typeof(Unaligned))]
 		[XmlElement(typeof(Cpblk))]
+		[XmlElement(typeof(Ceq))]
 		public Instruction[] invoke;
 
 		internal void Generate(Hashtable context, ILGenerator ilgen)

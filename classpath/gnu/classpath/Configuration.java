@@ -45,7 +45,7 @@ public interface Configuration
 {
   // TODO
   String CLASSPATH_HOME = "";
-  String CLASSPATH_VERSION = "0.18";
+  String CLASSPATH_VERSION = "0.18+cvs";
 
 
   /**
@@ -68,33 +68,6 @@ public interface Configuration
    * not require additional shared libraries to be loaded.
    */
   boolean INIT_LOAD_LIBRARY = false;
-
-  /**
-   * Set to true if the VM provides a native method to implement
-   * Proxy.getProxyClass completely, including argument verification.
-   * If this is true, HAVE_NATIVE_GET_PROXY_DATA and
-   * HAVE_NATIVE_GENERATE_PROXY_CLASS should be false.
-   * @see java.lang.reflect.Proxy
-   */
-  boolean HAVE_NATIVE_GET_PROXY_CLASS = false;
-
-  /**
-   * Set to true if the VM provides a native method to implement
-   * the first part of Proxy.getProxyClass: generation of the array
-   * of methods to convert, and verification of the arguments.
-   * If this is true, HAVE_NATIVE_GET_PROXY_CLASS should be false.
-   * @see java.lang.reflect.Proxy
-   */
-  boolean HAVE_NATIVE_GET_PROXY_DATA = false;
-
-  /**
-   * Set to true if the VM provides a native method to implement
-   * the second part of Proxy.getProxyClass: conversion of an array of
-   * methods into an actual proxy class.
-   * If this is true, HAVE_NATIVE_GET_PROXY_CLASS should be false.
-   * @see java.lang.reflect.Proxy
-   */
-  boolean HAVE_NATIVE_GENERATE_PROXY_CLASS = false;
 
   /**
    * Name of default AWT peer library.
