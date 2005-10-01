@@ -3391,7 +3391,7 @@ namespace IKVM.Internal
 							foreach(MethodWrapper mw in parent.GetMethods())
 							{
 								MethodInfo mi = mw.GetMethod() as MethodInfo;
-								if(mi != null && mi.IsAbstract && wrapper.GetMethodWrapper(mw.Name, mw.Signature, true).IsAbstract)
+								if(mi != null && mi.IsAbstract && wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw)
 								{
 									// NOTE in Sun's JRE 1.4.1 this method cannot be overridden by subclasses,
 									// but I think this is a bug, so we'll support it anyway.
@@ -4215,7 +4215,7 @@ namespace IKVM.Internal
 							else
 							{
 								stubattribs |= MethodAttributes.CheckAccessOnOverride | MethodAttributes.Virtual;
-								if(baseMethods[index].IsAbstract)
+								if(baseMethods[index].IsAbstract && wrapper.IsAbstract)
 								{
 									stubattribs |= MethodAttributes.Abstract;
 								}
@@ -4238,6 +4238,10 @@ namespace IKVM.Internal
 								}
 								baseMethods[index].EmitCall(ilgen);
 								ilgen.Emit(OpCodes.Ret);
+							}
+							else if(!wrapper.IsAbstract)
+							{
+								EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + methods[index].Name + methods[index].Signature);
 							}
 							return mb;
 						}
