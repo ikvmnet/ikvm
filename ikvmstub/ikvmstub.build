@@ -1,8 +1,15 @@
 <?xml version="1.0"?>
 <project name="ikvmstub" default="ikvmstub">
     <target name="ikvmstub">
-        <property overwrite="false" name="signed" value="" />
-        <csc target="exe" output="../bin/ikvmstub.exe" define="TRACE;${signed}">
+        <property overwrite="false" name="generics" value="false" />
+        <property name="defs" value="TRACE" />
+        <if propertyexists="signed">
+            <property name="defs" value="${defs};${signed}" />
+        </if>
+        <if propertytrue="generics">
+            <property name="defs" value="${defs};GENERICS" />
+        </if>
+        <csc target="exe" output="../bin/ikvmstub.exe" define="${defs}">
             <sources>
                 <includes name="*.cs" />
             </sources>

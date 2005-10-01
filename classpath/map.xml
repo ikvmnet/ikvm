@@ -90,6 +90,9 @@
 				</body>
 			</method>
 			<method name="getClass" sig="()Ljava.lang.Class;" modifiers="public final">
+				<attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
+					<parameter>()Ljava/lang/Class&lt;+Ljava/lang/Object;&gt;;</parameter>
+				</attribute>
 				<body>
 					<ldarg_0 />
 					<call type="IKVM.Runtime.Util" name="GetClassFromObject" sig="(Ljava.lang.Object;)Ljava.lang.Object;" />
@@ -191,9 +194,12 @@
 			</method>
 		</class>
 		<class name="java.lang.String" shadows="System.String, mscorlib" modifiers="public final">
+			<implements class="java.io.Serializable" />
 			<implements class="java.lang.Comparable" />
 			<implements class="java.lang.CharSequence" />
-			<implements class="java.io.Serializable" />
+			<attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
+				<parameter>Ljava/lang/Object;Ljava/io/Serializable;Ljava/lang/Comparable&lt;Ljava/lang/String;&gt;;Ljava/lang/CharSequence;</parameter>
+			</attribute>			
 			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-6849794470754667710" />
 			<constructor sig="()V" modifiers="public">
 				<alternateBody>
@@ -656,7 +662,11 @@
 					<ret />
 				</body>
 			</method>
-			<field name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" modifiers="public static final" />
+			<field name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" modifiers="public static final">
+				<attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
+					<parameter>Ljava/util/Comparator&lt;Ljava/lang/String;&gt;;</parameter>
+				</attribute>
+			</field>
 			<!-- NOTE we're redirecting fields to static methods here!
 				NOTE only reading fields can be redirected
 			-->
@@ -903,7 +913,13 @@
 			</method>
 		</class>
 		<class name="java.lang.Comparable" shadows="System.IComparable, mscorlib" modifiers="public abstract interface">
+			<attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
+				<parameter>&lt;T:Ljava/lang/Object;&gt;Ljava/lang/Object;</parameter>
+			</attribute>
 			<method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public abstract">
+				<attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
+					<parameter>(TT;)I</parameter>
+				</attribute>
 				<parameter name="o" />
 				<override name="CompareTo" />
 			</method>

@@ -386,11 +386,16 @@ namespace IKVM.Attributes
 		Super			= 0x0020,
 		Synchronized	= 0x0020,
 		Volatile		= 0x0040,
+		Bridge			= 0x0040,
 		Transient		= 0x0080,
+		VarArgs			= 0x0080,
 		Native			= 0x0100,
 		Interface		= 0x0200,
 		Abstract		= 0x0400,
 		Strictfp		= 0x0800,
+		Synthetic		= 0x1000,
+		Annotation		= 0x2000,
+		Enum			= 0x4000,
 
 		// Masks
 		AccessMask		= Public | Private | Protected
@@ -567,6 +572,64 @@ namespace IKVM.Attributes
 		public object GetConstantValue()
 		{
 			return val;
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Field)]
+	public sealed class SignatureAttribute : Attribute
+	{
+		private string signature;
+
+		public SignatureAttribute(string signature)
+		{
+			this.signature = signature;
+		}
+
+		public string Signature
+		{
+			get
+			{
+				return signature;
+			}
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
+	public sealed class EnclosingMethodAttribute : Attribute
+	{
+		private string className;
+		private string methodName;
+		private string methodSig;
+
+		public EnclosingMethodAttribute(string className, string methodName, string methodSig)
+		{
+			this.className = className;
+			this.methodName = methodName;
+			this.methodSig = methodSig;
+		}
+
+		public string ClassName
+		{
+			get
+			{
+				return className;
+			}
+		}
+
+		public string MethodName
+		{
+			get
+			{
+				return methodName;
+			}
+		}
+
+		public string MethodSignature
+		{
+			get
+			{
+				return methodSig;
+			}
 		}
 	}
 }

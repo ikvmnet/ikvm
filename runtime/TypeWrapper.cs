@@ -120,6 +120,9 @@ namespace IKVM.Internal
 		private static ConstructorInfo sourceFileAttribute;
 		private static ConstructorInfo lineNumberTableAttribute1;
 		private static ConstructorInfo lineNumberTableAttribute2;
+		private static ConstructorInfo enclosingMethodAttribute;
+		private static ConstructorInfo signatureAttribute;
+		private static CustomAttributeBuilder paramArrayAttribute;
 
 		private static object ParseValue(TypeWrapper tw, string val)
 		{
@@ -643,6 +646,11 @@ namespace IKVM.Internal
 			{
 				modifiers |= Modifiers.Native;
 			}
+			ParameterInfo[] parameters = mb.GetParameters();
+			if(parameters.Length > 0 && parameters[parameters.Length - 1].IsDefined(typeof(ParamArrayAttribute), false))
+			{
+				modifiers |= Modifiers.VarArgs;
+			}
 			return modifiers;
 		}
 
@@ -788,6 +796,58 @@ namespace IKVM.Internal
 			{
 				((MethodBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(con, new object[] { arg }));
 			}
+		}
+
+		internal static void SetEnclosingMethodAttribute(TypeBuilder tb, string className, string methodName, string methodSig)
+		{
+			if(enclosingMethodAttribute == null)
+			{
+				enclosingMethodAttribute = typeof(EnclosingMethodAttribute).GetConstructor(new Type[] { typeof(string), typeof(string), typeof(string) });
+			}
+			tb.SetCustomAttribute(new CustomAttributeBuilder(enclosingMethodAttribute, new object[] { className, methodName, methodSig }));
+		}
+
+		internal static void SetSignatureAttribute(TypeBuilder tb, string signature)
+		{
+			if(signatureAttribute == null)
+			{
+				signatureAttribute = typeof(SignatureAttribute).GetConstructor(new Type[] { typeof(string) });
+			}
+			tb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { signature }));
+		}
+
+		internal static void SetSignatureAttribute(FieldBuilder fb, string signature)
+		{
+			if(signatureAttribute == null)
+			{
+				signatureAttribute = typeof(SignatureAttribute).GetConstructor(new Type[] { typeof(string) });
+			}
+			fb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { signature }));
+		}
+
+		internal static void SetSignatureAttribute(MethodBase mb, string signature)
+		{
+			if(signatureAttribute == null)
+			{
+				signatureAttribute = typeof(SignatureAttribute).GetConstructor(new Type[] { typeof(string) });
+			}
+			if(mb is ConstructorBuilder)
+			{
+				((ConstructorBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { signature }));
+			}
+			else
+			{
+				((MethodBuilder)mb).SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { signature }));
+			}
+		}
+
+		internal static void SetParamArrayAttribute(ParameterBuilder pb)
+		{
+			if(paramArrayAttribute == null)
+			{
+				paramArrayAttribute = new CustomAttributeBuilder(typeof(ParamArrayAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+			}
+			pb.SetCustomAttribute(paramArrayAttribute);
 		}
 	}
 
@@ -1888,6 +1948,14 @@ namespace IKVM.Internal
 		internal virtual void EmitRunClassConstructor(ILGenerator ilgen)
 		{
 		}
+
+		internal abstract string GetGenericSignature();
+
+		internal abstract string GetGenericMethodSignature(MethodWrapper mw);
+
+		internal abstract string GetGenericFieldSignature(FieldWrapper fw);
+
+		internal abstract string[] GetEnclosingMethod();
 	}
 
 	class UnloadableTypeWrapper : TypeWrapper
@@ -2003,6 +2071,26 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ldstr, Name);
 			ilgen.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("DynamicInstanceOf"));
 		}
+
+		internal override string GetGenericSignature()
+		{
+			throw new InvalidOperationException("GetGenericSignature called on UnloadableTypeWrapper: " + Name);
+		}
+
+		internal override string GetGenericMethodSignature(MethodWrapper mw)
+		{
+			throw new InvalidOperationException("GetGenericMethodSignature called on UnloadableTypeWrapper: " + Name);
+		}
+
+		internal override string GetGenericFieldSignature(FieldWrapper fw)
+		{
+			throw new InvalidOperationException("GetGenericFieldSignature called on UnloadableTypeWrapper: " + Name);
+		}
+
+		internal override string[] GetEnclosingMethod()
+		{
+			throw new InvalidOperationException("GetEnclosingMethod called on UnloadableTypeWrapper: " + Name);
+		}
 	}
 
 	class PrimitiveTypeWrapper : TypeWrapper
@@ -2087,6 +2175,26 @@ namespace IKVM.Internal
 		public override string ToString()
 		{
 			return "PrimitiveTypeWrapper[" + sigName + "]";
+		}
+
+		internal override string GetGenericSignature()
+		{
+			return null;
+		}
+
+		internal override string GetGenericMethodSignature(MethodWrapper mw)
+		{
+			return null;
+		}
+
+		internal override string GetGenericFieldSignature(FieldWrapper fw)
+		{
+			return null;
+		}
+
+		internal override string[] GetEnclosingMethod()
+		{
+			return null;
 		}
 	}
 
@@ -2364,6 +2472,10 @@ namespace IKVM.Internal
 			internal abstract MethodBase LinkMethod(MethodWrapper mw);
 			internal abstract FieldInfo LinkField(FieldWrapper fw);
 			internal abstract void EmitRunClassConstructor(ILGenerator ilgen);
+			internal abstract string GetGenericSignature();
+			internal abstract string[] GetEnclosingMethod();
+			internal abstract string GetGenericMethodSignature(int index);
+			internal abstract string GetGenericFieldSignature(int index);
 		}
 
 		private class JavaTypeImpl : DynamicImpl
@@ -2631,9 +2743,20 @@ namespace IKVM.Internal
 						typeBuilder.AddInterfaceImplementation(interfaces[i].TypeAsBaseType);
 					}
 					AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
-					if(JVM.IsStaticCompiler && classFile.DeprecatedAttribute)
+					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
 					{
-						AttributeHelper.SetDeprecatedAttribute(typeBuilder);
+						if(classFile.DeprecatedAttribute)
+						{
+							AttributeHelper.SetDeprecatedAttribute(typeBuilder);
+						}
+						if(classFile.GenericSignature != null)
+						{
+							AttributeHelper.SetSignatureAttribute(typeBuilder, classFile.GenericSignature);
+						}
+						if(classFile.EnclosingMethod != null)
+						{
+							AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
+						}
 					}
 					if(!JVM.NoStackTraceInfo)
 					{
@@ -3147,19 +3270,26 @@ namespace IKVM.Internal
 						((GetterFieldWrapper)fw).SetGetter(getter);
 					}
 				}
-				// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
-				// the Java modifiers
-				if(setModifiers)
+				if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
 				{
-					AttributeHelper.SetModifiers(field, fld.Modifiers);
-				}
-				if(setNameSig)
-				{
-					AttributeHelper.SetNameSig(field, fld.Name, fld.Signature);
-				}
-				if(JVM.IsStaticCompiler && fld.DeprecatedAttribute)
-				{
-					AttributeHelper.SetDeprecatedAttribute(field);
+					// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
+					// the Java modifiers
+					if(setModifiers || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0)
+					{
+						AttributeHelper.SetModifiers(field, fld.Modifiers);
+					}
+					if(setNameSig)
+					{
+						AttributeHelper.SetNameSig(field, fld.Name, fld.Signature);
+					}
+					if(fld.DeprecatedAttribute)
+					{
+						AttributeHelper.SetDeprecatedAttribute(field);
+					}
+					if(fld.GenericSignature != null)
+					{
+						AttributeHelper.SetSignatureAttribute(field, fld.GenericSignature);
+					}
 				}
 				return field;
 			}
@@ -3552,6 +3682,15 @@ namespace IKVM.Internal
 					// See if there is any additional metadata
 					wrapper.EmitMapXmlMetadata(typeBuilder, classFile, fields, methods);
 
+					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
+					{
+						// NOTE in Whidbey we can (and should) use CompilerGeneratedAttribute to mark Synthetic types
+						if((classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
+						{
+							AttributeHelper.SetModifiers(typeBuilder, classFile.Modifiers);
+						}
+					}
+
 					Type type;
 					Profiler.Enter("TypeBuilder.CreateType");
 					try
@@ -3569,7 +3708,48 @@ namespace IKVM.Internal
 					ClassLoaderWrapper.SetWrapperForType(type, wrapper);
 					wrapper.FinishGhostStep2();
 					BakedTypeCleanupHack.Process(wrapper);
-					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers);
+					string[] genericMetaData = null;
+					for(int i = 0; i < classFile.Methods.Length; i++)
+					{
+						if(classFile.Methods[i].GenericSignature != null)
+						{
+							if(genericMetaData == null)
+							{
+								genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
+							}
+							genericMetaData[i + 4] = classFile.Methods[i].GenericSignature;
+						}
+					}
+					for(int i = 0; i < classFile.Fields.Length; i++)
+					{
+						if(classFile.Fields[i].GenericSignature != null)
+						{
+							if(genericMetaData == null)
+							{
+								genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
+							}
+							genericMetaData[i + 4 + classFile.Methods.Length] = classFile.Fields[i].GenericSignature;
+						}
+					}
+					if(classFile.EnclosingMethod != null)
+					{
+						if(genericMetaData == null)
+						{
+							genericMetaData = new string[4];
+						}
+						genericMetaData[0] = classFile.EnclosingMethod[0];
+						genericMetaData[1] = classFile.EnclosingMethod[1];
+						genericMetaData[2] = classFile.EnclosingMethod[2];
+					}
+					if(classFile.GenericSignature != null)
+					{
+						if(genericMetaData == null)
+						{
+							genericMetaData = new string[4];
+						}
+						genericMetaData[3] = classFile.GenericSignature;
+					}
+					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers, genericMetaData);
 					return finishedType;
 				}
 				catch(Exception x)
@@ -4316,10 +4496,6 @@ namespace IKVM.Internal
 							}
 						}
 						wrapper.AddParameterNames(classFile, m, mb);
-						if((JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage) && setModifiers)
-						{
-							AttributeHelper.SetModifiers(mb, m.Modifiers);
-						}
 						method = mb;
 					}
 					string[] exceptions = m.ExceptionsAttribute;
@@ -4327,6 +4503,17 @@ namespace IKVM.Internal
 					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
 					{
 						AttributeHelper.SetThrowsAttribute(method, exceptions);
+						if(setModifiers || (m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0)
+						{
+							if(method is ConstructorBuilder)
+							{
+								AttributeHelper.SetModifiers((ConstructorBuilder)method, m.Modifiers);
+							}
+							else
+							{
+								AttributeHelper.SetModifiers((MethodBuilder)method, m.Modifiers);
+							}
+						}
 						if(m.DeprecatedAttribute)
 						{
 							AttributeHelper.SetDeprecatedAttribute(method);
@@ -4334,6 +4521,10 @@ namespace IKVM.Internal
 						if(setNameSig)
 						{
 							AttributeHelper.SetNameSig(method, m.Name, m.Signature);
+						}
+						if(m.GenericSignature != null)
+						{
+							AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
 						}
 					}
 					return method;
@@ -4425,6 +4616,30 @@ namespace IKVM.Internal
 					return typeBuilder;
 				}
 			}
+
+			internal override string GetGenericSignature()
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+
+			internal override string[] GetEnclosingMethod()
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+
+			internal override string GetGenericMethodSignature(int index)
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+
+			internal override string GetGenericFieldSignature(int index)
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
 		}
 	
 		private class FinishedTypeImpl : DynamicImpl
@@ -4434,14 +4649,16 @@ namespace IKVM.Internal
 			private TypeWrapper declaringTypeWrapper;
 			private Modifiers reflectiveModifiers;
 			private MethodInfo clinitMethod;
+			private string[] genericMetaData;	/* [0..2] = enclosing method, [3] = class signature, [4..n] = method signatures */
 
-			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers)
+			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, string[] genericMetaData)
 			{
 				this.type = type;
 				this.innerclasses = innerclasses;
 				this.declaringTypeWrapper = declaringTypeWrapper;
 				this.reflectiveModifiers = reflectiveModifiers;
 				this.clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+				this.genericMetaData = genericMetaData;
 			}
 
 			internal override TypeWrapper[] InnerClasses
@@ -4503,6 +4720,43 @@ namespace IKVM.Internal
 				// we should never be called, because all fields on a finished type are already linked
 				Debug.Assert(false);
 				return fw.GetField();
+			}
+
+			internal override string GetGenericSignature()
+			{
+				if(genericMetaData != null)
+				{
+					return genericMetaData[3];
+				}
+				return null;
+			}
+
+			internal override string[] GetEnclosingMethod()
+			{
+				if(genericMetaData != null && genericMetaData[0] != null)
+				{
+					return new string[] { genericMetaData[0], genericMetaData[1], genericMetaData[2] };
+				}
+				return null;
+			}
+
+			internal override string GetGenericMethodSignature(int index)
+			{
+				if(genericMetaData != null)
+				{
+					return genericMetaData[index + 4];
+				}
+				return null;
+			}
+
+			// note that the caller is responsible for computing the correct index (field index + method count)
+			internal override string GetGenericFieldSignature(int index)
+			{
+				if(genericMetaData != null)
+				{
+					return genericMetaData[index + 4];
+				}
+				return null;
 			}
 		}
 
@@ -4745,6 +4999,44 @@ namespace IKVM.Internal
 		internal override void EmitRunClassConstructor(CountingILGenerator ilgen)
 		{
 			impl.EmitRunClassConstructor(ilgen);
+		}
+
+		internal override string GetGenericSignature()
+		{
+			return impl.GetGenericSignature();
+		}
+
+		internal override string GetGenericMethodSignature(MethodWrapper mw)
+		{
+			MethodWrapper[] methods = GetMethods();
+			for(int i = 0; i < methods.Length; i++)
+			{
+				if(methods[i] == mw)
+				{
+					return impl.GetGenericMethodSignature(i);
+				}
+			}
+			Debug.Fail("Unreachable code");
+			return null;
+		}
+
+		internal override string GetGenericFieldSignature(FieldWrapper fw)
+		{
+			FieldWrapper[] fields = GetFields();
+			for(int i = 0; i < fields.Length; i++)
+			{
+				if(fields[i] == fw)
+				{
+					return impl.GetGenericFieldSignature(i + GetMethods().Length);
+				}
+			}
+			Debug.Fail("Unreachable code");
+			return null;
+		}
+
+		internal override string[] GetEnclosingMethod()
+		{
+			return impl.GetEnclosingMethod();
 		}
 	}
 
@@ -4995,6 +5287,10 @@ namespace IKVM.Internal
 					}
 				}
 				ParameterBuilder[] pbs = AddParameterNames(method, m, parameterNames);
+				if((m.Modifiers & Modifiers.VarArgs) != 0 && pbs.Length > 0)
+				{
+					AttributeHelper.SetParamArrayAttribute(pbs[pbs.Length - 1]);
+				}
 				if(parameters != null)
 				{
 					for(int i = 0; i < pbs.Length; i++)
@@ -5026,6 +5322,10 @@ namespace IKVM.Internal
 					}
 				}
 				ParameterBuilder[] pbs = AddParameterNames(method, mw.Signature, parameterNames);
+				if((mw.Modifiers & Modifiers.VarArgs) != 0 && pbs.Length > 0)
+				{
+					AttributeHelper.SetParamArrayAttribute(pbs[pbs.Length - 1]);
+				}
 				if(parameters != null)
 				{
 					for(int i = 0; i < pbs.Length; i++)
@@ -6389,6 +6689,16 @@ namespace IKVM.Internal
 				}
 				return InvokeImpl(mb, obj, args, nonVirtual);
 			}
+
+			internal string GetGenericSignature()
+			{
+				object[] attr = (mbHelper != null ? mbHelper : GetMethod()).GetCustomAttributes(typeof(SignatureAttribute), false);
+				if(attr.Length == 1)
+				{
+					return ((SignatureAttribute)attr[0]).Signature;
+				}
+				return null;
+			}
 		}
 
 		private FieldWrapper CreateFieldWrapper(FieldInfo field)
@@ -6456,6 +6766,59 @@ namespace IKVM.Internal
 			{
 				ilgen.Emit(OpCodes.Call, clinitMethod);
 			}
+		}
+
+		internal override string GetGenericSignature()
+		{
+			object[] attr = type.GetCustomAttributes(typeof(SignatureAttribute), false);
+			if(attr.Length == 1)
+			{
+				return ((SignatureAttribute)attr[0]).Signature;
+			}
+			return null;
+		}
+
+		internal override string GetGenericMethodSignature(MethodWrapper mw)
+		{
+			if(mw is CompiledRemappedMethodWrapper)
+			{
+				return ((CompiledRemappedMethodWrapper)mw).GetGenericSignature();
+			}
+			MethodBase mb = mw.GetMethod();
+			if(mb != null)
+			{
+				object[] attr = mb.GetCustomAttributes(typeof(SignatureAttribute), false);
+				if(attr.Length == 1)
+				{
+					return ((SignatureAttribute)attr[0]).Signature;
+				}
+			}
+			return null;
+		}
+
+		internal override string GetGenericFieldSignature(FieldWrapper fw)
+		{
+			FieldInfo fi = fw.GetField();
+			if(fi != null)
+			{
+				object[] attr = fi.GetCustomAttributes(typeof(SignatureAttribute), false);
+				if(attr.Length == 1)
+				{
+					return ((SignatureAttribute)attr[0]).Signature;
+				}
+			}
+			return null;
+		}
+
+		internal override string[] GetEnclosingMethod()
+		{
+			object[] attr = type.GetCustomAttributes(typeof(EnclosingMethodAttribute), false);
+			if(attr.Length == 1)
+			{
+				EnclosingMethodAttribute enc = (EnclosingMethodAttribute)attr[0];
+				return new string[] { enc.ClassName, enc.MethodName, enc.MethodSignature };
+			}
+			return null;
 		}
 	}
 
@@ -7582,6 +7945,26 @@ namespace IKVM.Internal
 				fw.Link();
 			}
 		}
+
+		internal override string GetGenericSignature()
+		{
+			return null;
+		}
+
+		internal override string GetGenericMethodSignature(MethodWrapper mw)
+		{
+			return null;
+		}
+
+		internal override string GetGenericFieldSignature(FieldWrapper fw)
+		{
+			return null;
+		}
+
+		internal override string[] GetEnclosingMethod()
+		{
+			return null;
+		}
 	}
 
 	sealed class ArrayTypeWrapper : TypeWrapper
@@ -7709,6 +8092,26 @@ namespace IKVM.Internal
 					ClassLoaderWrapper.SetWrapperForType(type, this);
 				}
 			}
+		}
+
+		internal override string GetGenericSignature()
+		{
+			return null;
+		}
+
+		internal override string GetGenericMethodSignature(MethodWrapper mw)
+		{
+			return null;
+		}
+
+		internal override string GetGenericFieldSignature(FieldWrapper fw)
+		{
+			return null;
+		}
+
+		internal override string[] GetEnclosingMethod()
+		{
+			return null;
 		}
 	}
 }

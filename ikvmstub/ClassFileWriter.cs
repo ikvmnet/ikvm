@@ -634,8 +634,10 @@ class ClassFileWriter
 	private Modifiers access_flags;
 	private ushort this_class;
 	private ushort super_class;
+	private ushort minorVersion;
+	private ushort majorVersion;
 
-	public ClassFileWriter(Modifiers mods, string name, string super)
+	public ClassFileWriter(Modifiers mods, string name, string super, ushort minorVersion, ushort majorVersion)
 	{
 		cplist.Add(null);
 		access_flags = mods;
@@ -644,6 +646,8 @@ class ClassFileWriter
 		{
 			super_class = AddClass(super);
 		}
+		this.minorVersion = minorVersion;
+		this.majorVersion = majorVersion;
 	}
 
 	private ushort Add(ConstantPoolItem cpi)
@@ -770,9 +774,14 @@ class ClassFileWriter
 		return field;
 	}
 
+	public ClassFileAttribute MakeStringAttribute(string name, string value)
+	{
+		return new StringAttribute(AddUtf8(name), AddUtf8(value));
+	}
+
 	public void AddStringAttribute(string name, string value)
 	{
-		attribs.Add(new StringAttribute(AddUtf8(name), AddUtf8(value)));
+		attribs.Add(MakeStringAttribute(name, value));
 	}
 
 	public void AddAttribute(ClassFileAttribute attrib)
@@ -784,8 +793,8 @@ class ClassFileWriter
 	{
 		BigEndianStream bes = new BigEndianStream(stream);
 		bes.WriteUInt32(0xCAFEBABE);
-		bes.WriteUInt16((ushort)3);
-		bes.WriteUInt16((ushort)45);
+		bes.WriteUInt16(minorVersion);
+		bes.WriteUInt16(majorVersion);
 		bes.WriteUInt16((ushort)cplist.Count);
 		for(int i = 1; i < cplist.Count; i++)
 		{

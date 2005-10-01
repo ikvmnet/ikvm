@@ -1,14 +1,24 @@
 <?xml version="1.0"?>
-<project name="IKVM.GNU.Classpath.dll" default="HEAD">
+<project name="IKVM.GNU.Classpath.dll" default="branch">
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
+    <property overwrite="false" name="generics" value="false" />
     <if propertytrue="nant.platform.win32">
         <property name="pathsep" value=";" />
     </if>
     <property name="jikes.compiler" value="false" />
     <property name="ecj.compiler" value="true" />
 
-    <target name="HEAD">
+    <target name="branch">
+        <if propertytrue="generics">
+            <call target="generics" />
+        </if>
+        <ifnot propertytrue="generics">
+            <call target="trunk" />
+        </ifnot>
+    </target>
+
+    <target name="trunk">
         <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath" />
         <property name="allsources" value="allsources.lst" />
         <call target="IKVM.GNU.Classpath.dll" />

@@ -175,11 +175,35 @@ abstract class VMClass
     }
     private static native boolean IsArray(Object wrapper);
 
-  /* TODO: implement these 1.5 methods */
-  static Object cast(Object obj, Class k) { throw new Error(); }
-  static boolean isSynthetic(Class clazz) { throw new Error(); }
-  static boolean isAnnotation(Class clazz) { throw new Error(); }
-  static boolean isEnum(Class clazz) { throw new Error(); }
+    static Object cast(Object obj, Class k)
+    {
+        if(obj == null || k.isInstance(obj))
+        {
+            return obj;
+        }
+        throw new ClassCastException();
+    }
+
+    private static final int ACC_SYNTHETIC = 0x1000;
+    private static final int ACC_ANNOTATION = 0x2000;
+    private static final int ACC_ENUM = 0x4000;
+
+    static boolean isSynthetic(Class clazz)
+    {
+        return (GetRawModifiers(clazz.vmdata) & ACC_SYNTHETIC) != 0;
+    }
+
+    static boolean isAnnotation(Class clazz)
+    {
+        return (GetRawModifiers(clazz.vmdata) & ACC_ANNOTATION) != 0;
+    }
+
+    static boolean isEnum(Class clazz)
+    {
+        return (GetRawModifiers(clazz.vmdata) & ACC_ENUM) != 0;
+    }
+
+    private static native int GetRawModifiers(Object wrapper);
 
   static String getSimpleName(Class clazz)
   {
@@ -188,7 +212,7 @@ abstract class VMClass
 	return getSimpleName(getComponentType(clazz)) + "[]";
       }
     String fullName = getName(clazz);
-    return fullName.substring(fullName.lastIndexOf(".") + 1);
+    return fullName.substring(Math.max(fullName.lastIndexOf("."), fullName.lastIndexOf("$")) + 1);
   }
 
   static Object[] getEnumConstants(Class clazz)
@@ -230,9 +254,24 @@ abstract class VMClass
   }
   private static native String GetClassSignature(Object wrapper);
 
-  static Class getEnclosingClass(Class clazz) { throw new Error("Not implemented"); }
-  static Constructor getEnclosingConstructor(Class clazz) { throw new Error("Not implemented"); }
-  static Method getEnclosingMethod(Class clazz) { throw new Error("Not implemented"); }
+  static Class getEnclosingClass(Class clazz)
+  {
+    return (Class)GetEnclosingClass(clazz.vmdata);
+  }
+  private static native Object GetEnclosingClass(Object wrapper);
+
+  static Constructor getEnclosingConstructor(Class clazz)
+  {
+    return (Constructor)GetEnclosingConstructor(clazz.vmdata);
+  }
+  private static native Object GetEnclosingConstructor(Object wrapper);
+
+  static Method getEnclosingMethod(Class clazz)
+  {
+    return (Method)GetEnclosingMethod(clazz.vmdata);
+  }
+  private static native Object GetEnclosingMethod(Object wrapper);
+
   static boolean isAnonymousClass(Class clazz) { throw new Error("Not implemented"); }
   static boolean isLocalClass(Class clazz) { throw new Error("Not implemented"); }
   static boolean isMemberClass(Class clazz) { throw new Error("Not implemented"); }

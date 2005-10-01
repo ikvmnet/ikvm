@@ -1,6 +1,15 @@
 <?xml version="1.0"?>
-<project name="ikvm" default="all">
+<project name="ikvm" default="default">
+    <target name="default">
+         <property name="generics" value="false" />
+         <call target="all" />
+    </target>
+    <target name="generics">
+         <property name="generics" value="true" />
+         <call target="all" />
+    </target>
     <target name="signed">
+         <property name="generics" value="false" />
          <property name="signed" value="SIGNCODE" />
          <property name="signoption" value="-key:ikvm-key" />
          <property name="ilasm_signoption" value="/key:@ikvm-key" />

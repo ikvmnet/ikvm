@@ -117,6 +117,12 @@ namespace IKVM.NativeCode.java
 					}
 				}
 
+				public static string GetSignature(object methodCookie)
+				{
+					MethodWrapper wrapper = (MethodWrapper)methodCookie;
+					return wrapper.DeclaringType.GetGenericMethodSignature(wrapper);
+				}
+
 				[HideFromJava]
 				public static object Invoke(object methodCookie, object o, object[] args)
 				{
@@ -197,6 +203,12 @@ namespace IKVM.NativeCode.java
 					TypeWrapper fieldType = wrapper.FieldTypeWrapper;
 					fieldType = fieldType.EnsureLoadable(wrapper.DeclaringType.GetClassLoader());
 					return fieldType.ClassObject;
+				}
+
+				public static string GetSignature(object fieldCookie)
+				{
+					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
+					return wrapper.DeclaringType.GetGenericFieldSignature(wrapper);
 				}
 
 				public static bool isSamePackage(object a, object b)
@@ -997,12 +1009,93 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
+			public static int GetRawModifiers(Object cwrapper)
+			{
+				TypeWrapper wrapper = (TypeWrapper)cwrapper;
+				return (int)wrapper.Modifiers;
+			}
+
 			public static string GetClassSignature(object cwrapper)
+			{
+				TypeWrapper wrapper = (TypeWrapper)cwrapper;
+				return wrapper.GetGenericSignature();
+			}
+
+			public static object GetEnclosingClass(object cwrapper)
 			{
 				try
 				{
 					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					// TODO
+					wrapper.Finish();
+					string[] enclosing = wrapper.GetEnclosingMethod();
+					if(enclosing != null)
+					{
+						TypeWrapper enclosingClass = wrapper.GetClassLoader().LoadClassByDottedNameFast(enclosing[0]);
+						if(enclosingClass == null)
+						{
+							throw JavaException.NoClassDefFoundError(enclosing[0]);
+						}
+						return enclosingClass.ClassObject;
+					}
+					if (wrapper.DeclaringTypeWrapper != null)
+					{
+						wrapper.DeclaringTypeWrapper.EnsureLoadable(wrapper.GetClassLoader());
+						return wrapper.DeclaringTypeWrapper.ClassObject;
+					}
+					return null;
+				}
+				catch(RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
+			}
+
+			public static object GetEnclosingMethod(object cwrapper)
+			{
+				try
+				{
+					TypeWrapper wrapper = (TypeWrapper)cwrapper;
+					string[] enclosing = wrapper.GetEnclosingMethod();
+					if(enclosing != null && enclosing[1] != null && enclosing[1] != "<init>")
+					{
+						TypeWrapper enclosingClass = wrapper.GetClassLoader().LoadClassByDottedNameFast(enclosing[0]);
+						if(enclosingClass == null)
+						{
+							throw JavaException.NoClassDefFoundError(enclosing[0]);
+						}
+						MethodWrapper mw = enclosingClass.GetMethodWrapper(enclosing[1], enclosing[2], false);
+						if(mw != null && !mw.IsHideFromReflection)
+						{
+							return JVM.Library.newMethod(mw.DeclaringType.ClassObject, mw);
+						}
+					}
+					return null;
+				}
+				catch(RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
+			}
+
+			public static object GetEnclosingConstructor(object cwrapper)
+			{
+				try
+				{
+					TypeWrapper wrapper = (TypeWrapper)cwrapper;
+					string[] enclosing = wrapper.GetEnclosingMethod();
+					if(enclosing != null && enclosing[1] == "<init>")
+					{
+						TypeWrapper enclosingClass = wrapper.GetClassLoader().LoadClassByDottedNameFast(enclosing[0]);
+						if(enclosingClass == null)
+						{
+							throw JavaException.NoClassDefFoundError(enclosing[0]);
+						}
+						MethodWrapper mw = enclosingClass.GetMethodWrapper(enclosing[1], enclosing[2], false);
+						if(mw != null && !mw.IsHideFromReflection)
+						{
+							return JVM.Library.newConstructor(mw.DeclaringType.ClassObject, mw);
+						}
+					}
 					return null;
 				}
 				catch(RetargetableJavaException x)

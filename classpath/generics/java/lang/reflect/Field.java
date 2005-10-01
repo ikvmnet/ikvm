@@ -39,6 +39,7 @@ exception statement from your version. */
 package java.lang.reflect;
 
 import gnu.classpath.VMStackWalker;
+import gnu.java.lang.reflect.FieldSignatureParser;
 import gnu.java.lang.reflect.VMField;
 
 /**
@@ -93,7 +94,7 @@ public final class Field extends AccessibleObject implements Member
 	 * is a non-inherited member.
 	 * @return the class that declared this member
 	 */
-	public Class getDeclaringClass()
+	public Class<?> getDeclaringClass()
 	{
 	    return impl.getDeclaringClass();
 	}
@@ -125,7 +126,7 @@ public final class Field extends AccessibleObject implements Member
 	 * Gets the type of this field.
 	 * @return the type of this field
 	 */
-	public Class getType()
+	public Class<?> getType()
 	{
             return impl.getType();
 	}
@@ -684,4 +685,23 @@ public final class Field extends AccessibleObject implements Member
                 impl.checkAccess(o, VMStackWalker.getCallingClass());
             impl.setDouble(o, value, isAccessible());
 	}
+
+        public boolean isEnumConstant()
+        {
+            return impl.isEnumConstant();
+        }
+
+        public boolean isSynthetic()
+        {
+            return impl.isSynthetic();
+        }
+
+        public Type getGenericType()
+        {
+            String signature = impl.getSignature();
+            if (signature == null)
+                return getType();
+            FieldSignatureParser p = new FieldSignatureParser(getDeclaringClass(), signature);
+            return p.getFieldType();
+        }
 }

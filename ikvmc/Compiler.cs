@@ -558,7 +558,7 @@ class Compiler
 				{
 					ProcessZipFile(file);
 				}
-				catch(ICSharpCode.SharpZipLib.ZipException x)
+				catch(ICSharpCode.SharpZipLib.SharpZipBaseException x)
 				{
 					Console.Error.WriteLine("Warning: error reading {0}: {1}", file, x.Message);
 				}

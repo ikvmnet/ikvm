@@ -40,6 +40,7 @@ package java.lang.reflect;
 
 import cli.System.Diagnostics.StackFrame;
 import gnu.classpath.VMStackWalker;
+import gnu.java.lang.reflect.MethodSignatureParser;
 
 /**
  * The Constructor class represents a constructor of a class. It also allows
@@ -75,7 +76,7 @@ import gnu.classpath.VMStackWalker;
  * @status updated to 1.4
  */
 public final class Constructor<T>
-    extends AccessibleObject implements Member
+    extends AccessibleObject implements Member, GenericDeclaration
 {
     private Class declaringClass;
     Object methodCookie;
@@ -97,7 +98,7 @@ public final class Constructor<T>
      * Gets the class that declared this constructor.
      * @return the class that declared this member
      */
-    public Class getDeclaringClass()
+    public Class<T> getDeclaringClass()
     {
 	return declaringClass;
     }
@@ -122,7 +123,7 @@ public final class Constructor<T>
      */
     public int getModifiers()
     {
-	return modifiers;
+	return modifiers & (Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED);
     }
 
     /**
@@ -131,7 +132,7 @@ public final class Constructor<T>
      *
      * @return a list of the types of the constructor's parameters
      */
-    public Class[] getParameterTypes()
+    public Class<?>[] getParameterTypes()
     {
 	return Method.GetParameterTypesHelper(methodCookie);
     }
@@ -143,7 +144,7 @@ public final class Constructor<T>
      *
      * @return a list of the types in the constructor's throws clause
      */
-    public Class[] getExceptionTypes()
+    public Class<?>[] getExceptionTypes()
     {
 	ClassLoader loader = getDeclaringClass().getClassLoader();
 	String[] ex = Method.GetExceptionTypes(methodCookie);
@@ -269,5 +270,48 @@ public final class Constructor<T>
 	    throw new InstantiationException();
 	}
 	return (T)Method.Invoke(methodCookie, null, args);
+    }
+
+    public TypeVariable<Constructor<T>>[] getTypeParameters()
+    {
+        String sig = Method.GetSignature(methodCookie);
+        if (sig == null)
+        {
+            return new TypeVariable[0];
+        }
+        MethodSignatureParser p = new MethodSignatureParser(this, sig);
+        return p.getTypeParameters();
+    }
+
+    public Type[] getGenericExceptionTypes()
+    {
+        String sig = Method.GetSignature(methodCookie);
+        if (sig == null)
+        {
+            return getExceptionTypes();
+        }
+        MethodSignatureParser p = new MethodSignatureParser(this, sig);
+        return p.getGenericExceptionTypes();
+    }
+
+    public Type[] getGenericParameterTypes()
+    {
+        String sig = Method.GetSignature(methodCookie);
+        if (sig == null)
+        {
+            return getParameterTypes();
+        }
+        MethodSignatureParser p = new MethodSignatureParser(this, sig);
+        return p.getGenericParameterTypes();
+    }
+
+    public boolean isVarArgs()
+    {
+        return (modifiers & 0x0080) != 0;
+    }
+
+    public boolean isSynthetic()
+    {
+        return (modifiers & 0x1000) != 0;
     }
 }

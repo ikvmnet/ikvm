@@ -2062,6 +2062,26 @@ namespace IKVM.Internal
 						return shadowType == typeof(Exception) || shadowType.IsSubclassOf(typeof(Exception));
 					}
 				}
+
+				internal override string GetGenericSignature()
+				{
+					return null;
+				}
+
+				internal override string GetGenericMethodSignature(MethodWrapper mw)
+				{
+					return null;
+				}
+
+				internal override string GetGenericFieldSignature(FieldWrapper fw)
+				{
+					return null;
+				}
+
+				internal override string[] GetEnclosingMethod()
+				{
+					return null;
+				}
 			}
 
 			internal void EmitRemappedTypes(IKVM.Internal.MapXml.Root map)

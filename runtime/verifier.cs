@@ -1221,6 +1221,26 @@ class VerifierTypeWrapper : TypeWrapper
 	{
 		throw new InvalidOperationException("Finish called on " + this);
 	}
+
+	internal override string GetGenericSignature()
+	{
+		throw new InvalidOperationException("GetGenericSignature called on " + this);
+	}
+
+	internal override string GetGenericMethodSignature(MethodWrapper mw)
+	{
+		throw new InvalidOperationException("GetGenericMethodSignature called on " + this);
+	}
+
+	internal override string GetGenericFieldSignature(FieldWrapper fw)
+	{
+		throw new InvalidOperationException("GetGenericFieldSignature called on " + this);
+	}
+
+	internal override string[] GetEnclosingMethod()
+	{
+		throw new InvalidOperationException("GetEnclosingMethod called on " + this);
+	}
 }
 
 class LocalVar

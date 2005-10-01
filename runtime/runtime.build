@@ -1,8 +1,19 @@
 <?xml version="1.0"?>
 <project name="IKVM.Runtime" default="IKVM.Runtime">
+    <target name="generics">
+        <property name="generics" value="true" />
+        <call target="IKVM.Runtime" />
+    </target>
+
     <target name="IKVM.Runtime">
-        <property overwrite="false" name="signed" value="" />
-        <csc target="library" output="../bin/IKVM.Runtime.dll" define="TRACE;${signed}" optimize="true" unsafe="true">
+        <property name="defs" value="TRACE" />
+        <if propertyexists="signed">
+            <property name="defs" value="${defs};${signed}" />
+        </if>
+        <if propertytrue="generics">
+            <property name="defs" value="${defs};GENERICS" />
+        </if>
+        <csc target="library" output="../bin/IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="true">
             <sources>
                 <includes name="*.cs" />
             </sources>

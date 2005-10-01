@@ -113,6 +113,12 @@ abstract class VMFieldImpl extends VMField
         return (Class)GetFieldType(fieldCookie);
     }
 
+    public final String getSignature()
+    {
+        return GetSignature(fieldCookie);
+    }
+    private static native String GetSignature(Object fieldCookie);
+
     final void checkObject(Object obj)
     {
         if(!Modifier.isStatic(modifiers))

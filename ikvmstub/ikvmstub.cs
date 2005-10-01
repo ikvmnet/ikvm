@@ -193,7 +193,28 @@ public class NetExp
 			}
 			classmods &= ~(Modifiers.Static | Modifiers.Private | Modifiers.Protected);
 		}
-		ClassFileWriter f = new ClassFileWriter(classmods, name, super);
+#if GENERICS
+		if(c.isAnnotation())
+		{
+			classmods |= Modifiers.Annotation;
+		}
+		if(c.isEnum())
+		{
+			classmods |= Modifiers.Enum;
+		}
+		if(c.isSynthetic())
+		{
+			classmods |= Modifiers.Synthetic;
+		}
+		ClassFileWriter f = new ClassFileWriter(classmods, name, super, 0, 49);
+		string genericSignature = BuildGenericSignature(c);
+		if(genericSignature != null)
+		{
+			f.AddStringAttribute("Signature", genericSignature);
+		}
+#else
+		ClassFileWriter f = new ClassFileWriter(classmods, name, super, 3, 45);
+#endif
 		f.AddStringAttribute("IKVM.NET.Assembly", assemblyName);
 		if(IKVM.Runtime.Util.IsClassDeprecated(c))
 		{
@@ -245,6 +266,16 @@ public class NetExp
 			Modifiers mods = (Modifiers)constructors[i].getModifiers();
 			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
+#if GENERICS
+				if(constructors[i].isSynthetic())
+				{
+					mods |= Modifiers.Synthetic;
+				}
+				if(constructors[i].isVarArgs())
+				{
+					mods |= Modifiers.VarArgs;
+				}
+#endif
 				// TODO what happens if one of the argument types is non-public?
 				java.lang.Class[] args = constructors[i].getParameterTypes();
 				foreach(java.lang.Class arg in args)
@@ -274,11 +305,38 @@ public class NetExp
 				{
 					m.AddAttribute(new DeprecatedAttribute(f));
 				}
+#if GENERICS
+				string signature = BuildGenericSignature(constructors[i].getTypeParameters(),
+					constructors[i].getGenericParameterTypes(), java.lang.Void.TYPE, constructors[i].getGenericExceptionTypes());
+				if (signature != null)
+				{
+					m.AddAttribute(f.MakeStringAttribute("Signature", signature));
+				}
+#endif
 			}
 		}
 		java.lang.reflect.Method[] methods = c.getDeclaredMethods();
 		for(int i = 0; i < methods.Length; i++)
 		{
+			// FXBUG (?) .NET reflection on java.lang.Object returns toString() twice!
+			// I didn't want to add the work around to CompiledTypeWrapper, so it's here.
+			if((c.getName() == "java.lang.Object" || c.getName() == "java.lang.Throwable")
+				&& methods[i].getName() == "toString")
+			{
+				bool found = false;
+				for(int j = 0; j < i; j++)
+				{
+					if(methods[j].getName() == "toString")
+					{
+						found = true;
+						break;
+					}
+				}
+				if(found)
+				{
+					continue;
+				}
+			}
 			Modifiers mods = (Modifiers)methods[i].getModifiers();
 			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
@@ -286,6 +344,20 @@ public class NetExp
 				{
 					mods |= Modifiers.Native;
 				}
+#if GENERICS
+				if(methods[i].isBridge())
+				{
+					mods |= Modifiers.Bridge;
+				}
+				if(methods[i].isSynthetic())
+				{
+					mods |= Modifiers.Synthetic;
+				}
+				if(methods[i].isVarArgs())
+				{
+					mods |= Modifiers.VarArgs;
+				}
+#endif
 				// TODO what happens if one of the argument types (or the return type) is non-public?
 				java.lang.Class[] args = methods[i].getParameterTypes();
 				foreach(java.lang.Class arg in args)
@@ -306,6 +378,15 @@ public class NetExp
 				{
 					m.AddAttribute(new DeprecatedAttribute(f));
 				}
+#if GENERICS
+				string signature = BuildGenericSignature(methods[i].getTypeParameters(),
+					methods[i].getGenericParameterTypes(), methods[i].getGenericReturnType(),
+					methods[i].getGenericExceptionTypes());
+				if (signature != null)
+				{
+					m.AddAttribute(f.MakeStringAttribute("Signature", signature));
+				}
+#endif
 			}
 		}
 		java.lang.reflect.Field[] fields = c.getDeclaredFields();
@@ -370,11 +451,27 @@ public class NetExp
 				{
 					AddToExportList(fieldType);
 				}
+#if GENERICS
+				if(fields[i].isEnumConstant())
+				{
+					mods |= Modifiers.Enum;
+				}
+				if(fields[i].isSynthetic())
+				{
+					mods |= Modifiers.Synthetic;
+				}
+#endif
 				FieldOrMethod fld = f.AddField(mods, fields[i].getName(), ClassToSig(fieldType), constantValue);
 				if(IKVM.Runtime.Util.IsFieldDeprecated(fields[i]))
 				{
 					fld.AddAttribute(new DeprecatedAttribute(f));
 				}
+#if GENERICS
+				if(fields[i].getGenericType() != fieldType)
+				{
+					fld.AddAttribute(f.MakeStringAttribute("Signature", ToSigForm(fields[i].getGenericType())));
+				}
+#endif
 			}
 		}
 		if(innerClassesAttribute != null)
@@ -465,4 +562,150 @@ public class NetExp
 			return "L" + c.getName().Replace('.', '/') + ";";
 		}
 	}
+
+#if GENERICS
+	private static string BuildGenericSignature(java.lang.Class c)
+	{
+		bool isgeneric = false;
+		StringBuilder sb = new StringBuilder();
+		java.lang.reflect.TypeVariable[] vars = c.getTypeParameters();
+		if(vars.Length > 0)
+		{
+			isgeneric = true;
+			sb.Append('<');
+			foreach(java.lang.reflect.TypeVariable t in vars)
+			{
+				sb.Append(t.getName());
+				bool first = true;
+				foreach(java.lang.reflect.Type bound in t.getBounds())
+				{
+					if(first)
+					{
+						first = false;
+						if(bound is java.lang.Class)
+						{
+							// HACK I don't really understand what the proper criterion is to decide this
+							if(((java.lang.Class)bound).isInterface())
+							{
+								sb.Append(':');
+							}
+						}
+					}
+					sb.Append(':').Append(ToSigForm(bound));
+				}
+			}
+			sb.Append('>');
+		}
+		java.lang.reflect.Type superclass = c.getGenericSuperclass();
+		if(superclass == null)
+		{
+			sb.Append("Ljava/lang/Object;");
+		}
+		else
+		{
+			isgeneric |= !(superclass is java.lang.Class);
+			sb.Append(ToSigForm(superclass));
+		}
+        foreach(java.lang.reflect.Type t in c.getGenericInterfaces())
+        {
+			isgeneric |= !(t is java.lang.Class);
+			sb.Append(ToSigForm(t));
+        }
+		if(isgeneric)
+		{
+			return sb.ToString();
+		}
+		return null;
+	}
+
+	private static string BuildGenericSignature(java.lang.reflect.TypeVariable[] typeParameters,
+		java.lang.reflect.Type[] parameterTypes, java.lang.reflect.Type returnType,
+		java.lang.reflect.Type[] exceptionTypes)
+	{
+		StringBuilder sb = new StringBuilder();
+		if(typeParameters.Length > 0)
+		{
+			sb.Append('<');
+			foreach(java.lang.reflect.TypeVariable t in typeParameters)
+			{
+				sb.Append(t.getName());
+				foreach(java.lang.reflect.Type bound in t.getBounds())
+				{
+					sb.Append(':').Append(ToSigForm(bound));
+				}
+			}
+			sb.Append('>');
+		}
+		sb.Append('(');
+		foreach(java.lang.reflect.Type t in parameterTypes)
+		{
+			sb.Append(ToSigForm(t));
+		}
+		sb.Append(')');
+		sb.Append(ToSigForm(returnType));
+		foreach(java.lang.reflect.Type t in exceptionTypes)
+		{
+			sb.Append('^').Append(ToSigForm(t));
+		}
+		return sb.ToString();
+	}
+
+	private static string ToSigForm(java.lang.reflect.Type t)
+	{
+		if(t is java.lang.reflect.ParameterizedType)
+		{
+			java.lang.reflect.ParameterizedType p = (java.lang.reflect.ParameterizedType)t;
+			if(p.getOwnerType() != null)
+			{
+				// TODO
+				throw new NotImplementedException();
+			}
+			StringBuilder sb = new StringBuilder();
+			sb.Append('L').Append(((java.lang.Class)p.getRawType()).getName().Replace('.', '/'));
+			sb.Append('<');
+			foreach(java.lang.reflect.Type arg in p.getActualTypeArguments())
+			{
+				sb.Append(ToSigForm(arg));
+			}
+			sb.Append(">;");
+			return sb.ToString();
+		}
+		else if(t is java.lang.reflect.TypeVariable)
+		{
+			return "T" + ((java.lang.reflect.TypeVariable)t).getName() + ";";
+		}
+		else if(t is java.lang.reflect.WildcardType)
+		{
+			java.lang.reflect.WildcardType w = (java.lang.reflect.WildcardType)t;
+			java.lang.reflect.Type[] lower = w.getLowerBounds();
+			java.lang.reflect.Type[] upper = w.getUpperBounds();
+			if (lower.Length == 0 && upper.Length == 0)
+			{
+				return "*";
+			}
+			if (lower.Length == 1)
+			{
+				return "-" + ToSigForm(lower[0]);
+			}
+			if (upper.Length == 1)
+			{
+				return "+" + ToSigForm(upper[0]);
+			}
+			throw new NotImplementedException();
+		}
+		else if(t is java.lang.reflect.GenericArrayType)
+		{
+			java.lang.reflect.GenericArrayType a = (java.lang.reflect.GenericArrayType)t;
+			return "[" + ToSigForm(a.getGenericComponentType());
+		}
+		else if(t is java.lang.Class)
+		{
+			return ClassToSig((java.lang.Class)t);
+		}
+		else
+		{
+			throw new NotImplementedException(t.GetType().FullName);
+		}
+	}
+#endif
 }

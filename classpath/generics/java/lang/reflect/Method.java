@@ -40,6 +40,7 @@ package java.lang.reflect;
 
 import cli.System.Diagnostics.StackFrame;
 import gnu.classpath.VMStackWalker;
+import gnu.java.lang.reflect.MethodSignatureParser;
 
 /**
  * The Method class represents a member method of a class. It also allows
@@ -74,7 +75,8 @@ import gnu.classpath.VMStackWalker;
  * @since 1.1
  * @status updated to 1.4
  */
-public final class Method extends AccessibleObject implements Member
+public final class Method
+    extends AccessibleObject implements Member, GenericDeclaration
 {
     private Class declaringClass;
     Object methodCookie;
@@ -99,7 +101,7 @@ public final class Method extends AccessibleObject implements Member
      * is a non-inherited member.
      * @return the class that declared this member
      */
-    public Class getDeclaringClass()
+    public Class<?> getDeclaringClass()
     {
 	return declaringClass;
     }
@@ -125,14 +127,16 @@ public final class Method extends AccessibleObject implements Member
      */
     public int getModifiers()
     {
-	return modifiers;
+	return modifiers & (Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED
+                            | Modifier.ABSTRACT | Modifier.STATIC | Modifier.FINAL
+                            | Modifier.SYNCHRONIZED | Modifier.NATIVE | Modifier.STRICT);
     }
 
     /**
      * Gets the return type of this method.
      * @return the type of this method
      */
-    public Class getReturnType()
+    public Class<?> getReturnType()
     {
 	return (Class)GetReturnType(methodCookie);
     }
@@ -144,12 +148,12 @@ public final class Method extends AccessibleObject implements Member
      *
      * @return a list of the types of the method's parameters
      */
-    public Class[] getParameterTypes()
+    public Class<?>[] getParameterTypes()
     {
 	return GetParameterTypesHelper(methodCookie);
     }
 
-    static Class[] GetParameterTypesHelper(Object methodCookie)
+    static Class<?>[] GetParameterTypesHelper(Object methodCookie)
     {
         Object[] params = GetParameterTypes(methodCookie);
         Class[] paramsClass = new Class[params.length];
@@ -172,7 +176,7 @@ public final class Method extends AccessibleObject implements Member
      *
      * @return a list of the types in the method's throws clause
      */
-    public Class[] getExceptionTypes()
+    public Class<?>[] getExceptionTypes()
     {
 	ClassLoader loader = getDeclaringClass().getClassLoader();
 	String[] ex = GetExceptionTypes(methodCookie);
@@ -361,4 +365,65 @@ public final class Method extends AccessibleObject implements Member
     }
 
     static native Object Invoke(Object methodCookie, Object o, Object[] args);
+
+    public TypeVariable<Method>[] getTypeParameters()
+    {
+        String sig = GetSignature(methodCookie);
+        if (sig == null)
+        {
+            return new TypeVariable[0];
+        }
+        MethodSignatureParser p = new MethodSignatureParser(this, sig);
+        return p.getTypeParameters();
+    }
+
+    static native String GetSignature(Object cookie);
+
+    public Type[] getGenericExceptionTypes()
+    {
+        String sig = GetSignature(methodCookie);
+        if (sig == null)
+        {
+            return getExceptionTypes();
+        }
+        MethodSignatureParser p = new MethodSignatureParser(this, sig);
+        return p.getGenericExceptionTypes();
+    }
+
+    public Type[] getGenericParameterTypes()
+    {
+        String sig = GetSignature(methodCookie);
+        if (sig == null)
+        {
+            return getParameterTypes();
+        }
+        MethodSignatureParser p = new MethodSignatureParser(this, sig);
+        return p.getGenericParameterTypes();
+    }
+
+    public Type getGenericReturnType()
+    {
+        String sig = GetSignature(methodCookie);
+        if (sig == null)
+        {
+            return getReturnType();
+        }
+        MethodSignatureParser p = new MethodSignatureParser(this, sig);
+        return p.getGenericReturnType();
+    }
+
+    public boolean isBridge()
+    {
+        return (modifiers & 0x0040) != 0;
+    }
+
+    public boolean isVarArgs()
+    {
+        return (modifiers & 0x0080) != 0;
+    }
+
+    public boolean isSynthetic()
+    {
+        return (modifiers & 0x1000) != 0;
+    }
 }

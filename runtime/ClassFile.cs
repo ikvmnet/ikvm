@@ -54,13 +54,19 @@ namespace IKVM.Internal
 		private string sourceFile;
 		private ushort majorVersion;
 		private bool deprecated;
+		private string signature;
+		private string[] enclosingMethod;
 		private string ikvmAssembly;
 		private InnerClass[] innerClasses;
 
 		private class SupportedVersions
 		{
 			internal static readonly int Minimum = 45;
+#if GENERICS
+			internal static readonly int Maximum = 49;
+#else
 			internal static readonly int Maximum = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_JDK_5_0") == null ? 48 : 49;
+#endif
 		}
 
 		// This method parses just enough of the class file to obtain its name, it doesn't
@@ -342,6 +348,49 @@ namespace IKVM.Internal
 								if(innerClasses[j].innerClass == innerClasses[j].outerClass)
 								{
 									throw new ClassFormatError("{0} (Class is both inner and outer class)", this.Name);
+								}
+							}
+							break;
+						case "Signature":
+							if(majorVersion < 49)
+							{
+								goto default;
+							}
+							if(br.ReadUInt32() != 2)
+							{
+								throw new ClassFormatError("Signature attribute has incorrect length");
+							}
+							signature = GetConstantPoolUtf8String(br.ReadUInt16());
+							break;
+						case "EnclosingMethod":
+							if(majorVersion < 49)
+							{
+								goto default;
+							}
+							if(br.ReadUInt32() != 4)
+							{
+								throw new ClassFormatError("EnclosingMethod attribute has incorrect length");
+							}
+							else
+							{
+								int class_index = br.ReadUInt16();
+								int method_index = br.ReadUInt16();
+								if(method_index == 0)
+								{
+									enclosingMethod = new string[] {
+										GetConstantPoolClass(class_index),
+										null,
+										null
+																   };
+								}
+								else
+								{
+									ConstantPoolItemNameAndType m = (ConstantPoolItemNameAndType)GetConstantPoolItem(method_index);
+									enclosingMethod = new string[] {
+										GetConstantPoolClass(class_index),
+										GetConstantPoolUtf8String(m.name_index),
+										GetConstantPoolUtf8String(m.descriptor_index).Replace('/', '.')
+																   };
 								}
 							}
 							break;
@@ -728,6 +777,22 @@ namespace IKVM.Internal
 			get
 			{
 				return sourceFile;
+			}
+		}
+
+		internal string GenericSignature
+		{
+			get
+			{
+				return signature;
+			}
+		}
+
+		internal string[] EnclosingMethod
+		{
+			get
+			{
+				return enclosingMethod;
 			}
 		}
 
@@ -1434,6 +1499,7 @@ namespace IKVM.Internal
 			private string name;
 			private string descriptor;
 			protected bool deprecated;
+			protected string signature;
 
 			internal FieldOrMethod(ClassFile classFile, BigEndianBinaryReader br)
 			{
@@ -1459,6 +1525,14 @@ namespace IKVM.Internal
 				get
 				{
 					return descriptor;
+				}
+			}
+
+			internal string GenericSignature
+			{
+				get
+				{
+					return signature;
 				}
 			}
 
@@ -1640,6 +1714,17 @@ namespace IKVM.Internal
 							}
 							break;
 						}
+						case "Signature":
+							if(classFile.majorVersion < 49)
+							{
+								goto default;
+							}
+							if(br.ReadUInt32() != 2)
+							{
+								throw new ClassFormatError("Signature attribute has incorrect length");
+							}
+							signature = classFile.GetConstantPoolUtf8String(br.ReadUInt16());
+							break;
 						default:
 							br.Skip(br.ReadUInt32());
 							break;
@@ -1731,6 +1816,17 @@ namespace IKVM.Internal
 							}
 							break;
 						}
+						case "Signature":
+							if(classFile.majorVersion < 49)
+							{
+								goto default;
+							}
+							if(br.ReadUInt32() != 2)
+							{
+								throw new ClassFormatError("Signature attribute has incorrect length");
+							}
+							signature = classFile.GetConstantPoolUtf8String(br.ReadUInt16());
+							break;
 						default:
 							br.Skip(br.ReadUInt32());
 							break;
