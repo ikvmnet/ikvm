@@ -40,6 +40,7 @@ package java.lang;
 
 import java.security.ProtectionDomain;
 import java.net.URL;
+import java.net.MalformedURLException;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Map;
@@ -47,6 +48,8 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.StringTokenizer;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import java.lang.reflect.Constructor;
 import gnu.classpath.SystemProperties;
 import gnu.java.util.DoubleEnumeration;
@@ -258,8 +261,62 @@ final class VMClassLoader
                         String name = getPackageName(types[j]);
                         if(name != null)
                         {
-                            // TODO fill out more package details
-                            h.put(name, new Package(name, null, null, null, null, null, null, null));
+                            String specTitle = null;
+                            String specVersion = null;
+                            String specVendor = null;
+                            String implTitle = null;
+                            String implVersion = null;
+                            String implVendor = null;
+                            // TODO do we have a way of getting the URL?
+                            URL url = null;
+                            Manifest manifest = getManifestFromAssembly(assemblies[i]);
+                            if(manifest != null)
+                            {
+                                // Compute the name of the package as it may appear in the
+                                // Manifest.
+                                StringBuffer xform = new StringBuffer(name);
+                                for (int k = xform.length () - 1; k >= 0; --k)
+                                    if (xform.charAt(k) == '.')
+                                        xform.setCharAt(k, '/');
+                                xform.append('/');
+                                String xformName = xform.toString();
+
+                                Attributes entryAttr = manifest.getAttributes(xformName);
+                                Attributes attr = manifest.getMainAttributes();
+
+                                specTitle
+                                    = getAttributeValue(Attributes.Name.SPECIFICATION_TITLE,
+                                    entryAttr, attr);
+                                specVersion
+                                    = getAttributeValue(Attributes.Name.SPECIFICATION_VERSION,
+                                    entryAttr, attr);
+                                specVendor
+                                    = getAttributeValue(Attributes.Name.SPECIFICATION_VENDOR,
+                                    entryAttr, attr);
+                                implTitle
+                                    = getAttributeValue(Attributes.Name.IMPLEMENTATION_TITLE,
+                                    entryAttr, attr);
+                                implVersion
+                                    = getAttributeValue(Attributes.Name.IMPLEMENTATION_VERSION,
+                                    entryAttr, attr);
+                                implVendor
+                                    = getAttributeValue(Attributes.Name.IMPLEMENTATION_VENDOR,
+                                    entryAttr, attr);
+
+                                // Look if the Manifest indicates that this package is sealed
+                                // XXX - most likely not completely correct!
+                                // Shouldn't we also check the sealed attribute of the complete jar?
+                                // http://java.sun.com/products/jdk/1.4/docs/guide/extensions/spec.html#bundled
+                                // But how do we get that jar manifest here?
+                                String sealed = attr.getValue(Attributes.Name.SEALED);
+                                if ("false".equals(sealed))
+                                {
+                                    // make sure that the URL is null so the package is not sealed
+                                    url = null;
+                                }
+                            }
+
+                            h.put(name, new Package(name, specTitle, specVendor, specVersion, implTitle, implVendor, implVersion, url));
                         }
                     }
                 }
@@ -294,6 +351,32 @@ final class VMClassLoader
             }
         }
         return packages;        
+    }
+
+    private static String getAttributeValue(Attributes.Name name, Attributes first, Attributes second)
+    {
+        String result = null;
+        if (first != null)
+            result = first.getValue(name);
+        if (result == null)
+            result = second.getValue(name);
+        return result;
+    }
+
+    private static Manifest getManifestFromAssembly(Assembly asm)
+    {
+        try
+        {
+            URL url = new URL("ikvmres", asm.get_FullName(), -1, "/META-INF/MANIFEST.MF");
+            return new Manifest(url.openStream());
+        }
+        catch (MalformedURLException _)
+        {
+        }
+        catch (IOException _)
+        {
+        }
+        return null;
     }
 
     private static volatile Package[] packageCache;
