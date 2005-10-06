@@ -255,11 +255,12 @@ final class VMClassLoader
             {
                 if(!(assemblies[i] instanceof cli.System.Reflection.Emit.AssemblyBuilder))
                 {
+                    Manifest manifest = getManifestFromAssembly(assemblies[i]);
                     Type[] types = assemblies[i].GetTypes();
                     for(int j = 0; j < types.length; j++)
                     {
                         String name = getPackageName(types[j]);
-                        if(name != null)
+                        if(name != null && !h.containsKey(name))
                         {
                             String specTitle = null;
                             String specVersion = null;
@@ -269,7 +270,6 @@ final class VMClassLoader
                             String implVendor = null;
                             // TODO do we have a way of getting the URL?
                             URL url = null;
-                            Manifest manifest = getManifestFromAssembly(assemblies[i]);
                             if(manifest != null)
                             {
                                 // Compute the name of the package as it may appear in the
