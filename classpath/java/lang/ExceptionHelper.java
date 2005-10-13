@@ -54,10 +54,13 @@ final class ExceptionHelper
             cause = CAUSE_NOT_SET;
         }
 
-	ExceptionInfoHelper(Throwable x)
+	ExceptionInfoHelper(Throwable x, boolean captureAdditionalStackTrace)
 	{
 	    tracePart1 = new cli.System.Diagnostics.StackTrace(x, true);
-	    tracePart2 = new cli.System.Diagnostics.StackTrace(true);
+            if(captureAdditionalStackTrace)
+            {
+	        tracePart2 = new cli.System.Diagnostics.StackTrace(true);
+            }
 	    cause = getInnerException(x);
 	    if(cause == null)
 	    {
@@ -364,6 +367,32 @@ final class ExceptionHelper
 	return sb.toString();
     }
 
+    private static ExceptionInfoHelper getExceptionInfoHelper(Throwable t)
+    {
+        Object o = exceptions.get(t);
+        if(o == null || o instanceof ExceptionInfoHelper)
+        {
+            return (ExceptionInfoHelper)o;
+        }
+        else if(o == NOT_REMAPPED)
+        {
+            ExceptionInfoHelper eih = new ExceptionInfoHelper(t, false);
+            exceptions.put(t, eih);
+            return eih;
+        }
+        else
+        {
+            Throwable remapped = (Throwable)exceptions.get(o);
+            ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(remapped);
+            if(eih == null)
+            {
+                eih = new ExceptionInfoHelper(t, false);
+                exceptions.put(remapped, eih);
+            }
+            return eih;
+        }
+    }
+
     static Throwable initCause(Throwable x, Throwable cause)
     {
 	if(x == null)
@@ -381,7 +410,7 @@ final class ExceptionHelper
         {
             throw new IllegalStateException("Throwable cause already initialized");
         }
-	ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(x);
+	ExceptionInfoHelper eih = getExceptionInfoHelper(x);
 	if(eih == null)
 	{
 	    eih = new ExceptionInfoHelper();
@@ -397,7 +426,7 @@ final class ExceptionHelper
 	{
 	    throw new NullPointerException();
 	}
-	ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(x);
+	ExceptionInfoHelper eih = getExceptionInfoHelper(x);
 	if(eih == null)
 	{
 	    return getInnerException(x);
@@ -411,7 +440,7 @@ final class ExceptionHelper
 	{
 	    throw new NullPointerException();
 	}
-	ExceptionInfoHelper ei = (ExceptionInfoHelper)exceptions.get(x);
+	ExceptionInfoHelper ei = getExceptionInfoHelper(x);
 	if(ei == null)
 	{
 	    return new StackTraceElement[0];
@@ -432,7 +461,7 @@ final class ExceptionHelper
 		throw new NullPointerException();
 	    }
 	}
-	ExceptionInfoHelper ei = (ExceptionInfoHelper)exceptions.get(x);
+	ExceptionInfoHelper ei = getExceptionInfoHelper(x);
 	if(ei == null)
 	{
 	    ei = new ExceptionInfoHelper();
@@ -485,7 +514,7 @@ final class ExceptionHelper
 	{
 	    throw new NullPointerException();
 	}
-	ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(x);
+	ExceptionInfoHelper eih = getExceptionInfoHelper(x);
 	if(eih == null)
 	{
 	    eih = new ExceptionInfoHelper();
@@ -575,7 +604,7 @@ final class ExceptionHelper
                 {
                     // the exception is escaping into the wild for the first time,
                     // so we have to capture the stack trace
-                    eih = new ExceptionInfoHelper(org);
+                    eih = new ExceptionInfoHelper(org, true);
                     if(t != org)
                     {
                         eih.setOriginal(org);
@@ -584,7 +613,7 @@ final class ExceptionHelper
                     Throwable inner = getInnerException(org);
                     if(inner != null && !exceptions.containsKey(inner))
                     {
-                        exceptions.put(inner, new ExceptionInfoHelper(inner));
+                        exceptions.put(inner, new ExceptionInfoHelper(inner, true));
                     }
                 }
                 else
@@ -597,7 +626,7 @@ final class ExceptionHelper
                 ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(t);
                 if(eih == null)
                 {
-                    eih = new ExceptionInfoHelper(t);
+                    eih = new ExceptionInfoHelper(t, true);
                     exceptions.put(t, eih);
                 }
                 else
@@ -633,7 +662,7 @@ final class ExceptionHelper
 	ObjectOutputStream.PutField fields = s.putFields();
 	fields.put("detailMessage", t.getMessage());
 	Throwable cause;
-	ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(t);
+	ExceptionInfoHelper eih = getExceptionInfoHelper(t);
 	if(eih == null)
 	{
 	    cause = getInnerException(t);
@@ -673,7 +702,7 @@ final class ExceptionHelper
             }
         }
         // transplant the stack trace
-        setStackTrace(r, new ExceptionInfoHelper(t).get_StackTrace(t));
+        setStackTrace(r, new ExceptionInfoHelper(t, true).get_StackTrace(t));
         return r;
     }
 }
