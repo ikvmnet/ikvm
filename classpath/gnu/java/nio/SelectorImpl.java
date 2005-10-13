@@ -51,6 +51,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import cli.System.Net.Sockets.Socket;
+import cli.System.Net.Sockets.AddressFamily;
+import cli.System.Net.Sockets.SocketType;
+import cli.System.Net.Sockets.ProtocolType;
 import cli.System.Collections.ArrayList;
 
 public final class SelectorImpl extends AbstractSelector
@@ -67,7 +70,7 @@ public final class SelectorImpl extends AbstractSelector
   /**
    * Any thread that's currently blocked in a select operation.
    */
-  private Thread selectThread;
+  private Socket notifySocket;
   
   /**
    * Indicates whether we have an unhandled wakeup call. This can
@@ -190,7 +193,7 @@ public final class SelectorImpl extends AbstractSelector
                   }
                 else
                   {
-                    selectThread = Thread.currentThread ();
+                    notifySocket = createNotifySocket();
                   }
               }
 
@@ -209,8 +212,9 @@ public final class SelectorImpl extends AbstractSelector
                         write = (ArrayList)savedWriteList.Clone();
                         // TODO we should probably select errors too
                         // TODO we should somehow support waking up in response to Thread.interrupt()
+                        read.Add(notifySocket);
                         Socket.Select(read, write, null, Integer.MAX_VALUE);
-                    } while(read.get_Count() == 0 && write.get_Count() == 0);
+                    } while(read.get_Count() == 0 && write.get_Count() == 0 && !unhandledWakeup);
                     // TODO result should be set correctly
                     result = read.get_Count() + write.get_Count();
                 }
@@ -223,9 +227,10 @@ public final class SelectorImpl extends AbstractSelector
                         int microSeconds = 1000 * (int)Math.min(Integer.MAX_VALUE / 1000, timeout);
                         // TODO we should probably select errors too
                         // TODO we should somehow support waking up in response to Thread.interrupt()
+                        read.Add(notifySocket);
                         Socket.Select(read, write, null, microSeconds);
                         timeout -= microSeconds / 1000;
-                    } while(timeout > 0 && read.get_Count() == 0 && write.get_Count() == 0);
+                    } while(timeout > 0 && read.get_Count() == 0 && write.get_Count() == 0 && !unhandledWakeup);
                     // TODO result should be set correctly
                     result = read.get_Count() + write.get_Count();
                 }
@@ -233,6 +238,7 @@ public final class SelectorImpl extends AbstractSelector
             finally
               {
                 end();
+                notifySocket.Close();
               }
 
             // If our unhandled wakeup flag is set at this point,
@@ -249,12 +255,8 @@ public final class SelectorImpl extends AbstractSelector
             // this scenario.
             synchronized (selectThreadMutex)
               {
-                if (unhandledWakeup)
-                  {
-                    unhandledWakeup = false;
-                    Thread.interrupted ();
-                  }
-                selectThread = null;
+                unhandledWakeup = false;
+                notifySocket = null;
               }
 
             Iterator it = keys.iterator ();
@@ -321,6 +323,13 @@ public final class SelectorImpl extends AbstractSelector
           }
         }
   }
+
+  private static Socket createNotifySocket()
+  {
+    return new Socket(AddressFamily.wrap(AddressFamily.InterNetwork),
+                        SocketType.wrap(SocketType.Dgram),
+                        ProtocolType.wrap(ProtocolType.Udp));
+  }
     
   public final Set selectedKeys()
   {
@@ -332,22 +341,12 @@ public final class SelectorImpl extends AbstractSelector
 
   public final Selector wakeup()
   {
-    // IMPLEMENTATION NOTE: Whereas the specification says that
-    // thread interruption should trigger a call to wakeup, we
-    // do the reverse under the covers: wakeup triggers a thread
-    // interrupt followed by a subsequent reset of the thread's
-    // interrupt status within select().
-    
-    // First, acquire the monitor of the object regulating
-    // access to our selectThread and unhandledWakeup fields.
     synchronized (selectThreadMutex)
       {
         unhandledWakeup = true;
         
-        // Interrupt any thread which is currently blocked in
-        // a select operation.
-        if (selectThread != null)
-          selectThread.interrupt ();
+        if (notifySocket != null)
+          notifySocket.Close();
       }
       
     return this;
