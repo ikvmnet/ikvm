@@ -535,6 +535,7 @@ class Compiler
 			MemoryStream mem = new MemoryStream();
 			LZOutputStream lz = new LZOutputStream(mem);
 			lz.Write(buf, 0, buf.Length);
+			lz.Flush();
 			buf = mem.ToArray();
 		}
 		resources.Add(name, buf);
