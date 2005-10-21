@@ -6,6 +6,7 @@
     </target>
 
     <target name="IKVM.Runtime">
+        <property overwrite="false" name="generics" value="false" />
         <property name="defs" value="TRACE" />
         <if propertyexists="signed">
             <property name="defs" value="${defs};${signed}" />

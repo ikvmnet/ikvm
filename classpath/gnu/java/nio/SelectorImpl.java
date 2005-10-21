@@ -51,6 +51,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import cli.System.Net.Sockets.Socket;
+import cli.System.Net.Sockets.SocketException;
 import cli.System.Net.Sockets.AddressFamily;
 import cli.System.Net.Sockets.SocketType;
 import cli.System.Net.Sockets.ProtocolType;
@@ -65,7 +66,7 @@ public final class SelectorImpl extends AbstractSelector
    * A dummy object whose monitor regulates access to both our
    * selectThread and unhandledWakeup fields.
    */
-  private Object selectThreadMutex = new Object ();
+  private Object wakeupMutex = new Object ();
   
   /**
    * Any thread that's currently blocked in a select operation.
@@ -81,7 +82,7 @@ public final class SelectorImpl extends AbstractSelector
    * time that wakeup() was called, in which case the following select()
    * operation should return immediately with nothing selected.
    */
-  private boolean unhandledWakeup;
+  private volatile boolean unhandledWakeup;
 
   public SelectorImpl (SelectorProvider provider)
   {
@@ -171,7 +172,7 @@ public final class SelectorImpl extends AbstractSelector
             // Test to see if we've got an unhandled wakeup call,
             // in which case we return immediately. Otherwise,
             // remember our current thread and jump into the select.
-            // The monitor for dummy object selectThreadMutex regulates
+            // The monitor for dummy object wakeupMutex regulates
             // access to these fields.
 
             // FIXME: Not sure from the spec at what point we should
@@ -180,11 +181,11 @@ public final class SelectorImpl extends AbstractSelector
             
             // NOTE: There's a possibility of another thread calling
             // wakeup() immediately after our thread releases
-            // selectThreadMutex's monitor here, in which case we'll
+            // wakeupMutex's monitor here, in which case we'll
             // do the select anyway. Since calls to wakeup() and select()
             // among different threads happen in non-deterministic order,
             // I don't think this is an issue.
-            synchronized (selectThreadMutex)
+            synchronized (wakeupMutex)
               {
                 if (unhandledWakeup)
                   {
@@ -213,7 +214,14 @@ public final class SelectorImpl extends AbstractSelector
                         // TODO we should probably select errors too
                         // TODO we should somehow support waking up in response to Thread.interrupt()
                         read.Add(notifySocket);
-                        Socket.Select(read, write, null, Integer.MAX_VALUE);
+                        try
+                        {
+                            if (false) throw new SocketException();
+                            Socket.Select(read, write, null, Integer.MAX_VALUE);
+                        }
+                        catch(SocketException _)
+                        {
+                        }
                     } while(read.get_Count() == 0 && write.get_Count() == 0 && !unhandledWakeup);
                     // TODO result should be set correctly
                     result = read.get_Count() + write.get_Count();
@@ -228,8 +236,15 @@ public final class SelectorImpl extends AbstractSelector
                         // TODO we should probably select errors too
                         // TODO we should somehow support waking up in response to Thread.interrupt()
                         read.Add(notifySocket);
-                        Socket.Select(read, write, null, microSeconds);
-                        timeout -= microSeconds / 1000;
+                        try
+                        {
+                            if (false) throw new SocketException();
+                            Socket.Select(read, write, null, microSeconds);
+                            timeout -= microSeconds / 1000;
+                        }
+                        catch(SocketException _)
+                        {
+                        }
                     } while(timeout > 0 && read.get_Count() == 0 && write.get_Count() == 0 && !unhandledWakeup);
                     // TODO result should be set correctly
                     result = read.get_Count() + write.get_Count();
@@ -238,25 +253,12 @@ public final class SelectorImpl extends AbstractSelector
             finally
               {
                 end();
-                notifySocket.Close();
-              }
-
-            // If our unhandled wakeup flag is set at this point,
-            // reset our thread's interrupt flag because we were
-            // awakened by wakeup() instead of an external thread
-            // interruption.
-            //
-            // NOTE: If we were blocked in a select() and one thread
-            // called Thread.interrupt() on the blocked thread followed
-            // by another thread calling Selector.wakeup(), then race
-            // conditions could make it so that the thread's interrupt
-            // flag is reset even though the Thread.interrupt() call
-            // "was there first". I don't think we need to care about
-            // this scenario.
-            synchronized (selectThreadMutex)
-              {
-                unhandledWakeup = false;
-                notifySocket = null;
+                synchronized (wakeupMutex)
+                {
+                    unhandledWakeup = false;
+                    notifySocket.Close();
+                    notifySocket = null;
+                }
               }
 
             Iterator it = keys.iterator ();
@@ -341,7 +343,7 @@ public final class SelectorImpl extends AbstractSelector
 
   public final Selector wakeup()
   {
-    synchronized (selectThreadMutex)
+    synchronized (wakeupMutex)
       {
         unhandledWakeup = true;
         
