@@ -490,6 +490,8 @@ namespace IKVM.Attributes
 		}
 	}
 
+	// NOTE this attribute is also used by annotation attribute classes,
+	// to give them a different name in the Java world ($Proxy[Annotation]).
 	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
 	public sealed class InnerClassAttribute : Attribute
 	{
@@ -629,6 +631,61 @@ namespace IKVM.Attributes
 			get
 			{
 				return methodSig;
+			}
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Method)]
+	public sealed class AnnotationDefaultAttribute : Attribute
+	{
+		public const byte TAG_ENUM = (byte)'e';
+		public const byte TAG_CLASS = (byte)'c';
+		public const byte TAG_ANNOTATION = (byte)'@';
+		public const byte TAG_ARRAY = (byte)'[';
+		private object defaultValue;
+
+		// element_value encoding:
+		// primitives:
+		//   boxed values
+		// string:
+		//   string
+		// enum:
+		//   new object[] { (byte)'e', "<EnumType>", "<enumvalue>" }
+		// class:
+		//   new object[] { (byte)'c', "<Type>" }
+		// annotation:
+		//   new object[] { (byte)'@', "<AnnotationType>", ("name", (element_value))* }
+		// array:
+		//   new object[] { (byte)'[', (element_value)* }
+		public AnnotationDefaultAttribute(object defaultValue)
+		{
+			this.defaultValue = defaultValue;
+		}
+
+		public object Value
+		{
+			get
+			{
+				return defaultValue;
+			}
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Interface)]
+	public sealed class AnnotationAttributeAttribute : Attribute
+	{
+		private string attributeType;
+
+		public AnnotationAttributeAttribute(string attributeType)
+		{
+			this.attributeType = attributeType;
+		}
+
+		public string AttributeType
+		{
+			get
+			{
+				return attributeType;
 			}
 		}
 	}

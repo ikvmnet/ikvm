@@ -426,4 +426,14 @@ public final class Method
     {
         return (modifiers & 0x1000) != 0;
     }
+
+    public Object getDefaultValue()
+    {
+        if (declaringClass.isAnnotation())
+        {
+            return GetDefaultValue(methodCookie);
+        }
+        return null;
+    }
+    private static native Object GetDefaultValue(Object methodCookie);
 }

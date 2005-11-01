@@ -851,6 +851,11 @@ namespace IKVM.Internal
 		}
 	}
 
+	abstract class Annotation
+	{
+		internal abstract void Apply(TypeBuilder tb, object annotation);
+	}
+
 	public abstract class TypeWrapper
 	{
 		private readonly ClassLoaderWrapper classLoader;
@@ -1463,7 +1468,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal TypeWrapper MakeArrayType(int rank)
+		internal virtual TypeWrapper MakeArrayType(int rank)
 		{
 			Debug.Assert(rank != 0);
 			// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
@@ -1956,6 +1961,33 @@ namespace IKVM.Internal
 		internal abstract string GetGenericFieldSignature(FieldWrapper fw);
 
 		internal abstract string[] GetEnclosingMethod();
+
+		internal virtual object[] GetDeclaredAnnotations()
+		{
+			return null;
+		}
+
+		internal virtual object GetAnnotationDefault(MethodWrapper mw)
+		{
+			MethodBase mb = mw.GetMethod();
+			if(mb != null)
+			{
+				object[] attr = mb.GetCustomAttributes(typeof(AnnotationDefaultAttribute), false);
+				if(attr.Length == 1)
+				{
+					return JVM.Library.newAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, ((AnnotationDefaultAttribute)attr[0]).Value);
+				}
+			}
+			return null;
+		}
+
+		internal virtual Annotation Annotation
+		{
+			get
+			{
+				return null;
+			}
+		}
 	}
 
 	class UnloadableTypeWrapper : TypeWrapper
@@ -2476,6 +2508,8 @@ namespace IKVM.Internal
 			internal abstract string[] GetEnclosingMethod();
 			internal abstract string GetGenericMethodSignature(int index);
 			internal abstract string GetGenericFieldSignature(int index);
+			internal abstract object[] GetDeclaredAnnotations();
+			internal abstract object GetMethodDefaultValue(int index);
 		}
 
 		private class JavaTypeImpl : DynamicImpl
@@ -2492,6 +2526,7 @@ namespace IKVM.Internal
 			private Hashtable classCache = new Hashtable();
 			private FieldInfo classObjectField;
 			private MethodBuilder clinitMethod;
+			private AnnotationBuilder annotationBuilder;
 
 			internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper)
 			{
@@ -2798,6 +2833,13 @@ namespace IKVM.Internal
 						clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
 						clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
 					}
+#if GENERICS
+					if(JVM.IsStaticCompiler && f.IsAnnotation)
+					{
+						annotationBuilder = new AnnotationBuilder(this);
+						((AotTypeWrapper)wrapper).SetAnnotation(annotationBuilder);
+					}
+#endif
 				}
 				catch(Exception x)
 				{
@@ -3682,12 +3724,57 @@ namespace IKVM.Internal
 					// See if there is any additional metadata
 					wrapper.EmitMapXmlMetadata(typeBuilder, classFile, fields, methods);
 
+					TypeBuilder enumBuilder = null;
 					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
 					{
 						// NOTE in Whidbey we can (and should) use CompilerGeneratedAttribute to mark Synthetic types
 						if((classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
 						{
 							AttributeHelper.SetModifiers(typeBuilder, classFile.Modifiers);
+						}
+
+//						// For Java 5 Enum types, we generate a nested .NET enum
+//						if(classFile.IsEnum)
+//						{
+//							// TODO if wrapper is inner class, the Enum should be defined as an innerclass as well
+//							enumBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(classFile.Name + "Enum", TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.Serializable, typeof(Enum));
+//							AttributeHelper.HideFromJava(enumBuilder);
+//							enumBuilder.DefineField("value__", typeof(int), FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
+//							for(int i = 0; i < classFile.Fields.Length; i++)
+//							{
+//								if(classFile.Fields[i].IsEnum)
+//								{
+//									FieldBuilder fieldBuilder = enumBuilder.DefineField(classFile.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
+//									fieldBuilder.SetConstant(i);
+//								}
+//							}
+//						}
+
+						if(classFile.Annotations != null)
+						{
+							foreach(object[] def in classFile.Annotations)
+							{
+								Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
+								string annotationClass = (string)def[1];
+								Annotation annotation = null;
+								try
+								{
+									TypeWrapper annot = wrapper.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'));
+									annotation = annot.Annotation;
+								}
+								catch(RetargetableJavaException)
+								{
+									Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
+								}
+								if(annotation == null)
+								{
+									// TODO figure out what to do here
+								}
+								else
+								{
+									annotation.Apply(typeBuilder, def);
+								}
+							}
 						}
 					}
 
@@ -3700,6 +3787,14 @@ namespace IKVM.Internal
 						{
 							tbFields.CreateType();
 						}
+						if(enumBuilder != null)
+						{
+							enumBuilder.CreateType();
+						}
+						if(annotationBuilder != null)
+						{
+							annotationBuilder.Finish(this);
+						}
 					}
 					finally
 					{
@@ -3708,48 +3803,7 @@ namespace IKVM.Internal
 					ClassLoaderWrapper.SetWrapperForType(type, wrapper);
 					wrapper.FinishGhostStep2();
 					BakedTypeCleanupHack.Process(wrapper);
-					string[] genericMetaData = null;
-					for(int i = 0; i < classFile.Methods.Length; i++)
-					{
-						if(classFile.Methods[i].GenericSignature != null)
-						{
-							if(genericMetaData == null)
-							{
-								genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
-							}
-							genericMetaData[i + 4] = classFile.Methods[i].GenericSignature;
-						}
-					}
-					for(int i = 0; i < classFile.Fields.Length; i++)
-					{
-						if(classFile.Fields[i].GenericSignature != null)
-						{
-							if(genericMetaData == null)
-							{
-								genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
-							}
-							genericMetaData[i + 4 + classFile.Methods.Length] = classFile.Fields[i].GenericSignature;
-						}
-					}
-					if(classFile.EnclosingMethod != null)
-					{
-						if(genericMetaData == null)
-						{
-							genericMetaData = new string[4];
-						}
-						genericMetaData[0] = classFile.EnclosingMethod[0];
-						genericMetaData[1] = classFile.EnclosingMethod[1];
-						genericMetaData[2] = classFile.EnclosingMethod[2];
-					}
-					if(classFile.GenericSignature != null)
-					{
-						if(genericMetaData == null)
-						{
-							genericMetaData = new string[4];
-						}
-						genericMetaData[3] = classFile.GenericSignature;
-					}
-					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers, genericMetaData);
+					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers, Metadata.Create(classFile));
 					return finishedType;
 				}
 				catch(Exception x)
@@ -3760,6 +3814,226 @@ namespace IKVM.Internal
 				finally
 				{
 					Profiler.Leave("JavaTypeImpl.Finish.Core");
+				}
+			}
+
+			private bool IsValidAnnotationElementType(string type)
+			{
+				if(type[0] == '[')
+				{
+					type = type.Substring(1);
+				}
+				switch(type)
+				{
+					case "Z":
+					case "B":
+					case "S":
+					case "C":
+					case "I":
+					case "J":
+					case "F":
+					case "D":
+					case "Ljava.lang.String;":
+					case "Ljava.lang.Class;":
+						return true;
+				}
+				if(type.StartsWith("L") && type.EndsWith(";"))
+				{
+					try
+					{
+						TypeWrapper tw = wrapper.GetClassLoader().LoadClassByDottedNameFast(type.Substring(1, type.Length - 2));
+						if(tw != null)
+						{
+							if((tw.Modifiers & Modifiers.Annotation) != 0)
+							{
+								return true;
+							}
+							if((tw.Modifiers & Modifiers.Enum) != 0)
+							{
+								TypeWrapper enumType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("java.lang.Enum");
+								if(enumType != null && tw.IsSubTypeOf(enumType))
+								{
+									return true;
+								}
+							}
+						}
+					}
+					catch
+					{
+					}
+				}
+				return false;
+			}
+
+			sealed class AnnotationBuilder : Annotation
+			{
+				private TypeBuilder annotationTypeBuilder;
+				private TypeBuilder attributeTypeBuilder;
+				private ConstructorBuilder defaultConstructor;
+				private ConstructorBuilder defineConstructor;
+
+				internal AnnotationBuilder(JavaTypeImpl o)
+				{
+					annotationTypeBuilder = o.typeBuilder;
+
+					// Make sure the annotation type only has valid methods
+					for(int i = 0; i < o.methods.Length; i++)
+					{
+						if(!o.methods[i].IsStatic)
+						{
+							if(!o.methods[i].Signature.StartsWith("()"))
+							{
+								return;
+							}
+							if(!o.IsValidAnnotationElementType(o.methods[i].Signature.Substring(2)))
+							{
+								return;
+							}
+						}
+					}
+
+					TypeWrapper annotationAttributeBaseType = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
+
+					// TODO attribute should be .NET serializable
+					TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.Sealed;
+					if(o.outerClassWrapper != null)
+					{
+						if(o.wrapper.IsPublic)
+						{
+							typeAttributes |= TypeAttributes.NestedPublic;
+						}
+						else
+						{
+							typeAttributes |= TypeAttributes.NestedAssembly;
+						}
+						attributeTypeBuilder = o.outerClassWrapper.TypeAsBuilder.DefineNestedType(GetInnerClassName(o.outerClassWrapper.Name, o.classFile.Name) + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+					}
+					else
+					{
+						if(o.wrapper.IsPublic)
+						{
+							typeAttributes |= TypeAttributes.Public;
+						}
+						else
+						{
+							typeAttributes |= TypeAttributes.NotPublic;
+						}
+						attributeTypeBuilder = o.wrapper.GetClassLoader().ModuleBuilder.DefineType(o.classFile.Name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+					}
+					if(o.wrapper.IsPublic)
+					{
+						// In the Java world, the class appears as a non-public proxy class
+						AttributeHelper.SetModifiers(attributeTypeBuilder, Modifiers.Final);
+					}
+					// NOTE we "abuse" the InnerClassAttribute to add a custom attribute to name the class "$Proxy[Annotation]" in the Java world
+					int dotindex = o.classFile.Name.LastIndexOf('.') + 1;
+					AttributeHelper.SetInnerClass(attributeTypeBuilder, o.classFile.Name.Substring(0, dotindex) + "$Proxy" + o.classFile.Name.Substring(dotindex), Modifiers.Final);
+					attributeTypeBuilder.AddInterfaceImplementation(o.typeBuilder);
+					CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(AnnotationAttributeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { attributeTypeBuilder.FullName });
+					o.typeBuilder.SetCustomAttribute(cab);
+
+					defaultConstructor = attributeTypeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
+					defineConstructor = attributeTypeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new Type[] { typeof(object[]) });
+				}
+
+				internal void Finish(JavaTypeImpl o)
+				{
+					TypeWrapper annotationAttributeBaseType = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
+					annotationAttributeBaseType.Finish();
+
+					ILGenerator ilgen = defaultConstructor.GetILGenerator();
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ldtoken, annotationTypeBuilder);
+					ilgen.Emit(OpCodes.Call, typeof(ByteCodeHelper).GetMethod("GetClassFromTypeHandle"));
+					CoreClasses.java.lang.Class.Wrapper.EmitCheckcast(null, ilgen);
+					annotationAttributeBaseType.GetMethodWrapper("<init>", "(Ljava.lang.Class;)V", false).EmitCall(ilgen);
+					ilgen.Emit(OpCodes.Ret);
+
+					ilgen = defineConstructor.GetILGenerator();
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Call, defaultConstructor);
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ldarg_1);
+					annotationAttributeBaseType.GetMethodWrapper("setDefinition", "([Ljava.lang.Object;)V", false).EmitCall(ilgen);
+					ilgen.Emit(OpCodes.Ret);
+
+					MethodWrapper getValueMethod = annotationAttributeBaseType.GetMethodWrapper("getValue", "(Ljava.lang.String;)Ljava.lang.Object;", false);
+					MethodWrapper getByteValueMethod = annotationAttributeBaseType.GetMethodWrapper("getByteValue", "(Ljava.lang.String;)B", false);
+					MethodWrapper getBooleanValueMethod = annotationAttributeBaseType.GetMethodWrapper("getBooleanValue", "(Ljava.lang.String;)Z", false);
+					MethodWrapper getCharValueMethod = annotationAttributeBaseType.GetMethodWrapper("getCharValue", "(Ljava.lang.String;)C", false);
+					MethodWrapper getShortValueMethod = annotationAttributeBaseType.GetMethodWrapper("getShortValue", "(Ljava.lang.String;)S", false);
+					MethodWrapper getIntValueMethod = annotationAttributeBaseType.GetMethodWrapper("getIntValue", "(Ljava.lang.String;)I", false);
+					MethodWrapper getFloatValueMethod = annotationAttributeBaseType.GetMethodWrapper("getFloatValue", "(Ljava.lang.String;)F", false);
+					MethodWrapper getLongValueMethod = annotationAttributeBaseType.GetMethodWrapper("getLongValue", "(Ljava.lang.String;)J", false);
+					MethodWrapper getDoubleValueMethod = annotationAttributeBaseType.GetMethodWrapper("getDoubleValue", "(Ljava.lang.String;)D", false);
+					for(int i = 0; i < o.methods.Length; i++)
+					{
+						// skip <clinit>
+						if(!o.methods[i].IsStatic)
+						{
+							MethodBuilder mb = attributeTypeBuilder.DefineMethod(o.methods[i].Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot, o.methods[i].ReturnTypeForDefineMethod, o.methods[i].GetParametersForDefineMethod());
+							ilgen = mb.GetILGenerator();
+							ilgen.Emit(OpCodes.Ldarg_0);
+							ilgen.Emit(OpCodes.Ldstr, o.methods[i].Name);
+							if(o.methods[i].ReturnType.IsPrimitive)
+							{
+								if(o.methods[i].ReturnType == PrimitiveTypeWrapper.BYTE)
+								{
+									getByteValueMethod.EmitCall(ilgen);
+								}
+								else if(o.methods[i].ReturnType == PrimitiveTypeWrapper.BOOLEAN)
+								{
+									getBooleanValueMethod.EmitCall(ilgen);
+								}
+								else if(o.methods[i].ReturnType == PrimitiveTypeWrapper.CHAR)
+								{
+									getCharValueMethod.EmitCall(ilgen);
+								}
+								else if(o.methods[i].ReturnType == PrimitiveTypeWrapper.SHORT)
+								{
+									getShortValueMethod.EmitCall(ilgen);
+								}
+								else if(o.methods[i].ReturnType == PrimitiveTypeWrapper.INT)
+								{
+									getIntValueMethod.EmitCall(ilgen);
+								}
+								else if(o.methods[i].ReturnType == PrimitiveTypeWrapper.FLOAT)
+								{
+									getFloatValueMethod.EmitCall(ilgen);
+								}
+								else if(o.methods[i].ReturnType == PrimitiveTypeWrapper.LONG)
+								{
+									getLongValueMethod.EmitCall(ilgen);
+								}
+								else if(o.methods[i].ReturnType == PrimitiveTypeWrapper.DOUBLE)
+								{
+									getDoubleValueMethod.EmitCall(ilgen);
+								}
+								else if(o.methods[i].ReturnType == PrimitiveTypeWrapper.VOID)
+								{
+									// TODO what to do here?
+									ilgen.Emit(OpCodes.Pop);
+									ilgen.Emit(OpCodes.Pop);
+								}
+								else
+								{
+									throw new InvalidOperationException();
+								}
+							}
+							else
+							{
+								getValueMethod.EmitCall(ilgen);
+								o.methods[i].ReturnType.EmitCheckcast(null, ilgen);
+							}
+							ilgen.Emit(OpCodes.Ret);
+						}
+					}
+					attributeTypeBuilder.CreateType();
+				}
+
+				internal override void Apply(TypeBuilder tb, object annotation)
+				{
+					tb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 				}
 			}
 
@@ -4498,6 +4772,11 @@ namespace IKVM.Internal
 								ilgen.MarkLabel(skip);
 								ilgen.Emit(OpCodes.Ret);
 							}
+							if(JVM.IsStaticCompiler && classFile.Methods[index].AnnotationDefault != null)
+							{
+								CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(AnnotationDefaultAttribute).GetConstructor(new Type[] { typeof(object) }), new object[] { classFile.Methods[index].AnnotationDefault });
+								mb.SetCustomAttribute(cab);
+							}
 						}
 						wrapper.AddParameterNames(classFile, m, mb);
 						method = mb;
@@ -4644,6 +4923,224 @@ namespace IKVM.Internal
 				Debug.Fail("Unreachable code");
 				return null;
 			}
+
+			internal override object[] GetDeclaredAnnotations()
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+
+			internal override object GetMethodDefaultValue(int index)
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+		}
+
+		private sealed class Metadata
+		{
+			private string[] genericMetaData;
+			private object[][] annotations;
+
+			private Metadata(string[] genericMetaData, object[][] annotations)
+			{
+				this.genericMetaData = genericMetaData;
+				this.annotations = annotations;
+			}
+
+			internal static Metadata Create(ClassFile classFile)
+			{
+				if(classFile.MajorVersion < 49)
+				{
+					return null;
+				}
+				string[] genericMetaData = null;
+				object[][] annotations = null;
+				for(int i = 0; i < classFile.Methods.Length; i++)
+				{
+					if(classFile.Methods[i].GenericSignature != null)
+					{
+						if(genericMetaData == null)
+						{
+							genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
+						}
+						genericMetaData[i + 4] = classFile.Methods[i].GenericSignature;
+					}
+					if(classFile.Methods[i].Annotations != null)
+					{
+						if(annotations == null)
+						{
+							annotations = new object[5][];
+						}
+						if(annotations[1] == null)
+						{
+							annotations[1] = new object[classFile.Methods.Length];
+						}
+						annotations[1][i] = classFile.Methods[i].Annotations;
+					}
+					if(classFile.Methods[i].ParameterAnnotations != null)
+					{
+						if(annotations == null)
+						{
+							annotations = new object[5][];
+						}
+						if(annotations[2] == null)
+						{
+							annotations[2] = new object[classFile.Methods.Length];
+						}
+						annotations[2][i] = classFile.Methods[i].ParameterAnnotations;
+					}
+					if(classFile.Methods[i].AnnotationDefault != null)
+					{
+						if(annotations == null)
+						{
+							annotations = new object[5][];
+						}
+						if(annotations[3] == null)
+						{
+							annotations[3] = new object[classFile.Methods.Length];
+						}
+						annotations[3][i] = classFile.Methods[i].AnnotationDefault;
+					}
+				}
+				for(int i = 0; i < classFile.Fields.Length; i++)
+				{
+					if(classFile.Fields[i].GenericSignature != null)
+					{
+						if(genericMetaData == null)
+						{
+							genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
+						}
+						genericMetaData[i + 4 + classFile.Methods.Length] = classFile.Fields[i].GenericSignature;
+					}
+					if(classFile.Fields[i].Annotations != null)
+					{
+						if(annotations == null)
+						{
+							annotations = new object[5][];
+						}
+						if(annotations[4] == null)
+						{
+							annotations[4] = new object[classFile.Fields.Length][];
+						}
+						annotations[4][i] = classFile.Fields[i].Annotations;
+					}
+				}
+				if(classFile.EnclosingMethod != null)
+				{
+					if(genericMetaData == null)
+					{
+						genericMetaData = new string[4];
+					}
+					genericMetaData[0] = classFile.EnclosingMethod[0];
+					genericMetaData[1] = classFile.EnclosingMethod[1];
+					genericMetaData[2] = classFile.EnclosingMethod[2];
+				}
+				if(classFile.GenericSignature != null)
+				{
+					if(genericMetaData == null)
+					{
+						genericMetaData = new string[4];
+					}
+					genericMetaData[3] = classFile.GenericSignature;
+				}
+				if(classFile.Annotations != null)
+				{
+					if(annotations == null)
+					{
+						annotations = new object[5][];
+					}
+					annotations[0] = classFile.Annotations;
+				}
+				if(genericMetaData != null || annotations != null)
+				{
+					return new Metadata(genericMetaData, annotations);
+				}
+				return null;
+			}
+
+			internal static string GetGenericSignature(Metadata m)
+			{
+				if(m != null && m.genericMetaData != null)
+				{
+					return m.genericMetaData[3];
+				}
+				return null;
+			}
+
+			internal static string[] GetEnclosingMethod(Metadata m)
+			{
+				if(m != null && m.genericMetaData != null && m.genericMetaData[0] != null)
+				{
+					return new string[] { m.genericMetaData[0], m.genericMetaData[1], m.genericMetaData[2] };
+				}
+				return null;
+			}
+
+			internal static string GetGenericMethodSignature(Metadata m, int index)
+			{
+				if(m != null && m.genericMetaData != null)
+				{
+					return m.genericMetaData[index + 4];
+				}
+				return null;
+			}
+
+			// note that the caller is responsible for computing the correct index (field index + method count)
+			internal static string GetGenericFieldSignature(Metadata m, int index)
+			{
+				if(m != null && m.genericMetaData != null)
+				{
+					return m.genericMetaData[index + 4];
+				}
+				return null;
+			}
+
+			internal static object[] GetAnnotations(Metadata m)
+			{
+				if(m != null && m.annotations != null)
+				{
+					return m.annotations[0];
+				}
+				return null;
+			}
+
+			internal static object[] GetMethodAnnotations(Metadata m, int index)
+			{
+				if(m != null && m.annotations != null && m.annotations[1] != null)
+				{
+					return (object[])m.annotations[1][index];
+				}
+				return null;
+			}
+
+			internal static object[][] GetMethodParameterAnnotations(Metadata m, int index)
+			{
+				if(m != null && m.annotations != null && m.annotations[2] != null)
+				{
+					return (object[][])m.annotations[2][index];
+				}
+				return null;
+			}
+
+			internal static object GetMethodDefaultValue(Metadata m, int index)
+			{
+				if(m != null && m.annotations != null && m.annotations[3] != null)
+				{
+					return m.annotations[3][index];
+				}
+				return null;
+			}
+
+			// note that unlike GetGenericFieldSignature, the index is simply the field index 
+			internal static object[] GetFieldAnnotations(Metadata m, int index)
+			{
+				if(m != null && m.annotations != null && m.annotations[3] != null)
+				{
+					return (object[])m.annotations[4][index];
+				}
+				return null;
+			}
 		}
 	
 		private class FinishedTypeImpl : DynamicImpl
@@ -4653,16 +5150,16 @@ namespace IKVM.Internal
 			private TypeWrapper declaringTypeWrapper;
 			private Modifiers reflectiveModifiers;
 			private MethodInfo clinitMethod;
-			private string[] genericMetaData;	/* [0..2] = enclosing method, [3] = class signature, [4..n] = method signatures */
+			private Metadata metadata;
 
-			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, string[] genericMetaData)
+			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata)
 			{
 				this.type = type;
 				this.innerclasses = innerclasses;
 				this.declaringTypeWrapper = declaringTypeWrapper;
 				this.reflectiveModifiers = reflectiveModifiers;
 				this.clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-				this.genericMetaData = genericMetaData;
+				this.metadata = metadata;
 			}
 
 			internal override TypeWrapper[] InnerClasses
@@ -4728,39 +5225,33 @@ namespace IKVM.Internal
 
 			internal override string GetGenericSignature()
 			{
-				if(genericMetaData != null)
-				{
-					return genericMetaData[3];
-				}
-				return null;
+				return Metadata.GetGenericSignature(metadata);
 			}
 
 			internal override string[] GetEnclosingMethod()
 			{
-				if(genericMetaData != null && genericMetaData[0] != null)
-				{
-					return new string[] { genericMetaData[0], genericMetaData[1], genericMetaData[2] };
-				}
-				return null;
+				return Metadata.GetEnclosingMethod(metadata);
 			}
 
 			internal override string GetGenericMethodSignature(int index)
 			{
-				if(genericMetaData != null)
-				{
-					return genericMetaData[index + 4];
-				}
-				return null;
+				return Metadata.GetGenericMethodSignature(metadata, index);
 			}
 
 			// note that the caller is responsible for computing the correct index (field index + method count)
 			internal override string GetGenericFieldSignature(int index)
 			{
-				if(genericMetaData != null)
-				{
-					return genericMetaData[index + 4];
-				}
-				return null;
+				return Metadata.GetGenericFieldSignature(metadata, index);
+			}
+
+			internal override object[] GetDeclaredAnnotations()
+			{
+				return Metadata.GetAnnotations(metadata);
+			}
+
+			internal override object GetMethodDefaultValue(int index)
+			{
+				return Metadata.GetMethodDefaultValue(metadata, index);
 			}
 		}
 
@@ -5042,6 +5533,31 @@ namespace IKVM.Internal
 		{
 			return impl.GetEnclosingMethod();
 		}
+
+		internal override object[] GetDeclaredAnnotations()
+		{
+			object[] annotations = impl.GetDeclaredAnnotations();
+			object[] objs = new object[annotations.Length];
+			for(int i = 0; i < annotations.Length; i++)
+			{
+				objs[i] = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[i]);
+			}
+			return objs;
+		}
+
+		internal override object GetAnnotationDefault(MethodWrapper mw)
+		{
+			MethodWrapper[] methods = GetMethods();
+			for(int i = 0; i < methods.Length; i++)
+			{
+				if(methods[i] == mw)
+				{
+					return JVM.Library.newAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, impl.GetMethodDefaultValue(i));
+				}
+			}
+			Debug.Fail("Unreachable code");
+			return null;
+		}
 	}
 
 #if !NO_STATIC_COMPILER
@@ -5053,6 +5569,7 @@ namespace IKVM.Internal
 		private MethodBuilder ghostCastMethod;
 		private MethodBuilder ghostCastArrayMethod;
 		private TypeBuilder typeBuilderGhostInterface;
+		private Annotation annotation;
 		private static Hashtable ghosts;
 		private static TypeWrapper[] mappedExceptions;
 		private static bool[] mappedExceptionsAllSubClasses;
@@ -6027,6 +6544,19 @@ namespace IKVM.Internal
 				base.EmitInstanceOf(context, ilgen);
 			}
 		}
+
+		internal void SetAnnotation(Annotation annotation)
+		{
+			this.annotation = annotation;
+		}
+
+		internal override Annotation Annotation
+		{
+			get
+			{
+				return annotation;
+			}
+		}
 	}
 #endif
 
@@ -6260,6 +6790,13 @@ namespace IKVM.Internal
 				}
 				return ClassLoaderWrapper.GetWrapperFromType(type.BaseType);
 			}
+		}
+
+		internal override TypeWrapper MakeArrayType(int rank)
+		{
+			Debug.Assert(rank != 0);
+			// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
+			return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(new String('[', rank) + this.SigName);
 		}
 
 		private static ClassLoaderWrapper GetClassLoader(Type type)
@@ -6824,6 +7361,44 @@ namespace IKVM.Internal
 			}
 			return null;
 		}
+
+		internal override object[] GetDeclaredAnnotations()
+		{
+			return type.GetCustomAttributes(false);
+		}
+
+		private class CompiledAnnotation : Annotation
+		{
+			private Type type;
+
+			internal CompiledAnnotation(Type type)
+			{
+				this.type = type;
+			}
+
+			internal override void Apply(TypeBuilder tb, object annotation)
+			{
+				// TODO set the properties
+				tb.SetCustomAttribute(new CustomAttributeBuilder(type.GetConstructor(Type.EmptyTypes), new object[0]));
+			}
+		}
+
+		internal override Annotation Annotation
+		{
+			get
+			{
+				object[] attr = type.GetCustomAttributes(typeof(AnnotationAttributeAttribute), false);
+				if(attr.Length == 1)
+				{
+					Type annotationAttribute = type.Assembly.GetType(((AnnotationAttributeAttribute)attr[0]).AttributeType);
+					if(annotationAttribute != null)
+					{
+						return new CompiledAnnotation(annotationAttribute);
+					}
+				}
+				return null;
+			}
+		}
 	}
 
 	sealed class Whidbey
@@ -7134,6 +7709,13 @@ namespace IKVM.Internal
 		internal override ClassLoaderWrapper GetClassLoader()
 		{
 			return ClassLoaderWrapper.GetSystemClassLoader();
+		}
+
+		internal override TypeWrapper MakeArrayType(int rank)
+		{
+			Debug.Assert(rank != 0);
+			// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
+			return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(new String('[', rank) + this.SigName);
 		}
 
 		private class DelegateMethodWrapper : MethodWrapper
@@ -7968,6 +8550,11 @@ namespace IKVM.Internal
 		internal override string[] GetEnclosingMethod()
 		{
 			return null;
+		}
+
+		internal override object[] GetDeclaredAnnotations()
+		{
+			return type.GetCustomAttributes(false);
 		}
 	}
 

@@ -3614,6 +3614,7 @@ gnu/java/nio/SelectorImpl.java
 gnu/java/nio/ServerSocketChannelSelectionKey.java
 gnu/java/nio/SocketChannelSelectionKey.java
 gnu/java/nio/VMPipe.java
+generics/ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/LibraryVMInterface.java
 ikvm/lang/CIL.java
 java/io/VMFile.java
@@ -3646,3 +3647,4 @@ java/security/VMAccessController.java
 java/util/LocaleData.java
 java/util/VMTimeZone.java
 sun/misc/Ref.java
+generics/sun/reflect/annotation/AnnotationInvocationHandler.java

@@ -303,7 +303,16 @@ namespace IKVM.Internal
 						type = LoadClassByDottedNameFast(elemClass);
 						if(type != null)
 						{
-							type = type.GetClassLoader().CreateArrayType(name, type, dims);
+							// HACK make sure we don't go through a user class loader when creating
+							// an array for a precompiled or .NET type
+							if (type is DynamicTypeWrapper)
+							{
+								type = type.GetClassLoader().CreateArrayType(name, type, dims);
+							}
+							else
+							{
+								type = GetBootstrapClassLoader().CreateArrayType(name, type, dims);
+							}
 						}
 						return RegisterInitiatingLoader(type);
 					}

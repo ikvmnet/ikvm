@@ -2597,7 +2597,7 @@ class MethodAnalyzer
 							instructions[i + 1].flags |= InstructionFlags.Reachable;
 							break;
 						case NormalizedByteCode.__jsr:
-							// TODO should we check for unitialized objects?
+							state[i].CheckUninitializedObjRefs();
 							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
 							didJsrOrRet = true;
 							break;

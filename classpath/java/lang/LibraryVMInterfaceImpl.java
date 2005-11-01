@@ -28,7 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-
+import ikvm.internal.AnnotationAttributeBase;
 import ikvm.lang.CIL;
 
 class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
@@ -220,6 +220,24 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
     public boolean runFinalizersOnExit()
     {
         return VMRuntime.runFinalizersOnExitFlag;
+    }
+
+    public Object newAnnotation(Object classLoader, Object definition)
+    {
+        return AnnotationAttributeBase.newAnnotation((ClassLoader)classLoader, definition);
+    }
+
+    public Object newAnnotationElementValue(Object classLoader, Object expectedClass, Object definition)
+    {
+        try
+        {
+            return AnnotationAttributeBase.decodeElementValue(definition, (Class)expectedClass, (ClassLoader)classLoader);
+        }
+        catch (IllegalAccessException x)
+        {
+            // TODO this shouldn't be here
+            return null;
+        }
     }
 
     public Throwable newIllegalAccessError(String msg)

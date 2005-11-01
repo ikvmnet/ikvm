@@ -28,6 +28,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import cli.System.Type;
 
 abstract class VMClass 
@@ -211,6 +212,7 @@ abstract class VMClass
       {
 	return getSimpleName(getComponentType(clazz)) + "[]";
       }
+    // TODO instead of this hack, we should figure out the proper way to do this
     String fullName = getName(clazz);
     return fullName.substring(Math.max(fullName.lastIndexOf("."), fullName.lastIndexOf("$")) + 1);
   }
@@ -227,7 +229,28 @@ abstract class VMClass
       }
   }
 
-  static Annotation[] getDeclaredAnnotations(Class clazz) { throw new Error("Not implemented"); }
+  static Annotation[] getDeclaredAnnotations(Class clazz)
+  {
+    Object[] annotations = GetDeclaredAnnotations(clazz.vmdata);
+    if (annotations == null)
+    {
+        return new Annotation[0];
+    }
+    // For the time being we filter out the .NET attributes
+    // (that don't implement Annotation)
+    ArrayList list = new ArrayList(annotations.length);
+    for(int i = 0; i < annotations.length; i++)
+    {
+        if(annotations[i] instanceof Annotation)
+        {
+            list.add(annotations[i]);
+        }
+    }
+    Annotation[] ar = new Annotation[list.size()];
+    list.toArray(ar);
+    return ar;
+  }
+  private static native Object[] GetDeclaredAnnotations(Object wrapper);
 
   static String getCanonicalName(Class clazz)
   {

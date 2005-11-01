@@ -58,6 +58,7 @@ namespace IKVM.Internal
 		private string[] enclosingMethod;
 		private string ikvmAssembly;
 		private InnerClass[] innerClasses;
+		private object[] annotations;
 
 		private class SupportedVersions
 		{
@@ -221,7 +222,9 @@ namespace IKVM.Internal
 				// NOTE although the vmspec says (in 4.1) that interfaces must be marked abstract, earlier versions of
 				// javac (JDK 1.1) didn't do this, so the VM doesn't enforce this rule
 				// NOTE although the vmspec implies (in 4.1) that ACC_SUPER is illegal on interfaces, it doesn't enforce this
-				if((IsInterface && IsFinal) || (IsAbstract && IsFinal))
+				if((IsInterface && IsFinal)
+					|| (IsAbstract && IsFinal)
+					|| (majorVersion >= 49 && IsAnnotation && !IsInterface))
 				{
 					throw new ClassFormatError("{0} (Illegal class modifiers 0x{1:X})", inputClassName, access_flags);
 				}
@@ -268,7 +271,7 @@ namespace IKVM.Internal
 				{
 					fields[i] = new Field(this, br);
 					string name = fields[i].Name;
-					if(!IsValidIdentifier(name))
+					if(!IsValidFieldName(name))
 					{
 						throw new ClassFormatError("{0} (Illegal field name \"{1}\")", Name, name);
 					}
@@ -287,7 +290,7 @@ namespace IKVM.Internal
 					methods[i] = new Method(this, br);
 					string name = methods[i].Name;
 					string sig = methods[i].Signature;
-					if(!IsValidIdentifier(name) && name != "<init>" && name != "<clinit>")
+					if(!IsValidMethodName(name) && name != "<init>" && name != "<clinit>")
 					{
 						throw new ClassFormatError("{0} (Illegal method name \"{1}\")", Name, name);
 					}
@@ -320,6 +323,7 @@ namespace IKVM.Internal
 							sourceFile = GetConstantPoolUtf8String(br.ReadUInt16());
 							break;
 						case "InnerClasses":
+						{
 							// Sun totally ignores the length of InnerClasses attribute,
 							// so when we're running Fuzz this used to show up as lots of differences,
 							// now we do the same.
@@ -351,6 +355,8 @@ namespace IKVM.Internal
 								}
 							}
 							break;
+						}
+#if GENERICS
 						case "Signature":
 							if(majorVersion < 49)
 							{
@@ -394,6 +400,14 @@ namespace IKVM.Internal
 								}
 							}
 							break;
+						case "RuntimeVisibleAnnotations":
+							if(majorVersion < 49)
+							{
+								goto default;
+							}
+							annotations = ReadAnnotations(br, this);
+							break;
+#endif
 						case "IKVM.NET.Assembly":
 							if(br.ReadUInt32() != 2)
 							{
@@ -433,6 +447,93 @@ namespace IKVM.Internal
 			//		}
 		}
 
+		private static object[] ReadAnnotations(BigEndianBinaryReader br, ClassFile classFile)
+		{
+			BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
+			ushort num_annotations = rdr.ReadUInt16();
+			object[] annotations = new object[num_annotations];
+			for(int i = 0; i < annotations.Length; i++)
+			{
+				annotations[i] = ReadAnnotation(rdr, classFile);
+			}
+			if(!rdr.IsAtEnd)
+			{
+				throw new ClassFormatError("{0} (RuntimeVisibleAnnotations attribute has wrong length)", classFile.Name);
+			}
+			return annotations;
+		}
+
+		private static object ReadAnnotation(BigEndianBinaryReader rdr, ClassFile classFile)
+		{
+			string type = classFile.GetConstantPoolUtf8String(rdr.ReadUInt16());
+			ushort num_element_value_pairs = rdr.ReadUInt16();
+			object[] annot = new object[2 + num_element_value_pairs * 2];
+			annot[0] = AnnotationDefaultAttribute.TAG_ANNOTATION;
+			annot[1] = type;
+			for(int i = 0; i < num_element_value_pairs; i++)
+			{
+				annot[2 + i * 2 + 0] = classFile.GetConstantPoolUtf8String(rdr.ReadUInt16());
+				annot[2 + i * 2 + 1] = ReadAnnotationElementValue(rdr, classFile);
+			}
+			return annot;
+		}
+
+		private static object ReadAnnotationElementValue(BigEndianBinaryReader rdr, ClassFile classFile)
+		{
+			byte tag = rdr.ReadByte();
+			switch(tag)
+			{
+				case (byte)'Z':
+					return classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16()) != 0;
+				case (byte)'B':
+					return (byte)classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
+				case (byte)'C':
+					return (char)classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
+				case (byte)'S':
+					return (short)classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
+				case (byte)'I':
+					return classFile.GetConstantPoolConstantInteger(rdr.ReadUInt16());
+				case (byte)'F':
+					return classFile.GetConstantPoolConstantFloat(rdr.ReadUInt16());
+				case (byte)'J':
+					return classFile.GetConstantPoolConstantLong(rdr.ReadUInt16());
+				case (byte)'D':
+					return classFile.GetConstantPoolConstantDouble(rdr.ReadUInt16());
+				case (byte)'s':
+					return classFile.GetConstantPoolUtf8String(rdr.ReadUInt16());
+				case (byte)'e':
+				{
+					ushort type_name_index = rdr.ReadUInt16();
+					ushort const_name_index = rdr.ReadUInt16();
+					return new object[] {
+											AnnotationDefaultAttribute.TAG_ENUM,
+											classFile.GetConstantPoolUtf8String(type_name_index),
+											classFile.GetConstantPoolUtf8String(const_name_index)
+										};
+				}
+				case (byte)'c':
+					return new object[] {
+											AnnotationDefaultAttribute.TAG_CLASS,
+											classFile.GetConstantPoolUtf8String(rdr.ReadUInt16())
+										};
+				case (byte)'@':
+					return ReadAnnotation(rdr, classFile);
+				case (byte)'[':
+				{
+					ushort num_values = rdr.ReadUInt16();
+					object[] array = new object[num_values + 1];
+					array[0] = AnnotationDefaultAttribute.TAG_ARRAY;
+					for(int i = 0; i < num_values; i++)
+					{
+						array[i + 1] = ReadAnnotationElementValue(rdr, classFile);
+					}
+					return array;
+				}
+				default:
+					throw new ClassFormatError("Invalid tag {0} in annotation element_value", tag);
+			}
+		}
+
 		private void ValidateConstantPoolItemClass(string classFile, ushort index)
 		{
 			if(index >= constantpool.Length || !(constantpool[index] is ConstantPoolItemClass))
@@ -441,7 +542,39 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static bool IsValidIdentifier(string name)
+		private static bool IsValidMethodName(string name)
+		{
+			if(name.Length == 0)
+			{
+				return false;
+			}
+			for(int i = 0; i < name.Length; i++)
+			{
+				if(".;[/<>".IndexOf(name[i]) != -1)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
+		private static bool IsValidFieldName(string name)
+		{
+			if(name.Length == 0)
+			{
+				return false;
+			}
+			for(int i = 0; i < name.Length; i++)
+			{
+				if(".;[/".IndexOf(name[i]) != -1)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
+		private static bool IsValidClassName(string name)
 		{
 			if(name.Length == 0)
 			{
@@ -617,6 +750,22 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal bool IsEnum
+		{
+			get
+			{
+				return (access_flags & Modifiers.Enum) != 0;
+			}
+		}
+
+		internal bool IsAnnotation
+		{
+			get
+			{
+				return (access_flags & Modifiers.Annotation) != 0;
+			}
+		}
+
 		internal bool IsSuper
 		{
 			get
@@ -777,6 +926,14 @@ namespace IKVM.Internal
 			get
 			{
 				return sourceFile;
+			}
+		}
+
+		internal object[] Annotations
+		{
+			get
+			{
+				return annotations;
 			}
 		}
 
@@ -1182,7 +1339,7 @@ namespace IKVM.Internal
 				{
 					throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
 				}
-				if(!IsValidIdentifier(name))
+				if(!IsValidFieldName(name))
 				{
 					throw new ClassFormatError("Invalid field name \"{0}\"", name);
 				}
@@ -1254,7 +1411,7 @@ namespace IKVM.Internal
 						throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
 					}
 				}
-				else if(!IsValidIdentifier(name))
+				else if(!IsValidMethodName(name))
 				{
 					throw new ClassFormatError("Invalid method name \"{0}\"", name);
 				}
@@ -1500,6 +1657,7 @@ namespace IKVM.Internal
 			private string descriptor;
 			protected bool deprecated;
 			protected string signature;
+			protected object[] annotations;
 
 			internal FieldOrMethod(ClassFile classFile, BigEndianBinaryReader br)
 			{
@@ -1525,6 +1683,14 @@ namespace IKVM.Internal
 				get
 				{
 					return descriptor;
+				}
+			}
+
+			internal object[] Annotations
+			{
+				get
+				{
+					return annotations;
 				}
 			}
 
@@ -1624,6 +1790,14 @@ namespace IKVM.Internal
 				}
 			}
 
+			internal bool IsEnum
+			{
+				get
+				{
+					return (access_flags & Modifiers.Enum) != 0;
+				}
+			}
+
 			internal bool DeprecatedAttribute
 			{
 				get
@@ -1714,6 +1888,7 @@ namespace IKVM.Internal
 							}
 							break;
 						}
+#if GENERICS
 						case "Signature":
 							if(classFile.majorVersion < 49)
 							{
@@ -1725,6 +1900,14 @@ namespace IKVM.Internal
 							}
 							signature = classFile.GetConstantPoolUtf8String(br.ReadUInt16());
 							break;
+						case "RuntimeVisibleAnnotations":
+							if(classFile.majorVersion < 49)
+							{
+								goto default;
+							}
+							annotations = ReadAnnotations(br, classFile);
+							break;
+#endif
 						default:
 							br.Skip(br.ReadUInt32());
 							break;
@@ -1753,6 +1936,7 @@ namespace IKVM.Internal
 		{
 			private Code code;
 			private string[] exceptions;
+			private object annotationDefault;
 
 			internal Method(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
 			{
@@ -1816,6 +2000,7 @@ namespace IKVM.Internal
 							}
 							break;
 						}
+#if GENERICS
 						case "Signature":
 							if(classFile.majorVersion < 49)
 							{
@@ -1827,6 +2012,28 @@ namespace IKVM.Internal
 							}
 							signature = classFile.GetConstantPoolUtf8String(br.ReadUInt16());
 							break;
+						case "RuntimeVisibleAnnotations":
+							if(classFile.majorVersion < 49)
+							{
+								goto default;
+							}
+							annotations = ReadAnnotations(br, classFile);
+							break;
+						case "AnnotationDefault":
+						{
+							if(classFile.majorVersion < 49)
+							{
+								goto default;
+							}
+							BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
+							annotationDefault = ReadAnnotationElementValue(rdr, classFile);
+							if(!rdr.IsAtEnd)
+							{
+								throw new ClassFormatError("{0} (AnnotationDefault attribute has wrong length)", classFile.Name);
+							}
+							break;
+						}
+#endif
 						default:
 							br.Skip(br.ReadUInt32());
 							break;
@@ -1883,6 +2090,23 @@ namespace IKVM.Internal
 				get
 				{
 					return exceptions;
+				}
+			}
+
+			internal object[][] ParameterAnnotations
+			{
+				get
+				{
+					// TODO
+					return null;
+				}
+			}
+
+			internal object AnnotationDefault
+			{
+				get
+				{
+					return annotationDefault;
 				}
 			}
 

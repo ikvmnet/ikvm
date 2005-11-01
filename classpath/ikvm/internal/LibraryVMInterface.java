@@ -59,6 +59,9 @@ public interface LibraryVMInterface
 
     boolean runFinalizersOnExit();
 
+    Object newAnnotation(Object classLoader, Object definition);
+    Object newAnnotationElementValue(Object classLoader, Object expectedClass, Object definition);
+
     Throwable newIllegalAccessError(String msg);
     Throwable newIllegalAccessException(String msg);
     Throwable newIncompatibleClassChangeError(String msg);

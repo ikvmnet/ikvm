@@ -123,6 +123,12 @@ namespace IKVM.NativeCode.java
 					return wrapper.DeclaringType.GetGenericMethodSignature(wrapper);
 				}
 
+				public static object GetDefaultValue(Object methodCookie)
+				{
+					MethodWrapper wrapper = (MethodWrapper)methodCookie;
+					return wrapper.DeclaringType.GetAnnotationDefault(wrapper);
+				}
+
 				[HideFromJava]
 				public static object Invoke(object methodCookie, object o, object[] args)
 				{
@@ -1103,6 +1109,12 @@ namespace IKVM.NativeCode.java
 					throw x.ToJava();
 				}
 			}
+
+			public static object[] GetDeclaredAnnotations(object cwrapper)
+			{
+				TypeWrapper wrapper = (TypeWrapper)cwrapper;
+				return wrapper.GetDeclaredAnnotations();
+			}
 		}
 	}
 
@@ -1372,6 +1384,9 @@ namespace ikvm.@internal
 		void setProperties(System.Collections.Hashtable props);
 
 		bool runFinalizersOnExit();
+
+		object newAnnotation(object classLoader, object definition);
+		object newAnnotationElementValue(object classLoader, object expectedClass, object definition);
 
 		Exception newIllegalAccessError(string msg);
 		Exception newIllegalAccessException(string msg);
