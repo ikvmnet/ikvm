@@ -74,6 +74,7 @@ package java.lang.ref;
 public abstract class Reference
 {
     private volatile cli.System.WeakReference referent;
+    private volatile Object keepAlive;
 
     /**
      * The queue this reference is registered on. This is null, if this
@@ -98,10 +99,7 @@ public abstract class Reference
      */
     Reference(Object ref)
     {
-        if (ref != null)
-        {
-	    referent = new cli.System.WeakReference(ref);
-        }
+        this(ref, null, true);
     }
 
     /**
@@ -114,50 +112,93 @@ public abstract class Reference
      */
     Reference(Object ref, ReferenceQueue q)
     {
-	if (q == null)
-	    throw new NullPointerException();
+        this(ref, q, false);
+    }
+
+    private Reference(Object ref, ReferenceQueue q, boolean allowNullQueue)
+    {
+        if (q == null && !allowNullQueue)
+            throw new NullPointerException();
         queue = q;
         if (ref != null)
         {
             referent = new cli.System.WeakReference(ref, this instanceof PhantomReference);
-	    new QueueWatcher();
+            if (this instanceof SoftReference && 
+                cli.System.GC.GetGeneration(ref) < cli.System.GC.get_MaxGeneration())
+            {
+                keepAlive = ref;
+            }
+            if (q != null || keepAlive != null)
+            {
+                new QueueWatcher();
+            }
         }
     }
 
+    private static final boolean debug = false;
+
     private class QueueWatcher
     {
-	protected void finalize()
-	{
-	    boolean alive = false;
-	    try
-	    {
-		if(false) throw new cli.System.InvalidOperationException();
+        boolean check()
+        {
+            Object keepAliveCopy = keepAlive;
+            if (keepAliveCopy != null &&
+                cli.System.GC.GetGeneration(keepAliveCopy) == cli.System.GC.get_MaxGeneration())
+            {
+                if (debug)
+                    cli.System.Console.WriteLine("Clearing keep alive: " + hashCode());
+                keepAlive = null;
+            }
+            boolean alive = false;
+            try
+            {
+                if(false) throw new cli.System.InvalidOperationException();
                 cli.System.WeakReference referent = Reference.this.referent;
                 if (referent == null)
                 {
                     // ref was explicitly cleared, so we don't enqueue
-                    return;
+                    return false;
                 }
-		alive = referent.get_IsAlive();
-	    }
-	    catch(cli.System.InvalidOperationException x)
-	    {
-		// HACK this happens if the reference is already finalized (if we were
-		// the only one still hanging on to it)
-	    }
-	    if(alive)
-	    {
-		// we don't want to keep creating finalizable objects during shutdown
-		if(!cli.System.Environment.get_HasShutdownStarted())
-		{
-    		    new QueueWatcher();
-		}
-	    }
-	    else
-	    {
-		enqueueImpl();
-	    }
-	}
+                alive = referent.get_IsAlive();
+            }
+            catch(cli.System.InvalidOperationException x)
+            {
+                // HACK this happens if the reference is already finalized (if we were
+                // the only one still hanging on to it)
+            }
+            if(alive)
+            {
+                // we don't want to keep creating finalizable objects during shutdown
+                if(!cli.System.Environment.get_HasShutdownStarted())
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                enqueueImpl();
+            }
+            return false;
+        }
+
+	protected void finalize()
+	{
+            if (debug)
+                cli.System.Console.WriteLine("~QueueWatcher: " + hashCode() + " on " + Reference.this);
+            if (check())
+            {
+                new Object() {
+                    protected void finalize()  {
+                        if (check())
+                        {
+                            cli.System.GC.ReRegisterForFinalize(QueueWatcher.this);
+                            if (debug)
+                                cli.System.Console.WriteLine("~QueueWatcher: reregister: " + QueueWatcher.this.hashCode());
+                        }
+                    }
+                };
+            }
+        }
     }
 
     /**
@@ -189,6 +230,7 @@ public abstract class Reference
     public void clear()
     {
         referent = null;
+        keepAlive = null;
     }
 
     /**
