@@ -217,7 +217,16 @@ public final class SelectorImpl extends AbstractSelector
                         try
                         {
                             if (false) throw new SocketException();
-                            Socket.Select(read, write, null, Integer.MAX_VALUE);
+                            // HACK we shouldn't be holding the keys lock while blocking
+                            cli.System.Threading.Monitor.Exit(keys);
+                            try
+                            {
+                                Socket.Select(read, write, null, Integer.MAX_VALUE);
+                            }
+                            finally
+                            {
+                                cli.System.Threading.Monitor.Enter(keys);
+                            }
                         }
                         catch(SocketException _)
                         {
@@ -239,7 +248,16 @@ public final class SelectorImpl extends AbstractSelector
                         try
                         {
                             if (false) throw new SocketException();
-                            Socket.Select(read, write, null, microSeconds);
+                            // HACK we shouldn't be holding the keys lock while blocking
+                            cli.System.Threading.Monitor.Exit(keys);
+                            try
+                            {
+                                Socket.Select(read, write, null, microSeconds);
+                            }
+                            finally
+                            {
+                                cli.System.Threading.Monitor.Enter(keys);
+                            }
                             timeout -= microSeconds / 1000;
                         }
                         catch(SocketException _)
