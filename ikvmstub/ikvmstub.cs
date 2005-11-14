@@ -163,7 +163,7 @@ public class NetExp
 	private static bool IsGenericType(java.lang.Class c)
 	{
 		// HACK huge hack, we look for the backtick
-		return c.getName().IndexOf("_0060") > 0;
+		return c.getName().IndexOf("$$0060") > 0;
 	}
 
 	private static void ProcessClass(string assemblyName, java.lang.Class c, java.lang.Class outer)

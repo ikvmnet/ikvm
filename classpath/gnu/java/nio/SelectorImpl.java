@@ -233,6 +233,7 @@ public final class SelectorImpl extends AbstractSelector
                         }
                     } while(read.get_Count() == 0 && write.get_Count() == 0 && !unhandledWakeup);
                     // TODO result should be set correctly
+                    read.Remove(notifySocket);
                     result = read.get_Count() + write.get_Count();
                 }
                 else
@@ -265,6 +266,7 @@ public final class SelectorImpl extends AbstractSelector
                         }
                     } while(timeout > 0 && read.get_Count() == 0 && write.get_Count() == 0 && !unhandledWakeup);
                     // TODO result should be set correctly
+                    read.Remove(notifySocket);
                     result = read.get_Count() + write.get_Count();
                 }
               }
