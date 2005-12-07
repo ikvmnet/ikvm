@@ -22,8 +22,10 @@
   
 */
 using System;
-using System.Reflection.Emit;
 using System.Reflection;
+#if !COMPACT_FRAMEWORK
+using System.Reflection.Emit;
+#endif
 using System.IO;
 using System.Collections;
 using System.Xml;
@@ -35,25 +37,26 @@ namespace IKVM.Internal
 {
 	class ClassLoaderWrapper
 	{
+		private static readonly object wrapperLock = new object();
+#if !COMPACT_FRAMEWORK
 		private static bool arrayConstructionHack;
 		private static readonly object arrayConstructionLock = new object();
-		private static readonly object wrapperLock = new object();
 		private static readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
+		// FXBUG moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
+		// so for the time being, we share one dynamic assembly among all classloaders
+		private static ModuleBuilder moduleBuilder;
+		private static bool saveDebugImage;
+		private static Hashtable nameClashHash = new Hashtable();
+		private static ArrayList saveDebugAssemblies;
+#endif
 		private static readonly Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable());
 		private static ClassLoaderWrapper bootstrapClassLoader;
 		private static ClassLoaderWrapper systemClassLoader;
 		private object javaClassLoader;
 		private Hashtable types = new Hashtable();
 		private ArrayList nativeLibraries;
-		// FXBUG moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
-		// so for the time being, we share one dynamic assembly among all classloaders
-		private static ModuleBuilder moduleBuilder;
-		private static bool saveDebugImage;
-		private static Hashtable nameClashHash = new Hashtable();
-		private static Assembly coreAssembly;	// this is the assembly that contains the remapped and core classes
 		private static Hashtable remappedTypes = new Hashtable();
 		private static int instanceCounter = 0;
-		private static ArrayList saveDebugAssemblies;
 		private int instanceId = System.Threading.Interlocked.Increment(ref instanceCounter);
 
 		// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
@@ -66,9 +69,11 @@ namespace IKVM.Internal
 
 		static ClassLoaderWrapper()
 		{
+#if !COMPACT_FRAMEWORK
 			// TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
 			// we should handle that by disabling dynamic class loading
 			AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
+#endif
 			typeToTypeWrapper[PrimitiveTypeWrapper.BOOLEAN.TypeAsTBD] = PrimitiveTypeWrapper.BOOLEAN;
 			typeToTypeWrapper[PrimitiveTypeWrapper.BYTE.TypeAsTBD] = PrimitiveTypeWrapper.BYTE;
 			typeToTypeWrapper[PrimitiveTypeWrapper.CHAR.TypeAsTBD] = PrimitiveTypeWrapper.CHAR;
@@ -83,16 +88,11 @@ namespace IKVM.Internal
 
 		internal static void LoadRemappedTypes()
 		{
-			Debug.Assert(coreAssembly == null);
-
-			// if we're compiling the core, impl will be null
-			object impl = JVM.Library;
-
-			if(impl != null)
+			// if we're compiling the core, coreAssembly will be null
+			Assembly coreAssembly = JVM.CoreAssembly;
+			if(coreAssembly != null)
 			{
-				coreAssembly = impl.GetType().Assembly;
-
-				object[] remapped = coreAssembly.GetCustomAttributes(typeof(RemappedClassAttribute), false);
+				RemappedClassAttribute[] remapped = AttributeHelper.GetRemappedClasses(coreAssembly);
 				if(remapped.Length > 0)
 				{
 					foreach(RemappedClassAttribute r in remapped)
@@ -110,9 +110,10 @@ namespace IKVM.Internal
 
 		internal static bool IsCoreAssemblyType(Type type)
 		{
-			return type.Assembly == coreAssembly;
+			return type.Assembly == JVM.CoreAssembly;
 		}
 
+#if !COMPACT_FRAMEWORK
 		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
 		{
 			lock(arrayConstructionLock)
@@ -149,6 +150,7 @@ namespace IKVM.Internal
 			//dynamicTypes.Remove(args.Name);
 			return type.TypeAsTBD.Assembly;
 		}
+#endif
 
 		internal ClassLoaderWrapper(object javaClassLoader)
 		{
@@ -220,6 +222,7 @@ namespace IKVM.Internal
 			return tw;
 		}
 
+#if !COMPACT_FRAMEWORK
 		// FXBUG This mangles type names, to enable different class loaders loading classes with the same names.
 		// We used to support this by using an assembly per class loader instance, but because
 		// of the CLR TypeResolve bug, we put all types in a single assembly for now.
@@ -243,6 +246,7 @@ namespace IKVM.Internal
 				}
 			}
 		}
+#endif
 
 		internal TypeWrapper LoadClassByDottedName(string name)
 		{
@@ -303,6 +307,7 @@ namespace IKVM.Internal
 						type = LoadClassByDottedNameFast(elemClass);
 						if(type != null)
 						{
+#if !COMPACT_FRAMEWORK
 							// HACK make sure we don't go through a user class loader when creating
 							// an array for a precompiled or .NET type
 							if (type is DynamicTypeWrapper)
@@ -310,6 +315,7 @@ namespace IKVM.Internal
 								type = type.GetClassLoader().CreateArrayType(name, type, dims);
 							}
 							else
+#endif
 							{
 								type = GetBootstrapClassLoader().CreateArrayType(name, type, dims);
 							}
@@ -353,6 +359,7 @@ namespace IKVM.Internal
 						Type t = Type.GetType(name);
 						if(t == null)
 						{
+#if !COMPACT_FRAMEWORK
 							// HACK we explicitly try all loaded assemblies, to support assemblies
 							// that aren't loaded in the "Load" context.
 							string typeName = name.Substring(0, name.IndexOf(','));
@@ -365,10 +372,11 @@ namespace IKVM.Internal
 								}
 								t = null;
 							}
+#endif
 						}
 						if(t != null)
 						{
-							if(t.Module.IsDefined(typeof(JavaModuleAttribute), false))
+							if(AttributeHelper.IsJavaModule(t.Module))
 							{
 								return RegisterInitiatingLoader(GetWrapperFromType(t));
 							}
@@ -461,10 +469,12 @@ namespace IKVM.Internal
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromBootstrapType: {0}", type.FullName);
 			Debug.Assert(GetWrapperFromTypeFast(type) == null, "GetWrapperFromTypeFast(type) == null", type.FullName);
 			Debug.Assert(!type.IsArray, "!type.IsArray", type.FullName);
+#if !COMPACT_FRAMEWORK
 			Debug.Assert(!(type.Assembly is AssemblyBuilder), "!(type.Assembly is AssemblyBuilder)", type.FullName);
+#endif
 			// only the bootstrap classloader can own compiled types
 			Debug.Assert(this == GetBootstrapClassLoader(), "this == GetBootstrapClassLoader()", type.FullName);
-			bool javaType = type.Module.IsDefined(typeof(JavaModuleAttribute), false);
+			bool javaType = AttributeHelper.IsJavaModule(type.Module);
 			string name;
 			if(javaType)
 			{
@@ -525,7 +535,24 @@ namespace IKVM.Internal
 		// NOTE this method only sees pre-compiled Java classes
 		internal Type GetBootstrapTypeRaw(string name)
 		{
-			foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
+#if COMPACT_FRAMEWORK
+			// TODO figure this out
+			return GetJavaTypeFromAssembly(JVM.CoreAssembly, name);
+#else
+			Assembly[] assemblies;
+#if WHIDBEY
+			if(JVM.IsStaticCompiler)
+			{
+				assemblies = AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
+			}
+			else
+			{
+				assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			}
+#else
+			assemblies = AppDomain.CurrentDomain.GetAssemblies();
+#endif
+			foreach(Assembly a in assemblies)
 			{
 				if(!(a is AssemblyBuilder))
 				{
@@ -537,6 +564,7 @@ namespace IKVM.Internal
 				}
 			}
 			return null;
+#endif
 		}
 
 		private static Type GetJavaTypeFromAssembly(Assembly a, string name)
@@ -545,7 +573,7 @@ namespace IKVM.Internal
 			{
 				Type t = a.GetType(name);
 				if(t != null
-					&& t.Module.IsDefined(typeof(JavaModuleAttribute), false)
+					&& AttributeHelper.IsJavaModule(t.Module)
 					&& !AttributeHelper.IsHideFromJava(t))
 				{
 					return t;
@@ -553,7 +581,7 @@ namespace IKVM.Internal
 				// HACK we might be looking for an inner classes
 				t = a.GetType(name.Replace('$', '+'));
 				if(t != null
-					&& t.Module.IsDefined(typeof(JavaModuleAttribute), false)
+					&& AttributeHelper.IsJavaModule(t.Module)
 					&& !AttributeHelper.IsHideFromJava(t))
 				{
 					return t;
@@ -599,6 +627,7 @@ namespace IKVM.Internal
 					return null;
 				}
 				Type array;
+#if !COMPACT_FRAMEWORK
 				if(elementType.Module is ModuleBuilder)
 				{
 					// FXBUG ModuleBuilder.GetType() is broken (I think), it fires a TypeResolveEvent when
@@ -619,6 +648,7 @@ namespace IKVM.Internal
 					}
 				}
 				else
+#endif
 				{
 					array = elementType.Assembly.GetType(netname, true);
 				}
@@ -635,11 +665,19 @@ namespace IKVM.Internal
 					if(race == null)
 					{
 						types.Add(name, wrapper);
+#if COMPACT_FRAMEWORK
+						if(!wrapper.IsGhostArray)
+						{
+							Debug.Assert(!typeToTypeWrapper.ContainsKey(array), name);
+							typeToTypeWrapper.Add(array, wrapper);
+						}
+#else
 						if(!(elementType is TypeBuilder) && !wrapper.IsGhostArray)
 						{
 							Debug.Assert(!typeToTypeWrapper.ContainsKey(array), name);
 							typeToTypeWrapper.Add(array, wrapper);
 						}
+#endif
 					}
 					else
 					{
@@ -650,6 +688,7 @@ namespace IKVM.Internal
 			return wrapper;
 		}
 
+#if !COMPACT_FRAMEWORK
 		internal TypeWrapper DefineClass(ClassFile f, object protectionDomain)
 		{
 			string dotnetAssembly = f.IKVMAssemblyAttribute;
@@ -765,6 +804,7 @@ namespace IKVM.Internal
 			}
 			return type;
 		}
+#endif
 
 		internal object GetJavaClassLoader()
 		{
@@ -779,6 +819,7 @@ namespace IKVM.Internal
 			return GetBootstrapClassLoader().javaClassLoader;
 		}
 
+#if !COMPACT_FRAMEWORK
 		internal static void PrepareForSaveDebugImage()
 		{
 			Debug.Assert(moduleBuilder == null);
@@ -871,6 +912,7 @@ namespace IKVM.Internal
 			assemblyBuilder.SetCustomAttribute(debugAttr);
 			return saveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
 		}
+#endif
 
 		internal TypeWrapper ExpressionTypeWrapper(string type)
 		{
@@ -886,7 +928,11 @@ namespace IKVM.Internal
 		{
 			if(sig[1] == ')')
 			{
+#if COMPACT_FRAMEWORK
+				return new Type[0];
+#else
 				return Type.EmptyTypes;
+#endif
 			}
 			TypeWrapper[] wrappers = ArgTypeWrapperListFromSig(sig);
 			Type[] types = new Type[wrappers.Length];

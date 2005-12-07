@@ -285,7 +285,7 @@ namespace IKVM.Runtime
 			{
 				return int.MaxValue;
 			}
-			if(f != f)
+			if(float.IsNaN(f))
 			{
 				return 0;
 			}
@@ -303,7 +303,7 @@ namespace IKVM.Runtime
 			{
 				return long.MaxValue;
 			}
-			if(f != f)
+			if(float.IsNaN(f))
 			{
 				return 0;
 			}
@@ -321,7 +321,7 @@ namespace IKVM.Runtime
 			{
 				return int.MaxValue;
 			}
-			if(d != d)
+			if(double.IsNaN(d))
 			{
 				return 0;
 			}
@@ -339,7 +339,7 @@ namespace IKVM.Runtime
 			{
 				return long.MaxValue;
 			}
-			if(d != d)
+			if(double.IsNaN(d))
 			{
 				return 0;
 			}
@@ -384,6 +384,7 @@ namespace IKVM.Runtime
 				object[] dst1 = dest as object[];
 				if(src1 != null && dst1 != null)
 				{
+#if !COMPACT_FRAMEWORK
 					// for small copies, don't bother comparing the types as this is relatively expensive
 					if(len > 50 && Type.GetTypeHandle(src).Value == Type.GetTypeHandle(dest).Value)
 					{
@@ -391,6 +392,7 @@ namespace IKVM.Runtime
 						return;
 					}
 					else
+#endif
 					{
 						for(; len > 0; len--)
 						{
@@ -401,8 +403,13 @@ namespace IKVM.Runtime
 						return;
 					}
 				}
+#if COMPACT_FRAMEWORK
+				else if(src.GetType() != dest.GetType() &&
+						(IsPrimitiveArrayType(src.GetType()) || IsPrimitiveArrayType(dest.GetType())))
+#else
 				else if(Type.GetTypeHandle(src).Value != Type.GetTypeHandle(dest).Value &&
 						(IsPrimitiveArrayType(src.GetType()) || IsPrimitiveArrayType(dest.GetType())))
+#endif
 				{
 					// we don't want to allow copying a primitive into an object array!
 					throw JavaException.ArrayStoreException();
@@ -550,7 +557,11 @@ namespace IKVM.Runtime
 
 		public static bool SkipFinalizer()
 		{
+#if COMPACT_FRAMEWORK
+			return false;
+#else
 			return Environment.HasShutdownStarted && !IKVM.Internal.JVM.Library.runFinalizersOnExit();
+#endif
 		}
 	}
 }

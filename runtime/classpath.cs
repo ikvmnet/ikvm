@@ -243,10 +243,15 @@ namespace IKVM.NativeCode.java
 						{
 							return wrapper.GetValue(o);
 						}
+#if !COMPACT_FRAMEWORK
 						catch(FieldAccessException)
 						{
 							// this can happen if we're accessing a non-public field and the call stack doesn't have ReflectionPermission.MemberAccess
 							throw JavaException.IllegalAccessException("System.FieldAccessException for {0}.{1}", wrapper.DeclaringType.Name, wrapper.Name);
+						}
+#endif
+						finally
+						{
 						}
 					}
 					finally
@@ -271,10 +276,15 @@ namespace IKVM.NativeCode.java
 						{
 							wrapper.SetValue(o, v);
 						}
+#if !COMPACT_FRAMEWORK
 						catch(FieldAccessException)
 						{
 							// this can happen if we're accessing a non-public field and the call stack doesn't have ReflectionPermission.MemberAccess
 							throw JavaException.IllegalAccessException("System.FieldAccessException for {0}.{1}", wrapper.DeclaringType.Name, wrapper.Name);
+						}
+#endif
+						finally
+						{
 						}
 					}
 					finally
@@ -289,7 +299,11 @@ namespace IKVM.NativeCode.java
 		{
 			public static int nativeLoad(string filename, object classLoader)
 			{
+#if !COMPACT_FRAMEWORK
 				return IKVM.Runtime.JniHelper.LoadLibrary(filename, ClassLoaderWrapper.GetClassLoaderWrapper(classLoader));
+#else
+				return 0;
+#endif
 			}
 		}
 
@@ -528,6 +542,18 @@ namespace IKVM.NativeCode.java
 			public static Assembly findResourceAssembly(string name)
 			{
 				name = JVM.MangleResourceName(name);
+#if COMPACT_FRAMEWORK
+				// TODO
+				try
+				{
+					JVM.CoreAssembly.GetManifestResourceStream(name).Close();
+					return JVM.CoreAssembly;
+				}
+				catch(FileNotFoundException)
+				{
+					return null;
+				}
+#else
 				foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 				{
 					if(!(asm is NetSystem.Reflection.Emit.AssemblyBuilder))
@@ -539,11 +565,24 @@ namespace IKVM.NativeCode.java
 					}
 				}
 				return null;
+#endif
 			}
 
 			public static Assembly[] findResourceAssemblies(string name)
 			{
 				name = JVM.MangleResourceName(name);
+#if COMPACT_FRAMEWORK
+				// TODO figure this out
+				try
+				{
+					JVM.CoreAssembly.GetManifestResourceStream(name).Close();
+					return new Assembly[] { JVM.CoreAssembly };
+				}
+				catch(FileNotFoundException)
+				{
+					return new Assembly[0];
+				}
+#else
 				ArrayList list = new ArrayList();
 				foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 				{
@@ -556,6 +595,7 @@ namespace IKVM.NativeCode.java
 					}
 				}
 				return (Assembly[])list.ToArray(typeof(Assembly));
+#endif
 			}
 
 			public static object loadClass(string name, bool resolve)
@@ -609,6 +649,9 @@ namespace IKVM.NativeCode.java
 
 			public static object defineClassImpl(object classLoader, string name, byte[] data, int offset, int length, object protectionDomain)
 			{
+#if COMPACT_FRAMEWORK
+				throw JavaException.NoClassDefFoundError("Class loading is not supported on the Compact Framework");
+#else
 				Profiler.Enter("ClassLoader.defineClass");
 				try
 				{
@@ -631,16 +674,20 @@ namespace IKVM.NativeCode.java
 				{
 					Profiler.Leave("ClassLoader.defineClass");
 				}
+#endif
 			}
 
 			public static string getPackageName(Type type)
 			{
 				string name;
+#if !COMPACT_FRAMEWORK
 				if(type.Assembly is System.Reflection.Emit.AssemblyBuilder)
 				{
 					name = ClassLoaderWrapper.GetWrapperFromType(type).Name;
 				}
-				else if(type.Module.IsDefined(typeof(JavaModuleAttribute), false))
+				else
+#endif
+					if(type.Module.IsDefined(typeof(JavaModuleAttribute), false))
 				{
 					name = CompiledTypeWrapper.GetName(type);
 				}
@@ -1226,6 +1273,7 @@ namespace IKVM.NativeCode.java
 		}
 	}
 
+#if !COMPACT_FRAMEWORK
 	namespace security
 	{
 		public class VMAccessController
@@ -1236,6 +1284,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 	}
+#endif
 }
 
 namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
@@ -1255,7 +1304,14 @@ namespace IKVM.NativeCode.gnu.classpath
 	{
 		public static string getVersion()
 		{
-			return JVM.SafeGetAssemblyVersion(typeof(VMSystemProperties).Assembly).ToString();
+			try
+			{
+				return JVM.SafeGetAssemblyVersion(typeof(VMSystemProperties).Assembly).ToString();
+			}
+			catch(Exception)
+			{
+				return "(unknown)";
+			}
 		}
 	}
 
@@ -1304,7 +1360,9 @@ namespace gnu.classpath
 {
 	// This type lives here, because we don't want unverifiable code in IKVM.GNU.Classpath
 	// (as that would prevents us from verifying it during the build process).
+#if !COMPACT_FRAMEWORK
 	[SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
+#endif
 	public unsafe sealed class Pointer
 	{
 		[HideFromJava]

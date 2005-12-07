@@ -235,9 +235,47 @@ public abstract class FileChannelImpl extends FileChannel
 	mode = (stream.get_CanRead() ? READ : 0) | (stream.get_CanWrite() ? WRITE : 0);
     }
 
-    public static final FileChannelImpl in = FileChannelImpl.create(Console.OpenStandardInput());
-    public static final FileChannelImpl out = FileChannelImpl.create(Console.OpenStandardOutput());
-    public static final FileChannelImpl err = FileChannelImpl.create(Console.OpenStandardError());
+    public static final FileChannelImpl in;
+    public static final FileChannelImpl out;
+    public static final FileChannelImpl err;
+
+    static
+    {
+        FileChannelImpl _in;
+        FileChannelImpl _out;
+        FileChannelImpl _err;
+        try
+        {
+            _in = FileChannelImpl.create(getStandardStream(0));
+            _out = FileChannelImpl.create(getStandardStream(1));
+            _err = FileChannelImpl.create(getStandardStream(2));
+        }
+        catch(cli.System.MissingMethodException _)
+        {
+            _in = FileChannelImpl.create(Stream.Null);
+            _out = FileChannelImpl.create(Stream.Null);
+            _err = FileChannelImpl.create(Stream.Null);
+        }
+        in = _in;
+        out = _out;
+        err = _err;
+    }
+
+    private static Stream getStandardStream(int id)
+        throws cli.System.MissingMethodException
+    {
+        switch(id)
+        {
+            case 0:
+                return Console.OpenStandardInput();
+            case 1:
+                return Console.OpenStandardOutput();
+            case 2:
+                return Console.OpenStandardError();
+            default:
+                throw new Error();
+        }
+    }
 
     private Stream open (String path, int mode) throws FileNotFoundException
     {

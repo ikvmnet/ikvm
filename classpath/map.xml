@@ -24,34 +24,34 @@
 -->
 <root>
 	<assembly>
-		<attribute type="System.Reflection.AssemblyCompanyAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+		<attribute type="System.Reflection.AssemblyCompanyAttribute" sig="(Ljava.lang.String;)V">
 			<parameter>Jeroen Frijters</parameter>
 		</attribute>
-		<attribute type="System.Reflection.AssemblyCopyrightAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+		<attribute type="System.Reflection.AssemblyCopyrightAttribute" sig="(Ljava.lang.String;)V">
 			<parameter>This software is licensed under the GNU General Public License + GNU Classpath exception.
 			See http://www.gnu.org/software/classpath/license.html for details.
 			Copyright (C) 1998-2005 Free Software Foundation, Inc.
 			Copyright (C) 2002-2005 Jeroen Frijters</parameter>
 		</attribute>
-		<attribute type="System.Reflection.AssemblyTitleAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+		<attribute type="System.Reflection.AssemblyTitleAttribute" sig="(Ljava.lang.String;)V">
 			<parameter>IKVM GNU Classpath library for .NET</parameter>
 		</attribute>
-		<attribute type="System.Reflection.AssemblyProductAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+		<attribute type="System.Reflection.AssemblyProductAttribute" sig="(Ljava.lang.String;)V">
 			<parameter>IKVM.NET</parameter>
 		</attribute>
-		<class name="java.lang.Object" shadows="System.Object, mscorlib" modifiers="public">
+		<class name="java.lang.Object" shadows="System.Object" modifiers="public">
 			<constructor sig="()V" modifiers="public" />
 			<method name="notifyAll" sig="()V" modifiers="public final">
 				<body>
 					<ldarg_0 />
-					<call type="System.Threading.Monitor, mscorlib" name="PulseAll" sig="(Ljava.lang.Object;)V" />
+					<call type="System.Threading.Monitor" name="PulseAll" sig="(Ljava.lang.Object;)V" />
 					<ret />
 				</body>
 			</method>
 			<method name="notify" sig="()V" modifiers="public final">
 				<body>
 					<ldarg_0 />
-					<call type="System.Threading.Monitor, mscorlib" name="Pulse" sig="(Ljava.lang.Object;)V" />
+					<call type="System.Threading.Monitor" name="Pulse" sig="(Ljava.lang.Object;)V" />
 					<ret />
 				</body>
 			</method>
@@ -110,18 +110,18 @@
 					<throw />
 					<label name="ok" />
 					<ldarg_0 />
-					<call type="System.Object, mscorlib" name="MemberwiseClone" sig="()Ljava.lang.Object;" />
+					<call type="System.Object" name="MemberwiseClone" sig="()Ljava.lang.Object;" />
 					<ret />
 				</body>
 				<alternateBody>
 					<ldarg_0 />
-					<isinst type="System.Array, mscorlib" />
+					<isinst type="System.Array" />
 					<dup />
 					<brtrue name="ok" />
 					<newobj class="java.lang.CloneNotSupportedException" name="&lt;init&gt;" sig="()V" />
 					<throw />
 					<label name="ok" />
-					<call type="System.Array, mscorlib" name="Clone" sig="()Ljava.lang.Object;" />
+					<call type="System.Array" name="Clone" sig="()Ljava.lang.Object;" />
 					<ret />
 				</alternateBody>
 			</method>
@@ -134,7 +134,7 @@
 					<ldarg_0 />
 					<callvirt class="java.lang.Object" name="hashCode" sig="()I" />
 					<call class="java.lang.Integer" name="toHexString" sig="(I)Ljava.lang.String;" />
-					<call type="System.String, mscorlib" name="Concat" sig="(Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" />
+					<call type="System.String" name="Concat" sig="(Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" />
 					<ret />
 				</body>
 			</method>
@@ -147,14 +147,14 @@
 				</body>
 				<alternateBody>
 					<ldarg_0 />
-					<isinst type="System.Array, mscorlib" />
+					<isinst type="System.Array" />
 					<brfalse name="skip" />
 					<ldarg_0 />
 					<call class="java.lang.Object" name="toStringImpl" sig="(Ljava.lang.Object;)Ljava.lang.String;" />
 					<br name="end" />
 					<label name="skip" />
 					<ldarg_0 />
-					<callvirt type="System.Object, mscorlib" name="ToString" sig="()Ljava.lang.String;" />
+					<callvirt type="System.Object" name="ToString" sig="()Ljava.lang.String;" />
 					<label name="end" />
 					<ret />
 				</alternateBody>
@@ -166,10 +166,43 @@
 			</method>
 			<method name="hashCode" sig="()I" modifiers="public">
 				<override name="GetHashCode" />
+				<nonvirtualAlternateBody>
+					<ldarg_0 />
+					<conditional framework="2.0">
+						<code>
+							<call type="System.Runtime.CompilerServices.RuntimeHelpers" name="GetHashCode" sig="(Ljava.lang.Object;)I" />
+						</code>
+					</conditional>
+					<conditional framework="1.1">
+						<code>
+							<!-- FXBUG RuntimeHelpers.GetHashCode is broken in multi AppDomain scenarios (on v1.x) -->
+							<call type="System.Object" name="GetHashCode" sig="()I" />
+						</code>
+					</conditional>
+					<ret />
+				</nonvirtualAlternateBody>
 			</method>
 			<method name="equals" sig="(Ljava.lang.Object;)Z" modifiers="public">
 				<parameter name="obj" />
 				<override name="Equals" />
+				<body>
+					<ldarg_0 />
+					<ldarg_1 />
+					<ceq />
+					<ret />
+				</body>
+				<alternateBody>
+					<ldarg_0 />
+					<ldarg_1 />
+					<callvirt type="System.Object" name="Equals" sig="(Ljava.lang.Object;)Z" />
+					<ret />
+				</alternateBody>
+				<nonvirtualAlternateBody>
+					<ldarg_0 />
+					<ldarg_1 />
+					<ceq />
+					<ret />
+				</nonvirtualAlternateBody>
 			</method>
 			<method name="finalize" sig="()V" modifiers="protected">
 				<throws class="java.lang.Throwable" />
@@ -183,7 +216,7 @@
 				-->
 				<body>
 					<ldarg_0 />
-					<call type="System.Object, mscorlib" name="Finalize" sig="()V" />
+					<call type="System.Object" name="Finalize" sig="()V" />
 					<ret />
 				</body>
 				<alternateBody>
@@ -193,7 +226,7 @@
 				</alternateBody>
 			</method>
 		</class>
-		<class name="java.lang.String" shadows="System.String, mscorlib" modifiers="public final">
+		<class name="java.lang.String" shadows="System.String" modifiers="public final">
 			<implements class="java.io.Serializable" />
 			<implements class="java.lang.Comparable" />
 			<implements class="java.lang.CharSequence" />
@@ -204,7 +237,7 @@
 			<constructor sig="()V" modifiers="public">
 				<alternateBody>
 					<ldstr value="" />
-					<call type="System.String, mscorlib" name="Copy" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+					<call type="System.String" name="Copy" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 					<ret />
 				</alternateBody>
 			</constructor>
@@ -216,7 +249,7 @@
 					<ldlen />
 					<pop />
 					<ldarg_0 />
-					<newobj type="System.String, mscorlib" name=".ctor" sig="([C)V" />
+					<newobj type="System.String" name=".ctor" sig="([C)V" />
 					<ret />
 				</alternateBody>
 			</constructor>
@@ -245,7 +278,7 @@
 					<ldc_i4_0 />
 					<ldarg_0 />
 					<ldfld class="java.lang.StringBuilder" name="count" sig="I" />
-					<newobj type="System.String, mscorlib" name=".ctor" sig="([CII)V" />
+					<newobj type="System.String" name=".ctor" sig="([CII)V" />
 					<ret />
 				</alternateBody>
 			</constructor>
@@ -256,7 +289,7 @@
 			<constructor sig="([BI)V" modifiers="public">
 				<parameter name="ascii" />
 				<parameter name="hibyte" />
-				<attribute type="System.ObsoleteAttribute, mscorlib" sig="()V" />
+				<attribute type="System.ObsoleteAttribute" sig="()V" />
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BI)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="([BII)V" modifiers="public">
@@ -270,7 +303,7 @@
 				<parameter name="hibyte" />
 				<parameter name="offset" />
 				<parameter name="count" />
-				<attribute type="System.ObsoleteAttribute, mscorlib" sig="()V" />
+				<attribute type="System.ObsoleteAttribute" sig="()V" />
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIII)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="([BLjava.lang.String;)V" modifiers="public">
@@ -354,10 +387,10 @@
 						<try>
 							<ldarg_0 />
 							<ldarg_1 />
-							<callvirt type="System.String, mscorlib" name="get_Chars" sig="(I)C" />
-							<stloc name="char" type="System.Char, mscorlib" />
+							<callvirt type="System.String" name="get_Chars" sig="(I)C" />
+							<stloc name="char" type="System.Char" />
 						</try>
-						<catch type="System.IndexOutOfRangeException, mscorlib">
+						<catch type="System.IndexOutOfRangeException">
 							<pop />
 							<newobj class="java.lang.StringIndexOutOfBoundsException" name="&lt;init&gt;" sig="()V" />
 							<throw />
@@ -383,7 +416,7 @@
 					<label name="ok" />
 					<ldarg_0 />
 					<ldarg_1 />
-					<call type="System.String, mscorlib" name="IndexOf" sig="(C)I" />
+					<call type="System.String" name="IndexOf" sig="(C)I" />
 					<ret />
 				</body>
 			</method>
@@ -412,7 +445,7 @@
 					<label name="ok" />
 					<ldarg_0 />
 					<ldarg_1 />
-					<call type="System.String, mscorlib" name="LastIndexOf" sig="(C)I" />
+					<call type="System.String" name="LastIndexOf" sig="(C)I" />
 					<ret />
 				</body>
 			</method>
@@ -487,7 +520,7 @@
 				<body>
 					<ldarg_0 />
 					<ldarg_1 />
-					<castclass type="System.String, mscorlib" />
+					<castclass type="System.String" />
 					<call class="java.lang.StringHelper" name="compareTo" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
 					<ret />
 				</body>
@@ -533,7 +566,7 @@
 				<parameter name="srcEnd" />
 				<parameter name="dst" />
 				<parameter name="dstBegin" />
-				<attribute type="System.ObsoleteAttribute, mscorlib" sig="()V" />
+				<attribute type="System.ObsoleteAttribute" sig="()V" />
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II[BI)V" />
 			</method>
 			<method name="concat" sig="(Ljava.lang.String;)Ljava.lang.String;" modifiers="public">
@@ -572,7 +605,7 @@
 					<ldarg_0 />
 					<ldarg_1 />
 					<callvirt class="java.lang.StringBuffer" name="toString" sig="()Ljava.lang.String;" />
-					<callvirt type="System.String, mscorlib" name="Equals" sig="(Ljava.lang.String;)Z" />
+					<callvirt type="System.String" name="Equals" sig="(Ljava.lang.String;)Z" />
 					<ret />
 				</body>
 			</method>
@@ -646,7 +679,7 @@
 					<ldlen />
 					<pop />
 					<ldarg_0 />
-					<newobj type="System.String, mscorlib" name=".ctor" sig="([C)V" />
+					<newobj type="System.String" name=".ctor" sig="([C)V" />
 					<ret />
 				</body>
 			</method>
@@ -658,7 +691,7 @@
 					<ldarg_0 />
 					<ldarg_1 />
 					<ldarg_2 />
-					<newobj type="System.String, mscorlib" name=".ctor" sig="([CII)V" />
+					<newobj type="System.String" name=".ctor" sig="([CII)V" />
 					<ret />
 				</body>
 			</method>
@@ -679,7 +712,7 @@
 			<method name="zeroBasedStringValue" sig="(Ljava.lang.String;)[C" modifiers="static">
 				<body>
 					<ldarg_0 />
-					<call type="System.String, mscorlib" name="ToCharArray" sig="()[C" />
+					<call type="System.String" name="ToCharArray" sig="()[C" />
 					<ret />
 				</body>
 			</method>
@@ -699,12 +732,12 @@
 				</body>
 			</clinit>
 		</class>
-		<class name="java.lang.Throwable" shadows="System.Exception, mscorlib" modifiers="public">
+		<class name="java.lang.Throwable" shadows="System.Exception" modifiers="public">
 			<implements class="java.io.Serializable" />
 			<field name="serialVersionUID" sig="J" modifiers="private static final" constant="-3042686055658047285" />
 			<field name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" modifiers="private static final" />
 			<field name="suppressFillInStackTrace" sig="Z" modifiers="private static">
-				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+				<attribute type="System.ThreadStaticAttribute" sig="()V" />
 			</field>
 			<clinit>
 				<body>
@@ -715,7 +748,7 @@
 			</clinit>
 			<method name="__&lt;suppressFillInStackTrace&gt;" sig="()V" modifiers="public static">
 				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-				<attribute type="System.ComponentModel.EditorBrowsableAttribute, System, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+				<attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
 					<parameter>Never</parameter>
 				</attribute>
 				<body>
@@ -726,7 +759,7 @@
 			</method>
 			<method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" modifiers="public static">
 				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-				<attribute type="System.ComponentModel.EditorBrowsableAttribute, System, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+				<attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
 					<parameter>Never</parameter>
 				</attribute>
 				<body>
@@ -738,7 +771,7 @@
 			</method>
 			<method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;Lcli.System.Type;Z)Ljava.lang.Throwable;" modifiers="public static">
 				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-				<attribute type="System.ComponentModel.EditorBrowsableAttribute, System, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+				<attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
 					<parameter>Never</parameter>
 				</attribute>
 				<body>
@@ -751,7 +784,7 @@
 			</method>
 			<method name="__&lt;unmap&gt;" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="public static">
 				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-				<attribute type="System.ComponentModel.EditorBrowsableAttribute, System, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+				<attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
 					<parameter>Never</parameter>
 				</attribute>
 				<body>
@@ -783,7 +816,7 @@
 				<body>
 					<ldarg_0 />
 					<call class="java.lang.ExceptionHelper" name="get_NullString" sig="()Ljava.lang.String;" />
-					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;)V" />
+					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
 					<!-- Start fillInStackTrace call -->
 					<ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
 					<ldc_i4_0 />
@@ -803,7 +836,7 @@
 					<ldarg_0 />
 					<ldarg_1 />
 					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
-					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;)V" />
+					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;)V" />
 					<!-- Start fillInStackTrace call -->
 					<ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
 					<ldc_i4_0 />
@@ -825,7 +858,7 @@
 					<ldarg_1 />
 					<call class="java.lang.ExceptionHelper" name="FilterMessage" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 					<ldarg_2 />
-					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
 					<!-- Start fillInStackTrace call -->
 					<ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
 					<ldc_i4_0 />
@@ -853,7 +886,7 @@
 					<ldarg_1 />
 					<call class="java.lang.ExceptionHelper" name="GetMessageFromCause" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
 					<ldarg_1 />
-					<call type="System.Exception, mscorlib" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
+					<call type="System.Exception" name=".ctor" sig="(Ljava.lang.String;Ljava.lang.Throwable;)V" />
 					<!-- Start fillInStackTrace call -->
 					<ldsfld class="java.lang.Throwable" name="suppressFillInStackTrace" sig="Z" />
 					<ldc_i4_0 />
@@ -912,7 +945,7 @@
 				<redirect class="java.lang.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
 			</method>
 		</class>
-		<class name="java.lang.Comparable" shadows="System.IComparable, mscorlib" modifiers="public abstract interface">
+		<class name="java.lang.Comparable" shadows="System.IComparable" modifiers="public abstract interface">
 			<attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
 				<parameter>&lt;T:Ljava/lang/Object;&gt;Ljava/lang/Object;</parameter>
 			</attribute>
@@ -941,7 +974,7 @@
 			<method name="unbox_byte" sig="(Ljava.lang.Object;)B">
 				<body>
 					<ldarg_0 />
-					<unbox type="System.Byte, mscorlib" />
+					<unbox type="System.Byte" />
 					<ldind_i1 />
 					<ret />
 				</body>
@@ -949,7 +982,7 @@
 			<method name="unbox_boolean" sig="(Ljava.lang.Object;)Z">
 				<body>
 					<ldarg_0 />
-					<unbox type="System.Boolean, mscorlib" />
+					<unbox type="System.Boolean" />
 					<ldind_i1 />
 					<ret />
 				</body>
@@ -957,7 +990,7 @@
 			<method name="unbox_short" sig="(Ljava.lang.Object;)S">
 				<body>
 					<ldarg_0 />
-					<unbox type="System.Int16, mscorlib" />
+					<unbox type="System.Int16" />
 					<ldind_i2 />
 					<ret />
 				</body>
@@ -965,7 +998,7 @@
 			<method name="unbox_char" sig="(Ljava.lang.Object;)C">
 				<body>
 					<ldarg_0 />
-					<unbox type="System.Char, mscorlib" />
+					<unbox type="System.Char" />
 					<ldind_i2 />
 					<ret />
 				</body>
@@ -973,7 +1006,7 @@
 			<method name="unbox_int" sig="(Ljava.lang.Object;)I">
 				<body>
 					<ldarg_0 />
-					<unbox type="System.Int32, mscorlib" />
+					<unbox type="System.Int32" />
 					<ldind_i4 />
 					<ret />
 				</body>
@@ -981,7 +1014,7 @@
 			<method name="unbox_float" sig="(Ljava.lang.Object;)F">
 				<body>
 					<ldarg_0 />
-					<unbox type="System.Single, mscorlib" />
+					<unbox type="System.Single" />
 					<ldind_r4 />
 					<ret />
 				</body>
@@ -989,7 +1022,7 @@
 			<method name="unbox_long" sig="(Ljava.lang.Object;)J">
 				<body>
 					<ldarg_0 />
-					<unbox type="System.Int64, mscorlib" />
+					<unbox type="System.Int64" />
 					<ldind_i8 />
 					<ret />
 				</body>
@@ -997,7 +1030,7 @@
 			<method name="unbox_double" sig="(Ljava.lang.Object;)D">
 				<body>
 					<ldarg_0 />
-					<unbox type="System.Double, mscorlib" />
+					<unbox type="System.Double" />
 					<ldind_r8 />
 					<ret />
 				</body>
@@ -1005,56 +1038,56 @@
 			<method name="box_byte" sig="(B)Ljava.lang.Object;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Byte, mscorlib" />
+					<box type="System.Byte" />
 					<ret />
 				</body>
 			</method>
 			<method name="box_boolean" sig="(Z)Ljava.lang.Object;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Boolean, mscorlib" />
+					<box type="System.Boolean" />
 					<ret />
 				</body>
 			</method>
 			<method name="box_short" sig="(S)Ljava.lang.Object;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Int16, mscorlib" />
+					<box type="System.Int16" />
 					<ret />
 				</body>
 			</method>
 			<method name="box_char" sig="(C)Ljava.lang.Object;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Char, mscorlib" />
+					<box type="System.Char" />
 					<ret />
 				</body>
 			</method>
 			<method name="box_int" sig="(I)Ljava.lang.Object;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Int32, mscorlib" />
+					<box type="System.Int32" />
 					<ret />
 				</body>
 			</method>
 			<method name="box_float" sig="(F)Ljava.lang.Object;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Single, mscorlib" />
+					<box type="System.Single" />
 					<ret />
 				</body>
 			</method>
 			<method name="box_long" sig="(J)Ljava.lang.Object;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Int64, mscorlib" />
+					<box type="System.Int64" />
 					<ret />
 				</body>
 			</method>
 			<method name="box_double" sig="(D)Ljava.lang.Object;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Double, mscorlib" />
+					<box type="System.Double" />
 					<ret />
 				</body>
 			</method>
@@ -1136,9 +1169,18 @@
 		<class name="java.lang.VMSystem">
 			<method name="identityHashCode" sig="(Ljava.lang.Object;)I">
 				<body>
-					<!-- FXBUG RuntimeHelpers.GetHashCode is broken in multi AppDomain scenarios (on v1.x) -->
 					<ldarg_0 />
-					<call type="System.Object, mscorlib" name="GetHashCode" sig="()I" />
+					<conditional framework="2.0">
+						<code>
+							<call type="System.Runtime.CompilerServices.RuntimeHelpers" name="GetHashCode" sig="(Ljava.lang.Object;)I" />
+						</code>
+					</conditional>
+					<conditional framework="1.1">
+						<code>
+							<!-- FXBUG RuntimeHelpers.GetHashCode is broken in multi AppDomain scenarios (on v1.x) -->
+							<call type="System.Object" name="GetHashCode" sig="()I" />
+						</code>
+					</conditional>
 					<ret />
 				</body>
 			</method>
@@ -1241,7 +1283,7 @@
 					<ldarg_0 />
 					<ldfld class="java.nio.Buffer" name="pos" sig="I" />
 					<call type="gnu.classpath.Pointer" name="ReadByte" sig="(I)B" />
-					<stloc name="result" type="System.Byte, mscorlib" />
+					<stloc name="result" type="System.Byte" />
 					<ldarg_0 />
 					<ldarg_0 />
 					<ldfld class="java.nio.Buffer" name="pos" sig="I" />
@@ -1320,46 +1362,54 @@
 				</body>
 			</method>
 		</class>
+		<class name="ikvm.internal.Library">
+			<method name="doGetImpl" sig="()Likvm.internal.LibraryVMInterface;">
+				<body>
+					<newobj class="java.lang.LibraryVMInterfaceImpl" name="&lt;init&gt;" sig="()V" />
+					<ret />
+				</body>
+			</method>
+		</class>
 		<class name="java.lang.VMClassLoader">
 			<field name="__tls_nestedGetResourcesHack" sig="Z">
-				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+				<attribute type="System.ThreadStaticAttribute" sig="()V" />
 			</field>
 		</class>
 		<class name="java.lang.VMThread">
 			<field name="__tls_javaThread" sig="Ljava.lang.Thread;">
-				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+				<attribute type="System.ThreadStaticAttribute" sig="()V" />
 			</field>
 			<field name="__tls_cleanup" sig="Ljava.lang.Object;">
-				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+				<attribute type="System.ThreadStaticAttribute" sig="()V" />
 			</field>
 		</class>
 		<class name="java.security.VMAccessController">
 			<field name="__tls_contexts" sig="Ljava.util.LinkedList;">
-				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+				<attribute type="System.ThreadStaticAttribute" sig="()V" />
 			</field>
 			<field name="__tls_inGetContext" sig="Z">
-				<attribute type="System.ThreadStaticAttribute, mscorlib" sig="()V" />
+				<attribute type="System.ThreadStaticAttribute" sig="()V" />
 			</field>
 		</class>
 		<class name="gnu.java.nio.channels.FileChannelImpl$Win32">
 			<method name="FlushFileBuffers" sig="(Lcli.System.IntPtr;)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>kernel32</parameter>
 				</attribute>
 			</method>
 			<method name="CloseHandle" sig="(Lcli.System.IntPtr;)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>kernel32</parameter>
 				</attribute>
 			</method>
 			<method name="CreateFileMapping" sig="(Lcli.System.IntPtr;Lcli.System.IntPtr;IIILjava.lang.String;)Lcli.System.IntPtr;">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>kernel32</parameter>
 					<field name="SetLastError" sig="Z">true</field>
 				</attribute>
 			</method>
 			<method name="MapViewOfFile" sig="(Lcli.System.IntPtr;IIILcli.System.IntPtr;)Lcli.System.IntPtr;">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>kernel32</parameter>
 					<field name="SetLastError" sig="Z">true</field>
 				</attribute>
@@ -1367,69 +1417,69 @@
 		</class>
 		<class name="gnu.java.nio.channels.FileChannelImpl$Posix">
 			<method name="ikvm_mmap" sig="(Lcli.System.IntPtr;BBJI)Lcli.System.IntPtr;">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>ikvm-native</parameter>
 				</attribute>
 			</method>
 		</class>
 		<class name="java.nio.MappedByteBufferImpl$Win32">
 			<method name="UnmapViewOfFile" sig="(Lcli.System.IntPtr;)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>kernel32</parameter>
 				</attribute>
 			</method>
 			<method name="FlushViewOfFile" sig="(Lcli.System.IntPtr;Lcli.System.IntPtr;)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>kernel32</parameter>
 				</attribute>
 			</method>
 		</class>
 		<class name="java.nio.MappedByteBufferImpl$Posix">
 			<method name="ikvm_munmap" sig="(Lcli.System.IntPtr;I)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>ikvm-native</parameter>
 				</attribute>
 			</method>
 			<method name="ikvm_msync" sig="(Lcli.System.IntPtr;I)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute, mscorlib" sig="(Ljava.lang.String;)V">
+				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>ikvm-native</parameter>
 				</attribute>
 			</method>
 		</class>
 	</assembly>
 	<exceptionMappings>
-		<exception src="System.NullReferenceException, mscorlib" dst="java.lang.NullPointerException" />
+		<exception src="System.NullReferenceException" dst="java.lang.NullPointerException" />
 		<!-- many of the String and Object methods throw ArgumentNullException where Java throws an NPE -->
-		<exception src="System.ArgumentNullException, mscorlib" dst="java.lang.NullPointerException" />
-		<exception src="System.IndexOutOfRangeException, mscorlib" dst="java.lang.ArrayIndexOutOfBoundsException" />
+		<exception src="System.ArgumentNullException" dst="java.lang.NullPointerException" />
+		<exception src="System.IndexOutOfRangeException" dst="java.lang.ArrayIndexOutOfBoundsException" />
 		<!-- HACK for String methods, we remap ArgumentOutOfRangeException to StringIndexOutOfBoundsException -->
-		<exception src="System.ArgumentOutOfRangeException, mscorlib" dst="java.lang.StringIndexOutOfBoundsException" />
-		<exception src="System.InvalidCastException, mscorlib" dst="java.lang.ClassCastException" />
+		<exception src="System.ArgumentOutOfRangeException" dst="java.lang.StringIndexOutOfBoundsException" />
+		<exception src="System.InvalidCastException" dst="java.lang.ClassCastException" />
 		<!-- NOTE we "map" to java.lang.Error, because that is the base class of all possible mappings.
 			The * in front of the class name means that all subclasses can be thrown as well.
 		 -->
-		<exception src="System.TypeInitializationException, mscorlib" dst="*java.lang.Error">
+		<exception src="System.TypeInitializationException" dst="*java.lang.Error">
 			<code>
-				<castclass type="System.TypeInitializationException, mscorlib" />
+				<castclass type="System.TypeInitializationException" />
 				<call class="java.lang.ExceptionHelper" name="MapTypeInitializeException" sig="(Lcli.System.TypeInitializationException;)Ljava.lang.Throwable;" />
 			</code>
 		</exception>
-		<exception src="System.Threading.SynchronizationLockException, mscorlib" dst="java.lang.IllegalMonitorStateException" />
-		<exception src="System.OutOfMemoryException, mscorlib" dst="java.lang.OutOfMemoryError" />
-		<exception src="System.DivideByZeroException, mscorlib" dst="java.lang.ArithmeticException">
+		<exception src="System.Threading.SynchronizationLockException" dst="java.lang.IllegalMonitorStateException" />
+		<exception src="System.OutOfMemoryException" dst="java.lang.OutOfMemoryError" />
+		<exception src="System.DivideByZeroException" dst="java.lang.ArithmeticException">
 			<code>
 				<pop />
 				<ldstr value="/ by zero" />
 				<newobj class="java.lang.ArithmeticException" name="&lt;init&gt;" sig="(Ljava.lang.String;)V" />
 			</code>
 		</exception>
-		<exception src="System.ArrayTypeMismatchException, mscorlib" dst="java.lang.ArrayStoreException" />
-		<exception src="System.StackOverflowException, mscorlib" dst="java.lang.StackOverflowError" />
-		<exception src="System.Security.VerificationException, mscorlib" dst="java.lang.VerifyError" />
-		<exception src="System.Threading.ThreadAbortException, mscorlib" dst="java.lang.ThreadDeath">
+		<exception src="System.ArrayTypeMismatchException" dst="java.lang.ArrayStoreException" />
+		<exception src="System.StackOverflowException" dst="java.lang.StackOverflowError" />
+		<exception src="System.Security.VerificationException" dst="java.lang.VerifyError" />
+		<exception src="System.Threading.ThreadAbortException" dst="java.lang.ThreadDeath">
 			<code>
-				<castclass type="System.Threading.ThreadAbortException, mscorlib" />
-				<call type="System.Threading.ThreadAbortException, mscorlib" name="get_ExceptionState" sig="()Ljava.lang.Object;" />
+				<castclass type="System.Threading.ThreadAbortException" />
+				<call type="System.Threading.ThreadAbortException" name="get_ExceptionState" sig="()Ljava.lang.Object;" />
 				<isinst class="java.lang.ThreadDeath" />
 				<dup />
 				<brtrue name="end" />
@@ -1445,9 +1495,9 @@
 					<try>
 						<!-- TODO instead of catching the ThreadStateException, we should check the ThreadState
 						     before calling ResetAbort -->
-						<call type="System.Threading.Thread, mscorlib" name="ResetAbort" sig="()V" />
+						<call type="System.Threading.Thread" name="ResetAbort" sig="()V" />
 					</try>
-					<catch type="System.Threading.ThreadStateException, mscorlib">
+					<catch type="System.Threading.ThreadStateException">
 						<!-- ignore the exception -->
 					</catch>
 				</exceptionBlock>
@@ -1456,6 +1506,6 @@
 		</exception>
 		<!-- TODO make sure the originating method was from an IKVM.NET generated assembly, because if it was
 	    generated by non-Java code, this remapping is obviously bogus. -->
-		<exception src="System.OverflowException, mscorlib" dst="java.lang.NegativeArraySizeException" />
+		<exception src="System.OverflowException" dst="java.lang.NegativeArraySizeException" />
 	</exceptionMappings>
 </root>

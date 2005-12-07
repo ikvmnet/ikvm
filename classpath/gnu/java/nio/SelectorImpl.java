@@ -55,10 +55,12 @@ import cli.System.Net.Sockets.SocketException;
 import cli.System.Net.Sockets.AddressFamily;
 import cli.System.Net.Sockets.SocketType;
 import cli.System.Net.Sockets.ProtocolType;
+import cli.System.Net.Sockets.SelectMode;
 import cli.System.Collections.ArrayList;
 
 public final class SelectorImpl extends AbstractSelector
 {
+  private static boolean debug = false;
   private Set keys;
   private Set selected;
 
@@ -169,6 +171,11 @@ public final class SelectorImpl extends AbstractSelector
             ArrayList write = getFDsAsArray (SelectionKey.OP_WRITE
                                          | SelectionKey.OP_CONNECT);
 
+            if (debug)
+            {
+                System.out.println("SelectorImpl.select: read.Count = " + read.get_Count() + ", write.Count = " + write.get_Count() + ", timeout = " + timeout);
+            }
+
             // Test to see if we've got an unhandled wakeup call,
             // in which case we return immediately. Otherwise,
             // remember our current thread and jump into the select.
@@ -189,6 +196,10 @@ public final class SelectorImpl extends AbstractSelector
               {
                 if (unhandledWakeup)
                   {
+                    if (debug)
+                    {
+                        System.out.println("SelectorImpl.select: returning due to unhandled wakeup");
+                    }
                     unhandledWakeup = false;
                     return 0;
                   }
@@ -221,6 +232,10 @@ public final class SelectorImpl extends AbstractSelector
                             cli.System.Threading.Monitor.Exit(keys);
                             try
                             {
+                                if (debug)
+                                {
+                                    System.out.println("SelectorImpl.select: Socket.Select");
+                                }
                                 Socket.Select(read, write, null, Integer.MAX_VALUE);
                             }
                             finally
@@ -230,11 +245,24 @@ public final class SelectorImpl extends AbstractSelector
                         }
                         catch(SocketException _)
                         {
+                            if (debug)
+                            {
+                                System.out.println("SelectorImpl.select:");
+                                _.printStackTrace();
+                            }
+                            read.Clear();
+                            write.Clear();
+                            purgeList(savedReadList);
+                            purgeList(savedWriteList);
                         }
                     } while(read.get_Count() == 0 && write.get_Count() == 0 && !unhandledWakeup);
                     // TODO result should be set correctly
                     read.Remove(notifySocket);
                     result = read.get_Count() + write.get_Count();
+                    if (debug)
+                    {
+                        System.out.println("SelectorImpl.select: result = " + result);
+                    }
                 }
                 else
                 {
@@ -263,6 +291,10 @@ public final class SelectorImpl extends AbstractSelector
                         }
                         catch(SocketException _)
                         {
+                            read.Clear();
+                            write.Clear();
+                            purgeList(savedReadList);
+                            purgeList(savedWriteList);
                         }
                     } while(timeout > 0 && read.get_Count() == 0 && write.get_Count() == 0 && !unhandledWakeup);
                     // TODO result should be set correctly
@@ -338,12 +370,34 @@ public final class SelectorImpl extends AbstractSelector
 
                 // Set new ready ops
                 key.readyOps (key.interestOps () & ops);
+                if (debug)
+                {
+                    System.out.println("SelectorImpl.select: readyOps = " + (key.interestOps () & ops));
+                }
               }
             deregisterCancelledKeys();
             
             return result;
           }
         }
+  }
+
+  private static void purgeList(ArrayList list)
+  {
+    for (int i = 0; i < list.get_Count(); i++)
+    {
+        Socket s = (Socket)list.get_Item(i);
+        try
+        {
+            if (false) throw new cli.System.ObjectDisposedException("");
+            s.Poll(0, SelectMode.wrap(SelectMode.SelectError));
+        }
+        catch (cli.System.ObjectDisposedException _)
+        {
+            list.RemoveAt(i);
+            i--;
+        }
+    }
   }
 
   private static Socket createNotifySocket()

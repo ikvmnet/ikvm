@@ -3,7 +3,7 @@
     <target name="tools">
         <csc target="exe" output="asmref.exe" optimize="true">
             <sources>
-                <includes name="asmref.cs" />
+                <include name="asmref.cs" />
             </sources>
         </csc>
     </target>

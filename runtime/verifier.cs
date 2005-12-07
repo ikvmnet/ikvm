@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+#if !COMPACT_FRAMEWORK
 using System;
 using System.IO;
 using System.Collections;
@@ -3385,3 +3386,4 @@ class MethodAnalyzer
 		return allLocalVars;
 	}
 }
+#endif

@@ -24,7 +24,10 @@
 using System;
 using System.Threading;
 using System.Resources;
+#if !COMPACT_FRAMEWORK
 using System.Reflection.Emit;
+using ILGenerator = IKVM.Internal.CountingILGenerator;
+#endif
 using System.Reflection;
 using System.IO;
 using System.Collections;
@@ -37,8 +40,6 @@ using System.Security.Permissions;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;
-
-using ILGenerator = IKVM.Internal.CountingILGenerator;
 
 namespace IKVM.Runtime
 {
@@ -313,6 +314,7 @@ namespace IKVM.Internal
 		private static ikvm.@internal.LibraryVMInterface lib;
 		private static bool strictFinalFieldSemantics;
 		private static bool finishingForDebugSave;
+		private static Assembly coreAssembly;
 
 		internal static Version SafeGetAssemblyVersion(Assembly asm)
 		{
@@ -344,15 +346,43 @@ namespace IKVM.Internal
 			}
 		}
 
+#if COMPACT_FRAMEWORK
+		internal static ikvm.@internal.LibraryVMInterface Library
+		{
+			get
+			{
+				return ikvm.@internal.Library.getImpl();
+			}
+		}
+
+		internal static Assembly CoreAssembly
+		{
+			get
+			{
+				return Library.GetType().Assembly;
+			}
+		}
+#else
+
 		private static Assembly[] UnsafeGetAssemblies()
 		{
 			new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
+#if WHIDBEY
+			if(JVM.IsStaticCompiler)
+			{
+				return AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
+			}
+#endif
 			return AppDomain.CurrentDomain.GetAssemblies();
 		}
 
 		private static Type UnsafeGetType(Assembly asm, string name)
 		{
-			new ReflectionPermission(ReflectionPermissionFlag.MemberAccess | ReflectionPermissionFlag.TypeInformation).Assert();
+			new ReflectionPermission(ReflectionPermissionFlag.MemberAccess
+#if !WHIDBEY
+				| ReflectionPermissionFlag.TypeInformation
+#endif
+			).Assert();
 			return asm.GetType(name);
 		}
 
@@ -362,10 +392,32 @@ namespace IKVM.Internal
 			return Activator.CreateInstance(type, true);
 		}
 
+		internal static Assembly CoreAssembly
+		{
+			get
+			{
+				if(coreAssembly == null)
+				{
+					object lib = Library;
+					if(lib != null)
+					{
+						coreAssembly = lib.GetType().Assembly;
+					}
+				}
+				return coreAssembly;
+			}
+		}
+
 		internal static ikvm.@internal.LibraryVMInterface Library
 		{
 			get
 			{
+#if WHIDBEY
+				if(JVM.IsStaticCompiler)
+				{
+					return null;
+				}
+#endif
 				if(lib == null)
 				{
 					foreach(Assembly asm in UnsafeGetAssemblies())
@@ -391,6 +443,7 @@ namespace IKVM.Internal
 				return lib;
 			}
 		}
+#endif
 
 		public static bool StrictFinalFieldSemantics
 		{
@@ -533,7 +586,7 @@ namespace IKVM.Internal
 			}
 			return sb.ToString();
 		}
-#if !NO_STATIC_COMPILER
+#if !NO_STATIC_COMPILER && !COMPACT_FRAMEWORK
 		private class CompilerClassLoader : ClassLoaderWrapper
 		{
 			private Hashtable classes;
@@ -586,16 +639,18 @@ namespace IKVM.Internal
 					name.KeyPair = new StrongNameKeyPair(keycontainer);
 				}
 				name.Version = new Version(version);
-				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, assemblyDir);
+#if WHIDBEY
+				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
+#else
+				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.Save, assemblyDir);
+#endif
 				ModuleBuilder moduleBuilder;
 				moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, JVM.Debug);
 				if(!JVM.NoStackTraceInfo)
 				{
-					CustomAttributeBuilder sourceFileAttr = new CustomAttributeBuilder(typeof(SourceFileAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { null });
-					moduleBuilder.SetCustomAttribute(sourceFileAttr);
+					AttributeHelper.SetSourceFile(moduleBuilder, null);
 				}
-				CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeof(JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
-				moduleBuilder.SetCustomAttribute(ikvmModuleAttr);
+				AttributeHelper.SetJavaModule(moduleBuilder);
 				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
 				assemblyBuilder.SetCustomAttribute(debugAttr);
 				return moduleBuilder;
@@ -633,7 +688,11 @@ namespace IKVM.Internal
 						{
 							try
 							{
+#if WHIDBEY
+								Assembly.ReflectionOnlyLoad(netexp);
+#else
 								Assembly.Load(netexp);
+#endif
 							}
 							catch(Exception)
 							{
@@ -670,6 +729,7 @@ namespace IKVM.Internal
 				}
 				ILGenerator ilgen = mainStub.GetILGenerator();
 				LocalBuilder rc = ilgen.DeclareLocal(typeof(int));
+				Type startupType = StaticCompiler.GetType("IKVM.Runtime.Startup");
 				if(props.Count > 0)
 				{
 					ilgen.Emit(OpCodes.Newobj, typeof(Hashtable).GetConstructor(Type.EmptyTypes));
@@ -680,21 +740,21 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Ldstr, (string)de.Value);
 						ilgen.Emit(OpCodes.Callvirt, typeof(Hashtable).GetMethod("Add"));
 					}
-					ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("SetProperties"));
+					ilgen.Emit(OpCodes.Call, startupType.GetMethod("SetProperties"));
 				}
 				ilgen.BeginExceptionBlock();
-				ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("EnterMainThread"));
+				ilgen.Emit(OpCodes.Call, startupType.GetMethod("EnterMainThread"));
 				if(noglobbing)
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
 				}
 				else
 				{
-					ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("Glob", Type.EmptyTypes));
+					ilgen.Emit(OpCodes.Call, startupType.GetMethod("Glob", Type.EmptyTypes));
 				}
 				ilgen.Emit(OpCodes.Call, m);
 				ilgen.BeginCatchBlock(typeof(Exception));
-				ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Util).GetMethod("MapException", new Type[] { typeof(Exception) }));
+				ilgen.Emit(OpCodes.Call, StaticCompiler.GetType("IKVM.Runtime.Util").GetMethod("MapException", new Type[] { typeof(Exception) }));
 				LocalBuilder exceptionLocal = ilgen.DeclareLocal(typeof(Exception));
 				ilgen.Emit(OpCodes.Stloc, exceptionLocal);
 				TypeWrapper threadTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Thread");
@@ -705,11 +765,11 @@ namespace IKVM.Internal
 				threadTypeWrapper.GetMethodWrapper("getThreadGroup", "()Ljava.lang.ThreadGroup;", false).EmitCallvirt(ilgen);
 				ilgen.Emit(OpCodes.Ldloc, threadLocal);
 				ilgen.Emit(OpCodes.Ldloc, exceptionLocal);
-				ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadGroup").GetMethodWrapper("uncaughtException", "(Ljava.lang.Thread;Ljava.lang.Throwable;)V", false).EmitCall(ilgen);
+				ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadGroup").GetMethodWrapper("uncaughtException", "(Ljava.lang.Thread;Ljava.lang.Throwable;)V", false).EmitCallvirt(ilgen);
 				ilgen.Emit(OpCodes.Ldc_I4_1);
 				ilgen.Emit(OpCodes.Stloc, rc);
 				ilgen.BeginFinallyBlock();
-				ilgen.Emit(OpCodes.Call, typeof(IKVM.Runtime.Startup).GetMethod("ExitMainThread", Type.EmptyTypes));
+				ilgen.Emit(OpCodes.Call, startupType.GetMethod("ExitMainThread", Type.EmptyTypes));
 				ilgen.EndExceptionBlock();
 				ilgen.Emit(OpCodes.Ldloc, rc);
 				ilgen.Emit(OpCodes.Ret);
@@ -887,11 +947,9 @@ namespace IKVM.Internal
 						// of a bug in SetCustomAttribute that causes type arguments to be serialized incorrectly (if the type
 						// is in the same assembly). Normally we use AttributeHelper.FreezeDry to get around this, but that doesn't
 						// work in this case (no attribute is emitted at all). So we work around by emitting a string instead
-						ConstructorInfo remappedClassAttribute = typeof(RemappedClassAttribute).GetConstructor(new Type[] { typeof(string), typeof(Type) });
-						classLoader.assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedClassAttribute, new object[] { name, shadowType }));
-
-						ConstructorInfo remappedTypeAttribute = typeof(RemappedTypeAttribute).GetConstructor(new Type[] { typeof(Type) });
-						typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(remappedTypeAttribute, new object[] { shadowType }));
+						AttributeHelper.SetRemappedClass(classLoader.assemblyBuilder, name, shadowType);
+						
+						AttributeHelper.SetRemappedType(typeBuilder, shadowType);
 					}
 
 					// HACK because of the above FXBUG that prevents us from making the type both abstract and sealed,
@@ -1203,8 +1261,7 @@ namespace IKVM.Internal
 									}
 								}
 							}
-							CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(RemappedInterfaceMethodAttribute).GetConstructor(new Type[] { typeof(string), typeof(string) }), new object[] { m.Name, m.@override.Name } );
-							typeWrapper.typeBuilder.SetCustomAttribute(cab);
+							AttributeHelper.SetRemappedInterfaceMethod(typeWrapper.typeBuilder, m.Name, m.@override.Name);
 							MethodBuilder helper = null;
 							if(specialCases != null)
 							{
@@ -2207,13 +2264,25 @@ namespace IKVM.Internal
 			noStackTraceInfo = options.nostacktraceinfo;
 			strictFinalFieldSemantics = options.strictFinalFieldSemantics;
 			Assembly runtimeAssembly = typeof(JVM).Assembly;
+#if WHIDBEY
+			Assembly.ReflectionOnlyLoadFrom(runtimeAssembly.Location);
+#endif
 			AssemblyName runtimeAssemblyName = runtimeAssembly.GetName();
 			bool allReferencesAreStrongNamed = IsSigned(runtimeAssembly);
 			foreach(string r in options.references)
 			{
 				try
 				{
+#if WHIDBEY
+					Assembly reference = Assembly.ReflectionOnlyLoadFrom(r);
+					Type type = UnsafeGetType(reference, "java.lang.LibraryVMInterfaceImpl");
+					if(type != null)
+					{
+						coreAssembly = reference;
+					}
+#else
 					Assembly reference = Assembly.LoadFrom(r);
+#endif
 					if(reference == null)
 					{
 						Console.Error.WriteLine("Error: reference not found: {0}", r);
@@ -2254,6 +2323,22 @@ namespace IKVM.Internal
 					return 1;
 				}
 			}
+#if WHIDBEY
+			// If the "System" assembly wasn't explicitly referenced, load it automatically
+			bool systemIsLoaded = false;
+			foreach(Assembly asm in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
+			{
+				if(asm.GetType("System.ComponentModel.EditorBrowsableAttribute", false, false) != null)
+				{
+					systemIsLoaded = true;
+					break;
+				}
+			}
+			if(!systemIsLoaded)
+			{
+				Assembly.ReflectionOnlyLoadFrom(typeof(System.ComponentModel.EditorBrowsableAttribute).Assembly.Location);
+			}
+#endif
 			Hashtable h = new Hashtable();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
 			for(int i = 0; i < options.classes.Length; i++)
@@ -2395,14 +2480,18 @@ namespace IKVM.Internal
 			// Do a sanity check to make sure some of the bootstrap classes are available
 			if(loader.LoadClassByDottedNameFast("java.lang.Object") == null)
 			{
-				Assembly classpath = Assembly.LoadWithPartialName("IKVM.GNU.Classpath");
-				if(classpath == null)
+#if WHIDBEY
+				coreAssembly = Assembly.ReflectionOnlyLoadFrom(Assembly.GetExecutingAssembly().Location + "\\..\\IKVM.GNU.Classpath.dll");
+#else
+				coreAssembly = Assembly.LoadWithPartialName("IKVM.GNU.Classpath");
+#endif
+				if(coreAssembly == null)
 				{
 					Console.Error.WriteLine("Error: bootstrap classes missing and IKVM.GNU.Classpath.dll not found");
 					return 1;
 				}
-				allReferencesAreStrongNamed &= IsSigned(classpath);
-				Console.Error.WriteLine("Note: automatically adding reference to \"{0}\"", classpath.Location);
+				allReferencesAreStrongNamed &= IsSigned(coreAssembly);
+				Console.Error.WriteLine("Note: automatically adding reference to \"{0}\"", coreAssembly.Location);
 				// we need to scan again for remapped types, now that we've loaded the core library
 				ClassLoaderWrapper.LoadRemappedTypes();
 			}
@@ -2413,8 +2502,8 @@ namespace IKVM.Internal
 				return 1;
 			}
 
-			ClassLoaderWrapper.PublishLibraryImplementationHelperType(typeof(gnu.classpath.Pointer));
-			ClassLoaderWrapper.PublishLibraryImplementationHelperType(typeof(ikvm.@internal.LibraryVMInterface));
+			ClassLoaderWrapper.PublishLibraryImplementationHelperType(LoadType(typeof(gnu.classpath.Pointer)));
+			ClassLoaderWrapper.PublishLibraryImplementationHelperType(LoadType(typeof(ikvm.@internal.LibraryVMInterface)));
 
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
 			ArrayList allwrappers = new ArrayList();
@@ -2526,7 +2615,7 @@ namespace IKVM.Internal
 				{
 					if(!tw.IsInterface && tw.IsMapUnsafeException)
 					{
-						tw.TypeAsBuilder.SetCustomAttribute(typeof(ExceptionIsUnsafeForMappingAttribute).GetConstructor(Type.EmptyTypes), new byte[0]);
+						AttributeHelper.SetExceptionIsUnsafeForMapping(tw.TypeAsBuilder);
 					}
 				}
 				AotTypeWrapper.LoadMapXml(map);
@@ -2545,6 +2634,8 @@ namespace IKVM.Internal
 			return 0;
 		}
 #endif
+
+#if !COMPACT_FRAMEWORK
 		public static void PrepareForSaveDebugImage()
 		{
 			ClassLoaderWrapper.PrepareForSaveDebugImage();
@@ -2554,6 +2645,7 @@ namespace IKVM.Internal
 		{
 			ClassLoaderWrapper.SaveDebugImage(mainClass);
 		}
+#endif
 
 		public static void SetBootstrapClassLoader(object classLoader)
 		{
@@ -2572,7 +2664,11 @@ namespace IKVM.Internal
 				{
 					messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
 				}
-				new ReflectionPermission(ReflectionPermissionFlag.MemberAccess | ReflectionPermissionFlag.TypeInformation).Assert();
+				new ReflectionPermission(ReflectionPermissionFlag.MemberAccess
+#if !WHIDBEY
+					| ReflectionPermissionFlag.TypeInformation
+#endif
+				).Assert();
 				message = String.Format("****** Critical Failure: {1} ******{0}" +
 					"{2}{0}" + 
 					"{3}{0}" +
@@ -2620,6 +2716,17 @@ namespace IKVM.Internal
 		{
 			Console.Error.WriteLine("Unknown attribute {0} in XML mapping file, line {1}, column {2}", e.Attr.Name, e.LineNumber, e.LinePosition);
 			Environment.Exit(1);
+		}
+
+		internal static Type LoadType(Type type)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			if(JVM.IsStaticCompiler)
+			{
+				return Assembly.ReflectionOnlyLoadFrom(type.Assembly.Location).GetType(type.FullName);
+			}
+#endif
+			return type;
 		}
 	}
 }

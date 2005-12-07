@@ -4,13 +4,13 @@
         <property overwrite="false" name="signed" value="" />
         <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE;${signed}">
             <sources>
-                <includes name="*.cs" />
+                <include name="*.cs" />
             </sources>
             <references>
-                <includes name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
-                <includes name="../bin/IKVM.Runtime.dll" asis="true" />
-                <includes name="System.Windows.Forms.dll" asis="true" />
-                <includes name="System.Drawing.dll" asis="true" />
+                <include name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
+                <include name="../bin/IKVM.Runtime.dll" asis="true" />
+                <include name="System.Windows.Forms.dll" asis="true" />
+                <include name="System.Drawing.dll" asis="true" />
             </references>
         </csc>
     </target>

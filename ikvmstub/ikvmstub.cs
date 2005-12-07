@@ -56,6 +56,9 @@ public class NetExp
 		}
 		if(file != null && file.Exists)
 		{
+#if WHIDBEY
+			assembly = Assembly.ReflectionOnlyLoadFrom(args[0]);
+#else
 			try
 			{
 				// If the same assembly can be found in the "Load" context, we prefer to use that
@@ -72,6 +75,7 @@ public class NetExp
 			{
 				assembly = Assembly.LoadFrom(args[0]);
 			}
+#endif
 		}
 		else
 		{
@@ -215,6 +219,8 @@ public class NetExp
 #else
 		ClassFileWriter f = new ClassFileWriter(classmods, name, super, 3, 45);
 #endif
+		// TODO instead of passing in the assemblyName we're processing, we should get the assembly from the class
+		// (generic type instantiations can be from other assemblies)
 		f.AddStringAttribute("IKVM.NET.Assembly", assemblyName);
 		if(IKVM.Runtime.Util.IsClassDeprecated(c))
 		{
@@ -280,6 +286,7 @@ public class NetExp
 				java.lang.Class[] args = constructors[i].getParameterTypes();
 				foreach(java.lang.Class arg in args)
 				{
+					// TODO if arg is not public, add it to the export list as well
 					if(IsGenericType(arg))
 					{
 						AddToExportList(arg);
@@ -362,12 +369,14 @@ public class NetExp
 				java.lang.Class[] args = methods[i].getParameterTypes();
 				foreach(java.lang.Class arg in args)
 				{
+					// TODO if arg is not public, add it to the export list as well
 					if(IsGenericType(arg))
 					{
 						AddToExportList(arg);
 					}
 				}
 				java.lang.Class retType = methods[i].getReturnType();
+				// TODO if retType is not public, add it to the export list as well
 				if(IsGenericType(retType))
 				{
 					AddToExportList(retType);
@@ -445,8 +454,8 @@ public class NetExp
 						throw new InvalidOperationException();
 					}
 				}
-				// TODO what happens if the field type is non-public?
 				java.lang.Class fieldType = fields[i].getType();
+				// TODO if fieldType is not public, add it to the export list as well
 				if(IsGenericType(fieldType))
 				{
 					AddToExportList(fieldType);

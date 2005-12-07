@@ -70,7 +70,11 @@ class Compiler
 
 	static int RealMain(string[] args)
 	{
+#if WHIDBEY
+		AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+#else
 		AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+#endif
 		System.Threading.Thread.CurrentThread.Name = "compiler";
 		Tracer.EnableTraceForDebug();
 		JVM.CompilerOptions options = new JVM.CompilerOptions();
@@ -639,9 +643,13 @@ class Compiler
 	{
 		// make sure all the referenced assemblies are visible (they are loaded with LoadFrom, so
 		// they end up in the LoadFrom context [unless they happen to be available in one of the probe paths])
+#if WHIDBEY
+		foreach(Assembly a in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
+#else
 		foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
+#endif
 		{
-			if(a.FullName == args.Name)
+			if(args.Name.StartsWith(a.GetName().Name + ", "))
 			{
 				return a;
 			}

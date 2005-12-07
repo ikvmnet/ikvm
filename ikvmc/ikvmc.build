@@ -2,13 +2,20 @@
 <project name="ikvmc" default="ikvmc">
     <target name="ikvmc">
         <property overwrite="false" name="signed" value="" />
-        <csc target="exe" output="../bin/ikvmc.exe" define="TRACE;${signed}">
+        <property name="defs" value="TRACE" />
+        <if test="${property::exists('signed')}">
+            <property name="defs" value="${defs};${signed}" />
+        </if>
+	<if test="${framework::get-target-framework()=='net-2.0'}">
+            <property name="defs" value="${defs};WHIDBEY" />
+        </if>
+        <csc target="exe" output="../bin/ikvmc.exe" define="${defs}">
             <sources>
-                <includes name="*.cs" />
+                <include name="*.cs" />
             </sources>
             <references>
-                <includes name="../bin/IKVM.Runtime.dll" asis="true" />
-                <includes name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
+                <include name="../bin/IKVM.Runtime.dll" asis="true" />
+                <include name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
             </references>
         </csc>
     </target>

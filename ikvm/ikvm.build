@@ -4,11 +4,11 @@
         <property overwrite="false" name="signed" value="" />
         <csc target="exe" output="../bin/ikvm.exe" define="TRACE;${signed}">
             <sources>
-                <includes name="*.cs" />
+                <include name="*.cs" />
             </sources>
             <references>
-                <includes name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
-                <includes name="../bin/IKVM.Runtime.dll" asis="true" />
+                <include name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
+                <include name="../bin/IKVM.Runtime.dll" asis="true" />
             </references>
         </csc>
     </target>

@@ -3,20 +3,23 @@
     <target name="ikvmstub">
         <property overwrite="false" name="generics" value="false" />
         <property name="defs" value="TRACE" />
-        <if propertyexists="signed">
+        <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
-        <if propertytrue="generics">
+        <if test="${generics}">
             <property name="defs" value="${defs};GENERICS" />
+        </if>
+	<if test="${framework::get-target-framework()=='net-2.0'}">
+            <property name="defs" value="${defs};WHIDBEY" />
         </if>
         <csc target="exe" output="../bin/ikvmstub.exe" define="${defs}">
             <sources>
-                <includes name="*.cs" />
+                <include name="*.cs" />
             </sources>
             <references>
-                <includes name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
-                <includes name="../bin/IKVM.Runtime.dll" asis="true" />
-                <includes name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
+                <include name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
+                <include name="../bin/IKVM.Runtime.dll" asis="true" />
+                <include name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
             </references>
         </csc>
     </target>

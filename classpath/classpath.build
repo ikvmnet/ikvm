@@ -3,29 +3,27 @@
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property overwrite="false" name="generics" value="false" />
-    <if propertytrue="nant.platform.win32">
+    <if test="${nant.platform.win32}">
         <property name="pathsep" value=";" />
     </if>
-    <property name="jikes.compiler" value="false" />
-    <property name="ecj.compiler" value="true" />
 
     <target name="branch">
-        <if propertytrue="generics">
+        <if test="${generics}">
             <call target="generics" />
         </if>
-        <ifnot propertytrue="generics">
+        <ifnot test="${generics}">
             <call target="trunk" />
         </ifnot>
     </target>
 
     <target name="trunk">
-        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-0.19" />
+        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath" />
         <property name="allsources" value="allsources.lst" />
         <call target="IKVM.GNU.Classpath.dll" />
     </target>
 
     <target name="generics">
-        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-0.19-generics" />
+        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-generics" />
         <property name="allsources" value="allsources-generics.lst" />
         <call target="IKVM.GNU.Classpath.dll" />
     </target>
@@ -39,26 +37,20 @@
     <target name="classes" depends="jars" description="GNU Classpath + IKVM.NET specific Java classes">
         <delete>
 		<fileset basedir="${Classpath.dir}">
-			<includes name="**.class"/>
+			<include name="**.class"/>
 		</fileset>
 	</delete>
 	<delete>
 		<fileset basedir=".">
-			<includes name="**.class"/>
+			<include name="**.class"/>
 		</fileset>
 	</delete>
-        <if propertytrue="jikes.compiler">
-            <property name="classpath" value=".${pathsep}${Classpath.dir}${pathsep}${Classpath.dir}/external/w3c_dom${pathsep}${Classpath.dir}/external/sax${pathsep}${Classpath.dir}/vm/reference${pathsep}mscorlib.jar${pathsep}System.jar" />
-            <exec program="jikes" commandline="-g -nowarn -classpath ${classpath} @${allsources}"/>
-        </if>
-        <if propertytrue="ecj.compiler">
-            <exec program="ecj" commandline="-g -1.5 -nowarn -cp mscorlib.jar${pathsep}System.jar @${allsources}"/>
-        </if>
+        <exec program="ecj" commandline="-g -1.5 -nowarn -cp mscorlib.jar${pathsep}System.jar @${allsources}" useruntimeengine="false" />
     </target>
 
     <target name="IKVM.GNU.Classpath.dll" depends="classes">
         <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true">
-          <arg value="-version:0.22.0.0" />
+          <arg value="-version:0.23.*" />
           <arg value="${signoption}" />
           <arg value="-compressresources" />
           <arg value="-opt:fields" />
@@ -72,17 +64,18 @@
           <arg value="-recurse:${Classpath.dir}/resource/*.properties" />
           <arg value="-recurse:${Classpath.dir}/resource/javax.*" />
           <arg value="-recurse:${Classpath.dir}/resource/org.xml.*" />
-          <arg value="mscorlib.jar" />
-          <arg value="System.jar" />
-          <arg value="System.Xml.jar" />
+          <arg value="-r:${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
+<!--
+          <arg value="-r:C:\Program Files\Microsoft Visual Studio 8\SmartDevices\SDK\CompactFramework\2.0\v2.0\WindowsCE\System.dll" />
+-->
           <arg value="-resource:lib/security/classpath.security=classpath.security" />
           <arg value="-resource:META-INF/MANIFEST.MF=MANIFEST.MF" />
           <environment>
-            <option name="IKVM_EXPERIMENTAL_JDK_5_0" value="1" />
+            <variable name="IKVM_EXPERIMENTAL_JDK_5_0" value="1" />
           </environment>
         </exec>
         <copy file="IKVM.GNU.Classpath.dll" tofile="../bin/IKVM.GNU.Classpath.dll.new" />
-        <if propertytrue="nant.platform.win32">
+        <if test="${nant.platform.win32}">
             <call target="peverify-classpath"/>
         </if>
         <copy file="IKVM.GNU.Classpath.dll" todir="../bin" />

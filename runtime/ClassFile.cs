@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+#if !COMPACT_FRAMEWORK
 using System;
 using System.IO;
 using System.Collections;
@@ -54,11 +55,13 @@ namespace IKVM.Internal
 		private string sourceFile;
 		private ushort majorVersion;
 		private bool deprecated;
-		private string signature;
-		private string[] enclosingMethod;
 		private string ikvmAssembly;
 		private InnerClass[] innerClasses;
+#if GENERICS
 		private object[] annotations;
+		private string signature;
+		private string[] enclosingMethod;
+#endif
 
 		private class SupportedVersions
 		{
@@ -933,7 +936,11 @@ namespace IKVM.Internal
 		{
 			get
 			{
+#if GENERICS
 				return annotations;
+#else
+				return null;
+#endif
 			}
 		}
 
@@ -941,7 +948,11 @@ namespace IKVM.Internal
 		{
 			get
 			{
+#if GENERICS
 				return signature;
+#else
+				return null;
+#endif
 			}
 		}
 
@@ -949,7 +960,11 @@ namespace IKVM.Internal
 		{
 			get
 			{
+#if GENERICS
 				return enclosingMethod;
+#else
+				return null;
+#endif
 			}
 		}
 
@@ -1656,8 +1671,10 @@ namespace IKVM.Internal
 			private string name;
 			private string descriptor;
 			protected bool deprecated;
+#if GENERICS
 			protected string signature;
 			protected object[] annotations;
+#endif
 
 			internal FieldOrMethod(ClassFile classFile, BigEndianBinaryReader br)
 			{
@@ -1690,7 +1707,11 @@ namespace IKVM.Internal
 			{
 				get
 				{
+#if GENERICS
 					return annotations;
+#else
+					return null;
+#endif
 				}
 			}
 
@@ -1698,7 +1719,11 @@ namespace IKVM.Internal
 			{
 				get
 				{
+#if GENERICS
 					return signature;
+#else
+					return null;
+#endif
 				}
 			}
 
@@ -1936,7 +1961,9 @@ namespace IKVM.Internal
 		{
 			private Code code;
 			private string[] exceptions;
+#if GENERICS
 			private object annotationDefault;
+#endif
 
 			internal Method(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
 			{
@@ -2106,7 +2133,11 @@ namespace IKVM.Internal
 			{
 				get
 				{
+#if GENERICS
 					return annotationDefault;
+#else
+					return null;
+#endif
 				}
 			}
 
@@ -2625,3 +2656,4 @@ namespace IKVM.Internal
 		}
 	}
 }
+#endif

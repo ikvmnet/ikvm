@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+#if !COMPACT_FRAMEWORK
 using System;
 using System.IO;
 
@@ -225,3 +226,4 @@ sealed class BigEndianBinaryReader
 		return i;
 	}
 }
+#endif

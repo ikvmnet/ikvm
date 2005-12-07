@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+#if !COMPACT_FRAMEWORK
 using System;
 using System.Collections;
 using System.Collections.Specialized;
@@ -3416,3 +3417,4 @@ namespace IKVM.Runtime
 		internal static JNIEnv* pJNIEnv;
 	}
 }
+#endif

@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+#if !COMPACT_FRAMEWORK
 using System;
 using System.Collections;
 using System.Reflection;
@@ -351,3 +352,4 @@ namespace IKVM.Internal
 		internal abstract void Emit(CountingILGenerator ilgen);
 	}
 }
+#endif

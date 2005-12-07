@@ -23,7 +23,7 @@
         <nant buildfile="classpath/classpath.build" />
         <nant buildfile="ikvm/ikvm.build" />
         <nant buildfile="ikvmstub/ikvmstub.build" />
-        <if propertytrue="nant.platform.win32">
+        <if test="${nant.platform.win32}">
             <nant buildfile="awt/awt.build" />
             <nant buildfile="jvm/jvm.build" />
         </if>
@@ -31,17 +31,17 @@
     <target name="clean">
         <delete failonerror="false">
 	    <fileset>
-                <includes name="bin/IKVM.AWT.WinForms.dll" />
-                <includes name="bin/IKVM.Runtime.dll" />
-                <includes name="bin/IKVM.GNU.Classpath.dll" />
-                <includes name="bin/ikvm-native.dll" />
-                <includes name="bin/libikvm-native.so" />
-                <includes name="bin/ikvm.exe" />
-                <includes name="bin/ikvmc.exe" />
-                <includes name="bin/ikvmstub.exe" />
-                <includes name="bin/JVM.DLL" />
-                <includes name="tools/asmref.exe" />
-                <includes name="native/Release/ikvm-native.dll" />
+                <include name="bin/IKVM.AWT.WinForms.dll" />
+                <include name="bin/IKVM.Runtime.dll" />
+                <include name="bin/IKVM.GNU.Classpath.dll" />
+                <include name="bin/ikvm-native.dll" />
+                <include name="bin/libikvm-native.so" />
+                <include name="bin/ikvm.exe" />
+                <include name="bin/ikvmc.exe" />
+                <include name="bin/ikvmstub.exe" />
+                <include name="bin/JVM.DLL" />
+                <include name="tools/asmref.exe" />
+                <include name="native/Release/ikvm-native.dll" />
             </fileset>
         </delete>
     </target>

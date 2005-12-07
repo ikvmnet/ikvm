@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <project name="ikvm-native" default="ikvm-native">
     <target name="ikvm-native">
-		<if propertytrue="nant.platform.unix">
+        <if test="${nant.platform.unix}">
             <call target="ikvm-native-unix"/>
         </if>
-        <if propertytrue="nant.platform.win32">
+        <if test="${nant.platform.win32}">
             <call target="ikvm-native-win32"/>
         </if>
     </target>
@@ -16,12 +16,12 @@
         <mkdir dir="Release"/>
         <cl outputdir="Release" options="/O2 /D WIN32 /D NDEBUG /D _WINDLL /D _MBCS /GS /W3 /nologo /c">
             <sources>
-                <includes name="*.c"/>
+                <include name="*.c"/>
             </sources>
         </cl>
         <link output="Release/ikvm-native.dll" options="/DLL user32.lib">
             <sources>
-                <includes name="Release/*.obj"/>
+                <include name="Release/*.obj"/>
             </sources>
         </link>
         <copy file="Release/ikvm-native.dll" todir="../bin" />

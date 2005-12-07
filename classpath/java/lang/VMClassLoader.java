@@ -383,7 +383,8 @@ final class VMClassLoader
     private static final boolean enablePackageCaching;
 
     private static void hookUpAssemblyLoadEvent()
-        throws cli.System.Security.SecurityException
+        throws cli.System.Security.SecurityException,
+               cli.System.MissingMethodException
     {
         AppDomain.get_CurrentDomain().add_AssemblyLoad(new AssemblyLoadEventHandler(
             new AssemblyLoadEventHandler.Method() {
@@ -402,6 +403,10 @@ final class VMClassLoader
             // a seperate method
             hookUpAssemblyLoadEvent();
             enable = true;
+        }
+        catch(cli.System.MissingMethodException _1)
+        {
+            // we're running on the Compact Framework
         }
         catch(cli.System.Security.SecurityException _)
         {

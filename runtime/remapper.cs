@@ -21,7 +21,7 @@
   jeroen@frijters.net
   
 */
-#if! NO_STATIC_COMPILER
+#if !NO_STATIC_COMPILER && !COMPACT_FRAMEWORK
 
 using System;
 using System.Xml.Serialization;
@@ -100,7 +100,7 @@ namespace IKVM.Internal.MapXml
 			{
 				Debug.Assert(Class == null && type != null);
 				Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
-				ConstructorInfo ci = Type.GetType(type, true).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
+				ConstructorInfo ci = JVM.LoadType(Type.GetType(type, true)).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
 				if(ci == null)
 				{
 					throw new InvalidOperationException("Missing .ctor: " + type + "..ctor" + Sig);
@@ -189,10 +189,10 @@ namespace IKVM.Internal.MapXml
 						argTypes = new Type[types.Length];
 						for(int i = 0; i < types.Length; i++)
 						{
-							argTypes[i] = Type.GetType(types[i]);
+							argTypes[i] = JVM.LoadType(Type.GetType(types[i]));
 						}
 					}
-					MethodInfo mi = Type.GetType(type, true).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
+					MethodInfo mi = JVM.LoadType(Type.GetType(type, true)).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
 					if(mi == null)
 					{
 						throw new InvalidOperationException("Missing method: " + type + "." + Name + Sig);
@@ -271,7 +271,7 @@ namespace IKVM.Internal.MapXml
 				}
 				else
 				{
-					typeType = Type.GetType(type, true);
+					typeType = JVM.LoadType(Type.GetType(type, true));
 				}
 			}
 		}
@@ -354,7 +354,7 @@ namespace IKVM.Internal.MapXml
 			if(typeType == null)
 			{
 				Debug.Assert(type != null);
-				typeType = Type.GetType(type, true);
+				typeType = JVM.LoadType(Type.GetType(type, true));
 			}
 			ilgen.Emit(opcode, typeType);
 		}
@@ -513,7 +513,7 @@ namespace IKVM.Internal.MapXml
 					Debug.Assert(Class == null ^ type == null);
 					if(type != null)
 					{
-						typeType = Type.GetType(type, true);
+						typeType = JVM.LoadType(Type.GetType(type, true));
 					}
 					else
 					{
@@ -920,7 +920,7 @@ namespace IKVM.Internal.MapXml
 			@try.Generate(context, ilgen);
 			if(@catch != null)
 			{
-				ilgen.BeginCatchBlock(Type.GetType(@catch.type, true));
+				ilgen.BeginCatchBlock(JVM.LoadType(Type.GetType(@catch.type, true)));
 				@catch.Generate(context, ilgen);
 			}
 			if(@finally != null)
@@ -936,6 +936,22 @@ namespace IKVM.Internal.MapXml
 	{
 		[XmlAttribute("type")]
 		public string type;
+	}
+
+	[XmlType("conditional")]
+	public class ConditionalInstruction : Instruction
+	{
+		[XmlAttribute("framework")]
+		public string framework;
+		public InstructionList code;
+
+		internal override void Generate(Hashtable context, CountingILGenerator ilgen)
+		{
+			if (Environment.Version.ToString().StartsWith(framework))
+			{
+				code.Generate(context, ilgen);
+			}
+		}
 	}
 
 	public class InstructionList : CodeEmitter
@@ -1001,6 +1017,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Unaligned))]
 		[XmlElement(typeof(Cpblk))]
 		[XmlElement(typeof(Ceq))]
+		[XmlElement(typeof(ConditionalInstruction))]
 		public Instruction[] invoke;
 
 		internal void Generate(Hashtable context, ILGenerator ilgen)
