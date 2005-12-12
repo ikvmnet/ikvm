@@ -42,6 +42,7 @@
                 <include name="bin/JVM.DLL" />
                 <include name="tools/asmref.exe" />
                 <include name="native/Release/ikvm-native.dll" />
+                <include name="native/Release/*.obj" />
             </fileset>
         </delete>
     </target>

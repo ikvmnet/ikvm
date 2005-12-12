@@ -224,6 +224,16 @@ namespace IKVM.Runtime
 			return wrapper.ClassObject;
 		}
 
+		public static Type GetInstanceTypeFromClass(object classObject)
+		{
+			TypeWrapper wrapper = (TypeWrapper)JVM.Library.getWrapperFromClass(classObject);
+			if(wrapper.IsRemapped && wrapper.IsFinal)
+			{
+				return wrapper.TypeAsTBD;
+			}
+			return wrapper.TypeAsBaseType;
+		}
+
 		private static FieldWrapper GetFieldWrapperFromField(object field)
 		{
 			if(field == null)
