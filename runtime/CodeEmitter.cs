@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -39,8 +39,9 @@ namespace IKVM.Internal
 		private Stack exceptionStack = new Stack();
 		private bool inFinally;
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
+		private Type boxType;
 #if LABELCHECK
-	private Hashtable labels = new Hashtable();
+		private Hashtable labels = new Hashtable();
 #endif
 
 		public static implicit operator CountingILGenerator(ILGenerator ilgen)
@@ -55,23 +56,27 @@ namespace IKVM.Internal
 
 		internal int GetILOffset()
 		{
+			LazyGen();
 			return offset;
 		}
 
 		internal void BeginCatchBlock(Type exceptionType)
 		{
+			LazyGen();
 			offset += 5;
 			ilgen.BeginCatchBlock(exceptionType);
 		}
 
 		internal void BeginExceptFilterBlock()
 		{
+			LazyGen();
 			offset += 5;
 			ilgen.BeginExceptFilterBlock();
 		}
 
 		internal Label BeginExceptionBlock()
 		{
+			LazyGen();
 			exceptionStack.Push(inFinally);
 			inFinally = false;
 			return ilgen.BeginExceptionBlock();
@@ -79,6 +84,7 @@ namespace IKVM.Internal
 
 		internal void BeginFaultBlock()
 		{
+			LazyGen();
 			inFinally = true;
 			offset += 5;
 			ilgen.BeginFaultBlock();
@@ -86,6 +92,7 @@ namespace IKVM.Internal
 
 		internal void BeginFinallyBlock()
 		{
+			LazyGen();
 			inFinally = true;
 			offset += 5;
 			ilgen.BeginFinallyBlock();
@@ -93,6 +100,7 @@ namespace IKVM.Internal
 
 		internal void BeginScope()
 		{
+			LazyGen();
 			ilgen.BeginScope();
 		}
 
@@ -107,61 +115,70 @@ namespace IKVM.Internal
 		{
 			Label label = ilgen.DefineLabel();
 #if LABELCHECK
-		labels.Add(label, new System.Diagnostics.StackFrame(1, true));
+			labels.Add(label, new System.Diagnostics.StackFrame(1, true));
 #endif
 			return label;
 		}
 
 		internal void Emit(OpCode opcode)
 		{
+			LazyGen();
 			offset += opcode.Size;
 			ilgen.Emit(opcode);
 		}
 
 		internal void Emit(OpCode opcode, byte arg)
 		{
+			LazyGen();
 			offset += opcode.Size + 1;
 			ilgen.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, ConstructorInfo con)
 		{
+			LazyGen();
 			offset += opcode.Size + 4;
 			ilgen.Emit(opcode, con);
 		}
 
 		internal void Emit(OpCode opcode, double arg)
 		{
+			LazyGen();
 			offset += opcode.Size + 8;
 			ilgen.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, FieldInfo field)
 		{
+			LazyGen();
 			offset += opcode.Size + 4;
 			ilgen.Emit(opcode, field);
 		}
 
 		internal void Emit(OpCode opcode, short arg)
 		{
+			LazyGen();
 			offset += opcode.Size + 2;
 			ilgen.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, int arg)
 		{
+			LazyGen();
 			offset += opcode.Size + 4;
 			ilgen.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, long arg)
 		{
+			LazyGen();
 			offset += opcode.Size + 8;
 			ilgen.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, Label label)
 		{
+			LazyGen();
 			offset += opcode.Size;
 			ilgen.Emit(opcode, label);
 			switch(opcode.OperandType)
@@ -179,12 +196,14 @@ namespace IKVM.Internal
 
 		internal void Emit(OpCode opcode, Label[] labels)
 		{
+			LazyGen();
 			offset += 5 + labels.Length * 4;
 			ilgen.Emit(opcode, labels);
 		}
 
 		internal void Emit(OpCode opcode, LocalBuilder local)
 		{
+			LazyGen();
 			ilgen.Emit(opcode, local);
 			int index = locals.IndexOf(local);
 			if(index < 4 && opcode.Value != OpCodes.Ldloca.Value && opcode.Value != OpCodes.Ldloca_S.Value)
@@ -203,18 +222,21 @@ namespace IKVM.Internal
 
 		internal void Emit(OpCode opcode, MethodInfo meth)
 		{
+			LazyGen();
 			offset += opcode.Size + 4;
 			ilgen.Emit(opcode, meth);
 		}
 
 		internal void Emit(OpCode opcode, sbyte arg)
 		{
+			LazyGen();
 			offset += opcode.Size + 1;
 			ilgen.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, SignatureHelper signature)
 		{
+			LazyGen();
 			offset += opcode.Size;
 			ilgen.Emit(opcode, signature);
 			throw new NotImplementedException();
@@ -222,24 +244,28 @@ namespace IKVM.Internal
 
 		internal void Emit(OpCode opcode, float arg)
 		{
+			LazyGen();
 			offset += opcode.Size + 4;
 			ilgen.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, string arg)
 		{
+			LazyGen();
 			offset += opcode.Size + 4;
 			ilgen.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, Type cls)
 		{
+			LazyGen();
 			offset += opcode.Size + 4;
 			ilgen.Emit(opcode, cls);
 		}
 
 		internal void EmitCall(OpCode opcode, MethodInfo methodInfo, Type[] optionalParameterTypes)
 		{
+			LazyGen();
 			offset += opcode.Size;
 			ilgen.EmitCall(opcode, methodInfo, optionalParameterTypes);
 			throw new NotImplementedException();
@@ -247,36 +273,42 @@ namespace IKVM.Internal
 
 		internal void EmitCalli(OpCode opcode, CallingConvention unmanagedCallConv, Type returnType, Type[] parameterTypes)
 		{
+			LazyGen();
 			offset += 5;
 			ilgen.EmitCalli(opcode, unmanagedCallConv, returnType, parameterTypes);
 		}
 
 		internal void EmitCalli(OpCode opcode, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
 		{
+			LazyGen();
 			offset += 5;
 			ilgen.EmitCalli(opcode, callingConvention, returnType, parameterTypes, optionalParameterTypes);
 		}
 
 		internal void EmitWriteLine(FieldInfo fld)
 		{
+			LazyGen();
 			ilgen.EmitWriteLine(fld);
 			throw new NotImplementedException();
 		}
 
 		internal void EmitWriteLine(LocalBuilder localBuilder)
 		{
+			LazyGen();
 			ilgen.EmitWriteLine(localBuilder);
 			throw new NotImplementedException();
 		}
 
 		internal void EmitWriteLine(string value)
 		{
+			LazyGen();
 			offset += 10;
 			ilgen.EmitWriteLine(value);
 		}
 
 		internal void EndExceptionBlock()
 		{
+			LazyGen();
 			if(inFinally)
 			{
 				offset += 1;
@@ -291,11 +323,13 @@ namespace IKVM.Internal
 
 		internal void EndScope()
 		{
+			LazyGen();
 			ilgen.EndScope();
 		}
 
 		internal void MarkLabel(Label loc)
 		{
+			LazyGen();
 #if LABELCHECK
 		labels.Remove(loc);
 #endif
@@ -304,22 +338,26 @@ namespace IKVM.Internal
 
 		internal void MarkSequencePoint(ISymbolDocumentWriter document, int startLine, int startColumn, int endLine, int endColumn)
 		{
+			LazyGen();
 			ilgen.MarkSequencePoint(document, startLine, startColumn, endLine, endColumn);
 		}
 
 		internal void ThrowException(Type excType)
 		{
+			LazyGen();
 			offset += 6;
 			ilgen.ThrowException(excType);
 		}
 
 		internal void UsingNamespace(string usingNamespace)
 		{
+			LazyGen();
 			ilgen.UsingNamespace(usingNamespace);
 		}
 
 		internal void SetLineNumber(ushort line)
 		{
+			LazyGen();
 			if(linenums == null)
 			{
 				linenums = new IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter(32);
@@ -335,14 +373,54 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal void LazyEmitBox(Type type)
+		{
+			LazyGen();
+			boxType = type;
+		}
+
+		internal void LazyEmitUnboxSpecial(Type type)
+		{
+			if(boxType != null && boxType == type)
+			{
+				// the unbox and lazy box cancel each other out
+				boxType = null;
+			}
+			else
+			{
+				// NOTE if the reference is null, we treat it as a default instance of the value type.
+				Emit(OpCodes.Dup);
+				Label label1 = DefineLabel();
+				Emit(OpCodes.Brtrue_S, label1);
+				Emit(OpCodes.Pop);
+				Emit(OpCodes.Ldloc, DeclareLocal(type));
+				Label label2 = DefineLabel();
+				Emit(OpCodes.Br_S, label2);
+				MarkLabel(label1);
+				Emit(OpCodes.Unbox, type);
+				Emit(OpCodes.Ldobj, type);
+				MarkLabel(label2);
+			}
+		}
+
+		private void LazyGen()
+		{
+			if(boxType != null)
+			{
+				Type t = boxType;
+				boxType = null;
+				Emit(OpCodes.Box, t);
+			}
+		}
+
 		internal void Finish()
 		{
 #if LABELCHECK
-		foreach(System.Diagnostics.StackFrame frame in labels.Values)
-		{
-			string name = frame.GetFileName() + ":" + frame.GetFileLineNumber();
-			IKVM.Internal.JVM.CriticalFailure("Label failure: " + name, null);
-		}
+			foreach(System.Diagnostics.StackFrame frame in labels.Values)
+			{
+				string name = frame.GetFileName() + ":" + frame.GetFileLineNumber();
+				IKVM.Internal.JVM.CriticalFailure("Label failure: " + name, null);
+			}
 #endif
 		}
 	}

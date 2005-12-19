@@ -59,6 +59,7 @@ namespace IKVM.Runtime
 			return o;
 		}
 
+#if !COMPACT_FRAMEWORK
 		[DebuggerStepThroughAttribute]
 		public static object DynamicMultianewarray(RuntimeTypeHandle type, string clazz, int[] lengths)
 		{
@@ -273,6 +274,23 @@ namespace IKVM.Runtime
 			Profiler.Count("DynamicGetTypeAsExceptionType");
 			return LoadTypeWrapper(type, clazz).TypeAsExceptionType;
 		}
+#else
+		[DebuggerStepThroughAttribute]
+		public static object DynamicCast(object obj, RuntimeTypeHandle type, string clazz)
+		{
+			if(obj != null)
+			{
+				throw JavaException.ClassCastException("");
+			}
+			return obj;
+		}
+
+		[DebuggerStepThroughAttribute]
+		public static bool DynamicInstanceOf(object obj, RuntimeTypeHandle type, string clazz)
+		{
+			return false;
+		}
+#endif //!COMPACT_FRAMEWORK
 
 		[DebuggerStepThroughAttribute]
 		public static int f2i(float f)
@@ -552,7 +570,7 @@ namespace IKVM.Runtime
 		public static void VerboseCastFailure(RuntimeTypeHandle typeHandle, object obj)
 		{
 			string msg = String.Format("Object of type \"{0}\" cannot be cast to \"{1}\"", obj.GetType().AssemblyQualifiedName, Type.GetTypeFromHandle(typeHandle).AssemblyQualifiedName);
-			throw IKVM.Internal.JVM.Library.newClassCastException(msg);
+			throw JavaException.ClassCastException(msg);
 		}
 
 		public static bool SkipFinalizer()

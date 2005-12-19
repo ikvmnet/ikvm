@@ -378,9 +378,19 @@ class Compiler
 					compressResources = true;
 					options.compressedResources = true;
 				}
+				else if(s == "-manifestResources")
+				{
+					// NOTE this is an undocumented option and this resource format is *not* supported by IKVM.GNU.Classpath.dll
+					options.manifestResources = true;
+				}
 				else if(s == "-strictfinalfieldsemantics")
 				{
 					options.strictFinalFieldSemantics = true;
+				}
+				else if(s.StartsWith("-runtime:"))
+				{
+					// NOTE this is an undocumented option
+					options.runtimeAssembly = s.Substring(9);
 				}
 				else
 				{

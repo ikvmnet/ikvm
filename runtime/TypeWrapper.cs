@@ -722,7 +722,7 @@ namespace IKVM.Internal
 		internal static ModifiersAttribute GetModifiersAttribute(Type type)
 		{
 #if WHIDBEY
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
@@ -742,7 +742,7 @@ namespace IKVM.Internal
 		internal static Modifiers GetModifiers(MethodBase mb, bool assemblyIsPrivate)
 		{
 #if WHIDBEY
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 				{
@@ -818,7 +818,7 @@ namespace IKVM.Internal
 		internal static Modifiers GetModifiers(FieldInfo fi, bool assemblyIsPrivate)
 		{
 #if WHIDBEY
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
 				{
@@ -1047,7 +1047,7 @@ namespace IKVM.Internal
 		internal static NameSigAttribute GetNameSig(FieldInfo field)
 		{
 #if WHIDBEY
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
 				{
@@ -1067,7 +1067,7 @@ namespace IKVM.Internal
 		internal static NameSigAttribute GetNameSig(MethodBase method)
 		{
 #if WHIDBEY
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(method))
 				{
@@ -1085,7 +1085,7 @@ namespace IKVM.Internal
 		}
 
 #if WHIDBEY && !COMPACT_FRAMEWORK
-		private static T[] DecodeArray<T>(CustomAttributeTypedArgument arg)
+		internal static T[] DecodeArray<T>(CustomAttributeTypedArgument arg)
 		{
 			IList<CustomAttributeTypedArgument> elems = (IList<CustomAttributeTypedArgument>)arg.Value;
 			T[] arr = new T[elems.Count];
@@ -1100,7 +1100,7 @@ namespace IKVM.Internal
 		internal static ImplementsAttribute GetImplements(Type type)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
@@ -1120,7 +1120,7 @@ namespace IKVM.Internal
 		internal static InnerClassAttribute GetInnerClass(Type type)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
@@ -1140,7 +1140,7 @@ namespace IKVM.Internal
 		internal static RemappedInterfaceMethodAttribute[] GetRemappedInterfaceMethods(Type type)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				List<RemappedInterfaceMethodAttribute> attrs = new List<RemappedInterfaceMethodAttribute>();
 					foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
@@ -1163,7 +1163,7 @@ namespace IKVM.Internal
 		internal static RemappedTypeAttribute GetRemappedType(Type type)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
@@ -1206,7 +1206,7 @@ namespace IKVM.Internal
 		private static object[] GetCustomAttributes(MemberInfo member, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				ArrayList attrs = new ArrayList();
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(member))
@@ -1236,7 +1236,7 @@ namespace IKVM.Internal
 		internal static bool IsDefined(Module mod, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
 				{
@@ -1255,7 +1255,7 @@ namespace IKVM.Internal
 		internal static bool IsDefined(Assembly asm, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(asm))
 				{
@@ -1273,7 +1273,7 @@ namespace IKVM.Internal
 		internal static bool IsDefined(Type type, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
@@ -1292,7 +1292,7 @@ namespace IKVM.Internal
 		internal static bool IsDefined(ParameterInfo pi, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(pi))
 				{
@@ -1311,7 +1311,7 @@ namespace IKVM.Internal
 		internal static bool IsDefined(MemberInfo member, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(member))
 				{
@@ -2268,30 +2268,18 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		internal void EmitUnbox(ILGenerator ilgen)
+		internal void EmitUnbox(CountingILGenerator ilgen)
 		{
 			Debug.Assert(this.IsNonPrimitiveValueType);
 
-			Type type = this.TypeAsTBD;
-			// NOTE if the reference is null, we treat it as a default instance of the value type.
-			ilgen.Emit(OpCodes.Dup);
-			Label label1 = ilgen.DefineLabel();
-			ilgen.Emit(OpCodes.Brtrue_S, label1);
-			ilgen.Emit(OpCodes.Pop);
-			ilgen.Emit(OpCodes.Ldloc, ilgen.DeclareLocal(type));
-			Label label2 = ilgen.DefineLabel();
-			ilgen.Emit(OpCodes.Br_S, label2);
-			ilgen.MarkLabel(label1);
-			ilgen.Emit(OpCodes.Unbox, type);
-			ilgen.Emit(OpCodes.Ldobj, type);
-			ilgen.MarkLabel(label2);
+			ilgen.LazyEmitUnboxSpecial(this.TypeAsTBD);
 		}
 
-		internal void EmitBox(ILGenerator ilgen)
+		internal void EmitBox(CountingILGenerator ilgen)
 		{
 			Debug.Assert(this.IsNonPrimitiveValueType);
 
-			ilgen.Emit(OpCodes.Box, this.TypeAsTBD);
+			ilgen.LazyEmitBox(this.TypeAsTBD);
 		}
 
 		internal void EmitConvSignatureTypeToStackType(ILGenerator ilgen)
@@ -3307,11 +3295,36 @@ namespace IKVM.Internal
 							typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
 						}
 					}
+					ArrayList interfaceList = null;
 					TypeWrapper[] interfaces = wrapper.Interfaces;
 					for(int i = 0; i < interfaces.Length; i++)
 					{
 						// NOTE we're using TypeAsBaseType for the interfaces!
 						typeBuilder.AddInterfaceImplementation(interfaces[i].TypeAsBaseType);
+						// NOTE we're also "implementing" all interfaces that we inherit from the interfaces we implement.
+						// The C# compiler also does this and the Compact Framework requires it.
+						TypeWrapper[] inheritedInterfaces = interfaces[i].Interfaces;
+						if(inheritedInterfaces.Length > 0)
+						{
+							if(interfaceList == null)
+							{
+								interfaceList = new ArrayList();
+								foreach(TypeWrapper tw1 in interfaces)
+								{
+									interfaceList.Add(tw1.TypeAsBaseType);
+								}
+							}
+							foreach(TypeWrapper tw in inheritedInterfaces)
+							{
+								if(!interfaceList.Contains(tw.TypeAsBaseType))
+								{
+									interfaceList.Add(tw.TypeAsBaseType);
+									// NOTE we don't have to recurse upwards, because we assume that
+									// all interfaces follow this rule (of explicitly listed all of the base interfaces)
+									typeBuilder.AddInterfaceImplementation(tw.TypeAsBaseType);
+								}
+							}
+						}
 					}
 					AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
 					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
@@ -7954,6 +7967,7 @@ namespace IKVM.Internal
 		private static readonly object[] noargs = new object[0];
 		private static readonly MethodInfo get_IsGenericTypeDefinition = typeof(Type).GetMethod("get_IsGenericTypeDefinition");
 		private static readonly MethodInfo get_IsGenericMethodDefinition = typeof(MethodBase).GetMethod("get_IsGenericMethodDefinition");
+		private static readonly MethodInfo method_MakeGenericType = typeof(Type).GetMethod("MakeGenericType");
 
 		internal static bool IsGenericTypeDefinition(Type type)
 		{
@@ -7963,6 +7977,11 @@ namespace IKVM.Internal
 		internal static bool IsGenericMethodDefinition(MethodBase mb)
 		{
 			return get_IsGenericMethodDefinition != null && (bool)get_IsGenericMethodDefinition.Invoke(mb, noargs);
+		}
+
+		internal static Type MakeGenericType(Type type, Type[] typeArguments)
+		{
+			return (Type)method_MakeGenericType.Invoke(type, new object[] { typeArguments });
 		}
 	}
 
@@ -8186,10 +8205,71 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		private static string[] ParseGenericArgs(string args)
+		{
+			if(args[0] != '[')
+				throw new NotSupportedException();
+			ArrayList list = new ArrayList();
+			int start = 1;
+			int depth = 1;
+			for(int i = 1; i < args.Length; i++)
+			{
+				if(args[i] == '[')
+				{
+					depth++;
+					if(depth == 1)
+					{
+						start = i + 1;
+					}
+				}
+				else if(args[i] == ']')
+				{
+					depth--;
+					if(depth == 0)
+					{
+						list.Add(args.Substring(start, i - start));
+					}
+				}
+			}
+			return (string[])list.ToArray(typeof(string));
+		}
+
 		private static Type LoadTypeFromLoadedAssemblies(string name)
 		{
+			// HACK handle generic types here
+			int index = name.IndexOf("[[");
+			if(index > 0)
+			{
+				int lastIndex = name.LastIndexOf("]]");
+				if(lastIndex == -1 || (lastIndex + 2 < name.Length && name[lastIndex + 2] != ','))
+				{
+					return null;
+				}
+				Type t = LoadTypeFromLoadedAssemblies(name.Substring(0, index));
+				if(t != null && Whidbey.IsGenericTypeDefinition(t))
+				{
+					string[] typeArgStrings = ParseGenericArgs(name.Substring(index + 1, lastIndex - index));
+					Type[] typeArgs = new Type[typeArgStrings.Length];
+					for(int i = 0; i < typeArgs.Length; i++)
+					{
+						typeArgs[i] = LoadTypeFromLoadedAssemblies(typeArgStrings[i]);
+						if(typeArgs[i] == null)
+						{
+							return null;
+						}
+					}
+					return Whidbey.MakeGenericType(t, typeArgs);
+				}
+			}
+			// HACK we ignore the assembly name (we have to do that to make the generic type arguments work)
+			int comma = name.IndexOf(',');
+			if(comma >= 0)
+			{
+				name = name.Substring(0, comma);
+			}
+
 #if WHIDBEY
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				foreach(Assembly a in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
 				{
@@ -8211,6 +8291,7 @@ namespace IKVM.Internal
 						}
 					}
 				}
+				return Type.GetType(name);
 			}
 #endif
 			foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())

@@ -255,7 +255,7 @@ namespace IKVM.Runtime
 		public static bool IsFieldDeprecated(object field)
 		{
 			FieldInfo fi = GetFieldWrapperFromField(field).GetField();
-			return fi != null && fi.IsDefined(typeof(ObsoleteAttribute), false);
+			return fi != null && AttributeHelper.IsDefined(fi, typeof(ObsoleteAttribute));
 		}
 
 		public static bool IsMethodDeprecated(object method)
@@ -270,7 +270,7 @@ namespace IKVM.Runtime
 			}
 			MethodWrapper mw = (MethodWrapper)IKVM.Internal.JVM.Library.getWrapperFromMethodOrConstructor(method);
 			MethodBase mb = mw.GetMethod();
-			return mb != null && mb.IsDefined(typeof(ObsoleteAttribute), false);
+			return mb != null && AttributeHelper.IsDefined(mb, typeof(ObsoleteAttribute));
 		}
 
 		public static bool IsConstructorDeprecated(object constructor)
@@ -285,7 +285,7 @@ namespace IKVM.Runtime
 			}
 			MethodWrapper mw = (MethodWrapper)IKVM.Internal.JVM.Library.getWrapperFromMethodOrConstructor(constructor);
 			MethodBase mb = mw.GetMethod();
-			return mb != null && mb.IsDefined(typeof(ObsoleteAttribute), false);
+			return mb != null && AttributeHelper.IsDefined(mb, typeof(ObsoleteAttribute));
 		}
 
 		public static bool IsClassDeprecated(object clazz)
@@ -299,7 +299,7 @@ namespace IKVM.Runtime
 				throw new ArgumentException("clazz");
 			}
 			TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
-			return wrapper.TypeAsTBD.IsDefined(typeof(ObsoleteAttribute), false);
+			return AttributeHelper.IsDefined(wrapper.TypeAsTBD, typeof(ObsoleteAttribute));
 		}
 
 		[HideFromJava]
@@ -317,6 +317,7 @@ namespace IKVM.Internal
 		private static bool debug = System.Diagnostics.Debugger.IsAttached;
 		private static bool noJniStubs;
 		private static bool isStaticCompiler;
+		private static bool isIkvmStub;
 		private static bool noStackTraceInfo;
 		private static bool compilationPhase1;
 		private static string sourcePath;
@@ -520,6 +521,14 @@ namespace IKVM.Internal
 			get
 			{
 				return isStaticCompiler;
+			}
+		}
+
+		internal static bool IsIkvmStub
+		{
+			get
+			{
+				return isIkvmStub;
 			}
 		}
 
@@ -807,7 +816,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal void AddResources(Hashtable resources, bool compressedResources)
+			internal void AddResources(Hashtable resources, bool compressedResources, bool manifestResources)
 			{
 				Tracer.Info(Tracer.Compiler, "CompilerClassLoader adding resources...");
 				ModuleBuilder moduleBuilder = this.ModuleBuilder;
@@ -816,8 +825,21 @@ namespace IKVM.Internal
 					byte[] buf = (byte[])d.Value;
 					if(buf.Length > 0)
 					{
-						IResourceWriter writer = moduleBuilder.DefineResource(JVM.MangleResourceName((string)d.Key), "");
-						writer.AddResource(compressedResources ? "lz" : "ikvm", buf);
+						string name = JVM.MangleResourceName((string)d.Key);
+						if(manifestResources)
+						{
+#if WHIDBEY
+							// NOTE this is an undocumented option and this resource format is *not* supported by IKVM.GNU.Classpath.dll
+							moduleBuilder.DefineManifestResource(name, new MemoryStream(buf), ResourceAttributes.Public);
+#else
+							throw new InvalidOperationException("DefineManifestResource is only available on .NET 2.0");
+#endif
+						}
+						else
+						{
+							IResourceWriter writer = moduleBuilder.DefineResource(name, "");
+							writer.AddResource(compressedResources ? "lz" : "ikvm", buf);
+						}
 					}
 				}
 			}
@@ -2257,13 +2279,21 @@ namespace IKVM.Internal
 			public bool nostacktraceinfo;
 			public bool removeUnusedFields;
 			public bool compressedResources;
+			public bool manifestResources;
 			public bool strictFinalFieldSemantics;
+			public string runtimeAssembly;
 		}
 
 		private static bool IsSigned(Assembly asm)
 		{
 			byte[] key = asm.GetName().GetPublicKey();
 			return key != null && key.Length != 0;
+		}
+
+		public static void SetIkvmStubMode()
+		{
+			// HACK
+			isIkvmStub = true;
 		}
 
 		public static int Compile(CompilerOptions options)
@@ -2273,9 +2303,19 @@ namespace IKVM.Internal
 			noJniStubs = options.nojni;
 			noStackTraceInfo = options.nostacktraceinfo;
 			strictFinalFieldSemantics = options.strictFinalFieldSemantics;
-			Assembly runtimeAssembly = typeof(JVM).Assembly;
+			Assembly runtimeAssembly;
 #if WHIDBEY
-			Assembly.ReflectionOnlyLoadFrom(runtimeAssembly.Location);
+			if(options.runtimeAssembly == null)
+			{
+				runtimeAssembly = typeof(JVM).Assembly;
+				Assembly.ReflectionOnlyLoadFrom(runtimeAssembly.Location);
+			}
+			else
+			{
+				runtimeAssembly = Assembly.ReflectionOnlyLoadFrom(options.runtimeAssembly);
+			}
+#else
+			runtimeAssembly = typeof(JVM).Assembly;
 #endif
 			AssemblyName runtimeAssemblyName = runtimeAssembly.GetName();
 			bool allReferencesAreStrongNamed = IsSigned(runtimeAssembly);
@@ -2285,8 +2325,7 @@ namespace IKVM.Internal
 				{
 #if WHIDBEY
 					Assembly reference = Assembly.ReflectionOnlyLoadFrom(r);
-					Type type = UnsafeGetType(reference, "java.lang.LibraryVMInterfaceImpl");
-					if(type != null)
+					if(AttributeHelper.IsDefined(reference, JVM.LoadType(typeof(RemappedClassAttribute))))
 					{
 						coreAssembly = reference;
 					}
@@ -2512,8 +2551,14 @@ namespace IKVM.Internal
 				return 1;
 			}
 
-			ClassLoaderWrapper.PublishLibraryImplementationHelperType(LoadType(typeof(gnu.classpath.Pointer)));
-			ClassLoaderWrapper.PublishLibraryImplementationHelperType(LoadType(typeof(ikvm.@internal.LibraryVMInterface)));
+			if(runtimeAssembly.GetType("gnu.classpath.Pointer") != null)
+			{
+				ClassLoaderWrapper.PublishLibraryImplementationHelperType(LoadType(typeof(gnu.classpath.Pointer)));
+			}
+			if(runtimeAssembly.GetType("ikvm.internal.LibraryVMInterface") != null)
+			{
+				ClassLoaderWrapper.PublishLibraryImplementationHelperType(LoadType(typeof(ikvm.@internal.LibraryVMInterface)));
+			}
 
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
 			ArrayList allwrappers = new ArrayList();
@@ -2633,7 +2678,7 @@ namespace IKVM.Internal
 				loader.FinishRemappedTypes();
 			}
 			Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
-			loader.AddResources(options.resources, options.compressedResources);
+			loader.AddResources(options.resources, options.compressedResources, options.manifestResources);
 			if(options.fileversion != null)
 			{
 				CustomAttributeBuilder filever = new CustomAttributeBuilder(typeof(AssemblyFileVersionAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { options.fileversion });
@@ -2731,9 +2776,9 @@ namespace IKVM.Internal
 		internal static Type LoadType(Type type)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
-				return Assembly.ReflectionOnlyLoadFrom(type.Assembly.Location).GetType(type.FullName);
+				return StaticCompiler.GetType(type.FullName);
 			}
 #endif
 			return type;

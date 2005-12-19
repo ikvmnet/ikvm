@@ -92,6 +92,7 @@ namespace IKVM.Internal
 			Assembly coreAssembly = JVM.CoreAssembly;
 			if(coreAssembly != null)
 			{
+				Tracer.Info(Tracer.Runtime, "Core assembly: {0}", coreAssembly.Location);
 				RemappedClassAttribute[] remapped = AttributeHelper.GetRemappedClasses(coreAssembly);
 				if(remapped.Length > 0)
 				{
@@ -541,7 +542,7 @@ namespace IKVM.Internal
 #else
 			Assembly[] assemblies;
 #if WHIDBEY
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
 			{
 				assemblies = AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
 			}
@@ -907,7 +908,15 @@ namespace IKVM.Internal
 			}
 			DateTime now = DateTime.Now;
 			name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
-			AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true);
+			AssemblyBuilder assemblyBuilder;
+#if WHIDBEY
+			if(JVM.IsIkvmStub)
+			{
+				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, null, null, null, null, null, true);
+			}
+			else
+#endif
+			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true);
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
 			return saveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);

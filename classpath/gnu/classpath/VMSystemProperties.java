@@ -327,7 +327,7 @@ public class VMSystemProperties
         {
             p.setProperty("user.dir", ".");
         }
-        p.setProperty("awt.toolkit", "ikvm.awt.NetToolkit, IKVM.AWT.WinForms, Version=0.22.0.0, Culture=neutral, PublicKeyToken=13235d27fcbfff58");
+        p.setProperty("awt.toolkit", "ikvm.awt.NetToolkit, IKVM.AWT.WinForms");
         // HACK since we cannot use URL here (it depends on the properties being set), we manually encode the spaces in the assembly name
         p.setProperty("gnu.classpath.home.url", "ikvmres://" + ((cli.System.String)(Object)cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName()).Replace(" ", "%20") + "/lib");
         p.setProperty("gnu.cpu.endian", cli.System.BitConverter.IsLittleEndian ? "little" : "big");

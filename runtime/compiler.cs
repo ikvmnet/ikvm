@@ -1319,9 +1319,10 @@ class Compiler
 			// if there was a forward branch to this instruction, it is forward reachable
 			instructionIsForwardReachable |= block.HasLabel(i);
 
-			// TODO for now, every instruction has an associated label, I'm not sure it's worthwhile,
-			// but it could be optimized
-			block.MarkLabel(i);
+			if(block.HasLabel(i) || (instr.flags & ClassFile.Method.InstructionFlags.BranchTarget) != 0)
+			{
+				block.MarkLabel(i);
+			}
 
 			// if the instruction is only backward reachable, ECMA says it must have an empty stack,
 			// so we move the stack to locals
@@ -2963,6 +2964,8 @@ class Compiler
 				break;
 		}
 
+		int firstCastArg = -1;
+
 		if(!needsCast)
 		{
 			for(int i = 0; i < args.Length; i++)
@@ -2974,6 +2977,7 @@ class Compiler
 				else if(args[i].IsGhost)
 				{
 					needsCast = true;
+					firstCastArg = i;
 					break;
 				}
 				else if(args[i].IsInterfaceOrInterfaceArray)
@@ -2982,6 +2986,7 @@ class Compiler
 					if(!tw.IsUnloadable && !tw.IsAssignableTo(args[i]))
 					{
 						needsCast = true;
+						firstCastArg = i;
 						break;
 					}
 				}
@@ -2994,14 +2999,16 @@ class Compiler
 					else
 					{
 						needsCast = true;
+						firstCastArg = i;
+						break;
 					}
-					break;
 				}
 				// if the stack contains an unloadable, we might need to cast it
 				// (e.g. if the argument type is a base class that is loadable)
 				if(ma.GetRawStackTypeWrapper(instructionIndex, i).IsUnloadable)
 				{
 					needsCast = true;
+					firstCastArg = i;
 					break;
 				}
 			}
@@ -3009,9 +3016,8 @@ class Compiler
 
 		if(needsCast)
 		{
-			// OPTIMIZE if the first n arguments don't need a cast, they can be left on the stack
 			DupHelper dh = new DupHelper(this, args.Length);
-			for(int i = 0; i < args.Length; i++)
+			for(int i = firstCastArg + 1; i < args.Length; i++)
 			{
 				TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
 				if(tw != VerifierTypeWrapper.UninitializedThis)
@@ -3020,7 +3026,7 @@ class Compiler
 				}
 				dh.SetType(i, tw);
 			}
-			for(int i = args.Length - 1; i >= 0; i--)
+			for(int i = args.Length - 1; i >= firstCastArg; i--)
 			{
 				if(!args[i].IsUnloadable && !args[i].IsGhost)
 				{
@@ -3031,23 +3037,31 @@ class Compiler
 						Profiler.Count("InterfaceDownCast");
 					}
 				}
-				dh.Store(i);
+				if(i != firstCastArg)
+				{
+					dh.Store(i);
+				}
 			}
-			for(int i = 0; i < args.Length; i++)
+			for(int i = firstCastArg; i < args.Length; i++)
 			{
+				if(i != firstCastArg)
+				{
+					dh.Load(i);
+				}
 				if(!args[i].IsUnloadable && args[i].IsGhost && !dynamic)
 				{
 					if(i == 0 && instanceMethod && !method.DeclaringType.IsInterface)
 					{
 						// we're calling a java.lang.Object method through a ghost interface reference,
 						// no ghost handling is needed
-						dh.Load(i);
 					}
 					else
 					{
+						LocalBuilder ghost = AllocTempLocal(typeof(object));
+						ilGenerator.Emit(OpCodes.Stloc, ghost);
 						LocalBuilder local = AllocTempLocal(args[i].TypeAsSignatureType);
 						ilGenerator.Emit(OpCodes.Ldloca, local);
-						dh.Load(i);
+						ilGenerator.Emit(OpCodes.Ldloc, ghost);
 						ilGenerator.Emit(OpCodes.Stfld, args[i].GhostRefField);
 						ilGenerator.Emit(OpCodes.Ldloca, local);
 						ReleaseTempLocal(local);
@@ -3060,7 +3074,6 @@ class Compiler
 				}
 				else
 				{
-					dh.Load(i);
 					if(!args[i].IsUnloadable && !dynamic)
 					{
 						if(args[i].IsNonPrimitiveValueType)

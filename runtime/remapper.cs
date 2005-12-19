@@ -547,7 +547,7 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
-			ilgen.Emit(OpCodes.Ldarga, ArgNum);
+			ilgen.Emit(OpCodes.Ldarga, (short)ArgNum);
 		}
 	}
 

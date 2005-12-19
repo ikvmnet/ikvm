@@ -301,7 +301,13 @@ public class Starter
 				JarFile jf = new JarFile(mainClass);
 				try
 				{
-					mainClass = jf.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS).Replace('/', '.');
+					Manifest manifest = jf.getManifest();
+					if(manifest == null)
+					{
+						Console.Error.WriteLine("Jar file doesn't contain manifest");
+						return 1;
+					}
+					mainClass = manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
 				}
 				finally
 				{
@@ -312,6 +318,7 @@ public class Starter
 					Console.Error.WriteLine("Manifest doesn't contain a Main-Class.");
 					return 1;
 				}
+				mainClass = mainClass.Replace('/', '.');
 			}
 			if(bootclasspath != null)
 			{

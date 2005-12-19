@@ -448,6 +448,19 @@ namespace IKVM.Internal
 			// been set)
 			if(method != null && !(method is MethodBuilder))
 			{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+				if(JVM.IsIkvmStub)
+				{
+					foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(method))
+					{
+						if(cad.Constructor.DeclaringType == StaticCompiler.GetType(typeof(ThrowsAttribute).FullName))
+						{
+							return AttributeHelper.DecodeArray<string>(cad.ConstructorArguments[0]);
+						}
+					}
+					return new string[0];
+				}
+#endif
 				object[] attributes = method.GetCustomAttributes(typeof(ThrowsAttribute), false);
 				if(attributes.Length == 1)
 				{
@@ -1131,14 +1144,21 @@ namespace IKVM.Internal
 				if(field.IsLiteral)
 				{
 					ReflectionOnConstant.IssueWarning(field);
+#if WHIDBEY
+					val = field.GetRawConstantValue();
+#else
 					val = field.GetValue(null);
 					if(val is Enum)
 					{
 						val = DotNetTypeWrapper.EnumValueFieldWrapper.GetEnumPrimitiveValue(val);
 					}
+#endif
 				}
 				else
 				{
+#if WHIDBEY
+					// TODO
+#else
 					// In Java, instance fields can also have a ConstantValue attribute so we emulate that
 					// with ConstantValueAttribute (for consumption by ikvmstub only)
 					object[] attrib = field.GetCustomAttributes(typeof(ConstantValueAttribute), false);
@@ -1146,6 +1166,7 @@ namespace IKVM.Internal
 					{
 						val = ((ConstantValueAttribute)attrib[0]).GetConstantValue();
 					}
+#endif
 				}
 				if(val != null && !(val is string))
 				{

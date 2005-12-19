@@ -34,6 +34,7 @@ public class NetExp
 {
 	private static ZipOutputStream zipFile;
 	private static Hashtable privateClasses = new Hashtable();
+	private static FileInfo file;
 
 	public static void Main(string[] args)
 	{
@@ -44,7 +45,6 @@ public class NetExp
 			return;
 		}
 		Assembly assembly = null;
-		FileInfo file = null;
 		try
 		{
 			file = new FileInfo(args[0]);
@@ -57,6 +57,11 @@ public class NetExp
 		if(file != null && file.Exists)
 		{
 #if WHIDBEY
+			JVM.SetIkvmStubMode();
+			Assembly.ReflectionOnlyLoadFrom(typeof(System.ComponentModel.EditorBrowsableAttribute).Assembly.Location);
+			Assembly.ReflectionOnlyLoadFrom(typeof(JVM).Assembly.Location);
+			Assembly.ReflectionOnlyLoadFrom(typeof(java.lang.Object).Assembly.Location);
+			AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_ReflectionOnlyAssemblyResolve);
 			assembly = Assembly.ReflectionOnlyLoadFrom(args[0]);
 #else
 			try
@@ -106,6 +111,28 @@ public class NetExp
 		Environment.Exit(rc);
 	}
 
+#if WHIDBEY
+	private static Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
+	{
+		foreach(Assembly a in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
+		{
+			if(args.Name.StartsWith(a.GetName().Name + ", "))
+			{
+				return a;
+			}
+		}
+		string path = args.Name;
+		int index = path.IndexOf(',');
+		if(index > 0)
+		{
+			path = path.Substring(0, index);
+		}
+		path = file.DirectoryName + Path.DirectorySeparatorChar + path + ".dll";
+		Console.WriteLine("Loading referenced assembly: " + path);
+		return Assembly.ReflectionOnlyLoadFrom(path);
+	}
+#endif
+
 	private static void WriteClass(string name, ClassFileWriter c)
 	{
 		zipFile.PutNextEntry(new ZipEntry(name));
@@ -121,7 +148,12 @@ public class NetExp
 				java.lang.Class c;
 				try
 				{
-					c = java.lang.Class.forName(t.AssemblyQualifiedName, false, null);
+					c = (java.lang.Class)IKVM.Runtime.Util.GetFriendlyClassFromType(t);
+					if (c == null)
+					{
+						Console.WriteLine("Skipping: " + t.FullName);
+						continue;
+					}
 				}
 				catch(java.lang.ClassNotFoundException)
 				{
