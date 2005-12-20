@@ -379,6 +379,35 @@ namespace IKVM.Internal
 			boxType = type;
 		}
 
+		internal bool IsBoxPending(Type type)
+		{
+			return boxType == type;
+		}
+
+		internal void ClearPendingBox()
+		{
+			boxType = null;
+		}
+
+		internal void LazyEmitUnbox(Type type)
+		{
+			if(boxType != null && boxType == type)
+			{
+				// the unbox and lazy box cancel each other out
+				boxType = null;
+				// unbox leaves a pointer to the value of the stack (instead of the value)
+				// so we have to copy the value into a local variable and load the address
+				// of the local onto the stack
+				LocalBuilder local = DeclareLocal(type);
+				Emit(OpCodes.Stloc, local);
+				Emit(OpCodes.Ldloca, local);
+			}
+			else
+			{
+				Emit(OpCodes.Unbox, type);
+			}
+		}
+
 		internal void LazyEmitUnboxSpecial(Type type)
 		{
 			if(boxType != null && boxType == type)

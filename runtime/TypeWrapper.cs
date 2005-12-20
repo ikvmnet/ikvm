@@ -8534,26 +8534,33 @@ namespace IKVM.Internal
 			protected override void EmitGetImpl(ILGenerator ilgen)
 			{
 				DotNetTypeWrapper tw = (DotNetTypeWrapper)this.DeclaringType;
-				ilgen.Emit(OpCodes.Unbox, tw.type);
-				// FXBUG the .NET 1.1 verifier doesn't understand that ldobj on an enum that has an underlying type
-				// of byte or short that the resulting type on the stack is an int32, so we have to
-				// to it the hard way. Note that this is fixed in Whidbey.
-				Type underlyingType = Enum.GetUnderlyingType(tw.type);
-				if(underlyingType == typeof(sbyte) || underlyingType == typeof(byte))
+				if(ilgen.IsBoxPending(tw.type))
 				{
-					ilgen.Emit(OpCodes.Ldind_I1);
+					ilgen.ClearPendingBox();
 				}
-				else if(underlyingType == typeof(short) || underlyingType == typeof(ushort))
+				else
 				{
-					ilgen.Emit(OpCodes.Ldind_I2);
-				}
-				else if(underlyingType == typeof(int) || underlyingType == typeof(uint))
-				{
-					ilgen.Emit(OpCodes.Ldind_I4);
-				}
-				else if(underlyingType == typeof(long) || underlyingType == typeof(ulong))
-				{
-					ilgen.Emit(OpCodes.Ldind_I8);
+					ilgen.Emit(OpCodes.Unbox, tw.type);
+					// FXBUG the .NET 1.1 verifier doesn't understand that ldobj on an enum that has an underlying type
+					// of byte or short that the resulting type on the stack is an int32, so we have to
+					// to it the hard way. Note that this is fixed in Whidbey.
+					Type underlyingType = Enum.GetUnderlyingType(tw.type);
+					if(underlyingType == typeof(sbyte) || underlyingType == typeof(byte))
+					{
+						ilgen.Emit(OpCodes.Ldind_I1);
+					}
+					else if(underlyingType == typeof(short) || underlyingType == typeof(ushort))
+					{
+						ilgen.Emit(OpCodes.Ldind_I2);
+					}
+					else if(underlyingType == typeof(int) || underlyingType == typeof(uint))
+					{
+						ilgen.Emit(OpCodes.Ldind_I4);
+					}
+					else if(underlyingType == typeof(long) || underlyingType == typeof(ulong))
+					{
+						ilgen.Emit(OpCodes.Ldind_I8);
+					}
 				}
 			}
 

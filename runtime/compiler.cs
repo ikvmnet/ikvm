@@ -3083,7 +3083,7 @@ class Compiler
 								// we only need to unbox if the method was actually declared on the value type
 								if(method.DeclaringType == args[i])
 								{
-									ilGenerator.Emit(OpCodes.Unbox, args[i].TypeAsTBD);
+									ilGenerator.LazyEmitUnbox(args[i].TypeAsTBD);
 								}
 							}
 							else
