@@ -637,6 +637,7 @@ class Compiler
 		{
 			Null,
 			New,
+			This,
 			UnitializedThis,
 			Other
 		}
@@ -681,6 +682,10 @@ class Compiler
 				// new objects aren't really there on the stack
 				types[i] = StackType.New;
 			}
+			else if(VerifierTypeWrapper.IsThis(type))
+			{
+				types[i] = StackType.This;
+			}
 			else if(type == VerifierTypeWrapper.UninitializedThis)
 			{
 				// uninitialized references cannot be stored in a local, but we can reload them
@@ -703,6 +708,7 @@ class Compiler
 				case StackType.New:
 					// new objects aren't really there on the stack
 					break;
+				case StackType.This:
 				case StackType.UnitializedThis:
 					compiler.ilGenerator.Emit(OpCodes.Ldarg_0);
 					break;
@@ -719,6 +725,7 @@ class Compiler
 			switch(types[i])
 			{
 				case StackType.Null:
+				case StackType.This:
 				case StackType.UnitializedThis:
 					compiler.ilGenerator.Emit(OpCodes.Pop);
 					break;
@@ -1417,8 +1424,7 @@ class Compiler
 					ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
 					FieldWrapper field = cpi.GetField();
 					TypeWrapper tw = field.FieldTypeWrapper;
-					TypeWrapper val = ma.GetRawStackTypeWrapper(i, 0);
-					tw.EmitConvStackTypeToSignatureType(ilGenerator, val);
+					tw.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
 					field.EmitSet(ilGenerator);
 					break;
 				}
@@ -1511,8 +1517,8 @@ class Compiler
 						cpi.Signature == "(Ljava.lang.Object;ILjava.lang.Object;II)V" &&
 						cpi.GetClassType().GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())
 					{
-						TypeWrapper dst_type = ma.GetRawStackTypeWrapper(i, 2);
-						TypeWrapper src_type = ma.GetRawStackTypeWrapper(i, 4);
+						TypeWrapper dst_type = ma.GetStackTypeWrapper(i, 2);
+						TypeWrapper src_type = ma.GetStackTypeWrapper(i, 4);
 						if(!dst_type.IsUnloadable && dst_type.IsArray && dst_type == src_type)
 						{
 							switch(dst_type.Name[1])
@@ -1675,7 +1681,7 @@ class Compiler
 								{
 									if(!stackfix[j])
 									{
-										TypeWrapper stacktype = ma.GetRawStackTypeWrapper(i, argcount + 1 + j);
+										TypeWrapper stacktype = ma.GetStackTypeWrapper(i, argcount + 1 + j);
 										// it could be another new object reference (not from current invokespecial <init>
 										// instruction)
 										if(stacktype == VerifierTypeWrapper.Null)
@@ -1763,10 +1769,21 @@ class Compiler
 					}
 					else
 					{
-						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial
-							&& !method.IsPrivate) // if the method is private, we can get away with a callvirt (and not generate the stub)
+						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
 						{
-							ilGenerator.Emit(OpCodes.Callvirt, GetInvokeSpecialStub(method));
+							if(VerifierTypeWrapper.IsThis(type))
+							{
+								method.EmitCall(ilGenerator);
+							}
+							else if(method.IsPrivate)
+							{
+								// if the method is private, we can get away with a callvirt (and not generate the stub)
+								method.EmitCallvirt(ilGenerator);
+							}
+							else
+							{
+								ilGenerator.Emit(OpCodes.Callvirt, GetInvokeSpecialStub(method));
+							}
 						}
 						else
 						{
@@ -1793,11 +1810,7 @@ class Compiler
 						if(instr.NormalizedOpCode != NormalizedByteCode.__return)
 						{
 							TypeWrapper retTypeWrapper = mw.ReturnType;
-							retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
-							if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
-							{
-								ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsSignatureType);
-							}
+							retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
 							local = UnsafeAllocTempLocal(retTypeWrapper.TypeAsSignatureType);
 							ilGenerator.Emit(OpCodes.Stloc, local);
 						}
@@ -1822,11 +1835,7 @@ class Compiler
 						else
 						{
 							TypeWrapper retTypeWrapper = mw.ReturnType;
-							retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetRawStackTypeWrapper(i, 0));
-							if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
-							{
-								ilGenerator.Emit(OpCodes.Castclass, retTypeWrapper.TypeAsSignatureType);
-							}
+							retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
 							if(stackHeight != 1)
 							{
 								LocalBuilder local = AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
@@ -1851,6 +1860,10 @@ class Compiler
 					else if(VerifierTypeWrapper.IsNew(type))
 					{
 						// since new objects aren't represented on the stack, we don't need to do anything here
+					}
+					else if(VerifierTypeWrapper.IsThis(type))
+					{
+						ilGenerator.Emit(OpCodes.Ldarg_0);
 					}
 					else if(type == VerifierTypeWrapper.UninitializedThis)
 					{
@@ -2982,7 +2995,7 @@ class Compiler
 				}
 				else if(args[i].IsInterfaceOrInterfaceArray)
 				{
-					TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
+					TypeWrapper tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
 					if(!tw.IsUnloadable && !tw.IsAssignableTo(args[i]))
 					{
 						needsCast = true;
@@ -3020,7 +3033,8 @@ class Compiler
 			for(int i = firstCastArg + 1; i < args.Length; i++)
 			{
 				TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
-				if(tw != VerifierTypeWrapper.UninitializedThis)
+				if(tw != VerifierTypeWrapper.UninitializedThis
+					&& !VerifierTypeWrapper.IsThis(tw))
 				{
 					tw = args[i];
 				}
@@ -3030,7 +3044,7 @@ class Compiler
 			{
 				if(!args[i].IsUnloadable && !args[i].IsGhost)
 				{
-					TypeWrapper tw = ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i);
+					TypeWrapper tw = ma.GetStackTypeWrapper(instructionIndex, args.Length - 1 - i);
 					if(tw.IsUnloadable || (args[i].IsInterfaceOrInterfaceArray && !tw.IsAssignableTo(args[i])))
 					{
 						EmitHelper.EmitAssertType(ilGenerator, args[i].TypeAsTBD);
@@ -3251,7 +3265,8 @@ class Compiler
 	// TODO this method should have a better name
 	private TypeWrapper SigTypeToClassName(TypeWrapper type, TypeWrapper nullType)
 	{
-		if(type == VerifierTypeWrapper.UninitializedThis)
+		if(type == VerifierTypeWrapper.UninitializedThis
+			|| VerifierTypeWrapper.IsThis(type))
 		{
 			return clazz;
 		}

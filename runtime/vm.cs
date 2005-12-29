@@ -670,8 +670,11 @@ namespace IKVM.Internal
 					AttributeHelper.SetSourceFile(moduleBuilder, null);
 				}
 				AttributeHelper.SetJavaModule(moduleBuilder);
-				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
-				assemblyBuilder.SetCustomAttribute(debugAttr);
+				if(JVM.Debug || !JVM.NoStackTraceInfo)
+				{
+					CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
+					assemblyBuilder.SetCustomAttribute(debugAttr);
+				}
 				return moduleBuilder;
 			}
 

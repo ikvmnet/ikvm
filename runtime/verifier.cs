@@ -434,6 +434,14 @@ class InstructionState
 		{
 			return VerifierTypeWrapper.Invalid;
 		}
+		if(VerifierTypeWrapper.IsThis(type1))
+		{
+			type1 = ((VerifierTypeWrapper)type1).UnderlyingType;
+		}
+		if(VerifierTypeWrapper.IsThis(type2))
+		{
+			type2 = ((VerifierTypeWrapper)type2).UnderlyingType;
+		}
 		if(type1.IsUnloadable || type2.IsUnloadable)
 		{
 			return VerifierTypeWrapper.Unloadable;
@@ -820,6 +828,10 @@ class InstructionState
 		{
 			stackEnd++;
 		}
+		if(VerifierTypeWrapper.IsThis(type))
+		{
+			type = ((VerifierTypeWrapper)type).UnderlyingType;
+		}
 		return type;
 	}
 
@@ -993,7 +1005,12 @@ struct StackState
 		{
 			throw new VerifyError("Unable to pop operand off an empty stack");
 		}
-		return state.GetStackByIndex(sp - 1);
+		TypeWrapper type = state.GetStackByIndex(sp - 1);
+		if(VerifierTypeWrapper.IsThis(type))
+		{
+			type = ((VerifierTypeWrapper)type).UnderlyingType;
+		}
+		return type;
 	}
 
 	internal TypeWrapper PopAnyType()
@@ -1002,7 +1019,12 @@ struct StackState
 		{
 			throw new VerifyError("Unable to pop operand off an empty stack");
 		}
-		return state.GetStackByIndex(--sp);
+		TypeWrapper type = state.GetStackByIndex(--sp);
+		if(VerifierTypeWrapper.IsThis(type))
+		{
+			type = ((VerifierTypeWrapper)type).UnderlyingType;
+		}
+		return type;
 	}
 
 	internal TypeWrapper PopType(TypeWrapper baseType)
@@ -1114,7 +1136,7 @@ class VerifierTypeWrapper : TypeWrapper
 {
 	internal static readonly TypeWrapper Invalid = null;
 	internal static readonly TypeWrapper Null = new VerifierTypeWrapper("null", 0, null);
-	internal static readonly TypeWrapper UninitializedThis = new VerifierTypeWrapper("this", 0, null);
+	internal static readonly TypeWrapper UninitializedThis = new VerifierTypeWrapper("uninitialized-this", 0, null);
 	internal static readonly TypeWrapper Unloadable = new UnloadableTypeWrapper("<verifier>");
 
 	private int index;
@@ -1143,6 +1165,16 @@ class VerifierTypeWrapper : TypeWrapper
 		return new VerifierTypeWrapper("ret", bytecodeIndex, null);
 	}
 
+	// NOTE the "this" type is special, it can only exist in local[0] and on the stack
+	// as soon as the type on the stack is merged or popped it turns into its underlying type.
+	// It exists to capture the verification rules for non-virtual base class method invocation in .NET 2.0,
+	// which requires that the invocation is done on a "this" reference that was directly loaded onto the
+	// stack (using ldarg_0).
+	internal static TypeWrapper MakeThis(TypeWrapper type)
+	{
+		return new VerifierTypeWrapper("this", 0, type);
+	}
+
 	internal static bool IsNew(TypeWrapper w)
 	{
 		return w != null && w.IsVerifierType && w.Name == "new";
@@ -1156,6 +1188,11 @@ class VerifierTypeWrapper : TypeWrapper
 	internal static bool IsNullOrUnloadable(TypeWrapper w)
 	{
 		return w == Null || w.IsUnloadable;
+	}
+
+	internal static bool IsThis(TypeWrapper w)
+	{
+		return w != null && w.IsVerifierType && w.Name == "this";
 	}
 
 	internal int Index
@@ -1353,9 +1390,11 @@ class MethodAnalyzer
 
 		// start by computing the initial state, the stack is empty and the locals contain the arguments
 		state[0] = new InstructionState(method.MaxLocals, method.MaxStack);
+		TypeWrapper thisType;
 		int firstNonArgLocalIndex = 0;
 		if(!method.IsStatic)
 		{
+			thisType = VerifierTypeWrapper.MakeThis(wrapper);
 			// this reference. If we're a constructor, the this reference is uninitialized.
 			if(method.Name == "<init>")
 			{
@@ -1364,8 +1403,12 @@ class MethodAnalyzer
 			}
 			else
 			{
-				state[0].SetLocalType(firstNonArgLocalIndex++, wrapper, -1);
+				state[0].SetLocalType(firstNonArgLocalIndex++, thisType, -1);
 			}
+		}
+		else
+		{
+			thisType = null;
 		}
 		// mw can be null when we're invoked from IsSideEffectFreeStaticInitializer
 		TypeWrapper[] argTypeWrappers = mw == null ? TypeWrapper.EmptyArray : mw.GetParameters();
@@ -1766,6 +1809,10 @@ class MethodAnalyzer
 										// are now initialized
 										if(type == VerifierTypeWrapper.UninitializedThis)
 										{
+											if(s.GetLocalTypeEx(0) == type)
+											{
+												s.SetLocalType(0, thisType, i);
+											}
 											s.MarkInitialized(type, wrapper, i);
 											s.SetUnitializedThis(false);
 										}
@@ -2667,7 +2714,7 @@ class MethodAnalyzer
 					{
 						LocalVar v = new LocalVar();
 						v.local = instructions[i].NormalizedArg1;
-						v.type = GetRawStackTypeWrapper(i, 0);
+						v.type = GetStackTypeWrapper(i, 0);
 						v.FindLvtEntry(method, i);
 						locals.Add(v);
 						localByStoreSite.Add(i + ":" + v.local, v);
@@ -2879,6 +2926,7 @@ class MethodAnalyzer
 						instr.PatchOpCode(NormalizedByteCode.__dynamic_invokevirtual);
 						break;
 					case NormalizedByteCode.__invokespecial:
+						// TODO support dynamically instantiating an unloadable type
 						instr.SetHardError(HardError.LinkageError, AllocErrorMessage("Base class no longer loadable"));
 						break;
 					default:
@@ -3174,7 +3222,7 @@ class MethodAnalyzer
 				else
 				{
 					Debug.Assert(IsStoreLocal(method.Instructions[store].NormalizedOpCode));
-					type = InstructionState.FindCommonBaseType(type, GetRawStackTypeWrapper(store, 0));
+					type = InstructionState.FindCommonBaseType(type, GetStackTypeWrapper(store, 0));
 				}
 			}
 			// we can't have an invalid type, because that would have failed verification earlier
@@ -3206,7 +3254,14 @@ class MethodAnalyzer
 		{
 			local = new LocalVar();
 			local.local = localIndex;
-			local.type = type;
+			if(VerifierTypeWrapper.IsThis(type))
+			{
+				local.type = ((VerifierTypeWrapper)type).UnderlyingType;
+			}
+			else
+			{
+				local.type = type;
+			}
 			local.isArg = isArg;
 			if(JVM.Debug)
 			{
@@ -3357,6 +3412,16 @@ class MethodAnalyzer
 	internal int GetStackHeight(int index)
 	{
 		return state[index].GetStackHeight();
+	}
+
+	internal TypeWrapper GetStackTypeWrapper(int index, int pos)
+	{
+		TypeWrapper type = state[index].GetStackSlot(pos);
+		if(VerifierTypeWrapper.IsThis(type))
+		{
+			type = ((VerifierTypeWrapper)type).UnderlyingType;
+		}
+		return type;
 	}
 
 	internal TypeWrapper GetRawStackTypeWrapper(int index, int pos)
