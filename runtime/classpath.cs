@@ -311,6 +311,10 @@ namespace IKVM.NativeCode.java
 		{
 			public static double pow(double x, double y)
 			{
+				if(NetSystem.Math.Abs(x) == 1.0 && double.IsInfinity(y))
+				{
+					return double.NaN;
+				}
 				return NetSystem.Math.Pow(x, y);
 			}
 
