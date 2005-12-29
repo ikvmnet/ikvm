@@ -27,6 +27,7 @@ using System.Resources;
 #if !COMPACT_FRAMEWORK
 using System.Reflection.Emit;
 using ILGenerator = IKVM.Internal.CountingILGenerator;
+using Label = IKVM.Internal.CountingLabel;
 #endif
 using System.Reflection;
 using System.IO;

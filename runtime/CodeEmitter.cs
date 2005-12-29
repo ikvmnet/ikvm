@@ -31,6 +31,37 @@ using System.Diagnostics.SymbolStore;
 
 namespace IKVM.Internal
 {
+	class CountingLabel
+	{
+		private Label label;
+		private int offset = -1;
+
+		internal CountingLabel(Label label)
+		{
+			this.label = label;
+		}
+
+		internal Label Label
+		{
+			get
+			{
+				return label;
+			}
+		}
+
+		internal int Offset
+		{
+			get
+			{
+				return offset;
+			}
+			set
+			{
+				offset = value;
+			}
+		}
+	}
+
 	class CountingILGenerator
 	{
 		private ILGenerator ilgen;
@@ -111,13 +142,13 @@ namespace IKVM.Internal
 			return loc;
 		}
 
-		internal Label DefineLabel()
+		internal CountingLabel DefineLabel()
 		{
 			Label label = ilgen.DefineLabel();
 #if LABELCHECK
 			labels.Add(label, new System.Diagnostics.StackFrame(1, true));
 #endif
-			return label;
+			return new CountingLabel(label);
 		}
 
 		internal void Emit(OpCode opcode)
@@ -176,11 +207,50 @@ namespace IKVM.Internal
 			ilgen.Emit(opcode, arg);
 		}
 
-		internal void Emit(OpCode opcode, Label label)
+		internal void Emit(OpCode opcode, CountingLabel label)
 		{
 			LazyGen();
+			if(label.Offset != -1 && offset - label.Offset < 126)
+			{
+				if(opcode.Value == OpCodes.Brtrue.Value)
+				{
+					opcode = OpCodes.Brtrue_S;
+				}
+				else if(opcode.Value == OpCodes.Brfalse.Value)
+				{
+					opcode = OpCodes.Brfalse_S;
+				}
+				else if(opcode.Value == OpCodes.Br.Value)
+				{
+					opcode = OpCodes.Br_S;
+				}
+				else if(opcode.Value == OpCodes.Beq.Value)
+				{
+					opcode = OpCodes.Beq_S;
+				}
+				else if(opcode.Value == OpCodes.Bne_Un.Value)
+				{
+					opcode = OpCodes.Bne_Un_S;
+				}
+				else if(opcode.Value == OpCodes.Ble.Value)
+				{
+					opcode = OpCodes.Ble_S;
+				}
+				else if(opcode.Value == OpCodes.Blt.Value)
+				{
+					opcode = OpCodes.Blt_S;
+				}
+				else if(opcode.Value == OpCodes.Bge.Value)
+				{
+					opcode = OpCodes.Bge_S;
+				}
+				else if(opcode.Value == OpCodes.Bgt.Value)
+				{
+					opcode = OpCodes.Bgt_S;
+				}
+			}
 			offset += opcode.Size;
-			ilgen.Emit(opcode, label);
+			ilgen.Emit(opcode, label.Label);
 			switch(opcode.OperandType)
 			{
 				case OperandType.InlineBrTarget:
@@ -194,11 +264,16 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void Emit(OpCode opcode, Label[] labels)
+		internal void Emit(OpCode opcode, CountingLabel[] labels)
 		{
 			LazyGen();
 			offset += 5 + labels.Length * 4;
-			ilgen.Emit(opcode, labels);
+			Label[] real = new Label[labels.Length];
+			for(int i = 0; i < labels.Length; i++)
+			{
+				real[i] = labels[i].Label;
+			}
+			ilgen.Emit(opcode, real);
 		}
 
 		internal void Emit(OpCode opcode, LocalBuilder local)
@@ -327,13 +402,14 @@ namespace IKVM.Internal
 			ilgen.EndScope();
 		}
 
-		internal void MarkLabel(Label loc)
+		internal void MarkLabel(CountingLabel loc)
 		{
 			LazyGen();
 #if LABELCHECK
-		labels.Remove(loc);
+			labels.Remove(loc.Label);
 #endif
-			ilgen.MarkLabel(loc);
+			ilgen.MarkLabel(loc.Label);
+			loc.Offset = offset;
 		}
 
 		internal void MarkSequencePoint(ISymbolDocumentWriter document, int startLine, int startColumn, int endLine, int endColumn)
@@ -419,11 +495,11 @@ namespace IKVM.Internal
 			{
 				// NOTE if the reference is null, we treat it as a default instance of the value type.
 				Emit(OpCodes.Dup);
-				Label label1 = DefineLabel();
+				CountingLabel label1 = DefineLabel();
 				Emit(OpCodes.Brtrue_S, label1);
 				Emit(OpCodes.Pop);
 				Emit(OpCodes.Ldloc, DeclareLocal(type));
-				Label label2 = DefineLabel();
+				CountingLabel label2 = DefineLabel();
 				Emit(OpCodes.Br_S, label2);
 				MarkLabel(label1);
 				Emit(OpCodes.Unbox, type);

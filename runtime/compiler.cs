@@ -34,6 +34,7 @@ using IKVM.Attributes;
 using IKVM.Internal;
 
 using ILGenerator = IKVM.Internal.CountingILGenerator;
+using Label = IKVM.Internal.CountingLabel;
 
 using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
@@ -859,10 +860,13 @@ class Compiler
 			{
 				AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.lineNumbers);
 			}
-			// HACK because of the bogus Leave instruction that Reflection.Emit generates, this location
-			// sometimes appears reachable (it isn't), so we emit a bogus branch to keep the verifier happy.
-			ilGenerator.Emit(OpCodes.Br, - (ilGenerator.GetILOffset() + 5));
-			//ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
+			if((m.IsSynchronized && m.IsStatic) || c.exceptions.Length > 0)
+			{
+				// HACK because of the bogus Leave instruction that Reflection.Emit generates, this location
+				// sometimes appears reachable (it isn't), so we emit a bogus branch to keep the verifier happy.
+				//ilGenerator.Emit(OpCodes.Br, - (ilGenerator.GetILOffset() + 5));
+				ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
+			}
 			ilGenerator.Finish();
 			nonleaf = c.nonleaf;
 		}

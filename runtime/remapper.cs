@@ -32,6 +32,7 @@ using System.Diagnostics;
 using IKVM.Attributes;
 
 using ILGenerator = IKVM.Internal.CountingILGenerator;
+using Label = IKVM.Internal.CountingLabel;
 
 namespace IKVM.Internal.MapXml
 {
