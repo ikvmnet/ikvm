@@ -71,6 +71,7 @@ namespace IKVM.Internal
 		private bool inFinally;
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
 		private Type boxType;
+		private CountingLabel lazyBranch;
 #if LABELCHECK
 		private Hashtable labels = new Hashtable();
 #endif
@@ -210,7 +211,15 @@ namespace IKVM.Internal
 		internal void Emit(OpCode opcode, CountingLabel label)
 		{
 			LazyGen();
-			if(label.Offset != -1 && offset - label.Offset < 126)
+			if(label.Offset == -1)
+			{
+				if(opcode.Value == OpCodes.Br.Value)
+				{
+					lazyBranch = label;
+					return;
+				}
+			}
+			else if(offset - label.Offset < 126)
 			{
 				if(opcode.Value == OpCodes.Brtrue.Value)
 				{
@@ -404,6 +413,10 @@ namespace IKVM.Internal
 
 		internal void MarkLabel(CountingLabel loc)
 		{
+			if(lazyBranch == loc)
+			{
+				lazyBranch = null;
+			}
 			LazyGen();
 #if LABELCHECK
 			labels.Remove(loc.Label);
@@ -515,6 +528,12 @@ namespace IKVM.Internal
 				Type t = boxType;
 				boxType = null;
 				Emit(OpCodes.Box, t);
+			}
+			if(lazyBranch != null)
+			{
+				offset += OpCodes.Br.Size + 4;
+				ilgen.Emit(OpCodes.Br, lazyBranch.Label);
+				lazyBranch = null;
 			}
 		}
 
