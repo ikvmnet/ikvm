@@ -672,6 +672,7 @@
 ../../classpath/gnu/java/util/prefs/MemoryBasedPreferences.java
 ../../classpath/gnu/java/util/prefs/NodeReader.java
 ../../classpath/gnu/java/util/prefs/NodeWriter.java
+../../classpath/gnu/java/util/WeakIdentityHashMap.java
 ../../classpath/gnu/javax/crypto/DiffieHellmanImpl.java
 ../../classpath/gnu/javax/crypto/GnuDHPrivateKey.java
 ../../classpath/gnu/javax/crypto/RSACipherImpl.java
@@ -888,6 +889,7 @@
 ../../classpath/gnu/xml/stream/StartDocumentImpl.java
 ../../classpath/gnu/xml/stream/StartElementImpl.java
 ../../classpath/gnu/xml/stream/StartEntityImpl.java
+../../classpath/gnu/xml/stream/UnicodeReader.java
 ../../classpath/gnu/xml/stream/XIncludeFilter.java
 ../../classpath/gnu/xml/stream/XMLEventAllocatorImpl.java
 ../../classpath/gnu/xml/stream/XMLEventFactoryImpl.java
@@ -2743,6 +2745,7 @@
 ../../classpath/javax/swing/plaf/basic/BasicFileChooserUI.java
 ../../classpath/javax/swing/plaf/basic/BasicFormattedTextFieldUI.java
 ../../classpath/javax/swing/plaf/basic/BasicGraphicsUtils.java
+../../classpath/javax/swing/plaf/basic/BasicHTML.java
 ../../classpath/javax/swing/plaf/basic/BasicIconFactory.java
 ../../classpath/javax/swing/plaf/basic/BasicInternalFrameTitlePane.java
 ../../classpath/javax/swing/plaf/basic/BasicInternalFrameUI.java
