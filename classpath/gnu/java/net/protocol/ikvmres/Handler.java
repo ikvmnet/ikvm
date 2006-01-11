@@ -182,7 +182,7 @@ class IkvmresURLConnection extends URLConnection
 	doOutput = false;
     }
 
-    private static native String MangleResourceName(String name);
+    static native String MangleResourceName(String name);
 
     public void connect() throws IOException
     {
@@ -194,19 +194,14 @@ class IkvmresURLConnection extends URLConnection
 	    {
 		throw new MalformedURLException(url.toString());
 	    }
-	    resource = resource.substring(1);
-            cli.System.IO.Stream s;
             try
             {
                 if(false) throw new cli.System.IO.FileNotFoundException();
                 if(false) throw new cli.System.BadImageFormatException();
                 if(false) throw new cli.System.Security.SecurityException();
                 Assembly asm = Assembly.Load(assembly);
-                s = asm.GetManifestResourceStream(MangleResourceName(resource));
-                if(s == null)
-                {
-                    throw new FileNotFoundException("resource " + resource + " not found in assembly " + assembly);
-                }
+                inputStream = Handler.readResourceFromAssembly(asm, resource);
+                connected = true;
             }
             catch(cli.System.IO.FileNotFoundException x)
             {
@@ -220,52 +215,7 @@ class IkvmresURLConnection extends URLConnection
             {
                 throw (IOException)new IOException().initCause(x2);
             }
-	    try
-	    {
-		Object r;
-                try
-                {
-                    r = ResourceReader.class.getConstructor(new Class[] { cli.System.IO.Stream.class }).newInstance(new Object[] { s });
-                }
-                catch(Exception x)
-                {
-                    throw (IOException)new IOException().initCause(x);
-                }
-		try
-		{
-		    IEnumerator e = ((IEnumerable)r).GetEnumerator();
-		    if(!e.MoveNext())
-		    {
-			throw new IOException("Invalid resource " + resource + " found in assembly " + assembly);
-		    }
-                    DictionaryEntry de = (DictionaryEntry)e.get_Current();
-                    String key = (String)de.get_Key();
-                    byte[] value = (byte[])de.get_Value();
-		    inputStream = new ByteArrayInputStream(value);
-                    if(key.equals("lz"))
-                    {
-                        inputStream = new LZInputStream(inputStream);
-                    }
-                    else if(key.equals("ikvm"))
-                    {
-                        // not compressed
-                    }
-                    else
-                    {
-                        throw new IOException("Unsupported resource encoding " + key + " for resource " + resource + " found in assembly " + assembly);
-                    }
-		    connected = true;
-		}
-		finally
-		{
-		    ((cli.System.IDisposable)r).Dispose();
-		}
-	    }
-	    finally
-	    {
-		s.Close();
-	    }
-	}
+        }
     }
 
     public InputStream getInputStream() throws IOException
@@ -306,6 +256,63 @@ public class Handler extends URLStreamHandler
     private static final String RFC2396_PCHAR = RFC2396_UNRESERVED + ":@&=+$,";
     private static final String RFC2396_SEGMENT = RFC2396_PCHAR + ";";
     private static final String RFC2396_PATH_SEGMENTS = RFC2396_SEGMENT + "/";
+
+    public static InputStream readResourceFromAssembly(Assembly asm, String resource)
+        throws IOException
+    {
+        resource = resource.substring(1);
+        cli.System.IO.Stream s;
+        try
+        {
+            if(false) throw new cli.System.Security.SecurityException();
+            s = asm.GetManifestResourceStream(IkvmresURLConnection.MangleResourceName(resource));
+            if(s == null)
+            {
+                throw new FileNotFoundException("resource " + resource + " not found in assembly " + asm.get_FullName());
+            }
+        }
+        catch(cli.System.Security.SecurityException x2)
+        {
+            throw (IOException)new IOException().initCause(x2);
+        }
+        try
+        {
+            Object r = new ResourceReader(s);
+            try
+            {
+                IEnumerator e = ((IEnumerable)r).GetEnumerator();
+                if(!e.MoveNext())
+                {
+                    throw new IOException("Invalid resource " + resource + " found in assembly " + asm.get_FullName());
+                }
+                DictionaryEntry de = (DictionaryEntry)e.get_Current();
+                String key = (String)de.get_Key();
+                byte[] value = (byte[])de.get_Value();
+                InputStream inputStream = new ByteArrayInputStream(value);
+                if(key.equals("lz"))
+                {
+                    inputStream = new LZInputStream(inputStream);
+                }
+                else if(key.equals("ikvm"))
+                {
+                    // not compressed
+                }
+                else
+                {
+                    throw new IOException("Unsupported resource encoding " + key + " for resource " + resource + " found in assembly " + asm.get_FullName());
+                }
+                return inputStream;
+            }
+            finally
+            {
+                ((cli.System.IDisposable)r).Dispose();
+            }
+        }
+        finally
+        {
+            s.Close();
+        }
+    }
 
     protected URLConnection openConnection(URL url) throws IOException
     {

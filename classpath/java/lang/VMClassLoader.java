@@ -367,8 +367,8 @@ final class VMClassLoader
     {
         try
         {
-            URL url = new URL("ikvmres", asm.get_FullName(), -1, "/META-INF/MANIFEST.MF");
-            return new Manifest(url.openStream());
+            // NOTE we cannot use URL here, because that would trigger infinite recursion when a SecurityManager is installed
+            return new Manifest(gnu.java.net.protocol.ikvmres.Handler.readResourceFromAssembly(asm, "/META-INF/MANIFEST.MF"));
         }
         catch (MalformedURLException _)
         {
