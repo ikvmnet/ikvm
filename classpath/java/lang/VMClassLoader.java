@@ -115,6 +115,12 @@ final class VMClassLoader
     private static native Class defineClassImpl(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
         throws ClassNotFoundException;
 
+    static Class defineClassWithTransformers(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
+    {
+        // TODO handle transformers
+        return defineClass(cl, name, data, offset, len, pd);
+    }
+
     /**
      * Helper to resolve all references to other classes from this class.
      *
