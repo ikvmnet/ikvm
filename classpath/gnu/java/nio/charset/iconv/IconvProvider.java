@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005 Jeroen Frijters
+  Copyright (C) 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,8 +26,12 @@ package gnu.java.nio.charset.iconv;
 
 import java.nio.charset.spi.CharsetProvider;
 
-public class IconvProvider
+public abstract class IconvProvider extends CharsetProvider
 {
+  private IconvProvider()
+  {
+  }
+
   public static CharsetProvider provider()
   {
     throw new Error("IconvProvider not supported");

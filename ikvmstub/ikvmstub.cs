@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -487,8 +487,7 @@ public class NetExp
 					}
 				}
 				java.lang.Class fieldType = fields[i].getType();
-				// TODO if fieldType is not public, add it to the export list as well
-				if(IsGenericType(fieldType))
+				if(IsGenericType(fieldType) || (fieldType.getModifiers() & (int)Modifiers.Public) == 0)
 				{
 					AddToExportList(fieldType);
 				}
