@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2426,7 +2426,7 @@ namespace IKVM.Internal
 			return s;
 		}
 
-		// NOTE returns null for primitive types
+		// NOTE returns null for primitive types and types that are not visible from Java (e.g. open generic types)
 		internal static string GetNameFromType(Type type)
 		{
 			TypeWrapper.AssertFinished(type);
@@ -7967,12 +7967,18 @@ namespace IKVM.Internal
 	{
 		private static readonly object[] noargs = new object[0];
 		private static readonly MethodInfo get_IsGenericTypeDefinition = typeof(Type).GetMethod("get_IsGenericTypeDefinition");
+		private static readonly MethodInfo get_ContainsGenericParameters = typeof(Type).GetMethod("get_ContainsGenericParameters");
 		private static readonly MethodInfo get_IsGenericMethodDefinition = typeof(MethodBase).GetMethod("get_IsGenericMethodDefinition");
 		private static readonly MethodInfo method_MakeGenericType = typeof(Type).GetMethod("MakeGenericType");
 
 		internal static bool IsGenericTypeDefinition(Type type)
 		{
 			return get_IsGenericTypeDefinition != null && (bool)get_IsGenericTypeDefinition.Invoke(type, noargs);
+		}
+
+		internal static bool ContainsGenericParameters(Type type)
+		{
+			return get_ContainsGenericParameters != null && (bool)get_ContainsGenericParameters.Invoke(type, noargs);
 		}
 
 		internal static bool IsGenericMethodDefinition(MethodBase mb)
@@ -8044,13 +8050,21 @@ namespace IKVM.Internal
 		{
 			Debug.Assert(!type.IsArray && !AttributeHelper.IsJavaModule(type.Module));
 
+			string name = type.FullName;
+
+			if(name == null)
+			{
+				// open generic types don't have a full name
+				return null;
+			}
+
 			if(AttributeHelper.IsNoPackagePrefix(type))
 			{
 				// TODO figure out if this is even required
-				return type.FullName.Replace('+', '$');
+				return name.Replace('+', '$');
 			}
 
-			return MangleTypeName(type.FullName);
+			return MangleTypeName(name);
 		}
 
 		private static string MangleTypeName(string name)
@@ -8168,7 +8182,7 @@ namespace IKVM.Internal
 				{
 					return null;
 				}
-				if(Whidbey.IsGenericTypeDefinition(type))
+				if(Whidbey.ContainsGenericParameters(type))
 				{
 					return null;
 				}

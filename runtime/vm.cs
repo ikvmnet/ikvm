@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -201,11 +201,19 @@ namespace IKVM.Runtime
 			{
 				return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
 			}
+			if(Whidbey.ContainsGenericParameters(t))
+			{
+				return null;
+			}
 			return ClassLoaderWrapper.GetWrapperFromType(t).ClassObject;
 		}
 
 		public static object GetFriendlyClassFromType(Type type)
 		{
+			if(Whidbey.ContainsGenericParameters(type))
+			{
+				return null;
+			}
 			int rank = 0;
 			while(type.IsArray)
 			{

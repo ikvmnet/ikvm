@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -145,6 +145,7 @@ namespace ikvm.awt
 				System.Diagnostics.Debug.Assert(bogusForm == null);
 
 				Thread thread = new Thread(new ThreadStart(MessageLoop));
+				thread.ApartmentState = ApartmentState.STA;
 				thread.Start();
 				// TODO don't use polling...
 				while(bogusForm == null && thread.IsAlive)

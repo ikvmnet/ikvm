@@ -387,7 +387,13 @@ namespace IKVM.Internal
 								// (for remapped types as well, because netexp uses this way of
 								// loading types, we need the remapped types to appear in their
 								// .NET "warped" form).
-								return LoadClassByDottedNameFast(DotNetTypeWrapper.GetName(t), throwClassNotFoundException);
+								string javaName = DotNetTypeWrapper.GetName(t);
+								if(javaName == null)
+								{
+									// some type (e.g. open generic types) are not visible from Java
+									return null;
+								}
+								return LoadClassByDottedNameFast(javaName, throwClassNotFoundException);
 							}
 						}
 					}
@@ -1099,6 +1105,7 @@ namespace IKVM.Internal
 		internal static TypeWrapper GetWrapperFromTypeFast(Type type)
 		{
 			TypeWrapper.AssertFinished(type);
+			Debug.Assert(!Whidbey.ContainsGenericParameters(type));
 			TypeWrapper wrapper = (TypeWrapper)typeToTypeWrapper[type];
 			if(wrapper == null)
 			{
@@ -1115,6 +1122,7 @@ namespace IKVM.Internal
 		{
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
 			TypeWrapper.AssertFinished(type);
+			Debug.Assert(!Whidbey.ContainsGenericParameters(type));
 			TypeWrapper wrapper = GetWrapperFromTypeFast(type);
 			if(wrapper == null)
 			{
