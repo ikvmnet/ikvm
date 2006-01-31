@@ -1575,10 +1575,12 @@ class Compiler
 				}
 				case NormalizedByteCode.__dynamic_invokeinterface:
 				case NormalizedByteCode.__dynamic_invokevirtual:
+				case NormalizedByteCode.__dynamic_invokespecial:
 				case NormalizedByteCode.__invokevirtual:
 				case NormalizedByteCode.__invokeinterface:
 				case NormalizedByteCode.__invokespecial:
 				{
+					bool isinvokespecial = instr.NormalizedOpCode == NormalizedByteCode.__invokespecial || instr.NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial;
 					nonleaf = true;
 					ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
 					int argcount = cpi.GetArgTypes().Length;
@@ -1589,7 +1591,7 @@ class Compiler
 
 					// if the stack values don't match the argument types (for interface argument types)
 					// we must emit code to cast the stack value to the interface type
-					if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>" && VerifierTypeWrapper.IsNew(type))
+					if(isinvokespecial && cpi.Name == "<init>" && VerifierTypeWrapper.IsNew(type))
 					{
 						TypeWrapper[] args = cpi.GetArgTypes();
 						CastInterfaceArgs(method, args, i, false);
@@ -1611,7 +1613,7 @@ class Compiler
 						CastInterfaceArgs(method, args, i, true);
 					}
 
-					if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
+					if(isinvokespecial && cpi.Name == "<init>")
 					{
 						if(VerifierTypeWrapper.IsNew(type))
 						{
@@ -1773,7 +1775,7 @@ class Compiler
 					}
 					else
 					{
-						if(instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
+						if(isinvokespecial)
 						{
 							if(VerifierTypeWrapper.IsThis(type))
 							{
@@ -3260,6 +3262,7 @@ class Compiler
 			case NormalizedByteCode.__dynamic_invokeinterface:
 			case NormalizedByteCode.__dynamic_invokestatic:
 			case NormalizedByteCode.__dynamic_invokevirtual:
+			case NormalizedByteCode.__dynamic_invokespecial:
 				return new DynamicMethodWrapper(clazz, cpi);
 			default:
 				throw new InvalidOperationException();

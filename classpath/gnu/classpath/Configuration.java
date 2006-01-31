@@ -45,7 +45,7 @@ public interface Configuration
 {
   // TODO
   String CLASSPATH_HOME = "";
-  String CLASSPATH_VERSION = "0.20";
+  String CLASSPATH_VERSION = "0.21-pre";
 
 
   /**
@@ -72,5 +72,5 @@ public interface Configuration
   /**
    * Name of default AWT peer library.
    */
-  String default_awt_peer_toolkit = "ikvm.awt.NetToolkit, IKVM.AWT.WinForms, Version=0.24.0.1, Culture=neutral, PublicKeyToken=13235d27fcbfff58";
+  String default_awt_peer_toolkit = "ikvm.awt.NetToolkit, IKVM.AWT.WinForms";
 }

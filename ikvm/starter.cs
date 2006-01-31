@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -139,6 +139,7 @@ public class Starter
 		bool saveAssembly = false;
 		bool saveAssemblyX = false;
 		bool waitOnExit = false;
+		bool showVersion = false;
 		string mainClass = null;
 		string[] vmargs = null;
 		string bootclasspath = null;
@@ -178,6 +179,8 @@ public class Starter
 				}
 				else if(args[i] == "-version")
 				{
+					Console.WriteLine(IKVM.Runtime.Startup.GetVersionAndCopyrightInfo());
+					Console.WriteLine();
 					Console.WriteLine("CLR version: {0} ({1} bit)", Environment.Version, IntPtr.Size * 8);
 					foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 					{
@@ -185,6 +188,10 @@ public class Starter
 					}
 					Console.WriteLine("GNU Classpath version: {0}", java.lang.System.getProperty("gnu.classpath.version"));
 					return 0;
+				}
+				else if(args[i] == "-showversion")
+				{
+					showVersion = true;
 				}
 				else if(args[i].StartsWith("-D"))
 				{
@@ -258,6 +265,11 @@ public class Starter
 				break;
 			}
 		}
+		if(mainClass == null || showVersion)
+		{
+			Console.Error.WriteLine(IKVM.Runtime.Startup.GetVersionAndCopyrightInfo());
+			Console.Error.WriteLine();
+		}
 		if(mainClass == null)
 		{
 			Console.Error.WriteLine("usage: ikvm [-options] <class> [args...]");
@@ -268,6 +280,7 @@ public class Starter
 			Console.Error.WriteLine("where options include:");
 			Console.Error.WriteLine("    -? -help          Display this message");
 			Console.Error.WriteLine("    -version          Display IKVM and runtime version");
+			Console.Error.WriteLine("    -showversion      Display version and continue running");
 			Console.Error.WriteLine("    -cp -classpath <directories and zip/jar files separated by {0}>", Path.PathSeparator);
 			Console.Error.WriteLine("                      Set search path for application classes and resources");
 			Console.Error.WriteLine("    -D<name>=<value>  Set a system property");

@@ -176,6 +176,25 @@ namespace IKVM.Runtime
 			// explicitly cleans up our thread.
 			IKVM.Internal.JVM.Library.jniDetach();
 		}
+
+		public static string GetVersionAndCopyrightInfo()
+		{
+			Assembly asm = Assembly.GetEntryAssembly();
+			object[] desc = asm.GetCustomAttributes(typeof(AssemblyTitleAttribute), false);
+			if (desc.Length == 1)
+			{
+				object[] copyright = asm.GetCustomAttributes(typeof(AssemblyCopyrightAttribute), false);
+				if (copyright.Length == 1)
+				{
+					return string.Format("{0} version {1}{2}{3}{2}http://www.ikvm.net/",
+						((AssemblyTitleAttribute)desc[0]).Title,
+						asm.GetName().Version,
+						Environment.NewLine,
+						((AssemblyCopyrightAttribute)copyright[0]).Copyright);
+				}
+			}
+			return "";
+		}
 	}
 
 	public sealed class Util

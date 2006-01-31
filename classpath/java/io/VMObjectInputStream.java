@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005 Jeroen Frijters
+  Copyright (C) 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -37,7 +37,7 @@ final class VMObjectInputStream
             if (loader != null)
                 return loader;
         }
-        return null;
+        return Thread.currentThread().getContextClassLoader();
     }
 
     static native Object allocateObject(Class clazz, Class constr_clazz, Constructor constructor)

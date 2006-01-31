@@ -225,6 +225,7 @@ namespace IKVM.Internal
 				// NOTE although the vmspec says (in 4.1) that interfaces must be marked abstract, earlier versions of
 				// javac (JDK 1.1) didn't do this, so the VM doesn't enforce this rule
 				// NOTE although the vmspec implies (in 4.1) that ACC_SUPER is illegal on interfaces, it doesn't enforce this
+				// TODO consider implementing http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6320322
 				if((IsInterface && IsFinal)
 					|| (IsAbstract && IsFinal)
 					|| (majorVersion >= 49 && IsAnnotation && !IsInterface))

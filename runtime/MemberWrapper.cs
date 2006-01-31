@@ -1495,7 +1495,21 @@ namespace IKVM.Internal
 		{
 			// Reading a field should trigger the cctor, but since we're inlining the value
 			// we have to trigger it explicitly
-			DeclaringType.EmitRunClassConstructor(ilgen);
+			if(DeclaringType.IsInterface)
+			{
+				if(DeclaringType.HasStaticInitializer)
+				{
+					// NOTE since Everett doesn't support adding static methods to interfaces,
+					// EmitRunClassConstructor doesn't work for interface, so we do it manually.
+					// TODO once we're on Whidbey, this won't be necessary anymore.
+					ilgen.Emit(OpCodes.Ldtoken, DeclaringType.TypeAsBaseType);
+					ilgen.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("RunClassConstructor"));
+				}
+			}
+			else
+			{
+				DeclaringType.EmitRunClassConstructor(ilgen);
+			}
 
 			// NOTE even though you're not supposed to access a constant static final (the compiler is supposed
 			// to inline them), we have to support it (because it does happen, e.g. if the field becomes final

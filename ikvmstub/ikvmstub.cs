@@ -41,6 +41,8 @@ public class NetExp
 		Tracer.EnableTraceForDebug();
 		if(args.Length != 1)
 		{
+			Console.Error.WriteLine(IKVM.Runtime.Startup.GetVersionAndCopyrightInfo());
+			Console.Error.WriteLine();
 			Console.Error.WriteLine("usage: ikvmstub <assemblyNameOrPath>");
 			return;
 		}
@@ -148,7 +150,10 @@ public class NetExp
 				java.lang.Class c;
 				try
 				{
-					c = (java.lang.Class)IKVM.Runtime.Util.GetFriendlyClassFromType(t);
+					// NOTE we use GetClassFromTypeHandle instead of GetFriendlyClassFromType, to make sure
+					// we don't get the remapped types when we're processing System.Object, System.String,
+					// System.Throwable and System.IComparable
+					c = (java.lang.Class)IKVM.Runtime.Util.GetClassFromTypeHandle(t.TypeHandle);
 					if (c == null)
 					{
 						Console.WriteLine("Skipping: " + t.FullName);

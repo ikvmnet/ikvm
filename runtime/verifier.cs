@@ -2848,6 +2848,7 @@ class MethodAnalyzer
 				throw new VerifyError("Inconsistent args size");
 			}
 		}
+		bool isnew = false;
 		TypeWrapper thisType;
 		if(invoke == NormalizedByteCode.__invokestatic)
 		{
@@ -2859,9 +2860,10 @@ class MethodAnalyzer
 			if(cpi.Name == "<init>")
 			{
 				TypeWrapper type = stack.PopType();
-				if((VerifierTypeWrapper.IsNew(type) && ((VerifierTypeWrapper)type).UnderlyingType != cpi.GetClassType()) ||
+				isnew = VerifierTypeWrapper.IsNew(type);
+				if((isnew && ((VerifierTypeWrapper)type).UnderlyingType != cpi.GetClassType()) ||
 					(type == VerifierTypeWrapper.UninitializedThis && cpi.GetClassType() != wrapper.BaseTypeWrapper && cpi.GetClassType() != wrapper) ||
-					(!VerifierTypeWrapper.IsNew(type) && type != VerifierTypeWrapper.UninitializedThis))
+					(!isnew && type != VerifierTypeWrapper.UninitializedThis))
 				{
 					// TODO oddly enough, Java fails verification for the class without
 					// even running the constructor, so maybe constructors are always
@@ -2926,8 +2928,14 @@ class MethodAnalyzer
 						instr.PatchOpCode(NormalizedByteCode.__dynamic_invokevirtual);
 						break;
 					case NormalizedByteCode.__invokespecial:
-						// TODO support dynamically instantiating an unloadable type
-						instr.SetHardError(HardError.LinkageError, AllocErrorMessage("Base class no longer loadable"));
+						if(isnew)
+						{
+							instr.PatchOpCode(NormalizedByteCode.__dynamic_invokespecial);
+						}
+						else
+						{
+							instr.SetHardError(HardError.LinkageError, AllocErrorMessage("Base class no longer loadable"));
+						}
 						break;
 					default:
 						throw new InvalidOperationException();

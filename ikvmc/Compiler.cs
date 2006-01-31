@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -89,6 +89,8 @@ class Compiler
 		options.props = new Hashtable();
 		if(arglist.Count == 0)
 		{
+			Console.Error.WriteLine(IKVM.Runtime.Startup.GetVersionAndCopyrightInfo());
+			Console.Error.WriteLine();
 			Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("options:");

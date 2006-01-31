@@ -6,7 +6,8 @@ final class VMThread
 {
     private static final Object countLock = new Object();
     private static int nonDaemonCount;
-    private static Thread __tls_javaThread;
+    // used by inner class
+    /*private*/ static Thread __tls_javaThread;
     private static Object __tls_cleanup;
     private cli.System.WeakReference nativeThreadReference;
 
@@ -23,7 +24,8 @@ final class VMThread
 	this.thread = thread;
     }
 
-    private void run()
+    // used by inner class
+    /*private*/ void run()
     {
 	try
 	{
@@ -63,7 +65,8 @@ final class VMThread
     }
 
     // notify Thread that it is dead, this method can safely be called multiple times
-    private synchronized void cleanup()
+    // used by inner class
+    /*private*/ synchronized void cleanup()
     {
 	if(thread.vmThread != null)
 	{
@@ -574,6 +577,8 @@ final class VMThread
 	// so we duplicate that behavior.
 	if(ms == 0 && ns == 0)
 	{
+            // TODO this bug was fixed in Mustang,
+            // see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6213203
 	    yield();
 	}
 	else

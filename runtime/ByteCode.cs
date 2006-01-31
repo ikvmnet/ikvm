@@ -379,13 +379,14 @@ enum NormalizedByteCode : byte
 	__ifnull = 198,
 	__ifnonnull = 199,
 	// This is where the pseudo-bytecodes start
-	__dynamic_getstatic = 246,
-	__dynamic_putstatic = 247,
-	__dynamic_getfield = 248,
-	__dynamic_putfield = 249,
-	__dynamic_invokeinterface = 250,
-	__dynamic_invokestatic = 251,
-	__dynamic_invokevirtual = 252,
+	__dynamic_getstatic = 245,
+	__dynamic_putstatic = 246,
+	__dynamic_getfield = 247,
+	__dynamic_putfield = 248,
+	__dynamic_invokeinterface = 249,
+	__dynamic_invokestatic = 250,
+	__dynamic_invokevirtual = 251,
+	__dynamic_invokespecial = 252,
 	__clone_array = 253,
 	__static_error = 254,	// not a real instruction, this signals an instruction that is compiled as an exception
 	__iconst = 255
