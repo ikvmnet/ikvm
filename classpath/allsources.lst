@@ -403,7 +403,6 @@
 ../../classpath/gnu/java/beans/decoder/ConstructorContext.java
 ../../classpath/gnu/java/beans/decoder/Context.java
 ../../classpath/gnu/java/beans/decoder/DecoderContext.java
-../../classpath/gnu/java/beans/decoder/DefaultExceptionListener.java
 ../../classpath/gnu/java/beans/decoder/DoubleHandler.java
 ../../classpath/gnu/java/beans/decoder/DummyContext.java
 ../../classpath/gnu/java/beans/decoder/DummyHandler.java
@@ -685,15 +684,19 @@
 ../../classpath/gnu/java/security/jce/prng/Sha512RandomSpi.java
 ../../classpath/gnu/java/security/jce/prng/TigerRandomSpi.java
 ../../classpath/gnu/java/security/jce/prng/WhirlpoolRandomSpi.java
+../../classpath/gnu/java/security/jce/sig/DSSKeyFactory.java
 ../../classpath/gnu/java/security/jce/sig/DSSKeyPairGeneratorSpi.java
 ../../classpath/gnu/java/security/jce/sig/DSSRawSignatureSpi.java
+../../classpath/gnu/java/security/jce/sig/EncodedKeyFactory.java
 ../../classpath/gnu/java/security/jce/sig/KeyPairGeneratorAdapter.java
 ../../classpath/gnu/java/security/jce/sig/RSAKeyPairGeneratorSpi.java
 ../../classpath/gnu/java/security/jce/sig/RSAPSSRawSignatureSpi.java
 ../../classpath/gnu/java/security/jce/sig/SignatureAdapter.java
 ../../classpath/gnu/java/security/key/dss/DSSKey.java
 ../../classpath/gnu/java/security/key/dss/DSSKeyPairGenerator.java
+../../classpath/gnu/java/security/key/dss/DSSKeyPairPKCS8Codec.java
 ../../classpath/gnu/java/security/key/dss/DSSKeyPairRawCodec.java
+../../classpath/gnu/java/security/key/dss/DSSKeyPairX509Codec.java
 ../../classpath/gnu/java/security/key/dss/DSSPrivateKey.java
 ../../classpath/gnu/java/security/key/dss/DSSPublicKey.java
 ../../classpath/gnu/java/security/key/dss/FIPS186.java
@@ -764,6 +767,7 @@
 ../../classpath/gnu/java/security/util/ExpirableObject.java
 ../../classpath/gnu/java/security/util/Prime.java
 ../../classpath/gnu/java/security/util/Prime2.java
+../../classpath/gnu/java/security/util/PRNG.java
 ../../classpath/gnu/java/security/util/Sequence.java
 ../../classpath/gnu/java/security/util/SimpleList.java
 ../../classpath/gnu/java/security/util/Util.java
@@ -1207,7 +1211,10 @@
 ../../classpath/gnu/regexp/RETokenChar.java
 ../../classpath/gnu/regexp/RETokenEnd.java
 ../../classpath/gnu/regexp/RETokenEndSub.java
+../../classpath/gnu/regexp/RETokenIndependent.java
 ../../classpath/gnu/regexp/RETokenLookAhead.java
+../../classpath/gnu/regexp/RETokenLookBehind.java
+../../classpath/gnu/regexp/RETokenNamedProperty.java
 ../../classpath/gnu/regexp/RETokenOneOf.java
 ../../classpath/gnu/regexp/RETokenPOSIX.java
 ../../classpath/gnu/regexp/RETokenRange.java

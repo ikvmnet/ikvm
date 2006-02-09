@@ -22,4 +22,5 @@
 /classpath/java/nio/MappedByteBufferImpl.java
 /classpath/testsuite/
 /classpath/test/
+/classpath/tools/
 /classpath/vm/reference/
