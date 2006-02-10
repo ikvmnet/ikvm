@@ -380,11 +380,6 @@ class Compiler
 					compressResources = true;
 					options.compressedResources = true;
 				}
-				else if(s == "-manifestResources")
-				{
-					// NOTE this is an undocumented option and this resource format is *not* supported by IKVM.GNU.Classpath.dll
-					options.manifestResources = true;
-				}
 				else if(s == "-strictfinalfieldsemantics")
 				{
 					options.strictFinalFieldSemantics = true;
@@ -546,6 +541,7 @@ class Compiler
 
 	private static void AddResource(string name, byte[] buf)
 	{
+#if !WHIDBEY
 		if(compressResources)
 		{
 			MemoryStream mem = new MemoryStream();
@@ -554,6 +550,7 @@ class Compiler
 			lz.Flush();
 			buf = mem.ToArray();
 		}
+#endif
 		resources.Add(name, buf);
 	}
 

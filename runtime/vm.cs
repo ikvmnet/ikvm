@@ -847,7 +847,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal void AddResources(Hashtable resources, bool compressedResources, bool manifestResources)
+			internal void AddResources(Hashtable resources, bool compressedResources)
 			{
 				Tracer.Info(Tracer.Compiler, "CompilerClassLoader adding resources...");
 				ModuleBuilder moduleBuilder = this.ModuleBuilder;
@@ -857,20 +857,26 @@ namespace IKVM.Internal
 					if(buf.Length > 0)
 					{
 						string name = JVM.MangleResourceName((string)d.Key);
-						if(manifestResources)
-						{
 #if WHIDBEY
-							// NOTE this is an undocumented option and this resource format is *not* supported by IKVM.GNU.Classpath.dll
-							moduleBuilder.DefineManifestResource(name, new MemoryStream(buf), ResourceAttributes.Public);
-#else
-							throw new InvalidOperationException("DefineManifestResource is only available on .NET 2.0");
-#endif
+						MemoryStream mem = new MemoryStream();
+						if(compressedResources)
+						{
+							mem.WriteByte(1);
+							System.IO.Compression.DeflateStream def = new System.IO.Compression.DeflateStream(mem, System.IO.Compression.CompressionMode.Compress, true);
+							def.Write(buf, 0, buf.Length);
+							def.Close();
 						}
 						else
 						{
-							IResourceWriter writer = moduleBuilder.DefineResource(name, "");
-							writer.AddResource(compressedResources ? "lz" : "ikvm", buf);
+							mem.WriteByte(0);
+							mem.Write(buf, 0, buf.Length);
 						}
+						mem.Position = 0;
+						moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
+#else
+						IResourceWriter writer = moduleBuilder.DefineResource(name, "");
+						writer.AddResource(compressedResources ? "lz" : "ikvm", buf);
+#endif
 					}
 				}
 			}
@@ -2310,7 +2316,6 @@ namespace IKVM.Internal
 			public bool nostacktraceinfo;
 			public bool removeUnusedFields;
 			public bool compressedResources;
-			public bool manifestResources;
 			public bool strictFinalFieldSemantics;
 			public string runtimeAssembly;
 		}
@@ -2709,7 +2714,7 @@ namespace IKVM.Internal
 				loader.FinishRemappedTypes();
 			}
 			Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
-			loader.AddResources(options.resources, options.compressedResources, options.manifestResources);
+			loader.AddResources(options.resources, options.compressedResources);
 			if(options.fileversion != null)
 			{
 				CustomAttributeBuilder filever = new CustomAttributeBuilder(typeof(AssemblyFileVersionAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { options.fileversion });

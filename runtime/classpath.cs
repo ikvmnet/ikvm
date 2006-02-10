@@ -1293,6 +1293,7 @@ namespace IKVM.NativeCode.java
 
 namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 {
+#if !WHIDBEY
 	class LZInputStream : Stream 
 	{
 		private Stream inp;
@@ -1489,11 +1490,28 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 			throw new NotSupportedException();
 		}
 	}
+#endif // !WHIDBEY
 
 	public class Handler
 	{
 		public static Stream ReadResourceFromAssemblyImpl(Assembly asm, string resource)
 		{
+#if WHIDBEY
+			Stream s = asm.GetManifestResourceStream(JVM.MangleResourceName(resource.Substring(1)));
+			if(s == null)
+			{
+				throw new FileNotFoundException("resource " + resource + " not found in assembly " + asm.FullName);
+			}
+			switch (s.ReadByte())
+			{
+				case 0:
+					return s;
+				case 1:
+					return new System.IO.Compression.DeflateStream(s, System.IO.Compression.CompressionMode.Decompress, false);
+				default:
+					throw new IOException("Unsupported resource encoding for resource " + resource + " found in assembly " + asm.FullName);
+			}
+#else
 			using(Stream s = asm.GetManifestResourceStream(JVM.MangleResourceName(resource.Substring(1))))
 			{
 				if(s == null)
@@ -1520,6 +1538,7 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 					throw new IOException("Invalid resource " + resource + " found in assembly " + asm.FullName);
 				}
 			}
+#endif
 		}
 	}
 }
