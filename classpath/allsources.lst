@@ -4213,6 +4213,7 @@ gnu/java/nio/VMPipe.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/Library.java
 ikvm/internal/LibraryVMInterface.java
+ikvm/io/InputStreamWrapper.java
 ikvm/lang/CIL.java
 java/io/VMFile.java
 java/io/VMObjectInputStream.java

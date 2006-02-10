@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,153 +24,9 @@
 
 package gnu.java.net.protocol.ikvmres;
 
-import cli.System.Resources.*;
-import cli.System.Reflection.*;
-import cli.System.Collections.*;
+import cli.System.Reflection.Assembly;
 import java.net.*;
 import java.io.*;
-import java.io.IOException;
-
-class LZInputStream extends FilterInputStream 
-{
-    private int[] ptr_tbl;
-    private int[] char_tbl;
-    private int[] stack;
-    private int table_size;
-    private int count;
-    private int bitoff;
-    private int bitbuf;
-    private int prev = -1;
-    private int bits;
-    private int cc;
-    private int fc;
-    private int sp;
-
-    public LZInputStream(InputStream in) throws IOException 
-    {
-        super(in);
-        bitoff = 0;
-        count = 0;
-        table_size = 256;
-        bits = 9;
-        ptr_tbl = new int[table_size];
-        char_tbl = new int[table_size];
-        stack = new int[table_size];
-        sp = 0;
-        cc = prev = incode();
-        stack[sp++] = cc;
-    }
-
-    public int read() throws IOException 
-    {
-        if (sp == 0) 
-        {
-            if (stack.length != table_size) 
-            {
-                stack = new int[table_size];
-            }
-            int ic = cc = incode();
-            if (cc == -1) 
-            {
-                return -1;
-            }
-            if (count >= 0 && cc >= count + 256) 
-            {
-                stack[sp++] = fc;
-                cc = prev;
-                ic = find(prev, fc);
-            }
-            while (cc >= 256) 
-            {
-                stack[sp++] = char_tbl[cc - 256];
-                cc = ptr_tbl[cc - 256];
-            }
-            fc = stack[sp++] = cc;
-            if (count >= 0) 
-            {
-                ptr_tbl[count] = prev;
-                char_tbl[count] = fc;
-            }
-            count++;
-            if (count == table_size) 
-            {
-                count = -1;
-                if (bits == 12)
-                {
-                    table_size = 256;
-                    bits = 9;
-                }
-                else
-                {
-                    bits++;
-                    table_size = (1 << bits) - 256;
-                }
-                ptr_tbl = null;
-                char_tbl = null;
-                ptr_tbl = new int[table_size];
-                char_tbl= new int[table_size];
-            }
-            prev = ic;
-        }
-        return stack[--sp] & 0xFF;
-    }
-
-    private int find(int p, int c) 
-    {
-        int i;
-        for (i = 0; i < count; i++) 
-        {
-            if (ptr_tbl[i] == p && char_tbl[i] == c) 
-            {
-                break;
-            }
-        }
-        return i + 256;
-    }
-
-    private int incode() throws IOException 
-    {
-        while (bitoff < bits) 
-        {
-            int v = in.read();
-            if (v == -1) 
-            {
-                return -1;
-            }
-            bitbuf |= (v & 0xFF) << bitoff;
-            bitoff += 8;
-        }
-        bitoff -= bits;
-        int result = bitbuf;
-        bitbuf >>= bits;
-        result -= bitbuf << bits;
-        return result;
-    }
-
-    public int read(byte[] b) throws IOException
-    {
-        return read(b, 0, b.length);
-    }
-
-    public int read(byte[] b, int off, int len) throws IOException
-    {
-        if(len == 0)
-        {
-            return 0;
-        }
-        int i = 0;
-        for (; i < len ; i++)
-        {
-            int r = read();
-            if(r == -1)
-            {
-                break;
-            }
-            b[off + i] = (byte)r;
-        }
-        return (i == 0) ? -1 : i;
-    }
-}
 
 class IkvmresURLConnection extends URLConnection
 {
@@ -181,8 +37,6 @@ class IkvmresURLConnection extends URLConnection
 	super(url);
 	doOutput = false;
     }
-
-    static native String MangleResourceName(String name);
 
     public void connect() throws IOException
     {
@@ -260,59 +114,28 @@ public class Handler extends URLStreamHandler
     public static InputStream readResourceFromAssembly(Assembly asm, String resource)
         throws IOException
     {
-        resource = resource.substring(1);
-        cli.System.IO.Stream s;
         try
         {
             if(false) throw new cli.System.Security.SecurityException();
-            s = asm.GetManifestResourceStream(IkvmresURLConnection.MangleResourceName(resource));
-            if(s == null)
-            {
-                throw new FileNotFoundException("resource " + resource + " not found in assembly " + asm.get_FullName());
-            }
+            if(false) throw new cli.System.IO.FileNotFoundException();
+            if(false) throw new cli.System.IO.IOException();
+            return new ikvm.io.InputStreamWrapper(ReadResourceFromAssemblyImpl(asm, resource));
         }
-        catch(cli.System.Security.SecurityException x2)
+        catch (cli.System.Security.SecurityException x)
         {
-            throw (IOException)new IOException().initCause(x2);
+            throw (IOException)new IOException().initCause(x);
         }
-        try
+        catch (cli.System.IO.FileNotFoundException x)
         {
-            Object r = new ResourceReader(s);
-            try
-            {
-                IEnumerator e = ((IEnumerable)r).GetEnumerator();
-                if(!e.MoveNext())
-                {
-                    throw new IOException("Invalid resource " + resource + " found in assembly " + asm.get_FullName());
-                }
-                DictionaryEntry de = (DictionaryEntry)e.get_Current();
-                String key = (String)de.get_Key();
-                byte[] value = (byte[])de.get_Value();
-                InputStream inputStream = new ByteArrayInputStream(value);
-                if(key.equals("lz"))
-                {
-                    inputStream = new LZInputStream(inputStream);
-                }
-                else if(key.equals("ikvm"))
-                {
-                    // not compressed
-                }
-                else
-                {
-                    throw new IOException("Unsupported resource encoding " + key + " for resource " + resource + " found in assembly " + asm.get_FullName());
-                }
-                return inputStream;
-            }
-            finally
-            {
-                ((cli.System.IDisposable)r).Dispose();
-            }
+            throw (FileNotFoundException)new FileNotFoundException().initCause(x);
         }
-        finally
+        catch(cli.System.IO.IOException x)
         {
-            s.Close();
+            throw (IOException)new IOException().initCause(x);
         }
     }
+
+    private static native cli.System.IO.Stream ReadResourceFromAssemblyImpl(Assembly asm, String resource);
 
     protected URLConnection openConnection(URL url) throws IOException
     {
