@@ -130,7 +130,7 @@ public abstract class Reference
                 // (Eclipse 3.1 startup depends on SoftReferences not being cleared.)
                 keepAlive = ref;
             }
-            if (q != null)
+            else if (q != null)
             {
                 new QueueWatcher();
             }
