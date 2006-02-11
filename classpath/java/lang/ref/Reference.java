@@ -123,12 +123,14 @@ public abstract class Reference
         if (ref != null)
         {
             referent = new cli.System.WeakReference(ref, this instanceof PhantomReference);
-            if (this instanceof SoftReference && 
-                cli.System.GC.GetGeneration(ref) < cli.System.GC.get_MaxGeneration())
+            if (this instanceof SoftReference)
             {
+                // HACK we never clear SoftReferences, because there is no way to
+                // find out about the CLR memory status.
+                // (Eclipse 3.1 startup depends on SoftReferences not being cleared.)
                 keepAlive = ref;
             }
-            if (q != null || keepAlive != null)
+            if (q != null)
             {
                 new QueueWatcher();
             }
@@ -141,14 +143,6 @@ public abstract class Reference
     {
         boolean check()
         {
-            Object keepAliveCopy = keepAlive;
-            if (keepAliveCopy != null &&
-                cli.System.GC.GetGeneration(keepAliveCopy) == cli.System.GC.get_MaxGeneration())
-            {
-                if (debug)
-                    cli.System.Console.WriteLine("Clearing keep alive: " + hashCode());
-                keepAlive = null;
-            }
             boolean alive = false;
             try
             {
