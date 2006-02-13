@@ -530,7 +530,6 @@ public abstract class FileChannelImpl extends FileChannel
 	try
 	{
 	    if(false) throw new cli.System.IO.IOException();
-            stream.Flush();
 	    return stream.ReadByte();
 	}
 	catch(cli.System.IO.IOException x)
@@ -557,7 +556,6 @@ public abstract class FileChannelImpl extends FileChannel
 	try
 	{
 	    if(false) throw new cli.System.IO.IOException();
-            stream.Flush();
             int count = stream.Read(buf, offset, len);
 	    if(count == 0)
 	    {
