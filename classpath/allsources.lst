@@ -689,6 +689,7 @@
 ../../classpath/gnu/java/security/jce/sig/DSSRawSignatureSpi.java
 ../../classpath/gnu/java/security/jce/sig/EncodedKeyFactory.java
 ../../classpath/gnu/java/security/jce/sig/KeyPairGeneratorAdapter.java
+../../classpath/gnu/java/security/jce/sig/RSAKeyFactory.java
 ../../classpath/gnu/java/security/jce/sig/RSAKeyPairGeneratorSpi.java
 ../../classpath/gnu/java/security/jce/sig/RSAPSSRawSignatureSpi.java
 ../../classpath/gnu/java/security/jce/sig/SignatureAdapter.java
@@ -708,7 +709,9 @@
 ../../classpath/gnu/java/security/key/rsa/GnuRSAPrivateKey.java
 ../../classpath/gnu/java/security/key/rsa/GnuRSAPublicKey.java
 ../../classpath/gnu/java/security/key/rsa/RSAKeyPairGenerator.java
+../../classpath/gnu/java/security/key/rsa/RSAKeyPairPKCS8Codec.java
 ../../classpath/gnu/java/security/key/rsa/RSAKeyPairRawCodec.java
+../../classpath/gnu/java/security/key/rsa/RSAKeyPairX509Codec.java
 ../../classpath/gnu/java/security/OID.java
 ../../classpath/gnu/java/security/pkcs/PKCS7SignedData.java
 ../../classpath/gnu/java/security/pkcs/SignerInfo.java
@@ -921,11 +924,15 @@
 ../../classpath/gnu/javax/crypto/jce/prng/FortunaImpl.java
 ../../classpath/gnu/javax/crypto/jce/prng/ICMRandomSpi.java
 ../../classpath/gnu/javax/crypto/jce/prng/UMacRandomSpi.java
+../../classpath/gnu/javax/crypto/jce/sig/DHKeyFactory.java
+../../classpath/gnu/javax/crypto/jce/sig/DHKeyPairGeneratorSpi.java
 ../../classpath/gnu/javax/crypto/jce/spec/BlockCipherParameterSpec.java
 ../../classpath/gnu/javax/crypto/jce/spec/TMMHParameterSpec.java
 ../../classpath/gnu/javax/crypto/jce/spec/UMac32ParameterSpec.java
 ../../classpath/gnu/javax/crypto/key/BaseKeyAgreementParty.java
+../../classpath/gnu/javax/crypto/key/dh/DHKeyPairPKCS8Codec.java
 ../../classpath/gnu/javax/crypto/key/dh/DHKeyPairRawCodec.java
+../../classpath/gnu/javax/crypto/key/dh/DHKeyPairX509Codec.java
 ../../classpath/gnu/javax/crypto/key/dh/DiffieHellmanKeyAgreement.java
 ../../classpath/gnu/javax/crypto/key/dh/DiffieHellmanReceiver.java
 ../../classpath/gnu/javax/crypto/key/dh/DiffieHellmanSender.java
@@ -3421,6 +3428,7 @@
 ../../classpath/javax/swing/table/TableModel.java
 ../../classpath/javax/swing/text/AbstractDocument.java
 ../../classpath/javax/swing/text/AbstractWriter.java
+../../classpath/javax/swing/text/AsyncBoxView.java
 ../../classpath/javax/swing/text/AttributeSet.java
 ../../classpath/javax/swing/text/BadLocationException.java
 ../../classpath/javax/swing/text/BoxView.java
@@ -4232,6 +4240,7 @@ java/lang/VMClass.java
 java/lang/VMClassLoader.java
 java/lang/VMDouble.java
 java/lang/VMFloat.java
+java/lang/VMMath.java
 java/lang/VMRuntime.java
 java/lang/VMSystem.java
 java/lang/VMThread.java
