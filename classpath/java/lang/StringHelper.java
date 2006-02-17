@@ -200,7 +200,7 @@ final class StringHelper
 
     private static int upperCaseExpansion(char ch)
     {
-	return Character.direction[Character.readChar(ch) >> 7] & 3;
+        return Character.direction[0][Character.readCodePoint((int)ch) >> 7] & 3;
     }
 
     private static int upperCaseIndex(char ch)

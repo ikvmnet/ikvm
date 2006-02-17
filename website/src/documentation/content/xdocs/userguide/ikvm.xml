@@ -71,8 +71,8 @@
 						-Xbootclasspath:<em>classpath</em>            
 					</td>
 					<td>
-						<p>Specifies the boot classpath for the JVM. <em>classpath</em> is a semicolon-delimited list of pathnames to directories and jars.
-						These classes override those in the GNU Classpath libraries.</p>
+						<p>Augments the boot classpath for the JVM. <em>classpath</em> is a semicolon-delimited list of pathnames to directories and jars.
+						These classes are made available through the boot class loader in addition to those in the GNU Classpath libraries.</p>
                                                             <p>Note: If you specify this option more than once, only the last is used.</p>
 					</td>
 				</tr>
