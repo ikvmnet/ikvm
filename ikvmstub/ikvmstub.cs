@@ -278,13 +278,11 @@ public class NetExp
 		java.lang.Class[] interfaces = c.getInterfaces();
 		for(int i = 0; i < interfaces.Length; i++)
 		{
-			if(java.lang.reflect.Modifier.isPublic(interfaces[i].getModifiers()))
+			f.AddInterface(interfaces[i].getName().Replace('.', '/'));
+			if(IsGenericType(interfaces[i])
+				|| !java.lang.reflect.Modifier.isPublic(interfaces[i].getModifiers()))
 			{
-				f.AddInterface(interfaces[i].getName().Replace('.', '/'));
-				if(IsGenericType(interfaces[i]))
-				{
-					AddToExportList(interfaces[i]);
-				}
+				AddToExportList(interfaces[i]);
 			}
 		}
 		java.lang.Class[] innerClasses = c.getDeclaredClasses();
