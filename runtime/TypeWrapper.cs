@@ -2942,7 +2942,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return GetClassLoader().ModuleBuilder.Assembly;
+				return ((DynamicClassLoader)GetClassLoader()).ModuleBuilder.Assembly;
 			}
 		}
 
@@ -3293,7 +3293,7 @@ namespace IKVM.Internal
 						}
 						else
 						{
-							typeBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(wrapper.GetClassLoader().MangleTypeName(f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
+							typeBuilder = ((DynamicClassLoader)wrapper.GetClassLoader()).ModuleBuilder.DefineType(((DynamicClassLoader)wrapper.GetClassLoader()).MangleTypeName(f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
 						}
 					}
 					ArrayList interfaceList = null;
@@ -3328,7 +3328,7 @@ namespace IKVM.Internal
 						}
 					}
 					AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
-					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
+					if(JVM.IsStaticCompiler || DynamicClassLoader.IsSaveDebugImage)
 					{
 						if(classFile.DeprecatedAttribute)
 						{
@@ -3861,7 +3861,7 @@ namespace IKVM.Internal
 						((GetterFieldWrapper)fw).SetGetter(getter);
 					}
 				}
-				if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
+				if(JVM.IsStaticCompiler || DynamicClassLoader.IsSaveDebugImage)
 				{
 					// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
 					// the Java modifiers
@@ -4107,7 +4107,7 @@ namespace IKVM.Internal
 										}
 										else
 										{
-											if(ClassLoaderWrapper.IsSaveDebugImage)
+											if(DynamicClassLoader.IsSaveDebugImage)
 											{
 												JniProxyBuilder.Generate(ilGenerator, wrapper, methods[i], typeBuilder, classFile, m, args);
 											}
@@ -4279,7 +4279,7 @@ namespace IKVM.Internal
 					wrapper.EmitMapXmlMetadata(typeBuilder, classFile, fields, methods);
 
 					TypeBuilder enumBuilder = null;
-					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
+					if(JVM.IsStaticCompiler || DynamicClassLoader.IsSaveDebugImage)
 					{
 						// NOTE in Whidbey we can (and should) use CompilerGeneratedAttribute to mark Synthetic types
 						if((classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
@@ -4474,7 +4474,7 @@ namespace IKVM.Internal
 						{
 							typeAttributes |= TypeAttributes.NotPublic;
 						}
-						attributeTypeBuilder = o.wrapper.GetClassLoader().ModuleBuilder.DefineType(o.classFile.Name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+						attributeTypeBuilder = ((DynamicClassLoader)o.wrapper.GetClassLoader()).ModuleBuilder.DefineType(o.classFile.Name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
 					}
 					if(o.wrapper.IsPublic)
 					{
@@ -4602,8 +4602,8 @@ namespace IKVM.Internal
 				{
 					AssemblyName name = new AssemblyName();
 					name.Name = "jniproxy";
-					AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, ClassLoaderWrapper.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
-					ClassLoaderWrapper.RegisterForSaveDebug(ab);
+					AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, DynamicClassLoader.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
+					DynamicClassLoader.RegisterForSaveDebug(ab);
 					mod = ab.DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
 					AttributeHelper.SetJavaModule(mod);
 				}
@@ -5338,7 +5338,7 @@ namespace IKVM.Internal
 					}
 					string[] exceptions = m.ExceptionsAttribute;
 					methods[index].SetDeclaredExceptions(exceptions);
-					if(JVM.IsStaticCompiler || ClassLoaderWrapper.IsSaveDebugImage)
+					if(JVM.IsStaticCompiler || DynamicClassLoader.IsSaveDebugImage)
 					{
 						AttributeHelper.SetThrowsAttribute(method, exceptions);
 						if(setModifiers || (m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0)
@@ -5996,7 +5996,7 @@ namespace IKVM.Internal
 
 		protected virtual void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method)
 		{
-			if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
+			if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || JVM.Debug || DynamicClassLoader.IsSaveDebugImage)
 			{
 				AddParameterNames(method, m, null);
 			}
@@ -6031,7 +6031,7 @@ namespace IKVM.Internal
 
 		protected virtual TypeBuilder DefineType(TypeAttributes typeAttribs)
 		{
-			return GetClassLoader().ModuleBuilder.DefineType(GetClassLoader().MangleTypeName(Name), typeAttribs);
+			return ((DynamicClassLoader)GetClassLoader()).ModuleBuilder.DefineType(((DynamicClassLoader)GetClassLoader()).MangleTypeName(Name), typeAttribs);
 		}
 
 		internal override MethodBase LinkMethod(MethodWrapper mw)
@@ -6351,7 +6351,7 @@ namespace IKVM.Internal
 		protected override void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method)
 		{
 			IKVM.Internal.MapXml.Param[] parameters = GetXmlMapParameters(classFile.Name, m.Name, m.Signature);
-			if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || parameters != null || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
+			if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || parameters != null || JVM.Debug || DynamicClassLoader.IsSaveDebugImage)
 			{
 				string[] parameterNames = null;
 				if(parameters != null)
@@ -6386,7 +6386,7 @@ namespace IKVM.Internal
 		private void AddParameterNames(MethodBuilder method, MethodWrapper mw)
 		{
 			IKVM.Internal.MapXml.Param[] parameters = GetXmlMapParameters(Name, mw.Name, mw.Signature);
-			if((JVM.IsStaticCompiler && mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || parameters != null || JVM.Debug || ClassLoaderWrapper.IsSaveDebugImage)
+			if((JVM.IsStaticCompiler && mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || parameters != null || JVM.Debug || DynamicClassLoader.IsSaveDebugImage)
 			{
 				string[] parameterNames = null;
 				if(parameters != null)
@@ -7033,7 +7033,7 @@ namespace IKVM.Internal
 			{
 				typeAttribs &= ~(TypeAttributes.Interface | TypeAttributes.Abstract);
 				typeAttribs |= TypeAttributes.Class | TypeAttributes.Sealed;
-				TypeBuilder typeBuilder = GetClassLoader().ModuleBuilder.DefineType(GetClassLoader().MangleTypeName(Name), typeAttribs, typeof(ValueType));
+				TypeBuilder typeBuilder = ((DynamicClassLoader)GetClassLoader()).ModuleBuilder.DefineType(((DynamicClassLoader)GetClassLoader()).MangleTypeName(Name), typeAttribs, typeof(ValueType));
 				AttributeHelper.SetGhostInterface(typeBuilder);
 				AttributeHelper.SetModifiers(typeBuilder, Modifiers);
 				ghostRefField = typeBuilder.DefineField("__<ref>", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
@@ -8207,7 +8207,8 @@ namespace IKVM.Internal
 							// we know there aren't any unsupported parameter types, because IsDelegate() returned true
 							args[i] = parameters[i].ParameterType;
 						}
-						ModuleBuilder moduleBuilder = ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
+						// HACK this is an ugly hack to obtain the global ModuleBuilder
+						ModuleBuilder moduleBuilder = new DynamicClassLoader(null).ModuleBuilder;
 						TypeBuilder typeBuilder = moduleBuilder.DefineType(origname.Substring(NamePrefix.Length), TypeAttributes.NotPublic | TypeAttributes.Interface | TypeAttributes.Abstract);
 						AttributeHelper.HideFromJava(typeBuilder);
 						AttributeHelper.SetModifiers(typeBuilder, Modifiers.Public | Modifiers.Interface | Modifiers.Abstract);

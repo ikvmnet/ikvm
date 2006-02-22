@@ -50,6 +50,10 @@
 
     <target name="IKVM.GNU.Classpath.dll" depends="classes">
         <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true">
+<!--
+<arg value="-debug" />
+<arg value="-srcpath:/classpath/" />
+-->
           <arg value="-version:0.25.*" />
           <arg value="${signoption}" />
           <arg value="-compressresources" />

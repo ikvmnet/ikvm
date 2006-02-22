@@ -634,7 +634,7 @@ namespace IKVM.Internal
 			return sb.ToString();
 		}
 #if !NO_STATIC_COMPILER && !COMPACT_FRAMEWORK
-		private class CompilerClassLoader : ClassLoaderWrapper
+		private class CompilerClassLoader : DynamicClassLoader
 		{
 			private Hashtable classes;
 			private Hashtable remapped = new Hashtable();
@@ -2729,12 +2729,12 @@ namespace IKVM.Internal
 #if !COMPACT_FRAMEWORK
 		public static void PrepareForSaveDebugImage()
 		{
-			ClassLoaderWrapper.PrepareForSaveDebugImage();
+			DynamicClassLoader.PrepareForSaveDebugImage();
 		}
 	
 		public static void SaveDebugImage(object mainClass)
 		{
-			ClassLoaderWrapper.SaveDebugImage(mainClass);
+			DynamicClassLoader.SaveDebugImage(mainClass);
 		}
 #endif
 

@@ -35,29 +35,20 @@ using IKVM.Runtime;
 
 namespace IKVM.Internal
 {
-	class ClassLoaderWrapper
+	abstract class ClassLoaderWrapper
 	{
 		private static readonly object wrapperLock = new object();
 #if !COMPACT_FRAMEWORK
-		private static bool arrayConstructionHack;
-		private static readonly object arrayConstructionLock = new object();
-		private static readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
-		// FXBUG moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
-		// so for the time being, we share one dynamic assembly among all classloaders
-		private static ModuleBuilder moduleBuilder;
-		private static bool saveDebugImage;
-		private static Hashtable nameClashHash = new Hashtable();
-		private static ArrayList saveDebugAssemblies;
+		protected static bool arrayConstructionHack;
+		protected static readonly object arrayConstructionLock = new object();
 #endif
 		private static readonly Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable());
 		private static ClassLoaderWrapper bootstrapClassLoader;
 		private static ClassLoaderWrapper systemClassLoader;
 		private object javaClassLoader;
-		private Hashtable types = new Hashtable();
+		protected Hashtable types = new Hashtable();
 		private ArrayList nativeLibraries;
 		private static Hashtable remappedTypes = new Hashtable();
-		private static int instanceCounter = 0;
-		private int instanceId = System.Threading.Interlocked.Increment(ref instanceCounter);
 
 		// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
 		internal static void SetBootstrapClassLoader(ClassLoaderWrapper bootstrapClassLoader)
@@ -69,11 +60,6 @@ namespace IKVM.Internal
 
 		static ClassLoaderWrapper()
 		{
-#if !COMPACT_FRAMEWORK
-			// TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
-			// we should handle that by disabling dynamic class loading
-			AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
-#endif
 			typeToTypeWrapper[PrimitiveTypeWrapper.BOOLEAN.TypeAsTBD] = PrimitiveTypeWrapper.BOOLEAN;
 			typeToTypeWrapper[PrimitiveTypeWrapper.BYTE.TypeAsTBD] = PrimitiveTypeWrapper.BYTE;
 			typeToTypeWrapper[PrimitiveTypeWrapper.CHAR.TypeAsTBD] = PrimitiveTypeWrapper.CHAR;
@@ -113,45 +99,6 @@ namespace IKVM.Internal
 		{
 			return type.Assembly == JVM.CoreAssembly;
 		}
-
-#if !COMPACT_FRAMEWORK
-		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
-		{
-			lock(arrayConstructionLock)
-			{
-				Tracer.Info(Tracer.ClassLoading, "OnTypeResolve: {0} (arrayConstructionHack = {1})", args.Name, arrayConstructionHack);
-				if(arrayConstructionHack)
-				{
-					return null;
-				}
-			}
-			TypeWrapper type = (TypeWrapper)dynamicTypes[args.Name];
-			if(type == null)
-			{
-				return null;
-			}
-			// During static compilation, a TypeResolve event should never trigger a finish.
-			if(JVM.IsStaticCompilerPhase1)
-			{
-				JVM.CriticalFailure("Finish triggered during phase 1 of compilation.", null);
-				return null;
-			}
-			try
-			{
-				type.Finish();
-			}
-			catch(RetargetableJavaException x)
-			{
-				throw x.ToJava();
-			}
-			// NOTE We used to remove the type from the hashtable here, but that creates a race condition if
-			// another thread also fires the OnTypeResolve event while we're baking the type.
-			// I really would like to remove the type from the hashtable, but at the moment I don't see
-			// any way of doing that that wouldn't cause this race condition.
-			//dynamicTypes.Remove(args.Name);
-			return type.TypeAsTBD.Assembly;
-		}
-#endif
 
 		internal ClassLoaderWrapper(object javaClassLoader)
 		{
@@ -224,28 +171,63 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		// FXBUG This mangles type names, to enable different class loaders loading classes with the same names.
-		// We used to support this by using an assembly per class loader instance, but because
-		// of the CLR TypeResolve bug, we put all types in a single assembly for now.
-		internal string MangleTypeName(string name)
+		internal virtual TypeWrapper DefineClass(ClassFile f, object protectionDomain)
 		{
-			lock(nameClashHash.SyncRoot)
+			throw JavaException.NoClassDefFoundError("Dynamic class loading is not supported by this class loader");			
+		}
+
+		internal TypeWrapper DefineNetExpType(string name, string assemblyName)
+		{
+			Debug.Assert(this == GetBootstrapClassLoader());
+			TypeWrapper type;
+			lock(types.SyncRoot)
 			{
-				// FXBUG the 1.1 CLR doesn't like type names that end with a period.
-				if(nameClashHash.ContainsKey(name) || name.EndsWith("."))
+				// we need to check if we've already got it, because other classloaders than the bootstrap classloader may
+				// "define" NetExp types, there is a potential race condition if multiple classloaders try to define the
+				// same type simultaneously.
+				type = (TypeWrapper)types[name];
+				if(type != null)
 				{
-					if(JVM.IsStaticCompiler)
-					{
-						Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", name);
-					}
-					return name + "/" + instanceId;
+					return type;
+				}
+			}
+			// The sole purpose of the netexp class is to let us load the assembly that the class lives in,
+			// once we've done that, all types in it become visible.
+			Assembly asm;
+			try
+			{
+				asm = Assembly.Load(assemblyName);
+			}
+			catch(Exception x)
+			{
+				throw new NoClassDefFoundError(name + " (" + x.Message + ")");
+			}
+			// pre-compiled Java types can also live in a netexp referenced assembly,
+			// so we have to explicitly check for those
+			// (DotNetTypeWrapper.CreateDotNetTypeWrapper will refuse to return Java types).
+			Type t = GetJavaTypeFromAssembly(asm, name);
+			if(t != null)
+			{
+				return GetWrapperFromBootstrapType(t);
+			}
+			type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
+			if(type == null)
+			{
+				throw new NoClassDefFoundError(name + " not found in " + assemblyName);
+			}
+			lock(types.SyncRoot)
+			{
+				TypeWrapper race = (TypeWrapper)types[name];
+				if(race == null)
+				{
+					types.Add(name, type);
 				}
 				else
 				{
-					nameClashHash.Add(name, name);
-					return name;
+					type = race;
 				}
 			}
+			return type;
 		}
 #endif
 
@@ -695,124 +677,6 @@ namespace IKVM.Internal
 			return wrapper;
 		}
 
-#if !COMPACT_FRAMEWORK
-		internal TypeWrapper DefineClass(ClassFile f, object protectionDomain)
-		{
-			string dotnetAssembly = f.IKVMAssemblyAttribute;
-			if(dotnetAssembly != null)
-			{
-				// HACK only the bootstrap classloader can define .NET types (but for convenience, we do
-				// allow other class loaders to call DefineClass for them)
-				// TODO reconsider this, it might be a better idea to only allow netexp generated jars on the bootclasspath
-				return GetBootstrapClassLoader().DefineNetExpType(f.Name, dotnetAssembly);
-			}
-			lock(types.SyncRoot)
-			{
-				if(types.ContainsKey(f.Name))
-				{
-					throw new LinkageError("duplicate class definition: " + f.Name);
-				}
-				// mark the type as "loading in progress", so that we can detect circular dependencies.
-				types.Add(f.Name, null);
-			}
-			try
-			{
-				TypeWrapper type = CreateDynamicTypeWrapper(f, this, protectionDomain);
-				lock(types.SyncRoot)
-				{
-					// in very extreme conditions another thread may have beaten us to it
-					// and loaded a class with the same name, in that case we'll leak
-					// the defined DynamicTypeWrapper (or rather the Reflection.Emit
-					// defined type).
-					TypeWrapper race = (TypeWrapper)types[f.Name];
-					if(race == null)
-					{
-						Debug.Assert(!dynamicTypes.ContainsKey(type.TypeAsTBD.FullName));
-						dynamicTypes.Add(type.TypeAsTBD.FullName, type);
-						types[f.Name] = type;
-					}
-					else
-					{
-						throw new LinkageError("duplicate class definition: " + f.Name);
-					}
-				}
-				return type;
-			}
-			catch
-			{
-				lock(types.SyncRoot)
-				{
-					if(types[f.Name] == null)
-					{
-						// if loading the class fails, we remove the indicator that we're busy loading the class,
-						// because otherwise we get a ClassCircularityError if we try to load the class again.
-						types.Remove(f.Name);
-					}
-				}
-				throw;
-			}
-		}
-
-		protected virtual TypeWrapper CreateDynamicTypeWrapper(ClassFile f, ClassLoaderWrapper loader, object protectionDomain)
-		{
-			return new DynamicTypeWrapper(f, loader, protectionDomain);
-		}
-
-		private TypeWrapper DefineNetExpType(string name, string assemblyName)
-		{
-			Debug.Assert(this == GetBootstrapClassLoader());
-			TypeWrapper type;
-			lock(types.SyncRoot)
-			{
-				// we need to check if we've already got it, because other classloaders than the bootstrap classloader may
-				// "define" NetExp types, there is a potential race condition if multiple classloaders try to define the
-				// same type simultaneously.
-				type = (TypeWrapper)types[name];
-				if(type != null)
-				{
-					return type;
-				}
-			}
-			// The sole purpose of the netexp class is to let us load the assembly that the class lives in,
-			// once we've done that, all types in it become visible.
-			Assembly asm;
-			try
-			{
-				asm = Assembly.Load(assemblyName);
-			}
-			catch(Exception x)
-			{
-				throw new NoClassDefFoundError(name + " (" + x.Message + ")");
-			}
-			// pre-compiled Java types can also live in a netexp referenced assembly,
-			// so we have to explicitly check for those
-			// (DotNetTypeWrapper.CreateDotNetTypeWrapper will refuse to return Java types).
-			Type t = GetJavaTypeFromAssembly(asm, name);
-			if(t != null)
-			{
-				return GetWrapperFromBootstrapType(t);
-			}
-			type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
-			if(type == null)
-			{
-				throw new NoClassDefFoundError(name + " not found in " + assemblyName);
-			}
-			lock(types.SyncRoot)
-			{
-				TypeWrapper race = (TypeWrapper)types[name];
-				if(race == null)
-				{
-					types.Add(name, type);
-				}
-				else
-				{
-					type = race;
-				}
-			}
-			return type;
-		}
-#endif
-
 		internal object GetJavaClassLoader()
 		{
 			return (this == GetBootstrapClassLoader()) ? null : javaClassLoader;
@@ -825,114 +689,6 @@ namespace IKVM.Internal
 		{
 			return GetBootstrapClassLoader().javaClassLoader;
 		}
-
-#if !COMPACT_FRAMEWORK
-		internal static void PrepareForSaveDebugImage()
-		{
-			Debug.Assert(moduleBuilder == null);
-			saveDebugImage = true;
-		}
-
-		internal static bool IsSaveDebugImage
-		{
-			get
-			{
-				return saveDebugImage;
-			}
-		}
-
-		internal static void FinishAll()
-		{
-			JVM.FinishingForDebugSave = true;
-			while(dynamicTypes.Count > 0)
-			{
-				ArrayList l = new ArrayList(dynamicTypes.Values);
-				foreach(TypeWrapper tw in l)
-				{
-					string name = tw.TypeAsTBD.FullName;
-					Tracer.Info(Tracer.Runtime, "Finishing {0}", name);
-					tw.Finish();
-					dynamicTypes.Remove(name);
-				}
-			}
-		}
-
-		internal static void SaveDebugImage(object mainClass)
-		{
-			FinishAll();
-			// HACK use reflection to get the type from the class
-			TypeWrapper mainTypeWrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(mainClass);
-			mainTypeWrapper.Finish();
-			Type mainType = mainTypeWrapper.TypeAsTBD;
-			MethodInfo main = mainType.GetMethod("main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(string[]) }, null);
-			AssemblyBuilder asm = ((AssemblyBuilder)moduleBuilder.Assembly);
-			asm.SetEntryPoint(main, PEFileKinds.ConsoleApplication);
-			asm.Save("ikvmdump.exe");
-			if(saveDebugAssemblies != null)
-			{
-				foreach(AssemblyBuilder ab in saveDebugAssemblies)
-				{
-					ab.Save(ab.GetName().Name + ".dll");
-				}
-			}
-		}
-
-		internal static void RegisterForSaveDebug(AssemblyBuilder ab)
-		{
-			if(saveDebugAssemblies == null)
-			{
-				saveDebugAssemblies = new ArrayList();
-			}
-			saveDebugAssemblies.Add(ab);
-		}
-
-		internal ModuleBuilder ModuleBuilder
-		{
-			get
-			{
-				lock(this)
-				{
-					if(moduleBuilder == null)
-					{
-						moduleBuilder = CreateModuleBuilder();
-					}
-					return moduleBuilder;
-				}
-			}
-		}
-
-		protected virtual ModuleBuilder CreateModuleBuilder()
-		{
-			AssemblyName name = new AssemblyName();
-			if(saveDebugImage)
-			{
-				name.Name = "ikvmdump";
-			}
-			else
-			{
-				name.Name = "ikvm_dynamic_assembly__" + instanceId + "__" + (uint)Environment.TickCount;
-			}
-			DateTime now = DateTime.Now;
-			name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
-			AssemblyBuilder assemblyBuilder;
-#if WHIDBEY
-			if(JVM.IsIkvmStub)
-			{
-				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, null, null, null, null, null, true);
-			}
-			else
-#endif
-			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true);
-			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
-			assemblyBuilder.SetCustomAttribute(debugAttr);
-			ModuleBuilder moduleBuilder = saveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
-			if(!JVM.NoStackTraceInfo)
-			{
-				AttributeHelper.SetSourceFile(moduleBuilder, null);
-			}
-			return moduleBuilder;
-		}
-#endif
 
 		internal TypeWrapper ExpressionTypeWrapper(string type)
 		{
@@ -1061,7 +817,7 @@ namespace IKVM.Internal
 			{
 				if(bootstrapClassLoader == null)
 				{
-					bootstrapClassLoader = new ClassLoaderWrapper(null);
+					bootstrapClassLoader = new BootstrapClassLoader();
 				}
 				return bootstrapClassLoader;
 			}
@@ -1092,7 +848,7 @@ namespace IKVM.Internal
 				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(javaClassLoader);
 				if(wrapper == null)
 				{
-					wrapper = new ClassLoaderWrapper(javaClassLoader);
+					wrapper = new DynamicClassLoader(javaClassLoader);
 					JVM.Library.setWrapperForClassLoader(javaClassLoader, wrapper);
 				}
 				return wrapper;
@@ -1208,6 +964,14 @@ namespace IKVM.Internal
 				return "null";
 			}
 			return String.Format("{0}@{1:X}", GetWrapperFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
+		}
+	}
+
+	class BootstrapClassLoader : ClassLoaderWrapper
+	{
+		internal BootstrapClassLoader()
+			: base(null)
+		{
 		}
 	}
 }
