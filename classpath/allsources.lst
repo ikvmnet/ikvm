@@ -3543,6 +3543,7 @@
 ../../classpath/javax/swing/text/html/HTMLFrameHyperlinkEvent.java
 ../../classpath/javax/swing/text/html/InlineView.java
 ../../classpath/javax/swing/text/html/ObjectView.java
+../../classpath/javax/swing/text/html/ParagraphView.java
 ../../classpath/javax/swing/text/html/parser/AttributeList.java
 ../../classpath/javax/swing/text/html/parser/ContentModel.java
 ../../classpath/javax/swing/text/html/parser/DocumentParser.java
