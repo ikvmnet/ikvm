@@ -77,7 +77,7 @@ class Compiler
 #endif
 		System.Threading.Thread.CurrentThread.Name = "compiler";
 		Tracer.EnableTraceForDebug();
-		JVM.CompilerOptions options = new JVM.CompilerOptions();
+		CompilerOptions options = new CompilerOptions();
 		options.target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
 		options.guessFileKind = true;
 		options.version = "0.0.0.0";
@@ -467,7 +467,7 @@ class Compiler
 			options.references = (string[])references.ToArray(typeof(string));
 			options.resources = resources;
 			options.classesToExclude = (string[])classesToExclude.ToArray(typeof(string));
-			return JVM.Compile(options);
+			return AotCompiler.Compile(options);
 		}
 		catch(Exception x)
 		{
