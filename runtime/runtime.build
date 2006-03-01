@@ -4,6 +4,13 @@
         <property name="generics" value="true" />
         <call target="IKVM.Runtime" />
     </target>
+    <target name="signed">
+        <property name="generics" value="false" />
+        <property name="signed" value="SIGNCODE" />
+        <property name="signoption" value="-key:ikvm-key" />
+        <property name="ilasm_signoption" value="/key:@ikvm-key" />
+        <call target="IKVM.Runtime" />
+    </target>
 
     <target name="IKVM.Runtime">
         <property overwrite="false" name="generics" value="false" />

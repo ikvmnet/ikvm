@@ -7855,6 +7855,14 @@ namespace IKVM.Internal
 
 		internal override void Finish()
 		{
+			if(BaseTypeWrapper != null)
+			{
+				BaseTypeWrapper.Finish();
+			}
+			foreach(TypeWrapper tw in this.Interfaces)
+			{
+				tw.Finish();
+			}
 		}
 
 #if !COMPACT_FRAMEWORK
@@ -9218,6 +9226,14 @@ namespace IKVM.Internal
 
 		internal override void Finish()
 		{
+			if(BaseTypeWrapper != null)
+			{
+				BaseTypeWrapper.Finish();
+			}
+			foreach(TypeWrapper tw in this.Interfaces)
+			{
+				tw.Finish();
+			}
 			// TODO instead of linking here, we should just pre-link in LazyPublishMembers
 			foreach(MethodWrapper mw in GetMethods())
 			{
