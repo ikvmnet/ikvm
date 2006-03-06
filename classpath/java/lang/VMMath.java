@@ -133,4 +133,44 @@ class VMMath
     {
         return cli.System.Math.Round(d);
     }
+
+    static double cbrt(double d)
+    {
+        return cli.System.Math.Pow(d, 1.0 / 3.0);
+    }
+
+    static double cosh(double d)
+    {
+        return cli.System.Math.Cosh(d);
+    }
+
+    static double expm1(double d)
+    {
+        return cli.System.Math.Exp(d) - 1.0;
+    }
+
+    static double hypot(double a, double b)
+    {
+        return a * a  + b * b;
+    }
+
+    static double log10(double d)
+    {
+        return cli.System.Math.Log10(d);
+    }
+
+    static double log1p(double d)
+    {
+        return cli.System.Math.Log(d + 1.0);
+    }
+
+    static double sinh(double d)
+    {
+        return cli.System.Math.Sinh(d);
+    }
+
+    static double tanh(double d)
+    {
+        return cli.System.Math.Tanh(d);
+    }
 }
