@@ -254,18 +254,17 @@ public final class Method extends AccessibleObject implements Member
 	sb.append(Modifier.toString(getModifiers()));
 	if (sb.length() > 0)
 	    sb.append(' ');
-	classToString(sb, getReturnType());
+	sb.append(Constructor.getUserName(getReturnType()));
 	sb.append(' ');
 	sb.append(getDeclaringClass().getName()).append('.');
 	sb.append(getName()).append('(');
 	Class[] c = getParameterTypes();
 	if (c.length > 0)
 	{
-	    classToString(sb, c[0]);
+	    sb.append(Constructor.getUserName(c[0]));
 	    for (int i = 1; i < c.length; i++)
 	    {
-		sb.append(',');
-		classToString(sb, c[i]);
+		sb.append(',').append(Constructor.getUserName(c[i]));
 	    }
 	}
 	sb.append(')');
@@ -277,21 +276,6 @@ public final class Method extends AccessibleObject implements Member
 		sb.append(',').append(c[i].getName());
 	}
 	return sb.toString();
-    }
-
-    private static void classToString(StringBuffer sb, Class c)
-    {
-	int arrayrank = 0;
-	while(c.isArray())
-	{
-	    arrayrank++;
-	    c = c.getComponentType();
-	}
-	sb.append(c.getName());
-	for(; arrayrank > 0; arrayrank--)
-	{
-	    sb.append("[]");
-	}
     }
 
     /**
