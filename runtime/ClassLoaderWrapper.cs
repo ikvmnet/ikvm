@@ -171,9 +171,20 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
+		// HACK the proxyClassLoader is used to dynamically load classes in the boot class loader
+		// (e.g. when a Proxy is defined a boot class)
+		private static DynamicClassLoader proxyClassLoader;
+
 		internal virtual TypeWrapper DefineClass(ClassFile f, object protectionDomain)
 		{
-			throw JavaException.NoClassDefFoundError("Dynamic class loading is not supported by this class loader");			
+			lock(wrapperLock)
+			{
+				if(proxyClassLoader == null)
+				{
+					proxyClassLoader = new DynamicClassLoader(null);
+				}
+			}
+			return proxyClassLoader.DefineClass(f, protectionDomain);
 		}
 
 		internal TypeWrapper DefineNetExpType(string name, string assemblyName)
@@ -421,6 +432,12 @@ namespace IKVM.Internal
 						return null;
 					}
 				}
+#if !COMPACT_FRAMEWORK
+				if(this == proxyClassLoader)
+				{
+					return GetBootstrapClassLoader().LoadClassByDottedNameFast(name, throwClassNotFoundException);
+				}
+#endif
 				// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
 				lock(javaClassLoader)
 				{

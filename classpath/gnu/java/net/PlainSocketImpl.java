@@ -74,13 +74,13 @@ public class PlainSocketImpl extends SocketImpl
             case 10065: //WSAEHOSTUNREACH
                 return new NoRouteToHostException(x.getMessage());
             case 10060: //WSAETIMEDOUT
-                return new java.io.InterruptedIOException(x.getMessage());
+                return new java.net.SocketTimeoutException(x.getMessage());
             case 10061: //WSAECONNREFUSED
                 return new PortUnreachableException(x.getMessage());
             case 11001: //WSAHOST_NOT_FOUND
                 return new UnknownHostException(x.getMessage());
             default:
-                return new SocketException(x.getMessage());
+                return new SocketException(x.getMessage() + "\nError Code: " + x.get_ErrorCode());
         }
     }
 
@@ -348,6 +348,11 @@ public class PlainSocketImpl extends SocketImpl
             {
                 // the socket was shutdown, so we have to return EOF
                 return -1;
+            }
+            else if(x.get_ErrorCode() == 10035) //WSAEWOULDBLOCK
+            {
+                // nothing to read and would block
+                return 0;
             }
             throw convertSocketExceptionToIOException(x);
         }
