@@ -42,7 +42,7 @@ namespace IKVM.NativeCode.java
 	{
 		namespace reflect
 		{
-			public class Array
+			public class VMArray
 			{
 				public static object createObjectArray(object clazz, int dim)
 				{

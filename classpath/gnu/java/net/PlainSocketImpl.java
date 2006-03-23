@@ -43,6 +43,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.net.*;
 import cli.System.Net.IPEndPoint;
+import cli.System.Net.Sockets.SelectMode;
 import cli.System.Net.Sockets.SocketOptionName;
 import cli.System.Net.Sockets.SocketOptionLevel;
 import cli.System.Net.Sockets.SocketFlags;
@@ -74,7 +75,7 @@ public class PlainSocketImpl extends SocketImpl
             case 10065: //WSAEHOSTUNREACH
                 return new NoRouteToHostException(x.getMessage());
             case 10060: //WSAETIMEDOUT
-                return new java.net.SocketTimeoutException(x.getMessage());
+                return new SocketTimeoutException(x.getMessage());
             case 10061: //WSAECONNREFUSED
                 return new PortUnreachableException(x.getMessage());
             case 11001: //WSAHOST_NOT_FOUND
@@ -88,6 +89,7 @@ public class PlainSocketImpl extends SocketImpl
      * This is the native file descriptor for this socket
      */
     private cli.System.Net.Sockets.Socket socket;
+    private int timeout;
 
 
     /**
@@ -110,9 +112,8 @@ public class PlainSocketImpl extends SocketImpl
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            int timeout = ((Integer)getOption(SO_TIMEOUT)).intValue();
-            if(timeout != 0 && !socket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
-                cli.System.Net.Sockets.SelectMode.wrap(cli.System.Net.Sockets.SelectMode.SelectRead)))
+            if(timeout > 0 && !socket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
+                SelectMode.wrap(SelectMode.SelectRead)))
             {
                 throw new SocketTimeoutException("Accept timed out");
             }
@@ -340,6 +341,11 @@ public class PlainSocketImpl extends SocketImpl
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
+            if(timeout > 0 && !socket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
+                SelectMode.wrap(SelectMode.SelectRead)))
+            {
+                throw new SocketTimeoutException();
+            }
             return socket.Receive(buf, offset, len, SocketFlags.wrap(SocketFlags.None));
         }
         catch(cli.System.Net.Sockets.SocketException x)
@@ -375,6 +381,11 @@ public class PlainSocketImpl extends SocketImpl
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
+            if(timeout > 0 && !socket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
+                SelectMode.wrap(SelectMode.SelectWrite)))
+            {
+                throw new SocketTimeoutException();
+            }
             socket.Send(buf, offset, len, SocketFlags.wrap(SocketFlags.None));
         }
         catch(cli.System.Net.Sockets.SocketException x)
@@ -429,6 +440,9 @@ public class PlainSocketImpl extends SocketImpl
                 case SocketOptions.SO_OOBINLINE:
                     socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline), ((Boolean)val).booleanValue() ? 1 : 0);
                     break;
+                case SocketOptions.SO_TIMEOUT:
+                    timeout = ((Integer)val).intValue();
+                    break;
                 default:
                     setCommonSocketOption(socket, option_id, val);
                     break;
@@ -452,10 +466,6 @@ public class PlainSocketImpl extends SocketImpl
             if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
-                case SocketOptions.SO_TIMEOUT:
-                    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout), ((Integer)val).intValue());
-                    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendTimeout), ((Integer)val).intValue());
-                    break;
                 case SocketOptions.SO_SNDBUF:
                     socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer), ((Integer)val).intValue());
                     break;
@@ -514,6 +524,8 @@ public class PlainSocketImpl extends SocketImpl
                 }
                 case SocketOptions.SO_OOBINLINE:
                     return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline))));
+                case SocketOptions.SO_TIMEOUT:
+                    return new Integer(timeout);
                 default:
                     return getCommonSocketOption(socket, option_id);
             }
@@ -536,8 +548,6 @@ public class PlainSocketImpl extends SocketImpl
             if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
-                case SocketOptions.SO_TIMEOUT:
-                    return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout))));
                 case SocketOptions.SO_SNDBUF:
                     return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer))));
                 case SocketOptions.SO_RCVBUF:

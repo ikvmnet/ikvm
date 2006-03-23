@@ -72,9 +72,9 @@ namespace IKVM.Internal
 			Tracer.Info(Tracer.Compiler, "Instantiate CompilerClassLoader for {0}", assemblyName);
 		}
 
-		protected override TypeWrapper CreateDynamicTypeWrapper(ClassFile f, ClassLoaderWrapper loader, object protectionDomain)
+		protected override TypeWrapper CreateDynamicTypeWrapper(ClassFile f)
 		{
-			return new AotTypeWrapper(f, loader);
+			return new AotTypeWrapper(f, this);
 		}
 
 		protected override ModuleBuilder CreateModuleBuilder()
@@ -322,6 +322,7 @@ namespace IKVM.Internal
 
 		private class RemapperTypeWrapper : TypeWrapper
 		{
+			private CompilerClassLoader classLoader;
 			private TypeBuilder typeBuilder;
 			private TypeBuilder helperTypeBuilder;
 			private Type shadowType;
@@ -334,6 +335,11 @@ namespace IKVM.Internal
 				{
 					return typeBuilder.Assembly;
 				}
+			}
+
+			internal override ClassLoaderWrapper GetClassLoader()
+			{
+				return classLoader;
 			}
 
 			internal override bool IsRemapped
@@ -358,8 +364,9 @@ namespace IKVM.Internal
 			}
 
 			internal RemapperTypeWrapper(CompilerClassLoader classLoader, IKVM.Internal.MapXml.Class c, IKVM.Internal.MapXml.Root map)
-				: base((Modifiers)c.Modifiers, c.Name, GetBaseWrapper(c), classLoader, null)
+				: base((Modifiers)c.Modifiers, c.Name, GetBaseWrapper(c))
 			{
+				this.classLoader = classLoader;
 				classDef = c;
 				bool baseIsSealed = false;
 				shadowType = Type.GetType(c.Shadows, true);

@@ -304,6 +304,8 @@ namespace IKVM.Internal
 #if !COMPACT_FRAMEWORK
 							// HACK make sure we don't go through a user class loader when creating
 							// an array for a precompiled or .NET type
+							// (this is to compensate for the hack that returns the system class loader
+							// for precompiled classes or .NET types)
 							if (type is DynamicTypeWrapper)
 							{
 								type = type.GetClassLoader().CreateArrayType(name, type, dims);
@@ -830,7 +832,7 @@ namespace IKVM.Internal
 
 		internal static ClassLoaderWrapper GetBootstrapClassLoader()
 		{
-			lock(typeof(ClassLoaderWrapper))
+			lock(wrapperLock)
 			{
 				if(bootstrapClassLoader == null)
 				{

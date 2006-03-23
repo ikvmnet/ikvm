@@ -163,7 +163,12 @@ public class VMSystemProperties
         {
             try
             {
-                libraryPath = new cli.System.IO.FileInfo(GetAssemblyLocation(GetEntryAssembly())).get_DirectoryName();
+                cli.System.Reflection.Assembly entryAsm = GetEntryAssembly();
+                // If the CLR was started by a native app (e.g. via COM interop) there is no entry assembly
+                if (entryAsm != null)
+                {
+                    libraryPath = new cli.System.IO.FileInfo(GetAssemblyLocation(entryAsm)).get_DirectoryName();
+                }
             }
             catch(cli.System.MissingMethodException _)
             {

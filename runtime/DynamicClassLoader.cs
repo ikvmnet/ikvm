@@ -112,7 +112,7 @@ namespace IKVM.Internal
 			}
 			try
 			{
-				TypeWrapper type = CreateDynamicTypeWrapper(f, this, protectionDomain);
+				TypeWrapper type = CreateDynamicTypeWrapper(f);
 				lock(types.SyncRoot)
 				{
 					// in very extreme conditions another thread may have beaten us to it
@@ -125,6 +125,7 @@ namespace IKVM.Internal
 						Debug.Assert(!dynamicTypes.ContainsKey(type.TypeAsTBD.FullName));
 						dynamicTypes.Add(type.TypeAsTBD.FullName, type);
 						types[f.Name] = type;
+						type.SetClassObject(JVM.Library.newClass(type, protectionDomain));
 					}
 					else
 					{
@@ -148,9 +149,9 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected virtual TypeWrapper CreateDynamicTypeWrapper(ClassFile f, ClassLoaderWrapper loader, object protectionDomain)
+		protected virtual TypeWrapper CreateDynamicTypeWrapper(ClassFile f)
 		{
-			return new DynamicTypeWrapper(f, loader, protectionDomain);
+			return new DynamicTypeWrapper(f, this);
 		}
 
 		internal static void PrepareForSaveDebugImage()

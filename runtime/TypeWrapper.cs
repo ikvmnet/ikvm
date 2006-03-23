@@ -1380,19 +1380,18 @@ namespace IKVM.Internal
 
 	public abstract class TypeWrapper
 	{
-		private readonly ClassLoaderWrapper classLoader;
 		private readonly string name;		// java name (e.g. java.lang.Object)
 		private readonly Modifiers modifiers;
 		private MethodWrapper[] methods;
 		private FieldWrapper[] fields;
 		private readonly TypeWrapper baseWrapper;
-		private readonly object classObject;
+		private object classObject;
 		private bool hasIncompleteInterfaceImplementation;
 		internal static readonly TypeWrapper[] EmptyArray = new TypeWrapper[0];
 		internal const Modifiers UnloadableModifiersHack = Modifiers.Final | Modifiers.Interface | Modifiers.Private;
 		internal const Modifiers VerifierTypeModifiersHack = Modifiers.Final | Modifiers.Interface;
 
-		internal TypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper, ClassLoaderWrapper classLoader, object protectionDomain)
+		internal TypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper)
 		{
 			Profiler.Count("TypeWrapper");
 			// class name should be dotted or null for primitives
@@ -1401,22 +1400,27 @@ namespace IKVM.Internal
 			this.modifiers = modifiers;
 			this.name = name == null ? null : String.Intern(name);
 			this.baseWrapper = baseWrapper;
-			this.classLoader = classLoader;
-			if(IsUnloadable || IsVerifierType || JVM.IsStaticCompiler)
-			{
-				this.classObject = null;
-			}
-			else
-			{
-				this.classObject = JVM.Library.newClass(this, protectionDomain);
-			}
+		}
+
+		internal void SetClassObject(object classObject)
+		{
+			this.classObject = classObject;
 		}
 
 		internal object ClassObject
 		{
 			get
 			{
-				Debug.Assert(!IsUnloadable && !IsVerifierType);
+				Debug.Assert(!IsUnloadable && !IsVerifierType && !JVM.IsStaticCompiler);
+				lock(this)
+				{
+					if(classObject == null)
+					{
+						// DynamicTypeWrapper should haved already had SetClassObject explicitly
+						Debug.Assert(!(this is DynamicTypeWrapper));
+						classObject = JVM.Library.newClass(this, null);
+					}
+				}
 				return classObject;
 			}
 		}
@@ -1647,10 +1651,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal virtual ClassLoaderWrapper GetClassLoader()
-		{
-			return classLoader;
-		}
+		internal abstract ClassLoaderWrapper GetClassLoader();
 
 		internal FieldWrapper GetFieldWrapper(string fieldName, string fieldSig)
 		{
@@ -1965,11 +1966,11 @@ namespace IKVM.Internal
 					case '[':
 						// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
 						// (because the ultimate element type was already loaded when this type was created)
-						return classLoader.LoadClassByDottedNameFast(name.Substring(1));
+						return GetClassLoader().LoadClassByDottedNameFast(name.Substring(1));
 					case 'L':
 						// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
 						// (because the ultimate element type was already loaded when this type was created)
-						return classLoader.LoadClassByDottedNameFast(name.Substring(2, name.Length - 3));
+						return GetClassLoader().LoadClassByDottedNameFast(name.Substring(2, name.Length - 3));
 					case 'Z':
 						return PrimitiveTypeWrapper.BOOLEAN;
 					case 'B':
@@ -2515,7 +2516,7 @@ namespace IKVM.Internal
 		private static Hashtable warningHashtable;
 
 		internal UnloadableTypeWrapper(string name)
-			: base(TypeWrapper.UnloadableModifiersHack, name, null, null, null)
+			: base(TypeWrapper.UnloadableModifiersHack, name, null)
 		{
 			if(JVM.IsStaticCompiler && name != "<verifier>")
 			{
@@ -2535,6 +2536,11 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Warning: class \"{0}\" not found", name);
 				}
 			}
+		}
+
+		internal override ClassLoaderWrapper GetClassLoader()
+		{
+			return null;
 		}
 
 		internal override TypeWrapper EnsureLoadable(ClassLoaderWrapper loader)
@@ -2663,7 +2669,7 @@ namespace IKVM.Internal
 		private readonly string sigName;
 
 		private PrimitiveTypeWrapper(Type type, string sigName)
-			: base(Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null, null, null, null)
+			: base(Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null, null)
 		{
 			this.type = type;
 			this.sigName = sigName;
@@ -2853,6 +2859,7 @@ namespace IKVM.Internal
 
 	class DynamicTypeWrapper : TypeWrapper
 	{
+		protected readonly DynamicClassLoader classLoader;
 		private volatile DynamicImpl impl;
 		private TypeWrapper[] interfaces;
 		private bool hasStaticInitializer;
@@ -2867,10 +2874,11 @@ namespace IKVM.Internal
 			return tw;
 		}
 
-		internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader, object protectionDomain)
-			: base(f.Modifiers, f.Name, f.IsInterface ? null : LoadTypeWrapper(classLoader, f.SuperClass), classLoader, protectionDomain)
+		internal DynamicTypeWrapper(ClassFile f, DynamicClassLoader classLoader)
+			: base(f.Modifiers, f.Name, f.IsInterface ? null : LoadTypeWrapper(classLoader, f.SuperClass))
 		{
 			Profiler.Count("DynamicTypeWrapper");
+			this.classLoader = classLoader;
 			if(BaseTypeWrapper != null)
 			{
 				if(!BaseTypeWrapper.IsAccessibleFrom(this))
@@ -2930,6 +2938,11 @@ namespace IKVM.Internal
 			impl = new JavaTypeImpl(f, this);
 		}
 
+		internal override ClassLoaderWrapper GetClassLoader()
+		{
+			return classLoader;
+		}
+
 		internal override bool HasStaticInitializer
 		{
 			get
@@ -2942,7 +2955,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return ((DynamicClassLoader)GetClassLoader()).ModuleBuilder.Assembly;
+				return classLoader.ModuleBuilder.Assembly;
 			}
 		}
 
@@ -3293,7 +3306,7 @@ namespace IKVM.Internal
 						}
 						else
 						{
-							typeBuilder = ((DynamicClassLoader)wrapper.GetClassLoader()).ModuleBuilder.DefineType(((DynamicClassLoader)wrapper.GetClassLoader()).MangleTypeName(f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
+							typeBuilder = wrapper.classLoader.ModuleBuilder.DefineType(wrapper.classLoader.MangleTypeName(f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
 						}
 					}
 					ArrayList interfaceList = null;
@@ -4474,7 +4487,7 @@ namespace IKVM.Internal
 						{
 							typeAttributes |= TypeAttributes.NotPublic;
 						}
-						attributeTypeBuilder = ((DynamicClassLoader)o.wrapper.GetClassLoader()).ModuleBuilder.DefineType(o.classFile.Name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+						attributeTypeBuilder = o.wrapper.classLoader.ModuleBuilder.DefineType(o.classFile.Name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
 					}
 					if(o.wrapper.IsPublic)
 					{
@@ -6031,7 +6044,7 @@ namespace IKVM.Internal
 
 		protected virtual TypeBuilder DefineType(TypeAttributes typeAttribs)
 		{
-			return ((DynamicClassLoader)GetClassLoader()).ModuleBuilder.DefineType(((DynamicClassLoader)GetClassLoader()).MangleTypeName(Name), typeAttribs);
+			return classLoader.ModuleBuilder.DefineType(classLoader.MangleTypeName(Name), typeAttribs);
 		}
 
 		internal override MethodBase LinkMethod(MethodWrapper mw)
@@ -6130,8 +6143,8 @@ namespace IKVM.Internal
 		private static bool[] mappedExceptionsAllSubClasses;
 		private static Hashtable mapxml;
 
-		internal AotTypeWrapper(ClassFile f, ClassLoaderWrapper loader)
-			: base(f, loader, null)
+		internal AotTypeWrapper(ClassFile f, CompilerClassLoader loader)
+			: base(f, loader)
 		{
 		}
 
@@ -7033,7 +7046,7 @@ namespace IKVM.Internal
 			{
 				typeAttribs &= ~(TypeAttributes.Interface | TypeAttributes.Abstract);
 				typeAttribs |= TypeAttributes.Class | TypeAttributes.Sealed;
-				TypeBuilder typeBuilder = ((DynamicClassLoader)GetClassLoader()).ModuleBuilder.DefineType(((DynamicClassLoader)GetClassLoader()).MangleTypeName(Name), typeAttribs, typeof(ValueType));
+				TypeBuilder typeBuilder = classLoader.ModuleBuilder.DefineType(classLoader.MangleTypeName(Name), typeAttribs, typeof(ValueType));
 				AttributeHelper.SetGhostInterface(typeBuilder);
 				AttributeHelper.SetModifiers(typeBuilder, Modifiers);
 				ghostRefField = typeBuilder.DefineField("__<ref>", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
@@ -7355,18 +7368,18 @@ namespace IKVM.Internal
 			return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(new String('[', rank) + this.SigName);
 		}
 
-		private static ClassLoaderWrapper GetClassLoader(Type type)
-		{
-			return JVM.IsStaticCompiler || ClassLoaderWrapper.IsCoreAssemblyType(type) ? ClassLoaderWrapper.GetBootstrapClassLoader() : ClassLoaderWrapper.GetSystemClassLoader();
-		}
-
 		private CompiledTypeWrapper(string name, Type type)
-			: base(GetModifiers(type), name, GetBaseTypeWrapper(type), GetClassLoader(type), null)
+			: base(GetModifiers(type), name, GetBaseTypeWrapper(type))
 		{
 			Debug.Assert(!(type is TypeBuilder));
 			Debug.Assert(!type.IsArray);
 
 			this.type = type;
+		}
+
+		internal override ClassLoaderWrapper GetClassLoader()
+		{
+			return JVM.IsStaticCompiler || ClassLoaderWrapper.IsCoreAssemblyType(type) ? ClassLoaderWrapper.GetBootstrapClassLoader() : ClassLoaderWrapper.GetSystemClassLoader();
 		}
 
 		private static Modifiers GetModifiers(Type type)
@@ -8375,7 +8388,7 @@ namespace IKVM.Internal
 		}
 
 		internal DotNetTypeWrapper(Type type)
-			: base(GetModifiers(type), GetName(type), GetBaseTypeWrapper(type), null, null)
+			: base(GetModifiers(type), GetName(type), GetBaseTypeWrapper(type))
 		{
 			Debug.Assert(!(type.IsByRef), type.FullName);
 			Debug.Assert(!(type.IsPointer), type.FullName);
@@ -9277,12 +9290,19 @@ namespace IKVM.Internal
 		private static MethodInfo clone;
 		private Type type;
 		private Modifiers reflectiveModifiers;
+		private ClassLoaderWrapper classLoader;
 
 		internal ArrayTypeWrapper(Type type, Modifiers modifiers, Modifiers reflectiveModifiers, string name, ClassLoaderWrapper classLoader)
-			: base(modifiers, name, CoreClasses.java.lang.Object.Wrapper, classLoader, null)
+			: base(modifiers, name, CoreClasses.java.lang.Object.Wrapper)
 		{
 			this.type = type;
 			this.reflectiveModifiers = reflectiveModifiers;
+			this.classLoader = classLoader;
+		}
+
+		internal override ClassLoaderWrapper GetClassLoader()
+		{
+			return classLoader;
 		}
 
 		internal static MethodInfo CloneMethod

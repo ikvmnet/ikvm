@@ -439,6 +439,8 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
                     throw new SocketException("SocketOptions.IP_MULTICAST_IF2 not implemented");
                 case SocketOptions.IP_MULTICAST_LOOP:
                     return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback))) != 0);
+                case SocketOptions.SO_TIMEOUT:
+                    return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout))));
                 default:
                     return PlainSocketImpl.getCommonSocketOption(socket, option_id);
             }
@@ -501,6 +503,10 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
                     throw new SocketException("SocketOptions.IP_MULTICAST_IF2 not implemented");
                 case SocketOptions.IP_MULTICAST_LOOP:
                     socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback), ((Boolean)val).booleanValue() ? 1 : 0);
+                    break;
+                case SocketOptions.SO_TIMEOUT:
+                    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout), ((Integer)val).intValue());
+                    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendTimeout), ((Integer)val).intValue());
                     break;
                 default:
                     PlainSocketImpl.setCommonSocketOption(socket, option_id, val);

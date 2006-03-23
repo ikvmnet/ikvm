@@ -1212,10 +1212,15 @@ class VerifierTypeWrapper : TypeWrapper
 	}
 
 	private VerifierTypeWrapper(string name, int index, TypeWrapper underlyingType)
-		: base(TypeWrapper.VerifierTypeModifiersHack, name, null, null, null)
+		: base(TypeWrapper.VerifierTypeModifiersHack, name, null)
 	{
 		this.index = index;
 		this.underlyingType = underlyingType;
+	}
+
+	internal override ClassLoaderWrapper GetClassLoader()
+	{
+		return null;
 	}
 
 	protected override void LazyPublishMembers()
