@@ -195,6 +195,7 @@
 ../../classpath/gnu/classpath/debug/PreciseFilter.java
 ../../classpath/gnu/classpath/debug/Simple1LineFormatter.java
 ../../classpath/gnu/classpath/debug/SystemLogger.java
+../../classpath/gnu/classpath/NotImplementedException.java
 ../../classpath/gnu/classpath/ServiceFactory.java
 ../../classpath/gnu/classpath/ServiceProviderLoadingAction.java
 ../../classpath/gnu/classpath/SystemProperties.java
@@ -1091,10 +1092,13 @@
 ../../classpath/gnu/javax/crypto/sasl/srp/StoreEntry.java
 ../../classpath/gnu/javax/crypto/sasl/UserAlreadyExistsException.java
 ../../classpath/gnu/javax/imageio/bmp/BMPDecoder.java
+../../classpath/gnu/javax/imageio/bmp/BMPEncoder.java
 ../../classpath/gnu/javax/imageio/bmp/BMPException.java
 ../../classpath/gnu/javax/imageio/bmp/BMPFileHeader.java
 ../../classpath/gnu/javax/imageio/bmp/BMPImageReader.java
 ../../classpath/gnu/javax/imageio/bmp/BMPImageReaderSpi.java
+../../classpath/gnu/javax/imageio/bmp/BMPImageWriter.java
+../../classpath/gnu/javax/imageio/bmp/BMPImageWriterSpi.java
 ../../classpath/gnu/javax/imageio/bmp/BMPInfoHeader.java
 ../../classpath/gnu/javax/imageio/bmp/DecodeBF16.java
 ../../classpath/gnu/javax/imageio/bmp/DecodeBF32.java
@@ -1104,6 +1108,14 @@
 ../../classpath/gnu/javax/imageio/bmp/DecodeRGB8.java
 ../../classpath/gnu/javax/imageio/bmp/DecodeRLE4.java
 ../../classpath/gnu/javax/imageio/bmp/DecodeRLE8.java
+../../classpath/gnu/javax/imageio/bmp/EncodeRGB1.java
+../../classpath/gnu/javax/imageio/bmp/EncodeRGB16.java
+../../classpath/gnu/javax/imageio/bmp/EncodeRGB24.java
+../../classpath/gnu/javax/imageio/bmp/EncodeRGB32.java
+../../classpath/gnu/javax/imageio/bmp/EncodeRGB4.java
+../../classpath/gnu/javax/imageio/bmp/EncodeRGB8.java
+../../classpath/gnu/javax/imageio/bmp/EncodeRLE4.java
+../../classpath/gnu/javax/imageio/bmp/EncodeRLE8.java
 ../../classpath/gnu/javax/net/ssl/Base64.java
 ../../classpath/gnu/javax/net/ssl/EntropySource.java
 ../../classpath/gnu/javax/net/ssl/NullManagerParameters.java
@@ -3672,6 +3684,7 @@
 ../../classpath/javax/swing/text/html/HTMLFrameHyperlinkEvent.java
 ../../classpath/javax/swing/text/html/HTMLTableView.java
 ../../classpath/javax/swing/text/html/InlineView.java
+../../classpath/javax/swing/text/html/ListView.java
 ../../classpath/javax/swing/text/html/NullView.java
 ../../classpath/javax/swing/text/html/ObjectView.java
 ../../classpath/javax/swing/text/html/Option.java
@@ -4417,6 +4430,7 @@ gnu/classpath/Pointer.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
 gnu/java/lang/reflect/VMField.java
+gnu/java/locale/LocaleData.java
 gnu/java/net/PlainDatagramSocketImpl.java
 gnu/java/net/PlainSocketImpl.java
 gnu/java/net/protocol/ikvmres/Handler.java
@@ -4460,6 +4474,5 @@ java/nio/channels/VMChannels.java
 java/nio/MappedByteBufferImpl.java
 java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
-java/util/LocaleData.java
 java/util/VMTimeZone.java
 sun/misc/Ref.java

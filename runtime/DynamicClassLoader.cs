@@ -125,7 +125,10 @@ namespace IKVM.Internal
 						Debug.Assert(!dynamicTypes.ContainsKey(type.TypeAsTBD.FullName));
 						dynamicTypes.Add(type.TypeAsTBD.FullName, type);
 						types[f.Name] = type;
-						type.SetClassObject(JVM.Library.newClass(type, protectionDomain));
+						if (!JVM.IsStaticCompiler)
+						{
+							type.SetClassObject(JVM.Library.newClass(type, protectionDomain));
+						}
 					}
 					else
 					{
