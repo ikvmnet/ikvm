@@ -1249,7 +1249,6 @@ namespace IKVM.Internal
 			{
 				IKVM.Internal.MapXml.Class c = classDef;
 				TypeBuilder tb = typeBuilder;
-				bool baseIsSealed = shadowType.IsSealed;
 
 				ArrayList fields = new ArrayList();
 

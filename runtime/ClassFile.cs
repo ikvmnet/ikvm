@@ -450,7 +450,7 @@ namespace IKVM.Internal
 			//			throw;
 			//		}
 		}
-
+#if GENERICS
 		private static object[] ReadAnnotations(BigEndianBinaryReader br, ClassFile classFile)
 		{
 			BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
@@ -537,7 +537,7 @@ namespace IKVM.Internal
 					throw new ClassFormatError("Invalid tag {0} in annotation element_value", tag);
 			}
 		}
-
+#endif // GENERICS
 		private void ValidateConstantPoolItemClass(string classFile, ushort index)
 		{
 			if(index >= constantpool.Length || !(constantpool[index] is ConstantPoolItemClass))
@@ -571,26 +571,6 @@ namespace IKVM.Internal
 			for(int i = 0; i < name.Length; i++)
 			{
 				if(".;[/".IndexOf(name[i]) != -1)
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-
-		private static bool IsValidClassName(string name)
-		{
-			if(name.Length == 0)
-			{
-				return false;
-			}
-			if(!Char.IsLetter(name[0]) && name[0] != '$' && name[0] != '_')
-			{
-				return false;
-			}
-			for(int i = 1; i < name.Length; i++)
-			{
-				if(!Char.IsLetterOrDigit(name[i]) && name[i] != '$' && name[i] != '_')
 				{
 					return false;
 				}

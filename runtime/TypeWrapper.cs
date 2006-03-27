@@ -1204,36 +1204,6 @@ namespace IKVM.Internal
 			return attr1;
 		}
 
-		private static object[] GetCustomAttributes(MemberInfo member, Type attribute)
-		{
-#if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
-			{
-				ArrayList attrs = new ArrayList();
-				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(member))
-				{
-					// NOTE we don't support subtyping relations!
-					if(cad.Constructor.DeclaringType == attribute)
-					{
-						ConstructorInfo ci = cad.Constructor;
-						object[] parameters = new object[cad.ConstructorArguments.Count];
-						for(int i = 0; i < parameters.Length; i++)
-						{
-							parameters[i] = cad.ConstructorArguments[i];
-						}
-						if(cad.NamedArguments.Count > 0)
-						{
-							throw new NotImplementedException("NamedArguments: " + attribute.Name);
-						}
-						attrs.Add(ci.Invoke(parameters));
-					}
-				}
-				return attrs.ToArray();
-			}
-#endif
-			return member.GetCustomAttributes(attribute, false);
-		}
-
 		internal static bool IsDefined(Module mod, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK

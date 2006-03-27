@@ -9,6 +9,7 @@ gnu/classpath/Pointer.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
 gnu/java/lang/reflect/VMField.java
+gnu/java/locale/LocaleData.java
 gnu/java/net/PlainDatagramSocketImpl.java
 gnu/java/net/PlainSocketImpl.java
 gnu/java/net/protocol/ikvmres/Handler.java
@@ -52,6 +53,5 @@ java/nio/channels/VMChannels.java
 java/nio/MappedByteBufferImpl.java
 java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
-java/util/LocaleData.java
 java/util/VMTimeZone.java
 sun/misc/Ref.java

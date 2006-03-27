@@ -15,8 +15,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Classpath; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307 USA.
+Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+02110-1301 USA.
 
 Linking this library statically or dynamically with other modules is
 making a combined work based on this library.  Thus, the terms and
@@ -38,6 +38,9 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
+import gnu.java.lang.ClassHelper;
+
+import java.util.Arrays;
 import cli.System.Diagnostics.StackFrame;
 import gnu.classpath.VMStackWalker;
 
@@ -67,8 +70,8 @@ import gnu.classpath.VMStackWalker;
  * @author Eric Blake <ebb9@email.byu.edu>
  * @see Member
  * @see Class
- * @see java.lang.Class#getConstructor(Object[])
- * @see java.lang.Class#getDeclaredConstructor(Object[])
+ * @see java.lang.Class#getConstructor(Class[])
+ * @see java.lang.Class#getDeclaredConstructor(Class[])
  * @see java.lang.Class#getConstructors()
  * @see java.lang.Class#getDeclaredConstructors()
  * @since 1.1
@@ -77,17 +80,19 @@ import gnu.classpath.VMStackWalker;
 public final class Constructor
     extends AccessibleObject implements Member
 {
-    private Class declaringClass;
+    private Class clazz;
+    private static final int CONSTRUCTOR_MODIFIERS
+        = Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC;
     Object methodCookie;
     private int modifiers;
     private boolean classIsPublic;
   
     /**
-     * This class is instantiated by java.lang.Class
+     * This class is uninstantiable except from native code.
      */
     Constructor(Class declaringClass, Object methodCookie)
     {
-	this.declaringClass = declaringClass;
+	this.clazz = declaringClass;
 	this.methodCookie = methodCookie;
 	modifiers = Method.GetModifiers(methodCookie);
 	classIsPublic = (Method.GetRealModifiers(declaringClass) & Modifier.PUBLIC) != 0;
@@ -99,7 +104,7 @@ public final class Constructor
      */
     public Class getDeclaringClass()
     {
-	return declaringClass;
+        return clazz;
     }
 
     /**
@@ -109,7 +114,17 @@ public final class Constructor
      */
     public String getName()
     {
-	return declaringClass.getName();
+	return getDeclaringClass().getName();
+    }
+
+    /**
+     * Return the raw modifiers for this constructor.  In particular
+     * this will include the synthetic and varargs bits.
+     * @return the constructor's modifiers
+     */
+    private int getModifiersInternal()
+    {
+        return modifiers;
     }
 
     /**
@@ -122,7 +137,28 @@ public final class Constructor
      */
     public int getModifiers()
     {
-	return modifiers;
+        return getModifiersInternal() & CONSTRUCTOR_MODIFIERS;
+    }
+
+    /**
+     * Return true if this constructor is synthetic, false otherwise.
+     * A synthetic member is one which is created by the compiler,
+     * and which does not appear in the user's source code.
+     * @since 1.5
+     */
+    public boolean isSynthetic()
+    {
+        return (getModifiersInternal() & Modifier.SYNTHETIC) != 0;
+    }
+
+    /**
+     * Return true if this is a varargs constructor, that is if
+     * the constructor takes a variable number of arguments.
+     * @since 1.5
+     */
+    public boolean isVarArgs()
+    {
+        return (getModifiersInternal() & Modifier.VARARGS) != 0;
     }
 
     /**
@@ -174,11 +210,14 @@ public final class Constructor
      */
     public boolean equals(Object o)
     {
-	if(o instanceof Constructor)
-	{
-	    return methodCookie == ((Constructor)o).methodCookie;
-	}
-	return false;
+        if (!(o instanceof Constructor))
+            return false;
+        Constructor that = (Constructor)o; 
+        if (this.getDeclaringClass() != that.getDeclaringClass())
+            return false;
+        if (!Arrays.equals(this.getParameterTypes(), that.getParameterTypes()))
+            return false;
+        return true;
     }
 
     /**
@@ -193,34 +232,6 @@ public final class Constructor
     }
 
     /**
-     * Return the name of the class as written by the user.
-     * This is used by the various reflection toString methods.
-     * It differs from {@link Class#getName()} in that it prints
-     * arrays with trailing "[]"s.  Note that it does not treat
-     * member classes specially, so a dollar sign may still appear
-     * in the result.  This is intentional.
-     * @param klass the class
-     * @return a pretty form of the class' name
-     */
-    static String getUserName(Class klass)
-    {
-        int arrayCount = 0;
-        while (klass.isArray())
-        {
-            ++arrayCount;
-            klass = klass.getComponentType();
-        }
-        String name = klass.getName();
-        if (arrayCount == 0)
-            return name;
-        StringBuilder b = new StringBuilder(name.length() + 2 * arrayCount);
-        b.append(name);
-        for (int i = 0; i < arrayCount; ++i)
-            b.append("[]");
-        return b.toString();
-    }
-
-    /**
      * Get a String representation of the Constructor. A Constructor's String
      * representation is "&lt;modifier&gt; &lt;classname&gt;(&lt;paramtypes&gt;)
      * throws &lt;exceptions&gt;", where everything after ')' is omitted if
@@ -232,18 +243,17 @@ public final class Constructor
      */
     public String toString()
     {
-	StringBuffer sb = new StringBuffer();
-	sb.append(Modifier.toString(getModifiers()));
-	if (sb.length() > 0)
-	    sb.append(' ');
+        // 128 is a reasonable buffer initial size for constructor
+        StringBuffer sb = new StringBuffer(128);
+        Modifier.toString(getModifiers(), sb).append(' ');
 	sb.append(getDeclaringClass().getName()).append('(');
 	Class[] c = getParameterTypes();
 	if (c.length > 0)
 	{
-	    sb.append(getUserName(c[0]));
-	    for (int i = 1; i < c.length; i++)
-		sb.append(',').append(getUserName(c[i]));
-	}
+            sb.append(ClassHelper.getUserName(c[0]));
+            for (int i = 1; i < c.length; i++)
+                sb.append(',').append(ClassHelper.getUserName(c[i]));
+        }
 	sb.append(')');
 	c = getExceptionTypes();
 	if (c.length > 0)
@@ -290,8 +300,8 @@ public final class Constructor
 	InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    VMFieldImpl.checkAccess(modifiers, null, declaringClass, VMStackWalker.getCallingClass());
-        int mods = declaringClass.getModifiers() | Method.GetRealModifiers(declaringClass);
+	    VMFieldImpl.checkAccess(modifiers, null, clazz, VMStackWalker.getCallingClass());
+        int mods = clazz.getModifiers() | Method.GetRealModifiers(clazz);
 	if(Modifier.isAbstract(mods) || Modifier.isInterface(mods))
 	{
 	    throw new InstantiationException();

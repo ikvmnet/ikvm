@@ -62,7 +62,6 @@ class Compiler
 	private static MethodInfo arraycopy_primitive_2Method;
 	private static MethodInfo arraycopy_primitive_1Method;
 	private static MethodInfo arraycopyMethod;
-	private static TypeWrapper java_lang_Object;
 	private static TypeWrapper java_lang_Class;
 	private static TypeWrapper java_lang_Throwable;
 	private static TypeWrapper java_lang_ThreadDeath;
@@ -101,7 +100,6 @@ class Compiler
 		arraycopyMethod = typeofByteCodeHelper.GetMethod("arraycopy");
 		java_lang_Throwable = CoreClasses.java.lang.Throwable.Wrapper;
 		cli_System_Exception = ClassLoaderWrapper.LoadClassCritical("cli.System.Exception");
-		java_lang_Object = CoreClasses.java.lang.Object.Wrapper;
 		java_lang_Class = CoreClasses.java.lang.Class.Wrapper;
 		java_lang_ThreadDeath = ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadDeath");
 		// HACK we need to special case core compilation, because the __<map> methods are HideFromJava

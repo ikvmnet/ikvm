@@ -741,6 +741,7 @@
 ../../classpath/gnu/java/security/key/rsa/RSAKeyPairRawCodec.java
 ../../classpath/gnu/java/security/key/rsa/RSAKeyPairX509Codec.java
 ../../classpath/gnu/java/security/OID.java
+../../classpath/gnu/java/security/pkcs/PKCS7Data.java
 ../../classpath/gnu/java/security/pkcs/PKCS7SignedData.java
 ../../classpath/gnu/java/security/pkcs/SignerInfo.java
 ../../classpath/gnu/java/security/PolicyFile.java
@@ -755,7 +756,6 @@
 ../../classpath/gnu/java/security/Properties.java
 ../../classpath/gnu/java/security/provider/CollectionCertStoreImpl.java
 ../../classpath/gnu/java/security/provider/DefaultPolicy.java
-../../classpath/gnu/java/security/provider/DSAParameterGenerator.java
 ../../classpath/gnu/java/security/provider/Gnu.java
 ../../classpath/gnu/java/security/provider/PKIXCertPathValidatorImpl.java
 ../../classpath/gnu/java/security/provider/X509CertificateFactory.java
@@ -824,6 +824,7 @@
 ../../classpath/gnu/java/text/WordBreakIterator.java
 ../../classpath/gnu/java/util/DoubleEnumeration.java
 ../../classpath/gnu/java/util/EmptyEnumeration.java
+../../classpath/gnu/java/util/jar/JarUtils.java
 ../../classpath/gnu/java/util/prefs/EventDispatcher.java
 ../../classpath/gnu/java/util/prefs/FileBasedFactory.java
 ../../classpath/gnu/java/util/prefs/FileBasedPreferences.java
@@ -1325,6 +1326,7 @@
 ../../classpath/gnu/regexp/RETokenBackRef.java
 ../../classpath/gnu/regexp/RETokenChar.java
 ../../classpath/gnu/regexp/RETokenEnd.java
+../../classpath/gnu/regexp/RETokenEndOfPreviousMatch.java
 ../../classpath/gnu/regexp/RETokenEndSub.java
 ../../classpath/gnu/regexp/RETokenIndependent.java
 ../../classpath/gnu/regexp/RETokenLookAhead.java
@@ -2952,6 +2954,8 @@
 ../../classpath/javax/naming/ldap/InitialLdapContext.java
 ../../classpath/javax/naming/ldap/LdapContext.java
 ../../classpath/javax/naming/ldap/LdapReferralException.java
+../../classpath/javax/naming/ldap/StartTlsRequest.java
+../../classpath/javax/naming/ldap/StartTlsResponse.java
 ../../classpath/javax/naming/ldap/UnsolicitedNotification.java
 ../../classpath/javax/naming/ldap/UnsolicitedNotificationEvent.java
 ../../classpath/javax/naming/ldap/UnsolicitedNotificationListener.java
