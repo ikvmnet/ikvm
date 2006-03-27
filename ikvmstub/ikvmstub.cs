@@ -307,7 +307,6 @@ public class NetExp
 			Modifiers mods = (Modifiers)constructors[i].getModifiers();
 			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
-#if GENERICS
 				if(constructors[i].isSynthetic())
 				{
 					mods |= Modifiers.Synthetic;
@@ -316,7 +315,6 @@ public class NetExp
 				{
 					mods |= Modifiers.VarArgs;
 				}
-#endif
 				// TODO what happens if one of the argument types is non-public?
 				java.lang.Class[] args = constructors[i].getParameterTypes();
 				foreach(java.lang.Class arg in args)
@@ -386,7 +384,6 @@ public class NetExp
 				{
 					mods |= Modifiers.Native;
 				}
-#if GENERICS
 				if(methods[i].isBridge())
 				{
 					mods |= Modifiers.Bridge;
@@ -399,7 +396,6 @@ public class NetExp
 				{
 					mods |= Modifiers.VarArgs;
 				}
-#endif
 				// TODO what happens if one of the argument types (or the return type) is non-public?
 				java.lang.Class[] args = methods[i].getParameterTypes();
 				foreach(java.lang.Class arg in args)
@@ -494,7 +490,6 @@ public class NetExp
 				{
 					AddToExportList(fieldType);
 				}
-#if GENERICS
 				if(fields[i].isEnumConstant())
 				{
 					mods |= Modifiers.Enum;
@@ -503,7 +498,6 @@ public class NetExp
 				{
 					mods |= Modifiers.Synthetic;
 				}
-#endif
 				FieldOrMethod fld = f.AddField(mods, fields[i].getName(), ClassToSig(fieldType), constantValue);
 				if(IKVM.Runtime.Util.IsFieldDeprecated(fields[i]))
 				{
