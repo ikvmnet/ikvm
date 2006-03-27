@@ -41,7 +41,6 @@ package java.lang.reflect;
 import gnu.java.lang.ClassHelper;
 
 import java.util.Arrays;
-import cli.System.Diagnostics.StackFrame;
 import gnu.classpath.VMStackWalker;
 
 /**

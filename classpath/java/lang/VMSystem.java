@@ -138,6 +138,13 @@ final class VMSystem
 	return cli.System.DateTime.get_UtcNow().get_Ticks() / 10000L - january_1st_1970;
     }
 
+    static long nanoTime()
+    {
+        // Note that the epoch is undefined, but we use something similar to the JDK
+        final long epoch = 632785401332600000L;
+        return (cli.System.DateTime.get_UtcNow().get_Ticks() - epoch) * 100L;
+    }
+
     /**
      * Helper method which creates the standard input stream.
      * VM implementors may choose to construct these streams differently.

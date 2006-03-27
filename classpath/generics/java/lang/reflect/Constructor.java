@@ -1,5 +1,5 @@
 /* java.lang.reflect.Constructor - reflection of Java constructors
-   Copyright (C) 1998, 2001 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2001, 2004, 2005 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -15,8 +15,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Classpath; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307 USA.
+Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+02110-1301 USA.
 
 Linking this library statically or dynamically with other modules is
 making a combined work based on this library.  Thus, the terms and
@@ -38,9 +38,10 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
-import cli.System.Diagnostics.StackFrame;
+import gnu.java.lang.ClassHelper;
 import gnu.classpath.VMStackWalker;
 import gnu.java.lang.reflect.MethodSignatureParser;
+import java.util.Arrays;
 
 /**
  * The Constructor class represents a constructor of a class. It also allows
@@ -68,27 +69,28 @@ import gnu.java.lang.reflect.MethodSignatureParser;
  * @author Eric Blake <ebb9@email.byu.edu>
  * @see Member
  * @see Class
- * @see java.lang.Class#getConstructor(Object[])
- * @see java.lang.Class#getDeclaredConstructor(Object[])
+ * @see java.lang.Class#getConstructor(Class[])
+ * @see java.lang.Class#getDeclaredConstructor(Class[])
  * @see java.lang.Class#getConstructors()
  * @see java.lang.Class#getDeclaredConstructors()
  * @since 1.1
  * @status updated to 1.4
  */
 public final class Constructor<T>
-    extends AccessibleObject implements Member, GenericDeclaration
+    extends AccessibleObject
+    implements Member, GenericDeclaration
 {
-    private Class declaringClass;
+    private Class<T> clazz;
     Object methodCookie;
     private int modifiers;
     private boolean classIsPublic;
   
     /**
-     * This class is instantiated by java.lang.Class
+     * This class is uninstantiable except from native code.
      */
     Constructor(Class declaringClass, Object methodCookie)
     {
-	this.declaringClass = declaringClass;
+	this.clazz = declaringClass;
 	this.methodCookie = methodCookie;
 	modifiers = Method.GetModifiers(methodCookie);
 	classIsPublic = (Method.GetRealModifiers(declaringClass) & Modifier.PUBLIC) != 0;
@@ -100,7 +102,7 @@ public final class Constructor<T>
      */
     public Class<T> getDeclaringClass()
     {
-	return declaringClass;
+	return clazz;
     }
 
     /**
@@ -110,7 +112,7 @@ public final class Constructor<T>
      */
     public String getName()
     {
-	return declaringClass.getName();
+        return getDeclaringClass().getName();
     }
 
     /**
@@ -175,11 +177,14 @@ public final class Constructor<T>
      */
     public boolean equals(Object o)
     {
-	if(o instanceof Constructor)
-	{
-	    return methodCookie == ((Constructor)o).methodCookie;
-	}
-	return false;
+        if (!(o instanceof Constructor))
+            return false;
+        Constructor that = (Constructor)o; 
+        if (this.getDeclaringClass() != that.getDeclaringClass())
+            return false;
+        if (!Arrays.equals(this.getParameterTypes(), that.getParameterTypes()))
+            return false;
+        return true;
     }
 
     /**
@@ -205,18 +210,17 @@ public final class Constructor<T>
      */
     public String toString()
     {
-	StringBuffer sb = new StringBuffer();
-	sb.append(Modifier.toString(getModifiers()));
-	if (sb.length() > 0)
-	    sb.append(' ');
+        // 128 is a reasonable buffer initial size for constructor
+        StringBuilder sb = new StringBuilder(128);
+        Modifier.toString(getModifiers(), sb).append(' ');
 	sb.append(getDeclaringClass().getName()).append('(');
 	Class[] c = getParameterTypes();
 	if (c.length > 0)
 	{
-	    sb.append(c[0].getName());
-	    for (int i = 1; i < c.length; i++)
-		sb.append(',').append(c[i].getName());
-	}
+            sb.append(ClassHelper.getUserName(c[0]));
+            for (int i = 1; i < c.length; i++)
+                sb.append(',').append(ClassHelper.getUserName(c[i]));
+        }
 	sb.append(')');
 	c = getExceptionTypes();
 	if (c.length > 0)
@@ -263,8 +267,8 @@ public final class Constructor<T>
 	InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    VMFieldImpl.checkAccess(modifiers, null, declaringClass, VMStackWalker.getCallingClass());
-        int mods = declaringClass.getModifiers() | Method.GetRealModifiers(declaringClass);
+	    VMFieldImpl.checkAccess(modifiers, null, clazz, VMStackWalker.getCallingClass());
+        int mods = clazz.getModifiers() | Method.GetRealModifiers(clazz);
 	if(Modifier.isAbstract(mods) || Modifier.isInterface(mods))
 	{
 	    throw new InstantiationException();
@@ -272,35 +276,74 @@ public final class Constructor<T>
 	return (T)Method.Invoke(methodCookie, null, args);
     }
 
+    /**
+     * Returns an array of <code>TypeVariable</code> objects that represents
+     * the type variables declared by this constructor, in declaration order.
+     * An array of size zero is returned if this constructor has no type
+     * variables.
+     *
+     * @return the type variables associated with this constructor.
+     * @throws GenericSignatureFormatError if the generic signature does
+     *         not conform to the format specified in the Virtual Machine
+     *         specification, version 3.
+     * @since 1.5
+     */
     public TypeVariable<Constructor<T>>[] getTypeParameters()
     {
-        String sig = Method.GetSignature(methodCookie);
+        String sig = getSignature();
         if (sig == null)
-        {
             return new TypeVariable[0];
-        }
         MethodSignatureParser p = new MethodSignatureParser(this, sig);
         return p.getTypeParameters();
     }
 
+    /**
+     * Return the String in the Signature attribute for this constructor. If there
+     * is no Signature attribute, return null.
+     */
+    private String getSignature()
+    {
+        return Method.GetSignature(methodCookie);
+    }
+
+    /**
+     * Returns an array of <code>Type</code> objects that represents
+     * the exception types declared by this constructor, in declaration order.
+     * An array of size zero is returned if this constructor declares no
+     * exceptions.
+     *
+     * @return the exception types declared by this constructor. 
+     * @throws GenericSignatureFormatError if the generic signature does
+     *         not conform to the format specified in the Virtual Machine
+     *         specification, version 3.
+     * @since 1.5
+     */
     public Type[] getGenericExceptionTypes()
     {
-        String sig = Method.GetSignature(methodCookie);
+        String sig = getSignature();
         if (sig == null)
-        {
             return getExceptionTypes();
-        }
         MethodSignatureParser p = new MethodSignatureParser(this, sig);
         return p.getGenericExceptionTypes();
     }
 
+    /**
+     * Returns an array of <code>Type</code> objects that represents
+     * the parameter list for this constructor, in declaration order.
+     * An array of size zero is returned if this constructor takes no
+     * parameters.
+     *
+     * @return a list of the types of the constructor's parameters
+     * @throws GenericSignatureFormatError if the generic signature does
+     *         not conform to the format specified in the Virtual Machine
+     *         specification, version 3.
+     * @since 1.5
+     */
     public Type[] getGenericParameterTypes()
     {
-        String sig = Method.GetSignature(methodCookie);
+        String sig = getSignature();
         if (sig == null)
-        {
             return getParameterTypes();
-        }
         MethodSignatureParser p = new MethodSignatureParser(this, sig);
         return p.getGenericParameterTypes();
     }
