@@ -317,7 +317,7 @@ namespace IKVM.Runtime
 			{
 				throw new ArgumentException("clazz");
 			}
-			TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			return AttributeHelper.IsDefined(wrapper.TypeAsTBD, typeof(ObsoleteAttribute));
 		}
 

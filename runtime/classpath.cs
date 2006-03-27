@@ -34,8 +34,6 @@ using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;
 
-using NetSystem = System;
-
 namespace IKVM.NativeCode.java
 {
 	namespace lang
@@ -50,9 +48,9 @@ namespace IKVM.NativeCode.java
 					{
 						try
 						{
-							TypeWrapper wrapper = VMClass.getWrapperFromClass(clazz);
+							TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 							wrapper.Finish();
-							return NetSystem.Array.CreateInstance(wrapper.TypeAsArrayType, dim);
+							return System.Array.CreateInstance(wrapper.TypeAsArrayType, dim);
 						}
 						catch(RetargetableJavaException x)
 						{
@@ -79,7 +77,7 @@ namespace IKVM.NativeCode.java
 
 				public static int GetRealModifiers(object clazz)
 				{
-					return (int)VMClass.getWrapperFromClass(clazz).Modifiers;
+					return (int)TypeWrapper.FromClass(clazz).Modifiers;
 				}
 				
 				public static object GetReturnType(object methodCookie)
@@ -219,12 +217,12 @@ namespace IKVM.NativeCode.java
 
 				public static bool isSamePackage(object a, object b)
 				{
-					return VMClass.getWrapperFromClass(a).IsInSamePackageAs(VMClass.getWrapperFromClass(b));
+					return TypeWrapper.FromClass(a).IsInSamePackageAs(TypeWrapper.FromClass(b));
 				}
 
 				public static void RunClassInit(object clazz)
 				{
-					VMClass.getWrapperFromClass(clazz).RunClassInit();
+					TypeWrapper.FromClass(clazz).RunClassInit();
 				}
 
 				public static object GetValue(object fieldCookie, object o)
@@ -449,7 +447,7 @@ namespace IKVM.NativeCode.java
 #else
 				foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 				{
-					if(!(asm is NetSystem.Reflection.Emit.AssemblyBuilder))
+					if(!(asm is System.Reflection.Emit.AssemblyBuilder))
 					{
 						if(asm.GetManifestResourceInfo(name) != null)
 						{
@@ -479,7 +477,7 @@ namespace IKVM.NativeCode.java
 				ArrayList list = new ArrayList();
 				foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 				{
-					if(!(asm is NetSystem.Reflection.Emit.AssemblyBuilder))
+					if(!(asm is System.Reflection.Emit.AssemblyBuilder))
 					{
 						if(asm.GetManifestResourceInfo(name) != null)
 						{
@@ -684,21 +682,6 @@ namespace IKVM.NativeCode.java
 				{
 					throw x.ToJava();
 				}
-			}
-
-			internal static TypeWrapper getWrapperFromClass(object clazz)
-			{
-				return (TypeWrapper)JVM.Library.getWrapperFromClass(clazz);
-			}
-
-			internal static object getClassFromType(Type type)
-			{
-				TypeWrapper.AssertFinished(type);
-				if(type == null)
-				{
-					return null;
-				}
-				return ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
 			}
 
 			public static string GetName(object wrapper)
@@ -1064,7 +1047,7 @@ namespace IKVM.NativeCode.java
 		{
 			public static bool hasClassInitializer(object clazz)
 			{
-				TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+				TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 				try
 				{
 					wrapper.Finish();
@@ -1140,7 +1123,7 @@ namespace IKVM.NativeCode.java
 				Profiler.Enter("ObjectInputStream.allocateObject");
 				try
 				{
-					TypeWrapper wrapper = NativeCode.java.lang.VMClass.getWrapperFromClass(clazz);
+					TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 					// if we're trying to deserialize a string as a TC_OBJECT, just return an emtpy string (Sun does the same)
 					if(wrapper == CoreClasses.java.lang.String.Wrapper)
 					{
@@ -1148,7 +1131,7 @@ namespace IKVM.NativeCode.java
 					}
 					wrapper.Finish();
 					// TODO do we need error handling? (e.g. when trying to instantiate an interface or abstract class)
-					object obj = NetSystem.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
+					object obj = System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
 					MethodWrapper mw = (MethodWrapper)JVM.Library.getWrapperFromMethodOrConstructor(constructor);
 					// TODO do we need error handling?
 					mw.Invoke(obj, null, false);
@@ -1171,9 +1154,9 @@ namespace IKVM.NativeCode.java
 	{
 		public class VMAccessController
 		{
-			public static object getClassFromFrame(NetSystem.Diagnostics.StackFrame frame)
+			public static object getClassFromFrame(System.Diagnostics.StackFrame frame)
 			{
-				return NativeCode.java.lang.VMClass.getClassFromType(frame.GetMethod().DeclaringType);
+				return gnu.classpath.VMStackWalker.getClassFromType(frame.GetMethod().DeclaringType);
 			}
 		}
 	}
@@ -1453,7 +1436,12 @@ namespace IKVM.NativeCode.gnu.classpath
 	{
 		public static object getClassFromType(Type type)
 		{
-			return IKVM.NativeCode.java.lang.VMClass.getClassFromType(type);
+			TypeWrapper.AssertFinished(type);
+			if(type == null)
+			{
+				return null;
+			}
+			return ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
 		}
 
 		public static object getClassLoaderFromType(Type type)

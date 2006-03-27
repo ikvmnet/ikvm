@@ -1395,6 +1395,11 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal static TypeWrapper FromClass(object classObject)
+		{
+			return (TypeWrapper)JVM.Library.getWrapperFromClass(classObject);
+		}
+
 		public override string ToString()
 		{
 			return GetType().Name + "[" + name + "]";

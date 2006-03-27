@@ -190,7 +190,7 @@ namespace IKVM.Internal
 		internal static void SaveDebugImage(object mainClass)
 		{
 			FinishAll();
-			TypeWrapper mainTypeWrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(mainClass);
+			TypeWrapper mainTypeWrapper = TypeWrapper.FromClass(mainClass);
 			mainTypeWrapper.Finish();
 			Type mainType = mainTypeWrapper.TypeAsTBD;
 			MethodInfo main = mainType.GetMethod("main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(string[]) }, null);

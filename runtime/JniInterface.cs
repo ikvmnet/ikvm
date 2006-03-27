@@ -1339,14 +1339,14 @@ namespace IKVM.Runtime
 
 		internal static jclass GetSuperclass(JNIEnv* pEnv, jclass sub)
 		{
-			TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(sub)).BaseTypeWrapper;
+			TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(sub)).BaseTypeWrapper;
 			return pEnv->MakeLocalRef(wrapper == null ? null : wrapper.ClassObject);
 		}
 
 		internal static jboolean IsAssignableFrom(JNIEnv* pEnv, jclass sub, jclass super)
 		{
-			TypeWrapper w1 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(sub));
-			TypeWrapper w2 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(super));
+			TypeWrapper w1 = TypeWrapper.FromClass(pEnv->UnwrapRef(sub));
+			TypeWrapper w2 = TypeWrapper.FromClass(pEnv->UnwrapRef(super));
 			return w1.IsAssignableTo(w2) ? JNI_TRUE : JNI_FALSE;
 		}
 
@@ -1372,7 +1372,7 @@ namespace IKVM.Runtime
 
 		internal static jint ThrowNew(JNIEnv* pEnv, jclass clazz, byte* msg)
 		{
-			TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+			TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
 			MethodWrapper mw = wrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
 			if(mw != null)
 			{
@@ -1556,7 +1556,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+				TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
 				if(wrapper.IsAbstract)
 				{
 					SetPendingException(pEnv, JavaException.InstantiationException(wrapper.Name));
@@ -1667,8 +1667,8 @@ namespace IKVM.Runtime
 			// NOTE if clazz is an interface, this is still the right thing to do
 			// (i.e. if the object implements the interface, we return true)
 			object objClass = IKVM.Runtime.Util.GetClassFromObject(pEnv->UnwrapRef(obj));
-			TypeWrapper w1 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
-			TypeWrapper w2 = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(objClass);
+			TypeWrapper w1 = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
+			TypeWrapper w2 = TypeWrapper.FromClass(objClass);
 			return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
 		}
 
@@ -1676,7 +1676,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+				TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
 				wrapper.Finish();
 				string methodsig = StringFromUTF8(sig);
 				// don't allow dotted names!
@@ -1894,7 +1894,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+				TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
 				wrapper.Finish();
 				string fieldsig = StringFromUTF8(sig);
 				// don't allow dotted names!
@@ -2315,7 +2315,7 @@ namespace IKVM.Runtime
 			try
 			{
 				// we want to support (non-primitive) value types so we can't cast to object[]
-				Array array = Array.CreateInstance(IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz)).TypeAsArrayType, len);
+				Array array = Array.CreateInstance(TypeWrapper.FromClass(pEnv->UnwrapRef(clazz)).TypeAsArrayType, len);
 				object o = pEnv->UnwrapRef(init);
 				if(o != null)
 				{
@@ -2917,7 +2917,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+				TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
 				wrapper.Finish();
 				for(int i = 0; i < nMethods; i++)
 				{
@@ -2957,7 +2957,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				TypeWrapper wrapper = IKVM.NativeCode.java.lang.VMClass.getWrapperFromClass(pEnv->UnwrapRef(clazz));
+				TypeWrapper wrapper = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
 				wrapper.Finish();
 				// TODO this won't work when we're putting the JNI methods in jniproxy.dll
 				foreach(FieldInfo fi in wrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.NonPublic))
