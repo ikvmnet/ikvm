@@ -27,15 +27,16 @@ import gnu.classpath.Pointer;
 import cli.System.IntPtr;
 import cli.System.Runtime.InteropServices.Marshal;
 
-class VMDirectByteBuffer
+@ikvm.lang.Internal
+public class VMDirectByteBuffer
 {
     // this method is used by JNI.NewDirectByteBuffer
-    static ByteBuffer NewDirectByteBuffer(IntPtr p, int capacity)
+    public static ByteBuffer NewDirectByteBuffer(IntPtr p, int capacity)
     {
         return new DirectByteBufferImpl.ReadWrite(null, new Pointer(p), capacity, capacity, 0);
     }
 
-    static IntPtr GetDirectBufferAddress(Buffer buf)
+    public static IntPtr GetDirectBufferAddress(Buffer buf)
     {
         return buf.address != null ? buf.address.p() : IntPtr.Zero;
     }

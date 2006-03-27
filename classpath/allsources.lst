@@ -4451,6 +4451,7 @@ ikvm/internal/Library.java
 ikvm/internal/LibraryVMInterface.java
 ikvm/io/InputStreamWrapper.java
 ikvm/lang/CIL.java
+ikvm/lang/Internal.java
 java/io/VMFile.java
 java/io/VMObjectInputStream.java
 java/lang/annotation/Annotation.java

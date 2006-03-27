@@ -1140,32 +1140,6 @@
 				</body>
 			</method>
 		</class>
-		<class name="java.lang.VMClass">
-			<method name="createField" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.reflect.Field;">
-				<body>
-					<ldarg_0 />
-					<ldarg_1 />
-					<call class="java.lang.reflect.VMFieldImpl" name="newField" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.reflect.Field;" />
-					<ret />
-				</body>
-			</method>
-			<method name="createMethod" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.reflect.Method;">
-				<body>
-					<ldarg_0 />
-					<ldarg_1 />
-					<newobj class="java.lang.reflect.Method" name="&lt;init&gt;" sig="(Ljava.lang.Class;Ljava.lang.Object;)V" />
-					<ret />
-				</body>
-			</method>
-			<method name="createConstructor" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.reflect.Constructor;">
-				<body>
-					<ldarg_0 />
-					<ldarg_1 />
-					<newobj class="java.lang.reflect.Constructor" name="&lt;init&gt;" sig="(Ljava.lang.Class;Ljava.lang.Object;)V" />
-					<ret />
-				</body>
-			</method>
-		</class>
 		<class name="java.lang.VMSystem">
 			<method name="identityHashCode" sig="(Ljava.lang.Object;)I">
 				<body>
@@ -1185,46 +1159,6 @@
 				</body>
 			</method>
 		</class>
-		<class name="java.lang.LibraryVMInterfaceImpl">
-			<method name="getWrapperFromField" sig="(Ljava.lang.reflect.Field;)Ljava.lang.Object;">
-				<body>
-					<ldarg_0 />
-					<ldfld class="java.lang.reflect.Field" name="impl" sig="Lgnu.java.lang.reflect.VMField;" />
-					<ldfld class="gnu.java.lang.reflect.VMField" name="fieldCookie" sig="Ljava.lang.Object;" />
-					<ret />
-				</body>
-			</method>
-			<method name="getWrapperFromMethod" sig="(Ljava.lang.reflect.Method;)Ljava.lang.Object;">
-				<body>
-					<ldarg_0 />
-					<ldfld class="java.lang.reflect.Method" name="methodCookie" sig="Ljava.lang.Object;" />
-					<ret />
-				</body>
-			</method>
-			<method name="getWrapperFromConstructor" sig="(Ljava.lang.reflect.Constructor;)Ljava.lang.Object;">
-				<body>
-					<ldarg_0 />
-					<ldfld class="java.lang.reflect.Constructor" name="methodCookie" sig="Ljava.lang.Object;" />
-					<ret />
-				</body>
-			</method>
-			<method name="newDirectByteBuffer" sig="(Lcli.System.IntPtr;I)Ljava.lang.Object;">
-				<body>
-					<ldarg_1 />
-					<ldarg_2 />
-					<call class="java.nio.VMDirectByteBuffer" name="NewDirectByteBuffer" sig="(Lcli.System.IntPtr;I)Ljava.nio.ByteBuffer;" />
-					<ret />
-				</body>
-			</method>
-			<method name="getDirectBufferAddress" sig="(Ljava.lang.Object;)Lcli.System.IntPtr;">
-				<body>
-					<ldarg_1 />
-					<castclass class="java.nio.Buffer" />
-					<call class="java.nio.VMDirectByteBuffer" name="GetDirectBufferAddress" sig="(Ljava.nio.Buffer;)Lcli.System.IntPtr;" />
-					<ret />
-				</body>
-			</method>
-		</class>
 		<class name="gnu.java.net.PlainDatagramSocketImpl">
 			<method name="setDatagramPacketLength" sig="(Ljava.net.DatagramPacket;I)V">
 				<body>
@@ -1238,18 +1172,6 @@
 				<body>
 					<ldarg_0 />
 					<ldfld class="java.net.DatagramPacket" name="maxlen" sig="I" />
-					<ret />
-				</body>
-			</method>
-		</class>
-		<class name="gnu.java.nio.channels.FileChannelImpl">
-			<method name="createMappedByteBufferImpl" sig="(Lgnu.classpath.Pointer;IZZ)Ljava.nio.MappedByteBuffer;">
-				<body>
-					<ldarg_0 />
-					<ldarg_1 />
-					<ldarg_2 />
-					<ldarg_3 />
-					<call class="java.nio.MappedByteBufferImpl" name="create" sig="(Lgnu.classpath.Pointer;IZZ)Ljava.nio.MappedByteBufferImpl;" />
 					<ret />
 				</body>
 			</method>

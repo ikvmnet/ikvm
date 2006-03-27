@@ -84,7 +84,8 @@ public final class Field
         | Modifier.PUBLIC | Modifier.STATIC | Modifier.TRANSIENT
         | Modifier.VOLATILE;
     // package accessible to allow VM to access it
-    VMField impl;
+    @ikvm.lang.Internal
+    public VMField impl;
 
 	/**
 	 * This class is uninstantiable except natively.

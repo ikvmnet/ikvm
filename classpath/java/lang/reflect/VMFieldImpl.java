@@ -27,7 +27,8 @@ import cli.System.Diagnostics.StackFrame;
 import gnu.java.lang.reflect.VMField;
 import ikvm.lang.CIL;
 
-abstract class VMFieldImpl extends VMField
+@ikvm.lang.Internal
+public abstract class VMFieldImpl extends VMField
 {
     private static native Object GetValue(Object fieldCookie, Object o);
     private static native void SetValue(Object fieldCookie, Object o, Object value);
@@ -61,7 +62,7 @@ abstract class VMFieldImpl extends VMField
         }
     }
 
-    static Field newField(Class declaringClass, Object fieldCookie)
+    public static Field newField(Class declaringClass, Object fieldCookie)
     {
         Class type = (Class)GetFieldType(fieldCookie);
         if (type == Boolean.TYPE)

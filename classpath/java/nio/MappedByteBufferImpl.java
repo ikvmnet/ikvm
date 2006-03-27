@@ -43,7 +43,8 @@ import cli.System.IntPtr;
 
 import java.io.IOException;
 
-class MappedByteBufferImpl extends MappedByteBuffer
+@ikvm.lang.Internal
+public class MappedByteBufferImpl extends MappedByteBuffer
 {
     boolean readOnly;
 
@@ -115,7 +116,7 @@ class MappedByteBufferImpl extends MappedByteBuffer
 	private static native int ikvm_msync(IntPtr address, int size);
     }
 
-    static MappedByteBufferImpl create(Pointer address, int size, boolean readOnly, boolean win32)
+    public static MappedByteBufferImpl create(Pointer address, int size, boolean readOnly, boolean win32)
         throws IOException
     {
         return win32 ? new Win32(address, size, readOnly) : (MappedByteBufferImpl)new Posix(address, size, readOnly);

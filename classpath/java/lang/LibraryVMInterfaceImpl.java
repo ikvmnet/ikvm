@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004, 2005 Jeroen Frijters
+  Copyright (C) 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,6 +25,7 @@
 package java.lang;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.VMFieldImpl;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -45,17 +46,17 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 
     public Object newField(Object clazz, Object wrapper)
     {
-        return VMClass.createField((Class)clazz, wrapper);
+        return VMFieldImpl.newField((Class)clazz, wrapper);
     }
 
     public Object newConstructor(Object clazz, Object wrapper)
     {
-        return VMClass.createConstructor((Class)clazz, wrapper);
+        return new Constructor((Class)clazz, wrapper);
     }
 
     public Object newMethod(Object clazz, Object wrapper)
     {
-        return VMClass.createMethod((Class)clazz, wrapper);
+        return new Method((Class)clazz, wrapper);
     }
 
     public Object getWrapperFromClass(Object clazz)
@@ -65,22 +66,18 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 
     public Object getWrapperFromField(Object field)
     {
-        return getWrapperFromField((Field)field);
+        return ((Field)field).impl.fieldCookie;
     }
-
-    private static native Object getWrapperFromField(Field field);
-    private static native Object getWrapperFromMethod(Method method);
-    private static native Object getWrapperFromConstructor(Constructor constructor);
 
     public Object getWrapperFromMethodOrConstructor(Object methodOrConstructor)
     {
         if(methodOrConstructor instanceof Method)
         {
-            return getWrapperFromMethod((Method)methodOrConstructor);
+            return ((Method)methodOrConstructor).methodCookie;
         }
         else
         {
-            return getWrapperFromConstructor((Constructor)methodOrConstructor);
+            return ((Constructor)methodOrConstructor).methodCookie;
         }
     }
 
@@ -204,8 +201,15 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
         VMThread.setThreadGroup((ThreadGroup)group);
     }
 
-    public native Object newDirectByteBuffer(cli.System.IntPtr address, int capacity);
-    public native cli.System.IntPtr getDirectBufferAddress(Object buffer);
+    public Object newDirectByteBuffer(cli.System.IntPtr address, int capacity)
+    {
+        return java.nio.VMDirectByteBuffer.NewDirectByteBuffer(address, capacity);
+    }
+
+    public cli.System.IntPtr getDirectBufferAddress(Object buffer)
+    {
+        return java.nio.VMDirectByteBuffer.GetDirectBufferAddress((java.nio.Buffer)buffer);
+    }
     
     public int getDirectBufferCapacity(Object buffer)
     {

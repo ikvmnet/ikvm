@@ -46,15 +46,18 @@ namespace IKVM.Internal
 	{
 		private ConstantPoolItem[] constantpool;
 		private string[] utf8_cp;
+		// Modifiers is a ushort, so the next four fields combine into two 32 bit slots
 		private Modifiers access_flags;
 		private ushort this_class;
 		private ushort super_class;
+		private ushort flags;
+		private const ushort FLAG_MASK_MAJORVERSION = 0xFF;
+		private const ushort FLAG_MASK_DEPRECATED = 0x100;
+		private const ushort FLAG_MASK_INTERNAL = 0x200;
 		private ConstantPoolItemClass[] interfaces;
 		private Field[] fields;
 		private Method[] methods;
 		private string sourceFile;
-		private ushort majorVersion;
-		private bool deprecated;
 		private string ikvmAssembly;
 		private InnerClass[] innerClasses;
 #if GENERICS
@@ -86,7 +89,9 @@ namespace IKVM.Internal
 			}
 			int minorVersion = br.ReadUInt16();
 			int majorVersion = br.ReadUInt16();
-			if(majorVersion < SupportedVersions.Minimum || majorVersion > SupportedVersions.Maximum)
+			if((majorVersion & FLAG_MASK_MAJORVERSION) != majorVersion
+				|| majorVersion < SupportedVersions.Minimum
+				|| majorVersion > SupportedVersions.Maximum)
 			{
 				throw new UnsupportedClassVersionError(inputClassName + " (" + majorVersion + "." + minorVersion + ")");
 			}
@@ -144,12 +149,15 @@ namespace IKVM.Internal
 				{
 					throw new ClassFormatError("{0} (Bad magic number)", inputClassName);
 				}
-				int minorVersion = br.ReadUInt16();
-				majorVersion = br.ReadUInt16();
-				if(majorVersion < SupportedVersions.Minimum || majorVersion > SupportedVersions.Maximum)
+				ushort minorVersion = br.ReadUInt16();
+				ushort majorVersion = br.ReadUInt16();
+				if((majorVersion & FLAG_MASK_MAJORVERSION) != majorVersion
+					|| majorVersion < SupportedVersions.Minimum
+					|| majorVersion > SupportedVersions.Maximum)
 				{
 					throw new UnsupportedClassVersionError(inputClassName + " (" + majorVersion + "." + minorVersion + ")");
 				}
+				flags = majorVersion;
 				int constantpoolcount = br.ReadUInt16();
 				constantpool = new ConstantPoolItem[constantpoolcount];
 				utf8_cp = new string[constantpoolcount];
@@ -316,7 +324,7 @@ namespace IKVM.Internal
 					switch(GetConstantPoolUtf8String(br.ReadUInt16()))
 					{
 						case "Deprecated":
-							deprecated = true;
+							flags |= FLAG_MASK_DEPRECATED;
 							br.Skip(br.ReadUInt32());
 							break;
 						case "SourceFile":
@@ -412,6 +420,19 @@ namespace IKVM.Internal
 							annotations = ReadAnnotations(br, this);
 							break;
 #endif
+						case "RuntimeInvisibleAnnotations":
+							if(majorVersion < 49 || !JVM.IsStaticCompiler)
+							{
+								goto default;
+							}
+							foreach(object[] annot in ReadAnnotations(br, this))
+							{
+								if(annot[1].Equals("Likvm/lang/Internal;"))
+								{
+									flags |= FLAG_MASK_INTERNAL;
+								}
+							}
+							break;
 						case "IKVM.NET.Assembly":
 							if(br.ReadUInt32() != 2)
 							{
@@ -450,7 +471,7 @@ namespace IKVM.Internal
 			//			throw;
 			//		}
 		}
-#if GENERICS
+
 		private static object[] ReadAnnotations(BigEndianBinaryReader br, ClassFile classFile)
 		{
 			BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
@@ -537,7 +558,7 @@ namespace IKVM.Internal
 					throw new ClassFormatError("Invalid tag {0} in annotation element_value", tag);
 			}
 		}
-#endif // GENERICS
+
 		private void ValidateConstantPoolItemClass(string classFile, ushort index)
 		{
 			if(index >= constantpool.Length || !(constantpool[index] is ConstantPoolItemClass))
@@ -678,7 +699,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return majorVersion;
+				return flags & FLAG_MASK_MAJORVERSION;
 			}
 		}
 
@@ -961,7 +982,15 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return deprecated;
+				return (flags & FLAG_MASK_DEPRECATED) != 0;
+			}
+		}
+
+		internal bool IsInternal
+		{
+			get
+			{
+				return (flags & FLAG_MASK_INTERNAL) != 0;
 			}
 		}
 
@@ -1648,10 +1677,11 @@ namespace IKVM.Internal
 
 		internal abstract class FieldOrMethod
 		{
+			// Note that Modifiers is a ushort, so it combines nicely with the following ushort field
 			protected Modifiers access_flags;
+			protected ushort flags;
 			private string name;
 			private string descriptor;
-			protected bool deprecated;
 #if GENERICS
 			protected string signature;
 			protected object[] annotations;
@@ -1808,7 +1838,15 @@ namespace IKVM.Internal
 			{
 				get
 				{
-					return deprecated;
+					return (flags & FLAG_MASK_DEPRECATED) != 0;
+				}
+			}
+
+			internal bool IsInternal
+			{
+				get
+				{
+					return (flags & FLAG_MASK_INTERNAL) != 0;
 				}
 			}
 		}
@@ -1831,7 +1869,7 @@ namespace IKVM.Internal
 					switch(classFile.GetConstantPoolUtf8String(br.ReadUInt16()))
 					{
 						case "Deprecated":
-							deprecated = true;
+							flags |= FLAG_MASK_DEPRECATED;
 							br.Skip(br.ReadUInt32());
 							break;
 						case "ConstantValue":
@@ -1896,7 +1934,7 @@ namespace IKVM.Internal
 						}
 #if GENERICS
 						case "Signature":
-							if(classFile.majorVersion < 49)
+							if(classFile.MajorVersion < 49)
 							{
 								goto default;
 							}
@@ -1907,13 +1945,26 @@ namespace IKVM.Internal
 							signature = classFile.GetConstantPoolUtf8String(br.ReadUInt16());
 							break;
 						case "RuntimeVisibleAnnotations":
-							if(classFile.majorVersion < 49)
+							if(classFile.MajorVersion < 49)
 							{
 								goto default;
 							}
 							annotations = ReadAnnotations(br, classFile);
 							break;
 #endif
+						case "RuntimeInvisibleAnnotations":
+							if(classFile.MajorVersion < 49 || !JVM.IsStaticCompiler)
+							{
+								goto default;
+							}
+							foreach(object[] annot in ReadAnnotations(br, classFile))
+							{
+								if(annot[1].Equals("Likvm/lang/Internal;"))
+								{
+									flags |= FLAG_MASK_INTERNAL;
+								}
+							}
+							break;
 						default:
 							br.Skip(br.ReadUInt32());
 							break;
@@ -1972,7 +2023,7 @@ namespace IKVM.Internal
 					switch(classFile.GetConstantPoolUtf8String(br.ReadUInt16()))
 					{
 						case "Deprecated":
-							deprecated = true;
+							flags |= FLAG_MASK_DEPRECATED;
 							br.Skip(br.ReadUInt32());
 							break;
 						case "Code":
@@ -2010,7 +2061,7 @@ namespace IKVM.Internal
 						}
 #if GENERICS
 						case "Signature":
-							if(classFile.majorVersion < 49)
+							if(classFile.MajorVersion < 49)
 							{
 								goto default;
 							}
@@ -2021,7 +2072,7 @@ namespace IKVM.Internal
 							signature = classFile.GetConstantPoolUtf8String(br.ReadUInt16());
 							break;
 						case "RuntimeVisibleAnnotations":
-							if(classFile.majorVersion < 49)
+							if(classFile.MajorVersion < 49)
 							{
 								goto default;
 							}
@@ -2029,7 +2080,7 @@ namespace IKVM.Internal
 							break;
 						case "AnnotationDefault":
 						{
-							if(classFile.majorVersion < 49)
+							if(classFile.MajorVersion < 49)
 							{
 								goto default;
 							}
@@ -2042,6 +2093,19 @@ namespace IKVM.Internal
 							break;
 						}
 #endif
+						case "RuntimeInvisibleAnnotations":
+							if(classFile.MajorVersion < 49 || !JVM.IsStaticCompiler)
+							{
+								goto default;
+							}
+							foreach(object[] annot in ReadAnnotations(br, classFile))
+							{
+								if(annot[1].Equals("Likvm/lang/Internal;"))
+								{
+									flags |= FLAG_MASK_INTERNAL;
+								}
+							}
+							break;
 						default:
 							br.Skip(br.ReadUInt32());
 							break;

@@ -46,6 +46,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
+import java.nio.MappedByteBufferImpl;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -701,13 +702,10 @@ public abstract class FileChannelImpl extends FileChannel
         Pointer address = mapViewOfFile((FileStream)stream, mode != 'r', mode == 'c', position, size);
         if (address == null)
             throw new IOException("file mapping failed");
-        return createMappedByteBufferImpl(address, size, mode == 'r', win32);
+        return MappedByteBufferImpl.create(address, size, mode == 'r', win32);
     }
 
     abstract Pointer mapViewOfFile(FileStream stream, boolean writeable, boolean copy_on_write, long position, int size) throws IOException;
-
-    // implementation in map.xml to bypass Java access checking
-    private static native MappedByteBuffer createMappedByteBufferImpl(Pointer address, int size, boolean readonly, boolean win32);
 
     public MappedByteBuffer map (FileChannel.MapMode mode,
 	long position, long size)

@@ -3235,7 +3235,7 @@ namespace IKVM.Internal
 							}
 						}
 					}
-					if(f.IsPublic)
+					if(f.IsPublic && !f.IsInternal)
 					{
 						if(outer != null)
 						{
@@ -3760,7 +3760,7 @@ namespace IKVM.Internal
 					attribs |= FieldAttributes.FamORAssem;
 					methodAttribs |= MethodAttributes.FamORAssem;
 				}
-				else if(fld.IsPublic)
+				else if(fld.IsPublic && !fld.IsInternal)
 				{
 					attribs |= FieldAttributes.Public;
 					methodAttribs |= MethodAttributes.Public;
@@ -3855,7 +3855,12 @@ namespace IKVM.Internal
 					// the Java modifiers
 					if(setModifiers || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0)
 					{
-						AttributeHelper.SetModifiers(field, fld.Modifiers);
+						Modifiers mods = fld.Modifiers;
+						if(fld.IsPublic && fld.IsInternal)
+						{
+							mods &= ~Modifiers.Public;
+						}
+						AttributeHelper.SetModifiers(field, mods);
 					}
 					if(setNameSig)
 					{
@@ -4272,7 +4277,12 @@ namespace IKVM.Internal
 						// NOTE in Whidbey we can (and should) use CompilerGeneratedAttribute to mark Synthetic types
 						if((classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
 						{
-							AttributeHelper.SetModifiers(typeBuilder, classFile.Modifiers);
+							Modifiers mods = classFile.Modifiers;
+							if(classFile.IsPublic && classFile.IsInternal)
+							{
+								mods &= ~Modifiers.Public;
+							}
+							AttributeHelper.SetModifiers(typeBuilder, mods);
 						}
 
 //						// For Java 5 Enum types, we generate a nested .NET enum
@@ -5097,7 +5107,7 @@ namespace IKVM.Internal
 					{
 						attribs |= MethodAttributes.FamORAssem;
 					}
-					else if(m.IsPublic)
+					else if(m.IsPublic && !m.IsInternal)
 					{
 						attribs |= MethodAttributes.Public;
 					}
@@ -5188,7 +5198,7 @@ namespace IKVM.Internal
 								// method more accessible, because otherwise the CLR will complain that we're reducing access
 								MethodBase baseMethod = baseMce.GetMethod();
 								if((baseMethod.IsPublic && !m.IsPublic) ||
-									((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && !m.IsPublic && !m.IsProtected) ||
+									((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && (!m.IsPublic || m.IsInternal) && !m.IsProtected) ||
 									(!m.IsPublic && !m.IsProtected && !baseMce.DeclaringType.IsInSamePackageAs(wrapper)))
 								{
 									attribs &= ~MethodAttributes.MemberAccessMask;
@@ -5331,13 +5341,18 @@ namespace IKVM.Internal
 						AttributeHelper.SetThrowsAttribute(method, exceptions);
 						if(setModifiers || (m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0)
 						{
+							Modifiers mods = m.Modifiers;
+							if(m.IsPublic && m.IsInternal)
+							{
+								mods &= ~Modifiers.Public;
+							}
 							if(method is ConstructorBuilder)
 							{
-								AttributeHelper.SetModifiers((ConstructorBuilder)method, m.Modifiers);
+								AttributeHelper.SetModifiers((ConstructorBuilder)method, mods);
 							}
 							else
 							{
-								AttributeHelper.SetModifiers((MethodBuilder)method, m.Modifiers);
+								AttributeHelper.SetModifiers((MethodBuilder)method, mods);
 							}
 						}
 						if(m.DeprecatedAttribute)

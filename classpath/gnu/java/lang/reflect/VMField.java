@@ -27,9 +27,7 @@ import java.lang.reflect.Field;
 
 public abstract class VMField
 {
-    // fieldCookie must be package accessible (actually "assembly") to allow map.xml
-    // implementation of LibraryVMInterfaceImpl.getWrapperFromField() to access it.
-    protected Object fieldCookie;
+    public Object fieldCookie;
     protected Class declaringClass;
     protected boolean isPublic;
     protected int modifiers;

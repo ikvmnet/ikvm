@@ -26,6 +26,7 @@ package java.lang;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.VMFieldImpl;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -125,7 +126,7 @@ abstract class VMClass
 	Field[] fields = new Field[fieldCookies.length];
 	for(int i = 0; i < fields.length; i++)
 	{
-	    fields[i] = createField(clazz, fieldCookies[i]);
+	    fields[i] = VMFieldImpl.newField(clazz, fieldCookies[i]);
 	}
 	return fields;
     }
@@ -137,7 +138,7 @@ abstract class VMClass
 	Method[] methods = new Method[methodCookies.length];
 	for(int i = 0; i < methodCookies.length; i++)
 	{
-	    methods[i] = createMethod(clazz, methodCookies[i]);
+	    methods[i] = new Method(clazz, methodCookies[i]);
 	}
 	return methods;
     }
@@ -149,15 +150,10 @@ abstract class VMClass
 	Constructor[] constructors = new Constructor[methodCookies.length];
 	for(int i = 0; i < methodCookies.length; i++)
 	{
-	    constructors[i] = createConstructor(clazz, methodCookies[i]);
+	    constructors[i] = new Constructor(clazz, methodCookies[i]);
 	}
 	return constructors;
     }
-
-    // the implementations for these methods live in map.xml to access package accessible constructors
-    static native Field createField(Class declaringClass, Object fieldCookie);
-    static native Method createMethod(Class declaringClass, Object methodCookie);
-    static native Constructor createConstructor(Class declaringClass, Object methodCookie);
 
     static ClassLoader getClassLoader(Class clazz)
     {

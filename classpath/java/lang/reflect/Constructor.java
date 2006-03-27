@@ -82,14 +82,16 @@ public final class Constructor
     private Class clazz;
     private static final int CONSTRUCTOR_MODIFIERS
         = Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC;
-    Object methodCookie;
+    @ikvm.lang.Internal
+    public Object methodCookie;
     private int modifiers;
     private boolean classIsPublic;
   
     /**
      * This class is uninstantiable except from native code.
      */
-    Constructor(Class declaringClass, Object methodCookie)
+    @ikvm.lang.Internal
+    public Constructor(Class declaringClass, Object methodCookie)
     {
 	this.clazz = declaringClass;
 	this.methodCookie = methodCookie;

@@ -84,14 +84,16 @@ public final class Method
         = Modifier.ABSTRACT | Modifier.FINAL | Modifier.NATIVE
         | Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC
         | Modifier.STATIC | Modifier.STRICT | Modifier.SYNCHRONIZED;
-    Object methodCookie;
+    @ikvm.lang.Internal
+    public Object methodCookie;
     private int modifiers;
     private boolean classIsPublic;
 
     /**
      * This class is uninstantiable.
      */
-    Method(Class declaringClass, Object methodCookie)
+    @ikvm.lang.Internal
+    public Method(Class declaringClass, Object methodCookie)
     {
 	this.declaringClass = declaringClass;
 	this.methodCookie = methodCookie;
