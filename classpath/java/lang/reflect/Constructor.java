@@ -40,6 +40,8 @@ package java.lang.reflect;
 
 import gnu.java.lang.ClassHelper;
 
+import gnu.java.lang.reflect.MethodSignatureParser;
+
 import java.util.Arrays;
 import gnu.classpath.VMStackWalker;
 
@@ -77,7 +79,8 @@ import gnu.classpath.VMStackWalker;
  * @status updated to 1.4
  */
 public final class Constructor
-    extends AccessibleObject implements Member
+    extends AccessibleObject
+    implements GenericDeclaration, Member
 {
     private Class clazz;
     private static final int CONSTRUCTOR_MODIFIERS
@@ -268,6 +271,45 @@ public final class Constructor
 	return sb.toString();
     }
  
+    /* FIXME[GENERICS]: Add X extends GenericDeclaration and TypeVariable<X> */
+    static void addTypeParameters(StringBuffer sb, TypeVariable[] typeArgs)
+    {
+        if (typeArgs.length == 0)
+            return;
+        sb.append('<');
+        for (int i = 0; i < typeArgs.length; ++i)
+        {
+            if (i > 0)
+                sb.append(',');
+            sb.append(typeArgs[i]);
+        }
+        sb.append("> ");
+    }
+
+    public String toGenericString()
+    {
+        StringBuffer sb = new StringBuffer(128);
+        Modifier.toString(getModifiers(), sb).append(' ');
+        addTypeParameters(sb, getTypeParameters());
+        sb.append(getDeclaringClass().getName()).append('(');
+        Type[] types = getGenericParameterTypes();
+        if (types.length > 0)
+        {
+            sb.append(types[0]);
+            for (int i = 1; i < types.length; ++i)
+                sb.append(',').append(types[i]);
+        }
+        sb.append(')');
+        types = getGenericExceptionTypes();
+        if (types.length > 0)
+        {
+            sb.append(" throws ").append(types[0]);
+            for (int i = 1; i < types.length; i++)
+                sb.append(',').append(types[i]);
+        }
+        return sb.toString();
+    }
+
     /**
      * Create a new instance by invoking the constructor. Arguments are
      * automatically unwrapped and widened, if needed.<p>
@@ -310,5 +352,78 @@ public final class Constructor
 	    throw new InstantiationException();
 	}
 	return Method.Invoke(methodCookie, null, args);
+    }
+
+    /**
+     * Returns an array of <code>TypeVariable</code> objects that represents
+     * the type variables declared by this constructor, in declaration order.
+     * An array of size zero is returned if this constructor has no type
+     * variables.
+     *
+     * @return the type variables associated with this constructor.
+     * @throws GenericSignatureFormatError if the generic signature does
+     *         not conform to the format specified in the Virtual Machine
+     *         specification, version 3.
+     * @since 1.5
+     */
+    /* FIXME[GENERICS]: Add <Constructor<T>> */
+    public TypeVariable[] getTypeParameters()
+    {
+        String sig = getSignature();
+        if (sig == null)
+            return new TypeVariable[0];
+        MethodSignatureParser p = new MethodSignatureParser(this, sig);
+        return p.getTypeParameters();
+    }
+
+    /**
+     * Return the String in the Signature attribute for this constructor. If there
+     * is no Signature attribute, return null.
+     */
+    private String getSignature()
+    {
+        return Method.GetSignature(methodCookie);
+    }
+
+    /**
+     * Returns an array of <code>Type</code> objects that represents
+     * the exception types declared by this constructor, in declaration order.
+     * An array of size zero is returned if this constructor declares no
+     * exceptions.
+     *
+     * @return the exception types declared by this constructor. 
+     * @throws GenericSignatureFormatError if the generic signature does
+     *         not conform to the format specified in the Virtual Machine
+     *         specification, version 3.
+     * @since 1.5
+     */
+    public Type[] getGenericExceptionTypes()
+    {
+        String sig = getSignature();
+        if (sig == null)
+            return getExceptionTypes();
+        MethodSignatureParser p = new MethodSignatureParser(this, sig);
+        return p.getGenericExceptionTypes();
+    }
+
+    /**
+     * Returns an array of <code>Type</code> objects that represents
+     * the parameter list for this constructor, in declaration order.
+     * An array of size zero is returned if this constructor takes no
+     * parameters.
+     *
+     * @return a list of the types of the constructor's parameters
+     * @throws GenericSignatureFormatError if the generic signature does
+     *         not conform to the format specified in the Virtual Machine
+     *         specification, version 3.
+     * @since 1.5
+     */
+    public Type[] getGenericParameterTypes()
+    {
+        String sig = getSignature();
+        if (sig == null)
+            return getParameterTypes();
+        MethodSignatureParser p = new MethodSignatureParser(this, sig);
+        return p.getGenericParameterTypes();
     }
 }

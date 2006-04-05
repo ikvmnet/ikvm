@@ -85,14 +85,16 @@ public final class Method
         = Modifier.ABSTRACT | Modifier.FINAL | Modifier.NATIVE
         | Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC
         | Modifier.STATIC | Modifier.STRICT | Modifier.SYNCHRONIZED;
-    Object methodCookie;
+    @ikvm.lang.Internal
+    public Object methodCookie;
     private int modifiers;
     private boolean classIsPublic;
 
     /**
      * This class is uninstantiable.
      */
-    Method(Class declaringClass, Object methodCookie)
+    @ikvm.lang.Internal
+    public Method(Class declaringClass, Object methodCookie)
     {
 	this.declaringClass = declaringClass;
 	this.methodCookie = methodCookie;
@@ -311,8 +313,10 @@ public final class Method
     public String toString()
     {
         // 128 is a reasonable buffer initial size for constructor
-        StringBuilder sb = new StringBuilder(128);
-        Modifier.toString(getModifiers(), sb).append(' ');
+        StringBuffer sb = new StringBuffer(128);
+        Modifier.toString(getModifiers(), sb);
+        if (sb.length() > 0)
+            sb.append(' ');
         sb.append(ClassHelper.getUserName(getReturnType())).append(' ');
 	sb.append(getDeclaringClass().getName()).append('.');
 	sb.append(getName()).append('(');
@@ -332,6 +336,33 @@ public final class Method
 		sb.append(',').append(c[i].getName());
 	}
 	return sb.toString();
+    }
+
+    public String toGenericString()
+    {
+        // 128 is a reasonable buffer initial size for constructor
+        StringBuffer sb = new StringBuffer(128);
+        Modifier.toString(getModifiers(), sb).append(' ');
+        Constructor.addTypeParameters(sb, getTypeParameters());
+        sb.append(getGenericReturnType()).append(' ');
+        sb.append(getDeclaringClass().getName()).append('.');
+        sb.append(getName()).append('(');
+        Type[] types = getGenericParameterTypes();
+        if (types.length > 0)
+        {
+            sb.append(types[0]);
+            for (int i = 1; i < types.length; i++)
+                sb.append(',').append(types[i]);
+        }
+        sb.append(')');
+        types = getGenericExceptionTypes();
+        if (types.length > 0)
+        {
+            sb.append(" throws ").append(types[0]);
+            for (int i = 1; i < types.length; i++)
+                sb.append(',').append(types[i]);
+        }
+        return sb.toString();
     }
 
     /**
@@ -379,7 +410,7 @@ public final class Method
 	throws IllegalAccessException, InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    VMFieldImpl.checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
+	    VMFieldImpl.checkAccess(methodCookie, o, VMStackWalker.getCallingClass());
 	if(!Modifier.isStatic(modifiers))
 	{
 	    if(o == null)
@@ -431,7 +462,7 @@ public final class Method
     {
         return GetSignature(methodCookie);
     }
-    static native String GetSignature(Object cookie);
+    static native String GetSignature(Object methodCookie);
 
     /**
      * Returns an array of <code>Type</code> objects that represents

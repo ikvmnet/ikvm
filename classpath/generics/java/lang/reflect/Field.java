@@ -1,5 +1,5 @@
 /* java.lang.reflect.Field - reflection of Java fields
-   Copyright (C) 1998, 2001, 2005 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2001 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -15,8 +15,8 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Classpath; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307 USA.
+Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+02110-1301 USA.
 
 Linking this library statically or dynamically with other modules is
 making a combined work based on this library.  Thus, the terms and
@@ -38,6 +38,7 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
+import gnu.java.lang.ClassHelper;
 import gnu.classpath.VMStackWalker;
 import gnu.java.lang.reflect.FieldSignatureParser;
 import gnu.java.lang.reflect.VMField;
@@ -76,10 +77,16 @@ import gnu.java.lang.reflect.VMField;
  * @since 1.1
  * @status updated to 1.4
  */
-public final class Field extends AccessibleObject implements Member
+public final class Field
+    extends AccessibleObject implements Member
 {
+    private static final int FIELD_MODIFIERS
+        = Modifier.FINAL | Modifier.PRIVATE | Modifier.PROTECTED
+        | Modifier.PUBLIC | Modifier.STATIC | Modifier.TRANSIENT
+        | Modifier.VOLATILE;
     // package accessible to allow VM to access it
-    VMField impl;
+    @ikvm.lang.Internal
+    public VMField impl;
 
 	/**
 	 * This class is uninstantiable except natively.
@@ -108,7 +115,16 @@ public final class Field extends AccessibleObject implements Member
 	    return impl.getName();
 	}
 
-	/**
+    /**
+     * Return the raw modifiers for this field.
+     * @return the field's modifiers
+     */
+    private int getModifiersInternal()
+    {
+        return impl.getModifiers();
+    }
+
+        /**
 	 * Gets the modifiers this field uses.  Use the <code>Modifier</code>
 	 * class to interpret the values.  A field can only have a subset of the
 	 * following modifiers: public, private, protected, static, final,
@@ -119,7 +135,26 @@ public final class Field extends AccessibleObject implements Member
 	 */
 	public int getModifiers()
 	{
-	    return impl.getModifiers();
+            return getModifiersInternal() & FIELD_MODIFIERS;
+        }
+
+        /**
+         * Return true if this field is synthetic, false otherwise.
+         * @since 1.5
+         */
+        public boolean isSynthetic()
+        {
+            return (getModifiersInternal() & Modifier.SYNTHETIC) != 0;
+        }
+
+        /**
+         * Return true if this field represents an enum constant,
+         * false otherwise.
+         * @since 1.5
+         */
+        public boolean isEnumConstant()
+        {
+            return (getModifiersInternal() & Modifier.ENUM) != 0;
 	}
 
 	/**
@@ -134,27 +169,28 @@ public final class Field extends AccessibleObject implements Member
 	/**
 	 * Compare two objects to see if they are semantically equivalent.
 	 * Two Fields are semantically equivalent if they have the same declaring
-	 * class, name, and type.
+         * class, name, and type. Since you can't creat a Field except through
+         * the VM, this is just the == relation.
 	 *
 	 * @param o the object to compare to
 	 * @return <code>true</code> if they are equal; <code>false</code> if not
 	 */
 	public boolean equals(Object o)
 	{
-		if(!(o instanceof Field))
-			return false;
+	    if(!(o instanceof Field))
+		return false;
 
-		Field f = (Field)o;
-		if(!getName().equals(f.getName()))
-			return false;
+            Field that = (Field)o; 
+            if (this.getDeclaringClass() != that.getDeclaringClass())
+		return false;
 
-		if(getDeclaringClass() != f.getDeclaringClass())
-			return false;
+            if (!this.getName().equals(that.getName()))
+                return false;
 
-		if(getType() != f.getType())
-			return false;
+            if (this.getType() != that.getType())
+                return false;
 
-		return true;
+            return true;
 	}
 
 	/**
@@ -178,12 +214,15 @@ public final class Field extends AccessibleObject implements Member
 	 */
 	public String toString()
 	{
-		StringBuffer sb = new StringBuffer();
-		sb.append(Modifier.toString(getModifiers())).append(' ');
-		sb.append(getType().getName()).append(' ');
-		sb.append(getDeclaringClass().getName()).append('.');
-		sb.append(getName());
-		return sb.toString();
+            // 64 is a reasonable buffer initial size for field
+            StringBuffer sb = new StringBuffer(64);
+            Modifier.toString(getModifiers(), sb);
+            if (sb.length() > 0)
+                sb.append(' ');
+            sb.append(ClassHelper.getUserName(getType())).append(' ');
+            sb.append(getDeclaringClass().getName()).append('.');
+	    sb.append(getName());
+	    return sb.toString();
 	}
 
 	/**
@@ -230,8 +269,8 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
 	    if(impl.needsAccessCheck(isAccessible()))
-		impl.checkAccess(o, VMStackWalker.getCallingClass());
-	    return impl.get(o);
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
+            return impl.get(o);
 	}
 
 	/**
@@ -255,7 +294,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getBoolean(o);
 	}
 
@@ -280,7 +319,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getByte(o);
 	}
 
@@ -303,7 +342,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getChar(o);
 	}
 
@@ -328,7 +367,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getShort(o);
 	}
 
@@ -353,7 +392,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getInt(o);
 	}
 
@@ -378,7 +417,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getLong(o);
 	}
 
@@ -403,7 +442,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getFloat(o);
 	}
 
@@ -429,7 +468,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getDouble(o);
 	}
 
@@ -482,7 +521,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.set(o, value, isAccessible());
 	}
 
@@ -507,7 +546,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setBoolean(o, value, isAccessible());
 	}
 
@@ -532,7 +571,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setByte(o, value, isAccessible());
 	}
 
@@ -557,7 +596,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setChar(o, value, isAccessible());
 	}
 
@@ -582,7 +621,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setShort(o, value, isAccessible());
 	}
 
@@ -607,7 +646,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setInt(o, value, isAccessible());
 	}
 
@@ -632,7 +671,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setLong(o, value, isAccessible());
 	}
 
@@ -657,7 +696,7 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setFloat(o, value, isAccessible());
 	}
 
@@ -682,19 +721,9 @@ public final class Field extends AccessibleObject implements Member
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setDouble(o, value, isAccessible());
 	}
-
-        public boolean isEnumConstant()
-        {
-            return impl.isEnumConstant();
-        }
-
-        public boolean isSynthetic()
-        {
-            return impl.isSynthetic();
-        }
 
         public Type getGenericType()
         {

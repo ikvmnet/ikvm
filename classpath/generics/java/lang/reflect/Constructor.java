@@ -1,5 +1,5 @@
 /* java.lang.reflect.Constructor - reflection of Java constructors
-   Copyright (C) 1998, 2001, 2004, 2005 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2001 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -39,9 +39,10 @@ exception statement from your version. */
 package java.lang.reflect;
 
 import gnu.java.lang.ClassHelper;
-import gnu.classpath.VMStackWalker;
+
 import gnu.java.lang.reflect.MethodSignatureParser;
 import java.util.Arrays;
+import gnu.classpath.VMStackWalker;
 
 /**
  * The Constructor class represents a constructor of a class. It also allows
@@ -78,17 +79,21 @@ import java.util.Arrays;
  */
 public final class Constructor<T>
     extends AccessibleObject
-    implements Member, GenericDeclaration
+    implements GenericDeclaration, Member
 {
     private Class<T> clazz;
-    Object methodCookie;
+    private static final int CONSTRUCTOR_MODIFIERS
+        = Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC;
+    @ikvm.lang.Internal
+    public Object methodCookie;
     private int modifiers;
     private boolean classIsPublic;
   
     /**
      * This class is uninstantiable except from native code.
      */
-    Constructor(Class declaringClass, Object methodCookie)
+    @ikvm.lang.Internal
+    public Constructor(Class declaringClass, Object methodCookie)
     {
 	this.clazz = declaringClass;
 	this.methodCookie = methodCookie;
@@ -116,6 +121,16 @@ public final class Constructor<T>
     }
 
     /**
+     * Return the raw modifiers for this constructor.  In particular
+     * this will include the synthetic and varargs bits.
+     * @return the constructor's modifiers
+     */
+    private int getModifiersInternal()
+    {
+        return modifiers;
+    }
+
+    /**
      * Gets the modifiers this constructor uses.  Use the <code>Modifier</code>
      * class to interpret the values. A constructor can only have a subset of the
      * following modifiers: public, private, protected.
@@ -125,7 +140,28 @@ public final class Constructor<T>
      */
     public int getModifiers()
     {
-	return modifiers & (Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED);
+        return getModifiersInternal() & CONSTRUCTOR_MODIFIERS;
+    }
+
+    /**
+     * Return true if this constructor is synthetic, false otherwise.
+     * A synthetic member is one which is created by the compiler,
+     * and which does not appear in the user's source code.
+     * @since 1.5
+     */
+    public boolean isSynthetic()
+    {
+        return (getModifiersInternal() & Modifier.SYNTHETIC) != 0;
+    }
+
+    /**
+     * Return true if this is a varargs constructor, that is if
+     * the constructor takes a variable number of arguments.
+     * @since 1.5
+     */
+    public boolean isVarArgs()
+    {
+        return (getModifiersInternal() & Modifier.VARARGS) != 0;
     }
 
     /**
@@ -211,9 +247,11 @@ public final class Constructor<T>
     public String toString()
     {
         // 128 is a reasonable buffer initial size for constructor
-        StringBuilder sb = new StringBuilder(128);
-        Modifier.toString(getModifiers(), sb).append(' ');
-	sb.append(getDeclaringClass().getName()).append('(');
+        StringBuffer sb = new StringBuffer(128);
+        Modifier.toString(getModifiers(), sb);
+        if (sb.length() > 0)
+            sb.append(' ');
+        sb.append(getDeclaringClass().getName()).append('(');
 	Class[] c = getParameterTypes();
 	if (c.length > 0)
 	{
@@ -232,6 +270,45 @@ public final class Constructor<T>
 	return sb.toString();
     }
  
+    /* FIXME[GENERICS]: Add X extends GenericDeclaration and TypeVariable<X> */
+    static void addTypeParameters(StringBuffer sb, TypeVariable[] typeArgs)
+    {
+        if (typeArgs.length == 0)
+            return;
+        sb.append('<');
+        for (int i = 0; i < typeArgs.length; ++i)
+        {
+            if (i > 0)
+                sb.append(',');
+            sb.append(typeArgs[i]);
+        }
+        sb.append("> ");
+    }
+
+    public String toGenericString()
+    {
+        StringBuffer sb = new StringBuffer(128);
+        Modifier.toString(getModifiers(), sb).append(' ');
+        addTypeParameters(sb, getTypeParameters());
+        sb.append(getDeclaringClass().getName()).append('(');
+        Type[] types = getGenericParameterTypes();
+        if (types.length > 0)
+        {
+            sb.append(types[0]);
+            for (int i = 1; i < types.length; ++i)
+                sb.append(',').append(types[i]);
+        }
+        sb.append(')');
+        types = getGenericExceptionTypes();
+        if (types.length > 0)
+        {
+            sb.append(" throws ").append(types[0]);
+            for (int i = 1; i < types.length; i++)
+                sb.append(',').append(types[i]);
+        }
+        return sb.toString();
+    }
+
     /**
      * Create a new instance by invoking the constructor. Arguments are
      * automatically unwrapped and widened, if needed.<p>
@@ -267,7 +344,7 @@ public final class Constructor<T>
 	InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    VMFieldImpl.checkAccess(modifiers, null, clazz, VMStackWalker.getCallingClass());
+	    VMFieldImpl.checkAccess(methodCookie, null, VMStackWalker.getCallingClass());
         int mods = clazz.getModifiers() | Method.GetRealModifiers(clazz);
 	if(Modifier.isAbstract(mods) || Modifier.isInterface(mods))
 	{
@@ -346,15 +423,5 @@ public final class Constructor<T>
             return getParameterTypes();
         MethodSignatureParser p = new MethodSignatureParser(this, sig);
         return p.getGenericParameterTypes();
-    }
-
-    public boolean isVarArgs()
-    {
-        return (modifiers & 0x0080) != 0;
-    }
-
-    public boolean isSynthetic()
-    {
-        return (modifiers & 0x1000) != 0;
     }
 }
