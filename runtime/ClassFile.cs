@@ -60,20 +60,14 @@ namespace IKVM.Internal
 		private string sourceFile;
 		private string ikvmAssembly;
 		private InnerClass[] innerClasses;
-#if GENERICS
 		private object[] annotations;
 		private string signature;
 		private string[] enclosingMethod;
-#endif
 
 		private class SupportedVersions
 		{
 			internal static readonly int Minimum = 45;
-#if GENERICS
 			internal static readonly int Maximum = 49;
-#else
-			internal static readonly int Maximum = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_JDK_5_0") == null ? 48 : 49;
-#endif
 		}
 
 		// This method parses just enough of the class file to obtain its name, it doesn't
@@ -368,7 +362,6 @@ namespace IKVM.Internal
 							}
 							break;
 						}
-#if GENERICS
 						case "Signature":
 							if(majorVersion < 49)
 							{
@@ -419,7 +412,6 @@ namespace IKVM.Internal
 							}
 							annotations = ReadAnnotations(br, this);
 							break;
-#endif
 						case "RuntimeInvisibleAnnotations":
 							if(majorVersion < 49 || !JVM.IsStaticCompiler)
 							{
@@ -939,11 +931,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-#if GENERICS
 				return annotations;
-#else
-				return null;
-#endif
 			}
 		}
 
@@ -951,11 +939,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-#if GENERICS
 				return signature;
-#else
-				return null;
-#endif
 			}
 		}
 
@@ -963,11 +947,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-#if GENERICS
 				return enclosingMethod;
-#else
-				return null;
-#endif
 			}
 		}
 
@@ -1690,10 +1670,8 @@ namespace IKVM.Internal
 			protected ushort flags;
 			private string name;
 			private string descriptor;
-#if GENERICS
 			protected string signature;
 			protected object[] annotations;
-#endif
 
 			internal FieldOrMethod(ClassFile classFile, BigEndianBinaryReader br)
 			{
@@ -1726,11 +1704,7 @@ namespace IKVM.Internal
 			{
 				get
 				{
-#if GENERICS
 					return annotations;
-#else
-					return null;
-#endif
 				}
 			}
 
@@ -1738,11 +1712,7 @@ namespace IKVM.Internal
 			{
 				get
 				{
-#if GENERICS
 					return signature;
-#else
-					return null;
-#endif
 				}
 			}
 
@@ -1940,7 +1910,6 @@ namespace IKVM.Internal
 							}
 							break;
 						}
-#if GENERICS
 						case "Signature":
 							if(classFile.MajorVersion < 49)
 							{
@@ -1959,7 +1928,6 @@ namespace IKVM.Internal
 							}
 							annotations = ReadAnnotations(br, classFile);
 							break;
-#endif
 						case "RuntimeInvisibleAnnotations":
 							if(classFile.MajorVersion < 49 || !JVM.IsStaticCompiler)
 							{
@@ -2002,9 +1970,7 @@ namespace IKVM.Internal
 		{
 			private Code code;
 			private string[] exceptions;
-#if GENERICS
 			private object annotationDefault;
-#endif
 
 			internal Method(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
 			{
@@ -2068,7 +2034,6 @@ namespace IKVM.Internal
 							}
 							break;
 						}
-#if GENERICS
 						case "Signature":
 							if(classFile.MajorVersion < 49)
 							{
@@ -2101,7 +2066,6 @@ namespace IKVM.Internal
 							}
 							break;
 						}
-#endif
 						case "RuntimeInvisibleAnnotations":
 							if(classFile.MajorVersion < 49 || !JVM.IsStaticCompiler)
 							{
@@ -2188,11 +2152,7 @@ namespace IKVM.Internal
 			{
 				get
 				{
-#if GENERICS
 					return annotationDefault;
-#else
-					return null;
-#endif
 				}
 			}
 

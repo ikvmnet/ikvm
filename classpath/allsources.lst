@@ -4502,3 +4502,4 @@ java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
 java/util/VMTimeZone.java
 sun/misc/Ref.java
+sun/reflect/annotation/AnnotationInvocationHandler.java

@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <project name="japi-status" default="default">
 
+<!--
     <property name="REFERENCE_API_JARS" value="c:\j2sdk1.4.0\jre\lib\rt.jar c:\j2sdk1.4.0\jre\lib\jce.jar c:\j2sdk1.4.0\jre\lib\jsse.jar" />
     <property name="REFERENCE_API_NAME" value="JDK-1.4" />
-<!--
+-->
     <property name="REFERENCE_API_JARS" value="c:\jdk1.5\jre\lib\rt.jar c:\jdk1.5\jre\lib\jce.jar c:\jdk1.5\jre\lib\jsse.jar" />
     <property name="REFERENCE_API_NAME" value="JDK-1.5" />
--->
     <property name="JAPI_HOME" value="c:\japi\japitools" />
-    <property name="IKVM_VERSION" value="0.26.0.0" />
+    <property name="IKVM_VERSION" value="0.27" />
 
     <target name="default">
 	<call target="status" />

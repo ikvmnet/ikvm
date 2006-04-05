@@ -74,9 +74,6 @@
 -->
           <arg value="-resource:lib/security/classpath.security=classpath.security" />
           <arg value="-resource:META-INF/MANIFEST.MF=MANIFEST.MF" />
-          <environment>
-            <variable name="IKVM_EXPERIMENTAL_JDK_5_0" value="1" />
-          </environment>
         </exec>
         <copy file="IKVM.GNU.Classpath.dll" tofile="../bin/IKVM.GNU.Classpath.dll.new" />
         <if test="${nant.platform.win32}">

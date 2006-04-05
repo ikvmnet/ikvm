@@ -40,6 +40,7 @@ package java.lang.reflect;
 
 import gnu.java.lang.ClassHelper;
 import gnu.classpath.VMStackWalker;
+import gnu.java.lang.reflect.FieldSignatureParser;
 import gnu.java.lang.reflect.VMField;
 
 /**
@@ -723,4 +724,13 @@ public final class Field
                 VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setDouble(o, value, isAccessible());
 	}
+
+    public Type getGenericType()
+    {
+        String signature = impl.getSignature();
+        if (signature == null)
+            return getType();
+        FieldSignatureParser p = new FieldSignatureParser(getDeclaringClass(), signature);
+        return p.getFieldType();
+    }
 }

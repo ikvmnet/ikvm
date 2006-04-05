@@ -3137,9 +3137,7 @@ namespace IKVM.Internal
 			private Hashtable classCache = new Hashtable();
 			private FieldInfo classObjectField;
 			private MethodBuilder clinitMethod;
-#if GENERICS
 			private AnnotationBuilder annotationBuilder;
-#endif
 
 			internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper)
 			{
@@ -3480,13 +3478,11 @@ namespace IKVM.Internal
 						clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
 						clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
 					}
-#if GENERICS
 					if(JVM.IsStaticCompiler && f.IsAnnotation)
 					{
 						annotationBuilder = new AnnotationBuilder(this);
 						((AotTypeWrapper)wrapper).SetAnnotation(annotationBuilder);
 					}
-#endif
 				}
 				catch(Exception x)
 				{
@@ -4442,12 +4438,10 @@ namespace IKVM.Internal
 						{
 							enumBuilder.CreateType();
 						}
-#if GENERICS
 						if(annotationBuilder != null)
 						{
 							annotationBuilder.Finish(this);
 						}
-#endif
 					}
 					finally
 					{
@@ -4527,8 +4521,6 @@ namespace IKVM.Internal
 
 				internal AnnotationBuilder(JavaTypeImpl o)
 				{
-					annotationTypeBuilder = o.typeBuilder;
-
 					// Make sure the annotation type only has valid methods
 					for(int i = 0; i < o.methods.Length; i++)
 					{
@@ -4544,6 +4536,9 @@ namespace IKVM.Internal
 							}
 						}
 					}
+
+					// we only set annotationTypeBuilder if we're valid
+					annotationTypeBuilder = o.typeBuilder;
 
 					TypeWrapper annotationAttributeBaseType = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
 
@@ -4591,6 +4586,11 @@ namespace IKVM.Internal
 
 				internal void Finish(JavaTypeImpl o)
 				{
+					if(annotationTypeBuilder == null)
+					{
+						// not a valid annotation type
+						return;
+					}
 					TypeWrapper annotationAttributeBaseType = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
 					annotationAttributeBaseType.Finish();
 
@@ -4686,7 +4686,10 @@ namespace IKVM.Internal
 
 				internal override void Apply(TypeBuilder tb, object annotation)
 				{
-					tb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
+					if(annotationTypeBuilder != null)
+					{
+						tb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
+					}
 				}
 			}
 

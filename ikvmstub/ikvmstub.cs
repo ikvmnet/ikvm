@@ -234,7 +234,6 @@ public class NetExp
 			}
 			classmods &= ~(Modifiers.Static | Modifiers.Private | Modifiers.Protected);
 		}
-#if GENERICS
 		if(c.isAnnotation())
 		{
 			classmods |= Modifiers.Annotation;
@@ -253,9 +252,6 @@ public class NetExp
 		{
 			f.AddStringAttribute("Signature", genericSignature);
 		}
-#else
-		ClassFileWriter f = new ClassFileWriter(classmods, name, super, 3, 45);
-#endif
 		// TODO instead of passing in the assemblyName we're processing, we should get the assembly from the class
 		// (generic type instantiations can be from other assemblies)
 		f.AddStringAttribute("IKVM.NET.Assembly", assemblyName);
@@ -345,14 +341,12 @@ public class NetExp
 				{
 					m.AddAttribute(new DeprecatedAttribute(f));
 				}
-#if GENERICS
 				string signature = BuildGenericSignature(constructors[i].getTypeParameters(),
 					constructors[i].getGenericParameterTypes(), java.lang.Void.TYPE, constructors[i].getGenericExceptionTypes());
 				if (signature != null)
 				{
 					m.AddAttribute(f.MakeStringAttribute("Signature", signature));
 				}
-#endif
 			}
 		}
 		java.lang.reflect.Method[] methods = c.getDeclaredMethods();
@@ -418,7 +412,6 @@ public class NetExp
 				{
 					m.AddAttribute(new DeprecatedAttribute(f));
 				}
-#if GENERICS
 				string signature = BuildGenericSignature(methods[i].getTypeParameters(),
 					methods[i].getGenericParameterTypes(), methods[i].getGenericReturnType(),
 					methods[i].getGenericExceptionTypes());
@@ -426,7 +419,6 @@ public class NetExp
 				{
 					m.AddAttribute(f.MakeStringAttribute("Signature", signature));
 				}
-#endif
 			}
 		}
 		java.lang.reflect.Field[] fields = c.getDeclaredFields();
@@ -503,12 +495,10 @@ public class NetExp
 				{
 					fld.AddAttribute(new DeprecatedAttribute(f));
 				}
-#if GENERICS
 				if(fields[i].getGenericType() != fieldType)
 				{
 					fld.AddAttribute(f.MakeStringAttribute("Signature", ToSigForm(fields[i].getGenericType())));
 				}
-#endif
 			}
 		}
 		if(innerClassesAttribute != null)
@@ -600,7 +590,6 @@ public class NetExp
 		}
 	}
 
-#if GENERICS
 	private static string BuildGenericSignature(java.lang.Class c)
 	{
 		bool isgeneric = false;
@@ -659,9 +648,11 @@ public class NetExp
 		java.lang.reflect.Type[] parameterTypes, java.lang.reflect.Type returnType,
 		java.lang.reflect.Type[] exceptionTypes)
 	{
+		bool isgeneric = false;
 		StringBuilder sb = new StringBuilder();
 		if(typeParameters.Length > 0)
 		{
+			isgeneric = true;
 			sb.Append('<');
 			foreach(java.lang.reflect.TypeVariable t in typeParameters)
 			{
@@ -676,15 +667,22 @@ public class NetExp
 		sb.Append('(');
 		foreach(java.lang.reflect.Type t in parameterTypes)
 		{
+			isgeneric |= !(t is java.lang.Class);
 			sb.Append(ToSigForm(t));
 		}
 		sb.Append(')');
 		sb.Append(ToSigForm(returnType));
+		isgeneric |= !(returnType is java.lang.Class);
 		foreach(java.lang.reflect.Type t in exceptionTypes)
 		{
+			isgeneric |= !(t is java.lang.Class);
 			sb.Append('^').Append(ToSigForm(t));
 		}
-		return sb.ToString();
+		if(isgeneric)
+		{
+			return sb.ToString();
+		}
+		return null;
 	}
 
 	private static string ToSigForm(java.lang.reflect.Type t)
@@ -744,5 +742,4 @@ public class NetExp
 			throw new NotImplementedException(t.GetType().FullName);
 		}
 	}
-#endif
 }

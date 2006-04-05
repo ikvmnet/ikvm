@@ -108,7 +108,7 @@ public class VMSystemProperties
         p.setProperty("user.language", culture[0]);
         p.setProperty("user.region", culture.length > 1 ? culture[1] : "");
         p.setProperty("user.variant", culture.length > 2 ? culture[2] : "");
-        p.setProperty("java.version", "1.4.2");
+        p.setProperty("java.version", "1.5.0");
         p.setProperty("java.vendor", "Jeroen Frijters");
         p.setProperty("java.vendor.url", "http://ikvm.net/");
         try
@@ -136,10 +136,10 @@ public class VMSystemProperties
         p.setProperty("java.vm.version", getVersion());
         p.setProperty("java.vm.vendor", "Jeroen Frijters");
         p.setProperty("java.vm.name", "IKVM.NET");
-        p.setProperty("java.specification.version", "1.4");
+        p.setProperty("java.specification.version", "1.5");
         p.setProperty("java.specification.vendor", "Sun Microsystems Inc.");
         p.setProperty("java.specification.name", "Java Platform API Specification");
-        p.setProperty("java.class.version", "48.0");
+        p.setProperty("java.class.version", "49.0");
         try
         {
             if(false) throw new cli.System.Security.SecurityException();

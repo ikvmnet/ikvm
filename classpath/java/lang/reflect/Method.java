@@ -525,4 +525,14 @@ public final class Method
         MethodSignatureParser p = new MethodSignatureParser(this, sig);
         return p.getGenericReturnType();
     }
+
+    public Object getDefaultValue()
+    {
+        if (declaringClass.isAnnotation())
+        {
+            return GetDefaultValue(methodCookie);
+        }
+        return null;
+    }
+    private static native Object GetDefaultValue(Object methodCookie);
 }
