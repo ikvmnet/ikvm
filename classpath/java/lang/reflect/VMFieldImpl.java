@@ -23,7 +23,6 @@
 */
 package java.lang.reflect;
 
-import cli.System.Diagnostics.StackFrame;
 import gnu.java.lang.reflect.VMField;
 import ikvm.lang.CIL;
 
@@ -32,33 +31,22 @@ public abstract class VMFieldImpl extends VMField
 {
     private static native Object GetValue(Object fieldCookie, Object o);
     private static native void SetValue(Object fieldCookie, Object o, Object value);
-    private static native int GetModifiers(Object fieldCookie);
+    private static native int GetModifiers(Object memberCookie);
+    private static native Object GetDeclaringClass(Object memberCookie);
     private static native String GetName(Object fieldCookie);
     private static native Object GetFieldType(Object fieldCookie);
-    private static native boolean isSamePackage(Class a, Class b);
     private static native void RunClassInit(Class clazz);
+    private static native boolean CheckAccess(Object memberCookie, Object obj, Object callerTypeWrapper);
 
-    static void checkAccess(int modifiers, Object o, Class declaringClass, Class caller) throws IllegalAccessException
+    public static void checkAccess(Object memberCookie, Object o, Class caller) throws IllegalAccessException
     {
-        // when we're invoking a constructor, modifiers will not be static, but o will be null.
-        Class actualClass = Modifier.isStatic(modifiers) || o == null ? declaringClass : o.getClass();
-        boolean declaringClassIsPublic = (Method.GetRealModifiers(declaringClass) & Modifier.PUBLIC) != 0;
-        if((!Modifier.isPublic(modifiers) || !declaringClassIsPublic) && declaringClass != caller)
+        if(!CheckAccess(memberCookie, o, caller == null ? null : VMClass.getWrapper(caller)))
         {
-            // if the caller is a global method, the class returned will be null
-            if(caller == null)
-            {
-                throw new IllegalAccessException();
-            }
-            if(Modifier.isProtected(modifiers) && actualClass.isAssignableFrom(caller))
-            {
-            }
-            else if(!isSamePackage(declaringClass, caller) || Modifier.isPrivate(modifiers))
-            {
-                throw new IllegalAccessException("Class " + caller.getName() +
-                    " can not access a member of class " + declaringClass.getName() +
-                    " with modifiers \"" + Modifier.toString(modifiers & (Modifier.PRIVATE | Modifier.PROTECTED)) + "\"");
-            }
+            Class declaringClass = (Class)GetDeclaringClass(memberCookie);
+            int modifiers = GetModifiers(memberCookie);
+            throw new IllegalAccessException((caller == null ? "Global or JNI function" : "Class " + caller.getName()) +
+                " can not access a member of class " + declaringClass.getName() +
+                " with modifiers \"" + Modifier.toString(modifiers & (Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED)) + "\"");
         }
     }
 
@@ -97,11 +85,6 @@ public abstract class VMFieldImpl extends VMField
     public final Field newField()
     {
         return new Field(this);
-    }
-
-    public final void checkAccess(Object o, Class caller) throws IllegalAccessException
-    {
-        checkAccess(modifiers, o, declaringClass, caller);
     }
 
     public final String getName()

@@ -42,7 +42,8 @@ namespace IKVM.Internal
 		ExplicitOverride = 2,
 		LiteralField = 4,
 		MirandaMethod = 8,
-		AccessStub = 16
+		AccessStub = 16,
+		InternalAccess = 32  // member has "internal" access (@ikvm.lang.Internal)
 	}
 
 	class MemberWrapper
@@ -135,6 +136,7 @@ namespace IKVM.Internal
 				return IsPublic ||
 					caller == DeclaringType ||
 					(IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsSubTypeOf(caller))) ||
+					(IsInternal && caller.Assembly == DeclaringType.Assembly) ||
 					(!IsPrivate && caller.IsInSamePackageAs(DeclaringType));
 			}
 			return false;
@@ -198,6 +200,14 @@ namespace IKVM.Internal
 			get
 			{
 				return (modifiers & Modifiers.Static) != 0;
+			}
+		}
+
+		internal bool IsInternal
+		{
+			get
+			{
+				return (flags & MemberFlags.InternalAccess) != 0;
 			}
 		}
 
@@ -1110,8 +1120,9 @@ namespace IKVM.Internal
 			this.field = field;
 		}
 
-		internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field)
-			: this(declaringType, fieldType, name, sig, modifiers, field, field != null && field.IsLiteral ? MemberFlags.LiteralField : MemberFlags.None)
+		internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, ExModifiers modifiers, FieldInfo field)
+			: this(declaringType, fieldType, name, sig, modifiers.Modifiers, field,
+					(modifiers.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None) | (field != null && field.IsLiteral ? MemberFlags.LiteralField : MemberFlags.None))
 		{
 		}
 
@@ -1241,10 +1252,10 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
+		internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers)
 		{
 			// volatile long & double field accesses must be made atomic
-			if((modifiers & Modifiers.Volatile) != 0 && (sig == "J" || sig == "D"))
+			if((modifiers.Modifiers & Modifiers.Volatile) != 0 && (sig == "J" || sig == "D"))
 			{
 				return new VolatileLongDoubleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
 			}
@@ -1319,7 +1330,7 @@ namespace IKVM.Internal
 
 	sealed class SimpleFieldWrapper : FieldWrapper
 	{
-		internal SimpleFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
+		internal SimpleFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers)
 			: base(declaringType, fieldType, name, sig, modifiers, fi)
 		{
 			Debug.Assert(!(fieldType == PrimitiveTypeWrapper.DOUBLE || fieldType == PrimitiveTypeWrapper.LONG) || !IsVolatile);
@@ -1365,7 +1376,7 @@ namespace IKVM.Internal
 		private static MethodInfo volatileWriteDouble = typeof(System.Threading.Thread).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Double&"), typeof(double) });
 		private static MethodInfo volatileWriteLong = typeof(System.Threading.Thread).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Int64&"), typeof(long) });
 
-		internal VolatileLongDoubleFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers)
+		internal VolatileLongDoubleFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers)
 			: base(declaringType, fieldType, name, sig, modifiers, fi)
 		{
 			Debug.Assert(IsVolatile);
@@ -1435,7 +1446,7 @@ namespace IKVM.Internal
 		private MethodInfo getter;
 
 		// NOTE fi may be null!
-		internal GetterFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, Modifiers modifiers, MethodInfo getter)
+		internal GetterFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers, MethodInfo getter)
 			: base(declaringType, fieldType, name, sig, modifiers, fi)
 		{
 			Debug.Assert(!IsVolatile);

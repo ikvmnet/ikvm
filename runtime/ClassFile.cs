@@ -429,6 +429,7 @@ namespace IKVM.Internal
 							{
 								if(annot[1].Equals("Likvm/lang/Internal;"))
 								{
+									this.access_flags &= ~Modifiers.AccessMask;
 									flags |= FLAG_MASK_INTERNAL;
 								}
 							}
@@ -992,6 +993,13 @@ namespace IKVM.Internal
 			{
 				return (flags & FLAG_MASK_INTERNAL) != 0;
 			}
+		}
+
+		// for use by ikvmc (to implement the -privatepackage option)
+		internal void SetInternal()
+		{
+			access_flags &= ~Modifiers.AccessMask;
+			flags |= FLAG_MASK_INTERNAL;
 		}
 
 		internal struct InnerClass
@@ -1961,6 +1969,7 @@ namespace IKVM.Internal
 							{
 								if(annot[1].Equals("Likvm/lang/Internal;"))
 								{
+									this.access_flags &= ~Modifiers.AccessMask;
 									flags |= FLAG_MASK_INTERNAL;
 								}
 							}
@@ -2102,6 +2111,7 @@ namespace IKVM.Internal
 							{
 								if(annot[1].Equals("Likvm/lang/Internal;"))
 								{
+									this.access_flags &= ~Modifiers.AccessMask;
 									flags |= FLAG_MASK_INTERNAL;
 								}
 							}

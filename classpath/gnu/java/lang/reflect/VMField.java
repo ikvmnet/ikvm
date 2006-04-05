@@ -58,7 +58,6 @@ public abstract class VMField
     }
 
     public abstract Field newField();
-    public abstract void checkAccess(Object o, Class caller) throws IllegalAccessException;
     public abstract String getName();
     public abstract Class getType();
     public abstract String getSignature();

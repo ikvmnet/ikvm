@@ -166,6 +166,17 @@ namespace IKVM.Internal
 					{
 						f.RemoveUnusedFields();
 					}
+					if(f.IsPublic && options.privatePackages != null)
+					{
+						foreach(string p in options.privatePackages)
+						{
+							if(f.Name.StartsWith(p))
+							{
+								f.SetInternal();
+								break;
+							}
+						}
+					}
 					type = DefineClass(f, null);
 				}
 			}
@@ -421,7 +432,7 @@ namespace IKVM.Internal
 
 				if(baseIsSealed)
 				{
-					AttributeHelper.SetModifiers(typeBuilder, (Modifiers)c.Modifiers);
+					AttributeHelper.SetModifiers(typeBuilder, (Modifiers)c.Modifiers, false);
 				}
 
 				if(c.scope == IKVM.Internal.MapXml.Scope.Public)
@@ -459,14 +470,40 @@ namespace IKVM.Internal
 
 				if(c.Methods != null)
 				{
-					// TODO we should also add methods from our super classes (e.g. Throwable should have Object's methods)
 					foreach(IKVM.Internal.MapXml.Method m in c.Methods)
 					{
-						methods.Add(new RemappedMethodWrapper(this, m, map));
+						methods.Add(new RemappedMethodWrapper(this, m, map, false));
+					}
+				}
+				// add methods from our super classes (e.g. Throwable should have Object's methods)
+				if(!this.IsFinal && !this.IsInterface && this.BaseTypeWrapper != null)
+				{
+					foreach(MethodWrapper mw in BaseTypeWrapper.GetMethods())
+					{
+						RemappedMethodWrapper rmw = mw as RemappedMethodWrapper;
+						if(rmw != null && (rmw.IsPublic || rmw.IsProtected))
+						{
+							if(!FindMethod(methods, rmw.Name, rmw.Signature))
+							{
+								methods.Add(new RemappedMethodWrapper(this, rmw.XmlMethod, map, true));
+							}
+						}
 					}
 				}
 
 				SetMethods((MethodWrapper[])methods.ToArray(typeof(MethodWrapper)));
+			}
+
+			private static bool FindMethod(ArrayList methods, string name, string sig)
+			{
+				foreach(MethodWrapper mw in methods)
+				{
+					if(mw.Name == name && mw.Signature == sig)
+					{
+						return true;
+					}
+				}
+				return false;
 			}
 
 			abstract class RemappedMethodBaseWrapper : MethodWrapper
@@ -541,7 +578,7 @@ namespace IKVM.Internal
 							}
 						}
 						SetParameters(mbHelper, m.Params);
-						AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
+						AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers, false);
 						AttributeHelper.SetNameSig(mbHelper, "<init>", m.Sig);
 						AddDeclaredExceptions(mbHelper, m.throws);
 					}
@@ -678,12 +715,22 @@ namespace IKVM.Internal
 				private IKVM.Internal.MapXml.Root map;
 				private MethodBuilder mbHelper;
 				private ArrayList overriders = new ArrayList();
+				private bool inherited;
 
-				internal RemappedMethodWrapper(RemapperTypeWrapper typeWrapper, IKVM.Internal.MapXml.Method m, IKVM.Internal.MapXml.Root map)
+				internal RemappedMethodWrapper(RemapperTypeWrapper typeWrapper, IKVM.Internal.MapXml.Method m, IKVM.Internal.MapXml.Root map, bool inherited)
 					: base(typeWrapper, m.Name, m.Sig, (Modifiers)m.Modifiers)
 				{
 					this.m = m;
 					this.map = map;
+					this.inherited = inherited;
+				}
+
+				internal IKVM.Internal.MapXml.Method XmlMethod
+				{
+					get
+					{
+						return m;
+					}
 				}
 
 				internal override void EmitCall(ILGenerator ilgen)
@@ -858,9 +905,13 @@ namespace IKVM.Internal
 								}
 							}
 							SetParameters(mbCore, m.Params);
-							if(overrideMethod != null)
+							if(overrideMethod != null && !inherited)
 							{
 								typeWrapper.typeBuilder.DefineMethodOverride(mbCore, overrideMethod);
+							}
+							if(inherited)
+							{
+								AttributeHelper.HideFromReflection(mbCore);
 							}
 							AddDeclaredExceptions(mbCore, m.throws);
 						}
@@ -906,7 +957,7 @@ namespace IKVM.Internal
 							{
 								AttributeHelper.SetEditorBrowsableNever(mbHelper);
 							}
-							AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers);
+							AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers, false);
 							AttributeHelper.SetNameSig(mbHelper, m.Name, m.Sig);
 							AddDeclaredExceptions(mbHelper, m.throws);
 						}
@@ -1268,7 +1319,7 @@ namespace IKVM.Internal
 							}
 							// TODO emit an static helper method that enables access to the field at runtime
 							method.Link();
-							fields.Add(new GetterFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), null, f.Name, f.Sig, (Modifiers)f.Modifiers, (MethodInfo)method.GetMethod()));
+							fields.Add(new GetterFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), null, f.Name, f.Sig, new ExModifiers((Modifiers)f.Modifiers, false), (MethodInfo)method.GetMethod()));
 						}
 						else if((f.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) != 0)
 						{
@@ -1306,7 +1357,7 @@ namespace IKVM.Internal
 							}
 							else
 							{
-								fields.Add(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Name, f.Sig, (Modifiers)f.Modifiers));
+								fields.Add(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), fb, f.Name, f.Sig, new ExModifiers((Modifiers)f.Modifiers, false)));
 							}
 						}
 						else
@@ -1731,6 +1782,7 @@ namespace IKVM.Internal
 		public bool compressedResources;
 		public bool strictFinalFieldSemantics;
 		public string runtimeAssembly;
+		public string[] privatePackages;
 	}
 
 	public class AotCompiler

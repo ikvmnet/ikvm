@@ -630,6 +630,7 @@
 ../../classpath/gnu/java/rmi/registry/RegistryImpl_Stub.java
 ../../classpath/gnu/java/rmi/RMIMarshalledObjectInputStream.java
 ../../classpath/gnu/java/rmi/RMIMarshalledObjectOutputStream.java
+../../classpath/gnu/java/rmi/server/ActivatableRef.java
 ../../classpath/gnu/java/rmi/server/ActivatableServerRef.java
 ../../classpath/gnu/java/rmi/server/CombinedClassLoader.java
 ../../classpath/gnu/java/rmi/server/ConnectionRunnerPool.java
@@ -2884,6 +2885,7 @@
 ../../classpath/javax/imageio/metadata/IIOMetadataNode.java
 ../../classpath/javax/imageio/plugins/bmp/BMPImageWriteParam.java
 ../../classpath/javax/imageio/plugins/jpeg/JPEGHuffmanTable.java
+../../classpath/javax/imageio/plugins/jpeg/JPEGQTable.java
 ../../classpath/javax/imageio/spi/IIORegistry.java
 ../../classpath/javax/imageio/spi/IIOServiceProvider.java
 ../../classpath/javax/imageio/spi/ImageInputStreamSpi.java
@@ -3866,6 +3868,7 @@
 ../../classpath/javax/xml/transform/URIResolver.java
 ../../classpath/javax/xml/validation/Schema.java
 ../../classpath/javax/xml/validation/SchemaFactory.java
+../../classpath/javax/xml/validation/SchemaFactoryLoader.java
 ../../classpath/javax/xml/validation/TypeInfoProvider.java
 ../../classpath/javax/xml/validation/Validator.java
 ../../classpath/javax/xml/validation/ValidatorHandler.java
@@ -4449,6 +4452,7 @@ gnu/java/nio/VMPipe.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/Library.java
 ikvm/internal/LibraryVMInterface.java
+ikvm/internal/WeakIdentityMap.java
 ikvm/io/InputStreamWrapper.java
 ikvm/lang/CIL.java
 ikvm/lang/Internal.java

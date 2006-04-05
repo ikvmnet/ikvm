@@ -215,7 +215,9 @@ public final class Field
 	{
             // 64 is a reasonable buffer initial size for field
             StringBuffer sb = new StringBuffer(64);
-            Modifier.toString(getModifiers(), sb).append(' ');
+            Modifier.toString(getModifiers(), sb);
+            if (sb.length() > 0)
+                sb.append(' ');
             sb.append(ClassHelper.getUserName(getType())).append(' ');
 	    sb.append(getDeclaringClass().getName()).append('.');
 	    sb.append(getName());
@@ -266,7 +268,7 @@ public final class Field
 		throws IllegalAccessException
 	{
 	    if(impl.needsAccessCheck(isAccessible()))
-		impl.checkAccess(o, VMStackWalker.getCallingClass());
+		VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
 	    return impl.get(o);
 	}
 
@@ -291,7 +293,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getBoolean(o);
 	}
 
@@ -316,7 +318,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getByte(o);
 	}
 
@@ -339,7 +341,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getChar(o);
 	}
 
@@ -364,7 +366,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getShort(o);
 	}
 
@@ -389,7 +391,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getInt(o);
 	}
 
@@ -414,7 +416,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getLong(o);
 	}
 
@@ -439,7 +441,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getFloat(o);
 	}
 
@@ -465,7 +467,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             return impl.getDouble(o);
 	}
 
@@ -518,7 +520,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.set(o, value, isAccessible());
 	}
 
@@ -543,7 +545,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setBoolean(o, value, isAccessible());
 	}
 
@@ -568,7 +570,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setByte(o, value, isAccessible());
 	}
 
@@ -593,7 +595,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setChar(o, value, isAccessible());
 	}
 
@@ -618,7 +620,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setShort(o, value, isAccessible());
 	}
 
@@ -643,7 +645,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setInt(o, value, isAccessible());
 	}
 
@@ -668,7 +670,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setLong(o, value, isAccessible());
 	}
 
@@ -693,7 +695,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setFloat(o, value, isAccessible());
 	}
 
@@ -718,7 +720,7 @@ public final class Field
 		throws IllegalAccessException
 	{
             if(impl.needsAccessCheck(isAccessible()))
-                impl.checkAccess(o, VMStackWalker.getCallingClass());
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
             impl.setDouble(o, value, isAccessible());
 	}
 }

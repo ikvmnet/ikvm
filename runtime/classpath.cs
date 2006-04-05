@@ -195,10 +195,16 @@ namespace IKVM.NativeCode.java
 					return wrapper.Name;
 				}
 
-				public static int GetModifiers(object fieldCookie)
+				public static int GetModifiers(object memberCookie)
 				{
-					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
+					MemberWrapper wrapper = (MemberWrapper)memberCookie;
 					return (int)wrapper.Modifiers;
+				}
+
+				public static object GetDeclaringClass(object memberCookie)
+				{
+					MemberWrapper wrapper = (MemberWrapper)memberCookie;
+					return wrapper.DeclaringType.ClassObject;
 				}
 
 				public static object GetFieldType(object fieldCookie)
@@ -215,14 +221,31 @@ namespace IKVM.NativeCode.java
 					return wrapper.DeclaringType.GetGenericFieldSignature(wrapper);
 				}
 
-				public static bool isSamePackage(object a, object b)
-				{
-					return TypeWrapper.FromClass(a).IsInSamePackageAs(TypeWrapper.FromClass(b));
-				}
-
 				public static void RunClassInit(object clazz)
 				{
 					TypeWrapper.FromClass(clazz).RunClassInit();
+				}
+
+				public static bool CheckAccess(object memberCookie, object instance, object callerTypeWrapper)
+				{
+					MemberWrapper member = (MemberWrapper)memberCookie;
+					if(callerTypeWrapper != null)
+					{
+						TypeWrapper instanceTypeWrapper;
+						if(member.IsStatic || instance == null)
+						{
+							instanceTypeWrapper = member.DeclaringType;
+						}
+						else
+						{
+							instanceTypeWrapper = IKVM.Runtime.Util.GetTypeWrapperFromObject(instance);
+						}
+						return member.IsAccessibleFrom(member.DeclaringType, (TypeWrapper)callerTypeWrapper, instanceTypeWrapper);
+					}
+					else
+					{
+						return member.IsPublic && member.DeclaringType.IsPublic;
+					}
 				}
 
 				public static object GetValue(object fieldCookie, object o)

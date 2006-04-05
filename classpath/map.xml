@@ -968,6 +968,50 @@
 					<ret />
 				</body>
 			</method>
+			<method name="newInstance" sig="()Ljava.lang.Object;">
+				<body>
+					<ldarg_0 />
+					<ldc_i4_0 />
+					<call class="java.lang.Class" name="memberAccessCheck" sig="(I)V" />
+					<ldarg_0 />
+					<volatile />
+					<ldfld class="java.lang.Class" name="constructor" sig="Ljava.lang.reflect.Constructor;" />
+					<dup />
+					<brtrue name="ok" />
+					<pop />
+					<ldarg_0 />
+					<ldarg_0 />
+					<call class="java.lang.VMClass" name="getConstructor" sig="(Ljava.lang.Class;)Ljava.lang.reflect.Constructor;" />
+					<dup />
+					<stloc name="constructor" class="java.lang.reflect.Constructor" />
+					<volatile />
+					<stfld class="java.lang.Class" name="constructor" sig="Ljava.lang.reflect.Constructor;" />
+					<ldloc name="constructor" />
+					<label name="ok" />
+					<dup />
+					<stloc name="constructor" class="java.lang.reflect.Constructor" />
+					<call class="java.lang.VMClass" name="isPublic" sig="(Ljava.lang.reflect.Constructor;)Z" />
+					<brtrue name="doit" />
+					<ldloc name="constructor" />
+					<call class="gnu.classpath.VMStackWalker" name="getCallingClass" sig="()Ljava.lang.Class;" />
+					<call class="java.lang.VMClass" name="checkAccess" sig="(Ljava.lang.reflect.Constructor;Ljava.lang.Class;)V" />
+					<label name="doit" />
+					<exceptionBlock>
+						<try>
+							<ldloc name="constructor" />
+							<ldnull />
+							<callvirt class="java.lang.reflect.Constructor" name="newInstance" sig="([Ljava.lang.Object;)Ljava.lang.Object;" />
+							<stloc name="retval" class="java.lang.Object" />
+						</try>
+						<catch class="java.lang.reflect.InvocationTargetException">
+							<callvirt class="java.lang.reflect.InvocationTargetException" name="getTargetException" sig="()Ljava.lang.Throwable;" />
+							<throw />
+						</catch>
+					</exceptionBlock>
+					<ldloc name="retval" />
+					<ret />
+				</body>
+			</method>
 		</class>
 		<!-- This is where the "native" helper methods start -->
 		<class name="ikvm.lang.CIL">

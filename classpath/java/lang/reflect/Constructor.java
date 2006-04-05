@@ -246,8 +246,10 @@ public final class Constructor
     {
         // 128 is a reasonable buffer initial size for constructor
         StringBuffer sb = new StringBuffer(128);
-        Modifier.toString(getModifiers(), sb).append(' ');
-	sb.append(getDeclaringClass().getName()).append('(');
+        Modifier.toString(getModifiers(), sb);
+        if (sb.length() > 0)
+            sb.append(' ');
+        sb.append(getDeclaringClass().getName()).append('(');
 	Class[] c = getParameterTypes();
 	if (c.length > 0)
 	{
@@ -301,7 +303,7 @@ public final class Constructor
 	InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    VMFieldImpl.checkAccess(modifiers, null, clazz, VMStackWalker.getCallingClass());
+	    VMFieldImpl.checkAccess(methodCookie, null, VMStackWalker.getCallingClass());
         int mods = clazz.getModifiers() | Method.GetRealModifiers(clazz);
 	if(Modifier.isAbstract(mods) || Modifier.isInterface(mods))
 	{

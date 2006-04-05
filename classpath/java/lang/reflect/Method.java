@@ -313,7 +313,9 @@ public final class Method
     {
         // 128 is a reasonable buffer initial size for constructor
         StringBuffer sb = new StringBuffer(128);
-        Modifier.toString(getModifiers(), sb).append(' ');
+        Modifier.toString(getModifiers(), sb);
+        if (sb.length() > 0)
+            sb.append(' ');
         sb.append(ClassHelper.getUserName(getReturnType())).append(' ');
 	sb.append(getDeclaringClass().getName()).append('.');
 	sb.append(getName()).append('(');
@@ -380,7 +382,7 @@ public final class Method
 	throws IllegalAccessException, InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
-	    VMFieldImpl.checkAccess(modifiers, o, declaringClass, VMStackWalker.getCallingClass());
+	    VMFieldImpl.checkAccess(methodCookie, o, VMStackWalker.getCallingClass());
 	if(!Modifier.isStatic(modifiers))
 	{
 	    if(o == null)

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -33,7 +33,7 @@ final class ExceptionHelper
     // it will return that text as the Message property), but it *must* be a copy, because we need to be
     // able to distinguish it from a user specified blank string
     private static final String NULL_STRING = new String();
-    private static final java.util.WeakHashMap exceptions = new java.util.WeakHashMap();
+    private static final ikvm.internal.WeakIdentityMap exceptions = new ikvm.internal.WeakIdentityMap();
     private static final boolean cleanStackTrace = SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
     private static cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
     private static cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
@@ -245,6 +245,7 @@ final class ExceptionHelper
 		    || className.equals("cli.System.RuntimeMethodHandle")
                     || className.equals("java.lang.LibraryVMInterfaceImpl")
                     || (className.equals("java.lang.Throwable") && m.get_Name().equals("instancehelper_fillInStackTrace"))
+                    || methodName.startsWith("__<")
 		    || IsHideFromJava(m)
 		    || IsPrivateScope(m))) // NOTE we assume that privatescope methods are always stubs that we should exclude
 		{

@@ -196,12 +196,17 @@ namespace IKVM.Runtime
 
 		public static object GetClassFromObject(object o)
 		{
+			return GetTypeWrapperFromObject(o).ClassObject;
+		}
+
+		internal static TypeWrapper GetTypeWrapperFromObject(object o)
+		{
 			Type t = o.GetType();
 			if(t.IsPrimitive || (ClassLoaderWrapper.IsRemappedType(t) && !t.IsSealed))
 			{
-				return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
+				return DotNetTypeWrapper.GetWrapperFromDotNetType(t);
 			}
-			return ClassLoaderWrapper.GetWrapperFromType(t).ClassObject;
+			return ClassLoaderWrapper.GetWrapperFromType(t);
 		}
 
 		public static object GetClassFromTypeHandle(RuntimeTypeHandle handle)

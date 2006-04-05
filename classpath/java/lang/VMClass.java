@@ -27,14 +27,65 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.VMFieldImpl;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import cli.System.Type;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
-abstract class VMClass 
+@ikvm.lang.Internal
+public abstract class VMClass
 {
     private VMClass() {}
+
+    public static Object getWrapper(Class c)
+    {
+        return c.vmdata;
+    }
+
+    // this method is used by the map.xml implementation of Class.newInstance
+    static boolean isPublic(Constructor c)
+    {
+        return Modifier.isPublic(c.getModifiers())
+            && Modifier.isPublic(GetModifiers(c.getDeclaringClass().vmdata, true));
+    }
+
+    // this method is used by the map.xml implementation of Class.newInstance
+    static void checkAccess(Constructor c, Class caller) throws IllegalAccessException
+    {
+        VMFieldImpl.checkAccess(c.methodCookie, null, caller);
+    }
+
+    // this method is used by the map.xml implementation of Class.newInstance
+    static Constructor getConstructor(Class c) throws InstantiationException
+    {
+        Constructor constructor = null;
+        Constructor[] constructors = getDeclaredConstructors(c, false);
+        for (int i = 0; i < constructors.length; i++)
+        {
+            if (constructors[i].getParameterTypes().length == 0)
+            {
+                constructor = constructors[i];
+                break;
+            }
+        }
+        if (constructor == null)
+            throw new InstantiationException(c.getName());
+        if (!Modifier.isPublic(constructor.getModifiers())
+            || !Modifier.isPublic(GetModifiers(c.vmdata, true)))
+        {
+            final Constructor finalConstructor = constructor;
+            AccessController.doPrivileged(new PrivilegedAction()
+            {
+                public Object run()
+                {
+                    finalConstructor.setAccessible(true);
+                    return null;
+                }
+            });
+        }
+        return constructor;
+    }
 
     static boolean isInstance(Class clazz, Object o)
     {

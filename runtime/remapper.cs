@@ -921,7 +921,16 @@ namespace IKVM.Internal.MapXml
 			@try.Generate(context, ilgen);
 			if(@catch != null)
 			{
-				ilgen.BeginCatchBlock(JVM.LoadType(Type.GetType(@catch.type, true)));
+				Type type;
+				if(@catch.type != null)
+				{
+					type = JVM.LoadType(Type.GetType(@catch.type, true));
+				}
+				else
+				{
+					type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(@catch.Class).TypeAsExceptionType;
+				}
+				ilgen.BeginCatchBlock(type);
 				@catch.Generate(context, ilgen);
 			}
 			if(@finally != null)
@@ -937,6 +946,8 @@ namespace IKVM.Internal.MapXml
 	{
 		[XmlAttribute("type")]
 		public string type;
+		[XmlAttribute("class")]
+		public string Class;
 	}
 
 	[XmlType("conditional")]
@@ -952,6 +963,14 @@ namespace IKVM.Internal.MapXml
 			{
 				code.Generate(context, ilgen);
 			}
+		}
+	}
+
+	[XmlType("volatile")]
+	public sealed class Volatile : Simple
+	{
+		public Volatile() : base(OpCodes.Volatile)
+		{
 		}
 	}
 
@@ -1019,6 +1038,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Cpblk))]
 		[XmlElement(typeof(Ceq))]
 		[XmlElement(typeof(ConditionalInstruction))]
+		[XmlElement(typeof(Volatile))]
 		public Instruction[] invoke;
 
 		internal void Generate(Hashtable context, ILGenerator ilgen)

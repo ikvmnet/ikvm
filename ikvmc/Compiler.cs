@@ -132,6 +132,8 @@ class Compiler
 			Console.Error.WriteLine("    -compressresources         Compress resources");
 			Console.Error.WriteLine("    -strictfinalfieldsemantics Don't allow final fields to be modified outside");
 			Console.Error.WriteLine("                               of initializer methods");
+			Console.Error.WriteLine("    -privatepackage:<prefix>   Mark all classes with a package name starting");
+			Console.Error.WriteLine("                               with <prefix> as internal to the assembly");
 			return 1;
 		}
 		foreach(string s in arglist)
@@ -383,6 +385,21 @@ class Compiler
 				else if(s == "-strictfinalfieldsemantics")
 				{
 					options.strictFinalFieldSemantics = true;
+				}
+				else if(s.StartsWith("-privatepackage:"))
+				{
+					string prefix = s.Substring(16);
+					if(options.privatePackages == null)
+					{
+						options.privatePackages = new string[] { prefix };
+					}
+					else
+					{
+						string[] temp = new string[options.privatePackages.Length + 1];
+						Array.Copy(options.privatePackages, 0, temp, 0, options.privatePackages.Length);
+						temp[temp.Length - 1] = prefix;
+						options.privatePackages = temp;
+					}
 				}
 				else if(s.StartsWith("-runtime:"))
 				{

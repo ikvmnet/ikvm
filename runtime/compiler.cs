@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1791,7 +1791,23 @@ class Compiler
 						}
 						else
 						{
-							method.EmitCallvirt(ilGenerator);
+							// NOTE this check is written somewhat pessimistically, because we need to
+							// take remapped types into account. For example, Throwable.getClass() "overrides"
+							// the final Object.getClass() method and we don't want to call Object.getClass()
+							// on a Throwable instance, because that would yield unverifiable code (java.lang.Throwable
+							// extends System.Exception instead of java.lang.Object in the .NET type system).
+							if(VerifierTypeWrapper.IsThis(type)
+								&& (method.IsFinal || clazz.IsFinal)
+								&& clazz.GetMethodWrapper(method.Name, method.Signature, true) == method)
+							{
+								// we're calling a method on our own instance that can't possibly be overriden,
+								// so we don't need to use callvirt
+								method.EmitCall(ilGenerator);
+							}
+							else
+							{
+								method.EmitCallvirt(ilGenerator);
+							}
 						}
 						method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
 					}

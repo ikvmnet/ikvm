@@ -404,10 +404,25 @@ namespace IKVM.Attributes
 	public sealed class ModifiersAttribute : Attribute
 	{
 		private Modifiers modifiers;
+		private bool isInternal;
 
 		public ModifiersAttribute(Modifiers modifiers)
 		{
 			this.modifiers = modifiers;
+		}
+
+		public ModifiersAttribute(Modifiers modifiers, bool isInternal)
+		{
+			this.modifiers = modifiers;
+			this.isInternal = isInternal;
+		}
+
+		public bool IsInternal
+		{
+			get
+			{
+				return isInternal;
+			}
 		}
 
 		public Modifiers Modifiers
