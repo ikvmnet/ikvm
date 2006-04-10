@@ -548,12 +548,5 @@ namespace IKVM.Internal
 #endif
 		}
 	}
-
-#if STATIC_COMPILER
-	public abstract class CodeEmitter
-	{
-		internal abstract void Emit(CountingILGenerator ilgen);
-	}
-#endif
 }
 #endif

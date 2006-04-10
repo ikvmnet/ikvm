@@ -88,6 +88,11 @@
         <Files>
             <Include>
                 <File
+                    RelPath = "ikvmc\AotTypeWrapper.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "ikvmc\AssemblyInfo.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
