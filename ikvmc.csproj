@@ -93,6 +93,19 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "ikvmc\Compiler.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ikvmc\CompilerClassLoader.cs"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ikvmc\remapper.cs"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "runtime\BigEndianBinaryReader.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -123,22 +136,12 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "runtime\CompilerClassLoader.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "runtime\CoreClasses.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "runtime\DynamicClassLoader.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ikvmc\Compiler.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -154,11 +157,6 @@
                 />
                 <File
                     RelPath = "runtime\profiler.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "runtime\remapper.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

@@ -1,5 +1,6 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2006 Active Endpoints, Inc.
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,11 +24,14 @@
 */
 
 using System;
+using System.Drawing.Drawing2D;
+using System.IO;
 using System.Threading;
 using System.Windows.Forms;
 using System.Drawing;
 using System.ComponentModel;
 using System.Reflection;
+using System.Text;
 using java.awt.datatransfer;
 using java.awt.image;
 using java.awt.peer;
@@ -264,22 +268,27 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
 		protected override java.awt.peer.MenuPeer createMenu(java.awt.Menu target)
 		{
 			throw new NotImplementedException();
 		}
+
 		protected override java.awt.peer.PopupMenuPeer createPopupMenu(java.awt.PopupMenu target)
 		{
 			throw new NotImplementedException();
 		}
+
 		protected override java.awt.peer.MenuItemPeer createMenuItem(java.awt.MenuItem target)
 		{
 			throw new NotImplementedException();
 		}
+
 		protected override java.awt.peer.FileDialogPeer createFileDialog(java.awt.FileDialog target)
 		{
 			throw new NotImplementedException();
 		}
+
 		protected override java.awt.peer.CheckboxMenuItemPeer createCheckboxMenuItem(java.awt.CheckboxMenuItem target)
 		{
 			throw new NotImplementedException();
@@ -451,6 +460,7 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
+#if false
 		protected override java.awt.peer.LightweightPeer createComponent(java.awt.Component target)
 		{
 			if(target is java.awt.Container)
@@ -459,6 +469,7 @@ namespace ikvm.awt
 			}
 			return new NetLightweightComponentPeer(target);
 		}
+#endif
 
 		public override java.awt.Font createFont(int format, java.io.InputStream stream)
 		{
@@ -493,9 +504,15 @@ namespace ikvm.awt
 
 	class NetGraphicsEnvironment : java.awt.GraphicsEnvironment
 	{
+		// Create a bitmap with the dimensions of the argument image. Then
+		// create a graphics objects from the bitmap. All paint operations will
+		// then paint the bitmap.
 		public override java.awt.Graphics2D createGraphics(BufferedImage bi)
 		{
-			throw new NotImplementedException();
+			Bitmap bitmap = new Bitmap(bi.getWidth(), bi.getHeight());
+			NetGraphics g = new NetGraphics(Graphics.FromImage(bitmap), null, Color.Wheat, true);
+			g.setBitmap(bitmap);
+			return g;
 		}
 
 		public override java.awt.Font[] getAllFonts()
@@ -579,9 +596,9 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public override java.awt.FontMetrics getFontMetrics(java.awt.Font param)
+		public override java.awt.FontMetrics getFontMetrics(java.awt.Font aFont)
 		{
-			throw new NotImplementedException();
+			return new NetFontMetrics(aFont, 0);
 		}
 
 		public override string getGlyphName(java.awt.Font param1, int param2)
@@ -589,9 +606,10 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public override java.awt.font.LineMetrics getLineMetrics(java.awt.Font param1, java.text.CharacterIterator param2, int param3, int param4, java.awt.font.FontRenderContext param5)
+		public override java.awt.font.LineMetrics getLineMetrics(java.awt.Font aFont, java.text.CharacterIterator aCharacterIterator, int aBegin, int aLimit, java.awt.font.FontRenderContext aFontRenderContext)
 		{
-			throw new NotImplementedException();
+			string s = ToString(aCharacterIterator, aBegin, aLimit);
+			return new NetLineMetrics(aFont, s);
 		}
 
 		public override java.awt.geom.Rectangle2D getMaxCharBounds(java.awt.Font param1, java.awt.font.FontRenderContext param2)
@@ -614,9 +632,12 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public override java.awt.geom.Rectangle2D getStringBounds(java.awt.Font param1, java.text.CharacterIterator param2, int param3, int param4, java.awt.font.FontRenderContext param5)
+		public override java.awt.geom.Rectangle2D getStringBounds(java.awt.Font aFont, java.text.CharacterIterator aCharacterIterator, int aBegin, int aLimit, java.awt.font.FontRenderContext aFontRenderContext)
 		{
-			throw new NotImplementedException();
+			NetFontMetrics fontMetrics = (NetFontMetrics) getFontMetrics(aFont);
+			string s = ToString(aCharacterIterator, aBegin, aLimit);
+
+			return fontMetrics.GetStringBounds(s);
 		}
 
 		public override bool hasUniformLineMetrics(java.awt.Font param)
@@ -633,6 +654,21 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
+		private static string ToString(java.text.CharacterIterator aCharacterIterator, int aBegin, int aLimit)
+		{
+			aCharacterIterator.setIndex(aBegin);
+			StringBuilder sb = new StringBuilder();
+
+			for (int i = aBegin; i <= aLimit; ++i)
+			{
+				char c = aCharacterIterator.current();
+				sb.Append(c);
+				aCharacterIterator.next();
+			}
+
+			return sb.ToString();
+		}
 	}
 
 	class NetLightweightComponentPeer : NetComponentPeer, java.awt.peer.LightweightPeer
@@ -646,8 +682,20 @@ namespace ikvm.awt
 	class NetLightweightContainerPeer : NetContainerPeer, java.awt.peer.LightweightPeer
 	{
 		public NetLightweightContainerPeer(java.awt.Container target)
-			: base(target, (ContainerControl)((NetContainerPeer)target.getParent().getPeer()).control)
+			: base(target, GetContainerControl(target.getParent()))
 		{
+		}
+
+		private static ContainerControl GetContainerControl(java.awt.Container aContainer)
+		{
+			ContainerControl control = null;
+
+			if (aContainer != null)
+			{
+				control = (ContainerControl) ((NetContainerPeer) aContainer.getPeer()).control;
+			}
+
+			return control;
 		}
 	}
 
@@ -696,7 +744,7 @@ namespace ikvm.awt
 		}
 	}
 
-	class NetGraphics : java.awt.Graphics2D
+	public class NetGraphics : java.awt.Graphics2D
 	{
 		private bool disposable;
 		private Graphics g;
@@ -706,6 +754,7 @@ namespace ikvm.awt
 		private java.awt.Font font;
 		private Font netfont;
 		private java.awt.Rectangle _clip;
+		private Bitmap mBitmap;
 
 		public NetGraphics(Graphics g, java.awt.Font font, Color bgcolor, bool disposable)
 		{
@@ -724,6 +773,16 @@ namespace ikvm.awt
 			}
 		}
 
+		public Bitmap getBitmap()
+		{
+			return mBitmap;
+		}
+
+		public void setBitmap(Bitmap aBitmap)
+		{
+			mBitmap = aBitmap;
+		}
+
 		public override void clearRect(int x, int y, int width, int height)
 		{
 			using(SolidBrush b = new SolidBrush(bgcolor))
@@ -734,12 +793,10 @@ namespace ikvm.awt
 
 		public override void clipRect(int param1, int param2, int param3, int param4)
 		{
-		
 		}
 
 		public override void copyArea(int param1, int param2, int param3, int param4, int param5, int param6)
 		{
-		
 		}
 
 		public override java.awt.Graphics create(int param1, int param2, int param3, int param4)
@@ -771,22 +828,18 @@ namespace ikvm.awt
 
 		public override void draw3DRect(int param1, int param2, int param3, int param4, bool param5)
 		{
-		
 		}
 
 		public override void drawArc(int param1, int param2, int param3, int param4, int param5, int param6)
 		{
-		
 		}
 
 		public override void drawBytes(byte[] param1, int param2, int param3, int param4, int param5)
 		{
-		
 		}
 
 		public override void drawChars(char[] param1, int param2, int param3, int param4, int param5)
 		{
-		
 		}
 
 		public override bool drawImage(java.awt.Image param1, int param2, int param3, int param4, int param5, int param6, int param7, int param8, int param9, java.awt.Color param10, java.awt.image.ImageObserver param11)
@@ -832,7 +885,7 @@ namespace ikvm.awt
 			}
 			else if(img is NetProducerImage)
 			{
-				Console.WriteLine("TODO: Draw NetProducerImage");
+				g.DrawImage(((NetProducerImage)img).getBitmap(), x, y);
 			}
 			else
 			{
@@ -860,22 +913,45 @@ namespace ikvm.awt
 
 		public override void drawOval(int param1, int param2, int param3, int param4)
 		{
-		
 		}
 
 		public override void drawPolygon(java.awt.Polygon param)
 		{
-		
 		}
 
-		public override void drawPolygon(int[] param1, int[] param2, int param3)
+		public override void drawPolygon(int[] aX, int[] aY, int aLength)
 		{
-		
+			Point[] points = new Point[aLength];
+
+			for (int i = 0; i < aLength; i++)
+			{
+				points[i].X = aX[i];
+				points[i].Y = aY[i];
+			}
+
+			using (Pen pen = new Pen(color))
+			{
+				g.DrawPolygon(pen, points);
+			}
 		}
 
-		public override void drawPolyline(int[] param1, int[] param2, int param3)
+		/// <summary>
+		/// Draw a sequence of connected lines
+		/// </summary>
+		/// <param name="aX">Array of x coordinates</param>
+		/// <param name="aY">Array of y coordinates</param>
+		/// <param name="aLength">Length of coordinate arrays</param>
+		public override void drawPolyline(int[] aX, int[] aY, int aLength)
 		{
-		
+			using (Pen pen = new Pen(color))
+			{
+				for (int i = 0; i < aLength - 1; i++)
+				{
+					Point point1 = new Point(aX[i], aY[i]);
+					Point point2 = new Point(aX[i+1], aY[i+1]);
+					g.DrawLine(pen, point1, point2);
+				}
+			}
 		}
 
 		public override void drawRect(int x, int y, int width, int height)
@@ -883,17 +959,51 @@ namespace ikvm.awt
 			using(Pen pen = new Pen(color))
 			{
 				g.DrawRectangle(pen, x, y, width, height);
-			}		
+			}
 		}
 
-		public override void drawRoundRect(int param1, int param2, int param3, int param4, int param5, int param6)
+		/// <summary>
+		/// Apparently there is no rounded rec function in .Net. Draw the
+		/// rounded rectangle by using lines and arcs.
+		/// </summary>
+		public override void drawRoundRect(int x, int y, int w, int h, int radius, int param6)
 		{
-		
+			using (GraphicsPath gp = createRoundRect(x, y, w, h, radius))
+			using (Pen pen = new Pen(color))
+			{
+				g.DrawPath(pen, gp);
+			}
+		}
+
+		/// <summary>
+		/// Create a rounded rectangle using lines and arcs
+		/// </summary>
+		/// <param name="x">upper left x coordinate</param>
+		/// <param name="y">upper left y coordinate</param>
+		/// <param name="w">width</param>
+		/// <param name="h">height</param>
+		/// <param name="radius">radius of arc</param>
+		/// <returns></returns>
+		private GraphicsPath createRoundRect(int x, int y, int w, int h, int radius)
+		{
+			GraphicsPath gp = new GraphicsPath();
+
+			gp.AddLine(x + radius, y, x + w - (radius * 2), y);
+			gp.AddArc(x + w - (radius * 2), y, radius * 2, radius * 2, 270, 90);
+			gp.AddLine(x + w, y + radius, x + w, y + h - (radius * 2));
+			gp.AddArc(x + w - (radius * 2), y + h - (radius * 2), radius * 2, radius * 2, 0, 90);
+			gp.AddLine(x + w - (radius * 2), y + h, x + radius, y + h);
+			gp.AddArc(x, y + h - (radius * 2), radius * 2, radius * 2, 90, 90);
+			gp.AddLine(x, y + h - (radius * 2), x, y + radius);
+			gp.AddArc(x, y, radius * 2, radius * 2, 180, 90);
+
+			gp.CloseFigure();
+
+			return gp;
 		}
 
 		public override void drawString(java.text.AttributedCharacterIterator param1, int param2, int param3)
 		{
-		
 		}
 
 		public override void drawString(string str, int x, int y)
@@ -908,27 +1018,41 @@ namespace ikvm.awt
 
 		public override void fill3DRect(int param1, int param2, int param3, int param4, bool param5)
 		{
-		
 		}
 
 		public override void fillArc(int param1, int param2, int param3, int param4, int param5, int param6)
 		{
-		
 		}
 
 		public override void fillOval(int param1, int param2, int param3, int param4)
 		{
-		
 		}
 
-		public override void fillPolygon(java.awt.Polygon param)
+		public override void fillPolygon(java.awt.Polygon aPolygon)
 		{
-		
+			Point[] points = new Point[aPolygon.npoints];
+
+			for (int i = 0; i < aPolygon.npoints; i++)
+			{
+				points[i].X = aPolygon.xpoints[i];
+				points[i].Y = aPolygon.ypoints[i];
+			}
+
+			g.FillPolygon(new SolidBrush(color), points);
+
 		}
 
-		public override void fillPolygon(int[] param1, int[] param2, int param3)
+		public override void fillPolygon(int[] aX, int[] aY, int aLength)
 		{
-		
+			Point[] points = new Point[aLength];
+
+			for (int i = 0; i < aLength; i++)
+			{
+				points[i].X = aX[i];
+				points[i].Y = aY[i];
+			}
+
+			g.FillPolygon(new SolidBrush(color), points);
 		}
 
 		public override void fillRect(int x, int y, int width, int height)
@@ -939,9 +1063,12 @@ namespace ikvm.awt
 			}
 		}
 
-		public override void fillRoundRect(int param1, int param2, int param3, int param4, int param5, int param6)
+		public override void fillRoundRect(int x, int y, int w, int h, int radius, int param6)
 		{
-		
+			GraphicsPath gp = createRoundRect(x, y, w, h, radius);
+
+			g.FillPath(new SolidBrush(color), gp);
+			gp.Dispose();
 		}
 
 		public override java.awt.Shape getClip()
@@ -1060,7 +1187,7 @@ namespace ikvm.awt
 		public override void setClip(java.awt.Shape param)
 		{
 			// NOTE we only support rectangular clipping for the moment
-			java.awt.Rectangle r = param.getBounds();			
+			java.awt.Rectangle r = param.getBounds();
 			setClip(r.x, r.y, r.width, r.height);
 		}
 
@@ -1085,12 +1212,10 @@ namespace ikvm.awt
 
 		public override void setPaintMode()
 		{
-		
 		}
 
 		public override void setXORMode(java.awt.Color param)
 		{
-		
 		}
 
 		public override void translate(int x, int y)
@@ -1124,7 +1249,7 @@ namespace ikvm.awt
 		public override void drawString(string text, float x, float y)
 		{
 		}
-    
+
 		public override void drawString(java.text.AttributedCharacterIterator iterator, float x, float y)
 		{
 		}
@@ -1132,7 +1257,7 @@ namespace ikvm.awt
 		public override void fill(java.awt.Shape shape)
 		{
 		}
-    
+
 		public override bool hit(java.awt.Rectangle rect, java.awt.Shape text, bool onStroke)
 		{
 			return false;
@@ -1146,7 +1271,7 @@ namespace ikvm.awt
 		public override void setComposite(java.awt.Composite comp)
 		{
 		}
-    
+
 		public override void setPaint(java.awt.Paint paint)
 		{
 		}
@@ -1163,7 +1288,7 @@ namespace ikvm.awt
 		{
 			return null;
 		}
-  
+
 		public override void setRenderingHints(java.util.Map hints)
 		{
 		}
@@ -1180,7 +1305,7 @@ namespace ikvm.awt
 		public override void translate(double tx, double ty)
 		{
 		}
-    
+
 		public override void rotate(double theta)
 		{
 		}
@@ -1200,7 +1325,7 @@ namespace ikvm.awt
 		public override void transform(java.awt.geom.AffineTransform Tx)
 		{
 		}
-  
+
 		public override void setTransform(java.awt.geom.AffineTransform Tx)
 		{
 		}
@@ -1248,9 +1373,10 @@ namespace ikvm.awt
 		}
 	}
 
-	class NetFontMetrics : java.awt.FontMetrics
+	class NetFontMetrics : java.awt.FontMetrics, IDisposable
 	{
 		private float dpi;
+		private Font mFont;
 
 		public NetFontMetrics(java.awt.Font font, float dpi) : base(font)
 		{
@@ -1259,28 +1385,30 @@ namespace ikvm.awt
 
 		private Font RealizeFont()
 		{
-			if(dpi == 0)
+			if (mFont == null)
 			{
-				using(Graphics g = NetToolkit.bogusForm.CreateGraphics())
+				if (dpi == 0)
 				{
-					dpi = g.DpiY;
+					using (Graphics g = NetToolkit.bogusForm.CreateGraphics())
+					{
+						dpi = g.DpiY;
+					}
 				}
+
+				mFont = NetGraphics.NetFontFromJavaFont(getFont(), dpi);
 			}
-			return NetGraphics.NetFontFromJavaFont(getFont(), dpi);
+
+			return mFont;
 		}
 
 		public override int getHeight()
 		{
-			using(Font f = RealizeFont())
-			{
-				return f.Height;
-			}
+			return RealizeFont().Height;
 		}
 
 		public override int getLeading()
 		{
-			// HACK we always return 1
-			return 1;
+			return (int) Math.Round(GetLeadingFloat());
 		}
 
 		public override int getMaxAdvance()
@@ -1302,30 +1430,72 @@ namespace ikvm.awt
 
 		public override int getAscent()
 		{
-			using(Font f = RealizeFont())
-			{
-				int ascent = f.FontFamily.GetCellAscent(f.Style);
-				return (int)Math.Round(f.Size * ascent / f.FontFamily.GetEmHeight(f.Style));
-			}
+			return (int) Math.Round(GetAscentFloat());
 		}
 
 		public override int getDescent()
 		{
-			using(Font f = RealizeFont())
-			{
-				int descent = f.FontFamily.GetCellDescent(f.Style);
-				return (int)Math.Round(f.Size * descent / f.FontFamily.GetEmHeight(f.Style));
-			}
+			return (int) Math.Round(GetDescentFloat());
 		}
 
 		public override int stringWidth(string s)
 		{
-			using(Font f = RealizeFont())
-			using(Graphics g = NetToolkit.bogusForm.CreateGraphics())
+			return (int) Math.Round(GetStringBounds(s).getWidth());
+		}
+
+		public float GetAscentFloat()
+		{
+			Font f = RealizeFont();
+			int ascent = f.FontFamily.GetCellAscent(f.Style);
+			return f.Size * ascent / f.FontFamily.GetEmHeight(f.Style);
+		}
+
+		public float GetDescentFloat()
+		{
+			Font f = RealizeFont();
+			int descent = f.FontFamily.GetCellDescent(f.Style);
+			return f.Size * descent / f.FontFamily.GetEmHeight(f.Style);
+		}
+
+		public float GetLeadingFloat()
+		{
+			float leading = getHeight() - (GetAscentFloat() + GetDescentFloat());
+			return Math.Max(0.0f, leading);
+		}
+
+		public java.awt.geom.Rectangle2D GetStringBounds(String aString)
+		{
+			using (Graphics g = NetToolkit.bogusForm.CreateGraphics())
 			{
-				return (int)Math.Round(g.MeasureString(s, f).Width);
+				// TODO (KR) Could replace with System.Windows.Forms.TextRenderer#MeasureText (to skip creating Graphics)
+				//
+				// From .NET Framework Class Library documentation for Graphics#MeasureString:
+				//
+				//    To obtain metrics suitable for adjacent strings in layout (for
+				//    example, when implementing formatted text), use the
+				//    MeasureCharacterRanges method or one of the MeasureString
+				//    methods that takes a StringFormat, and pass GenericTypographic.
+				//    Also, ensure the TextRenderingHint for the Graphics is
+				//    AntiAlias.
+				//
+				// TODO (KR) Consider implementing with one of the Graphics#MeasureString methods that takes a StringFormat.
+				// TODO (KR) Consider implementing with Graphics#MeasureCharacterRanges().
+				SizeF size = g.MeasureString(aString, RealizeFont(), Int32.MaxValue, StringFormat.GenericTypographic);
+				return new java.awt.geom.Rectangle2D.Float(0, 0, size.Width, size.Height);
 			}
 		}
+
+		#region IDisposable Members
+
+		public void Dispose()
+		{
+			if (mFont != null)
+			{
+				mFont.Dispose();
+			}
+		}
+
+		#endregion
 	}
 
 	class NetComponentPeer : ComponentPeer
@@ -1998,6 +2168,18 @@ namespace ikvm.awt
 	{
 		private java.awt.image.ImageProducer source;
 
+		private int mHeight = 0;
+
+		private int mWidth = 0;
+
+		private int mHintFlags = 0;
+
+		private ColorModel mColorModel = null;
+
+		private Hashtable mProperties;
+
+		private Bitmap mBitmap;
+
 		internal NetProducerImage(java.awt.image.ImageProducer source)
 		{
 			this.source = source;
@@ -2005,7 +2187,6 @@ namespace ikvm.awt
 
 		public override void flush()
 		{
-
 		}
 
 		public override java.awt.Graphics getGraphics()
@@ -2015,12 +2196,12 @@ namespace ikvm.awt
 
 		public override int getHeight(ImageObserver param)
 		{
-			return 0;
+			return mHeight;
 		}
 
 		public override int getWidth(ImageObserver param)
 		{
-			return 0;
+			return mWidth;
 		}
 
 		public override object getProperty(string param, ImageObserver obs)
@@ -2030,42 +2211,71 @@ namespace ikvm.awt
 
 		public override ImageProducer getSource()
 		{
-			return null;
+			return source;
 		}
 
 		public void setHints(int hintflags)
 		{
-			Console.WriteLine("NetBufferedImage: setHints");
+			mHintFlags = hintflags;
 		}
 
 		public void setPixels(int x, int y, int w, int h, ColorModel model, byte[] pixels, int off, int scansize)
 		{
-			Console.WriteLine("NetBufferedImage: setPixels1");
+			Console.WriteLine("NetBufferedImage: setPixels");
 		}
 
-		void java.awt.image.ImageConsumer.setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize)
+		/// <summary>
+		/// Create a bitmap from the pixel array. The bitmap will be used
+		/// by drawImage.
+		/// </summary>
+		void java.awt.image.ImageConsumer.setPixels(int aX, int aY, int w, int h, ColorModel model, int[] pixels, int off, int scansize)
 		{
-			Console.WriteLine("NetBufferedImage: setPixels2");
+			mWidth = w;
+			mHeight = h;
+			mColorModel = model;
+			mBitmap = new Bitmap(mWidth, mHeight);
+			int pixel = 0;
+			for (int y = 0; y < mHeight; ++y)
+			{
+				for (int x = 0; x < mWidth; x++)
+				{
+					uint argb = (uint)pixels[pixel++];
+					int blue = (int)argb & 0xff;
+					argb >>= 8;
+					int green = (int)argb & 0xff;
+					argb >>= 8;
+					int red = (int)argb & 0xff;
+					argb >>= 8;
+					int alpha = (int)argb & 0xff;
+					mBitmap.SetPixel(x, y, Color.FromArgb(alpha, red, green, blue));
+				}
+			}
+		}
+
+		public Bitmap getBitmap()
+		{
+			return mBitmap;
 		}
 
 		public void setDimensions(int width, int height)
 		{
-			Console.WriteLine("NetBufferedImage: setDimensions");
+			mWidth = width;
+			mHeight = height;
 		}
 
 		public void imageComplete(int status)
 		{
-			Console.WriteLine("NetBufferedImage: imageComplete");
+			// Console.WriteLine("NetBufferedImage: imageComplete");
 		}
 
 		public void setColorModel(ColorModel model)
 		{
-			Console.WriteLine("NetBufferedImage: setColorModel");
+			mColorModel = model;
 		}
 
 		public void setProperties(Hashtable props)
 		{
-			Console.WriteLine("NetBufferedImage: setProperties");
+			mProperties = props;
 		}
 	}
 
@@ -2260,7 +2470,7 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
-		
+
 		private void setCaretPositionImpl(int pos)
 		{
 			((TextBox)control).SelectionStart = pos;
@@ -2271,14 +2481,17 @@ namespace ikvm.awt
 		{
 			control.Invoke(new SetInt(setCaretPositionImpl), new object[] { pos });
 		}
+
 		public long filterEvents(long filter)
 		{
 			throw new NotImplementedException();
 		}
+
 		public int getIndexAtPoint(int x, int y)
 		{
 			throw new NotImplementedException();
 		}
+
 		public java.awt.Rectangle getCharacterBounds(int pos)
 		{
 			throw new NotImplementedException();
@@ -2322,7 +2535,6 @@ namespace ikvm.awt
 			// TODO:  Add NetChoicePeer.remove implementation
 		}
 	}
-
 
 	class NetCheckboxPeer : NetComponentPeer, CheckboxPeer
 	{
@@ -2530,14 +2742,17 @@ namespace ikvm.awt
 		public void endValidate()
 		{
 		}
+
 		public void beginLayout()
 		{
 			throw new NotImplementedException();
 		}
+
 		public void endLayout()
 		{
 			throw new NotImplementedException();
 		}
+
 		public bool isPaintPending()
 		{
 			throw new NotImplementedException();
@@ -2552,7 +2767,7 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
-  
+
 		public void restack()
 		{
 			throw new NotImplementedException();
@@ -2683,18 +2898,22 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
 		public void setMenuBar(java.awt.MenuBar mb)
 		{
 			throw new NotImplementedException();
 		}
+
 		public void setResizable(bool resizable)
 		{
 			throw new NotImplementedException();
 		}
+
 		private void setTitleImpl(string title)
 		{
 			control.Text = title;
 		}
+
 		public void setTitle(string title)
 		{
 			control.Invoke(new SetString(setTitleImpl), new object[] { title });
@@ -2715,10 +2934,12 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
 		public void setState(int state)
 		{
 			throw new NotImplementedException();
 		}
+
 		public void setMaximizedBounds(java.awt.Rectangle r)
 		{
 			throw new NotImplementedException();
@@ -2832,6 +3053,78 @@ namespace ikvm.awt
 		}
 
 		public java.awt.Dimension getMinimumSize(int s)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	class NetLineMetrics : java.awt.font.LineMetrics
+	{
+		private java.awt.Font mFont;
+		private String mString;
+		private NetFontMetrics mFontMetrics;
+
+		public NetLineMetrics(java.awt.Font aFont, String aString)
+		{
+			mFont = aFont;
+			mString = aString;
+			mFontMetrics = new NetFontMetrics(aFont, 0);
+		}
+
+		public override float getAscent()
+		{
+			return mFontMetrics.GetAscentFloat();
+		}
+
+		public override int getBaselineIndex()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override float[] getBaselineOffsets()
+		{
+			// TODO (KR) Probably could implement with Graphics#MeasureCharacterRanges(), if called.
+			throw new NotImplementedException();
+		}
+
+		public override float getDescent()
+		{
+			return mFontMetrics.GetDescentFloat();
+		}
+
+		public override float getHeight()
+		{
+			// TODO (KR) Could implement with Graphics#MeasureString().
+			// TODO (KR) Consider implementing with Graphics#MeasureCharacterRanges().
+			return mFontMetrics.getHeight();
+		}
+
+		public override float getLeading()
+		{
+			return mFontMetrics.GetLeadingFloat();
+		}
+
+		public override int getNumChars()
+		{
+			return mString.Length;
+		}
+
+		public override float getStrikethroughOffset()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override float getStrikethroughThickness()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override float getUnderlineOffset()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override float getUnderlineThickness()
 		{
 			throw new NotImplementedException();
 		}
