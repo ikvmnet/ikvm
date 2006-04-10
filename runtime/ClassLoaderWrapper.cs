@@ -28,7 +28,6 @@ using System.Reflection.Emit;
 #endif
 using System.IO;
 using System.Collections;
-using System.Xml;
 using System.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Runtime;
@@ -44,7 +43,9 @@ namespace IKVM.Internal
 #endif
 		private static readonly Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable());
 		private static ClassLoaderWrapper bootstrapClassLoader;
+#if !STATIC_COMPILER
 		private static ClassLoaderWrapper systemClassLoader;
+#endif
 		private object javaClassLoader;
 		protected Hashtable types = new Hashtable();
 		private ArrayList nativeLibraries;
@@ -440,6 +441,7 @@ namespace IKVM.Internal
 					return GetBootstrapClassLoader().LoadClassByDottedNameFast(name, throwClassNotFoundException);
 				}
 #endif
+#if !STATIC_COMPILER
 				// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
 				lock(javaClassLoader)
 				{
@@ -465,6 +467,9 @@ namespace IKVM.Internal
 					// while we're holding the lock on the class loader object
 					return RegisterInitiatingLoader(type);
 				}
+#else
+				return null;
+#endif
 			}
 			finally
 			{
@@ -844,18 +849,19 @@ namespace IKVM.Internal
 
 		internal static ClassLoaderWrapper GetSystemClassLoader()
 		{
+#if STATIC_COMPILER
 			// during static compilation, we don't have a system class loader
-			if(JVM.IsStaticCompiler)
-			{
-				return GetBootstrapClassLoader();
-			}
+			return GetBootstrapClassLoader();
+#else
 			if(systemClassLoader == null)
 			{
 				systemClassLoader = GetClassLoaderWrapper(JVM.Library.getSystemClassLoader());
 			}
 			return systemClassLoader;
+#endif
 		}
-	
+
+#if !STATIC_COMPILER
 		internal static ClassLoaderWrapper GetClassLoaderWrapper(object javaClassLoader)
 		{
 			if(javaClassLoader == null || GetBootstrapClassLoader().javaClassLoader == javaClassLoader)
@@ -873,6 +879,7 @@ namespace IKVM.Internal
 				return wrapper;
 			}
 		}
+#endif
 
 		// This only returns the wrapper for a Type if that wrapper has already been created, otherwise
 		// it returns null
@@ -932,12 +939,14 @@ namespace IKVM.Internal
 			typeToTypeWrapper.Add(type, wrapper);
 		}
 
+#if STATIC_COMPILER
 		internal static void PublishLibraryImplementationHelperType(Type type)
 		{
 			CompiledTypeWrapper typeWrapper = CompiledTypeWrapper.newInstance(type.FullName, type);
 			SetWrapperForType(type, typeWrapper);
 			GetBootstrapClassLoader().types[type.FullName] = typeWrapper;
 		}
+#endif // STATIC_COMPILER
 
 		internal static TypeWrapper LoadClassCritical(string name)
 		{

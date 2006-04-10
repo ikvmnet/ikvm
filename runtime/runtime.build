@@ -27,7 +27,27 @@
         </if>
         <csc target="library" output="../bin/IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="true">
             <sources>
-                <include name="*.cs" />
+                <include name="AssemblyInfo.cs" />
+                <include name="attributes.cs" />
+                <include name="BigEndianBinaryReader.cs" />
+                <include name="ByteCode.cs" />
+                <include name="ByteCodeHelper.cs" />
+                <include name="ClassFile.cs" />
+                <include name="ClassLoaderWrapper.cs" />
+                <include name="classpath.cs" />
+                <include name="CodeEmitter.cs" />
+                <include name="compiler.cs" />
+                <include name="CoreClasses.cs" />
+                <include name="DynamicClassLoader.cs" />
+                <include name="ExceptionHelper.cs" />
+                <include name="JavaException.cs" />
+                <include name="JniInterface.cs" />
+                <include name="MemberWrapper.cs" />
+                <include name="profiler.cs" />
+                <include name="tracer.cs" />
+                <include name="TypeWrapper.cs" />
+                <include name="verifier.cs" />
+                <include name="vm.cs" />
             </sources>
         </csc>
     </target>

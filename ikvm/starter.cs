@@ -100,7 +100,7 @@ public class Starter
 			Console.Error.WriteLine("Saving dynamic assembly...");
 			try
 			{
-				JVM.SaveDebugImage(clazz);
+				IKVM.Internal.Starter.SaveDebugImage(clazz);
 				Console.Error.WriteLine("Saving done.");
 			}
 			catch(Exception x)
@@ -154,12 +154,12 @@ public class Starter
 				else if(args[i] == "-Xsave")
 				{
 					saveAssembly = true;
-					JVM.PrepareForSaveDebugImage();
+					IKVM.Internal.Starter.PrepareForSaveDebugImage();
 				}
 				else if(args[i] == "-XXsave")
 				{
 					saveAssemblyX = true;
-					JVM.PrepareForSaveDebugImage();
+					IKVM.Internal.Starter.PrepareForSaveDebugImage();
 				}
 				else if(args[i] == "-Xtime")
 				{
@@ -335,7 +335,7 @@ public class Starter
 			}
 			if(bootclasspath != null)
 			{
-				JVM.SetBootstrapClassLoader(new PathClassLoader(bootclasspath, null));
+				IKVM.Internal.Starter.SetBootstrapClassLoader(new PathClassLoader(bootclasspath, null));
 			}
 			java.lang.Class clazz = java.lang.Class.forName(mainClass, true, java.lang.ClassLoader.getSystemClassLoader());
 			Method method = FindMainMethod(clazz);
@@ -372,7 +372,7 @@ public class Starter
 				{
 					if(saveAssemblyX)
 					{
-						JVM.SaveDebugImage(clazz);
+						IKVM.Internal.Starter.SaveDebugImage(clazz);
 					}
 				}
 			}
@@ -393,7 +393,7 @@ public class Starter
 	{
 		// HACK without this hack, clazz.getDeclaredMethods would throw a NoClassDefFoundError if any
 		// of the methods in the class had an unloadable parameter type, but we don't want that.
-		JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters = true;
+		IKVM.Internal.Starter.EnableReflectionOnMethodsWithUnloadableTypeParameters = true;
 		try
 		{
 			while(clazz != null)
@@ -415,7 +415,7 @@ public class Starter
 		}
 		finally
 		{
-			JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters = false;
+			IKVM.Internal.Starter.EnableReflectionOnMethodsWithUnloadableTypeParameters = false;
 		}
 	}
 }

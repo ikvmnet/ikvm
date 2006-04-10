@@ -79,9 +79,14 @@ namespace IKVM.Internal
 			{
 				type.Finish();
 			}
+#if !STATIC_COMPILER
 			catch(RetargetableJavaException x)
 			{
 				throw x.ToJava();
+			}
+#endif // !STATIC_COMPILER
+			finally
+			{
 			}
 			// NOTE We used to remove the type from the hashtable here, but that creates a race condition if
 			// another thread also fires the OnTypeResolve event while we're baking the type.
@@ -125,10 +130,9 @@ namespace IKVM.Internal
 						Debug.Assert(!dynamicTypes.ContainsKey(type.TypeAsTBD.FullName));
 						dynamicTypes.Add(type.TypeAsTBD.FullName, type);
 						types[f.Name] = type;
-						if (!JVM.IsStaticCompiler)
-						{
-							type.SetClassObject(JVM.Library.newClass(type, protectionDomain));
-						}
+#if !STATIC_COMPILER
+						type.SetClassObject(JVM.Library.newClass(type, protectionDomain));
+#endif
 					}
 					else
 					{
@@ -171,9 +175,9 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static void FinishAll()
+		internal static void FinishAll(bool forDebug)
 		{
-			JVM.FinishingForDebugSave = true;
+			JVM.FinishingForDebugSave = forDebug;
 			while(dynamicTypes.Count > 0)
 			{
 				ArrayList l = new ArrayList(dynamicTypes.Values);
@@ -187,9 +191,10 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER
 		internal static void SaveDebugImage(object mainClass)
 		{
-			FinishAll();
+			FinishAll(true);
 			TypeWrapper mainTypeWrapper = TypeWrapper.FromClass(mainClass);
 			mainTypeWrapper.Finish();
 			Type mainType = mainTypeWrapper.TypeAsTBD;
@@ -205,6 +210,7 @@ namespace IKVM.Internal
 				}
 			}
 		}
+#endif
 
 		internal static void RegisterForSaveDebug(AssemblyBuilder ab)
 		{
@@ -272,10 +278,9 @@ namespace IKVM.Internal
 				// FXBUG the 1.1 CLR doesn't like type names that end with a period.
 				if(nameClashHash.ContainsKey(name) || name.EndsWith("."))
 				{
-					if(JVM.IsStaticCompiler)
-					{
-						Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", name);
-					}
+#if STATIC_COMPILER
+					Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", name);
+#endif
 					return name + "/" + instanceId;
 				}
 				else

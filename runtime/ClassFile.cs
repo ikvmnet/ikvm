@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -412,8 +412,9 @@ namespace IKVM.Internal
 							}
 							annotations = ReadAnnotations(br, this);
 							break;
+#if STATIC_COMPILER
 						case "RuntimeInvisibleAnnotations":
-							if(majorVersion < 49 || !JVM.IsStaticCompiler)
+							if(majorVersion < 49)
 							{
 								goto default;
 							}
@@ -426,6 +427,7 @@ namespace IKVM.Internal
 								}
 							}
 							break;
+#endif
 						case "IKVM.NET.Assembly":
 							if(br.ReadUInt32() != 2)
 							{
@@ -1124,7 +1126,10 @@ namespace IKVM.Internal
 			}
 			catch(RetargetableJavaException x)
 			{
-				if(!JVM.IsStaticCompiler && Tracer.ClassLoading.TraceError)
+				// HACK keep the compiler from warning about unused local
+				GC.KeepAlive(x);
+#if !STATIC_COMPILER
+				if(Tracer.ClassLoading.TraceError)
 				{
 					object cl = classLoader.GetJavaClassLoader();
 					if(cl != null)
@@ -1151,6 +1156,7 @@ namespace IKVM.Internal
 					Exception m = IKVM.Runtime.Util.MapException(x.ToJava());
 					Tracer.Error(Tracer.ClassLoading, m.ToString() + Environment.NewLine + m.StackTrace);
 				}
+#endif // !STATIC_COMPILER
 				return new UnloadableTypeWrapper(name);
 			}
 		}
@@ -1928,8 +1934,9 @@ namespace IKVM.Internal
 							}
 							annotations = ReadAnnotations(br, classFile);
 							break;
+#if STATIC_COMPILER
 						case "RuntimeInvisibleAnnotations":
-							if(classFile.MajorVersion < 49 || !JVM.IsStaticCompiler)
+							if(classFile.MajorVersion < 49)
 							{
 								goto default;
 							}
@@ -1942,6 +1949,7 @@ namespace IKVM.Internal
 								}
 							}
 							break;
+#endif
 						default:
 							br.Skip(br.ReadUInt32());
 							break;
@@ -2066,8 +2074,9 @@ namespace IKVM.Internal
 							}
 							break;
 						}
+#if STATIC_COMPILER
 						case "RuntimeInvisibleAnnotations":
-							if(classFile.MajorVersion < 49 || !JVM.IsStaticCompiler)
+							if(classFile.MajorVersion < 49)
 							{
 								goto default;
 							}
@@ -2080,6 +2089,7 @@ namespace IKVM.Internal
 								}
 							}
 							break;
+#endif
 						default:
 							br.Skip(br.ReadUInt32());
 							break;

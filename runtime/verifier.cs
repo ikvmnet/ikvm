@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2480,10 +2480,12 @@ class MethodAnalyzer
 							if(classFile.GetConstantPoolConstantType(instructions[i].Arg1) == ClassFile.ConstantType.Class)
 							{
 								TypeWrapper tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
-								if(tw.IsUnloadable && JVM.DisableDynamicBinding)
+#if STATIC_COMPILER
+								if(tw.IsUnloadable)
 								{
 									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
 								}
+#endif
 							}
 							break;
 						case NormalizedByteCode.__new:
@@ -2491,10 +2493,9 @@ class MethodAnalyzer
 							TypeWrapper tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
 							if(tw.IsUnloadable)
 							{
-								if(JVM.DisableDynamicBinding)
-								{
-									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
-								}
+#if STATIC_COMPILER
+								instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
+#endif
 							}
 							else if(!tw.IsAccessibleFrom(wrapper))
 							{
@@ -2512,10 +2513,9 @@ class MethodAnalyzer
 							TypeWrapper tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
 							if(tw.IsUnloadable)
 							{
-								if(JVM.DisableDynamicBinding)
-								{
-									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
-								}
+#if STATIC_COMPILER
+								instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
+#endif
 							}
 							else if(!tw.IsAccessibleFrom(wrapper))
 							{
@@ -2549,10 +2549,9 @@ class MethodAnalyzer
 							}
 							else if(tw.IsUnloadable)
 							{
-								if(JVM.DisableDynamicBinding)
-								{
-									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
-								}
+#if STATIC_COMPILER
+								instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
+#endif
 							}
 							else
 							{
@@ -2571,10 +2570,9 @@ class MethodAnalyzer
 							TypeWrapper tw = stack.PopArrayType();
 							if(tw.IsUnloadable)
 							{
-								if(JVM.DisableDynamicBinding)
-								{
-									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
-								}
+#if STATIC_COMPILER
+								instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
+#endif
 							}
 							else
 							{
@@ -2915,37 +2913,34 @@ class MethodAnalyzer
 
 		if(cpi.GetClassType().IsUnloadable || (thisType != null && thisType.IsUnloadable))
 		{
-			if(JVM.DisableDynamicBinding)
+#if STATIC_COMPILER
+			instr.SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(cpi.GetClassType().Name));
+#else
+			switch(invoke)
 			{
-				instr.SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(cpi.GetClassType().Name));
+				case NormalizedByteCode.__invokeinterface:
+					instr.PatchOpCode(NormalizedByteCode.__dynamic_invokeinterface);
+					break;
+				case NormalizedByteCode.__invokestatic:
+					instr.PatchOpCode(NormalizedByteCode.__dynamic_invokestatic);
+					break;
+				case NormalizedByteCode.__invokevirtual:
+					instr.PatchOpCode(NormalizedByteCode.__dynamic_invokevirtual);
+					break;
+				case NormalizedByteCode.__invokespecial:
+					if(isnew)
+					{
+						instr.PatchOpCode(NormalizedByteCode.__dynamic_invokespecial);
+					}
+					else
+					{
+						instr.SetHardError(HardError.LinkageError, AllocErrorMessage("Base class no longer loadable"));
+					}
+					break;
+				default:
+					throw new InvalidOperationException();
 			}
-			else
-			{
-				switch(invoke)
-				{
-					case NormalizedByteCode.__invokeinterface:
-						instr.PatchOpCode(NormalizedByteCode.__dynamic_invokeinterface);
-						break;
-					case NormalizedByteCode.__invokestatic:
-						instr.PatchOpCode(NormalizedByteCode.__dynamic_invokestatic);
-						break;
-					case NormalizedByteCode.__invokevirtual:
-						instr.PatchOpCode(NormalizedByteCode.__dynamic_invokevirtual);
-						break;
-					case NormalizedByteCode.__invokespecial:
-						if(isnew)
-						{
-							instr.PatchOpCode(NormalizedByteCode.__dynamic_invokespecial);
-						}
-						else
-						{
-							instr.SetHardError(HardError.LinkageError, AllocErrorMessage("Base class no longer loadable"));
-						}
-						break;
-					default:
-						throw new InvalidOperationException();
-				}
-			}
+#endif
 		}
 		else if(cpi.GetClassType().IsInterface != (invoke == NormalizedByteCode.__invokeinterface))
 		{
@@ -3081,11 +3076,9 @@ class MethodAnalyzer
 		}
 		else if(cpi.GetClassType().IsUnloadable || (thisType != null && thisType.IsUnloadable))
 		{
-			if(JVM.DisableDynamicBinding)
-			{
-				instr.SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(cpi.GetClassType().Name));
-				return;
-			}
+#if STATIC_COMPILER
+			instr.SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(cpi.GetClassType().Name));
+#else
 			switch(instr.NormalizedOpCode)
 			{
 				case NormalizedByteCode.__getstatic:
@@ -3103,6 +3096,7 @@ class MethodAnalyzer
 				default:
 					throw new InvalidOperationException();
 			}
+#endif
 			return;
 		}
 		else

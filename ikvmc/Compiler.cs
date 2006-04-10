@@ -30,7 +30,7 @@ using System.Threading;
 using ICSharpCode.SharpZipLib.Zip;
 using IKVM.Internal;
 
-class Compiler
+class IkvmcCompiler
 {
 	private static string manifestMainClass;
 	private static ArrayList classes = new ArrayList();

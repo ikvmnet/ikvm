@@ -33,8 +33,46 @@ using System.Security.Permissions;
 using IKVM.Attributes;
 using IKVM.Internal;
 
+#if !STATIC_COMPILER
+namespace IKVM.Internal
+{
+	public sealed class Starter
+	{
+		private Starter() {}
+
+		public static void PrepareForSaveDebugImage()
+		{
+			DynamicClassLoader.PrepareForSaveDebugImage();
+		}
+	
+		public static void SaveDebugImage(object mainClass)
+		{
+			DynamicClassLoader.SaveDebugImage(mainClass);
+		}
+
+		public static void SetBootstrapClassLoader(object classLoader)
+		{
+			ClassLoaderWrapper.GetBootstrapClassLoader().SetJavaClassLoader(classLoader);
+		}
+
+		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters
+		{
+			get
+			{
+				return JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters;
+			}
+			set
+			{
+				JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters = value;
+			}
+		}
+	}
+}
+#endif // !STATIC_COMPILER
+
 namespace IKVM.Runtime
 {
+#if !STATIC_COMPILER
 	public sealed class Startup
 	{
 		private Startup()
@@ -332,21 +370,29 @@ namespace IKVM.Runtime
 			return IKVM.Internal.JVM.Library.mapException(x);
 		}
 	}
+#endif
 }
 
 namespace IKVM.Internal
 {
-	public class JVM
+	class JVM
 	{
+#if STATIC_COMPILER
+		internal const bool IsStaticCompiler = true;
+#else
+		internal const bool IsStaticCompiler = false;
+#endif
+
 		private static bool debug = System.Diagnostics.Debugger.IsAttached;
 		private static bool noJniStubs;
-		private static bool isStaticCompiler;
 		private static bool isIkvmStub;
 		private static bool noStackTraceInfo;
 		private static bool compilationPhase1;
 		private static string sourcePath;
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
+#if !STATIC_COMPILER
 		private static ikvm.@internal.LibraryVMInterface lib;
+#endif
 		private static bool strictFinalFieldSemantics;
 		private static bool finishingForDebugSave;
 		private static Assembly coreAssembly;
@@ -431,6 +477,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
+#if !STATIC_COMPILER
 				if(coreAssembly == null)
 				{
 					object lib = Library;
@@ -439,6 +486,7 @@ namespace IKVM.Internal
 						coreAssembly = lib.GetType().Assembly;
 					}
 				}
+#endif
 				return coreAssembly;
 			}
 			set
@@ -447,16 +495,11 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER
 		internal static ikvm.@internal.LibraryVMInterface Library
 		{
 			get
 			{
-#if WHIDBEY
-				if(JVM.IsStaticCompiler)
-				{
-					return null;
-				}
-#endif
 				if(lib == null)
 				{
 					foreach(Assembly asm in UnsafeGetAssemblies())
@@ -474,7 +517,7 @@ namespace IKVM.Internal
 							break;
 						}
 					}
-					if(lib == null && !IsStaticCompiler)
+					if(lib == null)
 					{
 						JVM.CriticalFailure("Unable to find java.lang.LibraryVMInterfaceImpl", null);
 					}
@@ -482,7 +525,8 @@ namespace IKVM.Internal
 				return lib;
 			}
 		}
-#endif
+#endif // STATIC_COMPILER
+#endif // COMPACT_FRAMEWORK
 
 		public static void SetIkvmStubMode()
 		{
@@ -562,31 +606,11 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static bool DisableDynamicBinding
-		{
-			get
-			{
-				return isStaticCompiler;
-			}
-		}
-
 		internal static bool IsIkvmStub
 		{
 			get
 			{
 				return isIkvmStub;
-			}
-		}
-
-		internal static bool IsStaticCompiler
-		{
-			get
-			{
-				return isStaticCompiler;
-			}
-			set
-			{
-				isStaticCompiler = value;
 			}
 		}
 
@@ -658,23 +682,6 @@ namespace IKVM.Internal
 				}
 			}
 			return sb.ToString();
-		}
-
-#if !COMPACT_FRAMEWORK
-		public static void PrepareForSaveDebugImage()
-		{
-			DynamicClassLoader.PrepareForSaveDebugImage();
-		}
-	
-		public static void SaveDebugImage(object mainClass)
-		{
-			DynamicClassLoader.SaveDebugImage(mainClass);
-		}
-#endif
-
-		public static void SetBootstrapClassLoader(object classLoader)
-		{
-			ClassLoaderWrapper.GetBootstrapClassLoader().SetJavaClassLoader(classLoader);
 		}
 
 		internal static void CriticalFailure(string message, Exception x)

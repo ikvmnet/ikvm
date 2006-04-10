@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -36,7 +36,9 @@ abstract class RetargetableJavaException : ApplicationException
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal abstract Exception ToJava();
+#endif
 }
 
 // NOTE this is not a Java exception, but instead it wraps a Java exception that
@@ -50,10 +52,12 @@ class ClassLoadingException : RetargetableJavaException
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal override Exception ToJava()
 	{
 		return InnerException;
 	}
+#endif
 }
 
 class LinkageError : RetargetableJavaException
@@ -66,10 +70,12 @@ class LinkageError : RetargetableJavaException
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal override Exception ToJava()
 	{
 		return JVM.Library.newLinkageError(Message);
 	}
+#endif
 }
 
 class VerifyError : LinkageError
@@ -86,10 +92,12 @@ class VerifyError : LinkageError
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal override Exception ToJava()
 	{
 		return JVM.Library.newVerifyError(Message);
 	}
+#endif
 }
 
 class ClassNotFoundException : RetargetableJavaException
@@ -98,10 +106,12 @@ class ClassNotFoundException : RetargetableJavaException
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal override Exception ToJava()
 	{
 		return JVM.Library.newClassNotFoundException(Message);
 	}
+#endif
 }
 
 class ClassCircularityError : LinkageError
@@ -110,10 +120,12 @@ class ClassCircularityError : LinkageError
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal override Exception ToJava()
 	{
 		return JVM.Library.newClassCircularityError(Message);
 	}
+#endif
 }
 
 class NoClassDefFoundError : LinkageError
@@ -122,10 +134,12 @@ class NoClassDefFoundError : LinkageError
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal override Exception ToJava()
 	{
 		return JVM.Library.newNoClassDefFoundError(Message);
 	}
+#endif
 }
 
 class IncompatibleClassChangeError : LinkageError
@@ -134,10 +148,12 @@ class IncompatibleClassChangeError : LinkageError
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal override Exception ToJava()
 	{
 		return JVM.Library.newIncompatibleClassChangeError(Message);
 	}
+#endif
 }
 
 class IllegalAccessError : IncompatibleClassChangeError
@@ -146,10 +162,12 @@ class IllegalAccessError : IncompatibleClassChangeError
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal override Exception ToJava()
 	{
 		return JVM.Library.newIllegalAccessError(Message);
 	}
+#endif
 }
 
 internal class ClassFormatError : LinkageError
@@ -159,10 +177,12 @@ internal class ClassFormatError : LinkageError
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal override Exception ToJava()
 	{
 		return JVM.Library.newClassFormatError(Message);
 	}
+#endif
 }
 
 internal class UnsupportedClassVersionError : ClassFormatError
@@ -172,10 +192,12 @@ internal class UnsupportedClassVersionError : ClassFormatError
 	{
 	}
 
+#if !STATIC_COMPILER
 	internal override Exception ToJava()
 	{
 		return JVM.Library.newUnsupportedClassVersionError(Message);
 	}
+#endif
 }
 
 sealed class JavaException
@@ -191,6 +213,7 @@ sealed class JavaException
 		return String.Format(s, args);
 	}
 
+#if !STATIC_COMPILER
 	internal static Exception IllegalAccessError(string s, params object[] args)
 	{
 		return JVM.Library.newIllegalAccessError(Format(s, args));
@@ -302,4 +325,5 @@ sealed class JavaException
 	{
 		return JVM.Library.newIllegalMonitorStateException();
 	}
+#endif // !STATIC_COMPILER
 }

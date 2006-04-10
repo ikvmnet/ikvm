@@ -21,7 +21,7 @@
   jeroen@frijters.net
   
 */
-#if !NO_STATIC_COMPILER && !COMPACT_FRAMEWORK
+#if STATIC_COMPILER && !COMPACT_FRAMEWORK
 
 using System;
 using System.Xml.Serialization;
@@ -101,7 +101,7 @@ namespace IKVM.Internal.MapXml
 			{
 				Debug.Assert(Class == null && type != null);
 				Type[] argTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
-				ConstructorInfo ci = JVM.LoadType(Type.GetType(type, true)).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
+				ConstructorInfo ci = StaticCompiler.GetType(type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
 				if(ci == null)
 				{
 					throw new InvalidOperationException("Missing .ctor: " + type + "..ctor" + Sig);
@@ -190,10 +190,10 @@ namespace IKVM.Internal.MapXml
 						argTypes = new Type[types.Length];
 						for(int i = 0; i < types.Length; i++)
 						{
-							argTypes[i] = JVM.LoadType(Type.GetType(types[i]));
+							argTypes[i] = StaticCompiler.GetType(types[i]);
 						}
 					}
-					MethodInfo mi = JVM.LoadType(Type.GetType(type, true)).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
+					MethodInfo mi = StaticCompiler.GetType(type).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
 					if(mi == null)
 					{
 						throw new InvalidOperationException("Missing method: " + type + "." + Name + Sig);
@@ -272,7 +272,7 @@ namespace IKVM.Internal.MapXml
 				}
 				else
 				{
-					typeType = JVM.LoadType(Type.GetType(type, true));
+					typeType = StaticCompiler.GetType(type);
 				}
 			}
 		}
@@ -355,7 +355,7 @@ namespace IKVM.Internal.MapXml
 			if(typeType == null)
 			{
 				Debug.Assert(type != null);
-				typeType = JVM.LoadType(Type.GetType(type, true));
+				typeType = StaticCompiler.GetType(type);
 			}
 			ilgen.Emit(opcode, typeType);
 		}
@@ -514,7 +514,7 @@ namespace IKVM.Internal.MapXml
 					Debug.Assert(Class == null ^ type == null);
 					if(type != null)
 					{
-						typeType = JVM.LoadType(Type.GetType(type, true));
+						typeType = StaticCompiler.GetType(type);
 					}
 					else
 					{
@@ -924,7 +924,7 @@ namespace IKVM.Internal.MapXml
 				Type type;
 				if(@catch.type != null)
 				{
-					type = JVM.LoadType(Type.GetType(@catch.type, true));
+					type = StaticCompiler.GetType(@catch.type);
 				}
 				else
 				{

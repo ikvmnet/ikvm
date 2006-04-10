@@ -2,7 +2,7 @@
 <project name="ikvmc" default="ikvmc">
     <target name="ikvmc">
         <property overwrite="false" name="signed" value="" />
-        <property name="defs" value="TRACE" />
+        <property name="defs" value="TRACE;STATIC_COMPILER" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
@@ -11,7 +11,24 @@
         </if>
         <csc target="exe" output="../bin/ikvmc.exe" define="${defs}">
             <sources>
-                <include name="*.cs" />
+                <include name="AssemblyInfo.cs" />
+                <include name="Compiler.cs" />
+                <include name="../runtime/BigEndianBinaryReader.cs" />
+                <include name="../runtime/ByteCode.cs" />
+                <include name="../runtime/ClassFile.cs" />
+                <include name="../runtime/ClassLoaderWrapper.cs" />
+                <include name="../runtime/CodeEmitter.cs" />
+                <include name="../runtime/compiler.cs" />
+                <include name="../runtime/CompilerClassLoader.cs" />
+                <include name="../runtime/CoreClasses.cs" />
+                <include name="../runtime/DynamicClassLoader.cs" />
+                <include name="../runtime/JavaException.cs" />
+                <include name="../runtime/MemberWrapper.cs" />
+                <include name="../runtime/profiler.cs" />
+                <include name="../runtime/remapper.cs" />
+                <include name="../runtime/TypeWrapper.cs" />
+                <include name="../runtime/verifier.cs" />
+                <include name="../runtime/vm.cs" />
             </sources>
             <references>
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />

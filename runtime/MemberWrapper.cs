@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -300,6 +300,7 @@ namespace IKVM.Internal
 			}
 #endif
 
+#if !STATIC_COMPILER
 			[HideFromJava]
 			internal override object Invoke(object obj, object[] args, bool nonVirtual)
 			{
@@ -309,6 +310,7 @@ namespace IKVM.Internal
 				ResolveGhostMethod();
 				return InvokeImpl(ghostMethod, wrapper, args, nonVirtual);
 			}
+#endif // !STATIC_COMPILER
 		}
 
 		internal static MethodWrapper Create(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
@@ -547,6 +549,7 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER
 		[HideFromJava]
 		internal virtual object Invoke(object obj, object[] args, bool nonVirtual)
 		{
@@ -892,6 +895,7 @@ namespace IKVM.Internal
 				return args;
 			}
 		}
+#endif // !STATIC_COMPILER
 
 #if !COMPACT_FRAMEWORK
 		internal static OpCode SimpleOpCodeToOpCode(SimpleOpCode opc)
@@ -1142,6 +1146,7 @@ namespace IKVM.Internal
 			Debug.Assert(fieldType != null, this.DeclaringType.Name + "::" + this.Name + " (" + this.Signature+ ")");
 		}
 
+#if !STATIC_COMPILER
 		// NOTE used (thru IKVM.Runtime.Util.GetFieldConstantValue) by ikvmstub to find out if the
 		// field is a constant (and if it is, to get its value)
 		internal object GetConstant()
@@ -1187,6 +1192,7 @@ namespace IKVM.Internal
 			}
 			return null;
 		}
+#endif // !STATIC_COMPILER
 
 		internal static FieldWrapper FromCookie(IntPtr cookie)
 		{
@@ -1279,6 +1285,7 @@ namespace IKVM.Internal
 			Debug.Assert(field != null);
 		}
 
+#if !STATIC_COMPILER
 		internal virtual void SetValue(object obj, object val)
 		{
 			AssertLinked();
@@ -1302,6 +1309,7 @@ namespace IKVM.Internal
 				throw JavaException.IllegalAccessException(x.Message);
 			}
 		}
+#endif // !STATIC_COMPILER
 
 		internal virtual object GetValue(object obj)
 		{
@@ -1311,6 +1319,9 @@ namespace IKVM.Internal
 			{
 				LookupField();
 			}
+#if STATIC_COMPILER
+			return field.GetValue(null);
+#else
 			// FieldInfo.IsLiteral is expensive, so we have our own flag
 			// TODO we might be able to ensure that we always use ConstantFieldWrapper for literal fields,
 			// in that case the we could simply remove the check altogether.
@@ -1325,6 +1336,7 @@ namespace IKVM.Internal
 				val = fieldType.GhostRefField.GetValue(val);
 			}
 			return val;
+#endif // STATIC_COMPILER
 		}
 	}
 
@@ -1679,6 +1691,7 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, setter);
 		}
 
+#if !STATIC_COMPILER
 		internal override object GetValue(object obj)
 		{
 			// We're MemberFlags.HideFromReflection, so we should never be called
@@ -1690,6 +1703,7 @@ namespace IKVM.Internal
 			// We're MemberFlags.HideFromReflection, so we should never be called
 			throw new InvalidOperationException();
 		}
+#endif // !STATIC_COMPILER
 	}
 #endif
 
@@ -1733,6 +1747,7 @@ namespace IKVM.Internal
 		}
 #endif
 
+#if !STATIC_COMPILER
 		internal override object GetValue(object obj)
 		{
 			// We're MemberFlags.HideFromReflection, so we should never be called
@@ -1744,5 +1759,6 @@ namespace IKVM.Internal
 			// We're MemberFlags.HideFromReflection, so we should never be called
 			throw new InvalidOperationException();
 		}
+#endif // !STATIC_COMPILER
 	}
 }

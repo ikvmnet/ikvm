@@ -48,9 +48,6 @@ namespace IKVM.Internal
 		//	public readonly static TraceSwitch Methods = new TraceSwitch("methods", "Method Trace");
 		private readonly static Hashtable allTraceSwitches = new Hashtable();
 
-		private readonly static MethodInfo methodIsTracedMethod = typeof(Tracer).GetMethod("IsTracedMethod");
-		private readonly static MethodInfo methodMethodInfo = typeof(Tracer).GetMethod("MethodInfo");
-
 		private readonly static ArrayList methodtraces = new ArrayList();
 
 		private class MyTextWriterTraceListener : TextWriterTraceListener
@@ -202,25 +199,6 @@ namespace IKVM.Internal
 			if(traceSwitch.TraceError)
 			{
 				WriteLine(message, p);
-			}
-		}
-
-		[Conditional("TRACE")]
-		internal static void EmitMethodTrace(ILGenerator ilgen, string tracemessage)
-		{
-			if(IsTracedMethod(tracemessage))
-			{
-				Label label = ilgen.DefineLabel();
-				if(JVM.IsStaticCompiler)
-				{
-					// TODO this should be a boolean field test instead of a call to Tracer.IsTracedMessage
-					ilgen.Emit(OpCodes.Ldstr, tracemessage);
-					ilgen.Emit(OpCodes.Call, methodIsTracedMethod);
-					ilgen.Emit(OpCodes.Brfalse_S, label);
-				}
-				ilgen.Emit(OpCodes.Ldstr, tracemessage);
-				ilgen.Emit(OpCodes.Call, methodMethodInfo);
-				ilgen.MarkLabel(label);
 			}
 		}
 #else

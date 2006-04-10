@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmstub", "ikvmstub\ikvmst
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc", "ikvmc\ikvmc.csproj", "{4CA3F3DF-D2B7-4FA2-874C-BFC4B04286A2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc", "ikvmc.csproj", "{4CA3F3DF-D2B7-4FA2-874C-BFC4B04286A2}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject

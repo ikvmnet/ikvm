@@ -21,7 +21,7 @@
   jeroen@frijters.net
   
 */
-#if !NO_STATIC_COMPILER && !COMPACT_FRAMEWORK
+#if STATIC_COMPILER && !COMPACT_FRAMEWORK
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -247,7 +247,7 @@ namespace IKVM.Internal
 		internal void Save()
 		{
 			Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
-			FinishAll();
+			FinishAll(false);
 
 			ModuleBuilder.CreateGlobalFunctions();
 
@@ -1756,36 +1756,80 @@ namespace IKVM.Internal
 		}
 	}
 
-	public class CompilerOptions
+	class CompilerOptions
 	{
-		public string path;
-		public string keyfilename;
-		public string keycontainer;
-		public string version;
-		public string fileversion;
-		public bool targetIsModule;
-		public string assembly;
-		public string mainClass;
-		public ApartmentState apartment;
-		public PEFileKinds target;
-		public bool guessFileKind;
-		public byte[][] classes;
-		public string[] references;
-		public bool nojni;
-		public Hashtable resources;
-		public string[] classesToExclude;
-		public string remapfile;
-		public Hashtable props;
-		public bool noglobbing;
-		public bool nostacktraceinfo;
-		public bool removeUnusedFields;
-		public bool compressedResources;
-		public bool strictFinalFieldSemantics;
-		public string runtimeAssembly;
-		public string[] privatePackages;
+		internal string path;
+		internal string keyfilename;
+		internal string keycontainer;
+		internal string version;
+		internal string fileversion;
+		internal bool targetIsModule;
+		internal string assembly;
+		internal string mainClass;
+		internal ApartmentState apartment;
+		internal PEFileKinds target;
+		internal bool guessFileKind;
+		internal byte[][] classes;
+		internal string[] references;
+		internal bool nojni;
+		internal Hashtable resources;
+		internal string[] classesToExclude;
+		internal string remapfile;
+		internal Hashtable props;
+		internal bool noglobbing;
+		internal bool nostacktraceinfo;
+		internal bool removeUnusedFields;
+		internal bool compressedResources;
+		internal bool strictFinalFieldSemantics;
+		internal string runtimeAssembly;
+		internal string[] privatePackages;
 	}
 
-	public class AotCompiler
+	class StaticCompiler
+	{
+		internal static Assembly runtimeAssembly;
+
+		internal static Type GetType(string name)
+		{
+			return GetType(name, true);
+		}
+
+		internal static Type GetType(string name, bool throwOnError)
+		{
+			if(runtimeAssembly.GetType(name) != null)
+			{
+				return runtimeAssembly.GetType(name);
+			}
+#if WHIDBEY
+			foreach(Assembly asm in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
+			{
+				Type t = asm.GetType(name, false);
+				if(t != null)
+				{
+					return t;
+				}
+			}
+			// try mscorlib as well
+			return typeof(object).Assembly.GetType(name, throwOnError);
+#else
+			foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+			{
+				Type t = asm.GetType(name, false);
+				if(t != null)
+				{
+					return t;
+				}
+			}
+			if(throwOnError)
+			{
+				throw new TypeLoadException(name);
+			}
+			return null;
+#endif
+		}
+	}
+
+	class AotCompiler
 	{
 		private static bool IsSigned(Assembly asm)
 		{
@@ -1793,29 +1837,34 @@ namespace IKVM.Internal
 			return key != null && key.Length != 0;
 		}
 
-		public static int Compile(CompilerOptions options)
+		internal static int Compile(CompilerOptions options)
 		{
 			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", options.path, options.assembly);
-			JVM.IsStaticCompiler = true;
 			JVM.NoJniStubs = options.nojni;
 			JVM.NoStackTraceInfo = options.nostacktraceinfo;
 			JVM.StrictFinalFieldSemantics = options.strictFinalFieldSemantics;
-			Assembly runtimeAssembly;
 #if WHIDBEY
 			if(options.runtimeAssembly == null)
 			{
-				runtimeAssembly = typeof(JVM).Assembly;
-				Assembly.ReflectionOnlyLoadFrom(runtimeAssembly.Location);
+				Assembly.ReflectionOnlyLoadFrom(typeof(ByteCodeHelper).Assembly.Location);
 			}
 			else
 			{
 				runtimeAssembly = Assembly.ReflectionOnlyLoadFrom(options.runtimeAssembly);
 			}
 #else
-			runtimeAssembly = typeof(JVM).Assembly;
+			if(options.runtimeAssembly == null)
+			{
+				StaticCompiler.runtimeAssembly = typeof(ByteCodeHelper).Assembly;
+			}
+			else
+			{
+				StaticCompiler.runtimeAssembly = Assembly.LoadFrom(options.runtimeAssembly);
+			}
 #endif
-			AssemblyName runtimeAssemblyName = runtimeAssembly.GetName();
-			bool allReferencesAreStrongNamed = IsSigned(runtimeAssembly);
+			Tracer.Info(Tracer.Compiler, "Loaded runtime assembly: {0}", StaticCompiler.runtimeAssembly.FullName);
+			AssemblyName runtimeAssemblyName = StaticCompiler.runtimeAssembly.GetName();
+			bool allReferencesAreStrongNamed = IsSigned(StaticCompiler.runtimeAssembly);
 			foreach(string r in options.references)
 			{
 				try
@@ -1834,6 +1883,11 @@ namespace IKVM.Internal
 						Console.Error.WriteLine("Error: reference not found: {0}", r);
 						return 1;
 					}
+					// HACK if we explictly referenced the core assembly, make sure we register it as such
+					if(reference.GetType("java.lang.Object") != null)
+					{
+						JVM.CoreAssembly = reference;
+					}
 					allReferencesAreStrongNamed &= IsSigned(reference);
 					Tracer.Info(Tracer.Compiler, "Loaded reference assembly: {0}", reference.FullName);
 					// if it's an IKVM compiled assembly, make sure that it was compiled
@@ -1842,7 +1896,7 @@ namespace IKVM.Internal
 					{
 						if(asmref.Name == runtimeAssemblyName.Name)
 						{
-							if(IsSigned(runtimeAssembly))
+							if(IsSigned(StaticCompiler.runtimeAssembly))
 							{
 								if(asmref.FullName != runtimeAssemblyName.FullName)
 								{
@@ -2048,11 +2102,11 @@ namespace IKVM.Internal
 				return 1;
 			}
 
-			if(runtimeAssembly.GetType("gnu.classpath.Pointer") != null)
+			if(StaticCompiler.runtimeAssembly.GetType("gnu.classpath.Pointer") != null)
 			{
 				ClassLoaderWrapper.PublishLibraryImplementationHelperType(JVM.LoadType(typeof(gnu.classpath.Pointer)));
 			}
-			if(runtimeAssembly.GetType("ikvm.internal.LibraryVMInterface") != null)
+			if(StaticCompiler.runtimeAssembly.GetType("ikvm.internal.LibraryVMInterface") != null)
 			{
 				ClassLoaderWrapper.PublishLibraryImplementationHelperType(JVM.LoadType(typeof(ikvm.@internal.LibraryVMInterface)));
 			}
@@ -2199,4 +2253,4 @@ namespace IKVM.Internal
 		}
 	}
 }
-#endif //!NO_STATIC_COMPILER && !COMPACT_FRAMEWORK
+#endif // STATIC_COMPILER && !COMPACT_FRAMEWORK

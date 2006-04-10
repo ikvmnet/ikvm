@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -60,19 +60,19 @@ namespace IKVM.Attributes
 			this.table = table;
 		}
 
-		internal class LineNumberWriter
+		public class LineNumberWriter
 		{
 			private System.IO.MemoryStream stream;
 			private int prevILOffset;
 			private int prevLineNum;
 			private int count;
 
-			internal LineNumberWriter(int estimatedCount)
+			public LineNumberWriter(int estimatedCount)
 			{
 				stream = new System.IO.MemoryStream(estimatedCount * 2);
 			}
 
-			internal void AddMapping(int ilOffset, int linenumber)
+			public void AddMapping(int ilOffset, int linenumber)
 			{
 				if(count == 0)
 				{
@@ -129,7 +129,7 @@ namespace IKVM.Attributes
 				count++;
 			}
 
-			internal int Count
+			public int Count
 			{
 				get
 				{
@@ -137,7 +137,7 @@ namespace IKVM.Attributes
 				}
 			}
 
-			internal int LineNo
+			public int LineNo
 			{
 				get
 				{
@@ -145,7 +145,7 @@ namespace IKVM.Attributes
 				}
 			}
 
-			internal byte[] ToArray()
+			public byte[] ToArray()
 			{
 				return stream.ToArray();
 			}

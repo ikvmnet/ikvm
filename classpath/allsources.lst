@@ -503,6 +503,7 @@
 ../../classpath/gnu/java/net/BASE64.java
 ../../classpath/gnu/java/net/CRLFInputStream.java
 ../../classpath/gnu/java/net/CRLFOutputStream.java
+../../classpath/gnu/java/net/DefaultContentHandlerFactory.java
 ../../classpath/gnu/java/net/EmptyX509TrustManager.java
 ../../classpath/gnu/java/net/GetLocalHostAction.java
 ../../classpath/gnu/java/net/HeaderFieldHelper.java
@@ -3336,6 +3337,7 @@
 ../../classpath/javax/swing/colorchooser/DefaultSwatchChooserPanel.java
 ../../classpath/javax/swing/ComboBoxEditor.java
 ../../classpath/javax/swing/ComboBoxModel.java
+../../classpath/javax/swing/CompatibilityFocusTraversalPolicy.java
 ../../classpath/javax/swing/ComponentInputMap.java
 ../../classpath/javax/swing/DebugGraphics.java
 ../../classpath/javax/swing/DefaultBoundedRangeModel.java
@@ -4330,7 +4332,6 @@
 ../../classpath/org/omg/PortableInterceptor/ObjectReferenceFactory.java
 ../../classpath/org/omg/PortableInterceptor/ObjectReferenceFactoryHelper.java
 ../../classpath/org/omg/PortableInterceptor/ObjectReferenceFactoryHolder.java
-../../classpath/org/omg/PortableInterceptor/ObjectReferenceFactoryOperations.java
 ../../classpath/org/omg/PortableInterceptor/ObjectReferenceTemplate.java
 ../../classpath/org/omg/PortableInterceptor/ObjectReferenceTemplateHelper.java
 ../../classpath/org/omg/PortableInterceptor/ObjectReferenceTemplateHolder.java
