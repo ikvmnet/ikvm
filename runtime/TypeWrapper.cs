@@ -137,7 +137,9 @@ namespace IKVM.Internal
 		private static CustomAttributeBuilder ghostInterfaceAttribute;
 		private static CustomAttributeBuilder hideFromJavaAttribute;
 		private static CustomAttributeBuilder deprecatedAttribute;
+#if STATIC_COMPILER
 		private static CustomAttributeBuilder editorBrowsableNever;
+#endif
 		private static ConstructorInfo implementsAttribute;
 		private static ConstructorInfo throwsAttribute;
 		private static ConstructorInfo sourceFileAttribute;
@@ -1219,6 +1221,16 @@ namespace IKVM.Internal
 			RemappedClassAttribute[] attr1 = new RemappedClassAttribute[attr.Length];
 			Array.Copy(attr, attr1, attr.Length);
 			return attr1;
+		}
+
+		internal static string GetAnnotationAttributeType(Type type)
+		{
+			object[] attr = type.GetCustomAttributes(typeof(AnnotationAttributeAttribute), false);
+			if(attr.Length == 1)
+			{
+				return ((AnnotationAttributeAttribute)attr[0]).AttributeType;
+			}
+			return null;
 		}
 
 		internal static bool IsDefined(Module mod, Type attribute)
@@ -4747,7 +4759,11 @@ namespace IKVM.Internal
 
 			private class JniBuilder
 			{
-				private static readonly Type localRefStructType = JVM.LoadType(typeof(IKVM.Runtime.JNI.Frame));
+#if STATIC_COMPILER
+				private static readonly Type localRefStructType = StaticCompiler.GetType("IKVM.Runtime.JNI.Frame");
+#else
+				private static readonly Type localRefStructType = typeof(IKVM.Runtime.JNI.Frame);
+#endif
 				private static readonly MethodInfo jniFuncPtrMethod = localRefStructType.GetMethod("GetFuncPtr");
 				private static readonly MethodInfo enterLocalRefStruct = localRefStructType.GetMethod("Enter");
 				private static readonly MethodInfo leaveLocalRefStruct = localRefStructType.GetMethod("Leave");
@@ -5439,7 +5455,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 							if(classFile.Methods[index].AnnotationDefault != null)
 							{
-								CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationDefaultAttribute)).GetConstructor(new Type[] { typeof(object) }), new object[] { classFile.Methods[index].AnnotationDefault });
+								CustomAttributeBuilder cab = new CustomAttributeBuilder(StaticCompiler.GetType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor(new Type[] { typeof(object) }), new object[] { classFile.Methods[index].AnnotationDefault });
 								mb.SetCustomAttribute(cab);
 							}
 #endif
@@ -7089,14 +7105,10 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				object[] attr = type.GetCustomAttributes(typeof(AnnotationAttributeAttribute), false);
-				if(attr.Length == 1)
+				string annotationAttribute = AttributeHelper.GetAnnotationAttributeType(type);
+				if(annotationAttribute != null)
 				{
-					Type annotationAttribute = type.Assembly.GetType(((AnnotationAttributeAttribute)attr[0]).AttributeType);
-					if(annotationAttribute != null)
-					{
-						return new CompiledAnnotation(annotationAttribute);
-					}
+					return new CompiledAnnotation(type.Assembly.GetType(annotationAttribute, true));
 				}
 				return null;
 			}

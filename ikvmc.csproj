@@ -104,6 +104,7 @@
                 />
                 <File
                     RelPath = "ikvmc\CompilerClassLoader.cs"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File

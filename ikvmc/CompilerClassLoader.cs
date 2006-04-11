@@ -1871,7 +1871,7 @@ namespace IKVM.Internal
 				{
 #if WHIDBEY
 					Assembly reference = Assembly.ReflectionOnlyLoadFrom(r);
-					if(AttributeHelper.IsDefined(reference, JVM.LoadType(typeof(RemappedClassAttribute))))
+					if(AttributeHelper.IsDefined(reference, StaticCompiler.GetType("IKVM.Attributes.RemappedClassAttribute")))
 					{
 						JVM.CoreAssembly = reference;
 					}
@@ -2102,13 +2102,15 @@ namespace IKVM.Internal
 				return 1;
 			}
 
-			if(StaticCompiler.runtimeAssembly.GetType("gnu.classpath.Pointer") != null)
+			Type pointer = StaticCompiler.runtimeAssembly.GetType("gnu.classpath.Pointer");
+			if(pointer != null)
 			{
-				ClassLoaderWrapper.PublishLibraryImplementationHelperType(JVM.LoadType(typeof(gnu.classpath.Pointer)));
+				ClassLoaderWrapper.PublishLibraryImplementationHelperType(pointer);
 			}
-			if(StaticCompiler.runtimeAssembly.GetType("ikvm.internal.LibraryVMInterface") != null)
+			Type libvminterface = StaticCompiler.runtimeAssembly.GetType("ikvm.internal.LibraryVMInterface");
+			if(libvminterface != null)
 			{
-				ClassLoaderWrapper.PublishLibraryImplementationHelperType(JVM.LoadType(typeof(ikvm.@internal.LibraryVMInterface)));
+				ClassLoaderWrapper.PublishLibraryImplementationHelperType(libvminterface);
 			}
 
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");

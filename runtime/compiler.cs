@@ -75,7 +75,11 @@ class ByteCodeHelperMethods
 
 	static ByteCodeHelperMethods()
 	{
-		Type typeofByteCodeHelper = JVM.LoadType(typeof(ByteCodeHelper));
+#if STATIC_COMPILER
+		Type typeofByteCodeHelper = StaticCompiler.GetType("IKVM.Runtime.ByteCodeHelper");
+#else
+		Type typeofByteCodeHelper = typeof(ByteCodeHelper);
+#endif
 		GetClassFromTypeHandle = typeofByteCodeHelper.GetMethod("GetClassFromTypeHandle");
 		multianewarray = typeofByteCodeHelper.GetMethod("multianewarray");
 		f2i = typeofByteCodeHelper.GetMethod("f2i");
