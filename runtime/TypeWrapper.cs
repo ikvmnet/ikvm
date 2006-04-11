@@ -57,7 +57,7 @@ namespace IKVM.Internal
 	class EmitHelper
 	{
 		private static MethodInfo objectToString = typeof(object).GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-		private static MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : JVM.LoadType(typeof(ByteCodeHelper)).GetMethod("VerboseCastFailure");
+		private static MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
 
 		static EmitHelper() {}
 
@@ -2673,14 +2673,14 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
 			ilgen.Emit(OpCodes.Ldstr, Name);
-			ilgen.Emit(OpCodes.Call, JVM.LoadType(typeof(ByteCodeHelper)).GetMethod("DynamicCast"));
+			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
 		}
 
 		internal override void EmitInstanceOf(TypeWrapper context, ILGenerator ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
 			ilgen.Emit(OpCodes.Ldstr, Name);
-			ilgen.Emit(OpCodes.Call, JVM.LoadType(typeof(ByteCodeHelper)).GetMethod("DynamicInstanceOf"));
+			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
 		}
 #endif
 
@@ -4599,7 +4599,7 @@ namespace IKVM.Internal
 					ILGenerator ilgen = defaultConstructor.GetILGenerator();
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldtoken, annotationTypeBuilder);
-					ilgen.Emit(OpCodes.Call, JVM.LoadType(typeof(ByteCodeHelper)).GetMethod("GetClassFromTypeHandle"));
+					ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
 					CoreClasses.java.lang.Class.Wrapper.EmitCheckcast(null, ilgen);
 					annotationAttributeBaseType.GetMethodWrapper("<init>", "(Ljava.lang.Class;)V", false).EmitCall(ilgen);
 					ilgen.Emit(OpCodes.Ret);
@@ -4753,7 +4753,6 @@ namespace IKVM.Internal
 				private static readonly MethodInfo leaveLocalRefStruct = localRefStructType.GetMethod("Leave");
 				private static readonly MethodInfo makeLocalRef = localRefStructType.GetMethod("MakeLocalRef");
 				private static readonly MethodInfo unwrapLocalRef = localRefStructType.GetMethod("UnwrapLocalRef");
-				private static readonly MethodInfo getClassFromTypeHandle = JVM.LoadType(typeof(ByteCodeHelper)).GetMethod("GetClassFromTypeHandle");
 				private static readonly MethodInfo writeLine = typeof(Console).GetMethod("WriteLine", new Type[] { typeof(object) }, null);
 				private static readonly MethodInfo monitorEnter = typeof(System.Threading.Monitor).GetMethod("Enter", new Type[] { typeof(object) });
 				private static readonly MethodInfo monitorExit = typeof(System.Threading.Monitor).GetMethod("Exit", new Type[] { typeof(object) });
@@ -4776,7 +4775,7 @@ namespace IKVM.Internal
 						Label label = ilGenerator.DefineLabel();
 						ilGenerator.Emit(OpCodes.Brtrue_S, label);
 						ilGenerator.Emit(OpCodes.Ldtoken, wrapper.TypeAsTBD);
-						ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandle);
+						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
 						ilGenerator.Emit(OpCodes.Stsfld, classObjectField);
 						ilGenerator.MarkLabel(label);
 						ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
@@ -4852,7 +4851,7 @@ namespace IKVM.Internal
 						Label label = ilGenerator.DefineLabel();
 						ilGenerator.Emit(OpCodes.Brtrue_S, label);
 						ilGenerator.Emit(OpCodes.Ldtoken, wrapper.TypeAsTBD);
-						ilGenerator.Emit(OpCodes.Call, getClassFromTypeHandle);
+						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
 						ilGenerator.Emit(OpCodes.Stsfld, classObjectField);
 						ilGenerator.MarkLabel(label);
 						ilGenerator.Emit(OpCodes.Ldsfld, classObjectField);
@@ -5418,7 +5417,7 @@ namespace IKVM.Internal
 								MethodBuilder finalize = typeBuilder.DefineMethod("Finalize", attr, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
 								AttributeHelper.HideFromJava(finalize);
 								ILGenerator ilgen = finalize.GetILGenerator();
-								ilgen.Emit(OpCodes.Call, JVM.LoadType(typeof(ByteCodeHelper)).GetMethod("SkipFinalizer"));
+								ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.SkipFinalizer);
 								Label skip = ilgen.DefineLabel();
 								ilgen.Emit(OpCodes.Brtrue_S, skip);
 								if(needDispatch)
