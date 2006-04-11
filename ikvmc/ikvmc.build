@@ -11,6 +11,7 @@
         </if>
         <csc target="exe" output="../bin/ikvmc.exe" define="${defs}">
             <sources>
+                <include name="AotTypeWrapper.cs" />
                 <include name="AssemblyInfo.cs" />
                 <include name="Compiler.cs" />
                 <include name="CompilerClassLoader.cs" />
