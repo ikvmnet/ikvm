@@ -253,7 +253,10 @@ final class VMThread
 		        }
 		        for(long iter = ms / Integer.MAX_VALUE; iter != 0; iter--)
 		        {
-			    nativeThread.Join(Integer.MAX_VALUE);
+			    if(nativeThread.Join(Integer.MAX_VALUE))
+                            {
+                                break;
+                            }
 		        }
 		        nativeThread.Join((int)(ms % Integer.MAX_VALUE));
 		    }
