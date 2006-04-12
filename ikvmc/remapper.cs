@@ -21,7 +21,6 @@
   jeroen@frijters.net
   
 */
-#if STATIC_COMPILER && !COMPACT_FRAMEWORK
 
 using System;
 using System.Xml.Serialization;
@@ -1298,4 +1297,3 @@ namespace IKVM.Internal.MapXml
 		public ExceptionMapping[] exceptionMappings;
 	}
 }
-#endif

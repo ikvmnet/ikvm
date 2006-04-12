@@ -109,6 +109,7 @@
                 />
                 <File
                     RelPath = "ikvmc\remapper.cs"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File

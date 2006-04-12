@@ -1397,6 +1397,7 @@
 ../../classpath/gnu/xml/dom/html2/DomHTMLDListElement.java
 ../../classpath/gnu/xml/dom/html2/DomHTMLDocument.java
 ../../classpath/gnu/xml/dom/html2/DomHTMLElement.java
+../../classpath/gnu/xml/dom/html2/DomHTMLEmbedElement.java
 ../../classpath/gnu/xml/dom/html2/DomHTMLFieldSetElement.java
 ../../classpath/gnu/xml/dom/html2/DomHTMLFontElement.java
 ../../classpath/gnu/xml/dom/html2/DomHTMLFormElement.java
@@ -2810,12 +2811,14 @@
 ../../classpath/java/util/zip/ZipOutputStream.java
 ../../classpath/javax/accessibility/Accessible.java
 ../../classpath/javax/accessibility/AccessibleAction.java
+../../classpath/javax/accessibility/AccessibleAttributeSequence.java
 ../../classpath/javax/accessibility/AccessibleBundle.java
 ../../classpath/javax/accessibility/AccessibleComponent.java
 ../../classpath/javax/accessibility/AccessibleContext.java
 ../../classpath/javax/accessibility/AccessibleEditableText.java
 ../../classpath/javax/accessibility/AccessibleExtendedComponent.java
 ../../classpath/javax/accessibility/AccessibleExtendedTable.java
+../../classpath/javax/accessibility/AccessibleExtendedText.java
 ../../classpath/javax/accessibility/AccessibleHyperlink.java
 ../../classpath/javax/accessibility/AccessibleHypertext.java
 ../../classpath/javax/accessibility/AccessibleIcon.java
@@ -2827,9 +2830,11 @@
 ../../classpath/javax/accessibility/AccessibleSelection.java
 ../../classpath/javax/accessibility/AccessibleState.java
 ../../classpath/javax/accessibility/AccessibleStateSet.java
+../../classpath/javax/accessibility/AccessibleStreamable.java
 ../../classpath/javax/accessibility/AccessibleTable.java
 ../../classpath/javax/accessibility/AccessibleTableModelChange.java
 ../../classpath/javax/accessibility/AccessibleText.java
+../../classpath/javax/accessibility/AccessibleTextSequence.java
 ../../classpath/javax/accessibility/AccessibleValue.java
 ../../classpath/javax/crypto/BadPaddingException.java
 ../../classpath/javax/crypto/Cipher.java

@@ -21,22 +21,22 @@
   jeroen@frijters.net
   
 */
+
 using System;
 using System.Collections;
 #if WHIDBEY
 using System.Collections.Generic;
 #endif
 using System.Reflection;
-#if !COMPACT_FRAMEWORK
 using System.Reflection.Emit;
-using ILGenerator = IKVM.Internal.CountingILGenerator;
-using Label = IKVM.Internal.CountingLabel;
-#endif
 using System.Diagnostics;
 using System.Security;
 using System.Security.Permissions;
 using IKVM.Runtime;
 using IKVM.Attributes;
+
+using ILGenerator = IKVM.Internal.CountingILGenerator;
+using Label = IKVM.Internal.CountingLabel;
 
 namespace IKVM.Internal
 {

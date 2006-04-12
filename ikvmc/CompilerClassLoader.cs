@@ -21,7 +21,7 @@
   jeroen@frijters.net
   
 */
-#if STATIC_COMPILER && !COMPACT_FRAMEWORK
+
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -2255,4 +2255,3 @@ namespace IKVM.Internal
 		}
 	}
 }
-#endif // STATIC_COMPILER && !COMPACT_FRAMEWORK
