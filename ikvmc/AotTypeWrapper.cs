@@ -280,7 +280,7 @@ namespace IKVM.Internal
 		protected override void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method)
 		{
 			IKVM.Internal.MapXml.Param[] parameters = GetXmlMapParameters(classFile.Name, m.Name, m.Signature);
-			if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || parameters != null || JVM.Debug || DynamicClassLoader.IsSaveDebugImage)
+			if((classFile.IsPublic && (m.IsPublic || m.IsProtected)) || parameters != null || JVM.Debug)
 			{
 				string[] parameterNames = null;
 				if(parameters != null)
@@ -315,7 +315,7 @@ namespace IKVM.Internal
 		private void AddParameterNames(MethodBuilder method, MethodWrapper mw)
 		{
 			IKVM.Internal.MapXml.Param[] parameters = GetXmlMapParameters(Name, mw.Name, mw.Signature);
-			if((JVM.IsStaticCompiler && mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || parameters != null || JVM.Debug || DynamicClassLoader.IsSaveDebugImage)
+			if((mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || parameters != null || JVM.Debug)
 			{
 				string[] parameterNames = null;
 				if(parameters != null)

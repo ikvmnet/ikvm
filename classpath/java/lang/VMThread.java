@@ -48,10 +48,6 @@ final class VMThread
 		try
 		{
                     Thread.UncaughtExceptionHandler handler = thread.getUncaughtExceptionHandler();
-                    if(handler == null)
-                    {
-                        handler = thread.group;
-                    }
                     handler.uncaughtException(thread, t);
 		}
 		catch(Throwable ignore)

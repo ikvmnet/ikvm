@@ -1316,6 +1316,7 @@
 ../../classpath/gnu/javax/swing/text/html/parser/support/parameterDefaulter.java
 ../../classpath/gnu/javax/swing/text/html/parser/support/Parser.java
 ../../classpath/gnu/javax/swing/text/html/parser/support/textPreProcessor.java
+../../classpath/gnu/javax/swing/tree/GnuPath.java
 ../../classpath/gnu/regexp/BacktrackStack.java
 ../../classpath/gnu/regexp/CharIndexed.java
 ../../classpath/gnu/regexp/CharIndexedCharArray.java

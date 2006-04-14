@@ -3498,6 +3498,7 @@ namespace IKVM.Internal
 				return null;
 			}
 
+#if STATIC_COMPILER
 			private bool IsSideEffectFreeStaticInitializer(ClassFile.Method m)
 			{
 				if(m.ExceptionTable.Length != 0)
@@ -3546,6 +3547,7 @@ namespace IKVM.Internal
 					return false;
 				}
 			}
+#endif // STATIC_COMPILER
 
 			private static bool ContainsMemberWrapper(ArrayList members, string name, string sig)
 			{
@@ -4526,6 +4528,7 @@ namespace IKVM.Internal
 				return false;
 			}
 
+#if STATIC_COMPILER
 			sealed class AnnotationBuilder : Annotation
 			{
 				private TypeBuilder annotationTypeBuilder;
@@ -4706,6 +4709,7 @@ namespace IKVM.Internal
 					}
 				}
 			}
+#endif // STATIC_COMPILER
 
 			internal class JniProxyBuilder
 			{
