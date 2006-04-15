@@ -4507,6 +4507,7 @@ java/nio/channels/VMChannels.java
 java/nio/MappedByteBufferImpl.java
 java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
+java/security/VMSecureRandom.java
 java/util/VMTimeZone.java
 sun/misc/Ref.java
 sun/reflect/annotation/AnnotationInvocationHandler.java
