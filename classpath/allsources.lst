@@ -2209,6 +2209,7 @@
 ../../classpath/java/lang/Comparable.java
 ../../classpath/java/lang/Compiler.java
 ../../classpath/java/lang/Double.java
+../../classpath/java/lang/Enum.java
 ../../classpath/java/lang/EnumConstantNotPresentException.java
 ../../classpath/java/lang/Error.java
 ../../classpath/java/lang/Exception.java
@@ -2233,6 +2234,7 @@
 ../../classpath/java/lang/Integer.java
 ../../classpath/java/lang/InternalError.java
 ../../classpath/java/lang/InterruptedException.java
+../../classpath/java/lang/Iterable.java
 ../../classpath/java/lang/LinkageError.java
 ../../classpath/java/lang/Long.java
 ../../classpath/java/lang/Math.java
