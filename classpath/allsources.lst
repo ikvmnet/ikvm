@@ -2186,6 +2186,7 @@
 ../../classpath/java/io/WriteAbortedException.java
 ../../classpath/java/io/Writer.java
 ../../classpath/java/lang/AbstractMethodError.java
+../../classpath/java/lang/annotation/Annotation.java
 ../../classpath/java/lang/annotation/AnnotationFormatError.java
 ../../classpath/java/lang/annotation/AnnotationTypeMismatchException.java
 ../../classpath/java/lang/Appendable.java
@@ -2224,6 +2225,11 @@
 ../../classpath/java/lang/InheritableThreadLocal.java
 ../../classpath/java/lang/InstantiationError.java
 ../../classpath/java/lang/InstantiationException.java
+../../classpath/java/lang/instrument/ClassDefinition.java
+../../classpath/java/lang/instrument/ClassFileTransformer.java
+../../classpath/java/lang/instrument/IllegalClassFormatException.java
+../../classpath/java/lang/instrument/Instrumentation.java
+../../classpath/java/lang/instrument/UnmodifiableClassException.java
 ../../classpath/java/lang/Integer.java
 ../../classpath/java/lang/InternalError.java
 ../../classpath/java/lang/InterruptedException.java
@@ -2249,6 +2255,7 @@
 ../../classpath/java/lang/ref/SoftReference.java
 ../../classpath/java/lang/ref/WeakReference.java
 ../../classpath/java/lang/reflect/AccessibleObject.java
+../../classpath/java/lang/reflect/AnnotatedElement.java
 ../../classpath/java/lang/reflect/Array.java
 ../../classpath/java/lang/reflect/GenericArrayType.java
 ../../classpath/java/lang/reflect/GenericDeclaration.java
@@ -4482,7 +4489,6 @@ ikvm/lang/CIL.java
 ikvm/lang/Internal.java
 java/io/VMFile.java
 java/io/VMObjectInputStream.java
-java/lang/annotation/Annotation.java
 java/lang/DoubleToString.java
 java/lang/ExceptionHelper.java
 java/lang/LibraryVMInterfaceImpl.java

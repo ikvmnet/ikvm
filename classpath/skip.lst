@@ -6,6 +6,7 @@
 /classpath/gnu/classpath/Pointer.java
 /classpath/gnu/classpath/Pointer32.java
 /classpath/gnu/classpath/Pointer64.java
+/classpath/gnu/java/net/local/
 /classpath/gnu/java/net/PlainDatagramSocketImpl.java
 /classpath/gnu/java/net/PlainSocketImpl.java 
 /classpath/gnu/java/nio/channels/FileChannelImpl.java

@@ -30,7 +30,6 @@ ikvm/lang/CIL.java
 ikvm/lang/Internal.java
 java/io/VMFile.java
 java/io/VMObjectInputStream.java
-java/lang/annotation/Annotation.java
 java/lang/DoubleToString.java
 java/lang/ExceptionHelper.java
 java/lang/LibraryVMInterfaceImpl.java

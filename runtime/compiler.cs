@@ -903,7 +903,14 @@ class Compiler
 			}
 			if(c.lineNumbers != null)
 			{
-				AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.lineNumbers);
+				for(int i = 0; i < m.Instructions.Length; i++)
+				{
+					if(ByteCodeMetaData.CanThrowException(m.Instructions[i].NormalizedOpCode))
+					{
+						AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.lineNumbers);
+						break;
+					}
+				}
 			}
 			if((m.IsSynchronized && m.IsStatic) || c.exceptions.Length > 0)
 			{
