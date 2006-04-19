@@ -1979,6 +1979,7 @@ namespace IKVM.Internal
 			private Code code;
 			private string[] exceptions;
 			private object annotationDefault;
+			private object[][] parameterAnnotations;
 
 			internal Method(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
 			{
@@ -2060,6 +2061,30 @@ namespace IKVM.Internal
 							}
 							annotations = ReadAnnotations(br, classFile);
 							break;
+						case "RuntimeVisibleParameterAnnotations":
+						{
+							if(classFile.MajorVersion < 49)
+							{
+								goto default;
+							}
+							BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
+							byte num_parameters = rdr.ReadByte();
+							parameterAnnotations = new object[num_parameters][];
+							for(int j = 0; j < num_parameters; j++)
+							{
+								ushort num_annotations = rdr.ReadUInt16();
+								parameterAnnotations[j] = new object[num_annotations];
+								for(int k = 0; k < num_annotations; k++)
+								{
+									parameterAnnotations[j][k] = ReadAnnotation(rdr, classFile);
+								}
+							}
+							if(!rdr.IsAtEnd)
+							{
+								throw new ClassFormatError("{0} (RuntimeVisibleParameterAnnotations attribute has wrong length)", classFile.Name);
+							}
+							break;
+						}
 						case "AnnotationDefault":
 						{
 							if(classFile.MajorVersion < 49)
@@ -2153,8 +2178,7 @@ namespace IKVM.Internal
 			{
 				get
 				{
-					// TODO
-					return null;
+					return parameterAnnotations;
 				}
 			}
 

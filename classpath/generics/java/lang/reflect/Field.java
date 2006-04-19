@@ -38,6 +38,7 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
+import java.lang.annotation.Annotation;
 import gnu.java.lang.ClassHelper;
 import gnu.classpath.VMStackWalker;
 import gnu.java.lang.reflect.FieldSignatureParser;
@@ -733,4 +734,24 @@ public final class Field
             FieldSignatureParser p = new FieldSignatureParser(getDeclaringClass(), signature);
             return p.getFieldType();
         }
+
+    public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
+    {
+        T foundAnnotation = null;
+        Annotation[] annotations = getAnnotations();
+        for (Annotation annotation : annotations)
+        if (annotation.annotationType() == annotationClass)
+        foundAnnotation = (T) annotation;
+        return foundAnnotation;
+    }
+
+    public Annotation[] getAnnotations()
+    {
+        return getDeclaredAnnotations();
+    }
+
+    public Annotation[] getDeclaredAnnotations()
+    {
+        return Method.toAnnotationArray(VMFieldImpl.GetDeclaredAnnotations(impl.fieldCookie));
+    }
 }

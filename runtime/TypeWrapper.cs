@@ -2544,6 +2544,21 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		internal virtual object[] GetMethodAnnotations(MethodWrapper mw)
+		{
+			return null;
+		}
+
+		internal virtual object[][] GetParameterAnnotations(MethodWrapper mw)
+		{
+			return null;
+		}
+
+		internal virtual object[] GetFieldAnnotations(FieldWrapper fw)
+		{
+			return null;
+		}
+
 #if !STATIC_COMPILER
 		internal virtual object GetAnnotationDefault(MethodWrapper mw)
 		{
@@ -3102,6 +3117,9 @@ namespace IKVM.Internal
 			internal abstract string GetGenericFieldSignature(int index);
 			internal abstract object[] GetDeclaredAnnotations();
 			internal abstract object GetMethodDefaultValue(int index);
+			internal abstract object[] GetMethodAnnotations(int index);
+			internal abstract object[][] GetParameterAnnotations(int index);
+			internal abstract object[] GetFieldAnnotations(int index);
 		}
 
 		private class JavaTypeImpl : DynamicImpl
@@ -5621,6 +5639,24 @@ namespace IKVM.Internal
 				Debug.Fail("Unreachable code");
 				return null;
 			}
+
+			internal override object[] GetMethodAnnotations(int index)
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+
+			internal override object[][] GetParameterAnnotations(int index)
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
+
+			internal override object[] GetFieldAnnotations(int index)
+			{
+				Debug.Fail("Unreachable code");
+				return null;
+			}
 		}
 
 		private sealed class Metadata
@@ -5821,7 +5857,7 @@ namespace IKVM.Internal
 			// note that unlike GetGenericFieldSignature, the index is simply the field index 
 			internal static object[] GetFieldAnnotations(Metadata m, int index)
 			{
-				if(m != null && m.annotations != null && m.annotations[3] != null)
+				if(m != null && m.annotations != null && m.annotations[4] != null)
 				{
 					return (object[])m.annotations[4][index];
 				}
@@ -5938,6 +5974,21 @@ namespace IKVM.Internal
 			internal override object GetMethodDefaultValue(int index)
 			{
 				return Metadata.GetMethodDefaultValue(metadata, index);
+			}
+
+			internal override object[] GetMethodAnnotations(int index)
+			{
+				return Metadata.GetMethodAnnotations(metadata, index);
+			}
+
+			internal override object[][] GetParameterAnnotations(int index)
+			{
+				return Metadata.GetMethodParameterAnnotations(metadata, index);
+			}
+
+			internal override object[] GetFieldAnnotations(int index)
+			{
+				return Metadata.GetFieldAnnotations(metadata, index);
 			}
 		}
 
@@ -6224,12 +6275,92 @@ namespace IKVM.Internal
 		internal override object[] GetDeclaredAnnotations()
 		{
 			object[] annotations = impl.GetDeclaredAnnotations();
-			object[] objs = new object[annotations.Length];
-			for(int i = 0; i < annotations.Length; i++)
+			if(annotations != null)
 			{
-				objs[i] = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[i]);
+				object[] objs = new object[annotations.Length];
+				for(int i = 0; i < annotations.Length; i++)
+				{
+					objs[i] = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[i]);
+				}
+				return objs;
 			}
-			return objs;
+			return null;
+		}
+
+		internal override object[] GetMethodAnnotations(MethodWrapper mw)
+		{
+			MethodWrapper[] methods = GetMethods();
+			for(int i = 0; i < methods.Length; i++)
+			{
+				if(methods[i] == mw)
+				{
+					object[] annotations = impl.GetMethodAnnotations(i);
+					if(annotations != null)
+					{
+						object[] objs = new object[annotations.Length];
+						for(int j = 0; j < annotations.Length; j++)
+						{
+							objs[j] = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j]);
+						}
+						return objs;
+					}
+					return null;
+				}
+			}
+			Debug.Fail("Unreachable code");
+			return null;
+		}
+
+		internal override object[][] GetParameterAnnotations(MethodWrapper mw)
+		{
+			MethodWrapper[] methods = GetMethods();
+			for(int i = 0; i < methods.Length; i++)
+			{
+				if(methods[i] == mw)
+				{
+					object[][] annotations = impl.GetParameterAnnotations(i);
+					if(annotations != null)
+					{
+						object[][] objs = new object[annotations.Length][];
+						for(int j = 0; j < annotations.Length; j++)
+						{
+							objs[j] = new object[annotations[j].Length];
+							for(int k = 0; k < annotations[j].Length; k++)
+							{
+								objs[j][k] = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j][k]);
+							}
+						}
+						return objs;
+					}
+					return null;
+				}
+			}
+			Debug.Fail("Unreachable code");
+			return null;
+		}
+
+		internal override object[] GetFieldAnnotations(FieldWrapper fw)
+		{
+			FieldWrapper[] fields = GetFields();
+			for(int i = 0; i < fields.Length; i++)
+			{
+				if(fields[i] == fw)
+				{
+					object[] annotations = impl.GetFieldAnnotations(i);
+					if(annotations != null)
+					{
+						object[] objs = new object[annotations.Length];
+						for(int j = 0; j < annotations.Length; j++)
+						{
+							objs[j] = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j]);
+						}
+						return objs;
+					}
+					return null;
+				}
+			}
+			Debug.Fail("Unreachable code");
+			return null;
 		}
 
 		internal override object GetAnnotationDefault(MethodWrapper mw)
@@ -6239,7 +6370,12 @@ namespace IKVM.Internal
 			{
 				if(methods[i] == mw)
 				{
-					return JVM.Library.newAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, impl.GetMethodDefaultValue(i));
+					object defVal = impl.GetMethodDefaultValue(i);
+					if(defVal != null)
+					{
+						return JVM.Library.newAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, defVal);
+					}
+					return null;
 				}
 			}
 			Debug.Fail("Unreachable code");

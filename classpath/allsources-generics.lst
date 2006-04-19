@@ -494,17 +494,20 @@
 ../../classpath-generics/gnu/java/lang/ArrayHelper.java
 ../../classpath-generics/gnu/java/lang/CharData.java
 ../../classpath-generics/gnu/java/lang/ClassHelper.java
+../../classpath-generics/gnu/java/lang/InstrumentationImpl.java
 ../../classpath-generics/gnu/java/lang/MainThread.java
 ../../classpath-generics/gnu/java/lang/reflect/ClassSignatureParser.java
 ../../classpath-generics/gnu/java/lang/reflect/FieldSignatureParser.java
 ../../classpath-generics/gnu/java/lang/reflect/GenericSignatureParser.java
 ../../classpath-generics/gnu/java/lang/reflect/MethodSignatureParser.java
+../../classpath-generics/gnu/java/lang/reflect/TypeImpl.java
 ../../classpath-generics/gnu/java/lang/reflect/TypeSignature.java
 ../../classpath-generics/gnu/java/locale/LocaleHelper.java
 ../../classpath-generics/gnu/java/math/MPN.java
 ../../classpath-generics/gnu/java/net/BASE64.java
 ../../classpath-generics/gnu/java/net/CRLFInputStream.java
 ../../classpath-generics/gnu/java/net/CRLFOutputStream.java
+../../classpath-generics/gnu/java/net/DefaultContentHandlerFactory.java
 ../../classpath-generics/gnu/java/net/DefaultProxySelector.java
 ../../classpath-generics/gnu/java/net/EmptyX509TrustManager.java
 ../../classpath-generics/gnu/java/net/GetLocalHostAction.java
@@ -638,6 +641,7 @@
 ../../classpath-generics/gnu/java/rmi/registry/RegistryImpl_Stub.java
 ../../classpath-generics/gnu/java/rmi/RMIMarshalledObjectInputStream.java
 ../../classpath-generics/gnu/java/rmi/RMIMarshalledObjectOutputStream.java
+../../classpath-generics/gnu/java/rmi/server/ActivatableRef.java
 ../../classpath-generics/gnu/java/rmi/server/ActivatableServerRef.java
 ../../classpath-generics/gnu/java/rmi/server/CombinedClassLoader.java
 ../../classpath-generics/gnu/java/rmi/server/ConnectionRunnerPool.java
@@ -1317,9 +1321,11 @@
 ../../classpath-generics/gnu/javax/swing/text/html/parser/support/parameterDefaulter.java
 ../../classpath-generics/gnu/javax/swing/text/html/parser/support/Parser.java
 ../../classpath-generics/gnu/javax/swing/text/html/parser/support/textPreProcessor.java
+../../classpath-generics/gnu/javax/swing/tree/GnuPath.java
 ../../classpath-generics/gnu/regexp/BacktrackStack.java
 ../../classpath-generics/gnu/regexp/CharIndexed.java
 ../../classpath-generics/gnu/regexp/CharIndexedCharArray.java
+../../classpath-generics/gnu/regexp/CharIndexedCharSequence.java
 ../../classpath-generics/gnu/regexp/CharIndexedInputStream.java
 ../../classpath-generics/gnu/regexp/CharIndexedString.java
 ../../classpath-generics/gnu/regexp/CharIndexedStringBuffer.java
@@ -1334,6 +1340,7 @@
 ../../classpath-generics/gnu/regexp/RETokenBackRef.java
 ../../classpath-generics/gnu/regexp/RETokenChar.java
 ../../classpath-generics/gnu/regexp/RETokenEnd.java
+../../classpath-generics/gnu/regexp/RETokenEndOfPreviousMatch.java
 ../../classpath-generics/gnu/regexp/RETokenEndSub.java
 ../../classpath-generics/gnu/regexp/RETokenIndependent.java
 ../../classpath-generics/gnu/regexp/RETokenLookAhead.java
@@ -1396,6 +1403,7 @@
 ../../classpath-generics/gnu/xml/dom/html2/DomHTMLDListElement.java
 ../../classpath-generics/gnu/xml/dom/html2/DomHTMLDocument.java
 ../../classpath-generics/gnu/xml/dom/html2/DomHTMLElement.java
+../../classpath-generics/gnu/xml/dom/html2/DomHTMLEmbedElement.java
 ../../classpath-generics/gnu/xml/dom/html2/DomHTMLFieldSetElement.java
 ../../classpath-generics/gnu/xml/dom/html2/DomHTMLFontElement.java
 ../../classpath-generics/gnu/xml/dom/html2/DomHTMLFormElement.java
@@ -2236,7 +2244,6 @@
 ../../classpath-generics/java/lang/instrument/IllegalClassFormatException.java
 ../../classpath-generics/java/lang/instrument/Instrumentation.java
 ../../classpath-generics/java/lang/instrument/UnmodifiableClassException.java
-../../classpath-generics/java/lang/InstrumentationImpl.java
 ../../classpath-generics/java/lang/Integer.java
 ../../classpath-generics/java/lang/InternalError.java
 ../../classpath-generics/java/lang/InterruptedException.java
@@ -2856,12 +2863,14 @@
 ../../classpath-generics/java/util/zip/ZipOutputStream.java
 ../../classpath-generics/javax/accessibility/Accessible.java
 ../../classpath-generics/javax/accessibility/AccessibleAction.java
+../../classpath-generics/javax/accessibility/AccessibleAttributeSequence.java
 ../../classpath-generics/javax/accessibility/AccessibleBundle.java
 ../../classpath-generics/javax/accessibility/AccessibleComponent.java
 ../../classpath-generics/javax/accessibility/AccessibleContext.java
 ../../classpath-generics/javax/accessibility/AccessibleEditableText.java
 ../../classpath-generics/javax/accessibility/AccessibleExtendedComponent.java
 ../../classpath-generics/javax/accessibility/AccessibleExtendedTable.java
+../../classpath-generics/javax/accessibility/AccessibleExtendedText.java
 ../../classpath-generics/javax/accessibility/AccessibleHyperlink.java
 ../../classpath-generics/javax/accessibility/AccessibleHypertext.java
 ../../classpath-generics/javax/accessibility/AccessibleIcon.java
@@ -2873,9 +2882,11 @@
 ../../classpath-generics/javax/accessibility/AccessibleSelection.java
 ../../classpath-generics/javax/accessibility/AccessibleState.java
 ../../classpath-generics/javax/accessibility/AccessibleStateSet.java
+../../classpath-generics/javax/accessibility/AccessibleStreamable.java
 ../../classpath-generics/javax/accessibility/AccessibleTable.java
 ../../classpath-generics/javax/accessibility/AccessibleTableModelChange.java
 ../../classpath-generics/javax/accessibility/AccessibleText.java
+../../classpath-generics/javax/accessibility/AccessibleTextSequence.java
 ../../classpath-generics/javax/accessibility/AccessibleValue.java
 ../../classpath-generics/javax/crypto/BadPaddingException.java
 ../../classpath-generics/javax/crypto/Cipher.java
@@ -2941,6 +2952,9 @@
 ../../classpath-generics/javax/imageio/metadata/IIOMetadataNode.java
 ../../classpath-generics/javax/imageio/plugins/bmp/BMPImageWriteParam.java
 ../../classpath-generics/javax/imageio/plugins/jpeg/JPEGHuffmanTable.java
+../../classpath-generics/javax/imageio/plugins/jpeg/JPEGImageReadParam.java
+../../classpath-generics/javax/imageio/plugins/jpeg/JPEGImageWriteParam.java
+../../classpath-generics/javax/imageio/plugins/jpeg/JPEGQTable.java
 ../../classpath-generics/javax/imageio/spi/IIORegistry.java
 ../../classpath-generics/javax/imageio/spi/IIOServiceProvider.java
 ../../classpath-generics/javax/imageio/spi/ImageInputStreamSpi.java
@@ -3231,6 +3245,12 @@
 ../../classpath-generics/javax/security/auth/callback/UnsupportedCallbackException.java
 ../../classpath-generics/javax/security/auth/Destroyable.java
 ../../classpath-generics/javax/security/auth/DestroyFailedException.java
+../../classpath-generics/javax/security/auth/kerberos/DelegationPermission.java
+../../classpath-generics/javax/security/auth/kerberos/KerberosKey.java
+../../classpath-generics/javax/security/auth/kerberos/KerberosPrincipal.java
+../../classpath-generics/javax/security/auth/kerberos/KerberosTicket.java
+../../classpath-generics/javax/security/auth/kerberos/KeyImpl.java
+../../classpath-generics/javax/security/auth/kerberos/ServicePermission.java
 ../../classpath-generics/javax/security/auth/login/AccountException.java
 ../../classpath-generics/javax/security/auth/login/AccountExpiredException.java
 ../../classpath-generics/javax/security/auth/login/AccountLockedException.java
@@ -3374,6 +3394,7 @@
 ../../classpath-generics/javax/swing/colorchooser/DefaultSwatchChooserPanel.java
 ../../classpath-generics/javax/swing/ComboBoxEditor.java
 ../../classpath-generics/javax/swing/ComboBoxModel.java
+../../classpath-generics/javax/swing/CompatibilityFocusTraversalPolicy.java
 ../../classpath-generics/javax/swing/ComponentInputMap.java
 ../../classpath-generics/javax/swing/DebugGraphics.java
 ../../classpath-generics/javax/swing/DefaultBoundedRangeModel.java
@@ -3923,6 +3944,7 @@
 ../../classpath-generics/javax/xml/transform/URIResolver.java
 ../../classpath-generics/javax/xml/validation/Schema.java
 ../../classpath-generics/javax/xml/validation/SchemaFactory.java
+../../classpath-generics/javax/xml/validation/SchemaFactoryLoader.java
 ../../classpath-generics/javax/xml/validation/TypeInfoProvider.java
 ../../classpath-generics/javax/xml/validation/Validator.java
 ../../classpath-generics/javax/xml/validation/ValidatorHandler.java
@@ -4369,7 +4391,6 @@
 ../../classpath-generics/org/omg/PortableInterceptor/ObjectReferenceFactory.java
 ../../classpath-generics/org/omg/PortableInterceptor/ObjectReferenceFactoryHelper.java
 ../../classpath-generics/org/omg/PortableInterceptor/ObjectReferenceFactoryHolder.java
-../../classpath-generics/org/omg/PortableInterceptor/ObjectReferenceFactoryOperations.java
 ../../classpath-generics/org/omg/PortableInterceptor/ObjectReferenceTemplate.java
 ../../classpath-generics/org/omg/PortableInterceptor/ObjectReferenceTemplateHelper.java
 ../../classpath-generics/org/omg/PortableInterceptor/ObjectReferenceTemplateHolder.java
@@ -4493,6 +4514,7 @@ gnu/classpath/Pointer.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
 gnu/java/lang/reflect/VMField.java
+gnu/java/lang/VMInstrumentationImpl.java
 gnu/java/locale/LocaleData.java
 gnu/java/net/PlainDatagramSocketImpl.java
 gnu/java/net/PlainSocketImpl.java

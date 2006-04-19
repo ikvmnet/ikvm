@@ -127,6 +127,23 @@ namespace IKVM.NativeCode.java
 					return wrapper.DeclaringType.GetAnnotationDefault(wrapper);
 				}
 
+				public static object[] GetDeclaredAnnotations(Object methodCookie)
+				{
+					MethodWrapper wrapper = (MethodWrapper)methodCookie;
+					return wrapper.DeclaringType.GetMethodAnnotations(wrapper);
+				}
+
+				public static object[][] GetParameterAnnotations(Object methodCookie)
+				{
+					MethodWrapper wrapper = (MethodWrapper)methodCookie;
+					object[][] annotations = wrapper.DeclaringType.GetParameterAnnotations(wrapper);
+					if(annotations == null)
+					{
+						annotations = new object[wrapper.GetParameters().Length][];
+					}
+					return annotations;
+				}
+
 				[HideFromJava]
 				public static object Invoke(object methodCookie, object o, object[] args)
 				{
@@ -219,6 +236,12 @@ namespace IKVM.NativeCode.java
 				{
 					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
 					return wrapper.DeclaringType.GetGenericFieldSignature(wrapper);
+				}
+
+				public static object[] GetDeclaredAnnotations(Object fieldCookie)
+				{
+					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
+					return wrapper.DeclaringType.GetFieldAnnotations(wrapper);
 				}
 
 				public static void RunClassInit(object clazz)

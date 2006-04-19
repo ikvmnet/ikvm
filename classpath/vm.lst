@@ -9,6 +9,7 @@ gnu/classpath/Pointer.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
 gnu/java/lang/reflect/VMField.java
+gnu/java/lang/VMInstrumentationImpl.java
 gnu/java/locale/LocaleData.java
 gnu/java/net/PlainDatagramSocketImpl.java
 gnu/java/net/PlainSocketImpl.java
