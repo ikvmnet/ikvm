@@ -280,7 +280,10 @@ namespace IKVM.Internal
 		protected override void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method)
 		{
 			IKVM.Internal.MapXml.Param[] parameters = GetXmlMapParameters(classFile.Name, m.Name, m.Signature);
-			if((classFile.IsPublic && (m.IsPublic || m.IsProtected)) || parameters != null || JVM.Debug)
+			if((classFile.IsPublic && (m.IsPublic || m.IsProtected))
+				|| m.ParameterAnnotations != null
+				|| parameters != null
+				|| JVM.Debug)
 			{
 				string[] parameterNames = null;
 				if(parameters != null)
@@ -295,6 +298,20 @@ namespace IKVM.Internal
 				if((m.Modifiers & Modifiers.VarArgs) != 0 && pbs.Length > 0)
 				{
 					AttributeHelper.SetParamArrayAttribute(pbs[pbs.Length - 1]);
+				}
+				if(m.ParameterAnnotations != null)
+				{
+					for(int i = 0; i < m.ParameterAnnotations.Length; i++)
+					{
+						foreach(object[] def in m.ParameterAnnotations[i])
+						{
+							Annotation annotation = Annotation.Load(classLoader, def);
+							if(annotation != null)
+							{
+								annotation.Apply(pbs[i], def);
+							}
+						}
+					}
 				}
 				if(parameters != null)
 				{

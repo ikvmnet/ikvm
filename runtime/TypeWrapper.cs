@@ -1373,7 +1373,28 @@ namespace IKVM.Internal
 #if !COMPACT_FRAMEWORK
 	abstract class Annotation
 	{
+		// NOTE this method returns null if the type could not be found
+		internal static Annotation Load(ClassLoaderWrapper loader, object[] def)
+		{
+			Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
+			string annotationClass = (string)def[1];
+			try
+			{
+				TypeWrapper annot = loader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.'));
+				return annot.Annotation;
+			}
+			catch(RetargetableJavaException)
+			{
+				Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
+				return null;
+			}
+		}
+
 		internal abstract void Apply(TypeBuilder tb, object annotation);
+		internal abstract void Apply(MethodBuilder mb, object annotation);
+		internal abstract void Apply(ConstructorBuilder cb, object annotation);
+		internal abstract void Apply(FieldBuilder fb, object annotation);
+		internal abstract void Apply(ParameterBuilder pb, object annotation);
 	}
 #endif
 
@@ -4405,27 +4426,53 @@ namespace IKVM.Internal
 //							}
 //						}
 
+						for(int i = 0; i < classFile.Methods.Length; i++)
+						{
+							ClassFile.Method m = classFile.Methods[i];
+							MethodBase mb = methods[i].GetMethod();
+							if(m.Annotations != null)
+							{
+								foreach(object[] def in m.Annotations)
+								{
+									Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
+									if(annotation != null)
+									{
+										ConstructorBuilder cb = mb as ConstructorBuilder;
+										if(cb != null)
+										{
+											annotation.Apply(cb, def);
+										}
+										MethodBuilder mBuilder = mb as MethodBuilder;
+										if(mBuilder != null)
+										{
+											annotation.Apply(mBuilder, def);
+										}
+									}
+								}
+							}
+						}
+
+						for(int i = 0; i < classFile.Fields.Length; i++)
+						{
+							if(classFile.Fields[i].Annotations != null)
+							{
+								foreach(object[] def in classFile.Fields[i].Annotations)
+								{
+									Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
+									if(annotation != null)
+									{
+										annotation.Apply((FieldBuilder)fields[i].GetField(), def);
+									}
+								}
+							}
+						}
+
 						if(classFile.Annotations != null)
 						{
 							foreach(object[] def in classFile.Annotations)
 							{
-								Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
-								string annotationClass = (string)def[1];
-								Annotation annotation = null;
-								try
-								{
-									TypeWrapper annot = wrapper.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'));
-									annotation = annot.Annotation;
-								}
-								catch(RetargetableJavaException)
-								{
-									Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
-								}
-								if(annotation == null)
-								{
-									// TODO figure out what to do here
-								}
-								else
+								Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
+								if(annotation != null)
 								{
 									annotation.Apply(typeBuilder, def);
 								}
@@ -4724,6 +4771,38 @@ namespace IKVM.Internal
 					if(annotationTypeBuilder != null)
 					{
 						tb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
+					}
+				}
+
+				internal override void Apply(MethodBuilder mb, object annotation)
+				{
+					if(annotationTypeBuilder != null)
+					{
+						mb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
+					}
+				}
+
+				internal override void Apply(ConstructorBuilder cb, object annotation)
+				{
+					if(annotationTypeBuilder != null)
+					{
+						cb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
+					}
+				}
+
+				internal override void Apply(FieldBuilder fb, object annotation)
+				{
+					if(annotationTypeBuilder != null)
+					{
+						fb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
+					}
+				}
+
+				internal override void Apply(ParameterBuilder pb, object annotation)
+				{
+					if(annotationTypeBuilder != null)
+					{
+						pb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 					}
 				}
 			}
@@ -7224,6 +7303,27 @@ namespace IKVM.Internal
 			return type.GetCustomAttributes(false);
 		}
 
+		internal override object[] GetMethodAnnotations(MethodWrapper mw)
+		{
+			return mw.GetMethod().GetCustomAttributes(false);
+		}
+
+		internal override object[][] GetParameterAnnotations(MethodWrapper mw)
+		{
+			ParameterInfo[] parameters = mw.GetMethod().GetParameters();
+			object[][] attribs = new object[parameters.Length][];
+			for(int i = 0; i < parameters.Length; i++)
+			{
+				attribs[i] = parameters[i].GetCustomAttributes(false);
+			}
+			return attribs;
+		}
+
+		internal override object[] GetFieldAnnotations(FieldWrapper fw)
+		{
+			return fw.GetField().GetCustomAttributes(false);
+		}
+
 #if !COMPACT_FRAMEWORK
 		private class CompiledAnnotation : Annotation
 		{
@@ -7234,10 +7334,34 @@ namespace IKVM.Internal
 				this.type = type;
 			}
 
+			private CustomAttributeBuilder MakeCustomAttributeBuilder(object annotation)
+			{
+				return new CustomAttributeBuilder(type.GetConstructor(new Type[] { typeof(object[]) }), new object[] { annotation });
+			}
+
 			internal override void Apply(TypeBuilder tb, object annotation)
 			{
-				// TODO set the properties
-				tb.SetCustomAttribute(new CustomAttributeBuilder(type.GetConstructor(Type.EmptyTypes), new object[0]));
+				tb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+			}
+
+			internal override void Apply(ConstructorBuilder cb, object annotation)
+			{
+				cb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+			}
+
+			internal override void Apply(MethodBuilder mb, object annotation)
+			{
+				mb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+			}
+
+			internal override void Apply(FieldBuilder fb, object annotation)
+			{
+				fb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+			}
+
+			internal override void Apply(ParameterBuilder pb, object annotation)
+			{
+				pb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 		}
 
