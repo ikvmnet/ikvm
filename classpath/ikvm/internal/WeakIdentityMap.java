@@ -59,6 +59,11 @@ public final class WeakIdentityMap
     {
         if (key == null)
             throw new NullPointerException();
+        putImpl(key, value, true);
+    }
+
+    private void putImpl(Object key, Object value, boolean tryGC)
+    {
         int emptySlot = -1;
         int keySlot = -1;
         for (int i = 0; i < keys.length; i++)
@@ -85,6 +90,12 @@ public final class WeakIdentityMap
         }
         else
         {
+            if (tryGC)
+            {
+                GC.Collect(0);
+                putImpl(key, value, false);
+                return;
+            }
             int len = keys.length;
             WeakReference[] newkeys = new WeakReference[len * 2];
             Object[] newvalues = new Object[newkeys.length];

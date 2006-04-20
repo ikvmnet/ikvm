@@ -379,6 +379,7 @@ enum NormalizedByteCode : byte
 	__ifnull = 198,
 	__ifnonnull = 199,
 	// This is where the pseudo-bytecodes start
+	__athrow_no_unmap = 244,
 	__dynamic_getstatic = 245,
 	__dynamic_putstatic = 246,
 	__dynamic_getfield = 247,

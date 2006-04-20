@@ -2497,6 +2497,14 @@ namespace IKVM.Internal
 					}
 				}
 
+				internal bool IsBranchTarget
+				{
+					get
+					{
+						return (flags & InstructionFlags.BranchTarget) != 0;
+					}
+				}
+
 				internal void PatchOpCode(NormalizedByteCode bc)
 				{
 					this.normopcode = bc;

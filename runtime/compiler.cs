@@ -1382,7 +1382,7 @@ class Compiler
 			// if there was a forward branch to this instruction, it is forward reachable
 			instructionIsForwardReachable |= block.HasLabel(i);
 
-			if(block.HasLabel(i) || (instr.flags & ClassFile.Method.InstructionFlags.BranchTarget) != 0)
+			if(block.HasLabel(i) || instr.IsBranchTarget)
 			{
 				block.MarkLabel(i);
 			}
@@ -1714,6 +1714,10 @@ class Compiler
 									&& thisType.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == java_lang_Throwable)
 								{
 									ilGenerator.Emit(OpCodes.Call, suppressFillInStackTraceMethod);
+									if(!code[i + 1].IsBranchTarget)
+									{
+										code[i + 1].PatchOpCode(NormalizedByteCode.__athrow_no_unmap);
+									}
 								}
 							}
 							method.EmitNewobj(ilGenerator);
@@ -2766,8 +2770,14 @@ class Compiler
 				case NormalizedByteCode.__monitorexit:
 					ilGenerator.Emit(OpCodes.Call, monitorExitMethod);
 					break;
+				case NormalizedByteCode.__athrow_no_unmap:
+					if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
+					{
+						ilGenerator.Emit(OpCodes.Castclass, typeof(Exception));
+					}
+					ilGenerator.Emit(OpCodes.Throw);
+					break;
 				case NormalizedByteCode.__athrow:
-					// TODO we shouldn't call unmap when we know it isn't needed
 					if(ma.GetRawStackTypeWrapper(i, 0).IsUnloadable)
 					{
 						ilGenerator.Emit(OpCodes.Castclass, typeof(Exception));
@@ -2948,6 +2958,7 @@ class Compiler
 				case NormalizedByteCode.__areturn:
 				case NormalizedByteCode.__return:
 				case NormalizedByteCode.__athrow:
+				case NormalizedByteCode.__athrow_no_unmap:
 				case NormalizedByteCode.__static_error:
 					instructionIsForwardReachable = false;
 					break;
