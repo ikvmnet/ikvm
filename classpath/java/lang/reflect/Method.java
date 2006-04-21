@@ -41,8 +41,9 @@ package java.lang.reflect;
 import gnu.java.lang.ClassHelper;
 
 import gnu.java.lang.reflect.MethodSignatureParser;
-
+import java.lang.annotation.Annotation;
 import java.util.Arrays;
+import java.util.ArrayList;
 import gnu.classpath.VMStackWalker;
 
 /**
@@ -535,4 +536,57 @@ public final class Method
         return null;
     }
     private static native Object GetDefaultValue(Object methodCookie);
+
+    public Annotation getAnnotation(Class annotationClass)
+    {
+        for (Annotation annotation : getDeclaredAnnotations())
+            if (annotation.annotationType() == annotationClass)
+                return annotation;
+        return null;
+    }
+
+    static Annotation[] toAnnotationArray(Object[] annotations)
+    {
+        if (annotations == null)
+        {
+            return new Annotation[0];
+        }
+        // For the time being we filter out the .NET attributes
+        // (that don't implement Annotation)
+        ArrayList list = new ArrayList(annotations.length);
+        for(int i = 0; i < annotations.length; i++)
+        {
+            if(annotations[i] instanceof Annotation)
+            {
+                list.add(annotations[i]);
+            }
+        }
+        Annotation[] ar = new Annotation[list.size()];
+        list.toArray(ar);
+        return ar;
+    }
+
+    static Annotation[][] toAnnotationArrayArray(Object[][] annotations)
+    {
+        ArrayList list = new ArrayList(annotations.length);
+        for(int i = 0; i < annotations.length; i++)
+        {
+            list.add(toAnnotationArray(annotations[i]));
+        }
+        Annotation[][] ar = new Annotation[list.size()][];
+        list.toArray(ar);
+        return ar;
+    }
+
+    public Annotation[] getDeclaredAnnotations()
+    {
+        return toAnnotationArray(GetDeclaredAnnotations(methodCookie));
+    }
+    static native Object[] GetDeclaredAnnotations(Object methodCookie);
+
+    public Annotation[][] getParameterAnnotations()
+    {
+        return toAnnotationArrayArray(GetParameterAnnotations(methodCookie));
+    }
+    static native Object[][] GetParameterAnnotations(Object methodCookie);
 }

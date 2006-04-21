@@ -42,6 +42,7 @@ import gnu.java.lang.ClassHelper;
 
 import gnu.java.lang.reflect.MethodSignatureParser;
 
+import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import gnu.classpath.VMStackWalker;
 
@@ -425,5 +426,23 @@ public final class Constructor
             return getParameterTypes();
         MethodSignatureParser p = new MethodSignatureParser(this, sig);
         return p.getGenericParameterTypes();
+    }
+
+    public Annotation getAnnotation(Class annotationClass)
+    {
+        for (Annotation annotation : getDeclaredAnnotations())
+            if (annotation.annotationType() == annotationClass)
+                return annotation;
+        return null;
+    }
+
+    public Annotation[] getDeclaredAnnotations()
+    {
+        return Method.toAnnotationArray(Method.GetDeclaredAnnotations(methodCookie));
+    }
+
+    public Annotation[][] getParameterAnnotations()
+    {
+        return Method.toAnnotationArrayArray(Method.GetParameterAnnotations(methodCookie));
     }
 }

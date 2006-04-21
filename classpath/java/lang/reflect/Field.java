@@ -38,6 +38,7 @@ exception statement from your version. */
 
 package java.lang.reflect;
 
+import java.lang.annotation.Annotation;
 import gnu.java.lang.ClassHelper;
 import gnu.classpath.VMStackWalker;
 import gnu.java.lang.reflect.FieldSignatureParser;
@@ -224,6 +225,18 @@ public final class Field
 	    sb.append(getName());
 	    return sb.toString();
 	}
+
+        public String toGenericString()
+        {
+            StringBuffer sb = new StringBuffer(64);
+            Modifier.toString(getModifiers(), sb);
+            if (sb.length() > 0)
+                sb.append(' ');
+            sb.append(getGenericType()).append(' ');
+            sb.append(getDeclaringClass().getName()).append('.');
+            sb.append(getName());
+            return sb.toString();
+        }
 
 	/**
 	 * Get the value of this Field.  If it is primitive, it will be wrapped
@@ -725,12 +738,25 @@ public final class Field
             impl.setDouble(o, value, isAccessible());
 	}
 
-    public Type getGenericType()
-    {
-        String signature = impl.getSignature();
-        if (signature == null)
-            return getType();
-        FieldSignatureParser p = new FieldSignatureParser(getDeclaringClass(), signature);
-        return p.getFieldType();
-    }
+        public Type getGenericType()
+        {
+            String signature = impl.getSignature();
+            if (signature == null)
+                return getType();
+            FieldSignatureParser p = new FieldSignatureParser(getDeclaringClass(), signature);
+            return p.getFieldType();
+        }
+
+        public Annotation getAnnotation(Class annotationClass)
+        {
+            for (Annotation annotation : getDeclaredAnnotations())
+                if (annotation.annotationType() == annotationClass)
+                    return annotation;
+            return null;
+        }
+
+        public Annotation[] getDeclaredAnnotations()
+        {
+            return Method.toAnnotationArray(VMFieldImpl.GetDeclaredAnnotations(impl.fieldCookie));
+        }
 }

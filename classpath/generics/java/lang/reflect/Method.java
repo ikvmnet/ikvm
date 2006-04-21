@@ -538,17 +538,10 @@ public final class Method
 
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
     {
-        T foundAnnotation = null;
-        Annotation[] annotations = getAnnotations();
-        for (Annotation annotation : annotations)
+        for (Annotation annotation : getDeclaredAnnotations())
             if (annotation.annotationType() == annotationClass)
-                foundAnnotation = (T) annotation;
-        return foundAnnotation;
-    }
-
-    public Annotation[] getAnnotations()
-    {
-        return getDeclaredAnnotations();
+                return (T) annotation;
+        return null;
     }
 
     static Annotation[] toAnnotationArray(Object[] annotations)

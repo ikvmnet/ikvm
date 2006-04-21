@@ -428,17 +428,10 @@ public final class Constructor<T>
 
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
     {
-        T foundAnnotation = null;
-        Annotation[] annotations = getAnnotations();
-        for (Annotation annotation : annotations)
-        if (annotation.annotationType() == annotationClass)
-        foundAnnotation = (T) annotation;
-        return foundAnnotation;
-    }
-
-    public Annotation[] getAnnotations()
-    {
-        return getDeclaredAnnotations();
+        for (Annotation annotation : getDeclaredAnnotations())
+            if (annotation.annotationType() == annotationClass)
+                return (T) annotation;
+        return null;
     }
 
     public Annotation[] getDeclaredAnnotations()

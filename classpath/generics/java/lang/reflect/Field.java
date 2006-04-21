@@ -747,23 +747,16 @@ public final class Field
             return p.getFieldType();
         }
 
-    public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
-    {
-        T foundAnnotation = null;
-        Annotation[] annotations = getAnnotations();
-        for (Annotation annotation : annotations)
-        if (annotation.annotationType() == annotationClass)
-        foundAnnotation = (T) annotation;
-        return foundAnnotation;
-    }
+        public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
+        {
+            for (Annotation annotation : getDeclaredAnnotations())
+                if (annotation.annotationType() == annotationClass)
+                    return (T) annotation;
+            return null;
+        }
 
-    public Annotation[] getAnnotations()
-    {
-        return getDeclaredAnnotations();
-    }
-
-    public Annotation[] getDeclaredAnnotations()
-    {
-        return Method.toAnnotationArray(VMFieldImpl.GetDeclaredAnnotations(impl.fieldCookie));
-    }
+        public Annotation[] getDeclaredAnnotations()
+        {
+            return Method.toAnnotationArray(VMFieldImpl.GetDeclaredAnnotations(impl.fieldCookie));
+        }
 }
