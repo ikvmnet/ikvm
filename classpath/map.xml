@@ -960,7 +960,7 @@
 		<!-- Here we are adding methods to existing classes -->
 		<class name="java.lang.Class">
 			<attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
-				<parameter>&lt;T:Ljava/lang/Object;&gt;Ljava/lang/Object;</parameter>
+				<parameter>&lt;T:Ljava/lang/Object;&gt;Ljava/lang/Object;Ljava/io/Serializable;Ljava/lang/reflect/Type;Ljava/lang/reflect/AnnotatedElement;Ljava/lang/reflect/GenericDeclaration;</parameter>
 			</attribute>
 			<method name="op_Implicit" sig="(Lcli.System.Type;)Ljava.lang.Class;" modifiers="public static" attributes="SpecialName">
 				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />

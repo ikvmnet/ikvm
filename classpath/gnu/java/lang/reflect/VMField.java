@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005 Jeroen Frijters
+  Copyright (C) 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -44,17 +44,7 @@ public abstract class VMField
 
     public final int getModifiers()
     {
-        return modifiers & 0x00DF;
-    }
-
-    public final boolean isEnumConstant()
-    {
-        return (modifiers & 0x4000) != 0;
-    }
-
-    public final boolean isSynthetic()
-    {
-        return (modifiers & 0x1000) != 0;
+        return modifiers;
     }
 
     public abstract Field newField();

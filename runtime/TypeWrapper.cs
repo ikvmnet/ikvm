@@ -7248,7 +7248,9 @@ namespace IKVM.Internal
 		internal override string GetGenericSignature()
 		{
 			object[] attr = type.GetCustomAttributes(typeof(SignatureAttribute), false);
-			if(attr.Length == 1)
+			// HACK for the time being we have to support having two signature attributes
+			// (because of the hack in map.xml to make japi happy on the non-generics branch)
+			if(attr.Length >= 1)
 			{
 				return ((SignatureAttribute)attr[0]).Signature;
 			}
