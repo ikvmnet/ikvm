@@ -226,6 +226,18 @@ public final class Field
 	    return sb.toString();
 	}
 
+        public String toGenericString()
+        {
+            StringBuilder sb = new StringBuilder(64);
+            Modifier.toString(getModifiers(), sb);
+            if (sb.length() > 0)
+                sb.append(' ');
+            sb.append(getGenericType()).append(' ');
+            sb.append(getDeclaringClass().getName()).append('.');
+            sb.append(getName());
+            return sb.toString();
+        }
+
 	/**
 	 * Get the value of this Field.  If it is primitive, it will be wrapped
 	 * in the appropriate wrapper type (boolean = java.lang.Boolean).<p>
