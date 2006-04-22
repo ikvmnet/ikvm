@@ -3502,10 +3502,31 @@ namespace IKVM.Internal
 						clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
 					}
 #if STATIC_COMPILER
-					if(f.IsAnnotation)
+					if(f.IsAnnotation && f.Annotations != null)
 					{
-						annotationBuilder = new AnnotationBuilder(this);
-						((AotTypeWrapper)wrapper).SetAnnotation(annotationBuilder);
+						foreach(object[] def in f.Annotations)
+						{
+							if(def[1].Equals("Ljava/lang/annotation/Retention;"))
+							{
+								for(int i = 2; i < def.Length; i += 2)
+								{
+									if(def[i].Equals("value"))
+									{
+										object[] val = def[i + 1] as object[];
+										if(val != null
+											&& val.Length == 3
+											&& val[0].Equals(AnnotationDefaultAttribute.TAG_ENUM)
+											&& val[1].Equals("Ljava/lang/annotation/RetentionPolicy;")
+											&& val[2].Equals("RUNTIME"))
+										{
+											annotationBuilder = new AnnotationBuilder(this);
+											((AotTypeWrapper)wrapper).SetAnnotation(annotationBuilder);
+											break;
+										}
+									}
+								}
+							}
+						}
 					}
 #endif
 				}
