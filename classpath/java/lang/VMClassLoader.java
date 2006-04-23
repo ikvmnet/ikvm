@@ -322,7 +322,7 @@ final class VMClassLoader
                                 }
                             }
 
-                            h.put(name, new Package(name, specTitle, specVendor, specVersion, implTitle, implVendor, implVersion, url));
+                            h.put(name, new Package(name, specTitle, specVendor, specVersion, implTitle, implVendor, implVersion, url, null));
                         }
                     }
                 }

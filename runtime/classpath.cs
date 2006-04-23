@@ -130,12 +130,14 @@ namespace IKVM.NativeCode.java
 				public static object[] GetDeclaredAnnotations(Object methodCookie)
 				{
 					MethodWrapper wrapper = (MethodWrapper)methodCookie;
+					wrapper.DeclaringType.Finish();
 					return wrapper.DeclaringType.GetMethodAnnotations(wrapper);
 				}
 
 				public static object[][] GetParameterAnnotations(Object methodCookie)
 				{
 					MethodWrapper wrapper = (MethodWrapper)methodCookie;
+					wrapper.DeclaringType.Finish();
 					object[][] annotations = wrapper.DeclaringType.GetParameterAnnotations(wrapper);
 					if(annotations == null)
 					{
@@ -241,6 +243,7 @@ namespace IKVM.NativeCode.java
 				public static object[] GetDeclaredAnnotations(Object fieldCookie)
 				{
 					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
+					wrapper.DeclaringType.Finish();
 					return wrapper.DeclaringType.GetFieldAnnotations(wrapper);
 				}
 
@@ -1082,6 +1085,7 @@ namespace IKVM.NativeCode.java
 			public static object[] GetDeclaredAnnotations(object cwrapper)
 			{
 				TypeWrapper wrapper = (TypeWrapper)cwrapper;
+				wrapper.Finish();
 				return wrapper.GetDeclaredAnnotations();
 			}
 		}

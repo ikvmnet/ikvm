@@ -1066,7 +1066,7 @@ namespace IKVM.Internal
 						for(int i = skip; i < end; i++)
 						{
 							char c = name[i];
-							if(!Char.IsLetterOrDigit(c) && c != '$' && c != '_' && (c != '/' || prev == '/'))
+							if(!Char.IsLetterOrDigit(c) && c != '$' && c != '_' && c != '-' && (c != '/' || prev == '/'))
 							{
 								goto barf;
 							}

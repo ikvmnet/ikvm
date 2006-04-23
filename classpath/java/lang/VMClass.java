@@ -264,18 +264,6 @@ public abstract class VMClass
     return fullName.substring(Math.max(fullName.lastIndexOf("."), fullName.lastIndexOf("$")) + 1);
   }
 
-  static Object[] getEnumConstants(Class clazz)
-  {
-    if (isEnum(clazz))
-      {
-        throw new Error("Not implemented");
-      }
-    else
-      {
-	return null;
-      }
-  }
-
   static Annotation[] getDeclaredAnnotations(Class clazz)
   {
     Object[] annotations = GetDeclaredAnnotations(clazz.vmdata);

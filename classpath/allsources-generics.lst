@@ -4551,7 +4551,6 @@ java/lang/VMDouble.java
 java/lang/VMFloat.java
 java/lang/VMInstrumentationImpl.java
 java/lang/VMMath.java
-java/lang/VMPackage.java
 java/lang/VMProcess.java
 java/lang/VMRuntime.java
 java/lang/VMSystem.java

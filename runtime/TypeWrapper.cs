@@ -1390,6 +1390,35 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal static bool HasRetentionPolicyRuntime(object[] annotations)
+		{
+			if(annotations != null)
+			{
+				foreach(object[] def in annotations)
+				{
+					if(def[1].Equals("Ljava/lang/annotation/Retention;"))
+					{
+						for(int i = 2; i < def.Length; i += 2)
+						{
+							if(def[i].Equals("value"))
+							{
+								object[] val = def[i + 1] as object[];
+								if(val != null
+									&& val.Length == 3
+									&& val[0].Equals(AnnotationDefaultAttribute.TAG_ENUM)
+									&& val[1].Equals("Ljava/lang/annotation/RetentionPolicy;")
+									&& val[2].Equals("RUNTIME"))
+								{
+									return true;
+								}
+							}
+						}
+					}
+				}
+			}
+			return false;
+		}
+
 		internal abstract void Apply(TypeBuilder tb, object annotation);
 		internal abstract void Apply(MethodBuilder mb, object annotation);
 		internal abstract void Apply(ConstructorBuilder cb, object annotation);
@@ -3502,31 +3531,10 @@ namespace IKVM.Internal
 						clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
 					}
 #if STATIC_COMPILER
-					if(f.IsAnnotation && f.Annotations != null)
+					if(f.IsAnnotation && Annotation.HasRetentionPolicyRuntime(f.Annotations))
 					{
-						foreach(object[] def in f.Annotations)
-						{
-							if(def[1].Equals("Ljava/lang/annotation/Retention;"))
-							{
-								for(int i = 2; i < def.Length; i += 2)
-								{
-									if(def[i].Equals("value"))
-									{
-										object[] val = def[i + 1] as object[];
-										if(val != null
-											&& val.Length == 3
-											&& val[0].Equals(AnnotationDefaultAttribute.TAG_ENUM)
-											&& val[1].Equals("Ljava/lang/annotation/RetentionPolicy;")
-											&& val[2].Equals("RUNTIME"))
-										{
-											annotationBuilder = new AnnotationBuilder(this);
-											((AotTypeWrapper)wrapper).SetAnnotation(annotationBuilder);
-											break;
-										}
-									}
-								}
-							}
-						}
+						annotationBuilder = new AnnotationBuilder(this);
+						((AotTypeWrapper)wrapper).SetAnnotation(annotationBuilder);
 					}
 #endif
 				}
@@ -4682,6 +4690,67 @@ namespace IKVM.Internal
 					attributeTypeBuilder.AddInterfaceImplementation(o.typeBuilder);
 					CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(AnnotationAttributeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { attributeTypeBuilder.FullName });
 					o.typeBuilder.SetCustomAttribute(cab);
+
+					if(o.classFile.Annotations != null)
+					{
+						foreach(object[] def in o.classFile.Annotations)
+						{
+							if(def[1].Equals("Ljava/lang/annotation/Target;"))
+							{
+								for(int i = 2; i < def.Length; i += 2)
+								{
+									if(def[i].Equals("value"))
+									{
+										object[] val = def[i + 1] as object[];
+										if(val != null
+											&& val.Length > 0
+											&& val[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
+										{
+											AttributeTargets targets = 0;
+											for(int j = 1; j < val.Length; j++)
+											{
+												object[] eval = val[j] as object[];
+												if(eval != null
+													&& eval.Length == 3
+													&& eval[0].Equals(AnnotationDefaultAttribute.TAG_ENUM)
+													&& eval[1].Equals("Ljava/lang/annotation/ElementType;"))
+												{
+													switch((string)eval[2])
+													{
+														case "ANNOTATION_TYPE":
+															targets |= AttributeTargets.Interface;
+															break;
+														case "CONSTRUCTOR":
+															targets |= AttributeTargets.Constructor;
+															break;
+														case "FIELD":
+															targets |= AttributeTargets.Field;
+															break;
+														case "LOCAL_VARIABLE":
+															break;
+														case "METHOD":
+															targets |= AttributeTargets.Method;
+															break;
+														case "PACKAGE":
+															targets |= AttributeTargets.Interface;
+															break;
+														case "PARAMETER":
+															targets |= AttributeTargets.Parameter;
+															break;
+														case "TYPE":
+															targets |= AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Delegate | AttributeTargets.Enum;
+															break;
+													}
+												}
+											}
+											CustomAttributeBuilder cab2 = new CustomAttributeBuilder(typeof(AttributeUsageAttribute).GetConstructor(new Type[] { typeof(AttributeTargets) }), new object[] { targets });
+											attributeTypeBuilder.SetCustomAttribute(cab2);
+										}
+									}
+								}
+							}
+						}
+					}
 
 					defaultConstructor = attributeTypeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
 					defineConstructor = attributeTypeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new Type[] { typeof(object[]) });
