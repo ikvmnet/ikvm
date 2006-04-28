@@ -76,11 +76,81 @@ class Subroutine
 
 class InstructionState
 {
+	private struct LocalStoreSites
+	{
+		private int[] data;
+		private int count;
+		private bool shared;
+
+		internal LocalStoreSites Copy()
+		{
+			LocalStoreSites n = new LocalStoreSites();
+			n.data = data;
+			n.count = count;
+			n.shared = true;
+			return n;
+		}
+
+		internal static LocalStoreSites Alloc()
+		{
+			LocalStoreSites n = new LocalStoreSites();
+			n.data = new int[4];
+			return n;
+		}
+
+		internal bool IsEmpty
+		{
+			get
+			{
+				return data == null;
+			}
+		}
+
+		internal void Add(int store)
+		{
+			for(int i = 0; i < count; i++)
+			{
+				if(data[i] == store)
+				{
+					return;
+				}
+			}
+			if(count == data.Length)
+			{
+				int[] newarray = new int[data.Length * 2];
+				Buffer.BlockCopy(data, 0, newarray, 0, data.Length * 4);
+				data = newarray;
+				shared = false;
+			}
+			if(shared)
+			{
+				shared = false;
+				data = (int[])data.Clone();
+			}
+			data[count++] = store;
+		}
+
+		internal int this[int index]
+		{
+			get
+			{
+				return data[index];
+			}
+		}
+
+		internal int Count
+		{
+			get
+			{
+				return count;
+			}
+		}
+	}
 	private TypeWrapper[] stack;
 	private int stackSize;
 	private int stackEnd;
 	private TypeWrapper[] locals;
-	private Hashtable[] localStoreSites;
+	private LocalStoreSites[] localStoreSites;
 	private ArrayList subroutines;
 	private int callsites;
 	private bool unitializedThis;
@@ -96,7 +166,7 @@ class InstructionState
 	}
 	private ShareFlags flags;
 
-	private InstructionState(TypeWrapper[] stack, int stackSize, int stackEnd, TypeWrapper[] locals, Hashtable[] localStoreSites, ArrayList subroutines, int callsites, bool unitializedThis)
+	private InstructionState(TypeWrapper[] stack, int stackSize, int stackEnd, TypeWrapper[] locals, LocalStoreSites[] localStoreSites, ArrayList subroutines, int callsites, bool unitializedThis)
 	{
 		this.flags = ShareFlags.All;
 		this.stack = stack;
@@ -115,7 +185,7 @@ class InstructionState
 		this.stack = new TypeWrapper[maxStack];
 		this.stackEnd = maxStack;
 		this.locals = new TypeWrapper[maxLocals];
-		this.localStoreSites = new Hashtable[maxLocals];
+		this.localStoreSites = new LocalStoreSites[maxLocals];
 	}
 
 	internal InstructionState Copy()
@@ -224,7 +294,7 @@ class InstructionState
 						s2.LocalsCopyOnWrite();
 						s2.locals[i] = s3.locals[i];
 						s2.LocalStoreSitesCopyOnWrite();
-						s2.localStoreSites[i] = s3.localStoreSites[i] != null ? (Hashtable)s3.localStoreSites[i].Clone() : null;
+						s2.localStoreSites[i] = s3.localStoreSites[i].Copy();
 					}
 				}
 			}
@@ -281,8 +351,8 @@ class InstructionState
 		{
 			TypeWrapper type = s.locals[i];
 			TypeWrapper type2;
-			Hashtable storeSites = s.localStoreSites[i];
-			Hashtable storeSites2;
+			LocalStoreSites storeSites = s.localStoreSites[i];
+			LocalStoreSites storeSites2;
 			if(locals_modified == null || locals_modified[i])
 			{
 				type2 = s2.locals[i];
@@ -301,7 +371,7 @@ class InstructionState
 				s.changed = true;
 			}
 			storeSites = MergeStoreSites(storeSites, storeSites2);
-			if(storeSites != null && (s.localStoreSites[i] == null || storeSites.Count != s.localStoreSites[i].Count))
+			if(!storeSites.IsEmpty && (s.localStoreSites[i].IsEmpty || storeSites.Count != s.localStoreSites[i].Count))
 			{
 				s.LocalStoreSitesCopyOnWrite();
 				s.localStoreSites[i] = storeSites;
@@ -321,28 +391,20 @@ class InstructionState
 		return s;
 	}
 
-	private static Hashtable MergeStoreSites(Hashtable h1, Hashtable h2)
+	private static LocalStoreSites MergeStoreSites(LocalStoreSites h1, LocalStoreSites h2)
 	{
-		if(h1 == null && h2 == null)
+		if(h1.IsEmpty)
 		{
-			return null;
+			return h2.Copy();
 		}
-		if(h1 == null)
+		if(h2.IsEmpty)
 		{
-			return (Hashtable)h2.Clone();
+			return h2.Copy();
 		}
-		if(h2 == null)
+		LocalStoreSites h = h1.Copy();
+		for(int i = 0; i < h2.Count; i++)
 		{
-			return (Hashtable)h1.Clone();
-		}
-		Hashtable h = new Hashtable();
-		foreach(DictionaryEntry de in h1)
-		{
-			h.Add(de.Key, de.Value);
-		}
-		foreach(DictionaryEntry de in h2)
-		{
-			h[de.Key] = de.Value;
+			h.Add(h2[i]);
 		}
 		return h;
 	}
@@ -619,8 +681,8 @@ class InstructionState
 	private void SetLocalStoreSite(int localIndex, int instructionIndex)
 	{
 		LocalStoreSitesCopyOnWrite();
-		localStoreSites[localIndex] = new Hashtable();
-		localStoreSites[localIndex].Add(instructionIndex, "");
+		localStoreSites[localIndex] = LocalStoreSites.Alloc();
+		localStoreSites[localIndex].Add(instructionIndex);
 	}
 
 	internal void GetLocalInt(int index, ref Hashtable readers)
@@ -687,11 +749,11 @@ class InstructionState
 			{
 				readers = new Hashtable();
 			}
-			if(localStoreSites[index] != null)
+			if(!localStoreSites[index].IsEmpty)
 			{
-				foreach(int store in localStoreSites[index].Keys)
+				for(int i = 0; i < localStoreSites[index].Count; i++)
 				{
-					readers[store] = "";
+					readers[localStoreSites[index][i]] = "";
 				}
 			}
 			return locals[index];
@@ -978,7 +1040,7 @@ class InstructionState
 		if((flags & ShareFlags.LocalStoreSites) != 0)
 		{
 			flags &= ~ShareFlags.LocalStoreSites;
-			localStoreSites = (Hashtable[])localStoreSites.Clone();
+			localStoreSites = (LocalStoreSites[])localStoreSites.Clone();
 		}
 	}
 
