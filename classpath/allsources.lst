@@ -382,6 +382,13 @@
 ../../classpath/gnu/java/awt/GradientPaintContext.java
 ../../classpath/gnu/java/awt/image/ImageDecoder.java
 ../../classpath/gnu/java/awt/image/XBMDecoder.java
+../../classpath/gnu/java/awt/java2d/AbstractGraphics2D.java
+../../classpath/gnu/java/awt/java2d/CubicSegment.java
+../../classpath/gnu/java/awt/java2d/LineSegment.java
+../../classpath/gnu/java/awt/java2d/PolyEdge.java
+../../classpath/gnu/java/awt/java2d/PolyEdgeComparator.java
+../../classpath/gnu/java/awt/java2d/QuadSegment.java
+../../classpath/gnu/java/awt/java2d/Segment.java
 ../../classpath/gnu/java/awt/peer/ClasspathFontPeer.java
 ../../classpath/gnu/java/awt/peer/ClasspathTextLayoutPeer.java
 ../../classpath/gnu/java/awt/peer/EmbeddedWindowPeer.java
@@ -491,6 +498,7 @@
 ../../classpath/gnu/java/lang/ArrayHelper.java
 ../../classpath/gnu/java/lang/CharData.java
 ../../classpath/gnu/java/lang/ClassHelper.java
+../../classpath/gnu/java/lang/InstrumentationImpl.java
 ../../classpath/gnu/java/lang/MainThread.java
 ../../classpath/gnu/java/lang/reflect/ClassSignatureParser.java
 ../../classpath/gnu/java/lang/reflect/FieldSignatureParser.java
@@ -4470,6 +4478,7 @@ gnu/classpath/Pointer.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
 gnu/java/lang/reflect/VMField.java
+gnu/java/lang/VMInstrumentationImpl.java
 gnu/java/locale/LocaleData.java
 gnu/java/net/PlainDatagramSocketImpl.java
 gnu/java/net/PlainSocketImpl.java

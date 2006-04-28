@@ -232,25 +232,6 @@ public abstract class VMClass
         throw new ClassCastException();
     }
 
-    private static final int ACC_SYNTHETIC = 0x1000;
-    private static final int ACC_ANNOTATION = 0x2000;
-    private static final int ACC_ENUM = 0x4000;
-
-    static boolean isSynthetic(Class clazz)
-    {
-        return (GetModifiers(clazz.vmdata, true) & ACC_SYNTHETIC) != 0;
-    }
-
-    static boolean isAnnotation(Class clazz)
-    {
-        return (GetModifiers(clazz.vmdata, true) & ACC_ANNOTATION) != 0;
-    }
-
-    static boolean isEnum(Class clazz)
-    {
-        return (GetModifiers(clazz.vmdata, true) & ACC_ENUM) != 0;
-    }
-
   static String getSimpleName(Class clazz)
   {
     if (isArray(clazz))
