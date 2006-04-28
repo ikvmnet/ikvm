@@ -238,20 +238,18 @@ public abstract class VMClass
 
     static boolean isSynthetic(Class clazz)
     {
-        return (GetRawModifiers(clazz.vmdata) & ACC_SYNTHETIC) != 0;
+        return (GetModifiers(clazz.vmdata, true) & ACC_SYNTHETIC) != 0;
     }
 
     static boolean isAnnotation(Class clazz)
     {
-        return (GetRawModifiers(clazz.vmdata) & ACC_ANNOTATION) != 0;
+        return (GetModifiers(clazz.vmdata, true) & ACC_ANNOTATION) != 0;
     }
 
     static boolean isEnum(Class clazz)
     {
-        return (GetRawModifiers(clazz.vmdata) & ACC_ENUM) != 0;
+        return (GetModifiers(clazz.vmdata, true) & ACC_ENUM) != 0;
     }
-
-    private static native int GetRawModifiers(Object wrapper);
 
   static String getSimpleName(Class clazz)
   {

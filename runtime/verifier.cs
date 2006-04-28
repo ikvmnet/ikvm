@@ -85,9 +85,20 @@ class InstructionState
 	private int callsites;
 	private bool unitializedThis;
 	internal bool changed = true;
+	private enum ShareFlags : byte
+	{
+		None = 0,
+		Stack = 1,
+		Locals = 2,
+		LocalStoreSites = 4,
+		Subroutines = 8,
+		All = Stack | Locals | LocalStoreSites | Subroutines
+	}
+	private ShareFlags flags;
 
 	private InstructionState(TypeWrapper[] stack, int stackSize, int stackEnd, TypeWrapper[] locals, Hashtable[] localStoreSites, ArrayList subroutines, int callsites, bool unitializedThis)
 	{
+		this.flags = ShareFlags.All;
 		this.stack = stack;
 		this.stackSize = stackSize;
 		this.stackEnd = stackEnd;
@@ -100,6 +111,7 @@ class InstructionState
 
 	internal InstructionState(int maxLocals, int maxStack)
 	{
+		this.flags = ShareFlags.None;
 		this.stack = new TypeWrapper[maxStack];
 		this.stackEnd = maxStack;
 		this.locals = new TypeWrapper[maxLocals];
@@ -108,17 +120,18 @@ class InstructionState
 
 	internal InstructionState Copy()
 	{
-		return new InstructionState((TypeWrapper[])stack.Clone(), stackSize, stackEnd, (TypeWrapper[])locals.Clone(), (Hashtable[])localStoreSites.Clone(), CopySubroutines(subroutines), callsites, unitializedThis);
+		return new InstructionState(stack, stackSize, stackEnd, locals, localStoreSites, subroutines, callsites, unitializedThis);
 	}
 
 	internal void CopyTo(InstructionState target)
 	{
-		stack.CopyTo(target.stack, 0);
+		target.flags = ShareFlags.All;
+		target.stack = stack;
 		target.stackSize = stackSize;
 		target.stackEnd = stackEnd;
-		locals.CopyTo(target.locals, 0);
-		localStoreSites.CopyTo(target.localStoreSites, 0);
-		target.subroutines = CopySubroutines(subroutines);
+		target.locals = locals;
+		target.localStoreSites = localStoreSites;
+		target.subroutines = subroutines;
 		target.callsites = callsites;
 		target.unitializedThis = unitializedThis;
 		target.changed = true;
@@ -126,10 +139,12 @@ class InstructionState
 
 	internal InstructionState CopyLocalsAndSubroutines()
 	{
-		return new InstructionState(new TypeWrapper[stack.Length], 0, stack.Length, (TypeWrapper[])locals.Clone(), (Hashtable[])localStoreSites.Clone(), CopySubroutines(subroutines), callsites, unitializedThis);
+		InstructionState copy = new InstructionState(new TypeWrapper[stack.Length], 0, stack.Length, locals, localStoreSites, subroutines, callsites, unitializedThis);
+		copy.flags &= ~ShareFlags.Stack;
+		return copy;
 	}
 
-	private ArrayList CopySubroutines(ArrayList l)
+	private static ArrayList CopySubroutines(ArrayList l)
 	{
 		if(l == null)
 		{
@@ -160,6 +175,7 @@ class InstructionState
 		}
 		else
 		{
+			SubroutinesCopyOnWrite();
 			ArrayList ss1 = subroutines;
 			subroutines = new ArrayList();
 			foreach(Subroutine ss2 in s2.subroutines)
@@ -205,7 +221,9 @@ class InstructionState
 				{
 					if(!locals_modified[i])
 					{
+						s2.LocalsCopyOnWrite();
 						s2.locals[i] = s3.locals[i];
+						s2.LocalStoreSitesCopyOnWrite();
 						s2.localStoreSites[i] = s3.localStoreSites[i] != null ? (Hashtable)s3.localStoreSites[i].Clone() : null;
 					}
 				}
@@ -249,6 +267,7 @@ class InstructionState
 				}
 				if(type != baseType)
 				{
+					s.StackCopyOnWrite();
 					s.stack[i] = baseType;
 					s.changed = true;
 				}
@@ -277,12 +296,14 @@ class InstructionState
 			TypeWrapper baseType = InstructionState.FindCommonBaseType(type, type2);
 			if(type != baseType)
 			{
+				s.LocalsCopyOnWrite();
 				s.locals[i] = baseType;
 				s.changed = true;
 			}
 			storeSites = MergeStoreSites(storeSites, storeSites2);
 			if(storeSites != null && (s.localStoreSites[i] == null || storeSites.Count != s.localStoreSites[i].Count))
 			{
+				s.LocalStoreSitesCopyOnWrite();
 				s.localStoreSites[i] = storeSites;
 				s.changed = true;
 			}
@@ -347,6 +368,7 @@ class InstructionState
 
 	internal void SetSubroutineId(int subroutineIndex)
 	{
+		SubroutinesCopyOnWrite();
 		if(subroutines == null)
 		{
 			subroutines = new ArrayList();
@@ -367,6 +389,7 @@ class InstructionState
 
 	internal bool[] ClearSubroutineId(int subroutineIndex)
 	{
+		SubroutinesCopyOnWrite();
 		if(subroutines != null)
 		{
 			foreach(Subroutine s in subroutines)
@@ -531,6 +554,8 @@ class InstructionState
 	{
 		try
 		{
+			LocalsCopyOnWrite();
+			SubroutinesCopyOnWrite();
 			if(index > 0 && locals[index - 1] != VerifierTypeWrapper.Invalid && locals[index - 1].IsWidePrimitive)
 			{
 				locals[index - 1] = VerifierTypeWrapper.Invalid;
@@ -561,6 +586,8 @@ class InstructionState
 	{
 		try
 		{
+			LocalsCopyOnWrite();
+			SubroutinesCopyOnWrite();
 			if(index > 0 && locals[index - 1] != VerifierTypeWrapper.Invalid && locals[index - 1].IsWidePrimitive)
 			{
 				locals[index - 1] = VerifierTypeWrapper.Invalid;
@@ -591,6 +618,7 @@ class InstructionState
 
 	private void SetLocalStoreSite(int localIndex, int instructionIndex)
 	{
+		LocalStoreSitesCopyOnWrite();
 		localStoreSites[localIndex] = new Hashtable();
 		localStoreSites[localIndex].Add(instructionIndex, "");
 	}
@@ -900,6 +928,7 @@ class InstructionState
 		{
 			throw new VerifyError("Stack overflow");
 		}
+		StackCopyOnWrite();
 		stack[stackSize++] = type;
 	}
 
@@ -912,6 +941,7 @@ class InstructionState
 			if(locals[i] == type)
 			{
 				SetLocalStoreSite(i, instructionIndex);
+				LocalsCopyOnWrite();
 				locals[i] = initType;
 			}
 		}
@@ -919,8 +949,45 @@ class InstructionState
 		{
 			if(stack[i] == type)
 			{
+				StackCopyOnWrite();
 				stack[i] = initType;
 			}
+		}
+	}
+
+	private void StackCopyOnWrite()
+	{
+		if((flags & ShareFlags.Stack) != 0)
+		{
+			flags &= ~ShareFlags.Stack;
+			stack = (TypeWrapper[])stack.Clone();
+		}
+	}
+
+	private void LocalsCopyOnWrite()
+	{
+		if((flags & ShareFlags.Locals) != 0)
+		{
+			flags &= ~ShareFlags.Locals;
+			locals = (TypeWrapper[])locals.Clone();
+		}
+	}
+
+	private void LocalStoreSitesCopyOnWrite()
+	{
+		if((flags & ShareFlags.LocalStoreSites) != 0)
+		{
+			flags &= ~ShareFlags.LocalStoreSites;
+			localStoreSites = (Hashtable[])localStoreSites.Clone();
+		}
+	}
+
+	private void SubroutinesCopyOnWrite()
+	{
+		if((flags & ShareFlags.Subroutines) != 0)
+		{
+			flags &= ~ShareFlags.Subroutines;
+			subroutines = CopySubroutines(subroutines);
 		}
 	}
 
@@ -2650,6 +2717,9 @@ class MethodAnalyzer
 						case NormalizedByteCode.__jsr:
 							state[i].CheckUninitializedObjRefs();
 							instructions[method.PcIndexMap[instructions[i].PC + instructions[i].Arg1]].flags |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
+							// Note that we don't mark the next instruction as reachable,
+							// because that depends on the corresponding ret actually being
+							// reachable. We handle this in the loop below.
 							didJsrOrRet = true;
 							break;
 						case NormalizedByteCode.__ret:

@@ -975,22 +975,12 @@ namespace IKVM.NativeCode.java
 					// from the physical ones
 					Modifiers modifiers = ignoreInnerClassesAttribute ?
 						wrapper.Modifiers : wrapper.ReflectiveModifiers;
-					// only returns public, protected, private, final, static, abstract and interface (as per
-					// the documentation of Class.getModifiers())
-					Modifiers mask = Modifiers.Public | Modifiers.Protected | Modifiers.Private | Modifiers.Final |
-						Modifiers.Static | Modifiers.Abstract | Modifiers.Interface;
-					return (int)(modifiers & mask);
+					return (int)modifiers;
 				}
 				catch(RetargetableJavaException x)
 				{
 					throw x.ToJava();
 				}
-			}
-
-			public static int GetRawModifiers(Object cwrapper)
-			{
-				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				return (int)wrapper.Modifiers;
 			}
 
 			public static string GetClassSignature(object cwrapper)
