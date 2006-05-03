@@ -63,11 +63,6 @@ public final class VMStackWalker
         int skip = SKIP_FRAMES;
         StackFrame frame = new StackFrame(skip++);
         MethodBase method = frame.GetMethod();
-        while(isHideFromJava(method))
-        {
-            frame = new StackFrame(skip++);
-            method = frame.GetMethod();
-        }
         cli.System.Type type = method.get_DeclaringType();
         if(isReflectionCaller(type))
         {
@@ -85,11 +80,6 @@ public final class VMStackWalker
         int skip = SKIP_FRAMES;
         StackFrame frame = new StackFrame(skip++);
         MethodBase method = frame.GetMethod();
-        while(isHideFromJava(method))
-        {
-            frame = new StackFrame(skip++);
-            method = frame.GetMethod();
-        }
         cli.System.Type type = method.get_DeclaringType();
         if(isReflectionCaller(type))
         {
