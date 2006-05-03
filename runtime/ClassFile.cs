@@ -225,12 +225,14 @@ namespace IKVM.Internal
 				}
 				access_flags = (Modifiers)br.ReadUInt16();
 				// NOTE although the vmspec says (in 4.1) that interfaces must be marked abstract, earlier versions of
-				// javac (JDK 1.1) didn't do this, so the VM doesn't enforce this rule
+				// javac (JDK 1.1) didn't do this, so the VM doesn't enforce this rule for older class files.
 				// NOTE although the vmspec implies (in 4.1) that ACC_SUPER is illegal on interfaces, it doesn't enforce this
-				// TODO consider implementing http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6320322
+				// for older class files.
+				// (See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6320322)
 				if((IsInterface && IsFinal)
 					|| (IsAbstract && IsFinal)
-					|| (majorVersion >= 49 && IsAnnotation && !IsInterface))
+					|| (majorVersion >= 49 && IsAnnotation && !IsInterface)
+					|| (majorVersion >= 49 && IsInterface && (!IsAbstract || IsSuper || IsEnum)))
 				{
 					throw new ClassFormatError("{0} (Illegal class modifiers 0x{1:X})", inputClassName, access_flags);
 				}
@@ -296,11 +298,11 @@ namespace IKVM.Internal
 					methods[i] = new Method(this, br);
 					string name = methods[i].Name;
 					string sig = methods[i].Signature;
-					if(!IsValidMethodName(name) && name != "<init>" && name != "<clinit>")
+					if(!IsValidMethodName(name) && !ReferenceEquals(name, "<init>") && !ReferenceEquals(name, "<clinit>"))
 					{
 						throw new ClassFormatError("{0} (Illegal method name \"{1}\")", Name, name);
 					}
-					if((name == "<init>" || name == "<clinit>") && !sig.EndsWith("V"))
+					if((ReferenceEquals(name, "<init>") || ReferenceEquals(name, "<clinit>")) && !sig.EndsWith("V"))
 					{
 						throw new ClassFormatError("{0} (Method \"{1}\" has illegal signature \"{2}\")", Name, name, sig);
 					}
@@ -1423,7 +1425,7 @@ namespace IKVM.Internal
 				{
 					throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
 				}
-				if(name == "<init>" || name == "<clinit>")
+				if(ReferenceEquals(name, "<init>") || ReferenceEquals(name, "<clinit>"))
 				{
 					if(!descriptor.EndsWith("V"))
 					{
@@ -1480,7 +1482,7 @@ namespace IKVM.Internal
 				TypeWrapper wrapper = GetClassType();
 				if(!wrapper.IsUnloadable)
 				{
-					method = wrapper.GetMethodWrapper(Name, Signature, Name != "<init>");
+					method = wrapper.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, "<init>"));
 					if(method != null)
 					{
 						method.Link();
@@ -1984,7 +1986,7 @@ namespace IKVM.Internal
 			internal Method(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
 			{
 				// vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
-				if(Name == "<clinit>" && Signature == "()V")
+				if(ReferenceEquals(Name, "<clinit>") && ReferenceEquals(Signature, "()V"))
 				{
 					access_flags &= Modifiers.Strictfp;
 					access_flags |= (Modifiers.Static | Modifiers.Private);
@@ -1993,7 +1995,7 @@ namespace IKVM.Internal
 				{
 					// LAMESPEC: vmspec 4.6 says that abstract methods can not be strictfp (and this makes sense), but
 					// javac (pre 1.5) is broken and marks abstract methods as strictfp (if you put the strictfp on the class)
-					if((Name == "<init>" && (IsStatic || IsSynchronized || IsFinal || IsAbstract || IsNative))
+					if((ReferenceEquals(Name, "<init>") && (IsStatic || IsSynchronized || IsFinal || IsAbstract || IsNative))
 						|| (IsPrivate && IsPublic) || (IsPrivate && IsProtected) || (IsPublic && IsProtected)
 						|| (IsAbstract && (IsFinal || IsNative || IsPrivate || IsStatic || IsSynchronized))
 						|| (classFile.IsInterface && (!IsPublic || !IsAbstract)))
@@ -2131,7 +2133,7 @@ namespace IKVM.Internal
 				{
 					if(code.IsEmpty)
 					{
-						if(this.Name == "<clinit>")
+						if(ReferenceEquals(this.Name, "<clinit>"))
 						{
 							code.verifyError = string.Format("Class {0}, method {1} signature {2}: No Code attribute", classFile.Name, this.Name, this.Signature);
 							return;
@@ -2162,7 +2164,7 @@ namespace IKVM.Internal
 			{
 				get
 				{
-					return Name == "<clinit>" && Signature == "()V";
+					return ReferenceEquals(Name, "<clinit>") && ReferenceEquals(Signature, "()V");
 				}
 			}
 

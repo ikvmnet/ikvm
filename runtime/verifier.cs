@@ -1306,12 +1306,12 @@ class VerifierTypeWrapper : TypeWrapper
 
 	internal static bool IsNew(TypeWrapper w)
 	{
-		return w != null && w.IsVerifierType && w.Name == "new";
+		return w != null && w.IsVerifierType && ReferenceEquals(w.Name, "new");
 	}
 
 	internal static bool IsRet(TypeWrapper w)
 	{
-		return w != null && w.IsVerifierType && w.Name == "ret";
+		return w != null && w.IsVerifierType && ReferenceEquals(w.Name, "ret");
 	}
 
 	internal static bool IsNullOrUnloadable(TypeWrapper w)
@@ -1321,7 +1321,7 @@ class VerifierTypeWrapper : TypeWrapper
 
 	internal static bool IsThis(TypeWrapper w)
 	{
-		return w != null && w.IsVerifierType && w.Name == "this";
+		return w != null && w.IsVerifierType && ReferenceEquals(w.Name, "this");
 	}
 
 	internal int Index
@@ -1530,7 +1530,7 @@ class MethodAnalyzer
 		{
 			thisType = VerifierTypeWrapper.MakeThis(wrapper);
 			// this reference. If we're a constructor, the this reference is uninitialized.
-			if(method.Name == "<init>")
+			if(ReferenceEquals(method.Name, "<init>"))
 			{
 				state[0].SetLocalType(firstNonArgLocalIndex++, VerifierTypeWrapper.UninitializedThis, -1);
 				state[0].SetUnitializedThis(true);
@@ -1937,7 +1937,7 @@ class MethodAnalyzer
 								if(instr.NormalizedOpCode != NormalizedByteCode.__invokestatic)
 								{
 									TypeWrapper type = s.PopType();
-									if(cpi.Name == "<init>")
+									if(ReferenceEquals(cpi.Name, "<init>"))
 									{
 										// after we've invoked the constructor, the uninitialized references
 										// are now initialized
@@ -2845,14 +2845,14 @@ class MethodAnalyzer
 			{
 				if(instructions[i].IsReachable && IsStoreLocal(instructions[i].NormalizedOpCode))
 				{
-					if(!localByStoreSite.ContainsKey(i + ":" + instructions[i].NormalizedArg1))
+					if(!localByStoreSite.ContainsKey(MakeKey(i, instructions[i].NormalizedArg1)))
 					{
 						LocalVar v = new LocalVar();
 						v.local = instructions[i].NormalizedArg1;
 						v.type = GetStackTypeWrapper(i, 0);
 						v.FindLvtEntry(method, i);
 						locals.Add(v);
-						localByStoreSite.Add(i + ":" + v.local, v);
+						localByStoreSite.Add(MakeKey(i, v.local), v);
 					}
 				}
 			}
@@ -2915,7 +2915,7 @@ class MethodAnalyzer
 				// (by indirecting through a corresponding store)
 				foreach(int store in localStoreReaders[i].Keys)
 				{
-					v = (LocalVar)localByStoreSite[store + ":" + instructions[i].NormalizedArg1];
+					v = (LocalVar)localByStoreSite[MakeKey(store, instructions[i].NormalizedArg1)];
 					break;
 				}
 			}
@@ -2926,12 +2926,12 @@ class MethodAnalyzer
 					invokespecialLocalVars[i] = new LocalVar[method.MaxLocals];
 					for(int j = 0; j < invokespecialLocalVars[i].Length; j++)
 					{
-						invokespecialLocalVars[i][j] = (LocalVar)localByStoreSite[i + ":" + j];
+						invokespecialLocalVars[i][j] = (LocalVar)localByStoreSite[MakeKey(i, j)];
 					}
 				}
 				else
 				{
-					v = (LocalVar)localByStoreSite[i + ":" + instructions[i].NormalizedArg1];
+					v = (LocalVar)localByStoreSite[MakeKey(i, instructions[i].NormalizedArg1)];
 				}
 			}
 			if(v != null)
@@ -2954,11 +2954,11 @@ class MethodAnalyzer
 		{
 			throw new VerifyError("Illegal constant pool index");
 		}
-		if(instr.NormalizedOpCode != NormalizedByteCode.__invokespecial && cpi.Name == "<init>")
+		if(instr.NormalizedOpCode != NormalizedByteCode.__invokespecial && ReferenceEquals(cpi.Name, "<init>"))
 		{
 			throw new VerifyError("Must call initializers using invokespecial");
 		}
-		if(cpi.Name == "<clinit>")
+		if(ReferenceEquals(cpi.Name, "<clinit>"))
 		{
 			throw new VerifyError("Illegal call to internal method");
 		}
@@ -2992,7 +2992,7 @@ class MethodAnalyzer
 		else
 		{
 			thisType = SigTypeToClassName(stack.PeekType(), cpi.GetClassType(), wrapper);
-			if(cpi.Name == "<init>")
+			if(ReferenceEquals(cpi.Name, "<init>"))
 			{
 				TypeWrapper type = stack.PopType();
 				isnew = VerifierTypeWrapper.IsNew(type);
@@ -3103,7 +3103,9 @@ class MethodAnalyzer
 						// NOTE special case for incorrect invocation of Object.clone(), because this could mean
 						// we're calling clone() on an array
 						// (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
-						if(cpi.GetClassType() == CoreClasses.java.lang.Object.Wrapper && thisType.IsArray && cpi.Name == "clone")
+						if(cpi.GetClassType() == CoreClasses.java.lang.Object.Wrapper
+							&& thisType.IsArray
+							&& ReferenceEquals(cpi.Name, "clone"))
 						{
 							// Patch the instruction, so that the compiler doesn't need to do this test again.
 							instr.PatchOpCode(NormalizedByteCode.__clone_array);
@@ -3367,7 +3369,7 @@ class MethodAnalyzer
 			// we can't have an invalid type, because that would have failed verification earlier
 			Debug.Assert(type != VerifierTypeWrapper.Invalid);
 
-			LocalVar l = (LocalVar)localByStoreSite[store + ":" + localIndex];
+			LocalVar l = (LocalVar)localByStoreSite[MakeKey(store, localIndex)];
 			if(l != null)
 			{
 				if(local == null)
@@ -3416,16 +3418,21 @@ class MethodAnalyzer
 		}
 		foreach(int store in storeSites.Keys)
 		{
-			LocalVar v = (LocalVar)localByStoreSite[store + ":" + localIndex];
+			LocalVar v = (LocalVar)localByStoreSite[MakeKey(store, localIndex)];
 			if(v == null)
 			{
-				localByStoreSite[store + ":" + localIndex] = local;
+				localByStoreSite[MakeKey(store, localIndex)] = local;
 			}
 			else if(v != local)
 			{
 				local = MergeLocals(locals, localByStoreSite, local, v);
 			}
 		}
+	}
+
+	private static object MakeKey(int i, int j)
+	{
+		return (((long)(uint)i) << 32) + (uint)j;
 	}
 
 	private static LocalVar MergeLocals(ArrayList locals, Hashtable localByStoreSite, LocalVar l1, LocalVar l2)

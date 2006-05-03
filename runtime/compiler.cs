@@ -1568,10 +1568,10 @@ class Compiler
 					// are of a known array type, we can redirect to an optimized version of arraycopy.
 					// Note that we also have to handle VMSystem.arraycopy, because StringBuffer directly calls
 					// this method to avoid prematurely initialising System.
-					if((cpi.Class == "java.lang.System" || cpi.Class == "java.lang.VMSystem")&&
-						cpi.Name == "arraycopy" &&
-						cpi.Signature == "(Ljava.lang.Object;ILjava.lang.Object;II)V" &&
-						cpi.GetClassType().GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())
+					if((ReferenceEquals(cpi.Class, "java.lang.System") || ReferenceEquals(cpi.Class, "java.lang.VMSystem"))
+						&& ReferenceEquals(cpi.Name, "arraycopy")
+						&& ReferenceEquals(cpi.Signature, "(Ljava.lang.Object;ILjava.lang.Object;II)V")
+						&& cpi.GetClassType().GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())
 					{
 						TypeWrapper dst_type = ma.GetStackTypeWrapper(i, 2);
 						TypeWrapper src_type = ma.GetStackTypeWrapper(i, 4);
@@ -1643,7 +1643,7 @@ class Compiler
 
 					// if the stack values don't match the argument types (for interface argument types)
 					// we must emit code to cast the stack value to the interface type
-					if(isinvokespecial && cpi.Name == "<init>" && VerifierTypeWrapper.IsNew(type))
+					if(isinvokespecial && ReferenceEquals(cpi.Name, "<init>") && VerifierTypeWrapper.IsNew(type))
 					{
 						TypeWrapper[] args = cpi.GetArgTypes();
 						CastInterfaceArgs(method, args, i, false);
@@ -1665,7 +1665,7 @@ class Compiler
 						CastInterfaceArgs(method, args, i, true);
 					}
 
-					if(isinvokespecial && cpi.Name == "<init>")
+					if(isinvokespecial && ReferenceEquals(cpi.Name, "<init>"))
 					{
 						if(VerifierTypeWrapper.IsNew(type))
 						{

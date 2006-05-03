@@ -610,7 +610,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				if(Name == "<init>")
+				if(ReferenceEquals(Name, "<init>"))
 				{
 					if(method is MethodInfo)
 					{

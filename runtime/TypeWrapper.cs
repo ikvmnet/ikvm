@@ -1835,9 +1835,15 @@ namespace IKVM.Internal
 					LazyPublishMembers();
 				}
 			}
+			// MemberWrapper interns the name and sig so we can use ref equality
+			// profiling has shown this to be more efficient
+			string _name = String.IsInterned(name);
+			string _sig = String.IsInterned(sig);
 			foreach(MethodWrapper mw in methods)
 			{
-				if(mw.Name == name && mw.Signature == sig)
+				// NOTE we can use ref equality, because names and signatures are
+				// always interned by MemberWrapper
+				if(ReferenceEquals(mw.Name, _name) && ReferenceEquals(mw.Signature, _sig))
 				{
 					return mw;
 				}
@@ -3223,7 +3229,7 @@ namespace IKVM.Internal
 					{
 						methods[i] = new MethodWrapper.GhostMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
 					}
-					else if(m.Name == "<init>")
+					else if(ReferenceEquals(m.Name, "<init>"))
 					{
 						methods[i] = new SmartConstructorMethodWrapper(wrapper, m.Name, m.Signature, null, null, m.Modifiers, flags);
 					}
@@ -3285,7 +3291,7 @@ namespace IKVM.Internal
 						fields[i] = new ConstantFieldWrapper(wrapper, null, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.LiteralField);
 					}
 					else if(fld.IsFinal && (JVM.IsStaticCompiler && (fld.IsPublic || fld.IsProtected))
-						&& !wrapper.IsInterface && (!JVM.StrictFinalFieldSemantics || wrapper.Name == "java.lang.System"))
+						&& !wrapper.IsInterface && (!JVM.StrictFinalFieldSemantics || ReferenceEquals(wrapper.Name, "java.lang.System")))
 					{
 						fields[i] = new GetterFieldWrapper(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null);
 					}
@@ -5433,7 +5439,7 @@ namespace IKVM.Internal
 					{
 						attribs |= MethodAttributes.Assembly;
 					}
-					if(m.Name == "<init>")
+					if(ReferenceEquals(m.Name, "<init>"))
 					{
 						if(setNameSig)
 						{
@@ -5530,7 +5536,7 @@ namespace IKVM.Internal
 						{
 							bool needFinalize = false;
 							bool needDispatch = false;
-							if(baseMce != null && m.Name == "finalize" && m.Signature == "()V")
+							if(baseMce != null && ReferenceEquals(m.Name, "finalize") && ReferenceEquals(m.Signature, "()V"))
 							{
 								if(baseMce.RealName == "Finalize")
 								{
