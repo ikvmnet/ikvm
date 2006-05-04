@@ -787,13 +787,7 @@ class Compiler
 		}
 	}
 
-	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, Hashtable invokespecialstubcache)
-	{
-		bool nonleaf = false;
-		Compile(clazz, mw, classFile, m, ilGenerator, ref nonleaf, invokespecialstubcache);
-	}
-
-	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref bool nonleaf, Hashtable invokespecialstubcache)
+	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref bool nonleaf, Hashtable invokespecialstubcache, ref LineNumberTableAttribute.LineNumberWriter lineNumberTable)
 	{
 		DynamicClassLoader classLoader = (DynamicClassLoader)clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
@@ -828,8 +822,6 @@ class Compiler
 					if(firstLine > 0)
 					{
 						ilGenerator.MarkSequencePoint(symboldocument, firstLine, 0, firstLine + 1, 0);
-						// FXBUG emit an extra nop to workaround Whidbey June CTP dynamic debugging bug
-						ilGenerator.Emit(OpCodes.Nop);
 					}
 				}
 			}
@@ -907,7 +899,7 @@ class Compiler
 				{
 					if(ByteCodeMetaData.CanThrowException(m.Instructions[i].NormalizedOpCode))
 					{
-						AttributeHelper.SetLineNumberTable(mw.GetMethod(), c.lineNumbers);
+						lineNumberTable = c.lineNumbers;
 						break;
 					}
 				}

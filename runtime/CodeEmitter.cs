@@ -69,7 +69,9 @@ namespace IKVM.Internal
 		private ArrayList locals = new ArrayList();
 		private Stack exceptionStack = new Stack();
 		private bool inFinally;
+#if STATIC_COMPILER
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
+#endif // STATIC_COMPILER
 		private Type boxType;
 		private CountingLabel lazyBranch;
 #if LABELCHECK
@@ -444,6 +446,7 @@ namespace IKVM.Internal
 			ilgen.UsingNamespace(usingNamespace);
 		}
 
+#if STATIC_COMPILER
 		internal void SetLineNumber(ushort line)
 		{
 			LazyGen();
@@ -461,6 +464,7 @@ namespace IKVM.Internal
 				AttributeHelper.SetLineNumberTable(mb, linenums);
 			}
 		}
+#endif // STATIC_COMPILER
 
 		internal void LazyEmitBox(Type type)
 		{

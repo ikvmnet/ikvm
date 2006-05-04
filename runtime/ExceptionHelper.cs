@@ -58,31 +58,21 @@ namespace IKVM.NativeCode.java.lang
 
 		public static bool IsNative(MethodBase m)
 		{
-			if(m.IsDefined(typeof(ModifiersAttribute), false))
+			object[] methodFlagAttribs = m.GetCustomAttributes(typeof(ModifiersAttribute), false);
+			if(methodFlagAttribs.Length == 1)
 			{
-				object[] methodFlagAttribs = m.GetCustomAttributes(typeof(ModifiersAttribute), false);
-				if(methodFlagAttribs.Length == 1)
-				{
-					ModifiersAttribute modifiersAttrib = (ModifiersAttribute)methodFlagAttribs[0];
-					if((modifiersAttrib.Modifiers & Modifiers.Native) != 0)
-					{
-						return true;
-					}
-				}
+				ModifiersAttribute modifiersAttrib = (ModifiersAttribute)methodFlagAttribs[0];
+				return (modifiersAttrib.Modifiers & Modifiers.Native) != 0;
 			}
 			return false;
 		}
 
 		public static string GetMethodName(MethodBase mb)
 		{
-			if(mb.IsDefined(typeof(NameSigAttribute), false))
+			object[] attr = mb.GetCustomAttributes(typeof(NameSigAttribute), false);
+			if(attr.Length == 1)
 			{
-				object[] attr = mb.GetCustomAttributes(typeof(NameSigAttribute), false);
-				if(attr.Length == 1)
-				{
-					return ((NameSigAttribute)attr[0]).Name;
-				}
-				return mb.Name;
+				return ((NameSigAttribute)attr[0]).Name;
 			}
 			else if(mb.Name == ".ctor")
 			{
@@ -136,11 +126,8 @@ namespace IKVM.NativeCode.java.lang
 				MethodBase mb = frame.GetMethod();
 				if(mb != null)
 				{
-					object[] attr = mb.GetCustomAttributes(typeof(LineNumberTableAttribute), false);
-					if(attr.Length == 1)
-					{
-						return ((LineNumberTableAttribute)attr[0]).GetLineNumber(ilOffset);
-					}
+					TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
+					return tw.GetSourceLineNumber(mb, ilOffset);
 				}
 			}
 			return -1;
@@ -151,15 +138,8 @@ namespace IKVM.NativeCode.java.lang
 			MethodBase mb = frame.GetMethod();
 			if(mb != null)
 			{
-				object[] attr = mb.DeclaringType.GetCustomAttributes(typeof(SourceFileAttribute), false);
-				if(attr.Length == 1)
-				{
-					return ((SourceFileAttribute)attr[0]).SourceFile;
-				}
-				if(mb.DeclaringType.Module.IsDefined(typeof(SourceFileAttribute), false))
-				{
-					return mb.DeclaringType.Name + ".java";
-				}
+				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
+				return tw.GetSourceFileName();
 			}
 			return null;
 		}

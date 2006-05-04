@@ -261,10 +261,12 @@ namespace IKVM.Internal
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
 			ModuleBuilder moduleBuilder = saveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
+#if STATIC_COMPILER
 			if(!JVM.NoStackTraceInfo)
 			{
 				AttributeHelper.SetSourceFile(moduleBuilder, null);
 			}
+#endif // STATIC_COMPILER
 			return moduleBuilder;
 		}
 

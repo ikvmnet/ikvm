@@ -134,12 +134,11 @@ namespace IKVM.Internal
 	class AttributeHelper
 	{
 #if !COMPACT_FRAMEWORK
-		private static CustomAttributeBuilder ghostInterfaceAttribute;
 		private static CustomAttributeBuilder hideFromJavaAttribute;
-		private static CustomAttributeBuilder deprecatedAttribute;
 #if STATIC_COMPILER
+		private static CustomAttributeBuilder ghostInterfaceAttribute;
+		private static CustomAttributeBuilder deprecatedAttribute;
 		private static CustomAttributeBuilder editorBrowsableNever;
-#endif
 		private static ConstructorInfo implementsAttribute;
 		private static ConstructorInfo throwsAttribute;
 		private static ConstructorInfo sourceFileAttribute;
@@ -148,7 +147,8 @@ namespace IKVM.Internal
 		private static ConstructorInfo enclosingMethodAttribute;
 		private static ConstructorInfo signatureAttribute;
 		private static CustomAttributeBuilder paramArrayAttribute;
-#endif
+#endif // STATIC_COMPILER
+#endif // !COMPACT_FRAMEWORK
 		private static Type typeofRemappedClassAttribute = JVM.LoadType(typeof(RemappedClassAttribute));
 		private static Type typeofRemappedTypeAttribute = JVM.LoadType(typeof(RemappedTypeAttribute));
 		private static Type typeofModifiersAttribute = JVM.LoadType(typeof(ModifiersAttribute));
@@ -498,7 +498,6 @@ namespace IKVM.Internal
 			}
 			pb.SetCustomAttribute(editorBrowsableNever);
 		}
-#endif // STATIC_COMPILER
 
 		internal static void SetDeprecatedAttribute(MethodBase mb)
 		{
@@ -564,6 +563,7 @@ namespace IKVM.Internal
 			}
 			typeBuilder.SetCustomAttribute(ghostInterfaceAttribute);
 		}
+#endif // STATIC_COMPILER
 
 		internal static void HideFromReflection(MethodBuilder mb)
 		{
@@ -659,7 +659,7 @@ namespace IKVM.Internal
 			return IsDefined(mi, typeofHideFromJavaAttribute);
 		}
 
-#if !COMPACT_FRAMEWORK
+#if STATIC_COMPILER && !COMPACT_FRAMEWORK
 		internal static void SetImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper[] ifaceWrappers)
 		{
 			if(ifaceWrappers != null && ifaceWrappers.Length != 0)
@@ -859,7 +859,7 @@ namespace IKVM.Internal
 			return new ExModifiers(modifiers, false);
 		}
 
-#if !COMPACT_FRAMEWORK
+#if STATIC_COMPILER && !COMPACT_FRAMEWORK
 		internal static void SetModifiers(MethodBuilder mb, Modifiers modifiers, bool isInternal)
 		{
 			CustomAttributeBuilder customAttributeBuilder;
@@ -953,12 +953,6 @@ namespace IKVM.Internal
 			ConstructorInfo ci = typeofInnerClassAttribute.GetConstructor(argTypes);
 			CustomAttributeBuilder customAttributeBuilder = new CustomAttributeBuilder(ci, args);
 			typeBuilder.SetCustomAttribute(customAttributeBuilder);
-		}
-
-		internal static void SetJavaModule(ModuleBuilder moduleBuilder)
-		{
-			CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
-			moduleBuilder.SetCustomAttribute(ikvmModuleAttr);
 		}
 
 		internal static void SetSourceFile(TypeBuilder typeBuilder, string filename)
@@ -1062,7 +1056,13 @@ namespace IKVM.Internal
 			}
 			pb.SetCustomAttribute(paramArrayAttribute);
 		}
-#endif
+#endif  // STATIC_COMPILER && !COMPACT_FRAMEWORK
+
+		internal static void SetJavaModule(ModuleBuilder moduleBuilder)
+		{
+			CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
+			moduleBuilder.SetCustomAttribute(ikvmModuleAttr);
+		}
 
 		internal static NameSigAttribute GetNameSig(FieldInfo field)
 		{
@@ -1337,7 +1337,7 @@ namespace IKVM.Internal
 			return IsDefined(type, typeofNoPackagePrefixAttribute) || IsDefined(type.Assembly, typeofNoPackagePrefixAttribute);
 		}
 
-#if !COMPACT_FRAMEWORK
+#if STATIC_COMPILER && !COMPACT_FRAMEWORK
 		internal static void SetRemappedClass(AssemblyBuilder assemblyBuilder, string name, Type shadowType)
 		{
 			ConstructorInfo remappedClassAttribute = typeofRemappedClassAttribute.GetConstructor(new Type[] { typeof(string), typeof(Type) });
@@ -1367,7 +1367,7 @@ namespace IKVM.Internal
 			CustomAttributeBuilder constantValueAttrib = new CustomAttributeBuilder(typeofConstantValueAttribute.GetConstructor(new Type[] { constantValue.GetType() }), new object[] { constantValue });
 			field.SetCustomAttribute(constantValueAttrib);
 		}
-#endif
+#endif // STATIC_COMPILER && !COMPACT_FRAMEWORK
 	}
 
 #if !COMPACT_FRAMEWORK
@@ -2615,6 +2615,16 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		internal virtual string GetSourceFileName()
+		{
+			return null;
+		}
+
+		internal virtual int GetSourceLineNumber(MethodBase mb, int ilOffset)
+		{
+			return -1;
+		}
+
 #if !STATIC_COMPILER
 		internal virtual object GetAnnotationDefault(MethodWrapper mw)
 		{
@@ -2997,6 +3007,8 @@ namespace IKVM.Internal
 		protected readonly DynamicClassLoader classLoader;
 		private volatile DynamicImpl impl;
 		private TypeWrapper[] interfaces;
+		private readonly string sourceFileName;
+		private byte[][] lineNumberTables;
 
 		private static TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, string name)
 		{
@@ -3014,6 +3026,7 @@ namespace IKVM.Internal
 			Profiler.Count("DynamicTypeWrapper");
 			this.classLoader = classLoader;
 			this.IsInternal = f.IsInternal;
+			this.sourceFileName = f.SourceFileAttribute;
 			if(BaseTypeWrapper != null)
 			{
 				if(!BaseTypeWrapper.IsAccessibleFrom(this))
@@ -3480,21 +3493,19 @@ namespace IKVM.Internal
 							}
 						}
 					}
+#if STATIC_COMPILER
 					AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
-					if(JVM.IsStaticCompiler || DynamicClassLoader.IsSaveDebugImage)
+					if(classFile.DeprecatedAttribute)
 					{
-						if(classFile.DeprecatedAttribute)
-						{
-							AttributeHelper.SetDeprecatedAttribute(typeBuilder);
-						}
-						if(classFile.GenericSignature != null)
-						{
-							AttributeHelper.SetSignatureAttribute(typeBuilder, classFile.GenericSignature);
-						}
-						if(classFile.EnclosingMethod != null)
-						{
-							AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
-						}
+						AttributeHelper.SetDeprecatedAttribute(typeBuilder);
+					}
+					if(classFile.GenericSignature != null)
+					{
+						AttributeHelper.SetSignatureAttribute(typeBuilder, classFile.GenericSignature);
+					}
+					if(classFile.EnclosingMethod != null)
+					{
+						AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
 					}
 					if(!JVM.NoStackTraceInfo)
 					{
@@ -3510,6 +3521,7 @@ namespace IKVM.Internal
 							AttributeHelper.SetSourceFile(typeBuilder, null);
 						}
 					}
+#endif // STATIC_COMPILER
 					if(!classFile.IsInterface && hasclinit)
 					{
 						// We create a empty method that we can use to trigger our .cctor
@@ -3988,12 +4000,14 @@ namespace IKVM.Internal
 						// TODO the field should be marked as modreq(IsVolatile), but Reflection.Emit doesn't have a way of doing this
 						setModifiers = true;
 					}
+#if STATIC_COMPILER
 					// Instance fields can also have a ConstantValue attribute (and are inlined by the compiler),
 					// and ikvmstub has to export them, so we have to add a custom attribute.
 					if(constantValue != null)
 					{
 						AttributeHelper.SetConstantValue(field, constantValue);
 					}
+#endif // STATIC_COMPILER
 					if(isWrappedFinal)
 					{
 						methodAttribs |= MethodAttributes.SpecialName;
@@ -4016,27 +4030,26 @@ namespace IKVM.Internal
 						((GetterFieldWrapper)fw).SetGetter(getter);
 					}
 				}
-				if(JVM.IsStaticCompiler || DynamicClassLoader.IsSaveDebugImage)
+#if STATIC_COMPILER
+				// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
+				// the Java modifiers
+				if(setModifiers || fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0)
 				{
-					// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
-					// the Java modifiers
-					if(setModifiers || fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0)
-					{
-						AttributeHelper.SetModifiers(field, fld.Modifiers, fld.IsInternal);
-					}
-					if(setNameSig)
-					{
-						AttributeHelper.SetNameSig(field, fld.Name, fld.Signature);
-					}
-					if(fld.DeprecatedAttribute)
-					{
-						AttributeHelper.SetDeprecatedAttribute(field);
-					}
-					if(fld.GenericSignature != null)
-					{
-						AttributeHelper.SetSignatureAttribute(field, fld.GenericSignature);
-					}
+					AttributeHelper.SetModifiers(field, fld.Modifiers, fld.IsInternal);
 				}
+				if(setNameSig)
+				{
+					AttributeHelper.SetNameSig(field, fld.Name, fld.Signature);
+				}
+				if(fld.DeprecatedAttribute)
+				{
+					AttributeHelper.SetDeprecatedAttribute(field);
+				}
+				if(fld.GenericSignature != null)
+				{
+					AttributeHelper.SetSignatureAttribute(field, fld.GenericSignature);
+				}
+#endif // STATIC_COMPILER
 				return field;
 			}
 
@@ -4117,7 +4130,9 @@ namespace IKVM.Internal
 									{
 										inner = null;
 									}
+#if STATIC_COMPILER
 									AttributeHelper.SetInnerClass(typeBuilder, inner, innerclasses[i].accessFlags);
+#endif // STATIC_COMPILER
 								}
 							}
 						}
@@ -4167,7 +4182,21 @@ namespace IKVM.Internal
 								EmitConstantValueInitialization(ilGenerator);
 								wrapper.BaseTypeWrapper.EmitRunClassConstructor(ilGenerator);
 							}
-							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, invokespecialstubcache);
+							LineNumberTableAttribute.LineNumberWriter lineNumberTable = null;
+							bool nonLeaf = false;
+							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref nonLeaf, invokespecialstubcache, ref lineNumberTable);
+							if(lineNumberTable != null)
+							{
+#if STATIC_COMPILER
+								AttributeHelper.SetLineNumberTable(methods[i].GetMethod(), lineNumberTable);
+#else // STATIC_COMPILER
+								if(wrapper.lineNumberTables == null)
+								{
+									wrapper.lineNumberTables = new byte[methods.Length][];
+								}
+								wrapper.lineNumberTables[i] = lineNumberTable.ToArray();
+#endif // STATIC_COMPILER
+							}
 						}
 						else
 						{
@@ -4286,11 +4315,24 @@ namespace IKVM.Internal
 								{
 									continue;
 								}
+								LineNumberTableAttribute.LineNumberWriter lineNumberTable = null;
 								bool nonleaf = false;
-								Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf, invokespecialstubcache);
+								Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf, invokespecialstubcache, ref lineNumberTable);
 								if(nonleaf)
 								{
 									mbld.SetImplementationFlags(mbld.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
+								}
+								if(lineNumberTable != null)
+								{
+#if STATIC_COMPILER
+									AttributeHelper.SetLineNumberTable(methods[i].GetMethod(), lineNumberTable);
+#else // STATIC_COMPILER
+									if(wrapper.lineNumberTables == null)
+									{
+										wrapper.lineNumberTables = new byte[methods.Length][];
+									}
+									wrapper.lineNumberTables[i] = lineNumberTable.ToArray();
+#endif // STATIC_COMPILER
 								}
 							}
 						}
@@ -4690,9 +4732,11 @@ namespace IKVM.Internal
 						// In the Java world, the class appears as a non-public proxy class
 						AttributeHelper.SetModifiers(attributeTypeBuilder, Modifiers.Final, false);
 					}
+#if STATIC_COMPILER
 					// NOTE we "abuse" the InnerClassAttribute to add a custom attribute to name the class "$Proxy[Annotation]" in the Java world
 					int dotindex = o.classFile.Name.LastIndexOf('.') + 1;
 					AttributeHelper.SetInnerClass(attributeTypeBuilder, o.classFile.Name.Substring(0, dotindex) + "$Proxy" + o.classFile.Name.Substring(dotindex), Modifiers.Final);
+#endif // STATIC_COMPILER
 					attributeTypeBuilder.AddInterfaceImplementation(o.typeBuilder);
 					CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(AnnotationAttributeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { attributeTypeBuilder.FullName });
 					o.typeBuilder.SetCustomAttribute(cab);
@@ -5342,12 +5386,14 @@ namespace IKVM.Internal
 							string name = GenerateUniqueMethodName(methods[index].Name, baseMethods[index]);
 							MethodBuilder mb = typeBuilder.DefineMethod(methods[index].Name, MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Abstract | MethodAttributes.CheckAccessOnOverride, methods[index].ReturnTypeForDefineMethod, methods[index].GetParametersForDefineMethod());
 							AttributeHelper.HideFromReflection(mb);
+#if STATIC_COMPILER
 							if(unloadableOverrideStub || name != methods[index].Name)
 							{
 								// instead of creating an override stub, we created the Miranda method with the proper signature and
 								// decorate it with a NameSigAttribute that contains the real signature
 								AttributeHelper.SetNameSig(mb, methods[index].Name, methods[index].Signature);
 							}
+#endif // STATIC_COMPILER
 							// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
 							if(name != baseMethods[index].RealName)
 							{
@@ -5655,40 +5701,39 @@ namespace IKVM.Internal
 								CustomAttributeBuilder cab = new CustomAttributeBuilder(StaticCompiler.GetType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor(new Type[] { typeof(object) }), new object[] { classFile.Methods[index].AnnotationDefault });
 								mb.SetCustomAttribute(cab);
 							}
-#endif
+#endif // STATIC_COMPILER
 						}
 						wrapper.AddParameterNames(classFile, m, mb);
 						method = mb;
 					}
 					string[] exceptions = m.ExceptionsAttribute;
 					methods[index].SetDeclaredExceptions(exceptions);
-					if(JVM.IsStaticCompiler || DynamicClassLoader.IsSaveDebugImage)
+#if STATIC_COMPILER
+					AttributeHelper.SetThrowsAttribute(method, exceptions);
+					if(setModifiers || m.IsInternal || (m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0)
 					{
-						AttributeHelper.SetThrowsAttribute(method, exceptions);
-						if(setModifiers || m.IsInternal || (m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0)
+						if(method is ConstructorBuilder)
 						{
-							if(method is ConstructorBuilder)
-							{
-								AttributeHelper.SetModifiers((ConstructorBuilder)method, m.Modifiers, m.IsInternal);
-							}
-							else
-							{
-								AttributeHelper.SetModifiers((MethodBuilder)method, m.Modifiers, m.IsInternal);
-							}
+							AttributeHelper.SetModifiers((ConstructorBuilder)method, m.Modifiers, m.IsInternal);
 						}
-						if(m.DeprecatedAttribute)
+						else
 						{
-							AttributeHelper.SetDeprecatedAttribute(method);
-						}
-						if(setNameSig)
-						{
-							AttributeHelper.SetNameSig(method, m.Name, m.Signature);
-						}
-						if(m.GenericSignature != null)
-						{
-							AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
+							AttributeHelper.SetModifiers((MethodBuilder)method, m.Modifiers, m.IsInternal);
 						}
 					}
+					if(m.DeprecatedAttribute)
+					{
+						AttributeHelper.SetDeprecatedAttribute(method);
+					}
+					if(setNameSig)
+					{
+						AttributeHelper.SetNameSig(method, m.Name, m.Signature);
+					}
+					if(m.GenericSignature != null)
+					{
+						AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
+					}
+#endif // STATIC_COMPILER
 					return method;
 				}
 				finally
@@ -6444,6 +6489,31 @@ namespace IKVM.Internal
 		internal override string[] GetEnclosingMethod()
 		{
 			return impl.GetEnclosingMethod();
+		}
+
+		internal override string GetSourceFileName()
+		{
+			return sourceFileName;
+		}
+
+		internal override int GetSourceLineNumber(MethodBase mb, int ilOffset)
+		{
+			if(lineNumberTables != null)
+			{
+				MethodWrapper[] methods = GetMethods();
+				for(int i = 0; i < methods.Length; i++)
+				{
+					if(methods[i].GetMethod().MethodHandle.Value == mb.MethodHandle.Value)
+					{
+						if(lineNumberTables[i] != null)
+						{
+							return new LineNumberTableAttribute(lineNumberTables[i]).GetLineNumber(ilOffset);
+						}
+						break;
+					}
+				}
+			}
+			return -1;
 		}
 
 #if !STATIC_COMPILER
@@ -7475,6 +7545,30 @@ namespace IKVM.Internal
 				return null;
 			}
 		}
+
+		internal override string GetSourceFileName()
+		{
+			object[] attr = type.GetCustomAttributes(typeof(SourceFileAttribute), false);
+			if(attr.Length == 1)
+			{
+				return ((SourceFileAttribute)attr[0]).SourceFile;
+			}
+			if(type.Module.IsDefined(typeof(SourceFileAttribute), false))
+			{
+				return type.Name + ".java";
+			}
+			return null;
+		}
+
+		internal override int GetSourceLineNumber(MethodBase mb, int ilOffset)
+		{
+			object[] attr = mb.GetCustomAttributes(typeof(LineNumberTableAttribute), false);
+			if(attr.Length == 1)
+			{
+				return ((LineNumberTableAttribute)attr[0]).GetLineNumber(ilOffset);
+			}
+			return -1;
+		}
 #endif
 	}
 
@@ -7726,13 +7820,15 @@ namespace IKVM.Internal
 						ModuleBuilder moduleBuilder = new DynamicClassLoader(null).ModuleBuilder;
 						TypeBuilder typeBuilder = moduleBuilder.DefineType(origname.Substring(NamePrefix.Length), TypeAttributes.NotPublic | TypeAttributes.Interface | TypeAttributes.Abstract);
 						AttributeHelper.HideFromJava(typeBuilder);
+#if STATIC_COMPILER
 						AttributeHelper.SetModifiers(typeBuilder, Modifiers.Public | Modifiers.Interface | Modifiers.Abstract, false);
+#endif // STATIC_COMPILER
 						typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual, CallingConventions.Standard, invoke.ReturnType, args);
 						return CompiledTypeWrapper.newInstance(origname, typeBuilder.CreateType());
 					}
 				}
 			}
-#endif
+#endif // !COMPACT_FRAMEWORK
 			return null;
 		}
 
