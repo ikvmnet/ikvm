@@ -3141,18 +3141,8 @@ namespace IKVM.Internal
 
 		internal override void Finish()
 		{
-			lock(this)
-			{
-				Profiler.Enter("DynamicTypeWrapper.Finish");
-				try
-				{
-					impl = impl.Finish();
-				}
-				finally
-				{
-					Profiler.Leave("DynamicTypeWrapper.Finish");
-				}
-			}
+			// we don't need locking, because Finish is Thread safe
+			impl = impl.Finish();
 		}
 
 		// NOTE can only be used if the type hasn't been finished yet!
@@ -3168,6 +3158,16 @@ namespace IKVM.Internal
 		protected string GenerateUniqueMethodName(string basename, MethodWrapper mw)
 		{
 			return ((JavaTypeImpl)impl).GenerateUniqueMethodName(basename, mw);
+		}
+
+		internal void CreateStep1(out bool hasclinit)
+		{
+			((JavaTypeImpl)impl).CreateStep1(out hasclinit);
+		}
+
+		internal void CreateStep2NoFail(bool hasclinit, string mangledTypeName)
+		{
+			((JavaTypeImpl)impl).CreateStep2NoFail(hasclinit, mangledTypeName);
 		}
 
 		private abstract class DynamicImpl
@@ -3195,12 +3195,12 @@ namespace IKVM.Internal
 		{
 			private readonly ClassFile classFile;
 			private readonly DynamicTypeWrapper wrapper;
-			private readonly TypeBuilder typeBuilder;
+			private TypeBuilder typeBuilder;
 			private MethodWrapper[] methods;
 			private MethodWrapper[] baseMethods;
 			private FieldWrapper[] fields;
 			private FinishedTypeImpl finishedType;
-			private readonly DynamicTypeWrapper outerClassWrapper;
+			private DynamicTypeWrapper outerClassWrapper;
 			private Hashtable memberclashtable;
 			private Hashtable classCache = new Hashtable();
 			private FieldInfo classObjectField;
@@ -3214,9 +3214,12 @@ namespace IKVM.Internal
 				Tracer.Info(Tracer.Compiler, "constructing JavaTypeImpl for " + f.Name);
 				this.classFile = f;
 				this.wrapper = wrapper;
+			}
 
+			internal void CreateStep1(out bool hasclinit)
+			{
 				// process all methods
-				bool hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
+				hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
 				methods = new MethodWrapper[classFile.Methods.Length];
 				baseMethods = new MethodWrapper[classFile.Methods.Length];
 				for(int i = 0; i < methods.Length; i++)
@@ -3322,7 +3325,11 @@ namespace IKVM.Internal
 				}
 #endif
 				wrapper.SetFields(fields);
+			}
 
+			internal void CreateStep2NoFail(bool hasclinit, string mangledTypeName)
+			{
+				ClassFile f = classFile;
 				// from now on we shouldn't be throwing any exceptions (to be precise, after we've
 				// called ModuleBuilder.DefineType)
 				try
@@ -3366,6 +3373,8 @@ namespace IKVM.Internal
 								{
 									// make sure the relationship is reciprocal (otherwise we run the risk of
 									// baking the outer type before the inner type)
+									// NOTE this lock is bogus (and not required), because this code path is only
+									// applicable to static compilation, which requires no locking.
 									lock(outerClassWrapper)
 									{
 										if(outerClassWrapper.impl is JavaTypeImpl)
@@ -3445,7 +3454,7 @@ namespace IKVM.Internal
 						}
 						else
 						{
-							typeBuilder = wrapper.DefineType(typeAttribs);
+							typeBuilder = wrapper.DefineType(mangledTypeName, typeAttribs);
 						}
 					}
 					else
@@ -3459,7 +3468,7 @@ namespace IKVM.Internal
 						}
 						else
 						{
-							typeBuilder = wrapper.classLoader.ModuleBuilder.DefineType(wrapper.classLoader.MangleTypeName(f.Name), typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
+							typeBuilder = wrapper.classLoader.ModuleBuilder.DefineType(mangledTypeName, typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
 						}
 					}
 					ArrayList interfaceList = null;
@@ -3558,11 +3567,7 @@ namespace IKVM.Internal
 				}
 				catch(Exception x)
 				{
-					if(typeBuilder != null)
-					{
-						JVM.CriticalFailure("Exception during critical part of JavaTypeImpl construction", x);
-					}
-					throw;
+					JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2NoFail", x);
 				}
 			}
 
@@ -4088,7 +4093,12 @@ namespace IKVM.Internal
 				// make sure all classes are loaded, before we start finishing the type. During finishing, we
 				// may not run any Java code, because that might result in a request to finish the type that we
 				// are in the process of finishing, and this would be a problem.
-				classFile.Link(wrapper, classCache);
+				// TODO this locking is incorrect, we shouldn't be holding any locks while calling user code
+				// (Link will do class loading and class loading results in calling user code)
+				lock(classFile)
+				{
+					classFile.Link(wrapper, classCache);
+				}
 				for(int i = 0; i < fields.Length; i++)
 				{
 					fields[i].Link();
@@ -4097,6 +4107,16 @@ namespace IKVM.Internal
 				{
 					methods[i].Link();
 				}
+				// this is the correct lock, FinishCore doesn't call any user code and mutates global state,
+				// so it needs to be protected by a lock.
+				lock(this)
+				{
+					return FinishCore();
+				}
+			}
+
+			private FinishedTypeImpl FinishCore()
+			{
 				// it is possible that the loading of the referenced classes triggered a finish of us,
 				// if that happens, we just return
 				if(finishedType != null)
@@ -6431,9 +6451,9 @@ namespace IKVM.Internal
 		{
 		}
 
-		protected virtual TypeBuilder DefineType(TypeAttributes typeAttribs)
+		protected virtual TypeBuilder DefineType(string mangledTypeName, TypeAttributes typeAttribs)
 		{
-			return classLoader.ModuleBuilder.DefineType(classLoader.MangleTypeName(Name), typeAttribs);
+			return classLoader.ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
 		}
 
 		internal override MethodBase LinkMethod(MethodWrapper mw)

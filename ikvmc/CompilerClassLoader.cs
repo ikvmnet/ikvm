@@ -72,7 +72,7 @@ namespace IKVM.Internal
 			Tracer.Info(Tracer.Compiler, "Instantiate CompilerClassLoader for {0}", assemblyName);
 		}
 
-		protected override TypeWrapper CreateDynamicTypeWrapper(ClassFile f)
+		protected override DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f)
 		{
 			return new AotTypeWrapper(f, this);
 		}

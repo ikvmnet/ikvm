@@ -973,13 +973,13 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override TypeBuilder DefineType(TypeAttributes typeAttribs)
+		protected override TypeBuilder DefineType(string mangledTypeName, TypeAttributes typeAttribs)
 		{
 			if(IsGhost)
 			{
 				typeAttribs &= ~(TypeAttributes.Interface | TypeAttributes.Abstract);
 				typeAttribs |= TypeAttributes.Class | TypeAttributes.Sealed;
-				TypeBuilder typeBuilder = classLoader.ModuleBuilder.DefineType(classLoader.MangleTypeName(Name), typeAttribs, typeof(ValueType));
+				TypeBuilder typeBuilder = classLoader.ModuleBuilder.DefineType(mangledTypeName, typeAttribs, typeof(ValueType));
 				AttributeHelper.SetGhostInterface(typeBuilder);
 				AttributeHelper.SetModifiers(typeBuilder, Modifiers, IsInternal);
 				ghostRefField = typeBuilder.DefineField("__<ref>", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
@@ -999,7 +999,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				return base.DefineType(typeAttribs);
+				return base.DefineType(mangledTypeName, typeAttribs);
 			}
 		}
 

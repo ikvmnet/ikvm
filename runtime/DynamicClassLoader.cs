@@ -37,7 +37,6 @@ namespace IKVM.Internal
 		// so for the time being, we share one dynamic assembly among all classloaders
 		private static ModuleBuilder moduleBuilder;
 		private static bool saveDebugImage;
-		private static Hashtable nameClashHash = new Hashtable();
 		private static ArrayList saveDebugAssemblies;
 		private static int instanceCounter = 0;
 		private int instanceId = System.Threading.Interlocked.Increment(ref instanceCounter);
@@ -92,7 +91,8 @@ namespace IKVM.Internal
 			// another thread also fires the OnTypeResolve event while we're baking the type.
 			// I really would like to remove the type from the hashtable, but at the moment I don't see
 			// any way of doing that that wouldn't cause this race condition.
-			//dynamicTypes.Remove(args.Name);
+			// UPDATE since we now also use the dynamicTypes hashtable to keep track of type names that
+			// have been used already, we cannot remove the keys.
 			return type.TypeAsTBD.Assembly;
 		}
 
@@ -117,18 +117,39 @@ namespace IKVM.Internal
 			}
 			try
 			{
-				TypeWrapper type = CreateDynamicTypeWrapper(f);
+				DynamicTypeWrapper type = CreateDynamicTypeWrapper(f);
+				// this step can throw a retargettable exception, if the class is incorrect
+				bool hasclinit;
+				type.CreateStep1(out hasclinit);
+				// now we can allocate the mangledTypeName, because the next step cannot fail
+				string mangledTypeName = f.Name;
+				lock(dynamicTypes.SyncRoot)
+				{
+					// FXBUG the 1.1 CLR doesn't like type names that end with a period.
+					if(dynamicTypes.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
+					{
+#if STATIC_COMPILER
+						Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
+#endif
+						mangledTypeName += "/" + instanceId;
+					}
+					dynamicTypes.Add(mangledTypeName, null);
+				}
+				// This step actually creates the TypeBuilder. It is not allowed to throw any exceptions,
+				// if an exception does occur, it is due to a programming error in the IKVM or CLR runtime
+				// and will cause a CriticalFailure and exit the process.
+				type.CreateStep2NoFail(hasclinit, mangledTypeName);
 				lock(types.SyncRoot)
 				{
 					// in very extreme conditions another thread may have beaten us to it
-					// and loaded a class with the same name, in that case we'll leak
-					// the defined DynamicTypeWrapper (or rather the Reflection.Emit
-					// defined type).
+					// and loaded (not defined) a class with the same name, in that case
+					// we'll leak the the Reflection.Emit defined type. Also see the comment
+					// in ClassLoaderWrapper.RegisterInitiatingLoader().
 					TypeWrapper race = (TypeWrapper)types[f.Name];
 					if(race == null)
 					{
-						Debug.Assert(!dynamicTypes.ContainsKey(type.TypeAsTBD.FullName));
-						dynamicTypes.Add(type.TypeAsTBD.FullName, type);
+						Debug.Assert(dynamicTypes.ContainsKey(mangledTypeName) && dynamicTypes[mangledTypeName] == null);
+						dynamicTypes[mangledTypeName] = type;
 						types[f.Name] = type;
 #if !STATIC_COMPILER
 						type.SetClassObject(JVM.Library.newClass(type, protectionDomain));
@@ -156,7 +177,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected virtual TypeWrapper CreateDynamicTypeWrapper(ClassFile f)
+		protected virtual DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f)
 		{
 			return new DynamicTypeWrapper(f, this);
 		}
@@ -178,15 +199,21 @@ namespace IKVM.Internal
 		internal static void FinishAll(bool forDebug)
 		{
 			JVM.FinishingForDebugSave = forDebug;
-			while(dynamicTypes.Count > 0)
+			Hashtable done = new Hashtable();
+			bool more = true;
+			while(more)
 			{
+				more = false;
 				ArrayList l = new ArrayList(dynamicTypes.Values);
 				foreach(TypeWrapper tw in l)
 				{
-					string name = tw.TypeAsTBD.FullName;
-					Tracer.Info(Tracer.Runtime, "Finishing {0}", name);
-					tw.Finish();
-					dynamicTypes.Remove(name);
+					if(!done.ContainsKey(tw))
+					{
+						more = true;
+						done.Add(tw, tw);
+						Tracer.Info(Tracer.Runtime, "Finishing {0}", tw.TypeAsTBD.FullName);
+						tw.Finish();
+					}
 				}
 			}
 		}
@@ -268,29 +295,6 @@ namespace IKVM.Internal
 			}
 #endif // STATIC_COMPILER
 			return moduleBuilder;
-		}
-
-		// FXBUG This mangles type names, to enable different class loaders loading classes with the same names.
-		// We used to support this by using an assembly per class loader instance, but because
-		// of the CLR TypeResolve bug, we put all types in a single assembly for now.
-		internal string MangleTypeName(string name)
-		{
-			lock(nameClashHash.SyncRoot)
-			{
-				// FXBUG the 1.1 CLR doesn't like type names that end with a period.
-				if(nameClashHash.ContainsKey(name) || name.EndsWith("."))
-				{
-#if STATIC_COMPILER
-					Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", name);
-#endif
-					return name + "/" + instanceId;
-				}
-				else
-				{
-					nameClashHash.Add(name, name);
-					return name;
-				}
-			}
 		}
 	}
 }
