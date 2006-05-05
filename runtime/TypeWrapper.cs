@@ -6496,14 +6496,28 @@ namespace IKVM.Internal
 			return sourceFileName;
 		}
 
+		private int GetMethodBaseToken(MethodBase mb)
+		{
+			ConstructorInfo ci = mb as ConstructorInfo;
+			if(ci != null)
+			{
+				return classLoader.ModuleBuilder.GetConstructorToken(ci).Token;
+			}
+			else
+			{
+				return classLoader.ModuleBuilder.GetMethodToken((MethodInfo)mb).Token;
+			}
+		}
+
 		internal override int GetSourceLineNumber(MethodBase mb, int ilOffset)
 		{
 			if(lineNumberTables != null)
 			{
+				int token = GetMethodBaseToken(mb);
 				MethodWrapper[] methods = GetMethods();
 				for(int i = 0; i < methods.Length; i++)
 				{
-					if(methods[i].GetMethod().MethodHandle.Value == mb.MethodHandle.Value)
+					if(GetMethodBaseToken(methods[i].GetMethod()) == token)
 					{
 						if(lineNumberTables[i] != null)
 						{
