@@ -1374,30 +1374,31 @@ namespace IKVM.Internal
 			internal override void Link(TypeWrapper thisType, Hashtable classCache)
 			{
 				base.Link(thisType, classCache);
-				if(fieldTypeWrapper == null)
+				lock(this)
 				{
-					ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-					fieldTypeWrapper = FieldTypeWrapperFromSig(classLoader, classCache, this.Signature);
-					TypeWrapper wrapper = GetClassType();
-					if(!wrapper.IsUnloadable)
+					if(fieldTypeWrapper != null)
 					{
-						field = wrapper.GetFieldWrapper(Name, Signature);
-						if(field != null)
-						{
-							bool ok = false;
-							try
-							{
-								field.Link();
-								ok = true;
-							}
-							finally
-							{
-								if(!ok)
-								{
-									fieldTypeWrapper = null;
-								}
-							}
-						}
+						return;
+					}
+				}
+				FieldWrapper fw = null;
+				TypeWrapper wrapper = GetClassType();
+				if(!wrapper.IsUnloadable)
+				{
+					fw = wrapper.GetFieldWrapper(Name, Signature);
+					if(fw != null)
+					{
+						fw.Link();
+					}
+				}
+				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+				TypeWrapper fld = FieldTypeWrapperFromSig(classLoader, classCache, this.Signature);
+				lock(this)
+				{
+					if(fieldTypeWrapper == null)
+					{
+						fieldTypeWrapper = fld;
+						field = fw;
 					}
 				}
 			}
@@ -1441,11 +1442,23 @@ namespace IKVM.Internal
 			internal override void Link(TypeWrapper thisType, Hashtable classCache)
 			{
 				base.Link(thisType, classCache);
-				if(argTypeWrappers == null)
+				lock(this)
 				{
-					ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-					argTypeWrappers = ArgTypeWrapperListFromSig(classLoader, classCache, this.Signature);
-					retTypeWrapper = RetTypeWrapperFromSig(classLoader, classCache, this.Signature);
+					if(argTypeWrappers != null)
+					{
+						return;
+					}
+				}
+				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+				TypeWrapper[] args = ArgTypeWrapperListFromSig(classLoader, classCache, this.Signature);
+				TypeWrapper ret = RetTypeWrapperFromSig(classLoader, classCache, this.Signature);
+				lock(this)
+				{
+					if(argTypeWrappers == null)
+					{
+						argTypeWrappers = args;
+						retTypeWrapper = ret;
+					}
 				}
 			}
 

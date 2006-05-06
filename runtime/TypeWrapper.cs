@@ -3202,7 +3202,7 @@ namespace IKVM.Internal
 			private FinishedTypeImpl finishedType;
 			private DynamicTypeWrapper outerClassWrapper;
 			private Hashtable memberclashtable;
-			private Hashtable classCache = new Hashtable();
+			private Hashtable classCache = Hashtable.Synchronized(new Hashtable());
 			private FieldInfo classObjectField;
 			private MethodBuilder clinitMethod;
 #if STATIC_COMPILER
@@ -4093,12 +4093,7 @@ namespace IKVM.Internal
 				// make sure all classes are loaded, before we start finishing the type. During finishing, we
 				// may not run any Java code, because that might result in a request to finish the type that we
 				// are in the process of finishing, and this would be a problem.
-				// TODO this locking is incorrect, we shouldn't be holding any locks while calling user code
-				// (Link will do class loading and class loading results in calling user code)
-				lock(classFile)
-				{
-					classFile.Link(wrapper, classCache);
-				}
+				classFile.Link(wrapper, classCache);
 				for(int i = 0; i < fields.Length; i++)
 				{
 					fields[i].Link();

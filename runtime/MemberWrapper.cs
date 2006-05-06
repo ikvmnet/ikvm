@@ -377,14 +377,23 @@ namespace IKVM.Internal
 		{
 			lock(this)
 			{
+				if(parameterTypeWrappers != null)
+				{
+					return;
+				}
+			}
+			ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
+			// TODO we need to use the actual classCache here
+			System.Collections.Hashtable classCache = new System.Collections.Hashtable();
+			TypeWrapper ret = ClassFile.RetTypeWrapperFromSig(loader, classCache, Signature);
+			TypeWrapper[] parameters = ClassFile.ArgTypeWrapperListFromSig(loader, classCache, Signature);
+			lock(this)
+			{
 				if(parameterTypeWrappers == null)
 				{
 					Debug.Assert(returnTypeWrapper == null || returnTypeWrapper == PrimitiveTypeWrapper.VOID);
-					ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
-					// TODO we need to use the actual classCache here
-					System.Collections.Hashtable classCache = new System.Collections.Hashtable();
-					returnTypeWrapper = ClassFile.RetTypeWrapperFromSig(loader, classCache, Signature);
-					parameterTypeWrappers = ClassFile.ArgTypeWrapperListFromSig(loader, classCache, Signature);
+					returnTypeWrapper = ret;
+					parameterTypeWrappers = parameters;
 					if(method == null)
 					{
 						try
@@ -1230,11 +1239,19 @@ namespace IKVM.Internal
 		{
 			lock(this)
 			{
+				if(fieldType != null)
+				{
+					return;
+				}
+			}
+			// TODO we need to use the actual classCache here
+			System.Collections.Hashtable classCache = new System.Collections.Hashtable();
+			TypeWrapper fld = ClassFile.FieldTypeWrapperFromSig(this.DeclaringType.GetClassLoader(), classCache, Signature);
+			lock(this)
+			{
 				if(fieldType == null)
 				{
-					// TODO we need to use the actual classCache here
-					System.Collections.Hashtable classCache = new System.Collections.Hashtable();
-					fieldType = ClassFile.FieldTypeWrapperFromSig(this.DeclaringType.GetClassLoader(), classCache, Signature);
+					fieldType = fld;
 					try
 					{
 						field = this.DeclaringType.LinkField(this);
