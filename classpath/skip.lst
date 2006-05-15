@@ -16,6 +16,7 @@
 /classpath/gnu/java/nio/SelectorImpl.java
 /classpath/gnu/java/nio/ServerSocketChannelSelectionKey.java
 /classpath/gnu/java/nio/SocketChannelSelectionKey.java
+/classpath/gnu/java/nio/SocketChannelSelectionKeyImpl.java
 /classpath/gnu/javax/sound/midi/
 /classpath/gnu/xml/libxmlj/
 /classpath/gnu/test/

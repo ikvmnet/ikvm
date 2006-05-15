@@ -8,6 +8,7 @@ gnu/classpath/Configuration.java
 gnu/classpath/Pointer.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
+gnu/java/awt/peer/gtk/GtkImage.java
 gnu/java/lang/reflect/VMField.java
 gnu/java/lang/VMInstrumentationImpl.java
 gnu/java/locale/LocaleData.java
@@ -21,6 +22,8 @@ gnu/java/nio/SelectionKeyImpl.java
 gnu/java/nio/SelectorImpl.java
 gnu/java/nio/ServerSocketChannelSelectionKey.java
 gnu/java/nio/SocketChannelSelectionKey.java
+gnu/java/nio/SocketChannelSelectionKeyImpl.java
+gnu/java/nio/VMChannel.java
 gnu/java/nio/VMPipe.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/Library.java
