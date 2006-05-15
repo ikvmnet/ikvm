@@ -43,6 +43,9 @@ namespace IKVM.Internal
 #endif
 		private static readonly Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable());
 		private static ClassLoaderWrapper bootstrapClassLoader;
+#if WHIDBEY && !STATIC_COMPILER
+		private static readonly Hashtable reflectionOnlyClassLoaders = new Hashtable();
+#endif
 #if !STATIC_COMPILER
 		private static ClassLoaderWrapper systemClassLoader;
 #endif
@@ -135,7 +138,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
+		private TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
 		{
 			if(tw == null || tw.IsUnloadable || tw.IsPrimitive)
 				return tw;
@@ -158,7 +161,12 @@ namespace IKVM.Internal
 						{
 							elem = elem.ElementTypeWrapper;
 						}
-						RegisterInitiatingLoader(elem);
+						// HACK elem.ElementTypeWrapper as an evil side effect registers the initiating loader
+						// so if we're the same loader, don't do it again
+						if(!elem.IsPrimitive && !types.ContainsKey(elem.Name))
+						{
+							RegisterInitiatingLoader(elem);
+						}
 					}
 					// NOTE if types.ContainsKey(tw.Name) is true (i.e. the value is null),
 					// we currently have a DefineClass in progress on another thread and we've
@@ -261,7 +269,7 @@ namespace IKVM.Internal
 		private TypeWrapper LoadClassByDottedNameFast(string name, bool throwClassNotFoundException)
 		{
 			// .NET 1.1 has a limit of 1024 characters for type names
-			if(name.Length >= 1024)
+			if(name.Length >= 1024 || name.Length == 0)
 			{
 				return null;
 			}
@@ -348,95 +356,51 @@ namespace IKVM.Internal
 				}
 				if(this == GetBootstrapClassLoader())
 				{
-					// HACK if the name contains a comma, we assume it is an assembly qualified name
-					if(name.IndexOf(',') != -1)
+					Type t = GetBootstrapTypeRaw(name);
+					if(t != null)
 					{
-						// NOTE even though we search all loaded assemblies below, we still need to do this,
-						// because this call might actually trigger the load of an assembly.
-						Type t = Type.GetType(name);
-						if(t == null)
+						return RegisterInitiatingLoader(GetWrapperFromBootstrapType(t));
+					}
+					type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
+					if(type != null)
+					{
+						Debug.Assert(type.Name == name, type.Name + " != " + name);
+						lock(types.SyncRoot)
 						{
-#if !COMPACT_FRAMEWORK
-							// HACK we explicitly try all loaded assemblies, to support assemblies
-							// that aren't loaded in the "Load" context.
-							string typeName = name.Substring(0, name.IndexOf(','));
-							foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+							// another thread may have beaten us to it and in that
+							// case we don't want to overwrite the previous one
+							TypeWrapper race = (TypeWrapper)types[name];
+							if(race == null)
 							{
-								t = asm.GetType(typeName);
-								if(t != null && t.AssemblyQualifiedName == name)
-								{
-									break;
-								}
-								t = null;
-							}
-#endif
-						}
-						if(t != null)
-						{
-							if(AttributeHelper.IsJavaModule(t.Module))
-							{
-								return RegisterInitiatingLoader(GetWrapperFromType(t));
+								types[name] = type;
 							}
 							else
 							{
-								// HACK weird way to load the .NET type wrapper that always works
-								// (for remapped types as well, because netexp uses this way of
-								// loading types, we need the remapped types to appear in their
-								// .NET "warped" form).
-								string javaName = DotNetTypeWrapper.GetName(t);
-								if(javaName == null)
-								{
-									// some type (e.g. open generic types) are not visible from Java
-									return null;
-								}
-								return LoadClassByDottedNameFast(javaName, throwClassNotFoundException);
+								type = race;
 							}
 						}
+						return type;
 					}
-					// TODO why is this check here and not at the top of the method?
-					if(name != "")
+#if STATIC_COMPILER
+					// NOTE it is important that this is done last, because otherwise we will
+					// load the netexp generated fake types (e.g. delegate inner interface) instead
+					// of having DotNetTypeWrapper generating it.
+					type = GetTypeWrapperCompilerHook(name);
+					if(type != null)
 					{
-						Type t = GetBootstrapTypeRaw(name);
-						if(t != null)
-						{
-							return RegisterInitiatingLoader(GetWrapperFromBootstrapType(t));
-						}
-						type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
-						if(type != null)
-						{
-							Debug.Assert(type.Name == name, type.Name + " != " + name);
-							lock(types.SyncRoot)
-							{
-								// another thread may have beaten us to it and in that
-								// case we don't want to overwrite the previous one
-								TypeWrapper race = (TypeWrapper)types[name];
-								if(race == null)
-								{
-									types[name] = type;
-								}
-								else
-								{
-									type = race;
-								}
-							}
-							return type;
-						}
-						// NOTE it is important that this is done last, because otherwise we will
-						// load the netexp generated fake types (e.g. delegate inner interface) instead
-						// of having DotNetTypeWrapper generating it.
-						type = GetTypeWrapperCompilerHook(name);
-						if(type != null)
-						{
-							return type;
-						}
+						return type;
 					}
+#endif // STATIC_COMPILER
 					if(javaClassLoader == null)
 					{
 						return null;
 					}
 				}
 #if !COMPACT_FRAMEWORK
-				if(this == proxyClassLoader)
+				// if we're here, we're not the bootstrap class loader and don't have a java class loader,
+				// that must mean that we're either the proxyClassLoader or a ReflectionOnly class loader
+				// and we should delegate to the bootstrap class loader
+				if(javaClassLoader == null)
 				{
 					return GetBootstrapClassLoader().LoadClassByDottedNameFast(name, throwClassNotFoundException);
 				}
@@ -506,7 +470,7 @@ namespace IKVM.Internal
 			{
 				if(wrapper.TypeAsTBD != type)
 				{
-					string msg = String.Format("\nTypename \"{0}\" is imported from multiple assemblies:\n{1}\n{2}\n", type.FullName, wrapper.Assembly.FullName, type.Assembly.FullName);
+					string msg = String.Format("\nTypename \"{0}\" is imported from multiple assemblies:\n{1}\n{2}\n", type.FullName, wrapper.TypeAsTBD.Assembly.FullName, type.Assembly.FullName);
 					JVM.CriticalFailure(msg, null);
 				}
 			}
@@ -520,6 +484,10 @@ namespace IKVM.Internal
 				}
 				else
 				{
+					if(!DotNetTypeWrapper.IsAllowedOutside(type))
+					{
+						return null;
+					}
 					// since this type was not compiled from Java source, we don't need to
 					// look for our attributes, but we do need to filter unrepresentable
 					// stuff (and transform some other stuff)
@@ -546,7 +514,7 @@ namespace IKVM.Internal
 		}
 
 		// NOTE this method only sees pre-compiled Java classes
-		internal Type GetBootstrapTypeRaw(string name)
+		private Type GetBootstrapTypeRaw(string name)
 		{
 #if COMPACT_FRAMEWORK
 			// TODO figure this out
@@ -554,7 +522,7 @@ namespace IKVM.Internal
 #else
 			Assembly[] assemblies;
 #if WHIDBEY
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler)
 			{
 				assemblies = AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
 			}
@@ -587,7 +555,10 @@ namespace IKVM.Internal
 				Type t = a.GetType(name);
 				if(t != null
 					&& AttributeHelper.IsJavaModule(t.Module)
-					&& !AttributeHelper.IsHideFromJava(t))
+					&& !AttributeHelper.IsHideFromJava(t)
+					&& !t.IsArray
+					&& !t.IsPointer
+					&& !t.IsByRef)
 				{
 					return t;
 				}
@@ -595,7 +566,10 @@ namespace IKVM.Internal
 				t = a.GetType(name.Replace('$', '+'));
 				if(t != null
 					&& AttributeHelper.IsJavaModule(t.Module)
-					&& !AttributeHelper.IsHideFromJava(t))
+					&& !AttributeHelper.IsHideFromJava(t)
+					&& !t.IsArray
+					&& !t.IsPointer
+					&& !t.IsByRef)
 				{
 					return t;
 				}
@@ -609,10 +583,12 @@ namespace IKVM.Internal
 			return null;
 		}
 
+#if STATIC_COMPILER
 		internal virtual TypeWrapper GetTypeWrapperCompilerHook(string name)
 		{
 			return null;
 		}
+#endif // STATIC_COMPILER
 
 		// NOTE this method can actually return null if the resulting array type name would be too long
 		// for .NET to handle.
@@ -924,12 +900,35 @@ namespace IKVM.Internal
 				}
 				// if the wrapper doesn't already exist, that must mean that the type
 				// is a .NET type (or a pre-compiled Java class), which means that it
-				// was "loaded" by the bootstrap classloader
-				// TODO think up a scheme to deal with .NET types that have the same name. Since all .NET types
-				// appear in the boostrap classloader, we need to devise a scheme to mangle the class name
-				return GetBootstrapClassLoader().GetWrapperFromBootstrapType(type);
+				// was "loaded" by an assembly classloader
+				return GetAssemblyClassLoader(type.Assembly).GetWrapperFromBootstrapType(type);
 			}
 			return wrapper;
+		}
+
+		// this method only supports .NET or pre-compiled Java assemblies
+		internal static ClassLoaderWrapper GetAssemblyClassLoader(Assembly assembly)
+		{
+			// TODO this assertion fires when compiling the core library (at least on Whidbey)
+			// I need to find out why...
+			Debug.Assert(!(assembly is AssemblyBuilder));
+
+#if WHIDBEY && !STATIC_COMPILER
+			if(assembly.ReflectionOnly)
+			{
+				lock(reflectionOnlyClassLoaders)
+				{
+					ClassLoaderWrapper loader = (ClassLoaderWrapper)reflectionOnlyClassLoaders[assembly];
+					if(loader == null)
+					{
+						loader = new ReflectionOnlyClassLoader();
+						reflectionOnlyClassLoaders[assembly] = loader;
+					}
+					return loader;
+				}
+			}
+#endif
+			return GetBootstrapClassLoader();
 		}
 
 		internal static void SetWrapperForType(Type type, TypeWrapper wrapper)
@@ -998,6 +997,14 @@ namespace IKVM.Internal
 	class BootstrapClassLoader : ClassLoaderWrapper
 	{
 		internal BootstrapClassLoader()
+			: base(null)
+		{
+		}
+	}
+
+	class ReflectionOnlyClassLoader : ClassLoaderWrapper
+	{
+		internal ReflectionOnlyClassLoader()
 			: base(null)
 		{
 		}

@@ -26,6 +26,145 @@ using System.Reflection;
 
 namespace IKVM.Attributes
 {
+	/*
+	[Flags]
+	public enum TypeMetadataFlags : byte
+	{
+		None = 0,
+		HideFromJava = 1,
+		SourceNameIsClassName = 2,
+		ExceptionIsUnsafeForMapping = 4,
+		InternalAccess = 8,
+	}
+
+	public sealed class TypeMetadataAttribute : Attribute
+	{
+		private TypeMetadataFlags flags;
+		private string sourceFileName;
+		private string[] implements;
+		private string name;
+		private Modifiers modifiers;
+		private Modifiers innerClassModifiers;
+		private string genericSignature;
+		private string enclosingMethodClass;
+		private string enclosingMethodName;
+		private string enclosingMethodSig;
+		private string annotationAttributeType;
+
+		public TypeMetadataAttribute(TypeMetadataFlags flags, string sourceFileName, string[] implements)
+		{
+			this.flags = flags;
+			this.sourceFileName = sourceFileName;
+			this.implements = implements;
+		}
+
+		public TypeMetadataAttribute(TypeMetadataFlags flags, string sourceFileName, string[] implements,
+			string name, Modifiers modifiers, Modifiers innerClassModifiers, string genericSignature,
+			string enclosingMethodClass, string enclosingMethodName, string enclosingMethodSig,
+			string annotationAttributeType)
+		{
+			this.flags = flags;
+			this.sourceFileName = sourceFileName;
+			this.implements = implements;
+			this.name = name;
+			this.modifiers = modifiers;
+			this.innerClassModifiers = innerClassModifiers;
+			this.genericSignature = genericSignature;
+			this.enclosingMethodClass = enclosingMethodClass;
+			this.enclosingMethodName = enclosingMethodName;
+			this.enclosingMethodSig = enclosingMethodSig;
+			this.annotationAttributeType = annotationAttributeType;
+		}
+
+		public TypeMetadataFlags Flags
+		{
+			get
+			{
+				return flags;
+			}
+		}
+		public string SourceFile
+		{
+			get
+			{
+				return sourceFileName;
+			}
+		}
+
+		public string[] Implements
+		{
+			get
+			{
+				return implements;
+			}
+		}
+
+		public string Name
+		{
+			get
+			{
+				return name;
+			}
+		}
+
+		public Modifiers Modifiers
+		{
+			get
+			{
+				return modifiers;
+			}
+		}
+
+		public Modifiers InnerClassModifiers
+		{
+			get
+			{
+				return innerClassModifiers;
+			}
+		}
+
+		public string GenericSignature
+		{
+			get
+			{
+				return genericSignature;
+			}
+		}
+
+		public string EnclosingMethodClass
+		{
+			get
+			{
+				return enclosingMethodClass;
+			}
+		}
+
+		public string EnclosingMethodName
+		{
+			get
+			{
+				return enclosingMethodName;
+			}
+		}
+
+		public string EnclosingMethodSig
+		{
+			get
+			{
+				return enclosingMethodSig;
+			}
+		}
+
+		public string AnnotationAttributeType
+		{
+			get
+			{
+				return annotationAttributeType;
+			}
+		}
+	}
+	*/
+
 	public sealed class SourceFileAttribute : Attribute
 	{
 		private string file;

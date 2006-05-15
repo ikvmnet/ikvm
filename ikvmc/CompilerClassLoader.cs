@@ -1846,11 +1846,11 @@ namespace IKVM.Internal
 #if WHIDBEY
 			if(options.runtimeAssembly == null)
 			{
-				Assembly.ReflectionOnlyLoadFrom(typeof(ByteCodeHelper).Assembly.Location);
+				StaticCompiler.runtimeAssembly = Assembly.ReflectionOnlyLoadFrom(typeof(ByteCodeHelper).Assembly.Location);
 			}
 			else
 			{
-				runtimeAssembly = Assembly.ReflectionOnlyLoadFrom(options.runtimeAssembly);
+				StaticCompiler.runtimeAssembly = Assembly.ReflectionOnlyLoadFrom(options.runtimeAssembly);
 			}
 #else
 			if(options.runtimeAssembly == null)
@@ -2102,6 +2102,8 @@ namespace IKVM.Internal
 				return 1;
 			}
 
+			// NOTE types from IKVM.Runtime that are "published" should also be added to
+			// the white list in DotNetTypeWrapper.IsAllowedOutside()
 			Type pointer = StaticCompiler.runtimeAssembly.GetType("gnu.classpath.Pointer");
 			if(pointer != null)
 			{

@@ -59,9 +59,10 @@ public class NetExp
 		if(file != null && file.Exists)
 		{
 #if WHIDBEY
-			JVM.SetIkvmStubMode();
+			Type typeofJVM = typeof(IKVM.Runtime.Util).Assembly.GetType("IKVM.Internal.JVM");
+			typeofJVM.GetMethod("SetIkvmStubMode").Invoke(null, null);
 			Assembly.ReflectionOnlyLoadFrom(typeof(System.ComponentModel.EditorBrowsableAttribute).Assembly.Location);
-			Assembly.ReflectionOnlyLoadFrom(typeof(JVM).Assembly.Location);
+			Assembly.ReflectionOnlyLoadFrom(typeofJVM.Assembly.Location);
 			Assembly.ReflectionOnlyLoadFrom(typeof(java.lang.Object).Assembly.Location);
 			AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_ReflectionOnlyAssemblyResolve);
 			assembly = Assembly.ReflectionOnlyLoadFrom(args[0]);
@@ -152,8 +153,22 @@ public class NetExp
 				{
 					// NOTE we use GetClassFromTypeHandle instead of GetFriendlyClassFromType, to make sure
 					// we don't get the remapped types when we're processing System.Object, System.String,
-					// System.Throwable and System.IComparable
+					// System.Throwable and System.IComparable.
+					// NOTE we can't use GetClassFromTypeHandle for ReflectionOnly assemblies
+					// (because Type.TypeHandle is not supported by ReflectionOnly types), but this
+					// isn't a problem because mscorlib is never loaded in the ReflectionOnly context.
+#if WHIDBEY
+					if(assembly.ReflectionOnly)
+					{
+						c = (java.lang.Class)IKVM.Runtime.Util.GetFriendlyClassFromType(t);
+					}
+					else
+					{
+						c = (java.lang.Class)IKVM.Runtime.Util.GetClassFromTypeHandle(t.TypeHandle);
+					}
+#else
 					c = (java.lang.Class)IKVM.Runtime.Util.GetClassFromTypeHandle(t.TypeHandle);
+#endif
 					if (c == null)
 					{
 						Console.WriteLine("Skipping: " + t.FullName);

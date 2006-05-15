@@ -714,7 +714,7 @@ namespace IKVM.NativeCode.java
 				return null;
 			}
 
-			public static object forName(string name, bool initialize, object classLoader)
+			public static object forName0(string name, bool initialize, object classLoader)
 			{
 				try
 				{
@@ -731,6 +731,11 @@ namespace IKVM.NativeCode.java
 				{
 					throw x.ToJava();
 				}
+			}
+
+			public static object getClassFromType(Type type)
+			{
+				return IKVM.Runtime.Util.GetClassFromTypeHandle(type.TypeHandle);
 			}
 
 			public static string GetName(object wrapper)
@@ -784,7 +789,15 @@ namespace IKVM.NativeCode.java
 	
 			public static object getClassLoader0(object wrapper)
 			{
-				return ((TypeWrapper)wrapper).GetClassLoader().GetJavaClassLoader();
+				TypeWrapper tw = (TypeWrapper)wrapper;
+				object loader = tw.GetClassLoader().GetJavaClassLoader();
+				// HACK we have to exclude DynamicTypeWrapper instances, because proxies that are created by the bootstrap
+				// class loader also need to return null (but they don't live in the CoreAssembly)
+				if(loader == null && tw.Assembly != JVM.CoreAssembly && !(tw is DynamicTypeWrapper))
+				{
+					return ClassLoaderWrapper.GetSystemClassLoader().GetJavaClassLoader();
+				}
+				return loader;
 			}
 
 			public static object[] GetDeclaredMethods(object cwrapper, bool getMethods, bool publicOnly)
@@ -1481,7 +1494,12 @@ namespace IKVM.NativeCode.gnu.classpath
 			{
 				return null;
 			}
-			return ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
+			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+			if(tw == null)
+			{
+				return null;
+			}
+			return tw.ClassObject;
 		}
 
 		public static object getClassLoaderFromType(Type type)
@@ -1527,6 +1545,11 @@ namespace gnu.classpath
 #endif
 	public unsafe sealed class Pointer
 	{
+		// NOTE during static compilation this type is represented by a CompiledTypeWrapper,
+		// so we need to hide this field, because Java types cannot have pointer types.
+		// Note that at runtime this type is represented by a DotNetTypeWrapper and that
+		// DotNetTypeWrapper.LazyPublishMembers has a hack to prevent it from exposing any
+		// of the members of this type (because that would be a security problem).
 		[HideFromJava]
 		private byte* pb;
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -213,7 +213,30 @@ public abstract class VMClass
     }
     private static native ClassLoader getClassLoader0(Object wrapper);
 
-    static native Class forName(String name, boolean initialize, ClassLoader loader);
+    static Class forName(String name, boolean initialize, ClassLoader loader) throws ClassNotFoundException
+    {
+        if (name.indexOf(',') > 0)
+        {
+            // we essentially require full trust before allowing arbitrary types to be loaded,
+            // hence we do the "createClassLoader" permission check
+            SecurityManager sm = SecurityManager.current;
+            if (sm != null)
+                sm.checkPermission(new RuntimePermission("createClassLoader"));
+            cli.System.Type type = cli.System.Type.GetType(name);
+            if (type != null)
+            {
+                Class c = getClassFromType(type);
+                if (c != null)
+                {
+                    return c;
+                }
+            }
+            throw new ClassNotFoundException(name);
+        }
+        return forName0(name, initialize, loader);
+    }
+    private static native Class forName0(String name, boolean initialize, ClassLoader loader);
+    private static native Class getClassFromType(cli.System.Type type);
 
     static native void throwException(Throwable t);
 
@@ -222,15 +245,6 @@ public abstract class VMClass
 	return IsArray(clazz.vmdata);
     }
     private static native boolean IsArray(Object wrapper);
-
-    static Object cast(Object obj, Class k)
-    {
-        if(obj == null || k.isInstance(obj))
-        {
-            return obj;
-        }
-        throw new ClassCastException();
-    }
 
   static String getSimpleName(Class clazz)
   {

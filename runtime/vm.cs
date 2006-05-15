@@ -258,7 +258,12 @@ namespace IKVM.Runtime
 			{
 				return null;
 			}
-			return ClassLoaderWrapper.GetWrapperFromType(t).ClassObject;
+			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(t);
+			if(tw != null)
+			{
+				return tw.ClassObject;
+			}
+			return null;
 		}
 
 		public static object GetFriendlyClassFromType(Type type)
@@ -361,7 +366,9 @@ namespace IKVM.Runtime
 				throw new ArgumentException("clazz");
 			}
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
-			return AttributeHelper.IsDefined(wrapper.TypeAsTBD, typeof(ObsoleteAttribute));
+			// HACK we need to check TypeAsTBD for null, because ReflectionOnly
+			// generated delegate inner interfaces don't really exist
+			return wrapper.TypeAsTBD != null && AttributeHelper.IsDefined(wrapper.TypeAsTBD, typeof(ObsoleteAttribute));
 		}
 
 		[HideFromJava]
@@ -638,18 +645,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static bool CompileInnerClassesAsNestedTypes
-		{
-			get
-			{
-				// NOTE at the moment, we always do this when compiling statically
-				// note that it makes no sense to turn this on when we're dynamically
-				// running Java code, it only makes sense to turn it off when statically
-				// compiling code that is never used as a library.
-				return IsStaticCompiler;
-			}
-		}
-
 		internal static bool IsUnix
 		{
 			get
@@ -738,13 +733,13 @@ namespace IKVM.Internal
 			}
 		}
 
+		// this method resolves types in IKVM.Runtime.dll
+		// (the version of IKVM.Runtime.dll that we're running
+		// with can be different from the one we're compiling against.)
 		internal static Type LoadType(Type type)
 		{
-#if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
-			{
-				return StaticCompiler.GetType(type.FullName);
-			}
+#if WHIDBEY && STATIC_COMPILER
+			return StaticCompiler.GetType(type.FullName);
 #endif
 			return type;
 		}

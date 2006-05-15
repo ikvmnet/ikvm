@@ -127,7 +127,10 @@ namespace IKVM.NativeCode.java.lang
 				if(mb != null)
 				{
 					TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
-					return tw.GetSourceLineNumber(mb, ilOffset);
+					if(tw != null)
+					{
+						return tw.GetSourceLineNumber(mb, ilOffset);
+					}
 				}
 			}
 			return -1;
@@ -139,7 +142,10 @@ namespace IKVM.NativeCode.java.lang
 			if(mb != null)
 			{
 				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
-				return tw.GetSourceFileName();
+				if(tw != null)
+				{
+					return tw.GetSourceFileName();
+				}
 			}
 			return null;
 		}

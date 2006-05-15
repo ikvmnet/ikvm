@@ -469,19 +469,6 @@ namespace IKVM.Internal
 			// been set)
 			if(method != null && !(method is MethodBuilder))
 			{
-#if WHIDBEY && !COMPACT_FRAMEWORK
-				if(JVM.IsIkvmStub)
-				{
-					foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(method))
-					{
-						if(cad.Constructor.DeclaringType == StaticCompiler.GetType(typeof(ThrowsAttribute).FullName))
-						{
-							return AttributeHelper.DecodeArray<string>(cad.ConstructorArguments[0]);
-						}
-					}
-					return new string[0];
-				}
-#endif
 				object[] attributes = method.GetCustomAttributes(typeof(ThrowsAttribute), false);
 				if(attributes.Length == 1)
 				{

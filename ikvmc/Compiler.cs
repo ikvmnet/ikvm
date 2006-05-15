@@ -380,7 +380,6 @@ class IkvmcCompiler
 				else if(s == "-compressresources")
 				{
 					compressResources = true;
-					options.compressedResources = true;
 				}
 				else if(s == "-strictfinalfieldsemantics")
 				{
@@ -447,6 +446,7 @@ class IkvmcCompiler
 				}
 			}
 		}
+		options.compressedResources = compressResources;
 		if(options.assembly == null)
 		{
 			string basename = options.path == null ? defaultAssemblyName : new FileInfo(options.path).Name;
