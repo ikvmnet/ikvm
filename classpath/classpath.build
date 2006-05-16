@@ -17,13 +17,13 @@
     </target>
 
     <target name="trunk">
-        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath" />
+        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-0.91" />
         <property name="allsources" value="allsources.lst" />
         <call target="IKVM.GNU.Classpath.dll" />
     </target>
 
     <target name="generics">
-        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-generics" />
+        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-0.91-generics" />
         <property name="allsources" value="allsources-generics.lst" />
         <call target="IKVM.GNU.Classpath.dll" />
     </target>
@@ -54,7 +54,7 @@
 <arg value="-debug" />
 <arg value="-srcpath:/classpath/" />
 -->
-          <arg value="-version:0.27.*" />
+          <arg value="-version:0.28.0.0" />
           <arg value="${signoption}" />
           <arg value="-compressresources" />
           <arg value="-opt:fields" />
