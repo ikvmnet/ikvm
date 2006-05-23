@@ -100,7 +100,12 @@ namespace IKVM.NativeCode.java.lang
 			{
 				return DotNetTypeWrapper.GetName(type);
 			}
-			return TypeWrapper.GetNameFromType(type);
+			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+			if(tw != null)
+			{
+				return tw.Name;
+			}
+			return "<unknown>";
 		}
 
 		public static void initThrowable(object throwable, object detailMessage, object cause)

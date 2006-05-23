@@ -520,6 +520,14 @@ final class VMThread
     // of Java (either in .NET or in native code)
     private static Thread newThread(ThreadGroup group)
     {
+        // protect against calls to Thread.currentThread() while we're creating the Thread object
+        if(__tls_cleanup != null)
+        {
+            throw new InternalError("Recursive Thread.currentThread() initialization");
+        }
+        // set a temporary value, so that we know we're initializing this thread
+        __tls_cleanup = "";
+
         cli.System.Threading.Thread nativeThread = cli.System.Threading.Thread.get_CurrentThread();
         VMThread vmThread = new VMThread(null);
         vmThread.nativeThreadReference = new cli.System.WeakReference(nativeThread);
@@ -565,7 +573,7 @@ final class VMThread
         Thread javaThread = __tls_javaThread;
 	if(javaThread == null)
 	{
-            __tls_javaThread = javaThread = newThread(ThreadGroup.root);
+            javaThread = newThread(ThreadGroup.root);
 	}
 	return javaThread;
     }

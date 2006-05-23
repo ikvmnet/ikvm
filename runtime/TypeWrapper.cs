@@ -170,10 +170,6 @@ namespace IKVM.Internal
 		private static Type typeofNoPackagePrefixAttribute = JVM.LoadType(typeof(NoPackagePrefixAttribute));
 		private static Type typeofConstantValueAttribute = JVM.LoadType(typeof(ConstantValueAttribute));
 
-		// make sure we don't get the "beforefieldinit" flag as that could cause our cctor to run before
-		// JVM.IsStaticCompiler is set
-		static AttributeHelper() {}
-
 		private static object ParseValue(TypeWrapper tw, string val)
 		{
 			if(tw == CoreClasses.java.lang.String.Wrapper)
@@ -2530,62 +2526,6 @@ namespace IKVM.Internal
 			}
 		}
 #endif
-
-		internal static string GetSigNameFromType(Type type)
-		{
-			TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
-
-			if(wrapper != null)
-			{
-				return wrapper.SigName;
-			}
-
-			if(type.IsArray)
-			{
-				System.Text.StringBuilder sb = new System.Text.StringBuilder();
-				while(type.IsArray)
-				{
-					sb.Append('[');
-					type = type.GetElementType();
-				}
-				return sb.Append(GetSigNameFromType(type)).ToString();
-			}
-
-			string s = TypeWrapper.GetNameFromType(type);
-			if(s[0] != '[')
-			{
-				s = "L" + s + ";";
-			}
-			return s;
-		}
-
-		// NOTE returns null for primitive types and types that are not visible from Java (e.g. open generic types)
-		internal static string GetNameFromType(Type type)
-		{
-			TypeWrapper.AssertFinished(type);
-
-			if(type.IsArray)
-			{
-				return GetSigNameFromType(type);
-			}
-
-			// first we check if a wrapper exists, because if it does we must use the name from the wrapper to
-			// make sure that remapped types return the proper name
-			TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
-			if(wrapper != null)
-			{
-				return wrapper.Name;
-			}
-
-			if(AttributeHelper.IsJavaModule(type.Module))
-			{
-				return CompiledTypeWrapper.GetName(type);
-			}
-			else
-			{
-				return DotNetTypeWrapper.GetName(type);
-			}
-		}
 
 		// NOTE don't call this method, call MethodWrapper.Link instead
 		internal virtual MethodBase LinkMethod(MethodWrapper mw)
@@ -9086,7 +9026,7 @@ namespace IKVM.Internal
 		{
 			if(IsRemapped)
 			{
-				TypeWrapper shadow = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
+				TypeWrapper shadow = ClassLoaderWrapper.GetWrapperFromType(type);
 				MethodInfo method = shadow.TypeAsBaseType.GetMethod("__<instanceof>");
 				if(method != null)
 				{
@@ -9103,7 +9043,7 @@ namespace IKVM.Internal
 		{
 			if(IsRemapped)
 			{
-				TypeWrapper shadow = ClassLoaderWrapper.GetWrapperFromTypeFast(type);
+				TypeWrapper shadow = ClassLoaderWrapper.GetWrapperFromType(type);
 				MethodInfo method = shadow.TypeAsBaseType.GetMethod("__<checkcast>");
 				if(method != null)
 				{

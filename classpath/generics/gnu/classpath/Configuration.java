@@ -45,7 +45,7 @@ public interface Configuration
 {
   // TODO
   String CLASSPATH_HOME = "";
-  String CLASSPATH_VERSION = "0.91-generics-pre";
+  String CLASSPATH_VERSION = "0.92-generics-pre";
 
 
   /**

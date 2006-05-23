@@ -444,7 +444,6 @@ namespace IKVM.Internal
 		private TypeWrapper GetWrapperFromBootstrapType(Type type)
 		{
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromBootstrapType: {0}", type.FullName);
-			Debug.Assert(GetWrapperFromTypeFast(type) == null, "GetWrapperFromTypeFast(type) == null", type.FullName);
 			Debug.Assert(!type.IsArray, "!type.IsArray", type.FullName);
 #if !COMPACT_FRAMEWORK
 			Debug.Assert(!(type.Assembly is AssemblyBuilder), "!(type.Assembly is AssemblyBuilder)", type.FullName);
@@ -578,6 +577,14 @@ namespace IKVM.Internal
 			{
 				// we can end up here because we replace the $ with a plus sign
 				// (or client code did a Class.forName() on an invalid name)
+				Tracer.Info(Tracer.Runtime, x.Message);
+			}
+			catch(FileLoadException x)
+			{
+				// this can only happen if the assembly was loaded in the ReflectionOnly
+				// context and the requested type references a type in another assembly
+				// that cannot be found in the ReflectionOnly context
+				// TODO figure out what other exceptions Assembly.GetType() can throw
 				Tracer.Info(Tracer.Runtime, x.Message);
 			}
 			return null;
@@ -860,7 +867,7 @@ namespace IKVM.Internal
 		// This only returns the wrapper for a Type if that wrapper has already been created, otherwise
 		// it returns null
 		// If the wrapper doesn't exist, that means that the type is either a .NET type or a pre-compiled Java class
-		internal static TypeWrapper GetWrapperFromTypeFast(Type type)
+		private static TypeWrapper GetWrapperFromTypeFast(Type type)
 		{
 			TypeWrapper.AssertFinished(type);
 			Debug.Assert(!Whidbey.ContainsGenericParameters(type));
