@@ -430,6 +430,7 @@
 ../../classpath/gnu/java/awt/peer/swing/SwingWindowPeer.java
 ../../classpath/gnu/java/awt/print/JavaPrinterGraphics.java
 ../../classpath/gnu/java/awt/print/JavaPrinterJob.java
+../../classpath/gnu/java/awt/print/PostScriptGraphics2D.java
 ../../classpath/gnu/java/awt/print/SpooledDocument.java
 ../../classpath/gnu/java/beans/BeanInfoEmbryo.java
 ../../classpath/gnu/java/beans/decoder/AbstractContext.java
@@ -3783,6 +3784,7 @@
 ../../classpath/javax/swing/text/html/HTMLTableView.java
 ../../classpath/javax/swing/text/html/InlineView.java
 ../../classpath/javax/swing/text/html/ListView.java
+../../classpath/javax/swing/text/html/MinimalHTMLWriter.java
 ../../classpath/javax/swing/text/html/NullView.java
 ../../classpath/javax/swing/text/html/ObjectView.java
 ../../classpath/javax/swing/text/html/Option.java
@@ -4573,6 +4575,7 @@ java/lang/VMSystem.java
 java/lang/VMThread.java
 java/net/VMInetAddress.java
 java/net/VMNetworkInterface.java
+java/net/VMURLConnection.java
 java/nio/channels/VMChannels.java
 java/nio/MappedByteBufferImpl.java
 java/nio/VMDirectByteBuffer.java

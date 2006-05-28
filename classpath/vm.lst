@@ -54,6 +54,7 @@ java/lang/VMSystem.java
 java/lang/VMThread.java
 java/net/VMInetAddress.java
 java/net/VMNetworkInterface.java
+java/net/VMURLConnection.java
 java/nio/channels/VMChannels.java
 java/nio/MappedByteBufferImpl.java
 java/nio/VMDirectByteBuffer.java
