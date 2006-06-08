@@ -2516,7 +2516,15 @@ namespace IKVM.Internal
 				// TODO make sure we get the right "IsInstanceArray" method and cache it
 				// NOTE for dynamic ghosts we don't end up here because DynamicTypeWrapper overrides this method,
 				// so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
-				ilgen.Emit(OpCodes.Call, TypeAsTBD.GetMethod("IsInstanceArray"));
+				TypeWrapper tw = this;
+				int rank = 0;
+				while(tw.IsArray)
+				{
+					rank++;
+					tw = tw.ElementTypeWrapper;
+				}
+				ilgen.Emit(OpCodes.Ldc_I4, rank);
+				ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("IsInstanceArray"));
 			}
 			else
 			{

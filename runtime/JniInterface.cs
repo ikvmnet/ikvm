@@ -236,6 +236,12 @@ namespace IKVM.Runtime
 			{
 				MethodBase mb = MethodBase.GetMethodFromHandle(method);
 				ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
+				// HACK since we're returning the system class loader for statically compiled classes,
+				// we have to use that here too
+				if(loader.GetJavaClassLoader() == null)
+				{
+					loader = ClassLoaderWrapper.GetSystemClassLoader();
+				}
 				int sp = 0;
 				for(int i = 1; sig[i] != ')'; i++)
 				{

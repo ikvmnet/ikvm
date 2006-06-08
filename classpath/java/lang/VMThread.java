@@ -2,7 +2,8 @@ package java.lang;
 
 // Note: stop() should take care not to stop a thread if it is
 // executing code in this class.
-final class VMThread
+@ikvm.lang.Internal
+public final class VMThread
 {
     private static final Object countLock = new Object();
     private static int nonDaemonCount;
@@ -18,6 +19,8 @@ final class VMThread
     private volatile boolean interruptPending;
     private VMThread firstJoinWaiter;
     private VMThread nextJoinWaiter;
+    private volatile Object blocker;
+    private boolean pendingUnpark;
 
     private VMThread(Thread thread)
     {
@@ -663,5 +666,77 @@ final class VMThread
         {
             leaveInterruptableWait();
         }
+    }
+
+    public static void park(Object blocker, long nanos)
+    {
+        VMThread vmthread = currentThread().vmThread;
+        vmthread.blocker = blocker;
+        try
+        {
+            vmthread.parkImpl(nanos);
+        }
+        finally
+        {
+            vmthread.blocker = null;
+        }
+    }
+
+    public static void park(long nanos)
+    {
+        currentThread().vmThread.parkImpl(nanos);
+    }
+
+    private synchronized void parkImpl(long nanos)
+    {
+        if(nanos > 0 && !interruptPending)
+        {
+            long millis = nanos / 1000000;
+            if(millis > Integer.MAX_VALUE)
+            {
+                millis = Integer.MAX_VALUE;
+            }
+            if(!pendingUnpark)
+            {
+                interruptableWait = true;
+                try
+                {
+                    if(false) throw new cli.System.Threading.ThreadInterruptedException();
+                    cli.System.Threading.Monitor.Wait(this, (int)millis);
+                }
+                catch(cli.System.Threading.ThreadInterruptedException x)
+                {
+                }
+                finally
+                {
+                    interruptableWait = false;
+                }
+            }
+            pendingUnpark = false;
+        }
+    }
+
+    public static void unpark(Thread t)
+    {
+        if(t != null)
+        {
+            // NOTE we don't queue an unpark if the thread is not yet started
+            // (Sun doesn't either)
+            VMThread vmthread = t.vmThread;
+            if(vmthread != null)
+            {
+                synchronized(vmthread)
+                {
+                    vmthread.pendingUnpark = true;
+                    cli.System.Threading.Monitor.Pulse(vmthread);
+                }
+            }
+        }
+    }
+
+    public static Object getBlocker(Thread t)
+    {
+        VMThread vmthread = t.vmThread;
+        return vmthread != null ? vmthread.blocker : null;
     }
 }

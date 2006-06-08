@@ -29,8 +29,9 @@ import ikvm.lang.CIL;
 @ikvm.lang.Internal
 public abstract class VMFieldImpl extends VMField
 {
-    private static native Object GetValue(Object fieldCookie, Object o);
-    private static native void SetValue(Object fieldCookie, Object o, Object value);
+    // GetValue & SetValue are public for use by sun.misc.Unsafe
+    public static native Object GetValue(Object fieldCookie, Object o);
+    public static native void SetValue(Object fieldCookie, Object o, Object value);
     private static native int GetModifiers(Object memberCookie);
     private static native Object GetDeclaringClass(Object memberCookie);
     private static native String GetName(Object fieldCookie);

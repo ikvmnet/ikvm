@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?> 
 <!--
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1413,6 +1413,120 @@
 				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>ikvm-native</parameter>
 				</attribute>
+			</method>
+		</class>
+		<class name="java.util.concurrent.atomic.AtomicReference">
+			<method name="compareAndSet" sig="(Ljava.lang.Object;Ljava.lang.Object;)Z">
+				<body>
+					<ldarg_0 />
+					<ldflda class="java.util.concurrent.atomic.AtomicReference" name="value" sig="Ljava.lang.Object;" />
+					<ldarg_2 />
+					<ldarg_1 />
+					<call type="System.Threading.Interlocked" name="CompareExchange" sig="System.Object&amp;;System.Object;System.Object" />
+					<ldarg_1 />
+					<ceq />
+					<ret />
+				</body>
+			</method>
+		</class>
+		<class name="java.util.concurrent.atomic.AtomicReferenceArray">
+			<method name="get" sig="(I)Ljava.lang.Object;">
+				<body>
+					<ldarg_0 />
+					<ldfld class="java.util.concurrent.atomic.AtomicReferenceArray" name="array" sig="[Ljava.lang.Object;" />
+					<ldarg_1 />
+					<ldelema sig="Ljava.lang.Object;" />
+					<volatile />
+					<ldind_ref />
+					<ret />
+				</body>
+			</method>
+			<method name="set" sig="(ILjava.lang.Object;)V">
+				<body>
+					<ldarg_0 />
+					<ldfld class="java.util.concurrent.atomic.AtomicReferenceArray" name="array" sig="[Ljava.lang.Object;" />
+					<ldarg_1 />
+					<ldelema sig="Ljava.lang.Object;" />
+					<ldarg_2 />
+					<volatile />
+					<stind_ref />
+					<ret />
+				</body>
+			</method>
+			<method name="compareAndSet" sig="(ILjava.lang.Object;Ljava.lang.Object;)Z">
+				<body>
+					<ldarg_0 />
+					<ldfld class="java.util.concurrent.atomic.AtomicReferenceArray" name="array" sig="[Ljava.lang.Object;" />
+					<ldarg_1 />
+					<ldelema sig="Ljava.lang.Object;" />
+					<ldarg_3 />
+					<ldarg_2 />
+					<call type="System.Threading.Interlocked" name="CompareExchange" sig="System.Object&amp;;System.Object;System.Object" />
+					<ldarg_2 />
+					<ceq />
+					<ret />
+				</body>
+			</method>
+		</class>
+		<class name="java.util.concurrent.atomic.AtomicInteger">
+			<method name="compareAndSet" sig="(II)Z">
+				<body>
+					<ldarg_0 />
+					<ldflda class="java.util.concurrent.atomic.AtomicInteger" name="value" sig="I" />
+					<ldarg_2 />
+					<ldarg_1 />
+					<call type="System.Threading.Interlocked" name="CompareExchange" sig="System.Int32&amp;;System.Int32;System.Int32" />
+					<ldarg_1 />
+					<ceq />
+					<ret />
+				</body>
+			</method>
+		</class>
+		<class name="java.util.concurrent.atomic.AtomicIntegerArray">
+			<method name="get" sig="(I)I">
+				<body>
+					<ldarg_0 />
+					<ldfld class="java.util.concurrent.atomic.AtomicIntegerArray" name="array" sig="[I" />
+					<ldarg_1 />
+					<ldelema sig="I" />
+					<volatile />
+					<ldind_i4 />
+					<ret />
+				</body>
+			</method>
+			<method name="set" sig="(II)V">
+				<body>
+					<ldarg_0 />
+					<ldfld class="java.util.concurrent.atomic.AtomicIntegerArray" name="array" sig="[I" />
+					<ldarg_1 />
+					<ldelema sig="I" />
+					<ldarg_2 />
+					<volatile />
+					<stind_i4 />
+					<ret />
+				</body>
+			</method>
+			<method name="compareAndSet" sig="(III)Z">
+				<body>
+					<ldarg_0 />
+					<ldfld class="java.util.concurrent.atomic.AtomicIntegerArray" name="array" sig="[I" />
+					<ldarg_1 />
+					<ldelema sig="I" />
+					<ldarg_3 />
+					<ldarg_2 />
+					<call type="System.Threading.Interlocked" name="CompareExchange" sig="System.Int32&amp;;System.Int32;System.Int32" />
+					<ldarg_2 />
+					<ceq />
+					<ret />
+				</body>
+			</method>
+		</class>
+		<class name="java.util.concurrent.atomic.AtomicLong">
+			<method name="VMSupportsCS8" sig="()Z">
+				<body>
+					<ldc_i4_0 />
+					<ret />
+				</body>
 			</method>
 		</class>
 	</assembly>

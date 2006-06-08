@@ -631,10 +631,42 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("ldind_ref")]
+	public sealed class Ldind_ref : Simple
+	{
+		public Ldind_ref() : base(OpCodes.Ldind_Ref)
+		{
+		}
+	}
+
 	[XmlType("stind_i1")]
 	public sealed class Stind_i1 : Simple
 	{
 		public Stind_i1() : base(OpCodes.Stind_I1)
+		{
+		}
+	}
+
+	[XmlType("stind_i2")]
+	public sealed class Stind_i2 : Simple
+	{
+		public Stind_i2() : base(OpCodes.Stind_I2)
+		{
+		}
+	}
+
+	[XmlType("stind_i4")]
+	public sealed class Stind_i4 : Simple
+	{
+		public Stind_i4() : base(OpCodes.Stind_I4)
+		{
+		}
+	}
+
+	[XmlType("stind_ref")]
+	public sealed class Stind_ref : Simple
+	{
+		public Stind_ref() : base(OpCodes.Stind_Ref)
 		{
 		}
 	}
@@ -973,6 +1005,18 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("ldelema")]
+	public sealed class Ldelema : Instruction
+	{
+		[XmlAttribute("sig")]
+		public string Sig;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Ldelema, ClassLoaderWrapper.GetBootstrapClassLoader().FieldTypeWrapperFromSig(Sig).TypeAsArrayType);
+		}
+	}
+
 	public class InstructionList : CodeEmitter
 	{
 		[XmlElement(typeof(Ldstr))]
@@ -1007,7 +1051,11 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Ldind_i8))]
 		[XmlElement(typeof(Ldind_r4))]
 		[XmlElement(typeof(Ldind_r8))]
+		[XmlElement(typeof(Ldind_ref))]
 		[XmlElement(typeof(Stind_i1))]
+		[XmlElement(typeof(Stind_i2))]
+		[XmlElement(typeof(Stind_i4))]
+		[XmlElement(typeof(Stind_ref))]
 		[XmlElement(typeof(Ret))]
 		[XmlElement(typeof(Throw))]
 		[XmlElement(typeof(Ldnull))]
@@ -1038,6 +1086,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Ceq))]
 		[XmlElement(typeof(ConditionalInstruction))]
 		[XmlElement(typeof(Volatile))]
+		[XmlElement(typeof(Ldelema))]
 		public Instruction[] invoke;
 
 		internal void Generate(Hashtable context, ILGenerator ilgen)

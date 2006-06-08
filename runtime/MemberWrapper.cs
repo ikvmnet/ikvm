@@ -1387,10 +1387,10 @@ namespace IKVM.Internal
 
 	sealed class VolatileLongDoubleFieldWrapper : FieldWrapper
 	{
-		private static MethodInfo volatileReadDouble = typeof(System.Threading.Thread).GetMethod("VolatileRead", new Type[] { Type.GetType("System.Double&") });
-		private static MethodInfo volatileReadLong = typeof(System.Threading.Thread).GetMethod("VolatileRead", new Type[] { Type.GetType("System.Int64&") });
-		private static MethodInfo volatileWriteDouble = typeof(System.Threading.Thread).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Double&"), typeof(double) });
-		private static MethodInfo volatileWriteLong = typeof(System.Threading.Thread).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Int64&"), typeof(long) });
+		private static MethodInfo volatileReadDouble = typeof(IKVM.Runtime.ByteCodeHelper).GetMethod("VolatileRead", new Type[] { Type.GetType("System.Double&") });
+		private static MethodInfo volatileReadLong = typeof(IKVM.Runtime.ByteCodeHelper).GetMethod("VolatileRead", new Type[] { Type.GetType("System.Int64&") });
+		private static MethodInfo volatileWriteDouble = typeof(IKVM.Runtime.ByteCodeHelper).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Double&"), typeof(double) });
+		private static MethodInfo volatileWriteLong = typeof(IKVM.Runtime.ByteCodeHelper).GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Int64&"), typeof(long) });
 
 		internal VolatileLongDoubleFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers)
 			: base(declaringType, fieldType, name, sig, modifiers, fi)

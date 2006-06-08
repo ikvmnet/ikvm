@@ -24,6 +24,7 @@
 using System;
 using System.Reflection;
 using System.Diagnostics;
+using System.Threading;
 using IKVM.Attributes;
 using IKVM.Internal;
 
@@ -579,6 +580,58 @@ namespace IKVM.Runtime
 			return false;
 #else
 			return Environment.HasShutdownStarted && !IKVM.Internal.JVM.Library.runFinalizersOnExit();
+#endif
+		}
+
+#if !WHIDBEY || COMPACT_FRAMEWORK
+		private static readonly object volatileLock = new object();
+#endif
+
+		public static long VolatileRead(ref long v)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			return Interlocked.Read(ref v);
+#else
+			lock(volatileLock)
+			{
+				return v;
+			}
+#endif
+		}
+
+		public static void VolatileWrite(ref long v, long newValue)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			Interlocked.Exchange(ref v, newValue);
+#else
+			lock(volatileLock)
+			{
+				v = newValue;
+			}
+#endif
+		}
+
+		public static double VolatileRead(ref double v)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			return Interlocked.CompareExchange(ref v, 0.0, 0.0);
+#else
+			lock(volatileLock)
+			{
+				return v;
+			}
+#endif
+		}
+
+		public static void VolatileWrite(ref double v, double newValue)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			Interlocked.Exchange(ref v, newValue);
+#else
+			lock(volatileLock)
+			{
+				v = newValue;
+			}
 #endif
 		}
 	}
