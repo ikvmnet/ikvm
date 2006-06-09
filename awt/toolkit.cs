@@ -1038,8 +1038,10 @@ namespace ikvm.awt
 				points[i].Y = aPolygon.ypoints[i];
 			}
 
-			g.FillPolygon(new SolidBrush(color), points);
-
+			using(Brush brush = new SolidBrush(color))
+			{
+				g.FillPolygon(brush, points);
+			}
 		}
 
 		public override void fillPolygon(int[] aX, int[] aY, int aLength)
@@ -1052,7 +1054,10 @@ namespace ikvm.awt
 				points[i].Y = aY[i];
 			}
 
-			g.FillPolygon(new SolidBrush(color), points);
+			using(Brush brush = new SolidBrush(color))
+			{
+				g.FillPolygon(brush, points);
+			}
 		}
 
 		public override void fillRect(int x, int y, int width, int height)
@@ -1067,7 +1072,10 @@ namespace ikvm.awt
 		{
 			GraphicsPath gp = createRoundRect(x, y, w, h, radius);
 
-			g.FillPath(new SolidBrush(color), gp);
+			using(Brush brush = new SolidBrush(color))
+			{
+				g.FillPath(brush, gp);
+			}
 			gp.Dispose();
 		}
 

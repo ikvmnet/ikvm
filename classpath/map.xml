@@ -1469,6 +1469,15 @@
 			</method>
 		</class>
 		<class name="java.util.concurrent.atomic.AtomicInteger">
+			<method name="getAndSet" sig="(I)I">
+				<body>
+					<ldarg_0 />
+					<ldflda class="java.util.concurrent.atomic.AtomicInteger" name="value" sig="I" />
+					<ldarg_1 />
+					<call type="System.Threading.Interlocked" name="Exchange" sig="System.Int32&amp;;System.Int32" />
+					<ret />					
+				</body>
+			</method>
 			<method name="compareAndSet" sig="(II)Z">
 				<body>
 					<ldarg_0 />
@@ -1479,6 +1488,22 @@
 					<ldarg_1 />
 					<ceq />
 					<ret />
+				</body>
+			</method>
+			<method name="incrementAndGet" sig="()I">
+				<body>
+					<ldarg_0 />
+					<ldflda class="java.util.concurrent.atomic.AtomicInteger" name="value" sig="I" />
+					<call type="System.Threading.Interlocked" name="Increment" sig="System.Int32&amp;" />
+					<ret />					
+				</body>
+			</method>
+			<method name="decrementAndGet" sig="()I">
+				<body>
+					<ldarg_0 />
+					<ldflda class="java.util.concurrent.atomic.AtomicInteger" name="value" sig="I" />
+					<call type="System.Threading.Interlocked" name="Decrement" sig="System.Int32&amp;" />
+					<ret />					
 				</body>
 			</method>
 		</class>

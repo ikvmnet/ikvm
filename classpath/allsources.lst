@@ -4551,6 +4551,7 @@
 ../../classpath/org/omg/SendingContext/RunTime.java
 ../../classpath/org/omg/SendingContext/RunTimeOperations.java
 ../../classpath/org/omg/stub/java/rmi/_Remote_Stub.java
+../../classpath/sun/reflect/annotation/AnnotationInvocationHandler.java
 ../../classpath/vm/reference/java/io/VMObjectStreamClass.java
 ../../classpath/vm/reference/java/lang/reflect/VMArray.java
 ../../classpath/vm/reference/java/lang/VMCompiler.java
@@ -4621,5 +4622,4 @@ java/util/concurrent/locks/LockSupport.java
 java/util/VMTimeZone.java
 sun/misc/Ref.java
 sun/misc/Unsafe.java
-sun/reflect/annotation/AnnotationInvocationHandler.java
 sun/reflect/Reflection.java
