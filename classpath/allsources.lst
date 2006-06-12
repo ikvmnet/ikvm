@@ -531,6 +531,7 @@
 ../../classpath/gnu/java/lang/InstrumentationImpl.java
 ../../classpath/gnu/java/lang/MainThread.java
 ../../classpath/gnu/java/lang/management/OperatingSystemMXBeanImpl.java
+../../classpath/gnu/java/lang/management/RuntimeMXBeanImpl.java
 ../../classpath/gnu/java/lang/reflect/ClassSignatureParser.java
 ../../classpath/gnu/java/lang/reflect/FieldSignatureParser.java
 ../../classpath/gnu/java/lang/reflect/GenericSignatureParser.java
@@ -1117,6 +1118,7 @@
 ../../classpath/gnu/javax/crypto/mode/OFB.java
 ../../classpath/gnu/javax/crypto/pad/BasePad.java
 ../../classpath/gnu/javax/crypto/pad/IPad.java
+../../classpath/gnu/javax/crypto/pad/ISO10126.java
 ../../classpath/gnu/javax/crypto/pad/PadFactory.java
 ../../classpath/gnu/javax/crypto/pad/PKCS1_V1_5.java
 ../../classpath/gnu/javax/crypto/pad/PKCS7.java
@@ -2307,7 +2309,9 @@
 ../../classpath/java/lang/LinkageError.java
 ../../classpath/java/lang/Long.java
 ../../classpath/java/lang/management/ManagementFactory.java
+../../classpath/java/lang/management/ManagementPermission.java
 ../../classpath/java/lang/management/OperatingSystemMXBean.java
+../../classpath/java/lang/management/RuntimeMXBean.java
 ../../classpath/java/lang/Math.java
 ../../classpath/java/lang/NegativeArraySizeException.java
 ../../classpath/java/lang/NoClassDefFoundError.java
@@ -4564,6 +4568,7 @@ gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
 gnu/java/awt/peer/gtk/CairoSurface.java
 gnu/java/lang/reflect/VMField.java
+gnu/java/lang/management/VMRuntimeMXBeanImpl.java
 gnu/java/lang/VMInstrumentationImpl.java
 gnu/java/locale/LocaleData.java
 gnu/java/net/PlainDatagramSocketImpl.java
