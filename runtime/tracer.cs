@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004, 2005 Jeroen Frijters
+  Copyright (C) 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -81,13 +81,20 @@ namespace IKVM.Internal
 			allTraceSwitches[Runtime.DisplayName] = Runtime;
 			allTraceSwitches[Jni.DisplayName] = Jni;
 
-			Trace.AutoFlush = true;
-			Trace.Listeners.Add(new MyTextWriterTraceListener(Console.Error));
-			/* If the app config file gives some method trace - add it */
-			string trace = ConfigurationSettings.AppSettings["Traced Methods"];
-			if(trace != null)
+			try
 			{
-				methodtraces.Add(trace);
+				Trace.AutoFlush = true;
+				Trace.Listeners.Add(new MyTextWriterTraceListener(Console.Error));
+				/* If the app config file gives some method trace - add it */
+				string trace = ConfigurationSettings.AppSettings["Traced Methods"];
+				if(trace != null)
+				{
+					methodtraces.Add(trace);
+				}
+			}
+			catch(ConfigurationException)
+			{
+				// app.config is malformed, ignore
 			}
 		}
 

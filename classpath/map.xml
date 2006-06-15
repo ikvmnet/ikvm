@@ -30,8 +30,8 @@
 		<attribute type="System.Reflection.AssemblyCopyrightAttribute" sig="(Ljava.lang.String;)V">
 			<parameter>This software is licensed under the GNU General Public License + GNU Classpath exception.
 			See http://www.gnu.org/software/classpath/license.html for details.
-			Copyright (C) 1998-2005 Free Software Foundation, Inc.
-			Copyright (C) 2002-2005 Jeroen Frijters</parameter>
+			Copyright (C) 1998-2006 Free Software Foundation, Inc.
+			Copyright (C) 2002-2006 Jeroen Frijters</parameter>
 		</attribute>
 		<attribute type="System.Reflection.AssemblyTitleAttribute" sig="(Ljava.lang.String;)V">
 			<parameter>IKVM GNU Classpath library for .NET</parameter>

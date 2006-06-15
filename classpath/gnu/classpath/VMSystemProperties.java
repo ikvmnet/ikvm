@@ -372,16 +372,24 @@ public class VMSystemProperties
 
     static void postInit(Properties p)
     {
-        // read properties from app.config
-        cli.System.Collections.Specialized.NameValueCollection appSettings = cli.System.Configuration.ConfigurationSettings.get_AppSettings();
-        cli.System.Collections.IEnumerator keys = appSettings.GetEnumerator();
-        while(keys.MoveNext())
+        try
         {
-            String key = (String)keys.get_Current();
-            if(key.startsWith("ikvm:"))
+            // read properties from app.config
+            if(false) throw new cli.System.Configuration.ConfigurationException();
+            cli.System.Collections.Specialized.NameValueCollection appSettings = cli.System.Configuration.ConfigurationSettings.get_AppSettings();
+            cli.System.Collections.IEnumerator keys = appSettings.GetEnumerator();
+            while(keys.MoveNext())
             {
-                p.setProperty(key.substring(5), appSettings.get_Item(key));
+                String key = (String)keys.get_Current();
+                if(key.startsWith("ikvm:"))
+                {
+                    p.setProperty(key.substring(5), appSettings.get_Item(key));
+                }
             }
+        }
+        catch(cli.System.Configuration.ConfigurationException _)
+        {
+            // app.config is invalid, ignore
         }
         // set the properties that were specified with IKVM.Runtime.Startup.SetProperties()
         if(props != null)

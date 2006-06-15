@@ -544,6 +544,61 @@ class ExceptionsAttribute : ClassFileAttribute
 	}
 }
 
+class RuntimeVisibleAnnotationsAttribute : ClassFileAttribute
+{
+	private ClassFileWriter classFile;
+	private MemoryStream mem;
+	private BigEndianStream bes;
+	private ushort count;
+
+	internal RuntimeVisibleAnnotationsAttribute(ClassFileWriter classFile)
+		: base(classFile.AddUtf8("RuntimeVisibleAnnotations"))
+	{
+		this.classFile = classFile;
+		mem = new MemoryStream();
+		bes = new BigEndianStream(mem);
+	}
+
+	internal void Add(object[] annot)
+	{
+		count++;
+		bes.WriteUInt16(classFile.AddUtf8((string)annot[1]));
+		bes.WriteUInt16((ushort)((annot.Length - 2) / 2));
+		for(int i = 2; i < annot.Length; i += 2)
+		{
+			bes.WriteUInt16(classFile.AddUtf8((string)annot[i]));
+			WriteElementValue(bes, annot[i + 1]);
+		}
+	}
+
+	private void WriteElementValue(BigEndianStream bes, object val)
+	{
+		if(val is object[])
+		{
+			object[] arr = (object[])val;
+			if(AnnotationDefaultAttribute.TAG_ENUM.Equals(arr[0]))
+			{
+				bes.WriteByte(AnnotationDefaultAttribute.TAG_ENUM);
+				bes.WriteUInt16(classFile.AddUtf8((string)arr[1]));
+				bes.WriteUInt16(classFile.AddUtf8((string)arr[2]));
+				return;
+			}
+		}
+		throw new NotImplementedException();
+	}
+
+	public override void Write(BigEndianStream bes)
+	{
+		base.Write(bes);
+		bes.WriteUInt32((uint)(mem.Length + 2));
+		bes.WriteUInt16(count);
+		foreach(byte b in mem.ToArray())
+		{
+			bes.WriteByte(b);
+		}
+	}
+}
+
 class FieldOrMethod
 {
 	private Modifiers access_flags;

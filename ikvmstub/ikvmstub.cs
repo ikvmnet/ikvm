@@ -284,7 +284,31 @@ public class NetExp
 			{
 				innername = innername.Substring(idx + 1);
 			}
-			innerClassesAttribute.Add(name, outer.getName().Replace('.', '/'), innername, (ushort)c.getModifiers());
+			int mods = c.getModifiers();
+			if(c.isAnnotation())
+			{
+				mods |= (int)Modifiers.Annotation;
+				// HACK if we see the annotation, it must be runtime visible, but currently
+				// the classpath trunk doesn't yet have the required RetentionPoly enum,
+				// so we have to fake it here
+				RuntimeVisibleAnnotationsAttribute annot = new RuntimeVisibleAnnotationsAttribute(f);
+				annot.Add(new object[] {
+					AnnotationDefaultAttribute.TAG_ANNOTATION,
+					"Ljava/lang/annotation/Retention;",
+					"value",
+					new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" }
+				});
+				f.AddAttribute(annot);
+			}
+			if(c.isEnum())
+			{
+				mods |= (int)Modifiers.Enum;
+			}
+			if(c.isSynthetic())
+			{
+				mods |= (int)Modifiers.Synthetic;
+			}
+			innerClassesAttribute.Add(name, outer.getName().Replace('.', '/'), innername, (ushort)mods);
 		}
 		java.lang.Class[] interfaces = c.getInterfaces();
 		for(int i = 0; i < interfaces.Length; i++)

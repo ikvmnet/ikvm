@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005 Jeroen Frijters
+  Copyright (C) 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,11 +25,62 @@ package java.net;
 
 import java.util.Vector;
 
+import cli.System.Activator;
+import cli.System.Type;
+import cli.System.Collections.IEnumerable;
+import cli.System.Collections.IEnumerator;
+import cli.System.Reflection.BindingFlags;
+
 final class VMNetworkInterface
 {
     static Vector getInterfaces() throws SocketException
     {
-        // TODO
-        return new Vector();
+        // NOTE we use reflection to access the System.Management types, because I don't
+        // want a static dependency on System.Management (for one, Mono currently doesn't implement it)
+        // TODO once we move to .NET 2.0, we can use System.Net.NetworkInformation.NetworkInterface
+        Vector netInterfaces = new Vector();
+        Type type = Type.GetType("System.Management.ManagementClass, System.Management, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+        if (type != null)
+        {
+            Object mgmt = Activator.CreateInstance(type, new Object[] { "Win32_NetworkAdapterConfiguration" });
+            Object moc = invoke(mgmt, "GetInstances", new Object[0]);
+
+            for (IEnumerator e = ((IEnumerable)moc).GetEnumerator(); e.MoveNext(); )
+            {
+                Object props = invoke(e.get_Current(), "get_Properties", new Object[0]);
+                Object ipaddress = invoke(props, "get_Item", new Object[] { "IPAddress" });
+                String[] addresses = (String[])invoke(ipaddress, "get_Value", new Object[0]);
+                if (addresses != null)
+                {
+                    // TODO support IPv6
+                    Object dnshostname = invoke(props, "get_Item", new Object[] { "DNSHostName" });
+                    String hostName = (String)invoke(dnshostname, "get_Value", new Object[0]);
+                    Inet4Address[] addrArray = new Inet4Address[addresses.length];
+                    for (int i = 0; i < addresses.length; i++)
+                    {
+                        addrArray[i] = new Inet4Address(getAddressBytes(addresses[i]), hostName);
+                    }
+                    Object description = invoke(props, "get_Item", new Object[] { "Description" });
+                    netInterfaces.add(new NetworkInterface((String)invoke(description, "get_Value", new Object[0]), addrArray));
+                }
+            }
+        }
+        return netInterfaces;
+    }
+
+    private static Object invoke(Object obj, String method, Object[] args)
+    {
+        return ((cli.System.Object)obj).GetType().InvokeMember(method, BindingFlags.wrap(BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod), null, obj, args);
+    }
+
+    private static byte[] getAddressBytes(String aAddr)
+    {
+        String[] addrParts = aAddr.split("\\.");
+        byte[] addrBytes = new byte[addrParts.length];
+        for (int i = 0; i < addrParts.length; i++)
+        {
+            addrBytes[i] = (byte)Short.parseShort(addrParts[i]);
+        }
+        return addrBytes;
     }
 }

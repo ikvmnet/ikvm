@@ -38,13 +38,27 @@ final class VMRuntimeMXBeanImpl
     static String getName()
     {
         Process p = Process.GetCurrentProcess();
-        return p.get_Id() + "@" + Environment.get_MachineName();
+        try
+        {
+            return p.get_Id() + "@" + Environment.get_MachineName();
+        }
+        finally
+        {
+            p.Dispose();
+        }
     }
 
     static long getStartTime()
     {
         final long january_1st_1970 = 62135596800000L;
         Process p = Process.GetCurrentProcess();
-        return p.get_StartTime().ToUniversalTime().get_Ticks() / 10000L - january_1st_1970;
+        try
+        {
+            return p.get_StartTime().ToUniversalTime().get_Ticks() / 10000L - january_1st_1970;
+        }
+        finally
+        {
+            p.Dispose();
+        }
     }
 }

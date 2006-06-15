@@ -40,6 +40,8 @@ package gnu.java.net;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.*;
+import cli.System.Net.IPAddress;
 import cli.System.Net.IPEndPoint;
 import cli.System.Net.Sockets.SocketOptionName;
 import cli.System.Net.Sockets.SocketOptionLevel;
@@ -529,16 +531,86 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         throw new InternalError ("PlainDatagramSocketImpl::peekData is not implemented");
     }
 
-    public void joinGroup(SocketAddress address, NetworkInterface netIf)
+    /**
+     * Joins a multicast group
+     *
+     * @param address The group to join
+     * @param netIf The interface to bind to
+     *
+     * @exception IOException If an error occurs
+     */
+    public void joinGroup(SocketAddress address, NetworkInterface netIf) throws IOException
     {
-        // TODO
-        throw new InternalError ("PlainDatagramSocketImpl::joinGroup is not implemented");
+        try
+        {
+            if(!(address instanceof InetSocketAddress)) throw new cli.System.ArgumentException();
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+
+            InetAddress inetAddr = ((InetSocketAddress)address).getAddress();
+            IPAddress mcastAddr = new IPAddress(PlainSocketImpl.getAddressFromInetAddress(inetAddr));
+
+            Enumeration e=netIf.getInetAddresses();
+            if (e.hasMoreElements())
+            {
+                IPAddress bindAddr  = new IPAddress(PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement()));
+                MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
+                socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), mcastOption);
+            }
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ArgumentException x1)
+        {
+            throw new IOException(x1.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
-    public void leaveGroup(SocketAddress address, NetworkInterface netIf)
+    /**
+     * Leaves a multicast group
+     *
+     * @param address The group to join
+     * @param netIf The interface to bind to
+     *
+     * @exception IOException If an error occurs
+     */
+    public void leaveGroup(SocketAddress address, NetworkInterface netIf) throws IOException
     {
-        // TODO
-        throw new InternalError ("PlainDatagramSocketImpl::leaveGroup is not implemented");
+        try
+        {
+            if(!(address instanceof InetSocketAddress)) throw new cli.System.ArgumentException();
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+
+            InetAddress inetAddr = ((InetSocketAddress)address).getAddress();
+            IPAddress mcastAddr = new IPAddress(PlainSocketImpl.getAddressFromInetAddress(inetAddr));
+
+            Enumeration e=netIf.getInetAddresses();
+            if (e.hasMoreElements())
+            {
+                IPAddress bindAddr  = new IPAddress(PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement()));
+                MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
+                socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), mcastOption);
+            }
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ArgumentException x1)
+        {
+            throw new IOException(x1.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     public cli.System.Net.Sockets.Socket getSocket()
