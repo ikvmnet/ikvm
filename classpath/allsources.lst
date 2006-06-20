@@ -841,7 +841,6 @@
 ../../classpath/gnu/java/security/util/ExpirableObject.java
 ../../classpath/gnu/java/security/util/FormatUtil.java
 ../../classpath/gnu/java/security/util/Prime.java
-../../classpath/gnu/java/security/util/Prime2.java
 ../../classpath/gnu/java/security/util/PRNG.java
 ../../classpath/gnu/java/security/util/Sequence.java
 ../../classpath/gnu/java/security/util/SimpleList.java
@@ -3028,6 +3027,18 @@
 ../../classpath/javax/imageio/stream/MemoryCacheImageInputStream.java
 ../../classpath/javax/imageio/stream/MemoryCacheImageOutputStream.java
 ../../classpath/javax/management/Attribute.java
+../../classpath/javax/management/AttributeList.java
+../../classpath/javax/management/AttributeNotFoundException.java
+../../classpath/javax/management/DynamicMBean.java
+../../classpath/javax/management/InvalidAttributeValueException.java
+../../classpath/javax/management/JMException.java
+../../classpath/javax/management/JMRuntimeException.java
+../../classpath/javax/management/MBeanException.java
+../../classpath/javax/management/MBeanFeatureInfo.java
+../../classpath/javax/management/MBeanInfo.java
+../../classpath/javax/management/OperationsException.java
+../../classpath/javax/management/ReflectionException.java
+../../classpath/javax/management/RuntimeOperationsException.java
 ../../classpath/javax/naming/AuthenticationException.java
 ../../classpath/javax/naming/AuthenticationNotSupportedException.java
 ../../classpath/javax/naming/BinaryRefAddr.java
