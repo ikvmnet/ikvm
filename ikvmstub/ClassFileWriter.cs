@@ -599,6 +599,40 @@ class RuntimeVisibleAnnotationsAttribute : ClassFileAttribute
 	}
 }
 
+class AnnotationDefaultClassFileAttribute : ClassFileAttribute
+{
+	private ClassFileWriter classFile;
+	private byte[] buf;
+
+	internal AnnotationDefaultClassFileAttribute(ClassFileWriter classFile, object val)
+		: base(classFile.AddUtf8("AnnotationDefault"))
+	{
+		this.classFile = classFile;
+		MemoryStream mem = new MemoryStream();
+		BigEndianStream bes  = new BigEndianStream(mem);
+		if(val is java.lang.Boolean)
+		{
+			bes.WriteByte((byte)'Z');
+			bes.WriteUInt16(classFile.AddInt(((java.lang.Boolean)val).booleanValue() ? 1 : 0));
+		}
+		else
+		{
+			throw new NotImplementedException();
+		}
+		buf = mem.ToArray();
+	}
+
+	public override void Write(BigEndianStream bes)
+	{
+		base.Write(bes);
+		bes.WriteUInt32((uint)(buf.Length));
+		foreach(byte b in buf)
+		{
+			bes.WriteByte(b);
+		}
+	}
+}
+
 class FieldOrMethod
 {
 	private Modifiers access_flags;
@@ -740,7 +774,7 @@ class ClassFileWriter
 		return Add(new ConstantPoolItemNameAndType(AddUtf8(name), AddUtf8(type)));
 	}
 
-	private ushort AddInt(int i)
+	public ushort AddInt(int i)
 	{
 		return Add(new ConstantPoolItemInt(i));
 	}

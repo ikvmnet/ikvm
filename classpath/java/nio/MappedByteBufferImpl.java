@@ -40,6 +40,7 @@ package java.nio;
 
 import gnu.classpath.Pointer;
 import cli.System.IntPtr;
+import cli.System.Runtime.InteropServices.DllImportAttribute;
 
 import java.io.IOException;
 
@@ -75,10 +76,10 @@ public class MappedByteBufferImpl extends MappedByteBuffer
             FlushViewOfFile(address.p(), IntPtr.Zero);
         }
 
-        //[DllImport("kernel32")]
+        @DllImportAttribute.Annotation("kernel32")
         private static native int UnmapViewOfFile(IntPtr lpBaseAddress);
 
-        //[DllImport("kernel32")]
+        @DllImportAttribute.Annotation("kernel32")
         private static native int FlushViewOfFile(IntPtr lpBaseAddress, IntPtr dwNumberOfBytesToFlush);
     }
 
@@ -109,11 +110,11 @@ public class MappedByteBufferImpl extends MappedByteBuffer
             ikvm_msync(address.p(), capacity());
         }
 
-	//[DllImport("ikvm-native")]
-	private static native int ikvm_munmap(IntPtr address, int size);
+        @DllImportAttribute.Annotation("ikvm-native")
+        private static native int ikvm_munmap(IntPtr address, int size);
 
-	//[DllImport("ikvm-native")]
-	private static native int ikvm_msync(IntPtr address, int size);
+        @DllImportAttribute.Annotation("ikvm-native")
+        private static native int ikvm_msync(IntPtr address, int size);
     }
 
     public static MappedByteBufferImpl create(Pointer address, int size, boolean readOnly, boolean win32)

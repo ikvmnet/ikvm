@@ -4562,6 +4562,7 @@
 ../../classpath/vm/reference/java/lang/VMObject.java
 ../../classpath/vm/reference/java/lang/VMString.java
 ../../classpath/vm/reference/java/lang/VMThrowable.java
+AssemblyInfo.java
 gnu/classpath/Configuration.java
 gnu/classpath/Pointer.java
 gnu/classpath/VMStackWalker.java

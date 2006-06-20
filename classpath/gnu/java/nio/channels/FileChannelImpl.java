@@ -62,6 +62,7 @@ import cli.System.Type;
 import cli.System.Reflection.MethodInfo;
 import cli.System.Reflection.ParameterModifier;
 import cli.System.Reflection.BindingFlags;
+import cli.System.Runtime.InteropServices.DllImportAttribute;
 import gnu.classpath.Pointer;
 
 /**
@@ -152,16 +153,16 @@ public abstract class FileChannelImpl extends FileChannel
             return rc != 0;
         }
 
-        //[DllImport("kernel32")]
+        @DllImportAttribute.Annotation("kernel32")
         private static native int FlushFileBuffers(IntPtr handle);
 
-        //[DllImport("kernel32")]
+        @DllImportAttribute.Annotation("kernel32")
         private static native int CloseHandle(IntPtr handle);
 
-        //[DllImport("kernel32", SetLastError=true)]
+        @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
         private static native IntPtr CreateFileMapping(IntPtr hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName);
 
-        //[DllImport("kernel32", SetLastError=true)]
+        @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
         private static native IntPtr MapViewOfFile(IntPtr hFileMapping, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);
     }
 
@@ -207,8 +208,8 @@ public abstract class FileChannelImpl extends FileChannel
             return true;
         }
 
-	//[DllImport("ikvm-native")]
-	private static native IntPtr ikvm_mmap(IntPtr handle, byte writeable, byte copy_on_write, long position, int size);
+        @DllImportAttribute.Annotation("ikvm-native")
+        private static native IntPtr ikvm_mmap(IntPtr handle, byte writeable, byte copy_on_write, long position, int size);
     }
 
     /* Open a file.  MODE is a combination of the above mode flags. */

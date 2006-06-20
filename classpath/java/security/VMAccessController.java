@@ -57,6 +57,7 @@ final class VMAccessController
    * call stack. We use this to remember which context object corresponds to
    * which call.
    */
+  @cli.System.ThreadStaticAttribute.Annotation
   private static LinkedList __tls_contexts;
 
   /**
@@ -64,6 +65,7 @@ final class VMAccessController
    * been called once, allowing us to handle recursive permission checks
    * caused by methods getContext calls.
    */
+  @cli.System.ThreadStaticAttribute.Annotation
   private static boolean __tls_inGetContext;
 
   /**

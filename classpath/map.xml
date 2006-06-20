@@ -24,21 +24,6 @@
 -->
 <root>
 	<assembly>
-		<attribute type="System.Reflection.AssemblyCompanyAttribute" sig="(Ljava.lang.String;)V">
-			<parameter>Jeroen Frijters</parameter>
-		</attribute>
-		<attribute type="System.Reflection.AssemblyCopyrightAttribute" sig="(Ljava.lang.String;)V">
-			<parameter>This software is licensed under the GNU General Public License + GNU Classpath exception.
-			See http://www.gnu.org/software/classpath/license.html for details.
-			Copyright (C) 1998-2006 Free Software Foundation, Inc.
-			Copyright (C) 2002-2006 Jeroen Frijters</parameter>
-		</attribute>
-		<attribute type="System.Reflection.AssemblyTitleAttribute" sig="(Ljava.lang.String;)V">
-			<parameter>IKVM GNU Classpath library for .NET</parameter>
-		</attribute>
-		<attribute type="System.Reflection.AssemblyProductAttribute" sig="(Ljava.lang.String;)V">
-			<parameter>IKVM.NET</parameter>
-		</attribute>
 		<class name="java.lang.Object" shadows="System.Object" modifiers="public">
 			<constructor sig="()V" modifiers="public" />
 			<method name="notifyAll" sig="()V" modifiers="public final">
@@ -1337,82 +1322,6 @@
 					<newobj class="java.lang.LibraryVMInterfaceImpl" name="&lt;init&gt;" sig="()V" />
 					<ret />
 				</body>
-			</method>
-		</class>
-		<class name="java.lang.VMClassLoader">
-			<field name="__tls_nestedGetResourcesHack" sig="Z">
-				<attribute type="System.ThreadStaticAttribute" sig="()V" />
-			</field>
-		</class>
-		<class name="java.lang.VMThread">
-			<field name="__tls_javaThread" sig="Ljava.lang.Thread;">
-				<attribute type="System.ThreadStaticAttribute" sig="()V" />
-			</field>
-			<field name="__tls_cleanup" sig="Ljava.lang.Object;">
-				<attribute type="System.ThreadStaticAttribute" sig="()V" />
-			</field>
-		</class>
-		<class name="java.security.VMAccessController">
-			<field name="__tls_contexts" sig="Ljava.util.LinkedList;">
-				<attribute type="System.ThreadStaticAttribute" sig="()V" />
-			</field>
-			<field name="__tls_inGetContext" sig="Z">
-				<attribute type="System.ThreadStaticAttribute" sig="()V" />
-			</field>
-		</class>
-		<class name="gnu.java.nio.channels.FileChannelImpl$Win32">
-			<method name="FlushFileBuffers" sig="(Lcli.System.IntPtr;)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
-					<parameter>kernel32</parameter>
-				</attribute>
-			</method>
-			<method name="CloseHandle" sig="(Lcli.System.IntPtr;)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
-					<parameter>kernel32</parameter>
-				</attribute>
-			</method>
-			<method name="CreateFileMapping" sig="(Lcli.System.IntPtr;Lcli.System.IntPtr;IIILjava.lang.String;)Lcli.System.IntPtr;">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
-					<parameter>kernel32</parameter>
-					<field name="SetLastError" sig="Z">true</field>
-				</attribute>
-			</method>
-			<method name="MapViewOfFile" sig="(Lcli.System.IntPtr;IIILcli.System.IntPtr;)Lcli.System.IntPtr;">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
-					<parameter>kernel32</parameter>
-					<field name="SetLastError" sig="Z">true</field>
-				</attribute>
-			</method>
-		</class>
-		<class name="gnu.java.nio.channels.FileChannelImpl$Posix">
-			<method name="ikvm_mmap" sig="(Lcli.System.IntPtr;BBJI)Lcli.System.IntPtr;">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
-					<parameter>ikvm-native</parameter>
-				</attribute>
-			</method>
-		</class>
-		<class name="java.nio.MappedByteBufferImpl$Win32">
-			<method name="UnmapViewOfFile" sig="(Lcli.System.IntPtr;)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
-					<parameter>kernel32</parameter>
-				</attribute>
-			</method>
-			<method name="FlushViewOfFile" sig="(Lcli.System.IntPtr;Lcli.System.IntPtr;)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
-					<parameter>kernel32</parameter>
-				</attribute>
-			</method>
-		</class>
-		<class name="java.nio.MappedByteBufferImpl$Posix">
-			<method name="ikvm_munmap" sig="(Lcli.System.IntPtr;I)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
-					<parameter>ikvm-native</parameter>
-				</attribute>
-			</method>
-			<method name="ikvm_msync" sig="(Lcli.System.IntPtr;I)I">
-				<attribute type="System.Runtime.InteropServices.DllImportAttribute" sig="(Ljava.lang.String;)V">
-					<parameter>ikvm-native</parameter>
-				</attribute>
 			</method>
 		</class>
 		<class name="java.util.concurrent.atomic.AtomicReference">

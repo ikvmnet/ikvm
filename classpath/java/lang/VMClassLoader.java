@@ -210,6 +210,7 @@ final class VMClassLoader
 	}
     }
 
+    @cli.System.ThreadStaticAttribute.Annotation
     private static boolean __tls_nestedGetResourcesHack;
 
     /**

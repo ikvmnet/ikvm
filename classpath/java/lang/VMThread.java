@@ -8,7 +8,9 @@ public final class VMThread
     private static final Object countLock = new Object();
     private static int nonDaemonCount;
     // used by inner class
+    @cli.System.ThreadStaticAttribute.Annotation
     /*private*/ static Thread __tls_javaThread;
+    @cli.System.ThreadStaticAttribute.Annotation
     private static Object __tls_cleanup;
     private cli.System.WeakReference nativeThreadReference;
 

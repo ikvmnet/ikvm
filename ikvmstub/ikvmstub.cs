@@ -458,6 +458,11 @@ public class NetExp
 				{
 					m.AddAttribute(f.MakeStringAttribute("Signature", signature));
 				}
+				object defaultValue = methods[i].getDefaultValue();
+				if(defaultValue != null)
+				{
+					m.AddAttribute(new AnnotationDefaultClassFileAttribute(f, defaultValue));
+				}
 			}
 		}
 		java.lang.reflect.Field[] fields = c.getDeclaredFields();

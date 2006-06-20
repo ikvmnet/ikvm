@@ -1447,6 +1447,7 @@ namespace IKVM.Internal
 		internal abstract void Apply(ConstructorBuilder cb, object annotation);
 		internal abstract void Apply(FieldBuilder fb, object annotation);
 		internal abstract void Apply(ParameterBuilder pb, object annotation);
+		internal abstract void Apply(AssemblyBuilder ab, object annotation);
 	}
 #endif
 
@@ -4622,6 +4623,15 @@ namespace IKVM.Internal
 							Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
 							if(annotation != null)
 							{
+#if STATIC_COMPILER
+								// NOTE the "assembly" type in the unnamed package is a magic type
+								// that acts as the placeholder for assembly attributes
+								if(classFile.Name == "assembly")
+								{
+									annotation.Apply((AssemblyBuilder)typeBuilder.Assembly, def);
+									continue;
+								}
+#endif
 								annotation.Apply(typeBuilder, def);
 							}
 						}
@@ -5020,6 +5030,14 @@ namespace IKVM.Internal
 					if(annotationTypeBuilder != null)
 					{
 						pb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
+					}
+				}
+
+				internal override void Apply(AssemblyBuilder ab, object annotation)
+				{
+					if(annotationTypeBuilder != null)
+					{
+						ab.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 					}
 				}
 			}
@@ -7635,6 +7653,11 @@ namespace IKVM.Internal
 			{
 				pb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
+
+			internal override void Apply(AssemblyBuilder ab, object annotation)
+			{
+				ab.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+			}
 		}
 
 		internal override Annotation Annotation
@@ -8121,9 +8144,38 @@ namespace IKVM.Internal
 						}
 					}
 				}
+				foreach(FieldInfo fi in attributeType.GetFields(BindingFlags.Public | BindingFlags.Instance))
+				{
+					// TODO add other field validations to make sure it is appropriate
+					if(!fi.IsInitOnly)
+					{
+						// TODO support other types
+						if(fi.FieldType == typeof(bool))
+						{
+							// TODO handle the case where the field name is "value"
+							methods.Add(new AnnotationMethodWrapper(this, fi.Name, ClassLoaderWrapper.GetWrapperFromType(fi.FieldType)));
+						}
+					}
+				}
 				SetMethods((MethodWrapper[])methods.ToArray(typeof(MethodWrapper)));
 				base.LazyPublishMembers();
 			}
+
+#if !STATIC_COMPILER
+			internal override object GetAnnotationDefault(MethodWrapper mw)
+			{
+				// HACK
+				if(mw.Name == "value")
+				{
+					return null;
+				}
+				else if(mw.ReturnType == PrimitiveTypeWrapper.BOOLEAN)
+				{
+					return JVM.Library.box(false);
+				}
+				return null;
+			}
+#endif // !STATIC_COMPILER
 
 			internal override Assembly Assembly
 			{
@@ -8216,6 +8268,12 @@ namespace IKVM.Internal
 					{
 						return new CustomAttributeBuilder(type.GetConstructor(new Type[] { typeof(string) }), new object[] { arr[3] });
 					}
+					else if(arr.Length == 6 && "value".Equals(arr[2]) && arr[3] is string && arr[5] is bool)
+					{
+						FieldInfo field = type.GetField((string)arr[4]);
+						return new CustomAttributeBuilder(type.GetConstructor(new Type[] { typeof(string) }), new object[] { arr[3] },
+							new FieldInfo[] { field }, new object[] { arr[5] });
+					}
 					throw new NotImplementedException();
 				}
 
@@ -8242,6 +8300,11 @@ namespace IKVM.Internal
 				internal override void Apply(ParameterBuilder pb, object annotation)
 				{
 					pb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+				}
+
+				internal override void Apply(AssemblyBuilder ab, object annotation)
+				{
+					ab.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 				}
 			}
 
@@ -9072,7 +9135,41 @@ namespace IKVM.Internal
 
 		private static bool IsAttribute(Type type)
 		{
-			return !type.IsAbstract && type.IsSubclassOf(typeof(Attribute)) && IsVisible(type);
+			if(!type.IsAbstract && type.IsSubclassOf(typeof(Attribute)) && IsVisible(type))
+			{
+				// TODO for the time being we only support attributes that have either
+				// a default constructor or single arg string constructor
+				ConstructorInfo defaultConstructor = null;
+				ConstructorInfo maxArgConstructor = null;
+				int maxArgs = -1;
+				int constructorCount = 0;
+				foreach(ConstructorInfo ci in type.GetConstructors(BindingFlags.Public | BindingFlags.Instance))
+				{
+					constructorCount++;
+					int args = ci.GetParameters().Length;
+					if(args == 0)
+					{
+						defaultConstructor = ci;
+					}
+					if(args > maxArgs)
+					{
+						maxArgs = args;
+						maxArgConstructor = ci;
+					}
+				}
+				if(constructorCount == 1)
+				{
+					if(defaultConstructor != null)
+					{
+						return true;
+					}
+					if(maxArgs == 1)
+					{
+						return maxArgConstructor.GetParameters()[0].ParameterType == typeof(string);
+					}
+				}
+			}
+			return false;
 		}
 
 		private static bool IsDelegate(Type type)
