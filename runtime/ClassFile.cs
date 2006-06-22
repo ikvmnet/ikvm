@@ -815,6 +815,17 @@ namespace IKVM.Internal
 			return (ConstantPoolItemFieldref)constantpool[index];
 		}
 
+		// this won't throw an exception if index is invalid
+		// (used by IsSideEffectFreeStaticInitializer)
+		internal ConstantPoolItemFieldref SafeGetFieldref(int index)
+		{
+			if(index > 0 && index < constantpool.Length)
+			{
+				return constantpool[index] as ConstantPoolItemFieldref;
+			}
+			return null;
+		}
+
 		// NOTE this returns an MI, because it used for both normal methods and interface methods
 		internal ConstantPoolItemMI GetMethodref(int index)
 		{
@@ -829,6 +840,17 @@ namespace IKVM.Internal
 		internal string GetConstantPoolClass(int index)
 		{
 			return ((ConstantPoolItemClass)constantpool[index]).Name;
+		}
+
+		// this won't throw an exception if index is invalid
+		// (used by IsSideEffectFreeStaticInitializer)
+		internal bool SafeIsConstantPoolClass(int index)
+		{
+			if(index > 0 && index < constantpool.Length)
+			{
+				return constantpool[index] as ConstantPoolItemClass != null;
+			}
+			return false;
 		}
 
 		internal TypeWrapper GetConstantPoolClassType(int index)

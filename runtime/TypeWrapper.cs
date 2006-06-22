@@ -3668,8 +3668,8 @@ namespace IKVM.Internal
 					NormalizedByteCode bc = m.Instructions[i].NormalizedOpCode;
 					if(bc == NormalizedByteCode.__getstatic || bc == NormalizedByteCode.__putstatic)
 					{
-						ClassFile.ConstantPoolItemFieldref fld = classFile.GetFieldref(m.Instructions[i].Arg1);
-						if(fld.Class != classFile.Name)
+						ClassFile.ConstantPoolItemFieldref fld = classFile.SafeGetFieldref(m.Instructions[i].Arg1);
+						if(fld == null || fld.Class != classFile.Name)
 						{
 							return false;
 						}
@@ -3689,6 +3689,11 @@ namespace IKVM.Internal
 						return false;
 					}
 					else if(ByteCodeMetaData.CanThrowException(bc))
+					{
+						return false;
+					}
+					else if(bc == NormalizedByteCode.__ldc
+						&& classFile.SafeIsConstantPoolClass(m.Instructions[i].Arg1))
 					{
 						return false;
 					}
