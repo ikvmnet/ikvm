@@ -1216,6 +1216,19 @@ namespace IKVM.NativeCode.java
 #endif
 }
 
+namespace IKVM.NativeCode.gnu.java.lang.management
+{
+	public class VMClassLoadingMXBeanImpl
+	{
+		public static int getLoadedClassCount()
+		{
+			// we don't really have a number of classes loaded, but we'll
+			// return something anyway
+			return ClassLoaderWrapper.GetLoadedClassCount();
+		}
+	}
+}
+
 namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 {
 #if !WHIDBEY

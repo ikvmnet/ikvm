@@ -12,6 +12,7 @@ gnu/classpath/VMSystemProperties.java
 gnu/java/awt/peer/gtk/CairoSurface.java
 gnu/java/lang/reflect/VMField.java
 gnu/java/lang/management/VMRuntimeMXBeanImpl.java
+gnu/java/lang/management/VMClassLoadingMXBeanImpl.java
 gnu/java/lang/VMInstrumentationImpl.java
 gnu/java/locale/LocaleData.java
 gnu/java/net/PlainDatagramSocketImpl.java
@@ -27,6 +28,7 @@ gnu/java/nio/SocketChannelSelectionKey.java
 gnu/java/nio/SocketChannelSelectionKeyImpl.java
 gnu/java/nio/VMChannel.java
 gnu/java/nio/VMPipe.java
+gnu/java/security/Configuration.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/Library.java
 ikvm/internal/LibraryVMInterface.java

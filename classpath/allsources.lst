@@ -530,6 +530,7 @@
 ../../classpath/gnu/java/lang/ClassHelper.java
 ../../classpath/gnu/java/lang/InstrumentationImpl.java
 ../../classpath/gnu/java/lang/MainThread.java
+../../classpath/gnu/java/lang/management/ClassLoadingMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/OperatingSystemMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/RuntimeMXBeanImpl.java
 ../../classpath/gnu/java/lang/reflect/ClassSignatureParser.java
@@ -2307,6 +2308,7 @@
 ../../classpath/java/lang/Iterable.java
 ../../classpath/java/lang/LinkageError.java
 ../../classpath/java/lang/Long.java
+../../classpath/java/lang/management/ClassLoadingMXBean.java
 ../../classpath/java/lang/management/ManagementFactory.java
 ../../classpath/java/lang/management/ManagementPermission.java
 ../../classpath/java/lang/management/OperatingSystemMXBean.java
@@ -2833,6 +2835,7 @@
 ../../classpath/java/util/logging/Handler.java
 ../../classpath/java/util/logging/Level.java
 ../../classpath/java/util/logging/Logger.java
+../../classpath/java/util/logging/LoggingMXBean.java
 ../../classpath/java/util/logging/LoggingPermission.java
 ../../classpath/java/util/logging/LogManager.java
 ../../classpath/java/util/logging/LogRecord.java
@@ -4581,6 +4584,7 @@ gnu/classpath/VMSystemProperties.java
 gnu/java/awt/peer/gtk/CairoSurface.java
 gnu/java/lang/reflect/VMField.java
 gnu/java/lang/management/VMRuntimeMXBeanImpl.java
+gnu/java/lang/management/VMClassLoadingMXBeanImpl.java
 gnu/java/lang/VMInstrumentationImpl.java
 gnu/java/locale/LocaleData.java
 gnu/java/net/PlainDatagramSocketImpl.java
@@ -4596,6 +4600,7 @@ gnu/java/nio/SocketChannelSelectionKey.java
 gnu/java/nio/SocketChannelSelectionKeyImpl.java
 gnu/java/nio/VMChannel.java
 gnu/java/nio/VMPipe.java
+gnu/java/security/Configuration.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/Library.java
 ikvm/internal/LibraryVMInterface.java

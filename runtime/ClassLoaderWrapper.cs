@@ -99,6 +99,11 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal static int GetLoadedClassCount()
+		{
+			return typeToTypeWrapper.Count;
+		}
+
 		internal static bool IsCoreAssemblyType(Type type)
 		{
 			return type.Assembly == JVM.CoreAssembly;
