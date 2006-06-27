@@ -41,6 +41,7 @@ java/io/VMObjectInputStream.java
 java/lang/DoubleToString.java
 java/lang/ExceptionHelper.java
 java/lang/LibraryVMInterfaceImpl.java
+java/lang/management/VMThreadInfo.java
 java/lang/ref/Reference.java
 java/lang/reflect/Constructor.java
 java/lang/reflect/Field.java

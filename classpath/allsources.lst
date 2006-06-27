@@ -1207,6 +1207,10 @@
 ../../classpath/gnu/javax/imageio/bmp/EncodeRGB8.java
 ../../classpath/gnu/javax/imageio/bmp/EncodeRLE4.java
 ../../classpath/gnu/javax/imageio/bmp/EncodeRLE8.java
+../../classpath/gnu/javax/imageio/gif/GIFFile.java
+../../classpath/gnu/javax/imageio/gif/GIFImageReader.java
+../../classpath/gnu/javax/imageio/gif/GIFImageReaderSpi.java
+../../classpath/gnu/javax/imageio/gif/GIFStream.java
 ../../classpath/gnu/javax/imageio/jpeg/DCT.java
 ../../classpath/gnu/javax/imageio/jpeg/HuffmanTable.java
 ../../classpath/gnu/javax/imageio/jpeg/JPEGComponent.java
@@ -2313,6 +2317,8 @@
 ../../classpath/java/lang/management/ManagementPermission.java
 ../../classpath/java/lang/management/OperatingSystemMXBean.java
 ../../classpath/java/lang/management/RuntimeMXBean.java
+../../classpath/java/lang/management/ThreadInfo.java
+../../classpath/java/lang/management/ThreadMXBean.java
 ../../classpath/java/lang/Math.java
 ../../classpath/java/lang/NegativeArraySizeException.java
 ../../classpath/java/lang/NoClassDefFoundError.java
@@ -4613,6 +4619,7 @@ java/io/VMObjectInputStream.java
 java/lang/DoubleToString.java
 java/lang/ExceptionHelper.java
 java/lang/LibraryVMInterfaceImpl.java
+java/lang/management/VMThreadInfo.java
 java/lang/ref/Reference.java
 java/lang/reflect/Constructor.java
 java/lang/reflect/Field.java

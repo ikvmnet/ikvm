@@ -1,12 +1,13 @@
 package java.lang;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 // Note: stop() should take care not to stop a thread if it is
 // executing code in this class.
 @ikvm.lang.Internal
 public final class VMThread
 {
-    private static final Object countLock = new Object();
-    private static int nonDaemonCount;
+    private static final AtomicInteger nonDaemonCount = new AtomicInteger();
     // used by inner class
     @cli.System.ThreadStaticAttribute.Annotation
     /*private*/ static Thread __tls_javaThread;
@@ -80,10 +81,7 @@ public final class VMThread
 	    nativeThreadReference.set_Target(null);
 	    if(!thread.daemon)
 	    {
-		synchronized(countLock)
-		{
-		    nonDaemonCount--;
-		}
+                nonDaemonCount.decrementAndGet();
 	    }
 	}
     }
@@ -155,19 +153,13 @@ public final class VMThread
     {
 	if(!Thread.currentThread().isDaemon())
 	{
-	    synchronized(countLock)
-	    {
-		nonDaemonCount--;
-	    }
+            nonDaemonCount.decrementAndGet();
 	}
 	for(;;)
 	{
-	    synchronized(countLock)
+            if(nonDaemonCount.get() == 0)
 	    {
-		if(nonDaemonCount == 0)
-		{
-		    return;
-		}
+                return;
 	    }
 	    try
 	    {
@@ -296,7 +288,7 @@ public final class VMThread
 	    thread.stillborn = t;
     }
 
-    void start(long stacksize)
+    private void start(long stacksize)
     {
 	cli.System.Threading.ThreadStart starter = new cli.System.Threading.ThreadStart(
 	    new cli.System.Threading.ThreadStart.Method()
@@ -315,10 +307,7 @@ public final class VMThread
 	nativeThread.Start();
 	if(!thread.daemon)
 	{
-	    synchronized(countLock)
-	    {
-		nonDaemonCount++;
-	    }
+            nonDaemonCount.incrementAndGet();
 	}
     }
 
@@ -559,10 +548,7 @@ public final class VMThread
         Thread javaThread = new Thread(vmThread, nativeThread.get_Name(), priority, nativeThread.get_IsBackground());
         if(!javaThread.daemon)
         {
-            synchronized(countLock)
-            {
-                nonDaemonCount++;
-            }
+            nonDaemonCount.incrementAndGet();
         }
         vmThread.thread = javaThread;
         __tls_javaThread = javaThread;
@@ -740,5 +726,30 @@ public final class VMThread
     {
         VMThread vmthread = t.vmThread;
         return vmthread != null ? vmthread.blocker : null;
+    }
+
+    /**
+     * Returns the current state of the thread.
+     * The value must be one of "BLOCKED", "NEW",
+     * "RUNNABLE", "TERMINATED", "TIMED_WAITING" or
+     * "WAITING".
+     *
+     * @return a string corresponding to one of the 
+     *         thread enumeration states specified above.
+     */
+    String getState()
+    {
+        cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+        if (nativeThread != null && nativeThread.get_IsAlive())
+        {
+            if (interruptableWait)
+            {
+                // TODO we don't yet distinguish between WAITING and TIMED_WAITING
+                return "WAITING";
+            }
+            // TODO we don't support BLOCKED
+            return "RUNNABLE";
+        }
+        return "TERMINATED";
     }
 }
