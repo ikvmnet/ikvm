@@ -49,7 +49,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 		private static ClassLoaderWrapper systemClassLoader;
 #endif
-		private object javaClassLoader;
+		private readonly object javaClassLoader;
 		protected Hashtable types = new Hashtable();
 		private ArrayList nativeLibraries;
 		private static Hashtable remappedTypes = new Hashtable();
@@ -110,11 +110,6 @@ namespace IKVM.Internal
 		}
 
 		internal ClassLoaderWrapper(object javaClassLoader)
-		{
-			SetJavaClassLoader(javaClassLoader);
-		}
-
-		internal void SetJavaClassLoader(object javaClassLoader)
 		{
 			this.javaClassLoader = javaClassLoader;
 		}
@@ -691,15 +686,7 @@ namespace IKVM.Internal
 
 		internal object GetJavaClassLoader()
 		{
-			return (this == GetBootstrapClassLoader()) ? null : javaClassLoader;
-		}
-
-		// When -Xbootclasspath is specified, we use a URLClassLoader as an
-		// additional bootstrap class loader (this is not visible to the Java code).
-		// We need to access this to be able to load resources.
-		internal static object GetJavaBootstrapClassLoader()
-		{
-			return GetBootstrapClassLoader().javaClassLoader;
+			return javaClassLoader;
 		}
 
 		internal TypeWrapper ExpressionTypeWrapper(string type)
@@ -852,7 +839,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 		internal static ClassLoaderWrapper GetClassLoaderWrapper(object javaClassLoader)
 		{
-			if(javaClassLoader == null || GetBootstrapClassLoader().javaClassLoader == javaClassLoader)
+			if(javaClassLoader == null)
 			{
 				return GetBootstrapClassLoader();
 			}

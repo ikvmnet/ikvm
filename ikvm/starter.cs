@@ -54,36 +54,6 @@ public class Starter
 		}
 	}
 
-	public class PathClassLoader : URLClassLoader
-	{
-		private static URL[] GetClassPath(string classpath)
-		{
-			string[] s = classpath.Split(Path.PathSeparator);
-			URL[] urls = new URL[s.Length];
-			for(int i = 0; i < urls.Length; i++)
-			{
-				// TODO non-existing file/dir is treated as current directory, this obviously isn't correct
-				urls[i] = new java.io.File(s[i]).toURL();
-			}
-			return urls;
-		}
-
-		public PathClassLoader(string classpath, java.lang.ClassLoader parent)
-			: base(GetClassPath(classpath), parent)
-		{
-		}
-
-		protected override java.lang.Class loadClass(string name, bool resolve)
-		{
-			java.lang.Class c = findClass(name);
-			if(resolve)
-			{
-				resolveClass(c);
-			}
-			return c;
-		}
-	}
-
 	private class SaveAssemblyShutdownHook : java.lang.Thread
 	{
 		private java.lang.Class clazz;
@@ -142,7 +112,6 @@ public class Starter
 		bool showVersion = false;
 		string mainClass = null;
 		string[] vmargs = null;
-		string bootclasspath = null;
 		for(int i = 0; i < args.Length; i++)
 		{
 			if(args[i][0] == '-')
@@ -222,10 +191,6 @@ public class Starter
 				{
 					props["java.class.path"] = args[++i];
 				}
-				else if(args[i].StartsWith("-Xbootclasspath:"))
-				{
-					bootclasspath = args[i].Substring(16);
-				}
 				else if(args[i].StartsWith("-Xtrace:"))
 				{
 					Tracer.SetTraceLevel(args[i].Substring(8));
@@ -292,8 +257,6 @@ public class Starter
 			Console.Error.WriteLine("                      Disable assertions");
 			Console.Error.WriteLine("    -Xsave            Save the generated assembly (for debugging)");
 			Console.Error.WriteLine("    -Xtime            Time the execution");
-			Console.Error.WriteLine("    -Xbootclasspath:<directories and zip/jar files separated by {0}>", Path.PathSeparator);
-			Console.Error.WriteLine("                      Set search path for bootstrap classes and resources");
 			Console.Error.WriteLine("    -Xtrace:<string>  Displays all tracepoints with the given name");
 			Console.Error.WriteLine("    -Xmethodtrace:<string>");
 			Console.Error.WriteLine("                      Builds method trace into the specified output methods");
@@ -332,10 +295,6 @@ public class Starter
 					return 1;
 				}
 				mainClass = mainClass.Replace('/', '.');
-			}
-			if(bootclasspath != null)
-			{
-				IKVM.Internal.Starter.SetBootstrapClassLoader(new PathClassLoader(bootclasspath, null));
 			}
 			java.lang.Class clazz = java.lang.Class.forName(mainClass, true, java.lang.ClassLoader.getSystemClassLoader());
 			Method method = FindMainMethod(clazz);

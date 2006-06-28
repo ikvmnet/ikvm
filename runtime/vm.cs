@@ -50,11 +50,6 @@ namespace IKVM.Internal
 			DynamicClassLoader.SaveDebugImage(mainClass);
 		}
 
-		public static void SetBootstrapClassLoader(object classLoader)
-		{
-			ClassLoaderWrapper.GetBootstrapClassLoader().SetJavaClassLoader(classLoader);
-		}
-
 		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters
 		{
 			get

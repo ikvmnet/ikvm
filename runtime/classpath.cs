@@ -555,11 +555,6 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public static object getBootstrapClassLoader()
-			{
-				return ClassLoaderWrapper.GetJavaBootstrapClassLoader();
-			}
-
 			public static object getPrimitiveClass(char type)
 			{
 				switch(type)

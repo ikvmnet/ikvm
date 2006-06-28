@@ -50,9 +50,8 @@ import java.util.Collection;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.lang.reflect.Constructor;
 import gnu.classpath.SystemProperties;
-import gnu.java.util.DoubleEnumeration;
+import gnu.java.lang.InstrumentationImpl;
 import cli.System.*;
 import cli.System.Reflection.*;
 
@@ -67,41 +66,27 @@ import cli.System.Reflection.*;
  */
 final class VMClassLoader
 {
-    /**
-     * Helper to define a class using a string of bytes. This assumes that
-     * the security checks have already been performed, if necessary.
-     * <strong>This method will be removed in a future version of GNU
-     * Classpath</strong>.
-     *
-     * @param name the name to give the class, or null if unknown
-     * @param data the data representing the classfile, in classfile format
-     * @param offset the offset into the data where the classfile starts
-     * @param len the length of the classfile data in the array
-     * @return the class that was defined
-     * @throws ClassFormatError if data is not in proper classfile format
-     * @deprecated Implement
-     * {@link #defineClass(ClassLoader, String, byte[], int, int, ProtectionDomain)}
-     *   instead.
-     */
-    static Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len)
-    {
-	return defineClass(cl, name, data, offset, len, null);
-    }
+    //static InstrumentationImpl instrumenter;
 
-    /**
-     * Helper to define a class using a string of bytes. This assumes that
-     * the security checks have already been performed, if necessary.
-     *
-     * @param name the name to give the class, or null if unknown
-     * @param data the data representing the classfile, in classfile format
-     * @param offset the offset into the data where the classfile starts
-     * @param len the length of the classfile data in the array
-     * @param pd the protection domain
-     * @return the class that was defined
-     * @throws ClassFormatError if data is not in proper classfile format
-     */
-    static Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
+    private static native Class defineClassImpl(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
+        throws ClassNotFoundException;
+
+    static Class defineClassWithTransformers(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
     {
+        /*
+        if(instrumenter != null)
+        {
+            if(offset != 0 || len != data.length)
+            {
+                byte[] tmp = new byte[len];
+                System.arraycopy(data, offset, tmp, 0, len);
+                data = tmp;
+                offset = 0;
+            }
+            data = instrumenter.callTransformers(cl, name, null, pd, data);
+            len = data.length;
+        }
+        */
         try
         {
             return defineClassImpl(cl, name, data, offset, len, pd);
@@ -110,15 +95,6 @@ final class VMClassLoader
         {
             throw new NoClassDefFoundError(x.getMessage());
         }
-    }
-
-    private static native Class defineClassImpl(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
-        throws ClassNotFoundException;
-
-    static Class defineClassWithTransformers(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
-    {
-        // TODO handle transformers
-        return defineClass(cl, name, data, offset, len, pd);
     }
 
     /**
@@ -139,8 +115,6 @@ final class VMClassLoader
      */
     static native Class loadClass(String name, boolean resolve) throws ClassNotFoundException;
 
-    private static native ClassLoader getBootstrapClassLoader();
-
     /**
      * Helper to load a resource from the bootstrap class loader.
      *
@@ -155,15 +129,6 @@ final class VMClassLoader
 	    if(assembly != null)
 	    {
 		return new URL("ikvmres", assembly.get_FullName(), -1, "/" + name);
-	    }
-	    ClassLoader bootstrap = getBootstrapClassLoader();
-	    if(bootstrap != null)
-	    {
-		URL url = bootstrap.findResource(name);
-		if(url != null)
-		{
-		    return url;
-		}
 	    }
 	}
 	catch(java.net.MalformedURLException x)
@@ -183,35 +148,14 @@ final class VMClassLoader
      */
     static Enumeration getResources(String name) throws IOException
     {
-	if(__tls_nestedGetResourcesHack)
+	Assembly[] assemblies = findResourceAssemblies(name);
+	java.util.Vector v = new java.util.Vector();
+	for(int i = 0; i < assemblies.length; i++)
 	{
-	    return gnu.java.util.EmptyEnumeration.getInstance();
+	    v.addElement(new URL("ikvmres", assemblies[i].get_FullName(), -1, "/" + name));
 	}
-	__tls_nestedGetResourcesHack = true;
-	try
-	{
-	    Assembly[] assemblies = findResourceAssemblies(name);
-	    java.util.Vector v = new java.util.Vector();
-	    for(int i = 0; i < assemblies.length; i++)
-	    {
-		v.addElement(new URL("ikvmres", assemblies[i].get_FullName(), -1, "/" + name));
-	    }
-	    Enumeration e = v.elements();
-	    ClassLoader bootstrap = getBootstrapClassLoader();
-	    if(bootstrap != null)
-	    {
-		e = new DoubleEnumeration(e, bootstrap.getResources(name));
-	    }
-	    return e;
-	}
-	finally
-	{
-	    __tls_nestedGetResourcesHack = false;
-	}
+	return v.elements();
     }
-
-    @cli.System.ThreadStaticAttribute.Annotation
-    private static boolean __tls_nestedGetResourcesHack;
 
     /**
      * Helper to get a package from the bootstrap class loader.  The default
@@ -251,11 +195,6 @@ final class VMClassLoader
         Package[] packages = packageCache;
         if(packages == null)
         {
-            ClassLoader boot = getBootstrapClassLoader();
-            if(boot != null && __tls_nestedGetResourcesHack)
-            {
-                return new Package[0];
-            }
             HashMap h = new HashMap();
             Assembly[] assemblies = AppDomain.get_CurrentDomain().GetAssemblies();
             for(int i = 0; i < assemblies.length; i++)
@@ -328,33 +267,12 @@ final class VMClassLoader
                     }
                 }
             }
-            if(boot != null)
+            Collection c = h.values();
+            packages = new Package[c.size()];
+            c.toArray(packages);
+            if(enablePackageCaching)
             {
-                Package[] pkgboot;
-                __tls_nestedGetResourcesHack = true;
-                try
-                {
-                    pkgboot = boot.getPackages();
-                }
-                finally
-                {
-                    __tls_nestedGetResourcesHack = false;
-                }
-                Collection c = h.values();
-                packages = new Package[c.size() + pkgboot.length];
-                c.toArray(packages);
-                VMSystem.arraycopy(pkgboot, 0, packages, c.size(), pkgboot.length);
-                // we don't cache the result, because we don't know when the bootstrap class loader loads a new package
-            }
-            else
-            {
-                Collection c = h.values();
-                packages = new Package[c.size()];
-                c.toArray(packages);
-                if(enablePackageCaching)
-                {
-                    packageCache = packages;
-                }
+                packageCache = packages;
             }
         }
         return packages;        
