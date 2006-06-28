@@ -752,4 +752,14 @@ public final class VMThread
         }
         return "TERMINATED";
     }
+
+    public static cli.System.Threading.Thread getNativeThread(Thread t)
+    {
+        VMThread vmthread = t.vmThread;
+        if(vmthread != null)
+        {
+            return (cli.System.Threading.Thread)vmthread.nativeThreadReference.get_Target();
+        }
+        return null;
+    }
 }

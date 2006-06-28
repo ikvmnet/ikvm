@@ -37,6 +37,8 @@ exception statement from your version. */
 
 package java.lang.management;
 
+import java.lang.VMThread;
+
 /**
  * Provides low-level information about a thread.
  *
@@ -180,6 +182,35 @@ final class VMThreadInfo
      */
     static StackTraceElement[] getStackTrace(Thread thread, int maxDepth)
     {
-        throw new UnsupportedOperationException();
+        cli.System.Threading.Thread nativeThread = VMThread.getNativeThread(thread);
+        if(nativeThread == null)
+        {
+            return new StackTraceElement[0];
+        }
+        else if(nativeThread == cli.System.Threading.Thread.get_CurrentThread())
+        {
+            return ExceptionHelper.getStackTrace(new cli.System.Diagnostics.StackTrace(2, true), maxDepth);
+        }
+        else
+        {
+            cli.System.Diagnostics.StackTrace st = null;
+            try
+            {
+                nativeThread.Suspend();
+                try
+                {
+                    st = new cli.System.Diagnostics.StackTrace(nativeThread, true);
+                }
+                finally
+                {
+                    nativeThread.Resume();
+                }
+            }
+            catch(Throwable _)
+            {
+                return new StackTraceElement[0];
+            }
+            return ExceptionHelper.getStackTrace(st, maxDepth);
+        }
     }
 }

@@ -27,7 +27,8 @@ import java.io.*;
 import java.lang.reflect.*;
 import gnu.classpath.SystemProperties;
 
-final class ExceptionHelper
+@ikvm.lang.Internal
+public final class ExceptionHelper
 {
     // the contents of the NULL_STRING should be empty (because when the exception propagates to other .NET code
     // it will return that text as the Message property), but it *must* be a copy, because we need to be
@@ -705,5 +706,15 @@ final class ExceptionHelper
         // transplant the stack trace
         setStackTrace(r, new ExceptionInfoHelper(t, true).get_StackTrace(t));
         return r;
+    }
+
+    // helper for use by java.lang.management.VMThreadInfo
+    public static StackTraceElement[] getStackTrace(cli.System.Diagnostics.StackTrace st, int maxDepth)
+    {
+        cli.System.Collections.ArrayList stackTrace = new cli.System.Collections.ArrayList();
+        ExceptionInfoHelper.Append(stackTrace, st, 0);
+        StackTraceElement[] ste = new StackTraceElement[Math.min(maxDepth, stackTrace.get_Count())];
+        stackTrace.CopyTo(0, (cli.System.Array)(Object)ste, 0, ste.length);
+        return ste;
     }
 }
