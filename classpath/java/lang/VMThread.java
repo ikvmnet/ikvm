@@ -19,6 +19,7 @@ public final class VMThread
     volatile Thread thread;
     private volatile boolean running;
     private volatile boolean interruptableWait;
+    private boolean timedWait;
     private volatile boolean interruptPending;
     private VMThread firstJoinWaiter;
     private VMThread nextJoinWaiter;
@@ -219,7 +220,7 @@ public final class VMThread
 
     void join(long ms, int ns) throws InterruptedException
     {
-	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	cli.System.Threading.Thread nativeThread = getNativeThread();
 	if(nativeThread == null)
 	{
 	    return;
@@ -227,7 +228,7 @@ public final class VMThread
 	try
 	{
             VMThread current = currentThread().vmThread;
-	    enterInterruptableWait();
+	    enterInterruptableWait(ms != 0 || ns != 0);
 	    try
 	    {
                 addJoinWaiter(current);
@@ -311,7 +312,7 @@ public final class VMThread
 	}
     }
 
-    private static void enterInterruptableWait() throws InterruptedException
+    private static void enterInterruptableWait(boolean timedWait) throws InterruptedException
     {
         VMThread vmthread = currentThread().vmThread;
         synchronized(vmthread)
@@ -321,6 +322,7 @@ public final class VMThread
                 vmthread.interruptPending = false;
                 throw new InterruptedException();
             }
+            vmthread.timedWait = timedWait;
             vmthread.interruptableWait = true;
         }
     }
@@ -361,7 +363,7 @@ public final class VMThread
         interruptPending = true;
         if(interruptableWait)
         {
-            cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+            cli.System.Threading.Thread nativeThread = getNativeThread();
 	    if(nativeThread != null)
 	    {
 	        nativeThread.Interrupt();
@@ -387,7 +389,7 @@ public final class VMThread
 
     void suspend()
     {
-	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	cli.System.Threading.Thread nativeThread = getNativeThread();
 	if(nativeThread != null)
 	{
             try
@@ -403,7 +405,7 @@ public final class VMThread
 
     void resume()
     {
-	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	cli.System.Threading.Thread nativeThread = getNativeThread();
 	if(nativeThread != null)
 	{
             try
@@ -419,7 +421,7 @@ public final class VMThread
 
     void nativeSetPriority(int priority)
     {
-	cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	cli.System.Threading.Thread nativeThread = getNativeThread();
 	if(nativeThread != null)
 	{
 	    if(priority == Thread.MIN_PRIORITY)
@@ -463,7 +465,7 @@ public final class VMThread
 	}
 	else if(t instanceof ThreadDeath)
 	{
-	    cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+	    cli.System.Threading.Thread nativeThread = getNativeThread();
 	    if(nativeThread != null)
 	    {
                 try
@@ -586,7 +588,7 @@ public final class VMThread
 	}
 	else
 	{
-            enterInterruptableWait();
+            enterInterruptableWait(true);
             try
             {
 	        // if nanoseconds are specified, round up to one millisecond
@@ -638,7 +640,7 @@ public final class VMThread
         {
             throw new IllegalArgumentException("argument out of range");
         }
-        enterInterruptableWait();
+        enterInterruptableWait(timeout != 0 || nanos != 0);
         try
         {
             if((timeout == 0 && nanos == 0) || timeout > 922337203685476L)
@@ -686,6 +688,7 @@ public final class VMThread
             }
             if(!pendingUnpark)
             {
+                timedWait = millis != Integer.MAX_VALUE;
                 interruptableWait = true;
                 try
                 {
@@ -728,38 +731,34 @@ public final class VMThread
         return vmthread != null ? vmthread.blocker : null;
     }
 
-    /**
-     * Returns the current state of the thread.
-     * The value must be one of "BLOCKED", "NEW",
-     * "RUNNABLE", "TERMINATED", "TIMED_WAITING" or
-     * "WAITING".
-     *
-     * @return a string corresponding to one of the 
-     *         thread enumeration states specified above.
-     */
-    String getState()
+    synchronized String getState()
     {
-        cli.System.Threading.Thread nativeThread = (cli.System.Threading.Thread)nativeThreadReference.get_Target();
-        if (nativeThread != null && nativeThread.get_IsAlive())
+        cli.System.Threading.Thread nativeThread = getNativeThread();
+        if(nativeThread != null && nativeThread.get_IsAlive())
         {
-            if (interruptableWait)
+            if(interruptableWait)
             {
-                // TODO we don't yet distinguish between WAITING and TIMED_WAITING
-                return "WAITING";
+                // NOTE if objectWait has satisfied the wait condition (or has been interrupted or has timed-out),
+                // it can be blocking on the re-acquire of the monitor, but we have no way of detecting that.
+                return timedWait ? "TIMED_WAITING" : "WAITING";
             }
-            // TODO we don't support BLOCKED
+            if((nativeThread.get_ThreadState().Value & cli.System.Threading.ThreadState.WaitSleepJoin) != 0)
+            {
+                return "BLOCKED";
+            }
             return "RUNNABLE";
         }
         return "TERMINATED";
     }
 
+    private cli.System.Threading.Thread getNativeThread()
+    {
+        return (cli.System.Threading.Thread)nativeThreadReference.get_Target();
+    }
+
     public static cli.System.Threading.Thread getNativeThread(Thread t)
     {
         VMThread vmthread = t.vmThread;
-        if(vmthread != null)
-        {
-            return (cli.System.Threading.Thread)vmthread.nativeThreadReference.get_Target();
-        }
-        return null;
+        return vmthread != null ? vmthread.getNativeThread() : null;
     }
 }
