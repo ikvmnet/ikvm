@@ -1,5 +1,6 @@
 /classpath/gnu/java/awt/peer/gtk/
 /classpath/gnu/java/awt/peer/qt/
+/classpath/gnu/java/awt/peer/x/
 /classpath/gnu/java/util/prefs/gconf/
 /classpath/gnu/java/util/prefs/GConfBasedFactory.java
 /classpath/gnu/java/util/prefs/GConfBasedPreferences.java

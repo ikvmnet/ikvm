@@ -761,4 +761,9 @@ public final class VMThread
         VMThread vmthread = t.vmThread;
         return vmthread != null ? vmthread.getNativeThread() : null;
     }
+
+    public static Thread getThreadFromId(long id)
+    {
+        return ThreadGroup.getThreadFromId(id);
+    }
 }

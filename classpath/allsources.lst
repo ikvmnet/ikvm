@@ -416,7 +416,6 @@
 ../../classpath/gnu/java/awt/java2d/Segment.java
 ../../classpath/gnu/java/awt/java2d/TexturePaintContext.java
 ../../classpath/gnu/java/awt/peer/ClasspathFontPeer.java
-../../classpath/gnu/java/awt/peer/ClasspathTextLayoutPeer.java
 ../../classpath/gnu/java/awt/peer/EmbeddedWindowPeer.java
 ../../classpath/gnu/java/awt/peer/GLightweightPeer.java
 ../../classpath/gnu/java/awt/peer/swing/SwingButtonPeer.java
@@ -530,9 +529,11 @@
 ../../classpath/gnu/java/lang/ClassHelper.java
 ../../classpath/gnu/java/lang/InstrumentationImpl.java
 ../../classpath/gnu/java/lang/MainThread.java
+../../classpath/gnu/java/lang/management/BeanImpl.java
 ../../classpath/gnu/java/lang/management/ClassLoadingMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/OperatingSystemMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/RuntimeMXBeanImpl.java
+../../classpath/gnu/java/lang/management/ThreadMXBeanImpl.java
 ../../classpath/gnu/java/lang/reflect/ClassSignatureParser.java
 ../../classpath/gnu/java/lang/reflect/FieldSignatureParser.java
 ../../classpath/gnu/java/lang/reflect/GenericSignatureParser.java
@@ -4591,6 +4592,7 @@ gnu/java/awt/peer/gtk/CairoSurface.java
 gnu/java/lang/reflect/VMField.java
 gnu/java/lang/management/VMRuntimeMXBeanImpl.java
 gnu/java/lang/management/VMClassLoadingMXBeanImpl.java
+gnu/java/lang/management/VMThreadMXBeanImpl.java
 gnu/java/lang/VMInstrumentationImpl.java
 gnu/java/locale/LocaleData.java
 gnu/java/net/PlainDatagramSocketImpl.java
@@ -4619,7 +4621,6 @@ java/io/VMObjectInputStream.java
 java/lang/DoubleToString.java
 java/lang/ExceptionHelper.java
 java/lang/LibraryVMInterfaceImpl.java
-java/lang/management/VMThreadInfo.java
 java/lang/ref/Reference.java
 java/lang/reflect/Constructor.java
 java/lang/reflect/Field.java
