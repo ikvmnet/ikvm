@@ -531,6 +531,8 @@
 ../../classpath/gnu/java/lang/MainThread.java
 ../../classpath/gnu/java/lang/management/BeanImpl.java
 ../../classpath/gnu/java/lang/management/ClassLoadingMXBeanImpl.java
+../../classpath/gnu/java/lang/management/CompilationMXBeanImpl.java
+../../classpath/gnu/java/lang/management/MemoryMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/OperatingSystemMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/RuntimeMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/ThreadMXBeanImpl.java
@@ -2314,8 +2316,11 @@
 ../../classpath/java/lang/LinkageError.java
 ../../classpath/java/lang/Long.java
 ../../classpath/java/lang/management/ClassLoadingMXBean.java
+../../classpath/java/lang/management/CompilationMXBean.java
 ../../classpath/java/lang/management/ManagementFactory.java
 ../../classpath/java/lang/management/ManagementPermission.java
+../../classpath/java/lang/management/MemoryMXBean.java
+../../classpath/java/lang/management/MemoryUsage.java
 ../../classpath/java/lang/management/OperatingSystemMXBean.java
 ../../classpath/java/lang/management/RuntimeMXBean.java
 ../../classpath/java/lang/management/ThreadInfo.java
@@ -4590,8 +4595,10 @@ gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
 gnu/java/awt/peer/gtk/CairoSurface.java
 gnu/java/lang/reflect/VMField.java
-gnu/java/lang/management/VMRuntimeMXBeanImpl.java
 gnu/java/lang/management/VMClassLoadingMXBeanImpl.java
+gnu/java/lang/management/VMCompilationMXBeanImpl.java
+gnu/java/lang/management/VMMemoryMXBeanImpl.java
+gnu/java/lang/management/VMRuntimeMXBeanImpl.java
 gnu/java/lang/management/VMThreadMXBeanImpl.java
 gnu/java/lang/VMInstrumentationImpl.java
 gnu/java/locale/LocaleData.java
@@ -4644,8 +4651,11 @@ java/nio/MappedByteBufferImpl.java
 java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
 java/security/VMSecureRandom.java
+java/util/concurrent/atomic/AtomicBoolean.java
 java/util/concurrent/atomic/AtomicInteger.java
 java/util/concurrent/atomic/AtomicIntegerArray.java
+java/util/concurrent/atomic/AtomicLong.java
+java/util/concurrent/atomic/AtomicLongArray.java
 java/util/concurrent/atomic/AtomicReference.java
 java/util/concurrent/atomic/AtomicReferenceArray.java
 java/util/concurrent/locks/LockSupport.java

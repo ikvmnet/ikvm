@@ -11,8 +11,10 @@ gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
 gnu/java/awt/peer/gtk/CairoSurface.java
 gnu/java/lang/reflect/VMField.java
-gnu/java/lang/management/VMRuntimeMXBeanImpl.java
 gnu/java/lang/management/VMClassLoadingMXBeanImpl.java
+gnu/java/lang/management/VMCompilationMXBeanImpl.java
+gnu/java/lang/management/VMMemoryMXBeanImpl.java
+gnu/java/lang/management/VMRuntimeMXBeanImpl.java
 gnu/java/lang/management/VMThreadMXBeanImpl.java
 gnu/java/lang/VMInstrumentationImpl.java
 gnu/java/locale/LocaleData.java
@@ -65,8 +67,11 @@ java/nio/MappedByteBufferImpl.java
 java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
 java/security/VMSecureRandom.java
+java/util/concurrent/atomic/AtomicBoolean.java
 java/util/concurrent/atomic/AtomicInteger.java
 java/util/concurrent/atomic/AtomicIntegerArray.java
+java/util/concurrent/atomic/AtomicLong.java
+java/util/concurrent/atomic/AtomicLongArray.java
 java/util/concurrent/atomic/AtomicReference.java
 java/util/concurrent/atomic/AtomicReferenceArray.java
 java/util/concurrent/locks/LockSupport.java
