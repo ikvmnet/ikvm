@@ -71,6 +71,19 @@ final class VMClassLoader
     private static native Class defineClassImpl(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
         throws ClassNotFoundException;
 
+    // this method is used by java.lang.reflect.Proxy (through reflection)
+    static Class defineClass(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
+    {
+        try
+        {
+            return defineClassImpl(cl, name, data, offset, len, pd);
+        }
+        catch(ClassNotFoundException x)
+        {
+            throw new NoClassDefFoundError(x.getMessage());
+        }
+    }
+
     static Class defineClassWithTransformers(ClassLoader cl, String name, byte[] data, int offset, int len, ProtectionDomain pd)
     {
         /*

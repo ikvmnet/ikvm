@@ -138,7 +138,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
+		protected TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
 		{
 			if(tw == null || tw.IsUnloadable || tw.IsPrimitive)
 				return tw;
@@ -194,60 +194,6 @@ namespace IKVM.Internal
 				}
 			}
 			return proxyClassLoader.DefineClass(f, protectionDomain);
-		}
-
-		internal TypeWrapper DefineNetExpType(string name, string assemblyName)
-		{
-			Debug.Assert(this == GetBootstrapClassLoader());
-			TypeWrapper type;
-			lock(types.SyncRoot)
-			{
-				// we need to check if we've already got it, because other classloaders than the bootstrap classloader may
-				// "define" NetExp types, there is a potential race condition if multiple classloaders try to define the
-				// same type simultaneously.
-				type = (TypeWrapper)types[name];
-				if(type != null)
-				{
-					return type;
-				}
-			}
-			// The sole purpose of the netexp class is to let us load the assembly that the class lives in,
-			// once we've done that, all types in it become visible.
-			Assembly asm;
-			try
-			{
-				asm = Assembly.Load(assemblyName);
-			}
-			catch(Exception x)
-			{
-				throw new NoClassDefFoundError(name + " (" + x.Message + ")");
-			}
-			// pre-compiled Java types can also live in a netexp referenced assembly,
-			// so we have to explicitly check for those
-			// (DotNetTypeWrapper.CreateDotNetTypeWrapper will refuse to return Java types).
-			Type t = GetJavaTypeFromAssembly(asm, name);
-			if(t != null)
-			{
-				return GetWrapperFromBootstrapType(t);
-			}
-			type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
-			if(type == null)
-			{
-				throw new NoClassDefFoundError(name + " not found in " + assemblyName);
-			}
-			lock(types.SyncRoot)
-			{
-				TypeWrapper race = (TypeWrapper)types[name];
-				if(race == null)
-				{
-					types.Add(name, type);
-				}
-				else
-				{
-					type = race;
-				}
-			}
-			return type;
 		}
 #endif
 

@@ -101,10 +101,27 @@ namespace IKVM.Internal
 			string dotnetAssembly = f.IKVMAssemblyAttribute;
 			if(dotnetAssembly != null)
 			{
-				// HACK only the bootstrap classloader can define .NET types (but for convenience, we do
-				// allow other class loaders to call DefineClass for them)
-				// TODO reconsider this, it might be a better idea to only allow netexp generated jars on the bootclasspath
-				return GetBootstrapClassLoader().DefineNetExpType(f.Name, dotnetAssembly);
+				// The sole purpose of the stub class is to let us load the assembly that the class lives in,
+				// once we've done that, all types in it become visible.
+				Assembly asm;
+				try
+				{
+#if WHIDBEY && STATIC_COMPILER
+					asm = Assembly.ReflectionOnlyLoad(dotnetAssembly);
+#else
+					asm = Assembly.Load(dotnetAssembly);
+#endif
+				}
+				catch(Exception x)
+				{
+					throw new NoClassDefFoundError(f.Name + " (" + x.Message + ")");
+				}
+				TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).LoadClassByDottedName(f.Name);
+				if(tw.Assembly != asm)
+				{
+					throw new NoClassDefFoundError(f.Name + " (assembly mismatch)");
+				}
+				return RegisterInitiatingLoader(tw);
 			}
 			lock(types.SyncRoot)
 			{
@@ -265,6 +282,12 @@ namespace IKVM.Internal
 
 		protected virtual ModuleBuilder CreateModuleBuilder()
 		{
+#if STATIC_COMPILER
+			// HACK this is required because DelegateInnerClassTypeWrapper currently uses the ModuleBuilder
+			// property to get a ModuleBuilder on the class loader that defined the delegate,
+			// instead of the class loader that is using the delegate (as it probably should)
+			return ((DynamicClassLoader)GetBootstrapClassLoader()).ModuleBuilder;
+#else // STATIC_COMPILER
 			AssemblyName name = new AssemblyName();
 			if(saveDebugImage)
 			{
@@ -279,14 +302,8 @@ namespace IKVM.Internal
 			AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true);
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
-			ModuleBuilder moduleBuilder = saveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
-#if STATIC_COMPILER
-			if(!JVM.NoStackTraceInfo)
-			{
-				AttributeHelper.SetSourceFile(moduleBuilder, null);
-			}
+			return saveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
 #endif // STATIC_COMPILER
-			return moduleBuilder;
 		}
 	}
 }

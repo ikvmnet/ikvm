@@ -9061,7 +9061,13 @@ namespace IKVM.Internal
 						sig = null;
 						return false;
 					}
+#if WHIDBEY
+					// NOTE this is not just an optimization, but it is also required to
+					// make sure that ReflectionOnly types stay ReflectionOnly types.
+					type = type.GetElementType().MakeArrayType(1);
+#else
 					type = type.Assembly.GetType(type.GetElementType().FullName + "[]", true);
+#endif
 					if(mb.IsAbstract)
 					{
 						// Since we cannot override methods with byref arguments, we don't report abstract

@@ -486,11 +486,6 @@ namespace ikvm.awt
 			return new NetGraphicsEnvironment();
 		}
 
-		public override gnu.java.awt.peer.ClasspathTextLayoutPeer getClasspathTextLayoutPeer(java.text.AttributedString str, java.awt.font.FontRenderContext ctxt)
-		{
-			throw new NotImplementedException();
-		}
-
 		public override RobotPeer createRobot(java.awt.GraphicsDevice param)
 		{
 			throw new NotImplementedException();
