@@ -692,7 +692,7 @@ namespace IKVM.Internal
 		internal static ModifiersAttribute GetModifiersAttribute(Type type)
 		{
 #if WHIDBEY
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
@@ -716,7 +716,7 @@ namespace IKVM.Internal
 		internal static ExModifiers GetModifiers(MethodBase mb, bool assemblyIsPrivate)
 		{
 #if WHIDBEY
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || mb.DeclaringType.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 				{
@@ -797,7 +797,7 @@ namespace IKVM.Internal
 		internal static ExModifiers GetModifiers(FieldInfo fi, bool assemblyIsPrivate)
 		{
 #if WHIDBEY
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || fi.DeclaringType.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
 				{
@@ -1063,7 +1063,7 @@ namespace IKVM.Internal
 		internal static NameSigAttribute GetNameSig(FieldInfo field)
 		{
 #if WHIDBEY
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || field.DeclaringType.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
 				{
@@ -1083,7 +1083,7 @@ namespace IKVM.Internal
 		internal static NameSigAttribute GetNameSig(MethodBase method)
 		{
 #if WHIDBEY
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || method.DeclaringType.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(method))
 				{
@@ -1116,7 +1116,7 @@ namespace IKVM.Internal
 		internal static ImplementsAttribute GetImplements(Type type)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
@@ -1136,7 +1136,7 @@ namespace IKVM.Internal
 		internal static InnerClassAttribute GetInnerClass(Type type)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
@@ -1156,7 +1156,7 @@ namespace IKVM.Internal
 		internal static RemappedInterfaceMethodAttribute[] GetRemappedInterfaceMethods(Type type)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
 			{
 				List<RemappedInterfaceMethodAttribute> attrs = new List<RemappedInterfaceMethodAttribute>();
 					foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
@@ -1179,7 +1179,7 @@ namespace IKVM.Internal
 		internal static RemappedTypeAttribute GetRemappedType(Type type)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
@@ -1232,7 +1232,7 @@ namespace IKVM.Internal
 		internal static bool IsDefined(Module mod, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || mod.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
 				{
@@ -1251,7 +1251,7 @@ namespace IKVM.Internal
 		internal static bool IsDefined(Assembly asm, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || asm.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(asm))
 				{
@@ -1269,7 +1269,7 @@ namespace IKVM.Internal
 		internal static bool IsDefined(Type type, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
@@ -1288,7 +1288,7 @@ namespace IKVM.Internal
 		internal static bool IsDefined(ParameterInfo pi, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || pi.Member.DeclaringType.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(pi))
 				{
@@ -1307,7 +1307,7 @@ namespace IKVM.Internal
 		internal static bool IsDefined(MemberInfo member, Type attribute)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
+			if(JVM.IsStaticCompiler || member.DeclaringType.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(member))
 				{
