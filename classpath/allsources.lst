@@ -533,6 +533,7 @@
 ../../classpath/gnu/java/lang/management/ClassLoadingMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/CompilationMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/MemoryMXBeanImpl.java
+../../classpath/gnu/java/lang/management/MemoryPoolMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/OperatingSystemMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/RuntimeMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/ThreadMXBeanImpl.java
@@ -2320,6 +2321,7 @@
 ../../classpath/java/lang/management/ManagementFactory.java
 ../../classpath/java/lang/management/ManagementPermission.java
 ../../classpath/java/lang/management/MemoryMXBean.java
+../../classpath/java/lang/management/MemoryPoolMXBean.java
 ../../classpath/java/lang/management/MemoryUsage.java
 ../../classpath/java/lang/management/OperatingSystemMXBean.java
 ../../classpath/java/lang/management/RuntimeMXBean.java
@@ -4598,6 +4600,7 @@ gnu/java/lang/reflect/VMField.java
 gnu/java/lang/management/VMClassLoadingMXBeanImpl.java
 gnu/java/lang/management/VMCompilationMXBeanImpl.java
 gnu/java/lang/management/VMMemoryMXBeanImpl.java
+gnu/java/lang/management/VMMemoryPoolMXBeanImpl.java
 gnu/java/lang/management/VMRuntimeMXBeanImpl.java
 gnu/java/lang/management/VMThreadMXBeanImpl.java
 gnu/java/lang/VMInstrumentationImpl.java
@@ -4628,6 +4631,7 @@ java/io/VMObjectInputStream.java
 java/lang/DoubleToString.java
 java/lang/ExceptionHelper.java
 java/lang/LibraryVMInterfaceImpl.java
+java/lang/management/VMManagementFactory.java
 java/lang/ref/Reference.java
 java/lang/reflect/Constructor.java
 java/lang/reflect/Field.java

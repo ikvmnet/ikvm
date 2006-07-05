@@ -14,6 +14,7 @@ gnu/java/lang/reflect/VMField.java
 gnu/java/lang/management/VMClassLoadingMXBeanImpl.java
 gnu/java/lang/management/VMCompilationMXBeanImpl.java
 gnu/java/lang/management/VMMemoryMXBeanImpl.java
+gnu/java/lang/management/VMMemoryPoolMXBeanImpl.java
 gnu/java/lang/management/VMRuntimeMXBeanImpl.java
 gnu/java/lang/management/VMThreadMXBeanImpl.java
 gnu/java/lang/VMInstrumentationImpl.java
@@ -44,6 +45,7 @@ java/io/VMObjectInputStream.java
 java/lang/DoubleToString.java
 java/lang/ExceptionHelper.java
 java/lang/LibraryVMInterfaceImpl.java
+java/lang/management/VMManagementFactory.java
 java/lang/ref/Reference.java
 java/lang/reflect/Constructor.java
 java/lang/reflect/Field.java
