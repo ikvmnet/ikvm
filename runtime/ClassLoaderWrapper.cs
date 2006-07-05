@@ -559,7 +559,7 @@ namespace IKVM.Internal
 				{
 					return null;
 				}
-				Type array= ArrayTypeWrapper.MakeArrayType(elementType, dims);
+				Type array = ArrayTypeWrapper.MakeArrayType(elementType, dims);
 				Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
 				Modifiers reflectiveModifiers = modifiers;
 				modifiers |= elementTypeWrapper.Modifiers & Modifiers.Public;
