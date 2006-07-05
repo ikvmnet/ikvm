@@ -37,10 +37,6 @@ namespace IKVM.Internal
 	abstract class ClassLoaderWrapper
 	{
 		private static readonly object wrapperLock = new object();
-#if !COMPACT_FRAMEWORK
-		protected static bool arrayConstructionHack;
-		protected static readonly object arrayConstructionLock = new object();
-#endif
 		private static readonly Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable());
 		private static ClassLoaderWrapper bootstrapClassLoader;
 #if WHIDBEY && !STATIC_COMPILER
@@ -558,42 +554,12 @@ namespace IKVM.Internal
 			}
 			if(wrapper == null)
 			{
-				String netname = elementType.FullName + "[]";
-				for(int i = 1; i < dims; i++)
-				{
-					netname += "[]";
-				}
 				// .NET 1.1 has a limit of 1024 characters for type names
-				if(netname.Length >= 1024)
+				if(elementType.FullName.Length >= 1024 - dims * 2)
 				{
 					return null;
 				}
-				Type array;
-#if !COMPACT_FRAMEWORK
-				if(elementType.Module is ModuleBuilder)
-				{
-					// FXBUG ModuleBuilder.GetType() is broken (I think), it fires a TypeResolveEvent when
-					// you try to construct an array type from an unfinished type. I don't think it should
-					// do that. We have to work around that by setting a global flag (yuck) to prevent us
-					// from responding to the TypeResolveEvent.
-					lock(arrayConstructionLock)
-					{
-						arrayConstructionHack = true;
-						try
-						{
-							array = ((ModuleBuilder)elementType.Module).GetType(netname);
-						}
-						finally
-						{
-							arrayConstructionHack = false;
-						}
-					}
-				}
-				else
-#endif
-				{
-					array = elementType.Assembly.GetType(netname, true);
-				}
+				Type array= ArrayTypeWrapper.MakeArrayType(elementType, dims);
 				Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
 				Modifiers reflectiveModifiers = modifiers;
 				modifiers |= elementTypeWrapper.Modifiers & Modifiers.Public;

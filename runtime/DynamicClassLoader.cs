@@ -32,6 +32,10 @@ namespace IKVM.Internal
 {
 	class DynamicClassLoader : ClassLoaderWrapper
 	{
+#if !WHIDBEY
+		internal static bool arrayConstructionHack;
+		internal static readonly object arrayConstructionLock = new object();
+#endif // !WHIDBEY
 		private static readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
 		// FXBUG moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
 		// so for the time being, we share one dynamic assembly among all classloaders
@@ -55,6 +59,7 @@ namespace IKVM.Internal
 
 		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
 		{
+#if !WHIDBEY
 			lock(arrayConstructionLock)
 			{
 				Tracer.Info(Tracer.ClassLoading, "OnTypeResolve: {0} (arrayConstructionHack = {1})", args.Name, arrayConstructionHack);
@@ -63,6 +68,7 @@ namespace IKVM.Internal
 					return null;
 				}
 			}
+#endif // !WHIDBEY
 			TypeWrapper type = (TypeWrapper)dynamicTypes[args.Name];
 			if(type == null)
 			{

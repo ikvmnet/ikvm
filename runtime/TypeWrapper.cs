@@ -1991,13 +1991,7 @@ namespace IKVM.Internal
 				}
 				if(IsGhostArray)
 				{
-					int rank = ArrayRank;
-					string type = "System.Object";
-					for(int i = 0; i < rank; i++)
-					{
-						type += "[]";
-					}
-					return Type.GetType(type, true);
+					return ArrayTypeWrapper.MakeArrayType(typeof(object), ArrayRank);
 				}
 				return TypeAsTBD;
 			}
@@ -2031,13 +2025,7 @@ namespace IKVM.Internal
 				}
 				if(IsGhostArray)
 				{
-					int rank = ArrayRank;
-					string type = "System.Object";
-					for(int i = 0; i < rank; i++)
-					{
-						type += "[]";
-					}
-					return Type.GetType(type, true);
+					return ArrayTypeWrapper.MakeArrayType(typeof(object), ArrayRank);
 				}
 				return TypeAsTBD;
 			}
@@ -2054,13 +2042,7 @@ namespace IKVM.Internal
 				}
 				if(IsGhostArray)
 				{
-					int rank = ArrayRank;
-					string type = "System.Object";
-					for(int i = 0; i < rank; i++)
-					{
-						type += "[]";
-					}
-					return Type.GetType(type, true);
+					return ArrayTypeWrapper.MakeArrayType(typeof(object), ArrayRank);
 				}
 				return TypeAsTBD;
 			}
@@ -8572,7 +8554,7 @@ namespace IKVM.Internal
 					Type type = args[i];
 					if(type.IsByRef)
 					{
-						type = type.Assembly.GetType(type.GetElementType().FullName + "[]", true);
+						type = ArrayTypeWrapper.MakeArrayType(type.GetElementType(), 1);
 					}
 					locals[i] = ilgen.DeclareLocal(type);
 					ilgen.Emit(OpCodes.Stloc, locals[i]);
@@ -9061,13 +9043,7 @@ namespace IKVM.Internal
 						sig = null;
 						return false;
 					}
-#if WHIDBEY
-					// NOTE this is not just an optimization, but it is also required to
-					// make sure that ReflectionOnly types stay ReflectionOnly types.
-					type = type.GetElementType().MakeArrayType(1);
-#else
-					type = type.Assembly.GetType(type.GetElementType().FullName + "[]", true);
-#endif
+					type = ArrayTypeWrapper.MakeArrayType(type.GetElementType(), 1);
 					if(mb.IsAbstract)
 					{
 						// Since we cannot override methods with byref arguments, we don't report abstract
@@ -9564,7 +9540,7 @@ namespace IKVM.Internal
 					TypeWrapper elementTypeWrapper = ElementTypeWrapper;
 					Type elementType = elementTypeWrapper.TypeAsArrayType;
 					elementTypeWrapper.Finish();
-					type = elementType.Assembly.GetType(elementType.FullName + "[]", true);
+					type = MakeArrayType(elementType, 1);
 					ClassLoaderWrapper.SetWrapperForType(type, this);
 				}
 			}
@@ -9588,6 +9564,53 @@ namespace IKVM.Internal
 		internal override string[] GetEnclosingMethod()
 		{
 			return null;
+		}
+
+		internal static Type MakeArrayType(Type type, int dims)
+		{
+#if WHIDBEY
+			// NOTE this is not just an optimization, but it is also required to
+			// make sure that ReflectionOnly types stay ReflectionOnly types
+			// (in particular instantiations of generic types from mscorlib that
+			// have ReflectionOnly type parameters).
+			for(int i = 0; i < dims; i++)
+			{
+				type = type.MakeArrayType();
+			}
+			return type;
+#else // WHIDBEY
+			string name = type.FullName + "[]";
+			for(int i = 1; i < dims; i++)
+			{
+				name += "[]";
+			}
+#if !COMPACT_FRAMEWORK
+			ModuleBuilder mb = type.Module as ModuleBuilder;
+			if(mb != null)
+			{
+				// FXBUG ModuleBuilder.GetType() is broken on .NET 1.1, it fires a TypeResolveEvent when
+				// you try to construct an array type from an unfinished type. I don't think it should
+				// do that. We have to work around that by setting a global flag (yuck) to prevent us
+				// from responding to the TypeResolveEvent.
+				lock(DynamicClassLoader.arrayConstructionLock)
+				{
+					DynamicClassLoader.arrayConstructionHack = true;
+					try
+					{
+						return mb.GetType(name);
+					}
+					finally
+					{
+						DynamicClassLoader.arrayConstructionHack = false;
+					}
+				}
+			}
+			else
+#endif // !COMPACT_FRAMEWORK
+			{
+				return type.Assembly.GetType(name, true);
+			}
+#endif // WHIDBEY
 		}
 	}
 }
