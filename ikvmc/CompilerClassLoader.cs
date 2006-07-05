@@ -137,31 +137,6 @@ namespace IKVM.Internal
 						Console.Error.WriteLine("Warning: class format error: {0}", x.Message);
 						return null;
 					}
-					// to enhance error reporting we special case loading of netexp
-					// classes, to handle the case where the ikvmstub type doesn't exist
-					// (this happens when the .NET mscorlib.jar is used on Mono, for example)
-					string netexp = f.IKVMAssemblyAttribute;
-					if(netexp != null)
-					{
-						try
-						{
-#if WHIDBEY
-								Assembly.ReflectionOnlyLoad(netexp);
-#else
-							Assembly.Load(netexp);
-#endif
-						}
-						catch(Exception)
-						{
-							Console.Error.WriteLine("ikvmstub assembly not found: {0}", netexp);
-						}
-						// HACK create a new wrapper to see if the type is visible now
-						if(DotNetTypeWrapper.CreateDotNetTypeWrapper(name) == null)
-						{
-							Console.Error.WriteLine("Warning: ikvmstub class \"{0}\" refers to non-existing type", name);
-							return null;
-						}
-					}
 					if(options.removeUnusedFields)
 					{
 						f.RemoveUnusedFields();

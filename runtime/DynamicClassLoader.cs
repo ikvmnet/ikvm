@@ -122,7 +122,11 @@ namespace IKVM.Internal
 				{
 					throw new NoClassDefFoundError(f.Name + " (" + x.Message + ")");
 				}
-				TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).LoadClassByDottedName(f.Name);
+				TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).LoadClassByDottedNameFast(f.Name);
+				if(tw == null)
+				{
+					throw new NoClassDefFoundError(f.Name + " (type not found in " + asm.FullName + ")");
+				}
 				if(tw.Assembly != asm)
 				{
 					throw new NoClassDefFoundError(f.Name + " (assembly mismatch)");

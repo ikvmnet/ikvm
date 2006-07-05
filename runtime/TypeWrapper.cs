@@ -9538,9 +9538,8 @@ namespace IKVM.Internal
 				if(!IsFinished)
 				{
 					TypeWrapper elementTypeWrapper = ElementTypeWrapper;
-					Type elementType = elementTypeWrapper.TypeAsArrayType;
 					elementTypeWrapper.Finish();
-					type = MakeArrayType(elementType, 1);
+					type = MakeArrayType(elementTypeWrapper.TypeAsArrayType, 1);
 					ClassLoaderWrapper.SetWrapperForType(type, this);
 				}
 			}

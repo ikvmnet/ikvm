@@ -245,7 +245,7 @@ namespace IKVM.Runtime
 		public static object GetClassFromTypeHandle(RuntimeTypeHandle handle)
 		{
 			Type t = Type.GetTypeFromHandle(handle);
-			if(t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t))
+			if(t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t) || t == typeof(void))
 			{
 				return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
 			}
