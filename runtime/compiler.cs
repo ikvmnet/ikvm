@@ -789,7 +789,7 @@ class Compiler
 
 	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref bool nonleaf, Hashtable invokespecialstubcache, ref LineNumberTableAttribute.LineNumberWriter lineNumberTable)
 	{
-		DynamicClassLoader classLoader = (DynamicClassLoader)clazz.GetClassLoader();
+		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
 		if(JVM.Debug)
 		{

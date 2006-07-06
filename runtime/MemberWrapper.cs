@@ -467,7 +467,11 @@ namespace IKVM.Internal
 			// NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
 			// the method had any declared exceptions, the declaredExceptions field would have
 			// been set)
-			if(method != null && !(method is MethodBuilder))
+			if(method != null
+#if !COMPACT_FRAMEWORK
+				&& !(method is MethodBuilder)
+#endif
+				)
 			{
 				object[] attributes = method.GetCustomAttributes(typeof(ThrowsAttribute), false);
 				if(attributes.Length == 1)
@@ -550,6 +554,7 @@ namespace IKVM.Internal
 		internal virtual object Invoke(object obj, object[] args, bool nonVirtual)
 		{
 			AssertLinked();
+#if !COMPACT_FRAMEWORK
 			// if we've still got the builder object, we need to replace it with the real thing before we can call it
 			if(method is MethodBuilder)
 			{
@@ -589,6 +594,7 @@ namespace IKVM.Internal
 					throw new InvalidOperationException("Failed to fixate constructor: " + this.DeclaringType.Name + "." + this.Name + this.Signature);
 				}
 			}
+#endif // !COMPACT_FRAMEWORK
 			return InvokeImpl(method, obj, args, nonVirtual);
 		}
 
@@ -597,7 +603,9 @@ namespace IKVM.Internal
 		[HideFromJava]
 		internal object InvokeImpl(MethodBase method, object obj, object[] args, bool nonVirtual)
 		{
+#if !COMPACT_FRAMEWORK
 			Debug.Assert(!(method is MethodBuilder || method is ConstructorBuilder));
+#endif // !COMPACT_FRAMEWORK
 
 			if(IsStatic)
 			{
@@ -1073,6 +1081,7 @@ namespace IKVM.Internal
 
 		internal static void IssueWarning(FieldInfo field)
 		{
+#if !COMPACT_FRAMEWORK
 			// FXBUG .NET (1.0 & 1.1)
 			// FieldInfo.GetValue() on a literal causes the type initializer to run and
 			// we don't want that.
@@ -1092,6 +1101,7 @@ namespace IKVM.Internal
 					}
 				}
 			}
+#endif // !COMPACT_FRAMEWORK
 		}
 
 		private class Helper

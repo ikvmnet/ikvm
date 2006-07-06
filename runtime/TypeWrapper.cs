@@ -1054,11 +1054,13 @@ namespace IKVM.Internal
 		}
 #endif  // STATIC_COMPILER && !COMPACT_FRAMEWORK
 
+#if !COMPACT_FRAMEWORK
 		internal static void SetJavaModule(ModuleBuilder moduleBuilder)
 		{
 			CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
 			moduleBuilder.SetCustomAttribute(ikvmModuleAttr);
 		}
+#endif //!COMPACT_FRAMEWORK
 
 		internal static NameSigAttribute GetNameSig(FieldInfo field)
 		{
@@ -1500,8 +1502,10 @@ namespace IKVM.Internal
 				{
 					if(classObject == null)
 					{
+#if !COMPACT_FRAMEWORK
 						// DynamicTypeWrapper should haved already had SetClassObject explicitly
 						Debug.Assert(!(this is DynamicTypeWrapper));
+#endif // !COMPACT_FRAMEWORK
 						classObject = JVM.Library.newClass(this, null);
 					}
 				}
@@ -2966,7 +2970,7 @@ namespace IKVM.Internal
 
 	class DynamicTypeWrapper : TypeWrapper
 	{
-		protected readonly DynamicClassLoader classLoader;
+		protected readonly ClassLoaderWrapper classLoader;
 		private volatile DynamicImpl impl;
 		private TypeWrapper[] interfaces;
 		private readonly string sourceFileName;
@@ -2982,7 +2986,7 @@ namespace IKVM.Internal
 			return tw;
 		}
 
-		internal DynamicTypeWrapper(ClassFile f, DynamicClassLoader classLoader)
+		internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader)
 			: base(f.Modifiers, f.Name, f.IsInterface ? null : LoadTypeWrapper(classLoader, f.SuperClass))
 		{
 			Profiler.Count("DynamicTypeWrapper");
@@ -8002,8 +8006,8 @@ namespace IKVM.Internal
 #endif // WHIDBEY && !STATIC_COMPILER
 				{
 					// HACK this is an ugly hack to obtain the global ModuleBuilder
-					ModuleBuilder moduleBuilder = new DynamicClassLoader(null).ModuleBuilder;
-					// NOTE we chop of the prefix ("cli.") because C++/CLI doesn't like assemblies
+					ModuleBuilder moduleBuilder = ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
+					// NOTE we chop off the prefix ("cli.") because C++/CLI doesn't like assemblies
 					// that have types in the cli namespace (lame!)
 					TypeBuilder typeBuilder = moduleBuilder.DefineType(Name.Substring(NamePrefix.Length), TypeAttributes.NotPublic | TypeAttributes.Interface | TypeAttributes.Abstract);
 #if STATIC_COMPILER
@@ -8234,6 +8238,7 @@ namespace IKVM.Internal
 				}
 			}
 
+#if !COMPACT_FRAMEWORK
 			private class AttributeAnnotation : Annotation
 			{
 				private Type type;
@@ -8302,6 +8307,7 @@ namespace IKVM.Internal
 					return new AttributeAnnotation(attributeType);
 				}
 			}
+#endif //!COMPACT_FRAMEWORK
 		}
 
 		private static string[] ParseGenericArgs(string args)

@@ -30,7 +30,7 @@ using System.Reflection.Emit;
 
 namespace IKVM.Internal
 {
-	class DynamicClassLoader : ClassLoaderWrapper
+	class DynamicClassLoader : TypeWrapperFactory
 	{
 #if !WHIDBEY
 		internal static bool arrayConstructionHack;
@@ -44,6 +44,7 @@ namespace IKVM.Internal
 		private static ArrayList saveDebugAssemblies;
 		private static int instanceCounter = 0;
 		private int instanceId = System.Threading.Interlocked.Increment(ref instanceCounter);
+		private ClassLoaderWrapper classLoader;
 
 		static DynamicClassLoader()
 		{
@@ -52,9 +53,9 @@ namespace IKVM.Internal
 			AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
 		}
 
-		internal DynamicClassLoader(object javaClassLoader)
-			: base(javaClassLoader)
+		internal DynamicClassLoader(ClassLoaderWrapper classLoader)
 		{
+			this.classLoader = classLoader;
 		}
 
 		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
@@ -102,111 +103,57 @@ namespace IKVM.Internal
 			return type.TypeAsTBD.Assembly;
 		}
 
-		internal override TypeWrapper DefineClass(ClassFile f, object protectionDomain)
+		internal override TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, object protectionDomain)
 		{
-			string dotnetAssembly = f.IKVMAssemblyAttribute;
-			if(dotnetAssembly != null)
+			DynamicTypeWrapper type = CreateDynamicTypeWrapper(f);
+			// this step can throw a retargettable exception, if the class is incorrect
+			bool hasclinit;
+			type.CreateStep1(out hasclinit);
+			// now we can allocate the mangledTypeName, because the next step cannot fail
+			string mangledTypeName = f.Name;
+			lock(dynamicTypes.SyncRoot)
 			{
-				// The sole purpose of the stub class is to let us load the assembly that the class lives in,
-				// once we've done that, all types in it become visible.
-				Assembly asm;
-				try
+				// FXBUG the 1.1 CLR doesn't like type names that end with a period.
+				if(dynamicTypes.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
 				{
-#if WHIDBEY && STATIC_COMPILER
-					asm = Assembly.ReflectionOnlyLoad(dotnetAssembly);
-#else
-					asm = Assembly.Load(dotnetAssembly);
+#if STATIC_COMPILER
+					Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
 #endif
+					mangledTypeName += "/" + instanceId;
 				}
-				catch(Exception x)
-				{
-					throw new NoClassDefFoundError(f.Name + " (" + x.Message + ")");
-				}
-				TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).LoadClassByDottedNameFast(f.Name);
-				if(tw == null)
-				{
-					throw new NoClassDefFoundError(f.Name + " (type not found in " + asm.FullName + ")");
-				}
-				if(tw.Assembly != asm)
-				{
-					throw new NoClassDefFoundError(f.Name + " (assembly mismatch)");
-				}
-				return RegisterInitiatingLoader(tw);
+				dynamicTypes.Add(mangledTypeName, null);
 			}
+			// This step actually creates the TypeBuilder. It is not allowed to throw any exceptions,
+			// if an exception does occur, it is due to a programming error in the IKVM or CLR runtime
+			// and will cause a CriticalFailure and exit the process.
+			type.CreateStep2NoFail(hasclinit, mangledTypeName);
 			lock(types.SyncRoot)
 			{
-				if(types.ContainsKey(f.Name))
+				// in very extreme conditions another thread may have beaten us to it
+				// and loaded (not defined) a class with the same name, in that case
+				// we'll leak the the Reflection.Emit defined type. Also see the comment
+				// in ClassLoaderWrapper.RegisterInitiatingLoader().
+				TypeWrapper race = (TypeWrapper)types[f.Name];
+				if(race == null)
+				{
+					Debug.Assert(dynamicTypes.ContainsKey(mangledTypeName) && dynamicTypes[mangledTypeName] == null);
+					dynamicTypes[mangledTypeName] = type;
+					types[f.Name] = type;
+#if !STATIC_COMPILER
+					type.SetClassObject(JVM.Library.newClass(type, protectionDomain));
+#endif
+				}
+				else
 				{
 					throw new LinkageError("duplicate class definition: " + f.Name);
 				}
-				// mark the type as "loading in progress", so that we can detect circular dependencies.
-				types.Add(f.Name, null);
 			}
-			try
-			{
-				DynamicTypeWrapper type = CreateDynamicTypeWrapper(f);
-				// this step can throw a retargettable exception, if the class is incorrect
-				bool hasclinit;
-				type.CreateStep1(out hasclinit);
-				// now we can allocate the mangledTypeName, because the next step cannot fail
-				string mangledTypeName = f.Name;
-				lock(dynamicTypes.SyncRoot)
-				{
-					// FXBUG the 1.1 CLR doesn't like type names that end with a period.
-					if(dynamicTypes.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
-					{
-#if STATIC_COMPILER
-						Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
-#endif
-						mangledTypeName += "/" + instanceId;
-					}
-					dynamicTypes.Add(mangledTypeName, null);
-				}
-				// This step actually creates the TypeBuilder. It is not allowed to throw any exceptions,
-				// if an exception does occur, it is due to a programming error in the IKVM or CLR runtime
-				// and will cause a CriticalFailure and exit the process.
-				type.CreateStep2NoFail(hasclinit, mangledTypeName);
-				lock(types.SyncRoot)
-				{
-					// in very extreme conditions another thread may have beaten us to it
-					// and loaded (not defined) a class with the same name, in that case
-					// we'll leak the the Reflection.Emit defined type. Also see the comment
-					// in ClassLoaderWrapper.RegisterInitiatingLoader().
-					TypeWrapper race = (TypeWrapper)types[f.Name];
-					if(race == null)
-					{
-						Debug.Assert(dynamicTypes.ContainsKey(mangledTypeName) && dynamicTypes[mangledTypeName] == null);
-						dynamicTypes[mangledTypeName] = type;
-						types[f.Name] = type;
-#if !STATIC_COMPILER
-						type.SetClassObject(JVM.Library.newClass(type, protectionDomain));
-#endif
-					}
-					else
-					{
-						throw new LinkageError("duplicate class definition: " + f.Name);
-					}
-				}
-				return type;
-			}
-			catch
-			{
-				lock(types.SyncRoot)
-				{
-					if(types[f.Name] == null)
-					{
-						// if loading the class fails, we remove the indicator that we're busy loading the class,
-						// because otherwise we get a ClassCircularityError if we try to load the class again.
-						types.Remove(f.Name);
-					}
-				}
-				throw;
-			}
+			return type;
 		}
 
 		protected virtual DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f)
 		{
-			return new DynamicTypeWrapper(f, this);
+			return new DynamicTypeWrapper(f, classLoader);
 		}
 
 		internal static void PrepareForSaveDebugImage()
@@ -275,11 +222,11 @@ namespace IKVM.Internal
 			saveDebugAssemblies.Add(ab);
 		}
 
-		internal ModuleBuilder ModuleBuilder
+		internal override ModuleBuilder ModuleBuilder
 		{
 			get
 			{
-				lock(this)
+				lock(typeof(DynamicClassLoader))
 				{
 					if(moduleBuilder == null)
 					{
@@ -296,7 +243,7 @@ namespace IKVM.Internal
 			// HACK this is required because DelegateInnerClassTypeWrapper currently uses the ModuleBuilder
 			// property to get a ModuleBuilder on the class loader that defined the delegate,
 			// instead of the class loader that is using the delegate (as it probably should)
-			return ((DynamicClassLoader)GetBootstrapClassLoader()).ModuleBuilder;
+			return ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
 #else // STATIC_COMPILER
 			AssemblyName name = new AssemblyName();
 			if(saveDebugImage)

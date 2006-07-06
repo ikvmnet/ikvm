@@ -41,7 +41,7 @@ using Label = IKVM.Internal.CountingLabel;
 
 namespace IKVM.Internal
 {
-	class CompilerClassLoader : DynamicClassLoader
+	class CompilerClassLoader : ClassLoaderWrapper
 	{
 		private Hashtable classes;
 		private Hashtable remapped = new Hashtable();
@@ -72,12 +72,33 @@ namespace IKVM.Internal
 			Tracer.Info(Tracer.Compiler, "Instantiate CompilerClassLoader for {0}", assemblyName);
 		}
 
-		protected override DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f)
+		class CompilerTypeWrapperFactory : DynamicClassLoader
 		{
-			return new AotTypeWrapper(f, this);
+			private CompilerClassLoader classLoader;
+
+			internal CompilerTypeWrapperFactory(CompilerClassLoader classLoader)
+				: base(classLoader)
+			{
+				this.classLoader = classLoader;
+			}
+
+			protected override DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f)
+			{
+				return new AotTypeWrapper(f, classLoader);
+			}
+
+			protected override ModuleBuilder CreateModuleBuilder()
+			{
+				return classLoader.CreateModuleBuilder();
+			}
 		}
 
-		protected override ModuleBuilder CreateModuleBuilder()
+		protected override TypeWrapperFactory CreateTypeWrapperFactory()
+		{
+			return new CompilerTypeWrapperFactory(this);
+		}
+
+		private ModuleBuilder CreateModuleBuilder()
 		{
 			AssemblyName name = new AssemblyName();
 			name.Name = assemblyName;
@@ -94,7 +115,7 @@ namespace IKVM.Internal
 			}
 			name.Version = new Version(version);
 #if WHIDBEY
-				assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
+			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
 #else
 			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.Save, assemblyDir);
 #endif
@@ -222,7 +243,7 @@ namespace IKVM.Internal
 		internal void Save()
 		{
 			Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
-			FinishAll(false);
+			DynamicClassLoader.FinishAll(false);
 
 			ModuleBuilder.CreateGlobalFunctions();
 

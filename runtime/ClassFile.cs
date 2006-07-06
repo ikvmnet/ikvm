@@ -21,7 +21,6 @@
   jeroen@frijters.net
   
 */
-#if !COMPACT_FRAMEWORK
 using System;
 using System.IO;
 using System.Collections;
@@ -1152,7 +1151,7 @@ namespace IKVM.Internal
 			{
 				// HACK keep the compiler from warning about unused local
 				GC.KeepAlive(x);
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !COMPACT_FRAMEWORK
 				if(Tracer.ClassLoading.TraceError)
 				{
 					object cl = classLoader.GetJavaClassLoader();
@@ -2750,4 +2749,3 @@ namespace IKVM.Internal
 		}
 	}
 }
-#endif

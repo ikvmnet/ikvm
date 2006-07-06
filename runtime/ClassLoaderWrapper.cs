@@ -34,7 +34,15 @@ using IKVM.Runtime;
 
 namespace IKVM.Internal
 {
-	abstract class ClassLoaderWrapper
+	abstract class TypeWrapperFactory
+	{
+#if !COMPACT_FRAMEWORK
+		internal abstract ModuleBuilder ModuleBuilder { get; }
+#endif
+		internal abstract TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, object protectionDomain);
+	}
+
+	class ClassLoaderWrapper
 	{
 		private static readonly object wrapperLock = new object();
 		private static readonly Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable());
@@ -45,6 +53,7 @@ namespace IKVM.Internal
 		private readonly object javaClassLoader;
 		protected Hashtable types = new Hashtable();
 		private ArrayList nativeLibraries;
+		private TypeWrapperFactory factory;
 		private static Hashtable remappedTypes = new Hashtable();
 
 		// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
@@ -131,7 +140,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
+		private TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
 		{
 			if(tw == null || tw.IsUnloadable || tw.IsPrimitive)
 				return tw;
@@ -172,21 +181,95 @@ namespace IKVM.Internal
 			return tw;
 		}
 
-#if !COMPACT_FRAMEWORK
-		// HACK the proxyClassLoader is used to dynamically load classes in the boot class loader
-		// (e.g. when a Proxy is defined a boot class)
-		private static DynamicClassLoader proxyClassLoader;
-
-		internal virtual TypeWrapper DefineClass(ClassFile f, object protectionDomain)
+		internal TypeWrapper DefineClass(ClassFile f, object protectionDomain)
 		{
-			lock(wrapperLock)
+			string dotnetAssembly = f.IKVMAssemblyAttribute;
+			if(dotnetAssembly != null)
 			{
-				if(proxyClassLoader == null)
+				// The sole purpose of the stub class is to let us load the assembly that the class lives in,
+				// once we've done that, all types in it become visible.
+				Assembly asm;
+				try
 				{
-					proxyClassLoader = new DynamicClassLoader(null);
+#if WHIDBEY && STATIC_COMPILER
+					asm = Assembly.ReflectionOnlyLoad(dotnetAssembly);
+#else
+					asm = Assembly.Load(dotnetAssembly);
+#endif
 				}
+				catch(Exception x)
+				{
+					throw new NoClassDefFoundError(f.Name + " (" + x.Message + ")");
+				}
+				TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).LoadClassByDottedNameFast(f.Name);
+				if(tw == null)
+				{
+					throw new NoClassDefFoundError(f.Name + " (type not found in " + asm.FullName + ")");
+				}
+				if(tw.Assembly != asm)
+				{
+					throw new NoClassDefFoundError(f.Name + " (assembly mismatch)");
+				}
+				return RegisterInitiatingLoader(tw);
 			}
-			return proxyClassLoader.DefineClass(f, protectionDomain);
+			lock(types.SyncRoot)
+			{
+				if(types.ContainsKey(f.Name))
+				{
+					throw new LinkageError("duplicate class definition: " + f.Name);
+				}
+				// mark the type as "loading in progress", so that we can detect circular dependencies.
+				types.Add(f.Name, null);
+			}
+			try
+			{
+				lock(this)
+				{
+					if(factory == null)
+					{
+						factory = CreateTypeWrapperFactory();
+					}
+				}
+				return factory.DefineClassImpl(types, f, protectionDomain);
+			}
+			catch
+			{
+				lock(types.SyncRoot)
+				{
+					if(types[f.Name] == null)
+					{
+						// if loading the class fails, we remove the indicator that we're busy loading the class,
+						// because otherwise we get a ClassCircularityError if we try to load the class again.
+						types.Remove(f.Name);
+					}
+				}
+				throw;
+			}
+		}
+
+		protected virtual TypeWrapperFactory CreateTypeWrapperFactory()
+		{
+#if COMPACT_FRAMEWORK
+			throw new NoClassDefFoundError("Class loading is not supported on the Compact Framework");
+#else
+			return new DynamicClassLoader(this);
+#endif
+		}
+
+#if !COMPACT_FRAMEWORK
+		internal virtual ModuleBuilder ModuleBuilder
+		{
+			get
+			{
+				lock(this)
+				{
+					if(factory == null)
+					{
+						factory = CreateTypeWrapperFactory();
+					}
+				}
+				return factory.ModuleBuilder;
+			}
 		}
 #endif
 
@@ -324,8 +407,8 @@ namespace IKVM.Internal
 				}
 #if !COMPACT_FRAMEWORK
 				// if we're here, we're not the bootstrap class loader and don't have a java class loader,
-				// that must mean that we're either the proxyClassLoader or a ReflectionOnly class loader
-				// and we should delegate to the bootstrap class loader
+				// that must mean that we're a ReflectionOnly class loader and we should delegate to the
+				// bootstrap class loader
 				if(javaClassLoader == null)
 				{
 					return GetBootstrapClassLoader().LoadClassByDottedNameFast(name, throwClassNotFoundException);
@@ -730,7 +813,7 @@ namespace IKVM.Internal
 				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(javaClassLoader);
 				if(wrapper == null)
 				{
-					wrapper = new DynamicClassLoader(javaClassLoader);
+					wrapper = new ClassLoaderWrapper(javaClassLoader);
 					JVM.Library.setWrapperForClassLoader(javaClassLoader, wrapper);
 				}
 				return wrapper;
@@ -792,7 +875,9 @@ namespace IKVM.Internal
 		{
 			// TODO this assertion fires when compiling the core library (at least on Whidbey)
 			// I need to find out why...
+#if !COMPACT_FRAMEWORK
 			Debug.Assert(!(assembly is AssemblyBuilder));
+#endif // !COMPACT_FRAMEWORK
 
 #if WHIDBEY && !STATIC_COMPILER
 			if(assembly.ReflectionOnly)

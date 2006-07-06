@@ -584,9 +584,6 @@ namespace IKVM.NativeCode.java
 
 			public static object defineClassImpl(object classLoader, string name, byte[] data, int offset, int length, object protectionDomain)
 			{
-#if COMPACT_FRAMEWORK
-				throw JavaException.NoClassDefFoundError("Class loading is not supported on the Compact Framework");
-#else
 				Profiler.Enter("ClassLoader.defineClass");
 				try
 				{
@@ -609,7 +606,6 @@ namespace IKVM.NativeCode.java
 				{
 					Profiler.Leave("ClassLoader.defineClass");
 				}
-#endif
 			}
 
 			public static string getPackageName(Type type)
@@ -788,7 +784,11 @@ namespace IKVM.NativeCode.java
 				object loader = tw.GetClassLoader().GetJavaClassLoader();
 				// HACK we have to exclude DynamicTypeWrapper instances, because proxies that are created by the bootstrap
 				// class loader also need to return null (but they don't live in the CoreAssembly)
-				if(loader == null && tw.Assembly != JVM.CoreAssembly && !(tw is DynamicTypeWrapper))
+				if(loader == null && tw.Assembly != JVM.CoreAssembly
+#if !COMPACT_FRAMEWORK
+					&& !(tw is DynamicTypeWrapper)
+#endif // !COMPACT_FRAMEWORK
+					)
 				{
 					return JVM.Library.getSystemClassLoader();
 				}
@@ -1533,7 +1533,11 @@ namespace IKVM.NativeCode.gnu.classpath
 
 		public static Type getJNIEnvType()
 		{
+#if COMPACT_FRAMEWORK
+			return null;
+#else
 			return typeof(IKVM.Runtime.JNIEnv);
+#endif
 		}
 
 		public static bool isHideFromJava(MethodBase mb)
