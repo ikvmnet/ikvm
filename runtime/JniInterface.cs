@@ -240,7 +240,7 @@ namespace IKVM.Runtime
 				// we have to use that here too
 				if(loader.GetJavaClassLoader() == null)
 				{
-					loader = ClassLoaderWrapper.GetSystemClassLoader();
+					loader = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(JVM.Library.getSystemClassLoader());
 				}
 				int sp = 0;
 				for(int i = 1; sig[i] != ')'; i++)
@@ -1278,7 +1278,7 @@ namespace IKVM.Runtime
 			{
 				return (ClassLoaderWrapper)pEnv->classLoader.Target;
 			}
-			return ClassLoaderWrapper.GetSystemClassLoader();
+			return (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(JVM.Library.getSystemClassLoader());
 		}
 
 		internal static jclass FindClass(JNIEnv* pEnv, byte* pszName)

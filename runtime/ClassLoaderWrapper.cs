@@ -42,9 +42,6 @@ namespace IKVM.Internal
 #if WHIDBEY && !STATIC_COMPILER
 		private static readonly Hashtable reflectionOnlyClassLoaders = new Hashtable();
 #endif
-#if !STATIC_COMPILER
-		private static ClassLoaderWrapper systemClassLoader;
-#endif
 		private readonly object javaClassLoader;
 		protected Hashtable types = new Hashtable();
 		private ArrayList nativeLibraries;
@@ -252,20 +249,7 @@ namespace IKVM.Internal
 						type = LoadClassByDottedNameFast(elemClass);
 						if(type != null)
 						{
-#if !COMPACT_FRAMEWORK
-							// HACK make sure we don't go through a user class loader when creating
-							// an array for a precompiled or .NET type
-							// (this is to compensate for the hack that returns the system class loader
-							// for precompiled classes or .NET types)
-							if (type is DynamicTypeWrapper)
-							{
-								type = type.GetClassLoader().CreateArrayType(name, type, dims);
-							}
-							else
-#endif
-							{
-								type = GetBootstrapClassLoader().CreateArrayType(name, type, dims);
-							}
+							type = type.GetClassLoader().CreateArrayType(name, type, dims);
 						}
 						return RegisterInitiatingLoader(type);
 					}
@@ -732,20 +716,6 @@ namespace IKVM.Internal
 				}
 				return bootstrapClassLoader;
 			}
-		}
-
-		internal static ClassLoaderWrapper GetSystemClassLoader()
-		{
-#if STATIC_COMPILER
-			// during static compilation, we don't have a system class loader
-			return GetBootstrapClassLoader();
-#else
-			if(systemClassLoader == null)
-			{
-				systemClassLoader = GetClassLoaderWrapper(JVM.Library.getSystemClassLoader());
-			}
-			return systemClassLoader;
-#endif
 		}
 
 #if !STATIC_COMPILER

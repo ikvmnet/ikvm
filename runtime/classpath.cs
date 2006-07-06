@@ -790,7 +790,7 @@ namespace IKVM.NativeCode.java
 				// class loader also need to return null (but they don't live in the CoreAssembly)
 				if(loader == null && tw.Assembly != JVM.CoreAssembly && !(tw is DynamicTypeWrapper))
 				{
-					return ClassLoaderWrapper.GetSystemClassLoader().GetJavaClassLoader();
+					return JVM.Library.getSystemClassLoader();
 				}
 				return loader;
 			}
