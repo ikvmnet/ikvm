@@ -508,7 +508,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
                     break;
                 case SocketOptions.SO_TIMEOUT:
                     socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout), ((Integer)val).intValue());
-                    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendTimeout), ((Integer)val).intValue());
                     break;
                 default:
                     PlainSocketImpl.setCommonSocketOption(socket, option_id, val);

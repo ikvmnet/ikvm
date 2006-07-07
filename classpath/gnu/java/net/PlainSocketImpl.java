@@ -381,11 +381,6 @@ public class PlainSocketImpl extends SocketImpl
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            if(timeout > 0 && !socket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
-                SelectMode.wrap(SelectMode.SelectWrite)))
-            {
-                throw new SocketTimeoutException();
-            }
             socket.Send(buf, offset, len, SocketFlags.wrap(SocketFlags.None));
         }
         catch(cli.System.Net.Sockets.SocketException x)
