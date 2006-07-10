@@ -288,7 +288,7 @@ namespace IKVM.Internal
 			return LoadClassByDottedNameFast(name, false);
 		}
 
-		private TypeWrapper LoadClassByDottedNameFast(string name, bool throwClassNotFoundException)
+		internal TypeWrapper LoadClassByDottedNameFast(string name, bool throwClassNotFoundException)
 		{
 			// .NET 1.1 has a limit of 1024 characters for type names
 			if(name.Length >= 1024 || name.Length == 0)
@@ -320,6 +320,11 @@ namespace IKVM.Internal
 					while(name[dims] == '[')
 					{
 						dims++;
+						if(dims == name.Length)
+						{
+							// malformed class name
+							return null;
+						}
 					}
 					if(name[dims] == 'L')
 					{
@@ -363,86 +368,7 @@ namespace IKVM.Internal
 							return null;
 					}
 				}
-				if(this == GetBootstrapClassLoader())
-				{
-					Type t = GetBootstrapTypeRaw(name);
-					if(t != null)
-					{
-						return RegisterInitiatingLoader(GetWrapperFromBootstrapType(t));
-					}
-					type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
-					if(type != null)
-					{
-						Debug.Assert(type.Name == name, type.Name + " != " + name);
-						lock(types.SyncRoot)
-						{
-							// another thread may have beaten us to it and in that
-							// case we don't want to overwrite the previous one
-							TypeWrapper race = (TypeWrapper)types[name];
-							if(race == null)
-							{
-								types[name] = type;
-							}
-							else
-							{
-								type = race;
-							}
-						}
-						return type;
-					}
-#if STATIC_COMPILER
-					// NOTE it is important that this is done last, because otherwise we will
-					// load the netexp generated fake types (e.g. delegate inner interface) instead
-					// of having DotNetTypeWrapper generating it.
-					type = GetTypeWrapperCompilerHook(name);
-					if(type != null)
-					{
-						return type;
-					}
-#endif // STATIC_COMPILER
-					if(javaClassLoader == null)
-					{
-						return null;
-					}
-				}
-#if !COMPACT_FRAMEWORK
-				// if we're here, we're not the bootstrap class loader and don't have a java class loader,
-				// that must mean that we're a ReflectionOnly class loader and we should delegate to the
-				// bootstrap class loader
-				if(javaClassLoader == null)
-				{
-					return GetBootstrapClassLoader().LoadClassByDottedNameFast(name, throwClassNotFoundException);
-				}
-#endif
-#if !STATIC_COMPILER
-				// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
-				lock(javaClassLoader)
-				{
-					Profiler.Enter("ClassLoader.loadClass");
-					try
-					{
-						type = (TypeWrapper)JVM.Library.loadClass(javaClassLoader, name);
-					}
-					catch(Exception x)
-					{
-						if(!throwClassNotFoundException
-							&& LoadClassCritical("java.lang.ClassNotFoundException").TypeAsBaseType.IsInstanceOfType(x))
-						{
-							return null;
-						}
-						throw new ClassLoadingException(IKVM.Runtime.Util.MapException(x));
-					}
-					finally
-					{
-						Profiler.Leave("ClassLoader.loadClass");
-					}
-					// NOTE to be safe, we register the initiating loader,
-					// while we're holding the lock on the class loader object
-					return RegisterInitiatingLoader(type);
-				}
-#else
-				return null;
-#endif
+				return RegisterInitiatingLoader(LoadClassImpl(name, throwClassNotFoundException));
 			}
 			finally
 			{
@@ -450,7 +376,41 @@ namespace IKVM.Internal
 			}
 		}
 
-		private TypeWrapper GetWrapperFromBootstrapType(Type type)
+		protected virtual TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
+		{
+#if !STATIC_COMPILER
+			// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
+			lock(javaClassLoader)
+			{
+				Profiler.Enter("ClassLoader.loadClass");
+				TypeWrapper type;
+				try
+				{
+					type = (TypeWrapper)JVM.Library.loadClass(javaClassLoader, name);
+				}
+				catch(Exception x)
+				{
+					if(!throwClassNotFoundException
+						&& LoadClassCritical("java.lang.ClassNotFoundException").TypeAsBaseType.IsInstanceOfType(x))
+					{
+						return null;
+					}
+					throw new ClassLoadingException(IKVM.Runtime.Util.MapException(x));
+				}
+				finally
+				{
+					Profiler.Leave("ClassLoader.loadClass");
+				}
+				// NOTE to be safe, we register the initiating loader,
+				// while we're holding the lock on the class loader object
+				return RegisterInitiatingLoader(type);
+			}
+#else
+			return null;
+#endif
+		}
+
+		internal TypeWrapper GetWrapperFromBootstrapType(Type type)
 		{
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromBootstrapType: {0}", type.FullName);
 			Debug.Assert(!type.IsArray, "!type.IsArray", type.FullName);
@@ -520,91 +480,6 @@ namespace IKVM.Internal
 			}
 			return wrapper;
 		}
-
-		// NOTE this method only sees pre-compiled Java classes
-		private Type GetBootstrapTypeRaw(string name)
-		{
-#if COMPACT_FRAMEWORK
-			// TODO figure this out
-			return GetJavaTypeFromAssembly(JVM.CoreAssembly, name);
-#else
-			Assembly[] assemblies;
-#if WHIDBEY
-			if(JVM.IsStaticCompiler)
-			{
-				assemblies = AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
-			}
-			else
-			{
-				assemblies = AppDomain.CurrentDomain.GetAssemblies();
-			}
-#else
-			assemblies = AppDomain.CurrentDomain.GetAssemblies();
-#endif
-			foreach(Assembly a in assemblies)
-			{
-				if(!(a is AssemblyBuilder))
-				{
-					Type t = GetJavaTypeFromAssembly(a, name);
-					if(t != null)
-					{
-						return t;
-					}
-				}
-			}
-			return null;
-#endif
-		}
-
-		private static Type GetJavaTypeFromAssembly(Assembly a, string name)
-		{
-			try
-			{
-				Type t = a.GetType(name);
-				if(t != null
-					&& AttributeHelper.IsJavaModule(t.Module)
-					&& !AttributeHelper.IsHideFromJava(t)
-					&& !t.IsArray
-					&& !t.IsPointer
-					&& !t.IsByRef)
-				{
-					return t;
-				}
-				// HACK we might be looking for an inner classes
-				t = a.GetType(name.Replace('$', '+'));
-				if(t != null
-					&& AttributeHelper.IsJavaModule(t.Module)
-					&& !AttributeHelper.IsHideFromJava(t)
-					&& !t.IsArray
-					&& !t.IsPointer
-					&& !t.IsByRef)
-				{
-					return t;
-				}
-			}
-			catch(ArgumentException x)
-			{
-				// we can end up here because we replace the $ with a plus sign
-				// (or client code did a Class.forName() on an invalid name)
-				Tracer.Info(Tracer.Runtime, x.Message);
-			}
-			catch(FileLoadException x)
-			{
-				// this can only happen if the assembly was loaded in the ReflectionOnly
-				// context and the requested type references a type in another assembly
-				// that cannot be found in the ReflectionOnly context
-				// TODO figure out what other exceptions Assembly.GetType() can throw
-				Tracer.Info(Tracer.Runtime, x.Message);
-			}
-			return null;
-		}
-
-#if STATIC_COMPILER
-		internal virtual TypeWrapper GetTypeWrapperCompilerHook(string name)
-		{
-			return null;
-		}
-#endif // STATIC_COMPILER
 
 		// NOTE this method can actually return null if the resulting array type name would be too long
 		// for .NET to handle.
@@ -966,6 +841,114 @@ namespace IKVM.Internal
 			: base(null)
 		{
 		}
+
+		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
+		{
+			Type t = GetBootstrapTypeRaw(name);
+			if(t != null)
+			{
+				return GetWrapperFromBootstrapType(t);
+			}
+			TypeWrapper type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
+			if(type != null)
+			{
+				Debug.Assert(type.Name == name, type.Name + " != " + name);
+				lock(types.SyncRoot)
+				{
+					// another thread may have beaten us to it and in that
+					// case we don't want to overwrite the previous one
+					TypeWrapper race = (TypeWrapper)types[name];
+					if(race == null)
+					{
+						types[name] = type;
+					}
+					else
+					{
+						type = race;
+					}
+				}
+				return type;
+			}
+			return null;
+		}
+
+		// NOTE this method only sees pre-compiled Java classes
+		private Type GetBootstrapTypeRaw(string name)
+		{
+#if COMPACT_FRAMEWORK
+			// TODO figure this out
+			return GetJavaTypeFromAssembly(JVM.CoreAssembly, name);
+#else
+			Assembly[] assemblies;
+#if WHIDBEY
+			if(JVM.IsStaticCompiler)
+			{
+				assemblies = AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
+			}
+			else
+			{
+				assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			}
+#else
+			assemblies = AppDomain.CurrentDomain.GetAssemblies();
+#endif
+			foreach(Assembly a in assemblies)
+			{
+				if(!(a is AssemblyBuilder))
+				{
+					Type t = GetJavaTypeFromAssembly(a, name);
+					if(t != null)
+					{
+						return t;
+					}
+				}
+			}
+			return null;
+#endif
+		}
+
+		private static Type GetJavaTypeFromAssembly(Assembly a, string name)
+		{
+			try
+			{
+				Type t = a.GetType(name);
+				if(t != null
+					&& AttributeHelper.IsJavaModule(t.Module)
+					&& !AttributeHelper.IsHideFromJava(t)
+					&& !t.IsArray
+					&& !t.IsPointer
+					&& !t.IsByRef)
+				{
+					return t;
+				}
+				// HACK we might be looking for an inner classes
+				t = a.GetType(name.Replace('$', '+'));
+				if(t != null
+					&& AttributeHelper.IsJavaModule(t.Module)
+					&& !AttributeHelper.IsHideFromJava(t)
+					&& !t.IsArray
+					&& !t.IsPointer
+					&& !t.IsByRef)
+				{
+					return t;
+				}
+			}
+			catch(ArgumentException x)
+			{
+				// we can end up here because we replace the $ with a plus sign
+				// (or client code did a Class.forName() on an invalid name)
+				Tracer.Info(Tracer.Runtime, x.Message);
+			}
+			catch(FileLoadException x)
+			{
+				// this can only happen if the assembly was loaded in the ReflectionOnly
+				// context and the requested type references a type in another assembly
+				// that cannot be found in the ReflectionOnly context
+				// TODO figure out what other exceptions Assembly.GetType() can throw
+				Tracer.Info(Tracer.Runtime, x.Message);
+			}
+			return null;
+		}
 	}
 
 	class ReflectionOnlyClassLoader : ClassLoaderWrapper
@@ -973,6 +956,11 @@ namespace IKVM.Internal
 		internal ReflectionOnlyClassLoader()
 			: base(null)
 		{
+		}
+
+		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
+		{
+			return GetBootstrapClassLoader().LoadClassByDottedNameFast(name, throwClassNotFoundException);
 		}
 	}
 }

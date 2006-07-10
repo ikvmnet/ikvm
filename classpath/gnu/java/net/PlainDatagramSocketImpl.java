@@ -546,6 +546,11 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
 
+            if(((InetSocketAddress)address).isUnresolved())
+            {
+                throw new UnknownHostException(((InetSocketAddress)address).getHostName());
+            }
+
             InetAddress inetAddr = ((InetSocketAddress)address).getAddress();
             IPAddress mcastAddr = new IPAddress(PlainSocketImpl.getAddressFromInetAddress(inetAddr));
 
@@ -586,6 +591,11 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             if(!(address instanceof InetSocketAddress)) throw new cli.System.ArgumentException();
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
+
+            if(((InetSocketAddress)address).isUnresolved())
+            {
+                throw new UnknownHostException(((InetSocketAddress)address).getHostName());
+            }
 
             InetAddress inetAddr = ((InetSocketAddress)address).getAddress();
             IPAddress mcastAddr = new IPAddress(PlainSocketImpl.getAddressFromInetAddress(inetAddr));

@@ -41,7 +41,7 @@ using Label = IKVM.Internal.CountingLabel;
 
 namespace IKVM.Internal
 {
-	class CompilerClassLoader : ClassLoaderWrapper
+	class CompilerClassLoader : BootstrapClassLoader
 	{
 		private Hashtable classes;
 		private Hashtable remapped = new Hashtable();
@@ -57,7 +57,7 @@ namespace IKVM.Internal
 		private CompilerOptions options;
 
 		internal CompilerClassLoader(CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
-			: base(null)
+			: base()
 		{
 			this.options = options;
 			this.classes = classes;
@@ -134,9 +134,19 @@ namespace IKVM.Internal
 			return moduleBuilder;
 		}
 
-		internal override TypeWrapper GetTypeWrapperCompilerHook(string name)
+		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
-			TypeWrapper type = base.GetTypeWrapperCompilerHook(name);
+			TypeWrapper tw = base.LoadClassImpl(name, throwClassNotFoundException);
+			if(tw == null)
+			{
+				tw = GetTypeWrapperCompilerHook(name);
+			}
+			return tw;
+		}
+
+		private TypeWrapper GetTypeWrapperCompilerHook(string name)
+		{
+			TypeWrapper type = null;
 			if(type == null)
 			{
 				type = (TypeWrapper)remapped[name];

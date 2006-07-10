@@ -657,6 +657,10 @@ public class PlainSocketImpl extends SocketImpl
     {
         // NOTE for now we ignore the timeout and we only support InetSocketAddress
         InetSocketAddress inetAddress = (InetSocketAddress)address;
+        if(inetAddress.isUnresolved())
+        {
+            throw new UnknownHostException(inetAddress.getHostName());
+        }
         connect(inetAddress.getAddress(), inetAddress.getPort());
     }
 
