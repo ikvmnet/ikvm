@@ -152,7 +152,9 @@ namespace IKVM.Internal
 				{
 					if(existing != null)
 					{
-						throw new LinkageError("duplicate class definition: " + tw.Name);
+						// another thread beat us to it, discard the new TypeWrapper and
+						// return the previous one
+						return (TypeWrapper)existing;
 					}
 					if(tw.IsArray)
 					{
@@ -275,7 +277,7 @@ namespace IKVM.Internal
 
 		internal TypeWrapper LoadClassByDottedName(string name)
 		{
-			TypeWrapper type = LoadClassByDottedNameFast(name, true);
+			TypeWrapper type = RegisterInitiatingLoader(LoadClassByDottedNameFastImpl(name, true));
 			if(type != null)
 			{
 				return type;
@@ -285,10 +287,10 @@ namespace IKVM.Internal
 
 		internal TypeWrapper LoadClassByDottedNameFast(string name)
 		{
-			return LoadClassByDottedNameFast(name, false);
+			return RegisterInitiatingLoader(LoadClassByDottedNameFastImpl(name, false));
 		}
 
-		internal TypeWrapper LoadClassByDottedNameFast(string name, bool throwClassNotFoundException)
+		private TypeWrapper LoadClassByDottedNameFastImpl(string name, bool throwClassNotFoundException)
 		{
 			// .NET 1.1 has a limit of 1024 characters for type names
 			if(name.Length >= 1024 || name.Length == 0)
@@ -307,6 +309,9 @@ namespace IKVM.Internal
 						// NOTE this can also happen if we (incorrectly) trigger a load of this class during
 						// the loading of the base class, so we print a trace message here.
 						Tracer.Error(Tracer.ClassLoading, "**** ClassCircularityError: {0} ****", name);
+						// TODO if another thread is currently defining the class we're trying to load,
+						// we shouldn't throw a ClassCircularityError, but instead we should wait for the
+						// other thread to finish loading the type and return that.
 						throw new ClassCircularityError(name);
 					}
 				}
@@ -339,7 +344,7 @@ namespace IKVM.Internal
 						{
 							type = type.GetClassLoader().CreateArrayType(name, type, dims);
 						}
-						return RegisterInitiatingLoader(type);
+						return type;
 					}
 					if(name.Length != dims + 1)
 					{
@@ -349,26 +354,26 @@ namespace IKVM.Internal
 					switch(name[dims])
 					{
 						case 'B':
-							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BYTE, dims));
+							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BYTE, dims);
 						case 'C':
-							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.CHAR, dims));
+							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.CHAR, dims);
 						case 'D':
-							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE, dims));
+							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE, dims);
 						case 'F':
-							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.FLOAT, dims));
+							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.FLOAT, dims);
 						case 'I':
-							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.INT, dims));
+							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.INT, dims);
 						case 'J':
-							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.LONG, dims));
+							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.LONG, dims);
 						case 'S':
-							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.SHORT, dims));
+							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.SHORT, dims);
 						case 'Z':
-							return RegisterInitiatingLoader(GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN, dims));
+							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN, dims);
 						default:
 							return null;
 					}
 				}
-				return RegisterInitiatingLoader(LoadClassImpl(name, throwClassNotFoundException));
+				return LoadClassImpl(name, throwClassNotFoundException);
 			}
 			finally
 			{
@@ -401,9 +406,7 @@ namespace IKVM.Internal
 				{
 					Profiler.Leave("ClassLoader.loadClass");
 				}
-				// NOTE to be safe, we register the initiating loader,
-				// while we're holding the lock on the class loader object
-				return RegisterInitiatingLoader(type);
+				return type;
 			}
 #else
 			return null;
@@ -849,27 +852,7 @@ namespace IKVM.Internal
 			{
 				return GetWrapperFromBootstrapType(t);
 			}
-			TypeWrapper type = DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
-			if(type != null)
-			{
-				Debug.Assert(type.Name == name, type.Name + " != " + name);
-				lock(types.SyncRoot)
-				{
-					// another thread may have beaten us to it and in that
-					// case we don't want to overwrite the previous one
-					TypeWrapper race = (TypeWrapper)types[name];
-					if(race == null)
-					{
-						types[name] = type;
-					}
-					else
-					{
-						type = race;
-					}
-				}
-				return type;
-			}
-			return null;
+			return DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
 		}
 
 		// NOTE this method only sees pre-compiled Java classes
@@ -960,7 +943,7 @@ namespace IKVM.Internal
 
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
-			return GetBootstrapClassLoader().LoadClassByDottedNameFast(name, throwClassNotFoundException);
+			return GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
 		}
 	}
 }
