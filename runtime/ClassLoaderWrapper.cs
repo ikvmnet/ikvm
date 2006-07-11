@@ -142,8 +142,9 @@ namespace IKVM.Internal
 
 		private TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
 		{
-			if(tw == null || tw.IsUnloadable || tw.IsPrimitive)
-				return tw;
+			Debug.Assert(tw != null);
+			Debug.Assert(!tw.IsUnloadable);
+			Debug.Assert(!tw.IsPrimitive);
 
 			lock(types.SyncRoot)
 			{
@@ -155,22 +156,6 @@ namespace IKVM.Internal
 						// another thread beat us to it, discard the new TypeWrapper and
 						// return the previous one
 						return (TypeWrapper)existing;
-					}
-					if(tw.IsArray)
-					{
-						TypeWrapper elem = tw;
-						// TODO there should be a way to get the ultimate element type
-						// without creating all the intermediate types
-						while(elem.IsArray)
-						{
-							elem = elem.ElementTypeWrapper;
-						}
-						// HACK elem.ElementTypeWrapper as an evil side effect registers the initiating loader
-						// so if we're the same loader, don't do it again
-						if(!elem.IsPrimitive && !types.ContainsKey(elem.Name))
-						{
-							RegisterInitiatingLoader(elem);
-						}
 					}
 					// NOTE if types.ContainsKey(tw.Name) is true (i.e. the value is null),
 					// we currently have a DefineClass in progress on another thread and we've
@@ -214,38 +199,41 @@ namespace IKVM.Internal
 				}
 				return RegisterInitiatingLoader(tw);
 			}
-			lock(types.SyncRoot)
+			lock(this)
 			{
-				if(types.ContainsKey(f.Name))
+				if(factory == null)
 				{
-					throw new LinkageError("duplicate class definition: " + f.Name);
+					factory = CreateTypeWrapperFactory();
 				}
-				// mark the type as "loading in progress", so that we can detect circular dependencies.
-				types.Add(f.Name, null);
 			}
-			try
-			{
-				lock(this)
-				{
-					if(factory == null)
-					{
-						factory = CreateTypeWrapperFactory();
-					}
-				}
-				return factory.DefineClassImpl(types, f, protectionDomain);
-			}
-			catch
+			lock(factory)
 			{
 				lock(types.SyncRoot)
 				{
-					if(types[f.Name] == null)
+					if(types.ContainsKey(f.Name))
 					{
-						// if loading the class fails, we remove the indicator that we're busy loading the class,
-						// because otherwise we get a ClassCircularityError if we try to load the class again.
-						types.Remove(f.Name);
+						throw new LinkageError("duplicate class definition: " + f.Name);
 					}
+					// mark the type as "loading in progress", so that we can detect circular dependencies.
+					types.Add(f.Name, null);
 				}
-				throw;
+				try
+				{
+					return factory.DefineClassImpl(types, f, protectionDomain);
+				}
+				catch
+				{
+					lock(types.SyncRoot)
+					{
+						if(types[f.Name] == null)
+						{
+							// if loading the class fails, we remove the indicator that we're busy loading the class,
+							// because otherwise we get a ClassCircularityError if we try to load the class again.
+							types.Remove(f.Name);
+						}
+					}
+					throw;
+				}
 			}
 		}
 
@@ -277,17 +265,22 @@ namespace IKVM.Internal
 
 		internal TypeWrapper LoadClassByDottedName(string name)
 		{
-			TypeWrapper type = RegisterInitiatingLoader(LoadClassByDottedNameFastImpl(name, true));
+			TypeWrapper type = LoadClassByDottedNameFastImpl(name, true);
 			if(type != null)
 			{
-				return type;
+				return RegisterInitiatingLoader(type);
 			}
 			throw new ClassNotFoundException(name);
 		}
 
 		internal TypeWrapper LoadClassByDottedNameFast(string name)
 		{
-			return RegisterInitiatingLoader(LoadClassByDottedNameFastImpl(name, false));
+			TypeWrapper type = LoadClassByDottedNameFastImpl(name, false);
+			if(type != null)
+			{
+				return RegisterInitiatingLoader(type);
+			}
+			return null;
 		}
 
 		private TypeWrapper LoadClassByDottedNameFastImpl(string name, bool throwClassNotFoundException)
@@ -300,84 +293,105 @@ namespace IKVM.Internal
 			Profiler.Enter("LoadClassByDottedName");
 			try
 			{
+				bool defineInProgress;
 				TypeWrapper type;
 				lock(types.SyncRoot)
 				{
 					type = (TypeWrapper)types[name];
-					if(type == null && types.ContainsKey(name))
-					{
-						// NOTE this can also happen if we (incorrectly) trigger a load of this class during
-						// the loading of the base class, so we print a trace message here.
-						Tracer.Error(Tracer.ClassLoading, "**** ClassCircularityError: {0} ****", name);
-						// TODO if another thread is currently defining the class we're trying to load,
-						// we shouldn't throw a ClassCircularityError, but instead we should wait for the
-						// other thread to finish loading the type and return that.
-						throw new ClassCircularityError(name);
-					}
+					defineInProgress = (type == null && types.ContainsKey(name));
 				}
 				if(type != null)
 				{
 					return type;
 				}
+				if(defineInProgress && factory != null)
+				{
+					// DefineClass synchronizes on factory, so if we can obtain that
+					// lock it either means that the DefineClass has finished or
+					// that we're on the same thread. To distinguish between
+					// the two, we check the types hashtable again and if it still
+					// contains the null entry we're on the same thread and should throw
+					// the ClassCircularityError.
+					lock(factory)
+					{
+						lock(types.SyncRoot)
+						{
+							if(types[name] == null && types.ContainsKey(name))
+							{
+								// NOTE this can also happen if we (incorrectly) trigger a load of this class during
+								// the loading of the base class, so we print a trace message here.
+								Tracer.Error(Tracer.ClassLoading, "**** ClassCircularityError: {0} ****", name);
+								throw new ClassCircularityError(name);
+							}
+						}
+					}
+				}
 				if(name.Length > 1 && name[0] == '[')
 				{
-					int dims = 1;
-					while(name[dims] == '[')
-					{
-						dims++;
-						if(dims == name.Length)
-						{
-							// malformed class name
-							return null;
-						}
-					}
-					if(name[dims] == 'L')
-					{
-						if(!name.EndsWith(";") || name.Length <= dims + 2 || name[dims + 1] == '[')
-						{
-							// malformed class name
-							return null;
-						}
-						string elemClass = name.Substring(dims + 1, name.Length - dims - 2);
-						type = LoadClassByDottedNameFast(elemClass);
-						if(type != null)
-						{
-							type = type.GetClassLoader().CreateArrayType(name, type, dims);
-						}
-						return type;
-					}
-					if(name.Length != dims + 1)
-					{
-						// malformed class name
-						return null;
-					}
-					switch(name[dims])
-					{
-						case 'B':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BYTE, dims);
-						case 'C':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.CHAR, dims);
-						case 'D':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE, dims);
-						case 'F':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.FLOAT, dims);
-						case 'I':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.INT, dims);
-						case 'J':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.LONG, dims);
-						case 'S':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.SHORT, dims);
-						case 'Z':
-							return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN, dims);
-						default:
-							return null;
-					}
+					return LoadArrayClass(name);
 				}
 				return LoadClassImpl(name, throwClassNotFoundException);
 			}
 			finally
 			{
 				Profiler.Leave("LoadClassByDottedName");
+			}
+		}
+
+		private TypeWrapper LoadArrayClass(string name)
+		{
+			int dims = 1;
+			while(name[dims] == '[')
+			{
+				dims++;
+				if(dims == name.Length)
+				{
+					// malformed class name
+					return null;
+				}
+			}
+			if(name[dims] == 'L')
+			{
+				if(!name.EndsWith(";") || name.Length <= dims + 2 || name[dims + 1] == '[')
+				{
+					// malformed class name
+					return null;
+				}
+				string elemClass = name.Substring(dims + 1, name.Length - dims - 2);
+				// NOTE it's important that we're registered as the initiating loader
+				// for the element type here
+				TypeWrapper type = LoadClassByDottedNameFast(elemClass);
+				if(type != null)
+				{
+					type = type.GetClassLoader().CreateArrayType(name, type, dims);
+				}
+				return type;
+			}
+			if(name.Length != dims + 1)
+			{
+				// malformed class name
+				return null;
+			}
+			switch(name[dims])
+			{
+				case 'B':
+					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BYTE, dims);
+				case 'C':
+					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.CHAR, dims);
+				case 'D':
+					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE, dims);
+				case 'F':
+					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.FLOAT, dims);
+				case 'I':
+					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.INT, dims);
+				case 'J':
+					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.LONG, dims);
+				case 'S':
+					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.SHORT, dims);
+				case 'Z':
+					return GetBootstrapClassLoader().CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN, dims);
+				default:
+					return null;
 			}
 		}
 
@@ -476,15 +490,6 @@ namespace IKVM.Internal
 			Debug.Assert(!elementTypeWrapper.IsUnloadable && !elementTypeWrapper.IsVerifierType && !elementTypeWrapper.IsArray);
 			Debug.Assert(dims >= 1);
 			Type elementType = elementTypeWrapper.TypeAsArrayType;
-			TypeWrapper wrapper;
-			lock(types.SyncRoot)
-			{
-				wrapper = (TypeWrapper)types[name];
-			}
-			if(wrapper != null)
-			{
-				return wrapper;
-			}
 			// .NET 1.1 has a limit of 1024 characters for type names
 			if(elementType.FullName.Length >= 1024 - dims * 2)
 			{
