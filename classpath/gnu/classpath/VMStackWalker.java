@@ -37,7 +37,7 @@ public final class VMStackWalker
 
     public static Class[] getClassContext()
     {
-        StackTrace stack = new StackTrace(SKIP_FRAMES);
+        StackTrace stack = new StackTrace(1);
         java.util.ArrayList list = new java.util.ArrayList();
         for(int i = 0; i < stack.get_FrameCount(); i++)
         {
