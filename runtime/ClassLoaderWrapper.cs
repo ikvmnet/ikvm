@@ -439,11 +439,12 @@ namespace IKVM.Internal
 			}
 			if(wrapper != null)
 			{
-				if(wrapper.TypeAsTBD != type)
+				if(wrapper.TypeAsTBD != type && (!wrapper.IsRemapped || wrapper.TypeAsBaseType != type))
 				{
 					string msg = String.Format("\nTypename \"{0}\" is imported from multiple assemblies:\n{1}\n{2}\n", type.FullName, wrapper.TypeAsTBD.Assembly.FullName, type.Assembly.FullName);
 					JVM.CriticalFailure(msg, null);
 				}
+				return wrapper;
 			}
 			else
 			{
@@ -451,7 +452,7 @@ namespace IKVM.Internal
 				{
 					// since this type was compiled from Java source, we have to look for our
 					// attributes
-					wrapper = CompiledTypeWrapper.newInstance(name, type);
+					return RegisterInitiatingLoader(CompiledTypeWrapper.newInstance(name, type));
 				}
 				else
 				{
@@ -462,26 +463,9 @@ namespace IKVM.Internal
 					// since this type was not compiled from Java source, we don't need to
 					// look for our attributes, but we do need to filter unrepresentable
 					// stuff (and transform some other stuff)
-					wrapper = new DotNetTypeWrapper(type);
-				}
-				Debug.Assert(wrapper.Name == name, "wrapper.Name == name", type.FullName);
-				lock(types.SyncRoot)
-				{
-					// another thread may have beaten us to it and in that
-					// case we don't want to overwrite the previous one
-					TypeWrapper race = (TypeWrapper)types[name];
-					if(race == null)
-					{
-						types.Add(name, wrapper);
-						typeToTypeWrapper.Add(type, wrapper);
-					}
-					else
-					{
-						wrapper = race;
-					}
+					return RegisterInitiatingLoader(new DotNetTypeWrapper(type));
 				}
 			}
-			return wrapper;
 		}
 
 		// NOTE this method can actually return null if the resulting array type name would be too long
@@ -497,48 +481,21 @@ namespace IKVM.Internal
 			{
 				wrapper = (TypeWrapper)types[name];
 			}
-			if(wrapper == null)
+			if(wrapper != null)
 			{
-				// .NET 1.1 has a limit of 1024 characters for type names
-				if(elementType.FullName.Length >= 1024 - dims * 2)
-				{
-					return null;
-				}
-				Type array = ArrayTypeWrapper.MakeArrayType(elementType, dims);
-				Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
-				Modifiers reflectiveModifiers = modifiers;
-				modifiers |= elementTypeWrapper.Modifiers & Modifiers.Public;
-				reflectiveModifiers |= elementTypeWrapper.ReflectiveModifiers & Modifiers.AccessMask;
-				wrapper = new ArrayTypeWrapper(array, modifiers, reflectiveModifiers, name, this);
-				lock(types.SyncRoot)
-				{
-					// another thread may have beaten us to it and in that
-					// case we don't want to overwrite the previous one
-					TypeWrapper race = (TypeWrapper)types[name];
-					if(race == null)
-					{
-						types.Add(name, wrapper);
-#if COMPACT_FRAMEWORK
-						if(!wrapper.IsGhostArray)
-						{
-							Debug.Assert(!typeToTypeWrapper.ContainsKey(array), name);
-							typeToTypeWrapper.Add(array, wrapper);
-						}
-#else
-						if(!(elementType is TypeBuilder) && !wrapper.IsGhostArray)
-						{
-							Debug.Assert(!typeToTypeWrapper.ContainsKey(array), name);
-							typeToTypeWrapper.Add(array, wrapper);
-						}
-#endif
-					}
-					else
-					{
-						wrapper = race;
-					}
-				}
+				return wrapper;
 			}
-			return wrapper;
+			// .NET 1.1 has a limit of 1024 characters for type names
+			if(elementType.FullName.Length >= 1024 - dims * 2)
+			{
+				return null;
+			}
+			Type array = ArrayTypeWrapper.MakeArrayType(elementType, dims);
+			Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
+			Modifiers reflectiveModifiers = modifiers;
+			modifiers |= elementTypeWrapper.Modifiers & Modifiers.Public;
+			reflectiveModifiers |= elementTypeWrapper.ReflectiveModifiers & Modifiers.AccessMask;
+			return RegisterInitiatingLoader(new ArrayTypeWrapper(array, modifiers, reflectiveModifiers, name, this));
 		}
 
 		internal object GetJavaClassLoader()
@@ -699,52 +656,43 @@ namespace IKVM.Internal
 		}
 #endif
 
-		// This only returns the wrapper for a Type if that wrapper has already been created, otherwise
-		// it returns null
-		// If the wrapper doesn't exist, that means that the type is either a .NET type or a pre-compiled Java class
-		private static TypeWrapper GetWrapperFromTypeFast(Type type)
-		{
-			TypeWrapper.AssertFinished(type);
-			Debug.Assert(!Whidbey.ContainsGenericParameters(type));
-			TypeWrapper wrapper = (TypeWrapper)typeToTypeWrapper[type];
-			if(wrapper == null)
-			{
-				string name = (string)remappedTypes[type];
-				if(name != null)
-				{
-					return LoadClassCritical(name);
-				}
-			}
-			return wrapper;
-		}
-
 		internal static TypeWrapper GetWrapperFromType(Type type)
 		{
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
 			TypeWrapper.AssertFinished(type);
 			Debug.Assert(!Whidbey.ContainsGenericParameters(type));
-			TypeWrapper wrapper = GetWrapperFromTypeFast(type);
-			if(wrapper == null)
+			Debug.Assert(!type.IsPointer);
+			Debug.Assert(!type.IsByRef);
+			TypeWrapper wrapper = (TypeWrapper)typeToTypeWrapper[type];
+			if(wrapper != null)
 			{
-				Debug.Assert(type != typeof(object) && type != typeof(string));
-				if(type.IsArray)
+				return wrapper;
+			}
+			string remapped = (string)remappedTypes[type];
+			if(remapped != null)
+			{
+				wrapper = LoadClassCritical(remapped);
+			}
+			else if(type.IsArray)
+			{
+				// it might be an array of a dynamically compiled Java type
+				int rank = 1;
+				Type elem = type.GetElementType();
+				while(elem.IsArray)
 				{
-					// it might be an array of a dynamically compiled Java type
-					int rank = 1;
-					Type elem = type.GetElementType();
-					while(elem.IsArray)
-					{
-						rank++;
-						elem = elem.GetElementType();
-					}
-					wrapper = GetWrapperFromType(elem);
-					return wrapper.MakeArrayType(rank);
+					rank++;
+					elem = elem.GetElementType();
 				}
+				wrapper = GetWrapperFromType(elem).MakeArrayType(rank);
+			}
+			else
+			{
 				// if the wrapper doesn't already exist, that must mean that the type
 				// is a .NET type (or a pre-compiled Java class), which means that it
 				// was "loaded" by an assembly classloader
-				return GetAssemblyClassLoader(type.Assembly).GetWrapperFromBootstrapType(type);
+				wrapper = GetAssemblyClassLoader(type.Assembly).GetWrapperFromBootstrapType(type);
 			}
+			typeToTypeWrapper[type] = wrapper;
 			return wrapper;
 		}
 
