@@ -1,4 +1,4 @@
-/* VMManagementFactory.java - VM interface for obtaining system beans.
+/* VMMemoryManagerMXBeanImpl.java - VM interface for a memory manager bean
    Copyright (C) 2006 Free Software Foundation
 
 This file is part of GNU Classpath.
@@ -35,49 +35,49 @@ this exception to your version of the library, but you are not
 obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version. */
 
-package java.lang.management;
+package gnu.java.lang.management;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
- * Provides lists of resources required by the
- * {@link java.lang.management.ManagementFactory} for
- * creating beans.
+ * Provides access to information about the memory managers
+ * of the virtual machine.  An instance of this bean for each
+ * memory manager is obtained by calling
+ * {@link ManagementFactory#getMemoryManagerMXBeans()}.
  *
  * @author Andrew John Hughes (gnu_andrew@member.fsf.org)
  * @since 1.5
  */
-final class VMManagementFactory
+final class VMMemoryManagerMXBeanImpl
 {
-    /**
-     * Return a list of the names of the currently available
-     * memory pools within the virtual machine.
-     *
-     * @return a list of memory pool names.
+    /** 
+     * Returns an array containing the names of the memory pools
+     * this memory manager manages.
+     * 
+     * @param name the name of the memory manager.
+     * @return an array containing the name of each memory pool
+     *         this manager is responsible for.
      */
-    static String[] getMemoryPoolNames()
+    static String[] getMemoryPoolNames(String name)
     {
         return new String[0];
     }
 
     /**
-     * Return a list of the names of the currently available
-     * memory managers within the virtual machine.  This should
-     * not include the garbage collectors listed below.
+     * Returns true if this memory manager is still valid.  A memory
+     * manager becomes invalid when it is removed by the virtual machine
+     * and no longer used.
      *
-     * @return a list of memory manager names.
+     * @param name the name of the memory manager.
+     * @return true if this memory manager is valid.
      */
-    static String[] getMemoryManagerNames()
+    static boolean isValid(String name)
     {
-        return new String[0];
-    }
-
-    /**
-     * Return a list of the names of the currently available
-     * garbage collectors within the virtual machine.
-     *
-     * @return a list of garbage collector names.
-     */
-    static String[] getGarbageCollectorNames()
-    {
-        return new String[0];
+        return false;
     }
 }

@@ -1,4 +1,4 @@
-/* VMManagementFactory.java - VM interface for obtaining system beans.
+/* VMGarbageCollectorMXBeanImpl.java - VM interface for a GC bean
    Copyright (C) 2006 Free Software Foundation
 
 This file is part of GNU Classpath.
@@ -35,49 +35,50 @@ this exception to your version of the library, but you are not
 obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version. */
 
-package java.lang.management;
+package gnu.java.lang.management;
 
 /**
- * Provides lists of resources required by the
- * {@link java.lang.management.ManagementFactory} for
- * creating beans.
+ * Provides access to information about the garbage collectors
+ * of the virtual machine.  Garbage collectors are responsible
+ * for removing unreferenced objects from memory.  A garbage
+ * collector is a type of memory manager, so this interface
+ * is combined with that of generic memory managers.  An instance
+ * of this bean for each garbage collector is obtained by calling
+ * {@link ManagementFactory#getGarbageCollectorMXBeans()}.
  *
  * @author Andrew John Hughes (gnu_andrew@member.fsf.org)
  * @since 1.5
  */
-final class VMManagementFactory
+final class VMGarbageCollectorMXBeanImpl
 {
     /**
-     * Return a list of the names of the currently available
-     * memory pools within the virtual machine.
+     * Returns the number of collections the garbage collector
+     * represented by this bean has made.  -1 is returned if the
+     * collection count is undefined.
      *
-     * @return a list of memory pool names.
+     * @param name the name of the garbage collector.
+     * @return the number of collections made, or -1 if this is
+     *         undefined.
      */
-    static String[] getMemoryPoolNames()
+    static long getCollectionCount(String name)
     {
-        return new String[0];
+        return -1;
     }
 
     /**
-     * Return a list of the names of the currently available
-     * memory managers within the virtual machine.  This should
-     * not include the garbage collectors listed below.
-     *
-     * @return a list of memory manager names.
+     * Returns the accumulated number of milliseconds this garbage
+     * collector has spent freeing the memory used by unreferenced
+     * objects.  -1 is returned if the collection time is undefined.
+     * Note that the accumulated time may not change, even when the
+     * collection count increases, if the time taken is sufficiently
+     * short; this depends on the resolution of the timer used.
+     * 
+     * @param name the name of the garbage collector.
+     * @return the accumulated number of milliseconds spent collecting,
+     *         or -1 if this is undefined.
      */
-    static String[] getMemoryManagerNames()
+    static long getCollectionTime(String name)
     {
-        return new String[0];
-    }
-
-    /**
-     * Return a list of the names of the currently available
-     * garbage collectors within the virtual machine.
-     *
-     * @return a list of garbage collector names.
-     */
-    static String[] getGarbageCollectorNames()
-    {
-        return new String[0];
+        return -1;
     }
 }

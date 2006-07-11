@@ -532,6 +532,8 @@
 ../../classpath/gnu/java/lang/management/BeanImpl.java
 ../../classpath/gnu/java/lang/management/ClassLoadingMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/CompilationMXBeanImpl.java
+../../classpath/gnu/java/lang/management/GarbageCollectorMXBeanImpl.java
+../../classpath/gnu/java/lang/management/MemoryManagerMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/MemoryMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/MemoryPoolMXBeanImpl.java
 ../../classpath/gnu/java/lang/management/OperatingSystemMXBeanImpl.java
@@ -1396,6 +1398,7 @@
 ../../classpath/gnu/javax/security/auth/login/ConfigFileTokenizer.java
 ../../classpath/gnu/javax/security/auth/login/GnuConfiguration.java
 ../../classpath/gnu/javax/security/auth/Password.java
+../../classpath/gnu/javax/sound/sampled/WAV/WAVReader.java
 ../../classpath/gnu/javax/swing/plaf/gnu/GNULookAndFeel.java
 ../../classpath/gnu/javax/swing/plaf/metal/CustomizableTheme.java
 ../../classpath/gnu/javax/swing/text/html/CharacterAttributeTranslator.java
@@ -2318,8 +2321,10 @@
 ../../classpath/java/lang/Long.java
 ../../classpath/java/lang/management/ClassLoadingMXBean.java
 ../../classpath/java/lang/management/CompilationMXBean.java
+../../classpath/java/lang/management/GarbageCollectorMXBean.java
 ../../classpath/java/lang/management/ManagementFactory.java
 ../../classpath/java/lang/management/ManagementPermission.java
+../../classpath/java/lang/management/MemoryManagerMXBean.java
 ../../classpath/java/lang/management/MemoryMXBean.java
 ../../classpath/java/lang/management/MemoryPoolMXBean.java
 ../../classpath/java/lang/management/MemoryUsage.java
@@ -3053,6 +3058,14 @@
 ../../classpath/javax/management/MBeanException.java
 ../../classpath/javax/management/MBeanFeatureInfo.java
 ../../classpath/javax/management/MBeanInfo.java
+../../classpath/javax/management/openmbean/ArrayType.java
+../../classpath/javax/management/openmbean/CompositeData.java
+../../classpath/javax/management/openmbean/CompositeType.java
+../../classpath/javax/management/openmbean/OpenDataException.java
+../../classpath/javax/management/openmbean/OpenType.java
+../../classpath/javax/management/openmbean/SimpleType.java
+../../classpath/javax/management/openmbean/TabularData.java
+../../classpath/javax/management/openmbean/TabularType.java
 ../../classpath/javax/management/OperationsException.java
 ../../classpath/javax/management/ReflectionException.java
 ../../classpath/javax/management/RuntimeOperationsException.java
@@ -3837,14 +3850,15 @@
 ../../classpath/javax/swing/text/GlyphView.java
 ../../classpath/javax/swing/text/Highlighter.java
 ../../classpath/javax/swing/text/html/BlockView.java
+../../classpath/javax/swing/text/html/BRView.java
 ../../classpath/javax/swing/text/html/CSS.java
 ../../classpath/javax/swing/text/html/CSSParser.java
 ../../classpath/javax/swing/text/html/FormView.java
+../../classpath/javax/swing/text/html/HRuleView.java
 ../../classpath/javax/swing/text/html/HTML.java
 ../../classpath/javax/swing/text/html/HTMLDocument.java
 ../../classpath/javax/swing/text/html/HTMLEditorKit.java
 ../../classpath/javax/swing/text/html/HTMLFrameHyperlinkEvent.java
-../../classpath/javax/swing/text/html/HTMLTableView.java
 ../../classpath/javax/swing/text/html/ImageView.java
 ../../classpath/javax/swing/text/html/InlineView.java
 ../../classpath/javax/swing/text/html/ListView.java
@@ -3864,6 +3878,7 @@
 ../../classpath/javax/swing/text/html/parser/ParserDelegator.java
 ../../classpath/javax/swing/text/html/parser/TagElement.java
 ../../classpath/javax/swing/text/html/StyleSheet.java
+../../classpath/javax/swing/text/html/TableView.java
 ../../classpath/javax/swing/text/IconView.java
 ../../classpath/javax/swing/text/InternationalFormatter.java
 ../../classpath/javax/swing/text/JTextComponent.java
@@ -4599,6 +4614,8 @@ gnu/java/awt/peer/gtk/CairoSurface.java
 gnu/java/lang/reflect/VMField.java
 gnu/java/lang/management/VMClassLoadingMXBeanImpl.java
 gnu/java/lang/management/VMCompilationMXBeanImpl.java
+gnu/java/lang/management/VMGarbageCollectorMXBeanImpl.java
+gnu/java/lang/management/VMMemoryManagerMXBeanImpl.java
 gnu/java/lang/management/VMMemoryMXBeanImpl.java
 gnu/java/lang/management/VMMemoryPoolMXBeanImpl.java
 gnu/java/lang/management/VMRuntimeMXBeanImpl.java
