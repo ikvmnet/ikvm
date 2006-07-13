@@ -190,7 +190,6 @@
 ../../classpath/external/w3c_dom/org/w3c/dom/xpath/XPathNamespace.java
 ../../classpath/external/w3c_dom/org/w3c/dom/xpath/XPathNSResolver.java
 ../../classpath/external/w3c_dom/org/w3c/dom/xpath/XPathResult.java
-../../classpath/gnu/classpath/ByteArray.java
 ../../classpath/gnu/classpath/debug/Component.java
 ../../classpath/gnu/classpath/debug/PreciseFilter.java
 ../../classpath/gnu/classpath/debug/Simple1LineFormatter.java
@@ -844,6 +843,7 @@
 ../../classpath/gnu/java/security/sig/SignatureCodecFactory.java
 ../../classpath/gnu/java/security/sig/SignatureFactory.java
 ../../classpath/gnu/java/security/util/Base64.java
+../../classpath/gnu/java/security/util/ByteArray.java
 ../../classpath/gnu/java/security/util/DerUtil.java
 ../../classpath/gnu/java/security/util/ExpirableObject.java
 ../../classpath/gnu/java/security/util/FormatUtil.java
@@ -1398,6 +1398,7 @@
 ../../classpath/gnu/javax/security/auth/login/ConfigFileTokenizer.java
 ../../classpath/gnu/javax/security/auth/login/GnuConfiguration.java
 ../../classpath/gnu/javax/security/auth/Password.java
+../../classpath/gnu/javax/sound/sampled/AU/AUReader.java
 ../../classpath/gnu/javax/sound/sampled/WAV/WAVReader.java
 ../../classpath/gnu/javax/swing/plaf/gnu/GNULookAndFeel.java
 ../../classpath/gnu/javax/swing/plaf/metal/CustomizableTheme.java
