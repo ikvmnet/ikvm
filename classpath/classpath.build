@@ -72,7 +72,7 @@
 <!--
           <arg value="-r:C:\Program Files\Microsoft Visual Studio 8\SmartDevices\SDK\CompactFramework\2.0\v2.0\WindowsCE\System.dll" />
 -->
-          <arg value="-resource:lib/security/classpath.security=classpath.security" />
+          <arg value="-resource:lib/security/classpath.security=${Classpath.dir}/resource/java/security/classpath.security" />
           <arg value="-resource:META-INF/MANIFEST.MF=MANIFEST.MF" />
         </exec>
         <copy file="IKVM.GNU.Classpath.dll" tofile="../bin/IKVM.GNU.Classpath.dll.new" />
