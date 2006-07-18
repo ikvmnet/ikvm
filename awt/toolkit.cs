@@ -1207,10 +1207,14 @@ namespace ikvm.awt
 
 		public override void setFont(java.awt.Font f)
 		{
-			Font newfont = NetFontFromJavaFont(f, g.DpiY);
-			netfont.Dispose();
-			netfont = newfont;
-			font = f;
+			// TODO why is Component calling us with a null reference and is this legal?
+			if(f != null)
+			{
+				Font newfont = NetFontFromJavaFont(f, g.DpiY);
+				netfont.Dispose();
+				netfont = newfont;
+				font = f;
+			}
 		}
 
 		public override void setPaintMode()
@@ -2027,7 +2031,7 @@ namespace ikvm.awt
 
 		public void show()
 		{
-			throw new NotImplementedException();
+			setVisible(true);
 		}
 
 		public java.awt.GraphicsConfiguration getGraphicsConfiguration()

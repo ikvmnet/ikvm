@@ -1891,12 +1891,37 @@ class Compiler
 					}
 					else
 					{
+						// HACK the x64 JIT is lame and optimizes calls before ret into a tail call
+						// and this makes the method disappear from the call stack, so we try to thwart that
+						// by inserting some bogus instructions between the call and the return.
+						// Note that this optimization doesn't appear to happen if the method has exception handlers,
+						// so in that case we don't do anything.
+						bool x64hack = false;
+#if WHIDBEY
+						if(exceptions.Length == 0 && i > 0)
+						{
+							int k = i - 1;
+							while(k > 0 && m.Instructions[k].NormalizedOpCode == NormalizedByteCode.__nop)
+							{
+								k--;
+							}
+							switch(m.Instructions[k].NormalizedOpCode)
+							{
+								case NormalizedByteCode.__invokeinterface:
+								case NormalizedByteCode.__invokespecial:
+								case NormalizedByteCode.__invokestatic:
+								case NormalizedByteCode.__invokevirtual:
+									x64hack = true;
+									break;
+							}
+						}
+#endif // WHIDBEY
 						// if there is junk on the stack (other than the return value), we must pop it off
 						// because in .NET this is invalid (unlike in Java)
 						int stackHeight = ma.GetStackHeight(i);
 						if(instr.NormalizedOpCode == NormalizedByteCode.__return)
 						{
-							if(stackHeight != 0)
+							if(stackHeight != 0 || x64hack)
 							{
 								ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
 							}
@@ -1913,6 +1938,11 @@ class Compiler
 								ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
 								ilGenerator.Emit(OpCodes.Ldloc, local);
 								ReleaseTempLocal(local);
+							}
+							else if(x64hack)
+							{
+								ilGenerator.Emit(OpCodes.Ldnull);
+								ilGenerator.Emit(OpCodes.Pop);
 							}
 							ilGenerator.Emit(OpCodes.Ret);
 						}

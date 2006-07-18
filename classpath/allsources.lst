@@ -957,6 +957,10 @@
 ../../classpath/gnu/javax/crypto/cipher/TripleDES.java
 ../../classpath/gnu/javax/crypto/cipher/Twofish.java
 ../../classpath/gnu/javax/crypto/cipher/WeakKeyException.java
+../../classpath/gnu/javax/crypto/jce/cipher/AES128KeyWrapSpi.java
+../../classpath/gnu/javax/crypto/jce/cipher/AES192KeyWrapSpi.java
+../../classpath/gnu/javax/crypto/jce/cipher/AES256KeyWrapSpi.java
+../../classpath/gnu/javax/crypto/jce/cipher/AESKeyWrapSpi.java
 ../../classpath/gnu/javax/crypto/jce/cipher/AESSpi.java
 ../../classpath/gnu/javax/crypto/jce/cipher/AnubisSpi.java
 ../../classpath/gnu/javax/crypto/jce/cipher/ARCFourSpi.java
@@ -964,12 +968,14 @@
 ../../classpath/gnu/javax/crypto/jce/cipher/Cast5Spi.java
 ../../classpath/gnu/javax/crypto/jce/cipher/CipherAdapter.java
 ../../classpath/gnu/javax/crypto/jce/cipher/DESSpi.java
+../../classpath/gnu/javax/crypto/jce/cipher/KeyWrappingAlgorithmAdapter.java
 ../../classpath/gnu/javax/crypto/jce/cipher/KhazadSpi.java
 ../../classpath/gnu/javax/crypto/jce/cipher/NullCipherSpi.java
 ../../classpath/gnu/javax/crypto/jce/cipher/PBES2.java
 ../../classpath/gnu/javax/crypto/jce/cipher/RijndaelSpi.java
 ../../classpath/gnu/javax/crypto/jce/cipher/SerpentSpi.java
 ../../classpath/gnu/javax/crypto/jce/cipher/SquareSpi.java
+../../classpath/gnu/javax/crypto/jce/cipher/TripleDESKeyWrapSpi.java
 ../../classpath/gnu/javax/crypto/jce/cipher/TripleDESSpi.java
 ../../classpath/gnu/javax/crypto/jce/cipher/TwofishSpi.java
 ../../classpath/gnu/javax/crypto/jce/DiffieHellmanImpl.java
@@ -1100,6 +1106,12 @@
 ../../classpath/gnu/javax/crypto/keyring/PrivateKeyEntry.java
 ../../classpath/gnu/javax/crypto/keyring/Properties.java
 ../../classpath/gnu/javax/crypto/keyring/PublicKeyEntry.java
+../../classpath/gnu/javax/crypto/kwa/AESKeyWrap.java
+../../classpath/gnu/javax/crypto/kwa/BaseKeyWrappingAlgorithm.java
+../../classpath/gnu/javax/crypto/kwa/IKeyWrappingAlgorithm.java
+../../classpath/gnu/javax/crypto/kwa/KeyUnwrappingException.java
+../../classpath/gnu/javax/crypto/kwa/KeyWrappingAlgorithmFactory.java
+../../classpath/gnu/javax/crypto/kwa/TripleDESKeyWrap.java
 ../../classpath/gnu/javax/crypto/mac/BaseMac.java
 ../../classpath/gnu/javax/crypto/mac/HMac.java
 ../../classpath/gnu/javax/crypto/mac/HMacFactory.java
@@ -1406,7 +1418,9 @@
 ../../classpath/gnu/javax/swing/text/html/CombinedAttributes.java
 ../../classpath/gnu/javax/swing/text/html/ImageViewIconFactory.java
 ../../classpath/gnu/javax/swing/text/html/parser/gnuDTD.java
+../../classpath/gnu/javax/swing/text/html/parser/GnuParserDelegator.java
 ../../classpath/gnu/javax/swing/text/html/parser/HTML_401F.java
+../../classpath/gnu/javax/swing/text/html/parser/HTML_401Swing.java
 ../../classpath/gnu/javax/swing/text/html/parser/htmlAttributeSet.java
 ../../classpath/gnu/javax/swing/text/html/parser/htmlValidator.java
 ../../classpath/gnu/javax/swing/text/html/parser/models/list.java
@@ -2072,6 +2086,7 @@
 ../../classpath/java/awt/MenuContainer.java
 ../../classpath/java/awt/MenuItem.java
 ../../classpath/java/awt/MenuShortcut.java
+../../classpath/java/awt/MouseInfo.java
 ../../classpath/java/awt/PageAttributes.java
 ../../classpath/java/awt/Paint.java
 ../../classpath/java/awt/PaintContext.java
@@ -2094,6 +2109,7 @@
 ../../classpath/java/awt/peer/MenuComponentPeer.java
 ../../classpath/java/awt/peer/MenuItemPeer.java
 ../../classpath/java/awt/peer/MenuPeer.java
+../../classpath/java/awt/peer/MouseInfoPeer.java
 ../../classpath/java/awt/peer/PanelPeer.java
 ../../classpath/java/awt/peer/PopupMenuPeer.java
 ../../classpath/java/awt/peer/RobotPeer.java
@@ -2104,6 +2120,7 @@
 ../../classpath/java/awt/peer/TextFieldPeer.java
 ../../classpath/java/awt/peer/WindowPeer.java
 ../../classpath/java/awt/Point.java
+../../classpath/java/awt/PointerInfo.java
 ../../classpath/java/awt/Polygon.java
 ../../classpath/java/awt/PopupMenu.java
 ../../classpath/java/awt/print/Book.java
@@ -2327,6 +2344,7 @@
 ../../classpath/java/lang/management/ManagementPermission.java
 ../../classpath/java/lang/management/MemoryManagerMXBean.java
 ../../classpath/java/lang/management/MemoryMXBean.java
+../../classpath/java/lang/management/MemoryNotificationInfo.java
 ../../classpath/java/lang/management/MemoryPoolMXBean.java
 ../../classpath/java/lang/management/MemoryUsage.java
 ../../classpath/java/lang/management/OperatingSystemMXBean.java
@@ -2905,6 +2923,7 @@
 ../../classpath/java/util/TreeSet.java
 ../../classpath/java/util/UnknownFormatConversionException.java
 ../../classpath/java/util/UnknownFormatFlagsException.java
+../../classpath/java/util/UUID.java
 ../../classpath/java/util/Vector.java
 ../../classpath/java/util/WeakHashMap.java
 ../../classpath/java/util/zip/Adler32.java
@@ -3056,9 +3075,16 @@
 ../../classpath/javax/management/InvalidAttributeValueException.java
 ../../classpath/javax/management/JMException.java
 ../../classpath/javax/management/JMRuntimeException.java
+../../classpath/javax/management/ListenerNotFoundException.java
 ../../classpath/javax/management/MBeanException.java
 ../../classpath/javax/management/MBeanFeatureInfo.java
 ../../classpath/javax/management/MBeanInfo.java
+../../classpath/javax/management/MBeanNotificationInfo.java
+../../classpath/javax/management/Notification.java
+../../classpath/javax/management/NotificationBroadcaster.java
+../../classpath/javax/management/NotificationEmitter.java
+../../classpath/javax/management/NotificationFilter.java
+../../classpath/javax/management/NotificationListener.java
 ../../classpath/javax/management/openmbean/ArrayType.java
 ../../classpath/javax/management/openmbean/CompositeData.java
 ../../classpath/javax/management/openmbean/CompositeType.java
@@ -3325,6 +3351,8 @@
 ../../classpath/javax/rmi/CORBA/ValueHandler.java
 ../../classpath/javax/rmi/CORBA/ValueHandlerMultiFormat.java
 ../../classpath/javax/rmi/PortableRemoteObject.java
+../../classpath/javax/rmi/ssl/SslRMIClientSocketFactory.java
+../../classpath/javax/rmi/ssl/SslRMIServerSocketFactory.java
 ../../classpath/javax/security/auth/AuthPermission.java
 ../../classpath/javax/security/auth/callback/Callback.java
 ../../classpath/javax/security/auth/callback/CallbackHandler.java
