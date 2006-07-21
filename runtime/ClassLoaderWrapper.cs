@@ -330,6 +330,16 @@ namespace IKVM.Internal
 				{
 					return LoadArrayClass(name);
 				}
+//#if WHIDBEY
+//				if(name.EndsWith("_$$$$_") && name.IndexOf("_$$$_") > 0)
+//				{
+//					TypeWrapper tw = LoadGenericClass(name);
+//					if(tw != null)
+//					{
+//						return tw;
+//					}
+//				}
+//#endif // WHIDBEY
 				return LoadClassImpl(name, throwClassNotFoundException);
 			}
 			finally
@@ -394,6 +404,81 @@ namespace IKVM.Internal
 					return null;
 			}
 		}
+
+#if WHIDBEY
+		private TypeWrapper LoadGenericClass(string name)
+		{
+			// generic class name grammar:
+			//
+			// mangled(open_generic_type_name) "_$$$_" parameter_class_name ( "_$$_" parameter_class_name )* "_$$$$_"
+			int pos = name.IndexOf("_$$$_");
+			if(pos <= 0)
+			{
+				return null;
+			}
+			Type type = GetBootstrapClassLoader().GetType(DotNetTypeWrapper.DemangleTypeName(name.Substring(0, pos)));
+			if(type == null || !type.IsGenericTypeDefinition)
+			{
+				return null;
+			}
+			ArrayList typeParamNames = new ArrayList();
+			pos += 5;
+			int start = pos;
+			int nest = 0;
+			for(;;)
+			{
+				pos = name.IndexOf("_$$", pos);
+				if(pos == -1)
+				{
+					return null;
+				}
+				if(name.IndexOf("_$$_", pos, 4) == pos)
+				{
+					if(nest == 0)
+					{
+						typeParamNames.Add(name.Substring(start, pos - start));
+						start = pos + 4;
+					}
+					pos += 4;
+				}
+				else if(name.IndexOf("_$$$_", pos, 5) == pos)
+				{
+					nest++;
+					pos += 5;
+				}
+				else if(name.IndexOf("_$$$$_", pos, 6) == pos)
+				{
+					if(nest == 0)
+					{
+						if(pos + 6 != name.Length)
+						{
+							return null;
+						}
+						typeParamNames.Add(name.Substring(start, pos - start));
+						break;
+					}
+					nest--;
+					pos += 6;
+				}
+				else
+				{
+					pos += 3;
+				}
+			}
+			Type[] typeArguments = new Type[typeParamNames.Count];
+			for(int i = 0; i < typeArguments.Length; i++)
+			{
+				TypeWrapper tw = LoadClassByDottedNameFast((string)typeParamNames[i]);
+				if(tw == null)
+				{
+					return null;
+				}
+				typeArguments[i] = tw.TypeAsSignatureType;
+			}
+			// TODO consider catching the ArgumentException that MakeGenericType can throw
+			return GetWrapperFromType(type.MakeGenericType(typeArguments));
+		}
+#endif // WHIDBEY
 
 		protected virtual TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
@@ -701,6 +786,11 @@ namespace IKVM.Internal
 			return wrapper;
 		}
 
+		internal virtual Type GetType(string name)
+		{
+			return null;
+		}
+
 		// this method only supports .NET or pre-compiled Java assemblies
 		internal static ClassLoaderWrapper GetAssemblyClassLoader(Assembly assembly)
 		{
@@ -713,13 +803,14 @@ namespace IKVM.Internal
 #if WHIDBEY && !STATIC_COMPILER
 			if(assembly.ReflectionOnly)
 			{
-				lock(reflectionOnlyClassLoaders)
+				lock(wrapperLock)
 				{
 					ClassLoaderWrapper loader = (ClassLoaderWrapper)reflectionOnlyClassLoaders[assembly];
 					if(loader == null)
 					{
-						loader = new ReflectionOnlyClassLoader();
+						loader = new ReflectionOnlyClassLoader(assembly);
 						reflectionOnlyClassLoaders[assembly] = loader;
+						JVM.Library.setWrapperForClassLoader(loader.javaClassLoader, loader);
 					}
 					return loader;
 				}
@@ -843,7 +934,7 @@ namespace IKVM.Internal
 #endif
 		}
 
-		private static Type GetJavaTypeFromAssembly(Assembly a, string name)
+		internal static Type GetJavaTypeFromAssembly(Assembly a, string name)
 		{
 			try
 			{
@@ -885,18 +976,55 @@ namespace IKVM.Internal
 			}
 			return null;
 		}
+
+		internal override Type GetType(string name)
+		{
+			Assembly[] assemblies;
+#if WHIDBEY && STATIC_COMPILER
+			assemblies = AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
+#else
+			assemblies = AppDomain.CurrentDomain.GetAssemblies();
+#endif
+			foreach(Assembly a in assemblies)
+			{
+				if(!(a is AssemblyBuilder))
+				{
+					Type t = a.GetType(name);
+					if(t != null)
+					{
+						return t;
+					}
+				}
+			}
+			return null;
+		}
 	}
 
+#if !STATIC_COMPILER
 	class ReflectionOnlyClassLoader : ClassLoaderWrapper
 	{
-		internal ReflectionOnlyClassLoader()
-			: base(null)
+		private Assembly assembly;
+		private bool isCoreAssembly;
+
+		internal ReflectionOnlyClassLoader(Assembly assembly)
+			: base(JVM.Library.newReflectionOnlyClassLoader())
 		{
+			this.assembly = assembly;
+			isCoreAssembly = AttributeHelper.GetRemappedClasses(assembly).Length > 0;
 		}
 
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
+			if(isCoreAssembly)
+			{
+				Type t = BootstrapClassLoader.GetJavaTypeFromAssembly(assembly, name);
+				if(t != null)
+				{
+					return GetWrapperFromBootstrapType(t);
+				}
+			}
 			return GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
 		}
 	}
+#endif
 }

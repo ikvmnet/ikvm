@@ -1603,6 +1603,25 @@ namespace gnu.classpath
 	}
 }
 
+namespace IKVM.NativeCode.ikvm.@internal
+{
+	public class ReflectionOnlyClassLoader
+	{
+		public static object LoadClass(object classLoader, string name)
+		{
+			try
+			{
+				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader);
+				return wrapper.LoadClassByDottedName(name).ClassObject;
+			}
+			catch(RetargetableJavaException x)
+			{
+				throw x.ToJava();
+			}
+		}
+	}
+}
+
 namespace ikvm.@internal
 {
 	public interface LibraryVMInterface
@@ -1671,5 +1690,7 @@ namespace ikvm.@internal
 		Exception newInstantiationException(string msg);
 		Exception newInterruptedException();
 		Exception newIllegalMonitorStateException();
+
+		object newReflectionOnlyClassLoader();
 	}
 }

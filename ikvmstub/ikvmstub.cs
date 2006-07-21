@@ -61,9 +61,6 @@ public class NetExp
 #if WHIDBEY
 			Type typeofJVM = typeof(IKVM.Runtime.Util).Assembly.GetType("IKVM.Internal.JVM");
 			typeofJVM.GetMethod("SetIkvmStubMode").Invoke(null, null);
-			Assembly.ReflectionOnlyLoadFrom(typeof(System.ComponentModel.EditorBrowsableAttribute).Assembly.Location);
-			Assembly.ReflectionOnlyLoadFrom(typeofJVM.Assembly.Location);
-			Assembly.ReflectionOnlyLoadFrom(typeof(java.lang.Object).Assembly.Location);
 			AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_ReflectionOnlyAssemblyResolve);
 			assembly = Assembly.ReflectionOnlyLoadFrom(args[0]);
 #else
@@ -102,6 +99,15 @@ public class NetExp
 				ProcessAssembly(assembly);
 				ProcessPrivateClasses(assembly);
 			}
+			catch(ReflectionTypeLoadException x)
+			{
+				Console.WriteLine(x);
+				Console.WriteLine("LoaderExceptions:");
+				foreach(Exception n in x.LoaderExceptions)
+				{
+					Console.WriteLine(n);
+				}
+			}
 			catch(System.Exception x)
 			{
 				java.lang.Throwable.instancehelper_printStackTrace(IKVM.Runtime.Util.MapException(x));
@@ -117,12 +123,18 @@ public class NetExp
 #if WHIDBEY
 	private static Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
 	{
+		//Console.WriteLine("Resolve: " + args.Name);
 		foreach(Assembly a in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
 		{
 			if(args.Name.StartsWith(a.GetName().Name + ", "))
 			{
 				return a;
 			}
+		}
+		Assembly asm = Assembly.ReflectionOnlyLoad(args.Name);
+		if(asm != null)
+		{
+			return asm;
 		}
 		string path = args.Name;
 		int index = path.IndexOf(',');

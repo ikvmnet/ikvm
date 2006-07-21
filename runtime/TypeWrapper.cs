@@ -178,7 +178,7 @@ namespace IKVM.Internal
 			}
 			else if(tw.TypeAsTBD.IsEnum)
 			{
-#if WHIDBEY
+#if WHIDBEY && !COMPACT_FRAMEWORK
 				if(tw.TypeAsTBD.Assembly.ReflectionOnly)
 				{
 					// TODO implement full parsing semantics
@@ -689,14 +689,25 @@ namespace IKVM.Internal
 			return IsDefined(type, typeofExceptionIsUnsafeForMappingAttribute);
 		}
 
+#if WHIDBEY && !COMPACT_FRAMEWORK
+		// this method compares t1 and t2 by name
+		// if the type name and assembly name (ignoring the version and strong name) match
+		// the type are considered the same
+		private static bool MatchTypes(Type t1, Type t2)
+		{
+			return t1.FullName == t2.FullName
+				&& t1.Assembly.GetName().Name == t2.Assembly.GetName().Name;
+		}
+#endif
+
 		internal static ModifiersAttribute GetModifiersAttribute(Type type)
 		{
-#if WHIDBEY
+#if WHIDBEY && !COMPACT_FRAMEWORK
 			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
-					if(cad.Constructor.DeclaringType == typeofModifiersAttribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
 					{
 						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 						if(args.Count == 2)
@@ -715,12 +726,12 @@ namespace IKVM.Internal
 
 		internal static ExModifiers GetModifiers(MethodBase mb, bool assemblyIsPrivate)
 		{
-#if WHIDBEY
+#if WHIDBEY && !COMPACT_FRAMEWORK
 			if(JVM.IsStaticCompiler || mb.DeclaringType.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 				{
-					if(cad.Constructor.DeclaringType == typeofModifiersAttribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
 					{
 						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 						if(args.Count == 2)
@@ -796,12 +807,12 @@ namespace IKVM.Internal
 
 		internal static ExModifiers GetModifiers(FieldInfo fi, bool assemblyIsPrivate)
 		{
-#if WHIDBEY
+#if WHIDBEY && !COMPACT_FRAMEWORK
 			if(JVM.IsStaticCompiler || fi.DeclaringType.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
 				{
-					if(cad.Constructor.DeclaringType == typeofModifiersAttribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
 					{
 						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 						if(args.Count == 2)
@@ -1064,12 +1075,12 @@ namespace IKVM.Internal
 
 		internal static NameSigAttribute GetNameSig(FieldInfo field)
 		{
-#if WHIDBEY
+#if WHIDBEY && !COMPACT_FRAMEWORK
 			if(JVM.IsStaticCompiler || field.DeclaringType.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
 				{
-					if(cad.Constructor.DeclaringType == typeofNameSigAttribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
 					{
 						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 						return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
@@ -1084,12 +1095,12 @@ namespace IKVM.Internal
 
 		internal static NameSigAttribute GetNameSig(MethodBase method)
 		{
-#if WHIDBEY
+#if WHIDBEY && !COMPACT_FRAMEWORK
 			if(JVM.IsStaticCompiler || method.DeclaringType.Assembly.ReflectionOnly)
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(method))
 				{
-					if(cad.Constructor.DeclaringType == typeofNameSigAttribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
 					{
 						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 						return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
@@ -1122,7 +1133,7 @@ namespace IKVM.Internal
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
-					if(cad.Constructor.DeclaringType == typeofImplementsAttribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofImplementsAttribute))
 					{
 						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 						return new ImplementsAttribute(DecodeArray<string>(args[0]));
@@ -1135,6 +1146,88 @@ namespace IKVM.Internal
 			return attribs.Length == 1 ? (ImplementsAttribute)attribs[0] : null;
 		}
 
+		internal static ThrowsAttribute GetThrows(MethodBase mb)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			if(JVM.IsStaticCompiler || mb.DeclaringType.Assembly.ReflectionOnly)
+			{
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofThrowsAttribute))
+					{
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						return new ThrowsAttribute(DecodeArray<string>(args[0]));
+					}
+				}
+				return null;
+			}
+#endif
+			object[] attribs = mb.GetCustomAttributes(typeof(ThrowsAttribute), false);
+			return attribs.Length == 1 ? (ThrowsAttribute)attribs[0] : null;
+		}
+
+		internal static SignatureAttribute GetSignature(MethodBase mb)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			if(JVM.IsStaticCompiler || mb.DeclaringType.Assembly.ReflectionOnly)
+			{
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
+					{
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						return new SignatureAttribute((string)args[0].Value);
+					}
+				}
+				return null;
+			}
+#endif
+			object[] attribs = mb.GetCustomAttributes(typeof(SignatureAttribute), false);
+			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
+		}
+
+		internal static SignatureAttribute GetSignature(Type type)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
+			{
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
+					{
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						return new SignatureAttribute((string)args[0].Value);
+					}
+				}
+				return null;
+			}
+#endif
+			object[] attribs = type.GetCustomAttributes(typeof(SignatureAttribute), false);
+			// HACK for the time being we have to support having two signature attributes
+			// (because of the hack in map.xml to make japi happy on the non-generics branch)
+			return attribs.Length >= 1 ? (SignatureAttribute)attribs[0] : null;
+		}
+
+		internal static SignatureAttribute GetSignature(FieldInfo fi)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			if(JVM.IsStaticCompiler || fi.DeclaringType.Assembly.ReflectionOnly)
+			{
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
+					{
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						return new SignatureAttribute((string)args[0].Value);
+					}
+				}
+				return null;
+			}
+#endif
+			object[] attribs = fi.GetCustomAttributes(typeof(SignatureAttribute), false);
+			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
+		}
+
 		internal static InnerClassAttribute GetInnerClass(Type type)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
@@ -1142,7 +1235,7 @@ namespace IKVM.Internal
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
-					if(cad.Constructor.DeclaringType == typeofInnerClassAttribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofInnerClassAttribute))
 					{
 						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 						return new InnerClassAttribute((string)args[0].Value, (Modifiers)args[1].Value);
@@ -1163,7 +1256,7 @@ namespace IKVM.Internal
 				List<RemappedInterfaceMethodAttribute> attrs = new List<RemappedInterfaceMethodAttribute>();
 					foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 					{
-						if(cad.Constructor.DeclaringType == typeofRemappedInterfaceMethodAttribute)
+						if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedInterfaceMethodAttribute))
 						{
 							IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 							attrs.Add(new RemappedInterfaceMethodAttribute((string)args[0].Value, (string)args[1].Value));
@@ -1185,7 +1278,7 @@ namespace IKVM.Internal
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
-					if(cad.Constructor.DeclaringType == typeofRemappedTypeAttribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedTypeAttribute))
 					{
 						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 						return new RemappedTypeAttribute((Type)args[0].Value);
@@ -1201,12 +1294,12 @@ namespace IKVM.Internal
 		internal static RemappedClassAttribute[] GetRemappedClasses(Assembly coreAssembly)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler)
+			if(JVM.IsStaticCompiler || coreAssembly.ReflectionOnly)
 			{
 				List<RemappedClassAttribute> attrs = new List<RemappedClassAttribute>();
 					foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(coreAssembly))
 					{
-						if(cad.Constructor.DeclaringType == typeofRemappedClassAttribute)
+						if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedClassAttribute))
 						{
 							IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
 							attrs.Add(new RemappedClassAttribute((string)args[0].Value, (Type)args[1].Value));
@@ -1239,7 +1332,7 @@ namespace IKVM.Internal
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
 				{
 					// NOTE we don't support subtyping relations!
-					if(cad.Constructor.DeclaringType == attribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
 					{
 						return true;
 					}
@@ -1257,7 +1350,7 @@ namespace IKVM.Internal
 			{
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(asm))
 				{
-					if(cad.Constructor.DeclaringType == attribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
 					{
 						return true;
 					}
@@ -1276,7 +1369,7 @@ namespace IKVM.Internal
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					// NOTE we don't support subtyping relations!
-					if(cad.Constructor.DeclaringType == attribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
 					{
 						return true;
 					}
@@ -1295,7 +1388,7 @@ namespace IKVM.Internal
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(pi))
 				{
 					// NOTE we don't support subtyping relations!
-					if(cad.Constructor.DeclaringType == attribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
 					{
 						return true;
 					}
@@ -1314,7 +1407,7 @@ namespace IKVM.Internal
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(member))
 				{
 					// NOTE we don't support subtyping relations!
-					if(cad.Constructor.DeclaringType == attribute)
+					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
 					{
 						return true;
 					}
@@ -2117,7 +2210,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal virtual TypeWrapper MakeArrayType(int rank)
+		internal TypeWrapper MakeArrayType(int rank)
 		{
 			Debug.Assert(rank != 0);
 			// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
@@ -6977,13 +7070,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override TypeWrapper MakeArrayType(int rank)
-		{
-			Debug.Assert(rank != 0);
-			// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
-			return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(new String('[', rank) + this.SigName);
-		}
-
 		private CompiledTypeWrapper(ExModifiers exmod, string name, TypeWrapper baseTypeWrapper)
 			: base(exmod.Modifiers, name, baseTypeWrapper)
 		{
@@ -7434,10 +7520,10 @@ namespace IKVM.Internal
 
 			internal string GetGenericSignature()
 			{
-				object[] attr = (mbHelper != null ? mbHelper : GetMethod()).GetCustomAttributes(typeof(SignatureAttribute), false);
-				if(attr.Length == 1)
+				SignatureAttribute attr = AttributeHelper.GetSignature(mbHelper != null ? mbHelper : GetMethod());
+				if(attr != null)
 				{
-					return ((SignatureAttribute)attr[0]).Signature;
+					return attr.Signature;
 				}
 				return null;
 			}
@@ -7526,12 +7612,10 @@ namespace IKVM.Internal
 
 		internal override string GetGenericSignature()
 		{
-			object[] attr = type.GetCustomAttributes(typeof(SignatureAttribute), false);
-			// HACK for the time being we have to support having two signature attributes
-			// (because of the hack in map.xml to make japi happy on the non-generics branch)
-			if(attr.Length >= 1)
+			SignatureAttribute attr = AttributeHelper.GetSignature(type);
+			if(attr != null)
 			{
-				return ((SignatureAttribute)attr[0]).Signature;
+				return attr.Signature;
 			}
 			return null;
 		}
@@ -7545,10 +7629,10 @@ namespace IKVM.Internal
 			MethodBase mb = mw.GetMethod();
 			if(mb != null)
 			{
-				object[] attr = mb.GetCustomAttributes(typeof(SignatureAttribute), false);
-				if(attr.Length == 1)
+				SignatureAttribute attr = AttributeHelper.GetSignature(mb);
+				if(attr != null)
 				{
-					return ((SignatureAttribute)attr[0]).Signature;
+					return attr.Signature;
 				}
 			}
 			return null;
@@ -7559,10 +7643,10 @@ namespace IKVM.Internal
 			FieldInfo fi = fw.GetField();
 			if(fi != null)
 			{
-				object[] attr = fi.GetCustomAttributes(typeof(SignatureAttribute), false);
-				if(attr.Length == 1)
+				SignatureAttribute attr = AttributeHelper.GetSignature(fi);
+				if(attr != null)
 				{
-					return ((SignatureAttribute)attr[0]).Signature;
+					return attr.Signature;
 				}
 			}
 			return null;
@@ -7839,7 +7923,7 @@ namespace IKVM.Internal
 
 		// NOTE if the name is not a valid mangled type name, no demangling is done and the
 		// original string is returned
-		private static string DemangleTypeName(string name)
+		internal static string DemangleTypeName(string name)
 		{
 			Debug.Assert(name.StartsWith(NamePrefix));
 			System.Text.StringBuilder sb = new System.Text.StringBuilder(name.Length - NamePrefix.Length);
@@ -8470,13 +8554,6 @@ namespace IKVM.Internal
 		internal override ClassLoaderWrapper GetClassLoader()
 		{
 			return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly);
-		}
-
-		internal override TypeWrapper MakeArrayType(int rank)
-		{
-			Debug.Assert(rank != 0);
-			// NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
-			return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(new String('[', rank) + this.SigName);
 		}
 
 		private class DelegateMethodWrapper : MethodWrapper

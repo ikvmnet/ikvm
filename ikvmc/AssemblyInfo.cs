@@ -38,6 +38,11 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]		
 
+#if WHIDBEY
+// We rely on string literals being interned and starting with .NET 2.0 this is no longer the default
+[assembly: CompilationRelaxations(0)]
+#endif
+
 //
 // Version information for an assembly consists of the following four values:
 //

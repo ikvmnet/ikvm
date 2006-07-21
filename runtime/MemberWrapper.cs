@@ -473,10 +473,10 @@ namespace IKVM.Internal
 #endif
 				)
 			{
-				object[] attributes = method.GetCustomAttributes(typeof(ThrowsAttribute), false);
-				if(attributes.Length == 1)
+				ThrowsAttribute attr = AttributeHelper.GetThrows(method);
+				if(attr != null)
 				{
-					return ((ThrowsAttribute)attributes[0]).Classes;
+					return attr.Classes;
 				}
 			}
 			return new string[0];

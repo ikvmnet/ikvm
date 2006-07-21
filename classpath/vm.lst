@@ -38,6 +38,7 @@ gnu/java/security/Configuration.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/Library.java
 ikvm/internal/LibraryVMInterface.java
+ikvm/internal/ReflectionOnlyClassLoader.java
 ikvm/internal/WeakIdentityMap.java
 ikvm/io/InputStreamWrapper.java
 ikvm/lang/CIL.java

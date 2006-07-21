@@ -29,7 +29,10 @@ import java.lang.reflect.VMFieldImpl;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import ikvm.internal.AnnotationAttributeBase;
+import ikvm.internal.ReflectionOnlyClassLoader;
 import ikvm.lang.CIL;
 
 class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
@@ -382,5 +385,14 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
     public Throwable newIllegalMonitorStateException()
     {
         return new IllegalMonitorStateException();
+    }
+
+    public Object newReflectionOnlyClassLoader()
+    {
+        return AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return new ReflectionOnlyClassLoader();
+            }
+        });
     }
 }

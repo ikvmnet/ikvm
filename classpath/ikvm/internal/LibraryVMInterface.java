@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004 Jeroen Frijters
+  Copyright (C) 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -90,4 +90,6 @@ public interface LibraryVMInterface
     Throwable newInstantiationException(String msg);
     Throwable newInterruptedException();
     Throwable newIllegalMonitorStateException();
+
+    Object newReflectionOnlyClassLoader();
 }
