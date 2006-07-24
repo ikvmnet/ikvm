@@ -37,6 +37,8 @@ namespace IKVM.Internal
 		internal static readonly object arrayConstructionLock = new object();
 #endif // !WHIDBEY
 		private static readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
+		private static readonly char[] specialCharacters = { '\\', '+', ',', '[', ']' };
+		private static readonly string specialCharactersString = new String(specialCharacters);
 		// FXBUG moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
 		// so for the time being, we share one dynamic assembly among all classloaders
 		private static ModuleBuilder moduleBuilder;
@@ -113,6 +115,25 @@ namespace IKVM.Internal
 			string mangledTypeName = f.Name;
 			lock(dynamicTypes.SyncRoot)
 			{
+				// Ref.Emit doesn't like the "<Module>" name for types
+				// (since it already defines a pseudo-type named <Module> for global methods and fields)
+				if(mangledTypeName == "<Module>")
+				{
+					mangledTypeName = "_Module_";
+				}
+				if(mangledTypeName.IndexOfAny(specialCharacters) >= 0)
+				{
+					System.Text.StringBuilder sb = new System.Text.StringBuilder();
+					foreach(char c in mangledTypeName)
+					{
+						if(specialCharactersString.IndexOf(c) >= 0)
+						{
+							sb.Append('\\');
+						}
+						sb.Append(c);
+					}
+					mangledTypeName = sb.ToString();
+				}
 				// FXBUG the 1.1 CLR doesn't like type names that end with a period.
 				if(dynamicTypes.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
 				{

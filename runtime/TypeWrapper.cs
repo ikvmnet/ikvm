@@ -3534,6 +3534,13 @@ namespace IKVM.Internal
 							typeBuilder = wrapper.classLoader.ModuleBuilder.DefineType(mangledTypeName, typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
 						}
 					}
+#if STATIC_COMPILER
+					if(outer == null && mangledTypeName != wrapper.Name)
+					{
+						// HACK we abuse the InnerClassAttribute to record to real name
+						AttributeHelper.SetInnerClass(typeBuilder, wrapper.Name, wrapper.Modifiers);
+					}
+#endif // STATIC_COMPILER
 					ArrayList interfaceList = null;
 					TypeWrapper[] interfaces = wrapper.Interfaces;
 					for(int i = 0; i < interfaces.Length; i++)

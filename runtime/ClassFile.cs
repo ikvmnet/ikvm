@@ -1065,36 +1065,49 @@ namespace IKVM.Internal
 				name = classFile.GetConstantPoolUtf8String(name_index);
 				if(name.Length > 0)
 				{
-					char prev = name[0];
-					if(Char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[')
+					if(classFile.MajorVersion < 49)
 					{
-						int skip = 1;
-						int end = name.Length;
-						if(prev == '[')
+						char prev = name[0];
+						if(Char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[')
 						{
-							// TODO optimize this
-							if(!IsValidFieldSig(name))
+							int skip = 1;
+							int end = name.Length;
+							if(prev == '[')
 							{
-								goto barf;
+								// TODO optimize this
+								if(!IsValidFieldSig(name))
+								{
+									goto barf;
+								}
+								while(name[skip] == '[')
+								{
+									skip++;
+								}
+								if(name.EndsWith(";"))
+								{
+									end--;
+								}
 							}
-							while(name[skip] == '[')
+							for(int i = skip; i < end; i++)
 							{
-								skip++;
+								char c = name[i];
+								if(!Char.IsLetterOrDigit(c) && c != '$' && c != '_' && c != '-' && (c != '/' || prev == '/'))
+								{
+									goto barf;
+								}
+								prev = c;
 							}
-							if(name.EndsWith(";"))
-							{
-								end--;
-							}
+							name = String.Intern(name.Replace('/', '.'));
+							return;
 						}
-						for(int i = skip; i < end; i++)
-						{
-							char c = name[i];
-							if(!Char.IsLetterOrDigit(c) && c != '$' && c != '_' && c != '-' && (c != '/' || prev == '/'))
-							{
-								goto barf;
-							}
-							prev = c;
-						}
+					}
+					else
+					{
+						// since 1.5 the restrictions on class names have been greatly reduced
+						if(name.IndexOf('.') >= 0)
+							goto barf;
+						if(name[0] == '[' && !IsValidFieldSig(name))
+							goto barf;
 						name = String.Intern(name.Replace('/', '.'));
 						return;
 					}
