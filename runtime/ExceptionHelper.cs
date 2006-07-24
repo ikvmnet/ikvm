@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -82,6 +82,11 @@ namespace IKVM.NativeCode.java.lang
 			{
 				return "<clinit>";
 			}
+			else if(mb.Name == "ToJava" && typeof(RetargetableJavaException).IsAssignableFrom(mb.DeclaringType))
+			{
+				// hide this method from the stack trace
+				return "__<ToJava>";
+			}
 			else
 			{
 				return mb.Name;
@@ -105,7 +110,7 @@ namespace IKVM.NativeCode.java.lang
 			{
 				return tw.Name;
 			}
-			return "<unknown>";
+			return type.FullName;
 		}
 
 		public static void initThrowable(object throwable, object detailMessage, object cause)
