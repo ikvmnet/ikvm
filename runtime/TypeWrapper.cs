@@ -5557,6 +5557,34 @@ namespace IKVM.Internal
 				return name;
 			}
 
+			private static MethodInfo GetBaseFinalizeMethod(Type type, out bool clash)
+			{
+				clash = false;
+				MethodInfo baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+				if(baseFinalize != null)
+				{
+					return baseFinalize;
+				}
+				while(type != null)
+				{
+					foreach(MethodInfo m in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+					{
+						if(m.Name == "Finalize"
+							&& m.ReturnType == typeof(void)
+							&& m.GetParameters().Length == 0)
+						{
+							if(m.GetBaseDefinition().DeclaringType == typeof(object))
+							{
+								return m;
+							}
+							clash = true;
+						}
+					}
+					type = type.BaseType;
+				}
+				return null;
+			}
+
 			private MethodBase GenerateMethod(int index, bool unloadableOverrideStub)
 			{
 				methods[index].AssertLinked();
@@ -5768,8 +5796,11 @@ namespace IKVM.Internal
 						{
 							bool needFinalize = false;
 							bool needDispatch = false;
+							bool finalizeClash = false;
+							MethodInfo baseFinalize = null;
 							if(baseMce != null && ReferenceEquals(m.Name, "finalize") && ReferenceEquals(m.Signature, "()V"))
 							{
+								baseFinalize = GetBaseFinalizeMethod(typeBuilder.BaseType, out finalizeClash);
 								if(baseMce.RealName == "Finalize")
 								{
 									// We're overriding Finalize (that was renamed to finalize by DotNetTypeWrapper)
@@ -5794,8 +5825,7 @@ namespace IKVM.Internal
 									needFinalize = true;
 									needDispatch = false;
 									// If the base class finalize was optimized away, we need a dispatch call after all.
-									Type baseFinalizeType = typeBuilder.BaseType.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null).DeclaringType;
-									if(baseFinalizeType == typeof(object))
+									if(baseFinalize.DeclaringType == typeof(object))
 									{
 										needDispatch = true;
 									}
@@ -5805,8 +5835,7 @@ namespace IKVM.Internal
 									// One of our base classes already has a finalize method, but it may have been an empty
 									// method so that the hookup to the real Finalize was optimized away, we need to check
 									// for that.
-									Type baseFinalizeType = typeBuilder.BaseType.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null).DeclaringType;
-									if(baseFinalizeType == typeof(object))
+									if(baseFinalize.DeclaringType == typeof(object))
 									{
 										needFinalize = true;
 										needDispatch = true;
@@ -5849,7 +5878,16 @@ namespace IKVM.Internal
 							// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
 							if(needFinalize)
 							{
-								MethodInfo baseFinalize = typeBuilder.BaseType.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+								string finalizeName = finalizeClash ? "__<Finalize>" : baseFinalize.Name;
+								// if the Java class also defines a Finalize() method, we need to name the stub differently
+								foreach(ClassFile.Method mi in classFile.Methods)
+								{
+									if(mi.Name == "Finalize" && mi.Signature == "()V")
+									{
+										finalizeName = "__<Finalize>";
+										break;
+									}
+								}
 								MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.Virtual;
 								// make sure we don't reduce accessibility
 								attr |= baseFinalize.IsPublic ? MethodAttributes.Public : MethodAttributes.Family;
@@ -5857,9 +5895,11 @@ namespace IKVM.Internal
 								{
 									attr |= MethodAttributes.Final;
 								}
-								// TODO if the Java class also defines a Finalize() method, we need to name the stub differently
-								// (and make it effectively appear hidden by the class's Finalize method)
-								MethodBuilder finalize = typeBuilder.DefineMethod("Finalize", attr, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
+								MethodBuilder finalize = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
+								if(finalizeName != baseFinalize.Name)
+								{
+									typeBuilder.DefineMethodOverride(finalize, baseFinalize);
+								}
 								AttributeHelper.HideFromJava(finalize);
 								ILGenerator ilgen = finalize.GetILGenerator();
 								ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.SkipFinalizer);
