@@ -979,7 +979,7 @@ namespace IKVM.Internal
 			{
 				typeAttribs &= ~(TypeAttributes.Interface | TypeAttributes.Abstract);
 				typeAttribs |= TypeAttributes.Class | TypeAttributes.Sealed;
-				TypeBuilder typeBuilder = classLoader.ModuleBuilder.DefineType(mangledTypeName, typeAttribs, typeof(ValueType));
+				TypeBuilder typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, typeof(ValueType));
 				AttributeHelper.SetGhostInterface(typeBuilder);
 				AttributeHelper.SetModifiers(typeBuilder, Modifiers, IsInternal);
 				ghostRefField = typeBuilder.DefineField("__<ref>", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);

@@ -105,14 +105,8 @@ namespace IKVM.Internal
 			return type.TypeAsTBD.Assembly;
 		}
 
-		internal override TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, object protectionDomain)
+		internal override string AllocMangledName(string mangledTypeName)
 		{
-			DynamicTypeWrapper type = CreateDynamicTypeWrapper(f);
-			// this step can throw a retargettable exception, if the class is incorrect
-			bool hasclinit;
-			type.CreateStep1(out hasclinit);
-			// now we can allocate the mangledTypeName, because the next step cannot fail
-			string mangledTypeName = f.Name;
 			lock(dynamicTypes.SyncRoot)
 			{
 				// Ref.Emit doesn't like the "<Module>" name for types
@@ -153,6 +147,17 @@ namespace IKVM.Internal
 				}
 				dynamicTypes.Add(mangledTypeName, null);
 			}
+			return mangledTypeName;
+		}
+
+		internal override TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, object protectionDomain)
+		{
+			DynamicTypeWrapper type = CreateDynamicTypeWrapper(f);
+			// this step can throw a retargettable exception, if the class is incorrect
+			bool hasclinit;
+			type.CreateStep1(out hasclinit);
+			// now we can allocate the mangledTypeName, because the next step cannot fail
+			string mangledTypeName = AllocMangledName(f.Name);
 			// This step actually creates the TypeBuilder. It is not allowed to throw any exceptions,
 			// if an exception does occur, it is due to a programming error in the IKVM or CLR runtime
 			// and will cause a CriticalFailure and exit the process.
@@ -211,7 +216,7 @@ namespace IKVM.Internal
 				ArrayList l = new ArrayList(dynamicTypes.Values);
 				foreach(TypeWrapper tw in l)
 				{
-					if(!done.ContainsKey(tw))
+					if(tw != null && !done.ContainsKey(tw))
 					{
 						more = true;
 						done.Add(tw, tw);
@@ -267,13 +272,21 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal override AssemblyBuilder AssemblyBuilder
+		{
+			get
+			{
+				return (AssemblyBuilder)this.ModuleBuilder.Assembly;
+			}
+		}
+
 		protected virtual ModuleBuilder CreateModuleBuilder()
 		{
 #if STATIC_COMPILER
 			// HACK this is required because DelegateInnerClassTypeWrapper currently uses the ModuleBuilder
 			// property to get a ModuleBuilder on the class loader that defined the delegate,
 			// instead of the class loader that is using the delegate (as it probably should)
-			return ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
+			return ClassLoaderWrapper.GetBootstrapClassLoader().GetTypeWrapperFactory().ModuleBuilder;
 #else // STATIC_COMPILER
 			AssemblyName name = new AssemblyName();
 			if(saveDebugImage)

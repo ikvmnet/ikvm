@@ -72,6 +72,10 @@ class ByteCodeHelperMethods
 	internal static readonly MethodInfo VerboseCastFailure;
 	internal static readonly MethodInfo SkipFinalizer;
 	internal static readonly MethodInfo DynamicInstanceOf;
+	internal static readonly MethodInfo volatileReadDouble;
+	internal static readonly MethodInfo volatileReadLong;
+	internal static readonly MethodInfo volatileWriteDouble;
+	internal static readonly MethodInfo volatileWriteLong;
 
 	static ByteCodeHelperMethods()
 	{
@@ -110,6 +114,10 @@ class ByteCodeHelperMethods
 		VerboseCastFailure = typeofByteCodeHelper.GetMethod("VerboseCastFailure");
 		SkipFinalizer = typeofByteCodeHelper.GetMethod("SkipFinalizer");
 		DynamicInstanceOf = typeofByteCodeHelper.GetMethod("DynamicInstanceOf");
+		volatileReadDouble = typeofByteCodeHelper.GetMethod("VolatileRead", new Type[] { Type.GetType("System.Double&") });
+		volatileReadLong = typeofByteCodeHelper.GetMethod("VolatileRead", new Type[] { Type.GetType("System.Int64&") });
+		volatileWriteDouble = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Double&"), typeof(double) });
+		volatileWriteLong = typeofByteCodeHelper.GetMethod("VolatileWrite", new Type[] { Type.GetType("System.Int64&"), typeof(long) });
 	}
 }
 
@@ -803,7 +811,7 @@ class Compiler
 					package = index == -1 ? "" : package.Substring(0, index).Replace('.', '/');
 					sourcefile = new System.IO.FileInfo(JVM.SourcePath + "/" + package + "/" + sourcefile).FullName;
 				}
-				symboldocument = classLoader.ModuleBuilder.DefineDocument(sourcefile, SymLanguageType.Java, Guid.Empty, SymDocumentType.Text);
+				symboldocument = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineDocument(sourcefile, SymLanguageType.Java, Guid.Empty, SymDocumentType.Text);
 				// the very first instruction in the method must have an associated line number, to be able
 				// to step into the method in Visual Studio .NET
 				ClassFile.Method.LineNumberTableEntry[] table = m.LineNumberTableAttribute;

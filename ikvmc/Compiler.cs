@@ -94,6 +94,7 @@ class IkvmcCompiler
 			Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("options:");
+			Console.Error.WriteLine("    @<filename>                Read more options from file");
 			Console.Error.WriteLine("    -out:<outputfile>          Specify the output filename");
 			Console.Error.WriteLine("    -assembly:<name>           Specify assembly name");
 			Console.Error.WriteLine("    -target:exe                Build a console executable");
@@ -134,6 +135,7 @@ class IkvmcCompiler
 			Console.Error.WriteLine("                               of initializer methods");
 			Console.Error.WriteLine("    -privatepackage:<prefix>   Mark all classes with a package name starting");
 			Console.Error.WriteLine("                               with <prefix> as internal to the assembly");
+			Console.Error.WriteLine("    -nowarn:<warning[:key]>    Suppress specified warnings");
 			return 1;
 		}
 		foreach(string s in arglist)
@@ -289,7 +291,7 @@ class IkvmcCompiler
 					string[] spec = s.Substring(10).Split('=');
 					if(resources.ContainsKey(spec[0]))
 					{
-						Console.Error.WriteLine("Warning: skipping resource (name clash): " + spec[0]);
+						StaticCompiler.IssueMessage(Message.DuplicateResourceName, spec[0]);
 					}
 					else
 					{
@@ -400,6 +402,19 @@ class IkvmcCompiler
 						options.privatePackages = temp;
 					}
 				}
+				else if(s.StartsWith("-nowarn:"))
+				{
+					foreach(string w in s.Substring(8).Split(','))
+					{
+						string ws = w;
+						// lame way to chop off the leading zeroes
+						while(ws.StartsWith("0"))
+						{
+							ws = ws.Substring(1);
+						}
+						StaticCompiler.SuppressWarning(ws);
+					}
+				}
 				else if(s.StartsWith("-runtime:"))
 				{
 					// NOTE this is an undocumented option
@@ -475,7 +490,7 @@ class IkvmcCompiler
 		}
 		if(options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != System.Reflection.Emit.PEFileKinds.Dll))
 		{
-			Console.Error.WriteLine("Note: using main class {0} based on jar manifest", manifestMainClass);
+			StaticCompiler.IssueMessage(Message.MainMethodFromManifest, manifestMainClass);
 			options.mainClass = manifestMainClass;
 		}
 		try
@@ -541,7 +556,7 @@ class IkvmcCompiler
 					}
 					if(resources.ContainsKey(ze.Name))
 					{
-						Console.Error.WriteLine("Warning: skipping resource (name clash): " + ze.Name);
+						StaticCompiler.IssueMessage(Message.DuplicateResourceName, ze.Name);
 					}
 					else
 					{

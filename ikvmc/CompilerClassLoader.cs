@@ -165,7 +165,7 @@ namespace IKVM.Internal
 					}
 					catch(ClassFormatError x)
 					{
-						Console.Error.WriteLine("Warning: class format error: {0}", x.Message);
+						StaticCompiler.IssueMessage(Message.ClassFormatError, x.Message);
 						return null;
 					}
 					if(options.removeUnusedFields)
@@ -196,7 +196,7 @@ namespace IKVM.Internal
 			{
 				args = new Type[] { typeof(string[]) };
 			}
-			MethodBuilder mainStub = this.ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, typeof(int), args);
+			MethodBuilder mainStub = this.GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, typeof(int), args);
 			if(apartmentAttributeType != null)
 			{
 				mainStub.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
@@ -255,7 +255,7 @@ namespace IKVM.Internal
 			Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
 			DynamicClassLoader.FinishAll(false);
 
-			ModuleBuilder.CreateGlobalFunctions();
+			GetTypeWrapperFactory().ModuleBuilder.CreateGlobalFunctions();
 
 			if(targetIsModule)
 			{
@@ -274,7 +274,7 @@ namespace IKVM.Internal
 		internal void AddResources(Hashtable resources, bool compressedResources)
 		{
 			Tracer.Info(Tracer.Compiler, "CompilerClassLoader adding resources...");
-			ModuleBuilder moduleBuilder = this.ModuleBuilder;
+			ModuleBuilder moduleBuilder = this.GetTypeWrapperFactory().ModuleBuilder;
 			foreach(DictionaryEntry d in resources)
 			{
 				byte[] buf = (byte[])d.Value;
@@ -419,7 +419,7 @@ namespace IKVM.Internal
 					attrs |= TypeAttributes.Abstract;
 				}
 				string name = c.Name.Replace('/', '.');
-				typeBuilder = classLoader.ModuleBuilder.DefineType(name, attrs, baseIsSealed ? typeof(object) : baseType);
+				typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name, attrs, baseIsSealed ? typeof(object) : baseType);
 				if(c.Attributes != null)
 				{
 					foreach(IKVM.Internal.MapXml.Attribute custattr in c.Attributes)
@@ -1756,7 +1756,7 @@ namespace IKVM.Internal
 			{
 				foreach(IKVM.Internal.MapXml.Attribute attr in assemblyAttributes)
 				{
-					AttributeHelper.SetCustomAttribute(((AssemblyBuilder)this.ModuleBuilder.Assembly), attr);
+					AttributeHelper.SetCustomAttribute(this.GetTypeWrapperFactory().AssemblyBuilder, attr);
 				}
 			}
 		}
@@ -1789,6 +1789,25 @@ namespace IKVM.Internal
 		internal bool strictFinalFieldSemantics;
 		internal string runtimeAssembly;
 		internal string[] privatePackages;
+	}
+
+	enum Message
+	{
+		// These are the informational messages
+		MainMethodFound = 1,
+		OutputFileIs = 2,
+		AutoAddRef = 3,
+		MainMethodFromManifest = 4,
+		// This is were the warnings start
+		StartWarnings = 100,
+		ClassNotFound = 100,
+		ClassFormatError = 101,
+		DuplicateClassName = 102,
+		IllegalAccessError = 103,
+		VerificationError = 104,
+		NoClassDefFoundError = 105,
+		GenericUnableToCompileError = 106,
+		DuplicateResourceName = 107,
 	}
 
 	class StaticCompiler
@@ -1832,6 +1851,78 @@ namespace IKVM.Internal
 			}
 			return null;
 #endif
+		}
+
+		private static Hashtable suppressWarnings = new Hashtable();
+
+		internal static void SuppressWarning(string key)
+		{
+			suppressWarnings[key] = key;
+		}
+
+		internal static void IssueMessage(Message msgId, params string[] values)
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.Append((int)msgId);
+			foreach(string s in values)
+			{
+				sb.Append(':').Append(s);
+			}
+			string key = sb.ToString();
+			if(suppressWarnings.ContainsKey(key)
+				|| suppressWarnings.ContainsKey(((int)msgId).ToString()))
+			{
+				return;
+			}
+			suppressWarnings.Add(key, key);
+			string msg;
+			switch(msgId)
+			{
+				case Message.MainMethodFound:
+					msg = "found main method in class \"{0}\"";
+					break;
+				case Message.OutputFileIs:
+					msg = "output file is \"{0}\"";
+					break;
+				case Message.AutoAddRef:
+					msg = "automatically adding reference to \"{0}\"";
+					break;
+				case Message.MainMethodFromManifest:
+					msg = "using main class \"{0}\" based on jar manifest";
+					break;
+				case Message.ClassNotFound:
+					msg = "class \"{0}\" not found";
+					break;
+				case Message.ClassFormatError:
+					msg = "class format error: \"{0}\"";
+					break;
+				case Message.DuplicateClassName:
+					msg = "duplicate class name: \"{0}\"";
+					break;
+				case Message.IllegalAccessError:
+					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+						"    (illegal access error \"{1}\")";
+					break;
+				case Message.VerificationError:
+					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+						"    (verification error \"{1}\")";
+					break;
+				case Message.NoClassDefFoundError:
+					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+						"    (missing class \"{1}\")";
+					break;
+				case Message.GenericUnableToCompileError:
+					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+						"    (\"{1}\": \"{2}\")";
+					break;
+				case Message.DuplicateResourceName:
+					msg = "skipping resource (name clash): \"{0}\"";
+					break;
+				default:
+					throw new InvalidProgramException();
+			}
+			Console.Error.Write("{0} IKVMC{1:D4}: ", msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
+			Console.Error.WriteLine(msg, values);
 		}
 	}
 
@@ -1960,7 +2051,7 @@ namespace IKVM.Internal
 						{
 							if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
 							{
-								Console.Error.WriteLine("Note: found main method in class \"{0}\"", f.Name);
+								StaticCompiler.IssueMessage(Message.MainMethodFound, f.Name);
 								options.mainClass = f.Name;
 								break;
 							}
@@ -1992,7 +2083,7 @@ namespace IKVM.Internal
 				}
 				if(h.ContainsKey(name))
 				{
-					Console.Error.WriteLine("Warning: duplicate class name: {0}", name);
+					StaticCompiler.IssueMessage(Message.DuplicateClassName, name);
 					excluded = true;
 				}
 				if(!excluded)
@@ -2042,7 +2133,7 @@ namespace IKVM.Internal
 				{
 					options.path = options.assembly + ".exe";
 				}
-				Console.Error.WriteLine("Note: output file is \"{0}\"", options.path);
+				StaticCompiler.IssueMessage(Message.OutputFileIs, options.path);
 			}
 
 			if(options.targetIsModule)
@@ -2097,7 +2188,7 @@ namespace IKVM.Internal
 					return 1;
 				}
 				allReferencesAreStrongNamed &= IsSigned(JVM.CoreAssembly);
-				Console.Error.WriteLine("Note: automatically adding reference to \"{0}\"", JVM.CoreAssembly.Location);
+				StaticCompiler.IssueMessage(Message.AutoAddRef, JVM.CoreAssembly.Location);
 				// we need to scan again for remapped types, now that we've loaded the core library
 				ClassLoaderWrapper.LoadRemappedTypes();
 			}
@@ -2156,23 +2247,19 @@ namespace IKVM.Internal
 				}
 				catch(IllegalAccessError x)
 				{
-					Console.Error.WriteLine("Warning: unable to compile class \"{0}\"", s);
-					Console.Error.WriteLine("    (illegal access error \"{0}\")", x.Message);
+					StaticCompiler.IssueMessage(Message.IllegalAccessError, s, x.Message);
 				}
 				catch(VerifyError x)
 				{
-					Console.Error.WriteLine("Warning: unable to compile class \"{0}\"", s);
-					Console.Error.WriteLine("    (verification error \"{0}\")", x.Message);
+					StaticCompiler.IssueMessage(Message.VerificationError, s, x.Message);
 				}
 				catch(NoClassDefFoundError x)
 				{
-					Console.Error.WriteLine("Warning: unable to compile class \"{0}\"", s);
-					Console.Error.WriteLine("    (missing class \"{0}\")", x.Message);
+					StaticCompiler.IssueMessage(Message.NoClassDefFoundError, s, x.Message);
 				}
 				catch(RetargetableJavaException x)
 				{
-					Console.Error.WriteLine("Warning: unable to compile class \"{0}\"", s);
-					Console.Error.WriteLine("    ({0}: \"{1}\")", x.GetType().Name, x.Message);
+					StaticCompiler.IssueMessage(Message.GenericUnableToCompileError, s, x.GetType().Name, x.Message);
 				}
 			}
 			if(options.mainClass != null)
@@ -2203,7 +2290,7 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: redirected main method not supported");
 					return 1;
 				}
-				if(method.DeclaringType.Assembly != loader.ModuleBuilder.Assembly
+				if(method.DeclaringType.Assembly != loader.GetTypeWrapperFactory().AssemblyBuilder
 					&& (!method.IsPublic || !method.DeclaringType.IsPublic))
 				{
 					Console.Error.WriteLine("Error: external main method must be public and in a public class");
@@ -2243,9 +2330,9 @@ namespace IKVM.Internal
 			if(options.fileversion != null)
 			{
 				CustomAttributeBuilder filever = new CustomAttributeBuilder(typeof(AssemblyFileVersionAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { options.fileversion });
-				((AssemblyBuilder)loader.ModuleBuilder.Assembly).SetCustomAttribute(filever);
+				loader.GetTypeWrapperFactory().AssemblyBuilder.SetCustomAttribute(filever);
 			}
-			((AssemblyBuilder)loader.ModuleBuilder.Assembly).DefineVersionInfoResource();
+			loader.GetTypeWrapperFactory().AssemblyBuilder.DefineVersionInfoResource();
 			loader.Save();
 			return 0;
 		}

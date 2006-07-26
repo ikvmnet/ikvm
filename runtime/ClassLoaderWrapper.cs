@@ -38,8 +38,10 @@ namespace IKVM.Internal
 	{
 #if !COMPACT_FRAMEWORK
 		internal abstract ModuleBuilder ModuleBuilder { get; }
+		internal abstract AssemblyBuilder AssemblyBuilder { get; }
 #endif
 		internal abstract TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, object protectionDomain);
+		internal abstract string AllocMangledName(string name);
 	}
 
 	class ClassLoaderWrapper
@@ -200,13 +202,8 @@ namespace IKVM.Internal
 				}
 				return RegisterInitiatingLoader(tw);
 			}
-			lock(this)
-			{
-				if(factory == null)
-				{
-					factory = CreateTypeWrapperFactory();
-				}
-			}
+			// this will create the factory as a side effect
+			GetTypeWrapperFactory();
 			lock(factory)
 			{
 				lock(types.SyncRoot)
@@ -238,6 +235,18 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal TypeWrapperFactory GetTypeWrapperFactory()
+		{
+			lock(this)
+			{
+				if(factory == null)
+				{
+					factory = CreateTypeWrapperFactory();
+				}
+			}
+			return factory;
+		}
+
 		protected virtual TypeWrapperFactory CreateTypeWrapperFactory()
 		{
 #if COMPACT_FRAMEWORK
@@ -246,23 +255,6 @@ namespace IKVM.Internal
 			return new DynamicClassLoader(this);
 #endif
 		}
-
-#if !COMPACT_FRAMEWORK
-		internal virtual ModuleBuilder ModuleBuilder
-		{
-			get
-			{
-				lock(this)
-				{
-					if(factory == null)
-					{
-						factory = CreateTypeWrapperFactory();
-					}
-				}
-				return factory.ModuleBuilder;
-			}
-		}
-#endif
 
 		internal TypeWrapper LoadClassByDottedName(string name)
 		{
@@ -1127,7 +1119,11 @@ namespace IKVM.Internal
 
 		// HACK we use a ReflectionOnlyClassLoader Java peer for the time being
 		internal GenericClassLoader(ClassLoaderWrapper[] delegates)
+#if STATIC_COMPILER
+			: base(null)
+#else
 			: base(JVM.Library.newReflectionOnlyClassLoader())
+#endif
 		{
 			this.delegates = delegates;
 		}

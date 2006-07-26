@@ -2713,31 +2713,19 @@ namespace IKVM.Internal
 
 	class UnloadableTypeWrapper : TypeWrapper
 	{
-#if STATIC_COMPILER
-		private static Hashtable warningHashtable;
-#endif
-
 		internal UnloadableTypeWrapper(string name)
 			: base(TypeWrapper.UnloadableModifiersHack, name, null)
 		{
 #if STATIC_COMPILER
 			if(name != "<verifier>")
 			{
-				if(warningHashtable == null)
-				{
-					warningHashtable = new Hashtable();
-				}
 				if(name.StartsWith("["))
 				{
 					int skip = 1;
 					while(name[skip++] == '[');
 					name = name.Substring(skip, name.Length - skip - 1);
 				}
-				if(!warningHashtable.ContainsKey(name))
-				{
-					warningHashtable.Add(name, name);
-					Console.Error.WriteLine("Warning: class \"{0}\" not found", name);
-				}
+				StaticCompiler.IssueMessage(Message.ClassNotFound, name);
 			}
 #endif
 		}
@@ -3154,7 +3142,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return classLoader.ModuleBuilder.Assembly;
+				return classLoader.GetTypeWrapperFactory().AssemblyBuilder;
 			}
 		}
 
@@ -3531,7 +3519,7 @@ namespace IKVM.Internal
 						else
 #endif // STATIC_COMPILER
 						{
-							typeBuilder = wrapper.classLoader.ModuleBuilder.DefineType(mangledTypeName, typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
+							typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
 						}
 					}
 #if STATIC_COMPILER
@@ -4895,7 +4883,7 @@ namespace IKVM.Internal
 						{
 							typeAttributes |= TypeAttributes.NotPublic;
 						}
-						attributeTypeBuilder = o.wrapper.classLoader.ModuleBuilder.DefineType(o.classFile.Name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+						attributeTypeBuilder = o.wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(o.classFile.Name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
 					}
 					if(o.wrapper.IsPublic)
 					{
@@ -6669,7 +6657,7 @@ namespace IKVM.Internal
 
 		protected virtual TypeBuilder DefineType(string mangledTypeName, TypeAttributes typeAttribs)
 		{
-			return classLoader.ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
+			return classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
 		}
 
 		internal override MethodBase LinkMethod(MethodWrapper mw)
@@ -6737,11 +6725,11 @@ namespace IKVM.Internal
 			ConstructorInfo ci = mb as ConstructorInfo;
 			if(ci != null)
 			{
-				return classLoader.ModuleBuilder.GetConstructorToken(ci).Token;
+				return classLoader.GetTypeWrapperFactory().ModuleBuilder.GetConstructorToken(ci).Token;
 			}
 			else
 			{
-				return classLoader.ModuleBuilder.GetMethodToken((MethodInfo)mb).Token;
+				return classLoader.GetTypeWrapperFactory().ModuleBuilder.GetMethodToken((MethodInfo)mb).Token;
 			}
 		}
 
@@ -8085,9 +8073,6 @@ namespace IKVM.Internal
 			return true;
 		}
 
-		// this method returns a new TypeWrapper instance for each invocation (doesn't prevent duplicates)
-		// the caller is responsible for making sure that only one TypeWrapper with the specified name escapes
-		// out into the world
 		internal static TypeWrapper CreateDotNetTypeWrapper(ClassLoaderWrapper loader, string name)
 		{
 			Type type = loader.GetType(DemangleTypeName(name));
@@ -8099,7 +8084,7 @@ namespace IKVM.Internal
 				// check the name to make sure that the canonical name was used
 				if(tw.Name == name)
 				{
-					return tw;
+					return loader.RegisterInitiatingLoader(tw);
 				}
 			}
 			return null;
@@ -8110,7 +8095,7 @@ namespace IKVM.Internal
 			private Type delegateType;
 			private Type type;
 
-			internal DelegateInnerClassTypeWrapper(string name, Type delegateType)
+			internal DelegateInnerClassTypeWrapper(string name, Type delegateType, ClassLoaderWrapper classLoader)
 				: base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract, name, null)
 			{
 				this.delegateType = delegateType;
@@ -8132,11 +8117,13 @@ namespace IKVM.Internal
 				if(!delegateType.Assembly.ReflectionOnly)
 #endif // WHIDBEY && !STATIC_COMPILER
 				{
-					// HACK this is an ugly hack to obtain the global ModuleBuilder
-					ModuleBuilder moduleBuilder = ClassLoaderWrapper.GetBootstrapClassLoader().ModuleBuilder;
+					// HACK the class loader that defines the delegate is hardly the right one for this inner class,
+					// but we know that we'll only ever generate one assembly, so this will work.
+					TypeWrapperFactory factory = classLoader.GetTypeWrapperFactory();
+					ModuleBuilder moduleBuilder = factory.ModuleBuilder;
 					// NOTE we chop off the prefix ("cli.") because C++/CLI doesn't like assemblies
 					// that have types in the cli namespace (lame!)
-					TypeBuilder typeBuilder = moduleBuilder.DefineType(Name.Substring(NamePrefix.Length), TypeAttributes.NotPublic | TypeAttributes.Interface | TypeAttributes.Abstract);
+					TypeBuilder typeBuilder = moduleBuilder.DefineType(factory.AllocMangledName(Name.Substring(NamePrefix.Length)), TypeAttributes.NotPublic | TypeAttributes.Interface | TypeAttributes.Abstract);
 #if STATIC_COMPILER
 					AttributeHelper.HideFromJava(typeBuilder);
 #endif //STATIC_COMPILER
@@ -9221,7 +9208,8 @@ namespace IKVM.Internal
 						}
 						if(IsDelegate(type))
 						{
-							list.Add(GetClassLoader().RegisterInitiatingLoader(new DelegateInnerClassTypeWrapper(Name + DelegateInterfaceSuffix, type)));
+							ClassLoaderWrapper classLoader = GetClassLoader();
+							list.Add(classLoader.RegisterInitiatingLoader(new DelegateInnerClassTypeWrapper(Name + DelegateInterfaceSuffix, type, classLoader)));
 						}
 						if(IsAttribute(type))
 						{
