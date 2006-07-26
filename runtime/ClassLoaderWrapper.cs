@@ -330,16 +330,14 @@ namespace IKVM.Internal
 				{
 					return LoadArrayClass(name);
 				}
-//#if WHIDBEY
-//				if(name.EndsWith("_$$$$_") && name.IndexOf("_$$$_") > 0)
-//				{
-//					TypeWrapper tw = LoadGenericClass(name);
-//					if(tw != null)
-//					{
-//						return tw;
-//					}
-//				}
-//#endif // WHIDBEY
+				if(name.EndsWith("_$$$$_") && name.IndexOf("_$$$_") > 0)
+				{
+					TypeWrapper tw = LoadGenericClass(name);
+					if(tw != null)
+					{
+						return tw;
+					}
+				}
 				return LoadClassImpl(name, throwClassNotFoundException);
 			}
 			finally
@@ -405,19 +403,22 @@ namespace IKVM.Internal
 			}
 		}
 
-#if WHIDBEY
 		private TypeWrapper LoadGenericClass(string name)
 		{
 			// generic class name grammar:
 			//
-			// mangled(open_generic_type_name) "_$$$_" parameter_class_name ( "_$$_" parameter_class_name )* "_$$$$_"
+			// mangled(open_generic_type_name) "_$$$_" M(parameter_class_name) ( "_$$_" M(parameter_class_name) )* "_$$$$_"
+			//
+			// mangled() is the normal name mangling algorithm
+			// M() is a replacement of "__" with "$$005F$$005F" followed by a replace of "." with "__"
+			//
 			int pos = name.IndexOf("_$$$_");
 			if(pos <= 0)
 			{
 				return null;
 			}
 			Type type = GetBootstrapClassLoader().GetType(DotNetTypeWrapper.DemangleTypeName(name.Substring(0, pos)));
-			if(type == null || !type.IsGenericTypeDefinition)
+			if(type == null || !Whidbey.IsGenericTypeDefinition(type))
 			{
 				return null;
 			}
@@ -468,17 +469,62 @@ namespace IKVM.Internal
 			Type[] typeArguments = new Type[typeParamNames.Count];
 			for(int i = 0; i < typeArguments.Length; i++)
 			{
-				TypeWrapper tw = LoadClassByDottedNameFast((string)typeParamNames[i]);
+				string s = (string)typeParamNames[i];
+				s = s.Replace("__", ".");
+				s = s.Replace("$$005F$$005F", "__");
+				int dims = 0;
+				while(s.Length > dims && s[dims] == 'A')
+				{
+					dims++;
+				}
+				if(s.Length == dims)
+				{
+					return null;
+				}
+				TypeWrapper tw = null;
+				switch(s[dims])
+				{
+					case 'L':
+						tw = LoadClassByDottedNameFast(s.Substring(dims + 1));
+						break;
+					case 'Z':
+						tw = PrimitiveTypeWrapper.BOOLEAN;
+						break;
+					case 'B':
+						tw = PrimitiveTypeWrapper.BYTE;
+						break;
+					case 'S':
+						tw = PrimitiveTypeWrapper.SHORT;
+						break;
+					case 'C':
+						tw = PrimitiveTypeWrapper.CHAR;
+						break;
+					case 'I':
+						tw = PrimitiveTypeWrapper.INT;
+						break;
+					case 'F':
+						tw = PrimitiveTypeWrapper.FLOAT;
+						break;
+					case 'J':
+						tw = PrimitiveTypeWrapper.LONG;
+						break;
+					case 'D':
+						tw = PrimitiveTypeWrapper.DOUBLE;
+						break;
+				}
 				if(tw == null)
 				{
 					return null;
 				}
+				if(dims > 0)
+				{
+					tw = tw.MakeArrayType(dims);
+				}
 				typeArguments[i] = tw.TypeAsSignatureType;
 			}
 			// TODO consider catching the ArgumentException that MakeGenericType can throw
-			return GetWrapperFromType(type.MakeGenericType(typeArguments));
+			return GetWrapperFromType(Whidbey.MakeGenericType(type, typeArguments));
 		}
-#endif // WHIDBEY
 
 		protected virtual TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
@@ -530,6 +576,10 @@ namespace IKVM.Internal
 			else
 			{
 				name = DotNetTypeWrapper.GetName(type);
+				if(name == null)
+				{
+					return null;
+				}
 			}
 			TypeWrapper wrapper;
 			lock(types.SyncRoot)
@@ -896,7 +946,7 @@ namespace IKVM.Internal
 			{
 				return GetWrapperFromBootstrapType(t);
 			}
-			return DotNetTypeWrapper.CreateDotNetTypeWrapper(name);
+			return DotNetTypeWrapper.CreateDotNetTypeWrapper(this, name);
 		}
 
 		// NOTE this method only sees pre-compiled Java classes
@@ -981,6 +1031,13 @@ namespace IKVM.Internal
 		{
 			Assembly[] assemblies;
 #if WHIDBEY && STATIC_COMPILER
+			// mscorlib cannot be loaded in the ReflectionOnly context,
+			// so we have to search that separately
+			Type trycorlib = typeof(object).Assembly.GetType(name);
+			if(trycorlib != null)
+			{
+				return trycorlib;
+			}
 			assemblies = AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
 #else
 			assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -1013,6 +1070,11 @@ namespace IKVM.Internal
 			isCoreAssembly = AttributeHelper.GetRemappedClasses(assembly).Length > 0;
 		}
 
+		internal override Type GetType(string name)
+		{
+			return assembly.GetType(name);
+		}
+
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
 			if(isCoreAssembly)
@@ -1022,6 +1084,11 @@ namespace IKVM.Internal
 				{
 					return GetWrapperFromBootstrapType(t);
 				}
+			}
+			TypeWrapper tw = DotNetTypeWrapper.CreateDotNetTypeWrapper(this, name);
+			if(tw != null)
+			{
+				return tw;
 			}
 			return GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
 		}

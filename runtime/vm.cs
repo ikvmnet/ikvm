@@ -387,7 +387,6 @@ namespace IKVM.Internal
 
 		private static bool debug = System.Diagnostics.Debugger.IsAttached;
 		private static bool noJniStubs;
-		private static bool isIkvmStub;
 		private static bool noStackTraceInfo;
 		private static bool compilationPhase1;
 		private static string sourcePath;
@@ -530,12 +529,6 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 #endif // COMPACT_FRAMEWORK
 
-		public static void SetIkvmStubMode()
-		{
-			// HACK
-			isIkvmStub = true;
-		}
-
 		internal static bool StrictFinalFieldSemantics
 		{
 			get
@@ -605,14 +598,6 @@ namespace IKVM.Internal
 			set
 			{
 				enableReflectionOnMethodsWithUnloadableTypeParameters = value;
-			}
-		}
-
-		internal static bool IsIkvmStub
-		{
-			get
-			{
-				return isIkvmStub;
 			}
 		}
 

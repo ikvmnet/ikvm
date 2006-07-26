@@ -7827,6 +7827,9 @@ namespace IKVM.Internal
 		private static readonly MethodInfo get_IsGenericTypeDefinition = typeof(Type).GetMethod("get_IsGenericTypeDefinition");
 		private static readonly MethodInfo get_ContainsGenericParameters = typeof(Type).GetMethod("get_ContainsGenericParameters");
 		private static readonly MethodInfo get_IsGenericMethodDefinition = typeof(MethodBase).GetMethod("get_IsGenericMethodDefinition");
+		private static readonly MethodInfo get_IsGenericType = typeof(Type).GetMethod("get_IsGenericType");
+		private static readonly MethodInfo method_GetGenericTypeDefinition = typeof(Type).GetMethod("GetGenericTypeDefinition");
+		private static readonly MethodInfo method_GetGenericArguments = typeof(Type).GetMethod("GetGenericArguments");
 		private static readonly MethodInfo method_MakeGenericType = typeof(Type).GetMethod("MakeGenericType");
 
 		internal static bool IsGenericTypeDefinition(Type type)
@@ -7842,6 +7845,21 @@ namespace IKVM.Internal
 		internal static bool IsGenericMethodDefinition(MethodBase mb)
 		{
 			return get_IsGenericMethodDefinition != null && (bool)get_IsGenericMethodDefinition.Invoke(mb, noargs);
+		}
+
+		internal static bool IsGenericType(Type type)
+		{
+			return get_IsGenericType != null && (bool)get_IsGenericType.Invoke(type, noargs);
+		}
+
+		internal static Type GetGenericTypeDefinition(Type type)
+		{
+			return method_GetGenericTypeDefinition == null ? null : (Type)method_GetGenericTypeDefinition.Invoke(type, noargs);
+		}
+
+		internal static Type[] GetGenericArguments(Type type)
+		{
+			return method_GetGenericArguments == null ? Type.EmptyTypes : (Type[])method_GetGenericArguments.Invoke(type, noargs);
 		}
 
 		internal static Type MakeGenericType(Type type, Type[] typeArguments)
@@ -7913,13 +7931,50 @@ namespace IKVM.Internal
 
 			if(name == null)
 			{
-				// open generic types don't have a full name
+				// generic type parameters don't have a full name
 				return null;
 			}
 
-			if(AttributeHelper.IsNoPackagePrefix(type))
+			if(Whidbey.ContainsGenericParameters(type))
 			{
-				// TODO figure out if this is even required
+				// open generic types are not visible
+				return null;
+			}
+			if(Whidbey.IsGenericType(type))
+			{
+				System.Text.StringBuilder sb = new System.Text.StringBuilder();
+				sb.Append(MangleTypeName(Whidbey.GetGenericTypeDefinition(type).FullName));
+				sb.Append("_$$$_");
+				string sep = "";
+				foreach(Type t in Whidbey.GetGenericArguments(type))
+				{
+					sb.Append(sep);
+					TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(t);
+					while(tw.IsArray)
+					{
+						tw = tw.ElementTypeWrapper;
+						sb.Append('A');
+					}
+					if(tw.IsPrimitive)
+					{
+						sb.Append(tw.SigName);
+					}
+					else
+					{
+						string s = tw.Name;
+						s = s.Replace("__", "$$005F$$005F");
+						s = s.Replace(".", "__");
+						sb.Append('L').Append(s);
+					}
+					sep = "_$$_";
+				}
+				sb.Append("_$$$$_");
+				return sb.ToString();
+			}
+
+			if(AttributeHelper.IsNoPackagePrefix(type)
+				&& name.IndexOf('$') == -1)
+			{
 				return name.Replace('+', '$');
 			}
 
@@ -7929,25 +7984,16 @@ namespace IKVM.Internal
 		private static string MangleTypeName(string name)
 		{
 			System.Text.StringBuilder sb = new System.Text.StringBuilder(NamePrefix, NamePrefix.Length + name.Length);
-			int quoteMode = 0;
 			bool escape = false;
 			for(int i = 0; i < name.Length; i++)
 			{
 				char c = name[i];
-				if(c == '[' && !escape)
-				{
-					quoteMode++;
-				}
-				if(c == ']' && !escape)
-				{
-					quoteMode--;
-				}
 				if(c == '+' && !escape && (sb.Length == 0 || sb[sb.Length - 1] != '$'))
 				{
 					sb.Append('$');
 				}
 				else if("_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".IndexOf(c) != -1
-					|| (c == '.' && quoteMode == 0))
+					|| (c == '.' && !escape))
 				{
 					sb.Append(c);
 				}
@@ -7970,35 +8016,29 @@ namespace IKVM.Internal
 
 		// NOTE if the name is not a valid mangled type name, no demangling is done and the
 		// original string is returned
+		// NOTE we don't enforce canonical form, this is not required, because we cannot
+		// guarantee it for unprefixed names anyway, so the caller is responsible for
+		// ensuring that the original name was in fact the canonical name.
 		internal static string DemangleTypeName(string name)
 		{
-			Debug.Assert(name.StartsWith(NamePrefix));
+			if(!name.StartsWith(NamePrefix))
+			{
+				return name.Replace('$', '+');
+			}
 			System.Text.StringBuilder sb = new System.Text.StringBuilder(name.Length - NamePrefix.Length);
-			int end = name.Length;
-			bool hasDelegateSuffix = name.EndsWith(DelegateInterfaceSuffix);
-			if(hasDelegateSuffix)
-			{
-				end -= DelegateInterfaceSuffix.Length;
-			}
-			bool hasAnnotationSuffix = name.EndsWith(AttributeAnnotationSuffix);
-			if(hasAnnotationSuffix)
-			{
-				end -= AttributeAnnotationSuffix.Length;
-			}
-			// TODO we should enforce canonical form
-			for(int i = NamePrefix.Length; i < end; i++)
+			for(int i = NamePrefix.Length; i < name.Length; i++)
 			{
 				char c = name[i];
 				if(c == '$')
 				{
-					if(i + 1 < end && name[i + 1] != '$')
+					if(i + 1 < name.Length && name[i + 1] != '$')
 					{
 						sb.Append('+');
 					}
 					else
 					{
 						i++;
-						if(i + 5 > end)
+						if(i + 5 > name.Length)
 						{
 							return name;
 						}
@@ -8017,14 +8057,6 @@ namespace IKVM.Internal
 				{
 					sb.Append(c);
 				}
-			}
-			if(hasDelegateSuffix)
-			{
-				sb.Append(DelegateInterfaceSuffix);
-			}
-			if(hasAnnotationSuffix)
-			{
-				sb.Append(AttributeAnnotationSuffix);
 			}
 			return sb.ToString();
 		}
@@ -8056,56 +8088,41 @@ namespace IKVM.Internal
 		// this method returns a new TypeWrapper instance for each invocation (doesn't prevent duplicates)
 		// the caller is responsible for making sure that only one TypeWrapper with the specified name escapes
 		// out into the world
-		internal static TypeWrapper CreateDotNetTypeWrapper(string name)
+		internal static TypeWrapper CreateDotNetTypeWrapper(ClassLoaderWrapper loader, string name)
 		{
-			string origname = name;
-			bool prefixed = name.StartsWith(NamePrefix);
-			if(prefixed)
-			{
-				// mangled names cannot contain commas and since we're later on going to chop off the comma
-				// (to deal with assembly qualified names in generic types) we don't want to pass it along here
-				if(name.IndexOf(',') >= 0)
-				{
-					return null;
-				}
-				name = DemangleTypeName(name);
-			}
-			Type type = LoadTypeFromLoadedAssemblies(name);
-			if(type != null)
-			{
-				if(!IsAllowedOutside(type))
-				{
-					return null;
-				}
-				if(prefixed || AttributeHelper.IsNoPackagePrefix(type))
-				{
-					return new DotNetTypeWrapper(type);
-				}
-			}
 #if !COMPACT_FRAMEWORK
 			if(name.EndsWith(DelegateInterfaceSuffix))
 			{
-				Type delegateType = LoadTypeFromLoadedAssemblies(name.Substring(0, name.Length - DelegateInterfaceSuffix.Length));
-				if(delegateType != null && IsDelegate(delegateType))
+				TypeWrapper tw = loader.LoadClassByDottedNameFast(name.Substring(0, name.Length - DelegateInterfaceSuffix.Length));
+				if(tw is DotNetTypeWrapper
+					&& IsDelegate(tw.TypeAsTBD)
+					&& tw.Name + DelegateInterfaceSuffix == name)
 				{
-					if(prefixed || AttributeHelper.IsNoPackagePrefix(delegateType))
-					{
-						return new DelegateInnerClassTypeWrapper(origname, delegateType);
-					}
+					return new DelegateInnerClassTypeWrapper(name, tw.TypeAsTBD);
 				}
 			}
 			else if(name.EndsWith(AttributeAnnotationSuffix))
 			{
-				Type attributeType = LoadTypeFromLoadedAssemblies(name.Substring(0, name.Length - AttributeAnnotationSuffix.Length));
-				if(attributeType != null && IsAttribute(attributeType))
+				TypeWrapper tw = loader.LoadClassByDottedNameFast(name.Substring(0, name.Length - AttributeAnnotationSuffix.Length));
+				if(tw is DotNetTypeWrapper
+					&& IsAttribute(tw.TypeAsTBD)
+					&& tw.Name + AttributeAnnotationSuffix == name)
 				{
-					if(prefixed || AttributeHelper.IsNoPackagePrefix(attributeType))
-					{
-						return new AttributeAnnotationTypeWrapper(origname, attributeType);
-					}
+					return new AttributeAnnotationTypeWrapper(name, tw.TypeAsTBD);
 				}
 			}
 #endif // !COMPACT_FRAMEWORK
+			Type type = loader.GetType(DemangleTypeName(name));
+			if(type != null
+				&& !AttributeHelper.IsJavaModule(type.Module)
+				&& IsAllowedOutside(type))
+			{
+				TypeWrapper tw = new DotNetTypeWrapper(type);
+				if(tw.Name == name)
+				{
+					return tw;
+				}
+			}
 			return null;
 		}
 
@@ -8439,118 +8456,6 @@ namespace IKVM.Internal
 				}
 			}
 #endif //!COMPACT_FRAMEWORK
-		}
-
-		private static string[] ParseGenericArgs(string args)
-		{
-			if(args[0] != '[')
-				throw new NotSupportedException();
-			ArrayList list = new ArrayList();
-			int start = 1;
-			int depth = 1;
-			for(int i = 1; i < args.Length; i++)
-			{
-				if(args[i] == '[')
-				{
-					depth++;
-					if(depth == 1)
-					{
-						start = i + 1;
-					}
-				}
-				else if(args[i] == ']')
-				{
-					depth--;
-					if(depth == 0)
-					{
-						list.Add(args.Substring(start, i - start));
-					}
-				}
-			}
-			return (string[])list.ToArray(typeof(string));
-		}
-
-		private static Type LoadTypeFromLoadedAssemblies(string name)
-		{
-			// HACK handle generic types here
-			int index = name.IndexOf("[[");
-			if(index > 0)
-			{
-				int lastIndex = name.LastIndexOf("]]");
-				if(lastIndex == -1 || (lastIndex + 2 < name.Length && name[lastIndex + 2] != ','))
-				{
-					return null;
-				}
-				Type t = LoadTypeFromLoadedAssemblies(name.Substring(0, index));
-				if(t != null && Whidbey.IsGenericTypeDefinition(t))
-				{
-					string[] typeArgStrings = ParseGenericArgs(name.Substring(index + 1, lastIndex - index));
-					Type[] typeArgs = new Type[typeArgStrings.Length];
-					for(int i = 0; i < typeArgs.Length; i++)
-					{
-						typeArgs[i] = LoadTypeFromLoadedAssemblies(typeArgStrings[i]);
-						if(typeArgs[i] == null)
-						{
-							return null;
-						}
-					}
-					return Whidbey.MakeGenericType(t, typeArgs);
-				}
-			}
-			// HACK we ignore the assembly name (we have to do that to make the generic type arguments work)
-			int comma = name.IndexOf(',');
-			if(comma >= 0)
-			{
-				name = name.Substring(0, comma);
-			}
-
-#if WHIDBEY
-			if(JVM.IsStaticCompiler || JVM.IsIkvmStub)
-			{
-				foreach(Assembly a in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
-				{
-					if(!(a is AssemblyBuilder))
-					{
-						Type t = a.GetType(name);
-						if(t != null
-							&& !AttributeHelper.IsJavaModule(t.Module))
-						{
-							return t;
-						}
-						// HACK we might be looking for an inner classes
-						// (if we remove the mangling of NoPackagePrefix types from GetName, we don't need this anymore)
-						t = a.GetType(name.Replace('$', '+'));
-						if(t != null
-							&& !AttributeHelper.IsJavaModule(t.Module))
-						{
-							return t;
-						}
-					}
-				}
-				return Type.GetType(name);
-			}
-#endif
-			foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies())
-			{
-				if(!(a is AssemblyBuilder))
-				{
-					Type t = a.GetType(name);
-					if(t != null
-						&& !AttributeHelper.IsJavaModule(t.Module))
-					{
-						return t;
-					}
-					// HACK we might be looking for an inner classes
-					// (if we remove the mangling of NoPackagePrefix types from GetName, we don't need this anymore)
-					t = a.GetType(name.Replace('$', '+'));
-					if(t != null
-						&& !AttributeHelper.IsJavaModule(t.Module))
-					{
-						return t;
-					}
-				}
-			}
-			return null;
 		}
 
 		internal static TypeWrapper GetWrapperFromDotNetType(Type type)

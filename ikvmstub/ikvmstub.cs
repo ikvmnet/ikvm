@@ -59,8 +59,6 @@ public class NetExp
 		if(file != null && file.Exists)
 		{
 #if WHIDBEY
-			Type typeofJVM = typeof(IKVM.Runtime.Util).Assembly.GetType("IKVM.Internal.JVM");
-			typeofJVM.GetMethod("SetIkvmStubMode").Invoke(null, null);
 			AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_ReflectionOnlyAssemblyResolve);
 			assembly = Assembly.ReflectionOnlyLoadFrom(args[0]);
 #else

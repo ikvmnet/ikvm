@@ -121,6 +121,12 @@ namespace IKVM.Internal
 				{
 					mangledTypeName = "_Module_";
 				}
+				// TODO the escaping of special characters is not required on .NET 2.0
+				// (but it doesn't really hurt that much either, the only overhead is the
+				// extra InnerClassAttribute to record the real name of the class)
+				// Note that even though .NET 2.0 automatically escapes the special characters,
+				// the name that gets passed in ResolveEventArgs.Name of the TypeResolve event
+				// contains the unescaped type name.
 				if(mangledTypeName.IndexOfAny(specialCharacters) >= 0)
 				{
 					System.Text.StringBuilder sb = new System.Text.StringBuilder();
@@ -134,12 +140,15 @@ namespace IKVM.Internal
 					}
 					mangledTypeName = sb.ToString();
 				}
-				// FXBUG the 1.1 CLR doesn't like type names that end with a period.
+				// FXBUG the CLR (both 1.1 and 2.0) doesn't like type names that end with a single period,
+				// it loses the trailing period in the name that gets passed in the TypeResolve event.
 				if(dynamicTypes.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
 				{
 #if STATIC_COMPILER
 					Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
 #endif
+					// Java class names cannot contain slashes (since they are converted into periods),
+					// so we take advantage of that fact to create a unique name.
 					mangledTypeName += "/" + instanceId;
 				}
 				dynamicTypes.Add(mangledTypeName, null);

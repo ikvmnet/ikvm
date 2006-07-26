@@ -248,13 +248,22 @@ public abstract class VMClass
 
   static String getSimpleName(Class clazz)
   {
-    if (isArray(clazz))
-      {
-	return getSimpleName(getComponentType(clazz)) + "[]";
-      }
-    // TODO instead of this hack, we should figure out the proper way to do this
-    String fullName = getName(clazz);
-    return fullName.substring(Math.max(fullName.lastIndexOf("."), fullName.lastIndexOf("$")) + 1);
+    if(isArray(clazz))
+    {
+      return getSimpleName(getComponentType(clazz)) + "[]";
+    }
+    String name = getName(clazz);
+    Class enc = getEnclosingClass(clazz);
+    if(enc == null)
+    {
+      return name.substring(name.lastIndexOf('.') + 1);
+    }
+    int skip = getName(enc).length() + 1;
+    while(skip < name.length() && "0123456789".indexOf(name.charAt(skip)) >= 0)
+    {
+      skip++;
+    }
+    return name.substring(skip);
   }
 
   static Annotation[] getDeclaredAnnotations(Class clazz)
@@ -287,12 +296,14 @@ public abstract class VMClass
 	String componentName = getCanonicalName(getComponentType(clazz));
 	if (componentName != null)
 	  return componentName + "[]";
+        return null;
       }
     if (isMemberClass(clazz))
       {
 	String memberName = getCanonicalName(getDeclaringClass(clazz));
 	if (memberName != null)
 	  return memberName + "." + getSimpleName(clazz);
+        return null;
       }
     if (isLocalClass(clazz) || isAnonymousClass(clazz))
       return null;
@@ -307,7 +318,12 @@ public abstract class VMClass
 
   static Class getEnclosingClass(Class clazz)
   {
-    return (Class)GetEnclosingClass(clazz.vmdata);
+    Class enc = (Class)GetEnclosingClass(clazz.vmdata);
+    if(enc == null)
+    { 
+      return getDeclaringClass(clazz);
+    }
+    return enc;
   }
   private static native Object GetEnclosingClass(Object wrapper);
 
@@ -323,7 +339,18 @@ public abstract class VMClass
   }
   private static native Object GetEnclosingMethod(Object wrapper);
 
-  static boolean isAnonymousClass(Class clazz) { throw new Error("Not implemented"); }
-  static boolean isLocalClass(Class clazz) { throw new Error("Not implemented"); }
-  static boolean isMemberClass(Class clazz) { throw new Error("Not implemented"); }
+  static boolean isAnonymousClass(Class clazz)
+  {
+    return "".equals(getSimpleName(clazz));    
+  }
+
+  static boolean isLocalClass(Class clazz)
+  {
+    return !isAnonymousClass(clazz) && GetEnclosingClass(clazz.vmdata) != null;
+  }
+
+  static boolean isMemberClass(Class clazz)
+  {
+    return getDeclaringClass(clazz) != null && GetEnclosingClass(clazz.vmdata) == null;
+  }
 }

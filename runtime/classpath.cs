@@ -626,10 +626,13 @@ namespace IKVM.NativeCode.java
 				{
 					name = DotNetTypeWrapper.GetName(type);
 				}
-				int dot = name.LastIndexOf('.');
-				if(dot > 0)
+				if(name != null)
 				{
-					return name.Substring(0, dot);
+					int dot = name.LastIndexOf('.');
+					if(dot > 0)
+					{
+						return name.Substring(0, dot);
+					}
 				}
 				return null;
 			}
@@ -920,6 +923,10 @@ namespace IKVM.NativeCode.java
 						{
 							throw JavaException.NoClassDefFoundError(wrappers[i].Name);
 						}
+						if(!wrappers[i].IsAccessibleFrom(wrapper))
+						{
+							throw JavaException.IllegalAccessError("tried to access class {0} from class {1}", wrappers[i].Name, wrapper.Name);
+						}
 						innerclasses[i] = wrappers[i].ClassObject;
 					}
 					return innerclasses;
@@ -946,7 +953,19 @@ namespace IKVM.NativeCode.java
 					{
 						throw JavaException.NoClassDefFoundError(declaring.Name);
 					}
-					return declaring.ClassObject;
+					if(!declaring.IsAccessibleFrom(wrapper))
+					{
+						throw JavaException.IllegalAccessError("tried to access class {0} from class {1}", declaring.Name, wrapper.Name);
+					}
+					declaring.Finish();
+					foreach(TypeWrapper tw in declaring.InnerClasses)
+					{
+						if(tw == wrapper)
+						{
+							return declaring.ClassObject;
+						}
+					}
+					throw JavaException.IncompatibleClassChangeError("{0} and {1} disagree on InnerClasses attribute", declaring.Name, wrapper.Name);
 				}
 				catch(RetargetableJavaException x)
 				{
@@ -1012,11 +1031,6 @@ namespace IKVM.NativeCode.java
 							throw JavaException.NoClassDefFoundError(enclosing[0]);
 						}
 						return enclosingClass.ClassObject;
-					}
-					if (wrapper.DeclaringTypeWrapper != null)
-					{
-						wrapper.DeclaringTypeWrapper.EnsureLoadable(wrapper.GetClassLoader());
-						return wrapper.DeclaringTypeWrapper.ClassObject;
 					}
 					return null;
 				}
