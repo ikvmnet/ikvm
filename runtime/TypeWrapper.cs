@@ -8484,6 +8484,10 @@ namespace IKVM.Internal
 
 		internal override ClassLoaderWrapper GetClassLoader()
 		{
+			if(Whidbey.IsGenericType(type))
+			{
+				return ClassLoaderWrapper.GetGenericClassLoader(this);
+			}
 			return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly);
 		}
 

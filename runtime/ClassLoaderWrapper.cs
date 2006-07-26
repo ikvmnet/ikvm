@@ -50,6 +50,7 @@ namespace IKVM.Internal
 #if WHIDBEY && !STATIC_COMPILER
 		private static readonly Hashtable reflectionOnlyClassLoaders = new Hashtable();
 #endif
+		private static ArrayList genericClassLoaders;
 		private readonly object javaClassLoader;
 		protected Hashtable types = new Hashtable();
 		private ArrayList nativeLibraries;
@@ -862,6 +863,48 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		internal static ClassLoaderWrapper GetGenericClassLoader(TypeWrapper wrapper)
+		{
+			Type type = wrapper.TypeAsTBD;
+			Debug.Assert(Whidbey.IsGenericType(type));
+			Debug.Assert(!Whidbey.ContainsGenericParameters(type));
+
+			ArrayList list = new ArrayList();
+			list.Add(GetAssemblyClassLoader(type.Assembly));
+			foreach(Type arg in Whidbey.GetGenericArguments(type))
+			{
+				ClassLoaderWrapper loader = GetWrapperFromType(arg).GetClassLoader();
+				if(!list.Contains(loader))
+				{
+					list.Add(loader);
+				}
+			}
+			ClassLoaderWrapper[] key = (ClassLoaderWrapper[])list.ToArray(typeof(ClassLoaderWrapper));
+			ClassLoaderWrapper matchingLoader = null;
+			lock(wrapperLock)
+			{
+				if(genericClassLoaders == null)
+				{
+					genericClassLoaders = new ArrayList();
+				}
+				foreach(GenericClassLoader loader in genericClassLoaders)
+				{
+					if(loader.Matches(key))
+					{
+						matchingLoader = loader;
+						break;
+					}
+				}
+				if(matchingLoader == null)
+				{
+					matchingLoader = new GenericClassLoader(key);
+					genericClassLoaders.Add(matchingLoader);
+				}
+			}
+			matchingLoader.RegisterInitiatingLoader(wrapper);
+			return matchingLoader;
+		}
+
 		// this method only supports .NET or pre-compiled Java assemblies
 		internal static ClassLoaderWrapper GetAssemblyClassLoader(Assembly assembly)
 		{
@@ -1072,6 +1115,60 @@ namespace IKVM.Internal
 					{
 						return t;
 					}
+				}
+			}
+			return null;
+		}
+	}
+
+	class GenericClassLoader : ClassLoaderWrapper
+	{
+		private ClassLoaderWrapper[] delegates;
+
+		// HACK we use a ReflectionOnlyClassLoader Java peer for the time being
+		internal GenericClassLoader(ClassLoaderWrapper[] delegates)
+			: base(JVM.Library.newReflectionOnlyClassLoader())
+		{
+			this.delegates = delegates;
+		}
+
+		internal bool Matches(ClassLoaderWrapper[] key)
+		{
+			if(key.Length == delegates.Length)
+			{
+				for(int i = 0; i < key.Length; i++)
+				{
+					if(key[i] != delegates[i])
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+
+		internal override Type GetType(string name)
+		{
+			foreach(ClassLoaderWrapper loader in delegates)
+			{
+				Type t = loader.GetType(name);
+				if(t != null)
+				{
+					return t;
+				}
+			}
+			return null;
+		}
+
+		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
+		{
+			foreach(ClassLoaderWrapper loader in delegates)
+			{
+				TypeWrapper tw = loader.LoadClassByDottedNameFast(name);
+				if(tw != null)
+				{
+					return tw;
 				}
 			}
 			return null;
