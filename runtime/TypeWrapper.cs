@@ -8090,34 +8090,13 @@ namespace IKVM.Internal
 		// out into the world
 		internal static TypeWrapper CreateDotNetTypeWrapper(ClassLoaderWrapper loader, string name)
 		{
-#if !COMPACT_FRAMEWORK
-			if(name.EndsWith(DelegateInterfaceSuffix))
-			{
-				TypeWrapper tw = loader.LoadClassByDottedNameFast(name.Substring(0, name.Length - DelegateInterfaceSuffix.Length));
-				if(tw is DotNetTypeWrapper
-					&& IsDelegate(tw.TypeAsTBD)
-					&& tw.Name + DelegateInterfaceSuffix == name)
-				{
-					return new DelegateInnerClassTypeWrapper(name, tw.TypeAsTBD);
-				}
-			}
-			else if(name.EndsWith(AttributeAnnotationSuffix))
-			{
-				TypeWrapper tw = loader.LoadClassByDottedNameFast(name.Substring(0, name.Length - AttributeAnnotationSuffix.Length));
-				if(tw is DotNetTypeWrapper
-					&& IsAttribute(tw.TypeAsTBD)
-					&& tw.Name + AttributeAnnotationSuffix == name)
-				{
-					return new AttributeAnnotationTypeWrapper(name, tw.TypeAsTBD);
-				}
-			}
-#endif // !COMPACT_FRAMEWORK
 			Type type = loader.GetType(DemangleTypeName(name));
 			if(type != null
 				&& !AttributeHelper.IsJavaModule(type.Module)
 				&& IsAllowedOutside(type))
 			{
 				TypeWrapper tw = new DotNetTypeWrapper(type);
+				// check the name to make sure that the canonical name was used
 				if(tw.Name == name)
 				{
 					return tw;
@@ -9238,11 +9217,11 @@ namespace IKVM.Internal
 						}
 						if(IsDelegate(type))
 						{
-							list.Add(GetClassLoader().LoadClassByDottedName(Name + DelegateInterfaceSuffix));
+							list.Add(GetClassLoader().RegisterInitiatingLoader(new DelegateInnerClassTypeWrapper(Name + DelegateInterfaceSuffix, type)));
 						}
 						if(IsAttribute(type))
 						{
-							list.Add(GetClassLoader().LoadClassByDottedName(Name + AttributeAnnotationSuffix));
+							list.Add(GetClassLoader().RegisterInitiatingLoader(new AttributeAnnotationTypeWrapper(Name + AttributeAnnotationSuffix, type)));
 						}
 						innerClasses = (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
 					}

@@ -140,7 +140,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
+		internal TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
 		{
 			Debug.Assert(tw != null);
 			Debug.Assert(!tw.IsUnloadable);
@@ -336,6 +336,27 @@ namespace IKVM.Internal
 					if(tw != null)
 					{
 						return tw;
+					}
+				}
+				// for manufactured types, we load the declaring outer type (the real one) and
+				// let that generated the manufactured nested classes
+				TypeWrapper outer = null;
+				if(name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
+				{
+					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.DelegateInterfaceSuffix.Length), false);
+				}
+				else if(name.EndsWith(DotNetTypeWrapper.AttributeAnnotationSuffix))
+				{
+					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length), false);
+				}
+				if(outer != null)
+				{
+					foreach(TypeWrapper tw in outer.InnerClasses)
+					{
+						if(tw.Name == name)
+						{
+							return tw;
+						}
 					}
 				}
 				return LoadClassImpl(name, throwClassNotFoundException);
