@@ -645,23 +645,6 @@ namespace IKVM.NativeCode.java
 				{
 					return wrapper.ClassObject;
 				}
-				// For compatibility with Sun's JDK 1.4, we also find array variations of already loaded classes
-				if(name.StartsWith("[") && name.EndsWith(";"))
-				{
-					int rank = 1;
-					while(name[rank] == '[')
-					{
-						rank++;
-					}
-					if(name[rank] == 'L' && name[rank + 1] != '[')
-					{
-						wrapper = loader.GetLoadedClass(name.Substring(rank + 1, name.Length - (rank + 2)));
-						if(wrapper != null)
-						{
-							return wrapper.MakeArrayType(rank).ClassObject;
-						}
-					}
-				}
 				return null;
 			}
 		}
