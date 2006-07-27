@@ -609,7 +609,6 @@ namespace IKVM.Internal
 			switch(sig[start])
 			{
 				case 'L':
-					// TODO we might consider doing more checking here
 					return sig.IndexOf(';', start + 1) == end - 1;
 				case '[':
 					while(sig[start] == '[')
@@ -1054,6 +1053,7 @@ namespace IKVM.Internal
 			private ushort name_index;
 			private string name;
 			private TypeWrapper typeWrapper;
+			private static char[] invalidJava15Characters = { '.', ';' };
 
 			internal ConstantPoolItemClass(BigEndianBinaryReader br)
 			{
@@ -1074,7 +1074,6 @@ namespace IKVM.Internal
 							int end = name.Length;
 							if(prev == '[')
 							{
-								// TODO optimize this
 								if(!IsValidFieldSig(name))
 								{
 									goto barf;
@@ -1104,10 +1103,26 @@ namespace IKVM.Internal
 					else
 					{
 						// since 1.5 the restrictions on class names have been greatly reduced
-						if(name.IndexOf('.') >= 0)
+						int end = name.Length;
+						if(name[0] == '[')
+						{
+							if(!IsValidFieldSig(name))
+							{
+								goto barf;
+							}
+							// the semicolon is only allowed at the end and IsValidFieldSig enforces this,
+							// but since invalidJava15Characters contains the semicolon, we decrement end
+							// to make the following check against invalidJava15Characters ignore the
+							// trailing semicolon.
+							if(name[end - 1] == ';')
+							{
+								end--;
+							}
+						}
+						if(name.IndexOfAny(invalidJava15Characters, 0, end) >= 0)
+						{
 							goto barf;
-						if(name[0] == '[' && !IsValidFieldSig(name))
-							goto barf;
+						}
 						name = String.Intern(name.Replace('/', '.'));
 						return;
 					}

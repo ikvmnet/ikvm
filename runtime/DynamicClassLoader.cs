@@ -37,7 +37,7 @@ namespace IKVM.Internal
 		internal static readonly object arrayConstructionLock = new object();
 #endif // !WHIDBEY
 		private static readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
-		private static readonly char[] specialCharacters = { '\\', '+', ',', '[', ']' };
+		private static readonly char[] specialCharacters = { '\\', '+', ',', '[', ']', '*', '&', '\u0000' };
 		private static readonly string specialCharactersString = new String(specialCharacters);
 		// FXBUG moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
 		// so for the time being, we share one dynamic assembly among all classloaders
@@ -53,6 +53,10 @@ namespace IKVM.Internal
 			// TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
 			// we should handle that by disabling dynamic class loading
 			AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
+
+			// Ref.Emit doesn't like the "<Module>" name for types
+			// (since it already defines a pseudo-type named <Module> for global methods and fields)
+			dynamicTypes.Add("<Module>", null);
 		}
 
 		internal DynamicClassLoader(ClassLoaderWrapper classLoader)
@@ -109,12 +113,6 @@ namespace IKVM.Internal
 		{
 			lock(dynamicTypes.SyncRoot)
 			{
-				// Ref.Emit doesn't like the "<Module>" name for types
-				// (since it already defines a pseudo-type named <Module> for global methods and fields)
-				if(mangledTypeName == "<Module>")
-				{
-					mangledTypeName = "_Module_";
-				}
 				// TODO the escaping of special characters is not required on .NET 2.0
 				// (but it doesn't really hurt that much either, the only overhead is the
 				// extra InnerClassAttribute to record the real name of the class)
@@ -128,6 +126,12 @@ namespace IKVM.Internal
 					{
 						if(specialCharactersString.IndexOf(c) >= 0)
 						{
+							if(c == 0)
+							{
+								// we can't escape the NUL character, so we replace it with a space.
+								sb.Append(' ');
+								continue;
+							}
 							sb.Append('\\');
 						}
 						sb.Append(c);

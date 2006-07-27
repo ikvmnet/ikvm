@@ -1045,17 +1045,15 @@ namespace IKVM.Internal
 			try
 			{
 				Type t = a.GetType(name);
-				if(t != null
-					&& AttributeHelper.IsJavaModule(t.Module)
-					&& !AttributeHelper.IsHideFromJava(t)
-					&& !t.IsArray
-					&& !t.IsPointer
-					&& !t.IsByRef)
+				if(t == null)
 				{
-					return t;
+					// we might be looking for an inner classes
+					string cname = name.Replace('$', '+');
+					if(!ReferenceEquals(cname, name))
+					{
+						t = a.GetType(cname);
+					}
 				}
-				// HACK we might be looking for an inner classes
-				t = a.GetType(name.Replace('$', '+'));
 				if(t != null
 					&& AttributeHelper.IsJavaModule(t.Module)
 					&& !AttributeHelper.IsHideFromJava(t)
