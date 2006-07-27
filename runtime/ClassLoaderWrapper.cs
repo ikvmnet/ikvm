@@ -536,8 +536,22 @@ namespace IKVM.Internal
 				}
 				typeArguments[i] = tw.TypeAsSignatureType;
 			}
-			// TODO consider catching the ArgumentException that MakeGenericType can throw
-			return GetWrapperFromType(Whidbey.MakeGenericType(type, typeArguments));
+			try
+			{
+				type = Whidbey.MakeGenericType(type, typeArguments);
+			}
+			catch(ArgumentException)
+			{
+				// one of the typeArguments failed to meet the constraints
+				return null;
+			}
+			TypeWrapper wrapper = GetWrapperFromType(type);
+			if(wrapper != null && wrapper.Name != name)
+			{
+				// the name specified was not in canonical form
+				return null;
+			}
+			return wrapper;
 		}
 
 		protected virtual TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
@@ -644,12 +658,7 @@ namespace IKVM.Internal
 			{
 				return null;
 			}
-			Type array = ArrayTypeWrapper.MakeArrayType(elementType, dims);
-			Modifiers modifiers = Modifiers.Final | Modifiers.Abstract;
-			Modifiers reflectiveModifiers = modifiers;
-			modifiers |= elementTypeWrapper.Modifiers & Modifiers.Public;
-			reflectiveModifiers |= elementTypeWrapper.ReflectiveModifiers & Modifiers.AccessMask;
-			return RegisterInitiatingLoader(new ArrayTypeWrapper(array, modifiers, reflectiveModifiers, name, this));
+			return RegisterInitiatingLoader(new ArrayTypeWrapper(elementTypeWrapper, name));
 		}
 
 		internal object GetJavaClassLoader()

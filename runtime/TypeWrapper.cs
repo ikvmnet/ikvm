@@ -3527,6 +3527,8 @@ namespace IKVM.Internal
 					{
 						// HACK we abuse the InnerClassAttribute to record to real name
 						AttributeHelper.SetInnerClass(typeBuilder, wrapper.Name, wrapper.Modifiers);
+						// TODO once we've implemented an assembly class loader, add the name mapping to that,
+						// so that the renamed type can be found again at runtime.
 					}
 #endif // STATIC_COMPILER
 					ArrayList interfaceList = null;
@@ -7822,37 +7824,86 @@ namespace IKVM.Internal
 
 		internal static bool IsGenericTypeDefinition(Type type)
 		{
-			return get_IsGenericTypeDefinition != null && (bool)get_IsGenericTypeDefinition.Invoke(type, noargs);
+			try
+			{
+				return get_IsGenericTypeDefinition != null && (bool)get_IsGenericTypeDefinition.Invoke(type, noargs);
+			}
+			catch(TargetInvocationException x)
+			{
+				throw x.InnerException;
+			}
 		}
 
 		internal static bool ContainsGenericParameters(Type type)
 		{
-			return get_ContainsGenericParameters != null && (bool)get_ContainsGenericParameters.Invoke(type, noargs);
+			try
+			{
+				return get_ContainsGenericParameters != null && (bool)get_ContainsGenericParameters.Invoke(type, noargs);
+			}
+			catch(TargetInvocationException x)
+			{
+				throw x.InnerException;
+			}
 		}
 
 		internal static bool IsGenericMethodDefinition(MethodBase mb)
 		{
-			return get_IsGenericMethodDefinition != null && (bool)get_IsGenericMethodDefinition.Invoke(mb, noargs);
+			try
+			{
+				return get_IsGenericMethodDefinition != null && (bool)get_IsGenericMethodDefinition.Invoke(mb, noargs);
+			}
+			catch(TargetInvocationException x)
+			{
+				throw x.InnerException;
+			}
 		}
 
 		internal static bool IsGenericType(Type type)
 		{
-			return get_IsGenericType != null && (bool)get_IsGenericType.Invoke(type, noargs);
+			try
+			{
+				return get_IsGenericType != null && (bool)get_IsGenericType.Invoke(type, noargs);
+			}
+			catch(TargetInvocationException x)
+			{
+				throw x.InnerException;
+			}
 		}
 
 		internal static Type GetGenericTypeDefinition(Type type)
 		{
-			return method_GetGenericTypeDefinition == null ? null : (Type)method_GetGenericTypeDefinition.Invoke(type, noargs);
+			try
+			{
+				return method_GetGenericTypeDefinition == null ? null : (Type)method_GetGenericTypeDefinition.Invoke(type, noargs);
+			}
+			catch(TargetInvocationException x)
+			{
+				throw x.InnerException;
+			}
 		}
 
 		internal static Type[] GetGenericArguments(Type type)
 		{
-			return method_GetGenericArguments == null ? Type.EmptyTypes : (Type[])method_GetGenericArguments.Invoke(type, noargs);
+			try
+			{
+				return method_GetGenericArguments == null ? Type.EmptyTypes : (Type[])method_GetGenericArguments.Invoke(type, noargs);
+			}
+			catch(TargetInvocationException x)
+			{
+				throw x.InnerException;
+			}
 		}
 
 		internal static Type MakeGenericType(Type type, Type[] typeArguments)
 		{
-			return (Type)method_MakeGenericType.Invoke(type, new object[] { typeArguments });
+			try
+			{
+				return (Type)method_MakeGenericType.Invoke(type, new object[] { typeArguments });
+			}
+			catch(TargetInvocationException x)
+			{
+				throw x.InnerException;
+			}
 		}
 	}
 
@@ -9422,21 +9473,18 @@ namespace IKVM.Internal
 	{
 		private static TypeWrapper[] interfaces;
 		private static MethodInfo clone;
-		private Type type;
-		private Modifiers reflectiveModifiers;
-		private ClassLoaderWrapper classLoader;
+		private readonly TypeWrapper ultimateElementTypeWrapper;
+		private Type arrayType;
 
-		internal ArrayTypeWrapper(Type type, Modifiers modifiers, Modifiers reflectiveModifiers, string name, ClassLoaderWrapper classLoader)
-			: base(modifiers, name, CoreClasses.java.lang.Object.Wrapper)
+		internal ArrayTypeWrapper(TypeWrapper ultimateElementTypeWrapper, string name)
+			: base(Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name, CoreClasses.java.lang.Object.Wrapper)
 		{
-			this.type = type;
-			this.reflectiveModifiers = reflectiveModifiers;
-			this.classLoader = classLoader;
+			this.ultimateElementTypeWrapper = ultimateElementTypeWrapper;
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()
 		{
-			return classLoader;
+			return ultimateElementTypeWrapper.GetClassLoader();
 		}
 
 		internal static MethodInfo CloneMethod
@@ -9463,7 +9511,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return reflectiveModifiers;
+				return Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.ReflectiveModifiers & Modifiers.AccessMask);
 			}
 		}
 
@@ -9471,7 +9519,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return type.Assembly;
+				return ultimateElementTypeWrapper.Assembly;
 			}
 		}
 
@@ -9519,7 +9567,11 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return type;
+				if(arrayType == null)
+				{
+					arrayType = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
+				}
+				return arrayType;
 			}
 		}
 
@@ -9527,12 +9579,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				Type elem = type.GetElementType();
-				while(elem.IsArray)
-				{
-					elem = elem.GetElementType();
-				}
-				return !(elem is TypeBuilder);
+				return !(ultimateElementTypeWrapper.TypeAsArrayType is TypeBuilder);
 			}
 		}
 
@@ -9540,13 +9587,11 @@ namespace IKVM.Internal
 		{
 			lock(this)
 			{
-				// TODO optimize this
 				if(!IsFinished)
 				{
-					TypeWrapper elementTypeWrapper = ElementTypeWrapper;
-					elementTypeWrapper.Finish();
-					type = MakeArrayType(elementTypeWrapper.TypeAsArrayType, 1);
-					ClassLoaderWrapper.SetWrapperForType(type, this);
+					ultimateElementTypeWrapper.Finish();
+					arrayType = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
+					ClassLoaderWrapper.SetWrapperForType(arrayType, this);
 				}
 			}
 		}
