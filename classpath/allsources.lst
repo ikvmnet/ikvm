@@ -3898,6 +3898,7 @@
 ../../classpath/javax/swing/text/EditorKit.java
 ../../classpath/javax/swing/text/Element.java
 ../../classpath/javax/swing/text/ElementIterator.java
+../../classpath/javax/swing/text/EmptyAttributeSet.java
 ../../classpath/javax/swing/text/FieldView.java
 ../../classpath/javax/swing/text/FlowView.java
 ../../classpath/javax/swing/text/GapContent.java

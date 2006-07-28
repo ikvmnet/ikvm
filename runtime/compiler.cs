@@ -905,7 +905,27 @@ class Compiler
 			{
 				for(int i = 0; i < m.Instructions.Length; i++)
 				{
-					if(ByteCodeMetaData.CanThrowException(m.Instructions[i].NormalizedOpCode))
+					if(m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__getfield
+						&& VerifierTypeWrapper.IsThis(c.ma.GetRawStackTypeWrapper(i, 0)))
+					{
+						// loading a field from the current object cannot throw
+					}
+					else if(m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__putfield
+						&& VerifierTypeWrapper.IsThis(c.ma.GetRawStackTypeWrapper(i, 1)))
+					{
+						// storing a field in the current object cannot throw
+					}
+					else if(m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__getstatic
+						&& classFile.GetFieldref(m.Instructions[i].Arg1).GetClassType() == clazz)
+					{
+						// loading a field from the current class cannot throw
+					}
+					else if(m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__putstatic
+						&& classFile.GetFieldref(m.Instructions[i].Arg1).GetClassType() == clazz)
+					{
+						// storing a field to the current class cannot throw
+					}
+					else if(ByteCodeMetaData.CanThrowException(m.Instructions[i].NormalizedOpCode))
 					{
 						lineNumberTable = c.lineNumbers;
 						break;
@@ -1466,6 +1486,18 @@ class Compiler
 			switch(instr.NormalizedOpCode)
 			{
 				case NormalizedByteCode.__getstatic:
+				{
+					ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
+					if(cpi.GetClassType() != clazz)
+					{
+						// we may trigger a static initializer, which is equivalent to a call
+						nonleaf = true;
+					}
+					FieldWrapper field = cpi.GetField();
+					field.EmitGet(ilGenerator);
+					field.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilGenerator);
+					break;
+				}
 				case NormalizedByteCode.__getfield:
 				{
 					ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
@@ -1475,6 +1507,19 @@ class Compiler
 					break;
 				}
 				case NormalizedByteCode.__putstatic:
+				{
+					ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
+					if(cpi.GetClassType() != clazz)
+					{
+						// we may trigger a static initializer, which is equivalent to a call
+						nonleaf = true;
+					}
+					FieldWrapper field = cpi.GetField();
+					TypeWrapper tw = field.FieldTypeWrapper;
+					tw.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
+					field.EmitSet(ilGenerator);
+					break;
+				}
 				case NormalizedByteCode.__putfield:
 				{
 					ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
@@ -1488,6 +1533,7 @@ class Compiler
 				case NormalizedByteCode.__dynamic_putstatic:
 				case NormalizedByteCode.__dynamic_getfield:
 				case NormalizedByteCode.__dynamic_putfield:
+					nonleaf = true;
 					DynamicGetPutField(instr, i);
 					break;
 				case NormalizedByteCode.__aconst_null:
