@@ -1589,6 +1589,7 @@ namespace ikvm.awt
 			control.MouseLeave += new EventHandler(OnMouseLeave);
 			control.GotFocus += new EventHandler(OnGotFocus);
 			control.LostFocus += new EventHandler(OnLostFocus);
+			control.SizeChanged += new EventHandler(OnSizeChanged);
 		}
 
 		private static int MapKeyCode(Keys key)
@@ -1758,6 +1759,11 @@ namespace ikvm.awt
 			postEvent(new java.awt.@event.FocusEvent(component, java.awt.@event.FocusEvent.FOCUS_LOST));
 		}
 
+		private void OnSizeChanged(object sender, EventArgs e)
+		{
+			postEvent(new java.awt.@event.ComponentEvent(component, java.awt.@event.ComponentEvent.COMPONENT_RESIZED));
+		}
+
 		protected void postEvent(java.awt.AWTEvent evt)
 		{
 			NetToolkit.eventQueue.postEvent(evt);
@@ -1826,7 +1832,7 @@ namespace ikvm.awt
 			return minimumSize();
 		}
 
-		public virtual java.awt.Dimension getPreferredSize()
+		public java.awt.Dimension getPreferredSize()
 		{
 			return preferredSize();
 		}
@@ -1876,12 +1882,12 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public java.awt.Dimension minimumSize()
+		public virtual java.awt.Dimension minimumSize()
 		{
 			return component.getSize();
 		}
 
-		public java.awt.Dimension preferredSize()
+		public virtual java.awt.Dimension preferredSize()
 		{
 			return minimumSize();
 		}
@@ -2394,7 +2400,7 @@ namespace ikvm.awt
 			control.Invoke(new SetString(setLabelImpl), new object[] { label });
 		}
 
-		public override java.awt.Dimension getPreferredSize()
+		public override java.awt.Dimension minimumSize()
 		{
 			using(Graphics g = control.CreateGraphics())
 			{
@@ -2608,7 +2614,7 @@ namespace ikvm.awt
 			control.Text = s;
 		}
 
-		public override java.awt.Dimension getPreferredSize()
+		public override java.awt.Dimension preferredSize()
 		{
 			return (java.awt.Dimension)control.Invoke(new GetDimension(getPreferredSizeImpl), null);
 		}
@@ -2855,7 +2861,6 @@ namespace ikvm.awt
 		private void Setup()
 		{
 			Form form = (Form)control;
-			form.Resize += new EventHandler(Resize);
 			form.Closing += new CancelEventHandler(Closing);
 		}
 
@@ -2877,20 +2882,6 @@ namespace ikvm.awt
 			public void run()
 			{
 				comp.validate();
-			}
-		}
-
-		private void Resize(object sender, EventArgs e)
-		{
-			if(component.getWidth() != control.Bounds.Width
-				|| component.getHeight() != control.Bounds.Height)
-			{
-				component.setSize(control.Bounds.Width, control.Bounds.Height);
-			}
-			if(component.getX() != control.Bounds.X
-				|| component.getY() != control.Bounds.Y)
-			{
-				component.setLocation(control.Bounds.X, control.Bounds.Y);
 			}
 		}
 
