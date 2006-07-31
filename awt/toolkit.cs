@@ -1780,7 +1780,7 @@ namespace ikvm.awt
 
 		public void disable()
 		{
-			throw new NotImplementedException();
+			setEnabled(false);
 		}
 
 		public void dispose()
@@ -1796,7 +1796,7 @@ namespace ikvm.awt
 
 		public void enable()
 		{
-			throw new NotImplementedException();
+			setEnabled(true);
 		}
 
 		public ColorModel getColorModel()
@@ -1868,7 +1868,7 @@ namespace ikvm.awt
 
 		public void hide()
 		{
-			throw new NotImplementedException();
+			setVisible(false);
 		}
 
 		public bool isFocusTraversable()
@@ -1920,7 +1920,9 @@ namespace ikvm.awt
 
 		public bool requestFocus(java.awt.Component source, bool bool1, bool bool2, long x)
 		{
-			throw new NotImplementedException();
+			// TODO what do all the args mean?
+			requestFocus();
+			return true;
 		}
 
 		public void reshape(int x, int y, int width, int height)
