@@ -1529,7 +1529,15 @@ namespace ikvm.awt
 				}
 				else
 				{
-					control.Parent = ((NetComponentPeer)parent.getPeer()).control;
+					java.awt.Container p = parent;
+					while(p != null && p.getPeer() is java.awt.peer.LightweightPeer)
+					{
+						p = p.getParent();
+					}
+					if(p != null)
+					{
+						control.Parent = ((NetComponentPeer)p.getPeer()).control;
+					}
 				}
 				if(parent is java.awt.Frame)
 				{
