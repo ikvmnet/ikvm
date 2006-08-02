@@ -566,7 +566,7 @@ public final class ExceptionHelper
         {
             if(t instanceof cli.System.TypeInitializationException)
             {
-                return MapTypeInitializeException((cli.System.TypeInitializationException)t);
+                return MapTypeInitializeException((cli.System.TypeInitializationException)t, handler);
             }
             Object obj = exceptions.get(t);
             if(obj instanceof ExceptionInfoHelper)
@@ -686,23 +686,23 @@ public final class ExceptionHelper
 	setStackTrace(t, stackTrace == null ? new StackTraceElement[0] : stackTrace);
     }
 
-    static Throwable MapTypeInitializeException(cli.System.TypeInitializationException t)
+    static Throwable MapTypeInitializeException(cli.System.TypeInitializationException t, cli.System.Type handler)
     {
-        Throwable r;
+        Throwable r = MapExceptionFast(t.get_InnerException(), true);
+        if(!(r instanceof Error))
+        {
+            r = new ExceptionInInitializerError(r);
+        }
         String type = t.get_TypeName();
         if(failedTypes.containsKey(type))
         {
-            r = new NoClassDefFoundError();
+            r = new NoClassDefFoundError(type).initCause(r);
         }
-        else
+        if(handler != null && !handler.IsInstanceOfType(r))
         {
-            failedTypes.put(type, type);
-            r = MapExceptionFast(t.get_InnerException(), true);
-            if(!(r instanceof Error))
-            {
-                r = new ExceptionInInitializerError(r);
-            }
+            return null;
         }
+        failedTypes.put(type, type);
         // transplant the stack trace
         setStackTrace(r, new ExceptionInfoHelper(t, true).get_StackTrace(t));
         return r;

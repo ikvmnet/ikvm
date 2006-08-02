@@ -1617,6 +1617,42 @@ namespace IKVM.NativeCode.ikvm.@internal
 			}
 		}
 	}
+
+	namespace stubgen
+	{
+		public class StubGenerator
+		{
+			public static string getAssemblyName(object c)
+			{
+				return TypeWrapper.FromClass(c).Assembly.FullName;
+			}
+
+			public static bool isClassDeprecated(object c)
+			{
+				return IKVM.Runtime.Util.IsClassDeprecated(c);
+			}
+
+			public static bool isFieldDeprecated(object f)
+			{
+				return IKVM.Runtime.Util.IsFieldDeprecated(f);
+			}
+
+			public static bool isMethodDeprecated(object m)
+			{
+				return IKVM.Runtime.Util.IsMethodDeprecated(m);
+			}
+
+			public static bool isConstructorDeprecated(object c)
+			{
+				return IKVM.Runtime.Util.IsConstructorDeprecated(c);
+			}
+
+			public static object getFieldConstantValue(object f)
+			{
+				return IKVM.Runtime.Util.GetFieldConstantValue(f);
+			}
+		}
+	}
 }
 
 namespace ikvm.@internal

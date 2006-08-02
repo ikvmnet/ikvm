@@ -1477,8 +1477,7 @@
 		 -->
 		<exception src="System.TypeInitializationException" dst="*java.lang.Error">
 			<code>
-				<castclass type="System.TypeInitializationException" />
-				<call class="java.lang.ExceptionHelper" name="MapTypeInitializeException" sig="(Lcli.System.TypeInitializationException;)Ljava.lang.Throwable;" />
+				<!-- this code is unreachable, TypeInitializationException is handled explicitly in ExceptionHelper.java -->
 			</code>
 		</exception>
 		<exception src="System.Threading.SynchronizationLockException" dst="java.lang.IllegalMonitorStateException" />

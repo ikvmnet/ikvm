@@ -1169,7 +1169,14 @@ namespace IKVM.Internal
 #if WHIDBEY
 					val = field.GetRawConstantValue();
 #else
-					val = field.GetValue(null);
+					try
+					{
+						val = field.GetValue(null);
+					}
+					catch(TargetInvocationException x)
+					{
+						throw x.InnerException;
+					}
 					if(val is Enum)
 					{
 						val = DotNetTypeWrapper.EnumValueFieldWrapper.GetEnumPrimitiveValue(val);
