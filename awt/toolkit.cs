@@ -49,6 +49,7 @@ namespace ikvm.awt
 	delegate void SetStringInt(string s, int i);
 	delegate void SetRectangle(Rectangle r);
 	delegate void SetColor(Color c);
+	delegate void SetFont(Font f);
 	delegate java.awt.Dimension GetDimension();
 
 	class UndecoratedForm : Form
@@ -150,6 +151,7 @@ namespace ikvm.awt
 
 				Thread thread = new Thread(new ThreadStart(MessageLoop));
 				thread.ApartmentState = ApartmentState.STA;
+				thread.Name = "IKVM AWT WinForms Message Loop";
 				thread.Start();
 				// TODO don't use polling...
 				while(bogusForm == null && thread.IsAlive)
@@ -2020,10 +2022,14 @@ namespace ikvm.awt
 			control.Invoke(new SetBool(setEnabledImpl), new object[] { enabled });
 		}
 
+		private void setFontImpl(Font font)
+		{
+			control.Font = font;
+		}
+
 		public void setFont(java.awt.Font font)
 		{
-			// TODO use control.Invoke
-			control.Font = NetGraphics.NetFontFromJavaFont(font, component.getToolkit().getScreenResolution());
+			control.Invoke(new SetFont(setFontImpl), new object[] { NetGraphics.NetFontFromJavaFont(font, component.getToolkit().getScreenResolution()) });
 		}
 
 		public void setForeground(java.awt.Color color)
