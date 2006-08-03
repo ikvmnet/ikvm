@@ -794,9 +794,12 @@ namespace ikvm.awt
 		{
 		}
 
-		public override java.awt.Graphics create(int param1, int param2, int param3, int param4)
+		public override java.awt.Graphics create(int x, int y, int width, int height)
 		{
-			return null;
+			java.awt.Graphics g = create();
+			g.translate(x, y);
+			g.setClip(0, 0, width, height);
+			return g;
 		}
 
 		public override java.awt.Graphics create()
