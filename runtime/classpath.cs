@@ -1279,7 +1279,8 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 					stack[sp++] = char_tbl[cc - 256];
 					cc = ptr_tbl[cc - 256];
 				}
-				fc = stack[sp++] = cc;
+				stack[sp++] = cc;
+				fc = cc;
 				if (count >= 0) 
 				{
 					ptr_tbl[count] = prev;
