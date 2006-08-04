@@ -143,6 +143,20 @@ final class VMClassLoader
 	    {
 		return new URL("ikvmres", assembly.get_FullName(), -1, "/" + name);
 	    }
+            if(name.endsWith(".class") && name.indexOf('.') == name.length() - 6)
+            {
+                try
+                {
+                    Class c = loadClass(name.substring(0, name.length() - 6).replace('/', '.'), false);
+                    if(c != null)
+                    {
+                        return new URL("ikvmres", getClassAssembly(c).get_FullName(), -1, "/" + name);                        
+                    }
+                }
+                catch(ClassNotFoundException _)
+                {
+                }
+            }
 	}
 	catch(java.net.MalformedURLException x)
 	{
@@ -151,6 +165,7 @@ final class VMClassLoader
     }
     private static native Assembly findResourceAssembly(String name);
     private static native Assembly[] findResourceAssemblies(String name);
+    private static native Assembly getClassAssembly(Class c);
 
     /**
      * Helper to get a list of resources from the bootstrap class loader.

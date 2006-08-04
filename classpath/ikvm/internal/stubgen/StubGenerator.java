@@ -188,13 +188,13 @@ public final class StubGenerator
         {
             // FXBUG (?) .NET reflection on java.lang.Object returns toString() twice!
             // I didn't want to add the work around to CompiledTypeWrapper, so it's here.
-            if((c.getName() == "java.lang.Object" || c.getName() == "java.lang.Throwable")
-                && methods[i].getName() == "toString")
+            if((c.getName().equals("java.lang.Object") || c.getName().equals("java.lang.Throwable"))
+                && methods[i].getName().equals("toString"))
             {
                 boolean found = false;
                 for(int j = 0; j < i; j++)
                 {
-                    if(methods[j].getName() == "toString")
+                    if(methods[j].getName().equals("toString"))
                     {
                         found = true;
                         break;
@@ -254,7 +254,7 @@ public final class StubGenerator
             if((mods & (Modifiers.Public | Modifiers.Protected)) != 0 ||
                 // Include serialVersionUID field, to make Japitools comparison more acurate
                 ((mods & (Modifiers.Static | Modifiers.Final)) == (Modifiers.Static | Modifiers.Final) &&
-                fields[i].getName() == "serialVersionUID" && fields[i].getType() == java.lang.Long.TYPE))
+                fields[i].getName().equals("serialVersionUID") && fields[i].getType() == java.lang.Long.TYPE))
             {
                 // we use the IKVM runtime API to get constant value
                 // NOTE we can't use Field.get() because that will run the static initializer and
@@ -713,7 +713,7 @@ final class ConstantPoolItemUtf8 extends ConstantPoolItem
     {
         if(o instanceof ConstantPoolItemUtf8)
         {
-            return ((ConstantPoolItemUtf8)o).str == str;
+            return ((ConstantPoolItemUtf8)o).str.equals(str);
         }
         return false;
     }
@@ -1229,7 +1229,7 @@ class ClassFileWriter
             {
                 cplist.add(null);
             }
-            cphashtable.put(index, cpi);
+            cphashtable.put(cpi, index);
         }
         return (Short)index;
     }

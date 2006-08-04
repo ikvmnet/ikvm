@@ -127,6 +127,14 @@ public class Handler extends URLStreamHandler
         }
         catch (cli.System.IO.FileNotFoundException x)
         {
+            if(resource.endsWith(".class") && resource.indexOf('.') == resource.length() - 6)
+            {
+                Class c = LoadClassFromAssembly(asm, resource.substring(1, resource.length() - 6).replace('/', '.'));
+                if(c != null)
+                {
+                    return new ByteArrayInputStream(ikvm.internal.stubgen.StubGenerator.generateStub(c));
+                }
+            }
             throw (FileNotFoundException)new FileNotFoundException().initCause(x);
         }
         catch(cli.System.IO.IOException x)
@@ -136,6 +144,7 @@ public class Handler extends URLStreamHandler
     }
 
     private static native cli.System.IO.Stream ReadResourceFromAssemblyImpl(Assembly asm, String resource);
+    private static native Class LoadClassFromAssembly(Assembly asm, String className);
 
     protected URLConnection openConnection(URL url) throws IOException
     {

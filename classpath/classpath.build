@@ -54,7 +54,7 @@
 <arg value="-debug" />
 <arg value="-srcpath:/classpath/" />
 -->
-          <arg value="-version:0.29.*" />
+          <arg value="-version:0.31.*" />
           <arg value="${signoption}" />
           <arg value="-compressresources" />
           <arg value="-opt:fields" />

@@ -538,6 +538,11 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
+			public static Assembly getClassAssembly(object clazz)
+			{
+				return TypeWrapper.FromClass(clazz).Assembly;
+			}
+
 			public static object loadClass(string name, bool resolve)
 			{
 				try
@@ -1470,6 +1475,16 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 				}
 			}
 #endif
+		}
+
+		public static object LoadClassFromAssembly(Assembly asm, string className)
+		{
+			TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).LoadClassByDottedNameFast(className);
+			if(tw != null)
+			{
+				return tw.ClassObject;
+			}
+			return null;
 		}
 	}
 }
