@@ -1643,29 +1643,29 @@ namespace IKVM.NativeCode.ikvm.@internal
 				return TypeWrapper.FromClass(c).Assembly.FullName;
 			}
 
-			public static bool isClassDeprecated(object c)
+			public static object getFieldConstantValue(object fieldWrapper)
 			{
-				return IKVM.Runtime.Util.IsClassDeprecated(c);
+				return ((FieldWrapper)fieldWrapper).GetConstant();
 			}
 
-			public static bool isFieldDeprecated(object f)
+			public static bool isFieldDeprecated(object fieldWrapper)
 			{
-				return IKVM.Runtime.Util.IsFieldDeprecated(f);
+				FieldInfo fi = ((FieldWrapper)fieldWrapper).GetField();
+				return fi != null && AttributeHelper.IsDefined(fi, typeof(ObsoleteAttribute));
 			}
 
-			public static bool isMethodDeprecated(object m)
+			public static bool isMethodDeprecated(object methodWrapper)
 			{
-				return IKVM.Runtime.Util.IsMethodDeprecated(m);
+				MethodBase mb = ((MethodWrapper)methodWrapper).GetMethod();
+				return mb != null && AttributeHelper.IsDefined(mb, typeof(ObsoleteAttribute));
 			}
 
-			public static bool isConstructorDeprecated(object c)
+			public static bool isClassDeprecated(object wrapper)
 			{
-				return IKVM.Runtime.Util.IsConstructorDeprecated(c);
-			}
-
-			public static object getFieldConstantValue(object f)
-			{
-				return IKVM.Runtime.Util.GetFieldConstantValue(f);
+				Type type = ((TypeWrapper)wrapper).TypeAsTBD;
+				// we need to check type for null, because ReflectionOnly
+				// generated delegate inner interfaces don't really exist
+				return type != null && AttributeHelper.IsDefined(type, typeof(ObsoleteAttribute));
 			}
 		}
 	}

@@ -44,12 +44,12 @@
     <target name="clean">
         <delete failonerror="false">
 	    <fileset>
-                <includes name="IKVM.GNU.Classpath.jar" />
-                <includes name="japi1.diff" />
-                <includes name="japi2.diff" />
-                <includes name="${REFERENCE_API_NAME}.japi" />
-                <includes name="IKVM-${IKVM_VERSION}.japi" />
-		<includes name="../bin/japize.exe" />
+                <include name="IKVM.GNU.Classpath.jar" />
+                <include name="japi1.diff" />
+                <include name="japi2.diff" />
+                <include name="${REFERENCE_API_NAME}.japi" />
+                <include name="IKVM-${IKVM_VERSION}.japi" />
+		<include name="../bin/japize.exe" />
             </fileset>
         </delete>
     </target>

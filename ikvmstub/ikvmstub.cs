@@ -28,7 +28,6 @@ using System.Text;
 using System.Collections;
 using ICSharpCode.SharpZipLib.Zip;
 using IKVM.Attributes;
-using IKVM.Internal;
 
 public class NetExp
 {
@@ -38,7 +37,7 @@ public class NetExp
 
 	public static void Main(string[] args)
 	{
-		Tracer.EnableTraceForDebug();
+		IKVM.Internal.Tracer.EnableTraceForDebug();
 		if(args.Length != 1)
 		{
 			Console.Error.WriteLine(IKVM.Runtime.Startup.GetVersionAndCopyrightInfo());
