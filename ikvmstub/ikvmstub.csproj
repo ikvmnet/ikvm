@@ -93,11 +93,6 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "ClassFileWriter.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "ikvmstub.cs"
                     SubType = "Code"
                     BuildAction = "Compile"

@@ -146,10 +146,10 @@ public class NetExp
 	}
 #endif
 
-	private static void WriteClass(string name, ClassFileWriter c)
+	private static void WriteClass(string name, byte[] buf)
 	{
 		zipFile.PutNextEntry(new ZipEntry(name));
-		c.Write(zipFile);
+		zipFile.Write(buf, 0, buf.Length);
 	}
 
 	private static void ProcessAssembly(Assembly assembly)
@@ -190,7 +190,7 @@ public class NetExp
 					// types that IKVM doesn't support don't show up
 					continue;
 				}
-				ProcessClass(assembly.FullName, c, null);
+				ProcessClass(c);
 			}
 		}
 	}
@@ -211,7 +211,7 @@ public class NetExp
 				{
 					keepGoing = true;
 					done.Add(c.getName(), null);
-					ProcessClass(assembly.FullName, c, c.getDeclaringClass());
+					ProcessClass(c);
 				}
 			}
 		} while(keepGoing);
@@ -232,98 +232,20 @@ public class NetExp
 		return c.getName().IndexOf("$$0060") > 0;
 	}
 
-	private static void ProcessClass(string assemblyName, java.lang.Class c, java.lang.Class outer)
+	private static void ProcessClass(java.lang.Class c)
 	{
 		string name = c.getName().Replace('.', '/');
-		string super = null;
 		if(c.getSuperclass() != null)
 		{
-			super = c.getSuperclass().getName().Replace('.', '/');
 			// if the base class isn't public, we still need to export it (!)
 			if(!java.lang.reflect.Modifier.isPublic(c.getSuperclass().getModifiers()))
 			{
 				AddToExportList(c.getSuperclass());
 			}
 		}
-		if(c.isInterface())
-		{
-			super = "java/lang/Object";
-		}
-		Modifiers classmods = (Modifiers)c.getModifiers();
-		if(outer != null)
-		{
-			// protected inner classes are actually public and private inner classes are actually package
-			if((classmods & Modifiers.Protected) != 0)
-			{
-				classmods |= Modifiers.Public;
-			}
-			classmods &= ~(Modifiers.Static | Modifiers.Private | Modifiers.Protected);
-		}
-		if(c.isAnnotation())
-		{
-			classmods |= Modifiers.Annotation;
-		}
-		if(c.isEnum())
-		{
-			classmods |= Modifiers.Enum;
-		}
-		if(c.isSynthetic())
-		{
-			classmods |= Modifiers.Synthetic;
-		}
-		ClassFileWriter f = new ClassFileWriter(classmods, name, super, 0, 49);
-		string genericSignature = BuildGenericSignature(c);
-		if(genericSignature != null)
-		{
-			f.AddStringAttribute("Signature", genericSignature);
-		}
-		// TODO instead of passing in the assemblyName we're processing, we should get the assembly from the class
-		// (generic type instantiations can be from other assemblies)
-		f.AddStringAttribute("IKVM.NET.Assembly", assemblyName);
-		if(IKVM.Runtime.Util.IsClassDeprecated(c))
-		{
-			f.AddAttribute(new DeprecatedAttribute(f));
-		}
-		InnerClassesAttribute innerClassesAttribute = null;
-		if(outer != null)
-		{
-			innerClassesAttribute = new InnerClassesAttribute(f);
-			string innername = name;
-			int idx = name.LastIndexOf('$');
-			if(idx >= 0)
-			{
-				innername = innername.Substring(idx + 1);
-			}
-			int mods = c.getModifiers();
-			if(c.isAnnotation())
-			{
-				mods |= (int)Modifiers.Annotation;
-				// HACK if we see the annotation, it must be runtime visible, but currently
-				// the classpath trunk doesn't yet have the required RetentionPoly enum,
-				// so we have to fake it here
-				RuntimeVisibleAnnotationsAttribute annot = new RuntimeVisibleAnnotationsAttribute(f);
-				annot.Add(new object[] {
-					AnnotationDefaultAttribute.TAG_ANNOTATION,
-					"Ljava/lang/annotation/Retention;",
-					"value",
-					new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" }
-				});
-				f.AddAttribute(annot);
-			}
-			if(c.isEnum())
-			{
-				mods |= (int)Modifiers.Enum;
-			}
-			if(c.isSynthetic())
-			{
-				mods |= (int)Modifiers.Synthetic;
-			}
-			innerClassesAttribute.Add(name, outer.getName().Replace('.', '/'), innername, (ushort)mods);
-		}
 		java.lang.Class[] interfaces = c.getInterfaces();
 		for(int i = 0; i < interfaces.Length; i++)
 		{
-			f.AddInterface(interfaces[i].getName().Replace('.', '/'));
 			if(IsGenericType(interfaces[i])
 				|| !java.lang.reflect.Modifier.isPublic(interfaces[i].getModifiers()))
 			{
@@ -336,14 +258,7 @@ public class NetExp
 			Modifiers mods = (Modifiers)innerClasses[i].getModifiers();
 			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
-				if(innerClassesAttribute == null)
-				{
-					innerClassesAttribute = new InnerClassesAttribute(f);
-				}
-				string namePart = innerClasses[i].getName();
-				namePart = namePart.Substring(namePart.LastIndexOf('$') + 1);
-				innerClassesAttribute.Add(innerClasses[i].getName().Replace('.', '/'), name, namePart, (ushort)innerClasses[i].getModifiers());
-				ProcessClass(assemblyName, innerClasses[i], c);
+				ProcessClass(innerClasses[i]);
 			}
 		}
 		java.lang.reflect.Constructor[] constructors = c.getDeclaredConstructors();
@@ -352,14 +267,6 @@ public class NetExp
 			Modifiers mods = (Modifiers)constructors[i].getModifiers();
 			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
-				if(constructors[i].isSynthetic())
-				{
-					mods |= Modifiers.Synthetic;
-				}
-				if(constructors[i].isVarArgs())
-				{
-					mods |= Modifiers.VarArgs;
-				}
 				// TODO what happens if one of the argument types is non-public?
 				java.lang.Class[] args = constructors[i].getParameterTypes();
 				foreach(java.lang.Class arg in args)
@@ -369,32 +276,6 @@ public class NetExp
 					{
 						AddToExportList(arg);
 					}
-				}
-				FieldOrMethod m = f.AddMethod(mods, "<init>", MakeSig(args, java.lang.Void.TYPE));
-				CodeAttribute code = new CodeAttribute(f);
-				code.MaxLocals = (ushort)(args.Length * 2 + 1);
-				code.MaxStack = 3;
-				ushort index1 = f.AddClass("java/lang/UnsatisfiedLinkError");
-				ushort index2 = f.AddString("ikvmstub generated stubs can only be used on IKVM.NET");
-				ushort index3 = f.AddMethodRef("java/lang/UnsatisfiedLinkError", "<init>", "(Ljava/lang/String;)V");
-				code.ByteCode = new byte[] {
-					187, (byte)(index1 >> 8), (byte)index1,	// new java/lang/UnsatisfiedLinkError
-					89,										// dup
-				    19,	 (byte)(index2 >> 8), (byte)index2,	// ldc_w "..."
-					183, (byte)(index3 >> 8), (byte)index3, // invokespecial java/lang/UnsatisfiedLinkError/init()V
-					191										// athrow
-				};
-				m.AddAttribute(code);
-				AddExceptions(f, m, constructors[i].getExceptionTypes());
-				if(IKVM.Runtime.Util.IsConstructorDeprecated(constructors[i]))
-				{
-					m.AddAttribute(new DeprecatedAttribute(f));
-				}
-				string signature = BuildGenericSignature(constructors[i].getTypeParameters(),
-					constructors[i].getGenericParameterTypes(), java.lang.Void.TYPE, constructors[i].getGenericExceptionTypes());
-				if (signature != null)
-				{
-					m.AddAttribute(f.MakeStringAttribute("Signature", signature));
 				}
 			}
 		}
@@ -423,22 +304,6 @@ public class NetExp
 			Modifiers mods = (Modifiers)methods[i].getModifiers();
 			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
-				if((mods & Modifiers.Abstract) == 0)
-				{
-					mods |= Modifiers.Native;
-				}
-				if(methods[i].isBridge())
-				{
-					mods |= Modifiers.Bridge;
-				}
-				if(methods[i].isSynthetic())
-				{
-					mods |= Modifiers.Synthetic;
-				}
-				if(methods[i].isVarArgs())
-				{
-					mods |= Modifiers.VarArgs;
-				}
 				// TODO what happens if one of the argument types (or the return type) is non-public?
 				java.lang.Class[] args = methods[i].getParameterTypes();
 				foreach(java.lang.Class arg in args)
@@ -455,345 +320,21 @@ public class NetExp
 				{
 					AddToExportList(retType);
 				}
-				FieldOrMethod m = f.AddMethod(mods, methods[i].getName(), MakeSig(args, retType));
-				AddExceptions(f, m, methods[i].getExceptionTypes());
-				if(IKVM.Runtime.Util.IsMethodDeprecated(methods[i]))
-				{
-					m.AddAttribute(new DeprecatedAttribute(f));
-				}
-				string signature = BuildGenericSignature(methods[i].getTypeParameters(),
-					methods[i].getGenericParameterTypes(), methods[i].getGenericReturnType(),
-					methods[i].getGenericExceptionTypes());
-				if (signature != null)
-				{
-					m.AddAttribute(f.MakeStringAttribute("Signature", signature));
-				}
-				object defaultValue = methods[i].getDefaultValue();
-				if(defaultValue != null)
-				{
-					m.AddAttribute(new AnnotationDefaultClassFileAttribute(f, defaultValue));
-				}
 			}
 		}
 		java.lang.reflect.Field[] fields = c.getDeclaredFields();
 		for(int i = 0; i < fields.Length; i++)
 		{
 			Modifiers mods = (Modifiers)fields[i].getModifiers();
-			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0 ||
-				// Include serialVersionUID field, to make Japitools comparison more acurate
-				((mods & (Modifiers.Static | Modifiers.Final)) == (Modifiers.Static | Modifiers.Final) &&
-				fields[i].getName() == "serialVersionUID" && fields[i].getType() == java.lang.Long.TYPE))
+			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
-				// we use the IKVM runtime API to get constant value
-				// NOTE we can't use Field.get() because that will run the static initializer and
-				// also won't allow us to see the difference between constants and blank final fields.
-				object constantValue = IKVM.Runtime.Util.GetFieldConstantValue(fields[i]);
-				if(constantValue != null)
-				{
-					if(constantValue is java.lang.Boolean)
-					{
-						constantValue = ((java.lang.Boolean)constantValue).booleanValue();
-					}
-					else if(constantValue is java.lang.Byte)
-					{
-						constantValue = ((java.lang.Byte)constantValue).byteValue();
-					}
-					else if(constantValue is java.lang.Short)
-					{
-						constantValue = ((java.lang.Short)constantValue).shortValue();
-					}
-					else if(constantValue is java.lang.Character)
-					{
-						constantValue = ((java.lang.Character)constantValue).charValue();
-					}
-					else if(constantValue is java.lang.Integer)
-					{
-						constantValue = ((java.lang.Integer)constantValue).intValue();
-					}
-					else if(constantValue is java.lang.Long)
-					{
-						constantValue = ((java.lang.Long)constantValue).longValue();
-					}
-					else if(constantValue is java.lang.Float)
-					{
-						constantValue = ((java.lang.Float)constantValue).floatValue();
-					}
-					else if(constantValue is java.lang.Double)
-					{
-						constantValue = ((java.lang.Double)constantValue).doubleValue();
-					}
-					else if(constantValue is string)
-					{
-						// no conversion needed
-					}
-					else
-					{
-						throw new InvalidOperationException();
-					}
-				}
 				java.lang.Class fieldType = fields[i].getType();
 				if(IsGenericType(fieldType) || (fieldType.getModifiers() & (int)Modifiers.Public) == 0)
 				{
 					AddToExportList(fieldType);
 				}
-				if(fields[i].isEnumConstant())
-				{
-					mods |= Modifiers.Enum;
-				}
-				if(fields[i].isSynthetic())
-				{
-					mods |= Modifiers.Synthetic;
-				}
-				FieldOrMethod fld = f.AddField(mods, fields[i].getName(), ClassToSig(fieldType), constantValue);
-				if(IKVM.Runtime.Util.IsFieldDeprecated(fields[i]))
-				{
-					fld.AddAttribute(new DeprecatedAttribute(f));
-				}
-				if(fields[i].getGenericType() != fieldType)
-				{
-					fld.AddAttribute(f.MakeStringAttribute("Signature", ToSigForm(fields[i].getGenericType())));
-				}
 			}
 		}
-		if(innerClassesAttribute != null)
-		{
-			f.AddAttribute(innerClassesAttribute);
-		}
-		WriteClass(name + ".class", f);
-	}
-
-	private static void AddExceptions(ClassFileWriter f, FieldOrMethod m, java.lang.Class[] exceptions)
-	{
-		if(exceptions.Length > 0)
-		{
-			ExceptionsAttribute attrib = new ExceptionsAttribute(f);
-			foreach(java.lang.Class x in exceptions)
-			{
-				// TODO what happens if one of the exception types is non-public?
-				attrib.Add(x.getName().Replace('.', '/'));
-			}
-			m.AddAttribute(attrib);
-		}
-	}
-
-	private static string MakeSig(java.lang.Class[] args, java.lang.Class ret)
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.Append('(');
-		for(int i = 0; i < args.Length; i++)
-		{
-			sb.Append(ClassToSig(args[i]));
-		}
-		sb.Append(')');
-		sb.Append(ClassToSig(ret));
-		return sb.ToString();
-	}
-
-	private static string ClassToSig(java.lang.Class c)
-	{
-		if(c.isPrimitive())
-		{
-			if(c == java.lang.Void.TYPE)
-			{
-				return "V";
-			}
-			else if(c == java.lang.Byte.TYPE)
-			{
-				return "B";
-			}
-			else if(c == java.lang.Boolean.TYPE)
-			{
-				return "Z";
-			}
-			else if(c == java.lang.Short.TYPE)
-			{
-				return "S";
-			}
-			else if(c == java.lang.Character.TYPE)
-			{
-				return "C";
-			}
-			else if(c == java.lang.Integer.TYPE)
-			{
-				return "I";
-			}
-			else if(c == java.lang.Long.TYPE)
-			{
-				return "J";
-			}
-			else if(c == java.lang.Float.TYPE)
-			{
-				return "F";
-			}
-			else if(c == java.lang.Double.TYPE)
-			{
-				return "D";
-			}
-			else
-			{
-				throw new InvalidOperationException();
-			}
-		}
-		else if(c.isArray())
-		{
-			return "[" + ClassToSig(c.getComponentType());
-		}
-		else
-		{
-			return "L" + c.getName().Replace('.', '/') + ";";
-		}
-	}
-
-	private static string BuildGenericSignature(java.lang.Class c)
-	{
-		bool isgeneric = false;
-		StringBuilder sb = new StringBuilder();
-		java.lang.reflect.TypeVariable[] vars = c.getTypeParameters();
-		if(vars.Length > 0)
-		{
-			isgeneric = true;
-			sb.Append('<');
-			foreach(java.lang.reflect.TypeVariable t in vars)
-			{
-				sb.Append(t.getName());
-				bool first = true;
-				foreach(java.lang.reflect.Type bound in t.getBounds())
-				{
-					if(first)
-					{
-						first = false;
-						if(bound is java.lang.Class)
-						{
-							// HACK I don't really understand what the proper criterion is to decide this
-							if(((java.lang.Class)bound).isInterface())
-							{
-								sb.Append(':');
-							}
-						}
-					}
-					sb.Append(':').Append(ToSigForm(bound));
-				}
-			}
-			sb.Append('>');
-		}
-		java.lang.reflect.Type superclass = c.getGenericSuperclass();
-		if(superclass == null)
-		{
-			sb.Append("Ljava/lang/Object;");
-		}
-		else
-		{
-			isgeneric |= !(superclass is java.lang.Class);
-			sb.Append(ToSigForm(superclass));
-		}
-        foreach(java.lang.reflect.Type t in c.getGenericInterfaces())
-        {
-			isgeneric |= !(t is java.lang.Class);
-			sb.Append(ToSigForm(t));
-        }
-		if(isgeneric)
-		{
-			return sb.ToString();
-		}
-		return null;
-	}
-
-	private static string BuildGenericSignature(java.lang.reflect.TypeVariable[] typeParameters,
-		java.lang.reflect.Type[] parameterTypes, java.lang.reflect.Type returnType,
-		java.lang.reflect.Type[] exceptionTypes)
-	{
-		bool isgeneric = false;
-		StringBuilder sb = new StringBuilder();
-		if(typeParameters.Length > 0)
-		{
-			isgeneric = true;
-			sb.Append('<');
-			foreach(java.lang.reflect.TypeVariable t in typeParameters)
-			{
-				sb.Append(t.getName());
-				foreach(java.lang.reflect.Type bound in t.getBounds())
-				{
-					sb.Append(':').Append(ToSigForm(bound));
-				}
-			}
-			sb.Append('>');
-		}
-		sb.Append('(');
-		foreach(java.lang.reflect.Type t in parameterTypes)
-		{
-			isgeneric |= !(t is java.lang.Class);
-			sb.Append(ToSigForm(t));
-		}
-		sb.Append(')');
-		sb.Append(ToSigForm(returnType));
-		isgeneric |= !(returnType is java.lang.Class);
-		foreach(java.lang.reflect.Type t in exceptionTypes)
-		{
-			isgeneric |= !(t is java.lang.Class);
-			sb.Append('^').Append(ToSigForm(t));
-		}
-		if(isgeneric)
-		{
-			return sb.ToString();
-		}
-		return null;
-	}
-
-	private static string ToSigForm(java.lang.reflect.Type t)
-	{
-		if(t is java.lang.reflect.ParameterizedType)
-		{
-			java.lang.reflect.ParameterizedType p = (java.lang.reflect.ParameterizedType)t;
-			if(p.getOwnerType() != null)
-			{
-				// TODO
-				throw new NotImplementedException();
-			}
-			StringBuilder sb = new StringBuilder();
-			sb.Append('L').Append(((java.lang.Class)p.getRawType()).getName().Replace('.', '/'));
-			sb.Append('<');
-			foreach(java.lang.reflect.Type arg in p.getActualTypeArguments())
-			{
-				sb.Append(ToSigForm(arg));
-			}
-			sb.Append(">;");
-			return sb.ToString();
-		}
-		else if(t is java.lang.reflect.TypeVariable)
-		{
-			return "T" + ((java.lang.reflect.TypeVariable)t).getName() + ";";
-		}
-		else if(t is java.lang.reflect.WildcardType)
-		{
-			java.lang.reflect.WildcardType w = (java.lang.reflect.WildcardType)t;
-			java.lang.reflect.Type[] lower = w.getLowerBounds();
-			java.lang.reflect.Type[] upper = w.getUpperBounds();
-			if (lower.Length == 0 && upper.Length == 0)
-			{
-				return "*";
-			}
-			if (lower.Length == 1)
-			{
-				return "-" + ToSigForm(lower[0]);
-			}
-			if (upper.Length == 1)
-			{
-				return "+" + ToSigForm(upper[0]);
-			}
-			throw new NotImplementedException();
-		}
-		else if(t is java.lang.reflect.GenericArrayType)
-		{
-			java.lang.reflect.GenericArrayType a = (java.lang.reflect.GenericArrayType)t;
-			return "[" + ToSigForm(a.getGenericComponentType());
-		}
-		else if(t is java.lang.Class)
-		{
-			return ClassToSig((java.lang.Class)t);
-		}
-		else
-		{
-			throw new NotImplementedException(t.GetType().FullName);
-		}
+		WriteClass(name + ".class", ikvm.@internal.stubgen.StubGenerator.generateStub(c));
 	}
 }
