@@ -3292,7 +3292,7 @@ namespace IKVM.Internal
 					{
 						methods[i] = new MethodWrapper.GhostMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
 					}
-					else if(ReferenceEquals(m.Name, "<init>"))
+					else if(ReferenceEquals(m.Name, StringConstants.INIT))
 					{
 						methods[i] = new SmartConstructorMethodWrapper(wrapper, m.Name, m.Signature, null, null, m.Modifiers, flags);
 					}
@@ -3354,7 +3354,7 @@ namespace IKVM.Internal
 						fields[i] = new ConstantFieldWrapper(wrapper, null, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.LiteralField);
 					}
 					else if(fld.IsFinal && (JVM.IsStaticCompiler && (fld.IsPublic || fld.IsProtected))
-						&& !wrapper.IsInterface && (!JVM.StrictFinalFieldSemantics || ReferenceEquals(wrapper.Name, "java.lang.System")))
+						&& !wrapper.IsInterface && (!JVM.StrictFinalFieldSemantics || ReferenceEquals(wrapper.Name, StringConstants.JAVA_LANG_SYSTEM)))
 					{
 						fields[i] = new GetterFieldWrapper(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null);
 					}
@@ -5689,7 +5689,7 @@ namespace IKVM.Internal
 					{
 						attribs |= MethodAttributes.Assembly;
 					}
-					if(ReferenceEquals(m.Name, "<init>"))
+					if(ReferenceEquals(m.Name, StringConstants.INIT))
 					{
 						if(setNameSig)
 						{
@@ -5788,7 +5788,7 @@ namespace IKVM.Internal
 							bool needDispatch = false;
 							bool finalizeClash = false;
 							MethodInfo baseFinalize = null;
-							if(baseMce != null && ReferenceEquals(m.Name, "finalize") && ReferenceEquals(m.Signature, "()V"))
+							if(baseMce != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
 							{
 								baseFinalize = GetBaseFinalizeMethod(typeBuilder.BaseType, out finalizeClash);
 								if(baseMce.RealName == "Finalize")

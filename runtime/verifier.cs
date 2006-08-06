@@ -1530,7 +1530,7 @@ class MethodAnalyzer
 		{
 			thisType = VerifierTypeWrapper.MakeThis(wrapper);
 			// this reference. If we're a constructor, the this reference is uninitialized.
-			if(ReferenceEquals(method.Name, "<init>"))
+			if(ReferenceEquals(method.Name, StringConstants.INIT))
 			{
 				state[0].SetLocalType(firstNonArgLocalIndex++, VerifierTypeWrapper.UninitializedThis, -1);
 				state[0].SetUnitializedThis(true);
@@ -1937,7 +1937,7 @@ class MethodAnalyzer
 								if(instr.NormalizedOpCode != NormalizedByteCode.__invokestatic)
 								{
 									TypeWrapper type = s.PopType();
-									if(ReferenceEquals(cpi.Name, "<init>"))
+									if(ReferenceEquals(cpi.Name, StringConstants.INIT))
 									{
 										// after we've invoked the constructor, the uninitialized references
 										// are now initialized
@@ -2954,11 +2954,11 @@ class MethodAnalyzer
 		{
 			throw new VerifyError("Illegal constant pool index");
 		}
-		if(instr.NormalizedOpCode != NormalizedByteCode.__invokespecial && ReferenceEquals(cpi.Name, "<init>"))
+		if(instr.NormalizedOpCode != NormalizedByteCode.__invokespecial && ReferenceEquals(cpi.Name, StringConstants.INIT))
 		{
 			throw new VerifyError("Must call initializers using invokespecial");
 		}
-		if(ReferenceEquals(cpi.Name, "<clinit>"))
+		if(ReferenceEquals(cpi.Name, StringConstants.CLINIT))
 		{
 			throw new VerifyError("Illegal call to internal method");
 		}
@@ -2992,7 +2992,7 @@ class MethodAnalyzer
 		else
 		{
 			thisType = SigTypeToClassName(stack.PeekType(), cpi.GetClassType(), wrapper);
-			if(ReferenceEquals(cpi.Name, "<init>"))
+			if(ReferenceEquals(cpi.Name, StringConstants.INIT))
 			{
 				TypeWrapper type = stack.PopType();
 				isnew = VerifierTypeWrapper.IsNew(type);
@@ -3105,7 +3105,7 @@ class MethodAnalyzer
 						// (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
 						if(cpi.GetClassType() == CoreClasses.java.lang.Object.Wrapper
 							&& thisType.IsArray
-							&& ReferenceEquals(cpi.Name, "clone"))
+							&& ReferenceEquals(cpi.Name, StringConstants.CLONE))
 						{
 							// Patch the instruction, so that the compiler doesn't need to do this test again.
 							instr.PatchOpCode(NormalizedByteCode.__clone_array);

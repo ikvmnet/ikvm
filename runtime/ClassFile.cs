@@ -41,6 +41,22 @@ namespace IKVM.Internal
 		LinkageError
 	}
 
+	sealed class StringConstants
+	{
+		private StringConstants() {}
+
+		internal static readonly string CLINIT = string.Intern("<clinit>");
+		internal static readonly string INIT = string.Intern("<init>");
+		internal static readonly string SIG_VOID = string.Intern("()V");
+
+		internal static readonly string JAVA_LANG_SYSTEM = string.Intern("java.lang.System");
+		internal static readonly string JAVA_LANG_VMSYSTEM = string.Intern("java.lang.VMSystem");
+		internal static readonly string ARRAYCOPY = string.Intern("arraycopy");
+		internal static readonly string SIG_ARRAYCOPY = string.Intern("(Ljava.lang.Object;ILjava.lang.Object;II)V");
+		internal static readonly string FINALIZE = string.Intern("finalize");
+		internal static readonly string CLONE = string.Intern("clone");
+	}
+
 	sealed class ClassFile
 	{
 		private ConstantPoolItem[] constantpool;
@@ -297,13 +313,16 @@ namespace IKVM.Internal
 					methods[i] = new Method(this, br);
 					string name = methods[i].Name;
 					string sig = methods[i].Signature;
-					if(!IsValidMethodName(name) && !ReferenceEquals(name, "<init>") && !ReferenceEquals(name, "<clinit>"))
+					if(!IsValidMethodName(name))
 					{
-						throw new ClassFormatError("{0} (Illegal method name \"{1}\")", Name, name);
-					}
-					if((ReferenceEquals(name, "<init>") || ReferenceEquals(name, "<clinit>")) && !sig.EndsWith("V"))
-					{
-						throw new ClassFormatError("{0} (Method \"{1}\" has illegal signature \"{2}\")", Name, name, sig);
+						if(!ReferenceEquals(name, StringConstants.INIT) && !ReferenceEquals(name, StringConstants.CLINIT))
+						{
+							throw new ClassFormatError("{0} (Illegal method name \"{1}\")", Name, name);
+						}
+						if(!sig.EndsWith("V"))
+						{
+							throw new ClassFormatError("{0} (Method \"{1}\" has illegal signature \"{2}\")", Name, name, sig);
+						}
 					}
 					for(int j = 0; j < i; j++)
 					{
@@ -1475,16 +1494,16 @@ namespace IKVM.Internal
 				{
 					throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
 				}
-				if(ReferenceEquals(name, "<init>") || ReferenceEquals(name, "<clinit>"))
+				if(!IsValidMethodName(name))
 				{
+					if(!ReferenceEquals(name, StringConstants.INIT) && !ReferenceEquals(name, StringConstants.CLINIT))
+					{
+						throw new ClassFormatError("Invalid method name \"{0}\"", name);
+					}
 					if(!descriptor.EndsWith("V"))
 					{
 						throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
 					}
-				}
-				else if(!IsValidMethodName(name))
-				{
-					throw new ClassFormatError("Invalid method name \"{0}\"", name);
 				}
 			}
 
@@ -1544,12 +1563,12 @@ namespace IKVM.Internal
 				TypeWrapper wrapper = GetClassType();
 				if(!wrapper.IsUnloadable)
 				{
-					method = wrapper.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, "<init>"));
+					method = wrapper.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
 					if(method != null)
 					{
 						method.Link();
 					}
-					if(Name != "<init>" && 
+					if(Name != StringConstants.INIT && 
 						(thisType.Modifiers & (Modifiers.Interface | Modifiers.Super)) == Modifiers.Super &&
 						thisType != wrapper && thisType.IsSubTypeOf(wrapper))
 					{
@@ -2048,7 +2067,7 @@ namespace IKVM.Internal
 			internal Method(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
 			{
 				// vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
-				if(ReferenceEquals(Name, "<clinit>") && ReferenceEquals(Signature, "()V"))
+				if(ReferenceEquals(Name, StringConstants.CLINIT) && ReferenceEquals(Signature, StringConstants.SIG_VOID))
 				{
 					access_flags &= Modifiers.Strictfp;
 					access_flags |= (Modifiers.Static | Modifiers.Private);
@@ -2057,7 +2076,7 @@ namespace IKVM.Internal
 				{
 					// LAMESPEC: vmspec 4.6 says that abstract methods can not be strictfp (and this makes sense), but
 					// javac (pre 1.5) is broken and marks abstract methods as strictfp (if you put the strictfp on the class)
-					if((ReferenceEquals(Name, "<init>") && (IsStatic || IsSynchronized || IsFinal || IsAbstract || IsNative))
+					if((ReferenceEquals(Name, StringConstants.INIT) && (IsStatic || IsSynchronized || IsFinal || IsAbstract || IsNative))
 						|| (IsPrivate && IsPublic) || (IsPrivate && IsProtected) || (IsPublic && IsProtected)
 						|| (IsAbstract && (IsFinal || IsNative || IsPrivate || IsStatic || IsSynchronized))
 						|| (classFile.IsInterface && (!IsPublic || !IsAbstract)))
@@ -2195,7 +2214,7 @@ namespace IKVM.Internal
 				{
 					if(code.IsEmpty)
 					{
-						if(ReferenceEquals(this.Name, "<clinit>"))
+						if(ReferenceEquals(this.Name, StringConstants.CLINIT))
 						{
 							code.verifyError = string.Format("Class {0}, method {1} signature {2}: No Code attribute", classFile.Name, this.Name, this.Signature);
 							return;
@@ -2226,7 +2245,7 @@ namespace IKVM.Internal
 			{
 				get
 				{
-					return ReferenceEquals(Name, "<clinit>") && ReferenceEquals(Signature, "()V");
+					return ReferenceEquals(Name, StringConstants.CLINIT) && ReferenceEquals(Signature, StringConstants.SIG_VOID);
 				}
 			}
 

@@ -377,22 +377,16 @@ namespace IKVM.Runtime
 
 	sealed class JniHelper
 	{
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_LoadLibrary@4")]
 		[DllImport("ikvm-native")]
 		private static extern IntPtr ikvm_LoadLibrary(string filename);
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_FreeLibrary@4")]
 		[DllImport("ikvm-native")]
 		private static extern void ikvm_FreeLibrary(IntPtr handle);
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_GetProcAddress@12")]
 		[DllImport("ikvm-native")]
 		internal static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_CallOnLoad@12")]
 		[DllImport("ikvm-native")]
 		private unsafe static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_GetJNIEnvVTable@0")]
 		[DllImport("ikvm-native")]
 		internal unsafe static extern void** ikvm_GetJNIEnvVTable();
-		//[DllImport("ikvm-native", EntryPoint="_ikvm_MarshalDelegate@4")]
 		[DllImport("ikvm-native")]
 		internal unsafe static extern void* ikvm_MarshalDelegate(Delegate d);
 
@@ -911,12 +905,7 @@ namespace IKVM.Runtime
 		{
 			JNI.jvmCreated = true;
 			pJavaVM = (JavaVM*)(void*)JniMem.Alloc(IntPtr.Size * (1 + vtableDelegates.Length));
-//#if __MonoCS__ 
-//		// MONOBUG mcs requires this bogus fixed construct (and Microsoft doesn't allow it)
-//		fixed(void** p = &pJavaVM->firstVtableEntry) { pJavaVM->vtable = p; }
-//#else
 			pJavaVM->vtable = &pJavaVM->firstVtableEntry;
-//#endif
 			for(int i = 0; i < vtableDelegates.Length; i++)
 			{
 				pJavaVM->vtable[i] = JniHelper.ikvm_MarshalDelegate(vtableDelegates[i]);
@@ -3402,12 +3391,6 @@ namespace IKVM.Runtime
 	{
 		internal static IntPtr Alloc(int cb)
 		{
-			// MONOBUG Marshal.AllocHGlobal returns a null pointer if we try to allocate zero bytes
-			// (as of Mono 1.0.2 this shouldn't be necessary anymore)
-			if(cb == 0)
-			{
-				cb = 1;
-			}
 			return Marshal.AllocHGlobal(cb);
 		}
 

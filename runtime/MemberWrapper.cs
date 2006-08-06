@@ -614,7 +614,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				if(ReferenceEquals(Name, "<init>"))
+				if(ReferenceEquals(Name, StringConstants.INIT))
 				{
 					if(method is MethodInfo)
 					{

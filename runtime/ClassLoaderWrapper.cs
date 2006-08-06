@@ -559,30 +559,26 @@ namespace IKVM.Internal
 		protected virtual TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
 #if !STATIC_COMPILER
-			// NOTE just like Java does (I think), we take the classloader lock before calling the loadClass method
-			lock(javaClassLoader)
+			Profiler.Enter("ClassLoader.loadClass");
+			TypeWrapper type;
+			try
 			{
-				Profiler.Enter("ClassLoader.loadClass");
-				TypeWrapper type;
-				try
-				{
-					type = (TypeWrapper)JVM.Library.loadClass(javaClassLoader, name);
-				}
-				catch(Exception x)
-				{
-					if(!throwClassNotFoundException
-						&& LoadClassCritical("java.lang.ClassNotFoundException").TypeAsBaseType.IsInstanceOfType(x))
-					{
-						return null;
-					}
-					throw new ClassLoadingException(IKVM.Runtime.Util.MapException(x));
-				}
-				finally
-				{
-					Profiler.Leave("ClassLoader.loadClass");
-				}
-				return type;
+				type = (TypeWrapper)JVM.Library.loadClass(javaClassLoader, name);
 			}
+			catch(Exception x)
+			{
+				if(!throwClassNotFoundException
+					&& LoadClassCritical("java.lang.ClassNotFoundException").TypeAsBaseType.IsInstanceOfType(x))
+				{
+					return null;
+				}
+				throw new ClassLoadingException(IKVM.Runtime.Util.MapException(x));
+			}
+			finally
+			{
+				Profiler.Leave("ClassLoader.loadClass");
+			}
+			return type;
 #else
 			return null;
 #endif
