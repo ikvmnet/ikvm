@@ -384,7 +384,12 @@ public final class ExceptionHelper
         }
         else
         {
-            Throwable remapped = (Throwable)exceptions.get(o);
+            o = exceptions.get(o);
+            if(o instanceof ExceptionInfoHelper)
+            {
+                return (ExceptionInfoHelper)o;
+            }
+            Throwable remapped = (Throwable)o;
             ExceptionInfoHelper eih = (ExceptionInfoHelper)exceptions.get(remapped);
             if(eih == null)
             {
