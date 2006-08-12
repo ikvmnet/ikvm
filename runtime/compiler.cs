@@ -154,7 +154,7 @@ class Compiler
 		monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		java_lang_Throwable = CoreClasses.java.lang.Throwable.Wrapper;
-		cli_System_Exception = ClassLoaderWrapper.LoadClassCritical("cli.System.Exception");
+		cli_System_Exception = DotNetTypeWrapper.GetWrapperFromDotNetType(typeof(System.Exception));
 		java_lang_Class = CoreClasses.java.lang.Class.Wrapper;
 		java_lang_ThreadDeath = ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadDeath");
 		// HACK we need to special case core compilation, because the __<map> methods are HideFromJava
