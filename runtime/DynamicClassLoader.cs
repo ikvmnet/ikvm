@@ -109,35 +109,41 @@ namespace IKVM.Internal
 			return type.TypeAsTBD.Assembly;
 		}
 
+		internal static string EscapeName(string name)
+		{
+			// TODO the escaping of special characters is not required on .NET 2.0
+			// (but it doesn't really hurt that much either, the only overhead is the
+			// extra InnerClassAttribute to record the real name of the class)
+			// Note that even though .NET 2.0 automatically escapes the special characters,
+			// the name that gets passed in ResolveEventArgs.Name of the TypeResolve event
+			// contains the unescaped type name.
+			if(name.IndexOfAny(specialCharacters) >= 0)
+			{
+				System.Text.StringBuilder sb = new System.Text.StringBuilder();
+				foreach(char c in name)
+				{
+					if(specialCharactersString.IndexOf(c) >= 0)
+					{
+						if(c == 0)
+						{
+							// we can't escape the NUL character, so we replace it with a space.
+							sb.Append(' ');
+							continue;
+						}
+						sb.Append('\\');
+					}
+					sb.Append(c);
+				}
+				name = sb.ToString();
+			}
+			return name;
+		}
+
 		internal override string AllocMangledName(string mangledTypeName)
 		{
 			lock(dynamicTypes.SyncRoot)
 			{
-				// TODO the escaping of special characters is not required on .NET 2.0
-				// (but it doesn't really hurt that much either, the only overhead is the
-				// extra InnerClassAttribute to record the real name of the class)
-				// Note that even though .NET 2.0 automatically escapes the special characters,
-				// the name that gets passed in ResolveEventArgs.Name of the TypeResolve event
-				// contains the unescaped type name.
-				if(mangledTypeName.IndexOfAny(specialCharacters) >= 0)
-				{
-					System.Text.StringBuilder sb = new System.Text.StringBuilder();
-					foreach(char c in mangledTypeName)
-					{
-						if(specialCharactersString.IndexOf(c) >= 0)
-						{
-							if(c == 0)
-							{
-								// we can't escape the NUL character, so we replace it with a space.
-								sb.Append(' ');
-								continue;
-							}
-							sb.Append('\\');
-						}
-						sb.Append(c);
-					}
-					mangledTypeName = sb.ToString();
-				}
+				mangledTypeName = EscapeName(mangledTypeName);
 				// FXBUG the CLR (both 1.1 and 2.0) doesn't like type names that end with a single period,
 				// it loses the trailing period in the name that gets passed in the TypeResolve event.
 				if(dynamicTypes.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
