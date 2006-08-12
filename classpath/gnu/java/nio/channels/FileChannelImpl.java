@@ -498,33 +498,48 @@ public abstract class FileChannelImpl extends FileChannel
 	}
     }
 
-    public int read (ByteBuffer dst) throws IOException
+    public int read(ByteBuffer dst) throws IOException
     {
-	int result;
-	byte[] buffer = new byte [dst.remaining ()];
-    
-	result = read (buffer, 0, buffer.length);
-
-	if (result > 0)
-	    dst.put (buffer, 0, result);
-
-	return result;
+        if (dst.hasArray())
+        {
+            byte[] buffer = dst.array();
+            int result = read(buffer, dst.arrayOffset() + dst.position(), dst.remaining());
+            if (result > 0)
+            {
+                dst.position(dst.position() + result);
+            }
+            return result;
+        }
+        else
+        {
+	    byte[] buffer = new byte[dst.remaining()];
+	    int result = read(buffer, 0, buffer.length);
+	    if (result > 0)
+            {
+	        dst.put(buffer, 0, result);
+            }
+	    return result;
+        }
     }
 
-    public int read (ByteBuffer dst, long position)
-	throws IOException
+    public int read(ByteBuffer dst, long position) throws IOException
     {
 	if (position < 0)
             throw new IllegalArgumentException ("position: " + position);
-        long oldPosition = implPosition ();
-	position (position);
-	int result = read(dst);
-	position (oldPosition);
-    
-	return result;
+
+        long oldPosition = implPosition();
+	seek(position);
+        try
+        {
+	    return read(dst);
+        }
+        finally
+        {
+	    seek(oldPosition);
+        }
     }
 
-    public int read () throws IOException
+    public int read() throws IOException
     {
 	if(stream == null)
 	    throw new IOException("Invalid FileChannelImpl");
@@ -572,23 +587,22 @@ public abstract class FileChannelImpl extends FileChannel
 	// TODO map al the other exceptions as well...
     }
 
-    public long read (ByteBuffer[] dsts, int offset, int length)
-	throws IOException
+    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException
     {
 	long result = 0;
 
 	for (int i = offset; i < offset + length; i++)
 	{
-	    result += read (dsts [i]);
+	    result += read(dsts [i]);
 	}
 
 	return result;
     }
 
-    public int write (ByteBuffer src) throws IOException
+    public int write(ByteBuffer src) throws IOException
     {
-	int len = src.remaining ();
-	if (src.hasArray())
+	int len = src.remaining();
+	if (src.hasArray() && !src.isReadOnly())
 	{
 	    byte[] buffer = src.array();
 	    write(buffer, src.arrayOffset() + src.position(), len);
@@ -597,15 +611,14 @@ public abstract class FileChannelImpl extends FileChannel
 	else
 	{
 	    // Use a more efficient native method! FIXME!
-	    byte[] buffer = new byte [len];
-	    src.get (buffer, 0, len);
-	    write (buffer, 0, len);
+	    byte[] buffer = new byte[len];
+	    src.get(buffer, 0, len);
+	    write(buffer, 0, len);
 	}
 	return len;
     }
     
-    public int write (ByteBuffer src, long position)
-	throws IOException
+    public int write(ByteBuffer src, long position) throws IOException
     {
 	if (position < 0)
             throw new IllegalArgumentException ("position: " + position);
@@ -616,15 +629,16 @@ public abstract class FileChannelImpl extends FileChannel
 	if ((mode & WRITE) == 0)
 	    throw new NonWritableChannelException ();
 
-	int result;
-	long oldPosition;
-
-	oldPosition = implPosition ();
-	seek (position);
-	result = write(src);
-	seek (oldPosition);
-    
-	return result;
+	long oldPosition = implPosition();
+	seek(position);
+        try
+        {
+	    return write(src);
+        }
+        finally
+        {
+	    seek(oldPosition);
+        }
     }
 
     public void write(byte[] buf, int offset, int len) throws IOException
@@ -768,116 +782,68 @@ public abstract class FileChannelImpl extends FileChannel
 
     abstract boolean flush(FileStream fs);
 
-    // like transferTo, but with a count of less than 2Gbytes
-    private int smallTransferTo (long position, int count, 
-        WritableByteChannel target)
-        throws IOException
+    public long transferTo(long position, long count, WritableByteChannel target) throws IOException
     {
-        ByteBuffer buffer;
-        try
-        {
-            // Try to use a mapped buffer if we can.  If this fails for
-            // any reason we'll fall back to using a ByteBuffer.
-            buffer = map (MapMode.READ_ONLY, position, count);
-        }
-        catch (IOException e)
-        {
-            buffer = ByteBuffer.allocate (count);
-            read (buffer, position);
-            buffer.flip();
-        }
+        if (position < 0 || count < 0)
+            throw new IllegalArgumentException ("position: " + position + ", count: " + count);
 
-        return target.write (buffer);
-    }
-
-    public long transferTo (long position, long count, 
-        WritableByteChannel target)
-        throws IOException
-    {
-        if (position < 0
-            || count < 0)
-            throw new IllegalArgumentException ("position: " + position
-                                                + ", count: " + count);
-
-        if (!isOpen ())
+        if (!isOpen())
             throw new ClosedChannelException ();
 
         if ((mode & READ) == 0)
             throw new NonReadableChannelException ();
    
-        final int pageSize = 65536;
         long total = 0;
+        ByteBuffer buf = ByteBuffer.allocate((int)Math.min(4096, count));
 
         while (count > 0)
         {
-            int transferred 
-                = smallTransferTo (position, (int)Math.min (count, pageSize), 
-                target);
-            if (transferred < 0)
+            buf.clear();
+            buf.limit((int)Math.min(buf.capacity(), count));
+            int bytesRead = read(buf, position);
+            if (bytesRead <= 0)
+            {
                 break;
-            total += transferred;
-            position += transferred;
-            count -= transferred;
+            }
+            buf.flip();
+            int bytesWritten = target.write(buf);
+            total += bytesWritten;
+            position += bytesWritten;
+            count -= bytesWritten;
+            if (bytesWritten != bytesRead)
+            {
+                break;
+            }
         }
 
         return total;
     }
 
-    // like transferFrom, but with a count of less than 2Gbytes
-    private int smallTransferFrom (ReadableByteChannel src, long position, 
-        int count)
-        throws IOException
+    public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException
     {
-        ByteBuffer buffer = null;
+        if (position < 0 || count < 0)
+            throw new IllegalArgumentException ("position: " + position + ", count: " + count);
 
-        if (src instanceof FileChannel)
-        {
-            try
-            {
-                // Try to use a mapped buffer if we can.  If this fails
-                // for any reason we'll fall back to using a ByteBuffer.
-                buffer = ((FileChannel)src).map (MapMode.READ_ONLY, position, 
-                    count);
-            }
-            catch (IOException e)
-            {
-            }
-        }
-
-        if (buffer == null)
-        {
-            buffer = ByteBuffer.allocate ((int) count);
-            src.read (buffer);
-            buffer.flip();
-        }
-
-        return write (buffer, position);
-    }
-
-    public long transferFrom (ReadableByteChannel src, long position, 
-        long count)
-        throws IOException
-    {
-        if (position < 0
-            || count < 0)
-            throw new IllegalArgumentException ("position: " + position
-                                                + ", count: " + count);
-
-        if (!isOpen ())
+        if (!isOpen())
             throw new ClosedChannelException ();
 
         if ((mode & WRITE) == 0)
             throw new NonWritableChannelException ();
 
-        final int pageSize = 65536;
         long total = 0;
+        ByteBuffer buf = ByteBuffer.allocate((int)Math.min(4096, count));
 
         while (count > 0)
         {
-            int transferred = smallTransferFrom (src, position, 
-                (int)Math.min (count, pageSize));
-            if (transferred < 0)
+            buf.clear();
+            buf.limit((int)Math.min(buf.capacity(), count));
+            long transferred = src.read(buf);
+            if (transferred <= 0)
+            {
                 break;
+            }
+            buf.flip();
+            write(buf, position);
             total += transferred;
             position += transferred;
             count -= transferred;
