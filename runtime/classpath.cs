@@ -479,70 +479,6 @@ namespace IKVM.NativeCode.java
 
 		public class VMClassLoader
 		{
-			public static Assembly findResourceAssembly(string name)
-			{
-				name = JVM.MangleResourceName(name);
-#if COMPACT_FRAMEWORK
-				// TODO
-				try
-				{
-					JVM.CoreAssembly.GetManifestResourceStream(name).Close();
-					return JVM.CoreAssembly;
-				}
-				catch(FileNotFoundException)
-				{
-					return null;
-				}
-#else
-				foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
-				{
-					if(!(asm is System.Reflection.Emit.AssemblyBuilder))
-					{
-						if(asm.GetManifestResourceInfo(name) != null)
-						{
-							return asm;
-						}
-					}
-				}
-				return null;
-#endif
-			}
-
-			public static Assembly[] findResourceAssemblies(string name)
-			{
-				name = JVM.MangleResourceName(name);
-#if COMPACT_FRAMEWORK
-				// TODO figure this out
-				try
-				{
-					JVM.CoreAssembly.GetManifestResourceStream(name).Close();
-					return new Assembly[] { JVM.CoreAssembly };
-				}
-				catch(FileNotFoundException)
-				{
-					return new Assembly[0];
-				}
-#else
-				ArrayList list = new ArrayList();
-				foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
-				{
-					if(!(asm is System.Reflection.Emit.AssemblyBuilder))
-					{
-						if(asm.GetManifestResourceInfo(name) != null)
-						{
-							list.Add(asm);
-						}
-					}
-				}
-				return (Assembly[])list.ToArray(typeof(Assembly));
-#endif
-			}
-
-			public static Assembly getClassAssembly(object clazz)
-			{
-				return TypeWrapper.FromClass(clazz).Assembly;
-			}
-
 			public static object loadClass(string name, bool resolve)
 			{
 				try
@@ -611,35 +547,6 @@ namespace IKVM.NativeCode.java
 				{
 					Profiler.Leave("ClassLoader.defineClass");
 				}
-			}
-
-			public static string getPackageName(Type type)
-			{
-				string name;
-#if !COMPACT_FRAMEWORK
-				if(type.Assembly is System.Reflection.Emit.AssemblyBuilder)
-				{
-					name = ClassLoaderWrapper.GetWrapperFromType(type).Name;
-				}
-				else
-#endif
-					if(type.Module.IsDefined(typeof(JavaModuleAttribute), false))
-				{
-					name = CompiledTypeWrapper.GetName(type);
-				}
-				else
-				{
-					name = DotNetTypeWrapper.GetName(type);
-				}
-				if(name != null)
-				{
-					int dot = name.LastIndexOf('.');
-					if(dot > 0)
-					{
-						return name.Substring(0, dot);
-					}
-				}
-				return null;
 			}
 
 			public static object findLoadedClass(object javaClassLoader, string name)
@@ -772,18 +679,7 @@ namespace IKVM.NativeCode.java
 			public static object getClassLoader0(object wrapper)
 			{
 				TypeWrapper tw = (TypeWrapper)wrapper;
-				object loader = tw.GetClassLoader().GetJavaClassLoader();
-				// HACK we have to exclude DynamicTypeWrapper instances, because proxies that are created by the bootstrap
-				// class loader also need to return null (but they don't live in the CoreAssembly)
-				if(loader == null && tw.Assembly != JVM.CoreAssembly
-#if !COMPACT_FRAMEWORK
-					&& !(tw is DynamicTypeWrapper)
-#endif // !COMPACT_FRAMEWORK
-					)
-				{
-					return JVM.Library.getSystemClassLoader();
-				}
-				return loader;
+				return tw.GetClassLoader().GetJavaClassLoader();
 			}
 
 			public static object[] GetDeclaredMethods(object cwrapper, bool getMethods, bool publicOnly)
@@ -1486,6 +1382,17 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 			}
 			return null;
 		}
+
+		public static Assembly LoadAssembly(string name)
+		{
+#if WHIDBEY
+			if(name.EndsWith("[ReflectionOnly]"))
+			{
+				return Assembly.ReflectionOnlyLoad(name.Substring(0, name.Length - 16));
+			}
+#endif
+			return Assembly.Load(name);
+		}
 	}
 }
 
@@ -1528,19 +1435,15 @@ namespace IKVM.NativeCode.gnu.classpath
 			// global methods have no type
 			if(type == null)
 			{
-				return JVM.Library.getSystemClassLoader();
+				return null;
 			}
 			else if(type.Module is System.Reflection.Emit.ModuleBuilder)
 			{
 				return ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader().GetJavaClassLoader();
 			}
-			else if(ClassLoaderWrapper.IsCoreAssemblyType(type))
-			{
-				return null;
-			}
 			else
 			{
-				return JVM.Library.getSystemClassLoader();
+				return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly).GetJavaClassLoader();
 			}
 		}
 
@@ -1618,19 +1521,106 @@ namespace gnu.classpath
 
 namespace IKVM.NativeCode.ikvm.@internal
 {
-	public class ReflectionOnlyClassLoader
+	public class AssemblyClassLoader
 	{
 		public static object LoadClass(object classLoader, string name)
 		{
 			try
 			{
-				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader);
+				ClassLoaderWrapper wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader);
 				return wrapper.LoadClassByDottedName(name).ClassObject;
 			}
 			catch(RetargetableJavaException x)
 			{
 				throw x.ToJava();
 			}
+		}
+
+		public static Assembly FindResourceAssembly(object classLoader, string name)
+		{
+			// TODO consider supporting delegation
+			IKVM.Internal.AssemblyClassLoader wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader);
+			if(wrapper == null)
+			{
+				// must be a GenericClassLoader
+				return null;
+			}
+			name = JVM.MangleResourceName(name);
+			if(wrapper.Assembly.GetManifestResourceInfo(name) != null)
+			{
+				return wrapper.Assembly;
+			}
+			return null;
+		}
+
+		public static Assembly[] FindResourceAssemblies(object classLoader, string name)
+		{
+			// TODO consider supporting delegation
+			Assembly asm = FindResourceAssembly(classLoader, name);
+			if(asm != null)
+			{
+				return new Assembly[] { asm };
+			}
+			return null;
+		}
+
+		public static Assembly GetClassAssembly(object clazz)
+		{
+			return TypeWrapper.FromClass(clazz).Assembly;
+		}
+
+		public static string[] GetPackages(object classLoader)
+		{
+			IKVM.Internal.AssemblyClassLoader wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader);
+			if(wrapper == null)
+			{
+				// must be a GenericClassLoader
+				return null;
+			}
+			using(Stream s = wrapper.Assembly.GetManifestResourceStream("pkg.lst"))
+			{
+				if(s != null)
+				{
+					using(System.Resources.ResourceReader rdr = new System.Resources.ResourceReader(s))
+					{
+						foreach(DictionaryEntry de in rdr)
+						{
+							if(de.Key.Equals("m"))
+							{
+								BinaryReader br = new BinaryReader(new MemoryStream((byte[])de.Value), System.Text.Encoding.UTF8);
+								int count = br.ReadInt32();
+								string[] packages = new string[count];
+								for(int i = 0; i < count; i++)
+								{
+									packages[i] = br.ReadString();
+								}
+								return packages;
+							}
+						}
+					}
+				}
+			}
+			return new string[0];
+		}
+
+		public static Assembly GetAssembly(object classLoader)
+		{
+			IKVM.Internal.AssemblyClassLoader wrapper = JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader;
+			if(wrapper == null)
+			{
+				// must be a GenericClassLoader
+				return null;
+			}
+			return wrapper.Assembly;
+		}
+
+		public static bool IsReflectionOnly(Assembly asm)
+		{
+#if WHIDBEY
+			return asm.ReflectionOnly;
+#else
+			return false;
+#endif
 		}
 	}
 
@@ -1683,8 +1673,6 @@ namespace ikvm.@internal
 
 		object getWrapperFromClassLoader(object classLoader);
 		void setWrapperForClassLoader(object classLoader, object wrapper);
-
-		object getSystemClassLoader();
 
 		object box(object val);
 		object unbox(object val);
@@ -1740,6 +1728,6 @@ namespace ikvm.@internal
 		Exception newInterruptedException();
 		Exception newIllegalMonitorStateException();
 
-		object newReflectionOnlyClassLoader();
+		object newAssemblyClassLoader();
 	}
 }

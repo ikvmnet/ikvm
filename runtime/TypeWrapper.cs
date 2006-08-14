@@ -3527,8 +3527,11 @@ namespace IKVM.Internal
 					{
 						// HACK we abuse the InnerClassAttribute to record to real name
 						AttributeHelper.SetInnerClass(typeBuilder, wrapper.Name, wrapper.Modifiers);
-						// TODO once we've implemented an assembly class loader, add the name mapping to that,
-						// so that the renamed type can be found again at runtime.
+					}
+					if(typeBuilder.FullName != wrapper.Name
+						&& wrapper.Name.Replace('$', '+') != typeBuilder.FullName)
+					{
+						((CompilerClassLoader)wrapper.GetClassLoader()).AddNameMapping(wrapper.Name, typeBuilder.FullName);
 					}
 #endif // STATIC_COMPILER
 					ArrayList interfaceList = null;
@@ -3899,13 +3902,13 @@ namespace IKVM.Internal
 			private static bool CheckInnerOuterNames(string inner, string outer)
 			{
 				// do some sanity checks on the inner/outer class names
-				return inner.Length > outer.Length + 1 && inner[outer.Length] == '$' && inner.IndexOf('$', outer.Length + 1) == -1;
+				return inner.Length > outer.Length + 1 && inner[outer.Length] == '$' && inner.StartsWith(outer);
 			}
 
 			private static string GetInnerClassName(string outer, string inner)
 			{
 				Debug.Assert(CheckInnerOuterNames(inner, outer));
-				return inner.Substring(outer.Length + 1);
+				return DynamicClassLoader.EscapeName(inner.Substring(outer.Length + 1));
 			}
 
 			private static bool IsCompatibleArgList(TypeWrapper[] caller, TypeWrapper[] callee)
@@ -4268,6 +4271,7 @@ namespace IKVM.Internal
 				{
 					return finishedType;
 				}
+				Tracer.Info(Tracer.Compiler, "Finishing: {0}", wrapper.Name);
 				Profiler.Enter("JavaTypeImpl.Finish.Core");
 				try
 				{
@@ -4324,6 +4328,7 @@ namespace IKVM.Internal
 					Hashtable invokespecialstubcache = new Hashtable();
 					bool basehasclinit = wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasStaticInitializer;
 					bool hasclinit = false;
+					bool hasConstructor = false;
 					for(int i = 0; i < classFile.Methods.Length; i++)
 					{
 						ClassFile.Method m = classFile.Methods[i];
@@ -4332,12 +4337,19 @@ namespace IKVM.Internal
 						{
 							ILGenerator ilGenerator = ((ConstructorBuilder)mb).GetILGenerator();
 							TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
-							if(basehasclinit && m.IsClassInitializer && !classFile.IsInterface)
+							if(m.IsClassInitializer)
 							{
-								hasclinit = true;
-								// before we call the base class initializer, we need to set the non-final static ConstantValue fields
-								EmitConstantValueInitialization(ilGenerator);
-								wrapper.BaseTypeWrapper.EmitRunClassConstructor(ilGenerator);
+								if(basehasclinit && !classFile.IsInterface)
+								{
+									hasclinit = true;
+									// before we call the base class initializer, we need to set the non-final static ConstantValue fields
+									EmitConstantValueInitialization(ilGenerator);
+									wrapper.BaseTypeWrapper.EmitRunClassConstructor(ilGenerator);
+								}
+							}
+							else
+							{
+								hasConstructor = true;
 							}
 							LineNumberTableAttribute.LineNumberWriter lineNumberTable = null;
 							bool nonLeaf = false;
@@ -4524,6 +4536,18 @@ namespace IKVM.Internal
 								}
 								ilGenerator.Emit(OpCodes.Ret);
 							}
+						}
+						// if a class has no constructor, we generate one otherwise Ref.Emit will create a default ctor
+						// and that has several problems:
+						// - base type may not have an accessible default constructor
+						// - Ref.Emit uses BaseType.GetConstructors() which may trigger a TypeResolve event
+						// - we don't want the synthesized constructor to show up in Java
+						if(!hasConstructor)
+						{
+							ConstructorBuilder cb = typeBuilder.DefineConstructor(MethodAttributes.PrivateScope, CallingConventions.Standard, Type.EmptyTypes);
+							ILGenerator ilgen = cb.GetILGenerator();
+							ilgen.Emit(OpCodes.Ldnull);
+							ilgen.Emit(OpCodes.Throw);
 						}
 
 						// here we loop thru all the interfaces to explicitly implement any methods that we inherit from
@@ -8124,23 +8148,6 @@ namespace IKVM.Internal
 			return true;
 		}
 
-		internal static TypeWrapper CreateDotNetTypeWrapper(ClassLoaderWrapper loader, string name)
-		{
-			Type type = loader.GetType(DemangleTypeName(name));
-			if(type != null
-				&& !AttributeHelper.IsJavaModule(type.Module)
-				&& IsAllowedOutside(type))
-			{
-				TypeWrapper tw = new DotNetTypeWrapper(type);
-				// check the name to make sure that the canonical name was used
-				if(tw.Name == name)
-				{
-					return loader.RegisterInitiatingLoader(tw);
-				}
-			}
-			return null;
-		}
-
 		private class DelegateInnerClassTypeWrapper : TypeWrapper
 		{
 			private Type delegateType;
@@ -8477,8 +8484,7 @@ namespace IKVM.Internal
 
 		internal static TypeWrapper GetWrapperFromDotNetType(Type type)
 		{
-			// TODO there should be a better way
-			return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(DotNetTypeWrapper.GetName(type));
+			return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly).GetWrapperFromAssemblyType(type);
 		}
 
 		private static TypeWrapper GetBaseTypeWrapper(Type type)

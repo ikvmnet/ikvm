@@ -68,6 +68,7 @@
           <arg value="-recurse:${Classpath.dir}/resource/*.properties" />
           <arg value="-recurse:${Classpath.dir}/resource/javax.*" />
           <arg value="-recurse:${Classpath.dir}/resource/org.xml.*" />
+          <arg value="-r:${framework::get-assembly-directory(framework::get-target-framework())}/mscorlib.dll" />
           <arg value="-r:${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
 <!--
           <arg value="-r:C:\Program Files\Microsoft Visual Studio 8\SmartDevices\SDK\CompactFramework\2.0\v2.0\WindowsCE\System.dll" />

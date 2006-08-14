@@ -334,6 +334,17 @@ public class NetExp
 				}
 			}
 		}
-		WriteClass(name + ".class", ikvm.@internal.stubgen.StubGenerator.generateStub(c));
+		java.io.InputStream inp = c.getResourceAsStream("/" + name + ".class");
+		if(inp == null)
+		{
+			Console.Error.WriteLine("Class {0} not found", name);
+			return;
+		}
+		byte[] buf = new byte[inp.available()];
+		if(inp.read(buf) != buf.Length || inp.read() != -1)
+		{
+			throw new NotImplementedException();
+		}
+		WriteClass(name + ".class", buf);
 	}
 }

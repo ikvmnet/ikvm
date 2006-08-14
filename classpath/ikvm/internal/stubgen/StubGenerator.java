@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+@ikvm.lang.Internal
 public final class StubGenerator
 {
     public static byte[] generateStub(Class c)

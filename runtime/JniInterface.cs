@@ -236,12 +236,6 @@ namespace IKVM.Runtime
 			{
 				MethodBase mb = MethodBase.GetMethodFromHandle(method);
 				ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
-				// HACK since we're returning the system class loader for statically compiled classes,
-				// we have to use that here too
-				if(loader.GetJavaClassLoader() == null)
-				{
-					loader = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(JVM.Library.getSystemClassLoader());
-				}
 				int sp = 0;
 				for(int i = 1; sig[i] != ')'; i++)
 				{
@@ -1257,17 +1251,13 @@ namespace IKVM.Runtime
 			if(pEnv->currentMethod.Value != IntPtr.Zero)
 			{
 				MethodBase mb = MethodBase.GetMethodFromHandle(pEnv->currentMethod);
-				ClassLoaderWrapper loader =	ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
-				if(loader.GetJavaClassLoader() != null)
-				{
-					return loader;
-				}
+				return ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType).GetClassLoader();
 			}
 			if(pEnv->classLoader.Target != null)
 			{
 				return (ClassLoaderWrapper)pEnv->classLoader.Target;
 			}
-			return (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(JVM.Library.getSystemClassLoader());
+			return ClassLoaderWrapper.GetBootstrapClassLoader();
 		}
 
 		internal static jclass FindClass(JNIEnv* pEnv, byte* pszName)

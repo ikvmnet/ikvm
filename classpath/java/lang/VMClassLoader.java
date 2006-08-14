@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Hashtable;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -136,36 +137,8 @@ final class VMClassLoader
      */
     static URL getResource(String name)
     {
-	try
-	{
-	    Assembly assembly = findResourceAssembly(name);
-	    if(assembly != null)
-	    {
-		return new URL("ikvmres", assembly.get_FullName(), -1, "/" + name);
-	    }
-            if(name.endsWith(".class") && name.indexOf('.') == name.length() - 6)
-            {
-                try
-                {
-                    Class c = loadClass(name.substring(0, name.length() - 6).replace('/', '.'), false);
-                    if(c != null)
-                    {
-                        return new URL("ikvmres", getClassAssembly(c).get_FullName(), -1, "/" + name);                        
-                    }
-                }
-                catch(ClassNotFoundException _)
-                {
-                }
-            }
-	}
-	catch(java.net.MalformedURLException x)
-	{
-	}
-	return null;
+        return ikvm.internal.AssemblyClassLoader.getResource(null, name);
     }
-    private static native Assembly findResourceAssembly(String name);
-    private static native Assembly[] findResourceAssemblies(String name);
-    private static native Assembly getClassAssembly(Class c);
 
     /**
      * Helper to get a list of resources from the bootstrap class loader.
@@ -176,13 +149,7 @@ final class VMClassLoader
      */
     static Enumeration getResources(String name) throws IOException
     {
-	Assembly[] assemblies = findResourceAssemblies(name);
-	java.util.Vector v = new java.util.Vector();
-	for(int i = 0; i < assemblies.length; i++)
-	{
-	    v.addElement(new URL("ikvmres", assemblies[i].get_FullName(), -1, "/" + name));
-	}
-	return v.elements();
+        return ikvm.internal.AssemblyClassLoader.getResources(null, name);
     }
 
     /**
@@ -195,15 +162,8 @@ final class VMClassLoader
      */
     static Package getPackage(String name)
     {
-        Package[] packages = getPackagesImpl();
-        for(int i = 0; i < packages.length; i++)
-        {
-            if(packages[i].getName().equals(name))
-            {
-                return packages[i];
-            }
-        }
-	return null;
+        getPackagesImpl();
+        return (Package)packages.get(name);
     }
 
     /**
@@ -215,161 +175,45 @@ final class VMClassLoader
      */
     static Package[] getPackages()
     {
-        return (Package[])getPackagesImpl().clone();
+        getPackagesImpl();
+        Collection coll = packages.values();
+        Package[] pkg = new Package[coll.size()];
+        coll.toArray(pkg);
+        return pkg;
     }
 
-    private static Package[] getPackagesImpl()
+    private static void getPackagesImpl()
     {
-        Package[] packages = packageCache;
         if(packages == null)
         {
-            HashMap h = new HashMap();
-            Assembly[] assemblies = AppDomain.get_CurrentDomain().GetAssemblies();
-            for(int i = 0; i < assemblies.length; i++)
+            Hashtable h = new Hashtable();
+            String[] pkgs = ikvm.internal.AssemblyClassLoader.GetPackages(null);
+            URL sealBase = null;
+            try
             {
-                if(!(assemblies[i] instanceof cli.System.Reflection.Emit.AssemblyBuilder))
-                {
-                    Manifest manifest = getManifestFromAssembly(assemblies[i]);
-                    Type[] types = assemblies[i].GetTypes();
-                    for(int j = 0; j < types.length; j++)
-                    {
-                        String name = getPackageName(types[j]);
-                        if(name != null && !h.containsKey(name))
-                        {
-                            String specTitle = null;
-                            String specVersion = null;
-                            String specVendor = null;
-                            String implTitle = null;
-                            String implVersion = null;
-                            String implVendor = null;
-                            // TODO do we have a way of getting the URL?
-                            URL url = null;
-                            if(manifest != null)
-                            {
-                                // Compute the name of the package as it may appear in the
-                                // Manifest.
-                                StringBuffer xform = new StringBuffer(name);
-                                for (int k = xform.length () - 1; k >= 0; --k)
-                                    if (xform.charAt(k) == '.')
-                                        xform.setCharAt(k, '/');
-                                xform.append('/');
-                                String xformName = xform.toString();
-
-                                Attributes entryAttr = manifest.getAttributes(xformName);
-                                Attributes attr = manifest.getMainAttributes();
-
-                                specTitle
-                                    = getAttributeValue(Attributes.Name.SPECIFICATION_TITLE,
-                                    entryAttr, attr);
-                                specVersion
-                                    = getAttributeValue(Attributes.Name.SPECIFICATION_VERSION,
-                                    entryAttr, attr);
-                                specVendor
-                                    = getAttributeValue(Attributes.Name.SPECIFICATION_VENDOR,
-                                    entryAttr, attr);
-                                implTitle
-                                    = getAttributeValue(Attributes.Name.IMPLEMENTATION_TITLE,
-                                    entryAttr, attr);
-                                implVersion
-                                    = getAttributeValue(Attributes.Name.IMPLEMENTATION_VERSION,
-                                    entryAttr, attr);
-                                implVendor
-                                    = getAttributeValue(Attributes.Name.IMPLEMENTATION_VENDOR,
-                                    entryAttr, attr);
-
-                                // Look if the Manifest indicates that this package is sealed
-                                // XXX - most likely not completely correct!
-                                // Shouldn't we also check the sealed attribute of the complete jar?
-                                // http://java.sun.com/products/jdk/1.4/docs/guide/extensions/spec.html#bundled
-                                // But how do we get that jar manifest here?
-                                String sealed = attr.getValue(Attributes.Name.SEALED);
-                                if ("false".equals(sealed))
-                                {
-                                    // make sure that the URL is null so the package is not sealed
-                                    url = null;
-                                }
-                            }
-
-                            h.put(name, new Package(name, specTitle, specVendor, specVersion, implTitle, implVendor, implVersion, url, null));
-                        }
-                    }
-                }
+                sealBase = new URL(cli.System.Reflection.Assembly.GetExecutingAssembly().get_CodeBase());
             }
-            Collection c = h.values();
-            packages = new Package[c.size()];
-            c.toArray(packages);
-            if(enablePackageCaching)
+            catch(MalformedURLException _)
             {
-                packageCache = packages;
             }
+            for(int i = 0; i < pkgs.length; i++)
+            {
+                h.put(pkgs[i],
+                    new Package(pkgs[i],
+                    "Java Platform API Specification",             // specTitle
+                    "1.4",                                         // specVersion
+                    "Sun Microsystems, Inc.",                      // specVendor
+                    "GNU Classpath",                               // implTitle
+                    gnu.classpath.Configuration.CLASSPATH_VERSION, // implVersion
+                    "Free Software Foundation",                    // implVendor
+                    sealBase,                                      // sealBase
+                    null));                                        // class loader
+            }
+            packages = h;
         }
-        return packages;        
     }
 
-    private static String getAttributeValue(Attributes.Name name, Attributes first, Attributes second)
-    {
-        String result = null;
-        if (first != null)
-            result = first.getValue(name);
-        if (result == null)
-            result = second.getValue(name);
-        return result;
-    }
-
-    private static Manifest getManifestFromAssembly(Assembly asm)
-    {
-        try
-        {
-            // NOTE we cannot use URL here, because that would trigger infinite recursion when a SecurityManager is installed
-            return new Manifest(gnu.java.net.protocol.ikvmres.Handler.readResourceFromAssembly(asm, "/META-INF/MANIFEST.MF"));
-        }
-        catch (MalformedURLException _)
-        {
-        }
-        catch (IOException _)
-        {
-        }
-        return null;
-    }
-
-    private static volatile Package[] packageCache;
-    private static final boolean enablePackageCaching;
-
-    private static void hookUpAssemblyLoadEvent()
-        throws cli.System.Security.SecurityException,
-               cli.System.MissingMethodException
-    {
-        AppDomain.get_CurrentDomain().add_AssemblyLoad(new AssemblyLoadEventHandler(
-            new AssemblyLoadEventHandler.Method() {
-                public void Invoke(Object sender, AssemblyLoadEventArgs args) {
-                    packageCache = null;
-                }
-            }));
-    }
-
-    static
-    {
-        boolean enable = false;
-        try
-        {
-            // add_AssemblyLoad has a LinkDemand, so we need to do it in
-            // a seperate method
-            hookUpAssemblyLoadEvent();
-            enable = true;
-        }
-        catch(cli.System.MissingMethodException _1)
-        {
-            // we're running on the Compact Framework
-        }
-        catch(cli.System.Security.SecurityException _)
-        {
-            // if we don't have the ControlAppDomain permission we can't hook
-            // the event, so we don't enable package caching
-        }
-        enablePackageCaching = enable;
-    }
-
-    private static native String getPackageName(Type type);
+    private static Hashtable packages;
 
     /**
      * Helper for java.lang.Integer, Byte, etc to get the TYPE class

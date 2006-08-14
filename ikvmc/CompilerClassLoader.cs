@@ -41,7 +41,7 @@ using Label = IKVM.Internal.CountingLabel;
 
 namespace IKVM.Internal
 {
-	class CompilerClassLoader : BootstrapClassLoader
+	class CompilerClassLoader : ClassLoaderWrapper
 	{
 		private Hashtable classes;
 		private Hashtable remapped = new Hashtable();
@@ -55,10 +55,14 @@ namespace IKVM.Internal
 		private AssemblyBuilder assemblyBuilder;
 		private IKVM.Internal.MapXml.Attribute[] assemblyAttributes;
 		private CompilerOptions options;
+		private AssemblyClassLoader[] referencedAssemblies;
+		private Hashtable nameMappings = new Hashtable();
+		private Hashtable packages = new Hashtable();
 
-		internal CompilerClassLoader(CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
-			: base()
+		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
+			: base(null)
 		{
+			this.referencedAssemblies = referencedAssemblies;
 			this.options = options;
 			this.classes = classes;
 			this.assemblyName = assemblyName;
@@ -70,6 +74,19 @@ namespace IKVM.Internal
 			this.keyfilename = keyfilename;
 			this.keycontainer = keycontainer;
 			Tracer.Info(Tracer.Compiler, "Instantiate CompilerClassLoader for {0}", assemblyName);
+		}
+
+		internal void AddNameMapping(string javaName, string typeName)
+		{
+			nameMappings.Add(javaName, typeName);
+		}
+
+		internal void AddReference(AssemblyClassLoader acl)
+		{
+			AssemblyClassLoader[] temp = new AssemblyClassLoader[referencedAssemblies.Length + 1];
+			Array.Copy(referencedAssemblies, 0, temp, 0, referencedAssemblies.Length);
+			temp[temp.Length - 1] = acl;
+			referencedAssemblies = temp;
 		}
 
 		class CompilerTypeWrapperFactory : DynamicClassLoader
@@ -84,6 +101,11 @@ namespace IKVM.Internal
 
 			protected override DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f)
 			{
+				int pos = f.Name.LastIndexOf('.');
+				if(pos != -1)
+				{
+					classLoader.packages[f.Name.Substring(0, pos)] = "";
+				}
 				return new AotTypeWrapper(f, classLoader);
 			}
 
@@ -136,12 +158,15 @@ namespace IKVM.Internal
 
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
-			TypeWrapper tw = base.LoadClassImpl(name, throwClassNotFoundException);
-			if(tw == null)
+			foreach(AssemblyClassLoader acl in referencedAssemblies)
 			{
-				tw = GetTypeWrapperCompilerHook(name);
+				TypeWrapper tw = acl.DoLoad(name);
+				if(tw != null)
+				{
+					return tw;
+				}
 			}
-			return tw;
+			return GetTypeWrapperCompilerHook(name);
 		}
 
 		private TypeWrapper GetTypeWrapperCompilerHook(string name)
@@ -255,7 +280,48 @@ namespace IKVM.Internal
 			Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
 			DynamicClassLoader.FinishAll(false);
 
-			GetTypeWrapperFactory().ModuleBuilder.CreateGlobalFunctions();
+			ModuleBuilder mb = GetTypeWrapperFactory().ModuleBuilder;
+			// HACK force all referenced assemblies to end up as references in the assembly
+			// (even if they are otherwise unused), to make sure that the assembly class loader
+			// delegates to them at runtime.
+			for(int i = 0;i < referencedAssemblies.Length; i++)
+			{
+				Type[] types = referencedAssemblies[i].Assembly.GetExportedTypes();
+				if(types.Length > 0)
+				{
+					mb.GetTypeToken(types[0]);
+				}
+			}
+			mb.CreateGlobalFunctions();
+
+			// add a class.map resource, if needed.
+			if(nameMappings.Count > 0)
+			{
+				IResourceWriter writer = mb.DefineResource("class.map", "", ResourceAttributes.Public);
+				MemoryStream ms = new MemoryStream();
+				BinaryWriter bw = new BinaryWriter(ms, System.Text.Encoding.UTF8);
+				bw.Write(nameMappings.Count);
+				foreach(DictionaryEntry de in nameMappings)
+				{
+					bw.Write((string)de.Key);
+					bw.Write((string)de.Value);
+				}
+				writer.AddResource("m", ms.ToArray());
+			}
+
+			// add a package list
+			if(true)
+			{
+				IResourceWriter writer = mb.DefineResource("pkg.lst", "", ResourceAttributes.Public);
+				MemoryStream ms = new MemoryStream();
+				BinaryWriter bw = new BinaryWriter(ms, System.Text.Encoding.UTF8);
+				bw.Write(packages.Count);
+				foreach(string pkg in packages.Keys)
+				{
+					bw.Write(pkg);
+				}
+				writer.AddResource("m", ms.ToArray());
+			}
 
 			if(targetIsModule)
 			{
@@ -1962,6 +2028,7 @@ namespace IKVM.Internal
 			Tracer.Info(Tracer.Compiler, "Loaded runtime assembly: {0}", StaticCompiler.runtimeAssembly.FullName);
 			AssemblyName runtimeAssemblyName = StaticCompiler.runtimeAssembly.GetName();
 			bool allReferencesAreStrongNamed = IsSigned(StaticCompiler.runtimeAssembly);
+			ArrayList references = new ArrayList();
 			foreach(string r in options.references)
 			{
 				try
@@ -1973,13 +2040,14 @@ namespace IKVM.Internal
 						JVM.CoreAssembly = reference;
 					}
 #else
-					Assembly reference = Assembly.LoadFrom(r);
+					Assembly reference = Assembly.Load(AssemblyName.GetAssemblyName(r));
 #endif
 					if(reference == null)
 					{
 						Console.Error.WriteLine("Error: reference not found: {0}", r);
 						return 1;
 					}
+					references.Add(reference);
 					// HACK if we explictly referenced the core assembly, make sure we register it as such
 					if(reference.GetType("java.lang.Object") != null)
 					{
@@ -2155,7 +2223,12 @@ namespace IKVM.Internal
 			}
 
 			Tracer.Info(Tracer.Compiler, "Constructing compiler");
-			CompilerClassLoader loader = new CompilerClassLoader(options, options.path, options.keyfilename, options.keycontainer, options.version, options.targetIsModule, options.assembly, h);
+			AssemblyClassLoader[] referencedAssemblies = new AssemblyClassLoader[references.Count];
+			for(int i = 0; i < references.Count; i++)
+			{
+				referencedAssemblies[i] = ClassLoaderWrapper.GetAssemblyClassLoader((Assembly)references[i]);
+			}
+			CompilerClassLoader loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.keyfilename, options.keycontainer, options.version, options.targetIsModule, options.assembly, h);
 			ClassLoaderWrapper.SetBootstrapClassLoader(loader);
 			JVM.IsStaticCompilerPhase1 = true;
 			IKVM.Internal.MapXml.Root map = null;
@@ -2187,6 +2260,7 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: bootstrap classes missing and IKVM.GNU.Classpath.dll not found");
 					return 1;
 				}
+				loader.AddReference(ClassLoaderWrapper.GetAssemblyClassLoader(JVM.CoreAssembly));
 				allReferencesAreStrongNamed &= IsSigned(JVM.CoreAssembly);
 				StaticCompiler.IssueMessage(Message.AutoAddRef, JVM.CoreAssembly.Location);
 				// we need to scan again for remapped types, now that we've loaded the core library

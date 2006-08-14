@@ -50,11 +50,7 @@ class IkvmresURLConnection extends URLConnection
 	    }
             try
             {
-                if(false) throw new cli.System.IO.FileNotFoundException();
-                if(false) throw new cli.System.BadImageFormatException();
-                if(false) throw new cli.System.Security.SecurityException();
-                Assembly asm = Assembly.Load(assembly);
-                inputStream = Handler.readResourceFromAssembly(asm, resource);
+                inputStream = Handler.readResourceFromAssembly(assembly, resource);
                 connected = true;
             }
             catch(cli.System.IO.FileNotFoundException x)
@@ -111,6 +107,15 @@ public class Handler extends URLStreamHandler
     private static final String RFC2396_SEGMENT = RFC2396_PCHAR + ";";
     private static final String RFC2396_PATH_SEGMENTS = RFC2396_SEGMENT + "/";
 
+    static InputStream readResourceFromAssembly(String assembly, String resource)
+        throws cli.System.IO.FileNotFoundException,
+               cli.System.BadImageFormatException,
+               cli.System.Security.SecurityException,
+               IOException
+    {
+        return readResourceFromAssembly(LoadAssembly(assembly), resource);
+    }
+
     public static InputStream readResourceFromAssembly(Assembly asm, String resource)
         throws IOException
     {
@@ -145,6 +150,8 @@ public class Handler extends URLStreamHandler
 
     private static native cli.System.IO.Stream ReadResourceFromAssemblyImpl(Assembly asm, String resource);
     private static native Class LoadClassFromAssembly(Assembly asm, String className);
+    private static native Assembly LoadAssembly(String name)
+        throws cli.System.IO.FileNotFoundException, cli.System.BadImageFormatException, cli.System.Security.SecurityException;
 
     protected URLConnection openConnection(URL url) throws IOException
     {

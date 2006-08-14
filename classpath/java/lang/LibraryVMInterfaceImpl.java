@@ -32,7 +32,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import ikvm.internal.AnnotationAttributeBase;
-import ikvm.internal.ReflectionOnlyClassLoader;
+import ikvm.internal.AssemblyClassLoader;
 import ikvm.lang.CIL;
 
 class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
@@ -92,11 +92,6 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
     public void setWrapperForClassLoader(Object classLoader, Object wrapper)
     {
         ((ClassLoader)classLoader).vmdata = wrapper;
-    }
-
-    public Object getSystemClassLoader()
-    {
-        return ClassLoader.StaticData.systemClassLoader;
     }
 
     public Object box(Object val)
@@ -387,11 +382,11 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
         return new IllegalMonitorStateException();
     }
 
-    public Object newReflectionOnlyClassLoader()
+    public Object newAssemblyClassLoader()
     {
         return AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return new ReflectionOnlyClassLoader();
+                return new AssemblyClassLoader();
             }
         });
     }

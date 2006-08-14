@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005 Jeroen Frijters
+  Copyright (C) 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -34,6 +34,30 @@ public final class VMStackWalker
     private static final cli.System.Type methodType = cli.System.Type.GetType("java.lang.reflect.Method");
     private static final cli.System.Type constructorType = cli.System.Type.GetType("java.lang.reflect.Constructor");
     private static final cli.System.Type jniEnvType = getJNIEnvType();
+
+    public static ClassLoader firstNonNullClassLoader()
+    {
+        StackTrace stack = new StackTrace(1);
+        for(int i = 0; i < stack.get_FrameCount(); i++)
+        {
+            StackFrame frame = stack.GetFrame(i);
+            // TODO handle reflection scenarios
+            MethodBase method = frame.GetMethod();
+            if(!isHideFromJava(method))
+            {
+                cli.System.Type type = method.get_DeclaringType();
+                if(type != null)
+                {
+                    ClassLoader loader = (ClassLoader)getClassLoaderFromType(type);
+                    if(loader != null)
+                    {
+                        return loader;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
     public static Class[] getClassContext()
     {

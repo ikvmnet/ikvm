@@ -36,9 +36,9 @@ gnu/java/nio/VMChannel.java
 gnu/java/nio/VMPipe.java
 gnu/java/security/Configuration.java
 ikvm/internal/AnnotationAttributeBase.java
+ikvm/internal/AssemblyClassLoader.java
 ikvm/internal/Library.java
 ikvm/internal/LibraryVMInterface.java
-ikvm/internal/ReflectionOnlyClassLoader.java
 ikvm/internal/stubgen/StubGenerator.java
 ikvm/internal/WeakIdentityMap.java
 ikvm/io/InputStreamWrapper.java
