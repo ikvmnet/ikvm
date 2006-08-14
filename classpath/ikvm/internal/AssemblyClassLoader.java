@@ -191,19 +191,22 @@ public final class AssemblyClassLoader extends ClassLoader
         for(int i = 0; i < packages.length; i++)
         {
             String name = packages[i];
-            Attributes entryAttr = null;
-            if(manifest != null)
+            if(super.getPackage(name) == null)
             {
-                entryAttr = manifest.getAttributes(name.replace('.', '/') + '/');
+                Attributes entryAttr = null;
+                if(manifest != null)
+                {
+                    entryAttr = manifest.getAttributes(name.replace('.', '/') + '/');
+                }
+                definePackage(name,
+                    getAttributeValue(Attributes.Name.SPECIFICATION_TITLE, entryAttr, attr),
+                    getAttributeValue(Attributes.Name.SPECIFICATION_VERSION, entryAttr, attr),
+                    getAttributeValue(Attributes.Name.SPECIFICATION_VENDOR, entryAttr, attr),
+                    getAttributeValue(Attributes.Name.IMPLEMENTATION_TITLE, entryAttr, attr),
+                    getAttributeValue(Attributes.Name.IMPLEMENTATION_VERSION, entryAttr, attr),
+                    getAttributeValue(Attributes.Name.IMPLEMENTATION_VENDOR, entryAttr, attr),
+                    sealBase);
             }
-            definePackage(name,
-                getAttributeValue(Attributes.Name.SPECIFICATION_TITLE, entryAttr, attr),
-                getAttributeValue(Attributes.Name.SPECIFICATION_VERSION, entryAttr, attr),
-                getAttributeValue(Attributes.Name.SPECIFICATION_VENDOR, entryAttr, attr),
-                getAttributeValue(Attributes.Name.IMPLEMENTATION_TITLE, entryAttr, attr),
-                getAttributeValue(Attributes.Name.IMPLEMENTATION_VERSION, entryAttr, attr),
-                getAttributeValue(Attributes.Name.IMPLEMENTATION_VENDOR, entryAttr, attr),
-                sealBase);
         }
     }
 
