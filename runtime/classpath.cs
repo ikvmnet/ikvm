@@ -454,27 +454,6 @@ namespace IKVM.NativeCode.java
 			{
 				ByteCodeHelper.arraycopy(src, srcStart, dest, destStart, len);
 			}
-
-			public static void setErr(object printStream)
-			{
-				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
-				FieldWrapper fw = tw.GetFieldWrapper("err", "Ljava.io.PrintStream;");
-				fw.SetValue(null, printStream);
-			}
-
-			public static void setIn(object inputStream)
-			{
-				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
-				FieldWrapper fw = tw.GetFieldWrapper("in", "Ljava.io.InputStream;");
-				fw.SetValue(null, inputStream);
-			}
-
-			public static void setOut(object printStream)
-			{
-				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical("java.lang.System");
-				FieldWrapper fw = tw.GetFieldWrapper("out", "Ljava.io.PrintStream;");
-				fw.SetValue(null, printStream);
-			}
 		}
 
 		public class VMClassLoader
@@ -1666,7 +1645,7 @@ namespace ikvm.@internal
 	public interface LibraryVMInterface
 	{
 		object loadClass(object classLoader, string name);
-		object newClass(object wrapper, object protectionDomain);
+		object newClass(object wrapper, object protectionDomain, object classLoader);
 		object getWrapperFromClass(object clazz);
 		object getWrapperFromField(object field);
 		object getWrapperFromMethodOrConstructor(object methodOrConstructor);

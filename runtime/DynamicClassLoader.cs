@@ -185,7 +185,7 @@ namespace IKVM.Internal
 					dynamicTypes[mangledTypeName] = type;
 					types[f.Name] = type;
 #if !STATIC_COMPILER
-					type.SetClassObject(JVM.Library.newClass(type, protectionDomain));
+					type.SetClassObject(JVM.Library.newClass(type, protectionDomain, null));
 #endif
 				}
 				else

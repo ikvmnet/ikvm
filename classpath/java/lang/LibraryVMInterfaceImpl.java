@@ -42,8 +42,12 @@ class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
         return ((ClassLoader)classLoader).loadClass(name).vmdata;
     }
 
-    public Object newClass(Object wrapper, Object protectionDomain)
+    public Object newClass(Object wrapper, Object protectionDomain, Object classLoader)
     {
+        if(protectionDomain == null && classLoader instanceof AssemblyClassLoader)
+        {
+            protectionDomain = ((AssemblyClassLoader)classLoader).getProtectionDomain();
+        }
         return new Class(wrapper, (java.security.ProtectionDomain)protectionDomain);
     }
 

@@ -1472,20 +1472,40 @@ namespace IKVM.Internal
 	sealed class GetterFieldWrapper : FieldWrapper
 	{
 		private MethodInfo getter;
+		private PropertyInfo prop;
 
 		// NOTE fi may be null!
-		internal GetterFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers, MethodInfo getter)
+		internal GetterFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers, MethodInfo getter, PropertyInfo prop)
 			: base(declaringType, fieldType, name, sig, modifiers, fi)
 		{
 			Debug.Assert(!IsVolatile);
 
 			this.getter = getter;
+			this.prop = prop;
 		}
 
 		internal void SetGetter(MethodInfo getter)
 		{
 			this.getter = getter;
 		}
+
+#if !STATIC_COMPILER
+		internal override object GetValue(object obj)
+		{
+			return prop.GetValue(obj, null);
+		}
+
+		internal override void SetValue(object obj, object val)
+		{
+			if(FieldTypeWrapper.IsGhost)
+			{
+				object temp = GetValue(obj);
+				FieldTypeWrapper.GhostRefField.SetValue(temp, val);
+				val = temp;
+			}
+			prop.SetValue(obj, val, null);
+		}
+#endif
 
 #if !COMPACT_FRAMEWORK
 		protected override void EmitGetImpl(ILGenerator ilgen)

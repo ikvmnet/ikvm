@@ -33,10 +33,16 @@ import java.util.Enumeration;
 import java.util.Vector;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.security.AllPermission;
+import java.security.CodeSource;
+import java.security.Permissions;
+import java.security.ProtectionDomain;
 
 @Internal
 public final class AssemblyClassLoader extends ClassLoader
 {
+    private ProtectionDomain pd;
+
     public AssemblyClassLoader()
     {
         super(null);
@@ -160,7 +166,11 @@ public final class AssemblyClassLoader extends ClassLoader
     {
         try
         {
-            return new Manifest(gnu.java.net.protocol.ikvmres.Handler.readResourceFromAssembly(GetAssembly(this), "/META-INF/MANIFEST.MF"));
+            Assembly asm = GetAssembly(this);
+            if(asm != null)
+            {
+                return new Manifest(gnu.java.net.protocol.ikvmres.Handler.readResourceFromAssembly(asm, "/META-INF/MANIFEST.MF"));
+            }
         }
         catch (MalformedURLException _)
         {
@@ -173,14 +183,7 @@ public final class AssemblyClassLoader extends ClassLoader
 
     private void lazyDefinePackages()
     {
-        URL sealBase = null;
-        try
-        {
-            sealBase = new URL(GetAssembly(this).get_CodeBase());
-        }
-        catch(MalformedURLException _)
-        {
-        }
+        URL sealBase = getCodeBase();
         Manifest manifest = getManifest();
         Attributes attr = null;
         if(manifest != null)
@@ -231,5 +234,32 @@ public final class AssemblyClassLoader extends ClassLoader
         }
         // TODO make this string more meaningful
         return "GenericClassLoader";
+    }
+
+    private URL getCodeBase()
+    {
+        try
+        {
+            Assembly asm = GetAssembly(this);
+            if(asm != null)
+            {
+                return new URL(asm.get_CodeBase());
+            }
+        }
+        catch(MalformedURLException _)
+        {
+        }
+        return null;
+    }
+
+    public synchronized ProtectionDomain getProtectionDomain()
+    {
+        if(pd == null)
+        {
+            Permissions permissions = new Permissions();
+            permissions.add(new AllPermission());
+            pd = new ProtectionDomain(new CodeSource(getCodeBase(), null), permissions, this, null);
+        }
+        return pd;
     }
 }

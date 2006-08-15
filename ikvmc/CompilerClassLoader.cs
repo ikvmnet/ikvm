@@ -1391,7 +1391,7 @@ namespace IKVM.Internal
 							}
 							// TODO emit an static helper method that enables access to the field at runtime
 							method.Link();
-							fields.Add(new GetterFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), null, f.Name, f.Sig, new ExModifiers((Modifiers)f.Modifiers, false), (MethodInfo)method.GetMethod()));
+							fields.Add(new GetterFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), null, f.Name, f.Sig, new ExModifiers((Modifiers)f.Modifiers, false), (MethodInfo)method.GetMethod(), null));
 						}
 						else if((f.Modifiers & IKVM.Internal.MapXml.MapModifiers.Static) != 0)
 						{

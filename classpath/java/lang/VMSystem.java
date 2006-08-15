@@ -42,6 +42,7 @@ import java.util.Properties;
 import java.io.*;
 import cli.System.Collections.IDictionary;
 import cli.System.Collections.IDictionaryEnumerator;
+import cli.System.Reflection.BindingFlags;
 
 /**
  * VMSystem is a package-private helper class for System that the
@@ -106,7 +107,10 @@ final class VMSystem
      * @param in the new InputStream
      * @see #setIn(InputStream)
      */
-    static native void setIn(InputStream in);
+    static void setIn(InputStream in)
+    {
+        setSystemField("in", in);
+    }
 
     /**
      * Set {@link #out} to a new PrintStream.
@@ -114,7 +118,10 @@ final class VMSystem
      * @param out the new PrintStream
      * @see #setOut(PrintStream)
      */
-    static native void setOut(PrintStream out);
+    static void setOut(PrintStream out)
+    {
+        setSystemField("out", out);
+    }
 
     /**
      * Set {@link #err} to a new PrintStream.
@@ -122,7 +129,17 @@ final class VMSystem
      * @param err the new PrintStream
      * @see #setErr(PrintStream)
      */
-    static native void setErr(PrintStream err);
+    static void setErr(PrintStream err)
+    {
+        setSystemField("err", err);
+    }
+
+    private static void setSystemField(String field, Object value)
+    {
+        cli.System.Type.GetType("java.lang.System")
+            .GetField(field, BindingFlags.wrap(BindingFlags.NonPublic | BindingFlags.Static))
+            .SetValue(null, value);
+    }
 
     /**
      * Get the current time, measured in the number of milliseconds from the

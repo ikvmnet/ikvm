@@ -27,7 +27,7 @@ package ikvm.internal;
 public interface LibraryVMInterface
 {
     Object loadClass(Object classLoader, String name) throws ClassNotFoundException;
-    Object newClass(Object wrapper, Object protectionDomain);
+    Object newClass(Object wrapper, Object protectionDomain, Object classLoader);
     Object getWrapperFromClass(Object clazz);
     Object getWrapperFromField(Object field);
     Object getWrapperFromMethodOrConstructor(Object methodOrConstructor);

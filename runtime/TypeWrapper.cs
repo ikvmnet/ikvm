@@ -1599,7 +1599,7 @@ namespace IKVM.Internal
 						// DynamicTypeWrapper should haved already had SetClassObject explicitly
 						Debug.Assert(!(this is DynamicTypeWrapper));
 #endif // !COMPACT_FRAMEWORK
-						classObject = JVM.Library.newClass(this, null);
+						classObject = JVM.Library.newClass(this, null, GetClassLoader().GetJavaClassLoader());
 					}
 				}
 				return classObject;
@@ -3356,7 +3356,7 @@ namespace IKVM.Internal
 					else if(fld.IsFinal && (JVM.IsStaticCompiler && (fld.IsPublic || fld.IsProtected))
 						&& !wrapper.IsInterface && (!JVM.StrictFinalFieldSemantics || ReferenceEquals(wrapper.Name, StringConstants.JAVA_LANG_SYSTEM)))
 					{
-						fields[i] = new GetterFieldWrapper(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null);
+						fields[i] = new GetterFieldWrapper(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null, null);
 					}
 					else
 					{
@@ -4130,11 +4130,8 @@ namespace IKVM.Internal
 						{
 							// NOTE public/protected blank final fields get converted into a read-only property with a private field
 							// backing store
-							// we used to make the field privatescope, but that really serves no purpose (and it hinders
-							// serialization, which uses .NET reflection to get at the field)
 							attribs &= ~FieldAttributes.FieldAccessMask;
-							attribs |= FieldAttributes.Private;
-							setModifiers = true;
+							attribs |= FieldAttributes.PrivateScope;
 						}
 						else if(wrapper.IsInterface || JVM.StrictFinalFieldSemantics)
 						{
@@ -4167,8 +4164,7 @@ namespace IKVM.Internal
 					if(isWrappedFinal)
 					{
 						methodAttribs |= MethodAttributes.SpecialName;
-						// TODO we should ensure that the getter method name doesn't clash with an existing method
-						MethodBuilder getter = typeBuilder.DefineMethod("get_" + fld.Name, methodAttribs, CallingConventions.Standard, type, Type.EmptyTypes);
+						MethodBuilder getter = typeBuilder.DefineMethod(GenerateUniqueMethodName("get_" + fieldName, type, Type.EmptyTypes), methodAttribs, CallingConventions.Standard, type, Type.EmptyTypes);
 						AttributeHelper.HideFromJava(getter);
 						ILGenerator ilgen = getter.GetILGenerator();
 						if(fld.IsStatic)
@@ -4181,8 +4177,31 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Ldfld, field);
 						}
 						ilgen.Emit(OpCodes.Ret);
-						PropertyBuilder pb = typeBuilder.DefineProperty(fld.Name, PropertyAttributes.None, type, Type.EmptyTypes);
+#if STATIC_COMPILER
+						if(setNameSig)
+						{
+							setNameSig = false;
+							AttributeHelper.SetNameSig(getter, fld.Name, fld.Signature);
+						}
+						if(fld.IsTransient)
+						{
+							AttributeHelper.SetModifiers(getter, fld.Modifiers, fld.IsInternal);
+						}
+#endif // STATIC_COMPILER
+						PropertyBuilder pb = typeBuilder.DefineProperty(fieldName, PropertyAttributes.None, type, Type.EmptyTypes);
 						pb.SetGetMethod(getter);
+						if(!fld.IsStatic)
+						{
+							// this method exist for use by reflection only
+							// (that's why it only exists for instance fields, final static fields are not settable by reflection)
+							MethodBuilder setter = typeBuilder.DefineMethod("__<set>", MethodAttributes.PrivateScope, CallingConventions.Standard, typeof(void), new Type[] { type });
+							ilgen = setter.GetILGenerator();
+							ilgen.Emit(OpCodes.Ldarg_0);
+							ilgen.Emit(OpCodes.Ldarg_1);
+							ilgen.Emit(OpCodes.Stfld, field);
+							ilgen.Emit(OpCodes.Ret);
+							pb.SetSetMethod(setter);
+						}
 						((GetterFieldWrapper)fw).SetGetter(getter);
 					}
 				}
@@ -5556,15 +5575,20 @@ namespace IKVM.Internal
 
 			internal string GenerateUniqueMethodName(string basename, MethodWrapper mw)
 			{
+				return GenerateUniqueMethodName(basename, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+			}
+
+			private string GenerateUniqueMethodName(string basename, Type returnType, Type[] parameterTypes)
+			{
 				string name = basename;
-				string key = GenerateClashKey("method", name, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+				string key = GenerateClashKey("method", name, returnType, parameterTypes);
 				UpdateClashTable();
 				lock(memberclashtable.SyncRoot)
 				{
 					for(int clashcount = 0; memberclashtable.ContainsKey(key); clashcount++)
 					{
 						name = basename + "_" + clashcount;
-						key = GenerateClashKey("method", name, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+						key = GenerateClashKey("method", name, returnType, parameterTypes);
 					}
 					memberclashtable.Add(key, key);
 				}
@@ -5871,6 +5895,10 @@ namespace IKVM.Internal
 								// TODO we really should make sure that the name we generate doesn't already exist in a
 								// base class (not in the Java method namespace, but in the CLR method namespace)
 								name = GenerateUniqueMethodName(name, methods[index]);
+								if(name != m.Name)
+								{
+									setNameSig = true;
+								}
 							}
 							bool needMethodImpl = baseMce != null && (explicitOverride || baseMce.RealName != name) && !needFinalize;
 							if(unloadableOverrideStub || needMethodImpl)
@@ -7487,6 +7515,10 @@ namespace IKVM.Internal
 								{
 									fields.Add(new CompiledAccessStubFieldWrapper(this, property));
 								}
+								else
+								{
+									fields.Add(CreateFieldWrapper(property));
+								}
 							}
 						}
 					}
@@ -7590,6 +7622,21 @@ namespace IKVM.Internal
 			}
 		}
 
+		private FieldWrapper CreateFieldWrapper(PropertyInfo prop)
+		{
+			MethodInfo getter = prop.GetGetMethod(true);
+			ExModifiers modifiers = AttributeHelper.GetModifiers(getter, false);
+			string name = prop.Name;
+			TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(prop.PropertyType);
+			NameSigAttribute attr = AttributeHelper.GetNameSig(getter);
+			if(attr != null)
+			{
+				name = attr.Name;
+				SigTypePatchUp(attr.Sig, ref type);
+			}
+			return new GetterFieldWrapper(this, type, null, name, type.SigName, modifiers, getter, prop);
+		}
+
 		private FieldWrapper CreateFieldWrapper(FieldInfo field)
 		{
 			ExModifiers modifiers = AttributeHelper.GetModifiers(field, false);
@@ -7602,17 +7649,7 @@ namespace IKVM.Internal
 				SigTypePatchUp(attr.Sig, ref type);
 			}
 
-			// If the backing field is private, but the modifiers aren't, we've got a final field that
-			// has a property accessor method.
-			if(field.IsPrivate && ((modifiers.Modifiers & Modifiers.Private) == 0))
-			{
-				BindingFlags bindingFlags = BindingFlags.DeclaredOnly | BindingFlags.NonPublic | BindingFlags.Public;
-				bindingFlags |= field.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-				PropertyInfo prop = field.DeclaringType.GetProperty(field.Name, bindingFlags, null, field.FieldType, Type.EmptyTypes, null);
-				MethodInfo getter = prop.GetGetMethod(true);
-				return new GetterFieldWrapper(this, type, field, name, type.SigName, modifiers, getter);
-			}
-			else if(field.IsLiteral)
+			if(field.IsLiteral)
 			{
 				MemberFlags flags = MemberFlags.LiteralField;
 				if(AttributeHelper.IsHideFromReflection(field))
