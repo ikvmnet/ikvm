@@ -24,6 +24,7 @@
 package ikvm.internal;
 
 import cli.System.Reflection.Assembly;
+import gnu.java.util.DoubleEnumeration;
 import gnu.java.util.EmptyEnumeration;
 import ikvm.lang.Internal;
 import java.io.IOException;
@@ -58,7 +59,12 @@ public final class AssemblyClassLoader extends ClassLoader
 
     public URL getResource(String name)
     {
-        return getResource(this, name);
+        URL url = getResource(this, name);
+        if(url == null)
+        {
+            url = super.getResource(name);
+        }
+        return url;
     }
 
     private static URL makeIkvmresURL(Assembly asm, String name) throws MalformedURLException
@@ -119,7 +125,7 @@ public final class AssemblyClassLoader extends ClassLoader
 
     public Enumeration getResources(String name) throws IOException
     {
-        return getResources(this, name);
+        return new DoubleEnumeration(getResources(this, name), super.getResources(name));
     }
 
     public static Enumeration getResources(Object classLoader, String name) throws IOException
