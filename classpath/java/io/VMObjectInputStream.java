@@ -23,23 +23,10 @@
 */
 package java.io;
 
-import gnu.classpath.VMStackWalker;
 import java.lang.reflect.Constructor;
 
 final class VMObjectInputStream
 {
-    static ClassLoader currentClassLoader()
-    {
-        Class[] stack = VMStackWalker.getClassContext();
-        for (int i = 0; i < stack.length; i++)
-        {
-            ClassLoader loader = stack[i].getClassLoader();
-            if (loader != null)
-                return loader;
-        }
-        return Thread.currentThread().getContextClassLoader();
-    }
-
     static native Object allocateObject(Class clazz, Class constr_clazz, Constructor constructor)
         throws InstantiationException;
 }
