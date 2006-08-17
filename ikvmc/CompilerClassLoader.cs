@@ -228,7 +228,7 @@ namespace IKVM.Internal
 			}
 			ILGenerator ilgen = mainStub.GetILGenerator();
 			LocalBuilder rc = ilgen.DeclareLocal(typeof(int));
-			Type startupType = StaticCompiler.GetType("IKVM.Runtime.Startup");
+			TypeWrapper startupType = LoadClassByDottedName("ikvm.runtime.Startup");
 			if(props.Count > 0)
 			{
 				ilgen.Emit(OpCodes.Newobj, typeof(Hashtable).GetConstructor(Type.EmptyTypes));
@@ -239,21 +239,21 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldstr, (string)de.Value);
 					ilgen.Emit(OpCodes.Callvirt, typeof(Hashtable).GetMethod("Add"));
 				}
-				ilgen.Emit(OpCodes.Call, startupType.GetMethod("SetProperties"));
+				startupType.GetMethodWrapper("setProperties", "(Lcli.System.Collections.Hashtable;)V", false).EmitCall(ilgen);
 			}
 			ilgen.BeginExceptionBlock();
-			ilgen.Emit(OpCodes.Call, startupType.GetMethod("EnterMainThread"));
+			startupType.GetMethodWrapper("enterMainThread", "()V", false).EmitCall(ilgen);
 			if(noglobbing)
 			{
 				ilgen.Emit(OpCodes.Ldarg_0);
 			}
 			else
 			{
-				ilgen.Emit(OpCodes.Call, startupType.GetMethod("Glob", Type.EmptyTypes));
+				startupType.GetMethodWrapper("glob", "()[Ljava.lang.String;", false).EmitCall(ilgen);
 			}
 			ilgen.Emit(OpCodes.Call, m);
 			ilgen.BeginCatchBlock(typeof(Exception));
-			ilgen.Emit(OpCodes.Call, StaticCompiler.GetType("IKVM.Runtime.Util").GetMethod("MapException", new Type[] { typeof(Exception) }));
+			LoadClassByDottedName("ikvm.runtime.Util").GetMethodWrapper("mapException", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).EmitCall(ilgen);
 			LocalBuilder exceptionLocal = ilgen.DeclareLocal(typeof(Exception));
 			ilgen.Emit(OpCodes.Stloc, exceptionLocal);
 			TypeWrapper threadTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Thread");
@@ -268,7 +268,7 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ldc_I4_1);
 			ilgen.Emit(OpCodes.Stloc, rc);
 			ilgen.BeginFinallyBlock();
-			ilgen.Emit(OpCodes.Call, startupType.GetMethod("ExitMainThread", Type.EmptyTypes));
+			startupType.GetMethodWrapper("exitMainThread", "()V", false).EmitCall(ilgen);
 			ilgen.EndExceptionBlock();
 			ilgen.Emit(OpCodes.Ldloc, rc);
 			ilgen.Emit(OpCodes.Ret);

@@ -140,20 +140,7 @@ public class VMSystemProperties
         p.setProperty("java.specification.vendor", "Sun Microsystems Inc.");
         p.setProperty("java.specification.name", "Java Platform API Specification");
         p.setProperty("java.class.version", "49.0");
-        try
-        {
-            if(false) throw new cli.System.Security.SecurityException();
-            String classpath = GetEnvironmentVariable("CLASSPATH");
-            if(classpath == null)
-            {
-                classpath = ".";
-            }
-            p.setProperty("java.class.path", classpath);
-        }
-        catch(cli.System.Security.SecurityException _)
-        {
-            p.setProperty("java.class.path", "");
-        }
+        p.setProperty("java.class.path", "");
         String libraryPath = null;
         if(cli.System.Environment.get_OSVersion().ToString().indexOf("Unix") >= 0)
         {

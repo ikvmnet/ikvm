@@ -538,6 +538,11 @@ namespace IKVM.NativeCode.java
 				}
 				return null;
 			}
+
+			public static object getAssemblyClassLoader(Assembly asm)
+			{
+				return ClassLoaderWrapper.GetAssemblyClassLoader(asm).GetJavaClassLoader();
+			}
 		}
 
 		public class VMClass

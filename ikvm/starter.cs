@@ -105,6 +105,12 @@ public class Starter
 	{
 		Tracer.EnableTraceForDebug();
 		Hashtable props = new Hashtable();
+		string classpath = Environment.GetEnvironmentVariable("CLASSPATH");
+		if(classpath == null || classpath == "")
+		{
+			classpath = ".";
+		}
+		props["java.class.path"] = classpath;
 		bool jar = false;
 		bool saveAssembly = false;
 		bool saveAssemblyX = false;

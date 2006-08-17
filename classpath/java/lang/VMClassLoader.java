@@ -314,14 +314,11 @@ final class VMClassLoader
         if("".equals(SystemProperties.getProperty("java.class.path")) &&
             "".equals(SystemProperties.getProperty("java.ext.dirs")))
         {
-            // to support running in partial trust (without file access) we special
-            // case the "no class path" scenario (because the default code will assume
-            // a "." class path and fail when it tries to convert the URL to a file path)
-            return ClassLoader.createAuxiliarySystemClassLoader(
-                ClassLoader.createSystemClassLoader(new URL[0], null));
+            return getAssemblyClassLoader(Assembly.GetEntryAssembly());
         }
 	return ClassLoader.defaultGetSystemClassLoader();
     }
+    private static native ClassLoader getAssemblyClassLoader(Assembly asm);
 
     static native Class findLoadedClass(ClassLoader cl, String name);
 }
