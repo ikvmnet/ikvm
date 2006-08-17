@@ -576,7 +576,7 @@ namespace IKVM.Internal
 				{
 					return null;
 				}
-				throw new ClassLoadingException(IKVM.Runtime.Util.MapException(x));
+				throw new ClassLoadingException(JVM.Library.mapException(x));
 			}
 			finally
 			{

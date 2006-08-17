@@ -1223,7 +1223,7 @@ namespace IKVM.Internal
 						}
 						Tracer.Error(Tracer.ClassLoading, "ClassLoader chain: {0}", sb);
 					}
-					Exception m = IKVM.Runtime.Util.MapException(x.ToJava());
+					Exception m = JVM.Library.mapException(x.ToJava());
 					Tracer.Error(Tracer.ClassLoading, m.ToString() + Environment.NewLine + m.StackTrace);
 				}
 #endif // !STATIC_COMPILER

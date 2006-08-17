@@ -558,7 +558,8 @@ public final class ExceptionHelper
         return t;
     }
 
-    static Throwable MapExceptionFast(Throwable t, boolean remap)
+    // used by ikvm.runtime.Util
+    public static Throwable MapExceptionFast(Throwable t, boolean remap)
     {
         return MapException(t, null, remap);
     }

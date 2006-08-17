@@ -369,7 +369,7 @@ namespace IKVM.Runtime
 		[DebuggerStepThroughAttribute]
 		public static object GetClassFromTypeHandle(RuntimeTypeHandle typeHandle)
 		{
-			return Util.GetClassFromTypeHandle(typeHandle);
+			return NativeCode.ikvm.runtime.Util.getClassFromTypeHandle(typeHandle);
 		}
 
 		[DebuggerStepThroughAttribute]

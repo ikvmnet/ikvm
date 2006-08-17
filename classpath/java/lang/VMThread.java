@@ -125,7 +125,7 @@ public final class VMThread
         }
     }
 
-    static void jniDetach()
+    public static void jniDetach()
     {
         // If this thread never called Thread.currentThread(), we don't need
         // to clean up, because the Java Thread object doesn't exist and nobody

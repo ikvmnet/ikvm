@@ -29,8 +29,8 @@ using System.Collections;
 using System.Collections.Specialized;
 using System.Text;
 using IKVM.Internal;
-using IKVM.Runtime;
 
+using ikvm.runtime;
 using java.lang.reflect;
 using java.net;
 using java.util.jar;
@@ -148,7 +148,7 @@ public class Starter
 				}
 				else if(args[i] == "-version")
 				{
-					Console.WriteLine(IKVM.Runtime.Startup.GetVersionAndCopyrightInfo());
+					Console.WriteLine(Startup.getVersionAndCopyrightInfo());
 					Console.WriteLine();
 					Console.WriteLine("CLR version: {0} ({1} bit)", Environment.Version, IntPtr.Size * 8);
 					foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
@@ -226,13 +226,13 @@ public class Starter
 			else
 			{
 				mainClass = args[i];
-				vmargs = Startup.Glob(i + 2);
+				vmargs = Startup.glob(i + 2);
 				break;
 			}
 		}
 		if(mainClass == null || showVersion)
 		{
-			Console.Error.WriteLine(IKVM.Runtime.Startup.GetVersionAndCopyrightInfo());
+			Console.Error.WriteLine(Startup.getVersionAndCopyrightInfo());
 			Console.Error.WriteLine();
 		}
 		if(mainClass == null)
@@ -270,8 +270,8 @@ public class Starter
 			{
 				props["java.class.path"] = mainClass;
 			}
-			Startup.SetProperties(props);
-			Startup.EnterMainThread();
+			Startup.setProperties(props);
+			Startup.enterMainThread();
 			if(jar)
 			{
 				JarFile jf = new JarFile(mainClass);
@@ -339,11 +339,11 @@ public class Starter
 		catch(System.Exception x)
 		{
 			java.lang.Thread thread = java.lang.Thread.currentThread();
-			thread.getThreadGroup().uncaughtException(thread, IKVM.Runtime.Util.MapException(x));
+			thread.getThreadGroup().uncaughtException(thread, ikvm.runtime.Util.mapException(x));
 		}
 		finally
 		{
-			Startup.ExitMainThread();
+			Startup.exitMainThread();
 		}
 		return 1;
 	}

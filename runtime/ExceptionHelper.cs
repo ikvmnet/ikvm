@@ -87,6 +87,11 @@ namespace IKVM.NativeCode.java.lang
 				// hide this method from the stack trace
 				return "__<ToJava>";
 			}
+			else if(mb.Name == "mapException" && mb.DeclaringType.FullName == "ikvm.runtime.Util")
+			{
+				// hide this method from the stack trace
+				return "__<mapException>";
+			}
 			else
 			{
 				return mb.Name;

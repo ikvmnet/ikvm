@@ -646,7 +646,7 @@ namespace IKVM.Internal
 						}
 						catch(TargetInvocationException x)
 						{
-							throw JavaException.InvocationTargetException(IKVM.Runtime.Util.MapException(x.InnerException));
+							throw JavaException.InvocationTargetException(JVM.Library.mapException(x.InnerException));
 						}
 					}
 					else if(!method.DeclaringType.IsInstanceOfType(obj))
@@ -690,7 +690,7 @@ namespace IKVM.Internal
 					}
 					catch(TargetInvocationException x)
 					{
-						throw JavaException.InvocationTargetException(IKVM.Runtime.Util.MapException(x.InnerException));
+						throw JavaException.InvocationTargetException(JVM.Library.mapException(x.InnerException));
 					}
 #endif
 				}
@@ -712,7 +712,7 @@ namespace IKVM.Internal
 			}
 			catch(TargetInvocationException x)
 			{
-				throw JavaException.InvocationTargetException(IKVM.Runtime.Util.MapException(x.InnerException));
+				throw JavaException.InvocationTargetException(JVM.Library.mapException(x.InnerException));
 			}
 		}
 

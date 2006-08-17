@@ -40,7 +40,7 @@ public class NetExp
 		IKVM.Internal.Tracer.EnableTraceForDebug();
 		if(args.Length != 1)
 		{
-			Console.Error.WriteLine(IKVM.Runtime.Startup.GetVersionAndCopyrightInfo());
+			Console.Error.WriteLine(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("usage: ikvmstub <assemblyNameOrPath>");
 			return;
@@ -107,7 +107,7 @@ public class NetExp
 			}
 			catch(System.Exception x)
 			{
-				java.lang.Throwable.instancehelper_printStackTrace(IKVM.Runtime.Util.MapException(x));
+				java.lang.Throwable.instancehelper_printStackTrace(ikvm.runtime.Util.mapException(x));
 				rc = 1;
 			}
 			zipFile.Close();
@@ -169,14 +169,14 @@ public class NetExp
 #if WHIDBEY
 					if(assembly.ReflectionOnly)
 					{
-						c = (java.lang.Class)IKVM.Runtime.Util.GetFriendlyClassFromType(t);
+						c = ikvm.runtime.Util.getFriendlyClassFromType(t);
 					}
 					else
 					{
-						c = (java.lang.Class)IKVM.Runtime.Util.GetClassFromTypeHandle(t.TypeHandle);
+						c = ikvm.runtime.Util.getClassFromTypeHandle(t.TypeHandle);
 					}
 #else
-					c = (java.lang.Class)IKVM.Runtime.Util.GetClassFromTypeHandle(t.TypeHandle);
+					c = ikvm.runtime.Util.getClassFromTypeHandle(t.TypeHandle);
 #endif
 					if (c == null)
 					{

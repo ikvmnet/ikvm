@@ -264,7 +264,7 @@ namespace IKVM.NativeCode.java
 						}
 						else
 						{
-							instanceTypeWrapper = IKVM.Runtime.Util.GetTypeWrapperFromObject(instance);
+							instanceTypeWrapper = IKVM.NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(instance);
 						}
 						return member.IsAccessibleFrom(member.DeclaringType, (TypeWrapper)callerTypeWrapper, instanceTypeWrapper);
 					}
@@ -603,7 +603,7 @@ namespace IKVM.NativeCode.java
 
 			public static object getClassFromType(Type type)
 			{
-				return IKVM.Runtime.Util.GetClassFromTypeHandle(type.TypeHandle);
+				return IKVM.NativeCode.ikvm.runtime.Util.getClassFromTypeHandle(type.TypeHandle);
 			}
 
 			public static string GetName(object wrapper)
@@ -1636,6 +1636,81 @@ namespace IKVM.NativeCode.ikvm.@internal
 				// generated delegate inner interfaces don't really exist
 				return type != null && AttributeHelper.IsDefined(type, typeof(ObsoleteAttribute));
 			}
+		}
+	}
+}
+
+namespace IKVM.NativeCode.ikvm.runtime
+{
+	public class Util
+	{
+		public static object getClassFromObject(object o)
+		{
+			return GetTypeWrapperFromObject(o).ClassObject;
+		}
+
+		internal static TypeWrapper GetTypeWrapperFromObject(object o)
+		{
+			Type t = o.GetType();
+			if(t.IsPrimitive || (ClassLoaderWrapper.IsRemappedType(t) && !t.IsSealed))
+			{
+				return DotNetTypeWrapper.GetWrapperFromDotNetType(t);
+			}
+			return ClassLoaderWrapper.GetWrapperFromType(t);
+		}
+
+		public static object getClassFromTypeHandle(RuntimeTypeHandle handle)
+		{
+			Type t = Type.GetTypeFromHandle(handle);
+			if(t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t) || t == typeof(void))
+			{
+				return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
+			}
+			if(Whidbey.ContainsGenericParameters(t))
+			{
+				return null;
+			}
+			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(t);
+			if(tw != null)
+			{
+				return tw.ClassObject;
+			}
+			return null;
+		}
+
+		public static object getFriendlyClassFromType(Type type)
+		{
+			if(Whidbey.ContainsGenericParameters(type))
+			{
+				return null;
+			}
+			int rank = 0;
+			while(type.IsArray)
+			{
+				type = type.GetElementType();
+				rank++;
+			}
+			if(type.DeclaringType != null
+				&& type.DeclaringType.IsDefined(typeof(GhostInterfaceAttribute), false))
+			{
+				type = type.DeclaringType;
+			}
+			TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+			if(rank > 0)
+			{
+				wrapper = wrapper.MakeArrayType(rank);
+			}
+			return wrapper.ClassObject;
+		}
+
+		public static Type GetInstanceTypeFromTypeWrapper(object wrapperObject)
+		{
+			TypeWrapper wrapper = (TypeWrapper)wrapperObject;
+			if(wrapper.IsRemapped && wrapper.IsFinal)
+			{
+				return wrapper.TypeAsTBD;
+			}
+			return wrapper.TypeAsBaseType;
 		}
 	}
 }

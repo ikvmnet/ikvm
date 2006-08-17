@@ -34,8 +34,10 @@ import java.security.PrivilegedAction;
 import ikvm.internal.AnnotationAttributeBase;
 import ikvm.internal.AssemblyClassLoader;
 import ikvm.lang.CIL;
+import ikvm.lang.Internal;
 
-class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
+@Internal
+public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 {
     public Object loadClass(Object classLoader, String name) throws ClassNotFoundException
     {

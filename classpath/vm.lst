@@ -44,6 +44,8 @@ ikvm/internal/WeakIdentityMap.java
 ikvm/io/InputStreamWrapper.java
 ikvm/lang/CIL.java
 ikvm/lang/Internal.java
+ikvm/runtime/Startup.java
+ikvm/runtime/Util.java
 java/io/VMFile.java
 java/io/VMObjectInputStream.java
 java/lang/DoubleToString.java

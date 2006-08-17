@@ -80,8 +80,7 @@
 				</attribute>
 				<body>
 					<ldarg_0 />
-					<call type="IKVM.Runtime.Util" name="GetClassFromObject" sig="(Ljava.lang.Object;)Ljava.lang.Object;" />
-					<castclass class="java.lang.Class" />
+					<call class="ikvm.runtime.Util" name="getClassFromObject" sig="(Ljava.lang.Object;)Ljava.lang.Class;" />
 					<ret />
 				</body>
 			</method>
@@ -951,8 +950,7 @@
 				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
 				<body>
 					<ldarg_0 />
-					<call type="IKVM.Runtime.Util" name="GetFriendlyClassFromType" sig="(Lcli.System.Type;)Ljava.lang.Object;" />
-					<castclass class="java.lang.Class" />
+					<call class="ikvm.runtime.Util" name="getFriendlyClassFromType" sig="(Lcli.System.Type;)Ljava.lang.Class;" />
 					<ret />
 				</body>
 			</method>
@@ -1313,14 +1311,6 @@
 					<call class="java.lang.Integer" name="toString" sig="(I)Ljava.lang.String;" />
 					<newobj class="java.lang.IndexOutOfBoundsException" name="&lt;init&gt;" sig="(Ljava.lang.String;)V" />
 					<throw />
-				</body>
-			</method>
-		</class>
-		<class name="ikvm.internal.Library">
-			<method name="doGetImpl" sig="()Likvm.internal.LibraryVMInterface;">
-				<body>
-					<newobj class="java.lang.LibraryVMInterfaceImpl" name="&lt;init&gt;" sig="()V" />
-					<ret />
 				</body>
 			</method>
 		</class>

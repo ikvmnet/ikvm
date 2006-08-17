@@ -123,7 +123,7 @@ namespace IKVM.Runtime
 				}
 			}
 
-			Startup.SetProperties(props);
+			JVM.Library.setProperties(props);
 
 			*((void**)ppvm) = JavaVM.pJavaVM;
 			return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)ppenv, null);
@@ -1345,7 +1345,7 @@ namespace IKVM.Runtime
 		private static void SetPendingException(JNIEnv* pEnv, Exception x)
 		{
 			DeleteLocalRef(pEnv, pEnv->pendingException);
-			pEnv->pendingException = x == null ? IntPtr.Zero : pEnv->MakeLocalRef(Util.MapException(x));
+			pEnv->pendingException = x == null ? IntPtr.Zero : pEnv->MakeLocalRef(JVM.Library.mapException(x));
 		}
 
 		internal static jint Throw(JNIEnv* pEnv, jthrowable throwable)
@@ -1632,7 +1632,7 @@ namespace IKVM.Runtime
 				{
 					x = x.InnerException;
 				}
-				SetPendingException(pEnv, Util.MapException(x));
+				SetPendingException(pEnv, JVM.Library.mapException(x));
 				return null;
 			}
 		}
@@ -1644,14 +1644,14 @@ namespace IKVM.Runtime
 
 		internal static jclass GetObjectClass(JNIEnv* pEnv, jobject obj)
 		{
-			return pEnv->MakeLocalRef(IKVM.Runtime.Util.GetClassFromObject(pEnv->UnwrapRef(obj)));
+			return pEnv->MakeLocalRef(IKVM.NativeCode.ikvm.runtime.Util.getClassFromObject(pEnv->UnwrapRef(obj)));
 		}
 
 		internal static jboolean IsInstanceOf(JNIEnv* pEnv, jobject obj, jclass clazz)
 		{
 			// NOTE if clazz is an interface, this is still the right thing to do
 			// (i.e. if the object implements the interface, we return true)
-			object objClass = IKVM.Runtime.Util.GetClassFromObject(pEnv->UnwrapRef(obj));
+			object objClass = IKVM.NativeCode.ikvm.runtime.Util.getClassFromObject(pEnv->UnwrapRef(obj));
 			TypeWrapper w1 = TypeWrapper.FromClass(pEnv->UnwrapRef(clazz));
 			TypeWrapper w2 = TypeWrapper.FromClass(objClass);
 			return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
@@ -3271,7 +3271,7 @@ namespace IKVM.Runtime
 			}
 			catch(Exception x)
 			{
-				SetPendingException(pEnv, Util.MapException(x));
+				SetPendingException(pEnv, JVM.Library.mapException(x));
 				return IntPtr.Zero;
 			}
 		}
@@ -3284,7 +3284,7 @@ namespace IKVM.Runtime
 			}
 			catch(Exception x)
 			{
-				SetPendingException(pEnv, Util.MapException(x));
+				SetPendingException(pEnv, JVM.Library.mapException(x));
 				return IntPtr.Zero;
 			}
 		}
@@ -3297,7 +3297,7 @@ namespace IKVM.Runtime
 			}
 			catch(Exception x)
 			{
-				SetPendingException(pEnv, Util.MapException(x));
+				SetPendingException(pEnv, JVM.Library.mapException(x));
 				return 0;
 			}
 		}

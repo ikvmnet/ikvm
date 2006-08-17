@@ -68,6 +68,25 @@ class IkvmcCompiler
 		Environment.Exit(RealMain(args));
 	}
 
+	static string GetVersionAndCopyrightInfo()
+	{
+		Assembly asm = Assembly.GetEntryAssembly();
+		object[] desc = asm.GetCustomAttributes(typeof(AssemblyTitleAttribute), false);
+		if (desc.Length == 1)
+		{
+			object[] copyright = asm.GetCustomAttributes(typeof(AssemblyCopyrightAttribute), false);
+			if (copyright.Length == 1)
+			{
+				return string.Format("{0} version {1}{2}{3}{2}http://www.ikvm.net/",
+					((AssemblyTitleAttribute)desc[0]).Title,
+					asm.GetName().Version,
+					Environment.NewLine,
+					((AssemblyCopyrightAttribute)copyright[0]).Copyright);
+			}
+		}
+		return "";
+	}
+
 	static int RealMain(string[] args)
 	{
 #if WHIDBEY
@@ -89,7 +108,7 @@ class IkvmcCompiler
 		options.props = new Hashtable();
 		if(arglist.Count == 0)
 		{
-			Console.Error.WriteLine(IKVM.Runtime.Startup.GetVersionAndCopyrightInfo());
+			Console.Error.WriteLine(GetVersionAndCopyrightInfo());
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
 			Console.Error.WriteLine();
