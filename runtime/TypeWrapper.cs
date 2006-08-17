@@ -7626,6 +7626,8 @@ namespace IKVM.Internal
 		{
 			MethodInfo getter = prop.GetGetMethod(true);
 			ExModifiers modifiers = AttributeHelper.GetModifiers(getter, false);
+			// for static methods AttributeHelper.GetModifiers won't set the Final flag
+			modifiers = new ExModifiers(modifiers.Modifiers | Modifiers.Final, modifiers.IsInternal);
 			string name = prop.Name;
 			TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(prop.PropertyType);
 			NameSigAttribute attr = AttributeHelper.GetNameSig(getter);
