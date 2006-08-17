@@ -111,6 +111,7 @@ public class VMSystemProperties
         p.setProperty("java.version", "1.5.0");
         p.setProperty("java.vendor", "Jeroen Frijters");
         p.setProperty("java.vendor.url", "http://ikvm.net/");
+        p.setProperty("java.vendor.url.bug", "http://www.ikvm.net/bugs");
         try
         {
             if(false) throw new cli.System.Security.SecurityException();
@@ -136,6 +137,8 @@ public class VMSystemProperties
         p.setProperty("java.vm.version", getVersion());
         p.setProperty("java.vm.vendor", "Jeroen Frijters");
         p.setProperty("java.vm.name", "IKVM.NET");
+        p.setProperty("java.runtime.name", "IKVM.NET");
+        p.setProperty("java.runtime.version", getVersion());
         p.setProperty("java.specification.version", "1.5");
         p.setProperty("java.specification.vendor", "Sun Microsystems Inc.");
         p.setProperty("java.specification.name", "Java Platform API Specification");

@@ -855,6 +855,12 @@ namespace ikvm.awt
 				Rectangle srcRect = new Rectangle(sx1, sy1, sx2 - sx1, sy2 - sy1);
 				g.DrawImage(((NetBufferedImage)img).bitmap, destRect, srcRect, GraphicsUnit.Pixel);
 			}
+			else if(img is NetVolatileImage)
+			{
+				Rectangle destRect = new Rectangle(dx1, dy1, dx2 - dx1, dy2 - dy1);
+				Rectangle srcRect = new Rectangle(sx1, sy1, sx2 - sx1, sy2 - sy1);
+				g.DrawImage(((NetVolatileImage)img).bitmap, destRect, srcRect, GraphicsUnit.Pixel);
+			}
 			else
 			{
 				throw new NotImplementedException();
@@ -887,9 +893,28 @@ namespace ikvm.awt
 			{
 				g.DrawImage(((NetProducerImage)img).getBitmap(), x, y);
 			}
+			else if(img is NetVolatileImage)
+			{
+				g.DrawImage(((NetVolatileImage)img).bitmap, x, y);
+			}
+			else if(img is java.awt.image.BufferedImage)
+			{
+				// TODO this is horrible...
+				java.awt.image.BufferedImage bufImg = (java.awt.image.BufferedImage)img;
+				for(int iy = 0; iy < bufImg.getHeight(); iy++)
+				{
+					for(int ix = 0; ix < bufImg.getWidth(); ix++)
+					{
+						using(Pen p = new Pen(Color.FromArgb(bufImg.getRGB(ix, iy))))
+						{
+							g.DrawLine(p, x + ix, y + iy, x + ix + 1, y + iy);
+						}
+					}
+				}
+			}
 			else
 			{
-				throw new NotImplementedException();
+				throw new NotImplementedException(img.GetType().FullName);
 			}
 			return true;
 		}
@@ -2091,7 +2116,7 @@ namespace ikvm.awt
 
 		public java.awt.image.VolatileImage createVolatileImage(int width, int height)
 		{
-			throw new NotImplementedException();
+			return new NetVolatileImage(width, height);
 		}
 
 		public bool handlesWheelScrolling()
@@ -2148,6 +2173,74 @@ namespace ikvm.awt
 
 		public void layout()
 		{
+		}
+	}
+
+	class NetVolatileImage : java.awt.image.VolatileImage
+	{
+		internal Bitmap bitmap;
+
+		internal NetVolatileImage(int width, int height)
+		{
+			bitmap = new Bitmap(width, height);
+			using(Graphics g = Graphics.FromImage(bitmap))
+			{
+				g.Clear(Color.White);
+			}
+		}
+
+		public override bool contentsLost()
+		{
+			return false;
+		}
+
+		public override int getHeight(ImageObserver io)
+		{
+			return bitmap.Height;
+		}
+
+		public override int getWidth(ImageObserver io)
+		{
+			return bitmap.Width;
+		}
+
+		public override object getProperty(string str, ImageObserver io)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override java.awt.Graphics2D createGraphics()
+		{
+			Graphics g = Graphics.FromImage(bitmap);
+			// HACK for off-screen images we don't want ClearType or anti-aliasing
+			// TODO I'm sure Java 2D has a way to control text rendering quality, we should honor that
+			g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
+			return new NetGraphics(g, null, Color.White, true);
+		}
+
+		public override int getHeight()
+		{
+			return bitmap.Height;
+		}
+
+		public override int getWidth()
+		{
+			return bitmap.Width;
+		}
+
+		public override BufferedImage getSnapshot()
+		{
+			return new NetBufferedImage(bitmap);
+		}
+
+		public override int validate(java.awt.GraphicsConfiguration gc)
+		{
+			return 0;
+		}
+
+		public override java.awt.ImageCapabilities getCapabilities()
+		{
+			throw new NotImplementedException();
 		}
 	}
 
@@ -2913,7 +3006,7 @@ namespace ikvm.awt
 
 		public void setIconImage(java.awt.Image image)
 		{
-			throw new NotImplementedException();
+			Console.WriteLine("NOTE: setIconImage not implemented");
 		}
 
 		public void setMenuBar(java.awt.MenuBar mb)
