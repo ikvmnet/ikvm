@@ -1458,24 +1458,6 @@ namespace IKVM.Internal
 			CustomAttributeBuilder constantValueAttrib = new CustomAttributeBuilder(typeofConstantValueAttribute.GetConstructor(new Type[] { constantValue.GetType() }), new object[] { constantValue });
 			field.SetCustomAttribute(constantValueAttrib);
 		}
-
-		/*
-		internal static void SetTypeMetadata(TypeBuilder typeBuilder, TypeMetadataFlags flags, string sourceFile, string[] implements)
-		{
-			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(TypeMetadataAttribute).GetConstructor(new Type[] { typeof(TypeMetadataFlags), typeof(string), typeof(string[]) }), new object[] { flags, sourceFile, implements });
-			typeBuilder.SetCustomAttribute(cab);
-		}
-
-		internal static void SetTypeMetadata(TypeBuilder typeBuilder, TypeMetadataFlags flags, string sourceFile, string[] implements,
-			string name, Modifiers modifiers, Modifiers innerClassModifiers, string genericSignature,
-			string enclosingMethodClass, string enclosingMethodName, string enclosingMethodSig,
-			string annotationAttributeType)
-		{
-			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(TypeMetadataAttribute).GetConstructor(new Type[] { typeof(TypeMetadataFlags), typeof(string), typeof(string[]), typeof(string), typeof(Modifiers), typeof(Modifiers), typeof(string), typeof(string), typeof(string), typeof(string), typeof(string) }),
-				new object[] { flags, sourceFile, implements, name, modifiers, innerClassModifiers, genericSignature, enclosingMethodClass, enclosingMethodName, enclosingMethodSig, annotationAttributeType });
-			typeBuilder.SetCustomAttribute(cab);
-		}
-		*/		
 #endif // STATIC_COMPILER && !COMPACT_FRAMEWORK
 	}
 
@@ -3055,7 +3037,9 @@ namespace IKVM.Internal
 		private volatile DynamicImpl impl;
 		private TypeWrapper[] interfaces;
 		private readonly string sourceFileName;
+#if !STATIC_COMPILER
 		private byte[][] lineNumberTables;
+#endif
 
 		private static TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, string name)
 		{
@@ -3573,79 +3557,44 @@ namespace IKVM.Internal
 						((AotTypeWrapper)wrapper).SetAnnotation(annotationBuilder);
 						annotationAttributeType = annotationBuilder.AttributeTypeName;
 					}
-					//TypeMetadataFlags flags = TypeMetadataFlags.None;
 					string sourceFile = null;
-					bool reqSimple = interfaces.Length > 0;
 					if(!JVM.NoStackTraceInfo)
 					{
 						if(f.SourceFileAttribute != null)
 						{
 							if(f.SourceFileAttribute != typeBuilder.Name + ".java")
 							{
-								reqSimple = true;
 								sourceFile = f.SourceFileAttribute;
 							}
-							else
-							{
-								//flags |= TypeMetadataFlags.SourceNameIsClassName;
-							}
-						}
-						else
-						{
-							reqSimple = true;
 						}
 					}
-					bool reqComplex = classFile.GenericSignature != null
-						|| classFile.EnclosingMethod != null
-						|| classFile.IsInternal
-						|| (classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0
-						|| annotationAttributeType != null
-						|| outerClass.innerClass != 0;
-
 					string[] implements = new string[interfaces.Length];
 					for(int i = 0; i < implements.Length; i++)
 					{
 						implements[i] = interfaces[i].Name;
 					}
-
-					if(reqComplex)
+					if(outer != null)
 					{
-						if(classFile.IsInternal)
+						Modifiers innerClassModifiers = outerClass.accessFlags;
+						string innerClassName = classFile.GetConstantPoolClass(outerClass.innerClass);
+						if(innerClassName == classFile.Name && innerClassName == outerClassWrapper.Name + "$" + typeBuilder.Name)
 						{
-							//flags |= TypeMetadataFlags.InternalAccess;
+							innerClassName = null;
 						}
-						// NOTE in Whidbey we could (and probably should) use CompilerGeneratedAttribute to mark Synthetic types
-						if(outer != null)
-						{
-							Modifiers innerClassModifiers = outerClass.accessFlags;
-							string innerClassName = classFile.GetConstantPoolClass(outerClass.innerClass);
-							if(innerClassName == classFile.Name && innerClassName == outerClassWrapper.Name + "$" + typeBuilder.Name)
-							{
-								innerClassName = null;
-							}
-							AttributeHelper.SetInnerClass(typeBuilder, innerClassName, innerClassModifiers);
-						}
-						else if(outerClass.innerClass != 0)
-						{
-							AttributeHelper.SetInnerClass(typeBuilder, null, outerClass.accessFlags);
-						}
-						string enclosingMethodClass = null;
-						string enclosingMethodName = null;
-						string enclosingMethodSig = null;
-						if(classFile.EnclosingMethod != null)
-						{
-							enclosingMethodClass = classFile.EnclosingMethod[0];
-							enclosingMethodName = classFile.EnclosingMethod[1];
-							enclosingMethodSig = classFile.EnclosingMethod[2];
-						}
-//						AttributeHelper.SetTypeMetadata(typeBuilder, flags, sourceFile, implements, innerClassName,
-//							classFile.Modifiers, innerClassModifiers, classFile.GenericSignature,
-//							enclosingMethodClass, enclosingMethodName, enclosingMethodSig,
-//							annotationAttributeType);
+						AttributeHelper.SetInnerClass(typeBuilder, innerClassName, innerClassModifiers);
 					}
-					else if(reqSimple)
+					else if(outerClass.innerClass != 0)
 					{
-//						AttributeHelper.SetTypeMetadata(typeBuilder, flags, sourceFile, implements);
+						AttributeHelper.SetInnerClass(typeBuilder, null, outerClass.accessFlags);
+					}
+					string enclosingMethodClass = null;
+					string enclosingMethodName = null;
+					string enclosingMethodSig = null;
+					if(classFile.EnclosingMethod != null)
+					{
+						enclosingMethodClass = classFile.EnclosingMethod[0];
+						enclosingMethodName = classFile.EnclosingMethod[1];
+						enclosingMethodSig = classFile.EnclosingMethod[2];
 					}
 					AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
 					if(classFile.DeprecatedAttribute)
@@ -4148,12 +4097,12 @@ namespace IKVM.Internal
 						CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(typeof(NonSerializedAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 						field.SetCustomAttribute(transientAttrib);
 					}
+#if STATIC_COMPILER
 					if(fld.IsVolatile)
 					{
 						// TODO the field should be marked as modreq(IsVolatile), but Reflection.Emit doesn't have a way of doing this
 						setModifiers = true;
 					}
-#if STATIC_COMPILER
 					// Instance fields can also have a ConstantValue attribute (and are inlined by the compiler),
 					// and ikvmstub has to export them, so we have to add a custom attribute.
 					if(constantValue != null)
@@ -4223,6 +4172,11 @@ namespace IKVM.Internal
 				if(fld.GenericSignature != null)
 				{
 					AttributeHelper.SetSignatureAttribute(field, fld.GenericSignature);
+				}
+#else // STATIC_COMPILER
+				if(setModifiers)
+				{
+					// shut up the compiler
 				}
 #endif // STATIC_COMPILER
 				return field;
@@ -6001,6 +5955,11 @@ namespace IKVM.Internal
 					{
 						AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
 					}
+#else // STATIC_COMPILER
+					if(setModifiers)
+					{
+						// shut up the compiler
+					}
 #endif // STATIC_COMPILER
 					return method;
 				}
@@ -6787,6 +6746,7 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER
 		internal override int GetSourceLineNumber(MethodBase mb, int ilOffset)
 		{
 			if(lineNumberTables != null)
@@ -6808,7 +6768,6 @@ namespace IKVM.Internal
 			return -1;
 		}
 
-#if !STATIC_COMPILER
 		internal override object[] GetDeclaredAnnotations()
 		{
 			object[] annotations = impl.GetDeclaredAnnotations();
