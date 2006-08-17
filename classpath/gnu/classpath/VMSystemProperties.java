@@ -355,6 +355,8 @@ public class VMSystemProperties
         // HACK since we cannot use URL here (it depends on the properties being set), we manually encode the spaces in the assembly name
         p.setProperty("gnu.classpath.home.url", "ikvmres://" + ((cli.System.String)(Object)cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName()).Replace(" ", "%20") + "/lib");
         p.setProperty("gnu.cpu.endian", cli.System.BitConverter.IsLittleEndian ? "little" : "big");
+        // we don't want Swing to use graphics 2D
+        p.setProperty("gnu.javax.swing.noGraphics2D", "true");
     }
 
     static void postInit(Properties p)
