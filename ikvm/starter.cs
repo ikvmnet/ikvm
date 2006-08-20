@@ -303,42 +303,45 @@ public class Starter
 				mainClass = mainClass.Replace('/', '.');
 			}
 			java.lang.Class clazz = java.lang.Class.forName(mainClass, true, java.lang.ClassLoader.getSystemClassLoader());
-			Method method = FindMainMethod(clazz);
-			if(method == null)
+			try
 			{
-				throw new java.lang.NoSuchMethodError("main");
-			}
-			else if(!Modifier.isPublic(method.getModifiers()))
-			{
-				Console.Error.WriteLine("Main method not public.");
-			}
-			else
-			{
-				// if clazz isn't public, we can still call main
-				method.setAccessible(true);
-				if(saveAssembly)
+				Method method = FindMainMethod(clazz);
+				if(method == null)
 				{
-					java.lang.Runtime.getRuntime().addShutdownHook(new SaveAssemblyShutdownHook(clazz));
+					throw new java.lang.NoSuchMethodError("main");
 				}
-				if(waitOnExit)
+				else if(!Modifier.isPublic(method.getModifiers()))
 				{
-					java.lang.Runtime.getRuntime().addShutdownHook(new WaitShutdownHook());
+					Console.Error.WriteLine("Main method not public.");
 				}
-				try
+				else
 				{
-					method.invoke(null, new object[] { vmargs });
-					return 0;
-				}
-				catch(InvocationTargetException x)
-				{
-					throw x.getCause();
-				}
-				finally
-				{
-					if(saveAssemblyX)
+					// if clazz isn't public, we can still call main
+					method.setAccessible(true);
+					if(saveAssembly)
 					{
-						IKVM.Internal.Starter.SaveDebugImage(clazz);
+						java.lang.Runtime.getRuntime().addShutdownHook(new SaveAssemblyShutdownHook(clazz));
 					}
+					if(waitOnExit)
+					{
+						java.lang.Runtime.getRuntime().addShutdownHook(new WaitShutdownHook());
+					}
+					try
+					{
+						method.invoke(null, new object[] { vmargs });
+						return 0;
+					}
+					catch(InvocationTargetException x)
+					{
+						throw x.getCause();
+					}
+				}
+			}
+			finally
+			{
+				if(saveAssemblyX)
+				{
+					IKVM.Internal.Starter.SaveDebugImage(clazz);
 				}
 			}
 		}
