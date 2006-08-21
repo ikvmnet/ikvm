@@ -1511,7 +1511,7 @@ class MethodAnalyzer
 				int handler = method.PcIndexMap[method.ExceptionTable[i].handler_pc];
 				if((start >= end && end != -1) || start == -1 ||
 					(end == -1 && method.ExceptionTable[i].end_pc != end_pc) ||
-					handler == -1)
+					handler <= 0)
 				{
 					throw new IndexOutOfRangeException();
 				}
@@ -1519,7 +1519,7 @@ class MethodAnalyzer
 		}
 		catch(IndexOutOfRangeException)
 		{
-			throw new VerifyError(string.Format("Illegal exception table (class: {0}, method: {1}, signature: {2}", classFile.Name, method.Name, method.Signature));
+			throw new ClassFormatError(string.Format("Illegal exception table (class: {0}, method: {1}, signature: {2}", classFile.Name, method.Name, method.Signature));
 		}
 
 		// start by computing the initial state, the stack is empty and the locals contain the arguments
@@ -3004,7 +3004,7 @@ class MethodAnalyzer
 					// even running the constructor, so maybe constructors are always
 					// verified...
 					// NOTE when a constructor isn't verifiable, the static initializer
-					// doesn't run either (or so I believe)
+					// doesn't run either
 					throw new VerifyError("Call to wrong initialization method");
 				}
 			}
@@ -3035,10 +3035,18 @@ class MethodAnalyzer
 				}
 				else /* __invokeinterface */
 				{
-					// NOTE previously we checked the type here, but it turns out that
-					// the JVM throws an IncompatibleClassChangeError at runtime instead
-					// of a VerifyError if this doesn't match
-					stack.PopObjectType();
+					// NOTE unlike in the above case, we also allow *any* interface target type
+					// regardless of whether it is compatible or not, because if it is not compatible
+					// we want an IncompatibleClassChangeError at runtime
+					TypeWrapper refType = stack.PopObjectType();
+					TypeWrapper targetType = cpi.GetClassType();
+					if(!VerifierTypeWrapper.IsNullOrUnloadable(refType) 
+						&& !targetType.IsUnloadable
+						&& !refType.IsAssignableTo(targetType)
+						&& !targetType.IsInterface)
+					{
+						throw new VerifyError("Incompatible object argument for function call");
+					}
 				}
 			}
 		}

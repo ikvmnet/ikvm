@@ -190,7 +190,7 @@ namespace IKVM.Internal
 					}
 					catch(ClassFormatError x)
 					{
-						StaticCompiler.IssueMessage(Message.ClassFormatError, x.Message);
+						StaticCompiler.IssueMessage(Message.ClassFormatError, name, x.Message);
 						return null;
 					}
 					if(options.removeUnusedFields)
@@ -1842,6 +1842,7 @@ namespace IKVM.Internal
 		internal PEFileKinds target;
 		internal bool guessFileKind;
 		internal byte[][] classes;
+		internal string[] classNames;	// for diagnostics only (these are the file names, not the actual class names)
 		internal string[] references;
 		internal bool nojni;
 		internal Hashtable resources;
@@ -1864,6 +1865,7 @@ namespace IKVM.Internal
 		OutputFileIs = 2,
 		AutoAddRef = 3,
 		MainMethodFromManifest = 4,
+		NotAClassFile = 5,
 		// This is were the warnings start
 		StartWarnings = 100,
 		ClassNotFound = 100,
@@ -1956,11 +1958,15 @@ namespace IKVM.Internal
 				case Message.MainMethodFromManifest:
 					msg = "using main class \"{0}\" based on jar manifest";
 					break;
+				case Message.NotAClassFile:
+					msg = "\"{0}\" is not a class file, including it as resource";
+					break;
 				case Message.ClassNotFound:
 					msg = "class \"{0}\" not found";
 					break;
 				case Message.ClassFormatError:
-					msg = "class format error: \"{0}\"";
+					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+						"    (class format error \"{1}\")";
 					break;
 				case Message.DuplicateClassName:
 					msg = "duplicate class name: \"{0}\"";
@@ -2130,15 +2136,10 @@ namespace IKVM.Internal
 						name = ClassFile.GetClassName(options.classes[i], 0, options.classes[i].Length);
 					}
 				}
-				catch(UnsupportedClassVersionError x)
-				{
-					Console.Error.WriteLine("Error: unsupported class file version: {0}", x.Message);
-					return 1;
-				}
 				catch(ClassFormatError x)
 				{
-					Console.Error.WriteLine("Error: invalid class file: {0}", x.Message);
-					return 1;
+					StaticCompiler.IssueMessage(Message.ClassFormatError, options.classNames[i], x.Message);
+					continue;
 				}
 				bool excluded = false;
 				for(int j = 0; j < options.classesToExclude.Length; j++)
@@ -2318,6 +2319,10 @@ namespace IKVM.Internal
 						}
 						allwrappers.Add(wrapper);
 					}
+				}
+				catch(ClassFormatError x)
+				{
+					StaticCompiler.IssueMessage(Message.ClassFormatError, s, x.Message);
 				}
 				catch(IllegalAccessError x)
 				{

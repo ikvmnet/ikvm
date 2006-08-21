@@ -673,6 +673,16 @@ namespace IKVM.NativeCode.java
 				{
 					TypeWrapper wrapper = (TypeWrapper)cwrapper;
 					wrapper.Finish();
+					if(wrapper.HasVerifyError)
+					{
+						// TODO we should get the message from somewhere
+						throw new VerifyError();
+					}
+					if(wrapper.HasClassFormatError)
+					{
+						// TODO we should get the message from somewhere
+						throw new ClassFormatError(wrapper.Name);
+					}
 					// we need to look through the array for unloadable types, because we may not let them
 					// escape into the 'wild'
 					MethodWrapper[] methods = wrapper.GetMethods();
@@ -865,12 +875,15 @@ namespace IKVM.NativeCode.java
 				try
 				{
 					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					// NOTE unless ignoreInnerClassesAttribute is true, we don't return the modifiers from
-					// the TypeWrapper, because for inner classes the reflected modifiers are different
-					// from the physical ones
-					Modifiers modifiers = ignoreInnerClassesAttribute ?
-						wrapper.Modifiers : wrapper.ReflectiveModifiers;
-					return (int)modifiers;
+					if(ignoreInnerClassesAttribute)
+					{
+						// NOTE GNU Classpath's Class gets it wrong and sets the ignoreInnerClassesAttribute
+						// when it wants to find out about Enum, Annotation, etc. so we treat the flag instead
+						// to mean that we should return the real accessibility flags, but otherwise return the
+						// flags from the InnerClass attribute.
+						return (int)((wrapper.ReflectiveModifiers & ~Modifiers.AccessMask) | (wrapper.Modifiers & Modifiers.AccessMask));
+					}
+					return (int)wrapper.ReflectiveModifiers;
 				}
 				catch(RetargetableJavaException x)
 				{

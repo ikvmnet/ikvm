@@ -41,7 +41,8 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 {
     public Object loadClass(Object classLoader, String name) throws ClassNotFoundException
     {
-        return ((ClassLoader)classLoader).loadClass(name).vmdata;
+        Class c = ((ClassLoader)classLoader).loadClass(name);
+        return c == null ? null : c.vmdata;
     }
 
     public Object newClass(Object wrapper, Object protectionDomain, Object classLoader)

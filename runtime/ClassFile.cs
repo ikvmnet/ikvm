@@ -162,7 +162,9 @@ namespace IKVM.Internal
 				ushort majorVersion = br.ReadUInt16();
 				if((majorVersion & FLAG_MASK_MAJORVERSION) != majorVersion
 					|| majorVersion < SupportedVersions.Minimum
-					|| majorVersion > SupportedVersions.Maximum)
+					|| majorVersion > SupportedVersions.Maximum
+					|| (majorVersion == SupportedVersions.Minimum && minorVersion < 3)
+					|| (majorVersion == SupportedVersions.Maximum && minorVersion != 0))
 				{
 					throw new UnsupportedClassVersionError(inputClassName + " (" + majorVersion + "." + minorVersion + ")");
 				}
@@ -294,7 +296,7 @@ namespace IKVM.Internal
 				{
 					fields[i] = new Field(this, br);
 					string name = fields[i].Name;
-					if(!IsValidFieldName(name))
+					if(!IsValidFieldName(name, majorVersion))
 					{
 						throw new ClassFormatError("{0} (Illegal field name \"{1}\")", Name, name);
 					}
@@ -313,7 +315,7 @@ namespace IKVM.Internal
 					methods[i] = new Method(this, br);
 					string name = methods[i].Name;
 					string sig = methods[i].Signature;
-					if(!IsValidMethodName(name))
+					if(!IsValidMethodName(name, majorVersion))
 					{
 						if(!ReferenceEquals(name, StringConstants.INIT) && !ReferenceEquals(name, StringConstants.CLINIT))
 						{
@@ -338,8 +340,11 @@ namespace IKVM.Internal
 					switch(GetConstantPoolUtf8String(br.ReadUInt16()))
 					{
 						case "Deprecated":
+							if(br.ReadUInt32() != 0)
+							{
+								throw new ClassFormatError("Invalid Deprecated attribute length");
+							}
 							flags |= FLAG_MASK_DEPRECATED;
-							br.Skip(br.ReadUInt32());
 							break;
 						case "SourceFile":
 							if(br.ReadUInt32() != 2)
@@ -350,12 +355,13 @@ namespace IKVM.Internal
 							break;
 						case "InnerClasses":
 						{
-							// Sun totally ignores the length of InnerClasses attribute,
-							// so when we're running Fuzz this used to show up as lots of differences,
-							// now we do the same.
 							BigEndianBinaryReader rdr = br;
-							br.ReadUInt32();
+							uint attribute_length = br.ReadUInt32();
 							ushort count = rdr.ReadUInt16();
+							if(this.MajorVersion >= 49 && attribute_length != 2 + count * (2 + 2 + 2 + 2))
+							{
+								throw new ClassFormatError("{0} (InnerClasses attribute has incorrect length)", this.Name);
+							}
 							innerClasses = new InnerClass[count];
 							for(int j = 0; j < innerClasses.Length; j++)
 							{
@@ -582,7 +588,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static bool IsValidMethodName(string name)
+		private static bool IsValidMethodName(string name, int majorVersion)
 		{
 			if(name.Length == 0)
 			{
@@ -590,15 +596,15 @@ namespace IKVM.Internal
 			}
 			for(int i = 0; i < name.Length; i++)
 			{
-				if(".;[/<>".IndexOf(name[i]) != -1)
+				if(".;/<>".IndexOf(name[i]) != -1)
 				{
 					return false;
 				}
 			}
-			return true;
+			return majorVersion >= 49 || IsValidPre49Identifier(name);
 		}
 
-		private static bool IsValidFieldName(string name)
+		private static bool IsValidFieldName(string name, int majorVersion)
 		{
 			if(name.Length == 0)
 			{
@@ -606,7 +612,23 @@ namespace IKVM.Internal
 			}
 			for(int i = 0; i < name.Length; i++)
 			{
-				if(".;[/".IndexOf(name[i]) != -1)
+				if(".;/".IndexOf(name[i]) != -1)
+				{
+					return false;
+				}
+			}
+			return majorVersion >= 49 || IsValidPre49Identifier(name);
+		}
+
+		private static bool IsValidPre49Identifier(string name)
+		{
+			if(!Char.IsLetter(name[0]) && "$_".IndexOf(name[0]) == -1)
+			{
+				return false;
+			}
+			for(int i = 1; i < name.Length; i++)
+			{
+				if(!Char.IsLetterOrDigit(name[i]) && "$_".IndexOf(name[i]) == -1)
 				{
 					return false;
 				}
@@ -1087,7 +1109,7 @@ namespace IKVM.Internal
 					if(classFile.MajorVersion < 49)
 					{
 						char prev = name[0];
-						if(Char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[')
+						if(Char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[' || prev == '/')
 						{
 							int skip = 1;
 							int end = name.Length;
@@ -1109,7 +1131,7 @@ namespace IKVM.Internal
 							for(int i = skip; i < end; i++)
 							{
 								char c = name[i];
-								if(!Char.IsLetterOrDigit(c) && c != '$' && c != '_' && c != '-' && (c != '/' || prev == '/'))
+								if(!Char.IsLetterOrDigit(c) && c != '$' && c != '_' && (c != '/' || prev == '/'))
 								{
 									goto barf;
 								}
@@ -1372,11 +1394,11 @@ namespace IKVM.Internal
 				}
 				name = String.Intern(classFile.GetConstantPoolUtf8String(name_and_type.name_index));
 				descriptor = classFile.GetConstantPoolUtf8String(name_and_type.descriptor_index);
-				Validate(name, descriptor);
+				Validate(name, descriptor, classFile.MajorVersion);
 				descriptor = String.Intern(descriptor.Replace('/', '.'));
 			}
 
-			protected abstract void Validate(string name, string descriptor);
+			protected abstract void Validate(string name, string descriptor, int majorVersion);
 
 			internal override void Link(TypeWrapper thisType, Hashtable classCache)
 			{
@@ -1422,13 +1444,13 @@ namespace IKVM.Internal
 			{
 			}
 
-			protected override void Validate(string name, string descriptor)
+			protected override void Validate(string name, string descriptor, int majorVersion)
 			{
 				if(!IsValidFieldSig(descriptor))
 				{
 					throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
 				}
-				if(!IsValidFieldName(name))
+				if(!IsValidFieldName(name, majorVersion))
 				{
 					throw new ClassFormatError("Invalid field name \"{0}\"", name);
 				}
@@ -1488,15 +1510,15 @@ namespace IKVM.Internal
 			{
 			}
 
-			protected override void Validate(string name, string descriptor)
+			protected override void Validate(string name, string descriptor, int majorVersion)
 			{
 				if(!IsValidMethodSig(descriptor))
 				{
 					throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
 				}
-				if(!IsValidMethodName(name))
+				if(!IsValidMethodName(name, majorVersion))
 				{
-					if(!ReferenceEquals(name, StringConstants.INIT) && !ReferenceEquals(name, StringConstants.CLINIT))
+					if(!ReferenceEquals(name, StringConstants.INIT))
 					{
 						throw new ClassFormatError("Invalid method name \"{0}\"", name);
 					}
@@ -1696,7 +1718,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal sealed class ConstantPoolItemNameAndType : ConstantPoolItem
+		private sealed class ConstantPoolItemNameAndType : ConstantPoolItem
 		{
 			internal ushort name_index;
 			internal ushort descriptor_index;
@@ -1705,6 +1727,15 @@ namespace IKVM.Internal
 			{
 				name_index = br.ReadUInt16();
 				descriptor_index = br.ReadUInt16();
+			}
+
+			internal override void Resolve(ClassFile classFile)
+			{
+				if(classFile.GetConstantPoolUtf8String(name_index) == null
+					|| classFile.GetConstantPoolUtf8String(descriptor_index) == null)
+				{
+					throw new ClassFormatError("Illegal constant pool index");
+				}
 			}
 		}
 
@@ -1936,8 +1967,11 @@ namespace IKVM.Internal
 					switch(classFile.GetConstantPoolUtf8String(br.ReadUInt16()))
 					{
 						case "Deprecated":
+							if(br.ReadUInt32() != 0)
+							{
+								throw new ClassFormatError("Invalid Deprecated attribute length");
+							}
 							flags |= FLAG_MASK_DEPRECATED;
-							br.Skip(br.ReadUInt32());
 							break;
 						case "ConstantValue":
 						{
@@ -2090,8 +2124,11 @@ namespace IKVM.Internal
 					switch(classFile.GetConstantPoolUtf8String(br.ReadUInt16()))
 					{
 						case "Deprecated":
+							if(br.ReadUInt32() != 0)
+							{
+								throw new ClassFormatError("Invalid Deprecated attribute length");
+							}
 							flags |= FLAG_MASK_DEPRECATED;
-							br.Skip(br.ReadUInt32());
 							break;
 						case "Code":
 						{
@@ -2364,7 +2401,7 @@ namespace IKVM.Internal
 					max_stack = br.ReadUInt16();
 					max_locals = br.ReadUInt16();
 					uint code_length = br.ReadUInt32();
-					if(code_length > 65536)
+					if(code_length > 65535)
 					{
 						throw new ClassFormatError("{0} (Invalid Code length {1})", classFile.Name, code_length);
 					}
@@ -2392,11 +2429,22 @@ namespace IKVM.Internal
 					exception_table = new ExceptionTableEntry[exception_table_length];
 					for(int i = 0; i < exception_table_length; i++)
 					{
+						ushort start_pc = br.ReadUInt16();
+						ushort end_pc = br.ReadUInt16();
+						ushort handler_pc = br.ReadUInt16();
+						ushort catch_type = br.ReadUInt16();
+						if(start_pc >= end_pc
+							|| end_pc > code_length
+							|| handler_pc >= code_length
+							|| (catch_type != 0 && !classFile.SafeIsConstantPoolClass(catch_type)))
+						{
+							throw new ClassFormatError("Illegal exception table: {0}.{1}{2}", classFile.Name, method.Name, method.Signature);
+						}
 						exception_table[i] = new ExceptionTableEntry();
-						exception_table[i].start_pc = br.ReadUInt16();
-						exception_table[i].end_pc = br.ReadUInt16();
-						exception_table[i].handler_pc = br.ReadUInt16();
-						exception_table[i].catch_type = br.ReadUInt16();
+						exception_table[i].start_pc = start_pc;
+						exception_table[i].end_pc = end_pc;
+						exception_table[i].handler_pc = handler_pc;
+						exception_table[i].catch_type = catch_type;
 						exception_table[i].ordinal = i;
 					}
 					ushort attributes_count = br.ReadUInt16();

@@ -863,9 +863,17 @@ class Compiler
 		catch(VerifyError x)
 		{
 			Tracer.Error(Tracer.Verifier, x.ToString());
+			clazz.HasVerifyError = true;
 			// because in Java the method is only verified if it is actually called,
 			// we generate code here to throw the VerificationError
 			EmitHelper.Throw(ilGenerator, "java.lang.VerifyError", x.Message);
+			return;
+		}
+		catch(ClassFormatError x)
+		{
+			Tracer.Error(Tracer.Verifier, x.ToString());
+			clazz.HasClassFormatError = true;
+			EmitHelper.Throw(ilGenerator, "java.lang.ClassFormatError", x.Message);
 			return;
 		}
 		Profiler.Enter("Compile");

@@ -568,6 +568,11 @@ namespace IKVM.Internal
 			try
 			{
 				type = (TypeWrapper)JVM.Library.loadClass(javaClassLoader, name);
+				if(type != null && type.Name != name)
+				{
+					// the class loader is trying to trick us
+					return null;
+				}
 			}
 			catch(Exception x)
 			{

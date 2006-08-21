@@ -34,6 +34,7 @@ class IkvmcCompiler
 {
 	private static string manifestMainClass;
 	private static ArrayList classes = new ArrayList();
+	private static ArrayList classNames = new ArrayList();
 	private static Hashtable resources = new Hashtable();
 	private static bool compressResources;
 
@@ -308,26 +309,19 @@ class IkvmcCompiler
 				else if(s.StartsWith("-resource:"))
 				{
 					string[] spec = s.Substring(10).Split('=');
-					if(resources.ContainsKey(spec[0]))
+					try
 					{
-						StaticCompiler.IssueMessage(Message.DuplicateResourceName, spec[0]);
+						using(FileStream fs = new FileStream(spec[1], FileMode.Open, FileAccess.Read))
+						{
+							byte[] b = new byte[fs.Length];
+							fs.Read(b, 0, b.Length);
+							AddResource(spec[0], b);
+						}
 					}
-					else
+					catch(Exception x)
 					{
-						try
-						{
-							using(FileStream fs = new FileStream(spec[1], FileMode.Open, FileAccess.Read))
-							{
-								byte[] b = new byte[fs.Length];
-								fs.Read(b, 0, b.Length);
-								AddResource(spec[0], b);
-							}
-						}
-						catch(Exception x)
-						{
-							Console.Error.WriteLine("Error: {0}: {1}", x.Message, spec[1]);
-							return 1;
-						}
+						Console.Error.WriteLine("Error: {0}: {1}", x.Message, spec[1]);
+						return 1;
 					}
 				}
 				else if(s == "-nojni")
@@ -515,6 +509,7 @@ class IkvmcCompiler
 		try
 		{
 			options.classes = (byte[][])classes.ToArray(typeof(byte[]));
+			options.classNames = (string[])classNames.ToArray(typeof(string));
 			options.references = (string[])references.ToArray(typeof(string));
 			options.resources = resources;
 			options.classesToExclude = (string[])classesToExclude.ToArray(typeof(string));
@@ -552,7 +547,24 @@ class IkvmcCompiler
 				}
 				else if(ze.Name.ToLower().EndsWith(".class"))
 				{
-					classes.Add(ReadFromZip(zf, ze));
+					byte[] buf = ReadFromZip(zf, ze);
+					if(buf.Length > 4
+						&& buf[0] == 0xCA
+						&& buf[1] == 0xFE
+						&& buf[2] == 0xBA
+						&& buf[3] == 0xBE)
+					{
+						classes.Add(buf);
+						classNames.Add(ze.Name);
+					}
+					else
+					{
+						// magic is missing, so clearly not a class file,
+						// so we include it as a resource
+						// (IBM's db2os390/sqlj jars apparantly contain such files)
+						StaticCompiler.IssueMessage(Message.NotAClassFile, ze.Name);
+						AddResource(ze.Name, buf);
+					}
 				}
 				else
 				{
@@ -573,14 +585,7 @@ class IkvmcCompiler
 							}
 						}
 					}
-					if(resources.ContainsKey(ze.Name))
-					{
-						StaticCompiler.IssueMessage(Message.DuplicateResourceName, ze.Name);
-					}
-					else
-					{
-						AddResource(ze.Name, ReadFromZip(zf, ze));
-					}
+					AddResource(ze.Name, ReadFromZip(zf, ze));
 				}
 			}
 		}
@@ -592,17 +597,24 @@ class IkvmcCompiler
 
 	private static void AddResource(string name, byte[] buf)
 	{
-#if !WHIDBEY
-		if(compressResources)
+		if(resources.ContainsKey(name))
 		{
-			MemoryStream mem = new MemoryStream();
-			LZOutputStream lz = new LZOutputStream(mem);
-			lz.Write(buf, 0, buf.Length);
-			lz.Flush();
-			buf = mem.ToArray();
+			StaticCompiler.IssueMessage(Message.DuplicateResourceName, name);
 		}
+		else
+		{
+#if !WHIDBEY
+			if(compressResources)
+			{
+				MemoryStream mem = new MemoryStream();
+				LZOutputStream lz = new LZOutputStream(mem);
+				lz.Write(buf, 0, buf.Length);
+				lz.Flush();
+				buf = mem.ToArray();
+			}
 #endif
-		resources.Add(name, buf);
+			resources.Add(name, buf);
+		}
 	}
 
 	private static void ProcessFile(DirectoryInfo baseDir, string file)
@@ -615,6 +627,7 @@ class IkvmcCompiler
 					byte[] b = new byte[fs.Length];
 					fs.Read(b, 0, b.Length);
 					classes.Add(b);
+					classNames.Add(file);
 				}
 				break;
 			case ".jar":

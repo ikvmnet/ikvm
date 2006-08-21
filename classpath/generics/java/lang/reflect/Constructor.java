@@ -346,6 +346,10 @@ public final class Constructor<T>
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
 	    VMFieldImpl.checkAccess(methodCookie, null, VMStackWalker.getCallingClass());
+        if(clazz.isEnum())
+        {
+            throw new IllegalArgumentException("Cannot reflectively create enum objects");
+        }
         int mods = clazz.getModifiers() | Method.GetRealModifiers(clazz);
 	if(Modifier.isAbstract(mods) || Modifier.isInterface(mods))
 	{

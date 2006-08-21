@@ -24,7 +24,6 @@
 package ikvm.internal;
 
 import cli.System.Reflection.Assembly;
-import gnu.java.util.DoubleEnumeration;
 import gnu.java.util.EmptyEnumeration;
 import ikvm.lang.Internal;
 import java.io.IOException;
@@ -43,14 +42,14 @@ import java.security.ProtectionDomain;
 public final class AssemblyClassLoader extends ClassLoader
 {
     private ProtectionDomain pd;
+    private boolean packagesDefined;
 
     public AssemblyClassLoader()
     {
         super(null);
     }
 
-    protected synchronized Class loadClass(String name, boolean resolve)
-        throws ClassNotFoundException
+    protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException
     {
         return LoadClass(this, name);
     }
@@ -59,57 +58,69 @@ public final class AssemblyClassLoader extends ClassLoader
 
     public URL getResource(String name)
     {
-        URL url = getResource(this, name);
-        if(url == null)
+        // for consistency with class loading, we change the delegation order for .class files
+        // (this also helps make ikvmstub work reliably)
+        if(name.endsWith(".class"))
         {
-            url = super.getResource(name);
+            URL url = getResource(this, name);
+            if(url != null)
+            {
+                return url;
+            }
         }
-        return url;
+        return super.getResource(name);
     }
 
-    private static URL makeIkvmresURL(Assembly asm, String name) throws MalformedURLException
+    protected URL findResource(String name)
+    {
+        return getResource(this, name);
+    }
+
+    protected Enumeration findResources(String name) throws IOException
+    {
+        return getResources(this, name);
+    }
+
+    private static URL makeIkvmresURL(Assembly asm, String name)
     {
         String assemblyName = asm.get_FullName();
         if(IsReflectionOnly(asm))
         {
             assemblyName += "[ReflectionOnly]";
         }
-        return new URL("ikvmres", assemblyName, -1, "/" + name);
+        try
+        {
+            return new URL("ikvmres", assemblyName, -1, "/" + name);
+        }
+        catch(MalformedURLException x)
+        {
+            throw (InternalError)new InternalError().initCause(x);
+        }
     }
 
-    public static URL getResource(Object classLoader, String name)
+    public static URL getResource(AssemblyClassLoader classLoader, String name)
     {
         Assembly asm = FindResourceAssembly(classLoader, name);
         if(asm != null)
         {
-            try
-            {
-                return makeIkvmresURL(asm, name);
-            }
-            catch(MalformedURLException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
+            return makeIkvmresURL(asm, name);
         }
         else if(name.endsWith(".class") && name.indexOf('.') == name.length() - 6)
         {
+            Class c = null;
             try
             {
-                Class c = LoadClass(classLoader, name.substring(0, name.length() - 6).replace('/', '.'));
-                if(c != null)
-                {
-                    try
-                    {
-                        return makeIkvmresURL(GetClassAssembly(c), name);
-                    }
-                    catch(MalformedURLException x)
-                    {
-                        throw (InternalError)new InternalError().initCause(x);
-                    }
-                }
+                c = LoadClass(classLoader, name.substring(0, name.length() - 6).replace('/', '.'));
             }
             catch(ClassNotFoundException _)
             {
+            }
+            catch(LinkageError _)
+            {
+            }
+            if(c != null)
+            {
+                return makeIkvmresURL(GetClassAssembly(c), name);
             }
         }
         return null;
@@ -122,11 +133,6 @@ public final class AssemblyClassLoader extends ClassLoader
     private static native Assembly GetAssembly(Object classLoader);
     // also used by VMClassLoader
     public static native String[] GetPackages(Object classLoader);
-
-    public Enumeration getResources(String name) throws IOException
-    {
-        return new DoubleEnumeration(getResources(this, name), super.getResources(name));
-    }
 
     public static Enumeration getResources(Object classLoader, String name) throws IOException
     {
@@ -142,8 +148,6 @@ public final class AssemblyClassLoader extends ClassLoader
         }
         return EmptyEnumeration.getInstance();
     }
-
-    private static boolean packagesDefined;
 
     private synchronized void lazyDefinePackagesCheck()
     {

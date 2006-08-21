@@ -75,6 +75,8 @@ public class NetExp
 			}
 			if(assembly == null)
 			{
+				// since we're loading the assembly in the LoadFrom context, we need to hook the AssemblyResolve event
+				AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
 				assembly = Assembly.LoadFrom(args[0]);
 			}
 #endif
@@ -346,5 +348,17 @@ public class NetExp
 			throw new NotImplementedException();
 		}
 		WriteClass(name + ".class", buf);
+	}
+
+	private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+	{
+		foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+		{
+			if(asm.FullName == args.Name)
+			{
+				return asm;
+			}
+		}
+		return null;
 	}
 }

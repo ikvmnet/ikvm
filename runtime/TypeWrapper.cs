@@ -1533,7 +1533,9 @@ namespace IKVM.Internal
 	{
 		HasIncompleteInterfaceImplementation = 1,
 		InternalAccess = 2,
-		HasStaticInitializer = 4
+		HasStaticInitializer = 4,
+		VerifyError = 8,
+		ClassFormatError = 16,
 	}
 
 	internal abstract class TypeWrapper
@@ -1643,6 +1645,46 @@ namespace IKVM.Internal
 				else
 				{
 					flags &= ~TypeFlags.HasStaticInitializer;
+				}
+			}
+		}
+
+		internal bool HasVerifyError
+		{
+			get
+			{
+				return (flags & TypeFlags.VerifyError) != 0;
+			}
+			set
+			{
+				// TODO do we need locking here?
+				if(value)
+				{
+					flags |= TypeFlags.VerifyError;
+				}
+				else
+				{
+					flags &= ~TypeFlags.VerifyError;
+				}
+			}
+		}
+
+		internal bool HasClassFormatError
+		{
+			get
+			{
+				return (flags & TypeFlags.ClassFormatError) != 0;
+			}
+			set
+			{
+				// TODO do we need locking here?
+				if(value)
+				{
+					flags |= TypeFlags.ClassFormatError;
+				}
+				else
+				{
+					flags &= ~TypeFlags.ClassFormatError;
 				}
 			}
 		}

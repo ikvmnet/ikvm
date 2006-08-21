@@ -1448,6 +1448,8 @@
 ../../classpath/gnu/javax/swing/plaf/metal/CustomizableTheme.java
 ../../classpath/gnu/javax/swing/text/html/CharacterAttributeTranslator.java
 ../../classpath/gnu/javax/swing/text/html/CombinedAttributes.java
+../../classpath/gnu/javax/swing/text/html/css/CSSLexicalException.java
+../../classpath/gnu/javax/swing/text/html/css/CSSScanner.java
 ../../classpath/gnu/javax/swing/text/html/ImageViewIconFactory.java
 ../../classpath/gnu/javax/swing/text/html/parser/gnuDTD.java
 ../../classpath/gnu/javax/swing/text/html/parser/GnuParserDelegator.java
