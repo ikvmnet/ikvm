@@ -521,7 +521,7 @@
 ../../classpath/gnu/java/io/Base64InputStream.java
 ../../classpath/gnu/java/io/ClassLoaderObjectInputStream.java
 ../../classpath/gnu/java/io/NullOutputStream.java
-../../classpath/gnu/java/io/ObjectIdentityWrapper.java
+../../classpath/gnu/java/io/ObjectIdentityMap2Int.java
 ../../classpath/gnu/java/io/PlatformHelper.java
 ../../classpath/gnu/java/lang/ArrayHelper.java
 ../../classpath/gnu/java/lang/CharData.java

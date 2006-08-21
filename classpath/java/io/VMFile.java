@@ -23,6 +23,10 @@
 */
 package java.io;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 final class VMFile
 {
     // HACK iff we run on unix, we assume a case sensitive file system
@@ -353,5 +357,97 @@ final class VMFile
 	{
 	    throw new IOException(x5.getMessage());
 	}
+    }
+
+    static String getAbsolutePath(String path)
+    {
+        // java.io.File.getAbsolutePath() only calls us if path is not absolute,
+        // so we can:
+        // assert(!isAbsolute(path));
+        String userdir = new File(System.getProperty("user.dir")).getPath();
+        if (File.separatorChar == '\\')
+        {
+            if (path.startsWith(File.separator))
+            {
+                if (userdir.length() > 1
+                    && isDriveLetter(userdir.charAt(0))
+                    && userdir.charAt(1) == ':')
+                {
+                    userdir = userdir.substring(0, 2);
+                }
+                return userdir + path;
+            }
+            else if (path.length() > 1
+                && isDriveLetter(path.charAt(0))
+                && path.charAt(1) == ':')
+            {
+                String dir = path.substring(0, 2);
+                path = path.substring(2);
+                if (userdir.length() > 2
+                    // NOTE this is case sensitive comparison (broken like JDK 1.5)
+                    && userdir.charAt(0) == dir.charAt(0)
+                    && userdir.charAt(1) == ':'
+                    && userdir.charAt(2) == File.separatorChar)
+                {
+                    return userdir + File.separator + path;
+                }
+                try
+                {
+                    // the += is to retain the case of the drive letter
+                    dir += cli.System.IO.Path.GetFullPath(dir).substring(2);
+                    if (dir.endsWith(File.separator))
+                    {
+                        dir = dir.substring(0, dir.length() - 1);
+                    }
+                    // NOTE oddly enough, we only need to do a security check in this case
+                    SecurityManager sm = System.getSecurityManager();
+                    if (sm != null)
+                    {
+                        sm.checkRead(dir + File.separator + path);
+                    }
+                }
+                catch (Throwable _)
+                {
+                }
+                return dir + File.separator + path;
+            }
+        }
+        return userdir + File.separator + path;
+    }
+
+    private static boolean isDriveLetter(char c)
+    {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
+
+    static boolean isAbsolute(String path)
+    {
+        if (File.separatorChar == '\\')
+        {
+            if (path.length () > 0 && path.charAt(0) == '\\')
+            {
+                return path.length() > 1 && path.charAt(1) == '\\';
+            }
+            return path.length() > 2
+                && isDriveLetter(path.charAt(0))
+                && path.charAt(1) == ':'
+                && path.charAt(2) == '\\';
+        }
+        else
+        {
+            return path.startsWith(File.separator);
+        }
+    }
+
+    static URL toURL(File file) throws MalformedURLException
+    {
+        // On Win32, Sun's JDK returns URLs of the form "file:/c:/foo/bar.txt",
+        // while on UNIX, it returns URLs of the form "file:/foo/bar.txt". 
+        if (File.separatorChar == '\\')
+            return new URL ("file:/" + file.getAbsolutePath().replace ('\\', '/')
+                + (file.isDirectory() ? "/" : ""));
+        else
+            return new URL ("file:" + file.getAbsolutePath()
+                + (file.isDirectory() ? "/" : ""));
     }
 }
