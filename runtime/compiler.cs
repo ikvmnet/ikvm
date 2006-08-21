@@ -1625,7 +1625,7 @@ class Compiler
 					if((ReferenceEquals(cpi.Class, StringConstants.JAVA_LANG_SYSTEM) || ReferenceEquals(cpi.Class, StringConstants.JAVA_LANG_VMSYSTEM))
 						&& ReferenceEquals(cpi.Name, StringConstants.ARRAYCOPY)
 						&& ReferenceEquals(cpi.Signature, StringConstants.SIG_ARRAYCOPY)
-						&& cpi.GetClassType().GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())
+						&& cpi.GetClassType().GetClassLoader() == java_lang_Class.GetClassLoader())
 					{
 						TypeWrapper dst_type = ma.GetStackTypeWrapper(i, 2);
 						TypeWrapper src_type = ma.GetStackTypeWrapper(i, 4);

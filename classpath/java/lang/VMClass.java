@@ -23,6 +23,7 @@
 */
 package java.lang;
 
+import cli.System.Runtime.CompilerServices.RuntimeHelpers;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -228,10 +229,13 @@ public abstract class VMClass
                 Class c = getClassFromType(type);
                 if (c != null)
                 {
+                    if (initialize && !type.get_IsArray())
+                    {
+                        RuntimeHelpers.RunClassConstructor(type.get_TypeHandle());
+                    }
                     return c;
                 }
             }
-            throw new ClassNotFoundException(name);
         }
         return forName0(name, initialize, loader);
     }
