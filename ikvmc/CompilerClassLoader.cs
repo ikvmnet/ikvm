@@ -2231,7 +2231,6 @@ namespace IKVM.Internal
 			}
 			CompilerClassLoader loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.keyfilename, options.keycontainer, options.version, options.targetIsModule, options.assembly, h);
 			ClassLoaderWrapper.SetBootstrapClassLoader(loader);
-			JVM.IsStaticCompilerPhase1 = true;
 			IKVM.Internal.MapXml.Root map = null;
 			if(options.remapfile != null)
 			{
@@ -2386,7 +2385,6 @@ namespace IKVM.Internal
 				}
 				loader.SetMain(method, options.target, options.props, options.noglobbing, apartmentAttributeType);
 			}
-			JVM.IsStaticCompilerPhase1 = false;
 			if(map != null)
 			{
 				AotTypeWrapper.LoadMappedExceptions(map);

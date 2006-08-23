@@ -78,7 +78,6 @@ namespace IKVM.Internal
 		private static bool debug = System.Diagnostics.Debugger.IsAttached;
 		private static bool noJniStubs;
 		private static bool noStackTraceInfo;
-		private static bool compilationPhase1;
 		private static string sourcePath;
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 #if !STATIC_COMPILER
@@ -291,18 +290,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static bool IsStaticCompilerPhase1
-		{
-			get
-			{
-				return compilationPhase1;
-			}
-			set
-			{
-				compilationPhase1 = value;
-			}
-		}
-
 		internal static bool FinishingForDebugSave
 		{
 			get
@@ -366,7 +353,8 @@ namespace IKVM.Internal
 					| ReflectionPermissionFlag.TypeInformation
 #endif
 				).Assert();
-				message = String.Format("****** Critical Failure: {1} ******{0}" +
+				message = String.Format("****** Critical Failure: {1} ******{0}{0}" +
+					"PLEASE FILE A BUG REPORT FOR IKVM.NET WHEN YOU SEE THIS MESSAGE{0}{0}" +
 					"{2}{0}" + 
 					"{3}{0}" +
 					"{4}",

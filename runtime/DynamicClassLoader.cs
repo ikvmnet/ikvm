@@ -82,24 +82,18 @@ namespace IKVM.Internal
 				return null;
 			}
 			// During static compilation, a TypeResolve event should never trigger a finish.
-			if(JVM.IsStaticCompilerPhase1)
-			{
-				JVM.CriticalFailure("Finish triggered during phase 1 of compilation.", null);
-				return null;
-			}
+#if STATIC_COMPILER
+			JVM.CriticalFailure("Finish triggered during static compilation. Type = " + args.Name, null);
+#else // STATIC_COMPILER
 			try
 			{
 				type.Finish();
 			}
-#if !STATIC_COMPILER
 			catch(RetargetableJavaException x)
 			{
 				throw x.ToJava();
 			}
-#endif // !STATIC_COMPILER
-			finally
-			{
-			}
+#endif // STATIC_COMPILER
 			// NOTE We used to remove the type from the hashtable here, but that creates a race condition if
 			// another thread also fires the OnTypeResolve event while we're baking the type.
 			// I really would like to remove the type from the hashtable, but at the moment I don't see

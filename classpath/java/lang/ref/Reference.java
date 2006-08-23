@@ -1,5 +1,5 @@
 /* java.lang.ref.Reference
-   Copyright (C) 1999, 2002, 2003 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -73,8 +73,8 @@ package java.lang.ref;
  */
 public abstract class Reference
 {
-    private volatile cli.System.WeakReference referent;
-    private volatile Object keepAlive;
+    private volatile cli.System.WeakReference weakRef;
+    private volatile Object strongRef;
 
     /**
      * The queue this reference is registered on. This is null, if this
@@ -122,17 +122,22 @@ public abstract class Reference
         queue = q;
         if (ref != null)
         {
-            referent = new cli.System.WeakReference(ref, this instanceof PhantomReference);
-            if (this instanceof SoftReference)
+            if (this instanceof SoftReference || ref instanceof Class)
             {
                 // HACK we never clear SoftReferences, because there is no way to
                 // find out about the CLR memory status.
                 // (Eclipse 3.1 startup depends on SoftReferences not being cleared.)
-                keepAlive = ref;
+                // We also don't do Class gc, so no point in using a weak reference
+                // for classes either.
+                strongRef = ref;
             }
-            else if (q != null)
+            else
             {
-                new QueueWatcher();
+                weakRef = new cli.System.WeakReference(ref, this instanceof PhantomReference);
+                if (q != null)
+                {
+                    new QueueWatcher();
+                }
             }
         }
     }
@@ -147,7 +152,7 @@ public abstract class Reference
             try
             {
                 if(false) throw new cli.System.InvalidOperationException();
-                cli.System.WeakReference referent = Reference.this.referent;
+                cli.System.WeakReference referent = Reference.this.weakRef;
                 if (referent == null)
                 {
                     // ref was explicitly cleared, so we don't enqueue
@@ -175,22 +180,13 @@ public abstract class Reference
             return false;
         }
 
-	protected void finalize()
-	{
+        protected void finalize()
+        {
             if (debug)
                 cli.System.Console.WriteLine("~QueueWatcher: " + hashCode() + " on " + Reference.this);
             if (check())
             {
-                new Object() {
-                    protected void finalize()  {
-                        if (check())
-                        {
-                            cli.System.GC.ReRegisterForFinalize(QueueWatcher.this);
-                            if (debug)
-                                cli.System.Console.WriteLine("~QueueWatcher: reregister: " + QueueWatcher.this.hashCode());
-                        }
-                    }
-                };
+                cli.System.GC.ReRegisterForFinalize(QueueWatcher.this);
             }
         }
     }
@@ -202,17 +198,17 @@ public abstract class Reference
      */
     public Object get()
     {
-	try
-	{
-	    if(false) throw new cli.System.InvalidOperationException();
-            cli.System.WeakReference referent = this.referent;
-	    return referent == null ? null : referent.get_Target();
-	}
-	catch(cli.System.InvalidOperationException x)
-	{
-	    // HACK we were already finalized, so we just return null.
-	    return null;
-	}
+        try
+        {
+            if(false) throw new cli.System.InvalidOperationException();
+            cli.System.WeakReference referent = this.weakRef;
+            return referent == null ? strongRef : referent.get_Target();
+        }
+        catch(cli.System.InvalidOperationException x)
+        {
+            // HACK we were already finalized, so we just return null.
+            return null;
+        }
     }
 
     /**
@@ -223,8 +219,8 @@ public abstract class Reference
      */
     public void clear()
     {
-        referent = null;
-        keepAlive = null;
+        weakRef = null;
+        strongRef = null;
     }
 
     /**
@@ -233,7 +229,7 @@ public abstract class Reference
      */
     public boolean isEnqueued()
     {
-	return nextOnQueue != null;
+        return nextOnQueue != null;
     }
 
     /**
