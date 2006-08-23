@@ -38,6 +38,9 @@ exception statement from your version. */
 
 package java.lang.ref;
 
+import cli.System.Runtime.InteropServices.GCHandle;
+import cli.System.Runtime.InteropServices.GCHandleType;
+
 /**
  * This is the base class of all references.  A reference allows
  * refering to an object without preventing the garbage collector from
@@ -73,7 +76,8 @@ package java.lang.ref;
  */
 public abstract class Reference
 {
-    private volatile cli.System.WeakReference weakRef;
+    // accessed by inner class
+    volatile cli.System.WeakReference weakRef;
     private volatile Object strongRef;
 
     /**
@@ -136,7 +140,7 @@ public abstract class Reference
                 weakRef = new cli.System.WeakReference(ref, this instanceof PhantomReference);
                 if (q != null)
                 {
-                    new QueueWatcher();
+                    new QueueWatcher(this);
                 }
             }
         }
@@ -144,15 +148,22 @@ public abstract class Reference
 
     private static final boolean debug = false;
 
-    private class QueueWatcher
+    private static class QueueWatcher
     {
-        boolean check()
+        private GCHandle handle;
+
+        QueueWatcher(Reference r)
+        {
+            handle = GCHandle.Alloc(r, GCHandleType.wrap(GCHandleType.Weak));
+        }
+
+        boolean check(Reference r)
         {
             boolean alive = false;
             try
             {
                 if(false) throw new cli.System.InvalidOperationException();
-                cli.System.WeakReference referent = Reference.this.weakRef;
+                cli.System.WeakReference referent = r.weakRef;
                 if (referent == null)
                 {
                     // ref was explicitly cleared, so we don't enqueue
@@ -175,18 +186,23 @@ public abstract class Reference
             }
             else
             {
-                enqueueImpl();
+                r.enqueueImpl();
             }
             return false;
         }
 
         protected void finalize()
         {
+            Reference r = (Reference)handle.get_Target();
             if (debug)
-                cli.System.Console.WriteLine("~QueueWatcher: " + hashCode() + " on " + Reference.this);
-            if (check())
+                cli.System.Console.WriteLine("~QueueWatcher: " + hashCode() + " on " + r);
+            if (r != null && check(r))
             {
                 cli.System.GC.ReRegisterForFinalize(QueueWatcher.this);
+            }
+            else
+            {
+                handle.Free();
             }
         }
     }
@@ -243,7 +259,8 @@ public abstract class Reference
         return enqueueImpl();
     }
 
-    private synchronized boolean enqueueImpl()
+    // accessed by inner class
+    synchronized boolean enqueueImpl()
     {
         if (queue != null && nextOnQueue == null)
         {
