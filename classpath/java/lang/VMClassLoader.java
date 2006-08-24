@@ -314,7 +314,11 @@ final class VMClassLoader
         if("".equals(SystemProperties.getProperty("java.class.path")) &&
             "".equals(SystemProperties.getProperty("java.ext.dirs")))
         {
-            return getAssemblyClassLoader(Assembly.GetEntryAssembly());
+            Assembly entryAssembly = Assembly.GetEntryAssembly();
+            if(entryAssembly != null)
+            {
+                return getAssemblyClassLoader(entryAssembly);
+            }
         }
 	return ClassLoader.defaultGetSystemClassLoader();
     }
