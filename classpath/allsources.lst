@@ -3788,7 +3788,6 @@
 ../../classpath/javax/swing/plaf/MenuItemUI.java
 ../../classpath/javax/swing/plaf/metal/DefaultMetalTheme.java
 ../../classpath/javax/swing/plaf/metal/MetalBorders.java
-../../classpath/javax/swing/plaf/metal/MetalButtonListener.java
 ../../classpath/javax/swing/plaf/metal/MetalButtonUI.java
 ../../classpath/javax/swing/plaf/metal/MetalCheckBoxIcon.java
 ../../classpath/javax/swing/plaf/metal/MetalCheckBoxUI.java

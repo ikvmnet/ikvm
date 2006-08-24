@@ -84,7 +84,7 @@ public abstract class Reference
      * The queue this reference is registered on. This is null, if this
      * wasn't registered to any queue or reference was already enqueued.
      */
-    ReferenceQueue queue;
+    volatile ReferenceQueue queue;
 
     /**
      * Link to the next entry on the queue.  If this is null, this
@@ -93,7 +93,7 @@ public abstract class Reference
      * (not to null, that value is used to mark a not enqueued
      * reference).  
      */
-    Reference nextOnQueue;
+    volatile Reference nextOnQueue;
 
     /**
      * Creates a new reference that is not registered to any queue.
@@ -196,7 +196,7 @@ public abstract class Reference
             Reference r = (Reference)handle.get_Target();
             if (debug)
                 cli.System.Console.WriteLine("~QueueWatcher: " + hashCode() + " on " + r);
-            if (r != null && check(r))
+            if (r != null && r.queue != null && check(r))
             {
                 cli.System.GC.ReRegisterForFinalize(QueueWatcher.this);
             }
@@ -252,7 +252,7 @@ public abstract class Reference
      * Enqueue an object on a reference queue.  This is normally executed
      * by the garbage collector.
      */
-    public synchronized boolean enqueue() 
+    public boolean enqueue() 
     {
         // delegate to a private impl to prevent subclasses from overriding the enqueue
         // event in the finalization thread
@@ -260,13 +260,12 @@ public abstract class Reference
     }
 
     // accessed by inner class
-    synchronized boolean enqueueImpl()
+    final boolean enqueueImpl()
     {
-        if (queue != null && nextOnQueue == null)
+        ReferenceQueue q = queue;
+        if (q != null)
         {
-            queue.enqueue(this);
-            queue = null;
-            return true;
+            return q.enqueue(this);
         }
         return false;
     }
