@@ -111,11 +111,11 @@ outer:
 		{
 		    if(tz.getOffset(d) != nettz.getOffset(d))
 		    {
-			break outer;
+			continue outer;
 		    }
 		    d += 24 * 60 * 60 * 1000;
 		}
-		return tz;
+                return tz;
 	    }
 	}
 	// we didn't find a match, return our own implementation, this isn't really
