@@ -1787,6 +1787,22 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal bool IsErased
+		{
+			get
+			{
+				return IsUnloadable || IsGhostArray || IsDynamicOnly;
+			}
+		}
+
+		internal virtual bool IsDynamicOnly
+		{
+			get
+			{
+				return false;
+			}
+		}
+
 		internal bool IsUnloadable
 		{
 			get
@@ -2471,8 +2487,10 @@ namespace IKVM.Internal
 		{
 			Debug.Assert(this.IsInterface);
 
-			// make sure we don't do the same method twice
-			if(doneSet.ContainsKey(this))
+			// make sure we don't do the same method twice and dynamic only interfaces
+			// don't really exist, so there is no point in generating stub methods for
+			// them (nor can we).
+			if(doneSet.ContainsKey(this) || this.IsDynamicOnly)
 			{
 				return;
 			}
@@ -2613,6 +2631,12 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldc_I4, rank);
 				ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
 			}
+			else if(IsDynamicOnly)
+			{
+				ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
+				ilgen.Emit(OpCodes.Ldstr, this.Name);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
+			}
 			else
 			{
 				EmitHelper.Castclass(ilgen, TypeAsTBD);
@@ -2642,6 +2666,12 @@ namespace IKVM.Internal
 				}
 				ilgen.Emit(OpCodes.Ldc_I4, rank);
 				ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("IsInstanceArray"));
+			}
+			else if(IsDynamicOnly)
+			{
+				ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
+				ilgen.Emit(OpCodes.Ldstr, this.Name);
+				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
 			}
 			else
 			{
@@ -3564,8 +3594,13 @@ namespace IKVM.Internal
 					TypeWrapper[] interfaces = wrapper.Interfaces;
 					for(int i = 0; i < interfaces.Length; i++)
 					{
-						// NOTE we're using TypeAsBaseType for the interfaces!
-						typeBuilder.AddInterfaceImplementation(interfaces[i].TypeAsBaseType);
+						// skip interfaces that don't really exist
+						// (e.g. delegate "Method" and attribute "Annotation" inner interfaces)
+						if(!interfaces[i].IsDynamicOnly)
+						{
+							// NOTE we're using TypeAsBaseType for the interfaces!
+							typeBuilder.AddInterfaceImplementation(interfaces[i].TypeAsBaseType);
+						}
 						// NOTE we're also "implementing" all interfaces that we inherit from the interfaces we implement.
 						// The C# compiler also does this and the Compact Framework requires it.
 						TypeWrapper[] inheritedInterfaces = interfaces[i].Interfaces;
@@ -3576,12 +3611,15 @@ namespace IKVM.Internal
 								interfaceList = new ArrayList();
 								foreach(TypeWrapper tw1 in interfaces)
 								{
-									interfaceList.Add(tw1.TypeAsBaseType);
+									if(!tw1.IsDynamicOnly)
+									{
+										interfaceList.Add(tw1.TypeAsBaseType);
+									}
 								}
 							}
 							foreach(TypeWrapper tw in inheritedInterfaces)
 							{
-								if(!interfaceList.Contains(tw.TypeAsBaseType))
+								if(!tw.IsDynamicOnly && !interfaceList.Contains(tw.TypeAsBaseType))
 								{
 									interfaceList.Add(tw.TypeAsBaseType);
 									// NOTE we don't have to recurse upwards, because we assume that
@@ -4065,7 +4103,7 @@ namespace IKVM.Internal
 				string fieldName = fld.Name;
 				TypeWrapper typeWrapper = fw.FieldTypeWrapper;
 				Type type = typeWrapper.TypeAsSignatureType;
-				bool setNameSig = typeWrapper.IsUnloadable || typeWrapper.IsGhostArray;
+				bool setNameSig = typeWrapper.IsErased;
 				if(setNameSig)
 				{
 					// TODO use clashtable
@@ -5643,7 +5681,7 @@ namespace IKVM.Internal
 							}
 #endif // STATIC_COMPILER
 							// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
-							if(name != baseMethods[index].RealName)
+							if(!baseMethods[index].DeclaringType.IsDynamicOnly && name != baseMethods[index].RealName)
 							{
 								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index].GetMethod());
 							}
@@ -5697,10 +5735,10 @@ namespace IKVM.Internal
 					}
 					ClassFile.Method m = classFile.Methods[index];
 					MethodBase method;
-					bool setNameSig = methods[index].ReturnType.IsUnloadable || methods[index].ReturnType.IsGhostArray;
+					bool setNameSig = methods[index].ReturnType.IsErased;
 					foreach(TypeWrapper tw in methods[index].GetParameters())
 					{
-						setNameSig |= tw.IsUnloadable || tw.IsGhostArray;
+						setNameSig |= tw.IsErased;
 					}
 					bool setModifiers = false;
 					MethodAttributes attribs = MethodAttributes.HideBySig;
@@ -8191,7 +8229,6 @@ namespace IKVM.Internal
 		private class DelegateInnerClassTypeWrapper : TypeWrapper
 		{
 			private Type delegateType;
-			private Type type;
 
 			internal DelegateInnerClassTypeWrapper(string name, Type delegateType, ClassLoaderWrapper classLoader)
 				: base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract, name, null)
@@ -8199,46 +8236,25 @@ namespace IKVM.Internal
 				this.delegateType = delegateType;
 				MethodInfo invoke = delegateType.GetMethod("Invoke");
 				ParameterInfo[] parameters = invoke.GetParameters();
-				Type[] args = new Type[parameters.Length];
-				TypeWrapper[] argTypeWrappers = new TypeWrapper[args.Length];
+				TypeWrapper[] argTypeWrappers = new TypeWrapper[parameters.Length];
 				System.Text.StringBuilder sb = new System.Text.StringBuilder("(");
-				for(int i = 0; i < args.Length; i++)
+				for(int i = 0; i < parameters.Length; i++)
 				{
-					args[i] = parameters[i].ParameterType;
-					argTypeWrappers[i] = ClassLoaderWrapper.GetWrapperFromType(args[i]);
+					argTypeWrappers[i] = ClassLoaderWrapper.GetWrapperFromType(parameters[i].ParameterType);
 					sb.Append(argTypeWrappers[i].SigName);
 				}
 				TypeWrapper returnType = ClassLoaderWrapper.GetWrapperFromType(invoke.ReturnType);
 				sb.Append(")").Append(returnType.SigName);
-				MethodInfo method = null;
-#if WHIDBEY && !STATIC_COMPILER
-				if(!delegateType.Assembly.ReflectionOnly)
-#endif // WHIDBEY && !STATIC_COMPILER
-				{
-					// HACK the class loader that defines the delegate is hardly the right one for this inner class,
-					// but we know that we'll only ever generate one assembly, so this will work.
-					TypeWrapperFactory factory = classLoader.GetTypeWrapperFactory();
-					ModuleBuilder moduleBuilder = factory.ModuleBuilder;
-					// NOTE we chop off the prefix ("cli.") because C++/CLI doesn't like assemblies
-					// that have types in the cli namespace (lame!)
-					TypeBuilder typeBuilder = moduleBuilder.DefineType(factory.AllocMangledName(Name.Substring(NamePrefix.Length)), TypeAttributes.NotPublic | TypeAttributes.Interface | TypeAttributes.Abstract);
-#if STATIC_COMPILER
-					AttributeHelper.HideFromJava(typeBuilder);
-#endif //STATIC_COMPILER
-					typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual, CallingConventions.Standard, invoke.ReturnType, args);
-					type = typeBuilder.CreateType();
-					method = type.GetMethod("Invoke");
-				}
-				MethodWrapper invokeMethod = new DelegateInnerClassMethodWrapper(this, sb.ToString(), method, returnType, argTypeWrappers);
+				MethodWrapper invokeMethod = new DynamicOnlyMethodWrapper(this, "Invoke", sb.ToString(), returnType, argTypeWrappers);
 				SetMethods(new MethodWrapper[] { invokeMethod });
 				SetFields(FieldWrapper.EmptyArray);
 			}
 
-			private class DelegateInnerClassMethodWrapper : MethodWrapper
+			internal override bool IsDynamicOnly
 			{
-				internal DelegateInnerClassMethodWrapper(TypeWrapper declaringType, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes)
-					: base(declaringType, "Invoke", sig, method, returnType, parameterTypes, Modifiers.Public | Modifiers.Abstract, MemberFlags.None)
+				get
 				{
+					return true;
 				}
 			}
 
@@ -8307,9 +8323,34 @@ namespace IKVM.Internal
 			{
 				get
 				{
-					return type;
+					return typeof(object);
 				}
 			}
+
+			internal override Type TypeAsBaseType
+			{
+				get
+				{
+					throw new InvalidOperationException();
+				}
+			}
+		}
+
+		private class DynamicOnlyMethodWrapper : MethodWrapper
+		{
+			internal DynamicOnlyMethodWrapper(TypeWrapper declaringType, string name, string sig, TypeWrapper returnType, TypeWrapper[] parameterTypes)
+				: base(declaringType, name, sig, null, returnType, parameterTypes, Modifiers.Public | Modifiers.Abstract, MemberFlags.None)
+			{
+			}
+
+#if !STATIC_COMPILER
+				internal override object Invoke(object obj, object[] args, bool nonVirtual)
+				{
+					return TypeWrapper.FromClass(NativeCode.ikvm.runtime.Util.getClassFromObject(obj))
+						.GetMethodWrapper(this.Name, this.Signature, true)
+						.Invoke(obj, args, false);
+				}
+#endif // !STATIC_COMPILER
 		}
 
 		private class AttributeAnnotationTypeWrapper : TypeWrapper
@@ -8321,14 +8362,6 @@ namespace IKVM.Internal
 				: base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract | Modifiers.Annotation, name, null)
 			{
 				this.attributeType = attributeType;
-			}
-
-			private class AnnotationMethodWrapper : MethodWrapper
-			{
-				internal AnnotationMethodWrapper(TypeWrapper declaringType, string name, TypeWrapper valueType)
-					: base(declaringType, name, "()" + valueType.SigName, null, valueType, TypeWrapper.EmptyArray, Modifiers.Public | Modifiers.Abstract, MemberFlags.None)
-				{
-				}
 			}
 
 			protected override void LazyPublishMembers()
@@ -8343,7 +8376,8 @@ namespace IKVM.Internal
 						// TODO support other types
 						if(p[0].ParameterType == typeof(string))
 						{
-							methods.Add(new AnnotationMethodWrapper(this, "value", ClassLoaderWrapper.GetWrapperFromType(p[0].ParameterType)));
+							TypeWrapper returnType = ClassLoaderWrapper.GetWrapperFromType(p[0].ParameterType);
+							methods.Add(new DynamicOnlyMethodWrapper(this, "value", "()" + returnType.SigName, returnType, TypeWrapper.EmptyArray));
 						}
 					}
 				}
@@ -8356,7 +8390,8 @@ namespace IKVM.Internal
 						if(fi.FieldType == typeof(bool))
 						{
 							// TODO handle the case where the field name is "value"
-							methods.Add(new AnnotationMethodWrapper(this, fi.Name, ClassLoaderWrapper.GetWrapperFromType(fi.FieldType)));
+							TypeWrapper returnType = ClassLoaderWrapper.GetWrapperFromType(fi.FieldType);
+							methods.Add(new DynamicOnlyMethodWrapper(this, fi.Name, "()" + returnType.SigName, returnType, TypeWrapper.EmptyArray));
 						}
 					}
 				}
@@ -8441,12 +8476,27 @@ namespace IKVM.Internal
 				}
 			}
 
+			internal override bool IsDynamicOnly
+			{
+				get
+				{
+					return true;
+				}
+			}
+
 			internal override Type TypeAsTBD
 			{
 				get
 				{
-					// TODO
-					return null;
+					return typeof(object);
+				}
+			}
+
+			internal override Type TypeAsBaseType
+			{
+				get
+				{
+					throw new InvalidOperationException();
 				}
 			}
 
@@ -8588,16 +8638,32 @@ namespace IKVM.Internal
 			}
 
 #if !COMPACT_FRAMEWORK
-			internal override void EmitNewobj(ILGenerator ilgen)
+			internal override void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
 			{
-				ilgen.Emit(OpCodes.Dup);
-				// we know that a DelegateInnerClassTypeWrapper has only one method
-				Debug.Assert(iface.GetMethods().Length == 1);
-				MethodWrapper mw = iface.GetMethods()[0];
-				// linking here is safe, because a delegate never references a dynamic type
-				mw.Link();
-				ilgen.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
-				ilgen.Emit(OpCodes.Newobj, delegateConstructor);
+				TypeWrapper targetType = ma == null ? null : ma.GetStackTypeWrapper(opcodeIndex, 0);
+				if(targetType == null || targetType.IsInterface)
+				{
+					MethodInfo createDelegate = typeof(Delegate).GetMethod("CreateDelegate", new Type[] { typeof(Type), typeof(object), typeof(string) });
+					LocalBuilder targetObj = ilgen.DeclareLocal(typeof(object));
+					ilgen.Emit(OpCodes.Stloc, targetObj);
+					ilgen.Emit(OpCodes.Ldtoken, delegateConstructor.DeclaringType);
+					ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle", new Type[] { typeof(RuntimeTypeHandle) }));
+					ilgen.Emit(OpCodes.Ldloc, targetObj);
+					ilgen.Emit(OpCodes.Ldstr, "Invoke");
+					ilgen.Emit(OpCodes.Call, createDelegate);
+					ilgen.Emit(OpCodes.Castclass, delegateConstructor.DeclaringType);
+				}
+				else
+				{
+					ilgen.Emit(OpCodes.Dup);
+					// we know that a DelegateInnerClassTypeWrapper has only one method
+					Debug.Assert(iface.GetMethods().Length == 1);
+					MethodWrapper mw = targetType.GetMethodWrapper("Invoke", iface.GetMethods()[0].Signature, true);
+					// TODO linking here is not safe
+					mw.Link();
+					ilgen.Emit(OpCodes.Ldvirtftn, (MethodInfo)mw.GetMethod());
+					ilgen.Emit(OpCodes.Newobj, delegateConstructor);
+				}
 			}
 #endif
 
@@ -8851,7 +8917,7 @@ namespace IKVM.Internal
 			}
 
 #if !COMPACT_FRAMEWORK
-			internal override void EmitNewobj(ILGenerator ilgen)
+			internal override void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
 			{
 				LocalBuilder local = ilgen.DeclareLocal(DeclaringType.TypeAsTBD);
 				ilgen.Emit(OpCodes.Ldloc, local);

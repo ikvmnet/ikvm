@@ -131,6 +131,7 @@ class Compiler
 	private static MethodInfo getTypeFromHandleMethod;
 	private static MethodInfo monitorEnterMethod;
 	private static MethodInfo monitorExitMethod;
+	private static MethodWrapper getClassFromTypeHandle;
 	private static TypeWrapper java_lang_Class;
 	private static TypeWrapper java_lang_Throwable;
 	private static TypeWrapper java_lang_ThreadDeath;
@@ -181,6 +182,8 @@ class Compiler
 			unmapExceptionMethod = java_lang_Throwable.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { typeof(Exception) });
 		}
 		initCauseMethod = java_lang_Throwable.GetMethodWrapper("initCause", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false);
+		getClassFromTypeHandle = ClassLoaderWrapper.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
+		getClassFromTypeHandle.Link();
 	}
 
 	private class ExceptionSorter : IComparer
@@ -885,7 +888,7 @@ class Compiler
 				Label label = ilGenerator.DefineLabel();
 				ilGenerator.Emit(OpCodes.Brtrue_S, label);
 				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
-				ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
+				getClassFromTypeHandle.EmitCall(ilGenerator);
 				ilGenerator.Emit(OpCodes.Stsfld, clazz.ClassObjectField);
 				ilGenerator.MarkLabel(label);
 				ilGenerator.Emit(OpCodes.Ldsfld, clazz.ClassObjectField);
@@ -1600,13 +1603,13 @@ class Compiler
 								ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 								ilGenerator.Emit(OpCodes.Ldstr, tw.Name);
 								ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
+								java_lang_Class.EmitCheckcast(clazz, ilGenerator);
 							}
 							else
 							{
 								ilGenerator.Emit(OpCodes.Ldtoken, tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
-								ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
+								getClassFromTypeHandle.EmitCall(ilGenerator);
 							}
-							java_lang_Class.EmitCheckcast(clazz, ilGenerator);
 							break;
 						}
 						default:
@@ -1774,7 +1777,7 @@ class Compiler
 									}
 								}
 							}
-							method.EmitNewobj(ilGenerator);
+							method.EmitNewobj(ilGenerator, ma, i);
 							if(!thisType.IsUnloadable && thisType.IsSubTypeOf(cli_System_Exception))
 							{
 								// HACK we call Throwable.initCause(null) to force creation of an ExceptionInfoHelper
@@ -3373,7 +3376,7 @@ class Compiler
 			Emit(ByteCodeHelperMethods.DynamicInvokevirtual, ilgen, cpi.GetRetType());
 		}
 
-		internal override void EmitNewobj(ILGenerator ilgen)
+		internal override void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
 		{
 			Emit(ByteCodeHelperMethods.DynamicInvokeSpecialNew, ilgen, cpi.GetClassType());
 		}
@@ -3416,6 +3419,11 @@ class Compiler
 			case NormalizedByteCode.__invokespecial:
 				return cpi.GetMethodForInvokespecial();
 			case NormalizedByteCode.__invokeinterface:
+				if(cpi.GetClassType().IsDynamicOnly)
+				{
+					return new DynamicMethodWrapper(clazz, cpi);
+				}
+				return cpi.GetMethod();
 			case NormalizedByteCode.__invokestatic:
 			case NormalizedByteCode.__invokevirtual:
 				return cpi.GetMethod();

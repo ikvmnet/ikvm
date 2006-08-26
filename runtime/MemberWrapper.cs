@@ -263,7 +263,12 @@ namespace IKVM.Internal
 			throw new InvalidOperationException();
 		}
 
-		internal virtual void EmitNewobj(ILGenerator ilgen)
+		internal void EmitNewobj(ILGenerator ilgen)
+		{
+			EmitNewobj(ilgen, null, 0);
+		}
+
+		internal virtual void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
 		{
 			throw new InvalidOperationException();
 		}
@@ -964,7 +969,7 @@ namespace IKVM.Internal
 			throw new InvalidOperationException();
 		}
 
-		internal sealed override void EmitNewobj(ILGenerator ilgen)
+		internal sealed override void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
 		{
 			AssertLinked();
 			PreEmit(ilgen);
