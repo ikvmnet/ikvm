@@ -47,7 +47,7 @@ public final class StubGenerator
         {
             superClass = "java/lang/Object";
         }
-        int classmods = c.getModifiers();
+        int classmods = getModifiers(c);
         if(outer != null)
         {
             // protected inner classes are actually public and private inner classes are actually package
@@ -56,18 +56,6 @@ public final class StubGenerator
                 classmods |= Modifiers.Public;
             }
             classmods &= ~(Modifiers.Static | Modifiers.Private | Modifiers.Protected);
-        }
-        if(c.isAnnotation())
-        {
-            classmods |= Modifiers.Annotation;
-        }
-        if(c.isEnum())
-        {
-            classmods |= Modifiers.Enum;
-        }
-        if(c.isSynthetic())
-        {
-            classmods |= Modifiers.Synthetic;
         }
         ClassFileWriter f = new ClassFileWriter(classmods, name, superClass, 0, 49);
         String genericSignature = BuildGenericSignature(c);
@@ -91,10 +79,8 @@ public final class StubGenerator
             {
                 innername = innername.substring(idx + 1);
             }
-            int mods = c.getModifiers();
             if(c.isAnnotation())
             {
-                mods |= Modifiers.Annotation;
                 // HACK if we see the annotation, it must be runtime visible, but currently
                 // the classpath trunk doesn't yet have the required RetentionPolicy enum,
                 // so we have to fake it here
@@ -108,15 +94,7 @@ public final class StubGenerator
                     });
                 f.AddAttribute(annot);
             }
-            if(c.isEnum())
-            {
-                mods |= Modifiers.Enum;
-            }
-            if(c.isSynthetic())
-            {
-                mods |= Modifiers.Synthetic;
-            }
-            innerClassesAttribute.Add(name, outer.getName().replace('.', '/'), innername, mods);
+            innerClassesAttribute.Add(name, outer.getName().replace('.', '/'), innername, getModifiers(c));
         }
         Class[] interfaces = c.getInterfaces();
         for(int i = 0; i < interfaces.length; i++)
@@ -126,7 +104,7 @@ public final class StubGenerator
         Class[] innerClasses = c.getDeclaredClasses();
         for(int i = 0; i < innerClasses.length; i++)
         {
-            int mods = innerClasses[i].getModifiers();
+            int mods = getModifiers(innerClasses[i]);
             if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
             {
                 if(innerClassesAttribute == null)
@@ -136,7 +114,7 @@ public final class StubGenerator
                 String namePart = innerClasses[i].getName();
                 // TODO name mangling
                 namePart = namePart.substring(namePart.lastIndexOf('$') + 1);
-                innerClassesAttribute.Add(innerClasses[i].getName().replace('.', '/'), name, namePart, innerClasses[i].getModifiers());
+                innerClassesAttribute.Add(innerClasses[i].getName().replace('.', '/'), name, namePart, mods);
             }
         }
         java.lang.reflect.Constructor[] constructors = c.getDeclaredConstructors();
@@ -295,6 +273,24 @@ public final class StubGenerator
         {
             throw new Error(x);
         }
+    }
+
+    private static int getModifiers(Class c)
+    {
+        int mods = c.getModifiers();
+        if(c.isAnnotation())
+        {
+            mods |= Modifiers.Annotation;
+        }
+        if(c.isEnum())
+        {
+            mods |= Modifiers.Enum;
+        }
+        if(c.isSynthetic())
+        {
+            mods |= Modifiers.Synthetic;
+        }
+        return mods;
     }
 
     private static native String getAssemblyName(Class c);
