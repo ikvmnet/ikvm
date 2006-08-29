@@ -94,7 +94,7 @@ namespace IKVM.Internal
 			private CompilerClassLoader classLoader;
 
 			internal CompilerTypeWrapperFactory(CompilerClassLoader classLoader)
-				: base(classLoader)
+				: base(classLoader, classLoader.options.codegenoptions)
 			{
 				this.classLoader = classLoader;
 			}
@@ -112,6 +112,14 @@ namespace IKVM.Internal
 			protected override ModuleBuilder CreateModuleBuilder()
 			{
 				return classLoader.CreateModuleBuilder();
+			}
+		}
+
+		internal override string SourcePath
+		{
+			get
+			{
+				return options.sourcepath;
 			}
 		}
 
@@ -142,15 +150,15 @@ namespace IKVM.Internal
 			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.Save, assemblyDir);
 #endif
 			ModuleBuilder moduleBuilder;
-			moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, JVM.Debug);
-			if(!JVM.NoStackTraceInfo)
+			moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, this.EmitDebugInfo);
+			if(this.EmitStackTraceInfo)
 			{
 				AttributeHelper.SetSourceFile(moduleBuilder, null);
 			}
 			AttributeHelper.SetJavaModule(moduleBuilder);
-			if(JVM.Debug || !JVM.NoStackTraceInfo)
+			if(this.EmitDebugInfo || this.EmitStackTraceInfo)
 			{
-				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
+				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, this.EmitDebugInfo });
 				assemblyBuilder.SetCustomAttribute(debugAttr);
 			}
 			return moduleBuilder;
@@ -186,7 +194,12 @@ namespace IKVM.Internal
 					ClassFile f;
 					try
 					{
-						f = new ClassFile(classdef, 0, classdef.Length, name);
+						ClassFileParseOptions cfp = ClassFileParseOptions.LocalVariableTable;
+						if(this.EmitStackTraceInfo)
+						{
+							cfp |= ClassFileParseOptions.LineNumberTable;
+						}
+						f = new ClassFile(classdef, 0, classdef.Length, name, cfp);
 					}
 					catch(ClassFormatError x)
 					{
@@ -364,6 +377,14 @@ namespace IKVM.Internal
 						mem.Position = 0;
 						moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
 #else
+					if(compressedResources)
+					{
+						MemoryStream mem = new MemoryStream();
+						LZOutputStream lz = new LZOutputStream(mem);
+						lz.Write(buf, 0, buf.Length);
+						lz.Flush();
+						buf = mem.ToArray();
+					}
 					IResourceWriter writer = moduleBuilder.DefineResource(name, "");
 					writer.AddResource(compressedResources ? "lz" : "ikvm", buf);
 #endif
@@ -497,7 +518,7 @@ namespace IKVM.Internal
 				{
 					typeBuilder.AddInterfaceImplementation(baseInterface);
 				}
-				if(!JVM.NoStackTraceInfo)
+				if(classLoader.EmitStackTraceInfo)
 				{
 					AttributeHelper.SetSourceFile(typeBuilder, IKVM.Internal.MapXml.Root.filename);
 				}
@@ -710,7 +731,10 @@ namespace IKVM.Internal
 							}
 							ilgen.Emit(OpCodes.Ret);
 						}
-						ilgen.EmitLineNumberTable(cbCore);
+						if(this.DeclaringType.GetClassLoader().EmitStackTraceInfo)
+						{
+							ilgen.EmitLineNumberTable(cbCore);
+						}
 					}
 
 					if(mbHelper != null)
@@ -776,7 +800,10 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Newobj, baseCon);
 							ilgen.Emit(OpCodes.Ret);
 						}
-						ilgen.EmitLineNumberTable(mbHelper);
+						if(this.DeclaringType.GetClassLoader().EmitStackTraceInfo)
+						{
+							ilgen.EmitLineNumberTable(mbHelper);
+						}
 					}
 				}
 			}
@@ -1103,7 +1130,10 @@ namespace IKVM.Internal
 							this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 							ilgen.Emit(OpCodes.Ret);
 						}
-						ilgen.EmitLineNumberTable(mbCore);
+						if(this.DeclaringType.GetClassLoader().EmitStackTraceInfo)
+						{
+							ilgen.EmitLineNumberTable(mbCore);
+						}
 					}
 
 					// NOTE static methods don't have helpers
@@ -1222,7 +1252,10 @@ namespace IKVM.Internal
 							this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 							ilgen.Emit(OpCodes.Ret);
 						}
-						ilgen.EmitLineNumberTable(mbHelper);
+						if(this.DeclaringType.GetClassLoader().EmitStackTraceInfo)
+						{
+							ilgen.EmitLineNumberTable(mbHelper);
+						}
 					}
 
 					// do we need a helper for non-virtual reflection invocation?
@@ -1841,21 +1874,19 @@ namespace IKVM.Internal
 		internal ApartmentState apartment;
 		internal PEFileKinds target;
 		internal bool guessFileKind;
-		internal byte[][] classes;
-		internal string[] classNames;	// for diagnostics only (these are the file names, not the actual class names)
+		internal Hashtable classes;
 		internal string[] references;
-		internal bool nojni;
 		internal Hashtable resources;
 		internal string[] classesToExclude;
 		internal string remapfile;
 		internal Hashtable props;
 		internal bool noglobbing;
-		internal bool nostacktraceinfo;
+		internal CodeGenOptions codegenoptions;
 		internal bool removeUnusedFields;
 		internal bool compressedResources;
-		internal bool strictFinalFieldSemantics;
 		internal string runtimeAssembly;
 		internal string[] privatePackages;
+		internal string sourcepath;
 	}
 
 	enum Message
@@ -1865,7 +1896,6 @@ namespace IKVM.Internal
 		OutputFileIs = 2,
 		AutoAddRef = 3,
 		MainMethodFromManifest = 4,
-		NotAClassFile = 5,
 		// This is were the warnings start
 		StartWarnings = 100,
 		ClassNotFound = 100,
@@ -1876,6 +1906,7 @@ namespace IKVM.Internal
 		NoClassDefFoundError = 105,
 		GenericUnableToCompileError = 106,
 		DuplicateResourceName = 107,
+		NotAClassFile = 108,
 	}
 
 	class StaticCompiler
@@ -1958,9 +1989,6 @@ namespace IKVM.Internal
 				case Message.MainMethodFromManifest:
 					msg = "using main class \"{0}\" based on jar manifest";
 					break;
-				case Message.NotAClassFile:
-					msg = "\"{0}\" is not a class file, including it as resource";
-					break;
 				case Message.ClassNotFound:
 					msg = "class \"{0}\" not found";
 					break;
@@ -1990,6 +2018,10 @@ namespace IKVM.Internal
 				case Message.DuplicateResourceName:
 					msg = "skipping resource (name clash): \"{0}\"";
 					break;
+				case Message.NotAClassFile:
+					msg = "not a class file \"{0}\", including it as resource" + Environment.NewLine +
+						"    (class format error \"{1}\")";
+					break;
 				default:
 					throw new InvalidProgramException();
 			}
@@ -2009,9 +2041,6 @@ namespace IKVM.Internal
 		internal static int Compile(CompilerOptions options)
 		{
 			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", options.path, options.assembly);
-			JVM.NoJniStubs = options.nojni;
-			JVM.NoStackTraceInfo = options.nostacktraceinfo;
-			JVM.StrictFinalFieldSemantics = options.strictFinalFieldSemantics;
 #if WHIDBEY
 			if(options.runtimeAssembly == null)
 			{
@@ -2112,35 +2141,34 @@ namespace IKVM.Internal
 #endif
 			Hashtable h = new Hashtable();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
-			for(int i = 0; i < options.classes.Length; i++)
+			if(options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
 			{
-				string name;
-				try
+				foreach(DictionaryEntry de in options.classes)
 				{
-					if(options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+					ClassFile f;
+					try
 					{
-						ClassFile f = new ClassFile(options.classes[i], 0, options.classes[i].Length, null);
-						name = f.Name;
-						foreach(ClassFile.Method m in f.Methods)
+						byte[] buf = (byte[])de.Value;
+						f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
+					}
+					catch(ClassFormatError)
+					{
+						continue;
+					}
+					foreach(ClassFile.Method m in f.Methods)
+					{
+						if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
 						{
-							if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
-							{
-								StaticCompiler.IssueMessage(Message.MainMethodFound, f.Name);
-								options.mainClass = f.Name;
-								break;
-							}
+							StaticCompiler.IssueMessage(Message.MainMethodFound, f.Name);
+							options.mainClass = f.Name;
+							break;
 						}
 					}
-					else
-					{
-						name = ClassFile.GetClassName(options.classes[i], 0, options.classes[i].Length);
-					}
 				}
-				catch(ClassFormatError x)
-				{
-					StaticCompiler.IssueMessage(Message.ClassFormatError, options.classNames[i], x.Message);
-					continue;
-				}
+			}
+			foreach(DictionaryEntry de in options.classes)
+			{
+				string name = (string)de.Key;
 				bool excluded = false;
 				for(int j = 0; j < options.classesToExclude.Length; j++)
 				{
@@ -2157,7 +2185,7 @@ namespace IKVM.Internal
 				}
 				if(!excluded)
 				{
-					h[name] = options.classes[i];
+					h[name] = de.Value;
 				}
 			}
 			options.classes = null;
@@ -2248,7 +2276,16 @@ namespace IKVM.Internal
 				loader.EmitRemappedTypes(map);
 			}
 			// Do a sanity check to make sure some of the bootstrap classes are available
-			if(loader.LoadClassByDottedNameFast("java.lang.Object") == null)
+			bool hasBootClasses;
+			try
+			{
+				hasBootClasses = loader.LoadClassByDottedNameFast("java.lang.Object") != null;
+			}
+			catch(ClassFormatError)
+			{
+				hasBootClasses = false;
+			}
+			if(!hasBootClasses)
 			{
 #if WHIDBEY
 				JVM.CoreAssembly = Assembly.ReflectionOnlyLoadFrom(Assembly.GetExecutingAssembly().Location + "\\..\\IKVM.GNU.Classpath.dll");
@@ -2292,23 +2329,6 @@ namespace IKVM.Internal
 			{
 				try
 				{
-					// HACK skip synthetic delegate inner classes
-					// (we don't want to generate the unused interfaces)
-					if(s.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
-					{
-						byte[] buf = (byte[])h[s];
-						try
-						{
-							ClassFile c = new ClassFile(buf, 0, buf.Length, s);
-							if(c.IKVMAssemblyAttribute != null)
-							{
-								continue;
-							}
-						}
-						catch
-						{
-						}
-					}
 					TypeWrapper wrapper = loader.LoadClassByDottedNameFast(s);
 					if(wrapper != null)
 					{

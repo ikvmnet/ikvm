@@ -509,12 +509,18 @@ namespace IKVM.NativeCode.java
 				{
 					try
 					{
-						ClassFile classFile = new ClassFile(data, offset, length, name);
+						ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader);
+						ClassFileParseOptions cfp = ClassFileParseOptions.LineNumberTable;
+						if(classLoaderWrapper.EmitDebugInfo)
+						{
+							cfp |= ClassFileParseOptions.LocalVariableTable;
+						}
+						ClassFile classFile = new ClassFile(data, offset, length, name, cfp);
 						if(name != null && classFile.Name != name)
 						{
 							throw new NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
 						}
-						TypeWrapper type = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader).DefineClass(classFile, protectionDomain);
+						TypeWrapper type = classLoaderWrapper.DefineClass(classFile, protectionDomain);
 						return type.ClassObject;
 					}
 					catch(RetargetableJavaException x)

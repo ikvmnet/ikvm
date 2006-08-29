@@ -41,6 +41,14 @@ namespace IKVM.Internal
 		LinkageError
 	}
 
+	[Flags]
+	enum ClassFileParseOptions
+	{
+		None = 0,
+		LocalVariableTable = 1,
+		LineNumberTable = 2,
+	}
+
 	sealed class StringConstants
 	{
 		private StringConstants() {}
@@ -85,24 +93,26 @@ namespace IKVM.Internal
 			internal static readonly int Maximum = 49;
 		}
 
+#if STATIC_COMPILER
 		// This method parses just enough of the class file to obtain its name, it doesn't
 		// validate the class file structure, but it may throw a ClassFormatError if it
 		// encounters bogus data
 		internal static string GetClassName(byte[] buf, int offset, int length)
 		{
-			const string inputClassName = "(unknown)";
 			BigEndianBinaryReader br = new BigEndianBinaryReader(buf, offset, length);
 			if(br.ReadUInt32() != 0xCAFEBABE)
 			{
-				throw new ClassFormatError("{0} (Bad magic number)", inputClassName);
+				throw new ClassFormatError("Bad magic number");
 			}
 			int minorVersion = br.ReadUInt16();
 			int majorVersion = br.ReadUInt16();
 			if((majorVersion & FLAG_MASK_MAJORVERSION) != majorVersion
 				|| majorVersion < SupportedVersions.Minimum
-				|| majorVersion > SupportedVersions.Maximum)
+				|| majorVersion > SupportedVersions.Maximum
+				|| (majorVersion == SupportedVersions.Minimum && minorVersion < 3)
+				|| (majorVersion == SupportedVersions.Maximum && minorVersion != 0))
 			{
-				throw new UnsupportedClassVersionError(inputClassName + " (" + majorVersion + "." + minorVersion + ")");
+				throw new UnsupportedClassVersionError(majorVersion + "." + minorVersion);
 			}
 			int constantpoolcount = br.ReadUInt16();
 			int[] cpclass = new int[constantpoolcount];
@@ -132,10 +142,10 @@ namespace IKVM.Internal
 						br.Skip(2);
 						break;
 					case Constant.Utf8:
-						utf8_cp[i] = br.ReadString(inputClassName);
+						utf8_cp[i] = br.ReadString("<unknown>");
 						break;
 					default:
-						throw new ClassFormatError("{0} (Illegal constant pool type 0x{1:X})", inputClassName, tag);
+						throw new ClassFormatError("Illegal constant pool type 0x{0:X}", tag);
 				}
 			}
 			br.ReadUInt16(); // access_flags
@@ -148,8 +158,9 @@ namespace IKVM.Internal
 				throw new ClassFormatError("{0}: {1}", x.GetType().Name, x.Message);
 			}
 		}
+#endif // STATIC_COMPILER
 
-		internal ClassFile(byte[] buf, int offset, int length, string inputClassName)
+		internal ClassFile(byte[] buf, int offset, int length, string inputClassName, ClassFileParseOptions options)
 		{
 			try
 			{
@@ -312,7 +323,7 @@ namespace IKVM.Internal
 				methods = new Method[methods_count];
 				for(int i = 0; i < methods_count; i++)
 				{
-					methods[i] = new Method(this, br);
+					methods[i] = new Method(this, options, br);
 					string name = methods[i].Name;
 					string sig = methods[i].Signature;
 					if(!IsValidMethodName(name, majorVersion))
@@ -2098,7 +2109,7 @@ namespace IKVM.Internal
 			private object annotationDefault;
 			private object[][] parameterAnnotations;
 
-			internal Method(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
+			internal Method(ClassFile classFile, ClassFileParseOptions options, BigEndianBinaryReader br) : base(classFile, br)
 			{
 				// vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
 				if(ReferenceEquals(Name, StringConstants.CLINIT) && ReferenceEquals(Signature, StringConstants.SIG_VOID))
@@ -2137,7 +2148,7 @@ namespace IKVM.Internal
 								throw new ClassFormatError("{0} (Duplicate Code attribute)", classFile.Name);
 							}
 							BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
-							code.Read(classFile, this, rdr);
+							code.Read(classFile, this, rdr, options);
 							if(!rdr.IsAtEnd)
 							{
 								throw new ClassFormatError("{0} (Code attribute has wrong length)", classFile.Name);
@@ -2396,7 +2407,7 @@ namespace IKVM.Internal
 				internal LineNumberTableEntry[] lineNumberTable;
 				internal LocalVariableTableEntry[] localVariableTable;
 
-				internal void Read(ClassFile classFile, Method method, BigEndianBinaryReader br)
+				internal void Read(ClassFile classFile, Method method, BigEndianBinaryReader br, ClassFileParseOptions options)
 				{
 					max_stack = br.ReadUInt16();
 					max_locals = br.ReadUInt16();
@@ -2453,11 +2464,7 @@ namespace IKVM.Internal
 						switch(classFile.GetConstantPoolUtf8String(br.ReadUInt16()))
 						{
 							case "LineNumberTable":
-								if(JVM.NoStackTraceInfo)
-								{
-									br.Skip(br.ReadUInt32());
-								}
-								else
+								if((options & ClassFileParseOptions.LineNumberTable) != 0)
 								{
 									BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
 									int count = rdr.ReadUInt16();
@@ -2476,9 +2483,13 @@ namespace IKVM.Internal
 										throw new ClassFormatError("{0} (LineNumberTable attribute has wrong length)", classFile.Name);
 									}
 								}
+								else
+								{
+									br.Skip(br.ReadUInt32());
+								}
 								break;
 							case "LocalVariableTable":
-								if(JVM.Debug || JVM.IsStaticCompiler)
+								if((options & ClassFileParseOptions.LocalVariableTable) != 0)
 								{
 									BigEndianBinaryReader rdr = br.Section(br.ReadUInt32());
 									int count = rdr.ReadUInt16();

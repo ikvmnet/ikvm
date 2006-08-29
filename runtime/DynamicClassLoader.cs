@@ -30,6 +30,16 @@ using System.Reflection.Emit;
 
 namespace IKVM.Internal
 {
+	[Flags]
+	enum CodeGenOptions
+	{
+		None = 0,
+		Debug = 1,
+		NoStackTraceInfo = 2,
+		StrictFinalFieldSemantics = 4,
+		NoJNI = 8,
+	}
+
 	class DynamicClassLoader : TypeWrapperFactory
 	{
 #if !WHIDBEY
@@ -47,6 +57,7 @@ namespace IKVM.Internal
 		private static int instanceCounter = 0;
 		private int instanceId = System.Threading.Interlocked.Increment(ref instanceCounter);
 		private ClassLoaderWrapper classLoader;
+		private CodeGenOptions codegenoptions;
 
 		static DynamicClassLoader()
 		{
@@ -59,9 +70,10 @@ namespace IKVM.Internal
 			dynamicTypes.Add("<Module>", null);
 		}
 
-		internal DynamicClassLoader(ClassLoaderWrapper classLoader)
+		internal DynamicClassLoader(ClassLoaderWrapper classLoader, CodeGenOptions codegenoptions)
 		{
 			this.classLoader = classLoader;
+			this.codegenoptions = codegenoptions;
 		}
 
 		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
@@ -209,9 +221,44 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal override bool EmitDebugInfo
+		{
+			get
+			{
+				return (codegenoptions & CodeGenOptions.Debug) != 0;
+			}
+		}
+
+		internal override bool EmitStackTraceInfo
+		{
+			get
+			{
+				// NOTE we're negating the flag here!
+				return (codegenoptions & CodeGenOptions.NoStackTraceInfo) == 0;
+			}
+		}
+
+		internal override bool StrictFinalFieldSemantics
+		{
+			get
+			{
+				return (codegenoptions & CodeGenOptions.StrictFinalFieldSemantics) != 0;
+			}
+		}
+
+		internal override bool NoJNI
+		{
+			get
+			{
+				return (codegenoptions & CodeGenOptions.NoJNI) != 0;
+			}
+		}
+
 		internal static void FinishAll(bool forDebug)
 		{
+#if !STATIC_COMPILER
 			JVM.FinishingForDebugSave = forDebug;
+#endif // !STATIC_COMPILER
 			Hashtable done = new Hashtable();
 			bool more = true;
 			while(more)
@@ -304,9 +351,9 @@ namespace IKVM.Internal
 			DateTime now = DateTime.Now;
 			name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
 			AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true);
-			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, JVM.Debug });
+			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, this.EmitDebugInfo });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
-			return saveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", JVM.Debug) : assemblyBuilder.DefineDynamicModule(name.Name, JVM.Debug);
+			return saveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", this.EmitDebugInfo) : assemblyBuilder.DefineDynamicModule(name.Name, this.EmitDebugInfo);
 #endif // STATIC_COMPILER
 		}
 	}

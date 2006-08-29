@@ -42,6 +42,10 @@ namespace IKVM.Internal
 #endif
 		internal abstract TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, object protectionDomain);
 		internal abstract string AllocMangledName(string name);
+		internal abstract bool EmitDebugInfo { get; }
+		internal abstract bool EmitStackTraceInfo { get; }
+		internal abstract bool StrictFinalFieldSemantics { get; }
+		internal abstract bool NoJNI { get; }
 	}
 
 	class ClassLoaderWrapper
@@ -175,6 +179,46 @@ namespace IKVM.Internal
 			return tw;
 		}
 
+		internal bool EmitDebugInfo
+		{
+			get
+			{
+				return factory != null && factory.EmitDebugInfo;
+			}
+		}
+
+		internal bool EmitStackTraceInfo
+		{
+			get
+			{
+				return factory != null && factory.EmitStackTraceInfo;
+			}
+		}
+
+		internal bool StrictFinalFieldSemantics
+		{
+			get
+			{
+				return factory != null && factory.StrictFinalFieldSemantics;
+			}
+		}
+
+		internal bool NoJNI
+		{
+			get
+			{
+				return factory != null && factory.NoJNI;
+			}
+		}
+
+		internal virtual string SourcePath
+		{
+			get
+			{
+				return null;
+			}
+		}
+
 		internal TypeWrapper DefineClass(ClassFile f, object protectionDomain)
 		{
 			string dotnetAssembly = f.IKVMAssemblyAttribute;
@@ -256,7 +300,12 @@ namespace IKVM.Internal
 #if COMPACT_FRAMEWORK
 			throw new NoClassDefFoundError("Class loading is not supported on the Compact Framework");
 #else
-			return new DynamicClassLoader(this);
+			CodeGenOptions opt = CodeGenOptions.None;
+			if(System.Diagnostics.Debugger.IsAttached)
+			{
+				opt |= CodeGenOptions.Debug;
+			}
+			return new DynamicClassLoader(this, opt);
 #endif
 		}
 

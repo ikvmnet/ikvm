@@ -459,7 +459,7 @@ namespace IKVM.Internal
 
 		internal void EmitLineNumberTable(MethodBase mb)
 		{
-			if(!IKVM.Internal.JVM.NoStackTraceInfo && linenums != null)
+			if(linenums != null)
 			{
 				AttributeHelper.SetLineNumberTable(mb, linenums);
 			}

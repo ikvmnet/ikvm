@@ -33,8 +33,7 @@ using IKVM.Internal;
 class IkvmcCompiler
 {
 	private static string manifestMainClass;
-	private static ArrayList classes = new ArrayList();
-	private static ArrayList classNames = new ArrayList();
+	private static Hashtable classes = new Hashtable();
 	private static Hashtable resources = new Hashtable();
 	private static bool compressResources;
 
@@ -326,7 +325,7 @@ class IkvmcCompiler
 				}
 				else if(s == "-nojni")
 				{
-					options.nojni = true;
+					options.codegenoptions |= CodeGenOptions.NoJNI;
 				}
 				else if(s.StartsWith("-exclude:"))
 				{
@@ -374,11 +373,11 @@ class IkvmcCompiler
 				}
 				else if(s == "-debug")
 				{
-					JVM.Debug = true;
+					options.codegenoptions |= CodeGenOptions.Debug;
 				}
 				else if(s.StartsWith("-srcpath:"))
 				{
-					JVM.SourcePath = s.Substring(9);
+					options.sourcepath = s.Substring(9);
 				}
 				else if(s.StartsWith("-remap:"))
 				{
@@ -386,7 +385,7 @@ class IkvmcCompiler
 				}
 				else if(s == "-nostacktraceinfo")
 				{
-					options.nostacktraceinfo = true;
+					options.codegenoptions |= CodeGenOptions.NoStackTraceInfo;
 				}
 				else if(s == "-opt:fields")
 				{
@@ -398,7 +397,7 @@ class IkvmcCompiler
 				}
 				else if(s == "-strictfinalfieldsemantics")
 				{
-					options.strictFinalFieldSemantics = true;
+					options.codegenoptions |= CodeGenOptions.StrictFinalFieldSemantics;
 				}
 				else if(s.StartsWith("-privatepackage:"))
 				{
@@ -508,8 +507,7 @@ class IkvmcCompiler
 		}
 		try
 		{
-			options.classes = (byte[][])classes.ToArray(typeof(byte[]));
-			options.classNames = (string[])classNames.ToArray(typeof(string));
+			options.classes = classes;
 			options.references = (string[])references.ToArray(typeof(string));
 			options.resources = resources;
 			options.classesToExclude = (string[])classesToExclude.ToArray(typeof(string));
@@ -534,6 +532,36 @@ class IkvmcCompiler
 		return buf;
 	}
 
+	private static void AddClassFile(string filename, byte[] buf, bool addResourceFallback)
+	{
+		try
+		{
+			string name = ClassFile.GetClassName(buf, 0, buf.Length);
+			if(classes.ContainsKey(name))
+			{
+				StaticCompiler.IssueMessage(Message.DuplicateClassName, name);
+			}
+			else
+			{
+				classes.Add(name, buf);
+			}
+		}
+		catch(ClassFormatError x)
+		{
+			if(addResourceFallback)
+			{
+				// not a class file, so we include it as a resource
+				// (IBM's db2os390/sqlj jars apparantly contain such files)
+				StaticCompiler.IssueMessage(Message.NotAClassFile, filename, x.Message);
+				AddResource(filename, buf);
+			}
+			else
+			{
+				StaticCompiler.IssueMessage(Message.ClassFormatError, filename, x.Message);
+			}
+		}
+	}
+
 	private static void ProcessZipFile(string file)
 	{
 		ZipFile zf = new ZipFile(file);
@@ -547,24 +575,7 @@ class IkvmcCompiler
 				}
 				else if(ze.Name.ToLower().EndsWith(".class"))
 				{
-					byte[] buf = ReadFromZip(zf, ze);
-					if(buf.Length > 4
-						&& buf[0] == 0xCA
-						&& buf[1] == 0xFE
-						&& buf[2] == 0xBA
-						&& buf[3] == 0xBE)
-					{
-						classes.Add(buf);
-						classNames.Add(ze.Name);
-					}
-					else
-					{
-						// magic is missing, so clearly not a class file,
-						// so we include it as a resource
-						// (IBM's db2os390/sqlj jars apparantly contain such files)
-						StaticCompiler.IssueMessage(Message.NotAClassFile, ze.Name);
-						AddResource(ze.Name, buf);
-					}
+					AddClassFile(ze.Name, ReadFromZip(zf, ze), true);
 				}
 				else
 				{
@@ -603,16 +614,6 @@ class IkvmcCompiler
 		}
 		else
 		{
-#if !WHIDBEY
-			if(compressResources)
-			{
-				MemoryStream mem = new MemoryStream();
-				LZOutputStream lz = new LZOutputStream(mem);
-				lz.Write(buf, 0, buf.Length);
-				lz.Flush();
-				buf = mem.ToArray();
-			}
-#endif
 			resources.Add(name, buf);
 		}
 	}
@@ -624,10 +625,9 @@ class IkvmcCompiler
 			case ".class":
 				using(FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read))
 				{
-					byte[] b = new byte[fs.Length];
-					fs.Read(b, 0, b.Length);
-					classes.Add(b);
-					classNames.Add(file);
+					byte[] buf = new byte[fs.Length];
+					fs.Read(buf, 0, buf.Length);
+					AddClassFile(file, buf, false);
 				}
 				break;
 			case ".jar":

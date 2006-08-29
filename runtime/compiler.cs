@@ -148,6 +148,7 @@ class Compiler
 	private bool nonleaf;
 	private LocalBuilder[] tempLocals = new LocalBuilder[32];
 	private Hashtable invokespecialstubcache;
+	private bool debug;
 
 	static Compiler()
 	{
@@ -224,7 +225,8 @@ class Compiler
 		this.ilGenerator = ilGenerator;
 		this.symboldocument = symboldocument;
 		this.invokespecialstubcache = invokespecialstubcache;
-		if(m.LineNumberTableAttribute != null && !JVM.NoStackTraceInfo)
+		this.debug = classLoader.EmitDebugInfo;
+		if(m.LineNumberTableAttribute != null && classLoader.EmitStackTraceInfo)
 		{
 			this.lineNumbers = new LineNumberTableAttribute.LineNumberWriter(m.LineNumberTableAttribute.Length);
 		}
@@ -264,7 +266,7 @@ class Compiler
 					(v.type != tw || tw.TypeAsLocalOrStackType != tw.TypeAsSignatureType))
 				{
 					v.builder = ilGenerator.DeclareLocal(v.type.TypeAsLocalOrStackType);
-					if(JVM.Debug && v.name != null)
+					if(debug && v.name != null)
 					{
 						v.builder.SetLocalSymInfo(v.name);
 					}
@@ -802,17 +804,17 @@ class Compiler
 	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
-		if(JVM.Debug)
+		if(classLoader.EmitDebugInfo)
 		{
 			string sourcefile = classFile.SourceFileAttribute;
 			if(sourcefile != null)
 			{
-				if(JVM.SourcePath != null)
+				if(classLoader.SourcePath != null)
 				{
 					string package = clazz.Name;
 					int index = package.LastIndexOf('.');
 					package = index == -1 ? "" : package.Substring(0, index).Replace('.', '/');
-					sourcefile = new System.IO.FileInfo(JVM.SourcePath + "/" + package + "/" + sourcefile).FullName;
+					sourcefile = new System.IO.FileInfo(classLoader.SourcePath + "/" + package + "/" + sourcefile).FullName;
 				}
 				symboldocument = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineDocument(sourcefile, SymLanguageType.Java, Guid.Empty, SymDocumentType.Text);
 				// the very first instruction in the method must have an associated line number, to be able
@@ -1200,7 +1202,7 @@ class Compiler
 	{
 		int[] scope = null;
 		// if we're emitting debugging information, we need to use scopes for local variables
-		if(JVM.Debug)
+		if(debug)
 		{
 			scope = new int[m.Instructions.Length];
 			LocalVariableTableEntry[] lvt = m.LocalVariableTableAttribute;
@@ -3505,7 +3507,7 @@ class Compiler
 			if(v.builder == null)
 			{
 				v.builder = ilGenerator.DeclareLocal(v.type.TypeAsLocalOrStackType);
-				if(JVM.Debug && v.name != null)
+				if(debug && v.name != null)
 				{
 					v.builder.SetLocalSymInfo(v.name);
 				}
@@ -3544,7 +3546,7 @@ class Compiler
 			if(v.builder == null)
 			{
 				v.builder = ilGenerator.DeclareLocal(v.type.TypeAsLocalOrStackType);
-				if(JVM.Debug && v.name != null)
+				if(debug && v.name != null)
 				{
 					v.builder.SetLocalSymInfo(v.name);
 				}

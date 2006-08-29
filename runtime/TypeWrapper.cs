@@ -3410,7 +3410,7 @@ namespace IKVM.Internal
 						fields[i] = new ConstantFieldWrapper(wrapper, null, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.LiteralField);
 					}
 					else if(fld.IsFinal && (JVM.IsStaticCompiler && (fld.IsPublic || fld.IsProtected))
-						&& !wrapper.IsInterface && (!JVM.StrictFinalFieldSemantics || ReferenceEquals(wrapper.Name, StringConstants.JAVA_LANG_SYSTEM)))
+						&& !wrapper.IsInterface && (!wrapper.classLoader.StrictFinalFieldSemantics || ReferenceEquals(wrapper.Name, StringConstants.JAVA_LANG_SYSTEM)))
 					{
 						fields[i] = new GetterFieldWrapper(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null, null);
 					}
@@ -3638,7 +3638,7 @@ namespace IKVM.Internal
 						annotationAttributeType = annotationBuilder.AttributeTypeName;
 					}
 					string sourceFile = null;
-					if(!JVM.NoStackTraceInfo)
+					if(wrapper.classLoader.EmitStackTraceInfo)
 					{
 						if(f.SourceFileAttribute != null)
 						{
@@ -3694,7 +3694,7 @@ namespace IKVM.Internal
 						CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(AnnotationAttributeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { annotationAttributeType });
 						typeBuilder.SetCustomAttribute(cab);
 					}
-					if(!JVM.NoStackTraceInfo)
+					if(wrapper.classLoader.EmitStackTraceInfo)
 					{
 						if(f.SourceFileAttribute != null)
 						{
@@ -3810,7 +3810,7 @@ namespace IKVM.Internal
 				// we know that the verifier won't try to load any types (which isn't allowed at this time)
 				try
 				{
-					new MethodAnalyzer(wrapper, null, classFile, m, null);
+					new MethodAnalyzer(wrapper, null, classFile, m, wrapper.classLoader);
 					return true;
 				}
 				catch(VerifyError)
@@ -4162,7 +4162,7 @@ namespace IKVM.Internal
 							attribs &= ~FieldAttributes.FieldAccessMask;
 							attribs |= FieldAttributes.PrivateScope;
 						}
-						else if(wrapper.IsInterface || JVM.StrictFinalFieldSemantics)
+						else if(wrapper.IsInterface || wrapper.classLoader.StrictFinalFieldSemantics)
 						{
 							attribs |= FieldAttributes.InitOnly;
 						}
@@ -4504,7 +4504,7 @@ namespace IKVM.Internal
 									}
 									else
 									{
-										if(JVM.NoJniStubs)
+										if(wrapper.classLoader.NoJNI)
 										{
 											// since NoJniStubs can only be set when we're statically compiling, it is safe to use the "compiler" trace switch
 											Tracer.Warning(Tracer.Compiler, "Native method not implemented: {0}.{1}.{2}", classFile.Name, m.Name, m.Signature);
@@ -5253,11 +5253,7 @@ namespace IKVM.Internal
 
 			private class JniBuilder
 			{
-#if STATIC_COMPILER
-				private static readonly Type localRefStructType = StaticCompiler.GetType("IKVM.Runtime.JNI+Frame");
-#else
-				private static readonly Type localRefStructType = typeof(IKVM.Runtime.JNI.Frame);
-#endif
+				private static readonly Type localRefStructType = JVM.LoadType(typeof(IKVM.Runtime.JNI.Frame));
 				private static readonly MethodInfo jniFuncPtrMethod = localRefStructType.GetMethod("GetFuncPtr");
 				private static readonly MethodInfo enterLocalRefStruct = localRefStructType.GetMethod("Enter");
 				private static readonly MethodInfo leaveLocalRefStruct = localRefStructType.GetMethod("Leave");
@@ -6705,7 +6701,7 @@ namespace IKVM.Internal
 
 		protected virtual void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method)
 		{
-			if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || JVM.Debug || DynamicClassLoader.IsSaveDebugImage)
+			if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || GetClassLoader().EmitDebugInfo)
 			{
 				AddParameterNames(method, m, null);
 			}
@@ -9268,7 +9264,7 @@ namespace IKVM.Internal
 					{
 						Type[] interfaceTypes = type.GetInterfaces();
 						interfaces = new TypeWrapper[interfaceTypes.Length];
-						for(int i = 0; i < interfaces.Length; i++)
+						for(int i = 0; i < interfaceTypes.Length; i++)
 						{
 							if(interfaceTypes[i].DeclaringType != null &&
 								AttributeHelper.IsHideFromJava(interfaceTypes[i]) &&

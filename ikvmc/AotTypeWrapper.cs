@@ -283,7 +283,7 @@ namespace IKVM.Internal
 			if((classFile.IsPublic && (m.IsPublic || m.IsProtected))
 				|| m.ParameterAnnotations != null
 				|| parameters != null
-				|| JVM.Debug)
+				|| classLoader.EmitDebugInfo)
 			{
 				string[] parameterNames = null;
 				if(parameters != null)
@@ -332,7 +332,7 @@ namespace IKVM.Internal
 		private void AddParameterNames(MethodBuilder method, MethodWrapper mw)
 		{
 			IKVM.Internal.MapXml.Param[] parameters = GetXmlMapParameters(Name, mw.Name, mw.Signature);
-			if((mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || parameters != null || JVM.Debug)
+			if((mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || parameters != null || classLoader.EmitDebugInfo)
 			{
 				string[] parameterNames = null;
 				if(parameters != null)

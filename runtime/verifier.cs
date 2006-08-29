@@ -1421,7 +1421,7 @@ class LocalVar
 	internal int local;
 	internal TypeWrapper type;
 	internal System.Reflection.Emit.LocalBuilder builder;
-	// used to emit debugging info, only available if JVM.Debug is true
+	// used to emit debugging info, only available if ClassLoaderWrapper.EmitDebugInfo is true
 	internal string name;
 	internal int start_pc;
 	internal int end_pc;
@@ -2834,11 +2834,11 @@ class MethodAnalyzer
 		{
 			if(localStoreReaders[i] != null)
 			{
-				VisitLocalLoads(locals, localByStoreSite, localStoreReaders[i], i);
+				VisitLocalLoads(locals, localByStoreSite, localStoreReaders[i], i, classLoader.EmitDebugInfo);
 			}
 		}
 		Hashtable forwarders = new Hashtable();
-		if(JVM.Debug)
+		if(classLoader.EmitDebugInfo)
 		{
 			// if we're emitting debug info, we need to keep dead stores as well...
 			for(int i = 0; i < instructions.Length; i++)
@@ -3266,7 +3266,7 @@ class MethodAnalyzer
 			}
 			// are we trying to mutate a final field? (they are read-only from outside of the defining class)
 			if(write && field.IsFinal
-				&& ((isStatic ? wrapper != cpi.GetClassType() : wrapper != thisType) || (JVM.StrictFinalFieldSemantics && (isStatic ? (mw != null && mw.Name != "<clinit>") : (mw == null || mw.Name != "<init>")))))
+				&& ((isStatic ? wrapper != cpi.GetClassType() : wrapper != thisType) || (wrapper.GetClassLoader().StrictFinalFieldSemantics && (isStatic ? (mw != null && mw.Name != "<clinit>") : (mw == null || mw.Name != "<init>")))))
 			{
 				instr.SetHardError(HardError.IllegalAccessError, AllocErrorMessage("Field " + field.DeclaringType.Name + "." + field.Name + " is final"));
 				return;
@@ -3347,7 +3347,7 @@ class MethodAnalyzer
 			bc == NormalizedByteCode.__dstore;
 	}
 
-	private void VisitLocalLoads(ArrayList locals, Hashtable localByStoreSite, Hashtable storeSites, int instructionIndex)
+	private void VisitLocalLoads(ArrayList locals, Hashtable localByStoreSite, Hashtable storeSites, int instructionIndex, bool debug)
 	{
 		Debug.Assert(IsLoadLocal(method.Instructions[instructionIndex].NormalizedOpCode));
 		LocalVar local = null;
@@ -3412,7 +3412,7 @@ class MethodAnalyzer
 				local.type = type;
 			}
 			local.isArg = isArg;
-			if(JVM.Debug)
+			if(debug)
 			{
 				local.FindLvtEntry(method, instructionIndex);
 			}

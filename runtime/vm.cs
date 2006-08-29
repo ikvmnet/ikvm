@@ -71,20 +71,13 @@ namespace IKVM.Internal
 	{
 #if STATIC_COMPILER
 		internal const bool IsStaticCompiler = true;
+		internal const bool FinishingForDebugSave = false;
 #else
 		internal const bool IsStaticCompiler = false;
-#endif
-
-		private static bool debug = System.Diagnostics.Debugger.IsAttached;
-		private static bool noJniStubs;
-		private static bool noStackTraceInfo;
-		private static string sourcePath;
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
-#if !STATIC_COMPILER
+		private static bool finishingForDebugSave;
 		private static ikvm.@internal.LibraryVMInterface lib;
 #endif
-		private static bool strictFinalFieldSemantics;
-		private static bool finishingForDebugSave;
 		private static Assembly coreAssembly;
 
 		internal static Version SafeGetAssemblyVersion(Assembly asm)
@@ -138,13 +131,11 @@ namespace IKVM.Internal
 		private static Assembly[] UnsafeGetAssemblies()
 		{
 			new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
-#if WHIDBEY
-			if(JVM.IsStaticCompiler)
-			{
-				return AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
-			}
-#endif
+#if WHIDBEY && STATIC_COMPILER
+			return AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
+#else
 			return AppDomain.CurrentDomain.GetAssemblies();
+#endif
 		}
 
 		private static Type UnsafeGetType(Assembly asm, string name)
@@ -218,66 +209,7 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 #endif // COMPACT_FRAMEWORK
 
-		internal static bool StrictFinalFieldSemantics
-		{
-			get
-			{
-				return strictFinalFieldSemantics;
-			}
-			set
-			{
-				strictFinalFieldSemantics = value;
-			}
-		}
-
-		public static bool Debug
-		{
-			get
-			{
-				return debug;
-			}
-			set
-			{
-				debug = value;
-			}
-		}
-
-		public static string SourcePath
-		{
-			get
-			{
-				return sourcePath;
-			}
-			set
-			{
-				sourcePath = value;
-			}
-		}
-
-		internal static bool NoJniStubs
-		{
-			get
-			{
-				return noJniStubs;
-			}
-			set
-			{
-				noJniStubs = value;
-			}
-		}
-
-		internal static bool NoStackTraceInfo
-		{
-			get
-			{
-				return noStackTraceInfo;
-			}
-			set
-			{
-				noStackTraceInfo = value;
-			}
-		}
-
+#if !STATIC_COMPILER
 		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters
 		{
 			get
@@ -301,6 +233,7 @@ namespace IKVM.Internal
 				finishingForDebugSave = value;
 			}
 		}
+#endif // !STATIC_COMPILER
 
 		internal static bool IsUnix
 		{
