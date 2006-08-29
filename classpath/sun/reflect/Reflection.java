@@ -35,11 +35,27 @@ public final class Reflection
         return caller == declarer
             || (modifiers & Modifier.PUBLIC) != 0
             || ((modifiers & Modifier.PROTECTED) != 0 && declarer.isAssignableFrom(caller))
-            || ((modifiers & Modifier.PRIVATE) == 0 && caller.getPackage() == declarer.getPackage());
+            || ((modifiers & Modifier.PRIVATE) == 0 && isSamePackage(caller, declarer));
+    }
+
+    private static boolean isSamePackage(Class c1, Class c2)
+    {
+        if (c1.getClassLoader() == c2.getClassLoader())
+        {
+            String name1 = c1.getName();
+            String name2 = c2.getName();
+            int lastdot1 = name1.lastIndexOf('.');
+            int lastdot2 = name2.lastIndexOf('.');
+            if (lastdot1 == lastdot2)
+            {
+                return lastdot1 == -1 || name1.regionMatches(0, name2, 0, lastdot1);
+            }
+        }
+        return false;
     }
 
     public static Class getCallerClass(int skip)
     {
-        return VMStackWalker.getClassContext()[skip - 1];
+        return VMStackWalker.getClassContext()[skip];
     }
 }
