@@ -118,6 +118,10 @@ namespace ikvm.awt
 				form.CreateControl();
 				// HACK I have no idea why this line is necessary...
 				IntPtr p = form.Handle;
+				if(p == IntPtr.Zero)
+				{
+					// shut up compiler warning
+				}
 				bogusForm = form;
 				// FXBUG to make sure we can be aborted (Thread.Abort) we need to periodically
 				// fire an event (because otherwise we'll be blocking in unmanaged code and
@@ -135,6 +139,10 @@ namespace ikvm.awt
 			control.CreateControl();
 			// HACK here we go again...
 			IntPtr p = control.Handle;
+			if(p == IntPtr.Zero)
+			{
+				// shut up compiler warning
+			}
 			return control;
 		}
 
@@ -331,6 +339,7 @@ namespace ikvm.awt
 			return new string[] { "Dialog", "SansSerif", "Serif", "Monospaced", "DialogInput" };
 		}
 
+		[Obsolete]
 		public override java.awt.FontMetrics getFontMetrics(java.awt.Font font)
 		{
 			return new NetFontMetrics(font, getScreenResolution());
@@ -1131,7 +1140,7 @@ namespace ikvm.awt
 		{
 			if(_clip != null)
 			{
-				return (java.awt.Rectangle)_clip.clone();
+				return new java.awt.Rectangle(_clip);
 			}
 			return null;
 		}
