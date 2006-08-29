@@ -472,11 +472,11 @@ namespace IKVM.Internal
 			// NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
 			// the method had any declared exceptions, the declaredExceptions field would have
 			// been set)
-			if(method != null
-#if !COMPACT_FRAMEWORK
-				&& !(method is MethodBuilder)
+#if COMPACT_FRAMEWORK
+			if(method != null)
+#else
+			if(method != null && !(method is MethodBuilder))
 #endif
-				)
 			{
 				ThrowsAttribute attr = AttributeHelper.GetThrows(method);
 				if(attr != null)
