@@ -1446,10 +1446,16 @@
 ../../classpath/gnu/javax/sound/sampled/WAV/WAVReader.java
 ../../classpath/gnu/javax/swing/plaf/gnu/GNULookAndFeel.java
 ../../classpath/gnu/javax/swing/plaf/metal/CustomizableTheme.java
-../../classpath/gnu/javax/swing/text/html/CharacterAttributeTranslator.java
 ../../classpath/gnu/javax/swing/text/html/CombinedAttributes.java
+../../classpath/gnu/javax/swing/text/html/css/CSSColor.java
 ../../classpath/gnu/javax/swing/text/html/css/CSSLexicalException.java
+../../classpath/gnu/javax/swing/text/html/css/CSSParser.java
+../../classpath/gnu/javax/swing/text/html/css/CSSParserCallback.java
+../../classpath/gnu/javax/swing/text/html/css/CSSParserException.java
 ../../classpath/gnu/javax/swing/text/html/css/CSSScanner.java
+../../classpath/gnu/javax/swing/text/html/css/FontSize.java
+../../classpath/gnu/javax/swing/text/html/css/FontStyle.java
+../../classpath/gnu/javax/swing/text/html/css/FontWeight.java
 ../../classpath/gnu/javax/swing/text/html/ImageViewIconFactory.java
 ../../classpath/gnu/javax/swing/text/html/parser/gnuDTD.java
 ../../classpath/gnu/javax/swing/text/html/parser/GnuParserDelegator.java
@@ -3947,7 +3953,6 @@
 ../../classpath/javax/swing/text/html/BlockView.java
 ../../classpath/javax/swing/text/html/BRView.java
 ../../classpath/javax/swing/text/html/CSS.java
-../../classpath/javax/swing/text/html/CSSParser.java
 ../../classpath/javax/swing/text/html/FormView.java
 ../../classpath/javax/swing/text/html/HRuleView.java
 ../../classpath/javax/swing/text/html/HTML.java
@@ -3958,6 +3963,8 @@
 ../../classpath/javax/swing/text/html/InlineView.java
 ../../classpath/javax/swing/text/html/ListView.java
 ../../classpath/javax/swing/text/html/MinimalHTMLWriter.java
+../../classpath/javax/swing/text/html/MultiAttributeSet.java
+../../classpath/javax/swing/text/html/MultiStyle.java
 ../../classpath/javax/swing/text/html/NullView.java
 ../../classpath/javax/swing/text/html/ObjectView.java
 ../../classpath/javax/swing/text/html/Option.java
@@ -3974,6 +3981,7 @@
 ../../classpath/javax/swing/text/html/parser/TagElement.java
 ../../classpath/javax/swing/text/html/StyleSheet.java
 ../../classpath/javax/swing/text/html/TableView.java
+../../classpath/javax/swing/text/html/ViewAttributeSet.java
 ../../classpath/javax/swing/text/IconView.java
 ../../classpath/javax/swing/text/InternationalFormatter.java
 ../../classpath/javax/swing/text/JTextComponent.java
