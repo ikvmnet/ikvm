@@ -58,6 +58,10 @@ namespace IKVM.Internal
 		private AssemblyClassLoader[] referencedAssemblies;
 		private Hashtable nameMappings = new Hashtable();
 		private Hashtable packages = new Hashtable();
+		private Hashtable ghosts;
+		private TypeWrapper[] mappedExceptions;
+		private bool[] mappedExceptionsAllSubClasses;
+		private Hashtable mapxml;
 
 		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
 			: base(null)
@@ -1814,7 +1818,7 @@ namespace IKVM.Internal
 
 			if(hasRemappedTypes)
 			{
-				AotTypeWrapper.SetupGhosts(map);
+				SetupGhosts(map);
 			}
 
 			// 2nd pass, resolve interfaces, publish methods/fields
@@ -1834,6 +1838,210 @@ namespace IKVM.Internal
 					typeWrapper.Process2ndPassStep2(map);
 				}
 			}
+		}
+
+		internal bool IsMapUnsafeException(TypeWrapper tw)
+		{
+			if(mappedExceptions != null)
+			{
+				for(int i = 0; i < mappedExceptions.Length; i++)
+				{
+					if(mappedExceptions[i].IsSubTypeOf(tw) ||
+						(mappedExceptionsAllSubClasses[i] && tw.IsSubTypeOf(mappedExceptions[i])))
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		internal void LoadMappedExceptions(IKVM.Internal.MapXml.Root map)
+		{
+			if(map.exceptionMappings != null)
+			{
+				mappedExceptionsAllSubClasses = new bool[map.exceptionMappings.Length];
+				mappedExceptions = new TypeWrapper[map.exceptionMappings.Length];
+				for(int i = 0; i < mappedExceptions.Length; i++)
+				{
+					string dst = map.exceptionMappings[i].dst;
+					if(dst[0] == '*')
+					{
+						mappedExceptionsAllSubClasses[i] = true;
+						dst = dst.Substring(1);
+					}
+					mappedExceptions[i] = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dst);
+				}
+			}
+		}
+
+		private class ExceptionMapEmitter : CodeEmitter
+		{
+			private IKVM.Internal.MapXml.ExceptionMapping[] map;
+
+			internal ExceptionMapEmitter(IKVM.Internal.MapXml.ExceptionMapping[] map)
+			{
+				this.map = map;
+			}
+
+			internal override void Emit(ILGenerator ilgen)
+			{
+				MethodWrapper mwSuppressFillInStackTrace = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
+				mwSuppressFillInStackTrace.Link();
+				ilgen.Emit(OpCodes.Ldarg_0);
+				ilgen.Emit(OpCodes.Callvirt, typeof(Object).GetMethod("GetType"));
+				MethodInfo GetTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle");
+				for(int i = 0; i < map.Length; i++)
+				{
+					ilgen.Emit(OpCodes.Dup);
+					ilgen.Emit(OpCodes.Ldtoken, Type.GetType(map[i].src));
+					ilgen.Emit(OpCodes.Call, GetTypeFromHandle);
+					ilgen.Emit(OpCodes.Ceq);
+					Label label = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Brfalse_S, label);
+					ilgen.Emit(OpCodes.Pop);
+					if(map[i].code != null)
+					{
+						ilgen.Emit(OpCodes.Ldarg_0);
+						// TODO we should manually walk the instruction list and add a suppressFillInStackTrace call
+						// before each newobj that instantiates an exception
+						map[i].code.Emit(ilgen);
+						ilgen.Emit(OpCodes.Ret);
+					}
+					else
+					{
+						TypeWrapper tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(map[i].dst);
+						MethodWrapper mw = tw.GetMethodWrapper("<init>", "()V", false);
+						mw.Link();
+						mwSuppressFillInStackTrace.EmitCall(ilgen);
+						mw.EmitNewobj(ilgen);
+						ilgen.Emit(OpCodes.Ret);
+					}
+					ilgen.MarkLabel(label);
+				}
+				ilgen.Emit(OpCodes.Pop);
+				ilgen.Emit(OpCodes.Ldarg_0);
+				ilgen.Emit(OpCodes.Ret);
+			}
+		}
+
+		internal void LoadMapXml(IKVM.Internal.MapXml.Root map)
+		{
+			mapxml = new Hashtable();
+			// HACK we've got a hardcoded location for the exception mapping method that is generated from the xml mapping
+			mapxml["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
+			foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
+			{
+				// HACK if it is not a remapped type, we assume it is a container for native methods
+				if(c.Shadows == null)
+				{
+					string className = c.Name;
+					mapxml.Add(className, c);
+					if(c.Methods != null)
+					{
+						foreach(IKVM.Internal.MapXml.Method method in c.Methods)
+						{
+							if(method.body != null)
+							{
+								string methodName = method.Name;
+								string methodSig = method.Sig;
+								mapxml.Add(className + "." + methodName + methodSig, method.body);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		internal Hashtable GetMapXml()
+		{
+			return mapxml;
+		}
+
+		internal IKVM.Internal.MapXml.Param[] GetXmlMapParameters(string classname, string method, string sig)
+		{
+			if(mapxml != null)
+			{
+				IKVM.Internal.MapXml.Class clazz = (IKVM.Internal.MapXml.Class)mapxml[classname];
+				if(clazz != null)
+				{
+					if(method == "<init>" && clazz.Constructors != null)
+					{
+						for(int i = 0; i < clazz.Constructors.Length; i++)
+						{
+							if(clazz.Constructors[i].Sig == sig)
+							{
+								return clazz.Constructors[i].Params;
+							}
+						}
+					}
+					else if(clazz.Methods != null)
+					{
+						for(int i = 0; i < clazz.Methods.Length; i++)
+						{
+							if(clazz.Methods[i].Name == method && clazz.Methods[i].Sig == sig)
+							{
+								return clazz.Methods[i].Params;
+							}
+						}
+					}
+				}
+			}
+			return null;
+		}
+
+		internal bool IsGhost(TypeWrapper tw)
+		{
+			return ghosts != null && tw.IsInterface && ghosts.ContainsKey(tw.Name);
+		}
+
+		private void SetupGhosts(IKVM.Internal.MapXml.Root map)
+		{
+			ghosts = new Hashtable();
+
+			// find the ghost interfaces
+			foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
+			{
+				if(c.Shadows != null && c.Interfaces != null)
+				{
+					// NOTE we don't support interfaces that inherit from other interfaces
+					// (actually, if they are explicitly listed it would probably work)
+					TypeWrapper typeWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().GetLoadedClass(c.Name);
+					foreach(IKVM.Internal.MapXml.Interface iface in c.Interfaces)
+					{
+						TypeWrapper ifaceWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().GetLoadedClass(iface.Name);
+						if(ifaceWrapper == null || !ifaceWrapper.TypeAsTBD.IsAssignableFrom(typeWrapper.TypeAsTBD))
+						{
+							AddGhost(iface.Name, typeWrapper);
+						}
+					}
+				}
+			}
+			// we manually add the array ghost interfaces
+			TypeWrapper array = ClassLoaderWrapper.GetWrapperFromType(typeof(Array));
+			AddGhost("java.io.Serializable", array);
+			AddGhost("java.lang.Cloneable", array);
+		}
+
+		private void AddGhost(string interfaceName, TypeWrapper implementer)
+		{
+			ArrayList list = (ArrayList)ghosts[interfaceName];
+			if(list == null)
+			{
+				list = new ArrayList();
+				ghosts[interfaceName] = list;
+			}
+			list.Add(implementer);
+		}
+
+		internal TypeWrapper[] GetGhostImplementers(TypeWrapper wrapper)
+		{
+			ArrayList list = (ArrayList)ghosts[wrapper.Name];
+			if(list == null)
+			{
+				return TypeWrapper.EmptyArray;
+			}
+			return (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
 		}
 
 		internal void FinishRemappedTypes()
@@ -2407,7 +2615,7 @@ namespace IKVM.Internal
 			}
 			if(map != null)
 			{
-				AotTypeWrapper.LoadMappedExceptions(map);
+				loader.LoadMappedExceptions(map);
 				// mark all exceptions that are unsafe for mapping with a custom attribute,
 				// so that at runtime we can quickly assertain if an exception type can be
 				// caught without filtering
@@ -2418,7 +2626,7 @@ namespace IKVM.Internal
 						AttributeHelper.SetExceptionIsUnsafeForMapping(tw.TypeAsBuilder);
 					}
 				}
-				AotTypeWrapper.LoadMapXml(map);
+				loader.LoadMapXml(map);
 				Tracer.Info(Tracer.Compiler, "Loading remapped types (2)");
 				loader.FinishRemappedTypes();
 			}
