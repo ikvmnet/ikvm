@@ -35,7 +35,6 @@ class IkvmcCompiler
 	private static string manifestMainClass;
 	private static Hashtable classes = new Hashtable();
 	private static Hashtable resources = new Hashtable();
-	private static bool compressResources;
 
 	private static ArrayList GetArgs(string[] args)
 	{
@@ -393,7 +392,7 @@ class IkvmcCompiler
 				}
 				else if(s == "-compressresources")
 				{
-					compressResources = true;
+					options.compressedResources = true;
 				}
 				else if(s == "-strictfinalfieldsemantics")
 				{
@@ -473,7 +472,6 @@ class IkvmcCompiler
 				}
 			}
 		}
-		options.compressedResources = compressResources;
 		if(options.assembly == null)
 		{
 			string basename = options.path == null ? defaultAssemblyName : new FileInfo(options.path).Name;
