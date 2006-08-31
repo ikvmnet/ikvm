@@ -1271,14 +1271,6 @@ class VerifierTypeWrapper : TypeWrapper
 	private int index;
 	private TypeWrapper underlyingType;
 
-	internal override System.Reflection.Assembly Assembly
-	{
-		get
-		{
-			return null;
-		}
-	}
-
 	public override string ToString()
 	{
 		return GetType().Name + "[" + Name + "," + index + "," + underlyingType + "]";

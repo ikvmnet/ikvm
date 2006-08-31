@@ -1569,7 +1569,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 
 		public static Assembly GetClassAssembly(object clazz)
 		{
-			return TypeWrapper.FromClass(clazz).Assembly;
+			return ((IKVM.Internal.AssemblyClassLoader)TypeWrapper.FromClass(clazz).GetClassLoader()).Assembly;
 		}
 
 		public static string[] GetPackages(object classLoader)
@@ -1633,7 +1633,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 		{
 			public static string getAssemblyName(object c)
 			{
-				return TypeWrapper.FromClass(c).Assembly.FullName;
+				return ((IKVM.Internal.AssemblyClassLoader)TypeWrapper.FromClass(c).GetClassLoader()).Assembly.FullName;
 			}
 
 			public static object getFieldConstantValue(object fieldWrapper)

@@ -2045,25 +2045,17 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal abstract Assembly Assembly
-		{
-			get;
-		}
-
 		// returns true iff wrapper is allowed to access us
 		internal bool IsAccessibleFrom(TypeWrapper wrapper)
 		{
 			return IsPublic
-				|| (IsInternal && this.Assembly == wrapper.Assembly)
+				|| (IsInternal && GetClassLoader() == wrapper.GetClassLoader())
 				|| IsInSamePackageAs(wrapper);
 		}
 
 		internal bool IsInSamePackageAs(TypeWrapper wrapper)
 		{
-			if(GetClassLoader() == wrapper.GetClassLoader() &&
-				// Both types must also be in the same assembly, otherwise
-				// the packages are not accessible.
-				wrapper.Assembly == this.Assembly)
+			if(GetClassLoader() == wrapper.GetClassLoader())
 			{
 				int index1 = name.LastIndexOf('.');
 				int index2 = wrapper.name.LastIndexOf('.');
@@ -2799,14 +2791,6 @@ namespace IKVM.Internal
 			return tw;
 		}
 
-		internal override Assembly Assembly
-		{
-			get
-			{
-				return null;
-			}
-		}
-
 		internal override string SigName
 		{
 			get
@@ -2919,14 +2903,6 @@ namespace IKVM.Internal
 		{
 			this.type = type;
 			this.sigName = sigName;
-		}
-
-		internal override Assembly Assembly
-		{
-			get
-			{
-				return null;
-			}
 		}
 
 		internal override string SigName
@@ -3192,14 +3168,6 @@ namespace IKVM.Internal
 		internal override ClassLoaderWrapper GetClassLoader()
 		{
 			return classLoader;
-		}
-
-		internal override Assembly Assembly
-		{
-			get
-			{
-				return classLoader.GetTypeWrapperFactory().AssemblyBuilder;
-			}
 		}
 
 		internal override Modifiers ReflectiveModifiers
@@ -5588,7 +5556,7 @@ namespace IKVM.Internal
 					{
 						// RULE 4: package methods can only be overridden in the same package
 						if(baseMethod.DeclaringType.IsInSamePackageAs(wrapper)
-							|| (baseMethod.IsInternal && baseMethod.DeclaringType.Assembly == wrapper.Assembly))
+							|| (baseMethod.IsInternal && baseMethod.DeclaringType.GetClassLoader() == wrapper.GetClassLoader()))
 						{
 							return baseMethod;
 						}
@@ -7271,14 +7239,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override Assembly Assembly
-		{
-			get
-			{
-				return type.Assembly;
-			}
-		}
-
 		internal override TypeWrapper[] Interfaces
 		{
 			get
@@ -8254,14 +8214,6 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal override Assembly Assembly
-			{
-				get
-				{
-					return delegateType.Assembly;
-				}
-			}
-
 			internal override TypeWrapper DeclaringTypeWrapper
 			{
 				get
@@ -8410,14 +8362,6 @@ namespace IKVM.Internal
 				return null;
 			}
 #endif // !STATIC_COMPILER
-
-			internal override Assembly Assembly
-			{
-				get
-				{
-					return attributeType.Assembly;
-				}
-			}
 
 			internal override TypeWrapper DeclaringTypeWrapper
 			{
@@ -8895,14 +8839,6 @@ namespace IKVM.Internal
 				return GetEnumPrimitiveValue(obj);
 			}
 #endif // !STATIC_COMPILER
-		}
-
-		internal override Assembly Assembly
-		{
-			get
-			{
-				return type.Assembly;
-			}
 		}
 
 		private class ValueTypeDefaultCtor : MethodWrapper
@@ -9620,14 +9556,6 @@ namespace IKVM.Internal
 			get
 			{
 				return Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.ReflectiveModifiers & Modifiers.AccessMask);
-			}
-		}
-
-		internal override Assembly Assembly
-		{
-			get
-			{
-				return ultimateElementTypeWrapper.Assembly;
 			}
 		}
 

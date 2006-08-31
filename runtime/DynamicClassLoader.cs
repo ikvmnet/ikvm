@@ -323,21 +323,10 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override AssemblyBuilder AssemblyBuilder
-		{
-			get
-			{
-				return (AssemblyBuilder)this.ModuleBuilder.Assembly;
-			}
-		}
-
 		protected virtual ModuleBuilder CreateModuleBuilder()
 		{
 #if STATIC_COMPILER
-			// HACK this is required because DelegateInnerClassTypeWrapper currently uses the ModuleBuilder
-			// property to get a ModuleBuilder on the class loader that defined the delegate,
-			// instead of the class loader that is using the delegate (as it probably should)
-			return ClassLoaderWrapper.GetBootstrapClassLoader().GetTypeWrapperFactory().ModuleBuilder;
+			throw new InvalidOperationException();
 #else // STATIC_COMPILER
 			AssemblyName name = new AssemblyName();
 			if(saveDebugImage)

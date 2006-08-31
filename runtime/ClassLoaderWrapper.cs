@@ -38,7 +38,6 @@ namespace IKVM.Internal
 	{
 #if !COMPACT_FRAMEWORK
 		internal abstract ModuleBuilder ModuleBuilder { get; }
-		internal abstract AssemblyBuilder AssemblyBuilder { get; }
 #endif
 		internal abstract TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, object protectionDomain);
 		internal abstract string AllocMangledName(string name);
@@ -243,10 +242,6 @@ namespace IKVM.Internal
 				if(tw == null)
 				{
 					throw new NoClassDefFoundError(f.Name + " (type not found in " + asm.FullName + ")");
-				}
-				if(tw.Assembly != asm)
-				{
-					throw new NoClassDefFoundError(f.Name + " (assembly mismatch)");
 				}
 				return RegisterInitiatingLoader(tw);
 			}

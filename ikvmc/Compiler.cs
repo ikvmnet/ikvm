@@ -509,7 +509,7 @@ class IkvmcCompiler
 			options.references = (string[])references.ToArray(typeof(string));
 			options.resources = resources;
 			options.classesToExclude = (string[])classesToExclude.ToArray(typeof(string));
-			return AotCompiler.Compile(options);
+			return CompilerClassLoader.Compile(options);
 		}
 		catch(Exception x)
 		{

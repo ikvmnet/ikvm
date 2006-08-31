@@ -437,14 +437,6 @@ namespace IKVM.Internal
 			private IKVM.Internal.MapXml.Class classDef;
 			private TypeWrapper[] interfaceWrappers;
 
-			internal override Assembly Assembly
-			{
-				get
-				{
-					return typeBuilder.Assembly;
-				}
-			}
-
 			internal override ClassLoaderWrapper GetClassLoader()
 			{
 				return classLoader;
@@ -2063,183 +2055,11 @@ namespace IKVM.Internal
 			{
 				foreach(IKVM.Internal.MapXml.Attribute attr in assemblyAttributes)
 				{
-					AttributeHelper.SetCustomAttribute(this.GetTypeWrapperFactory().AssemblyBuilder, attr);
+					AttributeHelper.SetCustomAttribute(assemblyBuilder, attr);
 				}
 			}
 		}
-	}
 
-	class CompilerOptions
-	{
-		internal string path;
-		internal string keyfilename;
-		internal string keycontainer;
-		internal string version;
-		internal string fileversion;
-		internal bool targetIsModule;
-		internal string assembly;
-		internal string mainClass;
-		internal ApartmentState apartment;
-		internal PEFileKinds target;
-		internal bool guessFileKind;
-		internal Hashtable classes;
-		internal string[] references;
-		internal Hashtable resources;
-		internal string[] classesToExclude;
-		internal string remapfile;
-		internal Hashtable props;
-		internal bool noglobbing;
-		internal CodeGenOptions codegenoptions;
-		internal bool removeUnusedFields;
-		internal bool compressedResources;
-		internal string runtimeAssembly;
-		internal string[] privatePackages;
-		internal string sourcepath;
-	}
-
-	enum Message
-	{
-		// These are the informational messages
-		MainMethodFound = 1,
-		OutputFileIs = 2,
-		AutoAddRef = 3,
-		MainMethodFromManifest = 4,
-		// This is were the warnings start
-		StartWarnings = 100,
-		ClassNotFound = 100,
-		ClassFormatError = 101,
-		DuplicateClassName = 102,
-		IllegalAccessError = 103,
-		VerificationError = 104,
-		NoClassDefFoundError = 105,
-		GenericUnableToCompileError = 106,
-		DuplicateResourceName = 107,
-		NotAClassFile = 108,
-	}
-
-	class StaticCompiler
-	{
-		internal static Assembly runtimeAssembly;
-
-		internal static Type GetType(string name)
-		{
-			return GetType(name, true);
-		}
-
-		internal static Type GetType(string name, bool throwOnError)
-		{
-			if(runtimeAssembly.GetType(name) != null)
-			{
-				return runtimeAssembly.GetType(name);
-			}
-#if WHIDBEY
-			foreach(Assembly asm in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
-			{
-				Type t = asm.GetType(name, false);
-				if(t != null)
-				{
-					return t;
-				}
-			}
-			// try mscorlib as well
-			return typeof(object).Assembly.GetType(name, throwOnError);
-#else
-			foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
-			{
-				Type t = asm.GetType(name, false);
-				if(t != null)
-				{
-					return t;
-				}
-			}
-			if(throwOnError)
-			{
-				throw new TypeLoadException(name);
-			}
-			return null;
-#endif
-		}
-
-		private static Hashtable suppressWarnings = new Hashtable();
-
-		internal static void SuppressWarning(string key)
-		{
-			suppressWarnings[key] = key;
-		}
-
-		internal static void IssueMessage(Message msgId, params string[] values)
-		{
-			StringBuilder sb = new StringBuilder();
-			sb.Append((int)msgId);
-			foreach(string s in values)
-			{
-				sb.Append(':').Append(s);
-			}
-			string key = sb.ToString();
-			if(suppressWarnings.ContainsKey(key)
-				|| suppressWarnings.ContainsKey(((int)msgId).ToString()))
-			{
-				return;
-			}
-			suppressWarnings.Add(key, key);
-			string msg;
-			switch(msgId)
-			{
-				case Message.MainMethodFound:
-					msg = "found main method in class \"{0}\"";
-					break;
-				case Message.OutputFileIs:
-					msg = "output file is \"{0}\"";
-					break;
-				case Message.AutoAddRef:
-					msg = "automatically adding reference to \"{0}\"";
-					break;
-				case Message.MainMethodFromManifest:
-					msg = "using main class \"{0}\" based on jar manifest";
-					break;
-				case Message.ClassNotFound:
-					msg = "class \"{0}\" not found";
-					break;
-				case Message.ClassFormatError:
-					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
-						"    (class format error \"{1}\")";
-					break;
-				case Message.DuplicateClassName:
-					msg = "duplicate class name: \"{0}\"";
-					break;
-				case Message.IllegalAccessError:
-					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
-						"    (illegal access error \"{1}\")";
-					break;
-				case Message.VerificationError:
-					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
-						"    (verification error \"{1}\")";
-					break;
-				case Message.NoClassDefFoundError:
-					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
-						"    (missing class \"{1}\")";
-					break;
-				case Message.GenericUnableToCompileError:
-					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
-						"    (\"{1}\": \"{2}\")";
-					break;
-				case Message.DuplicateResourceName:
-					msg = "skipping resource (name clash): \"{0}\"";
-					break;
-				case Message.NotAClassFile:
-					msg = "not a class file \"{0}\", including it as resource" + Environment.NewLine +
-						"    (class format error \"{1}\")";
-					break;
-				default:
-					throw new InvalidProgramException();
-			}
-			Console.Error.Write("{0} IKVMC{1:D4}: ", msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
-			Console.Error.WriteLine(msg, values);
-		}
-	}
-
-	class AotCompiler
-	{
 		private static bool IsSigned(Assembly asm)
 		{
 			byte[] key = asm.GetName().GetPublicKey();
@@ -2596,7 +2416,7 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: redirected main method not supported");
 					return 1;
 				}
-				if(method.DeclaringType.Assembly != loader.GetTypeWrapperFactory().AssemblyBuilder
+				if(method.DeclaringType.Assembly != loader.assemblyBuilder
 					&& (!method.IsPublic || !method.DeclaringType.IsPublic))
 				{
 					Console.Error.WriteLine("Error: external main method must be public and in a public class");
@@ -2635,9 +2455,9 @@ namespace IKVM.Internal
 			if(options.fileversion != null)
 			{
 				CustomAttributeBuilder filever = new CustomAttributeBuilder(typeof(AssemblyFileVersionAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { options.fileversion });
-				loader.GetTypeWrapperFactory().AssemblyBuilder.SetCustomAttribute(filever);
+				loader.assemblyBuilder.SetCustomAttribute(filever);
 			}
-			loader.GetTypeWrapperFactory().AssemblyBuilder.DefineVersionInfoResource();
+			loader.assemblyBuilder.DefineVersionInfoResource();
 			loader.Save();
 			return 0;
 		}
@@ -2652,6 +2472,175 @@ namespace IKVM.Internal
 		{
 			Console.Error.WriteLine("Unknown attribute {0} in XML mapping file, line {1}, column {2}", e.Attr.Name, e.LineNumber, e.LinePosition);
 			Environment.Exit(1);
+		}
+	}
+
+	class CompilerOptions
+	{
+		internal string path;
+		internal string keyfilename;
+		internal string keycontainer;
+		internal string version;
+		internal string fileversion;
+		internal bool targetIsModule;
+		internal string assembly;
+		internal string mainClass;
+		internal ApartmentState apartment;
+		internal PEFileKinds target;
+		internal bool guessFileKind;
+		internal Hashtable classes;
+		internal string[] references;
+		internal Hashtable resources;
+		internal string[] classesToExclude;
+		internal string remapfile;
+		internal Hashtable props;
+		internal bool noglobbing;
+		internal CodeGenOptions codegenoptions;
+		internal bool removeUnusedFields;
+		internal bool compressedResources;
+		internal string runtimeAssembly;
+		internal string[] privatePackages;
+		internal string sourcepath;
+	}
+
+	enum Message
+	{
+		// These are the informational messages
+		MainMethodFound = 1,
+		OutputFileIs = 2,
+		AutoAddRef = 3,
+		MainMethodFromManifest = 4,
+		// This is were the warnings start
+		StartWarnings = 100,
+		ClassNotFound = 100,
+		ClassFormatError = 101,
+		DuplicateClassName = 102,
+		IllegalAccessError = 103,
+		VerificationError = 104,
+		NoClassDefFoundError = 105,
+		GenericUnableToCompileError = 106,
+		DuplicateResourceName = 107,
+		NotAClassFile = 108,
+	}
+
+	class StaticCompiler
+	{
+		internal static Assembly runtimeAssembly;
+
+		internal static Type GetType(string name)
+		{
+			return GetType(name, true);
+		}
+
+		internal static Type GetType(string name, bool throwOnError)
+		{
+			if(runtimeAssembly.GetType(name) != null)
+			{
+				return runtimeAssembly.GetType(name);
+			}
+#if WHIDBEY
+			foreach(Assembly asm in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
+			{
+				Type t = asm.GetType(name, false);
+				if(t != null)
+				{
+					return t;
+				}
+			}
+			// try mscorlib as well
+			return typeof(object).Assembly.GetType(name, throwOnError);
+#else
+			foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+			{
+				Type t = asm.GetType(name, false);
+				if(t != null)
+				{
+					return t;
+				}
+			}
+			if(throwOnError)
+			{
+				throw new TypeLoadException(name);
+			}
+			return null;
+#endif
+		}
+
+		private static Hashtable suppressWarnings = new Hashtable();
+
+		internal static void SuppressWarning(string key)
+		{
+			suppressWarnings[key] = key;
+		}
+
+		internal static void IssueMessage(Message msgId, params string[] values)
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.Append((int)msgId);
+			foreach(string s in values)
+			{
+				sb.Append(':').Append(s);
+			}
+			string key = sb.ToString();
+			if(suppressWarnings.ContainsKey(key)
+				|| suppressWarnings.ContainsKey(((int)msgId).ToString()))
+			{
+				return;
+			}
+			suppressWarnings.Add(key, key);
+			string msg;
+			switch(msgId)
+			{
+				case Message.MainMethodFound:
+					msg = "found main method in class \"{0}\"";
+					break;
+				case Message.OutputFileIs:
+					msg = "output file is \"{0}\"";
+					break;
+				case Message.AutoAddRef:
+					msg = "automatically adding reference to \"{0}\"";
+					break;
+				case Message.MainMethodFromManifest:
+					msg = "using main class \"{0}\" based on jar manifest";
+					break;
+				case Message.ClassNotFound:
+					msg = "class \"{0}\" not found";
+					break;
+				case Message.ClassFormatError:
+					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+						"    (class format error \"{1}\")";
+					break;
+				case Message.DuplicateClassName:
+					msg = "duplicate class name: \"{0}\"";
+					break;
+				case Message.IllegalAccessError:
+					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+						"    (illegal access error \"{1}\")";
+					break;
+				case Message.VerificationError:
+					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+						"    (verification error \"{1}\")";
+					break;
+				case Message.NoClassDefFoundError:
+					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+						"    (missing class \"{1}\")";
+					break;
+				case Message.GenericUnableToCompileError:
+					msg = "unable to compile class \"{0}\"" + Environment.NewLine + 
+						"    (\"{1}\": \"{2}\")";
+					break;
+				case Message.DuplicateResourceName:
+					msg = "skipping resource (name clash): \"{0}\"";
+					break;
+				case Message.NotAClassFile:
+					msg = "not a class file \"{0}\", including it as resource" + Environment.NewLine +
+						"    (class format error \"{1}\")";
+					break;
+				default:
+					throw new InvalidProgramException();
+			}
+			Console.Error.Write("{0} IKVMC{1:D4}: ", msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
+			Console.Error.WriteLine(msg, values);
 		}
 	}
 }
