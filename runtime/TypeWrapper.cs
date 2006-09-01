@@ -4480,9 +4480,11 @@ namespace IKVM.Internal
 										}
 										else
 										{
-											if(DynamicClassLoader.IsSaveDebugImage)
+											if(JVM.IsSaveDebugImage)
 											{
+#if !STATIC_COMPILER
 												JniProxyBuilder.Generate(ilGenerator, wrapper, methods[i], typeBuilder, classFile, m, args);
+#endif // !STATIC_COMPILER
 											}
 											else
 											{
@@ -5169,6 +5171,7 @@ namespace IKVM.Internal
 			}
 #endif // STATIC_COMPILER
 
+#if !STATIC_COMPILER
 			internal class JniProxyBuilder
 			{
 				private static ModuleBuilder mod;
@@ -5178,7 +5181,7 @@ namespace IKVM.Internal
 				{
 					AssemblyName name = new AssemblyName();
 					name.Name = "jniproxy";
-					AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, DynamicClassLoader.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
+					AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
 					DynamicClassLoader.RegisterForSaveDebug(ab);
 					mod = ab.DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
 					AttributeHelper.SetJavaModule(mod);
@@ -5218,6 +5221,7 @@ namespace IKVM.Internal
 					ilGenerator.Emit(OpCodes.Ret);
 				}
 			}
+#endif // !STATIC_COMPILER
 
 			private class JniBuilder
 			{

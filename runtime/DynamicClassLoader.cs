@@ -46,35 +46,34 @@ namespace IKVM.Internal
 		internal static bool arrayConstructionHack;
 		internal static readonly object arrayConstructionLock = new object();
 #endif // !WHIDBEY
-		private static readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
 		private static readonly char[] specialCharacters = { '\\', '+', ',', '[', ']', '*', '&', '\u0000' };
 		private static readonly string specialCharactersString = new String(specialCharacters);
-		// FXBUG moduleBuilder is static, because multiple dynamic assemblies is broken (TypeResolve doesn't fire)
-		// so for the time being, we share one dynamic assembly among all classloaders
-		private static ModuleBuilder moduleBuilder;
-		private static bool saveDebugImage;
+#if !STATIC_COMPILER
 		private static ArrayList saveDebugAssemblies;
-		private static int instanceCounter = 0;
-		private int instanceId = System.Threading.Interlocked.Increment(ref instanceCounter);
-		private ClassLoaderWrapper classLoader;
-		private CodeGenOptions codegenoptions;
+#endif // !STATIC_COMPILER
+		private readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
+		private ModuleBuilder moduleBuilder;
 
 		static DynamicClassLoader()
 		{
+#if !STATIC_COMPILER
 			// TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
 			// we should handle that by disabling dynamic class loading
 			AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
+#endif // !STATIC_COMPILER
+		}
+
+		protected DynamicClassLoader(ModuleBuilder moduleBuilder)
+		{
+			this.moduleBuilder = moduleBuilder;
 
 			// Ref.Emit doesn't like the "<Module>" name for types
 			// (since it already defines a pseudo-type named <Module> for global methods and fields)
 			dynamicTypes.Add("<Module>", null);
 		}
 
-		internal DynamicClassLoader(ClassLoaderWrapper classLoader, CodeGenOptions codegenoptions)
-		{
-			this.classLoader = classLoader;
-			this.codegenoptions = codegenoptions;
-		}
+#if !STATIC_COMPILER
+		internal static DynamicClassLoader Instance = new DynamicClassLoader(CreateModuleBuilder());
 
 		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
 		{
@@ -88,15 +87,11 @@ namespace IKVM.Internal
 				}
 			}
 #endif // !WHIDBEY
-			TypeWrapper type = (TypeWrapper)dynamicTypes[args.Name];
+			TypeWrapper type = (TypeWrapper)Instance.dynamicTypes[args.Name];
 			if(type == null)
 			{
 				return null;
 			}
-			// During static compilation, a TypeResolve event should never trigger a finish.
-#if STATIC_COMPILER
-			JVM.CriticalFailure("Finish triggered during static compilation. Type = " + args.Name, null);
-#else // STATIC_COMPILER
 			try
 			{
 				type.Finish();
@@ -105,7 +100,6 @@ namespace IKVM.Internal
 			{
 				throw x.ToJava();
 			}
-#endif // STATIC_COMPILER
 			// NOTE We used to remove the type from the hashtable here, but that creates a race condition if
 			// another thread also fires the OnTypeResolve event while we're baking the type.
 			// I really would like to remove the type from the hashtable, but at the moment I don't see
@@ -114,6 +108,7 @@ namespace IKVM.Internal
 			// have been used already, we cannot remove the keys.
 			return type.TypeAsTBD.Assembly;
 		}
+#endif // !STATIC_COMPILER
 
 		internal static string EscapeName(string name)
 		{
@@ -145,7 +140,7 @@ namespace IKVM.Internal
 			return name;
 		}
 
-		internal override string AllocMangledName(string mangledTypeName)
+		private string AllocMangledName(string mangledTypeName)
 		{
 			lock(dynamicTypes.SyncRoot)
 			{
@@ -159,16 +154,21 @@ namespace IKVM.Internal
 #endif
 					// Java class names cannot contain slashes (since they are converted into periods),
 					// so we take advantage of that fact to create a unique name.
-					mangledTypeName += "/" + instanceId;
+					string baseName = mangledTypeName;
+					int instanceId = 0;
+					do
+					{
+						mangledTypeName = baseName + "/" + (++instanceId);
+					} while(dynamicTypes.ContainsKey(mangledTypeName));
 				}
 				dynamicTypes.Add(mangledTypeName, null);
 			}
 			return mangledTypeName;
 		}
 
-		internal override TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, object protectionDomain)
+		internal sealed override TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, ClassLoaderWrapper classLoader, object protectionDomain)
 		{
-			DynamicTypeWrapper type = CreateDynamicTypeWrapper(f);
+			DynamicTypeWrapper type = CreateDynamicTypeWrapper(f, classLoader);
 			// this step can throw a retargettable exception, if the class is incorrect
 			bool hasclinit;
 			type.CreateStep1(out hasclinit);
@@ -202,63 +202,13 @@ namespace IKVM.Internal
 			return type;
 		}
 
-		protected virtual DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f)
+		protected virtual DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader)
 		{
 			return new DynamicTypeWrapper(f, classLoader);
 		}
 
-		internal static void PrepareForSaveDebugImage()
+		internal void FinishAll()
 		{
-			Debug.Assert(moduleBuilder == null);
-			saveDebugImage = true;
-		}
-
-		internal static bool IsSaveDebugImage
-		{
-			get
-			{
-				return saveDebugImage;
-			}
-		}
-
-		internal override bool EmitDebugInfo
-		{
-			get
-			{
-				return (codegenoptions & CodeGenOptions.Debug) != 0;
-			}
-		}
-
-		internal override bool EmitStackTraceInfo
-		{
-			get
-			{
-				// NOTE we're negating the flag here!
-				return (codegenoptions & CodeGenOptions.NoStackTraceInfo) == 0;
-			}
-		}
-
-		internal override bool StrictFinalFieldSemantics
-		{
-			get
-			{
-				return (codegenoptions & CodeGenOptions.StrictFinalFieldSemantics) != 0;
-			}
-		}
-
-		internal override bool NoJNI
-		{
-			get
-			{
-				return (codegenoptions & CodeGenOptions.NoJNI) != 0;
-			}
-		}
-
-		internal static void FinishAll(bool forDebug)
-		{
-#if !STATIC_COMPILER
-			JVM.FinishingForDebugSave = forDebug;
-#endif // !STATIC_COMPILER
 			Hashtable done = new Hashtable();
 			bool more = true;
 			while(more)
@@ -279,9 +229,10 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER
-		internal static void SaveDebugImage(object mainClass)
+		internal void SaveDebugImage(object mainClass)
 		{
-			FinishAll(true);
+			JVM.FinishingForDebugSave = true;
+			FinishAll();
 			TypeWrapper mainTypeWrapper = TypeWrapper.FromClass(mainClass);
 			mainTypeWrapper.Finish();
 			Type mainType = mainTypeWrapper.TypeAsTBD;
@@ -297,7 +248,6 @@ namespace IKVM.Internal
 				}
 			}
 		}
-#endif
 
 		internal static void RegisterForSaveDebug(AssemblyBuilder ab)
 		{
@@ -307,44 +257,37 @@ namespace IKVM.Internal
 			}
 			saveDebugAssemblies.Add(ab);
 		}
+#endif
 
-		internal override ModuleBuilder ModuleBuilder
+		internal sealed override ModuleBuilder ModuleBuilder
 		{
 			get
 			{
-				lock(typeof(DynamicClassLoader))
-				{
-					if(moduleBuilder == null)
-					{
-						moduleBuilder = CreateModuleBuilder();
-					}
-					return moduleBuilder;
-				}
+				return moduleBuilder;
 			}
 		}
 
-		protected virtual ModuleBuilder CreateModuleBuilder()
+#if !STATIC_COMPILER
+		private static ModuleBuilder CreateModuleBuilder()
 		{
-#if STATIC_COMPILER
-			throw new InvalidOperationException();
-#else // STATIC_COMPILER
 			AssemblyName name = new AssemblyName();
-			if(saveDebugImage)
+			if(JVM.IsSaveDebugImage)
 			{
 				name.Name = "ikvmdump";
 			}
 			else
 			{
-				name.Name = "ikvm_dynamic_assembly__" + instanceId + "__" + (uint)Environment.TickCount;
+				name.Name = "ikvm_dynamic_assembly__" + (uint)Environment.TickCount;
 			}
 			DateTime now = DateTime.Now;
 			name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
-			AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, saveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true);
-			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, this.EmitDebugInfo });
+			AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run, null, null, null, null, null, true);
+			bool debug = System.Diagnostics.Debugger.IsAttached;
+			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
-			return saveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", this.EmitDebugInfo) : assemblyBuilder.DefineDynamicModule(name.Name, this.EmitDebugInfo);
-#endif // STATIC_COMPILER
+			return JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
 		}
+#endif // !STATIC_COMPILER
 	}
 }
 #endif //COMPACT_FRAMEWORK

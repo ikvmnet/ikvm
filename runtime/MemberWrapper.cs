@@ -765,8 +765,8 @@ namespace IKVM.Internal
 				cache = new Hashtable(keygen, keygen);
 				AssemblyName name = new AssemblyName();
 				name.Name = "NonvirtualInvoker";
-				AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, DynamicClassLoader.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
-				if(DynamicClassLoader.IsSaveDebugImage)
+				AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
+				if(JVM.IsSaveDebugImage)
 				{
 					module = ab.DefineDynamicModule("NonvirtualInvoker", "NonvirtualInvoker.dll");
 					DynamicClassLoader.RegisterForSaveDebug(ab);

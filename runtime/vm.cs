@@ -42,12 +42,12 @@ namespace IKVM.Internal
 
 		public static void PrepareForSaveDebugImage()
 		{
-			DynamicClassLoader.PrepareForSaveDebugImage();
+			JVM.IsSaveDebugImage  = true;
 		}
 	
 		public static void SaveDebugImage(object mainClass)
 		{
-			DynamicClassLoader.SaveDebugImage(mainClass);
+			DynamicClassLoader.Instance.SaveDebugImage(mainClass);
 		}
 
 		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters
@@ -72,11 +72,13 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 		internal const bool IsStaticCompiler = true;
 		internal const bool FinishingForDebugSave = false;
+		internal const bool IsSaveDebugImage = false;
 #else
 		internal const bool IsStaticCompiler = false;
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static bool finishingForDebugSave;
 		private static ikvm.@internal.LibraryVMInterface lib;
+		internal static bool IsSaveDebugImage;
 #endif
 		private static Assembly coreAssembly;
 

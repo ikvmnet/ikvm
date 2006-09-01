@@ -64,7 +64,7 @@ namespace IKVM.Internal
 		private Hashtable mapxml;
 
 		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
-			: base(null)
+			: base(options.codegenoptions, null)
 		{
 			this.referencedAssemblies = referencedAssemblies;
 			this.options = options;
@@ -95,27 +95,20 @@ namespace IKVM.Internal
 
 		class CompilerTypeWrapperFactory : DynamicClassLoader
 		{
-			private CompilerClassLoader classLoader;
-
-			internal CompilerTypeWrapperFactory(CompilerClassLoader classLoader)
-				: base(classLoader, classLoader.options.codegenoptions)
+			internal CompilerTypeWrapperFactory(ModuleBuilder moduleBuilder)
+				: base(moduleBuilder)
 			{
-				this.classLoader = classLoader;
 			}
 
-			protected override DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f)
+			protected override DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f, ClassLoaderWrapper loader)
 			{
+				CompilerClassLoader classLoader = (CompilerClassLoader)loader;
 				int pos = f.Name.LastIndexOf('.');
 				if(pos != -1)
 				{
 					classLoader.packages[f.Name.Substring(0, pos)] = "";
 				}
 				return new AotTypeWrapper(f, classLoader);
-			}
-
-			protected override ModuleBuilder CreateModuleBuilder()
-			{
-				return classLoader.CreateModuleBuilder();
 			}
 		}
 
@@ -129,7 +122,7 @@ namespace IKVM.Internal
 
 		protected override TypeWrapperFactory CreateTypeWrapperFactory()
 		{
-			return new CompilerTypeWrapperFactory(this);
+			return new CompilerTypeWrapperFactory(CreateModuleBuilder());
 		}
 
 		private ModuleBuilder CreateModuleBuilder()
@@ -295,7 +288,7 @@ namespace IKVM.Internal
 		internal void Save()
 		{
 			Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
-			DynamicClassLoader.FinishAll(false);
+			((DynamicClassLoader)this.GetTypeWrapperFactory()).FinishAll();
 
 			ModuleBuilder mb = GetTypeWrapperFactory().ModuleBuilder;
 			// HACK force all referenced assemblies to end up as references in the assembly

@@ -39,12 +39,7 @@ namespace IKVM.Internal
 #if !COMPACT_FRAMEWORK
 		internal abstract ModuleBuilder ModuleBuilder { get; }
 #endif
-		internal abstract TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, object protectionDomain);
-		internal abstract string AllocMangledName(string name);
-		internal abstract bool EmitDebugInfo { get; }
-		internal abstract bool EmitStackTraceInfo { get; }
-		internal abstract bool StrictFinalFieldSemantics { get; }
-		internal abstract bool NoJNI { get; }
+		internal abstract TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, ClassLoaderWrapper classLoader, object protectionDomain);
 	}
 
 	class ClassLoaderWrapper
@@ -62,6 +57,7 @@ namespace IKVM.Internal
 		protected Hashtable types = new Hashtable();
 		private ArrayList nativeLibraries;
 		private TypeWrapperFactory factory;
+		private CodeGenOptions codegenoptions;
 		private static Hashtable remappedTypes = new Hashtable();
 
 #if STATIC_COMPILER
@@ -121,8 +117,9 @@ namespace IKVM.Internal
 			return type.Assembly == JVM.CoreAssembly;
 		}
 
-		internal ClassLoaderWrapper(object javaClassLoader)
+		internal ClassLoaderWrapper(CodeGenOptions codegenoptions, object javaClassLoader)
 		{
+			this.codegenoptions = codegenoptions;
 			this.javaClassLoader = javaClassLoader;
 		}
 
@@ -182,7 +179,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return factory != null && factory.EmitDebugInfo;
+				return (codegenoptions & CodeGenOptions.Debug) != 0;
 			}
 		}
 
@@ -190,7 +187,8 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return factory != null && factory.EmitStackTraceInfo;
+				// NOTE we're negating the flag here!
+				return (codegenoptions & CodeGenOptions.NoStackTraceInfo) == 0;
 			}
 		}
 
@@ -198,7 +196,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return factory != null && factory.StrictFinalFieldSemantics;
+				return (codegenoptions & CodeGenOptions.StrictFinalFieldSemantics) != 0;
 			}
 		}
 
@@ -206,7 +204,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return factory != null && factory.NoJNI;
+				return (codegenoptions & CodeGenOptions.NoJNI) != 0;
 			}
 		}
 
@@ -260,7 +258,7 @@ namespace IKVM.Internal
 				}
 				try
 				{
-					return factory.DefineClassImpl(types, f, protectionDomain);
+					return factory.DefineClassImpl(types, f, this, protectionDomain);
 				}
 				catch
 				{
@@ -294,13 +292,10 @@ namespace IKVM.Internal
 		{
 #if COMPACT_FRAMEWORK
 			throw new NoClassDefFoundError("Class loading is not supported on the Compact Framework");
+#elif STATIC_COMPILER
+			throw new InvalidOperationException();
 #else
-			CodeGenOptions opt = CodeGenOptions.None;
-			if(System.Diagnostics.Debugger.IsAttached)
-			{
-				opt |= CodeGenOptions.Debug;
-			}
-			return new DynamicClassLoader(this, opt);
+			return DynamicClassLoader.Instance;
 #endif
 		}
 
@@ -807,7 +802,12 @@ namespace IKVM.Internal
 				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(javaClassLoader);
 				if(wrapper == null)
 				{
-					wrapper = new ClassLoaderWrapper(javaClassLoader);
+					CodeGenOptions opt = CodeGenOptions.None;
+					if(System.Diagnostics.Debugger.IsAttached)
+					{
+						opt |= CodeGenOptions.Debug;
+					}
+					wrapper = new ClassLoaderWrapper(opt, javaClassLoader);
 					JVM.Library.setWrapperForClassLoader(javaClassLoader, wrapper);
 				}
 				return wrapper;
@@ -1017,7 +1017,7 @@ namespace IKVM.Internal
 		private ClassLoaderWrapper[] delegates;
 
 		internal GenericClassLoader(ClassLoaderWrapper[] delegates, object javaClassLoader)
-			: base(javaClassLoader)
+			: base(CodeGenOptions.None, javaClassLoader)
 		{
 			this.delegates = delegates;
 		}
@@ -1077,7 +1077,7 @@ namespace IKVM.Internal
 		private Hashtable nameMap;
 
 		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader)
-			: base(javaClassLoader)
+			: base(CodeGenOptions.None, javaClassLoader)
 		{
 			this.assembly = assembly;
 			isJava = AttributeHelper.IsJavaModule(assembly.GetModules()[0]);
