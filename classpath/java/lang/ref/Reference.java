@@ -154,7 +154,7 @@ public abstract class Reference
 
         QueueWatcher(Reference r)
         {
-            handle = GCHandle.Alloc(r, GCHandleType.wrap(GCHandleType.Weak));
+            handle = GCHandle.Alloc(r, GCHandleType.wrap(GCHandleType.WeakTrackResurrection));
         }
 
         boolean check(Reference r)

@@ -1456,6 +1456,7 @@
 ../../classpath/gnu/javax/swing/text/html/css/FontSize.java
 ../../classpath/gnu/javax/swing/text/html/css/FontStyle.java
 ../../classpath/gnu/javax/swing/text/html/css/FontWeight.java
+../../classpath/gnu/javax/swing/text/html/css/Length.java
 ../../classpath/gnu/javax/swing/text/html/ImageViewIconFactory.java
 ../../classpath/gnu/javax/swing/text/html/parser/gnuDTD.java
 ../../classpath/gnu/javax/swing/text/html/parser/GnuParserDelegator.java
@@ -4023,6 +4024,7 @@
 ../../classpath/javax/swing/text/View.java
 ../../classpath/javax/swing/text/ViewFactory.java
 ../../classpath/javax/swing/text/WrappedPlainView.java
+../../classpath/javax/swing/text/ZoneView.java
 ../../classpath/javax/swing/Timer.java
 ../../classpath/javax/swing/ToolTipManager.java
 ../../classpath/javax/swing/TransferHandler.java
