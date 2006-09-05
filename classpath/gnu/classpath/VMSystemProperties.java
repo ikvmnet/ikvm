@@ -297,7 +297,7 @@ public class VMSystemProperties
         p.setProperty("os.arch", arch);
         p.setProperty("sun.arch.data.model", "" + (cli.System.IntPtr.get_Size() * 8));
         p.setProperty("file.separator", "" + cli.System.IO.Path.DirectorySeparatorChar);
-        p.setProperty("file.encoding", "8859_1");
+        p.setProperty("file.encoding", cli.System.Text.Encoding.get_Default().get_WebName());
         p.setProperty("path.separator", "" + cli.System.IO.Path.PathSeparator);
         try
         {
