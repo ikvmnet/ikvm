@@ -313,7 +313,13 @@ class IkvmcCompiler
 						{
 							byte[] b = new byte[fs.Length];
 							fs.Read(b, 0, b.Length);
-							AddResource(spec[0], b);
+							string name = spec[0];
+							if(name.StartsWith("/"))
+							{
+								// a leading slash is not required, so strip it
+								name = name.Substring(1);
+							}
+							AddResource(name, b);
 						}
 					}
 					catch(Exception x)

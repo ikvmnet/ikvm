@@ -431,8 +431,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
-                case SocketOptions.SO_REUSEADDR:
-                    return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress))) != 0);
                 case SocketOptions.SO_BROADCAST:
                     return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast))) != 0);
                 case SocketOptions.IP_MULTICAST_IF:
@@ -492,9 +490,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
-                case SocketOptions.SO_REUSEADDR:
-                    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress), ((Boolean)val).booleanValue() ? 1 : 0);
-                    break;
                 case SocketOptions.SO_BROADCAST:
                     socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast), ((Boolean)val).booleanValue() ? 1 : 0);
                     break;

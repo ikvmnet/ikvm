@@ -461,6 +461,9 @@ public class PlainSocketImpl extends SocketImpl
             if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
+                case SocketOptions.SO_REUSEADDR:
+                    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress), ((Boolean)val).booleanValue() ? 1 : 0);
+                    break;
                 case SocketOptions.SO_SNDBUF:
                     socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer), ((Integer)val).intValue());
                     break;
@@ -543,6 +546,8 @@ public class PlainSocketImpl extends SocketImpl
             if(false) throw new cli.System.ObjectDisposedException("");
             switch(option_id)
             {
+                case SocketOptions.SO_REUSEADDR:
+                    return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress))) != 0);
                 case SocketOptions.SO_SNDBUF:
                     return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer))));
                 case SocketOptions.SO_RCVBUF:
