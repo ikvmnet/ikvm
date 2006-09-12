@@ -570,10 +570,7 @@ namespace IKVM.Internal
 			{
 				return typeBuilderGhostInterface.DefineMethod(name, attribs, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
 			}
-			else
-			{
-				return base.DefineGhostMethod(name, attribs, mw);
-			}
+			return null;
 		}
 
 		protected override void FinishGhost(TypeBuilder typeBuilder, MethodWrapper[] methods)
@@ -783,34 +780,27 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override TypeBuilder DefineType(string mangledTypeName, TypeAttributes typeAttribs)
+		protected override TypeBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs)
 		{
-			if(IsGhost)
-			{
-				typeAttribs &= ~(TypeAttributes.Interface | TypeAttributes.Abstract);
-				typeAttribs |= TypeAttributes.Class | TypeAttributes.Sealed;
-				TypeBuilder typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, typeof(ValueType));
-				AttributeHelper.SetGhostInterface(typeBuilder);
-				AttributeHelper.SetModifiers(typeBuilder, Modifiers, IsInternal);
-				ghostRefField = typeBuilder.DefineField("__<ref>", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
-				typeBuilderGhostInterface = typeBuilder.DefineNestedType("__Interface", TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.NestedPublic);
-				AttributeHelper.HideFromJava(typeBuilderGhostInterface);
-				ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object) });
-				ghostIsInstanceMethod.DefineParameter(1, ParameterAttributes.None, "obj");
-				ghostIsInstanceArrayMethod = typeBuilder.DefineMethod("IsInstanceArray", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object), typeof(int) });
-				ghostIsInstanceArrayMethod.DefineParameter(1, ParameterAttributes.None, "obj");
-				ghostIsInstanceArrayMethod.DefineParameter(2, ParameterAttributes.None, "rank");
-				ghostCastMethod = typeBuilder.DefineMethod("Cast", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeBuilder, new Type[] { typeof(object) });
-				ghostCastMethod.DefineParameter(1, ParameterAttributes.None, "obj");
-				ghostCastArrayMethod = typeBuilder.DefineMethod("CastArray", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeof(void), new Type[] { typeof(object), typeof(int) });
-				ghostCastArrayMethod.DefineParameter(1, ParameterAttributes.None, "obj");
-				ghostCastArrayMethod.DefineParameter(2, ParameterAttributes.None, "rank");
-				return typeBuilder;
-			}
-			else
-			{
-				return base.DefineType(mangledTypeName, typeAttribs);
-			}
+			typeAttribs &= ~(TypeAttributes.Interface | TypeAttributes.Abstract);
+			typeAttribs |= TypeAttributes.Class | TypeAttributes.Sealed;
+			TypeBuilder typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, typeof(ValueType));
+			AttributeHelper.SetGhostInterface(typeBuilder);
+			AttributeHelper.SetModifiers(typeBuilder, Modifiers, IsInternal);
+			ghostRefField = typeBuilder.DefineField("__<ref>", typeof(object), FieldAttributes.Public | FieldAttributes.SpecialName);
+			typeBuilderGhostInterface = typeBuilder.DefineNestedType("__Interface", TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.NestedPublic);
+			AttributeHelper.HideFromJava(typeBuilderGhostInterface);
+			ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object) });
+			ghostIsInstanceMethod.DefineParameter(1, ParameterAttributes.None, "obj");
+			ghostIsInstanceArrayMethod = typeBuilder.DefineMethod("IsInstanceArray", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeof(bool), new Type[] { typeof(object), typeof(int) });
+			ghostIsInstanceArrayMethod.DefineParameter(1, ParameterAttributes.None, "obj");
+			ghostIsInstanceArrayMethod.DefineParameter(2, ParameterAttributes.None, "rank");
+			ghostCastMethod = typeBuilder.DefineMethod("Cast", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeBuilder, new Type[] { typeof(object) });
+			ghostCastMethod.DefineParameter(1, ParameterAttributes.None, "obj");
+			ghostCastArrayMethod = typeBuilder.DefineMethod("CastArray", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeof(void), new Type[] { typeof(object), typeof(int) });
+			ghostCastArrayMethod.DefineParameter(1, ParameterAttributes.None, "obj");
+			ghostCastArrayMethod.DefineParameter(2, ParameterAttributes.None, "rank");
+			return typeBuilder;
 		}
 
 		internal override FieldInfo GhostRefField

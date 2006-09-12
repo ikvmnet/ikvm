@@ -48,6 +48,7 @@ namespace IKVM.Internal
 		private static readonly Hashtable typeToTypeWrapper = Hashtable.Synchronized(new Hashtable());
 #if STATIC_COMPILER
 		private static ClassLoaderWrapper bootstrapClassLoader;
+		private TypeWrapperFactory factory;
 #else
 		private static AssemblyClassLoader bootstrapClassLoader;
 #endif
@@ -56,7 +57,6 @@ namespace IKVM.Internal
 		private readonly object javaClassLoader;
 		protected Hashtable types = new Hashtable();
 		private ArrayList nativeLibraries;
-		private TypeWrapperFactory factory;
 		private CodeGenOptions codegenoptions;
 		private static Hashtable remappedTypes = new Hashtable();
 
@@ -244,7 +244,7 @@ namespace IKVM.Internal
 				return RegisterInitiatingLoader(tw);
 			}
 			// this will create the factory as a side effect
-			GetTypeWrapperFactory();
+			TypeWrapperFactory factory = GetTypeWrapperFactory();
 			lock(factory)
 			{
 				lock(types.SyncRoot)
@@ -278,22 +278,14 @@ namespace IKVM.Internal
 
 		internal TypeWrapperFactory GetTypeWrapperFactory()
 		{
-			lock(this)
-			{
-				if(factory == null)
-				{
-					factory = CreateTypeWrapperFactory();
-				}
-			}
-			return factory;
-		}
-
-		protected virtual TypeWrapperFactory CreateTypeWrapperFactory()
-		{
 #if COMPACT_FRAMEWORK
 			throw new NoClassDefFoundError("Class loading is not supported on the Compact Framework");
 #elif STATIC_COMPILER
-			throw new InvalidOperationException();
+			if(factory == null)
+			{
+				factory = new DynamicClassLoader(((CompilerClassLoader)this).CreateModuleBuilder());
+			}
+			return factory;
 #else
 			return DynamicClassLoader.Instance;
 #endif
@@ -340,7 +332,7 @@ namespace IKVM.Internal
 				{
 					return type;
 				}
-				if(defineInProgress && factory != null)
+				if(defineInProgress)
 				{
 					// DefineClass synchronizes on factory, so if we can obtain that
 					// lock it either means that the DefineClass has finished or
@@ -348,7 +340,7 @@ namespace IKVM.Internal
 					// the two, we check the types hashtable again and if it still
 					// contains the null entry we're on the same thread and should throw
 					// the ClassCircularityError.
-					lock(factory)
+					lock(GetTypeWrapperFactory())
 					{
 						lock(types.SyncRoot)
 						{

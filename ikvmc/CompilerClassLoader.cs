@@ -93,25 +93,6 @@ namespace IKVM.Internal
 			referencedAssemblies = temp;
 		}
 
-		class CompilerTypeWrapperFactory : DynamicClassLoader
-		{
-			internal CompilerTypeWrapperFactory(ModuleBuilder moduleBuilder)
-				: base(moduleBuilder)
-			{
-			}
-
-			protected override DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f, ClassLoaderWrapper loader)
-			{
-				CompilerClassLoader classLoader = (CompilerClassLoader)loader;
-				int pos = f.Name.LastIndexOf('.');
-				if(pos != -1)
-				{
-					classLoader.packages[f.Name.Substring(0, pos)] = "";
-				}
-				return new AotTypeWrapper(f, classLoader);
-			}
-		}
-
 		internal override string SourcePath
 		{
 			get
@@ -120,12 +101,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override TypeWrapperFactory CreateTypeWrapperFactory()
-		{
-			return new CompilerTypeWrapperFactory(CreateModuleBuilder());
-		}
-
-		private ModuleBuilder CreateModuleBuilder()
+		internal ModuleBuilder CreateModuleBuilder()
 		{
 			AssemblyName name = new AssemblyName();
 			name.Name = assemblyName;
@@ -2356,6 +2332,11 @@ namespace IKVM.Internal
 						if(map == null)
 						{
 							wrapper.Finish();
+						}
+						int pos = wrapper.Name.LastIndexOf('.');
+						if(pos != -1)
+						{
+							loader.packages[wrapper.Name.Substring(0, pos)] = "";
 						}
 						allwrappers.Add(wrapper);
 					}

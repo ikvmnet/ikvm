@@ -1574,7 +1574,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				Debug.Assert(!IsUnloadable && !IsVerifierType && !JVM.IsStaticCompiler);
+				Debug.Assert(!IsUnloadable && !IsVerifierType);
 				lock(this)
 				{
 					if(classObject == null)
@@ -3079,7 +3079,11 @@ namespace IKVM.Internal
 		}
 	}
 
+#if STATIC_COMPILER
+	abstract class DynamicTypeWrapper : TypeWrapper
+#else
 	class DynamicTypeWrapper : TypeWrapper
+#endif
 	{
 		protected readonly ClassLoaderWrapper classLoader;
 		private volatile DynamicImpl impl;
@@ -3377,11 +3381,16 @@ namespace IKVM.Internal
 					{
 						fields[i] = new ConstantFieldWrapper(wrapper, null, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.LiteralField);
 					}
-					else if(fld.IsFinal && (JVM.IsStaticCompiler && (fld.IsPublic || fld.IsProtected))
-						&& !wrapper.IsInterface && (!wrapper.classLoader.StrictFinalFieldSemantics || ReferenceEquals(wrapper.Name, StringConstants.JAVA_LANG_SYSTEM)))
+#if STATIC_COMPILER
+					else if(fld.IsFinal
+						&& (fld.IsPublic || fld.IsProtected)
+						&& wrapper.IsPublic
+						&& !wrapper.IsInterface
+						&& (!wrapper.classLoader.StrictFinalFieldSemantics || ReferenceEquals(wrapper.Name, StringConstants.JAVA_LANG_SYSTEM)))
 					{
 						fields[i] = new GetterFieldWrapper(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null, null);
 					}
+#endif
 					else
 					{
 						fields[i] = FieldWrapper.Create(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal));
@@ -3525,10 +3534,19 @@ namespace IKVM.Internal
 							typeBuilder = outer.DefineNestedType(GetInnerClassName(outerClassWrapper.Name, f.Name), typeAttribs);
 						}
 						else
-#endif // STATIC_COMPILER
 						{
-							typeBuilder = wrapper.DefineType(mangledTypeName, typeAttribs);
+							if(wrapper.IsGhost)
+							{
+								typeBuilder = wrapper.DefineGhostType(mangledTypeName, typeAttribs);
+							}
+							else
+							{
+								typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
+							}
 						}
+#else // STATIC_COMPILER
+						typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
+#endif // STATIC_COMPILER
 					}
 					else
 					{
@@ -4320,7 +4338,9 @@ namespace IKVM.Internal
 						}
 						innerClassesTypeWrappers = (TypeWrapper[])wrappers.ToArray(typeof(TypeWrapper));
 					}
+#if STATIC_COMPILER
 					wrapper.FinishGhost(typeBuilder, methods);
+#endif // STATIC_COMPILER
 					// if we're not abstract make sure we don't inherit any abstract methods
 					if(!wrapper.IsAbstract)
 					{
@@ -4412,11 +4432,13 @@ namespace IKVM.Internal
 								{
 									ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
 									TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
+#if STATIC_COMPILER
 									// do we have a native implementation in map.xml?
 									if(wrapper.EmitMapXmlMethodBody(ilGenerator, classFile, m))
 									{
 										continue;
 									}
+#endif
 									// see if there exists a IKVM.NativeCode class for this type
 									Type nativeCodeType = null;
 #if STATIC_COMPILER
@@ -4503,10 +4525,12 @@ namespace IKVM.Internal
 								MethodBuilder mbld = (MethodBuilder)mb;
 								ILGenerator ilGenerator = mbld.GetILGenerator();
 								TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
+#if STATIC_COMPILER
 								if(wrapper.EmitMapXmlMethodBody(ilGenerator, classFile, m))
 								{
 									continue;
 								}
+#endif // STATIC_COMPILER
 								LineNumberTableAttribute.LineNumberWriter lineNumberTable = null;
 								bool nonleaf = false;
 								Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf, invokespecialstubcache, ref lineNumberTable);
@@ -4790,7 +4814,9 @@ namespace IKVM.Internal
 						Profiler.Leave("TypeBuilder.CreateType");
 					}
 					ClassLoaderWrapper.SetWrapperForType(type, wrapper);
+#if STATIC_COMPILER
 					wrapper.FinishGhostStep2();
+#endif
 					BakedTypeCleanupHack.Process(wrapper);
 					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers, Metadata.Create(classFile));
 					return finishedType;
@@ -5831,7 +5857,10 @@ namespace IKVM.Internal
 								}
 							}
 						}
-						MethodBuilder mb = wrapper.DefineGhostMethod(name, attribs, methods[index]);
+						MethodBuilder mb = null;
+#if STATIC_COMPILER
+						mb = wrapper.DefineGhostMethod(name, attribs, methods[index]);
+#endif
 						if(mb == null)
 						{
 							bool needFinalize = false;
@@ -6671,18 +6700,23 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected virtual void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method)
+#if STATIC_COMPILER
+		protected abstract void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method);
+		protected abstract bool EmitMapXmlMethodBody(ILGenerator ilgen, ClassFile f, ClassFile.Method m);
+		protected abstract void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, FieldWrapper[] fields, MethodWrapper[] methods);
+		protected abstract MethodBuilder DefineGhostMethod(string name, MethodAttributes attribs, MethodWrapper mw);
+		protected abstract void FinishGhost(TypeBuilder typeBuilder, MethodWrapper[] methods);
+		protected abstract void FinishGhostStep2();
+		protected abstract TypeBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs);
+#else
+		private void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method)
 		{
-			if((JVM.IsStaticCompiler && classFile.IsPublic && (m.IsPublic || m.IsProtected)) || GetClassLoader().EmitDebugInfo)
+			if(GetClassLoader().EmitDebugInfo)
 			{
 				AddParameterNames(method, m, null);
 			}
 		}
-
-		protected virtual bool EmitMapXmlMethodBody(ILGenerator ilgen, ClassFile f, ClassFile.Method m)
-		{
-			return false;
-		}
+#endif // STATIC_COMPILER
 
 		protected virtual bool IsPInvokeMethod(ClassFile.Method m)
 		{
@@ -6697,28 +6731,6 @@ namespace IKVM.Internal
 				}
 			}
 			return false;
-		}
-
-		protected virtual void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, FieldWrapper[] fields, MethodWrapper[] methods)
-		{
-		}
-
-		protected virtual MethodBuilder DefineGhostMethod(string name, MethodAttributes attribs, MethodWrapper mw)
-		{
-			return null;
-		}
-
-		protected virtual void FinishGhost(TypeBuilder typeBuilder, MethodWrapper[] methods)
-		{
-		}
-
-		protected virtual void FinishGhostStep2()
-		{
-		}
-
-		protected virtual TypeBuilder DefineType(string mangledTypeName, TypeAttributes typeAttribs)
-		{
-			return classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
 		}
 
 		internal override MethodBase LinkMethod(MethodWrapper mw)

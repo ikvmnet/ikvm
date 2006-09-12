@@ -26,12 +26,6 @@ using System.Threading;
 using System.Diagnostics;
 using System.Collections;
 using System.Text.RegularExpressions;
-using System.Reflection;
-#if !COMPACT_FRAMEWORK
-using System.Reflection.Emit;
-using ILGenerator = IKVM.Internal.CountingILGenerator;
-using Label = IKVM.Internal.CountingLabel;
-#endif
 using System.Configuration;
 
 namespace IKVM.Internal

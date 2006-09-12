@@ -40,7 +40,7 @@ namespace IKVM.Internal
 		NoJNI = 8,
 	}
 
-	class DynamicClassLoader : TypeWrapperFactory
+	sealed class DynamicClassLoader : TypeWrapperFactory
 	{
 #if !WHIDBEY
 		internal static bool arrayConstructionHack;
@@ -63,7 +63,7 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER
 		}
 
-		protected DynamicClassLoader(ModuleBuilder moduleBuilder)
+		internal DynamicClassLoader(ModuleBuilder moduleBuilder)
 		{
 			this.moduleBuilder = moduleBuilder;
 
@@ -168,7 +168,12 @@ namespace IKVM.Internal
 
 		internal sealed override TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, ClassLoaderWrapper classLoader, object protectionDomain)
 		{
-			DynamicTypeWrapper type = CreateDynamicTypeWrapper(f, classLoader);
+			DynamicTypeWrapper type;
+#if STATIC_COMPILER
+			type = new AotTypeWrapper(f, (CompilerClassLoader)classLoader);
+#else
+			type = new DynamicTypeWrapper(f, classLoader);
+#endif
 			// this step can throw a retargettable exception, if the class is incorrect
 			bool hasclinit;
 			type.CreateStep1(out hasclinit);
@@ -200,11 +205,6 @@ namespace IKVM.Internal
 				}
 			}
 			return type;
-		}
-
-		protected virtual DynamicTypeWrapper CreateDynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader)
-		{
-			return new DynamicTypeWrapper(f, classLoader);
 		}
 
 		internal void FinishAll()

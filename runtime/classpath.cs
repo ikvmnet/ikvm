@@ -1331,26 +1331,33 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 	{
 		public static Stream ReadResourceFromAssemblyImpl(Assembly asm, string resource)
 		{
+			// chop off the leading slash
+			resource = resource.Substring(1);
 #if WHIDBEY
-			Stream s = asm.GetManifestResourceStream(JVM.MangleResourceName(resource.Substring(1)));
+			Stream s = asm.GetManifestResourceStream(JVM.MangleResourceName(resource));
 			if(s == null)
 			{
+				Tracer.Warning(Tracer.ClassLoading, "Resource \"{0}\" not found in {1}", resource, asm.FullName);
 				throw new FileNotFoundException("resource " + resource + " not found in assembly " + asm.FullName);
 			}
 			switch (s.ReadByte())
 			{
 				case 0:
+					Tracer.Info(Tracer.ClassLoading, "Reading resource \"{0}\" from {1}", resource, asm.FullName);
 					return s;
 				case 1:
+					Tracer.Info(Tracer.ClassLoading, "Reading compressed resource \"{0}\" from {1}", resource, asm.FullName);
 					return new System.IO.Compression.DeflateStream(s, System.IO.Compression.CompressionMode.Decompress, false);
 				default:
+					Tracer.Error(Tracer.ClassLoading, "Resource \"{0}\" in {1} has an unsupported encoding", resource, asm.FullName);
 					throw new IOException("Unsupported resource encoding for resource " + resource + " found in assembly " + asm.FullName);
 			}
 #else
-			using(Stream s = asm.GetManifestResourceStream(JVM.MangleResourceName(resource.Substring(1))))
+			using(Stream s = asm.GetManifestResourceStream(JVM.MangleResourceName(resource)))
 			{
 				if(s == null)
 				{
+					Tracer.Warning(Tracer.ClassLoading, "Resource \"{0}\" not found in {1}", resource, asm.FullName);
 					throw new FileNotFoundException("resource " + resource + " not found in assembly " + asm.FullName);
 				}
 				using(System.Resources.ResourceReader r = new System.Resources.ResourceReader(s))
@@ -1359,17 +1366,21 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 					{
 						if((string)de.Key == "lz")
 						{
+							Tracer.Info(Tracer.ClassLoading, "Reading compressed resource \"{0}\" from {1}", resource, asm.FullName);
 							return new LZInputStream(new MemoryStream((byte[])de.Value));
 						}
 						else if((string)de.Key == "ikvm")
 						{
+							Tracer.Info(Tracer.ClassLoading, "Reading resource \"{0}\" from {1}", resource, asm.FullName);
 							return new MemoryStream((byte[])de.Value);
 						}
 						else
 						{
+							Tracer.Error(Tracer.ClassLoading, "Resource \"{0}\" in {1} has an unsupported encoding", resource, asm.FullName);
 							throw new IOException("Unsupported resource encoding " + de.Key + " for resource " + resource + " found in assembly " + asm.FullName);
 						}
 					}
+					Tracer.Error(Tracer.ClassLoading, "Resource \"{0}\" in {1} is invalid", resource, asm.FullName);
 					throw new IOException("Invalid resource " + resource + " found in assembly " + asm.FullName);
 				}
 			}
@@ -1531,34 +1542,36 @@ namespace IKVM.NativeCode.ikvm.@internal
 			try
 			{
 				ClassLoaderWrapper wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader);
-				return wrapper.LoadClassByDottedName(name).ClassObject;
+				TypeWrapper tw = wrapper.LoadClassByDottedName(name);
+				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : classLoader);
+				return tw.ClassObject;
 			}
 			catch(RetargetableJavaException x)
 			{
+				Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : classLoader);
 				throw x.ToJava();
 			}
 		}
 
 		public static Assembly FindResourceAssembly(object classLoader, string name)
 		{
-			// TODO consider supporting delegation
 			IKVM.Internal.AssemblyClassLoader wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader);
 			if(wrapper == null)
 			{
 				// must be a GenericClassLoader
 				return null;
 			}
-			name = JVM.MangleResourceName(name);
-			if(wrapper.Assembly.GetManifestResourceInfo(name) != null)
+			if(wrapper.Assembly.GetManifestResourceInfo(JVM.MangleResourceName(name)) != null)
 			{
+				Tracer.Info(Tracer.ClassLoading, "Found resource \"{0}\" in {1}", name, wrapper.Assembly.FullName);
 				return wrapper.Assembly;
 			}
+			Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in {1}", name, wrapper.Assembly.FullName);
 			return null;
 		}
 
 		public static Assembly[] FindResourceAssemblies(object classLoader, string name)
 		{
-			// TODO consider supporting delegation
 			Assembly asm = FindResourceAssembly(classLoader, name);
 			if(asm != null)
 			{
