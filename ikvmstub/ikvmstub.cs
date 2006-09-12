@@ -32,7 +32,8 @@ using IKVM.Attributes;
 public class NetExp
 {
 	private static ZipOutputStream zipFile;
-	private static Hashtable privateClasses = new Hashtable();
+	private static Hashtable done = new Hashtable();
+	private static Hashtable todo = new Hashtable();
 	private static FileInfo file;
 
 	public static void Main(string[] args)
@@ -96,7 +97,6 @@ public class NetExp
 			try
 			{
 				ProcessAssembly(assembly);
-				ProcessPrivateClasses(assembly);
 			}
 			catch(ReflectionTypeLoadException x)
 			{
@@ -191,22 +191,14 @@ public class NetExp
 					// types that IKVM doesn't support don't show up
 					continue;
 				}
-				ProcessClass(c);
+				AddToExportList(c);
 			}
 		}
-	}
-
-	// TODO private classes should also be done handled for interfaces, fields and method arguments/return type
-	private static void ProcessPrivateClasses(Assembly assembly)
-	{
-		Hashtable done = new Hashtable();
 		bool keepGoing;
 		do
 		{
-			Hashtable todo = privateClasses;
-			privateClasses = new Hashtable();
 			keepGoing = false;
-			foreach(java.lang.Class c in todo.Values)
+			foreach(java.lang.Class c in new ArrayList(todo.Values))
 			{
 				if(!done.ContainsKey(c.getName()))
 				{
@@ -224,7 +216,7 @@ public class NetExp
 		{
 			c = c.getComponentType();
 		}
-		privateClasses[c.getName()] = c;
+		todo[c.getName()] = c;
 	}
 
 	private static bool IsGenericType(java.lang.Class c)
@@ -253,13 +245,18 @@ public class NetExp
 				AddToExportList(interfaces[i]);
 			}
 		}
+		java.lang.Class outerClass = c.getDeclaringClass();
+		if(outerClass != null)
+		{
+			AddToExportList(outerClass);
+		}
 		java.lang.Class[] innerClasses = c.getDeclaredClasses();
 		for(int i = 0; i < innerClasses.Length; i++)
 		{
 			Modifiers mods = (Modifiers)innerClasses[i].getModifiers();
 			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
 			{
-				ProcessClass(innerClasses[i]);
+				AddToExportList(innerClasses[i]);
 			}
 		}
 		java.lang.reflect.Constructor[] constructors = c.getDeclaredConstructors();
