@@ -76,6 +76,18 @@ final class VMInetAddress
         return s;
     }
 
+    static byte[] aton(String address)
+    {
+        try
+        {
+            return cli.System.Net.IPAddress.Parse(address).GetAddressBytes();
+        }
+        catch(Throwable _)
+        {
+            return null;
+        }
+    }
+
     static byte[][] getHostByName(String name) throws UnknownHostException
     {
         // TODO error handling

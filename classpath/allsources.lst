@@ -228,6 +228,7 @@
 ../../classpath/gnu/CORBA/CDR/Vio.java
 ../../classpath/gnu/CORBA/CDR/VMVio.java
 ../../classpath/gnu/CORBA/CdrEncapsCodecImpl.java
+../../classpath/gnu/CORBA/CollocatedOrbs.java
 ../../classpath/gnu/CORBA/Connected_objects.java
 ../../classpath/gnu/CORBA/CorbaList.java
 ../../classpath/gnu/CORBA/DefaultSocketFactory.java
@@ -339,6 +340,7 @@
 ../../classpath/gnu/CORBA/Poa/StandardPolicies.java
 ../../classpath/gnu/CORBA/RawReply.java
 ../../classpath/gnu/CORBA/ResponseHandlerImpl.java
+../../classpath/gnu/CORBA/SafeForDirectCalls.java
 ../../classpath/gnu/CORBA/ServiceDetailHolder.java
 ../../classpath/gnu/CORBA/ServiceRequestAdapter.java
 ../../classpath/gnu/CORBA/SetOverrideTypeHolder.java
