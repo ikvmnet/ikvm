@@ -70,7 +70,7 @@ public class Starter
 			Console.Error.WriteLine("Saving dynamic assembly...");
 			try
 			{
-				IKVM.Internal.Starter.SaveDebugImage(clazz);
+				IKVM.Internal.Starter.SaveDebugImage();
 				Console.Error.WriteLine("Saving done.");
 			}
 			catch(Exception x)
@@ -341,7 +341,7 @@ public class Starter
 			{
 				if(saveAssemblyX)
 				{
-					IKVM.Internal.Starter.SaveDebugImage(clazz);
+					IKVM.Internal.Starter.SaveDebugImage();
 				}
 			}
 		}

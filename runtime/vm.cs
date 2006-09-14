@@ -45,9 +45,9 @@ namespace IKVM.Internal
 			JVM.IsSaveDebugImage  = true;
 		}
 	
-		public static void SaveDebugImage(object mainClass)
+		public static void SaveDebugImage()
 		{
-			DynamicClassLoader.Instance.SaveDebugImage(mainClass);
+			DynamicClassLoader.Instance.SaveDebugImage();
 		}
 
 		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters

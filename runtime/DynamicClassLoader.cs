@@ -229,17 +229,12 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER
-		internal void SaveDebugImage(object mainClass)
+		internal void SaveDebugImage()
 		{
 			JVM.FinishingForDebugSave = true;
 			FinishAll();
-			TypeWrapper mainTypeWrapper = TypeWrapper.FromClass(mainClass);
-			mainTypeWrapper.Finish();
-			Type mainType = mainTypeWrapper.TypeAsTBD;
-			MethodInfo main = mainType.GetMethod("main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(string[]) }, null);
 			AssemblyBuilder asm = ((AssemblyBuilder)moduleBuilder.Assembly);
-			asm.SetEntryPoint(main, PEFileKinds.ConsoleApplication);
-			asm.Save("ikvmdump.exe");
+			asm.Save("ikvmdump.dll");
 			if(saveDebugAssemblies != null)
 			{
 				foreach(AssemblyBuilder ab in saveDebugAssemblies)
@@ -285,7 +280,7 @@ namespace IKVM.Internal
 			bool debug = System.Diagnostics.Debugger.IsAttached;
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
-			return JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.exe", "ikvmdump.exe", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
+			return JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule("ikvmdump.dll", "ikvmdump.dll", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
 		}
 #endif // !STATIC_COMPILER
 	}
