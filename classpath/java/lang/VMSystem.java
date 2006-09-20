@@ -136,6 +136,8 @@ final class VMSystem
 
     private static void setSystemField(String field, Object value)
     {
+        // MONOBUG due to a bug in mcs we currently prefix the backing fields with __<>
+        field = "__<>" + field;
         cli.System.Type.GetType("java.lang.System")
             .GetField(field, BindingFlags.wrap(BindingFlags.NonPublic | BindingFlags.Static))
             .SetValue(null, value);

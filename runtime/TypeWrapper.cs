@@ -4157,7 +4157,10 @@ namespace IKVM.Internal
 							setModifiers = true;
 						}
 					}
-					field = typeBuilder.DefineField(fieldName, type, attribs);
+					// MONOBUG the __<> prefix for wrapped final fields is to work around a bug in mcs 1.1.17
+					// it crashes when it tries to lookup the property with the same name as the privatescope field
+					// http://bugzilla.ximian.com/show_bug.cgi?id=79451
+					field = typeBuilder.DefineField(isWrappedFinal ? "__<>" + fieldName : fieldName, type, attribs);
 					if(fld.IsTransient)
 					{
 						CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(typeof(NonSerializedAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
