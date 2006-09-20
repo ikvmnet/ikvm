@@ -1,47 +1,33 @@
-/* PlainSocketImpl.java -- Default socket implementation
-   Copyright (C) 1998, 1999 Free Software Foundation, Inc.
+/*
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
-This file is part of GNU Classpath.
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
 
-GNU Classpath is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
-any later version.
- 
-GNU Classpath is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
 
-You should have received a copy of the GNU General Public License
-along with GNU Classpath; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307 USA.
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
 
-Linking this library statically or dynamically with other modules is
-making a combined work based on this library.  Thus, the terms and
-conditions of the GNU General Public License cover the whole
-combination.
-
-As a special exception, the copyright holders of this library give you
-permission to link this library with independent modules to produce an
-executable, regardless of the license terms of these independent
-modules, and to copy and distribute the resulting executable under
-terms of your choice, provided that you also meet, for each linked
-independent module, the terms and conditions of the license of that
-module.  An independent module is a module which is not derived from
-or based on this library.  If you modify this library, you may extend
-this exception to your version of the library, but you are not
-obligated to do so.  If you do not wish to do so, delete this
-exception statement from your version. */
-
-
+  Jeroen Frijters
+  jeroen@frijters.net
+  
+*/
 package gnu.java.net;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.net.*;
+import cli.System.Net.IPAddress;
 import cli.System.Net.IPEndPoint;
 import cli.System.Net.Sockets.SelectMode;
 import cli.System.Net.Sockets.SocketOptionName;
@@ -53,59 +39,49 @@ import cli.System.Net.Sockets.AddressFamily;
 import cli.System.Net.Sockets.SocketShutdown;
 import ikvm.lang.CIL;
 
-/**
-  * Unless the application installs its own SocketImplFactory, this is the
-  * default socket implemetation that will be used.  It simply uses a
-  * combination of Java and native routines to implement standard BSD
-  * style sockets of family AF_INET and types SOCK_STREAM and SOCK_DGRAM
-  *
-  * @version 0.1
-  *
-  * @author Aaron M. Renn (arenn@urbanophile.com)
-  */
-public class PlainSocketImpl extends SocketImpl
+public final class PlainSocketImpl extends SocketImpl
 {
+    // Winsock Error Codes
+    private static final int WSAEWOULDBLOCK    = 10035;
+    private static final int WSAEADDRINUSE     = 10048;
+    private static final int WSAENETUNREACH    = 10051;
+    private static final int WSAESHUTDOWN      = 10058;
+    private static final int WSAETIMEDOUT      = 10060;
+    private static final int WSAECONNREFUSED   = 10061;
+    private static final int WSAEHOSTUNREACH   = 10065;
+    private static final int WSAHOST_NOT_FOUND = 11001;
+
     static IOException convertSocketExceptionToIOException(cli.System.Net.Sockets.SocketException x) throws IOException
     {
         switch(x.get_ErrorCode())
         {
-            case 10048: //WSAEADDRINUSE
+            case WSAEADDRINUSE:
                 return new BindException(x.getMessage());
-            case 10051: //WSAENETUNREACH
-            case 10065: //WSAEHOSTUNREACH
+            case WSAENETUNREACH:
+            case WSAEHOSTUNREACH:
                 return new NoRouteToHostException(x.getMessage());
-            case 10060: //WSAETIMEDOUT
+            case WSAETIMEDOUT:
                 return new SocketTimeoutException(x.getMessage());
-            case 10061: //WSAECONNREFUSED
+            case WSAECONNREFUSED:
                 return new PortUnreachableException(x.getMessage());
-            case 11001: //WSAHOST_NOT_FOUND
+            case WSAHOST_NOT_FOUND:
                 return new UnknownHostException(x.getMessage());
             default:
                 return new SocketException(x.getMessage() + "\nError Code: " + x.get_ErrorCode());
         }
     }
 
-    /**
-     * This is the native file descriptor for this socket
-     */
     private cli.System.Net.Sockets.Socket socket;
     private int timeout;
+    private cli.System.IAsyncResult asyncConnect;
+    private InetSocketAddress asyncAddress;
 
-
-    /**
-     * Default do nothing constructor
-     */
     public PlainSocketImpl()
     {
     }
 
-    /**
-     * Accepts a new connection on this socket and returns in in the 
-     * passed in SocketImpl.
-     *
-     * @param impl The SocketImpl object to accept this connection.
-     */
-    protected void accept(SocketImpl _impl) throws IOException
+    // public for use by ServerSocketChannelImpl
+    public void accept(SocketImpl _impl) throws IOException
     {
         PlainSocketImpl impl = (PlainSocketImpl)_impl;
         try
@@ -118,11 +94,9 @@ public class PlainSocketImpl extends SocketImpl
                 throw new SocketTimeoutException("Accept timed out");
             }
             cli.System.Net.Sockets.Socket accept = socket.Accept();
-            ((PlainSocketImpl)impl).socket = accept;
+            impl.socket = accept;
             IPEndPoint remoteEndPoint = ((IPEndPoint)accept.get_RemoteEndPoint());
-            long remoteIP = remoteEndPoint.get_Address().get_Address();
-            String remote = (remoteIP & 0xff) + "." + ((remoteIP >> 8) & 0xff) + "." + ((remoteIP >> 16) & 0xff) + "." + ((remoteIP >> 24) & 0xff);
-            impl.address = InetAddress.getByName(remote);
+            impl.address = getInetAddressFromIPEndPoint(remoteEndPoint);
             impl.port = remoteEndPoint.get_Port();
             impl.localport = ((IPEndPoint)accept.get_LocalEndPoint()).get_Port();
         }
@@ -136,14 +110,25 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    /**
-     * Returns the number of bytes that the caller can read from this socket
-     * without blocking. 
-     *
-     * @return The number of readable bytes before blocking
-     *
-     * @exception IOException If an error occurs
-     */
+    // for use by ServerSocketChannelImpl
+    public boolean pollAccept() throws IOException
+    {
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            return socket.Poll(0, SelectMode.wrap(SelectMode.SelectRead));
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw convertSocketExceptionToIOException(x);
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }        
+    }
+
     protected int available() throws IOException
     {
         try
@@ -162,15 +147,6 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    /**
-     * Binds to the specified port on the specified addr.  Note that this addr
-     * must represent a local IP address.  **** How bind to INADDR_ANY? ****
-     *
-     * @param addr The address to bind to
-     * @param port The port number to bind to
-     *
-     * @exception IOException If an error occurs
-     */
     protected void bind(InetAddress addr, int port) throws IOException
     {
         try
@@ -190,28 +166,32 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    static long getAddressFromInetAddress(InetAddress addr)
+    static IPAddress getAddressFromInetAddress(InetAddress addr)
     {
         byte[] b = addr.getAddress();
-        return (((b[3] & 0xff) << 24) + ((b[2] & 0xff) << 16) + ((b[1] & 0xff) << 8) + (b[0] & 0xff)) & 0xffffffffL;
+        if (b.length == 16)
+        {
+            // FXBUG in .NET 1.1 you can only construct IPv6 addresses with this constructor
+            // (according to the documentation this was fixed in .NET 2.0)
+            return new IPAddress(b);
+        }
+        else
+        {
+            return new IPAddress((((b[3] & 0xff) << 24) + ((b[2] & 0xff) << 16) + ((b[1] & 0xff) << 8) + (b[0] & 0xff)) & 0xffffffffL);
+        }
     }
 
-    /**
-     * Closes the socket.  This will cause any InputStream or OutputStream
-     * objects for this Socket to be closed as well.
-     * <p>
-     * Note that if the SO_LINGER option is set on this socket, then the
-     * operation could block.
-     *
-     * @exception IOException If an error occurs
-     */
     protected void close() throws IOException
     {
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            socket.Close();
+            // if this socket was created by a failed accept(), socket may be null
+            if (socket != null)
+            {
+                socket.Close();
+            }
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
@@ -223,15 +203,8 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    /**
-     * Connects to the remote address and port specified as arguments.
-     *
-     * @param addr The remote address to connect to
-     * @param port The remote port to connect to
-     *
-     * @exception IOException If an error occurs
-     */
-    protected void connect(InetAddress addr, int port) throws IOException
+    // public for use by SocketChannelImpl
+    public void connect(InetAddress addr, int port) throws IOException
     {
         try
         {
@@ -252,40 +225,76 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    /**
-     * Connects to the remote hostname and port specified as arguments.
-     *
-     * @param hostname The remote hostname to connect to
-     * @param port The remote port to connect to
-     *
-     * @exception IOException If an error occurs
-     */
+    // for use by SocketChannelImpl
+    public void beginConnect(InetSocketAddress address) throws IOException
+    {
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            asyncConnect = socket.BeginConnect(new IPEndPoint(getAddressFromInetAddress(address.getAddress()), address.getPort()), null, null);
+            asyncAddress = address;
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw new ConnectException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
+    }
+
+    // for use by SocketChannelImpl
+    public void endConnect() throws IOException
+    {
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            cli.System.IAsyncResult res = asyncConnect;
+            asyncConnect = null;
+            socket.EndConnect(res);
+            this.address = asyncAddress.getAddress();
+            this.port = asyncAddress.getPort();
+            this.localport = ((IPEndPoint)socket.get_LocalEndPoint()).get_Port();
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw new ConnectException(x.getMessage());
+        }
+        catch(cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
+    }
+
+    // for use by SocketChannelImpl
+    public boolean isConnectFinished()
+    {
+        return asyncConnect.get_IsCompleted();
+    }
+
     protected void connect(String hostname, int port) throws IOException
     {
         connect(InetAddress.getByName(hostname), port);
     }
 
-    /**
-     * Creates a new socket that is not bound to any local address/port and
-     * is not connected to any remote address/port.  This will be created as
-     * a stream socket if the stream parameter is true, or a datagram socket
-     * if the stream parameter is false.
-     *
-     * @param stream true for a stream socket, false for a datagram socket
-     */
-    protected void create(boolean stream) throws IOException
+    // public for use by SocketChannelImpl
+    public void create(boolean stream) throws IOException
     {
-        if(!stream)
-        {
-            // TODO
-            System.out.println("NOTE: PlainSocketImpl.create(false) not implemented");
-            throw new IOException("PlainSocketImpl.create(false) not implemented");
-        }
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            socket = new cli.System.Net.Sockets.Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Stream), ProtocolType.wrap(ProtocolType.Tcp));
+            if(stream)
+            {
+                socket = new cli.System.Net.Sockets.Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Stream), ProtocolType.wrap(ProtocolType.Tcp));
+            }
+            else
+            {
+                socket = new cli.System.Net.Sockets.Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Dgram), ProtocolType.wrap(ProtocolType.Udp));
+            }
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
@@ -297,16 +306,6 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    /**
-     * Starts listening for connections on a socket. The queuelen parameter
-     * is how many pending connections will queue up waiting to be serviced
-     * before being accept'ed.  If the queue of pending requests exceeds this
-     * number, additional connections will be refused.
-     *
-     * @param queuelen The length of the pending connection queue
-     * 
-     * @exception IOException If an error occurs
-     */
     protected void listen(int queuelen) throws IOException
     {
         try
@@ -326,16 +325,8 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    /**
-     * Internal method used by SocketInputStream for reading data from
-     * the connection.  Reads up to len bytes of data into the buffer
-     * buf starting at offset bytes into the buffer.
-     *
-     * @return The actual number of bytes read or -1 if end of stream.
-     *
-     * @exception IOException If an error occurs
-     */
-    protected int read(byte[] buf, int offset, int len) throws IOException
+    // public for use by SocketChannelImpl
+    public int read(byte[] buf, int offset, int len) throws IOException
     {
         try
         {
@@ -350,12 +341,12 @@ public class PlainSocketImpl extends SocketImpl
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
-            if(x.get_ErrorCode() == 10058) //WSAESHUTDOWN
+            if(x.get_ErrorCode() == WSAESHUTDOWN)
             {
                 // the socket was shutdown, so we have to return EOF
                 return -1;
             }
-            else if(x.get_ErrorCode() == 10035) //WSAEWOULDBLOCK
+            else if(x.get_ErrorCode() == WSAEWOULDBLOCK)
             {
                 // nothing to read and would block
                 return 0;
@@ -368,20 +359,19 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    /**
-     * Internal method used by SocketOuputStream for writing data to
-     * the connection.  Writes up to len bytes of data from the buffer
-     * buf starting at offset bytes into the buffer.
-     *
-     * @exception IOException If an error occurs
-     */
     protected void write(byte[] buf, int offset, int len) throws IOException
+    {
+        writeImpl(buf, offset, len);
+    }
+
+    // public for use by SocketChannelImpl
+    public int writeImpl(byte[] buf, int offset, int len) throws IOException
     {
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            socket.Send(buf, offset, len, SocketFlags.wrap(SocketFlags.None));
+            return socket.Send(buf, offset, len, SocketFlags.wrap(SocketFlags.None));
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
@@ -393,17 +383,6 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    /**
-     * Sets the specified option on a socket to the passed in object.  For
-     * options that take an integer argument, the passed in object is an
-     * Integer.  The option_id parameter is one of the defined constants in
-     * this interface.
-     *
-     * @param option_id The identifier of the option
-     * @param val The value to set the option to
-     *
-     * @exception SocketException If an error occurs
-     */
     public void setOption(int option_id, Object val) throws SocketException
     {
         try
@@ -488,17 +467,6 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    /**
-     * Returns the current setting of the specified option.  The Object returned
-     * will be an Integer for options that have integer values.  The option_id
-     * is one of the defined constants in this interface.
-     *
-     * @param option_id The option identifier
-     *
-     * @return The current value of the option
-     *
-     * @exception SocketException If an error occurs
-     */
     public Object getOption(int option_id) throws SocketException
     {
         try
@@ -555,14 +523,7 @@ public class PlainSocketImpl extends SocketImpl
                 case SocketOptions.IP_TOS:
                     return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.TypeOfService))));
                 case SocketOptions.SO_BINDADDR:
-                    try
-                    {
-                        return InetAddress.getByAddress(getLocalAddress(socket));
-                    }
-                    catch(UnknownHostException x)
-                    {
-                        throw new SocketException(x.getMessage());
-                    }
+                    return getInetAddressFromIPEndPoint((IPEndPoint)socket.get_LocalEndPoint());
                 default:
                     throw new SocketException("Invalid socket option: " + option_id);
             }
@@ -577,20 +538,20 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    static byte[] getLocalAddress(cli.System.Net.Sockets.Socket socket)
+    private static InetAddress getInetAddressFromIPEndPoint(IPEndPoint endpoint)
     {
-        int address = (int)((cli.System.Net.IPEndPoint)socket.get_LocalEndPoint()).get_Address().get_Address();
-        return new byte[] { (byte)address, (byte)(address >> 8), (byte)(address >> 16), (byte)(address >> 24) };
+        try
+        {
+            return InetAddress.getByAddress(endpoint.get_Address().GetAddressBytes());
+        }
+        catch(UnknownHostException x)
+        {
+            // this exception only happens if the address byte array is of invalid length, which cannot happen unless
+            // the .NET socket returns a bogus address
+            throw (InternalError)new InternalError().initCause(x);
+        }
     }
 
-    /**
-     * Returns an InputStream object for reading from this socket.  This will
-     * be an instance of SocketInputStream.
-     *
-     * @return An InputStream
-     *
-     * @exception IOException If an error occurs
-     */
     protected InputStream getInputStream() throws IOException
     {
         return new InputStream() 
@@ -606,7 +567,7 @@ public class PlainSocketImpl extends SocketImpl
             public int read() throws IOException 
             {
                 byte buf[] = new byte[1];
-                int bytes_read = read(buf, 0, buf.length);
+                int bytes_read = read(buf, 0, 1);
                 if (bytes_read == 1)
                     return buf[0] & 0xFF;
                 else
@@ -626,14 +587,6 @@ public class PlainSocketImpl extends SocketImpl
         };
     }
 
-    /**
-     * Returns an OutputStream object for writing to this socket.  This will
-     * be an instance of SocketOutputStream.
-     * 
-     * @return An OutputStream
-     *
-     * @exception IOException If an error occurs
-     */
     protected OutputStream getOutputStream() throws IOException
     {
         return new OutputStream() 
@@ -645,7 +598,7 @@ public class PlainSocketImpl extends SocketImpl
             public void write(int b) throws IOException 
             {
                 byte buf[] = { (byte)b };
-                write(buf, 0, buf.length);
+                write(buf, 0, 1);
             }
             public void write(byte[] buf) throws IOException 
             {
@@ -658,9 +611,9 @@ public class PlainSocketImpl extends SocketImpl
         };
     }
 
-    public void connect(SocketAddress address, int timeout) throws IOException
+    protected void connect(SocketAddress address, int timeout) throws IOException
     {
-        // NOTE for now we ignore the timeout and we only support InetSocketAddress
+        // TODO support timeout
         InetSocketAddress inetAddress = (InetSocketAddress)address;
         if(inetAddress.isUnresolved())
         {
@@ -678,10 +631,6 @@ public class PlainSocketImpl extends SocketImpl
     {
         try
         {
-            // Send one byte of urgent data on the socket. The byte to be sent is
-            // the lowest eight bits of the data parameter.
-            // The urgent byte is sent after any preceding writes to the socket
-            // OutputStream and before any future writes to the OutputStream.
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
             byte[] oob = { (byte)data };
@@ -733,35 +682,39 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
-    /**
-     * Indicates whether a channel initiated whatever operation
-     * is being invoked on this socket.
-     */
-    private boolean inChannelOperation;
+    public void setBlocking(boolean blocking)
+    {
+        socket.set_Blocking(blocking);
+    }
 
-    /**
-     * Indicates whether we should ignore whether any associated
-     * channel is set to non-blocking mode. Certain operations
-     * throw an <code>IllegalBlockingModeException</code> if the
-     * associated channel is in non-blocking mode, <i>except</i>
-     * if the operation is invoked by the channel itself.
-     */
-    public final boolean isInChannelOperation()
+    public boolean isInChannelOperation()
     {
-	return inChannelOperation;
+	return false;
     }
-  
-    /**
-     * Sets our indicator of whether an I/O operation is being
-     * initiated by a channel.
-     */
-    public final void setInChannelOperation(boolean b)
-    {
-	inChannelOperation = b;
-    }
-    
+
     public cli.System.Net.Sockets.Socket getSocket()
     {
         return socket;
+    }
+
+    public InetSocketAddress getLocalAddress()
+    {
+        if(socket == null)
+        {
+            return null;
+        }
+        IPEndPoint endpoint = null;
+        try
+        {
+            endpoint = (IPEndPoint)socket.get_LocalEndPoint();
+        }
+        catch(Throwable _)
+        {
+        }
+        if(endpoint == null)
+        {
+            return null;
+        }
+        return new InetSocketAddress(getInetAddressFromIPEndPoint(endpoint), endpoint.get_Port());
     }
 }

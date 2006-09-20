@@ -23,7 +23,9 @@
 */
 package java.net;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import cli.System.Activator;
 import cli.System.Type;
@@ -33,12 +35,21 @@ import cli.System.Reflection.BindingFlags;
 
 final class VMNetworkInterface
 {
-    static Vector getInterfaces() throws SocketException
+    final String name;
+    final Set addresses;
+
+    private VMNetworkInterface(String name, Set addresses)
+    {
+        this.name = name;
+        this.addresses = addresses;
+    }
+
+    static VMNetworkInterface[] getVMInterfaces() throws SocketException
     {
         // NOTE we use reflection to access the System.Management types, because I don't
         // want a static dependency on System.Management (for one, Mono currently doesn't implement it)
         // TODO once we move to .NET 2.0, we can use System.Net.NetworkInformation.NetworkInterface
-        Vector netInterfaces = new Vector();
+        ArrayList netInterfaces = new ArrayList();
         Type type = Type.GetType("System.Management.ManagementClass, System.Management, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
         if (type != null)
         {
@@ -55,17 +66,19 @@ final class VMNetworkInterface
                     // TODO support IPv6
                     Object dnshostname = invoke(props, "get_Item", new Object[] { "DNSHostName" });
                     String hostName = (String)invoke(dnshostname, "get_Value", new Object[0]);
-                    Inet4Address[] addrArray = new Inet4Address[addresses.length];
+                    HashSet addrSet = new HashSet();
                     for (int i = 0; i < addresses.length; i++)
                     {
-                        addrArray[i] = new Inet4Address(getAddressBytes(addresses[i]), hostName);
+                        addrSet.add(new Inet4Address(getAddressBytes(addresses[i]), hostName));
                     }
                     Object description = invoke(props, "get_Item", new Object[] { "Description" });
-                    netInterfaces.add(new NetworkInterface((String)invoke(description, "get_Value", new Object[0]), addrArray));
+                    netInterfaces.add(new VMNetworkInterface((String)invoke(description, "get_Value", new Object[0]), addrSet));
                 }
             }
         }
-        return netInterfaces;
+        VMNetworkInterface[] arr = new VMNetworkInterface[netInterfaces.size()];
+        netInterfaces.toArray(arr);
+        return arr;
     }
 
     private static Object invoke(Object obj, String method, Object[] args)

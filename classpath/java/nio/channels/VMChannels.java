@@ -29,7 +29,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import gnu.java.nio.ChannelInputStream;
 import gnu.java.nio.ChannelOutputStream;
-import gnu.java.nio.channels.FileChannelImpl;
+import gnu.java.nio.FileChannelImpl;
 
 final class VMChannels
 {

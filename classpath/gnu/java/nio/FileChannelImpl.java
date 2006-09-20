@@ -36,7 +36,7 @@ obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version. */
 
 
-package gnu.java.nio.channels;
+package gnu.java.nio;
 
 import gnu.classpath.Configuration;
 import gnu.java.nio.FileLockImpl;

@@ -1207,17 +1207,17 @@
 			</method>
 		</class>
 		<class name="java.nio.channels.VMChannels">
-			<method name="newInputStream" sig="(Lgnu.java.nio.channels.FileChannelImpl;)Ljava.io.FileInputStream;">
+			<method name="newInputStream" sig="(Lgnu.java.nio.FileChannelImpl;)Ljava.io.FileInputStream;">
 				<body>
 					<ldarg_0 />
-					<newobj class="java.io.FileInputStream" name="&lt;init&gt;" sig="(Lgnu.java.nio.channels.FileChannelImpl;)V" />
+					<newobj class="java.io.FileInputStream" name="&lt;init&gt;" sig="(Lgnu.java.nio.FileChannelImpl;)V" />
 					<ret />
 				</body>
 			</method>
-			<method name="newOutputStream" sig="(Lgnu.java.nio.channels.FileChannelImpl;)Ljava.io.FileOutputStream;">
+			<method name="newOutputStream" sig="(Lgnu.java.nio.FileChannelImpl;)Ljava.io.FileOutputStream;">
 				<body>
 					<ldarg_0 />
-					<newobj class="java.io.FileOutputStream" name="&lt;init&gt;" sig="(Lgnu.java.nio.channels.FileChannelImpl;)V" />
+					<newobj class="java.io.FileOutputStream" name="&lt;init&gt;" sig="(Lgnu.java.nio.FileChannelImpl;)V" />
 					<ret />
 				</body>
 			</method>

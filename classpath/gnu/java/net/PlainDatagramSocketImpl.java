@@ -1,41 +1,26 @@
-/* PlainDatagramSocketImpl.java -- Default DatagramSocket implementation
-   Copyright (C) 1998, 1999, 2001 Free Software Foundation, Inc.
+/*
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
-This file is part of GNU Classpath.
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
 
-GNU Classpath is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
-any later version.
- 
-GNU Classpath is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
 
-You should have received a copy of the GNU General Public License
-along with GNU Classpath; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307 USA.
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
 
-Linking this library statically or dynamically with other modules is
-making a combined work based on this library.  Thus, the terms and
-conditions of the GNU General Public License cover the whole
-combination.
-
-As a special exception, the copyright holders of this library give you
-permission to link this library with independent modules to produce an
-executable, regardless of the license terms of these independent
-modules, and to copy and distribute the resulting executable under
-terms of your choice, provided that you also meet, for each linked
-independent module, the terms and conditions of the license of that
-module.  An independent module is a module which is not derived from
-or based on this library.  If you modify this library, you may extend
-this exception to your version of the library, but you are not
-obligated to do so.  If you do not wish to do so, delete this
-exception statement from your version. */
-
-
+  Jeroen Frijters
+  jeroen@frijters.net
+  
+*/
 package gnu.java.net;
 
 import java.io.IOException;
@@ -52,62 +37,30 @@ import cli.System.Net.Sockets.ProtocolType;
 import cli.System.Net.Sockets.AddressFamily;
 import ikvm.lang.CIL;
 
-/**
-* This is the default socket implementation for datagram sockets.
-* It makes native calls to C routines that implement BSD style
-* SOCK_DGRAM sockets in the AF_INET family.
-*
-* @version 0.1
-*
-* @author Aaron M. Renn (arenn@urbanophile.com)
-*/
 public class PlainDatagramSocketImpl extends DatagramSocketImpl
 {
-    /*
-     * Static Variables
-     */
+    private cli.System.Net.Sockets.Socket socket;
 
-    /**
-     * This is the actual underlying socket
-     */
-    private cli.System.Net.Sockets.Socket socket = new cli.System.Net.Sockets.Socket(
-        AddressFamily.wrap(AddressFamily.InterNetwork), 
-        SocketType.wrap(SocketType.Dgram),
-        ProtocolType.wrap(ProtocolType.Udp));
-
-    /*************************************************************************/
-
-    /*
-     * Constructors
-     */
-
-    /**
-     * Default do nothing constructor
-     */
-    public PlainDatagramSocketImpl()
+    public PlainDatagramSocketImpl() throws IOException
     {
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            socket = new cli.System.Net.Sockets.Socket(
+                AddressFamily.wrap(AddressFamily.InterNetwork), 
+                SocketType.wrap(SocketType.Dgram),
+                ProtocolType.wrap(ProtocolType.Udp));
+        }
+        catch(cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
     }
 
-    /*************************************************************************/
-
-    /*
-     * Instance Methods
-     */
-
-    /**
-     * Creates a new datagram socket
-     *
-     * @exception SocketException If an error occurs
-     */
     protected void create() throws SocketException
     {
     }
 
-    /*************************************************************************/
-
-    /**
-     * Closes the socket
-     */
     protected void close()
     {
         if(socket != null)
@@ -117,16 +70,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /*************************************************************************/
-
-    /**
-     * Binds this socket to a particular port and interface
-     *
-     * @param port The port to bind to
-     * @param addr The address to bind to
-     *
-     * @exception SocketException If an error occurs
-     */
     protected void bind(int port, InetAddress addr) throws SocketException
     {
         try
@@ -146,16 +89,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /*************************************************************************/
-
-    /**
-     * Sends a packet of data to a remote host
-     *
-     * @param packet The packet to send
-     *
-     * @exception IOException If an error occurs
-     */
-    protected void send(DatagramPacket packet) throws IOException
+    public void send(DatagramPacket packet) throws IOException
     {
         try		
         {
@@ -182,26 +116,12 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /*************************************************************************/
-
-    /**
-     * What does this method really do?
-     */
     protected int peek(InetAddress addr) throws IOException
     {
         throw new IOException("Not Implemented Yet");
     }
 
-    /*************************************************************************/
-
-    /**
-     * Receives a UDP packet from the network
-     *
-     * @param packet The packet to fill in with the data received
-     *
-     * @exception IOException IOException If an error occurs
-     */
-    protected void receive(DatagramPacket packet) throws IOException
+    public void receive(DatagramPacket packet) throws IOException
     {
         byte[] data = packet.getData();
         cli.System.Net.EndPoint[] remoteEP = new cli.System.Net.EndPoint[] 
@@ -240,15 +160,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
     private static native void setDatagramPacketLength(DatagramPacket packet, int length);
     private static native int getDatagramPacketBufferLength(DatagramPacket packet);
 
-    /*************************************************************************/
-
-    /**
-     * Joins a multicast group
-     *
-     * @param addr The group to join
-     *
-     * @exception IOException If an error occurs
-     */
     protected void join(InetAddress addr) throws IOException
     {
         try
@@ -256,7 +167,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ArgumentException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), new MulticastOption(new cli.System.Net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr))));
+            socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), new MulticastOption(PlainSocketImpl.getAddressFromInetAddress(addr)));
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
@@ -272,15 +183,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /*************************************************************************/
-
-    /**
-     * Leaves a multicast group
-     *
-     * @param addr The group to leave
-     *
-     * @exception IOException If an error occurs
-     */
     protected void leave(InetAddress addr) throws IOException
     {
         try
@@ -288,7 +190,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ArgumentException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), new MulticastOption(new cli.System.Net.IPAddress(PlainSocketImpl.getAddressFromInetAddress(addr))));
+            socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), new MulticastOption(PlainSocketImpl.getAddressFromInetAddress(addr)));
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
@@ -304,15 +206,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /*************************************************************************/
-
-    /**
-     * Gets the Time to Live value for the socket
-     *
-     * @return The TTL value
-     *
-     * @exception IOException If an error occurs
-     */
     protected byte getTTL() throws IOException
     {
         try
@@ -331,15 +224,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /*************************************************************************/
-
-    /**
-     * Sets the Time to Live value for the socket
-     *
-     * @param ttl The new TTL value
-     *
-     * @exception IOException If an error occurs
-     */
     protected void setTTL(byte ttl) throws IOException
     {
         try
@@ -358,15 +242,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /*************************************************************************/
-
-    /**
-     * Gets the Time to Live value for the socket
-     *
-     * @return The TTL value
-     *
-     * @exception IOException If an error occurs
-     */
     protected int getTimeToLive() throws IOException
     {
         try
@@ -385,15 +260,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /*************************************************************************/
-
-    /**
-     * Sets the Time to Live value for the socket
-     *
-     * @param ttl The new TTL value
-     *
-     * @exception IOException If an error occurs
-     */
     protected void setTimeToLive(int ttl) throws IOException
     {
         try
@@ -412,17 +278,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /*************************************************************************/
-
-    /**
-     * Retrieves the value of an option on the socket
-     *
-     * @param option_id The identifier of the option to retrieve
-     *
-     * @return The value of the option
-     *
-     * @exception SocketException If an error occurs
-     */
     public Object getOption(int option_id) throws SocketException
     {
         try
@@ -472,16 +327,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /*************************************************************************/
-
-    /**
-     * Sets the value of an option on the socket
-     *
-     * @param option_id The identifier of the option to set
-     * @param val The value of the option to set
-     *
-     * @exception SocketException If an error occurs
-     */
     public void setOption(int option_id, Object val) throws SocketException
     {
         try
@@ -494,7 +339,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
                     socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast), ((Boolean)val).booleanValue() ? 1 : 0);
                     break;
                 case SocketOptions.IP_MULTICAST_IF:
-                    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress((InetAddress)val));
+                    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress((InetAddress)val).get_Address());
                     break;
                 case SocketOptions.IP_MULTICAST_IF2:
                     throw new SocketException("SocketOptions.IP_MULTICAST_IF2 not implemented");
@@ -522,17 +367,9 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
     public int peekData(DatagramPacket packet)
     {
         // TODO
-        throw new InternalError ("PlainDatagramSocketImpl::peekData is not implemented");
+        throw new InternalError("PlainDatagramSocketImpl::peekData is not implemented");
     }
 
-    /**
-     * Joins a multicast group
-     *
-     * @param address The group to join
-     * @param netIf The interface to bind to
-     *
-     * @exception IOException If an error occurs
-     */
     public void joinGroup(SocketAddress address, NetworkInterface netIf) throws IOException
     {
         try
@@ -547,12 +384,12 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             }
 
             InetAddress inetAddr = ((InetSocketAddress)address).getAddress();
-            IPAddress mcastAddr = new IPAddress(PlainSocketImpl.getAddressFromInetAddress(inetAddr));
+            IPAddress mcastAddr = PlainSocketImpl.getAddressFromInetAddress(inetAddr);
 
-            Enumeration e=netIf.getInetAddresses();
-            if (e.hasMoreElements())
+            Enumeration e = netIf.getInetAddresses();
+            if(e.hasMoreElements())
             {
-                IPAddress bindAddr  = new IPAddress(PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement()));
+                IPAddress bindAddr  = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
                 MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
                 socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), mcastOption);
             }
@@ -571,14 +408,6 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
         }
     }
 
-    /**
-     * Leaves a multicast group
-     *
-     * @param address The group to join
-     * @param netIf The interface to bind to
-     *
-     * @exception IOException If an error occurs
-     */
     public void leaveGroup(SocketAddress address, NetworkInterface netIf) throws IOException
     {
         try
@@ -593,12 +422,12 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             }
 
             InetAddress inetAddr = ((InetSocketAddress)address).getAddress();
-            IPAddress mcastAddr = new IPAddress(PlainSocketImpl.getAddressFromInetAddress(inetAddr));
+            IPAddress mcastAddr = PlainSocketImpl.getAddressFromInetAddress(inetAddr);
 
-            Enumeration e=netIf.getInetAddresses();
-            if (e.hasMoreElements())
+            Enumeration e = netIf.getInetAddresses();
+            if(e.hasMoreElements())
             {
-                IPAddress bindAddr  = new IPAddress(PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement()));
+                IPAddress bindAddr  = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
                 MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
                 socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), mcastOption);
             }
@@ -621,4 +450,4 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
     {
         return socket;
     }
-} // class PlainDatagramSocketImpl
+}

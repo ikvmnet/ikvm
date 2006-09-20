@@ -454,11 +454,11 @@ public final class SelectorImpl extends AbstractSelector
     SelectionKeyImpl result;
     
     if (ch instanceof SocketChannelImpl)
-      result = new SocketChannelSelectionKey (ch, this);
+      result = new SelectionKeyImpl(ch, this, ((SocketChannelImpl)ch).getSocket());
     else if (ch instanceof DatagramChannelImpl)
-      result = new DatagramChannelSelectionKey (ch, this);
+      result = new SelectionKeyImpl(ch, this, ((DatagramChannelImpl)ch).getSocket());
     else if (ch instanceof ServerSocketChannelImpl)
-      result = new ServerSocketChannelSelectionKey (ch, this);
+      result = new SelectionKeyImpl(ch, this, ((ServerSocketChannelImpl)ch).getSocket());
     else
       throw new InternalError ("No known channel type");
 

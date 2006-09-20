@@ -28,7 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 import java.nio.channels.Channels;
-import gnu.java.nio.channels.FileChannelImpl;
+import gnu.java.nio.FileChannelImpl;
 import cli.System.Text.StringBuilder;
 import cli.System.Diagnostics.ProcessStartInfo;
 
