@@ -2105,22 +2105,20 @@ namespace ikvm.awt
 
 		public bool isObscured()
 		{
-			throw new NotImplementedException();
+			return false;
 		}
 
 		public bool canDetermineObscurity()
 		{
-			throw new NotImplementedException();
+			return false;
 		}
 
 		public void coalescePaintEvent(java.awt.@event.PaintEvent e)
 		{
-			throw new NotImplementedException();
 		}
 
 		public void updateCursorImmediately()
 		{
-			throw new NotImplementedException();
 		}
 
 		public java.awt.image.VolatileImage createVolatileImage(int width, int height)
@@ -2130,7 +2128,7 @@ namespace ikvm.awt
 
 		public bool handlesWheelScrolling()
 		{
-			throw new NotImplementedException();
+			return true;
 		}
 
 		public void createBuffers(int x, java.awt.BufferCapabilities capabilities)
