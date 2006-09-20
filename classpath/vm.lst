@@ -67,6 +67,7 @@ java/lang/VMMath.java
 java/lang/VMRuntime.java
 java/lang/VMSystem.java
 java/lang/VMThread.java
+java/net/NioServerSocket.java
 java/net/VMInetAddress.java
 java/net/VMNetworkInterface.java
 java/net/VMURLConnection.java

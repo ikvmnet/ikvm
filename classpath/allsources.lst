@@ -2480,6 +2480,7 @@
 ../../classpath/java/net/PasswordAuthentication.java
 ../../classpath/java/net/PortUnreachableException.java
 ../../classpath/java/net/ProtocolException.java
+../../classpath/java/net/ResolverCache.java
 ../../classpath/java/net/ServerSocket.java
 ../../classpath/java/net/Socket.java
 ../../classpath/java/net/SocketAddress.java
