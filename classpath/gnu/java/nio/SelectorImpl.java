@@ -61,80 +61,44 @@ import cli.System.Collections.ArrayList;
 public final class SelectorImpl extends AbstractSelector
 {
   private static boolean debug = false;
-  private Set keys;
-  private Set selected;
-
-  /**
-   * A dummy object whose monitor regulates access to both our
-   * selectThread and unhandledWakeup fields.
-   */
-  private Object wakeupMutex = new Object ();
-  
-  /**
-   * Any thread that's currently blocked in a select operation.
-   */
+  private final HashSet keys = new HashSet();
+  private final HashSet selected = new HashSet();
+  private final Object wakeupMutex = new Object();
   private Socket notifySocket;
-  
-  /**
-   * Indicates whether we have an unhandled wakeup call. This can
-   * be due to either wakeup() triggering a thread interruption while
-   * a thread was blocked in a select operation (in which case we need
-   * to reset this thread's interrupt status after interrupting the
-   * select), or else that no thread was on a select operation at the
-   * time that wakeup() was called, in which case the following select()
-   * operation should return immediately with nothing selected.
-   */
   private volatile boolean unhandledWakeup;
 
-  public SelectorImpl (SelectorProvider provider)
+  public SelectorImpl(SelectorProvider provider)
   {
-    super (provider);
-    
-    keys = new HashSet ();
-    selected = new HashSet ();
+    super(provider);
   }
 
-  protected final void implCloseSelector()
-    throws IOException
+  protected void implCloseSelector() throws IOException
   {
     // Cancel any pending select operation.
     wakeup();
-    
-    synchronized (keys)
-      {
-        synchronized (selected)
-          {
-            synchronized (cancelledKeys ())
-              {
-                // FIXME: Release resources here.
-              }
-          }
-      }
   }
 
-  public final Set keys()
+  public Set keys()
   {
     if (!isOpen())
       throw new ClosedSelectorException();
 
-    return Collections.unmodifiableSet (keys);
+    return Collections.unmodifiableSet(keys);
   }
     
-  public final int selectNow()
-    throws IOException
+  public int selectNow() throws IOException
   {
     // FIXME: We're simulating an immediate select
     // via a select with a timeout of one millisecond.
-    return select (1);
+    return select(1);
   }
 
-  public final int select()
-    throws IOException
+  public int select() throws IOException
   {
-    return select (0);
+    return select(0);
   }
 
-  private final ArrayList getFDsAsArray(int ops)
+  private ArrayList getSocketArray(int ops)
   {
     ArrayList result = new ArrayList();
     Iterator it = keys.iterator();
@@ -142,9 +106,11 @@ public final class SelectorImpl extends AbstractSelector
     // Fill the array with the file descriptors
     while (it.hasNext())
       {
-        SelectionKeyImpl key = (SelectionKeyImpl) it.next ();
+        SelectionKeyImpl key = (SelectionKeyImpl)it.next();
 
-        if ((key.interestOps () & ops) != 0)
+        int validOps = ops & key.channel().validOps();
+
+        if ((key.interestOps() & validOps) != 0 && (key.readyOps() & validOps) != validOps)
           {
             result.Add(key.getSocket());
           }
@@ -153,12 +119,11 @@ public final class SelectorImpl extends AbstractSelector
     return result;
   }
 
-  public synchronized int select(long timeout)
-    throws IOException
+  public synchronized int select(long timeout) throws IOException
   {
     if (!isOpen())
       throw new ClosedSelectorException();
-      
+
     synchronized (keys)
       {
         synchronized (selected)
@@ -166,32 +131,15 @@ public final class SelectorImpl extends AbstractSelector
             deregisterCancelledKeys();
 
             // Set only keys with the needed interest ops into the arrays.
-            ArrayList read = getFDsAsArray (SelectionKey.OP_READ
-                                        | SelectionKey.OP_ACCEPT);
-            ArrayList write = getFDsAsArray (SelectionKey.OP_WRITE
-                                         | SelectionKey.OP_CONNECT);
+            ArrayList read = getSocketArray(SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+            ArrayList write = getSocketArray(SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT);
+            ArrayList error = getSocketArray(SelectionKey.OP_CONNECT);
 
             if (debug)
             {
-                System.out.println("SelectorImpl.select: read.Count = " + read.get_Count() + ", write.Count = " + write.get_Count() + ", timeout = " + timeout);
+                System.out.println("SelectorImpl.select: read.Count = " + read.get_Count() + ", write.Count = " + write.get_Count() + ", error.Count = " + error.get_Count() + ", timeout = " + timeout);
             }
 
-            // Test to see if we've got an unhandled wakeup call,
-            // in which case we return immediately. Otherwise,
-            // remember our current thread and jump into the select.
-            // The monitor for dummy object wakeupMutex regulates
-            // access to these fields.
-
-            // FIXME: Not sure from the spec at what point we should
-            // return "immediately". Is it here or immediately upon
-            // entry to this function?
-            
-            // NOTE: There's a possibility of another thread calling
-            // wakeup() immediately after our thread releases
-            // wakeupMutex's monitor here, in which case we'll
-            // do the select anyway. Since calls to wakeup() and select()
-            // among different threads happen in non-deterministic order,
-            // I don't think this is an issue.
             synchronized (wakeupMutex)
               {
                 if (unhandledWakeup)
@@ -209,20 +157,19 @@ public final class SelectorImpl extends AbstractSelector
                   }
               }
 
-            // Call the native select() on all file descriptors.
-            int result = 0;
             try
               {
                 begin();
                 ArrayList savedReadList = read;
                 ArrayList savedWriteList = write;
+                ArrayList savedErrorList = error;
                 if (timeout == 0)
                 {
                     do
                     {
                         read = (ArrayList)savedReadList.Clone();
                         write = (ArrayList)savedWriteList.Clone();
-                        // TODO we should probably select errors too
+                        error = (ArrayList)savedErrorList.Clone();
                         // TODO we should somehow support waking up in response to Thread.interrupt()
                         read.Add(notifySocket);
                         try
@@ -236,7 +183,7 @@ public final class SelectorImpl extends AbstractSelector
                                 {
                                     System.out.println("SelectorImpl.select: Socket.Select");
                                 }
-                                Socket.Select(read, write, null, Integer.MAX_VALUE);
+                                Socket.Select(read, write, error, Integer.MAX_VALUE);
                             }
                             finally
                             {
@@ -252,17 +199,13 @@ public final class SelectorImpl extends AbstractSelector
                             }
                             read.Clear();
                             write.Clear();
+                            error.Clear();
                             purgeList(savedReadList);
                             purgeList(savedWriteList);
+                            purgeList(savedErrorList);
                         }
-                    } while(read.get_Count() == 0 && write.get_Count() == 0 && !unhandledWakeup);
-                    // TODO result should be set correctly
+                    } while(read.get_Count() == 0 && write.get_Count() == 0 && error.get_Count() == 0 && !unhandledWakeup);
                     read.Remove(notifySocket);
-                    result = read.get_Count() + write.get_Count();
-                    if (debug)
-                    {
-                        System.out.println("SelectorImpl.select: result = " + result);
-                    }
                 }
                 else
                 {
@@ -270,8 +213,8 @@ public final class SelectorImpl extends AbstractSelector
                     {
                         read = (ArrayList)savedReadList.Clone();
                         write = (ArrayList)savedWriteList.Clone();
+                        error = (ArrayList)savedErrorList.Clone();
                         int microSeconds = 1000 * (int)Math.min(Integer.MAX_VALUE / 1000, timeout);
-                        // TODO we should probably select errors too
                         // TODO we should somehow support waking up in response to Thread.interrupt()
                         read.Add(notifySocket);
                         try
@@ -281,7 +224,7 @@ public final class SelectorImpl extends AbstractSelector
                             cli.System.Threading.Monitor.Exit(keys);
                             try
                             {
-                                Socket.Select(read, write, null, microSeconds);
+                                Socket.Select(read, write, error, microSeconds);
                             }
                             finally
                             {
@@ -293,13 +236,13 @@ public final class SelectorImpl extends AbstractSelector
                         {
                             read.Clear();
                             write.Clear();
+                            error.Clear();
                             purgeList(savedReadList);
                             purgeList(savedWriteList);
+                            purgeList(savedErrorList);
                         }
-                    } while(timeout > 0 && read.get_Count() == 0 && write.get_Count() == 0 && !unhandledWakeup);
-                    // TODO result should be set correctly
+                    } while(timeout > 0 && read.get_Count() == 0 && write.get_Count() == 0 && error.get_Count() == 0 && !unhandledWakeup);
                     read.Remove(notifySocket);
-                    result = read.get_Count() + write.get_Count();
                 }
               }
             finally
@@ -315,69 +258,87 @@ public final class SelectorImpl extends AbstractSelector
 
             Iterator it = keys.iterator ();
 
-            while (it.hasNext ())
-              {
+            int updatedCount = 0;
+            while (it.hasNext())
+            {
                 int ops = 0;
-                SelectionKeyImpl key = (SelectionKeyImpl) it.next ();
+                SelectionKeyImpl key = (SelectionKeyImpl)it.next();
 
-                // If key is already selected retrieve old ready ops.
-                if (selected.contains (key))
-                  {
-                    ops = key.readyOps ();
-                  }
-
-                // Set new ready read/accept ops
-                for (int i = 0; i < read.get_Count(); i++)
-                  {
-                    if (key.getSocket() == read.get_Item(i))
-                      {
-                        if (key.channel () instanceof ServerSocketChannelImpl)
-                          {
-                            ops = ops | SelectionKey.OP_ACCEPT;
-                          }
-                        else
-                          {
-                            ops = ops | SelectionKey.OP_READ;
-                          }
-                      }
-                  }
-
-                // Set new ready write ops
-                for (int i = 0; i < write.get_Count(); i++)
-                  {
-                    if (key.getSocket() == write.get_Item(i))
-                      {
-                        ops = ops | SelectionKey.OP_WRITE;
-
-        //                 if (key.channel ().isConnected ())
-        //                   {
-        //                     ops = ops | SelectionKey.OP_WRITE;
-        //                   }
-        //                 else
-        //                   {
-        //                     ops = ops | SelectionKey.OP_CONNECT;
-        //                   }
-                     }
-                  }
-
-                // FIXME: We dont handle exceptional file descriptors yet.
-
-                // If key is not yet selected add it.
-                if (!selected.contains (key))
-                  {
-                    selected.add (key);
-                  }
-
-                // Set new ready ops
-                key.readyOps (key.interestOps () & ops);
-                if (debug)
+                for (int i = 0; i < error.get_Count(); i++)
                 {
-                    System.out.println("SelectorImpl.select: readyOps = " + (key.interestOps () & ops));
+                    if (key.getSocket() == error.get_Item(i))
+                    {
+                        ops |= SelectionKey.OP_CONNECT;
+                        break;
+                    }
                 }
-              }
+
+                for (int i = 0; i < read.get_Count(); i++)
+                {
+                    if (key.getSocket() == read.get_Item(i))
+                    {
+                        if (key.channel() instanceof ServerSocketChannelImpl)
+                        {
+                            ops |= SelectionKey.OP_ACCEPT;
+                        }
+                        else
+                        {
+                            ops |= SelectionKey.OP_READ;
+                        }
+                        break;
+                    }
+                }
+
+                for (int i = 0; i < write.get_Count(); i++)
+                {
+                    if (key.getSocket() == write.get_Item(i))
+                    {
+                        if (key.channel() instanceof SocketChannelImpl)
+                        {
+                            SocketChannelImpl impl = (SocketChannelImpl)key.channel();
+                            if (impl.isConnected())
+                            {
+                                ops |= SelectionKey.OP_WRITE;
+                            }
+                            else
+                            {
+                                ops |= SelectionKey.OP_CONNECT;
+                            }
+                        }
+                        else
+                        {
+                            ops |= SelectionKey.OP_WRITE;
+                        }
+                        break;
+                    }
+                }
+
+                ops &= key.interestOps();
+
+                if ((key.readyOps() & ops) != ops)
+                {
+                    updatedCount++;
+                    // Set new ready ops
+                    key.readyOps(key.readyOps() | ops);
+                    if (debug)
+                    {
+                        System.out.println("SelectorImpl.select: readyOps = " + (key.interestOps () & ops));
+                    }
+                    if (key.channel() instanceof SocketChannelImpl)
+                    {
+                        SocketChannelImpl impl = (SocketChannelImpl)key.channel();
+                        impl.selected();
+                    }
+                    // If key is not yet selected add it.
+                    if (!selected.contains(key))
+                    {
+                        selected.add(key);
+                    }
+                }
+            }
             deregisterCancelledKeys();
             
-            return result;
+            return updatedCount;
           }
         }
   }
@@ -430,26 +391,25 @@ public final class SelectorImpl extends AbstractSelector
 
   private final void deregisterCancelledKeys()
   {
-    Set ckeys = cancelledKeys ();
+    Set ckeys = cancelledKeys();
     synchronized (ckeys)
     {
       Iterator it = ckeys.iterator();
 
-      while (it.hasNext ())
+      while (it.hasNext())
         {
-          keys.remove ((SelectionKeyImpl) it.next ());
-          it.remove ();
+          keys.remove((SelectionKeyImpl)it.next());
+          it.remove();
         }
     }
   }
 
-  protected SelectionKey register (SelectableChannel ch, int ops, Object att)
+  protected SelectionKey register(SelectableChannel ch, int ops, Object att)
   {
-    return register ((AbstractSelectableChannel) ch, ops, att);
+    return register((AbstractSelectableChannel)ch, ops, att);
   }
 
-  protected final SelectionKey register (AbstractSelectableChannel ch, int ops,
-                                         Object att)
+  protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att)
   {
     SelectionKeyImpl result;
     
@@ -467,8 +427,8 @@ public final class SelectorImpl extends AbstractSelector
         keys.add (result);
       }
 
-    result.interestOps (ops);
-    result.attach (att);
+    result.interestOps(ops);
+    result.attach(att);
     return result;
   }
 }

@@ -160,6 +160,7 @@ namespace ikvm.awt
 				Thread thread = new Thread(new ThreadStart(MessageLoop));
 				thread.ApartmentState = ApartmentState.STA;
 				thread.Name = "IKVM AWT WinForms Message Loop";
+				//thread.IsBackground = true;
 				thread.Start();
 				// TODO don't use polling...
 				while(bogusForm == null && thread.IsAlive)

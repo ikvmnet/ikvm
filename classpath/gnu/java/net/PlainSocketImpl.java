@@ -129,7 +129,8 @@ public final class PlainSocketImpl extends SocketImpl
         }        
     }
 
-    protected int available() throws IOException
+    // public for use by SocketChannelImpl
+    public int available() throws IOException
     {
         try
         {
@@ -684,7 +685,18 @@ public final class PlainSocketImpl extends SocketImpl
 
     public void setBlocking(boolean blocking)
     {
-        socket.set_Blocking(blocking);
+        try
+        {
+            if(false) throw new cli.System.Net.Sockets.SocketException();
+            if(false) throw new cli.System.ObjectDisposedException("");
+            socket.set_Blocking(blocking);
+        }
+        catch(cli.System.Net.Sockets.SocketException _)
+        {
+        }
+        catch(cli.System.ObjectDisposedException _)
+        {
+        }
     }
 
     public boolean isInChannelOperation()

@@ -43,12 +43,17 @@ import java.nio.channels.spi.SelectorProvider;
 
 public final class SocketChannelImpl extends SocketChannel
 {
-    private PlainSocketImpl impl;
-    private Socket socket;
-    private boolean connected;
-    private boolean connectionPending;
-    private boolean blocking;
-  
+    private static final int NOT_CONNECTED = 0;
+    private static final int CONNECTION_PENDING = 1;
+    private static final int CONNECTED = 2;
+
+    private final PlainSocketImpl impl;
+    private final Socket socket;
+    private final Object lockRead = new Object();
+    private final Object lockWrite = new Object();
+    private volatile int state; // state is only valid while isOpen()
+    private volatile boolean connectionPendingReady;
+
     SocketChannelImpl(SelectorProvider provider) throws IOException
     {
         this(provider, new PlainSocketImpl(), false);
@@ -59,13 +64,15 @@ public final class SocketChannelImpl extends SocketChannel
     {
         super(provider);
         this.impl = impl;
-        this.connected = connected;
-        this.blocking = true;
+        if (connected)
+        {
+            state = CONNECTED;
+        }
         socket = new Socket(impl)
         {
             public void connect(SocketAddress endpoint) throws IOException
             {
-                if (blocking)
+                if (isBlocking())
                     throw new IllegalBlockingModeException();
 
                 super.connect(endpoint);
@@ -73,7 +80,7 @@ public final class SocketChannelImpl extends SocketChannel
 
             public void connect(SocketAddress endpoint, int timeout) throws IOException
             {
-                if (blocking)
+                if (isBlocking())
                     throw new IllegalBlockingModeException();
 
                 super.connect(endpoint, timeout);
@@ -88,15 +95,12 @@ public final class SocketChannelImpl extends SocketChannel
   
     protected void implCloseSelectableChannel() throws IOException
     {
-        connectionPending = false;
-        connected = false;
         socket.close();
     }
 
     protected void implConfigureBlocking(boolean blocking) throws IOException
     {
-        this.blocking = blocking;
-        if (connected)
+        if (state == CONNECTED)
         {
             impl.setBlocking(blocking);
         }
@@ -104,91 +108,121 @@ public final class SocketChannelImpl extends SocketChannel
 
     public boolean connect(SocketAddress remote) throws IOException
     {
-        if (!isOpen())
-            throw new ClosedChannelException();
-    
-        if (isConnected())
-            throw new AlreadyConnectedException();
-
-        if (connectionPending)
-            throw new ConnectionPendingException();
-
-        if (!(remote instanceof InetSocketAddress))
-            throw new UnsupportedAddressTypeException();
-    
-        InetSocketAddress connectAddress = (InetSocketAddress) remote;
-
-        if (connectAddress.isUnresolved())
-            throw new UnresolvedAddressException();
-
-        if (blocking)
+        synchronized (lockRead)
         {
-            try
+            synchronized (lockWrite)
             {
-                impl.connect(connectAddress.getAddress(), connectAddress.getPort());
-                impl.setBlocking(blocking);
-                connected = true;
-            }
-            finally
-            {
-                if (!connected)
+                if (!isOpen())
+                    throw new ClosedChannelException();
+            
+                if (isConnected())
+                    throw new AlreadyConnectedException();
+
+                if (isConnectionPending())
+                    throw new ConnectionPendingException();
+
+                if (!(remote instanceof InetSocketAddress))
+                    throw new UnsupportedAddressTypeException();
+            
+                InetSocketAddress connectAddress = (InetSocketAddress) remote;
+
+                if (connectAddress.isUnresolved())
+                    throw new UnresolvedAddressException();
+
+                if (isBlocking())
                 {
-                    close();
+                    try
+                    {
+                        impl.connect(connectAddress.getAddress(), connectAddress.getPort());
+                        state = CONNECTED;
+                        if (isBlocking())
+                        {
+                            impl.setBlocking(true);
+                        }
+                    }
+                    finally
+                    {
+                        if (state != CONNECTED)
+                        {
+                            close();
+                        }
+                    }
+                    return true;
+                }
+                else
+                {
+                    impl.beginConnect(connectAddress);
+                    state = CONNECTION_PENDING;
+                    return false;
                 }
             }
-            return true;
-        }
-        else
-        {
-            impl.beginConnect(connectAddress);
-            connectionPending = true;
-            return false;
         }
     }
-    
+
+    void selected()
+    {
+        if (state == CONNECTION_PENDING)
+        {
+            // if select() returned for this socket, we must make sure that
+            // a following finishConnect actually finishes the connect, so we
+            // set this flag (because oddly enough the .NET async object may still be
+            // unsignaled at this point, so impl.isConnectFinished may return false)
+            connectionPendingReady = true;
+        }
+    }
+
     public boolean finishConnect() throws IOException
     {
-        if (!isOpen())
-            throw new ClosedChannelException();
-
-        if (connected)
-            return true;
-    
-        if (!connectionPending)
-            throw new NoConnectionPendingException();
-
-        if (blocking || impl.isConnectFinished())
+        synchronized (lockRead)
         {
-            try
+            synchronized (lockWrite)
             {
-                connectionPending = false;
-                impl.endConnect();
-                connected = true;
-                impl.setBlocking(blocking);
-            }
-            finally
-            {
-                if (!connected)
+                if (!isOpen())
+                    throw new ClosedChannelException();
+
+                if (state == CONNECTED)
+                    return true;
+            
+                if (state != CONNECTION_PENDING)
+                    throw new NoConnectionPendingException();
+
+
+                if (isBlocking() || connectionPendingReady || impl.isConnectFinished())
                 {
-                    close();
+                    try
+                    {
+                        impl.endConnect();
+                        state = CONNECTED;
+                        if (isBlocking())
+                        {
+                            impl.setBlocking(true);
+                        }
+                    }
+                    finally
+                    {
+                        if (state != CONNECTED)
+                        {
+                            close();
+                        }
+                    }
+                    return true;
+                }
+                else
+                {
+                    return false;
                 }
             }
-            return true;
-        }
-        else
-        {
-            return false;
         }
     }
 
     public boolean isConnected()
     {
-        return connected;
+        return isOpen() && state == CONNECTED;
     }
     
     public boolean isConnectionPending()
     {
-        return connectionPending;
+        return isOpen() && state == CONNECTION_PENDING;
     }
     
     public Socket socket()
@@ -198,80 +232,132 @@ public final class SocketChannelImpl extends SocketChannel
 
     public int read(ByteBuffer dst) throws IOException
     {
-        if (!isOpen())
-            throw new ClosedChannelException();
-
-        if (!isConnected())
-            throw new NotYetConnectedException();
-
-        if (dst.hasArray())
+        synchronized (lockRead)
         {
-            byte[] buf = dst.array();
-            int len = impl.read(buf, dst.arrayOffset() + dst.position(), dst.remaining());
-            dst.position(dst.position() + len);
-            return len;
-        }
-        else
-        {
-            byte[] buf = new byte[dst.remaining()];
-            int len = impl.read(buf, 0, buf.length);
-            dst.put(buf, 0, len);
-            return len;
+            if (!isOpen())
+                throw new ClosedChannelException();
+
+            if (state != CONNECTED)
+                throw new NotYetConnectedException();
+
+            if (dst.hasArray())
+            {
+                byte[] buf = dst.array();
+                int len = impl.read(buf, dst.arrayOffset() + dst.position(), dst.remaining());
+                dst.position(dst.position() + len);
+                return len;
+            }
+            else
+            {
+                byte[] buf = new byte[dst.remaining()];
+                int len = impl.read(buf, 0, buf.length);
+                dst.put(buf, 0, len);
+                return len;
+            }
         }
     }
-    
+
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException
     {
-        if (!isOpen())
-            throw new ClosedChannelException();
+        synchronized (lockRead)
+        {
+            if (!isOpen())
+                throw new ClosedChannelException();
 
-        if (!isConnected())
-            throw new NotYetConnectedException();
-    
-        if (!Util.rangeCheck(dsts.length, offset, length))
-            throw new IndexOutOfBoundsException();
-    
-        throw new Error("Not implemented");
+            if (state != CONNECTED)
+                throw new NotYetConnectedException();
+        
+            if (!Util.rangeCheck(dsts.length, offset, length))
+                throw new IndexOutOfBoundsException();
+        
+            long totalRead = 0;
+            for (int i = 0; i < length; i++)
+            {
+                int size = dsts[i + offset].remaining();
+                if (size > 0)
+                {
+                    int read = read(dsts[i + offset]);
+                    totalRead += read;
+                    if (read < size || available() == 0)
+                    {
+                        break;
+                    }
+                }
+            }
+            return totalRead;
+        }
+    }
+
+    private int available()
+    {
+        try
+        {
+            return impl.available();
+        }
+        catch (IOException _)
+        {
+            return 0;
+        }
     }
 
     public int write(ByteBuffer src) throws IOException
     {
-        if (!isOpen())
-            throw new ClosedChannelException();
-
-        if (!isConnected())
-            throw new NotYetConnectedException();
-
-        if (src.hasArray())
+        synchronized (lockWrite)
         {
-            byte[] buf = src.array();
-            int len = impl.writeImpl(buf, src.arrayOffset() + src.position(), src.remaining());
-            src.position(src.position() + len);
-            return len;
-        }
-        else
-        {
-            int pos = src.position();
-            byte[] buf = new byte[src.remaining()];
-            src.get(buf);
-            int len = impl.writeImpl(buf, 0, buf.length);
-            src.position(pos + len);
-            return len;
+            if (!isOpen())
+                throw new ClosedChannelException();
+
+            if (state != CONNECTED)
+                throw new NotYetConnectedException();
+
+            if (src.hasArray())
+            {
+                byte[] buf = src.array();
+                int len = impl.writeImpl(buf, src.arrayOffset() + src.position(), src.remaining());
+                src.position(src.position() + len);
+                return len;
+            }
+            else
+            {
+                int pos = src.position();
+                byte[] buf = new byte[src.remaining()];
+                src.get(buf);
+                int len = impl.writeImpl(buf, 0, buf.length);
+                src.position(pos + len);
+                return len;
+            }
         }
     }
 
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException
     {
-        if (!isOpen())
-            throw new ClosedChannelException();
+        synchronized (lockWrite)
+        {
+            if (!isOpen())
+                throw new ClosedChannelException();
 
-        if (!isConnected())
-            throw new NotYetConnectedException();
-    
-        if (!Util.rangeCheck(srcs.length, offset, length))
-            throw new IndexOutOfBoundsException();
+            if (state != CONNECTED)
+                throw new NotYetConnectedException();
+        
+            if (!Util.rangeCheck(srcs.length, offset, length))
+                throw new IndexOutOfBoundsException();
 
-        throw new Error("Not implemented");
+            long totalWritten = 0;
+            for (int i = 0; i < length; i++)
+            {
+                int size = srcs[i + offset].remaining();
+                if (size > 0)
+                {
+                    int written = write(srcs[i + offset]);
+                    totalWritten += written;
+                    if (written < size)
+                    {
+                        break;
+                    }
+                }
+            }
+            return totalWritten;
+        }
     }
 
     cli.System.Net.Sockets.Socket getSocket()
