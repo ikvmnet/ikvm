@@ -18,6 +18,8 @@
 /classpath/gnu/java/nio/charset/iconv/
 /classpath/gnu/java/nio/DatagramChannelImpl.java
 /classpath/gnu/java/nio/DatagramChannelSelectionKey.java
+/classpath/gnu/java/nio/EpollSelectionKeyImpl.java
+/classpath/gnu/java/nio/EpollSelectorImpl.java
 /classpath/gnu/java/nio/FileChannelImpl.java
 /classpath/gnu/java/nio/KqueueSelectorImpl.java
 /classpath/gnu/java/nio/KqueueSelectionKeyImpl.java
