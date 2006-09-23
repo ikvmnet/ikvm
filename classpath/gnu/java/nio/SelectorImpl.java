@@ -60,262 +60,262 @@ import cli.System.Collections.ArrayList;
 
 public final class SelectorImpl extends AbstractSelector implements VMThread.InterruptProc
 {
-  private static boolean debug = false;
-  private final HashSet keys = new HashSet();
-  private final HashSet selected = new HashSet();
-  private final Object wakeupMutex = new Object();
-  private Socket notifySocket;
-  private volatile boolean unhandledWakeup;
+    private static boolean debug = false;
+    private final HashSet keys = new HashSet();
+    private final HashSet selected = new HashSet();
+    private final Object wakeupMutex = new Object();
+    private Socket notifySocket;
+    private volatile boolean unhandledWakeup;
 
-  public SelectorImpl(SelectorProvider provider)
-  {
-    super(provider);
-  }
+    public SelectorImpl(SelectorProvider provider)
+    {
+        super(provider);
+    }
 
-  protected void implCloseSelector() throws IOException
-  {
-    // Cancel any pending select operation.
-    wakeup();
-  }
+    protected void implCloseSelector() throws IOException
+    {
+        // Cancel any pending select operation.
+        wakeup();
+    }
 
     public void interrupt()
     {
         wakeup();
     }
 
-  public Set keys()
-  {
-    if (!isOpen())
-      throw new ClosedSelectorException();
+    public Set keys()
+    {
+        if (!isOpen())
+            throw new ClosedSelectorException();
 
-    return Collections.unmodifiableSet(keys);
-  }
+        return Collections.unmodifiableSet(keys);
+    }
     
-  public int selectNow() throws IOException
-  {
-    // FIXME: We're simulating an immediate select
-    // via a select with a timeout of one millisecond.
-    return select(1);
-  }
+    public int selectNow() throws IOException
+    {
+        // FIXME: We're simulating an immediate select
+        // via a select with a timeout of one millisecond.
+        return select(1);
+    }
 
-  public int select() throws IOException
-  {
-    return select(0);
-  }
+    public int select() throws IOException
+    {
+        return select(0);
+    }
 
-  private ArrayList getSocketArray(int ops)
-  {
-    ArrayList result = new ArrayList();
-    Iterator it = keys.iterator();
+    private ArrayList getSocketArray(int ops)
+    {
+        ArrayList result = new ArrayList();
+        Iterator it = keys.iterator();
 
-    // Fill the array with the file descriptors
-    while (it.hasNext())
-      {
-        SelectionKeyImpl key = (SelectionKeyImpl)it.next();
+        // Fill the array with the file descriptors
+        while (it.hasNext())
+        {
+            SelectionKeyImpl key = (SelectionKeyImpl)it.next();
 
-        int validOps = ops & key.channel().validOps();
+            int validOps = ops & key.channel().validOps();
 
-        if ((key.interestOps() & validOps) != 0 && (key.readyOps() & validOps) != validOps)
-          {
-            result.Add(key.getSocket());
-          }
-      }
-
-    return result;
-  }
-
-  public synchronized int select(long timeout) throws IOException
-  {
-    if (!isOpen())
-      throw new ClosedSelectorException();
-
-    synchronized (keys)
-      {
-        synchronized (selected)
-          {
-            deregisterCancelledKeys();
-
-            // Set only keys with the needed interest ops into the arrays.
-            ArrayList read = getSocketArray(SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
-            ArrayList write = getSocketArray(SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT);
-            ArrayList error = getSocketArray(SelectionKey.OP_CONNECT);
-
-            if (debug)
+            if ((key.interestOps() & validOps) != 0 && (key.readyOps() & validOps) != validOps)
             {
-                System.out.println("SelectorImpl.select: read.Count = " + read.get_Count() + ", write.Count = " + write.get_Count() + ", error.Count = " + error.get_Count() + ", timeout = " + timeout);
+                result.Add(key.getSocket());
             }
+        }
 
-            synchronized (wakeupMutex)
-              {
-                if (unhandledWakeup)
-                  {
-                    if (debug)
-                    {
-                        System.out.println("SelectorImpl.select: returning due to unhandled wakeup");
-                    }
-                    unhandledWakeup = false;
-                    return 0;
-                  }
-                else
-                  {
-                    notifySocket = createNotifySocket();
-                  }
-              }
+        return result;
+    }
 
-            try
-              {
-                begin();
-                ArrayList savedReadList = read;
-                ArrayList savedWriteList = write;
-                ArrayList savedErrorList = error;
-                if (timeout == 0)
+    public synchronized int select(long timeout) throws IOException
+    {
+        if (!isOpen())
+            throw new ClosedSelectorException();
+
+        synchronized (keys)
+        {
+            synchronized (selected)
+            {
+                deregisterCancelledKeys();
+
+                // Set only keys with the needed interest ops into the arrays.
+                ArrayList read = getSocketArray(SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+                ArrayList write = getSocketArray(SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT);
+                ArrayList error = getSocketArray(SelectionKey.OP_CONNECT);
+
+                if (debug)
                 {
-                    do
-                    {
-                        read = (ArrayList)savedReadList.Clone();
-                        write = (ArrayList)savedWriteList.Clone();
-                        error = (ArrayList)savedErrorList.Clone();
-                        read.Add(notifySocket);
-                        try
-                        {
-                            implSelect(read, write, error, Integer.MAX_VALUE);
-                        }
-                        catch(SocketException _)
-                        {
-                            read.Clear();
-                            write.Clear();
-                            error.Clear();
-                            purgeList(savedReadList);
-                            purgeList(savedWriteList);
-                            purgeList(savedErrorList);
-                        }
-                    } while(read.get_Count() == 0 && write.get_Count() == 0 && error.get_Count() == 0 && !unhandledWakeup);
-                    read.Remove(notifySocket);
+                    System.out.println("SelectorImpl.select: read.Count = " + read.get_Count() + ", write.Count = " + write.get_Count() + ", error.Count = " + error.get_Count() + ", timeout = " + timeout);
                 }
-                else
-                {
-                    do
-                    {
-                        read = (ArrayList)savedReadList.Clone();
-                        write = (ArrayList)savedWriteList.Clone();
-                        error = (ArrayList)savedErrorList.Clone();
-                        int microSeconds = 1000 * (int)Math.min(Integer.MAX_VALUE / 1000, timeout);
-                        read.Add(notifySocket);
-                        try
-                        {
-                            implSelect(read, write, error, microSeconds);
-                            timeout -= microSeconds / 1000;
-                        }
-                        catch(SocketException _)
-                        {
-                            read.Clear();
-                            write.Clear();
-                            error.Clear();
-                            purgeList(savedReadList);
-                            purgeList(savedWriteList);
-                            purgeList(savedErrorList);
-                        }
-                    } while(timeout > 0 && read.get_Count() == 0 && write.get_Count() == 0 && error.get_Count() == 0 && !unhandledWakeup);
-                    read.Remove(notifySocket);
-                }
-              }
-            finally
-              {
-                end();
+
                 synchronized (wakeupMutex)
                 {
-                    unhandledWakeup = false;
-                    notifySocket.Close();
-                    notifySocket = null;
-                }
-              }
-
-            Iterator it = keys.iterator ();
-
-            int updatedCount = 0;
-            while (it.hasNext())
-            {
-                int ops = 0;
-                SelectionKeyImpl key = (SelectionKeyImpl)it.next();
-
-                for (int i = 0; i < error.get_Count(); i++)
-                {
-                    if (key.getSocket() == error.get_Item(i))
+                    if (unhandledWakeup)
                     {
-                        ops |= SelectionKey.OP_CONNECT;
-                        break;
+                        if (debug)
+                        {
+                            System.out.println("SelectorImpl.select: returning due to unhandled wakeup");
+                        }
+                        unhandledWakeup = false;
+                        return 0;
+                    }
+                    else
+                    {
+                        notifySocket = createNotifySocket();
                     }
                 }
 
-                for (int i = 0; i < read.get_Count(); i++)
+                try
                 {
-                    if (key.getSocket() == read.get_Item(i))
+                    begin();
+                    ArrayList savedReadList = read;
+                    ArrayList savedWriteList = write;
+                    ArrayList savedErrorList = error;
+                    if (timeout == 0)
                     {
-                        if (key.channel() instanceof ServerSocketChannelImpl)
+                        do
                         {
-                            ops |= SelectionKey.OP_ACCEPT;
-                        }
-                        else
-                        {
-                            ops |= SelectionKey.OP_READ;
-                        }
-                        break;
-                    }
-                }
-
-                for (int i = 0; i < write.get_Count(); i++)
-                {
-                    if (key.getSocket() == write.get_Item(i))
-                    {
-                        if (key.channel() instanceof SocketChannelImpl)
-                        {
-                            SocketChannelImpl impl = (SocketChannelImpl)key.channel();
-                            if (impl.isConnected())
+                            read = (ArrayList)savedReadList.Clone();
+                            write = (ArrayList)savedWriteList.Clone();
+                            error = (ArrayList)savedErrorList.Clone();
+                            read.Add(notifySocket);
+                            try
                             {
-                                ops |= SelectionKey.OP_WRITE;
+                                implSelect(read, write, error, Integer.MAX_VALUE);
+                            }
+                            catch(SocketException _)
+                            {
+                                read.Clear();
+                                write.Clear();
+                                error.Clear();
+                                purgeList(savedReadList);
+                                purgeList(savedWriteList);
+                                purgeList(savedErrorList);
+                            }
+                        } while(read.get_Count() == 0 && write.get_Count() == 0 && error.get_Count() == 0 && !unhandledWakeup);
+                        read.Remove(notifySocket);
+                    }
+                    else
+                    {
+                        do
+                        {
+                            read = (ArrayList)savedReadList.Clone();
+                            write = (ArrayList)savedWriteList.Clone();
+                            error = (ArrayList)savedErrorList.Clone();
+                            int microSeconds = 1000 * (int)Math.min(Integer.MAX_VALUE / 1000, timeout);
+                            read.Add(notifySocket);
+                            try
+                            {
+                                implSelect(read, write, error, microSeconds);
+                                timeout -= microSeconds / 1000;
+                            }
+                            catch(SocketException _)
+                            {
+                                read.Clear();
+                                write.Clear();
+                                error.Clear();
+                                purgeList(savedReadList);
+                                purgeList(savedWriteList);
+                                purgeList(savedErrorList);
+                            }
+                        } while(timeout > 0 && read.get_Count() == 0 && write.get_Count() == 0 && error.get_Count() == 0 && !unhandledWakeup);
+                        read.Remove(notifySocket);
+                    }
+                }
+                finally
+                {
+                    end();
+                    synchronized (wakeupMutex)
+                    {
+                        unhandledWakeup = false;
+                        notifySocket.Close();
+                        notifySocket = null;
+                    }
+                }
+
+                Iterator it = keys.iterator ();
+
+                int updatedCount = 0;
+                while (it.hasNext())
+                {
+                    int ops = 0;
+                    SelectionKeyImpl key = (SelectionKeyImpl)it.next();
+
+                    for (int i = 0; i < error.get_Count(); i++)
+                    {
+                        if (key.getSocket() == error.get_Item(i))
+                        {
+                            ops |= SelectionKey.OP_CONNECT;
+                            break;
+                        }
+                    }
+
+                    for (int i = 0; i < read.get_Count(); i++)
+                    {
+                        if (key.getSocket() == read.get_Item(i))
+                        {
+                            if (key.channel() instanceof ServerSocketChannelImpl)
+                            {
+                                ops |= SelectionKey.OP_ACCEPT;
                             }
                             else
                             {
-                                ops |= SelectionKey.OP_CONNECT;
+                                ops |= SelectionKey.OP_READ;
                             }
+                            break;
                         }
-                        else
+                    }
+
+                    for (int i = 0; i < write.get_Count(); i++)
+                    {
+                        if (key.getSocket() == write.get_Item(i))
                         {
-                            ops |= SelectionKey.OP_WRITE;
+                            if (key.channel() instanceof SocketChannelImpl)
+                            {
+                                SocketChannelImpl impl = (SocketChannelImpl)key.channel();
+                                if (impl.isConnected())
+                                {
+                                    ops |= SelectionKey.OP_WRITE;
+                                }
+                                else
+                                {
+                                    ops |= SelectionKey.OP_CONNECT;
+                                }
+                            }
+                            else
+                            {
+                                ops |= SelectionKey.OP_WRITE;
+                            }
+                            break;
                         }
-                        break;
+                    }
+
+                    ops &= key.interestOps();
+
+                    if ((key.readyOps() & ops) != ops)
+                    {
+                        updatedCount++;
+                        // Set new ready ops
+                        key.readyOps(key.readyOps() | ops);
+                        if (debug)
+                        {
+                            System.out.println("SelectorImpl.select: readyOps = " + (key.interestOps () & ops));
+                        }
+                        if (key.channel() instanceof SocketChannelImpl)
+                        {
+                            SocketChannelImpl impl = (SocketChannelImpl)key.channel();
+                            impl.selected();
+                        }
+                        // If key is not yet selected add it.
+                        if (!selected.contains(key))
+                        {
+                            selected.add(key);
+                        }
                     }
                 }
-
-                ops &= key.interestOps();
-
-                if ((key.readyOps() & ops) != ops)
-                {
-                    updatedCount++;
-                    // Set new ready ops
-                    key.readyOps(key.readyOps() | ops);
-                    if (debug)
-                    {
-                        System.out.println("SelectorImpl.select: readyOps = " + (key.interestOps () & ops));
-                    }
-                    if (key.channel() instanceof SocketChannelImpl)
-                    {
-                        SocketChannelImpl impl = (SocketChannelImpl)key.channel();
-                        impl.selected();
-                    }
-                    // If key is not yet selected add it.
-                    if (!selected.contains(key))
-                    {
-                        selected.add(key);
-                    }
-                }
-            }
-            deregisterCancelledKeys();
+                deregisterCancelledKeys();
             
-            return updatedCount;
-          }
+                return updatedCount;
+            }
         }
-  }
+    }
 
     private void implSelect(ArrayList read, ArrayList write, ArrayList error, int microSeconds) throws SocketException
     {
@@ -347,93 +347,93 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
         }
     }
 
-  private static void purgeList(ArrayList list)
-  {
-    for (int i = 0; i < list.get_Count(); i++)
+    private static void purgeList(ArrayList list)
     {
-        Socket s = (Socket)list.get_Item(i);
-        try
+        for (int i = 0; i < list.get_Count(); i++)
         {
-            if (false) throw new cli.System.ObjectDisposedException("");
-            s.Poll(0, SelectMode.wrap(SelectMode.SelectError));
-        }
-        catch (cli.System.ObjectDisposedException _)
-        {
-            list.RemoveAt(i);
-            i--;
+            Socket s = (Socket)list.get_Item(i);
+            try
+            {
+                if (false) throw new cli.System.ObjectDisposedException("");
+                s.Poll(0, SelectMode.wrap(SelectMode.SelectError));
+            }
+            catch (cli.System.ObjectDisposedException _)
+            {
+                list.RemoveAt(i);
+                i--;
+            }
         }
     }
-  }
 
-  private static Socket createNotifySocket()
-  {
-    return new Socket(AddressFamily.wrap(AddressFamily.InterNetwork),
-                        SocketType.wrap(SocketType.Dgram),
-                        ProtocolType.wrap(ProtocolType.Udp));
-  }
+    private static Socket createNotifySocket()
+    {
+        return new Socket(AddressFamily.wrap(AddressFamily.InterNetwork),
+            SocketType.wrap(SocketType.Dgram),
+            ProtocolType.wrap(ProtocolType.Udp));
+    }
     
-  public final Set selectedKeys()
-  {
-    if (!isOpen())
-      throw new ClosedSelectorException();
+    public final Set selectedKeys()
+    {
+        if (!isOpen())
+            throw new ClosedSelectorException();
 
-    return selected;
-  }
+        return selected;
+    }
 
-  public final Selector wakeup()
-  {
-    synchronized (wakeupMutex)
-      {
-        unhandledWakeup = true;
+    public final Selector wakeup()
+    {
+        synchronized (wakeupMutex)
+        {
+            unhandledWakeup = true;
         
-        if (notifySocket != null)
-          notifySocket.Close();
-      }
+            if (notifySocket != null)
+                notifySocket.Close();
+        }
       
-    return this;
-  }
+        return this;
+    }
 
-  private final void deregisterCancelledKeys()
-  {
-    Set ckeys = cancelledKeys();
-    synchronized (ckeys)
+    private final void deregisterCancelledKeys()
     {
-      Iterator it = ckeys.iterator();
-
-      while (it.hasNext())
+        Set ckeys = cancelledKeys();
+        synchronized (ckeys)
         {
-          keys.remove((SelectionKeyImpl)it.next());
-          it.remove();
+            Iterator it = ckeys.iterator();
+
+            while (it.hasNext())
+            {
+                keys.remove((SelectionKeyImpl)it.next());
+                it.remove();
+            }
         }
     }
-  }
 
-  protected SelectionKey register(SelectableChannel ch, int ops, Object att)
-  {
-    return register((AbstractSelectableChannel)ch, ops, att);
-  }
+    protected SelectionKey register(SelectableChannel ch, int ops, Object att)
+    {
+        return register((AbstractSelectableChannel)ch, ops, att);
+    }
 
-  protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att)
-  {
-    SelectionKeyImpl result;
+    protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att)
+    {
+        SelectionKeyImpl result;
     
-    if (ch instanceof SocketChannelImpl)
-      result = new SelectionKeyImpl(ch, this, ((SocketChannelImpl)ch).getSocket());
-    else if (ch instanceof DatagramChannelImpl)
-      result = new SelectionKeyImpl(ch, this, ((DatagramChannelImpl)ch).getSocket());
-    else if (ch instanceof ServerSocketChannelImpl)
-      result = new SelectionKeyImpl(ch, this, ((ServerSocketChannelImpl)ch).getSocket());
-    else
-      throw new InternalError ("No known channel type");
+        if (ch instanceof SocketChannelImpl)
+            result = new SelectionKeyImpl(ch, this, ((SocketChannelImpl)ch).getSocket());
+        else if (ch instanceof DatagramChannelImpl)
+            result = new SelectionKeyImpl(ch, this, ((DatagramChannelImpl)ch).getSocket());
+        else if (ch instanceof ServerSocketChannelImpl)
+            result = new SelectionKeyImpl(ch, this, ((ServerSocketChannelImpl)ch).getSocket());
+        else
+            throw new InternalError ("No known channel type");
 
-    result.interestOps(ops);
-    result.attach(att);
+        result.interestOps(ops);
+        result.attach(att);
 
-    synchronized (keys)
-      {
-        keys.add (result);
-      }
+        synchronized (keys)
+        {
+            keys.add (result);
+        }
 
-    return result;
-  }
+        return result;
+    }
 }
