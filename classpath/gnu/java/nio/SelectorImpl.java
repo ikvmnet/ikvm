@@ -58,7 +58,7 @@ import cli.System.Net.Sockets.ProtocolType;
 import cli.System.Net.Sockets.SelectMode;
 import cli.System.Collections.ArrayList;
 
-public final class SelectorImpl extends AbstractSelector
+public final class SelectorImpl extends AbstractSelector implements VMThread.InterruptProc
 {
   private static boolean debug = false;
   private final HashSet keys = new HashSet();
@@ -77,6 +77,11 @@ public final class SelectorImpl extends AbstractSelector
     // Cancel any pending select operation.
     wakeup();
   }
+
+    public void interrupt()
+    {
+        wakeup();
+    }
 
   public Set keys()
   {
@@ -170,33 +175,13 @@ public final class SelectorImpl extends AbstractSelector
                         read = (ArrayList)savedReadList.Clone();
                         write = (ArrayList)savedWriteList.Clone();
                         error = (ArrayList)savedErrorList.Clone();
-                        // TODO we should somehow support waking up in response to Thread.interrupt()
                         read.Add(notifySocket);
                         try
                         {
-                            if (false) throw new SocketException();
-                            // HACK we shouldn't be holding the keys lock while blocking
-                            cli.System.Threading.Monitor.Exit(keys);
-                            try
-                            {
-                                if (debug)
-                                {
-                                    System.out.println("SelectorImpl.select: Socket.Select");
-                                }
-                                Socket.Select(read, write, error, Integer.MAX_VALUE);
-                            }
-                            finally
-                            {
-                                cli.System.Threading.Monitor.Enter(keys);
-                            }
+                            implSelect(read, write, error, Integer.MAX_VALUE);
                         }
                         catch(SocketException _)
                         {
-                            if (debug)
-                            {
-                                System.out.println("SelectorImpl.select:");
-                                _.printStackTrace();
-                            }
                             read.Clear();
                             write.Clear();
                             error.Clear();
@@ -215,21 +200,10 @@ public final class SelectorImpl extends AbstractSelector
                         write = (ArrayList)savedWriteList.Clone();
                         error = (ArrayList)savedErrorList.Clone();
                         int microSeconds = 1000 * (int)Math.min(Integer.MAX_VALUE / 1000, timeout);
-                        // TODO we should somehow support waking up in response to Thread.interrupt()
                         read.Add(notifySocket);
                         try
                         {
-                            if (false) throw new SocketException();
-                            // HACK we shouldn't be holding the keys lock while blocking
-                            cli.System.Threading.Monitor.Exit(keys);
-                            try
-                            {
-                                Socket.Select(read, write, error, microSeconds);
-                            }
-                            finally
-                            {
-                                cli.System.Threading.Monitor.Enter(keys);
-                            }
+                            implSelect(read, write, error, microSeconds);
                             timeout -= microSeconds / 1000;
                         }
                         catch(SocketException _)
@@ -343,6 +317,36 @@ public final class SelectorImpl extends AbstractSelector
         }
   }
 
+    private void implSelect(ArrayList read, ArrayList write, ArrayList error, int microSeconds) throws SocketException
+    {
+        // HACK we shouldn't be holding the keys lock while blocking
+        cli.System.Threading.Monitor.Exit(keys);
+        try
+        {
+            try
+            {
+                VMThread.enterInterruptableWait(this);
+                try
+                {
+                    Socket.Select(read, write, error, microSeconds);
+                }
+                finally
+                {
+                    VMThread.leaveInterruptableWait();
+                }
+            }
+            catch (InterruptedException _)
+            {
+                wakeup();
+                Thread.currentThread().interrupt();
+            }
+        }
+        finally
+        {
+            cli.System.Threading.Monitor.Enter(keys);
+        }
+    }
+
   private static void purgeList(ArrayList list)
   {
     for (int i = 0; i < list.get_Count(); i++)
@@ -422,13 +426,14 @@ public final class SelectorImpl extends AbstractSelector
     else
       throw new InternalError ("No known channel type");
 
+    result.interestOps(ops);
+    result.attach(att);
+
     synchronized (keys)
       {
         keys.add (result);
       }
 
-    result.interestOps(ops);
-    result.attach(att);
     return result;
   }
 }
