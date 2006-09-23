@@ -182,7 +182,8 @@ public final class PlainSocketImpl extends SocketImpl
         }
     }
 
-    protected void close() throws IOException
+    // public for use by SocketChannelImpl
+    public void close() throws IOException
     {
         try
         {

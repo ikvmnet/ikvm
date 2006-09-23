@@ -1,10 +1,11 @@
 package java.lang;
 
+import ikvm.lang.Internal;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // Note: stop() should take care not to stop a thread if it is
 // executing code in this class.
-@ikvm.lang.Internal
+@Internal
 public final class VMThread
 {
     private static final AtomicInteger nonDaemonCount = new AtomicInteger();
@@ -19,6 +20,7 @@ public final class VMThread
     volatile Thread thread;
     private volatile boolean running;
     private volatile boolean interruptableWait;
+    private InterruptProc interruptProc;
     private boolean timedWait;
     private volatile boolean interruptPending;
     private VMThread firstJoinWaiter;
@@ -228,7 +230,7 @@ public final class VMThread
 	try
 	{
             VMThread current = currentThread().vmThread;
-	    enterInterruptableWait(ms != 0 || ns != 0);
+	    enterInterruptableWait(ms != 0 || ns != 0, null);
 	    try
 	    {
                 addJoinWaiter(current);
@@ -312,7 +314,7 @@ public final class VMThread
 	}
     }
 
-    private static void enterInterruptableWait(boolean timedWait) throws InterruptedException
+    private static void enterInterruptableWait(boolean timedWait, InterruptProc proc) throws InterruptedException
     {
         VMThread vmthread = currentThread().vmThread;
         synchronized(vmthread)
@@ -324,10 +326,22 @@ public final class VMThread
             }
             vmthread.timedWait = timedWait;
             vmthread.interruptableWait = true;
+            vmthread.interruptProc = proc;
         }
     }
 
-    private static void leaveInterruptableWait() throws InterruptedException
+    @Internal
+    public static interface InterruptProc
+    {
+        void interrupt();
+    }
+
+    public static void enterInterruptableWait(InterruptProc proc) throws InterruptedException
+    {
+        enterInterruptableWait(false, proc);
+    }
+
+    public static void leaveInterruptableWait() throws InterruptedException
     {
         cli.System.Threading.ThreadInterruptedException dotnetInterrupt = null;
         for(;;)
@@ -338,6 +352,7 @@ public final class VMThread
                 VMThread vmthread = currentThread().vmThread;
                 synchronized(vmthread)
                 {
+                    vmthread.interruptProc = null;
                     vmthread.interruptableWait = false;
                     if(vmthread.interruptPending)
                     {
@@ -363,11 +378,18 @@ public final class VMThread
         interruptPending = true;
         if(interruptableWait)
         {
-            cli.System.Threading.Thread nativeThread = getNativeThread();
-	    if(nativeThread != null)
-	    {
-	        nativeThread.Interrupt();
-	    }
+            if(interruptProc != null)
+            {
+                interruptProc.interrupt();
+            }
+            else
+            {
+                cli.System.Threading.Thread nativeThread = getNativeThread();
+	        if(nativeThread != null)
+	        {
+	            nativeThread.Interrupt();
+	        }
+            }
         }
     }
 
@@ -588,7 +610,7 @@ public final class VMThread
 	}
 	else
 	{
-            enterInterruptableWait(true);
+            enterInterruptableWait(true, null);
             try
             {
 	        // if nanoseconds are specified, round up to one millisecond
@@ -640,7 +662,7 @@ public final class VMThread
         {
             throw new IllegalArgumentException("argument out of range");
         }
-        enterInterruptableWait(timeout != 0 || nanos != 0);
+        enterInterruptableWait(timeout != 0 || nanos != 0, null);
         try
         {
             if((timeout == 0 && nanos == 0) || timeout > 922337203685476L)

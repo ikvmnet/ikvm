@@ -26,11 +26,15 @@ package gnu.java.nio;
 import gnu.java.net.PlainSocketImpl;
 import ikvm.internal.Util;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyConnectedException;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.IllegalBlockingModeException;
@@ -41,7 +45,7 @@ import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.nio.channels.spi.SelectorProvider;
 
-public final class SocketChannelImpl extends SocketChannel
+public final class SocketChannelImpl extends SocketChannel implements VMThread.InterruptProc
 {
     private static final int NOT_CONNECTED = 0;
     private static final int CONNECTION_PENDING = 1;
@@ -95,7 +99,7 @@ public final class SocketChannelImpl extends SocketChannel
   
     protected void implCloseSelectableChannel() throws IOException
     {
-        socket.close();
+        impl.close();
     }
 
     protected void implConfigureBlocking(boolean blocking) throws IOException
@@ -133,7 +137,7 @@ public final class SocketChannelImpl extends SocketChannel
                 {
                     try
                     {
-                        impl.connect(connectAddress.getAddress(), connectAddress.getPort());
+                        implConnect(connectAddress.getAddress(), connectAddress.getPort());
                         state = CONNECTED;
                         if (isBlocking())
                         {
@@ -151,11 +155,67 @@ public final class SocketChannelImpl extends SocketChannel
                 }
                 else
                 {
-                    impl.beginConnect(connectAddress);
+                    implBeginConnect(connectAddress);
                     state = CONNECTION_PENDING;
                     return false;
                 }
             }
+        }
+    }
+
+    private void implConnect(InetAddress address, int port) throws IOException
+    {
+        try
+        {
+            VMThread.enterInterruptableWait(this);
+            try
+            {
+                impl.connect(address, port);
+            }
+            finally
+            {
+                VMThread.leaveInterruptableWait();
+            }
+        }
+        catch (SocketException x)
+        {
+            if (!isOpen())
+                throw new AsynchronousCloseException();
+            throw x;
+        }
+        catch (InterruptedException _)
+        {
+            close();
+            Thread.currentThread().interrupt();
+            throw new ClosedByInterruptException();
+        }
+    }
+
+    private void implBeginConnect(InetSocketAddress address) throws IOException
+    {
+        try
+        {
+            VMThread.enterInterruptableWait(this);
+            try
+            {
+                impl.beginConnect(address);
+            }
+            finally
+            {
+                VMThread.leaveInterruptableWait();
+            }
+        }
+        catch (SocketException x)
+        {
+            if (!isOpen())
+                throw new AsynchronousCloseException();
+            throw x;
+        }
+        catch (InterruptedException _)
+        {
+            close();
+            Thread.currentThread().interrupt();
+            throw new ClosedByInterruptException();
         }
     }
 
@@ -191,7 +251,7 @@ public final class SocketChannelImpl extends SocketChannel
                 {
                     try
                     {
-                        impl.endConnect();
+                        implEndConnect();
                         state = CONNECTED;
                         if (isBlocking())
                         {
@@ -209,9 +269,43 @@ public final class SocketChannelImpl extends SocketChannel
                 }
                 else
                 {
+                    if (Thread.interrupted())
+                    {
+                        close();
+                        Thread.currentThread().interrupt();
+                        throw new ClosedByInterruptException();
+                    }
                     return false;
                 }
             }
+        }
+    }
+
+    private void implEndConnect() throws IOException
+    {
+        try
+        {
+            VMThread.enterInterruptableWait(this);
+            try
+            {
+                impl.endConnect();
+            }
+            finally
+            {
+                VMThread.leaveInterruptableWait();
+            }
+        }
+        catch (SocketException x)
+        {
+            if (!isOpen())
+                throw new AsynchronousCloseException();
+            throw x;
+        }
+        catch (InterruptedException _)
+        {
+            close();
+            Thread.currentThread().interrupt();
+            throw new ClosedByInterruptException();
         }
     }
 
@@ -230,6 +324,17 @@ public final class SocketChannelImpl extends SocketChannel
         return socket;
     }
 
+    public void interrupt()
+    {
+        try
+        {
+            impl.close();
+        }
+        catch (IOException _)
+        {
+        }
+    }
+
     public int read(ByteBuffer dst) throws IOException
     {
         synchronized (lockRead)
@@ -243,14 +348,14 @@ public final class SocketChannelImpl extends SocketChannel
             if (dst.hasArray())
             {
                 byte[] buf = dst.array();
-                int len = impl.read(buf, dst.arrayOffset() + dst.position(), dst.remaining());
+                int len = implRead(buf, dst.arrayOffset() + dst.position(), dst.remaining());
                 dst.position(dst.position() + len);
                 return len;
             }
             else
             {
                 byte[] buf = new byte[dst.remaining()];
-                int len = impl.read(buf, 0, buf.length);
+                int len = implRead(buf, 0, buf.length);
                 dst.put(buf, 0, len);
                 return len;
             }
@@ -300,6 +405,62 @@ public final class SocketChannelImpl extends SocketChannel
         }
     }
 
+    private int implRead(byte[] buf, int offset, int length) throws IOException
+    {
+        try
+        {
+            VMThread.enterInterruptableWait(this);
+            try
+            {
+                return impl.read(buf, offset, length);
+            }
+            finally
+            {
+                VMThread.leaveInterruptableWait();
+            }
+        }
+        catch (SocketException x)
+        {
+            if (!isOpen())
+                throw new AsynchronousCloseException();
+            throw x;
+        }
+        catch (InterruptedException _)
+        {
+            close();
+            Thread.currentThread().interrupt();
+            throw new ClosedByInterruptException();
+        }
+    }
+
+    private int implWrite(byte[] buf, int offset, int length) throws IOException
+    {
+        try
+        {
+            VMThread.enterInterruptableWait(this);
+            try
+            {
+                return impl.writeImpl(buf, offset, length);
+            }
+            finally
+            {
+                VMThread.leaveInterruptableWait();
+            }
+        }
+        catch (SocketException x)
+        {
+            if (!isOpen())
+                throw new AsynchronousCloseException();
+            throw x;
+        }
+        catch (InterruptedException _)
+        {
+            close();
+            Thread.currentThread().interrupt();
+            throw new ClosedByInterruptException();
+        }
+    }
+
     public int write(ByteBuffer src) throws IOException
     {
         synchronized (lockWrite)
@@ -313,7 +474,7 @@ public final class SocketChannelImpl extends SocketChannel
             if (src.hasArray())
             {
                 byte[] buf = src.array();
-                int len = impl.writeImpl(buf, src.arrayOffset() + src.position(), src.remaining());
+                int len = implWrite(buf, src.arrayOffset() + src.position(), src.remaining());
                 src.position(src.position() + len);
                 return len;
             }
@@ -322,7 +483,7 @@ public final class SocketChannelImpl extends SocketChannel
                 int pos = src.position();
                 byte[] buf = new byte[src.remaining()];
                 src.get(buf);
-                int len = impl.writeImpl(buf, 0, buf.length);
+                int len = implWrite(buf, 0, buf.length);
                 src.position(pos + len);
                 return len;
             }
