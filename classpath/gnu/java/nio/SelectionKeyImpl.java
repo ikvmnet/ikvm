@@ -8,11 +8,12 @@ import java.nio.channels.spi.AbstractSelectionKey;
 
 final class SelectionKeyImpl extends AbstractSelectionKey
 {
+  private final SelectableChannel ch;
+  private final SelectorImpl impl;
+  private final cli.System.Net.Sockets.Socket socket;
   private int readyOps;
   private int interestOps;
-  private SelectorImpl impl;
-  private SelectableChannel ch;
-  private cli.System.Net.Sockets.Socket socket;
+  int savedInterestOps; // used by SelectorImpl to store interestOps at the begin of a select()
 
   SelectionKeyImpl(SelectableChannel ch, SelectorImpl impl, cli.System.Net.Sockets.Socket socket)
   {
@@ -26,7 +27,7 @@ final class SelectionKeyImpl extends AbstractSelectionKey
     return ch;
   }
 
-  public int readyOps()
+  public synchronized int readyOps()
   {
     if (!isValid())
       throw new CancelledKeyException();
@@ -34,7 +35,7 @@ final class SelectionKeyImpl extends AbstractSelectionKey
     return readyOps;
   }
 
-  public SelectionKey readyOps(int ops)
+  public synchronized SelectionKey readyOps(int ops)
   {
     if (!isValid())
       throw new CancelledKeyException();
@@ -43,7 +44,7 @@ final class SelectionKeyImpl extends AbstractSelectionKey
     return this;
   }
 
-  public int interestOps()
+  public synchronized int interestOps()
   {
     if (!isValid())
       throw new CancelledKeyException();
@@ -51,10 +52,13 @@ final class SelectionKeyImpl extends AbstractSelectionKey
     return interestOps;    
   }
 
-  public SelectionKey interestOps(int ops)
+  public synchronized SelectionKey interestOps(int ops)
   {
     if (!isValid())
       throw new CancelledKeyException();
+
+    if ((ops & ~ch.validOps()) != 0)
+      throw new IllegalArgumentException();
     
     interestOps = ops;
     return this;

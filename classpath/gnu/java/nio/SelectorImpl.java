@@ -145,17 +145,32 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
                             cancelled.remove(key);
                             selected.remove(key);
                             it.remove();
+                            deregister(key);
                             continue;
                         }
-                        if ((key.interestOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0)
+                        int ops = key.interestOps();
+                        if (key.channel() instanceof SocketChannelImpl)
+                        {
+                            // TODO there's a race condition here...
+                            if (((SocketChannelImpl)key.channel()).isConnected())
+                            {
+                                ops &= SelectionKey.OP_READ | SelectionKey.OP_WRITE;
+                            }
+                            else
+                            {
+                                ops &= SelectionKey.OP_CONNECT;
+                            }
+                        }
+                        key.savedInterestOps = ops;
+                        if ((ops & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0)
                         {
                             read.Add(key.getSocket());
                         }
-                        if ((key.interestOps() & (SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) != 0)
+                        if ((ops & (SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) != 0)
                         {
                             write.Add(key.getSocket());
                         }
-                        if ((key.interestOps() & SelectionKey.OP_CONNECT) != 0)
+                        if ((ops & SelectionKey.OP_CONNECT) != 0)
                         {
                             error.Add(key.getSocket());
                         }
@@ -180,7 +195,6 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
 
         try
         {
-            begin();
             ArrayList savedReadList = read;
             ArrayList savedWriteList = write;
             ArrayList savedErrorList = error;
@@ -212,7 +226,6 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
         }
         finally
         {
-            end();
             synchronized (wakeupMutex)
             {
                 unhandledWakeup = false;
@@ -237,6 +250,7 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
                             cancelled.remove(key);
                             selected.remove(key);
                             it.remove();
+                            deregister(key);
                             continue;
                         }
                         int ops = 0;
@@ -247,31 +261,13 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
                         }
                         if (read.Contains(socket))
                         {
-                            if (key.channel() instanceof ServerSocketChannelImpl)
-                            {
-                                ops |= SelectionKey.OP_ACCEPT;
-                            }
-                            else
-                            {
-                                ops |= SelectionKey.OP_READ;
-                            }
+                            ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
                         }
                         if (write.Contains(socket))
                         {
-                            if (key.channel() instanceof SocketChannelImpl
-                                && !((SocketChannelImpl)key.channel()).isConnected())
-                            {
-                                ops |= SelectionKey.OP_CONNECT;
-                            }
-                            else
-                            {
-                                ops |= SelectionKey.OP_WRITE;
-                            }
+                            ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
                         }
-                        // NOTE querying interestOps() here is not strictly correct,
-                        // we should really be using the interestOps() returned at the
-                        // start of the method.
-                        ops &= key.interestOps();
+                        ops &= key.savedInterestOps;
                         if (ops != 0)
                         {
                             if (selected.contains(key))
