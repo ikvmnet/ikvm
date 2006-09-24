@@ -39,6 +39,10 @@ import ikvm.lang.CIL;
 
 public class PlainDatagramSocketImpl extends DatagramSocketImpl
 {
+    // Winsock Error Codes
+    private static final int WSAEMSGSIZE   = 10040;
+    private static final int WSAECONNRESET = 10054;
+
     private cli.System.Net.Sockets.Socket socket;
 
     public PlainDatagramSocketImpl() throws IOException
@@ -128,32 +132,41 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
             {
                 new cli.System.Net.IPEndPoint(0, 0)
             };
-        try
+        for(;;)
         {
-            if(false) throw new cli.System.Net.Sockets.SocketException();
-            if(false) throw new cli.System.ObjectDisposedException("");
-            int length = socket.ReceiveFrom(data, packet.getOffset(), getDatagramPacketBufferLength(packet),
-                            cli.System.Net.Sockets.SocketFlags.wrap(cli.System.Net.Sockets.SocketFlags.None), remoteEP);
-            setDatagramPacketLength(packet, length);
-        }
-        catch(cli.System.Net.Sockets.SocketException x)
-        {
-            // If the buffer size was too small for the packet, ReceiveFrom receives the part of the packet
-            // that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
-            if(x.get_ErrorCode() != 10040) //WSAEMSGSIZE
+            try
             {
+                if(false) throw new cli.System.Net.Sockets.SocketException();
+                if(false) throw new cli.System.ObjectDisposedException("");
+                int length = socket.ReceiveFrom(data, packet.getOffset(), getDatagramPacketBufferLength(packet),
+                                cli.System.Net.Sockets.SocketFlags.wrap(cli.System.Net.Sockets.SocketFlags.None), remoteEP);
+                setDatagramPacketLength(packet, length);
+                break;
+            }
+            catch(cli.System.Net.Sockets.SocketException x)
+            {
+                if(x.get_ErrorCode() == WSAECONNRESET)
+                {
+                    // A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
+                    // the winsock stack helpfully lets us know this, but we don't care so we just retry the receive.
+                    continue;
+                }
+                if(x.get_ErrorCode() == WSAEMSGSIZE)
+                {
+                    // The buffer size was too small for the packet, ReceiveFrom receives the part of the packet
+                    // that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
+                    break;
+                }
                 throw PlainSocketImpl.convertSocketExceptionToIOException(x);
             }
+            catch(cli.System.ObjectDisposedException x1)
+            {
+                throw new SocketException("Socket is closed");
+            }
         }
-        catch(cli.System.ObjectDisposedException x1)
-        {
-            throw new SocketException("Socket is closed");
-        }
-        int remoteIP = (int)((cli.System.Net.IPEndPoint)remoteEP[0]).get_Address().get_Address();
-        byte[] ipv4 = new byte[] { (byte)remoteIP, (byte)(remoteIP >> 8), (byte)(remoteIP >> 16), (byte)(remoteIP >> 24) };
-        InetAddress remoteAddress = InetAddress.getByAddress(ipv4);
-        packet.setAddress(remoteAddress);
-        packet.setPort(((cli.System.Net.IPEndPoint)remoteEP[0]).get_Port());
+        IPEndPoint endpoint = (IPEndPoint)remoteEP[0];
+        packet.setAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(endpoint));
+        packet.setPort(endpoint.get_Port());
     }
 
     // these methods live in map.xml, because we need to access the package accessible fields in DatagramPacket

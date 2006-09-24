@@ -540,7 +540,7 @@ public final class PlainSocketImpl extends SocketImpl
         }
     }
 
-    private static InetAddress getInetAddressFromIPEndPoint(IPEndPoint endpoint)
+    static InetAddress getInetAddressFromIPEndPoint(IPEndPoint endpoint)
     {
         try
         {
