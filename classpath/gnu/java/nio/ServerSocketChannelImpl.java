@@ -27,17 +27,18 @@ import gnu.java.net.PlainSocketImpl;
 import java.io.IOException;
 import java.net.NioServerSocket;
 import java.net.ServerSocket;
-import java.net.SocketTimeoutException;
+import java.net.SocketException;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetBoundException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 
-public final class ServerSocketChannelImpl extends ServerSocketChannel
+public final class ServerSocketChannelImpl extends ServerSocketChannel implements VMThread.InterruptProc
 {
-    private NioServerSocket socket;
-    private boolean blocking = true;
+    private final NioServerSocket socket;
 
     protected ServerSocketChannelImpl(SelectorProvider provider) throws IOException
     {
@@ -52,7 +53,6 @@ public final class ServerSocketChannelImpl extends ServerSocketChannel
 
     protected void implConfigureBlocking(boolean blocking) throws IOException
     {
-        this.blocking = blocking;
     }
 
     public SocketChannel accept() throws IOException
@@ -63,26 +63,60 @@ public final class ServerSocketChannelImpl extends ServerSocketChannel
         if (!socket.isBound())
             throw new NotYetBoundException();
 
-        boolean completed = false;
-    
+        if (isBlocking() || socket.pollAccept())
+        {
+            PlainSocketImpl impl = new PlainSocketImpl();
+            implAccept(impl);
+            return new SocketChannelImpl(provider(), impl, true);
+        }
+        else
+        {
+            if (Thread.interrupted())
+            {
+                close();
+                Thread.currentThread().interrupt();
+                throw new ClosedByInterruptException();
+            }
+            return null;
+        }
+    }
+
+    private void implAccept(PlainSocketImpl impl) throws IOException
+    {
         try
         {
-            begin();
-            if (blocking || socket.pollAccept())
+            VMThread.enterInterruptableWait(this);
+            try
             {
-                PlainSocketImpl impl = new PlainSocketImpl();
                 socket.accept(impl);
-                completed = true;
-                return new SocketChannelImpl(provider(), impl, true);
             }
-            else
+            finally
             {
-                return null;
+                VMThread.leaveInterruptableWait();
             }
         }
-        finally
+        catch (SocketException x)
         {
-            end(completed);
+            if (!isOpen())
+                throw new AsynchronousCloseException();
+            throw x;
+        }
+        catch (InterruptedException _)
+        {
+            close();
+            Thread.currentThread().interrupt();
+            throw new ClosedByInterruptException();
+        }
+    }
+
+    public void interrupt()
+    {
+        try
+        {
+            socket.close();
+        }
+        catch (IOException _)
+        {
         }
     }
 
