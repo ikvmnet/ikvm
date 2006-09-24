@@ -3135,6 +3135,7 @@
 ../../classpath/javax/management/NotificationEmitter.java
 ../../classpath/javax/management/NotificationFilter.java
 ../../classpath/javax/management/NotificationListener.java
+../../classpath/javax/management/ObjectName.java
 ../../classpath/javax/management/openmbean/ArrayType.java
 ../../classpath/javax/management/openmbean/CompositeData.java
 ../../classpath/javax/management/openmbean/CompositeDataSupport.java
