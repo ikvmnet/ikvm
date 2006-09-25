@@ -139,9 +139,9 @@ public final class SocketChannelImpl extends SocketChannel implements VMThread.I
                     {
                         implConnect(connectAddress.getAddress(), connectAddress.getPort());
                         state = CONNECTED;
-                        if (isBlocking())
+                        synchronized (blockingLock())
                         {
-                            impl.setBlocking(true);
+                            impl.setBlocking(isBlocking());
                         }
                     }
                     finally
@@ -246,16 +246,15 @@ public final class SocketChannelImpl extends SocketChannel implements VMThread.I
                 if (state != CONNECTION_PENDING)
                     throw new NoConnectionPendingException();
 
-
                 if (isBlocking() || connectionPendingReady || impl.isConnectFinished())
                 {
                     try
                     {
                         implEndConnect();
                         state = CONNECTED;
-                        if (isBlocking())
+                        synchronized (blockingLock())
                         {
-                            impl.setBlocking(true);
+                            impl.setBlocking(isBlocking());
                         }
                     }
                     finally

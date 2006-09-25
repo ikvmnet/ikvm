@@ -77,6 +77,7 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
 
     protected void implCloseSelector() throws IOException
     {
+        // note that notifySocket gets closed by wakeup
         wakeup();
     }
 
@@ -186,12 +187,12 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
                 unhandledWakeup = false;
                 return 0;
             }
-            else
+            if (notifySocket == null)
             {
                 notifySocket = createNotifySocket();
             }
+            read.Add(notifySocket);
         }
-        read.Add(notifySocket);
 
         try
         {
@@ -226,12 +227,7 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
         }
         finally
         {
-            synchronized (wakeupMutex)
-            {
-                unhandledWakeup = false;
-                notifySocket.Close();
-                notifySocket = null;
-            }
+            unhandledWakeup = false;
         }
 
         int updatedCount = 0;
@@ -349,10 +345,11 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
         synchronized (wakeupMutex)
         {
             unhandledWakeup = true;
-        
+
             if (notifySocket != null)
             {
                 notifySocket.Close();
+                notifySocket = null;
             }
         }
         return this;
