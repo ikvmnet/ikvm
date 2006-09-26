@@ -262,6 +262,7 @@ namespace IKVM.Internal
 					indexer[i] = propargs[i].TypeAsSignatureType;
 				}
 				PropertyBuilder propbuilder = typeBuilder.DefineProperty(prop.Name, PropertyAttributes.None, typeWrapper.TypeAsSignatureType, indexer);
+				AttributeHelper.HideFromJava(propbuilder);
 				if(prop.Attributes != null)
 				{
 					foreach(IKVM.Internal.MapXml.Attribute attr in prop.Attributes)

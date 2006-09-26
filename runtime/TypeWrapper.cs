@@ -631,7 +631,18 @@ namespace IKVM.Internal
 			}
 			fb.SetCustomAttribute(hideFromJavaAttribute);
 		}
-#endif
+
+#if STATIC_COMPILER
+		internal static void HideFromJava(PropertyBuilder pb)
+		{
+			if(hideFromJavaAttribute == null)
+			{
+				hideFromJavaAttribute = new CustomAttributeBuilder(typeofHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
+			}
+			pb.SetCustomAttribute(hideFromJavaAttribute);
+		}
+#endif // STATIC_COMPILER
+#endif // !COMPACT_FRAMEWORK
 
 		internal static bool IsHideFromJava(Type type)
 		{
@@ -7520,6 +7531,8 @@ namespace IKVM.Internal
 						}
 						else
 						{
+							// NOTE explictly defined properties (in map.xml) are decorated with HideFromJava,
+							// so we don't need to worry about them here
 							PropertyInfo property = m as PropertyInfo;
 							if(property != null)
 							{
