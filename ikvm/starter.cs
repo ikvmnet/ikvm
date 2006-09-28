@@ -157,6 +157,11 @@ public class Starter
 					Console.WriteLine(Startup.getVersionAndCopyrightInfo());
 					Console.WriteLine();
 					Console.WriteLine("CLR version: {0} ({1} bit)", Environment.Version, IntPtr.Size * 8);
+					System.Type type = System.Type.GetType("Mono.Runtime");
+					if(type != null)
+					{
+						Console.WriteLine("Mono version: {0}", type.InvokeMember("GetDisplayName", BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.NonPublic, null, null, new object[0]));
+					}
 					foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 					{
 						Console.WriteLine("{0}: {1}", asm.GetName().Name, asm.GetName().Version);
