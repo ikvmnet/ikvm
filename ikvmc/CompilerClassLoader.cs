@@ -2072,7 +2072,18 @@ namespace IKVM.Internal
 						JVM.CoreAssembly = reference;
 					}
 #else
-					Assembly reference = Assembly.Load(AssemblyName.GetAssemblyName(r));
+					AssemblyName name = AssemblyName.GetAssemblyName(r);
+					Assembly reference;
+					try
+					{
+						reference = Assembly.Load(name);
+					}
+					catch(FileNotFoundException)
+					{
+						// MONOBUG mono fails to use the codebase inside the AssemblyName,
+						// so now we try again explicitly loading from the codebase
+						reference = Assembly.LoadFrom(name.CodeBase);
+					}
 #endif
 					if(reference == null)
 					{
