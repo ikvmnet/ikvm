@@ -170,6 +170,7 @@ namespace IKVM.Internal
 		private static Type typeofNoPackagePrefixAttribute = JVM.LoadType(typeof(NoPackagePrefixAttribute));
 		private static Type typeofConstantValueAttribute = JVM.LoadType(typeof(ConstantValueAttribute));
 
+#if STATIC_COMPILER && !COMPACT_FRAMEWORK
 		private static object ParseValue(TypeWrapper tw, string val)
 		{
 			if(tw == CoreClasses.java.lang.String.Wrapper)
@@ -178,7 +179,7 @@ namespace IKVM.Internal
 			}
 			else if(tw.TypeAsTBD.IsEnum)
 			{
-#if WHIDBEY && !COMPACT_FRAMEWORK
+#if WHIDBEY
 				if(tw.TypeAsTBD.Assembly.ReflectionOnly)
 				{
 					// TODO implement full parsing semantics
@@ -194,6 +195,11 @@ namespace IKVM.Internal
 			}
 			else if(tw.TypeAsTBD == typeof(Type))
 			{
+				TypeWrapper valtw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(val);
+				if(valtw != null)
+				{
+					return valtw.TypeAsBaseType;
+				}
 				return Type.GetType(val, true);
 			}
 			else if(tw == PrimitiveTypeWrapper.BOOLEAN)
@@ -233,7 +239,7 @@ namespace IKVM.Internal
 				throw new NotImplementedException();
 			}
 		}
-#if STATIC_COMPILER && !COMPACT_FRAMEWORK
+
 		private static void SetPropertiesAndFields(Attribute attrib, IKVM.Internal.MapXml.Attribute attr)
 		{
 			Type t = attrib.GetType();
