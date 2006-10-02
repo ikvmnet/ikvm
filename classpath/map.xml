@@ -1453,6 +1453,48 @@
 				</body>
 			</method>
 		</class>
+		<class name="java.lang.Byte">
+			<implements class="cli.System.IFormattable">
+				<method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
+					<redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Byte;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+				</method>
+			</implements>
+		</class>
+		<class name="java.lang.Short">
+			<implements class="cli.System.IFormattable">
+				<method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
+					<redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Short;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+				</method>
+			</implements>
+		</class>
+		<class name="java.lang.Integer">
+			<implements class="cli.System.IFormattable">
+				<method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
+					<redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Integer;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+				</method>
+			</implements>
+		</class>
+		<class name="java.lang.Long">
+			<implements class="cli.System.IFormattable">
+				<method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
+					<redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Long;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+				</method>
+			</implements>
+		</class>
+		<class name="java.lang.Float">
+			<implements class="cli.System.IFormattable">
+				<method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
+					<redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Float;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+				</method>
+			</implements>
+		</class>
+		<class name="java.lang.Double">
+			<implements class="cli.System.IFormattable">
+				<method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
+					<redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Double;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+				</method>
+			</implements>
+		</class>
 	</assembly>
 	<exceptionMappings>
 		<exception src="System.NullReferenceException" dst="java.lang.NullPointerException" />

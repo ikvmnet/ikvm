@@ -707,39 +707,7 @@ namespace IKVM.Internal
 						ILGenerator ilgen = mbHelper.GetILGenerator();
 						if(m.redirect != null)
 						{
-							if(m.redirect.Type != "static" || m.redirect.Class == null || m.redirect.Name == null || m.redirect.Sig == null)
-							{
-								throw new NotImplementedException();
-							}
-							Type[] redirParamTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(m.redirect.Sig);
-							for(int i = 0; i < redirParamTypes.Length; i++)
-							{
-								ilgen.Emit(OpCodes.Ldarg, (short)i);
-							}
-							// HACK if the class name contains a comma, we assume it is a .NET type
-							if(m.redirect.Class.IndexOf(',') >= 0)
-							{
-								Type type = Type.GetType(m.redirect.Class, true);
-								MethodInfo mi = type.GetMethod(m.redirect.Name, redirParamTypes);
-								if(mi == null)
-								{
-									throw new InvalidOperationException();
-								}
-								ilgen.Emit(OpCodes.Call, mi);
-							}
-							else
-							{
-								TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(m.redirect.Class);
-								MethodWrapper mw = tw.GetMethodWrapper(m.redirect.Name, m.redirect.Sig, false);
-								if(mw == null)
-								{
-									throw new InvalidOperationException();
-								}
-								mw.Link();
-								mw.EmitCall(ilgen);
-							}
-							// TODO we may need a cast here (or a stack to return type conversion)
-							ilgen.Emit(OpCodes.Ret);
+							m.redirect.Emit(ilgen);
 						}
 						else if(m.alternateBody != null)
 						{

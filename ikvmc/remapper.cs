@@ -1153,6 +1153,43 @@ namespace IKVM.Internal.MapXml
 		public string Sig;
 		[XmlAttribute("type")]
 		public string Type;
+
+		internal void Emit(ILGenerator ilgen)
+		{
+			if(Type != "static" || Class == null || Name == null || Sig == null)
+			{
+				throw new NotImplementedException();
+			}
+			Type[] redirParamTypes = ClassLoaderWrapper.GetBootstrapClassLoader().ArgTypeListFromSig(Sig);
+			for(int i = 0; i < redirParamTypes.Length; i++)
+			{
+				ilgen.Emit(OpCodes.Ldarg, (short)i);
+			}
+			// HACK if the class name contains a comma, we assume it is a .NET type
+			if(Class.IndexOf(',') >= 0)
+			{
+				Type type = System.Type.GetType(Class, true);
+				MethodInfo mi = type.GetMethod(Name, redirParamTypes);
+				if(mi == null)
+				{
+					throw new InvalidOperationException();
+				}
+				ilgen.Emit(OpCodes.Call, mi);
+			}
+			else
+			{
+				TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(Class);
+				MethodWrapper mw = tw.GetMethodWrapper(Name, Sig, false);
+				if(mw == null)
+				{
+					throw new InvalidOperationException();
+				}
+				mw.Link();
+				mw.EmitCall(ilgen);
+			}
+			// TODO we may need a cast here (or a stack to return type conversion)
+			ilgen.Emit(OpCodes.Ret);
+		}
 	}
 
 	public class Override
@@ -1184,6 +1221,18 @@ namespace IKVM.Internal.MapXml
 		public Throws[] throws;
 		[XmlElement("attribute")]
 		public Attribute[] Attributes;
+
+		internal void Emit(ILGenerator ilgen)
+		{
+			if(redirect != null)
+			{
+				redirect.Emit(ilgen);
+			}
+			else
+			{
+				body.Emit(ilgen);
+			}
+		}
 	}
 
 	public class Field
@@ -1217,6 +1266,8 @@ namespace IKVM.Internal.MapXml
 	{
 		[XmlAttribute("class")]
 		public string Name;
+		[XmlElement("method")]
+		public Method[] Methods;
 	}
 
 	[Flags]

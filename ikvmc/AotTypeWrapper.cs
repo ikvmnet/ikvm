@@ -561,6 +561,32 @@ namespace IKVM.Internal
 							}
 						}
 					}
+					if(clazz.Interfaces != null)
+					{
+						foreach(IKVM.Internal.MapXml.Interface iface in clazz.Interfaces)
+						{
+							TypeWrapper tw = GetClassLoader().LoadClassByDottedName(iface.Name);
+							// NOTE since this interface won't be part of the list in the ImplementAttribute,
+							// it won't be visible from Java that the type implements this interface.
+							typeBuilder.AddInterfaceImplementation(tw.TypeAsBaseType);
+							if(iface.Methods != null)
+							{
+								foreach(IKVM.Internal.MapXml.Method m in iface.Methods)
+								{
+									MethodWrapper mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
+									if(mw == null)
+									{
+										throw new InvalidOperationException("Method " + m.Name + m.Sig + " not found in interface " + tw.Name);
+									}
+									mw.Link();
+									MethodBuilder mb = typeBuilder.DefineMethod(tw.Name + "/" + m.Name, MethodAttributes.Private | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.CheckAccessOnOverride, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+									AttributeHelper.HideFromJava(mb);
+									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
+									m.Emit(mb.GetILGenerator());
+								}
+							}
+						}
+					}
 				}
 			}
 		}

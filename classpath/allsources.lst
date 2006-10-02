@@ -415,6 +415,7 @@
 ../../classpath/gnu/java/awt/java2d/QuadSegment.java
 ../../classpath/gnu/java/awt/java2d/RasterGraphics.java
 ../../classpath/gnu/java/awt/java2d/Segment.java
+../../classpath/gnu/java/awt/java2d/ShapeCache.java
 ../../classpath/gnu/java/awt/java2d/TexturePaintContext.java
 ../../classpath/gnu/java/awt/LowPriorityEvent.java
 ../../classpath/gnu/java/awt/peer/ClasspathFontPeer.java
@@ -3124,7 +3125,6 @@
 ../../classpath/javax/management/loading/ClassLoaderRepository.java
 ../../classpath/javax/management/MalformedObjectNameException.java
 ../../classpath/javax/management/MBeanAttributeInfo.java
-../../classpath/javax/management/MBeanConnection.java
 ../../classpath/javax/management/MBeanConstructorInfo.java
 ../../classpath/javax/management/MBeanException.java
 ../../classpath/javax/management/MBeanFeatureInfo.java
@@ -3134,6 +3134,7 @@
 ../../classpath/javax/management/MBeanParameterInfo.java
 ../../classpath/javax/management/MBeanRegistrationException.java
 ../../classpath/javax/management/MBeanServer.java
+../../classpath/javax/management/MBeanServerConnection.java
 ../../classpath/javax/management/NotCompliantMBeanException.java
 ../../classpath/javax/management/Notification.java
 ../../classpath/javax/management/NotificationBroadcaster.java
@@ -4747,6 +4748,7 @@ gnu/java/nio/SocketChannelImpl.java
 gnu/java/security/Configuration.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/AssemblyClassLoader.java
+ikvm/internal/Formatter.java
 ikvm/internal/Library.java
 ikvm/internal/LibraryVMInterface.java
 ikvm/internal/stubgen/StubGenerator.java
