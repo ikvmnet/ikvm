@@ -1294,8 +1294,9 @@ namespace IKVM.Internal
 			return new SimpleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
 		}
 
-		private FieldInfo TokenBasedLookup(int token)
+		private FieldInfo TokenBasedLookup(BindingFlags bindings, int token)
 		{
+			ModuleBuilder module = (ModuleBuilder)DeclaringType.TypeAsTBD.Module;
 			foreach(FieldInfo f in DeclaringType.TypeAsTBD.GetFields(bindings))
 			{
 				if(module.GetFieldToken(f).Token == token)
@@ -1339,7 +1340,7 @@ namespace IKVM.Internal
 				ModuleBuilder module = (ModuleBuilder)DeclaringType.TypeAsTBD.Module;
 				if(module.GetFieldToken(fi).Token != fb.GetToken().Token)
 				{
-					fi = TokenBasedLookup(fb.GetToken().Token);
+					fi = TokenBasedLookup(bindings, fb.GetToken().Token);
 				}
 				field = fi;
 				// HACK this is racy, but we need to get rid of it anyway

@@ -198,6 +198,7 @@
 ../../classpath/gnu/classpath/debug/TeeOutputStream.java
 ../../classpath/gnu/classpath/debug/TeeReader.java
 ../../classpath/gnu/classpath/debug/TeeWriter.java
+../../classpath/gnu/classpath/ListenerData.java
 ../../classpath/gnu/classpath/NotImplementedException.java
 ../../classpath/gnu/classpath/ServiceFactory.java
 ../../classpath/gnu/classpath/ServiceProviderLoadingAction.java
@@ -3135,6 +3136,9 @@
 ../../classpath/javax/management/MBeanRegistrationException.java
 ../../classpath/javax/management/MBeanServer.java
 ../../classpath/javax/management/MBeanServerConnection.java
+../../classpath/javax/management/MBeanServerDelegate.java
+../../classpath/javax/management/MBeanServerDelegateMBean.java
+../../classpath/javax/management/MBeanServerNotification.java
 ../../classpath/javax/management/NotCompliantMBeanException.java
 ../../classpath/javax/management/Notification.java
 ../../classpath/javax/management/NotificationBroadcaster.java
