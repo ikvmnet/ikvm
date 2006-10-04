@@ -2077,16 +2077,18 @@ namespace IKVM.Internal
 								if(asmref.FullName != runtimeAssemblyName.FullName)
 								{
 									Console.Error.WriteLine("Error: referenced assembly {0} was compiled with an incompatible IKVM.Runtime version ({1})", r, asmref.Version);
-									Console.Error.WriteLine("   (current runtime is {0})", runtimeAssemblyName.FullName);
+									Console.Error.WriteLine("   Current runtime: {0}", runtimeAssemblyName.FullName);
+									Console.Error.WriteLine("   Referenced assembly runtime: {0}", asmref.FullName);
 									return 1;
 								}
 							}
 							else
 							{
-								if(asmref.GetPublicKey() != null && asmref.GetPublicKey().Length != 0)
+								if(asmref.GetPublicKeyToken() != null && asmref.GetPublicKeyToken().Length != 0)
 								{
 									Console.Error.WriteLine("Error: referenced assembly {0} was compiled with an incompatible (signed) IKVM.Runtime version", r);
-									Console.Error.WriteLine("   (current runtime is {0})", runtimeAssemblyName.FullName);
+									Console.Error.WriteLine("   Current runtime: {0}", runtimeAssemblyName.FullName);
+									Console.Error.WriteLine("   Referenced assembly runtime: {0}", asmref.FullName);
 									return 1;
 								}
 							}
