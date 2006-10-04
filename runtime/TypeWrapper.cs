@@ -888,7 +888,12 @@ namespace IKVM.Internal
 			{
 				modifiers |= Modifiers.Static;
 			}
-			// TODO reflection doesn't support volatile
+#if WHIDBEY
+			if(Array.IndexOf(fi.GetRequiredCustomModifiers(), typeof(System.Runtime.CompilerServices.IsVolatile)) != -1)
+			{
+				modifiers |= Modifiers.Volatile;
+			}
+#endif
 			return new ExModifiers(modifiers, false);
 		}
 
@@ -4189,21 +4194,31 @@ namespace IKVM.Internal
 #endif
 						}
 					}
+#if WHIDBEY
+					Type[] modreq = Type.EmptyTypes;
+					if(fld.IsVolatile)
+					{
+						modreq = new Type[] { typeof(System.Runtime.CompilerServices.IsVolatile) };
+					}
+					field = typeBuilder.DefineField(isWrappedFinal ? "__<>" + fieldName : fieldName, type, modreq, Type.EmptyTypes, attribs);
+#else // WHIDBEY
 					// MONOBUG the __<> prefix for wrapped final fields is to work around a bug in mcs 1.1.17
 					// it crashes when it tries to lookup the property with the same name as the privatescope field
 					// http://bugzilla.ximian.com/show_bug.cgi?id=79451
 					field = typeBuilder.DefineField(isWrappedFinal ? "__<>" + fieldName : fieldName, type, attribs);
+#endif // WHIDBEY
 					if(fld.IsTransient)
 					{
 						CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(typeof(NonSerializedAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
 						field.SetCustomAttribute(transientAttrib);
 					}
 #if STATIC_COMPILER
+#if !WHIDBEY
 					if(fld.IsVolatile)
 					{
-						// TODO the field should be marked as modreq(IsVolatile), but Reflection.Emit doesn't have a way of doing this
 						setModifiers = true;
 					}
+#endif // !WHIDBEY
 					// Instance fields can also have a ConstantValue attribute (and are inlined by the compiler),
 					// and ikvmstub has to export them, so we have to add a custom attribute.
 					if(constantValue != null)
