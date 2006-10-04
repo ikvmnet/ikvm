@@ -35,31 +35,31 @@ public final class Formatter
 
     public static String ToString(Byte b, String format, IFormatProvider provider)
     {
-        return ((IFormattable)CIL.box_byte(b.byteValue())).ToString(format, provider);
+        return CIL.box_sbyte(b.byteValue()).ToString(format, provider);
     }
 
     public static String ToString(Short s, String format, IFormatProvider provider)
     {
-        return ((IFormattable)CIL.box_short(s.shortValue())).ToString(format, provider);
+        return CIL.box_short(s.shortValue()).ToString(format, provider);
     }
 
     public static String ToString(Integer i, String format, IFormatProvider provider)
     {
-        return ((IFormattable)CIL.box_int(i.intValue())).ToString(format, provider);
+        return CIL.box_int(i.intValue()).ToString(format, provider);
     }
 
     public static String ToString(Long l, String format, IFormatProvider provider)
     {
-        return ((IFormattable)CIL.box_long(l.longValue())).ToString(format, provider);
+        return CIL.box_long(l.longValue()).ToString(format, provider);
     }
 
     public static String ToString(Float f, String format, IFormatProvider provider)
     {
-        return ((IFormattable)CIL.box_float(f.floatValue())).ToString(format, provider);
+        return CIL.box_float(f.floatValue()).ToString(format, provider);
     }
 
     public static String ToString(Double d, String format, IFormatProvider provider)
     {
-        return ((IFormattable)CIL.box_double(d.doubleValue())).ToString(format, provider);
+        return CIL.box_double(d.doubleValue()).ToString(format, provider);
     }
 }

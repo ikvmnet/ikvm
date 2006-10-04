@@ -1657,7 +1657,16 @@ namespace IKVM.NativeCode.ikvm.@internal
 			public static bool isFieldDeprecated(object fieldWrapper)
 			{
 				FieldInfo fi = ((FieldWrapper)fieldWrapper).GetField();
-				return fi != null && AttributeHelper.IsDefined(fi, typeof(ObsoleteAttribute));
+				if(fi != null)
+				{
+					return AttributeHelper.IsDefined(fi, typeof(ObsoleteAttribute));
+				}
+				GetterFieldWrapper getter = fieldWrapper as GetterFieldWrapper;
+				if(getter != null)
+				{
+					return AttributeHelper.IsDefined(getter.GetProperty(), typeof(ObsoleteAttribute));
+				}
+				return false;
 			}
 
 			public static bool isMethodDeprecated(object methodWrapper)

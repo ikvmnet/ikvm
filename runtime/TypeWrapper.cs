@@ -536,6 +536,15 @@ namespace IKVM.Internal
 			fb.SetCustomAttribute(deprecatedAttribute);
 		}
 
+		internal static void SetDeprecatedAttribute(PropertyBuilder pb)
+		{
+			if(deprecatedAttribute == null)
+			{
+				deprecatedAttribute = new CustomAttributeBuilder(typeof(ObsoleteAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
+			}
+			pb.SetCustomAttribute(deprecatedAttribute);
+		}
+
 		internal static void SetThrowsAttribute(MethodBase mb, string[] exceptions)
 		{
 			if(exceptions != null && exceptions.Length != 0)
@@ -1804,11 +1813,12 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal bool IsErased
+		internal bool IsErasedOrBoxedPrimitiveOrRemapped
 		{
 			get
 			{
-				return IsUnloadable || IsGhostArray || IsDynamicOnly;
+				bool erased = IsUnloadable || IsGhostArray || IsDynamicOnly;
+				return erased || (TypeAsSignatureType.IsPrimitive && !IsPrimitive) || (IsRemapped && this is DotNetTypeWrapper);
 			}
 		}
 
@@ -2831,8 +2841,8 @@ namespace IKVM.Internal
 			get
 			{
 				throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper: " + Name);
-			} 
-		} 
+			}
+		}
 
 		internal override TypeWrapper[] Interfaces
 		{
@@ -4106,7 +4116,7 @@ namespace IKVM.Internal
 				string fieldName = fld.Name;
 				TypeWrapper typeWrapper = fw.FieldTypeWrapper;
 				Type type = typeWrapper.TypeAsSignatureType;
-				bool setNameSig = typeWrapper.IsErased;
+				bool setNameSig = typeWrapper.IsErasedOrBoxedPrimitiveOrRemapped;
 				if(setNameSig)
 				{
 					// TODO use clashtable
@@ -4117,7 +4127,10 @@ namespace IKVM.Internal
 				}
 				FieldAttributes attribs = 0;
 				MethodAttributes methodAttribs = MethodAttributes.HideBySig;
-				bool setModifiers = false;
+#if STATIC_COMPILER
+				bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
+#endif
+				bool isWrappedFinal = false;
 				if(fld.IsPrivate)
 				{
 					attribs |= FieldAttributes.Private;
@@ -4155,9 +4168,9 @@ namespace IKVM.Internal
 				}
 				else
 				{
-					bool isWrappedFinal = fw is GetterFieldWrapper;
 					if(fld.IsFinal)
 					{
+						isWrappedFinal = fw is GetterFieldWrapper;
 						if(isWrappedFinal)
 						{
 							// NOTE public/protected blank final fields get converted into a read-only property with a private field
@@ -4171,7 +4184,9 @@ namespace IKVM.Internal
 						}
 						else
 						{
+#if STATIC_COMPILER
 							setModifiers = true;
+#endif
 						}
 					}
 					// MONOBUG the __<> prefix for wrapped final fields is to work around a bug in mcs 1.1.17
@@ -4212,17 +4227,7 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Ldfld, field);
 						}
 						ilgen.Emit(OpCodes.Ret);
-#if STATIC_COMPILER
-						if(setNameSig)
-						{
-							setNameSig = false;
-							AttributeHelper.SetNameSig(getter, fld.Name, fld.Signature);
-						}
-						if(fld.IsTransient)
-						{
-							AttributeHelper.SetModifiers(getter, fld.Modifiers, fld.IsInternal);
-						}
-#endif // STATIC_COMPILER
+
 						PropertyBuilder pb = typeBuilder.DefineProperty(fieldName, PropertyAttributes.None, type, Type.EmptyTypes);
 						pb.SetGetMethod(getter);
 						if(!fld.IsStatic)
@@ -4238,31 +4243,48 @@ namespace IKVM.Internal
 							pb.SetSetMethod(setter);
 						}
 						((GetterFieldWrapper)fw).SetGetter(getter);
+#if STATIC_COMPILER
+						if(setNameSig)
+						{
+							AttributeHelper.SetNameSig(getter, fld.Name, fld.Signature);
+						}
+						if(setModifiers || fld.IsTransient)
+						{
+							AttributeHelper.SetModifiers(getter, fld.Modifiers, fld.IsInternal);
+						}
+						if(fld.DeprecatedAttribute)
+						{
+							// NOTE for better interop with other languages, we set the ObsoleteAttribute on the property itself
+							AttributeHelper.SetDeprecatedAttribute(pb);
+						}
+						if(fld.GenericSignature != null)
+						{
+							AttributeHelper.SetSignatureAttribute(getter, fld.GenericSignature);
+						}
+#endif // STATIC_COMPILER
 					}
 				}
 #if STATIC_COMPILER
-				// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
-				// the Java modifiers
-				if(setModifiers || fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0)
+				if(!isWrappedFinal)
 				{
-					AttributeHelper.SetModifiers(field, fld.Modifiers, fld.IsInternal);
-				}
-				if(setNameSig)
-				{
-					AttributeHelper.SetNameSig(field, fld.Name, fld.Signature);
-				}
-				if(fld.DeprecatedAttribute)
-				{
-					AttributeHelper.SetDeprecatedAttribute(field);
-				}
-				if(fld.GenericSignature != null)
-				{
-					AttributeHelper.SetSignatureAttribute(field, fld.GenericSignature);
-				}
-#else // STATIC_COMPILER
-				if(setModifiers)
-				{
-					// shut up the compiler
+					// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
+					// the Java modifiers
+					if(setModifiers)
+					{
+						AttributeHelper.SetModifiers(field, fld.Modifiers, fld.IsInternal);
+					}
+					if(setNameSig)
+					{
+						AttributeHelper.SetNameSig(field, fld.Name, fld.Signature);
+					}
+					if(fld.DeprecatedAttribute)
+					{
+						AttributeHelper.SetDeprecatedAttribute(field);
+					}
+					if(fld.GenericSignature != null)
+					{
+						AttributeHelper.SetSignatureAttribute(field, fld.GenericSignature);
+					}
 				}
 #endif // STATIC_COMPILER
 				return field;
@@ -4782,7 +4804,15 @@ namespace IKVM.Internal
 								Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
 								if(annotation != null)
 								{
-									annotation.Apply((FieldBuilder)fields[i].GetField(), def);
+									GetterFieldWrapper getter = fields[i] as GetterFieldWrapper;
+									if(getter != null)
+									{
+										annotation.Apply((MethodBuilder)getter.GetGetter(), def);
+									}
+									else
+									{
+										annotation.Apply((FieldBuilder)fields[i].GetField(), def);
+									}
 								}
 							}
 						}
@@ -5749,10 +5779,10 @@ namespace IKVM.Internal
 					}
 					ClassFile.Method m = classFile.Methods[index];
 					MethodBase method;
-					bool setNameSig = methods[index].ReturnType.IsErased;
+					bool setNameSig = methods[index].ReturnType.IsErasedOrBoxedPrimitiveOrRemapped;
 					foreach(TypeWrapper tw in methods[index].GetParameters())
 					{
-						setNameSig |= tw.IsErased;
+						setNameSig |= tw.IsErasedOrBoxedPrimitiveOrRemapped;
 					}
 					bool setModifiers = false;
 					MethodAttributes attribs = MethodAttributes.HideBySig;
@@ -7371,11 +7401,38 @@ namespace IKVM.Internal
 				{
 					type = GetClassLoader().FieldTypeWrapperFromSig(sigtype);
 				}
+				else if(type.IsPrimitive)
+				{
+					type = DotNetTypeWrapper.GetWrapperFromDotNetType(type.TypeAsTBD);
+					if(sigtype != type.SigName)
+					{
+						throw new InvalidOperationException();
+					}
+				}
+				else if(type.IsNonPrimitiveValueType)
+				{
+					// this can't happen and even if it does happen we cannot return
+					// UnloadableTypeWrapper because that would result in incorrect code
+					// being generated
+					throw new InvalidOperationException();
+				}
 				else
 				{
 					if(sigtype[0] == 'L')
 					{
 						sigtype = sigtype.Substring(1, sigtype.Length - 2);
+					}
+					try
+					{
+						TypeWrapper tw = GetClassLoader().LoadClassByDottedNameFast(sigtype);
+						if(tw != null && tw.IsRemapped)
+						{
+							type = tw;
+							return;
+						}
+					}
+					catch(RetargetableJavaException)
+					{
 					}
 					type = new UnloadableTypeWrapper(sigtype);
 				}
@@ -7782,6 +7839,18 @@ namespace IKVM.Internal
 					return attr.Signature;
 				}
 			}
+			else
+			{
+				GetterFieldWrapper getter = fw as GetterFieldWrapper;
+				if(getter != null)
+				{
+					SignatureAttribute attr = AttributeHelper.GetSignature(getter.GetGetter());
+					if(attr != null)
+					{
+						return attr.Signature;
+					}
+				}
+			}
 			return null;
 		}
 
@@ -7819,7 +7888,17 @@ namespace IKVM.Internal
 
 		internal override object[] GetFieldAnnotations(FieldWrapper fw)
 		{
-			return fw.GetField().GetCustomAttributes(false);
+			FieldInfo field = fw.GetField();
+			if(field != null)
+			{
+				return field.GetCustomAttributes(false);
+			}
+			GetterFieldWrapper getter = fw as GetterFieldWrapper;
+			if(getter != null)
+			{
+				return getter.GetGetter().GetCustomAttributes(false);
+			}
+			return new object[0];
 		}
 
 #if !COMPACT_FRAMEWORK

@@ -1065,59 +1065,51 @@
 					<ret />
 				</body>
 			</method>
-			<method name="box_byte" sig="(B)Ljava.lang.Object;">
+			<method name="box_byte" sig="(B)Lcli.System.Byte;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Byte" />
 					<ret />
 				</body>
 			</method>
-			<method name="box_boolean" sig="(Z)Ljava.lang.Object;">
+			<method name="box_boolean" sig="(Z)Lcli.System.Boolean;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Boolean" />
 					<ret />
 				</body>
 			</method>
-			<method name="box_short" sig="(S)Ljava.lang.Object;">
+			<method name="box_short" sig="(S)Lcli.System.Int16;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Int16" />
 					<ret />
 				</body>
 			</method>
-			<method name="box_char" sig="(C)Ljava.lang.Object;">
+			<method name="box_char" sig="(C)Lcli.System.Char;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Char" />
 					<ret />
 				</body>
 			</method>
-			<method name="box_int" sig="(I)Ljava.lang.Object;">
+			<method name="box_int" sig="(I)Lcli.System.Int32;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Int32" />
 					<ret />
 				</body>
 			</method>
-			<method name="box_float" sig="(F)Ljava.lang.Object;">
+			<method name="box_float" sig="(F)Lcli.System.Single;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Single" />
 					<ret />
 				</body>
 			</method>
-			<method name="box_long" sig="(J)Ljava.lang.Object;">
+			<method name="box_long" sig="(J)Lcli.System.Int64;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Int64" />
 					<ret />
 				</body>
 			</method>
-			<method name="box_double" sig="(D)Ljava.lang.Object;">
+			<method name="box_double" sig="(D)Lcli.System.Double;">
 				<body>
 					<ldarg_0 />
-					<box type="System.Double" />
 					<ret />
 				</body>
 			</method>

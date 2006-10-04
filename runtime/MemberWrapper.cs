@@ -1294,32 +1294,64 @@ namespace IKVM.Internal
 			return new SimpleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
 		}
 
+		private FieldInfo TokenBasedLookup(int token)
+		{
+			foreach(FieldInfo f in DeclaringType.TypeAsTBD.GetFields(bindings))
+			{
+				if(module.GetFieldToken(f).Token == token)
+				{
+					return f;
+				}
+			}
+			if(Type.GetType("Mono.Runtime") != null)
+			{
+				// MONOBUG token based lookup doesn't work on Mono 1.1.17,
+				// so we'll try again but now do a name/type based comparison
+				// (note that this is not water tight, because of erased types)
+				foreach(FieldInfo f in DeclaringType.TypeAsTBD.GetFields(bindings))
+				{
+					if(f.Name == field.Name && f.FieldType == field.FieldType)
+					{
+						return f;
+					}
+				}
+			}
+			throw new InvalidOperationException();
+		}
+
 		private void LookupField()
 		{
-			BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic;
-			if(IsStatic)
+			FieldBuilder fb = field as FieldBuilder;
+			if(fb != null)
 			{
-				bindings |= BindingFlags.Static;
+				// first do a name based lookup
+				BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+				if(this.IsStatic)
+				{
+					bindings |= BindingFlags.Static;
+				}
+				else
+				{
+					bindings |= BindingFlags.Instance;
+				}
+				FieldInfo fi = DeclaringType.TypeAsTBD.GetField(field.Name, bindings);
+				// now check that we've got the right field by comparing the tokens
+				ModuleBuilder module = (ModuleBuilder)DeclaringType.TypeAsTBD.Module;
+				if(module.GetFieldToken(fi).Token != fb.GetToken().Token)
+				{
+					fi = TokenBasedLookup(fb.GetToken().Token);
+				}
+				field = fi;
+				// HACK this is racy, but we need to get rid of it anyway
+				this.IsLiteralField = field.IsLiteral;
 			}
-			else
-			{
-				bindings |= BindingFlags.Instance;
-			}
-			// TODO instead of looking up the field by name, we should use the Token to find it.
-			field = DeclaringType.TypeAsTBD.GetField(Name, bindings);
-			this.IsLiteralField = field.IsLiteral;
-			Debug.Assert(field != null);
 		}
 
 #if !STATIC_COMPILER
 		internal virtual void SetValue(object obj, object val)
 		{
 			AssertLinked();
-			// TODO this is a broken implementation (for one thing, it needs to support redirection)
-			if(field == null || field is FieldBuilder)
-			{
-				LookupField();
-			}
+			LookupField();
 			if(fieldType.IsGhost)
 			{
 				object temp = field.GetValue(obj);
@@ -1340,11 +1372,7 @@ namespace IKVM.Internal
 		internal virtual object GetValue(object obj)
 		{
 			AssertLinked();
-			// TODO this is a broken implementation (for one thing, it needs to support redirection)
-			if(field == null || field is FieldBuilder)
-			{
-				LookupField();
-			}
+			LookupField();
 #if STATIC_COMPILER
 			return field.GetValue(null);
 #else
@@ -1492,6 +1520,16 @@ namespace IKVM.Internal
 		internal void SetGetter(MethodInfo getter)
 		{
 			this.getter = getter;
+		}
+
+		internal MethodInfo GetGetter()
+		{
+			return getter;
+		}
+
+		internal PropertyInfo GetProperty()
+		{
+			return prop;
 		}
 
 #if !STATIC_COMPILER

@@ -34,14 +34,14 @@ public class CIL
     public static native long unbox_long(Object o);
     public static native double unbox_double(Object o);
 
-    public static native Object box_byte(byte v);
-    public static native Object box_boolean(boolean v);
-    public static native Object box_short(short v);
-    public static native Object box_char(char v);
-    public static native Object box_int(int v);
-    public static native Object box_float(float v);
-    public static native Object box_long(long v);
-    public static native Object box_double(double v);
+    public static native cli.System.Byte box_byte(byte v);
+    public static native cli.System.Boolean box_boolean(boolean v);
+    public static native cli.System.Int16 box_short(short v);
+    public static native cli.System.Char box_char(char v);
+    public static native cli.System.Int32 box_int(int v);
+    public static native cli.System.Single box_float(float v);
+    public static native cli.System.Int64 box_long(long v);
+    public static native cli.System.Double box_double(double v);
 
     public static native cli.System.SByte box_sbyte(byte v);
     public static native cli.System.UInt16 box_ushort(short v);
