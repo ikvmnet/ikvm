@@ -297,6 +297,11 @@ class IkvmcCompiler
 							Console.Error.WriteLine("Error: path too long: {0}", spec);
 							return 1;
 						}
+						catch(DirectoryNotFoundException)
+						{
+							Console.Error.WriteLine("Error: path not found: {0}", spec);
+							return 1;
+						}
 						catch(ArgumentException)
 						{
 							Console.Error.WriteLine("Error: invalid path: {0}", spec);
