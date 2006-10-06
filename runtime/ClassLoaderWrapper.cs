@@ -1293,10 +1293,13 @@ namespace IKVM.Internal
 						delegates[i] = ClassLoaderWrapper.GetAssemblyClassLoader(asm);
 					}
 				}
-				tw = delegates[i].DoLoad(name);
-				if(tw != null)
+				if(delegates[i] != null)
 				{
-					return tw;
+					tw = delegates[i].DoLoad(name);
+					if(tw != null)
+					{
+						return tw;
+					}
 				}
 			}
 			if(!isJava)

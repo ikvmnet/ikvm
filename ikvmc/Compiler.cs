@@ -260,8 +260,13 @@ class IkvmcCompiler
 					string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(r));
 					if(files.Length == 0)
 					{
-						Console.Error.WriteLine("Error: reference not found: {0}", r);
-						return 1;
+						Assembly asm = Assembly.LoadWithPartialName(r);
+						if(asm == null)
+						{
+							Console.Error.WriteLine("Error: reference not found: {0}", r);
+							return 1;
+						}
+						files = new string[] { asm.Location };
 					}
 					foreach(string f in files)
 					{

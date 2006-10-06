@@ -308,7 +308,7 @@ namespace IKVM.Internal
 							{
 								for(int i = 0; i < indexer.Length; i++)
 								{
-									ilgen.Emit(OpCodes.Ldarg, i);
+									ilgen.Emit(OpCodes.Ldarg, (short)i);
 								}
 								mw.EmitCall(ilgen);
 							}
@@ -317,7 +317,7 @@ namespace IKVM.Internal
 								ilgen.Emit(OpCodes.Ldarg_0);
 								for(int i = 0; i < indexer.Length; i++)
 								{
-									ilgen.Emit(OpCodes.Ldarg, i + 1);
+									ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
 								}
 								mw.EmitCallvirt(ilgen);
 							}
@@ -348,7 +348,7 @@ namespace IKVM.Internal
 							{
 								for(int i = 0; i <= indexer.Length; i++)
 								{
-									ilgen.Emit(OpCodes.Ldarg, i);
+									ilgen.Emit(OpCodes.Ldarg, (short)i);
 								}
 								mw.EmitCall(ilgen);
 							}
@@ -357,7 +357,7 @@ namespace IKVM.Internal
 								ilgen.Emit(OpCodes.Ldarg_0);
 								for(int i = 0; i <= indexer.Length; i++)
 								{
-									ilgen.Emit(OpCodes.Ldarg, i + 1);
+									ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
 								}
 								mw.EmitCallvirt(ilgen);
 							}
