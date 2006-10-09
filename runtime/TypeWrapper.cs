@@ -1448,6 +1448,28 @@ namespace IKVM.Internal
 
 		internal static object[] GetJavaModuleAttributes(Module mod)
 		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			if(JVM.IsStaticCompiler || mod.Assembly.ReflectionOnly)
+			{
+				ArrayList attrs = new ArrayList();
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofJavaModuleAttribute))
+					{
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						if(args.Count == 0)
+						{
+							attrs.Add(new JavaModuleAttribute());
+						}
+						else
+						{
+							attrs.Add(new JavaModuleAttribute(DecodeArray<string>(args[0])));
+						}
+					}
+				}
+				return attrs.ToArray();
+			}
+#endif
 			return mod.GetCustomAttributes(typeofJavaModuleAttribute, false);
 		}
 
