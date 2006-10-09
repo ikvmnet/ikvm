@@ -1096,14 +1096,6 @@ namespace IKVM.Internal
 		}
 #endif  // STATIC_COMPILER && !COMPACT_FRAMEWORK
 
-#if !COMPACT_FRAMEWORK
-		internal static void SetJavaModule(ModuleBuilder moduleBuilder)
-		{
-			CustomAttributeBuilder ikvmModuleAttr = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
-			moduleBuilder.SetCustomAttribute(ikvmModuleAttr);
-		}
-#endif //!COMPACT_FRAMEWORK
-
 		internal static NameSigAttribute GetNameSig(FieldInfo field)
 		{
 #if WHIDBEY && !COMPACT_FRAMEWORK
@@ -1452,6 +1444,11 @@ namespace IKVM.Internal
 		internal static bool IsJavaModule(Module mod)
 		{
 			return IsDefined(mod, typeofJavaModuleAttribute);
+		}
+
+		internal static object[] GetJavaModuleAttributes(Module mod)
+		{
+			return mod.GetCustomAttributes(typeofJavaModuleAttribute, false);
 		}
 
 		internal static bool IsNoPackagePrefix(Type type)
@@ -5275,7 +5272,8 @@ namespace IKVM.Internal
 					AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
 					DynamicClassLoader.RegisterForSaveDebug(ab);
 					mod = ab.DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
-					AttributeHelper.SetJavaModule(mod);
+					CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(JavaModuleAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
+					mod.SetCustomAttribute(cab);
 				}
 
 				internal static void Generate(ILGenerator ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args)

@@ -1585,6 +1585,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 			return ((IKVM.Internal.AssemblyClassLoader)TypeWrapper.FromClass(clazz).GetClassLoader()).Assembly;
 		}
 
+		// NOTE the array may contain duplicates!
 		public static string[] GetPackages(object classLoader)
 		{
 			IKVM.Internal.AssemblyClassLoader wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader);
@@ -1593,30 +1594,20 @@ namespace IKVM.NativeCode.ikvm.@internal
 				// must be a GenericClassLoader
 				return null;
 			}
-			using(Stream s = wrapper.Assembly.GetManifestResourceStream("pkg.lst"))
+			string[] packages = new string[0];
+			foreach(Module m in wrapper.Assembly.GetModules(false))
 			{
-				if(s != null)
+				object[] attr = m.GetCustomAttributes(typeof(PackageListAttribute), false);
+				foreach(PackageListAttribute p in attr)
 				{
-					using(System.Resources.ResourceReader rdr = new System.Resources.ResourceReader(s))
-					{
-						foreach(DictionaryEntry de in rdr)
-						{
-							if(de.Key.Equals("m"))
-							{
-								BinaryReader br = new BinaryReader(new MemoryStream((byte[])de.Value), System.Text.Encoding.UTF8);
-								int count = br.ReadInt32();
-								string[] packages = new string[count];
-								for(int i = 0; i < count; i++)
-								{
-									packages[i] = br.ReadString();
-								}
-								return packages;
-							}
-						}
-					}
+					string[] mp = p.GetPackages();
+					string[] tmp = new string[packages.Length + mp.Length];
+					Array.Copy(packages, 0, tmp, 0, packages.Length);
+					Array.Copy(mp, 0, tmp, packages.Length, mp.Length);
+					packages = tmp;
 				}
 			}
-			return new string[0];
+			return packages;
 		}
 
 		public static Assembly GetAssembly(object classLoader)

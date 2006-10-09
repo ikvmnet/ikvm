@@ -350,6 +350,21 @@ namespace IKVM.Attributes
 	[AttributeUsage(AttributeTargets.Module)]
 	public sealed class JavaModuleAttribute : Attribute
 	{
+		private string[] classMap;
+
+		public JavaModuleAttribute()
+		{
+		}
+
+		public JavaModuleAttribute(string[] classMap)
+		{
+			this.classMap = classMap;
+		}
+
+		public string[] GetClassMap()
+		{
+			return classMap;
+		}
 	}
 
 	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Assembly)]
@@ -701,6 +716,22 @@ namespace IKVM.Attributes
 			{
 				return attributeType;
 			}
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Module)]
+	public sealed class PackageListAttribute : Attribute
+	{
+		private string[] packages;
+
+		public PackageListAttribute(string[] packages)
+		{
+			this.packages = packages;
+		}
+
+		public string[] GetPackages()
+		{
+			return packages;
 		}
 	}
 }

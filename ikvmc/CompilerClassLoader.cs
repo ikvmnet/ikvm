@@ -128,7 +128,6 @@ namespace IKVM.Internal
 			{
 				AttributeHelper.SetSourceFile(moduleBuilder, null);
 			}
-			AttributeHelper.SetJavaModule(moduleBuilder);
 			if(this.EmitDebugInfo || this.EmitStackTraceInfo)
 			{
 				CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, this.EmitDebugInfo });
@@ -283,30 +282,28 @@ namespace IKVM.Internal
 			// add a class.map resource, if needed.
 			if(nameMappings.Count > 0)
 			{
-				IResourceWriter writer = mb.DefineResource("class.map", "", ResourceAttributes.Public);
-				MemoryStream ms = new MemoryStream();
-				BinaryWriter bw = new BinaryWriter(ms, System.Text.Encoding.UTF8);
-				bw.Write(nameMappings.Count);
+				string[] list = new string[nameMappings.Count * 2];
+				int i = 0;
 				foreach(DictionaryEntry de in nameMappings)
 				{
-					bw.Write((string)de.Key);
-					bw.Write((string)de.Value);
+					list[i++] = (string)de.Key;
+					list[i++] = (string)de.Value;
 				}
-				writer.AddResource("m", ms.ToArray());
+				CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(JavaModuleAttribute)).GetConstructor(new Type[] { typeof(string[]) }), new object[] { list });
+				mb.SetCustomAttribute(cab);
+			}
+			else
+			{
+				CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(JavaModuleAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
+				mb.SetCustomAttribute(cab);
 			}
 
 			// add a package list
 			if(true)
 			{
-				IResourceWriter writer = mb.DefineResource("pkg.lst", "", ResourceAttributes.Public);
-				MemoryStream ms = new MemoryStream();
-				BinaryWriter bw = new BinaryWriter(ms, System.Text.Encoding.UTF8);
-				bw.Write(packages.Count);
-				foreach(string pkg in packages.Keys)
-				{
-					bw.Write(pkg);
-				}
-				writer.AddResource("m", ms.ToArray());
+				string[] list = new string[packages.Count];
+				packages.Keys.CopyTo(list, 0);
+				mb.SetCustomAttribute(new CustomAttributeBuilder(JVM.LoadType(typeof(PackageListAttribute)).GetConstructor(new Type[] { typeof(string[]) }), new object[] { list }));
 			}
 
 			if(targetIsModule)

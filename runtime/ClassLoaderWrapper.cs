@@ -1065,39 +1065,41 @@ namespace IKVM.Internal
 #if WHIDBEY
 		private bool isReflectionOnly;
 #endif // WHIDBEY
-		private bool isJava;
+		private bool[] isJavaModule;
+		private Module[] modules;
 		private Hashtable nameMap;
 
 		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader)
 			: base(CodeGenOptions.None, javaClassLoader)
 		{
 			this.assembly = assembly;
-			isJava = AttributeHelper.IsJavaModule(assembly.GetModules()[0]);
+			modules = assembly.GetModules(false);
+			isJavaModule = new bool[modules.Length];
 #if WHIDBEY
 			isReflectionOnly = assembly.ReflectionOnly;
 #endif // WHIDBEY
-			if(isJava)
+			for(int i = 0; i < modules.Length; i++)
 			{
-				using(Stream s = assembly.GetManifestResourceStream("class.map"))
+				object[] attr = AttributeHelper.GetJavaModuleAttributes(modules[i]);
+				if(attr.Length > 0)
 				{
-					if(s != null)
+					isJavaModule[i] = true;
+					foreach(JavaModuleAttribute jma in attr)
 					{
-						nameMap = new Hashtable();
-						using(System.Resources.ResourceReader rdr = new System.Resources.ResourceReader(s))
+						string[] map = jma.GetClassMap();
+						if(map != null)
 						{
-							foreach(DictionaryEntry de in rdr)
+							if(nameMap == null)
 							{
-								if(de.Key.Equals("m"))
-								{
-									BinaryReader br = new BinaryReader(new MemoryStream((byte[])de.Value), System.Text.Encoding.UTF8);
-									int count = br.ReadInt32();
-									for(int i = 0; i < count; i++)
-									{
-										string key = br.ReadString();
-										string val = br.ReadString();
-										nameMap.Add(key, val);
-									}
-								}
+								nameMap = new Hashtable();
+							}
+							for(int j = 0; j < map.Length; j += 2)
+							{
+								string key = map[j];
+								string val = map[j + 1];
+								// TODO if there is a name clash between modules, this will throw.
+								// Figure out how to handle that.
+								nameMap.Add(key, val);
 							}
 						}
 					}
@@ -1132,7 +1134,24 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		private Type GetJavaType(string name)
+		private Type GetType(Module mod, string name)
+		{
+			try
+			{
+				return mod.GetType(name);
+			}
+			catch(FileLoadException x)
+			{
+				// this can only happen if the assembly was loaded in the ReflectionOnly
+				// context and the requested type references a type in another assembly
+				// that cannot be found in the ReflectionOnly context
+				// TODO figure out what other exceptions Assembly.GetType() can throw
+				Tracer.Info(Tracer.Runtime, x.Message);
+			}
+			return null;
+		}
+
+		private Type GetJavaType(Module mod, string name)
 		{
 			try
 			{
@@ -1141,7 +1160,7 @@ namespace IKVM.Internal
 				{
 					n = (string)nameMap[name];
 				}
-				Type t = GetType(n != null ? n : name);
+				Type t = GetType(mod, n != null ? n : name);
 				if(t == null)
 				{
 					n = name.Replace('$', '+');
@@ -1170,34 +1189,36 @@ namespace IKVM.Internal
 
 		internal TypeWrapper DoLoad(string name)
 		{
-			if(isJava)
+			for(int i = 0; i < modules.Length; i++)
 			{
-				Type type = GetJavaType(name);
-				if(type != null)
+				if(isJavaModule[i])
 				{
-					// check the name to make sure that the canonical name was used
-					if(CompiledTypeWrapper.GetName(type) == name)
+					Type type = GetJavaType(modules[i], name);
+					if(type != null)
 					{
-						return RegisterInitiatingLoader(CompiledTypeWrapper.newInstance(name, type));
+						// check the name to make sure that the canonical name was used
+						if(CompiledTypeWrapper.GetName(type) == name)
+						{
+							return RegisterInitiatingLoader(CompiledTypeWrapper.newInstance(name, type));
+						}
 					}
 				}
-				return null;
-			}
-			else
-			{
-				// TODO should we catch ArgumentException and prohibit array, pointer and byref here?
-				Type type = GetType(DotNetTypeWrapper.DemangleTypeName(name));
-				if(type != null && DotNetTypeWrapper.IsAllowedOutside(type))
+				else
 				{
-					TypeWrapper tw = new DotNetTypeWrapper(type);
-					// check the name to make sure that the canonical name was used
-					if(tw.Name == name)
+					// TODO should we catch ArgumentException and prohibit array, pointer and byref here?
+					Type type = GetType(modules[i], DotNetTypeWrapper.DemangleTypeName(name));
+					if(type != null && DotNetTypeWrapper.IsAllowedOutside(type))
 					{
-						return RegisterInitiatingLoader(tw);
+						TypeWrapper tw = new DotNetTypeWrapper(type);
+						// check the name to make sure that the canonical name was used
+						if(tw.Name == name)
+						{
+							return RegisterInitiatingLoader(tw);
+						}
 					}
 				}
-				return null;
 			}
+			return null;
 		}
 
 		internal TypeWrapper GetWrapperFromAssemblyType(Type type)
@@ -1208,8 +1229,18 @@ namespace IKVM.Internal
 #if !COMPACT_FRAMEWORK
 			Debug.Assert(!(type.Assembly is AssemblyBuilder), "!(type.Assembly is AssemblyBuilder)", type.FullName);
 #endif
+			Module mod = type.Module;
+			int moduleIndex = -1;
+			for(int i = 0; i < modules.Length; i++)
+			{
+				if(modules[i] == mod)
+				{
+					moduleIndex = i;
+					break;
+				}
+			}
 			string name;
-			if(isJava)
+			if(isJavaModule[moduleIndex])
 			{
 				name = CompiledTypeWrapper.GetName(type);
 			}
@@ -1239,7 +1270,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				if(isJava)
+				if(isJavaModule[moduleIndex])
 				{
 					// since this type was compiled from Java source, we have to look for our
 					// attributes
@@ -1300,6 +1331,15 @@ namespace IKVM.Internal
 					{
 						return tw;
 					}
+				}
+			}
+			bool isJava = false;
+			for(int i = 0; i < isJavaModule.Length; i++)
+			{
+				if(isJavaModule[i])
+				{
+					isJava = true;
+					break;
 				}
 			}
 			if(!isJava)
