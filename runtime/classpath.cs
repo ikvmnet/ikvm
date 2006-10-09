@@ -1728,7 +1728,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 				rank++;
 			}
 			if(type.DeclaringType != null
-				&& type.DeclaringType.IsDefined(typeof(GhostInterfaceAttribute), false))
+				&& AttributeHelper.IsGhostInterface(type.DeclaringType))
 			{
 				type = type.DeclaringType;
 			}
