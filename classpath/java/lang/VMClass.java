@@ -35,7 +35,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 @ikvm.lang.Internal
-public abstract class VMClass
+public final class VMClass
 {
     private VMClass() {}
 

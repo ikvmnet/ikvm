@@ -3456,6 +3456,7 @@ namespace IKVM.Internal
 						typeAttribs |= TypeAttributes.BeforeFieldInit;
 					}
 #if STATIC_COMPILER
+					bool setModifiers = false;
 					TypeBuilder outer = null;
 					// we only compile inner classes as nested types in the static compiler, because it has a higher cost
 					// and doesn't buy us anything in dynamic mode (and if fact, due to an FXBUG it would make handling
@@ -3581,6 +3582,20 @@ namespace IKVM.Internal
 					{
 						typeAttribs |= TypeAttributes.Class;
 #if STATIC_COMPILER
+						if(f.IsEffectivelyFinal)
+						{
+							if(outer == null)
+							{
+								setModifiers = true;
+							}
+							else
+							{
+								// we don't need a ModifiersAttribute, because the InnerClassAttribute already records
+								// the modifiers
+							}
+							typeAttribs |= TypeAttributes.Sealed;
+							Tracer.Info(Tracer.Compiler, "Sealing type {0}", f.Name);
+						}
 						if(outer != null)
 						{
 							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
@@ -3724,7 +3739,7 @@ namespace IKVM.Internal
 						}
 					}
 					// NOTE in Whidbey we can (and should) use CompilerGeneratedAttribute to mark Synthetic types
-					if(classFile.IsInternal || (classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
+					if(setModifiers || classFile.IsInternal || (classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
 					{
 						AttributeHelper.SetModifiers(typeBuilder, classFile.Modifiers, classFile.IsInternal);
 					}

@@ -77,6 +77,7 @@ namespace IKVM.Internal
 		private const ushort FLAG_MASK_MAJORVERSION = 0xFF;
 		private const ushort FLAG_MASK_DEPRECATED = 0x100;
 		private const ushort FLAG_MASK_INTERNAL = 0x200;
+		private const ushort FLAG_MASK_EFFECTIVELY_FINAL = 0x400;
 		private ConstantPoolItemClass[] interfaces;
 		private Field[] fields;
 		private Method[] methods;
@@ -1056,6 +1057,19 @@ namespace IKVM.Internal
 		{
 			access_flags &= ~Modifiers.AccessMask;
 			flags |= FLAG_MASK_INTERNAL;
+		}
+
+		internal void SetEffectivelyFinal()
+		{
+			flags |= FLAG_MASK_EFFECTIVELY_FINAL;
+		}
+
+		internal bool IsEffectivelyFinal
+		{
+			get
+			{
+				return (flags & FLAG_MASK_EFFECTIVELY_FINAL) != 0;
+			}
 		}
 
 		internal struct InnerClass

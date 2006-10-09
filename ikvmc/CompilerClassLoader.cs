@@ -62,6 +62,7 @@ namespace IKVM.Internal
 		private TypeWrapper[] mappedExceptions;
 		private bool[] mappedExceptionsAllSubClasses;
 		private Hashtable mapxml;
+		private Hashtable baseClasses;
 
 		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
 			: base(options.codegenoptions, null)
@@ -181,6 +182,15 @@ namespace IKVM.Internal
 					if(options.removeUnusedFields)
 					{
 						f.RemoveUnusedFields();
+					}
+					if(!f.IsInterface
+						&& !f.IsAbstract
+						&& !f.IsPublic
+						&& !f.IsFinal
+						&& !baseClasses.ContainsKey(f.Name)
+						&& !options.targetIsModule)
+					{
+						f.SetEffectivelyFinal();
 					}
 					if(f.IsPublic && options.privatePackages != null)
 					{
@@ -2114,22 +2124,27 @@ namespace IKVM.Internal
 				Assembly.ReflectionOnlyLoadFrom(typeof(System.ComponentModel.EditorBrowsableAttribute).Assembly.Location);
 			}
 #endif
+			Hashtable baseClasses = new Hashtable();
 			Hashtable h = new Hashtable();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
-			if(options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+			foreach(DictionaryEntry de in options.classes)
 			{
-				foreach(DictionaryEntry de in options.classes)
+				ClassFile f;
+				try
 				{
-					ClassFile f;
-					try
+					byte[] buf = (byte[])de.Value;
+					f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
+					if(!f.IsInterface && f.SuperClass != null)
 					{
-						byte[] buf = (byte[])de.Value;
-						f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
+						baseClasses[f.SuperClass] = f.SuperClass;
 					}
-					catch(ClassFormatError)
-					{
-						continue;
-					}
+				}
+				catch(ClassFormatError)
+				{
+					continue;
+				}
+				if(options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+				{
 					foreach(ClassFile.Method m in f.Methods)
 					{
 						if(m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
@@ -2233,6 +2248,7 @@ namespace IKVM.Internal
 				referencedAssemblies[i] = ClassLoaderWrapper.GetAssemblyClassLoader((Assembly)references[i]);
 			}
 			CompilerClassLoader loader = new CompilerClassLoader(referencedAssemblies, options, options.path, options.keyfilename, options.keycontainer, options.version, options.targetIsModule, options.assembly, h);
+			loader.baseClasses = baseClasses;
 			ClassLoaderWrapper.SetBootstrapClassLoader(loader);
 			IKVM.Internal.MapXml.Root map = null;
 			if(options.remapfile != null)
