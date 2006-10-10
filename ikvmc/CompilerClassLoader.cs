@@ -1398,7 +1398,7 @@ namespace IKVM.Internal
 										throw new NotImplementedException("remapped constant field of type: " + f.Sig);
 								}
 								fb.SetConstant(constant);
-								fields.Add(new ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant, MemberFlags.LiteralField));
+								fields.Add(new ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant, MemberFlags.None));
 							}
 							else
 							{

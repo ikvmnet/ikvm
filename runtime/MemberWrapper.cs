@@ -40,7 +40,6 @@ namespace IKVM.Internal
 		None = 0,
 		HideFromReflection = 1,
 		ExplicitOverride = 2,
-		LiteralField = 4,
 		MirandaMethod = 8,
 		AccessStub = 16,
 		InternalAccess = 32  // member has "internal" access (@ikvm.lang.Internal)
@@ -155,19 +154,6 @@ namespace IKVM.Internal
 			get
 			{
 				return (flags & MemberFlags.ExplicitOverride) != 0;
-			}
-		}
-
-		internal bool IsLiteralField
-		{
-			get
-			{
-				return (flags & MemberFlags.LiteralField) != 0;
-			}
-			set
-			{
-				flags &= ~MemberFlags.LiteralField;
-				flags |= value ? MemberFlags.LiteralField : MemberFlags.None;
 			}
 		}
 
@@ -1137,7 +1123,7 @@ namespace IKVM.Internal
 
 		internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, ExModifiers modifiers, FieldInfo field)
 			: this(declaringType, fieldType, name, sig, modifiers.Modifiers, field,
-					(modifiers.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None) | (field != null && field.IsLiteral ? MemberFlags.LiteralField : MemberFlags.None))
+					(modifiers.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None))
 		{
 		}
 
@@ -1343,8 +1329,6 @@ namespace IKVM.Internal
 					fi = TokenBasedLookup(bindings, fb.GetToken().Token);
 				}
 				field = fi;
-				// HACK this is racy, but we need to get rid of it anyway
-				this.IsLiteralField = field.IsLiteral;
 			}
 		}
 
@@ -1377,14 +1361,6 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 			return field.GetValue(null);
 #else
-			// FieldInfo.IsLiteral is expensive, so we have our own flag
-			// TODO we might be able to ensure that we always use ConstantFieldWrapper for literal fields,
-			// in that case the we could simply remove the check altogether.
-			if(IsLiteralField)
-			{
-				// on a non-broken CLR GetValue on a literal will not trigger type initialization, but on Java it should
-				DeclaringType.RunClassInit();
-			}
 			object val = field.GetValue(obj);
 			if(fieldType.IsGhost)
 			{
@@ -1617,7 +1593,7 @@ namespace IKVM.Internal
 			// NOTE even though you're not supposed to access a constant static final (the compiler is supposed
 			// to inline them), we have to support it (because it does happen, e.g. if the field becomes final
 			// after the referencing class was compiled, or when we're accessing an unsigned primitive .NET field)
-			object v = GetValue(null);
+			object v = GetConstantValue();
 			if(v == null)
 			{
 				ilgen.Emit(OpCodes.Ldnull);
@@ -1681,14 +1657,20 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Pop);
 		}
 #endif
-
-		internal override object GetValue(object obj)
+		internal object GetConstantValue()
 		{
 			if(constant == null)
 			{
 				constant = GetField().GetValue(null);
 			}
 			return constant;
+		}
+
+		internal override object GetValue(object obj)
+		{
+			// on a non-broken CLR GetValue on a literal will not trigger type initialization, but on Java it should
+			DeclaringType.RunClassInit();
+			return GetConstantValue();
 		}
 	}
 
@@ -1709,13 +1691,13 @@ namespace IKVM.Internal
 		internal void DoLink(TypeBuilder typeBuilder)
 		{
 			basefield.Link();
-			if(basefield.IsLiteralField)
+			if(basefield is ConstantFieldWrapper)
 			{
 				FieldAttributes attribs = basefield.IsPublic ? FieldAttributes.Public : FieldAttributes.FamORAssem;
 				attribs |= FieldAttributes.Static | FieldAttributes.Literal;
 				FieldBuilder fb = typeBuilder.DefineField(Name, basefield.FieldTypeWrapper.TypeAsSignatureType, attribs);
 				AttributeHelper.HideFromReflection(fb);
-				fb.SetConstant(basefield.GetValue(null));
+				fb.SetConstant(((ConstantFieldWrapper)basefield).GetConstantValue());
 			}
 			else
 			{
@@ -1756,7 +1738,7 @@ namespace IKVM.Internal
 
 		protected override void EmitGetImpl(CountingILGenerator ilgen)
 		{
-			if(basefield.IsLiteralField)
+			if(basefield is ConstantFieldWrapper)
 			{
 				basefield.EmitGet(ilgen);
 			}

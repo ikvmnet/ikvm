@@ -3430,7 +3430,11 @@ namespace IKVM.Internal
 					ClassFile.Field fld = classFile.Fields[i];
 					if(fld.IsStatic && fld.IsFinal && fld.ConstantValue != null)
 					{
-						fields[i] = new ConstantFieldWrapper(wrapper, null, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.LiteralField);
+						TypeWrapper fieldType = null;
+#if !STATIC_COMPILER
+						fieldType = ClassLoaderWrapper.GetBootstrapClassLoader().FieldTypeWrapperFromSig(fld.Signature);
+#endif
+						fields[i] = new ConstantFieldWrapper(wrapper, fieldType, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.None);
 					}
 #if STATIC_COMPILER
 					else if(fld.IsFinal
@@ -7793,7 +7797,7 @@ namespace IKVM.Internal
 
 			if(field.IsLiteral)
 			{
-				MemberFlags flags = MemberFlags.LiteralField;
+				MemberFlags flags = MemberFlags.None;
 				if(AttributeHelper.IsHideFromReflection(field))
 				{
 					flags |= MemberFlags.HideFromReflection;
@@ -9089,7 +9093,7 @@ namespace IKVM.Internal
 #else
 						object val = EnumValueFieldWrapper.GetEnumPrimitiveValue(fields[i].GetValue(null));
 #endif
-						fieldsList.Add(new ConstantFieldWrapper(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val, MemberFlags.LiteralField));
+						fieldsList.Add(new ConstantFieldWrapper(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val, MemberFlags.None));
 					}
 				}
 				fieldsList.Add(new EnumValueFieldWrapper(this, fieldType));
@@ -9517,7 +9521,7 @@ namespace IKVM.Internal
 			TypeWrapper type = ClassLoaderWrapper.GetWrapperFromType(fieldType);
 			if(field.IsLiteral)
 			{
-				return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers, field, null, MemberFlags.LiteralField);
+				return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers, field, null, MemberFlags.None);
 			}
 			else
 			{

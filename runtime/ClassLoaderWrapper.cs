@@ -29,6 +29,7 @@ using System.Reflection.Emit;
 using System.IO;
 using System.Collections;
 using System.Diagnostics;
+using System.Threading;
 using IKVM.Attributes;
 using IKVM.Runtime;
 
@@ -56,6 +57,7 @@ namespace IKVM.Internal
 		private static ArrayList genericClassLoaders;
 		private readonly object javaClassLoader;
 		protected Hashtable types = new Hashtable();
+		private readonly Hashtable defineClassInProgress = new Hashtable();
 		private ArrayList nativeLibraries;
 		private CodeGenOptions codegenoptions;
 		private static Hashtable remappedTypes = new Hashtable();
@@ -243,35 +245,32 @@ namespace IKVM.Internal
 				}
 				return RegisterInitiatingLoader(tw);
 			}
-			// this will create the factory as a side effect
-			TypeWrapperFactory factory = GetTypeWrapperFactory();
-			lock(factory)
+			lock(types.SyncRoot)
+			{
+				if(types.ContainsKey(f.Name))
+				{
+					throw new LinkageError("duplicate class definition: " + f.Name);
+				}
+				// mark the type as "loading in progress", so that we can detect circular dependencies.
+				types.Add(f.Name, null);
+				defineClassInProgress.Add(f.Name, Thread.CurrentThread);
+			}
+			try
+			{
+				return GetTypeWrapperFactory().DefineClassImpl(types, f, this, protectionDomain);
+			}
+			finally
 			{
 				lock(types.SyncRoot)
 				{
-					if(types.ContainsKey(f.Name))
+					if(types[f.Name] == null)
 					{
-						throw new LinkageError("duplicate class definition: " + f.Name);
+						// if loading the class fails, we remove the indicator that we're busy loading the class,
+						// because otherwise we get a ClassCircularityError if we try to load the class again.
+						types.Remove(f.Name);
 					}
-					// mark the type as "loading in progress", so that we can detect circular dependencies.
-					types.Add(f.Name, null);
-				}
-				try
-				{
-					return factory.DefineClassImpl(types, f, this, protectionDomain);
-				}
-				catch
-				{
-					lock(types.SyncRoot)
-					{
-						if(types[f.Name] == null)
-						{
-							// if loading the class fails, we remove the indicator that we're busy loading the class,
-							// because otherwise we get a ClassCircularityError if we try to load the class again.
-							types.Remove(f.Name);
-						}
-					}
-					throw;
+					defineClassInProgress.Remove(f.Name);
+					Monitor.PulseAll(types.SyncRoot);
 				}
 			}
 		}
@@ -321,38 +320,32 @@ namespace IKVM.Internal
 			Profiler.Enter("LoadClassByDottedName");
 			try
 			{
-				bool defineInProgress;
 				TypeWrapper type;
 				lock(types.SyncRoot)
 				{
 					type = (TypeWrapper)types[name];
-					defineInProgress = (type == null && types.ContainsKey(name));
+					if(type == null)
+					{
+						object defineThread = defineClassInProgress[name];
+						if(defineThread != null)
+						{
+							if(Thread.CurrentThread == defineThread)
+							{
+								throw new ClassCircularityError(name);
+							}
+							// the requested class is currently being defined by another thread,
+							// so we have to wait on that
+							while(defineClassInProgress.ContainsKey(name))
+							{
+								Monitor.Wait(types.SyncRoot);
+							}
+							type = (TypeWrapper)types[name];
+						}
+					}
 				}
 				if(type != null)
 				{
 					return type;
-				}
-				if(defineInProgress)
-				{
-					// DefineClass synchronizes on factory, so if we can obtain that
-					// lock it either means that the DefineClass has finished or
-					// that we're on the same thread. To distinguish between
-					// the two, we check the types hashtable again and if it still
-					// contains the null entry we're on the same thread and should throw
-					// the ClassCircularityError.
-					lock(GetTypeWrapperFactory())
-					{
-						lock(types.SyncRoot)
-						{
-							if(types[name] == null && types.ContainsKey(name))
-							{
-								// NOTE this can also happen if we (incorrectly) trigger a load of this class during
-								// the loading of the base class, so we print a trace message here.
-								Tracer.Error(Tracer.ClassLoading, "**** ClassCircularityError: {0} ****", name);
-								throw new ClassCircularityError(name);
-							}
-						}
-					}
 				}
 				if(name.Length > 1 && name[0] == '[')
 				{
