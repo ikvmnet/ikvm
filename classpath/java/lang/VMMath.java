@@ -24,7 +24,7 @@
 
 package java.lang;
 
-class VMMath
+final class VMMath
 {
     static double sin(double d)
     {
