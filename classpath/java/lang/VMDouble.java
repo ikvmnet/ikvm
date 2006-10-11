@@ -25,6 +25,8 @@
 package java.lang;
 
 import cli.System.BitConverter;
+import cli.System.Globalization.CultureInfo;
+import ikvm.lang.CIL;
 
 final class VMDouble
 {
@@ -52,7 +54,6 @@ final class VMDouble
         if(isFloat)
         {
             float f = (float)d;
-            // TODO this is not correct, we need to use the Java algorithm of converting a float to string
             if(Float.isNaN(f))
             {
                 return "NaN";
@@ -61,8 +62,13 @@ final class VMDouble
             {
                 return f < 0f ? "-Infinity" : "Infinity";
             }
-            // HACK really lame hack to apprioximate the Java behavior a little bit
-            String s = ((cli.System.IConvertible)ikvm.lang.CIL.box_float(f)).ToString(cli.System.Globalization.CultureInfo.get_InvariantCulture());
+            if(f == 0f)
+            {
+                return BitConverter.DoubleToInt64Bits(d) < 0 ? "-0.0" : "0.0";
+            }
+            // TODO this is not correct, we need to use the Java algorithm of converting a float to string
+            // HACK really lame hack to approximate the Java behavior a little bit
+            String s = CIL.box_float(f).ToString(CultureInfo.get_InvariantCulture());
             if(s.indexOf('.') == -1)
             {
                 int e = s.indexOf('E');
@@ -84,11 +90,6 @@ final class VMDouble
                     int plus = s.charAt(e + 1) == '+' ? 1 : 0;
                     s = s.substring(0, e) + "E" + Integer.parseInt(s.substring(e + 1 + plus));
                 }
-            }
-            // make sure -0.0 renders correctly
-            if(d == 0.0 && BitConverter.DoubleToInt64Bits(d) < 0)
-            {
-                return "-" + s;
             }
             return s;
         }
