@@ -9695,6 +9695,7 @@ namespace IKVM.Internal
 			: base(Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name, CoreClasses.java.lang.Object.Wrapper)
 		{
 			this.ultimateElementTypeWrapper = ultimateElementTypeWrapper;
+			this.IsInternal = ultimateElementTypeWrapper.IsInternal;
 		}
 
 		internal override ClassLoaderWrapper GetClassLoader()
