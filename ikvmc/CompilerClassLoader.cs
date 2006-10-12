@@ -183,15 +183,6 @@ namespace IKVM.Internal
 					{
 						f.RemoveUnusedFields();
 					}
-					if(!f.IsInterface
-						&& !f.IsAbstract
-						&& !f.IsPublic
-						&& !f.IsFinal
-						&& !baseClasses.ContainsKey(f.Name)
-						&& !options.targetIsModule)
-					{
-						f.SetEffectivelyFinal();
-					}
 					if(f.IsPublic && options.privatePackages != null)
 					{
 						foreach(string p in options.privatePackages)
@@ -202,6 +193,15 @@ namespace IKVM.Internal
 								break;
 							}
 						}
+					}
+					if(!f.IsInterface
+						&& !f.IsAbstract
+						&& !f.IsPublic
+						&& !f.IsFinal
+						&& !baseClasses.ContainsKey(f.Name)
+						&& !options.targetIsModule)
+					{
+						f.SetEffectivelyFinal();
 					}
 					type = DefineClass(f, null);
 				}
