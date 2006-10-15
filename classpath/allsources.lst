@@ -383,6 +383,7 @@
 ../../classpath/gnu/java/awt/color/TagEntry.java
 ../../classpath/gnu/java/awt/color/ToneReproductionCurve.java
 ../../classpath/gnu/java/awt/ComponentDataBlitOp.java
+../../classpath/gnu/java/awt/ComponentReshapeEvent.java
 ../../classpath/gnu/java/awt/EmbeddedWindow.java
 ../../classpath/gnu/java/awt/EventModifier.java
 ../../classpath/gnu/java/awt/font/FontDelegate.java
