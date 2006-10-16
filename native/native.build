@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <project name="ikvm-native" default="ikvm-native">
     <target name="ikvm-native">
-        <if test="${nant.platform.unix}">
+        <if test="${platform::is-unix()}">
             <call target="ikvm-native-unix"/>
         </if>
-        <if test="${nant.platform.win32}">
+        <if test="${platform::is-win32()}">
             <call target="ikvm-native-win32"/>
         </if>
     </target>

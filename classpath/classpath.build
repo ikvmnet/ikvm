@@ -3,34 +3,30 @@
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property overwrite="false" name="generics" value="false" />
-    <if test="${nant.platform.win32}">
+    <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
 
     <target name="branch">
-        <if test="${generics}">
-            <call target="generics" />
-        </if>
-        <ifnot test="${generics}">
-            <call target="trunk" />
-        </ifnot>
+        <call target="generics" if="${generics}" />
+        <call target="trunk" unless="${generics}" />
     </target>
 
     <target name="trunk">
-        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath" />
+        <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath" />
         <property name="allsources" value="allsources.lst" />
         <call target="IKVM.GNU.Classpath.dll" />
     </target>
 
     <target name="generics">
-        <property name="Classpath.dir" value="${nant.project.basedir}/../../classpath-generics" />
+        <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath-generics" />
         <property name="allsources" value="allsources-generics.lst" />
         <call target="IKVM.GNU.Classpath.dll" />
     </target>
 
     <target name="jars">
         <!-- TODO
-        <exec program="${nant.project.basedir}/../bin/ikvmstub.exe" commandline="" />
+        <exec program="${project::get-base-directory()}/../bin/ikvmstub.exe" commandline="" />
         -->
     </target>
 
@@ -49,7 +45,7 @@
     </target>
 
     <target name="IKVM.GNU.Classpath.dll" depends="classes">
-        <exec program="${nant.project.basedir}/../bin/ikvmc.exe" useruntimeengine="true">
+        <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
 <!--
 <arg value="-debug" />
 <arg value="-srcpath:/classpath/" />
@@ -77,7 +73,7 @@
           <arg value="-resource:META-INF/MANIFEST.MF=MANIFEST.MF" />
         </exec>
         <copy file="IKVM.GNU.Classpath.dll" tofile="../bin/IKVM.GNU.Classpath.dll.new" />
-        <if test="${nant.platform.win32}">
+        <if test="${platform::is-win32()}">
             <call target="peverify-classpath"/>
         </if>
         <copy file="IKVM.GNU.Classpath.dll" todir="../bin" />
