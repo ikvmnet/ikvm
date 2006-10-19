@@ -1,5 +1,5 @@
 /* FileChannelImpl.java -- 
-   Copyright (C) 2002, 2004, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2004, 2005, 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -45,8 +45,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.DirectByteBufferImpl;
 import java.nio.MappedByteBuffer;
-import java.nio.MappedByteBufferImpl;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -63,17 +63,9 @@ import cli.System.Reflection.MethodInfo;
 import cli.System.Reflection.ParameterModifier;
 import cli.System.Reflection.BindingFlags;
 import cli.System.Runtime.InteropServices.DllImportAttribute;
-import gnu.classpath.Pointer;
 
-/**
- * This file is not user visible !
- * But alas, Java does not have a concept of friendly packages
- * so this class is public. 
- * Instances of this class are created by invoking getChannel
- * Upon a Input/Output/RandomAccessFile object.
- */
-
-public abstract class FileChannelImpl extends FileChannel
+@ikvm.lang.Internal
+public final class FileChannelImpl extends FileChannel
 {
     // These are mode values for open().
     public static final int READ   = 1;
@@ -98,125 +90,142 @@ public abstract class FileChannelImpl extends FileChannel
             platform == cli.System.PlatformID.Win32Windows;
     }
 
-    final static class Win32 extends FileChannelImpl
+    public static IntPtr mapViewOfFile(FileStream fs, boolean writeable, boolean copy_on_write, long position, int size) throws IOException
     {
-        Win32(File file, int mode) throws FileNotFoundException
-        {
-            super(file, mode);
-        }
-
-        Win32(Stream stream)
-        {
-            super(stream);
-        }
-
-        Pointer mapViewOfFile(FileStream fs, boolean writeable, boolean copy_on_write, long position, int size)
-            throws IOException
-        {
-            try
-            {
-                int PAGE_READONLY = 2;
-                int PAGE_READWRITE = 4;
-                int PAGE_WRITECOPY = 8;
-                IntPtr hFileMapping = CreateFileMapping(fs.get_Handle(), IntPtr.Zero, 
-                    copy_on_write ? PAGE_WRITECOPY : (writeable ? PAGE_READWRITE : PAGE_READONLY),
-                    0, size, null);
-                if(hFileMapping.Equals(IntPtr.Zero))
-                {
-                    int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-                    throw new IOException("Win32 error " + err);
-                }
-                int FILE_MAP_WRITE = 2;
-                int FILE_MAP_READ = 4;
-                int FILE_MAP_COPY = 1;
-                IntPtr p = MapViewOfFile(hFileMapping,
-                    copy_on_write ? FILE_MAP_COPY : (writeable ? FILE_MAP_WRITE : FILE_MAP_READ),
-                    (int)(position >> 32), (int)position, new IntPtr(size));
-                CloseHandle(hFileMapping);
-                if(p.Equals(IntPtr.Zero))
-                {
-                    int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-                    throw new IOException("Win32 error " + err);
-                }
-                return new Pointer(p);                
-            }
-            finally
-            {
-                cli.System.GC.KeepAlive(fs);
-            }
-        }
-        
-        boolean flush(FileStream fs)
-        {
-            int rc = FlushFileBuffers(fs.get_Handle());
-            cli.System.GC.KeepAlive(fs);
-            return rc != 0;
-        }
-
-        @DllImportAttribute.Annotation("kernel32")
-        private static native int FlushFileBuffers(IntPtr handle);
-
-        @DllImportAttribute.Annotation("kernel32")
-        private static native int CloseHandle(IntPtr handle);
-
-        @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-        private static native IntPtr CreateFileMapping(IntPtr hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName);
-
-        @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-        private static native IntPtr MapViewOfFile(IntPtr hFileMapping, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);
+        if (win32)
+            return mapViewOfFileWin32(fs, writeable, copy_on_write, position, size);
+        else
+            return mapViewOfFilePosix(fs, writeable, copy_on_write, position, size);
     }
 
-    final static class Posix extends FileChannelImpl
+    public static void unmapViewOfFile(IntPtr ptr, int size)
     {
-        Posix(File file, int mode) throws FileNotFoundException
-        {
-            super(file, mode);
-        }
-
-        Posix(Stream stream)
-        {
-            super(stream);
-        }
-
-        Pointer mapViewOfFile(FileStream fs, boolean writeable, boolean copy_on_write, long position, int size)
-        {
-            IntPtr p = ikvm_mmap(fs.get_Handle(), (byte)(writeable ? 1 : 0), (byte)(copy_on_write ? 1 : 0), position, size);
-            cli.System.GC.KeepAlive(fs);
-	    // HACK ikvm_mmap should really be changed to return a null pointer on failure,
-	    // instead of whatever MAP_FAILED is defined to on the particular system we're running on,
-	    // common values for MAP_FAILED are 0 and -1, so we test for these.
-            if(p.Equals(IntPtr.Zero) || p.Equals(new IntPtr(-1)))
-            {
-                return null;
-            }
-            return new Pointer(p);
-        }
-        
-        boolean flush(FileStream fs)
-        {
-            Type t = Type.GetType("Mono.Posix.Syscall, Mono.Posix");
-            if(t != null)
-            {
-                BindingFlags flags = BindingFlags.wrap(BindingFlags.Public | BindingFlags.Static);
-            	MethodInfo mono_1_1_Flush = t.GetMethod("fsync", flags, null, new Type[] { Type.GetType("System.Int32") }, new ParameterModifier[0]);
-                if(mono_1_1_Flush != null)
-                {
-		    Object[] args = new Object[] { ikvm.lang.CIL.box_int(fs.get_Handle().ToInt32()) };
-		    return ikvm.lang.CIL.unbox_int(mono_1_1_Flush.Invoke(null, args)) == 0;
-                }
-            }
-            return true;
-        }
-
-        @DllImportAttribute.Annotation("ikvm-native")
-        private static native IntPtr ikvm_mmap(IntPtr handle, byte writeable, byte copy_on_write, long position, int size);
+        if (win32)
+            UnmapViewOfFile(ptr);
+        else
+            ikvm_munmap(ptr, size);
     }
+
+    public static void flushViewOfFile(IntPtr ptr, int size)
+    {
+        if (win32)
+            FlushViewOfFile(ptr, IntPtr.Zero);
+        else
+            ikvm_msync(ptr, size);
+    }
+
+    private static IntPtr mapViewOfFileWin32(FileStream fs, boolean writeable, boolean copy_on_write, long position, int size) throws IOException
+    {
+        try
+        {
+            int PAGE_READONLY = 2;
+            int PAGE_READWRITE = 4;
+            int PAGE_WRITECOPY = 8;
+            IntPtr hFileMapping = CreateFileMapping(fs.get_Handle(), IntPtr.Zero, 
+                copy_on_write ? PAGE_WRITECOPY : (writeable ? PAGE_READWRITE : PAGE_READONLY),
+                0, size, null);
+            if(hFileMapping.Equals(IntPtr.Zero))
+            {
+                int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                throw new IOException("Win32 error " + err);
+            }
+            int FILE_MAP_WRITE = 2;
+            int FILE_MAP_READ = 4;
+            int FILE_MAP_COPY = 1;
+            IntPtr p = MapViewOfFile(hFileMapping,
+                copy_on_write ? FILE_MAP_COPY : (writeable ? FILE_MAP_WRITE : FILE_MAP_READ),
+                (int)(position >> 32), (int)position, new IntPtr(size));
+            CloseHandle(hFileMapping);
+            if(p.Equals(IntPtr.Zero))
+            {
+                int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                throw new IOException("Win32 error " + err);
+            }
+            return p;                
+        }
+        finally
+        {
+            cli.System.GC.KeepAlive(fs);
+        }
+    }
+        
+    private static IntPtr mapViewOfFilePosix(FileStream fs, boolean writeable, boolean copy_on_write, long position, int size) throws IOException
+    {
+        IntPtr p = ikvm_mmap(fs.get_Handle(), (byte)(writeable ? 1 : 0), (byte)(copy_on_write ? 1 : 0), position, size);
+        cli.System.GC.KeepAlive(fs);
+        // HACK ikvm_mmap should really be changed to return a null pointer on failure,
+        // instead of whatever MAP_FAILED is defined to on the particular system we're running on,
+        // common values for MAP_FAILED are 0 and -1, so we test for these.
+        if(p.Equals(IntPtr.Zero) || p.Equals(new IntPtr(-1)))
+        {
+            throw new IOException("file mapping failed");
+        }
+        return p;
+    }
+
+    private static boolean flush(FileStream fs)
+    {
+        if (win32)
+            return flushWin32(fs);
+        else
+            return flushPosix(fs);
+    }
+
+    private static boolean flushWin32(FileStream fs)
+    {
+        int rc = FlushFileBuffers(fs.get_Handle());
+        cli.System.GC.KeepAlive(fs);
+        return rc != 0;
+    }
+
+    private static boolean flushPosix(FileStream fs)
+    {
+        Type t = Type.GetType("Mono.Posix.Syscall, Mono.Posix");
+        if(t != null)
+        {
+            BindingFlags flags = BindingFlags.wrap(BindingFlags.Public | BindingFlags.Static);
+            MethodInfo mono_1_1_Flush = t.GetMethod("fsync", flags, null, new Type[] { Type.GetType("System.Int32") }, new ParameterModifier[0]);
+            if(mono_1_1_Flush != null)
+            {
+                Object[] args = new Object[] { ikvm.lang.CIL.box_int(fs.get_Handle().ToInt32()) };
+                return ikvm.lang.CIL.unbox_int(mono_1_1_Flush.Invoke(null, args)) == 0;
+            }
+        }
+        return true;
+    }
+
+    @DllImportAttribute.Annotation("kernel32")
+    private static native int FlushFileBuffers(IntPtr handle);
+
+    @DllImportAttribute.Annotation("kernel32")
+    private static native int CloseHandle(IntPtr handle);
+
+    @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
+    private static native IntPtr CreateFileMapping(IntPtr hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName);
+
+    @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
+    private static native IntPtr MapViewOfFile(IntPtr hFileMapping, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);
+
+    @DllImportAttribute.Annotation("kernel32")
+    private static native int FlushViewOfFile(IntPtr lpBaseAddress, IntPtr dwNumberOfBytesToFlush);
+
+    @DllImportAttribute.Annotation("kernel32")
+    private static native int UnmapViewOfFile(IntPtr lpBaseAddress);
+
+    @DllImportAttribute.Annotation("ikvm-native")
+    private static native int ikvm_munmap(IntPtr address, int size);
+
+    @DllImportAttribute.Annotation("ikvm-native")
+    private static native int ikvm_msync(IntPtr address, int size);
+
+    @DllImportAttribute.Annotation("ikvm-native")
+    private static native IntPtr ikvm_mmap(IntPtr handle, byte writeable, byte copy_on_write, long position, int size);
 
     /* Open a file.  MODE is a combination of the above mode flags. */
     public static FileChannelImpl create(File file, int mode)
         throws FileNotFoundException
     {
-        return win32 ? new Win32(file, mode) : (FileChannelImpl)new Posix(file, mode);
+        return new FileChannelImpl(file, mode);
     }
 
     FileChannelImpl(File file, int mode)
@@ -228,7 +237,7 @@ public abstract class FileChannelImpl extends FileChannel
 
     public static FileChannelImpl create(Stream stream)
     {
-        return win32 ? new Win32(stream) : (FileChannelImpl)new Posix(stream);
+        return new FileChannelImpl(stream);
     }
 
     private FileChannelImpl(Stream stream)
@@ -714,13 +723,8 @@ public abstract class FileChannelImpl extends FileChannel
         if (! (stream instanceof FileStream))
             throw new IllegalArgumentException("only file streams can be mapped");
 
-        Pointer address = mapViewOfFile((FileStream)stream, mode != 'r', mode == 'c', position, size);
-        if (address == null)
-            throw new IOException("file mapping failed");
-        return MappedByteBufferImpl.create(address, size, mode == 'r', win32);
+        return DirectByteBufferImpl.map((FileStream)stream, mode != 'r', mode == 'c', position, size);
     }
-
-    abstract Pointer mapViewOfFile(FileStream stream, boolean writeable, boolean copy_on_write, long position, int size) throws IOException;
 
     public MappedByteBuffer map (FileChannel.MapMode mode,
 	long position, long size)
@@ -779,8 +783,6 @@ public abstract class FileChannelImpl extends FileChannel
 	    }
 	}
     }
-
-    abstract boolean flush(FileStream fs);
 
     public long transferTo(long position, long count, WritableByteChannel target) throws IOException
     {

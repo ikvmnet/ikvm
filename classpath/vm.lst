@@ -6,7 +6,7 @@
 ../../classpath/vm/reference/java/lang/VMThrowable.java
 AssemblyInfo.java
 gnu/classpath/Configuration.java
-gnu/classpath/Pointer.java
+gnu/classpath/PointerUtil.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
 gnu/java/awt/peer/gtk/CairoSurface.java
@@ -73,7 +73,7 @@ java/net/VMInetAddress.java
 java/net/VMNetworkInterface.java
 java/net/VMURLConnection.java
 java/nio/channels/VMChannels.java
-java/nio/MappedByteBufferImpl.java
+java/nio/DirectByteBufferImpl.java
 java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
 java/security/VMSecureRandom.java

@@ -1478,61 +1478,6 @@ namespace IKVM.NativeCode.gnu.classpath
 	}
 }
 
-namespace gnu.classpath
-{
-	// This type lives here, because we don't want unverifiable code in IKVM.GNU.Classpath
-	// (as that would prevents us from verifying it during the build process).
-#if !COMPACT_FRAMEWORK
-	[SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
-#endif
-	public unsafe sealed class Pointer
-	{
-		// NOTE during static compilation this type is represented by a CompiledTypeWrapper,
-		// so we need to hide this field, because Java types cannot have pointer types.
-		// Note that at runtime this type is represented by a DotNetTypeWrapper and that
-		// DotNetTypeWrapper.LazyPublishMembers has a hack to prevent it from exposing any
-		// of the members of this type (because that would be a security problem).
-		[HideFromJava]
-		private byte* pb;
-
-		public Pointer(IntPtr p)
-		{
-			this.pb = (byte*)p;
-		}
-
-		public IntPtr p()
-		{
-			return new IntPtr(pb);
-		}
-
-		public byte ReadByte(int index)
-		{
-			return pb[index];
-		}
-
-		public void WriteByte(int index, byte b)
-		{
-			pb[index] = b;
-		}
-
-		public void MoveMemory(int dst_offset, int src_offset, int count)
-		{
-			if(dst_offset < src_offset)
-			{
-				while(count-- > 0)
-					pb[dst_offset++] = pb[src_offset++];
-			}
-			else
-			{
-				dst_offset += count;
-				src_offset += count;
-				while(count-- > 0)
-					pb[--dst_offset] = pb[--src_offset];
-			}
-		}
-	}
-}
-
 namespace IKVM.NativeCode.ikvm.@internal
 {
 	public class AssemblyClassLoader

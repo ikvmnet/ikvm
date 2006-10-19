@@ -8,9 +8,6 @@
 /classpath/compat/
 /classpath/examples/
 /classpath/gnu/classpath/jdwp/
-/classpath/gnu/classpath/Pointer.java
-/classpath/gnu/classpath/Pointer32.java
-/classpath/gnu/classpath/Pointer64.java
 /classpath/gnu/java/net/local/
 /classpath/gnu/java/net/PlainDatagramSocketImpl.java
 /classpath/gnu/java/net/PlainSocketImpl.java 
@@ -42,6 +39,7 @@
 /classpath/gnu/xml/libxmlj/
 /classpath/gnu/test/
 /classpath/java/lang/ref/Reference.java
+/classpath/java/nio/DirectByteBufferImpl.java
 /classpath/java/nio/MappedByteBufferImpl.java
 /classpath/testsuite/
 /classpath/test/

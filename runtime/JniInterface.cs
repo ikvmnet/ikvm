@@ -426,6 +426,7 @@ namespace IKVM.Runtime
 						try
 						{
 							version = ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
+							Tracer.Info(Tracer.Jni, "JNI_OnLoad returned: 0x{0:X8}", version);
 						}
 						finally
 						{
@@ -1894,7 +1895,7 @@ namespace IKVM.Runtime
 						}
 					}
 				}
-				SetPendingException(pEnv, JavaException.NoSuchFieldError(StringFromUTF8(name)));
+				SetPendingException(pEnv, JavaException.NoSuchFieldError((isstatic ? "Static" : "Instance") + " field '" + StringFromUTF8(name) + "' with signature '" + fieldsig + "' not found in class '" + wrapper.Name + "'"));
 			}
 			catch(RetargetableJavaException x)
 			{

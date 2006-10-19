@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,29 +21,43 @@
   jeroen@frijters.net
   
 */
-package java.nio;
+package gnu.classpath;
 
-import gnu.classpath.Pointer;
-import gnu.classpath.PointerUtil;
 import cli.System.IntPtr;
-import cli.System.Runtime.InteropServices.Marshal;
 
 @ikvm.lang.Internal
-public class VMDirectByteBuffer
+public final class PointerUtil
 {
-    // this method is used by JNI.NewDirectByteBuffer
-    public static ByteBuffer NewDirectByteBuffer(IntPtr p, int capacity)
+    private PointerUtil() {}
+
+    public static Pointer add(Pointer p, int offset)
     {
-        return new DirectByteBufferImpl(null, p, capacity, capacity, 0);
+        if (p instanceof Pointer32)
+        {
+            return new Pointer32(((Pointer32)p).data + offset);
+        }
+        return new Pointer64(((Pointer64)p).data + offset);
     }
 
-    public static IntPtr GetDirectBufferAddress(Buffer buf)
+    public static IntPtr toIntPtr(Pointer p)
     {
-        return buf.address != null ? PointerUtil.toIntPtr(buf.address) : IntPtr.Zero;
+        if (p instanceof Pointer32)
+        {
+            return new IntPtr(((Pointer32)p).data);
+        }
+        return new IntPtr(((Pointer64)p).data);
     }
 
-    static Pointer adjustAddress(Pointer r, int pos)
+    public static Pointer fromIntPtr(IntPtr p)
     {
-        return PointerUtil.add(r, pos);
+        switch (IntPtr.get_Size())
+        {
+            case 4:
+                return new Pointer32(p.ToInt32());
+            case 8:
+                return new Pointer64(p.ToInt64());
+            default:
+                throw new InternalError("Unsupported IntPtr size");
+        }
     }
 }

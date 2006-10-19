@@ -2303,11 +2303,6 @@ namespace IKVM.Internal
 
 			// NOTE types from IKVM.Runtime that are "published" should also be added to
 			// the white list in DotNetTypeWrapper.IsAllowedOutside()
-			Type pointer = StaticCompiler.runtimeAssembly.GetType("gnu.classpath.Pointer");
-			if(pointer != null)
-			{
-				ClassLoaderWrapper.PublishLibraryImplementationHelperType(pointer);
-			}
 			Type libvminterface = StaticCompiler.runtimeAssembly.GetType("ikvm.internal.LibraryVMInterface");
 			if(libvminterface != null)
 			{

@@ -200,6 +200,9 @@
 ../../classpath/gnu/classpath/debug/TeeWriter.java
 ../../classpath/gnu/classpath/ListenerData.java
 ../../classpath/gnu/classpath/NotImplementedException.java
+../../classpath/gnu/classpath/Pointer.java
+../../classpath/gnu/classpath/Pointer32.java
+../../classpath/gnu/classpath/Pointer64.java
 ../../classpath/gnu/classpath/ServiceFactory.java
 ../../classpath/gnu/classpath/ServiceProviderLoadingAction.java
 ../../classpath/gnu/classpath/SystemProperties.java
@@ -2567,7 +2570,6 @@
 ../../classpath/java/nio/charset/UnmappableCharacterException.java
 ../../classpath/java/nio/charset/UnsupportedCharsetException.java
 ../../classpath/java/nio/CharViewBufferImpl.java
-../../classpath/java/nio/DirectByteBufferImpl.java
 ../../classpath/java/nio/DoubleBuffer.java
 ../../classpath/java/nio/DoubleBufferImpl.java
 ../../classpath/java/nio/DoubleViewBufferImpl.java
@@ -4723,7 +4725,7 @@
 ../../classpath/vm/reference/java/lang/VMThrowable.java
 AssemblyInfo.java
 gnu/classpath/Configuration.java
-gnu/classpath/Pointer.java
+gnu/classpath/PointerUtil.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
 gnu/java/awt/peer/gtk/CairoSurface.java
@@ -4790,7 +4792,7 @@ java/net/VMInetAddress.java
 java/net/VMNetworkInterface.java
 java/net/VMURLConnection.java
 java/nio/channels/VMChannels.java
-java/nio/MappedByteBufferImpl.java
+java/nio/DirectByteBufferImpl.java
 java/nio/VMDirectByteBuffer.java
 java/security/VMAccessController.java
 java/security/VMSecureRandom.java

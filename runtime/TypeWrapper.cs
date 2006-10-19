@@ -1837,12 +1837,25 @@ namespace IKVM.Internal
 			}
 		}
 
+		private static bool IsJavaPrimitive(Type type)
+		{
+			return type == PrimitiveTypeWrapper.BOOLEAN.TypeAsTBD
+				|| type == PrimitiveTypeWrapper.BYTE.TypeAsTBD
+				|| type == PrimitiveTypeWrapper.CHAR.TypeAsTBD
+				|| type == PrimitiveTypeWrapper.DOUBLE.TypeAsTBD
+				|| type == PrimitiveTypeWrapper.FLOAT.TypeAsTBD
+				|| type == PrimitiveTypeWrapper.INT.TypeAsTBD
+				|| type == PrimitiveTypeWrapper.LONG.TypeAsTBD
+				|| type == PrimitiveTypeWrapper.SHORT.TypeAsTBD
+				|| type == PrimitiveTypeWrapper.VOID.TypeAsTBD;
+		}
+
 		internal bool IsErasedOrBoxedPrimitiveOrRemapped
 		{
 			get
 			{
 				bool erased = IsUnloadable || IsGhostArray || IsDynamicOnly;
-				return erased || (TypeAsSignatureType.IsPrimitive && !IsPrimitive) || (IsRemapped && this is DotNetTypeWrapper);
+				return erased || (!IsPrimitive && IsJavaPrimitive(TypeAsSignatureType)) || (IsRemapped && this is DotNetTypeWrapper);
 			}
 		}
 
@@ -8338,9 +8351,8 @@ namespace IKVM.Internal
 			// be accessible through Java reflection.
 			if(type.Assembly == typeof(DotNetTypeWrapper).Assembly)
 			{
-				// HACK make an exception for the two published types
-				if(type == typeof(ikvm.@internal.LibraryVMInterface)
-					|| type == typeof(gnu.classpath.Pointer))
+				// HACK make an exception for the vm/library interface
+				if(type == typeof(ikvm.@internal.LibraryVMInterface))
 				{
 					return true;
 				}
@@ -9043,14 +9055,6 @@ namespace IKVM.Internal
 
 		protected override void LazyPublishMembers()
 		{
-			// HACK don't expose any of the members of gnu.classpath.Pointer
-			// (for security reasons)
-			if(type == typeof(gnu.classpath.Pointer))
-			{
-				SetMethods(MethodWrapper.EmptyArray);
-				SetFields(FieldWrapper.EmptyArray);
-				return;
-			}
 			ArrayList fieldsList = new ArrayList();
 			ArrayList methodsList = new ArrayList();
 			// special support for enums

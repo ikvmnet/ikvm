@@ -73,4 +73,6 @@ public interface Configuration
    * Name of default AWT peer library.
    */
   String default_awt_peer_toolkit = "ikvm.awt.NetToolkit, IKVM.AWT.WinForms";
+
+  boolean WANT_NATIVE_BIG_INTEGER = false;
 }
