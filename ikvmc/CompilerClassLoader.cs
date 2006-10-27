@@ -2108,6 +2108,37 @@ namespace IKVM.Internal
 					return 1;
 				}
 			}
+			bool err = false;
+			foreach(Assembly reference in references)
+			{
+				try
+				{
+					reference.GetTypes();
+				}
+				catch(ReflectionTypeLoadException x)
+				{
+					err = true;
+					foreach(Exception n in x.LoaderExceptions)
+					{
+						FileNotFoundException f = n as FileNotFoundException;
+						if(f != null)
+						{
+							Console.Error.WriteLine("Error: referenced assembly {0} has a missing dependency: {1}", reference.GetName().Name, f.FileName);
+							goto next;
+						}
+					}
+					Console.Error.WriteLine("Error: referenced assembly produced the following loader exceptions:");
+					foreach(Exception n in x.LoaderExceptions)
+					{
+						Console.WriteLine(n.Message);
+					}
+				}
+			next:;
+			}
+			if(err)
+			{
+				return 1;
+			}
 #if WHIDBEY
 			// If the "System" assembly wasn't explicitly referenced, load it automatically
 			bool systemIsLoaded = false;

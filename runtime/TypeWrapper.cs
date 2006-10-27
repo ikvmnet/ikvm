@@ -3516,7 +3516,7 @@ namespace IKVM.Internal
 							}
 							catch(RetargetableJavaException x)
 							{
-								Tracer.Warning(Tracer.Compiler, "Unable to load outer class {0} for innner class {1} ({2}: {3})", outerClassName, f.Name, x.GetType().Name, x.Message);
+								Tracer.Warning(Tracer.Compiler, "Unable to load outer class {0} for inner class {1} ({2}: {3})", outerClassName, f.Name, x.GetType().Name, x.Message);
 							}
 							if(outerClassWrapper != null)
 							{
