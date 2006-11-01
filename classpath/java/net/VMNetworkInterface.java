@@ -44,6 +44,13 @@ final class VMNetworkInterface
         this.addresses = addresses;
     }
 
+    VMNetworkInterface()
+    {
+        name = null;
+        addresses = new HashSet();
+        addresses.add(InetAddress.ANY_IF);
+    }
+
     static VMNetworkInterface[] getVMInterfaces() throws SocketException
     {
         // NOTE we use reflection to access the System.Management types, because I don't
