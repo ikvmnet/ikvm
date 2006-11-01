@@ -400,15 +400,16 @@ public final class PlainSocketImpl extends SocketImpl
                     socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.KeepAlive), ((Boolean)val).booleanValue() ? 1 : 0);
                     break;
                 case SocketOptions.SO_LINGER:
-                    {
+                {
+                    int seconds = ((Integer)val).intValue();
                     cli.System.Net.Sockets.LingerOption linger;
-                    if(val instanceof Boolean)
+                    if(seconds < 0)
                     {
                         linger = new cli.System.Net.Sockets.LingerOption(false, 0);
                     }
                     else
                     {
-                        linger = new cli.System.Net.Sockets.LingerOption(true, ((Integer)val).intValue());
+                        linger = new cli.System.Net.Sockets.LingerOption(true, seconds);
                     }
                     socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Linger), linger);
                     break;
@@ -482,13 +483,13 @@ public final class PlainSocketImpl extends SocketImpl
                 case SocketOptions.SO_KEEPALIVE:
                     return new Boolean(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.KeepAlive))) != 0);
                 case SocketOptions.SO_LINGER:
-                    {
+                {
                     cli.System.Net.Sockets.LingerOption linger = (cli.System.Net.Sockets.LingerOption)socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Linger));
                     if(linger.get_Enabled())
                     {
                         return new Integer(linger.get_LingerTime());
                     }
-                    return Boolean.FALSE;
+                    return new Integer(-1);
                 }
                 case SocketOptions.SO_OOBINLINE:
                     return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline))));

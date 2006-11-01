@@ -2878,12 +2878,10 @@ namespace ikvm.awt
 
 		public void beginLayout()
 		{
-			throw new NotImplementedException();
 		}
 
 		public void endLayout()
 		{
-			throw new NotImplementedException();
 		}
 
 		public bool isPaintPending()
