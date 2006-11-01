@@ -2431,7 +2431,10 @@ namespace IKVM.Internal
 		{
 			// we're mangling the name to prevent subclasses from accidentally overriding this method and to
 			// prevent clashes with overloaded method stubs that are erased to the same signature (e.g. unloadable types and ghost arrays)
-			string mangledName = this.Name + "/" + ifmethod.Name + ifmethod.Signature;
+			// HACK the signature and name are the wrong way around to work around a C++/CLI bug (apparantely it looks looks at the last n
+			// characters of the method name, or something bizarre like that)
+			// https://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=234167
+			string mangledName = this.Name + "/" + ifmethod.Signature + ifmethod.Name;
 			MethodWrapper mce = null;
 			TypeWrapper lookup = wrapper;
 			while(lookup != null)
