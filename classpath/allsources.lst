@@ -426,6 +426,7 @@
 ../../classpath/gnu/java/awt/peer/ClasspathFontPeer.java
 ../../classpath/gnu/java/awt/peer/EmbeddedWindowPeer.java
 ../../classpath/gnu/java/awt/peer/GLightweightPeer.java
+../../classpath/gnu/java/awt/peer/NativeEventLoopRunningEvent.java
 ../../classpath/gnu/java/awt/peer/swing/SwingButtonPeer.java
 ../../classpath/gnu/java/awt/peer/swing/SwingCanvasPeer.java
 ../../classpath/gnu/java/awt/peer/swing/SwingComponent.java
@@ -1907,6 +1908,7 @@
 ../../classpath/java/awt/datatransfer/FlavorListener.java
 ../../classpath/java/awt/datatransfer/FlavorMap.java
 ../../classpath/java/awt/datatransfer/FlavorTable.java
+../../classpath/java/awt/datatransfer/MimeType.java
 ../../classpath/java/awt/datatransfer/MimeTypeParseException.java
 ../../classpath/java/awt/datatransfer/StringSelection.java
 ../../classpath/java/awt/datatransfer/SystemFlavorMap.java
@@ -3973,6 +3975,7 @@
 ../../classpath/javax/swing/text/html/HTMLDocument.java
 ../../classpath/javax/swing/text/html/HTMLEditorKit.java
 ../../classpath/javax/swing/text/html/HTMLFrameHyperlinkEvent.java
+../../classpath/javax/swing/text/html/HTMLWriter.java
 ../../classpath/javax/swing/text/html/ImageView.java
 ../../classpath/javax/swing/text/html/InlineView.java
 ../../classpath/javax/swing/text/html/ListView.java
