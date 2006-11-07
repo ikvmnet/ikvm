@@ -639,14 +639,6 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
-		public override java.awt.geom.Rectangle2D getStringBounds(java.awt.Font aFont, java.text.CharacterIterator aCharacterIterator, int aBegin, int aLimit, java.awt.font.FontRenderContext aFontRenderContext)
-		{
-			NetFontMetrics fontMetrics = (NetFontMetrics) getFontMetrics(aFont);
-			string s = ToString(aCharacterIterator, aBegin, aLimit);
-
-			return fontMetrics.GetStringBounds(s);
-		}
-
 		public override bool hasUniformLineMetrics(java.awt.Font param)
 		{
 			throw new NotImplementedException();
