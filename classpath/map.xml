@@ -679,6 +679,36 @@
 					<ret />
 				</body>
 			</method>
+			<method name="format" sig="(Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.String;" modifiers="public static">
+				<parameter name="format" />
+				<parameter name="args">
+					<attribute type="System.ParamArrayAttribute" sig="()V" />
+				</parameter>
+				<body>
+					<newobj class="java.util.Formatter" name="&lt;init&gt;" sig="()V" />
+					<ldarg_0 />
+					<ldarg_1 />
+					<callvirt class="java.util.Formatter" name="format" sig="(Ljava.lang.String;[Ljava.lang.Object;)Ljava.util.Formatter;" />
+					<callvirt class="java.util.Formatter" name="toString" sig="()Ljava.lang.String;" />
+					<ret />
+				</body>
+			</method>
+			<method name="format" sig="(Ljava.util.Locale;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.String;" modifiers="public static">
+				<parameter name="l" />
+				<parameter name="format" />
+				<parameter name="args">
+					<attribute type="System.ParamArrayAttribute" sig="()V" />
+				</parameter>
+				<body>
+					<ldarg_0 />
+					<newobj class="java.util.Formatter" name="&lt;init&gt;" sig="(Ljava.util.Locale;)V" />
+					<ldarg_1 />
+					<ldarg_2 />
+					<callvirt class="java.util.Formatter" name="format" sig="(Ljava.lang.String;[Ljava.lang.Object;)Ljava.util.Formatter;" />
+					<callvirt class="java.util.Formatter" name="toString" sig="()Ljava.lang.String;" />
+					<ret />
+				</body>
+			</method>
 			<field name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" modifiers="public static final">
 				<attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
 					<parameter>Ljava/util/Comparator&lt;Ljava/lang/String;&gt;;</parameter>
