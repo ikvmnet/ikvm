@@ -91,7 +91,7 @@ namespace IKVM.Internal
 		private class SupportedVersions
 		{
 			internal static readonly int Minimum = 45;
-			internal static readonly int Maximum = 49;
+			internal static readonly int Maximum = 50;
 		}
 
 #if STATIC_COMPILER

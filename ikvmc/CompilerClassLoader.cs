@@ -1481,8 +1481,12 @@ namespace IKVM.Internal
 							if(!mi.IsStatic)
 							{
 								ilgen.Emit(OpCodes.Ldarg_S, (byte)paramTypes.Length);
+								ilgen.Emit(OpCodes.Callvirt, mi);
 							}
-							ilgen.Emit(OpCodes.Call, mi);
+							else
+							{
+								ilgen.Emit(OpCodes.Call, mi);
+							}
 							ilgen.Emit(OpCodes.Ret);
 							methods[key] = mb;
 						}
