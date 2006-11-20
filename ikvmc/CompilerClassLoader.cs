@@ -959,14 +959,12 @@ namespace IKVM.Internal
 						{
 							// instance methods must have an instancehelper method
 							MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.HideBySig | MethodAttributes.Static;
-							// NOTE instancehelpers for protected methods are made public,
-							// because cli.System.Object derived types can call protected methods
+							// NOTE instancehelpers for protected methods are made internal
+							// and special cased in DotNetTypeWrapper.LazyPublishMembers
 							if((m.Modifiers & IKVM.Internal.MapXml.MapModifiers.Protected) != 0)
 							{
 								attr &= ~MethodAttributes.MemberAccessMask;
-								attr |= MethodAttributes.Public;
-								// mark with specialname, so that tools (hopefully) won't show them
-								attr |= MethodAttributes.SpecialName;
+								attr |= MethodAttributes.Assembly;
 							}
 							Type[] exParamTypes = new Type[paramTypes.Length + 1];
 							Array.Copy(paramTypes, 0, exParamTypes, 1, paramTypes.Length);

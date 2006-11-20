@@ -101,12 +101,34 @@
 					<ldarg_0 />
 					<isinst type="System.Array" />
 					<dup />
-					<brtrue name="ok" />
-					<newobj class="java.lang.CloneNotSupportedException" name="&lt;init&gt;" sig="()V" />
-					<throw />
-					<label name="ok" />
+					<brfalse name="not_array" />
 					<call type="System.Array" name="Clone" sig="()Ljava.lang.Object;" />
 					<ret />
+					<label name="not_array" />
+					<pop />
+					<ldarg_0 />
+					<isinst class="java.lang.Cloneable" />
+					<brfalse name="not_cloneable" />
+					<!--
+					 This means we're Cloneable, but not derived from java.lang.Object or java.lang.Throwable.
+					 It also means that we must have been invoked thru reflection (or by code in the java.lang package),
+					 so it is OK to use reflection to call Object.MemberwiseClone().
+					 -->
+					<ldtoken type="System.Object" />
+					<call type="System.Type" name="GetTypeFromHandle" sig="(Lcli.System.RuntimeTypeHandle;)Lcli.System.Type;" />
+					<ldstr value="MemberwiseClone" />
+					<ldc_i4 value="36" />
+					<ldnull />
+					<ldsfld type="System.Type" name="EmptyTypes" sig="[Lcli.SystemType;" />
+					<ldnull />
+					<callvirt type="System.Type" name="GetMethod" sig="(Ljava.lang.String;Lcli.System.Reflection.BindingFlags;Lcli.System.Reflection.Binder;[Lcli.System.Type;[Lcli.System.Reflection.ParameterModifier;)Lcli.System.Reflection.MethodInfo;" />
+					<ldarg_0 />
+					<ldnull />
+					<callvirt type="System.Reflection.MethodInfo" name="Invoke" sig="(Ljava.lang.Object;[Ljava.lang.Object;)Ljava.lang.Object;" />
+					<ret />
+					<label name="not_cloneable" />
+					<newobj class="java.lang.CloneNotSupportedException" name="&lt;init&gt;" sig="()V" />
+					<throw />
 				</alternateBody>
 			</method>
 			<method name="toStringImpl" sig="(Ljava.lang.Object;)Ljava.lang.String;" modifiers="private static">

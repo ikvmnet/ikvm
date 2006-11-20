@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -728,6 +728,8 @@ namespace IKVM.Internal.MapXml
 	{
 		[XmlAttribute("class")]
 		public string Class;
+		[XmlAttribute("type")]
+		public string Type;
 		[XmlAttribute("name")]
 		public string Name;
 		[XmlAttribute("sig")]
@@ -735,9 +737,16 @@ namespace IKVM.Internal.MapXml
 
 		internal override void Generate(Hashtable context, ILGenerator ilgen)
 		{
-			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
-			fw.Link();
-			fw.EmitGet(ilgen);
+			if(Type != null)
+			{
+				ilgen.Emit(OpCodes.Ldsfld, StaticCompiler.GetType(Type).GetField(Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic));
+			}
+			else
+			{
+				FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
+				fw.Link();
+				fw.EmitGet(ilgen);
+			}
 		}
 	}
 
@@ -1017,6 +1026,18 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("ldtoken")]
+	public sealed class Ldtoken : Instruction
+	{
+		[XmlAttribute("type")]
+		public string type;
+
+		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		{
+			ilgen.Emit(OpCodes.Ldtoken, StaticCompiler.GetType(type));
+		}
+	}
+
 	public class InstructionList : CodeEmitter
 	{
 		[XmlElement(typeof(Ldstr))]
@@ -1087,6 +1108,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(ConditionalInstruction))]
 		[XmlElement(typeof(Volatile))]
 		[XmlElement(typeof(Ldelema))]
+		[XmlElement(typeof(Ldtoken))]
 		public Instruction[] invoke;
 
 		internal void Generate(Hashtable context, ILGenerator ilgen)

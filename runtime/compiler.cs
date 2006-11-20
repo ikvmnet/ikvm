@@ -132,9 +132,11 @@ class Compiler
 	private static MethodInfo monitorEnterMethod;
 	private static MethodInfo monitorExitMethod;
 	private static MethodWrapper getClassFromTypeHandle;
+	private static TypeWrapper java_lang_Object;
 	private static TypeWrapper java_lang_Class;
 	private static TypeWrapper java_lang_Throwable;
 	private static TypeWrapper java_lang_ThreadDeath;
+	private static TypeWrapper cli_System_Object;
 	private static TypeWrapper cli_System_Exception;
 	private TypeWrapper clazz;
 	private MethodWrapper mw;
@@ -155,7 +157,9 @@ class Compiler
 		getTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(RuntimeTypeHandle) }, null);
 		monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
+		java_lang_Object = CoreClasses.java.lang.Object.Wrapper;
 		java_lang_Throwable = CoreClasses.java.lang.Throwable.Wrapper;
+		cli_System_Object = DotNetTypeWrapper.GetWrapperFromDotNetType(typeof(System.Object));
 		cli_System_Exception = DotNetTypeWrapper.GetWrapperFromDotNetType(typeof(System.Exception));
 		java_lang_Class = CoreClasses.java.lang.Class.Wrapper;
 		java_lang_ThreadDeath = ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadDeath");
@@ -1699,6 +1703,24 @@ class Compiler
 					TypeWrapper thisType = SigTypeToClassName(type, cpi.GetClassType());
 
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
+
+					if(method.IsProtected && (method.DeclaringType == java_lang_Object || method.DeclaringType == java_lang_Throwable))
+					{
+						// HACK we may need to redirect finalize or clone from java.lang.Object/Throwable
+						// to a more specific base type.
+						if(thisType.IsAssignableTo(cli_System_Object))
+						{
+							method = cli_System_Object.GetMethodWrapper(cpi.Name, cpi.Signature, true);
+						}
+						else if(thisType.IsAssignableTo(cli_System_Exception))
+						{
+							method = cli_System_Exception.GetMethodWrapper(cpi.Name, cpi.Signature, true);
+						}
+						else if(thisType.IsAssignableTo(java_lang_Throwable))
+						{
+							method = java_lang_Throwable.GetMethodWrapper(cpi.Name, cpi.Signature, true);
+						}
+					}
 
 					// if the stack values don't match the argument types (for interface argument types)
 					// we must emit code to cast the stack value to the interface type

@@ -7719,7 +7719,15 @@ namespace IKVM.Internal
 			protected override void CallvirtImpl(ILGenerator ilgen)
 			{
 				Debug.Assert(!mbHelper.IsStatic || mbHelper.Name.StartsWith("instancehelper_") || mbHelper.DeclaringType.Name == "__Helper");
-				ilgen.Emit(mbHelper.IsStatic ? OpCodes.Call : OpCodes.Callvirt, mbHelper);
+				if(mbHelper.IsPublic)
+				{
+					ilgen.Emit(mbHelper.IsStatic ? OpCodes.Call : OpCodes.Callvirt, mbHelper);
+				}
+				else
+				{
+					// HACK the helper is not public, this means that we're dealing with finalize or clone
+					ilgen.Emit(OpCodes.Callvirt, (MethodInfo)GetMethod());
+				}
 			}
 
 			protected override void NewobjImpl(ILGenerator ilgen)
@@ -9056,6 +9064,66 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER
 		}
 
+		private class FinalizeMethodWrapper : MethodWrapper
+		{
+			internal FinalizeMethodWrapper(DotNetTypeWrapper tw)
+				: base(tw, "finalize", "()V", null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Protected, MemberFlags.None)
+			{
+			}
+
+			internal override void EmitCall(ILGenerator ilgen)
+			{
+				ilgen.Emit(OpCodes.Pop);
+			}
+
+			internal override void EmitCallvirt(ILGenerator ilgen)
+			{
+				ilgen.Emit(OpCodes.Pop);
+			}
+
+#if !STATIC_COMPILER
+			internal override object Invoke(object obj, object[] args, bool nonVirtual)
+			{
+				return null;
+			}
+#endif // !STATIC_COMPILER
+		}
+
+		private class CloneMethodWrapper : MethodWrapper
+		{
+			internal CloneMethodWrapper(DotNetTypeWrapper tw)
+				: base(tw, "clone", "()Ljava.lang.Object;", null, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Protected, MemberFlags.None)
+			{
+			}
+
+			internal override void EmitCall(ILGenerator ilgen)
+			{
+				ilgen.Emit(OpCodes.Dup);
+				ilgen.Emit(OpCodes.Isinst, ClassLoaderWrapper.LoadClassCritical("java.lang.Cloneable").TypeAsBaseType);
+				Label label1 = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Brtrue_S, label1);
+				Label label2 = ilgen.DefineLabel();
+				ilgen.Emit(OpCodes.Brfalse_S, label2);
+				EmitHelper.Throw(ilgen, "java.lang.CloneNotSupportedException");
+				ilgen.MarkLabel(label2);
+				EmitHelper.Throw(ilgen, "java.lang.NullPointerException");
+				ilgen.MarkLabel(label1);
+				ilgen.Emit(OpCodes.Call, typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes, null));
+			}
+
+			internal override void EmitCallvirt(ILGenerator ilgen)
+			{
+				EmitCall(ilgen);
+			}
+
+#if !STATIC_COMPILER
+			internal override object Invoke(object obj, object[] args, bool nonVirtual)
+			{
+				return CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(Name, Signature, false).Invoke(obj, args, nonVirtual);
+			}
+#endif // !STATIC_COMPILER
+		}
+
 		protected override void LazyPublishMembers()
 		{
 			ArrayList fieldsList = new ArrayList();
@@ -9247,7 +9315,26 @@ namespace IKVM.Internal
 								{
 									h.Add(m.Name + m.Signature, "");
 									// TODO handle name/sig clash (what should we do?)
-									methodsList.Add(new BaseFinalMethodWrapper(this, m));
+									if(m.IsProtected)
+									{
+										if(m.Name == "finalize" && m.Signature == "()V")
+										{
+											methodsList.Add(new FinalizeMethodWrapper(this));
+										}
+										else if(m.Name == "clone" && m.Signature == "()Ljava.lang.Object;")
+										{
+											methodsList.Add(new CloneMethodWrapper(this));
+										}
+										else
+										{
+											// there should be a special MethodWrapper for this method
+											throw new InvalidOperationException("Missing protected method support for " + baseTypeWrapper.Name + "::" + m.Name + m.Signature);
+										}
+									}
+									else
+									{
+										methodsList.Add(new BaseFinalMethodWrapper(this, m));
+									}
 								}
 							}
 						}
