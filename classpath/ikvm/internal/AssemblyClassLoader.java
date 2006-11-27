@@ -41,12 +41,14 @@ import java.security.ProtectionDomain;
 @Internal
 public final class AssemblyClassLoader extends ClassLoader
 {
+    private final Assembly assembly;
     private ProtectionDomain pd;
     private boolean packagesDefined;
 
-    public AssemblyClassLoader()
+    public AssemblyClassLoader(Assembly assembly)
     {
         super(null);
+        this.assembly = assembly;
     }
 
     protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException
@@ -130,7 +132,6 @@ public final class AssemblyClassLoader extends ClassLoader
     private static native Assembly FindResourceAssembly(Object classLoader, String name);
     private static native Assembly[] FindResourceAssemblies(Object classLoader, String name);
     private static native Assembly GetClassAssembly(Class c);
-    private static native Assembly GetAssembly(Object classLoader);
     // also used by VMClassLoader
     public static native String[] GetPackages(Object classLoader);
 
@@ -176,10 +177,9 @@ public final class AssemblyClassLoader extends ClassLoader
     {
         try
         {
-            Assembly asm = GetAssembly(this);
-            if(asm != null)
+            if(assembly != null)
             {
-                return new Manifest(gnu.java.net.protocol.ikvmres.Handler.readResourceFromAssembly(asm, "/META-INF/MANIFEST.MF"));
+                return new Manifest(gnu.java.net.protocol.ikvmres.Handler.readResourceFromAssembly(assembly, "/META-INF/MANIFEST.MF"));
             }
         }
         catch (MalformedURLException _)
@@ -237,10 +237,9 @@ public final class AssemblyClassLoader extends ClassLoader
 
     public String toString()
     {
-        Assembly asm = GetAssembly(this);
-        if(asm != null)
+        if(assembly != null)
         {
-            return asm.get_FullName();
+            return assembly.get_FullName();
         }
         // TODO make this string more meaningful
         return "GenericClassLoader";
@@ -250,10 +249,9 @@ public final class AssemblyClassLoader extends ClassLoader
     {
         try
         {
-            Assembly asm = GetAssembly(this);
-            if(asm != null)
+            if(assembly != null)
             {
-                return new URL(asm.get_CodeBase());
+                return new URL(assembly.get_CodeBase());
             }
         }
         catch(MalformedURLException _)

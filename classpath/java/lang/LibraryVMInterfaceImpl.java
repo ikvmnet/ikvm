@@ -389,11 +389,11 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
         return new IllegalMonitorStateException();
     }
 
-    public Object newAssemblyClassLoader()
+    public Object newAssemblyClassLoader(final cli.System.Reflection.Assembly assembly)
     {
         return AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return new AssemblyClassLoader();
+                return new AssemblyClassLoader(assembly);
             }
         });
     }

@@ -23,8 +23,8 @@
         <nant buildfile="classpath/classpath.build" />
         <nant buildfile="ikvm/ikvm.build" />
         <nant buildfile="ikvmstub/ikvmstub.build" />
+        <nant buildfile="awt/awt.build" />
         <if test="${platform::is-win32()}">
-            <nant buildfile="awt/awt.build" />
             <nant buildfile="jvm/jvm.build" />
         </if>
     </target>

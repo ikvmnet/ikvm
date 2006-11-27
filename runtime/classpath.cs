@@ -1555,17 +1555,6 @@ namespace IKVM.NativeCode.ikvm.@internal
 			return packages;
 		}
 
-		public static Assembly GetAssembly(object classLoader)
-		{
-			IKVM.Internal.AssemblyClassLoader wrapper = JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader;
-			if(wrapper == null)
-			{
-				// must be a GenericClassLoader
-				return null;
-			}
-			return wrapper.Assembly;
-		}
-
 		public static bool IsReflectionOnly(Assembly asm)
 		{
 #if WHIDBEY
@@ -1764,6 +1753,6 @@ namespace ikvm.@internal
 		Exception newInterruptedException();
 		Exception newIllegalMonitorStateException();
 
-		object newAssemblyClassLoader();
+		object newAssemblyClassLoader(Assembly asm);
 	}
 }

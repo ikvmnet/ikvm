@@ -881,7 +881,7 @@ namespace IKVM.Internal
 				{
 					object javaClassLoader = null;
 #if !STATIC_COMPILER
-					javaClassLoader = JVM.Library.newAssemblyClassLoader();
+					javaClassLoader = JVM.Library.newAssemblyClassLoader(null);
 #endif
 					matchingLoader = new GenericClassLoader(key, javaClassLoader);
 #if !STATIC_COMPILER
@@ -918,7 +918,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 						javaClassLoader = null;
 #else
-						javaClassLoader = JVM.Library.newAssemblyClassLoader();
+						javaClassLoader = JVM.Library.newAssemblyClassLoader(assembly);
 #endif
 					}
 					loader = new AssemblyClassLoader(assembly, javaClassLoader);

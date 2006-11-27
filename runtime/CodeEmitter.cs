@@ -72,7 +72,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
 #endif // STATIC_COMPILER
-		private Type boxType;
+		private Expr stack;
 		private CountingLabel lazyBranch;
 #if LABELCHECK
 		private Hashtable labels = new Hashtable();
@@ -468,45 +468,43 @@ namespace IKVM.Internal
 
 		internal void LazyEmitBox(Type type)
 		{
-			LazyGen();
-			boxType = type;
-		}
-
-		internal bool IsBoxPending(Type type)
-		{
-			return boxType == type;
-		}
-
-		internal void ClearPendingBox()
-		{
-			boxType = null;
+			stack = new BoxExpr(stack, type);
 		}
 
 		internal void LazyEmitUnbox(Type type)
 		{
-			if(boxType != null && boxType == type)
+			BoxExpr box = stack as BoxExpr;
+			if(box != null)
 			{
-				// the unbox and lazy box cancel each other out
-				boxType = null;
-				// unbox leaves a pointer to the value of the stack (instead of the value)
-				// so we have to copy the value into a local variable and load the address
-				// of the local onto the stack
-				LocalBuilder local = DeclareLocal(type);
-				Emit(OpCodes.Stloc, local);
-				Emit(OpCodes.Ldloca, local);
+				stack = new BoxUnboxExpr(box.Expr, type);
 			}
 			else
 			{
-				Emit(OpCodes.Unbox, type);
+				stack = new UnboxExpr(stack, type);
+			}
+		}
+
+		internal void LazyEmitLdobj(Type type)
+		{
+			BoxUnboxExpr boxunbox = stack as BoxUnboxExpr;
+			if(boxunbox != null)
+			{
+				// box/unbox+ldobj annihilate each other
+				stack = boxunbox.Expr;
+			}
+			else
+			{
+				stack = new LdobjExpr(stack, type);
 			}
 		}
 
 		internal void LazyEmitUnboxSpecial(Type type)
 		{
-			if(boxType != null && boxType == type)
+			BoxExpr box = stack as BoxExpr;
+			if(box != null)
 			{
 				// the unbox and lazy box cancel each other out
-				boxType = null;
+				stack = box.Expr;
 			}
 			else
 			{
@@ -525,13 +523,122 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal void LazyEmitLdc_I4(int i)
+		{
+			LazyGen();
+			stack = new ConstIntExpr(i);
+		}
+
+		internal void LazyEmitLdc_I8(long l)
+		{
+			LazyGen();
+			stack = new ConstLongExpr(l);
+		}
+
+		internal void LazyEmit_idiv()
+		{
+			// we need to special case dividing by -1, because the CLR div instruction
+			// throws an OverflowException when dividing Int32.MinValue by -1, and
+			// Java just silently overflows
+			ConstIntExpr v = stack as ConstIntExpr;
+			if(v != null)
+			{
+				if(v.i == -1)
+				{
+					stack = null;
+					Emit(OpCodes.Neg);
+				}
+				else
+				{
+					Emit(OpCodes.Div);
+				}
+			}
+			else
+			{
+				Emit(OpCodes.Dup);
+				Emit(OpCodes.Ldc_I4_M1);
+				CountingLabel label = DefineLabel();
+				Emit(OpCodes.Bne_Un_S, label);
+				Emit(OpCodes.Pop);
+				Emit(OpCodes.Neg);
+				CountingLabel label2 = DefineLabel();
+				Emit(OpCodes.Br_S, label2);
+				MarkLabel(label);
+				Emit(OpCodes.Div);
+				MarkLabel(label2);
+			}
+		}
+
+		internal void LazyEmit_ldiv()
+		{
+			// we need to special case dividing by -1, because the CLR div instruction
+			// throws an OverflowException when dividing Int32.MinValue by -1, and
+			// Java just silently overflows
+			ConstLongExpr v = stack as ConstLongExpr;
+			if(v != null)
+			{
+				if(v.l == -1)
+				{
+					stack = null;
+					Emit(OpCodes.Neg);
+				}
+				else
+				{
+					Emit(OpCodes.Div);
+				}
+			}
+			else
+			{
+				Emit(OpCodes.Dup);
+				Emit(OpCodes.Ldc_I4_M1);
+				Emit(OpCodes.Conv_I8);
+				CountingLabel label = DefineLabel();
+				Emit(OpCodes.Bne_Un_S, label);
+				Emit(OpCodes.Pop);
+				Emit(OpCodes.Neg);
+				CountingLabel label2 = DefineLabel();
+				Emit(OpCodes.Br_S, label2);
+				MarkLabel(label);
+				Emit(OpCodes.Div);
+				MarkLabel(label2);
+			}
+		}
+
+		internal void LazyEmit_instanceof(Type type)
+		{
+			LazyGen();
+			stack = new InstanceOfExpr(type);
+		}
+
+		internal void LazyEmit_ifeq(CountingLabel label)
+		{
+			InstanceOfExpr instanceof = stack as InstanceOfExpr;
+			if(instanceof != null)
+			{
+				stack = null;
+				Emit(OpCodes.Isinst, instanceof.Type);
+			}
+			Emit(OpCodes.Brfalse, label);
+		}
+
+		internal void LazyEmit_ifne(CountingLabel label)
+		{
+			InstanceOfExpr instanceof = stack as InstanceOfExpr;
+			if(instanceof != null)
+			{
+				stack = null;
+				Emit(OpCodes.Isinst, instanceof.Type);
+			}
+			Emit(OpCodes.Brtrue, label);
+		}
+
 		private void LazyGen()
 		{
-			if(boxType != null)
+			if(stack != null)
 			{
-				Type t = boxType;
-				boxType = null;
-				Emit(OpCodes.Box, t);
+				Expr exp = stack;
+				stack = null;
+				exp.Emit(this);
 			}
 			if(lazyBranch != null)
 			{
@@ -550,6 +657,254 @@ namespace IKVM.Internal
 				IKVM.Internal.JVM.CriticalFailure("Label failure: " + name, null);
 			}
 #endif
+		}
+
+		abstract class Expr
+		{
+			internal readonly Type Type;
+
+			protected Expr(Type type)
+			{
+				this.Type = type;
+			}
+
+			internal abstract void Emit(CountingILGenerator ilgen);
+		}
+
+		abstract class UnaryExpr : Expr
+		{
+			internal readonly Expr Expr;
+
+			protected UnaryExpr(Expr expr, Type type)
+				: base(type)
+			{
+				this.Expr = expr;
+			}
+
+			internal override void Emit(CountingILGenerator ilgen)
+			{
+				if (Expr != null)
+				{
+					Expr.Emit(ilgen);
+				}
+			}
+		}
+
+		class BoxExpr : UnaryExpr
+		{
+			internal BoxExpr(Expr expr, Type type)
+				: base(expr, type)
+			{
+			}
+
+			internal override void Emit(CountingILGenerator ilgen)
+			{
+				base.Emit(ilgen);
+				ilgen.Emit(OpCodes.Box, Type);
+			}
+		}
+
+		class UnboxExpr : UnaryExpr
+		{
+			internal UnboxExpr(Expr expr, Type type)
+				: base(expr, type)
+			{
+			}
+
+			internal override void Emit(CountingILGenerator ilgen)
+			{
+				base.Emit(ilgen);
+				ilgen.Emit(OpCodes.Unbox, Type);
+			}
+		}
+
+		class BoxUnboxExpr : UnaryExpr
+		{
+			internal BoxUnboxExpr(Expr expr, Type type)
+				: base(expr, type)
+			{
+			}
+
+			internal override void Emit(CountingILGenerator ilgen)
+			{
+				base.Emit(ilgen);
+				// unbox leaves a pointer to the value of the stack (instead of the value)
+				// so we have to copy the value into a local variable and load the address
+				// of the local onto the stack
+				LocalBuilder local = ilgen.DeclareLocal(Type);
+				ilgen.Emit(OpCodes.Stloc, local);
+				ilgen.Emit(OpCodes.Ldloca, local);
+			}
+		}
+
+		class LdobjExpr : UnaryExpr
+		{
+			internal LdobjExpr(Expr expr, Type type)
+				: base(expr, type)
+			{
+			}
+
+			internal override void Emit(CountingILGenerator ilgen)
+			{
+				base.Emit(ilgen);
+				ilgen.Emit(OpCodes.Ldobj, Type);
+			}
+		}
+
+		class ConstIntExpr : Expr
+		{
+			internal readonly int i;
+
+			internal ConstIntExpr(int i)
+				: base(typeof(int))
+			{
+				this.i = i;
+			}
+
+			internal override void Emit(CountingILGenerator ilgen)
+			{
+				switch(i)
+				{
+					case -1:
+						ilgen.Emit(OpCodes.Ldc_I4_M1);
+						break;
+					case 0:
+						ilgen.Emit(OpCodes.Ldc_I4_0);
+						break;
+					case 1:
+						ilgen.Emit(OpCodes.Ldc_I4_1);
+						break;
+					case 2:
+						ilgen.Emit(OpCodes.Ldc_I4_2);
+						break;
+					case 3:
+						ilgen.Emit(OpCodes.Ldc_I4_3);
+						break;
+					case 4:
+						ilgen.Emit(OpCodes.Ldc_I4_4);
+						break;
+					case 5:
+						ilgen.Emit(OpCodes.Ldc_I4_5);
+						break;
+					case 6:
+						ilgen.Emit(OpCodes.Ldc_I4_6);
+						break;
+					case 7:
+						ilgen.Emit(OpCodes.Ldc_I4_7);
+						break;
+					case 8:
+						ilgen.Emit(OpCodes.Ldc_I4_8);
+						break;
+					default:
+						if(i >= -128 && i <= 127)
+						{
+							ilgen.Emit(OpCodes.Ldc_I4_S, (sbyte)i);
+						}
+						else
+						{
+							ilgen.Emit(OpCodes.Ldc_I4, i);
+						}
+						break;
+				}
+			}
+		}
+
+		class ConstLongExpr : Expr
+		{
+			internal readonly long l;
+
+			internal ConstLongExpr(long l)
+				: base(typeof(long))
+			{
+				this.l = l;
+			}
+
+			internal override void Emit(CountingILGenerator ilgen)
+			{
+				switch(l)
+				{
+					case -1:
+						ilgen.Emit(OpCodes.Ldc_I4_M1);
+						ilgen.Emit(OpCodes.Conv_I8);
+						break;
+					case 0:
+						ilgen.Emit(OpCodes.Ldc_I4_0);
+						ilgen.Emit(OpCodes.Conv_I8);
+						break;
+					case 1:
+						ilgen.Emit(OpCodes.Ldc_I4_1);
+						ilgen.Emit(OpCodes.Conv_I8);
+						break;
+					case 2:
+						ilgen.Emit(OpCodes.Ldc_I4_2);
+						ilgen.Emit(OpCodes.Conv_I8);
+						break;
+					case 3:
+						ilgen.Emit(OpCodes.Ldc_I4_3);
+						ilgen.Emit(OpCodes.Conv_I8);
+						break;
+					case 4:
+						ilgen.Emit(OpCodes.Ldc_I4_4);
+						ilgen.Emit(OpCodes.Conv_I8);
+						break;
+					case 5:
+						ilgen.Emit(OpCodes.Ldc_I4_5);
+						ilgen.Emit(OpCodes.Conv_I8);
+						break;
+					case 6:
+						ilgen.Emit(OpCodes.Ldc_I4_6);
+						ilgen.Emit(OpCodes.Conv_I8);
+						break;
+					case 7:
+						ilgen.Emit(OpCodes.Ldc_I4_7);
+						ilgen.Emit(OpCodes.Conv_I8);
+						break;
+					case 8:
+						ilgen.Emit(OpCodes.Ldc_I4_8);
+						ilgen.Emit(OpCodes.Conv_I8);
+						break;
+					default:
+						if(l >= -2147483648L && l <= 4294967295L)
+						{
+							if(l >= -128 && l <= 127)
+							{
+								ilgen.Emit(OpCodes.Ldc_I4_S, (sbyte)l);
+							}
+							else
+							{
+								ilgen.Emit(OpCodes.Ldc_I4, (int)l);
+							}
+							if(l < 0)
+							{
+								ilgen.Emit(OpCodes.Conv_I8);
+							}
+							else
+							{
+								ilgen.Emit(OpCodes.Conv_U8);
+							}
+						}
+						else
+						{
+							ilgen.Emit(OpCodes.Ldc_I8, l);
+						}
+						break;
+				}
+			}
+		}
+
+		class InstanceOfExpr : Expr
+		{
+			internal InstanceOfExpr(Type type)
+				: base(type)
+			{
+			}
+
+			internal override void Emit(CountingILGenerator ilgen)
+			{
+				ilgen.Emit(OpCodes.Isinst, this.Type);
+				ilgen.Emit(OpCodes.Ldnull);
+				ilgen.Emit(OpCodes.Cgt_Un);
+			}
 		}
 	}
 }

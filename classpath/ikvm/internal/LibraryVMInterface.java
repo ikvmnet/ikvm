@@ -89,5 +89,5 @@ public interface LibraryVMInterface
     Throwable newInterruptedException();
     Throwable newIllegalMonitorStateException();
 
-    Object newAssemblyClassLoader();
+    Object newAssemblyClassLoader(cli.System.Reflection.Assembly assembly);
 }

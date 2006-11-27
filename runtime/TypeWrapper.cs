@@ -2734,9 +2734,7 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				ilgen.Emit(OpCodes.Isinst, TypeAsTBD);
-				ilgen.Emit(OpCodes.Ldnull);
-				ilgen.Emit(OpCodes.Cgt_Un);
+				ilgen.LazyEmit_instanceof(TypeAsTBD);
 			}
 		}
 #endif
@@ -8936,44 +8934,20 @@ namespace IKVM.Internal
 
 		internal class EnumValueFieldWrapper : FieldWrapper
 		{
-			// NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
+			private Type underlyingType;
+
 			internal EnumValueFieldWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
 				: base(tw, fieldType, "Value", fieldType.SigName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
 			{
+				underlyingType = Enum.GetUnderlyingType(tw.type);
 			}
 
 #if !COMPACT_FRAMEWORK
 			protected override void EmitGetImpl(ILGenerator ilgen)
 			{
-				DotNetTypeWrapper tw = (DotNetTypeWrapper)this.DeclaringType;
-				if(ilgen.IsBoxPending(tw.type))
-				{
-					ilgen.ClearPendingBox();
-				}
-				else
-				{
-					ilgen.Emit(OpCodes.Unbox, tw.type);
-					// FXBUG the .NET 1.1 verifier doesn't understand that ldobj on an enum that has an underlying type
-					// of byte or short that the resulting type on the stack is an int32, so we have to
-					// to it the hard way. Note that this is fixed in Whidbey.
-					Type underlyingType = Enum.GetUnderlyingType(tw.type);
-					if(underlyingType == typeof(sbyte) || underlyingType == typeof(byte))
-					{
-						ilgen.Emit(OpCodes.Ldind_I1);
-					}
-					else if(underlyingType == typeof(short) || underlyingType == typeof(ushort))
-					{
-						ilgen.Emit(OpCodes.Ldind_I2);
-					}
-					else if(underlyingType == typeof(int) || underlyingType == typeof(uint))
-					{
-						ilgen.Emit(OpCodes.Ldind_I4);
-					}
-					else if(underlyingType == typeof(long) || underlyingType == typeof(ulong))
-					{
-						ilgen.Emit(OpCodes.Ldind_I8);
-					}
-				}
+				// NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
+				ilgen.LazyEmitUnbox(underlyingType);
+				ilgen.LazyEmitLdobj(underlyingType);
 			}
 
 			protected override void EmitSetImpl(ILGenerator ilgen)
@@ -9710,9 +9684,7 @@ namespace IKVM.Internal
 					return;
 				}
 			}
-			ilgen.Emit(OpCodes.Isinst, type);
-			ilgen.Emit(OpCodes.Ldnull);
-			ilgen.Emit(OpCodes.Cgt_Un);
+			ilgen.LazyEmit_instanceof(type);
 		}
 
 		internal override void EmitCheckcast(TypeWrapper context, ILGenerator ilgen)
