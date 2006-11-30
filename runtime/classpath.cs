@@ -1498,31 +1498,26 @@ namespace IKVM.NativeCode.ikvm.@internal
 			}
 		}
 
-		public static Assembly FindResourceAssembly(object classLoader, string name)
+		public static Assembly[] FindResourceAssemblies(object classLoader, string name, bool firstOnly)
 		{
 			IKVM.Internal.AssemblyClassLoader wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader);
 			if(wrapper == null)
 			{
 				// must be a GenericClassLoader
+				Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in generic class loader", name);
 				return null;
 			}
-			if(wrapper.Assembly.GetManifestResourceInfo(JVM.MangleResourceName(name)) != null)
+			Assembly[] assemblies = wrapper.FindResourceAssemblies(name, firstOnly);
+			if(assemblies == null || assemblies.Length == 0)
 			{
-				Tracer.Info(Tracer.ClassLoading, "Found resource \"{0}\" in {1}", name, wrapper.Assembly.FullName);
-				return wrapper.Assembly;
+				Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in {1}", name, wrapper.Assembly.FullName);
+				return null;
 			}
-			Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in {1}", name, wrapper.Assembly.FullName);
-			return null;
-		}
-
-		public static Assembly[] FindResourceAssemblies(object classLoader, string name)
-		{
-			Assembly asm = FindResourceAssembly(classLoader, name);
-			if(asm != null)
+			foreach(Assembly asm in assemblies)
 			{
-				return new Assembly[] { asm };
+				Tracer.Info(Tracer.ClassLoading, "Found resource \"{0}\" in {1}", name, asm.FullName);
 			}
-			return null;
+			return assemblies;
 		}
 
 		public static Assembly GetClassAssembly(object clazz)

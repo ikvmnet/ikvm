@@ -1341,5 +1341,95 @@ namespace IKVM.Internal
 			}
 			return null;
 		}
+
+#if !STATIC_COMPILER
+		internal Assembly[] FindResourceAssemblies(string name, bool firstOnly)
+		{
+			ArrayList list = null;
+			name = JVM.MangleResourceName(name);
+			if(assembly.GetManifestResourceInfo(name) != null)
+			{
+				if(firstOnly)
+				{
+					return new Assembly[] { assembly };
+				}
+				list = new ArrayList();
+				list.Add(assembly);
+			}
+			for(int i = 0; i < delegates.Length; i++)
+			{
+				if(delegates[i] == null)
+				{
+					Assembly asm = null;
+					try
+					{
+						// TODO consider throttling the Load attempts (or caching failure)
+#if WHIDBEY
+						if(isReflectionOnly)
+						{
+							asm = Assembly.ReflectionOnlyLoad(references[i].FullName);
+						}
+						else
+#endif
+					{
+						asm = Assembly.Load(references[i]);
+					}
+					}
+					catch
+					{
+					}
+					if(asm != null)
+					{
+						delegates[i] = ClassLoaderWrapper.GetAssemblyClassLoader(asm);
+					}
+				}
+				if(delegates[i] != null)
+				{
+					if(delegates[i].Assembly.GetManifestResourceInfo(name) != null)
+					{
+						if(firstOnly)
+						{
+							return new Assembly[] { delegates[i].Assembly };
+						}
+						if(list == null)
+						{
+							list = new ArrayList();
+						}
+						list.Add(delegates[i].Assembly);
+					}
+				}
+			}
+			bool isJava = false;
+			for(int i = 0; i < isJavaModule.Length; i++)
+			{
+				if(isJavaModule[i])
+				{
+					isJava = true;
+					break;
+				}
+			}
+			if(!isJava)
+			{
+				Assembly asm = GetBootstrapClassLoader().Assembly;
+				if(asm.GetManifestResourceInfo(name) != null)
+				{
+					if(firstOnly)
+					{
+						return new Assembly[] { asm };
+					}
+					if(list == null)
+					{
+						list = new ArrayList();
+					}
+					list.Add(asm);
+				}
+			}
+			if(list == null)
+			{
+				return null;
+			}
+			return (Assembly[])list.ToArray(typeof(Assembly));
+		}
+#endif // !STATIC_COMPILER
 	}
 }

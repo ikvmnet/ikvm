@@ -70,7 +70,12 @@ public final class AssemblyClassLoader extends ClassLoader
                 return url;
             }
         }
-        return super.getResource(name);
+        return getResource(this, name);
+    }
+
+    public Enumeration getResources(String name) throws IOException
+    {
+        return getResources(this, name);
     }
 
     protected URL findResource(String name)
@@ -102,10 +107,10 @@ public final class AssemblyClassLoader extends ClassLoader
 
     public static URL getResource(AssemblyClassLoader classLoader, String name)
     {
-        Assembly asm = FindResourceAssembly(classLoader, name);
-        if(asm != null)
+        Assembly[] asm = FindResourceAssemblies(classLoader, name, true);
+        if(asm != null && asm.length > 0)
         {
-            return makeIkvmresURL(asm, name);
+            return makeIkvmresURL(asm[0], name);
         }
         else if(name.endsWith(".class") && name.indexOf('.') == name.length() - 6)
         {
@@ -129,15 +134,14 @@ public final class AssemblyClassLoader extends ClassLoader
     }
 
     private static native boolean IsReflectionOnly(Assembly asm);
-    private static native Assembly FindResourceAssembly(Object classLoader, String name);
-    private static native Assembly[] FindResourceAssemblies(Object classLoader, String name);
+    private static native Assembly[] FindResourceAssemblies(Object classLoader, String name, boolean firstOnly);
     private static native Assembly GetClassAssembly(Class c);
     // also used by VMClassLoader
     public static native String[] GetPackages(Object classLoader);
 
     public static Enumeration getResources(Object classLoader, String name) throws IOException
     {
-        Assembly[] assemblies = FindResourceAssemblies(classLoader, name);
+        Assembly[] assemblies = FindResourceAssemblies(classLoader, name, false);
         if(assemblies != null)
         {
             Vector v = new Vector();
