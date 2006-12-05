@@ -5622,7 +5622,7 @@ namespace IKVM.Internal
 						{
 							// TODO at the moment we don't support constructor signature clash resolving, so we better
 							// not put them in the clash table
-							if(methods[i].IsLinked && methods[i].Name != "<init>")
+							if(methods[i].IsLinked && methods[i].GetMethod() != null && methods[i].Name != "<init>")
 							{
 								string key = GenerateClashKey("method", methods[i].RealName, methods[i].ReturnTypeForDefineMethod, methods[i].GetParametersForDefineMethod());
 								memberclashtable.Add(key, key);
@@ -9179,14 +9179,16 @@ namespace IKVM.Internal
 				{
 					string name;
 					string sig;
-					if(MakeMethodDescriptor(constructors[i], out name, out sig))
+					TypeWrapper[] args;
+					TypeWrapper ret;
+					if(MakeMethodDescriptor(constructors[i], out name, out sig, out args, out ret))
 					{
 						if(fabricateDefaultCtor && !constructors[i].IsStatic && sig == "()V")
 						{
 							fabricateDefaultCtor = false;
 						}
 						// TODO handle name/signature clash
-						methodsList.Add(CreateMethodWrapper(name, sig, constructors[i], false));
+						methodsList.Add(CreateMethodWrapper(name, sig, args, ret, constructors[i], false));
 					}
 				}
 
@@ -9207,7 +9209,9 @@ namespace IKVM.Internal
 					{
 						string name;
 						string sig;
-						if(MakeMethodDescriptor(methods[i], out name, out sig))
+						TypeWrapper[] args;
+						TypeWrapper ret;
+						if(MakeMethodDescriptor(methods[i], out name, out sig, out args, out ret))
 						{
 							if(!methods[i].IsStatic && !methods[i].IsPrivate && BaseTypeWrapper != null)
 							{
@@ -9218,7 +9222,7 @@ namespace IKVM.Internal
 								}
 							}
 							// TODO handle name/signature clash
-							methodsList.Add(CreateMethodWrapper(name, sig, methods[i], false));
+							methodsList.Add(CreateMethodWrapper(name, sig, args, ret, methods[i], false));
 						}
 					}
 				}
@@ -9240,7 +9244,9 @@ namespace IKVM.Internal
 								{
 									string name;
 									string sig;
-									if(MakeMethodDescriptor(map.InterfaceMethods[j], out name, out sig))
+									TypeWrapper[] args;
+									TypeWrapper ret;
+									if(MakeMethodDescriptor(map.InterfaceMethods[j], out name, out sig, out args, out ret))
 									{
 										if(BaseTypeWrapper != null)
 										{
@@ -9261,7 +9267,7 @@ namespace IKVM.Internal
 										if(!clash.ContainsKey(name + sig))
 										{
 											clash.Add(name + sig, null);
-											methodsList.Add(CreateMethodWrapper(name, sig, map.InterfaceMethods[j], true));
+											methodsList.Add(CreateMethodWrapper(name, sig, args, ret, map.InterfaceMethods[j], true));
 										}
 									}
 								}
@@ -9353,18 +9359,20 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER
 		}
 
-		private bool MakeMethodDescriptor(MethodBase mb, out string name, out string sig)
+		private bool MakeMethodDescriptor(MethodBase mb, out string name, out string sig, out TypeWrapper[] args, out TypeWrapper ret)
 		{
 			if(Whidbey.IsGenericMethodDefinition(mb))
 			{
 				name = null;
 				sig = null;
+				args = null;
+				ret = null;
 				return false;
 			}
 			System.Text.StringBuilder sb = new System.Text.StringBuilder();
 			sb.Append('(');
 			ParameterInfo[] parameters = mb.GetParameters();
-			TypeWrapper[] args = new TypeWrapper[parameters.Length];
+			args = new TypeWrapper[parameters.Length];
 			for(int i = 0; i < parameters.Length; i++)
 			{
 				Type type = parameters[i].ParameterType;
@@ -9372,6 +9380,8 @@ namespace IKVM.Internal
 				{
 					name = null;
 					sig = null;
+					args = null;
+					ret = null;
 					return false;
 				}
 				if(type.IsByRef)
@@ -9380,6 +9390,8 @@ namespace IKVM.Internal
 					{
 						name = null;
 						sig = null;
+						args = null;
+						ret = null;
 						return false;
 					}
 					type = ArrayTypeWrapper.MakeArrayType(type.GetElementType(), 1);
@@ -9389,6 +9401,8 @@ namespace IKVM.Internal
 						// methods with byref args.
 						name = null;
 						sig = null;
+						args = null;
+						ret = null;
 						return false;
 					}
 				}
@@ -9399,7 +9413,7 @@ namespace IKVM.Internal
 			sb.Append(')');
 			if(mb is ConstructorInfo)
 			{
-				TypeWrapper ret = PrimitiveTypeWrapper.VOID;
+				ret = PrimitiveTypeWrapper.VOID;
 				if(mb.IsStatic)
 				{
 					name = "<clinit>";
@@ -9419,9 +9433,10 @@ namespace IKVM.Internal
 				{
 					name = null;
 					sig = null;
+					ret = null;
 					return false;
 				}
-				TypeWrapper ret = ClassLoaderWrapper.GetWrapperFromType(type);
+				ret = ClassLoaderWrapper.GetWrapperFromType(type);
 				sb.Append(ret.SigName);
 				name = mb.Name;
 				sig = sb.ToString();
@@ -9597,7 +9612,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private MethodWrapper CreateMethodWrapper(string name, string sig, MethodBase mb, bool privateInterfaceImplHack)
+		private MethodWrapper CreateMethodWrapper(string name, string sig, TypeWrapper[] argTypeWrappers, TypeWrapper retTypeWrapper, MethodBase mb, bool privateInterfaceImplHack)
 		{
 			ExModifiers exmods = AttributeHelper.GetModifiers(mb, true);
 			Modifiers mods = exmods.Modifiers;
@@ -9637,20 +9652,17 @@ namespace IKVM.Internal
 				{
 					mods |= Modifiers.Final;
 				}
-				// TODO pass in the argument and return types
-				return new ByRefMethodWrapper(args, byrefs, this, name, sig, mb, null, null, mods, false);
+				return new ByRefMethodWrapper(args, byrefs, this, name, sig, mb, retTypeWrapper, argTypeWrappers, mods, false);
 			}
 			else
 			{
 				if(mb is ConstructorInfo)
 				{
-					// TODO pass in the argument and return types
-					return new SmartConstructorMethodWrapper(this, name, sig, (ConstructorInfo)mb, null, mods, MemberFlags.None);
+					return new SmartConstructorMethodWrapper(this, name, sig, (ConstructorInfo)mb, argTypeWrappers, mods, MemberFlags.None);
 				}
 				else
 				{
-					// TODO pass in the argument and return types
-					return new SmartCallMethodWrapper(this, name, sig, (MethodInfo)mb, null, null, mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
+					return new SmartCallMethodWrapper(this, name, sig, (MethodInfo)mb, retTypeWrapper, argTypeWrappers, mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
 				}
 			}
 		}
@@ -9712,15 +9724,6 @@ namespace IKVM.Internal
 			foreach(TypeWrapper tw in this.Interfaces)
 			{
 				tw.Finish();
-			}
-			// TODO instead of linking here, we should just pre-link in LazyPublishMembers
-			foreach(MethodWrapper mw in GetMethods())
-			{
-				mw.Link();
-			}
-			foreach(FieldWrapper fw in GetFields())
-			{
-				fw.Link();
 			}
 		}
 

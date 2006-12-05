@@ -894,6 +894,22 @@ namespace IKVM.Internal
 			return matchingLoader;
 		}
 
+		internal static int GetGenericClassLoaderId(ClassLoaderWrapper wrapper)
+		{
+			lock(wrapperLock)
+			{
+				return genericClassLoaders.IndexOf(wrapper);
+			}
+		}
+
+		internal static ClassLoaderWrapper GetGenericClassLoaderById(int id)
+		{
+			lock(wrapperLock)
+			{
+				return (ClassLoaderWrapper)genericClassLoaders[id];
+			}
+		}
+
 		// this method only supports .NET or pre-compiled Java assemblies
 		internal static AssemblyClassLoader GetAssemblyClassLoader(Assembly assembly)
 		{

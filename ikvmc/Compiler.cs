@@ -128,6 +128,8 @@ class IkvmcCompiler
 			Console.Error.WriteLine("    -recurse:<filespec>        Recurse directory and include matching files");
 			Console.Error.WriteLine("    -nojni                     Do not generate JNI stub for native methods");
 			Console.Error.WriteLine("    -resource:<name>=<path>    Include file as Java resource");
+			Console.Error.WriteLine("    -externalresource:<name>=<path>");
+			Console.Error.WriteLine("                               Reference file as Java resource");
 			Console.Error.WriteLine("    -exclude:<filename>        A file containing a list of classes to exclude");
 			Console.Error.WriteLine("    -debug                     Generate debug info for the output file");
 			Console.Error.WriteLine("                               (Note that this also causes the compiler to");
@@ -337,6 +339,26 @@ class IkvmcCompiler
 						Console.Error.WriteLine("Error: {0}: {1}", x.Message, spec[1]);
 						return 1;
 					}
+				}
+				else if(s.StartsWith("-externalresource:"))
+				{
+					string[] spec = s.Substring(18).Split('=');
+					if(!File.Exists(spec[1]))
+					{
+						Console.Error.WriteLine("Error: external resource file does not exist: {0}", spec[1]);
+						return 1;
+					}
+					if(Path.GetFileName(spec[1]) != spec[1])
+					{
+						Console.Error.WriteLine("Error: external resource file may not include path specification: {0}", spec[1]);
+						return 1;
+					}
+					if(options.externalResources == null)
+					{
+						options.externalResources = new Hashtable();
+					}
+					// TODO resource name clashes should be tested
+					options.externalResources.Add(spec[0], spec[1]);
 				}
 				else if(s == "-nojni")
 				{

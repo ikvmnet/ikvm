@@ -13,13 +13,13 @@
     </target>
 
     <target name="trunk">
-        <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath" />
+        <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath-0.93" />
         <property name="allsources" value="allsources.lst" />
         <call target="IKVM.GNU.Classpath.dll" />
     </target>
 
     <target name="generics">
-        <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath-generics" />
+        <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath-0.93-generics" />
         <property name="allsources" value="allsources-generics.lst" />
         <call target="IKVM.GNU.Classpath.dll" />
     </target>

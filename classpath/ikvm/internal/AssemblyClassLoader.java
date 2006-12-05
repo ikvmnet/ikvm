@@ -41,6 +41,7 @@ import java.security.ProtectionDomain;
 @Internal
 public final class AssemblyClassLoader extends ClassLoader
 {
+    // NOTE assembly is null for "generics" class loader instances
     private final Assembly assembly;
     private ProtectionDomain pd;
     private boolean packagesDefined;
@@ -127,7 +128,28 @@ public final class AssemblyClassLoader extends ClassLoader
             }
             if(c != null)
             {
-                return makeIkvmresURL(GetClassAssembly(c), name);
+                classLoader = (AssemblyClassLoader)c.getClassLoader();
+                if(classLoader == null)
+                {
+                    return makeIkvmresURL(GetBootClassLoaderAssembly(), name);
+                }
+                else if(classLoader.assembly != null)
+                {
+                    return makeIkvmresURL(classLoader.assembly, name);
+                }
+                else
+                {
+                    // HACK we use an index to identity the generic class loader in the url
+                    // TODO this obviously isn't persistable, we should use a list of assemblies instead.
+                    try
+                    {
+                        return new URL("ikvmres", "gen", GetGenericClassLoaderId(classLoader), "/" + name);
+                    }
+                    catch(MalformedURLException x)
+                    {
+                        throw (InternalError)new InternalError().initCause(x);
+                    }                    
+                }
             }
         }
         return null;
@@ -135,7 +157,8 @@ public final class AssemblyClassLoader extends ClassLoader
 
     private static native boolean IsReflectionOnly(Assembly asm);
     private static native Assembly[] FindResourceAssemblies(Object classLoader, String name, boolean firstOnly);
-    private static native Assembly GetClassAssembly(Class c);
+    private static native int GetGenericClassLoaderId(AssemblyClassLoader classLoader);
+    private static native Assembly GetBootClassLoaderAssembly();
     // also used by VMClassLoader
     public static native String[] GetPackages(Object classLoader);
 

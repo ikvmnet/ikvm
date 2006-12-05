@@ -1333,8 +1333,14 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 		{
 			// chop off the leading slash
 			resource = resource.Substring(1);
+			string mangledName = JVM.MangleResourceName(resource);
+			ManifestResourceInfo info = asm.GetManifestResourceInfo(mangledName);
+			if(info != null && info.FileName != null)
+			{
+				return asm.GetManifestResourceStream(mangledName);
+			}
 #if WHIDBEY
-			Stream s = asm.GetManifestResourceStream(JVM.MangleResourceName(resource));
+			Stream s = asm.GetManifestResourceStream(mangledName);
 			if(s == null)
 			{
 				Tracer.Warning(Tracer.ClassLoading, "Resource \"{0}\" not found in {1}", resource, asm.FullName);
@@ -1353,7 +1359,7 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 					throw new IOException("Unsupported resource encoding for resource " + resource + " found in assembly " + asm.FullName);
 			}
 #else
-			using(Stream s = asm.GetManifestResourceStream(JVM.MangleResourceName(resource)))
+			using(Stream s = asm.GetManifestResourceStream(mangledName))
 			{
 				if(s == null)
 				{
@@ -1406,6 +1412,11 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 			}
 #endif
 			return Assembly.Load(name);
+		}
+
+		public static object GetGenericClassLoaderById(int id)
+		{
+			return ClassLoaderWrapper.GetGenericClassLoaderById(id).GetJavaClassLoader();
 		}
 	}
 }
@@ -1520,11 +1531,6 @@ namespace IKVM.NativeCode.ikvm.@internal
 			return assemblies;
 		}
 
-		public static Assembly GetClassAssembly(object clazz)
-		{
-			return ((IKVM.Internal.AssemblyClassLoader)TypeWrapper.FromClass(clazz).GetClassLoader()).Assembly;
-		}
-
 		// NOTE the array may contain duplicates!
 		public static string[] GetPackages(object classLoader)
 		{
@@ -1558,6 +1564,16 @@ namespace IKVM.NativeCode.ikvm.@internal
 			return false;
 #endif
 		}
+
+		public static int GetGenericClassLoaderId(object classLoader)
+		{
+			return ClassLoaderWrapper.GetGenericClassLoaderId((ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader));
+		}
+
+		public static Assembly GetBootClassLoaderAssembly()
+		{
+			return ((IKVM.Internal.AssemblyClassLoader)ClassLoaderWrapper.GetBootstrapClassLoader()).Assembly;
+		}
 	}
 
 	namespace stubgen
@@ -1566,7 +1582,17 @@ namespace IKVM.NativeCode.ikvm.@internal
 		{
 			public static string getAssemblyName(object c)
 			{
-				return ((IKVM.Internal.AssemblyClassLoader)TypeWrapper.FromClass(c).GetClassLoader()).Assembly.FullName;
+				ClassLoaderWrapper loader = TypeWrapper.FromClass(c).GetClassLoader();
+				IKVM.Internal.AssemblyClassLoader acl = loader as IKVM.Internal.AssemblyClassLoader;
+				if(acl != null)
+				{
+					return acl.Assembly.FullName;
+				}
+				else
+				{
+					// TODO
+					return "TODO: implement support for generic types referencing multiple assemblies in their IKVM.NET.Assembly attribute";
+				}
 			}
 
 			public static object getFieldConstantValue(object fieldWrapper)

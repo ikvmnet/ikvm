@@ -50,7 +50,7 @@ class IkvmresURLConnection extends URLConnection
 	    }
             try
             {
-                inputStream = Handler.readResourceFromAssembly(assembly, resource);
+                inputStream = Handler.readResourceFromAssembly(assembly, url.getPort(), resource);
                 connected = true;
             }
             catch(cli.System.IO.FileNotFoundException x)
@@ -107,12 +107,27 @@ public class Handler extends URLStreamHandler
     private static final String RFC2396_SEGMENT = RFC2396_PCHAR + ";";
     private static final String RFC2396_PATH_SEGMENTS = RFC2396_SEGMENT + "/";
 
-    static InputStream readResourceFromAssembly(String assembly, String resource)
+    static InputStream readResourceFromAssembly(String assembly, int port, String resource)
         throws cli.System.IO.FileNotFoundException,
                cli.System.BadImageFormatException,
                cli.System.Security.SecurityException,
                IOException
     {
+        if(assembly.equals("gen") && port != -1 && resource.endsWith(".class") && resource.indexOf('.') == resource.length() - 6)
+        {
+            ClassLoader loader = GetGenericClassLoaderById(port);
+            try
+            {
+                Class c = Class.forName(resource.substring(1, resource.length() - 6).replace('/', '.'), false, loader);
+                return new ByteArrayInputStream(ikvm.internal.stubgen.StubGenerator.generateStub(c));
+            }
+            catch(ClassNotFoundException _)
+            {
+            }
+            catch(LinkageError _)
+            {
+            }
+        }
         return readResourceFromAssembly(LoadAssembly(assembly), resource);
     }
 
@@ -152,6 +167,7 @@ public class Handler extends URLStreamHandler
     private static native Class LoadClassFromAssembly(Assembly asm, String className);
     private static native Assembly LoadAssembly(String name)
         throws cli.System.IO.FileNotFoundException, cli.System.BadImageFormatException, cli.System.Security.SecurityException;
+    private static native ClassLoader GetGenericClassLoaderById(int id);
 
     protected URLConnection openConnection(URL url) throws IOException
     {

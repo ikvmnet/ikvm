@@ -360,7 +360,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return method != null;
+				return parameterTypeWrappers != null;
 			}
 		}
 

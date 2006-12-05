@@ -2448,6 +2448,13 @@ namespace IKVM.Internal
 			}
 			Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
 			loader.AddResources(options.resources, options.compressedResources);
+			if(options.externalResources != null)
+			{
+				foreach(DictionaryEntry de in options.externalResources)
+				{
+					loader.assemblyBuilder.AddResourceFile(JVM.MangleResourceName((string)de.Key), (string)de.Value);
+				}
+			}
 			if(options.fileversion != null)
 			{
 				CustomAttributeBuilder filever = new CustomAttributeBuilder(typeof(AssemblyFileVersionAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { options.fileversion });
@@ -2497,6 +2504,7 @@ namespace IKVM.Internal
 		internal string runtimeAssembly;
 		internal string[] privatePackages;
 		internal string sourcepath;
+		internal Hashtable externalResources;
 	}
 
 	enum Message
