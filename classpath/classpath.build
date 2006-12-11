@@ -34,7 +34,7 @@
 <arg value="-srcpath:/classpath/" />
 -->
           <arg value="-nowarn:100:java.math.BigInteger$NativeMPI" />
-          <arg value="-version:0.32.0.0" />
+          <arg value="-version:0.33.*" />
           <arg value="${signoption}" />
           <arg value="-compressresources" />
           <arg value="-opt:fields" />
