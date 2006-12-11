@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="ecj" default="all">
    <target name="checkout">
-     <exec program="cvs" commandline="-z3 -d:pserver:anonymous@dev.eclipse.org:/home/eclipse co org.eclipse.jdt.core" />
+     <exec program="cvs" commandline="-z3 -d:pserver:anonymous@dev.eclipse.org:/cvsroot/eclipse co org.eclipse.jdt.core" />
    </target>
    <target name="allsources">
      <exec program="cmd" commandline="/c dir /s/b org.eclipse.jdt.core\batch\*.java > allsources.lst" />

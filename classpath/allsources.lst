@@ -4021,6 +4021,11 @@
 ../../classpath-0.93/javax/swing/text/html/parser/Parser.java
 ../../classpath-0.93/javax/swing/text/html/parser/ParserDelegator.java
 ../../classpath-0.93/javax/swing/text/html/parser/TagElement.java
+../../classpath-0.93/javax/swing/text/html/ResetableModel.java
+../../classpath-0.93/javax/swing/text/html/ResetablePlainDocument.java
+../../classpath-0.93/javax/swing/text/html/ResetableToggleButtonModel.java
+../../classpath-0.93/javax/swing/text/html/SelectComboBoxModel.java
+../../classpath-0.93/javax/swing/text/html/SelectListModel.java
 ../../classpath-0.93/javax/swing/text/html/StyleSheet.java
 ../../classpath-0.93/javax/swing/text/html/TableView.java
 ../../classpath-0.93/javax/swing/text/html/ViewAttributeSet.java

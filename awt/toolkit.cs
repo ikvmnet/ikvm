@@ -1557,7 +1557,15 @@ namespace ikvm.awt
 			{
 				if(control is Form)
 				{
-					((Form)control).Owner = (Form)((NetComponentPeer)parent.getPeer()).control;
+					NetComponentPeer parentPeer = (NetComponentPeer)parent.getPeer();
+					if(parentPeer != null)
+					{
+						((Form)control).Owner = (Form)parentPeer.control;
+					}
+					else
+					{
+						// TODO later on when the owner peer is created we should set our owner
+					}
 				}
 				else
 				{
@@ -1571,7 +1579,7 @@ namespace ikvm.awt
 						control.Parent = ((NetComponentPeer)p.getPeer()).control;
 					}
 				}
-				if(parent is java.awt.Frame)
+				if(parent is java.awt.Frame && !(control is Form))
 				{
 					java.awt.Insets ins = ((NetFramePeer)parent.getPeer()).getInsets();
 					offsetX = -ins.left;
