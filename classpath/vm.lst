@@ -4,6 +4,7 @@
 ../../classpath/vm/reference/java/lang/VMObject.java
 ../../classpath/vm/reference/java/lang/VMString.java
 ../../classpath/vm/reference/java/lang/VMThrowable.java
+../../classpath/vm/reference/sun/reflect/misc/ReflectUtil.java
 AssemblyInfo.java
 gnu/classpath/Configuration.java
 gnu/classpath/PointerUtil.java
@@ -64,7 +65,9 @@ java/lang/VMClass.java
 java/lang/VMClassLoader.java
 java/lang/VMDouble.java
 java/lang/VMFloat.java
+java/lang/VMInstrumentationImpl.java
 java/lang/VMMath.java
+java/lang/VMProcess.java
 java/lang/VMRuntime.java
 java/lang/VMSystem.java
 java/lang/VMThread.java

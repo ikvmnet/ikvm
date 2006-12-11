@@ -1,28 +1,11 @@
 <?xml version="1.0"?>
-<project name="IKVM.GNU.Classpath.dll" default="branch">
+<project name="IKVM.GNU.Classpath.dll" default="IKVM.GNU.Classpath.dll">
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
-    <property overwrite="false" name="generics" value="false" />
+    <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
-
-    <target name="branch">
-        <call target="generics" if="${generics}" />
-        <call target="trunk" unless="${generics}" />
-    </target>
-
-    <target name="trunk">
-        <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath-0.93" />
-        <property name="allsources" value="allsources.lst" />
-        <call target="IKVM.GNU.Classpath.dll" />
-    </target>
-
-    <target name="generics">
-        <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath-0.93-generics" />
-        <property name="allsources" value="allsources-generics.lst" />
-        <call target="IKVM.GNU.Classpath.dll" />
-    </target>
 
     <target name="jars">
         <!-- TODO
@@ -41,7 +24,7 @@
 			<include name="**.class"/>
 		</fileset>
 	</delete>
-        <exec program="ecj" commandline="-g -1.5 -nowarn -cp mscorlib.jar${pathsep}System.jar @${allsources}" useruntimeengine="false" />
+        <exec program="ecj" commandline="-g -1.5 -nowarn -cp mscorlib.jar${pathsep}System.jar @allsources.lst" useruntimeengine="false" />
     </target>
 
     <target name="IKVM.GNU.Classpath.dll" depends="classes">

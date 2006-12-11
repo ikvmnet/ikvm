@@ -200,7 +200,7 @@ public abstract class AnnotationAttributeBase
         }
         HashMap map = new HashMap();
         decodeValues(map, annotationClass, loader, array);
-        return Proxy.newProxyInstance(annotationClass.getClassLoader(), new Class[] { annotationClass }, new AnnotationInvocationHandler(annotationClass, map));
+        return Proxy.newProxyInstance(annotationClass.getClassLoader(), new Class<?>[] { annotationClass }, new AnnotationInvocationHandler(annotationClass, map));
     }
 
     public static Object decodeElementValue(Object obj, Class type, ClassLoader loader)
@@ -293,7 +293,7 @@ public abstract class AnnotationAttributeBase
             new AnnotationInvocationHandler(annotationType, values));
     }
 
-    public final Class annotationType()
+    public final Class<? extends Annotation> annotationType()
     {
         return annotationType;
     }

@@ -111,7 +111,7 @@ public final class Method
      * is a non-inherited member.
      * @return the class that declared this member
      */
-    public Class getDeclaringClass()
+    public Class<?> getDeclaringClass()
     {
 	return declaringClass;
     }
@@ -183,7 +183,7 @@ public final class Method
      * Gets the return type of this method.
      * @return the type of this method
      */
-    public Class getReturnType()
+    public Class<?> getReturnType()
     {
 	return (Class)GetReturnType(methodCookie);
     }
@@ -195,12 +195,12 @@ public final class Method
      *
      * @return a list of the types of the method's parameters
      */
-    public Class[] getParameterTypes()
+    public Class<?>[] getParameterTypes()
     {
 	return GetParameterTypesHelper(methodCookie);
     }
 
-    static Class[] GetParameterTypesHelper(Object methodCookie)
+    static Class<?>[] GetParameterTypesHelper(Object methodCookie)
     {
         Object[] params = GetParameterTypes(methodCookie);
         Class[] paramsClass = new Class[params.length];
@@ -223,7 +223,7 @@ public final class Method
      *
      * @return a list of the types in the method's throws clause
      */
-    public Class[] getExceptionTypes()
+    public Class<?>[] getExceptionTypes()
     {
 	ClassLoader loader = getDeclaringClass().getClassLoader();
 	String[] ex = GetExceptionTypes(methodCookie);
@@ -278,16 +278,16 @@ public final class Method
 
         Method that = (Method)o;
         if (this.getDeclaringClass() != that.getDeclaringClass())
-            return false;
+	    return false;
 
         if(!this.getName().equals(that.getName()))
-	    return false;
+            return false;
 
-	if(this.getReturnType() != that.getReturnType())
-	    return false;
+        if(this.getReturnType() != that.getReturnType())
+            return false;
 
         if (!Arrays.equals(this.getParameterTypes(), that.getParameterTypes()))
-	    return false;
+            return false;
 
 	return true;
     }
@@ -408,7 +408,7 @@ public final class Method
      * @throws ExceptionInInitializerError if accessing a static method triggered
      *         class initialization, which then failed
      */
-    public Object invoke(Object o, Object[] args)
+    public Object invoke(Object o, Object... args)
 	throws IllegalAccessException, InvocationTargetException
     {
 	if(!isAccessible() && (!Modifier.isPublic(modifiers) || !classIsPublic))
@@ -447,8 +447,7 @@ public final class Method
      *         specification, version 3.
      * @since 1.5
      */
-    /* FIXME[GENERICS]: Should be TypeVariable<Method>[] */
-    public TypeVariable[] getTypeParameters()
+    public TypeVariable<Method>[] getTypeParameters()
     {
         String sig = getSignature();
         if (sig == null)
@@ -537,11 +536,11 @@ public final class Method
     }
     private static native Object GetDefaultValue(Object methodCookie);
 
-    public Annotation getAnnotation(Class annotationClass)
+    public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
     {
         for (Annotation annotation : getDeclaredAnnotations())
             if (annotation.annotationType() == annotationClass)
-                return annotation;
+                return (T) annotation;
         return null;
     }
 

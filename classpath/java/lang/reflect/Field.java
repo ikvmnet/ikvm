@@ -102,7 +102,7 @@ public final class Field
 	 * is a non-inherited member.
 	 * @return the class that declared this member
 	 */
-	public Class getDeclaringClass()
+	public Class<?> getDeclaringClass()
 	{
 	    return impl.getDeclaringClass();
 	}
@@ -116,16 +116,16 @@ public final class Field
 	    return impl.getName();
 	}
 
-        /**
-         * Return the raw modifiers for this field.
-         * @return the field's modifiers
-         */
-        private int getModifiersInternal()
-        {
-            return impl.getModifiers();
-        }
+    /**
+     * Return the raw modifiers for this field.
+     * @return the field's modifiers
+     */
+    private int getModifiersInternal()
+    {
+        return impl.getModifiers();
+    }
 
-	/**
+        /**
 	 * Gets the modifiers this field uses.  Use the <code>Modifier</code>
 	 * class to interpret the values.  A field can only have a subset of the
 	 * following modifiers: public, private, protected, static, final,
@@ -156,13 +156,13 @@ public final class Field
         public boolean isEnumConstant()
         {
             return (getModifiersInternal() & Modifier.ENUM) != 0;
-        }
+	}
 
-        /**
+	/**
 	 * Gets the type of this field.
 	 * @return the type of this field
 	 */
-	public Class getType()
+	public Class<?> getType()
 	{
             return impl.getType();
 	}
@@ -179,11 +179,11 @@ public final class Field
 	public boolean equals(Object o)
 	{
 	    if(!(o instanceof Field))
-                return false;
+		return false;
 
             Field that = (Field)o; 
             if (this.getDeclaringClass() != that.getDeclaringClass())
-                return false;
+		return false;
 
             if (!this.getName().equals(that.getName()))
                 return false;
@@ -192,7 +192,7 @@ public final class Field
                 return false;
 
             return true;
-        }
+	}
 
 	/**
 	 * Get the hash code for the Field. The Field hash code is the hash code
@@ -202,7 +202,7 @@ public final class Field
 	 */
 	public int hashCode()
 	{
-            return getDeclaringClass().getName().hashCode() ^ getName().hashCode();
+		return getDeclaringClass().getName().hashCode() ^ getName().hashCode();
 	}
 
 	/**
@@ -221,14 +221,14 @@ public final class Field
             if (sb.length() > 0)
                 sb.append(' ');
             sb.append(ClassHelper.getUserName(getType())).append(' ');
-	    sb.append(getDeclaringClass().getName()).append('.');
+            sb.append(getDeclaringClass().getName()).append('.');
 	    sb.append(getName());
 	    return sb.toString();
 	}
 
         public String toGenericString()
         {
-            StringBuffer sb = new StringBuffer(64);
+            StringBuilder sb = new StringBuilder(64);
             Modifier.toString(getModifiers(), sb);
             if (sb.length() > 0)
                 sb.append(' ');
@@ -282,8 +282,8 @@ public final class Field
 		throws IllegalAccessException
 	{
 	    if(impl.needsAccessCheck(isAccessible()))
-		VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
-	    return impl.get(o);
+                VMFieldImpl.checkAccess(impl.fieldCookie, o, VMStackWalker.getCallingClass());
+            return impl.get(o);
 	}
 
 	/**
@@ -747,11 +747,11 @@ public final class Field
             return p.getFieldType();
         }
 
-        public Annotation getAnnotation(Class annotationClass)
+        public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
         {
             for (Annotation annotation : getDeclaredAnnotations())
                 if (annotation.annotationType() == annotationClass)
-                    return annotation;
+                    return (T) annotation;
             return null;
         }
 

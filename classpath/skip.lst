@@ -1,3 +1,11 @@
+/classpath/external/jsr166/java/util/concurrent/atomic/AtomicBoolean.java
+/classpath/external/jsr166/java/util/concurrent/atomic/AtomicInteger.java
+/classpath/external/jsr166/java/util/concurrent/atomic/AtomicIntegerArray.java
+/classpath/external/jsr166/java/util/concurrent/atomic/AtomicLong.java
+/classpath/external/jsr166/java/util/concurrent/atomic/AtomicLongArray.java
+/classpath/external/jsr166/java/util/concurrent/atomic/AtomicReference.java
+/classpath/external/jsr166/java/util/concurrent/atomic/AtomicReferenceArray.java
+/classpath/external/jsr166/java/util/concurrent/locks/LockSupport.java
 /classpath/gnu/java/awt/dnd/
 /classpath/gnu/java/awt/peer/gtk/
 /classpath/gnu/java/awt/peer/qt/
@@ -45,3 +53,4 @@
 /classpath/test/
 /classpath/tools/
 /classpath/vm/reference/
+blablalba

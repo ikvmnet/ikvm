@@ -41,7 +41,6 @@ package java.lang.reflect;
 import gnu.java.lang.ClassHelper;
 
 import gnu.java.lang.reflect.MethodSignatureParser;
-
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import gnu.classpath.VMStackWalker;
@@ -79,11 +78,11 @@ import gnu.classpath.VMStackWalker;
  * @since 1.1
  * @status updated to 1.4
  */
-public final class Constructor
+public final class Constructor<T>
     extends AccessibleObject
     implements GenericDeclaration, Member
 {
-    private Class clazz;
+    private Class<T> clazz;
     private static final int CONSTRUCTOR_MODIFIERS
         = Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC;
     @ikvm.lang.Internal
@@ -107,9 +106,9 @@ public final class Constructor
      * Gets the class that declared this constructor.
      * @return the class that declared this member
      */
-    public Class getDeclaringClass()
+    public Class<T> getDeclaringClass()
     {
-        return clazz;
+	return clazz;
     }
 
     /**
@@ -119,7 +118,7 @@ public final class Constructor
      */
     public String getName()
     {
-	return getDeclaringClass().getName();
+        return getDeclaringClass().getName();
     }
 
     /**
@@ -172,7 +171,7 @@ public final class Constructor
      *
      * @return a list of the types of the constructor's parameters
      */
-    public Class[] getParameterTypes()
+    public Class<?>[] getParameterTypes()
     {
 	return Method.GetParameterTypesHelper(methodCookie);
     }
@@ -184,7 +183,7 @@ public final class Constructor
      *
      * @return a list of the types in the constructor's throws clause
      */
-    public Class[] getExceptionTypes()
+    public Class<?>[] getExceptionTypes()
     {
 	ClassLoader loader = getDeclaringClass().getClassLoader();
 	String[] ex = Method.GetExceptionTypes(methodCookie);
@@ -341,7 +340,7 @@ public final class Constructor
      * @throws ExceptionInInitializerError if construction triggered class
      *         initialization, which then failed
      */
-    public Object newInstance(Object args[])
+    public T newInstance(Object... args)
 	throws InstantiationException, IllegalAccessException,
 	InvocationTargetException
     {
@@ -356,7 +355,7 @@ public final class Constructor
 	{
 	    throw new InstantiationException();
 	}
-	return Method.Invoke(methodCookie, null, args);
+	return (T)Method.Invoke(methodCookie, null, args);
     }
 
     /**
@@ -371,8 +370,7 @@ public final class Constructor
      *         specification, version 3.
      * @since 1.5
      */
-    /* FIXME[GENERICS]: Add <Constructor<T>> */
-    public TypeVariable[] getTypeParameters()
+    public TypeVariable<Constructor<T>>[] getTypeParameters()
     {
         String sig = getSignature();
         if (sig == null)
@@ -432,11 +430,11 @@ public final class Constructor
         return p.getGenericParameterTypes();
     }
 
-    public Annotation getAnnotation(Class annotationClass)
+    public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
     {
         for (Annotation annotation : getDeclaredAnnotations())
             if (annotation.annotationType() == annotationClass)
-                return annotation;
+                return (T) annotation;
         return null;
     }
 

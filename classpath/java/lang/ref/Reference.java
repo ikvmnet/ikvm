@@ -74,17 +74,17 @@ import cli.System.Runtime.InteropServices.GCHandleType;
  * @author Jochen Hoenicke
  * @see java.util.WeakHashtable
  */
-public abstract class Reference
+public abstract class Reference<T>
 {
     // accessed by inner class
     volatile cli.System.WeakReference weakRef;
-    private volatile Object strongRef;
+    private volatile T strongRef;
 
     /**
      * The queue this reference is registered on. This is null, if this
      * wasn't registered to any queue or reference was already enqueued.
      */
-    volatile ReferenceQueue queue;
+    volatile ReferenceQueue<? super T> queue;
 
     /**
      * Link to the next entry on the queue.  If this is null, this
@@ -101,7 +101,7 @@ public abstract class Reference
      * class in a different package.  
      * @param referent the object we refer to.
      */
-    Reference(Object ref)
+    Reference(T ref)
     {
         this(ref, null, true);
     }
@@ -114,12 +114,12 @@ public abstract class Reference
      * @param q the reference queue to register on.
      * @exception NullPointerException if q is null.
      */
-    Reference(Object ref, ReferenceQueue q)
+    Reference(T ref, ReferenceQueue<? super T> q)
     {
         this(ref, q, false);
     }
 
-    private Reference(Object ref, ReferenceQueue q, boolean allowNullQueue)
+    private Reference(T ref, ReferenceQueue<? super T> q, boolean allowNullQueue)
     {
         if (q == null && !allowNullQueue)
             throw new NullPointerException();
@@ -212,13 +212,13 @@ public abstract class Reference
      * @return the object, this reference refers to, or null if the 
      * reference was cleared.
      */
-    public Object get()
+    public T get()
     {
         try
         {
             if(false) throw new cli.System.InvalidOperationException();
             cli.System.WeakReference referent = this.weakRef;
-            return referent == null ? strongRef : referent.get_Target();
+            return referent == null ? strongRef : (T)referent.get_Target();
         }
         catch(cli.System.InvalidOperationException x)
         {
