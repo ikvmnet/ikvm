@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters, Volker Berlin
   Copyright (C) 2006 Active Endpoints, Inc.
 
   This software is provided 'as-is', without any express or implied
@@ -19,16 +19,18 @@
   3. This notice may not be removed or altered from any source distribution.
 
   Jeroen Frijters
-  jeroen@frijters.net
-  
+  jeroen@frijters.net 
+
 */
 
 using System;
+using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Windows.Forms;
-using System.Drawing;
 using System.ComponentModel;
 using System.Reflection;
 using System.Text;
@@ -48,9 +50,11 @@ namespace ikvm.awt
 	delegate string GetString();
 	delegate void SetStringInt(string s, int i);
 	delegate void SetRectangle(Rectangle r);
-	delegate void SetColor(Color c);
-	delegate void SetFont(Font f);
+	delegate void SetColor(java.awt.Color c);
+	delegate void SetFont(java.awt.Font f);
+    delegate void SetCursor(java.awt.Cursor cursor);
 	delegate java.awt.Dimension GetDimension();
+    delegate Rectangle ConvertRectangle(Rectangle r);
 
 	class UndecoratedForm : Form
 	{
@@ -58,10 +62,6 @@ namespace ikvm.awt
 		{
 			this.FormBorderStyle = FormBorderStyle.None;
 			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
-		}
-
-		protected override void OnPaintBackground(PaintEventArgs pevent)
-		{
 		}
 	}
 
@@ -71,10 +71,6 @@ namespace ikvm.awt
 		{
 			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
 		}
-
-		protected override void OnPaintBackground(PaintEventArgs pevent)
-		{
-		}
 	}
 
 	class MyControl : Control
@@ -82,10 +78,6 @@ namespace ikvm.awt
 		public MyControl()
 		{
 			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
-		}
-
-		protected override void OnPaintBackground(PaintEventArgs pevent)
-		{
 		}
 	}
 
@@ -95,20 +87,16 @@ namespace ikvm.awt
 		{
 			SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw, true);
 		}
-
-		protected override void OnPaintBackground(PaintEventArgs pevent)
-		{
-		}
 	}
 
-	public class NetToolkit : gnu.java.awt.ClasspathToolkit
+    public class NetToolkit : gnu.java.awt.ClasspathToolkit
 	{
-		internal static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
+        internal static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
 		internal static volatile Form bogusForm;
 		private static Delegate createControlInstance;
 		private int resolution;
 
-		private delegate Control CreateControlInstanceDelegate(Type type);
+        private delegate NetComponentPeer CreateControlInstanceDelegate(Type controlType, java.awt.Component target, Type peerType);
 
 		private static void MessageLoop()
 		{
@@ -133,22 +121,33 @@ namespace ikvm.awt
 			}
 		}
 
-		internal static Control CreateControlImpl(Type type)
+        internal static NetComponentPeer CreateControlImpl(Type controlType, java.awt.Component target, Type peerType)
 		{
-			Control control = (Control)Activator.CreateInstance(type);
-			control.CreateControl();
-			// HACK here we go again...
+            Control control = (Control)Activator.CreateInstance(controlType);
+            control.CreateControl();
+            // HACK here we go again...
 			IntPtr p = control.Handle;
 			if(p == IntPtr.Zero)
 			{
 				// shut up compiler warning
 			}
-			return control;
-		}
+            NetComponentPeer peer = (NetComponentPeer)Activator.CreateInstance(peerType, new object[] { target, control });
+            peer.initEvents();
+            return peer;
+        }
 
-		internal static Control CreateControl(Type type)
+        internal static NetComponentPeer CreatePeer(Type controlType, java.awt.Component target, Type peerType)
 		{
-			return (Control)bogusForm.Invoke(createControlInstance, new object[] { type });
+            java.awt.Container parent = target.getParent();
+            if (parent != null && parent.getPeer() == null)
+            {
+                //This should do in Java, but it is a Bug in GNU classpath
+                //because synchronized in Java this must be call with the caller thread
+                parent.addNotify();
+            }
+            NetComponentPeer peer = (NetComponentPeer)bogusForm.Invoke(createControlInstance, new object[] { controlType, target, peerType });
+            peer.init();
+            return peer;
 		}
 
 		public NetToolkit()
@@ -207,27 +206,27 @@ namespace ikvm.awt
 
 		protected override java.awt.peer.ButtonPeer createButton(java.awt.Button target)
 		{
-			return new NetButtonPeer(target, (Button)CreateControl(typeof(Button)));
+            return (NetButtonPeer)CreatePeer(typeof(Button), target, typeof(NetButtonPeer));
 		}
 
 		protected override java.awt.peer.TextFieldPeer createTextField(java.awt.TextField target)
 		{
-			return new NetTextFieldPeer(target, (TextBox)CreateControl(typeof(TextBox)));
-		}
+            return (NetTextFieldPeer)CreatePeer(typeof(TextBox), target, typeof(NetTextFieldPeer));
+        }
 
 		protected override java.awt.peer.LabelPeer createLabel(java.awt.Label target)
 		{
-			return new NetLabelPeer(target, (Label)CreateControl(typeof(Label)));
+            return (NetLabelPeer)CreatePeer(typeof(Label), target, typeof(NetLabelPeer));
 		}
 
 		protected override java.awt.peer.ListPeer createList(java.awt.List target)
 		{
-			return new NetListPeer(target, (ListBox)CreateControl(typeof(ListBox)));
+            return (NetListPeer)CreatePeer(typeof(ListBox), target, typeof(NetListPeer));
 		}
 
 		protected override java.awt.peer.CheckboxPeer createCheckbox(java.awt.Checkbox target)
 		{
-			return new NetCheckboxPeer(target, (CheckBox)CreateControl(typeof(CheckBox)));
+            return (NetCheckboxPeer)CreatePeer(typeof(CheckBox), target, typeof(NetCheckboxPeer));
 		}
 
 		protected override java.awt.peer.ScrollbarPeer createScrollbar(java.awt.Scrollbar target)
@@ -242,37 +241,42 @@ namespace ikvm.awt
 
 		protected override java.awt.peer.TextAreaPeer createTextArea(java.awt.TextArea target)
 		{
-			return new NetTextAreaPeer(target, (TextBox)CreateControl(typeof(TextBox)));
+            return (NetTextAreaPeer)CreatePeer(typeof(TextBox), target, typeof(NetTextAreaPeer));
 		}
 
 		protected override java.awt.peer.ChoicePeer createChoice(java.awt.Choice target)
 		{
-			return new NetChoicePeer(target, (ComboBox)CreateControl(typeof(ComboBox)));
+            return (NetChoicePeer)CreatePeer(typeof(ComboBox), target, typeof(NetChoicePeer));
 		}
 
 		protected override java.awt.peer.FramePeer createFrame(java.awt.Frame target)
 		{
-			return new NetFramePeer(target, (Form)CreateControl(typeof(MyForm)));
+            if (!target.isFontSet())
+            {
+                java.awt.Font font = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
+                target.setFont(font);
+            }
+            return (NetFramePeer)CreatePeer(typeof(MyForm), target, typeof(NetFramePeer));
 		}
 
 		protected override java.awt.peer.CanvasPeer createCanvas(java.awt.Canvas target)
 		{
-			return new NewCanvasPeer(target, (Control)CreateControl(typeof(MyControl)));
+            return (NewCanvasPeer)CreatePeer(typeof(MyControl), target, typeof(NewCanvasPeer));
 		}
 
 		protected override java.awt.peer.PanelPeer createPanel(java.awt.Panel target)
 		{
-			return new NetPanelPeer(target, (ContainerControl)CreateControl(typeof(MyContainerControl)));
+            return (NetPanelPeer)CreatePeer(typeof(ContainerControl), target, typeof(NetPanelPeer));
 		}
 
 		protected override java.awt.peer.WindowPeer createWindow(java.awt.Window target)
 		{
-			return new NetWindowPeer(target, (Form)CreateControl(typeof(UndecoratedForm)));
+            return (NetWindowPeer)CreatePeer(typeof(UndecoratedForm), target, typeof(NetWindowPeer));
 		}
 
 		protected override java.awt.peer.DialogPeer createDialog(java.awt.Dialog target)
 		{
-			return new NetDialogPeer(target, (Form)CreateControl(typeof(MyForm)));
+            return (NetDialogPeer)CreatePeer(typeof(MyForm), target, typeof(NetDialogPeer));
 		}
 
 		protected override java.awt.peer.MenuBarPeer createMenuBar(java.awt.MenuBar target)
@@ -360,9 +364,9 @@ namespace ikvm.awt
 					return new NetBufferedImage(new Bitmap(Image.FromStream(stream)));
 				}
 			}
-			catch(Exception)
+			catch(Exception ex)
 			{
-				return new NoImage();
+                return new NoImage();
 			}
 		}
 
@@ -439,7 +443,14 @@ namespace ikvm.awt
 
 		public override java.awt.Image createImage(byte[] imagedata, int imageoffset, int imagelength)
 		{
-			throw new NotImplementedException();
+            try
+            {
+                return new NetBufferedImage(new Bitmap(new MemoryStream(imagedata, imageoffset, imagelength, false)));
+            }
+            catch (Exception ex)
+            {
+                return new NoImage();//TODO should throw the exception unstead of NoImage()
+            }
 		}
 
 		public override java.awt.PrintJob getPrintJob(java.awt.Frame frame, string jobtitle, Properties props)
@@ -517,9 +528,7 @@ namespace ikvm.awt
 		public override java.awt.Graphics2D createGraphics(BufferedImage bi)
 		{
 			Bitmap bitmap = new Bitmap(bi.getWidth(), bi.getHeight());
-			NetGraphics g = new NetGraphics(Graphics.FromImage(bitmap), null, Color.Wheat, true);
-			g.setBitmap(bitmap);
-			return g;
+            return new BitmapGraphics(bitmap);
 		}
 
 		public override java.awt.Font[] getAllFonts()
@@ -557,7 +566,7 @@ namespace ikvm.awt
 
 		public override java.awt.GraphicsConfiguration getDefaultConfiguration()
 		{
-			return new NetGraphicsConfiguration();
+			return new NetGraphicsConfiguration(Screen.PrimaryScreen);
 		}
 
 		public override string getIDstring()
@@ -700,6 +709,7 @@ namespace ikvm.awt
 
 	class NoImage : java.awt.Image
 	{
+
 		public override int getWidth(java.awt.image.ImageObserver observer)
 		{
 			if(observer != null)
@@ -743,151 +753,194 @@ namespace ikvm.awt
 		}
 	}
 
-	public class NetGraphics : java.awt.Graphics2D
+    internal class ComponentGraphics : NetGraphics
+    {
+        private readonly Control control;
+
+        internal ComponentGraphics(NetComponentPeer peer)
+            : base(peer.control.CreateGraphics(), peer.component.getFont(), peer.control.BackColor)
+        {
+            control = peer.control;
+        }
+
+        public override java.awt.Graphics create()
+        {
+            ComponentGraphics newGraphics = (ComponentGraphics)MemberwiseClone();
+            newGraphics.init(control.CreateGraphics());
+            return newGraphics;
+        }
+    }
+
+    internal class BitmapGraphics : NetGraphics
+    {
+        private readonly Bitmap bitmap;
+
+        internal BitmapGraphics(Bitmap bitmap)
+            : base(Graphics.FromImage(bitmap), null, Color.White)
+        {
+            this.bitmap = bitmap;
+        }
+
+        public override java.awt.Graphics create()
+        {
+            BitmapGraphics newGraphics = (BitmapGraphics)MemberwiseClone();
+            newGraphics.init(Graphics.FromImage(bitmap));
+            return newGraphics;
+        }
+    }
+
+    internal abstract class NetGraphics : java.awt.Graphics2D
 	{
-		private bool disposable;
 		private Graphics g;
 		private java.awt.Color jcolor;
 		private Color color = SystemColors.WindowText;
 		private Color bgcolor;
 		private java.awt.Font font;
+        private java.awt.Stroke stroke;
+        private static java.awt.BasicStroke defaultStroke = new java.awt.BasicStroke(); 
 		private Font netfont;
-		private java.awt.Rectangle _clip;
-		private Bitmap mBitmap;
+        private Brush brush;
+        private Pen pen;
 
-		public NetGraphics(Graphics g, java.awt.Font font, Color bgcolor, bool disposable)
+        protected NetGraphics(Graphics g, java.awt.Font font, Color bgcolor)
 		{
-			if(font == null)
+            if(font == null)
 			{
 				font = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
 			}
-			this.g = g;
 			this.font = font;
 			netfont = NetFontFromJavaFont(font, g.DpiY);
 			this.bgcolor = bgcolor;
-			this.disposable = disposable;
-			if(!g.IsClipEmpty)
-			{
-				_clip = new java.awt.Rectangle((int)Math.Round(g.ClipBounds.Left), (int)Math.Round(g.ClipBounds.Top), (int)Math.Round(g.ClipBounds.Width), (int)Math.Round(g.ClipBounds.Height));
-			}
+            init(g);
 		}
 
-		public Bitmap getBitmap()
-		{
-			return mBitmap;
-		}
-
-		public void setBitmap(Bitmap aBitmap)
-		{
-			mBitmap = aBitmap;
-		}
+        protected void init(Graphics graphics)
+        {
+            if (g != null)
+            {
+                //Transfer the state from the original graphics
+                //occur on call of create()
+                graphics.Transform = g.Transform;
+                graphics.Clip = g.Clip;
+                graphics.SmoothingMode = g.SmoothingMode;
+                graphics.TextRenderingHint = g.TextRenderingHint;
+                graphics.InterpolationMode = g.InterpolationMode;
+            }
+            g = graphics;
+            brush = new SolidBrush(color);
+            pen = new Pen(color);
+        }
 
 		public override void clearRect(int x, int y, int width, int height)
 		{
-			using(SolidBrush b = new SolidBrush(bgcolor))
-			{
-				g.FillRectangle(b, x, y, width, height);
-			}
+            using (Brush br = new SolidBrush(bgcolor))
+            {
+                g.FillRectangle(br, x, y, width, height);
+            }
 		}
 
-		public override void clipRect(int param1, int param2, int param3, int param4)
+		public override void clipRect(int x, int y, int w, int h)
 		{
+            g.IntersectClip(new Rectangle(x, y, w, h));
 		}
 
-		public override void copyArea(int param1, int param2, int param3, int param4, int param5, int param6)
+        public override void clip(java.awt.Shape shape)
 		{
-		}
+            if (shape == null)
+            {
+                // the API specification says that this will clear
+                // the clip, but in fact the reference implementation throws a 
+                // NullPointerException - see the following entry in the bug parade:
+                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6206189
+                throw new java.lang.NullPointerException();
+            }
+            else
+            {
+                g.IntersectClip(new Region(J2C.ConvertShape(shape)));
+            }
+        }
 
-		public override java.awt.Graphics create(int x, int y, int width, int height)
+        public override void copyArea(int param1, int param2, int param3, int param4, int param5, int param6)
 		{
-			java.awt.Graphics g = create();
-			g.translate(x, y);
-			g.setClip(0, 0, width, height);
-			return g;
-		}
-
-		public override java.awt.Graphics create()
-		{
-			// TODO we need to actually recreate a new underlying Graphics object, but .NET doesn't
-			// seem to have a way of doing that, so we probably need access to the underlying surface.
-			// Sigh...
-			NetGraphics newg = new NetGraphics(g, font, bgcolor, false);
-			disposable = false;
-			// TODO copy other attributes
-			return newg;
+            throw new NotImplementedException();
 		}
 
 		public override void dispose()
 		{
-			if(disposable)
-			{
-				disposable = false;
-				g.Dispose();
-				g = null;
-			}
-			netfont.Dispose();
+            g.Dispose();
 		}
 
-		public override void draw3DRect(int param1, int param2, int param3, int param4, bool param5)
+		public override void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle)
 		{
+            g.DrawArc(pen, x, y, width, height, startAngle, arcAngle);
 		}
 
-		public override void drawArc(int param1, int param2, int param3, int param4, int param5, int param6)
+		public override void drawBytes(byte[] data, int offset, int length, int x, int y)
 		{
+            char[] chars = new char[length];
+            for (int i = 0; i < length; i++)
+            {
+                chars[i] = (char)data[offset + i];
+            }
+            drawChars(chars, 0, length, x, y);
 		}
 
-		public override void drawBytes(byte[] param1, int param2, int param3, int param4, int param5)
+        public override void drawChars(char[] data, int offset, int length, int x, int y)
 		{
+            drawString(new String(data, offset, length), x, y);
 		}
 
-		public override void drawChars(char[] param1, int param2, int param3, int param4, int param5)
+        public override bool drawImage(java.awt.Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, java.awt.Color color, java.awt.image.ImageObserver observer)
 		{
-		}
-
-		public override bool drawImage(java.awt.Image param1, int param2, int param3, int param4, int param5, int param6, int param7, int param8, int param9, java.awt.Color param10, java.awt.image.ImageObserver param11)
-		{
-			return true;
+            Image image = J2C.ConvertImage(img);
+            if (image == null)
+            {
+                return false;
+            }
+            Rectangle destRect = new Rectangle(dx1, dy1, dx2 - dx1, dy2 - dy1);
+            Rectangle srcRect = new Rectangle(sx1, sy1, sx2 - sx1, sy2 - sy1);
+            using(Brush brush = J2C.CreateBrush(color) )
+            {
+                g.FillRectangle(brush, destRect);
+            }
+            g.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+            return true;
 		}
 
 		public override bool drawImage(java.awt.Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, java.awt.image.ImageObserver observer)
 		{
-			if(img is NetBufferedImage)
-			{
-				Rectangle destRect = new Rectangle(dx1, dy1, dx2 - dx1, dy2 - dy1);
-				Rectangle srcRect = new Rectangle(sx1, sy1, sx2 - sx1, sy2 - sy1);
-				g.DrawImage(((NetBufferedImage)img).bitmap, destRect, srcRect, GraphicsUnit.Pixel);
-			}
-			else if(img is NetVolatileImage)
-			{
-				Rectangle destRect = new Rectangle(dx1, dy1, dx2 - dx1, dy2 - dy1);
-				Rectangle srcRect = new Rectangle(sx1, sy1, sx2 - sx1, sy2 - sy1);
-				g.DrawImage(((NetVolatileImage)img).bitmap, destRect, srcRect, GraphicsUnit.Pixel);
-			}
-			else
-			{
-				throw new NotImplementedException();
-			}
-			return true;
+            Image image = J2C.ConvertImage(img);
+            if (image == null)
+            {
+                return false;
+            }
+            Rectangle destRect = new Rectangle(dx1, dy1, dx2 - dx1, dy2 - dy1);
+            Rectangle srcRect = new Rectangle(sx1, sy1, sx2 - sx1, sy2 - sy1);
+            g.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+            return true;
 		}
 
-		public override bool drawImage(java.awt.Image param1, int param2, int param3, int param4, int param5, java.awt.Color param6, java.awt.image.ImageObserver param7)
+        public override bool drawImage(java.awt.Image img, int param2, int param3, int param4, int param5, java.awt.Color col, java.awt.image.ImageObserver observer)
 		{
-			return true;
+            Console.WriteLine(new System.Diagnostics.StackTrace());
+            throw new NotImplementedException();
 		}
 
 		public override bool drawImage(java.awt.Image param1, int param2, int param3, java.awt.Color param4, java.awt.image.ImageObserver param5)
 		{
-			return true;
+            Console.WriteLine(new System.Diagnostics.StackTrace());
+            throw new NotImplementedException();
 		}
 
 		public override bool drawImage(java.awt.Image param1, int param2, int param3, int param4, int param5, java.awt.image.ImageObserver param6)
 		{
-			return true;
+            Console.WriteLine(new System.Diagnostics.StackTrace());
+            throw new NotImplementedException();
 		}
 
 		public override bool drawImage(java.awt.Image img, int x, int y, java.awt.image.ImageObserver observer)
 		{
-			if(img is NetBufferedImage)
+            if (img is NetBufferedImage)
 			{
 				g.DrawImage(((NetBufferedImage)img).bitmap, x, y);
 			}
@@ -916,50 +969,45 @@ namespace ikvm.awt
 			}
 			else
 			{
-				throw new NotImplementedException(img.GetType().FullName);
+                Console.WriteLine(new System.Diagnostics.StackTrace());
+                throw new NotImplementedException(img.GetType().FullName);
 			}
 			return true;
 		}
 
 		public override void drawLine(int x1, int y1, int x2, int y2)
 		{
-			using(Pen p = new Pen(color, 1))
+			// HACK DrawLine doesn't appear to draw the last pixel, so for single pixel lines, we have
+			// a freaky workaround
+			if(x1 == x2 && y1 == y2)
 			{
-				// HACK DrawLine doesn't appear to draw the last pixel, so for single pixel lines, we have
-				// a freaky workaround
-				if(x1 == x2 && y1 == y2)
-				{
-					g.DrawLine(p, x1, y1, x1 + 0.01f, y2 + 0.01f);
-				}
-				else
-				{
-					g.DrawLine(p, x1, y1, x2, y2);
-				}
+				g.DrawLine(pen, x1, y1, x1 + 0.01f, y2 + 0.01f);
+			}
+			else
+			{
+				g.DrawLine(pen, x1, y1, x2, y2);
 			}
 		}
 
-		public override void drawOval(int param1, int param2, int param3, int param4)
+		public override void drawOval(int x, int y, int w, int h)
 		{
+            g.DrawEllipse(pen, x, y, w, h);
 		}
 
-		public override void drawPolygon(java.awt.Polygon param)
+		public override void drawPolygon(java.awt.Polygon polygon)
 		{
+            drawPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
 		}
 
 		public override void drawPolygon(int[] aX, int[] aY, int aLength)
 		{
-			Point[] points = new Point[aLength];
-
+            Point[] points = new Point[aLength];
 			for (int i = 0; i < aLength; i++)
 			{
 				points[i].X = aX[i];
 				points[i].Y = aY[i];
 			}
-
-			using (Pen pen = new Pen(color))
-			{
-				g.DrawPolygon(pen, points);
-			}
+			g.DrawPolygon(pen, points);
 		}
 
 		/// <summary>
@@ -970,23 +1018,17 @@ namespace ikvm.awt
 		/// <param name="aLength">Length of coordinate arrays</param>
 		public override void drawPolyline(int[] aX, int[] aY, int aLength)
 		{
-			using (Pen pen = new Pen(color))
+			for (int i = 0; i < aLength - 1; i++)
 			{
-				for (int i = 0; i < aLength - 1; i++)
-				{
-					Point point1 = new Point(aX[i], aY[i]);
-					Point point2 = new Point(aX[i+1], aY[i+1]);
-					g.DrawLine(pen, point1, point2);
-				}
+				Point point1 = new Point(aX[i], aY[i]);
+				Point point2 = new Point(aX[i+1], aY[i+1]);
+				g.DrawLine(pen, point1, point2);
 			}
 		}
 
 		public override void drawRect(int x, int y, int width, int height)
 		{
-			using(Pen pen = new Pen(color))
-			{
-				g.DrawRectangle(pen, x, y, width, height);
-			}
+			g.DrawRectangle(pen, x, y, width, height);
 		}
 
 		/// <summary>
@@ -995,11 +1037,8 @@ namespace ikvm.awt
 		/// </summary>
 		public override void drawRoundRect(int x, int y, int w, int h, int radius, int param6)
 		{
-			using (GraphicsPath gp = createRoundRect(x, y, w, h, radius))
-			using (Pen pen = new Pen(color))
-			{
-				g.DrawPath(pen, gp);
-			}
+            using (GraphicsPath gp = createRoundRect(x, y, w, h, radius))
+			g.DrawPath(pen, gp);
 		}
 
 		/// <summary>
@@ -1013,7 +1052,7 @@ namespace ikvm.awt
 		/// <returns></returns>
 		private GraphicsPath createRoundRect(int x, int y, int w, int h, int radius)
 		{
-			GraphicsPath gp = new GraphicsPath();
+            GraphicsPath gp = new GraphicsPath();
 
 			gp.AddLine(x + radius, y, x + w - (radius * 2), y);
 			gp.AddArc(x + w - (radius * 2), y, radius * 2, radius * 2, 270, 90);
@@ -1029,80 +1068,63 @@ namespace ikvm.awt
 			return gp;
 		}
 
+        private java.awt.Rectangle createRectangle(RectangleF rec)
+        {
+            return new java.awt.Rectangle( (int)rec.X, (int)rec.Y, (int)rec.Width, (int)rec.Height );
+        }
+
 		public override void drawString(java.text.AttributedCharacterIterator param1, int param2, int param3)
 		{
+            throw new NotImplementedException();
 		}
 
 		public override void drawString(string str, int x, int y)
 		{
-			using(Brush brush = new SolidBrush(color))
-			{
-				int descent = netfont.FontFamily.GetCellDescent(netfont.Style);
-				int descentPixel = (int)Math.Round(netfont.Size * descent / netfont.FontFamily.GetEmHeight(netfont.Style));
-				g.DrawString(str, netfont, brush, x, y - netfont.Height + descentPixel);
-			}
+            int descent = netfont.FontFamily.GetCellDescent(netfont.Style);
+            int descentPixel = (int)Math.Round(netfont.Size * descent / netfont.FontFamily.GetEmHeight(netfont.Style));
+            g.DrawString(str, netfont, brush, x, y - netfont.Height + descentPixel);
 		}
 
 		public override void fill3DRect(int param1, int param2, int param3, int param4, bool param5)
 		{
+            throw new NotImplementedException();
 		}
 
-		public override void fillArc(int param1, int param2, int param3, int param4, int param5, int param6)
+		public override void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle)
 		{
+            g.FillPie(brush, x, y, width, height, startAngle, arcAngle);
 		}
 
-		public override void fillOval(int param1, int param2, int param3, int param4)
+		public override void fillOval(int x, int y, int w, int h)
 		{
+            g.FillEllipse(brush, x, y, w, h);
 		}
 
-		public override void fillPolygon(java.awt.Polygon aPolygon)
+		public override void fillPolygon(java.awt.Polygon polygon)
 		{
-			Point[] points = new Point[aPolygon.npoints];
-
-			for (int i = 0; i < aPolygon.npoints; i++)
-			{
-				points[i].X = aPolygon.xpoints[i];
-				points[i].Y = aPolygon.ypoints[i];
-			}
-
-			using(Brush brush = new SolidBrush(color))
-			{
-				g.FillPolygon(brush, points);
-			}
+            fillPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
 		}
 
 		public override void fillPolygon(int[] aX, int[] aY, int aLength)
 		{
-			Point[] points = new Point[aLength];
-
+            Point[] points = new Point[aLength];
 			for (int i = 0; i < aLength; i++)
 			{
 				points[i].X = aX[i];
 				points[i].Y = aY[i];
 			}
-
-			using(Brush brush = new SolidBrush(color))
-			{
-				g.FillPolygon(brush, points);
-			}
+			g.FillPolygon(brush, points);
 		}
 
 		public override void fillRect(int x, int y, int width, int height)
 		{
-			using(Brush brush = new SolidBrush(color))
-			{
-				g.FillRectangle(brush, x, y, width, height);
-			}
+            g.FillRectangle(brush, x, y, width, height);
 		}
 
 		public override void fillRoundRect(int x, int y, int w, int h, int radius, int param6)
 		{
-			GraphicsPath gp = createRoundRect(x, y, w, h, radius);
-
-			using(Brush brush = new SolidBrush(color))
-			{
-				g.FillPath(brush, gp);
-			}
+            GraphicsPath gp = createRoundRect(x, y, w, h, radius);
+			g.FillPath(brush, gp);
 			gp.Dispose();
 		}
 
@@ -1113,29 +1135,33 @@ namespace ikvm.awt
 
 		public override java.awt.Rectangle getClipBounds(java.awt.Rectangle r)
 		{
-			if(_clip != null)
+            Region clip = g.Clip;
+			if(!clip.IsInfinite(g))
 			{
-				r.x = _clip.x;
-				r.y = _clip.y;
-				r.width = _clip.width;
-				r.height = _clip.height;
+                RectangleF rec = clip.GetBounds(g);
+                r.x = (int)rec.X;
+                r.y = (int)rec.Y;
+                r.width = (int)rec.Width;
+                r.height = (int)rec.Height;
 			}
 			return r;
 		}
 
 		public override java.awt.Rectangle getClipBounds()
 		{
-			return getClipRect();
+            Region clip = g.Clip;
+			if(clip.IsInfinite(g))
+            {
+                return null;
+            }
+            RectangleF rec = clip.GetBounds(g);
+            return createRectangle(rec);
 		}
 
 		[Obsolete]
 		public override java.awt.Rectangle getClipRect()
 		{
-			if(_clip != null)
-			{
-				return new java.awt.Rectangle(_clip);
-			}
-			return null;
+            return getClipBounds();
 		}
 
 		public override java.awt.Color getColor()
@@ -1200,30 +1226,31 @@ namespace ikvm.awt
 
 		public override java.awt.FontMetrics getFontMetrics(java.awt.Font f)
 		{
-			return new NetFontMetrics(f, g.DpiY);
+            return new NetFontMetrics(f, g.DpiY);
 		}
 
 		public override java.awt.FontMetrics getFontMetrics()
 		{
-			return new NetFontMetrics(font, g.DpiY);
-		}
-
-		public override bool hitClip(int param1, int param2, int param3, int param4)
-		{
-			return true;
+            return new NetFontMetrics(font, g.DpiY);
 		}
 
 		public override void setClip(int x, int y, int width, int height)
 		{
-			_clip = new java.awt.Rectangle(x, y, width, height);
-			g.Clip = new Region(new Rectangle(x, y, width, height));
+            g.Clip = new Region(new Rectangle(x, y, width, height));
 		}
 
-		public override void setClip(java.awt.Shape param)
+		public override void setClip(java.awt.Shape shape)
 		{
-			// NOTE we only support rectangular clipping for the moment
-			java.awt.Rectangle r = param.getBounds();
-			setClip(r.x, r.y, r.width, r.height);
+            if (shape == null)
+            {
+                Region clip = g.Clip;
+                clip.MakeInfinite();
+                g.Clip = clip;
+            }
+            else
+            {
+                g.Clip = new Region(J2C.ConvertShape(shape));
+            }
 		}
 
 		public override void setColor(java.awt.Color color)
@@ -1231,184 +1258,368 @@ namespace ikvm.awt
 			if(color == null)
 			{
 				// TODO is this the correct default color?
-				color = java.awt.SystemColor.controlText;
+				//color = java.awt.SystemColor.controlText;
+                throw new java.lang.IllegalArgumentException("Color can't be null");
 			}
 			this.jcolor = color;
 			this.color = Color.FromArgb(color.getRGB());
+            if(brush is SolidBrush){
+                ((SolidBrush)brush).Color = this.color;
+            }else{
+                brush.Dispose();
+                brush = new SolidBrush(this.color);
+            }
+            pen.Color = this.color;
 		}
 
 		public override void setFont(java.awt.Font f)
 		{
 			// TODO why is Component calling us with a null reference and is this legal?
-			if(f != null)
-			{
-				Font newfont = NetFontFromJavaFont(f, g.DpiY);
-				netfont.Dispose();
-				netfont = newfont;
-				font = f;
-			}
+            if (f != null)
+            {
+                Font newfont = NetFontFromJavaFont(f, g.DpiY);
+                netfont.Dispose();
+                netfont = newfont;
+                font = f;
+            }
+            else
+            {
+                Console.WriteLine("Font is null");
+                Console.WriteLine(new System.Diagnostics.StackTrace());
+            }
 		}
 
 		public override void setPaintMode()
 		{
+            throw new NotImplementedException();
 		}
 
 		public override void setXORMode(java.awt.Color param)
 		{
+            throw new NotImplementedException();
 		}
 
 		public override void translate(int x, int y)
 		{
-			System.Drawing.Drawing2D.Matrix matrix = g.Transform;
-			matrix.Translate(x, y);
-			g.Transform = matrix;
+            Matrix transform = g.Transform;
+            transform.Translate(x, y);
+            g.Transform = transform;
 		}
 
 		public override void draw(java.awt.Shape shape)
 		{
-		}
+            using (GraphicsPath gp = J2C.ConvertShape(shape))
+            {
+                g.DrawPath(pen,gp);
+            }
+        }
 
 		public override bool drawImage(java.awt.Image image, java.awt.geom.AffineTransform xform, ImageObserver obs)
 		{
-			return false;
+            Console.WriteLine(new System.Diagnostics.StackTrace());
+            throw new NotImplementedException();
 		}
 
 		public override void drawImage(java.awt.image.BufferedImage image, BufferedImageOp op, int x, int y)
 		{
+            Console.WriteLine(new System.Diagnostics.StackTrace());
+            throw new NotImplementedException();
 		}
 
 		public override void drawRenderedImage(java.awt.image.RenderedImage image, java.awt.geom.AffineTransform xform)
 		{
+            throw new NotImplementedException();
 		}
 
 		public override void drawRenderableImage(java.awt.image.renderable.RenderableImage image, java.awt.geom.AffineTransform xform)
 		{
+            throw new NotImplementedException();
 		}
 
 		public override void drawString(string text, float x, float y)
 		{
+            g.DrawString(text, netfont, brush, x, y);
 		}
 
 		public override void drawString(java.text.AttributedCharacterIterator iterator, float x, float y)
 		{
+            throw new NotImplementedException();
 		}
 
 		public override void fill(java.awt.Shape shape)
 		{
+            using (Region region = new Region(J2C.ConvertShape(shape)))
+            {
+                g.FillRegion(brush,region);
+            }
 		}
 
-		public override bool hit(java.awt.Rectangle rect, java.awt.Shape text, bool onStroke)
+		public override bool hit(java.awt.Rectangle rect, java.awt.Shape s, bool onStroke)
 		{
-			return false;
+            if (onStroke)
+            {
+                //TODO use stroke
+                //s = stroke.createStrokedShape(s);
+            }
+            return s.intersects(rect);
 		}
 
 		public override java.awt.GraphicsConfiguration getDeviceConfiguration()
 		{
-			return null;
+            throw new NotImplementedException();
 		}
 
 		public override void setComposite(java.awt.Composite comp)
 		{
+            throw new NotImplementedException();
 		}
 
 		public override void setPaint(java.awt.Paint paint)
 		{
+            throw new NotImplementedException();
 		}
 
 		public override void setStroke(java.awt.Stroke stroke)
 		{
+            if (defaultStroke.equals(stroke))
+            {
+                stroke = null;
+                return;
+            }
+            this.stroke = stroke;
 		}
 
 		public override void setRenderingHint(java.awt.RenderingHints.Key hintKey, Object hintValue)
 		{
+            if(hintKey == java.awt.RenderingHints.KEY_ANTIALIASING)
+            {
+                if (hintValue == java.awt.RenderingHints.VALUE_ANTIALIAS_DEFAULT)
+                {
+                    g.SmoothingMode = SmoothingMode.Default;
+                    return;
+                }
+                if (hintValue == java.awt.RenderingHints.VALUE_ANTIALIAS_OFF)
+                {
+                    g.SmoothingMode = SmoothingMode.None;
+                    return;
+                }
+                if (hintValue == java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+                {
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
+                    return;
+                }
+                return;
+            }
+            if (hintKey == java.awt.RenderingHints.KEY_INTERPOLATION)
+            {
+                if (hintValue == java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+                {
+                    g.InterpolationMode = InterpolationMode.Bilinear;
+                    return;
+                }
+                if (hintValue == java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+                {
+                    g.InterpolationMode = InterpolationMode.Bicubic;
+                    return;
+                }
+                if (hintValue == java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR)
+                {
+                    g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                    return;
+                }
+                return;
+            }
+            if (hintKey == java.awt.RenderingHints.KEY_TEXT_ANTIALIASING)
+            {
+                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT)
+                {
+                    g.TextRenderingHint = TextRenderingHint.SystemDefault;
+                    return;
+                }
+                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF)
+                {
+                    g.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
+                    return;
+                }
+                if (hintValue == java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+                {
+                    g.TextRenderingHint = TextRenderingHint.AntiAlias;
+                    return;
+                }
+                return;
+            }
 		}
 
 		public override object getRenderingHint(java.awt.RenderingHints.Key hintKey)
 		{
-			return null;
+            return getRenderingHints().get(hintKey);
 		}
 
 		public override void setRenderingHints(java.util.Map hints)
 		{
+            addRenderingHints(hints);
+            //TODO all not included values should reset to default, but was is default?
 		}
 
 		public override void addRenderingHints(java.util.Map hints)
 		{
+            Iterator iterator = hints.entrySet().iterator();
+            while (iterator.hasNext())
+            {
+                java.util.Map.Entry entry = (java.util.Map.Entry)iterator.next();
+                setRenderingHint( (java.awt.RenderingHints.Key)entry.getKey(), entry.getValue());
+            }
 		}
 
 		public override java.awt.RenderingHints getRenderingHints()
 		{
-			return null;
+            java.awt.RenderingHints hints = new java.awt.RenderingHints(null);
+            switch (g.SmoothingMode)
+            {
+                case SmoothingMode.Default:
+                    hints.put(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_DEFAULT);
+                    break;
+                case SmoothingMode.None:
+                    hints.put(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_OFF);
+                    break;
+                case SmoothingMode.AntiAlias:
+                    hints.put(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                    break;
+            }
+
+            switch(g.InterpolationMode)
+            {
+                case InterpolationMode.Bilinear:
+                case InterpolationMode.HighQualityBilinear:
+                    hints.put(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                    break;
+                case InterpolationMode.Bicubic:
+                case InterpolationMode.HighQualityBicubic:
+                    hints.put(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                    break;
+                case InterpolationMode.NearestNeighbor:
+                    hints.put(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                    break;
+            }
+
+            switch (g.TextRenderingHint)
+            {
+                case TextRenderingHint.SystemDefault:
+                    hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT);
+                    break;
+                case TextRenderingHint.SingleBitPerPixelGridFit:
+                case TextRenderingHint.SingleBitPerPixel:
+                    hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+                    break;
+                case TextRenderingHint.AntiAlias:
+                case TextRenderingHint.AntiAliasGridFit:
+                    hints.put(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                    break;
+            }
+            return hints;
 		}
 
-		public override void translate(double tx, double ty)
+		public override void translate(double x, double y)
 		{
+            Matrix transform = g.Transform;
+            transform.Translate((float)x, (float)y);
+            g.Transform = transform;
+        }
+
+		public override void rotate(double angle)
+		{
+            Matrix transform = g.Transform;
+            transform.Rotate((float)angle);
+            g.Transform = transform;
 		}
 
-		public override void rotate(double theta)
+		public override void rotate(double angle, double x, double y)
 		{
-		}
-
-		public override void rotate(double theta, double x, double y)
-		{
-		}
+            Matrix transform = g.Transform;
+            transform.Translate((float)x, (float)y);
+            transform.Rotate((float)angle);
+            transform.Translate(-(float)x, -(float)y);
+            g.Transform = transform;
+        }
 
 		public override void scale(double scaleX, double scaleY)
 		{
-		}
+            using (Matrix transform = g.Transform)
+            {
+                transform.Scale((float)scaleX, (float)scaleY);
+                g.Transform = transform;
+            }
+        }
 
 		public override void shear(double shearX, double shearY)
 		{
+            using (Matrix transform = g.Transform)
+            {
+                transform.Shear((float)shearX, (float)shearY);
+                g.Transform = transform;
+            }
+        }
+
+		public override void transform(java.awt.geom.AffineTransform tx)
+		{
+            using (Matrix transform = g.Transform, 
+                matrix = J2C.ConvertTransform(tx))
+            {
+                transform.Multiply(matrix);
+                g.Transform = transform;
+            }
 		}
 
-		public override void transform(java.awt.geom.AffineTransform Tx)
+		public override void setTransform(java.awt.geom.AffineTransform tx)
 		{
-		}
-
-		public override void setTransform(java.awt.geom.AffineTransform Tx)
-		{
+            g.Transform = J2C.ConvertTransform(tx);
 		}
 
 		public override java.awt.geom.AffineTransform getTransform()
 		{
-			return null;
+            using (Matrix matrix = g.Transform)
+            {
+                return C2J.ConvertMatrix(matrix);
+            }
 		}
 
 		public override java.awt.Paint getPaint()
 		{
-			return null;
+            throw new NotImplementedException();
 		}
 
 		public override java.awt.Composite getComposite()
 		{
-			return null;
+            throw new NotImplementedException();
 		}
 
 		public override void setBackground(java.awt.Color color)
 		{
+            bgcolor = Color.FromArgb(color.getRGB());
 		}
 
 		public override java.awt.Color getBackground()
 		{
-			return null;
+            return new java.awt.Color(bgcolor.ToArgb());
 		}
 
 		public override java.awt.Stroke getStroke()
 		{
-			return null;
-		}
-
-		public override void clip(java.awt.Shape s)
-		{
+            if (stroke == null)
+            {
+                return defaultStroke;
+            }
+            return stroke;
 		}
 
 		public override java.awt.font.FontRenderContext getFontRenderContext()
 		{
-			return null;
+            throw new NotImplementedException();
 		}
 
 		public override void drawGlyphVector(java.awt.font.GlyphVector g, float x, float y)
 		{
+            throw new NotImplementedException();
 		}
 	}
 
@@ -1541,15 +1752,13 @@ namespace ikvm.awt
 	{
 		internal readonly java.awt.Component component;
 		internal readonly Control control;
-		private int offsetX;
-		private int offsetY;
 		private Point mouseDown;
 		private long lastClick;
 		private int clickCount;
 
 		public NetComponentPeer(java.awt.Component component, Control control)
 		{
-			this.control = control;
+            this.control = control;
 			this.component = component;
 			control.TabStop = false;
 			java.awt.Container parent = component.getParent();
@@ -1557,14 +1766,10 @@ namespace ikvm.awt
 			{
 				if(control is Form)
 				{
-					NetComponentPeer parentPeer = (NetComponentPeer)parent.getPeer();
-					if(parentPeer != null)
+                    NetComponentPeer parentPeer = (NetComponentPeer)parent.getPeer();
+                    if (parentPeer != null)
 					{
 						((Form)control).Owner = (Form)parentPeer.control;
-					}
-					else
-					{
-						// TODO later on when the owner peer is created we should set our owner
 					}
 				}
 				else
@@ -1579,33 +1784,56 @@ namespace ikvm.awt
 						control.Parent = ((NetComponentPeer)p.getPeer()).control;
 					}
 				}
-				if(parent is java.awt.Frame && !(control is Form))
-				{
-					java.awt.Insets ins = ((NetFramePeer)parent.getPeer()).getInsets();
-					offsetX = -ins.left;
-					offsetY = -ins.top;
-				}
 			}
-			if(component.isFontSet())
-			{
-				setFont(component.getFont());
-			}
-			// we need the null check, because for a Window, at this time it doesn't have a foreground yet
+            control.SetBounds(component.getX(), component.getY(), component.getWidth(), component.getHeight());
+            // we need the null check, because for a Window, at this time it doesn't have a foreground yet
 			if(component.getForeground() != null)
 			{
-				setForeground(component.getForeground());
+                SetForeColorImpl(component.getForeground());
 			}
 			// we need the null check, because for a Window, at this time it doesn't have a background yet
 			if(component.getBackground() != null)
 			{
-				setBackground(component.getBackground());
+                SetBackColorImpl(component.getBackground());
 			}
 			setEnabled(component.isEnabled());
-			//setBounds(component.getX(), component.getY(), component.getWidth(), component.getHeight());
-			control.Invoke(new SetVoid(Setup));
-			control.Paint += new PaintEventHandler(OnPaint);
-			component.invalidate();
 		}
+
+        internal virtual void initEvents()
+        {
+            // TODO we really only should hook these events when they are needed...
+            control.KeyDown += new KeyEventHandler(OnKeyDown);
+            control.KeyUp += new KeyEventHandler(OnKeyUp);
+            control.KeyPress += new KeyPressEventHandler(OnKeyPress);
+            control.MouseMove += new MouseEventHandler(OnMouseMove);
+            control.MouseDown += new MouseEventHandler(OnMouseDown);
+            control.MouseUp += new MouseEventHandler(OnMouseUp);
+            control.MouseEnter += new EventHandler(OnMouseEnter);
+            control.MouseLeave += new EventHandler(OnMouseLeave);
+            control.GotFocus += new EventHandler(OnGotFocus);
+            control.LostFocus += new EventHandler(OnLostFocus);
+            control.SizeChanged += new EventHandler(OnBoundsChanged);
+            control.Leave += new EventHandler(OnBoundsChanged);
+            control.Paint += new PaintEventHandler(OnPaint);
+        }
+
+        /// <summary>
+        /// This method is called from the same thread that call Commponent.addNotify().
+        /// The constructor is called from the global event thread with form.   Invoke()
+        /// Because addNotfy is synchronized with getTreeLock() and some classes are 
+        /// also synchronized with it self in the GNU classpath there can be dead locks.
+        /// You can use this method to modify the Component class thread safe.
+        /// </summary>
+        internal virtual void init()
+        {
+            // TODO temporaly disabled, because a Bug in classpath (Bug 30122)
+            // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=30122
+            if(component.isFontSet())
+            {
+                //setFontImpl(component.getFont());
+                setFont(component.getFont());
+            }
+        }
 
 		private void OnPaint(object sender, PaintEventArgs e)
 		{
@@ -1613,31 +1841,15 @@ namespace ikvm.awt
 			{
 				int x = 0;
 				int y = 0;
-				if(component is java.awt.Frame)
+				if(component is java.awt.Window)
 				{
-					java.awt.Insets insets = ((java.awt.Frame)component).getInsets();
+                    java.awt.Insets insets = ((java.awt.Window)component).getInsets();
 					x = insets.left;
 					y = insets.top;
 				}
 				java.awt.Rectangle rect = new java.awt.Rectangle(e.ClipRectangle.X + x, e.ClipRectangle.Y + y, e.ClipRectangle.Width, e.ClipRectangle.Height);
 				postEvent(new java.awt.@event.PaintEvent(component, java.awt.@event.PaintEvent.UPDATE, rect));
 			}
-		}
-
-		private void Setup()
-		{
-			// TODO we really only should hook these events when they are needed...
-			control.KeyDown += new KeyEventHandler(OnKeyDown);
-			control.KeyUp += new KeyEventHandler(OnKeyUp);
-			control.KeyPress += new KeyPressEventHandler(OnKeyPress);
-			control.MouseMove += new MouseEventHandler(OnMouseMove);
-			control.MouseDown += new MouseEventHandler(OnMouseDown);
-			control.MouseUp += new MouseEventHandler(OnMouseUp);
-			control.MouseEnter += new EventHandler(OnMouseEnter);
-			control.MouseLeave += new EventHandler(OnMouseLeave);
-			control.GotFocus += new EventHandler(OnGotFocus);
-			control.LostFocus += new EventHandler(OnLostFocus);
-			control.SizeChanged += new EventHandler(OnSizeChanged);
 		}
 
 		private static int MapKeyCode(Keys key)
@@ -1807,9 +2019,43 @@ namespace ikvm.awt
 			postEvent(new java.awt.@event.FocusEvent(component, java.awt.@event.FocusEvent.FOCUS_LOST));
 		}
 
-		private void OnSizeChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Set the size of the component to the size of the peer if different.
+        /// </summary>
+        private void componentSetBounds()
+        {
+            int x = control.Left;
+            int y = control.Top;
+            int width = control.Width;
+            int height = control.Height;
+            if (x != component.getX() ||
+                y != component.getY() ||
+                width != component.getWidth() ||
+                height != component.getHeight())
+            {
+                component.setBounds(x, y, width, height);
+            }
+        }
+
+        private void OnBoundsChanged(object sender, EventArgs e)
 		{
-			postEvent(new java.awt.@event.ComponentEvent(component, java.awt.@event.ComponentEvent.COMPONENT_RESIZED));
+            int x = control.Left;
+            int y = control.Top;
+            int width = control.Width;
+            int height = control.Height;
+            if (x != component.getX() ||
+                y != component.getY() ||
+                width != component.getWidth() ||
+                height != component.getHeight())
+            {
+                //If the component different then we need to update.
+                //We call this in a different thread
+                //because this event can be a result of a size change with the API
+                //If it a result of a API change then component can be synchronized in another thread.
+                new SetVoid(componentSetBounds).BeginInvoke(null, null);
+            }
+            //Will allready send in component.setBounds
+            //postEvent(new java.awt.@event.ComponentEvent(component, java.awt.@event.ComponentEvent.COMPONENT_RESIZED));
 		}
 
 		protected void postEvent(java.awt.AWTEvent evt)
@@ -1865,7 +2111,7 @@ namespace ikvm.awt
 
 		public virtual java.awt.Graphics getGraphics()
 		{
-			return new NetGraphics(control.CreateGraphics(), component.getFont(), control.BackColor, true);
+            return new ComponentGraphics(this);
 		}
 
 		public java.awt.Point getLocationOnScreen()
@@ -1892,35 +2138,34 @@ namespace ikvm.awt
 
 		public void handleEvent(java.awt.AWTEvent e)
 		{
-			if(e is java.awt.@event.PaintEvent)
-			{
-				java.awt.Graphics g = component.getGraphics();
-				try
-				{
-					java.awt.Rectangle r = ((java.awt.@event.PaintEvent)e).getUpdateRect();
-					r = r.intersection(g.getClipRect());
-					g.setClip(r);
-					switch(e.getID())
-					{
-						case java.awt.@event.PaintEvent.UPDATE:
-							component.update(g);
-							break;
-						case java.awt.@event.PaintEvent.PAINT:
-							component.paint(g);
-							break;
-						default:
-							Console.WriteLine("Unknown PaintEvent: {0}", e.getID());
-							break;
-					}
-				}
-				finally
-				{
-					g.dispose();
-				}
-			}
+            if (e is java.awt.@event.PaintEvent)
+            {
+                java.awt.Graphics g = component.getGraphics();
+                try
+                {
+                    java.awt.Rectangle r = ((java.awt.@event.PaintEvent)e).getUpdateRect();
+                    g.clipRect(r.x, r.y, r.width, r.height);
+                    switch (e.getID())
+                    {
+                        case java.awt.@event.PaintEvent.UPDATE:
+                            component.update(g);
+                            break;
+                        case java.awt.@event.PaintEvent.PAINT:
+                            component.paint(g);
+                            break;
+                        default:
+                            Console.WriteLine("Unknown PaintEvent: {0}", e.getID());
+                            break;
+                    }
+                }
+                finally
+                {
+                    g.dispose();
+                }
+            }
 		}
 
-		public void hide()
+        public void hide()
 		{
 			setVisible(false);
 		}
@@ -1986,25 +2231,26 @@ namespace ikvm.awt
 
 		public void setBackground(java.awt.Color color)
 		{
-			control.Invoke(new SetColor(SetBackColorImpl), new object[] { Color.FromArgb(color.getRGB()) });
+			control.Invoke(new SetColor(SetBackColorImpl), new object[] { color });
 		}
 
-		private void SetBackColorImpl(Color c)
+		private void SetBackColorImpl(java.awt.Color color)
 		{
-			control.BackColor = c;
+            control.BackColor = Color.FromArgb(color.getRGB());
 		}
 
-		private void setBoundsImpl(int x, int y, int width, int height)
+		protected virtual void setBoundsImpl(int x, int y, int width, int height)
 		{
-			control.SetBounds(x, y, width, height);
+            control.SetBounds(x, y, width, height);
 		}
 
 		public void setBounds(int x, int y, int width, int height)
 		{
-			control.Invoke(new SetXYWH(setBoundsImpl), new object[] { x + offsetX, y + offsetY, width, height });
+			control.Invoke(new SetXYWH(setBoundsImpl), new object[] { x, y, width, height });
+            componentSetBounds();
 		}
 
-		public void setCursor(java.awt.Cursor cursor)
+		private void setCursorImpl(java.awt.Cursor cursor)
 		{
 			switch(cursor.getType())
 			{
@@ -2047,6 +2293,11 @@ namespace ikvm.awt
 			}
 		}
 
+        public void setCursor(java.awt.Cursor cursor)
+        {
+            control.Invoke(new SetCursor(setCursorImpl), new object[] { cursor });
+        }
+
 		private void setEnabledImpl(bool enabled)
 		{
 			control.Enabled = enabled;
@@ -2057,31 +2308,32 @@ namespace ikvm.awt
 			control.Invoke(new SetBool(setEnabledImpl), new object[] { enabled });
 		}
 
-		private void setFontImpl(Font font)
+        private void setFontImpl(java.awt.Font font)
 		{
-			control.Font = font;
+            control.Font = NetGraphics.NetFontFromJavaFont(font, component.getToolkit().getScreenResolution());
 		}
 
 		public void setFont(java.awt.Font font)
 		{
-			control.Invoke(new SetFont(setFontImpl), new object[] { NetGraphics.NetFontFromJavaFont(font, component.getToolkit().getScreenResolution()) });
+			control.Invoke(new SetFont(setFontImpl), new object[] { font });
 		}
 
 		public void setForeground(java.awt.Color color)
 		{
-			control.Invoke(new SetColor(SetForeColorImpl), new object[] { Color.FromArgb(color.getRGB()) });
+			control.Invoke(new SetColor(SetForeColorImpl), new object[] { color });
 		}
 
-		private void SetForeColorImpl(Color c)
+		private void SetForeColorImpl(java.awt.Color color)
 		{
-			control.ForeColor = c;
+            control.ForeColor = Color.FromArgb(color.getRGB());
 		}
 
 		private void setVisibleImpl(bool visible)
 		{
 			control.Visible = visible;
-			postEvent(new java.awt.@event.ComponentEvent(component,
-				visible ? java.awt.@event.ComponentEvent.COMPONENT_SHOWN : java.awt.@event.ComponentEvent.COMPONENT_HIDDEN));
+            //will already Post from GNU Classpath
+			//postEvent(new java.awt.@event.ComponentEvent(component,
+			//	visible ? java.awt.@event.ComponentEvent.COMPONENT_SHOWN : java.awt.@event.ComponentEvent.COMPONENT_HIDDEN));
 		}
 
 		public void setVisible(bool visible)
@@ -2096,7 +2348,7 @@ namespace ikvm.awt
 
 		public java.awt.GraphicsConfiguration getGraphicsConfiguration()
 		{
-			return new NetGraphicsConfiguration();
+			return new NetGraphicsConfiguration(Screen.FromControl(control));
 		}
 
 		public void setEventMask (long mask)
@@ -2223,7 +2475,7 @@ namespace ikvm.awt
 			// HACK for off-screen images we don't want ClearType or anti-aliasing
 			// TODO I'm sure Java 2D has a way to control text rendering quality, we should honor that
 			g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
-			return new NetGraphics(g, null, Color.White, true);
+            return new BitmapGraphics(bitmap);
 		}
 
 		public override int getHeight()
@@ -2280,7 +2532,7 @@ namespace ikvm.awt
 			// HACK for off-screen images we don't want ClearType or anti-aliasing
 			// TODO I'm sure Java 2D has a way to control text rendering quality, we should honor that
 			g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
-			return new NetGraphics(g, null, Color.White, true);
+            return new BitmapGraphics(bitmap);
 		}
 
 		public override java.awt.image.ImageProducer getSource()
@@ -2414,6 +2666,13 @@ namespace ikvm.awt
 
 	class NetGraphicsConfiguration : java.awt.GraphicsConfiguration
 	{
+        Screen screen;
+
+        public NetGraphicsConfiguration(Screen screen)
+        {
+            this.screen = screen;
+        }
+
 		public override java.awt.image.BufferedImage createCompatibleImage(int param1, int param2, int param3)
 		{
 			throw new NotImplementedException();
@@ -2436,7 +2695,8 @@ namespace ikvm.awt
 
 		public override java.awt.Rectangle getBounds()
 		{
-			throw new NotImplementedException();
+            System.Drawing.Rectangle bounds = screen.Bounds;
+			return new java.awt.Rectangle(bounds.X, bounds.Y, bounds.Width, bounds.Height );
 		}
 
 		public override java.awt.BufferCapabilities getBufferCapabilities()
@@ -2533,16 +2793,10 @@ namespace ikvm.awt
 		public NetTextComponentPeer(java.awt.TextComponent textComponent, TextBox textBox)
 			: base(textComponent, textBox)
 		{
-			control.Invoke(new SetVoid(Setup));
-		}
-
-		private void Setup()
-		{
 			if(!component.isBackgroundSet())
 			{
 				component.setBackground(java.awt.SystemColor.window);
 			}
-			TextBox textBox = (TextBox)control;
 			setBackground(component.getBackground());
 			textBox.AutoSize = false;
 			textBox.Text = ((java.awt.TextComponent)component).getText();
@@ -2794,12 +3048,6 @@ namespace ikvm.awt
 		public NetTextAreaPeer(java.awt.TextArea textArea, TextBox textBox)
 			: base(textArea, textBox)
 		{
-			control.Invoke(new SetVoid(Setup));
-		}
-
-		private void Setup()
-		{
-			TextBox textBox = (TextBox)control;
 			textBox.ReadOnly = !((java.awt.TextArea)component).isEditable();
 			textBox.WordWrap = false;
 			textBox.ScrollBars = ScrollBars.Both;
@@ -2926,25 +3174,69 @@ namespace ikvm.awt
 		public NetWindowPeer(java.awt.Window window, Form form)
 			: base(window, form)
 		{
-			if(!window.isFontSet())
-			{
-				window.setFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12));
-			}
-			if(!window.isForegroundSet())
-			{
-				window.setForeground(java.awt.SystemColor.windowText);
-			}
-			if(!window.isBackgroundSet())
-			{
-				window.setBackground(java.awt.SystemColor.window);
-			}
-			setFont(window.getFont());
-			setForeground(window.getForeground());
-			setBackground(window.getBackground());
-			form.SetBounds(window.getX(), window.getY(), window.getWidth(), window.getHeight());
-		}
+            //form.Shown += new EventHandler(OnOpened); Will already post in java.awt.Window.show()
+            form.Closing += new CancelEventHandler(OnClosing);
+            form.Closed += new EventHandler(OnClosed);
+            form.Activated += new EventHandler(OnActivated);
+            form.Deactivate += new EventHandler(OnDeactivate);
+        }
 
-		public void toBack()
+        private void OnOpened(object sender, EventArgs e)
+        {
+            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_OPENED));
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            e.Cancel = true;
+            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_CLOSING));
+        }
+
+        private void OnClosed(object sender, EventArgs e)
+        {
+            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_CLOSED));
+        }
+
+        private void OnActivated(object sender, EventArgs e)
+        {
+            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_ACTIVATED));
+        }
+
+        private void OnDeactivate(object sender, EventArgs e)
+        {
+            postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_DEACTIVATED));
+        }
+
+        private Rectangle RectangleToScreen(Rectangle rec)
+        {
+            return control.RectangleToScreen(rec);
+        }
+
+        public override java.awt.Insets getInsets()
+        {
+            Rectangle client = control.ClientRectangle;
+            Rectangle r = (Rectangle)control.Invoke(new ConvertRectangle(RectangleToScreen), new object[] { client });
+            int x = r.Location.X - control.Location.X;
+            int y = r.Location.Y - control.Location.Y;
+            return new java.awt.Insets(y, x, control.Height - client.Height - y, control.Width - client.Width - x);
+        }
+
+        public override java.awt.Graphics getGraphics()
+        {
+            java.awt.Graphics g = base.getGraphics();
+            java.awt.Insets insets = getInsets();
+            g.translate(-insets.left, -insets.top);
+            g.setClip(insets.left, insets.top, control.ClientRectangle.Width, control.ClientRectangle.Height);
+            return g;
+        }
+
+        protected override void setBoundsImpl(int x, int y, int width, int height)
+        {
+            Form form = (Form)control;
+            form.DesktopBounds = new Rectangle(x, y, width, height);
+        }
+
+        public void toBack()
 		{
 			((Form)control).SendToBack();
 		}
@@ -2971,20 +3263,25 @@ namespace ikvm.awt
 			: base(frame, form)
 		{
 			setTitle(frame.getTitle());
-			control.Invoke(new SetVoid(Setup));
-		}
+        }
 
-		private void Setup()
-		{
-			Form form = (Form)control;
-			form.Closing += new CancelEventHandler(Closing);
-		}
-
-		private void Closing(object sender, CancelEventArgs e)
-		{
-			e.Cancel = true;
-			postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_CLOSING));
-		}
+        internal override void init()
+        {
+            if (!component.isFontSet())
+            {
+                java.awt.Font font = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
+                component.setFont(font);
+            }
+            if (!component.isForegroundSet())
+            {
+                component.setForeground(java.awt.SystemColor.windowText);
+            }
+            if (!component.isBackgroundSet())
+            {
+                component.setBackground(java.awt.SystemColor.window);
+            }
+            base.init();
+        }
 
 		private class ValidateHelper : java.lang.Runnable
 		{
@@ -2999,15 +3296,6 @@ namespace ikvm.awt
 			{
 				comp.validate();
 			}
-		}
-
-		public override java.awt.Graphics getGraphics()
-		{
-			NetGraphics g = new NetGraphics(control.CreateGraphics(), component.getFont(), control.BackColor, true);
-			java.awt.Insets insets = ((java.awt.Frame)component).getInsets();
-			g.translate(-insets.left, -insets.top);
-			g.setClip(insets.left, insets.top, control.ClientRectangle.Width, control.ClientRectangle.Height);
-			return g;
 		}
 
 		public void setIconImage(java.awt.Image image)
@@ -3035,20 +3323,21 @@ namespace ikvm.awt
 			control.Invoke(new SetString(setTitleImpl), new object[] { title });
 		}
 
-		public override java.awt.Insets getInsets()
-		{
-			// TODO use control.Invoke
-			Form f = (Form)control;
-			Rectangle client = f.ClientRectangle;
-			Rectangle r = f.RectangleToScreen(client);
-			int x = r.Location.X - f.Location.X;
-			int y = r.Location.Y - f.Location.Y;
-			return new java.awt.Insets(y, x, control.Height - client.Height - y, control.Width - client.Width - x);
-		}
-
 		public int getState()
 		{
-			throw new NotImplementedException();
+            Form f = (Form)control;
+            FormWindowState state = f.WindowState;
+            switch (state)
+            {
+                case FormWindowState.Normal:
+                    return java.awt.Frame.NORMAL;
+                case FormWindowState.Maximized:
+                    return java.awt.Frame.MAXIMIZED_BOTH;
+                case FormWindowState.Minimized:
+                    return java.awt.Frame.ICONIFIED;
+                default:
+                    throw new InvalidEnumArgumentException();
+            }
 		}
 
 		public void setState(int state)
@@ -3070,9 +3359,11 @@ namespace ikvm.awt
 
 	class NetDialogPeer : NetWindowPeer, DialogPeer
 	{
-		internal NetDialogPeer(java.awt.Dialog target, Form form)
+        public NetDialogPeer(java.awt.Dialog target, Form form)
 			: base(target, form)
 		{
+            form.MaximizeBox = false;
+            form.MinimizeBox = false;
 		}
 
 		private void setTitleImpl(string title)
