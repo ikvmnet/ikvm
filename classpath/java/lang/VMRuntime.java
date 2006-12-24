@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2004 Jeroen Frijters
+  Copyright (C) 2003, 2004, 2006 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 import java.nio.channels.Channels;
+import gnu.classpath.SystemProperties;
 import gnu.java.nio.FileChannelImpl;
 import cli.System.Text.StringBuilder;
 import cli.System.Diagnostics.ProcessStartInfo;
@@ -201,10 +202,15 @@ final class VMRuntime
      */
     static String mapLibraryName(String libname)
     {
-	if(cli.System.Environment.get_OSVersion().ToString().indexOf("Unix") >= 0)
+        String osname = SystemProperties.getProperty("os.name");
+	if(osname.indexOf("Unix") >= 0)
 	{
 	    return "lib" + libname + ".so";
 	}
+        else if(osname.equals("Mac OS X"))
+        {
+            return "lib" + libname + ".jnilib";
+        }
 	else
 	{
 	    return libname + ".dll";

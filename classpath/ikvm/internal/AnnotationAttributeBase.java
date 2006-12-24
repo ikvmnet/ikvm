@@ -244,7 +244,11 @@ public abstract class AnnotationAttributeBase
         }
         else if (type == Class.class)
         {
-            return classFromSig(loader, (String)obj);
+            Object[] array = (Object[])obj;
+            byte tag = CIL.unbox_byte(array[0]);
+            if (tag != 'c')
+                throw new ClassCastException();
+            return classFromSig(loader, (String)array[1]);
         }
         else if (type.isArray())
         {
