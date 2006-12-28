@@ -18,6 +18,7 @@ gnu/java/lang/management/VMGarbageCollectorMXBeanImpl.java
 gnu/java/lang/management/VMMemoryManagerMXBeanImpl.java
 gnu/java/lang/management/VMMemoryMXBeanImpl.java
 gnu/java/lang/management/VMMemoryPoolMXBeanImpl.java
+gnu/java/lang/management/VMOperatingSystemMXBeanImpl.java
 gnu/java/lang/management/VMRuntimeMXBeanImpl.java
 gnu/java/lang/management/VMThreadMXBeanImpl.java
 gnu/java/lang/VMInstrumentationImpl.java

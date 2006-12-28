@@ -262,6 +262,7 @@
 ../../classpath/gnu/classpath/debug/TeeWriter.java
 ../../classpath/gnu/classpath/ListenerData.java
 ../../classpath/gnu/classpath/NotImplementedException.java
+../../classpath/gnu/classpath/Pair.java
 ../../classpath/gnu/classpath/Pointer.java
 ../../classpath/gnu/classpath/Pointer32.java
 ../../classpath/gnu/classpath/Pointer64.java
@@ -451,22 +452,27 @@
 ../../classpath/gnu/java/awt/ComponentReshapeEvent.java
 ../../classpath/gnu/java/awt/EmbeddedWindow.java
 ../../classpath/gnu/java/awt/EventModifier.java
+../../classpath/gnu/java/awt/font/autofit/AutoHinter.java
 ../../classpath/gnu/java/awt/font/autofit/AxisHints.java
 ../../classpath/gnu/java/awt/font/autofit/Constants.java
+../../classpath/gnu/java/awt/font/autofit/Edge.java
 ../../classpath/gnu/java/awt/font/autofit/GlyphHints.java
+../../classpath/gnu/java/awt/font/autofit/HintScaler.java
 ../../classpath/gnu/java/awt/font/autofit/Latin.java
 ../../classpath/gnu/java/awt/font/autofit/LatinAxis.java
+../../classpath/gnu/java/awt/font/autofit/LatinBlue.java
 ../../classpath/gnu/java/awt/font/autofit/LatinMetrics.java
-../../classpath/gnu/java/awt/font/autofit/Scaler.java
 ../../classpath/gnu/java/awt/font/autofit/Script.java
 ../../classpath/gnu/java/awt/font/autofit/ScriptMetrics.java
 ../../classpath/gnu/java/awt/font/autofit/Segment.java
+../../classpath/gnu/java/awt/font/autofit/Utils.java
 ../../classpath/gnu/java/awt/font/autofit/Width.java
 ../../classpath/gnu/java/awt/font/FontDelegate.java
 ../../classpath/gnu/java/awt/font/FontFactory.java
 ../../classpath/gnu/java/awt/font/GNUGlyphVector.java
 ../../classpath/gnu/java/awt/font/opentype/CharGlyphMap.java
 ../../classpath/gnu/java/awt/font/opentype/GlyphNamer.java
+../../classpath/gnu/java/awt/font/opentype/Hinter.java
 ../../classpath/gnu/java/awt/font/opentype/MacResourceFork.java
 ../../classpath/gnu/java/awt/font/opentype/NameDecoder.java
 ../../classpath/gnu/java/awt/font/opentype/OpenTypeFont.java
@@ -476,6 +482,7 @@
 ../../classpath/gnu/java/awt/font/opentype/truetype/GlyphLoader.java
 ../../classpath/gnu/java/awt/font/opentype/truetype/GlyphLocator.java
 ../../classpath/gnu/java/awt/font/opentype/truetype/GlyphMeasurer.java
+../../classpath/gnu/java/awt/font/opentype/truetype/Point.java
 ../../classpath/gnu/java/awt/font/opentype/truetype/TrueTypeScaler.java
 ../../classpath/gnu/java/awt/font/opentype/truetype/VirtualMachine.java
 ../../classpath/gnu/java/awt/font/opentype/truetype/Zone.java
@@ -2344,6 +2351,7 @@
 ../../classpath/java/beans/BeanDescriptor.java
 ../../classpath/java/beans/BeanInfo.java
 ../../classpath/java/beans/Beans.java
+../../classpath/java/beans/ConstructorProperties.java
 ../../classpath/java/beans/Customizer.java
 ../../classpath/java/beans/DefaultPersistenceDelegate.java
 ../../classpath/java/beans/DesignMode.java
@@ -2517,6 +2525,7 @@
 ../../classpath/java/lang/management/ClassLoadingMXBean.java
 ../../classpath/java/lang/management/CompilationMXBean.java
 ../../classpath/java/lang/management/GarbageCollectorMXBean.java
+../../classpath/java/lang/management/LockInfo.java
 ../../classpath/java/lang/management/ManagementFactory.java
 ../../classpath/java/lang/management/ManagementPermission.java
 ../../classpath/java/lang/management/MemoryManagerMXBean.java
@@ -2525,6 +2534,7 @@
 ../../classpath/java/lang/management/MemoryPoolMXBean.java
 ../../classpath/java/lang/management/MemoryType.java
 ../../classpath/java/lang/management/MemoryUsage.java
+../../classpath/java/lang/management/MonitorInfo.java
 ../../classpath/java/lang/management/OperatingSystemMXBean.java
 ../../classpath/java/lang/management/RuntimeMXBean.java
 ../../classpath/java/lang/management/ThreadInfo.java
@@ -4911,6 +4921,7 @@ gnu/java/lang/management/VMGarbageCollectorMXBeanImpl.java
 gnu/java/lang/management/VMMemoryManagerMXBeanImpl.java
 gnu/java/lang/management/VMMemoryMXBeanImpl.java
 gnu/java/lang/management/VMMemoryPoolMXBeanImpl.java
+gnu/java/lang/management/VMOperatingSystemMXBeanImpl.java
 gnu/java/lang/management/VMRuntimeMXBeanImpl.java
 gnu/java/lang/management/VMThreadMXBeanImpl.java
 gnu/java/lang/VMInstrumentationImpl.java

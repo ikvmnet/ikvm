@@ -203,17 +203,17 @@ final class VMRuntime
     static String mapLibraryName(String libname)
     {
         String osname = SystemProperties.getProperty("os.name");
-	if(osname.indexOf("Unix") >= 0)
+	if(osname.indexOf("Windows") >= 0)
 	{
-	    return "lib" + libname + ".so";
-	}
+            return libname + ".dll";
+        }
         else if(osname.equals("Mac OS X"))
         {
             return "lib" + libname + ".jnilib";
         }
 	else
 	{
-	    return libname + ".dll";
+            return "lib" + libname + ".so";
 	}
     }
 

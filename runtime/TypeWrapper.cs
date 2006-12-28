@@ -492,6 +492,15 @@ namespace IKVM.Internal
 			mb.SetCustomAttribute(editorBrowsableNever);
 		}
 
+		internal static void SetEditorBrowsableNever(ConstructorBuilder cb)
+		{
+			if(editorBrowsableNever == null)
+			{
+				editorBrowsableNever = new CustomAttributeBuilder(StaticCompiler.GetType("System.ComponentModel.EditorBrowsableAttribute").GetConstructor(new Type[] { StaticCompiler.GetType("System.ComponentModel.EditorBrowsableState") }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
+			}
+			cb.SetCustomAttribute(editorBrowsableNever);
+		}
+
 		internal static void SetEditorBrowsableNever(PropertyBuilder pb)
 		{
 			if(editorBrowsableNever == null)
@@ -2819,6 +2828,14 @@ namespace IKVM.Internal
 				return null;
 			}
 		}
+
+		internal virtual Type EnumType
+		{
+			get
+			{
+				return null;
+			}
+		}
 #endif
 	}
 
@@ -3279,6 +3296,24 @@ namespace IKVM.Internal
 			}
 		}
 
+#if STATIC_COMPILER
+		internal override Annotation Annotation
+		{
+			get
+			{
+				return impl.Annotation;
+			}
+		}
+
+		internal override Type EnumType
+		{
+			get
+			{
+				return impl.EnumType;
+			}
+		}
+#endif // STATIC_COMPILER
+
 		internal override void Finish()
 		{
 			// we don't need locking, because Finish is Thread safe
@@ -3316,6 +3351,10 @@ namespace IKVM.Internal
 			internal abstract TypeWrapper[] InnerClasses { get; }
 			internal abstract TypeWrapper DeclaringTypeWrapper { get; }
 			internal abstract Modifiers ReflectiveModifiers { get; }
+#if STATIC_COMPILER
+			internal abstract Annotation Annotation { get; }
+			internal abstract Type EnumType { get; }
+#endif
 			internal abstract DynamicImpl Finish();
 			internal abstract MethodBase LinkMethod(MethodWrapper mw);
 			internal abstract FieldInfo LinkField(FieldWrapper fw);
@@ -3347,6 +3386,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 			private DynamicTypeWrapper outerClassWrapper;
 			private AnnotationBuilder annotationBuilder;
+			private TypeBuilder enumBuilder;
 #endif
 
 			internal JavaTypeImpl(ClassFile f, DynamicTypeWrapper wrapper)
@@ -3706,6 +3746,23 @@ namespace IKVM.Internal
 						annotationBuilder = new AnnotationBuilder(this);
 						((AotTypeWrapper)wrapper).SetAnnotation(annotationBuilder);
 						annotationAttributeType = annotationBuilder.AttributeTypeName;
+					}
+					// For Java 5 Enum types, we generate a nested .NET enum.
+					// This is primarily to support annotations that take enum parameters.
+					if(f.IsEnum && f.IsPublic)
+					{
+						// TODO make sure there isn't already a nested type with the __Enum name
+						enumBuilder = wrapper.TypeAsBuilder.DefineNestedType("__Enum", TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, typeof(Enum));
+						AttributeHelper.HideFromJava(enumBuilder);
+						enumBuilder.DefineField("value__", typeof(int), FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
+						for(int i = 0; i < f.Fields.Length; i++)
+						{
+							if(f.Fields[i].IsEnum)
+							{
+								FieldBuilder fieldBuilder = enumBuilder.DefineField(f.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
+								fieldBuilder.SetConstant(i);
+							}
+						}
 					}
 					string sourceFile = null;
 					if(wrapper.classLoader.EmitStackTraceInfo)
@@ -4813,27 +4870,6 @@ namespace IKVM.Internal
 
 					// See if there is any additional metadata
 					wrapper.EmitMapXmlMetadata(typeBuilder, classFile, fields, methods);
-
-					TypeBuilder enumBuilder = null;
-					if(true)
-					{
-//						// For Java 5 Enum types, we generate a nested .NET enum
-//						if(classFile.IsEnum)
-//						{
-//							// TODO if wrapper is inner class, the Enum should be defined as an innerclass as well
-//							enumBuilder = wrapper.GetClassLoader().ModuleBuilder.DefineType(classFile.Name + "Enum", TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.Serializable, typeof(Enum));
-//							AttributeHelper.HideFromJava(enumBuilder);
-//							enumBuilder.DefineField("value__", typeof(int), FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
-//							for(int i = 0; i < classFile.Fields.Length; i++)
-//							{
-//								if(classFile.Fields[i].IsEnum)
-//								{
-//									FieldBuilder fieldBuilder = enumBuilder.DefineField(classFile.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
-//									fieldBuilder.SetConstant(i);
-//								}
-//							}
-//						}
-					}
 #endif // STATIC_COMPILER
 
 					for(int i = 0; i < classFile.Methods.Length; i++)
@@ -4935,7 +4971,11 @@ namespace IKVM.Internal
 					wrapper.FinishGhostStep2();
 #endif
 					BakedTypeCleanupHack.Process(wrapper);
-					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers, Metadata.Create(classFile));
+					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers, Metadata.Create(classFile)
+#if STATIC_COMPILER
+						, annotationBuilder, enumBuilder
+#endif
+						);
 					return finishedType;
 				}
 				catch(Exception x)
@@ -5025,7 +5065,6 @@ namespace IKVM.Internal
 			{
 				private TypeBuilder annotationTypeBuilder;
 				private TypeBuilder attributeTypeBuilder;
-				private ConstructorBuilder defaultConstructor;
 				private ConstructorBuilder defineConstructor;
 
 				internal AnnotationBuilder(JavaTypeImpl o)
@@ -5148,8 +5187,44 @@ namespace IKVM.Internal
 						}
 					}
 
-					defaultConstructor = attributeTypeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
 					defineConstructor = attributeTypeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new Type[] { typeof(object[]) });
+					AttributeHelper.SetEditorBrowsableNever(defineConstructor);
+				}
+
+				private static Type TypeWrapperToAnnotationParameterType(TypeWrapper tw)
+				{
+					bool isArray = false;
+					if(tw.IsArray)
+					{
+						isArray = true;
+						tw = tw.ElementTypeWrapper;
+					}
+					if(tw.Annotation != null)
+					{
+						// we don't support Annotation args
+						return null;
+					}
+					else
+					{
+						Type argType;
+						if(tw == CoreClasses.java.lang.Class.Wrapper)
+						{
+							argType = typeof(Type);
+						}
+						else if(tw.EnumType != null)
+						{
+							argType = tw.EnumType;
+						}
+						else
+						{
+							argType = tw.TypeAsSignatureType;
+						}
+						if(isArray)
+						{
+							argType = ArrayTypeWrapper.MakeArrayType(argType, 1);
+						}
+						return argType;
+					}
 				}
 
 				internal string AttributeTypeName
@@ -5164,6 +5239,24 @@ namespace IKVM.Internal
 					}
 				}
 
+				private static void EmitSetValueCall(TypeWrapper annotationAttributeBaseType, ILGenerator ilgen, string name, TypeWrapper tw, int argIndex)
+				{
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ldstr, name);
+					ilgen.Emit(OpCodes.Ldarg_S, (byte)argIndex);
+					if(tw.TypeAsSignatureType.IsValueType)
+					{
+						ilgen.Emit(OpCodes.Box, tw.TypeAsSignatureType);
+					}
+					else if(tw.EnumType != null)
+					{
+						ilgen.Emit(OpCodes.Box, tw.EnumType);
+					}
+					MethodWrapper setValueMethod = annotationAttributeBaseType.GetMethodWrapper("setValue", "(Ljava.lang.String;Ljava.lang.Object;)V", false);
+					setValueMethod.Link();
+					setValueMethod.EmitCall(ilgen);
+				}
+
 				internal void Finish(JavaTypeImpl o)
 				{
 					if(annotationTypeBuilder == null)
@@ -5174,7 +5267,84 @@ namespace IKVM.Internal
 					TypeWrapper annotationAttributeBaseType = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
 					annotationAttributeBaseType.Finish();
 
-					ILGenerator ilgen = defaultConstructor.GetILGenerator();
+					int requiredArgCount = 0;
+					int valueArg = -1;
+					bool unsupported = false;
+					for(int i = 0; i < o.methods.Length; i++)
+					{
+						if(!o.methods[i].IsStatic)
+						{
+							if(valueArg == -1 && o.methods[i].Name == "value")
+							{
+								valueArg = i;
+							}
+							if(o.classFile.Methods[i].AnnotationDefault == null)
+							{
+								if(TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType) == null)
+								{
+									unsupported = true;
+									break;
+								}
+								requiredArgCount++;
+							}
+						}
+					}
+
+					ConstructorBuilder defaultConstructor = attributeTypeBuilder.DefineConstructor(unsupported || requiredArgCount > 0 ? MethodAttributes.Private : MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
+					ILGenerator ilgen;
+
+					if(!unsupported)
+					{
+						if(requiredArgCount > 0)
+						{
+							Type[] args = new Type[requiredArgCount];
+							for(int i = 0, j = 0; i < o.methods.Length; i++)
+							{
+								if(!o.methods[i].IsStatic)
+								{
+									if(o.classFile.Methods[i].AnnotationDefault == null)
+									{
+										args[j++] = TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType);
+									}
+								}
+							}
+							ConstructorBuilder reqArgConstructor = attributeTypeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, args);
+							ilgen = reqArgConstructor.GetILGenerator();
+							ilgen.Emit(OpCodes.Ldarg_0);
+							ilgen.Emit(OpCodes.Call, defaultConstructor);
+							for(int i = 0, j = 0; i < o.methods.Length; i++)
+							{
+								if(!o.methods[i].IsStatic)
+								{
+									if(o.classFile.Methods[i].AnnotationDefault == null)
+									{
+										reqArgConstructor.DefineParameter(++j, ParameterAttributes.None, o.methods[i].Name);
+										EmitSetValueCall(annotationAttributeBaseType, ilgen, o.methods[i].Name, o.methods[i].ReturnType, j);
+									}
+								}
+							}
+							ilgen.Emit(OpCodes.Ret);
+						}
+						else if(valueArg != -1)
+						{
+							// We don't have any required parameters, but we do have an optional "value" parameter,
+							// so we create an additional constructor (the default constructor will be public in this case)
+							// that accepts the value parameter.
+							Type argType = TypeWrapperToAnnotationParameterType(o.methods[valueArg].ReturnType);
+							if(argType != null)
+							{
+								ConstructorBuilder cb = attributeTypeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new Type[] { argType });
+								cb.DefineParameter(1, ParameterAttributes.None, "value");
+								ilgen = cb.GetILGenerator();
+								ilgen.Emit(OpCodes.Ldarg_0);
+								ilgen.Emit(OpCodes.Call, defaultConstructor);
+								EmitSetValueCall(annotationAttributeBaseType, ilgen, "value", o.methods[valueArg].ReturnType, 1);
+								ilgen.Emit(OpCodes.Ret);
+							}
+						}
+					}
+
+					ilgen = defaultConstructor.GetILGenerator();
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldtoken, annotationTypeBuilder);
 					ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
@@ -5204,7 +5374,8 @@ namespace IKVM.Internal
 						// skip <clinit>
 						if(!o.methods[i].IsStatic)
 						{
-							MethodBuilder mb = attributeTypeBuilder.DefineMethod(o.methods[i].Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot, o.methods[i].ReturnTypeForDefineMethod, o.methods[i].GetParametersForDefineMethod());
+							MethodBuilder mb = attributeTypeBuilder.DefineMethod(o.methods[i].Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot, o.methods[i].ReturnTypeForDefineMethod, o.methods[i].GetParametersForDefineMethod());
+							attributeTypeBuilder.DefineMethodOverride(mb, (MethodInfo)o.methods[i].GetMethod());
 							ilgen = mb.GetILGenerator();
 							ilgen.Emit(OpCodes.Ldarg_0);
 							ilgen.Emit(OpCodes.Ldstr, o.methods[i].Name);
@@ -5242,12 +5413,6 @@ namespace IKVM.Internal
 								{
 									getDoubleValueMethod.EmitCall(ilgen);
 								}
-								else if(o.methods[i].ReturnType == PrimitiveTypeWrapper.VOID)
-								{
-									// TODO what to do here?
-									ilgen.Emit(OpCodes.Pop);
-									ilgen.Emit(OpCodes.Pop);
-								}
 								else
 								{
 									throw new InvalidOperationException();
@@ -5259,6 +5424,23 @@ namespace IKVM.Internal
 								o.methods[i].ReturnType.EmitCheckcast(null, ilgen);
 							}
 							ilgen.Emit(OpCodes.Ret);
+
+							if(o.classFile.Methods[i].AnnotationDefault != null
+								&& !(o.methods[i].Name == "value" && requiredArgCount == 0))
+							{
+								// now add a .NET property for this annotation optional parameter
+								Type argType = TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType);
+								PropertyBuilder pb = attributeTypeBuilder.DefineProperty(o.methods[i].Name, PropertyAttributes.None, argType, Type.EmptyTypes);
+								MethodBuilder setter = attributeTypeBuilder.DefineMethod("set_" + o.methods[i].Name, MethodAttributes.Public, typeof(void), new Type[] { argType });
+								pb.SetSetMethod(setter);
+								ilgen = setter.GetILGenerator();
+								EmitSetValueCall(annotationAttributeBaseType, ilgen, o.methods[i].Name, o.methods[i].ReturnType, 1);
+								ilgen.Emit(OpCodes.Ret);
+								MethodBuilder getter = attributeTypeBuilder.DefineMethod("get_" + o.methods[i].Name, MethodAttributes.Public, argType, Type.EmptyTypes);
+								pb.SetGetMethod(getter);
+								// TODO implement the getter method
+								getter.GetILGenerator().ThrowException(typeof(NotImplementedException));
+							}
 						}
 					}
 					attributeTypeBuilder.CreateType();
@@ -6299,6 +6481,24 @@ namespace IKVM.Internal
 				Debug.Fail("Unreachable code");
 				return null;
 			}
+
+#if STATIC_COMPILER
+			internal override Annotation Annotation
+			{
+				get
+				{
+					return annotationBuilder;
+				}
+			}
+
+			internal override Type EnumType
+			{
+				get
+				{
+					return enumBuilder;
+				}
+			}
+#endif // STATIC_COMPILER
 		}
 
 		private sealed class Metadata
@@ -6515,8 +6715,17 @@ namespace IKVM.Internal
 			private Modifiers reflectiveModifiers;
 			private MethodInfo clinitMethod;
 			private Metadata metadata;
+#if STATIC_COMPILER
+			private Annotation annotationBuilder;
+			private TypeBuilder enumBuilder;
+#endif
 
-			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata)
+			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata
+#if STATIC_COMPILER
+				, Annotation annotationBuilder
+				, TypeBuilder enumBuilder
+#endif
+				)
 			{
 				this.type = type;
 				this.innerclasses = innerclasses;
@@ -6524,6 +6733,10 @@ namespace IKVM.Internal
 				this.reflectiveModifiers = reflectiveModifiers;
 				this.clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 				this.metadata = metadata;
+#if STATIC_COMPILER
+				this.annotationBuilder = annotationBuilder;
+				this.enumBuilder = enumBuilder;
+#endif
 			}
 
 			internal override TypeWrapper[] InnerClasses
@@ -6632,6 +6845,24 @@ namespace IKVM.Internal
 			{
 				return Metadata.GetFieldAnnotations(metadata, index);
 			}
+
+#if STATIC_COMPILER
+			internal override Annotation Annotation
+			{
+				get
+				{
+					return annotationBuilder;
+				}
+			}
+
+			internal override Type EnumType
+			{
+				get
+				{
+					return enumBuilder;
+				}
+			}
+#endif // STATIC_COMPILER
 		}
 
 		protected static ParameterBuilder[] AddParameterNames(MethodBase mb, ClassFile.Method m, string[] parameterNames)
@@ -8031,6 +8262,18 @@ namespace IKVM.Internal
 				if(annotationAttribute != null)
 				{
 					return new CompiledAnnotation(type.Assembly.GetType(annotationAttribute, true));
+				}
+				return null;
+			}
+		}
+
+		internal override Type EnumType
+		{
+			get
+			{
+				if((this.Modifiers & Modifiers.Enum) != 0)
+				{
+					return type.GetNestedType("__Enum");
 				}
 				return null;
 			}

@@ -56,6 +56,19 @@ final class VMThreadMXBeanImpl
 {
     /**
      * Returns the ids of cycles of deadlocked threads, occurring
+     * due to monitor ownership or ownable synchronizer ownership.
+     * This will only be called if ownable synchronizer monitoring
+     * is supported.
+     *
+     * @return the ids of the deadlocked threads.
+     */
+    static long[] findDeadlockedThreads()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns the ids of cycles of deadlocked threads, occurring
      * due to monitor ownership.
      *
      * @return the ids of the deadlocked threads.
@@ -109,6 +122,31 @@ final class VMThreadMXBeanImpl
      * @return the number of live daemon threads.
      */
     static int getDaemonThreadCount()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Fill out the given {@link ThreadInfo} object
+     * with ownable synchronizer usage information.
+     * This is only called if ownable synchronizer
+     * usage monitoring is supported.
+     *
+     * @param info the {@link ThreadInfo} object to modify.
+     */
+    static void getLockInfo(ThreadInfo info)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Fill out the given {@link ThreadInfo} object
+     * with monitor usage information.  This is only
+     * called if monitor usage monitoring is supported.
+     *
+     * @param info the {@link ThreadInfo} object to modify.
+     */
+    static void getMonitorInfo(ThreadInfo info)
     {
         throw new UnsupportedOperationException();
     }

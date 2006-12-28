@@ -41,6 +41,7 @@ package java.lang.reflect;
 import gnu.java.lang.ClassHelper;
 
 import gnu.java.lang.reflect.MethodSignatureParser;
+import ikvm.internal.AnnotationAttributeBase;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -557,6 +558,7 @@ public final class Method
         {
             if(annotations[i] instanceof Annotation)
             {
+                AnnotationAttributeBase.freeze(annotations[i]);
                 list.add(annotations[i]);
             }
         }

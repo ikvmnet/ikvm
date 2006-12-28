@@ -27,6 +27,7 @@ import ikvm.lang.CIL;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Map;
@@ -91,6 +92,108 @@ public abstract class AnnotationAttributeBase
         return ((Double)values.get(name)).doubleValue();
     }
 
+    protected final synchronized void setValue(String name, Object value)
+    {
+        if(frozen)
+        {
+            throw new IllegalStateException("Annotation properties have already been defined");
+        }
+        try
+        {
+            Class type = annotationType.getMethod(name).getReturnType();
+            if(type.isEnum())
+            {
+                value = type.getMethod("valueOf", String.class).invoke(null, value.toString());
+            }
+            else if(type == Class.class)
+            {
+                value = ikvm.runtime.Util.getFriendlyClassFromType((cli.System.Type)value);
+            }
+            else if(type == boolean.class)
+            {
+                value = ikvm.lang.CIL.unbox_boolean(value);
+            }
+            else if(type == byte.class)
+            {
+                value = ikvm.lang.CIL.unbox_byte(value);
+            }
+            else if(type == short.class)
+            {
+                value = ikvm.lang.CIL.unbox_short(value);
+            }
+            else if(type == char.class)
+            {
+                value = ikvm.lang.CIL.unbox_char(value);
+            }
+            else if(type == int.class)
+            {
+                value = ikvm.lang.CIL.unbox_int(value);
+            }
+            else if(type == long.class)
+            {
+                value = ikvm.lang.CIL.unbox_long(value);
+            }
+            else if(type == float.class)
+            {
+                value = ikvm.lang.CIL.unbox_float(value);
+            }
+            else if(type == double.class)
+            {
+                value = ikvm.lang.CIL.unbox_double(value);
+            }
+            else if(type == String.class)
+            {
+                // no conversion needed
+            }
+            else if(type.isArray())
+            {
+                type = type.getComponentType();
+                if(type.isEnum())
+                {
+                    Method valueOf = type.getMethod("valueOf", String.class);
+                    cli.System.Array orgarray = (cli.System.Array)value;
+                    Object[] array = (Object[])Array.newInstance(type, orgarray.get_Length());
+                    for(int i = 0; i < array.length; i++)
+                    {
+                        array[i] = valueOf.invoke(null, orgarray.GetValue(i).toString());
+                    }
+                    value = array;
+                }
+                else if(type == Class.class)
+                {
+                    cli.System.Type[] orgarray = (cli.System.Type[])value;
+                    Class[] array = new Class[orgarray.length];
+                    for(int i = 0; i < array.length; i++)
+                    {
+                        array[i] = ikvm.runtime.Util.getFriendlyClassFromType(orgarray[i]);
+                    }
+                    value = array;
+                }
+                else
+                {
+                    // no conversion needed
+                }
+            }
+            else
+            {
+                throw new InternalError("Invalid annotation type: " + type);
+            }
+            values.put(name, value);
+        }
+        catch (NoSuchMethodException x)
+        {
+            throw (NoSuchMethodError)new NoSuchMethodError().initCause(x);
+        }
+        catch (IllegalAccessException x)
+        {
+            throw (IllegalAccessError)new IllegalAccessError().initCause(x);
+        }
+        catch (InvocationTargetException x)
+        {
+            throw (InternalError)new InternalError().initCause(x);
+        }
+    }
+
     protected final synchronized void setDefinition(Object[] array)
     {
         if(frozen)
@@ -101,6 +204,24 @@ public abstract class AnnotationAttributeBase
         // TODO consider checking that the type matches
         // (or better yet (?), remove the first two redundant elements from the array)
         decodeValues(values, annotationType, annotationType.getClassLoader(), array);
+    }
+
+    @ikvm.lang.Internal
+    public static void freeze(Object ann)
+    {
+        if(ann instanceof AnnotationAttributeBase)
+        {
+            ((AnnotationAttributeBase)ann).freeze();
+        }
+    }
+
+    private synchronized void freeze()
+    {
+        if(!frozen)
+        {
+            frozen = true;
+            setDefaults(values, annotationType);
+        }
     }
 
     private static void decodeValues(HashMap map, Class annotationClass, ClassLoader loader, Object[] array)
@@ -124,6 +245,11 @@ public abstract class AnnotationAttributeBase
                 throw new IncompatibleClassChangeError("Method " + name + " is missing in annotation " + annotationClass.getName());
             }
         }
+        setDefaults(map, annotationClass);
+    }
+
+    private static void setDefaults(HashMap map, Class annotationClass)
+    {
         for (Method m : annotationClass.getDeclaredMethods())
         {
             Object defaultValue = m.getDefaultValue();
