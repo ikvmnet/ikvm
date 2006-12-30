@@ -1,5 +1,6 @@
 /*
-  Copyright (C) 2006 Jeroen Frijters, Volker Berlin
+  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters, Volker Berlin
+  Copyright (C) 2006 Active Endpoints, Inc.
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -94,12 +95,39 @@ namespace ikvm.awt
             IntPtr pixelPtr = data.Scan0;
 
             //Request the pixel data from Java and copy it to .NET
-            Raster raster = img.getData();
+            WritableRaster raster = img.getRaster();
             int[] pixelData = raster.getPixels(0, 0, width, height, (int[])null);
             Marshal.Copy(pixelData, 0, pixelPtr, pixelData.Length);
 
             bitmap.UnlockBits(data);
             return bitmap;
+        }
+
+        /// <summary>
+        /// Create a rounded rectangle using lines and arcs
+        /// </summary>
+        /// <param name="x">upper left x coordinate</param>
+        /// <param name="y">upper left y coordinate</param>
+        /// <param name="w">width</param>
+        /// <param name="h">height</param>
+        /// <param name="radius">radius of arc</param>
+        /// <returns></returns>
+        internal static GraphicsPath ConvertRoundRect(int x, int y, int w, int h, int radius)
+        {
+            GraphicsPath gp = new GraphicsPath();
+
+            gp.AddLine(x + radius, y, x + w - (radius * 2), y);
+            gp.AddArc(x + w - (radius * 2), y, radius * 2, radius * 2, 270, 90);
+            gp.AddLine(x + w, y + radius, x + w, y + h - (radius * 2));
+            gp.AddArc(x + w - (radius * 2), y + h - (radius * 2), radius * 2, radius * 2, 0, 90);
+            gp.AddLine(x + w - (radius * 2), y + h, x + radius, y + h);
+            gp.AddArc(x, y + h - (radius * 2), radius * 2, radius * 2, 90, 90);
+            gp.AddLine(x, y + h - (radius * 2), x, y + radius);
+            gp.AddArc(x, y, radius * 2, radius * 2, 180, 90);
+
+            gp.CloseFigure();
+
+            return gp;
         }
 
         internal static GraphicsPath ConvertShape(java.awt.Shape shape)
@@ -168,6 +196,44 @@ namespace ikvm.awt
                 (float)tx.getTranslateY());
         }
 
+        internal static FontFamily CreateFontFamily(String name)
+        {
+            switch (name)
+            {
+                case "Monospaced":
+                case "Courier":
+                case "courier":
+                    return FontFamily.GenericMonospace;
+                case "Serif":
+                    return FontFamily.GenericSerif;
+                case "SansSerif":
+                case "Dialog":
+                case "DialogInput":
+                case null:
+                case "Default":
+                    return FontFamily.GenericSansSerif;
+                default:
+                    try
+                    {
+                        return new FontFamily(name);
+                    }
+                    catch (ArgumentException)
+                    {
+                        return FontFamily.GenericSansSerif;
+                    }
+            }
+        }
+
+        internal static Font ConvertFont(java.awt.Font font)
+        {
+            return ConvertFont( font.getName(), font.getStyle(), font.getSize2D() );
+        }
+
+        internal static Font ConvertFont(String name, int style, float size){
+            FontFamily fam = CreateFontFamily(name);
+            return new Font(fam, size, (FontStyle)style, GraphicsUnit.Pixel);
+        }
+
     }
 
     /// <summary>
@@ -180,5 +246,11 @@ namespace ikvm.awt
             float[] elements = matrix.Elements;
             return new java.awt.geom.AffineTransform(elements);
         }
+
+        internal static java.awt.Rectangle ConvertRectangle(RectangleF rec)
+        {
+            return new java.awt.Rectangle((int)rec.X, (int)rec.Y, (int)rec.Width, (int)rec.Height);
+        }
+
     }
 }
