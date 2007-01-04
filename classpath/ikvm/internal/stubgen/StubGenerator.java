@@ -1093,6 +1093,12 @@ class AnnotationDefaultClassFileAttribute extends ClassFileAttribute
                 dos.writeByte('Z');
                 dos.writeShort(classFile.AddInt(((Boolean)val).booleanValue() ? 1 : 0));
             }
+            else if(val instanceof Enum)
+            {
+                dos.writeByte('e');
+                dos.writeShort(classFile.AddUtf8("L" + val.getClass().getName().replace('.', '/') + ";"));
+                dos.writeShort(classFile.AddUtf8(((Enum)val).name()));
+            }
             else
             {
                 throw new Error("Not Implemented");

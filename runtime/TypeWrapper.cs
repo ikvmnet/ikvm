@@ -8795,6 +8795,50 @@ namespace IKVM.Internal
 				}
 			}
 
+			private class EnumValuesMethodWrapper : MethodWrapper
+			{
+				internal EnumValuesMethodWrapper(TypeWrapper declaringType)
+					: base(declaringType, "values", "()[" + declaringType.SigName, null, declaringType.MakeArrayType(1), TypeWrapper.EmptyArray, Modifiers.Public | Modifiers.Static, MemberFlags.None)
+				{
+				}
+
+#if !STATIC_COMPILER
+				internal override object Invoke(object obj, object[] args, bool nonVirtual)
+				{
+					FieldWrapper[] values = this.DeclaringType.GetFields();
+					object[] array = (object[])Array.CreateInstance(this.DeclaringType.TypeAsArrayType, values.Length);
+					for(int i = 0; i < values.Length; i++)
+					{
+						array[i] = values[i].GetValue(null);
+					}
+					return array;
+				}
+#endif // !STATIC_COMPILER
+			}
+
+			private class EnumValueOfMethodWrapper : MethodWrapper
+			{
+				internal EnumValueOfMethodWrapper(TypeWrapper declaringType)
+					: base(declaringType, "valueOf", "(Ljava.lang.String;)" + declaringType.SigName, null, declaringType, new TypeWrapper[] { CoreClasses.java.lang.String.Wrapper }, Modifiers.Public | Modifiers.Static, MemberFlags.None)
+				{
+				}
+
+#if !STATIC_COMPILER
+				internal override object Invoke(object obj, object[] args, bool nonVirtual)
+				{
+					FieldWrapper[] values = this.DeclaringType.GetFields();
+					for(int i = 0; i < values.Length; i++)
+					{
+						if(values[i].Name.Equals(args[0]))
+						{
+							return values[i].GetValue(null);
+						}
+					}
+					throw JavaException.IllegalArgumentException("{0}", args[0]);
+				}
+#endif // !STATIC_COMPILER
+			}
+
 			protected override void LazyPublishMembers()
 			{
 				ArrayList fields = new ArrayList();
@@ -8809,6 +8853,7 @@ namespace IKVM.Internal
 				// TODO if the enum already has an __unspecified value, rename this one
 				fields.Add(new EnumFieldWrapper(this, "__unspecified", ordinal++));
 				SetFields((FieldWrapper[])fields.ToArray(typeof(FieldWrapper)));
+				SetMethods(new MethodWrapper[] { new EnumValuesMethodWrapper(this), new EnumValueOfMethodWrapper(this) });
 				base.LazyPublishMembers();
 			}
 
@@ -8877,7 +8922,8 @@ namespace IKVM.Internal
 			{
 				get
 				{
-					return typeof(object);
+					// return java.lang.Enum instead
+					return BaseTypeWrapper.TypeAsTBD;
 				}
 			}
 
@@ -9055,30 +9101,30 @@ namespace IKVM.Internal
 					AttributeUsageAttribute aua = (AttributeUsageAttribute)attr[0];
 					if((aua.ValidOn & (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
 					{
-						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.ElementType", "TYPE" });
+						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "TYPE" });
 					}
 					if((aua.ValidOn & AttributeTargets.Constructor) != 0)
 					{
-						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.ElementType", "CONSTRUCTOR" });
+						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "CONSTRUCTOR" });
 					}
 					if((aua.ValidOn & AttributeTargets.Field) != 0)
 					{
-						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.ElementType", "FIELD" });
+						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "FIELD" });
 					}
 					if((aua.ValidOn & AttributeTargets.Method) != 0)
 					{
-						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.ElementType", "METHOD" });
+						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "METHOD" });
 					}
 					if((aua.ValidOn & AttributeTargets.Parameter) != 0)
 					{
-						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.ElementType", "PARAMETER" });
+						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "PARAMETER" });
 					}
 					target = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", (object[])targets.ToArray() });
 					// TODO figure out if AttributeUsageAttribute.Inherited maps to java.lang.annotation.Inherited
 				}
 				return new object[] {
 										target,
-										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.RetentionPolicy", "CLASS" } })
+										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "CLASS" } })
 									};
 			}
 #endif

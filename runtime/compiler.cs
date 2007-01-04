@@ -3370,19 +3370,19 @@ class Compiler
 
 	private MethodWrapper GetMethodCallEmitter(ClassFile.ConstantPoolItemMI cpi, NormalizedByteCode invoke)
 	{
+		MethodWrapper mw = null;
 		switch(invoke)
 		{
 			case NormalizedByteCode.__invokespecial:
-				return cpi.GetMethodForInvokespecial();
+				mw = cpi.GetMethodForInvokespecial();
+				break;
 			case NormalizedByteCode.__invokeinterface:
-				if(cpi.GetClassType().IsDynamicOnly)
-				{
-					return new DynamicMethodWrapper(clazz, cpi);
-				}
-				return cpi.GetMethod();
+				mw = cpi.GetMethod();
+				break;
 			case NormalizedByteCode.__invokestatic:
 			case NormalizedByteCode.__invokevirtual:
-				return cpi.GetMethod();
+				mw = cpi.GetMethod();
+				break;
 			case NormalizedByteCode.__dynamic_invokeinterface:
 			case NormalizedByteCode.__dynamic_invokestatic:
 			case NormalizedByteCode.__dynamic_invokevirtual:
@@ -3391,6 +3391,11 @@ class Compiler
 			default:
 				throw new InvalidOperationException();
 		}
+		if(mw.DeclaringType.IsDynamicOnly)
+		{
+			return new DynamicMethodWrapper(clazz, cpi);
+		}
+		return mw;
 	}
 
 	// TODO this method should have a better name
