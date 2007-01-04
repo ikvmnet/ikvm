@@ -8406,6 +8406,7 @@ namespace IKVM.Internal
 		private const string NamePrefix = "cli.";
 		internal const string DelegateInterfaceSuffix = "$Method";
 		internal const string AttributeAnnotationSuffix = "$Annotation";
+		internal const string EnumEnumSuffix = "$__Enum";
 		private readonly Type type;
 		private TypeWrapper[] innerClasses;
 		private TypeWrapper outerClass;
@@ -8736,11 +8737,163 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER
 		}
 
+		private class EnumEnumTypeWrapper : TypeWrapper
+		{
+			private Type enumType;
+
+			internal EnumEnumTypeWrapper(string name, Type enumType)
+				: base(Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, ClassLoaderWrapper.LoadClassCritical("java.lang.Enum"))
+			{
+				this.enumType = enumType;
+			}
+
+			private class EnumFieldWrapper : FieldWrapper
+			{
+				private readonly int ordinal;
+				private object val;
+				private static ConstructorInfo enumEnumConstructor;
+				private static FieldInfo enumEnumTypeField;
+
+				internal EnumFieldWrapper(TypeWrapper tw, string name, int ordinal)
+					: base(tw, tw, name, tw.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final | Modifiers.Enum, null, MemberFlags.None)
+				{
+					this.ordinal = ordinal;
+				}
+
+				internal override object GetValue(object unused)
+				{
+					lock(this)
+					{
+						if(val == null)
+						{
+							if(enumEnumConstructor == null)
+							{
+								enumEnumConstructor = JVM.CoreAssembly.GetType("ikvm.internal.EnumEnum").GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(string), typeof(int) }, null);
+							}
+							object obj = enumEnumConstructor.Invoke(new object[] { this.Name, ordinal });
+							if(enumEnumTypeField == null)
+							{
+								enumEnumTypeField = enumEnumConstructor.DeclaringType.GetField("typeWrapper", BindingFlags.NonPublic | BindingFlags.Instance);
+							}
+							enumEnumTypeField.SetValue(obj, this.DeclaringType);
+							val = obj;
+						}
+					}
+					return val;
+				}
+
+				protected override void EmitGetImpl(ILGenerator ilgen)
+				{
+					ilgen.Emit(OpCodes.Ldstr, this.DeclaringType.Name);
+					CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("forName", "(Ljava.lang.String;)Ljava.lang.Class;", false).EmitCall(ilgen);
+					ilgen.Emit(OpCodes.Ldstr, this.Name);
+					this.DeclaringType.BaseTypeWrapper.GetMethodWrapper("valueOf", "(Ljava.lang.Class;Ljava.lang.String;)Ljava.lang.Enum;", false).EmitCall(ilgen);
+				}
+
+				protected override void EmitSetImpl(ILGenerator ilgen)
+				{
+				}
+			}
+
+			protected override void LazyPublishMembers()
+			{
+				ArrayList fields = new ArrayList();
+				int ordinal = 0;
+				foreach(FieldInfo field in enumType.GetFields(BindingFlags.Static | BindingFlags.Public))
+				{
+					if(field.IsLiteral)
+					{
+						fields.Add(new EnumFieldWrapper(this, field.Name, ordinal++));
+					}
+				}
+				// TODO if the enum already has an __unspecified value, rename this one
+				fields.Add(new EnumFieldWrapper(this, "__unspecified", ordinal++));
+				SetFields((FieldWrapper[])fields.ToArray(typeof(FieldWrapper)));
+				base.LazyPublishMembers();
+			}
+
+			internal override TypeWrapper DeclaringTypeWrapper
+			{
+				get
+				{
+					return ClassLoaderWrapper.GetWrapperFromType(enumType);
+				}
+			}
+
+			internal override void Finish()
+			{
+			}
+
+			internal override ClassLoaderWrapper GetClassLoader()
+			{
+				return DeclaringTypeWrapper.GetClassLoader();
+			}
+
+			internal override string[] GetEnclosingMethod()
+			{
+				return null;
+			}
+
+			internal override string GetGenericFieldSignature(FieldWrapper fw)
+			{
+				return null;
+			}
+
+			internal override string GetGenericMethodSignature(MethodWrapper mw)
+			{
+				return null;
+			}
+
+			internal override string GetGenericSignature()
+			{
+				return null;
+			}
+
+			internal override TypeWrapper[] InnerClasses
+			{
+				get
+				{
+					return TypeWrapper.EmptyArray;
+				}
+			}
+
+			internal override TypeWrapper[] Interfaces
+			{
+				get
+				{
+					return TypeWrapper.EmptyArray;
+				}
+			}
+
+			internal override bool IsDynamicOnly
+			{
+				get
+				{
+					return true;
+				}
+			}
+
+			internal override Type TypeAsTBD
+			{
+				get
+				{
+					return typeof(object);
+				}
+			}
+
+			internal override Type TypeAsBaseType
+			{
+				get
+				{
+					throw new InvalidOperationException();
+				}
+			}
+		}
+
 		private class AttributeAnnotationTypeWrapper : TypeWrapper
 		{
 			private Type attributeType;
 
-			// TODO we should surface all of the appropriate annotations (e.g. Retention and Target)
 			internal AttributeAnnotationTypeWrapper(string name, Type attributeType)
 				: base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract | Modifiers.Annotation, name, null)
 			{
@@ -8770,11 +8923,22 @@ namespace IKVM.Internal
 					if(!fi.IsInitOnly)
 					{
 						// TODO support other types
+						// TODO handle the case where the field name is "value"
 						if(fi.FieldType == typeof(bool))
 						{
-							// TODO handle the case where the field name is "value"
 							TypeWrapper returnType = ClassLoaderWrapper.GetWrapperFromType(fi.FieldType);
 							methods.Add(new DynamicOnlyMethodWrapper(this, fi.Name, "()" + returnType.SigName, returnType, TypeWrapper.EmptyArray));
+						}
+						else if(fi.FieldType.IsEnum)
+						{
+							foreach(TypeWrapper tw in ClassLoaderWrapper.GetWrapperFromType(fi.FieldType).InnerClasses)
+							{
+								if(tw is EnumEnumTypeWrapper)
+								{
+									methods.Add(new DynamicOnlyMethodWrapper(this, fi.Name, "()" + tw.SigName, tw, TypeWrapper.EmptyArray));
+									break;
+								}
+							}
 						}
 					}
 				}
@@ -8793,6 +8957,10 @@ namespace IKVM.Internal
 				else if(mw.ReturnType == PrimitiveTypeWrapper.BOOLEAN)
 				{
 					return JVM.Library.box(false);
+				}
+				else if(mw.ReturnType is EnumEnumTypeWrapper)
+				{
+					return mw.ReturnType.GetFieldWrapper("__unspecified", mw.ReturnType.SigName).GetValue(null);
 				}
 				return null;
 			}
@@ -8874,6 +9042,46 @@ namespace IKVM.Internal
 					throw new InvalidOperationException();
 				}
 			}
+
+#if !STATIC_COMPILER
+			internal override object[] GetDeclaredAnnotations()
+			{
+				object target = null;
+				object[] attr = attributeType.GetCustomAttributes(typeof(AttributeUsageAttribute), false);
+				if(attr.Length == 1)
+				{
+					ArrayList targets = new ArrayList();
+					targets.Add(AnnotationDefaultAttribute.TAG_ARRAY);
+					AttributeUsageAttribute aua = (AttributeUsageAttribute)attr[0];
+					if((aua.ValidOn & (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
+					{
+						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.ElementType", "TYPE" });
+					}
+					if((aua.ValidOn & AttributeTargets.Constructor) != 0)
+					{
+						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.ElementType", "CONSTRUCTOR" });
+					}
+					if((aua.ValidOn & AttributeTargets.Field) != 0)
+					{
+						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.ElementType", "FIELD" });
+					}
+					if((aua.ValidOn & AttributeTargets.Method) != 0)
+					{
+						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.ElementType", "METHOD" });
+					}
+					if((aua.ValidOn & AttributeTargets.Parameter) != 0)
+					{
+						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.ElementType", "PARAMETER" });
+					}
+					target = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", (object[])targets.ToArray() });
+					// TODO figure out if AttributeUsageAttribute.Inherited maps to java.lang.annotation.Inherited
+				}
+				return new object[] {
+										target,
+										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "java.lang.annotation.RetentionPolicy", "CLASS" } })
+									};
+			}
+#endif
 
 #if !COMPACT_FRAMEWORK
 			private class AttributeAnnotation : Annotation
@@ -9806,6 +10014,10 @@ namespace IKVM.Internal
 						if(IsAttribute(type))
 						{
 							list.Add(GetClassLoader().RegisterInitiatingLoader(new AttributeAnnotationTypeWrapper(Name + AttributeAnnotationSuffix, type)));
+						}
+						if(type.IsEnum && IsVisible(type))
+						{
+							list.Add(GetClassLoader().RegisterInitiatingLoader(new EnumEnumTypeWrapper(Name + EnumEnumSuffix, type)));
 						}
 						innerClasses = (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
 					}

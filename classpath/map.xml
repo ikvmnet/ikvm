@@ -1060,6 +1060,9 @@
 				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
 			</field>
 		</class>
+		<class name="ikvm.internal.EnumEnum">
+			<field name="typeWrapper" sig="Ljava.lang.Object;" modifiers="private" />
+		</class>
 		<!-- This is where the "native" helper methods start -->
 		<class name="ikvm.lang.CIL">
 			<method name="unbox_byte" sig="(Ljava.lang.Object;)B">

@@ -1075,7 +1075,10 @@ namespace IKVM.Internal
 					}
 
 					// NOTE static methods don't have helpers
-					if(mbHelper != null)
+					// NOTE for interface helpers we don't have to do anything,
+					// because they've already been generated in DoLink
+					// (currently this only applies to Comparable.compareTo).
+					if(mbHelper != null && !this.DeclaringType.IsInterface)
 					{
 						ILGenerator ilgen = mbHelper.GetILGenerator();
 						// check "this" for null

@@ -561,6 +561,45 @@ namespace IKVM.Internal
 							}
 						}
 					}
+					if(clazz.Fields != null)
+					{
+						foreach(IKVM.Internal.MapXml.Field field in clazz.Fields)
+						{
+							// are we adding a new field?
+							if(GetFieldWrapper(field.Name, field.Sig) == null)
+							{
+								FieldAttributes attribs = 0;
+								Modifiers modifiers = (Modifiers)field.Modifiers;
+								if((modifiers & Modifiers.Public) != 0)
+								{
+									attribs |= FieldAttributes.Public;
+								}
+								else if((modifiers & Modifiers.Protected) != 0)
+								{
+									attribs |= FieldAttributes.FamORAssem;
+								}
+								else if((modifiers & Modifiers.Private) != 0)
+								{
+									attribs |= FieldAttributes.Private;
+								}
+								else
+								{
+									attribs |= FieldAttributes.Assembly;
+								}
+								if((modifiers & Modifiers.Static) != 0)
+								{
+									attribs |= FieldAttributes.Static;
+								}
+								if((modifiers & Modifiers.Final) != 0)
+								{
+									attribs |= FieldAttributes.InitOnly;
+								}
+								Hashtable classCache = new Hashtable();
+								Type fieldType = ClassFile.FieldTypeWrapperFromSig(GetClassLoader(), classCache, field.Sig).TypeAsSignatureType;
+								typeBuilder.DefineField(field.Name, fieldType, attribs);
+							}
+						}
+					}
 					if(clazz.Interfaces != null)
 					{
 						foreach(IKVM.Internal.MapXml.Interface iface in clazz.Interfaces)

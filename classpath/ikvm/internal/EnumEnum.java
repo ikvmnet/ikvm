@@ -21,33 +21,13 @@
   jeroen@frijters.net
   
 */
-package ikvm.runtime;
+package ikvm.internal;
 
-import cli.System.Type;
-import cli.System.RuntimeTypeHandle;
-
-public final class Util
+enum EnumEnum
 {
-    private Util()
-    {
-    }
-
-    public static native Class getClassFromObject(Object o);
-
-    public static native Class getClassFromTypeHandle(RuntimeTypeHandle handle);
-
-    public static native Class getFriendlyClassFromType(Type type);
-
-    public static Type getInstanceTypeFromClass(Class classObject)
-    {
-        return GetInstanceTypeFromTypeWrapper(VMClass.getWrapper(classObject));
-    }
-
-    private static native Type GetInstanceTypeFromTypeWrapper(Object wrapper);
-
-    //[HideFromJava]
-    public static Throwable mapException(Throwable x)
-    {
-        return ExceptionHelper.MapExceptionFast(x, true);
-    }
+    // This class is used as a proxy class for all __Enum enum classes that represent .NET enum types as Java enums.
+    // In map.xml an instance field named "typeWrapper" is added to this class, to record the actual type of the enum
+    // instance. Object.getClass() (in particular IKVM.NativeCode.ikvm.runtime.GetTypeWrapperFromObject) is special
+    // cased for this class.
+    // Objects of this class are constructed by invoking the private (String,int) constructor using reflection.
 }

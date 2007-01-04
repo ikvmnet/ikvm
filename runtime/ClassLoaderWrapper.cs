@@ -370,6 +370,10 @@ namespace IKVM.Internal
 				{
 					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length), false);
 				}
+				else if(name.EndsWith(DotNetTypeWrapper.EnumEnumSuffix))
+				{
+					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.EnumEnumSuffix.Length), false);
+				}
 				// NOTE we cannot use the InnerClasses property on unfinished dynamic types,
 				// so we restrict ourself to DotNetTypeWrapper instances.
 				if(outer != null && outer is DotNetTypeWrapper)
