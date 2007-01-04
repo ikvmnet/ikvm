@@ -344,7 +344,7 @@ namespace ikvm.awt
 		[Obsolete]
 		public override java.awt.FontMetrics getFontMetrics(java.awt.Font font)
 		{
-			return new NetFontMetrics(font, getScreenResolution());
+			return new NetFontMetrics(font);
 		}
 
 		public override void sync()
@@ -949,7 +949,7 @@ namespace ikvm.awt
 
 		public java.awt.FontMetrics getFontMetrics(java.awt.Font f)
 		{
-			return new NetFontMetrics(f, 0);
+			return new NetFontMetrics(f);
 		}
 
 		public virtual java.awt.Graphics getGraphics()

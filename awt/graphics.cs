@@ -477,12 +477,12 @@ namespace ikvm.awt
 
         public override java.awt.FontMetrics getFontMetrics(java.awt.Font f)
         {
-            return new NetFontMetrics(f, g.DpiY);
+            return new NetFontMetrics(f);
         }
 
         public override java.awt.FontMetrics getFontMetrics()
         {
-            return new NetFontMetrics(font, g.DpiY);
+            return new NetFontMetrics(font);
         }
 
         public override void setClip(int x, int y, int width, int height)
@@ -1027,7 +1027,11 @@ namespace ikvm.awt
 
         public override string[] getAvailableFontFamilyNames(Locale locale)
         {
+#if WHIDBEY 
             int language = CultureInfo.GetCultureInfo(locale.toString()).LCID;
+#else
+            int language = new CultureInfo(locale.toString()).LCID;
+#endif
             return getAvailableFontFamilyNames(language);
         }
 

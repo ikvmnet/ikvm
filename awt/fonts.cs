@@ -26,36 +26,31 @@
 using System;
 using System.Drawing;
 using System.Text;
+using java.awt.font;
+using java.awt.geom;
 using java.util;
 
 
 namespace ikvm.awt
 {
 
-    class NetFontMetrics : java.awt.FontMetrics, IDisposable
+    class NetFontMetrics : java.awt.FontMetrics
     {
-        private float dpi;
-        private Font mFont;
+        private readonly NetFontPeer peer;
 
-        public NetFontMetrics(java.awt.Font font, float dpi)
-            : base(font)
+        public NetFontMetrics(java.awt.Font font) : base(font)
         {
-            this.dpi = dpi;
+            peer = (NetFontPeer)font.getPeer();
         }
 
-        private Font RealizeFont()
+        private Font GetNetFont()
         {
-            if (mFont == null)
-            {
-                mFont = J2C.ConvertFont(font);
-            }
-
-            return mFont;
+            return peer.netFont;
         }
 
         public override int getHeight()
         {
-            return RealizeFont().Height;
+            return GetNetFont().Height;
         }
 
         public override int getLeading()
@@ -97,14 +92,14 @@ namespace ikvm.awt
 
         public float GetAscentFloat()
         {
-            Font f = RealizeFont();
+            Font f = GetNetFont();
             int ascent = f.FontFamily.GetCellAscent(f.Style);
             return f.Size * ascent / f.FontFamily.GetEmHeight(f.Style);
         }
 
         public float GetDescentFloat()
         {
-            Font f = RealizeFont();
+            Font f = GetNetFont();
             int descent = f.FontFamily.GetCellDescent(f.Style);
             return f.Size * descent / f.FontFamily.GetEmHeight(f.Style);
         }
@@ -115,7 +110,7 @@ namespace ikvm.awt
             return Math.Max(0.0f, leading);
         }
 
-        public java.awt.geom.Rectangle2D GetStringBounds(String aString)
+        internal java.awt.geom.Rectangle2D GetStringBounds(String aString)
         {
             using (Graphics g = NetToolkit.bogusForm.CreateGraphics())
             {
@@ -132,27 +127,15 @@ namespace ikvm.awt
                 //
                 // TODO (KR) Consider implementing with one of the Graphics#MeasureString methods that takes a StringFormat.
                 // TODO (KR) Consider implementing with Graphics#MeasureCharacterRanges().
-                SizeF size = g.MeasureString(aString, RealizeFont(), Int32.MaxValue, StringFormat.GenericTypographic);
+                SizeF size = g.MeasureString(aString, GetNetFont(), Int32.MaxValue, StringFormat.GenericTypographic);
                 return new java.awt.geom.Rectangle2D.Float(0, 0, size.Width, size.Height);
             }
         }
-
-        #region IDisposable Members
-
-        public void Dispose()
-        {
-            if (mFont != null)
-            {
-                mFont.Dispose();
-            }
-        }
-
-        #endregion
     }
 
-    class NetFontPeer : gnu.java.awt.peer.ClasspathFontPeer
+    class NetFontPeer : gnu.java.awt.peer.ClasspathFontPeer, IDisposable
     {
-        private Font netFont;
+        internal readonly Font netFont;
 
         internal NetFontPeer(string name, java.util.Map attrs)
             : base(name, attrs)
@@ -170,14 +153,27 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override java.awt.font.GlyphVector createGlyphVector(java.awt.Font font, java.awt.font.FontRenderContext param2, int[] param3)
+        public override GlyphVector createGlyphVector(java.awt.Font font, FontRenderContext frc, int[] glyphCodes)
         {
-            throw new NotImplementedException();
+            char[] chars = new char[glyphCodes.Length];
+            for (int i = 0; i < chars.Length; i++)
+            {
+                chars[i] = (char)glyphCodes[i];
+            }
+            return new NetGlyphVector(netFont, font, frc, chars);
         }
 
-        public override java.awt.font.GlyphVector createGlyphVector(java.awt.Font font, java.awt.font.FontRenderContext param2, java.text.CharacterIterator param3)
+        public override GlyphVector createGlyphVector(java.awt.Font font, FontRenderContext frc, java.text.CharacterIterator text)
         {
-            throw new NotImplementedException();
+            int count = text.getEndIndex() - text.getBeginIndex();
+            char[] chars = new char[count];
+            text.first();
+            for (int i = 0; i < count; i++)
+            {
+                chars[i] = text.current();
+                text.next();
+            }
+            return new NetGlyphVector(netFont, font, frc, chars);
         }
 
         public override byte getBaselineFor(java.awt.Font font, char param2)
@@ -187,7 +183,7 @@ namespace ikvm.awt
 
         public override java.awt.FontMetrics getFontMetrics(java.awt.Font font)
         {
-            return new NetFontMetrics(font, 0);
+            return new NetFontMetrics(font);
         }
 
         public override string getGlyphName(java.awt.Font font, int param2)
@@ -195,13 +191,13 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override java.awt.font.LineMetrics getLineMetrics(java.awt.Font font, java.text.CharacterIterator aCharacterIterator, int aBegin, int aLimit, java.awt.font.FontRenderContext aFontRenderContext)
+        public override LineMetrics getLineMetrics(java.awt.Font font, java.text.CharacterIterator aCharacterIterator, int aBegin, int aLimit, FontRenderContext aFontRenderContext)
         {
             string s = ToString(aCharacterIterator, aBegin, aLimit);
             return new NetLineMetrics(font, s);
         }
 
-        public override java.awt.geom.Rectangle2D getMaxCharBounds(java.awt.Font font, java.awt.font.FontRenderContext param2)
+        public override java.awt.geom.Rectangle2D getMaxCharBounds(java.awt.Font font, FontRenderContext param2)
         {
             throw new NotImplementedException();
         }
@@ -226,9 +222,11 @@ namespace ikvm.awt
             throw new NotImplementedException();
         }
 
-        public override java.awt.font.GlyphVector layoutGlyphVector(java.awt.Font font, java.awt.font.FontRenderContext param2, char[] param3, int param4, int param5, int param6)
+        public override GlyphVector layoutGlyphVector(java.awt.Font font, FontRenderContext frc, char[] text, int beginIndex, int endIndex, int flags)
         {
-            throw new NotImplementedException();
+            char[] chars = new char[endIndex - beginIndex];
+            Array.Copy(text, beginIndex, chars, 0, chars.Length);
+            return new NetGlyphVector(netFont, font, frc, chars);
         }
 
         public override string getSubFamilyName(java.awt.Font font, Locale param2)
@@ -250,9 +248,141 @@ namespace ikvm.awt
 
             return sb.ToString();
         }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            netFont.Dispose();
+        }
+
+        #endregion
     }
 
-    class NetLineMetrics : java.awt.font.LineMetrics
+    class NetGlyphVector : GlyphVector
+    {
+        private readonly Font netFont;
+        private readonly java.awt.Font font;
+        private readonly FontRenderContext frc;
+        private readonly char[] text;
+
+
+        internal NetGlyphVector(Font netFont, java.awt.Font font, FontRenderContext frc, char[] text)
+        {
+            this.netFont = netFont;
+            this.font = font;
+            this.frc = frc;
+            this.text = text;
+        }
+
+        public override bool equals(GlyphVector gv)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override java.awt.Font getFont()
+        {
+            return font;
+        }
+
+        public override FontRenderContext getFontRenderContext()
+        {
+            return frc;
+        }
+
+        public override int getGlyphCode(int i)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int[] getGlyphCodes(int i1, int i2, int[] iarr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override GlyphJustificationInfo getGlyphJustificationInfo(int i)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override java.awt.Shape getGlyphLogicalBounds(int i)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override GlyphMetrics getGlyphMetrics(int i)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override java.awt.Shape getGlyphOutline(int i)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Point2D getGlyphPosition(int i)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override float[] getGlyphPositions(int i1, int i2, float[] farr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override AffineTransform getGlyphTransform(int i)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override java.awt.Shape getGlyphVisualBounds(int i)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Rectangle2D getLogicalBounds()
+        {
+            return new NetFontMetrics(font).GetStringBounds(new String(text));
+        }
+
+        public override int getNumGlyphs()
+        {
+            return text.Length;
+        }
+
+        public override java.awt.Shape getOutline()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override java.awt.Shape getOutline(float f1, float f2)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Rectangle2D getVisualBounds()
+        {
+            return new NetFontMetrics(font).GetStringBounds(new String(text));
+        }
+
+        public override void performDefaultLayout()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void setGlyphPosition(int i, Point2D pd)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void setGlyphTransform(int i, AffineTransform at)
+        {
+            throw new NotImplementedException();
+        }
+
+}
+
+    class NetLineMetrics : LineMetrics
     {
         private java.awt.Font mFont;
         private String mString;
