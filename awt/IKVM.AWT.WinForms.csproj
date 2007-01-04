@@ -104,6 +104,15 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "fonts.cs"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "graphics.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "toolkit.cs"
                     SubType = "Component"
                     BuildAction = "Compile"
