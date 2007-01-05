@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -156,6 +156,7 @@ class IkvmcCompiler
 			Console.Error.WriteLine("    -privatepackage:<prefix>   Mark all classes with a package name starting");
 			Console.Error.WriteLine("                               with <prefix> as internal to the assembly");
 			Console.Error.WriteLine("    -nowarn:<warning[:key]>    Suppress specified warnings");
+			Console.Error.WriteLine("    -warnaserror:<warning[:key]>  Treat specified warnings as errors");
 			return 1;
 		}
 		foreach(string s in arglist)
@@ -462,6 +463,19 @@ class IkvmcCompiler
 							ws = ws.Substring(1);
 						}
 						StaticCompiler.SuppressWarning(ws);
+					}
+				}
+				else if(s.StartsWith("-warnaserror:"))
+				{
+					foreach(string w in s.Substring(13).Split(','))
+					{
+						string ws = w;
+						// lame way to chop off the leading zeroes
+						while(ws.StartsWith("0"))
+						{
+							ws = ws.Substring(1);
+						}
+						StaticCompiler.WarnAsError(ws);
 					}
 				}
 				else if(s.StartsWith("-runtime:"))

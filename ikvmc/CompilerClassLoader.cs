@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2574,10 +2574,16 @@ namespace IKVM.Internal
 		}
 
 		private static Hashtable suppressWarnings = new Hashtable();
+		private static Hashtable errorWarnings = new Hashtable();
 
 		internal static void SuppressWarning(string key)
 		{
 			suppressWarnings[key] = key;
+		}
+
+		internal static void WarnAsError(string key)
+		{
+			errorWarnings[key] = key;
 		}
 
 		internal static void IssueMessage(Message msgId, params string[] values)
@@ -2645,6 +2651,13 @@ namespace IKVM.Internal
 					break;
 				default:
 					throw new InvalidProgramException();
+			}
+			if(errorWarnings.ContainsKey(key)
+				|| errorWarnings.ContainsKey(((int)msgId).ToString()))
+			{
+				Console.Error.Write("{0} IKVMC{1:D4}: ", "Error", (int)msgId);
+				Console.Error.WriteLine(msg, values);
+				Environment.Exit(1);
 			}
 			Console.Error.Write("{0} IKVMC{1:D4}: ", msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
 			Console.Error.WriteLine(msg, values);
