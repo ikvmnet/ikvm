@@ -491,6 +491,7 @@
 ../../classpath/gnu/java/awt/image/ImageDecoder.java
 ../../classpath/gnu/java/awt/image/XBMDecoder.java
 ../../classpath/gnu/java/awt/java2d/AbstractGraphics2D.java
+../../classpath/gnu/java/awt/java2d/ActiveEdges.java
 ../../classpath/gnu/java/awt/java2d/AlphaCompositeContext.java
 ../../classpath/gnu/java/awt/java2d/CubicSegment.java
 ../../classpath/gnu/java/awt/java2d/ImagePaint.java
@@ -499,6 +500,8 @@
 ../../classpath/gnu/java/awt/java2d/PolyEdgeComparator.java
 ../../classpath/gnu/java/awt/java2d/QuadSegment.java
 ../../classpath/gnu/java/awt/java2d/RasterGraphics.java
+../../classpath/gnu/java/awt/java2d/Scanline.java
+../../classpath/gnu/java/awt/java2d/ScanlineConverter.java
 ../../classpath/gnu/java/awt/java2d/Segment.java
 ../../classpath/gnu/java/awt/java2d/ShapeCache.java
 ../../classpath/gnu/java/awt/java2d/TexturePaintContext.java
@@ -640,6 +643,7 @@
 ../../classpath/gnu/java/lang/reflect/TypeImpl.java
 ../../classpath/gnu/java/lang/reflect/TypeSignature.java
 ../../classpath/gnu/java/locale/LocaleHelper.java
+../../classpath/gnu/java/math/Fixed.java
 ../../classpath/gnu/java/math/MPN.java
 ../../classpath/gnu/java/net/BASE64.java
 ../../classpath/gnu/java/net/CRLFInputStream.java
@@ -948,9 +952,12 @@
 ../../classpath/gnu/java/security/x509/ext/CRLNumber.java
 ../../classpath/gnu/java/security/x509/ext/ExtendedKeyUsage.java
 ../../classpath/gnu/java/security/x509/ext/Extension.java
+../../classpath/gnu/java/security/x509/ext/GeneralName.java
 ../../classpath/gnu/java/security/x509/ext/GeneralNames.java
+../../classpath/gnu/java/security/x509/ext/GeneralSubtree.java
 ../../classpath/gnu/java/security/x509/ext/IssuerAlternativeNames.java
 ../../classpath/gnu/java/security/x509/ext/KeyUsage.java
+../../classpath/gnu/java/security/x509/ext/NameConstraints.java
 ../../classpath/gnu/java/security/x509/ext/PolicyConstraint.java
 ../../classpath/gnu/java/security/x509/ext/PolicyMappings.java
 ../../classpath/gnu/java/security/x509/ext/PrivateKeyUsagePeriod.java
@@ -3003,6 +3010,8 @@
 ../../classpath/java/text/ParsePosition.java
 ../../classpath/java/text/RuleBasedCollator.java
 ../../classpath/java/text/SimpleDateFormat.java
+../../classpath/java/text/spi/BreakIteratorProvider.java
+../../classpath/java/text/spi/DateFormatSymbolsProvider.java
 ../../classpath/java/text/StringCharacterIterator.java
 ../../classpath/java/util/AbstractCollection.java
 ../../classpath/java/util/AbstractList.java
@@ -3107,10 +3116,16 @@
 ../../classpath/java/util/regex/Pattern.java
 ../../classpath/java/util/regex/PatternSyntaxException.java
 ../../classpath/java/util/ResourceBundle.java
+../../classpath/java/util/ServiceConfigurationError.java
+../../classpath/java/util/ServiceLoader.java
 ../../classpath/java/util/Set.java
 ../../classpath/java/util/SimpleTimeZone.java
 ../../classpath/java/util/SortedMap.java
 ../../classpath/java/util/SortedSet.java
+../../classpath/java/util/spi/CurrencyNameProvider.java
+../../classpath/java/util/spi/LocaleNameProvider.java
+../../classpath/java/util/spi/LocaleServiceProvider.java
+../../classpath/java/util/spi/TimeZoneNameProvider.java
 ../../classpath/java/util/Stack.java
 ../../classpath/java/util/StringTokenizer.java
 ../../classpath/java/util/Timer.java
