@@ -105,6 +105,7 @@
                 />
                 <File
                     RelPath = "fonts.cs"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File

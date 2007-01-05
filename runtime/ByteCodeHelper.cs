@@ -207,7 +207,7 @@ namespace IKVM.Runtime
 			// (to be compatible with Sun)
 			if(obj != null && !DynamicInstanceOf(obj, type, clazz))
 			{
-				throw JavaException.ClassCastException(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()).Name);
+				throw JavaException.ClassCastException(NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj).Name);
 			}
 			return obj;
 		}
@@ -223,7 +223,7 @@ namespace IKVM.Runtime
 				return false;
 			}
 			TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
-			TypeWrapper other = ClassLoaderWrapper.GetWrapperFromType(obj.GetType());
+			TypeWrapper other = NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj);
 			return other.IsAssignableTo(wrapper);
 		}
 

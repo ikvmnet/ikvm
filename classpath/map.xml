@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?> 
 <!--
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -331,6 +331,34 @@
 				<parameter name="offset" />
 				<parameter name="count" />
 				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([III)Ljava.lang.String;" />
+			</constructor>
+			<constructor sig="([BIILjava.nio.charset.Charset;)V" modifiers="public">
+				<parameter name="bytes" />
+				<parameter name="offset" />
+				<parameter name="length" />
+				<parameter name="charset" />
+				<alternateBody>
+					<ldarg_3 />
+					<ldarg_0 />
+					<ldarg_1 />
+					<ldarg_2 />
+					<call class="java.nio.ByteBuffer" name="wrap" sig="([BII)Ljava.nio.ByteBuffer;" />
+					<callvirt class="java.nio.charset.Charset" name="decode" sig="(Ljava.nio.ByteBuffer;)Ljava.nio.CharBuffer;" />
+					<callvirt class="java.nio.CharBuffer" name="toString" sig="()Ljava.lang.String;" />
+					<ret />
+				</alternateBody>
+			</constructor>
+			<constructor sig="([BLjava.nio.charset.Charset;)V" modifiers="public">
+				<parameter name="bytes" />
+				<parameter name="charset" />
+				<alternateBody>
+					<ldarg_1 />
+					<ldarg_0 />
+					<call class="java.nio.ByteBuffer" name="wrap" sig="([B)Ljava.nio.ByteBuffer;" />
+					<callvirt class="java.nio.charset.Charset" name="decode" sig="(Ljava.nio.ByteBuffer;)Ljava.nio.CharBuffer;" />
+					<callvirt class="java.nio.CharBuffer" name="toString" sig="()Ljava.lang.String;" />
+					<ret />
+				</alternateBody>
 			</constructor>
 			<method name="hashCode" sig="()I" modifiers="public">
 				<redirect class="java.lang.StringHelper" name="hashCode" type="static" sig="(Lcli.System.String;)I" />
@@ -728,6 +756,25 @@
 					<ldarg_2 />
 					<callvirt class="java.util.Formatter" name="format" sig="(Ljava.lang.String;[Ljava.lang.Object;)Ljava.util.Formatter;" />
 					<callvirt class="java.util.Formatter" name="toString" sig="()Ljava.lang.String;" />
+					<ret />
+				</body>
+			</method>
+			<method name="isEmpty" sig="()Z" modifiers="public">
+				<body>
+					<ldarg_0 />
+					<callvirt type="System.String" name="get_Length" sig="()I" />
+					<ldc_i4_0 />
+					<ceq />
+					<ret />
+				</body>
+			</method>
+			<method name="getBytes" sig="(Ljava.nio.charset.Charset;)[B" modifiers="public">
+				<parameter name="charset" />
+				<body>
+					<ldarg_1 />
+					<ldarg_0 />
+					<callvirt class="java.nio.charset.Charset" name="encode" sig="(Ljava.lang.String;)Ljava.nio.ByteBuffer;" />
+					<callvirt class="java.nio.ByteBuffer" name="array" sig="()[B" />
 					<ret />
 				</body>
 			</method>
