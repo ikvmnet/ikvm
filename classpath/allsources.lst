@@ -3011,6 +3011,7 @@
 ../../classpath/java/text/RuleBasedCollator.java
 ../../classpath/java/text/SimpleDateFormat.java
 ../../classpath/java/text/spi/BreakIteratorProvider.java
+../../classpath/java/text/spi/CollatorProvider.java
 ../../classpath/java/text/spi/DateFormatSymbolsProvider.java
 ../../classpath/java/text/StringCharacterIterator.java
 ../../classpath/java/util/AbstractCollection.java
