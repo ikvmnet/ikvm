@@ -1311,7 +1311,10 @@ namespace IKVM.Internal
 			FieldBuilder fb = field as FieldBuilder;
 			if(fb != null)
 			{
-				// first do a name based lookup
+#if WHIDBEY
+				field = DeclaringType.TypeAsTBD.Module.ResolveField(fb.GetToken().Token);
+#else
+				// first do a name based lookup as that is much faster than doing a token based lookup
 				BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 				if(this.IsStatic)
 				{
@@ -1321,14 +1324,24 @@ namespace IKVM.Internal
 				{
 					bindings |= BindingFlags.Instance;
 				}
-				FieldInfo fi = DeclaringType.TypeAsTBD.GetField(field.Name, bindings);
-				// now check that we've got the right field by comparing the tokens
-				ModuleBuilder module = (ModuleBuilder)DeclaringType.TypeAsTBD.Module;
-				if(module.GetFieldToken(fi).Token != fb.GetToken().Token)
+				try
 				{
-					fi = TokenBasedLookup(bindings, fb.GetToken().Token);
+					FieldInfo fi = DeclaringType.TypeAsTBD.GetField(field.Name, bindings);
+					// now check that we've got the right field by comparing the tokens
+					ModuleBuilder module = (ModuleBuilder)DeclaringType.TypeAsTBD.Module;
+					if(module.GetFieldToken(fi).Token != fb.GetToken().Token)
+					{
+						fi = TokenBasedLookup(bindings, fb.GetToken().Token);
+					}
+					field = fi;
 				}
-				field = fi;
+				catch(AmbiguousMatchException)
+				{
+					// .NET 2.0 will throw this exception if there are multiple fields
+					// with the same name (.NET 1.1 will simply return one of them)
+					field = TokenBasedLookup(bindings, fb.GetToken().Token);
+				}
+#endif
 			}
 		}
 
