@@ -3818,7 +3818,7 @@ namespace IKVM.Internal
 					}
 					if(annotationAttributeType != null)
 					{
-						CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(AnnotationAttributeAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { annotationAttributeType });
+						CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { typeof(string) }), new object[] { annotationAttributeType });
 						typeBuilder.SetCustomAttribute(cab);
 					}
 					if(wrapper.classLoader.EmitStackTraceInfo)
