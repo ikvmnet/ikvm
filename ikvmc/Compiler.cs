@@ -777,7 +777,11 @@ class IkvmcCompiler
 				return a;
 			}
 		}
+#if WHIDBEY
+		return Assembly.ReflectionOnlyLoad(args.Name);
+#else
 		return null;
+#endif
 	}
 }
 
