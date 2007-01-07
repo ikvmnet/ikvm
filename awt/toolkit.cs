@@ -456,8 +456,10 @@ namespace ikvm.awt
 		}
 
 		public override void beep()
-		{
-			throw new NotImplementedException();
+        {
+#if WHIDBEY && !COMPACT_FRAMEWORK
+            Console.Beep();
+#endif
 		}
 
 		public override java.awt.datatransfer.Clipboard getSystemClipboard()
@@ -595,9 +597,7 @@ namespace ikvm.awt
 	{
 		internal readonly java.awt.Component component;
 		internal readonly Control control;
-		private Point mouseDown;
-		private long lastClick;
-		private int clickCount;
+        private bool isMouseClick;
 
 		public NetComponentPeer(java.awt.Component component, Control control)
 		{
@@ -650,6 +650,7 @@ namespace ikvm.awt
             control.KeyPress += new KeyPressEventHandler(OnKeyPress);
             control.MouseMove += new MouseEventHandler(OnMouseMove);
             control.MouseDown += new MouseEventHandler(OnMouseDown);
+            control.Click += new EventHandler(OnClick);
             control.MouseUp += new MouseEventHandler(OnMouseUp);
             control.MouseEnter += new EventHandler(OnMouseEnter);
             control.MouseLeave += new EventHandler(OnMouseLeave);
@@ -678,18 +679,22 @@ namespace ikvm.awt
             }
         }
 
-		private void OnPaint(object sender, PaintEventArgs e)
+        protected virtual int getInsetsLeft()
+        {
+            return 0;
+        }
+
+        protected virtual int getInsetsTop()
+        {
+            return 0;
+        }
+
+        private void OnPaint(object sender, PaintEventArgs e)
 		{
 			if(!e.ClipRectangle.IsEmpty)
 			{
-				int x = 0;
-				int y = 0;
-				if(component is java.awt.Window)
-				{
-                    java.awt.Insets insets = ((java.awt.Window)component).getInsets();
-					x = insets.left;
-					y = insets.top;
-				}
+                int x = getInsetsLeft();
+                int y = getInsetsTop();
 				java.awt.Rectangle rect = new java.awt.Rectangle(e.ClipRectangle.X + x, e.ClipRectangle.Y + y, e.ClipRectangle.Width, e.ClipRectangle.Height);
 				postEvent(new java.awt.@event.PaintEvent(component, java.awt.@event.PaintEvent.UPDATE, rect));
 			}
@@ -704,37 +709,56 @@ namespace ikvm.awt
 			}
 		}
 
-		private static int GetModifiers(Keys keys)
+        private static int GetMouseEventModifiers(MouseEventArgs ev)
+        {
+            int modifiers = GetModifiers(Control.ModifierKeys);
+            //Which button was pressed or released, because it can only one that it is a switch
+            MouseButtons button = ev.Button;
+            switch(button){
+                case MouseButtons.Left:
+                    modifiers |= java.awt.@event.InputEvent.BUTTON1_MASK;
+                    break;
+                case MouseButtons.Middle:
+                    modifiers |= java.awt.@event.InputEvent.BUTTON2_MASK;
+                    break;
+                case MouseButtons.Right:
+                    modifiers |= java.awt.@event.InputEvent.BUTTON3_MASK;
+                    break;
+            }
+            return modifiers;
+        }
+
+        private static int GetModifiers(Keys keys)
 		{
 			int modifiers = 0;
-			if((keys & Keys.Shift) != 0)
+            if ((keys & Keys.Shift) != 0)
 			{
-				modifiers |= java.awt.@event.KeyEvent.SHIFT_DOWN_MASK;
+				modifiers |= java.awt.@event.InputEvent.SHIFT_DOWN_MASK;
 			}
 			if((keys & Keys.Control) != 0)
 			{
-				modifiers |= java.awt.@event.KeyEvent.CTRL_DOWN_MASK;
+				modifiers |= java.awt.@event.InputEvent.CTRL_DOWN_MASK;
 			}
 			if((keys & Keys.Alt) != 0)
 			{
-				modifiers |= java.awt.@event.KeyEvent.ALT_DOWN_MASK;
+				modifiers |= java.awt.@event.InputEvent.ALT_DOWN_MASK;
 			}
 			if((Control.MouseButtons & MouseButtons.Left) != 0)
 			{
-				modifiers |= java.awt.@event.KeyEvent.BUTTON1_DOWN_MASK;
+                modifiers |= java.awt.@event.InputEvent.BUTTON1_DOWN_MASK;
 			}
 			if((Control.MouseButtons & MouseButtons.Middle) != 0)
 			{
-				modifiers |= java.awt.@event.KeyEvent.BUTTON2_DOWN_MASK;
+                modifiers |= java.awt.@event.InputEvent.BUTTON2_DOWN_MASK;
 			}
 			if((Control.MouseButtons & MouseButtons.Right) != 0)
 			{
-				modifiers |= java.awt.@event.KeyEvent.BUTTON3_DOWN_MASK;
+				modifiers |= java.awt.@event.InputEvent.BUTTON3_DOWN_MASK;
 			}
 			return modifiers;
 		}
 
-		protected virtual void OnKeyDown(object sender, KeyEventArgs e)
+        private void OnKeyDown(object sender, KeyEventArgs e)
 		{
 			long when = java.lang.System.currentTimeMillis();
 			int modifiers = GetModifiers(e.Modifiers);
@@ -745,7 +769,7 @@ namespace ikvm.awt
 			postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_PRESSED, when, modifiers, keyCode, keyChar, keyLocation));
 		}
 
-		protected virtual void OnKeyUp(object sender, KeyEventArgs e)
+        private void OnKeyUp(object sender, KeyEventArgs e)
 		{
 			long when = java.lang.System.currentTimeMillis();
 			int modifiers = GetModifiers(e.Modifiers);
@@ -766,23 +790,43 @@ namespace ikvm.awt
 			postEvent(new java.awt.@event.KeyEvent(component, java.awt.@event.KeyEvent.KEY_TYPED, when, modifiers, keyCode, keyChar, keyLocation));
 		}
 
-		protected virtual void OnMouseMove(object sender, MouseEventArgs e)
+        private void postMouseEvent(MouseEventArgs ev, int id)
+        {
+            long when = java.lang.System.currentTimeMillis();
+            int modifiers = GetMouseEventModifiers(ev);
+            int button = GetButton(ev);
+            int clickCount = ev.Clicks;
+            int x = ev.X + getInsetsLeft(); //The Inset correctur is needed for Window and extended classes
+            int y = ev.Y + getInsetsTop();
+            postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, false, button));
+        }
+
+        private void postMouseEvent(EventArgs ev, int id)
+        {
+            long when = java.lang.System.currentTimeMillis();
+            int modifiers = GetModifiers(Control.ModifierKeys);
+            int button = 0;
+            int clickCount = 0;
+            int x = Control.MousePosition.X - control.Location.X;
+            int y = Control.MousePosition.Y - control.Location.Y;
+            postEvent(new java.awt.@event.MouseEvent(component, id, when, modifiers, x, y, clickCount, false, button));
+        }
+
+        protected virtual void OnMouseMove(object sender, MouseEventArgs ev)
 		{
-			long when = java.lang.System.currentTimeMillis();
-			int modifiers = GetModifiers(Control.ModifierKeys);
-			if((e.Button & (MouseButtons.Left | MouseButtons.Right)) != 0)
+			if((ev.Button & (MouseButtons.Left | MouseButtons.Right)) != 0)
 			{
-				postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_DRAGGED, when, modifiers, e.X, e.Y, 0, false));
+                postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_DRAGGED);
 			}
 			else
 			{
-				postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_MOVED, when, modifiers, e.X, e.Y, 0, false));
+                postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_MOVED);
 			}
 		}
 
 		private static int GetButton(MouseEventArgs e)
 		{
-			if((e.Button & MouseButtons.Left) != 0)
+            if((e.Button & MouseButtons.Left) != 0)
 			{
 				return java.awt.@event.MouseEvent.BUTTON1;
 			}
@@ -800,56 +844,37 @@ namespace ikvm.awt
 			}
 		}
 
-		private static bool IsWithinDoubleClickRectangle(Point p, int x, int y)
+        private void OnMouseDown(object sender, MouseEventArgs ev)
 		{
-			return Math.Abs(x - p.X) <= SystemInformation.DoubleClickSize.Width / 2 &&
-				Math.Abs(y - p.Y) <= SystemInformation.DoubleClickSize.Height / 2;
+            isMouseClick = false;
+            postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_PRESSED);
 		}
 
-		protected virtual void OnMouseDown(object sender, MouseEventArgs e)
+        private void OnClick(object sender, EventArgs ev)
+        {
+            isMouseClick = true;
+        }
+
+        private void OnMouseUp(object sender, MouseEventArgs ev)
 		{
-			long when = java.lang.System.currentTimeMillis();
-			if(when > lastClick + SystemInformation.DoubleClickTime
-				|| !IsWithinDoubleClickRectangle(mouseDown, e.X, e.Y))
+            postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_RELEASED);
+            if (isMouseClick)
 			{
-				clickCount = 0;
-			}
-			clickCount++;
-			lastClick = when;
-			mouseDown = new Point(e.X, e.Y);
-			int modifiers = GetModifiers(Control.ModifierKeys);
-			int button = GetButton(e);
-			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_PRESSED, when, modifiers, e.X, e.Y, clickCount, false, button));
+                //We make our own mouse click event because the event order is different in .NET
+                //in .NET the click occured before MouseUp
+                postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_CLICKED);
+            }
+            isMouseClick = false;
 		}
 
-		protected virtual void OnMouseUp(object sender, MouseEventArgs e)
+		private void OnMouseEnter(object sender, EventArgs ev)
 		{
-			long when = java.lang.System.currentTimeMillis();
-			int modifiers = GetModifiers(Control.ModifierKeys);
-			int button = GetButton(e);
-			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_RELEASED, when, modifiers, e.X, e.Y, clickCount, (e.Button & MouseButtons.Right) != 0, button));
-			if(mouseDown.X == e.X && mouseDown.Y == e.Y)
-			{
-				postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_CLICKED, when, modifiers, e.X, e.Y, clickCount, false, button));
-			}
-		}
+            postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_ENTERED);
+        }
 
-		private void OnMouseEnter(object sender, EventArgs e)
+		private void OnMouseLeave(object sender, EventArgs ev)
 		{
-			long when = java.lang.System.currentTimeMillis();
-			int modifiers = GetModifiers(Control.ModifierKeys);
-			int x = Control.MousePosition.X;
-			int y = Control.MousePosition.Y;
-			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_ENTERED, when, modifiers, x, y, 0, false));
-		}
-
-		private void OnMouseLeave(object sender, EventArgs e)
-		{
-			long when = java.lang.System.currentTimeMillis();
-			int modifiers = GetModifiers(Control.ModifierKeys);
-			int x = Control.MousePosition.X;
-			int y = Control.MousePosition.Y;
-			postEvent(new java.awt.@event.MouseEvent(component, java.awt.@event.MouseEvent.MOUSE_EXITED, when, modifiers, x, y, 0, false));
+            postMouseEvent(ev, java.awt.@event.MouseEvent.MOUSE_EXITED);
 		}
 
 		private void OnGotFocus(object sender, EventArgs e)
@@ -1060,10 +1085,21 @@ namespace ikvm.awt
 			control.Focus();
 		}
 
-		public bool requestFocus(java.awt.Component source, bool bool1, bool bool2, long x)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="request">the component for which the focus is requested</param>
+        /// <param name="temporary">indicates if the focus change is temporary (true) or permanent (false)</param>
+        /// <param name="allowWindowFocus">indicates if it's allowed to change window focus</param>
+        /// <param name="time">the timestamp</param>
+        /// <returns></returns>
+        public bool requestFocus(java.awt.Component request, bool temporary, bool allowWindowFocus, long time)
 		{
-			// TODO what do all the args mean?
-			requestFocus();
+            if (!control.Enabled || !control.Visible)
+            {
+                return false;
+            }
+            postEvent(new java.awt.@event.FocusEvent(request, java.awt.@event.FocusEvent.FOCUS_GAINED, temporary, component));
 			return true;
 		}
 
@@ -1866,19 +1902,29 @@ namespace ikvm.awt
 
 	class NetContainerPeer : NetComponentPeer, ContainerPeer
 	{
-		private java.awt.Insets _insets = new java.awt.Insets(0, 0, 0, 0);
+		protected java.awt.Insets _insets = new java.awt.Insets(0, 0, 0, 0);
 
 		public NetContainerPeer(java.awt.Container awtcontainer, ContainerControl container)
 			: base(awtcontainer, container)
 		{
 		}
 
-		public java.awt.Insets insets()
+        protected override int getInsetsLeft()
+        {
+            return _insets.left; ;
+        }
+
+        protected override int getInsetsTop()
+        {
+            return _insets.top;
+        }
+
+        public java.awt.Insets insets()
 		{
 			return getInsets();
 		}
 
-		public virtual java.awt.Insets getInsets()
+		public java.awt.Insets getInsets()
 		{
 			return _insets;
 		}
@@ -1946,6 +1992,14 @@ namespace ikvm.awt
             form.Closed += new EventHandler(OnClosed);
             form.Activated += new EventHandler(OnActivated);
             form.Deactivate += new EventHandler(OnDeactivate);
+
+            //Calculate the Insets one time
+            //This is many faster because there no thread change is needed.
+            Rectangle client = control.ClientRectangle;
+            Rectangle r = control.RectangleToScreen( client );
+            int x = r.Location.X - control.Location.X;
+            int y = r.Location.Y - control.Location.Y;
+            _insets = new java.awt.Insets(y, x, control.Height - client.Height - y, control.Width - client.Width - x);
         }
 
         private void OnOpened(object sender, EventArgs e)
@@ -1972,20 +2026,6 @@ namespace ikvm.awt
         private void OnDeactivate(object sender, EventArgs e)
         {
             postEvent(new java.awt.@event.WindowEvent((java.awt.Window)component, java.awt.@event.WindowEvent.WINDOW_DEACTIVATED));
-        }
-
-        private Rectangle RectangleToScreen(Rectangle rec)
-        {
-            return control.RectangleToScreen(rec);
-        }
-
-        public override java.awt.Insets getInsets()
-        {
-            Rectangle client = control.ClientRectangle;
-            Rectangle r = (Rectangle)control.Invoke(new ConvertRectangle(RectangleToScreen), new object[] { client });
-            int x = r.Location.X - control.Location.X;
-            int y = r.Location.Y - control.Location.Y;
-            return new java.awt.Insets(y, x, control.Height - client.Height - y, control.Width - client.Width - x);
         }
 
         public override java.awt.Graphics getGraphics()
