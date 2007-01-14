@@ -127,8 +127,21 @@ namespace ikvm.awt
                 //
                 // TODO (KR) Consider implementing with one of the Graphics#MeasureString methods that takes a StringFormat.
                 // TODO (KR) Consider implementing with Graphics#MeasureCharacterRanges().
-                SizeF size = g.MeasureString(aString, GetNetFont(), Int32.MaxValue, StringFormat.GenericTypographic);
-                return new java.awt.geom.Rectangle2D.Float(0, 0, size.Width, size.Height);
+				if (aString.Length == 0)
+				{
+					SizeF size = g.MeasureString(aString, GetNetFont(), Int32.MaxValue, StringFormat.GenericTypographic);
+					return new java.awt.geom.Rectangle2D.Float(0, 0, size.Width, size.Height);
+				}
+				else
+				{
+					StringFormat format = new StringFormat(StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap);
+					format.Trimming = StringTrimming.None;
+					format.SetMeasurableCharacterRanges(new CharacterRange[] { new CharacterRange(0, aString.Length) });
+					Region[] regions = g.MeasureCharacterRanges(aString, GetNetFont(), new RectangleF(0, 0, int.MaxValue, int.MaxValue), format);
+					SizeF size = regions[0].GetBounds(g).Size;
+					regions[0].Dispose();
+					return new java.awt.geom.Rectangle2D.Float(0, 0, size.Width, size.Height);
+				}
             }
         }
     }

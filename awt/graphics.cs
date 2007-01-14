@@ -52,6 +52,10 @@ namespace ikvm.awt
             newGraphics.init(Graphics.FromImage(bitmap));
             return newGraphics;
         }
+
+		public override void copyArea(int x, int y, int width, int height, int dx, int dy)
+		{
+		}
     }
 
     internal class ComponentGraphics : NetGraphics
@@ -70,11 +74,16 @@ namespace ikvm.awt
             newGraphics.init(control.CreateGraphics());
             return newGraphics;
         }
+
+		public override void copyArea(int x, int y, int width, int height, int dx, int dy)
+		{
+			throw new NotImplementedException();
+		}
     }
 
     internal abstract class NetGraphics : java.awt.Graphics2D
     {
-        private Graphics g;
+        protected Graphics g;
         private java.awt.Color jcolor;
         private Color color = SystemColors.WindowText;
         private Color bgcolor;
@@ -92,7 +101,7 @@ namespace ikvm.awt
                 font = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
             }
             this.font = font;
-            netfont = NetFontFromJavaFont(font, g.DpiY);
+            netfont = ((NetFontPeer)font.getPeer()).netFont;
             this.bgcolor = bgcolor;
             init(g);
         }
@@ -141,11 +150,6 @@ namespace ikvm.awt
             {
                 g.IntersectClip(new Region(J2C.ConvertShape(shape)));
             }
-        }
-
-        public override void copyArea(int param1, int param2, int param3, int param4, int param5, int param6)
-        {
-            throw new NotImplementedException();
         }
 
         public override void dispose()
@@ -203,60 +207,57 @@ namespace ikvm.awt
             return true;
         }
 
-        public override bool drawImage(java.awt.Image img, int param2, int param3, int param4, int param5, java.awt.Color col, java.awt.image.ImageObserver observer)
+        public override bool drawImage(java.awt.Image img, int x, int y, int width, int height, java.awt.Color bgcolor, java.awt.image.ImageObserver observer)
         {
-            Console.WriteLine(new System.Diagnostics.StackTrace());
-            throw new NotImplementedException();
-        }
+			Image image = J2C.ConvertImage(img);
+			if (image == null)
+			{
+				return false;
+			}
+			using (Brush brush = J2C.CreateBrush(bgcolor))
+			{
+				g.FillRectangle(brush, x, y, width, height);
+			}
+			g.DrawImage(image, x, y, width, height);
+			return true;
+		}
 
-        public override bool drawImage(java.awt.Image param1, int param2, int param3, java.awt.Color param4, java.awt.image.ImageObserver param5)
+        public override bool drawImage(java.awt.Image img, int x, int y, java.awt.Color bgcolor, java.awt.image.ImageObserver observer)
         {
-            Console.WriteLine(new System.Diagnostics.StackTrace());
-            throw new NotImplementedException();
-        }
+			Image image = J2C.ConvertImage(img);
+			if (image == null)
+			{
+				return false;
+			}
+			using (Brush brush = J2C.CreateBrush(bgcolor))
+			{
+				g.FillRectangle(brush, x, y, image.Width, image.Height);
+			}
+			g.DrawImage(image, x, y);
+			return true;
+		}
 
-        public override bool drawImage(java.awt.Image param1, int param2, int param3, int param4, int param5, java.awt.image.ImageObserver param6)
+        public override bool drawImage(java.awt.Image img, int x, int y, int width, int height, java.awt.image.ImageObserver observer)
         {
-            Console.WriteLine(new System.Diagnostics.StackTrace());
-            throw new NotImplementedException();
-        }
+			Image image = J2C.ConvertImage(img);
+			if (image == null)
+			{
+				return false;
+			}
+			g.DrawImage(image, x, y, width, height);
+			return true;
+		}
 
         public override bool drawImage(java.awt.Image img, int x, int y, java.awt.image.ImageObserver observer)
         {
-            if (img is NetBufferedImage)
-            {
-                g.DrawImage(((NetBufferedImage)img).bitmap, x, y);
-            }
-            else if (img is NetProducerImage)
-            {
-                g.DrawImage(((NetProducerImage)img).getBitmap(), x, y);
-            }
-            else if (img is NetVolatileImage)
-            {
-                g.DrawImage(((NetVolatileImage)img).bitmap, x, y);
-            }
-            else if (img is java.awt.image.BufferedImage)
-            {
-                // TODO this is horrible...
-                java.awt.image.BufferedImage bufImg = (java.awt.image.BufferedImage)img;
-                for (int iy = 0; iy < bufImg.getHeight(); iy++)
-                {
-                    for (int ix = 0; ix < bufImg.getWidth(); ix++)
-                    {
-                        using (Pen p = new Pen(Color.FromArgb(bufImg.getRGB(ix, iy))))
-                        {
-                            g.DrawLine(p, x + ix, y + iy, x + ix + 1, y + iy);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                Console.WriteLine(new System.Diagnostics.StackTrace());
-                throw new NotImplementedException(img.GetType().FullName);
-            }
-            return true;
-        }
+			Image image = J2C.ConvertImage(img);
+			if (image == null)
+			{
+				return false;
+			}
+			g.DrawImage(image, x, y);
+			return true;
+		}
 
         public override void drawLine(int x1, int y1, int x2, int y2)
         {
@@ -333,7 +334,7 @@ namespace ikvm.awt
         {
             int descent = netfont.FontFamily.GetCellDescent(netfont.Style);
             int descentPixel = (int)Math.Round(netfont.Size * descent / netfont.FontFamily.GetEmHeight(netfont.Style));
-            g.DrawString(str, netfont, brush, x, y - netfont.Height + descentPixel);
+			g.DrawString(str, netfont, brush, x, y - netfont.Height + descentPixel);
         }
 
         public override void fill3DRect(int param1, int param2, int param3, int param4, bool param5)
@@ -429,52 +430,6 @@ namespace ikvm.awt
             return font;
         }
 
-        internal static Font NetFontFromJavaFont(java.awt.Font f, float dpi)
-        {
-            FontFamily fam;
-            switch (f.getName())
-            {
-                case "Monospaced":
-                case "Courier":
-                case "courier":
-                    fam = FontFamily.GenericMonospace;
-                    break;
-                case "Serif":
-                    fam = FontFamily.GenericSerif;
-                    break;
-                case "SansSerif":
-                case "Dialog":
-                case "DialogInput":
-                case null:
-                case "Default":
-                    fam = FontFamily.GenericSansSerif;
-                    break;
-                default:
-                    try
-                    {
-                        fam = new FontFamily(f.getName());
-                    }
-                    catch (ArgumentException)
-                    {
-                        fam = FontFamily.GenericSansSerif;
-                    }
-                    break;
-            }
-            // NOTE Regular is guaranteed zero
-            FontStyle style = FontStyle.Regular;
-            if (f.isBold())
-            {
-                style |= FontStyle.Bold;
-            }
-            if (f.isItalic())
-            {
-                style |= FontStyle.Italic;
-            }
-            float em = fam.GetEmHeight(style);
-            float line = fam.GetLineSpacing(style);
-            return new Font(fam, (int)Math.Round(((f.getSize() * dpi) / 72) * em / line), style, GraphicsUnit.Pixel);
-        }
-
         public override java.awt.FontMetrics getFontMetrics(java.awt.Font f)
         {
             return new NetFontMetrics(f);
@@ -509,8 +464,8 @@ namespace ikvm.awt
             if (color == null)
             {
                 // TODO is this the correct default color?
-                //color = java.awt.SystemColor.controlText;
-                throw new java.lang.IllegalArgumentException("Color can't be null");
+                color = java.awt.SystemColor.controlText;
+                //throw new java.lang.IllegalArgumentException("Color can't be null");
             }
             this.jcolor = color;
             this.color = Color.FromArgb(color.getRGB());
@@ -531,9 +486,7 @@ namespace ikvm.awt
             // TODO why is Component calling us with a null reference and is this legal?
             if (f != null)
             {
-                Font newfont = NetFontFromJavaFont(f, g.DpiY);
-                netfont.Dispose();
-                netfont = newfont;
+                netfont = ((NetFontPeer)f.getPeer()).netFont;
                 font = f;
             }
             else
@@ -1059,7 +1012,7 @@ namespace ikvm.awt
 
         public override java.awt.GraphicsDevice[] getScreenDevices()
         {
-            throw new NotImplementedException();
+			return new java.awt.GraphicsDevice[] { getDefaultScreenDevice() };
         }
     }
 

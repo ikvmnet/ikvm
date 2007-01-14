@@ -224,14 +224,24 @@ namespace ikvm.awt
             }
         }
 
-        internal static Font ConvertFont(java.awt.Font font)
-        {
-            return ConvertFont( font.getName(), font.getStyle(), font.getSize2D() );
-        }
+		private static FontStyle ConvertFontStyle(int style)
+		{
+			FontStyle fs = FontStyle.Regular;
+			if ((style & java.awt.Font.BOLD) != 0)
+			{
+				fs |= FontStyle.Bold;
+			}
+			if ((style & java.awt.Font.ITALIC) != 0)
+			{
+				fs |= FontStyle.Italic;
+			}
+			return fs;
+		}
 
-        internal static Font ConvertFont(String name, int style, float size){
+        internal static Font ConvertFont(String name, int style, float size)
+		{
             FontFamily fam = CreateFontFamily(name);
-            return new Font(fam, size, (FontStyle)style, GraphicsUnit.Pixel);
+            return new Font(fam, size, ConvertFontStyle(style), GraphicsUnit.Pixel);
         }
 
     }

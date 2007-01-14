@@ -1145,6 +1145,7 @@ namespace ikvm.awt
 				case java.awt.Cursor.CROSSHAIR_CURSOR:
 					control.Cursor = Cursors.Cross;
 					break;
+				case java.awt.Cursor.W_RESIZE_CURSOR:
 				case java.awt.Cursor.E_RESIZE_CURSOR:
 					control.Cursor = Cursors.SizeWE;
 					break;
@@ -1189,7 +1190,7 @@ namespace ikvm.awt
 
         private void setFontImpl(java.awt.Font font)
 		{
-            control.Font = NetGraphics.NetFontFromJavaFont(font, component.getToolkit().getScreenResolution());
+            control.Font = ((NetFontPeer)font.getPeer()).netFont;
 		}
 
 		public void setFont(java.awt.Font font)
