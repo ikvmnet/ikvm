@@ -45,6 +45,7 @@
           <arg value="-target:library" />
           <arg value="-recurse:./*.class" />
           <arg value="-recurse:${Classpath.dir}/*.class" />
+          <arg value="-recurse:${Classpath.dir}/*.css" />
           <arg value="-recurse:${Classpath.dir}/resource/*.properties" />
           <arg value="-recurse:${Classpath.dir}/resource/javax.*" />
           <arg value="-recurse:${Classpath.dir}/resource/org.xml.*" />

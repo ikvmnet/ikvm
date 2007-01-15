@@ -3012,7 +3012,10 @@
 ../../classpath/java/text/SimpleDateFormat.java
 ../../classpath/java/text/spi/BreakIteratorProvider.java
 ../../classpath/java/text/spi/CollatorProvider.java
+../../classpath/java/text/spi/DateFormatProvider.java
 ../../classpath/java/text/spi/DateFormatSymbolsProvider.java
+../../classpath/java/text/spi/DecimalFormatSymbolsProvider.java
+../../classpath/java/text/spi/NumberFormatProvider.java
 ../../classpath/java/text/StringCharacterIterator.java
 ../../classpath/java/util/AbstractCollection.java
 ../../classpath/java/util/AbstractList.java
@@ -3283,6 +3286,7 @@
 ../../classpath/javax/imageio/stream/MemoryCacheImageInputStream.java
 ../../classpath/javax/imageio/stream/MemoryCacheImageOutputStream.java
 ../../classpath/javax/management/Attribute.java
+../../classpath/javax/management/AttributeChangeNotification.java
 ../../classpath/javax/management/AttributeList.java
 ../../classpath/javax/management/AttributeNotFoundException.java
 ../../classpath/javax/management/BadAttributeValueExpException.java
