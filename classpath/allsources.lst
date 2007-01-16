@@ -3287,11 +3287,14 @@
 ../../classpath/javax/imageio/stream/MemoryCacheImageOutputStream.java
 ../../classpath/javax/management/Attribute.java
 ../../classpath/javax/management/AttributeChangeNotification.java
+../../classpath/javax/management/AttributeChangeNotificationFilter.java
 ../../classpath/javax/management/AttributeList.java
 ../../classpath/javax/management/AttributeNotFoundException.java
+../../classpath/javax/management/AttributeValueExp.java
 ../../classpath/javax/management/BadAttributeValueExpException.java
 ../../classpath/javax/management/BadBinaryOpValueExpException.java
 ../../classpath/javax/management/BadStringOperationException.java
+../../classpath/javax/management/DefaultLoaderRepository.java
 ../../classpath/javax/management/DynamicMBean.java
 ../../classpath/javax/management/InstanceAlreadyExistsException.java
 ../../classpath/javax/management/InstanceNotFoundException.java
@@ -3355,6 +3358,7 @@
 ../../classpath/javax/management/openmbean/TabularDataSupport.java
 ../../classpath/javax/management/openmbean/TabularType.java
 ../../classpath/javax/management/OperationsException.java
+../../classpath/javax/management/QueryEval.java
 ../../classpath/javax/management/QueryExp.java
 ../../classpath/javax/management/ReflectionException.java
 ../../classpath/javax/management/RuntimeErrorException.java
@@ -3362,6 +3366,7 @@
 ../../classpath/javax/management/RuntimeOperationsException.java
 ../../classpath/javax/management/ServiceNotFoundException.java
 ../../classpath/javax/management/StandardMBean.java
+../../classpath/javax/management/StringValueExp.java
 ../../classpath/javax/management/ValueExp.java
 ../../classpath/javax/naming/AuthenticationException.java
 ../../classpath/javax/naming/AuthenticationNotSupportedException.java
