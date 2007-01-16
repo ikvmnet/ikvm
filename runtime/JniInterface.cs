@@ -1109,6 +1109,18 @@ namespace IKVM.Runtime
 			TlsHack.pJNIEnv = null;
 		}
 
+		private static string StringFromOEM(byte* psz)
+		{
+			for(int i = 0;; i++)
+			{
+				if(psz[i] == 0)
+				{
+					int oem = System.Globalization.CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
+					return new String((sbyte*)psz, 0, i, Encoding.GetEncoding(oem));
+				}
+			}
+		}
+
 		internal static string StringFromUTF8(byte* psz)
 		{
 			// Sun's modified UTF8 encoding is not compatible with System.Text.Encoding.UTF8,
@@ -1238,7 +1250,7 @@ namespace IKVM.Runtime
 				Marshal.Copy((IntPtr)(void*)pbuf, buf, 0, length);
 				// TODO what should the protection domain be?
 				// NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
-				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClassLoader.defineClassImpl(pEnv->UnwrapRef(loader), name != null ? new String((sbyte*)name) : null, buf, 0, buf.Length, null));
+				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClassLoader.defineClassImpl(pEnv->UnwrapRef(loader), name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
 			}
 			catch(Exception x)
 			{
@@ -1265,7 +1277,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				string name = new String((sbyte*)pszName);
+				string name = StringFromOEM(pszName);
 				// don't allow dotted names!
 				if(name.IndexOf('.') >= 0)
 				{
@@ -1367,7 +1379,7 @@ namespace IKVM.Runtime
 				try
 				{
 					wrapper.Finish();
-					exception = (Exception)mw.Invoke(null, new object[] { new String((sbyte*)msg) }, false);
+					exception = (Exception)mw.Invoke(null, new object[] { StringFromOEM(msg) }, false);
 					rc = JNI_OK;
 				}
 				catch(RetargetableJavaException x)
@@ -1420,7 +1432,9 @@ namespace IKVM.Runtime
 
 		internal static void FatalError(JNIEnv* pEnv, byte* msg)
 		{
-			JVM.CriticalFailure(new String((sbyte*)msg), null);
+			Console.Error.WriteLine("FATAL ERROR in native method: {0}", msg == null ? "(null)" : StringFromOEM(msg));
+			Console.Error.WriteLine(new StackTrace(1, true));
+			Environment.Exit(1);
 		}
 
 		internal static jint PushLocalFrame(JNIEnv* pEnv, jint capacity)
