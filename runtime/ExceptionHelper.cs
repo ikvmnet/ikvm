@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -100,8 +100,7 @@ namespace IKVM.NativeCode.java.lang
 
 		public static bool IsHideFromJava(MethodBase mb)
 		{
-			return mb.IsDefined(typeof(HideFromJavaAttribute), false)
-				|| mb.IsDefined(typeof(HideFromReflectionAttribute), false);
+			return NativeCode.gnu.classpath.VMStackWalker.isHideFromJava(mb);
 		}
 
 		public static string getClassNameFromType(Type type)

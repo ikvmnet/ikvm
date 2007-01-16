@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1440,6 +1440,8 @@ namespace IKVM.NativeCode.gnu.classpath
 
 	public class VMStackWalker
 	{
+		private static readonly Hashtable isHideFromJavaCache = Hashtable.Synchronized(new Hashtable());
+
 		public static object getClassFromType(Type type)
 		{
 			TypeWrapper.AssertFinished(type);
@@ -1483,8 +1485,15 @@ namespace IKVM.NativeCode.gnu.classpath
 
 		public static bool isHideFromJava(MethodBase mb)
 		{
-			return mb.IsDefined(typeof(HideFromJavaAttribute), false)
-				|| mb.IsDefined(typeof(HideFromReflectionAttribute), false);
+			// TODO on .NET 2.0 isHideFromJavaCache should be a Dictionary<RuntimeMethodHandle, bool>
+			object cached = isHideFromJavaCache[mb];
+			if(cached == null)
+			{
+				cached = mb.IsDefined(typeof(HideFromJavaAttribute), false)
+					|| mb.IsDefined(typeof(HideFromReflectionAttribute), false);
+				isHideFromJavaCache[mb] = cached;
+			}
+			return (bool)cached;
 		}
 	}
 }
