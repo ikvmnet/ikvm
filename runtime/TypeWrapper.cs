@@ -2583,7 +2583,7 @@ namespace IKVM.Internal
 		{
 			if(type != null)
 			{
-				while(type.IsArray)
+				while(type.HasElementType)
 				{
 					type = type.GetElementType();
 				}
@@ -7537,7 +7537,7 @@ namespace IKVM.Internal
 			: this(GetModifiers(type), name, GetBaseTypeWrapper(type))
 		{
 			Debug.Assert(!(type is TypeBuilder));
-			Debug.Assert(!type.IsArray);
+			Debug.Assert(!type.Name.EndsWith("[]"));
 
 			this.type = type;
 		}
@@ -8459,7 +8459,7 @@ namespace IKVM.Internal
 		// E.g. GetName(typeof(object)) returns "cli.System.Object".
 		internal static string GetName(Type type)
 		{
-			Debug.Assert(!type.IsArray && !AttributeHelper.IsJavaModule(type.Module));
+			Debug.Assert(!type.Name.EndsWith("[]") && !AttributeHelper.IsJavaModule(type.Module));
 
 			string name = type.FullName;
 
@@ -9238,7 +9238,7 @@ namespace IKVM.Internal
 		{
 			Debug.Assert(!(type.IsByRef), type.FullName);
 			Debug.Assert(!(type.IsPointer), type.FullName);
-			Debug.Assert(!(type.IsArray), type.FullName);
+			Debug.Assert(!(type.Name.EndsWith("[]")), type.FullName);
 			Debug.Assert(!(type is TypeBuilder), type.FullName);
 			Debug.Assert(!(AttributeHelper.IsJavaModule(type.Module)));
 

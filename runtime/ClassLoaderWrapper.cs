@@ -821,12 +821,12 @@ namespace IKVM.Internal
 			{
 				wrapper = LoadClassCritical(remapped);
 			}
-			else if(type.IsArray)
+			else if(IsVector(type))
 			{
 				// it might be an array of a dynamically compiled Java type
 				int rank = 1;
 				Type elem = type.GetElementType();
-				while(elem.IsArray)
+				while(IsVector(elem))
 				{
 					rank++;
 					elem = elem.GetElementType();
@@ -842,6 +842,14 @@ namespace IKVM.Internal
 			}
 			typeToTypeWrapper[type] = wrapper;
 			return wrapper;
+		}
+
+		private static bool IsVector(Type type)
+		{
+			// NOTE it looks like there's no API to distinguish an array of rank 1 from a vector,
+			// so we check if the type name ends in [], which indicates it's a vector
+			// (non-vectors will have [*] or [,]).
+			return type.IsArray && type.Name.EndsWith("[]");
 		}
 
 		internal virtual Type GetType(string name)
@@ -1237,7 +1245,7 @@ namespace IKVM.Internal
 		internal TypeWrapper GetWrapperFromAssemblyType(Type type)
 		{
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromAssemblyType: {0}", type.FullName);
-			Debug.Assert(!type.IsArray, "!type.IsArray", type.FullName);
+			Debug.Assert(!type.Name.EndsWith("[]"), "!type.IsArray", type.FullName);
 			Debug.Assert(type.Assembly == assembly);
 #if !COMPACT_FRAMEWORK
 			Debug.Assert(!(type.Assembly is AssemblyBuilder), "!(type.Assembly is AssemblyBuilder)", type.FullName);
