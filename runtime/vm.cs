@@ -276,13 +276,15 @@ namespace IKVM.Internal
 			try
 			{
 				Tracer.Error(Tracer.Runtime, "CRITICAL FAILURE: {0}", message);
+				Type messageBox = null;
+#if !STATIC_COMPILER
 				// NOTE we use reflection to invoke MessageBox.Show, to make sure we run in environments where WinForms isn't available
 				Assembly winForms = IsUnix ? null : Assembly.Load("System.Windows.Forms, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
-				Type messageBox = null;
 				if(winForms != null)
 				{
 					messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
 				}
+#endif
 				new ReflectionPermission(ReflectionPermissionFlag.MemberAccess
 #if !WHIDBEY
 					| ReflectionPermissionFlag.TypeInformation
@@ -290,6 +292,7 @@ namespace IKVM.Internal
 				).Assert();
 				message = String.Format("****** Critical Failure: {1} ******{0}{0}" +
 					"PLEASE FILE A BUG REPORT FOR IKVM.NET WHEN YOU SEE THIS MESSAGE{0}{0}" +
+					(messageBox != null ? "(on Windows you can use Ctrl+C to copy the contents of this message to the clipboard){0}{0}" : "") +
 					"{2}{0}" + 
 					"{3}{0}" +
 					"{4}",
