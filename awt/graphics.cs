@@ -1,6 +1,7 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters, Volker Berlin
+  Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
+  Copyright (C) 2006, 2007 Volker Berlin
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
