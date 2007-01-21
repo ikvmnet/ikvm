@@ -84,7 +84,8 @@ namespace ikvm.awt
     internal abstract class NetGraphics : java.awt.Graphics2D
     {
         protected Graphics g;
-        private java.awt.Color jcolor;
+        private java.awt.Color javaColor;
+        private java.awt.Paint javaPaint;
         private Color color = SystemColors.WindowText;
         private Color bgcolor;
         private java.awt.Font font;
@@ -418,11 +419,11 @@ namespace ikvm.awt
 
         public override java.awt.Color getColor()
         {
-            if (jcolor == null)
+            if (javaColor == null)
             {
-                jcolor = new java.awt.Color(color.ToArgb());
+                javaColor = new java.awt.Color(color.ToArgb());
             }
-            return jcolor;
+            return javaColor;
         }
 
         public override java.awt.Font getFont()
@@ -467,7 +468,7 @@ namespace ikvm.awt
                 color = java.awt.SystemColor.controlText;
                 //throw new java.lang.IllegalArgumentException("Color can't be null");
             }
-            this.jcolor = color;
+            this.javaPaint = this.javaColor = color;
             this.color = Color.FromArgb(color.getRGB());
             if (brush is SolidBrush)
             {
@@ -479,6 +480,7 @@ namespace ikvm.awt
                 brush = new SolidBrush(this.color);
             }
             pen.Color = this.color;
+            pen.Brush = brush;
         }
 
         public override void setFont(java.awt.Font f)
@@ -583,7 +585,76 @@ namespace ikvm.awt
 
         public override void setPaint(java.awt.Paint paint)
         {
-            throw new NotImplementedException();
+            if (paint is java.awt.Color)
+            {
+                setColor((java.awt.Color)paint);
+                return;
+            }
+
+            if (this.javaPaint == paint)
+            {
+                return;
+            }
+            this.javaPaint = paint;
+
+            if (paint is java.awt.GradientPaint)
+            {
+                java.awt.GradientPaint gradient = (java.awt.GradientPaint)paint;
+                LinearGradientBrush linear;
+                if (gradient.isCyclic())
+                {
+                    linear = new LinearGradientBrush(
+                        J2C.ConvertPoint(gradient.getPoint1()),
+                        J2C.ConvertPoint(gradient.getPoint2()),
+                        J2C.ConvertColor(gradient.getColor1()),
+                        J2C.ConvertColor(gradient.getColor2()));
+                }
+                else
+                {
+                    //HACK because .NET does not support continue gradient like Java else Tile Gradient
+                    //that we receize the rectangle very large (factor z) and set 4 color values
+                    // a exact solution will calculate the size of the Graphics with the current transform
+                    Color color1 = J2C.ConvertColor(gradient.getColor1());
+                    Color color2 = J2C.ConvertColor(gradient.getColor2());
+                    float x1 = (float)gradient.getPoint1().getX();
+                    float x2 = (float)gradient.getPoint2().getX();
+                    float y1 = (float)gradient.getPoint1().getY();
+                    float y2 = (float)gradient.getPoint2().getY();
+                    float diffX = x2 - x1;
+                    float diffY = y2 - y1;
+                    const float z = 60; //HACK zoom factor, with a larger factor .NET will make the gradient wider.
+                    linear = new LinearGradientBrush(
+                        new PointF(x1 - z * diffX, y1 - z * diffY),
+                        new PointF(x2 + z * diffX, y2 + z * diffY),
+                        color1,
+                        color1);
+                    ColorBlend colorBlend = new ColorBlend(4);
+                    Color[] colors = colorBlend.Colors;
+                    colors[0] = colors[1] = color1;
+                    colors[2] = colors[3] = color2;
+                    float[] positions = colorBlend.Positions;
+                    positions[1] = z / (2 * z + 1);
+                    positions[2] = (z + 1) / (2 * z + 1);
+                    positions[3] = 1.0f;
+                    linear.InterpolationColors = colorBlend;
+                }
+                linear.WrapMode = WrapMode.TileFlipXY;
+                brush = linear;
+                pen.Brush = brush;
+                return;
+            }
+
+            if (paint is java.awt.TexturePaint)
+            {
+                java.awt.TexturePaint texture = (java.awt.TexturePaint)paint;
+                brush = new TextureBrush(
+                    J2C.ConvertImage(texture.getImage()),
+                    J2C.ConvertRect(texture.getAnchorRect()));
+                pen.Brush = brush;
+                return;
+            }
+
+            throw new NotImplementedException("setPaint("+paint.GetType().FullName+")");
         }
 
         public override void setStroke(java.awt.Stroke stroke)
@@ -792,7 +863,7 @@ namespace ikvm.awt
 
         public override java.awt.Paint getPaint()
         {
-            throw new NotImplementedException();
+            return javaPaint;
         }
 
         public override java.awt.Composite getComposite()
