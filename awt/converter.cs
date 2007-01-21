@@ -49,6 +49,11 @@ namespace ikvm.awt
     class J2C
     {
 
+        internal static Color ConvertColor(java.awt.Color color)
+        {
+            return Color.FromArgb(color.getRGB());
+        }
+
         internal static Image ConvertImage(java.awt.Image img)
         {
             if (img is NetBufferedImage)
@@ -58,6 +63,10 @@ namespace ikvm.awt
             if (img is NetVolatileImage)
             {
                 return ((NetVolatileImage)img).bitmap;
+            }
+            if (img is NetProducerImage)
+            {
+                return ((NetProducerImage)img).getBitmap();
             }
             if (img is BufferedImage)
             {
@@ -101,6 +110,16 @@ namespace ikvm.awt
 
             bitmap.UnlockBits(data);
             return bitmap;
+        }
+
+        internal static PointF ConvertPoint(java.awt.geom.Point2D point)
+        {
+            return new PointF((float)point.getX(), (float)point.getY());
+        }
+
+        internal static RectangleF ConvertRect(java.awt.geom.Rectangle2D rect)
+        {
+            return new RectangleF((float)rect.getX(), (float)rect.getY(), (float)rect.getWidth(), (float)rect.getHeight());
         }
 
         /// <summary>
@@ -240,8 +259,29 @@ namespace ikvm.awt
 
         internal static Font ConvertFont(String name, int style, float size)
 		{
-            FontFamily fam = CreateFontFamily(name);
-            return new Font(fam, size, ConvertFontStyle(style), GraphicsUnit.Pixel);
+            if (size <= 0)
+            {
+                size = 1;
+            }
+            FontFamily family = CreateFontFamily(name);
+            FontStyle fontStyle = ConvertFontStyle(style);
+            if (!family.IsStyleAvailable(fontStyle))
+            {
+                //Some Fonts (for example Aharoni) does not support Regular style. This throw an exception else it is not documented.
+                if(family.IsStyleAvailable(FontStyle.Regular)){
+                    fontStyle = FontStyle.Regular;
+                }else
+                if(family.IsStyleAvailable(FontStyle.Bold)){
+                    fontStyle = FontStyle.Bold;
+                }else
+                if(family.IsStyleAvailable(FontStyle.Italic)){
+                    fontStyle = FontStyle.Italic;
+                }else
+                if(family.IsStyleAvailable(FontStyle.Bold | FontStyle.Italic)){
+                    fontStyle = FontStyle.Bold | FontStyle.Italic;
+                }
+            }
+            return new Font(family, size, fontStyle, GraphicsUnit.Pixel);
         }
 
     }
