@@ -53,6 +53,7 @@ namespace ikvm.awt
     delegate void SetCursor(java.awt.Cursor cursor);
 	delegate java.awt.Dimension GetDimension();
     delegate Rectangle ConvertRectangle(Rectangle r);
+    delegate Point ConvertPoint(Point p);
 
 	class UndecoratedForm : Form
 	{
@@ -939,8 +940,10 @@ namespace ikvm.awt
 
 		public java.awt.Point getLocationOnScreen()
 		{
-			// TODO use control.Invoke
-			Point p = control.PointToScreen(new Point(0, 0));
+			Point p = new Point(0, 0);
+            p = control.InvokeRequired ?
+                    (Point)control.Invoke(new ConvertPoint(control.PointToScreen), new object[] { p }) :
+                    control.PointToScreen(p);
 			return new java.awt.Point(p.X, p.Y);
 		}
 
@@ -1773,12 +1776,12 @@ namespace ikvm.awt
 
         public void toBack()
 		{
-			((Form)control).SendToBack();
+            control.BeginInvoke(new SetVoid(((Form)control).SendToBack));
 		}
 
 		public void toFront()
 		{
-			((Form)control).Activate();
+            control.BeginInvoke(new SetVoid(((Form)control).Activate));
 		}
 
 		public void updateAlwaysOnTop()
