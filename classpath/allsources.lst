@@ -3197,6 +3197,9 @@
 ../../classpath/javax/accessibility/AccessibleText.java
 ../../classpath/javax/accessibility/AccessibleTextSequence.java
 ../../classpath/javax/accessibility/AccessibleValue.java
+../../classpath/javax/activity/ActivityCompletedException.java
+../../classpath/javax/activity/ActivityRequiredException.java
+../../classpath/javax/activity/InvalidActivityException.java
 ../../classpath/javax/crypto/BadPaddingException.java
 ../../classpath/javax/crypto/Cipher.java
 ../../classpath/javax/crypto/CipherInputStream.java
@@ -3329,6 +3332,7 @@
 ../../classpath/javax/management/NotCompliantMBeanException.java
 ../../classpath/javax/management/Notification.java
 ../../classpath/javax/management/NotificationBroadcaster.java
+../../classpath/javax/management/NotificationBroadcasterSupport.java
 ../../classpath/javax/management/NotificationEmitter.java
 ../../classpath/javax/management/NotificationFilter.java
 ../../classpath/javax/management/NotificationListener.java
