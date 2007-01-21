@@ -29,6 +29,10 @@ using System.Text;
 using java.awt.font;
 using java.awt.geom;
 using java.util;
+#if WINFX
+using System.Windows;
+using System.Windows.Media;
+#endif
 
 
 namespace ikvm.awt
@@ -158,12 +162,14 @@ namespace ikvm.awt
 
         public override bool canDisplay(java.awt.Font font, char param2)
         {
-            throw new NotImplementedException();
+            //HACK There is no equivalent in C# http://msdn2.microsoft.com/en-us/library/sf4dhbw8(VS.80).aspx
+            return true;
         }
 
         public override int canDisplayUpTo(java.awt.Font font, java.text.CharacterIterator param2, int param3, int param4)
         {
-            throw new NotImplementedException();
+            //HACK There is no equivalent in C# http://msdn2.microsoft.com/en-us/library/e8bh4szw(VS.80).aspx
+            return -1;
         }
 
         public override GlyphVector createGlyphVector(java.awt.Font font, FontRenderContext frc, int[] glyphCodes)
