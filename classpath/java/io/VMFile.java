@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004 Jeroen Frijters
+  Copyright (C) 2004, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -47,51 +47,110 @@ final class VMFile
     {
 	try
 	{
-	    // TODO what if "path" is a directory?
+            if(false) throw new cli.System.UnauthorizedAccessException();
+            if(false) throw new cli.System.ArgumentException();
+            if(false) throw new cli.System.IO.IOException();
+            if(false) throw new cli.System.NotSupportedException();
 	    return DateTimeToJavaLongTime(cli.System.IO.File.GetLastWriteTime(path));
 	}
-	catch(Throwable x)
+	catch(cli.System.UnauthorizedAccessException _)
 	{
 	    return 0;
 	}
+        catch(cli.System.ArgumentException _)
+        {
+            return 0;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return 0;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return 0;
+        }
+    }
+
+    private static cli.System.IO.FileInfo newFileInfo(String path)
+        throws cli.System.ArgumentNullException,
+            cli.System.Security.SecurityException,
+            cli.System.ArgumentException,
+            cli.System.UnauthorizedAccessException,
+            cli.System.IO.PathTooLongException,
+            cli.System.NotSupportedException
+    {
+        return new cli.System.IO.FileInfo(path);
     }
 
     static boolean setReadOnly(String path)
     {
 	try
 	{
-	    cli.System.IO.FileInfo fileInfo = new cli.System.IO.FileInfo(path);
+	    cli.System.IO.FileInfo fileInfo = newFileInfo(path);
 	    cli.System.IO.FileAttributes attr = fileInfo.get_Attributes();
 	    attr = cli.System.IO.FileAttributes.wrap(attr.Value | cli.System.IO.FileAttributes.ReadOnly);
 	    fileInfo.set_Attributes(attr);
 	    return true;
 	}
-	catch(Throwable x)
+	catch(cli.System.Security.SecurityException _)
 	{
 	    return false;
 	}
+        catch(cli.System.ArgumentException _)
+        {
+            return false;
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return false;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return false;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return false;
+        }
     }
 
     static boolean create(String path) throws IOException
     {
 	try
 	{
+            if(false) throw new cli.System.ArgumentException();
+            if(false) throw new cli.System.IO.IOException();
+            if(false) throw new cli.System.UnauthorizedAccessException();
+            if(false) throw new cli.System.NotSupportedException();
 	    cli.System.IO.File.Open(path, cli.System.IO.FileMode.wrap(cli.System.IO.FileMode.CreateNew)).Close();
 	    return true;
 	}
-	catch(Throwable x)
-	{
-	    // TODO handle errors
-	    return false;
-	}
+        catch(cli.System.ArgumentException _)
+        {
+            return false;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return false;
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return false;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return false;
+        }
     }
 
     static String[] list(String dirpath)
     {
-	// TODO error handling
 	try
 	{
-	    String[] l = cli.System.IO.Directory.GetFileSystemEntries(dirpath);
+            if(false) throw new cli.System.ArgumentException();
+            if(false) throw new cli.System.IO.IOException();
+            if(false) throw new cli.System.UnauthorizedAccessException();
+            String[] l = cli.System.IO.Directory.GetFileSystemEntries(dirpath);
 	    for(int i = 0; i < l.length; i++)
 	    {
 		int pos = l[i].lastIndexOf(cli.System.IO.Path.DirectorySeparatorChar);
@@ -102,53 +161,84 @@ final class VMFile
 	    }
 	    return l;
 	}
-	catch(Throwable x)
-	{
-	    return null;
-	}
+        catch(cli.System.ArgumentException _)
+        {
+            return null;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return null;
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return null;
+        }
     }
 
     static boolean renameTo(String targetpath, String destpath)
     {
 	try
 	{
-	    new cli.System.IO.FileInfo(targetpath).MoveTo(destpath);
+	    newFileInfo(targetpath).MoveTo(destpath);
 	    return true;
 	}
-	catch(Throwable x)
-	{
-	    return false;
-	}
+        catch(cli.System.Security.SecurityException _)
+        {
+            return false;
+        }
+        catch(cli.System.ArgumentException _)
+        {
+            return false;
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return false;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return false;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return false;
+        }
     }
 
     static long length(String path)
     {
-	// TODO handle errors
 	try
 	{
-	    return new cli.System.IO.FileInfo(path).get_Length();
+	    return newFileInfo(path).get_Length();
 	}
-	catch(Throwable x)
-	{
-	    return 0;
-	}
+        catch(cli.System.Security.SecurityException _)
+        {
+            return 0;
+        }
+        catch(cli.System.ArgumentException _)
+        {
+            return 0;
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return 0;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return 0;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return 0;
+        }
     }
 
     static boolean exists(String path)
     {
-	try
-	{
-	    return cli.System.IO.File.Exists(path) || cli.System.IO.Directory.Exists(path);
-	}
-	catch(Throwable x)
-	{
-	    return false;
-	}
+	return cli.System.IO.File.Exists(path) || cli.System.IO.Directory.Exists(path);
     }
 
     static boolean delete(String path)
     {
-	// TODO handle errors
 	try
 	{
             cli.System.IO.FileSystemInfo fileInfo;
@@ -158,7 +248,7 @@ final class VMFile
             }
             else if(cli.System.IO.File.Exists(path))
             {
-                fileInfo = new cli.System.IO.FileInfo(path);
+                fileInfo = newFileInfo(path);
             }
             else
             {
@@ -175,75 +265,132 @@ final class VMFile
             fileInfo.Delete();
             return true;
 	}
-	catch(Throwable x)
-	{
-	    return false;
-	}
+        catch(cli.System.Security.SecurityException _)
+        {
+            return false;
+        }
+        catch(cli.System.ArgumentException _)
+        {
+            return false;
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return false;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return false;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return false;
+        }
     }
 
     static boolean setLastModified(String path, long time)
     {
 	try
 	{
-	    new cli.System.IO.FileInfo(path).set_LastWriteTime(JavaLongTimeToDateTime(time));
+	    newFileInfo(path).set_LastWriteTime(JavaLongTimeToDateTime(time));
 	    return true;
 	}
-	catch(Throwable x)
-	{
-	    return false;
-	}
-    }
-
-    static boolean mkdir(String path)
-    {
-	// TODO handle errors
-        cli.System.IO.DirectoryInfo parent;
-        try
+        catch(cli.System.Security.SecurityException _)
         {
-            if(false) throw new cli.System.ArgumentException();
-            parent = cli.System.IO.Directory.GetParent(path);
+            return false;
         }
         catch(cli.System.ArgumentException _)
         {
             return false;
         }
-	if (parent == null ||
-            !cli.System.IO.Directory.Exists(parent.get_FullName()) ||
-	    cli.System.IO.Directory.Exists(path))
-	{
-	    return false;
-	}
-	return cli.System.IO.Directory.CreateDirectory(path) != null;
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return false;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return false;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return false;
+        }
+    }
+
+    static boolean mkdir(String path)
+    {
+        try
+        {
+            if(false) throw new cli.System.IO.IOException();
+            if(false) throw new cli.System.UnauthorizedAccessException();
+            if(false) throw new cli.System.ArgumentException();
+            if(false) throw new cli.System.NotSupportedException();
+            if(false) throw new cli.System.Security.SecurityException();
+            cli.System.IO.DirectoryInfo parent = cli.System.IO.Directory.GetParent(path);
+            if (parent == null ||
+                !cli.System.IO.Directory.Exists(parent.get_FullName()) ||
+                cli.System.IO.Directory.Exists(path))
+            {
+                return false;
+            }
+            return cli.System.IO.Directory.CreateDirectory(path) != null;
+        }
+        catch(cli.System.Security.SecurityException _)
+        {
+            return false;
+        }
+        catch(cli.System.ArgumentException _)
+        {
+            return false;
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return false;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return false;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return false;
+        }
     }
 
     static boolean isFile(String path)
     {
-	// TODO handle errors
-	// TODO make sure semantics are the same
-	try
-	{
-	    return cli.System.IO.File.Exists(path);
-	}
-	catch(Throwable x)
-	{
-	    return false;
-	}
+	return cli.System.IO.File.Exists(path);
     }
 
     static boolean canWrite(String path)
     {
 	try
 	{
-            cli.System.IO.FileInfo fileInfo = new cli.System.IO.FileInfo(path);
+            cli.System.IO.FileInfo fileInfo = newFileInfo(path);
             cli.System.IO.FileAttributes attr = fileInfo.get_Attributes();
             // Like the JDK we'll only look at the read-only attribute and not
             // the security permissions associated with the file or directory.
             return (attr.Value & cli.System.IO.FileAttributes.ReadOnly) == 0;
 	}
-	catch(Throwable x)
-	{
-	    return false;
-	}
+        catch(cli.System.Security.SecurityException _)
+        {
+            return false;
+        }
+        catch(cli.System.ArgumentException _)
+        {
+            return false;
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return false;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return false;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return false;
+        }
     }
 
     static boolean canWriteDirectory(File dir)
@@ -260,41 +407,61 @@ final class VMFile
 	    {
 		return true;
 	    }
-	    new cli.System.IO.FileInfo(path).Open(
+	    newFileInfo(path).Open(
 		cli.System.IO.FileMode.wrap(cli.System.IO.FileMode.Open),
 		cli.System.IO.FileAccess.wrap(cli.System.IO.FileAccess.Read),
 		cli.System.IO.FileShare.wrap(cli.System.IO.FileShare.ReadWrite)).Close();
 	    return true;
 	}
-	catch(Throwable x)
-	{
-	    return false;
-	}
+        catch(cli.System.Security.SecurityException _)
+        {
+            return false;
+        }
+        catch(cli.System.ArgumentException _)
+        {
+            return false;
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return false;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return false;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return false;
+        }
     }
 
     static boolean isDirectory(String path)
     {
-	// TODO handle errors
-	// TODO make sure semantics are the same
-	try
-	{
-	    return cli.System.IO.Directory.Exists(path);
-	}
-	catch(Throwable x)
-	{
-	    return false;
-	}
+	return cli.System.IO.Directory.Exists(path);
     }
 
     static File[] listRoots()
     {
-	String[] roots = cli.System.IO.Directory.GetLogicalDrives();
-	File[] fileRoots = new File[roots.length];
-	for(int i = 0; i < roots.length; i++)
-	{
-	    fileRoots[i] = new File(roots[i]);
-	}
-	return fileRoots;
+        try
+        {
+            if(false) throw new cli.System.IO.IOException();
+            if(false) throw new cli.System.UnauthorizedAccessException();
+	    String[] roots = cli.System.IO.Directory.GetLogicalDrives();
+	    File[] fileRoots = new File[roots.length];
+	    for(int i = 0; i < roots.length; i++)
+	    {
+	        fileRoots[i] = new File(roots[i]);
+	    }
+	    return fileRoots;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return new File[0];
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return new File[0];
+        }
     }
 
     static boolean isHidden(String path)
@@ -307,18 +474,45 @@ final class VMFile
 	    }
 	    else
 	    {
-		return (new cli.System.IO.FileInfo(path).get_Attributes().Value & cli.System.IO.FileAttributes.Hidden) != 0;
+		return (newFileInfo(path).get_Attributes().Value & cli.System.IO.FileAttributes.Hidden) != 0;
 	    }
 	}
-	catch(Throwable x)
-	{
-	    return false;
-	}
+        catch(cli.System.Security.SecurityException _)
+        {
+            return false;
+        }
+        catch(cli.System.ArgumentException _)
+        {
+            return false;
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+            return false;
+        }
+        catch(cli.System.IO.IOException _)
+        {
+            return false;
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+            return false;
+        }
     }
 
     static String getName(String path)
     {
-	return cli.System.IO.Path.GetFileName(path);
+        try
+        {
+            if(false) throw new cli.System.ArgumentException();
+	    return cli.System.IO.Path.GetFileName(path);
+        }
+        catch(cli.System.ArgumentException _)
+        {
+            // HACK this is not quite compatible with the JDK, but
+            // since we only do this for invalid paths anyway, it
+            // probably isn't worthwhile to be 100% correct.
+            return path.substring(path.lastIndexOf(File.separatorChar) + 1);
+        }
     }
 
     static String toCanonicalForm(String path) throws IOException
@@ -330,12 +524,7 @@ final class VMFile
     {
 	try
 	{
-	    if(false) throw new cli.System.Security.SecurityException();
-	    if(false) throw new cli.System.ArgumentException();
-	    if(false) throw new cli.System.UnauthorizedAccessException();
-	    if(false) throw new cli.System.IO.IOException();
-	    if(false) throw new cli.System.NotSupportedException();
-	    return new cli.System.IO.FileInfo(path);
+	    return newFileInfo(path);
 	}
 	catch(cli.System.Security.SecurityException x1)
 	{
