@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -5125,6 +5125,7 @@ namespace IKVM.Internal
 					int dotindex = o.classFile.Name.LastIndexOf('.') + 1;
 					AttributeHelper.SetInnerClass(attributeTypeBuilder, o.classFile.Name.Substring(0, dotindex) + "$Proxy" + o.classFile.Name.Substring(dotindex), Modifiers.Final);
 					attributeTypeBuilder.AddInterfaceImplementation(o.typeBuilder);
+					AttributeHelper.SetImplementsAttribute(attributeTypeBuilder, new TypeWrapper[] { o.wrapper });
 
 					if(o.classFile.Annotations != null)
 					{
@@ -5430,16 +5431,19 @@ namespace IKVM.Internal
 							{
 								// now add a .NET property for this annotation optional parameter
 								Type argType = TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType);
-								PropertyBuilder pb = attributeTypeBuilder.DefineProperty(o.methods[i].Name, PropertyAttributes.None, argType, Type.EmptyTypes);
-								MethodBuilder setter = attributeTypeBuilder.DefineMethod("set_" + o.methods[i].Name, MethodAttributes.Public, typeof(void), new Type[] { argType });
-								pb.SetSetMethod(setter);
-								ilgen = setter.GetILGenerator();
-								EmitSetValueCall(annotationAttributeBaseType, ilgen, o.methods[i].Name, o.methods[i].ReturnType, 1);
-								ilgen.Emit(OpCodes.Ret);
-								MethodBuilder getter = attributeTypeBuilder.DefineMethod("get_" + o.methods[i].Name, MethodAttributes.Public, argType, Type.EmptyTypes);
-								pb.SetGetMethod(getter);
-								// TODO implement the getter method
-								getter.GetILGenerator().ThrowException(typeof(NotImplementedException));
+								if(argType != null)
+								{
+									PropertyBuilder pb = attributeTypeBuilder.DefineProperty(o.methods[i].Name, PropertyAttributes.None, argType, Type.EmptyTypes);
+									MethodBuilder setter = attributeTypeBuilder.DefineMethod("set_" + o.methods[i].Name, MethodAttributes.Public, typeof(void), new Type[] { argType });
+									pb.SetSetMethod(setter);
+									ilgen = setter.GetILGenerator();
+									EmitSetValueCall(annotationAttributeBaseType, ilgen, o.methods[i].Name, o.methods[i].ReturnType, 1);
+									ilgen.Emit(OpCodes.Ret);
+									MethodBuilder getter = attributeTypeBuilder.DefineMethod("get_" + o.methods[i].Name, MethodAttributes.Public, argType, Type.EmptyTypes);
+									pb.SetGetMethod(getter);
+									// TODO implement the getter method
+									getter.GetILGenerator().ThrowException(typeof(NotImplementedException));
+								}
 							}
 						}
 					}
