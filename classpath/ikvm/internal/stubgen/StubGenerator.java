@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006 Jeroen Frijters
+  Copyright (C) 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,7 +28,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 
 @ikvm.lang.Internal
@@ -79,21 +86,6 @@ public final class StubGenerator
             {
                 innername = innername.substring(idx + 1);
             }
-            if(c.isAnnotation())
-            {
-                // HACK if we see the annotation, it must be runtime visible, but currently
-                // the classpath trunk doesn't yet have the required RetentionPolicy enum,
-                // so we have to fake it here
-                RuntimeVisibleAnnotationsAttribute annot = new RuntimeVisibleAnnotationsAttribute(f);
-                annot.Add(new Object[] 
-                    {
-                        AnnotationDefaultAttribute.TAG_ANNOTATION,
-                        "Ljava/lang/annotation/Retention;",
-                        "value",
-                        new Object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" }
-                    });
-                f.AddAttribute(annot);
-            }
             innerClassesAttribute.Add(name, outer.getName().replace('.', '/'), innername, getModifiers(c));
         }
         Class[] interfaces = c.getInterfaces();
@@ -131,7 +123,6 @@ public final class StubGenerator
                 {
                     mods |= Modifiers.VarArgs;
                 }
-                // TODO what happens if one of the argument types is non-public?
                 Class[] args = constructors[i].getParameterTypes();
                 FieldOrMethod m = f.AddMethod(mods, "<init>", MakeSig(args, java.lang.Void.TYPE));
                 CodeAttribute code = new CodeAttribute(f);
@@ -159,6 +150,16 @@ public final class StubGenerator
                 if (signature != null)
                 {
                     m.AddAttribute(f.MakeStringAttribute("Signature", signature));
+                }
+                Annotation[] annotations = constructors[i].getDeclaredAnnotations();
+                if(annotations.length > 0)
+                {
+                    m.AddAttribute(new RuntimeVisibleAnnotationsAttribute(f, annotations));
+                }
+                Annotation[][] parameterAnnotations = constructors[i].getParameterAnnotations();
+                if(hasParameterAnnotations(parameterAnnotations))
+                {
+                    m.AddAttribute(new RuntimeVisibleAnnotationsAttribute(f, parameterAnnotations));
                 }
             }
         }
@@ -203,7 +204,6 @@ public final class StubGenerator
                 {
                     mods |= Modifiers.VarArgs;
                 }
-                // TODO what happens if one of the argument types (or the return type) is non-public?
                 Class[] args = methods[i].getParameterTypes();
                 Class retType = methods[i].getReturnType();
                 FieldOrMethod m = f.AddMethod(mods, methods[i].getName(), MakeSig(args, retType));
@@ -223,6 +223,16 @@ public final class StubGenerator
                 if(defaultValue != null)
                 {
                     m.AddAttribute(new AnnotationDefaultClassFileAttribute(f, defaultValue));
+                }
+                Annotation[] annotations = methods[i].getDeclaredAnnotations();
+                if(annotations.length > 0)
+                {
+                    m.AddAttribute(new RuntimeVisibleAnnotationsAttribute(f, annotations));
+                }
+                Annotation[][] parameterAnnotations = methods[i].getParameterAnnotations();
+                if(hasParameterAnnotations(parameterAnnotations))
+                {
+                    m.AddAttribute(new RuntimeVisibleAnnotationsAttribute(f, parameterAnnotations));
                 }
             }
         }
@@ -257,11 +267,21 @@ public final class StubGenerator
                 {
                     fld.AddAttribute(f.MakeStringAttribute("Signature", ToSigForm(fields[i].getGenericType())));
                 }
+                Annotation[] annotations = fields[i].getDeclaredAnnotations();
+                if(annotations.length > 0)
+                {
+                    fld.AddAttribute(new RuntimeVisibleAnnotationsAttribute(f, annotations));
+                }
             }
         }
         if(innerClassesAttribute != null)
         {
             f.AddAttribute(innerClassesAttribute);
+        }
+        Annotation[] annotations = c.getDeclaredAnnotations();
+        if(annotations.length > 0)
+        {
+            f.AddAttribute(new RuntimeVisibleAnnotationsAttribute(f, annotations));
         }
         try
         {
@@ -273,6 +293,18 @@ public final class StubGenerator
         {
             throw new Error(x);
         }
+    }
+
+    private static boolean hasParameterAnnotations(Annotation[][] parameterAnnotations)
+    {
+        for(int i = 0; i < parameterAnnotations.length; i++)
+        {
+            if(parameterAnnotations[i].length > 0)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static int getModifiers(Class c)
@@ -543,12 +575,6 @@ public final class StubGenerator
             throw new Error("Not Implemented: " + t);
         }
     }
-}
-
-class AnnotationDefaultAttribute
-{
-    static final byte TAG_ANNOTATION = (byte)'@';
-    static final byte TAG_ENUM = (byte)'e';
 }
 
 class Modifiers
@@ -1017,60 +1043,263 @@ class ExceptionsAttribute extends ClassFileAttribute
 class RuntimeVisibleAnnotationsAttribute extends ClassFileAttribute
 {
     private ClassFileWriter classFile;
-    private ByteArrayOutputStream mem;
-    private DataOutputStream dos;
-    private short count;
+    private byte[] buf;
 
-    RuntimeVisibleAnnotationsAttribute(ClassFileWriter classFile)
+    RuntimeVisibleAnnotationsAttribute(ClassFileWriter classFile, Annotation[] annotations)
     {
         super(classFile.AddUtf8("RuntimeVisibleAnnotations"));
         this.classFile = classFile;
-        mem = new ByteArrayOutputStream();
-        dos = new DataOutputStream(mem);
-    }
-
-    void Add(Object[] annot)
-    {
         try
         {
-            count++;
-            dos.writeShort(classFile.AddUtf8((String)annot[1]));
-            dos.writeShort((annot.length - 2) / 2);
-            for(int i = 2; i < annot.length; i += 2)
+            ByteArrayOutputStream mem = new ByteArrayOutputStream();
+            DataOutputStream dos = new DataOutputStream(mem);
+            dos.writeShort((short)annotations.length);
+            for(Annotation ann : annotations)
             {
-                dos.writeShort(classFile.AddUtf8((String)annot[i]));
-                WriteElementValue(dos, annot[i + 1]);
+                WriteAnnotation(classFile, dos, ann);
             }
+            buf = mem.toByteArray();
         }
-        catch (IOException x)
+        catch(Exception x)
         {
-            // this cannot happen, we're writing to a ByteArrayOutputStream
             throw new Error(x);
         }
     }
 
-    private void WriteElementValue(DataOutputStream dos, Object val) throws IOException
+    RuntimeVisibleAnnotationsAttribute(ClassFileWriter classFile, Annotation[][] parameterAnnotations)
     {
-        if(val instanceof Object[])
+        super(classFile.AddUtf8("RuntimeVisibleParameterAnnotations"));
+        this.classFile = classFile;
+        try
         {
-            Object[] arr = (Object[])val;
-            if(((Object)AnnotationDefaultAttribute.TAG_ENUM).equals(arr[0]))
+            ByteArrayOutputStream mem = new ByteArrayOutputStream();
+            DataOutputStream dos = new DataOutputStream(mem);
+            dos.writeByte(parameterAnnotations.length);
+            for(Annotation[] annotations : parameterAnnotations)
             {
-                dos.writeByte(AnnotationDefaultAttribute.TAG_ENUM);
-                dos.writeShort(classFile.AddUtf8((String)arr[1]));
-                dos.writeShort(classFile.AddUtf8((String)arr[2]));
-                return;
+                dos.writeShort((short)annotations.length);
+                for(Annotation ann : annotations)
+                {
+                    WriteAnnotation(classFile, dos, ann);
+                }
+            }
+            buf = mem.toByteArray();
+        }
+        catch(Exception x)
+        {
+            throw new Error(x);
+        }
+    }
+
+    private static boolean deepEquals(Object o1, Object o2)
+    {
+        if (o1 == o2)
+            return true;
+
+        if (o1 == null || o2 == null)
+            return false;
+
+        if (o1 instanceof boolean[] && o2 instanceof boolean[])
+            return Arrays.equals((boolean[]) o1, (boolean[]) o2);
+
+        if (o1 instanceof byte[] && o2 instanceof byte[])
+            return Arrays.equals((byte[]) o1, (byte[]) o2);
+
+        if (o1 instanceof char[] && o2 instanceof char[])
+            return Arrays.equals((char[]) o1, (char[]) o2);
+
+        if (o1 instanceof short[] && o2 instanceof short[])
+            return Arrays.equals((short[]) o1, (short[]) o2);
+
+        if (o1 instanceof int[] && o2 instanceof int[])
+            return Arrays.equals((int[]) o1, (int[]) o2);
+
+        if (o1 instanceof float[] && o2 instanceof float[])
+            return Arrays.equals((float[]) o1, (float[]) o2);
+
+        if (o1 instanceof long[] && o2 instanceof long[])
+            return Arrays.equals((long[]) o1, (long[]) o2);
+
+        if (o1 instanceof double[] && o2 instanceof double[])
+            return Arrays.equals((double[]) o1, (double[]) o2);
+
+        if (o1 instanceof Object[] && o2 instanceof Object[])
+            return Arrays.equals((Object[]) o1, (Object[]) o2);
+
+        return o1.equals(o2);
+    }
+
+    static void WriteValue(ClassFileWriter classFile, DataOutputStream dos, Object val)
+        throws IOException, IllegalAccessException, InvocationTargetException
+    {
+        if(val instanceof Boolean)
+        {
+            dos.writeByte('Z');
+            dos.writeShort(classFile.AddInt(((Boolean)val).booleanValue() ? 1 : 0));
+        }
+        else if(val instanceof Byte)
+        {
+            dos.writeByte('B');
+            dos.writeShort(classFile.AddInt(((Byte)val).byteValue()));
+        }
+        else if(val instanceof Character)
+        {
+            dos.writeByte('C');
+            dos.writeShort(classFile.AddInt(((Character)val).charValue()));
+        }
+        else if(val instanceof Short)
+        {
+            dos.writeByte('S');
+            dos.writeShort(classFile.AddInt(((Short)val).shortValue()));
+        }
+        else if(val instanceof Integer)
+        {
+            dos.writeByte('I');
+            dos.writeShort(classFile.AddInt(((Integer)val).intValue()));
+        }
+        else if(val instanceof Float)
+        {
+            dos.writeByte('F');
+            dos.writeShort(classFile.AddFloat(((Float)val).floatValue()));
+        }
+        else if(val instanceof Long)
+        {
+            dos.writeByte('J');
+            dos.writeShort(classFile.AddLong(((Long)val).longValue()));
+        }
+        else if(val instanceof Double)
+        {
+            dos.writeByte('D');
+            dos.writeShort(classFile.AddDouble(((Double)val).doubleValue()));
+        }
+        else if(val instanceof String)
+        {
+            dos.writeByte('s');
+            dos.writeShort(classFile.AddUtf8((String)val));
+        }
+        else if(val instanceof Enum)
+        {
+            Enum enumVal = (Enum)val;
+            Class enumType = enumVal.getDeclaringClass();
+            dos.writeByte('e');
+            dos.writeShort(classFile.AddUtf8("L" + enumType.getName().replace('.', '/') + ";"));
+            dos.writeShort(classFile.AddUtf8(enumVal.name()));
+        }
+        else if(val instanceof Class)
+        {
+            dos.writeByte('c');
+            Class c = (Class)val;
+            String sig;
+            if(c.isArray())
+            {
+                sig = c.getName();
+            }
+            else if(c == Boolean.TYPE)
+            {
+                sig = "Z";
+            }
+            else if(c == Byte.TYPE)
+            {
+                sig = "B";
+            }
+            else if(c == Character.TYPE)
+            {
+                sig = "C";
+            }
+            else if(c == Short.TYPE)
+            {
+                sig = "S";
+            }
+            else if(c == Integer.TYPE)
+            {
+                sig = "I";
+            }
+            else if(c == Float.TYPE)
+            {
+                sig = "F";
+            }
+            else if(c == Long.TYPE)
+            {
+                sig = "J";
+            }
+            else if(c == Double.TYPE)
+            {
+                sig = "D";
+            }
+            else if(c == Void.TYPE)
+            {
+                sig = "V";
+            }
+            else
+            {
+                sig = "L" + c.getName() + ";";
+            }
+            dos.writeShort(classFile.AddUtf8(sig.replace('.', '/')));
+        }
+        else if(val instanceof Annotation)
+        {
+            dos.writeByte('@');
+            WriteAnnotation(classFile, dos, (Annotation)val);
+        }
+        else if(val.getClass().isArray())
+        {
+            dos.writeByte('[');
+            int len = Array.getLength(val);
+            dos.writeShort((short)len);
+            for(int i = 0; i < len; i++)
+            {
+                WriteValue(classFile, dos, Array.get(val, i));
             }
         }
-        throw new Error("Not Implemented");
+        else
+        {
+            throw new Error("Not Implemented: " + val.getClass());
+        }
+    }
+
+    private static void WriteAnnotation(ClassFileWriter classFile, DataOutputStream dos, Annotation ann)
+        throws IOException, IllegalAccessException, InvocationTargetException
+    {
+        Class annotationType = ann.annotationType();
+        dos.writeShort(classFile.AddUtf8("L" + annotationType.getName().replace('.', '/') + ";"));
+        short numvalues = 0;
+        Method[] methods = annotationType.getDeclaredMethods();
+        for(int i = 0; i < methods.length; i++)
+        {
+            final Method m = methods[i];
+            AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    m.setAccessible(true);
+                    return null;
+                }
+            });
+            // HACK since there's no way to query if the annotation value is the default value
+            // (and I don't want to add a private API for that), we simply compare the value
+            // with the default and if they match we won't list the value.
+            if(deepEquals(m.invoke(ann), m.getDefaultValue()))
+            {
+                methods[i] = null;
+            }
+            else
+            {
+                numvalues++;
+            }
+        }
+        dos.writeShort(numvalues);
+        for(Method m : methods)
+        {
+            if(m != null)
+            {
+                dos.writeShort(classFile.AddUtf8(m.getName()));
+                WriteValue(classFile, dos, m.invoke(ann));
+            }
+        }
     }
 
     void Write(DataOutputStream dos) throws IOException
     {
         super.Write(dos);
-        byte[] buf = mem.toByteArray();
-        dos.writeInt(buf.length + 2);
-        dos.writeShort(count);
+        dos.writeInt(buf.length);
         dos.write(buf);
     }
 }
@@ -1088,26 +1317,11 @@ class AnnotationDefaultClassFileAttribute extends ClassFileAttribute
         {
             ByteArrayOutputStream mem = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(mem);
-            if(val instanceof Boolean)
-            {
-                dos.writeByte('Z');
-                dos.writeShort(classFile.AddInt(((Boolean)val).booleanValue() ? 1 : 0));
-            }
-            else if(val instanceof Enum)
-            {
-                dos.writeByte('e');
-                dos.writeShort(classFile.AddUtf8("L" + val.getClass().getName().replace('.', '/') + ";"));
-                dos.writeShort(classFile.AddUtf8(((Enum)val).name()));
-            }
-            else
-            {
-                throw new Error("Not Implemented");
-            }
+            RuntimeVisibleAnnotationsAttribute.WriteValue(classFile, dos, val);
             buf = mem.toByteArray();
         }
-        catch (IOException x)
+        catch (Exception x)
         {
-            // this cannot happen, we're writing to a ByteArrayOutputStream
             throw new Error(x);
         }
     }
@@ -1261,17 +1475,17 @@ class ClassFileWriter
         return Add(new ConstantPoolItemInt(i));
     }
 
-    private short AddLong(long l)
+    public short AddLong(long l)
     {
         return Add(new ConstantPoolItemLong(l));
     }
 
-    private short AddFloat(float f)
+    public short AddFloat(float f)
     {
         return Add(new ConstantPoolItemFloat(f));
     }
 
-    private short AddDouble(double d)
+    public short AddDouble(double d)
     {
         return Add(new ConstantPoolItemDouble(d));
     }
