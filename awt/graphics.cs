@@ -969,7 +969,7 @@ namespace ikvm.awt
 
         public override java.awt.GraphicsDevice getDevice()
         {
-            return new NetGraphicsDevice();
+            return new NetGraphicsDevice(screen);
         }
 
         public override java.awt.ImageCapabilities getImageCapabilities()
@@ -990,9 +990,22 @@ namespace ikvm.awt
 
     class NetGraphicsDevice : java.awt.GraphicsDevice
     {
+        internal readonly Screen screen;
+
+        internal NetGraphicsDevice(Screen screen)
+        {
+            this.screen = screen;
+        }
+
         public override java.awt.GraphicsConfiguration[] getConfigurations()
         {
-            throw new NotImplementedException();
+            Screen[] screens = Screen.AllScreens;
+            NetGraphicsConfiguration[] configs = new NetGraphicsConfiguration[screens.Length];
+            for (int i = 0; i < screens.Length; i++)
+            {
+                configs[i] = new NetGraphicsConfiguration(screens[i]);
+            }
+            return configs;
         }
 
         public override java.awt.GraphicsConfiguration getDefaultConfiguration()
@@ -1002,7 +1015,7 @@ namespace ikvm.awt
 
         public override string getIDstring()
         {
-            throw new NotImplementedException();
+            return screen.DeviceName;
         }
 
         public override int getType()
@@ -1079,12 +1092,18 @@ namespace ikvm.awt
 
         public override java.awt.GraphicsDevice getDefaultScreenDevice()
         {
-            return new NetGraphicsDevice();
+            return new NetGraphicsDevice(Screen.PrimaryScreen);
         }
 
         public override java.awt.GraphicsDevice[] getScreenDevices()
         {
-			return new java.awt.GraphicsDevice[] { getDefaultScreenDevice() };
+            Screen[] screens = Screen.AllScreens;
+            NetGraphicsDevice[] devices = new NetGraphicsDevice[screens.Length];
+            for (int i = 0; i < screens.Length; i++)
+            {
+                devices[i] = new NetGraphicsDevice(screens[i]);
+            }
+            return devices;
         }
     }
 
