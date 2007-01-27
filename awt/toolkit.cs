@@ -510,9 +510,14 @@ namespace ikvm.awt
 			return new NetGraphicsEnvironment();
 		}
 
-		public override RobotPeer createRobot(java.awt.GraphicsDevice param)
+		public override RobotPeer createRobot(java.awt.GraphicsDevice screen)
 		{
-			throw new NotImplementedException();
+            String osname = gnu.classpath.SystemProperties.getProperty("os.name");
+            if (osname.IndexOf("Windows") >= 0)
+            {
+                return new WindowsRobot(screen);
+            }
+            throw new java.awt.AWTException("Robot not supported for this OS");
 		}
 
 		public override gnu.java.awt.peer.EmbeddedWindowPeer createEmbeddedWindow(gnu.java.awt.EmbeddedWindow ew)
@@ -584,7 +589,7 @@ namespace ikvm.awt
 					}
 				}
 			}
-            control.SetBounds(component.getX(), component.getY(), component.getWidth(), component.getHeight());
+            SetBoundsImpl(component.getX(), component.getY(), component.getWidth(), component.getHeight());
             // we need the null check, because for a Window, at this time it doesn't have a foreground yet
 			if(component.getForeground() != null)
 			{
@@ -643,6 +648,22 @@ namespace ikvm.awt
         protected virtual int getInsetsTop()
         {
             return 0;
+        }
+
+        private Point getParentOffset()
+        {
+            java.awt.Container parent = component.getParent();
+            if (parent != null)
+            {
+                ComponentPeer peer = parent.getPeer();
+                if (peer is NetComponentPeer)
+                {
+                    return new Point(
+                        ((NetComponentPeer)peer).getInsetsLeft(),
+                        ((NetComponentPeer)peer).getInsetsTop());
+                }
+            }
+            return new Point();
         }
 
         private void OnPaint(object sender, PaintEventArgs e)
@@ -848,8 +869,9 @@ namespace ikvm.awt
         /// </summary>
         private void componentSetBounds()
         {
-            int x = control.Left;
-            int y = control.Top;
+            Point offset = getParentOffset();
+            int x = control.Left + offset.X;
+            int y = control.Top + offset.Y;
             int width = control.Width;
             int height = control.Height;
             if (x != component.getX() ||
@@ -1063,7 +1085,7 @@ namespace ikvm.awt
 
 		public void reshape(int x, int y, int width, int height)
 		{
-			throw new NotImplementedException();
+			setBounds(x, y, width, height);
 		}
 
 		public void setBackground(java.awt.Color color)
@@ -1076,14 +1098,15 @@ namespace ikvm.awt
             control.BackColor = Color.FromArgb(color.getRGB());
 		}
 
-		protected virtual void setBoundsImpl(int x, int y, int width, int height)
+        protected virtual void SetBoundsImpl(int x, int y, int width, int height)
 		{
-            control.SetBounds(x, y, width, height);
+            Point offset = getParentOffset(); 
+            control.SetBounds(x - offset.X, y - offset.Y, width, height);
 		}
 
 		public void setBounds(int x, int y, int width, int height)
 		{
-			control.Invoke(new SetXYWH(setBoundsImpl), new object[] { x, y, width, height });
+			control.Invoke(new SetXYWH(SetBoundsImpl), new object[] { x, y, width, height });
             componentSetBounds();
 		}
 
@@ -1256,7 +1279,8 @@ namespace ikvm.awt
 
 		public void setBounds(int x, int y, int width, int height, int z)
 		{
-			control.Bounds = new Rectangle(x, y, width, height);
+            setBounds(x, y, width, height);
+            //TODO changing the Z-Order
 		}
 
 		public void reparent(java.awt.peer.ContainerPeer parent)
@@ -1768,7 +1792,7 @@ namespace ikvm.awt
             return g;
         }
 
-        protected override void setBoundsImpl(int x, int y, int width, int height)
+        protected override void SetBoundsImpl(int x, int y, int width, int height)
         {
             Form form = (Form)control;
             form.DesktopBounds = new Rectangle(x, y, width, height);
