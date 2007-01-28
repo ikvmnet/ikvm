@@ -650,17 +650,28 @@ namespace ikvm.awt
             return 0;
         }
 
+
+        /// <summary>
+        /// .NET calculate the offset relative to the detail area.
+        /// Java is using the top left point of a window.
+        /// That be must compensate the cordinate of a component
+        /// if the parent is a window, frame or dialog.
+        /// </summary>
+        /// <returns>The offset of the details area in the parent</returns>
         private Point getParentOffset()
         {
-            java.awt.Container parent = component.getParent();
-            if (parent != null)
+            if (!(component is java.awt.Window))
             {
-                ComponentPeer peer = parent.getPeer();
-                if (peer is NetComponentPeer)
+                java.awt.Container parent = component.getParent();
+                if (parent != null)
                 {
-                    return new Point(
-                        ((NetComponentPeer)peer).getInsetsLeft(),
-                        ((NetComponentPeer)peer).getInsetsTop());
+                    ComponentPeer peer = parent.getPeer();
+                    if (peer is NetComponentPeer)
+                    {
+                        return new Point(
+                            ((NetComponentPeer)peer).getInsetsLeft(),
+                            ((NetComponentPeer)peer).getInsetsTop());
+                    }
                 }
             }
             return new Point();
