@@ -2354,6 +2354,11 @@ namespace IKVM.Internal
 					TypeWrapper wrapper = loader.LoadClassByDottedNameFast(s);
 					if(wrapper != null)
 					{
+						if(wrapper.GetClassLoader() != loader)
+						{
+							StaticCompiler.IssueMessage(Message.SkippingReferencedClass, s, ((AssemblyClassLoader)wrapper.GetClassLoader()).Assembly.FullName);
+							continue;
+						}
 						if(map == null)
 						{
 							wrapper.Finish();
@@ -2528,6 +2533,7 @@ namespace IKVM.Internal
 		GenericUnableToCompileError = 106,
 		DuplicateResourceName = 107,
 		NotAClassFile = 108,
+		SkippingReferencedClass = 109,
 	}
 
 	class StaticCompiler
@@ -2590,9 +2596,9 @@ namespace IKVM.Internal
 		{
 			StringBuilder sb = new StringBuilder();
 			sb.Append((int)msgId);
-			foreach(string s in values)
+			if(values.Length > 0)
 			{
-				sb.Append(':').Append(s);
+				sb.Append(':').Append(values[0]);
 			}
 			string key = sb.ToString();
 			if(suppressWarnings.ContainsKey(key)
@@ -2648,6 +2654,10 @@ namespace IKVM.Internal
 				case Message.NotAClassFile:
 					msg = "not a class file \"{0}\", including it as resource" + Environment.NewLine +
 						"    (class format error \"{1}\")";
+					break;
+				case Message.SkippingReferencedClass:
+					msg = "skipping class: \"{0}\"" + Environment.NewLine +
+						"    (class is already available in referenced assembly \"{1}\")";
 					break;
 				default:
 					throw new InvalidProgramException();
