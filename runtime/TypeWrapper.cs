@@ -6134,6 +6134,23 @@ namespace IKVM.Internal
 							attribs |= MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
 						}
 						string name = m.Name;
+#if STATIC_COMPILER
+						if((m.Modifiers & Modifiers.Bridge) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
+						{
+							string sigbase = m.Signature.Substring(0, m.Signature.LastIndexOf(')') + 1);
+							foreach(MethodWrapper mw in methods)
+							{
+								if(mw.Name == m.Name && mw.Signature.StartsWith(sigbase) && mw.Signature != m.Signature)
+								{
+									// To prevent bridge methods with covariant return types from confusing
+									// other .NET compilers (like C#), we rename the bridge method.
+									name = "<bridge>" + name;
+									setNameSig = true;
+									break;
+								}
+							}
+						}
+#endif
 						// if a method is virtual, we need to find the method it overrides (if any), for several reasons:
 						// - if we're overriding a method that has a different name (e.g. some of the virtual methods
 						//   in System.Object [Equals <-> equals]) we need to add an explicit MethodOverride
@@ -6329,6 +6346,21 @@ namespace IKVM.Internal
 						{
 							AttributeHelper.SetModifiers((MethodBuilder)method, m.Modifiers, m.IsInternal);
 						}
+					}
+					if((m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0
+						&& (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
+					{
+						if(method is ConstructorBuilder)
+						{
+							AttributeHelper.SetEditorBrowsableNever((ConstructorBuilder)method);
+						}
+						else
+						{
+							AttributeHelper.SetEditorBrowsableNever((MethodBuilder)method);
+						}
+#if WHIDBEY
+						// TODO apply CompilerGeneratedAttribute
+#endif
 					}
 					if(m.DeprecatedAttribute)
 					{
