@@ -645,7 +645,6 @@
 ../../classpath/gnu/java/locale/LocaleHelper.java
 ../../classpath/gnu/java/math/Fixed.java
 ../../classpath/gnu/java/math/MPN.java
-../../classpath/gnu/java/net/BASE64.java
 ../../classpath/gnu/java/net/CRLFInputStream.java
 ../../classpath/gnu/java/net/CRLFOutputStream.java
 ../../classpath/gnu/java/net/DefaultContentHandlerFactory.java
@@ -934,7 +933,6 @@
 ../../classpath/gnu/java/security/sig/rsa/RSASignatureFactory.java
 ../../classpath/gnu/java/security/sig/SignatureCodecFactory.java
 ../../classpath/gnu/java/security/sig/SignatureFactory.java
-../../classpath/gnu/java/security/util/Base64.java
 ../../classpath/gnu/java/security/util/ByteArray.java
 ../../classpath/gnu/java/security/util/ByteBufferOutputStream.java
 ../../classpath/gnu/java/security/util/DerUtil.java
@@ -983,6 +981,7 @@
 ../../classpath/gnu/java/text/SentenceBreakIterator.java
 ../../classpath/gnu/java/text/StringFormatBuffer.java
 ../../classpath/gnu/java/text/WordBreakIterator.java
+../../classpath/gnu/java/util/Base64.java
 ../../classpath/gnu/java/util/DoubleEnumeration.java
 ../../classpath/gnu/java/util/EmptyEnumeration.java
 ../../classpath/gnu/java/util/jar/JarUtils.java
@@ -1374,7 +1373,6 @@
 ../../classpath/gnu/javax/naming/jndi/url/rmi/rmiURLContext.java
 ../../classpath/gnu/javax/naming/jndi/url/rmi/rmiURLContextFactory.java
 ../../classpath/gnu/javax/net/ssl/AbstractSessionContext.java
-../../classpath/gnu/javax/net/ssl/Base64.java
 ../../classpath/gnu/javax/net/ssl/EntropySource.java
 ../../classpath/gnu/javax/net/ssl/NullManagerParameters.java
 ../../classpath/gnu/javax/net/ssl/PreSharedKeyManager.java
@@ -3335,6 +3333,7 @@
 ../../classpath/javax/management/NotificationBroadcasterSupport.java
 ../../classpath/javax/management/NotificationEmitter.java
 ../../classpath/javax/management/NotificationFilter.java
+../../classpath/javax/management/NotificationFilterSupport.java
 ../../classpath/javax/management/NotificationListener.java
 ../../classpath/javax/management/ObjectInstance.java
 ../../classpath/javax/management/ObjectName.java
@@ -3362,6 +3361,7 @@
 ../../classpath/javax/management/openmbean/TabularDataSupport.java
 ../../classpath/javax/management/openmbean/TabularType.java
 ../../classpath/javax/management/OperationsException.java
+../../classpath/javax/management/PersistentMBean.java
 ../../classpath/javax/management/QueryEval.java
 ../../classpath/javax/management/QueryExp.java
 ../../classpath/javax/management/ReflectionException.java
