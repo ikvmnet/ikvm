@@ -4172,6 +4172,9 @@ namespace IKVM.Internal
 						}
 						else
 						{
+#if STATIC_COMPILER
+							StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has a return type \"{1}\"", mw.ReturnType, baseMethod.ReturnType, mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
+#endif
 							throw new LinkageError("Loader constraints violated");
 						}
 					}
@@ -4190,6 +4193,9 @@ namespace IKVM.Internal
 							}
 							else
 							{
+#if STATIC_COMPILER
+								StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has an argument type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has an argument type \"{1}\"", here[i], there[i], mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
+#endif
 								throw new LinkageError("Loader constraints violated");
 							}
 						}

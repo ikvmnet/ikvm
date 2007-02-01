@@ -2672,5 +2672,31 @@ namespace IKVM.Internal
 			Console.Error.Write("{0} IKVMC{1:D4}: ", msgId < Message.StartWarnings ? "Note" : "Warning", (int)msgId);
 			Console.Error.WriteLine(msg, values);
 		}
+
+		internal static void LinkageError(string msg, TypeWrapper actualType, TypeWrapper expectedType, params object[] values)
+		{
+			object[] args = new object[values.Length + 2];
+			values.CopyTo(args, 2);
+			args[0] = AssemblyQualifiedName(actualType);
+			args[1] = AssemblyQualifiedName(expectedType);
+			Console.Error.WriteLine("Link Error: " + msg, args);
+			Environment.Exit(1);
+		}
+
+		private static string AssemblyQualifiedName(TypeWrapper tw)
+		{
+			ClassLoaderWrapper loader = tw.GetClassLoader();
+			AssemblyClassLoader acl = loader as AssemblyClassLoader;
+			if(acl != null)
+			{
+				return tw.Name + ", " + acl.Assembly.FullName;
+			}
+			CompilerClassLoader ccl = loader as CompilerClassLoader;
+			if(ccl != null)
+			{
+				return tw.Name + ", " + ccl.GetTypeWrapperFactory().ModuleBuilder.Assembly.FullName;
+			}
+			return tw.Name + " (unknown assembly)";
+		}
 	}
 }

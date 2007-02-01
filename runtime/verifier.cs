@@ -3243,6 +3243,9 @@ class MethodAnalyzer
 			}
 			if(cpi.GetFieldType() != field.FieldTypeWrapper && !field.FieldTypeWrapper.IsUnloadable)
 			{
+#if STATIC_COMPILER
+				StaticCompiler.LinkageError("Field \"{2}.{3}\" is of type \"{0}\" instead of type \"{1}\" as expected by \"{4}\"", field.FieldTypeWrapper, cpi.GetFieldType(), cpi.GetClassType().Name, cpi.Name, wrapper.Name);
+#endif
 				instr.SetHardError(HardError.LinkageError, AllocErrorMessage("Loader constraints violated: " + field.DeclaringType.Name + "." + field.Name));
 				return;
 			}
@@ -3305,6 +3308,9 @@ class MethodAnalyzer
 	{
 		if(cpi.GetRetType() != mw.ReturnType && !mw.ReturnType.IsUnloadable)
 		{
+#if STATIC_COMPILER
+			StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" instead of type \"{1}\" as expected by \"{5}\"", mw.ReturnType, cpi.GetRetType(), cpi.GetClassType().Name, cpi.Name, cpi.Signature, classFile.Name);
+#endif
 			return "Loader constraints violated (return type): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;
 		}
 		TypeWrapper[] here = cpi.GetArgTypes();
@@ -3313,6 +3319,9 @@ class MethodAnalyzer
 		{
 			if(here[i] != there[i] && !there[i].IsUnloadable)
 			{
+#if STATIC_COMPILER
+				StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a argument type \"{0}\" instead of type \"{1}\" as expected by \"{5}\"", there[i], here[i], cpi.GetClassType().Name, cpi.Name, cpi.Signature, classFile.Name);
+#endif
 				return "Loader constraints violated (arg " + i + "): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;
 			}
 		}
