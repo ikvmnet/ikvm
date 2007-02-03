@@ -1297,7 +1297,7 @@ namespace IKVM.Internal
 				// (note that this is not water tight, because of erased types)
 				foreach(FieldInfo f in DeclaringType.TypeAsTBD.GetFields(bindings))
 				{
-					if(f.Name == field.Name && f.FieldType == field.FieldType)
+					if(f.Name == field.Name && f.FieldType.Equals(field.FieldType))
 					{
 						return f;
 					}
