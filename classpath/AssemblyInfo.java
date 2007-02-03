@@ -25,8 +25,8 @@
 @cli.System.Reflection.AssemblyCopyrightAttribute.Annotation(
     "This software is licensed under the GNU General Public License + GNU Classpath exception.\r\n" +
     "See http://www.gnu.org/software/classpath/license.html for details.\r\n" +
-    "Copyright (C) 1998-2006 Free Software Foundation, Inc.\r\n" +
-    "Copyright (C) 2002-2006 Jeroen Frijters"
+    "Copyright (C) 1998-2007 Free Software Foundation, Inc.\r\n" +
+    "Copyright (C) 2002-2007 Jeroen Frijters"
 )
 
 @cli.System.Reflection.AssemblyTitleAttribute.Annotation("IKVM GNU Classpath library for .NET")

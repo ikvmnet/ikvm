@@ -34,7 +34,7 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("IKVM.NET")]
-[assembly: AssemblyCopyright("Copyright (C) 2002-2006 Jeroen Frijters")]
+[assembly: AssemblyCopyright("Copyright (C) 2002-2007 Jeroen Frijters")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]		
 
