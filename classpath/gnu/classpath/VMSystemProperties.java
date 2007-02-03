@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -117,7 +117,18 @@ public class VMSystemProperties
             if(false) throw new cli.System.Security.SecurityException();
             // HACK using the Assembly.Location property isn't correct
             cli.System.Reflection.Assembly asm = cli.System.Reflection.Assembly.GetExecutingAssembly();
-            p.setProperty("java.home", new cli.System.IO.FileInfo(GetAssemblyLocation(asm)).get_DirectoryName());
+            String loc = GetAssemblyLocation(asm);
+            if(loc.length() == 0)
+            {
+                // The assembly was most likely loaded with Assembly.Load(byte[]) and so it doesn't
+                // have a location.
+                // TODO we may need to set some other value here
+                p.setProperty("java.home", ".");
+            }
+            else
+            {
+                p.setProperty("java.home", new cli.System.IO.FileInfo(loc).get_DirectoryName());
+            }
         }
         catch(cli.System.MissingMethodException _1)
         {
