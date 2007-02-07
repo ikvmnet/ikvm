@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2005, 2006 Jeroen Frijters
+  Copyright (C) 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -41,12 +41,13 @@ public final class VMStackWalker
         for(int i = 0; i < stack.get_FrameCount(); i++)
         {
             StackFrame frame = stack.GetFrame(i);
-            // TODO handle reflection scenarios
             MethodBase method = frame.GetMethod();
             if(!isHideFromJava(method))
             {
                 cli.System.Type type = method.get_DeclaringType();
-                if(type != null)
+                // We skip mscorlib types, because they account for reflection and there
+                // are no other scenarios in which it is meaningful for mscorlib to be returned.
+                if(type != null && type.get_Assembly() != mscorlib)
                 {
                     ClassLoader loader = (ClassLoader)getClassLoaderFromType(type);
                     if(loader != null)
