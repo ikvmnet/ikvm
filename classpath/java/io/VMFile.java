@@ -639,4 +639,54 @@ final class VMFile
             return new URL ("file:" + file.getAbsolutePath()
                 + (file.isDirectory() ? "/" : ""));
     }
+
+    static boolean setReadable(String path, boolean readable, boolean ownerOnly)
+    {
+        // TODO consider using Mono.Posix on Linux
+        return false;
+    }
+
+    static boolean setWritable(String path, boolean writable, boolean ownerOnly)
+    {
+        try
+        {
+            // TODO consider using Mono.Posix on Linux
+            cli.System.IO.FileInfo file = newFileInfo(path);
+            int attr = file.get_Attributes().Value & ~cli.System.IO.FileAttributes.ReadOnly;
+            if (!writable)
+            {
+                attr |= cli.System.IO.FileAttributes.ReadOnly;
+            }
+            file.set_Attributes(cli.System.IO.FileAttributes.wrap(attr));
+            return true;
+        }
+        catch(cli.System.Security.SecurityException _)
+        {
+        }
+        catch(cli.System.ArgumentException _)
+        {
+        }
+        catch(cli.System.UnauthorizedAccessException _)
+        {
+        }
+        catch(cli.System.IO.IOException _)
+        {
+        }
+        catch(cli.System.NotSupportedException _)
+        {
+        }
+        return false;
+    }
+    
+    static boolean setExecutable(String path, boolean executable, boolean ownerOnly)
+    {
+        // TODO consider using Mono.Posix on Linux
+        return false;
+    }
+
+    static boolean canExecute(String path)
+    {
+        // TODO consider using Mono.Posix on Linux
+        return true;
+    }
 }
