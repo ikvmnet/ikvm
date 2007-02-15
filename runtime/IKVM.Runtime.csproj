@@ -68,6 +68,11 @@
                     Name = "System"
                     AssemblyName = "System"
                 />
+                <Reference
+                    Name = "IKVM.GNU.Classpath"
+                    AssemblyName = "IKVM.GNU.Classpath"
+                    HintPath = "..\bin\IKVM.GNU.Classpath.dll"
+                />
             </References>
         </Build>
         <Files>

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -77,9 +77,11 @@ namespace IKVM.Internal
 		internal const bool IsStaticCompiler = false;
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static bool finishingForDebugSave;
+#if !FIRST_PASS
 		private static ikvm.@internal.LibraryVMInterface lib;
-		internal static bool IsSaveDebugImage;
 #endif
+		internal static bool IsSaveDebugImage;
+#endif // STATIC_COMPILER
 		private static Assembly coreAssembly;
 
 		internal static Version SafeGetAssemblyVersion(Assembly asm)
@@ -112,50 +114,6 @@ namespace IKVM.Internal
 			}
 		}
 
-#if COMPACT_FRAMEWORK
-		internal static ikvm.@internal.LibraryVMInterface Library
-		{
-			get
-			{
-				return ikvm.@internal.Library.getImpl();
-			}
-		}
-
-		internal static Assembly CoreAssembly
-		{
-			get
-			{
-				return Library.GetType().Assembly;
-			}
-		}
-#else
-
-		private static Assembly[] UnsafeGetAssemblies()
-		{
-			new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
-#if WHIDBEY && STATIC_COMPILER
-			return AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
-#else
-			return AppDomain.CurrentDomain.GetAssemblies();
-#endif
-		}
-
-		private static Type UnsafeGetType(Assembly asm, string name)
-		{
-			new ReflectionPermission(ReflectionPermissionFlag.MemberAccess
-#if !WHIDBEY
-				| ReflectionPermissionFlag.TypeInformation
-#endif
-			).Assert();
-			return asm.GetType(name);
-		}
-
-		private static object UnsafeCreateInstance(Type type)
-		{
-			new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
-			return Activator.CreateInstance(type, true);
-		}
-
 		internal static Assembly CoreAssembly
 		{
 			get
@@ -163,13 +121,13 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 				if(coreAssembly == null)
 				{
-					object lib = Library;
-					if(lib != null)
-					{
-						coreAssembly = lib.GetType().Assembly;
-					}
-				}
+#if FIRST_PASS
+					throw new InvalidOperationException("This version of IKVM.Runtime.dll was compiled with FIRST_PASS defined.");
+#else
+					coreAssembly = typeof(ikvm.@internal.Library).Assembly;
 #endif
+				}
+#endif // !STATIC_COMPILER
 				return coreAssembly;
 			}
 			set
@@ -183,35 +141,18 @@ namespace IKVM.Internal
 		{
 			get
 			{
+#if FIRST_PASS
+				throw new InvalidOperationException("This version of IKVM.Runtime.dll was compiled with FIRST_PASS defined.");
+#else
 				if(lib == null)
 				{
-					foreach(Assembly asm in UnsafeGetAssemblies())
-					{
-						Type type = UnsafeGetType(asm, "java.lang.LibraryVMInterfaceImpl");
-						if(type != null)
-						{
-							lib = UnsafeCreateInstance(type) as ikvm.@internal.LibraryVMInterface;
-							if(lib == null)
-							{
-								// If the "as" fails, this is most likely due to an IKVM.GNU.Classpath.dll version
-								// that was linked against an incompatible version of IKVM.Runtime.dll.
-								JVM.CriticalFailure("Incompatible core library version", null);
-							}
-							break;
-						}
-					}
-					if(lib == null)
-					{
-						JVM.CriticalFailure("Unable to find java.lang.LibraryVMInterfaceImpl", null);
-					}
+					lib = ikvm.@internal.Library.getImpl();
 				}
 				return lib;
+#endif
 			}
 		}
-#endif // STATIC_COMPILER
-#endif // COMPACT_FRAMEWORK
 
-#if !STATIC_COMPILER
 		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters
 		{
 			get
@@ -336,8 +277,9 @@ namespace IKVM.Internal
 		{
 #if WHIDBEY && STATIC_COMPILER
 			return StaticCompiler.GetType(type.FullName);
-#endif
+#else
 			return type;
+#endif
 		}
 	}
 }

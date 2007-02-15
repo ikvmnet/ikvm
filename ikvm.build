@@ -8,10 +8,11 @@
     </target>
     <target name="all">
         <nant buildfile="tools/tools.build" />
-        <nant buildfile="runtime/runtime.build" />
+        <nant buildfile="runtime/runtime.build" target="first-pass" />
         <nant buildfile="native/native.build" />
         <nant buildfile="ikvmc/ikvmc.build" />
         <nant buildfile="classpath/classpath.build" />
+        <nant buildfile="runtime/runtime.build" />
         <nant buildfile="ikvm/ikvm.build" />
         <nant buildfile="ikvmstub/ikvmstub.build" />
         <nant buildfile="awt/awt.build" />
