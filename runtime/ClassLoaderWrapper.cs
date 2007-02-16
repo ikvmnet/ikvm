@@ -969,15 +969,6 @@ namespace IKVM.Internal
 			typeToTypeWrapper.Add(type, wrapper);
 		}
 
-#if STATIC_COMPILER
-		internal static void PublishLibraryImplementationHelperType(Type type)
-		{
-			CompiledTypeWrapper typeWrapper = CompiledTypeWrapper.newInstance(type.FullName, type);
-			SetWrapperForType(type, typeWrapper);
-			GetBootstrapClassLoader().types[type.FullName] = typeWrapper;
-		}
-#endif // STATIC_COMPILER
-
 		internal static TypeWrapper LoadClassCritical(string name)
 		{
 			try

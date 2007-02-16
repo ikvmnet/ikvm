@@ -8646,11 +8646,6 @@ namespace IKVM.Internal
 			// be accessible through Java reflection.
 			if(type.Assembly == typeof(DotNetTypeWrapper).Assembly)
 			{
-				// HACK make an exception for the vm/library interface
-				if(type == typeof(ikvm.@internal.LibraryVMInterface))
-				{
-					return true;
-				}
 				return false;
 			}
 			if(Whidbey.ContainsGenericParameters(type))

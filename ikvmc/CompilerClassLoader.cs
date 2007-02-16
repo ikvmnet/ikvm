@@ -2337,14 +2337,6 @@ namespace IKVM.Internal
 				return 1;
 			}
 
-			// NOTE types from IKVM.Runtime that are "published" should also be added to
-			// the white list in DotNetTypeWrapper.IsAllowedOutside()
-			Type libvminterface = StaticCompiler.runtimeAssembly.GetType("ikvm.internal.LibraryVMInterface");
-			if(libvminterface != null)
-			{
-				ClassLoaderWrapper.PublishLibraryImplementationHelperType(libvminterface);
-			}
-
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
 			ArrayList allwrappers = new ArrayList();
 			foreach(string s in new ArrayList(h.Keys))

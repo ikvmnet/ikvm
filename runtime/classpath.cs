@@ -1726,6 +1726,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 	}
 }
 
+#if FIRST_PASS
 namespace ikvm.@internal
 {
 	public interface LibraryVMInterface
@@ -1796,3 +1797,4 @@ namespace ikvm.@internal
 		object newAssemblyClassLoader(Assembly asm);
 	}
 }
+#endif // !FIRST_PASS
