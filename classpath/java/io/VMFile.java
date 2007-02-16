@@ -643,7 +643,7 @@ final class VMFile
     static boolean setReadable(String path, boolean readable, boolean ownerOnly)
     {
         // TODO consider using Mono.Posix on Linux
-        return false;
+        return readable;
     }
 
     static boolean setWritable(String path, boolean writable, boolean ownerOnly)
@@ -681,7 +681,7 @@ final class VMFile
     static boolean setExecutable(String path, boolean executable, boolean ownerOnly)
     {
         // TODO consider using Mono.Posix on Linux
-        return false;
+        return executable;
     }
 
     static boolean canExecute(String path)
