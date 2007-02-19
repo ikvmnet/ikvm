@@ -1595,6 +1595,7 @@ namespace IKVM.Internal
 		HasStaticInitializer = 4,
 		VerifyError = 8,
 		ClassFormatError = 16,
+		HasUnsupportedAbstractMethods = 32,
 	}
 
 	internal abstract class TypeWrapper
@@ -1684,6 +1685,33 @@ namespace IKVM.Internal
 				else
 				{
 					flags &= ~TypeFlags.HasIncompleteInterfaceImplementation;
+				}
+			}
+		}
+
+		internal bool HasUnsupportedAbstractMethods
+		{
+			get
+			{
+				foreach(TypeWrapper iface in this.Interfaces)
+				{
+					if(iface.HasUnsupportedAbstractMethods)
+					{
+						return true;
+					}
+				}
+				return (flags & TypeFlags.HasUnsupportedAbstractMethods) != 0 || (baseWrapper != null && baseWrapper.HasUnsupportedAbstractMethods);
+			}
+			set
+			{
+				// TODO do we need locking here?
+				if(value)
+				{
+					flags |= TypeFlags.HasUnsupportedAbstractMethods;
+				}
+				else
+				{
+					flags &= ~TypeFlags.HasUnsupportedAbstractMethods;
 				}
 			}
 		}
@@ -4807,6 +4835,10 @@ namespace IKVM.Internal
 							}
 							baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
 						}
+						if(!wrapper.IsAbstract && wrapper.HasUnsupportedAbstractMethods)
+						{
+							AddUnsupportedAbstractMethods();
+						}
 						foreach(MethodWrapper mw in methods)
 						{
 							if(mw.Name != "<init>" && !mw.IsStatic && !mw.IsPrivate)
@@ -4993,6 +5025,51 @@ namespace IKVM.Internal
 				{
 					Profiler.Leave("JavaTypeImpl.Finish.Core");
 				}
+			}
+
+			private void AddUnsupportedAbstractMethods()
+			{
+				foreach(MethodBase mb in wrapper.BaseTypeWrapper.TypeAsBaseType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+				{
+					if(DotNetTypeWrapper.IsUnsupportedAbstractMethod(mb))
+					{
+						GenerateUnsupportedAbstractMethodStub(mb);
+					}
+				}
+				Hashtable h = new Hashtable();
+				TypeWrapper tw = wrapper;
+				while(tw != null)
+				{
+					foreach(TypeWrapper iface in tw.Interfaces)
+					{
+						foreach(MethodBase mb in iface.TypeAsBaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+						{
+							if(!h.ContainsKey(mb))
+							{
+								h.Add(mb, mb);
+								if(DotNetTypeWrapper.IsUnsupportedAbstractMethod(mb))
+								{
+									GenerateUnsupportedAbstractMethodStub(mb);
+								}
+							}
+						}
+					}
+					tw = tw.BaseTypeWrapper;
+				}
+			}
+
+			private void GenerateUnsupportedAbstractMethodStub(MethodBase mb)
+			{
+				ParameterInfo[] parameters = mb.GetParameters();
+				Type[] parameterTypes = new Type[parameters.Length];
+				for(int i = 0; i < parameters.Length; i++)
+				{
+					parameterTypes[i] = parameters[i].ParameterType;
+				}
+				MethodAttributes attr = MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Private;
+				MethodBuilder m = typeBuilder.DefineMethod("__<unsupported>" + mb.DeclaringType.FullName + "/" + mb.Name, attr, ((MethodInfo)mb).ReturnType, parameterTypes);
+				EmitHelper.Throw(m.GetILGenerator(), "java.lang.AbstractMethodError", "Method " + mb.DeclaringType.FullName + "." + mb.Name + " is unsupported by IKVM.");
+				typeBuilder.DefineMethodOverride(m, (MethodInfo)mb);
 			}
 
 			class TraceHelper
@@ -9758,6 +9835,10 @@ namespace IKVM.Internal
 							// TODO handle name/signature clash
 							methodsList.Add(CreateMethodWrapper(name, sig, args, ret, methods[i], false));
 						}
+						else if(methods[i].IsAbstract)
+						{
+							this.HasUnsupportedAbstractMethods = true;
+						}
 					}
 				}
 
@@ -9891,6 +9972,26 @@ namespace IKVM.Internal
 				return m.Invoke(obj, args, nonVirtual);
 			}
 #endif // !STATIC_COMPILER
+		}
+
+		internal static bool IsUnsupportedAbstractMethod(MethodBase mb)
+		{
+			if(mb.IsAbstract)
+			{
+				MethodInfo mi = (MethodInfo)mb;
+				if(mi.ReturnType.IsPointer || mi.ReturnType.IsByRef)
+				{
+					return true;
+				}
+				foreach(ParameterInfo p in mi.GetParameters())
+				{
+					if(p.ParameterType.IsByRef || p.ParameterType.IsPointer)
+					{
+						return true;
+					}
+				}
+			}
+			return false;
 		}
 
 		private bool MakeMethodDescriptor(MethodBase mb, out string name, out string sig, out TypeWrapper[] args, out TypeWrapper ret)
