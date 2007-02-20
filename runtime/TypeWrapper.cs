@@ -9238,7 +9238,7 @@ namespace IKVM.Internal
 				}
 				return new object[] {
 										target,
-										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "CLASS" } })
+										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" } })
 									};
 			}
 #endif
@@ -9711,8 +9711,6 @@ namespace IKVM.Internal
 
 		protected override void LazyPublishMembers()
 		{
-			ArrayList fieldsList = new ArrayList();
-			ArrayList methodsList = new ArrayList();
 			// special support for enums
 			if(type.IsEnum)
 			{
@@ -9735,6 +9733,7 @@ namespace IKVM.Internal
 				}
 				TypeWrapper fieldType = ClassLoaderWrapper.GetWrapperFromType(underlyingType);
 				FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
+				ArrayList fieldsList = new ArrayList();
 				for(int i = 0; i < fields.Length; i++)
 				{
 					if(fields[i].FieldType == type)
@@ -9757,10 +9756,12 @@ namespace IKVM.Internal
 					}
 				}
 				fieldsList.Add(new EnumValueFieldWrapper(this, fieldType));
-				methodsList.Add(new EnumWrapMethodWrapper(this, fieldType));
+				SetFields((FieldWrapper[])fieldsList.ToArray(typeof(FieldWrapper)));
+				SetMethods(new MethodWrapper[] { new EnumWrapMethodWrapper(this, fieldType) });
 			}
 			else
 			{
+				ArrayList fieldsList = new ArrayList();
 				FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 				for(int i = 0; i < fields.Length; i++)
 				{
@@ -9775,15 +9776,17 @@ namespace IKVM.Internal
 						fieldsList.Add(CreateFieldWrapperDotNet(AttributeHelper.GetModifiers(fields[i], true).Modifiers, fields[i].Name, fields[i].FieldType, fields[i]));
 					}
 				}
+				SetFields((FieldWrapper[])fieldsList.ToArray(typeof(FieldWrapper)));
+
+				Hashtable methodsList = new Hashtable();
 
 				// special case for delegate constructors!
 				if(IsDelegate(type))
 				{
 					TypeWrapper iface = InnerClasses[0];
-					methodsList.Add(new DelegateMethodWrapper(this, (DelegateInnerClassTypeWrapper)iface));
+					DelegateMethodWrapper mw = new DelegateMethodWrapper(this, (DelegateInnerClassTypeWrapper)iface);
+					methodsList.Add(mw.Name + mw.Signature, mw);
 				}
-
-				bool fabricateDefaultCtor = type.IsValueType;
 
 				ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 				for(int i = 0; i < constructors.Length; i++)
@@ -9794,19 +9797,19 @@ namespace IKVM.Internal
 					TypeWrapper ret;
 					if(MakeMethodDescriptor(constructors[i], out name, out sig, out args, out ret))
 					{
-						if(fabricateDefaultCtor && !constructors[i].IsStatic && sig == "()V")
+						MethodWrapper mw = CreateMethodWrapper(name, sig, args, ret, constructors[i], false);
+						string key = mw.Name + mw.Signature;
+						if(!methodsList.ContainsKey(key))
 						{
-							fabricateDefaultCtor = false;
+							methodsList.Add(key, mw);
 						}
-						// TODO handle name/signature clash
-						methodsList.Add(CreateMethodWrapper(name, sig, args, ret, constructors[i], false));
 					}
 				}
 
-				if(fabricateDefaultCtor)
+				if(type.IsValueType && !methodsList.ContainsKey("<init>()V"))
 				{
 					// Value types have an implicit default ctor
-					methodsList.Add(new ValueTypeDefaultCtor(this));
+					methodsList.Add("<init>()V", new ValueTypeDefaultCtor(this));
 				}
 
 				MethodInfo[] methods = type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
@@ -9832,8 +9835,13 @@ namespace IKVM.Internal
 									continue;
 								}
 							}
-							// TODO handle name/signature clash
-							methodsList.Add(CreateMethodWrapper(name, sig, args, ret, methods[i], false));
+							MethodWrapper mw = CreateMethodWrapper(name, sig, args, ret, methods[i], false);
+							string key = mw.Name + mw.Signature;
+							MethodWrapper existing = (MethodWrapper)methodsList[key];
+							if(existing == null || existing is ByRefMethodWrapper)
+							{
+								methodsList[key] = mw;
+							}
 						}
 						else if(methods[i].IsAbstract)
 						{
@@ -9846,7 +9854,6 @@ namespace IKVM.Internal
 				// (otherwise the type appears abstract while it isn't)
 				if(!type.IsInterface)
 				{
-					Hashtable clash = null;
 					Type[] interfaces = type.GetInterfaces();
 					for(int i = 0; i < interfaces.Length; i++)
 					{
@@ -9871,18 +9878,11 @@ namespace IKVM.Internal
 												continue;
 											}
 										}
-										if(clash == null)
+										string key = name + sig;
+										MethodWrapper existing = (MethodWrapper)methodsList[key];
+										if(existing == null || existing is ByRefMethodWrapper)
 										{
-											clash = new Hashtable();
-											foreach(MethodWrapper mw in methodsList)
-											{
-												clash.Add(mw.Name + mw.Signature, null);
-											}										
-										}
-										if(!clash.ContainsKey(name + sig))
-										{
-											clash.Add(name + sig, null);
-											methodsList.Add(CreateMethodWrapper(name, sig, args, ret, map.InterfaceMethods[j], true));
+											methodsList[key] = CreateMethodWrapper(name, sig, args, ret, map.InterfaceMethods[j], true);
 										}
 									}
 								}
@@ -9898,7 +9898,6 @@ namespace IKVM.Internal
 				{
 					// Finish the type, to make sure the methods are populated
 					this.BaseTypeWrapper.Finish();
-					Hashtable h = new Hashtable();
 					TypeWrapper baseTypeWrapper = this.BaseTypeWrapper;
 					while(baseTypeWrapper != null)
 					{
@@ -9906,19 +9905,18 @@ namespace IKVM.Internal
 						{
 							if(!m.IsStatic && !m.IsFinal && (m.IsPublic || m.IsProtected) && m.Name != "<init>")
 							{
-								if(!h.ContainsKey(m.Name + m.Signature))
+								string key = m.Name + m.Signature;
+								if(!methodsList.ContainsKey(key))
 								{
-									h.Add(m.Name + m.Signature, "");
-									// TODO handle name/sig clash (what should we do?)
 									if(m.IsProtected)
 									{
 										if(m.Name == "finalize" && m.Signature == "()V")
 										{
-											methodsList.Add(new FinalizeMethodWrapper(this));
+											methodsList.Add(key, new FinalizeMethodWrapper(this));
 										}
 										else if(m.Name == "clone" && m.Signature == "()Ljava.lang.Object;")
 										{
-											methodsList.Add(new CloneMethodWrapper(this));
+											methodsList.Add(key, new CloneMethodWrapper(this));
 										}
 										else
 										{
@@ -9928,7 +9926,7 @@ namespace IKVM.Internal
 									}
 									else
 									{
-										methodsList.Add(new BaseFinalMethodWrapper(this, m));
+										methodsList.Add(key, new BaseFinalMethodWrapper(this, m));
 									}
 								}
 							}
@@ -9936,9 +9934,10 @@ namespace IKVM.Internal
 						baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
 					}
 				}
+				MethodWrapper[] methodArray = new MethodWrapper[methodsList.Count];
+				methodsList.Values.CopyTo(methodArray, 0);
+				SetMethods(methodArray);
 			}
-			SetMethods((MethodWrapper[])methodsList.ToArray(typeof(MethodWrapper)));
-			SetFields((FieldWrapper[])fieldsList.ToArray(typeof(FieldWrapper)));
 		}
 
 		private class BaseFinalMethodWrapper : MethodWrapper
