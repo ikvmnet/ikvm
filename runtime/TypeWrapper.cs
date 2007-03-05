@@ -6989,46 +6989,33 @@ namespace IKVM.Internal
 			ClassFile.Method.LocalVariableTableEntry[] localVars = m.LocalVariableTableAttribute;
 			if(localVars != null)
 			{
-				int bias = 1;
-				if(m.IsStatic)
+				if(parameterNames == null)
 				{
-					bias = 0;
+					// we're allocating the worst case length here
+					// (double & long args take two slots and for instance methods there's the this arg)
+					parameterNames = new string[m.ArgMap.Length];
 				}
-				ParameterBuilder[] parameterBuilders = new ParameterBuilder[m.ArgMap.Length - bias];
-				for(int i = bias; i < m.ArgMap.Length; i++)
+				for(int i = m.IsStatic ? 0 : 1, pos = 0; i < m.ArgMap.Length; i++)
 				{
+					// skip double & long fillers
 					if(m.ArgMap[i] != -1)
 					{
-						for(int j = 0; j < localVars.Length; j++)
+						if(parameterNames[pos] == null)
 						{
-							if(localVars[j].index == i && parameterBuilders[i - bias] == null)
+							for(int j = 0; j < localVars.Length; j++)
 							{
-								string name = localVars[j].name;
-								if(parameterNames != null && parameterNames[i - bias] != null)
+								if(localVars[j].index == i)
 								{
-									name = parameterNames[i - bias];
+									parameterNames[pos] = localVars[j].name;
+									break;
 								}
-								ParameterBuilder pb;
-								if(mb is MethodBuilder)
-								{
-									pb = ((MethodBuilder)mb).DefineParameter(m.ArgMap[i] + 1 - bias, ParameterAttributes.None, name);
-								}
-								else
-								{
-									pb = ((ConstructorBuilder)mb).DefineParameter(m.ArgMap[i], ParameterAttributes.None, name);
-								}
-								parameterBuilders[i - bias] = pb;
-								break;
 							}
 						}
+						pos++;
 					}
 				}
-				return parameterBuilders;
 			}
-			else
-			{
-				return AddParameterNames(mb, m.Signature, parameterNames);
-			}
+			return AddParameterNames(mb, m.Signature, parameterNames);
 		}
 
 		protected static ParameterBuilder[] AddParameterNames(MethodBase mb, string sig, string[] parameterNames)
