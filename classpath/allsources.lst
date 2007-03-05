@@ -260,7 +260,6 @@
 ../../classpath/gnu/classpath/debug/TeeOutputStream.java
 ../../classpath/gnu/classpath/debug/TeeReader.java
 ../../classpath/gnu/classpath/debug/TeeWriter.java
-../../classpath/gnu/classpath/ListenerData.java
 ../../classpath/gnu/classpath/NotImplementedException.java
 ../../classpath/gnu/classpath/Pair.java
 ../../classpath/gnu/classpath/Pointer.java
@@ -434,6 +433,7 @@
 ../../classpath/gnu/java/awt/BitMaskExtent.java
 ../../classpath/gnu/java/awt/BitwiseXORComposite.java
 ../../classpath/gnu/java/awt/Buffers.java
+../../classpath/gnu/java/awt/ClasspathGraphicsEnvironment.java
 ../../classpath/gnu/java/awt/ClasspathToolkit.java
 ../../classpath/gnu/java/awt/color/CieXyzConverter.java
 ../../classpath/gnu/java/awt/color/ClutProfileConverter.java
@@ -1024,6 +1024,7 @@
 ../../classpath/gnu/java/util/regex/RETokenWordBoundary.java
 ../../classpath/gnu/java/util/regex/UncheckedRE.java
 ../../classpath/gnu/java/util/WeakIdentityHashMap.java
+../../classpath/gnu/java/util/ZoneInfo.java
 ../../classpath/gnu/javax/crypto/assembly/Assembly.java
 ../../classpath/gnu/javax/crypto/assembly/Cascade.java
 ../../classpath/gnu/javax/crypto/assembly/CascadeStage.java
@@ -1355,7 +1356,9 @@
 ../../classpath/gnu/javax/imageio/png/PNGPalette.java
 ../../classpath/gnu/javax/imageio/png/PNGPhys.java
 ../../classpath/gnu/javax/imageio/png/PNGTime.java
+../../classpath/gnu/javax/management/ListenerData.java
 ../../classpath/gnu/javax/management/Server.java
+../../classpath/gnu/javax/management/Translator.java
 ../../classpath/gnu/javax/naming/giop/ContextContinuation.java
 ../../classpath/gnu/javax/naming/giop/CorbalocParser.java
 ../../classpath/gnu/javax/naming/giop/GiopNamingEnumeration.java
@@ -2053,6 +2056,7 @@
 ../../classpath/java/awt/datatransfer/UnsupportedFlavorException.java
 ../../classpath/java/awt/DefaultFocusTraversalPolicy.java
 ../../classpath/java/awt/DefaultKeyboardFocusManager.java
+../../classpath/java/awt/Desktop.java
 ../../classpath/java/awt/Dialog.java
 ../../classpath/java/awt/Dimension.java
 ../../classpath/java/awt/DisplayMode.java
@@ -2280,6 +2284,7 @@
 ../../classpath/java/awt/peer/ChoicePeer.java
 ../../classpath/java/awt/peer/ComponentPeer.java
 ../../classpath/java/awt/peer/ContainerPeer.java
+../../classpath/java/awt/peer/DesktopPeer.java
 ../../classpath/java/awt/peer/DialogPeer.java
 ../../classpath/java/awt/peer/FileDialogPeer.java
 ../../classpath/java/awt/peer/FontPeer.java
@@ -3296,6 +3301,9 @@
 ../../classpath/javax/management/BadBinaryOpValueExpException.java
 ../../classpath/javax/management/BadStringOperationException.java
 ../../classpath/javax/management/DefaultLoaderRepository.java
+../../classpath/javax/management/Descriptor.java
+../../classpath/javax/management/DescriptorAccess.java
+../../classpath/javax/management/DescriptorRead.java
 ../../classpath/javax/management/DynamicMBean.java
 ../../classpath/javax/management/InstanceAlreadyExistsException.java
 ../../classpath/javax/management/InstanceNotFoundException.java
@@ -3304,6 +3312,7 @@
 ../../classpath/javax/management/InvalidAttributeValueException.java
 ../../classpath/javax/management/JMException.java
 ../../classpath/javax/management/JMRuntimeException.java
+../../classpath/javax/management/JMX.java
 ../../classpath/javax/management/ListenerNotFoundException.java
 ../../classpath/javax/management/loading/ClassLoaderRepository.java
 ../../classpath/javax/management/MalformedObjectNameException.java
@@ -3324,9 +3333,11 @@
 ../../classpath/javax/management/MBeanServerDelegate.java
 ../../classpath/javax/management/MBeanServerDelegateMBean.java
 ../../classpath/javax/management/MBeanServerFactory.java
+../../classpath/javax/management/MBeanServerInvocationHandler.java
 ../../classpath/javax/management/MBeanServerNotification.java
 ../../classpath/javax/management/MBeanServerPermission.java
 ../../classpath/javax/management/MBeanTrustPermission.java
+../../classpath/javax/management/MXBean.java
 ../../classpath/javax/management/NotCompliantMBeanException.java
 ../../classpath/javax/management/Notification.java
 ../../classpath/javax/management/NotificationBroadcaster.java
@@ -3362,6 +3373,7 @@
 ../../classpath/javax/management/openmbean/TabularType.java
 ../../classpath/javax/management/OperationsException.java
 ../../classpath/javax/management/PersistentMBean.java
+../../classpath/javax/management/Query.java
 ../../classpath/javax/management/QueryEval.java
 ../../classpath/javax/management/QueryExp.java
 ../../classpath/javax/management/ReflectionException.java
@@ -4942,6 +4954,7 @@ gnu/classpath/Configuration.java
 gnu/classpath/PointerUtil.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
+gnu/java/awt/peer/ClasspathDesktopPeer.java
 gnu/java/awt/peer/gtk/CairoSurface.java
 gnu/java/lang/reflect/VMField.java
 gnu/java/lang/management/VMClassLoadingMXBeanImpl.java

@@ -10,6 +10,7 @@ gnu/classpath/Configuration.java
 gnu/classpath/PointerUtil.java
 gnu/classpath/VMStackWalker.java
 gnu/classpath/VMSystemProperties.java
+gnu/java/awt/peer/ClasspathDesktopPeer.java
 gnu/java/awt/peer/gtk/CairoSurface.java
 gnu/java/lang/reflect/VMField.java
 gnu/java/lang/management/VMClassLoadingMXBeanImpl.java

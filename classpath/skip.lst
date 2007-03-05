@@ -7,6 +7,9 @@
 /classpath/external/jsr166/java/util/concurrent/atomic/AtomicReferenceArray.java
 /classpath/external/jsr166/java/util/concurrent/locks/LockSupport.java
 /classpath/gnu/java/awt/dnd/
+/classpath/gnu/java/awt/peer/ClasspathDesktopPeer.java
+/classpath/gnu/java/awt/peer/GnomeDesktopPeer.java
+/classpath/gnu/java/awt/peer/KDEDesktopPeer.java
 /classpath/gnu/java/awt/peer/gtk/
 /classpath/gnu/java/awt/peer/qt/
 /classpath/gnu/java/awt/peer/x/
