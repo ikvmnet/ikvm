@@ -3716,6 +3716,7 @@ namespace IKVM.Internal
 							typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
 						}
 					}
+					ImplementInterfaces(wrapper.Interfaces, null);
 #if STATIC_COMPILER
 					if(outer == null && mangledTypeName != wrapper.Name)
 					{
@@ -3727,47 +3728,6 @@ namespace IKVM.Internal
 					{
 						((CompilerClassLoader)wrapper.GetClassLoader()).AddNameMapping(wrapper.Name, typeBuilder.FullName);
 					}
-#endif // STATIC_COMPILER
-					ArrayList interfaceList = null;
-					TypeWrapper[] interfaces = wrapper.Interfaces;
-					for(int i = 0; i < interfaces.Length; i++)
-					{
-						// skip interfaces that don't really exist
-						// (e.g. delegate "Method" and attribute "Annotation" inner interfaces)
-						if(!interfaces[i].IsDynamicOnly)
-						{
-							// NOTE we're using TypeAsBaseType for the interfaces!
-							typeBuilder.AddInterfaceImplementation(interfaces[i].TypeAsBaseType);
-						}
-						// NOTE we're also "implementing" all interfaces that we inherit from the interfaces we implement.
-						// The C# compiler also does this and the Compact Framework requires it.
-						TypeWrapper[] inheritedInterfaces = interfaces[i].Interfaces;
-						if(inheritedInterfaces.Length > 0)
-						{
-							if(interfaceList == null)
-							{
-								interfaceList = new ArrayList();
-								foreach(TypeWrapper tw1 in interfaces)
-								{
-									if(!tw1.IsDynamicOnly)
-									{
-										interfaceList.Add(tw1.TypeAsBaseType);
-									}
-								}
-							}
-							foreach(TypeWrapper tw in inheritedInterfaces)
-							{
-								if(!tw.IsDynamicOnly && !interfaceList.Contains(tw.TypeAsBaseType))
-								{
-									interfaceList.Add(tw.TypeAsBaseType);
-									// NOTE we don't have to recurse upwards, because we assume that
-									// all interfaces follow this rule (of explicitly listed all of the base interfaces)
-									typeBuilder.AddInterfaceImplementation(tw.TypeAsBaseType);
-								}
-							}
-						}
-					}
-#if STATIC_COMPILER
 					string annotationAttributeType = null;
 					if(f.IsAnnotation && Annotation.HasRetentionPolicyRuntime(f.Annotations))
 					{
@@ -3803,6 +3763,7 @@ namespace IKVM.Internal
 							}
 						}
 					}
+					TypeWrapper[] interfaces = wrapper.Interfaces;
 					string[] implements = new string[interfaces.Length];
 					for(int i = 0; i < implements.Length; i++)
 					{
@@ -3899,6 +3860,38 @@ namespace IKVM.Internal
 				catch(Exception x)
 				{
 					JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2NoFail", x);
+				}
+			}
+
+			private void ImplementInterfaces(TypeWrapper[] interfaces, ArrayList interfaceList)
+			{
+				foreach(TypeWrapper iface in interfaces)
+				{
+					if(iface.IsDynamicOnly)
+					{
+						// skip interfaces that don't really exist
+						// (e.g. delegate "Method" and attribute "Annotation" inner interfaces)
+					}
+					else if(interfaceList != null && interfaceList.Contains(iface))
+					{
+						// we've already done this interface
+					}
+					else
+					{
+						// NOTE we're using TypeAsBaseType for the interfaces!
+						typeBuilder.AddInterfaceImplementation(iface.TypeAsBaseType);
+					}
+					// NOTE we're recursively "implementing" all interfaces that we inherit from the interfaces we implement.
+					// The C# compiler also does this and the Compact Framework requires it.
+					TypeWrapper[] inheritedInterfaces = iface.Interfaces;
+					if(inheritedInterfaces.Length > 0)
+					{
+						if(interfaceList == null)
+						{
+							interfaceList = new ArrayList();
+						}
+						ImplementInterfaces(inheritedInterfaces, interfaceList);
+					}
 				}
 			}
 
