@@ -633,12 +633,12 @@ struct ByteCodeMetaData
 		new ByteCodeMetaData(ByteCode.__lmul, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__fmul, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__dmul, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
-		new ByteCodeMetaData(ByteCode.__idiv, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
-		new ByteCodeMetaData(ByteCode.__ldiv, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
+		new ByteCodeMetaData(ByteCode.__idiv, ByteCodeMode.Simple, ByteCodeModeWide.Unused, false);
+		new ByteCodeMetaData(ByteCode.__ldiv, ByteCodeMode.Simple, ByteCodeModeWide.Unused, false);
 		new ByteCodeMetaData(ByteCode.__fdiv, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__ddiv, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
-		new ByteCodeMetaData(ByteCode.__irem, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
-		new ByteCodeMetaData(ByteCode.__lrem, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
+		new ByteCodeMetaData(ByteCode.__irem, ByteCodeMode.Simple, ByteCodeModeWide.Unused, false);
+		new ByteCodeMetaData(ByteCode.__lrem, ByteCodeMode.Simple, ByteCodeModeWide.Unused, false);
 		new ByteCodeMetaData(ByteCode.__frem, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__drem, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
 		new ByteCodeMetaData(ByteCode.__ineg, ByteCodeMode.Simple, ByteCodeModeWide.Unused, true);
