@@ -3716,7 +3716,6 @@ namespace IKVM.Internal
 							typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, wrapper.BaseTypeWrapper.TypeAsBaseType);
 						}
 					}
-					ImplementInterfaces(wrapper.Interfaces, new ArrayList());
 #if STATIC_COMPILER
 					if(outer == null && mangledTypeName != wrapper.Name)
 					{
@@ -3860,27 +3859,6 @@ namespace IKVM.Internal
 				catch(Exception x)
 				{
 					JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2NoFail", x);
-				}
-			}
-
-			private void ImplementInterfaces(TypeWrapper[] interfaces, ArrayList interfaceList)
-			{
-				foreach(TypeWrapper iface in interfaces)
-				{
-					if(!interfaceList.Contains(iface))
-					{
-						interfaceList.Add(iface);
-						// skip interfaces that don't really exist
-						// (e.g. delegate "Method" and attribute "Annotation" inner interfaces)
-						if(!iface.IsDynamicOnly)
-						{
-							// NOTE we're using TypeAsBaseType for the interfaces!
-							typeBuilder.AddInterfaceImplementation(iface.TypeAsBaseType);
-						}
-						// NOTE we're recursively "implementing" all interfaces that we inherit from the interfaces we implement.
-						// The C# compiler also does this and the Compact Framework requires it.
-						ImplementInterfaces(iface.Interfaces, interfaceList);
-					}
 				}
 			}
 
@@ -4735,6 +4713,10 @@ namespace IKVM.Internal
 							}
 						}
 					}
+
+					// add all interfaces that we implement (including the magic ones) and handle ghost conversions
+					ImplementInterfaces(wrapper.Interfaces, new ArrayList());
+
 					// NOTE non-final fields aren't allowed in interfaces so we don't have to initialize constant fields
 					if(!classFile.IsInterface)
 					{
@@ -4788,22 +4770,6 @@ namespace IKVM.Internal
 						TypeWrapper[] interfaces = wrapper.Interfaces;
 						for(int i = 0; i < interfaces.Length; i++)
 						{
-#if STATIC_COMPILER
-							// if we implement a ghost interface, add an implicit conversion to the ghost reference value type
-							// TODO do this for indirectly implemented interfaces (interfaces implemented by interfaces) as well
-							if(interfaces[i].IsGhost && wrapper.IsPublic)
-							{
-								MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, interfaces[i].TypeAsSignatureType, new Type[] { wrapper.TypeAsSignatureType });
-								ILGenerator ilgen = mb.GetILGenerator();
-								LocalBuilder local = ilgen.DeclareLocal(interfaces[i].TypeAsSignatureType);
-								ilgen.Emit(OpCodes.Ldloca, local);
-								ilgen.Emit(OpCodes.Ldarg_0);
-								ilgen.Emit(OpCodes.Stfld, interfaces[i].GhostRefField);
-								ilgen.Emit(OpCodes.Ldloca, local);
-								ilgen.Emit(OpCodes.Ldobj, interfaces[i].TypeAsSignatureType);
-								ilgen.Emit(OpCodes.Ret);
-							}
-#endif
 							interfaces[i].ImplementInterfaceMethodStubs(typeBuilder, wrapper, doneSet);
 						}
 						// if any of our base classes has an incomplete interface implementation we need to look through all
@@ -5006,6 +4972,79 @@ namespace IKVM.Internal
 				finally
 				{
 					Profiler.Leave("JavaTypeImpl.Finish.Core");
+				}
+			}
+
+			private void ImplementInterfaces(TypeWrapper[] interfaces, ArrayList interfaceList)
+			{
+				foreach (TypeWrapper iface in interfaces)
+				{
+					if (!interfaceList.Contains(iface))
+					{
+						interfaceList.Add(iface);
+						// skip interfaces that don't really exist
+						// (e.g. delegate "Method" and attribute "Annotation" inner interfaces)
+						if (!iface.IsDynamicOnly)
+						{
+							// NOTE we're using TypeAsBaseType for the interfaces!
+							typeBuilder.AddInterfaceImplementation(iface.TypeAsBaseType);
+						}
+#if STATIC_COMPILER
+						if (!wrapper.IsInterface)
+						{
+							// look for "magic" interfaces that imply a .NET interface
+							if (iface.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
+							{
+								if (iface.Name == "java.lang.Iterable"
+									&& !wrapper.ImplementsInterface(ClassLoaderWrapper.GetWrapperFromType(typeof(IEnumerable))))
+								{
+									TypeWrapper enumeratorType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("ikvm.lang.IterableEnumerator");
+									if (enumeratorType != null)
+									{
+										typeBuilder.AddInterfaceImplementation(typeof(IEnumerable));
+										MethodBuilder mb = typeBuilder.DefineMethod("__<>GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, typeof(IEnumerator), Type.EmptyTypes);
+										typeBuilder.DefineMethodOverride(mb, typeof(IEnumerable).GetMethod("GetEnumerator"));
+										ILGenerator ilgen = mb.GetILGenerator();
+										ilgen.Emit(OpCodes.Ldarg_0);
+										MethodWrapper mw = enumeratorType.GetMethodWrapper("<init>", "(Ljava.lang.Iterable;)V", false);
+										mw.Link();
+										mw.EmitNewobj(ilgen);
+										ilgen.Emit(OpCodes.Ret);
+									}
+								}
+								else if (iface.Name == "java.io.Closeable"
+									&& !wrapper.ImplementsInterface(ClassLoaderWrapper.GetWrapperFromType(typeof(IDisposable))))
+								{
+									typeBuilder.AddInterfaceImplementation(typeof(IDisposable));
+									MethodBuilder mb = typeBuilder.DefineMethod("__<>Dispose", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, typeof(void), Type.EmptyTypes);
+									typeBuilder.DefineMethodOverride(mb, typeof(IDisposable).GetMethod("Dispose"));
+									ILGenerator ilgen = mb.GetILGenerator();
+									ilgen.Emit(OpCodes.Ldarg_0);
+									MethodWrapper mw = iface.GetMethodWrapper("close", "()V", false);
+									mw.Link();
+									mw.EmitCallvirt(ilgen);
+									ilgen.Emit(OpCodes.Ret);
+								}
+							}
+							// if we implement a ghost interface, add an implicit conversion to the ghost reference value type
+							if(iface.IsGhost && wrapper.IsPublic)
+							{
+								MethodBuilder mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, iface.TypeAsSignatureType, new Type[] { wrapper.TypeAsSignatureType });
+								ILGenerator ilgen = mb.GetILGenerator();
+								LocalBuilder local = ilgen.DeclareLocal(iface.TypeAsSignatureType);
+								ilgen.Emit(OpCodes.Ldloca, local);
+								ilgen.Emit(OpCodes.Ldarg_0);
+								ilgen.Emit(OpCodes.Stfld, iface.GhostRefField);
+								ilgen.Emit(OpCodes.Ldloca, local);
+								ilgen.Emit(OpCodes.Ldobj, iface.TypeAsSignatureType);
+								ilgen.Emit(OpCodes.Ret);
+							}
+						}
+#endif // STATIC_COMPILER
+						// NOTE we're recursively "implementing" all interfaces that we inherit from the interfaces we implement.
+						// The C# compiler also does this and the Compact Framework requires it.
+						ImplementInterfaces(iface.Interfaces, interfaceList);
+					}
 				}
 			}
 
