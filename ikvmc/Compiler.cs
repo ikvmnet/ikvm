@@ -35,6 +35,7 @@ class IkvmcCompiler
 	private static string manifestMainClass;
 	private static Hashtable classes = new Hashtable();
 	private static Hashtable resources = new Hashtable();
+	private static bool time;
 
 	private static ArrayList GetArgs(string[] args)
 	{
@@ -62,9 +63,16 @@ class IkvmcCompiler
 
 	static void Main(string[] args)
 	{
+		DateTime start = DateTime.Now;
+		int rc = RealMain(args);
+		if (time)
+		{
+			Console.WriteLine("Total cpu time: {0}", System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime);
+			Console.WriteLine("Total wall clock time: {0}", DateTime.Now - start);
+		}
 		// FXBUG if we run a static initializer that starts a thread, we would never end,
 		// so we force an exit here
-		Environment.Exit(RealMain(args));
+		Environment.Exit(rc);
 	}
 
 	static string GetVersionAndCopyrightInfo()
@@ -157,6 +165,7 @@ class IkvmcCompiler
 			Console.Error.WriteLine("                               with <prefix> as internal to the assembly");
 			Console.Error.WriteLine("    -nowarn:<warning[:key]>    Suppress specified warnings");
 			Console.Error.WriteLine("    -warnaserror:<warning[:key]>  Treat specified warnings as errors");
+			Console.Error.WriteLine("    -time                      Display timing statistics");
 			return 1;
 		}
 		foreach(string s in arglist)
@@ -482,6 +491,10 @@ class IkvmcCompiler
 				{
 					// NOTE this is an undocumented option
 					options.runtimeAssembly = s.Substring(9);
+				}
+				else if(s == "-time")
+				{
+					time = true;
 				}
 				else
 				{
