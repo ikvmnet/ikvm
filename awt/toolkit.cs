@@ -524,6 +524,11 @@ namespace ikvm.awt
 		{
 			throw new NotImplementedException();
 		}
+
+		protected override DesktopPeer createDesktopPeer(java.awt.Desktop target)
+		{
+			return new NetDesktopPeer();
+		}
 	}
 
 	class NetLightweightComponentPeer : NetComponentPeer, java.awt.peer.LightweightPeer
@@ -2038,4 +2043,68 @@ namespace ikvm.awt
 		}
 	}
 
+	class NetDesktopPeer : DesktopPeer
+	{
+		private static void ShellExecute(string file, string verb)
+		{
+			try
+			{
+				ProcessStartInfo psi = new ProcessStartInfo(file);
+				psi.UseShellExecute = true;
+				psi.Verb = verb;
+				Process p = Process.Start(psi);
+				if (p != null)
+				{
+					p.Dispose();
+				}
+			}
+			catch (System.ComponentModel.Win32Exception x)
+			{
+				throw new java.io.IOException(x.Message);
+			}
+		}
+
+		public void browse(URI uri)
+		{
+			ShellExecute(uri.toString(), "open");
+		}
+
+		public void edit(java.io.File f)
+		{
+			ShellExecute(f.toString(), "edit");
+		}
+
+		public bool isSupported(java.awt.Desktop.Action da)
+		{
+			return da == java.awt.Desktop.Action.BROWSE
+				|| da == java.awt.Desktop.Action.EDIT
+				|| da == java.awt.Desktop.Action.MAIL
+				|| da == java.awt.Desktop.Action.OPEN
+				|| da == java.awt.Desktop.Action.PRINT;
+		}
+
+		public void mail(URI uri)
+		{
+			if (!uri.getScheme().Equals("mailto", StringComparison.OrdinalIgnoreCase))
+			{
+				throw new java.lang.IllegalArgumentException("URI scheme is not \"mailto\"");
+			}
+			ShellExecute(uri.toString(), "open");
+		}
+
+		public void mail()
+		{
+			ShellExecute("mailto:", "open");
+		}
+
+		public void open(java.io.File f)
+		{
+			ShellExecute(f.toString(), "open");
+		}
+
+		public void print(java.io.File f)
+		{
+			ShellExecute(f.toString(), "print");
+		}
+	}
 }
