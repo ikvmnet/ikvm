@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1168,25 +1168,19 @@ namespace IKVM.Internal
 					{
 						throw x.InnerException;
 					}
-					if(val is Enum)
-					{
-						val = DotNetTypeWrapper.EnumValueFieldWrapper.GetEnumPrimitiveValue(val);
-					}
 #endif
+					if(field.FieldType.IsEnum)
+					{
+						val = DotNetTypeWrapper.EnumValueFieldWrapper.GetEnumPrimitiveValue(Enum.GetUnderlyingType(field.FieldType), val);
+					}
 				}
 				else
 				{
-#if WHIDBEY
-					// TODO
-#else
-					// In Java, instance fields can also have a ConstantValue attribute so we emulate that
-					// with ConstantValueAttribute (for consumption by ikvmstub only)
-					object[] attrib = field.GetCustomAttributes(typeof(ConstantValueAttribute), false);
-					if(attrib.Length == 1)
-					{
-						val = ((ConstantValueAttribute)attrib[0]).GetConstantValue();
-					}
-#endif
+					// NOTE instance fields can also be "constant" and we round trip this information to make the Japi results look
+					// nice (but otherwise this has no practical value), but note that this only works when the code is compiled
+					// with -strictfieldfieldsemantics (because the ConstantValueAttribute is on the field and when we're a GetterFieldWrapper
+					// we don't have access to the corresponding field).
+					val = AttributeHelper.GetConstantValue(field);
 				}
 				if(val != null && !(val is string))
 				{
@@ -1674,7 +1668,25 @@ namespace IKVM.Internal
 		{
 			if(constant == null)
 			{
+#if WHIDBEY
+				FieldInfo field = GetField();
+#if !STATIC_COMPILER
+				if(field.FieldType.IsEnum && !field.DeclaringType.IsEnum)
+				{
+					if(field.DeclaringType.Assembly.ReflectionOnly)
+					{
+						return null;
+					}
+					constant = field.GetValue(null);
+				}
+				else
+#endif // !STATIC_COMPILER
+				{
+					constant = field.GetRawConstantValue();
+				}
+#else // WHIDBEY
 				constant = GetField().GetValue(null);
+#endif // WHIDBEY
 			}
 			return constant;
 		}

@@ -169,6 +169,7 @@ namespace IKVM.Internal
 		private static Type typeofHideFromJavaAttribute = JVM.LoadType(typeof(HideFromJavaAttribute));
 		private static Type typeofNoPackagePrefixAttribute = JVM.LoadType(typeof(NoPackagePrefixAttribute));
 		private static Type typeofConstantValueAttribute = JVM.LoadType(typeof(ConstantValueAttribute));
+		private static Type typeofAnnotationAttributeAttribute = JVM.LoadType(typeof(AnnotationAttributeAttribute));
 
 #if STATIC_COMPILER && !COMPACT_FRAMEWORK
 		private static object ParseValue(TypeWrapper tw, string val)
@@ -734,6 +735,31 @@ namespace IKVM.Internal
 				&& t1.Assembly.GetName().Name == t2.Assembly.GetName().Name;
 		}
 #endif
+
+		internal static object GetConstantValue(FieldInfo field)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			if(JVM.IsStaticCompiler || field.DeclaringType.Assembly.ReflectionOnly)
+			{
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofConstantValueAttribute))
+					{
+						return cad.ConstructorArguments[0].Value;
+					}
+				}
+				return null;
+			}
+#endif
+			// In Java, instance fields can also have a ConstantValue attribute so we emulate that
+			// with ConstantValueAttribute (for consumption by ikvmstub only)
+			object[] attrib = field.GetCustomAttributes(typeof(ConstantValueAttribute), false);
+			if(attrib.Length == 1)
+			{
+				return ((ConstantValueAttribute)attrib[0]).GetConstantValue();
+			}
+			return null;
+		}
 
 		internal static ModifiersAttribute GetModifiersAttribute(Type type)
 		{
@@ -1348,6 +1374,19 @@ namespace IKVM.Internal
 
 		internal static string GetAnnotationAttributeType(Type type)
 		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
+			{
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofAnnotationAttributeAttribute))
+					{
+						return (string)cad.ConstructorArguments[0].Value;
+					}
+				}
+				return null;
+			}
+#endif
 			object[] attr = type.GetCustomAttributes(typeof(AnnotationAttributeAttribute), false);
 			if(attr.Length == 1)
 			{
@@ -2838,6 +2877,13 @@ namespace IKVM.Internal
 			MethodBase mb = mw.GetMethod();
 			if(mb != null)
 			{
+#if WHIDBEY
+				if(mb.DeclaringType.Assembly.ReflectionOnly)
+				{
+					// TODO
+					return null;
+				}
+#endif // WHIDBEY
 				object[] attr = mb.GetCustomAttributes(typeof(AnnotationDefaultAttribute), false);
 				if(attr.Length == 1)
 				{
@@ -2846,7 +2892,7 @@ namespace IKVM.Internal
 			}
 			return null;
 		}
-#endif
+#endif // !STATIC_COMPILER
 
 #if !COMPACT_FRAMEWORK
 		internal virtual Annotation Annotation
@@ -8301,17 +8347,40 @@ namespace IKVM.Internal
 
 		internal override object[] GetDeclaredAnnotations()
 		{
+#if WHIDBEY
+			if(type.Assembly.ReflectionOnly)
+			{
+				// TODO
+				return null;
+			}
+#endif // WHIDBEY
 			return type.GetCustomAttributes(false);
 		}
 
 		internal override object[] GetMethodAnnotations(MethodWrapper mw)
 		{
-			return mw.GetMethod().GetCustomAttributes(false);
+			MethodBase mb = mw.GetMethod();
+#if WHIDBEY
+			if(mb.DeclaringType.Assembly.ReflectionOnly)
+			{
+				// TODO
+				return null;
+			}
+#endif // WHIDBEY
+			return mb.GetCustomAttributes(false);
 		}
 
 		internal override object[][] GetParameterAnnotations(MethodWrapper mw)
 		{
-			ParameterInfo[] parameters = mw.GetMethod().GetParameters();
+			MethodBase mb = mw.GetMethod();
+#if WHIDBEY
+			if(mb.DeclaringType.Assembly.ReflectionOnly)
+			{
+				// TODO
+				return null;
+			}
+#endif // WHIDBEY
+			ParameterInfo[] parameters = mb.GetParameters();
 			object[][] attribs = new object[parameters.Length][];
 			for(int i = 0; i < parameters.Length; i++)
 			{
@@ -8325,11 +8394,25 @@ namespace IKVM.Internal
 			FieldInfo field = fw.GetField();
 			if(field != null)
 			{
+#if WHIDBEY
+				if (field.DeclaringType.Assembly.ReflectionOnly)
+				{
+					// TODO
+					return null;
+				}
+#endif // WHIDBEY
 				return field.GetCustomAttributes(false);
 			}
 			GetterFieldWrapper getter = fw as GetterFieldWrapper;
 			if(getter != null)
 			{
+#if WHIDBEY
+				if (getter.GetGetter().DeclaringType.Assembly.ReflectionOnly)
+				{
+					// TODO
+					return null;
+				}
+#endif // WHIDBEY
 				return getter.GetGetter().GetCustomAttributes(false);
 			}
 			return new object[0];
@@ -9214,38 +9297,52 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 			internal override object[] GetDeclaredAnnotations()
 			{
-				object target = null;
+				AttributeTargets validOn = AttributeTargets.All;
+#if WHIDBEY
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(attributeType))
+				{
+					if(cad.Constructor.DeclaringType == typeof(AttributeUsageAttribute))
+					{
+						if(cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == typeof(AttributeTargets))
+						{
+							validOn = (AttributeTargets)cad.ConstructorArguments[0].Value;
+							break;
+						}
+					}
+				}
+#else // WHIDBEY
 				object[] attr = attributeType.GetCustomAttributes(typeof(AttributeUsageAttribute), false);
 				if(attr.Length == 1)
 				{
-					ArrayList targets = new ArrayList();
-					targets.Add(AnnotationDefaultAttribute.TAG_ARRAY);
 					AttributeUsageAttribute aua = (AttributeUsageAttribute)attr[0];
-					if((aua.ValidOn & (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
-					{
-						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "TYPE" });
-					}
-					if((aua.ValidOn & AttributeTargets.Constructor) != 0)
-					{
-						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "CONSTRUCTOR" });
-					}
-					if((aua.ValidOn & AttributeTargets.Field) != 0)
-					{
-						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "FIELD" });
-					}
-					if((aua.ValidOn & AttributeTargets.Method) != 0)
-					{
-						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "METHOD" });
-					}
-					if((aua.ValidOn & AttributeTargets.Parameter) != 0)
-					{
-						targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "PARAMETER" });
-					}
-					target = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", (object[])targets.ToArray() });
+					validOn = aua.ValidOn;
 					// TODO figure out if AttributeUsageAttribute.Inherited maps to java.lang.annotation.Inherited
 				}
+#endif // WHIDBEY
+				ArrayList targets = new ArrayList();
+				targets.Add(AnnotationDefaultAttribute.TAG_ARRAY);
+				if((validOn & (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
+				{
+					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "TYPE" });
+				}
+				if((validOn & AttributeTargets.Constructor) != 0)
+				{
+					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "CONSTRUCTOR" });
+				}
+				if((validOn & AttributeTargets.Field) != 0)
+				{
+					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "FIELD" });
+				}
+				if((validOn & AttributeTargets.Method) != 0)
+				{
+					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "METHOD" });
+				}
+				if((validOn & AttributeTargets.Parameter) != 0)
+				{
+					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "PARAMETER" });
+				}
 				return new object[] {
-										target,
+										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", (object[])targets.ToArray() }),
 										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" } })
 									};
 			}
@@ -9589,7 +9686,12 @@ namespace IKVM.Internal
 			// of the subset of Java primitives (i.e. byte, short, int, long)
 			internal static object GetEnumPrimitiveValue(object obj)
 			{
-				Type underlyingType = Enum.GetUnderlyingType(obj.GetType());
+				return GetEnumPrimitiveValue(Enum.GetUnderlyingType(obj.GetType()), obj);
+			}
+
+			// this method can be used to convert an enum value or its underlying value to a Java primitive
+			internal static object GetEnumPrimitiveValue(Type underlyingType, object obj)
+			{
 				if(underlyingType == typeof(sbyte) || underlyingType == typeof(byte))
 				{
 					return unchecked((byte)((IConvertible)obj).ToInt32(null));
@@ -9756,7 +9858,7 @@ namespace IKVM.Internal
 							name = "_" + name;
 						}
 #if WHIDBEY
-						object val = fields[i].GetRawConstantValue();
+						object val = EnumValueFieldWrapper.GetEnumPrimitiveValue(underlyingType, fields[i].GetRawConstantValue());
 #else
 						object val = EnumValueFieldWrapper.GetEnumPrimitiveValue(fields[i].GetValue(null));
 #endif
@@ -10395,7 +10497,32 @@ namespace IKVM.Internal
 
 		internal override object[] GetDeclaredAnnotations()
 		{
+#if WHIDBEY
+			if(type.Assembly.ReflectionOnly)
+			{
+				// TODO
+				return null;
+			}
+#endif
 			return type.GetCustomAttributes(false);
+		}
+
+		internal override object[] GetFieldAnnotations(FieldWrapper fw)
+		{
+			// TODO
+			return null;
+		}
+
+		internal override object[] GetMethodAnnotations(MethodWrapper mw)
+		{
+			// TODO
+			return null;
+		}
+
+		internal override object[][] GetParameterAnnotations(MethodWrapper mw)
+		{
+			// TODO
+			return null;
 		}
 	}
 
