@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -833,6 +833,49 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Brtrue_S, end);
 					EmitHelper.Throw(ilgen, "java.lang.ClassCastException");
 					ilgen.MarkLabel(end);
+					ilgen.Emit(OpCodes.Ret);
+
+					// Implement the "Equals" method
+					mb = typeBuilder.DefineMethod("Equals", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual, typeof(bool), new Type[] { typeof(object) });
+					AttributeHelper.HideFromJava(mb);
+					ilgen = mb.GetILGenerator();
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
+					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Ceq);
+					ilgen.Emit(OpCodes.Ret);
+
+					// Implement the "GetHashCode" method
+					mb = typeBuilder.DefineMethod("GetHashCode", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual, typeof(int), Type.EmptyTypes);
+					AttributeHelper.HideFromJava(mb);
+					ilgen = mb.GetILGenerator();
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
+					ilgen.Emit(OpCodes.Callvirt, typeof(object).GetMethod("GetHashCode"));
+					ilgen.Emit(OpCodes.Ret);
+
+					// Implement the "op_Equality" method
+					mb = typeBuilder.DefineMethod("op_Equality", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeof(bool), new Type[] { typeBuilder, typeBuilder });
+					AttributeHelper.HideFromJava(mb);
+					ilgen = mb.GetILGenerator();
+					ilgen.Emit(OpCodes.Ldarga_S, (byte)0);
+					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
+					ilgen.Emit(OpCodes.Ldarga_S, (byte)1);
+					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
+					ilgen.Emit(OpCodes.Ceq);
+					ilgen.Emit(OpCodes.Ret);
+
+					// Implement the "op_Inequality" method
+					mb = typeBuilder.DefineMethod("op_Inequality", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeof(bool), new Type[] { typeBuilder, typeBuilder });
+					AttributeHelper.HideFromJava(mb);
+					ilgen = mb.GetILGenerator();
+					ilgen.Emit(OpCodes.Ldarga_S, (byte)0);
+					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
+					ilgen.Emit(OpCodes.Ldarga_S, (byte)1);
+					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
+					ilgen.Emit(OpCodes.Ceq);
+					ilgen.Emit(OpCodes.Ldc_I4_0);
+					ilgen.Emit(OpCodes.Ceq);
 					ilgen.Emit(OpCodes.Ret);
 				}
 			}
