@@ -1506,6 +1506,14 @@
 				</method>
 			</implements>
 		</class>
+    <class name="java.lang.Runtime">
+      <method name="addShutdownHook" sig="(Ljava.lang.Thread;)V">
+        <attribute type="System.Security.Permissions.SecurityPermissionAttribute" sig="(Lcli.System.Security.Permissions.SecurityAction;)V">
+          <parameter>LinkDemand</parameter>
+          <property name="ControlAppDomain" sig="Z">true</property>
+        </attribute>
+      </method>
+    </class>
 	</assembly>
 	<exceptionMappings>
 		<exception src="System.NullReferenceException" dst="java.lang.NullPointerException" />
