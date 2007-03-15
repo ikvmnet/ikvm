@@ -2085,7 +2085,7 @@ namespace ikvm.awt
 
 		public void mail(URI uri)
 		{
-			if (!uri.getScheme().Equals("mailto", StringComparison.OrdinalIgnoreCase))
+			if (uri.getScheme().ToLower(System.Globalization.CultureInfo.InvariantCulture) != "mailto")
 			{
 				throw new java.lang.IllegalArgumentException("URI scheme is not \"mailto\"");
 			}
