@@ -124,9 +124,9 @@ public final class FileChannelImpl extends FileChannel
             IntPtr hFileMapping = CreateFileMapping(fs.get_Handle(), IntPtr.Zero, 
                 copy_on_write ? PAGE_WRITECOPY : (writeable ? PAGE_READWRITE : PAGE_READONLY),
                 0, size, null);
+            int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
             if(hFileMapping.Equals(IntPtr.Zero))
             {
-                int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
                 throw new IOException("Win32 error " + err);
             }
             int FILE_MAP_WRITE = 2;
@@ -135,10 +135,10 @@ public final class FileChannelImpl extends FileChannel
             IntPtr p = MapViewOfFile(hFileMapping,
                 copy_on_write ? FILE_MAP_COPY : (writeable ? FILE_MAP_WRITE : FILE_MAP_READ),
                 (int)(position >> 32), (int)position, new IntPtr(size));
+            err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
             CloseHandle(hFileMapping);
             if(p.Equals(IntPtr.Zero))
             {
-                int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
                 throw new IOException("Win32 error " + err);
             }
             return p;                
