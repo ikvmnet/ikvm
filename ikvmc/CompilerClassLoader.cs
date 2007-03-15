@@ -38,6 +38,8 @@ using IKVM.Runtime;
 
 using ILGenerator = IKVM.Internal.CountingILGenerator;
 using Label = IKVM.Internal.CountingLabel;
+using System.Security.Permissions;
+using System.Security;
 
 namespace IKVM.Internal
 {
@@ -834,6 +836,7 @@ namespace IKVM.Internal
 						MethodBuilder helper = null;
 						if(specialCases != null)
 						{
+							ILGenerator ilgen;
 							Type[] temp = typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig);
 							Type[] argTypes = new Type[temp.Length + 1];
 							temp.CopyTo(argTypes, 1);
@@ -841,7 +844,10 @@ namespace IKVM.Internal
 							if(typeWrapper.helperTypeBuilder == null)
 							{
 								// FXBUG we use a nested helper class, because Reflection.Emit won't allow us to add a static method to the interface
-								typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class);
+								typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class | TypeAttributes.Sealed);
+								ilgen = typeWrapper.helperTypeBuilder.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, Type.EmptyTypes).GetILGenerator();
+								ilgen.Emit(OpCodes.Ldnull);
+								ilgen.Emit(OpCodes.Throw);
 								AttributeHelper.HideFromJava(typeWrapper.helperTypeBuilder);
 							}
 							helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeWrapper.GetClassLoader().RetTypeWrapperFromSig(m.Sig).TypeAsSignatureType, argTypes);
@@ -853,7 +859,7 @@ namespace IKVM.Internal
 								}
 							}
 							SetParameters(helper, m.Params);
-							ILGenerator ilgen = helper.GetILGenerator();
+							ilgen = helper.GetILGenerator();
 							foreach(IKVM.Internal.MapXml.Class c in specialCases)
 							{
 								TypeWrapper tw = typeWrapper.GetClassLoader().LoadClassByDottedName(c.Name);
@@ -1458,7 +1464,6 @@ namespace IKVM.Internal
 					// For all inherited methods, we emit a method that hides the inherited method and
 					// annotate it with EditorBrowsableAttribute(EditorBrowsableState.Never) to make
 					// sure the inherited methods don't show up in Intellisense.
-					// TODO if the original method has a LinkDemand, we should copy that
 					Hashtable methods = new Hashtable();
 					foreach(MethodInfo mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy))
 					{
@@ -1474,6 +1479,7 @@ namespace IKVM.Internal
 							MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & (MethodAttributes.MemberAccessMask | MethodAttributes.SpecialName | MethodAttributes.Static), mi.ReturnType, paramTypes);
 							AttributeHelper.HideFromJava(mb);
 							AttributeHelper.SetEditorBrowsableNever(mb);
+							CopyLinkDemands(mb, mi);
 							ILGenerator ilgen = mb.GetILGenerator();
 							for(int i = 0; i < paramTypes.Length; i++)
 							{
@@ -1517,6 +1523,23 @@ namespace IKVM.Internal
 				if(helperTypeBuilder != null)
 				{
 					helperTypeBuilder.CreateType();
+				}
+			}
+
+			private static void CopyLinkDemands(MethodBuilder mb, MethodInfo mi)
+			{
+				foreach (object attr in mi.GetCustomAttributes(false))
+				{
+					CodeAccessSecurityAttribute cas = attr as CodeAccessSecurityAttribute;
+					if (cas != null)
+					{
+						if (cas.Action == SecurityAction.LinkDemand)
+						{
+							PermissionSet pset = new PermissionSet(PermissionState.None);
+							pset.AddPermission(cas.CreatePermission());
+							mb.AddDeclarativeSecurity(SecurityAction.LinkDemand, pset);
+						}
+					}
 				}
 			}
 
