@@ -221,8 +221,18 @@ public class NetExp
 
 	private static bool IsGenericType(java.lang.Class c)
 	{
-		// HACK huge hack, we look for the backtick
+#if WHIDBEY
+		Type t = ikvm.runtime.Util.getInstanceTypeFromClass(c);
+		while(t == null && c.getDeclaringClass() != null)
+		{
+			// dynamic only inner class, so we look at the declaring class
+			c = c.getDeclaringClass();
+			t = ikvm.runtime.Util.getInstanceTypeFromClass(c);
+		}
+		return t.IsGenericType;
+#else
 		return c.getName().IndexOf("$$0060") > 0;
+#endif
 	}
 
 	private static void ProcessClass(java.lang.Class c)

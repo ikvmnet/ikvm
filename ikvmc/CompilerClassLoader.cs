@@ -2371,7 +2371,10 @@ namespace IKVM.Internal
 					{
 						if(wrapper.GetClassLoader() != loader)
 						{
-							StaticCompiler.IssueMessage(Message.SkippingReferencedClass, s, ((AssemblyClassLoader)wrapper.GetClassLoader()).Assembly.FullName);
+							if(!(wrapper.GetClassLoader() is GenericClassLoader))
+							{
+								StaticCompiler.IssueMessage(Message.SkippingReferencedClass, s, ((AssemblyClassLoader)wrapper.GetClassLoader()).Assembly.FullName);
+							}
 							continue;
 						}
 						if(map == null)

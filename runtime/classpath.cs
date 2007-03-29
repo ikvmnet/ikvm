@@ -1583,6 +1583,11 @@ namespace IKVM.NativeCode.ikvm.@internal
 		{
 			return ((IKVM.Internal.AssemblyClassLoader)ClassLoaderWrapper.GetBootstrapClassLoader()).Assembly;
 		}
+
+		public static string GetGenericClassLoaderName(object classLoader)
+		{
+			return ((GenericClassLoader)JVM.Library.getWrapperFromClassLoader(classLoader)).GetName();
+		}
 	}
 
 	namespace stubgen
@@ -1599,8 +1604,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 				}
 				else
 				{
-					// TODO
-					return "TODO: implement support for generic types referencing multiple assemblies in their IKVM.NET.Assembly attribute";
+					return ((IKVM.Internal.GenericClassLoader)loader).GetName();
 				}
 			}
 
@@ -1717,6 +1721,10 @@ namespace IKVM.NativeCode.ikvm.runtime
 		public static Type GetInstanceTypeFromTypeWrapper(object wrapperObject)
 		{
 			TypeWrapper wrapper = (TypeWrapper)wrapperObject;
+			if(wrapper.IsDynamicOnly)
+			{
+				return null;
+			}
 			if(wrapper.IsRemapped && wrapper.IsFinal)
 			{
 				return wrapper.TypeAsTBD;

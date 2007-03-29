@@ -8706,8 +8706,13 @@ namespace IKVM.Internal
 					else
 					{
 						string s = tw.Name;
-						s = s.Replace("__", "$$005F$$005F");
-						s = s.Replace(".", "__");
+						// only do the mangling for non-generic types (because we don't want to convert
+						// the double underscores in two adjacent _$$$_ or _$$$$_ markers)
+						if (s.IndexOf("_$$$_") == -1)
+						{
+							s = s.Replace("__", "$$005F$$005F");
+							s = s.Replace(".", "__");
+						}
 						sb.Append('L').Append(s);
 					}
 					sep = "_$$_";

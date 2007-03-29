@@ -159,6 +159,7 @@ public final class AssemblyClassLoader extends ClassLoader
     private static native Assembly[] FindResourceAssemblies(Object classLoader, String name, boolean firstOnly);
     private static native int GetGenericClassLoaderId(AssemblyClassLoader classLoader);
     private static native Assembly GetBootClassLoaderAssembly();
+    private static native String GetGenericClassLoaderName(Object classLoader);
     // also used by VMClassLoader
     public static native String[] GetPackages(Object classLoader);
 
@@ -268,8 +269,7 @@ public final class AssemblyClassLoader extends ClassLoader
         {
             return assembly.get_FullName();
         }
-        // TODO make this string more meaningful
-        return "GenericClassLoader";
+        return GetGenericClassLoaderName(this);
     }
 
     private URL getCodeBase()
