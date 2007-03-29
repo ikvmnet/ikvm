@@ -1,0 +1,135 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>IKVM.Runtime</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Library</OutputType>
+    <RootNamespace>
+    </RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG;WHIDBEY</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="IKVM.GNU.Classpath">
+      <Name>IKVM.GNU.Classpath</Name>
+      <HintPath>..\bin\IKVM.GNU.Classpath.dll</HintPath>
+    </Reference>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="attributes.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BigEndianBinaryReader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ByteCode.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ByteCodeHelper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ClassFile.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ClassLoaderWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="classpath.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CodeEmitter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="compiler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CoreClasses.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DynamicClassLoader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ExceptionHelper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="JavaException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="JniInterface.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MemberWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="profiler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tracer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TypeWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="verifier.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="vm.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

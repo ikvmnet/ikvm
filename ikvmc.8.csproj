@@ -1,0 +1,137 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{4CA3F3DF-D2B7-4FA2-874C-BFC4B04286A2}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>ikvmc</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ikvmc</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>ikvmc\bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG;STATIC_COMPILER;WHIDBEY</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <Name>ICSharpCode.SharpZipLib</Name>
+      <HintPath>bin\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Name>System.XML</Name>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ikvmc\AotTypeWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ikvmc\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ikvmc\Compiler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ikvmc\CompilerClassLoader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ikvmc\remapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\BigEndianBinaryReader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\ByteCode.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\ClassFile.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\ClassLoaderWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\CodeEmitter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\compiler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\CoreClasses.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\DynamicClassLoader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\JavaException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\MemberWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\profiler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\TypeWrapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\verifier.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\vm.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="runtime\IKVM.Runtime.8.csproj">
+      <Project>{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}</Project>
+      <Name>IKVM.Runtime.8</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>
