@@ -52,10 +52,6 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ICSharpCode.SharpZipLib">
-      <Name>ICSharpCode.SharpZipLib</Name>
-      <HintPath>..\bin\ICSharpCode.SharpZipLib.dll</HintPath>
-    </Reference>
     <Reference Include="IKVM.GNU.Classpath">
       <Name>IKVM.GNU.Classpath</Name>
       <HintPath>..\bin\IKVM.GNU.Classpath.dll</HintPath>

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,8 +26,8 @@ using System.Reflection;
 using System.IO;
 using System.Text;
 using System.Collections;
-using ICSharpCode.SharpZipLib.Zip;
 using IKVM.Attributes;
+using java.util.zip;
 
 public class NetExp
 {
@@ -93,26 +93,28 @@ public class NetExp
 		}
 		else
 		{
-			zipFile = new ZipOutputStream(new FileStream(assembly.GetName().Name + ".jar", FileMode.Create));
-			try
+			using(zipFile = new ZipOutputStream(new java.io.FileOutputStream(assembly.GetName().Name + ".jar")))
 			{
-				ProcessAssembly(assembly);
-			}
-			catch(ReflectionTypeLoadException x)
-			{
-				Console.WriteLine(x);
-				Console.WriteLine("LoaderExceptions:");
-				foreach(Exception n in x.LoaderExceptions)
+				zipFile.setComment(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
+				try
 				{
-					Console.WriteLine(n);
+					ProcessAssembly(assembly);
+				}
+				catch(ReflectionTypeLoadException x)
+				{
+					Console.WriteLine(x);
+					Console.WriteLine("LoaderExceptions:");
+					foreach (Exception n in x.LoaderExceptions)
+					{
+						Console.WriteLine(n);
+					}
+				}
+				catch(System.Exception x)
+				{
+					java.lang.Throwable.instancehelper_printStackTrace(ikvm.runtime.Util.mapException(x));
+					rc = 1;
 				}
 			}
-			catch(System.Exception x)
-			{
-				java.lang.Throwable.instancehelper_printStackTrace(ikvm.runtime.Util.mapException(x));
-				rc = 1;
-			}
-			zipFile.Close();
 		}
 		// FXBUG if we run a static initializer that starts a thread, we would never end,
 		// so we force an exit here
@@ -149,8 +151,8 @@ public class NetExp
 
 	private static void WriteClass(string name, byte[] buf)
 	{
-		zipFile.PutNextEntry(new ZipEntry(name));
-		zipFile.Write(buf, 0, buf.Length);
+		zipFile.putNextEntry(new ZipEntry(name));
+		zipFile.write(buf, 0, buf.Length);
 	}
 
 	private static void ProcessAssembly(Assembly assembly)
