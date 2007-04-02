@@ -477,7 +477,7 @@ namespace IKVM.Runtime
 			{
 				checked
 				{
-					Buffer.BlockCopy(src, srcStart << 3, dest, destStart << 3, len << 3);
+					Buffer.BlockCopy(src, srcStart * 8, dest, destStart * 8, len * 8);
 					return;
 				}
 			}
@@ -502,7 +502,7 @@ namespace IKVM.Runtime
 			{
 				checked
 				{
-					Buffer.BlockCopy(src, srcStart << 2, dest, destStart << 2, len << 2);
+					Buffer.BlockCopy(src, srcStart * 4, dest, destStart * 4, len * 4);
 					return;
 				}
 			}
@@ -527,7 +527,7 @@ namespace IKVM.Runtime
 			{
 				checked
 				{
-					Buffer.BlockCopy(src, srcStart << 1, dest, destStart << 1, len << 1);
+					Buffer.BlockCopy(src, srcStart * 2, dest, destStart * 2, len * 2);
 					return;
 				}
 			}
