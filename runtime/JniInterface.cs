@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -64,7 +64,7 @@ namespace IKVM.Runtime
 	[StructLayout(LayoutKind.Sequential)]
 	unsafe struct JavaVMOption
 	{
-		internal sbyte* optionString;
+		internal byte* optionString;
 		internal void* extraInfo;
 	}
 
@@ -103,7 +103,7 @@ namespace IKVM.Runtime
 			Hashtable props = new Hashtable();
 			for(int i = 0; i < pInitArgs->nOptions; i++)
 			{
-				string option = new String(pInitArgs->options[i].optionString);
+				string option = JNIEnv.StringFromOEM(pInitArgs->options[i].optionString);
 				if(option.StartsWith("-D"))
 				{
 					int idx = option.IndexOf('=', 2);
@@ -870,7 +870,7 @@ namespace IKVM.Runtime
 	unsafe struct JavaVMAttachArgs
 	{
 		internal jint version;
-		internal sbyte* name;
+		internal byte* name;
 		internal jobject group;
 	}
 
@@ -949,7 +949,7 @@ namespace IKVM.Runtime
 				{
 					try
 					{
-						System.Threading.Thread.CurrentThread.Name = new String(pAttachArgs->name);
+						System.Threading.Thread.CurrentThread.Name = JNIEnv.StringFromUTF8(pAttachArgs->name);
 					}
 					catch(InvalidOperationException)
 					{
@@ -1109,7 +1109,7 @@ namespace IKVM.Runtime
 			TlsHack.pJNIEnv = null;
 		}
 
-		private static string StringFromOEM(byte* psz)
+		internal static string StringFromOEM(byte* psz)
 		{
 			for(int i = 0;; i++)
 			{
