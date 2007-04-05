@@ -1553,7 +1553,24 @@ namespace IKVM.Internal
 
 		internal static void SetConstantValue(FieldBuilder field, object constantValue)
 		{
-			CustomAttributeBuilder constantValueAttrib = new CustomAttributeBuilder(typeofConstantValueAttribute.GetConstructor(new Type[] { constantValue.GetType() }), new object[] { constantValue });
+			CustomAttributeBuilder constantValueAttrib;
+			try
+			{
+				constantValueAttrib = new CustomAttributeBuilder(typeofConstantValueAttribute.GetConstructor(new Type[] { constantValue.GetType() }), new object[] { constantValue });
+			}
+			catch (OverflowException)
+			{
+				// FXBUG for char values > 32K .NET (1.1 and 2.0) throws an exception (because it tries to convert to Int16)
+				if (constantValue is char)
+				{
+					// we use the int constant value instead, the stub generator can handle that
+					constantValueAttrib = new CustomAttributeBuilder(typeofConstantValueAttribute.GetConstructor(new Type[] { typeof(int) }), new object[] { (int)(char)constantValue });
+				}
+				else
+				{
+					throw;
+				}
+			}
 			field.SetCustomAttribute(constantValueAttrib);
 		}
 #endif // STATIC_COMPILER && !COMPACT_FRAMEWORK
