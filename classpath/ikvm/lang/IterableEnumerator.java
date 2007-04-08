@@ -25,6 +25,7 @@ package ikvm.lang;
 
 import cli.System.Collections.IEnumerator;
 import cli.System.InvalidOperationException;
+import ikvm.runtime.Util;
 import java.util.Iterator;
 
 public final class IterableEnumerator implements IEnumerator
@@ -55,8 +56,7 @@ public final class IterableEnumerator implements IEnumerator
     {
         if (current == UNDEFINED)
         {
-            // HACK we abuse Thread.stop() to throw a checked exception
-            Thread.currentThread().stop(new InvalidOperationException());
+            Util.throwException(new InvalidOperationException());
         }
         return current;
     }

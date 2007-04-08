@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006 Jeroen Frijters
+  Copyright (C) 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -49,5 +49,10 @@ public final class Util
     public static Throwable mapException(Throwable x)
     {
         return ExceptionHelper.MapExceptionFast(x, true);
+    }
+
+    public static void throwException(cli.System.Exception x)
+    {
+        VMClass.throwException(x);
     }
 }

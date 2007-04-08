@@ -243,7 +243,7 @@ public final class VMClass
     private static native Class forName0(String name, boolean initialize, ClassLoader loader);
     private static native Class getClassFromType(cli.System.Type type);
 
-    static native void throwException(Throwable t);
+    public static native void throwException(Throwable t);
 
     static boolean isArray(Class clazz)
     {
