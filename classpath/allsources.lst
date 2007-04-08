@@ -3350,6 +3350,7 @@
 ../../classpath/javax/management/ObjectName.java
 ../../classpath/javax/management/openmbean/ArrayType.java
 ../../classpath/javax/management/openmbean/CompositeData.java
+../../classpath/javax/management/openmbean/CompositeDataInvocationHandler.java
 ../../classpath/javax/management/openmbean/CompositeDataSupport.java
 ../../classpath/javax/management/openmbean/CompositeType.java
 ../../classpath/javax/management/openmbean/InvalidKeyException.java
