@@ -4,7 +4,7 @@
     <property name="REFERENCE_API_JARS" value="c:\jdk1.6\jre\lib\rt.jar c:\jdk1.6\jre\lib\jce.jar c:\jdk1.6\jre\lib\jsse.jar" />
     <property name="REFERENCE_API_NAME" value="JDK-1.6" />
     <property name="JAPI_HOME" value="c:\japi\japitools" />
-    <property name="IKVM_VERSION" value="0.33" />
+    <property name="IKVM_VERSION" value="0.35" />
 
     <target name="default">
 	<call target="status" />
