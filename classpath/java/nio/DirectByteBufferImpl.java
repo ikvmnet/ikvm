@@ -149,6 +149,11 @@ public class DirectByteBufferImpl extends MappedByteBuffer
         // TODO this should be a CER
         this.ptr = c.ptr = Marshal.AllocHGlobal(capacity);
         this.address = PointerUtil.fromIntPtr(ptr);
+        // Marshal.AllocHGlobal doesn't clear the memory, so we have to do that manually
+        for(int i = 0; i < capacity; i++)
+        {
+            Marshal.WriteByte(ptr, i, (byte)0);
+        }
         cli.System.Threading.Thread.MemoryBarrier();
         cli.System.GC.KeepAlive(this);
     }
