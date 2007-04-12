@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,9 +23,10 @@
 */
 package java.lang;
 
-import java.io.*;
-import java.lang.reflect.*;
-import gnu.classpath.SystemProperties;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
 
 @ikvm.lang.Internal
 public final class ExceptionHelper
@@ -36,14 +37,22 @@ public final class ExceptionHelper
     private static final String NULL_STRING = new String();
     private static final ikvm.internal.WeakIdentityMap exceptions = new ikvm.internal.WeakIdentityMap();
     private static final boolean cleanStackTrace = SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
-    private static cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
-    private static cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
-    private static final Throwable NOT_REMAPPED = new cli.System.Exception();
+    private static final cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
+    private static final cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
+    // we use Activator.CreateInstance to prevent the exception from being added to the exceptions map
+    private static final Throwable NOT_REMAPPED = (Throwable)cli.System.Activator.CreateInstance(System_Exception);
+    // non-private because it is used by the ExceptionInfoHelper inner class
+    /*private*/ static final Throwable CAUSE_NOT_SET = (Throwable)cli.System.Activator.CreateInstance(System_Exception);
     private static final java.util.Hashtable failedTypes = new java.util.Hashtable();
+
+    static
+    {
+        // make sure the exceptions map continues to work during AppDomain finalization
+        cli.System.GC.SuppressFinalize(exceptions);
+    }
 
     private static final class ExceptionInfoHelper
     {
-	private static final Throwable CAUSE_NOT_SET = new cli.System.Exception();
 	private cli.System.Diagnostics.StackTrace tracePart1;
 	private cli.System.Diagnostics.StackTrace tracePart2;
 	private cli.System.Collections.ArrayList stackTrace;
