@@ -1634,12 +1634,12 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		internal abstract void Apply(TypeBuilder tb, object annotation);
-		internal abstract void Apply(MethodBuilder mb, object annotation);
-		internal abstract void Apply(ConstructorBuilder cb, object annotation);
-		internal abstract void Apply(FieldBuilder fb, object annotation);
-		internal abstract void Apply(ParameterBuilder pb, object annotation);
-		internal abstract void Apply(AssemblyBuilder ab, object annotation);
+		internal abstract void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation);
+		internal abstract void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation);
+		internal abstract void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation);
+		internal abstract void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation);
+		internal abstract void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation);
+		internal abstract void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation);
 	}
 #endif
 
@@ -4935,12 +4935,12 @@ namespace IKVM.Internal
 									ConstructorBuilder cb = mb as ConstructorBuilder;
 									if(cb != null)
 									{
-										annotation.Apply(cb, def);
+										annotation.Apply(wrapper.GetClassLoader(), cb, def);
 									}
 									MethodBuilder mBuilder = mb as MethodBuilder;
 									if(mBuilder != null)
 									{
-										annotation.Apply(mBuilder, def);
+										annotation.Apply(wrapper.GetClassLoader(), mBuilder, def);
 									}
 								}
 							}
@@ -4959,11 +4959,11 @@ namespace IKVM.Internal
 									GetterFieldWrapper getter = fields[i] as GetterFieldWrapper;
 									if(getter != null)
 									{
-										annotation.Apply((MethodBuilder)getter.GetGetter(), def);
+										annotation.Apply(wrapper.GetClassLoader(), (MethodBuilder)getter.GetGetter(), def);
 									}
 									else
 									{
-										annotation.Apply((FieldBuilder)fields[i].GetField(), def);
+										annotation.Apply(wrapper.GetClassLoader(), (FieldBuilder)fields[i].GetField(), def);
 									}
 								}
 							}
@@ -4982,11 +4982,11 @@ namespace IKVM.Internal
 								// that acts as the placeholder for assembly attributes
 								if(classFile.Name == "assembly")
 								{
-									annotation.Apply((AssemblyBuilder)typeBuilder.Assembly, def);
+									annotation.Apply(wrapper.GetClassLoader(), (AssemblyBuilder)typeBuilder.Assembly, def);
 									continue;
 								}
 #endif
-								annotation.Apply(typeBuilder, def);
+								annotation.Apply(wrapper.GetClassLoader(), typeBuilder, def);
 							}
 						}
 					}
@@ -5617,7 +5617,7 @@ namespace IKVM.Internal
 					attributeTypeBuilder.CreateType();
 				}
 
-				internal override void Apply(TypeBuilder tb, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
 				{
 					if(annotationTypeBuilder != null)
 					{
@@ -5625,7 +5625,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal override void Apply(MethodBuilder mb, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
 				{
 					if(annotationTypeBuilder != null)
 					{
@@ -5633,7 +5633,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal override void Apply(ConstructorBuilder cb, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
 				{
 					if(annotationTypeBuilder != null)
 					{
@@ -5641,7 +5641,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal override void Apply(FieldBuilder fb, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
 				{
 					if(annotationTypeBuilder != null)
 					{
@@ -5649,7 +5649,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal override void Apply(ParameterBuilder pb, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
 				{
 					if(annotationTypeBuilder != null)
 					{
@@ -5657,7 +5657,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal override void Apply(AssemblyBuilder ab, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 				{
 					if(annotationTypeBuilder != null)
 					{
@@ -8450,32 +8450,32 @@ namespace IKVM.Internal
 				return new CustomAttributeBuilder(type.GetConstructor(new Type[] { typeof(object[]) }), new object[] { annotation });
 			}
 
-			internal override void Apply(TypeBuilder tb, object annotation)
+			internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
 			{
 				tb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 
-			internal override void Apply(ConstructorBuilder cb, object annotation)
+			internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
 			{
 				cb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 
-			internal override void Apply(MethodBuilder mb, object annotation)
+			internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
 			{
 				mb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 
-			internal override void Apply(FieldBuilder fb, object annotation)
+			internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
 			{
 				fb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 
-			internal override void Apply(ParameterBuilder pb, object annotation)
+			internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
 			{
 				pb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 
-			internal override void Apply(AssemblyBuilder ab, object annotation)
+			internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 			{
 				ab.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
@@ -9173,46 +9173,169 @@ namespace IKVM.Internal
 				this.attributeType = attributeType;
 			}
 
+			private static bool IsSupportedType(Type type)
+			{
+				// Java annotations only support one-dimensional arrays
+				if(type.IsArray)
+				{
+					type = type.GetElementType();
+				}
+				return type == typeof(string)
+					|| type == typeof(bool)
+					|| type == typeof(byte)
+					|| type == typeof(char)
+					|| type == typeof(short)
+					|| type == typeof(int)
+					|| type == typeof(float)
+					|| type == typeof(long)
+					|| type == typeof(double)
+					|| type == typeof(Type)
+					|| type.IsEnum;
+			}
+
+			internal static void GetConstructors(Type type, out ConstructorInfo defCtor, out ConstructorInfo singleOneArgCtor)
+			{
+				defCtor = null;
+				int oneArgCtorCount = 0;
+				ConstructorInfo oneArgCtor = null;
+				foreach(ConstructorInfo ci in type.GetConstructors(BindingFlags.Public | BindingFlags.Instance))
+				{
+					ParameterInfo[] args = ci.GetParameters();
+					if(args.Length == 0)
+					{
+						defCtor = ci;
+					}
+					else if(args.Length == 1)
+					{
+						if(IsSupportedType(args[0].ParameterType))
+						{
+							oneArgCtor = ci;
+							oneArgCtorCount++;
+						}
+						else
+						{
+							// set to two to make sure we don't see the oneArgCtor as viable
+							oneArgCtorCount = 2;
+						}
+					}
+				}
+				singleOneArgCtor = oneArgCtorCount == 1 ? oneArgCtor : null;
+			}
+
+			private class AttributeAnnotationMethodWrapper : DynamicOnlyMethodWrapper
+			{
+				private bool optional;
+
+				internal AttributeAnnotationMethodWrapper(AttributeAnnotationTypeWrapper tw, string name, Type type, bool optional)
+					: this(tw, name, MapType(type, false), optional)
+				{
+				}
+
+				private static TypeWrapper MapType(Type type, bool isArray)
+				{
+					if(type == typeof(string))
+					{
+						return CoreClasses.java.lang.String.Wrapper;
+					}
+					else if(type == typeof(bool))
+					{
+						return PrimitiveTypeWrapper.BOOLEAN;
+					}
+					else if(type == typeof(byte))
+					{
+						return PrimitiveTypeWrapper.BYTE;
+					}
+					else if(type == typeof(char))
+					{
+						return PrimitiveTypeWrapper.CHAR;
+					}
+					else if(type == typeof(short))
+					{
+						return PrimitiveTypeWrapper.SHORT;
+					}
+					else if(type == typeof(int))
+					{
+						return PrimitiveTypeWrapper.INT;
+					}
+					else if(type == typeof(float))
+					{
+						return PrimitiveTypeWrapper.FLOAT;
+					}
+					else if(type == typeof(long))
+					{
+						return PrimitiveTypeWrapper.LONG;
+					}
+					else if(type == typeof(double))
+					{
+						return PrimitiveTypeWrapper.DOUBLE;
+					}
+					else if(type == typeof(Type))
+					{
+						return CoreClasses.java.lang.Class.Wrapper;
+					}
+					else if (type.IsEnum)
+					{
+						foreach (TypeWrapper tw in ClassLoaderWrapper.GetWrapperFromType(type).InnerClasses)
+						{
+							if (tw is EnumEnumTypeWrapper)
+							{
+								if (!isArray && AttributeHelper.IsDefined(type, typeof(FlagsAttribute)))
+								{
+									return tw.MakeArrayType(1);
+								}
+								return tw;
+							}
+						}
+						throw new InvalidOperationException();
+					}
+					else if(!isArray && type.IsArray)
+					{
+						return MapType(type.GetElementType(), true).MakeArrayType(1);
+					}
+					else
+					{
+						throw new NotImplementedException();
+					}
+				}
+
+				private AttributeAnnotationMethodWrapper(AttributeAnnotationTypeWrapper tw, string name, TypeWrapper returnType, bool optional)
+					: base(tw, name, "()" + returnType.SigName, returnType, TypeWrapper.EmptyArray)
+				{
+					this.optional = optional;
+				}
+
+				internal bool IsOptional
+				{
+					get
+					{
+						return optional;
+					}
+				}
+			}
+
 			protected override void LazyPublishMembers()
 			{
 				ArrayList methods = new ArrayList();
-				foreach(ConstructorInfo ci in attributeType.GetConstructors(BindingFlags.Public | BindingFlags.Instance))
+				ConstructorInfo defCtor;
+				ConstructorInfo singleOneArgCtor;
+				GetConstructors(attributeType, out defCtor, out singleOneArgCtor);
+				if(singleOneArgCtor != null)
 				{
-					ParameterInfo[] p = ci.GetParameters();
-					// TODO support other constructors
-					if(p.Length == 1)
+					methods.Add(new AttributeAnnotationMethodWrapper(this, "value", singleOneArgCtor.GetParameters()[0].ParameterType, defCtor != null));
+				}
+				foreach(PropertyInfo pi in attributeType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+				{
+					if(pi.CanRead && pi.CanWrite && IsSupportedType(pi.PropertyType))
 					{
-						// TODO support other types
-						if(p[0].ParameterType == typeof(string))
-						{
-							TypeWrapper returnType = ClassLoaderWrapper.GetWrapperFromType(p[0].ParameterType);
-							methods.Add(new DynamicOnlyMethodWrapper(this, "value", "()" + returnType.SigName, returnType, TypeWrapper.EmptyArray));
-						}
+						methods.Add(new AttributeAnnotationMethodWrapper(this, pi.Name, pi.PropertyType, true));
 					}
 				}
 				foreach(FieldInfo fi in attributeType.GetFields(BindingFlags.Public | BindingFlags.Instance))
 				{
 					// TODO add other field validations to make sure it is appropriate
-					if(!fi.IsInitOnly)
+					if(!fi.IsInitOnly && IsSupportedType(fi.FieldType))
 					{
-						// TODO support other types
-						// TODO handle the case where the field name is "value"
-						if(fi.FieldType == typeof(bool))
-						{
-							TypeWrapper returnType = ClassLoaderWrapper.GetWrapperFromType(fi.FieldType);
-							methods.Add(new DynamicOnlyMethodWrapper(this, fi.Name, "()" + returnType.SigName, returnType, TypeWrapper.EmptyArray));
-						}
-						else if(fi.FieldType.IsEnum)
-						{
-							foreach(TypeWrapper tw in ClassLoaderWrapper.GetWrapperFromType(fi.FieldType).InnerClasses)
-							{
-								if(tw is EnumEnumTypeWrapper)
-								{
-									methods.Add(new DynamicOnlyMethodWrapper(this, fi.Name, "()" + tw.SigName, tw, TypeWrapper.EmptyArray));
-									break;
-								}
-							}
-						}
+						methods.Add(new AttributeAnnotationMethodWrapper(this, fi.Name, fi.FieldType, true));
 					}
 				}
 				SetMethods((MethodWrapper[])methods.ToArray(typeof(MethodWrapper)));
@@ -9222,18 +9345,56 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
 			internal override object GetAnnotationDefault(MethodWrapper mw)
 			{
-				// HACK
-				if(mw.Name == "value")
+				if(((AttributeAnnotationMethodWrapper)mw).IsOptional)
 				{
-					return null;
-				}
-				else if(mw.ReturnType == PrimitiveTypeWrapper.BOOLEAN)
-				{
-					return JVM.Library.box(false);
-				}
-				else if(mw.ReturnType is EnumEnumTypeWrapper)
-				{
-					return mw.ReturnType.GetFieldWrapper("__unspecified", mw.ReturnType.SigName).GetValue(null);
+					if (mw.ReturnType == PrimitiveTypeWrapper.BOOLEAN)
+					{
+						return JVM.Library.box(false);
+					}
+					else if(mw.ReturnType == PrimitiveTypeWrapper.BYTE)
+					{
+						return JVM.Library.box((byte)0);
+					}
+					else if(mw.ReturnType == PrimitiveTypeWrapper.CHAR)
+					{
+						return JVM.Library.box((char)0);
+					}
+					else if(mw.ReturnType == PrimitiveTypeWrapper.SHORT)
+					{
+						return JVM.Library.box((short)0);
+					}
+					else if(mw.ReturnType == PrimitiveTypeWrapper.INT)
+					{
+						return JVM.Library.box(0);
+					}
+					else if(mw.ReturnType == PrimitiveTypeWrapper.FLOAT)
+					{
+						return JVM.Library.box(0F);
+					}
+					else if(mw.ReturnType == PrimitiveTypeWrapper.LONG)
+					{
+						return JVM.Library.box(0L);
+					}
+					else if(mw.ReturnType == PrimitiveTypeWrapper.DOUBLE)
+					{
+						return JVM.Library.box(0D);
+					}
+					else if(mw.ReturnType == CoreClasses.java.lang.String.Wrapper)
+					{
+						return "";
+					}
+					else if(mw.ReturnType == CoreClasses.java.lang.Class.Wrapper)
+					{
+						return ClassLoaderWrapper.LoadClassCritical("ikvm.internal.__unspecified").ClassObject;
+					}
+					else if(mw.ReturnType is EnumEnumTypeWrapper)
+					{
+						return mw.ReturnType.GetFieldWrapper("__unspecified", mw.ReturnType.SigName).GetValue(null);
+					}
+					else if(mw.ReturnType.IsArray)
+					{
+						return Array.CreateInstance(mw.ReturnType.TypeAsArrayType, 0);
+					}
 				}
 				return null;
 			}
@@ -9380,55 +9541,139 @@ namespace IKVM.Internal
 					this.type = type;
 				}
 
-				private CustomAttributeBuilder MakeCustomAttributeBuilder(object annotation)
+				private static object ConvertValue(ClassLoaderWrapper loader, Type targetType, object obj)
 				{
-					// TODO implement this
+					if(targetType.IsEnum)
+					{
+						// TODO check the obj descriptor matches the type we expect
+						if(((object[])obj)[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
+						{
+							object[] arr = (object[])obj;
+							string s = "";
+							string sep = "";
+							for(int i = 1; i < arr.Length; i++)
+							{
+								// TODO check the obj descriptor matches the type we expect
+								string val = ((object[])arr[i])[2].ToString();
+								if(val != "__unspecified")
+								{
+									s += sep + val;
+									sep = ", ";
+								}
+							}
+							if(s == "")
+							{
+								return Activator.CreateInstance(targetType);
+							}
+							return Enum.Parse(targetType, s);
+						}
+						else
+						{
+							string s = ((object[])obj)[2].ToString();
+							if(s == "__unspecified")
+							{
+								// TODO instead of this, we should probably return null and handle that
+								return Activator.CreateInstance(targetType);
+							}
+							return Enum.Parse(targetType, s);
+						}
+					}
+					else if(targetType == typeof(Type))
+					{
+						// TODO check the obj descriptor matches the type we expect
+						return loader.FieldTypeWrapperFromSig(((string)((object[])obj)[1]).Replace('/', '.')).TypeAsTBD;
+					}
+					else if(targetType.IsArray)
+					{
+						// TODO check the obj descriptor matches the type we expect
+						object[] arr = (object[])obj;
+						Type elementType = targetType.GetElementType();
+						Array targetArray = Array.CreateInstance(elementType, arr.Length - 1);
+						for(int i = 1; i < arr.Length; i++)
+						{
+							targetArray.SetValue(ConvertValue(loader, elementType, arr[i]), i - 1);
+						}
+						return targetArray;
+					}
+					else
+					{
+						return obj;
+					}
+				}
+
+				private CustomAttributeBuilder MakeCustomAttributeBuilder(ClassLoaderWrapper loader, object annotation)
+				{
 					object[] arr = (object[])annotation;
-					if(arr.Length == 2)
+					ConstructorInfo defCtor;
+					ConstructorInfo singleOneArgCtor;
+					object ctorArg = null;
+					GetConstructors(type, out defCtor, out singleOneArgCtor);
+					ArrayList properties = new ArrayList();
+					ArrayList propertyValues = new ArrayList();
+					ArrayList fields = new ArrayList();
+					ArrayList fieldValues = new ArrayList();
+					for(int i = 2; i < arr.Length; i += 2)
 					{
-						return new CustomAttributeBuilder(type.GetConstructor(Type.EmptyTypes), new object[0]);
+						string name = (string)arr[i];
+						if(name == "value" && singleOneArgCtor != null)
+						{
+							ctorArg = ConvertValue(loader, singleOneArgCtor.GetParameters()[0].ParameterType, arr[i + 1]);
+						}
+						else
+						{
+							PropertyInfo pi = type.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
+							if(pi != null)
+							{
+								properties.Add(pi);
+								propertyValues.Add(ConvertValue(loader, pi.PropertyType, arr[i + 1]));
+							}
+							else
+							{
+								FieldInfo fi = type.GetField(name, BindingFlags.Public | BindingFlags.Instance);
+								if(fi != null)
+								{
+									fields.Add(fi);
+									fieldValues.Add(ConvertValue(loader, fi.FieldType, arr[i + 1]));
+								}
+							}
+						}
 					}
-					else if(arr.Length == 4 && "value".Equals(arr[2]) && arr[3] is string)
-					{
-						return new CustomAttributeBuilder(type.GetConstructor(new Type[] { typeof(string) }), new object[] { arr[3] });
-					}
-					else if(arr.Length == 6 && "value".Equals(arr[2]) && arr[3] is string && arr[5] is bool)
-					{
-						FieldInfo field = type.GetField((string)arr[4]);
-						return new CustomAttributeBuilder(type.GetConstructor(new Type[] { typeof(string) }), new object[] { arr[3] },
-							new FieldInfo[] { field }, new object[] { arr[5] });
-					}
-					throw new NotImplementedException();
+					return new CustomAttributeBuilder(ctorArg == null ? defCtor : singleOneArgCtor,
+						ctorArg == null ? new object[0] : new object[] { ctorArg },
+						(PropertyInfo[])properties.ToArray(typeof(PropertyInfo)),
+						(object[])propertyValues.ToArray(),
+						(FieldInfo[])fields.ToArray(typeof(FieldInfo)),
+						(object[])fieldValues.ToArray());
 				}
 
-				internal override void Apply(TypeBuilder tb, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
 				{
-					tb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+					tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 				}
 
-				internal override void Apply(ConstructorBuilder cb, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
 				{
-					cb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+					cb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 				}
 
-				internal override void Apply(MethodBuilder mb, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
 				{
-					mb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+					mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 				}
 
-				internal override void Apply(FieldBuilder fb, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
 				{
-					fb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+					fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 				}
 
-				internal override void Apply(ParameterBuilder pb, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
 				{
-					pb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+					pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 				}
 
-				internal override void Apply(AssemblyBuilder ab, object annotation)
+				internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 				{
-					ab.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+					ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 				}
 			}
 
@@ -10244,37 +10489,23 @@ namespace IKVM.Internal
 		{
 			if(!type.IsAbstract && type.IsSubclassOf(typeof(Attribute)) && IsVisible(type))
 			{
-				// TODO for the time being we only support attributes that have either
-				// a default constructor or single arg string constructor
-				ConstructorInfo defaultConstructor = null;
-				ConstructorInfo maxArgConstructor = null;
-				int maxArgs = -1;
-				int constructorCount = 0;
-				foreach(ConstructorInfo ci in type.GetConstructors(BindingFlags.Public | BindingFlags.Instance))
-				{
-					constructorCount++;
-					int args = ci.GetParameters().Length;
-					if(args == 0)
-					{
-						defaultConstructor = ci;
-					}
-					if(args > maxArgs)
-					{
-						maxArgs = args;
-						maxArgConstructor = ci;
-					}
-				}
-				if(constructorCount == 1)
-				{
-					if(defaultConstructor != null)
-					{
-						return true;
-					}
-					if(maxArgs == 1)
-					{
-						return maxArgConstructor.GetParameters()[0].ParameterType == typeof(string);
-					}
-				}
+				//
+				// Based on the number of constructors and their arguments, we distinguish several types
+				// of attributes:
+				//                                   | def ctor | single 1-arg ctor
+				// -----------------------------------------------------------------
+				// complex only (i.e. Annotation{N}) |          |
+				// all optional fields/properties    |    X     |
+				// required "value"                  |          |   X
+				// optional "value"                  |    X     |   X
+				// -----------------------------------------------------------------
+				// 
+				// TODO currently we don't support "complex only" attributes.
+				//
+				ConstructorInfo defCtor;
+				ConstructorInfo singleOneArgCtor;
+				AttributeAnnotationTypeWrapper.GetConstructors(type, out defCtor, out singleOneArgCtor);
+				return defCtor != null || singleOneArgCtor != null;
 			}
 			return false;
 		}

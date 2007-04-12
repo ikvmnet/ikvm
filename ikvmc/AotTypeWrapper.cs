@@ -115,7 +115,7 @@ namespace IKVM.Internal
 							Annotation annotation = Annotation.Load(classLoader, def);
 							if(annotation != null)
 							{
-								annotation.Apply(pbs[i], def);
+								annotation.Apply(classLoader, pbs[i], def);
 							}
 						}
 					}

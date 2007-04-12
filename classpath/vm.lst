@@ -37,6 +37,7 @@ gnu/java/nio/SelectorProviderImpl.java
 gnu/java/nio/ServerSocketChannelImpl.java
 gnu/java/nio/SocketChannelImpl.java
 gnu/java/security/Configuration.java
+ikvm/internal/__unspecified.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/AssemblyClassLoader.java
 ikvm/internal/EnumEnum.java
