@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006 Jeroen Frijters
+  Copyright (C) 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -38,7 +38,8 @@ public final class WeakIdentityMap
         {
             keys[i] = new WeakReference(null, true);
             // NOTE we suppress finalization, to make sure the WeakReference continues to work
-            // while the AppDomain is finalizing for unload
+            // while the AppDomain is finalizing for unload (note that for this to work,
+            // the code that instantiates us also has to call SuppressFinalize on us.)
             GC.SuppressFinalize(keys[i]);
         }
     }
