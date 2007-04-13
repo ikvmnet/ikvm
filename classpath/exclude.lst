@@ -1,4 +1,3 @@
 java.lang.VMObject
 java.lang.VMString
 java.lang.VMThrowable
-java.math.BigInteger\$NativeMPI

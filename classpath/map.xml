@@ -1098,15 +1098,6 @@
 				</body>
 			</method>
 		</class>
-		<class name="java.math.BigInteger">
-			<!-- HACK we don't need BigInteger$NativeMPI (and it includes native methods that we don't have)
-			so the build script excludes this class, this results in a field in BigInteger of a missing class,
-			ikvmstub would barf on this. This needs to be fixed, but for the time being we'll just hide the
-			field -->
-			<field name="mpz" sig="Ljava.math.BigInteger$NativeMPI;">
-				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-			</field>
-		</class>
 		<class name="ikvm.internal.EnumEnum">
 			<field name="typeWrapper" sig="Ljava.lang.Object;" modifiers="private" />
 		</class>
