@@ -367,13 +367,21 @@ namespace IKVM.Internal
 				{
 					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length), false);
 				}
+				else if(name.EndsWith(DotNetTypeWrapper.AttributeAnnotationReturnValueSuffix))
+				{
+					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationReturnValueSuffix.Length), false);
+				}
+				else if(name.EndsWith(DotNetTypeWrapper.AttributeAnnotationMultipleSuffix))
+				{
+					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationMultipleSuffix.Length), false);
+				}
 				else if(name.EndsWith(DotNetTypeWrapper.EnumEnumSuffix))
 				{
 					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.EnumEnumSuffix.Length), false);
 				}
 				// NOTE we cannot use the InnerClasses property on unfinished dynamic types,
-				// so we restrict ourself to DotNetTypeWrapper instances.
-				if(outer != null && outer is DotNetTypeWrapper)
+				// so we restrict ourself to DotNetTypeWrapper and DynamicOnly instances.
+				if(outer != null && (outer is DotNetTypeWrapper || outer.IsDynamicOnly))
 				{
 					foreach(TypeWrapper tw in outer.InnerClasses)
 					{

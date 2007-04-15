@@ -1586,7 +1586,9 @@ namespace IKVM.Internal
 			Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
 			string annotationClass = (string)def[1];
 #if !STATIC_COMPILER
-			if(!annotationClass.EndsWith("$Annotation;"))
+			if(!annotationClass.EndsWith("$Annotation;")
+				&& !annotationClass.EndsWith("$Annotation$__ReturnValue;")
+				&& !annotationClass.EndsWith("$Annotation$__Multiple;"))
 			{
 				// we don't want to try to load an annotation in dynamic mode,
 				// unless it is a .NET custom attribute (which can affect runtime behavior)
@@ -1640,6 +1642,10 @@ namespace IKVM.Internal
 		internal abstract void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation);
 		internal abstract void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation);
 		internal abstract void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation);
+
+		internal virtual void ApplyReturnValue(ClassLoaderWrapper loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
+		{
+		}
 	}
 #endif
 
@@ -4925,6 +4931,27 @@ namespace IKVM.Internal
 					{
 						ClassFile.Method m = classFile.Methods[i];
 						MethodBase mb = methods[i].GetMethod();
+						ParameterBuilder returnParameter = null;
+						ParameterBuilder[] parameterBuilders = null;
+						if(wrapper.GetClassLoader().EmitDebugInfo
+#if STATIC_COMPILER
+							|| (classFile.IsPublic && (m.IsPublic || m.IsProtected))
+#endif
+							)
+						{
+							string[] parameterNames = new string[methods[i].GetParameters().Length];
+							GetParameterNamesFromLVT(m, parameterNames);
+							GetParameterNamesFromSig(m.Signature, parameterNames);
+#if STATIC_COMPILER
+							((AotTypeWrapper)wrapper).GetParameterNamesFromXml(m.Name, m.Signature, parameterNames);
+#endif
+							parameterBuilders = GetParameterBuilders(mb, parameterNames.Length, parameterNames);
+						}
+#if STATIC_COMPILER
+						((AotTypeWrapper)wrapper).AddParameterAttributes(m, mb, ref parameterBuilders);
+#endif
+						ConstructorBuilder cb = mb as ConstructorBuilder;
+						MethodBuilder mBuilder = mb as MethodBuilder;
 						if(m.Annotations != null)
 						{
 							foreach(object[] def in m.Annotations)
@@ -4932,15 +4959,33 @@ namespace IKVM.Internal
 								Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
 								if(annotation != null)
 								{
-									ConstructorBuilder cb = mb as ConstructorBuilder;
 									if(cb != null)
 									{
 										annotation.Apply(wrapper.GetClassLoader(), cb, def);
 									}
-									MethodBuilder mBuilder = mb as MethodBuilder;
 									if(mBuilder != null)
 									{
 										annotation.Apply(wrapper.GetClassLoader(), mBuilder, def);
+										annotation.ApplyReturnValue(wrapper.GetClassLoader(), mBuilder, ref returnParameter, def);
+									}
+								}
+							}
+						}
+						if(m.ParameterAnnotations != null)
+						{
+							if(parameterBuilders == null)
+							{
+								parameterBuilders = GetParameterBuilders(mb, methods[i].GetParameters().Length, null);
+							}
+							object[][] defs = m.ParameterAnnotations;
+							for(int j = 0; j < defs.Length; j++)
+							{
+								foreach(object[] def in defs[j])
+								{
+									Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
+									if(annotation != null)
+									{
+										annotation.Apply(wrapper.GetClassLoader(), parameterBuilders[j], def);
 									}
 								}
 							}
@@ -6249,7 +6294,6 @@ namespace IKVM.Internal
 						}
 						method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod());
 						((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
-						wrapper.AddParameterNames(classFile, m, method);
 					}
 					else if(m.IsClassInitializer)
 					{
@@ -6490,7 +6534,6 @@ namespace IKVM.Internal
 							}
 #endif // STATIC_COMPILER
 						}
-						wrapper.AddParameterNames(classFile, m, mb);
 						method = mb;
 					}
 					string[] exceptions = m.ExceptionsAttribute;
@@ -7068,17 +7111,11 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 		}
 
-		protected static ParameterBuilder[] AddParameterNames(MethodBase mb, ClassFile.Method m, string[] parameterNames)
+		protected static void GetParameterNamesFromLVT(ClassFile.Method m, string[] parameterNames)
 		{
 			ClassFile.Method.LocalVariableTableEntry[] localVars = m.LocalVariableTableAttribute;
 			if(localVars != null)
 			{
-				if(parameterNames == null)
-				{
-					// we're allocating the worst case length here
-					// (double & long args take two slots and for instance methods there's the this arg)
-					parameterNames = new string[m.ArgMap.Length];
-				}
 				for(int i = m.IsStatic ? 0 : 1, pos = 0; i < m.ArgMap.Length; i++)
 				{
 					// skip double & long fillers
@@ -7099,10 +7136,9 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			return AddParameterNames(mb, m.Signature, parameterNames);
 		}
 
-		protected static ParameterBuilder[] AddParameterNames(MethodBase mb, string sig, string[] parameterNames)
+		protected static void GetParameterNamesFromSig(string sig, string[] parameterNames)
 		{
 			ArrayList names = new ArrayList();
 			for(int i = 1; sig[i] != ')'; i++)
@@ -7182,35 +7218,49 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			ParameterBuilder[] parameterBuilders = new ParameterBuilder[names.Count];
-			Hashtable clashes = new Hashtable();
-			for(int i = 0; i < names.Count; i++)
+			for(int i = 0; i < parameterNames.Length; i++)
 			{
-				string name = (string)names[i];
-				if(parameterNames != null && parameterNames[i] != null)
+				if(parameterNames[i] == null)
+				{
+					parameterNames[i] = (string)names[i];
+				}
+			}
+		}
+
+		protected static ParameterBuilder[] GetParameterBuilders(MethodBase mb, int parameterCount, string[] parameterNames)
+		{
+			ParameterBuilder[] parameterBuilders = new ParameterBuilder[parameterCount];
+			Hashtable clashes = null;
+			for(int i = 0; i < parameterBuilders.Length; i++)
+			{
+				string name = null;
+				if(parameterNames != null)
 				{
 					name = parameterNames[i];
-				}
-				ParameterBuilder pb;
-				if(names.IndexOf(name, i + 1) >= 0 || clashes.ContainsKey(name))
-				{
-					int clash = 1;
-					if(clashes.ContainsKey(name))
+					if(Array.IndexOf(parameterNames, name, i + 1) >= 0 || (clashes != null && clashes.ContainsKey(name)))
 					{
-						clash = (int)clashes[name] + 1;
+						if(clashes == null)
+						{
+							clashes = new Hashtable();
+						}
+						int clash = 1;
+						if(clashes.ContainsKey(name))
+						{
+							clash = (int)clashes[name] + 1;
+						}
+						clashes[name] = clash;
+						name += clash;
 					}
-					clashes[name] = clash;
-					name += clash;
 				}
-				if(mb is MethodBuilder)
+				MethodBuilder mBuilder = mb as MethodBuilder;
+				if(mBuilder != null)
 				{
-					pb = ((MethodBuilder)mb).DefineParameter(i + 1, ParameterAttributes.None, name);
+					parameterBuilders[i] = mBuilder.DefineParameter(i + 1, ParameterAttributes.None, name);
 				}
 				else
 				{
-					pb = ((ConstructorBuilder)mb).DefineParameter(i + 1, ParameterAttributes.None, name);
+					parameterBuilders[i] = ((ConstructorBuilder)mb).DefineParameter(i + 1, ParameterAttributes.None, name);
 				}
-				parameterBuilders[i] = pb;
 			}
 			return parameterBuilders;
 		}
@@ -7240,21 +7290,12 @@ namespace IKVM.Internal
 		}
 
 #if STATIC_COMPILER
-		protected abstract void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method);
 		protected abstract bool EmitMapXmlMethodBody(ILGenerator ilgen, ClassFile f, ClassFile.Method m);
 		protected abstract void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, FieldWrapper[] fields, MethodWrapper[] methods);
 		protected abstract MethodBuilder DefineGhostMethod(string name, MethodAttributes attribs, MethodWrapper mw);
 		protected abstract void FinishGhost(TypeBuilder typeBuilder, MethodWrapper[] methods);
 		protected abstract void FinishGhostStep2();
 		protected abstract TypeBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs);
-#else
-		private void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method)
-		{
-			if(GetClassLoader().EmitDebugInfo)
-			{
-				AddParameterNames(method, m, null);
-			}
-		}
 #endif // STATIC_COMPILER
 
 		protected virtual bool IsPInvokeMethod(ClassFile.Method m)
@@ -8633,6 +8674,8 @@ namespace IKVM.Internal
 		private const string NamePrefix = "cli.";
 		internal const string DelegateInterfaceSuffix = "$Method";
 		internal const string AttributeAnnotationSuffix = "$Annotation";
+		internal const string AttributeAnnotationReturnValueSuffix = "$__ReturnValue";
+		internal const string AttributeAnnotationMultipleSuffix = "$__Multiple";
 		internal const string EnumEnumSuffix = "$__Enum";
 		private readonly Type type;
 		private TypeWrapper[] innerClasses;
@@ -9163,12 +9206,82 @@ namespace IKVM.Internal
 			}
 		}
 
-		private class AttributeAnnotationTypeWrapper : TypeWrapper
+		private abstract class AttributeAnnotationTypeWrapperBase : TypeWrapper
+		{
+			internal AttributeAnnotationTypeWrapperBase(string name)
+				: base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract | Modifiers.Annotation, name, null)
+			{
+			}
+
+			internal sealed override void Finish()
+			{
+			}
+
+			internal sealed override ClassLoaderWrapper GetClassLoader()
+			{
+				return DeclaringTypeWrapper.GetClassLoader();
+			}
+
+			internal sealed override string[] GetEnclosingMethod()
+			{
+				return null;
+			}
+
+			internal sealed override string GetGenericFieldSignature(FieldWrapper fw)
+			{
+				return null;
+			}
+
+			internal sealed override string GetGenericMethodSignature(MethodWrapper mw)
+			{
+				return null;
+			}
+
+			internal sealed override string GetGenericSignature()
+			{
+				return null;
+			}
+
+			internal sealed override TypeWrapper[] Interfaces
+			{
+				get
+				{
+					return new TypeWrapper[] { ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.annotation.Annotation") };
+				}
+			}
+
+			internal sealed override bool IsDynamicOnly
+			{
+				get
+				{
+					return true;
+				}
+			}
+
+			internal sealed override Type TypeAsTBD
+			{
+				get
+				{
+					return typeof(object);
+				}
+			}
+
+			internal sealed override Type TypeAsBaseType
+			{
+				get
+				{
+					throw new InvalidOperationException();
+				}
+			}
+		}
+
+		private sealed class AttributeAnnotationTypeWrapper : AttributeAnnotationTypeWrapperBase
 		{
 			private Type attributeType;
+			private TypeWrapper[] innerClasses;
 
 			internal AttributeAnnotationTypeWrapper(string name, Type attributeType)
-				: base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract | Modifiers.Annotation, name, null)
+				: base(name)
 			{
 				this.attributeType = attributeType;
 			}
@@ -9408,80 +9521,293 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal override void Finish()
+			private sealed class ReturnValueAnnotationTypeWrapper : AttributeAnnotationTypeWrapperBase
 			{
+				private AttributeAnnotationTypeWrapper declaringType;
+
+				internal ReturnValueAnnotationTypeWrapper(AttributeAnnotationTypeWrapper declaringType)
+					: base(declaringType.Name + AttributeAnnotationReturnValueSuffix)
+				{
+					this.declaringType = declaringType;
+				}
+
+				protected override void LazyPublishMembers()
+				{
+					TypeWrapper tw = declaringType;
+					if(declaringType.GetAttributeUsage().AllowMultiple)
+					{
+						tw = tw.MakeArrayType(1);
+					}
+					SetMethods(new MethodWrapper[] { new DynamicOnlyMethodWrapper(this, "value", "()" + tw.SigName, tw, TypeWrapper.EmptyArray) });
+					SetFields(FieldWrapper.EmptyArray);
+				}
+
+				internal override TypeWrapper DeclaringTypeWrapper
+				{
+					get
+					{
+						return declaringType;
+					}
+				}
+
+				internal override TypeWrapper[] InnerClasses
+				{
+					get
+					{
+						return TypeWrapper.EmptyArray;
+					}
+				}
+
+#if !STATIC_COMPILER
+				internal override object[] GetDeclaredAnnotations()
+				{
+					return new object[] {
+										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", 
+											new object[] { AnnotationDefaultAttribute.TAG_ARRAY, new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "METHOD" } }
+										}),
+										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" } })
+									};
+				}
+#endif
+
+#if !COMPACT_FRAMEWORK
+				private class ReturnValueAnnotation : Annotation
+				{
+					private AttributeAnnotationTypeWrapper type;
+
+					internal ReturnValueAnnotation(AttributeAnnotationTypeWrapper type)
+					{
+						this.type = type;
+					}
+
+					internal override void ApplyReturnValue(ClassLoaderWrapper loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
+					{
+						// TODO make sure the descriptor is correct
+						Annotation ann = type.Annotation;
+						object[] arr = (object[])annotation;
+						for(int i = 2; i < arr.Length; i += 2)
+						{
+							if("value".Equals(arr[i]))
+							{
+								if(pb == null)
+								{
+									pb = mb.DefineParameter(0, ParameterAttributes.None, null);
+								}
+								object[] value = (object[])arr[i + 1];
+								if(value[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION))
+								{
+									ann.Apply(loader, pb, value);
+								}
+								else
+								{
+									for(int j = 1; j < value.Length; j++)
+									{
+										ann.Apply(loader, pb, value[j]);
+									}
+								}
+								break;
+							}
+						}
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
+					{
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
+					{
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
+					{
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
+					{
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
+					{
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
+					{
+					}
+				}
+
+				internal override Annotation Annotation
+				{
+					get
+					{
+						return new ReturnValueAnnotation(declaringType);
+					}
+				}
+#endif
 			}
 
-			internal override ClassLoaderWrapper GetClassLoader()
+			private sealed class MultipleAnnotationTypeWrapper : AttributeAnnotationTypeWrapperBase
 			{
-				return DeclaringTypeWrapper.GetClassLoader();
-			}
+				private AttributeAnnotationTypeWrapper declaringType;
 
-			internal override string[] GetEnclosingMethod()
-			{
-				return null;
-			}
+				internal MultipleAnnotationTypeWrapper(AttributeAnnotationTypeWrapper declaringType)
+					: base(declaringType.Name + AttributeAnnotationMultipleSuffix)
+				{
+					this.declaringType = declaringType;
+				}
 
-			internal override string GetGenericFieldSignature(FieldWrapper fw)
-			{
-				return null;
-			}
+				protected override void LazyPublishMembers()
+				{
+					TypeWrapper tw = declaringType.MakeArrayType(1);
+					SetMethods(new MethodWrapper[] { new DynamicOnlyMethodWrapper(this, "value", "()" + tw.SigName, tw, TypeWrapper.EmptyArray) });
+					SetFields(FieldWrapper.EmptyArray);
+				}
 
-			internal override string GetGenericMethodSignature(MethodWrapper mw)
-			{
-				return null;
-			}
+				internal override TypeWrapper DeclaringTypeWrapper
+				{
+					get
+					{
+						return declaringType;
+					}
+				}
 
-			internal override string GetGenericSignature()
-			{
-				return null;
+				internal override TypeWrapper[] InnerClasses
+				{
+					get
+					{
+						return TypeWrapper.EmptyArray;
+					}
+				}
+
+#if !STATIC_COMPILER
+				internal override object[] GetDeclaredAnnotations()
+				{
+					return declaringType.GetDeclaredAnnotations();
+				}
+#endif
+
+#if !COMPACT_FRAMEWORK
+				private class MultipleAnnotation : Annotation
+				{
+					private AttributeAnnotationTypeWrapper type;
+
+					internal MultipleAnnotation(AttributeAnnotationTypeWrapper type)
+					{
+						this.type = type;
+					}
+
+					private static object[] UnwrapArray(object annotation)
+					{
+						// TODO make sure the descriptor is correct
+						object[] arr = (object[])annotation;
+						for (int i = 2; i < arr.Length; i += 2)
+						{
+							if ("value".Equals(arr[i]))
+							{
+								object[] value = (object[])arr[i + 1];
+								object[] rc = new object[value.Length - 1];
+								Array.Copy(value, 1, rc, 0, rc.Length);
+								return rc;
+							}
+						}
+						return new object[0];
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
+					{
+						Annotation annot = type.Annotation;
+						foreach(object ann in UnwrapArray(annotation))
+						{
+							annot.Apply(loader, mb, ann);
+						}
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
+					{
+						Annotation annot = type.Annotation;
+						foreach (object ann in UnwrapArray(annotation))
+						{
+							annot.Apply(loader, ab, ann);
+						}
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
+					{
+						Annotation annot = type.Annotation;
+						foreach (object ann in UnwrapArray(annotation))
+						{
+							annot.Apply(loader, cb, ann);
+						}
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
+					{
+						Annotation annot = type.Annotation;
+						foreach (object ann in UnwrapArray(annotation))
+						{
+							annot.Apply(loader, fb, ann);
+						}
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
+					{
+						Annotation annot = type.Annotation;
+						foreach (object ann in UnwrapArray(annotation))
+						{
+							annot.Apply(loader, pb, ann);
+						}
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
+					{
+						Annotation annot = type.Annotation;
+						foreach (object ann in UnwrapArray(annotation))
+						{
+							annot.Apply(loader, tb, ann);
+						}
+					}
+				}
+
+				internal override Annotation Annotation
+				{
+					get
+					{
+						return new MultipleAnnotation(declaringType);
+					}
+				}
+#endif
 			}
 
 			internal override TypeWrapper[] InnerClasses
 			{
 				get
 				{
-					return TypeWrapper.EmptyArray;
+					lock(this)
+					{
+						if(innerClasses == null)
+						{
+							ArrayList list = new ArrayList();
+							AttributeUsageAttribute attr = GetAttributeUsage();
+							if((attr.ValidOn & AttributeTargets.ReturnValue) != 0)
+							{
+								list.Add(GetClassLoader().RegisterInitiatingLoader(new ReturnValueAnnotationTypeWrapper(this)));
+							}
+							if(attr.AllowMultiple)
+							{
+								list.Add(GetClassLoader().RegisterInitiatingLoader(new MultipleAnnotationTypeWrapper(this)));
+							}
+							innerClasses = (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
+						}
+					}
+					return innerClasses;
 				}
 			}
 
-			internal override TypeWrapper[] Interfaces
+			private AttributeUsageAttribute GetAttributeUsage()
 			{
-				get
-				{
-					return new TypeWrapper[] { ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.annotation.Annotation") };
-				}
-			}
-
-			internal override bool IsDynamicOnly
-			{
-				get
-				{
-					return true;
-				}
-			}
-
-			internal override Type TypeAsTBD
-			{
-				get
-				{
-					return typeof(object);
-				}
-			}
-
-			internal override Type TypeAsBaseType
-			{
-				get
-				{
-					throw new InvalidOperationException();
-				}
-			}
-
-#if !STATIC_COMPILER
-			internal override object[] GetDeclaredAnnotations()
-			{
-				AttributeTargets validOn = AttributeTargets.All;
 #if WHIDBEY
+				AttributeTargets validOn = AttributeTargets.All;
+				bool allowMultiple = false;
+				bool inherited = true;
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(attributeType))
 				{
 					if(cad.Constructor.DeclaringType == typeof(AttributeUsageAttribute))
@@ -9489,19 +9815,39 @@ namespace IKVM.Internal
 						if(cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == typeof(AttributeTargets))
 						{
 							validOn = (AttributeTargets)cad.ConstructorArguments[0].Value;
-							break;
+						}
+						foreach(CustomAttributeNamedArgument cana in cad.NamedArguments)
+						{
+							if (cana.MemberInfo.Name == "AllowMultiple")
+							{
+								allowMultiple = (bool)cana.TypedValue.Value;
+							}
+							else if(cana.MemberInfo.Name == "Inherited")
+							{
+								inherited = (bool)cana.TypedValue.Value;
+							}
 						}
 					}
 				}
+				AttributeUsageAttribute attr = new AttributeUsageAttribute(validOn);
+				attr.AllowMultiple = allowMultiple;
+				attr.Inherited = inherited;
+				return attr;
 #else // WHIDBEY
 				object[] attr = attributeType.GetCustomAttributes(typeof(AttributeUsageAttribute), false);
 				if(attr.Length == 1)
 				{
-					AttributeUsageAttribute aua = (AttributeUsageAttribute)attr[0];
-					validOn = aua.ValidOn;
-					// TODO figure out if AttributeUsageAttribute.Inherited maps to java.lang.annotation.Inherited
+					return (AttributeUsageAttribute)attr[0];
 				}
+				return new AttributeUsageAttribute(AttributeTargets.All);
 #endif // WHIDBEY
+			}
+
+#if !STATIC_COMPILER
+			internal override object[] GetDeclaredAnnotations()
+			{
+				// note that AttributeUsageAttribute.Inherited does not map to java.lang.annotation.Inherited
+				AttributeTargets validOn = GetAttributeUsage().ValidOn;
 				ArrayList targets = new ArrayList();
 				targets.Add(AnnotationDefaultAttribute.TAG_ARRAY);
 				if((validOn & (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
@@ -9637,6 +9983,10 @@ namespace IKVM.Internal
 								}
 							}
 						}
+					}
+					if(ctorArg == null && defCtor == null)
+					{
+						// TODO required argument is missing
 					}
 					return new CustomAttributeBuilder(ctorArg == null ? defCtor : singleOneArgCtor,
 						ctorArg == null ? new object[0] : new object[] { ctorArg },

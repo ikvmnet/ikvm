@@ -84,41 +84,34 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override void AddParameterNames(ClassFile classFile, ClassFile.Method m, MethodBase method)
+		internal void GetParameterNamesFromXml(string methodName, string methodSig, string[] parameterNames)
 		{
-			IKVM.Internal.MapXml.Param[] parameters = ((CompilerClassLoader)classLoader).GetXmlMapParameters(classFile.Name, m.Name, m.Signature);
-			if((classFile.IsPublic && (m.IsPublic || m.IsProtected))
-				|| m.ParameterAnnotations != null
-				|| parameters != null
-				|| classLoader.EmitDebugInfo)
+			IKVM.Internal.MapXml.Param[] parameters = ((CompilerClassLoader)classLoader).GetXmlMapParameters(Name, methodName, methodSig);
+			if(parameters != null)
 			{
-				string[] parameterNames = null;
-				if(parameters != null)
+				for(int i = 0; i < parameters.Length; i++)
 				{
-					parameterNames = new string[parameters.Length];
-					for(int i = 0; i < parameters.Length; i++)
+					if(parameterNames[i] == null)
 					{
 						parameterNames[i] = parameters[i].Name;
 					}
 				}
-				ParameterBuilder[] pbs = AddParameterNames(method, m, parameterNames);
+			}
+		}
+
+		internal void AddParameterAttributes(ClassFile.Method m, MethodBase method, ref ParameterBuilder[] pbs)
+		{
+			IKVM.Internal.MapXml.Param[] parameters = ((CompilerClassLoader)classLoader).GetXmlMapParameters(Name, m.Name, m.Signature);
+			if(parameters != null)
+			{
+				if(pbs == null)
+				{
+					// let's hope that the parameters array is the right length
+					pbs = GetParameterBuilders(method, parameters.Length, null);
+				}
 				if((m.Modifiers & Modifiers.VarArgs) != 0 && pbs.Length > 0)
 				{
 					AttributeHelper.SetParamArrayAttribute(pbs[pbs.Length - 1]);
-				}
-				if(m.ParameterAnnotations != null)
-				{
-					for(int i = 0; i < m.ParameterAnnotations.Length; i++)
-					{
-						foreach(object[] def in m.ParameterAnnotations[i])
-						{
-							Annotation annotation = Annotation.Load(classLoader, def);
-							if(annotation != null)
-							{
-								annotation.Apply(classLoader, pbs[i], def);
-							}
-						}
-					}
 				}
 				if(parameters != null)
 				{
@@ -136,35 +129,34 @@ namespace IKVM.Internal
 			}
 		}
 
-		private void AddParameterNames(MethodBuilder method, MethodWrapper mw)
+		private void AddParameterMetadata(MethodBuilder method, MethodWrapper mw)
 		{
-			IKVM.Internal.MapXml.Param[] parameters = ((CompilerClassLoader)classLoader).GetXmlMapParameters(Name, mw.Name, mw.Signature);
-			if((mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || parameters != null || classLoader.EmitDebugInfo)
+			ParameterBuilder[] pbs;
+			if((mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || classLoader.EmitDebugInfo)
 			{
-				string[] parameterNames = null;
-				if(parameters != null)
+				string[] parameterNames = new string[mw.GetParameters().Length];
+				GetParameterNamesFromXml(mw.Name, mw.Signature, parameterNames);
+				GetParameterNamesFromSig(mw.Signature, parameterNames);
+				pbs = GetParameterBuilders(method, parameterNames.Length, parameterNames);
+			}
+			else
+			{
+				pbs = GetParameterBuilders(method, mw.GetParameters().Length, null);
+			}
+			if((mw.Modifiers & Modifiers.VarArgs) != 0 && pbs.Length > 0)
+			{
+				AttributeHelper.SetParamArrayAttribute(pbs[pbs.Length - 1]);
+			}
+			IKVM.Internal.MapXml.Param[] parameters = ((CompilerClassLoader)classLoader).GetXmlMapParameters(Name, mw.Name, mw.Signature);
+			if (parameters != null)
+			{
+				for(int i = 0; i < pbs.Length; i++)
 				{
-					parameterNames = new string[parameters.Length];
-					for(int i = 0; i < parameters.Length; i++)
+					if(parameters[i].Attributes != null)
 					{
-						parameterNames[i] = parameters[i].Name;
-					}
-				}
-				ParameterBuilder[] pbs = AddParameterNames(method, mw.Signature, parameterNames);
-				if((mw.Modifiers & Modifiers.VarArgs) != 0 && pbs.Length > 0)
-				{
-					AttributeHelper.SetParamArrayAttribute(pbs[pbs.Length - 1]);
-				}
-				if(parameters != null)
-				{
-					for(int i = 0; i < pbs.Length; i++)
-					{
-						if(parameters[i].Attributes != null)
+						foreach(IKVM.Internal.MapXml.Attribute attr in parameters[i].Attributes)
 						{
-							foreach(IKVM.Internal.MapXml.Attribute attr in parameters[i].Attributes)
-							{
-								AttributeHelper.SetCustomAttribute(pbs[i], attr);
-							}
+							AttributeHelper.SetCustomAttribute(pbs[i], attr);
 						}
 					}
 				}
@@ -651,7 +643,7 @@ namespace IKVM.Internal
 					{
 						TypeWrapper[] args = methods[i].GetParameters();
 						MethodBuilder stub = typeBuilder.DefineMethod(methods[i].Name, MethodAttributes.Public, methods[i].ReturnTypeForDefineMethod, methods[i].GetParametersForDefineMethod());
-						AddParameterNames(stub, methods[i]);
+						AddParameterMetadata(stub, methods[i]);
 						AttributeHelper.SetModifiers(stub, methods[i].Modifiers, methods[i].IsInternal);
 						ILGenerator ilgen = stub.GetILGenerator();
 						Label end = ilgen.DefineLabel();
