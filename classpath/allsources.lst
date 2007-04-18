@@ -2718,6 +2718,7 @@
 ../../classpath/java/nio/channels/WritableByteChannel.java
 ../../classpath/java/nio/CharBuffer.java
 ../../classpath/java/nio/CharBufferImpl.java
+../../classpath/java/nio/CharSequenceBuffer.java
 ../../classpath/java/nio/charset/CharacterCodingException.java
 ../../classpath/java/nio/charset/Charset.java
 ../../classpath/java/nio/charset/CharsetDecoder.java
