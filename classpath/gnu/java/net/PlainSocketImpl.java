@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -208,11 +208,30 @@ public final class PlainSocketImpl extends SocketImpl
     // public for use by SocketChannelImpl
     public void connect(InetAddress addr, int port) throws IOException
     {
+        connectImpl(addr, port, 0);
+    }
+
+    private void connectImpl(InetAddress addr, int port, int timeout) throws IOException
+    {
         try
         {
             if(false) throw new cli.System.Net.Sockets.SocketException();
             if(false) throw new cli.System.ObjectDisposedException("");
-            socket.Connect(new IPEndPoint(getAddressFromInetAddress(addr), port));
+            IPEndPoint ep = new IPEndPoint(getAddressFromInetAddress(addr), port);
+            if(timeout <= 0)
+            {
+                socket.Connect(ep);
+            }
+            else
+            {
+                cli.System.IAsyncResult result = socket.BeginConnect(ep, null, null);
+                if(!result.get_AsyncWaitHandle().WaitOne(timeout, false))
+                {
+                    socket.Close();
+                    throw new SocketTimeoutException();
+                }
+                socket.EndConnect(result);
+            }
             this.address = addr;
             this.port = port;
             this.localport = ((IPEndPoint)socket.get_LocalEndPoint()).get_Port();
@@ -616,13 +635,12 @@ public final class PlainSocketImpl extends SocketImpl
 
     protected void connect(SocketAddress address, int timeout) throws IOException
     {
-        // TODO support timeout
         InetSocketAddress inetAddress = (InetSocketAddress)address;
         if(inetAddress.isUnresolved())
         {
             throw new UnknownHostException(inetAddress.getHostName());
         }
-        connect(inetAddress.getAddress(), inetAddress.getPort());
+        connectImpl(inetAddress.getAddress(), inetAddress.getPort(), timeout);
     }
 
     protected boolean supportsUrgentData()
