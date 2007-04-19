@@ -335,14 +335,29 @@ final class StringHelper
 	return s.Substring(off, end - off);
     }
 
-    static boolean startsWith(cli.System.String s, String prefix, int toffset)
+    static boolean startsWith(String s, String prefix)
     {
-	if(toffset < 0 || toffset > s.get_Length())
+	return cli.System.String.CompareOrdinal(s, 0, prefix, 0, prefix.length()) == 0;
+    }
+
+    static boolean startsWith(String s, String prefix, int toffset)
+    {
+	if(toffset < 0 || toffset > s.length())
 	{
 	    return false;
 	}
-	s = (cli.System.String)(Object)s.Substring(Math.min(s.get_Length(), toffset));
-	return s.StartsWith(prefix);
+        return cli.System.String.CompareOrdinal(s, toffset, prefix, 0, prefix.length()) == 0;
+    }
+
+    static boolean endsWith(String s, String suffix)
+    {
+        int suflen = suffix.length();
+        int off = s.length() - suflen;
+        if(off < 0)
+        {
+            return false;
+        }
+        return cli.System.String.CompareOrdinal(s, off, suffix, 0, suflen) == 0;
     }
 
     static void getChars(cli.System.String s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 
@@ -382,10 +397,38 @@ final class StringHelper
 	return s.IndexOf((char)ch, Math.max(0, Math.min(s.get_Length(), fromIndex)));
     }
 
-    static int indexOf(cli.System.String s, String o, int fromIndex)
+    static int indexOf(String s, String o)
     {
-	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
-	return s.IndexOf(o, Math.max(0, Math.min(s.get_Length(), fromIndex)));
+        return indexOf(s, o, 0);
+    }
+
+    static int indexOf(String s, String o, int fromIndex)
+    {
+        // start by dereferencing s, to make sure we throw a NullPointerException if s is null
+        int slen = s.length();
+        int olen = o.length();
+        if(olen == 0)
+        {
+            return Math.max(0, Math.min(fromIndex, slen));
+        }
+        if(olen > slen)
+        {
+            return -1;
+        }
+        cli.System.String cliStr = (cli.System.String)(Object)s;
+        char firstChar = o.charAt(0);
+        // Java allows fromIndex to both below zero or above the length of the string, .NET doesn't
+        int index = Math.max(0, Math.min(slen, fromIndex));
+        int end = slen - olen;
+        while(index >= 0 && index <= end)
+        {
+            if(cli.System.String.CompareOrdinal(s, index, o, 0, olen) == 0)
+            {
+                return index;
+            }
+            index = cliStr.IndexOf(firstChar, index + 1);
+        }
+        return -1;
     }
 
     static int lastIndexOf(cli.System.String s, int ch, int fromIndex)
@@ -404,30 +447,41 @@ final class StringHelper
 	return s.LastIndexOf((char)ch, Math.min(len - 1, fromIndex));
     }
 
-    static int lastIndexOf(cli.System.String s, String o)
+    static int lastIndexOf(String s, String o)
     {
-	return lastIndexOf(s, o, s.get_Length());
+	return lastIndexOf(s, o, Integer.MAX_VALUE);
     }
 
-    static int lastIndexOf(cli.System.String s, String o, int fromIndex)
+    static int lastIndexOf(String s, String o, int fromIndex)
     {
 	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
-	int len = s.get_Length();
-	if(fromIndex  < 0)
+	int slen = s.length();
+	if(fromIndex < 0)
 	{
 	    return -1;
 	}
-	if(o.length() == 0)
+        int olen = o.length();
+	if(olen == 0)
 	{
-	    return Math.min(len, fromIndex);
+	    return Math.min(slen, fromIndex);
 	}
-	// make sure we don't overflow if fromIndex is near Integer.MAX_VALUE
-	if((fromIndex + o.length() - 1) < 0) 
-	{ 
-	    fromIndex = len - 1; 
-	} 
-	// Java allows fromIndex to be above the length of the string, .NET doesn't
-	return s.LastIndexOf(o, Math.min(len - 1, fromIndex + o.length() - 1));
+        if(olen > slen)
+        {
+            return -1;
+        }
+        cli.System.String cliStr = (cli.System.String)(Object)s;
+        char firstChar = o.charAt(0);
+        // Java allows fromIndex to both below zero or above the length of the string, .NET doesn't
+        int index = Math.max(0, Math.min(slen - olen, fromIndex - olen + 1));
+        while(index > 0)
+        {
+            if(cli.System.String.CompareOrdinal(s, index, o, 0, olen) == 0)
+            {
+                return index;
+            }
+            index = cliStr.LastIndexOf(firstChar, index - 1);
+        }
+        return cli.System.String.CompareOrdinal(s, 0, o, 0, olen) == 0 ? 0 : -1;
     }
 
     static String concat(String s1, String s2)
@@ -598,22 +652,39 @@ final class StringHelper
     {
         String s1 = oldValue.toString();
         String s2 = newValue.toString();
-        if(s1.length() > 0)
+        int prev = 0;
+        int pos = s.indexOf(s1);
+        if(pos == -1)
         {
-            return ((cli.System.String)(Object)s).Replace(s1, s2);
+            return s;
         }
-        cli.System.Text.StringBuilder sb = new cli.System.Text.StringBuilder((s.length() + 1) * (s2.length() + 1));
-        for(int i = 0; i < s.length(); i++)
+        int slen = s.length();
+        int s1len = s1.length();
+        if(s1len == 0)
         {
-            sb.Append(s2).Append(s.charAt(i));
+            cli.System.Text.StringBuilder sb = new cli.System.Text.StringBuilder((slen + 1) * (s2.length() + 1));
+            for(int i = 0; i < slen; i++)
+            {
+                sb.Append(s2).Append(s.charAt(i));
+            }
+            sb.Append(s2);
+            return sb.ToString();
         }
-        sb.Append(s2);
+        cli.System.Text.StringBuilder sb = new cli.System.Text.StringBuilder();
+        while (pos != -1)
+        {
+            sb.Append(s, prev, pos - prev);
+            sb.Append(s2);
+            prev = pos + s1len;
+            pos = s.indexOf(s1, prev);
+        }
+        sb.Append(s, prev, slen - prev);
         return sb.ToString();
     }
 
     static boolean contains(String s, CharSequence seq)
     {
-        return ((cli.System.String)(Object)s).IndexOf(seq.toString()) != -1;
+        return s.indexOf(seq.toString()) != -1;
     }
 
     static boolean contentEquals(String s, CharSequence seq)

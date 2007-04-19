@@ -461,12 +461,12 @@
 			</method>
 			<method name="indexOf" sig="(Ljava.lang.String;)I" modifiers="public">
 				<parameter name="str" />
-				<redirect name="IndexOf" />
-			</method>
+        <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
+      </method>
 			<method name="indexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
 				<parameter name="str" />
 				<parameter name="fromIndex" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;I)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
 			</method>
 			<method name="lastIndexOf" sig="(I)I" modifiers="public">
 				<parameter name="ch" />
@@ -490,12 +490,12 @@
 			</method>
 			<method name="lastIndexOf" sig="(Ljava.lang.String;)I" modifiers="public">
 				<parameter name="str" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
 			</method>
 			<method name="lastIndexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
 				<parameter name="str" />
 				<parameter name="fromIndex" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;I)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
 			</method>
 			<method name="toCharArray" sig="()[C" modifiers="public">
 				<redirect name="ToCharArray" />
@@ -509,17 +509,17 @@
 			</method>
 			<method name="startsWith" sig="(Ljava.lang.String;)Z" modifiers="public">
 				<parameter name="prefix" />
-				<redirect name="StartsWith" />
-			</method>
+        <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)Z" />
+      </method>
 			<method name="startsWith" sig="(Ljava.lang.String;I)Z" modifiers="public">
 				<parameter name="prefix" />
 				<parameter name="toffset" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;I)Z" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)Z" />
 			</method>
 			<method name="endsWith" sig="(Ljava.lang.String;)Z" modifiers="public">
 				<parameter name="suffix" />
-				<redirect name="EndsWith" />
-			</method>
+        <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)Z" />
+      </method>
 			<method name="toUpperCase" sig="()Ljava.lang.String;" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 			</method>
