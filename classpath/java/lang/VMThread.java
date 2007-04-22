@@ -101,17 +101,25 @@ public final class VMThread
 
     // notify Thread that it is dead, this method can safely be called multiple times
     // used by inner class
-    /*private*/ synchronized void cleanup()
+    /*private*/ void cleanup()
     {
-	if(thread.vmThread != null)
-	{
-	    thread.die();
-	    nativeThreadReference.set_Target(null);
-	    if(!thread.daemon)
-	    {
-                nonDaemonCount.decrementAndGet();
-	    }
-	}
+        // since we're going to call back to Thread.die() (which is synchronized)
+        // we must first acquire the Thread lock and then our own lock, to prevent deadlock.
+        synchronized(thread)
+        {
+            synchronized(this)
+            {
+	        if(thread.vmThread != null)
+	        {
+	            thread.die();
+	            nativeThreadReference.set_Target(null);
+	            if(!thread.daemon)
+	            {
+                        nonDaemonCount.decrementAndGet();
+	            }
+	        }
+            }
+        }
     }
 
     private synchronized void addJoinWaiter(VMThread waiter)
