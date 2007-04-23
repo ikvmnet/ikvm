@@ -335,31 +335,6 @@ final class StringHelper
 	return s.Substring(off, end - off);
     }
 
-    static boolean startsWith(String s, String prefix)
-    {
-	return cli.System.String.CompareOrdinal(s, 0, prefix, 0, prefix.length()) == 0;
-    }
-
-    static boolean startsWith(String s, String prefix, int toffset)
-    {
-	if(toffset < 0 || toffset > s.length())
-	{
-	    return false;
-	}
-        return cli.System.String.CompareOrdinal(s, toffset, prefix, 0, prefix.length()) == 0;
-    }
-
-    static boolean endsWith(String s, String suffix)
-    {
-        int suflen = suffix.length();
-        int off = s.length() - suflen;
-        if(off < 0)
-        {
-            return false;
-        }
-        return cli.System.String.CompareOrdinal(s, off, suffix, 0, suflen) == 0;
-    }
-
     static void getChars(cli.System.String s, int srcBegin, int srcEnd, char[] dst, int dstBegin) 
     {
 	s.CopyTo(srcBegin, dst, dstBegin, srcEnd - srcBegin);
@@ -383,20 +358,6 @@ final class StringHelper
 	return 0;
     }
 
-    static int indexOf(cli.System.String s, int ch, int fromIndex)
-    {
-	if(ch < 0 || ch > Character.MAX_VALUE)
-	{
-	    if(s == null)
-	    {
-		throw new NullPointerException();
-	    }
-    	    return -1;
-	}
-	// Java allow fromIndex to both below zero or above the length of the string, .NET doesn't
-	return s.IndexOf((char)ch, Math.max(0, Math.min(s.get_Length(), fromIndex)));
-    }
-
     static int indexOf(String s, String o)
     {
         return indexOf(s, o, 0);
@@ -415,7 +376,6 @@ final class StringHelper
         {
             return -1;
         }
-        cli.System.String cliStr = (cli.System.String)(Object)s;
         char firstChar = o.charAt(0);
         // Java allows fromIndex to both below zero or above the length of the string, .NET doesn't
         int index = Math.max(0, Math.min(slen, fromIndex));
@@ -426,7 +386,7 @@ final class StringHelper
             {
                 return index;
             }
-            index = cliStr.IndexOf(firstChar, index + 1);
+            index = s.indexOf(firstChar, index + 1);
         }
         return -1;
     }
