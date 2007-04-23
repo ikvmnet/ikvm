@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,7 +26,6 @@ package ikvm.internal;
 
 public interface LibraryVMInterface
 {
-    Object loadClass(Object classLoader, String name) throws ClassNotFoundException;
     Object newClass(Object wrapper, Object protectionDomain, Object classLoader);
     Object getWrapperFromClass(Object clazz);
     Object getWrapperFromField(Object field);
@@ -39,7 +38,6 @@ public interface LibraryVMInterface
     Object unbox(Object val);
 
     Throwable mapException(Throwable t);
-    void printStackTrace(Throwable t);
 
     void jniWaitUntilLastThread();
     void jniDetach();
@@ -59,35 +57,6 @@ public interface LibraryVMInterface
 
     Object newAnnotation(Object classLoader, Object definition);
     Object newAnnotationElementValue(Object classLoader, Object expectedClass, Object definition);
-
-    Throwable newIllegalAccessError(String msg);
-    Throwable newIllegalAccessException(String msg);
-    Throwable newIncompatibleClassChangeError(String msg);
-    Throwable newLinkageError(String msg);
-    Throwable newVerifyError(String msg);
-    Throwable newClassCircularityError(String msg);
-    Throwable newClassFormatError(String msg);
-    Throwable newUnsupportedClassVersionError(String msg);
-    Throwable newNoClassDefFoundError(String msg);
-    Throwable newClassNotFoundException(String msg);
-    Throwable newUnsatisfiedLinkError(String msg);
-    Throwable newIllegalArgumentException(String msg);
-    Throwable newNegativeArraySizeException();
-    Throwable newArrayStoreException();
-    Throwable newIndexOutOfBoundsException(String msg);
-    Throwable newStringIndexOutOfBoundsException();
-    Throwable newInvocationTargetException(Throwable t);
-    Throwable newUnknownHostException(String msg);
-    Throwable newArrayIndexOutOfBoundsException();
-    Throwable newNumberFormatException(String msg);
-    Throwable newNullPointerException();
-    Throwable newClassCastException(String msg);
-    Throwable newNoSuchFieldError(String msg);
-    Throwable newNoSuchMethodError(String msg);
-    Throwable newInstantiationError(String msg);
-    Throwable newInstantiationException(String msg);
-    Throwable newInterruptedException();
-    Throwable newIllegalMonitorStateException();
 
     Object newAssemblyClassLoader(cli.System.Reflection.Assembly assembly);
 }

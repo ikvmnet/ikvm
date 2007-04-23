@@ -9093,7 +9093,7 @@ namespace IKVM.Internal
 				{
 				}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 				internal override object Invoke(object obj, object[] args, bool nonVirtual)
 				{
 					FieldWrapper[] values = this.DeclaringType.GetFields();
@@ -9104,9 +9104,9 @@ namespace IKVM.Internal
 							return values[i].GetValue(null);
 						}
 					}
-					throw JavaException.IllegalArgumentException("{0}", args[0]);
+					throw new java.lang.IllegalArgumentException("" + args[0]);
 				}
-#endif // !STATIC_COMPILER
+#endif // !STATIC_COMPILER && !FIRST_PASS
 			}
 
 			protected override void LazyPublishMembers()
@@ -9455,42 +9455,42 @@ namespace IKVM.Internal
 				base.LazyPublishMembers();
 			}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 			internal override object GetAnnotationDefault(MethodWrapper mw)
 			{
 				if(((AttributeAnnotationMethodWrapper)mw).IsOptional)
 				{
 					if (mw.ReturnType == PrimitiveTypeWrapper.BOOLEAN)
 					{
-						return JVM.Library.box(false);
+						return java.lang.Boolean.FALSE;
 					}
 					else if(mw.ReturnType == PrimitiveTypeWrapper.BYTE)
 					{
-						return JVM.Library.box((byte)0);
+						return java.lang.Byte.valueOf((byte)0);
 					}
 					else if(mw.ReturnType == PrimitiveTypeWrapper.CHAR)
 					{
-						return JVM.Library.box((char)0);
+						return java.lang.Character.valueOf((char)0);
 					}
 					else if(mw.ReturnType == PrimitiveTypeWrapper.SHORT)
 					{
-						return JVM.Library.box((short)0);
+						return java.lang.Short.valueOf((short)0);
 					}
 					else if(mw.ReturnType == PrimitiveTypeWrapper.INT)
 					{
-						return JVM.Library.box(0);
+						return java.lang.Integer.valueOf(0);
 					}
 					else if(mw.ReturnType == PrimitiveTypeWrapper.FLOAT)
 					{
-						return JVM.Library.box(0F);
+						return java.lang.Float.valueOf(0F);
 					}
 					else if(mw.ReturnType == PrimitiveTypeWrapper.LONG)
 					{
-						return JVM.Library.box(0L);
+						return java.lang.Long.valueOf(0L);
 					}
 					else if(mw.ReturnType == PrimitiveTypeWrapper.DOUBLE)
 					{
-						return JVM.Library.box(0D);
+						return java.lang.Double.valueOf(0D);
 					}
 					else if(mw.ReturnType == CoreClasses.java.lang.String.Wrapper)
 					{
@@ -9498,7 +9498,7 @@ namespace IKVM.Internal
 					}
 					else if(mw.ReturnType == CoreClasses.java.lang.Class.Wrapper)
 					{
-						return ClassLoaderWrapper.LoadClassCritical("ikvm.internal.__unspecified").ClassObject;
+						return (java.lang.Class)typeof(ikvm.@internal.__unspecified);
 					}
 					else if(mw.ReturnType is EnumEnumTypeWrapper)
 					{
@@ -9511,7 +9511,7 @@ namespace IKVM.Internal
 				}
 				return null;
 			}
-#endif // !STATIC_COMPILER
+#endif // !STATIC_COMPILER && !FIRST_PASS
 
 			internal override TypeWrapper DeclaringTypeWrapper
 			{

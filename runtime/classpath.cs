@@ -33,6 +33,13 @@ using System.Security.Permissions;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;
+#if !FIRST_PASS
+using NegativeArraySizeException = java.lang.NegativeArraySizeException;
+using IllegalArgumentException = java.lang.IllegalArgumentException;
+using IllegalAccessException = java.lang.IllegalAccessException;
+using NumberFormatException = java.lang.NumberFormatException;
+using jlNoClassDefFoundError = java.lang.NoClassDefFoundError;
+#endif
 
 namespace IKVM.NativeCode.java
 {
@@ -57,7 +64,11 @@ namespace IKVM.NativeCode.java
 							throw x.ToJava();
 						}
 					}
-					throw JavaException.NegativeArraySizeException();
+#if !FIRST_PASS
+					throw new NegativeArraySizeException();
+#else
+					return null;
+#endif
 				}
 			}
 
@@ -149,6 +160,7 @@ namespace IKVM.NativeCode.java
 				[HideFromJava]
 				public static object Invoke(object methodCookie, object o, object[] args)
 				{
+#if !FIRST_PASS
 					try
 					{
 						object[] argsCopy = new Object[args != null ? args.Length : 0];
@@ -161,7 +173,7 @@ namespace IKVM.NativeCode.java
 							{
 								if(args[i] == null)
 								{
-									throw JavaException.IllegalArgumentException("primitive wrapper null");
+									throw new IllegalArgumentException("primitive wrapper null");
 								}
 								argsCopy[i] = JVM.Library.unbox(args[i]);
 								// NOTE we depend on the fact that the .NET reflection parameter type
@@ -188,10 +200,10 @@ namespace IKVM.NativeCode.java
 						{
 							retval = mw.Invoke(o, argsCopy, false);
 						}
-						catch(MethodAccessException)
+						catch(MethodAccessException x)
 						{
 							// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
-							throw JavaException.IllegalAccessException("System.MethodAccessException for {0}.{1}", mw.DeclaringType.Name, mw.Name);
+							throw new IllegalAccessException().initCause(x);
 						}
 						if(mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
 						{
@@ -203,6 +215,9 @@ namespace IKVM.NativeCode.java
 					{
 						throw x.ToJava();
 					}
+#else
+					return null;
+#endif
 				}
 			}
 
@@ -290,11 +305,11 @@ namespace IKVM.NativeCode.java
 						{
 							return wrapper.GetValue(o);
 						}
-#if !COMPACT_FRAMEWORK
-						catch(FieldAccessException)
+#if !COMPACT_FRAMEWORK && !FIRST_PASS
+						catch(FieldAccessException x)
 						{
 							// this can happen if we're accessing a non-public field and the call stack doesn't have ReflectionPermission.MemberAccess
-							throw JavaException.IllegalAccessException("System.FieldAccessException for {0}.{1}", wrapper.DeclaringType.Name, wrapper.Name);
+							throw new IllegalAccessException().initCause(x);
 						}
 #endif
 						finally
@@ -323,11 +338,11 @@ namespace IKVM.NativeCode.java
 						{
 							wrapper.SetValue(o, v);
 						}
-#if !COMPACT_FRAMEWORK
-						catch(FieldAccessException)
+#if !COMPACT_FRAMEWORK && !FIRST_PASS
+						catch(FieldAccessException x)
 						{
 							// this can happen if we're accessing a non-public field and the call stack doesn't have ReflectionPermission.MemberAccess
-							throw JavaException.IllegalAccessException("System.FieldAccessException for {0}.{1}", wrapper.DeclaringType.Name, wrapper.Name);
+							throw new IllegalAccessException().initCause(x);
 						}
 #endif
 						finally
@@ -444,7 +459,11 @@ namespace IKVM.NativeCode.java
 					System.Diagnostics.Debug.Fail(x.ToString());
 				}
 				error:
-				throw JavaException.NumberFormatException("For input string: \"{0}\"", s);
+#if !FIRST_PASS
+				throw new NumberFormatException(string.Format("For input string: \"{0}\"", s));
+#else
+				return 0;
+#endif
 			}
 		}
 
@@ -518,7 +537,9 @@ namespace IKVM.NativeCode.java
 						ClassFile classFile = new ClassFile(data, offset, length, name, cfp);
 						if(name != null && classFile.Name != name)
 						{
-							throw new NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
+#if !FIRST_PASS
+							throw new jlNoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
+#endif
 						}
 						TypeWrapper type = classLoaderWrapper.DefineClass(classFile, protectionDomain);
 						return type.ClassObject;
@@ -774,6 +795,7 @@ namespace IKVM.NativeCode.java
 
 			public static object[] GetDeclaredClasses(object cwrapper, bool publicOnly)
 			{
+#if !FIRST_PASS
 				try
 				{
 					TypeWrapper wrapper = (TypeWrapper)cwrapper;
@@ -787,7 +809,7 @@ namespace IKVM.NativeCode.java
 						{
 							if(wrappers[i].IsUnloadable)
 							{
-								throw JavaException.NoClassDefFoundError(wrappers[i].Name);
+								throw new jlNoClassDefFoundError(wrappers[i].Name);
 							}
 							// because the VM lacks any support for nested visibility control, we
 							// cannot rely on the publicness of the type here, but instead we have
@@ -805,11 +827,11 @@ namespace IKVM.NativeCode.java
 					{
 						if(wrappers[i].IsUnloadable)
 						{
-							throw JavaException.NoClassDefFoundError(wrappers[i].Name);
+							throw new jlNoClassDefFoundError(wrappers[i].Name);
 						}
 						if(!wrappers[i].IsAccessibleFrom(wrapper))
 						{
-							throw JavaException.IllegalAccessError("tried to access class {0} from class {1}", wrappers[i].Name, wrapper.Name);
+							throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", wrappers[i].Name, wrapper.Name));
 						}
 						innerclasses[i] = wrappers[i].ClassObject;
 					}
@@ -819,10 +841,14 @@ namespace IKVM.NativeCode.java
 				{
 					throw x.ToJava();
 				}
+#else
+				return null;
+#endif
 			}
 
 			public static object GetDeclaringClass(object cwrapper)
 			{
+#if !FIRST_PASS
 				try
 				{
 					TypeWrapper wrapper = (TypeWrapper)cwrapper;
@@ -835,11 +861,11 @@ namespace IKVM.NativeCode.java
 					}
 					if(declaring.IsUnloadable)
 					{
-						throw JavaException.NoClassDefFoundError(declaring.Name);
+						throw new jlNoClassDefFoundError(declaring.Name);
 					}
 					if(!declaring.IsAccessibleFrom(wrapper))
 					{
-						throw JavaException.IllegalAccessError("tried to access class {0} from class {1}", declaring.Name, wrapper.Name);
+						throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", declaring.Name, wrapper.Name));
 					}
 					declaring.Finish();
 					foreach(TypeWrapper tw in declaring.InnerClasses)
@@ -849,12 +875,15 @@ namespace IKVM.NativeCode.java
 							return declaring.ClassObject;
 						}
 					}
-					throw JavaException.IncompatibleClassChangeError("{0} and {1} disagree on InnerClasses attribute", declaring.Name, wrapper.Name);
+					throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", declaring.Name, wrapper.Name));
 				}
 				catch(RetargetableJavaException x)
 				{
 					throw x.ToJava();
 				}
+#else
+				return null;
+#endif
 			}
 
 			public static object[] GetInterfaces(object cwrapper)
@@ -915,7 +944,9 @@ namespace IKVM.NativeCode.java
 						TypeWrapper enclosingClass = wrapper.GetClassLoader().LoadClassByDottedNameFast(enclosing[0]);
 						if(enclosingClass == null)
 						{
-							throw JavaException.NoClassDefFoundError(enclosing[0]);
+#if !FIRST_PASS
+							throw new jlNoClassDefFoundError(enclosing[0]);
+#endif
 						}
 						return enclosingClass.ClassObject;
 					}
@@ -938,7 +969,9 @@ namespace IKVM.NativeCode.java
 						TypeWrapper enclosingClass = wrapper.GetClassLoader().LoadClassByDottedNameFast(enclosing[0]);
 						if(enclosingClass == null)
 						{
-							throw JavaException.NoClassDefFoundError(enclosing[0]);
+#if !FIRST_PASS
+							throw new jlNoClassDefFoundError(enclosing[0]);
+#endif
 						}
 						MethodWrapper mw = enclosingClass.GetMethodWrapper(enclosing[1], enclosing[2], false);
 						if(mw != null && !mw.IsHideFromReflection)
@@ -965,7 +998,9 @@ namespace IKVM.NativeCode.java
 						TypeWrapper enclosingClass = wrapper.GetClassLoader().LoadClassByDottedNameFast(enclosing[0]);
 						if(enclosingClass == null)
 						{
-							throw JavaException.NoClassDefFoundError(enclosing[0]);
+#if !FIRST_PASS
+							throw new jlNoClassDefFoundError(enclosing[0]);
+#endif
 						}
 						MethodWrapper mw = enclosingClass.GetMethodWrapper(enclosing[1], enclosing[2], false);
 						if(mw != null && !mw.IsHideFromReflection)
@@ -1739,7 +1774,6 @@ namespace ikvm.@internal
 {
 	public interface LibraryVMInterface
 	{
-		object loadClass(object classLoader, string name);
 		object newClass(object wrapper, object protectionDomain, object classLoader);
 		object getWrapperFromClass(object clazz);
 		object getWrapperFromField(object field);
@@ -1752,7 +1786,6 @@ namespace ikvm.@internal
 		object unbox(object val);
 
 		Exception mapException(Exception t);
-		void printStackTrace(Exception t);
 
 		void jniWaitUntilLastThread();
 		void jniDetach();
@@ -1772,35 +1805,6 @@ namespace ikvm.@internal
 
 		object newAnnotation(object classLoader, object definition);
 		object newAnnotationElementValue(object classLoader, object expectedClass, object definition);
-
-		Exception newIllegalAccessError(string msg);
-		Exception newIllegalAccessException(string msg);
-		Exception newIncompatibleClassChangeError(string msg);
-		Exception newLinkageError(string msg);
-		Exception newVerifyError(string msg);
-		Exception newClassCircularityError(string msg);
-		Exception newClassFormatError(string msg);
-		Exception newUnsupportedClassVersionError(string msg);
-		Exception newNoClassDefFoundError(string msg);
-		Exception newClassNotFoundException(string msg);
-		Exception newUnsatisfiedLinkError(string msg);
-		Exception newIllegalArgumentException(string msg);
-		Exception newNegativeArraySizeException();
-		Exception newArrayStoreException();
-		Exception newIndexOutOfBoundsException(string msg);
-		Exception newStringIndexOutOfBoundsException();
-		Exception newInvocationTargetException(Exception t);
-		Exception newUnknownHostException(string msg);
-		Exception newArrayIndexOutOfBoundsException();
-		Exception newNumberFormatException(string msg);
-		Exception newNullPointerException();
-		Exception newClassCastException(string msg);
-		Exception newNoSuchFieldError(string msg);
-		Exception newNoSuchMethodError(string msg);
-		Exception newInstantiationError(string msg);
-		Exception newInstantiationException(string msg);
-		Exception newInterruptedException();
-		Exception newIllegalMonitorStateException();
 
 		object newAssemblyClassLoader(Assembly asm);
 	}

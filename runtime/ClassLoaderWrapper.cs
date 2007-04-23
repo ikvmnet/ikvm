@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -55,7 +55,9 @@ namespace IKVM.Internal
 #endif
 		private static readonly Hashtable assemblyClassLoaders = new Hashtable();
 		private static ArrayList genericClassLoaders;
-		private readonly object javaClassLoader;
+#if !STATIC_COMPILER && !FIRST_PASS
+		private readonly java.lang.ClassLoader javaClassLoader;
+#endif
 		protected Hashtable types = new Hashtable();
 		private readonly Hashtable defineClassInProgress = new Hashtable();
 		private ArrayList nativeLibraries;
@@ -122,7 +124,9 @@ namespace IKVM.Internal
 		internal ClassLoaderWrapper(CodeGenOptions codegenoptions, object javaClassLoader)
 		{
 			this.codegenoptions = codegenoptions;
-			this.javaClassLoader = javaClassLoader;
+#if !STATIC_COMPILER && !FIRST_PASS
+			this.javaClassLoader = (java.lang.ClassLoader)javaClassLoader;
+#endif
 		}
 
 		internal static bool IsRemappedType(Type type)
@@ -600,32 +604,39 @@ namespace IKVM.Internal
 
 		protected virtual TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 			Profiler.Enter("ClassLoader.loadClass");
-			TypeWrapper type;
 			try
 			{
-				type = (TypeWrapper)JVM.Library.loadClass(javaClassLoader, name);
-				if(type != null && type.Name != name)
+				java.lang.Class c = javaClassLoader.loadClass(name);
+				if(c == null)
+				{
+					return null;
+				}
+				TypeWrapper type = TypeWrapper.FromClass(c);
+				if(type.Name != name)
 				{
 					// the class loader is trying to trick us
 					return null;
 				}
+				return type;
+			}
+			catch(java.lang.ClassNotFoundException x)
+			{
+				if(throwClassNotFoundException)
+				{
+					throw new ClassLoadingException(ikvm.runtime.Util.mapException(x));
+				}
+				return null;
 			}
 			catch(Exception x)
 			{
-				if(!throwClassNotFoundException
-					&& LoadClassCritical("java.lang.ClassNotFoundException").TypeAsBaseType.IsInstanceOfType(x))
-				{
-					return null;
-				}
-				throw new ClassLoadingException(JVM.Library.mapException(x));
+				throw new ClassLoadingException(ikvm.runtime.Util.mapException(x));
 			}
 			finally
 			{
 				Profiler.Leave("ClassLoader.loadClass");
 			}
-			return type;
 #else
 			return null;
 #endif
@@ -649,7 +660,11 @@ namespace IKVM.Internal
 
 		internal object GetJavaClassLoader()
 		{
+#if FIRST_PASS || STATIC_COMPILER
+			return null;
+#else
 			return javaClassLoader;
+#endif
 		}
 
 		internal TypeWrapper ExpressionTypeWrapper(string type)
@@ -1073,6 +1088,7 @@ namespace IKVM.Internal
 			}
 		}
 
+#if !STATIC_COMPILER && !FIRST_PASS
 		public override string ToString()
 		{
 			if(javaClassLoader == null)
@@ -1081,6 +1097,7 @@ namespace IKVM.Internal
 			}
 			return String.Format("{0}@{1:X}", GetWrapperFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
 		}
+#endif
 	}
 
 	class GenericClassLoader : ClassLoaderWrapper

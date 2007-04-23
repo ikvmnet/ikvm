@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -36,8 +36,22 @@ abstract class RetargetableJavaException : ApplicationException
 	{
 	}
 
-#if !STATIC_COMPILER
+	internal static string Format(string s, object[] args)
+	{
+		if (args == null || args.Length == 0)
+		{
+			return s;
+		}
+		return String.Format(s, args);
+	}
+
+#if !STATIC_COMPILER && !FIRST_PASS
 	internal abstract Exception ToJava();
+#elif FIRST_PASS
+	internal virtual Exception ToJava()
+	{
+		return null;
+	}
 #endif
 }
 
@@ -70,10 +84,10 @@ class LinkageError : RetargetableJavaException
 	{
 	}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 	internal override Exception ToJava()
 	{
-		return JVM.Library.newLinkageError(Message);
+		return new java.lang.LinkageError(Message);
 	}
 #endif
 }
@@ -92,10 +106,10 @@ class VerifyError : LinkageError
 	{
 	}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 	internal override Exception ToJava()
 	{
-		return JVM.Library.newVerifyError(Message);
+		return new java.lang.VerifyError(Message);
 	}
 #endif
 }
@@ -106,10 +120,10 @@ class ClassNotFoundException : RetargetableJavaException
 	{
 	}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 	internal override Exception ToJava()
 	{
-		return JVM.Library.newClassNotFoundException(Message);
+		return new java.lang.ClassNotFoundException(Message);
 	}
 #endif
 }
@@ -120,10 +134,10 @@ class ClassCircularityError : LinkageError
 	{
 	}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 	internal override Exception ToJava()
 	{
-		return JVM.Library.newClassCircularityError(Message);
+		return new java.lang.ClassCircularityError(Message);
 	}
 #endif
 }
@@ -134,10 +148,10 @@ class NoClassDefFoundError : LinkageError
 	{
 	}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 	internal override Exception ToJava()
 	{
-		return JVM.Library.newNoClassDefFoundError(Message);
+		return new java.lang.NoClassDefFoundError(Message);
 	}
 #endif
 }
@@ -148,10 +162,10 @@ class IncompatibleClassChangeError : LinkageError
 	{
 	}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 	internal override Exception ToJava()
 	{
-		return JVM.Library.newIncompatibleClassChangeError(Message);
+		return new java.lang.IncompatibleClassChangeError(Message);
 	}
 #endif
 }
@@ -162,168 +176,40 @@ class IllegalAccessError : IncompatibleClassChangeError
 	{
 	}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 	internal override Exception ToJava()
 	{
-		return JVM.Library.newIllegalAccessError(Message);
+		return new java.lang.IllegalAccessError(Message);
 	}
 #endif
 }
 
-internal class ClassFormatError : LinkageError
+class ClassFormatError : LinkageError
 {
 	internal ClassFormatError(string msg, params object[] p)
-		: base(JavaException.Format(msg, p))
+		: base(Format(msg, p))
 	{
 	}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 	internal override Exception ToJava()
 	{
-		return JVM.Library.newClassFormatError(Message);
+		return new java.lang.ClassFormatError(Message);
 	}
 #endif
 }
 
-internal class UnsupportedClassVersionError : ClassFormatError
+class UnsupportedClassVersionError : ClassFormatError
 {
 	internal UnsupportedClassVersionError(string msg)
 		: base(msg)
 	{
 	}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 	internal override Exception ToJava()
 	{
-		return JVM.Library.newUnsupportedClassVersionError(Message);
+		return new java.lang.UnsupportedClassVersionError(Message);
 	}
 #endif
-}
-
-sealed class JavaException
-{
-	private JavaException() {}
-
-	internal static string Format(string s, object[] args)
-	{
-		if(args == null || args.Length == 0)
-		{
-			return s;
-		}
-		return String.Format(s, args);
-	}
-
-#if !STATIC_COMPILER
-	internal static Exception IllegalAccessError(string s, params object[] args)
-	{
-		return JVM.Library.newIllegalAccessError(Format(s, args));
-	}
-
-	internal static Exception IllegalAccessException(string s, params object[] args)
-	{
-		return JVM.Library.newIllegalAccessException(Format(s, args));
-	}
-
-	internal static Exception IncompatibleClassChangeError(string s, params object[] args)
-	{
-		return JVM.Library.newIncompatibleClassChangeError(Format(s, args));
-	}
-
-	internal static Exception NoClassDefFoundError(string s, params object[] args)
-	{
-		return JVM.Library.newNoClassDefFoundError(Format(s, args));
-	}
-
-	internal static Exception UnsatisfiedLinkError(string s, params object[] args)
-	{
-		s = Format(s, args);
-		Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", s);
-		return JVM.Library.newUnsatisfiedLinkError(s);
-	}
-
-	internal static Exception IllegalArgumentException(string s, params object[] args)
-	{
-		return JVM.Library.newIllegalArgumentException(Format(s, args));
-	}
-
-	internal static Exception NegativeArraySizeException()
-	{
-		return JVM.Library.newNegativeArraySizeException();
-	}
-
-	internal static Exception ArrayStoreException()
-	{
-		return JVM.Library.newArrayStoreException();
-	}
-
-	internal static Exception IndexOutOfBoundsException(string s)
-	{
-		return JVM.Library.newIndexOutOfBoundsException(s);
-	}
-
-	internal static Exception StringIndexOutOfBoundsException()
-	{
-		return JVM.Library.newStringIndexOutOfBoundsException();
-	}
-
-	internal static Exception InvocationTargetException(Exception x)
-	{
-		return JVM.Library.newInvocationTargetException(x);
-	}
-
-	internal static Exception UnknownHostException(string s, params object[] args)
-	{
-		return JVM.Library.newUnknownHostException(Format(s, args));
-	}
-
-	internal static Exception ArrayIndexOutOfBoundsException()
-	{
-		return JVM.Library.newArrayIndexOutOfBoundsException();
-	}
-
-	internal static Exception NumberFormatException(string s, params object[] args)
-	{
-		return JVM.Library.newNumberFormatException(Format(s, args));
-	}
-
-	internal static Exception NullPointerException()
-	{
-		return JVM.Library.newNullPointerException();
-	}
-
-	internal static Exception ClassCastException(string s, params object[] args)
-	{
-		return JVM.Library.newClassCastException(Format(s, args));
-	}
-
-	internal static Exception NoSuchFieldError(string s, params object[] args)
-	{
-		return JVM.Library.newNoSuchFieldError(Format(s, args));
-	}
-
-	internal static Exception NoSuchMethodError(string s, params object[] args)
-	{
-		return JVM.Library.newNoSuchMethodError(Format(s, args));
-	}
-
-	internal static Exception InstantiationError(string s, params object[] args)
-	{
-		return JVM.Library.newInstantiationError(Format(s, args));
-	}
-
-	internal static Exception InstantiationException(string s, params object[] args)
-	{
-		return JVM.Library.newInstantiationException(Format(s, args));
-	}
-
-	internal static Exception InterruptedException()
-	{
-		return JVM.Library.newInterruptedException();
-	}
-
-	internal static Exception IllegalMonitorStateException()
-	{
-		return JVM.Library.newIllegalMonitorStateException();
-	}
-#endif // !STATIC_COMPILER
 }

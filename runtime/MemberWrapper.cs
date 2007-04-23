@@ -594,6 +594,7 @@ namespace IKVM.Internal
 		[HideFromJava]
 		internal object InvokeImpl(MethodBase method, object obj, object[] args, bool nonVirtual)
 		{
+#if !FIRST_PASS
 #if !COMPACT_FRAMEWORK
 			Debug.Assert(!(method is MethodBuilder || method is ConstructorBuilder));
 #endif // !COMPACT_FRAMEWORK
@@ -617,7 +618,7 @@ namespace IKVM.Internal
 						{
 							// the type of this exception is a bit random (note that this can only happen through JNI reflection or
 							// if there is a bug in serialization [which uses the ObjectInputStream.callConstructor() in classpath.cs)
-							throw JavaException.IncompatibleClassChangeError("Remapped type {0} doesn't support constructor invocation on an existing instance", DeclaringType.Name);
+							throw new java.lang.IncompatibleClassChangeError(string.Format("Remapped type {0} doesn't support constructor invocation on an existing instance", DeclaringType.Name));
 						}
 					}
 					else if(obj == null)
@@ -633,11 +634,11 @@ namespace IKVM.Internal
 						}
 						catch(ArgumentException x1)
 						{
-							throw JavaException.IllegalArgumentException(x1.Message);
+							throw new java.lang.IllegalArgumentException(x1.Message);
 						}
 						catch(TargetInvocationException x)
 						{
-							throw JavaException.InvocationTargetException(JVM.Library.mapException(x.InnerException));
+							throw new java.lang.reflect.InvocationTargetException(JVM.Library.mapException(x.InnerException));
 						}
 					}
 					else if(!method.DeclaringType.IsInstanceOfType(obj))
@@ -677,11 +678,11 @@ namespace IKVM.Internal
 					}
 					catch(ArgumentException x1)
 					{
-						throw JavaException.IllegalArgumentException(x1.Message);
+						throw new java.lang.IllegalArgumentException(x1.Message);
 					}
 					catch(TargetInvocationException x)
 					{
-						throw JavaException.InvocationTargetException(JVM.Library.mapException(x.InnerException));
+						throw new java.lang.reflect.InvocationTargetException(JVM.Library.mapException(x.InnerException));
 					}
 #endif
 				}
@@ -699,12 +700,15 @@ namespace IKVM.Internal
 			}
 			catch(ArgumentException x1)
 			{
-				throw JavaException.IllegalArgumentException(x1.Message);
+				throw new java.lang.IllegalArgumentException(x1.Message);
 			}
 			catch(TargetInvocationException x)
 			{
-				throw JavaException.InvocationTargetException(JVM.Library.mapException(x.InnerException));
+				throw new java.lang.reflect.InvocationTargetException(JVM.Library.mapException(x.InnerException));
 			}
+#else // !FIRST_PASS
+			return null;
+#endif
 		}
 
 #if !COMPACT_FRAMEWORK
@@ -1356,7 +1360,9 @@ namespace IKVM.Internal
 			}
 			catch(FieldAccessException x)
 			{
-				throw JavaException.IllegalAccessException(x.Message);
+#if !FIRST_PASS
+				throw new java.lang.IllegalAccessException(x.Message);
+#endif
 			}
 		}
 #endif // !STATIC_COMPILER

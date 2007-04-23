@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -39,12 +39,6 @@ import ikvm.lang.Internal;
 @Internal
 public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 {
-    public Object loadClass(Object classLoader, String name) throws ClassNotFoundException
-    {
-        Class c = ((ClassLoader)classLoader).loadClass(name);
-        return c == null ? null : c.vmdata;
-    }
-
     public Object newClass(Object wrapper, Object protectionDomain, Object classLoader)
     {
         if(protectionDomain == null && classLoader instanceof AssemblyClassLoader)
@@ -186,11 +180,6 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
         return ExceptionHelper.MapExceptionFast(t, true);
     }
 
-    public void printStackTrace(Throwable t)
-    {
-        t.printStackTrace();
-    }
-
     public void jniWaitUntilLastThread()
     {
         VMThread.jniWaitUntilLastThread();
@@ -247,146 +236,6 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
             // TODO this shouldn't be here
             return null;
         }
-    }
-
-    public Throwable newIllegalAccessError(String msg)
-    {
-        return new IllegalAccessError(msg);
-    }
-
-    public Throwable newIllegalAccessException(String msg)
-    {
-        return new IllegalAccessException(msg);
-    }
-
-    public Throwable newIncompatibleClassChangeError(String msg)
-    {
-        return new IncompatibleClassChangeError(msg);
-    }
-
-    public Throwable newLinkageError(String msg)
-    {
-        return new LinkageError(msg);
-    }
-
-    public Throwable newVerifyError(String msg)
-    {
-        return new VerifyError(msg);
-    }
-
-    public Throwable newClassCircularityError(String msg)
-    {
-        return new ClassCircularityError(msg);
-    }
-
-    public Throwable newClassFormatError(String msg)
-    {
-        return new ClassFormatError(msg);
-    }
-
-    public Throwable newUnsupportedClassVersionError(String msg)
-    {
-        return new UnsupportedClassVersionError(msg);
-    }
-
-    public Throwable newNoClassDefFoundError(String msg)
-    {
-        return new NoClassDefFoundError(msg);
-    }
-
-    public Throwable newClassNotFoundException(String msg)
-    {
-        return new ClassNotFoundException(msg);
-    }
-
-    public Throwable newUnsatisfiedLinkError(String msg)
-    {
-        return new UnsatisfiedLinkError(msg);
-    }
-
-    public Throwable newIllegalArgumentException(String msg)
-    {
-        return new IllegalArgumentException(msg);
-    }
-
-    public Throwable newNegativeArraySizeException()
-    {
-        return new NegativeArraySizeException();
-    }
-
-    public Throwable newArrayStoreException()
-    {
-        return new ArrayStoreException();
-    }
-
-    public Throwable newIndexOutOfBoundsException(String msg)
-    {
-        return new IndexOutOfBoundsException(msg);
-    }
-
-    public Throwable newStringIndexOutOfBoundsException()
-    {
-        return new StringIndexOutOfBoundsException();
-    }
-
-    public Throwable newInvocationTargetException(Throwable t)
-    {
-        return new InvocationTargetException(t);
-    }
-
-    public Throwable newUnknownHostException(String msg)
-    {
-        return new java.net.UnknownHostException(msg);
-    }
-
-    public Throwable newArrayIndexOutOfBoundsException()
-    {
-        return new ArrayIndexOutOfBoundsException();
-    }
-
-    public Throwable newNumberFormatException(String msg)
-    {
-        return new NumberFormatException(msg);
-    }
-
-    public Throwable newNullPointerException()
-    {
-        return new NullPointerException();
-    }
-
-    public Throwable newClassCastException(String msg)
-    {
-        return new ClassCastException(msg);
-    }
-
-    public Throwable newNoSuchFieldError(String msg)
-    {
-        return new NoSuchFieldError(msg);
-    }
-
-    public Throwable newNoSuchMethodError(String msg)
-    {
-        return new NoSuchMethodError(msg);
-    }
-
-    public Throwable newInstantiationError(String msg)
-    {
-        return new InstantiationError(msg);
-    }
-
-    public Throwable newInstantiationException(String msg)
-    {
-        return new InstantiationException(msg);
-    }
-
-    public Throwable newInterruptedException()
-    {
-        return new InterruptedException();
-    }
-
-    public Throwable newIllegalMonitorStateException()
-    {
-        return new IllegalMonitorStateException();
     }
 
     public Object newAssemblyClassLoader(final cli.System.Reflection.Assembly assembly)

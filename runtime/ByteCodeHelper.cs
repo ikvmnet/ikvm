@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -39,7 +39,9 @@ namespace IKVM.Runtime
 			{
 				if(lengths[i] < 0)
 				{
-					throw JavaException.NegativeArraySizeException();
+#if !FIRST_PASS
+					throw new java.lang.NegativeArraySizeException();
+#endif
 				}
 			}
 			return MultianewarrayHelper(Type.GetTypeFromHandle(typeHandle).GetElementType(), lengths, 0);
@@ -60,7 +62,7 @@ namespace IKVM.Runtime
 			return o;
 		}
 
-#if !COMPACT_FRAMEWORK
+#if !COMPACT_FRAMEWORK && !FIRST_PASS
 		[DebuggerStepThroughAttribute]
 		public static object DynamicMultianewarray(RuntimeTypeHandle type, string clazz, int[] lengths)
 		{
@@ -75,7 +77,7 @@ namespace IKVM.Runtime
 			Profiler.Count("DynamicNewarray");
 			if(length < 0)
 			{
-				throw JavaException.NegativeArraySizeException();
+				throw new java.lang.NegativeArraySizeException();
 			}
 			TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 			return Array.CreateInstance(wrapper.TypeAsArrayType, length);
@@ -104,18 +106,18 @@ namespace IKVM.Runtime
 			FieldWrapper field = wrapper.GetFieldWrapper(name, sig);
 			if(field == null)
 			{
-				throw JavaException.NoSuchFieldError(clazz + "." + name);
+				throw new java.lang.NoSuchFieldError(clazz + "." + name);
 			}
 			// TODO check loader constraints
 			if(field.IsStatic != isStatic)
 			{
-				throw JavaException.IncompatibleClassChangeError(clazz + "." + name);
+				throw new java.lang.IncompatibleClassChangeError(clazz + "." + name);
 			}
 			if(field.IsAccessibleFrom(wrapper, caller, thisType))
 			{
 				return field;
 			}
-			throw JavaException.IllegalAccessError(field.DeclaringType.Name + "." + name);
+			throw new java.lang.IllegalAccessError(field.DeclaringType.Name + "." + name);
 		}
 
 		[DebuggerStepThroughAttribute]
@@ -139,7 +141,7 @@ namespace IKVM.Runtime
 			FieldWrapper fw = GetFieldWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false);
 			if(fw.IsFinal)
 			{
-				throw JavaException.IllegalAccessError("Field " + fw.DeclaringType.Name + "." + fw.Name + " is final");
+				throw new java.lang.IllegalAccessError("Field " + fw.DeclaringType.Name + "." + fw.Name + " is final");
 			}
 			fw.SetValue(obj, val);
 		}
@@ -151,7 +153,7 @@ namespace IKVM.Runtime
 			FieldWrapper fw = GetFieldWrapper(null, type, clazz, name, sig, true);
 			if(fw.IsFinal)
 			{
-				throw JavaException.IllegalAccessError("Field " + fw.DeclaringType.Name + "." + fw.Name + " is final");
+				throw new java.lang.IllegalAccessError("Field " + fw.DeclaringType.Name + "." + fw.Name + " is final");
 			}
 			fw.SetValue(null, val);
 		}
@@ -164,7 +166,7 @@ namespace IKVM.Runtime
 			TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
 			if(wrapper.IsAbstract)
 			{
-				throw JavaException.InstantiationError(clazz);
+				throw new java.lang.InstantiationError(clazz);
 			}
 			wrapper.RunClassInit();
 		}
@@ -177,11 +179,11 @@ namespace IKVM.Runtime
 				TypeWrapper wrapper = context.GetClassLoader().LoadClassByDottedNameFast(clazz);
 				if(wrapper == null)
 				{
-					throw JavaException.NoClassDefFoundError(clazz);
+					throw new java.lang.NoClassDefFoundError(clazz);
 				}
 				if(!wrapper.IsAccessibleFrom(context))
 				{
-					throw JavaException.IllegalAccessError("Try to access class " + wrapper.Name + " from class " + context.Name);
+					throw new java.lang.IllegalAccessError("Try to access class " + wrapper.Name + " from class " + context.Name);
 				}
 				wrapper.Finish();
 				return wrapper;
@@ -207,7 +209,7 @@ namespace IKVM.Runtime
 			// (to be compatible with Sun)
 			if(obj != null && !DynamicInstanceOf(obj, type, clazz))
 			{
-				throw JavaException.ClassCastException(NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj).Name);
+				throw new java.lang.ClassCastException(NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj).Name);
 			}
 			return obj;
 		}
@@ -234,18 +236,18 @@ namespace IKVM.Runtime
 			MethodWrapper mw = wrapper.GetMethodWrapper(name, sig, false);
 			if(mw == null)
 			{
-				throw JavaException.NoSuchMethodError(clazz + "." + name + sig);
+				throw new java.lang.NoSuchMethodError(clazz + "." + name + sig);
 			}
 			// TODO check loader constraints
 			if(mw.IsStatic != isStatic)
 			{
-				throw JavaException.IncompatibleClassChangeError(clazz + "." + name);
+				throw new java.lang.IncompatibleClassChangeError(clazz + "." + name);
 			}
 			if(mw.IsAccessibleFrom(wrapper, caller, thisType))
 			{
 				return mw;
 			}
-			throw JavaException.IllegalAccessError(clazz + "." + name + sig);
+			throw new java.lang.IllegalAccessError(clazz + "." + name + sig);
 		}
 
 		[DebuggerStepThroughAttribute]
@@ -281,7 +283,9 @@ namespace IKVM.Runtime
 		{
 			if(obj != null)
 			{
-				throw JavaException.ClassCastException("");
+#if !FIRST_PASS
+				throw new java.lang.ClassCastException();
+#endif
 			}
 			return obj;
 		}
@@ -375,6 +379,7 @@ namespace IKVM.Runtime
 		[DebuggerStepThroughAttribute]
 		public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
 		{
+#if !FIRST_PASS
 			// If the two arrays are the same, we can use the fast path, but we're also required to do so,
 			// to get the required memmove semantics.
 			if(src == dest)
@@ -386,16 +391,16 @@ namespace IKVM.Runtime
 				}
 				catch(InvalidCastException)
 				{
-					throw JavaException.ArrayStoreException();
+					throw new java.lang.ArrayStoreException();
 				}
 			}
 			else if(src == null || dest == null)
 			{
-				throw JavaException.NullPointerException();
+				throw new java.lang.NullPointerException();
 			}
 			else if(len < 0)
 			{
-				throw JavaException.ArrayIndexOutOfBoundsException();
+				throw new java.lang.ArrayIndexOutOfBoundsException();
 			}
 			else
 			{
@@ -431,7 +436,7 @@ namespace IKVM.Runtime
 #endif
 				{
 					// we don't want to allow copying a primitive into an object array!
-					throw JavaException.ArrayStoreException();
+					throw new java.lang.ArrayStoreException();
 				}
 				else
 				{
@@ -442,10 +447,11 @@ namespace IKVM.Runtime
 					}
 					catch(InvalidCastException)
 					{
-						throw JavaException.ArrayStoreException();
+						throw new java.lang.ArrayStoreException();
 					}
 				}
 			}
+#endif // !FIRST_PASS
 		}
 
 		private static bool IsPrimitiveArrayType(Type type)
@@ -456,23 +462,26 @@ namespace IKVM.Runtime
 		[DebuggerStepThroughAttribute]
 		public static void arraycopy_fast(Array src, int srcStart, Array dest, int destStart, int len)
 		{
+#if !FIRST_PASS
 			try 
 			{
 				Array.Copy(src, srcStart, dest, destStart, len);
 			}
 			catch(ArgumentNullException)
 			{
-				throw JavaException.NullPointerException();
+				throw new java.lang.NullPointerException();
 			}
 			catch(ArgumentException) 
 			{
-				throw JavaException.ArrayIndexOutOfBoundsException();
+				throw new java.lang.ArrayIndexOutOfBoundsException();
 			}
+#endif // !FIRST_PASS
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static void arraycopy_primitive_8(Array src, int srcStart, Array dest, int destStart, int len)
 		{
+#if !FIRST_PASS
 			try 
 			{
 				checked
@@ -483,21 +492,23 @@ namespace IKVM.Runtime
 			}
 			catch(ArgumentNullException)
 			{
-				throw JavaException.NullPointerException();
+				throw new java.lang.NullPointerException();
 			}
 			catch(OverflowException)
 			{
-				throw JavaException.ArrayIndexOutOfBoundsException();
+				throw new java.lang.ArrayIndexOutOfBoundsException();
 			}
 			catch(ArgumentException) 
 			{
-				throw JavaException.ArrayIndexOutOfBoundsException();
+				throw new java.lang.ArrayIndexOutOfBoundsException();
 			}
+#endif // !FIRST_PASS
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static void arraycopy_primitive_4(Array src, int srcStart, Array dest, int destStart, int len)
 		{
+#if !FIRST_PASS
 			try 
 			{
 				checked
@@ -508,21 +519,23 @@ namespace IKVM.Runtime
 			}
 			catch(ArgumentNullException)
 			{
-				throw JavaException.NullPointerException();
+				throw new java.lang.NullPointerException();
 			}
 			catch(OverflowException)
 			{
-				throw JavaException.ArrayIndexOutOfBoundsException();
+				throw new java.lang.ArrayIndexOutOfBoundsException();
 			}
 			catch(ArgumentException) 
 			{
-				throw JavaException.ArrayIndexOutOfBoundsException();
+				throw new java.lang.ArrayIndexOutOfBoundsException();
 			}
+#endif // !FIRST_PASS
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static void arraycopy_primitive_2(Array src, int srcStart, Array dest, int destStart, int len)
 		{
+#if !FIRST_PASS
 			try 
 			{
 				checked
@@ -533,21 +546,23 @@ namespace IKVM.Runtime
 			}
 			catch(ArgumentNullException)
 			{
-				throw JavaException.NullPointerException();
+				throw new java.lang.NullPointerException();
 			}
 			catch(OverflowException)
 			{
-				throw JavaException.ArrayIndexOutOfBoundsException();
+				throw new java.lang.ArrayIndexOutOfBoundsException();
 			}
 			catch(ArgumentException) 
 			{
-				throw JavaException.ArrayIndexOutOfBoundsException();
+				throw new java.lang.ArrayIndexOutOfBoundsException();
 			}
+#endif // !FIRST_PASS
 		}
 
 		[DebuggerStepThroughAttribute]
 		public static void arraycopy_primitive_1(Array src, int srcStart, Array dest, int destStart, int len)
 		{
+#if !FIRST_PASS
 			try 
 			{
 				Buffer.BlockCopy(src, srcStart, dest, destStart, len);
@@ -555,23 +570,26 @@ namespace IKVM.Runtime
 			}
 			catch(ArgumentNullException)
 			{
-				throw JavaException.NullPointerException();
+				throw new java.lang.NullPointerException();
 			}
 			catch(OverflowException)
 			{
-				throw JavaException.ArrayIndexOutOfBoundsException();
+				throw new java.lang.ArrayIndexOutOfBoundsException();
 			}
 			catch(ArgumentException) 
 			{
-				throw JavaException.ArrayIndexOutOfBoundsException();
+				throw new java.lang.ArrayIndexOutOfBoundsException();
 			}
+#endif // !FIRST_PASS
 		}
 
 		[HideFromJava]
 		public static void VerboseCastFailure(RuntimeTypeHandle typeHandle, object obj)
 		{
+#if !FIRST_PASS
 			string msg = String.Format("Object of type \"{0}\" cannot be cast to \"{1}\"", obj.GetType().AssemblyQualifiedName, Type.GetTypeFromHandle(typeHandle).AssemblyQualifiedName);
-			throw JavaException.ClassCastException(msg);
+			throw new java.lang.ClassCastException(msg);
+#endif // !FIRST_PASS
 		}
 
 		public static bool SkipFinalizer()
