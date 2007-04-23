@@ -414,24 +414,20 @@
 			<method name="length" sig="()I" modifiers="public">
 				<redirect name="get_Length" />
 			</method>
-			<method name="charAt" sig="(I)C" modifiers="public">
+			<method name="charAt" sig="(I)C" modifiers="public" nonullcheck="true">
 				<parameter name="index" />
 				<body>
-					<exceptionBlock>
-						<try>
-							<ldarg_0 />
-							<ldarg_1 />
-							<callvirt type="System.String" name="get_Chars" sig="(I)C" />
-							<stloc name="char" type="System.Char" />
-						</try>
-						<catch type="System.IndexOutOfRangeException">
-							<pop />
-							<newobj class="java.lang.StringIndexOutOfBoundsException" name="&lt;init&gt;" sig="()V" />
-							<throw />
-						</catch>
-					</exceptionBlock>
-					<ldloc name="char" />
-					<ret />
+          <ldarg_1 />
+          <ldarg_0 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <bge_un name="throw" />
+          <ldarg_0 />
+				  <ldarg_1 />
+				  <callvirt type="System.String" name="get_Chars" sig="(I)C" />
+				  <ret />
+          <label name="throw" />
+					<newobj class="java.lang.StringIndexOutOfBoundsException" name="&lt;init&gt;" sig="()V" />
+					<throw />
 				</body>
 			</method>
 			<method name="substring" sig="(II)Ljava.lang.String;" modifiers="public">
@@ -454,19 +450,58 @@
 					<ret />
 				</body>
 			</method>
-			<method name="indexOf" sig="(II)I" modifiers="public">
+			<method name="indexOf" sig="(II)I" modifiers="public" nonullcheck="true">
 				<parameter name="ch" />
 				<parameter name="fromIndex" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)I" />
+        <body>
+          <!--
+    			for (int i = fromIndex < 0 ? 0 : fromIndex; i < s.Length; i++)
+			    {
+				    if (this[i] == ch)
+				    {
+					    return i;
+				    }
+			    }
+			    return -1;
+          -->
+          <ldarg_2 />
+          <stloc name="i" type="System.Int32" />
+          <ldc_i4_0 />
+          <ldloc name="i" />
+          <blt name="start_loop" />
+          <ldc_i4_0 />
+          <stloc name="i" type="System.Int32" />
+          <br name="start_loop" />
+          <label name="next" />
+          <ldarg_0 />
+          <ldloc name="i" />
+          <callvirt type="System.String" name="get_Chars" sig="(I)C" />
+          <ldarg_1 />
+          <beq name="ret_i" />
+          <ldloc name="i" />
+          <ldc_i4_1 />
+          <add />
+          <stloc name="i" type="System.Int32" />
+          <label name="start_loop" />
+          <ldloc name="i" />
+          <ldarg_0 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <blt name="next" />
+          <ldc_i4_m1 />
+          <ret />
+          <label name="ret_i" />
+          <ldloc name="i" />
+          <ret />
+        </body>
 			</method>
 			<method name="indexOf" sig="(Ljava.lang.String;)I" modifiers="public">
 				<parameter name="str" />
-				<redirect name="IndexOf" />
-			</method>
+        <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
+      </method>
 			<method name="indexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
 				<parameter name="str" />
 				<parameter name="fromIndex" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;I)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
 			</method>
 			<method name="lastIndexOf" sig="(I)I" modifiers="public">
 				<parameter name="ch" />
@@ -490,12 +525,12 @@
 			</method>
 			<method name="lastIndexOf" sig="(Ljava.lang.String;)I" modifiers="public">
 				<parameter name="str" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
 			</method>
 			<method name="lastIndexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
 				<parameter name="str" />
 				<parameter name="fromIndex" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;I)I" />
+				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
 			</method>
 			<method name="toCharArray" sig="()[C" modifiers="public">
 				<redirect name="ToCharArray" />
@@ -507,19 +542,173 @@
 				<parameter name="dstBegin" />
 				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II[CI)V" />
 			</method>
-			<method name="startsWith" sig="(Ljava.lang.String;)Z" modifiers="public">
+			<method name="startsWith" sig="(Ljava.lang.String;)Z" modifiers="public" nonullcheck="true">
 				<parameter name="prefix" />
-				<redirect name="StartsWith" />
-			</method>
-			<method name="startsWith" sig="(Ljava.lang.String;I)Z" modifiers="public">
+        <body>
+          <!--
+			    if (this.Length >= prefix.Length)
+			    {
+				    for (int i = 0; i < prefix.Length; i++)
+				    {
+					    if (this[i] != prefix[i])
+					    {
+						    return false;
+					    }
+				    }
+				    return true;
+			    }
+			    return false;
+          -->
+          <ldarg_0 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <ldarg_1 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <blt name="ret_false" />
+          <ldc_i4_0 />
+          <stloc name="i" type="System.Int32" />
+          <br name="start_loop" />
+          <label name="next" />
+          <ldarg_0 />
+          <ldloc name="i" />
+          <callvirt type="System.String" name="get_Chars" sig="(I)C" />
+          <ldarg_1 />
+          <ldloc name="i" />
+          <callvirt type="System.String" name="get_Chars" sig="(I)C" />
+          <bne_un name="ret_false" />
+          <ldloc name="i" />
+          <ldc_i4_1 />
+          <add />
+          <stloc name="i" type="System.Int32" />
+          <label name="start_loop" />
+          <ldloc name="i" />
+          <ldarg_1 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <blt name="next" />
+          <ldc_i4_1 />
+          <ret />
+          <label name="ret_false" />
+          <ldc_i4_0 />
+          <ret />
+        </body>
+      </method>
+			<method name="startsWith" sig="(Ljava.lang.String;I)Z" modifiers="public" nonullcheck="true">
 				<parameter name="prefix" />
 				<parameter name="toffset" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;Ljava.lang.String;I)Z" />
-			</method>
-			<method name="endsWith" sig="(Ljava.lang.String;)Z" modifiers="public">
+        <body>
+          <!--
+			    if (toffset >= 0
+             && toffset <= this.Length
+             && this.Length - toffset >= prefix.Length)
+			    {
+				    for (int i = 0; i < prefix.Length; i++)
+				    {
+					    if (this[i + toffset] != prefix[i])
+					    {
+						    return false;
+					    }
+				    }
+				    return true;
+			    }
+			    return false;
+          -->
+          <ldarg_0 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <ldarg_2 />
+          <blt_un name="ret_false" />
+          <ldarg_0 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <ldarg_2 />
+          <sub />
+          <ldarg_1 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <blt name="ret_false" />
+          <ldc_i4_0 />
+          <stloc name="i" type="System.Int32" />
+          <br name="start_loop" />
+          <label name="next" />
+          <ldarg_0 />
+          <ldloc name="i" />
+          <ldarg_2 />
+          <add />
+          <callvirt type="System.String" name="get_Chars" sig="(I)C" />
+          <ldarg_1 />
+          <ldloc name="i" />
+          <callvirt type="System.String" name="get_Chars" sig="(I)C" />
+          <bne_un name="ret_false" />
+          <ldloc name="i" />
+          <ldc_i4_1 />
+          <add />
+          <stloc name="i" type="System.Int32" />
+          <label name="start_loop" />
+          <ldloc name="i" />
+          <ldarg_1 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <blt name="next" />
+          <ldc_i4_1 />
+          <ret />
+          <label name="ret_false" />
+          <ldc_i4_0 />
+          <ret />
+        </body>
+      </method>
+			<method name="endsWith" sig="(Ljava.lang.String;)Z" modifiers="public" nonullcheck="true">
 				<parameter name="suffix" />
-				<redirect name="EndsWith" />
-			</method>
+        <body>
+          <!--
+			    int j = this.Length - suffix.Length;
+			    if (j >= 0)
+			    {
+				    for (int i = 0; i < suffix.Length; i++)
+				    {
+					    if (this[j++] != suffix[i])
+					    {
+						    return false;
+					    }
+				    }
+				    return true;
+			    }
+			    return false;
+          -->
+          <ldarg_0 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <ldarg_1 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <sub />
+          <stloc name="j" type="System.Int32" />
+          <ldloc name="j" />
+          <ldc_i4_0 />
+          <blt name="ret_false" />
+          <ldc_i4_0 />
+          <stloc name="i" type="System.Int32" />
+          <br name="start_loop" />
+          <label name="next" />
+          <ldarg_0 />
+          <ldloc name="j" />
+          <dup />
+          <ldc_i4_1 />
+          <add />
+          <stloc name="j" type="System.Int32" />
+          <callvirt type="System.String" name="get_Chars" sig="(I)C" />
+          <ldarg_1 />
+          <ldloc name="i" />
+          <callvirt type="System.String" name="get_Chars" sig="(I)C" />
+          <bne_un name="ret_false" />
+          <ldloc name="i" />
+          <ldc_i4_1 />
+          <add />
+          <stloc name="i" type="System.Int32" />
+          <label name="start_loop" />
+          <ldloc name="i" />
+          <ldarg_1 />
+          <callvirt type="System.String" name="get_Length" sig="()I" />
+          <blt name="next" />
+          <ldc_i4_1 />
+          <ret />
+          <label name="ret_false" />
+          <ldc_i4_0 />
+          <ret />
+        </body>
+      </method>
 			<method name="toUpperCase" sig="()Ljava.lang.String;" modifiers="public">
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
 			</method>

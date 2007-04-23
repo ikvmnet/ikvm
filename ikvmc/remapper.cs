@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -432,6 +432,24 @@ namespace IKVM.Internal.MapXml
 	public sealed class Br : Branch
 	{
 		public Br() : base(OpCodes.Br)
+		{
+		}
+	}
+
+	[XmlType("beq")]
+	public sealed class Beq : Branch
+	{
+		public Beq()
+			: base(OpCodes.Beq)
+		{
+		}
+	}
+
+	[XmlType("bne_un")]
+	public sealed class Bne_Un : Branch
+	{
+		public Bne_Un()
+			: base(OpCodes.Bne_Un)
 		{
 		}
 	}
@@ -912,6 +930,15 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("sub")]
+	public sealed class Sub : Simple
+	{
+		public Sub()
+			: base(OpCodes.Sub)
+		{
+		}
+	}
+
 	[XmlType("mul")]
 	public sealed class Mul : Simple
 	{
@@ -1053,6 +1080,8 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(BrFalse))]
 		[XmlElement(typeof(BrTrue))]
 		[XmlElement(typeof(Br))]
+		[XmlElement(typeof(Beq))]
+		[XmlElement(typeof(Bne_Un))]
 		[XmlElement(typeof(Bge_Un))]
 		[XmlElement(typeof(Ble_Un))]
 		[XmlElement(typeof(Blt))]
@@ -1101,6 +1130,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Ldlen))]
 		[XmlElement(typeof(ExceptionBlock))]
 		[XmlElement(typeof(Add))]
+		[XmlElement(typeof(Sub))]
 		[XmlElement(typeof(Mul))]
 		[XmlElement(typeof(Unaligned))]
 		[XmlElement(typeof(Cpblk))]
@@ -1232,6 +1262,8 @@ namespace IKVM.Internal.MapXml
 		public MethodAttributes MethodAttributes;
 		[XmlAttribute("type")]
 		public string Type;
+		[XmlAttribute("nonullcheck")]
+		public bool NoNullCheck;
 		[XmlElement("parameter")]
 		public Param[] Params;
 		public InstructionList body;
