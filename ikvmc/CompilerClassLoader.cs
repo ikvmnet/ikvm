@@ -1092,7 +1092,7 @@ namespace IKVM.Internal
 						{
 							// we're going to be calling the overridden version, so we don't need the null check
 						}
-						else
+						else if(!m.NoNullCheck)
 						{
 							ilgen.Emit(OpCodes.Ldarg_0);
 							EmitHelper.NullCheck(ilgen);
