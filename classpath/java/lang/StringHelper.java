@@ -432,7 +432,7 @@ final class StringHelper
         cli.System.String cliStr = (cli.System.String)(Object)s;
         char firstChar = o.charAt(0);
         // Java allows fromIndex to both below zero or above the length of the string, .NET doesn't
-        int index = Math.max(0, Math.min(slen - olen, fromIndex - olen + 1));
+        int index = Math.max(0, Math.min(slen - olen, fromIndex));
         while(index > 0)
         {
             if(cli.System.String.CompareOrdinal(s, index, o, 0, olen) == 0)
