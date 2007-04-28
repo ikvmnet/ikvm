@@ -156,6 +156,7 @@ public final class PlainSocketImpl extends SocketImpl
             if(false) throw new cli.System.ObjectDisposedException("");
             socket.Bind(new IPEndPoint(getAddressFromInetAddress(addr), port));
             this.address = addr;
+            this.localport = ((IPEndPoint)socket.get_LocalEndPoint()).get_Port();
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
@@ -358,7 +359,8 @@ public final class PlainSocketImpl extends SocketImpl
             {
                 throw new SocketTimeoutException();
             }
-            return socket.Receive(buf, offset, len, SocketFlags.wrap(SocketFlags.None));
+            int read = socket.Receive(buf, offset, len, SocketFlags.wrap(SocketFlags.None));
+            return read == 0 ? -1 : read;
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
@@ -601,10 +603,7 @@ public final class PlainSocketImpl extends SocketImpl
             }
             public int read(byte[] buf, int offset, int len) throws IOException 
             {
-                int bytes_read = PlainSocketImpl.this.read(buf, offset, len);
-                if (bytes_read == 0)
-                    return -1;
-                return bytes_read;
+                return PlainSocketImpl.this.read(buf, offset, len);
             }
         };
     }
