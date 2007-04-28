@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,6 +28,7 @@ import ikvm.internal.Util;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NioServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -68,10 +69,6 @@ public final class SocketChannelImpl extends SocketChannel implements VMThread.I
     {
         super(provider);
         this.impl = impl;
-        if (connected)
-        {
-            state = CONNECTED;
-        }
         socket = new Socket(impl)
         {
             public void connect(SocketAddress endpoint) throws IOException
@@ -95,7 +92,12 @@ public final class SocketChannelImpl extends SocketChannel implements VMThread.I
                 return SocketChannelImpl.this;
             }
         };
-    }
+		if (connected)
+		{
+			state = CONNECTED;
+			NioServerSocket.setFlags(socket);
+		}
+	}
   
     protected void implCloseSelectableChannel() throws IOException
     {
@@ -348,14 +350,17 @@ public final class SocketChannelImpl extends SocketChannel implements VMThread.I
             {
                 byte[] buf = dst.array();
                 int len = implRead(buf, dst.arrayOffset() + dst.position(), dst.remaining());
-                dst.position(dst.position() + len);
+				if (len > 0)
+				{
+					dst.position(dst.position() + len);
+				}
                 return len;
             }
             else
             {
                 byte[] buf = new byte[dst.remaining()];
                 int len = implRead(buf, 0, buf.length);
-                dst.put(buf, 0, len);
+				dst.put(buf, 0, len);
                 return len;
             }
         }
@@ -381,6 +386,10 @@ public final class SocketChannelImpl extends SocketChannel implements VMThread.I
                 if (size > 0)
                 {
                     int read = read(dsts[i + offset]);
+					if (read < 0)
+					{
+						break;
+					}
                     totalRead += read;
                     if (read < size || available() == 0)
                     {
