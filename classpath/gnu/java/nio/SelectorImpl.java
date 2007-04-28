@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -365,6 +365,10 @@ public final class SelectorImpl extends AbstractSelector implements VMThread.Int
             result = new SelectionKeyImpl(ch, this, ((DatagramChannelImpl)ch).getSocket());
         else if (ch instanceof ServerSocketChannelImpl)
             result = new SelectionKeyImpl(ch, this, ((ServerSocketChannelImpl)ch).getSocket());
+        else if (ch instanceof PipeImpl.SourceChannelImpl)
+            result = new SelectionKeyImpl(ch, this, ((PipeImpl.SourceChannelImpl)ch).getSocket());
+        else if (ch instanceof PipeImpl.SinkChannelImpl)
+            result = new SelectionKeyImpl(ch, this, ((PipeImpl.SinkChannelImpl)ch).getSocket());
         else
             throw new InternalError("No known channel type");
 
