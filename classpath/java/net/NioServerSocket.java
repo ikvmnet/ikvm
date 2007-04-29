@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -69,4 +69,10 @@ public final class NioServerSocket extends ServerSocket
     {
         impl.accept(_impl);
     }
+
+	public static void setFlags(Socket sock)
+	{
+		sock.implCreated = true;
+		sock.bound = true;
+	}
 }
