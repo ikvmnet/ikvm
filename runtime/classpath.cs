@@ -447,6 +447,11 @@ namespace IKVM.NativeCode.java
 					// I doubt that this is fully correct, but since we don't implement FP properly,
 					// we can probably get away with this as well.
 					double d = double.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
+					if(d == 0.0 && (s == "4.9E-324" || s == "4.9e-324"))
+					{
+						// HACK special support for Double.MIN_VALUE
+						return sign ? -double.Epsilon : double.Epsilon;
+					}
 					return sign ? -d : d;
 				}
 				catch(OverflowException)

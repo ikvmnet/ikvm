@@ -493,6 +493,10 @@ public static void append(StringBuffer s, double d)
       i = i%100 >= 50 ? (i/100) + 1 : i/100;
       appendFractDigits(s, i,7);
     }
+    else if (d == Double.MIN_VALUE)
+      s.append("4.9E-324");
+    else if (d == Double.MAX_VALUE)
+      s.append("1.7976931348623157E308");
     else
     {
       int magnitude = magnitude(d);
