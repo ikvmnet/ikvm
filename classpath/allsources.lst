@@ -514,6 +514,7 @@
 ../../classpath/gnu/java/awt/peer/NativeEventLoopRunningEvent.java
 ../../classpath/gnu/java/awt/peer/swing/SwingButtonPeer.java
 ../../classpath/gnu/java/awt/peer/swing/SwingCanvasPeer.java
+../../classpath/gnu/java/awt/peer/swing/SwingCheckboxPeer.java
 ../../classpath/gnu/java/awt/peer/swing/SwingComponent.java
 ../../classpath/gnu/java/awt/peer/swing/SwingComponentPeer.java
 ../../classpath/gnu/java/awt/peer/swing/SwingContainerPeer.java
