@@ -205,7 +205,35 @@ namespace IKVM.Internal
 					{
 						f.SetEffectivelyFinal();
 					}
-					type = DefineClass(f, null);
+					try
+					{
+						type = DefineClass(f, null);
+					}
+					catch (ClassFormatError x)
+					{
+						StaticCompiler.IssueMessage(Message.ClassFormatError, name, x.Message);
+						return null;
+					}
+					catch (IllegalAccessError x)
+					{
+						StaticCompiler.IssueMessage(Message.IllegalAccessError, name, x.Message);
+						return null;
+					}
+					catch (VerifyError x)
+					{
+						StaticCompiler.IssueMessage(Message.VerificationError, name, x.Message);
+						return null;
+					}
+					catch (NoClassDefFoundError x)
+					{
+						StaticCompiler.IssueMessage(Message.NoClassDefFoundError, name, x.Message);
+						return null;
+					}
+					catch (RetargetableJavaException x)
+					{
+						StaticCompiler.IssueMessage(Message.GenericUnableToCompileError, name, x.GetType().Name, x.Message);
+						return null;
+					}
 				}
 			}
 			return type;
@@ -2364,50 +2392,27 @@ namespace IKVM.Internal
 			ArrayList allwrappers = new ArrayList();
 			foreach(string s in new ArrayList(h.Keys))
 			{
-				try
+				TypeWrapper wrapper = loader.LoadClassByDottedNameFast(s);
+				if(wrapper != null)
 				{
-					TypeWrapper wrapper = loader.LoadClassByDottedNameFast(s);
-					if(wrapper != null)
+					if(wrapper.GetClassLoader() != loader)
 					{
-						if(wrapper.GetClassLoader() != loader)
+						if(!(wrapper.GetClassLoader() is GenericClassLoader))
 						{
-							if(!(wrapper.GetClassLoader() is GenericClassLoader))
-							{
-								StaticCompiler.IssueMessage(Message.SkippingReferencedClass, s, ((AssemblyClassLoader)wrapper.GetClassLoader()).Assembly.FullName);
-							}
-							continue;
+							StaticCompiler.IssueMessage(Message.SkippingReferencedClass, s, ((AssemblyClassLoader)wrapper.GetClassLoader()).Assembly.FullName);
 						}
-						if(map == null)
-						{
-							wrapper.Finish();
-						}
-						int pos = wrapper.Name.LastIndexOf('.');
-						if(pos != -1)
-						{
-							loader.packages[wrapper.Name.Substring(0, pos)] = "";
-						}
-						allwrappers.Add(wrapper);
+						continue;
 					}
-				}
-				catch(ClassFormatError x)
-				{
-					StaticCompiler.IssueMessage(Message.ClassFormatError, s, x.Message);
-				}
-				catch(IllegalAccessError x)
-				{
-					StaticCompiler.IssueMessage(Message.IllegalAccessError, s, x.Message);
-				}
-				catch(VerifyError x)
-				{
-					StaticCompiler.IssueMessage(Message.VerificationError, s, x.Message);
-				}
-				catch(NoClassDefFoundError x)
-				{
-					StaticCompiler.IssueMessage(Message.NoClassDefFoundError, s, x.Message);
-				}
-				catch(RetargetableJavaException x)
-				{
-					StaticCompiler.IssueMessage(Message.GenericUnableToCompileError, s, x.GetType().Name, x.Message);
+					if(map == null)
+					{
+						wrapper.Finish();
+					}
+					int pos = wrapper.Name.LastIndexOf('.');
+					if(pos != -1)
+					{
+						loader.packages[wrapper.Name.Substring(0, pos)] = "";
+					}
+					allwrappers.Add(wrapper);
 				}
 			}
 			if(options.mainClass != null)
