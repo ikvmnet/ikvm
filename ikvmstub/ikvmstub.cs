@@ -24,10 +24,9 @@
 using System;
 using System.Reflection;
 using System.IO;
-using System.Text;
 using System.Collections;
-using IKVM.Attributes;
 using java.util.zip;
+using java.lang.reflect;
 
 public class NetExp
 {
@@ -124,7 +123,6 @@ public class NetExp
 #if WHIDBEY
 	private static Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
 	{
-		//Console.WriteLine("Resolve: " + args.Name);
 		foreach(Assembly a in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
 		{
 			if(args.Name.StartsWith(a.GetName().Name + ", "))
@@ -149,51 +147,53 @@ public class NetExp
 	}
 #endif
 
-	private static void WriteClass(string name, byte[] buf)
+	private static void WriteClass(java.lang.Class c)
 	{
-		zipFile.putNextEntry(new ZipEntry(name));
+		string name = c.getName().Replace('.', '/');
+		java.io.InputStream inp = c.getResourceAsStream("/" + name + ".class");
+		if(inp == null)
+		{
+			Console.Error.WriteLine("Class {0} not found", name);
+			return;
+		}
+		byte[] buf = new byte[inp.available()];
+		if(inp.read(buf) != buf.Length || inp.read() != -1)
+		{
+			throw new NotImplementedException();
+		}
+		zipFile.putNextEntry(new ZipEntry(name + ".class"));
 		zipFile.write(buf, 0, buf.Length);
 	}
 
 	private static void ProcessAssembly(Assembly assembly)
 	{
-		foreach(Type t in assembly.GetTypes())
+		foreach(System.Type t in assembly.GetTypes())
 		{
 			if(t.IsPublic)
 			{
 				java.lang.Class c;
-				try
-				{
-					// NOTE we use GetClassFromTypeHandle instead of GetFriendlyClassFromType, to make sure
-					// we don't get the remapped types when we're processing System.Object, System.String,
-					// System.Throwable and System.IComparable.
-					// NOTE we can't use GetClassFromTypeHandle for ReflectionOnly assemblies
-					// (because Type.TypeHandle is not supported by ReflectionOnly types), but this
-					// isn't a problem because mscorlib is never loaded in the ReflectionOnly context.
+				// NOTE we use getClassFromTypeHandle instead of getFriendlyClassFromType, to make sure
+				// we don't get the remapped types when we're processing System.Object, System.String,
+				// System.Throwable and System.IComparable.
+				// NOTE we can't use getClassFromTypeHandle for ReflectionOnly assemblies
+				// (because Type.TypeHandle is not supported by ReflectionOnly types), but this
+				// isn't a problem because mscorlib is never loaded in the ReflectionOnly context.
 #if WHIDBEY
-					if(assembly.ReflectionOnly)
-					{
-						c = ikvm.runtime.Util.getFriendlyClassFromType(t);
-					}
-					else
-					{
-						c = ikvm.runtime.Util.getClassFromTypeHandle(t.TypeHandle);
-					}
-#else
-					c = ikvm.runtime.Util.getClassFromTypeHandle(t.TypeHandle);
-#endif
-					if (c == null)
-					{
-						Console.WriteLine("Skipping: " + t.FullName);
-						continue;
-					}
-				}
-				catch(java.lang.ClassNotFoundException)
+				if(assembly.ReflectionOnly)
 				{
-					// types that IKVM doesn't support don't show up
-					continue;
+					c = ikvm.runtime.Util.getFriendlyClassFromType(t);
 				}
-				AddToExportList(c);
+				else
+				{
+					c = ikvm.runtime.Util.getClassFromTypeHandle(t.TypeHandle);
+				}
+#else
+				c = ikvm.runtime.Util.getClassFromTypeHandle(t.TypeHandle);
+#endif
+				if(c != null)
+				{
+					AddToExportList(c);
+				}
 			}
 		}
 		bool keepGoing;
@@ -207,6 +207,7 @@ public class NetExp
 					keepGoing = true;
 					done.Add(c.getName(), null);
 					ProcessClass(c);
+					WriteClass(c);
 				}
 			}
 		} while(keepGoing);
@@ -224,7 +225,7 @@ public class NetExp
 	private static bool IsGenericType(java.lang.Class c)
 	{
 #if WHIDBEY
-		Type t = ikvm.runtime.Util.getInstanceTypeFromClass(c);
+		System.Type t = ikvm.runtime.Util.getInstanceTypeFromClass(c);
 		while(t == null && c.getDeclaringClass() != null)
 		{
 			// dynamic only inner class, so we look at the declaring class
@@ -237,126 +238,71 @@ public class NetExp
 #endif
 	}
 
+	private static void AddToExportListIfNeeded(java.lang.Class c)
+	{
+		if(IsGenericType(c) || (c.getModifiers() & Modifier.PUBLIC) == 0)
+		{
+			AddToExportList(c);
+		}
+	}
+
+	private static void AddToExportListIfNeeded(java.lang.Class[] classes)
+	{
+		foreach(java.lang.Class c in classes)
+		{
+			AddToExportListIfNeeded(c);
+		}
+	}
+
 	private static void ProcessClass(java.lang.Class c)
 	{
-		string name = c.getName().Replace('.', '/');
-		if(c.getSuperclass() != null)
+		java.lang.Class superclass = c.getSuperclass();
+		if(superclass != null)
 		{
-			// if the base class isn't public, we still need to export it (!)
-			if(!java.lang.reflect.Modifier.isPublic(c.getSuperclass().getModifiers()))
-			{
-				AddToExportList(c.getSuperclass());
-			}
+			AddToExportListIfNeeded(c.getSuperclass());
 		}
-		java.lang.Class[] interfaces = c.getInterfaces();
-		for(int i = 0; i < interfaces.Length; i++)
+		foreach(java.lang.Class iface in c.getInterfaces())
 		{
-			if(IsGenericType(interfaces[i])
-				|| !java.lang.reflect.Modifier.isPublic(interfaces[i].getModifiers()))
-			{
-				AddToExportList(interfaces[i]);
-			}
+			AddToExportListIfNeeded(iface);
 		}
 		java.lang.Class outerClass = c.getDeclaringClass();
 		if(outerClass != null)
 		{
 			AddToExportList(outerClass);
 		}
-		java.lang.Class[] innerClasses = c.getDeclaredClasses();
-		for(int i = 0; i < innerClasses.Length; i++)
+		foreach(java.lang.Class innerClass in c.getDeclaredClasses())
 		{
-			Modifiers mods = (Modifiers)innerClasses[i].getModifiers();
-			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
+			int mods = innerClass.getModifiers();
+			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
 			{
-				AddToExportList(innerClasses[i]);
+				AddToExportList(innerClass);
 			}
 		}
-		java.lang.reflect.Constructor[] constructors = c.getDeclaredConstructors();
-		for(int i = 0; i < constructors.Length; i++)
+		foreach(Constructor constructor in c.getDeclaredConstructors())
 		{
-			Modifiers mods = (Modifiers)constructors[i].getModifiers();
-			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
+			int mods = constructor.getModifiers();
+			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
 			{
-				// TODO what happens if one of the argument types is non-public?
-				java.lang.Class[] args = constructors[i].getParameterTypes();
-				foreach(java.lang.Class arg in args)
-				{
-					// TODO if arg is not public, add it to the export list as well
-					if(IsGenericType(arg))
-					{
-						AddToExportList(arg);
-					}
-				}
+				AddToExportListIfNeeded(constructor.getParameterTypes());
 			}
 		}
-		java.lang.reflect.Method[] methods = c.getDeclaredMethods();
-		for(int i = 0; i < methods.Length; i++)
+		foreach(Method method in c.getDeclaredMethods())
 		{
-			// FXBUG (?) .NET reflection on java.lang.Object returns toString() twice!
-			// I didn't want to add the work around to CompiledTypeWrapper, so it's here.
-			if((c.getName() == "java.lang.Object" || c.getName() == "java.lang.Throwable")
-				&& methods[i].getName() == "toString")
+			int mods = method.getModifiers();
+			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
 			{
-				bool found = false;
-				for(int j = 0; j < i; j++)
-				{
-					if(methods[j].getName() == "toString")
-					{
-						found = true;
-						break;
-					}
-				}
-				if(found)
-				{
-					continue;
-				}
-			}
-			Modifiers mods = (Modifiers)methods[i].getModifiers();
-			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
-			{
-				// TODO what happens if one of the argument types (or the return type) is non-public?
-				java.lang.Class[] args = methods[i].getParameterTypes();
-				foreach(java.lang.Class arg in args)
-				{
-					// TODO if arg is not public, add it to the export list as well
-					if(IsGenericType(arg))
-					{
-						AddToExportList(arg);
-					}
-				}
-				java.lang.Class retType = methods[i].getReturnType();
-				// TODO if retType is not public, add it to the export list as well
-				if(IsGenericType(retType))
-				{
-					AddToExportList(retType);
-				}
+				AddToExportListIfNeeded(method.getParameterTypes());
+				AddToExportListIfNeeded(method.getReturnType());
 			}
 		}
-		java.lang.reflect.Field[] fields = c.getDeclaredFields();
-		for(int i = 0; i < fields.Length; i++)
+		foreach(Field field in c.getDeclaredFields())
 		{
-			Modifiers mods = (Modifiers)fields[i].getModifiers();
-			if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
+			int mods = field.getModifiers();
+			if((mods & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0)
 			{
-				java.lang.Class fieldType = fields[i].getType();
-				if(IsGenericType(fieldType) || (fieldType.getModifiers() & (int)Modifiers.Public) == 0)
-				{
-					AddToExportList(fieldType);
-				}
+				AddToExportListIfNeeded(field.getType());
 			}
 		}
-		java.io.InputStream inp = c.getResourceAsStream("/" + name + ".class");
-		if(inp == null)
-		{
-			Console.Error.WriteLine("Class {0} not found", name);
-			return;
-		}
-		byte[] buf = new byte[inp.available()];
-		if(inp.read(buf) != buf.Length || inp.read() != -1)
-		{
-			throw new NotImplementedException();
-		}
-		WriteClass(name + ".class", buf);
 	}
 
 	private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
