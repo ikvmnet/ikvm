@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2192,12 +2192,21 @@ class MethodAnalyzer
 							case NormalizedByteCode.__dup_x2:
 							{
 								TypeWrapper value1 = s.PopType();
-								TypeWrapper value2 = s.PopType();
-								TypeWrapper value3 = s.PopType();
-								s.PushType(value1);
-								s.PushType(value3);
-								s.PushType(value2);
-								s.PushType(value1);
+								TypeWrapper value2 = s.PopAnyType();
+								if(value2.IsWidePrimitive)
+								{
+									s.PushType(value1);
+									s.PushType(value2);
+									s.PushType(value1);
+								}
+								else
+								{
+									TypeWrapper value3 = s.PopType();
+									s.PushType(value1);
+									s.PushType(value3);
+									s.PushType(value2);
+									s.PushType(value1);
+								}
 								break;
 							}
 							case NormalizedByteCode.__dup2_x2:
