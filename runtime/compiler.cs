@@ -131,6 +131,7 @@ class Compiler
 	private static MethodInfo getTypeFromHandleMethod;
 	private static MethodInfo monitorEnterMethod;
 	private static MethodInfo monitorExitMethod;
+	private static MethodInfo keepAliveMethod;
 	private static MethodWrapper getClassFromTypeHandle;
 	private static TypeWrapper java_lang_Object;
 	private static TypeWrapper java_lang_Class;
@@ -151,12 +152,14 @@ class Compiler
 	private LocalBuilder[] tempLocals = new LocalBuilder[32];
 	private Hashtable invokespecialstubcache;
 	private bool debug;
+	private bool keepAlive;
 
 	static Compiler()
 	{
 		getTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(RuntimeTypeHandle) }, null);
 		monitorEnterMethod = typeof(System.Threading.Monitor).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		monitorExitMethod = typeof(System.Threading.Monitor).GetMethod("Exit", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
+		keepAliveMethod = typeof(System.GC).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object) }, null);
 		java_lang_Object = CoreClasses.java.lang.Object.Wrapper;
 		java_lang_Throwable = CoreClasses.java.lang.Throwable.Wrapper;
 		cli_System_Object = DotNetTypeWrapper.GetWrapperFromDotNetType(typeof(System.Object));
@@ -233,6 +236,11 @@ class Compiler
 		if(m.LineNumberTableAttribute != null && classLoader.EmitStackTraceInfo)
 		{
 			this.lineNumbers = new LineNumberTableAttribute.LineNumberWriter(m.LineNumberTableAttribute.Length);
+		}
+		if(ReferenceEquals(mw.Name, StringConstants.INIT))
+		{
+			MethodWrapper finalize = clazz.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
+			keepAlive = finalize != null && finalize.DeclaringType != java_lang_Object;
 		}
 
 		Profiler.Enter("MethodAnalyzer");
@@ -1497,6 +1505,61 @@ class Compiler
 						}
 						break;
 					}
+				}
+			}
+
+			if(keepAlive)
+			{
+				// JSR 133 specifies that a finalizer cannot run while the constructor is still in progress.
+				// This code attempts to implement that by adding calls to GC.KeepAlive(this) before return,
+				// backward branches and throw instructions. I don't think it is perfect, you may be able to
+				// fool it by calling a trivial method that loops forever which the CLR JIT will then inline
+				// and see that control flow doesn't continue and hence the lifetime of "this" will be
+				// shorter than the constructor.
+				switch(instr.NormalizedOpCode)
+				{
+					case NormalizedByteCode.__return:
+					case NormalizedByteCode.__areturn:
+					case NormalizedByteCode.__ireturn:
+					case NormalizedByteCode.__lreturn:
+					case NormalizedByteCode.__freturn:
+					case NormalizedByteCode.__dreturn:
+						ilGenerator.Emit(OpCodes.Ldarg_0);
+						ilGenerator.Emit(OpCodes.Call, keepAliveMethod);
+						break;
+					case NormalizedByteCode.__if_icmpeq:
+					case NormalizedByteCode.__if_icmpne:
+					case NormalizedByteCode.__if_icmple:
+					case NormalizedByteCode.__if_icmplt:
+					case NormalizedByteCode.__if_icmpge:
+					case NormalizedByteCode.__if_icmpgt:
+					case NormalizedByteCode.__ifle:
+					case NormalizedByteCode.__iflt:
+					case NormalizedByteCode.__ifge:
+					case NormalizedByteCode.__ifgt:
+					case NormalizedByteCode.__ifne:
+					case NormalizedByteCode.__ifeq:
+					case NormalizedByteCode.__ifnonnull:
+					case NormalizedByteCode.__ifnull:
+					case NormalizedByteCode.__if_acmpeq:
+					case NormalizedByteCode.__if_acmpne:
+					case NormalizedByteCode.__goto:
+						if(instr.Arg1 <= 0)
+						{
+							ilGenerator.Emit(OpCodes.Ldarg_0);
+							ilGenerator.Emit(OpCodes.Call, keepAliveMethod);
+						}
+						break;
+					case NormalizedByteCode.__athrow:
+					case NormalizedByteCode.__athrow_no_unmap:
+					case NormalizedByteCode.__lookupswitch:
+					case NormalizedByteCode.__tableswitch:
+						if(ma.GetLocalTypeWrapper(i, 0) != VerifierTypeWrapper.UninitializedThis)
+						{
+							ilGenerator.Emit(OpCodes.Ldarg_0);
+							ilGenerator.Emit(OpCodes.Call, keepAliveMethod);
+						}
+						break;
 				}
 			}
 
