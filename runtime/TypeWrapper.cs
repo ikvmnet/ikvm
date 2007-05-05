@@ -6840,7 +6840,7 @@ namespace IKVM.Internal
 				{
 					if(genericMetaData == null)
 					{
-						genericMetaData = new string[4];
+						genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
 					}
 					genericMetaData[0] = classFile.EnclosingMethod[0];
 					genericMetaData[1] = classFile.EnclosingMethod[1];
@@ -6850,7 +6850,7 @@ namespace IKVM.Internal
 				{
 					if(genericMetaData == null)
 					{
-						genericMetaData = new string[4];
+						genericMetaData = new string[classFile.Methods.Length + classFile.Fields.Length + 4];
 					}
 					genericMetaData[3] = classFile.GenericSignature;
 				}
