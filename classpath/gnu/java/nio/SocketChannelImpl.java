@@ -350,17 +350,20 @@ public final class SocketChannelImpl extends SocketChannel implements VMThread.I
             {
                 byte[] buf = dst.array();
                 int len = implRead(buf, dst.arrayOffset() + dst.position(), dst.remaining());
-				if (len > 0)
-				{
-					dst.position(dst.position() + len);
-				}
+		if (len > 0)
+		{
+		    dst.position(dst.position() + len);
+		}
                 return len;
             }
             else
             {
                 byte[] buf = new byte[dst.remaining()];
                 int len = implRead(buf, 0, buf.length);
-				dst.put(buf, 0, len);
+		if (len > 0)
+		{
+		    dst.put(buf, 0, len);
+		}
                 return len;
             }
         }
@@ -386,10 +389,10 @@ public final class SocketChannelImpl extends SocketChannel implements VMThread.I
                 if (size > 0)
                 {
                     int read = read(dsts[i + offset]);
-					if (read < 0)
-					{
-						break;
-					}
+		    if (read < 0)
+		    {
+			break;
+		    }
                     totalRead += read;
                     if (read < size || available() == 0)
                     {
