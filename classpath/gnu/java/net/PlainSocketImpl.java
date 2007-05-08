@@ -513,7 +513,7 @@ public final class PlainSocketImpl extends SocketImpl
                     return new Integer(-1);
                 }
                 case SocketOptions.SO_OOBINLINE:
-                    return new Integer(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline))));
+                    return Boolean.valueOf(CIL.unbox_int(socket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.OutOfBandInline))) != 0);
                 case SocketOptions.SO_TIMEOUT:
                     return new Integer(timeout);
                 default:
