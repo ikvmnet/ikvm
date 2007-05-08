@@ -54,6 +54,7 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl
                 AddressFamily.wrap(AddressFamily.InterNetwork), 
                 SocketType.wrap(SocketType.Dgram),
                 ProtocolType.wrap(ProtocolType.Udp));
+	    socket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast), 1);
         }
         catch(cli.System.Net.Sockets.SocketException x)
         {
