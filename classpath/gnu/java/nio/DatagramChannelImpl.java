@@ -104,12 +104,15 @@ public final class DatagramChannelImpl extends DatagramChannel
             throw new UnsupportedAddressTypeException();
 
         // HACK the .NET Socket class has no way to disconnect, so we simulate connected sockets
-        connectedTo = (InetSocketAddress)remote;
+	InetSocketAddress addr = (InetSocketAddress)remote;
+	socket.connect(addr.getAddress(), addr.getPort());
+        connectedTo = addr;
         return this;
     }
     
     public DatagramChannel disconnect() throws IOException
     {
+	socket.disconnect();
         connectedTo = null;
         return this;
     }
