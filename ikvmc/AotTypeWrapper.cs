@@ -99,9 +99,9 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void AddParameterAttributes(ClassFile.Method m, MethodBase method, ref ParameterBuilder[] pbs)
+		internal void AddXmlMapParameterAttributes(MethodBase method, string className, string methodName, string methodSig, ref ParameterBuilder[] pbs)
 		{
-			IKVM.Internal.MapXml.Param[] parameters = ((CompilerClassLoader)classLoader).GetXmlMapParameters(Name, m.Name, m.Signature);
+			IKVM.Internal.MapXml.Param[] parameters = ((CompilerClassLoader)classLoader).GetXmlMapParameters(className, methodName, methodSig);
 			if(parameters != null)
 			{
 				if(pbs == null)
@@ -109,20 +109,13 @@ namespace IKVM.Internal
 					// let's hope that the parameters array is the right length
 					pbs = GetParameterBuilders(method, parameters.Length, null);
 				}
-				if((m.Modifiers & Modifiers.VarArgs) != 0 && pbs.Length > 0)
+				for(int i = 0; i < pbs.Length; i++)
 				{
-					AttributeHelper.SetParamArrayAttribute(pbs[pbs.Length - 1]);
-				}
-				if(parameters != null)
-				{
-					for(int i = 0; i < pbs.Length; i++)
+					if(parameters[i].Attributes != null)
 					{
-						if(parameters[i].Attributes != null)
+						foreach(IKVM.Internal.MapXml.Attribute attr in parameters[i].Attributes)
 						{
-							foreach(IKVM.Internal.MapXml.Attribute attr in parameters[i].Attributes)
-							{
-								AttributeHelper.SetCustomAttribute(pbs[i], attr);
-							}
+							AttributeHelper.SetCustomAttribute(pbs[i], attr);
 						}
 					}
 				}
@@ -147,20 +140,7 @@ namespace IKVM.Internal
 			{
 				AttributeHelper.SetParamArrayAttribute(pbs[pbs.Length - 1]);
 			}
-			IKVM.Internal.MapXml.Param[] parameters = ((CompilerClassLoader)classLoader).GetXmlMapParameters(Name, mw.Name, mw.Signature);
-			if (parameters != null)
-			{
-				for(int i = 0; i < pbs.Length; i++)
-				{
-					if(parameters[i].Attributes != null)
-					{
-						foreach(IKVM.Internal.MapXml.Attribute attr in parameters[i].Attributes)
-						{
-							AttributeHelper.SetCustomAttribute(pbs[i], attr);
-						}
-					}
-				}
-			}
+			AddXmlMapParameterAttributes(method, Name, mw.Name, mw.Signature, ref pbs);
 		}
 
 		protected override bool EmitMapXmlMethodBody(CountingILGenerator ilgen, ClassFile f, ClassFile.Method m)

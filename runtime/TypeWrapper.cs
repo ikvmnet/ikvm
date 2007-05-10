@@ -4948,7 +4948,18 @@ namespace IKVM.Internal
 							parameterBuilders = GetParameterBuilders(mb, parameterNames.Length, parameterNames);
 						}
 #if STATIC_COMPILER
-						((AotTypeWrapper)wrapper).AddParameterAttributes(m, mb, ref parameterBuilders);
+						if((m.Modifiers & Modifiers.VarArgs) != 0)
+						{
+							if(parameterBuilders == null)
+							{
+								parameterBuilders = GetParameterBuilders(mb, methods[i].GetParameters().Length, null);
+							}
+							if(parameterBuilders.Length > 0)
+							{
+								AttributeHelper.SetParamArrayAttribute(parameterBuilders[parameterBuilders.Length - 1]);
+							}
+						}
+						((AotTypeWrapper)wrapper).AddXmlMapParameterAttributes(mb, classFile.Name, m.Name, m.Signature, ref parameterBuilders);
 #endif
 						ConstructorBuilder cb = mb as ConstructorBuilder;
 						MethodBuilder mBuilder = mb as MethodBuilder;
