@@ -23,9 +23,6 @@
  * have any questions.
  */
 
-/*IKVM*/
-// This file was modified for IKVM by Jeroen Frijters.
-
 package sun.misc;
 
 import sun.misc.FpUtils;
@@ -1424,9 +1421,7 @@ public class FloatingDecimal{
 		     * Lets face it. This is going to be
 		     * zero. Cut to the chase.
 		     */
-		    /*IKVM*/
-		    // HACK we use Double.longBitsToDouble(0) to work around .NET 2.0 x64 CLR JIT bug that optimized the expression to -0.0
-		    return (isNegative) ? -0.0 : Double.longBitsToDouble(0);
+		    return (isNegative)? -0.0 : 0.0;
 		}
 		if ( (exp&15) != 0 ){
 		    dValue /= small10pow[exp&15];
@@ -1460,9 +1455,7 @@ public class FloatingDecimal{
 			t = dValue * 2.0;
 			t *= tiny10pow[j];
 			if ( t == 0.0 ){
-			    /*IKVM*/
-			    // HACK we use Double.longBitsToDouble(0) to work around .NET 2.0 x64 CLR JIT bug that optimized the expression to -0.0
-			    return (isNegative)? -0.0 : Double.longBitsToDouble(0);
+			    return (isNegative)? -0.0 : 0.0;
 			}
 			t = Double.MIN_VALUE;
 		    }
@@ -1737,9 +1730,7 @@ public class FloatingDecimal{
 		 * Lets face it. This is going to be
 		 * zero. Cut to the chase.
 		 */
-		/*IKVM*/
-		// HACK we use Float.intBitsToFloat(0) to work around .NET 2.0 x64 CLR JIT bug that optimized the expression to -0.0
-		return (isNegative) ? -0.0f : Float.intBitsToFloat(0);
+		return (isNegative)? -0.0f : 0.0f;
 	    }
 
 	    /*
