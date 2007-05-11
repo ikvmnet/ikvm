@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003 Jeroen Frijters
+  Copyright (C) 2003, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,6 +24,8 @@
 
 package java.lang;
 
+import sun.misc.FloatingDecimal;
+
 final class VMFloat
 {
     static float intBitsToFloat(int v)
@@ -43,5 +45,15 @@ final class VMFloat
     static int floatToRawIntBits(float v)
     {
 	return cli.System.BitConverter.ToInt32(cli.System.BitConverter.GetBytes(v), 0);
+    }
+
+    static String toString(float f)
+    {
+	return new FloatingDecimal(f).toJavaFormatString();
+    }
+
+    static float parseFloat(String str)
+    {
+	return FloatingDecimal.readJavaFormatString(str).floatValue();
     }
 }

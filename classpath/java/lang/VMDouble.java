@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2003, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,8 +25,7 @@
 package java.lang;
 
 import cli.System.BitConverter;
-import cli.System.Globalization.CultureInfo;
-import ikvm.lang.CIL;
+import sun.misc.FloatingDecimal;
 
 final class VMDouble
 {
@@ -51,55 +50,12 @@ final class VMDouble
 
     static String toString(double d, boolean isFloat)
     {
-        if(isFloat)
-        {
-            float f = (float)d;
-            if(Float.isNaN(f))
-            {
-                return "NaN";
-            }
-            if(Float.isInfinite(f))
-            {
-                return f < 0f ? "-Infinity" : "Infinity";
-            }
-            if(f == 0f)
-            {
-                return BitConverter.DoubleToInt64Bits(d) < 0 ? "-0.0" : "0.0";
-            }
-            // TODO this is not correct, we need to use the Java algorithm of converting a float to string
-            // HACK really lame hack to approximate the Java behavior a little bit
-            String s = CIL.box_float(f).ToString(CultureInfo.get_InvariantCulture());
-            if(s.indexOf('.') == -1)
-            {
-                int e = s.indexOf('E');
-                if(e == -1)
-                {
-                    s += ".0";
-                }
-                else
-                {
-                    int plus = s.charAt(e + 1) == '+' ? 1 : 0;
-                    s = s.substring(0, e) + ".0E" + Integer.parseInt(s.substring(e + 1 + plus));
-                }
-            }
-            else
-            {
-                int e = s.indexOf('E');
-                if(e != -1)
-                {
-                    int plus = s.charAt(e + 1) == '+' ? 1 : 0;
-                    s = s.substring(0, e) + "E" + Integer.parseInt(s.substring(e + 1 + plus));
-                }
-            }
-            return s;
-        }
-        else
-        {
-            StringBuffer sb = new StringBuffer();
-            DoubleToString.append(sb, d);
-            return sb.toString();
-        }
+       assert !isFloat;
+       return new FloatingDecimal(d).toJavaFormatString();
     }
 
-    static native double parseDouble(String s);
+    static double parseDouble(String s)
+    {
+	return FloatingDecimal.readJavaFormatString(s).doubleValue();
+    }
 }

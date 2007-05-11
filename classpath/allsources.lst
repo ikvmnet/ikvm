@@ -5002,7 +5002,6 @@ ikvm/runtime/Startup.java
 ikvm/runtime/Util.java
 java/io/VMFile.java
 java/io/VMObjectInputStream.java
-java/lang/DoubleToString.java
 java/lang/ExceptionHelper.java
 java/lang/LibraryVMInterfaceImpl.java
 java/lang/management/VMManagementFactory.java
@@ -5041,6 +5040,10 @@ java/util/concurrent/atomic/AtomicReference.java
 java/util/concurrent/atomic/AtomicReferenceArray.java
 java/util/concurrent/locks/LockSupport.java
 java/util/VMTimeZone.java
+sun/misc/DoubleConsts.java
+sun/misc/FloatConsts.java
+sun/misc/FloatingDecimal.java
+sun/misc/FpUtils.java
 sun/misc/Ref.java
 sun/misc/Unsafe.java
 sun/reflect/Reflection.java

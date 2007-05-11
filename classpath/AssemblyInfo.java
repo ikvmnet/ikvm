@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006 Jeroen Frijters
+  Copyright (C) 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,9 +23,10 @@
 */
 
 @cli.System.Reflection.AssemblyCopyrightAttribute.Annotation(
-    "This software is licensed under the GNU General Public License + GNU Classpath exception.\r\n" +
+    "This software is licensed under the GNU General Public License version 2 + \"Classpath\" exception.\r\n" +
     "See http://www.gnu.org/software/classpath/license.html for details.\r\n" +
     "Copyright (C) 1998-2007 Free Software Foundation, Inc.\r\n" +
+    "Copyright (C) 1996-2007 Sun Microsystems, Inc.\r\n" +
     "Copyright (C) 2002-2007 Jeroen Frijters"
 )
 
