@@ -36,6 +36,8 @@ using java.net;
 using java.util.jar;
 using java.io;
 
+using Console = System.Console;
+
 public class Starter
 {
 	private class Timer
