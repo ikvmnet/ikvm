@@ -57,6 +57,16 @@ public final class Unsafe
         }
     }
 
+    public int fieldOffset(Field field)
+    {
+	synchronized(fields)
+	{
+	    int id = fields.size();
+	    fields.add(field.impl.fieldCookie);
+	    return id;
+	}
+    }
+
     public int arrayBaseOffset(Class c)
     {
         return 0;
@@ -306,4 +316,10 @@ public final class Unsafe
     {
         return getLongVolatile(obj, offset);
     }
+
+    public native void throwException(Throwable t);
+
+    public native void ensureClassInitialized(Class clazz);
+
+    public native Object allocateInstance(Class clazz) throws InstantiationException;
 }

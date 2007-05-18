@@ -25,6 +25,7 @@ package ikvm.runtime;
 
 import cli.System.Type;
 import cli.System.RuntimeTypeHandle;
+import sun.misc.Unsafe;
 
 public final class Util
 {
@@ -38,12 +39,7 @@ public final class Util
 
     public static native Class getFriendlyClassFromType(Type type);
 
-    public static Type getInstanceTypeFromClass(Class classObject)
-    {
-        return GetInstanceTypeFromTypeWrapper(VMClass.getWrapper(classObject));
-    }
-
-    private static native Type GetInstanceTypeFromTypeWrapper(Object wrapper);
+    public static native Type getInstanceTypeFromClass(Class classObject);
 
     //[HideFromJava]
     public static Throwable mapException(Throwable x)
@@ -53,6 +49,6 @@ public final class Util
 
     public static void throwException(cli.System.Exception x)
     {
-        VMClass.throwException(x);
+        Unsafe.getUnsafe().throwException(x);
     }
 }

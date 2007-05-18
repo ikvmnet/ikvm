@@ -267,10 +267,10 @@ namespace IKVM.NativeCode.java
 					TypeWrapper.FromClass(clazz).RunClassInit();
 				}
 
-				public static bool CheckAccess(object memberCookie, object instance, object callerTypeWrapper)
+				public static bool CheckAccess(object memberCookie, object instance, object callerClass)
 				{
 					MemberWrapper member = (MemberWrapper)memberCookie;
-					if(callerTypeWrapper != null)
+					if(callerClass != null)
 					{
 						TypeWrapper instanceTypeWrapper;
 						if(member.IsStatic || instance == null)
@@ -281,7 +281,7 @@ namespace IKVM.NativeCode.java
 						{
 							instanceTypeWrapper = IKVM.NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(instance);
 						}
-						return member.IsAccessibleFrom(member.DeclaringType, (TypeWrapper)callerTypeWrapper, instanceTypeWrapper);
+						return member.IsAccessibleFrom(member.DeclaringType, TypeWrapper.FromClass(callerClass), instanceTypeWrapper);
 					}
 					else
 					{
@@ -1571,9 +1571,9 @@ namespace IKVM.NativeCode.ikvm.@internal
 				return mb != null && AttributeHelper.IsDefined(mb, typeof(ObsoleteAttribute));
 			}
 
-			public static bool isClassDeprecated(object wrapper)
+			public static bool isClassDeprecated(object clazz)
 			{
-				Type type = ((TypeWrapper)wrapper).TypeAsTBD;
+				Type type = TypeWrapper.FromClass(clazz).TypeAsTBD;
 				// we need to check type for null, because ReflectionOnly
 				// generated delegate inner interfaces don't really exist
 				return type != null && AttributeHelper.IsDefined(type, typeof(ObsoleteAttribute));
@@ -1655,9 +1655,9 @@ namespace IKVM.NativeCode.ikvm.runtime
 			return wrapper.ClassObject;
 		}
 
-		public static Type GetInstanceTypeFromTypeWrapper(object wrapperObject)
+		public static Type getInstanceTypeFromClass(object clazz)
 		{
-			TypeWrapper wrapper = (TypeWrapper)wrapperObject;
+			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 			if(wrapper.IsDynamicOnly)
 			{
 				return null;
@@ -1667,6 +1667,42 @@ namespace IKVM.NativeCode.ikvm.runtime
 				return wrapper.TypeAsTBD;
 			}
 			return wrapper.TypeAsBaseType;
+		}
+	}
+}
+
+namespace IKVM.NativeCode.sun.misc
+{
+	public sealed class Unsafe
+	{
+		private Unsafe() { }
+
+		public static void throwException(object thisUnsafe, Exception x)
+		{
+			throw x;
+		}
+
+		public static void ensureClassInitialized(object thisUnsafe, object clazz)
+		{
+			TypeWrapper tw = TypeWrapper.FromClass(clazz);
+			if (!tw.IsArray)
+			{
+				tw.RunClassInit();
+			}
+		}
+
+		public static object allocateInstance(object thisUnsafe, object clazz)
+		{
+			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
+			try
+			{
+				wrapper.Finish();
+			}
+			catch (RetargetableJavaException x)
+			{
+				throw x.ToJava();
+			}
+			return System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
 		}
 	}
 }

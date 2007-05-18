@@ -27,6 +27,7 @@ import cli.System.Threading.ApartmentState;
 import gnu.classpath.SystemProperties;
 import ikvm.lang.Internal;
 import java.util.concurrent.atomic.AtomicInteger;
+import sun.misc.Unsafe;
 
 // Note: stop() should take care not to stop a thread if it is
 // executing code in this class.
@@ -411,7 +412,7 @@ public final class VMThread
         }
         if(dotnetInterrupt != null)
         {
-            VMClass.throwException(dotnetInterrupt);
+            Unsafe.getUnsafe().throwException(dotnetInterrupt);
         }
     }
 
@@ -525,7 +526,7 @@ public final class VMThread
 	// exceptions from Java.
 	if(currentThread().vmThread == this)
 	{
-	    VMClass.throwException(t);
+	    Unsafe.getUnsafe().throwException(t);
 	}
 	else if(t instanceof ThreadDeath)
 	{

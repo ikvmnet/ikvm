@@ -37,12 +37,12 @@ public abstract class VMFieldImpl extends VMField
     private static native String GetName(Object fieldCookie);
     private static native Object GetFieldType(Object fieldCookie);
     private static native void RunClassInit(Class clazz);
-    private static native boolean CheckAccess(Object memberCookie, Object obj, Object callerTypeWrapper);
+    private static native boolean CheckAccess(Object memberCookie, Object obj, Class callerClass);
     static native Object[] GetDeclaredAnnotations(Object fieldCookie);
 
     public static void checkAccess(Object memberCookie, Object o, Class caller) throws IllegalAccessException
     {
-        if(!CheckAccess(memberCookie, o, caller == null ? null : VMClass.getWrapper(caller)))
+        if(!CheckAccess(memberCookie, o, caller))
         {
             Class declaringClass = (Class)GetDeclaringClass(memberCookie);
             int modifiers = GetModifiers(memberCookie);
