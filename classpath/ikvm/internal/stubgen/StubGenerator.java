@@ -71,7 +71,7 @@ public final class StubGenerator
             f.AddStringAttribute("Signature", genericSignature);
         }
         f.AddStringAttribute("IKVM.NET.Assembly", getAssemblyName(c));
-        if(isClassDeprecated(VMClass.getWrapper(c)))
+        if(isClassDeprecated(c))
         {
             f.AddAttribute(new DeprecatedAttribute(f));
         }
@@ -326,7 +326,7 @@ public final class StubGenerator
     }
 
     private static native String getAssemblyName(Class c);
-    private static native boolean isClassDeprecated(Object wrapper);
+    private static native boolean isClassDeprecated(Class c);
     private static native boolean isFieldDeprecated(Object fieldCookie);
     private static native boolean isMethodDeprecated(Object methodCookie);
     private static native Object getFieldConstantValue(Object fieldCookie);
