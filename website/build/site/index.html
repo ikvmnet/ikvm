@@ -90,11 +90,15 @@
 </li>
     
 <li>
-<a href="faqdoc.html" title="">FAQ</a>
+<a href="http://weblog.ikvm.net/story.aspx/faq" title="">FAQ</a>
 </li>
     
 <li>
-<a href="license.html" title="">License</a>
+<a href="http://weblog.ikvm.net/story.aspx/license" title="">License</a>
+</li>
+    
+<li>
+<a href="stories.html" title="">Case Studies</a>
 </li>
   
 </ul>
@@ -198,7 +202,7 @@
 <!--================= start Content==================-->
 <tr>
 <td align="left" width="10"><img width="10" height="1" alt="" src="skin/images/spacer.gif" class="spacer"></td><td colspan="2" align="left" width="100%">
-<div class="content">
+<div xmlns:xhtml="http://www.w3.org/1999/xhtml" class="content">
 <table class="title" summary="">
 <tr>
 <td valign="middle">
@@ -264,12 +268,12 @@ Java code as java.lang.Object, java.lang.String and java.lang.Throwable.</li>
 <li>
 
 <strong>IKVM.GNU.Classpath.dll</strong>: compiled version of <a href="http://www.gnu.org/software/classpath/classpath.html">GNU Classpath</a>, the Free Software Foundation's implementation of the Java class libraries, 
-plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>part</em> of IKVM.NET, but it is <em>used</em> by IK.VM.NET 
+plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>part</em> of IKVM.NET, but it is <em>used</em> by IKVM.NET 
 </li>
 
 <li>
 
-<strong>IKVM.JNI.[Mono|CLR-Win32].dll</strong>: Managed C++ assembly that implements the JNI interface. This is an optional part, only required when an application uses its own native libraries. This is not needed for pure Java applications. 
+<strong>ikvm-native.dll</strong>: Unmanaged C library that implements a small part of the JNI interface and some platform specific code on non Windows platforms. On Windows this is an optional part, only required when an application uses its own native libraries. This is not needed for pure Java applications. On non-Windows platforms it is required, but it is included with the Mono distribution so it usually doesn't need to be installed seperately.
 </li>
 
 <li>
@@ -322,10 +326,6 @@ plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>p
 <li>
 <a href="http://www.gnu.org/software/classpath/classpath.html">GNU Classpath: The Free Java Library Project</a>
 </li>
-        
-<li>
-<a href="http://msdn.microsoft.com/vjsharp/default.aspx">Microsoft's J# for .NET</a>
-</li>
       
 </ul>
 </div>
@@ -352,7 +352,7 @@ plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>p
 <br>
 	  
 	  Copyright &copy;
-          2004&nbsp;Jeroen Frijters  All rights reserved.<script type="text/javascript" language="JavaScript"><!--
+          2007&nbsp;Jeroen Frijters  All rights reserved.<script type="text/javascript" language="JavaScript"><!--
               document.write(" - "+"Last Published: " + document.lastModified);
             //  --></script></font></td>
 </tr>

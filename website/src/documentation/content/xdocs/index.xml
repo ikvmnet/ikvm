@@ -31,10 +31,10 @@ Java code as java.lang.Object, java.lang.String and java.lang.Throwable.</li>
 </li>
 <li>
 <strong>IKVM.GNU.Classpath.dll</strong>: compiled version of <link href="ext:classpath">GNU Classpath</link>, the Free Software Foundation's implementation of the Java class libraries, 
-plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>part</em> of IKVM.NET, but it is <em>used</em> by IK.VM.NET 
+plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>part</em> of IKVM.NET, but it is <em>used</em> by IKVM.NET 
 </li>
 <li>
-<strong>IKVM.JNI.[Mono|CLR-Win32].dll</strong>: Managed C++ assembly that implements the JNI interface. This is an optional part, only required when an application uses its own native libraries. This is not needed for pure Java applications. 
+<strong>ikvm-native.dll</strong>: Unmanaged C library that implements a small part of the JNI interface and some platform specific code on non Windows platforms. On Windows this is an optional part, only required when an application uses its own native libraries. This is not needed for pure Java applications. On non-Windows platforms it is required, but it is included with the Mono distribution so it usually doesn't need to be installed seperately.
 </li>
 <li>
 <strong>ikvm.exe</strong>: Starter executable, comparable to java.exe ("dynamic mode").
@@ -67,7 +67,6 @@ plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>p
       <ul>
         <li><link href="ext:monodevelop">MonoDevelop: A Mono IDE with IKVM Support</link></li>
         <li><link href="ext:classpath">GNU Classpath: The Free Java Library Project</link></li>
-        <li><link href="http://msdn.microsoft.com/vjsharp/default.aspx">Microsoft's J# for .NET</link></li>
       </ul>
     </section>
   </body>
