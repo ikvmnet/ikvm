@@ -38,9 +38,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 
-@ikvm.lang.Internal
 public final class StubGenerator
 {
+    @ikvm.lang.Internal
     public static byte[] generateStub(Class c)
     {
         Class outer = c.getDeclaringClass();
@@ -293,6 +293,27 @@ public final class StubGenerator
         {
             throw new Error(x);
         }
+    }
+
+    public interface IConstantPoolWriter
+    {
+	short AddUtf8(String str);
+	short AddInt(int i);
+	short AddLong(long l);
+	short AddFloat(float f);
+	short AddDouble(double d);
+    }
+
+    public static byte[] writeAnnotations(IConstantPoolWriter cp, Annotation[] annotations) throws IOException, InvocationTargetException, IllegalAccessException
+    {
+        ByteArrayOutputStream mem = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(mem);
+        dos.writeShort((short)annotations.length);
+        for(Annotation ann : annotations)
+        {
+            RuntimeVisibleAnnotationsAttribute.WriteAnnotation(cp, dos, ann);
+        }
+        return mem.toByteArray();
     }
 
     private static boolean hasParameterAnnotations(Annotation[][] parameterAnnotations)
@@ -1129,7 +1150,7 @@ class RuntimeVisibleAnnotationsAttribute extends ClassFileAttribute
         return o1.equals(o2);
     }
 
-    static void WriteValue(ClassFileWriter classFile, DataOutputStream dos, Object val)
+    static void WriteValue(StubGenerator.IConstantPoolWriter classFile, DataOutputStream dos, Object val)
         throws IOException, IllegalAccessException, InvocationTargetException
     {
         if(val instanceof Boolean)
@@ -1257,7 +1278,7 @@ class RuntimeVisibleAnnotationsAttribute extends ClassFileAttribute
         }
     }
 
-    private static void WriteAnnotation(ClassFileWriter classFile, DataOutputStream dos, Annotation ann)
+    static void WriteAnnotation(StubGenerator.IConstantPoolWriter classFile, DataOutputStream dos, Annotation ann)
         throws IOException, IllegalAccessException, InvocationTargetException
     {
         Class annotationType = ann.annotationType();
@@ -1407,7 +1428,7 @@ class CodeAttribute extends ClassFileAttribute
     }
 }
 
-class ClassFileWriter
+class ClassFileWriter implements StubGenerator.IConstantPoolWriter
 {
     private ArrayList cplist = new ArrayList();
     private Hashtable cphashtable = new Hashtable();
