@@ -27,6 +27,9 @@ using System.Diagnostics;
 using System.Collections;
 using System.Text.RegularExpressions;
 using System.Configuration;
+#if WHIDBEY
+using ConfigurationSettings = System.Configuration.ConfigurationManager;
+#endif
 
 namespace IKVM.Internal
 {
