@@ -717,12 +717,22 @@ namespace IKVM.Internal
 			private static Hashtable cache;
 			private static ModuleBuilder module;
 
-			private class KeyGen : IHashCodeProvider, IComparer
+			private class KeyGen :
+#if WHIDBEY
+				IEqualityComparer
+#else
+				IHashCodeProvider, IComparer
+#endif
 			{
 				public int GetHashCode(object o)
 				{
 					MethodWrapper mw = (MethodWrapper)o;
 					return mw.Signature.GetHashCode();
+				}
+
+				public new bool Equals(object x, object y)
+				{
+					return Compare(x, y) == 0;
 				}
 
 				public int Compare(object x, object y)
@@ -752,7 +762,11 @@ namespace IKVM.Internal
 			static NonvirtualInvokeHelper()
 			{
 				KeyGen keygen = new KeyGen();
+#if WHIDBEY
+				cache = new Hashtable(keygen);
+#else
 				cache = new Hashtable(keygen, keygen);
+#endif
 				AssemblyName name = new AssemblyName();
 				name.Name = "NonvirtualInvoker";
 				AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
