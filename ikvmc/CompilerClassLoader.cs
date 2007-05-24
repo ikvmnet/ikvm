@@ -2378,14 +2378,29 @@ namespace IKVM.Internal
 			}
 			if(!hasBootClasses)
 			{
+				AssemblyName coreAssemblyName = null;
+				foreach(AssemblyName asm in StaticCompiler.runtimeAssembly.GetReferencedAssemblies())
+				{
+					// HACK we assume that IKVM.Runtime.dll only references the core library and that the name starts with "IKVM."
+					if(asm.Name.StartsWith("IKVM."))
+					{
+						coreAssemblyName = asm;
+						break;
+					}
+				}
+				if(coreAssemblyName == null)
+				{
+					Console.Error.WriteLine("Error: runtime assembly doesn't reference core assembly");
+					return 1;
+				}
 #if WHIDBEY
-				JVM.CoreAssembly = Assembly.ReflectionOnlyLoadFrom(Assembly.GetExecutingAssembly().Location + "\\..\\IKVM.GNU.Classpath.dll");
+				JVM.CoreAssembly = Assembly.ReflectionOnlyLoadFrom(coreAssemblyName.CodeBase);
 #else
-				JVM.CoreAssembly = Assembly.LoadWithPartialName("IKVM.GNU.Classpath");
+				JVM.CoreAssembly = Assembly.Load(coreAssemblyName);
 #endif
 				if(JVM.CoreAssembly == null)
 				{
-					Console.Error.WriteLine("Error: bootstrap classes missing and IKVM.GNU.Classpath.dll not found");
+					Console.Error.WriteLine("Error: bootstrap classes missing and core assembly not found");
 					return 1;
 				}
 				loader.AddReference(ClassLoaderWrapper.GetAssemblyClassLoader(JVM.CoreAssembly));
