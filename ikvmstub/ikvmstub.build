@@ -1,7 +1,12 @@
 <?xml version="1.0"?>
 <project name="ikvmstub" default="ikvmstub">
+    <target name="hybrid">
+        <property name="hybrid" value="true" />
+        <call target="ikvmstub" />
+    </target>
     <target name="ikvmstub">
         <property name="defs" value="TRACE" />
+        <property overwrite="false" name="hybrid" value="false" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
@@ -13,7 +18,8 @@
                 <include name="*.cs" />
             </sources>
             <references>
-                <include name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
+                <include unless="${hybrid}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
+                <include if="${hybrid}" name="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
             </references>
         </csc>

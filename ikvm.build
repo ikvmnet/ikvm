@@ -6,12 +6,18 @@
          <property name="ilasm_signoption" value="/key:@ikvm-key" />
          <call target="all" />
     </target>
+    <target name="hybrid">
+         <property name="hybrid" value="true" />
+         <call target="all" />
+    </target>
     <target name="all">
+        <property overwrite="false" name="hybrid" value="false" />
         <nant buildfile="tools/tools.build" />
         <nant buildfile="runtime/runtime.build" target="first-pass" />
         <nant buildfile="native/native.build" />
         <nant buildfile="ikvmc/ikvmc.build" />
-        <nant buildfile="classpath/classpath.build" />
+        <nant unless="${hybrid}" buildfile="classpath/classpath.build" />
+        <nant if="${hybrid}" buildfile="openjdk/openjdk.build" />
         <nant buildfile="runtime/runtime.build" />
         <nant buildfile="ikvm/ikvm.build" />
         <nant buildfile="ikvmstub/ikvmstub.build" />
@@ -26,6 +32,7 @@
                 <include name="bin/IKVM.AWT.WinForms.dll" />
                 <include name="bin/IKVM.Runtime.dll" />
                 <include name="bin/IKVM.GNU.Classpath.dll" />
+                <include name="bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" />
                 <include name="bin/ikvm-native.dll" />
                 <include name="bin/libikvm-native.so" />
                 <include name="bin/ikvm.exe" />

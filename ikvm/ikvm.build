@@ -1,13 +1,19 @@
 <?xml version="1.0"?>
 <project name="ikvm" default="ikvm">
+    <target name="hybrid">
+        <property name="hybrid" value="true" />
+        <call target="ikvm" />
+    </target>
     <target name="ikvm">
+        <property overwrite="false" name="hybrid" value="false" />
         <property overwrite="false" name="signed" value="" />
         <csc target="exe" output="../bin/ikvm.exe" define="TRACE;${signed}">
             <sources>
                 <include name="*.cs" />
             </sources>
             <references>
-                <include name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
+                <include unless="${hybrid}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
+                <include if="${hybrid}" name="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
             </references>
         </csc>
