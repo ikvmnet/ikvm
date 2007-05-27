@@ -1810,37 +1810,40 @@ namespace IKVM.Internal
 
 			assemblyAttributes = map.assembly.Attributes;
 
-			// 1st pass, put all types in remapped to make them loadable
-			bool hasRemappedTypes = false;
-			foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
+			if(map.assembly.Classes != null)
 			{
-				if(c.Shadows != null)
+				// 1st pass, put all types in remapped to make them loadable
+				bool hasRemappedTypes = false;
+				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 				{
-					remapped.Add(c.Name, new RemapperTypeWrapper(this, c, map));
-					hasRemappedTypes = true;
+					if(c.Shadows != null)
+					{
+						remapped.Add(c.Name, new RemapperTypeWrapper(this, c, map));
+						hasRemappedTypes = true;
+					}
 				}
-			}
 
-			if(hasRemappedTypes)
-			{
-				SetupGhosts(map);
-			}
-
-			// 2nd pass, resolve interfaces, publish methods/fields
-			foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
-			{
-				if(c.Shadows != null)
+				if(hasRemappedTypes)
 				{
-					RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
-					typeWrapper.Process2ndPassStep1(map);
+					SetupGhosts(map);
 				}
-			}
-			foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
-			{
-				if(c.Shadows != null)
+
+				// 2nd pass, resolve interfaces, publish methods/fields
+				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 				{
-					RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
-					typeWrapper.Process2ndPassStep2(map);
+					if(c.Shadows != null)
+					{
+						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
+						typeWrapper.Process2ndPassStep1(map);
+					}
+				}
+				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
+				{
+					if(c.Shadows != null)
+					{
+						RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)remapped[c.Name];
+						typeWrapper.Process2ndPassStep2(map);
+					}
 				}
 			}
 		}
@@ -1935,22 +1938,25 @@ namespace IKVM.Internal
 			mapxml = new Hashtable();
 			// HACK we've got a hardcoded location for the exception mapping method that is generated from the xml mapping
 			mapxml["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
-			foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
+			if(map.assembly.Classes != null)
 			{
-				// HACK if it is not a remapped type, we assume it is a container for native methods
-				if(c.Shadows == null)
+				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 				{
-					string className = c.Name;
-					mapxml.Add(className, c);
-					if(c.Methods != null)
+					// HACK if it is not a remapped type, we assume it is a container for native methods
+					if(c.Shadows == null)
 					{
-						foreach(IKVM.Internal.MapXml.Method method in c.Methods)
+						string className = c.Name;
+						mapxml.Add(className, c);
+						if(c.Methods != null)
 						{
-							if(method.body != null)
+							foreach(IKVM.Internal.MapXml.Method method in c.Methods)
 							{
-								string methodName = method.Name;
-								string methodSig = method.Sig;
-								mapxml.Add(className + "." + methodName + methodSig, method.body);
+								if(method.body != null)
+								{
+									string methodName = method.Name;
+									string methodSig = method.Sig;
+									mapxml.Add(className + "." + methodName + methodSig, method.body);
+								}
 							}
 						}
 					}
@@ -2394,7 +2400,7 @@ namespace IKVM.Internal
 					return 1;
 				}
 #if WHIDBEY
-				JVM.CoreAssembly = Assembly.ReflectionOnlyLoadFrom(coreAssemblyName.CodeBase);
+				JVM.CoreAssembly = Assembly.ReflectionOnlyLoadFrom(StaticCompiler.runtimeAssembly.CodeBase + "\\..\\" + coreAssemblyName.Name + ".dll");
 #else
 				JVM.CoreAssembly = Assembly.Load(coreAssemblyName);
 #endif
