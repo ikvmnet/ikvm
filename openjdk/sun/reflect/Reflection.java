@@ -23,6 +23,14 @@
  * have any questions.
  */
 
+/*IKVM*/
+/* Modified for IKVM by Jeroen Frijters
+ * 
+ * May 27, 2007	    Added support for @ikvm.lang.Internal access modifier
+ * 
+ */
+/*IKVM*/
+
 package sun.reflect;
 
 import java.lang.reflect.*;
@@ -101,6 +109,9 @@ public class Reflection {
         }
     }
 
+    /*IKVM*/
+    private static native boolean checkInternalAccess(Class currentClass, Class memberClass);
+
     public static boolean verifyMemberAccess(Class currentClass,
                                              // Declaring class of field
                                              // or method
@@ -124,7 +135,8 @@ public class Reflection {
         if (!Modifier.isPublic(getClassAccessFlags(memberClass))) {
             isSameClassPackage = isSameClassPackage(currentClass, memberClass);
             gotIsSameClassPackage = true;
-            if (!isSameClassPackage) {
+	    /*IKVM*/
+            if (!isSameClassPackage && !checkInternalAccess(currentClass, memberClass)) {
                 return false;
             }
         }
@@ -134,6 +146,12 @@ public class Reflection {
         if (Modifier.isPublic(modifiers)) {
             return true;
         }
+
+	/*IKVM*/
+	// Is the member @ikvm.lang.Internal accessible?
+	if ((modifiers & 0x40000000) != 0) {
+	    return currentClass.getClassLoader() == memberClass.getClassLoader();
+	}
 
         boolean successSoFar = false;
 
