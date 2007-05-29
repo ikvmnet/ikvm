@@ -47,6 +47,9 @@ namespace IKVM.Internal
 
 	class MemberWrapper
 	{
+#if OPENJDK && !FIRST_PASS
+		protected static readonly sun.reflect.ReflectionFactory reflectionFactory = (sun.reflect.ReflectionFactory)java.security.AccessController.doPrivileged(new sun.reflect.ReflectionFactory.GetReflectionFactoryAction());
+#endif
 		private System.Runtime.InteropServices.GCHandle handle;
 		private TypeWrapper declaringType;
 		private Modifiers modifiers;
@@ -232,6 +235,11 @@ namespace IKVM.Internal
 
 	abstract class MethodWrapper : MemberWrapper
 	{
+#if OPENJDK && !FIRST_PASS
+		private static readonly FieldInfo methodSlotField = typeof(java.lang.reflect.Method).GetField("slot", BindingFlags.NonPublic | BindingFlags.Instance);
+		private static readonly FieldInfo constructorSlotField = typeof(java.lang.reflect.Constructor).GetField("slot", BindingFlags.NonPublic | BindingFlags.Instance);
+		private volatile object reflectionMethod;
+#endif
 		internal static readonly MethodWrapper[] EmptyArray  = new MethodWrapper[0];
 		private MethodBase method;
 		private string[] declaredExceptions;
@@ -350,6 +358,146 @@ namespace IKVM.Internal
 			}
 			this.declaredExceptions = (string[])exceptions.Clone();
 		}
+
+#if !STATIC_COMPILER
+		internal object ToMethodOrConstructor(bool copy)
+		{
+#if FIRST_PASS
+			return null;
+#elif OPENJDK
+			object method = reflectionMethod;
+			if (method == null)
+			{
+				TypeWrapper[] argTypes = GetParameters();
+				java.lang.Class[] parameterTypes = new java.lang.Class[argTypes.Length];
+				for (int i = 0; i < argTypes.Length; i++)
+				{
+					parameterTypes[i] = (java.lang.Class)argTypes[i].ClassObject;
+				}
+				string[] exceptions = GetExceptions();
+				java.lang.Class[] checkedExceptions = new java.lang.Class[exceptions.Length];
+				for (int i = 0; i < exceptions.Length; i++)
+				{
+					checkedExceptions[i] = (java.lang.Class)this.DeclaringType.GetClassLoader().LoadClassByDottedName(exceptions[i]).ClassObject;
+				}
+				object[] objAnn = this.DeclaringType.GetMethodAnnotations(this);
+				byte[] annotations = null;
+				if (objAnn != null)
+				{
+					ArrayList ann = new ArrayList();
+					foreach (object obj in objAnn)
+					{
+						if (obj is java.lang.annotation.Annotation)
+						{
+							ann.Add(obj);
+						}
+					}
+					ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter cp = IKVM.NativeCode.java.lang.Class.GetConstantPoolWriter(this.DeclaringType);
+					annotations = ikvm.@internal.stubgen.StubGenerator.writeAnnotations(cp, (java.lang.annotation.Annotation[])ann.ToArray(typeof(java.lang.annotation.Annotation)));
+				}
+				object[][] objParamAnn = this.DeclaringType.GetParameterAnnotations(this);
+				byte[] parameterAnnotations = null;
+				if (objParamAnn != null)
+				{
+					java.lang.annotation.Annotation[][] ann = new java.lang.annotation.Annotation[objParamAnn.Length][];
+					for (int i = 0; i < objParamAnn.Length; i++)
+					{
+						ArrayList list = new ArrayList();
+						foreach (object obj in objParamAnn[i])
+						{
+							if (obj is java.lang.annotation.Annotation)
+							{
+								list.Add(obj);
+							}
+						}
+						ann[i] = (java.lang.annotation.Annotation[])list.ToArray(typeof(java.lang.annotation.Annotation));
+					}
+					ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter cp = IKVM.NativeCode.java.lang.Class.GetConstantPoolWriter(this.DeclaringType);
+					parameterAnnotations = ikvm.@internal.stubgen.StubGenerator.writeParameterAnnotations(cp, ann);
+				}
+				if (this.Name == StringConstants.INIT)
+				{
+					method = reflectionFactory.newConstructor(
+						(java.lang.Class)this.DeclaringType.ClassObject,
+						parameterTypes,
+						checkedExceptions,
+						(int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
+						Array.IndexOf(this.DeclaringType.GetMethods(), this),
+						this.DeclaringType.GetGenericMethodSignature(this),
+						annotations,
+						parameterAnnotations
+					);
+				}
+				else
+				{
+					byte[] annotationDefault = null;
+					object objAnnDef = this.DeclaringType.GetAnnotationDefault(this);
+					if (objAnnDef != null)
+					{
+						ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter cp = IKVM.NativeCode.java.lang.Class.GetConstantPoolWriter(this.DeclaringType);
+						annotationDefault = ikvm.@internal.stubgen.StubGenerator.writeAnnotationDefault(cp, objAnnDef);
+					}
+					method = reflectionFactory.newMethod(
+						(java.lang.Class)this.DeclaringType.ClassObject,
+						this.Name,
+						parameterTypes,
+						(java.lang.Class)this.ReturnType.ClassObject,
+						checkedExceptions,
+						(int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
+						Array.IndexOf(this.DeclaringType.GetMethods(), this),
+						this.DeclaringType.GetGenericMethodSignature(this),
+						annotations,
+						parameterAnnotations,
+						annotationDefault
+					);
+				}
+				lock (this)
+				{
+					if (reflectionMethod == null)
+					{
+						reflectionMethod = method;
+					}
+					else
+					{
+						method = reflectionMethod;
+					}
+				}
+			}
+			if (copy)
+			{
+				java.lang.reflect.Constructor ctor = method as java.lang.reflect.Constructor;
+				if (ctor != null)
+				{
+					return reflectionFactory.copyConstructor(ctor);
+				}
+				return reflectionFactory.copyMethod((java.lang.reflect.Method)method);
+			}
+			return method;
+#else
+			if (this.Name == StringConstants.INIT)
+			{
+				return JVM.Library.newConstructor(this.DeclaringType.ClassObject, this);
+			}
+			return JVM.Library.newMethod(this.DeclaringType.ClassObject, this);
+#endif
+		}
+
+		internal static MethodWrapper FromMethodOrConstructor(object methodOrConstructor)
+		{
+#if FIRST_PASS
+			return null;
+#elif OPENJDK
+			java.lang.reflect.Method method = methodOrConstructor as java.lang.reflect.Method;
+			if (method != null)
+			{
+				return TypeWrapper.FromClass(method.getDeclaringClass()).GetMethods()[(int)methodSlotField.GetValue(method)];
+			}
+			return TypeWrapper.FromClass(((java.lang.reflect.Constructor)methodOrConstructor).getDeclaringClass()).GetMethods()[(int)constructorSlotField.GetValue(methodOrConstructor)];
+#else
+			return (MethodWrapper)JVM.Library.getWrapperFromMethodOrConstructor(methodOrConstructor);
+#endif
+		}
+#endif // !STATIC_COMPILER
 
 		internal static MethodWrapper FromCookie(IntPtr cookie)
 		{
@@ -1126,6 +1274,10 @@ namespace IKVM.Internal
 
 	abstract class FieldWrapper : MemberWrapper
 	{
+#if OPENJDK && !FIRST_PASS
+		private static readonly FieldInfo slotField = typeof(java.lang.reflect.Field).GetField("slot", BindingFlags.Instance | BindingFlags.NonPublic);
+		private volatile object reflectionField;
+#endif
 		internal static readonly FieldWrapper[] EmptyArray  = new FieldWrapper[0];
 		private FieldInfo field;
 		private TypeWrapper fieldType;
@@ -1207,6 +1359,72 @@ namespace IKVM.Internal
 				return val;
 			}
 			return null;
+		}
+
+		internal static FieldWrapper FromField(object field)
+		{
+#if FIRST_PASS
+			return null;
+#elif OPENJDK
+			java.lang.reflect.Field f = (java.lang.reflect.Field)field;
+			return TypeWrapper.FromClass(f.getDeclaringClass()).GetFields()[(int)slotField.GetValue(f)];
+#else
+			return (FieldWrapper)JVM.Library.getWrapperFromField(field);
+#endif
+		}
+
+		internal object ToField(bool copy)
+		{
+#if FIRST_PASS
+			return null;
+#elif OPENJDK
+			object field = reflectionField;
+			if (field == null)
+			{
+				object[] objAnn = this.DeclaringType.GetFieldAnnotations(this);
+				byte[] annotations = null;
+				if (objAnn != null)
+				{
+					ArrayList ann = new ArrayList();
+					foreach (object obj in objAnn)
+					{
+						if (obj is java.lang.annotation.Annotation)
+						{
+							ann.Add(obj);
+						}
+					}
+					ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter cp = IKVM.NativeCode.java.lang.Class.GetConstantPoolWriter(this.DeclaringType);
+					annotations = ikvm.@internal.stubgen.StubGenerator.writeAnnotations(cp, (java.lang.annotation.Annotation[])ann.ToArray(typeof(java.lang.annotation.Annotation)));
+				}
+				field = reflectionFactory.newField(
+					(java.lang.Class)this.DeclaringType.ClassObject,
+					this.Name,
+					(java.lang.Class)this.FieldTypeWrapper.ClassObject,
+					(int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
+					Array.IndexOf(this.DeclaringType.GetFields(), this),
+					this.DeclaringType.GetGenericFieldSignature(this),
+					annotations
+				);
+			}
+			lock (this)
+			{
+				if (reflectionField == null)
+				{
+					reflectionField = field;
+				}
+				else
+				{
+					field = reflectionField;
+				}
+			}
+			if (copy)
+			{
+				field = reflectionFactory.copyField((java.lang.reflect.Field)field);
+			}
+			return field;
+#else
+			return JVM.Library.newField(this.DeclaringType.ClassObject, this);
+#endif // FIRST_PASS
 		}
 #endif // !STATIC_COMPILER
 

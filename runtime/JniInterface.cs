@@ -1264,7 +1264,11 @@ namespace IKVM.Runtime
 				Marshal.Copy((IntPtr)(void*)pbuf, buf, 0, length);
 				// TODO what should the protection domain be?
 				// NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
+#if OPENJDK
+				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.ClassLoader.defineClass0(pEnv->UnwrapRef(loader), name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
+#else
 				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClassLoader.defineClassImpl(pEnv->UnwrapRef(loader), name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
+#endif
 			}
 			catch(Exception x)
 			{
@@ -1331,26 +1335,17 @@ namespace IKVM.Runtime
 
 		internal static jmethodID FromReflectedMethod(JNIEnv* pEnv, jobject method)
 		{
-			return ((MethodWrapper)JVM.Library.getWrapperFromMethodOrConstructor(pEnv->UnwrapRef(method))).Cookie;
+			return MethodWrapper.FromMethodOrConstructor(pEnv->UnwrapRef(method)).Cookie;
 		}
 
 		internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)
 		{
-			return ((FieldWrapper)JVM.Library.getWrapperFromField(pEnv->UnwrapRef(field))).Cookie;
+			return FieldWrapper.FromField(pEnv->UnwrapRef(field)).Cookie;
 		}
 
 		internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method, jboolean isStatic)
 		{
-			MethodWrapper mw = MethodWrapper.FromCookie(method);
-			object clazz = mw.DeclaringType.ClassObject;
-			if(mw.Name == "<init>")
-			{
-				return pEnv->MakeLocalRef(JVM.Library.newConstructor(clazz, mw));
-			}
-			else
-			{
-				return pEnv->MakeLocalRef(JVM.Library.newMethod(clazz, mw));
-			}
+			return pEnv->MakeLocalRef(MethodWrapper.FromCookie(method).ToMethodOrConstructor(true));
 		}
 
 		internal static jclass GetSuperclass(JNIEnv* pEnv, jclass sub)
@@ -1368,9 +1363,7 @@ namespace IKVM.Runtime
 
 		internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field, jboolean isStatic)
 		{
-			FieldWrapper fw = FieldWrapper.FromCookie(field);
-			object clazz = fw.DeclaringType.ClassObject;
-			return pEnv->MakeLocalRef(JVM.Library.newField(clazz, fw));
+			return pEnv->MakeLocalRef(FieldWrapper.FromCookie(field).ToField(true));
 		}
 
 		private static void SetPendingException(JNIEnv* pEnv, Exception x)
@@ -1668,7 +1661,7 @@ namespace IKVM.Runtime
 #if !FIRST_PASS
 			catch(java.lang.reflect.InvocationTargetException x)
 			{
-				SetPendingException(pEnv, JVM.Library.mapException(x.InnerException));
+				SetPendingException(pEnv, JVM.Library.mapException(x.getCause()));
 				return null;
 			}
 #endif

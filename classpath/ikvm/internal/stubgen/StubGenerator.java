@@ -96,6 +96,7 @@ public final class StubGenerator
         Class[] innerClasses = c.getDeclaredClasses();
         for(int i = 0; i < innerClasses.length; i++)
         {
+	    // TODO add private export support (for bcel)
             int mods = getModifiers(innerClasses[i]);
             if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
             {
@@ -141,7 +142,7 @@ public final class StubGenerator
                     });
                 m.AddAttribute(code);
                 AddExceptions(f, m, constructors[i].getExceptionTypes());
-                if(isMethodDeprecated(constructors[i].methodCookie))
+                if(isMethodDeprecated(constructors[i]))
                 {
                     m.AddAttribute(new DeprecatedAttribute(f));
                 }
@@ -208,7 +209,7 @@ public final class StubGenerator
                 Class retType = methods[i].getReturnType();
                 FieldOrMethod m = f.AddMethod(mods, methods[i].getName(), MakeSig(args, retType));
                 AddExceptions(f, m, methods[i].getExceptionTypes());
-                if(isMethodDeprecated(methods[i].methodCookie))
+                if(isMethodDeprecated(methods[i]))
                 {
                     m.AddAttribute(new DeprecatedAttribute(f));
                 }
@@ -248,7 +249,7 @@ public final class StubGenerator
                 // NOTE we can't use Field.get() because that will run the static initializer and
                 // also won't allow us to see the difference between constants and blank final fields,
                 // so we use a "native" method.
-                Object constantValue = getFieldConstantValue(fields[i].impl.fieldCookie);
+                Object constantValue = getFieldConstantValue(fields[i]);
                 Class fieldType = fields[i].getType();
                 if(fields[i].isEnumConstant())
                 {
@@ -259,7 +260,7 @@ public final class StubGenerator
                     mods |= Modifiers.Synthetic;
                 }
                 FieldOrMethod fld = f.AddField(mods, fields[i].getName(), ClassToSig(fieldType), constantValue);
-                if(isFieldDeprecated(fields[i].impl.fieldCookie))
+                if(isFieldDeprecated(fields[i]))
                 {
                     fld.AddAttribute(new DeprecatedAttribute(f));
                 }
@@ -316,6 +317,30 @@ public final class StubGenerator
         return mem.toByteArray();
     }
 
+    public static byte[] writeParameterAnnotations(IConstantPoolWriter cp, Annotation[][] parameterAnnotations) throws IOException, InvocationTargetException, IllegalAccessException
+    {
+        ByteArrayOutputStream mem = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(mem);
+        dos.writeByte(parameterAnnotations.length);
+        for(Annotation[] annotations : parameterAnnotations)
+        {
+            dos.writeShort((short)annotations.length);
+            for(Annotation ann : annotations)
+            {
+                RuntimeVisibleAnnotationsAttribute.WriteAnnotation(cp, dos, ann);
+            }
+        }
+        return mem.toByteArray();
+    }
+
+    public static byte[] writeAnnotationDefault(IConstantPoolWriter cp, Object value) throws IOException, InvocationTargetException, IllegalAccessException
+    {
+        ByteArrayOutputStream mem = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(mem);
+        RuntimeVisibleAnnotationsAttribute.WriteValue(cp, dos, value);
+        return mem.toByteArray();
+    }
+
     private static boolean hasParameterAnnotations(Annotation[][] parameterAnnotations)
     {
         for(int i = 0; i < parameterAnnotations.length; i++)
@@ -348,9 +373,9 @@ public final class StubGenerator
 
     private static native String getAssemblyName(Class c);
     private static native boolean isClassDeprecated(Class c);
-    private static native boolean isFieldDeprecated(Object fieldCookie);
-    private static native boolean isMethodDeprecated(Object methodCookie);
-    private static native Object getFieldConstantValue(Object fieldCookie);
+    private static native boolean isFieldDeprecated(Object field);
+    private static native boolean isMethodDeprecated(Object method);
+    private static native Object getFieldConstantValue(Object field);
 
     private static void AddExceptions(ClassFileWriter f, FieldOrMethod m, Class[] exceptions)
     {

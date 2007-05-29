@@ -39,6 +39,8 @@ using IllegalArgumentException = java.lang.IllegalArgumentException;
 using IllegalAccessException = java.lang.IllegalAccessException;
 using NumberFormatException = java.lang.NumberFormatException;
 using jlNoClassDefFoundError = java.lang.NoClassDefFoundError;
+using jlrConstructor = java.lang.reflect.Constructor;
+using jlrField = java.lang.reflect.Field;
 #endif
 
 namespace IKVM.NativeCode.java
@@ -71,290 +73,6 @@ namespace IKVM.NativeCode.java
 #endif
 				}
 			}
-
-			public class Method
-			{
-				public static String GetName(object methodCookie)
-				{
-					MethodWrapper wrapper = (MethodWrapper)methodCookie;
-					return wrapper.Name;
-				}
-
-				public static int GetModifiers(object methodCookie)
-				{
-					MethodWrapper wrapper = (MethodWrapper)methodCookie;
-					return (int)wrapper.Modifiers;
-				}
-
-				public static int GetRealModifiers(object clazz)
-				{
-					return (int)TypeWrapper.FromClass(clazz).Modifiers;
-				}
-				
-				public static object GetReturnType(object methodCookie)
-				{
-					MethodWrapper wrapper = (MethodWrapper)methodCookie;
-					TypeWrapper retType = wrapper.ReturnType;
-					retType = retType.EnsureLoadable(wrapper.DeclaringType.GetClassLoader());
-					return retType.ClassObject;
-				}
-
-				public static object[] GetParameterTypes(object methodCookie)
-				{
-					MethodWrapper wrapper = (MethodWrapper)methodCookie;
-					TypeWrapper[] parameters = wrapper.GetParameters();
-					object[] parameterClasses = new object[parameters.Length];
-					for(int i = 0; i < parameters.Length; i++)
-					{
-						TypeWrapper paramType = parameters[i].EnsureLoadable(wrapper.DeclaringType.GetClassLoader());
-						parameterClasses[i] = paramType.ClassObject;
-					}
-					return parameterClasses;
-				}
-
-				public static string[] GetExceptionTypes(object methodCookie)
-				{
-					try
-					{
-						MethodWrapper wrapper = (MethodWrapper)methodCookie;
-						wrapper.DeclaringType.Finish();
-						return wrapper.GetExceptions();
-					}
-					catch(RetargetableJavaException x)
-					{
-						throw x.ToJava();
-					}
-				}
-
-				public static string GetSignature(object methodCookie)
-				{
-					MethodWrapper wrapper = (MethodWrapper)methodCookie;
-					return wrapper.DeclaringType.GetGenericMethodSignature(wrapper);
-				}
-
-				public static object GetDefaultValue(Object methodCookie)
-				{
-					MethodWrapper wrapper = (MethodWrapper)methodCookie;
-					return wrapper.DeclaringType.GetAnnotationDefault(wrapper);
-				}
-
-				public static object[] GetDeclaredAnnotations(Object methodCookie)
-				{
-					MethodWrapper wrapper = (MethodWrapper)methodCookie;
-					wrapper.DeclaringType.Finish();
-					return wrapper.DeclaringType.GetMethodAnnotations(wrapper);
-				}
-
-				public static object[][] GetParameterAnnotations(Object methodCookie)
-				{
-					MethodWrapper wrapper = (MethodWrapper)methodCookie;
-					wrapper.DeclaringType.Finish();
-					object[][] annotations = wrapper.DeclaringType.GetParameterAnnotations(wrapper);
-					if(annotations == null)
-					{
-						annotations = new object[wrapper.GetParameters().Length][];
-					}
-					return annotations;
-				}
-
-				[HideFromJava]
-				public static object Invoke(object methodCookie, object o, object[] args)
-				{
-#if !FIRST_PASS
-					try
-					{
-						object[] argsCopy = new Object[args != null ? args.Length : 0];
-						MethodWrapper mw = (MethodWrapper)methodCookie;
-						mw.DeclaringType.Finish();
-						TypeWrapper[] argWrappers = mw.GetParameters();
-						for(int i = 0; i < argWrappers.Length; i++)
-						{
-							if(argWrappers[i].IsPrimitive)
-							{
-								if(args[i] == null)
-								{
-									throw new IllegalArgumentException("primitive wrapper null");
-								}
-								argsCopy[i] = JVM.Library.unbox(args[i]);
-								// NOTE we depend on the fact that the .NET reflection parameter type
-								// widening rules are the same as in Java, but to have this work for byte
-								// we need to convert byte to sbyte.
-								if(argsCopy[i] is byte && argWrappers[i] != PrimitiveTypeWrapper.BYTE)
-								{
-									argsCopy[i] = (sbyte)(byte)argsCopy[i];
-								}
-							}
-							else
-							{
-								argsCopy[i] = args[i];
-							}
-						}
-						// if the method is an interface method, we must explicitly run <clinit>,
-						// because .NET reflection doesn't
-						if(mw.DeclaringType.IsInterface)
-						{
-							mw.DeclaringType.RunClassInit();
-						}
-						object retval;
-						try
-						{
-							retval = mw.Invoke(o, argsCopy, false);
-						}
-						catch(MethodAccessException x)
-						{
-							// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
-							throw new IllegalAccessException().initCause(x);
-						}
-						if(mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
-						{
-							retval = JVM.Library.box(retval);
-						}
-						return retval;
-					}
-					catch(RetargetableJavaException x)
-					{
-						throw x.ToJava();
-					}
-#else
-					return null;
-#endif
-				}
-			}
-
-			public class VMFieldImpl
-			{
-				public static string GetName(object fieldCookie)
-				{
-					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-					return wrapper.Name;
-				}
-
-				public static int GetModifiers(object memberCookie)
-				{
-					MemberWrapper wrapper = (MemberWrapper)memberCookie;
-					return (int)wrapper.Modifiers;
-				}
-
-				public static object GetDeclaringClass(object memberCookie)
-				{
-					MemberWrapper wrapper = (MemberWrapper)memberCookie;
-					return wrapper.DeclaringType.ClassObject;
-				}
-
-				public static object GetFieldType(object fieldCookie)
-				{
-					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-					TypeWrapper fieldType = wrapper.FieldTypeWrapper;
-					fieldType = fieldType.EnsureLoadable(wrapper.DeclaringType.GetClassLoader());
-					return fieldType.ClassObject;
-				}
-
-				public static string GetSignature(object fieldCookie)
-				{
-					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-					return wrapper.DeclaringType.GetGenericFieldSignature(wrapper);
-				}
-
-				public static object[] GetDeclaredAnnotations(Object fieldCookie)
-				{
-					FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-					wrapper.DeclaringType.Finish();
-					return wrapper.DeclaringType.GetFieldAnnotations(wrapper);
-				}
-
-				public static void RunClassInit(object clazz)
-				{
-					TypeWrapper.FromClass(clazz).RunClassInit();
-				}
-
-				public static bool CheckAccess(object memberCookie, object instance, object callerClass)
-				{
-					MemberWrapper member = (MemberWrapper)memberCookie;
-					if(callerClass != null)
-					{
-						TypeWrapper instanceTypeWrapper;
-						if(member.IsStatic || instance == null)
-						{
-							instanceTypeWrapper = member.DeclaringType;
-						}
-						else
-						{
-							instanceTypeWrapper = IKVM.NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(instance);
-						}
-						return member.IsAccessibleFrom(member.DeclaringType, TypeWrapper.FromClass(callerClass), instanceTypeWrapper);
-					}
-					else
-					{
-						return member.IsPublic && member.DeclaringType.IsPublic;
-					}
-				}
-
-				public static object GetValue(object fieldCookie, object o)
-				{
-					Profiler.Enter("Field.GetValue");
-					try
-					{
-						FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-						// if the field is an interface field, we must explicitly run <clinit>,
-						// because .NET reflection doesn't
-						if(wrapper.DeclaringType.IsInterface)
-						{
-							wrapper.DeclaringType.RunClassInit();
-						}
-						try
-						{
-							return wrapper.GetValue(o);
-						}
-#if !COMPACT_FRAMEWORK && !FIRST_PASS
-						catch(FieldAccessException x)
-						{
-							// this can happen if we're accessing a non-public field and the call stack doesn't have ReflectionPermission.MemberAccess
-							throw new IllegalAccessException().initCause(x);
-						}
-#endif
-						finally
-						{
-						}
-					}
-					finally
-					{
-						Profiler.Leave("Field.GetValue");
-					}
-				}
-
-				public static void SetValue(object fieldCookie, object o, object v)
-				{
-					Profiler.Enter("Field.SetValue");
-					try
-					{
-						FieldWrapper wrapper = (FieldWrapper)fieldCookie;
-						// if the field is an interface field, we must explicitly run <clinit>,
-						// because .NET reflection doesn't
-						if(wrapper.DeclaringType.IsInterface)
-						{
-							wrapper.DeclaringType.RunClassInit();
-						}
-						try
-						{
-							wrapper.SetValue(o, v);
-						}
-#if !COMPACT_FRAMEWORK && !FIRST_PASS
-						catch(FieldAccessException x)
-						{
-							// this can happen if we're accessing a non-public field and the call stack doesn't have ReflectionPermission.MemberAccess
-							throw new IllegalAccessException().initCause(x);
-						}
-#endif
-						finally
-						{
-						}
-					}
-					finally
-					{
-						Profiler.Leave("Field.SetValue");
-					}
-				}
-			}
 		}
 
 		public class VMRuntime
@@ -379,23 +97,6 @@ namespace IKVM.NativeCode.java
 
 		public class VMClassLoader
 		{
-			public static object loadClass(string name, bool resolve)
-			{
-				try
-				{
-					TypeWrapper type = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
-					if(type != null)
-					{
-						return type.ClassObject;
-					}
-					return null;
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-			}
-
 			public static object getPrimitiveClass(char type)
 			{
 				switch(type)
@@ -421,508 +122,6 @@ namespace IKVM.NativeCode.java
 					default:
 						throw new InvalidOperationException();
 				}
-			}
-
-			public static object defineClassImpl(object classLoader, string name, byte[] data, int offset, int length, object protectionDomain)
-			{
-				Profiler.Enter("ClassLoader.defineClass");
-				try
-				{
-					try
-					{
-						ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader);
-						ClassFileParseOptions cfp = ClassFileParseOptions.LineNumberTable;
-						if(classLoaderWrapper.EmitDebugInfo)
-						{
-							cfp |= ClassFileParseOptions.LocalVariableTable;
-						}
-						ClassFile classFile = new ClassFile(data, offset, length, name, cfp);
-						if(name != null && classFile.Name != name)
-						{
-#if !FIRST_PASS
-							throw new jlNoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
-#endif
-						}
-						TypeWrapper type = classLoaderWrapper.DefineClass(classFile, protectionDomain);
-						return type.ClassObject;
-					}
-					catch(RetargetableJavaException x)
-					{
-						throw x.ToJava();
-					}
-				}
-				finally
-				{
-					Profiler.Leave("ClassLoader.defineClass");
-				}
-			}
-
-			public static object findLoadedClass(object javaClassLoader, string name)
-			{
-				ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderWrapper(javaClassLoader);
-				TypeWrapper wrapper = loader.GetLoadedClass(name);
-				if(wrapper != null)
-				{
-					return wrapper.ClassObject;
-				}
-				return null;
-			}
-
-			public static object getAssemblyClassLoader(Assembly asm)
-			{
-				return ClassLoaderWrapper.GetAssemblyClassLoader(asm).GetJavaClassLoader();
-			}
-		}
-
-		public class VMClass
-		{
-			public static void throwException(Exception e)
-			{
-				throw e;
-			}
-
-			public static bool IsAssignableFrom(object w1, object w2)
-			{
-				return ((TypeWrapper)w2).IsAssignableTo((TypeWrapper)w1);
-			}
-
-			public static bool IsInterface(object wrapper)
-			{
-				return ((TypeWrapper)wrapper).IsInterface;
-			}
-
-			public static bool IsArray(object wrapper)
-			{
-				return ((TypeWrapper)wrapper).IsArray;
-			}
-
-			public static object GetSuperClassFromWrapper(object wrapper)
-			{
-				TypeWrapper baseWrapper = ((TypeWrapper)wrapper).BaseTypeWrapper;
-				if(baseWrapper != null)
-				{
-					return baseWrapper.ClassObject;
-				}
-				return null;
-			}
-
-			public static object getComponentClassFromWrapper(object wrapper)
-			{
-				TypeWrapper typeWrapper = (TypeWrapper)wrapper;
-				if(typeWrapper.IsArray)
-				{
-					return typeWrapper.ElementTypeWrapper.ClassObject;
-				}
-				return null;
-			}
-
-			public static object forName0(string name, bool initialize, object classLoader)
-			{
-				try
-				{
-					ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader);
-					TypeWrapper type = classLoaderWrapper.LoadClassByDottedName(name);
-					if(initialize && !type.IsArray)
-					{
-						type.Finish();
-						type.RunClassInit();
-					}
-					return type.ClassObject;
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-			}
-
-			public static object getClassFromType(Type type)
-			{
-				return IKVM.NativeCode.ikvm.runtime.Util.getClassFromTypeHandle(type.TypeHandle);
-			}
-
-			public static string GetName(object wrapper)
-			{
-				TypeWrapper typeWrapper = (TypeWrapper)wrapper;
-				if(typeWrapper.IsPrimitive)
-				{
-					if(typeWrapper == PrimitiveTypeWrapper.VOID)
-					{
-						return "void";
-					}
-					else if(typeWrapper == PrimitiveTypeWrapper.BYTE)
-					{
-						return "byte";
-					}
-					else if(typeWrapper == PrimitiveTypeWrapper.BOOLEAN)
-					{
-						return "boolean";
-					}
-					else if(typeWrapper == PrimitiveTypeWrapper.SHORT)
-					{
-						return "short";
-					}
-					else if(typeWrapper == PrimitiveTypeWrapper.CHAR)
-					{
-						return "char";
-					}
-					else if(typeWrapper == PrimitiveTypeWrapper.INT)
-					{
-						return "int";
-					}
-					else if(typeWrapper == PrimitiveTypeWrapper.LONG)
-					{
-						return "long";
-					}
-					else if(typeWrapper == PrimitiveTypeWrapper.FLOAT)
-					{
-						return "float";
-					}
-					else if(typeWrapper == PrimitiveTypeWrapper.DOUBLE)
-					{
-						return "double";
-					}
-					else
-					{
-						throw new InvalidOperationException();
-					}
-				}
-				return typeWrapper.Name;
-			}
-	
-			public static object getClassLoader0(object wrapper)
-			{
-				TypeWrapper tw = (TypeWrapper)wrapper;
-				return tw.GetClassLoader().GetJavaClassLoader();
-			}
-
-			public static object[] GetDeclaredMethods(object cwrapper, bool getMethods, bool publicOnly)
-			{
-				Profiler.Enter("VMClass.GetDeclaredMethods");
-				try
-				{
-					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					wrapper.Finish();
-					if(wrapper.HasVerifyError)
-					{
-						// TODO we should get the message from somewhere
-						throw new VerifyError();
-					}
-					if(wrapper.HasClassFormatError)
-					{
-						// TODO we should get the message from somewhere
-						throw new ClassFormatError(wrapper.Name);
-					}
-					// we need to look through the array for unloadable types, because we may not let them
-					// escape into the 'wild'
-					MethodWrapper[] methods = wrapper.GetMethods();
-					ArrayList list = new ArrayList();
-					for(int i = 0; i < methods.Length; i++)
-					{
-						// we don't want to expose "hideFromReflection" methods (one reason is that it would
-						// mess up the serialVersionUID computation)
-						if(!methods[i].IsHideFromReflection)
-						{
-							if(methods[i].Name == "<clinit>")
-							{
-								// not reported back
-							}
-							else if(publicOnly && !methods[i].IsPublic)
-							{
-								// caller is only asking for public methods, so we don't return this non-public method
-							}
-							else if((methods[i].Name == "<init>") != getMethods)
-							{
-								if(!JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters)
-								{
-									methods[i].ReturnType.EnsureLoadable(wrapper.GetClassLoader());
-									TypeWrapper[] args = methods[i].GetParameters();
-									for(int j = 0; j < args.Length; j++)
-									{
-										args[j].EnsureLoadable(wrapper.GetClassLoader());
-									}
-								}
-								list.Add(methods[i]);
-							}
-						}
-					}
-					return (MethodWrapper[])list.ToArray(typeof(MethodWrapper));
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-				finally
-				{
-					Profiler.Leave("VMClass.GetDeclaredMethods");
-				}
-			}
-
-			public static object[] GetDeclaredFields(object cwrapper, bool publicOnly)
-			{
-				Profiler.Enter("VMClass.GetDeclaredFields");
-				try
-				{
-					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					// we need to finish the type otherwise all fields will not be in the field map yet
-					wrapper.Finish();
-					FieldWrapper[] fields = wrapper.GetFields();
-					ArrayList list = new ArrayList();
-					for(int i = 0; i < fields.Length; i++)
-					{
-						if(fields[i].IsHideFromReflection)
-						{
-							// skip
-						}
-						else if(publicOnly && !fields[i].IsPublic)
-						{
-							// caller is only asking for public field, so we don't return this non-public field
-						}
-						else
-						{
-							fields[i].FieldTypeWrapper.EnsureLoadable(wrapper.GetClassLoader());
-							list.Add(fields[i]);
-						}
-					}
-					return (FieldWrapper[])list.ToArray(typeof(FieldWrapper));
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-				finally
-				{
-					Profiler.Leave("VMClass.GetDeclaredFields");
-				}
-			}
-
-			public static object[] GetDeclaredClasses(object cwrapper, bool publicOnly)
-			{
-#if !FIRST_PASS
-				try
-				{
-					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					// NOTE to get at the InnerClasses we need to finish the type
-					wrapper.Finish();
-					TypeWrapper[] wrappers = wrapper.InnerClasses;
-					if(publicOnly)
-					{
-						ArrayList list = new ArrayList();
-						for(int i = 0; i < wrappers.Length; i++)
-						{
-							if(wrappers[i].IsUnloadable)
-							{
-								throw new jlNoClassDefFoundError(wrappers[i].Name);
-							}
-							// because the VM lacks any support for nested visibility control, we
-							// cannot rely on the publicness of the type here, but instead we have
-							// to look at the reflective modifiers
-							wrappers[i].Finish();
-							if((wrappers[i].ReflectiveModifiers & Modifiers.Public) != 0)
-							{
-								list.Add(wrappers[i]);
-							}
-						}
-						wrappers = (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
-					}
-					object[] innerclasses = new object[wrappers.Length];
-					for(int i = 0; i < innerclasses.Length; i++)
-					{
-						if(wrappers[i].IsUnloadable)
-						{
-							throw new jlNoClassDefFoundError(wrappers[i].Name);
-						}
-						if(!wrappers[i].IsAccessibleFrom(wrapper))
-						{
-							throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", wrappers[i].Name, wrapper.Name));
-						}
-						innerclasses[i] = wrappers[i].ClassObject;
-					}
-					return innerclasses;
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-#else
-				return null;
-#endif
-			}
-
-			public static object GetDeclaringClass(object cwrapper)
-			{
-#if !FIRST_PASS
-				try
-				{
-					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					// before we can call DeclaringTypeWrapper, we need to finish the type
-					wrapper.Finish();
-					TypeWrapper declaring = wrapper.DeclaringTypeWrapper;
-					if(declaring == null)
-					{
-						return null;
-					}
-					if(declaring.IsUnloadable)
-					{
-						throw new jlNoClassDefFoundError(declaring.Name);
-					}
-					if(!declaring.IsAccessibleFrom(wrapper))
-					{
-						throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", declaring.Name, wrapper.Name));
-					}
-					declaring.Finish();
-					foreach(TypeWrapper tw in declaring.InnerClasses)
-					{
-						if(tw == wrapper)
-						{
-							return declaring.ClassObject;
-						}
-					}
-					throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", declaring.Name, wrapper.Name));
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-#else
-				return null;
-#endif
-			}
-
-			public static object[] GetInterfaces(object cwrapper)
-			{
-				try
-				{
-					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					TypeWrapper[] interfaceWrappers = wrapper.Interfaces;
-					object[] interfaces = new object[interfaceWrappers.Length];
-					for(int i = 0; i < interfaces.Length; i++)
-					{
-						interfaces[i] = interfaceWrappers[i].ClassObject;
-					}
-					return interfaces;
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-			}
-
-			public static int GetModifiers(Object cwrapper, bool ignoreInnerClassesAttribute)
-			{
-				try
-				{
-					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					if(ignoreInnerClassesAttribute)
-					{
-						// NOTE GNU Classpath's Class gets it wrong and sets the ignoreInnerClassesAttribute
-						// when it wants to find out about Enum, Annotation, etc. so we treat the flag instead
-						// to mean that we should return the real accessibility flags, but otherwise return the
-						// flags from the InnerClass attribute.
-						return (int)((wrapper.ReflectiveModifiers & ~Modifiers.AccessMask) | (wrapper.Modifiers & Modifiers.AccessMask));
-					}
-					return (int)wrapper.ReflectiveModifiers;
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-			}
-
-			public static string GetClassSignature(object cwrapper)
-			{
-				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				return wrapper.GetGenericSignature();
-			}
-
-			public static object GetEnclosingClass(object cwrapper)
-			{
-				try
-				{
-					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					wrapper.Finish();
-					string[] enclosing = wrapper.GetEnclosingMethod();
-					if(enclosing != null)
-					{
-						TypeWrapper enclosingClass = wrapper.GetClassLoader().LoadClassByDottedNameFast(enclosing[0]);
-						if(enclosingClass == null)
-						{
-#if !FIRST_PASS
-							throw new jlNoClassDefFoundError(enclosing[0]);
-#endif
-						}
-						return enclosingClass.ClassObject;
-					}
-					return null;
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-			}
-
-			public static object GetEnclosingMethod(object cwrapper)
-			{
-				try
-				{
-					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					string[] enclosing = wrapper.GetEnclosingMethod();
-					if(enclosing != null && enclosing[1] != null && enclosing[1] != "<init>")
-					{
-						TypeWrapper enclosingClass = wrapper.GetClassLoader().LoadClassByDottedNameFast(enclosing[0]);
-						if(enclosingClass == null)
-						{
-#if !FIRST_PASS
-							throw new jlNoClassDefFoundError(enclosing[0]);
-#endif
-						}
-						MethodWrapper mw = enclosingClass.GetMethodWrapper(enclosing[1], enclosing[2], false);
-						if(mw != null && !mw.IsHideFromReflection)
-						{
-							return JVM.Library.newMethod(mw.DeclaringType.ClassObject, mw);
-						}
-					}
-					return null;
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-			}
-
-			public static object GetEnclosingConstructor(object cwrapper)
-			{
-				try
-				{
-					TypeWrapper wrapper = (TypeWrapper)cwrapper;
-					string[] enclosing = wrapper.GetEnclosingMethod();
-					if(enclosing != null && enclosing[1] == "<init>")
-					{
-						TypeWrapper enclosingClass = wrapper.GetClassLoader().LoadClassByDottedNameFast(enclosing[0]);
-						if(enclosingClass == null)
-						{
-#if !FIRST_PASS
-							throw new jlNoClassDefFoundError(enclosing[0]);
-#endif
-						}
-						MethodWrapper mw = enclosingClass.GetMethodWrapper(enclosing[1], enclosing[2], false);
-						if(mw != null && !mw.IsHideFromReflection)
-						{
-							return JVM.Library.newConstructor(mw.DeclaringType.ClassObject, mw);
-						}
-					}
-					return null;
-				}
-				catch(RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-			}
-
-			public static object[] GetDeclaredAnnotations(object cwrapper)
-			{
-				TypeWrapper wrapper = (TypeWrapper)cwrapper;
-				wrapper.Finish();
-				return wrapper.GetDeclaredAnnotations();
 			}
 		}
 	}
@@ -953,7 +152,11 @@ namespace IKVM.NativeCode.java
 
 			private static FieldWrapper GetFieldWrapperFromField(object field)
 			{
-				return (FieldWrapper)JVM.Library.getWrapperFromField(field);
+#if FIRST_PASS
+				return null;
+#else
+				return FieldWrapper.FromField(field);
+#endif
 			}
 
 			public static void setDoubleNative(object field, object obj, double val)
@@ -1006,6 +209,9 @@ namespace IKVM.NativeCode.java
 		{
 			public static object allocateObject(object clazz, object constructor_clazz, object constructor)
 			{
+#if FIRST_PASS
+				return null;
+#else
 				Profiler.Enter("ObjectInputStream.allocateObject");
 				try
 				{
@@ -1018,7 +224,7 @@ namespace IKVM.NativeCode.java
 					wrapper.Finish();
 					// TODO do we need error handling? (e.g. when trying to instantiate an interface or abstract class)
 					object obj = System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
-					MethodWrapper mw = (MethodWrapper)JVM.Library.getWrapperFromMethodOrConstructor(constructor);
+					MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
 					// TODO do we need error handling?
 					mw.Invoke(obj, null, false);
 					return obj;
@@ -1031,6 +237,7 @@ namespace IKVM.NativeCode.java
 				{
 					Profiler.Leave("ObjectInputStream.allocateObject");
 				}
+#endif
 			}
 		}
 	}
@@ -1547,18 +754,12 @@ namespace IKVM.NativeCode.ikvm.@internal
 
 			public static object getFieldConstantValue(object field)
 			{
-#if FIRST_PASS
-				return null;
-#else
-				FieldWrapper fw = (FieldWrapper)JVM.Library.getWrapperFromField(field);
-				return fw.GetConstant();
-#endif
+				return FieldWrapper.FromField(field).GetConstant();
 			}
 
 			public static bool isFieldDeprecated(object field)
 			{
-#if !FIRST_PASS
-				FieldWrapper fieldWrapper = (FieldWrapper)JVM.Library.getWrapperFromField(field);
+				FieldWrapper fieldWrapper = FieldWrapper.FromField(field);
 				FieldInfo fi = fieldWrapper.GetField();
 				if(fi != null)
 				{
@@ -1569,19 +770,14 @@ namespace IKVM.NativeCode.ikvm.@internal
 				{
 					return AttributeHelper.IsDefined(getter.GetProperty(), typeof(ObsoleteAttribute));
 				}
-#endif
 				return false;
 			}
 
 			public static bool isMethodDeprecated(object method)
 			{
-#if FIRST_PASS
-				return false;
-#else
-				MethodWrapper mw = (MethodWrapper)JVM.Library.getWrapperFromMethodOrConstructor(method);
+				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
 				MethodBase mb = mw.GetMethod();
 				return mb != null && AttributeHelper.IsDefined(mb, typeof(ObsoleteAttribute));
-#endif
 			}
 
 			public static bool isClassDeprecated(object clazz)
@@ -1728,8 +924,6 @@ namespace ikvm.@internal
 	{
 		object newClass(object wrapper, object protectionDomain, object classLoader);
 		object getWrapperFromClass(object clazz);
-		object getWrapperFromField(object field);
-		object getWrapperFromMethodOrConstructor(object methodOrConstructor);
 
 		object getWrapperFromClassLoader(object classLoader);
 		void setWrapperForClassLoader(object classLoader, object wrapper);
@@ -1742,10 +936,6 @@ namespace ikvm.@internal
 		void jniWaitUntilLastThread();
 		void jniDetach();
 		void setThreadGroup(object group);
-
-		object newConstructor(object clazz, object wrapper);
-		object newMethod(object clazz, object wrapper);
-		object newField(object clazz, object wrapper);
 
 		object newDirectByteBuffer(IntPtr address, int capacity);
 		IntPtr getDirectBufferAddress(object buffer);

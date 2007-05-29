@@ -23,23 +23,39 @@
 */
 using System;
 using System.Collections;
+using StackFrame = System.Diagnostics.StackFrame;
 using IKVM.Internal;
 #if !FIRST_PASS
 using jlClass = java.lang.Class;
 using jlClassNotFoundException = java.lang.ClassNotFoundException;
+using jlIllegalAccessException = java.lang.IllegalAccessException;
+using jlIllegalArgumentException = java.lang.IllegalArgumentException;
 using jlNoClassDefFoundError = java.lang.NoClassDefFoundError;
 using jlSecurityManager = java.lang.SecurityManager;
 using jlStackTraceElement = java.lang.StackTraceElement;
 using jlSystem = java.lang.System;
 using jlRuntimePermission = java.lang.RuntimePermission;
+using jlBoolean = java.lang.Boolean;
+using jlByte = java.lang.Byte;
+using jlShort = java.lang.Short;
+using jlCharacter = java.lang.Character;
+using jlInteger = java.lang.Integer;
+using jlFloat = java.lang.Float;
+using jlLong = java.lang.Long;
+using jlDouble = java.lang.Double;
+using jlVoid = java.lang.Void;
+using jlNumber = java.lang.Number;
 using jlrConstructor = java.lang.reflect.Constructor;
 using jlrMethod = java.lang.reflect.Method;
 using jlrField = java.lang.reflect.Field;
+using jlrModifier = java.lang.reflect.Modifier;
 using ProtectionDomain = java.security.ProtectionDomain;
 using srMethodAccessor = sun.reflect.MethodAccessor;
 using srConstantPool = sun.reflect.ConstantPool;
 using srConstructorAccessor = sun.reflect.ConstructorAccessor;
+using srFieldAccessor = sun.reflect.FieldAccessor;
 using srLangReflectAccess = sun.reflect.LangReflectAccess;
+using srReflection = sun.reflect.Reflection;
 using srReflectionFactory = sun.reflect.ReflectionFactory;
 using jnByteBuffer = java.nio.ByteBuffer;
 using StubGenerator = ikvm.@internal.stubgen.StubGenerator;
@@ -52,79 +68,6 @@ namespace IKVM.NativeCode.java
 	namespace lang
 	{
 #if !FIRST_PASS
-		sealed class LangReflectAccessImpl : srLangReflectAccess
-		{
-		    public jlrField newField(jlClass declaringClass, string name, jlClass type, int modifiers, int slot, string signature, byte[] annotations)
-			{
-				throw new NotImplementedException();
-			}
-
-			public jlrMethod newMethod(jlClass declaringClass, string name, jlClass[] parameterTypes, jlClass returnType, jlClass[] checkedExceptions, int modifiers, int slot, string signature, byte[] annotations, byte[] parameterAnnotations, byte[] annotationDefault)
-			{
-				throw new NotImplementedException();
-			}
-
-			public jlrConstructor newConstructor(jlClass declaringClass, jlClass[] parameterTypes, jlClass[] checkedExceptions, int modifiers, int slot, string signature, byte[] annotations, byte[] parameterAnnotations)
-			{
-				throw new NotImplementedException();
-			}
-
-		    public srMethodAccessor getMethodAccessor(jlrMethod m)
-			{
-				throw new NotImplementedException();
-			}
-
-		    public void setMethodAccessor(jlrMethod m, srMethodAccessor accessor)
-			{
-				throw new NotImplementedException();
-			}
-
-		    public srConstructorAccessor getConstructorAccessor(jlrConstructor c)
-			{
-				throw new NotImplementedException();
-			}
-
-		    public void setConstructorAccessor(jlrConstructor c, srConstructorAccessor accessor)
-			{
-				throw new NotImplementedException();
-			}
-
-		    public int getConstructorSlot(jlrConstructor c)
-			{
-				throw new NotImplementedException();
-			}
-
-		    public string getConstructorSignature(jlrConstructor c)
-			{
-				throw new NotImplementedException();
-			}
-
-		    public byte[] getConstructorAnnotations(jlrConstructor c)
-			{
-				throw new NotImplementedException();
-			}
-
-		    public byte[] getConstructorParameterAnnotations(jlrConstructor c)
-			{
-				throw new NotImplementedException();
-			}
-
-		    public jlrMethod copyMethod(jlrMethod arg)
-			{
-				return (jlrMethod)JVM.Library.newMethod(arg.getDeclaringClass(), JVM.Library.getWrapperFromMethodOrConstructor(arg));
-			}
-
-			public jlrField copyField(jlrField arg)
-			{
-				return (jlrField)JVM.Library.newField(arg.getDeclaringClass(), JVM.Library.getWrapperFromField(arg));
-			}
-
-			public jlrConstructor copyConstructor(jlrConstructor arg)
-			{
-				return (jlrConstructor)JVM.Library.newConstructor(arg.getDeclaringClass(), JVM.Library.getWrapperFromMethodOrConstructor(arg));
-			}
-		}
-
 		sealed class ConstantPoolWriter : IConstantPoolWriter
 		{
 			private ArrayList items = new ArrayList();
@@ -193,9 +136,6 @@ namespace IKVM.NativeCode.java
 			public static void registerNatives()
 			{
 #if !FIRST_PASS
-				// HACK to avoid triggering java.lang.System initialization we directly access the private field of ReflectionFactory
-				srReflectionFactory fact = (srReflectionFactory)typeof(srReflectionFactory).GetField("soleInstance", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).GetValue(null);
-				fact.setLangReflectAccess(new LangReflectAccessImpl());
 				signersField = typeof(jlClass).GetField("signers", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 				pdField = typeof(jlClass).GetField("pd", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 				constantPoolField = typeof(jlClass).GetField("constantPool", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -489,6 +429,13 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
+#if !FIRST_PASS
+			internal static IConstantPoolWriter GetConstantPoolWriter(TypeWrapper wrapper)
+			{
+				return (IConstantPoolWriter)constantPoolOopField.GetValue(getConstantPool(wrapper.ClassObject));
+			}
+#endif
+
 			public static object getConstantPool(object thisClass)
 			{
 #if FIRST_PASS
@@ -534,7 +481,7 @@ namespace IKVM.NativeCode.java
 						else
 						{
 							fields[i].FieldTypeWrapper.EnsureLoadable(wrapper.GetClassLoader());
-							list.Add(JVM.Library.newField(thisClass, fields[i]));
+							list.Add(fields[i].ToField(false));
 						}
 					}
 					return (jlrField[])list.ToArray(typeof(jlrField));
@@ -582,16 +529,13 @@ namespace IKVM.NativeCode.java
 							&& methods[i].Name != "<clinit>" && methods[i].Name != "<init>"
 							&& (!publicOnly || methods[i].IsPublic))
 						{
-							if (!JVM.EnableReflectionOnMethodsWithUnloadableTypeParameters)
+							methods[i].ReturnType.EnsureLoadable(wrapper.GetClassLoader());
+							TypeWrapper[] args = methods[i].GetParameters();
+							for (int j = 0; j < args.Length; j++)
 							{
-								methods[i].ReturnType.EnsureLoadable(wrapper.GetClassLoader());
-								TypeWrapper[] args = methods[i].GetParameters();
-								for (int j = 0; j < args.Length; j++)
-								{
-									args[j].EnsureLoadable(wrapper.GetClassLoader());
-								}
+								args[j].EnsureLoadable(wrapper.GetClassLoader());
 							}
-							list.Add(JVM.Library.newMethod(thisClass, methods[i]));
+							list.Add(methods[i].ToMethodOrConstructor(false));
 						}
 					}
 					return (jlrMethod[])list.ToArray(typeof(jlrMethod));
@@ -639,13 +583,12 @@ namespace IKVM.NativeCode.java
 						{
 							if (methods[i].Name == "<init>")
 							{
-								methods[i].ReturnType.EnsureLoadable(wrapper.GetClassLoader());
 								TypeWrapper[] args = methods[i].GetParameters();
 								for (int j = 0; j < args.Length; j++)
 								{
 									args[j].EnsureLoadable(wrapper.GetClassLoader());
 								}
-								list.Add(JVM.Library.newConstructor(thisClass, methods[i]));
+								list.Add(methods[i].ToMethodOrConstructor(false));
 							}
 						}
 					}
@@ -895,16 +838,51 @@ namespace IKVM.NativeCode.sun.reflect
 	{
 		private Reflection() { }
 
+		// this method will return null for global methods on .NET 1.1
+		// (.NET 1.1 doesn't have a way to go from MethodBase to Module or Assembly)
+		private static System.Reflection.Assembly GetAssemblyFromMethodBase(System.Reflection.MethodBase mb)
+		{
+#if WHIDBEY
+			return mb.Module.Assembly;
+#else
+			Type type = mb.DeclaringType;
+			return type == null ? null : type.Assembly;
+#endif
+		}
+
 		public static object getCallerClass(int realFramesToSkip)
 		{
-			System.Diagnostics.StackTrace stack = new System.Diagnostics.StackTrace(false);
+#if FIRST_PASS
+			return null;
+#else
 			// HACK compensate for not inlining (or no tail-call optimization) of the native method stub
-			if (stack.GetFrame(1).GetMethod().DeclaringType.FullName == "sun.reflect.Reflection")
+			if (new StackFrame(1, false).GetMethod().DeclaringType == typeof(srReflection))
 			{
 				realFramesToSkip++;
 			}
-			// TODO implement skipping reflection frames
-			return ClassLoaderWrapper.GetWrapperFromType(stack.GetFrame(realFramesToSkip).GetMethod().DeclaringType).ClassObject;
+			StackFrame frame;
+			// skip reflection frames
+			while (GetAssemblyFromMethodBase((frame = new StackFrame(realFramesToSkip, false)).GetMethod()) == typeof(object).Assembly)
+			{
+				for (;;)
+				{
+					Type type = new StackFrame(realFramesToSkip++, false).GetMethod().DeclaringType;
+					if (type == typeof(jlrMethod) || type == typeof(jlrConstructor))
+					{
+						break;
+					}
+					if (type == typeof(IKVM.Runtime.JNIEnv))
+					{
+						while (new StackFrame(realFramesToSkip, false).GetMethod().DeclaringType == typeof(IKVM.Runtime.JNIEnv))
+						{
+							realFramesToSkip++;
+						}
+						break;
+					}
+				}
+			}
+			return ClassLoaderWrapper.GetWrapperFromType(frame.GetMethod().DeclaringType).ClassObject;
+#endif
 		}
 
 		public static int getClassAccessFlags(object clazz)
@@ -920,21 +898,788 @@ namespace IKVM.NativeCode.sun.reflect
 		}
 	}
 
-	public sealed class NativeConstructorAccessorImpl
+	public sealed class ReflectionFactory
 	{
-		private NativeConstructorAccessorImpl() { }
+		private ReflectionFactory() { }
 
-		public static object newInstance0(object thisConstructor, object[] args)
+#if !FIRST_PASS
+		private static object[] ConvertArgs(TypeWrapper[] argumentTypes, object[] args)
 		{
-			throw new NotImplementedException();
+			object[] nargs = new object[args == null ? 0 : args.Length];
+			for (int i = 0; i < nargs.Length; i++)
+			{
+				if (argumentTypes[i].IsPrimitive)
+				{
+					if (args[i] == null)
+					{
+						throw new jlIllegalArgumentException("primitive wrapper null");
+					}
+					nargs[i] = JVM.Library.unbox(args[i]);
+					// NOTE we depend on the fact that the .NET reflection parameter type
+					// widening rules are the same as in Java, but to have this work for byte
+					// we need to convert byte to sbyte.
+					if (nargs[i] is byte && argumentTypes[i] != PrimitiveTypeWrapper.BYTE)
+					{
+						nargs[i] = (sbyte)(byte)nargs[i];
+					}
+				}
+				else
+				{
+					nargs[i] = args[i];
+				}
+			}
+			return nargs;
 		}
-	}
 
-	public sealed class NativeMethodAccessorImpl
-	{
-		private NativeMethodAccessorImpl() { }
+		private sealed class MethodAccessorImpl : srMethodAccessor
+		{
+			private readonly MethodWrapper mw;
 
-		public static object invoke0(object thisMethod, object obj, object[] args)
+			internal MethodAccessorImpl(jlrMethod method)
+			{
+				mw = MethodWrapper.FromMethodOrConstructor(method);
+			}
+
+			[IKVM.Attributes.HideFromJava]
+			public object invoke(object obj, object[] args)
+			{
+				args = ConvertArgs(mw.GetParameters(), args);
+				object retval;
+				try
+				{
+					retval = mw.Invoke(obj, args, false);
+				}
+				catch (MethodAccessException x)
+				{
+					// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
+					throw new jlIllegalAccessException().initCause(x);
+				}
+				if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
+				{
+					retval = JVM.Library.box(retval);
+				}
+				return retval;
+			}
+		}
+
+		private sealed class ConstructorAccessorImpl : srConstructorAccessor
+		{
+			private readonly MethodWrapper mw;
+
+			internal ConstructorAccessorImpl(jlrConstructor constructor)
+			{
+				mw = MethodWrapper.FromMethodOrConstructor(constructor);
+			}
+
+			[IKVM.Attributes.HideFromJava]
+			public object newInstance(object[] args)
+			{
+				args = ConvertArgs(mw.GetParameters(), args);
+				try
+				{
+					return mw.Invoke(null, args, false);
+				}
+				catch (MethodAccessException x)
+				{
+					// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
+					throw new jlIllegalAccessException().initCause(x);
+				}
+			}
+		}
+
+		private abstract class FieldAccessorImplBase : srFieldAccessor
+		{
+			private readonly FieldWrapper fw;
+			private readonly bool isFinal;
+
+			private FieldAccessorImplBase(jlrField field, bool overrideAccessCheck)
+			{
+				fw = FieldWrapper.FromField(field);
+				isFinal = (!overrideAccessCheck || fw.IsStatic) && fw.IsFinal;
+			}
+
+			public virtual bool getBoolean(object obj)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual byte getByte(object obj)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual char getChar(object obj)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual short getShort(object obj)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual int getInt(object obj)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual long getLong(object obj)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual float getFloat(object obj)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual double getDouble(object obj)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual void setBoolean(object obj, bool z)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual void setByte(object obj, byte b)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual void setChar(object obj, char c)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual void setShort(object obj, short s)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual void setInt(object obj, int i)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual void setLong(object obj, long l)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual void setFloat(object obj, float f)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public virtual void setDouble(object obj, double d)
+			{
+				throw new jlIllegalArgumentException();
+			}
+
+			public abstract object get(object obj);
+			public abstract void set(object obj, object value);
+			
+			private sealed class ObjectField : FieldAccessorImplBase
+			{
+				private readonly jlClass fieldType;
+
+				internal ObjectField(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					fieldType = field.getType();
+				}
+
+				public override object get(object obj)
+				{
+					return fw.GetValue(obj);
+				}
+
+				public override void set(object obj, object value)
+				{
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					if (value != null && !fieldType.isInstance(value))
+					{
+						throw new jlIllegalArgumentException();
+					}
+					fw.SetValue(obj, value);
+				}
+			}
+
+			private sealed class ByteField : FieldAccessorImplBase
+			{
+				internal ByteField(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+				}
+
+				public override byte getByte(object obj)
+				{
+					return (byte)fw.GetValue(obj);
+				}
+
+				public override short getShort(object obj)
+				{
+					return (sbyte)getByte(obj);
+				}
+
+				public override int getInt(object obj)
+				{
+					return (sbyte)getByte(obj);
+				}
+
+				public override long getLong(object obj)
+				{
+					return (sbyte)getByte(obj);
+				}
+
+				public override float getFloat(object obj)
+				{
+					return (sbyte)getByte(obj);
+				}
+
+				public override double getDouble(object obj)
+				{
+					return (sbyte)getByte(obj);
+				}
+
+				public override object get(object obj)
+				{
+					return jlByte.valueOf(getByte(obj));
+				}
+
+				public override void set(object obj, object val)
+				{
+					if (!(val is jlByte))
+					{
+						throw new jlIllegalArgumentException();
+					}
+					setByte(obj, ((jlByte)val).byteValue());
+				}
+
+				public override void setByte(object obj, byte b)
+				{
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					fw.SetValue(obj, b);
+				}
+			}
+
+			private sealed class BooleanField : FieldAccessorImplBase
+			{
+				internal BooleanField(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+				}
+
+				public override bool getBoolean(object obj)
+				{
+					return (bool)fw.GetValue(obj);
+				}
+
+				public override object get(object obj)
+				{
+					return jlBoolean.valueOf(getBoolean(obj));
+				}
+
+				public override void set(object obj, object val)
+				{
+					if (!(val is jlBoolean))
+					{
+						throw new jlIllegalArgumentException();
+					}
+					setBoolean(obj, ((jlBoolean)val).booleanValue());
+				}
+
+				public override void setBoolean(object obj, bool b)
+				{
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					fw.SetValue(obj, b);
+				}
+			}
+
+			private sealed class CharField : FieldAccessorImplBase
+			{
+				internal CharField(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+				}
+
+				public override char getChar(object obj)
+				{
+					return (char)fw.GetValue(obj);
+				}
+
+				public override int getInt(object obj)
+				{
+					return getChar(obj);
+				}
+
+				public override long getLong(object obj)
+				{
+					return getChar(obj);
+				}
+
+				public override float getFloat(object obj)
+				{
+					return getChar(obj);
+				}
+
+				public override double getDouble(object obj)
+				{
+					return getChar(obj);
+				}
+
+				public override object get(object obj)
+				{
+					return jlCharacter.valueOf(getChar(obj));
+				}
+
+				public override void set(object obj, object val)
+				{
+					if (val is jlCharacter)
+						setChar(obj, ((jlCharacter)val).charValue());
+					else
+						throw new jlIllegalArgumentException();
+				}
+
+				public override void setChar(object obj, char c)
+				{
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					fw.SetValue(obj, c);
+				}
+			}
+
+			private sealed class ShortField : FieldAccessorImplBase
+			{
+				internal ShortField(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+				}
+
+				public override short getShort(object obj)
+				{
+					return (short)fw.GetValue(obj);
+				}
+
+				public override int getInt(object obj)
+				{
+					return getShort(obj);
+				}
+
+				public override long getLong(object obj)
+				{
+					return getShort(obj);
+				}
+
+				public override float getFloat(object obj)
+				{
+					return getShort(obj);
+				}
+
+				public override double getDouble(object obj)
+				{
+					return getShort(obj);
+				}
+
+				public override object get(object obj)
+				{
+					return jlShort.valueOf(getShort(obj));
+				}
+
+				public override void set(object obj, object val)
+				{
+					if (val is jlByte
+						|| val is jlShort)
+						setShort(obj, ((jlNumber)val).shortValue());
+					else
+						throw new jlIllegalArgumentException();
+				}
+
+				public override void setByte(object obj, byte b)
+				{
+					setShort(obj, (sbyte)b);
+				}
+
+				public override void setShort(object obj, short s)
+				{
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					fw.SetValue(obj, s);
+				}
+			}
+
+			private sealed class IntField : FieldAccessorImplBase
+			{
+				internal IntField(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+				}
+
+				public override int getInt(object obj)
+				{
+					return (int)fw.GetValue(obj);
+				}
+
+				public override long getLong(object obj)
+				{
+					return getInt(obj);
+				}
+
+				public override float getFloat(object obj)
+				{
+					return getInt(obj);
+				}
+
+				public override double getDouble(object obj)
+				{
+					return getInt(obj);
+				}
+
+				public override object get(object obj)
+				{
+					return jlInteger.valueOf(getInt(obj));
+				}
+
+				public override void set(object obj, object val)
+				{
+					if (val is jlByte
+						|| val is jlShort
+						|| val is jlInteger)
+						setInt(obj, ((jlNumber)val).intValue());
+					else if (val is jlCharacter)
+						setInt(obj, ((jlCharacter)val).charValue());
+					else
+						throw new jlIllegalArgumentException();
+				}
+
+				public override void setByte(object obj, byte b)
+				{
+					setInt(obj, (sbyte)b);
+				}
+
+				public override void setChar(object obj, char c)
+				{
+					setInt(obj, c);
+				}
+
+				public override void setShort(object obj, short s)
+				{
+					setInt(obj, s);
+				}
+
+				public override void setInt(object obj, int i)
+				{
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					fw.SetValue(obj, i);
+				}
+			}
+
+			private sealed class FloatField : FieldAccessorImplBase
+			{
+				internal FloatField(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+				}
+
+				public override float getFloat(object obj)
+				{
+					return (float)fw.GetValue(obj);
+				}
+
+				public override double getDouble(object obj)
+				{
+					return getFloat(obj);
+				}
+
+				public override object get(object obj)
+				{
+					return jlFloat.valueOf(getFloat(obj));
+				}
+
+				public override void set(object obj, object val)
+				{
+					if (val is jlFloat
+						|| val is jlByte
+						|| val is jlShort
+						|| val is jlInteger
+						|| val is jlLong)
+						setFloat(obj, ((jlNumber)val).floatValue());
+					else if (val is jlCharacter)
+						setFloat(obj, ((jlCharacter)val).charValue());
+					else
+						throw new jlIllegalArgumentException();
+				}
+
+				public override void setByte(object obj, byte b)
+				{
+					setFloat(obj, (sbyte)b);
+				}
+
+				public override void setChar(object obj, char c)
+				{
+					setFloat(obj, c);
+				}
+
+				public override void setShort(object obj, short s)
+				{
+					setFloat(obj, s);
+				}
+
+				public override void setInt(object obj, int i)
+				{
+					setFloat(obj, i);
+				}
+
+				public override void setLong(object obj, long l)
+				{
+					setFloat(obj, l);
+				}
+
+				public override void setFloat(object obj, float f)
+				{
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					fw.SetValue(obj, f);
+				}
+			}
+
+			private sealed class LongField : FieldAccessorImplBase
+			{
+				internal LongField(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+				}
+
+				public override long getLong(object obj)
+				{
+					return (long)fw.GetValue(obj);
+				}
+
+				public override float getFloat(object obj)
+				{
+					return getLong(obj);
+				}
+
+				public override double getDouble(object obj)
+				{
+					return getLong(obj);
+				}
+
+				public override object get(object obj)
+				{
+					return jlLong.valueOf(getLong(obj));
+				}
+
+				public override void setLong(object obj, long l)
+				{
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					fw.SetValue(obj, l);
+				}
+
+				public override void set(object obj, object val)
+				{
+					if (val is jlLong
+						|| val is jlByte
+						|| val is jlShort
+						|| val is jlInteger)
+						setLong(obj, ((jlNumber)val).longValue());
+					else if (val is jlCharacter)
+						setLong(obj, ((jlCharacter)val).charValue());
+					else
+						throw new jlIllegalArgumentException();
+				}
+
+				public override void setByte(object obj, byte b)
+				{
+					setLong(obj, (sbyte)b);
+				}
+
+				public override void setChar(object obj, char c)
+				{
+					setLong(obj, c);
+				}
+
+				public override void setShort(object obj, short s)
+				{
+					setLong(obj, s);
+				}
+
+				public override void setInt(object obj, int i)
+				{
+					setLong(obj, i);
+				}
+			}
+
+			private sealed class DoubleField : FieldAccessorImplBase
+			{
+				internal DoubleField(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+				}
+
+				public override double getDouble(object obj)
+				{
+					return (double)fw.GetValue(obj);
+				}
+
+				public override object get(object obj)
+				{
+					return jlDouble.valueOf(getDouble(obj));
+				}
+
+				public override void set(object obj, object val)
+				{
+					if (val is jlDouble
+						|| val is jlFloat
+						|| val is jlByte
+						|| val is jlShort
+						|| val is jlInteger
+						|| val is jlLong)
+						setDouble(obj, ((jlNumber)val).doubleValue());
+					else if (val is jlCharacter)
+						setDouble(obj, ((jlCharacter)val).charValue());
+					else
+						throw new jlIllegalArgumentException();
+				}
+
+				public override void setByte(object obj, byte b)
+				{
+					setDouble(obj, (sbyte)b);
+				}
+
+				public override void setChar(object obj, char c)
+				{
+					setDouble(obj, c);
+				}
+
+				public override void setShort(object obj, short s)
+				{
+					setDouble(obj, s);
+				}
+
+				public override void setInt(object obj, int i)
+				{
+					setDouble(obj, i);
+				}
+
+				public override void setLong(object obj, long l)
+				{
+					setDouble(obj, l);
+				}
+
+				public override void setFloat(object obj, float f)
+				{
+					setDouble(obj, f);
+				}
+
+				public override void setDouble(object obj, double d)
+				{
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					fw.SetValue(obj, d);
+				}
+			}
+
+			internal static FieldAccessorImplBase Create(jlrField field, bool overrideAccessCheck)
+			{
+				jlClass type = field.getType();
+				if (type.isPrimitive())
+				{
+					if (type == jlByte.TYPE)
+					{
+						return new ByteField(field, overrideAccessCheck);
+					}
+					if (type == jlBoolean.TYPE)
+					{
+						return new BooleanField(field, overrideAccessCheck);
+					}
+					if (type == jlCharacter.TYPE)
+					{
+						return new CharField(field, overrideAccessCheck);
+					}
+					if (type == jlShort.TYPE)
+					{
+						return new ShortField(field, overrideAccessCheck);
+					}
+					if (type == jlInteger.TYPE)
+					{
+						return new IntField(field, overrideAccessCheck);
+					}
+					if (type == jlFloat.TYPE)
+					{
+						return new FloatField(field, overrideAccessCheck);
+					}
+					if (type == jlLong.TYPE)
+					{
+						return new LongField(field, overrideAccessCheck);
+					}
+					if (type == jlDouble.TYPE)
+					{
+						return new DoubleField(field, overrideAccessCheck);
+					}
+					throw new InvalidOperationException("field type: " + type);
+				}
+				else
+				{
+					return new ObjectField(field, overrideAccessCheck);
+				}
+			}
+		}
+#endif
+
+		public static object newFieldAccessor(object thisFactory, object field, bool overrideAccessCheck)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return FieldAccessorImplBase.Create((jlrField)field, overrideAccessCheck);
+#endif
+		}
+
+		public static object newMethodAccessor(object thisFactory, object method)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return new MethodAccessorImpl((jlrMethod)method);
+#endif
+		}
+
+		public static object newConstructorAccessor0(object thisFactory, object constructor)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return new ConstructorAccessorImpl((jlrConstructor)constructor);
+#endif
+		}
+
+		public static object newConstructorAccessorForSerialization(object classToInstantiate, object constructorToCall)
 		{
 			throw new NotImplementedException();
 		}

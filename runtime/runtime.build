@@ -42,7 +42,8 @@
                 <include name="ByteCodeHelper.cs" />
                 <include name="ClassFile.cs" />
                 <include name="ClassLoaderWrapper.cs" />
-                <include name="classpath.cs" />
+                <include unless="${hybrid}" name="classpath.cs" />
+                <include if="${hybrid}" name="classpath-hybrid.cs" />
                 <include name="CodeEmitter.cs" />
                 <include name="compiler.cs" />
                 <include name="CoreClasses.cs" />

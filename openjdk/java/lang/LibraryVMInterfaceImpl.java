@@ -26,7 +26,6 @@ package java.lang;
 
 import cli.System.Reflection.BindingFlags;
 import java.lang.reflect.Field;
-import java.lang.reflect.VMFieldImpl;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -68,41 +67,9 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 	return clazz;
     }
 
-    public Object newField(Object clazz, Object wrapper)
-    {
-        return VMFieldImpl.newField((Class)clazz, wrapper);
-    }
-
-    public Object newConstructor(Object clazz, Object wrapper)
-    {
-        return new Constructor((Class)clazz, wrapper);
-    }
-
-    public Object newMethod(Object clazz, Object wrapper)
-    {
-        return new Method((Class)clazz, wrapper);
-    }
-
     public Object getWrapperFromClass(Object clazz)
     {
 	return classTypeWrapperField.GetValue(clazz);
-    }
-
-    public Object getWrapperFromField(Object field)
-    {
-        return ((Field)field).impl.fieldCookie;
-    }
-
-    public Object getWrapperFromMethodOrConstructor(Object methodOrConstructor)
-    {
-        if(methodOrConstructor instanceof Method)
-        {
-            return ((Method)methodOrConstructor).methodCookie;
-        }
-        else
-        {
-            return ((Constructor)methodOrConstructor).methodCookie;
-        }
     }
 
     public Object getWrapperFromClassLoader(Object classLoader)
