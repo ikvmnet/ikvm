@@ -23,9 +23,11 @@
 */
 package java.lang;
 
-import java.io.*;
-import java.lang.reflect.*;
-import gnu.classpath.SystemProperties;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.util.ArrayList;
 
 @ikvm.lang.Internal
 public final class ExceptionHelper
@@ -36,14 +38,22 @@ public final class ExceptionHelper
     private static final String NULL_STRING = new String();
     private static final ikvm.internal.WeakIdentityMap exceptions = new ikvm.internal.WeakIdentityMap();
     private static final boolean cleanStackTrace = SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
-    private static cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
-    private static cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
-    private static final Throwable NOT_REMAPPED = new cli.System.Exception();
+    private static final cli.System.Type System_Reflection_MethodBase = cli.System.Type.GetType("System.Reflection.MethodBase, mscorlib");
+    private static final cli.System.Type System_Exception = cli.System.Type.GetType("System.Exception, mscorlib");
+    // we use Activator.CreateInstance to prevent the exception from being added to the exceptions map
+    private static final Throwable NOT_REMAPPED = (Throwable)cli.System.Activator.CreateInstance(System_Exception);
+    // non-private because it is used by the ExceptionInfoHelper inner class
+    /*private*/ static final Throwable CAUSE_NOT_SET = (Throwable)cli.System.Activator.CreateInstance(System_Exception);
     private static final java.util.Hashtable failedTypes = new java.util.Hashtable();
+
+    static
+    {
+        // make sure the exceptions map continues to work during AppDomain finalization
+        cli.System.GC.SuppressFinalize(exceptions);
+    }
 
     private static final class ExceptionInfoHelper
     {
-	private static final Throwable CAUSE_NOT_SET = new cli.System.Exception();
 	private cli.System.Diagnostics.StackTrace tracePart1;
 	private cli.System.Diagnostics.StackTrace tracePart2;
 	private cli.System.Collections.ArrayList stackTrace;
@@ -66,6 +76,15 @@ public final class ExceptionHelper
 	    if(cause == null)
 	    {
 		cause = CAUSE_NOT_SET;
+	    }
+	}
+
+	void captureCause(Throwable x)
+	{
+	    Throwable cause = getInnerException(x);
+	    if(cause != null)
+	    {
+		this.cause = cause;
 	    }
 	}
 
@@ -297,37 +316,42 @@ public final class ExceptionHelper
 
     static void printStackTrace(Throwable x)
     {
-	printStackTrace(x, System.err);
+	x.printStackTrace(System.err);
     }
 
     static void printStackTrace(Throwable x, java.io.PrintStream printStream)
     {
-	printStream.print(buildStackTrace(x));
+	for(String line : buildStackTrace(x))
+	{
+	    printStream.println(line);
+	}
     }
 
     static void printStackTrace(Throwable x, java.io.PrintWriter printWriter)
     {
-	printWriter.print(buildStackTrace(x));
+	for(String line : buildStackTrace(x))
+	{
+	    printWriter.println(line);
+	}
     }
 
-    private static String buildStackTrace(Throwable x)
+    private static ArrayList<String> buildStackTrace(Throwable x)
     {
 	if(x == null)
 	{
 	    throw new NullPointerException();
 	}
-	String newline = cli.System.Environment.get_NewLine();
-	StringBuffer sb = new StringBuffer();
-	sb.append(x).append(newline);
+	ArrayList<String> list = new ArrayList<String>();
+	list.add(x.toString());
 	StackTraceElement[] stack = x.getStackTrace();
 	for(int i = 0; i < stack.length; i++)
 	{
-	    sb.append("\tat ").append(stack[i]).append(newline);
+	    list.add("\tat " + stack[i]);
 	}
 	Throwable cause = x.getCause();
 	while(cause != null)
 	{
-	    sb.append("Caused by: ").append(cause).append(newline);
+	    list.add("Caused by: " + cause);
 
 	    // Cause stacktrace
 	    StackTraceElement[] parentStack = stack;
@@ -356,17 +380,17 @@ public final class ExceptionHelper
 		// Print stacktrace element or indicate the rest is equal 
 		if(!equal)
 		{
-		    sb.append("\tat ").append(stack[i]).append(newline);
+		    list.add("\tat " + stack[i]);
 		}
 		else
 		{
-		    sb.append("\t... ").append(remaining).append(" more").append(newline);
+		    list.add("\t... " + remaining + " more");
 		    break; // from stack printing for loop
 		}
 	    }
 	    cause = cause.getCause();
 	}
-	return sb.toString();
+	return list;
     }
 
     private static ExceptionInfoHelper getExceptionInfoHelper(Throwable t)
@@ -472,6 +496,7 @@ public final class ExceptionHelper
 	if(ei == null)
 	{
 	    ei = new ExceptionInfoHelper();
+	    ei.captureCause(x);
 	    exceptions.put(x, ei);
 	}
 	ei.set_StackTrace(stackTrace);
@@ -525,6 +550,7 @@ public final class ExceptionHelper
 	if(eih == null)
 	{
 	    eih = new ExceptionInfoHelper();
+	    eih.captureCause(x);
 	    exceptions.put(x, eih);
 	}
         eih.ResetStackTrace();
