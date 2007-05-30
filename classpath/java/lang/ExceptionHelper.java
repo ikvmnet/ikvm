@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -551,6 +551,7 @@ public final class ExceptionHelper
                 Throwable org = eih.getOriginal();
                 if(org != null)
                 {
+		    exceptions.put(org, t);
                     t = org;
                 }
             }
@@ -616,6 +617,7 @@ public final class ExceptionHelper
                     if(t != org)
                     {
                         eih.setOriginal(org);
+			exceptions.remove(org);
                     }
                     exceptions.put(t, eih);
                     Throwable inner = getInnerException(org);
@@ -627,6 +629,7 @@ public final class ExceptionHelper
                 else
                 {
                     eih.setOriginal(org);
+		    exceptions.remove(org);
                 }
             }
             else
