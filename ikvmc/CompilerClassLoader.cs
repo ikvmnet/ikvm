@@ -211,6 +211,19 @@ namespace IKVM.Internal
 			return type;
 		}
 
+		internal override Type GetType(string name)
+		{
+			foreach(AssemblyClassLoader loader in referencedAssemblies)
+			{
+				Type type = loader.GetType(name);
+				if(type != null)
+				{
+					return type;
+				}
+			}
+			return null;
+		}
+
 		internal void SetMain(MethodInfo m, PEFileKinds target, Hashtable props, bool noglobbing, Type apartmentAttributeType)
 		{
 			Type[] args = Type.EmptyTypes;
