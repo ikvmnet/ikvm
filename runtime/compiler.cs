@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2813,18 +2813,36 @@ class Compiler
 				}
 				case NormalizedByteCode.__dup_x2:
 				{
-					DupHelper dh = new DupHelper(this, 3);
-					dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
-					dh.SetType(1, ma.GetRawStackTypeWrapper(i, 1));
-					dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
-					dh.Store(0);
-					dh.Store(1);
-					dh.Store(2);
-					dh.Load(0);
-					dh.Load(2);
-					dh.Load(1);
-					dh.Load(0);
-					dh.Release();
+					TypeWrapper type2 = ma.GetRawStackTypeWrapper(i, 1);
+					if(type2.IsWidePrimitive)
+					{
+						// Form 2
+						DupHelper dh = new DupHelper(this, 2);
+						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+						dh.SetType(1, type2);
+						dh.Store(0);
+						dh.Store(1);
+						dh.Load(0);
+						dh.Load(1);
+						dh.Load(0);
+						dh.Release();
+					}
+					else
+					{
+						// Form 1
+						DupHelper dh = new DupHelper(this, 3);
+						dh.SetType(0, ma.GetRawStackTypeWrapper(i, 0));
+						dh.SetType(1, type2);
+						dh.SetType(2, ma.GetRawStackTypeWrapper(i, 2));
+						dh.Store(0);
+						dh.Store(1);
+						dh.Store(2);
+						dh.Load(0);
+						dh.Load(2);
+						dh.Load(1);
+						dh.Load(0);
+						dh.Release();
+					}
 					break;
 				}
 				case NormalizedByteCode.__pop2:
