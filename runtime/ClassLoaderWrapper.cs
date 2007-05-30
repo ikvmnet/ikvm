@@ -846,7 +846,7 @@ namespace IKVM.Internal
 			return wrapper;
 		}
 
-		private static bool IsVector(Type type)
+		internal static bool IsVector(Type type)
 		{
 			// NOTE it looks like there's no API to distinguish an array of rank 1 from a vector,
 			// so we check if the type name ends in [], which indicates it's a vector
