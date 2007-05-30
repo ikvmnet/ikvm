@@ -3078,6 +3078,19 @@ namespace IKVM.Internal
 			this.sigName = sigName;
 		}
 
+		internal static bool IsPrimitiveType(Type type)
+		{
+			return type == BYTE.type
+				|| type == CHAR.type
+				|| type == DOUBLE.type
+				|| type == FLOAT.type
+				|| type == INT.type
+				|| type == LONG.type
+				|| type == SHORT.type
+				|| type == BOOLEAN.type
+				|| type == VOID.type;
+		}
+
 		internal override string SigName
 		{
 			get
@@ -8707,22 +8720,42 @@ namespace IKVM.Internal
 				sb.Append(MangleTypeName(Whidbey.GetGenericTypeDefinition(type).FullName));
 				sb.Append("_$$$_");
 				string sep = "";
-				foreach(Type t in Whidbey.GetGenericArguments(type))
+				foreach(Type t1 in Whidbey.GetGenericArguments(type))
 				{
+					Type t = t1;
 					sb.Append(sep);
-					TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(t);
-					while(tw.IsArray)
+					// NOTE we can't use ClassLoaderWrapper.GetWrapperFromType() here to get t's name,
+					// because we might be resolving a generic type that refers to a type that is in
+					// the process of being constructed.
+					//
+					// For example:
+					//   class Base<T> { } 
+					//   class Derived : Base<Derived> { }
+					//
+					while(ClassLoaderWrapper.IsVector(t))
 					{
-						tw = tw.ElementTypeWrapper;
+						t = t.GetElementType();
 						sb.Append('A');
 					}
-					if(tw.IsPrimitive)
+					if(PrimitiveTypeWrapper.IsPrimitiveType(t))
 					{
-						sb.Append(tw.SigName);
+						sb.Append(ClassLoaderWrapper.GetWrapperFromType(t).SigName);
 					}
 					else
 					{
-						string s = tw.Name;
+						string s;
+						if(ClassLoaderWrapper.IsRemappedType(t))
+						{
+							s = ClassLoaderWrapper.GetWrapperFromType(t).Name;
+						}
+						else if(AttributeHelper.IsJavaModule(t.Module))
+						{
+							s = CompiledTypeWrapper.GetName(t);
+						}
+						else
+						{
+							s = DotNetTypeWrapper.GetName(t);
+						}
 						// only do the mangling for non-generic types (because we don't want to convert
 						// the double underscores in two adjacent _$$$_ or _$$$$_ markers)
 						if (s.IndexOf("_$$$_") == -1)
