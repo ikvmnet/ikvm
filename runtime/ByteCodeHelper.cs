@@ -225,8 +225,7 @@ namespace IKVM.Runtime
 				return false;
 			}
 			TypeWrapper wrapper = LoadTypeWrapper(type, clazz);
-			TypeWrapper other = NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj);
-			return other.IsAssignableTo(wrapper);
+			return wrapper.IsInstance(obj);
 		}
 
 		private static MethodWrapper GetMethodWrapper(TypeWrapper thisType, RuntimeTypeHandle type, string clazz, string name, string sig, bool isStatic)

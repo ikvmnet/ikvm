@@ -1966,6 +1966,15 @@ namespace IKVM.Internal
 			}
 		}
 
+		// is this an array type of which the ultimate element type is dynamic-only?
+		internal bool IsDynamicOnlyArray
+		{
+			get
+			{
+				return IsArray && (ElementTypeWrapper.IsDynamicOnly || ElementTypeWrapper.IsDynamicOnlyArray);
+			}
+		}
+
 		internal bool IsUnloadable
 		{
 			get
@@ -2504,6 +2513,40 @@ namespace IKVM.Internal
 				return !elem1.IsNonPrimitiveValueType && elem1.IsSubTypeOf(elem2);
 			}
 			return this.IsSubTypeOf(wrapper);
+		}
+
+		internal bool IsInstance(object obj)
+		{
+			if(obj != null)
+			{
+				TypeWrapper thisWrapper = this;
+				TypeWrapper objWrapper = IKVM.NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj);
+				if(thisWrapper.IsGhostArray)
+				{
+					TypeWrapper elementType = objWrapper;
+					while(elementType.IsArray)
+					{
+						elementType = elementType.ElementTypeWrapper;
+					}
+					return thisWrapper.ArrayRank == objWrapper.ArrayRank && elementType == CoreClasses.java.lang.Object.Wrapper;
+				}
+				if(thisWrapper.IsDynamicOnlyArray)
+				{
+					TypeWrapper elementType = thisWrapper;
+					while(elementType.IsArray)
+					{
+						elementType = elementType.ElementTypeWrapper;
+					}
+					elementType = elementType.BaseTypeWrapper;
+					if(elementType == null)
+					{
+						elementType = CoreClasses.java.lang.Object.Wrapper;
+					}
+					thisWrapper = elementType.MakeArrayType(thisWrapper.ArrayRank);
+				}
+				return objWrapper.IsAssignableTo(thisWrapper);
+			}
+			return false;
 		}
 
 		internal abstract TypeWrapper[] Interfaces
