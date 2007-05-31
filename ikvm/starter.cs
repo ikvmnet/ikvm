@@ -119,7 +119,7 @@ public class Starter
 		bool waitOnExit = false;
 		bool showVersion = false;
 		string mainClass = null;
-		string[] vmargs = null;
+		int vmargsIndex = -1;
 		for(int i = 0; i < args.Length; i++)
 		{
 			if(args[i][0] == '-')
@@ -239,7 +239,7 @@ public class Starter
 			else
 			{
 				mainClass = args[i];
-				vmargs = Startup.glob(i + 2);
+				vmargsIndex = i + 2;
 				break;
 			}
 		}
@@ -285,7 +285,9 @@ public class Starter
 			}
 			Startup.setProperties(props);
 			Startup.enterMainThread();
-			if(jar)
+			// HACK Starup.glob() uses Java code, so we need to do this after we've initialized
+			string[] vmargs = Startup.glob(vmargsIndex);
+			if (jar)
 			{
 				JarFile jf = new JarFile(mainClass);
 				try
