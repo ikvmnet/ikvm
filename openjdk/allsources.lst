@@ -2566,7 +2566,6 @@
 ../../classpath/java/lang/ref/ReferenceQueue.java
 ../../classpath/java/lang/ref/SoftReference.java
 ../../classpath/java/lang/ref/WeakReference.java
-../../classpath/java/lang/reflect/Array.java
 ../../classpath/java/lang/Runnable.java
 ../../classpath/java/lang/Runtime.java
 ../../classpath/java/lang/RuntimeException.java
@@ -5024,6 +5023,7 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/java/lang/Package.java
 ../../openjdk/j2se/src/share/classes/java/lang/reflect/AccessibleObject.java
 ../../openjdk/j2se/src/share/classes/java/lang/reflect/AnnotatedElement.java
+../../openjdk/j2se/src/share/classes/java/lang/reflect/Array.java
 ../../openjdk/j2se/src/share/classes/java/lang/reflect/Constructor.java
 ../../openjdk/j2se/src/share/classes/java/lang/reflect/Field.java
 ../../openjdk/j2se/src/share/classes/java/lang/reflect/GenericArrayType.java

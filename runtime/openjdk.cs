@@ -27,10 +27,13 @@ using StackFrame = System.Diagnostics.StackFrame;
 using IKVM.Internal;
 #if !FIRST_PASS
 using jlClass = java.lang.Class;
+using jlArrayIndexOutOfBoundsException = java.lang.ArrayIndexOutOfBoundsException;
 using jlClassNotFoundException = java.lang.ClassNotFoundException;
 using jlIllegalAccessException = java.lang.IllegalAccessException;
 using jlIllegalArgumentException = java.lang.IllegalArgumentException;
+using jlNegativeArraySizeException = java.lang.NegativeArraySizeException;
 using jlNoClassDefFoundError = java.lang.NoClassDefFoundError;
+using jlNullPointerException = java.lang.NullPointerException;
 using jlSecurityManager = java.lang.SecurityManager;
 using jlStackTraceElement = java.lang.StackTraceElement;
 using jlSystem = java.lang.System;
@@ -67,6 +70,604 @@ namespace IKVM.NativeCode.java
 {
 	namespace lang
 	{
+		namespace reflect
+		{
+			public sealed class Array
+			{
+#if FIRST_PASS
+			public static int getLength(object arrayObj)
+			{
+				return 0;
+			}
+
+			public static object get(object arrayObj, int index)
+			{
+				return null;
+			}
+
+			public static bool getBoolean(object arrayObj, int index)
+			{
+				return false;
+			}
+
+			public static byte getByte(object arrayObj, int index)
+			{
+				return 0;
+			}
+
+			public static char getChar(object arrayObj, int index)
+			{
+				return '\u0000';
+			}
+
+			public static short getShort(object arrayObj, int index)
+			{
+				return 0;
+			}
+
+			public static int getInt(object arrayObj, int index)
+			{
+				return 0;
+			}
+
+			public static float getFloat(object arrayObj, int index)
+			{
+				return 0;
+			}
+
+			public static long getLong(object arrayObj, int index)
+			{
+				return 0;
+			}
+
+			public static double getDouble(object arrayObj, int index)
+			{
+				return 0;
+			}
+
+			public static void set(object arrayObj, int index, object value)
+			{
+			}
+
+			public static void setBoolean(object arrayObj, int index, bool value)
+			{
+			}
+
+			public static void setByte(object arrayObj, int index, byte value)
+			{
+			}
+
+			public static void setChar(object arrayObj, int index, char value)
+			{
+			}
+
+			public static void setShort(object arrayObj, int index, short value)
+			{
+			}
+
+			public static void setInt(object arrayObj, int index, int value)
+			{
+			}
+
+			public static void setFloat(object arrayObj, int index, float value)
+			{
+			}
+
+			public static void setLong(object arrayObj, int index, long value)
+			{
+			}
+
+			public static void setDouble(object arrayObj, int index, double value)
+			{
+			}
+
+			public static object newArray(object componentType, int length)
+			{
+				return null;
+			}
+
+			public static object multiNewArray(object componentType, int[] dimensions)
+			{
+				return null;
+			}
+#else
+				private static System.Array CheckArray(object arrayObj)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					System.Array arr = arrayObj as System.Array;
+					if (arr != null)
+					{
+						return arr;
+					}
+					throw new jlIllegalArgumentException("Argument is not an array");
+				}
+
+				public static int getLength(object arrayObj)
+				{
+					return CheckArray(arrayObj).Length;
+				}
+
+				public static object get(object arrayObj, int index)
+				{
+					System.Array arr = CheckArray(arrayObj);
+					if (index < 0 || index >= arr.Length)
+					{
+						throw new jlArrayIndexOutOfBoundsException();
+					}
+					// We need to look at the actual type here, because "is" or "as"
+					// will convert enums to their underlying type and unsigned integral types
+					// to their signed counter parts.
+					Type type = arrayObj.GetType();
+					if (type == typeof(bool[]))
+					{
+						return jlBoolean.valueOf(((bool[])arr)[index]);
+					}
+					if (type == typeof(byte[]))
+					{
+						return jlByte.valueOf(((byte[])arr)[index]);
+					}
+					if (type == typeof(short[]))
+					{
+						return jlShort.valueOf(((short[])arr)[index]);
+					}
+					if (type == typeof(char[]))
+					{
+						return jlCharacter.valueOf(((char[])arr)[index]);
+					}
+					if (type == typeof(int[]))
+					{
+						return jlInteger.valueOf(((int[])arr)[index]);
+					}
+					if (type == typeof(float[]))
+					{
+						return jlFloat.valueOf(((float[])arr)[index]);
+					}
+					if (type == typeof(long[]))
+					{
+						return jlLong.valueOf(((long[])arr)[index]);
+					}
+					if (type == typeof(double[]))
+					{
+						return jlDouble.valueOf(((double[])arr)[index]);
+					}
+					return arr.GetValue(index);
+				}
+
+				public static bool getBoolean(object arrayObj, int index)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					bool[] arr = arrayObj as bool[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						return arr[index];
+					}
+					throw new jlIllegalArgumentException("argument type mismatch");
+				}
+
+				public static byte getByte(object arrayObj, int index)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					byte[] arr = arrayObj as byte[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						return arr[index];
+					}
+					throw new jlIllegalArgumentException("argument type mismatch");
+				}
+
+				public static char getChar(object arrayObj, int index)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					char[] arr = arrayObj as char[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						return arr[index];
+					}
+					throw new jlIllegalArgumentException("argument type mismatch");
+				}
+
+				public static short getShort(object arrayObj, int index)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					short[] arr = arrayObj as short[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						return arr[index];
+					}
+					return (sbyte)getByte(arrayObj, index);
+				}
+
+				public static int getInt(object arrayObj, int index)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					int[] arr1 = arrayObj as int[];
+					if (arr1 != null)
+					{
+						if (index < 0 || index >= arr1.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						return arr1[index];
+					}
+					char[] arr2 = arrayObj as char[];
+					if (arr2 != null)
+					{
+						if (index < 0 || index >= arr2.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						return arr2[index];
+					}
+					return getShort(arrayObj, index);
+				}
+
+				public static float getFloat(object arrayObj, int index)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					float[] arr = arrayObj as float[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						return arr[index];
+					}
+					return getLong(arrayObj, index);
+				}
+
+				public static long getLong(object arrayObj, int index)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					long[] arr = arrayObj as long[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						return arr[index];
+					}
+					return getInt(arrayObj, index);
+				}
+
+				public static double getDouble(object arrayObj, int index)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					double[] arr = arrayObj as double[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						return arr[index];
+					}
+					return getFloat(arrayObj, index);
+				}
+
+				public static void set(object arrayObj, int index, object value)
+				{
+					jlBoolean booleanValue = value as jlBoolean;
+					if (booleanValue != null)
+					{
+						setBoolean(arrayObj, index, booleanValue.booleanValue());
+						return;
+					}
+					jlByte byteValue = value as jlByte;
+					if (byteValue != null)
+					{
+						setByte(arrayObj, index, byteValue.byteValue());
+						return;
+					}
+					jlCharacter charValue = value as jlCharacter;
+					if (charValue != null)
+					{
+						setChar(arrayObj, index, charValue.charValue());
+						return;
+					}
+					jlShort shortValue = value as jlShort;
+					if (shortValue != null)
+					{
+						setShort(arrayObj, index, shortValue.shortValue());
+						return;
+					}
+					jlInteger intValue = value as jlInteger;
+					if (intValue != null)
+					{
+						setInt(arrayObj, index, intValue.intValue());
+						return;
+					}
+					jlFloat floatValue = value as jlFloat;
+					if (floatValue != null)
+					{
+						setFloat(arrayObj, index, floatValue.floatValue());
+						return;
+					}
+					jlLong longValue = value as jlLong;
+					if (longValue != null)
+					{
+						setLong(arrayObj, index, longValue.longValue());
+						return;
+					}
+					jlDouble doubleValue = value as jlDouble;
+					if (doubleValue != null)
+					{
+						setDouble(arrayObj, index, doubleValue.doubleValue());
+						return;
+					}
+					try
+					{
+						CheckArray(arrayObj).SetValue(value, index);
+					}
+					catch (System.ArrayTypeMismatchException)
+					{
+						throw new jlIllegalArgumentException("argument type mismatch");
+					}
+					catch (System.IndexOutOfRangeException)
+					{
+						throw new jlArrayIndexOutOfBoundsException();
+					}
+				}
+
+				public static void setBoolean(object arrayObj, int index, bool value)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					bool[] arr = arrayObj as bool[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						arr[index] = value;
+					}
+					else
+					{
+						throw new jlIllegalArgumentException("argument type mismatch");
+					}
+				}
+
+				public static void setByte(object arrayObj, int index, byte value)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					byte[] arr = arrayObj as byte[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						arr[index] = value;
+					}
+					else
+					{
+						setShort(arrayObj, index, (sbyte)value);
+					}
+				}
+
+				public static void setChar(object arrayObj, int index, char value)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					char[] arr = arrayObj as char[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						arr[index] = value;
+					}
+					else
+					{
+						setInt(arrayObj, index, value);
+					}
+				}
+
+				public static void setShort(object arrayObj, int index, short value)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					short[] arr = arrayObj as short[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						arr[index] = value;
+					}
+					else
+					{
+						setInt(arrayObj, index, value);
+					}
+				}
+
+				public static void setInt(object arrayObj, int index, int value)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					int[] arr = arrayObj as int[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						arr[index] = value;
+					}
+					else
+					{
+						setLong(arrayObj, index, value);
+					}
+				}
+
+				public static void setFloat(object arrayObj, int index, float value)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					float[] arr = arrayObj as float[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						arr[index] = value;
+					}
+					else
+					{
+						setDouble(arrayObj, index, value);
+					}
+				}
+
+				public static void setLong(object arrayObj, int index, long value)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					long[] arr = arrayObj as long[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						arr[index] = value;
+					}
+					else
+					{
+						setFloat(arrayObj, index, value);
+					}
+				}
+
+				public static void setDouble(object arrayObj, int index, double value)
+				{
+					if (arrayObj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					double[] arr = arrayObj as double[];
+					if (arr != null)
+					{
+						if (index < 0 || index >= arr.Length)
+						{
+							throw new jlArrayIndexOutOfBoundsException();
+						}
+						arr[index] = value;
+					}
+					else
+					{
+						throw new jlIllegalArgumentException("argument type mismatch");
+					}
+				}
+
+				public static object newArray(object componentType, int length)
+				{
+					if (componentType == null)
+					{
+						throw new jlNullPointerException();
+					}
+					if (length < 0)
+					{
+						throw new jlNegativeArraySizeException();
+					}
+					try
+					{
+						TypeWrapper wrapper = TypeWrapper.FromClass(componentType);
+						wrapper.Finish();
+						return System.Array.CreateInstance(wrapper.TypeAsArrayType, length);
+					}
+					catch (RetargetableJavaException x)
+					{
+						throw x.ToJava();
+					}
+				}
+
+				public static object multiNewArray(object componentType, int[] dimensions)
+				{
+					if (componentType == null || dimensions == null)
+					{
+						throw new jlNullPointerException();
+					}
+					if (dimensions.Length == 0 || dimensions.Length > 255)
+					{
+						throw new jlIllegalArgumentException();
+					}
+					try
+					{
+						TypeWrapper wrapper = TypeWrapper.FromClass(componentType);
+						wrapper.Finish();
+						return IKVM.Runtime.ByteCodeHelper.multianewarray(wrapper.MakeArrayType(dimensions.Length).TypeAsArrayType.TypeHandle, dimensions);
+					}
+					catch (RetargetableJavaException x)
+					{
+						throw x.ToJava();
+					}
+				}
+#endif // FIRST_PASS
+			}
+		}
+
 #if !FIRST_PASS
 		sealed class ConstantPoolWriter : IConstantPoolWriter
 		{
@@ -192,7 +793,7 @@ namespace IKVM.NativeCode.java
 
 			public static bool isInstance(object thisClass, object obj)
 			{
-				return obj != null && IKVM.NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj).IsAssignableTo(TypeWrapper.FromClass(thisClass));
+				return TypeWrapper.FromClass(thisClass).IsInstance(obj);
 			}
 
 			public static bool isAssignableFrom(object thisClass, object otherClass)
@@ -340,7 +941,7 @@ namespace IKVM.NativeCode.java
 						throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
 					}
 					decl.Finish();
-					if (Array.IndexOf(decl.InnerClasses, wrapper) == -1)
+					if (System.Array.IndexOf(decl.InnerClasses, wrapper) == -1)
 					{
 						throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", decl.Name, wrapper.Name));
 					}
