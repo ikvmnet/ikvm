@@ -55,6 +55,21 @@ public final class WeakIdentityMap
         }
     }
 
+    public synchronized Object remove(Object key)
+    {
+        for (int i = 0; i < keys.length; i++)
+        {
+            if (keys[i].get_Target() == key)
+            {
+		Object value = values[i];
+		keys[i].set_Target(null);
+		values[i] = null;
+                return value;
+            }
+        }
+        return null;
+    }
+
     // Note that null values are supported, null keys are not
     public synchronized void put(Object key, Object value)
     {

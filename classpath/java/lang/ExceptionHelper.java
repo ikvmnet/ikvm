@@ -577,6 +577,7 @@ public final class ExceptionHelper
                 Throwable org = eih.getOriginal();
                 if(org != null)
                 {
+		    exceptions.put(org, t);
                     t = org;
                 }
             }
@@ -642,6 +643,7 @@ public final class ExceptionHelper
                     if(t != org)
                     {
                         eih.setOriginal(org);
+			exceptions.remove(org);
                     }
                     exceptions.put(t, eih);
                     Throwable inner = getInnerException(org);
@@ -653,6 +655,7 @@ public final class ExceptionHelper
                 else
                 {
                     eih.setOriginal(org);
+		    exceptions.remove(org);
                 }
             }
             else
