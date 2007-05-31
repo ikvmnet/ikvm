@@ -2517,6 +2517,7 @@ namespace IKVM.Internal
 
 		internal bool IsInstance(object obj)
 		{
+#if !FIRST_PASS && !STATIC_COMPILER
 			if(obj != null)
 			{
 				TypeWrapper thisWrapper = this;
@@ -2546,6 +2547,7 @@ namespace IKVM.Internal
 				}
 				return objWrapper.IsAssignableTo(thisWrapper);
 			}
+#endif
 			return false;
 		}
 
