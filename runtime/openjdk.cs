@@ -443,7 +443,7 @@ namespace IKVM.NativeCode.java
 					{
 						CheckArray(arrayObj).SetValue(value, index);
 					}
-					catch (System.ArrayTypeMismatchException)
+					catch (System.InvalidCastException)
 					{
 						throw new jlIllegalArgumentException("argument type mismatch");
 					}
@@ -627,6 +627,10 @@ namespace IKVM.NativeCode.java
 					{
 						throw new jlNullPointerException();
 					}
+					if (componentType == jlVoid.TYPE)
+					{
+						throw new jlIllegalArgumentException();
+					}
 					if (length < 0)
 					{
 						throw new jlNegativeArraySizeException();
@@ -648,6 +652,10 @@ namespace IKVM.NativeCode.java
 					if (componentType == null || dimensions == null)
 					{
 						throw new jlNullPointerException();
+					}
+					if (componentType == jlVoid.TYPE)
+					{
+						throw new jlIllegalArgumentException();
 					}
 					if (dimensions.Length == 0 || dimensions.Length > 255)
 					{
@@ -798,6 +806,12 @@ namespace IKVM.NativeCode.java
 
 			public static bool isAssignableFrom(object thisClass, object otherClass)
 			{
+#if !FIRST_PASS
+				if (otherClass == null)
+				{
+					throw new jlNullPointerException();
+				}
+#endif
 				return TypeWrapper.FromClass(otherClass).IsAssignableTo(TypeWrapper.FromClass(thisClass));
 			}
 
@@ -1180,17 +1194,16 @@ namespace IKVM.NativeCode.java
 					{
 						// we don't want to expose "hideFromReflection" methods (one reason is that it would
 						// mess up the serialVersionUID computation)
-						if (!methods[i].IsHideFromReflection)
+						if (!methods[i].IsHideFromReflection
+							&& methods[i].Name == "<init>"
+							&& (!publicOnly || methods[i].IsPublic))
 						{
-							if (methods[i].Name == "<init>")
+							TypeWrapper[] args = methods[i].GetParameters();
+							for (int j = 0; j < args.Length; j++)
 							{
-								TypeWrapper[] args = methods[i].GetParameters();
-								for (int j = 0; j < args.Length; j++)
-								{
-									args[j].EnsureLoadable(wrapper.GetClassLoader());
-								}
-								list.Add(methods[i].ToMethodOrConstructor(false));
+								args[j].EnsureLoadable(wrapper.GetClassLoader());
 							}
+							list.Add(methods[i].ToMethodOrConstructor(false));
 						}
 					}
 					return (jlrConstructor[])list.ToArray(typeof(jlrConstructor));
@@ -1461,28 +1474,19 @@ namespace IKVM.NativeCode.sun.reflect
 			{
 				realFramesToSkip++;
 			}
-			StackFrame frame;
-			// skip reflection frames
-			while (GetAssemblyFromMethodBase((frame = new StackFrame(realFramesToSkip, false)).GetMethod()) == typeof(object).Assembly)
+			for (; ; )
 			{
-				for (;;)
+				Type type = new StackFrame(realFramesToSkip++, false).GetMethod().DeclaringType;
+				if (type == null
+					|| type.Assembly == typeof(object).Assembly
+					|| type == typeof(jlrMethod)
+					|| type == typeof(jlrConstructor)
+					|| type == typeof(IKVM.Runtime.JNIEnv))
 				{
-					Type type = new StackFrame(realFramesToSkip++, false).GetMethod().DeclaringType;
-					if (type == typeof(jlrMethod) || type == typeof(jlrConstructor))
-					{
-						break;
-					}
-					if (type == typeof(IKVM.Runtime.JNIEnv))
-					{
-						while (new StackFrame(realFramesToSkip, false).GetMethod().DeclaringType == typeof(IKVM.Runtime.JNIEnv))
-						{
-							realFramesToSkip++;
-						}
-						break;
-					}
+					continue;
 				}
+				return ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
 			}
-			return ClassLoaderWrapper.GetWrapperFromType(frame.GetMethod().DeclaringType).ClassObject;
 #endif
 		}
 
@@ -1507,6 +1511,10 @@ namespace IKVM.NativeCode.sun.reflect
 		private static object[] ConvertArgs(TypeWrapper[] argumentTypes, object[] args)
 		{
 			object[] nargs = new object[args == null ? 0 : args.Length];
+			if (nargs.Length != argumentTypes.Length)
+			{
+				throw new jlIllegalArgumentException("wrong number of arguments");
+			}
 			for (int i = 0; i < nargs.Length; i++)
 			{
 				if (argumentTypes[i].IsPrimitive)
@@ -1544,7 +1552,21 @@ namespace IKVM.NativeCode.sun.reflect
 			[IKVM.Attributes.HideFromJava]
 			public object invoke(object obj, object[] args)
 			{
+				if (!mw.IsStatic && !mw.DeclaringType.IsInstance(obj))
+				{
+					if (obj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					throw new jlIllegalArgumentException("object is not an instance of declaring class");
+				}
 				args = ConvertArgs(mw.GetParameters(), args);
+				// if the method is an interface method, we must explicitly run <clinit>,
+				// because .NET reflection doesn't
+				if (mw.DeclaringType.IsInterface)
+				{
+					mw.DeclaringType.RunClassInit();
+				}
 				object retval;
 				try
 				{
@@ -1592,11 +1614,41 @@ namespace IKVM.NativeCode.sun.reflect
 		{
 			private readonly FieldWrapper fw;
 			private readonly bool isFinal;
+			private bool runInit;
 
 			private FieldAccessorImplBase(jlrField field, bool overrideAccessCheck)
 			{
 				fw = FieldWrapper.FromField(field);
 				isFinal = (!overrideAccessCheck || fw.IsStatic) && fw.IsFinal;
+				runInit = fw.DeclaringType.IsInterface;
+			}
+
+			private object getImpl(object obj)
+			{
+				// if the field is an interface field, we must explicitly run <clinit>,
+				// because .NET reflection doesn't
+				if (runInit)
+				{
+					fw.DeclaringType.RunClassInit();
+					runInit = false;
+				}
+				return fw.GetValue(obj);
+			}
+
+			private void setImpl(object obj, object value)
+			{
+				if (isFinal)
+				{
+					throw new jlIllegalAccessException();
+				}
+				// if the field is an interface field, we must explicitly run <clinit>,
+				// because .NET reflection doesn't
+				if (runInit)
+				{
+					fw.DeclaringType.RunClassInit();
+					runInit = false;
+				}
+				fw.SetValue(obj, value);
 			}
 
 			public virtual bool getBoolean(object obj)
@@ -1694,20 +1746,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override object get(object obj)
 				{
-					return fw.GetValue(obj);
+					return getImpl(obj);
 				}
 
 				public override void set(object obj, object value)
 				{
-					if (isFinal)
-					{
-						throw new jlIllegalAccessException();
-					}
 					if (value != null && !fieldType.isInstance(value))
 					{
 						throw new jlIllegalArgumentException();
 					}
-					fw.SetValue(obj, value);
+					setImpl(obj, value);
 				}
 			}
 
@@ -1720,7 +1768,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override byte getByte(object obj)
 				{
-					return (byte)fw.GetValue(obj);
+					return (byte)getImpl(obj);
 				}
 
 				public override short getShort(object obj)
@@ -1764,11 +1812,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override void setByte(object obj, byte b)
 				{
-					if (isFinal)
-					{
-						throw new jlIllegalAccessException();
-					}
-					fw.SetValue(obj, b);
+					setImpl(obj, b);
 				}
 			}
 
@@ -1781,7 +1825,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override bool getBoolean(object obj)
 				{
-					return (bool)fw.GetValue(obj);
+					return (bool)getImpl(obj);
 				}
 
 				public override object get(object obj)
@@ -1800,11 +1844,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override void setBoolean(object obj, bool b)
 				{
-					if (isFinal)
-					{
-						throw new jlIllegalAccessException();
-					}
-					fw.SetValue(obj, b);
+					setImpl(obj, b);
 				}
 			}
 
@@ -1817,7 +1857,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override char getChar(object obj)
 				{
-					return (char)fw.GetValue(obj);
+					return (char)getImpl(obj);
 				}
 
 				public override int getInt(object obj)
@@ -1855,11 +1895,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override void setChar(object obj, char c)
 				{
-					if (isFinal)
-					{
-						throw new jlIllegalAccessException();
-					}
-					fw.SetValue(obj, c);
+					setImpl(obj, c);
 				}
 			}
 
@@ -1872,7 +1908,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override short getShort(object obj)
 				{
-					return (short)fw.GetValue(obj);
+					return (short)getImpl(obj);
 				}
 
 				public override int getInt(object obj)
@@ -1916,11 +1952,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override void setShort(object obj, short s)
 				{
-					if (isFinal)
-					{
-						throw new jlIllegalAccessException();
-					}
-					fw.SetValue(obj, s);
+					setImpl(obj, s);
 				}
 			}
 
@@ -1933,7 +1965,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override int getInt(object obj)
 				{
-					return (int)fw.GetValue(obj);
+					return (int)getImpl(obj);
 				}
 
 				public override long getLong(object obj)
@@ -1985,11 +2017,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override void setInt(object obj, int i)
 				{
-					if (isFinal)
-					{
-						throw new jlIllegalAccessException();
-					}
-					fw.SetValue(obj, i);
+					setImpl(obj, i);
 				}
 			}
 
@@ -2002,7 +2030,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override float getFloat(object obj)
 				{
-					return (float)fw.GetValue(obj);
+					return (float)getImpl(obj);
 				}
 
 				public override double getDouble(object obj)
@@ -2056,11 +2084,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override void setFloat(object obj, float f)
 				{
-					if (isFinal)
-					{
-						throw new jlIllegalAccessException();
-					}
-					fw.SetValue(obj, f);
+					setImpl(obj, f);
 				}
 			}
 
@@ -2073,7 +2097,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override long getLong(object obj)
 				{
-					return (long)fw.GetValue(obj);
+					return (long)getImpl(obj);
 				}
 
 				public override float getFloat(object obj)
@@ -2093,11 +2117,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override void setLong(object obj, long l)
 				{
-					if (isFinal)
-					{
-						throw new jlIllegalAccessException();
-					}
-					fw.SetValue(obj, l);
+					setImpl(obj, l);
 				}
 
 				public override void set(object obj, object val)
@@ -2143,7 +2163,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override double getDouble(object obj)
 				{
-					return (double)fw.GetValue(obj);
+					return (double)getImpl(obj);
 				}
 
 				public override object get(object obj)
@@ -2198,11 +2218,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 				public override void setDouble(object obj, double d)
 				{
-					if (isFinal)
-					{
-						throw new jlIllegalAccessException();
-					}
-					fw.SetValue(obj, d);
+					setImpl(obj, d);
 				}
 			}
 
