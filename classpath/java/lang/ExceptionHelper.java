@@ -181,8 +181,10 @@ public final class ExceptionHelper
                             if(tracePart2.get_FrameCount() > skip)
                             {
                                 cli.System.Reflection.MethodBase mb = tracePart2.GetFrame(skip).GetMethod();
+				// here we have to check for both fillInStackTrace and .ctor, because on x64 the fillInStackTrace method
+				// disappears from the stack trace due to the tail call optimization.
                                 if(mb.get_DeclaringType().get_FullName().equals("java.lang.Throwable") &&
-                                    mb.get_Name().endsWith("fillInStackTrace"))
+                                    (mb.get_Name().endsWith("fillInStackTrace") || mb.get_Name().equals(".ctor")))
                                 {
                                     while(tracePart2.get_FrameCount() > skip)
                                     {
