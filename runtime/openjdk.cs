@@ -1452,18 +1452,6 @@ namespace IKVM.NativeCode.sun.reflect
 	{
 		private Reflection() { }
 
-		// this method will return null for global methods on .NET 1.1
-		// (.NET 1.1 doesn't have a way to go from MethodBase to Module or Assembly)
-		private static System.Reflection.Assembly GetAssemblyFromMethodBase(System.Reflection.MethodBase mb)
-		{
-#if WHIDBEY
-			return mb.Module.Assembly;
-#else
-			Type type = mb.DeclaringType;
-			return type == null ? null : type.Assembly;
-#endif
-		}
-
 		public static object getCallerClass(int realFramesToSkip)
 		{
 #if FIRST_PASS
@@ -1479,9 +1467,9 @@ namespace IKVM.NativeCode.sun.reflect
 				Type type = new StackFrame(realFramesToSkip++, false).GetMethod().DeclaringType;
 				if (type == null
 					|| type.Assembly == typeof(object).Assembly
+					|| type.Assembly == typeof(Reflection).Assembly
 					|| type == typeof(jlrMethod)
-					|| type == typeof(jlrConstructor)
-					|| type == typeof(IKVM.Runtime.JNIEnv))
+					|| type == typeof(jlrConstructor))
 				{
 					continue;
 				}
