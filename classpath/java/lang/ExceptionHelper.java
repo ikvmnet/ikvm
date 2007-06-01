@@ -296,7 +296,7 @@ public final class ExceptionHelper
 		{
 		    fileName = GetFileName(frame);
 		}
-		stackTrace.Add(new StackTraceElement(fileName, lineNumber, className, methodName, IsNative(m)));
+		stackTrace.Add(new StackTraceElement(className, methodName, fileName, IsNative(m) ? -2 : lineNumber));
 	    }
 	}
     }
