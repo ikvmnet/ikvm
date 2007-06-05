@@ -1423,6 +1423,8 @@ namespace IKVM.NativeCode.java
 		{
 			[ThreadStatic]
 			private static VMThread vmThread;
+			[ThreadStatic]
+			private static object cleanup;
 			private static readonly System.Reflection.ConstructorInfo threadConstructor1;
 			private static readonly System.Reflection.ConstructorInfo threadConstructor2;
 			private static readonly System.Reflection.FieldInfo vmThreadField;
@@ -1553,14 +1555,29 @@ namespace IKVM.NativeCode.java
 					}
 					finally
 					{
-						threadExitMethod.Invoke(javaThread, null);
-						threadStatusField.SetValue(javaThread, TERMINATED);
-						lock (javaThread)
-						{
-							System.Threading.Monitor.PulseAll(javaThread);
-						}
+						DetachThread();
 					}
 #endif
+				}
+			}
+
+			private sealed class Cleanup
+			{
+				private object javaThread;
+
+				internal Cleanup(object javaThread)
+				{
+					this.javaThread = javaThread;
+				}
+
+				~Cleanup()
+				{
+					threadExitMethod.Invoke(javaThread, null);
+					threadStatusField.SetValue(javaThread, TERMINATED);
+					lock (javaThread)
+					{
+						System.Threading.Monitor.PulseAll(javaThread);
+					}
 				}
 			}
 
@@ -1630,6 +1647,7 @@ namespace IKVM.NativeCode.java
 				t.running = true;
 				vmThreadField.SetValue(thread, t);
 				vmThread = t;
+				cleanup = new Cleanup(thread);
 				threadPriorityField.SetValue(thread, MapNativePriorityToJava(t.nativeThread.Priority));
 				if (name == null)
 				{
@@ -1766,7 +1784,7 @@ namespace IKVM.NativeCode.java
 
 			public static int countStackFrames(object thisThread)
 			{
-				throw new NotImplementedException();
+				return 0;
 			}
 
 			public static bool holdsLock(object obj)
@@ -1780,7 +1798,7 @@ namespace IKVM.NativeCode.java
 				}
 				try
 				{
-					// The new 1.5 memory model explicitly allows spurious wake-ups from Object.wait,
+					// The 1.5 memory model (JSR133) explicitly allows spurious wake-ups from Object.wait,
 					// so we abuse Pulse to check if we own the monitor.
 					System.Threading.Monitor.Pulse(obj);
 					return true;
@@ -1923,7 +1941,7 @@ namespace IKVM.NativeCode.java
 			}
 
 			// this is called from JniInterface.cs
-			internal static void DetachThreadFromJni()
+			internal static void DetachThread()
 			{
 				object javaThread = currentThread();
 				threadExitMethod.Invoke(javaThread, null);
@@ -1942,21 +1960,29 @@ namespace IKVM.NativeCode.java
 				{
 					throw new jlNullPointerException();
 				}
-				if (timeout < 0 || nanos < 0 || nanos > 999999)
+				if (timeout < 0)
 				{
-					throw new jlIllegalArgumentException("argument out of range");
+					throw new jlIllegalArgumentException("timeout value is negative");
+				}
+				if (nanos < 0 || nanos > 999999)
+				{
+					throw new jlIllegalArgumentException("nanosecond timeout value out of range");
+				}
+				if (nanos >= 500000 || (nanos != 0 && timeout == 0))
+				{
+					timeout++;
 				}
 				VMThread t = CurrentVMThread();
-				t.EnterInterruptableWait(timeout != 0 || nanos != 0);
+				t.EnterInterruptableWait(timeout != 0);
 				try
 				{
-					if ((timeout == 0 && nanos == 0) || timeout > 922337203685476L)
+					if (timeout == 0 || timeout > 922337203685476L)
 					{
 						System.Threading.Monitor.Wait(o);
 					}
 					else
 					{
-						System.Threading.Monitor.Wait(o, new System.TimeSpan(timeout * 10000 + (nanos + 99) / 100));
+						System.Threading.Monitor.Wait(o, new System.TimeSpan(timeout * 10000));
 					}
 				}
 				finally
@@ -1972,7 +1998,7 @@ namespace IKVM.NativeCode.java
 			// this method has the wrong name, it is only called by ikvm.runtime.Startup.exitMainThread()
 			public static void jniDetach()
 			{
-				Thread.DetachThreadFromJni();
+				Thread.DetachThread();
 			}
 
 			public static void park(Object blocker, long nanos)
