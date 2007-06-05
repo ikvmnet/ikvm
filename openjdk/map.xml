@@ -47,7 +47,7 @@
 					<ldc_i4_0 />
 					<conv_i8 />
 					<ldc_i4_0 />
-					<call class="java.lang.VMThread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
+					<call type="IKVM.NativeCode.java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
 					<ret />
 				</body>
 			</method>
@@ -58,19 +58,19 @@
 					<ldarg_0 />
 					<ldarg_1 />
 					<ldc_i4_0 />
-					<call class="java.lang.VMThread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
-					<ret />
-				</body>
-			</method>
-			<method name="wait" sig="(JI)V" modifiers="public final">
-				<parameter name="timeout" />
-				<parameter name="nanos" />
-				<throws class="java.lang.InterruptedException" />
-				<body>
-					<ldarg_0 />
-					<ldarg_1 />
-					<ldarg_2 />
-					<call class="java.lang.VMThread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
+					<call type="IKVM.NativeCode.java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
+          <ret />
+        </body>
+      </method>
+      <method name="wait" sig="(JI)V" modifiers="public final">
+        <parameter name="timeout" />
+        <parameter name="nanos" />
+        <throws class="java.lang.InterruptedException" />
+        <body>
+          <ldarg_0 />
+          <ldarg_1 />
+          <ldarg_2 />
+          <call type="IKVM.NativeCode.java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
 					<ret />
 				</body>
 			</method>
@@ -1260,6 +1260,9 @@
           <ret />
         </body>
       </method>
+    </class>
+    <class name="java.lang.Thread">
+      <field name="vmThread" sig="Ljava.lang.Object;" modifiers="private" />
     </class>
 		<class name="ikvm.internal.EnumEnum">
 			<field name="typeWrapper" sig="Ljava.lang.Object;" modifiers="private" />

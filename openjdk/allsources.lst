@@ -2516,7 +2516,6 @@
 ../../classpath/java/lang/IllegalThreadStateException.java
 ../../classpath/java/lang/IncompatibleClassChangeError.java
 ../../classpath/java/lang/IndexOutOfBoundsException.java
-../../classpath/java/lang/InheritableThreadLocal.java
 ../../classpath/java/lang/InstantiationError.java
 ../../classpath/java/lang/InstantiationException.java
 ../../classpath/java/lang/instrument/ClassDefinition.java
@@ -2583,8 +2582,6 @@
 ../../classpath/java/lang/SuppressWarnings.java
 ../../classpath/java/lang/System.java
 ../../classpath/java/lang/ThreadDeath.java
-../../classpath/java/lang/ThreadGroup.java
-../../classpath/java/lang/ThreadLocal.java
 ../../classpath/java/lang/Throwable.java
 ../../classpath/java/lang/TypeNotPresentException.java
 ../../classpath/java/lang/UnknownError.java
@@ -4980,7 +4977,6 @@
 ../classpath/java/lang/VMProcess.java
 ../classpath/java/lang/VMRuntime.java
 ../classpath/java/lang/VMSystem.java
-../classpath/java/lang/VMThread.java
 ../classpath/java/net/NioServerSocket.java
 ../classpath/java/net/VMInetAddress.java
 ../classpath/java/net/VMNetworkInterface.java
@@ -5006,8 +5002,8 @@ ikvm/internal/LibraryVMInterface.java
 java/io/Console.java
 java/lang/LangHelper.java
 java/lang/LibraryVMInterfaceImpl.java
-java/lang/Thread.java
 java/lang/VMClassLoader.java
+java/lang/VMThread.java
 java/util/jar/JarEntry.java
 sun/misc/FileURLMapper.java
 sun/misc/OSEnvironment.java
@@ -5019,6 +5015,7 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/java/lang/Class.java
 ../../openjdk/j2se/src/share/classes/java/lang/ClassLoader.java
 ../../openjdk/j2se/src/share/classes/java/lang/Enum.java
+../../openjdk/j2se/src/share/classes/java/lang/InheritableThreadLocal.java
 ../../openjdk/j2se/src/share/classes/java/lang/NumberFormatException.java
 ../../openjdk/j2se/src/share/classes/java/lang/Package.java
 ../../openjdk/j2se/src/share/classes/java/lang/reflect/AccessibleObject.java
@@ -5044,6 +5041,9 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/java/lang/reflect/TypeVariable.java
 ../../openjdk/j2se/src/share/classes/java/lang/reflect/UndeclaredThrowableException.java
 ../../openjdk/j2se/src/share/classes/java/lang/reflect/WildcardType.java
+../../openjdk/j2se/src/share/classes/java/lang/Thread.java
+../../openjdk/j2se/src/share/classes/java/lang/ThreadGroup.java
+../../openjdk/j2se/src/share/classes/java/lang/ThreadLocal.java
 ../../openjdk/j2se/src/share/classes/java/security/CodeSigner.java
 ../../openjdk/j2se/src/share/classes/java/security/Timestamp.java
 ../../openjdk/j2se/src/share/classes/sun/misc/ClassFileTransformer.java
@@ -5069,6 +5069,7 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/sun/misc/ProxyGenerator.java
 ../../openjdk/j2se/src/share/classes/sun/misc/Resource.java
 ../../openjdk/j2se/src/share/classes/sun/misc/SharedSecrets.java
+../../openjdk/j2se/src/share/classes/sun/misc/SoftCache.java
 ../../openjdk/j2se/src/share/classes/sun/misc/URLClassPath.java
 ../../openjdk/j2se/src/share/classes/sun/misc/VM.java
 ../../openjdk/j2se/src/share/classes/sun/misc/VMNotification.java

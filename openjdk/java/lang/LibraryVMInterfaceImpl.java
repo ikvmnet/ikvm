@@ -167,21 +167,6 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
         return ExceptionHelper.MapExceptionFast(t, true);
     }
 
-    public void jniWaitUntilLastThread()
-    {
-        VMThread.jniWaitUntilLastThread();
-    }
-
-    public void jniDetach()
-    {
-        VMThread.jniDetach();
-    }
-
-    public void setThreadGroup(Object group)
-    {
-        VMThread.setThreadGroup((ThreadGroup)group);
-    }
-
     public Object newDirectByteBuffer(cli.System.IntPtr address, int capacity)
     {
         return java.nio.VMDirectByteBuffer.NewDirectByteBuffer(address, capacity);

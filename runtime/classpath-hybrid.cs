@@ -933,10 +933,6 @@ namespace ikvm.@internal
 
 		Exception mapException(Exception t);
 
-		void jniWaitUntilLastThread();
-		void jniDetach();
-		void setThreadGroup(object group);
-
 		object newDirectByteBuffer(IntPtr address, int capacity);
 		IntPtr getDirectBufferAddress(object buffer);
 		int getDirectBufferCapacity(object buffer);

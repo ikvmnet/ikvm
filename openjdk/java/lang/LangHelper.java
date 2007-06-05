@@ -113,7 +113,7 @@ class LangHelper
 		return klass.getEnumConstantsShared();
 	    }
 	    public void blockedOn(Thread t, sun.nio.ch.Interruptible b) {
-		throw new Error("not implemented");
+		t.blockedOn(b);
 	    }
 	});
     }

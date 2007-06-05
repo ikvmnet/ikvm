@@ -63,6 +63,10 @@
                 <include unless="${first-pass or hybrid}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
                 <include unless="${first-pass or not hybrid}" name="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" asis="true" />
             </references>
+            <nowarn>
+                <!-- don't whine about deprecated methods -->
+                <warning number="618" />
+            </nowarn>
         </csc>
         <copy file="IKVM.Runtime.dll" todir="../bin" />
     </target>

@@ -56,7 +56,12 @@
           <arg value="-resource:lib/security/classpath.security=${Classpath.dir}/resource/java/security/classpath.security" />
           <arg value="-resource:META-INF/MANIFEST.MF=MANIFEST.MF" />
         </exec>
+        <copy file="IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" tofile="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll.new" />
+        <if test="${platform::is-win32()}">
+          <exec program="peverify" commandline="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll.new" />
+        </if>
         <copy file="IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" todir="../bin" />
+	<delete file="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll.new" />
     </target>
 
 </project>

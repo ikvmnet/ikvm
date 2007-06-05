@@ -31,12 +31,17 @@ using jlArrayIndexOutOfBoundsException = java.lang.ArrayIndexOutOfBoundsExceptio
 using jlClassNotFoundException = java.lang.ClassNotFoundException;
 using jlIllegalAccessException = java.lang.IllegalAccessException;
 using jlIllegalArgumentException = java.lang.IllegalArgumentException;
+using jlInterruptedException = java.lang.InterruptedException;
 using jlNegativeArraySizeException = java.lang.NegativeArraySizeException;
 using jlNoClassDefFoundError = java.lang.NoClassDefFoundError;
 using jlNullPointerException = java.lang.NullPointerException;
+using jlRunnable = java.lang.Runnable;
 using jlSecurityManager = java.lang.SecurityManager;
 using jlStackTraceElement = java.lang.StackTraceElement;
 using jlSystem = java.lang.System;
+using jlThread = java.lang.Thread;
+using jlThreadDeath = java.lang.ThreadDeath;
+using jlThreadGroup = java.lang.ThreadGroup;
 using jlRuntimePermission = java.lang.RuntimePermission;
 using jlBoolean = java.lang.Boolean;
 using jlByte = java.lang.Byte;
@@ -1410,6 +1415,593 @@ namespace IKVM.NativeCode.java
 			public static string[] getSystemPackages0()
 			{
 				// this method is not implemented because we redirect Package.getSystemPackages() to our implementation in LangHelper
+				throw new NotImplementedException();
+			}
+		}
+
+		public sealed class Thread
+		{
+			[ThreadStatic]
+			private static VMThread vmThread;
+			private static readonly System.Reflection.ConstructorInfo threadConstructor1;
+			private static readonly System.Reflection.ConstructorInfo threadConstructor2;
+			private static readonly System.Reflection.FieldInfo vmThreadField;
+			private static readonly System.Reflection.MethodInfo threadGroupAddMethod;
+			private static readonly System.Reflection.FieldInfo threadStatusField;
+			private static readonly System.Reflection.FieldInfo daemonField;
+			private static readonly System.Reflection.FieldInfo threadPriorityField;
+			private static readonly System.Reflection.MethodInfo threadExitMethod;
+			private static readonly object mainThreadGroup;
+			// we don't really use the Thread.threadStatus field, but we have to set it to a non-zero value,
+			// so we use RUNNABLE (which the HotSpot also uses) and the value was taken from the
+			// ThreadStatus enum in /openjdk/hotspot/src/share/vm/memory/javaClasses.hpp
+			private const int JVMTI_THREAD_STATE_ALIVE = 0x0001;
+			private const int JVMTI_THREAD_STATE_RUNNABLE = 0x0004;
+			private const int JVMTI_THREAD_STATE_TERMINATED = 0x0002;
+			private const int RUNNABLE = JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE;
+			private const int TERMINATED = JVMTI_THREAD_STATE_TERMINATED;
+
+			private sealed class VMThread
+			{
+				internal System.Threading.Thread nativeThread;
+#if !FIRST_PASS
+				internal jlThread javaThread;
+#endif
+				internal Exception stillborn;
+				internal bool running;
+				private bool interruptPending;
+				private bool interruptableWait;
+
+				internal bool IsInterruptPending(bool clearInterrupt)
+				{
+					lock (this)
+					{
+						bool b = interruptPending;
+						if (clearInterrupt)
+						{
+							interruptPending = false;
+						}
+						return b;
+					}
+				}
+
+				internal void EnterInterruptableWait(bool timedWait)
+				{
+#if !FIRST_PASS
+					lock (this)
+					{
+						if (interruptPending)
+						{
+							interruptPending = false;
+							throw new jlInterruptedException();
+						}
+						interruptableWait = true;
+					}
+#endif
+				}
+
+				internal void LeaveInterruptableWait()
+				{
+#if !FIRST_PASS
+					System.Threading.ThreadInterruptedException dotnetInterrupt = null;
+					for (; ; )
+					{
+						try
+						{
+							lock (this)
+							{
+								interruptableWait = false;
+								if (interruptPending)
+								{
+									interruptPending = false;
+									throw new jlInterruptedException();
+								}
+							}
+							break;
+						}
+						catch (System.Threading.ThreadInterruptedException x)
+						{
+							dotnetInterrupt = x;
+						}
+					}
+					if (dotnetInterrupt != null)
+					{
+						throw dotnetInterrupt;
+					}
+#endif
+				}
+
+				internal void Interrupt()
+				{
+					lock (this)
+					{
+						interruptPending = true;
+						if (interruptableWait)
+						{
+							nativeThread.Interrupt();
+						}
+					}
+				}
+
+				internal void ThreadProc()
+				{
+#if !FIRST_PASS
+					vmThread = this;
+					try
+					{
+						lock (javaThread)
+						{
+							running = true;
+							Exception x = stillborn;
+							if (x != null)
+							{
+								stillborn = null;
+								throw x;
+							}
+						}
+						javaThread.run();
+					}
+					catch (Exception x)
+					{
+						try
+						{
+							javaThread.getUncaughtExceptionHandler().uncaughtException(javaThread, x);
+						}
+						catch
+						{
+						}
+					}
+					finally
+					{
+						threadExitMethod.Invoke(javaThread, null);
+						threadStatusField.SetValue(javaThread, TERMINATED);
+						lock (javaThread)
+						{
+							System.Threading.Monitor.PulseAll(javaThread);
+						}
+					}
+#endif
+				}
+			}
+
+#if !FIRST_PASS
+			static Thread()
+			{
+				threadConstructor1 = typeof(jlThread).GetConstructor(new Type[] { typeof(jlThreadGroup), typeof(string) });
+				threadConstructor2 = typeof(jlThread).GetConstructor(new Type[] { typeof(jlThreadGroup), typeof(jlRunnable) });
+				vmThreadField = typeof(jlThread).GetField("vmThread", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+				threadGroupAddMethod = typeof(jlThreadGroup).GetMethod("add", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, null, new Type[] { typeof(jlThread) }, null);
+				threadStatusField = typeof(jlThread).GetField("threadStatus", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+				daemonField = typeof(jlThread).GetField("daemon", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+				threadPriorityField = typeof(jlThread).GetField("priority", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+				threadExitMethod = typeof(jlThread).GetMethod("exit", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, null, Type.EmptyTypes, null);
+
+				jlThreadGroup systemThreadGroup = (jlThreadGroup)Activator.CreateInstance(typeof(jlThreadGroup), true);
+				mainThreadGroup = new jlThreadGroup(systemThreadGroup, "main");
+			}
+#endif
+
+			public static void registerNatives()
+			{
+				// the first thread here is the main thread
+				// AttachThread(null, false);
+				// call System.initializeSystemClass()
+			}
+
+			public static object currentThread()
+			{
+#if FIRST_PASS
+				return null;
+#else
+				return CurrentVMThread().javaThread;
+#endif
+			}
+
+			private static VMThread CurrentVMThread()
+			{
+				VMThread t = vmThread;
+				if (t == null)
+				{
+					t = AttachThread(null, true, null);
+				}
+				return t;
+			}
+
+			private static VMThread GetVMThread(object threadObj)
+			{
+				return (VMThread)vmThreadField.GetValue(threadObj);
+			}
+
+			private static VMThread AttachThread(string name, bool addToGroup, object threadGroup)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				if (threadGroup == null)
+				{
+					threadGroup = mainThreadGroup;
+				}
+				// because the Thread constructor calls Thread.currentThread(), we have to have an instance before we
+				// run the constructor
+				jlThread thread = (jlThread)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(jlThread));
+				VMThread t = new VMThread();
+				t.javaThread = thread;
+				t.nativeThread = System.Threading.Thread.CurrentThread;
+				t.running = true;
+				vmThreadField.SetValue(thread, t);
+				vmThread = t;
+				threadPriorityField.SetValue(thread, MapNativePriorityToJava(t.nativeThread.Priority));
+				if (name == null)
+				{
+					// inherit the .NET name of the thread (if it has a name)
+					name = t.nativeThread.Name;
+				}
+				if (name != null)
+				{
+					threadConstructor1.Invoke(thread, new object[] { threadGroup, name });
+				}
+				else
+				{
+					threadConstructor2.Invoke(thread, new object[] { threadGroup, null });
+				}
+				daemonField.SetValue(thread, t.nativeThread.IsBackground);
+				threadStatusField.SetValue(thread, RUNNABLE);
+				if (addToGroup)
+				{
+					threadGroupAddMethod.Invoke(threadGroup, new object[] { thread });
+				}
+				return t;
+#endif
+			}
+
+#if !FIRST_PASS
+			private static int MapNativePriorityToJava(System.Threading.ThreadPriority priority)
+			{
+				// TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
+				switch (priority)
+				{
+					case System.Threading.ThreadPriority.Lowest:
+						return jlThread.MIN_PRIORITY;
+					case System.Threading.ThreadPriority.BelowNormal:
+						return 3;
+					default:
+					case System.Threading.ThreadPriority.Normal:
+						return jlThread.NORM_PRIORITY;
+					case System.Threading.ThreadPriority.AboveNormal:
+						return 7;
+					case System.Threading.ThreadPriority.Highest:
+						return jlThread.MAX_PRIORITY;
+				}
+			}
+
+			private static System.Threading.ThreadPriority MapJavaPriorityToNative(int priority)
+			{
+				// TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
+				if (priority == jlThread.MIN_PRIORITY)
+				{
+					return System.Threading.ThreadPriority.Lowest;
+				}
+				else if (priority > jlThread.MIN_PRIORITY && priority < jlThread.NORM_PRIORITY)
+				{
+					return System.Threading.ThreadPriority.BelowNormal;
+				}
+				else if (priority == jlThread.NORM_PRIORITY)
+				{
+					return System.Threading.ThreadPriority.Normal;
+				}
+				else if (priority > jlThread.NORM_PRIORITY && priority < jlThread.MAX_PRIORITY)
+				{
+					return System.Threading.ThreadPriority.AboveNormal;
+				}
+				else if (priority == jlThread.MAX_PRIORITY)
+				{
+					return System.Threading.ThreadPriority.Highest;
+				}
+				else
+				{
+					// can't happen
+					return System.Threading.ThreadPriority.Normal;
+				}
+			}
+#endif
+
+			public static void yield()
+			{
+				System.Threading.Thread.Sleep(0);
+			}
+
+			public static void sleep(long millis)
+			{
+				VMThread t = CurrentVMThread();
+				t.EnterInterruptableWait(true);
+				try
+				{
+					for (long iter = millis / int.MaxValue; iter != 0; iter--)
+					{
+						System.Threading.Thread.Sleep(int.MaxValue);
+					}
+					System.Threading.Thread.Sleep((int)(millis % int.MaxValue));
+				}
+				finally
+				{
+					t.LeaveInterruptableWait();
+				}
+			}
+
+			public static void start0(object thisThread)
+			{
+#if !FIRST_PASS
+				VMThread t = new VMThread();
+				t.javaThread = (jlThread)thisThread;
+				vmThreadField.SetValue(thisThread, t);
+				// TODO on NET 2.0 set the stack size
+				t.nativeThread = new System.Threading.Thread(new System.Threading.ThreadStart(t.ThreadProc));
+				t.nativeThread.Name = t.javaThread.getName();
+				t.nativeThread.IsBackground = t.javaThread.isDaemon();
+				t.nativeThread.Priority = MapJavaPriorityToNative(t.javaThread.getPriority());
+				string apartment = jlSystem.getProperty("ikvm.apartmentstate", "").ToLower();
+				if (apartment == "mta")
+				{
+					t.nativeThread.ApartmentState = System.Threading.ApartmentState.MTA;
+				}
+				else if (apartment == "sta")
+				{
+					t.nativeThread.ApartmentState = System.Threading.ApartmentState.STA;
+				}
+				t.nativeThread.Start();
+#endif
+			}
+
+			public static bool isInterrupted(object thisThread, bool clearInterrupted)
+			{
+				VMThread t = GetVMThread(thisThread);
+				return t != null && t.IsInterruptPending(clearInterrupted);
+			}
+
+			public static bool isAlive(object thisThread)
+			{
+				VMThread t = GetVMThread(thisThread);
+				return t != null && t.nativeThread.IsAlive && (int)threadStatusField.GetValue(thisThread) != TERMINATED;
+			}
+
+			public static int countStackFrames(object thisThread)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static bool holdsLock(object obj)
+			{
+#if FIRST_PASS
+				return false;
+#else
+				if (obj == null)
+				{
+					throw new jlNullPointerException();
+				}
+				try
+				{
+					// The new 1.5 memory model explicitly allows spurious wake-ups from Object.wait,
+					// so we abuse Pulse to check if we own the monitor.
+					System.Threading.Monitor.Pulse(obj);
+					return true;
+				}
+				catch (System.Threading.SynchronizationLockException)
+				{
+					return false;
+				}
+#endif
+			}
+
+			public static object[][] dumpThreads(object[] threads)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static object[] getThreads()
+			{
+				throw new NotImplementedException();
+			}
+
+			public static void setPriority0(object thisThread, int newPriority)
+			{
+#if !FIRST_PASS
+				lock (thisThread)
+				{
+					VMThread t = GetVMThread(thisThread);
+					if (t != null)
+					{
+						t.nativeThread.Priority = MapJavaPriorityToNative(newPriority);
+					}
+				}
+#endif
+			}
+
+			public static void stop0(object thisThread, object o)
+			{
+#if !FIRST_PASS
+				VMThread t = GetVMThread(thisThread);
+				if (t.running)
+				{
+					// NOTE we allow ThreadDeath (and its subclasses) to be thrown on every thread, but any
+					// other exception is ignored, except if we're throwing it on the current Thread. This
+					// is done to allow exception handlers to be type specific, otherwise every exception
+					// handler would have to catch ThreadAbortException and look inside it to see if it
+					// contains the real exception that we wish to handle.
+					// I hope we can get away with this behavior, because Thread.stop() is deprecated
+					// anyway. Note that we do allow arbitrary exceptions to be thrown on the current
+					// thread, since this is harmless (because they aren't wrapped) and also because it
+					// provides some real value, because it is one of the ways you can throw arbitrary checked
+					// exceptions from Java.
+					if (t == vmThread)
+					{
+						throw (Exception)o;
+					}
+					else if (o is jlThreadDeath)
+					{
+						try
+						{
+							t.nativeThread.Abort(o);
+						}
+						catch (System.Threading.ThreadStateException)
+						{
+							// .NET 2.0 throws a ThreadStateException if the target thread is currently suspended
+							// (but it does record the Abort request)
+						}
+						try
+						{
+							System.Threading.ThreadState suspend = System.Threading.ThreadState.Suspended | System.Threading.ThreadState.SuspendRequested;
+							while ((t.nativeThread.ThreadState & suspend) != 0)
+							{
+								t.nativeThread.Resume();
+							}
+						}
+						catch (System.Threading.ThreadStateException)
+						{
+						}
+					}
+				}
+				else
+				{
+					t.stillborn = (Exception)o;
+				}
+#endif
+			}
+
+			public static void suspend0(object thisThread)
+			{
+				VMThread t = GetVMThread(thisThread);
+				if (t != null)
+				{
+					try
+					{
+						t.nativeThread.Suspend();
+					}
+					catch (System.Threading.ThreadStateException)
+					{
+					}
+				}
+			}
+
+			public static void resume0(object thisThread)
+			{
+				VMThread t = GetVMThread(thisThread);
+				if (t != null)
+				{
+					try
+					{
+						t.nativeThread.Resume();
+					}
+					catch (System.Threading.ThreadStateException)
+					{
+					}
+				}
+			}
+
+			public static void interrupt0(object thisThread)
+			{
+				// if the thread hasn't been started yet, the interrupt is ignored
+				// (like on the reference implementation)
+				VMThread t = GetVMThread(thisThread);
+				if (t != null)
+				{
+					t.Interrupt();
+				}
+			}
+
+			// this is called from JniInterface.cs
+			internal static void WaitUntilLastJniThread()
+			{
+				throw new NotImplementedException();
+			}
+
+			// this is called from JniInterface.cs
+			internal static void AttachThreadFromJni(object threadGroup)
+			{
+#if !FIRST_PASS
+				AttachThread(null, true, threadGroup);
+#endif
+			}
+
+			// this is called from JniInterface.cs
+			internal static void DetachThreadFromJni()
+			{
+				object javaThread = currentThread();
+				threadExitMethod.Invoke(javaThread, null);
+				threadStatusField.SetValue(javaThread, TERMINATED);
+				lock (javaThread)
+				{
+					System.Threading.Monitor.PulseAll(javaThread);
+				}
+				vmThread = null;
+			}
+
+			public static void objectWait(object o, long timeout, int nanos)
+			{
+#if !FIRST_PASS
+				if (o == null)
+				{
+					throw new jlNullPointerException();
+				}
+				if (timeout < 0 || nanos < 0 || nanos > 999999)
+				{
+					throw new jlIllegalArgumentException("argument out of range");
+				}
+				VMThread t = CurrentVMThread();
+				t.EnterInterruptableWait(timeout != 0 || nanos != 0);
+				try
+				{
+					if ((timeout == 0 && nanos == 0) || timeout > 922337203685476L)
+					{
+						System.Threading.Monitor.Wait(o);
+					}
+					else
+					{
+						System.Threading.Monitor.Wait(o, new System.TimeSpan(timeout * 10000 + (nanos + 99) / 100));
+					}
+				}
+				finally
+				{
+					t.LeaveInterruptableWait();
+				}
+#endif
+			}
+		}
+
+		public sealed class VMThread
+		{
+			// this method has the wrong name, it is only called by ikvm.runtime.Startup.exitMainThread()
+			public static void jniDetach()
+			{
+				Thread.DetachThreadFromJni();
+			}
+
+			public static void park(Object blocker, long nanos)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static void park(long nanos)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static void unpark(object javaThread)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static Object getBlocker(object javaThread)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static System.Threading.Thread getNativeThread(object javaThread)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static object getThreadFromId(long id)
+			{
 				throw new NotImplementedException();
 			}
 		}

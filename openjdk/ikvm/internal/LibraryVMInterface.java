@@ -37,10 +37,6 @@ public interface LibraryVMInterface
 
     Throwable mapException(Throwable t);
 
-    void jniWaitUntilLastThread();
-    void jniDetach();
-    void setThreadGroup(Object group);
-
     Object newDirectByteBuffer(cli.System.IntPtr address, int capacity);
     cli.System.IntPtr getDirectBufferAddress(Object buffer);
     int getDirectBufferCapacity(Object buffer);
