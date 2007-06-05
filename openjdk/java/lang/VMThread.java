@@ -38,11 +38,20 @@ public final class VMThread
     public static void enterInterruptableWait(InterruptProc proc) throws InterruptedException
     {
 	Thread.currentThread().blockedOn(proc);
+	if (Thread.interrupted())
+	{
+	    Thread.currentThread().blockedOn(null);
+	    throw new InterruptedException();
+	}
     }
 
     public static void leaveInterruptableWait() throws InterruptedException
     {
 	Thread.currentThread().blockedOn(null);
+	if (Thread.interrupted())
+	{
+	    throw new InterruptedException();
+	}
     }
 
     public static native void park(Object blocker, long nanos);
