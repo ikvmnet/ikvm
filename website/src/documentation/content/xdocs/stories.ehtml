@@ -7,19 +7,29 @@
 
 <body>
 
+<h2>IKVM at Chordiant Software</h2>
+
+<p><i>Chordiant software and solutions help major brand enterprises around the world deliver the best possible customer experience.</i></p>
+
+<p><i>Our product suite consists of J2EE applications as well as Windows desktop systems. As an IKVM customer, Chordiant was able to consolidate our dedicated C++ engine with our Java code base. This effectively enabled us to cut development time on one specific product in half.</i></p>
+
+<p><i>Having used IKVM for over a year, we have found IKVM to work reliably and offer production quality operation. The one time where we did run into some specific problem, the open source nature of IKVM allowed us to quickly track down the bug and verify the cause of the problem. We had a fix for the problem the very same day.</i></p>
+
+<p><i>In short, at Chordiant we like IKVM a lot.</i> -- Otto Perdeck, development manager <a href="http://www.chordiant.com/">Chordiant Software</a></p>
+
 <h2>IKVM at eInstruction</h2>
 
-At <a href="http://www.eInstruction.com/">eInstruction</a>, we provide classroom response systems that include custom hardware for gathering responses from students.
+<i>At eInstruction, we provide classroom response systems that include custom hardware for gathering responses from students.
 Our main application was originally written in J++, including some pure Java libraries.
 This past year we needed to port to .NET. We made some attempts with J#, but ran into some limitations that IKVM does
 not suffer from. IKVM has been a key part of the success of our port, and we continue to use it to cross-compile our Java
 hardware API to .NET. IKVM is stable, performs great and Jeroen's support for the few esoteric cases we've run into has
-been fantastic. -- Chris Morris, eInstruction.
+been fantastic.</i> -- Chris Morris, <a href="http://www.eInstruction.com/">eInstruction</a>.
 
 <h2>IKVM at WL | Delft Hydraulics</h2>
 
-I'm David Levelt, Software Engineer. I work at <a href="http://www.wldelft.nl">WL | Delft Hydraulics</a>.<br /> WL
-| Delft Hydraulics is an independent research institute and specialist consultancy based in the Netherlands.
+<i>WL | Delft Hydraulics is
+an independent research institute and specialist consultancy based in the Netherlands.
 One of our tasks is to make world leading software in watermodelling. I work on the integration of different models.
 Some models may concern water movement, other models may provide information on water quality.
 All these models have to work together and exchange information.
@@ -52,7 +62,7 @@ A drawback of IKVM is in this case that you can not debug the Java code to track
 <p />
 IKVM saves us a lot of time setting up the connection between Java and C#.
 It can be a drawback when you have to debug the underlying Java code.
-It's amazing how this software bridges the gap between the Java and C# world.
+It's amazing how this software bridges the gap between the Java and C# world.</i> -- David Levelt, Software Engineer <a href="http://www.wldelft.nl">WL | Delft Hydraulics</a>
 
 </body>
 </html>
