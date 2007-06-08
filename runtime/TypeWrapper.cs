@@ -4679,6 +4679,13 @@ namespace IKVM.Internal
 							{
 								hasConstructor = true;
 							}
+#if STATIC_COMPILER
+							// do we have a native implementation in map.xml?
+							if(wrapper.EmitMapXmlMethodBody(ilGenerator, classFile, m))
+							{
+								continue;
+							}
+#endif
 							LineNumberTableAttribute.LineNumberWriter lineNumberTable = null;
 							bool nonLeaf = false;
 							Compiler.Compile(wrapper, methods[i], classFile, m, ilGenerator, ref nonLeaf, invokespecialstubcache, ref lineNumberTable);
