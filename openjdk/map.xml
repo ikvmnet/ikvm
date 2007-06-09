@@ -1263,6 +1263,14 @@
     </class>
     <class name="java.lang.Thread">
       <field name="vmThread" sig="Ljava.lang.Object;" modifiers="private" />
+      <method name="getState" sig="()Ljava.lang.Thread$State;">
+        <body>
+          <ldarg_0 />
+          <call type="IKVM.NativeCode.java.lang.Thread" name="getState" sig="(Ljava.lang.Object;)Ljava.lang.Object;" />
+          <castclass class="java.lang.Thread$State" />
+          <ret />
+        </body>
+      </method>
     </class>
 		<class name="ikvm.internal.EnumEnum">
 			<field name="typeWrapper" sig="Ljava.lang.Object;" modifiers="private" />
@@ -1447,7 +1455,26 @@
 				</body>
 			</method>
 		</class>
-		<class name="java.lang.VMSystem">
+    <class name="java.lang.Shutdown">
+      <method name="runAllFinalizers" sig="()V">
+        <body>
+          <ldc_i4_1 />
+          <volatile />
+          <stsfld class="java.lang.LibraryVMInterfaceImpl" name="runFinalizersOnExitFlag" sig="Z" />
+          <ret />
+        </body>
+      </method>
+    </class>
+		<class name="java.lang.System">
+      <!-- HACK we replace <clinit> to remove the null initialization of in/out/err,
+           because we have to trigger VM initialization in registerNatives. -->
+      <method name="&lt;clinit&gt;" sig="()V">
+        <body>
+          <call class="java.lang.System" name="registerNatives" sig="()V" />
+          <call class="java.lang.LangHelper" name="init" sig="()V" />
+          <ret />
+        </body>
+      </method>
 			<method name="identityHashCode" sig="(Ljava.lang.Object;)I">
 				<body>
 					<ldarg_0 />

@@ -96,25 +96,13 @@ class LangHelper
 	return ikvm.internal.AssemblyClassLoader.getResources(null, name);
     }
 
-    static
+    // this method is called from the System.<clinit> method in map.xml
+    static void init()
     {
-        sun.misc.SharedSecrets.setJavaLangAccess(new sun.misc.JavaLangAccess() {
-	    public sun.reflect.ConstantPool getConstantPool(Class klass) {
-		return klass.getConstantPool();
+	cli.System.AppDomain.get_CurrentDomain().add_ProcessExit(new cli.System.EventHandler(new cli.System.EventHandler.Method() {
+	    public void Invoke(Object sender, cli.System.EventArgs e) {
+		Shutdown.shutdown();
 	    }
-	    public void setAnnotationType(Class klass, sun.reflect.annotation.AnnotationType type) {
-		klass.setAnnotationType(type);
-	    }
-	    public sun.reflect.annotation.AnnotationType getAnnotationType(Class klass) {
-		return klass.getAnnotationType();
-	    }
-	    public <E extends Enum<E>>
-		    E[] getEnumConstantsShared(Class<E> klass) {
-		return klass.getEnumConstantsShared();
-	    }
-	    public void blockedOn(Thread t, sun.nio.ch.Interruptible b) {
-		t.blockedOn(b);
-	    }
-	});
+	}));
     }
 }

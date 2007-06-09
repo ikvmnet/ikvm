@@ -23,7 +23,17 @@
 */
 using System;
 using System.Collections;
+using System.Globalization;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
+using System.Text;
+using System.Threading;
 using StackFrame = System.Diagnostics.StackFrame;
+using SystemArray = System.Array;
+using SystemThreadingThread = System.Threading.Thread;
+using SystemThreadingThreadInterruptedException = System.Threading.ThreadInterruptedException;
+using SystemThreadingThreadPriority = System.Threading.ThreadPriority;
 using IKVM.Internal;
 #if !FIRST_PASS
 using jlClass = java.lang.Class;
@@ -69,6 +79,13 @@ using jnByteBuffer = java.nio.ByteBuffer;
 using StubGenerator = ikvm.@internal.stubgen.StubGenerator;
 using IConstantPoolWriter = ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter;
 using Annotation = java.lang.annotation.Annotation;
+using smJavaIOAccess = sun.misc.JavaIOAccess;
+using smSharedSecrets = sun.misc.SharedSecrets;
+using jiConsole = java.io.Console;
+using jnCharset = java.nio.charset.Charset;
+using juProperties = java.util.Properties;
+using gcSystemProperties = gnu.classpath.SystemProperties;
+using irUtil = ikvm.runtime.Util;
 #endif
 
 namespace IKVM.NativeCode.java
@@ -176,13 +193,13 @@ namespace IKVM.NativeCode.java
 				return null;
 			}
 #else
-				private static System.Array CheckArray(object arrayObj)
+				private static SystemArray CheckArray(object arrayObj)
 				{
 					if (arrayObj == null)
 					{
 						throw new jlNullPointerException();
 					}
-					System.Array arr = arrayObj as System.Array;
+					SystemArray arr = arrayObj as SystemArray;
 					if (arr != null)
 					{
 						return arr;
@@ -197,7 +214,7 @@ namespace IKVM.NativeCode.java
 
 				public static object get(object arrayObj, int index)
 				{
-					System.Array arr = CheckArray(arrayObj);
+					SystemArray arr = CheckArray(arrayObj);
 					if (index < 0 || index >= arr.Length)
 					{
 						throw new jlArrayIndexOutOfBoundsException();
@@ -448,11 +465,11 @@ namespace IKVM.NativeCode.java
 					{
 						CheckArray(arrayObj).SetValue(value, index);
 					}
-					catch (System.InvalidCastException)
+					catch (InvalidCastException)
 					{
 						throw new jlIllegalArgumentException("argument type mismatch");
 					}
-					catch (System.IndexOutOfRangeException)
+					catch (IndexOutOfRangeException)
 					{
 						throw new jlArrayIndexOutOfBoundsException();
 					}
@@ -644,7 +661,7 @@ namespace IKVM.NativeCode.java
 					{
 						TypeWrapper wrapper = TypeWrapper.FromClass(componentType);
 						wrapper.Finish();
-						return System.Array.CreateInstance(wrapper.TypeAsArrayType, length);
+						return SystemArray.CreateInstance(wrapper.TypeAsArrayType, length);
 					}
 					catch (RetargetableJavaException x)
 					{
@@ -742,21 +759,18 @@ namespace IKVM.NativeCode.java
 		{
 			private Class() { }
 
-			private static System.Reflection.FieldInfo signersField;
-			private static System.Reflection.FieldInfo pdField;
-			private static System.Reflection.FieldInfo constantPoolField;
-			private static System.Reflection.FieldInfo constantPoolOopField;
+			private static FieldInfo signersField;
+			private static FieldInfo pdField;
+			private static FieldInfo constantPoolField;
+			private static FieldInfo constantPoolOopField;
 
 			public static void registerNatives()
 			{
 #if !FIRST_PASS
-				signersField = typeof(jlClass).GetField("signers", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-				pdField = typeof(jlClass).GetField("pd", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-				constantPoolField = typeof(jlClass).GetField("constantPool", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-				constantPoolOopField = typeof(srConstantPool).GetField("constantPoolOop", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-
-				// HACK force LangHelper static initializer to run to register JavaLangAccess with SharedSecrets.
-				System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(jlClass).Assembly.GetType("java.lang.LangHelper").TypeHandle);
+				signersField = typeof(jlClass).GetField("signers", BindingFlags.Instance | BindingFlags.NonPublic);
+				pdField = typeof(jlClass).GetField("pd", BindingFlags.Instance | BindingFlags.NonPublic);
+				constantPoolField = typeof(jlClass).GetField("constantPool", BindingFlags.Instance | BindingFlags.NonPublic);
+				constantPoolOopField = typeof(srConstantPool).GetField("constantPoolOop", BindingFlags.Instance | BindingFlags.NonPublic);
 #endif
 			}
 
@@ -960,7 +974,7 @@ namespace IKVM.NativeCode.java
 						throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
 					}
 					decl.Finish();
-					if (System.Array.IndexOf(decl.InnerClasses, wrapper) == -1)
+					if (SystemArray.IndexOf(decl.InnerClasses, wrapper) == -1)
 					{
 						throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", decl.Name, wrapper.Name));
 					}
@@ -979,7 +993,23 @@ namespace IKVM.NativeCode.java
 				{
 					wrapper = wrapper.ElementTypeWrapper;
 				}
-				return pdField.GetValue(wrapper.ClassObject);
+				object pd = pdField.GetValue(wrapper.ClassObject);
+				if (pd == null && wrapper.GetClassLoader() is AssemblyClassLoader)
+				{
+					object loader = wrapper.GetClassLoader().GetJavaClassLoader();
+					if (loader != null)
+					{
+						// The protection domain for statically compiled code is created lazily (not at java.lang.Class creation time),
+						// to work around boot strap issues.
+						// TODO this should be done more efficiently
+						MethodInfo method = loader.GetType().GetMethod("getProtectionDomain", BindingFlags.NonPublic | BindingFlags.Instance);
+						if (method != null)
+						{
+							pd = method.Invoke(loader, null);
+						}
+					}
+				}
+				return pd;
 			}
 
 			public static void setProtectionDomain0(object thisClass, object pd)
@@ -1378,8 +1408,22 @@ namespace IKVM.NativeCode.java
 
 				public static void load(object thisNativeLibrary, string name)
 				{
-					// TODO
-					throw new NotImplementedException();
+					if (name == Assembly.GetExecutingAssembly().Location)
+					{
+						// HACK work around for the zip library
+						SetHandle(thisNativeLibrary, -1);
+						return;
+					}
+					object fromClass = thisNativeLibrary.GetType().GetField("fromClass", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(thisNativeLibrary);
+					if (IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(fromClass).GetClassLoader()) == 1)
+					{
+						SetHandle(thisNativeLibrary, -1);
+					}
+				}
+
+				private static void SetHandle(object thisNativeLibrary, long handle)
+				{
+					thisNativeLibrary.GetType().GetField("handle", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(thisNativeLibrary, handle);
 				}
 
 				public static long find(object thisNativeLibrary, string name)
@@ -1419,20 +1463,240 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		public sealed class ProcessEnvironment
+		{
+			public static string environmentBlock()
+			{
+				StringBuilder sb = new StringBuilder();
+				foreach (DictionaryEntry de in Environment.GetEnvironmentVariables())
+				{
+					sb.Append(de.Key).Append('=').Append(de.Value).Append('\u0000');
+				}
+				if (sb.Length == 0)
+				{
+					sb.Append('\u0000');
+				}
+				sb.Append('\u0000');
+				return sb.ToString();
+			}
+		}
+
+		public sealed class Runtime
+		{
+			public static int availableProcessors(object thisRuntime)
+			{
+				string s = JVM.SafeGetEnvironmentVariable("NUMBER_OF_PROCESSORS");
+				if (s != null)
+				{
+					try
+					{
+						return Int32.Parse(s, NumberFormatInfo.InvariantInfo);
+					}
+					catch (FormatException)
+					{
+					}
+					catch (OverflowException)
+					{
+					}
+				}
+				return 1;
+			}
+
+			public static long freeMemory(object thisRuntime)
+			{
+				// TODO figure out if there is anything meaningful we can return here
+				return 10 * 1024 * 1024;
+			}
+
+			public static long totalMemory(object thisRuntime)
+			{
+				// NOTE this really is a bogus number, but we have to return something
+				return GC.GetTotalMemory(false) + freeMemory(thisRuntime);
+			}
+
+			public static long maxMemory(object thisRuntime)
+			{
+				// spec says: If there is no inherent limit then the value Long.MAX_VALUE will be returned.
+				return Int64.MaxValue;
+			}
+
+			public static void gc(object thisRuntime)
+			{
+				GC.Collect();
+			}
+
+			public static void traceInstructions(object thisRuntime, bool on)
+			{
+			}
+
+			public static void traceMethodCalls(object thisRuntime, bool on)
+			{
+			}
+
+			public static void runFinalization0()
+			{
+				GC.WaitForPendingFinalizers();
+			}
+		}
+
+		public sealed class Shutdown
+		{
+			public static void halt0(int status)
+			{
+				Environment.Exit(status);
+			}
+
+			// runAllFinalizers() implementation lives in map.xml
+		}
+
+		public sealed class System
+		{
+			public static void arraycopy(object src, int srcPos, object dest, int destPos, int length)
+			{
+				IKVM.Runtime.ByteCodeHelper.arraycopy(src, srcPos, dest, destPos, length);
+			}
+
+			// FXBUG this is implemented by a non-virtual call to System.Object.GetHashCode (in map.xml),
+			// because RuntimeHelpers.GetHashCode is broken (in v1.x) when called in a secondary AppDomain.
+			// See http://weblog.ikvm.net/PermaLink.aspx?guid=c2442bc8-7b48-4570-b082-82649cc347dc
+			//
+			// public static int identityHashCode(object obj)
+
+			public static long currentTimeMillis()
+			{
+				const long january_1st_1970 = 62135596800000L;
+				return DateTime.UtcNow.Ticks / 10000L - january_1st_1970;
+			}
+
+			public static long nanoTime()
+			{
+				// Note that the epoch is undefined, but we use something similar to the JDK
+				const long epoch = 632785401332600000L;
+				return (DateTime.UtcNow.Ticks - epoch) * 100L;
+			}
+
+			public static string mapLibraryName(string libname)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				if (libname == "zip")
+				{
+					// HACK prevent failure zip library loading
+					return Assembly.GetExecutingAssembly().Location;
+				}
+				// TODO instead of using the System property, we should use
+				// a VM level shared variable that contains the os
+				// (and that os.name is defined by)
+				string osname = jlSystem.getProperty("os.name");
+				if (osname == null)
+				{
+					return libname;
+				}
+				else if (osname.IndexOf("Windows") >= 0)
+				{
+					return libname + ".dll";
+				}
+				else if (osname == "Mac OS X")
+				{
+					return "lib" + libname + ".jnilib";
+				}
+				else
+				{
+					return "lib" + libname + ".so";
+				}
+#endif
+			}
+
+#if !FIRST_PASS
+			sealed class JavaIOAccess : smJavaIOAccess
+			{
+				public jiConsole console()
+				{
+					return null;
+				}
+
+				class ConsoleRestoreHook : jlRunnable
+				{
+					public void run()
+					{
+					}
+				}
+
+				public jlRunnable consoleRestoreHook()
+				{
+					return new ConsoleRestoreHook();
+				}
+
+				public jnCharset charset()
+				{
+					return null;
+				}
+			}
+#endif
+
+			public static void registerNatives()
+			{
+#if !FIRST_PASS
+				smSharedSecrets.setJavaIOAccess(new JavaIOAccess());
+				Thread.currentThread();
+#endif
+			}
+
+			public static void setIn0(object @in)
+			{
+				SetSystemField("in", @in);
+			}
+
+			public static void setOut0(object @out)
+			{
+				SetSystemField("out", @out);
+			}
+
+			public static void setErr0(object err)
+			{
+				SetSystemField("err", err);
+			}
+
+			private static void SetSystemField(string field, object obj)
+			{
+#if !FIRST_PASS
+				// MONOBUG due to a bug in mcs we currently prefix the backing fields with __<>
+				field = "__<>" + field;
+				typeof(jlSystem)
+					.GetField(field, BindingFlags.NonPublic | BindingFlags.Static)
+					.SetValue(null, obj);
+#endif
+			}
+
+			public static object initProperties(object props)
+			{
+#if !FIRST_PASS
+				juProperties p1 = gcSystemProperties.getProperties();
+				juProperties p = (juProperties)props;
+				foreach (string key in (IEnumerable)p1.keySet())
+				{
+					p.put(key, p1.getProperty(key));
+				}
+#endif
+				return props;
+			}
+		}
+
 		public sealed class Thread
 		{
 			[ThreadStatic]
 			private static VMThread vmThread;
 			[ThreadStatic]
 			private static object cleanup;
-			private static readonly System.Reflection.ConstructorInfo threadConstructor1;
-			private static readonly System.Reflection.ConstructorInfo threadConstructor2;
-			private static readonly System.Reflection.FieldInfo vmThreadField;
-			private static readonly System.Reflection.MethodInfo threadGroupAddMethod;
-			private static readonly System.Reflection.FieldInfo threadStatusField;
-			private static readonly System.Reflection.FieldInfo daemonField;
-			private static readonly System.Reflection.FieldInfo threadPriorityField;
-			private static readonly System.Reflection.MethodInfo threadExitMethod;
+			private static readonly ConstructorInfo threadConstructor1;
+			private static readonly ConstructorInfo threadConstructor2;
+			private static readonly FieldInfo vmThreadField;
+			private static readonly MethodInfo threadGroupAddMethod;
+			private static readonly FieldInfo threadStatusField;
+			private static readonly FieldInfo daemonField;
+			private static readonly FieldInfo threadPriorityField;
+			private static readonly MethodInfo threadExitMethod;
 			private static readonly object mainThreadGroup;
 			// we don't really use the Thread.threadStatus field, but we have to set it to a non-zero value,
 			// so we use RUNNABLE (which the HotSpot also uses) and the value was taken from the
@@ -1440,19 +1704,35 @@ namespace IKVM.NativeCode.java
 			private const int JVMTI_THREAD_STATE_ALIVE = 0x0001;
 			private const int JVMTI_THREAD_STATE_RUNNABLE = 0x0004;
 			private const int JVMTI_THREAD_STATE_TERMINATED = 0x0002;
+			private const int NEW = 0;
 			private const int RUNNABLE = JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE;
 			private const int TERMINATED = JVMTI_THREAD_STATE_TERMINATED;
 
 			private sealed class VMThread
 			{
-				internal System.Threading.Thread nativeThread;
+				internal readonly SystemThreadingThread nativeThread;
 #if !FIRST_PASS
-				internal jlThread javaThread;
+				internal readonly jlThread javaThread;
 #endif
 				internal Exception stillborn;
 				internal bool running;
 				private bool interruptPending;
 				private bool interruptableWait;
+				private bool timedWait;
+
+#if !FIRST_PASS
+				internal VMThread(jlThread javaThread, SystemThreadingThread nativeThread)
+				{
+					this.javaThread = javaThread;
+					this.nativeThread = nativeThread;
+				}
+
+				internal VMThread(jlThread javaThread)
+				{
+					this.javaThread = javaThread;
+					nativeThread = new SystemThreadingThread(new ThreadStart(ThreadProc));
+				}
+#endif
 
 				internal bool IsInterruptPending(bool clearInterrupt)
 				{
@@ -1467,6 +1747,33 @@ namespace IKVM.NativeCode.java
 					}
 				}
 
+#if !FIRST_PASS
+				internal jlThread.State GetState()
+				{
+					switch (GetThreadStatus(javaThread))
+					{
+						case NEW:
+							return jlThread.State.NEW;
+						case TERMINATED:
+							return jlThread.State.TERMINATED;
+					}
+					lock (this)
+					{
+						if (interruptableWait)
+						{
+							// NOTE if objectWait has satisfied the wait condition (or has been interrupted or has timed-out),
+							// it can be blocking on the re-acquire of the monitor, but we have no way of detecting that.
+							return timedWait ? jlThread.State.TIMED_WAITING : jlThread.State.WAITING;
+						}
+						if ((nativeThread.ThreadState & ThreadState.WaitSleepJoin) != 0)
+						{
+							return jlThread.State.BLOCKED;
+						}
+					}
+					return jlThread.State.RUNNABLE;
+				}
+#endif
+
 				internal void EnterInterruptableWait(bool timedWait)
 				{
 #if !FIRST_PASS
@@ -1478,6 +1785,7 @@ namespace IKVM.NativeCode.java
 							throw new jlInterruptedException();
 						}
 						interruptableWait = true;
+						this.timedWait = timedWait;
 					}
 #endif
 				}
@@ -1485,7 +1793,7 @@ namespace IKVM.NativeCode.java
 				internal void LeaveInterruptableWait()
 				{
 #if !FIRST_PASS
-					System.Threading.ThreadInterruptedException dotnetInterrupt = null;
+					SystemThreadingThreadInterruptedException dotnetInterrupt = null;
 					for (; ; )
 					{
 						try
@@ -1501,7 +1809,7 @@ namespace IKVM.NativeCode.java
 							}
 							break;
 						}
-						catch (System.Threading.ThreadInterruptedException x)
+						catch (SystemThreadingThreadInterruptedException x)
 						{
 							dotnetInterrupt = x;
 						}
@@ -1547,7 +1855,7 @@ namespace IKVM.NativeCode.java
 					{
 						try
 						{
-							javaThread.getUncaughtExceptionHandler().uncaughtException(javaThread, x);
+							javaThread.getUncaughtExceptionHandler().uncaughtException(javaThread, irUtil.mapException(x));
 						}
 						catch
 						{
@@ -1572,12 +1880,7 @@ namespace IKVM.NativeCode.java
 
 				~Cleanup()
 				{
-					threadExitMethod.Invoke(javaThread, null);
-					threadStatusField.SetValue(javaThread, TERMINATED);
-					lock (javaThread)
-					{
-						System.Threading.Monitor.PulseAll(javaThread);
-					}
+					SetThreadStatus(javaThread, TERMINATED);
 				}
 			}
 
@@ -1586,12 +1889,12 @@ namespace IKVM.NativeCode.java
 			{
 				threadConstructor1 = typeof(jlThread).GetConstructor(new Type[] { typeof(jlThreadGroup), typeof(string) });
 				threadConstructor2 = typeof(jlThread).GetConstructor(new Type[] { typeof(jlThreadGroup), typeof(jlRunnable) });
-				vmThreadField = typeof(jlThread).GetField("vmThread", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-				threadGroupAddMethod = typeof(jlThreadGroup).GetMethod("add", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, null, new Type[] { typeof(jlThread) }, null);
-				threadStatusField = typeof(jlThread).GetField("threadStatus", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-				daemonField = typeof(jlThread).GetField("daemon", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-				threadPriorityField = typeof(jlThread).GetField("priority", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-				threadExitMethod = typeof(jlThread).GetMethod("exit", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, null, Type.EmptyTypes, null);
+				vmThreadField = typeof(jlThread).GetField("vmThread", BindingFlags.Instance | BindingFlags.NonPublic);
+				threadGroupAddMethod = typeof(jlThreadGroup).GetMethod("add", BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(jlThread) }, null);
+				threadStatusField = typeof(jlThread).GetField("threadStatus", BindingFlags.Instance | BindingFlags.NonPublic);
+				daemonField = typeof(jlThread).GetField("daemon", BindingFlags.Instance | BindingFlags.NonPublic);
+				threadPriorityField = typeof(jlThread).GetField("priority", BindingFlags.Instance | BindingFlags.NonPublic);
+				threadExitMethod = typeof(jlThread).GetMethod("exit", BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes, null);
 
 				jlThreadGroup systemThreadGroup = (jlThreadGroup)Activator.CreateInstance(typeof(jlThreadGroup), true);
 				mainThreadGroup = new jlThreadGroup(systemThreadGroup, "main");
@@ -1600,9 +1903,11 @@ namespace IKVM.NativeCode.java
 
 			public static void registerNatives()
 			{
+#if !FIRST_PASS
 				// the first thread here is the main thread
-				// AttachThread(null, false);
-				// call System.initializeSystemClass()
+				AttachThread("main", false, null);
+				typeof(jlSystem).GetMethod("initializeSystemClass", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
+#endif
 			}
 
 			public static object currentThread()
@@ -1612,6 +1917,37 @@ namespace IKVM.NativeCode.java
 #else
 				return CurrentVMThread().javaThread;
 #endif
+			}
+
+			internal static int GetThreadStatus(object javaThread)
+			{
+				// this needs to be a volatile read, but note that we can't synchronize on javaThread
+				SystemThreadingThread.MemoryBarrier();
+				return (int)threadStatusField.GetValue(javaThread);
+			}
+
+			internal static void SetThreadStatus(object javaThread, int value)
+			{
+				if (value == TERMINATED)
+				{
+					// NOTE there might be a race condition here (when the thread's Cleanup object
+					// is finalized during AppDomain shutdown while the thread is also exiting on its own),
+					// but that doesn't matter because Thread.exit() is idempotent.
+					threadExitMethod.Invoke(javaThread, null);
+				}
+				// this needs to be a volatile write, but note that we can't synchronize on javaThread
+				threadStatusField.SetValue(javaThread, value);
+				SystemThreadingThread.MemoryBarrier();
+				if (value == TERMINATED)
+				{
+					// NOTE locking javaThread here isn't ideal, because we might be invoked from
+					// the Cleanup object's finalizer and some user code might own the lock and hence
+					// block the finalizer thread.
+					lock (javaThread)
+					{
+						Monitor.PulseAll(javaThread);
+					}
+				}
 			}
 
 			private static VMThread CurrentVMThread()
@@ -1640,10 +1976,8 @@ namespace IKVM.NativeCode.java
 				}
 				// because the Thread constructor calls Thread.currentThread(), we have to have an instance before we
 				// run the constructor
-				jlThread thread = (jlThread)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(jlThread));
-				VMThread t = new VMThread();
-				t.javaThread = thread;
-				t.nativeThread = System.Threading.Thread.CurrentThread;
+				jlThread thread = (jlThread)FormatterServices.GetUninitializedObject(typeof(jlThread));
+				VMThread t = new VMThread(thread, SystemThreadingThread.CurrentThread);
 				t.running = true;
 				vmThreadField.SetValue(thread, t);
 				vmThread = t;
@@ -1663,7 +1997,7 @@ namespace IKVM.NativeCode.java
 					threadConstructor2.Invoke(thread, new object[] { threadGroup, null });
 				}
 				daemonField.SetValue(thread, t.nativeThread.IsBackground);
-				threadStatusField.SetValue(thread, RUNNABLE);
+				SetThreadStatus(thread, RUNNABLE);
 				if (addToGroup)
 				{
 					threadGroupAddMethod.Invoke(threadGroup, new object[] { thread });
@@ -1673,99 +2007,104 @@ namespace IKVM.NativeCode.java
 			}
 
 #if !FIRST_PASS
-			private static int MapNativePriorityToJava(System.Threading.ThreadPriority priority)
+			private static int MapNativePriorityToJava(SystemThreadingThreadPriority priority)
 			{
 				// TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
 				switch (priority)
 				{
-					case System.Threading.ThreadPriority.Lowest:
+					case SystemThreadingThreadPriority.Lowest:
 						return jlThread.MIN_PRIORITY;
-					case System.Threading.ThreadPriority.BelowNormal:
+					case SystemThreadingThreadPriority.BelowNormal:
 						return 3;
 					default:
-					case System.Threading.ThreadPriority.Normal:
+					case SystemThreadingThreadPriority.Normal:
 						return jlThread.NORM_PRIORITY;
-					case System.Threading.ThreadPriority.AboveNormal:
+					case SystemThreadingThreadPriority.AboveNormal:
 						return 7;
-					case System.Threading.ThreadPriority.Highest:
+					case SystemThreadingThreadPriority.Highest:
 						return jlThread.MAX_PRIORITY;
 				}
 			}
 
-			private static System.Threading.ThreadPriority MapJavaPriorityToNative(int priority)
+			private static SystemThreadingThreadPriority MapJavaPriorityToNative(int priority)
 			{
 				// TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
 				if (priority == jlThread.MIN_PRIORITY)
 				{
-					return System.Threading.ThreadPriority.Lowest;
+					return SystemThreadingThreadPriority.Lowest;
 				}
 				else if (priority > jlThread.MIN_PRIORITY && priority < jlThread.NORM_PRIORITY)
 				{
-					return System.Threading.ThreadPriority.BelowNormal;
+					return SystemThreadingThreadPriority.BelowNormal;
 				}
 				else if (priority == jlThread.NORM_PRIORITY)
 				{
-					return System.Threading.ThreadPriority.Normal;
+					return SystemThreadingThreadPriority.Normal;
 				}
 				else if (priority > jlThread.NORM_PRIORITY && priority < jlThread.MAX_PRIORITY)
 				{
-					return System.Threading.ThreadPriority.AboveNormal;
+					return SystemThreadingThreadPriority.AboveNormal;
 				}
 				else if (priority == jlThread.MAX_PRIORITY)
 				{
-					return System.Threading.ThreadPriority.Highest;
+					return SystemThreadingThreadPriority.Highest;
 				}
 				else
 				{
 					// can't happen
-					return System.Threading.ThreadPriority.Normal;
+					return SystemThreadingThreadPriority.Normal;
 				}
 			}
 #endif
 
 			public static void yield()
 			{
-				System.Threading.Thread.Sleep(0);
+				SystemThreadingThread.Sleep(0);
 			}
 
 			public static void sleep(long millis)
 			{
+#if !FIRST_PASS
+				if (millis < 0)
+				{
+					throw new jlIllegalArgumentException("timeout value is negative");
+				}
 				VMThread t = CurrentVMThread();
 				t.EnterInterruptableWait(true);
 				try
 				{
 					for (long iter = millis / int.MaxValue; iter != 0; iter--)
 					{
-						System.Threading.Thread.Sleep(int.MaxValue);
+						SystemThreadingThread.Sleep(int.MaxValue);
 					}
-					System.Threading.Thread.Sleep((int)(millis % int.MaxValue));
+					SystemThreadingThread.Sleep((int)(millis % int.MaxValue));
 				}
 				finally
 				{
 					t.LeaveInterruptableWait();
 				}
+#endif
 			}
 
 			public static void start0(object thisThread)
 			{
 #if !FIRST_PASS
-				VMThread t = new VMThread();
-				t.javaThread = (jlThread)thisThread;
-				vmThreadField.SetValue(thisThread, t);
 				// TODO on NET 2.0 set the stack size
-				t.nativeThread = new System.Threading.Thread(new System.Threading.ThreadStart(t.ThreadProc));
+				VMThread t = new VMThread((jlThread)thisThread);
+				vmThreadField.SetValue(thisThread, t);
 				t.nativeThread.Name = t.javaThread.getName();
 				t.nativeThread.IsBackground = t.javaThread.isDaemon();
 				t.nativeThread.Priority = MapJavaPriorityToNative(t.javaThread.getPriority());
 				string apartment = jlSystem.getProperty("ikvm.apartmentstate", "").ToLower();
 				if (apartment == "mta")
 				{
-					t.nativeThread.ApartmentState = System.Threading.ApartmentState.MTA;
+					t.nativeThread.ApartmentState = ApartmentState.MTA;
 				}
 				else if (apartment == "sta")
 				{
-					t.nativeThread.ApartmentState = System.Threading.ApartmentState.STA;
+					t.nativeThread.ApartmentState = ApartmentState.STA;
 				}
+				SetThreadStatus(thisThread, RUNNABLE);
 				t.nativeThread.Start();
 #endif
 			}
@@ -1778,8 +2117,8 @@ namespace IKVM.NativeCode.java
 
 			public static bool isAlive(object thisThread)
 			{
-				VMThread t = GetVMThread(thisThread);
-				return t != null && t.nativeThread.IsAlive && (int)threadStatusField.GetValue(thisThread) != TERMINATED;
+				int status = GetThreadStatus(thisThread);
+				return status != NEW && status != TERMINATED;
 			}
 
 			public static int countStackFrames(object thisThread)
@@ -1800,10 +2139,10 @@ namespace IKVM.NativeCode.java
 				{
 					// The 1.5 memory model (JSR133) explicitly allows spurious wake-ups from Object.wait,
 					// so we abuse Pulse to check if we own the monitor.
-					System.Threading.Monitor.Pulse(obj);
+					Monitor.Pulse(obj);
 					return true;
 				}
-				catch (System.Threading.SynchronizationLockException)
+				catch (SynchronizationLockException)
 				{
 					return false;
 				}
@@ -1860,20 +2199,20 @@ namespace IKVM.NativeCode.java
 						{
 							t.nativeThread.Abort(o);
 						}
-						catch (System.Threading.ThreadStateException)
+						catch (ThreadStateException)
 						{
 							// .NET 2.0 throws a ThreadStateException if the target thread is currently suspended
 							// (but it does record the Abort request)
 						}
 						try
 						{
-							System.Threading.ThreadState suspend = System.Threading.ThreadState.Suspended | System.Threading.ThreadState.SuspendRequested;
+							ThreadState suspend = ThreadState.Suspended | ThreadState.SuspendRequested;
 							while ((t.nativeThread.ThreadState & suspend) != 0)
 							{
 								t.nativeThread.Resume();
 							}
 						}
-						catch (System.Threading.ThreadStateException)
+						catch (ThreadStateException)
 						{
 						}
 					}
@@ -1894,7 +2233,7 @@ namespace IKVM.NativeCode.java
 					{
 						t.nativeThread.Suspend();
 					}
-					catch (System.Threading.ThreadStateException)
+					catch (ThreadStateException)
 					{
 					}
 				}
@@ -1909,7 +2248,7 @@ namespace IKVM.NativeCode.java
 					{
 						t.nativeThread.Resume();
 					}
-					catch (System.Threading.ThreadStateException)
+					catch (ThreadStateException)
 					{
 					}
 				}
@@ -1926,6 +2265,16 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
+			public static object getState(object thisThread)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				VMThread t = GetVMThread(thisThread);
+				return t == null ? jlThread.State.NEW : t.GetState();
+#endif
+			}
+
 			// this is called from JniInterface.cs
 			internal static void WaitUntilLastJniThread()
 			{
@@ -1940,17 +2289,16 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			// this is called from JniInterface.cs
+			// this is called from JNI and from VMThread.ThreadProc
 			internal static void DetachThread()
 			{
-				object javaThread = currentThread();
-				threadExitMethod.Invoke(javaThread, null);
-				threadStatusField.SetValue(javaThread, TERMINATED);
-				lock (javaThread)
-				{
-					System.Threading.Monitor.PulseAll(javaThread);
-				}
+				SetThreadStatus(currentThread(), TERMINATED);
 				vmThread = null;
+				if (cleanup != null)
+				{
+					GC.SuppressFinalize(cleanup);
+					cleanup = null;
+				}
 			}
 
 			public static void objectWait(object o, long timeout, int nanos)
@@ -1978,11 +2326,11 @@ namespace IKVM.NativeCode.java
 				{
 					if (timeout == 0 || timeout > 922337203685476L)
 					{
-						System.Threading.Monitor.Wait(o);
+						Monitor.Wait(o);
 					}
 					else
 					{
-						System.Threading.Monitor.Wait(o, new System.TimeSpan(timeout * 10000));
+						Monitor.Wait(o, new TimeSpan(timeout * 10000));
 					}
 				}
 				finally
@@ -2021,7 +2369,7 @@ namespace IKVM.NativeCode.java
 				throw new NotImplementedException();
 			}
 
-			public static System.Threading.Thread getNativeThread(object javaThread)
+			public static SystemThreadingThread getNativeThread(object javaThread)
 			{
 				throw new NotImplementedException();
 			}
@@ -2049,6 +2397,55 @@ namespace IKVM.NativeCode.java
 
 namespace IKVM.NativeCode.sun.misc
 {
+	public sealed class Signal
+	{
+		public static int findSignal(string sigName)
+		{
+			return 0;
+		}
+
+		public static long handle0(int sig, long nativeH)
+		{
+			return 0;
+		}
+
+		public static void raise0(int sig)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	public sealed class NativeSignalHandler
+	{
+		public static void handle0(int number, long handler)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	public sealed class Version
+	{
+		public static string getJvmSpecialVersion()
+		{
+			throw new NotImplementedException();
+		}
+
+		public static string getJdkSpecialVersion()
+		{
+			throw new NotImplementedException();
+		}
+
+		public static bool getJvmVersionInfo()
+		{
+			throw new NotImplementedException();
+		}
+
+		public static void getJdkVersionInfo()
+		{
+			throw new NotImplementedException();
+		}
+	}
+
 	public sealed class VM
 	{
 		private VM() { }

@@ -43,6 +43,8 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
     private static final cli.System.Reflection.FieldInfo classTypeWrapperField;
     private static final cli.System.Reflection.FieldInfo classProtectionDomainField;
     private static final cli.System.Reflection.FieldInfo classLoaderWrapperField;
+    // this flag is set by Shutdown.runAllFinalizers() in map.xml
+    static volatile boolean runFinalizersOnExitFlag;
 
     static
     {
@@ -57,10 +59,6 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 
     public Object newClass(Object wrapper, Object protectionDomain, Object classLoader)
     {
-	if(protectionDomain == null && classLoader instanceof AssemblyClassLoader)
-	{
-	    protectionDomain = ((AssemblyClassLoader)classLoader).getProtectionDomain();
-	}
 	Object clazz = classConstructor.Invoke(null);
 	classTypeWrapperField.SetValue(clazz, wrapper);
 	classProtectionDomainField.SetValue(clazz, protectionDomain);
@@ -189,7 +187,7 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 
     public boolean runFinalizersOnExit()
     {
-        return VMRuntime.runFinalizersOnExitFlag;
+        return runFinalizersOnExitFlag;
     }
 
     public Object newAnnotation(Object classLoader, Object definition)

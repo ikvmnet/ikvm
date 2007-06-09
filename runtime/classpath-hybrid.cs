@@ -30,6 +30,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Security;
 using System.Security.Permissions;
+using System.Runtime.Serialization;
+using SystemArray = System.Array;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;
@@ -59,7 +61,7 @@ namespace IKVM.NativeCode.java
 						{
 							TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
 							wrapper.Finish();
-							return System.Array.CreateInstance(wrapper.TypeAsArrayType, dim);
+							return SystemArray.CreateInstance(wrapper.TypeAsArrayType, dim);
 						}
 						catch(RetargetableJavaException x)
 						{
@@ -912,7 +914,7 @@ namespace IKVM.NativeCode.sun.misc
 			{
 				throw x.ToJava();
 			}
-			return System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
+			return FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
 		}
 	}
 }
