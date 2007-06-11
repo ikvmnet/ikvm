@@ -30,7 +30,9 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using StackFrame = System.Diagnostics.StackFrame;
+using StackTrace = System.Diagnostics.StackTrace;
 using SystemArray = System.Array;
+using SystemDouble = System.Double;
 using SystemThreadingThread = System.Threading.Thread;
 using SystemThreadingThreadInterruptedException = System.Threading.ThreadInterruptedException;
 using SystemThreadingThreadPriority = System.Threading.ThreadPriority;
@@ -1446,6 +1448,66 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		public sealed class Compiler
+		{
+			public static void initialize()
+			{
+			}
+
+			public static void registerNatives()
+			{
+			}
+
+			public static bool compileClass(object clazz)
+			{
+				return false;
+			}
+
+			public static bool compileClasses(string str)
+			{
+				return false;
+			}
+
+			public static object command(object any)
+			{
+				return null;
+			}
+
+			public static void enable()
+			{
+			}
+
+			public static void disable()
+			{
+			}
+		}
+
+		public sealed class Double
+		{
+			public static long doubleToRawLongBits(double value)
+			{
+				return BitConverter.DoubleToInt64Bits(value);
+			}
+
+			public static double longBitsToDouble(long bits)
+			{
+				return BitConverter.Int64BitsToDouble(bits);
+			}
+		}
+
+		public sealed class Float
+		{
+			public static int floatToRawIntBits(float value)
+			{
+				return BitConverter.ToInt32(BitConverter.GetBytes(value), 0);
+			}
+
+			public static float intBitsToFloat(int bits)
+			{
+				return BitConverter.ToSingle(BitConverter.GetBytes(bits), 0);
+			}
+		}
+
 		public sealed class Package
 		{
 			private Package() { }
@@ -1539,6 +1601,66 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		public sealed class SecurityManager
+		{
+			public static object getClassContext(object thisSecurityManager)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				ArrayList stack = new ArrayList();
+				StackTrace trace = new StackTrace();
+				for (int i = 0; i < trace.FrameCount; i++)
+				{
+					StackFrame frame = trace.GetFrame(i);
+					MethodBase method = frame.GetMethod();
+					Type type = method.DeclaringType;
+					// NOTE these checks should be the same as the ones in Reflection.getCallerClass
+					if (IKVM.NativeCode.gnu.classpath.VMStackWalker.isHideFromJava(method)
+						|| type == null
+						|| type.Assembly == typeof(object).Assembly
+						|| type.Assembly == typeof(SecurityManager).Assembly
+						|| type == typeof(jlrConstructor)
+						|| type == typeof(jlrMethod))
+					{
+						continue;
+					}
+					if (type == typeof(jlSecurityManager))
+					{
+						continue;
+					}
+					stack.Add(ClassLoaderWrapper.GetWrapperFromType(type).ClassObject);
+				}
+				return stack.ToArray(typeof(jlClass));
+#endif
+			}
+
+			public static object currentClassLoader0(object thisSecurityManager)
+			{
+				object currentClass = currentLoadedClass0(thisSecurityManager);
+				if (currentClass != null)
+				{
+					return TypeWrapper.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
+				}
+				return null;
+			}
+
+			public static int classDepth(object thisSecurityManager, string name)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static int classLoaderDepth0(object thisSecurityManager)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static object currentLoadedClass0(object thisSecurityManager)
+			{
+				throw new NotImplementedException();
+			}
+		}
+
 		public sealed class Shutdown
 		{
 			public static void halt0(int status)
@@ -1547,6 +1669,157 @@ namespace IKVM.NativeCode.java
 			}
 
 			// runAllFinalizers() implementation lives in map.xml
+		}
+
+		public sealed class StrictMath
+		{
+			public static double sin(double d)
+			{
+				return Math.Sin(d);
+			}
+
+			public static double cos(double d)
+			{
+				return Math.Cos(d);
+			}
+
+			public static double tan(double d)
+			{
+				return Math.Tan(d);
+			}
+
+			public static double asin(double d)
+			{
+				return Math.Asin(d);
+			}
+
+			public static double acos(double d)
+			{
+				return Math.Acos(d);
+			}
+
+			public static double atan(double d)
+			{
+				return Math.Atan(d);
+			}
+
+			public static double exp(double d)
+			{
+				return Math.Exp(d);
+			}
+
+			public static double log(double d)
+			{
+				return Math.Log(d);
+			}
+
+			public static double log10(double d)
+			{
+				return Math.Log10(d);
+			}
+
+			public static double sqrt(double d)
+			{
+				return Math.Sqrt(d);
+			}
+
+			public static double cbrt(double d)
+			{
+				return Math.Pow(d, 1.0 / 3.0);
+			}
+
+			public static double IEEEremainder(double f1, double f2)
+			{
+				if (SystemDouble.IsInfinity(f2) && !SystemDouble.IsInfinity(f1))
+				{
+					return f1;
+				}
+				return Math.IEEERemainder(f1, f2);
+			}
+
+			public static double ceil(double d)
+			{
+				return Math.Ceiling(d);
+			}
+
+			public static double floor(double d)
+			{
+				return Math.Floor(d);
+			}
+
+			public static double atan2(double y, double x)
+			{
+				if (SystemDouble.IsInfinity(y) && SystemDouble.IsInfinity(x))
+				{
+					if (SystemDouble.IsPositiveInfinity(y))
+					{
+						if (SystemDouble.IsPositiveInfinity(x))
+						{
+							return Math.PI / 4.0;
+						}
+						else
+						{
+							return Math.PI * 3.0 / 4.0;
+						}
+					}
+					else
+					{
+						if (SystemDouble.IsPositiveInfinity(x))
+						{
+							return -Math.PI / 4.0;
+						}
+						else
+						{
+							return -Math.PI * 3.0 / 4.0;
+						}
+					}
+				}
+				return Math.Atan2(y, x);
+			}
+
+			public static double pow(double x, double y)
+			{
+				if (Math.Abs(x) == 1.0 && SystemDouble.IsInfinity(y))
+				{
+					return SystemDouble.NaN;
+				}
+				return Math.Pow(x, y);
+			}
+
+			public static double sinh(double d)
+			{
+				return Math.Sinh(d);
+			}
+
+			public static double cosh(double d)
+			{
+				return Math.Cosh(d);
+			}
+
+			public static double tanh(double d)
+			{
+				return Math.Tanh(d);
+			}
+
+			public static double rint(double d)
+			{
+				return Math.Round(d);
+			}
+
+			public static double hypot(double a, double b)
+			{
+				return a * a + b * b;
+			}
+
+			public static double expm1(double d)
+			{
+				return Math.Exp(d) - 1.0;
+			}
+
+			public static double log1p(double d)
+			{
+				return Math.Log(d + 1.0);
+			}
 		}
 
 		public sealed class System
@@ -2397,6 +2670,19 @@ namespace IKVM.NativeCode.java
 
 namespace IKVM.NativeCode.sun.misc
 {
+	public sealed class MessageUtils
+	{
+		public static void toStderr(string msg)
+		{
+			Console.Error.Write(msg);
+		}
+
+		public static void toStdout(string msg)
+		{
+			Console.Out.Write(msg);
+		}
+	}
+
 	public sealed class Signal
 	{
 		public static int findSignal(string sigName)
@@ -2467,20 +2753,31 @@ namespace IKVM.NativeCode.sun.reflect
 	{
 		private Reflection() { }
 
+		// NOTE this method is hooked up explicitly through map.xml to prevent inlining of the native stub
+		// and tail-call optimization in the native stub.
 		public static object getCallerClass(int realFramesToSkip)
 		{
 #if FIRST_PASS
 			return null;
 #else
-			// HACK compensate for not inlining (or no tail-call optimization) of the native method stub
-			if (new StackFrame(1, false).GetMethod().DeclaringType == typeof(srReflection))
+			int i = 3;
+			if (realFramesToSkip <= 1)
 			{
-				realFramesToSkip++;
+				i = 1;
+				realFramesToSkip = Math.Max(realFramesToSkip + 2, 2);
 			}
+			realFramesToSkip--;
 			for (; ; )
 			{
-				Type type = new StackFrame(realFramesToSkip++, false).GetMethod().DeclaringType;
-				if (type == null
+				MethodBase method = new StackFrame(i++, false).GetMethod();
+				if (method == null)
+				{
+					return null;
+				}
+				Type type = method.DeclaringType;
+				// NOTE these checks should be the same as the ones in SecurityManager.getClassContext
+				if (IKVM.NativeCode.gnu.classpath.VMStackWalker.isHideFromJava(method)
+					|| type == null
 					|| type.Assembly == typeof(object).Assembly
 					|| type.Assembly == typeof(Reflection).Assembly
 					|| type == typeof(jlrMethod)
@@ -2488,7 +2785,10 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					continue;
 				}
-				return ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
+				if (--realFramesToSkip == 0)
+				{
+					return ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
+				}
 			}
 #endif
 		}

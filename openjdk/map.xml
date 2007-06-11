@@ -265,8 +265,8 @@
 				<parameter name="count" />
 			</constructor>
 			<!-- Package private constructor, that we redirect to static helper -->
-			<constructor sig="([CIIZ)V" modifiers="">
-				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([CIIZ)Ljava.lang.String;" />
+			<constructor sig="(II[C)V" modifiers="">
+				<redirect class="java.lang.StringHelper" name="NewString" type="static" sig="(II[C)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="(Ljava.lang.String;)V" modifiers="public">
 				<parameter name="original" />
@@ -383,7 +383,7 @@
 			</method>
 			<method name="valueOf" sig="(C)Ljava.lang.String;" modifiers="public static">
 				<parameter name="c" />
-				<redirect class="java.lang.StringHelper" sig="(C)Lcli.System.String;" />
+				<redirect class="java.lang.StringHelper" />
 			</method>
 			<method name="valueOf" sig="(F)Ljava.lang.String;" modifiers="public static">
 				<parameter name="f" />
@@ -437,62 +437,12 @@
 			</method>
 			<method name="indexOf" sig="(I)I" modifiers="public">
 				<parameter name="ch" />
-				<body>
-					<ldarg_1 />
-					<ldc_i4 value="65535" />
-					<ble_un name="ok" />
-					<ldc_i4_m1 />
-					<ret />
-					<label name="ok" />
-					<ldarg_0 />
-					<ldarg_1 />
-					<call type="System.String" name="IndexOf" sig="(C)I" />
-					<ret />
-				</body>
+        <redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;I)I" />
 			</method>
 			<method name="indexOf" sig="(II)I" modifiers="public" nonullcheck="true">
 				<parameter name="ch" />
 				<parameter name="fromIndex" />
-        <body>
-          <!--
-    			for (int i = fromIndex < 0 ? 0 : fromIndex; i < s.Length; i++)
-			    {
-				    if (this[i] == ch)
-				    {
-					    return i;
-				    }
-			    }
-			    return -1;
-          -->
-          <ldarg_2 />
-          <stloc name="i" type="System.Int32" />
-          <ldc_i4_0 />
-          <ldloc name="i" />
-          <blt name="start_loop" />
-          <ldc_i4_0 />
-          <stloc name="i" type="System.Int32" />
-          <br name="start_loop" />
-          <label name="next" />
-          <ldarg_0 />
-          <ldloc name="i" />
-          <callvirt type="System.String" name="get_Chars" sig="(I)C" />
-          <ldarg_1 />
-          <beq name="ret_i" />
-          <ldloc name="i" />
-          <ldc_i4_1 />
-          <add />
-          <stloc name="i" type="System.Int32" />
-          <label name="start_loop" />
-          <ldloc name="i" />
-          <ldarg_0 />
-          <callvirt type="System.String" name="get_Length" sig="()I" />
-          <blt name="next" />
-          <ldc_i4_m1 />
-          <ret />
-          <label name="ret_i" />
-          <ldloc name="i" />
-          <ret />
-        </body>
+        <redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)I" />
 			</method>
 			<method name="indexOf" sig="(Ljava.lang.String;)I" modifiers="public">
 				<parameter name="str" />
@@ -503,32 +453,32 @@
 				<parameter name="fromIndex" />
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
 			</method>
-			<method name="lastIndexOf" sig="(I)I" modifiers="public">
+      <!-- These three methods are package private and used by (Abstract)StringBuilder/Buffer -->
+      <method name="getChars" sig="([CI)V" modifiers="">
+        <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;[CI)V" />
+      </method>
+      <method name="indexOf" sig="([CII[CIII)I" modifiers="static">
+        <redirect class="java.lang.StringHelper" />
+      </method>
+      <method name="lastIndexOf" sig="([CII[CIII)I" modifiers="static">
+        <redirect class="java.lang.StringHelper" />
+      </method>
+      <!-- end of package private methods used by (Abstract)StringBuilder/Buffer -->
+      <method name="lastIndexOf" sig="(I)I" modifiers="public">
 				<parameter name="ch" />
-				<body>
-					<ldarg_1 />
-					<ldc_i4 value="65535" />
-					<ble_un name="ok" />
-					<ldc_i4_m1 />
-					<ret />
-					<label name="ok" />
-					<ldarg_0 />
-					<ldarg_1 />
-					<call type="System.String" name="LastIndexOf" sig="(C)I" />
-					<ret />
-				</body>
-			</method>
-			<method name="lastIndexOf" sig="(II)I" modifiers="public">
-				<parameter name="ch" />
-				<parameter name="fromIndex" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)I" />
-			</method>
-			<method name="lastIndexOf" sig="(Ljava.lang.String;)I" modifiers="public">
-				<parameter name="str" />
-				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
-			</method>
-			<method name="lastIndexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
-				<parameter name="str" />
+        <redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;I)I" />
+      </method>
+      <method name="lastIndexOf" sig="(II)I" modifiers="public">
+        <parameter name="ch" />
+        <parameter name="fromIndex" />
+        <redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)I" />
+      </method>
+      <method name="lastIndexOf" sig="(Ljava.lang.String;)I" modifiers="public">
+        <parameter name="str" />
+        <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
+      </method>
+      <method name="lastIndexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
+        <parameter name="str" />
 				<parameter name="fromIndex" />
 				<redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
 			</method>
@@ -972,33 +922,11 @@
 					<parameter>Ljava/util/Comparator&lt;Ljava/lang/String;&gt;;</parameter>
 				</attribute>
 			</field>
-			<!-- NOTE we're redirecting fields to static methods here!
-				NOTE only reading fields can be redirected
-			-->
-			<field name="count" sig="I" modifiers="">
-				<redirect class="java.lang.StringHelper" type="static" name="GetCountField" sig="(Lcli.System.String;)I" />
-			</field>
-			<!-- Making a new char array instead of directly accessing the contents of the string, probably isn't
-				as efficient as the coder of this construct wished for, but hey ;-) At least it works...
-			-->
-			<method name="zeroBasedStringValue" sig="(Ljava.lang.String;)[C" modifiers="static">
-				<body>
-					<ldarg_0 />
-					<call type="System.String" name="ToCharArray" sig="()[C" />
-					<ret />
-				</body>
-			</method>
-			<!-- NOTE value and offset aren't used anymore in Classpath's StringBuffer, so we should drop them -->
-			<field name="value" sig="[C" modifiers="">
-				<redirect class="java.lang.StringHelper" type="static" name="GetValueField" sig="(Lcli.System.String;)[C" />
-			</field>
-			<field name="offset" sig="I" modifiers="">
-				<redirect class="java.lang.StringHelper" type="static" name="GetOffsetField" sig="(Lcli.System.String;)I" />
-			</field>
 			<!-- TODO mark this method as BeforeFieldInit (and benchmark to see if that is faster) -->
 			<clinit>
 				<body>
-					<newobj class="java.lang.String$CaseInsensitiveComparator" name="&lt;init&gt;" sig="()V" />
+          <ldnull />
+					<newobj class="java.lang.String$CaseInsensitiveComparator" name="&lt;init&gt;" sig="(Ljava.lang.String$CaseInsensitiveComparator;)V" />
 					<stsfld class="java.lang.String" name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" />
 					<ret />
 				</body>
@@ -1713,6 +1641,25 @@
           <parameter>LinkDemand</parameter>
           <property name="ControlAppDomain" sig="Z">true</property>
         </attribute>
+      </method>
+    </class>
+    <class name="sun.reflect.Reflection">
+      <!-- we manually hook up this native method, to prevent inlining and tail-call optimizations -->
+      <method name="getCallerClass" sig="(I)Ljava.lang.Class;">
+        <attribute type="System.Runtime.CompilerServices.MethodImplAttribute" sig="(Lcli.System.Runtime.CompilerServices.MethodImplOptions;)V">
+          <parameter>NoInlining</parameter>
+        </attribute>
+        <body>
+          <ldarg_0 />
+          <call type="IKVM.NativeCode.sun.reflect.Reflection" name="getCallerClass" sig="(I)Ljava.lang.Object;" />
+          <stloc name="class" class="java.lang.Object" />
+          <!-- "leave" is to thwart tail-call optimization -->
+          <leave name="x" />
+          <label name="x" />
+          <ldloc name="class" />
+          <castclass class="java.lang.Class" />
+          <ret />
+        </body>
       </method>
     </class>
 	</assembly>
