@@ -975,6 +975,14 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("leave")]
+	public sealed class Leave : Branch
+	{
+		public Leave() : base(OpCodes.Leave)
+		{
+		}
+	}
+
 	[XmlType("exceptionBlock")]
 	public sealed class ExceptionBlock : Instruction
 	{
@@ -1139,6 +1147,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Volatile))]
 		[XmlElement(typeof(Ldelema))]
 		[XmlElement(typeof(Ldtoken))]
+		[XmlElement(typeof(Leave))]
 		public Instruction[] invoke;
 
 		internal void Generate(Hashtable context, ILGenerator ilgen)
