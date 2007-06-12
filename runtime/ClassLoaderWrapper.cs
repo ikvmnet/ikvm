@@ -41,6 +41,7 @@ namespace IKVM.Internal
 		internal abstract ModuleBuilder ModuleBuilder { get; }
 #endif
 		internal abstract TypeWrapper DefineClassImpl(Hashtable types, ClassFile f, ClassLoaderWrapper classLoader, object protectionDomain);
+		internal abstract bool ReserveName(string name);
 	}
 
 	class ClassLoaderWrapper
