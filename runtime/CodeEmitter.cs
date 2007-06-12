@@ -88,6 +88,14 @@ namespace IKVM.Internal
 			this.ilgen = ilgen;
 		}
 
+		internal bool IsStackEmpty
+		{
+			get
+			{
+				return stack == null;
+			}
+		}
+
 		internal int GetILOffset()
 		{
 			LazyGen();
@@ -535,6 +543,12 @@ namespace IKVM.Internal
 			stack = new ConstLongExpr(l);
 		}
 
+		internal void LazyEmitLdstr(string str)
+		{
+			LazyGen();
+			stack = new ConstStringExpr(str);
+		}
+
 		internal void LazyEmit_idiv()
 		{
 			// we need to special case dividing by -1, because the CLR div instruction
@@ -630,6 +644,17 @@ namespace IKVM.Internal
 				Emit(OpCodes.Isinst, instanceof.Type);
 			}
 			Emit(OpCodes.Brtrue, label);
+		}
+
+		internal string PopLazyLdstr()
+		{
+			ConstStringExpr str = stack as ConstStringExpr;
+			if(str != null)
+			{
+				stack = null;
+				return str.str;
+			}
+			return null;
 		}
 
 		private void LazyGen()
@@ -889,6 +914,22 @@ namespace IKVM.Internal
 						}
 						break;
 				}
+			}
+		}
+
+		class ConstStringExpr : Expr
+		{
+			internal readonly string str;
+
+			internal ConstStringExpr(string str)
+				: base(typeof(string))
+			{
+				this.str = str;
+			}
+
+			internal override void Emit(CountingILGenerator ilgen)
+			{
+				ilgen.Emit(OpCodes.Ldstr, str);
 			}
 		}
 
