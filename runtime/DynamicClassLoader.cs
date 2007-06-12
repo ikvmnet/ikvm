@@ -140,6 +140,19 @@ namespace IKVM.Internal
 			return name;
 		}
 
+		internal override bool ReserveName(string name)
+		{
+			lock(dynamicTypes.SyncRoot)
+			{
+				if(dynamicTypes.ContainsKey(name))
+				{
+					return false;
+				}
+				dynamicTypes.Add(name, null);
+				return true;
+			}
+		}
+
 		private string AllocMangledName(string mangledTypeName)
 		{
 			lock(dynamicTypes.SyncRoot)
