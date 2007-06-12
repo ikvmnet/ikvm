@@ -1499,7 +1499,10 @@ class Compiler
 							// we emit a nop to make sure we always have an instruction associated with the sequence point
 							ilGenerator.Emit(OpCodes.Nop);
 						}
-						if(lineNumbers != null)
+						// we only add a line number mapping if the stack is empty for two reasons:
+						// 1) the CLR JIT only generates native to IL mappings for locations where the stack is empty
+						// 2) GetILOffset() flushes the lazy emit stack, so if we don't do this check we miss some optimization opportunities
+						if(lineNumbers != null && ilGenerator.IsStackEmpty)
 						{
 							lineNumbers.AddMapping(ilGenerator.GetILOffset(), table[j].line_number);
 						}
@@ -1687,7 +1690,7 @@ class Compiler
 							ilGenerator.LazyEmitLdc_I8(classFile.GetConstantPoolConstantLong(constant));
 							break;
 						case ClassFile.ConstantType.String:
-							ilGenerator.Emit(OpCodes.Ldstr, classFile.GetConstantPoolConstantString(constant));
+							ilGenerator.LazyEmitLdstr(classFile.GetConstantPoolConstantString(constant));
 							break;
 						case ClassFile.ConstantType.Class:
 						{
@@ -1792,6 +1795,25 @@ class Compiler
 					TypeWrapper thisType = SigTypeToClassName(type, cpi.GetClassType());
 
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
+
+#if STATIC_COMPILER
+					if(method.DeclaringType == CoreClasses.java.lang.String.Wrapper
+						&& ReferenceEquals(method.Name, StringConstants.TOCHARARRAY)
+						&& ReferenceEquals(method.Signature, StringConstants.SIG_TOCHARARRAY))
+					{
+						string str = ilGenerator.PopLazyLdstr();
+						if(str != null)
+						{
+							// arbitrary length for "big" strings
+							if(str.Length > 128)
+							{
+								EmitLoadCharArrayLiteral(ilGenerator, str, mw.DeclaringType);
+								break;
+							}
+							ilGenerator.Emit(OpCodes.Ldstr, str);
+						}
+					}
+#endif
 
 					if(method.IsProtected && (method.DeclaringType == java_lang_Object || method.DeclaringType == java_lang_Throwable))
 					{
@@ -3123,6 +3145,61 @@ class Compiler
 					break;
 			}
 		}
+	}
+
+	private static void EmitLoadCharArrayLiteral(ILGenerator ilgen, string str, TypeWrapper tw)
+	{
+		ModuleBuilder mod = tw.GetClassLoader().GetTypeWrapperFactory().ModuleBuilder;
+		// FXBUG on .NET 1.1 & 2.0 the value type that Ref.Emit automatically generates is public,
+		// so we pre-create a non-public type with the right name here and it will "magically" use
+		// that instead.
+		// If we're running on Mono this isn't necessary, but for simplicitly we'll simply create
+		// the type as well (it is useless, but all it does is waste a little space).
+		int length = str.Length * 2;
+		string typename = "$ArrayType$" + length;
+		Type type = mod.GetType(typename, false, false);
+		if(type == null)
+		{
+			if(tw.GetClassLoader().GetTypeWrapperFactory().ReserveName(typename))
+			{
+				TypeBuilder tb = mod.DefineType(typename, TypeAttributes.Sealed | TypeAttributes.Class | TypeAttributes.ExplicitLayout | TypeAttributes.NotPublic, typeof(ValueType), PackingSize.Size1, length);
+				AttributeHelper.HideFromJava(tb);
+				type = tb.CreateType();
+			}
+		}
+		if(type == null
+			|| !type.IsValueType
+#if WHIDBEY
+			|| type.StructLayoutAttribute.Pack != 1 || type.StructLayoutAttribute.Size != length
+#endif
+			)
+		{
+			// the type that we found doesn't match (must mean we've compiled a Java type with that name),
+			// so we fall back to the string approach
+			ilgen.Emit(OpCodes.Ldstr, str);
+			ilgen.Emit(OpCodes.Call, typeof(string).GetMethod("ToCharArray", Type.EmptyTypes));
+			return;
+		}
+		ilgen.Emit(OpCodes.Ldc_I4, str.Length);
+		ilgen.Emit(OpCodes.Newarr, typeof(char));
+		ilgen.Emit(OpCodes.Dup);
+		byte[] data = new byte[length];
+		for (int j = 0; j < str.Length; j++)
+		{
+			data[j * 2 + 0] = (byte)(str[j] >> 0);
+			data[j * 2 + 1] = (byte)(str[j] >> 8);
+		}
+		// NOTE we define a module field, because type fields on Mono don't use the global $ArrayType$<n> type.
+		// NOTE this also means that this will only work during static compilation, because ModuleBuilder.CreateGlobalFunctions() must
+		// be called before the field can be used.
+		FieldBuilder fb = mod.DefineInitializedData("__<str>", data, FieldAttributes.Static | FieldAttributes.PrivateScope);
+		if(!fb.FieldType.Equals(type))
+		{
+			// this is actually relatively harmless, but I would like to know about it, so we abort and hope that users report this when they encounter it
+			JVM.CriticalFailure("Unsupported runtime: ModuleBuilder.DefineInitializedData() field type mispredicted", null);
+		}
+		ilgen.Emit(OpCodes.Ldtoken, fb);
+		ilgen.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("InitializeArray", new Type[] { typeof(Array), typeof(RuntimeFieldHandle) }));
 	}
 
 	private MethodInfo GetInvokeSpecialStub(MethodWrapper method)

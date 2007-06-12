@@ -63,6 +63,8 @@ namespace IKVM.Internal
 		internal static readonly string SIG_ARRAYCOPY = string.Intern("(Ljava.lang.Object;ILjava.lang.Object;II)V");
 		internal static readonly string FINALIZE = string.Intern("finalize");
 		internal static readonly string CLONE = string.Intern("clone");
+		internal static readonly string TOCHARARRAY = string.Intern("toCharArray");
+		internal static readonly string SIG_TOCHARARRAY = string.Intern("()[C");
 	}
 
 	sealed class ClassFile
