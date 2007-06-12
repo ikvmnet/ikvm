@@ -1957,11 +1957,20 @@ namespace IKVM.Internal
 									string methodSig = method.Sig;
 									mapxml.Add(className + "." + methodName + methodSig, method.body);
 								}
+								if(method.ReplaceMethodCalls != null)
+								{
+									mapxml.Add("replaced:" + className + "." + method.Name + method.Sig, method.ReplaceMethodCalls);
+								}
 							}
 						}
 					}
 				}
 			}
+		}
+
+		internal IKVM.Internal.MapXml.ReplaceMethodCall[] GetReplacedMethodsFor(MethodWrapper mw)
+		{
+			return (IKVM.Internal.MapXml.ReplaceMethodCall[])mapxml["replaced:" + mw.DeclaringType.Name + "." + mw.Name + mw.Signature];
 		}
 
 		internal Hashtable GetMapXml()

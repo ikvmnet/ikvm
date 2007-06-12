@@ -1259,6 +1259,17 @@ namespace IKVM.Internal.MapXml
 		public string Name;
 	}
 
+	public class ReplaceMethodCall
+	{
+		[XmlAttribute("class")]
+		public string Class;
+		[XmlAttribute("name")]
+		public string Name;
+		[XmlAttribute("sig")]
+		public string Sig;
+		public InstructionList code;
+	}
+
 	public class Method
 	{
 		[XmlAttribute("name")]
@@ -1284,6 +1295,8 @@ namespace IKVM.Internal.MapXml
 		public Throws[] throws;
 		[XmlElement("attribute")]
 		public Attribute[] Attributes;
+		[XmlElement("replace-method-call")]
+		public ReplaceMethodCall[] ReplaceMethodCalls;
 
 		internal void Emit(ILGenerator ilgen)
 		{

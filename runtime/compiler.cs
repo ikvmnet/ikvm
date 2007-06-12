@@ -153,6 +153,10 @@ class Compiler
 	private Hashtable invokespecialstubcache;
 	private bool debug;
 	private bool keepAlive;
+#if STATIC_COMPILER
+	private IKVM.Internal.MapXml.ReplaceMethodCall[] replacedMethods;
+	private MethodWrapper[] replacedMethodWrappers;
+#endif
 
 	static Compiler()
 	{
@@ -242,6 +246,13 @@ class Compiler
 			MethodWrapper finalize = clazz.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
 			keepAlive = finalize != null && finalize.DeclaringType != java_lang_Object;
 		}
+#if STATIC_COMPILER
+		replacedMethods = ((CompilerClassLoader)clazz.GetClassLoader()).GetReplacedMethodsFor(mw);
+		if(replacedMethods != null)
+		{
+			replacedMethodWrappers = new MethodWrapper[replacedMethods.Length];
+		}
+#endif
 
 		Profiler.Enter("MethodAnalyzer");
 		try
@@ -3504,10 +3515,56 @@ class Compiler
 		}
 	}
 
+#if STATIC_COMPILER
+	private class ReplacedMethodWrapper : MethodWrapper
+	{
+		private CodeEmitter code;
+
+		internal ReplacedMethodWrapper(ClassFile.ConstantPoolItemMI cpi, CodeEmitter code)
+			: base(cpi.GetClassType(), cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
+		{
+			this.code = code;
+		}
+
+		internal override void EmitCall(ILGenerator ilgen)
+		{
+			code.Emit(ilgen);
+		}
+
+		internal override void EmitCallvirt(ILGenerator ilgen)
+		{
+			code.Emit(ilgen);
+		}
+
+		internal override void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
+		{
+			code.Emit(ilgen);
+		}
+	}
+#endif
+
 	private MethodWrapper GetMethodCallEmitter(ClassFile.ConstantPoolItemMI cpi, NormalizedByteCode invoke)
 	{
+#if STATIC_COMPILER
+		if(replacedMethods != null)
+		{
+			for(int i = 0; i < replacedMethods.Length; i++)
+			{
+				if(replacedMethods[i].Class == cpi.Class
+					&& replacedMethods[i].Name == cpi.Name
+					&& replacedMethods[i].Sig == cpi.Signature)
+				{
+					if(replacedMethodWrappers[i] == null)
+					{
+						replacedMethodWrappers[i] = new ReplacedMethodWrapper(cpi, replacedMethods[i].code);
+					}
+					return replacedMethodWrappers[i];
+				}
+			}
+		}
+#endif
 		MethodWrapper mw = null;
-		switch(invoke)
+		switch (invoke)
 		{
 			case NormalizedByteCode.__invokespecial:
 				mw = cpi.GetMethodForInvokespecial();
