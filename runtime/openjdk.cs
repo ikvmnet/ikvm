@@ -1410,12 +1410,6 @@ namespace IKVM.NativeCode.java
 
 				public static void load(object thisNativeLibrary, string name)
 				{
-					if (name == Assembly.GetExecutingAssembly().Location)
-					{
-						// HACK work around for the zip library
-						SetHandle(thisNativeLibrary, -1);
-						return;
-					}
 					object fromClass = thisNativeLibrary.GetType().GetField("fromClass", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(thisNativeLibrary);
 					if (IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(fromClass).GetClassLoader()) == 1)
 					{
@@ -1853,11 +1847,6 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				if (libname == "zip")
-				{
-					// HACK prevent failure zip library loading
-					return Assembly.GetExecutingAssembly().Location;
-				}
 				// TODO instead of using the System property, we should use
 				// a VM level shared variable that contains the os
 				// (and that os.name is defined by)
