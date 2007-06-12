@@ -1428,6 +1428,20 @@
         </replace-method-call>
       </method>
 		</class>
+    <class name="sun.misc.Launcher">
+      <method name="&lt;init&gt;" sig="()V">
+        <replace-method-call class="sun.misc.Launcher$ExtClassLoader" name="getExtClassLoader" sig="()Lsun.misc.Launcher$ExtClassLoader;">
+          <code>
+            <call class="sun.misc.MiscHelper" name="getExtClassLoader" sig="()Lsun.misc.Launcher$ExtClassLoader;" />
+          </code>
+        </replace-method-call>
+        <replace-method-call class="sun.misc.Launcher$AppClassLoader" name="getAppClassLoader" sig="(Ljava.lang.ClassLoader;)Ljava.lang.ClassLoader;">
+          <code>
+            <call class="sun.misc.MiscHelper" name="getAppClassLoader" sig="(Ljava.lang.ClassLoader;)Ljava.lang.ClassLoader;" />
+          </code>
+        </replace-method-call>
+      </method>
+    </class>
 		<class name="gnu.java.net.PlainDatagramSocketImpl">
 			<method name="setDatagramPacketLength" sig="(Ljava.net.DatagramPacket;I)V">
 				<body>

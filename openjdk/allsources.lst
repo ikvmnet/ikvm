@@ -4882,6 +4882,7 @@ java/lang/StringHelper.java
 java/lang/VMThread.java
 java/util/jar/JarEntry.java
 sun/misc/FileURLMapper.java
+sun/misc/MiscHelper.java
 sun/misc/OSEnvironment.java
 sun/misc/Unsafe.java
 sun/misc/Version.java

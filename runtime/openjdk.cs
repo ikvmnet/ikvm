@@ -82,6 +82,7 @@ using StubGenerator = ikvm.@internal.stubgen.StubGenerator;
 using IConstantPoolWriter = ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter;
 using Annotation = java.lang.annotation.Annotation;
 using smJavaIOAccess = sun.misc.JavaIOAccess;
+using smLauncher = sun.misc.Launcher;
 using smSharedSecrets = sun.misc.SharedSecrets;
 using jiConsole = java.io.Console;
 using jnCharset = java.nio.charset.Charset;
@@ -2169,6 +2170,8 @@ namespace IKVM.NativeCode.java
 				// the first thread here is the main thread
 				AttachThread("main", false, null);
 				typeof(jlSystem).GetMethod("initializeSystemClass", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
+				// make sure the Launcher singleton is created on the main thread and allow it to install the security manager
+				smLauncher.getLauncher();
 #endif
 			}
 
@@ -2669,6 +2672,14 @@ namespace IKVM.NativeCode.sun.misc
 		public static void toStdout(string msg)
 		{
 			Console.Out.Write(msg);
+		}
+	}
+
+	public sealed class MiscHelper
+	{
+		public static object getAssemblyClassLoader(Assembly asm)
+		{
+			return ClassLoaderWrapper.GetAssemblyClassLoader(asm).GetJavaClassLoader();
 		}
 	}
 
