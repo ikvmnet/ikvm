@@ -157,6 +157,7 @@ final class ProcessImpl extends Process {
     public int waitFor() throws InterruptedException
     {
 	// to be interruptable we have to use polling
+	// (on .NET 2.0 WaitForExit is actually interruptible, but this isn't documented)
 	for (; ; )
 	{
 	    if (Thread.interrupted())
