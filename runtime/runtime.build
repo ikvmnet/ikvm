@@ -45,6 +45,7 @@
                 <include unless="${hybrid}" name="classpath.cs" />
                 <include if="${hybrid}" name="classpath-hybrid.cs" />
                 <include name="CodeEmitter.cs" />
+                <include name="common.cs" />
                 <include name="compiler.cs" />
                 <include name="CoreClasses.cs" />
                 <include name="DynamicClassLoader.cs" />

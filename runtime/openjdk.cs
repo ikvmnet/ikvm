@@ -2709,6 +2709,40 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
+	public sealed class Unsafe
+	{
+		private Unsafe() { }
+
+		public static void throwException(object thisUnsafe, Exception x)
+		{
+			throw x;
+		}
+
+		public static void ensureClassInitialized(object thisUnsafe, object clazz)
+		{
+			TypeWrapper tw = TypeWrapper.FromClass(clazz);
+			if (!tw.IsArray)
+			{
+				tw.Finish();
+				tw.RunClassInit();
+			}
+		}
+
+		public static object allocateInstance(object thisUnsafe, object clazz)
+		{
+			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
+			try
+			{
+				wrapper.Finish();
+			}
+			catch (RetargetableJavaException x)
+			{
+				throw x.ToJava();
+			}
+			return FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
+		}
+	}
+
 	public sealed class Version
 	{
 		public static string getJvmSpecialVersion()
@@ -3700,3 +3734,35 @@ namespace IKVM.NativeCode.sun.reflect
 		}
 	}
 }
+
+#if FIRST_PASS
+namespace ikvm.@internal
+{
+	public interface LibraryVMInterface
+	{
+		object newClass(object wrapper, object protectionDomain, object classLoader);
+		object getWrapperFromClass(object clazz);
+
+		object getWrapperFromClassLoader(object classLoader);
+		void setWrapperForClassLoader(object classLoader, object wrapper);
+
+		object box(object val);
+		object unbox(object val);
+
+		Exception mapException(Exception t);
+
+		object newDirectByteBuffer(IntPtr address, int capacity);
+		IntPtr getDirectBufferAddress(object buffer);
+		int getDirectBufferCapacity(object buffer);
+
+		void setProperties(System.Collections.Hashtable props);
+
+		bool runFinalizersOnExit();
+
+		object newAnnotation(object classLoader, object definition);
+		object newAnnotationElementValue(object classLoader, object expectedClass, object definition);
+
+		object newAssemblyClassLoader(Assembly asm);
+	}
+}
+#endif // !FIRST_PASS
