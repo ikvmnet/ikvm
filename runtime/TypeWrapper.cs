@@ -8515,10 +8515,15 @@ namespace IKVM.Internal
 			}
 #endif // WHIDBEY
 			ParameterInfo[] parameters = mb.GetParameters();
-			object[][] attribs = new object[parameters.Length][];
-			for(int i = 0; i < parameters.Length; i++)
+			int skip = 0;
+			if(mb.IsStatic && !mw.IsStatic && mw.Name != "<init>")
 			{
-				attribs[i] = parameters[i].GetCustomAttributes(false);
+				skip = 1;
+			}
+			object[][] attribs = new object[parameters.Length - skip][];
+			for(int i = skip; i < parameters.Length; i++)
+			{
+				attribs[i - skip] = parameters[i].GetCustomAttributes(false);
 			}
 			return attribs;
 		}
