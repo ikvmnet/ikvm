@@ -83,13 +83,16 @@
     <Compile Include="ClassLoaderWrapper.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="classpath-hybrid.cs" />
+    <Compile Include="classpath-hybrid.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="classpath.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CodeEmitter.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="common.cs" />
     <Compile Include="compiler.cs">
       <SubType>Code</SubType>
     </Compile>
