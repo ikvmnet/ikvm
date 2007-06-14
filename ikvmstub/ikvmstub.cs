@@ -38,28 +38,49 @@ public class NetExp
 	public static void Main(string[] args)
 	{
 		IKVM.Internal.Tracer.EnableTraceForDebug();
-		if(args.Length != 1)
+		string assemblyNameOrPath = null;
+		foreach(string s in args)
+		{
+			if(s.StartsWith("-") || assemblyNameOrPath != null)
+			{
+				if(s == "-serialver")
+				{
+					java.lang.System.setProperty("ikvm.stubgen.serialver", "true");
+				}
+				else
+				{
+					// unrecognized option, or multiple assemblies, print usage message and exit
+					assemblyNameOrPath = null;
+					break;
+				}
+			}
+			else
+			{
+				assemblyNameOrPath = s;
+			}
+		}
+		if(assemblyNameOrPath == null)
 		{
 			Console.Error.WriteLine(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
 			Console.Error.WriteLine();
-			Console.Error.WriteLine("usage: ikvmstub <assemblyNameOrPath>");
+			Console.Error.WriteLine("usage: ikvmstub [-serialver] <assemblyNameOrPath>");
 			return;
 		}
 		Assembly assembly = null;
 		try
 		{
-			file = new FileInfo(args[0]);
+			file = new FileInfo(assemblyNameOrPath);
 		}
 		catch(System.Exception x)
 		{
-			Console.Error.WriteLine("Error: unable to load \"{0}\"\n  {1}", args[0], x.Message);
+			Console.Error.WriteLine("Error: unable to load \"{0}\"\n  {1}", assemblyNameOrPath, x.Message);
 			return;
 		}
 		if(file != null && file.Exists)
 		{
 #if WHIDBEY
 			AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_ReflectionOnlyAssemblyResolve);
-			assembly = Assembly.ReflectionOnlyLoadFrom(args[0]);
+			assembly = Assembly.ReflectionOnlyLoadFrom(assemblyNameOrPath);
 #else
 			try
 			{
@@ -67,7 +88,7 @@ public class NetExp
 				// http://blogs.gotdotnet.com/suzcook/permalink.aspx/d5c5e14a-3612-4af1-a9b7-0a144c8dbf16
 				// We use AssemblyName.FullName, because otherwise the assembly will be loaded in the
 				// "LoadFrom" context using the path inside the AssemblyName object.
-				assembly = Assembly.Load(AssemblyName.GetAssemblyName(args[0]).FullName);
+				assembly = Assembly.Load(AssemblyName.GetAssemblyName(assemblyNameOrPath).FullName);
 				Console.Error.WriteLine("Warning: Assembly loaded from {0} instead", assembly.Location);
 			}
 			catch
@@ -77,18 +98,18 @@ public class NetExp
 			{
 				// since we're loading the assembly in the LoadFrom context, we need to hook the AssemblyResolve event
 				AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
-				assembly = Assembly.LoadFrom(args[0]);
+				assembly = Assembly.LoadFrom(assemblyNameOrPath);
 			}
 #endif
 		}
 		else
 		{
-			assembly = Assembly.LoadWithPartialName(args[0]);
+			assembly = Assembly.LoadWithPartialName(assemblyNameOrPath);
 		}
 		int rc = 0;
 		if(assembly == null)
 		{
-			Console.Error.WriteLine("Error: Assembly \"{0}\" not found", args[0]);
+			Console.Error.WriteLine("Error: Assembly \"{0}\" not found", assemblyNameOrPath);
 		}
 		else
 		{
