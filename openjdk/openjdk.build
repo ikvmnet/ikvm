@@ -55,6 +55,8 @@
           <arg value="-r:${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
           <arg value="-resource:lib/security/classpath.security=${Classpath.dir}/resource/java/security/classpath.security" />
           <arg value="-resource:META-INF/MANIFEST.MF=MANIFEST.MF" />
+          <arg value="-resource:sun/text/resources/unorm.icu=${OpenJDK.dir}/j2se/src/share/classes/sun/text/resources/unorm.icu" />
+          <arg value="-resource:sun/text/resources/uprops.icu=${OpenJDK.dir}/j2se/src/share/classes/sun/text/resources/uprops.icu" />
         </exec>
         <copy file="IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" tofile="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll.new" />
         <if test="${platform::is-win32()}">

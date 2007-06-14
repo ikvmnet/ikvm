@@ -2365,7 +2365,6 @@
 ../../classpath/java/beans/Visibility.java
 ../../classpath/java/beans/XMLDecoder.java
 ../../classpath/java/beans/XMLEncoder.java
-../../classpath/java/io/BufferedInputStream.java
 ../../classpath/java/io/BufferedOutputStream.java
 ../../classpath/java/io/BufferedReader.java
 ../../classpath/java/io/BufferedWriter.java
@@ -2376,7 +2375,6 @@
 ../../classpath/java/io/CharConversionException.java
 ../../classpath/java/io/Closeable.java
 ../../classpath/java/io/DataInput.java
-../../classpath/java/io/DataInputStream.java
 ../../classpath/java/io/DataOutput.java
 ../../classpath/java/io/DataOutputStream.java
 ../../classpath/java/io/DeleteFileHelper.java
@@ -4795,12 +4793,6 @@
 ../../classpath/sun/misc/Service.java
 ../../classpath/sun/misc/ServiceConfigurationError.java
 ../../classpath/vm/reference/java/io/VMObjectStreamClass.java
-../../classpath/vm/reference/java/lang/reflect/VMArray.java
-../../classpath/vm/reference/java/lang/VMCompiler.java
-../../classpath/vm/reference/java/lang/VMObject.java
-../../classpath/vm/reference/java/lang/VMString.java
-../../classpath/vm/reference/java/lang/VMThrowable.java
-../../classpath/vm/reference/sun/reflect/misc/ReflectUtil.java
 ../classpath/gnu/classpath/Configuration.java
 ../classpath/gnu/classpath/PointerUtil.java
 ../classpath/gnu/classpath/VMStackWalker.java
@@ -4889,6 +4881,8 @@ sun/misc/Version.java
 sun/net/www/protocol/jar/JarFileFactory.java
 sun/reflect/Reflection.java
 sun/reflect/ReflectionFactory.java
+../../openjdk/j2se/src/share/classes/java/io/BufferedInputStream.java
+../../openjdk/j2se/src/share/classes/java/io/DataInputStream.java
 ../../openjdk/j2se/src/share/classes/java/io/IOException.java
 ../../openjdk/j2se/src/share/classes/java/lang/AbstractMethodError.java
 ../../openjdk/j2se/src/share/classes/java/lang/AbstractStringBuilder.java
@@ -5058,6 +5052,16 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/sun/misc/URLClassPath.java
 ../../openjdk/j2se/src/share/classes/sun/misc/VM.java
 ../../openjdk/j2se/src/share/classes/sun/misc/VMNotification.java
+../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages.java
+../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages_de.java
+../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages_es.java
+../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages_fr.java
+../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages_it.java
+../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages_ja.java
+../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages_ko.java
+../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages_sv.java
+../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages_zh_CN.java
+../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages_zh_TW.java
 ../../openjdk/j2se/src/share/classes/sun/net/InetAddressCachePolicy.java
 ../../openjdk/j2se/src/share/classes/sun/net/www/ParseUtil.java
 ../../openjdk/j2se/src/share/classes/sun/net/www/protocol/jar/Handler.java
@@ -5134,6 +5138,7 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/sun/reflect/generics/visitor/Reifier.java
 ../../openjdk/j2se/src/share/classes/sun/reflect/generics/visitor/TypeTreeVisitor.java
 ../../openjdk/j2se/src/share/classes/sun/reflect/generics/visitor/Visitor.java
+../../openjdk/j2se/src/share/classes/sun/reflect/misc/ReflectUtil.java
 ../../openjdk/j2se/src/share/classes/sun/security/action/GetBooleanAction.java
 ../../openjdk/j2se/src/share/classes/sun/security/action/GetIntegerAction.java
 ../../openjdk/j2se/src/share/classes/sun/security/action/GetPropertyAction.java
