@@ -27,6 +27,7 @@ package ikvm.internal.stubgen;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -38,11 +39,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 
-public final class StubGenerator
+public final class StubGenerator implements PrivilegedAction<byte[]>
 {
+    private Class c;
+
+    private StubGenerator(Class c)
+    {
+	this.c = c;
+    }
+
     @ikvm.lang.Internal
     public static byte[] generateStub(Class c)
     {
+	return AccessController.doPrivileged(new StubGenerator(c));
+    }
+
+    public byte[] run()
+    {
+	boolean includeSerialVersionUIDs = "true".equalsIgnoreCase(System.getProperty("ikvm.stubgen.serialver"));
         Class outer = c.getDeclaringClass();
         String name = c.getName().replace('.', '/');
         String superClass = null;
@@ -237,14 +251,17 @@ public final class StubGenerator
                 }
             }
         }
+	boolean hasSerialVersionUID = false;
         java.lang.reflect.Field[] fields = c.getDeclaredFields();
         for(int i = 0; i < fields.length; i++)
         {
             int mods = fields[i].getModifiers();
+	    boolean serialVersionUID = includeSerialVersionUIDs && fields[i].getName().equals("serialVersionUID");
+	    hasSerialVersionUID |= serialVersionUID;
             if((mods & (Modifiers.Public | Modifiers.Protected)) != 0 ||
                 // Include serialVersionUID field, to make Japitools comparison more acurate
                 ((mods & (Modifiers.Static | Modifiers.Final)) == (Modifiers.Static | Modifiers.Final) &&
-                fields[i].getName().equals("serialVersionUID") && fields[i].getType() == java.lang.Long.TYPE))
+                serialVersionUID && fields[i].getType() == java.lang.Long.TYPE))
             {
                 // NOTE we can't use Field.get() because that will run the static initializer and
                 // also won't allow us to see the difference between constants and blank final fields,
@@ -275,7 +292,17 @@ public final class StubGenerator
                 }
             }
         }
-        if(innerClassesAttribute != null)
+	if(!hasSerialVersionUID && includeSerialVersionUIDs)
+	{
+	    ObjectStreamClass osc = ObjectStreamClass.lookup(c);
+	    if(osc != null)
+	    {
+		// class is serializable but doesn't have an explicit serialVersionUID, so we add the field to record
+		// the serialVersionUID as we see it (mainly to make the Japi reports more realistic)
+		f.AddField(Modifiers.Private | Modifiers.Static | Modifiers.Final, "serialVersionUID", "J", osc.getSerialVersionUID());
+	    }
+	}
+	if(innerClassesAttribute != null)
         {
             f.AddAttribute(innerClassesAttribute);
         }
@@ -567,11 +594,6 @@ public final class StubGenerator
         if(t instanceof java.lang.reflect.ParameterizedType)
         {
             java.lang.reflect.ParameterizedType p = (java.lang.reflect.ParameterizedType)t;
-            if(p.getOwnerType() != null)
-            {
-                // TODO
-                throw new Error("Not Implemented");
-            }
             StringBuilder sb = new StringBuilder();
             sb.append('L').append(((Class)p.getRawType()).getName().replace('.', '/'));
             sb.append('<');
