@@ -1970,6 +1970,10 @@ namespace IKVM.Internal
 
 		internal IKVM.Internal.MapXml.ReplaceMethodCall[] GetReplacedMethodsFor(MethodWrapper mw)
 		{
+			if(mapxml == null)
+			{
+				return null;
+			}
 			return (IKVM.Internal.MapXml.ReplaceMethodCall[])mapxml["replaced:" + mw.DeclaringType.Name + "." + mw.Name + mw.Signature];
 		}
 
