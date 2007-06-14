@@ -7,6 +7,12 @@
 
 <body>
 
+<h2>IKVM for JSTM</h2>
+ 
+<p><i><a href="http://jstm.sourceforge.net/">JSTM</a> is an open source Java library for distributed object replication. IKVM allowed us to replicate objects between java and dotnet applications very easily. The whole Java library is compiled to a dll, and communication between the Java and .NET processes is done over TCP or HTTP using the same Java code.</i></p>
+
+<p><i>This project makes heavy use of the the Java IO and collections classes, and we did not have to modify the Java version to get the same features and similar performance on the .NET framework. There seem to be bugs left in the new Java 5 collections and for the formatting of dates, but the IO stack is robust. IKVM is way beyond our previous solution based on J#, and it allows lots of cool scenarios.</i> -- Cyprien NOEL, <a href="http://jstm.sourceforge.net/">http://jstm.sourceforge.net/</a></p>
+
 <h2>IKVM at Chordiant Software</h2>
 
 <p><i>Chordiant software and solutions help major brand enterprises around the world deliver the best possible customer experience.</i></p>
