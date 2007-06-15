@@ -625,7 +625,6 @@
 ../../classpath/gnu/java/lang/ArrayHelper.java
 ../../classpath/gnu/java/lang/CharData.java
 ../../classpath/gnu/java/lang/ClassHelper.java
-../../classpath/gnu/java/lang/InstrumentationImpl.java
 ../../classpath/gnu/java/lang/MainThread.java
 ../../classpath/gnu/java/lang/management/BeanImpl.java
 ../../classpath/gnu/java/lang/management/ClassLoadingMXBeanImpl.java
@@ -2439,11 +2438,6 @@
 ../../classpath/java/io/UTFDataFormatException.java
 ../../classpath/java/io/WriteAbortedException.java
 ../../classpath/java/io/Writer.java
-../../classpath/java/lang/instrument/ClassDefinition.java
-../../classpath/java/lang/instrument/ClassFileTransformer.java
-../../classpath/java/lang/instrument/IllegalClassFormatException.java
-../../classpath/java/lang/instrument/Instrumentation.java
-../../classpath/java/lang/instrument/UnmodifiableClassException.java
 ../../classpath/java/lang/management/ClassLoadingMXBean.java
 ../../classpath/java/lang/management/CompilationMXBean.java
 ../../classpath/java/lang/management/GarbageCollectorMXBean.java
@@ -4987,6 +4981,11 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/java/lang/annotation/Retention.java
 ../../openjdk/j2se/src/share/classes/java/lang/annotation/RetentionPolicy.java
 ../../openjdk/j2se/src/share/classes/java/lang/annotation/Target.java
+../../openjdk/j2se/src/share/classes/java/lang/instrument/ClassDefinition.java
+../../openjdk/j2se/src/share/classes/java/lang/instrument/ClassFileTransformer.java
+../../openjdk/j2se/src/share/classes/java/lang/instrument/IllegalClassFormatException.java
+../../openjdk/j2se/src/share/classes/java/lang/instrument/Instrumentation.java
+../../openjdk/j2se/src/share/classes/java/lang/instrument/UnmodifiableClassException.java
 ../../openjdk/j2se/src/share/classes/java/lang/ref/FinalReference.java
 ../../openjdk/j2se/src/share/classes/java/lang/ref/PhantomReference.java
 ../../openjdk/j2se/src/share/classes/java/lang/ref/ReferenceQueue.java
