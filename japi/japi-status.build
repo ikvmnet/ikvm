@@ -5,6 +5,12 @@
     <property name="REFERENCE_API_NAME" value="JDK-1.6" />
     <property name="JAPI_HOME" value="c:\japi\japitools" />
     <property name="IKVM_VERSION" value="0.35" />
+    <property name="CORE_LIBRARY" value="IKVM.GNU.Classpath" />
+
+    <target name="hybrid">
+        <property name="CORE_LIBRARY" value="IKVM.Hybrid.GNU.Classpath.OpenJDK" />
+        <call target="default" />
+    </target>
 
     <target name="default">
 	<call target="status" />
@@ -25,12 +31,12 @@
 	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as ${REFERENCE_API_NAME} apis ${REFERENCE_API_JARS} +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
     </target>
 
-    <target name="ikvm.japi" depends="IKVM.GNU.Classpath.jar,japize">
-	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis IKVM.GNU.Classpath.jar +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
+    <target name="ikvm.japi" depends="jar,japize">
+	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis ${CORE_LIBRARY}.jar +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
     </target>
 
-    <target name="IKVM.GNU.Classpath.jar">
-	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="IKVM.GNU.Classpath" />
+    <target name="jar">
+	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="-serialver ${CORE_LIBRARY}" />
     </target>
 
     <target name="japize">
