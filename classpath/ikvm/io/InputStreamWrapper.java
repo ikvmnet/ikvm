@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006 Jeroen Frijters
+  Copyright (C) 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,6 +28,7 @@ public final class InputStreamWrapper extends java.io.InputStream
 {
     private cli.System.IO.Stream stream;
     private long markPosition = -1;
+    private int lookAhead = -1;
 
     public InputStreamWrapper(cli.System.IO.Stream stream)
     {
@@ -36,6 +37,12 @@ public final class InputStreamWrapper extends java.io.InputStream
 
     public int read() throws java.io.IOException
     {
+	if (lookAhead != -1)
+	{
+	    int b = lookAhead;
+	    lookAhead = -1;
+	    return b;
+	}
         try
         {
             if (false) throw new cli.System.IO.IOException();
@@ -79,8 +86,21 @@ public final class InputStreamWrapper extends java.io.InputStream
         {
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.ObjectDisposedException(null);
-            int count = stream.Read(b, off, len);
-            return count == 0  ? -1 : count;
+	    if (lookAhead != -1)
+	    {
+		b[off] = (byte)lookAhead;
+		lookAhead = -1;
+		if (len > 1)
+		{
+		    return stream.Read(b, off + 1, len - 1) + 1;
+		}
+		return 1;
+	    }
+	    else
+	    {
+		int count = stream.Read(b, off, len);
+		return count == 0 ? -1 : count;
+	    }
         }
         catch (cli.System.IO.IOException x)
         {
@@ -158,7 +178,27 @@ public final class InputStreamWrapper extends java.io.InputStream
         }
         else
         {
-            return 0;
+	    // It turns out that it's important that available() return non-zero when
+	    // data is still available, because BufferedInputStream uses the non-zero
+	    // return value as a cue to continue reading.
+	    // As suggested by Mark Reinhold, we emulate InflaterInputStream's behavior
+	    // and return 0 after we've reached EOF and otherwise 1.
+	    if (lookAhead == -1)
+	    {
+		try
+		{
+		    if (false) throw new cli.System.IO.IOException();
+		    if (false) throw new cli.System.ObjectDisposedException(null);
+		    lookAhead = stream.ReadByte();
+		}
+		catch (cli.System.IO.IOException x)
+		{
+		}
+		catch (cli.System.ObjectDisposedException x)
+		{
+		}
+	    }
+	    return lookAhead == -1 ? 0 : 1;
         }
     }
 

@@ -1683,22 +1683,6 @@
         </body>
       </method>
     </class>
-    <class name="sun.text.normalizer.NormalizerDataReader">
-      <method name="read" sig="([B[B[B[C[C)V">
-        <!-- OPENJDKBUG -->
-        <replace-method-call class="java.io.DataInputStream" name="read" sig="([B)I">
-          <code>
-            <stloc name="buf" type="System.Byte[]" />
-            <stloc name="inp" class="java.io.DataInputStream" />
-            <ldloc name="inp" />
-            <ldloc name="buf" />
-            <callvirt class="java.io.DataInputStream" name="readFully" sig="([B)V" />
-            <ldloc name="buf" />
-            <ldlen />
-          </code>
-        </replace-method-call>
-      </method>
-    </class>
 	</assembly>
 	<exceptionMappings>
 		<exception src="System.NullReferenceException" dst="java.lang.NullPointerException" />
