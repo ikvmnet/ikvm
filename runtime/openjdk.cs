@@ -93,6 +93,32 @@ using irUtil = ikvm.runtime.Util;
 
 namespace IKVM.NativeCode.java
 {
+	namespace io
+	{
+		public sealed class Console
+		{
+			public static string encoding()
+			{
+				// TODO
+				return "IBM437";
+			}
+
+			public static bool echo(bool on)
+			{
+				// TODO
+				return false;
+			}
+
+			public static bool istty()
+			{
+				// the JDK returns false here if stdin or stdout is redirected (not stderr)
+				// or if there is no console associated with the current process
+				// TODO figure out if there is a managed way to detect redirection or console presence
+				return true;
+			}
+		}
+	}
+
 	namespace lang
 	{
 		namespace reflect
@@ -1871,37 +1897,9 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-#if !FIRST_PASS
-			sealed class JavaIOAccess : smJavaIOAccess
-			{
-				public jiConsole console()
-				{
-					return null;
-				}
-
-				class ConsoleRestoreHook : jlRunnable
-				{
-					public void run()
-					{
-					}
-				}
-
-				public jlRunnable consoleRestoreHook()
-				{
-					return new ConsoleRestoreHook();
-				}
-
-				public jnCharset charset()
-				{
-					return null;
-				}
-			}
-#endif
-
 			public static void registerNatives()
 			{
 #if !FIRST_PASS
-				smSharedSecrets.setJavaIOAccess(new JavaIOAccess());
 				Thread.currentThread();
 #endif
 			}
