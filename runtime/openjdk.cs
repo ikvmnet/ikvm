@@ -1899,9 +1899,7 @@ namespace IKVM.NativeCode.java
 
 			public static void registerNatives()
 			{
-#if !FIRST_PASS
-				Thread.currentThread();
-#endif
+				Thread.Bootstrap();
 			}
 
 			public static void setIn0(object @in)
@@ -2159,18 +2157,20 @@ namespace IKVM.NativeCode.java
 
 				jlThreadGroup systemThreadGroup = (jlThreadGroup)Activator.CreateInstance(typeof(jlThreadGroup), true);
 				mainThreadGroup = new jlThreadGroup(systemThreadGroup, "main");
-			}
-#endif
-
-			public static void registerNatives()
-			{
-#if !FIRST_PASS
 				// the first thread here is the main thread
 				AttachThread("main", false, null);
 				typeof(jlSystem).GetMethod("initializeSystemClass", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
 				// make sure the Launcher singleton is created on the main thread and allow it to install the security manager
 				smLauncher.getLauncher();
+			}
 #endif
+			internal static void Bootstrap()
+			{
+				// call this method to trigger the bootstrap (in the static initializer)
+			}
+
+			public static void registerNatives()
+			{
 			}
 
 			public static object currentThread()
