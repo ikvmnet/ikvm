@@ -39,6 +39,7 @@ using SystemThreadingThreadPriority = System.Threading.ThreadPriority;
 using IKVM.Internal;
 #if !FIRST_PASS
 using jlClass = java.lang.Class;
+using jlClassLoader = java.lang.ClassLoader;
 using jlArrayIndexOutOfBoundsException = java.lang.ArrayIndexOutOfBoundsException;
 using jlClassNotFoundException = java.lang.ClassNotFoundException;
 using jlIllegalAccessException = java.lang.IllegalAccessException;
@@ -1334,6 +1335,7 @@ namespace IKVM.NativeCode.java
 
 			public static void registerNatives()
 			{
+				Thread.Bootstrap();
 			}
 
 			public static object defineClass0(object thisClassLoader, string name, byte[] b, int off, int len, object pd)
@@ -2157,11 +2159,16 @@ namespace IKVM.NativeCode.java
 
 				jlThreadGroup systemThreadGroup = (jlThreadGroup)Activator.CreateInstance(typeof(jlThreadGroup), true);
 				mainThreadGroup = new jlThreadGroup(systemThreadGroup, "main");
-				// the first thread here is the main thread
-				AttachThread("main", false, null);
+				AttachThread(null, false, null);
 				typeof(jlSystem).GetMethod("initializeSystemClass", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
 				// make sure the Launcher singleton is created on the main thread and allow it to install the security manager
 				smLauncher.getLauncher();
+				if (jlClassLoader.getSystemClassLoader() == null)
+				{
+					// HACK because of bootstrap issues (Launcher instantiates a URL and GNU Classpath's URL calls getSystemClassLoader) we have
+					// to set clear the sclSet flag here, to make sure the system class loader is constructed next time getSystemClassLoader is called
+					typeof(jlClassLoader).GetField("sclSet", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, false);
+				}
 			}
 #endif
 			internal static void Bootstrap()

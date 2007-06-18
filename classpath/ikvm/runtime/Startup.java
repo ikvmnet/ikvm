@@ -164,6 +164,7 @@ public final class Startup
             {
             }
         }
+	java.lang.Thread.currentThread();
     }
 
     public static void exitMainThread()
