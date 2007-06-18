@@ -1014,4 +1014,9 @@ public final class FileChannelImpl extends FileChannel
             implTruncate (size);
 	return this;
     }
+
+    public Stream getStream()
+    {
+	return stream;
+    }
 }

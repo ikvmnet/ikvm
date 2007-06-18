@@ -1459,22 +1459,6 @@
 				</body>
 			</method>
 		</class>
-		<class name="java.nio.channels.VMChannels">
-			<method name="newInputStream" sig="(Lgnu.java.nio.FileChannelImpl;)Ljava.io.FileInputStream;">
-				<body>
-					<ldarg_0 />
-					<newobj class="java.io.FileInputStream" name="&lt;init&gt;" sig="(Lgnu.java.nio.FileChannelImpl;)V" />
-					<ret />
-				</body>
-			</method>
-			<method name="newOutputStream" sig="(Lgnu.java.nio.FileChannelImpl;)Ljava.io.FileOutputStream;">
-				<body>
-					<ldarg_0 />
-					<newobj class="java.io.FileOutputStream" name="&lt;init&gt;" sig="(Lgnu.java.nio.FileChannelImpl;)V" />
-					<ret />
-				</body>
-			</method>
-		</class>
 		<class name="java.util.concurrent.atomic.AtomicReference">
 			<method name="compareAndSet" sig="(Ljava.lang.Object;Ljava.lang.Object;)Z">
 				<body>
