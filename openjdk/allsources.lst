@@ -5024,6 +5024,12 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/java/util/regex/Pattern.java
 ../../openjdk/j2se/src/share/classes/java/util/regex/PatternSyntaxException.java
 ../../openjdk/j2se/src/share/classes/sun/misc/ASCIICaseInsensitiveComparator.java
+../../openjdk/j2se/src/share/classes/sun/misc/BASE64Decoder.java
+../../openjdk/j2se/src/share/classes/sun/misc/BASE64Encoder.java
+../../openjdk/j2se/src/share/classes/sun/misc/CEFormatException.java
+../../openjdk/j2se/src/share/classes/sun/misc/CEStreamExhausted.java
+../../openjdk/j2se/src/share/classes/sun/misc/CharacterDecoder.java
+../../openjdk/j2se/src/share/classes/sun/misc/CharacterEncoder.java
 ../../openjdk/j2se/src/share/classes/sun/misc/ClassFileTransformer.java
 ../../openjdk/j2se/src/share/classes/sun/misc/Cleaner.java
 ../../openjdk/j2se/src/share/classes/sun/misc/CompoundEnumeration.java
@@ -5035,6 +5041,7 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/sun/misc/FloatConsts.java
 ../../openjdk/j2se/src/share/classes/sun/misc/FloatingDecimal.java
 ../../openjdk/j2se/src/share/classes/sun/misc/FpUtils.java
+../../openjdk/j2se/src/share/classes/sun/misc/HexDumpEncoder.java
 ../../openjdk/j2se/src/share/classes/sun/misc/InvalidJarIndexException.java
 ../../openjdk/j2se/src/share/classes/sun/misc/JarFilter.java
 ../../openjdk/j2se/src/share/classes/sun/misc/JarIndex.java
@@ -5068,11 +5075,13 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/sun/misc/resources/Messages_zh_TW.java
 ../../openjdk/j2se/src/share/classes/sun/net/InetAddressCachePolicy.java
 ../../openjdk/j2se/src/share/classes/sun/net/www/ParseUtil.java
+../../openjdk/j2se/src/share/classes/sun/net/www/protocol/http/NegotiateCallbackHandler.java
 ../../openjdk/j2se/src/share/classes/sun/net/www/protocol/jar/Handler.java
 ../../openjdk/j2se/src/share/classes/sun/net/www/protocol/jar/JarURLConnection.java
 ../../openjdk/j2se/src/share/classes/sun/net/www/protocol/jar/URLJarFile.java
 ../../openjdk/j2se/src/share/classes/sun/net/www/protocol/jar/URLJarFileCallBack.java
 ../../openjdk/j2se/src/share/classes/sun/nio/ByteBuffered.java
+../../openjdk/j2se/src/share/classes/sun/nio/ch/DirectBuffer.java
 ../../openjdk/j2se/src/share/classes/sun/nio/ch/Interruptible.java
 ../../openjdk/j2se/src/share/classes/sun/nio/cs/AbstractCharsetProvider.java
 ../../openjdk/j2se/src/share/classes/sun/nio/cs/FastCharsetProvider.java
