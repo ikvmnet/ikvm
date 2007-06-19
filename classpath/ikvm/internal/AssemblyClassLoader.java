@@ -37,6 +37,7 @@ import java.security.AllPermission;
 import java.security.CodeSource;
 import java.security.Permissions;
 import java.security.ProtectionDomain;
+import java.security.cert.Certificate;
 
 @Internal
 public final class AssemblyClassLoader extends ClassLoader
@@ -293,7 +294,7 @@ public final class AssemblyClassLoader extends ClassLoader
         {
             Permissions permissions = new Permissions();
             permissions.add(new AllPermission());
-            pd = new ProtectionDomain(new CodeSource(getCodeBase(), null), permissions, this, null);
+            pd = new ProtectionDomain(new CodeSource(getCodeBase(), (Certificate[])null), permissions, this, null);
         }
         return pd;
     }
