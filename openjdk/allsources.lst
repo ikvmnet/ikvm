@@ -2378,7 +2378,6 @@
 ../../classpath/java/io/DeleteFileHelper.java
 ../../classpath/java/io/EOFException.java
 ../../classpath/java/io/Externalizable.java
-../../classpath/java/io/File.java
 ../../classpath/java/io/FileFilter.java
 ../../classpath/java/io/FilenameFilter.java
 ../../classpath/java/io/FileNotFoundException.java
@@ -4813,7 +4812,6 @@
 ../classpath/ikvm/lang/IterableEnumerator.java
 ../classpath/ikvm/runtime/Startup.java
 ../classpath/ikvm/runtime/Util.java
-../classpath/java/io/VMFile.java
 ../classpath/java/io/VMObjectInputStream.java
 ../classpath/java/lang/ExceptionHelper.java
 ../classpath/java/lang/management/VMManagementFactory.java
@@ -4864,8 +4862,12 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/java/io/Console.java
 ../../openjdk/j2se/src/share/classes/java/io/DataInputStream.java
 ../../openjdk/j2se/src/share/classes/java/io/DataOutputStream.java
+../../openjdk/j2se/src/share/classes/java/io/DeleteOnExitHook.java
+../../openjdk/j2se/src/share/classes/java/io/ExpiringCache.java
 ../../openjdk/j2se/src/share/classes/java/io/IOError.java
 ../../openjdk/j2se/src/share/classes/java/io/IOException.java
+../../openjdk/j2se/src/share/classes/java/io/File.java
+../../openjdk/j2se/src/share/classes/java/io/FileSystem.java
 ../../openjdk/j2se/src/share/classes/java/lang/AbstractMethodError.java
 ../../openjdk/j2se/src/share/classes/java/lang/AbstractStringBuilder.java
 ../../openjdk/j2se/src/share/classes/java/lang/Appendable.java
@@ -5227,5 +5229,7 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk/j2se/src/share/classes/sun/text/normalizer/Utility.java
 ../../openjdk/j2se/src/share/classes/sun/text/normalizer/VersionInfo.java
 ../../openjdk/j2se/src/share/classes/sun/util/PreHashedMap.java
+../../openjdk/j2se/src/solaris/classes/java/io/UnixFileSystem.java
+../../openjdk/j2se/src/windows/classes/java/io/Win32FileSystem.java
 ../../openjdk/j2se/src/windows/classes/java/lang/ProcessEnvironment.java
 ../../openjdk/j2se/src/windows/classes/java/lang/Terminator.java

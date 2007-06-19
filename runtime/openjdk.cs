@@ -86,6 +86,8 @@ using smJavaIOAccess = sun.misc.JavaIOAccess;
 using smLauncher = sun.misc.Launcher;
 using smSharedSecrets = sun.misc.SharedSecrets;
 using jiConsole = java.io.Console;
+using jiIOException = java.io.IOException;
+using jiFile = java.io.File;
 using jnCharset = java.nio.charset.Charset;
 using juProperties = java.util.Properties;
 using gcSystemProperties = gnu.classpath.SystemProperties;
@@ -116,6 +118,647 @@ namespace IKVM.NativeCode.java
 				// or if there is no console associated with the current process
 				// TODO figure out if there is a managed way to detect redirection or console presence
 				return true;
+			}
+		}
+
+		public sealed class FileSystem
+		{
+			public static object getFileSystem()
+			{
+#if FIRST_PASS
+				return null;
+#else
+				if (Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Win32Windows)
+				{
+					return Activator.CreateInstance(typeof(jlClass).Assembly.GetType("java.io.Win32FileSystem"), true);
+				}
+				else
+				{
+					return Activator.CreateInstance(typeof(jlClass).Assembly.GetType("java.io.UnixFileSystem"), true);
+				}
+#endif
+			}
+		}
+
+		public sealed class Win32FileSystem
+		{
+			const int ACCESS_READ = 0x04;
+			const int ACCESS_WRITE = 0x02;
+			const int ACCESS_EXECUTE = 0x01;
+
+			public static string getDriveDirectory(object _this, int drive)
+			{
+				try
+				{
+					string path = ((char)('A' + (drive - 1))) + ":";
+					return System.IO.Path.GetFullPath(path).Substring(2);
+				}
+				catch (ArgumentException)
+				{
+				}
+				catch (System.Security.SecurityException)
+				{
+				}
+				catch (System.IO.PathTooLongException)
+				{
+				}
+				return "\\";
+			}
+
+			private static System.IO.FileInfo GetFileInfo(string path)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				try
+				{
+					return new System.IO.FileInfo(path);
+				}
+				catch(System.Security.SecurityException x1)
+				{
+					throw new jiIOException(x1.Message);
+				}
+				catch(System.ArgumentException x2)
+				{
+					throw new jiIOException(x2.Message);
+				}
+				catch(System.UnauthorizedAccessException x3)
+				{
+					throw new jiIOException(x3.Message);
+				}
+				catch(System.IO.IOException x4)
+				{
+					throw new jiIOException(x4.Message);
+				}
+				catch(System.NotSupportedException x5)
+				{
+					throw new jiIOException(x5.Message);
+				}
+#endif
+			}
+
+			public static string canonicalize0(object _this, string path)
+			{
+				return GetFileInfo(path).FullName;
+			}
+
+			public static string canonicalizeWithPrefix0(object _this, string canonicalPrefix, string pathWithCanonicalPrefix)
+			{
+				// TODO what's this all about?
+				return GetFileInfo(pathWithCanonicalPrefix).FullName;
+			}
+
+			private static string GetPathFromFile(object file)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				return ((jiFile)file).getPath();
+#endif
+			}
+
+			public static int getBooleanAttributes(object _this, object f)
+			{
+				try
+				{
+					System.IO.FileAttributes attr = System.IO.File.GetAttributes(GetPathFromFile(f));
+					const int BA_EXISTS = 0x01;
+					const int BA_REGULAR = 0x02;
+					const int BA_DIRECTORY = 0x04;
+					const int BA_HIDDEN = 0x08;
+					int rv = BA_EXISTS;
+					if ((attr & System.IO.FileAttributes.Directory) != 0)
+					{
+						rv |= BA_DIRECTORY;
+					}
+					else
+					{
+						rv |= BA_REGULAR;
+					}
+					if ((attr & System.IO.FileAttributes.Hidden) != 0)
+					{
+						rv |= BA_HIDDEN;
+					}
+					return rv;
+				}
+				catch (System.ArgumentException)
+				{
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				catch (System.Security.SecurityException)
+				{
+				}
+				catch (System.NotSupportedException)
+				{
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				return 0;
+			}
+
+			public static bool checkAccess(object _this, object f, int access)
+			{
+				string path = GetPathFromFile(f);
+				bool ok = true;
+				if ((access & (ACCESS_READ | ACCESS_EXECUTE)) != 0)
+				{
+					ok = false;
+					try
+					{
+						// HACK if path refers to a directory, we always return true
+						if (!System.IO.Directory.Exists(path))
+						{
+							new System.IO.FileInfo(path).Open(
+								System.IO.FileMode.Open,
+								System.IO.FileAccess.Read,
+								System.IO.FileShare.ReadWrite).Close();
+						}
+						ok = true;
+					}
+					catch (System.Security.SecurityException)
+					{
+					}
+					catch (System.ArgumentException)
+					{
+					}
+					catch (System.UnauthorizedAccessException)
+					{
+					}
+					catch (System.IO.IOException)
+					{
+					}
+					catch (System.NotSupportedException)
+					{
+					}
+				}
+				if (ok && ((access & ACCESS_WRITE) != 0))
+				{
+					ok = false;
+					try
+					{
+						System.IO.FileInfo fileInfo = new System.IO.FileInfo(path);
+						// Like the JDK we'll only look at the read-only attribute and not
+						// the security permissions associated with the file or directory.
+						ok = (fileInfo.Attributes & System.IO.FileAttributes.ReadOnly) == 0;
+					}
+					catch (System.Security.SecurityException)
+					{
+					}
+					catch (System.ArgumentException)
+					{
+					}
+					catch (System.UnauthorizedAccessException)
+					{
+					}
+					catch (System.IO.IOException)
+					{
+					}
+					catch (System.NotSupportedException)
+					{
+					}
+				}
+				return ok;
+			}
+
+			private static long DateTimeToJavaLongTime(System.DateTime datetime)
+			{
+				return (System.TimeZone.CurrentTimeZone.ToUniversalTime(datetime) - new System.DateTime(1970, 1, 1)).Ticks / 10000L;
+			}
+
+			private static System.DateTime JavaLongTimeToDateTime(long datetime)
+			{
+				return System.TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(new System.DateTime(1970, 1, 1).Ticks + datetime * 10000L));
+			}
+
+			public static long getLastModifiedTime(object _this, object f)
+			{
+				try
+				{
+					return DateTimeToJavaLongTime(System.IO.File.GetLastWriteTime(GetPathFromFile(f)));
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				catch (System.ArgumentException)
+				{
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				catch (System.NotSupportedException)
+				{
+				}
+				return 0;
+			}
+
+			public static long getLength(object _this, object f)
+			{
+				try
+				{
+					return new System.IO.FileInfo(GetPathFromFile(f)).Length;
+				}
+				catch (System.Security.SecurityException)
+				{
+				}
+				catch (System.ArgumentException)
+				{
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				catch (System.NotSupportedException)
+				{
+				}
+				return 0;
+			}
+
+			public static bool setPermission(object _this, object f, int access, bool enable, bool owneronly)
+			{
+				if ((access & ACCESS_WRITE) != 0)
+				{
+					try
+					{
+						System.IO.FileInfo file = new System.IO.FileInfo(GetPathFromFile(f));
+						if (enable)
+						{
+							file.Attributes &= ~System.IO.FileAttributes.ReadOnly;
+						}
+						else
+						{
+							file.Attributes |= System.IO.FileAttributes.ReadOnly;
+						}
+						return true;
+					}
+					catch (System.Security.SecurityException)
+					{
+					}
+					catch (System.ArgumentException)
+					{
+					}
+					catch (System.UnauthorizedAccessException)
+					{
+					}
+					catch (System.IO.IOException)
+					{
+					}
+					catch (System.NotSupportedException)
+					{
+					}
+					return false;
+				}
+				return enable;
+			}
+
+			public static bool createFileExclusively(object _this, string path)
+			{
+#if !FIRST_PASS
+				try
+				{
+					System.IO.File.Open(path, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None).Close();
+					return true;
+				}
+				catch (System.ArgumentException x)
+				{
+					throw new jiIOException(x.Message);
+				}
+				catch (System.IO.IOException x)
+				{
+					if (!System.IO.File.Exists(path) && !System.IO.Directory.Exists(path))
+					{
+						throw new jiIOException(x.Message);
+					}
+				}
+				catch (System.UnauthorizedAccessException x)
+				{
+					throw new jiIOException(x.Message);
+				}
+				catch (System.NotSupportedException x)
+				{
+					throw new jiIOException(x.Message);
+				}
+#endif
+				return false;
+			}
+
+			public static bool delete0(object _this, object f)
+			{
+				try
+				{
+					string path = GetPathFromFile(f);
+					System.IO.FileSystemInfo fileInfo;
+					if (System.IO.Directory.Exists(path))
+					{
+						fileInfo = new System.IO.DirectoryInfo(path);
+					}
+					else if (System.IO.File.Exists(path))
+					{
+						fileInfo = new System.IO.FileInfo(path);
+					}
+					else
+					{
+						return false;
+					}
+					// We need to be able to delete read-only files/dirs too, so we clear
+					// the read-only attribute, if set.
+					if ((fileInfo.Attributes & System.IO.FileAttributes.ReadOnly) != 0)
+					{
+						fileInfo.Attributes &= ~System.IO.FileAttributes.ReadOnly;
+					}
+					fileInfo.Delete();
+					return true;
+				}
+				catch (System.Security.SecurityException)
+				{
+				}
+				catch (System.ArgumentException)
+				{
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				catch (System.NotSupportedException)
+				{
+				}
+				return false;
+			}
+
+			public static string[] list(object _this, object f)
+			{
+				try
+				{
+					string[] l = System.IO.Directory.GetFileSystemEntries(GetPathFromFile(f));
+					for (int i = 0; i < l.Length; i++)
+					{
+						int pos = l[i].LastIndexOf(System.IO.Path.DirectorySeparatorChar);
+						if (pos >= 0)
+						{
+							l[i] = l[i].Substring(pos + 1);
+						}
+					}
+					return l;
+				}
+				catch (System.ArgumentException)
+				{
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				return null;
+			}
+
+			public static bool createDirectory(object _this, object f)
+			{
+				try
+				{
+					string path = GetPathFromFile(f);
+					System.IO.DirectoryInfo parent = System.IO.Directory.GetParent(path);
+					if (parent == null ||
+						!System.IO.Directory.Exists(parent.FullName) ||
+						System.IO.Directory.Exists(path))
+					{
+						return false;
+					}
+					return System.IO.Directory.CreateDirectory(path) != null;
+				}
+				catch (System.Security.SecurityException)
+				{
+				}
+				catch (System.ArgumentException)
+				{
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				catch (System.NotSupportedException)
+				{
+				}
+				return false;
+			}
+
+			public static bool rename0(object _this, object f1, object f2)
+			{
+				try
+				{
+					new System.IO.FileInfo(GetPathFromFile(f1)).MoveTo(GetPathFromFile(f2));
+					return true;
+				}
+				catch (System.Security.SecurityException)
+				{
+				}
+				catch (System.ArgumentException)
+				{
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				catch (System.NotSupportedException)
+				{
+				}
+				return false;
+			}
+
+			public static bool setLastModifiedTime(object _this, object f, long time)
+			{
+				try
+				{
+					new System.IO.FileInfo(GetPathFromFile(f)).LastWriteTime = JavaLongTimeToDateTime(time);
+					return true;
+				}
+				catch (System.Security.SecurityException)
+				{
+				}
+				catch (System.ArgumentException)
+				{
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				catch (System.NotSupportedException)
+				{
+				}
+				return false;
+			}
+
+			public static bool setReadOnly(object _this, object f)
+			{
+				try
+				{
+					System.IO.FileInfo fileInfo = new System.IO.FileInfo(GetPathFromFile(f));
+					fileInfo.Attributes |= System.IO.FileAttributes.ReadOnly;
+					return true;
+				}
+				catch (System.Security.SecurityException)
+				{
+				}
+				catch (System.ArgumentException)
+				{
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				catch (System.NotSupportedException)
+				{
+				}
+				return false;
+			}
+
+			public static int listRoots0()
+			{
+				try
+				{
+					int drives = 0;
+					foreach (string drive in System.IO.Directory.GetLogicalDrives())
+					{
+						char c = Char.ToUpperInvariant(drive[0]);
+						drives |= 1 << (c - 'A');
+					}
+					return drives;
+				}
+				catch (System.IO.IOException)
+				{
+				}
+				catch (System.UnauthorizedAccessException)
+				{
+				}
+				return 0;
+			}
+
+			public static long getSpace0(object _this, object f, int t)
+			{
+				const int SPACE_TOTAL = 0;
+				const int SPACE_FREE = 1;
+				const int SPACE_USABLE = 2;
+				long freeAvailable;
+				long total;
+				long totalFree;
+				if (GetDiskFreeSpaceEx(GetPathFromFile(f), out freeAvailable, out total, out totalFree) != 0)
+				{
+					switch (t)
+					{
+						case SPACE_TOTAL:
+							return total;
+						case SPACE_FREE:
+							return totalFree;
+						case SPACE_USABLE:
+							return freeAvailable;
+					}
+				}
+				return 0;
+			}
+
+			[System.Runtime.InteropServices.DllImport("kernel32")]
+			private static extern int GetDiskFreeSpaceEx(string directory, out long freeAvailable, out long total, out long totalFree);
+
+			public static void initIDs()
+			{
+			}
+		}
+
+		public sealed class UnixFileSystem
+		{
+			public static int getBooleanAttributes0(object _this, object f)
+			{
+				return Win32FileSystem.getBooleanAttributes(_this, f);
+			}
+
+			public static long getSpace(object _this, object f, int t)
+			{
+				// TODO
+				return 0;
+			}
+
+			public static string getDriveDirectory(object _this, int drive)
+			{
+				return Win32FileSystem.getDriveDirectory(_this, drive);
+			}
+
+			public static string canonicalize0(object _this, string path)
+			{
+				return Win32FileSystem.canonicalize0(_this, path);
+			}
+
+			public static bool checkAccess(object _this, object f, int access)
+			{
+				return Win32FileSystem.checkAccess(_this, f, access);
+			}
+
+			public static long getLastModifiedTime(object _this, object f)
+			{
+				return Win32FileSystem.getLastModifiedTime(_this, f);
+			}
+
+			public static long getLength(object _this, object f)
+			{
+				return Win32FileSystem.getLength(_this, f);
+			}
+
+			public static bool setPermission(object _this, object f, int access, bool enable, bool owneronly)
+			{
+				// TODO consider using Mono.Posix
+				return Win32FileSystem.setPermission(_this, f, access, enable, owneronly);
+			}
+
+			public static bool createFileExclusively(object _this, string path)
+			{
+				return Win32FileSystem.createFileExclusively(_this, path);
+			}
+
+			public static bool delete0(object _this, object f)
+			{
+				return Win32FileSystem.delete0(_this, f);
+			}
+
+			public static string[] list(object _this, object f)
+			{
+				return Win32FileSystem.list(_this, f);
+			}
+
+			public static bool createDirectory(object _this, object f)
+			{
+				return Win32FileSystem.createDirectory(_this, f);
+			}
+
+			public static bool rename0(object _this, object f1, object f2)
+			{
+				return Win32FileSystem.rename0(_this, f1, f2);
+			}
+
+			public static bool setLastModifiedTime(object _this, object f, long time)
+			{
+				return Win32FileSystem.setLastModifiedTime(_this, f, time);
+			}
+
+			public static bool setReadOnly(object _this, object f)
+			{
+				return Win32FileSystem.setReadOnly(_this, f);
+			}
+
+			public static void initIDs()
+			{
 			}
 		}
 	}
