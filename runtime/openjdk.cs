@@ -92,6 +92,7 @@ using jnCharset = java.nio.charset.Charset;
 using juProperties = java.util.Properties;
 using gcSystemProperties = gnu.classpath.SystemProperties;
 using irUtil = ikvm.runtime.Util;
+using jsDriverManager = java.sql.DriverManager;
 #endif
 
 namespace IKVM.NativeCode.java
@@ -3398,6 +3399,42 @@ namespace IKVM.NativeCode.java
 				{
 					return ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
 				}
+			}
+		}
+	}
+
+	namespace sql
+	{
+		public sealed class DriverManager
+		{
+			public static object getCallerClassLoader()
+			{
+#if FIRST_PASS
+				return null;
+#else
+				for (int i = 1; ; i++)
+				{
+					StackFrame frame = new StackFrame(i);
+					MethodBase method = frame.GetMethod();
+					if (method == null)
+					{
+						return null;
+					}
+					Type type = method.DeclaringType;
+					if (type != typeof(jsDriverManager))
+					{
+						if (type != null)
+						{
+							TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+							if (wrapper != null)
+							{
+								return wrapper.GetClassLoader().GetJavaClassLoader();
+							}
+						}
+						return null;
+					}
+				}
+#endif
 			}
 		}
 	}
