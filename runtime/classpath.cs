@@ -940,7 +940,7 @@ namespace IKVM.NativeCode.java
 				}
 				catch(RetargetableJavaException x)
 				{
-					x.ToJava();
+					throw x.ToJava();
 				}
 				Type type = wrapper.TypeAsTBD;
 				if(!type.IsArray && type.TypeInitializer != null)

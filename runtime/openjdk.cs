@@ -140,6 +140,101 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		public sealed class ObjectInputStream
+		{
+			public static void bytesToFloats(byte[] src, int srcpos, float[] dst, int dstpos, int nfloats)
+			{
+				while (nfloats-- > 0)
+				{
+					dst[dstpos++] = BitConverter.ToSingle(src, srcpos);
+					srcpos += 4;
+				}
+			}
+
+			public static void bytesToDoubles(byte[] src, int srcpos, double[] dst, int dstpos, int ndoubles)
+			{
+				while (ndoubles-- > 0)
+				{
+					dst[dstpos++] = BitConverter.ToDouble(src, srcpos);
+					srcpos += 4;
+				}
+			}
+
+			public static object latestUserDefinedLoader()
+			{
+				for (int i = 1; ; i++)
+				{
+					StackFrame frame = new StackFrame(i);
+					MethodBase method = frame.GetMethod();
+					if (method == null)
+					{
+						return null;
+					}
+					Type type = method.DeclaringType;
+					if (type != null)
+					{
+						TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+						if (tw != null)
+						{
+							object javaClassLoader = tw.GetClassLoader().GetJavaClassLoader();
+							if (javaClassLoader != null)
+							{
+								return javaClassLoader;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		public sealed class ObjectOutputStream
+		{
+			public static void floatsToBytes(float[] src, int srcpos, byte[] dst, int dstpos, int nfloats)
+			{
+				while (nfloats-- > 0)
+				{
+					Buffer.BlockCopy(BitConverter.GetBytes(src[srcpos++]), 0, dst, dstpos, 4);
+					dstpos += 4;
+				}
+			}
+
+			public static void doublesToBytes(double[] src, int srcpos, byte[] dst, int dstpos, int ndoubles)
+			{
+				while (ndoubles-- > 0)
+				{
+					Buffer.BlockCopy(BitConverter.GetBytes(src[srcpos++]), 0, dst, dstpos, 8);
+					dstpos += 8;
+				}
+			}
+		}
+
+		public sealed class ObjectStreamClass
+		{
+			public static void initNative()
+			{
+			}
+
+			public static bool hasStaticInitializer(object cl)
+			{
+				TypeWrapper wrapper = TypeWrapper.FromClass(cl);
+				try
+				{
+					wrapper.Finish();
+				}
+				catch (RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
+				Type type = wrapper.TypeAsTBD;
+				if (!type.IsArray && type.TypeInitializer != null)
+				{
+					wrapper.RunClassInit();
+					return !AttributeHelper.IsHideFromJava(type.TypeInitializer);
+				}
+				return false;
+			}
+		}
+
 		public sealed class Win32FileSystem
 		{
 			const int ACCESS_READ = 0x04;
@@ -3595,6 +3690,53 @@ namespace IKVM.NativeCode.sun.reflect
 			}
 		}
 
+		private sealed class SerializationConstructorAccessorImpl : srConstructorAccessor
+		{
+			private Type type;
+			private MethodWrapper constructor;
+
+			internal SerializationConstructorAccessorImpl(jlrConstructor constructorToCall, jlClass classToInstantiate)
+			{
+				constructor = MethodWrapper.FromMethodOrConstructor(constructorToCall);
+				try
+				{
+					TypeWrapper wrapper = TypeWrapper.FromClass(classToInstantiate);
+					wrapper.Finish();
+					type = wrapper.TypeAsBaseType;
+				}
+				catch (RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
+			}
+
+			[IKVM.Attributes.HideFromJava]
+			public object newInstance(object[] args)
+			{
+				// if we're trying to deserialize a string as a TC_OBJECT, just return an emtpy string (Sun does the same)
+				if (type == typeof(string))
+				{
+					return "";
+				}
+				args = ConvertArgs(constructor.GetParameters(), args);
+				try
+				{
+					object obj = FormatterServices.GetUninitializedObject(type);
+					constructor.Invoke(obj, args, false);
+					return obj;
+				}
+				catch (RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
+				catch (MethodAccessException x)
+				{
+					// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
+					throw new jlIllegalAccessException().initCause(x);
+				}
+			}
+		}
+
 		private abstract class FieldAccessorImplBase : srFieldAccessor
 		{
 			private readonly FieldWrapper fw;
@@ -4283,7 +4425,11 @@ namespace IKVM.NativeCode.sun.reflect
 
 		public static object newConstructorAccessorForSerialization(object classToInstantiate, object constructorToCall)
 		{
-			throw new NotImplementedException();
+#if FIRST_PASS
+			return null;
+#else
+			return new SerializationConstructorAccessorImpl((jlrConstructor)constructorToCall, (jlClass)classToInstantiate);
+#endif
 		}
 	}
 
