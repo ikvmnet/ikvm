@@ -3,7 +3,7 @@
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath" />
-    <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk" />
+    <property name="OpenJDK.dir" value="${project::get-base-directory()}/../../openjdk-b13" />
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
