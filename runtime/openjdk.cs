@@ -33,6 +33,7 @@ using StackFrame = System.Diagnostics.StackFrame;
 using StackTrace = System.Diagnostics.StackTrace;
 using SystemArray = System.Array;
 using SystemDouble = System.Double;
+using SystemTimeZone = System.TimeZone;
 using SystemThreadingThread = System.Threading.Thread;
 using SystemThreadingThreadInterruptedException = System.Threading.ThreadInterruptedException;
 using SystemThreadingThreadPriority = System.Threading.ThreadPriority;
@@ -3435,6 +3436,60 @@ namespace IKVM.NativeCode.java
 					}
 				}
 #endif
+			}
+		}
+	}
+
+	namespace util
+	{
+		public sealed class ResourceBundle
+		{
+			public static object getClassContext()
+			{
+#if FIRST_PASS
+				return null;
+#else
+				// the caller is only interested in context[2], so that's all we'll fill
+				jlClass[] context = new jlClass[3];
+				int index = 4;
+				// HACK handle inlining or tail-call optimization of native method stub
+				if (new StackFrame(1).GetMethod().Name != "getClassContext")
+				{
+					index--;
+				}
+				Type type = new StackFrame(index).GetMethod().DeclaringType;
+				if (type != null)
+				{
+					context[2] = (jlClass)ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
+				}
+				return context;
+#endif
+			}
+		}
+
+		public sealed class TimeZone
+		{
+			public static string getSystemTimeZoneID(string javaHome, string country)
+			{
+				// TODO we need to return the corresponding Java name for TimeZone.CurrentTimeZone.StandardName.
+				// The mappings are defined in $JAVA_HOME/lib/tzmappings, but we need the entire $JAVA_HOME/lib/zi
+				// directory tree before this is useless, because those files contain the actual time zone definitions.
+				return null;
+			}
+
+			public static string getSystemGMTOffsetID()
+			{
+				TimeSpan sp = SystemTimeZone.CurrentTimeZone.GetUtcOffset(DateTime.Now);
+				int hours = sp.Hours;
+				int mins = sp.Minutes;
+				if (hours >= 0 && mins >= 0)
+				{
+					return String.Format("GMT+{0:D2}:{1:D2}", hours, mins);
+				}
+				else
+				{
+					return String.Format("GMT-{0:D2}:{1:D2}", -hours, -mins);
+				}
 			}
 		}
 	}
