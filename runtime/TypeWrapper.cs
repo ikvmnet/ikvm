@@ -10678,19 +10678,22 @@ namespace IKVM.Internal
 					}
 				}
 
-				// HACK private interface implementations need to be published as well
-				// (otherwise the type appears abstract while it isn't)
+				// make sure that all the interface methods that we implement are available as public methods,
+				// otherwise javac won't like the class.
 				if(!type.IsInterface)
 				{
 					Type[] interfaces = type.GetInterfaces();
 					for(int i = 0; i < interfaces.Length; i++)
 					{
-						if(interfaces[i].IsPublic)
+						// we only handle public (or nested public) types, because we're potentially adding a
+						// method that should be callable by anyone through the interface
+						if(IsVisible(interfaces[i]))
 						{
 							InterfaceMapping map = type.GetInterfaceMap(interfaces[i]);
 							for(int j = 0; j < map.InterfaceMethods.Length; j++)
 							{
-								if(!map.TargetMethods[j].IsPublic && map.TargetMethods[j].DeclaringType == type)
+								if((!map.TargetMethods[j].IsPublic || map.TargetMethods[j].Name != map.InterfaceMethods[j].Name)
+									&& map.TargetMethods[j].DeclaringType == type)
 								{
 									string name;
 									string sig;
@@ -10698,7 +10701,9 @@ namespace IKVM.Internal
 									TypeWrapper ret;
 									if(MakeMethodDescriptor(map.InterfaceMethods[j], out name, out sig, out args, out ret))
 									{
-										if(BaseTypeWrapper != null)
+										string key = name + sig;
+										MethodWrapper existing = (MethodWrapper)methodsList[key];
+										if(existing == null && BaseTypeWrapper != null)
 										{
 											MethodWrapper baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
 											if(baseMethod != null && !baseMethod.IsStatic && baseMethod.IsPublic)
@@ -10706,10 +10711,11 @@ namespace IKVM.Internal
 												continue;
 											}
 										}
-										string key = name + sig;
-										MethodWrapper existing = (MethodWrapper)methodsList[key];
-										if(existing == null || existing is ByRefMethodWrapper)
+										if(existing == null || existing is ByRefMethodWrapper || existing.IsStatic || !existing.IsPublic)
 										{
+											// TODO if existing != null, we need to rename the existing method (but this is complicated because
+											// it also affects subclasses). This is especially required is the existing method is abstract,
+											// because otherwise we won't be able to create any subclasses in Java.
 											methodsList[key] = CreateMethodWrapper(name, sig, args, ret, map.InterfaceMethods[j], true);
 										}
 									}
