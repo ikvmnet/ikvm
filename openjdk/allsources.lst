@@ -434,12 +434,14 @@
 ../../classpath/gnu/java/awt/java2d/CubicSegment.java
 ../../classpath/gnu/java/awt/java2d/ImagePaint.java
 ../../classpath/gnu/java/awt/java2d/LineSegment.java
+../../classpath/gnu/java/awt/java2d/Pixelizer.java
 ../../classpath/gnu/java/awt/java2d/PolyEdge.java
 ../../classpath/gnu/java/awt/java2d/PolyEdgeComparator.java
 ../../classpath/gnu/java/awt/java2d/QuadSegment.java
 ../../classpath/gnu/java/awt/java2d/RasterGraphics.java
 ../../classpath/gnu/java/awt/java2d/Scanline.java
 ../../classpath/gnu/java/awt/java2d/ScanlineConverter.java
+../../classpath/gnu/java/awt/java2d/ScanlineCoverage.java
 ../../classpath/gnu/java/awt/java2d/Segment.java
 ../../classpath/gnu/java/awt/java2d/ShapeCache.java
 ../../classpath/gnu/java/awt/java2d/TexturePaintContext.java
