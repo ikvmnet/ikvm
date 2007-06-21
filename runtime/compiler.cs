@@ -1234,28 +1234,40 @@ class Compiler
 				for(int i = 0; i < lvt.Length; i++)
 				{
 					// TODO validate the contents of the LVT entry
-					int index = FindPcIndex(lvt[i].start_pc);
-					if(index > 0)
+					int startIndex = SafeFindPcIndex(lvt[i].start_pc);
+					if(startIndex > 0)
 					{
 						// NOTE javac (correctly) sets start_pc of the LVT entry to the instruction
 						// following the store that first initializes the local, so we have to
 						// detect that case and adjust our local scope (because we'll be creating
 						// the local when we encounter the first store).
-						LocalVar v = ma.GetLocalVar(index - 1);
+						LocalVar v = ma.GetLocalVar(startIndex - 1);
 						if(v != null && v.local == lvt[i].index)
 						{
-							index--;
+							startIndex--;
 						}
 					}
-					scope[index]++;
 					int end = lvt[i].start_pc + lvt[i].length;
+					int endIndex;
 					if(end == m.Instructions[m.Instructions.Length - 1].PC)
 					{
-						scope[m.Instructions.Length - 1]--;
+						endIndex = m.Instructions.Length - 1;
 					}
 					else
 					{
-						scope[FindPcIndex(end)]--;
+						endIndex = SafeFindPcIndex(end);
+					}
+					if(startIndex != -1 && endIndex != -1)
+					{
+						scope[startIndex]++;
+						scope[endIndex]--;
+					}
+					else
+					{
+						// the LVT range is invalid, but we need to have a scope for the variable,
+						// so we create an artificial scope that spans the method
+						scope[0]++;
+						scope[m.Instructions.Length - 1]--;
 					}
 				}
 			}
@@ -3615,6 +3627,15 @@ class Compiler
 
 	private int FindPcIndex(int target)
 	{
+		return m.PcIndexMap[target];
+	}
+
+	private int SafeFindPcIndex(int target)
+	{
+		if(target < 0 || target >= m.PcIndexMap.Length)
+		{
+			return -1;
+		}
 		return m.PcIndexMap[target];
 	}
 
