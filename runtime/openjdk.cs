@@ -3442,6 +3442,284 @@ namespace IKVM.NativeCode.java
 
 	namespace util
 	{
+		namespace prefs
+		{
+			public sealed class FileSystemPreferences
+			{
+				public static int chmod(string filename, int permission)
+				{
+					// TODO
+					return 0;
+				}
+
+				public static int[] lockFile0(string filename, int permission, bool shared)
+				{
+					// TODO
+					return new int[] { 1, 0 };
+				}
+
+				public static int unlockFile0(int fd)
+				{
+					// TODO
+					return 0;
+				}
+			}
+
+			public sealed class WindowsPreferences
+			{
+				// HACK we currently support only 16 handles at a time
+				private static Microsoft.Win32.RegistryKey[] keys = new Microsoft.Win32.RegistryKey[16];
+
+				private static Microsoft.Win32.RegistryKey MapKey(int hKey)
+				{
+					switch (hKey)
+					{
+						case unchecked((int)0x80000001):
+							return Microsoft.Win32.Registry.CurrentUser;
+						case unchecked((int)0x80000002):
+							return Microsoft.Win32.Registry.LocalMachine;
+						default:
+							return keys[hKey - 1];
+					}
+				}
+
+				private static int AllocHandle(Microsoft.Win32.RegistryKey key)
+				{
+					lock (keys)
+					{
+						if (key != null)
+						{
+							for (int i = 0; i < keys.Length; i++)
+							{
+								if (keys[i] == null)
+								{
+									keys[i] = key;
+									return i + 1;
+								}
+							}
+						}
+						return 0;
+					}
+				}
+
+				private static string BytesToString(byte[] bytes)
+				{
+					int len = bytes.Length;
+					if (bytes[len - 1] == 0)
+					{
+						len--;
+					}
+					return Encoding.ASCII.GetString(bytes, 0, len);
+				}
+
+				private static byte[] StringToBytes(string str)
+				{
+					if (str.Length == 0 || str[str.Length - 1] != 0)
+					{
+						str += '\u0000';
+					}
+					return Encoding.ASCII.GetBytes(str);
+				}
+
+				public static int[] WindowsRegOpenKey(int hKey, byte[] subKey, int securityMask)
+				{
+					bool writable = (securityMask & 0x30006) != 0;
+					Microsoft.Win32.RegistryKey resultKey = null;
+					int error = 0;
+					try
+					{
+						resultKey = MapKey(hKey).OpenSubKey(BytesToString(subKey), writable);
+					}
+					catch (System.Security.SecurityException)
+					{
+						error = 5;
+					}
+					catch (UnauthorizedAccessException)
+					{
+						error = 5;
+					}
+					return new int[] { AllocHandle(resultKey), error };
+				}
+
+				public static int WindowsRegCloseKey(int hKey)
+				{
+					keys[hKey - 1].Close();
+					lock (keys)
+					{
+						keys[hKey - 1] = null;
+					}
+					return 0;
+				}
+
+				public static int[] WindowsRegCreateKeyEx(int hKey, byte[] subKey)
+				{
+					Microsoft.Win32.RegistryKey resultKey = null;
+					int error = 0;
+					int disposition = -1;
+					try
+					{
+						Microsoft.Win32.RegistryKey key = MapKey(hKey);
+						string name = BytesToString(subKey);
+						resultKey = key.OpenSubKey(name);
+						disposition = 2;
+						if (resultKey == null)
+						{
+							resultKey = key.CreateSubKey(name);
+							disposition = 1;
+						}
+					}
+					catch (System.Security.SecurityException)
+					{
+						error = 5;
+					}
+					catch (UnauthorizedAccessException)
+					{
+						error = 5;
+					}
+					return new int[] { AllocHandle(resultKey), error, disposition };
+				}
+
+				public static int WindowsRegDeleteKey(int hKey, byte[] subKey)
+				{
+					try
+					{
+						MapKey(hKey).DeleteSubKey(BytesToString(subKey));
+						return 0;
+					}
+					catch (System.Security.SecurityException)
+					{
+						return 5;
+					}
+				}
+
+				public static int WindowsRegFlushKey(int hKey)
+				{
+					MapKey(hKey).Flush();
+					return 0;
+				}
+
+				public static byte[] WindowsRegQueryValueEx(int hKey, byte[] valueName)
+				{
+					try
+					{
+						string value = MapKey(hKey).GetValue(BytesToString(valueName)) as string;
+						if (value == null)
+						{
+							return null;
+						}
+						return StringToBytes(value);
+					}
+					catch (System.Security.SecurityException)
+					{
+						return null;
+					}
+					catch (UnauthorizedAccessException)
+					{
+						return null;
+					}
+				}
+
+				public static int WindowsRegSetValueEx(int hKey, byte[] valueName, byte[] data)
+				{
+					if (valueName == null || data == null)
+					{
+						return -1;
+					}
+					try
+					{
+						MapKey(hKey).SetValue(BytesToString(valueName), BytesToString(data));
+						return 0;
+					}
+					catch (System.Security.SecurityException)
+					{
+						return 5;
+					}
+					catch (UnauthorizedAccessException)
+					{
+						return 5;
+					}
+				}
+
+				public static int WindowsRegDeleteValue(int hKey, byte[] valueName)
+				{
+					try
+					{
+						MapKey(hKey).DeleteValue(BytesToString(valueName));
+						return 0;
+					}
+					catch (System.Security.SecurityException)
+					{
+						return 5;
+					}
+					catch (UnauthorizedAccessException)
+					{
+						return 5;
+					}
+				}
+
+				public static int[] WindowsRegQueryInfoKey(int hKey)
+				{
+					int[] result = new int[5] { -1, -1, -1, -1, -1 };
+					try
+					{
+						Microsoft.Win32.RegistryKey key = MapKey(hKey);
+						result[0] = key.SubKeyCount;
+						result[1] = 0;
+						result[2] = key.ValueCount;
+						foreach (string s in key.GetSubKeyNames())
+						{
+							result[3] = Math.Max(result[3], s.Length);
+						}
+						foreach (string s in key.GetValueNames())
+						{
+							result[4] = Math.Max(result[4], s.Length);
+						}
+					}
+					catch (System.Security.SecurityException)
+					{
+						result[1] = 5;
+					}
+					catch (UnauthorizedAccessException)
+					{
+						result[1] = 5;
+					}
+					return result;
+				}
+
+				public static byte[] WindowsRegEnumKeyEx(int hKey, int subKeyIndex, int maxKeyLength)
+				{
+					try
+					{
+						return StringToBytes(MapKey(hKey).GetSubKeyNames()[subKeyIndex]);
+					}
+					catch (System.Security.SecurityException)
+					{
+						return null;
+					}
+					catch (UnauthorizedAccessException)
+					{
+						return null;
+					}
+				}
+
+				public static byte[] WindowsRegEnumValue(int hKey, int valueIndex, int maxValueNameLength)
+				{
+					try
+					{
+						return StringToBytes(MapKey(hKey).GetValueNames()[valueIndex]);
+					}
+					catch (System.Security.SecurityException)
+					{
+						return null;
+					}
+					catch (UnauthorizedAccessException)
+					{
+						return null;
+					}
+				}
+			}
+		}
+
 		public sealed class ResourceBundle
 		{
 			public static object getClassContext()
