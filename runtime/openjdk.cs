@@ -730,7 +730,7 @@ namespace IKVM.NativeCode.java
 					int drives = 0;
 					foreach (string drive in System.IO.Directory.GetLogicalDrives())
 					{
-						char c = Char.ToUpperInvariant(drive[0]);
+						char c = Char.ToUpper(drive[0]);
 						drives |= 1 << (c - 'A');
 					}
 					return drives;
