@@ -25,15 +25,17 @@
 @cli.System.Reflection.AssemblyCopyrightAttribute.Annotation(
     "This software is licensed under the GNU General Public License version 2 + \"Classpath\" exception.\r\n" +
     "See http://www.gnu.org/software/classpath/license.html for details.\r\n" +
+    "Copyright (C) 1995      Colin Plumb\r\n" +
     "Copyright (C) 1995-2005 International Business Machines, Inc.\r\n" +
     "Copyright (C) 1996      Internet Software Consortium\r\n" +
     "Copyright (C) 1996-2007 Free Software Foundation, Inc.\r\n" +
     "Copyright (C) 2002-2007 Jeroen Frijters\r\n" +
     "Copyright (C) 1997-1998 Microstar Software Ltd.\r\n" +
     "Copyright (C) 1994-2007 Sun Microsystems, Inc.\r\n" +
+    "Copyright (C) 1996-1998 Taligent, Inc.\r\n" +
     "Copyright (C) 2001      Thai Open Source Software Center Ltd\r\n" +
     "Copyright (C) 2000      The Internet Society\r\n" +
-    "Copyright (C) 1991-2005 Unicode, Inc.\r\n" +
+    "Copyright (C) 1991-2007 Unicode, Inc.\r\n" +
     "Copyright (C) 2003      Wily Technology, Inc.\r\n" +
     "Copyright (C) 2000-2004 World Wide Web Consortium"
 )
