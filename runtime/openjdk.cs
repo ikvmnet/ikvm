@@ -3787,6 +3787,14 @@ namespace IKVM.NativeCode.java
 
 namespace IKVM.NativeCode.sun.misc
 {
+	public sealed class GC
+	{
+		public static long maxObjectInspectionAge()
+		{
+			return 0;
+		}
+	}
+
 	public sealed class MessageUtils
 	{
 		public static void toStderr(string msg)
@@ -4907,6 +4915,17 @@ namespace IKVM.NativeCode.sun.reflect
 #else
 			return ((IKVM.NativeCode.java.lang.ConstantPoolWriter)constantPoolOop).GetUtf8(index);
 #endif
+		}
+	}
+}
+
+namespace IKVM.NativeCode.sun.rmi.server
+{
+	public sealed class MarshalInputStream
+	{
+		public static object latestUserDefinedLoader()
+		{
+			return java.io.ObjectInputStream.latestUserDefinedLoader();
 		}
 	}
 }
