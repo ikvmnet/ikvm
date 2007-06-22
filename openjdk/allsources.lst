@@ -5508,10 +5508,6 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk-b13/j2se/src/share/classes/sun/text/normalizer/UTF16.java
 ../../openjdk-b13/j2se/src/share/classes/sun/text/normalizer/Utility.java
 ../../openjdk-b13/j2se/src/share/classes/sun/text/normalizer/VersionInfo.java
-../../openjdk-b13/j2se/src/share/classes/sun/text/resources/BreakIteratorInfo.java
-../../openjdk-b13/j2se/src/share/classes/sun/text/resources/BreakIteratorInfo_th.java
-../../openjdk-b13/j2se/src/share/classes/sun/text/resources/BreakIteratorRules.java
-../../openjdk-b13/j2se/src/share/classes/sun/text/resources/BreakIteratorRules_th.java
 ../../openjdk-b13/j2se/src/share/classes/sun/text/resources/CollationData.java
 ../../openjdk-b13/j2se/src/share/classes/sun/text/resources/CollationData_ar.java
 ../../openjdk-b13/j2se/src/share/classes/sun/text/resources/CollationData_be.java
