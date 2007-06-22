@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+#if !OPENJDK
 using System;
 using System.Collections;
 using System.IO;
@@ -1217,3 +1218,4 @@ namespace ikvm.@internal
 	}
 }
 #endif // !FIRST_PASS
+#endif // !OPENJDK
