@@ -51,9 +51,9 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="IKVM.GNU.Classpath">
-      <Name>IKVM.GNU.Classpath</Name>
-      <HintPath>..\bin\IKVM.GNU.Classpath.dll</HintPath>
+    <Reference Include="IKVM.Hybrid.GNU.Classpath.OpenJDK, Version=0.35.2728.21374, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\IKVM.Hybrid.GNU.Classpath.OpenJDK.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>
