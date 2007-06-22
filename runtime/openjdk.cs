@@ -3442,6 +3442,18 @@ namespace IKVM.NativeCode.java
 
 	namespace util
 	{
+		namespace logging
+		{
+			public sealed class FileHandler
+			{
+				public static bool isSetUID()
+				{
+					// TODO
+					return false;
+				}
+			}
+		}
+
 		namespace prefs
 		{
 			public sealed class FileSystemPreferences
