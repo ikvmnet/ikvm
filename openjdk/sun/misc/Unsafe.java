@@ -24,7 +24,12 @@
 
 package sun.misc;
 
+import cli.System.Reflection.BindingFlags;
+import cli.System.Reflection.FieldInfo;
 import gnu.classpath.VMStackWalker;
+import ikvm.lang.CIL;
+import ikvm.runtime.Util;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.security.AccessController;
@@ -37,6 +42,7 @@ public final class Unsafe
     private static final Unsafe instance = new Unsafe();
     private static final ArrayList<Field> fields = new ArrayList<Field>();
     private static final ReflectionFactory factory = (ReflectionFactory)AccessController.doPrivileged(new ReflectionFactory.GetReflectionFactoryAction());
+    private static final FieldInfo accessibleField = Util.getInstanceTypeFromClass(AccessibleObject.class).GetField("override", BindingFlags.wrap(BindingFlags.Instance | BindingFlags.NonPublic));
 
     private Unsafe() {}
 
@@ -57,13 +63,10 @@ public final class Unsafe
 
     public int fieldOffset(Field original)
     {
-	final Field copy = factory.copyField(original);
-	AccessController.doPrivileged(new PrivilegedAction() {
-	    public Object run() {
-		copy.setAccessible(true);
-		return null;
-	    }
-	});
+	Field copy = factory.copyField(original);
+	// we use .NET reflection to directly set the override field (equivalent to calling setAccessible(true)),
+	// because a broken Mauve security manager prevents us from using AccessController.doPrivileged().
+	accessibleField.SetValue(copy, CIL.box_boolean(true));
 	synchronized(fields)
 	{
 	    int id = fields.size();
