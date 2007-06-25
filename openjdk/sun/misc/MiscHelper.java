@@ -31,7 +31,7 @@ class MiscHelper
     // map.xml replaces ExtClassLoader.getExtClassLoader() invocation in Launcher constructor with a call to this method
     static Launcher.ExtClassLoader getExtClassLoader() throws IOException
     {
-	if ("".equals(System.getProperty("java.ext.dirs")))
+	if ("".equals(System.getProperty("java.ext.dirs")) && "".equals(System.getProperty("java.class.path")))
 	{
 	    return null;
 	}
@@ -41,7 +41,7 @@ class MiscHelper
     // map.xml replaces AppClassLoader.getAppClassLoader() invocation in Launcher constructor with a call to this method
     static ClassLoader getAppClassLoader(ClassLoader extcl) throws IOException
     {
-	if (extcl == null && "".equals(System.getProperty("java.class.path")))
+	if (extcl == null)
 	{
 	    Assembly entryAssembly = Assembly.GetEntryAssembly();
 	    if (entryAssembly != null)
