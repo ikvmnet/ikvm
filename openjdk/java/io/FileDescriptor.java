@@ -322,14 +322,23 @@ public final class FileDescriptor {
 	checkOpen();
 	try
 	{
+	    if (false) throw new cli.System.NotSupportedException();
 	    if (false) throw new cli.System.IO.IOException();
+            if (false) throw new cli.System.ObjectDisposedException(null);
 	    return stream.ReadByte();
+	}
+	catch (cli.System.NotSupportedException x)
+	{
+	    throw new IOException(x.getMessage());
 	}
 	catch (cli.System.IO.IOException x)
 	{
 	    throw new IOException(x.getMessage());
 	}
-	// TODO map all the other exceptions as well...
+        catch (cli.System.ObjectDisposedException x)
+        {
+            throw new java.nio.channels.ClosedChannelException();
+        }
     }
 
     int readBytes(byte buf[], int offset, int len) throws IOException
@@ -353,7 +362,9 @@ public final class FileDescriptor {
 
 	try
 	{
+	    if (false) throw new cli.System.NotSupportedException();
 	    if (false) throw new cli.System.IO.IOException();
+            if (false) throw new cli.System.ObjectDisposedException(null);
             int count = stream.Read(buf, offset, len);
 	    if (count == 0)
 	    {
@@ -361,11 +372,18 @@ public final class FileDescriptor {
 	    }
 	    return count;
 	}
+	catch (cli.System.NotSupportedException x)
+	{
+	    throw new IOException(x.getMessage());
+	}
 	catch (cli.System.IO.IOException x)
 	{
 	    throw new IOException(x.getMessage());
 	}
-	// TODO map all the other exceptions as well...
+        catch (cli.System.ObjectDisposedException x)
+        {
+            throw new java.nio.channels.ClosedChannelException();
+        }
     }
 
     long skip(long n) throws IOException
@@ -380,6 +398,7 @@ public final class FileDescriptor {
 	{
 	    if (false) throw new cli.System.IO.IOException();
 	    if (false) throw new cli.System.NotSupportedException();
+            if (false) throw new cli.System.ObjectDisposedException(null);
 	    long cur = stream.get_Position();
 	    long end = stream.Seek(n, SeekOrigin.wrap(SeekOrigin.Current));
 	    return end - cur;
@@ -394,6 +413,10 @@ public final class FileDescriptor {
 	    // support Length and Position
 	    throw new IOException(x1);
 	}
+        catch (cli.System.ObjectDisposedException x)
+        {
+            throw new java.nio.channels.ClosedChannelException();
+        }
     }
 
     int available() throws IOException
@@ -403,6 +426,7 @@ public final class FileDescriptor {
 	{
 	    if (false) throw new cli.System.IO.IOException();
 	    if (false) throw new cli.System.NotSupportedException();
+            if (false) throw new cli.System.ObjectDisposedException(null);
 	    if (stream.get_CanSeek())
 	    {
 		return (int)Math.min(Integer.MAX_VALUE, Math.max(0, stream.get_Length() - stream.get_Position()));
@@ -419,6 +443,10 @@ public final class FileDescriptor {
 	    // support Length and Position
 	    throw new IOException(x1);
 	}
+        catch (cli.System.ObjectDisposedException x)
+        {
+            throw new java.nio.channels.ClosedChannelException();
+        }
     }
 
     void write(int b) throws IOException
@@ -426,17 +454,22 @@ public final class FileDescriptor {
 	checkOpen();
         try
         {
-            if(false) throw new cli.System.IO.IOException();
-            if(false) throw new cli.System.ObjectDisposedException(null);
+	    if (false) throw new cli.System.NotSupportedException();
+            if (false) throw new cli.System.IO.IOException();
+            if (false) throw new cli.System.ObjectDisposedException(null);
             stream.WriteByte((byte)b);
             // NOTE FileStream buffers the output, so we have to flush explicitly
             stream.Flush();
         }
+	catch (cli.System.NotSupportedException x)
+	{
+	    throw new IOException(x.getMessage());
+	}
         catch (cli.System.IO.IOException x)
         {
             throw new IOException(x.getMessage());
         }
-        catch (cli.System.ObjectDisposedException x2)
+        catch (cli.System.ObjectDisposedException x)
         {
             throw new java.nio.channels.ClosedChannelException();
         }
@@ -462,17 +495,22 @@ public final class FileDescriptor {
 
 	try
 	{
+	    if (false) throw new cli.System.NotSupportedException();
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.ObjectDisposedException(null);
 	    stream.Write(buf, offset, len);
 	    // NOTE FileStream buffers the output, so we have to flush explicitly
 	    stream.Flush();
 	}
+	catch (cli.System.NotSupportedException x)
+	{
+	    throw new IOException(x.getMessage());
+	}
 	catch (cli.System.IO.IOException x)
 	{
 	    throw new IOException(x.getMessage());
 	}
-        catch (cli.System.ObjectDisposedException x2)
+        catch (cli.System.ObjectDisposedException x)
         {
             throw new java.nio.channels.ClosedChannelException();
         }
@@ -485,6 +523,7 @@ public final class FileDescriptor {
 	{
 	    if (false) throw new cli.System.IO.IOException();
 	    if (false) throw new cli.System.NotSupportedException();
+            if (false) throw new cli.System.ObjectDisposedException(null);
 	    return stream.get_Position();
 	}
 	catch (cli.System.IO.IOException x)
@@ -495,6 +534,10 @@ public final class FileDescriptor {
 	{
 	    throw new IOException(x1);
 	}
+        catch (cli.System.ObjectDisposedException x)
+        {
+            throw new java.nio.channels.ClosedChannelException();
+        }
     }
 
     void seek(long newPosition) throws IOException
@@ -504,6 +547,7 @@ public final class FileDescriptor {
 	{
 	    if (false) throw new cli.System.IO.IOException();
 	    if (false) throw new cli.System.NotSupportedException();
+            if (false) throw new cli.System.ObjectDisposedException(null);
 	    stream.set_Position(newPosition);
 	}
 	catch (cli.System.IO.IOException x)
@@ -514,6 +558,10 @@ public final class FileDescriptor {
 	{
 	    throw new IOException(x1);
 	}
+        catch (cli.System.ObjectDisposedException x)
+        {
+            throw new java.nio.channels.ClosedChannelException();
+        }
     }
 
     long length() throws IOException
@@ -523,6 +571,7 @@ public final class FileDescriptor {
 	{
 	    if (false) throw new cli.System.IO.IOException();
 	    if (false) throw new cli.System.NotSupportedException();
+            if (false) throw new cli.System.ObjectDisposedException(null);
 	    return stream.get_Length();
 	}
 	catch (cli.System.IO.IOException x)
@@ -533,6 +582,10 @@ public final class FileDescriptor {
 	{
 	    throw new IOException(x1);
 	}
+        catch (cli.System.ObjectDisposedException x)
+        {
+            throw new java.nio.channels.ClosedChannelException();
+        }
     }
 
     void setLength(long newLength) throws IOException
@@ -542,6 +595,7 @@ public final class FileDescriptor {
 	{
 	    if (false) throw new cli.System.IO.IOException();
 	    if (false) throw new cli.System.NotSupportedException();
+            if (false) throw new cli.System.ObjectDisposedException(null);
 	    stream.SetLength(newLength);
 	}
 	catch (cli.System.IO.IOException x)
@@ -552,6 +606,10 @@ public final class FileDescriptor {
 	{
 	    throw new IOException(x1);
 	}
+        catch (cli.System.ObjectDisposedException x)
+        {
+            throw new java.nio.channels.ClosedChannelException();
+        }
     }
 
     void close() throws IOException
