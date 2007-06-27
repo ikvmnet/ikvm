@@ -244,17 +244,6 @@ public final class FileDescriptor {
 	return useCount.decrementAndGet();
     }
 
-    private static String demanglePath(String path)
-    {
-	// HACK for some reason Java accepts: \c:\foo.txt
-	// I don't know what else, but for now lets just support this
-	if(path.length() > 3 && (path.charAt(0) == '\\' || path.charAt(0) == '/') && path.charAt(2) == ':')
-	{
-	    path = path.substring(1);
-	}
-	return path;
-    }
-
     void openReadOnly(String name) throws FileNotFoundException
     {
 	open(name, FileMode.Open, FileAccess.Read);
@@ -275,16 +264,18 @@ public final class FileDescriptor {
 	open(name, FileMode.Append, FileAccess.Write);
     }
 
+    private static native cli.System.IO.Stream open(String name, FileMode fileMode, FileAccess fileAccess)
+	throws cli.System.IO.IOException,
+	    cli.System.Security.SecurityException,
+	    cli.System.UnauthorizedAccessException,
+	    cli.System.ArgumentException,
+	    cli.System.NotSupportedException;
+    
     private void open(String name, int fileMode, int fileAccess) throws FileNotFoundException
     {
 	try
 	{
-	    if (false) throw new cli.System.IO.IOException();
-	    if (false) throw new cli.System.Security.SecurityException();
-	    if (false) throw new cli.System.UnauthorizedAccessException();
-	    if (false) throw new cli.System.ArgumentException();
-	    if (false) throw new cli.System.NotSupportedException();
-	    stream = new FileStream(demanglePath(name), FileMode.wrap(fileMode), FileAccess.wrap(fileAccess), FileShare.wrap(FileShare.ReadWrite), 1, false);
+	    stream = open(name, FileMode.wrap(fileMode), FileAccess.wrap(fileAccess));
 	}
 	catch (cli.System.Security.SecurityException x1)
 	{

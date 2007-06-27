@@ -32,7 +32,16 @@
         <exec program="ecj" commandline="-g -1.5 -nowarn -cp ../classpath/mscorlib.jar${pathsep}../classpath/System.jar @allsources.lst" useruntimeengine="false" />
     </target>
 
-    <target name="IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" depends="classes">
+    <target name="vfs">
+      <!-- This file is generated here, but it is added as a resource to IKVM.Runtime.dll, because Ref.Emit on .NET 1.1 doesn't support adding a raw resource. -->
+      <zip zipfile="vfs.zip">
+          <fileset basedir="${OpenJDK.dir}/control/build/linux-i586/j2re-image">
+               <include name="lib/zi/**/*" />
+          </fileset>
+      </zip>
+    </target>
+
+    <target name="IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" depends="classes vfs">
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
           <arg value="-version:0.35.*" />
           <arg value="${signoption}" />

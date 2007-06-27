@@ -94,6 +94,9 @@ using juProperties = java.util.Properties;
 using gcSystemProperties = gnu.classpath.SystemProperties;
 using irUtil = ikvm.runtime.Util;
 using jsDriverManager = java.sql.DriverManager;
+using juzZipFile = java.util.zip.ZipFile;
+using juzZipEntry = java.util.zip.ZipEntry;
+using jiInputStream = java.io.InputStream;
 #endif
 
 namespace IKVM.NativeCode.java
@@ -123,6 +126,21 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		public sealed class FileDescriptor
+		{
+			public static System.IO.Stream open(String name, System.IO.FileMode fileMode, System.IO.FileAccess fileAccess)
+			{
+				if (VirtualFileSystem.IsVirtualFS(name))
+				{
+					return VirtualFileSystem.Open(name, fileMode, fileAccess);
+				}
+				else
+				{
+					return new System.IO.FileStream(name, fileMode, fileAccess, System.IO.FileShare.ReadWrite, 1, false);
+				}
+			}
+		}
+
 		public sealed class FileSystem
 		{
 			public static object getFileSystem()
@@ -130,13 +148,13 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				if (Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Win32Windows)
+				if (JVM.IsUnix)
 				{
-					return Activator.CreateInstance(typeof(jlClass).Assembly.GetType("java.io.Win32FileSystem"), true);
+					return Activator.CreateInstance(typeof(jlClass).Assembly.GetType("java.io.UnixFileSystem"), true);
 				}
 				else
 				{
-					return Activator.CreateInstance(typeof(jlClass).Assembly.GetType("java.io.UnixFileSystem"), true);
+					return Activator.CreateInstance(typeof(jlClass).Assembly.GetType("java.io.Win32FileSystem"), true);
 				}
 #endif
 			}
@@ -237,9 +255,202 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		sealed class VirtualFileSystem
+		{
+			internal static readonly string RootPath = JVM.IsUnix ? "/.virtual-ikvm-home/" : @"C:\.virtual-ikvm-home\";
+
+			internal static bool IsVirtualFS(string path)
+			{
+				return String.CompareOrdinal(path, 0, RootPath, 0, RootPath.Length) == 0;
+			}
+
+#if !FIRST_PASS
+			// TODO on WHIDBEY this variable can be typed juzZipFile (because Interlocked.CompareExchange<>() is availble there)
+			private static object zipFile;
+
+			private static juzZipEntry GetZipEntry(string name)
+			{
+				if (zipFile == null)
+				{
+					// this is a weird loop back, the vfs.zip resource is loaded from vfs,
+					// because that's the easiest way to construct a ZipFile from a Stream.
+					juzZipFile zf = new juzZipFile(RootPath + "vfs.zip");
+					if (Interlocked.CompareExchange(ref zipFile, zf, null) != null)
+					{
+						zf.close();
+					}
+				}
+				if (IsVirtualFS(name))
+				{
+					name = name.Substring(RootPath.Length);
+				}
+				return ((juzZipFile)zipFile).getEntry(name.Replace('\\', '/'));
+			}
+
+			private sealed class ZipEntryStream : System.IO.Stream
+			{
+				private juzZipFile zipFile;
+				private juzZipEntry entry;
+				private jiInputStream inp;
+				private long position;
+
+				internal ZipEntryStream(juzZipFile zipFile, juzZipEntry entry)
+				{
+					this.zipFile = zipFile;
+					this.entry = entry;
+					inp = zipFile.getInputStream(entry);
+				}
+
+				public override bool CanRead
+				{
+					get { return true; }
+				}
+
+				public override bool CanWrite
+				{
+					get { return false; }
+				}
+
+				public override bool CanSeek
+				{
+					get { return true; }
+				}
+
+				public override long Length
+				{
+					get { return entry.getSize(); }
+				}
+
+				public override int Read(byte[] buffer, int offset, int count)
+				{
+					int read = inp.read(buffer, offset, count);
+					position += read;
+					return read;
+				}
+
+				public override long Position
+				{
+					get
+					{
+						return position;
+					}
+					set
+					{
+						if (value < position)
+						{
+							if (value < 0)
+							{
+								throw new System.IO.IOException("Negative seek offset");
+							}
+							position = 0;
+							inp.close();
+							inp = zipFile.getInputStream(entry);
+						}
+						long skip = value - position;
+						while (skip > 0)
+						{
+							long skipped = inp.skip(skip);
+							if (skipped == 0)
+							{
+								if (position != entry.getSize())
+								{
+									throw new System.IO.IOException("skip failed");
+								}
+								// we're actually at EOF in the InputStream, but we set the virtual position beyond EOF
+								position += skip;
+								break;
+							}
+							position += skipped;
+							skip -= skipped;
+						}
+					}
+				}
+
+				public override void Flush()
+				{
+				}
+
+				public override long Seek(long offset, System.IO.SeekOrigin origin)
+				{
+					switch (origin)
+					{
+						case System.IO.SeekOrigin.Begin:
+							Position = offset;
+							break;
+						case System.IO.SeekOrigin.Current:
+							Position += offset;
+							break;
+						case System.IO.SeekOrigin.End:
+							Position = entry.getSize() + offset;
+							break;
+					}
+					return position;
+				}
+
+				public override void Write(byte[] buffer, int offset, int count)
+				{
+					throw new NotSupportedException();
+				}
+
+				public override void SetLength(long value)
+				{
+					throw new NotSupportedException();
+				}
+
+				public override void Close()
+				{
+ 					base.Close();
+					inp.close();
+				}
+			}
+#endif
+
+			internal static System.IO.Stream Open(string name, System.IO.FileMode fileMode, System.IO.FileAccess fileAccess)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				if (fileMode != System.IO.FileMode.Open || fileAccess != System.IO.FileAccess.Read)
+				{
+					throw new System.IO.IOException("vfs is read-only");
+				}
+				name = name.Substring(RootPath.Length);
+				if (name == "vfs.zip")
+				{
+					return Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
+				}
+				juzZipEntry entry = GetZipEntry(name);
+				if (entry == null)
+				{
+					throw new System.IO.FileNotFoundException("File not found");
+				}
+				return new ZipEntryStream(((juzZipFile)zipFile), entry);
+#endif
+			}
+
+			internal static long GetLength(string path)
+			{
+#if FIRST_PASS
+				return 0;
+#else
+				juzZipEntry entry = GetZipEntry(path);
+				return entry == null ? 0 : entry.getSize();
+#endif
+			}
+
+			internal static bool CheckAccess(string path, int access)
+			{
+#if FIRST_PASS
+				return false;
+#else
+				return access == Win32FileSystem.ACCESS_READ && GetZipEntry(path) != null;
+#endif
+			}
+		}
+
 		public sealed class Win32FileSystem
 		{
-			const int ACCESS_READ = 0x04;
+			internal const int ACCESS_READ = 0x04;
 			const int ACCESS_WRITE = 0x02;
 			const int ACCESS_EXECUTE = 0x01;
 
@@ -359,6 +570,10 @@ namespace IKVM.NativeCode.java
 			public static bool checkAccess(object _this, object f, int access)
 			{
 				string path = GetPathFromFile(f);
+				if (VirtualFileSystem.IsVirtualFS(path))
+				{
+					return VirtualFileSystem.CheckAccess(path, access);
+				}
 				bool ok = true;
 				if ((access & (ACCESS_READ | ACCESS_EXECUTE)) != 0)
 				{
@@ -455,7 +670,12 @@ namespace IKVM.NativeCode.java
 			{
 				try
 				{
-					return new System.IO.FileInfo(GetPathFromFile(f)).Length;
+					string path = GetPathFromFile(f);
+					if (VirtualFileSystem.IsVirtualFS(path))
+					{
+						return VirtualFileSystem.GetLength(path);
+					}
+					return new System.IO.FileInfo(path).Length;
 				}
 				catch (System.Security.SecurityException)
 				{
@@ -2679,6 +2899,9 @@ namespace IKVM.NativeCode.java
 				{
 					p.put(key, p1.getProperty(key));
 				}
+				// TODO instead of setting it here, we should set it before the user specified properties are processed
+				// TODO we should chop off the trailing separator
+				p.put("java.home", io.VirtualFileSystem.RootPath);
 #endif
 				return props;
 			}
@@ -3761,10 +3984,261 @@ namespace IKVM.NativeCode.java
 		{
 			public static string getSystemTimeZoneID(string javaHome, string country)
 			{
-				// TODO we need to return the corresponding Java name for TimeZone.CurrentTimeZone.StandardName.
-				// The mappings are defined in $JAVA_HOME/lib/tzmappings, but we need the entire $JAVA_HOME/lib/zi
-				// directory tree before this is useless, because those files contain the actual time zone definitions.
-				return null;
+				// HACK this is very lame and probably won't work on localized windows versions
+				// (the switch was generated from the contents of $JAVA_HOME/lib/tzmappings)
+				switch (SystemTimeZone.CurrentTimeZone.StandardName)
+				{
+					case "Romance":
+					case "Romance Standard Time":
+						return "Europe/Paris";
+					case "Warsaw":
+						return "Europe/Warsaw";
+					case "Central Europe":
+					case "Central Europe Standard Time":
+					case "Prague Bratislava":
+						return "Europe/Prague";
+					case "W. Central Africa Standard Time":
+						return "Africa/Luanda";
+					case "FLE":
+					case "FLE Standard Time":
+						return "Europe/Helsinki";
+					case "GFT":
+					case "GFT Standard Time":
+					case "GTB":
+					case "GTB Standard Time":
+						return "Europe/Athens";
+					case "Israel":
+					case "Israel Standard Time":
+						return "Asia/Jerusalem";
+					case "Arab":
+					case "Arab Standard Time":
+						return "Asia/Riyadh";
+					case "Arabic Standard Time":
+						return "Asia/Baghdad";
+					case "E. Africa":
+					case "E. Africa Standard Time":
+						return "Africa/Nairobi";
+					case "Saudi Arabia":
+					case "Saudi Arabia Standard Time":
+						return "Asia/Riyadh";
+					case "Iran":
+					case "Iran Standard Time":
+						return "Asia/Tehran";
+					case "Afghanistan":
+					case "Afghanistan Standard Time":
+						return "Asia/Kabul";
+					case "India":
+					case "India Standard Time":
+						return "Asia/Calcutta";
+					case "Myanmar Standard Time":
+						return "Asia/Rangoon";
+					case "Nepal Standard Time":
+						return "Asia/Katmandu";
+					case "Sri Lanka":
+					case "Sri Lanka Standard Time":
+						return "Asia/Colombo";
+					case "Beijing":
+					case "China":
+					case "China Standard Time":
+						return "Asia/Shanghai";
+					case "AUS Central":
+					case "AUS Central Standard Time":
+						return "Australia/Darwin";
+					case "Cen. Australia":
+					case "Cen. Australia Standard Time":
+						return "Australia/Adelaide";
+					case "Vladivostok":
+					case "Vladivostok Standard Time":
+						return "Asia/Vladivostok";
+					case "West Pacific":
+					case "West Pacific Standard Time":
+						return "Pacific/Guam";
+					case "E. South America":
+					case "E. South America Standard Time":
+						return "America/Sao_Paulo";
+					case "Greenland Standard Time":
+						return "America/Godthab";
+					case "Newfoundland":
+					case "Newfoundland Standard Time":
+						return "America/St_Johns";
+					case "Pacific SA":
+					case "Pacific SA Standard Time":
+						return "America/Santiago";
+					case "SA Western":
+					case "SA Western Standard Time":
+						return "America/Caracas";
+					case "SA Pacific":
+					case "SA Pacific Standard Time":
+						return "America/Bogota";
+					case "US Eastern":
+					case "US Eastern Standard Time":
+						return "America/Indianapolis";
+					case "Central America Standard Time":
+						return "America/Regina";
+					case "Mexico":
+					case "Mexico Standard Time":
+						return "America/Mexico_City";
+					case "Canada Central":
+					case "Canada Central Standard Time":
+						return "America/Regina";
+					case "US Mountain":
+					case "US Mountain Standard Time":
+						return "America/Phoenix";
+					case "GMT":
+					case "GMT Standard Time":
+						return "Europe/London";
+					case "Ekaterinburg":
+					case "Ekaterinburg Standard Time":
+						return "Asia/Yekaterinburg";
+					case "West Asia":
+					case "West Asia Standard Time":
+						return "Asia/Karachi";
+					case "Central Asia":
+					case "Central Asia Standard Time":
+						return "Asia/Dhaka";
+					case "N. Central Asia Standard Time":
+						return "Asia/Novosibirsk";
+					case "Bangkok":
+					case "Bangkok Standard Time":
+						return "Asia/Bangkok";
+					case "North Asia Standard Time":
+						return "Asia/Krasnoyarsk";
+					case "SE Asia":
+					case "SE Asia Standard Time":
+						return "Asia/Bangkok";
+					case "North Asia East Standard Time":
+						return "Asia/Ulaanbaatar";
+					case "Singapore":
+					case "Singapore Standard Time":
+						return "Asia/Singapore";
+					case "Taipei":
+					case "Taipei Standard Time":
+						return "Asia/Taipei";
+					case "W. Australia":
+					case "W. Australia Standard Time":
+						return "Australia/Perth";
+					case "Korea":
+					case "Korea Standard Time":
+						return "Asia/Seoul";
+					case "Tokyo":
+					case "Tokyo Standard Time":
+						return "Asia/Tokyo";
+					case "Yakutsk":
+					case "Yakutsk Standard Time":
+						return "Asia/Yakutsk";
+					case "Central European":
+					case "Central European Standard Time":
+						return "Europe/Belgrade";
+					case "W. Europe":
+					case "W. Europe Standard Time":
+						return "Europe/Berlin";
+					case "Tasmania":
+					case "Tasmania Standard Time":
+						return "Australia/Hobart";
+					case "AUS Eastern":
+					case "AUS Eastern Standard Time":
+						return "Australia/Sydney";
+					case "E. Australia":
+					case "E. Australia Standard Time":
+						return "Australia/Brisbane";
+					case "Sydney Standard Time":
+						return "Australia/Sydney";
+					case "Central Pacific":
+					case "Central Pacific Standard Time":
+						return "Pacific/Guadalcanal";
+					case "Dateline":
+					case "Dateline Standard Time":
+						return "GMT-1200";
+					case "Fiji":
+					case "Fiji Standard Time":
+						return "Pacific/Fiji";
+					case "Samoa":
+					case "Samoa Standard Time":
+						return "Pacific/Apia";
+					case "Hawaiian":
+					case "Hawaiian Standard Time":
+						return "Pacific/Honolulu";
+					case "Alaskan":
+					case "Alaskan Standard Time":
+						return "America/Anchorage";
+					case "Pacific":
+					case "Pacific Standard Time":
+						return "America/Los_Angeles";
+					case "Mexico Standard Time 2":
+						return "America/Chihuahua";
+					case "Mountain":
+					case "Mountain Standard Time":
+						return "America/Denver";
+					case "Central":
+					case "Central Standard Time":
+						return "America/Chicago";
+					case "Eastern":
+					case "Eastern Standard Time":
+						return "America/New_York";
+					case "E. Europe":
+					case "E. Europe Standard Time":
+						return "Europe/Minsk";
+					case "Egypt":
+					case "Egypt Standard Time":
+						return "Africa/Cairo";
+					case "South Africa":
+					case "South Africa Standard Time":
+						return "Africa/Harare";
+					case "Atlantic":
+					case "Atlantic Standard Time":
+						return "America/Halifax";
+					case "SA Eastern":
+					case "SA Eastern Standard Time":
+						return "America/Buenos_Aires";
+					case "Mid-Atlantic":
+					case "Mid-Atlantic Standard Time":
+						return "Atlantic/South_Georgia";
+					case "Azores":
+					case "Azores Standard Time":
+						return "Atlantic/Azores";
+					case "Cape Verde Standard Time":
+						return "Atlantic/Cape_Verde";
+					case "Russian":
+					case "Russian Standard Time":
+						return "Europe/Moscow";
+					case "New Zealand":
+					case "New Zealand Standard Time":
+						return "Pacific/Auckland";
+					case "Tonga Standard Time":
+						return "Pacific/Tongatapu";
+					case "Arabian":
+					case "Arabian Standard Time":
+						return "Asia/Muscat";
+					case "Caucasus":
+					case "Caucasus Standard Time":
+						return "Asia/Yerevan";
+					case "Greenwich":
+					case "Greenwich Standard Time":
+						return "GMT";
+					case "Central Brazilian Standard Time":
+						return "America/Manaus";
+					case "Central Standard Time (Mexico)":
+						return "America/Mexico_City";
+					case "Georgian Standard Time":
+						return "Asia/Tbilisi";
+					case "Mountain Standard Time (Mexico)":
+						return "America/Chihuahua";
+					case "Namibia Standard Time":
+						return "Africa/Windhoek";
+					case "Pacific Standard Time (Mexico)":
+						return "America/Tijuana";
+					case "Western Brazilian Standard Time":
+						return "America/Rio_Branco";
+					case "Azerbaijan Standard Time":
+						return "Asia/Baku";
+					case "Jordan Standard Time":
+						return "Asia/Amman";
+					case "Middle East Standard Time":
+						return "Asia/Beirut";
+					default:
+						// this means fall back to GMT offset
+						return null;
+				}
 			}
 
 			public static string getSystemGMTOffsetID()

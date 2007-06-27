@@ -60,6 +60,9 @@
                 <include name="verifier.cs" />
                 <include name="vm.cs" />
             </sources>
+            <resources>
+                <include if="${hybrid and not first-pass}" name="../openjdk/vfs.zip" />
+            </resources>
             <references>
                 <include unless="${first-pass or hybrid}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
                 <include unless="${first-pass or not hybrid}" name="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" asis="true" />
