@@ -182,7 +182,12 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return Environment.OSVersion.ToString().IndexOf("Unix") >= 0;
+#if WHIDBEY
+				return Environment.OSVersion.Platform == PlatformID.Unix;
+#else
+				PlatformID pid = Environment.OSVersion.Platform;
+				return pid != PlatformID.Win32NT && pid != PlatformID.Win32S && pid != PlatformID.Win32Windows && pid != PlatformID.WinCE;
+#endif
 			}
 		}
 	
