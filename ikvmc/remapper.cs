@@ -737,7 +737,8 @@ namespace IKVM.Internal.MapXml
 		{
 			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
-			fw.EmitGet(ilgen);
+			// we don't use fw.EmitGet because we don't want automatic unboxing and whatever
+			ilgen.Emit(OpCodes.Ldfld, fw.GetField());
 		}
 	}
 
@@ -763,7 +764,8 @@ namespace IKVM.Internal.MapXml
 			{
 				FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
 				fw.Link();
-				fw.EmitGet(ilgen);
+				// we don't use fw.EmitGet because we don't want automatic unboxing and whatever
+				ilgen.Emit(OpCodes.Ldsfld, fw.GetField());
 			}
 		}
 	}
