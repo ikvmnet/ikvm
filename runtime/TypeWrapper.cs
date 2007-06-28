@@ -3667,6 +3667,7 @@ namespace IKVM.Internal
 					AddAccessStubFields(fieldsArray, wrapper);
 					fields = (FieldWrapper[])fieldsArray.ToArray(typeof(FieldWrapper));
 				}
+				((AotTypeWrapper)wrapper).AddMapXmlFields(ref fields);
 #endif
 				wrapper.SetFields(fields);
 			}
@@ -4346,8 +4347,41 @@ namespace IKVM.Internal
 					((AotAccessStubFieldWrapper)fw).DoLink(typeBuilder);
 					return null;
 				}
+				int fieldIndex = GetFieldIndex(fw);
+#if STATIC_COMPILER
+				if(fieldIndex >= classFile.Fields.Length)
+				{
+					// this must be a field defined in map.xml
+					FieldAttributes fieldAttribs = 0;
+					if(fw.IsPublic)
+					{
+						fieldAttribs |= FieldAttributes.Public;
+					}
+					else if(fw.IsProtected)
+					{
+						fieldAttribs |= FieldAttributes.FamORAssem;
+					}
+					else if(fw.IsPrivate)
+					{
+						fieldAttribs |= FieldAttributes.Private;
+					}
+					else
+					{
+						fieldAttribs |= FieldAttributes.Assembly;
+					}
+					if(fw.IsStatic)
+					{
+						fieldAttribs |= FieldAttributes.Static;
+					}
+					if(fw.IsFinal)
+					{
+						fieldAttribs |= FieldAttributes.InitOnly;
+					}
+					return typeBuilder.DefineField(fw.Name, fw.FieldTypeWrapper.TypeAsSignatureType, fieldAttribs);
+				}
+#endif // STATIC_COMPILER
 				FieldBuilder field;
-				ClassFile.Field fld = classFile.Fields[GetFieldIndex(fw)];
+				ClassFile.Field fld = classFile.Fields[fieldIndex];
 				string fieldName = fld.Name;
 				TypeWrapper typeWrapper = fw.FieldTypeWrapper;
 				Type type = typeWrapper.TypeAsSignatureType;
@@ -7366,6 +7400,7 @@ namespace IKVM.Internal
 		}
 
 #if STATIC_COMPILER
+		protected abstract void AddMapXmlFields(ref FieldWrapper[] fields);
 		protected abstract bool EmitMapXmlMethodBody(ILGenerator ilgen, ClassFile f, ClassFile.Method m);
 		protected abstract void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, FieldWrapper[] fields, MethodWrapper[] methods);
 		protected abstract MethodBuilder DefineGhostMethod(string name, MethodAttributes attribs, MethodWrapper mw);

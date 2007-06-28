@@ -2435,6 +2435,11 @@ namespace IKVM.Internal
 				return 1;
 			}
 
+			if(map != null)
+			{
+				loader.LoadMapXml(map);
+			}
+
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
 			ArrayList allwrappers = new ArrayList();
 			foreach(string s in new ArrayList(h.Keys))
@@ -2520,7 +2525,6 @@ namespace IKVM.Internal
 						AttributeHelper.SetExceptionIsUnsafeForMapping(tw.TypeAsBuilder);
 					}
 				}
-				loader.LoadMapXml(map);
 				Tracer.Info(Tracer.Compiler, "Loading remapped types (2)");
 				loader.FinishRemappedTypes();
 			}
