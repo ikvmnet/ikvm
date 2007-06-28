@@ -3027,6 +3027,18 @@ namespace IKVM.NativeCode.java
 								interruptableWait = false;
 								if (interruptPending)
 								{
+									// HACK if there is a pending Interrupt (on the .NET thread), we need to consume that
+									// (if there was no contention on "lock (this)" above the interrupted state isn't checked) 
+									try
+									{
+										SystemThreadingThread t = SystemThreadingThread.CurrentThread;
+										// the obvious thing to do would be t.Interrupt() / t.Join(), but for some reason that doesn't work (probably a CLR bug)
+										// so we waste a time slice... sigh.
+										t.Join(1);
+									}
+									catch (SystemThreadingThreadInterruptedException)
+									{
+									}
 									interruptPending = false;
 									throw new jlInterruptedException();
 								}
@@ -3580,26 +3592,6 @@ namespace IKVM.NativeCode.java
 			public static void jniDetach()
 			{
 				Thread.DetachThread();
-			}
-
-			public static void park(Object blocker, long nanos)
-			{
-				throw new NotImplementedException();
-			}
-
-			public static void park(long nanos)
-			{
-				throw new NotImplementedException();
-			}
-
-			public static void unpark(object javaThread)
-			{
-				throw new NotImplementedException();
-			}
-
-			public static Object getBlocker(object javaThread)
-			{
-				throw new NotImplementedException();
 			}
 
 			public static SystemThreadingThread getNativeThread(object javaThread)

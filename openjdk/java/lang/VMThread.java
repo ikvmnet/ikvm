@@ -54,15 +54,7 @@ public final class VMThread
 	}
     }
 
-    public static native void park(Object blocker, long nanos);
-
-    public static native void park(long nanos);
-
-    public static native void unpark(Thread t);
-
-    public static native Object getBlocker(Thread t);
-
+    // these are used by gnu.java.lang.management.VMThreadMXBeanImpl
     public static native cli.System.Threading.Thread getNativeThread(Thread t);
-
     public static native Thread getThreadFromId(long id);
 }

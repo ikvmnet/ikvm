@@ -4404,7 +4404,6 @@
 ../classpath/java/util/concurrent/atomic/AtomicLongArray.java
 ../classpath/java/util/concurrent/atomic/AtomicReference.java
 ../classpath/java/util/concurrent/atomic/AtomicReferenceArray.java
-../classpath/java/util/concurrent/locks/LockSupport.java
 ../classpath/sun/misc/Ref.java
 AssemblyInfo.java
 ikvm/internal/AnnotationAttributeBase.java
@@ -4420,6 +4419,7 @@ java/lang/StringHelper.java
 java/lang/VMThread.java
 java/lang/ref/Reference.java
 java/nio/channels/VMChannels.java
+java/util/concurrent/locks/LockSupport.java
 java/util/jar/JarEntry.java
 sun/misc/FileURLMapper.java
 sun/misc/MiscHelper.java

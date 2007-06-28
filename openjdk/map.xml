@@ -1191,11 +1191,59 @@
     </class>
     <class name="java.lang.Thread">
       <field name="vmThread" sig="Ljava.lang.Object;" modifiers="private" />
+      <field name="parkLock" sig="Ljava.lang.Object;" modifiers="" />
+      <field name="parkState" sig="I" modifiers="" />
       <method name="getState" sig="()Ljava.lang.Thread$State;">
         <body>
           <ldarg_0 />
           <call type="IKVM.NativeCode.java.lang.Thread" name="getState" sig="(Ljava.lang.Object;)Ljava.lang.Object;" />
           <castclass class="java.lang.Thread$State" />
+          <ret />
+        </body>
+      </method>
+    </class>
+    <class name="java.util.concurrent.locks.LockSupport">
+      <method name="cmpxchgParkState" sig="(Ljava.lang.Thread;II)I">
+        <body>
+          <ldarg_0 />
+          <ldflda class="java.lang.Thread" name="parkState" sig="I" />
+          <ldarg_1 />
+          <ldarg_2 />
+          <call type="System.Threading.Interlocked" name="CompareExchange" sig="System.Int32&amp;;System.Int32;System.Int32" />
+          <ret />
+        </body>
+      </method>
+      <method name="getBlocker" sig="(Ljava.lang.Thread;)Ljava.lang.Object;">
+        <body>
+          <ldarg_0 />
+          <volatile />
+          <ldfld class="java.lang.Thread" name="parkBlocker" sig="Ljava.lang.Object;" />
+          <ret />
+        </body>
+      </method>
+      <method name="setBlocker" sig="(Ljava.lang.Thread;Ljava.lang.Object;)V">
+        <body>
+          <ldarg_0 />
+          <ldarg_1 />
+          <volatile />
+          <stfld class="java.lang.Thread" name="parkBlocker" sig="Ljava.lang.Object;" />
+          <ret />
+        </body>
+      </method>
+      <method name="getParkLock" sig="(Ljava.lang.Thread;)Ljava.lang.Object;">
+        <body>
+          <ldarg_0 />
+          <volatile />
+          <ldfld class="java.lang.Thread" name="parkLock" sig="Ljava.lang.Object;" />
+          <ret />
+        </body>
+      </method>
+      <method name="setParkLock" sig="(Ljava.lang.Thread;Ljava.lang.Object;)V">
+        <body>
+          <ldarg_0 />
+          <ldarg_1 />
+          <volatile />
+          <stfld class="java.lang.Thread" name="parkLock" sig="Ljava.lang.Object;" />
           <ret />
         </body>
       </method>
