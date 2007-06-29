@@ -446,6 +446,23 @@ namespace IKVM.NativeCode.java
 				return access == Win32FileSystem.ACCESS_READ && GetZipEntry(path) != null;
 #endif
 			}
+
+			internal static int GetBooleanAttributes(string path)
+			{
+#if FIRST_PASS
+				return 0;
+#else
+				juzZipEntry entry = GetZipEntry(path);
+				if (entry == null)
+				{
+					return 0;
+				}
+				const int BA_EXISTS = 0x01;
+				const int BA_REGULAR = 0x02;
+				const int BA_DIRECTORY = 0x04;
+				return entry.isDirectory() ? BA_EXISTS | BA_DIRECTORY : BA_EXISTS | BA_REGULAR;
+#endif
+			}
 		}
 
 		public sealed class Win32FileSystem
@@ -529,7 +546,12 @@ namespace IKVM.NativeCode.java
 			{
 				try
 				{
-					System.IO.FileAttributes attr = System.IO.File.GetAttributes(GetPathFromFile(f));
+					string path = GetPathFromFile(f);
+					if (VirtualFileSystem.IsVirtualFS(path))
+					{
+						return VirtualFileSystem.GetBooleanAttributes(path);
+					}
+					System.IO.FileAttributes attr = System.IO.File.GetAttributes(path);
 					const int BA_EXISTS = 0x01;
 					const int BA_REGULAR = 0x02;
 					const int BA_DIRECTORY = 0x04;

@@ -37,6 +37,7 @@
       <zip zipfile="vfs.zip">
           <fileset basedir="${OpenJDK.dir}/control/build/linux-i586/j2re-image">
                <include name="lib/zi/**/*" />
+               <include name="lib/logging.properties" />
           </fileset>
       </zip>
     </target>
