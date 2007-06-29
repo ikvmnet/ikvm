@@ -323,9 +323,22 @@ namespace IKVM.NativeCode.java
 
 				public override int Read(byte[] buffer, int offset, int count)
 				{
-					int read = inp.read(buffer, offset, count);
-					position += read;
-					return read;
+					// For compatibility with real file i/o, we try to read the requested number
+					// of bytes, instead of returning earlier if the underlying InputStream does so.
+					int totalRead = 0;
+					while (count > 0)
+					{
+						int read = inp.read(buffer, offset, count);
+						if (read <= 0)
+						{
+							break;
+						}
+						offset += read;
+						count -= read;
+						totalRead += read;
+						position += read;
+					}
+					return totalRead;
 				}
 
 				public override long Position
