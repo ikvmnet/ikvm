@@ -4418,7 +4418,9 @@ java/lang/ProcessImpl.java
 java/lang/StringHelper.java
 java/lang/VMThread.java
 java/lang/ref/Reference.java
+java/lang/reflect/ReflectHelper.java
 java/nio/channels/VMChannels.java
+java/util/concurrent/locks/AbstractQueuedSynchronizer.java
 java/util/concurrent/locks/LockSupport.java
 java/util/jar/JarEntry.java
 sun/misc/FileURLMapper.java
@@ -5203,7 +5205,6 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk-b13/j2se/src/share/classes/java/util/concurrent/atomic/AtomicStampedReference.java
 ../../openjdk-b13/j2se/src/share/classes/java/util/concurrent/locks/AbstractOwnableSynchronizer.java
 ../../openjdk-b13/j2se/src/share/classes/java/util/concurrent/locks/AbstractQueuedLongSynchronizer.java
-../../openjdk-b13/j2se/src/share/classes/java/util/concurrent/locks/AbstractQueuedSynchronizer.java
 ../../openjdk-b13/j2se/src/share/classes/java/util/concurrent/locks/Condition.java
 ../../openjdk-b13/j2se/src/share/classes/java/util/concurrent/locks/Lock.java
 ../../openjdk-b13/j2se/src/share/classes/java/util/concurrent/locks/ReadWriteLock.java
