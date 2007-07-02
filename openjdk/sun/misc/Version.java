@@ -46,9 +46,9 @@ public class Version {
     }
 
     public static void init() {
-	System.setProperty("java.version", java_version);
-	System.setProperty("java.runtime.version", java_runtime_version);
-	System.setProperty("java.runtime.name", java_runtime_name);
+	//System.setProperty("java.version", java_version);
+	//System.setProperty("java.runtime.version", java_runtime_version);
+	//System.setProperty("java.runtime.name", java_runtime_name);
     }
 
     private static boolean versionsInitialized = false;
