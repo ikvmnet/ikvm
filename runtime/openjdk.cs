@@ -196,10 +196,15 @@ namespace IKVM.NativeCode.java
 						TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
 						if (tw != null)
 						{
-							object javaClassLoader = tw.GetClassLoader().GetJavaClassLoader();
-							if (javaClassLoader != null)
+							ClassLoaderWrapper classLoader = tw.GetClassLoader();
+							AssemblyClassLoader acl = classLoader as AssemblyClassLoader;
+							if (acl == null || acl.Assembly != typeof(object).Assembly)
 							{
-								return javaClassLoader;
+								object javaClassLoader = classLoader.GetJavaClassLoader();
+								if (javaClassLoader != null)
+								{
+									return javaClassLoader;
+								}
 							}
 						}
 					}
@@ -261,12 +266,26 @@ namespace IKVM.NativeCode.java
 
 			internal static bool IsVirtualFS(string path)
 			{
-				return String.CompareOrdinal(path, 0, RootPath, 0, RootPath.Length) == 0;
+				return (path.Length == RootPath.Length - 1 && String.CompareOrdinal(path, 0, RootPath, 0, RootPath.Length - 1) == 0)
+					|| String.CompareOrdinal(path, 0, RootPath, 0, RootPath.Length) == 0;
 			}
 
 #if !FIRST_PASS
 			// TODO on WHIDBEY this variable can be typed juzZipFile (because Interlocked.CompareExchange<>() is availble there)
 			private static object zipFile;
+
+			private class VfsEntry : juzZipEntry
+			{
+				internal VfsEntry()
+					: base("")
+				{
+				}
+
+				public override bool isDirectory()
+				{
+					return true;
+				}
+			}
 
 			private static juzZipEntry GetZipEntry(string name)
 			{
@@ -282,7 +301,14 @@ namespace IKVM.NativeCode.java
 				}
 				if (IsVirtualFS(name))
 				{
-					name = name.Substring(RootPath.Length);
+					if (name.Length < RootPath.Length)
+					{
+						return new VfsEntry();
+					}
+					else
+					{
+						name = name.Substring(RootPath.Length);
+					}
 				}
 				return ((juzZipFile)zipFile).getEntry(name.Replace('\\', '/'));
 			}
@@ -1804,6 +1830,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
+				//Console.WriteLine("forName: " + name + ", loader = " + loader);
 				TypeWrapper tw = null;
 				if (name.IndexOf(',') > 0)
 				{
@@ -4650,6 +4677,14 @@ namespace IKVM.NativeCode.sun.reflect
 					fw.DeclaringType.RunClassInit();
 					runInit = false;
 				}
+				if (!fw.IsStatic && !fw.DeclaringType.IsInstance(obj))
+				{
+					if (obj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					throw new jlIllegalArgumentException();
+				}
 				return fw.GetValue(obj);
 			}
 
@@ -4665,6 +4700,14 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					fw.DeclaringType.RunClassInit();
 					runInit = false;
+				}
+				if (!fw.IsStatic && !fw.DeclaringType.IsInstance(obj))
+				{
+					if (obj == null)
+					{
+						throw new jlNullPointerException();
+					}
+					throw new jlIllegalArgumentException();
 				}
 				fw.SetValue(obj, value);
 			}
