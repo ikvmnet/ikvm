@@ -243,6 +243,9 @@ final class VMAccessController
     ProtectionDomain[] result = (ProtectionDomain[])
       domains.toArray(new ProtectionDomain[domains.size()]);
 
+    if (result.length == 0)
+      result = DEFAULT_CONTEXT.getProtectionDomains();
+
     // Intersect the derived protection domain with the context supplied
     // to doPrivileged.
     if (context != null)
