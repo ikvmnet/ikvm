@@ -1,8 +1,12 @@
 <?xml version="1.0"?>
 <project name="awt" default="awt">
+    <target name="hybrid">
+        <property name="hybrid" value="true" />
+        <call target="awt" />
+    </target>
     <target name="awt">
         <property overwrite="false" name="signed" value="" />
-        <property overwrite="false" name="hybrid" value="" />
+        <property overwrite="false" name="hybrid" value="false" />
         <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE;${signed}">
             <sources>
                 <include name="*.cs" />
