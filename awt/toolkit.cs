@@ -54,6 +54,7 @@ namespace ikvm.awt
 	delegate java.awt.Dimension GetDimension();
     delegate Rectangle ConvertRectangle(Rectangle r);
     delegate Point ConvertPoint(Point p);
+	delegate object GetObject();
 
 	class UndecoratedForm : Form
 	{
@@ -528,6 +529,18 @@ namespace ikvm.awt
 		protected override DesktopPeer createDesktopPeer(java.awt.Desktop target)
 		{
 			return new NetDesktopPeer();
+		}
+
+		public override bool isModalExclusionTypeSupported(java.awt.Dialog.ModalExclusionType modalExclusionType)
+		{
+			// TODO
+			return false;
+		}
+
+		public override bool isModalityTypeSupported(java.awt.Dialog.ModalityType modalityType)
+		{
+			// TODO
+			return false;
 		}
 	}
 
@@ -1079,6 +1092,11 @@ namespace ikvm.awt
 		private void requestFocusImpl()
 		{
 			control.Focus();
+		}
+
+		public bool requestFocus(java.awt.Component request, bool temporary, bool allowWindowFocus, long time, sun.awt.CausedFocusEvent.Cause cause)
+		{
+			return requestFocus(request, temporary, allowWindowFocus, time);
 		}
 
         /// <summary>
@@ -1833,6 +1851,31 @@ namespace ikvm.awt
 		{
 			return control.Focus();
 		}
+
+		public void setAlwaysOnTop(bool alwaysOnTop)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void updateFocusableWindowState()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setModalBlocked(java.awt.Dialog blocker, bool blocked)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void updateMinimumSize()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void updateIconImages()
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class NetFramePeer : NetWindowPeer, FramePeer
@@ -1928,10 +1971,25 @@ namespace ikvm.awt
 			throw new NotImplementedException();
 		}
 
+		private void SetBoundsImpl(int x, int y, int width, int height)
+		{
+			control.Bounds = new Rectangle(x, y, width, height);
+		}
+
 		public void setBoundsPrivate(int x, int y, int width, int height)
 		{
-			// TODO use control.Invoke
-			control.Bounds = new Rectangle(x, y, width, height);
+			control.Invoke(new SetXYWH(SetBoundsImpl), x, y, width, height);
+		}
+
+		private object GetBoundsImpl()
+		{
+			Rectangle r = control.Bounds;
+			return new java.awt.Rectangle(r.Left, r.Top, r.Width, r.Height);
+		}
+
+		public java.awt.Rectangle getBoundsPrivate()
+		{
+			return (java.awt.Rectangle)control.Invoke(new GetObject(GetBoundsImpl));
 		}
 	}
 

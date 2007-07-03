@@ -4940,6 +4940,7 @@
 ../../classpath/org/omg/SendingContext/RunTime.java
 ../../classpath/org/omg/SendingContext/RunTimeOperations.java
 ../../classpath/org/omg/stub/java/rmi/_Remote_Stub.java
+../../classpath/sun/awt/CausedFocusEvent.java
 ../../classpath/sun/misc/Service.java
 ../../classpath/sun/misc/ServiceConfigurationError.java
 ../../classpath/sun/reflect/annotation/AnnotationInvocationHandler.java

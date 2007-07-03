@@ -42,6 +42,10 @@ namespace ikvm.awt
             screen = ((NetGraphicsDevice)device).screen;
         }
 
+		public void dispose()
+		{
+		}
+
         public int getRGBPixel(int x, int y)
         {
 #if WHIDBEY

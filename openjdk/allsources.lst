@@ -4343,6 +4343,7 @@
 ../../classpath/org/omg/SendingContext/RunTime.java
 ../../classpath/org/omg/SendingContext/RunTimeOperations.java
 ../../classpath/org/omg/stub/java/rmi/_Remote_Stub.java
+../../classpath/sun/awt/CausedFocusEvent.java
 ../classpath/gnu/classpath/Configuration.java
 ../classpath/gnu/classpath/PointerUtil.java
 ../classpath/gnu/classpath/VMStackWalker.java

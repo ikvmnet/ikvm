@@ -161,7 +161,7 @@ namespace ikvm.awt
             netFont = J2C.ConvertFont(name, getStyle(null), getSize(null));
         }
 
-        public override bool canDisplay(java.awt.Font font, char param2)
+        public override bool canDisplay(java.awt.Font font, int param2)
         {
             //HACK There is no equivalent in C# http://msdn2.microsoft.com/en-us/library/sf4dhbw8(VS.80).aspx
             return true;
