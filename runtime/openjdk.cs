@@ -2488,8 +2488,19 @@ namespace IKVM.NativeCode.java
 
 			public static object retrieveDirectives()
 			{
+#if FIRST_PASS
+				return null;
+#else
+				Type type = typeof(jlClass).Assembly.GetType("java.lang.AssertionStatusDirectives");
+				object obj = Activator.CreateInstance(type, true);
 				// TODO
-				throw new NotImplementedException();
+				type.GetField("classes", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, new string[0]);
+				type.GetField("classEnabled", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, new bool[0]);
+				type.GetField("packages", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, new string[0]);
+				type.GetField("packageEnabled", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, new bool[0]);
+				type.GetField("deflt", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, false);
+				return obj;
+#endif
 			}
 		}
 
