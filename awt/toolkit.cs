@@ -1978,7 +1978,7 @@ namespace ikvm.awt
 
 		public void setBoundsPrivate(int x, int y, int width, int height)
 		{
-			control.Invoke(new SetXYWH(SetBoundsImpl), x, y, width, height);
+			control.Invoke(new SetXYWH(SetBoundsImpl), new object[] { x, y, width, height });
 		}
 
 		private object GetBoundsImpl()
