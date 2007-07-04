@@ -926,7 +926,7 @@
 			<clinit>
 				<body>
           <ldnull />
-					<newobj class="java.lang.String$CaseInsensitiveComparator" name="&lt;init&gt;" sig="(Ljava.lang.String$CaseInsensitiveComparator;)V" />
+					<newobj class="java.lang.String$CaseInsensitiveComparator" name="&lt;init&gt;" sig="(Ljava.lang.String$1;)V" />
 					<stsfld class="java.lang.String" name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" />
 					<ret />
 				</body>

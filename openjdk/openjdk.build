@@ -29,7 +29,7 @@
 			<include name="**.class"/>
 		</fileset>
 	</delete>
-        <exec program="ecj" commandline="-g -1.5 -nowarn -cp ../classpath/mscorlib.jar${pathsep}../classpath/System.jar @allsources.lst" useruntimeengine="false" />
+        <exec program="javac" commandline="-g -nowarn -bootclasspath ../classpath/mscorlib.jar${pathsep}../classpath/System.jar @allsources.lst" useruntimeengine="false" />
     </target>
 
     <target name="vfs">
