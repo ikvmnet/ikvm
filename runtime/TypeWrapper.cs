@@ -7692,7 +7692,7 @@ namespace IKVM.Internal
 			{
 				ArrayList methods = new ArrayList();
 				ArrayList fields = new ArrayList();
-				MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+				MemberInfo[] members = FilterDuplicates(type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance));
 				foreach(MemberInfo m in members)
 				{
 					if(!AttributeHelper.IsHideFromJava(m))
@@ -7702,7 +7702,6 @@ namespace IKVM.Internal
 							(remappedType.IsSealed || !m.Name.StartsWith("instancehelper_")) &&
 							(!remappedType.IsSealed || method.IsStatic))
 						{
-							// FXBUG on .NET 1.1 Throwable.toString() shows up twice
 							methods.Add(CreateRemappedMethodWrapper(method));
 						}
 						else
@@ -8183,12 +8182,40 @@ namespace IKVM.Internal
 			}
 		}
 
+		private static MemberInfo[] FilterDuplicates(MemberInfo[] members)
+		{
+#if !WHIDBEY
+			// FXBUG on .NET 1.1 methods that explicitly override another method are returned twice, so we filter them here
+			for(int i = 1; i < members.Length; i++)
+			{
+				MethodBase m1 = members[i] as MethodBase;
+				if(m1 != null)
+				{
+					for(int j = 0; j < i; j++)
+					{
+						MethodBase m2 = members[j] as MethodBase;
+						if(m2 != null && m1.MethodHandle.Value == m2.MethodHandle.Value)
+						{
+							MemberInfo[] newArray = new MemberInfo[members.Length - 1];
+							Array.Copy(members, newArray, i);
+							Array.Copy(members, i + 1, newArray, i, newArray.Length - i);
+							members = newArray;
+							i--;
+							break;
+						}
+					}
+				}
+			}
+#endif
+			return members;
+		}
+
 		protected override void LazyPublishMembers()
 		{
 			clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 			ArrayList methods = new ArrayList();
 			ArrayList fields = new ArrayList();
-			MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+			MemberInfo[] members = FilterDuplicates(type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance));
 			foreach(MemberInfo m in members)
 			{
 				if(!AttributeHelper.IsHideFromJava(m))

@@ -181,25 +181,6 @@ public final class StubGenerator implements PrivilegedAction<byte[]>
         java.lang.reflect.Method[] methods = c.getDeclaredMethods();
         for(int i = 0; i < methods.length; i++)
         {
-            // FXBUG (?) .NET reflection on java.lang.Object returns toString() twice!
-            // I didn't want to add the work around to CompiledTypeWrapper, so it's here.
-            if((c.getName().equals("java.lang.Object") || c.getName().equals("java.lang.Throwable"))
-                && methods[i].getName().equals("toString"))
-            {
-                boolean found = false;
-                for(int j = 0; j < i; j++)
-                {
-                    if(methods[j].getName().equals("toString"))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if(found)
-                {
-                    continue;
-                }
-            }
             int mods = methods[i].getModifiers();
             if((mods & (Modifiers.Public | Modifiers.Protected)) != 0)
             {
