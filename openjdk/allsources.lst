@@ -4431,7 +4431,6 @@ sun/misc/Unsafe.java
 sun/misc/Version.java
 sun/net/www/protocol/jar/JarFileFactory.java
 sun/nio/ch/FileChannelImpl.java
-sun/security/action/LoadLibraryAction.java
 sun/security/provider/PolicyFile.java
 sun/reflect/Reflection.java
 sun/reflect/ReflectionFactory.java
@@ -5498,6 +5497,7 @@ sun/reflect/ReflectionFactory.java
 ../../openjdk-b13/j2se/src/share/classes/sun/security/action/GetIntegerAction.java
 ../../openjdk-b13/j2se/src/share/classes/sun/security/action/GetLongAction.java
 ../../openjdk-b13/j2se/src/share/classes/sun/security/action/GetPropertyAction.java
+../../openjdk-b13/j2se/src/share/classes/sun/security/action/LoadLibraryAction.java
 ../../openjdk-b13/j2se/src/share/classes/sun/security/util/SecurityConstants.java
 ../../openjdk-b13/j2se/src/share/classes/sun/text/CodePointIterator.java
 ../../openjdk-b13/j2se/src/share/classes/sun/text/CollatorUtilities.java

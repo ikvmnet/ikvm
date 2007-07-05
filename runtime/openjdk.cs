@@ -276,14 +276,17 @@ namespace IKVM.NativeCode.java
 
 			private class VfsEntry : juzZipEntry
 			{
-				internal VfsEntry()
+				private bool directory;
+
+				internal VfsEntry(bool directory)
 					: base("")
 				{
+					this.directory = directory;
 				}
 
 				public override bool isDirectory()
 				{
-					return true;
+					return directory;
 				}
 			}
 
@@ -303,14 +306,23 @@ namespace IKVM.NativeCode.java
 				{
 					if (name.Length < RootPath.Length)
 					{
-						return new VfsEntry();
+						return new VfsEntry(true);
 					}
 					else
 					{
 						name = name.Substring(RootPath.Length);
 					}
 				}
-				return ((juzZipFile)zipFile).getEntry(name.Replace('\\', '/'));
+				name = name.Replace('\\', '/');
+				juzZipEntry entry = ((juzZipFile)zipFile).getEntry(name);
+				if (entry == null)
+				{
+					if (name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("zip"))
+					{
+						return new VfsEntry(false);
+					}
+				}
+				return entry;
 			}
 
 			private sealed class ZipEntryStream : System.IO.Stream
@@ -563,6 +575,10 @@ namespace IKVM.NativeCode.java
 
 			public static string canonicalize0(object _this, string path)
 			{
+				if (VirtualFileSystem.IsVirtualFS(path))
+				{
+					return path;
+				}
 				return GetFileInfo(path).FullName;
 			}
 
@@ -2461,10 +2477,18 @@ namespace IKVM.NativeCode.java
 
 				public static void load(object thisNativeLibrary, string name)
 				{
-					object fromClass = thisNativeLibrary.GetType().GetField("fromClass", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(thisNativeLibrary);
-					if (IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(fromClass).GetClassLoader()) == 1)
+					if (java.io.VirtualFileSystem.IsVirtualFS(name))
 					{
+						// we fake success for native libraries loaded from VFS
 						SetHandle(thisNativeLibrary, -1);
+					}
+					else
+					{
+						object fromClass = thisNativeLibrary.GetType().GetField("fromClass", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(thisNativeLibrary);
+						if (IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(fromClass).GetClassLoader()) == 1)
+						{
+							SetHandle(thisNativeLibrary, -1);
+						}
 					}
 				}
 
@@ -2975,6 +2999,7 @@ namespace IKVM.NativeCode.java
 				// TODO instead of setting it here, we should set it before the user specified properties are processed
 				// TODO we should chop off the trailing separator
 				p.put("java.home", io.VirtualFileSystem.RootPath);
+				p.put("sun.boot.library.path", io.VirtualFileSystem.RootPath + "bin");
 #endif
 				return props;
 			}

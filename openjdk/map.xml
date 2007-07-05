@@ -1518,13 +1518,6 @@
 					<ret />
 				</body>
 			</method>
-      <method name="initializeSystemClass" sig="()V">
-        <replace-method-call class="java.lang.System" name="loadLibrary" sig="(Ljava.lang.String;)V">
-          <code>
-            <pop />
-          </code>
-        </replace-method-call>
-      </method>
 		</class>
     <class name="sun.misc.Launcher">
       <method name="&lt;init&gt;" sig="()V">
