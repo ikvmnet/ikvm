@@ -43,6 +43,7 @@ using jlClass = java.lang.Class;
 using jlClassLoader = java.lang.ClassLoader;
 using jlArrayIndexOutOfBoundsException = java.lang.ArrayIndexOutOfBoundsException;
 using jlClassNotFoundException = java.lang.ClassNotFoundException;
+using jlException = java.lang.Exception;
 using jlIllegalAccessException = java.lang.IllegalAccessException;
 using jlIllegalArgumentException = java.lang.IllegalArgumentException;
 using jlInterruptedException = java.lang.InterruptedException;
@@ -50,6 +51,7 @@ using jlNegativeArraySizeException = java.lang.NegativeArraySizeException;
 using jlNoClassDefFoundError = java.lang.NoClassDefFoundError;
 using jlNullPointerException = java.lang.NullPointerException;
 using jlRunnable = java.lang.Runnable;
+using jlRuntimeException = java.lang.RuntimeException;
 using jlSecurityManager = java.lang.SecurityManager;
 using jlStackTraceElement = java.lang.StackTraceElement;
 using jlSystem = java.lang.System;
@@ -97,6 +99,11 @@ using jsDriverManager = java.sql.DriverManager;
 using juzZipFile = java.util.zip.ZipFile;
 using juzZipEntry = java.util.zip.ZipEntry;
 using jiInputStream = java.io.InputStream;
+using jsAccessController = java.security.AccessController;
+using jsAccessControlContext = java.security.AccessControlContext;
+using jsPrivilegedAction = java.security.PrivilegedAction;
+using jsPrivilegedExceptionAction = java.security.PrivilegedExceptionAction;
+using jsPrivilegedActionException = java.security.PrivilegedActionException;
 #endif
 
 namespace IKVM.NativeCode.java
@@ -3713,6 +3720,184 @@ namespace IKVM.NativeCode.java
 				{
 					return ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
 				}
+			}
+		}
+	}
+
+	namespace security
+	{
+		public sealed class AccessController
+		{
+			private static FieldInfo threadIaccField;
+			private static ConstructorInfo accessControlContextContructor;
+			private static FieldInfo accessControlContextPrivilegedContextField;
+			[ThreadStatic]
+			private static PrivilegedElement privileged_stack_top;
+
+			private class PrivilegedElement
+			{
+				internal object protection_domain;
+				internal object privileged_context;
+			}
+
+			// NOTE two different Java methods map to this native method
+			public static object doPrivileged(object action)
+			{
+				return doPrivileged(action, null);
+			}
+
+			public static object doPrivileged(object action, object context)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				Type caller;
+				for (int i = 1; ; i++)
+				{
+					caller = new StackFrame(i).GetMethod().DeclaringType;
+					if (caller != typeof(AccessController) && caller != typeof(jsAccessController))
+					{
+						break;
+					}
+				}
+
+				PrivilegedElement savedPrivilegedElement = privileged_stack_top;
+				try
+				{
+					PrivilegedElement pi = new PrivilegedElement();
+					privileged_stack_top = pi;
+					pi.privileged_context = context;
+					pi.protection_domain = GetProtectionDomainFromType(caller);
+					jsPrivilegedAction pa = action as jsPrivilegedAction;
+					if (pa != null)
+					{
+						return pa.run();
+					}
+					try
+					{
+						return ((jsPrivilegedExceptionAction)action).run();
+					}
+					catch (Exception x)
+					{
+						x = JVM.Library.mapException(x);
+						if (x is jlException && !(x is jlRuntimeException))
+						{
+							throw new jsPrivilegedActionException((jlException)x);
+						}
+						throw;
+					}
+				}
+				finally
+				{
+					privileged_stack_top = savedPrivilegedElement;
+				}
+#endif
+			}
+
+			public static object getStackAccessControlContext()
+			{
+#if FIRST_PASS
+				return null;
+#else
+				object previous_protection_domain = null;
+				object privileged_context = null;
+				bool is_privileged = false;
+				object protection_domain = null;
+				StackTrace stack = new StackTrace(1);
+				ArrayList array = new ArrayList();
+
+				for (int i = 0; i < stack.FrameCount; i++)
+				{
+					MethodBase method = stack.GetFrame(i).GetMethod();
+					if (method.DeclaringType == typeof(jsAccessController)
+						&& method.Name == "doPrivileged")
+					{
+						is_privileged = true;
+						PrivilegedElement p = privileged_stack_top;
+						privileged_context = p.privileged_context;
+						protection_domain = p.protection_domain;
+					}
+					else
+					{
+						protection_domain = GetProtectionDomainFromType(method.DeclaringType);
+					}
+
+					if (previous_protection_domain != protection_domain && protection_domain != null)
+					{
+						previous_protection_domain = protection_domain;
+						array.Add(protection_domain);
+					}
+
+					if (is_privileged)
+					{
+						break;
+					}
+				}
+
+				if (array.Count == 0)
+				{
+					if (is_privileged && privileged_context == null)
+					{
+						return null;
+					}
+
+					return CreateAccessControlContext(null, is_privileged, privileged_context);
+				}
+
+				ProtectionDomain[] context = new ProtectionDomain[array.Count];
+				array.CopyTo(context);
+				return CreateAccessControlContext(context, is_privileged, privileged_context);
+#endif
+			}
+
+#if !FIRST_PASS
+			private static object CreateAccessControlContext(ProtectionDomain[] context, bool is_privileged, object privileged_context)
+			{
+				if (accessControlContextContructor == null)
+				{
+					accessControlContextContructor = typeof(jsAccessControlContext).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(ProtectionDomain[]), typeof(bool) }, null);
+				}
+				object obj = accessControlContextContructor.Invoke(new object[] { context, is_privileged });
+				if (privileged_context != null)
+				{
+					if (accessControlContextPrivilegedContextField == null)
+					{
+						accessControlContextPrivilegedContextField = typeof(jsAccessControlContext).GetField("privilegedContext", BindingFlags.NonPublic | BindingFlags.Instance);
+					}
+					accessControlContextPrivilegedContextField.SetValue(obj, privileged_context);
+				}
+				return obj;
+			}
+
+			private static object GetProtectionDomainFromType(Type type)
+			{
+				if (type == null
+					|| type.Assembly == typeof(object).Assembly
+					|| type.Assembly == typeof(AccessController).Assembly
+					|| type.Assembly == typeof(jlThread).Assembly)
+				{
+					return null;
+				}
+				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+				if (tw != null)
+				{
+					return java.lang.Class.getProtectionDomain0(tw.ClassObject);
+				}
+				return null;
+			}
+#endif
+
+			public static object getInheritedAccessControlContext()
+			{
+#if FIRST_PASS
+				return null;
+#else
+				if (threadIaccField == null)
+				{
+					threadIaccField = typeof(jlThread).GetField("inheritedAccessControlContext", BindingFlags.NonPublic | BindingFlags.Instance);
+				}
+				return threadIaccField.GetValue(jlThread.currentThread());
+#endif
 			}
 		}
 	}
