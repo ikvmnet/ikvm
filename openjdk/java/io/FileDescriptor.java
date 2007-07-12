@@ -55,16 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class FileDescriptor {
  
-    private static final boolean win32 = runningOnWindows();
     private volatile cli.System.IO.Stream stream;
-
-    private static boolean runningOnWindows()
-    {
-        cli.System.OperatingSystem os = cli.System.Environment.get_OSVersion();
-        int platform = os.get_Platform().Value;
-        return platform == cli.System.PlatformID.Win32NT || 
-            platform == cli.System.PlatformID.Win32Windows;
-    }
 
     /**
      * A use counter for tracking the FIS/FOS/RAF instances that
@@ -172,7 +163,7 @@ public final class FileDescriptor {
 	if (stream instanceof FileStream)
 	{
 	    FileStream fs = (FileStream)stream;
-	    boolean ok = win32 ? flushWin32(fs) : flushPosix(fs);
+	    boolean ok = ikvm.internal.Util.WINDOWS ? flushWin32(fs) : flushPosix(fs);
 	    if (!ok)
 	    {
 		throw new SyncFailedException("sync failed");

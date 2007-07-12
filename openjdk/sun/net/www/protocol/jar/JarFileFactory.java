@@ -51,8 +51,6 @@ import java.security.Permission;
  */
 class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 
-    private static final boolean runningOnWindows = cli.System.Environment.get_OSVersion().ToString().indexOf("Unix") == -1;
-
     /* the url to file cache */
     private static HashMap fileCache = new HashMap();
 
@@ -72,7 +70,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
     }
 
     JarFile get(URL url, boolean useCaches) throws IOException {
-        if (runningOnWindows && url.getProtocol().equalsIgnoreCase("file")) {
+        if (ikvm.internal.Util.WINDOWS && url.getProtocol().equalsIgnoreCase("file")) {
             // Deal with UNC pathnames specially. See 4180841
 
             String host = url.getHost();

@@ -98,12 +98,15 @@ using irUtil = ikvm.runtime.Util;
 using jsDriverManager = java.sql.DriverManager;
 using juzZipFile = java.util.zip.ZipFile;
 using juzZipEntry = java.util.zip.ZipEntry;
+using juEnumeration = java.util.Enumeration;
 using jiInputStream = java.io.InputStream;
 using jsAccessController = java.security.AccessController;
 using jsAccessControlContext = java.security.AccessControlContext;
 using jsPrivilegedAction = java.security.PrivilegedAction;
 using jsPrivilegedExceptionAction = java.security.PrivilegedExceptionAction;
 using jsPrivilegedActionException = java.security.PrivilegedActionException;
+using jnUnknownHostException = java.net.UnknownHostException;
+using jnInetAddress = java.net.InetAddress;
 #endif
 
 namespace IKVM.NativeCode.java
@@ -324,7 +327,8 @@ namespace IKVM.NativeCode.java
 				juzZipEntry entry = ((juzZipFile)zipFile).getEntry(name);
 				if (entry == null)
 				{
-					if (name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("zip"))
+					if (name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("zip")
+						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("net"))
 					{
 						return new VfsEntry(false);
 					}
@@ -3724,6 +3728,244 @@ namespace IKVM.NativeCode.java
 		}
 	}
 
+	namespace net
+	{
+		public sealed class DatagramPacket
+		{
+			public static void init()
+			{
+			}
+		}
+
+		public sealed class InetAddress
+		{
+			public static void init()
+			{
+			}
+		}
+
+		public sealed class InetAddressImplFactory
+		{
+			public static bool isIPv6Supported()
+			{
+				// TODO System.Net.Sockets.Socket.OSSupportsIPv6;
+				return false;
+			}
+		}
+
+		public sealed class Inet4Address
+		{
+			public static void init()
+			{
+			}
+		}
+
+		public sealed class Inet4AddressImpl
+		{
+			public static string getLocalHostName(object thisInet4AddressImpl)
+			{
+				try
+				{
+					return System.Net.Dns.GetHostName();
+				}
+				catch (System.Net.Sockets.SocketException x)
+				{
+					throw new jnUnknownHostException(x.Message);
+				}
+			}
+
+			public static object lookupAllHostAddr(object thisInet4AddressImpl, string hostname)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				try
+				{
+					System.Net.IPAddress[] addr = System.Net.Dns.GetHostAddresses(hostname);
+					ArrayList addresses = new ArrayList();
+					for (int i = 0; i < addr.Length; i++)
+					{
+						byte[] b = addr[i].GetAddressBytes();
+						if (b.Length == 4)
+						{
+							addresses.Add(jnInetAddress.getByAddress(b));
+						}
+					}
+					return (jnInetAddress[])addresses.ToArray(typeof(jnInetAddress));
+				}
+				catch (System.ArgumentException x)
+				{
+					throw new jnUnknownHostException(x.Message);
+				}
+				catch (System.Net.Sockets.SocketException x)
+				{
+					throw new jnUnknownHostException(x.Message);
+				}
+#endif
+			}
+
+			public static string getHostByAddr(object thisInet4AddressImpl, byte[] addr)
+			{
+				string s;
+				try
+				{
+					s = System.Net.Dns.GetHostByAddress(string.Format("{0}.{1}.{2}.{3}", addr[0], addr[1], addr[2], addr[3])).HostName;
+				}
+				catch (System.Net.Sockets.SocketException x)
+				{
+					throw new jnUnknownHostException(x.Message);
+				}
+				try
+				{
+					System.Net.Dns.GetHostByName(s);
+				}
+				catch (System.Net.Sockets.SocketException)
+				{
+					// FXBUG .NET framework bug
+					// HACK if GetHostByAddress returns a netbios name, it appends the default DNS suffix, but if the
+					// machine's netbios name isn't the same as the DNS hostname, this might result in an unresolvable
+					// name, if that happens we chop off the DNS suffix.
+					int idx = s.indexOf('.');
+					if (idx > 0)
+					{
+						return s.Substring(0, idx);
+					}
+				}
+				return s;
+			}
+
+			public static bool isReachable0(object thisInet4AddressImpl, byte[] addr, int timeout, byte[] ifaddr, int ttl)
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		public sealed class Inet6Address
+		{
+			public static void init()
+			{
+			}
+		}
+
+		public sealed class Inet6AddressImpl
+		{
+			public static string getLocalHostName(object thisInet6AddressImpl)
+			{
+				try
+				{
+					return System.Net.Dns.GetHostName();
+				}
+				catch (System.Net.Sockets.SocketException x)
+				{
+					throw new jnUnknownHostException(x.Message);
+				}
+			}
+
+			public static object lookupAllHostAddr(object thisInet6AddressImpl, string hostname)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				try
+				{
+					System.Net.IPAddress[] addr = System.Net.Dns.GetHostAddresses(hostname);
+					jnInetAddress[] addresses = new jnInetAddress[addr.Length];
+					for (int i = 0; i < addr.Length; i++)
+					{
+						addresses[i] = jnInetAddress.getByAddress(addr[i].GetAddressBytes());
+					}
+					return addresses;
+				}
+				catch (System.ArgumentException x)
+				{
+					throw new jnUnknownHostException(x.Message);
+				}
+				catch (System.Net.Sockets.SocketException x)
+				{
+					throw new jnUnknownHostException(x.Message);
+				}
+#endif
+			}
+
+			public static string getHostByAddr(object thisInet6AddressImpl, byte[] addr)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static bool isReachable0(object thisInet6AddressImpl, byte[] addr, int scope, int timeout, byte[] inf, int ttl, int if_scope)
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		public sealed class NetworkInterface
+		{
+			public static void init()
+			{
+			}
+
+			public static object getByIndex(int index)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static object getAll()
+			{
+				throw new NotImplementedException();
+			}
+
+			public static object getByName0(string name)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static object getByInetAddress0(object addr)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static long getSubnet0(string name, int ind)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static object getBroadcast0(string name, int ind)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static bool isUp0(string name, int ind)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static bool isLoopback0(string name, int ind)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static bool supportsMulticast0(string name, int ind)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static bool isP2P0(string name, int ind)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static byte[] getMacAddr0(byte[] inAddr, string name, int ind)
+			{
+				throw new NotImplementedException();
+			}
+
+			public static int getMTU0(string name, int ind)
+			{
+				throw new NotImplementedException();
+			}
+		}
+	}
+
 	namespace security
 	{
 		public sealed class AccessController
@@ -4230,6 +4472,36 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		namespace jar
+		{
+			public sealed class JarFile
+			{
+				public static string[] getMetaInfEntryNames(object thisJarFile)
+				{
+#if FIRST_PASS
+					return null;
+#else
+					juzZipFile zf = (juzZipFile)thisJarFile;
+					juEnumeration entries = zf.entries();
+					ArrayList list = null;
+					while (entries.hasMoreElements())
+					{
+						juzZipEntry entry = (juzZipEntry)entries.nextElement();
+						if (entry.getName().StartsWith("META-INF/"))
+						{
+							if (list == null)
+							{
+								list = new ArrayList();
+							}
+							list.Add(entry.getName());
+						}
+					}
+					return list == null ? null : (string[])list.ToArray(typeof(string));
+#endif
+				}
+			}
+		}
+
 		public sealed class ResourceBundle
 		{
 			public static object getClassContext()
@@ -4591,6 +4863,43 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
+	public sealed class Perf
+	{
+		public static object attach(object thisPerf, string user, int lvmid, int mode)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static void detach(object thisPerf, object bb)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static object createLong(object thisPerf, string name, int variability, int units, long value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static object createByteArray(object thisPerf, string name, int variability, int units, byte[] value, int maxLength)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static long highResCounter(object thisPerf)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static long highResFrequency(object thisPerf)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static void registerNatives()
+		{
+		}
+	}
+
 	public sealed class Unsafe
 	{
 		private Unsafe() { }
@@ -4659,6 +4968,52 @@ namespace IKVM.NativeCode.sun.misc
 
 		public static void initialize()
 		{
+		}
+	}
+
+	public sealed class VMSupport
+	{
+		public static object initAgentProperties(object props)
+		{
+			return props;
+		}
+	}
+}
+
+namespace IKVM.NativeCode.sun.net.dns
+{
+	public sealed class ResolverConfigurationImpl
+	{
+		public static void init0()
+		{
+			throw new NotImplementedException();
+		}
+
+		public static void loadDNSconfig0()
+		{
+			throw new NotImplementedException();
+		}
+
+		public static int notifyAddrChange0()
+		{
+			throw new NotImplementedException();
+		}
+	}
+}
+
+namespace IKVM.NativeCode.sun.net.spi
+{
+	public sealed class DefaultProxySelector
+	{
+		public static bool init()
+		{
+			return true;
+		}
+
+		public static object getSystemProxy(object thisDefaultProxySelector, string protocol, string host)
+		{
+			// TODO on Whidbey we might be able to use System.Net.Configuration.DefaultProxySection.Proxy
+			return null;
 		}
 	}
 }
@@ -5691,6 +6046,113 @@ namespace IKVM.NativeCode.sun.rmi.server
 		public static object latestUserDefinedLoader()
 		{
 			return java.io.ObjectInputStream.latestUserDefinedLoader();
+		}
+	}
+}
+
+namespace IKVM.NativeCode.sun.security.krb5
+{
+	public sealed class Credentials
+	{
+		public static object acquireDefaultNativeCreds()
+		{
+			// TODO
+			return null;
+		}
+	}
+
+	public sealed class Config
+	{
+		public static string getWindowsDirectory()
+		{
+			return Environment.GetEnvironmentVariable("SystemRoot");
+		}
+	}
+}
+
+namespace IKVM.NativeCode.sun.security.provider
+{
+	public sealed class NativeSeedGenerator
+	{
+		public static bool nativeGenerateSeed(byte[] result)
+		{
+			try
+			{
+				System.Security.Cryptography.RNGCryptoServiceProvider csp = new System.Security.Cryptography.RNGCryptoServiceProvider();
+				csp.GetBytes(result);
+				return true;
+			}
+			catch (System.Security.Cryptography.CryptographicException)
+			{
+				return false;
+			}
+		}
+	}
+}
+
+namespace IKVM.NativeCode.com.sun.java.util.jar.pack
+{
+	public sealed class NativeUnpack
+	{
+		public static void initIDs()
+		{
+		}
+
+		public static long start(object thisNativeUnpack, object buf, long offset)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static bool getNextFile(object thisNativeUnpack, object[] parts)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static object getUnusedInput(object thisNativeUnpack)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static long finish(object thisNativeUnpack)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static bool setOption(object thisNativeUnpack, string opt, string value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static string getOption(object thisNativeUnpack, string opt)
+		{
+			throw new NotImplementedException();
+		}
+	}
+}
+
+namespace IKVM.NativeCode.com.sun.security.auth.module
+{
+	public sealed class NTSystem
+	{
+		public static void getCurrent(object thisObj, bool debug)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	public sealed class SolarisSystem
+	{
+		public static void getSolarisInfo(object thisObj)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	public sealed class UnixSystem
+	{
+		public static void getUnixInfo(object thisObj)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }
