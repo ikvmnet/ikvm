@@ -3832,7 +3832,7 @@ namespace IKVM.NativeCode.java
 					// HACK if GetHostByAddress returns a netbios name, it appends the default DNS suffix, but if the
 					// machine's netbios name isn't the same as the DNS hostname, this might result in an unresolvable
 					// name, if that happens we chop off the DNS suffix.
-					int idx = s.indexOf('.');
+					int idx = s.IndexOf('.');
 					if (idx > 0)
 					{
 						return s.Substring(0, idx);
