@@ -3764,6 +3764,9 @@ namespace IKVM.NativeCode.java
 		{
 			public static string getLocalHostName(object thisInet4AddressImpl)
 			{
+#if FIRST_PASS
+				return null;
+#else
 				try
 				{
 					return System.Net.Dns.GetHostName();
@@ -3772,6 +3775,7 @@ namespace IKVM.NativeCode.java
 				{
 					throw new jnUnknownHostException(x.Message);
 				}
+#endif
 			}
 
 			public static object lookupAllHostAddr(object thisInet4AddressImpl, string hostname)
@@ -3806,6 +3810,9 @@ namespace IKVM.NativeCode.java
 
 			public static string getHostByAddr(object thisInet4AddressImpl, byte[] addr)
 			{
+#if FIRST_PASS
+				return null;
+#else
 				string s;
 				try
 				{
@@ -3832,6 +3839,7 @@ namespace IKVM.NativeCode.java
 					}
 				}
 				return s;
+#endif
 			}
 
 			public static bool isReachable0(object thisInet4AddressImpl, byte[] addr, int timeout, byte[] ifaddr, int ttl)
@@ -3851,6 +3859,9 @@ namespace IKVM.NativeCode.java
 		{
 			public static string getLocalHostName(object thisInet6AddressImpl)
 			{
+#if FIRST_PASS
+				return null;
+#else
 				try
 				{
 					return System.Net.Dns.GetHostName();
@@ -3859,6 +3870,7 @@ namespace IKVM.NativeCode.java
 				{
 					throw new jnUnknownHostException(x.Message);
 				}
+#endif
 			}
 
 			public static object lookupAllHostAddr(object thisInet6AddressImpl, string hostname)
