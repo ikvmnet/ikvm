@@ -84,7 +84,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="toolkit.cs">
-      <SubType>Form</SubType>
+      <SubType>Component</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
