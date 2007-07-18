@@ -3141,7 +3141,8 @@ namespace IKVM.NativeCode.java
 									try
 									{
 										SystemThreadingThread t = SystemThreadingThread.CurrentThread;
-										// the obvious thing to do would be t.Interrupt() / t.Join(), but for some reason that doesn't work (probably a CLR bug)
+										// the obvious thing to do would be t.Interrupt() / t.Join(),
+										// but for some reason that causes a regression in JSR166TestCase (probably a CLR bug)
 										// so we waste a time slice... sigh.
 										t.Join(1);
 									}
