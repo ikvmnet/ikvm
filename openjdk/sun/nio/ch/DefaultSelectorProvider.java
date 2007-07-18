@@ -25,6 +25,8 @@
 
 package sun.nio.ch;
 
+import java.io.IOException;
+import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
 
@@ -43,7 +45,24 @@ public class DefaultSelectorProvider {
      * Returns the default SelectorProvider.
      */
     public static SelectorProvider create() {
-        throw new Error("Not implemented");
+	// TODO we should instantiate SelectorProviderImpl here
+	return new SelectorProvider() {
+	    public java.nio.channels.DatagramChannel openDatagramChannel() throws IOException {
+		throw new Error("temporary");
+	    }
+	    public java.nio.channels.Pipe openPipe() throws IOException {
+		throw new Error("temporary");
+	    }
+	    public java.nio.channels.ServerSocketChannel openServerSocketChannel() throws IOException {
+		throw new Error("temporary");
+	    }
+	    public java.nio.channels.SocketChannel openSocketChannel() throws IOException {
+		return new SocketChannelImpl(this);
+	    }
+	    public AbstractSelector openSelector() throws IOException {
+		return new DotNetSelectorImpl(this);
+	    }
+	};
     }
 
 }

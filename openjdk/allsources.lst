@@ -3417,7 +3417,12 @@ sun/net/www/protocol/ikvmres/Handler.java
 sun/net/www/protocol/file/Handler.java
 sun/net/www/protocol/jar/JarFileFactory.java
 sun/nio/ch/DefaultSelectorProvider.java
+sun/nio/ch/DotNetSelectorImpl.java
 sun/nio/ch/FileChannelImpl.java
+sun/nio/ch/Net.java
+sun/nio/ch/SelectionKeyImpl.java
+sun/nio/ch/SocketChannelImpl.java
+sun/nio/ch/Util.java
 sun/reflect/Reflection.java
 sun/reflect/ReflectionFactory.java
 sun/security/jgss/wrapper/NativeGSSFactory.java
@@ -3453,6 +3458,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk-b13/control/build/linux-i586/gensrc/java/nio/charset/IllegalCharsetNameException.java
 ../../openjdk-b13/control/build/linux-i586/gensrc/java/nio/charset/UnsupportedCharsetException.java
 ../../openjdk-b13/control/build/linux-i586/gensrc/java/util/CurrencyData.java
+../../openjdk-b13/control/build/linux-i586/gensrc/sun/nio/ch/AlreadyBoundException.java
 ../../openjdk-b13/control/build/linux-i586/gensrc/sun/nio/cs/StandardCharsets.java
 ../../openjdk-b13/control/build/linux-i586/gensrc/sun/util/CoreResourceBundleControl.java
 ../../openjdk-b13/control/build/linux-i586/gensrc/sun/util/LocaleDataMetaInfo.java
@@ -5162,6 +5168,13 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/DirectBuffer.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/ChannelInputStream.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/Interruptible.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/IOStatus.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/OptionAdaptor.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SelChImpl.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SelectorImpl.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SocketAdaptor.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SocketOpts.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SocketOptsImpl.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/cs/AbstractCharsetProvider.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/cs/FastCharsetProvider.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/cs/HistoricallyNamedCharset.java
@@ -6091,6 +6104,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk-b13/j2se/src/windows/classes/java/util/prefs/WindowsPreferences.java
 ../../openjdk-b13/j2se/src/windows/classes/java/util/prefs/WindowsPreferencesFactory.java
 ../../openjdk-b13/j2se/src/windows/classes/sun/net/dns/ResolverConfigurationImpl.java
+../../openjdk-b13/j2se/src/windows/classes/sun/nio/ch/NativeThread.java
 ../../openjdk-b13/j2se/src/windows/classes/sun/security/krb5/internal/tools/Kinit.java
 ../../openjdk-b13/j2se/src/windows/classes/sun/security/krb5/internal/tools/KinitOptions.java
 ../../openjdk-b13/j2se/src/windows/classes/sun/security/krb5/internal/tools/Klist.java

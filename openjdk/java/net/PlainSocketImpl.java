@@ -54,19 +54,20 @@ import sun.net.ConnectionResetException;
  * @author  Steven B. Byrne
  * @version 1.73, 05/05/07
  */
-class PlainSocketImpl extends SocketImpl
+@ikvm.lang.Internal
+public class PlainSocketImpl extends SocketImpl
 {
     // Winsock Error Codes
-    private static final int WSAEWOULDBLOCK = 10035;
+    public static final int WSAEWOULDBLOCK = 10035;
     private static final int WSAEADDRINUSE = 10048;
     private static final int WSAENETUNREACH = 10051;
-    private static final int WSAESHUTDOWN = 10058;
+    public static final int WSAESHUTDOWN = 10058;
     private static final int WSAETIMEDOUT = 10060;
     private static final int WSAECONNREFUSED = 10061;
     private static final int WSAEHOSTUNREACH = 10065;
     private static final int WSAHOST_NOT_FOUND = 11001;
 
-    static IOException convertSocketExceptionToIOException(cli.System.Net.Sockets.SocketException x) throws IOException
+    public static IOException convertSocketExceptionToIOException(cli.System.Net.Sockets.SocketException x) throws IOException
     {
 	switch (x.get_ErrorCode())
 	{
@@ -86,7 +87,7 @@ class PlainSocketImpl extends SocketImpl
 	}
     }
 
-    static IPAddress getAddressFromInetAddress(InetAddress addr)
+    public static IPAddress getAddressFromInetAddress(InetAddress addr)
     {
 	byte[] b = addr.getAddress();
 	if (b.length == 16)
@@ -101,7 +102,7 @@ class PlainSocketImpl extends SocketImpl
 	}
     }
 
-    static InetAddress getInetAddressFromIPEndPoint(IPEndPoint endpoint)
+    public static InetAddress getInetAddressFromIPEndPoint(IPEndPoint endpoint)
     {
 	try
 	{
