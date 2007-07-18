@@ -3050,7 +3050,8 @@ namespace IKVM.NativeCode.java
 				internal Exception stillborn;
 				internal bool running;
 				private bool interruptPending;
-				private bool interruptableWait;
+				private volatile bool nativeInterruptPending;
+				private volatile bool interruptableWait;
 				private bool timedWait;
 
 #if !FIRST_PASS
@@ -3127,15 +3128,16 @@ namespace IKVM.NativeCode.java
 				{
 #if !FIRST_PASS
 					SystemThreadingThreadInterruptedException dotnetInterrupt = null;
+					interruptableWait = false;
 					for (; ; )
 					{
 						try
 						{
 							lock (this)
 							{
-								interruptableWait = false;
-								if (interruptPending)
+								if (nativeInterruptPending)
 								{
+									nativeInterruptPending = false;
 									// HACK if there is a pending Interrupt (on the .NET thread), we need to consume that
 									// (if there was no contention on "lock (this)" above the interrupted state isn't checked) 
 									try
@@ -3149,6 +3151,9 @@ namespace IKVM.NativeCode.java
 									catch (SystemThreadingThreadInterruptedException)
 									{
 									}
+								}
+								if (interruptPending)
+								{
 									interruptPending = false;
 									throw new jlInterruptedException();
 								}
@@ -3158,6 +3163,7 @@ namespace IKVM.NativeCode.java
 						catch (SystemThreadingThreadInterruptedException x)
 						{
 							dotnetInterrupt = x;
+							nativeInterruptPending = false;
 						}
 					}
 					if (dotnetInterrupt != null)
@@ -3171,10 +3177,14 @@ namespace IKVM.NativeCode.java
 				{
 					lock (this)
 					{
-						interruptPending = true;
-						if (interruptableWait)
+						if (!interruptPending)
 						{
-							nativeThread.Interrupt();
+							interruptPending = true;
+							if (interruptableWait)
+							{
+								nativeInterruptPending = true;
+								nativeThread.Interrupt();
+							}
 						}
 					}
 				}
@@ -3434,6 +3444,9 @@ namespace IKVM.NativeCode.java
 					}
 					SystemThreadingThread.Sleep((int)(millis % int.MaxValue));
 				}
+				catch (SystemThreadingThreadInterruptedException)
+				{
+				}
 				finally
 				{
 					t.LeaveInterruptableWait();
@@ -3687,6 +3700,9 @@ namespace IKVM.NativeCode.java
 					{
 						Monitor.Wait(o, new TimeSpan(timeout * 10000));
 					}
+				}
+				catch (SystemThreadingThreadInterruptedException)
+				{
 				}
 				finally
 				{
