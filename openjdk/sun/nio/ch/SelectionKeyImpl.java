@@ -46,6 +46,10 @@ final class SelectionKeyImpl extends AbstractSelectionKey
 	{
 	    socket = ((SocketChannelImpl)ch).getSocket();
 	}
+	else if (ch instanceof ServerSocketChannelImpl)
+	{
+	    socket = ((ServerSocketChannelImpl)ch).getSocket();
+	}
 	else
 	{
 	    // TODO

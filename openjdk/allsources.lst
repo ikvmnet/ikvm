@@ -3421,6 +3421,7 @@ sun/nio/ch/DotNetSelectorImpl.java
 sun/nio/ch/FileChannelImpl.java
 sun/nio/ch/Net.java
 sun/nio/ch/SelectionKeyImpl.java
+sun/nio/ch/ServerSocketChannelImpl.java
 sun/nio/ch/SocketChannelImpl.java
 sun/nio/ch/Util.java
 sun/reflect/Reflection.java
@@ -5172,6 +5173,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/OptionAdaptor.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SelChImpl.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SelectorImpl.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/ServerSocketAdaptor.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SocketAdaptor.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SocketOpts.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SocketOptsImpl.java

@@ -423,11 +423,13 @@ class SocketChannelImpl
 	    if (false) throw new cli.System.ObjectDisposedException("");
 	    netSocket.set_Blocking(block);
 	}
-	catch (cli.System.Net.Sockets.SocketException _)
+	catch (cli.System.Net.Sockets.SocketException x)
 	{
+	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
 	}
 	catch (cli.System.ObjectDisposedException _)
 	{
+	    throw new SocketException("Socket is closed");
 	}
     }
 
@@ -880,10 +882,24 @@ class SocketChannelImpl
 
     // -- Native methods --
 
-    private SocketAddress bindImpl(InetAddress addr, int port)
+    private SocketAddress bindImpl(InetAddress addr, int port) throws IOException
     {
-	// TODO
-	throw new Error("TODO");
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    if (false) throw new cli.System.ObjectDisposedException("");
+	    netSocket.Bind(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(addr), port));
+	    IPEndPoint ep = (IPEndPoint)netSocket.get_LocalEndPoint();
+	    return new InetSocketAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(ep), ep.get_Port());
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+	}
+	catch (cli.System.ObjectDisposedException x1)
+	{
+	    throw new SocketException("Socket is closed");
+	}
     }
 
     private int connectImpl(InetAddress remote, int remotePort, int trafficClass) throws IOException
@@ -1229,11 +1245,6 @@ class SocketChannelImpl
 }
 
 // temporary compilation stubs
-class ServerSocketChannelImpl
-{
-    SocketOpts options() { throw new Error(); }
-}
-
 class DatagramChannelImpl
 {
     SocketOpts options() { throw new Error(); }

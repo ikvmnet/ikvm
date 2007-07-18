@@ -54,7 +54,7 @@ public class DefaultSelectorProvider {
 		throw new Error("temporary");
 	    }
 	    public java.nio.channels.ServerSocketChannel openServerSocketChannel() throws IOException {
-		throw new Error("temporary");
+		return new ServerSocketChannelImpl(this);
 	    }
 	    public java.nio.channels.SocketChannel openSocketChannel() throws IOException {
 		return new SocketChannelImpl(this);
