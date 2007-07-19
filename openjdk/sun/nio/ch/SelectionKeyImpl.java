@@ -36,7 +36,6 @@ final class SelectionKeyImpl extends AbstractSelectionKey
     private final cli.System.Net.Sockets.Socket socket;
     private int readyOps;
     private volatile int interestOps;
-    int savedInterestOps;   // used by DotNetSelectorImpl
 
     SelectionKeyImpl(SelChImpl ch, SelectorImpl sel)
     {

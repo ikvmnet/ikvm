@@ -1,29 +1,39 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+ * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
 
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
+// Parts Copyright (C) 2002-2007 Jeroen Frijters
 
 package sun.nio.ch;
 
+import cli.System.Net.Sockets.Socket;
+import cli.System.Net.Sockets.SocketException;
+import cli.System.Net.Sockets.AddressFamily;
+import cli.System.Net.Sockets.SocketType;
+import cli.System.Net.Sockets.ProtocolType;
+import cli.System.Net.Sockets.SelectMode;
+import cli.System.Collections.ArrayList;
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
@@ -34,58 +44,62 @@ import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import cli.System.Net.Sockets.Socket;
-import cli.System.Net.Sockets.SocketException;
-import cli.System.Net.Sockets.AddressFamily;
-import cli.System.Net.Sockets.SocketType;
-import cli.System.Net.Sockets.ProtocolType;
-import cli.System.Net.Sockets.SelectMode;
-import cli.System.Collections.ArrayList;
 
 final class DotNetSelectorImpl extends SelectorImpl
 {
-    private final Object wakeupMutex = new Object();
-    private Socket notifySocket;
-    private volatile boolean unhandledWakeup;
+    private Socket wakeupSourceFd;
+    private ArrayList channelArray = new ArrayList();
+    private long updateCount = 0;
+
+    // Lock for interrupt triggering and clearing
+    private final Object interruptLock = new Object();
+    private volatile boolean interruptTriggered = false;
+
+    // class for fdMap entries
+    private final static class MapEntry
+    {
+	SelectionKeyImpl ski;
+	long updateCount = 0;
+	long clearedCount = 0;
+	MapEntry(SelectionKeyImpl ski)
+	{
+	    this.ski = ski;
+	}
+    }
+    private final HashMap<Socket, MapEntry> fdMap = new HashMap<Socket, MapEntry>();
 
     DotNetSelectorImpl(SelectorProvider sp)
     {
 	super(sp);
+	createWakeupSocket();
     }
 
     protected int doSelect(long timeout) throws IOException
     {
+	if (channelArray == null)
+	    throw new ClosedSelectorException();
 	processDeregisterQueue();
+	if (interruptTriggered)
+	{
+	    resetWakeupSocket();
+	    return 0;
+	}
 
 	ArrayList read = new ArrayList();
 	ArrayList write = new ArrayList();
 	ArrayList error = new ArrayList();
-
-	synchronized (wakeupMutex)
+	for (int i = 0; i < channelArray.get_Count(); i++)
 	{
-	    if (unhandledWakeup)
-	    {
-		unhandledWakeup = false;
-		return 0;
-	    }
-	    if (notifySocket == null)
-	    {
-		notifySocket = createNotifySocket();
-	    }
-	    read.Add(notifySocket);
-	}
-
-	for (Iterator it = keys.iterator(); it.hasNext(); )
-	{
-	    SelectionKeyImpl key = (SelectionKeyImpl)it.next();
-	    int ops = key.interestOps();
-	    if (key.channel() instanceof SocketChannelImpl)
+	    SelectionKeyImpl ski = (SelectionKeyImpl)channelArray.get_Item(i);
+	    int ops = ski.interestOps();
+	    if (ski.channel() instanceof SocketChannelImpl)
 	    {
 		// TODO there's a race condition here...
-		if (((SocketChannelImpl)key.channel()).isConnected())
+		if (((SocketChannelImpl)ski.channel()).isConnected())
 		{
 		    ops &= SelectionKey.OP_READ | SelectionKey.OP_WRITE;
 		}
@@ -94,130 +108,156 @@ final class DotNetSelectorImpl extends SelectorImpl
 		    ops &= SelectionKey.OP_CONNECT;
 		}
 	    }
-	    key.savedInterestOps = ops;
 	    if ((ops & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0)
 	    {
-		read.Add(key.getSocket());
+		read.Add(ski.getSocket());
 	    }
 	    if ((ops & (SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) != 0)
 	    {
-		write.Add(key.getSocket());
+		write.Add(ski.getSocket());
 	    }
 	    if ((ops & SelectionKey.OP_CONNECT) != 0)
 	    {
-		error.Add(key.getSocket());
+		error.Add(ski.getSocket());
 	    }
 	}
+	read.Add(wakeupSourceFd);
 	try
 	{
 	    begin();
-	    ArrayList savedReadList = read;
-	    ArrayList savedWriteList = write;
-	    ArrayList savedErrorList = error;
-	    do
+	    int microSeconds = 1000 * (int)Math.min(Integer.MAX_VALUE / 1000, timeout);
+	    try
 	    {
-		read = (ArrayList)savedReadList.Clone();
-		write = (ArrayList)savedWriteList.Clone();
-		error = (ArrayList)savedErrorList.Clone();
-		int microSeconds = 1000 * (int)Math.min(Integer.MAX_VALUE / 1000, timeout);
-		try
-		{
-		    if (false) throw new SocketException();
-		    Socket.Select(read, write, error, microSeconds);
-		    timeout -= microSeconds / 1000;
-		}
-		catch (SocketException _)
-		{
-		    read.Clear();
-		    write.Clear();
-		    error.Clear();
-		    purgeList(savedReadList);
-		    purgeList(savedWriteList);
-		    purgeList(savedErrorList);
-		}
-	    } while (timeout > 0
-		&& read.get_Count() == 0
-		&& write.get_Count() == 0
-		&& error.get_Count() == 0
-		&& !unhandledWakeup);
+		if (false) throw new SocketException();
+		Socket.Select(read, write, error, microSeconds);
+	    }
+	    catch (SocketException _)
+	    {
+		read.Clear();
+		write.Clear();
+		error.Clear();
+	    }
 	}
 	finally
 	{
 	    end();
-	    unhandledWakeup = false;
 	}
 	processDeregisterQueue();
-	int updatedCount = 0;
-	for (Iterator it = keys.iterator(); it.hasNext(); )
-	{
-	    SelectionKeyImpl key = (SelectionKeyImpl)it.next();
-	    int ops = 0;
-	    Socket socket = key.getSocket();
-	    if (error.Contains(socket))
-	    {
-		ops |= SelectionKey.OP_CONNECT;
-	    }
-	    if (read.Contains(socket))
-	    {
-		ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
-	    }
-	    if (write.Contains(socket))
-	    {
-		ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
-	    }
-	    ops &= key.savedInterestOps;
-	    if (ops != 0)
-	    {
-		if (selectedKeys.contains(key))
-		{
-		    int ready = key.readyOps();
-		    if ((ready & ops) != ops)
-		    {
-			updatedCount++;
-		    }
-		    key.readyOps(ready | ops);
-		}
-		else
-		{
-		    key.readyOps(ops);
-		    selectedKeys.add(key);
-		    updatedCount++;
-		}
-	    }
-	}
-	return updatedCount;
+	int updated = updateSelectedKeys(read, write, error);
+	// Done with poll(). Set wakeupSocket to nonsignaled  for the next run.
+	resetWakeupSocket();
+	return updated;
     }
 
-    private static void purgeList(ArrayList list)
+    private int updateSelectedKeys(ArrayList read, ArrayList write, ArrayList error)
     {
-	for (int i = 0; i < list.get_Count(); i++)
+	updateCount++;
+	int keys = processFDSet(updateCount, read, PollArrayWrapper.POLLIN);
+	keys += processFDSet(updateCount, write, PollArrayWrapper.POLLCONN | PollArrayWrapper.POLLOUT);
+	keys += processFDSet(updateCount, error, PollArrayWrapper.POLLIN | PollArrayWrapper.POLLCONN | PollArrayWrapper.POLLOUT);
+	return keys;
+    }
+
+    private int processFDSet(long updateCount, ArrayList sockets, int rOps)
+    {
+	int numKeysUpdated = 0;
+	for (int i = 0; i < sockets.get_Count(); i++)
 	{
-	    Socket s = (Socket)list.get_Item(i);
-	    try
+	    Socket desc = (Socket)sockets.get_Item(i);
+	    if (desc == wakeupSourceFd)
 	    {
-		if (false) throw new cli.System.ObjectDisposedException("");
-		s.Poll(0, SelectMode.wrap(SelectMode.SelectError));
+		synchronized (interruptLock)
+		{
+		    interruptTriggered = true;
+		}
+		continue;
 	    }
-	    catch (cli.System.ObjectDisposedException _)
-	    {
-		list.RemoveAt(i);
-		i--;
+	    MapEntry me = fdMap.get(desc);
+	    // If me is null, the key was deregistered in the previous
+	    // processDeregisterQueue.
+	    if (me == null)
+		continue;
+	    SelectionKeyImpl sk = me.ski;
+	    if (selectedKeys.contains(sk))
+	    { // Key in selected set
+		if (me.clearedCount != updateCount)
+		{
+		    if (sk.channel.translateAndSetReadyOps(rOps, sk) &&
+			(me.updateCount != updateCount))
+		    {
+			me.updateCount = updateCount;
+			numKeysUpdated++;
+		    }
+		}
+		else
+		{ // The readyOps have been set; now add
+		    if (sk.channel.translateAndUpdateReadyOps(rOps, sk) &&
+			(me.updateCount != updateCount))
+		    {
+			me.updateCount = updateCount;
+			numKeysUpdated++;
+		    }
+		}
+		me.clearedCount = updateCount;
+	    }
+	    else
+	    { // Key is not in selected set yet
+		if (me.clearedCount != updateCount)
+		{
+		    sk.channel.translateAndSetReadyOps(rOps, sk);
+		    if ((sk.nioReadyOps() & sk.nioInterestOps()) != 0)
+		    {
+			selectedKeys.add(sk);
+			me.updateCount = updateCount;
+			numKeysUpdated++;
+		    }
+		}
+		else
+		{ // The readyOps have been set; now add
+		    sk.channel.translateAndUpdateReadyOps(rOps, sk);
+		    if ((sk.nioReadyOps() & sk.nioInterestOps()) != 0)
+		    {
+			selectedKeys.add(sk);
+			me.updateCount = updateCount;
+			numKeysUpdated++;
+		    }
+		}
+		me.clearedCount = updateCount;
 	    }
 	}
+	return numKeysUpdated;
     }
 
     protected void implClose() throws IOException
     {
-	wakeup();
+	if (channelArray != null)
+	{
+	    // prevent further wakeup
+	    wakeup();
+	    for (int i = 0; i < channelArray.get_Count(); i++)
+	    { // Deregister channels
+		SelectionKeyImpl ski = (SelectionKeyImpl)channelArray.get_Item(i);
+		deregister(ski);
+		SelectableChannel selch = ski.channel();
+		if (!selch.isOpen() && !selch.isRegistered())
+		    ((SelChImpl)selch).kill();
+	    }
+	    selectedKeys = null;
+	    channelArray = null;
+	}
     }
 
     protected void implRegister(SelectionKeyImpl ski)
     {
+	channelArray.Add(ski);
+	fdMap.put(ski.getSocket(), new MapEntry(ski));
 	keys.add(ski);
     }
 
     protected void implDereg(SelectionKeyImpl ski) throws IOException
     {
+	channelArray.Remove(ski);
+	fdMap.remove(ski.getSocket());
 	keys.remove(ski);
 	selectedKeys.remove(ski);
 	deregister(ski);
@@ -230,23 +270,31 @@ final class DotNetSelectorImpl extends SelectorImpl
 
     public Selector wakeup()
     {
-	synchronized (wakeupMutex)
+	synchronized (interruptLock)
 	{
-	    unhandledWakeup = true;
-
-	    if (notifySocket != null)
+	    if (!interruptTriggered)
 	    {
-		notifySocket.Close();
-		notifySocket = null;
+		wakeupSourceFd.Close();
+		interruptTriggered = true;
 	    }
 	}
 	return this;
     }
 
-    private static Socket createNotifySocket()
+    // Sets Windows wakeup socket to a non-signaled state.
+    private void resetWakeupSocket()
     {
-	return new Socket(AddressFamily.wrap(AddressFamily.InterNetwork),
-	    SocketType.wrap(SocketType.Dgram),
-	    ProtocolType.wrap(ProtocolType.Udp));
+	synchronized (interruptLock)
+	{
+	    if (interruptTriggered == false)
+		return;
+	    createWakeupSocket();
+	    interruptTriggered = false;
+	}
+    }
+
+    private void createWakeupSocket()
+    {
+	wakeupSourceFd = new Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Dgram), ProtocolType.wrap(ProtocolType.Udp));
     }
 }

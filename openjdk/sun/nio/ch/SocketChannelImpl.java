@@ -941,6 +941,8 @@ class SocketChannelImpl
 		cli.System.IAsyncResult res = asyncConnect;
 		asyncConnect = null;
 		netSocket.EndConnect(res);
+		// FXBUG after connecting the sockets gets set back to blocking (even though Socket.get_Blocking() still returns false)
+		netSocket.set_Blocking(netSocket.get_Blocking());
 		return 1;
 	    }
 	    else
