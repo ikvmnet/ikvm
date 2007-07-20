@@ -25,18 +25,6 @@
 
 package sun.nio.ch;
 
-import cli.System.Net.IPAddress;
-import cli.System.Net.IPEndPoint;
-import cli.System.Net.Sockets.LingerOption;
-import cli.System.Net.Sockets.SelectMode;
-import cli.System.Net.Sockets.SocketOptionName;
-import cli.System.Net.Sockets.SocketOptionLevel;
-import cli.System.Net.Sockets.SocketFlags;
-import cli.System.Net.Sockets.SocketType;
-import cli.System.Net.Sockets.ProtocolType;
-import cli.System.Net.Sockets.AddressFamily;
-import cli.System.Net.Sockets.SocketShutdown;
-import ikvm.lang.CIL;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.*;
@@ -53,7 +41,8 @@ class SocketChannelImpl
     extends SocketChannel
     implements SelChImpl
 {
-    private final cli.System.Net.Sockets.Socket netSocket;
+    // Our file descriptor object
+    private final FileDescriptor fd;
     private volatile cli.System.IAsyncResult asyncConnect;
 
     // IDs of native threads doing reads and writes, for signalling
@@ -103,26 +92,18 @@ class SocketChannelImpl
     //
     SocketChannelImpl(SelectorProvider sp) throws IOException {
 	super(sp);
+	this.fd = Net.socket(true);
 	this.state = ST_UNCONNECTED;
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    netSocket = new cli.System.Net.Sockets.Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Stream), ProtocolType.wrap(ProtocolType.Tcp));
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
     }
 
     // Constructor for sockets obtained from server sockets
     //
     SocketChannelImpl(SelectorProvider sp,
-		      cli.System.Net.Sockets.Socket socket, InetSocketAddress remote)
+		      FileDescriptor fd, InetSocketAddress remote)
 	throws IOException
     {
 	super(sp);
-	this.netSocket = socket;
+	this.fd = fd;
 	this.state = ST_CONNECTED;
 	this.remoteAddress = remote;
     }
@@ -261,7 +242,7 @@ class SocketChannelImpl
 		// except that the shutdown operation plays the role of
 		// nd.preClose().
 		for (;;) {
-		    n = readImpl(buf);
+		    n = Net.read(fd, buf);
 		    if ((n == IOStatus.INTERRUPTED) && isOpen()) {
 			// The system call was interrupted but the channel
 			// is still open, so retry
@@ -319,7 +300,7 @@ class SocketChannelImpl
                 }
 
 		for (;;) {
-		    n = readImpl(bufs);
+		    n = Net.read(fd, bufs);
 		    if ((n == IOStatus.INTERRUPTED) && isOpen())
 			continue;
 		    return IOStatus.normalize(n);
@@ -359,7 +340,7 @@ class SocketChannelImpl
 		    writerThread = NativeThread.current();
 		}
 		for (;;) {
-		    n = writeImpl(buf);
+		    n = Net.write(fd, buf);
 		    if ((n == IOStatus.INTERRUPTED) && isOpen())
 			continue;
 		    return IOStatus.normalize(n);
@@ -390,7 +371,7 @@ class SocketChannelImpl
 		    writerThread = NativeThread.current();
 		}
 		for (;;) {
-		    n = writeImpl(bufs);
+		    n = Net.write(fd, bufs);
 		    if ((n == IOStatus.INTERRUPTED) && isOpen())
 			continue;
 		    return IOStatus.normalize(n);
@@ -417,25 +398,7 @@ class SocketChannelImpl
     }
 
     protected void implConfigureBlocking(boolean block) throws IOException {
-	if (isConnectionPending() && !isBlocking()) {
-	    // Work around for winsock issue. You can't set a socket to blocking at this point, so we'll have
-	    // to handle the blocking explicitly in checkConnect.
-	    return;
-	}
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    netSocket.set_Blocking(block);
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ObjectDisposedException _)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+	IOUtil.configureBlocking(fd, block);
     }
 
     public SocketOpts options() {
@@ -444,12 +407,12 @@ class SocketChannelImpl
 		SocketOptsImpl.Dispatcher d
 		    = new SocketOptsImpl.Dispatcher() {
 			    int getInt(int opt) throws IOException {
-				return getSocketOptionImpl(mapSocketOptionLevel(opt), mapSocketOptionName(opt));
+				return Net.getIntOption(fd, opt);
 			    }
 			    void setInt(int opt, int arg)
 				throws IOException
 			    {
-				setSocketOptionImpl(mapSocketOptionLevel(opt), mapSocketOptionName(opt), arg);
+				Net.setIntOption(fd, opt, arg);
 			    }
 			};
 		options = new SocketOptsImpl.IP.TCP(d);
@@ -473,19 +436,7 @@ class SocketChannelImpl
 		 ((InetSocketAddress)localAddress).getAddress().isAnyLocalAddress())) {
 		// Socket was not bound before connecting or
 		// Socket was bound with an "anyLocalAddress"
-		try
-		{
-		    if (false) throw new cli.System.Net.Sockets.SocketException();
-		    if (false) throw new cli.System.ObjectDisposedException("");
-		    IPEndPoint ep = (IPEndPoint)netSocket.get_LocalEndPoint();
-		    localAddress = new InetSocketAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(ep), ep.get_Port());
-		}
-		catch (cli.System.Net.Sockets.SocketException x)
-		{
-		}
-		catch (cli.System.ObjectDisposedException _)
-		{
-		}
+		    localAddress = Net.localAddress(fd);
 	    }
 	    return localAddress;
 	}
@@ -505,7 +456,8 @@ class SocketChannelImpl
 		    if (localAddress != null)
 			throw new AlreadyBoundException();
 		    InetSocketAddress isa = Net.checkAddress(local);
-		    localAddress = bindImpl(isa.getAddress(), isa.getPort());
+		    Net.bind(fd, isa.getAddress(), isa.getPort());
+		    localAddress = Net.localAddress(fd);
 		}
 	    }
 	}
@@ -627,7 +579,7 @@ class SocketChannelImpl
 			    }
 			    if (!isBlocking()) {
 				for (;;) {
-				    n = checkConnect(false,
+				    n = checkConnect(fd, false,
 						     readyToConnect);
 				    if (  (n == IOStatus.INTERRUPTED)
 					  && isOpen())
@@ -636,7 +588,7 @@ class SocketChannelImpl
 				}
 			    } else {
 				for (;;) {
-				    n = checkConnect(true,
+				    n = checkConnect(fd, true,
 						     readyToConnect);
 				    if (n == 0) {
 					// Loop in case of
@@ -693,7 +645,7 @@ class SocketChannelImpl
 	    if (!isOpen())
 		throw new ClosedChannelException();
 	    isInputOpen = false;
-	    shutdown(SHUT_RD);
+	    shutdown(fd, SHUT_RD);
 	    if (readerThread != 0)
 		NativeThread.signal(readerThread);
 	}
@@ -704,7 +656,7 @@ class SocketChannelImpl
 	    if (!isOpen())
 		throw new ClosedChannelException();
 	    isOutputOpen = false;
-	    shutdown(SHUT_WR);
+	    shutdown(fd, SHUT_WR);
 	    if (writerThread != 0)
 		NativeThread.signal(writerThread);
 	}
@@ -851,8 +803,6 @@ class SocketChannelImpl
     }
 
     public FileDescriptor getFD() {
-	FileDescriptor fd = new FileDescriptor();
-	fd.setSocket(netSocket);
 	return fd;
     }
 
@@ -900,41 +850,21 @@ class SocketChannelImpl
 
     // -- Native methods --
 
-    private SocketAddress bindImpl(InetAddress addr, int port) throws IOException
-    {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    netSocket.Bind(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(addr), port));
-	    IPEndPoint ep = (IPEndPoint)netSocket.get_LocalEndPoint();
-	    return new InetSocketAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(ep), ep.get_Port());
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	    throw new SocketException("Socket is closed");
-	}
-    }
-
     private int connectImpl(InetAddress remote, int remotePort, int trafficClass) throws IOException
     {
 	try
 	{
 	    if (false) throw new cli.System.Net.Sockets.SocketException();
 	    if (false) throw new cli.System.ObjectDisposedException("");
-	    IPEndPoint ep = new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(remote), remotePort);
+	    cli.System.Net.IPEndPoint ep = new cli.System.Net.IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(remote), remotePort);
 	    if (isBlocking())
 	    {
-		netSocket.Connect(ep);
+		fd.getSocket().Connect(ep);
 		return 1;
 	    }
 	    else
 	    {
-		asyncConnect = netSocket.BeginConnect(ep, null, null);
+		asyncConnect = fd.getSocket().BeginConnect(ep, null, null);
 		return IOStatus.UNAVAILABLE;
 	    }
 	}
@@ -948,7 +878,7 @@ class SocketChannelImpl
 	}
     }
 
-    private int checkConnect(boolean block, boolean ready) throws IOException
+    private int checkConnect(FileDescriptor fd, boolean block, boolean ready) throws IOException
     {
 	try
 	{
@@ -958,9 +888,9 @@ class SocketChannelImpl
 	    {
 		cli.System.IAsyncResult res = asyncConnect;
 		asyncConnect = null;
-		netSocket.EndConnect(res);
+		fd.getSocket().EndConnect(res);
 		// work around for blocking issue
-		netSocket.set_Blocking(isBlocking());
+		fd.getSocket().set_Blocking(isBlocking());
 		return 1;
 	    }
 	    else
@@ -978,13 +908,13 @@ class SocketChannelImpl
 	}
     }
 
-    private void shutdown(int how) throws IOException
+    private static void shutdown(FileDescriptor fd, int how) throws IOException
     {
 	try
 	{
 	    if (false) throw new cli.System.Net.Sockets.SocketException();
 	    if (false) throw new cli.System.ObjectDisposedException("");
-	    netSocket.Shutdown(SocketShutdown.wrap(how == SHUT_RD ? SocketShutdown.Receive : SocketShutdown.Send));
+	    fd.getSocket().Shutdown(cli.System.Net.Sockets.SocketShutdown.wrap(how == SHUT_RD ? cli.System.Net.Sockets.SocketShutdown.Receive : cli.System.Net.Sockets.SocketShutdown.Send));
 	}
 	catch (cli.System.Net.Sockets.SocketException x)
 	{
@@ -994,156 +924,6 @@ class SocketChannelImpl
 	{
 	    throw new SocketException("Socket is closed");
 	}
-    }
-
-    private int readImpl(ByteBuffer dst) throws IOException
-    {
-	if (dst.hasArray())
-	{
-	    byte[] buf = dst.array();
-	    int len = readImpl0(buf, dst.arrayOffset() + dst.position(), dst.remaining());
-	    if (len > 0)
-	    {
-		dst.position(dst.position() + len);
-	    }
-	    return len;
-	}
-	else
-	{
-	    byte[] buf = new byte[dst.remaining()];
-	    int len = readImpl0(buf, 0, buf.length);
-	    if (len > 0)
-	    {
-		dst.put(buf, 0, len);
-	    }
-	    return len;
-	}
-    }
-
-    private int readImpl0(byte[] buf, int offset, int length) throws IOException
-    {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    int read = netSocket.Receive(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
-	    return read == 0 ? -1 : read;
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    if (x.get_ErrorCode() == PlainSocketImpl.WSAESHUTDOWN)
-	    {
-		// the socket was shutdown, so we have to return EOF
-		return -1;
-	    }
-	    else if (x.get_ErrorCode() == PlainSocketImpl.WSAEWOULDBLOCK)
-	    {
-		// nothing to read and would block
-		return 0;
-	    }
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	    throw new SocketException("Socket is closed");
-	}
-    }
-
-    private long readImpl(ByteBuffer[] dsts) throws IOException
-    {
-	long totalRead = 0;
-	for (int i = 0; i < dsts.length; i++)
-	{
-	    int size = dsts[i].remaining();
-	    if (size > 0)
-	    {
-		int read = readImpl(dsts[i]);
-		if (read < 0)
-		{
-		    break;
-		}
-		totalRead += read;
-		if (read < size || safeGetAvailable() == 0)
-		{
-		    break;
-		}
-	    }
-	}
-	return totalRead;
-    }
-
-    private int safeGetAvailable()
-    {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    return netSocket.get_Available();
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	}
-	return 0;
-    }
-
-    private int writeImpl(ByteBuffer src) throws IOException
-    {
-	if (src.hasArray())
-	{
-	    byte[] buf = src.array();
-	    int len = writeImpl0(buf, src.arrayOffset() + src.position(), src.remaining());
-	    src.position(src.position() + len);
-	    return len;
-	}
-	else
-	{
-	    int pos = src.position();
-	    byte[] buf = new byte[src.remaining()];
-	    src.get(buf);
-	    int len = writeImpl0(buf, 0, buf.length);
-	    src.position(pos + len);
-	    return len;
-	}
-    }
-
-    private int writeImpl0(byte[] buf, int offset, int length) throws IOException
-    {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    return netSocket.Send(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	    throw new SocketException("Socket is closed");
-	}
-    }
-
-    private long writeImpl(ByteBuffer[] srcs) throws IOException
-    {
-	long totalWritten = 0;
-	for (int i = 0; i < srcs.length; i++)
-	{
-	    int size = srcs[i].remaining();
-	    if (size > 0)
-	    {
-		int written = writeImpl(srcs[i]);
-		totalWritten += written;
-		if (written < size)
-		{
-		    break;
-		}
-	    }
-	}
-	return totalWritten;
     }
 
     private void closeImpl() throws IOException
@@ -1152,7 +932,7 @@ class SocketChannelImpl
 	{
 	    if (false) throw new cli.System.Net.Sockets.SocketException();
 	    if (false) throw new cli.System.ObjectDisposedException("");
-	    netSocket.Close();
+	    fd.getSocket().Close();
 	}
 	catch (cli.System.Net.Sockets.SocketException x)
 	{
@@ -1164,98 +944,6 @@ class SocketChannelImpl
 	}
     }
 
-    static int mapSocketOptionLevel(int opt) throws IOException
-    {
-	switch (opt)
-	{
-	    case SocketOptions.SO_BROADCAST:
-	    case SocketOptions.SO_KEEPALIVE:
-	    case SocketOptions.SO_LINGER:
-	    case SocketOptions.SO_OOBINLINE:
-	    case SocketOptions.SO_RCVBUF:
-	    case SocketOptions.SO_SNDBUF:
-	    case SocketOptions.SO_REUSEADDR:
-		return SocketOptionLevel.Socket;
-	    case SocketOptions.IP_MULTICAST_LOOP:
-	    case SocketOptions.IP_TOS:
-		return SocketOptionLevel.IP;
-	    case SocketOptions.TCP_NODELAY:
-		return SocketOptionLevel.Tcp;
-	    default:
-		throw new SocketException("unsupported socket option: " + opt);
-	}
-    }
-
-    static int mapSocketOptionName(int opt) throws IOException
-    {
-	switch (opt)
-	{
-	    case SocketOptions.SO_BROADCAST:
-		return SocketOptionName.Broadcast;
-	    case SocketOptions.SO_KEEPALIVE:
-		return SocketOptionName.KeepAlive;
-	    case SocketOptions.SO_LINGER:
-		return SocketOptionName.Linger;
-	    case SocketOptions.SO_OOBINLINE:
-		return SocketOptionName.OutOfBandInline;
-	    case SocketOptions.SO_RCVBUF:
-		return SocketOptionName.ReceiveBuffer;
-	    case SocketOptions.SO_SNDBUF:
-		return SocketOptionName.SendBuffer;
-	    case SocketOptions.SO_REUSEADDR:
-		return SocketOptionName.ReuseAddress;
-	    case SocketOptions.IP_MULTICAST_LOOP:
-		return SocketOptionName.MulticastLoopback;
-	    case SocketOptions.IP_TOS:
-		return SocketOptionName.TypeOfService;
-	    case SocketOptions.TCP_NODELAY:
-		return SocketOptionName.NoDelay;
-	    default:
-		throw new SocketException("unsupported socket option: " + opt);
-	}
-    }
-
-    int getSocketOptionImpl(int level, int name) throws IOException
-    {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    Object obj = netSocket.GetSocketOption(SocketOptionLevel.wrap(level), SocketOptionName.wrap(name));
-	    if (obj instanceof LingerOption)
-	    {
-		LingerOption lo = (LingerOption)obj;
-		return lo.get_Enabled() ? lo.get_LingerTime() : -1;
-	    }
-	    return CIL.unbox_int(obj);
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	    throw new SocketException("Socket is closed");
-	}
-    }
-
-    void setSocketOptionImpl(int level, int name, int value) throws IOException
-    {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    netSocket.SetSocketOption(SocketOptionLevel.wrap(level), SocketOptionName.wrap(name), value);
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	    throw new SocketException("Socket is closed");
-	}
-    }
 }
 
 // temporary compilation stubs

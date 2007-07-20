@@ -49,6 +49,7 @@ class Net {						// package-private
     private Net() { }
 
     // Winsock Error Codes
+    static final int WSAEINVAL = 10022;
     static final int WSAEWOULDBLOCK = 10035;
     static final int WSAEMSGSIZE = 10040;
     static final int WSAEADDRINUSE = 10048;
@@ -60,13 +61,18 @@ class Net {						// package-private
     static final int WSAEHOSTUNREACH = 10065;
     static final int WSAHOST_NOT_FOUND = 11001;
 
-    static FileDescriptor socket(boolean streaming) throws IOException
+    static FileDescriptor serverSocket(boolean stream) throws IOException
+    {
+	return socket(stream);
+    }
+
+    static FileDescriptor socket(boolean stream) throws IOException
     {
 	try
 	{
 	    if (false) throw new cli.System.Net.Sockets.SocketException();
 	    FileDescriptor fd = new FileDescriptor();
-	    if (streaming)
+	    if (stream)
 	    {
 		fd.setSocket(new cli.System.Net.Sockets.Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Stream), ProtocolType.wrap(ProtocolType.Tcp)));
 	    }
@@ -110,6 +116,12 @@ class Net {						// package-private
 	}
 	catch (cli.System.Net.Sockets.SocketException x)
 	{
+	    if (x.get_ErrorCode() == WSAEINVAL)
+	    {
+		// Work around for winsock issue. You can't set a socket to blocking if a connection request is pending,
+		// so we'll have to set the blocking again in SocketChannelImpl.checkConnect().
+		return;
+	    }
 	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
 	}
 	catch (cli.System.ObjectDisposedException _)
