@@ -25,9 +25,22 @@
 
 package sun.nio.ch;
 
+import cli.System.Net.IPAddress;
+import cli.System.Net.IPEndPoint;
+import cli.System.Net.Sockets.LingerOption;
+import cli.System.Net.Sockets.SelectMode;
+import cli.System.Net.Sockets.SocketOptionName;
+import cli.System.Net.Sockets.SocketOptionLevel;
+import cli.System.Net.Sockets.SocketFlags;
+import cli.System.Net.Sockets.SocketType;
+import cli.System.Net.Sockets.ProtocolType;
+import cli.System.Net.Sockets.AddressFamily;
+import cli.System.Net.Sockets.SocketShutdown;
+import ikvm.lang.CIL;
 import java.io.*;
 import java.lang.reflect.*;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.nio.channels.*;
 
 
@@ -35,6 +48,360 @@ class Net {						// package-private
 
     private Net() { }
 
+    // Winsock Error Codes
+    static final int WSAEWOULDBLOCK = 10035;
+    static final int WSAEMSGSIZE = 10040;
+    static final int WSAEADDRINUSE = 10048;
+    static final int WSAENETUNREACH = 10051;
+    static final int WSAECONNRESET = 10054;
+    static final int WSAESHUTDOWN = 10058;
+    static final int WSAETIMEDOUT = 10060;
+    static final int WSAECONNREFUSED = 10061;
+    static final int WSAEHOSTUNREACH = 10065;
+    static final int WSAHOST_NOT_FOUND = 11001;
+
+    static FileDescriptor socket(boolean streaming) throws IOException
+    {
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    FileDescriptor fd = new FileDescriptor();
+	    if (streaming)
+	    {
+		fd.setSocket(new cli.System.Net.Sockets.Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Stream), ProtocolType.wrap(ProtocolType.Tcp)));
+	    }
+	    else
+	    {
+		fd.setSocket(new cli.System.Net.Sockets.Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Dgram), ProtocolType.wrap(ProtocolType.Udp)));
+	    }
+	    return fd;
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+	}
+    }
+
+    static void bind(FileDescriptor fd, InetAddress addr, int port) throws IOException
+    {
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    if (false) throw new cli.System.ObjectDisposedException("");
+	    fd.getSocket().Bind(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(addr), port));
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+	}
+	catch (cli.System.ObjectDisposedException x1)
+	{
+	    throw new SocketException("Socket is closed");
+	}
+    }
+
+    static void configureBlocking(FileDescriptor fd, boolean blocking) throws IOException
+    {
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    if (false) throw new cli.System.ObjectDisposedException("");
+	    fd.getSocket().set_Blocking(blocking);
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+	}
+	catch (cli.System.ObjectDisposedException _)
+	{
+	    throw new SocketException("Socket is closed");
+	}
+    }
+
+    static InetSocketAddress localAddress(FileDescriptor fd)
+    {
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    if (false) throw new cli.System.ObjectDisposedException("");
+	    IPEndPoint ep = (IPEndPoint)fd.getSocket().get_LocalEndPoint();
+	    return new InetSocketAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(ep), ep.get_Port());
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	    throw new Error(x);
+	}
+	catch (cli.System.ObjectDisposedException x)
+	{
+	    throw new Error(x);
+	}
+    }
+
+    static int localPortNumber(FileDescriptor fd)
+    {
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    if (false) throw new cli.System.ObjectDisposedException("");
+	    IPEndPoint ep = (IPEndPoint)fd.getSocket().get_LocalEndPoint();
+	    return ep == null ? 0 : ep.get_Port();
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	    throw new Error(x);
+	}
+	catch (cli.System.ObjectDisposedException x)
+	{
+	    throw new Error(x);
+	}
+    }
+
+    private static int mapSocketOptionLevel(int opt) throws IOException
+    {
+	switch (opt)
+	{
+	    case SocketOptions.SO_BROADCAST:
+	    case SocketOptions.SO_KEEPALIVE:
+	    case SocketOptions.SO_LINGER:
+	    case SocketOptions.SO_OOBINLINE:
+	    case SocketOptions.SO_RCVBUF:
+	    case SocketOptions.SO_SNDBUF:
+	    case SocketOptions.SO_REUSEADDR:
+		return SocketOptionLevel.Socket;
+	    case SocketOptions.IP_MULTICAST_LOOP:
+	    case SocketOptions.IP_TOS:
+		return SocketOptionLevel.IP;
+	    case SocketOptions.TCP_NODELAY:
+		return SocketOptionLevel.Tcp;
+	    default:
+		throw new SocketException("unsupported socket option: " + opt);
+	}
+    }
+
+    private static int mapSocketOptionName(int opt) throws IOException
+    {
+	switch (opt)
+	{
+	    case SocketOptions.SO_BROADCAST:
+		return SocketOptionName.Broadcast;
+	    case SocketOptions.SO_KEEPALIVE:
+		return SocketOptionName.KeepAlive;
+	    case SocketOptions.SO_LINGER:
+		return SocketOptionName.Linger;
+	    case SocketOptions.SO_OOBINLINE:
+		return SocketOptionName.OutOfBandInline;
+	    case SocketOptions.SO_RCVBUF:
+		return SocketOptionName.ReceiveBuffer;
+	    case SocketOptions.SO_SNDBUF:
+		return SocketOptionName.SendBuffer;
+	    case SocketOptions.SO_REUSEADDR:
+		return SocketOptionName.ReuseAddress;
+	    case SocketOptions.IP_MULTICAST_LOOP:
+		return SocketOptionName.MulticastLoopback;
+	    case SocketOptions.IP_TOS:
+		return SocketOptionName.TypeOfService;
+	    case SocketOptions.TCP_NODELAY:
+		return SocketOptionName.NoDelay;
+	    default:
+		throw new SocketException("unsupported socket option: " + opt);
+	}
+    }
+
+    static void setIntOption(FileDescriptor fd, int opt, int arg) throws IOException
+    {
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    if (false) throw new cli.System.ObjectDisposedException("");
+	    int level = mapSocketOptionLevel(opt);
+	    int name = mapSocketOptionName(opt);
+	    fd.getSocket().SetSocketOption(SocketOptionLevel.wrap(level), SocketOptionName.wrap(name), arg);
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+	}
+	catch (cli.System.ObjectDisposedException x1)
+	{
+	    throw new SocketException("Socket is closed");
+	}
+    }
+
+    static int getIntOption(FileDescriptor fd, int opt) throws IOException
+    {
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    if (false) throw new cli.System.ObjectDisposedException("");
+	    int level = mapSocketOptionLevel(opt);
+	    int name = mapSocketOptionName(opt);
+	    Object obj = fd.getSocket().GetSocketOption(SocketOptionLevel.wrap(level), SocketOptionName.wrap(name));
+	    if (obj instanceof LingerOption)
+	    {
+		LingerOption lo = (LingerOption)obj;
+		return lo.get_Enabled() ? lo.get_LingerTime() : -1;
+	    }
+	    return CIL.unbox_int(obj);
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+	}
+	catch (cli.System.ObjectDisposedException x1)
+	{
+	    throw new SocketException("Socket is closed");
+	}
+    }
+
+    private static int readImpl(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException
+    {
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    if (false) throw new cli.System.ObjectDisposedException("");
+	    int read = fd.getSocket().Receive(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
+	    return read == 0 ? -1 : read;
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	    if (x.get_ErrorCode() == PlainSocketImpl.WSAESHUTDOWN)
+	    {
+		// the socket was shutdown, so we have to return EOF
+		return -1;
+	    }
+	    else if (x.get_ErrorCode() == PlainSocketImpl.WSAEWOULDBLOCK)
+	    {
+		// nothing to read and would block
+		return 0;
+	    }
+	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+	}
+	catch (cli.System.ObjectDisposedException x1)
+	{
+	    throw new SocketException("Socket is closed");
+	}
+    }
+
+    static int read(FileDescriptor fd, ByteBuffer dst) throws IOException
+    {
+	if (dst.hasArray())
+	{
+	    byte[] buf = dst.array();
+	    int len = readImpl(fd, buf, dst.arrayOffset() + dst.position(), dst.remaining());
+	    if (len > 0)
+	    {
+		dst.position(dst.position() + len);
+	    }
+	    return len;
+	}
+	else
+	{
+	    byte[] buf = new byte[dst.remaining()];
+	    int len = readImpl(fd, buf, 0, buf.length);
+	    if (len > 0)
+	    {
+		dst.put(buf, 0, len);
+	    }
+	    return len;
+	}
+    }
+
+    static long read(FileDescriptor fd, ByteBuffer[] dsts) throws IOException
+    {
+	long totalRead = 0;
+	for (int i = 0; i < dsts.length; i++)
+	{
+	    int size = dsts[i].remaining();
+	    if (size > 0)
+	    {
+		int read = read(fd, dsts[i]);
+		if (read < 0)
+		{
+		    break;
+		}
+		totalRead += read;
+		if (read < size || safeGetAvailable(fd) == 0)
+		{
+		    break;
+		}
+	    }
+	}
+	return totalRead;
+    }
+
+    private static int safeGetAvailable(FileDescriptor fd)
+    {
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    if (false) throw new cli.System.ObjectDisposedException("");
+	    return fd.getSocket().get_Available();
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	}
+	catch (cli.System.ObjectDisposedException x1)
+	{
+	}
+	return 0;
+    }
+
+    private static int writeImpl(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException
+    {
+	try
+	{
+	    if (false) throw new cli.System.Net.Sockets.SocketException();
+	    if (false) throw new cli.System.ObjectDisposedException("");
+	    return fd.getSocket().Send(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
+	}
+	catch (cli.System.Net.Sockets.SocketException x)
+	{
+	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+	}
+	catch (cli.System.ObjectDisposedException x1)
+	{
+	    throw new SocketException("Socket is closed");
+	}
+    }
+
+    static int write(FileDescriptor fd, ByteBuffer src) throws IOException
+    {
+	if (src.hasArray())
+	{
+	    byte[] buf = src.array();
+	    int len = writeImpl(fd, buf, src.arrayOffset() + src.position(), src.remaining());
+	    src.position(src.position() + len);
+	    return len;
+	}
+	else
+	{
+	    int pos = src.position();
+	    byte[] buf = new byte[src.remaining()];
+	    src.get(buf);
+	    int len = writeImpl(fd, buf, 0, buf.length);
+	    src.position(pos + len);
+	    return len;
+	}
+    }
+
+    static long write(FileDescriptor fd, ByteBuffer[] srcs) throws IOException
+    {
+	long totalWritten = 0;
+	for (int i = 0; i < srcs.length; i++)
+	{
+	    int size = srcs[i].remaining();
+	    if (size > 0)
+	    {
+		int written = write(fd, srcs[i]);
+		totalWritten += written;
+		if (written < size)
+		{
+		    break;
+		}
+	    }
+	}
+	return totalWritten;
+    }
 
     // -- Miscellaneous utilities --
 

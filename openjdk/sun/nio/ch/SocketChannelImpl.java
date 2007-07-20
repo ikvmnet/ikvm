@@ -417,6 +417,11 @@ class SocketChannelImpl
     }
 
     protected void implConfigureBlocking(boolean block) throws IOException {
+	if (isConnectionPending() && !isBlocking()) {
+	    // Work around for winsock issue. You can't set a socket to blocking at this point, so we'll have
+	    // to handle the blocking explicitly in checkConnect.
+	    return;
+	}
 	try
 	{
 	    if (false) throw new cli.System.Net.Sockets.SocketException();
@@ -466,10 +471,21 @@ class SocketChannelImpl
 	    if (state == ST_CONNECTED &&
 		(localAddress == null ||
 		 ((InetSocketAddress)localAddress).getAddress().isAnyLocalAddress())) {
-		    // Socket was not bound before connecting or
-		    // Socket was bound with an "anyLocalAddress"
+		// Socket was not bound before connecting or
+		// Socket was bound with an "anyLocalAddress"
+		try
+		{
+		    if (false) throw new cli.System.Net.Sockets.SocketException();
+		    if (false) throw new cli.System.ObjectDisposedException("");
 		    IPEndPoint ep = (IPEndPoint)netSocket.get_LocalEndPoint();
 		    localAddress = new InetSocketAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(ep), ep.get_Port());
+		}
+		catch (cli.System.Net.Sockets.SocketException x)
+		{
+		}
+		catch (cli.System.ObjectDisposedException _)
+		{
+		}
 	    }
 	    return localAddress;
 	}
@@ -835,7 +851,9 @@ class SocketChannelImpl
     }
 
     public FileDescriptor getFD() {
-	throw new Error();
+	FileDescriptor fd = new FileDescriptor();
+	fd.setSocket(netSocket);
+	return fd;
     }
 
     public int getFDVal() {
@@ -909,7 +927,7 @@ class SocketChannelImpl
 	    if (false) throw new cli.System.Net.Sockets.SocketException();
 	    if (false) throw new cli.System.ObjectDisposedException("");
 	    IPEndPoint ep = new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(remote), remotePort);
-	    if (netSocket.get_Blocking())
+	    if (isBlocking())
 	    {
 		netSocket.Connect(ep);
 		return 1;
@@ -941,8 +959,8 @@ class SocketChannelImpl
 		cli.System.IAsyncResult res = asyncConnect;
 		asyncConnect = null;
 		netSocket.EndConnect(res);
-		// FXBUG after connecting the sockets gets set back to blocking (even though Socket.get_Blocking() still returns false)
-		netSocket.set_Blocking(netSocket.get_Blocking());
+		// work around for blocking issue
+		netSocket.set_Blocking(isBlocking());
 		return 1;
 	    }
 	    else
@@ -1238,20 +1256,9 @@ class SocketChannelImpl
 	    throw new SocketException("Socket is closed");
 	}
     }
-
-    // used by SelectionKeyImpl constructor
-    cli.System.Net.Sockets.Socket getSocket()
-    {
-	return netSocket;
-    }
 }
 
 // temporary compilation stubs
-class DatagramChannelImpl
-{
-    SocketOpts options() { throw new Error(); }
-}
-
 class PollArrayWrapper
 {
     static final short POLLIN = 0x0001;

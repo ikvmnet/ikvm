@@ -3416,9 +3416,11 @@ sun/misc/Version.java
 sun/net/www/protocol/ikvmres/Handler.java
 sun/net/www/protocol/file/Handler.java
 sun/net/www/protocol/jar/JarFileFactory.java
+sun/nio/ch/DatagramChannelImpl.java
 sun/nio/ch/DefaultSelectorProvider.java
 sun/nio/ch/DotNetSelectorImpl.java
 sun/nio/ch/FileChannelImpl.java
+sun/nio/ch/IOUtil.java
 sun/nio/ch/Net.java
 sun/nio/ch/SelectionKeyImpl.java
 sun/nio/ch/ServerSocketChannelImpl.java
@@ -5166,6 +5168,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk-b13/j2se/src/share/classes/sun/net/www/protocol/mailto/MailToURLConnection.java
 ../../openjdk-b13/j2se/src/share/classes/sun/net/www/protocol/netdoc/Handler.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ByteBuffered.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/DatagramSocketAdaptor.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/DirectBuffer.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/ChannelInputStream.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/Interruptible.java
@@ -5173,6 +5176,7 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/OptionAdaptor.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SelChImpl.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SelectorImpl.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SelectorProviderImpl.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/ServerSocketAdaptor.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SocketAdaptor.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SocketOpts.java
@@ -6107,6 +6111,9 @@ sun/security/jgss/wrapper/SunNativeProvider.java
 ../../openjdk-b13/j2se/src/windows/classes/java/util/prefs/WindowsPreferencesFactory.java
 ../../openjdk-b13/j2se/src/windows/classes/sun/net/dns/ResolverConfigurationImpl.java
 ../../openjdk-b13/j2se/src/windows/classes/sun/nio/ch/NativeThread.java
+../../openjdk-b13/j2se/src/windows/classes/sun/nio/ch/PipeImpl.java
+../../openjdk-b13/j2se/src/windows/classes/sun/nio/ch/SinkChannelImpl.java
+../../openjdk-b13/j2se/src/windows/classes/sun/nio/ch/SourceChannelImpl.java
 ../../openjdk-b13/j2se/src/windows/classes/sun/security/krb5/internal/tools/Kinit.java
 ../../openjdk-b13/j2se/src/windows/classes/sun/security/krb5/internal/tools/KinitOptions.java
 ../../openjdk-b13/j2se/src/windows/classes/sun/security/krb5/internal/tools/Klist.java

@@ -306,7 +306,9 @@ class ServerSocketChannelImpl
     }
 
     public FileDescriptor getFD() {
-	throw new Error();
+	FileDescriptor fd = new FileDescriptor();
+	fd.setSocket(netSocket);
+	return fd;
     }
 
     public int getFDVal() {
@@ -419,11 +421,5 @@ class ServerSocketChannelImpl
 	{
 	    throw new SocketException("Socket is closed");
 	}
-    }
-
-    // used by SelectionKeyImpl constructor
-    cli.System.Net.Sockets.Socket getSocket()
-    {
-	return netSocket;
     }
 }

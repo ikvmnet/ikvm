@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2002 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,40 @@
 
 package sun.nio.ch;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
-import java.nio.channels.spi.AbstractSelector;
-import java.nio.channels.spi.SelectorProvider;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.*;
+import java.nio.channels.spi.*;
 
 
 /**
- * Creates this platform's default SelectorProvider
+ * File-descriptor based I/O utilities that are shared by NIO classes.
  */
 
-public class DefaultSelectorProvider {
+class IOUtil {
 
-    /**
-     * Prevent instantiation.
-     */
-    private DefaultSelectorProvider() { }
+    private IOUtil() { }		// No instantiation
 
-    /**
-     * Returns the default SelectorProvider.
-     */
-    public static SelectorProvider create() {
-	return new SelectorProviderImpl() {
-	    public AbstractSelector openSelector() throws IOException {
-		return new DotNetSelectorImpl(this);
-	    }
-	};
+    static boolean randomBytes(byte[] someBytes)
+    {
+	try
+	{
+	    if (false) throw new cli.System.Security.Cryptography.CryptographicException();
+	    cli.System.Security.Cryptography.RNGCryptoServiceProvider csp = new cli.System.Security.Cryptography.RNGCryptoServiceProvider();
+	    csp.GetBytes(someBytes);
+	    return true;
+	}
+	catch (cli.System.Security.Cryptography.CryptographicException _)
+	{
+	    return false;
+	}
+    }
+
+    static void configureBlocking(FileDescriptor fd, boolean blocking) throws IOException
+    {
+	Net.configureBlocking(fd, blocking);
     }
 
 }

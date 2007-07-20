@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class FileDescriptor {
  
     private volatile cli.System.IO.Stream stream;
+    private volatile cli.System.Net.Sockets.Socket socket;
 
     /**
      * A use counter for tracking the FIS/FOS/RAF instances that
@@ -616,5 +617,17 @@ public final class FileDescriptor {
 	FileDescriptor desc = new FileDescriptor();
 	desc.stream = stream;
 	return desc;
+    }
+
+    @ikvm.lang.Internal
+    public cli.System.Net.Sockets.Socket getSocket()
+    {
+	return socket;
+    }
+
+    @ikvm.lang.Internal
+    public void setSocket(cli.System.Net.Sockets.Socket socket)
+    {
+	this.socket = socket;
     }
 }
