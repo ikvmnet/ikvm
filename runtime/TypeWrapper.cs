@@ -2510,7 +2510,7 @@ namespace IKVM.Internal
 					rank1--;
 					rank2--;
 				}
-				return !elem1.IsNonPrimitiveValueType && elem1.IsSubTypeOf(elem2);
+				return (!elem1.IsNonPrimitiveValueType && elem1.IsSubTypeOf(elem2)) || (rank1 == rank2 && elem2.IsGhost && elem1 == CoreClasses.java.lang.Object.Wrapper);
 			}
 			return this.IsSubTypeOf(wrapper);
 		}
