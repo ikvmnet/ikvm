@@ -448,6 +448,12 @@ class DatagramChannelImpl
 		    if (sm != null)
 			sm.checkConnect(isa.getAddress().getHostAddress(),
 					isa.getPort());
+		    // We simulate connectedness, so we don't call connect here,
+		    // but if we're not yet bound, we should bind here.
+		    if (!isBound())
+		    {
+			socket().bind(null);
+		    }
 		    //int n = Net.connect(fd,
 		    //                    isa.getAddress(),
 		    //                    isa.getPort(),
@@ -716,8 +722,27 @@ class DatagramChannelImpl
 
     private long readImpl(ByteBuffer[] bb) throws IOException
     {
-	// TODO
-	throw new Error("TODO");
+	// This is a rather lame implementation. On .NET 2.0 we could make this more
+	// efficient by using the IList<ArraySegment<byte>> overload of Socket.Send()
+	long size = 0;
+	for (int i = 0; i < bb.length; i++)
+	{
+	    size += bb[i].remaining();
+	}
+	// UDP has a maximum packet size of 64KB
+	byte[] buf = new byte[(int)Math.min(65536, size)];
+	int n = receive0(ByteBuffer.wrap(buf));
+	if (n <= 0)
+	{
+	    return n;
+	}
+	for (int i = 0, pos = 0; i < bb.length && pos < buf.length; i++)
+	{
+	    int len = Math.min(bb[i].remaining(), buf.length - pos);
+	    bb[i].put(buf, pos, len);
+	    pos += len;
+	}
+	return n;
     }
 
     private int writeImpl(ByteBuffer bb) throws IOException
@@ -727,7 +752,29 @@ class DatagramChannelImpl
 
     private long writeImpl(ByteBuffer[] bb) throws IOException
     {
-	// TODO
-	throw new Error("TODO");
+	// This is a rather lame implementation. On .NET 2.0 we could make this more
+	// efficient by using the IList<ArraySegment<byte>> overload of Socket.Send()
+	long totalWritten = 0;
+	for (int i = 0; i < bb.length; i++)
+	{
+	    try
+	    {
+		int len = writeImpl(bb[i]);
+		if (len < 0)
+		{
+		    return totalWritten > 0 ? totalWritten : len;
+		}
+		totalWritten += len;
+	    }
+	    catch (IOException x)
+	    {
+		if (totalWritten > 0)
+		{
+		    return totalWritten;
+		}
+		throw x;
+	    }
+	}
+	return totalWritten;
     }
 }
