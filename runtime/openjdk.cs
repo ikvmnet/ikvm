@@ -107,6 +107,8 @@ using jsPrivilegedExceptionAction = java.security.PrivilegedExceptionAction;
 using jsPrivilegedActionException = java.security.PrivilegedActionException;
 using jnUnknownHostException = java.net.UnknownHostException;
 using jnInetAddress = java.net.InetAddress;
+using jnInet4Address = java.net.Inet4Address;
+using jnInet6Address = java.net.Inet6Address;
 #endif
 
 namespace IKVM.NativeCode.java
@@ -335,6 +337,26 @@ namespace IKVM.NativeCode.java
 				}
 				return entry;
 			}
+
+			/*
+			 * On WHIDBEY we should generate cacerts on the fly by using something like this:
+			 *
+			 * java.security.KeyStore jstore = java.security.KeyStore.getInstance("jks");
+			 * jstore.load(null);
+			 * java.security.cert.CertificateFactory cf = java.security.cert.CertificateFactory.getInstance("X509");
+			 * 
+			 * X509Store store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
+			 * store.Open(OpenFlags.ReadOnly);
+			 * foreach (X509Certificate2 cert in store.Certificates)
+			 * {
+			 *   if (!cert.HasPrivateKey)
+			 *   {
+			 *     jstore.setCertificateEntry(cert.Subject, cf.generateCertificate(new java.io.ByteArrayInputStream(cert.RawData)));
+			 *   }
+			 * }
+			 * java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+			 * jstore.store(baos, new char[0]);
+			 */
 
 			private sealed class ZipEntryStream : System.IO.Stream
 			{
@@ -3809,7 +3831,7 @@ namespace IKVM.NativeCode.java
 						byte[] b = addr[i].GetAddressBytes();
 						if (b.Length == 4)
 						{
-							addresses.Add(jnInetAddress.getByAddress(b));
+							addresses.Add(typeof(jnInet4Address).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(string), typeof(byte[]) }, null).Invoke(new object[] { hostname, b }));
 						}
 					}
 					return (jnInetAddress[])addresses.ToArray(typeof(jnInetAddress));
@@ -3901,7 +3923,15 @@ namespace IKVM.NativeCode.java
 					jnInetAddress[] addresses = new jnInetAddress[addr.Length];
 					for (int i = 0; i < addr.Length; i++)
 					{
-						addresses[i] = jnInetAddress.getByAddress(addr[i].GetAddressBytes());
+						byte[] b = addr[i].GetAddressBytes();
+						if (b.Length == 4)
+						{
+							addresses[i] = (jnInetAddress)typeof(jnInet4Address).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(string), typeof(byte[]) }, null).Invoke(new object[] { hostname, b });
+						}
+						else
+						{
+							addresses[i] = (jnInetAddress)typeof(jnInet6Address).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(string), typeof(byte[]), typeof(int) }, null).Invoke(new object[] { hostname, b, -1 });
+						}
 					}
 					return addresses;
 				}
