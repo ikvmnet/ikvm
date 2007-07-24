@@ -109,6 +109,8 @@ using jnUnknownHostException = java.net.UnknownHostException;
 using jnInetAddress = java.net.InetAddress;
 using jnInet4Address = java.net.Inet4Address;
 using jnInet6Address = java.net.Inet6Address;
+using jnNetworkInterface = java.net.NetworkInterface;
+using jnInterfaceAddress = java.net.InterfaceAddress;
 #endif
 
 namespace IKVM.NativeCode.java
@@ -3957,6 +3959,228 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+#if WHIDBEY
+		public sealed class NetworkInterface
+		{
+			private static ConstructorInfo ni_ctor;
+			private static FieldInfo ni_displayName;
+			private static FieldInfo ni_bindings;
+			private static FieldInfo ni_childs;
+
+			public static void init()
+			{
+#if !FIRST_PASS
+				ni_ctor = typeof(jnNetworkInterface).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(string), typeof(int), typeof(jnInetAddress[]) }, null);
+				ni_displayName = typeof(jnNetworkInterface).GetField("displayName", BindingFlags.Instance | BindingFlags.NonPublic);
+				ni_bindings = typeof(jnNetworkInterface).GetField("bindings", BindingFlags.Instance | BindingFlags.NonPublic);
+				ni_childs = typeof(jnNetworkInterface).GetField("childs", BindingFlags.Instance | BindingFlags.NonPublic);
+#endif
+			}
+
+#if !FIRST_PASS
+			private class NetworkInterfaceInfo
+			{
+				internal System.Net.NetworkInformation.NetworkInterface[] dotnetInterfaces;
+				internal jnNetworkInterface[] javaInterfaces;
+			}
+
+			private static NetworkInterfaceInfo GetInterfaces()
+			{
+				System.Net.NetworkInformation.NetworkInterface[] ifaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+				jnNetworkInterface[] ret = new jnNetworkInterface[ifaces.Length];
+				int eth = 0;
+				int tr = 0;
+				int fddi = 0;
+				int lo = 0;
+				int ppp = 0;
+				int sl = 0;
+				int net = 0;
+				for (int i = 0; i < ifaces.Length; i++)
+				{
+					string name;
+					switch (ifaces[i].NetworkInterfaceType)
+					{
+						case System.Net.NetworkInformation.NetworkInterfaceType.Ethernet:
+							name = "eth" + eth++;
+							break;
+						case System.Net.NetworkInformation.NetworkInterfaceType.TokenRing:
+							name = "tr" + tr++;
+							break;
+						case System.Net.NetworkInformation.NetworkInterfaceType.Fddi:
+							name = "fddi" + fddi++;
+							break;
+						case System.Net.NetworkInformation.NetworkInterfaceType.Loopback:
+							if (lo > 0)
+							{
+								continue;
+							}
+							name = "lo";
+							lo++;
+							break;
+						case System.Net.NetworkInformation.NetworkInterfaceType.Ppp:
+							name = "ppp" + ppp++;
+							break;
+						case System.Net.NetworkInformation.NetworkInterfaceType.Slip:
+							name = "sl" + sl++;
+							break;
+						default:
+							name = "net" + net++;
+							break;
+					}
+					System.Net.NetworkInformation.UnicastIPAddressInformationCollection uipaic = ifaces[i].GetIPProperties().UnicastAddresses;
+					jnInetAddress[] addresses = new jnInetAddress[uipaic.Count];
+					for (int j = 0; j < addresses.Length; j++)
+					{
+						addresses[j] = jnInetAddress.getByAddress(uipaic[j].Address.GetAddressBytes());
+					}
+					ret[i] = (jnNetworkInterface)ni_ctor.Invoke(new object[] { name, i, addresses });
+					// TODO should implement bindings
+					ni_bindings.SetValue(ret[i], new jnInterfaceAddress[0]);
+					ni_childs.SetValue(ret[i], new jnNetworkInterface[0]);
+					ni_displayName.SetValue(ret[i], ifaces[i].Description);
+				}
+				NetworkInterfaceInfo nii = new NetworkInterfaceInfo();
+				nii.dotnetInterfaces = ifaces;
+				nii.javaInterfaces = ret;
+				return nii;
+			}
+#endif
+
+			public static object getByIndex(int index)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				jnNetworkInterface[] ifaces = GetInterfaces().javaInterfaces;
+				if (index < 0 || index >= ifaces.Length)
+				{
+					return null;
+				}
+				return ifaces[index];
+#endif
+			}
+
+			public static object getAll()
+			{
+#if FIRST_PASS
+				return null;
+#else
+				return GetInterfaces().javaInterfaces;
+#endif
+			}
+
+			public static object getByName0(string name)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				foreach (jnNetworkInterface iface in GetInterfaces().javaInterfaces)
+				{
+					if (iface.getName() == name)
+					{
+						return iface;
+					}
+				}
+				return null;
+#endif
+			}
+
+			public static object getByInetAddress0(object addr)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				foreach (jnNetworkInterface iface in GetInterfaces().javaInterfaces)
+				{
+					juEnumeration addresses = iface.getInetAddresses();
+					while (addresses.hasMoreElements())
+					{
+						if (addresses.nextElement().Equals(addr))
+						{
+							return iface;
+						}
+					}
+				}
+				return null;
+#endif
+			}
+
+			public static long getSubnet0(string name, int ind)
+			{
+				// this method is not used by the java code (!)
+				return 0;
+			}
+
+			public static object getBroadcast0(string name, int ind)
+			{
+				// this method is not used by the java code (!)
+				return null;
+			}
+
+			public static bool isUp0(string name, int ind)
+			{
+#if FIRST_PASS
+				return false;
+#else
+				return GetInterfaces().dotnetInterfaces[ind].OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up;
+#endif
+			}
+
+			public static bool isLoopback0(string name, int ind)
+			{
+#if FIRST_PASS
+				return false;
+#else
+				return GetInterfaces().dotnetInterfaces[ind].NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Loopback;
+#endif
+			}
+
+			public static bool supportsMulticast0(string name, int ind)
+			{
+#if FIRST_PASS
+				return false;
+#else
+				return GetInterfaces().dotnetInterfaces[ind].SupportsMulticast;
+#endif
+			}
+
+			public static bool isP2P0(string name, int ind)
+			{
+#if FIRST_PASS
+				return false;
+#else
+				switch (GetInterfaces().dotnetInterfaces[ind].NetworkInterfaceType)
+				{
+					case System.Net.NetworkInformation.NetworkInterfaceType.Ppp:
+					case System.Net.NetworkInformation.NetworkInterfaceType.Slip:
+						return true;
+					default:
+						return false;
+				}
+#endif
+			}
+
+			public static byte[] getMacAddr0(byte[] inAddr, string name, int ind)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				return GetInterfaces().dotnetInterfaces[ind].GetPhysicalAddress().GetAddressBytes();
+#endif
+			}
+
+			public static int getMTU0(string name, int ind)
+			{
+#if FIRST_PASS
+				return 0;
+#else
+				return GetInterfaces().dotnetInterfaces[ind].GetIPProperties().GetIPv4Properties().Mtu;
+#endif
+			}
+		}
+#else
+		// TODO it would be nice to implement this on .NET 1.1 builds as well
+		// (by creating .NET 2.0 compatible reflection based wrappers around the System.Management based implementation)
 		public sealed class NetworkInterface
 		{
 			public static void init()
@@ -3965,64 +4189,67 @@ namespace IKVM.NativeCode.java
 
 			public static object getByIndex(int index)
 			{
-				throw new NotImplementedException();
+				return null;
 			}
 
 			public static object getAll()
 			{
-				throw new NotImplementedException();
+				return null;
 			}
 
 			public static object getByName0(string name)
 			{
-				throw new NotImplementedException();
+				return null;
 			}
 
 			public static object getByInetAddress0(object addr)
 			{
-				throw new NotImplementedException();
+				return null;
 			}
 
 			public static long getSubnet0(string name, int ind)
 			{
-				throw new NotImplementedException();
+				// this method is not used by the java code (!)
+				return 0;
 			}
 
 			public static object getBroadcast0(string name, int ind)
 			{
-				throw new NotImplementedException();
+				// this method is not used by the java code (!)
+				return null;
 			}
 
 			public static bool isUp0(string name, int ind)
 			{
-				throw new NotImplementedException();
+				return false;
 			}
 
 			public static bool isLoopback0(string name, int ind)
 			{
-				throw new NotImplementedException();
+				return false;
 			}
 
 			public static bool supportsMulticast0(string name, int ind)
 			{
-				throw new NotImplementedException();
+				return false;
 			}
 
 			public static bool isP2P0(string name, int ind)
 			{
-				throw new NotImplementedException();
+				return false;
 			}
 
 			public static byte[] getMacAddr0(byte[] inAddr, string name, int ind)
 			{
-				throw new NotImplementedException();
+				return null;
 			}
 
 			public static int getMTU0(string name, int ind)
 			{
-				throw new NotImplementedException();
+				return 0;
 			}
 		}
+#endif
 	}
 
 	namespace security
