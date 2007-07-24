@@ -214,26 +214,18 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 
     protected synchronized void receive0(DatagramPacket p) throws IOException
     {
-	byte[] data = p.getData();
 	cli.System.Net.EndPoint[] remoteEP = new cli.System.Net.EndPoint[] 
             {
                 new cli.System.Net.IPEndPoint(0, 0)
             };
+	int length;
 	for (; ; )
 	{
 	    try
 	    {
 		if (false) throw new cli.System.Net.Sockets.SocketException();
 		if (false) throw new cli.System.ObjectDisposedException("");
-		int length = 0;
-		try
-		{
-		    length = netSocket.ReceiveFrom(data, p.offset, p.bufLength, SocketFlags.wrap(SocketFlags.None), remoteEP);
-		}
-		finally
-		{
-		    p.length = length;
-		}
+		length = netSocket.ReceiveFrom(p.buf, p.offset, p.bufLength, SocketFlags.wrap(SocketFlags.None), remoteEP);
 		break;
 	    }
 	    catch (cli.System.Net.Sockets.SocketException x)
@@ -248,6 +240,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 		{
 		    // The buffer size was too small for the packet, ReceiveFrom receives the part of the packet
 		    // that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
+		    length = p.bufLength;
 		    break;
 		}
 		throw PlainSocketImpl.convertSocketExceptionToIOException(x);
@@ -260,6 +253,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 	IPEndPoint endpoint = (IPEndPoint)remoteEP[0];
 	p.address = PlainSocketImpl.getInetAddressFromIPEndPoint(endpoint);
 	p.port = endpoint.get_Port();
+	p.length = length;
     }
 
     /**
