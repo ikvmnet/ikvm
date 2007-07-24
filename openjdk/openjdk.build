@@ -39,6 +39,9 @@
                <include name="lib/zi/**/*" />
                <include name="lib/logging.properties" />
           </fileset>
+          <fileset basedir=".">
+               <include name="lib/**/*" />
+          </fileset>
       </zip>
     </target>
 
