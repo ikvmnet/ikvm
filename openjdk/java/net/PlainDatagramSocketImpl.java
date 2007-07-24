@@ -27,6 +27,7 @@ package java.net;
 
 import cli.System.Net.IPAddress;
 import cli.System.Net.IPEndPoint;
+import cli.System.Net.Sockets.SelectMode;
 import cli.System.Net.Sockets.SocketOptionName;
 import cli.System.Net.Sockets.SocketOptionLevel;
 import cli.System.Net.Sockets.MulticastOption;
@@ -225,6 +226,11 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 	    {
 		if (false) throw new cli.System.Net.Sockets.SocketException();
 		if (false) throw new cli.System.ObjectDisposedException("");
+		if (timeout > 0 && !netSocket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
+		    SelectMode.wrap(SelectMode.SelectRead)))
+		{
+		    throw new SocketTimeoutException();
+		}
 		length = netSocket.ReceiveFrom(p.buf, p.offset, p.bufLength, SocketFlags.wrap(SocketFlags.None), remoteEP);
 		break;
 	    }
@@ -595,9 +601,6 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 		case SocketOptions.IP_MULTICAST_LOOP:
 		    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback), ((Boolean)val).booleanValue() ? 1 : 0);
 		    break;
-		case SocketOptions.SO_TIMEOUT:
-		    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout), ((Integer)val).intValue());
-		    break;
 		case SocketOptions.SO_REUSEADDR:
 		    PlainSocketImpl.setCommonSocketOption(netSocket, opt, ((Boolean)val).booleanValue(), null);
 		    break;
@@ -632,8 +635,6 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 		    throw new SocketException("SocketOptions.IP_MULTICAST_IF(2) not implemented");
 		case SocketOptions.IP_MULTICAST_LOOP:
 		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback))) != 0;
-		case SocketOptions.SO_TIMEOUT:
-		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveTimeout)));
 		case SocketOptions.SO_REUSEADDR:
 		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress))) != 0;
 		case SocketOptions.SO_SNDBUF:
