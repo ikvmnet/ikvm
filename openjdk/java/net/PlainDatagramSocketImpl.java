@@ -362,12 +362,19 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 	    if (false) throw new cli.System.ArgumentException();
 	    if (false) throw new cli.System.ObjectDisposedException("");
 	    IPAddress mcastAddr = PlainSocketImpl.getAddressFromInetAddress(inetaddr);
-	    Enumeration e = netIf.getInetAddresses();
-	    if (e.hasMoreElements())
+	    if (netIf == null)
 	    {
-		IPAddress bindAddr = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
-		MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
-		netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), mcastOption);
+		netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), new MulticastOption(mcastAddr));
+	    }
+	    else
+	    {
+		Enumeration e = netIf.getInetAddresses();
+		if (e.hasMoreElements())
+		{
+		    IPAddress bindAddr = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
+		    MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
+		    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), mcastOption);
+		}
 	    }
 	}
 	catch (cli.System.Net.Sockets.SocketException x)
@@ -407,12 +414,19 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 	    if (false) throw new cli.System.ArgumentException();
 	    if (false) throw new cli.System.ObjectDisposedException("");
 	    IPAddress mcastAddr = PlainSocketImpl.getAddressFromInetAddress(inetaddr);
-	    Enumeration e = netIf.getInetAddresses();
-	    if (e.hasMoreElements())
+	    if (netIf == null)
 	    {
-		IPAddress bindAddr = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
-		MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
-		netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), mcastOption);
+		netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), new MulticastOption(mcastAddr));
+	    }
+	    else
+	    {
+		Enumeration e = netIf.getInetAddresses();
+		if (e.hasMoreElements())
+		{
+		    IPAddress bindAddr = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
+		    MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
+		    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), mcastOption);
+		}
 	    }
 	}
 	catch (cli.System.Net.Sockets.SocketException x)
