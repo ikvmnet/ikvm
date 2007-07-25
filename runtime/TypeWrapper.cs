@@ -1600,7 +1600,14 @@ namespace IKVM.Internal
 				TypeWrapper annot = loader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.'));
 				return annot.Annotation;
 			}
-			catch(RetargetableJavaException)
+#if STATIC_COMPILER
+			catch(ClassNotFoundException x)
+			{
+				StaticCompiler.IssueMessage(Message.ClassNotFound, x.Message);
+				return null;
+			}
+#endif
+			catch (RetargetableJavaException)
 			{
 				Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
 				return null;
@@ -5132,15 +5139,6 @@ namespace IKVM.Internal
 							Annotation annotation = Annotation.Load(wrapper.GetClassLoader(), def);
 							if(annotation != null)
 							{
-#if STATIC_COMPILER
-								// NOTE the "assembly" type in the unnamed package is a magic type
-								// that acts as the placeholder for assembly attributes
-								if(classFile.Name == "assembly")
-								{
-									annotation.Apply(wrapper.GetClassLoader(), (AssemblyBuilder)typeBuilder.Assembly, def);
-									continue;
-								}
-#endif
 								annotation.Apply(wrapper.GetClassLoader(), typeBuilder, def);
 							}
 						}

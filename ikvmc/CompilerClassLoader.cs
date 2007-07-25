@@ -2243,6 +2243,7 @@ namespace IKVM.Internal
 				Assembly.ReflectionOnlyLoadFrom(typeof(System.ComponentModel.EditorBrowsableAttribute).Assembly.Location);
 			}
 #endif
+			ArrayList assemblyAnnotations = new ArrayList();
 			Hashtable baseClasses = new Hashtable();
 			Hashtable h = new Hashtable();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
@@ -2256,6 +2257,12 @@ namespace IKVM.Internal
 					if(!f.IsInterface && f.SuperClass != null)
 					{
 						baseClasses[f.SuperClass] = f.SuperClass;
+					}
+					// NOTE the "assembly" type in the unnamed package is a magic type
+					// that acts as the placeholder for assembly attributes
+					if(f.Name == "assembly" && f.Annotations != null)
+					{
+						assemblyAnnotations.AddRange(f.Annotations);
 					}
 				}
 				catch(ClassFormatError)
@@ -2541,6 +2548,14 @@ namespace IKVM.Internal
 			{
 				CustomAttributeBuilder filever = new CustomAttributeBuilder(typeof(AssemblyFileVersionAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { options.fileversion });
 				loader.assemblyBuilder.SetCustomAttribute(filever);
+			}
+			foreach(object[] def in assemblyAnnotations)
+			{
+				Annotation annotation = Annotation.Load(loader, def);
+				if(annotation != null)
+				{
+					annotation.Apply(loader, loader.assemblyBuilder, def);
+				}
 			}
 			loader.assemblyBuilder.DefineVersionInfoResource();
 			loader.Save();
