@@ -3826,7 +3826,11 @@ namespace IKVM.NativeCode.java
 #else
 				try
 				{
+#if WHIDBEY
 					System.Net.IPAddress[] addr = System.Net.Dns.GetHostAddresses(hostname);
+#else
+					System.Net.IPAddress[] addr = System.Net.Dns.Resolve(hostname).AddressList;
+#endif
 					ArrayList addresses = new ArrayList();
 					for (int i = 0; i < addr.Length; i++)
 					{
@@ -3921,7 +3925,11 @@ namespace IKVM.NativeCode.java
 #else
 				try
 				{
+#if WHIDBEY
 					System.Net.IPAddress[] addr = System.Net.Dns.GetHostAddresses(hostname);
+#else
+					System.Net.IPAddress[] addr = System.Net.Dns.Resolve(hostname).AddressList;
+#endif
 					jnInetAddress[] addresses = new jnInetAddress[addr.Length];
 					for (int i = 0; i < addr.Length; i++)
 					{
