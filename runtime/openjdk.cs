@@ -3837,7 +3837,7 @@ namespace IKVM.NativeCode.java
 						byte[] b = addr[i].GetAddressBytes();
 						if (b.Length == 4)
 						{
-							addresses.Add(typeof(jnInet4Address).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(string), typeof(byte[]) }, null).Invoke(new object[] { hostname, b }));
+							addresses.Add(jnInetAddress.getByAddress(hostname, b));
 						}
 					}
 					return (jnInetAddress[])addresses.ToArray(typeof(jnInetAddress));
@@ -3933,15 +3933,7 @@ namespace IKVM.NativeCode.java
 					jnInetAddress[] addresses = new jnInetAddress[addr.Length];
 					for (int i = 0; i < addr.Length; i++)
 					{
-						byte[] b = addr[i].GetAddressBytes();
-						if (b.Length == 4)
-						{
-							addresses[i] = (jnInetAddress)typeof(jnInet4Address).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(string), typeof(byte[]) }, null).Invoke(new object[] { hostname, b });
-						}
-						else
-						{
-							addresses[i] = (jnInetAddress)typeof(jnInet6Address).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(string), typeof(byte[]), typeof(int) }, null).Invoke(new object[] { hostname, b, -1 });
-						}
+						addresses[i] = jnInetAddress.getByAddress(hostname, addr[i].GetAddressBytes());
 					}
 					return addresses;
 				}
@@ -3967,13 +3959,16 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-#if WHIDBEY
 		public sealed class NetworkInterface
 		{
+#if !FIRST_PASS
 			private static ConstructorInfo ni_ctor;
 			private static FieldInfo ni_displayName;
 			private static FieldInfo ni_bindings;
 			private static FieldInfo ni_childs;
+			private static NetworkInterfaceInfo cache;
+			private static DateTime cachedSince;
+#endif
 
 			public static void init()
 			{
@@ -3994,6 +3989,12 @@ namespace IKVM.NativeCode.java
 
 			private static NetworkInterfaceInfo GetInterfaces()
 			{
+				// Since many of the methods in java.net.NetworkInterface end up calling this method and the underlying stuff this is
+				// based on isn't very quick either, we cache the array for a couple of seconds.
+				if (cache != null && DateTime.UtcNow - cachedSince < new TimeSpan(0, 0, 5))
+				{
+					return cache;
+				}
 				System.Net.NetworkInformation.NetworkInterface[] ifaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
 				jnNetworkInterface[] ret = new jnNetworkInterface[ifaces.Length];
 				int eth = 0;
@@ -4039,6 +4040,7 @@ namespace IKVM.NativeCode.java
 					jnInetAddress[] addresses = new jnInetAddress[uipaic.Count];
 					for (int j = 0; j < addresses.Length; j++)
 					{
+						// TODO for IPv6 addresses we should set the scope
 						addresses[j] = jnInetAddress.getByAddress(uipaic[j].Address.GetAddressBytes());
 					}
 					ret[i] = (jnNetworkInterface)ni_ctor.Invoke(new object[] { name, i, addresses });
@@ -4050,6 +4052,8 @@ namespace IKVM.NativeCode.java
 				NetworkInterfaceInfo nii = new NetworkInterfaceInfo();
 				nii.dotnetInterfaces = ifaces;
 				nii.javaInterfaces = ret;
+				cache = nii;
+				cachedSince = DateTime.UtcNow;
 				return nii;
 			}
 #endif
@@ -4182,82 +4186,11 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return 0;
 #else
-				return GetInterfaces().dotnetInterfaces[ind].GetIPProperties().GetIPv4Properties().Mtu;
+				System.Net.NetworkInformation.IPv4InterfaceProperties props = GetInterfaces().dotnetInterfaces[ind].GetIPProperties().GetIPv4Properties();
+				return props == null ? -1 : props.Mtu;
 #endif
 			}
 		}
-#else
-		// TODO it would be nice to implement this on .NET 1.1 builds as well
-		// (by creating .NET 2.0 compatible reflection based wrappers around the System.Management based implementation)
-		public sealed class NetworkInterface
-		{
-			public static void init()
-			{
-			}
-
-			public static object getByIndex(int index)
-			{
-				return null;
-			}
-
-			public static object getAll()
-			{
-				return null;
-			}
-
-			public static object getByName0(string name)
-			{
-				return null;
-			}
-
-			public static object getByInetAddress0(object addr)
-			{
-				return null;
-			}
-
-			public static long getSubnet0(string name, int ind)
-			{
-				// this method is not used by the java code (!)
-				return 0;
-			}
-
-			public static object getBroadcast0(string name, int ind)
-			{
-				// this method is not used by the java code (!)
-				return null;
-			}
-
-			public static bool isUp0(string name, int ind)
-			{
-				return false;
-			}
-
-			public static bool isLoopback0(string name, int ind)
-			{
-				return false;
-			}
-
-			public static bool supportsMulticast0(string name, int ind)
-			{
-				return false;
-			}
-
-			public static bool isP2P0(string name, int ind)
-			{
-				return false;
-			}
-
-			public static byte[] getMacAddr0(byte[] inAddr, string name, int ind)
-			{
-				return null;
-			}
-
-			public static int getMTU0(string name, int ind)
-			{
-				return 0;
-			}
-		}
-#endif
 	}
 
 	namespace security

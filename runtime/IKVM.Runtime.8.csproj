@@ -60,6 +60,7 @@
       <Name>System</Name>
     </Reference>
     <Reference Include="System.configuration" />
+    <Reference Include="System.Management" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs">
@@ -114,6 +115,7 @@
     <Compile Include="MemberWrapper.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="netinf.cs" />
     <Compile Include="openjdk.cs" />
     <Compile Include="profiler.cs">
       <SubType>Code</SubType>

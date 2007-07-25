@@ -53,6 +53,7 @@
                 <include name="JavaException.cs" />
                 <include name="JniInterface.cs" />
                 <include name="MemberWrapper.cs" />
+                <include name="netinf.cs" />
                 <include if="${hybrid}" name="openjdk.cs" />
                 <include name="profiler.cs" />
                 <include name="tracer.cs" />
