@@ -5033,6 +5033,24 @@ namespace IKVM.NativeCode.java
 	}
 }
 
+namespace IKVM.NativeCode.sun.java2d
+{
+	public sealed class DefaultDisposerRecord
+	{
+		public static void invokeNativeDispose(long disposerMethodPointer, long dataPointer)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	public sealed class Disposer
+	{
+		public static void initIDs()
+		{
+		}
+	}
+}
+
 namespace IKVM.NativeCode.sun.misc
 {
 	public sealed class GC
