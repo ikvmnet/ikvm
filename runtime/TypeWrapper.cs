@@ -3497,6 +3497,12 @@ namespace IKVM.Internal
 			return ((JavaTypeImpl)impl).GenerateUniqueMethodName(basename, mw);
 		}
 
+		// NOTE can only be used if the type hasn't been finished yet!
+		internal string GenerateUniqueMethodName(string basename, Type returnType, Type[] parameterTypes)
+		{
+			return ((JavaTypeImpl)impl).GenerateUniqueMethodName(basename, returnType, parameterTypes);
+		}
+
 		internal void CreateStep1(out bool hasclinit)
 		{
 			((JavaTypeImpl)impl).CreateStep1(out hasclinit);
@@ -4616,12 +4622,30 @@ namespace IKVM.Internal
 				classFile.Link(wrapper, classCache);
 				for(int i = 0; i < fields.Length; i++)
 				{
+#if STATIC_COMPILER
+					if(fields[i] is AotAccessStubFieldWrapper)
+					{
+						// HACK we skip access stubs, because we want to do the methods first
+						// (to prevent the stub method from taking the name of a real method)
+						continue;
+					}
+#endif
 					fields[i].Link();
 				}
 				for(int i = 0; i < methods.Length; i++)
 				{
 					methods[i].Link();
 				}
+#if STATIC_COMPILER
+				// HACK second pass for the access stubs (see above)
+				for(int i = 0; i < fields.Length; i++)
+				{
+					if(fields[i] is AotAccessStubFieldWrapper)
+					{
+						fields[i].Link();
+					}
+				}
+#endif
 				// this is the correct lock, FinishCore doesn't call any user code and mutates global state,
 				// so it needs to be protected by a lock.
 				lock(this)
@@ -6230,7 +6254,7 @@ namespace IKVM.Internal
 				return GenerateUniqueMethodName(basename, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
 			}
 
-			private string GenerateUniqueMethodName(string basename, Type returnType, Type[] parameterTypes)
+			internal string GenerateUniqueMethodName(string basename, Type returnType, Type[] parameterTypes)
 			{
 				string name = basename;
 				string key = GenerateClashKey("method", name, returnType, parameterTypes);

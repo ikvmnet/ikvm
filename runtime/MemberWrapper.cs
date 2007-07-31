@@ -1951,6 +1951,11 @@ namespace IKVM.Internal
 			this.basefield = basefield;
 		}
 
+		private string GenerateUniqueMethodName(string basename, Type returnType, Type[] parameterTypes)
+		{
+			return ((DynamicTypeWrapper)this.DeclaringType).GenerateUniqueMethodName(basename, returnType, parameterTypes);
+		}
+
 		internal void DoLink(TypeBuilder typeBuilder)
 		{
 			basefield.Link();
@@ -1964,7 +1969,8 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				PropertyBuilder pb = typeBuilder.DefineProperty(Name, PropertyAttributes.None, basefield.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
+				Type propType = basefield.FieldTypeWrapper.TypeAsSignatureType;
+				PropertyBuilder pb = typeBuilder.DefineProperty(Name, PropertyAttributes.None, propType, Type.EmptyTypes);
 				AttributeHelper.HideFromReflection(pb);
 				MethodAttributes attribs = basefield.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
 				attribs |= MethodAttributes.HideBySig;
@@ -1972,7 +1978,7 @@ namespace IKVM.Internal
 				{
 					attribs |= MethodAttributes.Static;
 				}
-				getter = typeBuilder.DefineMethod("get_" + Name, attribs, basefield.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
+				getter = typeBuilder.DefineMethod(GenerateUniqueMethodName("get_" + Name, propType, Type.EmptyTypes), attribs, propType, Type.EmptyTypes);
 				AttributeHelper.HideFromJava(getter);
 				pb.SetGetMethod(getter);
 				ILGenerator ilgen = getter.GetILGenerator();
@@ -1984,7 +1990,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ret);
 				if(!basefield.IsFinal)
 				{
-					setter = typeBuilder.DefineMethod("set_" + Name, attribs, null, new Type[] { basefield.FieldTypeWrapper.TypeAsSignatureType });
+					setter = typeBuilder.DefineMethod(GenerateUniqueMethodName("set_" + Name, typeof(void), new Type[] { propType }), attribs, null, new Type[] { propType });
 					AttributeHelper.HideFromJava(setter);
 					pb.SetSetMethod(setter);
 					ilgen = setter.GetILGenerator();
