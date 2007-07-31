@@ -1686,7 +1686,17 @@ namespace IKVM.Runtime
 
 		internal static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue *args)
 		{
-			return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false));
+			jobject obj = AllocObject(pEnv, clazz);
+			if(obj != IntPtr.Zero)
+			{
+				InvokeHelper(pEnv, obj, methodID, args, false);
+				if(ExceptionCheck(pEnv) == JNI_TRUE)
+				{
+					DeleteLocalRef(pEnv, obj);
+					obj = IntPtr.Zero;
+				}
+			}
+			return obj;
 		}
 
 		internal static jclass GetObjectClass(JNIEnv* pEnv, jobject obj)
