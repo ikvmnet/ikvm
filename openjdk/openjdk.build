@@ -60,10 +60,6 @@
           <arg value="-recurse:../classpath/*.class" />
           <arg value="-recurse:${OpenJDK.dir}/*.class" />
           <arg value="-recurse:${Classpath.dir}/*.class" />
-          <arg value="-recurse:${Classpath.dir}/resource/*.css" />
-          <arg value="-recurse:${Classpath.dir}/resource/*.properties" />
-          <arg value="-recurse:${Classpath.dir}/resource/javax.*" />
-          <arg value="-recurse:${Classpath.dir}/resource/org.xml.*" />
           <arg value="-r:mscorlib" />
           <arg value="-r:${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
           <arg value="-resource:lib/security/classpath.security=${Classpath.dir}/resource/java/security/classpath.security" />
