@@ -209,10 +209,7 @@ namespace System.Net.NetworkInformation
 							// TODO this doesn't work, the MTU value is always null
 							mtu = (int)(uint)props["MTU"].Value;
 						}
-						catch (System.Management.ManagementException)
-						{
-						}
-						catch (NullReferenceException)
+						catch
 						{
 						}
 						byte[] mac = null;
@@ -220,10 +217,7 @@ namespace System.Net.NetworkInformation
 						{
 							mac = ParseMacAddress((string)props["MACAddress"].Value);
 						}
-						catch (System.Management.ManagementException)
-						{
-						}
-						catch (NullReferenceException)
+						catch
 						{
 						}
 						ifaces.Add(new NetworkInterface((uint)props["InterfaceIndex"].Value, (string)props["Description"].Value, addr, mtu, mac));
@@ -244,10 +238,7 @@ namespace System.Net.NetworkInformation
 						{
 							type = (NetworkInterfaceType)(ushort)props["AdapterTypeID"].Value;
 						}
-						catch (System.Management.ManagementException)
-						{
-						}
-						catch (NullReferenceException)
+						catch
 						{
 						}
 						OperationalStatus status = OperationalStatus.Unknown;
@@ -258,10 +249,7 @@ namespace System.Net.NetworkInformation
 								status = OperationalStatus.Up;
 							}
 						}
-						catch (System.Management.ManagementException)
-						{
-						}
-						catch (NullReferenceException)
+						catch
 						{
 						}
 						for (int i = 0; i < netif.Length; i++)

@@ -53,7 +53,7 @@
                 <include name="JavaException.cs" />
                 <include name="JniInterface.cs" />
                 <include name="MemberWrapper.cs" />
-                <include name="netinf.cs" />
+                <include if="${hybrid}" name="netinf.cs" />
                 <include if="${hybrid}" name="openjdk.cs" />
                 <include name="profiler.cs" />
                 <include name="tracer.cs" />
@@ -67,6 +67,8 @@
             <references>
                 <include unless="${first-pass or hybrid}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
                 <include unless="${first-pass or not hybrid}" name="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" asis="true" />
+                <!-- HACK mcs 1.2.3 requires explicit reference to System.Management -->
+                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Management.dll" />
             </references>
             <nowarn>
                 <!-- don't whine about deprecated methods -->
