@@ -3612,7 +3612,7 @@ namespace IKVM.Internal
 					}
 				}
 				wrapper.HasStaticInitializer = hasclinit;
-				if(!wrapper.IsInterface)
+				if(!wrapper.IsInterface || wrapper.IsPublic)
 				{
 					ArrayList methodsArray = null;
 					ArrayList baseMethodsArray = null;
@@ -3623,7 +3623,7 @@ namespace IKVM.Internal
 						AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
 					}
 #if STATIC_COMPILER
-					if(wrapper.IsPublic)
+					if(!wrapper.IsInterface && wrapper.IsPublic)
 					{
 						TypeWrapper baseTypeWrapper = wrapper.BaseTypeWrapper;
 						while(baseTypeWrapper != null && !baseTypeWrapper.IsPublic)
@@ -3674,7 +3674,7 @@ namespace IKVM.Internal
 					}
 				}
 #if STATIC_COMPILER
-				if(!wrapper.IsInterface && wrapper.IsPublic)
+				if(wrapper.IsPublic)
 				{
 					ArrayList fieldsArray = new ArrayList(fields);
 					AddAccessStubFields(fieldsArray, wrapper);
@@ -4118,6 +4118,11 @@ namespace IKVM.Internal
 			{
 				foreach(TypeWrapper iface in tw.Interfaces)
 				{
+					if(iface.IsPublic && this.wrapper.IsInterface)
+					{
+						// for interfaces, we only need miranda methods for non-public interfaces that we extend
+						continue;
+					}
 					AddMirandaMethods(methods, baseMethods, iface);
 					foreach(MethodWrapper ifmethod in iface.GetMethods())
 					{
