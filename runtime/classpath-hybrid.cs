@@ -22,57 +22,8 @@
   
 */
 using System;
-using System.Collections;
-using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Security;
-using System.Security.Permissions;
-using System.Runtime.Serialization;
-using SystemArray = System.Array;
-using IKVM.Attributes;
-using IKVM.Runtime;
 using IKVM.Internal;
-#if !FIRST_PASS
-using NegativeArraySizeException = java.lang.NegativeArraySizeException;
-using IllegalArgumentException = java.lang.IllegalArgumentException;
-using IllegalAccessException = java.lang.IllegalAccessException;
-using NumberFormatException = java.lang.NumberFormatException;
-using jlNoClassDefFoundError = java.lang.NoClassDefFoundError;
-using jlrConstructor = java.lang.reflect.Constructor;
-using jlrField = java.lang.reflect.Field;
-#endif
-
-namespace IKVM.NativeCode.java
-{
-#if !COMPACT_FRAMEWORK
-	namespace security
-	{
-		public class VMAccessController
-		{
-			public static object getClassFromFrame(System.Diagnostics.StackFrame frame)
-			{
-				return gnu.classpath.VMStackWalker.getClassFromType(frame.GetMethod().DeclaringType);
-			}
-		}
-	}
-#endif
-}
-
-namespace IKVM.NativeCode.gnu.java.lang.management
-{
-	public class VMClassLoadingMXBeanImpl
-	{
-		public static int getLoadedClassCount()
-		{
-			// we don't really have a number of classes loaded, but we'll
-			// return something anyway
-			return ClassLoaderWrapper.GetLoadedClassCount();
-		}
-	}
-}
 
 namespace IKVM.NativeCode.gnu.classpath
 {
@@ -88,65 +39,6 @@ namespace IKVM.NativeCode.gnu.classpath
 			{
 				return "(unknown)";
 			}
-		}
-	}
-
-	public class VMStackWalker
-	{
-		private static readonly Hashtable isHideFromJavaCache = Hashtable.Synchronized(new Hashtable());
-
-		public static object getClassFromType(Type type)
-		{
-			TypeWrapper.AssertFinished(type);
-			if(type == null)
-			{
-				return null;
-			}
-			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
-			if(tw == null)
-			{
-				return null;
-			}
-			return tw.ClassObject;
-		}
-
-		public static object getClassLoaderFromType(Type type)
-		{
-			// global methods have no type
-			if(type == null)
-			{
-				return null;
-			}
-			else if(type.Module is System.Reflection.Emit.ModuleBuilder)
-			{
-				return ClassLoaderWrapper.GetWrapperFromType(type).GetClassLoader().GetJavaClassLoader();
-			}
-			else
-			{
-				return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly).GetJavaClassLoader();
-			}
-		}
-
-		public static Type getJNIEnvType()
-		{
-#if COMPACT_FRAMEWORK
-			return null;
-#else
-			return typeof(IKVM.Runtime.JNIEnv);
-#endif
-		}
-
-		public static bool isHideFromJava(MethodBase mb)
-		{
-			// TODO on .NET 2.0 isHideFromJavaCache should be a Dictionary<RuntimeMethodHandle, bool>
-			object cached = isHideFromJavaCache[mb];
-			if(cached == null)
-			{
-				cached = mb.IsDefined(typeof(HideFromJavaAttribute), false)
-					|| mb.IsDefined(typeof(HideFromReflectionAttribute), false);
-				isHideFromJavaCache[mb] = cached;
-			}
-			return (bool)cached;
 		}
 	}
 }
