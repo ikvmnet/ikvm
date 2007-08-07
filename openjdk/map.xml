@@ -1739,6 +1739,21 @@
         </attribute>
       </method>
     </class>
+    <class name="java.nio.charset.spi.CharsetProvider">
+      <method name="&lt;init&gt;" sig="()V">
+        <!-- HACK this is a work around for a bootstrap issue, we can't trigger initialization of java.lang.System from here -->
+        <replace-method-call class="java.lang.System" name="getSecurityManager" sig="()Ljava.lang.SecurityManager;">
+          <code>
+            <ldnull />
+            <call class="sun.misc.VM" name="isBooted" sig="()Z" />
+            <brfalse name="skip" />
+            <pop />
+            <call class="java.lang.System" name="getSecurityManager" sig="()Ljava.lang.SecurityManager;" />
+            <label name="skip" />
+          </code>
+        </replace-method-call>
+      </method>
+    </class>
     <class name="sun.reflect.Reflection">
       <!-- we manually hook up this native method, to prevent inlining and tail-call optimizations -->
       <method name="getCallerClass" sig="(I)Ljava.lang.Class;">
