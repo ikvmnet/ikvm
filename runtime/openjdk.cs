@@ -73,6 +73,7 @@ using jlrConstructor = java.lang.reflect.Constructor;
 using jlrMethod = java.lang.reflect.Method;
 using jlrField = java.lang.reflect.Field;
 using jlrModifier = java.lang.reflect.Modifier;
+using jlrAccessibleObject = java.lang.reflect.AccessibleObject;
 using ProtectionDomain = java.security.ProtectionDomain;
 using srMethodAccessor = sun.reflect.MethodAccessor;
 using srConstantPool = sun.reflect.ConstantPool;
@@ -88,6 +89,7 @@ using Annotation = java.lang.annotation.Annotation;
 using smJavaIOAccess = sun.misc.JavaIOAccess;
 using smLauncher = sun.misc.Launcher;
 using smSharedSecrets = sun.misc.SharedSecrets;
+using smVM = sun.misc.VM;
 using jiConsole = java.io.Console;
 using jiIOException = java.io.IOException;
 using jiFile = java.io.File;
@@ -332,6 +334,8 @@ namespace IKVM.NativeCode.java
 				if (entry == null)
 				{
 					if (name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("zip")
+						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("awt")
+						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("rmi")
 						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("net"))
 					{
 						return new VfsEntry(false);
@@ -2105,7 +2109,7 @@ namespace IKVM.NativeCode.java
 						// The protection domain for statically compiled code is created lazily (not at java.lang.Class creation time),
 						// to work around boot strap issues.
 						// TODO this should be done more efficiently
-						MethodInfo method = loader.GetType().GetMethod("getProtectionDomain", BindingFlags.NonPublic | BindingFlags.Instance);
+						MethodInfo method = loader.GetType().GetMethod("getProtectionDomain", BindingFlags.Public | BindingFlags.Instance);
 						if (method != null)
 						{
 							pd = method.Invoke(loader, null);
@@ -2408,7 +2412,6 @@ namespace IKVM.NativeCode.java
 
 			public static void registerNatives()
 			{
-				Thread.Bootstrap();
 			}
 
 			public static object defineClass0(object thisClassLoader, string name, byte[] b, int off, int len, object pd)
@@ -2731,7 +2734,7 @@ namespace IKVM.NativeCode.java
 					MethodBase method = frame.GetMethod();
 					Type type = method.DeclaringType;
 					// NOTE these checks should be the same as the ones in Reflection.getCallerClass
-					if (IKVM.NativeCode.gnu.classpath.VMStackWalker.isHideFromJava(method)
+					if (IKVM.NativeCode.sun.reflect.Reflection.IsHideFromJava(method)
 						|| type == null
 						|| type.Assembly == typeof(object).Assembly
 						|| type.Assembly == typeof(SecurityManager).Assembly
@@ -3035,6 +3038,20 @@ namespace IKVM.NativeCode.java
 				// TODO we should chop off the trailing separator
 				p.put("java.home", io.VirtualFileSystem.RootPath);
 				p.put("sun.boot.library.path", io.VirtualFileSystem.RootPath + "bin");
+
+				// HACK this is an extremely gross hack, here we explicitly call the class initializer of a bunch of
+				// classes while their class initializers may already be running. All of their class initializers are
+				// idempotent (or so we hope).
+				// Normally this wouldn't be necessary, but for some scenarios the initialization order may be such
+				// that the code following us will expect the class initializer of the following classes to already have
+				// run to completion, but if one of these classes was responsible for triggering bootstrap, a second
+				// invocation wouldn't normally result in the class initializer running again, by running them
+				// explicitly (and thus possibly twice), we make sure that subsequent code won't see an unexpected
+				// state.
+				typeof(jiFile).TypeInitializer.Invoke(null, null);
+				typeof(jlrAccessibleObject).TypeInitializer.Invoke(null, null);
+				typeof(jlrModifier).TypeInitializer.Invoke(null, null);
+				typeof(jiConsole).TypeInitializer.Invoke(null, null);
 #endif
 				return props;
 			}
@@ -4220,6 +4237,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
+				IKVM.NativeCode.java.lang.Thread.Bootstrap();
 				Type caller;
 				for (int i = 1; ; i++)
 				{
@@ -4268,6 +4286,14 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
+				if (!smVM.isBooted())
+				{
+					// NOTE work around boot strap issue. When the main thread is attached,
+					// it calls us for the inherited AccessControlContext, but we won't be able
+					// to provide anything meaningful (primarily because we can't create
+					// ProtectionDomain instances yet) so we return null (which implies full trust).
+					return null;
+				}
 				object previous_protection_domain = null;
 				object privileged_context = null;
 				bool is_privileged = false;
@@ -5267,7 +5293,22 @@ namespace IKVM.NativeCode.sun.reflect
 {
 	public sealed class Reflection
 	{
+		private static readonly Hashtable isHideFromJavaCache = Hashtable.Synchronized(new Hashtable());
+
 		private Reflection() { }
+
+		internal static bool IsHideFromJava(MethodBase mb)
+		{
+			// TODO on .NET 2.0 isHideFromJavaCache should be a Dictionary<RuntimeMethodHandle, bool>
+			object cached = isHideFromJavaCache[mb];
+			if (cached == null)
+			{
+				cached = mb.IsDefined(typeof(IKVM.Attributes.HideFromJavaAttribute), false)
+					|| mb.IsDefined(typeof(IKVM.Attributes.HideFromReflectionAttribute), false);
+				isHideFromJavaCache[mb] = cached;
+			}
+			return (bool)cached;
+		}
 
 		// NOTE this method is hooked up explicitly through map.xml to prevent inlining of the native stub
 		// and tail-call optimization in the native stub.
@@ -5292,7 +5333,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				Type type = method.DeclaringType;
 				// NOTE these checks should be the same as the ones in SecurityManager.getClassContext
-				if (IKVM.NativeCode.gnu.classpath.VMStackWalker.isHideFromJava(method)
+				if (IsHideFromJava(method)
 					|| type == null
 					|| type.Assembly == typeof(object).Assembly
 					|| type.Assembly == typeof(Reflection).Assembly
