@@ -24,7 +24,6 @@
 
 package sun.misc;
 
-import gnu.classpath.VMStackWalker;
 import java.lang.reflect.Field;
 import java.lang.reflect.ReflectHelper;
 import java.util.ArrayList;
@@ -32,18 +31,26 @@ import java.util.ArrayList;
 public final class Unsafe
 {
     public static final int INVALID_FIELD_OFFSET = -1;
-    private static final Unsafe instance = new Unsafe();
+    // NOTE sun.corba.Bridge actually access this field directly (via reflection),
+    // so the name must match the JDK name.
+    private static final Unsafe theUnsafe = new Unsafe();
     private static final ArrayList<Field> fields = new ArrayList<Field>();
 
-    private Unsafe() {}
+    private Unsafe() { }
 
     public static Unsafe getUnsafe()
     {
-        if(VMStackWalker.getCallingClassLoader() != null)
+	Class c = sun.reflect.Reflection.getCallerClass(2);
+        if(c.getClassLoader() != null)
         {
-            throw new SecurityException();
+            throw new SecurityException("Unsafe");
         }
-        return instance;
+	if(c == SharedSecrets.class)
+	{
+	    // HACK make sure that bootstrap has occurred before SharedSecrets.getJavaLangAccess() is called.
+	    theUnsafe.ensureClassInitialized(System.class);
+	}
+	return theUnsafe;
     }
 
     // NOTE we have a really lame (and slow) implementation!
