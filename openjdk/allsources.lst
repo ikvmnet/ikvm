@@ -1302,11 +1302,9 @@
 ../../classpath/sun/awt/CausedFocusEvent.java
 ../classpath/gnu/classpath/Configuration.java
 ../classpath/gnu/classpath/PointerUtil.java
-../classpath/gnu/classpath/VMStackWalker.java
 ../classpath/gnu/classpath/VMSystemProperties.java
 ../classpath/gnu/java/awt/peer/ClasspathDesktopPeer.java
 ../classpath/gnu/java/awt/peer/gtk/CairoSurface.java
-../classpath/gnu/java/lang/VMInstrumentationImpl.java
 ../classpath/gnu/java/net/protocol/ikvmres/Handler.java
 ../classpath/gnu/java/nio/FileChannelImpl.java
 ../classpath/ikvm/internal/__unspecified.java
@@ -1324,7 +1322,6 @@
 ../classpath/ikvm/runtime/Startup.java
 ../classpath/ikvm/runtime/Util.java
 ../classpath/java/lang/ExceptionHelper.java
-../classpath/java/lang/VMInstrumentationImpl.java
 ../classpath/java/nio/DirectByteBufferImpl.java
 ../classpath/java/nio/VMDirectByteBuffer.java
 ../classpath/java/util/concurrent/atomic/AtomicBoolean.java
