@@ -1519,53 +1519,61 @@ namespace IKVM.NativeCode.java
 
 				public static void set(object arrayObj, int index, object value)
 				{
-					jlBoolean booleanValue = value as jlBoolean;
-					if (booleanValue != null)
+					if (arrayObj == null)
 					{
-						setBoolean(arrayObj, index, booleanValue.booleanValue());
-						return;
+						throw new jlNullPointerException();
 					}
-					jlByte byteValue = value as jlByte;
-					if (byteValue != null)
+					Type type = arrayObj.GetType();
+					if (type.IsArray && ClassLoaderWrapper.GetWrapperFromType(type.GetElementType()).IsPrimitive)
 					{
-						setByte(arrayObj, index, byteValue.byteValue());
-						return;
-					}
-					jlCharacter charValue = value as jlCharacter;
-					if (charValue != null)
-					{
-						setChar(arrayObj, index, charValue.charValue());
-						return;
-					}
-					jlShort shortValue = value as jlShort;
-					if (shortValue != null)
-					{
-						setShort(arrayObj, index, shortValue.shortValue());
-						return;
-					}
-					jlInteger intValue = value as jlInteger;
-					if (intValue != null)
-					{
-						setInt(arrayObj, index, intValue.intValue());
-						return;
-					}
-					jlFloat floatValue = value as jlFloat;
-					if (floatValue != null)
-					{
-						setFloat(arrayObj, index, floatValue.floatValue());
-						return;
-					}
-					jlLong longValue = value as jlLong;
-					if (longValue != null)
-					{
-						setLong(arrayObj, index, longValue.longValue());
-						return;
-					}
-					jlDouble doubleValue = value as jlDouble;
-					if (doubleValue != null)
-					{
-						setDouble(arrayObj, index, doubleValue.doubleValue());
-						return;
+						jlBoolean booleanValue = value as jlBoolean;
+						if (booleanValue != null)
+						{
+							setBoolean(arrayObj, index, booleanValue.booleanValue());
+							return;
+						}
+						jlByte byteValue = value as jlByte;
+						if (byteValue != null)
+						{
+							setByte(arrayObj, index, byteValue.byteValue());
+							return;
+						}
+						jlCharacter charValue = value as jlCharacter;
+						if (charValue != null)
+						{
+							setChar(arrayObj, index, charValue.charValue());
+							return;
+						}
+						jlShort shortValue = value as jlShort;
+						if (shortValue != null)
+						{
+							setShort(arrayObj, index, shortValue.shortValue());
+							return;
+						}
+						jlInteger intValue = value as jlInteger;
+						if (intValue != null)
+						{
+							setInt(arrayObj, index, intValue.intValue());
+							return;
+						}
+						jlFloat floatValue = value as jlFloat;
+						if (floatValue != null)
+						{
+							setFloat(arrayObj, index, floatValue.floatValue());
+							return;
+						}
+						jlLong longValue = value as jlLong;
+						if (longValue != null)
+						{
+							setLong(arrayObj, index, longValue.longValue());
+							return;
+						}
+						jlDouble doubleValue = value as jlDouble;
+						if (doubleValue != null)
+						{
+							setDouble(arrayObj, index, doubleValue.doubleValue());
+							return;
+						}
 					}
 					try
 					{
@@ -1791,9 +1799,9 @@ namespace IKVM.NativeCode.java
 					}
 					try
 					{
-						TypeWrapper wrapper = TypeWrapper.FromClass(componentType);
+						TypeWrapper wrapper = TypeWrapper.FromClass(componentType).MakeArrayType(dimensions.Length);
 						wrapper.Finish();
-						return IKVM.Runtime.ByteCodeHelper.multianewarray(wrapper.MakeArrayType(dimensions.Length).TypeAsArrayType.TypeHandle, dimensions);
+						return IKVM.Runtime.ByteCodeHelper.multianewarray(wrapper.TypeAsArrayType.TypeHandle, dimensions);
 					}
 					catch (RetargetableJavaException x)
 					{
