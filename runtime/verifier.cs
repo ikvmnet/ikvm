@@ -315,24 +315,45 @@ class InstructionState
 		for(int i = 0; i < s.stackSize; i++)
 		{
 			TypeWrapper type = s.stack[i];
-			if(type == s2.stack[i])
+			TypeWrapper type2 = s2.stack[i];
+			if(type == type2)
 			{
 				// perfect match, nothing to do
 			}
+			else if((type == VerifierTypeWrapper.ExtendedDouble && type2 == PrimitiveTypeWrapper.DOUBLE)
+				|| (type2 == VerifierTypeWrapper.ExtendedDouble && type == PrimitiveTypeWrapper.DOUBLE))
+			{
+				if(type != VerifierTypeWrapper.ExtendedDouble)
+				{
+					s.StackCopyOnWrite();
+					s.stack[i] = VerifierTypeWrapper.ExtendedDouble;
+					s.changed = true;
+				}
+			}
+			else if((type == VerifierTypeWrapper.ExtendedFloat && type2 == PrimitiveTypeWrapper.FLOAT)
+				|| (type2 == VerifierTypeWrapper.ExtendedFloat && type == PrimitiveTypeWrapper.FLOAT))
+			{
+				if(type != VerifierTypeWrapper.ExtendedFloat)
+				{
+					s.StackCopyOnWrite();
+					s.stack[i] = VerifierTypeWrapper.ExtendedFloat;
+					s.changed = true;
+				}
+			}
 			else if(!type.IsPrimitive)
 			{
-				TypeWrapper baseType = InstructionState.FindCommonBaseType(type, s2.stack[i]);
+				TypeWrapper baseType = InstructionState.FindCommonBaseType(type, type2);
 				if(baseType == VerifierTypeWrapper.Invalid)
 				{
 					// if we never return from a subroutine, it is legal to merge to subroutine flows
 					// (this is from the Mauve test subr.pass.mergeok)
-					if(VerifierTypeWrapper.IsRet(type) && VerifierTypeWrapper.IsRet(s2.stack[i]))
+					if(VerifierTypeWrapper.IsRet(type) && VerifierTypeWrapper.IsRet(type2))
 					{
 						baseType = VerifierTypeWrapper.Invalid;
 					}
 					else
 					{
-						throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, s2.stack[i].Name));
+						throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, type2.Name));
 					}
 				}
 				if(type != baseType)
@@ -344,7 +365,7 @@ class InstructionState
 			}
 			else
 			{
-				throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, s2.stack[i].Name));
+				throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, type2.Name));
 			}
 		}
 		for(int i = 0; i < s.locals.Length; i++)
@@ -819,9 +840,19 @@ class InstructionState
 		PushHelper(PrimitiveTypeWrapper.FLOAT);
 	}
 
+	internal void PushExtendedFloat()
+	{
+		PushHelper(VerifierTypeWrapper.ExtendedFloat);
+	}
+
 	internal void PushDouble()
 	{
 		PushHelper(PrimitiveTypeWrapper.DOUBLE);
+	}
+
+	internal void PushExtendedDouble()
+	{
+		PushHelper(VerifierTypeWrapper.ExtendedDouble);
 	}
 
 	internal void PopInt()
@@ -832,20 +863,24 @@ class InstructionState
 		}
 	}
 
-	internal void PopFloat()
+	internal bool PopFloat()
 	{
-		if(PopAnyType() != PrimitiveTypeWrapper.FLOAT)
+		TypeWrapper tw = PopAnyType();
+		if(tw != PrimitiveTypeWrapper.FLOAT && tw != VerifierTypeWrapper.ExtendedFloat)
 		{
 			throw new VerifyError("Float expected on stack");
 		}
+		return tw == VerifierTypeWrapper.ExtendedFloat;
 	}
 
-	internal void PopDouble()
+	internal bool PopDouble()
 	{
-		if(PopAnyType() != PrimitiveTypeWrapper.DOUBLE)
+		TypeWrapper tw = PopAnyType();
+		if(tw != PrimitiveTypeWrapper.DOUBLE && tw != VerifierTypeWrapper.ExtendedDouble)
 		{
 			throw new VerifyError("Double expected on stack");
 		}
+		return tw == VerifierTypeWrapper.ExtendedDouble;
 	}
 
 	internal void PopLong()
@@ -914,7 +949,7 @@ class InstructionState
 			throw new VerifyError("Unable to pop operand off an empty stack");
 		}
 		TypeWrapper type = stack[--stackSize];
-		if(type.IsWidePrimitive)
+		if(type.IsWidePrimitive || type == VerifierTypeWrapper.ExtendedDouble)
 		{
 			stackEnd++;
 		}
@@ -929,7 +964,7 @@ class InstructionState
 	internal TypeWrapper PopType()
 	{
 		TypeWrapper type = PopAnyType();
-		if(type.IsWidePrimitive)
+		if(type.IsWidePrimitive || type == VerifierTypeWrapper.ExtendedDouble)
 		{
 			throw new VerifyError("Attempt to split long or double on the stack");
 		}
@@ -960,6 +995,14 @@ class InstructionState
 			{
 				return type;
 			}
+			if(type == VerifierTypeWrapper.ExtendedDouble && baseType == PrimitiveTypeWrapper.DOUBLE)
+			{
+				return type;
+			}
+			if(type == VerifierTypeWrapper.ExtendedFloat && baseType == PrimitiveTypeWrapper.FLOAT)
+			{
+				return type;
+			}
 			throw new VerifyError("Unexpected type " + type.Name + " where " + baseType.Name + " was expected");
 		}
 		return type;
@@ -972,7 +1015,16 @@ class InstructionState
 
 	internal TypeWrapper GetStackSlot(int pos)
 	{
-		return stack[stackSize - 1 - pos];
+		TypeWrapper tw = stack[stackSize - 1 - pos];
+		if(tw == VerifierTypeWrapper.ExtendedDouble)
+		{
+			tw = PrimitiveTypeWrapper.DOUBLE;
+		}
+		else if(tw == VerifierTypeWrapper.ExtendedFloat)
+		{
+			tw = PrimitiveTypeWrapper.FLOAT;
+		}
+		return tw;
 	}
 
 	internal TypeWrapper GetStackByIndex(int index)
@@ -982,7 +1034,7 @@ class InstructionState
 
 	private void PushHelper(TypeWrapper type)
 	{
-		if(type.IsWidePrimitive)
+		if(type.IsWidePrimitive || type == VerifierTypeWrapper.ExtendedDouble)
 		{
 			stackEnd--;
 		}
@@ -1177,6 +1229,14 @@ struct StackState
 			{
 				return type;
 			}
+			if(type == VerifierTypeWrapper.ExtendedDouble && baseType == PrimitiveTypeWrapper.DOUBLE)
+			{
+				return type;
+			}
+			if(type == VerifierTypeWrapper.ExtendedFloat && baseType == PrimitiveTypeWrapper.FLOAT)
+			{
+				return type;
+			}
 			throw new VerifyError("Unexpected type " + type.Name + " where " + baseType.Name + " was expected");
 		}
 		return type;
@@ -1186,7 +1246,7 @@ struct StackState
 	internal TypeWrapper PopType()
 	{
 		TypeWrapper type = PopAnyType();
-		if(type.IsWidePrimitive)
+		if(type.IsWidePrimitive || type == VerifierTypeWrapper.ExtendedDouble)
 		{
 			throw new VerifyError("Attempt to split long or double on the stack");
 		}
@@ -1203,7 +1263,8 @@ struct StackState
 
 	internal void PopFloat()
 	{
-		if(PopAnyType() != PrimitiveTypeWrapper.FLOAT)
+		TypeWrapper tw = PopAnyType();
+		if(tw != PrimitiveTypeWrapper.FLOAT && tw != VerifierTypeWrapper.ExtendedFloat)
 		{
 			throw new VerifyError("Float expected on stack");
 		}
@@ -1211,7 +1272,8 @@ struct StackState
 
 	internal void PopDouble()
 	{
-		if(PopAnyType() != PrimitiveTypeWrapper.DOUBLE)
+		TypeWrapper tw = PopAnyType();
+		if(tw != PrimitiveTypeWrapper.DOUBLE && tw != VerifierTypeWrapper.ExtendedDouble)
 		{
 			throw new VerifyError("Double expected on stack");
 		}
@@ -1267,6 +1329,8 @@ class VerifierTypeWrapper : TypeWrapper
 	internal static readonly TypeWrapper Null = new VerifierTypeWrapper("null", 0, null);
 	internal static readonly TypeWrapper UninitializedThis = new VerifierTypeWrapper("uninitialized-this", 0, null);
 	internal static readonly TypeWrapper Unloadable = new UnloadableTypeWrapper("<verifier>");
+	internal static readonly TypeWrapper ExtendedFloat = new VerifierTypeWrapper("<extfloat>", 0, null);
+	internal static readonly TypeWrapper ExtendedDouble = new VerifierTypeWrapper("<extdouble>", 0, null);
 
 	private int index;
 	private TypeWrapper underlyingType;
@@ -1959,6 +2023,14 @@ class MethodAnalyzer
 									{
 										s.PushType(cpi.GetMethod().ReturnType);
 									}
+									else if(retType == PrimitiveTypeWrapper.DOUBLE)
+									{
+										s.PushExtendedDouble();
+									}
+									else if(retType == PrimitiveTypeWrapper.FLOAT)
+									{
+										s.PushExtendedFloat();
+									}
 									else
 									{
 										s.PushType(retType);
@@ -2019,8 +2091,14 @@ class MethodAnalyzer
 								s.PushLong();
 								break;
 							case NormalizedByteCode.__fneg:
-								s.PopFloat();
-								s.PushFloat();
+								if(s.PopFloat())
+								{
+									s.PushExtendedFloat();
+								}
+								else
+								{
+									s.PushFloat();
+								}
 								break;
 							case NormalizedByteCode.__fadd:
 							case NormalizedByteCode.__fsub:
@@ -2029,11 +2107,17 @@ class MethodAnalyzer
 							case NormalizedByteCode.__frem:
 								s.PopFloat();
 								s.PopFloat();
-								s.PushFloat();
+								s.PushExtendedFloat();
 								break;
 							case NormalizedByteCode.__dneg:
-								s.PopDouble();
-								s.PushDouble();
+								if(s.PopDouble())
+								{
+									s.PushExtendedDouble();
+								}
+								else
+								{
+									s.PushDouble();
+								}
 								break;
 							case NormalizedByteCode.__dadd:
 							case NormalizedByteCode.__dsub:
@@ -2042,7 +2126,7 @@ class MethodAnalyzer
 							case NormalizedByteCode.__drem:
 								s.PopDouble();
 								s.PopDouble();
-								s.PushDouble();
+								s.PushExtendedDouble();
 								break;
 							case NormalizedByteCode.__new:
 							{
@@ -2143,7 +2227,7 @@ class MethodAnalyzer
 							case NormalizedByteCode.__dup2:
 							{
 								TypeWrapper t = s.PopAnyType();
-								if(t.IsWidePrimitive)
+								if(t.IsWidePrimitive || t == VerifierTypeWrapper.ExtendedDouble)
 								{
 									s.PushType(t);
 									s.PushType(t);
@@ -2170,7 +2254,7 @@ class MethodAnalyzer
 							case NormalizedByteCode.__dup2_x1:
 							{
 								TypeWrapper value1 = s.PopAnyType();
-								if(value1.IsWidePrimitive)
+								if(value1.IsWidePrimitive || value1 == VerifierTypeWrapper.ExtendedDouble)
 								{
 									TypeWrapper value2 = s.PopType();
 									s.PushType(value1);
@@ -2193,7 +2277,7 @@ class MethodAnalyzer
 							{
 								TypeWrapper value1 = s.PopType();
 								TypeWrapper value2 = s.PopAnyType();
-								if(value2.IsWidePrimitive)
+								if(value2.IsWidePrimitive || value2 == VerifierTypeWrapper.ExtendedDouble)
 								{
 									s.PushType(value1);
 									s.PushType(value2);
@@ -2212,10 +2296,10 @@ class MethodAnalyzer
 							case NormalizedByteCode.__dup2_x2:
 							{
 								TypeWrapper value1 = s.PopAnyType();
-								if(value1.IsWidePrimitive)
+								if(value1.IsWidePrimitive || value1 == VerifierTypeWrapper.ExtendedDouble)
 								{
 									TypeWrapper value2 = s.PopAnyType();
-									if(value2.IsWidePrimitive)
+									if(value2.IsWidePrimitive || value2 == VerifierTypeWrapper.ExtendedDouble)
 									{
 										// Form 4
 										s.PushType(value1);
@@ -2236,7 +2320,7 @@ class MethodAnalyzer
 								{
 									TypeWrapper value2 = s.PopType();
 									TypeWrapper value3 = s.PopAnyType();
-									if(value3.IsWidePrimitive)
+									if(value3.IsWidePrimitive || value3 == VerifierTypeWrapper.ExtendedDouble)
 									{
 										// Form 3
 										s.PushType(value2);
@@ -2265,7 +2349,7 @@ class MethodAnalyzer
 							case NormalizedByteCode.__pop2:
 							{
 								TypeWrapper type = s.PopAnyType();
-								if(!type.IsWidePrimitive)
+								if(!type.IsWidePrimitive && type != VerifierTypeWrapper.ExtendedDouble)
 								{
 									s.PopType();
 								}
@@ -2594,6 +2678,30 @@ class MethodAnalyzer
 					StackState stack = new StackState(state[i]);
 					switch(instructions[i].NormalizedOpCode)
 					{
+						case NormalizedByteCode.__fstore:
+							if(stack.PeekType() == VerifierTypeWrapper.ExtendedFloat && !method.IsStrictfp)
+							{
+								instructions[i].PatchOpCode(NormalizedByteCode.__fstore_conv);
+							}
+							break;
+						case NormalizedByteCode.__fastore:
+							if(stack.PeekType() == VerifierTypeWrapper.ExtendedFloat && !method.IsStrictfp)
+							{
+								instructions[i].PatchOpCode(NormalizedByteCode.__fastore_conv);
+							}
+							break;
+						case NormalizedByteCode.__dstore:
+							if(stack.PeekType() == VerifierTypeWrapper.ExtendedDouble && !method.IsStrictfp)
+							{
+								instructions[i].PatchOpCode(NormalizedByteCode.__dstore_conv);
+							}
+							break;
+						case NormalizedByteCode.__dastore:
+							if(stack.PeekType() == VerifierTypeWrapper.ExtendedDouble && !method.IsStrictfp)
+							{
+								instructions[i].PatchOpCode(NormalizedByteCode.__dastore_conv);
+							}
+							break;
 						case NormalizedByteCode.__invokeinterface:
 						case NormalizedByteCode.__invokespecial:
 						case NormalizedByteCode.__invokestatic:
