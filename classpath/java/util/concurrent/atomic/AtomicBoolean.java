@@ -46,7 +46,7 @@ package java.util.concurrent.atomic;
 public class AtomicBoolean implements java.io.Serializable {
     private static final long serialVersionUID = 4654671469794556979L;
 
-    private volatile boolean value;
+    private volatile int value;
 
     /**
      * Creates a new <tt>AtomicBoolean</tt> with the given initial value.
@@ -54,7 +54,7 @@ public class AtomicBoolean implements java.io.Serializable {
      * @param initialValue the initial value
      */
     public AtomicBoolean(boolean initialValue) {
-        value = initialValue;
+        value = initialValue ? 1 : 0;
     }
 
     /**
@@ -69,7 +69,7 @@ public class AtomicBoolean implements java.io.Serializable {
      * @return the current value
      */
     public final boolean get() {
-        return value;
+        return value != 0;
     }
 
     /**
@@ -81,13 +81,13 @@ public class AtomicBoolean implements java.io.Serializable {
      * @return true if successful. False return indicates that
      * the actual value was not equal to the expected value.
      */
-    public final synchronized boolean compareAndSet(boolean expect, boolean update) {
-        if (value == expect) {
-            value = update;
-            return true;
-        }
-        return false;
+    public final boolean compareAndSet(boolean expect, boolean update) {
+	int e = expect ? 1 : 0;
+	int u = update ? 1 : 0;
+	return compareAndSwapInt(e, u);
     }
+    // implemented in map.xml
+    private native boolean compareAndSwapInt(int expected, int update);
 
     /**
      * Atomically sets the value to the given updated value
@@ -109,7 +109,7 @@ public class AtomicBoolean implements java.io.Serializable {
      * @param newValue the new value
      */
     public final void set(boolean newValue) {
-        value = newValue;
+	value = newValue ? 1 : 0;
     }
 
     /**
@@ -119,7 +119,7 @@ public class AtomicBoolean implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(boolean newValue) {
-        value = newValue;
+	value = newValue ? 1 : 0;
     }
 
     /**

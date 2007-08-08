@@ -1603,6 +1603,20 @@
 				</body>
 			</method>
 		</class>
+    <class name="java.util.concurrent.atomic.AtomicBoolean">
+      <method name="compareAndSwapInt" sig="(II)Z">
+        <body>
+          <ldarg_0 />
+          <ldflda class="java.util.concurrent.atomic.AtomicBoolean" name="value" sig="I" />
+          <ldarg_2 />
+          <ldarg_1 />
+          <call type="System.Threading.Interlocked" name="CompareExchange" sig="System.Int32&amp;;System.Int32;System.Int32" />
+          <ldarg_1 />
+          <ceq />
+          <ret />
+        </body>
+      </method>
+    </class>
 		<class name="java.util.concurrent.atomic.AtomicInteger">
 			<method name="getAndSet" sig="(I)I">
 				<body>
