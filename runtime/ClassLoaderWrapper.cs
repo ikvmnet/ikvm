@@ -1052,6 +1052,12 @@ namespace IKVM.Internal
 			typeToTypeWrapper.Add(type, wrapper);
 		}
 
+		internal static void ResetWrapperForType(Type type, TypeWrapper wrapper)
+		{
+			TypeWrapper.AssertFinished(type);
+			typeToTypeWrapper[type] = wrapper;
+		}
+
 		internal static TypeWrapper LoadClassCritical(string name)
 		{
 			try

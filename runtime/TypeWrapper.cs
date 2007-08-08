@@ -11331,6 +11331,7 @@ namespace IKVM.Internal
 		private static MethodInfo clone;
 		private readonly TypeWrapper ultimateElementTypeWrapper;
 		private Type arrayType;
+		private bool finished;
 
 		internal ArrayTypeWrapper(TypeWrapper ultimateElementTypeWrapper, string name)
 			: base(Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name, CoreClasses.java.lang.Object.Wrapper)
@@ -11424,23 +11425,16 @@ namespace IKVM.Internal
 			}
 		}
 
-		private bool IsFinished
-		{
-			get
-			{
-				return !(ultimateElementTypeWrapper.TypeAsArrayType is TypeBuilder);
-			}
-		}
-
 		internal override void Finish()
 		{
 			lock(this)
 			{
-				if(!IsFinished)
+				if(!finished)
 				{
+					finished = true;
 					ultimateElementTypeWrapper.Finish();
 					arrayType = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
-					ClassLoaderWrapper.SetWrapperForType(arrayType, this);
+					ClassLoaderWrapper.ResetWrapperForType(arrayType, this);
 				}
 			}
 		}
