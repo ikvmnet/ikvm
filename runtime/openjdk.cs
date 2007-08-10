@@ -113,6 +113,7 @@ using jnInet4Address = java.net.Inet4Address;
 using jnInet6Address = java.net.Inet6Address;
 using jnNetworkInterface = java.net.NetworkInterface;
 using jnInterfaceAddress = java.net.InterfaceAddress;
+using ssaGetPropertyAction = sun.security.action.GetPropertyAction;
 #endif
 
 namespace IKVM.NativeCode.java
@@ -3512,7 +3513,7 @@ namespace IKVM.NativeCode.java
 				t.nativeThread.Name = t.javaThread.getName();
 				t.nativeThread.IsBackground = t.javaThread.isDaemon();
 				t.nativeThread.Priority = MapJavaPriorityToNative(t.javaThread.getPriority());
-				string apartment = jlSystem.getProperty("ikvm.apartmentstate", "").ToLower();
+				string apartment = ((string)jsAccessController.doPrivileged(new ssaGetPropertyAction("ikvm.apartmentstate", ""))).ToLower();
 				if (apartment == "mta")
 				{
 					t.nativeThread.ApartmentState = ApartmentState.MTA;
@@ -4240,6 +4241,7 @@ namespace IKVM.NativeCode.java
 				return doPrivileged(action, null);
 			}
 
+			[MethodImpl(MethodImplOptions.NoInlining)]
 			public static object doPrivileged(object action, object context)
 			{
 #if FIRST_PASS
@@ -4312,7 +4314,7 @@ namespace IKVM.NativeCode.java
 				for (int i = 0; i < stack.FrameCount; i++)
 				{
 					MethodBase method = stack.GetFrame(i).GetMethod();
-					if (method.DeclaringType == typeof(jsAccessController)
+					if (method.DeclaringType == typeof(AccessController)
 						&& method.Name == "doPrivileged")
 					{
 						is_privileged = true;
