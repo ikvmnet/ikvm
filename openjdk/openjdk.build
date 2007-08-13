@@ -39,6 +39,7 @@
           <fileset basedir="${OpenJDK.dir}/control/build/linux-i586/j2re-image">
                <include name="lib/zi/**/*" />
                <include name="lib/logging.properties" />
+               <include name="lib/security/java.policy" />
           </fileset>
           <fileset basedir=".">
                <include name="lib/**/*" />
