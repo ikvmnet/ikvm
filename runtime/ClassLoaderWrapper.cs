@@ -1397,6 +1397,10 @@ namespace IKVM.Internal
 			{
 				if(isJavaModule[moduleIndex])
 				{
+					if(AttributeHelper.IsHideFromJava(type))
+					{
+						return null;
+					}
 					// since this type was compiled from Java source, we have to look for our
 					// attributes
 					return RegisterInitiatingLoader(CompiledTypeWrapper.newInstance(name, type));
