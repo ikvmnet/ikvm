@@ -26,19 +26,20 @@
     "This software is licensed under the GNU General Public License version 2 + \"Classpath\" exception.\r\n" +
     "See http://www.gnu.org/software/classpath/license.html for details.\r\n" +
     "Copyright (C) 1988      AT&T\r\n" +
+    "Copyright (C) 2003-2004 BEA Systems\r\n" +
     "Copyright (C) 2007      Casey Marshall\r\n" +
     "Copyright (C) 1995      Colin Plumb\r\n" +
-    "Copyright (C) 1996-2007 Free Software Foundation, Inc.\r\n" +
+    "Copyright (C) 1998-2007 Free Software Foundation, Inc.\r\n" +
+    "Copyright (C) 2001-2005 freebxml.org\r\n" +
     "Copyright (C) 1998      FundsXpress, Inc.\r\n" +
-    "Copyright (C) 1995-2005 International Business Machines, Inc.\r\n" +
+    "Copyright (C) 1993-2005 International Business Machines, Inc.\r\n" +
     "Copyright (C) 1996      Internet Software Consortium\r\n" +
     "Copyright (C) 2002-2007 Jeroen Frijters\r\n" +
-    "Copyright (C) 1997-1998 Microstar Software Ltd.\r\n" +
     "Copyright (C) 2007      Red Hat, Inc.\r\n" +
     "Copyright (C) 1994-2007 Sun Microsystems, Inc.\r\n" +
     "Copyright (C) 1996-1998 Taligent, Inc.\r\n" +
-    "Copyright (C) 2001      Thai Open Source Software Center Ltd\r\n" +
-    "Copyright (C) 2000      The Internet Society\r\n" +
+    "Copyright (C) 2001-2002 Thai Open Source Software Center Ltd\r\n" +
+    "Copyright (C) 1999-2006 The Apache Software Foundation\r\n" +
     "Copyright (C) 1997      The Open Group Research Institute\r\n" +
     "Copyright (C) 1991-2007 Unicode, Inc.\r\n" +
     "Copyright (C) 2003      Wily Technology, Inc.\r\n" +
