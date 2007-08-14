@@ -64,6 +64,7 @@
           <arg value="-recurse:${OpenJDK.dir}/control/build/linux-i586/gensrc/*.class" />
           <arg value="-recurse:${OpenJDK.dir}/control/build/linux-i586/classes/*_Stub.class" />
           <arg value="-recurse:${OpenJDK.dir}/control/build/linux-i586/classes/*_Tie.class" />
+          <arg value="-recurse:${OpenJDK.dir}/control/build/linux-i586/classes/*_Skel.class" />
           <arg value="-recurse:${Classpath.dir}/*.class" />
           <arg value="-r:mscorlib" />
           <arg value="-r:${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
