@@ -3769,16 +3769,6 @@ namespace IKVM.NativeCode.java
 			{
 				Thread.DetachThread();
 			}
-
-			public static SystemThreadingThread getNativeThread(object javaThread)
-			{
-				throw new NotImplementedException();
-			}
-
-			public static object getThreadFromId(long id)
-			{
-				throw new NotImplementedException();
-			}
 		}
 
 		namespace reflect

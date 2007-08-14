@@ -29,32 +29,4 @@ import ikvm.lang.Internal;
 public final class VMThread
 {
     public static native void jniDetach();
-
-    @Internal
-    public static interface InterruptProc extends sun.nio.ch.Interruptible
-    {
-    }
-
-    public static void enterInterruptableWait(InterruptProc proc) throws InterruptedException
-    {
-	Thread.currentThread().blockedOn(proc);
-	if (Thread.interrupted())
-	{
-	    Thread.currentThread().blockedOn(null);
-	    throw new InterruptedException();
-	}
-    }
-
-    public static void leaveInterruptableWait() throws InterruptedException
-    {
-	Thread.currentThread().blockedOn(null);
-	if (Thread.interrupted())
-	{
-	    throw new InterruptedException();
-	}
-    }
-
-    // these are used by gnu.java.lang.management.VMThreadMXBeanImpl
-    public static native cli.System.Threading.Thread getNativeThread(Thread t);
-    public static native Thread getThreadFromId(long id);
 }
