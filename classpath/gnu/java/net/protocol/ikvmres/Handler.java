@@ -186,7 +186,7 @@ public class Handler extends URLStreamHandler
 	        int slash = url_string.indexOf('/', 2);
 	        if(slash == -1)
 	        {
-		    throw new gnu.java.net.URLParseError("ikvmres: URLs must contain path");
+		    throw new RuntimeException("ikvmres: URLs must contain path");
 	        }
 	        String assembly = unquote(url_string.substring(2, slash));
 	        String file = unquote(url_string.substring(slash));
@@ -230,7 +230,7 @@ public class Handler extends URLStreamHandler
 	}
 	catch(URISyntaxException x)
 	{
-	    throw new gnu.java.net.URLParseError(x.getMessage());
+	    throw new RuntimeException(x.getMessage());
 	}
     }
 
