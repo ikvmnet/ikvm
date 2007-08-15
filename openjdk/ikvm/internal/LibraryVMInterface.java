@@ -37,7 +37,6 @@ public interface LibraryVMInterface
 
     Throwable mapException(Throwable t);
 
-    Object newDirectByteBuffer(cli.System.IntPtr address, int capacity);
     cli.System.IntPtr getDirectBufferAddress(Object buffer);
     int getDirectBufferCapacity(Object buffer);
 

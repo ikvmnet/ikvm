@@ -165,14 +165,9 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
         return ExceptionHelper.MapExceptionFast(t, true);
     }
 
-    public Object newDirectByteBuffer(cli.System.IntPtr address, int capacity)
-    {
-        return java.nio.VMDirectByteBuffer.NewDirectByteBuffer(address, capacity);
-    }
-
     public cli.System.IntPtr getDirectBufferAddress(Object buffer)
     {
-        return java.nio.VMDirectByteBuffer.GetDirectBufferAddress((java.nio.Buffer)buffer);
+        return cli.System.IntPtr.op_Explicit(((sun.nio.ch.DirectBuffer)buffer).address());
     }
     
     public int getDirectBufferCapacity(Object buffer)

@@ -24,6 +24,9 @@
 
 package sun.misc;
 
+import cli.System.IntPtr;
+import cli.System.Runtime.InteropServices.Marshal;
+import ikvm.lang.Internal;
 import java.lang.reflect.Field;
 import java.lang.reflect.ReflectHelper;
 import java.util.ArrayList;
@@ -720,4 +723,97 @@ public final class Unsafe
     public native void ensureClassInitialized(Class clazz);
 
     public native Object allocateInstance(Class clazz) throws InstantiationException;
+
+    public int addressSize()
+    {
+	return IntPtr.get_Size();
+    }
+
+    public int pageSize()
+    {
+	return 4096;
+    }
+
+    // The really unsafe methods start here. They are all @Internal to prevent
+    // external code from accessing them.
+
+    @Internal
+    public long allocateMemory(long bytes)
+    {
+	try
+	{
+	    if (false) throw new cli.System.OutOfMemoryException();
+	    return Marshal.AllocHGlobal(IntPtr.op_Explicit(bytes)).ToInt64();
+	}
+	catch (cli.System.OutOfMemoryException x)
+	{
+	    throw new OutOfMemoryError(x.get_Message());
+	}
+    }
+
+    @Internal
+    public void freeMemory(long address)
+    {
+	Marshal.FreeHGlobal(IntPtr.op_Explicit(address));
+    }
+
+    @Internal
+    public static native void setMemory(long address, long bytes, byte value);
+
+    @Internal
+    public static native void copyMemory(long srcAddress, long destAddress, long bytes);
+
+    @Internal
+    public static native byte getByte(long address);
+
+    @Internal
+    public static native void putByte(long address, byte x);
+
+    @Internal
+    public static native short getShort(long address);
+
+    @Internal
+    public static native void putShort(long address, short x);
+
+    @Internal
+    public static native char getChar(long address);
+
+    @Internal
+    public static native void putChar(long address, char x);
+
+    @Internal
+    public static native int getInt(long address);
+
+    @Internal
+    public static native void putInt(long address, int x);
+
+    @Internal
+    public static native long getLong(long address);
+
+    @Internal
+    public static native void putLong(long address, long x);
+
+    @Internal
+    public float getFloat(long address)
+    {
+	return Float.intBitsToFloat(getInt(address));
+    }
+
+    @Internal
+    public void putFloat(long address, float x)
+    {
+	putInt(address, Float.floatToIntBits(x));
+    }
+
+    @Internal
+    public double getDouble(long address)
+    {
+	return Double.longBitsToDouble(getLong(address));
+    }
+
+    @Internal
+    public void putDouble(long address, double x)
+    {
+	putLong(address, Double.doubleToLongBits(x));
+    }
 }

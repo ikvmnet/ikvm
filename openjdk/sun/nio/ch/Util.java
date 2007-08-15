@@ -149,6 +149,101 @@ class Util {
     }
 
 
+    private static volatile Constructor directByteBufferConstructor = null;
+
+    private static void initDBBConstructor() {
+	AccessController.doPrivileged(new PrivilegedAction() {
+		public Object run() {
+		    try {
+			Class cl = Class.forName("java.nio.DirectByteBuffer");
+                        Constructor ctor = cl.getDeclaredConstructor(
+			    new Class[] { int.class,
+                                          long.class,
+				          Runnable.class });
+                        ctor.setAccessible(true);
+			directByteBufferConstructor = ctor;
+		    } catch (ClassNotFoundException x) {
+			throw new InternalError();
+		    } catch (NoSuchMethodException x) {
+			throw new InternalError();
+		    } catch (IllegalArgumentException x) {
+			throw new InternalError();
+		    } catch (ClassCastException x) {
+			throw new InternalError();
+		    }
+                    return null;
+		}});
+    }
+
+    static MappedByteBuffer newMappedByteBuffer(int size, long addr,
+						Runnable unmapper)
+    {
+        MappedByteBuffer dbb;
+        if (directByteBufferConstructor == null)
+            initDBBConstructor();
+        try {
+            dbb = (MappedByteBuffer)directByteBufferConstructor.newInstance(
+              new Object[] { new Integer(size),
+                             new Long(addr),
+			     unmapper });
+        } catch (InstantiationException e) {
+            throw new InternalError();
+        } catch (IllegalAccessException e) {
+            throw new InternalError();
+        } catch (InvocationTargetException e) {
+            throw new InternalError();
+        }
+        return dbb;
+    }
+
+    private static volatile Constructor directByteBufferRConstructor = null;
+
+    private static void initDBBRConstructor() {
+	AccessController.doPrivileged(new PrivilegedAction() {
+		public Object run() {
+		    try {
+			Class cl = Class.forName("java.nio.DirectByteBufferR");
+			Constructor ctor = cl.getDeclaredConstructor(
+			    new Class[] { int.class,
+                                          long.class,
+					  Runnable.class });
+			ctor.setAccessible(true);
+			directByteBufferRConstructor = ctor;
+		    } catch (ClassNotFoundException x) {
+			throw new InternalError();
+		    } catch (NoSuchMethodException x) {
+			throw new InternalError();
+		    } catch (IllegalArgumentException x) {
+			throw new InternalError();
+		    } catch (ClassCastException x) {
+			throw new InternalError();
+		    }
+                    return null;
+		}});
+    }
+
+    static MappedByteBuffer newMappedByteBufferR(int size, long addr,
+						 Runnable unmapper)
+    {
+        MappedByteBuffer dbb;
+        if (directByteBufferRConstructor == null)
+            initDBBRConstructor();
+        try {
+            dbb = (MappedByteBuffer)directByteBufferRConstructor.newInstance(
+              new Object[] { new Integer(size),
+                             new Long(addr),
+			     unmapper });
+        } catch (InstantiationException e) {
+            throw new InternalError();
+        } catch (IllegalAccessException e) {
+            throw new InternalError();
+        } catch (InvocationTargetException e) {
+            throw new InternalError();
+        }
+        return dbb;
+    }
+
+
     // -- Bug compatibility --
 
     private static volatile String bugLevel = null;

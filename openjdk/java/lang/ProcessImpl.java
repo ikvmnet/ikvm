@@ -31,7 +31,7 @@
 package java.lang;
 
 import cli.System.Diagnostics.ProcessStartInfo;
-import gnu.java.nio.FileChannelImpl;
+import sun.nio.ch.FileChannelImpl;
 import java.io.*;
 import java.nio.channels.Channels;
 

@@ -4209,6 +4209,346 @@ namespace IKVM.NativeCode.java
 		}
 	}
 
+	namespace nio
+	{
+		[System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, UnmanagedCode = true)]
+		public sealed class Bits
+		{
+			public static void copyFromByteArray(object src, long srcPos, long dstAddr, long length)
+			{
+				byte[] byteArray = src as byte[];
+				if (byteArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy(byteArray, (int)srcPos, (IntPtr)dstAddr, (int)length);
+					return;
+				}
+				char[] charArray = src as char[];
+				if (charArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy(charArray, ((int)srcPos) >> 1, (IntPtr)dstAddr, ((int)length) >> 1);
+					return;
+				}
+				short[] shortArray = src as short[];
+				if (shortArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy(shortArray, ((int)srcPos) >> 1, (IntPtr)dstAddr, ((int)length) >> 1);
+					return;
+				}
+				int[] intArray = src as int[];
+				if (intArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy(intArray, ((int)srcPos) >> 2, (IntPtr)dstAddr, ((int)length) >> 2);
+					return;
+				}
+				float[] floatArray = src as float[];
+				if (floatArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy(floatArray, ((int)srcPos) >> 2, (IntPtr)dstAddr, ((int)length) >> 2);
+					return;
+				}
+				long[] longArray = src as long[];
+				if (longArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy(longArray, ((int)srcPos) >> 3, (IntPtr)dstAddr, ((int)length) >> 3);
+					return;
+				}
+				double[] doubleArray = src as double[];
+				if (doubleArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy(doubleArray, ((int)srcPos) >> 3, (IntPtr)dstAddr, ((int)length) >> 3);
+					return;
+				}
+			}
+
+			public static void copyToByteArray(long srcAddr, object dst, long dstPos, long length)
+			{
+				byte[] byteArray = dst as byte[];
+				if (byteArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy((IntPtr)srcAddr, byteArray, (int)dstPos, (int)length);
+					return;
+				}
+				char[] charArray = dst as char[];
+				if (charArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy((IntPtr)srcAddr, charArray, ((int)dstPos) >> 1, ((int)length) >> 1);
+					return;
+				}
+				short[] shortArray = dst as short[];
+				if (shortArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy((IntPtr)srcAddr, shortArray, ((int)dstPos) >> 1, ((int)length) >> 1);
+					return;
+				}
+				int[] intArray = dst as int[];
+				if (intArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy((IntPtr)srcAddr, intArray, ((int)dstPos) >> 2, ((int)length) >> 2);
+					return;
+				}
+				float[] floatArray = dst as float[];
+				if (floatArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy((IntPtr)srcAddr, floatArray, ((int)dstPos) >> 2, ((int)length) >> 2);
+					return;
+				}
+				long[] longArray = dst as long[];
+				if (longArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy((IntPtr)srcAddr, longArray, ((int)dstPos) >> 3, ((int)length) >> 3);
+					return;
+				}
+				double[] doubleArray = dst as double[];
+				if (doubleArray != null)
+				{
+					System.Runtime.InteropServices.Marshal.Copy((IntPtr)srcAddr, doubleArray, ((int)dstPos) >> 3, ((int)length) >> 3);
+					return;
+				}
+			}
+
+			public static void copyFromShortArray(object src, long srcPos, long dstAddr, long length)
+			{
+#if !FIRST_PASS
+				short[] shortArray = src as short[];
+				if (shortArray != null)
+				{
+					int index = ((int)srcPos) >> 1;
+					while (length > 0)
+					{
+						short v = jlShort.reverseBytes(shortArray[index++]);
+						System.Runtime.InteropServices.Marshal.WriteInt16((IntPtr)dstAddr, v);
+						dstAddr += 2;
+						length -= 2;
+					}
+				}
+				else
+				{
+					char[] charArray = (char[])src;
+					int index = ((int)srcPos) >> 1;
+					while (length > 0)
+					{
+						short v = jlShort.reverseBytes((short)charArray[index++]);
+						System.Runtime.InteropServices.Marshal.WriteInt16((IntPtr)dstAddr, v);
+						dstAddr += 2;
+						length -= 2;
+					}
+				}
+#endif
+			}
+
+			public static void copyToShortArray(long srcAddr, object dst, long dstPos, long length)
+			{
+#if !FIRST_PASS
+				short[] shortArray = dst as short[];
+				if (shortArray != null)
+				{
+					int index = ((int)dstPos) >> 1;
+					while (length > 0)
+					{
+						short v = System.Runtime.InteropServices.Marshal.ReadInt16((IntPtr)srcAddr);
+						shortArray[index++] = jlShort.reverseBytes(v);
+						srcAddr += 2;
+						length -= 2;
+					}
+				}
+				else
+				{
+					char[] charArray = (char[])dst;
+					int index = ((int)dstPos) >> 1;
+					while (length > 0)
+					{
+						short v = System.Runtime.InteropServices.Marshal.ReadInt16((IntPtr)srcAddr);
+						charArray[index++] = (char)jlShort.reverseBytes(v);
+						srcAddr += 2;
+						length -= 2;
+					}
+				}
+#endif
+			}
+
+			public static void copyFromIntArray(object src, long srcPos, long dstAddr, long length)
+			{
+#if !FIRST_PASS
+				int[] intArray = src as int[];
+				if (intArray != null)
+				{
+					int index = ((int)srcPos) >> 2;
+					while (length > 0)
+					{
+						int v = jlInteger.reverseBytes(intArray[index++]);
+						System.Runtime.InteropServices.Marshal.WriteInt32((IntPtr)dstAddr, v);
+						dstAddr += 4;
+						length -= 4;
+					}
+				}
+				else
+				{
+					float[] floatArray = (float[])src;
+					int index = ((int)srcPos) >> 2;
+					while (length > 0)
+					{
+						int v = jlInteger.reverseBytes(jlFloat.floatToRawIntBits(floatArray[index++]));
+						System.Runtime.InteropServices.Marshal.WriteInt32((IntPtr)dstAddr, v);
+						dstAddr += 4;
+						length -= 4;
+					}
+				}
+#endif
+			}
+
+			public static void copyToIntArray(long srcAddr, object dst, long dstPos, long length)
+			{
+#if !FIRST_PASS
+				int[] intArray = dst as int[];
+				if (intArray != null)
+				{
+					int index = ((int)dstPos) >> 2;
+					while (length > 0)
+					{
+						int v = System.Runtime.InteropServices.Marshal.ReadInt32((IntPtr)srcAddr);
+						intArray[index++] = jlInteger.reverseBytes(v);
+						srcAddr += 4;
+						length -= 4;
+					}
+				}
+				else
+				{
+					float[] floatArray = (float[])dst;
+					int index = ((int)dstPos) >> 2;
+					while (length > 0)
+					{
+						int v = System.Runtime.InteropServices.Marshal.ReadInt32((IntPtr)srcAddr);
+						floatArray[index++] = jlFloat.intBitsToFloat(jlInteger.reverseBytes(v));
+						srcAddr += 4;
+						length -= 4;
+					}
+				}
+#endif
+			}
+
+			public static void copyFromLongArray(object src, long srcPos, long dstAddr, long length)
+			{
+#if !FIRST_PASS
+				long[] longArray = src as long[];
+				if (longArray != null)
+				{
+					int index = ((int)srcPos) >> 3;
+					while (length > 0)
+					{
+						long v = jlLong.reverseBytes(longArray[index++]);
+						System.Runtime.InteropServices.Marshal.WriteInt64((IntPtr)dstAddr, v);
+						dstAddr += 8;
+						length -= 8;
+					}
+				}
+				else
+				{
+					double[] doubleArray = (double[])src;
+					int index = ((int)srcPos) >> 3;
+					while (length > 0)
+					{
+						long v = jlLong.reverseBytes(BitConverter.DoubleToInt64Bits(doubleArray[index++]));
+						System.Runtime.InteropServices.Marshal.WriteInt64((IntPtr)dstAddr, v);
+						dstAddr += 8;
+						length -= 8;
+					}
+				}
+#endif
+			}
+
+			public static void copyToLongArray(long srcAddr, object dst, long dstPos, long length)
+			{
+#if !FIRST_PASS
+				long[] longArray = dst as long[];
+				if (longArray != null)
+				{
+					int index = ((int)dstPos) >> 3;
+					while (length > 0)
+					{
+						long v = System.Runtime.InteropServices.Marshal.ReadInt64((IntPtr)srcAddr);
+						longArray[index++] = jlLong.reverseBytes(v);
+						srcAddr += 8;
+						length -= 8;
+					}
+				}
+				else
+				{
+					double[] doubleArray = (double[])dst;
+					int index = ((int)dstPos) >> 3;
+					while (length > 0)
+					{
+						long v = System.Runtime.InteropServices.Marshal.ReadInt64((IntPtr)srcAddr);
+						doubleArray[index++] = BitConverter.Int64BitsToDouble(jlLong.reverseBytes(v));
+						srcAddr += 8;
+						length -= 8;
+					}
+				}
+#endif
+			}
+		}
+
+		[System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, UnmanagedCode = true)]
+		public sealed class MappedByteBuffer
+		{
+			private static volatile int bogusField;
+
+			public static bool isLoaded0(object thisMappedByteBuffer, long address, long length)
+			{
+				// on Windows, JDK simply returns false, so we can get away with that too.
+				return false;
+			}
+
+			public static int load0(object thisMappedByteBuffer, long address, long length, int pageSize)
+			{
+				int bogus = 0;
+				while (length > 0)
+				{
+					// touch a byte in every page
+					bogus += System.Runtime.InteropServices.Marshal.ReadByte((IntPtr)address);
+					length -= pageSize;
+					address += pageSize;
+				}
+				// do a volatile store of the sum of the bytes to make sure the reads don't get optimized out
+				bogusField = bogus;
+				return 0;
+			}
+
+			public static void force0(object thisMappedByteBuffer, long address, long length)
+			{
+				if (JVM.IsUnix)
+				{
+					ikvm_msync((IntPtr)address, (int)length);
+				}
+				else
+				{
+					// according to the JDK sources, FlushViewOfFile can fail with an ERROR_LOCK_VIOLATION error,
+					// so like the JDK, we retry up to three times if that happens.
+					for (int i = 0; i < 3; i++)
+					{
+						if (FlushViewOfFile((IntPtr)address, (IntPtr)length) != 0)
+						{
+							return;
+						}
+						const int ERROR_LOCK_VIOLATION = 33;
+						if (System.Runtime.InteropServices.Marshal.GetLastWin32Error() != ERROR_LOCK_VIOLATION)
+						{
+							break;
+						}
+					}
+#if !FIRST_PASS
+					throw new jiIOException("Flush failed");
+#endif
+				}
+			}
+
+			[System.Runtime.InteropServices.DllImport("kernel32", SetLastError = true)]
+			private static extern int FlushViewOfFile(IntPtr lpBaseAddress, IntPtr dwNumberOfBytesToFlush);
+
+			[System.Runtime.InteropServices.DllImport("ikvm-native")]
+		    private static extern int ikvm_msync(IntPtr address, int size);
+		}
+	}
+
 	namespace security
 	{
 		public sealed class AccessController
@@ -5171,7 +5511,8 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
-	public sealed class Unsafe
+	[System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, UnmanagedCode = true)]
+	public sealed unsafe class Unsafe
 	{
 		private Unsafe() { }
 
@@ -5202,6 +5543,75 @@ namespace IKVM.NativeCode.sun.misc
 				throw x.ToJava();
 			}
 			return FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
+		}
+
+		public static void setMemory(long address, long bytes, byte value)
+		{
+			byte* p = (byte*)address;
+			while (bytes-- > 0)
+			{
+				*p++ = value;
+			}
+		}
+
+		public static void copyMemory(long srcAddress, long destAddress, long bytes)
+		{
+			byte* psrc = (byte*)srcAddress;
+			byte* pdst = (byte*)destAddress;
+			while (bytes-- > 0)
+			{
+				*pdst++ = *psrc++;
+			}
+		}
+
+		public static byte getByte(long address)
+		{
+			return *(byte*)address;
+		}
+
+		public static void putByte(long address, byte x)
+		{
+			*(byte*)address = x;
+		}
+
+		public static short getShort(long address)
+		{
+			return *(short*)address;
+		}
+
+		public static void putShort(long address, short x)
+		{
+			*(short*)address = x;
+		}
+
+		public static char getChar(long address)
+		{
+			return *(char*)address;
+		}
+
+		public static void putChar(long address, char x)
+		{
+			*(char*)address = x;
+		}
+
+		public static int getInt(long address)
+		{
+			return *(int*)address;
+		}
+
+		public static void putInt(long address, int x)
+		{
+			*(int*)address = x;
+		}
+
+		public static long getLong(long address)
+		{
+			return *(long*)address;
+		}
+
+		public static void putLong(long address, long x)
+		{
+			*(long*)address = x;
 		}
 	}
 
@@ -6459,7 +6869,6 @@ namespace ikvm.@internal
 
 		Exception mapException(Exception t);
 
-		object newDirectByteBuffer(IntPtr address, int capacity);
 		IntPtr getDirectBufferAddress(object buffer);
 		int getDirectBufferCapacity(object buffer);
 

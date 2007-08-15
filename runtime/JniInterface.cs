@@ -3380,7 +3380,13 @@ namespace IKVM.Runtime
 #endif
 					return IntPtr.Zero;
 				}
+#if OPENJDK
+				return pEnv->MakeLocalRef(JVM.CoreAssembly.GetType("java.nio.DirectByteBuffer")
+					.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(long), typeof(int) }, null)
+					.Invoke(new object[] { address.ToInt64(), (int)capacity }));
+#else
 				return pEnv->MakeLocalRef(JVM.Library.newDirectByteBuffer(address, (int)capacity));
+#endif
 			}
 			catch(Exception x)
 			{
