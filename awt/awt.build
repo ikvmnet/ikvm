@@ -9,7 +9,15 @@
         <property overwrite="false" name="hybrid" value="false" />
         <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE;${signed}">
             <sources>
-                <include name="*.cs" />
+                <include name="AssemblyInfo.cs" />
+                <include name="converter.cs" />
+                <include if="${hybrid}" name="fonts-0.95.cs" />
+                <include unless="${hybrid}" name="fonts.cs" />
+                <include name="graphics.cs" />
+                <include name="images.cs" />
+                <include name="robot.cs" />
+                <include if="${hybrid}" name="toolkit-0.95.cs" />
+                <include unless="${hybrid}" name="toolkit.cs" />
             </sources>
             <references>
                 <include unless="${hybrid}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
