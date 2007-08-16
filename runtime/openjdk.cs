@@ -95,7 +95,6 @@ using jiIOException = java.io.IOException;
 using jiFile = java.io.File;
 using jnCharset = java.nio.charset.Charset;
 using juProperties = java.util.Properties;
-using gcSystemProperties = gnu.classpath.SystemProperties;
 using irUtil = ikvm.runtime.Util;
 using jsDriverManager = java.sql.DriverManager;
 using juzZipFile = java.util.zip.ZipFile;
@@ -3037,16 +3036,12 @@ namespace IKVM.NativeCode.java
 			public static object initProperties(object props)
 			{
 #if !FIRST_PASS
-				juProperties p1 = gcSystemProperties.getProperties();
 				juProperties p = (juProperties)props;
-				foreach (string key in (IEnumerable)p1.keySet())
-				{
-					p.put(key, p1.getProperty(key));
-				}
-				// TODO instead of setting it here, we should set it before the user specified properties are processed
-				// TODO we should chop off the trailing separator
-				p.put("java.home", io.VirtualFileSystem.RootPath);
+				p.put("openjdk.version", "b13");
+				p.put("gnu.classpath.version", "0.95");
+				p.put("java.home", io.VirtualFileSystem.RootPath.Substring(0, io.VirtualFileSystem.RootPath.Length - 1));
 				p.put("sun.boot.library.path", io.VirtualFileSystem.RootPath + "bin");
+				JVM.Library.initProperties(p);
 
 				// HACK this is an extremely gross hack, here we explicitly call the class initializer of a bunch of
 				// classes while their class initializers may already be running. All of their class initializers are

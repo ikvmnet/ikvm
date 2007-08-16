@@ -25,8 +25,13 @@ package gnu.classpath;
 
 import java.util.Properties;
 
+@ikvm.lang.Internal
 public class VMSystemProperties
 {
+    public static final String SPEC_TITLE = "Java Platform API Specification";
+    public static final String SPEC_VERSION = "1.6";
+    public static final String SPEC_VENDOR = "Sun Microsystems Inc.";
+
     public static cli.System.Collections.Hashtable props;
 
     private static native String getVersion();
@@ -102,46 +107,12 @@ public class VMSystemProperties
         return asm.get_Location();
     }
 
-    static void preInit(Properties p)
+    private static void initCommonProperties(Properties p)
     {
-        String[] culture = ((cli.System.String)(Object)cli.System.Globalization.CultureInfo.get_CurrentCulture().get_Name()).Split(new char[] { '-' });        
-        p.setProperty("user.language", culture[0]);
-        p.setProperty("user.region", culture.length > 1 ? culture[1] : "");
-        p.setProperty("user.variant", culture.length > 2 ? culture[2] : "");
-        p.setProperty("java.version", "1.5.0");
+        p.setProperty("java.version", "1.6.0");
         p.setProperty("java.vendor", "Jeroen Frijters");
         p.setProperty("java.vendor.url", "http://ikvm.net/");
         p.setProperty("java.vendor.url.bug", "http://www.ikvm.net/bugs");
-        try
-        {
-            if(false) throw new cli.System.Security.SecurityException();
-            // HACK using the Assembly.Location property isn't correct
-            cli.System.Reflection.Assembly asm = cli.System.Reflection.Assembly.GetExecutingAssembly();
-            String loc = GetAssemblyLocation(asm);
-            if(loc.length() == 0)
-            {
-                // The assembly was most likely loaded with Assembly.Load(byte[]) and so it doesn't
-                // have a location.
-                // TODO we may need to set some other value here
-                p.setProperty("java.home", ".");
-            }
-            else
-            {
-                p.setProperty("java.home", new cli.System.IO.FileInfo(loc).get_DirectoryName());
-            }
-        }
-        catch(cli.System.MissingMethodException _1)
-        {
-            // We're running on the Compact Framework
-            // TODO we may need to set some other value here
-            p.setProperty("java.home", ".");
-        }
-        catch(cli.System.Security.SecurityException _)
-        {
-            // when we're running in partial trust, we may not be allowed file access
-            // TODO we may need to set some other value here
-            p.setProperty("java.home", ".");
-        }
         p.setProperty("java.vm.specification.version", "1.0");
         p.setProperty("java.vm.specification.vendor", "Sun Microsystems Inc.");
         p.setProperty("java.vm.specification.name", "Java Virtual Machine Specification");
@@ -150,10 +121,10 @@ public class VMSystemProperties
         p.setProperty("java.vm.name", "IKVM.NET");
         p.setProperty("java.runtime.name", "IKVM.NET");
         p.setProperty("java.runtime.version", getVersion());
-        p.setProperty("java.specification.version", "1.5");
-        p.setProperty("java.specification.vendor", "Sun Microsystems Inc.");
-        p.setProperty("java.specification.name", "Java Platform API Specification");
-        p.setProperty("java.class.version", "49.0");
+        p.setProperty("java.specification.version", SPEC_VERSION);
+        p.setProperty("java.specification.vendor", SPEC_VENDOR);
+        p.setProperty("java.specification.name", SPEC_TITLE);
+        p.setProperty("java.class.version", "50.0");
         p.setProperty("java.class.path", "");
         String libraryPath = null;
         if(cli.System.Environment.get_OSVersion().ToString().indexOf("Unix") >= 0)
@@ -218,7 +189,6 @@ public class VMSystemProperties
             // TODO should we set another value?
             p.setProperty("java.io.tmpdir", ".");
         }
-        p.setProperty("java.compiler", "");
         p.setProperty("java.ext.dirs", "");
         // NOTE os.name *must* contain "Windows" when running on Windows, because Classpath tests on that
         String osname = null;
@@ -366,11 +336,74 @@ public class VMSystemProperties
             p.setProperty("user.dir", ".");
         }
         p.setProperty("awt.toolkit", Configuration.default_awt_peer_toolkit);
+        // we don't want Swing to use graphics 2D
+        p.setProperty("gnu.javax.swing.noGraphics2D", "true");
+    }
+
+    public static void initOpenJDK(Properties p)
+    {
+	initCommonProperties(p);
+        String[] culture = ((cli.System.String)(Object)cli.System.Globalization.CultureInfo.get_CurrentCulture().get_Name()).Split(new char[] { '-' });        
+        p.setProperty("user.language", culture[0]);
+        p.setProperty("user.country", culture.length > 1 ? culture[1] : "");
+        p.setProperty("user.variant", culture.length > 2 ? culture[2] : "");
+	p.setProperty("sun.cpu.endian", cli.System.BitConverter.IsLittleEndian ? "little" : "big");
+	p.setProperty("file.encoding.pkg", "sun.io");
+	p.setProperty("user.timezone", "");
+	p.setProperty("sun.os.patch.level", "");
+	p.setProperty("java.vm.info", "compiled mode");
+	// TODO
+	// sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
+	// sun.desktop:=windows
+	// sun.io.unicode.encoding:=UnicodeLittle
+	// sun.java.launcher:=SUN_STANDARD
+	// sun.jnu.encoding:=Cp1252
+	// sun.management.compiler:=HotSpot Client Compiler
+	// java.awt.graphicsenv:=sun.awt.Win32GraphicsEnvironment
+	// java.awt.printerjob:=sun.awt.windows.WPrinterJob
+	postInit(p);
+    }
+
+    static void preInit(Properties p)
+    {
+	initCommonProperties(p);
+        String[] culture = ((cli.System.String)(Object)cli.System.Globalization.CultureInfo.get_CurrentCulture().get_Name()).Split(new char[] { '-' });        
+        p.setProperty("user.language", culture[0]);
+        p.setProperty("user.region", culture.length > 1 ? culture[1] : "");
+        p.setProperty("user.variant", culture.length > 2 ? culture[2] : "");
+        try
+        {
+            if(false) throw new cli.System.Security.SecurityException();
+            // HACK using the Assembly.Location property isn't correct
+            cli.System.Reflection.Assembly asm = cli.System.Reflection.Assembly.GetExecutingAssembly();
+            String loc = GetAssemblyLocation(asm);
+            if(loc.length() == 0)
+            {
+                // The assembly was most likely loaded with Assembly.Load(byte[]) and so it doesn't
+                // have a location.
+                // TODO we may need to set some other value here
+                p.setProperty("java.home", ".");
+            }
+            else
+            {
+                p.setProperty("java.home", new cli.System.IO.FileInfo(loc).get_DirectoryName());
+            }
+        }
+        catch(cli.System.MissingMethodException _1)
+        {
+            // We're running on the Compact Framework
+            // TODO we may need to set some other value here
+            p.setProperty("java.home", ".");
+        }
+        catch(cli.System.Security.SecurityException _)
+        {
+            // when we're running in partial trust, we may not be allowed file access
+            // TODO we may need to set some other value here
+            p.setProperty("java.home", ".");
+        }
         // HACK since we cannot use URL here (it depends on the properties being set), we manually encode the spaces in the assembly name
         p.setProperty("gnu.classpath.home.url", "ikvmres://" + ((cli.System.String)(Object)cli.System.Reflection.Assembly.GetExecutingAssembly().get_FullName()).Replace(" ", "%20") + "/lib");
         p.setProperty("gnu.cpu.endian", cli.System.BitConverter.IsLittleEndian ? "little" : "big");
-        // we don't want Swing to use graphics 2D
-        p.setProperty("gnu.javax.swing.noGraphics2D", "true");
     }
 
     static void postInit(Properties p)

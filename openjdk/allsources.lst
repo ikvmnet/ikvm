@@ -1,5 +1,4 @@
 ../../classpath-0.95/gnu/classpath/NotImplementedException.java
-../../classpath-0.95/gnu/classpath/SystemProperties.java
 ../../classpath-0.95/gnu/java/awt/AWTUtilities.java
 ../../classpath-0.95/gnu/java/awt/BitMaskExtent.java
 ../../classpath-0.95/gnu/java/awt/BitwiseXORComposite.java
@@ -1006,7 +1005,6 @@
 ../../classpath-0.95/javax/swing/UnsupportedLookAndFeelException.java
 ../../classpath-0.95/javax/swing/ViewportLayout.java
 ../../classpath-0.95/javax/swing/WindowConstants.java
-../classpath/gnu/classpath/Configuration.java
 ../classpath/gnu/classpath/VMSystemProperties.java
 ../classpath/gnu/java/awt/peer/ClasspathDesktopPeer.java
 ../classpath/gnu/java/awt/peer/gtk/CairoSurface.java
@@ -1035,6 +1033,7 @@
 ../classpath/java/util/concurrent/atomic/AtomicReferenceArray.java
 ../classpath/sun/misc/Ref.java
 AssemblyInfo.java
+Configuration.java
 ConnectorBootstrap.java
 com/sun/imageio/plugins/jpeg/JPEGImageReaderSpi.java
 com/sun/imageio/plugins/jpeg/JPEGImageWriterSpi.java
@@ -1098,6 +1097,7 @@ sun/reflect/Reflection.java
 sun/reflect/ReflectionFactory.java
 sun/security/jgss/wrapper/NativeGSSFactory.java
 sun/security/jgss/wrapper/SunNativeProvider.java
+SystemProperties.java
 ../../openjdk-b13/control/build/linux-i586/gensrc/com/sun/accessibility/internal/resources/accessibility.java
 ../../openjdk-b13/control/build/linux-i586/gensrc/com/sun/accessibility/internal/resources/accessibility_de.java
 ../../openjdk-b13/control/build/linux-i586/gensrc/com/sun/accessibility/internal/resources/accessibility_es.java

@@ -48,4 +48,6 @@ public interface LibraryVMInterface
     Object newAnnotationElementValue(Object classLoader, Object expectedClass, Object definition);
 
     Object newAssemblyClassLoader(cli.System.Reflection.Assembly assembly);
+
+    void initProperties(java.util.Properties props);
 }

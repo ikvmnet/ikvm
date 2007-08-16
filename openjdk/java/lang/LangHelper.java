@@ -24,11 +24,14 @@
 
 package java.lang;
 
+import gnu.classpath.VMSystemProperties;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.AccessController;
 import java.util.Enumeration;
 import java.util.Map;
+import sun.security.action.GetPropertyAction;
 
 class LangHelper
 {
@@ -49,16 +52,17 @@ class LangHelper
             catch (MalformedURLException _)
             {
             }
+	    String openJdkVersion = AccessController.doPrivileged(new GetPropertyAction("openjdk.version", "unknown"));
             for (int i = 0; i < pkgs.length; i++)
             {
                 pkgMap.put(pkgs[i],
                     new Package(pkgs[i],
-                    "Java Platform API Specification",             // specTitle
-                    "1.6",                                         // specVersion
-                    "Sun Microsystems, Inc.",                      // specVendor
-                    "Hybrid GNU Classpath / OpenJDK",              // implTitle
-                    gnu.classpath.Configuration.CLASSPATH_VERSION, // implVersion
-                    "Free Software Foundation & Sun Microsystems", // implVendor
+		    VMSystemProperties.SPEC_TITLE,                 // specTitle
+		    VMSystemProperties.SPEC_VERSION,               // specVersion
+		    VMSystemProperties.SPEC_VENDOR,                // specVendor
+                    "IKVM.NET OpenJDK",                            // implTitle
+                    openJdkVersion,                                // implVersion
+                    "Sun Microsystems, Inc. & others",             // implVendor
                     sealBase,                                      // sealBase
                     null));                                        // class loader
             }

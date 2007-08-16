@@ -211,4 +211,9 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
             }
         });
     }
+
+    public void initProperties(java.util.Properties props)
+    {
+	gnu.classpath.VMSystemProperties.initOpenJDK(props);
+    }
 }
