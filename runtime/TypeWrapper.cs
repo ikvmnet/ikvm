@@ -5659,6 +5659,7 @@ namespace IKVM.Internal
 								}
 							}
 							ConstructorBuilder reqArgConstructor = attributeTypeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, args);
+							AttributeHelper.HideFromJava(reqArgConstructor);
 							ilgen = reqArgConstructor.GetILGenerator();
 							ilgen.Emit(OpCodes.Ldarg_0);
 							ilgen.Emit(OpCodes.Call, defaultConstructor);
@@ -5684,6 +5685,7 @@ namespace IKVM.Internal
 							if(argType != null)
 							{
 								ConstructorBuilder cb = attributeTypeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new Type[] { argType });
+								AttributeHelper.HideFromJava(cb);
 								cb.DefineParameter(1, ParameterAttributes.None, "value");
 								ilgen = cb.GetILGenerator();
 								ilgen.Emit(OpCodes.Ldarg_0);
@@ -5783,12 +5785,15 @@ namespace IKVM.Internal
 								if(argType != null)
 								{
 									PropertyBuilder pb = attributeTypeBuilder.DefineProperty(o.methods[i].Name, PropertyAttributes.None, argType, Type.EmptyTypes);
+									AttributeHelper.HideFromJava(pb);
 									MethodBuilder setter = attributeTypeBuilder.DefineMethod("set_" + o.methods[i].Name, MethodAttributes.Public, typeof(void), new Type[] { argType });
+									AttributeHelper.HideFromJava(setter);
 									pb.SetSetMethod(setter);
 									ilgen = setter.GetILGenerator();
 									EmitSetValueCall(annotationAttributeBaseType, ilgen, o.methods[i].Name, o.methods[i].ReturnType, 1);
 									ilgen.Emit(OpCodes.Ret);
 									MethodBuilder getter = attributeTypeBuilder.DefineMethod("get_" + o.methods[i].Name, MethodAttributes.Public, argType, Type.EmptyTypes);
+									AttributeHelper.HideFromJava(getter);
 									pb.SetGetMethod(getter);
 									// TODO implement the getter method
 									getter.GetILGenerator().ThrowException(typeof(NotImplementedException));
