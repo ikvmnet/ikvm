@@ -216,4 +216,9 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
     {
 	gnu.classpath.VMSystemProperties.initOpenJDK(props);
     }
+
+    public StackTraceElement[] getStackTrace(cli.System.Diagnostics.StackTrace stack)
+    {
+	return ExceptionHelper.getStackTrace(stack, Integer.MAX_VALUE);
+    }
 }

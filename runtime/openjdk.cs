@@ -336,6 +336,10 @@ namespace IKVM.NativeCode.java
 					if (name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("zip")
 						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("awt")
 						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("rmi")
+						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("w2k_lsa_auth")
+						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("jaas_nt")
+						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("jaas_unix")
+						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("unpack")
 						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("net"))
 					{
 						return new VfsEntry(false);
@@ -3564,12 +3568,76 @@ namespace IKVM.NativeCode.java
 
 			public static object[][] dumpThreads(object[] threads)
 			{
-				throw new NotImplementedException();
+#if FIRST_PASS
+				return null;
+#else
+				jlStackTraceElement[][] stacks = new jlStackTraceElement[threads.Length][];
+				for (int i = 0; i < threads.Length; i++)
+				{
+					VMThread t = GetVMThread(threads[i]);
+					if (t == null)
+					{
+						stacks[i] = new jlStackTraceElement[0];
+					}
+					else
+					{
+						try
+						{
+							bool suspended = false;
+							if ((t.nativeThread.ThreadState & ThreadState.Suspended) == 0 && t.nativeThread != SystemThreadingThread.CurrentThread)
+							{
+								t.nativeThread.Suspend();
+								suspended = true;
+							}
+							StackTrace stack;
+							try
+							{
+								stack = new StackTrace(t.nativeThread, true);
+							}
+							finally
+							{
+								if (suspended)
+								{
+									t.nativeThread.Resume();
+								}
+							}
+							stacks[i] = JVM.Library.getStackTrace(stack);
+						}
+						catch (ThreadStateException)
+						{
+							stacks[i] = new jlStackTraceElement[0];
+						}
+					}
+				}
+				return stacks;
+#endif
 			}
+
+#if !FIRST_PASS
+			private sealed class GetThreads : jsPrivilegedAction
+			{
+				public object run()
+				{
+					jlThreadGroup root = (jlThreadGroup)mainThreadGroup;
+					for (; ; )
+					{
+						jlThread[] threads = new jlThread[root.activeCount()];
+						if (root.enumerate(threads) == threads.Length)
+						{
+							return threads;
+						}
+					}
+				}
+			}
+#endif
 
 			public static object[] getThreads()
 			{
-				throw new NotImplementedException();
+#if FIRST_PASS
+				return null;
+#else
+				return (object[])jsAccessController.doPrivileged(new GetThreads());
+#endif
 			}
 
 			public static void setPriority0(object thisThread, int newPriority)
@@ -3691,6 +3759,7 @@ namespace IKVM.NativeCode.java
 			// this is called from JniInterface.cs
 			internal static void WaitUntilLastJniThread()
 			{
+				// TODO
 				throw new NotImplementedException();
 			}
 

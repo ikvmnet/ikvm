@@ -50,4 +50,5 @@ public interface LibraryVMInterface
     Object newAssemblyClassLoader(cli.System.Reflection.Assembly assembly);
 
     void initProperties(java.util.Properties props);
+    StackTraceElement[] getStackTrace(cli.System.Diagnostics.StackTrace stack);
 }
