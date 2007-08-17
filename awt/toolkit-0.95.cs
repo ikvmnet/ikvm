@@ -512,8 +512,7 @@ namespace ikvm.awt
 
 		public override RobotPeer createRobot(java.awt.GraphicsDevice screen)
 		{
-            String osname = gnu.classpath.SystemProperties.getProperty("os.name");
-            if (osname.IndexOf("Windows") >= 0)
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Win32Windows)
             {
                 return new WindowsRobot(screen);
             }
