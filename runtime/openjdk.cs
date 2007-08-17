@@ -3071,6 +3071,7 @@ namespace IKVM.NativeCode.java
 			private static VMThread vmThread;
 			[ThreadStatic]
 			private static object cleanup;
+			private static int nonDaemonCount;
 			private static readonly ConstructorInfo threadConstructor1;
 			private static readonly ConstructorInfo threadConstructor2;
 			private static readonly FieldInfo vmThreadField;
@@ -3342,6 +3343,7 @@ namespace IKVM.NativeCode.java
 
 			internal static void SetThreadStatus(object javaThread, int value)
 			{
+#if !FIRST_PASS
 				if (value == TERMINATED)
 				{
 					// NOTE there might be a race condition here (when the thread's Cleanup object
@@ -3361,7 +3363,12 @@ namespace IKVM.NativeCode.java
 					{
 						Monitor.PulseAll(javaThread);
 					}
+					if (!((jlThread)javaThread).isDaemon())
+					{
+						Interlocked.Decrement(ref nonDaemonCount);
+					}
 				}
+#endif
 			}
 
 			private static VMThread CurrentVMThread()
@@ -3410,7 +3417,12 @@ namespace IKVM.NativeCode.java
 				{
 					threadConstructor2.Invoke(thread, new object[] { threadGroup, null });
 				}
-				daemonField.SetValue(thread, t.nativeThread.IsBackground);
+				bool daemon = t.nativeThread.IsBackground;
+				if (!daemon)
+				{
+					Interlocked.Increment(ref nonDaemonCount);
+				}
+				daemonField.SetValue(thread, daemon);
 				SetThreadStatus(thread, RUNNABLE);
 				if (addToGroup)
 				{
@@ -3523,6 +3535,10 @@ namespace IKVM.NativeCode.java
 				}
 				SetThreadStatus(thisThread, RUNNABLE);
 				t.nativeThread.Start();
+				if (!t.javaThread.isDaemon())
+				{
+					Interlocked.Increment(ref nonDaemonCount);
+				}
 #endif
 			}
 
@@ -3759,8 +3775,13 @@ namespace IKVM.NativeCode.java
 			// this is called from JniInterface.cs
 			internal static void WaitUntilLastJniThread()
 			{
-				// TODO
-				throw new NotImplementedException();
+#if !FIRST_PASS
+				int count = jlThread.currentThread().isDaemon() ? 0 : 1;
+				while (Interlocked.CompareExchange(ref nonDaemonCount, 0, 0) > count)
+				{
+					SystemThreadingThread.Sleep(1);
+				}
+#endif
 			}
 
 			// this is called from JniInterface.cs
