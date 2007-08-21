@@ -31,7 +31,6 @@
 package java.lang;
 
 import cli.System.Diagnostics.ProcessStartInfo;
-import sun.nio.ch.FileChannelImpl;
 import java.io.*;
 import java.nio.channels.Channels;
 
@@ -128,9 +127,9 @@ final class ProcessImpl extends Process {
 	    throw new java.io.IOException(x2.getMessage());
 	}
 
-	stdin_stream = new BufferedOutputStream(Channels.newOutputStream(FileChannelImpl.create(proc.get_StandardInput().get_BaseStream())));
-	stdout_stream = new BufferedInputStream(Channels.newInputStream(FileChannelImpl.create(proc.get_StandardOutput().get_BaseStream())));
-	stderr_stream = Channels.newInputStream(FileChannelImpl.create(proc.get_StandardError().get_BaseStream()));
+	stdin_stream = new BufferedOutputStream(new FileOutputStream(FileDescriptor.fromStream(proc.get_StandardInput().get_BaseStream())));
+	stdout_stream = new BufferedInputStream(new FileInputStream(FileDescriptor.fromStream(proc.get_StandardOutput().get_BaseStream())));
+	stderr_stream = new FileInputStream(FileDescriptor.fromStream(proc.get_StandardError().get_BaseStream()));
     }
 
     public OutputStream getOutputStream() {
