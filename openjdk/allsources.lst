@@ -1087,6 +1087,7 @@ sun/nio/ch/DatagramChannelImpl.java
 sun/nio/ch/DefaultSelectorProvider.java
 sun/nio/ch/DotNetSelectorImpl.java
 sun/nio/ch/FileChannelImpl.java
+sun/nio/ch/FileKey.java
 sun/nio/ch/IOUtil.java
 sun/nio/ch/Net.java
 sun/nio/ch/SelectionKeyImpl.java
@@ -9041,6 +9042,7 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/Interruptible.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/IOStatus.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/OptionAdaptor.java
+../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/Reflect.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SelChImpl.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SelectorImpl.java
 ../../openjdk-b13/j2se/src/share/classes/sun/nio/ch/SelectorProviderImpl.java

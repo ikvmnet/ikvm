@@ -324,13 +324,14 @@ public final class FileDescriptor {
         }
     }
 
-    int readBytes(byte buf[], int offset, int len) throws IOException
+    @ikvm.lang.Internal
+    public int readBytes(byte buf[], int offset, int len) throws IOException
     {
 	checkOpen();
 
 	if (len == 0)
 	{
-	    return(0);
+	    return 0;
 	}
 
 	if ((offset < 0) || (offset > buf.length))
@@ -402,7 +403,8 @@ public final class FileDescriptor {
         }
     }
 
-    int available() throws IOException
+    @ikvm.lang.Internal
+    public int available() throws IOException
     {
 	checkOpen();
 	try
@@ -458,7 +460,8 @@ public final class FileDescriptor {
         }
     }
 
-    void writeBytes(byte buf[], int offset, int len) throws IOException
+    @ikvm.lang.Internal
+    public void writeBytes(byte buf[], int offset, int len) throws IOException
     {
 	checkOpen();
 	if (len == 0)
@@ -499,7 +502,8 @@ public final class FileDescriptor {
         }
     }
 
-    long getFilePointer() throws IOException
+    @ikvm.lang.Internal
+    public long getFilePointer() throws IOException
     {
 	checkOpen();
 	try
@@ -523,7 +527,8 @@ public final class FileDescriptor {
         }
     }
 
-    void seek(long newPosition) throws IOException
+    @ikvm.lang.Internal
+    public void seek(long newPosition) throws IOException
     {
 	checkOpen();
 	try
@@ -547,7 +552,8 @@ public final class FileDescriptor {
         }
     }
 
-    long length() throws IOException
+    @ikvm.lang.Internal
+    public long length() throws IOException
     {
 	checkOpen();
 	try
@@ -571,7 +577,8 @@ public final class FileDescriptor {
         }
     }
 
-    void setLength(long newLength) throws IOException
+    @ikvm.lang.Internal
+    public void setLength(long newLength) throws IOException
     {
 	checkOpen();
 	try
@@ -595,7 +602,8 @@ public final class FileDescriptor {
         }
     }
 
-    void close() throws IOException
+    @ikvm.lang.Internal
+    public void close() throws IOException
     {
 	cli.System.IO.Stream s = stream;
 	stream = null;
