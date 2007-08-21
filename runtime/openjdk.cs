@@ -616,19 +616,57 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
+			private static string CanonicalizePath(string path)
+			{
+				System.IO.FileInfo fi = new System.IO.FileInfo(path);
+				if (fi.DirectoryName == null)
+				{
+					return path.Length > 1 && path[1] == ':' ? path.ToUpper() : path;
+				}
+				string dir = CanonicalizePath(fi.DirectoryName);
+				string name = fi.Name;
+				try
+				{
+					string[] arr = System.IO.Directory.GetFileSystemEntries(dir, name);
+					if (arr.Length == 1)
+					{
+						name = arr[0];
+					}
+				}
+				catch (System.IO.DirectoryNotFoundException)
+				{
+				}
+				return System.IO.Path.Combine(dir, name);
+			}
+
 			public static string canonicalize0(object _this, string path)
 			{
-				if (VirtualFileSystem.IsVirtualFS(path))
+				try
+				{
+					// TODO there is still a known bug here. A dotted path component right after the root component
+					// are not removed as they should be. E.g. "c:\..." => "C:\..." or "\\server\..." => IOException
+					// Another know issue is that when running under Mono on Windows, the case names aren't converted
+					// to the correct (on file system) casing.
+					//
+					// FXBUG we're appending the directory separator to work around an apparent .NET bug.
+					// If we don't do this, "c:\j\." would be canonicalized to "C:\"
+					return CanonicalizePath(path + System.IO.Path.DirectorySeparatorChar);
+				}
+				catch (System.IO.IOException x)
 				{
 					return path;
 				}
-				return GetFileInfo(path).FullName;
+#if !FIRST_PASS
+				catch (System.ArgumentException x)
+				{
+					throw new jiIOException(x.Message);
+				}
+#endif
 			}
 
 			public static string canonicalizeWithPrefix0(object _this, string canonicalPrefix, string pathWithCanonicalPrefix)
 			{
-				// TODO what's this all about?
-				return GetFileInfo(pathWithCanonicalPrefix).FullName;
+				return canonicalize0(_this, pathWithCanonicalPrefix);
 			}
 
 			private static string GetPathFromFile(object file)
