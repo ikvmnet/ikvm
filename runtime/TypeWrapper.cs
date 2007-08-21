@@ -3996,11 +3996,35 @@ namespace IKVM.Internal
 						clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
 						clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
 					}
+					if(HasStructLayoutAttributeAnnotation(classFile))
+					{
+						// when we have a StructLayoutAttribute, field order is significant,
+						// so we link all fields here to make sure they are created in class file order.
+						foreach(FieldWrapper fw in fields)
+						{
+							fw.Link();
+						}
+					}
 				}
 				catch(Exception x)
 				{
 					JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2NoFail", x);
 				}
+			}
+
+			private static bool HasStructLayoutAttributeAnnotation(ClassFile c)
+			{
+				if(c.Annotations != null)
+				{
+					foreach(object[] annot in c.Annotations)
+					{
+						if("Lcli/System/Runtime/InteropServices/StructLayoutAttribute$Annotation;".Equals(annot[1]))
+						{
+							return true;
+						}
+					}
+				}
+				return false;
 			}
 
 			private ClassFile.InnerClass getOuterClass()
@@ -9515,6 +9539,12 @@ namespace IKVM.Internal
 					}
 					else if(args.Length == 1)
 					{
+						// HACK special case for p/invoke StructLayout attribute
+						if(type == typeof(System.Runtime.InteropServices.StructLayoutAttribute) && args[0].ParameterType == typeof(short))
+						{
+							// we skip this constructor, so that the other one will be visible
+							continue;
+						}
 						if(IsSupportedType(args[0].ParameterType))
 						{
 							oneArgCtor = ci;
@@ -10193,6 +10223,13 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
 				{
+					if(type == typeof(System.Runtime.InteropServices.StructLayoutAttribute) && tb.BaseType != typeof(object))
+					{
+						// we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
+						// TypeBuilder.CreateType() will later on throw an exception.
+						Tracer.Error(Tracer.Runtime, "StructLayoutAttribute cannot be applied to {0}, because it does not directly extend cli.System.Object", tb.FullName);
+						return;
+					}
 					tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 				}
 
