@@ -97,15 +97,34 @@ namespace System.Net.NetworkInformation
 		}
 	}
 
+	class IPAddressCollection : IEnumerable
+	{
+		private IPAddress[] addresses;
+
+		internal IPAddressCollection(IPAddress[] addresses)
+		{
+			this.addresses = addresses;
+		}
+
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return addresses.GetEnumerator();
+		}
+	}
+
 	class IPInterfaceProperties
 	{
 		private UnicastIPAddressInformationCollection addresses;
 		internal IPv4InterfaceProperties v4props;
+		private IPAddressCollection dnsservers;
+		private string dnssuffix;
 
-		internal IPInterfaceProperties(IPAddress[] addresses, int mtu)
+		internal IPInterfaceProperties(IPAddress[] addresses, int mtu, string dnssuffix, IPAddress[] dnsservers)
 		{
 			this.addresses = new UnicastIPAddressInformationCollection(addresses);
 			this.v4props = new IPv4InterfaceProperties(mtu);
+			this.dnsservers = new IPAddressCollection(dnsservers);
+			this.dnssuffix = dnssuffix;
 		}
 
 		internal UnicastIPAddressInformationCollection UnicastAddresses
@@ -119,6 +138,22 @@ namespace System.Net.NetworkInformation
 		internal IPv4InterfaceProperties GetIPv4Properties()
 		{
 			return v4props;
+		}
+
+		internal IPAddressCollection DnsAddresses
+		{
+			get
+			{
+				return dnsservers;
+			}
+		}
+
+		internal string DnsSuffix
+		{
+			get
+			{
+				return dnssuffix;
+			}
 		}
 	}
 
@@ -164,11 +199,11 @@ namespace System.Net.NetworkInformation
 		private OperationalStatus status = OperationalStatus.Unknown;
 		private byte[] mac;
 
-		private NetworkInterface(uint interfaceIndex, string description, IPAddress[] addresses, int mtu, byte[] mac)
+		private NetworkInterface(uint interfaceIndex, string description, IPAddress[] addresses, int mtu, byte[] mac, string dnssuffix, IPAddress[] dnsservers)
 		{
 			this.interfaceIndex = interfaceIndex;
 			this.description = description;
-			this.props = new IPInterfaceProperties(addresses, mtu);
+			this.props = new IPInterfaceProperties(addresses, mtu, dnssuffix, dnsservers);
 			this.mac = mac;
 		}
 
@@ -179,7 +214,7 @@ namespace System.Net.NetworkInformation
 			{
 				ArrayList ifaces = new ArrayList();
 				// loopback isn't reported, so we make it up
-				NetworkInterface loopback = new NetworkInterface(0xFFFFFFFF, "Software Loopback Interface 1", new IPAddress[] { IPAddress.Loopback }, -1, new byte[0]);
+				NetworkInterface loopback = new NetworkInterface(0xFFFFFFFF, "Software Loopback Interface 1", new IPAddress[] { IPAddress.Loopback }, -1, new byte[0], "", new IPAddress[0]);
 				loopback.type = NetworkInterfaceType.Loopback;
 				loopback.status = OperationalStatus.Up;
 				ifaces.Add(loopback);
@@ -220,7 +255,29 @@ namespace System.Net.NetworkInformation
 						catch
 						{
 						}
-						ifaces.Add(new NetworkInterface((uint)props["InterfaceIndex"].Value, (string)props["Description"].Value, addr, mtu, mac));
+						string dnssuffix = "";
+						try
+						{
+							dnssuffix = ((string[])props["DNSDomainSuffixSearchOrder"].Value)[0];
+						}
+						catch
+						{
+						}
+						IPAddress[] dnsservers;
+						try
+						{
+							string[] dnsaddresses = (string[])props["DNSServerSearchOrder"].Value;
+							dnsservers = new IPAddress[dnsaddresses.Length];
+							for (int i = 0; i < dnsaddresses.Length; i++)
+							{
+								dnsservers[i] = IPAddress.Parse(dnsaddresses[i]);
+							}
+						}
+						catch
+						{
+							dnsservers = new IPAddress[0];
+						}
+						ifaces.Add(new NetworkInterface((uint)props["InterfaceIndex"].Value, (string)props["Description"].Value, addr, mtu, mac, dnssuffix, dnsservers));
 					}
 				}
 				netif = (NetworkInterface[])ifaces.ToArray(typeof(NetworkInterface));
