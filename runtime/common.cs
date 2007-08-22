@@ -341,6 +341,24 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 	}
 }
 
+namespace IKVM.NativeCode.gnu.classpath
+{
+	public class VMSystemProperties
+	{
+		public static string getVersion()
+		{
+			try
+			{
+				return JVM.SafeGetAssemblyVersion(typeof(VMSystemProperties).Assembly).ToString();
+			}
+			catch(Exception)
+			{
+				return "(unknown)";
+			}
+		}
+	}
+}
+
 namespace IKVM.NativeCode.ikvm.@internal
 {
 	public class AssemblyClassLoader

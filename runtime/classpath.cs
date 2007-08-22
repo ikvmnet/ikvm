@@ -1065,21 +1065,6 @@ namespace IKVM.NativeCode.gnu.java.lang.management
 
 namespace IKVM.NativeCode.gnu.classpath
 {
-	public class VMSystemProperties
-	{
-		public static string getVersion()
-		{
-			try
-			{
-				return JVM.SafeGetAssemblyVersion(typeof(VMSystemProperties).Assembly).ToString();
-			}
-			catch(Exception)
-			{
-				return "(unknown)";
-			}
-		}
-	}
-
 	public class VMStackWalker
 	{
 		private static readonly Hashtable isHideFromJavaCache = Hashtable.Synchronized(new Hashtable());
