@@ -29,11 +29,10 @@
     "Copyright (C) 2003-2004 BEA Systems\r\n" +
     "Copyright (C) 2007      Casey Marshall\r\n" +
     "Copyright (C) 1995      Colin Plumb\r\n" +
-    "Copyright (C) 1998-2007 Free Software Foundation, Inc.\r\n" +
+    "Copyright (C) 1999-2007 Free Software Foundation, Inc.\r\n" +
     "Copyright (C) 2001-2005 freebxml.org\r\n" +
     "Copyright (C) 1998      FundsXpress, Inc.\r\n" +
     "Copyright (C) 1993-2005 International Business Machines, Inc.\r\n" +
-    "Copyright (C) 1996      Internet Software Consortium\r\n" +
     "Copyright (C) 2002-2007 Jeroen Frijters\r\n" +
     "Copyright (C) 2007      Red Hat, Inc.\r\n" +
     "Copyright (C) 1994-2007 Sun Microsystems, Inc.\r\n" +
@@ -46,7 +45,7 @@
     "Copyright (C) 2000-2004 World Wide Web Consortium"
 )
 
-@cli.System.Reflection.AssemblyTitleAttribute.Annotation("IKVM Hybrid GNU Classpath OpenJDK library for .NET")
+@cli.System.Reflection.AssemblyTitleAttribute.Annotation("IKVM.NET OpenJDK Library for .NET")
 @cli.System.Reflection.AssemblyProductAttribute.Annotation("IKVM.NET")
 @cli.System.Reflection.AssemblyCompanyAttribute.Annotation("Jeroen Frijters")
 
