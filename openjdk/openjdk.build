@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" default="IKVM.Hybrid.GNU.Classpath.OpenJDK.dll">
+<project name="IKVM.OpenJDK.ClassLibrary.dll" default="IKVM.OpenJDK.ClassLibrary.dll">
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath-0.95" />
@@ -47,14 +47,14 @@
       </zip>
     </target>
 
-    <target name="IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" depends="classes vfs">
+    <target name="IKVM.OpenJDK.ClassLibrary.dll" depends="classes vfs">
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
           <arg value="-version:0.35.*" />
           <arg value="${signoption}" />
           <arg value="-compressresources" />
           <arg value="-opt:fields" />
           <arg value="-strictfinalfieldsemantics" />
-          <arg value="-out:IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" />
+          <arg value="-out:IKVM.OpenJDK.ClassLibrary.dll" />
           <arg value="-remap:map.xml" />
           <arg value="-exclude:exclude.lst" />
           <arg value="-target:library" />
@@ -71,12 +71,12 @@
           <arg value="-resource:META-INF/MANIFEST.MF=MANIFEST.MF" />
           <arg value="${OpenJDK.dir}/control/build/linux-i586/j2re-image/lib/resources.jar" />
         </exec>
-        <copy file="IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" tofile="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll.new" />
+        <copy file="IKVM.OpenJDK.ClassLibrary.dll" tofile="../bin/IKVM.OpenJDK.ClassLibrary.dll.new" />
         <if test="${platform::is-win32()}">
-          <exec program="peverify" commandline="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll.new" />
+          <exec program="peverify" commandline="../bin/IKVM.OpenJDK.ClassLibrary.dll.new" />
         </if>
-        <copy file="IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" todir="../bin" />
-	<delete file="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll.new" />
+        <copy file="IKVM.OpenJDK.ClassLibrary.dll" todir="../bin" />
+	<delete file="../bin/IKVM.OpenJDK.ClassLibrary.dll.new" />
     </target>
 
 </project>

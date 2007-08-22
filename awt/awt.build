@@ -1,27 +1,27 @@
 <?xml version="1.0"?>
 <project name="awt" default="awt">
-    <target name="hybrid">
-        <property name="hybrid" value="true" />
+    <target name="classpath">
+        <property name="classpath" value="true" />
         <call target="awt" />
     </target>
     <target name="awt">
         <property overwrite="false" name="signed" value="" />
-        <property overwrite="false" name="hybrid" value="false" />
+        <property overwrite="false" name="classpath" value="false" />
         <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE;${signed}">
             <sources>
                 <include name="AssemblyInfo.cs" />
                 <include name="converter.cs" />
-                <include if="${hybrid}" name="fonts-0.95.cs" />
-                <include unless="${hybrid}" name="fonts.cs" />
+                <include unless="${classpath}" name="fonts-0.95.cs" />
+                <include if="${classpath}" name="fonts.cs" />
                 <include name="graphics.cs" />
                 <include name="images.cs" />
                 <include name="robot.cs" />
-                <include if="${hybrid}" name="toolkit-0.95.cs" />
-                <include unless="${hybrid}" name="toolkit.cs" />
+                <include unless="${classpath}" name="toolkit-0.95.cs" />
+                <include if="${classpath}" name="toolkit.cs" />
             </sources>
             <references>
-                <include unless="${hybrid}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
-                <include if="${hybrid}" name="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" asis="true" />
+                <include if="${classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
+                <include unless="${classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
                 <include name="System.Windows.Forms.dll" asis="true" />
                 <include name="System.Drawing.dll" asis="true" />

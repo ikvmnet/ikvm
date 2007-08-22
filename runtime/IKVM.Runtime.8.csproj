@@ -52,9 +52,9 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="IKVM.Hybrid.GNU.Classpath.OpenJDK, Version=0.35.2728.21374, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="IKVM.OpenJDK.ClassLibrary, Version=0.35.2790.20823, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\IKVM.Hybrid.GNU.Classpath.OpenJDK.dll</HintPath>
+      <HintPath>..\bin\IKVM.OpenJDK.ClassLibrary.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>
@@ -82,9 +82,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ClassLoaderWrapper.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="classpath-hybrid.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="classpath.cs">

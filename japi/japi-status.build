@@ -5,10 +5,10 @@
     <property name="REFERENCE_API_NAME" value="JDK-1.6" />
     <property name="JAPI_HOME" value="c:\japi\japitools" />
     <property name="IKVM_VERSION" value="0.35" />
-    <property name="CORE_LIBRARY" value="IKVM.GNU.Classpath" />
+    <property name="CORE_LIBRARY" value="IKVM.OpenJDK.ClassLibrary" />
 
-    <target name="hybrid">
-        <property name="CORE_LIBRARY" value="IKVM.Hybrid.GNU.Classpath.OpenJDK" />
+    <target name="classpath">
+        <property name="CORE_LIBRARY" value="IKVM.GNU.Classpath" />
         <call target="default" />
     </target>
 

@@ -4,12 +4,12 @@
         <property name="first-pass" value="true" />
         <call target="IKVM.Runtime" />
     </target>
-    <target name="hybrid">
-        <property name="hybrid" value="true" />
+    <target name="classpath">
+        <property name="classpath" value="true" />
         <call target="IKVM.Runtime" />
     </target>
     <target name="signed">
-        <property name="hybrid" value="false" />
+        <property name="classpath" value="false" />
         <property name="signed" value="SIGNCODE" />
         <property name="signoption" value="-key:ikvm-key" />
         <property name="ilasm_signoption" value="/key:@ikvm-key" />
@@ -17,14 +17,14 @@
     </target>
 
     <target name="IKVM.Runtime">
-        <property overwrite="false" name="hybrid" value="false" />
+        <property overwrite="false" name="classpath" value="false" />
         <property overwrite="false" name="cfnet" value="false" />
         <property overwrite="false" name="first-pass" value="false" />
         <property name="defs" value="TRACE" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
-        <if test="${hybrid}">
+        <if test="${not classpath}">
             <property name="defs" value="${defs};OPENJDK" />
         </if>
         <if test="${first-pass}">
@@ -42,8 +42,7 @@
                 <include name="ByteCodeHelper.cs" />
                 <include name="ClassFile.cs" />
                 <include name="ClassLoaderWrapper.cs" />
-                <include unless="${hybrid}" name="classpath.cs" />
-                <include if="${hybrid}" name="classpath-hybrid.cs" />
+                <include if="${classpath}" name="classpath.cs" />
                 <include name="CodeEmitter.cs" />
                 <include name="common.cs" />
                 <include name="compiler.cs" />
@@ -53,8 +52,8 @@
                 <include name="JavaException.cs" />
                 <include name="JniInterface.cs" />
                 <include name="MemberWrapper.cs" />
-                <include if="${hybrid}" name="netinf.cs" />
-                <include if="${hybrid}" name="openjdk.cs" />
+                <include unless="${classpath}" name="netinf.cs" />
+                <include unless="${classpath}" name="openjdk.cs" />
                 <include name="profiler.cs" />
                 <include name="tracer.cs" />
                 <include name="TypeWrapper.cs" />
@@ -62,11 +61,11 @@
                 <include name="vm.cs" />
             </sources>
             <resources>
-                <include if="${hybrid and not first-pass}" name="../openjdk/vfs.zip" />
+                <include if="${not classpath and not first-pass}" name="../openjdk/vfs.zip" />
             </resources>
             <references>
-                <include unless="${first-pass or hybrid}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
-                <include unless="${first-pass or not hybrid}" name="../bin/IKVM.Hybrid.GNU.Classpath.OpenJDK.dll" asis="true" />
+                <include unless="${first-pass or not classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
+                <include unless="${first-pass or classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
                 <!-- HACK mcs 1.2.3 requires explicit reference to System.Management -->
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Management.dll" />
             </references>
