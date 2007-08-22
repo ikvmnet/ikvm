@@ -246,7 +246,7 @@ class Compiler
 		if(ReferenceEquals(mw.Name, StringConstants.INIT))
 		{
 			MethodWrapper finalize = clazz.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
-			keepAlive = finalize != null && finalize.DeclaringType != java_lang_Object;
+			keepAlive = finalize != null && finalize.DeclaringType != java_lang_Object && finalize.DeclaringType != cli_System_Object;
 		}
 #if STATIC_COMPILER
 		replacedMethods = ((CompilerClassLoader)clazz.GetClassLoader()).GetReplacedMethodsFor(mw);
