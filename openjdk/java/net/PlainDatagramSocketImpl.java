@@ -192,12 +192,17 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected synchronized int peek(InetAddress i) throws IOException
     {
-	throw new IOException("Not Implemented Yet");
+	DatagramPacket p = new DatagramPacket(new byte[1], 1);
+	receiveImpl(p, SocketFlags.Peek);
+	i.address = p.getAddress().address;
+	i.family = InetAddress.IPv4;
+	return p.getPort();
     }
 
     protected synchronized int peekData(DatagramPacket p) throws IOException
     {
-	throw new IOException("Not Implemented Yet");
+	receiveImpl(p, SocketFlags.Peek);
+	return p.getPort();
     }
 
     /**
@@ -215,6 +220,11 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 
     protected synchronized void receive0(DatagramPacket p) throws IOException
     {
+	receiveImpl(p, SocketFlags.None);
+    }
+
+    private void receiveImpl(DatagramPacket p, int socketFlags) throws IOException
+    {
 	cli.System.Net.EndPoint[] remoteEP = new cli.System.Net.EndPoint[] 
             {
                 new cli.System.Net.IPEndPoint(0, 0)
@@ -231,7 +241,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 		{
 		    throw new SocketTimeoutException();
 		}
-		length = netSocket.ReceiveFrom(p.buf, p.offset, p.bufLength, SocketFlags.wrap(SocketFlags.None), remoteEP);
+		length = netSocket.ReceiveFrom(p.buf, p.offset, p.bufLength, SocketFlags.wrap(socketFlags), remoteEP);
 		break;
 	    }
 	    catch (cli.System.Net.Sockets.SocketException x)
@@ -240,6 +250,22 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 		{
 		    // A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
 		    // the winsock stack helpfully lets us know this, but we don't care so we just retry the receive.
+		    if ((socketFlags & SocketFlags.Peek) != 0)
+		    {
+			// We did a peek, so we still need to remove the error result.
+			try
+			{
+			    if (false) throw new cli.System.Net.Sockets.SocketException();
+			    if (false) throw new cli.System.ObjectDisposedException("");
+			    netSocket.ReceiveFrom(p.buf, 0, 0, SocketFlags.wrap(SocketFlags.None), remoteEP);
+			}
+			catch (cli.System.Net.Sockets.SocketException _)
+			{
+			}
+			catch (cli.System.ObjectDisposedException _)
+			{
+			}
+		    }
 		    continue;
 		}
 		if (x.get_ErrorCode() == WSAEMSGSIZE)
@@ -676,12 +702,18 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 
     private void connect0(InetAddress address, int port) throws SocketException
     {
-	throw new SocketException("not implemented");
+	// If we throw here, DatagramSocket will fake connectedness for us.
+	// Once we're on .NET 2.0 we can use Socket.Connect/Disconnect.
+	throw new SocketException();
     }
 
     private void disconnect0(int family)
     {
-	// TODO
+    }
+
+    // this is a workaround for a bug in java.net.DatagramSocket.receive(), see map.xml for details.
+    static boolean equalsHack(InetAddress addr1, InetAddress addr2)
+    {
+	return addr1.address == addr2.address;
     }
 }
-
