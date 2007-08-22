@@ -113,6 +113,7 @@ using jnInet6Address = java.net.Inet6Address;
 using jnNetworkInterface = java.net.NetworkInterface;
 using jnInterfaceAddress = java.net.InterfaceAddress;
 using ssaGetPropertyAction = sun.security.action.GetPropertyAction;
+using sndResolverConfigurationImpl = sun.net.dns.ResolverConfigurationImpl;
 #endif
 
 namespace IKVM.NativeCode.java
@@ -652,7 +653,7 @@ namespace IKVM.NativeCode.java
 					// If we don't do this, "c:\j\." would be canonicalized to "C:\"
 					return CanonicalizePath(path + System.IO.Path.DirectorySeparatorChar);
 				}
-				catch (System.IO.IOException x)
+				catch (System.IO.IOException)
 				{
 					return path;
 				}
@@ -5828,17 +5829,55 @@ namespace IKVM.NativeCode.sun.net.dns
 	{
 		public static void init0()
 		{
-			throw new NotImplementedException();
+		}
+
+		private static string StrAppend(string s, string app)
+		{
+			if (s == "")
+			{
+				return app;
+			}
+			if (app == "")
+			{
+				return s;
+			}
+			return s + " " + app;
 		}
 
 		public static void loadDNSconfig0()
 		{
-			throw new NotImplementedException();
+#if !FIRST_PASS
+			string searchlist = "";
+			string nameservers = "";
+			foreach (System.Net.NetworkInformation.NetworkInterface iface in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+			{
+				System.Net.NetworkInformation.IPInterfaceProperties props = iface.GetIPProperties();
+				foreach (System.Net.IPAddress addr in props.DnsAddresses)
+				{
+					// no IPv6 support
+					if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+					{
+						nameservers = StrAppend(nameservers, addr.ToString());
+					}
+				}
+				try
+				{
+					searchlist = StrAppend(searchlist, props.DnsSuffix);
+				}
+				catch (PlatformNotSupportedException)
+				{
+				}
+			}
+			Type type = typeof(sndResolverConfigurationImpl);
+			type.GetField("os_searchlist", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, searchlist);
+			type.GetField("os_nameservers", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, nameservers);
+#endif
 		}
 
 		public static int notifyAddrChange0()
 		{
-			throw new NotImplementedException();
+			// TODO on .NET 2.0 we could use System.Net.NetworkInformation.NetworkChange to detect changes
+			return -1;
 		}
 	}
 }
