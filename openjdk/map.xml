@@ -1783,6 +1783,45 @@
         </body>
       </method>
     </class>
+    <class name="com.sun.beans.ObjectHandler">
+      <!-- HACK this is a workaround for an OpenJDK regression. It apparently no longer supports primitive types in the bean xml deserialization. -->
+      <method name="classForName2" sig="(Ljava.lang.String;)Ljava.lang.Class;">
+        <body>
+          <ldarg_1 />
+          <call class="com.sun.beans.ObjectHandler" name="typeNameToPrimitiveClass" sig="(Ljava.lang.String;)Ljava.lang.Class;" />
+          <dup />
+          <brfalse name="not_primitive" />
+          <ret />
+          <label name="not_primitive" />
+          <pop />
+          <exceptionBlock>
+            <try>
+              <ldarg_1 />
+              <ldarg_0 />
+              <ldfld class="com.sun.beans.ObjectHandler" name="ldr" sig="Ljava.lang.ClassLoader;" />
+              <call class="com.sun.beans.finder.ClassFinder" name="findClass" sig="(Ljava.lang.String;Ljava.lang.ClassLoader;)Ljava.lang.Class;" />
+              <stloc name="retval" class="java.lang.Class" />
+            </try>
+            <catch class="java.lang.ClassNotFoundException">
+              <stloc name="e" class="java.lang.ClassNotFoundException" />
+              <ldarg_0 />
+              <ldfld class="com.sun.beans.ObjectHandler" name="is" sig="Ljava.beans.XMLDecoder;" />
+              <brfalse name="skip" />
+              <ldarg_0 />
+              <ldfld class="com.sun.beans.ObjectHandler" name="is" sig="Ljava.beans.XMLDecoder;" />
+              <callvirt class="java.beans.XMLDecoder" name="getExceptionListener" sig="()Ljava.beans.ExceptionListener;" />
+              <ldloc name="e" />
+              <callvirt class="java.beans.ExceptionListener" name="exceptionThrown" sig="(Ljava.lang.Exception;)V" />
+              <label name="skip" />
+              <ldnull />
+              <stloc name="retval" class="java.lang.Class" />
+            </catch>
+          </exceptionBlock>
+          <ldloc name="retval" />
+          <ret />
+        </body>
+      </method>
+    </class>
 	</assembly>
 	<exceptionMappings>
 		<exception src="System.NullReferenceException" dst="java.lang.NullPointerException" />
