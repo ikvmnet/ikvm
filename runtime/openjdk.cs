@@ -619,29 +619,45 @@ namespace IKVM.NativeCode.java
 
 			private static string CanonicalizePath(string path)
 			{
-				System.IO.FileInfo fi = new System.IO.FileInfo(path);
-				if (fi.DirectoryName == null)
-				{
-					return path.Length > 1 && path[1] == ':' ? path.ToUpper() : path;
-				}
-				string dir = CanonicalizePath(fi.DirectoryName);
-				string name = fi.Name;
 				try
 				{
-					string[] arr = System.IO.Directory.GetFileSystemEntries(dir, name);
-					if (arr.Length == 1)
+					System.IO.FileInfo fi = new System.IO.FileInfo(path);
+					if (fi.DirectoryName == null)
 					{
-						name = arr[0];
+						return path.Length > 1 && path[1] == ':' ? path.ToUpper() : path;
 					}
+					string dir = CanonicalizePath(fi.DirectoryName);
+					string name = fi.Name;
+					try
+					{
+						string[] arr = System.IO.Directory.GetFileSystemEntries(dir, name);
+						if (arr.Length == 1)
+						{
+							name = arr[0];
+						}
+					}
+					catch (System.UnauthorizedAccessException)
+					{
+					}
+					catch (System.IO.IOException)
+					{
+					}
+					return System.IO.Path.Combine(dir, name);
 				}
-				catch (System.IO.DirectoryNotFoundException)
+				catch (System.UnauthorizedAccessException)
 				{
 				}
-				return System.IO.Path.Combine(dir, name);
+				catch (System.IO.IOException)
+				{
+				}
+				return path;
 			}
 
 			public static string canonicalize0(object _this, string path)
 			{
+#if FIRST_PASS
+				return null;
+#else
 				try
 				{
 					// TODO there is still a known bug here. A dotted path component right after the root component
@@ -653,11 +669,6 @@ namespace IKVM.NativeCode.java
 					// If we don't do this, "c:\j\." would be canonicalized to "C:\"
 					return CanonicalizePath(path + System.IO.Path.DirectorySeparatorChar);
 				}
-				catch (System.IO.IOException)
-				{
-					return path;
-				}
-#if !FIRST_PASS
 				catch (System.ArgumentException x)
 				{
 					throw new jiIOException(x.Message);
@@ -924,10 +935,10 @@ namespace IKVM.NativeCode.java
 
 			public static bool delete0(object _this, object f)
 			{
+				System.IO.FileSystemInfo fileInfo = null;
 				try
 				{
 					string path = GetPathFromFile(f);
-					System.IO.FileSystemInfo fileInfo;
 					if (System.IO.Directory.Exists(path))
 					{
 						fileInfo = new System.IO.DirectoryInfo(path);
@@ -960,6 +971,22 @@ namespace IKVM.NativeCode.java
 				}
 				catch (System.IO.IOException)
 				{
+					if (Environment.Version.Major == 1 && fileInfo is System.IO.DirectoryInfo)
+					{
+						// FXBUG on .NET 1.1 DirectoryInfo.Delete() can throw an exception even on success,
+						// because it checks GetLastWin32Error() even if RemoveDirectory() succeeded.
+						try
+						{
+							fileInfo.Refresh();
+						}
+						catch (System.ArgumentException)
+						{
+						}
+						catch (System.IO.IOException)
+						{
+						}
+						return !fileInfo.Exists;
+					}
 				}
 				catch (System.NotSupportedException)
 				{
