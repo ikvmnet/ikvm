@@ -145,7 +145,11 @@ public class ZipEntry implements ZipConstants, Cloneable
     public void setTime(long time)
     {
 	Date d = new Date(time);
-	this.time = (Math.max(80, d.getYear()) << 25)
+	if (d.getYear() < 80)
+	{
+	    d = new Date(80, 0, 1);
+	}
+	this.time = ((d.getYear() - 80) << 25)
 	    | ((d.getMonth() + 1) << 21)
 	    | (d.getDate() << 16)
 	    | (d.getHours() << 11)
