@@ -272,19 +272,19 @@ class Net {						// package-private
 	    if (false) throw new cli.System.Net.Sockets.SocketException();
 	    if (false) throw new cli.System.ObjectDisposedException("");
 	    int read = fd.getSocket().Receive(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
-	    return read == 0 ? -1 : read;
+	    return read == 0 ? IOStatus.EOF : read;
 	}
 	catch (cli.System.Net.Sockets.SocketException x)
 	{
 	    if (x.get_ErrorCode() == PlainSocketImpl.WSAESHUTDOWN)
 	    {
 		// the socket was shutdown, so we have to return EOF
-		return -1;
+		return IOStatus.EOF;
 	    }
 	    else if (x.get_ErrorCode() == PlainSocketImpl.WSAEWOULDBLOCK)
 	    {
 		// nothing to read and would block
-		return 0;
+		return IOStatus.UNAVAILABLE;
 	    }
 	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
 	}
@@ -368,6 +368,10 @@ class Net {						// package-private
 	}
 	catch (cli.System.Net.Sockets.SocketException x)
 	{
+	    if (x.get_ErrorCode() == PlainSocketImpl.WSAEWOULDBLOCK)
+	    {
+		return IOStatus.UNAVAILABLE;
+	    }
 	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
 	}
 	catch (cli.System.ObjectDisposedException x1)
@@ -382,7 +386,10 @@ class Net {						// package-private
 	{
 	    byte[] buf = src.array();
 	    int len = writeImpl(fd, buf, src.arrayOffset() + src.position(), src.remaining());
-	    src.position(src.position() + len);
+	    if (len > 0)
+	    {
+		src.position(src.position() + len);
+	    }
 	    return len;
 	}
 	else
@@ -391,7 +398,10 @@ class Net {						// package-private
 	    byte[] buf = new byte[src.remaining()];
 	    src.get(buf);
 	    int len = writeImpl(fd, buf, 0, buf.length);
-	    src.position(pos + len);
+	    if (len > 0)
+	    {
+		src.position(pos + len);
+	    }
 	    return len;
 	}
     }
@@ -405,6 +415,10 @@ class Net {						// package-private
 	    if (size > 0)
 	    {
 		int written = write(fd, srcs[i]);
+		if (written < 0)
+		{
+		    break;
+		}
 		totalWritten += written;
 		if (written < size)
 		{
