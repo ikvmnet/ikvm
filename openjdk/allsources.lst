@@ -10035,6 +10035,7 @@ icedtea/jce/gnu/java/security/hash/Sha384.java
 icedtea/jce/gnu/java/security/hash/Sha512.java
 icedtea/jce/gnu/java/security/hash/Tiger.java
 icedtea/jce/gnu/java/security/hash/Whirlpool.java
+icedtea/jce/gnu/java/security/icedtea/CertBundleKeyStoreImpl.java
 icedtea/jce/gnu/java/security/icedtea/GNUTlsKeyMaterialGeneratorImpl.java
 icedtea/jce/gnu/java/security/icedtea/GNUTlsMasterSecretGenerator.java
 icedtea/jce/gnu/java/security/icedtea/GNUTlsPrfGeneratorImpl.java
@@ -10206,6 +10207,7 @@ icedtea/jce/gnu/javax/crypto/cipher/WeakKeyException.java
 icedtea/jce/gnu/javax/crypto/jce/DiffieHellmanImpl.java
 icedtea/jce/gnu/javax/crypto/jce/GnuCrypto.java
 icedtea/jce/gnu/javax/crypto/jce/GnuSasl.java
+icedtea/jce/gnu/javax/crypto/jce/PBESecretKeyFactory.java
 icedtea/jce/gnu/javax/crypto/jce/PBKDF2SecretKeyFactory.java
 icedtea/jce/gnu/javax/crypto/jce/cipher/AES128KeyWrapSpi.java
 icedtea/jce/gnu/javax/crypto/jce/cipher/AES192KeyWrapSpi.java
@@ -10221,6 +10223,7 @@ icedtea/jce/gnu/javax/crypto/jce/cipher/DESSpi.java
 icedtea/jce/gnu/javax/crypto/jce/cipher/KeyWrappingAlgorithmAdapter.java
 icedtea/jce/gnu/javax/crypto/jce/cipher/KhazadSpi.java
 icedtea/jce/gnu/javax/crypto/jce/cipher/NullCipherSpi.java
+icedtea/jce/gnu/javax/crypto/jce/cipher/PBE.java
 icedtea/jce/gnu/javax/crypto/jce/cipher/PBES2.java
 icedtea/jce/gnu/javax/crypto/jce/cipher/RijndaelSpi.java
 icedtea/jce/gnu/javax/crypto/jce/cipher/SerpentSpi.java

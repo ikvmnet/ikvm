@@ -316,6 +316,9 @@ public final class GnuCrypto
             gnu.javax.crypto.jce.cipher.PBES2.HMacWhirlpool.TripleDES.class.getName());
         put("Cipher.PBEWithHMacWhirlpoolAndTwofish",
             gnu.javax.crypto.jce.cipher.PBES2.HMacWhirlpool.Twofish.class.getName());
+        put("Cipher.PBE",
+        		gnu.javax.crypto.jce.cipher.PBE.MD5.DES.class.getName());
+	put("Alg.Alias.Cipher.PBEWithMD5AndDES", "PBE");
 
         // Key Wrapping Algorithm cipher
         put("Cipher." + Registry.AES128_KWA,
@@ -348,7 +351,11 @@ public final class GnuCrypto
             gnu.javax.crypto.jce.PBKDF2SecretKeyFactory.HMacTiger.class.getName());
         put("SecretKeyFactory.PBKDF2WithHMacWhirlpool",
             gnu.javax.crypto.jce.PBKDF2SecretKeyFactory.HMacWhirlpool.class.getName());
+        put("SecretKeyFactory.PBEWithMD5AndDES",
+        		gnu.javax.crypto.jce.PBESecretKeyFactory.class.getName());
 
+        put("Alg.Alias.AlgorithmParameters.PBEWithMD5AndDES", "PBEWithMD5AndDES");
+        
         // Simple SecretKeyFactory implementations.
         put("SecretKeyFactory.Anubis",
             gnu.javax.crypto.jce.key.AnubisSecretKeyFactoryImpl.class.getName());
@@ -553,7 +560,7 @@ public final class GnuCrypto
         put("KeyFactory.DH",
             gnu.javax.crypto.jce.sig.DHKeyFactory.class.getName());
 
-        put("Alg.Alias,KeyFactory.DiffieHellman", "DH");
+        put("Alg.Alias.KeyFactory.DiffieHellman", "DH");
 
         // Algorithm Parameters -----------------------------------------------
         put("AlgorithmParameters.DH",

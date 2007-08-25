@@ -91,8 +91,11 @@ public class PBEKeySpec implements KeySpec
    */
   public PBEKeySpec(char[] password)
   {
-    setPassword(password);
-    
+   if (password == null)
+        password = new char[0];
+
+    setPassword(password.clone());   
+ 
     // load the default values for unspecified variables.
     salt = null;
     iterationCount = 0;
@@ -114,8 +117,12 @@ public class PBEKeySpec implements KeySpec
    */
   public PBEKeySpec(char[] password, byte[] salt, int iterationCount)
   {
-    setPassword(password);
-    setSalt(salt);
+    if (password == null)
+        password = new char[0];
+
+    setPassword(password.clone());    
+
+    setSalt(salt.clone());
     setIterationCount(iterationCount);
 
     // load default values into unspecified variables.
@@ -140,8 +147,12 @@ public class PBEKeySpec implements KeySpec
   public PBEKeySpec(char[] password, byte[] salt, int iterationCount,
                     int keyLength)
   {
-    setPassword(password);
-    setSalt(salt);
+    if (password == null)
+        password = new char[0];
+
+    setPassword(password.clone());    
+
+    setSalt(salt.clone());
     setIterationCount(iterationCount);
     setKeyLength(keyLength);
   }

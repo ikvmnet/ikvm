@@ -48,9 +48,13 @@ public class IcedTls extends Provider
   {
     super("IcedTls", 1.0, "Free replacements for encumbered Sun sources for TLS");
     
+    // Key generators for Sun's JSSE.
     put("KeyGenerator.SunTlsRsaPremasterSecret", GNUTlsRsaPreMasterSecretGeneratorImpl.class.getName());
     put("KeyGenerator.SunTlsMasterSecret", GNUTlsMasterSecretGenerator.class.getName());
     put("KeyGenerator.SunTlsKeyMaterial", GNUTlsKeyMaterialGeneratorImpl.class.getName());
     put("KeyGenerator.SunTlsPrf", GNUTlsPrfGeneratorImpl.class.getName());
+    
+    // Certificate bundle key store.
+    put("KeyStore.CertBundle", CertBundleKeyStoreImpl.class.getName());
   }
 }

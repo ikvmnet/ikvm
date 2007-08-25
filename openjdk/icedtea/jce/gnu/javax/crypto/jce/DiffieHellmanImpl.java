@@ -94,8 +94,54 @@ public final class DiffieHellmanImpl
     DHPublicKey pub = (DHPublicKey) incoming;
     DHParameterSpec s1 = key.getParams();
     DHParameterSpec s2 = pub.getParams();
-    if (! s1.getG().equals(s2.getG()) || ! s1.getP().equals(s2.getP())
-        || s1.getL() != s2.getL())
+
+/* ICEDTEA LOCAL: This change is not committed to Classpath because
+   it's still waiting a response from Casey Marshall <csm@gnu.org>,
+   the author.
+
+From: Andrew Haley <aph-gcc@littlepinkcloud.COM>
+To: Casey Marshall <csm@gnu.org>, classpath-patches@gnu.org
+CC: Lillian Angel <langel@redhat.com>
+Subject: Fix DiffieHellmanImpl.java
+Date: Fri, 3 Aug 2007 18:19:07 +0100
+
+I came across a problem with GNU Crypto that causes Diffie-Hellman key
+exchange to fail when running on IcedTea.  We're doing what looks to
+me like an unnecessary check in DiffieHellmanImpl.engineDoPhase()
+which can fail in some circumstances, and this is triggered when
+running in IcedTea.  The code runs correctly on Sun's Java 1.7, not on
+the IcedTea version of Java 1.7, which uses GNU Crypto.
+
+With IcedTea and Classpath we get:
+
+Exception in thread "main" java.security.InvalidKeyException: Incompatible key
+        at gnu.javax.crypto.jce.DiffieHellmanImpl.engineDoPhase(DiffieHellmanImpl.java:99)
+        at javax.crypto.KeyAgreement.doPhase(KeyAgreement.java:224)
+        at Tt.main(Tt.java:35)
+
+Here's my patch:
+
+2007-08-03  Andrew Haley  <aph@redhat.com>
+
+	* jce/gnu/javax/crypto/jce/DiffieHellmanImpl.java (engineDoPhase):
+	Don't check the length of q.
+
+--- gnu/javax/crypto/jce/DiffieHellmanImpl.java~	2007-07-23 14:15:36.000000000 +0100
++++ gnu/javax/crypto/jce/DiffieHellmanImpl.java	2007-08-03 17:49:09.000000000 +0100
+@@ -94,8 +94,7 @@
+     DHPublicKey pub = (DHPublicKey) incoming;
+     DHParameterSpec s1 = key.getParams();
+     DHParameterSpec s2 = pub.getParams();
+-    if (! s1.getG().equals(s2.getG()) || ! s1.getP().equals(s2.getP())
+-        || s1.getL() != s2.getL())
++    if (! s1.getG().equals(s2.getG()) || ! s1.getP().equals(s2.getP()))
+       throw new InvalidKeyException("Incompatible key");
+     if (! lastPhase)
+       throw new IllegalArgumentException(
+
+*/
+
+    if (! s1.getG().equals(s2.getG()) || ! s1.getP().equals(s2.getP()))
       throw new InvalidKeyException("Incompatible key");
     if (! lastPhase)
       throw new IllegalArgumentException(

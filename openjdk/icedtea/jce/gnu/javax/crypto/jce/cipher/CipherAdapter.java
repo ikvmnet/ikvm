@@ -386,7 +386,7 @@ class CipherAdapter
         && ((Integer) attributes.get(IMode.STATE)).intValue() == IMode.DECRYPTION
         && (partLen + inLen) % blockSize == 0)
       blockCount--;
-
+    
     final byte[] out = new byte[blockCount * blockSize];
     try
       {
@@ -406,23 +406,23 @@ class CipherAdapter
       return 0;
     final int blockSize = mode.currentBlockSize();
     int blockCount = (partLen + inLen) / blockSize;
-
     // always keep data for unpadding in padded decryption mode;
     // might even be a complete block
     if (pad != null
         && ((Integer) attributes.get(IMode.STATE)).intValue() == IMode.DECRYPTION
         && (partLen + inLen) % blockSize == 0)
       blockCount--;
-
     final int result = blockCount * blockSize;
     if (result > out.length - outOff)
       throw new ShortBufferException();
+    
     if (blockCount == 0) // not enough bytes for even 1 block
       {
         System.arraycopy(in, inOff, partBlock, partLen, inLen);
         partLen += inLen;
         return 0;
       }
+    
     final byte[] buf;
     // we have enough bytes for at least 1 block
     if (partLen == 0) // if no cached bytes use input
@@ -435,12 +435,14 @@ class CipherAdapter
           System.arraycopy(in, inOff, buf, partLen, inLen);
         inOff = 0;
       }
+    
     for (int i = 0; i < blockCount; i++) // update blockCount * blockSize
       {
         mode.update(buf, inOff, out, outOff);
         inOff += blockSize;
         outOff += blockSize;
       }
+    
     partLen += inLen - result;
     if (partLen > 0) // cache remaining bytes from buf
       System.arraycopy(buf, inOff, partBlock, 0, partLen);

@@ -85,11 +85,12 @@ public class GnuPBEKey
 
   public String getFormat ()
   {
-    return "NONE"; // FIXME?
+    return "RAW";
   }
 
   public byte[] getEncoded ()
   {
-    return null; // FIXME?
+    String pass = new String(getPassword());
+    return pass.getBytes();
   }
 }
