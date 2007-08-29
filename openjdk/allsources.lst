@@ -1049,6 +1049,7 @@ java/lang/ProcessImpl.java
 java/lang/StringHelper.java
 java/lang/VMThread.java
 java/lang/ref/Reference.java
+java/lang/ref/SoftReference.java
 java/lang/reflect/ReflectHelper.java
 java/net/PlainDatagramSocketImpl.java
 java/net/PlainSocketImpl.java
@@ -6473,7 +6474,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ref/FinalReference.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ref/PhantomReference.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ref/ReferenceQueue.java
-../../openjdk-b13/j2se/src/share/classes/java/lang/ref/SoftReference.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ref/WeakReference.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/AccessibleObject.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/AnnotatedElement.java

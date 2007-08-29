@@ -31,7 +31,7 @@ public abstract class Reference<T>
 {
     // accessed by inner class
     volatile cli.System.WeakReference weakRef;
-    private volatile T strongRef;
+    volatile T strongRef;
     volatile ReferenceQueue<? super T> queue;
     volatile Reference next;
 
@@ -45,19 +45,15 @@ public abstract class Reference<T>
         this.queue = queue == null ? ReferenceQueue.NULL : queue;
         if (referent != null)
         {
-            if (this instanceof SoftReference || referent instanceof Class)
+            if (referent instanceof Class)
             {
-                // HACK we never clear SoftReferences, because there is no way to
-                // find out about the CLR memory status.
-                // (Eclipse 3.1 startup depends on SoftReferences not being cleared.)
-                // We also don't do Class gc, so no point in using a weak reference
-                // for classes either.
+                // We don't do Class gc, so no point in using a weak reference for classes.
                 strongRef = referent;
             }
             else
             {
                 weakRef = new cli.System.WeakReference(referent, this instanceof PhantomReference);
-                if (queue != null || referent instanceof Cleaner)
+                if (queue != null || referent instanceof Cleaner || this instanceof SoftReference)
                 {
                     new QueueWatcher(this);
                 }
@@ -78,6 +74,7 @@ public abstract class Reference<T>
 
         boolean check(Reference r)
         {
+	    r.strongRef = null;
             boolean alive = false;
             try
             {
@@ -109,7 +106,7 @@ public abstract class Reference<T>
 		{
 		    ((Cleaner)r).clean();
 		}
-		else
+		else if (r.queue != null)
 		{
 		    r.queue.enqueue(r);
 		}
