@@ -2170,7 +2170,6 @@ class Compiler
 						// Note that this optimization doesn't appear to happen if the method has exception handlers,
 						// so in that case we don't do anything.
 						bool x64hack = false;
-#if WHIDBEY
 						if(exceptions.Length == 0 && i > 0)
 						{
 							int k = i - 1;
@@ -2188,7 +2187,6 @@ class Compiler
 									break;
 							}
 						}
-#endif // WHIDBEY
 						// if there is junk on the stack (other than the return value), we must pop it off
 						// because in .NET this is invalid (unlike in Java)
 						int stackHeight = ma.GetStackHeight(i);
