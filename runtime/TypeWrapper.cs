@@ -4735,7 +4735,7 @@ namespace IKVM.Internal
 							foreach(MethodWrapper mw in parent.GetMethods())
 							{
 								MethodInfo mi = mw.GetMethod() as MethodInfo;
-								if(mi != null && mi.IsAbstract && wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw)
+								if(mi != null && mi.IsAbstract && !mi.DeclaringType.IsInterface && wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw)
 								{
 									// NOTE in Sun's JRE 1.4.1 this method cannot be overridden by subclasses,
 									// but I think this is a bug, so we'll support it anyway.
