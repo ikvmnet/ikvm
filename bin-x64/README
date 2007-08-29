@@ -1,0 +1,4 @@
+This directory contains the Windows x64 specific versions of ikvm-native.dll and JVM.DLL.
+If you want to use IKVM.NET JNI while running on the x64 version of the CLR,
+replace the ikvm\bin\ikvm-native.dll and ikvm\bin\JVM.DLL files with the versions from
+this directory.
