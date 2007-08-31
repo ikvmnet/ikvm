@@ -85,7 +85,7 @@ namespace IKVM.Runtime
 
 		internal static bool IsSupportedJniVersion(jint version)
 		{
-			return version == JNIEnv.JNI_VERSION_1_1 || version == JNIEnv.JNI_VERSION_1_2 || version == JNIEnv.JNI_VERSION_1_4;
+			return version == JNIEnv.JNI_VERSION_1_1 || version == JNIEnv.JNI_VERSION_1_2 || version == JNIEnv.JNI_VERSION_1_4 || version == JNIEnv.JNI_VERSION_1_6;
 		}
 
 		public static int CreateJavaVM(void* ppvm, void* ppenv, void* args)
@@ -876,7 +876,9 @@ namespace IKVM.Runtime
 
 			new pf_IntPtr_IntPtr_long(JNIEnv.NewDirectByteBuffer), //virtual jobject JNICALL NewDirectByteBuffer(void* address, jlong capacity);
 			new pf_IntPtr_IntPtr(JNIEnv.GetDirectBufferAddress), //virtual void* JNICALL GetDirectBufferAddress(jobject buf);
-			new pf_long_IntPtr(JNIEnv.GetDirectBufferCapacity)  //virtual jlong JNICALL GetDirectBufferCapacity(jobject buf);
+			new pf_long_IntPtr(JNIEnv.GetDirectBufferCapacity), //virtual jlong JNICALL GetDirectBufferCapacity(jobject buf);
+
+			new pf_int_IntPtr(JNIEnv.GetObjectRefType) // virtual jobjectRefType GetObjectRefType(jobject obj);
 		};
 	}
 
@@ -1046,6 +1048,11 @@ namespace IKVM.Runtime
 		internal const int JNI_VERSION_1_1 = 0x00010001;
 		internal const int JNI_VERSION_1_2 = 0x00010002;
 		internal const int JNI_VERSION_1_4 = 0x00010004;
+		internal const int JNI_VERSION_1_6 = 0x00010006;
+		internal const int JNIInvalidRefType = 0;
+		internal const int JNILocalRefType = 1;
+		internal const int JNIGlobalRefType = 2;
+		internal const int JNIWeakGlobalRefType = 3;
 		internal const sbyte JNI_TRUE = 1;
 		internal const sbyte JNI_FALSE = 0;
 		internal void* vtable;
@@ -1265,7 +1272,7 @@ namespace IKVM.Runtime
 
 		internal static jint GetVersion(JNIEnv* pEnv)
 		{
-			return JNI_VERSION_1_4;
+			return JNI_VERSION_1_6;
 		}
 
 		internal static jclass DefineClass(JNIEnv* pEnv, byte* name, jobject loader, jbyte* pbuf, jint length)
@@ -3418,6 +3425,24 @@ namespace IKVM.Runtime
 			{
 				SetPendingException(pEnv, JVM.Library.mapException(x));
 				return 0;
+			}
+		}
+
+		internal static int GetObjectRefType(JNIEnv* pEnv, jobject obj)
+		{
+			int i = obj.ToInt32();
+			if(i >= 0)
+			{
+				return JNILocalRefType;
+			}
+			i = -i;
+			if((i & (1 << 30)) != 0)
+			{
+				return JNIWeakGlobalRefType;
+			}
+			else
+			{
+				return JNIGlobalRefType;
 			}
 		}
 
