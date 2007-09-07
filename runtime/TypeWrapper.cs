@@ -4842,9 +4842,20 @@ namespace IKVM.Internal
 						{
 							if(m.IsAbstract)
 							{
-								// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
-								// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
+								bool stub = false;
 								if(!classFile.IsAbstract)
+								{
+									// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
+									// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
+									stub = true;
+								}
+								else if(classFile.IsPublic && !classFile.IsFinal && !(m.IsPublic || m.IsProtected))
+								{
+									// We have an abstract package accessible method in our public class. To allow a class in another
+									// assembly to subclass this class, we must fake the abstractness of this method.
+									stub = true;
+								}
+								if(stub)
 								{
 									ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
 									TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
@@ -6516,7 +6527,14 @@ namespace IKVM.Internal
 							// allows abstract methods in non-abstract classes)
 							if(classFile.IsAbstract)
 							{
-								attribs |= MethodAttributes.Abstract;
+								if(classFile.IsPublic && !classFile.IsFinal && !(m.IsPublic || m.IsProtected))
+								{
+									setModifiers = true;
+								}
+								else
+								{
+									attribs |= MethodAttributes.Abstract;
+								}
 							}
 							else
 							{
