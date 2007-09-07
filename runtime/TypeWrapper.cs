@@ -3551,6 +3551,7 @@ namespace IKVM.Internal
 			private Hashtable classCache = Hashtable.Synchronized(new Hashtable());
 			private FieldInfo classObjectField;
 			private MethodBuilder clinitMethod;
+			private MethodBuilder finalizeMethod;
 #if STATIC_COMPILER
 			private DynamicTypeWrapper outerClassWrapper;
 			private AnnotationBuilder annotationBuilder;
@@ -6358,9 +6359,36 @@ namespace IKVM.Internal
 				return name;
 			}
 
-			private static MethodInfo GetBaseFinalizeMethod(Type type, out bool clash)
+			private static MethodInfo GetBaseFinalizeMethod(TypeWrapper wrapper, out bool clash)
 			{
 				clash = false;
+				for(;;)
+				{
+					// HACK we get called during method linking (which is probably a bad idea) and
+					// it is possible for the base type not to be finished yet, so we look at the
+					// private state of the unfinished base types to find the finalize method.
+					DynamicTypeWrapper dtw = wrapper as DynamicTypeWrapper;
+					if(dtw == null)
+					{
+						break;
+					}
+					JavaTypeImpl impl = dtw.impl as JavaTypeImpl;
+					if(impl == null)
+					{
+						break;
+					}
+					MethodWrapper mw = dtw.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, false);
+					if(mw != null)
+					{
+						mw.Link();
+					}
+					if(impl.finalizeMethod != null)
+					{
+						return impl.finalizeMethod;
+					}
+					wrapper = wrapper.BaseTypeWrapper;
+				}
+				Type type = wrapper.TypeAsBaseType;
 				MethodInfo baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 				if(baseFinalize != null)
 				{
@@ -6627,7 +6655,7 @@ namespace IKVM.Internal
 							MethodInfo baseFinalize = null;
 							if(baseMce != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
 							{
-								baseFinalize = GetBaseFinalizeMethod(typeBuilder.BaseType, out finalizeClash);
+								baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper, out finalizeClash);
 								if(baseMce.RealName == "Finalize")
 								{
 									// We're overriding Finalize (that was renamed to finalize by DotNetTypeWrapper)
@@ -6748,13 +6776,13 @@ namespace IKVM.Internal
 								{
 									attr |= MethodAttributes.Final;
 								}
-								MethodBuilder finalize = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
+								finalizeMethod = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
 								if(finalizeName != baseFinalize.Name)
 								{
-									typeBuilder.DefineMethodOverride(finalize, baseFinalize);
+									typeBuilder.DefineMethodOverride(finalizeMethod, baseFinalize);
 								}
-								AttributeHelper.HideFromJava(finalize);
-								ILGenerator ilgen = finalize.GetILGenerator();
+								AttributeHelper.HideFromJava(finalizeMethod);
+								ILGenerator ilgen = finalizeMethod.GetILGenerator();
 								ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.SkipFinalizer);
 								Label skip = ilgen.DefineLabel();
 								ilgen.Emit(OpCodes.Brtrue_S, skip);
