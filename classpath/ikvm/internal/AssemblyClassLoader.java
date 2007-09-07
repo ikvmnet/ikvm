@@ -247,7 +247,7 @@ public final class AssemblyClassLoader extends ClassLoader
                     getAttributeValue(Attributes.Name.IMPLEMENTATION_TITLE, entryAttr, attr),
                     getAttributeValue(Attributes.Name.IMPLEMENTATION_VERSION, entryAttr, attr),
                     getAttributeValue(Attributes.Name.IMPLEMENTATION_VENDOR, entryAttr, attr),
-                    sealBase);
+                    "true".equalsIgnoreCase(getAttributeValue(Attributes.Name.SEALED, entryAttr, attr)) ? sealBase : null);
             }
         }
     }
