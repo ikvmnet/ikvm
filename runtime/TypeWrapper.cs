@@ -6645,6 +6645,28 @@ namespace IKVM.Internal
 								Debug.Assert(baseMce.GetMethod().IsVirtual && !baseMce.GetMethod().IsFinal);
 								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMce.GetMethod());
 							}
+							if(!m.IsStatic && !m.IsAbstract && !m.IsPrivate && baseMce != null && !baseMce.DeclaringType.IsInSamePackageAs(wrapper))
+							{
+								// we may have to explicitly override another package accessible abstract method
+								TypeWrapper btw = baseMce.DeclaringType.BaseTypeWrapper;
+								while(btw != null)
+								{
+									MethodWrapper bmw = btw.GetMethodWrapper(m.Name, m.Signature, true);
+									if(bmw == null)
+									{
+										break;
+									}
+									if(bmw.DeclaringType.IsInSamePackageAs(wrapper) && bmw.IsAbstract && !(bmw.IsPublic || bmw.IsProtected))
+									{
+										if(bmw != baseMce)
+										{
+											typeBuilder.DefineMethodOverride(mb, (MethodInfo)bmw.GetMethod());
+										}
+										break;
+									}
+									btw = bmw.DeclaringType.BaseTypeWrapper;
+								}
+							}
 							// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
 							// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
 							if(needFinalize)
