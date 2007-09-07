@@ -4735,13 +4735,55 @@ namespace IKVM.Internal
 							foreach(MethodWrapper mw in parent.GetMethods())
 							{
 								MethodInfo mi = mw.GetMethod() as MethodInfo;
-								if(mi != null && mi.IsAbstract && !mi.DeclaringType.IsInterface && wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw)
+								if(mi != null && mi.IsAbstract && !mi.DeclaringType.IsInterface)
 								{
-									// NOTE in Sun's JRE 1.4.1 this method cannot be overridden by subclasses,
-									// but I think this is a bug, so we'll support it anyway.
-									MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Abstract|MethodAttributes.NewSlot), CallingConventions.Standard, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
-									AttributeHelper.HideFromJava(mb);
-									EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + mw.Name + mw.Signature);
+									bool needStub = false;
+									bool needRename = false;
+									if(mw.IsPublic || mw.IsProtected)
+									{
+										MethodWrapper fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+										while(fmw != mw && (fmw.IsStatic || fmw.IsPrivate))
+										{
+											needRename = true;
+											fmw = fmw.DeclaringType.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+										}
+										if(fmw == mw && fmw.DeclaringType != wrapper)
+										{
+											needStub = true;
+										}
+									}
+									else
+									{
+										MethodWrapper fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+										while(fmw != mw && (fmw.IsStatic || fmw.IsPrivate || !fmw.DeclaringType.IsInSamePackageAs(mw.DeclaringType)))
+										{
+											needRename = true;
+											fmw = fmw.DeclaringType.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+										}
+										if(fmw == mw && fmw.DeclaringType != wrapper)
+										{
+											needStub = true;
+										}
+									}
+									if(needStub)
+									{
+										// NOTE in Sun's JRE 1.4.1 this method cannot be overridden by subclasses,
+										// but I think this is a bug, so we'll support it anyway.
+										string name = mi.Name;
+										MethodAttributes attr = mi.Attributes & ~(MethodAttributes.Abstract | MethodAttributes.NewSlot);
+										if(needRename)
+										{
+											name = "__<>" + name + "/" + mi.DeclaringType.FullName;
+											attr = MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot;
+										}
+										MethodBuilder mb = typeBuilder.DefineMethod(name, attr, CallingConventions.Standard, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+										if(needRename)
+										{
+											typeBuilder.DefineMethodOverride(mb, mi);
+										}
+										AttributeHelper.HideFromJava(mb);
+										EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
+									}
 								}
 							}
 							parent = parent.BaseTypeWrapper;
