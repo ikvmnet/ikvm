@@ -5017,7 +5017,7 @@ namespace IKVM.Internal
 						}
 						foreach(MethodWrapper mw in methods)
 						{
-							if(mw.Name != "<init>" && !mw.IsStatic && !mw.IsPrivate)
+							if(mw.Name != "<init>" && !mw.IsStatic && mw.IsPublic)
 							{
 								if(wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasIncompleteInterfaceImplementation)
 								{
