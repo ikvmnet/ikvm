@@ -44,14 +44,6 @@ class LangHelper
         {
             addedSystemPackages = true;
             String[] pkgs = ikvm.internal.AssemblyClassLoader.GetPackages(null);
-            URL sealBase = null;
-            try
-            {
-                sealBase = new URL(cli.System.Reflection.Assembly.GetExecutingAssembly().get_CodeBase());
-            }
-            catch (MalformedURLException _)
-            {
-            }
 	    String openJdkVersion = AccessController.doPrivileged(new GetPropertyAction("openjdk.version", "unknown"));
             for (int i = 0; i < pkgs.length; i++)
             {
@@ -63,7 +55,7 @@ class LangHelper
                     "IKVM.NET OpenJDK",                            // implTitle
                     openJdkVersion,                                // implVersion
                     "Sun Microsystems, Inc. & others",             // implVendor
-                    sealBase,                                      // sealBase
+                    null,                                          // sealBase
                     null));                                        // class loader
             }
         }
