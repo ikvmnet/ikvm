@@ -360,6 +360,82 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER
+#if OPENJDK
+#if FIRST_PASS
+		internal byte[] GetRawAnnotations()
+		{
+			return null;
+		}
+
+		internal byte[] GetRawParameterAnnotations()
+		{
+			return null;
+		}
+
+		internal byte[] GetRawAnnotationDefault()
+		{
+			return null;
+		}
+#else
+		internal byte[] GetRawAnnotations()
+		{
+			object[] objAnn = this.DeclaringType.GetMethodAnnotations(this);
+			byte[] annotations = null;
+			if (objAnn != null)
+			{
+				ArrayList ann = new ArrayList();
+				foreach (object obj in objAnn)
+				{
+					if (obj is java.lang.annotation.Annotation)
+					{
+						ann.Add(obj);
+					}
+				}
+				ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter cp = IKVM.NativeCode.java.lang.Class.GetConstantPoolWriter(this.DeclaringType);
+				annotations = ikvm.@internal.stubgen.StubGenerator.writeAnnotations(cp, (java.lang.annotation.Annotation[])ann.ToArray(typeof(java.lang.annotation.Annotation)));
+			}
+			return annotations;
+		}
+
+		internal byte[] GetRawParameterAnnotations()
+		{
+			object[][] objParamAnn = this.DeclaringType.GetParameterAnnotations(this);
+			byte[] parameterAnnotations = null;
+			if (objParamAnn != null)
+			{
+				java.lang.annotation.Annotation[][] ann = new java.lang.annotation.Annotation[objParamAnn.Length][];
+				for (int i = 0; i < objParamAnn.Length; i++)
+				{
+					ArrayList list = new ArrayList();
+					foreach (object obj in objParamAnn[i])
+					{
+						if (obj is java.lang.annotation.Annotation)
+						{
+							list.Add(obj);
+						}
+					}
+					ann[i] = (java.lang.annotation.Annotation[])list.ToArray(typeof(java.lang.annotation.Annotation));
+				}
+				ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter cp = IKVM.NativeCode.java.lang.Class.GetConstantPoolWriter(this.DeclaringType);
+				parameterAnnotations = ikvm.@internal.stubgen.StubGenerator.writeParameterAnnotations(cp, ann);
+			}
+			return parameterAnnotations;
+		}
+
+		internal byte[] GetRawAnnotationDefault()
+		{
+			byte[] annotationDefault = null;
+			object objAnnDef = this.DeclaringType.GetAnnotationDefault(this);
+			if (objAnnDef != null)
+			{
+				ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter cp = IKVM.NativeCode.java.lang.Class.GetConstantPoolWriter(this.DeclaringType);
+				annotationDefault = ikvm.@internal.stubgen.StubGenerator.writeAnnotationDefault(cp, objAnnDef);
+			}
+			return annotationDefault;
+		}
+#endif // !FIRST_PASS
+#endif // OPENJDK
+
 		internal object ToMethodOrConstructor(bool copy)
 		{
 #if FIRST_PASS
@@ -380,41 +456,6 @@ namespace IKVM.Internal
 				{
 					checkedExceptions[i] = (java.lang.Class)this.DeclaringType.GetClassLoader().LoadClassByDottedName(exceptions[i]).ClassObject;
 				}
-				object[] objAnn = this.DeclaringType.GetMethodAnnotations(this);
-				byte[] annotations = null;
-				if (objAnn != null)
-				{
-					ArrayList ann = new ArrayList();
-					foreach (object obj in objAnn)
-					{
-						if (obj is java.lang.annotation.Annotation)
-						{
-							ann.Add(obj);
-						}
-					}
-					ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter cp = IKVM.NativeCode.java.lang.Class.GetConstantPoolWriter(this.DeclaringType);
-					annotations = ikvm.@internal.stubgen.StubGenerator.writeAnnotations(cp, (java.lang.annotation.Annotation[])ann.ToArray(typeof(java.lang.annotation.Annotation)));
-				}
-				object[][] objParamAnn = this.DeclaringType.GetParameterAnnotations(this);
-				byte[] parameterAnnotations = null;
-				if (objParamAnn != null)
-				{
-					java.lang.annotation.Annotation[][] ann = new java.lang.annotation.Annotation[objParamAnn.Length][];
-					for (int i = 0; i < objParamAnn.Length; i++)
-					{
-						ArrayList list = new ArrayList();
-						foreach (object obj in objParamAnn[i])
-						{
-							if (obj is java.lang.annotation.Annotation)
-							{
-								list.Add(obj);
-							}
-						}
-						ann[i] = (java.lang.annotation.Annotation[])list.ToArray(typeof(java.lang.annotation.Annotation));
-					}
-					ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter cp = IKVM.NativeCode.java.lang.Class.GetConstantPoolWriter(this.DeclaringType);
-					parameterAnnotations = ikvm.@internal.stubgen.StubGenerator.writeParameterAnnotations(cp, ann);
-				}
 				if (this.Name == StringConstants.INIT)
 				{
 					method = reflectionFactory.newConstructor(
@@ -424,19 +465,12 @@ namespace IKVM.Internal
 						(int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
 						Array.IndexOf(this.DeclaringType.GetMethods(), this),
 						this.DeclaringType.GetGenericMethodSignature(this),
-						annotations,
-						parameterAnnotations
+						GetRawAnnotations(),
+						GetRawParameterAnnotations()
 					);
 				}
 				else
 				{
-					byte[] annotationDefault = null;
-					object objAnnDef = this.DeclaringType.GetAnnotationDefault(this);
-					if (objAnnDef != null)
-					{
-						ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter cp = IKVM.NativeCode.java.lang.Class.GetConstantPoolWriter(this.DeclaringType);
-						annotationDefault = ikvm.@internal.stubgen.StubGenerator.writeAnnotationDefault(cp, objAnnDef);
-					}
 					method = reflectionFactory.newMethod(
 						(java.lang.Class)this.DeclaringType.ClassObject,
 						this.Name,
@@ -446,9 +480,9 @@ namespace IKVM.Internal
 						(int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
 						Array.IndexOf(this.DeclaringType.GetMethods(), this),
 						this.DeclaringType.GetGenericMethodSignature(this),
-						annotations,
-						parameterAnnotations,
-						annotationDefault
+						null,
+						null,
+						null
 					);
 				}
 				lock (this)

@@ -3933,6 +3933,26 @@ namespace IKVM.NativeCode.java
 					return ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
 				}
 			}
+
+			public sealed class Method
+			{
+				private Method() { }
+
+				public static byte[] getRawAnnotations(object thisMethod)
+				{
+					return MethodWrapper.FromMethodOrConstructor(thisMethod).GetRawAnnotations();
+				}
+
+				public static byte[] getRawParameterAnnotations(object thisMethod)
+				{
+					return MethodWrapper.FromMethodOrConstructor(thisMethod).GetRawParameterAnnotations();
+				}
+
+				public static byte[] getRawAnnotationDefault(object thisMethod)
+				{
+					return MethodWrapper.FromMethodOrConstructor(thisMethod).GetRawAnnotationDefault();
+				}
+			}
 		}
 	}
 

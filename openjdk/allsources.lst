@@ -1050,6 +1050,7 @@ java/lang/StringHelper.java
 java/lang/VMThread.java
 java/lang/ref/Reference.java
 java/lang/ref/SoftReference.java
+java/lang/reflect/Method.java
 java/lang/reflect/ReflectHelper.java
 java/net/PlainDatagramSocketImpl.java
 java/net/PlainSocketImpl.java
@@ -6487,7 +6488,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/InvocationTargetException.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/MalformedParameterizedTypeException.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/Member.java
-../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/Method.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/Modifier.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/package-info.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/ParameterizedType.java
