@@ -53,6 +53,8 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER
 		private readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
 		private ModuleBuilder moduleBuilder;
+		private TypeBuilder proxyHelperContainer;
+		private ArrayList proxyHelpers;
 
 		static DynamicClassLoader()
 		{
@@ -220,6 +222,46 @@ namespace IKVM.Internal
 			return type;
 		}
 
+#if STATIC_COMPILER
+		internal void DefineProxyHelper(Type type)
+		{
+			if(proxyHelperContainer == null)
+			{
+				proxyHelperContainer = moduleBuilder.DefineType("__<Proxy>", TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract);
+				AttributeHelper.HideFromJava(proxyHelperContainer);
+				AttributeHelper.SetEditorBrowsableNever(proxyHelperContainer);
+				proxyHelpers = new ArrayList();
+			}
+			proxyHelpers.Add(proxyHelperContainer.DefineNestedType(GetProxyHelperName(type).Substring(10), TypeAttributes.NestedPublic | TypeAttributes.Interface | TypeAttributes.Abstract, null, new Type[] { type }));
+		}
+#endif
+
+		internal static string GetProxyHelperName(Type type)
+		{
+			System.Text.StringBuilder sb = new System.Text.StringBuilder("__<Proxy>+");
+			foreach (char c in type.FullName)
+			{
+				int index = specialCharactersString.IndexOf(c);
+				if(c == '.')
+				{
+					sb.Append("%-");
+				}
+				else if(index == -1)
+				{
+					sb.Append(c);
+					if(c == '%')
+					{
+						sb.Append(c);
+					}
+				}
+				else
+				{
+					sb.Append('%').AppendFormat("{0:X2}", index);
+				}
+			}
+			return sb.ToString();
+		}
+
 		internal void FinishAll()
 		{
 			Hashtable done = new Hashtable();
@@ -237,6 +279,14 @@ namespace IKVM.Internal
 						Tracer.Info(Tracer.Runtime, "Finishing {0}", tw.TypeAsTBD.FullName);
 						tw.Finish();
 					}
+				}
+			}
+			if(proxyHelperContainer != null)
+			{
+				proxyHelperContainer.CreateType();
+				foreach(TypeBuilder tb in proxyHelpers)
+				{
+					tb.CreateType();
 				}
 			}
 		}

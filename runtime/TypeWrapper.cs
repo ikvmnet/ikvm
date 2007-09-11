@@ -484,6 +484,15 @@ namespace IKVM.Internal
 
 #if !COMPACT_FRAMEWORK
 #if STATIC_COMPILER
+		internal static void SetEditorBrowsableNever(TypeBuilder tb)
+		{
+			if(editorBrowsableNever == null)
+			{
+				editorBrowsableNever = new CustomAttributeBuilder(StaticCompiler.GetType("System.ComponentModel.EditorBrowsableAttribute").GetConstructor(new Type[] { StaticCompiler.GetType("System.ComponentModel.EditorBrowsableState") }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
+			}
+			tb.SetCustomAttribute(editorBrowsableNever);
+		}
+
 		internal static void SetEditorBrowsableNever(MethodBuilder mb)
 		{
 			if(editorBrowsableNever == null)
@@ -5269,6 +5278,10 @@ namespace IKVM.Internal
 						{
 							annotationBuilder.Finish(this);
 						}
+						if(classFile.IsInterface && !classFile.IsPublic)
+						{
+							((DynamicClassLoader)wrapper.classLoader.GetTypeWrapperFactory()).DefineProxyHelper(type);
+						}
 #endif
 					}
 					finally
@@ -5310,7 +5323,12 @@ namespace IKVM.Internal
 						if (!iface.IsDynamicOnly)
 						{
 							// NOTE we're using TypeAsBaseType for the interfaces!
-							typeBuilder.AddInterfaceImplementation(iface.TypeAsBaseType);
+							Type ifaceType = iface.TypeAsBaseType;
+							if(!iface.IsPublic && ifaceType.Assembly != typeBuilder.Assembly)
+							{
+								ifaceType = ifaceType.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(ifaceType));
+							}
+							typeBuilder.AddInterfaceImplementation(ifaceType);
 						}
 #if STATIC_COMPILER
 						if (!wrapper.IsInterface)
