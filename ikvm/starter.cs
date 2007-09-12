@@ -195,19 +195,27 @@ public class Starter
 				}
 				else if(args[i] == "-ea" || args[i] == "-enableassertions")
 				{
-					props["ikvm.assert.default"] = "true";
+					IKVM.Runtime.Assertions.EnableAssertions();
 				}
 				else if(args[i] == "-da" || args[i] == "-disableassertions")
 				{
-					props["ikvm.assert.default"] = "false";
+					IKVM.Runtime.Assertions.DisableAssertions();
+				}
+				else if(args[i] == "-esa" || args[i] == "-enablesystemassertions")
+				{
+					IKVM.Runtime.Assertions.EnableSystemAssertions();
+				}
+				else if(args[i] == "-dsa" || args[i] == "-disablesystemassertions")
+				{
+					IKVM.Runtime.Assertions.DisableSystemAssertions();
 				}
 				else if(args[i].StartsWith("-ea:") || args[i].StartsWith("-enableassertions:"))
 				{
-					props["ikvm.assert.enable"] = args[i].Substring(args[i].IndexOf(':') + 1);
+					IKVM.Runtime.Assertions.EnableAssertions(args[i].Substring(args[i].IndexOf(':') + 1));
 				}
 				else if(args[i].StartsWith("-da:") || args[i].StartsWith("-disableassertions:"))
 				{
-					props["ikvm.assert.disable"] = args[i].Substring(args[i].IndexOf(':') + 1);
+					IKVM.Runtime.Assertions.DisableAssertions(args[i].Substring(args[i].IndexOf(':') + 1));
 				}
 				else if(args[i] == "-cp" || args[i] == "-classpath")
 				{
