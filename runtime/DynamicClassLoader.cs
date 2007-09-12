@@ -53,8 +53,10 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER
 		private readonly Hashtable dynamicTypes = Hashtable.Synchronized(new Hashtable());
 		private ModuleBuilder moduleBuilder;
+#if STATIC_COMPILER
 		private TypeBuilder proxyHelperContainer;
 		private ArrayList proxyHelpers;
+#endif // STATIC_COMPILER
 
 		static DynamicClassLoader()
 		{
@@ -281,6 +283,7 @@ namespace IKVM.Internal
 					}
 				}
 			}
+#if STATIC_COMPILER
 			if(proxyHelperContainer != null)
 			{
 				proxyHelperContainer.CreateType();
@@ -289,6 +292,7 @@ namespace IKVM.Internal
 					tb.CreateType();
 				}
 			}
+#endif // STATIC_COMPILER
 		}
 
 #if !STATIC_COMPILER
