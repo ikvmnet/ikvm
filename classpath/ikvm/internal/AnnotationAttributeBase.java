@@ -403,9 +403,9 @@ public abstract class AnnotationAttributeBase
             Class enumClass = classFromSig(loader, (String)array[1]);
             try
             {
-                return type.cast(enumClass.getDeclaredField((String)array[2]).get(null));
+                return Enum.valueOf(enumClass, (String)array[2]);
             }
-            catch (NoSuchFieldException x)
+            catch (IllegalArgumentException x)
             {
                 throw new EnumConstantNotPresentException(enumClass, (String)array[2]);
             }

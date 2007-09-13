@@ -116,6 +116,161 @@ using ssaGetPropertyAction = sun.security.action.GetPropertyAction;
 using sndResolverConfigurationImpl = sun.net.dns.ResolverConfigurationImpl;
 #endif
 
+namespace IKVM.Runtime
+{
+	public sealed class Assertions
+	{
+		private static bool sysAsserts;
+		private static bool userAsserts;
+		private static OptionNode classes;
+		private static OptionNode packages;
+
+		private class OptionNode
+		{
+			internal readonly string name;
+			internal readonly bool enabled;
+			internal readonly OptionNode next;
+
+			internal OptionNode(string name, bool enabled, OptionNode next)
+			{
+				this.name = name;
+				this.enabled = enabled;
+				this.next = next;
+			}
+		}
+
+		private Assertions() { }
+
+		private static void AddOption(string classOrPackage, bool enabled)
+		{
+			if (classOrPackage == null)
+			{
+				throw new ArgumentNullException("classOrPackage");
+			}
+
+			if (classOrPackage.EndsWith("..."))
+			{
+				packages = new OptionNode(classOrPackage.Substring(0, classOrPackage.Length - 3), enabled, packages);
+			}
+			else
+			{
+				classes = new OptionNode(classOrPackage, enabled, classes);
+			}
+		}
+
+		public static void EnableAssertions(string classOrPackage)
+		{
+			AddOption(classOrPackage, true);
+		}
+
+		public static void DisableAssertions(string classOrPackage)
+		{
+			AddOption(classOrPackage, false);
+		}
+
+		public static void EnableAssertions()
+		{
+			userAsserts = true;
+		}
+
+		public static void DisableAssertions()
+		{
+			userAsserts = false;
+		}
+
+		public static void EnableSystemAssertions()
+		{
+			sysAsserts = true;
+		}
+
+		public static void DisableSystemAssertions()
+		{
+			sysAsserts = false;
+		}
+
+		internal static bool IsEnabled(TypeWrapper tw)
+		{
+			string className = tw.Name;
+
+			// match class name
+			for (OptionNode n = classes; n != null; n = n.next)
+			{
+				if (n.name == className)
+				{
+					return n.enabled;
+				}
+			}
+
+			// match package name
+			if (packages != null)
+			{
+				int len = className.Length;
+				while (len > 0 && className[--len] != '.') ;
+
+				do
+				{
+					for (OptionNode n = packages; n != null; n = n.next)
+					{
+						if (String.Compare(n.name, 0, className, 0, len, false, System.Globalization.CultureInfo.InvariantCulture) == 0 && len == n.name.Length)
+						{
+							return n.enabled;
+						}
+					}
+					while (len > 0 && className[--len] != '.') ;
+				} while (len > 0);
+			}
+
+			return tw.GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader() ? sysAsserts : userAsserts;
+		}
+
+		private static int Count(OptionNode n)
+		{
+			int count = 0;
+			while (n != null)
+			{
+				count++;
+				n = n.next;
+			}
+			return count;
+		}
+
+		internal static object RetrieveDirectives()
+		{
+#if FIRST_PASS
+			return null;
+#else
+
+			Type type = typeof(jlClass).Assembly.GetType("java.lang.AssertionStatusDirectives");
+			object obj = Activator.CreateInstance(type, true);
+			string[] arrStrings = new string[Count(classes)];
+			bool[] arrBools = new bool[arrStrings.Length];
+			OptionNode n = classes;
+			for (int i = 0; i < arrStrings.Length; i++)
+			{
+				arrStrings[i] = n.name;
+				arrBools[i] = n.enabled;
+				n = n.next;
+			}
+			type.GetField("classes", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, arrStrings);
+			type.GetField("classEnabled", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, arrBools);
+			arrStrings = new string[Count(packages)];
+			arrBools = new bool[arrStrings.Length];
+			n = packages;
+			for (int i = 0; i < arrStrings.Length; i++)
+			{
+				arrStrings[i] = n.name;
+				arrBools[i] = n.enabled;
+				n = n.next;
+			}
+			type.GetField("packages", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, arrStrings);
+			type.GetField("packageEnabled", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, arrBools);
+			type.GetField("deflt", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, userAsserts);
+			return obj;
+#endif
+		}
+	}
+}
+
 namespace IKVM.NativeCode.java
 {
 	namespace io
@@ -2475,8 +2630,7 @@ namespace IKVM.NativeCode.java
 
 			public static bool desiredAssertionStatus0(object clazz)
 			{
-				// TODO
-				return false;
+				return IKVM.Runtime.Assertions.IsEnabled(TypeWrapper.FromClass(clazz));
 			}
 		}
 
@@ -2628,19 +2782,7 @@ namespace IKVM.NativeCode.java
 
 			public static object retrieveDirectives()
 			{
-#if FIRST_PASS
-				return null;
-#else
-				Type type = typeof(jlClass).Assembly.GetType("java.lang.AssertionStatusDirectives");
-				object obj = Activator.CreateInstance(type, true);
-				// TODO
-				type.GetField("classes", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, new string[0]);
-				type.GetField("classEnabled", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, new bool[0]);
-				type.GetField("packages", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, new string[0]);
-				type.GetField("packageEnabled", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, new bool[0]);
-				type.GetField("deflt", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, false);
-				return obj;
-#endif
+				return IKVM.Runtime.Assertions.RetrieveDirectives();
 			}
 		}
 
@@ -3931,6 +4073,26 @@ namespace IKVM.NativeCode.java
 				public static object defineClass0(object classLoader, string name, byte[] b, int off, int len)
 				{
 					return ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
+				}
+			}
+
+			public sealed class Method
+			{
+				private Method() { }
+
+				public static byte[] getRawAnnotations(object thisMethod)
+				{
+					return MethodWrapper.FromMethodOrConstructor(thisMethod).GetRawAnnotations();
+				}
+
+				public static byte[] getRawParameterAnnotations(object thisMethod)
+				{
+					return MethodWrapper.FromMethodOrConstructor(thisMethod).GetRawParameterAnnotations();
+				}
+
+				public static byte[] getRawAnnotationDefault(object thisMethod)
+				{
+					return MethodWrapper.FromMethodOrConstructor(thisMethod).GetRawAnnotationDefault();
 				}
 			}
 		}

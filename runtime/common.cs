@@ -574,6 +574,10 @@ namespace IKVM.NativeCode.ikvm.runtime
 				type = type.DeclaringType;
 			}
 			TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+			if(wrapper == null)
+			{
+				return null;
+			}
 			if(rank > 0)
 			{
 				wrapper = wrapper.MakeArrayType(rank);

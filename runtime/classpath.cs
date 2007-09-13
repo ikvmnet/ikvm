@@ -42,6 +42,38 @@ using NumberFormatException = java.lang.NumberFormatException;
 using jlNoClassDefFoundError = java.lang.NoClassDefFoundError;
 #endif
 
+namespace IKVM.Runtime
+{
+	public sealed class Assertions
+	{
+		private Assertions() { }
+
+		public static void EnableAssertions(string classOrPackage)
+		{
+		}
+
+		public static void DisableAssertions(string classOrPackage)
+		{
+		}
+
+		public static void EnableAssertions()
+		{
+		}
+
+		public static void DisableAssertions()
+		{
+		}
+
+		public static void EnableSystemAssertions()
+		{
+		}
+
+		public static void DisableSystemAssertions()
+		{
+		}
+	}
+}
+
 namespace IKVM.NativeCode.java
 {
 	namespace lang

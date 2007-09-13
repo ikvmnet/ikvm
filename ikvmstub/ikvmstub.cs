@@ -30,6 +30,7 @@ using java.lang.reflect;
 
 public class NetExp
 {
+	private static int zipCount;
 	private static ZipOutputStream zipFile;
 	private static Hashtable done = new Hashtable();
 	private static Hashtable todo = new Hashtable();
@@ -113,26 +114,41 @@ public class NetExp
 		}
 		else
 		{
-			using(zipFile = new ZipOutputStream(new java.io.FileOutputStream(assembly.GetName().Name + ".jar")))
+			try
 			{
-				zipFile.setComment(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
-				try
+				using (zipFile = new ZipOutputStream(new java.io.FileOutputStream(assembly.GetName().Name + ".jar")))
 				{
-					ProcessAssembly(assembly);
-				}
-				catch(ReflectionTypeLoadException x)
-				{
-					Console.WriteLine(x);
-					Console.WriteLine("LoaderExceptions:");
-					foreach (Exception n in x.LoaderExceptions)
+					zipFile.setComment(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
+					try
 					{
-						Console.WriteLine(n);
+						ProcessAssembly(assembly);
+					}
+					catch (ReflectionTypeLoadException x)
+					{
+						Console.WriteLine(x);
+						Console.WriteLine("LoaderExceptions:");
+						foreach (Exception n in x.LoaderExceptions)
+						{
+							Console.WriteLine(n);
+						}
+					}
+					catch (System.Exception x)
+					{
+						java.lang.Throwable.instancehelper_printStackTrace(ikvm.runtime.Util.mapException(x));
+						rc = 1;
 					}
 				}
-				catch(System.Exception x)
+			}
+			catch (ZipException x)
+			{
+				rc = 1;
+				if (zipCount == 0)
 				{
-					java.lang.Throwable.instancehelper_printStackTrace(ikvm.runtime.Util.mapException(x));
-					rc = 1;
+					Console.Error.WriteLine("Error: Assembly contains no public IKVM.NET compatible types");
+				}
+				else
+				{
+					Console.Error.WriteLine("Error: {0}", x.Message);
 				}
 			}
 		}
@@ -182,6 +198,7 @@ public class NetExp
 		{
 			throw new NotImplementedException();
 		}
+		zipCount++;
 		zipFile.putNextEntry(new ZipEntry(name + ".class"));
 		zipFile.write(buf, 0, buf.Length);
 	}

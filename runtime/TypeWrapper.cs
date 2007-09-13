@@ -484,6 +484,15 @@ namespace IKVM.Internal
 
 #if !COMPACT_FRAMEWORK
 #if STATIC_COMPILER
+		internal static void SetEditorBrowsableNever(TypeBuilder tb)
+		{
+			if(editorBrowsableNever == null)
+			{
+				editorBrowsableNever = new CustomAttributeBuilder(StaticCompiler.GetType("System.ComponentModel.EditorBrowsableAttribute").GetConstructor(new Type[] { StaticCompiler.GetType("System.ComponentModel.EditorBrowsableState") }), new object[] { (int)System.ComponentModel.EditorBrowsableState.Never });
+			}
+			tb.SetCustomAttribute(editorBrowsableNever);
+		}
+
 		internal static void SetEditorBrowsableNever(MethodBuilder mb)
 		{
 			if(editorBrowsableNever == null)
@@ -3551,6 +3560,7 @@ namespace IKVM.Internal
 			private Hashtable classCache = Hashtable.Synchronized(new Hashtable());
 			private FieldInfo classObjectField;
 			private MethodBuilder clinitMethod;
+			private MethodBuilder finalizeMethod;
 #if STATIC_COMPILER
 			private DynamicTypeWrapper outerClassWrapper;
 			private AnnotationBuilder annotationBuilder;
@@ -4735,13 +4745,55 @@ namespace IKVM.Internal
 							foreach(MethodWrapper mw in parent.GetMethods())
 							{
 								MethodInfo mi = mw.GetMethod() as MethodInfo;
-								if(mi != null && mi.IsAbstract && !mi.DeclaringType.IsInterface && wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw)
+								if(mi != null && mi.IsAbstract && !mi.DeclaringType.IsInterface)
 								{
-									// NOTE in Sun's JRE 1.4.1 this method cannot be overridden by subclasses,
-									// but I think this is a bug, so we'll support it anyway.
-									MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & ~(MethodAttributes.Abstract|MethodAttributes.NewSlot), CallingConventions.Standard, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
-									AttributeHelper.HideFromJava(mb);
-									EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", wrapper.Name + "." + mw.Name + mw.Signature);
+									bool needStub = false;
+									bool needRename = false;
+									if(mw.IsPublic || mw.IsProtected)
+									{
+										MethodWrapper fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+										while(fmw != mw && (fmw.IsStatic || fmw.IsPrivate))
+										{
+											needRename = true;
+											fmw = fmw.DeclaringType.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+										}
+										if(fmw == mw && fmw.DeclaringType != wrapper)
+										{
+											needStub = true;
+										}
+									}
+									else
+									{
+										MethodWrapper fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+										while(fmw != mw && (fmw.IsStatic || fmw.IsPrivate || !fmw.DeclaringType.IsInSamePackageAs(mw.DeclaringType)))
+										{
+											needRename = true;
+											fmw = fmw.DeclaringType.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+										}
+										if(fmw == mw && fmw.DeclaringType != wrapper)
+										{
+											needStub = true;
+										}
+									}
+									if(needStub)
+									{
+										// NOTE in Sun's JRE 1.4.1 this method cannot be overridden by subclasses,
+										// but I think this is a bug, so we'll support it anyway.
+										string name = mi.Name;
+										MethodAttributes attr = mi.Attributes & ~(MethodAttributes.Abstract | MethodAttributes.NewSlot);
+										if(needRename)
+										{
+											name = "__<>" + name + "/" + mi.DeclaringType.FullName;
+											attr = MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot;
+										}
+										MethodBuilder mb = typeBuilder.DefineMethod(name, attr, CallingConventions.Standard, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
+										if(needRename)
+										{
+											typeBuilder.DefineMethodOverride(mb, mi);
+										}
+										AttributeHelper.HideFromJava(mb);
+										EmitHelper.Throw(mb.GetILGenerator(), "java.lang.AbstractMethodError", mw.DeclaringType.Name + "." + mw.Name + mw.Signature);
+									}
 								}
 							}
 							parent = parent.BaseTypeWrapper;
@@ -4800,9 +4852,20 @@ namespace IKVM.Internal
 						{
 							if(m.IsAbstract)
 							{
-								// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
-								// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
+								bool stub = false;
 								if(!classFile.IsAbstract)
+								{
+									// NOTE in the JVM it is apparently legal for a non-abstract class to have abstract methods, but
+									// the CLR doens't allow this, so we have to emit a method that throws an AbstractMethodError
+									stub = true;
+								}
+								else if(classFile.IsPublic && !classFile.IsFinal && !(m.IsPublic || m.IsProtected))
+								{
+									// We have an abstract package accessible method in our public class. To allow a class in another
+									// assembly to subclass this class, we must fake the abstractness of this method.
+									stub = true;
+								}
+								if(stub)
 								{
 									ILGenerator ilGenerator = ((MethodBuilder)mb).GetILGenerator();
 									TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
@@ -5017,7 +5080,7 @@ namespace IKVM.Internal
 						}
 						foreach(MethodWrapper mw in methods)
 						{
-							if(mw.Name != "<init>" && !mw.IsStatic && !mw.IsPrivate)
+							if(mw.Name != "<init>" && !mw.IsStatic && mw.IsPublic)
 							{
 								if(wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasIncompleteInterfaceImplementation)
 								{
@@ -5215,6 +5278,10 @@ namespace IKVM.Internal
 						{
 							annotationBuilder.Finish(this);
 						}
+						if(classFile.IsInterface && !classFile.IsPublic)
+						{
+							((DynamicClassLoader)wrapper.classLoader.GetTypeWrapperFactory()).DefineProxyHelper(type);
+						}
 #endif
 					}
 					finally
@@ -5256,7 +5323,12 @@ namespace IKVM.Internal
 						if (!iface.IsDynamicOnly)
 						{
 							// NOTE we're using TypeAsBaseType for the interfaces!
-							typeBuilder.AddInterfaceImplementation(iface.TypeAsBaseType);
+							Type ifaceType = iface.TypeAsBaseType;
+							if(!iface.IsPublic && ifaceType.Assembly != typeBuilder.Assembly)
+							{
+								ifaceType = ifaceType.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(ifaceType));
+							}
+							typeBuilder.AddInterfaceImplementation(ifaceType);
 						}
 #if STATIC_COMPILER
 						if (!wrapper.IsInterface)
@@ -6305,9 +6377,36 @@ namespace IKVM.Internal
 				return name;
 			}
 
-			private static MethodInfo GetBaseFinalizeMethod(Type type, out bool clash)
+			private static MethodInfo GetBaseFinalizeMethod(TypeWrapper wrapper, out bool clash)
 			{
 				clash = false;
+				for(;;)
+				{
+					// HACK we get called during method linking (which is probably a bad idea) and
+					// it is possible for the base type not to be finished yet, so we look at the
+					// private state of the unfinished base types to find the finalize method.
+					DynamicTypeWrapper dtw = wrapper as DynamicTypeWrapper;
+					if(dtw == null)
+					{
+						break;
+					}
+					JavaTypeImpl impl = dtw.impl as JavaTypeImpl;
+					if(impl == null)
+					{
+						break;
+					}
+					MethodWrapper mw = dtw.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, false);
+					if(mw != null)
+					{
+						mw.Link();
+					}
+					if(impl.finalizeMethod != null)
+					{
+						return impl.finalizeMethod;
+					}
+					wrapper = wrapper.BaseTypeWrapper;
+				}
+				Type type = wrapper.TypeAsBaseType;
 				MethodInfo baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 				if(baseFinalize != null)
 				{
@@ -6474,7 +6573,14 @@ namespace IKVM.Internal
 							// allows abstract methods in non-abstract classes)
 							if(classFile.IsAbstract)
 							{
-								attribs |= MethodAttributes.Abstract;
+								if(classFile.IsPublic && !classFile.IsFinal && !(m.IsPublic || m.IsProtected))
+								{
+									setModifiers = true;
+								}
+								else
+								{
+									attribs |= MethodAttributes.Abstract;
+								}
 							}
 							else
 							{
@@ -6567,7 +6673,7 @@ namespace IKVM.Internal
 							MethodInfo baseFinalize = null;
 							if(baseMce != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
 							{
-								baseFinalize = GetBaseFinalizeMethod(typeBuilder.BaseType, out finalizeClash);
+								baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper, out finalizeClash);
 								if(baseMce.RealName == "Finalize")
 								{
 									// We're overriding Finalize (that was renamed to finalize by DotNetTypeWrapper)
@@ -6645,6 +6751,28 @@ namespace IKVM.Internal
 								Debug.Assert(baseMce.GetMethod().IsVirtual && !baseMce.GetMethod().IsFinal);
 								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMce.GetMethod());
 							}
+							if(!m.IsStatic && !m.IsAbstract && !m.IsPrivate && baseMce != null && !baseMce.DeclaringType.IsInSamePackageAs(wrapper))
+							{
+								// we may have to explicitly override another package accessible abstract method
+								TypeWrapper btw = baseMce.DeclaringType.BaseTypeWrapper;
+								while(btw != null)
+								{
+									MethodWrapper bmw = btw.GetMethodWrapper(m.Name, m.Signature, true);
+									if(bmw == null)
+									{
+										break;
+									}
+									if(bmw.DeclaringType.IsInSamePackageAs(wrapper) && bmw.IsAbstract && !(bmw.IsPublic || bmw.IsProtected))
+									{
+										if(bmw != baseMce)
+										{
+											typeBuilder.DefineMethodOverride(mb, (MethodInfo)bmw.GetMethod());
+										}
+										break;
+									}
+									btw = bmw.DeclaringType.BaseTypeWrapper;
+								}
+							}
 							// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
 							// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
 							if(needFinalize)
@@ -6666,13 +6794,13 @@ namespace IKVM.Internal
 								{
 									attr |= MethodAttributes.Final;
 								}
-								MethodBuilder finalize = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
+								finalizeMethod = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, typeof(void), Type.EmptyTypes);
 								if(finalizeName != baseFinalize.Name)
 								{
-									typeBuilder.DefineMethodOverride(finalize, baseFinalize);
+									typeBuilder.DefineMethodOverride(finalizeMethod, baseFinalize);
 								}
-								AttributeHelper.HideFromJava(finalize);
-								ILGenerator ilgen = finalize.GetILGenerator();
+								AttributeHelper.HideFromJava(finalizeMethod);
+								ILGenerator ilgen = finalizeMethod.GetILGenerator();
 								ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.SkipFinalizer);
 								Label skip = ilgen.DefineLabel();
 								ilgen.Emit(OpCodes.Brtrue_S, skip);
