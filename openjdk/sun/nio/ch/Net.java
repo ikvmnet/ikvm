@@ -267,6 +267,10 @@ class Net {						// package-private
 
     private static int readImpl(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException
     {
+	if (length == 0)
+	{
+	    return 0;
+	}
 	try
 	{
 	    if (false) throw new cli.System.Net.Sockets.SocketException();
