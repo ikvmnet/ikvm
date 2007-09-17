@@ -36,6 +36,7 @@ import cli.System.Net.Sockets.SelectMode;
 import cli.System.Collections.ArrayList;
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -51,9 +52,14 @@ import java.util.Set;
 
 final class DotNetSelectorImpl extends SelectorImpl
 {
-    private Socket wakeupSourceFd;
     private ArrayList channelArray = new ArrayList();
     private long updateCount = 0;
+
+    //Pipe used as a wakeup object.
+    private final Pipe wakeupPipe;
+
+    // File descriptors corresponding to source and sink
+    private final Socket wakeupSourceFd, wakeupSinkFd;
 
     // Lock for interrupt triggering and clearing
     private final Object interruptLock = new Object();
@@ -72,10 +78,16 @@ final class DotNetSelectorImpl extends SelectorImpl
     }
     private final HashMap<Socket, MapEntry> fdMap = new HashMap<Socket, MapEntry>();
 
-    DotNetSelectorImpl(SelectorProvider sp)
+    DotNetSelectorImpl(SelectorProvider sp) throws IOException
     {
 	super(sp);
-	createWakeupSocket();
+	wakeupPipe = Pipe.open();
+	wakeupSourceFd = ((SelChImpl)wakeupPipe.source()).getFD().getSocket();
+
+	// Disable the Nagle algorithm so that the wakeup is more immediate
+	SinkChannelImpl sink = (SinkChannelImpl)wakeupPipe.sink();
+	(sink.sc).socket().setTcpNoDelay(true);
+	wakeupSinkFd = ((SelChImpl)sink).getFD().getSocket();
     }
 
     protected int doSelect(long timeout) throws IOException
@@ -234,7 +246,11 @@ final class DotNetSelectorImpl extends SelectorImpl
 	if (channelArray != null)
 	{
 	    // prevent further wakeup
-	    wakeup();
+	    synchronized (interruptLock) {
+		interruptTriggered = true;
+	    }
+	    wakeupPipe.sink().close();
+	    wakeupPipe.source().close();
 	    for (int i = 0; i < channelArray.get_Count(); i++)
 	    { // Deregister channels
 		SelectionKeyImpl ski = (SelectionKeyImpl)channelArray.get_Item(i);
@@ -275,27 +291,34 @@ final class DotNetSelectorImpl extends SelectorImpl
 	{
 	    if (!interruptTriggered)
 	    {
-		wakeupSourceFd.Close();
+		setWakeupSocket();
 		interruptTriggered = true;
 	    }
 	}
 	return this;
     }
 
+    // Sets Windows wakeup socket to a signaled state.
+    private void setWakeupSocket() {
+	wakeupSinkFd.Send(new byte[1]);
+    }
+
     // Sets Windows wakeup socket to a non-signaled state.
-    private void resetWakeupSocket()
-    {
+    private void resetWakeupSocket() {
 	synchronized (interruptLock)
 	{
 	    if (interruptTriggered == false)
 		return;
-	    createWakeupSocket();
+	    resetWakeupSocket0(wakeupSourceFd);
 	    interruptTriggered = false;
 	}
     }
 
-    private void createWakeupSocket()
+    private static void resetWakeupSocket0(Socket wakeupSourceFd)
     {
-	wakeupSourceFd = new Socket(AddressFamily.wrap(AddressFamily.InterNetwork), SocketType.wrap(SocketType.Dgram), ProtocolType.wrap(ProtocolType.Udp));
+	while (wakeupSourceFd.get_Available() > 0)
+	{
+	    wakeupSourceFd.Receive(new byte[1]);
+	}
     }
 }
