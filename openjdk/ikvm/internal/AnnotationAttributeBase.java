@@ -52,46 +52,55 @@ public abstract class AnnotationAttributeBase
 
     protected final Object getValue(String name)
     {
+	freeze();
         return values.get(name);
     }
 
     protected final byte getByteValue(String name)
     {
+	freeze();
         return ((Byte)values.get(name)).byteValue();
     }
 
     protected final boolean getBooleanValue(String name)
     {
+	freeze();
         return ((Boolean)values.get(name)).booleanValue();
     }
 
     protected final short getShortValue(String name)
     {
+	freeze();
         return ((Short)values.get(name)).shortValue();
     }
 
     protected final char getCharValue(String name)
     {
+	freeze();
         return ((Character)values.get(name)).charValue();
     }
 
     protected final int getIntValue(String name)
     {
+	freeze();
         return ((Integer)values.get(name)).intValue();
     }
 
     protected final float getFloatValue(String name)
     {
+	freeze();
         return ((Float)values.get(name)).floatValue();
     }
 
     protected final long getLongValue(String name)
     {
+	freeze();
         return ((Long)values.get(name)).longValue();
     }
 
     protected final double getDoubleValue(String name)
     {
+	freeze();
         return ((Double)values.get(name)).doubleValue();
     }
 
