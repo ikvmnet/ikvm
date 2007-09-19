@@ -65,15 +65,11 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 	return clazz;
     }
 
-    public Object getWrapperFromClass(Object clazz)
-    {
-	return classTypeWrapperField.GetValue(clazz);
-    }
+    // implemented in map.xml
+    public native Object getWrapperFromClass(Object clazz);
 
-    public Object getWrapperFromClassLoader(Object classLoader)
-    {
-	return classLoaderWrapperField.GetValue(classLoader);
-    }
+    // implemented in map.xml
+    public native Object getWrapperFromClassLoader(Object classLoader);
 
     public void setWrapperForClassLoader(Object classLoader, Object wrapper)
     {
