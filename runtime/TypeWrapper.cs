@@ -7837,6 +7837,7 @@ namespace IKVM.Internal
 		private TypeWrapper[] interfaces;
 		private TypeWrapper[] innerclasses;
 		private MethodInfo clinitMethod;
+		private Modifiers reflectiveModifiers;
 
 		internal static CompiledTypeWrapper newInstance(string name, Type type)
 		{
@@ -8213,12 +8214,19 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				InnerClassAttribute attr = AttributeHelper.GetInnerClass(type);
-				if(attr != null)
+				if (reflectiveModifiers == 0)
 				{
-					return attr.Modifiers;
+					InnerClassAttribute attr = AttributeHelper.GetInnerClass(type);
+					if (attr != null)
+					{
+						reflectiveModifiers = attr.Modifiers;
+					}
+					else
+					{
+						reflectiveModifiers = Modifiers;
+					}
 				}
-				return Modifiers;
+				return reflectiveModifiers;
 			}
 		}
 
