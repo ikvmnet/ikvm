@@ -3369,6 +3369,11 @@ namespace IKVM.Internal
 				{
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its superclass " + BaseTypeWrapper.Name);
 				}
+				if(!BaseTypeWrapper.IsPublic && BaseTypeWrapper.TypeAsTBD.Assembly != classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly)
+				{
+					// NOTE this can only happen if evil code calls ClassLoader.defineClass() on an assembly class loader (which we allow for compatibility with other slightly less evil code)
+					throw new IllegalAccessError("Class " + f.Name + " cannot access its non-public superclass " + BaseTypeWrapper.Name + " from another assembly");
+				}
 				if(BaseTypeWrapper.IsFinal)
 				{
 					throw new VerifyError("Class " + f.Name + " extends final class " + BaseTypeWrapper.Name);
@@ -3411,6 +3416,16 @@ namespace IKVM.Internal
 				if(!iface.IsAccessibleFrom(this))
 				{
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its superinterface " + iface.Name);
+				}
+				if(!iface.IsPublic
+					&& iface.TypeAsTBD.Assembly != classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly
+					&& iface.TypeAsTBD.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(iface.TypeAsTBD)) == null)
+				{
+					// NOTE this happens when you call Proxy.newProxyInstance() on a non-public .NET interface
+					// (for ikvmc compiled Java types, ikvmc generates public proxy stubs).
+					// NOTE we don't currently check interfaces inherited from other interfaces because mainstream .NET languages
+					// don't allow public interfaces extending non-public interfaces.
+					throw new IllegalAccessError("Class " + f.Name + " cannot access its non-public superinterface " + iface.Name + " from another assembly");
 				}
 				if(!iface.IsInterface)
 				{
@@ -7822,6 +7837,7 @@ namespace IKVM.Internal
 		private TypeWrapper[] interfaces;
 		private TypeWrapper[] innerclasses;
 		private MethodInfo clinitMethod;
+		private Modifiers reflectiveModifiers;
 
 		internal static CompiledTypeWrapper newInstance(string name, Type type)
 		{
@@ -8198,12 +8214,19 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				InnerClassAttribute attr = AttributeHelper.GetInnerClass(type);
-				if(attr != null)
+				if (reflectiveModifiers == 0)
 				{
-					return attr.Modifiers;
+					InnerClassAttribute attr = AttributeHelper.GetInnerClass(type);
+					if (attr != null)
+					{
+						reflectiveModifiers = attr.Modifiers;
+					}
+					else
+					{
+						reflectiveModifiers = Modifiers;
+					}
 				}
-				return Modifiers;
+				return reflectiveModifiers;
 			}
 		}
 

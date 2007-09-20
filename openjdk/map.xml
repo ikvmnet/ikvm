@@ -1159,7 +1159,7 @@
 		</class>
 		<!-- Here we are adding/replacing methods to existing classes -->
 		<class name="java.lang.Class">
-      <field name="typeWrapper" sig="Ljava.lang.Object;" modifiers="private" />
+      <field name="typeWrapper" sig="Ljava.lang.Object;" modifiers="" />
       <field name="pd" sig="Ljava.security.ProtectionDomain;" modifiers="private" />
       <field name="signers" sig="[Ljava.lang.Object;" modifiers="private" />
       <field name="constantPool" sig="Ljava.lang.Object;" modifiers="private" />
@@ -1173,7 +1173,7 @@
 			</method>
 		</class>
     <class name="java.lang.ClassLoader">
-      <field name="wrapper" sig="Ljava.lang.Object;" modifiers="private" />
+      <field name="wrapper" sig="Ljava.lang.Object;" modifiers="" />
       <method name="getBootstrapResource" sig="(Ljava.lang.String;)Ljava.net.URL;">
         <body>
           <ldarg_0 />
@@ -1532,6 +1532,24 @@
 				</body>
 			</method>
 		</class>
+    <class name="java.lang.LibraryVMInterfaceImpl">
+      <method name="getWrapperFromClass" sig="(Ljava.lang.Object;)Ljava.lang.Object;">
+        <body>
+          <ldarg_1 />
+          <castclass class="java.lang.Class" />
+          <ldfld class="java.lang.Class" name="typeWrapper" sig="Ljava.lang.Object;" />
+          <ret />
+        </body>
+      </method>
+      <method name="getWrapperFromClassLoader" sig="(Ljava.lang.Object;)Ljava.lang.Object;">
+        <body>
+          <ldarg_1 />
+          <castclass class="java.lang.ClassLoader" />
+          <ldfld class="java.lang.ClassLoader" name="wrapper" sig="Ljava.lang.Object;" />
+          <ret />
+        </body>
+      </method>
+    </class>
     <class name="sun.misc.Launcher">
       <method name="&lt;init&gt;" sig="()V">
         <replace-method-call class="sun.misc.Launcher$ExtClassLoader" name="getExtClassLoader" sig="()Lsun.misc.Launcher$ExtClassLoader;">
