@@ -124,7 +124,7 @@ class ByteCodeHelperMethods
 class Compiler
 {
 	private static MethodInfo mapExceptionMethod;
-	private static MethodInfo mapExceptionFastMethod;
+	internal static MethodInfo mapExceptionFastMethod;
 	private static MethodInfo unmapExceptionMethod;
 	private static MethodWrapper initCauseMethod;
 	private static MethodInfo suppressFillInStackTraceMethod;
