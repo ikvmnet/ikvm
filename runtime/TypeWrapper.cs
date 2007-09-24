@@ -2744,7 +2744,7 @@ namespace IKVM.Internal
 
 		internal void RunClassInit()
 		{
-			Type t = TypeAsTBD;
+			Type t = IsRemapped ? TypeAsBaseType : TypeAsTBD;
 			if(t != null)
 			{
 				System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(t.TypeHandle);
