@@ -6588,6 +6588,10 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				else
 				{
+					if (args[i] != null && !argumentTypes[i].IsInstance(args[i]))
+					{
+						throw new jlIllegalArgumentException();
+					}
 					nargs[i] = args[i];
 				}
 			}
