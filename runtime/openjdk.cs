@@ -6663,7 +6663,7 @@ namespace IKVM.NativeCode.sun.reflect
 			private static readonly MethodInfo doubleValue;
 			internal static readonly ConstructorInfo invocationTargetExceptionCtor;
 			private delegate object Invoker(object obj, object[] args);
-			private readonly Invoker invoker;
+			private Invoker invoker;
 
 			static FastMethodAccessorImpl()
 			{
@@ -6686,6 +6686,29 @@ namespace IKVM.NativeCode.sun.reflect
 				doubleValue = typeof(jlDouble).GetMethod("doubleValue", Type.EmptyTypes);
 
 				invocationTargetExceptionCtor = typeof(jlrInvocationTargetException).GetConstructor(new Type[] { typeof(Exception) });
+			}
+
+			private sealed class RunClassInit
+			{
+				private FastMethodAccessorImpl outer;
+				private TypeWrapper tw;
+				private Invoker invoker;
+
+				internal RunClassInit(FastMethodAccessorImpl outer, TypeWrapper tw, Invoker invoker)
+				{
+					this.outer = outer;
+					this.tw = tw;
+					this.invoker = invoker;
+				}
+
+				[IKVM.Attributes.HideFromJava]
+				internal object invoke(object obj, object[] args)
+				{
+					// FXBUG a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
+					tw.RunClassInit();
+					outer.invoker = invoker;
+					return invoker(obj, args);
+				}
 			}
 
 			internal FastMethodAccessorImpl(jlrMethod method)
@@ -6805,6 +6828,11 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Ldloc, ret);
 				ilgen.Emit(OpCodes.Ret);
 				invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
+
+				if (mw.IsStatic)
+				{
+					invoker = new Invoker(new RunClassInit(this, mw.DeclaringType, invoker).invoke);
+				}
 			}
 
 			private static void Expand(CountingILGenerator ilgen, TypeWrapper type)
