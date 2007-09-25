@@ -124,12 +124,13 @@ using sndResolverConfigurationImpl = sun.net.dns.ResolverConfigurationImpl;
 #if WHIDBEY
 sealed class DynamicMethodSupport
 {
-	internal const bool Enabled = true;
+	// MONOBUG as of Mono 1.2.5.1, DynamicMethod is too broken to be used
+	internal static readonly bool Enabled = Type.GetType("Mono.Runtime") == null;
 }
 #else
 sealed class DynamicMethodSupport
 {
-	internal static readonly bool Enabled = Environment.Version.Major >= 2;
+	internal static readonly bool Enabled = Environment.Version.Major >= 2 && Type.GetType("Mono.Runtime") == null;
 }
 
 sealed class DynamicMethod
