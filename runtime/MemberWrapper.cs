@@ -727,6 +727,12 @@ namespace IKVM.Internal
 		internal virtual object Invoke(object obj, object[] args, bool nonVirtual)
 		{
 			AssertLinked();
+			ResolveMethod();
+			return InvokeImpl(method, obj, args, nonVirtual);
+		}
+
+		internal void ResolveMethod()
+		{
 #if !COMPACT_FRAMEWORK
 			// if we've still got the builder object, we need to replace it with the real thing before we can call it
 			if(method is MethodBuilder)
@@ -768,7 +774,6 @@ namespace IKVM.Internal
 				}
 			}
 #endif // !COMPACT_FRAMEWORK
-			return InvokeImpl(method, obj, args, nonVirtual);
 		}
 
 		private delegate object Invoker(IntPtr pFunc, object obj, object[] args);
@@ -1570,7 +1575,7 @@ namespace IKVM.Internal
 			throw new InvalidOperationException();
 		}
 
-		private void LookupField()
+		internal void ResolveField()
 		{
 			FieldBuilder fb = field as FieldBuilder;
 			if(fb != null)
@@ -1613,7 +1618,7 @@ namespace IKVM.Internal
 		internal virtual void SetValue(object obj, object val)
 		{
 			AssertLinked();
-			LookupField();
+			ResolveField();
 			if(fieldType.IsGhost)
 			{
 				object temp = field.GetValue(obj);
@@ -1636,7 +1641,7 @@ namespace IKVM.Internal
 		internal virtual object GetValue(object obj)
 		{
 			AssertLinked();
-			LookupField();
+			ResolveField();
 #if STATIC_COMPILER
 			return field.GetValue(null);
 #else

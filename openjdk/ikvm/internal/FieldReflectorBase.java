@@ -21,12 +21,15 @@
   jeroen@frijters.net
   
 */
-package gnu.classpath;
+package ikvm.internal;
 
-/*
- * This is a temporary class while we're using the GNU Classpath AWT/Swing implementation.
- */
-public interface Configuration
+import java.io.ObjectStreamField;
+
+public abstract class FieldReflectorBase
 {
-    String default_awt_peer_toolkit = "ikvm.awt.NetToolkit, IKVM.AWT.WinForms, Version=0.36.0.3, Culture=neutral, PublicKeyToken=13235d27fcbfff58";
+  public abstract ObjectStreamField[] getFields();
+  public abstract void getPrimFieldValues(Object obj, byte[] buf);
+  public abstract void setPrimFieldValues(Object obj, byte[] buf);
+  public abstract void getObjFieldValues(Object obj, Object[] vals);
+  public abstract void setObjFieldValues(Object obj, Object[] vals);
 }

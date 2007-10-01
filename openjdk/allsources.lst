@@ -1038,10 +1038,12 @@ ConnectorBootstrap.java
 com/sun/imageio/plugins/jpeg/JPEGImageReaderSpi.java
 com/sun/imageio/plugins/jpeg/JPEGImageWriterSpi.java
 ikvm/internal/AnnotationAttributeBase.java
+ikvm/internal/FieldReflectorBase.java
 ikvm/internal/LibraryVMInterface.java
 java/io/FileDescriptor.java
 java/io/FileInputStream.java
 java/io/FileOutputStream.java
+java/io/ObjectStreamClass.java
 java/io/RandomAccessFile.java
 java/lang/LangHelper.java
 java/lang/LibraryVMInterfaceImpl.java
@@ -6310,7 +6312,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/ObjectInputValidation.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/ObjectOutput.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/ObjectOutputStream.java
-../../openjdk-b13/j2se/src/share/classes/java/io/ObjectStreamClass.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/ObjectStreamConstants.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/ObjectStreamException.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/ObjectStreamField.java

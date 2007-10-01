@@ -25,6 +25,7 @@ using System;
 using System.Collections;
 using System.Globalization;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
@@ -47,6 +48,7 @@ using jlException = java.lang.Exception;
 using jlIllegalAccessException = java.lang.IllegalAccessException;
 using jlIllegalArgumentException = java.lang.IllegalArgumentException;
 using jlInterruptedException = java.lang.InterruptedException;
+using jlInternalError = java.lang.InternalError;
 using jlNegativeArraySizeException = java.lang.NegativeArraySizeException;
 using jlNoClassDefFoundError = java.lang.NoClassDefFoundError;
 using jlNullPointerException = java.lang.NullPointerException;
@@ -74,6 +76,7 @@ using jlrMethod = java.lang.reflect.Method;
 using jlrField = java.lang.reflect.Field;
 using jlrModifier = java.lang.reflect.Modifier;
 using jlrAccessibleObject = java.lang.reflect.AccessibleObject;
+using jlrInvocationTargetException = java.lang.reflect.InvocationTargetException;
 using ProtectionDomain = java.security.ProtectionDomain;
 using srMethodAccessor = sun.reflect.MethodAccessor;
 using srConstantPool = sun.reflect.ConstantPool;
@@ -93,9 +96,11 @@ using smVM = sun.misc.VM;
 using jiConsole = java.io.Console;
 using jiIOException = java.io.IOException;
 using jiFile = java.io.File;
+using jiObjectStreamField = java.io.ObjectStreamField;
 using jnCharset = java.nio.charset.Charset;
 using juProperties = java.util.Properties;
 using irUtil = ikvm.runtime.Util;
+using iiFieldReflectorBase = ikvm.@internal.FieldReflectorBase;
 using jsDriverManager = java.sql.DriverManager;
 using juzZipFile = java.util.zip.ZipFile;
 using juzZipEntry = java.util.zip.ZipEntry;
@@ -114,6 +119,57 @@ using jnNetworkInterface = java.net.NetworkInterface;
 using jnInterfaceAddress = java.net.InterfaceAddress;
 using ssaGetPropertyAction = sun.security.action.GetPropertyAction;
 using sndResolverConfigurationImpl = sun.net.dns.ResolverConfigurationImpl;
+#endif
+
+#if WHIDBEY
+sealed class DynamicMethodSupport
+{
+	// MONOBUG as of Mono 1.2.5.1, DynamicMethod is too broken to be used
+	internal static readonly bool Enabled = Type.GetType("Mono.Runtime") == null;
+}
+#else
+sealed class DynamicMethodSupport
+{
+	internal static readonly bool Enabled = Environment.Version.Major >= 2 && Type.GetType("Mono.Runtime") == null;
+}
+
+sealed class DynamicMethod
+{
+	private static ConstructorInfo ctor1;
+	private static ConstructorInfo ctor2;
+	private static MethodInfo createMethod;
+	private static MethodInfo getILGenMethod;
+	private object dm;
+
+	static DynamicMethod()
+	{
+		Type type = Type.GetType("System.Reflection.Emit.DynamicMethod", true);
+		ctor1 = type.GetConstructor(new Type[] { typeof(string), typeof(MethodAttributes), typeof(CallingConventions), typeof(Type), typeof(Type[]), typeof(Module), typeof(bool) });
+		ctor2 = type.GetConstructor(new Type[] { typeof(string), typeof(Type), typeof(Type[]), typeof(Type) });
+		createMethod = type.GetMethod("CreateDelegate", new Type[] { typeof(Type) });
+		getILGenMethod = type.GetMethod("GetILGenerator", new Type[0]);
+	}
+
+	internal DynamicMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Module owner, bool skipVisibility)
+	{
+		dm = ctor1.Invoke(new object[] { name, attributes, callingConvention, returnType, parameterTypes, owner, skipVisibility });
+	}
+
+	internal DynamicMethod(string name, Type returnType, Type[] parameterTypes, Type owner)
+	{
+		dm = ctor2.Invoke(new object[] { name, returnType, parameterTypes, owner });
+	}
+
+	internal ILGenerator GetILGenerator()
+	{
+		return (ILGenerator)getILGenMethod.Invoke(dm, null);
+	}
+
+	internal Delegate CreateDelegate(Type delegateType)
+	{
+		return (Delegate)createMethod.Invoke(dm, new object[] { delegateType });
+	}
+}
 #endif
 
 namespace IKVM.Runtime
@@ -429,6 +485,345 @@ namespace IKVM.NativeCode.java
 					return !AttributeHelper.IsHideFromJava(type.TypeInitializer);
 				}
 				return false;
+			}
+
+#if !FIRST_PASS
+			public static void WriteByte(byte[] buf, int offset, byte value)
+			{
+				buf[offset] = value;
+			}
+
+			public static void WriteBoolean(byte[] buf, int offset, bool value)
+			{
+				buf[offset] = value ? (byte)1 : (byte)0;
+			}
+
+			public static void WriteChar(byte[] buf, int offset, char value)
+			{
+				buf[offset + 0] = (byte)(value >> 8);
+				buf[offset + 1] = (byte)(value >> 0);
+			}
+
+			public static void WriteShort(byte[] buf, int offset, short value)
+			{
+				buf[offset + 0] = (byte)(value >> 8);
+				buf[offset + 1] = (byte)(value >> 0);
+			}
+
+			public static void WriteInt(byte[] buf, int offset, int value)
+			{
+				buf[offset + 0] = (byte)(value >> 24);
+				buf[offset + 1] = (byte)(value >> 16);
+				buf[offset + 2] = (byte)(value >>  8);
+				buf[offset + 3] = (byte)(value >>  0);
+			}
+
+			public static void WriteFloat(byte[] buf, int offset, float value)
+			{
+				WriteInt(buf, offset, jlFloat.floatToIntBits(value));
+			}
+
+			public static void WriteLong(byte[] buf, int offset, long value)
+			{
+				WriteInt(buf, offset, (int)(value >> 32));
+				WriteInt(buf, offset + 4, (int)value);
+			}
+
+			public static void WriteDouble(byte[] buf, int offset, double value)
+			{
+				WriteLong(buf, offset, jlDouble.doubleToLongBits(value));
+			}
+
+			public static byte ReadByte(byte[] buf, int offset)
+			{
+				return buf[offset];
+			}
+
+			public static bool ReadBoolean(byte[] buf, int offset)
+			{
+				return buf[offset] != 0;
+			}
+
+			public static char ReadChar(byte[] buf, int offset)
+			{
+				return (char)((buf[offset] << 8) + buf[offset + 1]);
+			}
+
+			public static short ReadShort(byte[] buf, int offset)
+			{
+				return (short)((buf[offset] << 8) + buf[offset + 1]);
+			}
+
+			public static int ReadInt(byte[] buf, int offset)
+			{
+				return (buf[offset + 0] << 24)
+					 + (buf[offset + 1] << 16)
+					 + (buf[offset + 2] <<  8)
+					 + (buf[offset + 3] <<  0);
+			}
+
+			public static float ReadFloat(byte[] buf, int offset)
+			{
+				return jlFloat.intBitsToFloat(ReadInt(buf, offset));
+			}
+
+			public static long ReadLong(byte[] buf, int offset)
+			{
+				long hi = (uint)ReadInt(buf, offset);
+				long lo = (uint)ReadInt(buf, offset + 4);
+				return lo + (hi << 32);
+			}
+
+			public static double ReadDouble(byte[] buf, int offset)
+			{
+				return jlDouble.longBitsToDouble(ReadLong(buf, offset));
+			}
+
+			private sealed class FastFieldReflector : iiFieldReflectorBase
+			{
+				private static readonly MethodInfo ReadByteMethod = typeof(ObjectStreamClass).GetMethod("ReadByte");
+				private static readonly MethodInfo ReadBooleanMethod = typeof(ObjectStreamClass).GetMethod("ReadBoolean");
+				private static readonly MethodInfo ReadCharMethod = typeof(ObjectStreamClass).GetMethod("ReadChar");
+				private static readonly MethodInfo ReadShortMethod = typeof(ObjectStreamClass).GetMethod("ReadShort");
+				private static readonly MethodInfo ReadIntMethod = typeof(ObjectStreamClass).GetMethod("ReadInt");
+				private static readonly MethodInfo ReadFloatMethod = typeof(ObjectStreamClass).GetMethod("ReadFloat");
+				private static readonly MethodInfo ReadLongMethod = typeof(ObjectStreamClass).GetMethod("ReadLong");
+				private static readonly MethodInfo ReadDoubleMethod = typeof(ObjectStreamClass).GetMethod("ReadDouble");
+				private static readonly MethodInfo WriteByteMethod = typeof(ObjectStreamClass).GetMethod("WriteByte");
+				private static readonly MethodInfo WriteBooleanMethod = typeof(ObjectStreamClass).GetMethod("WriteBoolean");
+				private static readonly MethodInfo WriteCharMethod = typeof(ObjectStreamClass).GetMethod("WriteChar");
+				private static readonly MethodInfo WriteShortMethod = typeof(ObjectStreamClass).GetMethod("WriteShort");
+				private static readonly MethodInfo WriteIntMethod = typeof(ObjectStreamClass).GetMethod("WriteInt");
+				private static readonly MethodInfo WriteFloatMethod = typeof(ObjectStreamClass).GetMethod("WriteFloat");
+				private static readonly MethodInfo WriteLongMethod = typeof(ObjectStreamClass).GetMethod("WriteLong");
+				private static readonly MethodInfo WriteDoubleMethod = typeof(ObjectStreamClass).GetMethod("WriteDouble");
+				private static readonly FieldInfo fieldField = typeof(jiObjectStreamField).GetField("field", BindingFlags.Instance | BindingFlags.NonPublic);
+				private delegate void ObjFieldGetterSetter(object obj, object[] objarr);
+				private delegate void PrimFieldGetterSetter(object obj, byte[] objarr);
+				private static readonly ObjFieldGetterSetter objDummy = new ObjFieldGetterSetter(Dummy);
+				private static readonly PrimFieldGetterSetter primDummy = new PrimFieldGetterSetter(Dummy);
+				private jiObjectStreamField[] fields;
+				private ObjFieldGetterSetter objFieldGetter;
+				private PrimFieldGetterSetter primFieldGetter;
+				private ObjFieldGetterSetter objFieldSetter;
+				private PrimFieldGetterSetter primFieldSetter;
+
+				private static void Dummy(object obj, object[] objarr)
+				{
+				}
+
+				private static void Dummy(object obj, byte[] barr)
+				{
+				}
+
+				internal FastFieldReflector(jiObjectStreamField[] fields)
+				{
+					this.fields = fields;
+					TypeWrapper tw = null;
+					foreach (jiObjectStreamField field in fields)
+					{
+						FieldWrapper fw = GetFieldWrapper(field);
+						if (fw != null)
+						{
+							if (tw == null)
+							{
+								tw = fw.DeclaringType;
+							}
+							else if (tw != fw.DeclaringType)
+							{
+								// pre-condition is that all fields are from the same Type!
+								throw new jlInternalError();
+							}
+						}
+					}
+					if (tw == null)
+					{
+						objFieldGetter = objFieldSetter = objDummy;
+						primFieldGetter = primFieldSetter = primDummy;
+					}
+					else
+					{
+						tw.Finish();
+						DynamicMethod dmObjGetter = new DynamicMethod("__<ObjFieldGetter>", null, new Type[] { typeof(object), typeof(object[]) }, tw.TypeAsBaseType);
+						DynamicMethod dmPrimGetter = new DynamicMethod("__<PrimFieldGetter>", null, new Type[] { typeof(object), typeof(byte[]) }, tw.TypeAsBaseType);
+						DynamicMethod dmObjSetter = new DynamicMethod("__<ObjFieldSetter>", null, new Type[] { typeof(object), typeof(object[]) }, tw.TypeAsBaseType);
+						DynamicMethod dmPrimSetter = new DynamicMethod("__<PrimFieldSetter>", null, new Type[] { typeof(object), typeof(byte[]) }, tw.TypeAsBaseType);
+						CountingILGenerator ilgenObjGetter = dmObjGetter.GetILGenerator();
+						CountingILGenerator ilgenPrimGetter = dmPrimGetter.GetILGenerator();
+						CountingILGenerator ilgenObjSetter = dmObjSetter.GetILGenerator();
+						CountingILGenerator ilgenPrimSetter = dmPrimSetter.GetILGenerator();
+						foreach (jiObjectStreamField field in fields)
+						{
+							FieldWrapper fw = GetFieldWrapper(field);
+							if (fw == null)
+							{
+								continue;
+							}
+							fw.ResolveField();
+							TypeWrapper fieldType = fw.FieldTypeWrapper;
+							fieldType.Finish();
+							if (fieldType.IsPrimitive)
+							{
+								// Getter
+								ilgenPrimGetter.Emit(OpCodes.Ldarg_1);
+								ilgenPrimGetter.Emit(OpCodes.Ldc_I4, field.getOffset());
+								ilgenPrimGetter.Emit(OpCodes.Ldarg_0);
+								fw.EmitGet(ilgenPrimGetter);
+								if (fieldType == PrimitiveTypeWrapper.BYTE)
+								{
+									ilgenPrimGetter.Emit(OpCodes.Call, WriteByteMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.BOOLEAN)
+								{
+									ilgenPrimGetter.Emit(OpCodes.Call, WriteBooleanMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.CHAR)
+								{
+									ilgenPrimGetter.Emit(OpCodes.Call, WriteCharMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.SHORT)
+								{
+									ilgenPrimGetter.Emit(OpCodes.Call, WriteShortMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.INT)
+								{
+									ilgenPrimGetter.Emit(OpCodes.Call, WriteIntMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.FLOAT)
+								{
+									ilgenPrimGetter.Emit(OpCodes.Call, WriteFloatMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.LONG)
+								{
+									ilgenPrimGetter.Emit(OpCodes.Call, WriteLongMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.DOUBLE)
+								{
+									ilgenPrimGetter.Emit(OpCodes.Call, WriteDoubleMethod);
+								}
+								else
+								{
+									throw new jlInternalError();
+								}
+
+								// Setter
+								ilgenPrimSetter.Emit(OpCodes.Ldarg_0);
+								ilgenPrimSetter.Emit(OpCodes.Ldarg_1);
+								ilgenPrimSetter.Emit(OpCodes.Ldc_I4, field.getOffset());
+								if (fieldType == PrimitiveTypeWrapper.BYTE)
+								{
+									ilgenPrimSetter.Emit(OpCodes.Call, ReadByteMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.BOOLEAN)
+								{
+									ilgenPrimSetter.Emit(OpCodes.Call, ReadBooleanMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.CHAR)
+								{
+									ilgenPrimSetter.Emit(OpCodes.Call, ReadCharMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.SHORT)
+								{
+									ilgenPrimSetter.Emit(OpCodes.Call, ReadShortMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.INT)
+								{
+									ilgenPrimSetter.Emit(OpCodes.Call, ReadIntMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.FLOAT)
+								{
+									ilgenPrimSetter.Emit(OpCodes.Call, ReadFloatMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.LONG)
+								{
+									ilgenPrimSetter.Emit(OpCodes.Call, ReadLongMethod);
+								}
+								else if (fieldType == PrimitiveTypeWrapper.DOUBLE)
+								{
+									ilgenPrimSetter.Emit(OpCodes.Call, ReadDoubleMethod);
+								}
+								else
+								{
+									throw new jlInternalError();
+								}
+								fw.EmitSet(ilgenPrimSetter);
+							}
+							else
+							{
+								// Getter
+								ilgenObjGetter.Emit(OpCodes.Ldarg_1);
+								ilgenObjGetter.Emit(OpCodes.Ldc_I4, field.getOffset());
+								ilgenObjGetter.Emit(OpCodes.Ldarg_0);
+								fw.EmitGet(ilgenObjGetter);
+								ilgenObjGetter.Emit(OpCodes.Stelem_Ref);
+
+								// Setter
+								ilgenObjSetter.Emit(OpCodes.Ldarg_0);
+								ilgenObjSetter.Emit(OpCodes.Ldarg_1);
+								ilgenObjSetter.Emit(OpCodes.Ldc_I4, field.getOffset());
+								ilgenObjSetter.Emit(OpCodes.Ldelem_Ref);
+								fw.FieldTypeWrapper.EmitCheckcast(null, ilgenObjSetter);
+								fw.EmitSet(ilgenObjSetter);
+							}
+						}
+						ilgenObjGetter.Emit(OpCodes.Ret);
+						ilgenPrimGetter.Emit(OpCodes.Ret);
+						ilgenObjSetter.Emit(OpCodes.Ret);
+						ilgenPrimSetter.Emit(OpCodes.Ret);
+						objFieldGetter = (ObjFieldGetterSetter)dmObjGetter.CreateDelegate(typeof(ObjFieldGetterSetter));
+						primFieldGetter = (PrimFieldGetterSetter)dmPrimGetter.CreateDelegate(typeof(PrimFieldGetterSetter));
+						objFieldSetter = (ObjFieldGetterSetter)dmObjSetter.CreateDelegate(typeof(ObjFieldGetterSetter));
+						primFieldSetter = (PrimFieldGetterSetter)dmPrimSetter.CreateDelegate(typeof(PrimFieldGetterSetter));
+					}
+				}
+
+				private static FieldWrapper GetFieldWrapper(jiObjectStreamField field)
+				{
+					object f = fieldField.GetValue(field);
+					return f == null ? null : FieldWrapper.FromField(f);
+				}
+
+				public override jiObjectStreamField[] getFields()
+				{
+					return fields;
+				}
+
+				public override void getObjFieldValues(object obj, object[] objarr)
+				{
+					objFieldGetter(obj, objarr);
+				}
+
+				public override void setObjFieldValues(object obj, object[] objarr)
+				{
+					objFieldSetter(obj, objarr);
+				}
+
+				public override void getPrimFieldValues(object obj, byte[] barr)
+				{
+					primFieldGetter(obj, barr);
+				}
+
+				public override void setPrimFieldValues(object obj, byte[] barr)
+				{
+					primFieldSetter(obj, barr);
+				}
+			}
+#endif // !FIRST_PASS
+
+			public static object getFastFieldReflector(object fieldsObj)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				if (DynamicMethodSupport.Enabled)
+				{
+					return new FastFieldReflector((jiObjectStreamField[])fieldsObj);
+				}
+				else
+				{
+					return null;
+				}
+#endif
 			}
 		}
 
@@ -6193,6 +6588,10 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				else
 				{
+					if (args[i] != null && !argumentTypes[i].IsInstance(args[i]))
+					{
+						throw new jlIllegalArgumentException();
+					}
 					nargs[i] = args[i];
 				}
 			}
@@ -6244,6 +6643,379 @@ namespace IKVM.NativeCode.sun.reflect
 			}
 		}
 
+		private sealed class FastMethodAccessorImpl : srMethodAccessor
+		{
+			private static readonly MethodInfo valueOfByte;
+			private static readonly MethodInfo valueOfBoolean;
+			private static readonly MethodInfo valueOfChar;
+			private static readonly MethodInfo valueOfShort;
+			private static readonly MethodInfo valueOfInt;
+			private static readonly MethodInfo valueOfFloat;
+			private static readonly MethodInfo valueOfLong;
+			private static readonly MethodInfo valueOfDouble;
+			private static readonly MethodInfo byteValue;
+			private static readonly MethodInfo booleanValue;
+			private static readonly MethodInfo charValue;
+			private static readonly MethodInfo shortValue;
+			private static readonly MethodInfo intValue;
+			private static readonly MethodInfo floatValue;
+			private static readonly MethodInfo longValue;
+			private static readonly MethodInfo doubleValue;
+			internal static readonly ConstructorInfo invocationTargetExceptionCtor;
+			private delegate object Invoker(object obj, object[] args);
+			private Invoker invoker;
+
+			static FastMethodAccessorImpl()
+			{
+				valueOfByte = typeof(jlByte).GetMethod("valueOf", new Type[] { typeof(byte) });
+				valueOfBoolean = typeof(jlBoolean).GetMethod("valueOf", new Type[] { typeof(bool) });
+				valueOfChar = typeof(jlCharacter).GetMethod("valueOf", new Type[] { typeof(char) });
+				valueOfShort = typeof(jlShort).GetMethod("valueOf", new Type[] { typeof(short) });
+				valueOfInt = typeof(jlInteger).GetMethod("valueOf", new Type[] { typeof(int) });
+				valueOfFloat = typeof(jlFloat).GetMethod("valueOf", new Type[] { typeof(float) });
+				valueOfLong = typeof(jlLong).GetMethod("valueOf", new Type[] { typeof(long) });
+				valueOfDouble = typeof(jlDouble).GetMethod("valueOf", new Type[] { typeof(double) });
+
+				byteValue = typeof(jlByte).GetMethod("byteValue", Type.EmptyTypes);
+				booleanValue = typeof(jlBoolean).GetMethod("booleanValue", Type.EmptyTypes);
+				charValue = typeof(jlCharacter).GetMethod("charValue", Type.EmptyTypes);
+				shortValue = typeof(jlShort).GetMethod("shortValue", Type.EmptyTypes);
+				intValue = typeof(jlInteger).GetMethod("intValue", Type.EmptyTypes);
+				floatValue = typeof(jlFloat).GetMethod("floatValue", Type.EmptyTypes);
+				longValue = typeof(jlLong).GetMethod("longValue", Type.EmptyTypes);
+				doubleValue = typeof(jlDouble).GetMethod("doubleValue", Type.EmptyTypes);
+
+				invocationTargetExceptionCtor = typeof(jlrInvocationTargetException).GetConstructor(new Type[] { typeof(Exception) });
+			}
+
+			private sealed class RunClassInit
+			{
+				private FastMethodAccessorImpl outer;
+				private TypeWrapper tw;
+				private Invoker invoker;
+
+				internal RunClassInit(FastMethodAccessorImpl outer, TypeWrapper tw, Invoker invoker)
+				{
+					this.outer = outer;
+					this.tw = tw;
+					this.invoker = invoker;
+				}
+
+				[IKVM.Attributes.HideFromJava]
+				internal object invoke(object obj, object[] args)
+				{
+					// FXBUG a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
+					tw.RunClassInit();
+					outer.invoker = invoker;
+					return invoker(obj, args);
+				}
+			}
+
+			internal FastMethodAccessorImpl(jlrMethod method)
+			{
+				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
+				mw.DeclaringType.Finish();
+				mw.ResolveMethod();
+				DynamicMethod dm;
+				if (mw.DeclaringType.TypeAsTBD.IsInterface)
+				{
+					// FXBUG interfaces aren't allowed as owners of dynamic methods
+					dm = new DynamicMethod("__<Invoker>", MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeof(object), new Type[] { typeof(object), typeof(object[]) }, mw.DeclaringType.TypeAsTBD.Module, true);
+				}
+				else
+				{
+					dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object), typeof(object[]) }, mw.DeclaringType.TypeAsTBD);
+				}
+				CountingILGenerator ilgen = dm.GetILGenerator();
+				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
+				if (!mw.IsStatic)
+				{
+					// check target for null
+					ilgen.Emit(OpCodes.Ldarg_0);
+					EmitHelper.NullCheck(ilgen);
+				}
+
+				// check args length
+				CountingLabel argsLengthOK = ilgen.DefineLabel();
+				if (mw.GetParameters().Length == 0)
+				{
+					// zero length array may be null
+					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Brfalse_S, argsLengthOK);
+				}
+				ilgen.Emit(OpCodes.Ldarg_1);
+				ilgen.Emit(OpCodes.Ldlen);
+				ilgen.Emit(OpCodes.Ldc_I4, mw.GetParameters().Length);
+				ilgen.Emit(OpCodes.Beq_S, argsLengthOK);
+				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.MarkLabel(argsLengthOK);
+
+				int thisCount = mw.IsStatic ? 0 : 1;
+				LocalBuilder[] args = new LocalBuilder[mw.GetParameters().Length + thisCount];
+				if (!mw.IsStatic)
+				{
+					args[0] = ilgen.DeclareLocal(mw.DeclaringType.TypeAsSignatureType);
+				}
+				for (int i = thisCount; i < args.Length; i++)
+				{
+					mw.GetParameters()[i - thisCount].Finish();
+					args[i] = ilgen.DeclareLocal(mw.GetParameters()[i - thisCount].TypeAsSignatureType);
+				}
+				ilgen.BeginExceptionBlock();
+				if (!mw.IsStatic)
+				{
+					ilgen.Emit(OpCodes.Ldarg_0);
+					mw.DeclaringType.EmitCheckcast(null, ilgen);
+					mw.DeclaringType.EmitConvStackTypeToSignatureType(ilgen, null);
+					ilgen.Emit(OpCodes.Stloc, args[0]);
+				}
+				for (int i = thisCount; i < args.Length; i++)
+				{
+					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Ldc_I4, i - thisCount);
+					ilgen.Emit(OpCodes.Ldelem_Ref);
+					TypeWrapper tw = mw.GetParameters()[i - thisCount];
+					EmitUnboxArg(ilgen, tw);
+					tw.EmitConvStackTypeToSignatureType(ilgen, null);
+					ilgen.Emit(OpCodes.Stloc, args[i]);
+				}
+				ilgen.BeginCatchBlock(typeof(InvalidCastException));
+				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.BeginCatchBlock(typeof(NullReferenceException));
+				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.EndExceptionBlock();
+
+				if (mw.DeclaringType.IsInterface && mw.DeclaringType.HasStaticInitializer)
+				{
+					// NOTE since Everett doesn't support adding static methods to interfaces,
+					// EmitRunClassConstructor doesn't work for interface, so we do it manually.
+					// TODO once we're on Whidbey, this won't be necessary anymore.
+					ilgen.Emit(OpCodes.Ldtoken, mw.DeclaringType.TypeAsBaseType);
+					ilgen.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("RunClassConstructor"));
+				}
+
+				// this is the actual call
+				ilgen.BeginExceptionBlock();
+				for (int i = 0; i < args.Length; i++)
+				{
+					if (i == 0 && !mw.IsStatic && (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost))
+					{
+						ilgen.Emit(OpCodes.Ldloca, args[i]);
+					}
+					else
+					{
+						ilgen.Emit(OpCodes.Ldloc, args[i]);
+					}
+				}
+				if (mw.IsStatic)
+				{
+					mw.EmitCall(ilgen);
+				}
+				else
+				{
+					mw.EmitCallvirt(ilgen);
+				}
+				mw.ReturnType.EmitConvSignatureTypeToStackType(ilgen);
+				BoxReturnValue(ilgen, mw.ReturnType);
+				ilgen.Emit(OpCodes.Stloc, ret);
+				ilgen.BeginCatchBlock(typeof(Exception));
+				ilgen.Emit(OpCodes.Ldc_I4_1);
+				ilgen.Emit(OpCodes.Call, Compiler.mapExceptionFastMethod);
+				ilgen.Emit(OpCodes.Newobj, invocationTargetExceptionCtor);
+				ilgen.Emit(OpCodes.Throw);
+				ilgen.EndExceptionBlock();
+
+				ilgen.Emit(OpCodes.Ldloc, ret);
+				ilgen.Emit(OpCodes.Ret);
+				invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
+
+				if (mw.IsStatic)
+				{
+					invoker = new Invoker(new RunClassInit(this, mw.DeclaringType, invoker).invoke);
+				}
+			}
+
+			private static void Expand(CountingILGenerator ilgen, TypeWrapper type)
+			{
+				if (type == PrimitiveTypeWrapper.FLOAT)
+				{
+					ilgen.Emit(OpCodes.Conv_R4);
+				}
+				else if (type == PrimitiveTypeWrapper.LONG)
+				{
+					ilgen.Emit(OpCodes.Conv_I8);
+				}
+				else if (type == PrimitiveTypeWrapper.DOUBLE)
+				{
+					ilgen.Emit(OpCodes.Conv_R8);
+				}
+			}
+
+			internal static void EmitUnboxArg(CountingILGenerator ilgen, TypeWrapper type)
+			{
+				if (type == PrimitiveTypeWrapper.BYTE)
+				{
+					ilgen.Emit(OpCodes.Castclass, typeof(jlByte));
+					ilgen.Emit(OpCodes.Call, byteValue);
+				}
+				else if (type == PrimitiveTypeWrapper.BOOLEAN)
+				{
+					ilgen.Emit(OpCodes.Castclass, typeof(jlBoolean));
+					ilgen.Emit(OpCodes.Call, booleanValue);
+				}
+				else if (type == PrimitiveTypeWrapper.CHAR)
+				{
+					ilgen.Emit(OpCodes.Castclass, typeof(jlCharacter));
+					ilgen.Emit(OpCodes.Call, charValue);
+				}
+				else if (type == PrimitiveTypeWrapper.SHORT
+					|| type == PrimitiveTypeWrapper.INT
+					|| type == PrimitiveTypeWrapper.FLOAT
+					|| type == PrimitiveTypeWrapper.LONG
+					|| type == PrimitiveTypeWrapper.DOUBLE)
+				{
+					ilgen.Emit(OpCodes.Dup);
+					ilgen.Emit(OpCodes.Isinst, typeof(jlByte));
+					CountingLabel next = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Brfalse_S, next);
+					ilgen.Emit(OpCodes.Call, byteValue);
+					ilgen.Emit(OpCodes.Conv_I1);
+					Expand(ilgen, type);
+					CountingLabel done = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Br_S, done);
+					ilgen.MarkLabel(next);
+					if (type == PrimitiveTypeWrapper.SHORT)
+					{
+						ilgen.Emit(OpCodes.Castclass, typeof(jlShort));
+						ilgen.Emit(OpCodes.Call, shortValue);
+					}
+					else
+					{
+						ilgen.Emit(OpCodes.Dup);
+						ilgen.Emit(OpCodes.Isinst, typeof(jlShort));
+						next = ilgen.DefineLabel();
+						ilgen.Emit(OpCodes.Brfalse_S, next);
+						ilgen.Emit(OpCodes.Call, shortValue);
+						Expand(ilgen, type);
+						ilgen.Emit(OpCodes.Br_S, done);
+						ilgen.MarkLabel(next);
+						ilgen.Emit(OpCodes.Dup);
+						ilgen.Emit(OpCodes.Isinst, typeof(jlCharacter));
+						next = ilgen.DefineLabel();
+						ilgen.Emit(OpCodes.Brfalse_S, next);
+						ilgen.Emit(OpCodes.Call, charValue);
+						Expand(ilgen, type);
+						ilgen.Emit(OpCodes.Br_S, done);
+						ilgen.MarkLabel(next);
+						if (type == PrimitiveTypeWrapper.INT)
+						{
+							ilgen.Emit(OpCodes.Castclass, typeof(jlInteger));
+							ilgen.Emit(OpCodes.Call, intValue);
+						}
+						else
+						{
+							ilgen.Emit(OpCodes.Dup);
+							ilgen.Emit(OpCodes.Isinst, typeof(jlInteger));
+							next = ilgen.DefineLabel();
+							ilgen.Emit(OpCodes.Brfalse_S, next);
+							ilgen.Emit(OpCodes.Call, intValue);
+							Expand(ilgen, type);
+							ilgen.Emit(OpCodes.Br_S, done);
+							ilgen.MarkLabel(next);
+							if (type == PrimitiveTypeWrapper.LONG)
+							{
+								ilgen.Emit(OpCodes.Castclass, typeof(jlLong));
+								ilgen.Emit(OpCodes.Call, longValue);
+							}
+							else
+							{
+								ilgen.Emit(OpCodes.Dup);
+								ilgen.Emit(OpCodes.Isinst, typeof(jlLong));
+								next = ilgen.DefineLabel();
+								ilgen.Emit(OpCodes.Brfalse_S, next);
+								ilgen.Emit(OpCodes.Call, longValue);
+								Expand(ilgen, type);
+								ilgen.Emit(OpCodes.Br_S, done);
+								ilgen.MarkLabel(next);
+								if (type == PrimitiveTypeWrapper.FLOAT)
+								{
+									ilgen.Emit(OpCodes.Castclass, typeof(jlFloat));
+									ilgen.Emit(OpCodes.Call, floatValue);
+								}
+								else if (type == PrimitiveTypeWrapper.DOUBLE)
+								{
+									ilgen.Emit(OpCodes.Dup);
+									ilgen.Emit(OpCodes.Isinst, typeof(jlFloat));
+									next = ilgen.DefineLabel();
+									ilgen.Emit(OpCodes.Brfalse_S, next);
+									ilgen.Emit(OpCodes.Call, floatValue);
+									ilgen.Emit(OpCodes.Br_S, done);
+									ilgen.MarkLabel(next);
+									ilgen.Emit(OpCodes.Castclass, typeof(jlDouble));
+									ilgen.Emit(OpCodes.Call, doubleValue);
+								}
+								else
+								{
+									throw new InvalidOperationException();
+								}
+							}
+						}
+					}
+					ilgen.MarkLabel(done);
+				}
+				else
+				{
+					type.EmitCheckcast(null, ilgen);
+				}
+			}
+
+			private static void BoxReturnValue(CountingILGenerator ilgen, TypeWrapper type)
+			{
+				if (type == PrimitiveTypeWrapper.VOID)
+				{
+					ilgen.Emit(OpCodes.Ldnull);
+				}
+				else if (type == PrimitiveTypeWrapper.BYTE)
+				{
+					ilgen.Emit(OpCodes.Call, valueOfByte);
+				}
+				else if (type == PrimitiveTypeWrapper.BOOLEAN)
+				{
+					ilgen.Emit(OpCodes.Call, valueOfBoolean);
+				}
+				else if (type == PrimitiveTypeWrapper.CHAR)
+				{
+					ilgen.Emit(OpCodes.Call, valueOfChar);
+				}
+				else if (type == PrimitiveTypeWrapper.SHORT)
+				{
+					ilgen.Emit(OpCodes.Call, valueOfShort);
+				}
+				else if (type == PrimitiveTypeWrapper.INT)
+				{
+					ilgen.Emit(OpCodes.Call, valueOfInt);
+				}
+				else if (type == PrimitiveTypeWrapper.FLOAT)
+				{
+					ilgen.Emit(OpCodes.Call, valueOfFloat);
+				}
+				else if (type == PrimitiveTypeWrapper.LONG)
+				{
+					ilgen.Emit(OpCodes.Call, valueOfLong);
+				}
+				else if (type == PrimitiveTypeWrapper.DOUBLE)
+				{
+					ilgen.Emit(OpCodes.Call, valueOfDouble);
+				}
+			}
+
+			[IKVM.Attributes.HideFromJava]
+			public object invoke(object obj, object[] args)
+			{
+				return invoker(obj, args);
+			}
+		}
+
 		private sealed class ConstructorAccessorImpl : srConstructorAccessor
 		{
 			private readonly MethodWrapper mw;
@@ -6266,6 +7038,85 @@ namespace IKVM.NativeCode.sun.reflect
 					// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
 					throw new jlIllegalAccessException().initCause(x);
 				}
+			}
+		}
+
+		private sealed class FastConstructorAccessorImpl : srConstructorAccessor
+		{
+			private delegate object Invoker(object[] args);
+			private Invoker invoker;
+
+			internal FastConstructorAccessorImpl(jlrConstructor constructor)
+			{
+				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
+				mw.DeclaringType.Finish();
+				mw.ResolveMethod();
+				DynamicMethod dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object), typeof(object[]) }, mw.DeclaringType.TypeAsTBD);
+				CountingILGenerator ilgen = dm.GetILGenerator();
+				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
+
+				// check args length
+				CountingLabel argsLengthOK = ilgen.DefineLabel();
+				if (mw.GetParameters().Length == 0)
+				{
+					// zero length array may be null
+					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Brfalse_S, argsLengthOK);
+				}
+				ilgen.Emit(OpCodes.Ldarg_1);
+				ilgen.Emit(OpCodes.Ldlen);
+				ilgen.Emit(OpCodes.Ldc_I4, mw.GetParameters().Length);
+				ilgen.Emit(OpCodes.Beq_S, argsLengthOK);
+				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.MarkLabel(argsLengthOK);
+
+				LocalBuilder[] args = new LocalBuilder[mw.GetParameters().Length];
+				for (int i = 0; i < args.Length; i++)
+				{
+					mw.GetParameters()[i].Finish();
+					args[i] = ilgen.DeclareLocal(mw.GetParameters()[i].TypeAsSignatureType);
+				}
+				ilgen.BeginExceptionBlock();
+				for (int i = 0; i < args.Length; i++)
+				{
+					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Ldc_I4, i);
+					ilgen.Emit(OpCodes.Ldelem_Ref);
+					TypeWrapper tw = mw.GetParameters()[i];
+					FastMethodAccessorImpl.EmitUnboxArg(ilgen, tw);
+					tw.EmitConvStackTypeToSignatureType(ilgen, null);
+					ilgen.Emit(OpCodes.Stloc, args[i]);
+				}
+				ilgen.BeginCatchBlock(typeof(InvalidCastException));
+				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.BeginCatchBlock(typeof(NullReferenceException));
+				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+				ilgen.EndExceptionBlock();
+
+				// this is the actual call
+				ilgen.BeginExceptionBlock();
+				for (int i = 0; i < args.Length; i++)
+				{
+					ilgen.Emit(OpCodes.Ldloc, args[i]);
+				}
+				mw.EmitNewobj(ilgen);
+				ilgen.Emit(OpCodes.Stloc, ret);
+				ilgen.BeginCatchBlock(typeof(Exception));
+				ilgen.Emit(OpCodes.Ldc_I4_1);
+				ilgen.Emit(OpCodes.Call, Compiler.mapExceptionFastMethod);
+				ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.invocationTargetExceptionCtor);
+				ilgen.Emit(OpCodes.Throw);
+				ilgen.EndExceptionBlock();
+
+				ilgen.Emit(OpCodes.Ldloc, ret);
+				ilgen.Emit(OpCodes.Ret);
+				invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
+			}
+
+			[IKVM.Attributes.HideFromJava]
+			public object newInstance(object[] args)
+			{
+				return invoker(args);
 			}
 		}
 
@@ -6316,10 +7167,51 @@ namespace IKVM.NativeCode.sun.reflect
 			}
 		}
 
+		private sealed class FastSerializationConstructorAccessorImpl : srConstructorAccessor
+		{
+			private static readonly MethodInfo GetTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle", new Type[] { typeof(RuntimeTypeHandle) });
+			private static readonly MethodInfo GetUninitializedObjectMethod = typeof(FormatterServices).GetMethod("GetUninitializedObject", new Type[] { typeof(Type) });
+			private delegate object InvokeCtor();
+			private InvokeCtor invoker;
+
+			internal FastSerializationConstructorAccessorImpl(jlrConstructor constructorToCall, jlClass classToInstantiate)
+			{
+				MethodWrapper constructor = MethodWrapper.FromMethodOrConstructor(constructorToCall);
+				constructor.Link();
+				constructor.ResolveMethod();
+				Type type;
+				try
+				{
+					TypeWrapper wrapper = TypeWrapper.FromClass(classToInstantiate);
+					wrapper.Finish();
+					type = wrapper.TypeAsBaseType;
+				}
+				catch (RetargetableJavaException x)
+				{
+					throw x.ToJava();
+				}
+				DynamicMethod dm = new DynamicMethod("__<SerializationCtor>", typeof(object), null, constructor.DeclaringType.TypeAsBaseType);
+				CountingILGenerator ilgen = dm.GetILGenerator();
+				ilgen.Emit(OpCodes.Ldtoken, type);
+				ilgen.Emit(OpCodes.Call, GetTypeFromHandleMethod);
+				ilgen.Emit(OpCodes.Call, GetUninitializedObjectMethod);
+				ilgen.Emit(OpCodes.Dup);
+				constructor.EmitCall(ilgen);
+				ilgen.Emit(OpCodes.Ret);
+				invoker = (InvokeCtor)dm.CreateDelegate(typeof(InvokeCtor));
+			}
+
+			[IKVM.Attributes.HideFromJava]
+			public object newInstance(object[] args)
+			{
+				return invoker();
+			}
+		}
+
 		private abstract class FieldAccessorImplBase : srFieldAccessor
 		{
-			private readonly FieldWrapper fw;
-			private readonly bool isFinal;
+			protected readonly FieldWrapper fw;
+			protected readonly bool isFinal;
 			private bool runInit;
 
 			private FieldAccessorImplBase(jlrField field, bool overrideAccessCheck)
@@ -6351,16 +7243,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 			private void setImpl(object obj, object value)
 			{
-				if (isFinal)
-				{
-					throw new jlIllegalAccessException();
-				}
 				// if the field is an interface field, we must explicitly run <clinit>,
 				// because .NET reflection doesn't
 				if (runInit)
 				{
 					fw.DeclaringType.RunClassInit();
 					runInit = false;
+				}
+				if (isFinal)
+				{
+					throw new jlIllegalAccessException();
 				}
 				if (!fw.IsStatic && !fw.DeclaringType.IsInstance(obj))
 				{
@@ -6456,7 +7348,7 @@ namespace IKVM.NativeCode.sun.reflect
 			public abstract object get(object obj);
 			public abstract void set(object obj, object value);
 			
-			private sealed class ObjectField : FieldAccessorImplBase
+			private class ObjectField : FieldAccessorImplBase
 			{
 				private readonly jlClass fieldType;
 
@@ -6481,7 +7373,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private sealed class ByteField : FieldAccessorImplBase
+			private class ByteField : FieldAccessorImplBase
 			{
 				internal ByteField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6493,37 +7385,37 @@ namespace IKVM.NativeCode.sun.reflect
 					return (byte)getImpl(obj);
 				}
 
-				public override short getShort(object obj)
+				public sealed override short getShort(object obj)
 				{
 					return (sbyte)getByte(obj);
 				}
 
-				public override int getInt(object obj)
+				public sealed override int getInt(object obj)
 				{
 					return (sbyte)getByte(obj);
 				}
 
-				public override long getLong(object obj)
+				public sealed override long getLong(object obj)
 				{
 					return (sbyte)getByte(obj);
 				}
 
-				public override float getFloat(object obj)
+				public sealed override float getFloat(object obj)
 				{
 					return (sbyte)getByte(obj);
 				}
 
-				public override double getDouble(object obj)
+				public sealed override double getDouble(object obj)
 				{
 					return (sbyte)getByte(obj);
 				}
 
-				public override object get(object obj)
+				public sealed override object get(object obj)
 				{
 					return jlByte.valueOf(getByte(obj));
 				}
 
-				public override void set(object obj, object val)
+				public sealed override void set(object obj, object val)
 				{
 					if (!(val is jlByte))
 					{
@@ -6538,7 +7430,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private sealed class BooleanField : FieldAccessorImplBase
+			private class BooleanField : FieldAccessorImplBase
 			{
 				internal BooleanField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6550,12 +7442,12 @@ namespace IKVM.NativeCode.sun.reflect
 					return (bool)getImpl(obj);
 				}
 
-				public override object get(object obj)
+				public sealed override object get(object obj)
 				{
 					return jlBoolean.valueOf(getBoolean(obj));
 				}
 
-				public override void set(object obj, object val)
+				public sealed override void set(object obj, object val)
 				{
 					if (!(val is jlBoolean))
 					{
@@ -6570,7 +7462,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private sealed class CharField : FieldAccessorImplBase
+			private class CharField : FieldAccessorImplBase
 			{
 				internal CharField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6582,32 +7474,32 @@ namespace IKVM.NativeCode.sun.reflect
 					return (char)getImpl(obj);
 				}
 
-				public override int getInt(object obj)
+				public sealed override int getInt(object obj)
 				{
 					return getChar(obj);
 				}
 
-				public override long getLong(object obj)
+				public sealed override long getLong(object obj)
 				{
 					return getChar(obj);
 				}
 
-				public override float getFloat(object obj)
+				public sealed override float getFloat(object obj)
 				{
 					return getChar(obj);
 				}
 
-				public override double getDouble(object obj)
+				public sealed override double getDouble(object obj)
 				{
 					return getChar(obj);
 				}
 
-				public override object get(object obj)
+				public sealed override object get(object obj)
 				{
 					return jlCharacter.valueOf(getChar(obj));
 				}
 
-				public override void set(object obj, object val)
+				public sealed override void set(object obj, object val)
 				{
 					if (val is jlCharacter)
 						setChar(obj, ((jlCharacter)val).charValue());
@@ -6621,7 +7513,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private sealed class ShortField : FieldAccessorImplBase
+			private class ShortField : FieldAccessorImplBase
 			{
 				internal ShortField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6633,32 +7525,32 @@ namespace IKVM.NativeCode.sun.reflect
 					return (short)getImpl(obj);
 				}
 
-				public override int getInt(object obj)
+				public sealed override int getInt(object obj)
 				{
 					return getShort(obj);
 				}
 
-				public override long getLong(object obj)
+				public sealed override long getLong(object obj)
 				{
 					return getShort(obj);
 				}
 
-				public override float getFloat(object obj)
+				public sealed override float getFloat(object obj)
 				{
 					return getShort(obj);
 				}
 
-				public override double getDouble(object obj)
+				public sealed override double getDouble(object obj)
 				{
 					return getShort(obj);
 				}
 
-				public override object get(object obj)
+				public sealed override object get(object obj)
 				{
 					return jlShort.valueOf(getShort(obj));
 				}
 
-				public override void set(object obj, object val)
+				public sealed override void set(object obj, object val)
 				{
 					if (val is jlByte
 						|| val is jlShort)
@@ -6667,7 +7559,7 @@ namespace IKVM.NativeCode.sun.reflect
 						throw new jlIllegalArgumentException();
 				}
 
-				public override void setByte(object obj, byte b)
+				public sealed override void setByte(object obj, byte b)
 				{
 					setShort(obj, (sbyte)b);
 				}
@@ -6678,7 +7570,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private sealed class IntField : FieldAccessorImplBase
+			private class IntField : FieldAccessorImplBase
 			{
 				internal IntField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6690,27 +7582,27 @@ namespace IKVM.NativeCode.sun.reflect
 					return (int)getImpl(obj);
 				}
 
-				public override long getLong(object obj)
+				public sealed override long getLong(object obj)
 				{
 					return getInt(obj);
 				}
 
-				public override float getFloat(object obj)
+				public sealed override float getFloat(object obj)
 				{
 					return getInt(obj);
 				}
 
-				public override double getDouble(object obj)
+				public sealed override double getDouble(object obj)
 				{
 					return getInt(obj);
 				}
 
-				public override object get(object obj)
+				public sealed override object get(object obj)
 				{
 					return jlInteger.valueOf(getInt(obj));
 				}
 
-				public override void set(object obj, object val)
+				public sealed override void set(object obj, object val)
 				{
 					if (val is jlByte
 						|| val is jlShort
@@ -6722,17 +7614,17 @@ namespace IKVM.NativeCode.sun.reflect
 						throw new jlIllegalArgumentException();
 				}
 
-				public override void setByte(object obj, byte b)
+				public sealed override void setByte(object obj, byte b)
 				{
 					setInt(obj, (sbyte)b);
 				}
 
-				public override void setChar(object obj, char c)
+				public sealed override void setChar(object obj, char c)
 				{
 					setInt(obj, c);
 				}
 
-				public override void setShort(object obj, short s)
+				public sealed override void setShort(object obj, short s)
 				{
 					setInt(obj, s);
 				}
@@ -6743,7 +7635,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private sealed class FloatField : FieldAccessorImplBase
+			private class FloatField : FieldAccessorImplBase
 			{
 				internal FloatField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6755,17 +7647,17 @@ namespace IKVM.NativeCode.sun.reflect
 					return (float)getImpl(obj);
 				}
 
-				public override double getDouble(object obj)
+				public sealed override double getDouble(object obj)
 				{
 					return getFloat(obj);
 				}
 
-				public override object get(object obj)
+				public sealed override object get(object obj)
 				{
 					return jlFloat.valueOf(getFloat(obj));
 				}
 
-				public override void set(object obj, object val)
+				public sealed override void set(object obj, object val)
 				{
 					if (val is jlFloat
 						|| val is jlByte
@@ -6779,27 +7671,27 @@ namespace IKVM.NativeCode.sun.reflect
 						throw new jlIllegalArgumentException();
 				}
 
-				public override void setByte(object obj, byte b)
+				public sealed override void setByte(object obj, byte b)
 				{
 					setFloat(obj, (sbyte)b);
 				}
 
-				public override void setChar(object obj, char c)
+				public sealed override void setChar(object obj, char c)
 				{
 					setFloat(obj, c);
 				}
 
-				public override void setShort(object obj, short s)
+				public sealed override void setShort(object obj, short s)
 				{
 					setFloat(obj, s);
 				}
 
-				public override void setInt(object obj, int i)
+				public sealed override void setInt(object obj, int i)
 				{
 					setFloat(obj, i);
 				}
 
-				public override void setLong(object obj, long l)
+				public sealed override void setLong(object obj, long l)
 				{
 					setFloat(obj, l);
 				}
@@ -6810,7 +7702,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private sealed class LongField : FieldAccessorImplBase
+			private class LongField : FieldAccessorImplBase
 			{
 				internal LongField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6822,17 +7714,17 @@ namespace IKVM.NativeCode.sun.reflect
 					return (long)getImpl(obj);
 				}
 
-				public override float getFloat(object obj)
+				public sealed override float getFloat(object obj)
 				{
 					return getLong(obj);
 				}
 
-				public override double getDouble(object obj)
+				public sealed override double getDouble(object obj)
 				{
 					return getLong(obj);
 				}
 
-				public override object get(object obj)
+				public sealed override object get(object obj)
 				{
 					return jlLong.valueOf(getLong(obj));
 				}
@@ -6842,7 +7734,7 @@ namespace IKVM.NativeCode.sun.reflect
 					setImpl(obj, l);
 				}
 
-				public override void set(object obj, object val)
+				public sealed override void set(object obj, object val)
 				{
 					if (val is jlLong
 						|| val is jlByte
@@ -6855,28 +7747,28 @@ namespace IKVM.NativeCode.sun.reflect
 						throw new jlIllegalArgumentException();
 				}
 
-				public override void setByte(object obj, byte b)
+				public sealed override void setByte(object obj, byte b)
 				{
 					setLong(obj, (sbyte)b);
 				}
 
-				public override void setChar(object obj, char c)
+				public sealed override void setChar(object obj, char c)
 				{
 					setLong(obj, c);
 				}
 
-				public override void setShort(object obj, short s)
+				public sealed override void setShort(object obj, short s)
 				{
 					setLong(obj, s);
 				}
 
-				public override void setInt(object obj, int i)
+				public sealed override void setInt(object obj, int i)
 				{
 					setLong(obj, i);
 				}
 			}
 
-			private sealed class DoubleField : FieldAccessorImplBase
+			private class DoubleField : FieldAccessorImplBase
 			{
 				internal DoubleField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
@@ -6944,6 +7836,499 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
+			private static Delegate GenerateFastGetter(Type delegateType, Type fieldType, FieldWrapper fw)
+			{
+				fw.FieldTypeWrapper.Finish();
+				fw.DeclaringType.Finish();
+				fw.ResolveField();
+				DynamicMethod dm;
+				if (fw.DeclaringType.TypeAsBaseType.IsInterface)
+				{
+					// FXBUG interfaces aren't allowed as owners of dynamic methods
+					dm = new DynamicMethod("__<Getter>", MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, fieldType, new Type[] { typeof(object) }, fw.DeclaringType.TypeAsBaseType.Module, true);
+				}
+				else
+				{
+					dm = new DynamicMethod("__<Getter>", fieldType, new Type[] { typeof(object) }, fw.DeclaringType.TypeAsBaseType);
+				}
+				CountingILGenerator ilgen = dm.GetILGenerator();
+				if (fw.IsStatic)
+				{
+					fw.EmitGet(ilgen);
+				}
+				else
+				{
+					ilgen.BeginExceptionBlock();
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsTBD);
+					fw.EmitGet(ilgen);
+					fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
+					LocalBuilder local = ilgen.DeclareLocal(fieldType);
+					ilgen.Emit(OpCodes.Stloc, local);
+					ilgen.BeginCatchBlock(typeof(InvalidCastException));
+					EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+					ilgen.EndExceptionBlock();
+					ilgen.Emit(OpCodes.Ldloc, local);
+				}
+				ilgen.Emit(OpCodes.Ret);
+				return dm.CreateDelegate(delegateType);
+			}
+
+			private static Delegate GenerateFastSetter(Type delegateType, Type fieldType, FieldWrapper fw)
+			{
+				fw.FieldTypeWrapper.Finish();
+				fw.DeclaringType.Finish();
+				fw.ResolveField();
+				DynamicMethod dm;
+				if (fw.DeclaringType.TypeAsBaseType.IsInterface)
+				{
+					// FXBUG interfaces aren't allowed as owners of dynamic methods
+					dm = new DynamicMethod("__<Setter>", MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, null, new Type[] { typeof(object), fieldType }, fw.DeclaringType.TypeAsBaseType.Module, true);
+				}
+				else
+				{
+					dm = new DynamicMethod("__<Setter>", null, new Type[] { typeof(object), fieldType }, fw.DeclaringType.TypeAsBaseType);
+				}
+				CountingILGenerator ilgen = dm.GetILGenerator();
+				if (fw.IsStatic)
+				{
+					if (fieldType == typeof(object))
+					{
+						ilgen.BeginExceptionBlock();
+						ilgen.Emit(OpCodes.Ldarg_1);
+						fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
+						fw.EmitSet(ilgen);
+						ilgen.BeginCatchBlock(typeof(InvalidCastException));
+						EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+						ilgen.EndExceptionBlock();
+					}
+					else
+					{
+						ilgen.Emit(OpCodes.Ldarg_1);
+						fw.EmitSet(ilgen);
+					}
+				}
+				else
+				{
+					ilgen.BeginExceptionBlock();
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsTBD);
+					ilgen.Emit(OpCodes.Ldarg_1);
+					fw.FieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
+					fw.EmitSet(ilgen);
+					ilgen.BeginCatchBlock(typeof(InvalidCastException));
+					EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
+					ilgen.EndExceptionBlock();
+				}
+				ilgen.Emit(OpCodes.Ret);
+				return dm.CreateDelegate(delegateType);
+			}
+
+			private sealed class FastByteFieldAccessor : ByteField
+			{
+				private delegate void Setter(object obj, byte value);
+				private delegate byte Getter(object obj);
+				private Setter setter;
+				private Getter getter;
+
+				internal FastByteFieldAccessor(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					setter = new Setter(lazySet);
+					getter = new Getter(lazyGet);
+				}
+
+				private byte lazyGet(object obj)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(byte), fw);
+					return getter(obj);
+				}
+
+				private void lazySet(object obj, byte value)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(byte), fw);
+					setter(obj, value);
+				}
+
+				public override byte getByte(object obj)
+				{
+					return getter(obj);
+				}
+
+				public override void setByte(object obj, byte value)
+				{
+					setter(obj, value);
+				}
+			}
+
+			private sealed class FastBooleanFieldAccessor : BooleanField
+			{
+				private delegate void Setter(object obj, bool value);
+				private delegate bool Getter(object obj);
+				private Setter setter;
+				private Getter getter;
+
+				internal FastBooleanFieldAccessor(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					setter = new Setter(lazySet);
+					getter = new Getter(lazyGet);
+				}
+
+				private bool lazyGet(object obj)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(bool), fw);
+					return getter(obj);
+				}
+
+				private void lazySet(object obj, bool value)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(bool), fw);
+					setter(obj, value);
+				}
+
+				public override bool getBoolean(object obj)
+				{
+					return getter(obj);
+				}
+
+				public override void setBoolean(object obj, bool value)
+				{
+					setter(obj, value);
+				}
+			}
+
+			private sealed class FastCharFieldAccessor : CharField
+			{
+				private delegate void Setter(object obj, char value);
+				private delegate char Getter(object obj);
+				private Setter setter;
+				private Getter getter;
+
+				internal FastCharFieldAccessor(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					setter = new Setter(lazySet);
+					getter = new Getter(lazyGet);
+				}
+
+				private char lazyGet(object obj)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(char), fw);
+					return getter(obj);
+				}
+
+				private void lazySet(object obj, char value)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(char), fw);
+					setter(obj, value);
+				}
+
+				public override char getChar(object obj)
+				{
+					return getter(obj);
+				}
+
+				public override void setChar(object obj, char value)
+				{
+					setter(obj, value);
+				}
+			}
+
+			private sealed class FastShortFieldAccessor : ShortField
+			{
+				private delegate void Setter(object obj, short value);
+				private delegate short Getter(object obj);
+				private Setter setter;
+				private Getter getter;
+
+				internal FastShortFieldAccessor(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					setter = new Setter(lazySet);
+					getter = new Getter(lazyGet);
+				}
+
+				private short lazyGet(object obj)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(short), fw);
+					return getter(obj);
+				}
+
+				private void lazySet(object obj, short value)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(short), fw);
+					setter(obj, value);
+				}
+
+				public override short getShort(object obj)
+				{
+					return getter(obj);
+				}
+
+				public override void setShort(object obj, short value)
+				{
+					setter(obj, value);
+				}
+			}
+
+			private sealed class FastIntegerFieldAccessor : IntField
+			{
+				private delegate void Setter(object obj, int value);
+				private delegate int Getter(object obj);
+				private Setter setter;
+				private Getter getter;
+
+				internal FastIntegerFieldAccessor(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					setter = new Setter(lazySet);
+					getter = new Getter(lazyGet);
+				}
+
+				private int lazyGet(object obj)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(int), fw);
+					return getter(obj);
+				}
+
+				private void lazySet(object obj, int value)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(int), fw);
+					setter(obj, value);
+				}
+
+				public override int getInt(object obj)
+				{
+					return getter(obj);
+				}
+
+				public override void setInt(object obj, int value)
+				{
+					setter(obj, value);
+				}
+			}
+
+			private sealed class FastFloatFieldAccessor : FloatField
+			{
+				private delegate void Setter(object obj, float value);
+				private delegate float Getter(object obj);
+				private Setter setter;
+				private Getter getter;
+
+				internal FastFloatFieldAccessor(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					setter = new Setter(lazySet);
+					getter = new Getter(lazyGet);
+				}
+
+				private float lazyGet(object obj)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(float), fw);
+					return getter(obj);
+				}
+
+				private void lazySet(object obj, float value)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(float), fw);
+					setter(obj, value);
+				}
+
+				public override float getFloat(object obj)
+				{
+					return getter(obj);
+				}
+
+				public override void setFloat(object obj, float value)
+				{
+					setter(obj, value);
+				}
+			}
+
+			private sealed class FastLongFieldAccessor : LongField
+			{
+				private delegate void Setter(object obj, long value);
+				private delegate long Getter(object obj);
+				private Setter setter;
+				private Getter getter;
+
+				internal FastLongFieldAccessor(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					setter = new Setter(lazySet);
+					getter = new Getter(lazyGet);
+				}
+
+				private long lazyGet(object obj)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(long), fw);
+					return getter(obj);
+				}
+
+				private void lazySet(object obj, long value)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(long), fw);
+					setter(obj, value);
+				}
+
+				public override long getLong(object obj)
+				{
+					return getter(obj);
+				}
+
+				public override void setLong(object obj, long value)
+				{
+					setter(obj, value);
+				}
+			}
+
+			private sealed class FastDoubleFieldAccessor : DoubleField
+			{
+				private delegate void Setter(object obj, double value);
+				private delegate double Getter(object obj);
+				private Setter setter;
+				private Getter getter;
+
+				internal FastDoubleFieldAccessor(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					setter = new Setter(lazySet);
+					getter = new Getter(lazyGet);
+				}
+
+				private double lazyGet(object obj)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(double), fw);
+					return getter(obj);
+				}
+
+				private void lazySet(object obj, double value)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(double), fw);
+					setter(obj, value);
+				}
+
+				public override double getDouble(object obj)
+				{
+					return getter(obj);
+				}
+
+				public override void setDouble(object obj, double value)
+				{
+					setter(obj, value);
+				}
+			}
+
+			private sealed class FastObjectFieldAccessor : ObjectField
+			{
+				private delegate void Setter(object obj, object value);
+				private delegate object Getter(object obj);
+				private Setter setter;
+				private Getter getter;
+
+				internal FastObjectFieldAccessor(jlrField field, bool overrideAccessCheck)
+					: base(field, overrideAccessCheck)
+				{
+					setter = new Setter(lazySet);
+					getter = new Getter(lazyGet);
+				}
+
+				private object lazyGet(object obj)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(object), fw);
+					return getter(obj);
+				}
+
+				private void lazySet(object obj, object value)
+				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
+					if (isFinal)
+					{
+						throw new jlIllegalAccessException();
+					}
+					setter = (Setter)GenerateFastSetter(typeof(Setter), typeof(object), fw);
+					setter(obj, value);
+				}
+
+				public override object get(object obj)
+				{
+					return getter(obj);
+				}
+
+				public override void set(object obj, object value)
+				{
+					setter(obj, value);
+				}
+			}
+
 			internal static FieldAccessorImplBase Create(jlrField field, bool overrideAccessCheck)
 			{
 				jlClass type = field.getType();
@@ -6951,41 +8336,104 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					if (type == jlByte.TYPE)
 					{
-						return new ByteField(field, overrideAccessCheck);
+						if (DynamicMethodSupport.Enabled)
+						{
+							return new FastByteFieldAccessor(field, overrideAccessCheck);
+						}
+						else
+						{
+							return new ByteField(field, overrideAccessCheck);
+						}
 					}
 					if (type == jlBoolean.TYPE)
 					{
-						return new BooleanField(field, overrideAccessCheck);
+						if (DynamicMethodSupport.Enabled)
+						{
+							return new FastBooleanFieldAccessor(field, overrideAccessCheck);
+						}
+						else
+						{
+							return new BooleanField(field, overrideAccessCheck);
+						}
 					}
 					if (type == jlCharacter.TYPE)
 					{
-						return new CharField(field, overrideAccessCheck);
+						if (DynamicMethodSupport.Enabled)
+						{
+							return new FastCharFieldAccessor(field, overrideAccessCheck);
+						}
+						else
+						{
+							return new CharField(field, overrideAccessCheck);
+						}
 					}
 					if (type == jlShort.TYPE)
 					{
-						return new ShortField(field, overrideAccessCheck);
+						if (DynamicMethodSupport.Enabled)
+						{
+							return new FastShortFieldAccessor(field, overrideAccessCheck);
+						}
+						else
+						{
+							return new ShortField(field, overrideAccessCheck);
+						}
 					}
 					if (type == jlInteger.TYPE)
 					{
-						return new IntField(field, overrideAccessCheck);
+						if (DynamicMethodSupport.Enabled)
+						{
+							return new FastIntegerFieldAccessor(field, overrideAccessCheck);
+						}
+						else
+						{
+							return new IntField(field, overrideAccessCheck);
+						}
 					}
 					if (type == jlFloat.TYPE)
 					{
-						return new FloatField(field, overrideAccessCheck);
+						if (DynamicMethodSupport.Enabled)
+						{
+							return new FastFloatFieldAccessor(field, overrideAccessCheck);
+						}
+						else
+						{
+							return new FloatField(field, overrideAccessCheck);
+						}
 					}
 					if (type == jlLong.TYPE)
 					{
-						return new LongField(field, overrideAccessCheck);
+						if (DynamicMethodSupport.Enabled)
+						{
+							return new FastLongFieldAccessor(field, overrideAccessCheck);
+						}
+						else
+						{
+							return new LongField(field, overrideAccessCheck);
+						}
 					}
 					if (type == jlDouble.TYPE)
 					{
-						return new DoubleField(field, overrideAccessCheck);
+						if (DynamicMethodSupport.Enabled)
+						{
+							return new FastDoubleFieldAccessor(field, overrideAccessCheck);
+						}
+						else
+						{
+							return new DoubleField(field, overrideAccessCheck);
+						}
 					}
 					throw new InvalidOperationException("field type: " + type);
 				}
 				else
 				{
-					return new ObjectField(field, overrideAccessCheck);
+					if (DynamicMethodSupport.Enabled)
+					{
+						return new FastObjectFieldAccessor(field, overrideAccessCheck);
+					}
+					else
+					{
+						return new ObjectField(field, overrideAccessCheck);
+					}
 				}
 			}
 		}
@@ -7005,7 +8453,16 @@ namespace IKVM.NativeCode.sun.reflect
 #if FIRST_PASS
 			return null;
 #else
-			return new MethodAccessorImpl((jlrMethod)method);
+			jlrMethod m = (jlrMethod)method;
+			if (DynamicMethodSupport.Enabled)
+			{
+				TypeWrapper tw = TypeWrapper.FromClass(m.getDeclaringClass());
+				if (!tw.IsDynamicOnly && !tw.IsRemapped)
+				{
+					return new FastMethodAccessorImpl(m);
+				}
+			}
+			return new MethodAccessorImpl(m);
 #endif
 		}
 
@@ -7014,7 +8471,16 @@ namespace IKVM.NativeCode.sun.reflect
 #if FIRST_PASS
 			return null;
 #else
-			return new ConstructorAccessorImpl((jlrConstructor)constructor);
+			jlrConstructor cons = (jlrConstructor)constructor;
+			if (DynamicMethodSupport.Enabled
+				&& !TypeWrapper.FromClass(cons.getDeclaringClass()).IsDynamicOnly)
+			{
+				return new FastConstructorAccessorImpl(cons);
+			}
+			else
+			{
+				return new ConstructorAccessorImpl(cons);
+			}
 #endif
 		}
 
@@ -7023,7 +8489,18 @@ namespace IKVM.NativeCode.sun.reflect
 #if FIRST_PASS
 			return null;
 #else
-			return new SerializationConstructorAccessorImpl((jlrConstructor)constructorToCall, (jlClass)classToInstantiate);
+			jlrConstructor cons = (jlrConstructor)constructorToCall;
+			if (DynamicMethodSupport.Enabled
+				&& cons.getParameterTypes().Length == 0
+				&& !TypeWrapper.FromClass(cons.getDeclaringClass()).IsDynamicOnly
+				&& !TypeWrapper.FromClass(classToInstantiate).IsDynamicOnly)
+			{
+				return new FastSerializationConstructorAccessorImpl(cons, (jlClass)classToInstantiate);
+			}
+			else
+			{
+				return new SerializationConstructorAccessorImpl(cons, (jlClass)classToInstantiate);
+			}
 #endif
 		}
 	}
