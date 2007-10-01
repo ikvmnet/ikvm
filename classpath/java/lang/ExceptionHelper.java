@@ -145,6 +145,12 @@ public final class ExceptionHelper
 		    !mb.get_IsFamilyOrAssembly() && !mb.get_IsPublic() && !mb.get_IsAssembly();
 	}
 
+	private static String getDeclaringTypeNameSafe(cli.System.Reflection.MethodBase mb)
+	{
+	    cli.System.Type type = mb.get_DeclaringType();
+	    return type == null ? "" : type.get_FullName();
+	}
+
 	StackTraceElement[] get_StackTrace(Throwable t)
 	{
 	    synchronized(this)
@@ -174,7 +180,7 @@ public final class ExceptionHelper
 			if(cleanStackTrace)
 			{
 			    while(tracePart2.get_FrameCount() > skip && 
-				tracePart2.GetFrame(skip).GetMethod().get_DeclaringType().get_FullName().startsWith("java.lang.ExceptionHelper"))
+				getDeclaringTypeNameSafe(tracePart2.GetFrame(skip).GetMethod()).startsWith("java.lang.ExceptionHelper"))
 			    {
 				skip++;
 			    }
@@ -183,13 +189,13 @@ public final class ExceptionHelper
                                 cli.System.Reflection.MethodBase mb = tracePart2.GetFrame(skip).GetMethod();
 				// here we have to check for both fillInStackTrace and .ctor, because on x64 the fillInStackTrace method
 				// disappears from the stack trace due to the tail call optimization.
-                                if(mb.get_DeclaringType().get_FullName().equals("java.lang.Throwable") &&
+                                if(getDeclaringTypeNameSafe(mb).equals("java.lang.Throwable") &&
                                     (mb.get_Name().endsWith("fillInStackTrace") || mb.get_Name().equals(".ctor")))
                                 {
                                     while(tracePart2.get_FrameCount() > skip)
                                     {
                                         mb = tracePart2.GetFrame(skip).GetMethod();
-                                        if(!mb.get_DeclaringType().get_FullName().equals("java.lang.Throwable")
+                                        if(!getDeclaringTypeNameSafe(mb).equals("java.lang.Throwable")
                                             || !mb.get_Name().endsWith("fillInStackTrace"))
                                         {
                                             break;
