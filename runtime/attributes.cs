@@ -550,6 +550,44 @@ namespace IKVM.Attributes
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = true)]
+	public sealed class NonNestedInnerClassAttribute : Attribute
+	{
+		private string innerClassName;
+
+		public NonNestedInnerClassAttribute(string innerClassName)
+		{
+			this.innerClassName = innerClassName;
+		}
+
+		public string InnerClassName
+		{
+			get
+			{
+				return innerClassName;
+			}
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
+	public sealed class NonNestedOuterClassAttribute : Attribute
+	{
+		private string outerClassName;
+
+		public NonNestedOuterClassAttribute(string outerClassName)
+		{
+			this.outerClassName = outerClassName;
+		}
+
+		public string OuterClassName
+		{
+			get
+			{
+				return outerClassName;
+			}
+		}
+	}
+
 	[AttributeUsage(AttributeTargets.Field)]
 	public sealed class ConstantValueAttribute : Attribute
 	{
