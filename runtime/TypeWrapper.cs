@@ -2737,7 +2737,7 @@ namespace IKVM.Internal
 					ilGenerator.Emit(OpCodes.Ret);
 					typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 				}
-				else if(mce.DeclaringType.TypeAsTBD.Assembly != typeBuilder.Assembly)
+				else if(!mce.DeclaringType.TypeAsTBD.Assembly.Equals(typeBuilder.Assembly))
 				{
 					// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
 					// interface methods, so we have to generate a stub here that doesn't do anything but call the base
@@ -3438,7 +3438,7 @@ namespace IKVM.Internal
 				{
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its superclass " + BaseTypeWrapper.Name);
 				}
-				if(!BaseTypeWrapper.IsPublic && BaseTypeWrapper.TypeAsTBD.Assembly != classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly)
+				if(!BaseTypeWrapper.IsPublic && !BaseTypeWrapper.TypeAsBaseType.Assembly.Equals(classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly))
 				{
 					// NOTE this can only happen if evil code calls ClassLoader.defineClass() on an assembly class loader (which we allow for compatibility with other slightly less evil code)
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its non-public superclass " + BaseTypeWrapper.Name + " from another assembly");
@@ -3487,8 +3487,8 @@ namespace IKVM.Internal
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its superinterface " + iface.Name);
 				}
 				if(!iface.IsPublic
-					&& iface.TypeAsTBD.Assembly != classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly
-					&& iface.TypeAsTBD.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(iface.TypeAsTBD)) == null)
+					&& !iface.TypeAsBaseType.Assembly.Equals(classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly)
+					&& iface.TypeAsBaseType.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(iface.TypeAsTBD)) == null)
 				{
 					// NOTE this happens when you call Proxy.newProxyInstance() on a non-public .NET interface
 					// (for ikvmc compiled Java types, ikvmc generates public proxy stubs).
@@ -5424,7 +5424,7 @@ namespace IKVM.Internal
 						{
 							// NOTE we're using TypeAsBaseType for the interfaces!
 							Type ifaceType = iface.TypeAsBaseType;
-							if(!iface.IsPublic && ifaceType.Assembly != typeBuilder.Assembly)
+							if(!iface.IsPublic && !ifaceType.Assembly.Equals(typeBuilder.Assembly))
 							{
 								ifaceType = ifaceType.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(ifaceType));
 							}

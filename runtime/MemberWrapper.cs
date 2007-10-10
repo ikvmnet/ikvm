@@ -1551,7 +1551,7 @@ namespace IKVM.Internal
 
 		private FieldInfo TokenBasedLookup(BindingFlags bindings, int token)
 		{
-			ModuleBuilder module = (ModuleBuilder)DeclaringType.TypeAsTBD.Module;
+			ModuleBuilder module = DeclaringType.GetClassLoader().GetTypeWrapperFactory().ModuleBuilder;
 			foreach(FieldInfo f in DeclaringType.TypeAsTBD.GetFields(bindings))
 			{
 				if(module.GetFieldToken(f).Token == token)
@@ -1597,7 +1597,7 @@ namespace IKVM.Internal
 				{
 					FieldInfo fi = DeclaringType.TypeAsTBD.GetField(field.Name, bindings);
 					// now check that we've got the right field by comparing the tokens
-					ModuleBuilder module = (ModuleBuilder)DeclaringType.TypeAsTBD.Module;
+					ModuleBuilder module = DeclaringType.GetClassLoader().GetTypeWrapperFactory().ModuleBuilder;
 					if(module.GetFieldToken(fi).Token != fb.GetToken().Token)
 					{
 						fi = TokenBasedLookup(bindings, fb.GetToken().Token);
