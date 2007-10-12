@@ -147,6 +147,8 @@ namespace IKVM.Internal
 		private static ConstructorInfo enclosingMethodAttribute;
 		private static ConstructorInfo signatureAttribute;
 		private static CustomAttributeBuilder paramArrayAttribute;
+		private static ConstructorInfo nonNestedInnerClassAttribute;
+		private static ConstructorInfo nonNestedOuterClassAttribute;
 #endif // STATIC_COMPILER
 #endif // !COMPACT_FRAMEWORK
 		private static Type typeofRemappedClassAttribute = JVM.LoadType(typeof(RemappedClassAttribute));
@@ -170,6 +172,8 @@ namespace IKVM.Internal
 		private static Type typeofNoPackagePrefixAttribute = JVM.LoadType(typeof(NoPackagePrefixAttribute));
 		private static Type typeofConstantValueAttribute = JVM.LoadType(typeof(ConstantValueAttribute));
 		private static Type typeofAnnotationAttributeAttribute = JVM.LoadType(typeof(AnnotationAttributeAttribute));
+		private static Type typeofNonNestedInnerClassAttribute = JVM.LoadType(typeof(NonNestedInnerClassAttribute));
+		private static Type typeofNonNestedOuterClassAttribute = JVM.LoadType(typeof(NonNestedOuterClassAttribute));
 
 #if STATIC_COMPILER && !COMPACT_FRAMEWORK
 		private static object ParseValue(TypeWrapper tw, string val)
@@ -592,6 +596,24 @@ namespace IKVM.Internal
 				ghostInterfaceAttribute = new CustomAttributeBuilder(typeofGhostInterfaceAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
 			}
 			typeBuilder.SetCustomAttribute(ghostInterfaceAttribute);
+		}
+
+		internal static void SetNonNestedInnerClass(TypeBuilder typeBuilder, string className)
+		{
+			if(nonNestedInnerClassAttribute == null)
+			{
+				nonNestedInnerClassAttribute = typeofNonNestedInnerClassAttribute.GetConstructor(new Type[] { typeof(string) });
+			}
+			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedInnerClassAttribute, new object[] { className }));
+		}
+
+		internal static void SetNonNestedOuterClass(TypeBuilder typeBuilder, string className)
+		{
+			if(nonNestedOuterClassAttribute == null)
+			{
+				nonNestedOuterClassAttribute = typeofNonNestedOuterClassAttribute.GetConstructor(new Type[] { typeof(string) });
+			}
+			typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedOuterClassAttribute, new object[] { className }));
 		}
 #endif // STATIC_COMPILER
 
@@ -1231,6 +1253,53 @@ namespace IKVM.Internal
 #endif
 			object[] attribs = mb.GetCustomAttributes(typeof(ThrowsAttribute), false);
 			return attribs.Length == 1 ? (ThrowsAttribute)attribs[0] : null;
+		}
+
+		internal static string[] GetNonNestedInnerClasses(Type t)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			if(JVM.IsStaticCompiler || t.Assembly.ReflectionOnly)
+			{
+				List<string> list = new List<string>();
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedInnerClassAttribute))
+					{
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						list.Add((string)args[0].Value);
+					}
+				}
+				return list.ToArray();
+			}
+#endif
+			object[] attribs = t.GetCustomAttributes(typeof(NonNestedInnerClassAttribute), false);
+			string[] classes = new string[attribs.Length];
+			for(int i = 0; i < attribs.Length; i++)
+			{
+				classes[i] = ((NonNestedInnerClassAttribute)attribs[i]).InnerClassName;
+			}
+			return classes;
+		}
+
+		internal static string GetNonNestedOuterClasses(Type t)
+		{
+#if WHIDBEY && !COMPACT_FRAMEWORK
+			if(JVM.IsStaticCompiler || t.Assembly.ReflectionOnly)
+			{
+				List<string> list = new List<string>();
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedOuterClassAttribute))
+					{
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						return (string)args[0].Value;
+					}
+				}
+				return null;
+			}
+#endif
+			object[] attribs = t.GetCustomAttributes(typeof(NonNestedOuterClassAttribute), false);
+			return attribs.Length == 1 ? ((NonNestedOuterClassAttribute)attribs[0]).OuterClassName : null;
 		}
 
 		internal static SignatureAttribute GetSignature(MethodBase mb)
@@ -2668,7 +2737,7 @@ namespace IKVM.Internal
 					ilGenerator.Emit(OpCodes.Ret);
 					typeBuilder.DefineMethodOverride(mb, (MethodInfo)ifmethod.GetMethod());
 				}
-				else if(mce.DeclaringType.TypeAsTBD.Assembly != typeBuilder.Assembly)
+				else if(!mce.DeclaringType.TypeAsTBD.Assembly.Equals(typeBuilder.Assembly))
 				{
 					// NOTE methods inherited from base classes in a different assembly do *not* automatically implement
 					// interface methods, so we have to generate a stub here that doesn't do anything but call the base
@@ -3369,7 +3438,7 @@ namespace IKVM.Internal
 				{
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its superclass " + BaseTypeWrapper.Name);
 				}
-				if(!BaseTypeWrapper.IsPublic && BaseTypeWrapper.TypeAsTBD.Assembly != classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly)
+				if(!BaseTypeWrapper.IsPublic && !BaseTypeWrapper.TypeAsBaseType.Assembly.Equals(classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly))
 				{
 					// NOTE this can only happen if evil code calls ClassLoader.defineClass() on an assembly class loader (which we allow for compatibility with other slightly less evil code)
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its non-public superclass " + BaseTypeWrapper.Name + " from another assembly");
@@ -3418,8 +3487,8 @@ namespace IKVM.Internal
 					throw new IllegalAccessError("Class " + f.Name + " cannot access its superinterface " + iface.Name);
 				}
 				if(!iface.IsPublic
-					&& iface.TypeAsTBD.Assembly != classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly
-					&& iface.TypeAsTBD.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(iface.TypeAsTBD)) == null)
+					&& !iface.TypeAsBaseType.Assembly.Equals(classLoader.GetTypeWrapperFactory().ModuleBuilder.Assembly)
+					&& iface.TypeAsBaseType.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(iface.TypeAsTBD)) == null)
 				{
 					// NOTE this happens when you call Proxy.newProxyInstance() on a non-public .NET interface
 					// (for ikvmc compiled Java types, ikvmc generates public proxy stubs).
@@ -3730,6 +3799,7 @@ namespace IKVM.Internal
 						typeAttribs |= TypeAttributes.BeforeFieldInit;
 					}
 #if STATIC_COMPILER
+					bool cantNest = false;
 					bool setModifiers = false;
 					TypeBuilder outer = null;
 					// we only compile inner classes as nested types in the static compiler, because it has a higher cost
@@ -3804,7 +3874,17 @@ namespace IKVM.Internal
 					{
 						if(outer != null)
 						{
-							typeAttribs |= TypeAttributes.NestedPublic;
+							if(outerClassWrapper.IsPublic)
+							{
+								typeAttribs |= TypeAttributes.NestedPublic;
+							}
+							else
+							{
+								// We're a public type nested inside a non-public type, this means that we can't compile this type as a nested type,
+								// because that would mean it wouldn't be visible outside the assembly.
+								cantNest = true;
+								typeAttribs |= TypeAttributes.Public;
+							}
 						}
 						else
 						{
@@ -3825,7 +3905,7 @@ namespace IKVM.Internal
 					{
 						typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
 #if STATIC_COMPILER
-						if(outer != null)
+						if(outer != null && !cantNest)
 						{
 							if(wrapper.IsGhost)
 							{
@@ -3870,7 +3950,7 @@ namespace IKVM.Internal
 							typeAttribs |= TypeAttributes.Sealed;
 							Tracer.Info(Tracer.Compiler, "Sealing type {0}", f.Name);
 						}
-						if(outer != null)
+						if(outer != null && !cantNest)
 						{
 							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
 							// (and broken by J# as well), so we'll just ignore it too.
@@ -3883,6 +3963,11 @@ namespace IKVM.Internal
 						}
 					}
 #if STATIC_COMPILER
+					if(outer != null && cantNest)
+					{
+						AttributeHelper.SetNonNestedOuterClass(typeBuilder, outerClassWrapper.Name);
+						AttributeHelper.SetNonNestedInnerClass(outer, f.Name);
+					}
 					if(outer == null && mangledTypeName != wrapper.Name)
 					{
 						// HACK we abuse the InnerClassAttribute to record to real name
@@ -4020,6 +4105,10 @@ namespace IKVM.Internal
 						}
 						clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
 						clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
+						// FXBUG on .NET 2.0 RTM x64 the JIT sometimes throws an InvalidProgramException while trying to inline this method,
+						// so we prevent inlining for now (it also turns out that on x86 not inlining this method actually has a positive perf impact in some cases...)
+						// http://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=285772
+						clinitMethod.SetImplementationFlags(clinitMethod.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
 					}
 					if(HasStructLayoutAttributeAnnotation(classFile))
 					{
@@ -5339,7 +5428,7 @@ namespace IKVM.Internal
 						{
 							// NOTE we're using TypeAsBaseType for the interfaces!
 							Type ifaceType = iface.TypeAsBaseType;
-							if(!iface.IsPublic && ifaceType.Assembly != typeBuilder.Assembly)
+							if(!iface.IsPublic && !ifaceType.Assembly.Equals(typeBuilder.Assembly))
 							{
 								ifaceType = ifaceType.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(ifaceType));
 							}
@@ -8191,6 +8280,10 @@ namespace IKVM.Internal
 							wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
 						}
 					}
+					foreach(string s in AttributeHelper.GetNonNestedInnerClasses(type))
+					{
+						wrappers.Add(GetClassLoader().LoadClassByDottedName(s));
+					}
 					innerclasses = (TypeWrapper[])wrappers.ToArray(typeof(TypeWrapper));
 				}
 				return innerclasses;
@@ -8205,6 +8298,11 @@ namespace IKVM.Internal
 				if(declaringType != null)
 				{
 					return ClassLoaderWrapper.GetWrapperFromType(declaringType);
+				}
+				string decl = AttributeHelper.GetNonNestedOuterClasses(type);
+				if(decl != null)
+				{
+					return GetClassLoader().LoadClassByDottedName(decl);
 				}
 				return null;
 			}

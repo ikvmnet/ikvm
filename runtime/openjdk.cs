@@ -7855,6 +7855,7 @@ namespace IKVM.NativeCode.sun.reflect
 				if (fw.IsStatic)
 				{
 					fw.EmitGet(ilgen);
+					fw.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
 				}
 				else
 				{

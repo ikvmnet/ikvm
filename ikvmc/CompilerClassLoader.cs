@@ -2502,7 +2502,7 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: redirected main method not supported");
 					return 1;
 				}
-				if(method.DeclaringType.Assembly != loader.assemblyBuilder
+				if(!method.DeclaringType.Assembly.Equals(loader.assemblyBuilder)
 					&& (!method.IsPublic || !method.DeclaringType.IsPublic))
 				{
 					Console.Error.WriteLine("Error: external main method must be public and in a public class");
