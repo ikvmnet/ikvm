@@ -35,6 +35,7 @@ using SystemArray = System.Array;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;
+using AssemblyClassLoader_ = IKVM.Internal.AssemblyClassLoader;
 #if !FIRST_PASS
 using NegativeArraySizeException = java.lang.NegativeArraySizeException;
 using IllegalArgumentException = java.lang.IllegalArgumentException;
@@ -367,8 +368,38 @@ namespace IKVM.NativeCode.ikvm.@internal
 		{
 			try
 			{
-				ClassLoaderWrapper wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader);
-				TypeWrapper tw = wrapper.LoadClassByDottedName(name);
+				TypeWrapper tw = null;
+				if(classLoader == null)
+				{
+					tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(name);
+				}
+				else
+				{
+					ClassLoaderWrapper classLoaderWrapper = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader);
+					AssemblyClassLoader_ acl = classLoaderWrapper as AssemblyClassLoader_;
+					if(acl != null)
+					{
+						// HACK we need to support generic type instantiations here, because we may not have gone
+						// through LoadClassByDottedNameFastImpl.
+						if(name.EndsWith("_$$$$_") && name.IndexOf("_$$$_") > 0)
+						{
+							tw = acl.LoadGenericClass(name);
+						}
+						if(tw == null)
+						{
+							tw = acl.LoadClass(name);
+						}
+						if(tw == null)
+						{
+							throw new ClassNotFoundException(name);
+						}
+					}
+					else
+					{
+						// this must be a GenericClassLoader
+						tw = ((GenericClassLoader)classLoaderWrapper).LoadClassByDottedName(name);
+					}
+				}
 				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : classLoader);
 				return tw.ClassObject;
 			}

@@ -361,41 +361,6 @@ namespace IKVM.Internal
 						return tw;
 					}
 				}
-				// for manufactured types, we load the declaring outer type (the real one) and
-				// let that generated the manufactured nested classes
-				TypeWrapper outer = null;
-				if(name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
-				{
-					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.DelegateInterfaceSuffix.Length), false);
-				}
-				else if(name.EndsWith(DotNetTypeWrapper.AttributeAnnotationSuffix))
-				{
-					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length), false);
-				}
-				else if(name.EndsWith(DotNetTypeWrapper.AttributeAnnotationReturnValueSuffix))
-				{
-					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationReturnValueSuffix.Length), false);
-				}
-				else if(name.EndsWith(DotNetTypeWrapper.AttributeAnnotationMultipleSuffix))
-				{
-					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationMultipleSuffix.Length), false);
-				}
-				else if(name.EndsWith(DotNetTypeWrapper.EnumEnumSuffix))
-				{
-					outer = LoadClassByDottedNameFastImpl(name.Substring(0, name.Length - DotNetTypeWrapper.EnumEnumSuffix.Length), false);
-				}
-				// NOTE we cannot use the InnerClasses property on unfinished dynamic types,
-				// so we restrict ourself to DotNetTypeWrapper and DynamicOnly instances.
-				if(outer != null && (outer is DotNetTypeWrapper || outer.IsDynamicOnly))
-				{
-					foreach(TypeWrapper tw in outer.InnerClasses)
-					{
-						if(tw.Name == name)
-						{
-							return tw;
-						}
-					}
-				}
 				return LoadClassImpl(name, throwClassNotFoundException);
 			}
 			finally
@@ -461,7 +426,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private TypeWrapper LoadGenericClass(string name)
+		internal TypeWrapper LoadGenericClass(string name)
 		{
 			// generic class name grammar:
 			//
@@ -799,7 +764,7 @@ namespace IKVM.Internal
 			{
 				if(bootstrapClassLoader == null)
 				{
-					bootstrapClassLoader = GetAssemblyClassLoader(JVM.CoreAssembly);
+					bootstrapClassLoader = new BootstrapClassLoader();
 				}
 				return bootstrapClassLoader;
 			}
@@ -1008,8 +973,6 @@ namespace IKVM.Internal
 		// this method only supports .NET or pre-compiled Java assemblies
 		internal static AssemblyClassLoader GetAssemblyClassLoader(Assembly assembly)
 		{
-			// TODO this assertion fires when compiling the core library (at least on Whidbey)
-			// I need to find out why...
 #if !COMPACT_FRAMEWORK
 			Debug.Assert(!(assembly is AssemblyBuilder));
 #endif // !COMPACT_FRAMEWORK
@@ -1019,19 +982,17 @@ namespace IKVM.Internal
 				AssemblyClassLoader loader = (AssemblyClassLoader)assemblyClassLoaders[assembly];
 				if(loader == null)
 				{
-					object javaClassLoader;
+					object javaClassLoader = null;
+#if !STATIC_COMPILER && !FIRST_PASS
 					if(assembly == JVM.CoreAssembly)
 					{
-						javaClassLoader = null;
+						return GetBootstrapClassLoader();
 					}
 					else
 					{
-#if STATIC_COMPILER
-						javaClassLoader = null;
-#else
 						javaClassLoader = JVM.Library.newAssemblyClassLoader(assembly);
-#endif
 					}
+#endif
 					loader = new AssemblyClassLoader(assembly, javaClassLoader);
 					assemblyClassLoaders[assembly] = loader;
 #if !STATIC_COMPILER
@@ -1193,6 +1154,7 @@ namespace IKVM.Internal
 		private bool[] isJavaModule;
 		private Module[] modules;
 		private Hashtable nameMap;
+		private bool hasDotNetModule;
 
 		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader)
 			: base(CodeGenOptions.None, javaClassLoader)
@@ -1228,6 +1190,10 @@ namespace IKVM.Internal
 							}
 						}
 					}
+				}
+				else
+				{
+					hasDotNetModule = true;
 				}
 			}
 			references = assembly.GetReferencedAssemblies();
@@ -1343,6 +1309,42 @@ namespace IKVM.Internal
 					}
 				}
 			}
+			if(hasDotNetModule)
+			{
+				// for manufactured types, we load the declaring outer type (the real one) and
+				// let that generated the manufactured nested classes
+				TypeWrapper outer = null;
+				if(name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
+				{
+					outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.DelegateInterfaceSuffix.Length));
+				}
+				else if(name.EndsWith(DotNetTypeWrapper.AttributeAnnotationSuffix))
+				{
+					outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length));
+				}
+				else if(name.EndsWith(DotNetTypeWrapper.AttributeAnnotationReturnValueSuffix))
+				{
+					outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationReturnValueSuffix.Length));
+				}
+				else if(name.EndsWith(DotNetTypeWrapper.AttributeAnnotationMultipleSuffix))
+				{
+					outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationMultipleSuffix.Length));
+				}
+				else if(name.EndsWith(DotNetTypeWrapper.EnumEnumSuffix))
+				{
+					outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.EnumEnumSuffix.Length));
+				}
+				if(outer != null && (outer is DotNetTypeWrapper || outer.IsDynamicOnly))
+				{
+					foreach(TypeWrapper tw in outer.InnerClasses)
+					{
+						if(tw.Name == name)
+						{
+							return RegisterInitiatingLoader(tw);
+						}
+					}
+				}
+			}
 			return null;
 		}
 
@@ -1419,7 +1421,14 @@ namespace IKVM.Internal
 			}
 		}
 
+#if STATIC_COMPILER
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
+		{
+			return LoadClass(name);
+		}
+#endif
+
+		internal TypeWrapper LoadClass(string name)
 		{
 			TypeWrapper tw = DoLoad(name);
 			if(tw != null)
@@ -1567,5 +1576,18 @@ namespace IKVM.Internal
 			return (Assembly[])list.ToArray(typeof(Assembly));
 		}
 #endif // !STATIC_COMPILER
+	}
+
+	class BootstrapClassLoader : AssemblyClassLoader
+	{
+		internal BootstrapClassLoader()
+			: base(JVM.CoreAssembly, null)
+		{
+		}
+
+		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
+		{
+			return LoadClass(name);
+		}
 	}
 }
