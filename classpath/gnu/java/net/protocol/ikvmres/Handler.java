@@ -246,11 +246,6 @@ public class Handler extends URLStreamHandler
 	return null;
     }
 
-    protected boolean hostsEqual(URL url1, URL url2)
-    {
-	return false;
-    }
-
     private static String quote (String str, String legalCharacters)
     {
 	StringBuffer sb = new StringBuffer(str.length());
