@@ -1566,7 +1566,10 @@ namespace IKVM.Internal
 					{
 						list = new ArrayList();
 					}
-					list.Add(asm);
+					if(!list.Contains(asm))
+					{
+						list.Add(asm);
+					}
 				}
 			}
 			if(list == null)
