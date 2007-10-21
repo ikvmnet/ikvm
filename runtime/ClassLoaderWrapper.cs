@@ -58,6 +58,8 @@ namespace IKVM.Internal
 		private static ArrayList genericClassLoaders;
 #if !STATIC_COMPILER && !FIRST_PASS
 		private readonly java.lang.ClassLoader javaClassLoader;
+		private static bool customClassLoaderRedirectsLoaded;
+		private static Hashtable customClassLoaderRedirects;
 #endif
 		protected Hashtable types = new Hashtable();
 		private readonly Hashtable defineClassInProgress = new Hashtable();
@@ -977,18 +979,80 @@ namespace IKVM.Internal
 			Debug.Assert(!(assembly is AssemblyBuilder));
 #endif // !COMPACT_FRAMEWORK
 
+			ConstructorInfo customClassLoaderCtor = null;
+			AssemblyClassLoader loader;
+			object javaClassLoader = null;
 			lock(wrapperLock)
 			{
-				AssemblyClassLoader loader = (AssemblyClassLoader)assemblyClassLoaders[assembly];
+				loader = (AssemblyClassLoader)assemblyClassLoaders[assembly];
 				if(loader == null)
 				{
-					object javaClassLoader = null;
 #if !STATIC_COMPILER && !FIRST_PASS
 					if(assembly == JVM.CoreAssembly)
 					{
 						return GetBootstrapClassLoader();
 					}
-					else
+					if(!Whidbey.ReflectionOnly(assembly))
+					{
+						Type customClassLoaderClass = null;
+						LoadCustomClassLoaderRedirects();
+						if(customClassLoaderRedirects != null)
+						{
+							string assemblyName = assembly.FullName;
+							foreach(DictionaryEntry de in customClassLoaderRedirects)
+							{
+								string asm = (string)de.Key;
+								// we only support matching on the assembly's simple name,
+								// because there appears to be no viable alternative.
+								// On .NET 2.0 there is AssemblyName.ReferenceMatchesDefinition()
+								// but it is broken (and .NET 2.0 specific).
+								if(assemblyName.StartsWith(asm + ","))
+								{
+									try
+									{
+										customClassLoaderClass = Type.GetType((string)de.Value, true);
+									}
+									catch(Exception x)
+									{
+										Tracer.Error(Tracer.Runtime, "Unable to load custom class loader {0} specified in app.config for assembly {1}: {2}", de.Value, assembly, x);
+									}
+									break;
+								}
+							}
+						}
+						if(customClassLoaderClass == null)
+						{
+							object[] attribs = assembly.GetCustomAttributes(typeof(CustomAssemblyClassLoaderAttribute), false);
+							if(attribs.Length == 1)
+							{
+								customClassLoaderClass = ((CustomAssemblyClassLoaderAttribute)attribs[0]).Type;
+							}
+						}
+						if(customClassLoaderClass != null)
+						{
+							try
+							{
+								// NOTE we're creating an uninitialized instance of the custom class loader here, so that getClassLoader will return the proper object
+								// when it is called during the construction of the custom class loader later on. This still doesn't make it safe to use the custom
+								// class loader before it is constructed, but at least the object instance is valid and should anyone cache it, they will get the
+								// right object to use later on.
+								// Note also that we're not running the constructor here, because we don't want to run user code while holding a global lock.
+								javaClassLoader = (java.lang.ClassLoader)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(customClassLoaderClass);
+								customClassLoaderCtor = customClassLoaderClass.GetConstructor(new Type[] { typeof(Assembly) });
+								if(customClassLoaderCtor == null)
+								{
+									javaClassLoader = null;
+									throw new Exception("No constructor");
+								}
+								Tracer.Info(Tracer.Runtime, "Created custom assembly class loader {0} for assembly {1}", customClassLoaderClass.FullName, assembly);
+							}
+							catch(Exception x)
+							{
+								Tracer.Error(Tracer.Runtime, "Unable to create custom assembly class loader {0} for {1}: {2}", customClassLoaderClass.FullName, assembly, x);
+							}
+						}
+					}
+					if(javaClassLoader == null)
 					{
 						javaClassLoader = JVM.Library.newAssemblyClassLoader(assembly);
 					}
@@ -996,15 +1060,83 @@ namespace IKVM.Internal
 					loader = new AssemblyClassLoader(assembly, javaClassLoader);
 					assemblyClassLoaders[assembly] = loader;
 #if !STATIC_COMPILER
+					if(customClassLoaderCtor != null)
+					{
+						loader.SetInitInProgress();
+					}
 					if(javaClassLoader != null)
 					{
 						JVM.Library.setWrapperForClassLoader(javaClassLoader, loader);
 					}
 #endif
 				}
-				return loader;
+			}
+#if !STATIC_COMPILER && !FIRST_PASS
+			if(customClassLoaderCtor != null)
+			{
+				try
+				{
+					java.security.AccessController.doPrivileged(new CustomClassLoaderCtorCaller(customClassLoaderCtor, javaClassLoader, assembly));
+				}
+				finally
+				{
+					loader.SetInitDone();
+				}
+			}
+			loader.WaitInitDone();
+#endif
+			return loader;
+		}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		private static void LoadCustomClassLoaderRedirects()
+		{
+			// this method assumes that we hold a global lock
+			if(!customClassLoaderRedirectsLoaded)
+			{
+				customClassLoaderRedirectsLoaded = true;
+				try
+				{
+					foreach(string key in System.Configuration.ConfigurationSettings.AppSettings.AllKeys)
+					{
+						const string prefix = "ikvm-classloader:";
+						if(key.StartsWith(prefix))
+						{
+							if(customClassLoaderRedirects == null)
+							{
+								customClassLoaderRedirects = new Hashtable();
+							}
+							customClassLoaderRedirects[key.Substring(prefix.Length)] = System.Configuration.ConfigurationSettings.AppSettings.Get(key);
+						}
+					}
+				}
+				catch(Exception x)
+				{
+					Tracer.Error(Tracer.Runtime, "Error while reading custom class loader redirects: {0}", x);
+				}
 			}
 		}
+
+		sealed class CustomClassLoaderCtorCaller : java.security.PrivilegedAction
+		{
+			private ConstructorInfo ctor;
+			private object classLoader;
+			private Assembly assembly;
+
+			internal CustomClassLoaderCtorCaller(ConstructorInfo ctor, object classLoader, Assembly assembly)
+			{
+				this.ctor = ctor;
+				this.classLoader = classLoader;
+				this.assembly = assembly;
+			}
+
+			public object run()
+			{
+				ctor.Invoke(classLoader, new object[] { assembly });
+				return null;
+			}
+		}
+#endif
 
 		internal static void SetWrapperForType(Type type, TypeWrapper wrapper)
 		{
@@ -1154,7 +1286,9 @@ namespace IKVM.Internal
 		private bool[] isJavaModule;
 		private Module[] modules;
 		private Hashtable nameMap;
+		private Thread initializerThread;
 		private bool hasDotNetModule;
+		private object protectionDomain;
 
 		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader)
 			: base(CodeGenOptions.None, javaClassLoader)
@@ -1578,7 +1712,60 @@ namespace IKVM.Internal
 			}
 			return (Assembly[])list.ToArray(typeof(Assembly));
 		}
+
+		internal void SetInitInProgress()
+		{
+			initializerThread = Thread.CurrentThread;
+		}
+
+		internal void SetInitDone()
+		{
+			lock(this)
+			{
+				initializerThread = null;
+				Monitor.PulseAll(this);
+			}
+		}
+
+		internal void WaitInitDone()
+		{
+			lock(this)
+			{
+				if(initializerThread != Thread.CurrentThread)
+				{
+					while(initializerThread != null)
+					{
+						Monitor.Wait(this);
+					}
+				}
+			}
+		}
 #endif // !STATIC_COMPILER
+
+		internal virtual object GetProtectionDomain()
+		{
+			lock(this)
+			{
+				if(protectionDomain == null)
+				{
+#if !STATIC_COMPILER && !FIRST_PASS
+					java.net.URL codebase;
+					try
+					{
+						codebase = new java.net.URL(assembly.CodeBase);
+					}
+					catch(java.net.MalformedURLException)
+					{
+						codebase = null;
+					}
+					java.security.Permissions permissions = new java.security.Permissions();
+					permissions.add(new java.security.AllPermission());
+					protectionDomain = new java.security.ProtectionDomain(new java.security.CodeSource(codebase, (java.security.cert.Certificate[])null), permissions, (java.lang.ClassLoader)GetJavaClassLoader(), null);
+#endif
+				}
+				return protectionDomain;
+			}
+		}
 	}
 
 	class BootstrapClassLoader : AssemblyClassLoader
@@ -1591,6 +1778,11 @@ namespace IKVM.Internal
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
 			return LoadClass(name);
+		}
+
+		internal override object GetProtectionDomain()
+		{
+			return null;
 		}
 	}
 }

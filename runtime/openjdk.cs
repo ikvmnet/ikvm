@@ -2729,19 +2729,14 @@ namespace IKVM.NativeCode.java
 					wrapper = wrapper.ElementTypeWrapper;
 				}
 				object pd = pdField.GetValue(wrapper.ClassObject);
-				if (pd == null && wrapper.GetClassLoader() is AssemblyClassLoader)
+				if (pd == null)
 				{
-					object loader = wrapper.GetClassLoader().GetJavaClassLoader();
-					if (loader != null)
+					// The protection domain for statically compiled code is created lazily (not at java.lang.Class creation time),
+					// to work around boot strap issues.
+					AssemblyClassLoader acl = wrapper.GetClassLoader() as AssemblyClassLoader;
+					if (acl != null)
 					{
-						// The protection domain for statically compiled code is created lazily (not at java.lang.Class creation time),
-						// to work around boot strap issues.
-						// TODO this should be done more efficiently
-						MethodInfo method = loader.GetType().GetMethod("getProtectionDomain", BindingFlags.Public | BindingFlags.Instance);
-						if (method != null)
-						{
-							pd = method.Invoke(loader, null);
-						}
+						pd = acl.GetProtectionDomain();
 					}
 				}
 				return pd;

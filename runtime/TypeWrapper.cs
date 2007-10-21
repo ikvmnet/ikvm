@@ -9028,6 +9028,7 @@ namespace IKVM.Internal
 		private static readonly MethodInfo get_ContainsGenericParameters = typeof(Type).GetMethod("get_ContainsGenericParameters");
 		private static readonly MethodInfo get_IsGenericMethodDefinition = typeof(MethodBase).GetMethod("get_IsGenericMethodDefinition");
 		private static readonly MethodInfo get_IsGenericType = typeof(Type).GetMethod("get_IsGenericType");
+		private static readonly MethodInfo get_ReflectionOnly = typeof(Assembly).GetMethod("get_ReflectionOnly");
 		private static readonly MethodInfo method_GetGenericTypeDefinition = typeof(Type).GetMethod("GetGenericTypeDefinition");
 		private static readonly MethodInfo method_GetGenericArguments = typeof(Type).GetMethod("GetGenericArguments");
 		private static readonly MethodInfo method_MakeGenericType = typeof(Type).GetMethod("MakeGenericType");
@@ -9109,6 +9110,18 @@ namespace IKVM.Internal
 			try
 			{
 				return (Type)method_MakeGenericType.Invoke(type, new object[] { typeArguments });
+			}
+			catch(TargetInvocationException x)
+			{
+				throw x.InnerException;
+			}
+		}
+
+		internal static bool ReflectionOnly(Assembly asm)
+		{
+			try
+			{
+				return get_ReflectionOnly != null && (bool)get_ReflectionOnly.Invoke(asm, noargs);
 			}
 			catch(TargetInvocationException x)
 			{
