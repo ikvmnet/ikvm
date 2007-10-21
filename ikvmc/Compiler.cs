@@ -166,6 +166,7 @@ class IkvmcCompiler
 			Console.Error.WriteLine("    -nowarn:<warning[:key]>    Suppress specified warnings");
 			Console.Error.WriteLine("    -warnaserror:<warning[:key]>  Treat specified warnings as errors");
 			Console.Error.WriteLine("    -time                      Display timing statistics");
+			Console.Error.WriteLine("    -classloader:<class>       Set custom class loader class for assembly");
 			return 1;
 		}
 		foreach(string s in arglist)
@@ -495,6 +496,10 @@ class IkvmcCompiler
 				else if(s == "-time")
 				{
 					time = true;
+				}
+				else if(s.StartsWith("-classloader:"))
+				{
+					options.classLoader = s.Substring(13);
 				}
 				else
 				{

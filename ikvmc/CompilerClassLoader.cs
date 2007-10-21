@@ -2351,6 +2351,11 @@ namespace IKVM.Internal
 
 			if(options.targetIsModule)
 			{
+				if(options.classLoader != null)
+				{
+					Console.Error.WriteLine("Error: cannot specify assembly class loader for modules");
+					return 1;
+				}
 				// TODO if we're overwriting a user specified assembly name, we need to emit a warning
 				options.assembly = new FileInfo(options.path).Name;
 			}
@@ -2557,6 +2562,45 @@ namespace IKVM.Internal
 					annotation.Apply(loader, loader.assemblyBuilder, def);
 				}
 			}
+			if(options.classLoader != null)
+			{
+				TypeWrapper wrapper = null;
+				try
+				{
+					wrapper = loader.LoadClassByDottedNameFast(options.classLoader);
+				}
+				catch(RetargetableJavaException)
+				{
+				}
+				if(wrapper == null)
+				{
+					Console.Error.WriteLine("Error: custom assembly class loader class not found");
+					return 1;
+				}
+				if(!wrapper.IsPublic)
+				{
+					Console.Error.WriteLine("Error: custom assembly class loader class is not public");
+					return 1;
+				}
+				if(wrapper.IsAbstract)
+				{
+					Console.Error.WriteLine("Error: custom assembly class loader class is abstract");
+					return 1;
+				}
+				if(!wrapper.IsAssignableTo(ClassLoaderWrapper.LoadClassCritical("java.lang.ClassLoader")))
+				{
+					Console.Error.WriteLine("Error: custom assembly class loader class does not extend java.lang.ClassLoader");
+					return 1;
+				}
+				MethodWrapper mw = wrapper.GetMethodWrapper("<init>", "(Lcli.System.Reflection.Assembly;)V", false);
+				if(mw == null || !mw.IsPublic)
+				{
+					Console.Error.WriteLine("Error: custom assembly class loader constructor is missing or not public");
+					return 1;
+				}
+				ConstructorInfo ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(new Type[] { typeof(Type) });
+				loader.assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { wrapper.TypeAsTBD }));
+			}
 			loader.assemblyBuilder.DefineVersionInfoResource();
 			loader.Save();
 			return 0;
@@ -2602,6 +2646,7 @@ namespace IKVM.Internal
 		internal string[] privatePackages;
 		internal string sourcepath;
 		internal Hashtable externalResources;
+		internal string classLoader;
 	}
 
 	enum Message
