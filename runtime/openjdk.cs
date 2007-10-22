@@ -2663,7 +2663,10 @@ namespace IKVM.NativeCode.java
 
 			public static int getModifiers(object thisClass)
 			{
-				return (int)TypeWrapper.FromClass(thisClass).ReflectiveModifiers;
+				// the 0x7FFF mask comes from JVM_ACC_WRITTEN_FLAGS in hotspot\src\share\vm\utilities\accessFlags.hpp
+				// masking out ACC_SUPER comes from instanceKlass::compute_modifier_flags() in hotspot\src\share\vm\oops\instanceKlass.cpp
+				const int mask = 0x7FFF & (int)~IKVM.Attributes.Modifiers.Super;
+				return (int)TypeWrapper.FromClass(thisClass).ReflectiveModifiers & mask;
 			}
 
 			public static object[] getSigners(object thisClass)
