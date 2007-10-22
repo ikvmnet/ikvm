@@ -132,6 +132,11 @@ namespace IKVM.Internal
 #endif
 		}
 
+		internal static bool IsDynamicType(Type type)
+		{
+			return typeToTypeWrapper[type] is DynamicTypeWrapper;
+		}
+
 		internal static bool IsRemappedType(Type type)
 		{
 			return remappedTypes.ContainsKey(type);
@@ -522,6 +527,7 @@ namespace IKVM.Internal
 				{
 					case 'L':
 						tw = LoadClassByDottedNameFast(s.Substring(dims + 1));
+						tw.Finish();
 						break;
 					case 'Z':
 						tw = PrimitiveTypeWrapper.BOOLEAN;

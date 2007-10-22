@@ -9239,7 +9239,7 @@ namespace IKVM.Internal
 						{
 							s = ClassLoaderWrapper.GetWrapperFromType(t).Name;
 						}
-						else if(AttributeHelper.IsJavaModule(t.Module))
+						else if(ClassLoaderWrapper.IsDynamicType(t) || AttributeHelper.IsJavaModule(t.Module))
 						{
 							s = CompiledTypeWrapper.GetName(t);
 						}
