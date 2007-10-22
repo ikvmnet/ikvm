@@ -225,6 +225,11 @@ namespace IKVM.Internal
 			}
 		}
 
+		protected virtual void CheckDefineClassAllowed(string className)
+		{
+			// this hook exists so that AssemblyClassLoader can prevent DefineClass when the name is already present in the assembly
+		}
+
 		internal TypeWrapper DefineClass(ClassFile f, object protectionDomain)
 		{
 			string dotnetAssembly = f.IKVMAssemblyAttribute;
@@ -249,6 +254,7 @@ namespace IKVM.Internal
 				}
 				return RegisterInitiatingLoader(tw);
 			}
+			CheckDefineClassAllowed(f.Name);
 			lock(types.SyncRoot)
 			{
 				if(types.ContainsKey(f.Name))
@@ -1764,6 +1770,14 @@ namespace IKVM.Internal
 #endif
 				}
 				return protectionDomain;
+			}
+		}
+
+		protected override void CheckDefineClassAllowed(string className)
+		{
+			if(DoLoad(className) != null)
+			{
+				throw new LinkageError("duplicate class definition: " + className);
 			}
 		}
 	}
