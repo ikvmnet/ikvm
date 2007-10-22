@@ -1021,6 +1021,8 @@
 ../classpath/ikvm/lang/CIL.java
 ../classpath/ikvm/lang/Internal.java
 ../classpath/ikvm/lang/IterableEnumerator.java
+../classpath/ikvm/runtime/AppDomainAssemblyClassLoader.java
+../classpath/ikvm/runtime/ClassPathAssemblyClassLoader.java
 ../classpath/ikvm/runtime/Startup.java
 ../classpath/ikvm/runtime/Util.java
 ../classpath/java/lang/ExceptionHelper.java

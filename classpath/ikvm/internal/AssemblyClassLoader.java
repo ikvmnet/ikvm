@@ -84,7 +84,7 @@ public final class AssemblyClassLoader extends ClassLoader
         return getResources(this, assembly, name);
     }
 
-    private static URL makeIkvmresURL(Assembly asm, String name)
+    public static URL makeIkvmresURL(Assembly asm, String name)
     {
         String assemblyName = asm.get_FullName();
         if(IsReflectionOnly(asm))

@@ -532,6 +532,20 @@ namespace IKVM.NativeCode.ikvm.@internal
 
 namespace IKVM.NativeCode.ikvm.runtime
 {
+	public class AppDomainAssemblyClassLoader
+	{
+		public static object loadClassFromAssembly(Assembly asm, string className)
+		{
+			TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).DoLoad(className);
+			return tw != null ? tw.ClassObject : null;
+		}
+
+		public static bool findResourceInAssembly(Assembly asm, string resourceName)
+		{
+			return asm.GetManifestResourceInfo(JVM.MangleResourceName(resourceName)) != null;
+		}
+	}
+
 	public class Util
 	{
 		private static Type enumEnumType = JVM.CoreAssembly.GetType("ikvm.internal.EnumEnum");
