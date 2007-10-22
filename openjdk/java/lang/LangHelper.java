@@ -43,7 +43,7 @@ class LangHelper
         if (!addedSystemPackages)
         {
             addedSystemPackages = true;
-            String[] pkgs = ikvm.internal.AssemblyClassLoader.GetPackages(null);
+	    String[] pkgs = ikvm.internal.AssemblyClassLoader.GetPackages(getBootstrapAssembly());
 	    String openJdkVersion = AccessController.doPrivileged(new GetPropertyAction("openjdk.version", "unknown"));
             for (int i = 0; i < pkgs.length; i++)
             {
@@ -82,14 +82,19 @@ class LangHelper
         }
     }
 
+    private static cli.System.Reflection.Assembly getBootstrapAssembly()
+    {
+	return ikvm.runtime.Util.getInstanceTypeFromClass(Object.class).get_Assembly();
+    }
+
     static URL getBootstrapResource(String name)
     {
-	return ikvm.internal.AssemblyClassLoader.getResource(null, name);
+	return ikvm.internal.AssemblyClassLoader.getResource(null, getBootstrapAssembly(), name);
     }
 
     static Enumeration getBootstrapResources(String name) throws IOException
     {
-	return ikvm.internal.AssemblyClassLoader.getResources(null, name);
+	return ikvm.internal.AssemblyClassLoader.getResources(null, getBootstrapAssembly(), name);
     }
 
     // this method is called from the System.<clinit> method in map.xml

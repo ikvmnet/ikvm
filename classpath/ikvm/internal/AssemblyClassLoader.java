@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006 Jeroen Frijters
+  Copyright (C) 2006, 2007 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -33,18 +33,12 @@ import java.util.Enumeration;
 import java.util.Vector;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.security.AllPermission;
-import java.security.CodeSource;
-import java.security.Permissions;
-import java.security.ProtectionDomain;
-import java.security.cert.Certificate;
 
 @Internal
 public final class AssemblyClassLoader extends ClassLoader
 {
     // NOTE assembly is null for "generics" class loader instances
     private final Assembly assembly;
-    private ProtectionDomain pd;
     private boolean packagesDefined;
 
     public AssemblyClassLoader(Assembly assembly)
@@ -55,10 +49,10 @@ public final class AssemblyClassLoader extends ClassLoader
 
     protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException
     {
-        return LoadClass(this, name);
+        return LoadClass(this, assembly, name);
     }
 
-    private static native Class LoadClass(Object classLoader, String name) throws ClassNotFoundException;
+    private static native Class LoadClass(ClassLoader classLoader, Assembly assembly, String name) throws ClassNotFoundException;
 
     public URL getResource(String name)
     {
@@ -66,28 +60,28 @@ public final class AssemblyClassLoader extends ClassLoader
         // (this also helps make ikvmstub work reliably)
         if(name.endsWith(".class"))
         {
-            URL url = getResource(this, name);
+            URL url = getResource(this, assembly, name);
             if(url != null)
             {
                 return url;
             }
         }
-        return getResource(this, name);
+        return getResource(this, assembly, name);
     }
 
     public Enumeration getResources(String name) throws IOException
     {
-        return getResources(this, name);
+        return getResources(this, assembly, name);
     }
 
     protected URL findResource(String name)
     {
-        return getResource(this, name);
+        return getResource(this, assembly, name);
     }
 
     protected Enumeration findResources(String name) throws IOException
     {
-        return getResources(this, name);
+        return getResources(this, assembly, name);
     }
 
     private static URL makeIkvmresURL(Assembly asm, String name)
@@ -107,19 +101,22 @@ public final class AssemblyClassLoader extends ClassLoader
         }
     }
 
-    public static URL getResource(AssemblyClassLoader classLoader, String name)
+    public static URL getResource(ClassLoader classLoader, Assembly assembly, String name)
     {
-        Assembly[] asm = FindResourceAssemblies(classLoader, name, true);
-        if(asm != null && asm.length > 0)
-        {
-            return makeIkvmresURL(asm[0], name);
-        }
-        else if(name.endsWith(".class") && name.indexOf('.') == name.length() - 6)
+	if(assembly != null)
+	{
+	    Assembly[] asm = FindResourceAssemblies(assembly, name, true);
+	    if(asm != null && asm.length > 0)
+	    {
+		return makeIkvmresURL(asm[0], name);
+	    }
+	}
+        if(name.endsWith(".class") && name.indexOf('.') == name.length() - 6)
         {
             Class c = null;
             try
             {
-                c = LoadClass(classLoader, name.substring(0, name.length() - 6).replace('/', '.'));
+                c = LoadClass(classLoader, assembly, name.substring(0, name.length() - 6).replace('/', '.'));
             }
             catch(ClassNotFoundException _)
             {
@@ -129,14 +126,15 @@ public final class AssemblyClassLoader extends ClassLoader
             }
             if(c != null)
             {
-                classLoader = (AssemblyClassLoader)c.getClassLoader();
+                classLoader = c.getClassLoader();
                 if(classLoader == null)
                 {
                     return makeIkvmresURL(GetBootClassLoaderAssembly(), name);
                 }
-                else if(classLoader.assembly != null)
+		assembly = GetAssemblyFromClassLoader(classLoader);
+                if(assembly != null)
                 {
-                    return makeIkvmresURL(classLoader.assembly, name);
+                    return makeIkvmresURL(assembly, name);
                 }
                 else
                 {
@@ -157,16 +155,17 @@ public final class AssemblyClassLoader extends ClassLoader
     }
 
     private static native boolean IsReflectionOnly(Assembly asm);
-    private static native Assembly[] FindResourceAssemblies(Object classLoader, String name, boolean firstOnly);
-    private static native int GetGenericClassLoaderId(AssemblyClassLoader classLoader);
+    private static native Assembly[] FindResourceAssemblies(Assembly assembly, String name, boolean firstOnly);
+    private static native int GetGenericClassLoaderId(ClassLoader classLoader);
     private static native Assembly GetBootClassLoaderAssembly();
     private static native String GetGenericClassLoaderName(Object classLoader);
+    private static native Assembly GetAssemblyFromClassLoader(ClassLoader classLoader);
     // also used by VMClassLoader
-    public static native String[] GetPackages(Object classLoader);
+    public static native String[] GetPackages(Assembly assembly);
 
-    public static Enumeration getResources(Object classLoader, String name) throws IOException
+    public static Enumeration getResources(ClassLoader classLoader, Assembly assembly, String name) throws IOException
     {
-        Assembly[] assemblies = FindResourceAssemblies(classLoader, name, false);
+        Assembly[] assemblies = FindResourceAssemblies(assembly, name, false);
         if(assemblies != null)
         {
             Vector v = new Vector();
@@ -222,6 +221,11 @@ public final class AssemblyClassLoader extends ClassLoader
 
     private void lazyDefinePackages()
     {
+	if(assembly == null)
+	{
+	    // generic class loader (doesn't support packages)
+	    return;
+	}
         URL sealBase = getCodeBase();
         Manifest manifest = getManifest();
         Attributes attr = null;
@@ -229,7 +233,7 @@ public final class AssemblyClassLoader extends ClassLoader
         {
             attr = manifest.getMainAttributes();
         }
-        String[] packages = GetPackages(this);
+        String[] packages = GetPackages(assembly);
         for(int i = 0; i < packages.length; i++)
         {
             String name = packages[i];
@@ -286,16 +290,5 @@ public final class AssemblyClassLoader extends ClassLoader
         {
         }
         return null;
-    }
-
-    public synchronized ProtectionDomain getProtectionDomain()
-    {
-        if(pd == null)
-        {
-            Permissions permissions = new Permissions();
-            permissions.add(new AllPermission());
-            pd = new ProtectionDomain(new CodeSource(getCodeBase(), (Certificate[])null), permissions, this, null);
-        }
-        return pd;
     }
 }

@@ -364,7 +364,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 {
 	public class AssemblyClassLoader
 	{
-		public static object LoadClass(object classLoader, string name)
+		public static object LoadClass(object classLoader, Assembly assembly, string name)
 		{
 			try
 			{
@@ -373,32 +373,28 @@ namespace IKVM.NativeCode.ikvm.@internal
 				{
 					tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(name);
 				}
+				else if(assembly != null)
+				{
+					AssemblyClassLoader_ acl = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
+					// HACK we need to support generic type instantiations here, because we may not have gone
+					// through LoadClassByDottedNameFastImpl.
+					if(name.EndsWith("_$$$$_") && name.IndexOf("_$$$_") > 0)
+					{
+						tw = acl.LoadGenericClass(name);
+					}
+					if(tw == null)
+					{
+						tw = acl.LoadClass(name);
+					}
+					if(tw == null)
+					{
+						throw new ClassNotFoundException(name);
+					}
+				}
 				else
 				{
-					ClassLoaderWrapper classLoaderWrapper = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader);
-					AssemblyClassLoader_ acl = classLoaderWrapper as AssemblyClassLoader_;
-					if(acl != null)
-					{
-						// HACK we need to support generic type instantiations here, because we may not have gone
-						// through LoadClassByDottedNameFastImpl.
-						if(name.EndsWith("_$$$$_") && name.IndexOf("_$$$_") > 0)
-						{
-							tw = acl.LoadGenericClass(name);
-						}
-						if(tw == null)
-						{
-							tw = acl.LoadClass(name);
-						}
-						if(tw == null)
-						{
-							throw new ClassNotFoundException(name);
-						}
-					}
-					else
-					{
-						// this must be a GenericClassLoader
-						tw = ((GenericClassLoader)classLoaderWrapper).LoadClassByDottedName(name);
-					}
+					// this must be a GenericClassLoader
+					tw = ((GenericClassLoader)ClassLoaderWrapper.GetClassLoaderWrapper(classLoader)).LoadClassByDottedName(name);
 				}
 				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : classLoader);
 				return tw.ClassObject;
@@ -410,15 +406,9 @@ namespace IKVM.NativeCode.ikvm.@internal
 			}
 		}
 
-		public static Assembly[] FindResourceAssemblies(object classLoader, string name, bool firstOnly)
+		public static Assembly[] FindResourceAssemblies(Assembly assembly, string name, bool firstOnly)
 		{
-			IKVM.Internal.AssemblyClassLoader wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader);
-			if(wrapper == null)
-			{
-				// must be a GenericClassLoader
-				Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in generic class loader", name);
-				return null;
-			}
+			IKVM.Internal.AssemblyClassLoader wrapper = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
 			Assembly[] assemblies = wrapper.FindResourceAssemblies(name, firstOnly);
 			if(assemblies == null || assemblies.Length == 0)
 			{
@@ -432,15 +422,16 @@ namespace IKVM.NativeCode.ikvm.@internal
 			return assemblies;
 		}
 
-		// NOTE the array may contain duplicates!
-		public static string[] GetPackages(object classLoader)
+		public static Assembly GetAssemblyFromClassLoader(object classLoader)
 		{
-			IKVM.Internal.AssemblyClassLoader wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader);
-			if(wrapper == null)
-			{
-				// must be a GenericClassLoader
-				return null;
-			}
+			AssemblyClassLoader_ acl = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader) as AssemblyClassLoader_;
+			return acl != null ? acl.Assembly : null;
+		}
+
+		// NOTE the array may contain duplicates!
+		public static string[] GetPackages(Assembly assembly)
+		{
+			IKVM.Internal.AssemblyClassLoader wrapper = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
 			string[] packages = new string[0];
 			foreach(Module m in wrapper.Assembly.GetModules(false))
 			{
@@ -473,7 +464,7 @@ namespace IKVM.NativeCode.ikvm.@internal
 
 		public static Assembly GetBootClassLoaderAssembly()
 		{
-			return ((IKVM.Internal.AssemblyClassLoader)ClassLoaderWrapper.GetBootstrapClassLoader()).Assembly;
+			return ClassLoaderWrapper.GetBootstrapClassLoader().Assembly;
 		}
 
 		public static string GetGenericClassLoaderName(object classLoader)
