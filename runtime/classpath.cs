@@ -390,6 +390,15 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		public class LibraryVMInterfaceImpl
+		{
+			public static object getProtectionDomain(object classLoader)
+			{
+				AssemblyClassLoader acl = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader) as AssemblyClassLoader;
+				return acl != null ? acl.GetProtectionDomain() : null;
+			}
+		}
+
 		public class VMRuntime
 		{
 			public static int nativeLoad(string filename, object classLoader)

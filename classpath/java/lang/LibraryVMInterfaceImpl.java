@@ -41,12 +41,14 @@ public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface
 {
     public Object newClass(Object wrapper, Object protectionDomain, Object classLoader)
     {
-        if(protectionDomain == null && classLoader instanceof AssemblyClassLoader)
+        if(protectionDomain == null)
         {
-            protectionDomain = ((AssemblyClassLoader)classLoader).getProtectionDomain();
+            protectionDomain = getProtectionDomain((java.lang.ClassLoader)classLoader);
         }
         return new Class(wrapper, (java.security.ProtectionDomain)protectionDomain);
     }
+
+    private static native java.security.ProtectionDomain getProtectionDomain(java.lang.ClassLoader classLoader);
 
     public Object newField(Object clazz, Object wrapper)
     {
