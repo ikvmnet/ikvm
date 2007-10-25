@@ -2577,9 +2577,9 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: custom assembly class loader class not found");
 					return 1;
 				}
-				if(!wrapper.IsPublic)
+				if(!wrapper.IsPublic && !wrapper.TypeAsBaseType.Assembly.Equals(loader.assemblyBuilder))
 				{
-					Console.Error.WriteLine("Error: custom assembly class loader class is not public");
+					Console.Error.WriteLine("Error: custom assembly class loader class is not accessible");
 					return 1;
 				}
 				if(wrapper.IsAbstract)
@@ -2593,12 +2593,12 @@ namespace IKVM.Internal
 					return 1;
 				}
 				MethodWrapper mw = wrapper.GetMethodWrapper("<init>", "(Lcli.System.Reflection.Assembly;)V", false);
-				if(mw == null || !mw.IsPublic)
+				if(mw == null)
 				{
-					Console.Error.WriteLine("Error: custom assembly class loader constructor is missing or not public");
+					Console.Error.WriteLine("Error: custom assembly class loader constructor is missing");
 					return 1;
 				}
-				ConstructorInfo ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(new Type[] { typeof(Type) });
+				ConstructorInfo ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(Type) }, null);
 				loader.assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { wrapper.TypeAsTBD }));
 			}
 			loader.assemblyBuilder.DefineVersionInfoResource();

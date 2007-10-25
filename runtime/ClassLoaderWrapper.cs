@@ -1050,7 +1050,7 @@ namespace IKVM.Internal
 								// right object to use later on.
 								// Note also that we're not running the constructor here, because we don't want to run user code while holding a global lock.
 								javaClassLoader = (java.lang.ClassLoader)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(customClassLoaderClass);
-								customClassLoaderCtor = customClassLoaderClass.GetConstructor(new Type[] { typeof(Assembly) });
+								customClassLoaderCtor = customClassLoaderClass.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(Assembly) }, null);
 								if(customClassLoaderCtor == null)
 								{
 									javaClassLoader = null;
