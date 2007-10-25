@@ -6186,9 +6186,13 @@ namespace IKVM.NativeCode.sun.misc
 
 	public sealed class MiscHelper
 	{
-		public static object getAssemblyClassLoader(Assembly asm)
+		public static object getAssemblyClassLoader(Assembly asm, object extcl)
 		{
-			return ClassLoaderWrapper.GetAssemblyClassLoader(asm).GetJavaClassLoader();
+			if (extcl == null || asm.IsDefined(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute), false))
+			{
+				return ClassLoaderWrapper.GetAssemblyClassLoader(asm).GetJavaClassLoader();
+			}
+			return null;
 		}
 	}
 
