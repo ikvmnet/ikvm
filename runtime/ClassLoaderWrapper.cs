@@ -1069,7 +1069,7 @@ namespace IKVM.Internal
 						javaClassLoader = JVM.Library.newAssemblyClassLoader(assembly);
 					}
 #endif
-					loader = new AssemblyClassLoader(assembly, javaClassLoader);
+					loader = new AssemblyClassLoader(assembly, javaClassLoader, customClassLoaderCtor != null);
 					assemblyClassLoaders[assembly] = loader;
 #if !STATIC_COMPILER
 					if(customClassLoaderCtor != null)
@@ -1301,13 +1301,15 @@ namespace IKVM.Internal
 		private Thread initializerThread;
 		private bool hasDotNetModule;
 		private object protectionDomain;
+		private bool hasCustomClassLoader;
 
-		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader)
+		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader, bool hasCustomClassLoader)
 			: base(CodeGenOptions.None, javaClassLoader)
 		{
 			this.assembly = assembly;
 			modules = assembly.GetModules(false);
 			isJavaModule = new bool[modules.Length];
+			this.hasCustomClassLoader = hasCustomClassLoader;
 #if WHIDBEY
 			isReflectionOnly = assembly.ReflectionOnly;
 #endif // WHIDBEY
@@ -1567,12 +1569,29 @@ namespace IKVM.Internal
 			}
 		}
 
-#if STATIC_COMPILER
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
+#if STATIC_COMPILER
 			return LoadClass(name);
-		}
+#else
+			if(hasCustomClassLoader)
+			{
+				// before calling the custom class loader, we have to look inside our assembly,
+				// to prevent the custom class loader from registering us as the initiating
+				// loader for an external type with the same name as a type that we define
+				TypeWrapper tw = DoLoad(name);
+				if(tw != null)
+				{
+					return tw;
+				}
+				return base.LoadClassImpl(name, throwClassNotFoundException);
+			}
+			else
+			{
+				return LoadClass(name);
+			}
 #endif
+		}
 
 		internal TypeWrapper LoadClass(string name)
 		{
@@ -1791,7 +1810,7 @@ namespace IKVM.Internal
 	class BootstrapClassLoader : AssemblyClassLoader
 	{
 		internal BootstrapClassLoader()
-			: base(JVM.CoreAssembly, null)
+			: base(JVM.CoreAssembly, null, false)
 		{
 		}
 
