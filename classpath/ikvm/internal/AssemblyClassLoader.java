@@ -21,7 +21,8 @@
   jeroen@frijters.net
   
 */
-package ikvm.internal;
+// HACK because of historical reasons this class' source lives in ikvm/internal instead of ikvm/runtime
+package ikvm.runtime;
 
 import cli.System.Reflection.Assembly;
 import gnu.java.util.EmptyEnumeration;
@@ -34,7 +35,6 @@ import java.util.Vector;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-@Internal
 public final class AssemblyClassLoader extends ClassLoader
 {
     // NOTE assembly is null for "generics" class loader instances
@@ -84,6 +84,7 @@ public final class AssemblyClassLoader extends ClassLoader
         return getResources(this, assembly, name);
     }
 
+    @Internal
     public static URL makeIkvmresURL(Assembly asm, String name)
     {
         String assemblyName = asm.get_FullName();
@@ -101,6 +102,7 @@ public final class AssemblyClassLoader extends ClassLoader
         }
     }
 
+    @Internal
     public static URL getResource(ClassLoader classLoader, Assembly assembly, String name)
     {
 	if(assembly != null)
@@ -161,8 +163,10 @@ public final class AssemblyClassLoader extends ClassLoader
     private static native String GetGenericClassLoaderName(Object classLoader);
     private static native Assembly GetAssemblyFromClassLoader(ClassLoader classLoader);
     // also used by VMClassLoader
+    @Internal
     public static native String[] GetPackages(Assembly assembly);
 
+    @Internal
     public static Enumeration getResources(ClassLoader classLoader, Assembly assembly, String name) throws IOException
     {
         Assembly[] assemblies = FindResourceAssemblies(assembly, name, false);

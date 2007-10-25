@@ -25,7 +25,6 @@ package ikvm.runtime;
 
 import cli.System.AppDomain;
 import cli.System.Reflection.Assembly;
-import ikvm.internal.AssemblyClassLoader;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;

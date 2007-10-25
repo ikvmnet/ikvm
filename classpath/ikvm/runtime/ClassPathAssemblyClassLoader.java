@@ -24,7 +24,6 @@
 package ikvm.runtime;
 
 import cli.System.Reflection.Assembly;
-import ikvm.internal.AssemblyClassLoader;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;

@@ -142,7 +142,7 @@ final class VMClassLoader
      */
     static URL getResource(String name)
     {
-        return ikvm.internal.AssemblyClassLoader.getResource(null, getBootstrapAssembly(), name);
+        return ikvm.runtime.AssemblyClassLoader.getResource(null, getBootstrapAssembly(), name);
     }
 
     /**
@@ -154,7 +154,7 @@ final class VMClassLoader
      */
     static Enumeration getResources(String name) throws IOException
     {
-        return ikvm.internal.AssemblyClassLoader.getResources(null, getBootstrapAssembly(), name);
+        return ikvm.runtime.AssemblyClassLoader.getResources(null, getBootstrapAssembly(), name);
     }
 
     /**
@@ -192,7 +192,7 @@ final class VMClassLoader
         if(packages == null)
         {
             Hashtable h = new Hashtable();
-            String[] pkgs = ikvm.internal.AssemblyClassLoader.GetPackages(null);
+            String[] pkgs = ikvm.runtime.AssemblyClassLoader.GetPackages(null);
             URL sealBase = null;
             try
             {

@@ -362,6 +362,65 @@ namespace IKVM.NativeCode.gnu.classpath
 
 namespace IKVM.NativeCode.ikvm.@internal
 {
+	namespace stubgen
+	{
+		public class StubGenerator
+		{
+			public static string getAssemblyName(object c)
+			{
+				ClassLoaderWrapper loader = TypeWrapper.FromClass(c).GetClassLoader();
+				IKVM.Internal.AssemblyClassLoader acl = loader as IKVM.Internal.AssemblyClassLoader;
+				if(acl != null)
+				{
+					return acl.Assembly.FullName;
+				}
+				else
+				{
+					return ((IKVM.Internal.GenericClassLoader)loader).GetName();
+				}
+			}
+
+			public static object getFieldConstantValue(object field)
+			{
+				return FieldWrapper.FromField(field).GetConstant();
+			}
+
+			public static bool isFieldDeprecated(object field)
+			{
+				FieldWrapper fieldWrapper = FieldWrapper.FromField(field);
+				FieldInfo fi = fieldWrapper.GetField();
+				if(fi != null)
+				{
+					return AttributeHelper.IsDefined(fi, typeof(ObsoleteAttribute));
+				}
+				GetterFieldWrapper getter = fieldWrapper as GetterFieldWrapper;
+				if(getter != null)
+				{
+					return AttributeHelper.IsDefined(getter.GetProperty(), typeof(ObsoleteAttribute));
+				}
+				return false;
+			}
+
+			public static bool isMethodDeprecated(object method)
+			{
+				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
+				MethodBase mb = mw.GetMethod();
+				return mb != null && AttributeHelper.IsDefined(mb, typeof(ObsoleteAttribute));
+			}
+
+			public static bool isClassDeprecated(object clazz)
+			{
+				Type type = TypeWrapper.FromClass(clazz).TypeAsTBD;
+				// we need to check type for null, because ReflectionOnly
+				// generated delegate inner interfaces don't really exist
+				return type != null && AttributeHelper.IsDefined(type, typeof(ObsoleteAttribute));
+			}
+		}
+	}
+}
+
+namespace IKVM.NativeCode.ikvm.runtime
+{
 	public class AssemblyClassLoader
 	{
 		public static object LoadClass(object classLoader, Assembly assembly, string name)
@@ -473,65 +532,6 @@ namespace IKVM.NativeCode.ikvm.@internal
 		}
 	}
 
-	namespace stubgen
-	{
-		public class StubGenerator
-		{
-			public static string getAssemblyName(object c)
-			{
-				ClassLoaderWrapper loader = TypeWrapper.FromClass(c).GetClassLoader();
-				IKVM.Internal.AssemblyClassLoader acl = loader as IKVM.Internal.AssemblyClassLoader;
-				if(acl != null)
-				{
-					return acl.Assembly.FullName;
-				}
-				else
-				{
-					return ((IKVM.Internal.GenericClassLoader)loader).GetName();
-				}
-			}
-
-			public static object getFieldConstantValue(object field)
-			{
-				return FieldWrapper.FromField(field).GetConstant();
-			}
-
-			public static bool isFieldDeprecated(object field)
-			{
-				FieldWrapper fieldWrapper = FieldWrapper.FromField(field);
-				FieldInfo fi = fieldWrapper.GetField();
-				if(fi != null)
-				{
-					return AttributeHelper.IsDefined(fi, typeof(ObsoleteAttribute));
-				}
-				GetterFieldWrapper getter = fieldWrapper as GetterFieldWrapper;
-				if(getter != null)
-				{
-					return AttributeHelper.IsDefined(getter.GetProperty(), typeof(ObsoleteAttribute));
-				}
-				return false;
-			}
-
-			public static bool isMethodDeprecated(object method)
-			{
-				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
-				MethodBase mb = mw.GetMethod();
-				return mb != null && AttributeHelper.IsDefined(mb, typeof(ObsoleteAttribute));
-			}
-
-			public static bool isClassDeprecated(object clazz)
-			{
-				Type type = TypeWrapper.FromClass(clazz).TypeAsTBD;
-				// we need to check type for null, because ReflectionOnly
-				// generated delegate inner interfaces don't really exist
-				return type != null && AttributeHelper.IsDefined(type, typeof(ObsoleteAttribute));
-			}
-		}
-	}
-}
-
-namespace IKVM.NativeCode.ikvm.runtime
-{
 	public class AppDomainAssemblyClassLoader
 	{
 		public static object loadClassFromAssembly(Assembly asm, string className)
