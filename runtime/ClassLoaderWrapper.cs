@@ -1044,6 +1044,10 @@ namespace IKVM.Internal
 						{
 							try
 							{
+								if(!customClassLoaderClass.IsPublic && !customClassLoaderClass.Assembly.Equals(assembly))
+								{
+									throw new Exception("Type not accessible");
+								}
 								// NOTE we're creating an uninitialized instance of the custom class loader here, so that getClassLoader will return the proper object
 								// when it is called during the construction of the custom class loader later on. This still doesn't make it safe to use the custom
 								// class loader before it is constructed, but at least the object instance is valid and should anyone cache it, they will get the
@@ -1055,6 +1059,11 @@ namespace IKVM.Internal
 								{
 									javaClassLoader = null;
 									throw new Exception("No constructor");
+								}
+								if(!customClassLoaderCtor.IsPublic && !customClassLoaderClass.Assembly.Equals(assembly))
+								{
+									javaClassLoader = null;
+									throw new Exception("Constructor not accessible");
 								}
 								Tracer.Info(Tracer.Runtime, "Created custom assembly class loader {0} for assembly {1}", customClassLoaderClass.FullName, assembly);
 							}
