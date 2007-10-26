@@ -151,9 +151,9 @@ namespace IKVM.Internal
 			remappedTypes.Add(type, type);
 		}
 
-		// HACK return the TypeWrapper if it is already loaded
-		// (this exists solely for DynamicTypeWrapper.SetupGhosts and VMClassLoader.findLoadedClass)
-		internal TypeWrapper GetLoadedClass(string name)
+		// return the TypeWrapper if it is already loaded, this exists for DynamicTypeWrapper.SetupGhosts
+		// and ClassLoader.findLoadedClass()
+		internal virtual TypeWrapper GetLoadedClass(string name)
 		{
 			lock(types.SyncRoot)
 			{
@@ -366,14 +366,6 @@ namespace IKVM.Internal
 				{
 					return LoadArrayClass(name);
 				}
-				if(name.EndsWith("_$$$$_") && name.IndexOf("_$$$_") > 0)
-				{
-					TypeWrapper tw = LoadGenericClass(name);
-					if(tw != null)
-					{
-						return tw;
-					}
-				}
 				return LoadClassImpl(name, throwClassNotFoundException);
 			}
 			finally
@@ -449,7 +441,7 @@ namespace IKVM.Internal
 			// M() is a replacement of "__" with "$$005F$$005F" followed by a replace of "." with "__"
 			//
 			int pos = name.IndexOf("_$$$_");
-			if(pos <= 0)
+			if(pos <= 0 || !name.EndsWith("_$$$$_"))
 			{
 				return null;
 			}
@@ -584,6 +576,11 @@ namespace IKVM.Internal
 
 		protected virtual TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
+			TypeWrapper tw = LoadGenericClass(name);
+			if(tw != null)
+			{
+				return tw;
+			}
 #if !STATIC_COMPILER && !FIRST_PASS
 			Profiler.Enter("ClassLoader.loadClass");
 			try
@@ -1262,9 +1259,14 @@ namespace IKVM.Internal
 
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
+			TypeWrapper tw = LoadGenericClass(name);
+			if(tw != null)
+			{
+				return tw;
+			}
 			foreach(ClassLoaderWrapper loader in delegates)
 			{
-				TypeWrapper tw = loader.LoadClassByDottedNameFast(name);
+				tw = loader.LoadClassByDottedNameFast(name);
 				if(tw != null)
 				{
 					return tw;
@@ -1309,7 +1311,7 @@ namespace IKVM.Internal
 		private Hashtable nameMap;
 		private Thread initializerThread;
 		private bool hasDotNetModule;
-		private object protectionDomain;
+		private volatile object protectionDomain;
 		private bool hasCustomClassLoader;
 
 		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader, bool hasCustomClassLoader)
@@ -1580,35 +1582,28 @@ namespace IKVM.Internal
 
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
 		{
-#if STATIC_COMPILER
-			return LoadClass(name);
-#else
-			if(hasCustomClassLoader)
-			{
-				// before calling the custom class loader, we have to look inside our assembly,
-				// to prevent the custom class loader from registering us as the initiating
-				// loader for an external type with the same name as a type that we define
-				TypeWrapper tw = DoLoad(name);
-				if(tw != null)
-				{
-					return tw;
-				}
-				return base.LoadClassImpl(name, throwClassNotFoundException);
-			}
-			else
-			{
-				return LoadClass(name);
-			}
-#endif
-		}
-
-		internal TypeWrapper LoadClass(string name)
-		{
 			TypeWrapper tw = DoLoad(name);
 			if(tw != null)
 			{
 				return tw;
 			}
+			if(hasCustomClassLoader)
+			{
+				return base.LoadClassImpl(name, throwClassNotFoundException);
+			}
+			else
+			{
+				tw = LoadGenericClass(name);
+				if(tw != null)
+				{
+					return tw;
+				}
+				return LoadReferenced(name);
+			}
+		}
+
+		internal TypeWrapper LoadReferenced(string name)
+		{
 			for(int i = 0; i < delegates.Length; i++)
 			{
 				if(delegates[i] == null)
@@ -1638,7 +1633,7 @@ namespace IKVM.Internal
 				}
 				if(delegates[i] != null)
 				{
-					tw = delegates[i].DoLoad(name);
+					TypeWrapper tw = delegates[i].DoLoad(name);
 					if(tw != null)
 					{
 						return tw;
@@ -1784,27 +1779,31 @@ namespace IKVM.Internal
 
 		internal virtual object GetProtectionDomain()
 		{
-			lock(this)
+			if(protectionDomain == null)
 			{
-				if(protectionDomain == null)
-				{
 #if !STATIC_COMPILER && !FIRST_PASS
-					java.net.URL codebase;
-					try
-					{
-						codebase = new java.net.URL(assembly.CodeBase);
-					}
-					catch(java.net.MalformedURLException)
-					{
-						codebase = null;
-					}
-					java.security.Permissions permissions = new java.security.Permissions();
-					permissions.add(new java.security.AllPermission());
-					protectionDomain = new java.security.ProtectionDomain(new java.security.CodeSource(codebase, (java.security.cert.Certificate[])null), permissions, (java.lang.ClassLoader)GetJavaClassLoader(), null);
-#endif
+				java.net.URL codebase;
+				try
+				{
+					codebase = new java.net.URL(assembly.CodeBase);
 				}
-				return protectionDomain;
+				catch(java.net.MalformedURLException)
+				{
+					codebase = null;
+				}
+				java.security.Permissions permissions = new java.security.Permissions();
+				permissions.add(new java.security.AllPermission());
+				object pd = new java.security.ProtectionDomain(new java.security.CodeSource(codebase, (java.security.cert.Certificate[])null), permissions, (java.lang.ClassLoader)GetJavaClassLoader(), null);
+				lock(this)
+				{
+					if(protectionDomain == null)
+					{
+						protectionDomain = pd;
+					}
+				}
+#endif
 			}
+			return protectionDomain;
 		}
 
 		protected override void CheckDefineClassAllowed(string className)
@@ -1814,6 +1813,12 @@ namespace IKVM.Internal
 				throw new LinkageError("duplicate class definition: " + className);
 			}
 		}
+
+		internal override TypeWrapper GetLoadedClass(string name)
+		{
+			TypeWrapper tw = base.GetLoadedClass(name);
+			return tw != null ? tw : DoLoad(name);
+		}
 	}
 
 	class BootstrapClassLoader : AssemblyClassLoader
@@ -1821,11 +1826,6 @@ namespace IKVM.Internal
 		internal BootstrapClassLoader()
 			: base(JVM.CoreAssembly, null, false)
 		{
-		}
-
-		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
-		{
-			return LoadClass(name);
 		}
 
 		internal override object GetProtectionDomain()

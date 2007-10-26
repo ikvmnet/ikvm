@@ -435,15 +435,14 @@ namespace IKVM.NativeCode.ikvm.runtime
 				else if(assembly != null)
 				{
 					AssemblyClassLoader_ acl = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
-					// HACK we need to support generic type instantiations here, because we may not have gone
-					// through LoadClassByDottedNameFastImpl.
-					if(name.EndsWith("_$$$$_") && name.IndexOf("_$$$_") > 0)
+					tw = acl.GetLoadedClass(name);
+					if(tw == null)
 					{
 						tw = acl.LoadGenericClass(name);
 					}
 					if(tw == null)
 					{
-						tw = acl.LoadClass(name);
+						tw = acl.LoadReferenced(name);
 					}
 					if(tw == null)
 					{
