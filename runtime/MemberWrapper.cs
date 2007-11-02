@@ -1829,7 +1829,6 @@ namespace IKVM.Internal
 
 		protected override void EmitSetImpl(ILGenerator ilgen)
 		{
-			FieldInfo fi = GetField();
 			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
 			{
 				LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsSignatureType);
@@ -1837,7 +1836,19 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Unbox, DeclaringType.TypeAsTBD);
 				ilgen.Emit(OpCodes.Ldloc, temp);
 			}
-			ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
+			FieldInfo fi = GetField();
+			if(fi != null)
+			{
+				// common case (we're in a DynamicTypeWrapper and the caller is too)
+				ilgen.Emit(IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fi);
+			}
+			else
+			{
+				// this means that we are an instance on a CompiledTypeWrapper and we're being called
+				// from DynamicMethod based reflection, so we can safely emit a call to the private
+				// setter, because the DynamicMethod is allowed to access our private members.
+				ilgen.Emit(OpCodes.Call, prop.GetSetMethod(true));
+			}
 		}
 #endif
 	}
