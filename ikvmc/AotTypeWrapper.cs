@@ -908,7 +908,16 @@ namespace IKVM.Internal
 			else if(IsGhostArray)
 			{
 				ilgen.Emit(OpCodes.Dup);
+				TypeWrapper tw = this;
+				int rank = 0;
+				while(tw.IsArray)
+				{
+					rank++;
+					tw = tw.ElementTypeWrapper;
+				}
+				ilgen.Emit(OpCodes.Ldc_I4, rank);
 				ilgen.Emit(OpCodes.Call, ghostCastArrayMethod);
+				ilgen.Emit(OpCodes.Castclass, ArrayTypeWrapper.MakeArrayType(typeof(object), rank));
 			}
 			else
 			{

@@ -2898,7 +2898,7 @@ namespace IKVM.Internal
 			{
 				ilgen.Emit(OpCodes.Dup);
 				// TODO make sure we get the right "Cast" method and cache it
-				// NOTE for dynamic ghosts we don't end up here because DynamicTypeWrapper overrides this method,
+				// NOTE for dynamic ghosts we don't end up here because AotTypeWrapper overrides this method,
 				// so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
 				ilgen.Emit(OpCodes.Call, TypeAsTBD.GetMethod("Cast"));
 				ilgen.Emit(OpCodes.Pop);
@@ -2907,7 +2907,7 @@ namespace IKVM.Internal
 			{
 				ilgen.Emit(OpCodes.Dup);
 				// TODO make sure we get the right "CastArray" method and cache it
-				// NOTE for dynamic ghosts we don't end up here because DynamicTypeWrapper overrides this method,
+				// NOTE for dynamic ghosts we don't end up here because AotTypeWrapper overrides this method,
 				// so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
 				TypeWrapper tw = this;
 				int rank = 0;
@@ -2918,6 +2918,7 @@ namespace IKVM.Internal
 				}
 				ilgen.Emit(OpCodes.Ldc_I4, rank);
 				ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
+				ilgen.Emit(OpCodes.Castclass, ArrayTypeWrapper.MakeArrayType(typeof(object), rank));
 			}
 			else if(IsDynamicOnly)
 			{
