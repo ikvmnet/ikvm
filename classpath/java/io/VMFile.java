@@ -689,4 +689,22 @@ final class VMFile
         // TODO consider using Mono.Posix on Linux
         return true;
     }
+
+    static long getTotalSpace(String path)
+    {
+	// TODO
+	return 0;
+    }
+
+    static long getFreeSpace(String path)
+    {
+	// TODO
+	return 0;
+    }
+
+    static long getUsableSpace(String path)
+    {
+	// TODO
+	return 0;
+    }
 }

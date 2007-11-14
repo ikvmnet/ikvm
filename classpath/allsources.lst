@@ -487,6 +487,7 @@
 ../../classpath/gnu/java/awt/font/opentype/truetype/VirtualMachine.java
 ../../classpath/gnu/java/awt/font/opentype/truetype/Zone.java
 ../../classpath/gnu/java/awt/font/opentype/truetype/ZonePathIterator.java
+../../classpath/gnu/java/awt/font/OpenTypeFontPeer.java
 ../../classpath/gnu/java/awt/GradientPaintContext.java
 ../../classpath/gnu/java/awt/image/ImageDecoder.java
 ../../classpath/gnu/java/awt/image/XBMDecoder.java
@@ -496,6 +497,7 @@
 ../../classpath/gnu/java/awt/java2d/CubicSegment.java
 ../../classpath/gnu/java/awt/java2d/ImagePaint.java
 ../../classpath/gnu/java/awt/java2d/LineSegment.java
+../../classpath/gnu/java/awt/java2d/PixelCoverage.java
 ../../classpath/gnu/java/awt/java2d/Pixelizer.java
 ../../classpath/gnu/java/awt/java2d/PolyEdge.java
 ../../classpath/gnu/java/awt/java2d/PolyEdgeComparator.java
@@ -506,6 +508,8 @@
 ../../classpath/gnu/java/awt/java2d/ScanlineCoverage.java
 ../../classpath/gnu/java/awt/java2d/Segment.java
 ../../classpath/gnu/java/awt/java2d/ShapeCache.java
+../../classpath/gnu/java/awt/java2d/ShapeWrapper.java
+../../classpath/gnu/java/awt/java2d/TextCacheKey.java
 ../../classpath/gnu/java/awt/java2d/TexturePaintContext.java
 ../../classpath/gnu/java/awt/LowPriorityEvent.java
 ../../classpath/gnu/java/awt/peer/ClasspathFontPeer.java
@@ -988,6 +992,7 @@
 ../../classpath/gnu/java/util/DoubleEnumeration.java
 ../../classpath/gnu/java/util/EmptyEnumeration.java
 ../../classpath/gnu/java/util/jar/JarUtils.java
+../../classpath/gnu/java/util/LRUCache.java
 ../../classpath/gnu/java/util/prefs/EventDispatcher.java
 ../../classpath/gnu/java/util/prefs/FileBasedFactory.java
 ../../classpath/gnu/java/util/prefs/FileBasedPreferences.java
@@ -1583,6 +1588,7 @@
 ../../classpath/gnu/javax/security/auth/login/ConfigFileTokenizer.java
 ../../classpath/gnu/javax/security/auth/login/GnuConfiguration.java
 ../../classpath/gnu/javax/security/auth/Password.java
+../../classpath/gnu/javax/sound/AudioSecurityManager.java
 ../../classpath/gnu/javax/sound/sampled/AU/AUReader.java
 ../../classpath/gnu/javax/sound/sampled/WAV/WAVReader.java
 ../../classpath/gnu/javax/swing/plaf/gnu/GNULookAndFeel.java
