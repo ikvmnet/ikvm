@@ -915,8 +915,8 @@ namespace IKVM.NativeCode.java
 
 				internal override System.IO.Stream Open()
 				{
-					return new System.IO.FileStream("c:\\ikvm\\openjdk\\vfs.zip", System.IO.FileMode.Open);
-					//return Assembly.GetExecutingAssembly().GetManifestResourceStream("vfs.zip");
+					//return new System.IO.FileStream("c:\\ikvm\\openjdk\\vfs.zip", System.IO.FileMode.Open);
+					return Assembly.GetExecutingAssembly().GetManifestResourceStream("vfs.zip");
 				}
 			}
 
