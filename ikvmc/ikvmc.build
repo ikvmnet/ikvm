@@ -6,9 +6,6 @@
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
-	<if test="${framework::get-target-framework()=='net-2.0'}">
-            <property name="defs" value="${defs};WHIDBEY" />
-        </if>
         <csc target="exe" output="../bin/ikvmc.exe" define="${defs}">
             <sources>
                 <include name="AotTypeWrapper.cs" />

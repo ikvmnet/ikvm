@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -2804,7 +2805,7 @@ namespace IKVM.NativeCode.java
 					// we need to finish the type otherwise all fields will not be in the field map yet
 					wrapper.Finish();
 					FieldWrapper[] fields = wrapper.GetFields();
-					ArrayList list = new ArrayList();
+					List<jlrField> list = new List<jlrField>();
 					for (int i = 0; i < fields.Length; i++)
 					{
 						if (fields[i].IsHideFromReflection)
@@ -2818,10 +2819,10 @@ namespace IKVM.NativeCode.java
 						else
 						{
 							fields[i].FieldTypeWrapper.EnsureLoadable(wrapper.GetClassLoader());
-							list.Add(fields[i].ToField(false));
+							list.Add((jlrField)fields[i].ToField(false));
 						}
 					}
-					return (jlrField[])list.ToArray(typeof(jlrField));
+					return list.ToArray();
 				}
 				catch (RetargetableJavaException x)
 				{
@@ -2857,7 +2858,7 @@ namespace IKVM.NativeCode.java
 					// we need to look through the array for unloadable types, because we may not let them
 					// escape into the 'wild'
 					MethodWrapper[] methods = wrapper.GetMethods();
-					ArrayList list = new ArrayList();
+					List<jlrMethod> list = new List<jlrMethod>();
 					for (int i = 0; i < methods.Length; i++)
 					{
 						// we don't want to expose "hideFromReflection" methods (one reason is that it would
@@ -2872,10 +2873,10 @@ namespace IKVM.NativeCode.java
 							{
 								args[j].EnsureLoadable(wrapper.GetClassLoader());
 							}
-							list.Add(methods[i].ToMethodOrConstructor(false));
+							list.Add((jlrMethod)methods[i].ToMethodOrConstructor(false));
 						}
 					}
-					return (jlrMethod[])list.ToArray(typeof(jlrMethod));
+					return list.ToArray();
 				}
 				catch (RetargetableJavaException x)
 				{
@@ -2911,7 +2912,7 @@ namespace IKVM.NativeCode.java
 					// we need to look through the array for unloadable types, because we may not let them
 					// escape into the 'wild'
 					MethodWrapper[] methods = wrapper.GetMethods();
-					ArrayList list = new ArrayList();
+					List<jlrConstructor> list = new List<jlrConstructor>();
 					for (int i = 0; i < methods.Length; i++)
 					{
 						// we don't want to expose "hideFromReflection" methods (one reason is that it would
@@ -2925,10 +2926,10 @@ namespace IKVM.NativeCode.java
 							{
 								args[j].EnsureLoadable(wrapper.GetClassLoader());
 							}
-							list.Add(methods[i].ToMethodOrConstructor(false));
+							list.Add((jlrConstructor)methods[i].ToMethodOrConstructor(false));
 						}
 					}
-					return (jlrConstructor[])list.ToArray(typeof(jlrConstructor));
+					return list.ToArray();
 				}
 				catch (RetargetableJavaException x)
 				{
@@ -3293,7 +3294,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				ArrayList stack = new ArrayList();
+				List<jlClass> stack = new List<jlClass>();
 				StackTrace trace = new StackTrace();
 				for (int i = 0; i < trace.FrameCount; i++)
 				{
@@ -3314,9 +3315,9 @@ namespace IKVM.NativeCode.java
 					{
 						continue;
 					}
-					stack.Add(ClassLoaderWrapper.GetWrapperFromType(type).ClassObject);
+					stack.Add((jlClass)ClassLoaderWrapper.GetWrapperFromType(type).ClassObject);
 				}
-				return stack.ToArray(typeof(jlClass));
+				return stack.ToArray();
 #endif
 			}
 
@@ -4518,7 +4519,7 @@ namespace IKVM.NativeCode.java
 				try
 				{
 					System.Net.IPAddress[] addr = System.Net.Dns.GetHostAddresses(hostname);
-					ArrayList addresses = new ArrayList();
+					List<jnInetAddress> addresses = new List<jnInetAddress>();
 					for (int i = 0; i < addr.Length; i++)
 					{
 						byte[] b = addr[i].GetAddressBytes();
@@ -4527,7 +4528,7 @@ namespace IKVM.NativeCode.java
 							addresses.Add(jnInetAddress.getByAddress(hostname, b));
 						}
 					}
-					return (jnInetAddress[])addresses.ToArray(typeof(jnInetAddress));
+					return addresses.ToArray();
 				}
 				catch (System.ArgumentException x)
 				{
@@ -5326,7 +5327,7 @@ namespace IKVM.NativeCode.java
 				bool is_privileged = false;
 				object protection_domain = null;
 				StackTrace stack = new StackTrace(1);
-				ArrayList array = new ArrayList();
+				List<ProtectionDomain> array = new List<ProtectionDomain>();
 
 				for (int i = 0; i < stack.FrameCount; i++)
 				{
@@ -5347,7 +5348,7 @@ namespace IKVM.NativeCode.java
 					if (previous_protection_domain != protection_domain && protection_domain != null)
 					{
 						previous_protection_domain = protection_domain;
-						array.Add(protection_domain);
+						array.Add((ProtectionDomain)protection_domain);
 					}
 
 					if (is_privileged)
@@ -5366,9 +5367,7 @@ namespace IKVM.NativeCode.java
 					return CreateAccessControlContext(null, is_privileged, privileged_context);
 				}
 
-				ProtectionDomain[] context = new ProtectionDomain[array.Count];
-				array.CopyTo(context);
-				return CreateAccessControlContext(context, is_privileged, privileged_context);
+				return CreateAccessControlContext(array.ToArray(), is_privileged, privileged_context);
 #endif
 			}
 
@@ -5763,7 +5762,7 @@ namespace IKVM.NativeCode.java
 #else
 					juzZipFile zf = (juzZipFile)thisJarFile;
 					juEnumeration entries = zf.entries();
-					ArrayList list = null;
+					List<string> list = null;
 					while (entries.hasMoreElements())
 					{
 						juzZipEntry entry = (juzZipEntry)entries.nextElement();
@@ -5771,12 +5770,12 @@ namespace IKVM.NativeCode.java
 						{
 							if (list == null)
 							{
-								list = new ArrayList();
+								list = new List<string>();
 							}
 							list.Add(entry.getName());
 						}
 					}
-					return list == null ? null : (string[])list.ToArray(typeof(string));
+					return list == null ? null : list.ToArray();
 #endif
 				}
 			}
@@ -6432,21 +6431,41 @@ namespace IKVM.NativeCode.sun.reflect
 {
 	public sealed class Reflection
 	{
-		private static readonly Hashtable isHideFromJavaCache = Hashtable.Synchronized(new Hashtable());
+		private static readonly Dictionary<RuntimeMethodHandle, bool> isHideFromJavaCache = new Dictionary<RuntimeMethodHandle, bool>();
 
 		private Reflection() { }
 
 		internal static bool IsHideFromJava(MethodBase mb)
 		{
-			// TODO on .NET 2.0 isHideFromJavaCache should be a Dictionary<RuntimeMethodHandle, bool>
-			object cached = isHideFromJavaCache[mb];
-			if (cached == null)
+			RuntimeMethodHandle handle;
+			try
 			{
-				cached = mb.IsDefined(typeof(IKVM.Attributes.HideFromJavaAttribute), false)
-					|| mb.IsDefined(typeof(IKVM.Attributes.HideFromReflectionAttribute), false);
-				isHideFromJavaCache[mb] = cached;
+				handle = mb.MethodHandle;
 			}
-			return (bool)cached;
+			catch (InvalidOperationException)
+			{
+				// DynamicMethods don't have a RuntimeMethodHandle and we always want to hide them anyway
+				return true;
+			}
+			catch (NotSupportedException)
+			{
+				// DynamicMethods don't have a RuntimeMethodHandle and we always want to hide them anyway
+				return true;
+			}
+			lock (isHideFromJavaCache)
+			{
+				bool cached;
+				if (isHideFromJavaCache.TryGetValue(handle, out cached))
+				{
+					return cached;
+				}
+			}
+			bool isHide = mb.IsDefined(typeof(IKVM.Attributes.HideFromJavaAttribute), false) || mb.IsDefined(typeof(IKVM.Attributes.HideFromReflectionAttribute), false);
+			lock (isHideFromJavaCache)
+			{
+				isHideFromJavaCache[handle] = isHide;
+			}
+			return isHide;
 		}
 
 		// NOTE this method is hooked up explicitly through map.xml to prevent inlining of the native stub
@@ -6649,7 +6668,7 @@ namespace IKVM.NativeCode.sun.reflect
 				[IKVM.Attributes.HideFromJava]
 				internal object invoke(object obj, object[] args)
 				{
-					// FXBUG a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
+					// FXBUG pre-SP1 a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
 					tw.RunClassInit();
 					outer.invoker = invoker;
 					return invoker(obj, args);
@@ -6729,15 +6748,6 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.BeginCatchBlock(typeof(NullReferenceException));
 				EmitHelper.Throw(ilgen, "java.lang.IllegalArgumentException");
 				ilgen.EndExceptionBlock();
-
-				if (mw.DeclaringType.IsInterface && mw.DeclaringType.HasStaticInitializer)
-				{
-					// NOTE since Everett doesn't support adding static methods to interfaces,
-					// EmitRunClassConstructor doesn't work for interface, so we do it manually.
-					// TODO once we're on Whidbey, this won't be necessary anymore.
-					ilgen.Emit(OpCodes.Ldtoken, mw.DeclaringType.TypeAsBaseType);
-					ilgen.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("RunClassConstructor"));
-				}
 
 				// this is the actual call
 				ilgen.BeginExceptionBlock();

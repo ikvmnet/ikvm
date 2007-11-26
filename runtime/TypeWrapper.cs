@@ -3974,7 +3974,7 @@ namespace IKVM.Internal
 						AttributeHelper.SetModifiers(typeBuilder, classFile.Modifiers, classFile.IsInternal);
 					}
 #endif // STATIC_COMPILER
-					if(!classFile.IsInterface && hasclinit)
+					if(hasclinit)
 					{
 						// We create a empty method that we can use to trigger our .cctor
 						// (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
