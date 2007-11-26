@@ -485,12 +485,7 @@ namespace IKVM.Internal
 					if(baseType.IsSealed)
 					{
 						baseIsSealed = true;
-						// FXBUG .NET framework bug
-						// ideally we would make the type sealed and abstract,
-						// but Reflection.Emit incorrectly prohibits that
-						// (the ECMA spec explicitly mentions this is valid)
-						// attrs |= TypeAttributes.Abstract | TypeAttributes.Sealed;
-						attrs |= TypeAttributes.Abstract;
+						attrs |= TypeAttributes.Abstract | TypeAttributes.Sealed;
 					}
 				}
 				else
@@ -867,6 +862,7 @@ namespace IKVM.Internal
 							if(typeWrapper.helperTypeBuilder == null)
 							{
 								// FXBUG we use a nested helper class, because Reflection.Emit won't allow us to add a static method to the interface
+								// TODO now that we're on Whidbey we can remove this workaround
 								typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class | TypeAttributes.Sealed);
 								ilgen = typeWrapper.helperTypeBuilder.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, Type.EmptyTypes).GetILGenerator();
 								ilgen.Emit(OpCodes.Ldnull);

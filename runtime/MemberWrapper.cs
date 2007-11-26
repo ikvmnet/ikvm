@@ -1245,62 +1245,6 @@ namespace IKVM.Internal
 #endif
 	}
 
-	// This class tests if reflection on a constant field triggers the class constructor to run
-	// (it shouldn't run, but on .NET 1.0 & 1.1 it does)
-	sealed class ReflectionOnConstant
-	{
-		private static bool isBroken;
-		private static System.Collections.Hashtable warnOnce;
-
-		static ReflectionOnConstant()
-		{
-			typeof(Helper).GetField("foo", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
-		}
-
-		internal static bool IsBroken
-		{
-			get
-			{
-				return isBroken;
-			}
-		}
-
-		internal static void IssueWarning(FieldInfo field)
-		{
-#if !COMPACT_FRAMEWORK
-			// FXBUG .NET (1.0 & 1.1)
-			// FieldInfo.GetValue() on a literal causes the type initializer to run and
-			// we don't want that.
-			// TODO may need to find a workaround, for now we just spit out a warning
-			if(ReflectionOnConstant.IsBroken && field.DeclaringType.TypeInitializer != null)
-			{
-				if(Tracer.FxBug.TraceWarning)
-				{
-					if(warnOnce == null)
-					{
-						warnOnce = new System.Collections.Hashtable();
-					}
-					if(!warnOnce.ContainsKey(field.DeclaringType.FullName))
-					{
-						warnOnce.Add(field.DeclaringType.FullName, null);
-						Tracer.Warning(Tracer.FxBug, "Running type initializer for {0} due to CLR bug", field.DeclaringType.FullName);
-					}
-				}
-			}
-#endif // !COMPACT_FRAMEWORK
-		}
-
-		private class Helper
-		{
-			internal const int foo = 1;
-
-			static Helper()
-			{
-				isBroken = true;
-			}
-		}
-	}
-
 	abstract class FieldWrapper : MemberWrapper
 	{
 #if OPENJDK && !FIRST_PASS
@@ -1355,7 +1299,6 @@ namespace IKVM.Internal
 				object val = null;
 				if(field.IsLiteral)
 				{
-					ReflectionOnConstant.IssueWarning(field);
 					val = field.GetRawConstantValue();
 					if(field.FieldType.IsEnum)
 					{

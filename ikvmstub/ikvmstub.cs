@@ -36,7 +36,7 @@ public class NetExp
 	private static Hashtable todo = new Hashtable();
 	private static FileInfo file;
 
-	public static void Main(string[] args)
+	public static int Main(string[] args)
 	{
 		IKVM.Internal.Tracer.EnableTraceForDebug();
 		string assemblyNameOrPath = null;
@@ -65,7 +65,7 @@ public class NetExp
 			Console.Error.WriteLine(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("usage: ikvmstub [-serialver] <assemblyNameOrPath>");
-			return;
+			return 1;
 		}
 		Assembly assembly = null;
 		try
@@ -75,7 +75,7 @@ public class NetExp
 		catch(System.Exception x)
 		{
 			Console.Error.WriteLine("Error: unable to load \"{0}\"\n  {1}", assemblyNameOrPath, x.Message);
-			return;
+			return 1;
 		}
 		if(file != null && file.Exists)
 		{
@@ -134,9 +134,7 @@ public class NetExp
 				}
 			}
 		}
-		// FXBUG if we run a static initializer that starts a thread, we would never end,
-		// so we force an exit here
-		Environment.Exit(rc);
+		return rc;
 	}
 
 	private static Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)

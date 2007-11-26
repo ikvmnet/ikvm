@@ -1566,22 +1566,6 @@ namespace IKVM.NativeCode.java
 				}
 				catch (System.IO.IOException)
 				{
-					if (Environment.Version.Major == 1 && fileInfo is System.IO.DirectoryInfo)
-					{
-						// FXBUG on .NET 1.1 DirectoryInfo.Delete() can throw an exception even on success,
-						// because it checks GetLastWin32Error() even if RemoveDirectory() succeeded.
-						try
-						{
-							fileInfo.Refresh();
-						}
-						catch (System.ArgumentException)
-						{
-						}
-						catch (System.IO.IOException)
-						{
-						}
-						return !fileInfo.Exists;
-					}
 				}
 				catch (System.NotSupportedException)
 				{

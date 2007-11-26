@@ -61,7 +61,7 @@ class IkvmcCompiler
 		return arglist;
 	}
 
-	static void Main(string[] args)
+	static int Main(string[] args)
 	{
 		DateTime start = DateTime.Now;
 		int rc = RealMain(args);
@@ -70,9 +70,7 @@ class IkvmcCompiler
 			Console.WriteLine("Total cpu time: {0}", System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime);
 			Console.WriteLine("Total wall clock time: {0}", DateTime.Now - start);
 		}
-		// FXBUG if we run a static initializer that starts a thread, we would never end,
-		// so we force an exit here
-		Environment.Exit(rc);
+		return rc;
 	}
 
 	static string GetVersionAndCopyrightInfo()
