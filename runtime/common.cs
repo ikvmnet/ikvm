@@ -272,11 +272,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 		public static bool IsReflectionOnly(Assembly asm)
 		{
-#if WHIDBEY
 			return asm.ReflectionOnly;
-#else
-			return false;
-#endif
 		}
 
 		public static int GetGenericClassLoaderId(object classLoader)
@@ -361,7 +357,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 			{
 				return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
 			}
-			if(Whidbey.ContainsGenericParameters(t))
+			if(t.ContainsGenericParameters)
 			{
 				return null;
 			}
@@ -375,7 +371,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 		public static object getFriendlyClassFromType(Type type)
 		{
-			if(Whidbey.ContainsGenericParameters(type))
+			if(type.ContainsGenericParameters)
 			{
 				return null;
 			}

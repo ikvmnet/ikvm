@@ -3295,104 +3295,6 @@ namespace IKVM.Internal
 	}
 
 #if !COMPACT_FRAMEWORK
-	class BakedTypeCleanupHack
-	{
-		private static readonly FieldInfo m_methodBuilder = typeof(ConstructorBuilder).GetField("m_methodBuilder", BindingFlags.Instance | BindingFlags.NonPublic);
-		private static readonly FieldInfo[] methodBuilderFields = GetFieldList(typeof(MethodBuilder), new string[]
-			{
-				"m_ilGenerator",
-				"m_ubBody",
-				"m_RVAFixups",
-				"mm_mdMethodFixups",
-				"m_localSignature",
-				"m_localSymInfo",
-				"m_exceptions",
-				"m_parameterTypes",
-				"m_retParam",
-				"m_returnType",
-				"m_signature"
-			});
-		private static readonly FieldInfo[] fieldBuilderFields = GetFieldList(typeof(FieldBuilder), new string[]
-			{
-				"m_data",
-				"m_fieldType",
-		});
-
-		private static bool IsSupportedVersion
-		{
-			get
-			{
-				return Environment.Version.Major == 1 && Environment.Version.Minor == 1 && Environment.Version.Build == 4322;
-			}
-		}
-
-		private static FieldInfo[] GetFieldList(Type type, string[] list)
-		{
-			if(JVM.SafeGetEnvironmentVariable("IKVM_DISABLE_TYPEBUILDER_HACK") != null || !IsSupportedVersion)
-			{
-				return null;
-			}
-			if(!SecurityManager.IsGranted(new SecurityPermission(SecurityPermissionFlag.Assertion)) ||
-				!SecurityManager.IsGranted(new ReflectionPermission(ReflectionPermissionFlag.MemberAccess)))
-			{
-				return null;
-			}
-			FieldInfo[] fields = new FieldInfo[list.Length];
-			for(int i = 0; i < list.Length; i++)
-			{
-				fields[i] = type.GetField(list[i], BindingFlags.Instance | BindingFlags.NonPublic);
-				if(fields[i] == null)
-				{
-					return null;
-				}
-			}
-			return fields;
-		}
-
-		internal static void Process(DynamicTypeWrapper wrapper)
-		{
-			if(m_methodBuilder != null && methodBuilderFields != null && fieldBuilderFields != null)
-			{
-				foreach(MethodWrapper mw in wrapper.GetMethods())
-				{
-					MethodBuilder mb = mw.GetMethod() as MethodBuilder;
-					if(mb == null)
-					{
-						ConstructorBuilder cb = mw.GetMethod() as ConstructorBuilder;
-						if(cb != null)
-						{
-							new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
-							mb = (MethodBuilder)m_methodBuilder.GetValue(cb);
-							CodeAccessPermission.RevertAssert();
-						}
-					}
-					if(mb != null)
-					{
-						new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
-						foreach(FieldInfo fi in methodBuilderFields)
-						{
-							fi.SetValue(mb, null);
-						}
-						CodeAccessPermission.RevertAssert();
-					}
-				}
-				foreach(FieldWrapper fw in wrapper.GetFields())
-				{
-					FieldBuilder fb = fw.GetField() as FieldBuilder;
-					if(fb != null)
-					{
-						new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
-						foreach(FieldInfo fi in fieldBuilderFields)
-						{
-							fi.SetValue(fb, null);
-						}
-						CodeAccessPermission.RevertAssert();
-					}
-				}
-			}
-		}
-	}
-
 #if STATIC_COMPILER
 	abstract class DynamicTypeWrapper : TypeWrapper
 #else
@@ -5378,7 +5280,6 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 					wrapper.FinishGhostStep2();
 #endif
-					BakedTypeCleanupHack.Process(wrapper);
 					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers, Metadata.Create(classFile)
 #if STATIC_COMPILER
 						, annotationBuilder, enumBuilder
@@ -8967,115 +8868,6 @@ namespace IKVM.Internal
 #endif
 	}
 
-	sealed class Whidbey
-	{
-		private static readonly object[] noargs = new object[0];
-		private static readonly MethodInfo get_IsGenericTypeDefinition = typeof(Type).GetMethod("get_IsGenericTypeDefinition");
-		private static readonly MethodInfo get_ContainsGenericParameters = typeof(Type).GetMethod("get_ContainsGenericParameters");
-		private static readonly MethodInfo get_IsGenericMethodDefinition = typeof(MethodBase).GetMethod("get_IsGenericMethodDefinition");
-		private static readonly MethodInfo get_IsGenericType = typeof(Type).GetMethod("get_IsGenericType");
-		private static readonly MethodInfo get_ReflectionOnly = typeof(Assembly).GetMethod("get_ReflectionOnly");
-		private static readonly MethodInfo method_GetGenericTypeDefinition = typeof(Type).GetMethod("GetGenericTypeDefinition");
-		private static readonly MethodInfo method_GetGenericArguments = typeof(Type).GetMethod("GetGenericArguments");
-		private static readonly MethodInfo method_MakeGenericType = typeof(Type).GetMethod("MakeGenericType");
-
-		internal static bool IsGenericTypeDefinition(Type type)
-		{
-			try
-			{
-				return get_IsGenericTypeDefinition != null && (bool)get_IsGenericTypeDefinition.Invoke(type, noargs);
-			}
-			catch(TargetInvocationException x)
-			{
-				throw x.InnerException;
-			}
-		}
-
-		internal static bool ContainsGenericParameters(Type type)
-		{
-			try
-			{
-				return get_ContainsGenericParameters != null && (bool)get_ContainsGenericParameters.Invoke(type, noargs);
-			}
-			catch(TargetInvocationException x)
-			{
-				throw x.InnerException;
-			}
-		}
-
-		internal static bool IsGenericMethodDefinition(MethodBase mb)
-		{
-			try
-			{
-				return get_IsGenericMethodDefinition != null && (bool)get_IsGenericMethodDefinition.Invoke(mb, noargs);
-			}
-			catch(TargetInvocationException x)
-			{
-				throw x.InnerException;
-			}
-		}
-
-		internal static bool IsGenericType(Type type)
-		{
-			try
-			{
-				return get_IsGenericType != null && (bool)get_IsGenericType.Invoke(type, noargs);
-			}
-			catch(TargetInvocationException x)
-			{
-				throw x.InnerException;
-			}
-		}
-
-		internal static Type GetGenericTypeDefinition(Type type)
-		{
-			try
-			{
-				return method_GetGenericTypeDefinition == null ? null : (Type)method_GetGenericTypeDefinition.Invoke(type, noargs);
-			}
-			catch(TargetInvocationException x)
-			{
-				throw x.InnerException;
-			}
-		}
-
-		internal static Type[] GetGenericArguments(Type type)
-		{
-			try
-			{
-				return method_GetGenericArguments == null ? Type.EmptyTypes : (Type[])method_GetGenericArguments.Invoke(type, noargs);
-			}
-			catch(TargetInvocationException x)
-			{
-				throw x.InnerException;
-			}
-		}
-
-		internal static Type MakeGenericType(Type type, Type[] typeArguments)
-		{
-			try
-			{
-				return (Type)method_MakeGenericType.Invoke(type, new object[] { typeArguments });
-			}
-			catch(TargetInvocationException x)
-			{
-				throw x.InnerException;
-			}
-		}
-
-		internal static bool ReflectionOnly(Assembly asm)
-		{
-			try
-			{
-				return get_ReflectionOnly != null && (bool)get_ReflectionOnly.Invoke(asm, noargs);
-			}
-			catch(TargetInvocationException x)
-			{
-				throw x.InnerException;
-			}
-		}
-	}
-
 	sealed class DotNetTypeWrapper : TypeWrapper
 	{
 		private const string NamePrefix = "cli.";
@@ -9146,18 +8938,18 @@ namespace IKVM.Internal
 				return null;
 			}
 
-			if(Whidbey.ContainsGenericParameters(type))
+			if(type.ContainsGenericParameters)
 			{
 				// open generic types are not visible
 				return null;
 			}
-			if(Whidbey.IsGenericType(type))
+			if(type.IsGenericType)
 			{
 				System.Text.StringBuilder sb = new System.Text.StringBuilder();
-				sb.Append(MangleTypeName(Whidbey.GetGenericTypeDefinition(type).FullName));
+				sb.Append(MangleTypeName(type.GetGenericTypeDefinition().FullName));
 				sb.Append("_$$$_");
 				string sep = "";
-				foreach(Type t1 in Whidbey.GetGenericArguments(type))
+				foreach(Type t1 in type.GetGenericArguments())
 				{
 					Type t = t1;
 					sb.Append(sep);
@@ -9308,7 +9100,7 @@ namespace IKVM.Internal
 			{
 				return false;
 			}
-			if(Whidbey.ContainsGenericParameters(type))
+			if(type.ContainsGenericParameters)
 			{
 				return false;
 			}
@@ -10514,7 +10306,7 @@ namespace IKVM.Internal
 
 		internal override ClassLoaderWrapper GetClassLoader()
 		{
-			if(Whidbey.IsGenericType(type))
+			if(type.IsGenericType)
 			{
 				return ClassLoaderWrapper.GetGenericClassLoader(this);
 			}
@@ -11155,7 +10947,7 @@ namespace IKVM.Internal
 
 		private bool MakeMethodDescriptor(MethodBase mb, out string name, out string sig, out TypeWrapper[] args, out TypeWrapper ret)
 		{
-			if(Whidbey.IsGenericMethodDefinition(mb))
+			if(mb.IsGenericMethodDefinition)
 			{
 				name = null;
 				sig = null;
@@ -11330,7 +11122,7 @@ namespace IKVM.Internal
 						ArrayList list = new ArrayList(nestedTypes.Length);
 						for(int i = 0; i < nestedTypes.Length; i++)
 						{
-							if(!Whidbey.IsGenericTypeDefinition(nestedTypes[i]))
+							if (!nestedTypes[i].IsGenericTypeDefinition)
 							{
 								list.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
 							}

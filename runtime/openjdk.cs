@@ -793,8 +793,7 @@ namespace IKVM.NativeCode.java
 			}
 
 #if !FIRST_PASS
-			// TODO on WHIDBEY this variable can be typed juzZipFile (because Interlocked.CompareExchange<>() is availble there)
-			private static object zipFile;
+			private static juzZipFile zipFile;
 
 			private class VfsEntry : juzZipEntry
 			{

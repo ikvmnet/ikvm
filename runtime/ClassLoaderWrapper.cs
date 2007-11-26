@@ -445,7 +445,7 @@ namespace IKVM.Internal
 				return null;
 			}
 			Type type = GetType(DotNetTypeWrapper.DemangleTypeName(name.Substring(0, pos)));
-			if(type == null || !Whidbey.IsGenericTypeDefinition(type))
+			if(type == null || !type.IsGenericTypeDefinition)
 			{
 				return null;
 			}
@@ -557,7 +557,7 @@ namespace IKVM.Internal
 			}
 			try
 			{
-				type = Whidbey.MakeGenericType(type, typeArguments);
+				type = type.MakeGenericType(typeArguments);
 			}
 			catch(ArgumentException)
 			{
@@ -809,7 +809,7 @@ namespace IKVM.Internal
 		{
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
 			TypeWrapper.AssertFinished(type);
-			Debug.Assert(!Whidbey.ContainsGenericParameters(type));
+			Debug.Assert(!type.ContainsGenericParameters);
 			Debug.Assert(!type.IsPointer);
 			Debug.Assert(!type.IsByRef);
 			TypeWrapper wrapper = (TypeWrapper)typeToTypeWrapper[type];
@@ -861,12 +861,12 @@ namespace IKVM.Internal
 		internal static ClassLoaderWrapper GetGenericClassLoader(TypeWrapper wrapper)
 		{
 			Type type = wrapper.TypeAsTBD;
-			Debug.Assert(Whidbey.IsGenericType(type));
-			Debug.Assert(!Whidbey.ContainsGenericParameters(type));
+			Debug.Assert(type.IsGenericType);
+			Debug.Assert(!type.ContainsGenericParameters);
 
 			ArrayList list = new ArrayList();
 			list.Add(GetAssemblyClassLoader(type.Assembly));
-			foreach(Type arg in Whidbey.GetGenericArguments(type))
+			foreach(Type arg in type.GetGenericArguments())
 			{
 				ClassLoaderWrapper loader = GetWrapperFromType(arg).GetClassLoader();
 				if(!list.Contains(loader))
@@ -1000,7 +1000,7 @@ namespace IKVM.Internal
 					{
 						return GetBootstrapClassLoader();
 					}
-					if(!Whidbey.ReflectionOnly(assembly))
+					if(!assembly.ReflectionOnly)
 					{
 						Type customClassLoaderClass = null;
 						LoadCustomClassLoaderRedirects();
