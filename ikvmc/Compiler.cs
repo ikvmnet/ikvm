@@ -273,7 +273,10 @@ class IkvmcCompiler
 					string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(r));
 					if(files.Length == 0)
 					{
+#pragma warning disable 618
+						// Assembly.LoadWithPartialName is obsolete
 						Assembly asm = Assembly.LoadWithPartialName(r);
+#pragma warning restore
 						if(asm == null)
 						{
 							Console.Error.WriteLine("Error: reference not found: {0}", r);

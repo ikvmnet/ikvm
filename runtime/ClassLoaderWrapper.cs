@@ -1124,7 +1124,7 @@ namespace IKVM.Internal
 							{
 								customClassLoaderRedirects = new Hashtable();
 							}
-							customClassLoaderRedirects[key.Substring(prefix.Length)] = System.Configuration.ConfigurationSettings.AppSettings.Get(key);
+							customClassLoaderRedirects[key.Substring(prefix.Length)] = System.Configuration.ConfigurationManager.AppSettings.Get(key);
 						}
 					}
 				}
@@ -1309,9 +1309,11 @@ namespace IKVM.Internal
 		private bool[] isJavaModule;
 		private Module[] modules;
 		private Hashtable nameMap;
+#if !STATIC_COMPILER
 		private Thread initializerThread;
-		private bool hasDotNetModule;
 		private volatile object protectionDomain;
+#endif
+		private bool hasDotNetModule;
 		private bool hasCustomClassLoader;
 
 		internal AssemblyClassLoader(Assembly assembly, object javaClassLoader, bool hasCustomClassLoader)
@@ -1779,9 +1781,11 @@ namespace IKVM.Internal
 
 		internal virtual object GetProtectionDomain()
 		{
+#if STATIC_COMPILER || FIRST_PASS
+			return null;
+#else
 			if(protectionDomain == null)
 			{
-#if !STATIC_COMPILER && !FIRST_PASS
 				java.net.URL codebase;
 				try
 				{
@@ -1801,9 +1805,9 @@ namespace IKVM.Internal
 						protectionDomain = pd;
 					}
 				}
-#endif
 			}
 			return protectionDomain;
+#endif
 		}
 
 		protected override void CheckDefineClassAllowed(string className)

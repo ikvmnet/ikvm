@@ -105,7 +105,10 @@ public class NetExp
 		}
 		else
 		{
+#pragma warning disable 618
+			// Assembly.LoadWithPartialName is obsolete
 			assembly = Assembly.LoadWithPartialName(assemblyNameOrPath);
+#pragma warning restore
 		}
 		int rc = 0;
 		if(assembly == null)

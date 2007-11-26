@@ -156,7 +156,7 @@ namespace ikvm.awt
 				System.Diagnostics.Debug.Assert(bogusForm == null);
 
 				Thread thread = new Thread(new ThreadStart(MessageLoop));
-				thread.ApartmentState = ApartmentState.STA;
+				thread.SetApartmentState(ApartmentState.STA);
 				thread.Name = "IKVM AWT WinForms Message Loop";
 				thread.IsBackground = true;
 				thread.Start();
@@ -363,7 +363,7 @@ namespace ikvm.awt
 					return new NetBufferedImage(new Bitmap(Image.FromStream(stream)));
 				}
 			}
-			catch(Exception ex)
+			catch(Exception)
 			{
                 return new NoImage();
 			}
@@ -446,7 +446,7 @@ namespace ikvm.awt
             {
                 return new NetBufferedImage(new Bitmap(new MemoryStream(imagedata, imageoffset, imagelength, false)));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new NoImage();//TODO should throw the exception unstead of NoImage()
             }
