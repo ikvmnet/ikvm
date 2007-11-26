@@ -48,206 +48,6 @@ using jlrField = java.lang.reflect.Field;
 
 namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 {
-#if !WHIDBEY
-	class LZInputStream : Stream 
-	{
-		private Stream inp;
-		private int[] ptr_tbl;
-		private int[] char_tbl;
-		private int[] stack;
-		private int table_size;
-		private int count;
-		private int bitoff;
-		private int bitbuf;
-		private int prev = -1;
-		private int bits;
-		private int cc;
-		private int fc;
-		private int sp;
-
-		public LZInputStream(Stream inp)
-		{
-			this.inp = inp;
-			bitoff = 0;
-			count = 0;
-			table_size = 256;
-			bits = 9;
-			ptr_tbl = new int[table_size];
-			char_tbl = new int[table_size];
-			stack = new int[table_size];
-			sp = 0;
-			cc = prev = incode();
-			stack[sp++] = cc;
-		}
-
-		private int read()
-		{
-			if (sp == 0) 
-			{
-				if (stack.Length != table_size) 
-				{
-					stack = new int[table_size];
-				}
-				int ic = cc = incode();
-				if (cc == -1) 
-				{
-					return -1;
-				}
-				if (count >= 0 && cc >= count + 256) 
-				{
-					stack[sp++] = fc;
-					cc = prev;
-					ic = find(prev, fc);
-				}
-				while (cc >= 256) 
-				{
-					stack[sp++] = char_tbl[cc - 256];
-					cc = ptr_tbl[cc - 256];
-				}
-				stack[sp++] = cc;
-				fc = cc;
-				if (count >= 0) 
-				{
-					ptr_tbl[count] = prev;
-					char_tbl[count] = fc;
-				}
-				count++;
-				if (count == table_size) 
-				{
-					count = -1;
-					if (bits == 12)
-					{
-						table_size = 256;
-						bits = 9;
-					}
-					else
-					{
-						bits++;
-						table_size = (1 << bits) - 256;
-					}
-					ptr_tbl = null;
-					char_tbl = null;
-					ptr_tbl = new int[table_size];
-					char_tbl= new int[table_size];
-				}
-				prev = ic;
-			}
-			return stack[--sp] & 0xFF;
-		}
-
-		private int find(int p, int c) 
-		{
-			int i;
-			for (i = 0; i < count; i++) 
-			{
-				if (ptr_tbl[i] == p && char_tbl[i] == c) 
-				{
-					break;
-				}
-			}
-			return i + 256;
-		}
-
-		private int incode()
-		{
-			while (bitoff < bits) 
-			{
-				int v = inp.ReadByte();
-				if (v == -1) 
-				{
-					return -1;
-				}
-				bitbuf |= (v & 0xFF) << bitoff;
-				bitoff += 8;
-			}
-			bitoff -= bits;
-			int result = bitbuf;
-			bitbuf >>= bits;
-			result -= bitbuf << bits;
-			return result;
-		}
-
-		public override int Read(byte[] b, int off, int len)
-		{
-			int i = 0;
-			for (; i < len ; i++)
-			{
-				int r = read();
-				if(r == -1)
-				{
-					break;
-				}
-				b[off + i] = (byte)r;
-			}
-			return i;
-		}
-
-		public override bool CanRead
-		{
-			get
-			{
-				return true;
-			}
-		}
-
-		public override bool CanSeek
-		{
-			get
-			{
-				return false;
-			}
-		}
-
-		public override bool CanWrite
-		{
-			get
-			{
-				return false;
-			}
-		}
-
-		public override void Flush()
-		{
-			throw new NotSupportedException();
-		}
-
-		public override long Length
-		{
-			get
-			{
-				throw new NotSupportedException();
-			}
-		}
-
-		public override long Position
-		{
-			get
-			{
-				throw new NotSupportedException();
-			}
-			set
-			{
-				throw new NotSupportedException();
-			}
-		}
-
-		public override long Seek(long offset, SeekOrigin origin)
-		{
-			throw new NotSupportedException();
-		}
-
-		public override void SetLength(long value)
-		{
-			throw new NotSupportedException();
-		}
-
-		public override void Write(byte[] buffer, int offset, int count)
-		{
-			throw new NotSupportedException();
-		}
-	}
-#endif // !WHIDBEY
-
 	public class Handler
 	{
 		public static Stream ReadResourceFromAssemblyImpl(Assembly asm, string resource)
@@ -260,7 +60,6 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 			{
 				return asm.GetManifestResourceStream(mangledName);
 			}
-#if WHIDBEY
 			Stream s = asm.GetManifestResourceStream(mangledName);
 			if(s == null)
 			{
@@ -279,39 +78,6 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 					Tracer.Error(Tracer.ClassLoading, "Resource \"{0}\" in {1} has an unsupported encoding", resource, asm.FullName);
 					throw new IOException("Unsupported resource encoding for resource " + resource + " found in assembly " + asm.FullName);
 			}
-#else
-			using(Stream s = asm.GetManifestResourceStream(mangledName))
-			{
-				if(s == null)
-				{
-					Tracer.Warning(Tracer.ClassLoading, "Resource \"{0}\" not found in {1}", resource, asm.FullName);
-					throw new FileNotFoundException("resource " + resource + " not found in assembly " + asm.FullName);
-				}
-				using(System.Resources.ResourceReader r = new System.Resources.ResourceReader(s))
-				{
-					foreach(DictionaryEntry de in r)
-					{
-						if((string)de.Key == "lz")
-						{
-							Tracer.Info(Tracer.ClassLoading, "Reading compressed resource \"{0}\" from {1}", resource, asm.FullName);
-							return new LZInputStream(new MemoryStream((byte[])de.Value));
-						}
-						else if((string)de.Key == "ikvm")
-						{
-							Tracer.Info(Tracer.ClassLoading, "Reading resource \"{0}\" from {1}", resource, asm.FullName);
-							return new MemoryStream((byte[])de.Value);
-						}
-						else
-						{
-							Tracer.Error(Tracer.ClassLoading, "Resource \"{0}\" in {1} has an unsupported encoding", resource, asm.FullName);
-							throw new IOException("Unsupported resource encoding " + de.Key + " for resource " + resource + " found in assembly " + asm.FullName);
-						}
-					}
-					Tracer.Error(Tracer.ClassLoading, "Resource \"{0}\" in {1} is invalid", resource, asm.FullName);
-					throw new IOException("Invalid resource " + resource + " found in assembly " + asm.FullName);
-				}
-			}
-#endif
 		}
 
 		public static object LoadClassFromAssembly(Assembly asm, string className)
@@ -326,12 +92,10 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 
 		public static Assembly LoadAssembly(string name)
 		{
-#if WHIDBEY
 			if(name.EndsWith("[ReflectionOnly]"))
 			{
 				return Assembly.ReflectionOnlyLoad(name.Substring(0, name.Length - 16));
 			}
-#endif
 			return Assembly.Load(name);
 		}
 

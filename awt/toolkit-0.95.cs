@@ -459,7 +459,7 @@ namespace ikvm.awt
 
 		public override void beep()
         {
-#if WHIDBEY && !COMPACT_FRAMEWORK
+#if !COMPACT_FRAMEWORK
             Console.Beep();
 #endif
 		}

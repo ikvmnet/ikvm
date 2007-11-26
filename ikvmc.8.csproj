@@ -59,6 +59,7 @@
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
+    <Reference Include="System.configuration" />
     <Reference Include="System.Xml">
       <Name>System.XML</Name>
     </Reference>
@@ -77,6 +78,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ikvmc\remapper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="runtime\attributes.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="runtime\BigEndianBinaryReader.cs">
@@ -112,6 +116,7 @@
     <Compile Include="runtime\profiler.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="runtime\tracer.cs" />
     <Compile Include="runtime\TypeWrapper.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -121,12 +126,6 @@
     <Compile Include="runtime\vm.cs">
       <SubType>Code</SubType>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="runtime\IKVM.Runtime.8.csproj">
-      <Project>{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}</Project>
-      <Name>IKVM.Runtime.8</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -30,7 +30,6 @@ using ILGenerator = IKVM.Internal.CountingILGenerator;
 #endif
 using System.Diagnostics;
 using IKVM.Attributes;
-using IKVM.Runtime;
 
 namespace IKVM.Internal
 {
@@ -904,12 +903,7 @@ namespace IKVM.Internal
 			private static Hashtable cache;
 			private static ModuleBuilder module;
 
-			private class KeyGen :
-#if WHIDBEY
-				IEqualityComparer
-#else
-				IHashCodeProvider, IComparer
-#endif
+			private class KeyGen : IEqualityComparer
 			{
 				public int GetHashCode(object o)
 				{
@@ -949,11 +943,7 @@ namespace IKVM.Internal
 			static NonvirtualInvokeHelper()
 			{
 				KeyGen keygen = new KeyGen();
-#if WHIDBEY
 				cache = new Hashtable(keygen);
-#else
-				cache = new Hashtable(keygen, keygen);
-#endif
 				AssemblyName name = new AssemblyName();
 				name.Name = "NonvirtualInvoker";
 				AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
@@ -1366,18 +1356,7 @@ namespace IKVM.Internal
 				if(field.IsLiteral)
 				{
 					ReflectionOnConstant.IssueWarning(field);
-#if WHIDBEY
 					val = field.GetRawConstantValue();
-#else
-					try
-					{
-						val = field.GetValue(null);
-					}
-					catch(TargetInvocationException x)
-					{
-						throw x.InnerException;
-					}
-#endif
 					if(field.FieldType.IsEnum)
 					{
 						val = DotNetTypeWrapper.EnumValueFieldWrapper.GetEnumPrimitiveValue(Enum.GetUnderlyingType(field.FieldType), val);
@@ -1580,37 +1559,7 @@ namespace IKVM.Internal
 			FieldBuilder fb = field as FieldBuilder;
 			if(fb != null)
 			{
-#if WHIDBEY
 				field = DeclaringType.TypeAsTBD.Module.ResolveField(fb.GetToken().Token);
-#else
-				// first do a name based lookup as that is much faster than doing a token based lookup
-				BindingFlags bindings = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
-				if(this.IsStatic)
-				{
-					bindings |= BindingFlags.Static;
-				}
-				else
-				{
-					bindings |= BindingFlags.Instance;
-				}
-				try
-				{
-					FieldInfo fi = DeclaringType.TypeAsTBD.GetField(field.Name, bindings);
-					// now check that we've got the right field by comparing the tokens
-					ModuleBuilder module = DeclaringType.GetClassLoader().GetTypeWrapperFactory().ModuleBuilder;
-					if(module.GetFieldToken(fi).Token != fb.GetToken().Token)
-					{
-						fi = TokenBasedLookup(bindings, fb.GetToken().Token);
-					}
-					field = fi;
-				}
-				catch(AmbiguousMatchException)
-				{
-					// .NET 2.0 will throw this exception if there are multiple fields
-					// with the same name (.NET 1.1 will simply return one of them)
-					field = TokenBasedLookup(bindings, fb.GetToken().Token);
-				}
-#endif
 			}
 		}
 
@@ -1956,7 +1905,6 @@ namespace IKVM.Internal
 		{
 			if(constant == null)
 			{
-#if WHIDBEY
 				FieldInfo field = GetField();
 #if !STATIC_COMPILER
 				if(field.FieldType.IsEnum && !field.DeclaringType.IsEnum)
@@ -1972,9 +1920,6 @@ namespace IKVM.Internal
 				{
 					constant = field.GetRawConstantValue();
 				}
-#else // WHIDBEY
-				constant = GetField().GetValue(null);
-#endif // WHIDBEY
 			}
 			return constant;
 		}

@@ -23,7 +23,6 @@
 */
 using System;
 using System.Reflection;
-using IKVM.Runtime;
 using IKVM.Internal;
 
 abstract class RetargetableJavaException : ApplicationException

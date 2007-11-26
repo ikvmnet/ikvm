@@ -435,6 +435,7 @@ namespace IKVM.Runtime
 						ClassLoaderWrapper prevLoader = f.Enter(loader);
 						try
 						{
+							// TODO on Whidbey we should be able to use Marshal.GetDelegateForFunctionPointer to call OnLoad
 							version = ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
 							Tracer.Info(Tracer.Jni, "JNI_OnLoad returned: 0x{0:X8}", version);
 						}
@@ -473,6 +474,7 @@ namespace IKVM.Runtime
 
 	unsafe class VtableBuilder
 	{
+		// TODO on Whidbey we should use generics to cut down on the number of delegates needed
 		delegate int pf_int_IntPtr(JNIEnv* pEnv, IntPtr p);
 		delegate IntPtr pf_IntPtr_IntPtr(JNIEnv* pEnv, IntPtr p);
 		delegate void pf_void_IntPtr(JNIEnv* pEnv, IntPtr p);
@@ -566,6 +568,7 @@ namespace IKVM.Runtime
 			{
 				if(vtableDelegates[i] != null)
 				{
+					// TODO on Whidbey we can use Marshal.GetFunctionPointerForDelegate
 					p[i] = JniHelper.ikvm_MarshalDelegate(vtableDelegates[i]);
 				}
 				else

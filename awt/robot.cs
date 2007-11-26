@@ -48,7 +48,6 @@ namespace ikvm.awt
 
         public int getRGBPixel(int x, int y)
         {
-#if WHIDBEY
             Bitmap bitmap = new Bitmap(1, 1);
             Graphics g = Graphics.FromImage(bitmap);
             g.CopyFromScreen( x, y, 0, 0, new Size(1,1));
@@ -56,14 +55,10 @@ namespace ikvm.awt
             Color color = bitmap.GetPixel(0,0);
             bitmap.Dispose();
             return color.ToArgb();
-#else
-            return 0;
-#endif
         }
 
         public int[] getRGBPixels(java.awt.Rectangle r)
         {
-#if WHIDBEY
             int width = r.width;
             int height = r.height;
             Bitmap bitmap = new Bitmap(width, height);
@@ -80,9 +75,6 @@ namespace ikvm.awt
             }
             bitmap.Dispose();
             return pixels;
-#else
-            return null;
-#endif
         }
 
         private byte MapKeyCode(int keyCode)

@@ -31,7 +31,6 @@ using System.Collections;
 using System.Diagnostics;
 using System.Threading;
 using IKVM.Attributes;
-using IKVM.Runtime;
 
 namespace IKVM.Internal
 {
@@ -958,7 +957,7 @@ namespace IKVM.Internal
 			{
 				return GetGenericClassLoaderByName(name);
 			}
-#if WHIDBEY && STATIC_COMPILER
+#if STATIC_COMPILER
 			return ClassLoaderWrapper.GetAssemblyClassLoader(Assembly.ReflectionOnlyLoad(name));
 #else
 			return ClassLoaderWrapper.GetAssemblyClassLoader(Assembly.Load(name));
@@ -1303,9 +1302,7 @@ namespace IKVM.Internal
 		private Assembly assembly;
 		private AssemblyName[] references;
 		private AssemblyClassLoader[] delegates;
-#if WHIDBEY
 		private bool isReflectionOnly;
-#endif // WHIDBEY
 		private bool[] isJavaModule;
 		private Module[] modules;
 		private Hashtable nameMap;
@@ -1323,9 +1320,7 @@ namespace IKVM.Internal
 			modules = assembly.GetModules(false);
 			isJavaModule = new bool[modules.Length];
 			this.hasCustomClassLoader = hasCustomClassLoader;
-#if WHIDBEY
 			isReflectionOnly = assembly.ReflectionOnly;
-#endif // WHIDBEY
 			for(int i = 0; i < modules.Length; i++)
 			{
 				object[] attr = AttributeHelper.GetJavaModuleAttributes(modules[i]);
@@ -1614,13 +1609,11 @@ namespace IKVM.Internal
 					try
 					{
 						// TODO consider throttling the Load attempts (or caching failure)
-#if WHIDBEY
 						if(isReflectionOnly)
 						{
 							asm = Assembly.ReflectionOnlyLoad(references[i].FullName);
 						}
 						else
-#endif
 						{
 							asm = Assembly.Load(references[i]);
 						}
@@ -1680,13 +1673,11 @@ namespace IKVM.Internal
 					try
 					{
 						// TODO consider throttling the Load attempts (or caching failure)
-#if WHIDBEY
 						if(isReflectionOnly)
 						{
 							asm = Assembly.ReflectionOnlyLoad(references[i].FullName);
 						}
 						else
-#endif
 					{
 						asm = Assembly.Load(references[i]);
 					}

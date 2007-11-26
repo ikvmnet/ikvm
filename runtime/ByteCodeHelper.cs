@@ -600,13 +600,13 @@ namespace IKVM.Runtime
 #endif
 		}
 
-#if !WHIDBEY || COMPACT_FRAMEWORK
+#if COMPACT_FRAMEWORK
 		private static readonly object volatileLock = new object();
 #endif
 
 		public static long VolatileRead(ref long v)
 		{
-#if WHIDBEY && !COMPACT_FRAMEWORK
+#if !COMPACT_FRAMEWORK
 			return Interlocked.Read(ref v);
 #else
 			lock(volatileLock)
@@ -618,7 +618,7 @@ namespace IKVM.Runtime
 
 		public static void VolatileWrite(ref long v, long newValue)
 		{
-#if WHIDBEY && !COMPACT_FRAMEWORK
+#if !COMPACT_FRAMEWORK
 			Interlocked.Exchange(ref v, newValue);
 #else
 			lock(volatileLock)
@@ -630,7 +630,7 @@ namespace IKVM.Runtime
 
 		public static double VolatileRead(ref double v)
 		{
-#if WHIDBEY && !COMPACT_FRAMEWORK
+#if !COMPACT_FRAMEWORK
 			return Interlocked.CompareExchange(ref v, 0.0, 0.0);
 #else
 			lock(volatileLock)
@@ -642,7 +642,7 @@ namespace IKVM.Runtime
 
 		public static void VolatileWrite(ref double v, double newValue)
 		{
-#if WHIDBEY && !COMPACT_FRAMEWORK
+#if !COMPACT_FRAMEWORK
 			Interlocked.Exchange(ref v, newValue);
 #else
 			lock(volatileLock)

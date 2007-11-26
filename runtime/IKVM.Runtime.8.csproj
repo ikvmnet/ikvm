@@ -113,7 +113,6 @@
     <Compile Include="MemberWrapper.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="netinf.cs" />
     <Compile Include="openjdk.cs" />
     <Compile Include="profiler.cs">
       <SubType>Code</SubType>

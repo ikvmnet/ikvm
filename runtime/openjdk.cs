@@ -121,56 +121,11 @@ using ssaGetPropertyAction = sun.security.action.GetPropertyAction;
 using sndResolverConfigurationImpl = sun.net.dns.ResolverConfigurationImpl;
 #endif
 
-#if WHIDBEY
 sealed class DynamicMethodSupport
 {
 	// MONOBUG as of Mono 1.2.5.1, DynamicMethod is too broken to be used
 	internal static readonly bool Enabled = Type.GetType("Mono.Runtime") == null;
 }
-#else
-sealed class DynamicMethodSupport
-{
-	internal static readonly bool Enabled = Environment.Version.Major >= 2 && Type.GetType("Mono.Runtime") == null;
-}
-
-sealed class DynamicMethod
-{
-	private static ConstructorInfo ctor1;
-	private static ConstructorInfo ctor2;
-	private static MethodInfo createMethod;
-	private static MethodInfo getILGenMethod;
-	private object dm;
-
-	static DynamicMethod()
-	{
-		Type type = Type.GetType("System.Reflection.Emit.DynamicMethod", true);
-		ctor1 = type.GetConstructor(new Type[] { typeof(string), typeof(MethodAttributes), typeof(CallingConventions), typeof(Type), typeof(Type[]), typeof(Module), typeof(bool) });
-		ctor2 = type.GetConstructor(new Type[] { typeof(string), typeof(Type), typeof(Type[]), typeof(Type) });
-		createMethod = type.GetMethod("CreateDelegate", new Type[] { typeof(Type) });
-		getILGenMethod = type.GetMethod("GetILGenerator", new Type[0]);
-	}
-
-	internal DynamicMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Module owner, bool skipVisibility)
-	{
-		dm = ctor1.Invoke(new object[] { name, attributes, callingConvention, returnType, parameterTypes, owner, skipVisibility });
-	}
-
-	internal DynamicMethod(string name, Type returnType, Type[] parameterTypes, Type owner)
-	{
-		dm = ctor2.Invoke(new object[] { name, returnType, parameterTypes, owner });
-	}
-
-	internal ILGenerator GetILGenerator()
-	{
-		return (ILGenerator)getILGenMethod.Invoke(dm, null);
-	}
-
-	internal Delegate CreateDelegate(Type delegateType)
-	{
-		return (Delegate)createMethod.Invoke(dm, new object[] { delegateType });
-	}
-}
-#endif
 
 namespace IKVM.Runtime
 {
@@ -4563,11 +4518,7 @@ namespace IKVM.NativeCode.java
 #else
 				try
 				{
-#if WHIDBEY
 					System.Net.IPAddress[] addr = System.Net.Dns.GetHostAddresses(hostname);
-#else
-					System.Net.IPAddress[] addr = System.Net.Dns.Resolve(hostname).AddressList;
-#endif
 					ArrayList addresses = new ArrayList();
 					for (int i = 0; i < addr.Length; i++)
 					{
@@ -4682,11 +4633,7 @@ namespace IKVM.NativeCode.java
 #else
 				try
 				{
-#if WHIDBEY
 					System.Net.IPAddress[] addr = System.Net.Dns.GetHostAddresses(hostname);
-#else
-					System.Net.IPAddress[] addr = System.Net.Dns.Resolve(hostname).AddressList;
-#endif
 					jnInetAddress[] addresses = new jnInetAddress[addr.Length];
 					for (int i = 0; i < addr.Length; i++)
 					{

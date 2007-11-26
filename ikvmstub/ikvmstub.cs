@@ -79,29 +79,8 @@ public class NetExp
 		}
 		if(file != null && file.Exists)
 		{
-#if WHIDBEY
 			AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_ReflectionOnlyAssemblyResolve);
 			assembly = Assembly.ReflectionOnlyLoadFrom(assemblyNameOrPath);
-#else
-			try
-			{
-				// If the same assembly can be found in the "Load" context, we prefer to use that
-				// http://blogs.gotdotnet.com/suzcook/permalink.aspx/d5c5e14a-3612-4af1-a9b7-0a144c8dbf16
-				// We use AssemblyName.FullName, because otherwise the assembly will be loaded in the
-				// "LoadFrom" context using the path inside the AssemblyName object.
-				assembly = Assembly.Load(AssemblyName.GetAssemblyName(assemblyNameOrPath).FullName);
-				Console.Error.WriteLine("Warning: Assembly loaded from {0} instead", assembly.Location);
-			}
-			catch
-			{
-			}
-			if(assembly == null)
-			{
-				// since we're loading the assembly in the LoadFrom context, we need to hook the AssemblyResolve event
-				AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
-				assembly = Assembly.LoadFrom(assemblyNameOrPath);
-			}
-#endif
 		}
 		else
 		{
@@ -160,7 +139,6 @@ public class NetExp
 		Environment.Exit(rc);
 	}
 
-#if WHIDBEY
 	private static Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
 	{
 		foreach(Assembly a in AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies())
@@ -185,7 +163,6 @@ public class NetExp
 		Console.WriteLine("Loading referenced assembly: " + path);
 		return Assembly.ReflectionOnlyLoadFrom(path);
 	}
-#endif
 
 	private static void WriteClass(java.lang.Class c)
 	{
@@ -219,7 +196,6 @@ public class NetExp
 				// NOTE we can't use getClassFromTypeHandle for ReflectionOnly assemblies
 				// (because Type.TypeHandle is not supported by ReflectionOnly types), but this
 				// isn't a problem because mscorlib is never loaded in the ReflectionOnly context.
-#if WHIDBEY
 				if(assembly.ReflectionOnly)
 				{
 					c = ikvm.runtime.Util.getFriendlyClassFromType(t);
@@ -228,9 +204,6 @@ public class NetExp
 				{
 					c = ikvm.runtime.Util.getClassFromTypeHandle(t.TypeHandle);
 				}
-#else
-				c = ikvm.runtime.Util.getClassFromTypeHandle(t.TypeHandle);
-#endif
 				if(c != null)
 				{
 					AddToExportList(c);
@@ -265,7 +238,6 @@ public class NetExp
 
 	private static bool IsGenericType(java.lang.Class c)
 	{
-#if WHIDBEY
 		System.Type t = ikvm.runtime.Util.getInstanceTypeFromClass(c);
 		while(t == null && c.getDeclaringClass() != null)
 		{
@@ -274,9 +246,6 @@ public class NetExp
 			t = ikvm.runtime.Util.getInstanceTypeFromClass(c);
 		}
 		return t.IsGenericType;
-#else
-		return c.getName().IndexOf("$$0060") > 0;
-#endif
 	}
 
 	private static void AddToExportListIfNeeded(java.lang.Class c)
@@ -344,17 +313,5 @@ public class NetExp
 				AddToExportListIfNeeded(field.getType());
 			}
 		}
-	}
-
-	private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
-	{
-		foreach(Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
-		{
-			if(asm.FullName == args.Name)
-			{
-				return asm;
-			}
-		}
-		return null;
 	}
 }

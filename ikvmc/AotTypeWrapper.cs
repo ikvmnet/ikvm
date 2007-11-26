@@ -24,15 +24,12 @@
 
 using System;
 using System.Collections;
-#if WHIDBEY
 using System.Collections.Generic;
-#endif
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
 using System.Security;
 using System.Security.Permissions;
-using IKVM.Runtime;
 using IKVM.Attributes;
 
 using ILGenerator = IKVM.Internal.CountingILGenerator;

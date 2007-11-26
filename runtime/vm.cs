@@ -30,7 +30,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Security;
 using System.Security.Permissions;
-using IKVM.Attributes;
 using IKVM.Internal;
 
 #if !STATIC_COMPILER && !COMPACT_FRAMEWORK
@@ -182,12 +181,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-#if WHIDBEY
 				return Environment.OSVersion.Platform == PlatformID.Unix;
-#else
-				PlatformID pid = Environment.OSVersion.Platform;
-				return pid != PlatformID.Win32NT && pid != PlatformID.Win32S && pid != PlatformID.Win32Windows && pid != PlatformID.WinCE;
-#endif
 			}
 		}
 	
@@ -231,11 +225,7 @@ namespace IKVM.Internal
 					messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
 				}
 #endif
-				new ReflectionPermission(ReflectionPermissionFlag.MemberAccess
-#if !WHIDBEY
-					| ReflectionPermissionFlag.TypeInformation
-#endif
-				).Assert();
+				new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
 				message = String.Format("****** Critical Failure: {1} ******{0}{0}" +
 					"PLEASE FILE A BUG REPORT FOR IKVM.NET WHEN YOU SEE THIS MESSAGE{0}{0}" +
 					(messageBox != null ? "(on Windows you can use Ctrl+C to copy the contents of this message to the clipboard){0}{0}" : "") +
@@ -280,7 +270,7 @@ namespace IKVM.Internal
 		// with can be different from the one we're compiling against.)
 		internal static Type LoadType(Type type)
 		{
-#if WHIDBEY && STATIC_COMPILER
+#if STATIC_COMPILER
 			return StaticCompiler.GetType(type.FullName);
 #else
 			return type;

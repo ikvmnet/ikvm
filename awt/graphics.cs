@@ -1065,11 +1065,7 @@ namespace ikvm.awt
 
         public override string[] getAvailableFontFamilyNames(Locale locale)
         {
-#if WHIDBEY 
             int language = CultureInfo.GetCultureInfo(locale.toString()).LCID;
-#else
-            int language = new CultureInfo(locale.toString()).LCID;
-#endif
             return getAvailableFontFamilyNames(language);
         }
 

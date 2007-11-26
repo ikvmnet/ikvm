@@ -52,7 +52,6 @@
                 <include name="JavaException.cs" />
                 <include name="JniInterface.cs" />
                 <include name="MemberWrapper.cs" />
-                <include unless="${classpath}" name="netinf.cs" />
                 <include unless="${classpath}" name="openjdk.cs" />
                 <include name="profiler.cs" />
                 <include name="tracer.cs" />

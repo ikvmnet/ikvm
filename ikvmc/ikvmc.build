@@ -16,6 +16,7 @@
                 <include name="Compiler.cs" />
                 <include name="CompilerClassLoader.cs" />
                 <include name="remapper.cs" />
+                <include name="../runtime/attributes.cs" />
                 <include name="../runtime/BigEndianBinaryReader.cs" />
                 <include name="../runtime/ByteCode.cs" />
                 <include name="../runtime/ClassFile.cs" />
@@ -27,12 +28,12 @@
                 <include name="../runtime/JavaException.cs" />
                 <include name="../runtime/MemberWrapper.cs" />
                 <include name="../runtime/profiler.cs" />
+                <include name="../runtime/tracer.cs" />
                 <include name="../runtime/TypeWrapper.cs" />
                 <include name="../runtime/verifier.cs" />
                 <include name="../runtime/vm.cs" />
             </sources>
             <references>
-                <include name="../bin/IKVM.Runtime.dll" asis="true" />
                 <include name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
             </references>
         </csc>

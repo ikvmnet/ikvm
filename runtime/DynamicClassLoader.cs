@@ -42,10 +42,6 @@ namespace IKVM.Internal
 
 	sealed class DynamicClassLoader : TypeWrapperFactory
 	{
-#if !WHIDBEY
-		internal static bool arrayConstructionHack;
-		internal static readonly object arrayConstructionLock = new object();
-#endif // !WHIDBEY
 		private static readonly char[] specialCharacters = { '\\', '+', ',', '[', ']', '*', '&', '\u0000' };
 		private static readonly string specialCharactersString = new String(specialCharacters);
 #if !STATIC_COMPILER
@@ -81,16 +77,6 @@ namespace IKVM.Internal
 
 		private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
 		{
-#if !WHIDBEY
-			lock(arrayConstructionLock)
-			{
-				Tracer.Info(Tracer.ClassLoading, "OnTypeResolve: {0} (arrayConstructionHack = {1})", args.Name, arrayConstructionHack);
-				if(arrayConstructionHack)
-				{
-					return null;
-				}
-			}
-#endif // !WHIDBEY
 			TypeWrapper type = (TypeWrapper)Instance.dynamicTypes[args.Name];
 			if(type == null)
 			{
