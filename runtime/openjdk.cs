@@ -5198,6 +5198,7 @@ namespace IKVM.NativeCode.java
 				}
 				// do a volatile store of the sum of the bytes to make sure the reads don't get optimized out
 				bogusField = bogus;
+				GC.KeepAlive(thisMappedByteBuffer);
 				return 0;
 			}
 
@@ -5206,6 +5207,7 @@ namespace IKVM.NativeCode.java
 				if (JVM.IsUnix)
 				{
 					ikvm_msync((IntPtr)address, (int)length);
+					GC.KeepAlive(thisMappedByteBuffer);
 				}
 				else
 				{
@@ -5215,6 +5217,7 @@ namespace IKVM.NativeCode.java
 					{
 						if (FlushViewOfFile((IntPtr)address, (IntPtr)length) != 0)
 						{
+							GC.KeepAlive(thisMappedByteBuffer);
 							return;
 						}
 						const int ERROR_LOCK_VIOLATION = 33;

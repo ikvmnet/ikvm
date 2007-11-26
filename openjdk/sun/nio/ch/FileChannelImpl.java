@@ -25,6 +25,7 @@
 
 package sun.nio.ch;
 
+import cli.Microsoft.Win32.SafeHandles.SafeFileHandle;
 import cli.System.IntPtr;
 import cli.System.IO.FileStream;
 import cli.System.Reflection.MethodInfo;
@@ -1228,7 +1229,7 @@ public class FileChannelImpl
 	    {
 		flags |= LOCKFILE_EXCLUSIVE_LOCK;
 	    }
-	    int result = LockFileEx(fs.get_Handle(), flags, 0, (int)size, (int)(size >> 32), o);
+	    int result = LockFileEx(fs.get_SafeFileHandle(), flags, 0, (int)size, (int)(size >> 32), o);
 	    if (result == 0)
 	    {
 		int error = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
@@ -1284,7 +1285,7 @@ public class FileChannelImpl
 	    OVERLAPPED o = new OVERLAPPED();
 	    o.OffsetLow = (int)pos;
 	    o.OffsetHigh = (int)(pos >> 32);
-	    int result = UnlockFileEx(fs.get_Handle(), 0, (int)size, (int)(size >> 32), o);
+	    int result = UnlockFileEx(fs.get_SafeFileHandle(), 0, (int)size, (int)(size >> 32), o);
 	    if (result == 0)
 	    {
 		throw new IOException("Release failed");
@@ -1357,9 +1358,9 @@ public class FileChannelImpl
 		    throw new Error();
 	    }
 
-	    IntPtr hFileMapping = CreateFileMapping(fs.get_Handle(), IntPtr.Zero, fileProtect, (int)(length >> 32), (int)length, null);
+	    SafeFileHandle hFileMapping = CreateFileMapping(fs.get_SafeFileHandle(), IntPtr.Zero, fileProtect, (int)(length >> 32), (int)length, null);
 	    int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-	    if (hFileMapping.Equals(IntPtr.Zero))
+	    if (hFileMapping.get_IsInvalid())
 	    {
 		throw new IOException("Win32 error " + err);
 	    }
@@ -1374,6 +1375,7 @@ public class FileChannelImpl
 		}
 		throw new IOException("Win32 error " + err);
 	    }
+	    cli.System.GC.AddMemoryPressure(length);
 	    return p.ToInt64();
 	}
 	finally
@@ -1386,7 +1388,7 @@ public class FileChannelImpl
     {
 	byte writeable = prot != MAP_RO ? (byte)1 : (byte)0;
 	byte copy_on_write = prot == MAP_PV ? (byte)1 : (byte)0;
-        IntPtr p = ikvm_mmap(fs.get_Handle(), writeable, copy_on_write, position, (int)length);
+        IntPtr p = ikvm_mmap(fs.get_SafeFileHandle(), writeable, copy_on_write, position, (int)length);
         cli.System.GC.KeepAlive(fs);
         // HACK ikvm_mmap should really be changed to return a null pointer on failure,
         // instead of whatever MAP_FAILED is defined to on the particular system we're running on,
@@ -1395,12 +1397,13 @@ public class FileChannelImpl
         {
             throw new IOException("file mapping failed");
         }
+	cli.System.GC.AddMemoryPressure(length);
         return p.ToInt64();
     }
 
     private static boolean flushWin32(FileStream fs)
     {
-        int rc = FlushFileBuffers(fs.get_Handle());
+        int rc = FlushFileBuffers(fs.get_SafeFileHandle());
         cli.System.GC.KeepAlive(fs);
         return rc != 0;
     }
@@ -1422,31 +1425,31 @@ public class FileChannelImpl
     }
 
     @DllImportAttribute.Annotation("kernel32")
-    private static native int FlushFileBuffers(IntPtr handle);
+    private static native int FlushFileBuffers(SafeFileHandle handle);
 
     @DllImportAttribute.Annotation("kernel32")
-    private static native int CloseHandle(IntPtr handle);
+    private static native int CloseHandle(SafeFileHandle handle);
 
     @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-    private static native IntPtr CreateFileMapping(IntPtr hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName);
+    private static native SafeFileHandle CreateFileMapping(SafeFileHandle hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName);
 
     @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-    private static native IntPtr MapViewOfFile(IntPtr hFileMapping, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);
+    private static native IntPtr MapViewOfFile(SafeFileHandle hFileMapping, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);
 
     @DllImportAttribute.Annotation("kernel32")
     private static native int UnmapViewOfFile(IntPtr lpBaseAddress);
 
     @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-    static native int LockFileEx(IntPtr hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, OVERLAPPED lpOverlapped);
+    static native int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, OVERLAPPED lpOverlapped);
 
     @DllImportAttribute.Annotation("kernel32")
-    static native int UnlockFileEx(IntPtr hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, OVERLAPPED lpOverlapped);
+    static native int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, OVERLAPPED lpOverlapped);
 
     @DllImportAttribute.Annotation("ikvm-native")
     private static native int ikvm_munmap(IntPtr address, int size);
 
     @DllImportAttribute.Annotation("ikvm-native")
-    private static native IntPtr ikvm_mmap(IntPtr handle, byte writeable, byte copy_on_write, long position, int size);
+    private static native IntPtr ikvm_mmap(SafeFileHandle handle, byte writeable, byte copy_on_write, long position, int size);
 
     // Removes an existing mapping
     static int unmap0(long address, long length)
@@ -1455,6 +1458,7 @@ public class FileChannelImpl
             UnmapViewOfFile(IntPtr.op_Explicit(address));
         else
             ikvm_munmap(IntPtr.op_Explicit(address), (int)length);
+        cli.System.GC.RemoveMemoryPressure(length);
 	return 0;
     }
 
