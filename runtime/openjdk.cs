@@ -31,6 +31,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
+using System.Security.Cryptography.X509Certificates;
 using StackFrame = System.Diagnostics.StackFrame;
 using StackTrace = System.Diagnostics.StackTrace;
 using SystemArray = System.Array;
@@ -794,85 +795,176 @@ namespace IKVM.NativeCode.java
 			}
 
 #if !FIRST_PASS
-			private static juzZipFile zipFile;
+			private static Dictionary<string, VfsEntry> entries;
 
-			private class VfsEntry : juzZipEntry
+			private abstract class VfsEntry
+			{
+				internal abstract long Size { get; }
+				internal virtual bool IsDirectory { get { return false; } }
+				internal abstract System.IO.Stream Open();
+			}
+
+			private class VfsDummyEntry : VfsEntry
 			{
 				private bool directory;
 
-				internal VfsEntry(bool directory)
-					: base("")
+				internal VfsDummyEntry(bool directory)
 				{
 					this.directory = directory;
 				}
 
-				public override bool isDirectory()
+				internal override long Size
 				{
-					return directory;
+					get { return 0; }
+				}
+
+				internal override bool IsDirectory
+				{
+					get { return directory; }
+				}
+
+				internal override System.IO.Stream Open()
+				{
+					return System.IO.Stream.Null;
 				}
 			}
 
-			private static juzZipEntry GetZipEntry(string name)
+			private class VfsZipEntry : VfsEntry
 			{
-				if (zipFile == null)
+				private juzZipFile zipFile;
+				private juzZipEntry entry;
+
+				internal VfsZipEntry(juzZipFile zipFile, juzZipEntry entry)
 				{
-					// this is a weird loop back, the vfs.zip resource is loaded from vfs,
-					// because that's the easiest way to construct a ZipFile from a Stream.
-					juzZipFile zf = new juzZipFile(RootPath + "vfs.zip");
-					if (Interlocked.CompareExchange(ref zipFile, zf, null) != null)
-					{
-						zf.close();
-					}
+					this.zipFile = zipFile;
+					this.entry = entry;
 				}
-				if (IsVirtualFS(name))
+
+				internal override long Size
 				{
-					if (name.Length < RootPath.Length)
-					{
-						return new VfsEntry(true);
-					}
-					else
-					{
-						name = name.Substring(RootPath.Length);
-					}
+					get { return entry.getSize(); }
 				}
-				name = name.Replace('\\', '/');
-				juzZipEntry entry = ((juzZipFile)zipFile).getEntry(name);
-				if (entry == null)
+
+				internal override bool IsDirectory
 				{
-					if (name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("zip")
-						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("awt")
-						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("rmi")
-						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("w2k_lsa_auth")
-						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("jaas_nt")
-						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("jaas_unix")
-						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("unpack")
-						|| name == "bin/" + IKVM.NativeCode.java.lang.System.mapLibraryName("net"))
-					{
-						return new VfsEntry(false);
-					}
+					get { return entry.isDirectory(); }
 				}
-				return entry;
+
+				internal override System.IO.Stream Open()
+				{
+					return new ZipEntryStream(zipFile, entry);
+				}
 			}
 
-			/*
-			 * On WHIDBEY we should generate cacerts on the fly by using something like this:
-			 *
-			 * java.security.KeyStore jstore = java.security.KeyStore.getInstance("jks");
-			 * jstore.load(null);
-			 * java.security.cert.CertificateFactory cf = java.security.cert.CertificateFactory.getInstance("X509");
-			 * 
-			 * X509Store store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
-			 * store.Open(OpenFlags.ReadOnly);
-			 * foreach (X509Certificate2 cert in store.Certificates)
-			 * {
-			 *   if (!cert.HasPrivateKey)
-			 *   {
-			 *     jstore.setCertificateEntry(cert.Subject, cf.generateCertificate(new java.io.ByteArrayInputStream(cert.RawData)));
-			 *   }
-			 * }
-			 * java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-			 * jstore.store(baos, new char[0]);
-			 */
+			private class VfsCacertsEntry : VfsEntry
+			{
+				private byte[] buf;
+
+				internal override long Size
+				{
+					get 
+					{
+						Populate();
+						return buf.Length;
+					}
+				}
+
+				internal override System.IO.Stream Open()
+				{
+					Populate();
+					return new System.IO.MemoryStream(buf, false);
+				}
+
+				private void Populate()
+				{
+					if (buf == null)
+					{
+						global::java.security.KeyStore jstore = global::java.security.KeyStore.getInstance("jks");
+						jstore.load(null);
+						global::java.security.cert.CertificateFactory cf = global::java.security.cert.CertificateFactory.getInstance("X509");
+
+						X509Store store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
+						store.Open(OpenFlags.ReadOnly);
+						foreach (X509Certificate2 cert in store.Certificates)
+						{
+							if (!cert.HasPrivateKey)
+							{
+								jstore.setCertificateEntry(cert.Subject, cf.generateCertificate(new global::java.io.ByteArrayInputStream(cert.RawData)));
+							}
+						}
+						store.Close();
+						global::java.io.ByteArrayOutputStream baos = new global::java.io.ByteArrayOutputStream();
+						jstore.store(baos, new char[0]);
+						buf = baos.toByteArray();
+					}
+				}
+			}
+
+			private class VfsVfsZipEntry : VfsEntry
+			{
+				internal override long Size
+				{
+					get
+					{
+						using (System.IO.Stream stream = Open())
+						{
+							return stream.Length;
+						}
+					}
+				}
+
+				internal override System.IO.Stream Open()
+				{
+					return new System.IO.FileStream("c:\\ikvm\\openjdk\\vfs.zip", System.IO.FileMode.Open);
+					//return Assembly.GetExecutingAssembly().GetManifestResourceStream("vfs.zip");
+				}
+			}
+
+			private static void Initialize()
+			{
+				// this is a weird loop back, the vfs.zip resource is loaded from vfs,
+				// because that's the easiest way to construct a ZipFile from a Stream.
+				juzZipFile zf = new juzZipFile(RootPath + "vfs.zip");
+				global::java.util.Enumeration e = zf.entries();
+				Dictionary<string, VfsEntry> dict = new Dictionary<string, VfsEntry>();
+				char sep = jiFile.separatorChar;
+				while (e.hasMoreElements())
+				{
+					juzZipEntry entry = (juzZipEntry)e.nextElement();
+					dict[RootPath + entry.getName().Replace('/', sep)] = new VfsZipEntry(zf, entry);
+				}
+				dict[RootPath] = new VfsDummyEntry(true);
+				dict[RootPath + "lib/security/cacerts".Replace('/', sep)] = new VfsCacertsEntry();
+				dict[RootPath + "bin"] = new VfsDummyEntry(true);
+				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("zip")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("awt")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("rmi")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("w2k_lsa_auth")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("jaas_nt")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("jaas_unix")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("unpack")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("net")] = new VfsDummyEntry(false);
+				if (Interlocked.CompareExchange(ref entries, dict, null) != null)
+				{
+					// we lost the race, so we close our zip file
+					zf.close();
+				}
+			}
+
+			private static VfsEntry GetVfsEntry(string name)
+			{
+				if (entries == null)
+				{
+					if (name == RootPath + "vfs.zip")
+					{
+						return new VfsVfsZipEntry();
+					}
+					Initialize();
+				}
+				VfsEntry ve;
+				entries.TryGetValue(name, out ve);
+				return ve;
+			}
 
 			private sealed class ZipEntryStream : System.IO.Stream
 			{
@@ -1014,17 +1106,12 @@ namespace IKVM.NativeCode.java
 				{
 					throw new System.IO.IOException("vfs is read-only");
 				}
-				name = name.Substring(RootPath.Length);
-				if (name == "vfs.zip")
-				{
-					return Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
-				}
-				juzZipEntry entry = GetZipEntry(name);
+				VfsEntry entry = GetVfsEntry(name);
 				if (entry == null)
 				{
 					throw new System.IO.FileNotFoundException("File not found");
 				}
-				return new ZipEntryStream(((juzZipFile)zipFile), entry);
+				return entry.Open();
 #endif
 			}
 
@@ -1033,8 +1120,8 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return 0;
 #else
-				juzZipEntry entry = GetZipEntry(path);
-				return entry == null ? 0 : entry.getSize();
+				VfsEntry entry = GetVfsEntry(path);
+				return entry == null ? 0 : entry.Size;
 #endif
 			}
 
@@ -1043,7 +1130,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return false;
 #else
-				return access == Win32FileSystem.ACCESS_READ && GetZipEntry(path) != null;
+				return access == Win32FileSystem.ACCESS_READ && GetVfsEntry(path) != null;
 #endif
 			}
 
@@ -1052,7 +1139,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return 0;
 #else
-				juzZipEntry entry = GetZipEntry(path);
+				VfsEntry entry = GetVfsEntry(path);
 				if (entry == null)
 				{
 					return 0;
@@ -1060,7 +1147,7 @@ namespace IKVM.NativeCode.java
 				const int BA_EXISTS = 0x01;
 				const int BA_REGULAR = 0x02;
 				const int BA_DIRECTORY = 0x04;
-				return entry.isDirectory() ? BA_EXISTS | BA_DIRECTORY : BA_EXISTS | BA_REGULAR;
+				return entry.IsDirectory ? BA_EXISTS | BA_DIRECTORY : BA_EXISTS | BA_REGULAR;
 #endif
 			}
 		}
@@ -1135,10 +1222,13 @@ namespace IKVM.NativeCode.java
 					string name = fi.Name;
 					try
 					{
-						string[] arr = System.IO.Directory.GetFileSystemEntries(dir, name);
-						if (arr.Length == 1)
+						if (!VirtualFileSystem.IsVirtualFS(path))
 						{
-							name = arr[0];
+							string[] arr = System.IO.Directory.GetFileSystemEntries(dir, name);
+							if (arr.Length == 1)
+							{
+								name = arr[0];
+							}
 						}
 					}
 					catch (System.UnauthorizedAccessException)
@@ -6440,6 +6530,10 @@ namespace IKVM.NativeCode.sun.reflect
 
 		internal static bool IsHideFromJava(MethodBase mb)
 		{
+			if (mb.Name.StartsWith("__<", StringComparison.Ordinal))
+			{
+				return true;
+			}
 			RuntimeMethodHandle handle;
 			try
 			{
