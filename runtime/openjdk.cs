@@ -7087,7 +7087,7 @@ namespace IKVM.NativeCode.sun.reflect
 				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
 				mw.DeclaringType.Finish();
 				mw.ResolveMethod();
-				DynamicMethod dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object), typeof(object[]) }, mw.DeclaringType.TypeAsTBD);
+				DynamicMethod dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object[]) }, mw.DeclaringType.TypeAsTBD);
 				CountingILGenerator ilgen = dm.GetILGenerator();
 				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
 
@@ -7096,10 +7096,10 @@ namespace IKVM.NativeCode.sun.reflect
 				if (mw.GetParameters().Length == 0)
 				{
 					// zero length array may be null
-					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Brfalse_S, argsLengthOK);
 				}
-				ilgen.Emit(OpCodes.Ldarg_1);
+				ilgen.Emit(OpCodes.Ldarg_0);
 				ilgen.Emit(OpCodes.Ldlen);
 				ilgen.Emit(OpCodes.Ldc_I4, mw.GetParameters().Length);
 				ilgen.Emit(OpCodes.Beq_S, argsLengthOK);
@@ -7115,7 +7115,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.BeginExceptionBlock();
 				for (int i = 0; i < args.Length; i++)
 				{
-					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldc_I4, i);
 					ilgen.Emit(OpCodes.Ldelem_Ref);
 					TypeWrapper tw = mw.GetParameters()[i];
