@@ -62,8 +62,8 @@
             <references>
                 <include unless="${first-pass or not classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
                 <include unless="${first-pass or classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
-                <!-- HACK mcs 1.2.3 requires explicit reference to System.Management -->
-                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Management.dll" />
+                <!-- HACK mcs requires an explicit reference to System.Configuration -->
+                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Configuration.dll" />
             </references>
             <nowarn>
                 <!-- don't whine about deprecated methods -->
