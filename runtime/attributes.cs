@@ -588,6 +588,25 @@ namespace IKVM.Attributes
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Assembly)]
+	public sealed class CustomAssemblyClassLoaderAttribute : Attribute
+	{
+		private Type type;
+
+		public CustomAssemblyClassLoaderAttribute(Type type)
+		{
+			this.type = type;
+		}
+
+		public Type Type
+		{
+			get
+			{
+				return type;
+			}
+		}
+	}
+
 	[AttributeUsage(AttributeTargets.Field)]
 	public sealed class ConstantValueAttribute : Attribute
 	{

@@ -2898,7 +2898,7 @@ namespace IKVM.Internal
 			{
 				ilgen.Emit(OpCodes.Dup);
 				// TODO make sure we get the right "Cast" method and cache it
-				// NOTE for dynamic ghosts we don't end up here because DynamicTypeWrapper overrides this method,
+				// NOTE for dynamic ghosts we don't end up here because AotTypeWrapper overrides this method,
 				// so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
 				ilgen.Emit(OpCodes.Call, TypeAsTBD.GetMethod("Cast"));
 				ilgen.Emit(OpCodes.Pop);
@@ -2907,7 +2907,7 @@ namespace IKVM.Internal
 			{
 				ilgen.Emit(OpCodes.Dup);
 				// TODO make sure we get the right "CastArray" method and cache it
-				// NOTE for dynamic ghosts we don't end up here because DynamicTypeWrapper overrides this method,
+				// NOTE for dynamic ghosts we don't end up here because AotTypeWrapper overrides this method,
 				// so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
 				TypeWrapper tw = this;
 				int rank = 0;
@@ -2918,6 +2918,7 @@ namespace IKVM.Internal
 				}
 				ilgen.Emit(OpCodes.Ldc_I4, rank);
 				ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
+				ilgen.Emit(OpCodes.Castclass, ArrayTypeWrapper.MakeArrayType(typeof(object), rank));
 			}
 			else if(IsDynamicOnly)
 			{
@@ -9028,6 +9029,7 @@ namespace IKVM.Internal
 		private static readonly MethodInfo get_ContainsGenericParameters = typeof(Type).GetMethod("get_ContainsGenericParameters");
 		private static readonly MethodInfo get_IsGenericMethodDefinition = typeof(MethodBase).GetMethod("get_IsGenericMethodDefinition");
 		private static readonly MethodInfo get_IsGenericType = typeof(Type).GetMethod("get_IsGenericType");
+		private static readonly MethodInfo get_ReflectionOnly = typeof(Assembly).GetMethod("get_ReflectionOnly");
 		private static readonly MethodInfo method_GetGenericTypeDefinition = typeof(Type).GetMethod("GetGenericTypeDefinition");
 		private static readonly MethodInfo method_GetGenericArguments = typeof(Type).GetMethod("GetGenericArguments");
 		private static readonly MethodInfo method_MakeGenericType = typeof(Type).GetMethod("MakeGenericType");
@@ -9109,6 +9111,18 @@ namespace IKVM.Internal
 			try
 			{
 				return (Type)method_MakeGenericType.Invoke(type, new object[] { typeArguments });
+			}
+			catch(TargetInvocationException x)
+			{
+				throw x.InnerException;
+			}
+		}
+
+		internal static bool ReflectionOnly(Assembly asm)
+		{
+			try
+			{
+				return get_ReflectionOnly != null && (bool)get_ReflectionOnly.Invoke(asm, noargs);
 			}
 			catch(TargetInvocationException x)
 			{
@@ -9226,7 +9240,7 @@ namespace IKVM.Internal
 						{
 							s = ClassLoaderWrapper.GetWrapperFromType(t).Name;
 						}
-						else if(AttributeHelper.IsJavaModule(t.Module))
+						else if(ClassLoaderWrapper.IsDynamicType(t) || AttributeHelper.IsJavaModule(t.Module))
 						{
 							s = CompiledTypeWrapper.GetName(t);
 						}

@@ -2663,7 +2663,10 @@ namespace IKVM.NativeCode.java
 
 			public static int getModifiers(object thisClass)
 			{
-				return (int)TypeWrapper.FromClass(thisClass).ReflectiveModifiers;
+				// the 0x7FFF mask comes from JVM_ACC_WRITTEN_FLAGS in hotspot\src\share\vm\utilities\accessFlags.hpp
+				// masking out ACC_SUPER comes from instanceKlass::compute_modifier_flags() in hotspot\src\share\vm\oops\instanceKlass.cpp
+				const int mask = 0x7FFF & (int)~IKVM.Attributes.Modifiers.Super;
+				return (int)TypeWrapper.FromClass(thisClass).ReflectiveModifiers & mask;
 			}
 
 			public static object[] getSigners(object thisClass)
@@ -2729,19 +2732,14 @@ namespace IKVM.NativeCode.java
 					wrapper = wrapper.ElementTypeWrapper;
 				}
 				object pd = pdField.GetValue(wrapper.ClassObject);
-				if (pd == null && wrapper.GetClassLoader() is AssemblyClassLoader)
+				if (pd == null)
 				{
-					object loader = wrapper.GetClassLoader().GetJavaClassLoader();
-					if (loader != null)
+					// The protection domain for statically compiled code is created lazily (not at java.lang.Class creation time),
+					// to work around boot strap issues.
+					AssemblyClassLoader acl = wrapper.GetClassLoader() as AssemblyClassLoader;
+					if (acl != null)
 					{
-						// The protection domain for statically compiled code is created lazily (not at java.lang.Class creation time),
-						// to work around boot strap issues.
-						// TODO this should be done more efficiently
-						MethodInfo method = loader.GetType().GetMethod("getProtectionDomain", BindingFlags.Public | BindingFlags.Instance);
-						if (method != null)
-						{
-							pd = method.Invoke(loader, null);
-						}
+						pd = acl.GetProtectionDomain();
 					}
 				}
 				return pd;
@@ -6188,9 +6186,13 @@ namespace IKVM.NativeCode.sun.misc
 
 	public sealed class MiscHelper
 	{
-		public static object getAssemblyClassLoader(Assembly asm)
+		public static object getAssemblyClassLoader(Assembly asm, object extcl)
 		{
-			return ClassLoaderWrapper.GetAssemblyClassLoader(asm).GetJavaClassLoader();
+			if (extcl == null || asm.IsDefined(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute), false))
+			{
+				return ClassLoaderWrapper.GetAssemblyClassLoader(asm).GetJavaClassLoader();
+			}
+			return null;
 		}
 	}
 
@@ -7051,7 +7053,7 @@ namespace IKVM.NativeCode.sun.reflect
 				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
 				mw.DeclaringType.Finish();
 				mw.ResolveMethod();
-				DynamicMethod dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object), typeof(object[]) }, mw.DeclaringType.TypeAsTBD);
+				DynamicMethod dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object[]) }, mw.DeclaringType.TypeAsTBD);
 				CountingILGenerator ilgen = dm.GetILGenerator();
 				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
 
@@ -7060,10 +7062,10 @@ namespace IKVM.NativeCode.sun.reflect
 				if (mw.GetParameters().Length == 0)
 				{
 					// zero length array may be null
-					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Brfalse_S, argsLengthOK);
 				}
-				ilgen.Emit(OpCodes.Ldarg_1);
+				ilgen.Emit(OpCodes.Ldarg_0);
 				ilgen.Emit(OpCodes.Ldlen);
 				ilgen.Emit(OpCodes.Ldc_I4, mw.GetParameters().Length);
 				ilgen.Emit(OpCodes.Beq_S, argsLengthOK);
@@ -7079,7 +7081,7 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.BeginExceptionBlock();
 				for (int i = 0; i < args.Length; i++)
 				{
-					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldc_I4, i);
 					ilgen.Emit(OpCodes.Ldelem_Ref);
 					TypeWrapper tw = mw.GetParameters()[i];

@@ -32,9 +32,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import ikvm.internal.AnnotationAttributeBase;
-import ikvm.internal.AssemblyClassLoader;
 import ikvm.lang.CIL;
 import ikvm.lang.Internal;
+import ikvm.runtime.AssemblyClassLoader;
 
 @Internal
 public class LibraryVMInterfaceImpl implements ikvm.internal.LibraryVMInterface

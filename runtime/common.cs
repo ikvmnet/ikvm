@@ -35,6 +35,7 @@ using SystemArray = System.Array;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;
+using AssemblyClassLoader_ = IKVM.Internal.AssemblyClassLoader;
 #if !FIRST_PASS
 using NegativeArraySizeException = java.lang.NegativeArraySizeException;
 using IllegalArgumentException = java.lang.IllegalArgumentException;
@@ -361,96 +362,6 @@ namespace IKVM.NativeCode.gnu.classpath
 
 namespace IKVM.NativeCode.ikvm.@internal
 {
-	public class AssemblyClassLoader
-	{
-		public static object LoadClass(object classLoader, string name)
-		{
-			try
-			{
-				ClassLoaderWrapper wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader);
-				TypeWrapper tw = wrapper.LoadClassByDottedName(name);
-				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : classLoader);
-				return tw.ClassObject;
-			}
-			catch(RetargetableJavaException x)
-			{
-				Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : classLoader);
-				throw x.ToJava();
-			}
-		}
-
-		public static Assembly[] FindResourceAssemblies(object classLoader, string name, bool firstOnly)
-		{
-			IKVM.Internal.AssemblyClassLoader wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader);
-			if(wrapper == null)
-			{
-				// must be a GenericClassLoader
-				Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in generic class loader", name);
-				return null;
-			}
-			Assembly[] assemblies = wrapper.FindResourceAssemblies(name, firstOnly);
-			if(assemblies == null || assemblies.Length == 0)
-			{
-				Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in {1}", name, wrapper.Assembly.FullName);
-				return null;
-			}
-			foreach(Assembly asm in assemblies)
-			{
-				Tracer.Info(Tracer.ClassLoading, "Found resource \"{0}\" in {1}", name, asm.FullName);
-			}
-			return assemblies;
-		}
-
-		// NOTE the array may contain duplicates!
-		public static string[] GetPackages(object classLoader)
-		{
-			IKVM.Internal.AssemblyClassLoader wrapper = classLoader == null ? ClassLoaderWrapper.GetBootstrapClassLoader() : (JVM.Library.getWrapperFromClassLoader(classLoader) as IKVM.Internal.AssemblyClassLoader);
-			if(wrapper == null)
-			{
-				// must be a GenericClassLoader
-				return null;
-			}
-			string[] packages = new string[0];
-			foreach(Module m in wrapper.Assembly.GetModules(false))
-			{
-				object[] attr = m.GetCustomAttributes(typeof(PackageListAttribute), false);
-				foreach(PackageListAttribute p in attr)
-				{
-					string[] mp = p.GetPackages();
-					string[] tmp = new string[packages.Length + mp.Length];
-					Array.Copy(packages, 0, tmp, 0, packages.Length);
-					Array.Copy(mp, 0, tmp, packages.Length, mp.Length);
-					packages = tmp;
-				}
-			}
-			return packages;
-		}
-
-		public static bool IsReflectionOnly(Assembly asm)
-		{
-#if WHIDBEY
-			return asm.ReflectionOnly;
-#else
-			return false;
-#endif
-		}
-
-		public static int GetGenericClassLoaderId(object classLoader)
-		{
-			return ClassLoaderWrapper.GetGenericClassLoaderId((ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader));
-		}
-
-		public static Assembly GetBootClassLoaderAssembly()
-		{
-			return ((IKVM.Internal.AssemblyClassLoader)ClassLoaderWrapper.GetBootstrapClassLoader()).Assembly;
-		}
-
-		public static string GetGenericClassLoaderName(object classLoader)
-		{
-			return ((GenericClassLoader)JVM.Library.getWrapperFromClassLoader(classLoader)).GetName();
-		}
-	}
-
 	namespace stubgen
 	{
 		public class StubGenerator
@@ -510,6 +421,148 @@ namespace IKVM.NativeCode.ikvm.@internal
 
 namespace IKVM.NativeCode.ikvm.runtime
 {
+	public class AssemblyClassLoader
+	{
+		public static object LoadClass(object classLoader, Assembly assembly, string name)
+		{
+			try
+			{
+				TypeWrapper tw = null;
+				if(classLoader == null)
+				{
+					tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(name);
+				}
+				else if(assembly != null)
+				{
+					AssemblyClassLoader_ acl = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
+					tw = acl.GetLoadedClass(name);
+					if(tw == null)
+					{
+						tw = acl.LoadGenericClass(name);
+					}
+					if(tw == null)
+					{
+						tw = acl.LoadReferenced(name);
+					}
+					if(tw == null)
+					{
+						throw new ClassNotFoundException(name);
+					}
+				}
+				else
+				{
+					// this must be a GenericClassLoader
+					tw = ((GenericClassLoader)ClassLoaderWrapper.GetClassLoaderWrapper(classLoader)).LoadClassByDottedName(name);
+				}
+				Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : classLoader);
+				return tw.ClassObject;
+			}
+			catch(RetargetableJavaException x)
+			{
+				Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, classLoader == null ? "boot class loader" : classLoader);
+				throw x.ToJava();
+			}
+		}
+
+		public static Assembly[] FindResourceAssemblies(Assembly assembly, string name, bool firstOnly)
+		{
+			IKVM.Internal.AssemblyClassLoader wrapper = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
+			Assembly[] assemblies = wrapper.FindResourceAssemblies(name, firstOnly);
+			if(assemblies == null || assemblies.Length == 0)
+			{
+				Tracer.Info(Tracer.ClassLoading, "Failed to find resource \"{0}\" in {1}", name, wrapper.Assembly.FullName);
+				return null;
+			}
+			foreach(Assembly asm in assemblies)
+			{
+				Tracer.Info(Tracer.ClassLoading, "Found resource \"{0}\" in {1}", name, asm.FullName);
+			}
+			return assemblies;
+		}
+
+		public static Assembly GetAssemblyFromClassLoader(object classLoader)
+		{
+			AssemblyClassLoader_ acl = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader) as AssemblyClassLoader_;
+			return acl != null ? acl.Assembly : null;
+		}
+
+		// NOTE the array may contain duplicates!
+		public static string[] GetPackages(Assembly assembly)
+		{
+			IKVM.Internal.AssemblyClassLoader wrapper = ClassLoaderWrapper.GetAssemblyClassLoader(assembly);
+			string[] packages = new string[0];
+			foreach(Module m in wrapper.Assembly.GetModules(false))
+			{
+				object[] attr = m.GetCustomAttributes(typeof(PackageListAttribute), false);
+				foreach(PackageListAttribute p in attr)
+				{
+					string[] mp = p.GetPackages();
+					string[] tmp = new string[packages.Length + mp.Length];
+					Array.Copy(packages, 0, tmp, 0, packages.Length);
+					Array.Copy(mp, 0, tmp, packages.Length, mp.Length);
+					packages = tmp;
+				}
+			}
+			return packages;
+		}
+
+		public static bool IsReflectionOnly(Assembly asm)
+		{
+#if WHIDBEY
+			return asm.ReflectionOnly;
+#else
+			return false;
+#endif
+		}
+
+		public static int GetGenericClassLoaderId(object classLoader)
+		{
+			return ClassLoaderWrapper.GetGenericClassLoaderId((ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader));
+		}
+
+		public static Assembly GetBootClassLoaderAssembly()
+		{
+			return ClassLoaderWrapper.GetBootstrapClassLoader().Assembly;
+		}
+
+		public static string GetGenericClassLoaderName(object classLoader)
+		{
+			return ((GenericClassLoader)JVM.Library.getWrapperFromClassLoader(classLoader)).GetName();
+		}
+	}
+
+	public class AppDomainAssemblyClassLoader
+	{
+		public static object loadClassFromAssembly(Assembly asm, string className)
+		{
+			if(asm is System.Reflection.Emit.AssemblyBuilder)
+			{
+				return null;
+			}
+			if(asm.Equals(DynamicClassLoader.Instance.ModuleBuilder.Assembly))
+			{
+				// this can happen on Orcas, where an AssemblyBuilder has a corresponding Assembly
+				return null;
+			}
+			TypeWrapper tw = ClassLoaderWrapper.GetAssemblyClassLoader(asm).DoLoad(className);
+			return tw != null ? tw.ClassObject : null;
+		}
+
+		public static bool findResourceInAssembly(Assembly asm, string resourceName)
+		{
+			if(asm is System.Reflection.Emit.AssemblyBuilder)
+			{
+				return false;
+			}
+			if(asm.Equals(DynamicClassLoader.Instance.ModuleBuilder.Assembly))
+			{
+				// this can happen on Orcas, where an AssemblyBuilder has a corresponding Assembly
+				return false;
+			}
+			return asm.GetManifestResourceInfo(JVM.MangleResourceName(resourceName)) != null;
+		}
+	}
+
 	public class Util
 	{
 		private static Type enumEnumType = JVM.CoreAssembly.GetType("ikvm.internal.EnumEnum");

@@ -41,16 +41,19 @@ class MiscHelper
     // map.xml replaces AppClassLoader.getAppClassLoader() invocation in Launcher constructor with a call to this method
     static ClassLoader getAppClassLoader(ClassLoader extcl) throws IOException
     {
-	if (extcl == null)
+	Assembly entryAssembly = Assembly.GetEntryAssembly();
+	if (entryAssembly != null)
 	{
-	    Assembly entryAssembly = Assembly.GetEntryAssembly();
-	    if (entryAssembly != null)
+	    ClassLoader acl = getAssemblyClassLoader(entryAssembly, extcl);
+	    if (acl != null)
 	    {
-		return getAssemblyClassLoader(entryAssembly);
+		// assembly has a custom assembly class loader,
+		// that overrides the Launcher.AppClassLoader
+		return acl;
 	    }
 	}
 	return Launcher.AppClassLoader.getAppClassLoader(extcl);
     }
 
-    private static native ClassLoader getAssemblyClassLoader(Assembly asm);
+    private static native ClassLoader getAssemblyClassLoader(Assembly asm, ClassLoader extcl);
 }

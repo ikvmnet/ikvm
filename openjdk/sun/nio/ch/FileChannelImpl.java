@@ -119,8 +119,6 @@ public class FileChannelImpl
 
     protected void implCloseChannel() throws IOException {
 
-	fd.close();
-        
         // Invalidate and release any locks that we still hold
         if (fileLockTable != null) {
             fileLockTable.removeAll( new FileLockTable.Releaser() { 
@@ -147,6 +145,8 @@ public class FileChannelImpl
 	    else
 		assert false;
 
+	} else {
+	    fd.close();
 	}
 
     }

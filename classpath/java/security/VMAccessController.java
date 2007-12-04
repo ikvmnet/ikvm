@@ -220,7 +220,7 @@ final class VMAccessController
 	// HACK to prevent bootstrap issues (on OpenJDK), we skip all statically compiled classes.
 	// They all have an AllPermission protection domain, so security wise it doesn't matter.
 	ClassLoader loader = clazz.getClassLoader();
-	if (loader == null || loader instanceof ikvm.internal.AssemblyClassLoader)
+	if (loader == null || loader instanceof ikvm.runtime.AssemblyClassLoader)
 	    continue;
 
         ProtectionDomain domain = clazz.getProtectionDomain();
