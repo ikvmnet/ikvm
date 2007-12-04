@@ -1299,7 +1299,15 @@ namespace IKVM.Internal
 				object val = null;
 				if(field.IsLiteral)
 				{
-					val = field.GetRawConstantValue();
+					try
+					{
+						val = field.GetRawConstantValue();
+					}
+					catch(NotSupportedException)
+					{
+						// MONOBUG GetRawConstantValue() is not implemented on Mono 1.2.6
+						val = field.GetValue(null);
+					}
 					if(field.FieldType.IsEnum)
 					{
 						val = DotNetTypeWrapper.EnumValueFieldWrapper.GetEnumPrimitiveValue(Enum.GetUnderlyingType(field.FieldType), val);
@@ -1847,7 +1855,15 @@ namespace IKVM.Internal
 				else
 #endif // !STATIC_COMPILER
 				{
-					constant = field.GetRawConstantValue();
+					try
+					{
+						constant = field.GetRawConstantValue();
+					}
+					catch(NotSupportedException)
+					{
+						// MONOBUG GetRawConstantValue() is not implemented on Mono 1.2.6
+						constant = field.GetValue(null);
+					}
 				}
 			}
 			return constant;
