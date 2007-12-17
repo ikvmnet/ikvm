@@ -1466,6 +1466,26 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		internal static AssemblyName[] GetInternalsVisibleToAttributes(Assembly assembly)
+		{
+			List<AssemblyName> list = new List<AssemblyName>();
+			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(assembly))
+			{
+				if(MatchTypes(cad.Constructor.DeclaringType, typeof(System.Runtime.CompilerServices.InternalsVisibleToAttribute)))
+				{
+					try
+					{
+						list.Add(new AssemblyName((string)cad.ConstructorArguments[0].Value));
+					}
+					catch
+					{
+						// HACK since there is no list of exception that the AssemblyName constructor can throw, we simply catch all
+					}
+				}
+			}
+			return list.ToArray();
+		}
+
 		internal static bool IsDefined(Module mod, Type attribute)
 		{
 #if !COMPACT_FRAMEWORK
@@ -2299,13 +2319,13 @@ namespace IKVM.Internal
 		internal bool IsAccessibleFrom(TypeWrapper wrapper)
 		{
 			return IsPublic
-				|| (IsInternal && GetClassLoader() == wrapper.GetClassLoader())
-				|| IsInSamePackageAs(wrapper);
+				|| (IsInternal && GetClassLoader().InternalsVisibleTo(wrapper.GetClassLoader()))
+				|| IsPackageAccessibleFrom(wrapper);
 		}
 
-		internal bool IsInSamePackageAs(TypeWrapper wrapper)
+		internal bool IsPackageAccessibleFrom(TypeWrapper wrapper)
 		{
-			if(GetClassLoader() == wrapper.GetClassLoader())
+			if(GetClassLoader().InternalsVisibleTo(wrapper.GetClassLoader()))
 			{
 				int index1 = name.LastIndexOf('.');
 				int index2 = wrapper.name.LastIndexOf('.');
@@ -4753,7 +4773,7 @@ namespace IKVM.Internal
 									else
 									{
 										MethodWrapper fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
-										while(fmw != mw && (fmw.IsStatic || fmw.IsPrivate || !fmw.DeclaringType.IsInSamePackageAs(mw.DeclaringType)))
+										while(fmw != mw && (fmw.IsStatic || fmw.IsPrivate || !fmw.DeclaringType.IsPackageAccessibleFrom(mw.DeclaringType)))
 										{
 											needRename = true;
 											fmw = fmw.DeclaringType.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
@@ -6299,7 +6319,7 @@ namespace IKVM.Internal
 					// (note that we intentionally not check IsStatic here!)
 					if(baseMethod.IsFinal
 						&& !baseMethod.IsPrivate
-						&& (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.DeclaringType.IsInSamePackageAs(wrapper)))
+						&& (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
 					{
 						throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overriden in " + wrapper.Name);
 					}
@@ -6324,8 +6344,8 @@ namespace IKVM.Internal
 					else if(!baseMethod.IsPrivate)
 					{
 						// RULE 4: package methods can only be overridden in the same package
-						if(baseMethod.DeclaringType.IsInSamePackageAs(wrapper)
-							|| (baseMethod.IsInternal && baseMethod.DeclaringType.GetClassLoader() == wrapper.GetClassLoader()))
+						if(baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)
+							|| (baseMethod.IsInternal && baseMethod.DeclaringType.GetClassLoader().InternalsVisibleTo(wrapper.GetClassLoader())))
 						{
 							return baseMethod;
 						}
@@ -6638,7 +6658,7 @@ namespace IKVM.Internal
 								MethodBase baseMethod = baseMce.GetMethod();
 								if((baseMethod.IsPublic && !m.IsPublic) ||
 									((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && !m.IsPublic && !m.IsProtected) ||
-									(!m.IsPublic && !m.IsProtected && !baseMce.DeclaringType.IsInSamePackageAs(wrapper)))
+									(!m.IsPublic && !m.IsProtected && !baseMce.DeclaringType.IsPackageAccessibleFrom(wrapper)))
 								{
 									attribs &= ~MethodAttributes.MemberAccessMask;
 									attribs |= baseMethod.IsPublic ? MethodAttributes.Public : MethodAttributes.FamORAssem;
@@ -6736,7 +6756,7 @@ namespace IKVM.Internal
 								Debug.Assert(baseMce.GetMethod().IsVirtual && !baseMce.GetMethod().IsFinal);
 								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMce.GetMethod());
 							}
-							if(!m.IsStatic && !m.IsAbstract && !m.IsPrivate && baseMce != null && !baseMce.DeclaringType.IsInSamePackageAs(wrapper))
+							if(!m.IsStatic && !m.IsAbstract && !m.IsPrivate && baseMce != null && !baseMce.DeclaringType.IsPackageAccessibleFrom(wrapper))
 							{
 								// we may have to explicitly override another package accessible abstract method
 								TypeWrapper btw = baseMce.DeclaringType.BaseTypeWrapper;
@@ -6747,7 +6767,7 @@ namespace IKVM.Internal
 									{
 										break;
 									}
-									if(bmw.DeclaringType.IsInSamePackageAs(wrapper) && bmw.IsAbstract && !(bmw.IsPublic || bmw.IsProtected))
+									if(bmw.DeclaringType.IsPackageAccessibleFrom(wrapper) && bmw.IsAbstract && !(bmw.IsPublic || bmw.IsProtected))
 									{
 										if(bmw != baseMce)
 										{

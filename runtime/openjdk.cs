@@ -6658,7 +6658,7 @@ namespace IKVM.NativeCode.sun.reflect
 		{
 			TypeWrapper current = TypeWrapper.FromClass(currentClass);
 			TypeWrapper member = TypeWrapper.FromClass(memberClass);
-			return member.IsInternal && member.GetClassLoader() == current.GetClassLoader();
+			return member.IsInternal && member.GetClassLoader().InternalsVisibleTo(current.GetClassLoader());
 		}
 	}
 

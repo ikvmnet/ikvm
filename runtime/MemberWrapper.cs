@@ -137,8 +137,8 @@ namespace IKVM.Internal
 				return IsPublic ||
 					caller == DeclaringType ||
 					(IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsSubTypeOf(caller))) ||
-					(IsInternal && caller.GetClassLoader() == DeclaringType.GetClassLoader()) ||
-					(!IsPrivate && caller.IsInSamePackageAs(DeclaringType));
+					(IsInternal && DeclaringType.GetClassLoader().InternalsVisibleTo(caller.GetClassLoader())) ||
+					(!IsPrivate && DeclaringType.IsPackageAccessibleFrom(caller));
 			}
 			return false;
 		}

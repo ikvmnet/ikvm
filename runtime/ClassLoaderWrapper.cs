@@ -1215,6 +1215,11 @@ namespace IKVM.Internal
 			return String.Format("{0}@{1:X}", GetWrapperFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
 		}
 #endif
+
+		internal virtual bool InternalsVisibleTo(ClassLoaderWrapper other)
+		{
+			return this == other;
+		}
 	}
 
 	class GenericClassLoader : ClassLoaderWrapper
@@ -1302,6 +1307,7 @@ namespace IKVM.Internal
 		private Assembly assembly;
 		private AssemblyName[] references;
 		private AssemblyClassLoader[] delegates;
+		private AssemblyName[] internalsVisibleTo;
 		private bool isReflectionOnly;
 		private bool[] isJavaModule;
 		private Module[] modules;
@@ -1354,6 +1360,7 @@ namespace IKVM.Internal
 			}
 			references = assembly.GetReferencedAssemblies();
 			delegates = new AssemblyClassLoader[references.Length];
+			internalsVisibleTo = AttributeHelper.GetInternalsVisibleToAttributes(assembly);
 		}
 
 		internal Assembly Assembly
@@ -1813,6 +1820,38 @@ namespace IKVM.Internal
 		{
 			TypeWrapper tw = base.GetLoadedClass(name);
 			return tw != null ? tw : DoLoad(name);
+		}
+
+		internal override bool InternalsVisibleTo(ClassLoaderWrapper other)
+		{
+			if(this == other)
+			{
+				return true;
+			}
+			AssemblyName otherName;
+#if STATIC_COMPILER
+			CompilerClassLoader ccl = other as CompilerClassLoader;
+			if(ccl == null)
+			{
+				return false;
+			}
+			otherName = ccl.GetAssemblyName();
+#else
+			AssemblyClassLoader acl = other as AssemblyClassLoader;
+			if(acl == null)
+			{
+				return false;
+			}
+			otherName = acl.Assembly.GetName();
+#endif
+			foreach(AssemblyName name in internalsVisibleTo)
+			{
+				if(AssemblyName.ReferenceMatchesDefinition(name, otherName))
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 

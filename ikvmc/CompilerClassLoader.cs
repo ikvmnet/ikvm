@@ -103,6 +103,11 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal AssemblyName GetAssemblyName()
+		{
+			return assemblyBuilder.GetName();
+		}
+
 		internal ModuleBuilder CreateModuleBuilder()
 		{
 			AssemblyName name = new AssemblyName();
