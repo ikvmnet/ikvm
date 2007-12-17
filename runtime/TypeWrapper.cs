@@ -10691,17 +10691,7 @@ namespace IKVM.Internal
 						{
 							name = "_" + name;
 						}
-						object rawval;
-						try
-						{
-							rawval = fields[i].GetRawConstantValue();
-						}
-						catch(NotSupportedException)
-						{
-							// MONOBUG GetRawConstantValue() is not implemented on Mono 1.2.6
-							rawval = fields[i].GetValue(null);
-						}
-						object val = EnumValueFieldWrapper.GetEnumPrimitiveValue(underlyingType, rawval);
+						object val = EnumValueFieldWrapper.GetEnumPrimitiveValue(underlyingType, fields[i].GetRawConstantValue());
 						fieldsList.Add(new ConstantFieldWrapper(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val, MemberFlags.None));
 					}
 				}

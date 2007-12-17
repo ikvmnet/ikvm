@@ -79,17 +79,8 @@ public class NetExp
 		}
 		if(file != null && file.Exists)
 		{
-			if(System.Type.GetType("Mono.Runtime") != null)
-			{
-				// MONOBUG FieldInfo.GetRawConstantValue() is not implemented in Mono,
-				// so for now we don't use ReflectionOnly when running on Mono
-				assembly = Assembly.LoadFrom(assemblyNameOrPath);
-			}
-			else
-			{
-				AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_ReflectionOnlyAssemblyResolve);
-				assembly = Assembly.ReflectionOnlyLoadFrom(assemblyNameOrPath);
-			}
+			AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_ReflectionOnlyAssemblyResolve);
+			assembly = Assembly.ReflectionOnlyLoadFrom(assemblyNameOrPath);
 		}
 		else
 		{
