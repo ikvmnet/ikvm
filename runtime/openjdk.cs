@@ -292,22 +292,82 @@ namespace IKVM.NativeCode.java
 		{
 			public static string encoding()
 			{
-				// TODO
-				return "IBM437";
+				int cp = 437;
+				try
+				{
+					cp = global::System.Console.InputEncoding.CodePage;
+				}
+				catch
+				{
+				}
+				if (cp >= 874 && cp <= 950)
+				{
+					return "ms" + cp;
+				}
+				return "cp" + cp;
 			}
+
+			private const int STD_INPUT_HANDLE = -10;
+			private const int ENABLE_ECHO_INPUT = 0x0004;
+
+			[System.Runtime.InteropServices.DllImport("kernel32")]
+			private static extern IntPtr GetStdHandle(int nStdHandle);
+
+			[System.Runtime.InteropServices.DllImport("kernel32")]
+			private static extern int GetConsoleMode(IntPtr hConsoleHandle, out int lpMode);
+
+			[System.Runtime.InteropServices.DllImport("kernel32")]
+			private static extern int SetConsoleMode(IntPtr hConsoleHandle, int dwMode);
 
 			public static bool echo(bool on)
 			{
-				// TODO
-				return false;
+#if !FIRST_PASS
+				// HACK the only way to get this to work is by p/invoking the Win32 APIs
+				if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+				{
+					IntPtr hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+					if (hStdIn.ToInt64() == 0 || hStdIn.ToInt64() == -1)
+					{
+						throw new global::java.io.IOException("The handle is invalid");
+					}
+					int fdwMode;
+					if (GetConsoleMode(hStdIn, out fdwMode) == 0)
+					{
+						throw new global::java.io.IOException("GetConsoleMode failed");
+					}
+					bool old = (fdwMode & ENABLE_ECHO_INPUT) != 0;
+					if (on)
+					{
+						fdwMode |= ENABLE_ECHO_INPUT;
+					}
+					else
+					{
+						fdwMode &= ~ENABLE_ECHO_INPUT;
+					}
+					if (SetConsoleMode(hStdIn, fdwMode) == 0)
+					{
+						throw new global::java.io.IOException("SetConsoleMode failed");
+					}
+					return old;
+				}
+#endif
+				return true;
 			}
 
 			public static bool istty()
 			{
-				// the JDK returns false here if stdin or stdout is redirected (not stderr)
-				// or if there is no console associated with the current process
-				// TODO figure out if there is a managed way to detect redirection or console presence
-				return true;
+				// The JDK returns false here if stdin or stdout (not stderr) is redirected to a file
+				// or if there is no console associated with the current process.
+				// The best we can do is to look at the KeyAvailable property, which
+				// will throw an InvalidOperationException if stdin is redirected or not available
+				try
+				{
+					return global::System.Console.KeyAvailable || true;
+				}
+				catch (InvalidOperationException)
+				{
+					return false;
+				}
 			}
 		}
 
