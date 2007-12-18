@@ -32,7 +32,7 @@ using NetSystem = System;
 
 namespace IKVM.NativeCode.java.lang
 {
-	public class ExceptionHelper
+	static class ExceptionHelper
 	{
 		public static string SafeGetEnvironmentVariable(string name)
 		{

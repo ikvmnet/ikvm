@@ -131,7 +131,7 @@ sealed class DynamicMethodSupport
 
 namespace IKVM.Runtime
 {
-	public sealed class Assertions
+	public static class Assertions
 	{
 		private static bool sysAsserts;
 		private static bool userAsserts;
@@ -151,8 +151,6 @@ namespace IKVM.Runtime
 				this.next = next;
 			}
 		}
-
-		private Assertions() { }
 
 		private static void AddOption(string classOrPackage, bool enabled)
 		{
@@ -288,7 +286,7 @@ namespace IKVM.NativeCode.java
 {
 	namespace io
 	{
-		public sealed class Console
+		static class Console
 		{
 			public static string encoding()
 			{
@@ -371,7 +369,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class FileDescriptor
+		static class FileDescriptor
 		{
 			public static System.IO.Stream open(String name, System.IO.FileMode fileMode, System.IO.FileAccess fileAccess)
 			{
@@ -386,7 +384,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class FileSystem
+		static class FileSystem
 		{
 			public static object getFileSystem()
 			{
@@ -405,7 +403,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class ObjectInputStream
+		static class ObjectInputStream
 		{
 			public static void bytesToFloats(byte[] src, int srcpos, float[] dst, int dstpos, int nfloats)
 			{
@@ -457,7 +455,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class ObjectOutputStream
+		static class ObjectOutputStream
 		{
 			public static void floatsToBytes(float[] src, int srcpos, byte[] dst, int dstpos, int nfloats)
 			{
@@ -478,7 +476,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class ObjectStreamClass
+		static class ObjectStreamClass
 		{
 			public static void initNative()
 			{
@@ -1212,7 +1210,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class Win32FileSystem
+		static class Win32FileSystem
 		{
 			internal const int ACCESS_READ = 0x04;
 			const int ACCESS_WRITE = 0x02;
@@ -1820,7 +1818,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class UnixFileSystem
+		static class UnixFileSystem
 		{
 			public static int getBooleanAttributes0(object _this, object f)
 			{
@@ -1909,7 +1907,7 @@ namespace IKVM.NativeCode.java
 	{
 		namespace reflect
 		{
-			public sealed class Array
+			static class Array
 			{
 #if FIRST_PASS
 			public static int getLength(object arrayObj)
@@ -2578,10 +2576,8 @@ namespace IKVM.NativeCode.java
 		}
 #endif
 
-		public sealed class Class
+		static class Class
 		{
-			private Class() { }
-
 			private static FieldInfo signersField;
 			private static FieldInfo pdField;
 			private static FieldInfo constantPoolField;
@@ -3116,13 +3112,11 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class ClassLoader
+		static class ClassLoader
 		{
 #if !FIRST_PASS
 			private static jlClassNotFoundException classNotFoundException;
 #endif
-
-			private ClassLoader() { }
 
 			public static void registerNatives()
 			{
@@ -3223,10 +3217,8 @@ namespace IKVM.NativeCode.java
 				return tw != null ? tw.ClassObject : null;
 			}
 
-			public sealed class NativeLibrary
+			internal static class NativeLibrary
 			{
-				private NativeLibrary() { }
-
 				public static void load(object thisNativeLibrary, string name)
 				{
 #if !FIRST_PASS
@@ -3270,7 +3262,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class Compiler
+		static class Compiler
 		{
 			public static void initialize()
 			{
@@ -3304,7 +3296,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class Double
+		static class Double
 		{
 			public static long doubleToRawLongBits(double value)
 			{
@@ -3317,7 +3309,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class Float
+		static class Float
 		{
 			public static int floatToRawIntBits(float value)
 			{
@@ -3330,10 +3322,8 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class Package
+		static class Package
 		{
-			private Package() { }
-
 			public static string getSystemPackage0(string name)
 			{
 				// this method is not implemented because we redirect Package.getSystemPackage() to our implementation in LangHelper
@@ -3347,7 +3337,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class ProcessEnvironment
+		static class ProcessEnvironment
 		{
 			public static string environmentBlock()
 			{
@@ -3365,7 +3355,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class Runtime
+		static class Runtime
 		{
 			public static int availableProcessors(object thisRuntime)
 			{
@@ -3423,7 +3413,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class SecurityManager
+		static class SecurityManager
 		{
 			public static object getClassContext(object thisSecurityManager)
 			{
@@ -3484,7 +3474,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class Shutdown
+		static class Shutdown
 		{
 			public static void halt0(int status)
 			{
@@ -3494,7 +3484,7 @@ namespace IKVM.NativeCode.java
 			// runAllFinalizers() implementation lives in map.xml
 		}
 
-		public sealed class StrictMath
+		static class StrictMath
 		{
 			public static double sin(double d)
 			{
@@ -3645,7 +3635,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class System
+		static class System
 		{
 			public static void arraycopy(object src, int srcPos, object dest, int destPos, int length)
 			{
@@ -3758,7 +3748,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class Thread
+		static class Thread
 		{
 			[ThreadStatic]
 			private static VMThread vmThread;
@@ -4555,7 +4545,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class VMThread
+		static class VMThread
 		{
 			// this method has the wrong name, it is only called by ikvm.runtime.Startup.exitMainThread()
 			public static void jniDetach()
@@ -4566,20 +4556,16 @@ namespace IKVM.NativeCode.java
 
 		namespace reflect
 		{
-			public sealed class Proxy
+			static class Proxy
 			{
-				private Proxy() { }
-
 				public static object defineClass0(object classLoader, string name, byte[] b, int off, int len)
 				{
 					return ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
 				}
 			}
 
-			public sealed class Method
+			static class Method
 			{
-				private Method() { }
-
 				public static byte[] getRawAnnotations(object thisMethod)
 				{
 					return MethodWrapper.FromMethodOrConstructor(thisMethod).GetRawAnnotations();
@@ -4600,21 +4586,21 @@ namespace IKVM.NativeCode.java
 
 	namespace net
 	{
-		public sealed class DatagramPacket
+		static class DatagramPacket
 		{
 			public static void init()
 			{
 			}
 		}
 
-		public sealed class InetAddress
+		static class InetAddress
 		{
 			public static void init()
 			{
 			}
 		}
 
-		public sealed class InetAddressImplFactory
+		static class InetAddressImplFactory
 		{
 			public static bool isIPv6Supported()
 			{
@@ -4623,14 +4609,14 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class Inet4Address
+		static class Inet4Address
 		{
 			public static void init()
 			{
 			}
 		}
 
-		public sealed class Inet4AddressImpl
+		static class Inet4AddressImpl
 		{
 			public static string getLocalHostName(object thisInet4AddressImpl)
 			{
@@ -4738,14 +4724,14 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class Inet6Address
+		static class Inet6Address
 		{
 			public static void init()
 			{
 			}
 		}
 
-		public sealed class Inet6AddressImpl
+		static class Inet6AddressImpl
 		{
 			public static string getLocalHostName(object thisInet6AddressImpl)
 			{
@@ -4800,7 +4786,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class NetworkInterface
+		static class NetworkInterface
 		{
 #if !FIRST_PASS
 			private static ConstructorInfo ni_ctor;
@@ -5037,7 +5023,7 @@ namespace IKVM.NativeCode.java
 	namespace nio
 	{
 		[System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, UnmanagedCode = true)]
-		public sealed class Bits
+		static class Bits
 		{
 			public static void copyFromByteArray(object src, long srcPos, long dstAddr, long length)
 			{
@@ -5313,7 +5299,7 @@ namespace IKVM.NativeCode.java
 		}
 
 		[System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, UnmanagedCode = true)]
-		public sealed class MappedByteBuffer
+		static class MappedByteBuffer
 		{
 			private static volatile int bogusField;
 
@@ -5379,7 +5365,7 @@ namespace IKVM.NativeCode.java
 
 	namespace security
 	{
-		public sealed class AccessController
+		static class AccessController
 		{
 			private static FieldInfo threadIaccField;
 			private static ConstructorInfo accessControlContextContructor;
@@ -5566,7 +5552,7 @@ namespace IKVM.NativeCode.java
 
 	namespace sql
 	{
-		public sealed class DriverManager
+		static class DriverManager
 		{
 			public static object getCallerClassLoader()
 			{
@@ -5604,7 +5590,7 @@ namespace IKVM.NativeCode.java
 	{
 		namespace logging
 		{
-			public sealed class FileHandler
+			static class FileHandler
 			{
 				public static bool isSetUID()
 				{
@@ -5616,7 +5602,7 @@ namespace IKVM.NativeCode.java
 
 		namespace prefs
 		{
-			public sealed class FileSystemPreferences
+			static class FileSystemPreferences
 			{
 				public static int chmod(string filename, int permission)
 				{
@@ -5637,7 +5623,7 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
-			public sealed class WindowsPreferences
+			static class WindowsPreferences
 			{
 				// HACK we currently support only 16 handles at a time
 				private static Microsoft.Win32.RegistryKey[] keys = new Microsoft.Win32.RegistryKey[16];
@@ -5894,7 +5880,7 @@ namespace IKVM.NativeCode.java
 
 		namespace jar
 		{
-			public sealed class JarFile
+			static class JarFile
 			{
 				public static string[] getMetaInfEntryNames(object thisJarFile)
 				{
@@ -5922,7 +5908,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class ResourceBundle
+		static class ResourceBundle
 		{
 			public static object getClassContext()
 			{
@@ -5947,7 +5933,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		public sealed class TimeZone
+		static class TimeZone
 		{
 			public static string getSystemTimeZoneID(string javaHome, string country)
 			{
@@ -6228,7 +6214,7 @@ namespace IKVM.NativeCode.java
 
 namespace IKVM.NativeCode.sun.java2d
 {
-	public sealed class DefaultDisposerRecord
+	static class DefaultDisposerRecord
 	{
 		public static void invokeNativeDispose(long disposerMethodPointer, long dataPointer)
 		{
@@ -6236,7 +6222,7 @@ namespace IKVM.NativeCode.sun.java2d
 		}
 	}
 
-	public sealed class Disposer
+	static class Disposer
 	{
 		public static void initIDs()
 		{
@@ -6246,7 +6232,7 @@ namespace IKVM.NativeCode.sun.java2d
 
 namespace IKVM.NativeCode.sun.misc
 {
-	public sealed class GC
+	static class GC
 	{
 		public static long maxObjectInspectionAge()
 		{
@@ -6254,7 +6240,7 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
-	public sealed class MessageUtils
+	static class MessageUtils
 	{
 		public static void toStderr(string msg)
 		{
@@ -6267,7 +6253,7 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
-	public sealed class MiscHelper
+	static class MiscHelper
 	{
 		public static object getAssemblyClassLoader(Assembly asm, object extcl)
 		{
@@ -6279,7 +6265,7 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
-	public sealed class Signal
+	static class Signal
 	{
 		public static int findSignal(string sigName)
 		{
@@ -6297,7 +6283,7 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
-	public sealed class NativeSignalHandler
+	static class NativeSignalHandler
 	{
 		public static void handle0(int number, long handler)
 		{
@@ -6305,7 +6291,7 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
-	public sealed class Perf
+	static class Perf
 	{
 		public static object attach(object thisPerf, string user, int lvmid, int mode)
 		{
@@ -6343,10 +6329,8 @@ namespace IKVM.NativeCode.sun.misc
 	}
 
 	[System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, UnmanagedCode = true)]
-	public sealed class Unsafe
+	static class Unsafe
 	{
-		private Unsafe() { }
-
 		public static void throwException(object thisUnsafe, Exception x)
 		{
 			throw x;
@@ -6443,7 +6427,7 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
-	public sealed class Version
+	static class Version
 	{
 		public static string getJvmSpecialVersion()
 		{
@@ -6466,10 +6450,8 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
-	public sealed class VM
+	static class VM
 	{
-		private VM() { }
-
 		public static void getThreadStateValues(int[][] vmThreadStateValues, string[][] vmThreadStateNames)
 		{
 			// TODO
@@ -6480,7 +6462,7 @@ namespace IKVM.NativeCode.sun.misc
 		}
 	}
 
-	public sealed class VMSupport
+	static class VMSupport
 	{
 		public static object initAgentProperties(object props)
 		{
@@ -6491,7 +6473,7 @@ namespace IKVM.NativeCode.sun.misc
 
 namespace IKVM.NativeCode.sun.net.dns
 {
-	public sealed class ResolverConfigurationImpl
+	static class ResolverConfigurationImpl
 	{
 		public static void init0()
 		{
@@ -6550,7 +6532,7 @@ namespace IKVM.NativeCode.sun.net.dns
 
 namespace IKVM.NativeCode.sun.net.spi
 {
-	public sealed class DefaultProxySelector
+	static class DefaultProxySelector
 	{
 		public static bool init()
 		{
@@ -6567,11 +6549,9 @@ namespace IKVM.NativeCode.sun.net.spi
 
 namespace IKVM.NativeCode.sun.reflect
 {
-	public sealed class Reflection
+	static class Reflection
 	{
 		private static readonly Dictionary<RuntimeMethodHandle, bool> isHideFromJavaCache = new Dictionary<RuntimeMethodHandle, bool>();
-
-		private Reflection() { }
 
 		internal static bool IsHideFromJava(MethodBase mb)
 		{
@@ -6664,10 +6644,8 @@ namespace IKVM.NativeCode.sun.reflect
 		}
 	}
 
-	public sealed class ReflectionFactory
+	static class ReflectionFactory
 	{
-		private ReflectionFactory() { }
-
 #if !FIRST_PASS
 		private static object[] ConvertArgs(TypeWrapper[] argumentTypes, object[] args)
 		{
@@ -8604,10 +8582,8 @@ namespace IKVM.NativeCode.sun.reflect
 		}
 	}
 
-	public sealed class ConstantPool
+	static class ConstantPool
 	{
-		private ConstantPool() { }
-
 		public static int getSize0(object thisConstantPool, object constantPoolOop)
 		{
 			throw new NotImplementedException();
@@ -8702,7 +8678,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 namespace IKVM.NativeCode.sun.rmi.server
 {
-	public sealed class MarshalInputStream
+	static class MarshalInputStream
 	{
 		public static object latestUserDefinedLoader()
 		{
@@ -8713,7 +8689,7 @@ namespace IKVM.NativeCode.sun.rmi.server
 
 namespace IKVM.NativeCode.sun.security.krb5
 {
-	public sealed class Credentials
+	static class Credentials
 	{
 		public static object acquireDefaultNativeCreds()
 		{
@@ -8722,7 +8698,7 @@ namespace IKVM.NativeCode.sun.security.krb5
 		}
 	}
 
-	public sealed class Config
+	static class Config
 	{
 		public static string getWindowsDirectory()
 		{
@@ -8733,7 +8709,7 @@ namespace IKVM.NativeCode.sun.security.krb5
 
 namespace IKVM.NativeCode.sun.security.provider
 {
-	public sealed class NativeSeedGenerator
+	static class NativeSeedGenerator
 	{
 		public static bool nativeGenerateSeed(byte[] result)
 		{
@@ -8753,7 +8729,7 @@ namespace IKVM.NativeCode.sun.security.provider
 
 namespace IKVM.NativeCode.com.sun.java.util.jar.pack
 {
-	public sealed class NativeUnpack
+	static class NativeUnpack
 	{
 		public static void initIDs()
 		{
@@ -8793,7 +8769,7 @@ namespace IKVM.NativeCode.com.sun.java.util.jar.pack
 
 namespace IKVM.NativeCode.com.sun.security.auth.module
 {
-	public sealed class NTSystem
+	static class NTSystem
 	{
 		public static void getCurrent(object thisObj, bool debug)
 		{
@@ -8801,7 +8777,7 @@ namespace IKVM.NativeCode.com.sun.security.auth.module
 		}
 	}
 
-	public sealed class SolarisSystem
+	static class SolarisSystem
 	{
 		public static void getSolarisInfo(object thisObj)
 		{
@@ -8809,7 +8785,7 @@ namespace IKVM.NativeCode.com.sun.security.auth.module
 		}
 	}
 
-	public sealed class UnixSystem
+	static class UnixSystem
 	{
 		public static void getUnixInfo(object thisObj)
 		{
