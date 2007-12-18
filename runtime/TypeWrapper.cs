@@ -6014,6 +6014,8 @@ namespace IKVM.Internal
 			{
 #if STATIC_COMPILER
 				private static readonly Type localRefStructType = StaticCompiler.GetType("IKVM.Runtime.JNI.Frame");
+#elif FIRST_PASS
+				private static readonly Type localRefStructType = null;
 #else
 				private static readonly Type localRefStructType = JVM.LoadType(typeof(IKVM.Runtime.JNI.Frame));
 #endif
@@ -9114,6 +9116,12 @@ namespace IKVM.Internal
 			{
 				return false;
 			}
+#if !FIRST_PASS && !STATIC_COMPILER
+			if(type.Assembly == typeof(IKVM.Runtime.JNI).Assembly)
+			{
+				return false;
+			}
+#endif
 			if(type.ContainsGenericParameters)
 			{
 				return false;

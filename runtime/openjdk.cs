@@ -3229,6 +3229,7 @@ namespace IKVM.NativeCode.java
 
 				public static void load(object thisNativeLibrary, string name)
 				{
+#if !FIRST_PASS
 					if (java.io.VirtualFileSystem.IsVirtualFS(name))
 					{
 						// we fake success for native libraries loaded from VFS
@@ -3242,6 +3243,7 @@ namespace IKVM.NativeCode.java
 							SetHandle(thisNativeLibrary, -1);
 						}
 					}
+#endif
 				}
 
 				private static void SetHandle(object thisNativeLibrary, long handle)
@@ -3440,6 +3442,7 @@ namespace IKVM.NativeCode.java
 						|| type == null
 						|| type.Assembly == typeof(object).Assembly
 						|| type.Assembly == typeof(SecurityManager).Assembly
+						|| type.Assembly == typeof(IKVM.Runtime.JNI).Assembly
 						|| type == typeof(jlrConstructor)
 						|| type == typeof(jlrMethod))
 					{
@@ -5532,6 +5535,7 @@ namespace IKVM.NativeCode.java
 				if (type == null
 					|| type.Assembly == typeof(object).Assembly
 					|| type.Assembly == typeof(AccessController).Assembly
+					|| type.Assembly == typeof(IKVM.Runtime.JNI).Assembly
 					|| type.Assembly == typeof(jlThread).Assembly)
 				{
 					return null;
@@ -6339,7 +6343,7 @@ namespace IKVM.NativeCode.sun.misc
 	}
 
 	[System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.LinkDemand, UnmanagedCode = true)]
-	public sealed unsafe class Unsafe
+	public sealed class Unsafe
 	{
 		private Unsafe() { }
 
@@ -6374,71 +6378,68 @@ namespace IKVM.NativeCode.sun.misc
 
 		public static void setMemory(long address, long bytes, byte value)
 		{
-			byte* p = (byte*)address;
 			while (bytes-- > 0)
 			{
-				*p++ = value;
+				putByte(address++, value);
 			}
 		}
 
 		public static void copyMemory(long srcAddress, long destAddress, long bytes)
 		{
-			byte* psrc = (byte*)srcAddress;
-			byte* pdst = (byte*)destAddress;
 			while (bytes-- > 0)
 			{
-				*pdst++ = *psrc++;
+				putByte(destAddress++, getByte(srcAddress++));
 			}
 		}
 
 		public static byte getByte(long address)
 		{
-			return *(byte*)address;
+			return System.Runtime.InteropServices.Marshal.ReadByte((IntPtr)address);
 		}
 
 		public static void putByte(long address, byte x)
 		{
-			*(byte*)address = x;
+			System.Runtime.InteropServices.Marshal.WriteByte((IntPtr)address, x);
 		}
 
 		public static short getShort(long address)
 		{
-			return *(short*)address;
+			return System.Runtime.InteropServices.Marshal.ReadInt16((IntPtr)address);
 		}
 
 		public static void putShort(long address, short x)
 		{
-			*(short*)address = x;
+			System.Runtime.InteropServices.Marshal.WriteInt16((IntPtr)address, x);
 		}
 
 		public static char getChar(long address)
 		{
-			return *(char*)address;
+			return (char)System.Runtime.InteropServices.Marshal.ReadInt16((IntPtr)address);
 		}
 
 		public static void putChar(long address, char x)
 		{
-			*(char*)address = x;
+			System.Runtime.InteropServices.Marshal.WriteInt16((IntPtr)address, x);
 		}
 
 		public static int getInt(long address)
 		{
-			return *(int*)address;
+			return System.Runtime.InteropServices.Marshal.ReadInt32((IntPtr)address);
 		}
 
 		public static void putInt(long address, int x)
 		{
-			*(int*)address = x;
+			System.Runtime.InteropServices.Marshal.WriteInt32((IntPtr)address, x);
 		}
 
 		public static long getLong(long address)
 		{
-			return *(long*)address;
+			return System.Runtime.InteropServices.Marshal.ReadInt64((IntPtr)address);
 		}
 
 		public static void putLong(long address, long x)
 		{
-			*(long*)address = x;
+			System.Runtime.InteropServices.Marshal.WriteInt64((IntPtr)address, x);
 		}
 	}
 
@@ -6636,6 +6637,7 @@ namespace IKVM.NativeCode.sun.reflect
 					|| type == null
 					|| type.Assembly == typeof(object).Assembly
 					|| type.Assembly == typeof(Reflection).Assembly
+					|| type.Assembly == typeof(IKVM.Runtime.JNI).Assembly
 					|| type == typeof(jlrMethod)
 					|| type == typeof(jlrConstructor))
 				{

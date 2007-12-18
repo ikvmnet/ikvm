@@ -16,6 +16,20 @@
         <call target="IKVM.Runtime" />
     </target>
 
+    <target name="IKVM.Runtime.JNI">
+        <csc target="library" output="IKVM.Runtime.JNI.dll" define="${defs}" optimize="true" unsafe="true" rebuild="true">
+            <sources>
+                <include name="JniInterface.cs" />
+            </sources>
+            <references>
+                <include unless="${first-pass or not classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
+                <include unless="${first-pass or classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
+                <include name="../bin/IKVM.Runtime.dll" asis="true" />
+            </references>
+        </csc>
+        <copy file="IKVM.Runtime.JNI.dll" todir="../bin" />        
+    </target>
+
     <target name="IKVM.Runtime">
         <property overwrite="false" name="classpath" value="false" />
         <property overwrite="false" name="cfnet" value="false" />
@@ -30,7 +44,10 @@
         <if test="${first-pass}">
             <property name="defs" value="${defs};FIRST_PASS" />
         </if>
-        <csc target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="true" rebuild="true">
+        <if test="${not first-pass}">
+            <call target="IKVM.Runtime.JNI" />
+        </if>
+        <csc target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" rebuild="true">
             <sources>
                 <include name="AssemblyInfo.cs" />
                 <include name="attributes.cs" />
@@ -47,7 +64,6 @@
                 <include name="DynamicClassLoader.cs" />
                 <include name="ExceptionHelper.cs" />
                 <include name="JavaException.cs" />
-                <include name="JniInterface.cs" />
                 <include name="MemberWrapper.cs" />
                 <include unless="${classpath}" name="openjdk.cs" />
                 <include name="profiler.cs" />
@@ -60,6 +76,7 @@
                 <include if="${not classpath and not first-pass}" name="../openjdk/vfs.zip" />
             </resources>
             <references>
+                <include unless="${first-pass}" name="../bin/IKVM.Runtime.JNI.dll" asis="true" />
                 <include unless="${first-pass or not classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
                 <include unless="${first-pass or classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
                 <!-- HACK mcs requires an explicit reference to System.Configuration -->
@@ -71,5 +88,9 @@
             </nowarn>
         </csc>
         <copy file="IKVM.Runtime.dll" todir="../bin" />
+        <if test="${not first-pass}">
+            <!-- We have to build again, to be able to bind against the real ikvm.internal.LibraryVMInterface in the class library assembly -->
+            <call target="IKVM.Runtime.JNI" />
+        </if>
     </target>
 </project>

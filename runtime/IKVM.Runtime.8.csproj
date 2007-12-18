@@ -57,6 +57,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\bin\IKVM.OpenJDK.ClassLibrary.dll</HintPath>
     </Reference>
+    <Reference Include="IKVM.Runtime.JNI, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\IKVM.Runtime.JNI.dll</HintPath>
+    </Reference>
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
@@ -105,9 +109,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="JavaException.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="JniInterface.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MemberWrapper.cs">
