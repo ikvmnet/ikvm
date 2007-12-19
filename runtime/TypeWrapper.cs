@@ -1803,7 +1803,14 @@ namespace IKVM.Internal
 						// DynamicTypeWrapper should haved already had SetClassObject explicitly
 						Debug.Assert(!(this is DynamicTypeWrapper));
 #endif // !COMPACT_FRAMEWORK
+#if FIRST_PASS
+#elif OPENJDK
+						java.lang.Class clazz = java.lang.Class.newClass();
+						clazz.typeWrapper = this;
+						classObject = clazz;
+#else
 						classObject = JVM.Library.newClass(this, null, GetClassLoader().GetJavaClassLoader());
+#endif
 					}
 				}
 				return classObject;
@@ -1812,7 +1819,13 @@ namespace IKVM.Internal
 
 		internal static TypeWrapper FromClass(object classObject)
 		{
+#if FIRST_PASS
+			return null;
+#elif OPENJDK
+			return ((java.lang.Class)classObject).typeWrapper;
+#else
 			return (TypeWrapper)JVM.Library.getWrapperFromClass(classObject);
+#endif
 		}
 #endif // !STATIC_COMPILER
 
@@ -3052,7 +3065,7 @@ namespace IKVM.Internal
 				object[] attr = mb.GetCustomAttributes(typeof(AnnotationDefaultAttribute), false);
 				if(attr.Length == 1)
 				{
-					return JVM.Library.newAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, ((AnnotationDefaultAttribute)attr[0]).Value);
+					return JVM.NewAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, ((AnnotationDefaultAttribute)attr[0]).Value);
 				}
 			}
 			return null;
@@ -7716,7 +7729,7 @@ namespace IKVM.Internal
 				object[] objs = new object[annotations.Length];
 				for(int i = 0; i < annotations.Length; i++)
 				{
-					objs[i] = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[i]);
+					objs[i] = JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[i]);
 				}
 				return objs;
 			}
@@ -7736,7 +7749,7 @@ namespace IKVM.Internal
 						object[] objs = new object[annotations.Length];
 						for(int j = 0; j < annotations.Length; j++)
 						{
-							objs[j] = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j]);
+							objs[j] = JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j]);
 						}
 						return objs;
 					}
@@ -7763,7 +7776,7 @@ namespace IKVM.Internal
 							objs[j] = new object[annotations[j].Length];
 							for(int k = 0; k < annotations[j].Length; k++)
 							{
-								objs[j][k] = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j][k]);
+								objs[j][k] = JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j][k]);
 							}
 						}
 						return objs;
@@ -7788,7 +7801,7 @@ namespace IKVM.Internal
 						object[] objs = new object[annotations.Length];
 						for(int j = 0; j < annotations.Length; j++)
 						{
-							objs[j] = JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j]);
+							objs[j] = JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), annotations[j]);
 						}
 						return objs;
 					}
@@ -7809,7 +7822,7 @@ namespace IKVM.Internal
 					object defVal = impl.GetMethodDefaultValue(i);
 					if(defVal != null)
 					{
-						return JVM.Library.newAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, defVal);
+						return JVM.NewAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, defVal);
 					}
 					return null;
 				}
@@ -9112,11 +9125,11 @@ namespace IKVM.Internal
 			// SECURITY we never expose types from IKVM.Runtime, because doing so would lead to a security hole,
 			// since the reflection implementation lives inside this assembly, all internal members would
 			// be accessible through Java reflection.
+#if !FIRST_PASS && !STATIC_COMPILER
 			if(type.Assembly == typeof(DotNetTypeWrapper).Assembly)
 			{
 				return false;
 			}
-#if !FIRST_PASS && !STATIC_COMPILER
 			if(type.Assembly == typeof(IKVM.Runtime.JNI).Assembly)
 			{
 				return false;
@@ -9809,10 +9822,10 @@ namespace IKVM.Internal
 				internal override object[] GetDeclaredAnnotations()
 				{
 					return new object[] {
-										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", 
+										JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", 
 											new object[] { AnnotationDefaultAttribute.TAG_ARRAY, new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "METHOD" } }
 										}),
-										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" } })
+										JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" } })
 									};
 				}
 #endif
@@ -10109,8 +10122,8 @@ namespace IKVM.Internal
 					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "PARAMETER" });
 				}
 				return new object[] {
-										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", (object[])targets.ToArray() }),
-										JVM.Library.newAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" } })
+										JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", (object[])targets.ToArray() }),
+										JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" } })
 									};
 			}
 #endif

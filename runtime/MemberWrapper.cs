@@ -794,7 +794,7 @@ namespace IKVM.Internal
 						}
 						catch(TargetInvocationException x)
 						{
-							throw new java.lang.reflect.InvocationTargetException(JVM.Library.mapException(x.InnerException));
+							throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x.InnerException));
 						}
 					}
 					else if(!method.DeclaringType.IsInstanceOfType(obj))
@@ -838,7 +838,7 @@ namespace IKVM.Internal
 					}
 					catch(TargetInvocationException x)
 					{
-						throw new java.lang.reflect.InvocationTargetException(JVM.Library.mapException(x.InnerException));
+						throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x.InnerException));
 					}
 #endif
 				}
@@ -860,7 +860,7 @@ namespace IKVM.Internal
 			}
 			catch(TargetInvocationException x)
 			{
-				throw new java.lang.reflect.InvocationTargetException(JVM.Library.mapException(x.InnerException));
+				throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x.InnerException));
 			}
 #else // !FIRST_PASS
 			return null;
@@ -1285,7 +1285,7 @@ namespace IKVM.Internal
 				}
 				if(val != null && !(val is string))
 				{
-					return JVM.Library.box(val);
+					return JVM.Box(val);
 				}
 				return val;
 			}

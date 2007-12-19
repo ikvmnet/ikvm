@@ -67,6 +67,7 @@
           <arg value="-recurse:${OpenJDK.dir}/control/build/linux-i586/classes/*_Skel.class" />
           <arg value="-recurse:${Classpath.dir}/*.class" />
           <arg value="-r:mscorlib" />
+          <arg value="-r:IKVM.Runtime" />
           <arg value="-r:${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
           <arg value="-resource:META-INF/MANIFEST.MF=MANIFEST.MF" />
           <arg value="${OpenJDK.dir}/control/build/linux-i586/j2re-image/lib/resources.jar" />

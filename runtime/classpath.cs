@@ -208,7 +208,7 @@ namespace IKVM.NativeCode.java
 								{
 									throw new IllegalArgumentException("primitive wrapper null");
 								}
-								argsCopy[i] = JVM.Library.unbox(args[i]);
+								argsCopy[i] = JVM.Unbox(args[i]);
 								// NOTE we depend on the fact that the .NET reflection parameter type
 								// widening rules are the same as in Java, but to have this work for byte
 								// we need to convert byte to sbyte.
@@ -240,7 +240,7 @@ namespace IKVM.NativeCode.java
 						}
 						if(mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
 						{
-							retval = JVM.Library.box(retval);
+							retval = JVM.Box(retval);
 						}
 						return retval;
 					}

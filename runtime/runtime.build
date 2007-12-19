@@ -88,9 +88,5 @@
             </nowarn>
         </csc>
         <copy file="IKVM.Runtime.dll" todir="../bin" />
-        <if test="${not first-pass}">
-            <!-- We have to build again, to be able to bind against the real ikvm.internal.LibraryVMInterface in the class library assembly -->
-            <call target="IKVM.Runtime.JNI" />
-        </if>
     </target>
 </project>

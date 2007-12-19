@@ -789,7 +789,13 @@ namespace IKVM.Internal
 			}
 			lock(wrapperLock)
 			{
+#if FIRST_PASS
+				ClassLoaderWrapper wrapper = null;
+#elif OPENJDK
+				ClassLoaderWrapper wrapper = ((java.lang.ClassLoader)javaClassLoader).wrapper;
+#else
 				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(javaClassLoader);
+#endif
 				if(wrapper == null)
 				{
 					CodeGenOptions opt = CodeGenOptions.None;
@@ -798,7 +804,7 @@ namespace IKVM.Internal
 						opt |= CodeGenOptions.Debug;
 					}
 					wrapper = new ClassLoaderWrapper(opt, javaClassLoader);
-					JVM.Library.setWrapperForClassLoader(javaClassLoader, wrapper);
+					SetWrapperForClassLoader(javaClassLoader, wrapper);
 				}
 				return wrapper;
 			}
@@ -896,16 +902,24 @@ namespace IKVM.Internal
 					}
 				}
 				object javaClassLoader = null;
-#if !STATIC_COMPILER
-				javaClassLoader = JVM.Library.newAssemblyClassLoader(null);
+#if !STATIC_COMPILER && !FIRST_PASS
+				javaClassLoader = java.security.AccessController.doPrivileged(new CreateAssemblyClassLoader(null));
 #endif
 				GenericClassLoader newLoader = new GenericClassLoader(key, javaClassLoader);
-#if !STATIC_COMPILER
-				JVM.Library.setWrapperForClassLoader(javaClassLoader, newLoader);
-#endif
+				SetWrapperForClassLoader(javaClassLoader, newLoader);
 				genericClassLoaders.Add(newLoader);
 				return newLoader;
 			}
+		}
+
+		private static void SetWrapperForClassLoader(object javaClassLoader, ClassLoaderWrapper wrapper)
+		{
+#if FIRST_PASS || STATIC_COMPILER
+#elif OPENJDK
+			((java.lang.ClassLoader)javaClassLoader).wrapper = wrapper;
+#else
+			JVM.Library.setWrapperForClassLoader(javaClassLoader, wrapper);
+#endif
 		}
 
 		internal static ClassLoaderWrapper GetGenericClassLoaderByName(string name)
@@ -1071,7 +1085,7 @@ namespace IKVM.Internal
 					}
 					if(javaClassLoader == null)
 					{
-						javaClassLoader = JVM.Library.newAssemblyClassLoader(assembly);
+						javaClassLoader = java.security.AccessController.doPrivileged(new CreateAssemblyClassLoader(assembly));
 					}
 #endif
 					loader = new AssemblyClassLoader(assembly, javaClassLoader, customClassLoaderCtor != null);
@@ -1083,7 +1097,7 @@ namespace IKVM.Internal
 					}
 					if(javaClassLoader != null)
 					{
-						JVM.Library.setWrapperForClassLoader(javaClassLoader, loader);
+						SetWrapperForClassLoader(javaClassLoader, loader);
 					}
 #endif
 				}
@@ -1131,6 +1145,21 @@ namespace IKVM.Internal
 				{
 					Tracer.Error(Tracer.Runtime, "Error while reading custom class loader redirects: {0}", x);
 				}
+			}
+		}
+
+		sealed class CreateAssemblyClassLoader : java.security.PrivilegedAction
+		{
+			private Assembly assembly;
+
+			internal CreateAssemblyClassLoader(Assembly assembly)
+			{
+				this.assembly = assembly;
+			}
+
+			public object run()
+			{
+				return new ikvm.runtime.AssemblyClassLoader(assembly);
 			}
 		}
 

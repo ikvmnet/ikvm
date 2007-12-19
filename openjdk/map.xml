@@ -1159,10 +1159,12 @@
 		</class>
 		<!-- Here we are adding/replacing methods to existing classes -->
 		<class name="java.lang.Class">
-      <field name="typeWrapper" sig="Ljava.lang.Object;" modifiers="" />
-      <field name="pd" sig="Ljava.security.ProtectionDomain;" modifiers="private" />
-      <field name="signers" sig="[Ljava.lang.Object;" modifiers="private" />
-      <field name="constantPool" sig="Ljava.lang.Object;" modifiers="private" />
+      <field name="typeWrapper" sig="Lcli.IKVM.Internal.TypeWrapper;" modifiers="">
+        <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+      </field>
+      <field name="pd" sig="Ljava.security.ProtectionDomain;" modifiers="" />
+      <field name="signers" sig="[Ljava.lang.Object;" modifiers="" />
+      <field name="constantPool" sig="Ljava.lang.Object;" modifiers="" />
 			<method name="op_Implicit" sig="(Lcli.System.Type;)Ljava.lang.Class;" modifiers="public static" attributes="SpecialName">
 				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
 				<body>
@@ -1171,9 +1173,18 @@
 					<ret />
 				</body>
 			</method>
+      <method name="newClass" sig="()Ljava.lang.Class;" modifiers="static">
+        <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+        <body>
+          <newobj class="java.lang.Class" name="&lt;init&gt;" sig="()V" />
+          <ret />
+        </body>
+      </method>
 		</class>
     <class name="java.lang.ClassLoader">
-      <field name="wrapper" sig="Ljava.lang.Object;" modifiers="" />
+      <field name="wrapper" sig="Lcli.IKVM.Internal.ClassLoaderWrapper;" modifiers="">
+        <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+      </field>
       <method name="getBootstrapResource" sig="(Ljava.lang.String;)Ljava.net.URL;">
         <body>
           <ldarg_0 />
@@ -1494,16 +1505,6 @@
 				</body>
 			</method>
 		</class>
-    <class name="java.lang.Shutdown">
-      <method name="runAllFinalizers" sig="()V">
-        <body>
-          <ldc_i4_1 />
-          <volatile />
-          <stsfld class="java.lang.LibraryVMInterfaceImpl" name="runFinalizersOnExitFlag" sig="Z" />
-          <ret />
-        </body>
-      </method>
-    </class>
 		<class name="java.lang.System">
       <!-- HACK we replace <clinit> to remove the null initialization of in/out/err,
            because we have to trigger VM initialization in registerNatives. -->
@@ -1532,24 +1533,6 @@
 				</body>
 			</method>
 		</class>
-    <class name="java.lang.LibraryVMInterfaceImpl">
-      <method name="getWrapperFromClass" sig="(Ljava.lang.Object;)Ljava.lang.Object;">
-        <body>
-          <ldarg_1 />
-          <castclass class="java.lang.Class" />
-          <ldfld class="java.lang.Class" name="typeWrapper" sig="Ljava.lang.Object;" />
-          <ret />
-        </body>
-      </method>
-      <method name="getWrapperFromClassLoader" sig="(Ljava.lang.Object;)Ljava.lang.Object;">
-        <body>
-          <ldarg_1 />
-          <castclass class="java.lang.ClassLoader" />
-          <ldfld class="java.lang.ClassLoader" name="wrapper" sig="Ljava.lang.Object;" />
-          <ret />
-        </body>
-      </method>
-    </class>
     <class name="sun.misc.Launcher">
       <method name="&lt;init&gt;" sig="()V">
         <replace-method-call class="sun.misc.Launcher$ExtClassLoader" name="getExtClassLoader" sig="()Lsun.misc.Launcher$ExtClassLoader;">

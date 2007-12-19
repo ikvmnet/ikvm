@@ -49,5 +49,8 @@
 @cli.System.Reflection.AssemblyProductAttribute.Annotation("IKVM.NET")
 @cli.System.Reflection.AssemblyCompanyAttribute.Annotation("Jeroen Frijters")
 
+// TODO use a string literal from another class for the runtime assembly name (to handle strong named builds)
+@cli.System.Runtime.CompilerServices.InternalsVisibleToAttribute.Annotation("IKVM.Runtime")
+
 // magic type to collect Assembly attributes
 interface assembly {}

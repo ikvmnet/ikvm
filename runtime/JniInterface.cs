@@ -137,7 +137,7 @@ namespace IKVM.Runtime
 				}
 			}
 
-			JVM.Library.setProperties(props);
+			JVM.SetProperties(props);
 
 			*((void**)ppvm) = JavaVM.pJavaVM;
 			return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)ppenv, null);
@@ -1393,7 +1393,7 @@ namespace IKVM.Runtime
 		private static void SetPendingException(JNIEnv* pEnv, Exception x)
 		{
 			DeleteLocalRef(pEnv, pEnv->pendingException);
-			pEnv->pendingException = x == null ? IntPtr.Zero : pEnv->MakeLocalRef(JVM.Library.mapException(x));
+			pEnv->pendingException = x == null ? IntPtr.Zero : pEnv->MakeLocalRef(ikvm.runtime.Util.mapException(x));
 		}
 
 		internal static jint Throw(JNIEnv* pEnv, jthrowable throwable)
@@ -1678,12 +1678,12 @@ namespace IKVM.Runtime
 			}
 			catch(java.lang.reflect.InvocationTargetException x)
 			{
-				SetPendingException(pEnv, JVM.Library.mapException(x.getCause()));
+				SetPendingException(pEnv, ikvm.runtime.Util.mapException(x.getCause()));
 				return null;
 			}
 			catch(Exception x)
 			{
-				SetPendingException(pEnv, JVM.Library.mapException(x));
+				SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
 				return null;
 			}
 		}
@@ -3338,7 +3338,7 @@ namespace IKVM.Runtime
 			}
 			catch(Exception x)
 			{
-				SetPendingException(pEnv, JVM.Library.mapException(x));
+				SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
 				return IntPtr.Zero;
 			}
 		}
@@ -3347,11 +3347,15 @@ namespace IKVM.Runtime
 		{
 			try
 			{
+#if OPENJDK
+				return (IntPtr)((sun.nio.ch.DirectBuffer)pEnv->UnwrapRef(buf)).address();
+#else
 				return JVM.Library.getDirectBufferAddress(pEnv->UnwrapRef(buf));
+#endif
 			}
 			catch(Exception x)
 			{
-				SetPendingException(pEnv, JVM.Library.mapException(x));
+				SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
 				return IntPtr.Zero;
 			}
 		}
@@ -3360,11 +3364,11 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-				return (jlong)(long)JVM.Library.getDirectBufferCapacity(pEnv->UnwrapRef(buf));
+				return (jlong)(long)((java.nio.Buffer)pEnv->UnwrapRef(buf)).capacity();
 			}
 			catch(Exception x)
 			{
-				SetPendingException(pEnv, JVM.Library.mapException(x));
+				SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
 				return 0;
 			}
 		}

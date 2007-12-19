@@ -1246,32 +1246,23 @@ namespace IKVM.Internal
 			{
 				// HACK keep the compiler from warning about unused local
 				GC.KeepAlive(x);
-#if !STATIC_COMPILER && !COMPACT_FRAMEWORK
+#if !STATIC_COMPILER && !COMPACT_FRAMEWORK && !FIRST_PASS
 				if(Tracer.ClassLoading.TraceError)
 				{
-					object cl = classLoader.GetJavaClassLoader();
+					java.lang.ClassLoader cl = (java.lang.ClassLoader)classLoader.GetJavaClassLoader();
 					if(cl != null)
 					{
 						System.Text.StringBuilder sb = new System.Text.StringBuilder();
-						Type type = cl.GetType();
-						while(type.FullName != "java.lang.ClassLoader")
+						string sep = "";
+						while(cl != null)
 						{
-							type = type.BaseType;
-						}
-						System.Reflection.FieldInfo parentField = type.GetField("parent", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-						if(parentField != null)
-						{
-							string sep = "";
-							while(cl != null)
-							{
-								sb.Append(sep).Append(cl);
-								sep = " -> ";
-								cl = parentField.GetValue(cl);
-							}
+							sb.Append(sep).Append(cl);
+							sep = " -> ";
+							cl = cl.getParent();
 						}
 						Tracer.Error(Tracer.ClassLoading, "ClassLoader chain: {0}", sb);
 					}
-					Exception m = JVM.Library.mapException(x.ToJava());
+					Exception m = ikvm.runtime.Util.mapException(x.ToJava());
 					Tracer.Error(Tracer.ClassLoading, m.ToString() + Environment.NewLine + m.StackTrace);
 				}
 #endif // !STATIC_COMPILER

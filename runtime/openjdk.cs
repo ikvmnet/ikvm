@@ -476,6 +476,112 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		public static class IOHelpers
+		{
+			public static void WriteByte(byte[] buf, int offset, byte value)
+			{
+				buf[offset] = value;
+			}
+
+			public static void WriteBoolean(byte[] buf, int offset, bool value)
+			{
+				buf[offset] = value ? (byte)1 : (byte)0;
+			}
+
+			public static void WriteChar(byte[] buf, int offset, char value)
+			{
+				buf[offset + 0] = (byte)(value >> 8);
+				buf[offset + 1] = (byte)(value >> 0);
+			}
+
+			public static void WriteShort(byte[] buf, int offset, short value)
+			{
+				buf[offset + 0] = (byte)(value >> 8);
+				buf[offset + 1] = (byte)(value >> 0);
+			}
+
+			public static void WriteInt(byte[] buf, int offset, int value)
+			{
+				buf[offset + 0] = (byte)(value >> 24);
+				buf[offset + 1] = (byte)(value >> 16);
+				buf[offset + 2] = (byte)(value >> 8);
+				buf[offset + 3] = (byte)(value >> 0);
+			}
+
+			public static void WriteFloat(byte[] buf, int offset, float value)
+			{
+#if !FIRST_PASS
+				WriteInt(buf, offset, jlFloat.floatToIntBits(value));
+#endif
+			}
+
+			public static void WriteLong(byte[] buf, int offset, long value)
+			{
+				WriteInt(buf, offset, (int)(value >> 32));
+				WriteInt(buf, offset + 4, (int)value);
+			}
+
+			public static void WriteDouble(byte[] buf, int offset, double value)
+			{
+#if !FIRST_PASS
+				WriteLong(buf, offset, jlDouble.doubleToLongBits(value));
+#endif
+			}
+
+			public static byte ReadByte(byte[] buf, int offset)
+			{
+				return buf[offset];
+			}
+
+			public static bool ReadBoolean(byte[] buf, int offset)
+			{
+				return buf[offset] != 0;
+			}
+
+			public static char ReadChar(byte[] buf, int offset)
+			{
+				return (char)((buf[offset] << 8) + buf[offset + 1]);
+			}
+
+			public static short ReadShort(byte[] buf, int offset)
+			{
+				return (short)((buf[offset] << 8) + buf[offset + 1]);
+			}
+
+			public static int ReadInt(byte[] buf, int offset)
+			{
+				return (buf[offset + 0] << 24)
+					 + (buf[offset + 1] << 16)
+					 + (buf[offset + 2] << 8)
+					 + (buf[offset + 3] << 0);
+			}
+
+			public static float ReadFloat(byte[] buf, int offset)
+			{
+#if FIRST_PASS
+				return 0;
+#else
+				return jlFloat.intBitsToFloat(ReadInt(buf, offset));
+#endif
+			}
+
+			public static long ReadLong(byte[] buf, int offset)
+			{
+				long hi = (uint)ReadInt(buf, offset);
+				long lo = (uint)ReadInt(buf, offset + 4);
+				return lo + (hi << 32);
+			}
+
+			public static double ReadDouble(byte[] buf, int offset)
+			{
+#if FIRST_PASS
+				return 0;
+#else
+				return jlDouble.longBitsToDouble(ReadLong(buf, offset));
+#endif
+			}
+		}
+
 		static class ObjectStreamClass
 		{
 			public static void initNative()
@@ -503,115 +609,24 @@ namespace IKVM.NativeCode.java
 			}
 
 #if !FIRST_PASS
-			public static void WriteByte(byte[] buf, int offset, byte value)
-			{
-				buf[offset] = value;
-			}
-
-			public static void WriteBoolean(byte[] buf, int offset, bool value)
-			{
-				buf[offset] = value ? (byte)1 : (byte)0;
-			}
-
-			public static void WriteChar(byte[] buf, int offset, char value)
-			{
-				buf[offset + 0] = (byte)(value >> 8);
-				buf[offset + 1] = (byte)(value >> 0);
-			}
-
-			public static void WriteShort(byte[] buf, int offset, short value)
-			{
-				buf[offset + 0] = (byte)(value >> 8);
-				buf[offset + 1] = (byte)(value >> 0);
-			}
-
-			public static void WriteInt(byte[] buf, int offset, int value)
-			{
-				buf[offset + 0] = (byte)(value >> 24);
-				buf[offset + 1] = (byte)(value >> 16);
-				buf[offset + 2] = (byte)(value >>  8);
-				buf[offset + 3] = (byte)(value >>  0);
-			}
-
-			public static void WriteFloat(byte[] buf, int offset, float value)
-			{
-				WriteInt(buf, offset, jlFloat.floatToIntBits(value));
-			}
-
-			public static void WriteLong(byte[] buf, int offset, long value)
-			{
-				WriteInt(buf, offset, (int)(value >> 32));
-				WriteInt(buf, offset + 4, (int)value);
-			}
-
-			public static void WriteDouble(byte[] buf, int offset, double value)
-			{
-				WriteLong(buf, offset, jlDouble.doubleToLongBits(value));
-			}
-
-			public static byte ReadByte(byte[] buf, int offset)
-			{
-				return buf[offset];
-			}
-
-			public static bool ReadBoolean(byte[] buf, int offset)
-			{
-				return buf[offset] != 0;
-			}
-
-			public static char ReadChar(byte[] buf, int offset)
-			{
-				return (char)((buf[offset] << 8) + buf[offset + 1]);
-			}
-
-			public static short ReadShort(byte[] buf, int offset)
-			{
-				return (short)((buf[offset] << 8) + buf[offset + 1]);
-			}
-
-			public static int ReadInt(byte[] buf, int offset)
-			{
-				return (buf[offset + 0] << 24)
-					 + (buf[offset + 1] << 16)
-					 + (buf[offset + 2] <<  8)
-					 + (buf[offset + 3] <<  0);
-			}
-
-			public static float ReadFloat(byte[] buf, int offset)
-			{
-				return jlFloat.intBitsToFloat(ReadInt(buf, offset));
-			}
-
-			public static long ReadLong(byte[] buf, int offset)
-			{
-				long hi = (uint)ReadInt(buf, offset);
-				long lo = (uint)ReadInt(buf, offset + 4);
-				return lo + (hi << 32);
-			}
-
-			public static double ReadDouble(byte[] buf, int offset)
-			{
-				return jlDouble.longBitsToDouble(ReadLong(buf, offset));
-			}
-
 			private sealed class FastFieldReflector : iiFieldReflectorBase
 			{
-				private static readonly MethodInfo ReadByteMethod = typeof(ObjectStreamClass).GetMethod("ReadByte");
-				private static readonly MethodInfo ReadBooleanMethod = typeof(ObjectStreamClass).GetMethod("ReadBoolean");
-				private static readonly MethodInfo ReadCharMethod = typeof(ObjectStreamClass).GetMethod("ReadChar");
-				private static readonly MethodInfo ReadShortMethod = typeof(ObjectStreamClass).GetMethod("ReadShort");
-				private static readonly MethodInfo ReadIntMethod = typeof(ObjectStreamClass).GetMethod("ReadInt");
-				private static readonly MethodInfo ReadFloatMethod = typeof(ObjectStreamClass).GetMethod("ReadFloat");
-				private static readonly MethodInfo ReadLongMethod = typeof(ObjectStreamClass).GetMethod("ReadLong");
-				private static readonly MethodInfo ReadDoubleMethod = typeof(ObjectStreamClass).GetMethod("ReadDouble");
-				private static readonly MethodInfo WriteByteMethod = typeof(ObjectStreamClass).GetMethod("WriteByte");
-				private static readonly MethodInfo WriteBooleanMethod = typeof(ObjectStreamClass).GetMethod("WriteBoolean");
-				private static readonly MethodInfo WriteCharMethod = typeof(ObjectStreamClass).GetMethod("WriteChar");
-				private static readonly MethodInfo WriteShortMethod = typeof(ObjectStreamClass).GetMethod("WriteShort");
-				private static readonly MethodInfo WriteIntMethod = typeof(ObjectStreamClass).GetMethod("WriteInt");
-				private static readonly MethodInfo WriteFloatMethod = typeof(ObjectStreamClass).GetMethod("WriteFloat");
-				private static readonly MethodInfo WriteLongMethod = typeof(ObjectStreamClass).GetMethod("WriteLong");
-				private static readonly MethodInfo WriteDoubleMethod = typeof(ObjectStreamClass).GetMethod("WriteDouble");
+				private static readonly MethodInfo ReadByteMethod = typeof(IOHelpers).GetMethod("ReadByte");
+				private static readonly MethodInfo ReadBooleanMethod = typeof(IOHelpers).GetMethod("ReadBoolean");
+				private static readonly MethodInfo ReadCharMethod = typeof(IOHelpers).GetMethod("ReadChar");
+				private static readonly MethodInfo ReadShortMethod = typeof(IOHelpers).GetMethod("ReadShort");
+				private static readonly MethodInfo ReadIntMethod = typeof(IOHelpers).GetMethod("ReadInt");
+				private static readonly MethodInfo ReadFloatMethod = typeof(IOHelpers).GetMethod("ReadFloat");
+				private static readonly MethodInfo ReadLongMethod = typeof(IOHelpers).GetMethod("ReadLong");
+				private static readonly MethodInfo ReadDoubleMethod = typeof(IOHelpers).GetMethod("ReadDouble");
+				private static readonly MethodInfo WriteByteMethod = typeof(IOHelpers).GetMethod("WriteByte");
+				private static readonly MethodInfo WriteBooleanMethod = typeof(IOHelpers).GetMethod("WriteBoolean");
+				private static readonly MethodInfo WriteCharMethod = typeof(IOHelpers).GetMethod("WriteChar");
+				private static readonly MethodInfo WriteShortMethod = typeof(IOHelpers).GetMethod("WriteShort");
+				private static readonly MethodInfo WriteIntMethod = typeof(IOHelpers).GetMethod("WriteInt");
+				private static readonly MethodInfo WriteFloatMethod = typeof(IOHelpers).GetMethod("WriteFloat");
+				private static readonly MethodInfo WriteLongMethod = typeof(IOHelpers).GetMethod("WriteLong");
+				private static readonly MethodInfo WriteDoubleMethod = typeof(IOHelpers).GetMethod("WriteDouble");
 				private static readonly FieldInfo fieldField = typeof(jiObjectStreamField).GetField("field", BindingFlags.Instance | BindingFlags.NonPublic);
 				private delegate void ObjFieldGetterSetter(object obj, object[] objarr);
 				private delegate void PrimFieldGetterSetter(object obj, byte[] objarr);
@@ -3474,16 +3489,6 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		static class Shutdown
-		{
-			public static void halt0(int status)
-			{
-				Environment.Exit(status);
-			}
-
-			// runAllFinalizers() implementation lives in map.xml
-		}
-
 		static class StrictMath
 		{
 			public static double sin(double d)
@@ -3728,7 +3733,7 @@ namespace IKVM.NativeCode.java
 				p.put("gnu.classpath.version", "0.95");
 				p.put("java.home", io.VirtualFileSystem.RootPath.Substring(0, io.VirtualFileSystem.RootPath.Length - 1));
 				p.put("sun.boot.library.path", io.VirtualFileSystem.RootPath + "bin");
-				JVM.Library.initProperties(p);
+				global::gnu.classpath.VMSystemProperties.initOpenJDK(p);
 
 				// HACK this is an extremely gross hack, here we explicitly call the class initializer of a bunch of
 				// classes while their class initializers may already be running. All of their class initializers are
@@ -4299,7 +4304,7 @@ namespace IKVM.NativeCode.java
 									ResumeThread(t.nativeThread);
 								}
 							}
-							stacks[i] = JVM.Library.getStackTrace(stack);
+							stacks[i] = global::java.lang.ExceptionHelper.getStackTrace(stack, int.MaxValue);
 						}
 						catch (ThreadStateException)
 						{
@@ -5420,7 +5425,7 @@ namespace IKVM.NativeCode.java
 					}
 					catch (Exception x)
 					{
-						x = JVM.Library.mapException(x);
+						x = irUtil.mapException(x);
 						if (x is jlException && !(x is jlRuntimeException))
 						{
 							throw new jsPrivilegedActionException((jlException)x);
@@ -6662,7 +6667,7 @@ namespace IKVM.NativeCode.sun.reflect
 					{
 						throw new jlIllegalArgumentException("primitive wrapper null");
 					}
-					nargs[i] = JVM.Library.unbox(args[i]);
+					nargs[i] = JVM.Unbox(args[i]);
 					// NOTE we depend on the fact that the .NET reflection parameter type
 					// widening rules are the same as in Java, but to have this work for byte
 					// we need to convert byte to sbyte.
@@ -6722,7 +6727,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
 				{
-					retval = JVM.Library.box(retval);
+					retval = JVM.Box(retval);
 				}
 				return retval;
 			}
@@ -8793,34 +8798,3 @@ namespace IKVM.NativeCode.com.sun.security.auth.module
 		}
 	}
 }
-
-#if FIRST_PASS
-namespace ikvm.@internal
-{
-	public interface LibraryVMInterface
-	{
-		object newClass(object wrapper, object protectionDomain, object classLoader);
-		object getWrapperFromClass(object clazz);
-
-		object getWrapperFromClassLoader(object classLoader);
-		void setWrapperForClassLoader(object classLoader, object wrapper);
-
-		object box(object val);
-		object unbox(object val);
-
-		Exception mapException(Exception t);
-
-		IntPtr getDirectBufferAddress(object buffer);
-		int getDirectBufferCapacity(object buffer);
-
-		void setProperties(System.Collections.Hashtable props);
-
-		bool runFinalizersOnExit();
-
-		object newAnnotation(object classLoader, object definition);
-		object newAnnotationElementValue(object classLoader, object expectedClass, object definition);
-
-		object newAssemblyClassLoader(Assembly asm);
-	}
-}
-#endif // !FIRST_PASS

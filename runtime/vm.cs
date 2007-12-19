@@ -76,7 +76,7 @@ namespace IKVM.Internal
 		internal const bool IsStaticCompiler = false;
 		private static bool enableReflectionOnMethodsWithUnloadableTypeParameters;
 		private static bool finishingForDebugSave;
-#if !FIRST_PASS
+#if !FIRST_PASS && !OPENJDK
 		private static ikvm.@internal.LibraryVMInterface lib;
 #endif
 		internal static bool IsSaveDebugImage;
@@ -123,7 +123,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 					throw new InvalidOperationException("This version of IKVM.Runtime.dll was compiled with FIRST_PASS defined.");
 #else
-					coreAssembly = typeof(ikvm.@internal.Library).Assembly;
+					coreAssembly = typeof(java.lang.Object).Assembly;
 #endif
 				}
 #endif // !STATIC_COMPILER
@@ -136,6 +136,7 @@ namespace IKVM.Internal
 		}
 
 #if !STATIC_COMPILER
+#if !OPENJDK
 		internal static ikvm.@internal.LibraryVMInterface Library
 		{
 			get
@@ -151,6 +152,7 @@ namespace IKVM.Internal
 #endif
 			}
 		}
+#endif
 
 		public static bool EnableReflectionOnMethodsWithUnloadableTypeParameters
 		{
@@ -276,5 +278,147 @@ namespace IKVM.Internal
 			return type;
 #endif
 		}
+
+		internal static object Box(object val)
+		{
+#if STATIC_COMPILER || FIRST_PASS
+			return null;
+#else
+			if(val is byte)
+			{
+				return java.lang.Byte.valueOf((byte)val);
+			}
+			else if(val is bool)
+			{
+				return java.lang.Boolean.valueOf((bool)val);
+			}
+			else if(val is short)
+			{
+				return java.lang.Short.valueOf((short)val);
+			}
+			else if(val is char)
+			{
+				return java.lang.Character.valueOf((char)val);
+			}
+			else if(val is int)
+			{
+				return java.lang.Integer.valueOf((int)val);
+			}
+			else if(val is float)
+			{
+				return java.lang.Float.valueOf((float)val);
+			}
+			else if(val is long)
+			{
+				return java.lang.Long.valueOf((long)val);
+			}
+			else if(val is double)
+			{
+				return java.lang.Double.valueOf((double)val);
+			}
+			else
+			{
+				throw new java.lang.IllegalArgumentException();
+			}
+#endif
+		}
+
+		internal static object Unbox(object val)
+		{
+#if STATIC_COMPILER || FIRST_PASS
+			return null;
+#else
+			java.lang.Byte b = val as java.lang.Byte;
+			if(b != null)
+			{
+				return b.byteValue();
+			}
+			java.lang.Boolean b1 = val as java.lang.Boolean;
+			if(b1 != null)
+			{
+				return b1.booleanValue();
+			}
+			java.lang.Short s = val as java.lang.Short;
+			if(s != null)
+			{
+				return s.shortValue();
+			}
+			java.lang.Character c = val as java.lang.Character;
+			if(c != null)
+			{
+				return c.charValue();
+			}
+			java.lang.Integer i = val as java.lang.Integer;
+			if(i != null)
+			{
+				return i.intValue();
+			}
+			java.lang.Float f = val as java.lang.Float;
+			if(f != null)
+			{
+				return f.floatValue();
+			}
+			java.lang.Long l = val as java.lang.Long;
+			if(l != null)
+			{
+				return l.longValue();
+			}
+			java.lang.Double d = val as java.lang.Double;
+			if(d != null)
+			{
+				return d.doubleValue();
+			}
+			else
+			{
+				throw new java.lang.IllegalArgumentException();
+			}
+#endif
+		}
+
+#if !STATIC_COMPILER
+		internal static void SetProperties(Hashtable props)
+		{
+#if FIRST_PASS
+#elif OPENJDK
+			gnu.classpath.VMSystemProperties.props = props;
+#else
+			JVM.Library.setProperties(props);
+#endif
+		}
+#endif
+
+#if !STATIC_COMPILER
+		internal static object NewAnnotation(object classLoader, object definition)
+		{
+#if FIRST_PASS
+			return null;
+#elif OPENJDK
+			return ikvm.@internal.AnnotationAttributeBase.newAnnotation((java.lang.ClassLoader)classLoader, definition);
+#else
+			return JVM.Library.newAnnotation(classLoader, definition);
+#endif
+		}
+#endif
+
+#if !STATIC_COMPILER
+		internal static object NewAnnotationElementValue(object classLoader, object expectedClass, object definition)
+		{
+#if FIRST_PASS
+			return null;
+#elif OPENJDK
+			try
+			{
+				return ikvm.@internal.AnnotationAttributeBase.decodeElementValue(definition, (java.lang.Class)expectedClass, (java.lang.ClassLoader)classLoader);
+			}
+			catch(java.lang.IllegalAccessException)
+			{
+				// TODO this shouldn't be here
+				return null;
+			}
+#else
+			return JVM.Library.newAnnotationElementValue(classLoader, expectedClass, definition);
+#endif
+		}
+#endif
 	}
 }

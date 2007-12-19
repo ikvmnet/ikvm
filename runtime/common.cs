@@ -277,7 +277,13 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 		public static int GetGenericClassLoaderId(object classLoader)
 		{
+#if FIRST_PASS
+			return 0;
+#elif OPENJDK
+			return ClassLoaderWrapper.GetGenericClassLoaderId(((global::java.lang.ClassLoader)classLoader).wrapper);
+#else
 			return ClassLoaderWrapper.GetGenericClassLoaderId((ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader));
+#endif
 		}
 
 		public static Assembly GetBootClassLoaderAssembly()
@@ -287,7 +293,13 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 		public static string GetGenericClassLoaderName(object classLoader)
 		{
+#if FIRST_PASS
+			return null;
+#elif OPENJDK
+			return ((GenericClassLoader)((global::java.lang.ClassLoader)classLoader).wrapper).GetName();
+#else
 			return ((GenericClassLoader)JVM.Library.getWrapperFromClassLoader(classLoader)).GetName();
+#endif
 		}
 	}
 

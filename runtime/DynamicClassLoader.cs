@@ -198,7 +198,13 @@ namespace IKVM.Internal
 					Debug.Assert(dynamicTypes.ContainsKey(mangledTypeName) && dynamicTypes[mangledTypeName] == null);
 					dynamicTypes[mangledTypeName] = type;
 					types[f.Name] = type;
-#if !STATIC_COMPILER
+#if STATIC_COMPILER || FIRST_PASS
+#elif OPENJDK
+					java.lang.Class clazz = java.lang.Class.newClass();
+					clazz.typeWrapper = type;
+					clazz.pd = (java.security.ProtectionDomain)protectionDomain;
+					type.SetClassObject(clazz);
+#else
 					type.SetClassObject(JVM.Library.newClass(type, protectionDomain, null));
 #endif
 				}
