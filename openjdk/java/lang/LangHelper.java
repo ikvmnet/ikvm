@@ -97,14 +97,4 @@ class LangHelper
     {
 	return AssemblyClassLoader.getResources(null, getBootstrapAssembly(), name);
     }
-
-    // this method is called from the System.<clinit> method in map.xml
-    static void init()
-    {
-	cli.System.AppDomain.get_CurrentDomain().add_ProcessExit(new cli.System.EventHandler(new cli.System.EventHandler.Method() {
-	    public void Invoke(Object sender, cli.System.EventArgs e) {
-		Shutdown.shutdown();
-	    }
-	}));
-    }
 }

@@ -1074,6 +1074,12 @@ namespace IKVM.Runtime
 		internal GCHandle criticalArrayHandle2;
 		private static LocalDataStoreSlot cleanupHelperDataSlot = System.Threading.Thread.AllocateDataSlot();
 
+		static JNIEnv()
+		{
+			// we set the field here so that IKVM.Runtime.dll doesn't have to load us if we're not otherwise needed
+			IKVM.NativeCode.java.lang.SecurityManager.jniAssembly = typeof(JNIEnv).Assembly;
+		}
+
 		unsafe class JNIEnvCleanupHelper
 		{
 			private JNIEnv* pJNIEnv;
