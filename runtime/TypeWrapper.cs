@@ -1471,7 +1471,7 @@ namespace IKVM.Internal
 			List<AssemblyName> list = new List<AssemblyName>();
 			foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(assembly))
 			{
-				if(MatchTypes(cad.Constructor.DeclaringType, typeof(System.Runtime.CompilerServices.InternalsVisibleToAttribute)))
+				if(cad.Constructor.DeclaringType == typeof(System.Runtime.CompilerServices.InternalsVisibleToAttribute))
 				{
 					try
 					{
@@ -3614,7 +3614,7 @@ namespace IKVM.Internal
 					{
 						methods[i] = new MethodWrapper.GhostMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
 					}
-					else if(ReferenceEquals(m.Name, StringConstants.INIT))
+					else if(ReferenceEquals(m.Name, StringConstants.INIT) || m.IsClassInitializer)
 					{
 						methods[i] = new SmartConstructorMethodWrapper(wrapper, m.Name, m.Signature, null, null, m.Modifiers, flags);
 					}
