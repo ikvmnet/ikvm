@@ -11189,7 +11189,7 @@ namespace IKVM.Internal
 				if(outerClass == null)
 				{
 					Type outer = type.DeclaringType;
-					if(outer != null)
+					if(outer != null && !type.IsGenericType)
 					{
 						outerClass = ClassLoaderWrapper.GetWrapperFromType(outer);
 					}
