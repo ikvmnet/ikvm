@@ -40,6 +40,7 @@ public class NetExp
 	{
 		IKVM.Internal.Tracer.EnableTraceForDebug();
 		string assemblyNameOrPath = null;
+		bool continueOnError = false;
 		foreach(string s in args)
 		{
 			if(s.StartsWith("-") || assemblyNameOrPath != null)
@@ -47,6 +48,10 @@ public class NetExp
 				if(s == "-serialver")
 				{
 					java.lang.System.setProperty("ikvm.stubgen.serialver", "true");
+				}
+				else if(s == "-skiperror")
+				{
+					continueOnError = true;
 				}
 				else
 				{
@@ -64,7 +69,7 @@ public class NetExp
 		{
 			Console.Error.WriteLine(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
 			Console.Error.WriteLine();
-			Console.Error.WriteLine("usage: ikvmstub [-serialver] <assemblyNameOrPath>");
+			Console.Error.WriteLine("usage: ikvmstub [-serialver] [-skiperror] <assemblyNameOrPath>");
 			return 1;
 		}
 		Assembly assembly = null;
@@ -103,7 +108,7 @@ public class NetExp
 					zipFile.setComment(ikvm.runtime.Startup.getVersionAndCopyrightInfo());
 					try
 					{
-						ProcessAssembly(assembly);
+						rc = ProcessAssembly(assembly, continueOnError);
 					}
 					catch (ReflectionTypeLoadException x)
 					{
@@ -117,6 +122,12 @@ public class NetExp
 					catch (System.Exception x)
 					{
 						java.lang.Throwable.instancehelper_printStackTrace(ikvm.runtime.Util.mapException(x));
+						
+						if (!continueOnError)
+						{
+							Console.Error.WriteLine("Warning: Assembly reflection encountered an error. Resultant JAR may be incomplete.");
+						}
+						
 						rc = 1;
 					}
 				}
@@ -181,8 +192,9 @@ public class NetExp
 		zipFile.write(buf, 0, buf.Length);
 	}
 
-	private static void ProcessAssembly(Assembly assembly)
+	private static int ProcessAssembly(Assembly assembly, bool continueOnError)
 	{
+		int rc = 0;
 		foreach(System.Type t in assembly.GetTypes())
 		{
 			if(t.IsPublic)
@@ -218,11 +230,28 @@ public class NetExp
 				{
 					keepGoing = true;
 					done.Add(c.getName(), null);
-					ProcessClass(c);
+					
+					try
+					{
+						ProcessClass(c);
+					}
+					catch (Exception x)
+					{
+						if (continueOnError)
+						{
+							rc = 1;
+							java.lang.Throwable.instancehelper_printStackTrace(ikvm.runtime.Util.mapException(x));
+						}
+						else
+						{
+							throw;
+						}
+					}
 					WriteClass(c);
 				}
 			}
 		} while(keepGoing);
+		return rc;
 	}
 
 	private static void AddToExportList(java.lang.Class c)
