@@ -403,6 +403,64 @@ namespace IKVM.Internal
 			return base.IsPInvokeMethod(m);
 		}
 
+		private static void MapModifiers(MapXml.MapModifiers mapmods, bool isConstructor, out bool setmodifiers, ref MethodAttributes attribs)
+		{
+			setmodifiers = false;
+			Modifiers modifiers = (Modifiers)mapmods;
+			if((modifiers & Modifiers.Public) != 0)
+			{
+				attribs |= MethodAttributes.Public;
+			}
+			else if((modifiers & Modifiers.Protected) != 0)
+			{
+				attribs |= MethodAttributes.FamORAssem;
+			}
+			else if((modifiers & Modifiers.Private) != 0)
+			{
+				attribs |= MethodAttributes.Private;
+			}
+			else
+			{
+				attribs |= MethodAttributes.Assembly;
+			}
+			if((modifiers & Modifiers.Static) != 0)
+			{
+				attribs |= MethodAttributes.Static;
+				if((modifiers & Modifiers.Final) != 0)
+				{
+					setmodifiers = true;
+				}
+			}
+			else if(!isConstructor)
+			{
+				attribs |= MethodAttributes.Virtual;
+				if((modifiers & Modifiers.Final) != 0)
+				{
+					attribs |= MethodAttributes.Final;
+				}
+				else if((modifiers & Modifiers.Abstract) != 0)
+				{
+					attribs |= MethodAttributes.Abstract;
+				}
+			}
+			if((modifiers & Modifiers.Synchronized) != 0)
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		private void MapSignature(string sig, out Type returnType, out Type[] parameterTypes)
+		{
+			Hashtable classCache = new Hashtable();
+			returnType = ClassFile.RetTypeWrapperFromSig(GetClassLoader(), classCache, sig).TypeAsSignatureType;
+			TypeWrapper[] parameterTypeWrappers = ClassFile.ArgTypeWrapperListFromSig(GetClassLoader(), classCache, sig);
+			parameterTypes = new Type[parameterTypeWrappers.Length];
+			for(int i = 0; i < parameterTypeWrappers.Length; i++)
+			{
+				parameterTypes[i] = parameterTypeWrappers[i].TypeAsSignatureType;
+			}
+		}
+
 		protected override void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, FieldWrapper[] fields, MethodWrapper[] methods)
 		{
 			Hashtable mapxml = ((CompilerClassLoader)classLoader).GetMapXml();
@@ -444,6 +502,34 @@ namespace IKVM.Internal
 					}
 					if(clazz.Constructors != null)
 					{
+						// HACK this isn't the right place to do this, but for now it suffices
+						foreach(IKVM.Internal.MapXml.Constructor constructor in clazz.Constructors)
+						{
+							// are we adding a new constructor?
+							if(GetMethodWrapper(StringConstants.INIT, constructor.Sig, false) == null)
+							{
+								bool setmodifiers = false;
+								MethodAttributes attribs = 0;
+								MapModifiers(constructor.Modifiers, true, out setmodifiers, ref attribs);
+								Type returnType;
+								Type[] parameterTypes;
+								MapSignature(constructor.Sig, out returnType, out parameterTypes);
+								ConstructorBuilder cb = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, parameterTypes);
+								if(setmodifiers)
+								{
+									AttributeHelper.SetModifiers(cb, (Modifiers)constructor.Modifiers, false);
+								}
+								ILGenerator ilgen = cb.GetILGenerator();
+								constructor.body.Emit(ilgen);
+								if(constructor.Attributes != null)
+								{
+									foreach(IKVM.Internal.MapXml.Attribute attr in constructor.Attributes)
+									{
+										AttributeHelper.SetCustomAttribute(cb, attr);
+									}
+								}
+							}
+						}
 						foreach(IKVM.Internal.MapXml.Constructor constructor in clazz.Constructors)
 						{
 							if(constructor.Attributes != null)
@@ -475,63 +561,14 @@ namespace IKVM.Internal
 							{
 								bool setmodifiers = false;
 								MethodAttributes attribs = method.MethodAttributes;
-								Modifiers modifiers = (Modifiers)method.Modifiers;
-								if((modifiers & Modifiers.Public) != 0)
-								{
-									attribs |= MethodAttributes.Public;
-								}
-								else if((modifiers & Modifiers.Protected) != 0)
-								{
-									attribs |= MethodAttributes.FamORAssem;
-								}
-								else if((modifiers & Modifiers.Private) != 0)
-								{
-									attribs |= MethodAttributes.Private;
-								}
-								else
-								{
-									attribs |= MethodAttributes.Assembly;
-								}
-								if((modifiers & Modifiers.Static) != 0)
-								{
-									attribs |= MethodAttributes.Static;
-									if((modifiers & Modifiers.Final) != 0)
-									{
-										setmodifiers = true;
-									}
-								}
-								else if(method.Name != "<init>")
-								{
-									attribs |= MethodAttributes.Virtual;
-									if((modifiers & Modifiers.Final) != 0)
-									{
-										attribs |= MethodAttributes.Final;
-									}
-									else if((modifiers & Modifiers.Abstract) != 0)
-									{
-										attribs |= MethodAttributes.Abstract;
-									}
-								}
-								if((modifiers & Modifiers.Synchronized) != 0)
-								{
-									throw new NotImplementedException();
-								}
-								if(method.Name == "<init>")
-								{
-									throw new NotImplementedException();
-								}
-								Hashtable classCache = new Hashtable();
-								Type returnType = ClassFile.RetTypeWrapperFromSig(GetClassLoader(), classCache, method.Sig).TypeAsSignatureType;
-								TypeWrapper[] parameterTypeWrappers = ClassFile.ArgTypeWrapperListFromSig(GetClassLoader(), classCache, method.Sig);
-								Type[] parameterTypes = new Type[parameterTypeWrappers.Length];
-								for(int i = 0; i < parameterTypeWrappers.Length; i++)
-								{
-									parameterTypes[i] = parameterTypeWrappers[i].TypeAsSignatureType;
-								}
+								MapModifiers(method.Modifiers, false, out setmodifiers, ref attribs);
+								Type returnType;
+								Type[] parameterTypes;
+								MapSignature(method.Sig, out returnType, out parameterTypes);
 								MethodBuilder mb = typeBuilder.DefineMethod(method.Name, attribs, returnType, parameterTypes);
 								if(setmodifiers)
 								{
-									AttributeHelper.SetModifiers(mb, modifiers, false);
+									AttributeHelper.SetModifiers(mb, (Modifiers)method.Modifiers, false);
 								}
 								ILGenerator ilgen = mb.GetILGenerator();
 								method.body.Emit(ilgen);
