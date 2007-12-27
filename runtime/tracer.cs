@@ -68,6 +68,17 @@ namespace IKVM.Internal
 
 		static Tracer()
 		{
+			try
+			{
+				Init();
+			}
+			catch(System.Security.SecurityException)
+			{
+			}
+		}
+
+		private static void Init()
+		{
 			allTraceSwitches[Compiler.DisplayName] = Compiler;
 			allTraceSwitches[FxBug.DisplayName] = FxBug;
 			allTraceSwitches[ClassLoading.DisplayName] = ClassLoading;
