@@ -1075,6 +1075,18 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("runclassinit")]
+	public sealed class RunClassInit : Instruction
+	{
+		[XmlAttribute("class")]
+		public string Class;
+
+		internal override void Generate(Hashtable context, CountingILGenerator ilgen)
+		{
+			ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).EmitRunClassConstructor(ilgen);
+		}
+	}
+
 	public class InstructionList : CodeEmitter
 	{
 		[XmlElement(typeof(Ldstr))]
@@ -1150,6 +1162,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Ldelema))]
 		[XmlElement(typeof(Ldtoken))]
 		[XmlElement(typeof(Leave))]
+		[XmlElement(typeof(RunClassInit))]
 		public Instruction[] invoke;
 
 		internal void Generate(Hashtable context, ILGenerator ilgen)
