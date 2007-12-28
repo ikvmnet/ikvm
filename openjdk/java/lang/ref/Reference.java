@@ -23,8 +23,6 @@
 */
 package java.lang.ref;
 
-import cli.System.Runtime.InteropServices.GCHandle;
-import cli.System.Runtime.InteropServices.GCHandleType;
 import sun.misc.Cleaner;
 
 public abstract class Reference<T>
@@ -65,11 +63,11 @@ public abstract class Reference<T>
 
     private static final class QueueWatcher
     {
-        private GCHandle handle;
+        private cli.System.WeakReference handle;
 
         QueueWatcher(Reference r)
         {
-            handle = GCHandle.Alloc(r, GCHandleType.wrap(GCHandleType.WeakTrackResurrection));
+            handle = new cli.System.WeakReference(r, true);
         }
 
         boolean check(Reference r)
@@ -125,7 +123,7 @@ public abstract class Reference<T>
             }
             else
             {
-                handle.Free();
+                handle.set_Target(null);
             }
         }
     }
