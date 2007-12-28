@@ -9155,7 +9155,7 @@ namespace IKVM.Internal
 			{
 				return false;
 			}
-			if(type.Assembly == typeof(IKVM.Runtime.JNI).Assembly)
+			if(type.Assembly == IKVM.NativeCode.java.lang.SecurityManager.jniAssembly)
 			{
 				return false;
 			}
