@@ -85,10 +85,6 @@ static class AtomicReferenceFieldUpdaterEmitter
 			EmitSet("set", tb, field.GetField(), false);
 			EmitSet("lazySet", tb, field.GetField(), true);
 
-			ilgen.Emit(OpCodes.Pop);
-			ilgen.Emit(OpCodes.Pop);
-			ilgen.Emit(OpCodes.Pop);
-
 			cb = tb.DefineConstructor(MethodAttributes.Assembly, CallingConventions.Standard, Type.EmptyTypes);
 			lock (map)
 			{
@@ -106,6 +102,9 @@ static class AtomicReferenceFieldUpdaterEmitter
 				tb.CreateType();
 			});
 		}
+		ilgen.Emit(OpCodes.Pop);
+		ilgen.Emit(OpCodes.Pop);
+		ilgen.Emit(OpCodes.Pop);
 		ilgen.Emit(OpCodes.Newobj, cb);
 	}
 
