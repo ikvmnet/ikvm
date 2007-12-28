@@ -126,7 +126,23 @@ using sndResolverConfigurationImpl = sun.net.dns.ResolverConfigurationImpl;
 sealed class DynamicMethodSupport
 {
 	// MONOBUG as of Mono 1.2.5.1, DynamicMethod is too broken to be used
-	internal static readonly bool Enabled = Type.GetType("Mono.Runtime") == null;
+	internal static readonly bool Enabled = IsFullTrust && Type.GetType("Mono.Runtime") == null;
+
+	private static bool IsFullTrust
+	{
+		get
+		{
+			try
+			{
+				new System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode).Demand();
+				return true;
+			}
+			catch (System.Security.SecurityException)
+			{
+				return false;
+			}
+		}
+	}
 }
 
 namespace IKVM.Runtime
@@ -1316,6 +1332,9 @@ namespace IKVM.NativeCode.java
 				{
 				}
 				catch (System.IO.IOException)
+				{
+				}
+				catch (System.Security.SecurityException)
 				{
 				}
 				return path;
@@ -3245,14 +3264,22 @@ namespace IKVM.NativeCode.java
 					}
 					else
 					{
-						object fromClass = thisNativeLibrary.GetType().GetField("fromClass", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(thisNativeLibrary);
-						if (IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(fromClass).GetClassLoader()) == 1)
-						{
-							SetHandle(thisNativeLibrary, -1);
-						}
+						doLoad(thisNativeLibrary, name);
 					}
 #endif
 				}
+
+#if !FIRST_PASS
+				private static void doLoad(object thisNativeLibrary, string name)
+				{
+					object fromClass = thisNativeLibrary.GetType().GetField("fromClass", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(thisNativeLibrary);
+					if (IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(fromClass).GetClassLoader()) == 1)
+					{
+						SetHandle(thisNativeLibrary, -1);
+					}
+				}
+#endif
+
 
 				private static void SetHandle(object thisNativeLibrary, long handle)
 				{
@@ -3702,32 +3729,6 @@ namespace IKVM.NativeCode.java
 			public static void registerNatives()
 			{
 				Thread.Bootstrap();
-			}
-
-			public static void setIn0(object @in)
-			{
-				SetSystemField("in", @in);
-			}
-
-			public static void setOut0(object @out)
-			{
-				SetSystemField("out", @out);
-			}
-
-			public static void setErr0(object err)
-			{
-				SetSystemField("err", err);
-			}
-
-			private static void SetSystemField(string field, object obj)
-			{
-#if !FIRST_PASS
-				// MONOBUG due to a bug in mcs we currently prefix the backing fields with __<>
-				field = "__<>" + field;
-				typeof(jlSystem)
-					.GetField(field, BindingFlags.NonPublic | BindingFlags.Static)
-					.SetValue(null, obj);
-#endif
 			}
 
 			public static object initProperties(object props)

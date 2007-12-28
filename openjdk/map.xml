@@ -1329,6 +1329,24 @@
         </body>
       </method>
     </class>
+    <class name="java.lang.reflect.Constructor">
+      <method name="_slot" sig="()I">
+        <body>
+          <ldarg_0 />
+          <ldfld class="java.lang.reflect.Constructor" name="slot" sig="I" />
+          <ret />
+        </body>
+      </method>
+    </class>
+    <class name="java.lang.reflect.Method">
+      <method name="_slot" sig="()I">
+        <body>
+          <ldarg_0 />
+          <ldfld class="java.lang.reflect.Method" name="slot" sig="I" />
+          <ret />
+        </body>
+      </method>
+    </class>
     <class name="java.lang.reflect.Modifier">
       <method name="_reinitHack" sig="()V" modifiers="static">
         <body>
@@ -1661,7 +1679,28 @@
           <ret />
         </body>
       </method>
-		</class>
+      <method name="setIn0" sig="(Ljava.io.InputStream;)V">
+        <body>
+          <ldarg_0 />
+          <stsfld class="java.lang.System" name="in" sig="Ljava.io.InputStream;" />
+          <ret />
+        </body>
+      </method>
+      <method name="setOut0" sig="(Ljava.io.PrintStream;)V">
+        <body>
+          <ldarg_0 />
+          <stsfld class="java.lang.System" name="out" sig="Ljava.io.PrintStream;" />
+          <ret />
+        </body>
+      </method>
+      <method name="setErr0" sig="(Ljava.io.PrintStream;)V">
+        <body>
+          <ldarg_0 />
+          <stsfld class="java.lang.System" name="err" sig="Ljava.io.PrintStream;" />
+          <ret />
+        </body>
+      </method>
+    </class>
     <class name="sun.misc.Launcher">
       <method name="&lt;init&gt;" sig="()V">
         <replace-method-call class="sun.misc.Launcher$ExtClassLoader" name="getExtClassLoader" sig="()Lsun.misc.Launcher$ExtClassLoader;">
@@ -1672,6 +1711,46 @@
         <replace-method-call class="sun.misc.Launcher$AppClassLoader" name="getAppClassLoader" sig="(Ljava.lang.ClassLoader;)Ljava.lang.ClassLoader;">
           <code>
             <call class="sun.misc.MiscHelper" name="getAppClassLoader" sig="(Ljava.lang.ClassLoader;)Ljava.lang.ClassLoader;" />
+          </code>
+        </replace-method-call>
+      </method>
+    </class>
+    <class name="sun.misc.SharedSecrets">
+      <method name="javaUtilJarAccess" sig="()Lsun.misc.JavaUtilJarAccess;">
+        <replace-method-call class="sun.misc.Unsafe" name="ensureClassInitialized" sig="(Ljava.lang.Class;)V">
+          <code>
+            <pop />
+            <pop />
+            <runclassinit class="java.util.jar.JarFile" />
+          </code>
+        </replace-method-call>
+      </method>
+      <method name="getJavaIOAccess" sig="()Lsun.misc.JavaIOAccess;">
+        <replace-method-call class="sun.misc.Unsafe" name="ensureClassInitialized" sig="(Ljava.lang.Class;)V">
+          <code>
+            <pop />
+            <pop />
+            <runclassinit class="java.io.Console" />
+          </code>
+        </replace-method-call>
+      </method>
+      <method name="getJavaIODeleteOnExitAccess" sig="()Lsun.misc.JavaIODeleteOnExitAccess;">
+        <replace-method-call class="sun.misc.Unsafe" name="ensureClassInitialized" sig="(Ljava.lang.Class;)V">
+          <code>
+            <pop />
+            <pop />
+            <runclassinit class="java.io.File" />
+          </code>
+        </replace-method-call>
+      </method>
+    </class>
+    <class name="sun.misc.Unsafe">
+      <method name="getUnsafe" sig="()Lsun.misc.Unsafe;">
+        <replace-method-call class="sun.misc.Unsafe" name="ensureClassInitialized" sig="(Ljava.lang.Class;)V">
+          <code>
+            <pop />
+            <pop />
+            <runclassinit class="java.lang.System" />
           </code>
         </replace-method-call>
       </method>
@@ -1877,6 +1956,19 @@
           <parameter>LinkDemand</parameter>
           <property name="ControlAppDomain" sig="Z">true</property>
         </attribute>
+      </method>
+    </class>
+    <class name="java.nio.Bits">
+      <method name="byteOrder" sig="()Ljava.nio.ByteOrder;">
+        <body>
+          <ldsfld type="System.BitConverter" name="IsLittleEndian" sig="Z" />
+          <brfalse name="big" />
+          <ldsfld class="java.nio.ByteOrder" name="LITTLE_ENDIAN" sig="Ljava.nio.ByteOrder;" />
+          <ret />
+          <label name="big" />
+          <ldsfld class="java.nio.ByteOrder" name="BIG_ENDIAN" sig="Ljava.nio.ByteOrder;" />
+          <ret />
+        </body>
       </method>
     </class>
     <class name="java.nio.charset.spi.CharsetProvider">
