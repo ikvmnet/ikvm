@@ -3572,6 +3572,7 @@ namespace IKVM.Internal
 			private FieldInfo classObjectField;
 			private MethodBuilder clinitMethod;
 			private MethodBuilder finalizeMethod;
+			private List<System.Threading.ThreadStart> postFinishProcs;
 #if STATIC_COMPILER
 			private DynamicTypeWrapper outerClassWrapper;
 			private AnnotationBuilder annotationBuilder;
@@ -5286,6 +5287,13 @@ namespace IKVM.Internal
 					try
 					{
 						type = typeBuilder.CreateType();
+						if(postFinishProcs != null)
+						{
+							foreach(System.Threading.ThreadStart proc in postFinishProcs)
+							{
+								proc();
+							}
+						}
 #if STATIC_COMPILER
 						if(tbFields != null)
 						{
@@ -5328,6 +5336,18 @@ namespace IKVM.Internal
 				finally
 				{
 					Profiler.Leave("JavaTypeImpl.Finish.Core");
+				}
+			}
+
+			internal void RegisterPostFinishProc(System.Threading.ThreadStart proc)
+			{
+				lock(this)
+				{
+					if(postFinishProcs == null)
+					{
+						postFinishProcs = new List<System.Threading.ThreadStart>();
+					}
+					postFinishProcs.Add(proc);
 				}
 			}
 
@@ -7697,6 +7717,11 @@ namespace IKVM.Internal
 			{
 				return classLoader.GetTypeWrapperFactory().ModuleBuilder.GetMethodToken((MethodInfo)mb).Token;
 			}
+		}
+
+		internal void RegisterPostFinishProc(System.Threading.ThreadStart proc)
+		{
+			((JavaTypeImpl)impl).RegisterPostFinishProc(proc);
 		}
 
 #if !STATIC_COMPILER
