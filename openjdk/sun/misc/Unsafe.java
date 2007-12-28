@@ -28,6 +28,7 @@ import cli.System.IntPtr;
 import cli.System.Runtime.InteropServices.Marshal;
 import ikvm.lang.Internal;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ReflectHelper;
 import java.util.ArrayList;
 
@@ -59,6 +60,10 @@ public final class Unsafe
     // NOTE we have a really lame (and slow) implementation!
     public long objectFieldOffset(Field field)
     {
+	if(Modifier.isStatic(field.getModifiers()))
+	{
+	    throw new IllegalArgumentException();
+	}
 	return fieldOffset(field);
     }
 
