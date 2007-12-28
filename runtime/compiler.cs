@@ -1819,6 +1819,10 @@ class Compiler
 							break;
 						}
 					}
+					if(AtomicReferenceFieldUpdaterEmitter.Emit(clazz, ilGenerator, classFile, cpi, i, code))
+					{
+						break;
+					}
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
 					// if the stack values don't match the argument types (for interface argument types)
 					// we must emit code to cast the stack value to the interface type

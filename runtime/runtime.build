@@ -50,6 +50,7 @@
         <csc target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" rebuild="true">
             <sources>
                 <include name="AssemblyInfo.cs" />
+                <include name="atomic.cs" />
                 <include name="attributes.cs" />
                 <include name="BigEndianBinaryReader.cs" />
                 <include name="ByteCode.cs" />

@@ -13,6 +13,7 @@
                 <include name="Compiler.cs" />
                 <include name="CompilerClassLoader.cs" />
                 <include name="remapper.cs" />
+                <include name="../runtime/atomic.cs" />
                 <include name="../runtime/attributes.cs" />
                 <include name="../runtime/BigEndianBinaryReader.cs" />
                 <include name="../runtime/ByteCode.cs" />

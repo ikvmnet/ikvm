@@ -71,6 +71,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="atomic.cs" />
     <Compile Include="attributes.cs">
       <SubType>Code</SubType>
     </Compile>
