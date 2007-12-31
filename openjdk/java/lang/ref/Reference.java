@@ -63,11 +63,15 @@ public abstract class Reference<T>
 
     private static final class QueueWatcher
     {
+	private static final java.util.Set keepAlive = java.util.Collections.synchronizedSet(new java.util.HashSet());
         private cli.System.WeakReference handle;
 
         QueueWatcher(Reference r)
         {
             handle = new cli.System.WeakReference(r, true);
+            // FXBUG when a WeakReference is finalizer reachable, it gets cleared by the GC (even if we call GC.SuppressFinalize),
+            // so we have to maintain a strong reference to it to prevent it from being cleared.
+	    keepAlive.add(handle);
         }
 
         boolean check(Reference r)
@@ -124,6 +128,7 @@ public abstract class Reference<T>
             else
             {
                 handle.set_Target(null);
+		keepAlive.remove(handle);
             }
         }
     }
