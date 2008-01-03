@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -121,6 +121,8 @@ class IkvmcCompiler
 			Console.Error.WriteLine("    -target:winexe             Build a windows executable");
 			Console.Error.WriteLine("    -target:library            Build a library");
 			Console.Error.WriteLine("    -target:module             Build a module for use by the linker");
+			Console.Error.WriteLine("    -platform:<string>         Limit which platforms this code can run on: x86,");
+			Console.Error.WriteLine("                               Itanium, x64, or anycpu. The default is anycpu.");
 			Console.Error.WriteLine("    -keyfile:<keyfilename>     Use keyfile to sign the assembly");
 			Console.Error.WriteLine("    -key:<keycontainer>        Use keycontainer to sign the assembly");
 			Console.Error.WriteLine("    -version:<M.m.b.r>         Assembly version");
@@ -203,6 +205,31 @@ class IkvmcCompiler
 						case "-target:library":
 							options.target = System.Reflection.Emit.PEFileKinds.Dll;
 							options.guessFileKind = false;
+							break;
+						default:
+							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
+							break;
+					}
+				}
+				else if(s.StartsWith("-platform:"))
+				{
+					switch(s)
+					{
+						case "-platform:x86":
+							options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Required32Bit;
+							options.imageFileMachine = ImageFileMachine.I386;
+							break;
+						case "-platform:Itanium":
+							options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.PE32Plus;
+							options.imageFileMachine = ImageFileMachine.IA64;
+							break;
+						case "-platform:x64":
+							options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.PE32Plus;
+							options.imageFileMachine = ImageFileMachine.AMD64;
+							break;
+						case "-platform:anycpu":
+							options.pekind = PortableExecutableKinds.ILOnly;
+							options.imageFileMachine = ImageFileMachine.I386;
 							break;
 						default:
 							Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
