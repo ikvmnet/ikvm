@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,10 +23,15 @@
 */
 using System.Reflection;
 
-//
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-//
-[assembly: AssemblyTitle("IKVM.NET Stub Generator")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("Jeroen Frijters")]
+[assembly: AssemblyProduct("IKVM.NET")]
+[assembly: AssemblyCopyright("Copyright (C) 2002-2008 Jeroen Frijters")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+[assembly: AssemblyVersion("0.37.2923.0")]
+
+#if SIGNCODE
+	#pragma warning disable 1699
+	[assembly: AssemblyKeyName("ikvm-key")]
+#endif

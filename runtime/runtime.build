@@ -19,6 +19,7 @@
     <target name="IKVM.Runtime.JNI">
         <csc target="library" output="IKVM.Runtime.JNI.dll" define="${defs}" optimize="true" unsafe="true" rebuild="true">
             <sources>
+                <include name="../CommonAssemblyInfo.cs" />
                 <include name="JniInterface.cs" />
             </sources>
             <references>
@@ -49,6 +50,7 @@
         </if>
         <csc target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" rebuild="true">
             <sources>
+                <include name="../CommonAssemblyInfo.cs" />
                 <include name="AssemblyInfo.cs" />
                 <include name="atomic.cs" />
                 <include name="attributes.cs" />

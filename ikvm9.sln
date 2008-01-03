@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.AWT.WinForms.8", "awt\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ikvm-native", "native\native.9.vcproj", "{14EC8F2A-90C6-4CFC-AD26-04C9A3392B8E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Runtime.JNI.8", "runtime\IKVM.Runtime.JNI.8.csproj", "{CEA4FEC4-1D24-4004-908E-F86C8D7AC772}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,11 @@ Global
 		{14EC8F2A-90C6-4CFC-AD26-04C9A3392B8E}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{14EC8F2A-90C6-4CFC-AD26-04C9A3392B8E}.Debug|Win32.ActiveCfg = Debug|Win32
 		{14EC8F2A-90C6-4CFC-AD26-04C9A3392B8E}.Debug|Win32.Build.0 = Debug|Win32
+		{CEA4FEC4-1D24-4004-908E-F86C8D7AC772}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEA4FEC4-1D24-4004-908E-F86C8D7AC772}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEA4FEC4-1D24-4004-908E-F86C8D7AC772}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{CEA4FEC4-1D24-4004-908E-F86C8D7AC772}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{CEA4FEC4-1D24-4004-908E-F86C8D7AC772}.Debug|Win32.ActiveCfg = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
