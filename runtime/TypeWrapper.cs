@@ -6046,7 +6046,7 @@ namespace IKVM.Internal
 			private class JniBuilder
 			{
 #if STATIC_COMPILER
-				private static readonly Type localRefStructType = StaticCompiler.GetType("IKVM.Runtime.JNI.Frame");
+				private static readonly Type localRefStructType = StaticCompiler.GetType("IKVM.Runtime.JNI+Frame");
 #elif FIRST_PASS
 				private static readonly Type localRefStructType = null;
 #else
