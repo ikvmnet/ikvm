@@ -23,7 +23,7 @@
 */
 .assembly JVM
 {
-  .ver 0:36:0:5
+  .ver 0:36:0:6
 }
 .module JVM.DLL
 
