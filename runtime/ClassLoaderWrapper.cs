@@ -1459,11 +1459,10 @@ namespace IKVM.Internal
 					Type type = GetType(modules[i], DotNetTypeWrapper.DemangleTypeName(name));
 					if(type != null && DotNetTypeWrapper.IsAllowedOutside(type))
 					{
-						TypeWrapper tw = new DotNetTypeWrapper(type);
 						// check the name to make sure that the canonical name was used
-						if(tw.Name == name)
+						if (DotNetTypeWrapper.GetName(type) == name)
 						{
-							return RegisterInitiatingLoader(tw);
+							return RegisterInitiatingLoader(new DotNetTypeWrapper(type, name));
 						}
 					}
 				}
@@ -1575,7 +1574,7 @@ namespace IKVM.Internal
 					// since this type was not compiled from Java source, we don't need to
 					// look for our attributes, but we do need to filter unrepresentable
 					// stuff (and transform some other stuff)
-					return RegisterInitiatingLoader(new DotNetTypeWrapper(type));
+					return RegisterInitiatingLoader(new DotNetTypeWrapper(type, name));
 				}
 			}
 		}
