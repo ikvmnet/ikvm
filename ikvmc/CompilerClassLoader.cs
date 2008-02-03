@@ -2130,10 +2130,6 @@ namespace IKVM.Internal
 				{
 #if WHIDBEY
 					Assembly reference = Assembly.ReflectionOnlyLoadFrom(r);
-					if(AttributeHelper.IsDefined(reference, StaticCompiler.GetType("IKVM.Attributes.RemappedClassAttribute")))
-					{
-						JVM.CoreAssembly = reference;
-					}
 #else
 					AssemblyName name = AssemblyName.GetAssemblyName(r);
 					Assembly reference;
@@ -2147,18 +2143,18 @@ namespace IKVM.Internal
 						// so now we try again explicitly loading from the codebase
 						reference = Assembly.LoadFrom(name.CodeBase);
 					}
-#endif
 					if(reference == null)
 					{
 						Console.Error.WriteLine("Error: reference not found: {0}", r);
 						return 1;
 					}
-					references.Add(reference);
-					// HACK if we explictly referenced the core assembly, make sure we register it as such
-					if(reference.GetType("java.lang.Object") != null)
+#endif
+					// if we explictly referenced the core assembly, make sure we register it as such
+					if(AttributeHelper.IsDefined(reference, StaticCompiler.GetType("IKVM.Attributes.RemappedClassAttribute")))
 					{
 						JVM.CoreAssembly = reference;
 					}
+					references.Add(reference);
 					allReferencesAreStrongNamed &= IsSigned(reference);
 					Tracer.Info(Tracer.Compiler, "Loaded reference assembly: {0}", reference.FullName);
 					// if it's an IKVM compiled assembly, make sure that it was compiled
@@ -2398,15 +2394,7 @@ namespace IKVM.Internal
 				loader.EmitRemappedTypes(map);
 			}
 			// Do a sanity check to make sure some of the bootstrap classes are available
-			bool hasBootClasses;
-			try
-			{
-				hasBootClasses = loader.LoadClassByDottedNameFast("java.lang.Object") != null;
-			}
-			catch(ClassFormatError)
-			{
-				hasBootClasses = false;
-			}
+			bool hasBootClasses = JVM.CoreAssembly != null || loader.remapped.ContainsKey("java.lang.Object");
 			if(!hasBootClasses)
 			{
 				AssemblyName coreAssemblyName = null;
