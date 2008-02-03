@@ -269,11 +269,33 @@ class IkvmcCompiler
 				else if(s.StartsWith("-reference:") || s.StartsWith("-r:"))
 				{
 					string r = s.Substring(s.IndexOf(':') + 1);
-					string path = Path.GetDirectoryName(r);
-					string[] files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(r));
+					if(r == "")
+					{
+						Console.Error.WriteLine("Error: missing file specification for '{0}' option", s);
+						return 1;
+					}
+					string[] files = new string[0];
+					try
+					{
+						string path = Path.GetDirectoryName(r);
+						files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(r));
+					}
+					catch (ArgumentException x)
+					{
+					}
+					catch (IOException x)
+					{
+					}
 					if(files.Length == 0)
 					{
-						Assembly asm = Assembly.LoadWithPartialName(r);
+						Assembly asm = null;
+						try
+						{
+							asm = Assembly.LoadWithPartialName(r);
+						}
+						catch (FileLoadException)
+						{
+						}
 						if(asm == null)
 						{
 							Console.Error.WriteLine("Error: reference not found: {0}", r);
