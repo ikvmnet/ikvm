@@ -1368,6 +1368,23 @@
         </replace-method-call>
       </method>
     </class>
+    <class name="java.util.AbstractCollection">
+      <!-- We're adding an Add(object) method to allow collection initializers and Xml (soap) serialization to magically work -->
+      <!-- NOTE Modifiers.Final and MethodAttributes.NewSlot is recognized by AotTypeWrapper.MapModifiers() as a magic combination that generates a non-virtual method -->
+      <method name="Add" sig="(Ljava.lang.Object;)V" modifiers="public final" attributes="NewSlot">
+				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+        <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+          <parameter>Never</parameter>
+        </attribute>
+        <body>
+          <ldarg_0 />
+          <ldarg_1 />
+          <callvirt class="java.util.AbstractCollection" name="add" sig="(Ljava.lang.Object;)Z" />
+          <pop />
+          <ret />
+        </body>
+      </method>
+    </class>
     <class name="java.util.concurrent.locks.AbstractQueuedSynchronizer">
       <method name="compareAndSetState" sig="(II)Z">
         <body>
