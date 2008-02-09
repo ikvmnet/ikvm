@@ -7,6 +7,26 @@
 
 <body>
 
+<h2>IKVM at eTrading and Analytics Group at HSBC</h2>
+
+<p><i>eTrading and Analytics Group at HSBC provides real-time pricing and algorithmic strategies for a variety of financial markets.</i></p>
+
+<p><i>We are very happy with IKVM. It enables us to develop our core libraries in Java and compile for use in .NET. The IKVM team is very responsive and knowledgeable about the issues we were facing.</i></p>
+
+
+<p><i>Some challenges we faced were:<br />
+&nbsp; - working with the classpath<br />
+&nbsp; - downcasting generics in java to using a base object in .NET<br />
+&nbsp; - integrating 3rd party C++ libraries which use JNI</i></p>
+
+<p><i>IKVM provides a number of flexible options for us to define the classpath.</i></p>
+
+<p><i>Generics would help us enforce the contract between the library and the .NET developer. In practice, we write thin .NET UI applications so this is manageable.</i></p>
+
+<p><i>Integrating with in-house quantitative analytic libraries that are exposed through JNI worked effortlessly. However, we hit a roadblock trying to use Reuters sass3j.dll. We suspect there may be some differences in the event models.</i></p>
+
+<p><i>All in all, this is an excellent tool that offers us the flexibility to focus on developing domain specific solutions without worrying about porting issues. IKVM solves that.</i> -- Shamus Neville</p>
+
 <h2>IKVM for JSTM</h2>
  
 <p><i><a href="http://jstm.sourceforge.net/">JSTM</a> is an open source Java library for distributed object replication. IKVM allowed us to replicate objects between java and dotnet applications very easily. The whole Java library is compiled to a dll, and communication between the Java and .NET processes is done over TCP or HTTP using the same Java code.</i></p>
