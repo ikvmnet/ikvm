@@ -3461,7 +3461,9 @@ class MethodAnalyzer
 			bc == NormalizedByteCode.__istore ||
 			bc == NormalizedByteCode.__lstore ||
 			bc == NormalizedByteCode.__fstore ||
-			bc == NormalizedByteCode.__dstore;
+			bc == NormalizedByteCode.__dstore ||
+			bc == NormalizedByteCode.__fstore_conv ||
+			bc == NormalizedByteCode.__dstore_conv;
 	}
 
 	private void VisitLocalLoads(ArrayList locals, Hashtable localByStoreSite, Hashtable storeSites, int instructionIndex, bool debug)
