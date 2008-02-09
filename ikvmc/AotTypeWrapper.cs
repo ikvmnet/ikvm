@@ -433,14 +433,23 @@ namespace IKVM.Internal
 			}
 			else if(!isConstructor)
 			{
-				attribs |= MethodAttributes.Virtual;
-				if((modifiers & Modifiers.Final) != 0)
+				// NOTE we're abusing the MethodAttributes.NewSlot and Modifiers.Final combination to mean non-virtual
+				if((modifiers & Modifiers.Final) != 0 && (attribs & MethodAttributes.NewSlot) != 0 && (attribs & MethodAttributes.Virtual) == 0)
 				{
-					attribs |= MethodAttributes.Final;
+					// remove NewSlot, because it doesn't make sense on a non-virtual method
+					attribs &= ~MethodAttributes.NewSlot;
 				}
-				else if((modifiers & Modifiers.Abstract) != 0)
+				else
 				{
-					attribs |= MethodAttributes.Abstract;
+					attribs |= MethodAttributes.Virtual;
+					if((modifiers & Modifiers.Final) != 0)
+					{
+						attribs |= MethodAttributes.Final;
+					}
+					else if((modifiers & Modifiers.Abstract) != 0)
+					{
+						attribs |= MethodAttributes.Abstract;
+					}
 				}
 			}
 			if((modifiers & Modifiers.Synchronized) != 0)
