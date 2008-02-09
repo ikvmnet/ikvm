@@ -1734,6 +1734,91 @@ namespace IKVM.Internal
 			return false;
 		}
 
+		protected static object QualifyClassNames(ClassLoaderWrapper loader, object annotation)
+		{
+			bool copy = false;
+			object[] def = (object[])annotation;
+			for(int i = 3; i < def.Length; i += 2)
+			{
+				object[] val = def[i] as object[];
+				if(val != null)
+				{
+					object[] newval = ValueQualifyClassNames(loader, val);
+					if(newval != val)
+					{
+						if(!copy)
+						{
+							copy = true;
+							object[] newdef = new object[def.Length];
+							Array.Copy(def, newdef, def.Length);
+							def = newdef;
+						}
+						def[i] = newval;
+					}
+				}
+			}
+			return def;
+		}
+
+		private static object[] ValueQualifyClassNames(ClassLoaderWrapper loader, object[] val)
+		{
+			if(val[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION))
+			{
+				return (object[])QualifyClassNames(loader, val);
+			}
+			else if(val[0].Equals(AnnotationDefaultAttribute.TAG_CLASS))
+			{
+				string sig = (string)val[1];
+				if(sig.StartsWith("L"))
+				{
+					TypeWrapper tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+					if(tw != null)
+					{
+						return new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";" };
+					}
+				}
+				return val;
+			}
+			else if(val[0].Equals(AnnotationDefaultAttribute.TAG_ENUM))
+			{
+				string sig = (string)val[1];
+				TypeWrapper tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+				if(tw != null)
+				{
+					return new object[] { AnnotationDefaultAttribute.TAG_ENUM, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";", val[2] };
+				}
+				return val;
+			}
+			else if(val[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
+			{
+				bool copy = false;
+				for(int i = 1; i < val.Length; i++)
+				{
+					object[] nval = val[i] as object[];
+					if(nval != null)
+					{
+						object newnval = ValueQualifyClassNames(loader, nval);
+						if(newnval != nval)
+						{
+							if(!copy)
+							{
+								copy = true;
+								object[] newval = new object[val.Length];
+								Array.Copy(val, newval, val.Length);
+								val = newval;
+							}
+							val[i] = newnval;
+						}
+					}
+				}
+				return val;
+			}
+			else
+			{
+				throw new InvalidOperationException();
+			}
+		}
+
 		internal abstract void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation);
 		internal abstract void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation);
 		internal abstract void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation);
@@ -5383,7 +5468,8 @@ namespace IKVM.Internal
 									if (enumeratorType != null)
 									{
 										typeBuilder.AddInterfaceImplementation(typeof(IEnumerable));
-										MethodBuilder mb = typeBuilder.DefineMethod("__<>GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, typeof(IEnumerator), Type.EmptyTypes);
+										// FXBUG we're using the same method name as the C# compiler here because both the .NET and Mono implementations of Xml serialization depend on this method name
+										MethodBuilder mb = typeBuilder.DefineMethod("System.Collections.IEnumerable.GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, typeof(IEnumerator), Type.EmptyTypes);
 										typeBuilder.DefineMethodOverride(mb, typeof(IEnumerable).GetMethod("GetEnumerator"));
 										ILGenerator ilgen = mb.GetILGenerator();
 										ilgen.Emit(OpCodes.Ldarg_0);
@@ -5944,6 +6030,7 @@ namespace IKVM.Internal
 				{
 					if(annotationTypeBuilder != null)
 					{
+						annotation = QualifyClassNames(loader, annotation);
 						tb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 					}
 				}
@@ -5952,6 +6039,7 @@ namespace IKVM.Internal
 				{
 					if(annotationTypeBuilder != null)
 					{
+						annotation = QualifyClassNames(loader, annotation);
 						mb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 					}
 				}
@@ -5960,6 +6048,7 @@ namespace IKVM.Internal
 				{
 					if(annotationTypeBuilder != null)
 					{
+						annotation = QualifyClassNames(loader, annotation);
 						cb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 					}
 				}
@@ -5968,6 +6057,7 @@ namespace IKVM.Internal
 				{
 					if(annotationTypeBuilder != null)
 					{
+						annotation = QualifyClassNames(loader, annotation);
 						fb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 					}
 				}
@@ -5976,6 +6066,7 @@ namespace IKVM.Internal
 				{
 					if(annotationTypeBuilder != null)
 					{
+						annotation = QualifyClassNames(loader, annotation);
 						pb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 					}
 				}
@@ -5984,6 +6075,7 @@ namespace IKVM.Internal
 				{
 					if(annotationTypeBuilder != null)
 					{
+						annotation = QualifyClassNames(loader, annotation);
 						ab.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 					}
 				}
@@ -8842,31 +8934,37 @@ namespace IKVM.Internal
 
 			internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
 			{
+				annotation = QualifyClassNames(loader, annotation);
 				tb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
 			{
+				annotation = QualifyClassNames(loader, annotation);
 				cb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
 			{
+				annotation = QualifyClassNames(loader, annotation);
 				mb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
 			{
+				annotation = QualifyClassNames(loader, annotation);
 				fb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
 			{
+				annotation = QualifyClassNames(loader, annotation);
 				pb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 
 			internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 			{
+				annotation = QualifyClassNames(loader, annotation);
 				ab.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 		}
