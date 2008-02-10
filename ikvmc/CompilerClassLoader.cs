@@ -2081,6 +2081,11 @@ namespace IKVM.Internal
 			return key != null && key.Length != 0;
 		}
 
+		private static bool IsCoreAssembly(Assembly asm)
+		{
+			return AttributeHelper.IsDefined(asm, StaticCompiler.GetType("IKVM.Attributes.RemappedClassAttribute"));
+		}
+
 		internal static int Compile(CompilerOptions options)
 		{
 			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", options.path, options.assembly);
@@ -2117,7 +2122,7 @@ namespace IKVM.Internal
 				try
 				{
 					Assembly reference = Assembly.ReflectionOnlyLoadFrom(r);
-					if(AttributeHelper.IsDefined(reference, StaticCompiler.GetType("IKVM.Attributes.RemappedClassAttribute")))
+					if(IsCoreAssembly(reference))
 					{
 						JVM.CoreAssembly = reference;
 					}
@@ -2377,33 +2382,28 @@ namespace IKVM.Internal
 			}
 			if(!hasBootClasses)
 			{
-				AssemblyName coreAssemblyName = null;
-				foreach(AssemblyName asm in StaticCompiler.runtimeAssembly.GetReferencedAssemblies())
+				// try to find the core assembly looking at the assemblies that the runtime references
+				foreach(AssemblyName name in StaticCompiler.runtimeAssembly.GetReferencedAssemblies())
 				{
-					// HACK we assume that IKVM.Runtime.dll only references the core library and that the name starts with "IKVM."
-					if(asm.Name.StartsWith("IKVM."))
-					{
-						coreAssemblyName = asm;
-						break;
-					}
-				}
-				if(coreAssemblyName == null)
-				{
-					Console.Error.WriteLine("Error: runtime assembly doesn't reference core assembly");
-					return 1;
-				}
-				try
-				{
-					JVM.CoreAssembly = Assembly.ReflectionOnlyLoad(coreAssemblyName.FullName);
-				}
-				catch(FileNotFoundException)
-				{
+					Assembly asm = null;
 					try
 					{
-						JVM.CoreAssembly = Assembly.ReflectionOnlyLoadFrom(StaticCompiler.runtimeAssembly.CodeBase + "\\..\\" + coreAssemblyName.Name + ".dll");
+						asm = Assembly.ReflectionOnlyLoad(name.FullName);
 					}
 					catch(FileNotFoundException)
 					{
+						try
+						{
+							asm = Assembly.ReflectionOnlyLoadFrom(StaticCompiler.runtimeAssembly.CodeBase + "\\..\\" + name.Name + ".dll");
+						}
+						catch(FileNotFoundException)
+						{
+						}
+					}
+					if(asm != null && IsCoreAssembly(asm))
+					{
+						JVM.CoreAssembly = asm;
+						break;
 					}
 				}
 				if(JVM.CoreAssembly == null)
