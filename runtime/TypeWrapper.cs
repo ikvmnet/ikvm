@@ -3413,6 +3413,106 @@ namespace IKVM.Internal
 	}
 
 #if !COMPACT_FRAMEWORK
+	class BakedTypeCleanupHack
+	{
+		private static readonly FieldInfo m_methodBuilder = typeof(ConstructorBuilder).GetField("m_methodBuilder", BindingFlags.Instance | BindingFlags.NonPublic);
+		private static readonly FieldInfo[] methodBuilderFields = GetFieldList(typeof(MethodBuilder), new string[]
+			{
+				"m_ilGenerator",
+				"m_ubBody",
+				"m_RVAFixups",
+				"mm_mdMethodFixups",
+				"m_localSignature",
+				"m_localSymInfo",
+				"m_exceptions",
+				"m_parameterTypes",
+				"m_retParam",
+				"m_returnType",
+				"m_signature"
+			});
+		private static readonly FieldInfo[] fieldBuilderFields = GetFieldList(typeof(FieldBuilder), new string[]
+			{
+				"m_data",
+				"m_fieldType",
+		});
+
+		private static bool IsSupportedVersion
+		{
+			get
+			{
+				return Environment.Version.Major == 2 && Environment.Version.Minor == 0 && Environment.Version.Build == 50727 && Environment.Version.Revision == 1433;
+			}
+		}
+
+		private static FieldInfo[] GetFieldList(Type type, string[] list)
+		{
+			if(JVM.SafeGetEnvironmentVariable("IKVM_DISABLE_TYPEBUILDER_HACK") != null || !IsSupportedVersion)
+			{
+				return null;
+			}
+			if(!SecurityManager.IsGranted(new SecurityPermission(SecurityPermissionFlag.Assertion)) ||
+				!SecurityManager.IsGranted(new ReflectionPermission(ReflectionPermissionFlag.MemberAccess)))
+			{
+				return null;
+			}
+			FieldInfo[] fields = new FieldInfo[list.Length];
+			for(int i = 0; i < list.Length; i++)
+			{
+				fields[i] = type.GetField(list[i], BindingFlags.Instance | BindingFlags.NonPublic);
+				if(fields[i] == null)
+				{
+					return null;
+				}
+			}
+			return fields;
+		}
+
+		internal static void Process(DynamicTypeWrapper wrapper)
+		{
+			if(m_methodBuilder != null && methodBuilderFields != null && fieldBuilderFields != null)
+			{
+				foreach(MethodWrapper mw in wrapper.GetMethods())
+				{
+					MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+					if(mb == null)
+					{
+						ConstructorBuilder cb = mw.GetMethod() as ConstructorBuilder;
+						if(cb != null)
+						{
+							new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
+							mb = (MethodBuilder)m_methodBuilder.GetValue(cb);
+							CodeAccessPermission.RevertAssert();
+						}
+					}
+					if(mb != null)
+					{
+						new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
+						foreach(FieldInfo fi in methodBuilderFields)
+						{
+							fi.SetValue(mb, null);
+						}
+						CodeAccessPermission.RevertAssert();
+					}
+				}
+				foreach(FieldWrapper fw in wrapper.GetFields())
+				{
+					FieldBuilder fb = fw.GetField() as FieldBuilder;
+					if(fb != null)
+					{
+						new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
+						foreach(FieldInfo fi in fieldBuilderFields)
+						{
+							fi.SetValue(fb, null);
+						}
+						CodeAccessPermission.RevertAssert();
+					}
+				}
+			}
+		}
+	}
+#endif
+
+#if !COMPACT_FRAMEWORK
 #if STATIC_COMPILER
 	abstract class DynamicTypeWrapper : TypeWrapper
 #else
@@ -5406,6 +5506,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 					wrapper.FinishGhostStep2();
 #endif
+					BakedTypeCleanupHack.Process(wrapper);
 					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, this.ReflectiveModifiers, Metadata.Create(classFile)
 #if STATIC_COMPILER
 						, annotationBuilder, enumBuilder
