@@ -10551,8 +10551,8 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal DotNetTypeWrapper(Type type)
-			: base(GetModifiers(type), GetName(type), GetBaseTypeWrapper(type))
+		internal DotNetTypeWrapper(Type type, string name)
+			: base(GetModifiers(type), name, GetBaseTypeWrapper(type))
 		{
 			Debug.Assert(!(type.IsByRef), type.FullName);
 			Debug.Assert(!(type.IsPointer), type.FullName);
