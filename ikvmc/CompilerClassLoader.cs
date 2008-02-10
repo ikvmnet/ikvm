@@ -2370,19 +2370,10 @@ namespace IKVM.Internal
 				}
 				loader.EmitRemappedTypes(map);
 			}
-			// Do a sanity check to make sure some of the bootstrap classes are available
-			bool hasBootClasses;
-			try
+			// If we do not yet have a reference to the core assembly and we are not compiling the core assembly,
+			// try to find the core assembly by looking at the assemblies that the runtime references
+			if(JVM.CoreAssembly == null && !loader.remapped.ContainsKey("java.lang.Object"))
 			{
-				hasBootClasses = loader.LoadClassByDottedNameFast("java.lang.Object") != null;
-			}
-			catch(ClassFormatError)
-			{
-				hasBootClasses = false;
-			}
-			if(!hasBootClasses)
-			{
-				// try to find the core assembly looking at the assemblies that the runtime references
 				foreach(AssemblyName name in StaticCompiler.runtimeAssembly.GetReferencedAssemblies())
 				{
 					Assembly asm = null;
