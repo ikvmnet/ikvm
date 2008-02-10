@@ -536,18 +536,6 @@ namespace IKVM.Internal
 					AttributeHelper.SetRemappedType(typeBuilder, shadowType);
 				}
 
-				// HACK because of the above FXBUG that prevents us from making the type both abstract and sealed,
-				// we need to emit a private constructor (otherwise reflection will automatically generate a public
-				// default constructor, another lame feature)
-				if(baseIsSealed)
-				{
-					ConstructorBuilder cb = typeBuilder.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, Type.EmptyTypes);
-					ILGenerator ilgen = cb.GetILGenerator();
-					// lazyman's way to create a type-safe bogus constructor
-					ilgen.Emit(OpCodes.Ldnull);
-					ilgen.Emit(OpCodes.Throw);
-				}
-
 				ArrayList methods = new ArrayList();
 
 				if(c.Constructors != null)
