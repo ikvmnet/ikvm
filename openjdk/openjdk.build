@@ -41,7 +41,7 @@
                 </replacetokens>
             </filterchain>
         </copy>
-        <exec program="javac" commandline="-J-Xmx1024M -g -nowarn -bootclasspath ../classpath/mscorlib.jar${pathsep}../classpath/System.jar @allsources.lst" useruntimeengine="false" />
+        <exec program="javac" commandline="-J-Xmx1024M -g -nowarn -bootclasspath ../classpath/mscorlib.jar${pathsep}../classpath/System.jar${pathsep}../classpath/IKVM.Runtime.jar @allsources.lst" useruntimeengine="false" />
     </target>
 
     <target name="vfs">

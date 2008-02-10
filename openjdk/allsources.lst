@@ -1009,6 +1009,7 @@
 ../classpath/gnu/java/awt/peer/ClasspathDesktopPeer.java
 ../classpath/gnu/java/awt/peer/gtk/CairoSurface.java
 ../classpath/gnu/java/net/protocol/ikvmres/Handler.java
+../classpath/ikvm/extensions/ExtensionMethods.java
 ../classpath/ikvm/internal/__unspecified.java
 ../classpath/ikvm/internal/AssemblyClassLoader.java
 ../classpath/ikvm/internal/EnumEnum.java
