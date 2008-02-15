@@ -53,6 +53,13 @@ using jlrField = java.lang.reflect.Field;
 namespace System.Runtime.CompilerServices
 {
 	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+	// HACK we only "see" public attributes (as Java annotations),
+	// so we make our ExtensionAttribute public in the first compilation pass
+	// (we don't want it to be public later on, because that will cause conflicts
+	// with the real ExtensionAttribute).
+#if FIRST_PASS
+	public
+#endif
 	sealed class ExtensionAttribute : Attribute
 	{
 	}
