@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005, 2006, 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -64,7 +64,7 @@ namespace IKVM.Internal
 
 	class CountingILGenerator
 	{
-		private ILGenerator ilgen;
+		private ILGenerator ilgen_real;
 		private int offset;
 		private ArrayList locals = new ArrayList();
 		private Stack exceptionStack = new Stack();
@@ -74,6 +74,7 @@ namespace IKVM.Internal
 #endif // STATIC_COMPILER
 		private Expr stack;
 		private CountingLabel lazyBranch;
+		private LocalBuilder[] tempLocals = new LocalBuilder[32];
 #if LABELCHECK
 		private Hashtable labels = new Hashtable();
 #endif
@@ -85,7 +86,59 @@ namespace IKVM.Internal
 
 		internal CountingILGenerator(ILGenerator ilgen)
 		{
-			this.ilgen = ilgen;
+			this.ilgen_real = ilgen;
+		}
+
+		internal LocalBuilder UnsafeAllocTempLocal(Type type)
+		{
+			int free = -1;
+			for (int i = 0; i < tempLocals.Length; i++)
+			{
+				LocalBuilder lb = tempLocals[i];
+				if (lb == null)
+				{
+					if (free == -1)
+					{
+						free = i;
+					}
+				}
+				else if (lb.LocalType == type)
+				{
+					return lb;
+				}
+			}
+			LocalBuilder lb1 = DeclareLocal(type);
+			if (free != -1)
+			{
+				tempLocals[free] = lb1;
+			}
+			return lb1;
+		}
+
+		internal LocalBuilder AllocTempLocal(Type type)
+		{
+			for (int i = 0; i < tempLocals.Length; i++)
+			{
+				LocalBuilder lb = tempLocals[i];
+				if (lb != null && lb.LocalType == type)
+				{
+					tempLocals[i] = null;
+					return lb;
+				}
+			}
+			return DeclareLocal(type);
+		}
+
+		internal void ReleaseTempLocal(LocalBuilder lb)
+		{
+			for (int i = 0; i < tempLocals.Length; i++)
+			{
+				if (tempLocals[i] == null)
+				{
+					tempLocals[i] = lb;
+					break;
+				}
+			}
 		}
 
 		internal bool IsStackEmpty
@@ -106,14 +159,14 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			offset += 5;
-			ilgen.BeginCatchBlock(exceptionType);
+			ilgen_real.BeginCatchBlock(exceptionType);
 		}
 
 		internal void BeginExceptFilterBlock()
 		{
 			LazyGen();
 			offset += 5;
-			ilgen.BeginExceptFilterBlock();
+			ilgen_real.BeginExceptFilterBlock();
 		}
 
 		internal Label BeginExceptionBlock()
@@ -121,7 +174,7 @@ namespace IKVM.Internal
 			LazyGen();
 			exceptionStack.Push(inFinally);
 			inFinally = false;
-			return ilgen.BeginExceptionBlock();
+			return ilgen_real.BeginExceptionBlock();
 		}
 
 		internal void BeginFaultBlock()
@@ -129,7 +182,7 @@ namespace IKVM.Internal
 			LazyGen();
 			inFinally = true;
 			offset += 5;
-			ilgen.BeginFaultBlock();
+			ilgen_real.BeginFaultBlock();
 		}
 
 		internal void BeginFinallyBlock()
@@ -137,25 +190,25 @@ namespace IKVM.Internal
 			LazyGen();
 			inFinally = true;
 			offset += 5;
-			ilgen.BeginFinallyBlock();
+			ilgen_real.BeginFinallyBlock();
 		}
 
 		internal void BeginScope()
 		{
 			LazyGen();
-			ilgen.BeginScope();
+			ilgen_real.BeginScope();
 		}
 
 		internal LocalBuilder DeclareLocal(Type localType)
 		{
-			LocalBuilder loc = ilgen.DeclareLocal(localType);
+			LocalBuilder loc = ilgen_real.DeclareLocal(localType);
 			locals.Add(loc);
 			return loc;
 		}
 
 		internal CountingLabel DefineLabel()
 		{
-			Label label = ilgen.DefineLabel();
+			Label label = ilgen_real.DefineLabel();
 #if LABELCHECK
 			labels.Add(label, new System.Diagnostics.StackFrame(1, true));
 #endif
@@ -166,56 +219,56 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			offset += opcode.Size;
-			ilgen.Emit(opcode);
+			ilgen_real.Emit(opcode);
 		}
 
 		internal void Emit(OpCode opcode, byte arg)
 		{
 			LazyGen();
 			offset += opcode.Size + 1;
-			ilgen.Emit(opcode, arg);
+			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, ConstructorInfo con)
 		{
 			LazyGen();
 			offset += opcode.Size + 4;
-			ilgen.Emit(opcode, con);
+			ilgen_real.Emit(opcode, con);
 		}
 
 		internal void Emit(OpCode opcode, double arg)
 		{
 			LazyGen();
 			offset += opcode.Size + 8;
-			ilgen.Emit(opcode, arg);
+			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, FieldInfo field)
 		{
 			LazyGen();
 			offset += opcode.Size + 4;
-			ilgen.Emit(opcode, field);
+			ilgen_real.Emit(opcode, field);
 		}
 
 		internal void Emit(OpCode opcode, short arg)
 		{
 			LazyGen();
 			offset += opcode.Size + 2;
-			ilgen.Emit(opcode, arg);
+			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, int arg)
 		{
 			LazyGen();
 			offset += opcode.Size + 4;
-			ilgen.Emit(opcode, arg);
+			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, long arg)
 		{
 			LazyGen();
 			offset += opcode.Size + 8;
-			ilgen.Emit(opcode, arg);
+			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, CountingLabel label)
@@ -269,7 +322,7 @@ namespace IKVM.Internal
 				}
 			}
 			offset += opcode.Size;
-			ilgen.Emit(opcode, label.Label);
+			ilgen_real.Emit(opcode, label.Label);
 			switch(opcode.OperandType)
 			{
 				case OperandType.InlineBrTarget:
@@ -292,13 +345,13 @@ namespace IKVM.Internal
 			{
 				real[i] = labels[i].Label;
 			}
-			ilgen.Emit(opcode, real);
+			ilgen_real.Emit(opcode, real);
 		}
 
 		internal void Emit(OpCode opcode, LocalBuilder local)
 		{
 			LazyGen();
-			ilgen.Emit(opcode, local);
+			ilgen_real.Emit(opcode, local);
 			int index = locals.IndexOf(local);
 			if(index < 4 && opcode.Value != OpCodes.Ldloca.Value && opcode.Value != OpCodes.Ldloca_S.Value)
 			{
@@ -318,21 +371,21 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			offset += opcode.Size + 4;
-			ilgen.Emit(opcode, meth);
+			ilgen_real.Emit(opcode, meth);
 		}
 
 		internal void Emit(OpCode opcode, sbyte arg)
 		{
 			LazyGen();
 			offset += opcode.Size + 1;
-			ilgen.Emit(opcode, arg);
+			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, SignatureHelper signature)
 		{
 			LazyGen();
 			offset += opcode.Size;
-			ilgen.Emit(opcode, signature);
+			ilgen_real.Emit(opcode, signature);
 			throw new NotImplementedException();
 		}
 
@@ -340,28 +393,28 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			offset += opcode.Size + 4;
-			ilgen.Emit(opcode, arg);
+			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, string arg)
 		{
 			LazyGen();
 			offset += opcode.Size + 4;
-			ilgen.Emit(opcode, arg);
+			ilgen_real.Emit(opcode, arg);
 		}
 
 		internal void Emit(OpCode opcode, Type cls)
 		{
 			LazyGen();
 			offset += opcode.Size + 4;
-			ilgen.Emit(opcode, cls);
+			ilgen_real.Emit(opcode, cls);
 		}
 
 		internal void EmitCall(OpCode opcode, MethodInfo methodInfo, Type[] optionalParameterTypes)
 		{
 			LazyGen();
 			offset += opcode.Size;
-			ilgen.EmitCall(opcode, methodInfo, optionalParameterTypes);
+			ilgen_real.EmitCall(opcode, methodInfo, optionalParameterTypes);
 			throw new NotImplementedException();
 		}
 
@@ -369,27 +422,27 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			offset += 5;
-			ilgen.EmitCalli(opcode, unmanagedCallConv, returnType, parameterTypes);
+			ilgen_real.EmitCalli(opcode, unmanagedCallConv, returnType, parameterTypes);
 		}
 
 		internal void EmitCalli(OpCode opcode, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
 		{
 			LazyGen();
 			offset += 5;
-			ilgen.EmitCalli(opcode, callingConvention, returnType, parameterTypes, optionalParameterTypes);
+			ilgen_real.EmitCalli(opcode, callingConvention, returnType, parameterTypes, optionalParameterTypes);
 		}
 
 		internal void EmitWriteLine(FieldInfo fld)
 		{
 			LazyGen();
-			ilgen.EmitWriteLine(fld);
+			ilgen_real.EmitWriteLine(fld);
 			throw new NotImplementedException();
 		}
 
 		internal void EmitWriteLine(LocalBuilder localBuilder)
 		{
 			LazyGen();
-			ilgen.EmitWriteLine(localBuilder);
+			ilgen_real.EmitWriteLine(localBuilder);
 			throw new NotImplementedException();
 		}
 
@@ -397,7 +450,7 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			offset += 10;
-			ilgen.EmitWriteLine(value);
+			ilgen_real.EmitWriteLine(value);
 		}
 
 		internal void EndExceptionBlock()
@@ -412,13 +465,13 @@ namespace IKVM.Internal
 				offset += 5;
 			}
 			inFinally = (bool)exceptionStack.Pop();
-			ilgen.EndExceptionBlock();
+			ilgen_real.EndExceptionBlock();
 		}
 
 		internal void EndScope()
 		{
 			LazyGen();
-			ilgen.EndScope();
+			ilgen_real.EndScope();
 		}
 
 		internal void MarkLabel(CountingLabel loc)
@@ -431,27 +484,27 @@ namespace IKVM.Internal
 #if LABELCHECK
 			labels.Remove(loc.Label);
 #endif
-			ilgen.MarkLabel(loc.Label);
+			ilgen_real.MarkLabel(loc.Label);
 			loc.Offset = offset;
 		}
 
 		internal void MarkSequencePoint(ISymbolDocumentWriter document, int startLine, int startColumn, int endLine, int endColumn)
 		{
 			LazyGen();
-			ilgen.MarkSequencePoint(document, startLine, startColumn, endLine, endColumn);
+			ilgen_real.MarkSequencePoint(document, startLine, startColumn, endLine, endColumn);
 		}
 
 		internal void ThrowException(Type excType)
 		{
 			LazyGen();
 			offset += 6;
-			ilgen.ThrowException(excType);
+			ilgen_real.ThrowException(excType);
 		}
 
 		internal void UsingNamespace(string usingNamespace)
 		{
 			LazyGen();
-			ilgen.UsingNamespace(usingNamespace);
+			ilgen_real.UsingNamespace(usingNamespace);
 		}
 
 #if STATIC_COMPILER
@@ -626,24 +679,120 @@ namespace IKVM.Internal
 
 		internal void LazyEmit_ifeq(CountingLabel label)
 		{
-			InstanceOfExpr instanceof = stack as InstanceOfExpr;
-			if(instanceof != null)
-			{
-				stack = null;
-				Emit(OpCodes.Isinst, instanceof.Type);
-			}
-			Emit(OpCodes.Brfalse, label);
+			LazyEmit_if_ne_eq(label, false);
 		}
 
 		internal void LazyEmit_ifne(CountingLabel label)
 		{
+			LazyEmit_if_ne_eq(label, true);
+		}
+
+		private void LazyEmit_if_ne_eq(CountingLabel label, bool brtrue)
+		{
 			InstanceOfExpr instanceof = stack as InstanceOfExpr;
-			if(instanceof != null)
+			if (instanceof != null)
 			{
 				stack = null;
 				Emit(OpCodes.Isinst, instanceof.Type);
 			}
-			Emit(OpCodes.Brtrue, label);
+			else
+			{
+				CmpExpr cmp = stack as CmpExpr;
+				if (cmp != null)
+				{
+					stack = null;
+					Emit(brtrue ? OpCodes.Bne_Un : OpCodes.Beq, label);
+					return;
+				}
+			}
+			Emit(brtrue ? OpCodes.Brtrue : OpCodes.Brfalse, label);
+		}
+
+		internal enum Comparison
+		{
+			LessOrEqual,
+			LessThan,
+			GreaterOrEqual,
+			GreaterThan
+		}
+
+		private void EmitBcc(Comparison comp, CountingLabel label)
+		{
+			switch (comp)
+			{
+				case Comparison.LessOrEqual:
+					Emit(OpCodes.Ble, label);
+					break;
+				case Comparison.LessThan:
+					Emit(OpCodes.Blt, label);
+					break;
+				case Comparison.GreaterOrEqual:
+					Emit(OpCodes.Bge, label);
+					break;
+				case Comparison.GreaterThan:
+					Emit(OpCodes.Bgt, label);
+					break;
+			}
+		}
+
+		internal void LazyEmit_if_le_lt_ge_gt(Comparison comp, CountingLabel label)
+		{
+			CmpExpr cmp = stack as CmpExpr;
+			if (cmp != null)
+			{
+				stack = null;
+				cmp.EmitBcc(this, comp, label);
+			}
+			else
+			{
+				Emit(OpCodes.Ldc_I4_0);
+				EmitBcc(comp, label);
+			}
+		}
+
+		internal void LazyEmit_lcmp()
+		{
+			LazyGen();
+			stack = new LCmpExpr();
+		}
+
+		internal void LazyEmit_fcmpl()
+		{
+			LazyGen();
+			stack = new FCmplExpr();
+		}
+
+		internal void LazyEmit_fcmpg()
+		{
+			LazyGen();
+			stack = new FCmpgExpr();
+		}
+
+		internal void LazyEmit_dcmpl()
+		{
+			LazyGen();
+			stack = new DCmplExpr();
+		}
+
+		internal void LazyEmit_dcmpg()
+		{
+			LazyGen();
+			stack = new DCmpgExpr();
+		}
+
+		internal void LazyEmitAnd_I4(int v2)
+		{
+			ConstIntExpr v1 = stack as ConstIntExpr;
+			if (v1 != null)
+			{
+				stack = null;
+				LazyEmitLdc_I4(v1.i & v2);
+			}
+			else
+			{
+				LazyEmitLdc_I4(v2);
+				Emit(OpCodes.And);
+			}
 		}
 
 		internal string PopLazyLdstr()
@@ -668,7 +817,7 @@ namespace IKVM.Internal
 			if(lazyBranch != null)
 			{
 				offset += OpCodes.Br.Size + 4;
-				ilgen.Emit(OpCodes.Br, lazyBranch.Label);
+				ilgen_real.Emit(OpCodes.Br, lazyBranch.Label);
 				lazyBranch = null;
 			}
 		}
@@ -834,7 +983,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class ConstLongExpr : Expr
+		sealed class ConstLongExpr : Expr
 		{
 			internal readonly long l;
 
@@ -846,7 +995,7 @@ namespace IKVM.Internal
 
 			internal override void Emit(CountingILGenerator ilgen)
 			{
-				switch(l)
+				switch (l)
 				{
 					case -1:
 						ilgen.Emit(OpCodes.Ldc_I4_M1);
@@ -889,9 +1038,9 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Conv_I8);
 						break;
 					default:
-						if(l >= -2147483648L && l <= 4294967295L)
+						if (l >= -2147483648L && l <= 4294967295L)
 						{
-							if(l >= -128 && l <= 127)
+							if (l >= -128 && l <= 127)
 							{
 								ilgen.Emit(OpCodes.Ldc_I4_S, (sbyte)l);
 							}
@@ -899,7 +1048,7 @@ namespace IKVM.Internal
 							{
 								ilgen.Emit(OpCodes.Ldc_I4, (int)l);
 							}
-							if(l < 0)
+							if (l < 0)
 							{
 								ilgen.Emit(OpCodes.Conv_I8);
 							}
@@ -917,7 +1066,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class ConstStringExpr : Expr
+		sealed class ConstStringExpr : Expr
 		{
 			internal readonly string str;
 
@@ -933,7 +1082,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		class InstanceOfExpr : Expr
+		sealed class InstanceOfExpr : Expr
 		{
 			internal InstanceOfExpr(Type type)
 				: base(type)
@@ -945,6 +1094,149 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Isinst, this.Type);
 				ilgen.Emit(OpCodes.Ldnull);
 				ilgen.Emit(OpCodes.Cgt_Un);
+			}
+		}
+
+		abstract class CmpExpr : Expr
+		{
+			internal CmpExpr()
+				: base(typeof(int))
+			{
+			}
+
+			internal abstract void EmitBcc(CountingILGenerator ilgen, Comparison comp, CountingLabel label);
+		}
+
+		sealed class LCmpExpr : CmpExpr
+		{
+			internal LCmpExpr()
+			{
+			}
+
+			internal sealed override void Emit(CountingILGenerator ilgen)
+			{
+				LocalBuilder value1 = ilgen.AllocTempLocal(typeof(long));
+				LocalBuilder value2 = ilgen.AllocTempLocal(typeof(long));
+				ilgen.Emit(OpCodes.Stloc, value2);
+				ilgen.Emit(OpCodes.Stloc, value1);
+				ilgen.Emit(OpCodes.Ldloc, value1);
+				ilgen.Emit(OpCodes.Ldloc, value2);
+				ilgen.Emit(OpCodes.Cgt);
+				ilgen.Emit(OpCodes.Ldloc, value1);
+				ilgen.Emit(OpCodes.Ldloc, value2);
+				ilgen.Emit(OpCodes.Clt);
+				ilgen.Emit(OpCodes.Sub);
+				ilgen.ReleaseTempLocal(value2);
+				ilgen.ReleaseTempLocal(value1);
+			}
+
+			internal sealed override void EmitBcc(CountingILGenerator ilgen, Comparison comp, CountingLabel label)
+			{
+				ilgen.EmitBcc(comp, label);
+			}
+		}
+
+		class FCmplExpr : CmpExpr
+		{
+			protected virtual Type FloatOrDouble()
+			{
+				return typeof(float);
+			}
+
+			internal sealed override void Emit(CountingILGenerator ilgen)
+			{
+				LocalBuilder value1 = ilgen.AllocTempLocal(FloatOrDouble());
+				LocalBuilder value2 = ilgen.AllocTempLocal(FloatOrDouble());
+				ilgen.Emit(OpCodes.Stloc, value2);
+				ilgen.Emit(OpCodes.Stloc, value1);
+				ilgen.Emit(OpCodes.Ldloc, value1);
+				ilgen.Emit(OpCodes.Ldloc, value2);
+				ilgen.Emit(OpCodes.Cgt);
+				ilgen.Emit(OpCodes.Ldloc, value1);
+				ilgen.Emit(OpCodes.Ldloc, value2);
+				ilgen.Emit(OpCodes.Clt_Un);
+				ilgen.Emit(OpCodes.Sub);
+				ilgen.ReleaseTempLocal(value1);
+				ilgen.ReleaseTempLocal(value2);
+			}
+
+			internal sealed override void EmitBcc(CountingILGenerator ilgen, Comparison comp, CountingLabel label)
+			{
+				switch (comp)
+				{
+					case Comparison.LessOrEqual:
+						ilgen.Emit(OpCodes.Ble_Un, label);
+						break;
+					case Comparison.LessThan:
+						ilgen.Emit(OpCodes.Blt_Un, label);
+						break;
+					case Comparison.GreaterOrEqual:
+						ilgen.Emit(OpCodes.Bge, label);
+						break;
+					case Comparison.GreaterThan:
+						ilgen.Emit(OpCodes.Bgt, label);
+						break;
+				}
+			}
+		}
+
+		class FCmpgExpr : CmpExpr
+		{
+			protected virtual Type FloatOrDouble()
+			{
+				return typeof(float);
+			}
+
+			internal sealed override void Emit(CountingILGenerator ilgen)
+			{
+				LocalBuilder value1 = ilgen.AllocTempLocal(FloatOrDouble());
+				LocalBuilder value2 = ilgen.AllocTempLocal(FloatOrDouble());
+				ilgen.Emit(OpCodes.Stloc, value2);
+				ilgen.Emit(OpCodes.Stloc, value1);
+				ilgen.Emit(OpCodes.Ldloc, value1);
+				ilgen.Emit(OpCodes.Ldloc, value2);
+				ilgen.Emit(OpCodes.Cgt_Un);
+				ilgen.Emit(OpCodes.Ldloc, value1);
+				ilgen.Emit(OpCodes.Ldloc, value2);
+				ilgen.Emit(OpCodes.Clt);
+				ilgen.Emit(OpCodes.Sub);
+				ilgen.ReleaseTempLocal(value1);
+				ilgen.ReleaseTempLocal(value2);
+			}
+
+			internal sealed override void EmitBcc(CountingILGenerator ilgen, Comparison comp, CountingLabel label)
+			{
+				switch (comp)
+				{
+					case Comparison.LessOrEqual:
+						ilgen.Emit(OpCodes.Ble, label);
+						break;
+					case Comparison.LessThan:
+						ilgen.Emit(OpCodes.Blt, label);
+						break;
+					case Comparison.GreaterOrEqual:
+						ilgen.Emit(OpCodes.Bge_Un, label);
+						break;
+					case Comparison.GreaterThan:
+						ilgen.Emit(OpCodes.Bgt_Un, label);
+						break;
+				}
+			}
+		}
+
+		class DCmplExpr : FCmplExpr
+		{
+			protected override Type FloatOrDouble()
+			{
+				return typeof(double);
+			}
+		}
+
+		class DCmpgExpr : FCmpgExpr
+		{
+			protected override Type FloatOrDouble()
+			{
+				return typeof(double);
 			}
 		}
 	}
