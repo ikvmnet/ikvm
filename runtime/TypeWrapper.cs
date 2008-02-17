@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -10042,15 +10042,17 @@ namespace IKVM.Internal
 					}
 				}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 				internal override object[] GetDeclaredAnnotations()
 				{
+					java.util.HashMap targetMap = new java.util.HashMap();
+					targetMap.put("value", java.lang.annotation.ElementType.METHOD);
+					java.util.HashMap retentionMap = new java.util.HashMap();
+					retentionMap.put("value", java.lang.annotation.RetentionPolicy.RUNTIME);
 					return new object[] {
-										JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", 
-											new object[] { AnnotationDefaultAttribute.TAG_ARRAY, new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "METHOD" } }
-										}),
-										JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" } })
-									};
+						java.lang.reflect.Proxy.newProxyInstance(null, new java.lang.Class[] { typeof(java.lang.annotation.Target) }, new sun.reflect.annotation.AnnotationInvocationHandler(typeof(java.lang.annotation.Target), targetMap)),
+						java.lang.reflect.Proxy.newProxyInstance(null, new java.lang.Class[] { typeof(java.lang.annotation.Retention) }, new sun.reflect.annotation.AnnotationInvocationHandler(typeof(java.lang.annotation.Retention), retentionMap))
+					};
 				}
 #endif
 
@@ -10318,37 +10320,40 @@ namespace IKVM.Internal
 				return attr;
 			}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 			internal override object[] GetDeclaredAnnotations()
 			{
 				// note that AttributeUsageAttribute.Inherited does not map to java.lang.annotation.Inherited
 				AttributeTargets validOn = GetAttributeUsage().ValidOn;
-				ArrayList targets = new ArrayList();
-				targets.Add(AnnotationDefaultAttribute.TAG_ARRAY);
-				if((validOn & (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
+				List<java.lang.annotation.ElementType> targets = new List<java.lang.annotation.ElementType>();
+				if ((validOn & (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
 				{
-					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "TYPE" });
+					targets.Add(java.lang.annotation.ElementType.TYPE);
 				}
-				if((validOn & AttributeTargets.Constructor) != 0)
+				if ((validOn & AttributeTargets.Constructor) != 0)
 				{
-					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "CONSTRUCTOR" });
+					targets.Add(java.lang.annotation.ElementType.CONSTRUCTOR);
 				}
-				if((validOn & AttributeTargets.Field) != 0)
+				if ((validOn & AttributeTargets.Field) != 0)
 				{
-					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "FIELD" });
+					targets.Add(java.lang.annotation.ElementType.FIELD);
 				}
-				if((validOn & AttributeTargets.Method) != 0)
+				if ((validOn & AttributeTargets.Method) != 0)
 				{
-					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "METHOD" });
+					targets.Add(java.lang.annotation.ElementType.METHOD);
 				}
-				if((validOn & AttributeTargets.Parameter) != 0)
+				if ((validOn & AttributeTargets.Parameter) != 0)
 				{
-					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "PARAMETER" });
+					targets.Add(java.lang.annotation.ElementType.PARAMETER);
 				}
+				java.util.HashMap targetMap = new java.util.HashMap();
+				targetMap.put("value", targets.ToArray());
+				java.util.HashMap retentionMap = new java.util.HashMap();
+				retentionMap.put("value", java.lang.annotation.RetentionPolicy.RUNTIME);
 				return new object[] {
-										JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Target", "value", (object[])targets.ToArray() }),
-										JVM.NewAnnotation(GetClassLoader().GetJavaClassLoader(), new object[] { AnnotationDefaultAttribute.TAG_ANNOTATION, "java.lang.annotation.Retention", "value", new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" } })
-									};
+					java.lang.reflect.Proxy.newProxyInstance(null, new java.lang.Class[] { typeof(java.lang.annotation.Target) }, new sun.reflect.annotation.AnnotationInvocationHandler(typeof(java.lang.annotation.Target), targetMap)),
+					java.lang.reflect.Proxy.newProxyInstance(null, new java.lang.Class[] { typeof(java.lang.annotation.Retention) }, new sun.reflect.annotation.AnnotationInvocationHandler(typeof(java.lang.annotation.Retention), retentionMap))
+				};
 			}
 #endif
 
