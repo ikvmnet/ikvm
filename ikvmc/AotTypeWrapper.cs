@@ -579,6 +579,12 @@ namespace IKVM.Internal
 								{
 									AttributeHelper.SetModifiers(mb, (Modifiers)method.Modifiers, false);
 								}
+								if(method.@override != null)
+								{
+									MethodWrapper mw = GetClassLoader().LoadClassByDottedName(method.@override.Class).GetMethodWrapper(method.@override.Name, method.Sig, true);
+									mw.Link();
+									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
+								}
 								ILGenerator ilgen = mb.GetILGenerator();
 								method.body.Emit(ilgen);
 								if(method.Attributes != null)

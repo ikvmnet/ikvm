@@ -1270,6 +1270,8 @@ namespace IKVM.Internal.MapXml
 
 	public class Override
 	{
+		[XmlAttribute("class")]
+		public string Class;
 		[XmlAttribute("name")]
 		public string Name;
 	}
