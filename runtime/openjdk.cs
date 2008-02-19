@@ -2909,7 +2909,7 @@ namespace IKVM.NativeCode.java
 				return sig.Replace('.', '/');
 			}
 
-			public static byte[] getRawAnnotations(object thisClass)
+			public static object getDeclaredAnnotationsImpl(object thisClass)
 			{
 #if FIRST_PASS
 				return null;
@@ -2917,20 +2917,19 @@ namespace IKVM.NativeCode.java
 				TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
 				wrapper.Finish();
 				object[] objAnn = wrapper.GetDeclaredAnnotations();
-				if (objAnn == null)
+				global::java.util.HashMap map = new global::java.util.HashMap();
+				if (objAnn != null)
 				{
-					return null;
-				}
-				ArrayList ann = new ArrayList();
-				foreach (object obj in objAnn)
-				{
-					if (obj is Annotation)
+					foreach (object obj in objAnn)
 					{
-						ann.Add(obj);
+						Annotation a = obj as Annotation;
+						if (a != null)
+						{
+							map.put(a.annotationType(), a);
+						}
 					}
 				}
-				IConstantPoolWriter cp = (IConstantPoolWriter)((srConstantPool)getConstantPool(thisClass))._constantPoolOop();
-				return StubGenerator.writeAnnotations(cp, (Annotation[])ann.ToArray(typeof(Annotation)));
+				return map;
 #endif
 			}
 

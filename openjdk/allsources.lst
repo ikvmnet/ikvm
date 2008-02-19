@@ -1047,6 +1047,7 @@ java/io/FileInputStream.java
 java/io/FileOutputStream.java
 java/io/ObjectStreamClass.java
 java/io/RandomAccessFile.java
+java/lang/Class.java
 java/lang/LangHelper.java
 java/lang/ProcessImpl.java
 java/lang/Shutdown.java
@@ -1054,6 +1055,8 @@ java/lang/StringHelper.java
 java/lang/VMThread.java
 java/lang/ref/Reference.java
 java/lang/ref/SoftReference.java
+java/lang/reflect/Constructor.java
+java/lang/reflect/Field.java
 java/lang/reflect/Method.java
 java/lang/reflect/ReflectHelper.java
 java/net/PlainDatagramSocketImpl.java
@@ -6357,7 +6360,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/Character.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/CharacterData.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/CharSequence.java
-../../openjdk-b13/j2se/src/share/classes/java/lang/Class.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ClassCastException.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ClassCircularityError.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ClassFormatError.java
@@ -6481,8 +6483,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/AccessibleObject.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/AnnotatedElement.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/Array.java
-../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/Constructor.java
-../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/Field.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/GenericArrayType.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/GenericDeclaration.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/reflect/GenericSignatureFormatError.java
