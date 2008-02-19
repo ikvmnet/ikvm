@@ -10046,7 +10046,7 @@ namespace IKVM.Internal
 				internal override object[] GetDeclaredAnnotations()
 				{
 					java.util.HashMap targetMap = new java.util.HashMap();
-					targetMap.put("value", java.lang.annotation.ElementType.METHOD);
+					targetMap.put("value", new java.lang.annotation.ElementType[] { java.lang.annotation.ElementType.METHOD });
 					java.util.HashMap retentionMap = new java.util.HashMap();
 					retentionMap.put("value", java.lang.annotation.RetentionPolicy.RUNTIME);
 					return new object[] {
