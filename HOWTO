@@ -1,21 +1,5 @@
-Note that IKVM.NET comes with a build script for the GNU Classpath sources as well, you don't need to run the GNU Classpath make files.
+TODO
 
-If you want to build from source, follow these steps:
-
-
-1.	Download the GNU Classpath corresponding to the ikvm version you have. If you use ikvm from cvs, also use GNU Classpath from cvs or use the latest snapshot.
-	The latest (nightly build) version is available at http://builder.classpath.org/dist/.
-2.	Download NAnt Version 0.85
-	and install it 
-3.	Download the Eclipse Java Compiler 3.2
-	The compiler is a single file ecj.jar. It is named "JDT Core Batch Compiler". You find it in the download center from eclipse at http://download.eclipse.org/eclipse/downloads/.
-4.	Extract the GNU Classpath
- archive to a directory parallel to the top IKVM project directory. Use the directory name "classpath".
-5.	Compile the ecj with the command line: ikvmc ecj.jar
-	This creates a file ecj.exe .
-6.	Set the PATH to ecj.exe and make sure that IKVM.GNU.Classpath.dll and IKVM.Runtime.dll are in the same directory as ecj.exe (or in the GAC).
-7.	Run build script in the ikvm directory: nant -t:net-1.1
-8.	Compiler Errors
-	It can occur that the list of files has changes then you must modify the file "allsources.lst". After it repeat with the previous step.
-
-(Thanks to Volker Berlin for this step by step list.)
+> - extend HOWTO file with information about .NET versions
+> - extend HOWTO with information about signing
+> - extend HOWTO with information that build has two passes
