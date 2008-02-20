@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?> 
 <!--
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1213,6 +1213,15 @@
             <call class="java.net.PlainDatagramSocketImpl" name="equalsHack" sig="(Ljava.net.InetAddress;Ljava.net.InetAddress;)Z" />
           </code>
         </replace-method-call>
+      </method>
+    </class>
+    <class name="java.util.BitSet">
+      <!-- HACK we "comment" out the asserts in checkInvariants, because they aren't used and yet have a significant perf impact
+           because the CLR JIT isn't as clever as HotSpot about optimizing them away -->
+      <method name="checkInvariants" sig="()V">
+        <body>
+          <ret />
+        </body>
       </method>
     </class>
     <class name="java.util.concurrent.locks.AbstractQueuedSynchronizer">

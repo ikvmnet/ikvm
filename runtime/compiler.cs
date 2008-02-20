@@ -29,7 +29,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
-using IKVM.Runtime;
 using IKVM.Attributes;
 using IKVM.Internal;
 
@@ -82,7 +81,7 @@ class ByteCodeHelperMethods
 #if STATIC_COMPILER
 		Type typeofByteCodeHelper = StaticCompiler.GetType("IKVM.Runtime.ByteCodeHelper");
 #else
-		Type typeofByteCodeHelper = typeof(ByteCodeHelper);
+		Type typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
 #endif
 		GetClassFromTypeHandle = typeofByteCodeHelper.GetMethod("GetClassFromTypeHandle");
 		multianewarray = typeofByteCodeHelper.GetMethod("multianewarray");
@@ -149,7 +148,6 @@ class Compiler
 	private ISymbolDocumentWriter symboldocument;
 	private LineNumberTableAttribute.LineNumberWriter lineNumbers;
 	private bool nonleaf;
-	private LocalBuilder[] tempLocals = new LocalBuilder[32];
 	private Hashtable invokespecialstubcache;
 	private bool debug;
 	private bool keepAlive;
@@ -618,58 +616,6 @@ class Compiler
 		}
 	}
 
-	private LocalBuilder UnsafeAllocTempLocal(Type type)
-	{
-		int free = -1;
-		for(int i = 0; i < tempLocals.Length; i++)
-		{
-			LocalBuilder lb = tempLocals[i];
-			if(lb == null)
-			{
-				if(free == -1)
-				{
-					free = i;
-				}
-			}
-			else if(lb.LocalType == type)
-			{
-				return lb;
-			}
-		}
-		LocalBuilder lb1 = ilGenerator.DeclareLocal(type);
-		if(free != -1)
-		{
-			tempLocals[free] = lb1;
-		}
-		return lb1;
-	}
-
-	private LocalBuilder AllocTempLocal(Type type)
-	{
-		for(int i = 0; i < tempLocals.Length; i++)
-		{
-			LocalBuilder lb = tempLocals[i];
-			if(lb != null && lb.LocalType == type)
-			{
-				tempLocals[i] = null;
-				return lb;
-			}
-		}
-		return ilGenerator.DeclareLocal(type);
-	}
-
-	private void ReleaseTempLocal(LocalBuilder lb)
-	{
-		for(int i = 0; i < tempLocals.Length; i++)
-		{
-			if(tempLocals[i] == null)
-			{
-				tempLocals[i] = lb;
-				break;
-			}
-		}
-	}
-
 	private sealed class ReturnCookie
 	{
 		private Label stub;
@@ -742,7 +688,7 @@ class Compiler
 			{
 				if(lb != null)
 				{
-					compiler.ReleaseTempLocal(lb);
+					compiler.ilGenerator.ReleaseTempLocal(lb);
 				}
 			}
 		}
@@ -778,7 +724,7 @@ class Compiler
 			else
 			{
 				types[i] = StackType.Other;
-				locals[i] = compiler.AllocTempLocal(type.TypeAsLocalOrStackType);
+				locals[i] = compiler.ilGenerator.AllocTempLocal(type.TypeAsLocalOrStackType);
 			}
 		}
 
@@ -2163,7 +2109,7 @@ class Compiler
 						{
 							TypeWrapper retTypeWrapper = mw.ReturnType;
 							retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
-							local = UnsafeAllocTempLocal(retTypeWrapper.TypeAsSignatureType);
+							local = ilGenerator.UnsafeAllocTempLocal(retTypeWrapper.TypeAsSignatureType);
 							ilGenerator.Emit(OpCodes.Stloc, local);
 						}
 						Label label = ilGenerator.DefineLabel();
@@ -2213,11 +2159,11 @@ class Compiler
 							retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
 							if(stackHeight != 1)
 							{
-								LocalBuilder local = AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
+								LocalBuilder local = ilGenerator.AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
 								ilGenerator.Emit(OpCodes.Stloc, local);
 								ilGenerator.Emit(OpCodes.Leave_S, (byte)0);
 								ilGenerator.Emit(OpCodes.Ldloc, local);
-								ReleaseTempLocal(local);
+								ilGenerator.ReleaseTempLocal(local);
 							}
 							else if(x64hack)
 							{
@@ -2352,8 +2298,8 @@ class Compiler
 				}
 				case NormalizedByteCode.__multianewarray:
 				{
-					LocalBuilder localArray = UnsafeAllocTempLocal(typeof(int[]));
-					LocalBuilder localInt = UnsafeAllocTempLocal(typeof(int));
+					LocalBuilder localArray = ilGenerator.UnsafeAllocTempLocal(typeof(int[]));
+					LocalBuilder localInt = ilGenerator.UnsafeAllocTempLocal(typeof(int));
 					ilGenerator.LazyEmitLdc_I4(instr.Arg2);
 					ilGenerator.Emit(OpCodes.Newarr, typeof(int));
 					ilGenerator.Emit(OpCodes.Stloc, localArray);
@@ -2521,7 +2467,7 @@ class Compiler
 				case NormalizedByteCode.__fastore_conv:
 				{
 					// see dastore_conv comment
-					LocalBuilder local = UnsafeAllocTempLocal(typeof(float));
+					LocalBuilder local = ilGenerator.UnsafeAllocTempLocal(typeof(float));
 					ilGenerator.Emit(OpCodes.Stloc, local);
 					ilGenerator.Emit(OpCodes.Ldloc, local);
 					ilGenerator.Emit(OpCodes.Conv_R4);
@@ -2541,7 +2487,7 @@ class Compiler
 					// do the conv.r8, because otherwise it would be legal
 					// (per ECMA CLI spec) for the JIT to reuse the unconverted value
 					// on the FPU stack.
-					LocalBuilder local = UnsafeAllocTempLocal(typeof(double));
+					LocalBuilder local = ilGenerator.UnsafeAllocTempLocal(typeof(double));
 					ilGenerator.Emit(OpCodes.Stloc, local);
 					ilGenerator.Emit(OpCodes.Ldloc, local);
 					ilGenerator.Emit(OpCodes.Conv_R8);
@@ -2567,7 +2513,7 @@ class Compiler
 						if(elem.IsNonPrimitiveValueType)
 						{
 							Type t = elem.TypeAsTBD;
-							LocalBuilder local = UnsafeAllocTempLocal(typeof(object));
+							LocalBuilder local = ilGenerator.UnsafeAllocTempLocal(typeof(object));
 							ilGenerator.Emit(OpCodes.Stloc, local);
 							ilGenerator.Emit(OpCodes.Ldelema, t);
 							ilGenerator.Emit(OpCodes.Ldloc, local);
@@ -2596,90 +2542,20 @@ class Compiler
 					}
 					break;
 				case NormalizedByteCode.__lcmp:
-				{
-					LocalBuilder value1 = AllocTempLocal(typeof(long));
-					LocalBuilder value2 = AllocTempLocal(typeof(long));
-					ilGenerator.Emit(OpCodes.Stloc, value2);
-					ilGenerator.Emit(OpCodes.Stloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value2);
-					ilGenerator.Emit(OpCodes.Cgt);
-					ilGenerator.Emit(OpCodes.Ldloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value2);
-					ilGenerator.Emit(OpCodes.Clt);
-					ilGenerator.Emit(OpCodes.Sub);
-					ReleaseTempLocal(value1);
-					ReleaseTempLocal(value2);
+					ilGenerator.LazyEmit_lcmp();
 					break;
-				}
 				case NormalizedByteCode.__fcmpl:
-				{
-					LocalBuilder value1 = AllocTempLocal(typeof(float));
-					LocalBuilder value2 = AllocTempLocal(typeof(float));
-					ilGenerator.Emit(OpCodes.Stloc, value2);
-					ilGenerator.Emit(OpCodes.Stloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value2);
-					ilGenerator.Emit(OpCodes.Cgt);
-					ilGenerator.Emit(OpCodes.Ldloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value2);
-					ilGenerator.Emit(OpCodes.Clt_Un);
-					ilGenerator.Emit(OpCodes.Sub);
-					ReleaseTempLocal(value1);
-					ReleaseTempLocal(value2);
+					ilGenerator.LazyEmit_fcmpl();
 					break;
-				}
 				case NormalizedByteCode.__fcmpg:
-				{
-					LocalBuilder value1 = AllocTempLocal(typeof(float));
-					LocalBuilder value2 = AllocTempLocal(typeof(float));
-					ilGenerator.Emit(OpCodes.Stloc, value2);
-					ilGenerator.Emit(OpCodes.Stloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value2);
-					ilGenerator.Emit(OpCodes.Cgt_Un);
-					ilGenerator.Emit(OpCodes.Ldloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value2);
-					ilGenerator.Emit(OpCodes.Clt);
-					ilGenerator.Emit(OpCodes.Sub);
-					ReleaseTempLocal(value1);
-					ReleaseTempLocal(value2);
+					ilGenerator.LazyEmit_fcmpg();
 					break;
-				}
 				case NormalizedByteCode.__dcmpl:
-				{
-					LocalBuilder value1 = AllocTempLocal(typeof(double));
-					LocalBuilder value2 = AllocTempLocal(typeof(double));
-					ilGenerator.Emit(OpCodes.Stloc, value2);
-					ilGenerator.Emit(OpCodes.Stloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value2);
-					ilGenerator.Emit(OpCodes.Cgt);
-					ilGenerator.Emit(OpCodes.Ldloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value2);
-					ilGenerator.Emit(OpCodes.Clt_Un);
-					ilGenerator.Emit(OpCodes.Sub);
-					ReleaseTempLocal(value1);
-					ReleaseTempLocal(value2);
+					ilGenerator.LazyEmit_dcmpl();
 					break;
-				}
 				case NormalizedByteCode.__dcmpg:
-				{
-					LocalBuilder value1 = AllocTempLocal(typeof(double));
-					LocalBuilder value2 = AllocTempLocal(typeof(double));
-					ilGenerator.Emit(OpCodes.Stloc, value2);
-					ilGenerator.Emit(OpCodes.Stloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value2);
-					ilGenerator.Emit(OpCodes.Cgt_Un);
-					ilGenerator.Emit(OpCodes.Ldloc, value1);
-					ilGenerator.Emit(OpCodes.Ldloc, value2);
-					ilGenerator.Emit(OpCodes.Clt);
-					ilGenerator.Emit(OpCodes.Sub);
-					ReleaseTempLocal(value1);
-					ReleaseTempLocal(value2);
+					ilGenerator.LazyEmit_dcmpg();
 					break;
-				}
 				case NormalizedByteCode.__if_icmpeq:
 					ilGenerator.Emit(OpCodes.Beq, block.GetLabel(instr.PC + instr.Arg1));
 					break;
@@ -2699,20 +2575,16 @@ class Compiler
 					ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.PC + instr.Arg1));
 					break;
 				case NormalizedByteCode.__ifle:
-					ilGenerator.Emit(OpCodes.Ldc_I4_0);
-					ilGenerator.Emit(OpCodes.Ble, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CountingILGenerator.Comparison.LessOrEqual, block.GetLabel(instr.PC + instr.Arg1));
 					break;
 				case NormalizedByteCode.__iflt:
-					ilGenerator.Emit(OpCodes.Ldc_I4_0);
-					ilGenerator.Emit(OpCodes.Blt, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CountingILGenerator.Comparison.LessThan, block.GetLabel(instr.PC + instr.Arg1));
 					break;
 				case NormalizedByteCode.__ifge:
-					ilGenerator.Emit(OpCodes.Ldc_I4_0);
-					ilGenerator.Emit(OpCodes.Bge, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CountingILGenerator.Comparison.GreaterOrEqual, block.GetLabel(instr.PC + instr.Arg1));
 					break;
 				case NormalizedByteCode.__ifgt:
-					ilGenerator.Emit(OpCodes.Ldc_I4_0);
-					ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CountingILGenerator.Comparison.GreaterThan, block.GetLabel(instr.PC + instr.Arg1));
 					break;
 				case NormalizedByteCode.__ifne:
 					ilGenerator.LazyEmit_ifne(block.GetLabel(instr.PC + instr.Arg1));
@@ -2871,33 +2743,27 @@ class Compiler
 					}
 					break;
 				case NormalizedByteCode.__ishl:
-					ilGenerator.LazyEmitLdc_I4(31);
-					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.LazyEmitAnd_I4(31);
 					ilGenerator.Emit(OpCodes.Shl);
 					break;
 				case NormalizedByteCode.__lshl:
-					ilGenerator.LazyEmitLdc_I4(63);
-					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.LazyEmitAnd_I4(63);
 					ilGenerator.Emit(OpCodes.Shl);
 					break;
 				case NormalizedByteCode.__iushr:
-					ilGenerator.LazyEmitLdc_I4(31);
-					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.LazyEmitAnd_I4(31);
 					ilGenerator.Emit(OpCodes.Shr_Un);
 					break;
 				case NormalizedByteCode.__lushr:
-					ilGenerator.LazyEmitLdc_I4(63);
-					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.LazyEmitAnd_I4(63);
 					ilGenerator.Emit(OpCodes.Shr_Un);
 					break;
 				case NormalizedByteCode.__ishr:
-					ilGenerator.LazyEmitLdc_I4(31);
-					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.LazyEmitAnd_I4(31);
 					ilGenerator.Emit(OpCodes.Shr);
 					break;
 				case NormalizedByteCode.__lshr:
-					ilGenerator.LazyEmitLdc_I4(63);
-					ilGenerator.Emit(OpCodes.And);
+					ilGenerator.LazyEmitAnd_I4(63);
 					ilGenerator.Emit(OpCodes.Shr);
 					break;
 				case NormalizedByteCode.__swap:
@@ -3527,14 +3393,15 @@ class Compiler
 					}
 					else
 					{
-						LocalBuilder ghost = AllocTempLocal(typeof(object));
+						LocalBuilder ghost = ilGenerator.AllocTempLocal(typeof(object));
 						ilGenerator.Emit(OpCodes.Stloc, ghost);
-						LocalBuilder local = AllocTempLocal(args[i].TypeAsSignatureType);
+						LocalBuilder local = ilGenerator.AllocTempLocal(args[i].TypeAsSignatureType);
 						ilGenerator.Emit(OpCodes.Ldloca, local);
 						ilGenerator.Emit(OpCodes.Ldloc, ghost);
 						ilGenerator.Emit(OpCodes.Stfld, args[i].GhostRefField);
 						ilGenerator.Emit(OpCodes.Ldloca, local);
-						ReleaseTempLocal(local);
+						ilGenerator.ReleaseTempLocal(local);
+						ilGenerator.ReleaseTempLocal(ghost);
 						// NOTE when the this argument is a value type, we need the address on the stack instead of the value
 						if(i != 0 || !instanceMethod)
 						{
