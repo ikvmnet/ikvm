@@ -1747,6 +1747,17 @@ namespace IKVM.Internal
 			return def;
 		}
 
+		private static string GetAssemblyQualifiedTypeName(Type type)
+		{
+			string name = type.AssemblyQualifiedName;
+			if(name.IndexOf("Culture=") == -1)
+			{
+				// FXBUG on .NET 1.1 an AssemblyBuilder with neutral culture will not return a proper assembly name
+				name += ", Culture=neutral";
+			}
+			return name;
+		}
+
 		private static object[] ValueQualifyClassNames(ClassLoaderWrapper loader, object[] val)
 		{
 			if(val[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION))
@@ -1761,7 +1772,7 @@ namespace IKVM.Internal
 					TypeWrapper tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
 					if(tw != null)
 					{
-						return new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";" };
+						return new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + GetAssemblyQualifiedTypeName(tw.TypeAsBaseType).Replace('.', '/') + ";" };
 					}
 				}
 				return val;
@@ -1772,7 +1783,7 @@ namespace IKVM.Internal
 				TypeWrapper tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
 				if(tw != null)
 				{
-					return new object[] { AnnotationDefaultAttribute.TAG_ENUM, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";", val[2] };
+					return new object[] { AnnotationDefaultAttribute.TAG_ENUM, "L" + GetAssemblyQualifiedTypeName(tw.TypeAsBaseType).Replace('.', '/') + ";", val[2] };
 				}
 				return val;
 			}
@@ -11710,20 +11721,58 @@ namespace IKVM.Internal
 
 		internal override object[] GetFieldAnnotations(FieldWrapper fw)
 		{
-			// TODO
-			return null;
+			FieldInfo fi = fw.GetField();
+			if(fi == null)
+			{
+				return null;
+			}
+#if WHIDBEY
+			if(fi.DeclaringType.Assembly.ReflectionOnly)
+			{
+				// TODO on Whidbey this must be implemented
+			}
+#endif
+			return fi.GetCustomAttributes(false);
 		}
 
 		internal override object[] GetMethodAnnotations(MethodWrapper mw)
 		{
-			// TODO
-			return null;
+			MethodBase mb = mw.GetMethod();
+			if(mb == null)
+			{
+				return null;
+			}
+#if WHIDBEY
+			if(mb.DeclaringType.Assembly.ReflectionOnly)
+			{
+				// TODO on Whidbey this must be implemented
+				return null;
+			}
+#endif
+			return mb.GetCustomAttributes(false);
 		}
 
 		internal override object[][] GetParameterAnnotations(MethodWrapper mw)
 		{
-			// TODO
-			return null;
+			MethodBase mb = mw.GetMethod();
+			if(mb == null)
+			{
+				return null;
+			}
+#if WHIDBEY
+			if(mb.DeclaringType.Assembly.ReflectionOnly)
+			{
+				// TODO on Whidbey this must be implemented
+				return null;
+			}
+#endif
+			ParameterInfo[] parameters = mb.GetParameters();
+			object[][] attribs = new object[parameters.Length][];
+			for(int i = 0; i < parameters.Length; i++)
+			{
+				attribs[i] = parameters[i].GetCustomAttributes(false);
+			}
+			return attribs;
 		}
 	}
 
