@@ -2528,7 +2528,7 @@ namespace IKVM.NativeCode.java
 					Type type = Type.GetType(name);
 					if (type != null)
 					{
-						tw = DotNetTypeWrapper.GetWrapperFromDotNetType(type);
+						tw = ClassLoaderWrapper.GetWrapperFromType(type);
 					}
 					if (tw == null)
 					{
