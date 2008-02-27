@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -219,6 +219,14 @@ namespace IKVM.Internal
 			get
 			{
 				return (codegenoptions & CodeGenOptions.NoJNI) != 0;
+			}
+		}
+
+		internal bool RemoveAsserts
+		{
+			get
+			{
+				return (codegenoptions & CodeGenOptions.RemoveAsserts) != 0;
 			}
 		}
 

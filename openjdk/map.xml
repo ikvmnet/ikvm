@@ -1215,15 +1215,6 @@
         </replace-method-call>
       </method>
     </class>
-    <class name="java.util.BitSet">
-      <!-- HACK we "comment" out the asserts in checkInvariants, because they aren't used and yet have a significant perf impact
-           because the CLR JIT isn't as clever as HotSpot about optimizing them away -->
-      <method name="checkInvariants" sig="()V">
-        <body>
-          <ret />
-        </body>
-      </method>
-    </class>
     <class name="java.util.concurrent.locks.AbstractQueuedSynchronizer">
       <method name="compareAndSetState" sig="(II)Z">
         <body>

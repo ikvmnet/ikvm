@@ -38,6 +38,7 @@ namespace IKVM.Internal
 		NoStackTraceInfo = 2,
 		StrictFinalFieldSemantics = 4,
 		NoJNI = 8,
+		RemoveAsserts = 16,
 	}
 
 	sealed class DynamicClassLoader : TypeWrapperFactory
