@@ -1586,6 +1586,11 @@ namespace IKVM.NativeCode.java
 					{
 						return false;
 					}
+					// FXBUG on .NET 1.1 and Mono CreateDirectory doesn't throw an IOException if a file with the same name already exists
+					if (System.IO.File.Exists(path))
+					{
+						return false;
+					}
 					return System.IO.Directory.CreateDirectory(path) != null;
 				}
 				catch (System.Security.SecurityException)

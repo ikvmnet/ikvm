@@ -54,6 +54,7 @@
           <arg value="-compressresources" />
           <arg value="-opt:fields" />
           <arg value="-strictfinalfieldsemantics" />
+          <arg value="-removeassertions" />
           <arg value="-out:IKVM.OpenJDK.ClassLibrary.dll" />
           <arg value="-remap:map.xml" />
           <arg value="-exclude:exclude.lst" />
