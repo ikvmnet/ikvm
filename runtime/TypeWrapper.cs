@@ -3737,6 +3737,7 @@ namespace IKVM.Internal
 			private MethodWrapper[] baseMethods;
 			private FieldWrapper[] fields;
 			private FinishedTypeImpl finishedType;
+			private bool finishInProgress;
 			private Hashtable memberclashtable;
 			private Hashtable classCache = Hashtable.Synchronized(new Hashtable());
 			private FieldInfo classObjectField;
@@ -4902,6 +4903,11 @@ namespace IKVM.Internal
 				{
 					return finishedType;
 				}
+				if(finishInProgress)
+				{
+					throw new InvalidOperationException("Recursive finish attempt for " + wrapper.Name);
+				}
+				finishInProgress = true;
 				Tracer.Info(Tracer.Compiler, "Finishing: {0}", wrapper.Name);
 				Profiler.Enter("JavaTypeImpl.Finish.Core");
 				try
