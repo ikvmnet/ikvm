@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2656,6 +2656,43 @@ class MethodAnalyzer
 						}
 						throw new VerifyError(string.Format("{5} (class: {0}, method: {1}, signature: {2}, offset: {3}, instruction: {4})",
 							classFile.Name, method.Name, method.Signature, instructions[i].PC, opcode, x.Message), x);
+					}
+				}
+			}
+		}
+
+		// Optimization pass
+		if (classLoader.RemoveAsserts)
+		{
+			FieldWrapper assertionsDisabled = null;
+			foreach (FieldWrapper fw in wrapper.GetFields())
+			{
+				// HACK we assume that all compilers use the same name for this field (ecj and javac do)
+				if (fw.Name == "$assertionsDisabled" && fw.Signature == "Z"
+					&& (fw.Modifiers & (IKVM.Attributes.Modifiers.AccessMask | IKVM.Attributes.Modifiers.Final | IKVM.Attributes.Modifiers.Static | IKVM.Attributes.Modifiers.Synthetic))
+						== (IKVM.Attributes.Modifiers.Static | IKVM.Attributes.Modifiers.Final | IKVM.Attributes.Modifiers.Synthetic))
+				{
+					assertionsDisabled = fw;
+					break;
+				}
+			}
+			if (assertionsDisabled != null)
+			{
+				for (int i = 0; i < instructions.Length; i++)
+				{
+					if (instructions[i].NormalizedOpCode == NormalizedByteCode.__getstatic
+						&& instructions[i + 1].NormalizedOpCode == NormalizedByteCode.__ifne
+						&& instructions[i + 1].Arg1 > 0
+						&& !instructions[i + 1].IsBranchTarget)
+					{
+						ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instructions[i].Arg1);
+						if (cpi.GetField() == assertionsDisabled)
+						{
+							// We've found an assertion. We patch the instruction to branch around it so that
+							// the assertion code will be unreachable (and hence optimized away).
+							// Note that the goto will be optimized away later by the code generator (which removes unnecessary branches).
+							instructions[i].PatchOpCode(NormalizedByteCode.__goto, instructions[i + 1].Arg1 + 3);
+						}
 					}
 				}
 			}

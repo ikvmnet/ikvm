@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2656,6 +2656,12 @@ namespace IKVM.Internal
 				internal void PatchOpCode(NormalizedByteCode bc)
 				{
 					this.normopcode = bc;
+				}
+
+				internal void PatchOpCode(NormalizedByteCode bc, int arg1)
+				{
+					this.normopcode = bc;
+					this.arg1 = arg1;
 				}
 
 				internal void SetTermNop(ushort pc)

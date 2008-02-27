@@ -227,6 +227,14 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal bool RemoveAsserts
+		{
+			get
+			{
+				return (codegenoptions & CodeGenOptions.RemoveAsserts) != 0;
+			}
+		}
+
 		internal virtual string SourcePath
 		{
 			get

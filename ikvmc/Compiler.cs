@@ -150,6 +150,7 @@ class IkvmcCompiler
 			Console.Error.WriteLine("    -da[:<packagename>...|:<classname>]");
 			Console.Error.WriteLine("    -disableassertions[:<packagename>...|:<classname>]");
 			Console.Error.WriteLine("                               Set system property to disable assertions");
+			Console.Error.WriteLine("    -removeassertions          Remove all assert statements");
 			Console.Error.WriteLine("    -nostacktraceinfo          Don't create metadata to emit rich stack traces");
 			Console.Error.WriteLine("    -opt:fields                Remove unused private fields");
 			Console.Error.WriteLine("    -Xtrace:<string>           Displays all tracepoints with the given name");
@@ -282,6 +283,10 @@ class IkvmcCompiler
 				else if(s.StartsWith("-da:") || s.StartsWith("-disableassertions:"))
 				{
 					options.props["ikvm.assert.disable"] = s.Substring(s.IndexOf(':') + 1);
+				}
+				else if(s == "-removeassertions")
+				{
+					options.codegenoptions |= CodeGenOptions.RemoveAsserts;
 				}
 				else if(s.StartsWith("-main:"))
 				{
