@@ -889,7 +889,11 @@ class Compiler
 			{
 				for(int i = 0; i < m.Instructions.Length; i++)
 				{
-					if(m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__getfield
+					if(!m.Instructions[i].IsReachable)
+					{
+						// skip unreachable instructions
+					}
+					else if(m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__getfield
 						&& VerifierTypeWrapper.IsThis(c.ma.GetRawStackTypeWrapper(i, 0)))
 					{
 						// loading a field from the current object cannot throw
