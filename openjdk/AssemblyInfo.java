@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2006, 2007 Jeroen Frijters
+  Copyright (C) 2006-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -33,7 +33,7 @@
     "Copyright (C) 2001-2005 freebxml.org\r\n" +
     "Copyright (C) 1998      FundsXpress, Inc.\r\n" +
     "Copyright (C) 1993-2005 International Business Machines, Inc.\r\n" +
-    "Copyright (C) 2002-2007 Jeroen Frijters\r\n" +
+    "Copyright (C) 2002-2008 Jeroen Frijters\r\n" +
     "Copyright (C) 2007      Red Hat, Inc.\r\n" +
     "Copyright (C) 1994-2007 Sun Microsystems, Inc.\r\n" +
     "Copyright (C) 1996-1998 Taligent, Inc.\r\n" +
