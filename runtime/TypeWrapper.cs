@@ -11736,6 +11736,7 @@ namespace IKVM.Internal
 			if(fi.DeclaringType.Assembly.ReflectionOnly)
 			{
 				// TODO on Whidbey this must be implemented
+				return null;
 			}
 #endif
 			return fi.GetCustomAttributes(false);
