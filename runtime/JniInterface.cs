@@ -125,6 +125,9 @@ namespace IKVM.Runtime
 
 			JVM.Library.setProperties(props);
 
+			// initialize the class library
+			java.lang.Thread.currentThread();
+
 			*((void**)ppvm) = JavaVM.pJavaVM;
 			return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)ppenv, null);
 		}
