@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007 Jeroen Frijters
+  Copyright (C) 2007, 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2635,7 +2635,7 @@ namespace IKVM.NativeCode.java
 					Type type = Type.GetType(name);
 					if (type != null)
 					{
-						tw = DotNetTypeWrapper.GetWrapperFromDotNetType(type);
+						tw = ClassLoaderWrapper.GetWrapperFromType(type);
 					}
 					if (tw == null)
 					{
@@ -2909,14 +2909,11 @@ namespace IKVM.NativeCode.java
 				return sig.Replace('.', '/');
 			}
 
-			public static object getDeclaredAnnotationsImpl(object thisClass)
+			internal static object AnnotationsToMap(object[] objAnn)
 			{
 #if FIRST_PASS
 				return null;
 #else
-				TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
-				wrapper.Finish();
-				object[] objAnn = wrapper.GetDeclaredAnnotations();
 				global::java.util.HashMap map = new global::java.util.HashMap();
 				if (objAnn != null)
 				{
@@ -2925,11 +2922,23 @@ namespace IKVM.NativeCode.java
 						Annotation a = obj as Annotation;
 						if (a != null)
 						{
+							global::ikvm.@internal.AnnotationAttributeBase.freeze(a);
 							map.put(a.annotationType(), a);
 						}
 					}
 				}
 				return map;
+#endif
+			}
+
+			public static object getDeclaredAnnotationsImpl(object thisClass)
+			{
+#if FIRST_PASS
+				return null;
+#else
+				TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
+				wrapper.Finish();
+				return AnnotationsToMap(wrapper.GetDeclaredAnnotations());
 #endif
 			}
 
@@ -4594,21 +4603,57 @@ namespace IKVM.NativeCode.java
 				}
 			}
 
+			static class Field
+			{
+				public static object getDeclaredAnnotationsImpl(object thisField)
+				{
+					FieldWrapper fw = FieldWrapper.FromField(thisField);
+					return Class.AnnotationsToMap(fw.DeclaringType.GetFieldAnnotations(fw));
+				}
+			}
+
 			static class Method
 			{
-				public static byte[] getRawAnnotations(object thisMethod)
+				public static object getDeclaredAnnotationsImpl(object methodOrConstructor)
 				{
-					return MethodWrapper.FromMethodOrConstructor(thisMethod).GetRawAnnotations();
+					MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(methodOrConstructor);
+					return Class.AnnotationsToMap(mw.DeclaringType.GetMethodAnnotations(mw));
 				}
 
-				public static byte[] getRawParameterAnnotations(object thisMethod)
+				public static object[][] getParameterAnnotationsImpl(object methodOrConstructor)
 				{
-					return MethodWrapper.FromMethodOrConstructor(thisMethod).GetRawParameterAnnotations();
+#if FIRST_PASS
+					return null;
+#else
+					MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(methodOrConstructor);
+					object[][] objAnn = mw.DeclaringType.GetParameterAnnotations(mw);
+					if (objAnn == null)
+					{
+						return null;
+					}
+					Annotation[][] ann = new Annotation[objAnn.Length][];
+					for (int i = 0; i < ann.Length; i++)
+					{
+						List<Annotation> list = new List<Annotation>();
+						foreach (object obj in objAnn[i])
+						{
+							Annotation a = obj as Annotation;
+							if (a != null)
+							{
+								global::ikvm.@internal.AnnotationAttributeBase.freeze(a);
+								list.Add(a);
+							}
+						}
+						ann[i] = list.ToArray();
+					}
+					return ann;
+#endif
 				}
 
-				public static byte[] getRawAnnotationDefault(object thisMethod)
+				public static object getDefaultValue(object thisMethod)
 				{
-					return MethodWrapper.FromMethodOrConstructor(thisMethod).GetRawAnnotationDefault();
+					MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(thisMethod);
+					return mw.DeclaringType.GetAnnotationDefault(mw);
 				}
 			}
 		}

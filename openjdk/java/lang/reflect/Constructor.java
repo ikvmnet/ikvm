@@ -71,8 +71,6 @@ public final
     private transient String    signature;
     // generic info repository; lazily initialized
     private transient ConstructorRepository genericInfo;
-    private byte[]              annotations;
-    private byte[]              parameterAnnotations;
 
     // For non-public members or members in package-private classes,
     // it is necessary to perform somewhat expensive security checks.
@@ -122,8 +120,8 @@ public final
                 int modifiers,
                 int slot,
                 String signature,
-                byte[] annotations,
-                byte[] parameterAnnotations)
+                byte[] unused1,
+                byte[] unused2)
     {
         this.clazz = declaringClass;
         this.parameterTypes = parameterTypes;
@@ -131,8 +129,6 @@ public final
         this.modifiers = modifiers;
         this.slot = slot;
         this.signature = signature;
-        this.annotations = annotations;
-        this.parameterAnnotations = parameterAnnotations;
     }
 
     /**
@@ -152,8 +148,8 @@ public final
 						parameterTypes,
 						exceptionTypes, modifiers, slot,
                                                 signature,
-                                                annotations,
-                                                parameterAnnotations);
+                                                null,
+                                                null);
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.constructorAccessor = constructorAccessor;
@@ -609,11 +605,11 @@ public final
    }
 
     byte[] getRawAnnotations() {
-        return annotations;
+        return null;
     }
 
     byte[] getRawParameterAnnotations() {
-        return parameterAnnotations;
+        return null;
     }
 
     /**
@@ -640,10 +636,7 @@ public final
 
     private synchronized  Map<Class, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
-            declaredAnnotations = AnnotationParser.parseAnnotations(
-                annotations, sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-                getDeclaringClass());
+            declaredAnnotations = Method.getDeclaredAnnotationsImpl(this);
         }
         return declaredAnnotations;
     }
@@ -666,14 +659,9 @@ public final
      */
     public Annotation[][] getParameterAnnotations() {
         int numParameters = parameterTypes.length;
-        if (parameterAnnotations == null)
+        Annotation[][] result = Method.getParameterAnnotationsImpl(this);
+        if (result == null)
             return new Annotation[numParameters][0];
-
-        Annotation[][] result = AnnotationParser.parseParameterAnnotations(
-            parameterAnnotations,
-            sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-            getDeclaringClass());
         if (result.length != numParameters) {
 	    Class<?> declaringClass = getDeclaringClass();
 	    if (declaringClass.isEnum() || 

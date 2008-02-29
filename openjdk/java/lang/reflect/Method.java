@@ -74,9 +74,6 @@ public final
     private transient String              signature;
     // generic info repository; lazily initialized
     private transient MethodRepository genericInfo;
-    //private byte[]              annotations;
-    //private byte[]              parameterAnnotations;
-    //private byte[]              annotationDefault;
     private volatile MethodAccessor methodAccessor;
     // For sharing of MethodAccessors. This branching structure is
     // currently only two levels deep (i.e., one root Method and
@@ -128,9 +125,9 @@ public final
            int modifiers,
            int slot,
            String signature,
-           byte[] annotations,
-           byte[] parameterAnnotations,
-           byte[] annotationDefault)
+           byte[] unused1,
+           byte[] unused2,
+           byte[] unused3)
     {
         this.clazz = declaringClass;
         this.name = name;
@@ -140,9 +137,6 @@ public final
         this.modifiers = modifiers;
         this.slot = slot;
         this.signature = signature;
-        //this.annotations = annotations;
-        //this.parameterAnnotations = parameterAnnotations;
-        //this.annotationDefault = annotationDefault;
     }
 
     /**
@@ -160,8 +154,7 @@ public final
         // objects.)
         Method res = new Method(clazz, name, parameterTypes, returnType,
                                 exceptionTypes, modifiers, slot, signature,
-				null, null, null);
-                                //annotations, parameterAnnotations, annotationDefault);
+                                null, null, null);
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.methodAccessor = methodAccessor;
@@ -720,14 +713,12 @@ public final
 
     private synchronized  Map<Class, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
-	    byte[] annotations = getRawAnnotations();
-            declaredAnnotations = AnnotationParser.parseAnnotations(
-                annotations, sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-                getDeclaringClass());
+            declaredAnnotations = getDeclaredAnnotationsImpl(this);
         }
         return declaredAnnotations;
     }
+    
+    static native Map<Class, Annotation> getDeclaredAnnotationsImpl(Object methodOrConstructor);
 
     /**
      * Returns the default value for the annotation member represented by
@@ -743,21 +734,7 @@ public final
      *     default class value.
      * @since  1.5
      */
-    public Object getDefaultValue() {
-	byte[] annotationDefault = getRawAnnotationDefault();
-        if  (annotationDefault == null)
-            return null;
-        Class memberType = AnnotationType.invocationHandlerReturnType(
-            getReturnType());
-        Object result = AnnotationParser.parseMemberValue(
-            memberType, ByteBuffer.wrap(annotationDefault),
-            sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-            getDeclaringClass());
-        if (result instanceof sun.reflect.annotation.ExceptionProxy)
-            throw new AnnotationFormatError("Invalid default: " + this);
-        return result;
-    }
+    public native Object getDefaultValue();
 
     /**
      * Returns an array of arrays that represent the annotations on the formal
@@ -776,23 +753,16 @@ public final
      * @since 1.5
      */
     public Annotation[][] getParameterAnnotations() {
-	byte[] parameterAnnotations = getRawParameterAnnotations();
+	Annotation[][] result = getParameterAnnotationsImpl(this);
         int numParameters = parameterTypes.length;
-        if (parameterAnnotations == null)
+        if (result == null)
             return new Annotation[numParameters][0];
 
-        Annotation[][] result = AnnotationParser.parseParameterAnnotations(
-            parameterAnnotations,
-            sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-            getDeclaringClass());
         if (result.length != numParameters)
             throw new java.lang.annotation.AnnotationFormatError(
                 "Parameter annotations don't match number of parameters");
         return result;
     }
 
-    private native byte[] getRawAnnotations();
-    private native byte[] getRawParameterAnnotations();
-    private native byte[] getRawAnnotationDefault();
+    static native Annotation[][] getParameterAnnotationsImpl(Object methodOrConstructor);
 }

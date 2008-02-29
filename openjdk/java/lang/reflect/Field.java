@@ -69,7 +69,6 @@ class Field extends AccessibleObject implements Member {
     private transient String    signature;
     // generic info repository; lazily initialized
     private transient FieldRepository genericInfo;
-    private byte[]              annotations;
     // Cached field accessor created without override
     private FieldAccessor fieldAccessor;
     // Cached field accessor created with override
@@ -118,7 +117,7 @@ class Field extends AccessibleObject implements Member {
           int modifiers,
           int slot,
           String signature,
-          byte[] annotations)
+          byte[] unused)
     {
         this.clazz = declaringClass;
         this.name = name;
@@ -126,7 +125,6 @@ class Field extends AccessibleObject implements Member {
         this.modifiers = modifiers;
         this.slot = slot;
         this.signature = signature;
-        this.annotations = annotations;
     }
 
     /**
@@ -142,7 +140,7 @@ class Field extends AccessibleObject implements Member {
         // which implicitly requires that new java.lang.reflect
         // objects be fabricated for each reflective call on Class
         // objects.)
-        Field res = new Field(clazz, name, type, modifiers, slot, signature, annotations);
+        Field res = new Field(clazz, name, type, modifiers, slot, signature, null);
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.fieldAccessor = fieldAccessor;
@@ -1031,11 +1029,10 @@ class Field extends AccessibleObject implements Member {
 
     private synchronized  Map<Class, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
-            declaredAnnotations = AnnotationParser.parseAnnotations(
-                annotations, sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-                getDeclaringClass());
+            declaredAnnotations = getDeclaredAnnotationsImpl();
         }
         return declaredAnnotations;
     }
+    
+    private native Map<Class, Annotation> getDeclaredAnnotationsImpl();
 }
