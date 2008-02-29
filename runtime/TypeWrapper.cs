@@ -5577,6 +5577,7 @@ namespace IKVM.Internal
 										typeBuilder.AddInterfaceImplementation(typeof(IEnumerable));
 										// FXBUG we're using the same method name as the C# compiler here because both the .NET and Mono implementations of Xml serialization depend on this method name
 										MethodBuilder mb = typeBuilder.DefineMethod("System.Collections.IEnumerable.GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, typeof(IEnumerator), Type.EmptyTypes);
+										AttributeHelper.HideFromJava(mb);
 										typeBuilder.DefineMethodOverride(mb, typeof(IEnumerable).GetMethod("GetEnumerator"));
 										ILGenerator ilgen = mb.GetILGenerator();
 										ilgen.Emit(OpCodes.Ldarg_0);
