@@ -3752,6 +3752,7 @@ namespace IKVM.Internal
 			private MethodWrapper[] baseMethods;
 			private FieldWrapper[] fields;
 			private FinishedTypeImpl finishedType;
+			private bool finishInProgress;
 			private Hashtable memberclashtable;
 			private Hashtable classCache = Hashtable.Synchronized(new Hashtable());
 			private FieldInfo classObjectField;
@@ -4908,6 +4909,11 @@ namespace IKVM.Internal
 				{
 					return finishedType;
 				}
+				if(finishInProgress)
+				{
+					throw new InvalidOperationException("Recursive finish attempt for " + wrapper.Name);
+				}
+				finishInProgress = true;
 				Tracer.Info(Tracer.Compiler, "Finishing: {0}", wrapper.Name);
 				Profiler.Enter("JavaTypeImpl.Finish.Core");
 				try
@@ -11599,20 +11605,53 @@ namespace IKVM.Internal
 
 		internal override object[] GetFieldAnnotations(FieldWrapper fw)
 		{
-			// TODO on Whidbey this must be implemented
-			return null;
+			FieldInfo fi = fw.GetField();
+			if(fi == null)
+			{
+				return null;
+			}
+			if(fi.DeclaringType.Assembly.ReflectionOnly)
+			{
+				// TODO on Whidbey this must be implemented
+				return null;
+			}
+			return fi.GetCustomAttributes(false);
 		}
 
 		internal override object[] GetMethodAnnotations(MethodWrapper mw)
 		{
-			// TODO on Whidbey this must be implemented
-			return null;
+			MethodBase mb = mw.GetMethod();
+			if(mb == null)
+			{
+				return null;
+			}
+			if(mb.DeclaringType.Assembly.ReflectionOnly)
+			{
+				// TODO on Whidbey this must be implemented
+				return null;
+			}
+			return mb.GetCustomAttributes(false);
 		}
 
 		internal override object[][] GetParameterAnnotations(MethodWrapper mw)
 		{
-			// TODO on Whidbey this must be implemented
-			return null;
+			MethodBase mb = mw.GetMethod();
+			if(mb == null)
+			{
+				return null;
+			}
+			if(mb.DeclaringType.Assembly.ReflectionOnly)
+			{
+				// TODO on Whidbey this must be implemented
+				return null;
+			}
+			ParameterInfo[] parameters = mb.GetParameters();
+			object[][] attribs = new object[parameters.Length][];
+			for(int i = 0; i < parameters.Length; i++)
+			{
+				attribs[i] = parameters[i].GetCustomAttributes(false);
+			}
+			return attribs;
 		}
 	}
 
