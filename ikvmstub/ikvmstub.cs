@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002, 2004, 2005, 2006, 2007, 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -157,11 +157,6 @@ public class NetExp
 				return a;
 			}
 		}
-		Assembly asm = Assembly.ReflectionOnlyLoad(args.Name);
-		if(asm != null)
-		{
-			return asm;
-		}
 		string path = args.Name;
 		int index = path.IndexOf(',');
 		if(index > 0)
@@ -169,8 +164,11 @@ public class NetExp
 			path = path.Substring(0, index);
 		}
 		path = file.DirectoryName + Path.DirectorySeparatorChar + path + ".dll";
-		Console.WriteLine("Loading referenced assembly: " + path);
-		return Assembly.ReflectionOnlyLoadFrom(path);
+		if(File.Exists(path))
+		{
+			return Assembly.ReflectionOnlyLoadFrom(path);
+		}
+		return Assembly.ReflectionOnlyLoad(args.Name);
 	}
 
 	private static void WriteClass(java.lang.Class c)
