@@ -81,7 +81,6 @@ using jlrAccessibleObject = java.lang.reflect.AccessibleObject;
 using jlrInvocationTargetException = java.lang.reflect.InvocationTargetException;
 using ProtectionDomain = java.security.ProtectionDomain;
 using srMethodAccessor = sun.reflect.MethodAccessor;
-using srConstantPool = sun.reflect.ConstantPool;
 using srConstructorAccessor = sun.reflect.ConstructorAccessor;
 using srFieldAccessor = sun.reflect.FieldAccessor;
 using srLangReflectAccess = sun.reflect.LangReflectAccess;
@@ -89,7 +88,6 @@ using srReflection = sun.reflect.Reflection;
 using srReflectionFactory = sun.reflect.ReflectionFactory;
 using jnByteBuffer = java.nio.ByteBuffer;
 using StubGenerator = ikvm.@internal.stubgen.StubGenerator;
-using IConstantPoolWriter = ikvm.@internal.stubgen.StubGenerator.IConstantPoolWriter;
 using Annotation = java.lang.annotation.Annotation;
 using smJavaIOAccess = sun.misc.JavaIOAccess;
 using smLauncher = sun.misc.Launcher;
@@ -2555,63 +2553,6 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-#if !FIRST_PASS
-		sealed class ConstantPoolWriter : IConstantPoolWriter
-		{
-			private ArrayList items = new ArrayList();
-
-			public short AddUtf8(String str)
-			{
-				return (short)items.Add(str);
-			}
-
-			public short AddInt(int i)
-			{
-				return (short)items.Add(i);
-			}
-
-			public short AddLong(long l)
-			{
-				return (short)items.Add(l);
-			}
-
-			public short AddFloat(float f)
-			{
-				return (short)items.Add(f);
-			}
-
-			public short AddDouble(double d)
-			{
-				return (short)items.Add(d);
-			}
-
-			internal string GetUtf8(int index)
-			{
-				return (string)items[index];
-			}
-
-			internal int GetInt(int index)
-			{
-				return (int)items[index];
-			}
-
-			internal long GetLong(int index)
-			{
-				return (long)items[index];
-			}
-
-			internal float GetFloat(int index)
-			{
-				return (float)items[index];
-			}
-
-			internal double GetDouble(int index)
-			{
-				return (double)items[index];
-			}
-		}
-#endif
-
 		static class Class
 		{
 			public static void registerNatives()
@@ -2939,32 +2880,6 @@ namespace IKVM.NativeCode.java
 				TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
 				wrapper.Finish();
 				return AnnotationsToMap(wrapper.GetDeclaredAnnotations());
-#endif
-			}
-
-#if !FIRST_PASS
-			internal static IConstantPoolWriter GetConstantPoolWriter(TypeWrapper wrapper)
-			{
-				return (IConstantPoolWriter)((srConstantPool)getConstantPool(wrapper.ClassObject))._constantPoolOop();
-			}
-#endif
-
-			public static object getConstantPool(object thisClass)
-			{
-#if FIRST_PASS
-				return null;
-#else
-				lock (thisClass)
-				{
-					object cp = ((jlClass)thisClass).constantPool;
-					if (cp == null)
-					{
-						cp = new srConstantPool();
-						((srConstantPool)cp)._constantPoolOop(new ConstantPoolWriter());
-						((jlClass)thisClass).constantPool = cp;
-					}
-					return cp;
-				}
 #endif
 			}
 
@@ -8702,38 +8617,22 @@ namespace IKVM.NativeCode.sun.reflect
 
 		public static int getIntAt0(object thisConstantPool, object constantPoolOop, int index)
 		{
-#if FIRST_PASS
-			return 0;
-#else
-			return ((IKVM.NativeCode.java.lang.ConstantPoolWriter)constantPoolOop).GetInt(index);
-#endif
+			throw new NotImplementedException();
 		}
 
 		public static long getLongAt0(object thisConstantPool, object constantPoolOop, int index)
 		{
-#if FIRST_PASS
-			return 0;
-#else
-			return ((IKVM.NativeCode.java.lang.ConstantPoolWriter)constantPoolOop).GetLong(index);
-#endif
+			throw new NotImplementedException();
 		}
 
 		public static float getFloatAt0(object thisConstantPool, object constantPoolOop, int index)
 		{
-#if FIRST_PASS
-			return 0;
-#else
-			return ((IKVM.NativeCode.java.lang.ConstantPoolWriter)constantPoolOop).GetFloat(index);
-#endif
+			throw new NotImplementedException();
 		}
 
 		public static double getDoubleAt0(object thisConstantPool, object constantPoolOop, int index)
 		{
-#if FIRST_PASS
-			return 0;
-#else
-			return ((IKVM.NativeCode.java.lang.ConstantPoolWriter)constantPoolOop).GetDouble(index);
-#endif
+			throw new NotImplementedException();
 		}
 
 		public static string getStringAt0(object thisConstantPool, object constantPoolOop, int index)
@@ -8743,11 +8642,7 @@ namespace IKVM.NativeCode.sun.reflect
 
 		public static string getUTF8At0(object thisConstantPool, object constantPoolOop, int index)
 		{
-#if FIRST_PASS
-			return null;
-#else
-			return ((IKVM.NativeCode.java.lang.ConstantPoolWriter)constantPoolOop).GetUtf8(index);
-#endif
+			throw new NotImplementedException();
 		}
 	}
 }

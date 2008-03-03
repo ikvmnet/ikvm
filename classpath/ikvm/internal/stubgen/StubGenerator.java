@@ -304,51 +304,6 @@ public final class StubGenerator implements PrivilegedAction<byte[]>
         }
     }
 
-    public interface IConstantPoolWriter
-    {
-	short AddUtf8(String str);
-	short AddInt(int i);
-	short AddLong(long l);
-	short AddFloat(float f);
-	short AddDouble(double d);
-    }
-
-    public static byte[] writeAnnotations(IConstantPoolWriter cp, Annotation[] annotations) throws IOException, InvocationTargetException, IllegalAccessException
-    {
-        ByteArrayOutputStream mem = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(mem);
-        dos.writeShort((short)annotations.length);
-        for(Annotation ann : annotations)
-        {
-            RuntimeVisibleAnnotationsAttribute.WriteAnnotation(cp, dos, ann);
-        }
-        return mem.toByteArray();
-    }
-
-    public static byte[] writeParameterAnnotations(IConstantPoolWriter cp, Annotation[][] parameterAnnotations) throws IOException, InvocationTargetException, IllegalAccessException
-    {
-        ByteArrayOutputStream mem = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(mem);
-        dos.writeByte(parameterAnnotations.length);
-        for(Annotation[] annotations : parameterAnnotations)
-        {
-            dos.writeShort((short)annotations.length);
-            for(Annotation ann : annotations)
-            {
-                RuntimeVisibleAnnotationsAttribute.WriteAnnotation(cp, dos, ann);
-            }
-        }
-        return mem.toByteArray();
-    }
-
-    public static byte[] writeAnnotationDefault(IConstantPoolWriter cp, Object value) throws IOException, InvocationTargetException, IllegalAccessException
-    {
-        ByteArrayOutputStream mem = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(mem);
-        RuntimeVisibleAnnotationsAttribute.WriteValue(cp, dos, value);
-        return mem.toByteArray();
-    }
-
     private static boolean hasParameterAnnotations(Annotation[][] parameterAnnotations)
     {
         for(int i = 0; i < parameterAnnotations.length; i++)
@@ -1178,7 +1133,7 @@ class RuntimeVisibleAnnotationsAttribute extends ClassFileAttribute
         return o1.equals(o2);
     }
 
-    static void WriteValue(StubGenerator.IConstantPoolWriter classFile, DataOutputStream dos, Object val)
+    static void WriteValue(ClassFileWriter classFile, DataOutputStream dos, Object val)
         throws IOException, IllegalAccessException, InvocationTargetException
     {
         if(val instanceof Boolean)
@@ -1306,7 +1261,7 @@ class RuntimeVisibleAnnotationsAttribute extends ClassFileAttribute
         }
     }
 
-    static void WriteAnnotation(StubGenerator.IConstantPoolWriter classFile, DataOutputStream dos, Annotation ann)
+    static void WriteAnnotation(ClassFileWriter classFile, DataOutputStream dos, Annotation ann)
         throws IOException, IllegalAccessException, InvocationTargetException
     {
         Class annotationType = ann.annotationType();
@@ -1456,7 +1411,7 @@ class CodeAttribute extends ClassFileAttribute
     }
 }
 
-class ClassFileWriter implements StubGenerator.IConstantPoolWriter
+class ClassFileWriter
 {
     private ArrayList cplist = new ArrayList();
     private Hashtable cphashtable = new Hashtable();

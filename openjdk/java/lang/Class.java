@@ -2278,8 +2278,10 @@ public final
     // Annotations handling
     private native Map<Class, Annotation> getDeclaredAnnotationsImpl();
 
-// TODO remove this
-    native ConstantPool getConstantPool();
+    ConstantPool getConstantPool()
+    {
+	throw new NoSuchMethodError();
+    }
 
     //
     //

@@ -1180,7 +1180,6 @@
       </field>
       <field name="pd" sig="Ljava.security.ProtectionDomain;" modifiers="" />
       <field name="signers" sig="[Ljava.lang.Object;" modifiers="" />
-      <field name="constantPool" sig="Ljava.lang.Object;" modifiers="" />
 			<method name="op_Implicit" sig="(Lcli.System.Type;)Ljava.lang.Class;" modifiers="public static" attributes="SpecialName">
 				<attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
 				<body>
@@ -2027,23 +2026,6 @@
             <label name="skip" />
           </code>
         </replace-method-call>
-      </method>
-    </class>
-    <class name="sun.reflect.ConstantPool">
-      <method name="_constantPoolOop" sig="()Ljava.lang.Object;">
-        <body>
-          <ldarg_0 />
-          <ldfld class="sun.reflect.ConstantPool" name="constantPoolOop" sig="Ljava.lang.Object;" />
-          <ret />
-        </body>
-      </method>
-      <method name="_constantPoolOop" sig="(Ljava.lang.Object;)V">
-        <body>
-          <ldarg_0 />
-          <ldarg_1 />
-          <stfld class="sun.reflect.ConstantPool" name="constantPoolOop" sig="Ljava.lang.Object;" />
-          <ret />
-        </body>
       </method>
     </class>
     <class name="sun.reflect.Reflection">
