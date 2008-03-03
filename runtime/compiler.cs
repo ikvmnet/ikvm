@@ -3637,7 +3637,7 @@ class Compiler
 			default:
 				throw new InvalidOperationException();
 		}
-		if(mw.DeclaringType.IsDynamicOnly)
+		if(mw.IsDynamicOnly)
 		{
 			return new DynamicMethodWrapper(clazz, cpi);
 		}

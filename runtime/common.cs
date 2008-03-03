@@ -356,12 +356,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 
 	static class Util
 	{
-		private static Type enumEnumType = JVM.CoreAssembly.GetType("ikvm.internal.EnumEnum");
-		private static FieldInfo enumEnumTypeField = enumEnumType.GetField("typeWrapper", BindingFlags.Instance | BindingFlags.NonPublic);
-
-		// we don't want "beforefieldinit"
-		static Util() {}
-
 		public static object getClassFromObject(object o)
 		{
 			return GetTypeWrapperFromObject(o).ClassObject;
@@ -373,10 +367,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 			if(t.IsPrimitive || (ClassLoaderWrapper.IsRemappedType(t) && !t.IsSealed))
 			{
 				return DotNetTypeWrapper.GetWrapperFromDotNetType(t);
-			}
-			if(t == enumEnumType)
-			{
-				return (TypeWrapper)enumEnumTypeField.GetValue(o);
 			}
 			return ClassLoaderWrapper.GetWrapperFromType(t);
 		}
@@ -432,10 +422,6 @@ namespace IKVM.NativeCode.ikvm.runtime
 		public static Type getInstanceTypeFromClass(object clazz)
 		{
 			TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
-			if(wrapper.IsDynamicOnly)
-			{
-				return null;
-			}
 			if(wrapper.IsRemapped && wrapper.IsFinal)
 			{
 				return wrapper.TypeAsTBD;

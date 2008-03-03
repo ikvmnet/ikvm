@@ -264,6 +264,13 @@ namespace IKVM.Internal
 			throw new InvalidOperationException();
 		}
 #endif
+		internal virtual bool IsDynamicOnly
+		{
+			get
+			{
+				return false;
+			}
+		}
 
 		internal class GhostMethodWrapper : SmartMethodWrapper
 		{

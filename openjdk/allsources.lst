@@ -1012,7 +1012,6 @@
 ../classpath/ikvm/extensions/ExtensionMethods.java
 ../classpath/ikvm/internal/__unspecified.java
 ../classpath/ikvm/internal/AssemblyClassLoader.java
-../classpath/ikvm/internal/EnumEnum.java
 ../classpath/ikvm/internal/Formatter.java
 ../classpath/ikvm/internal/stubgen/StubGenerator.java
 ../classpath/ikvm/internal/Util.java

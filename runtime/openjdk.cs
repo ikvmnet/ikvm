@@ -8608,8 +8608,9 @@ namespace IKVM.NativeCode.sun.reflect
 			jlrMethod m = (jlrMethod)method;
 			if (DynamicMethodSupport.Enabled)
 			{
+				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
 				TypeWrapper tw = TypeWrapper.FromClass(m.getDeclaringClass());
-				if (!tw.IsDynamicOnly && !tw.IsRemapped)
+				if (!mw.IsDynamicOnly && !tw.IsRemapped)
 				{
 					return new FastMethodAccessorImpl(m);
 				}
@@ -8625,7 +8626,7 @@ namespace IKVM.NativeCode.sun.reflect
 #else
 			jlrConstructor cons = (jlrConstructor)constructor;
 			if (DynamicMethodSupport.Enabled
-				&& !TypeWrapper.FromClass(cons.getDeclaringClass()).IsDynamicOnly)
+				&& !MethodWrapper.FromMethodOrConstructor(constructor).IsDynamicOnly)
 			{
 				return new FastConstructorAccessorImpl(cons);
 			}
@@ -8644,8 +8645,7 @@ namespace IKVM.NativeCode.sun.reflect
 			jlrConstructor cons = (jlrConstructor)constructorToCall;
 			if (DynamicMethodSupport.Enabled
 				&& cons.getParameterTypes().Length == 0
-				&& !TypeWrapper.FromClass(cons.getDeclaringClass()).IsDynamicOnly
-				&& !TypeWrapper.FromClass(classToInstantiate).IsDynamicOnly)
+				&& !MethodWrapper.FromMethodOrConstructor(constructorToCall).IsDynamicOnly)
 			{
 				return new FastSerializationConstructorAccessorImpl(cons, (jlClass)classToInstantiate);
 			}

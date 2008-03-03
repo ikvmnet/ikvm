@@ -2034,6 +2034,14 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal virtual bool IsFakeTypeContainer
+		{
+			get
+			{
+				return false;
+			}
+		}
+
 		// a ghost is an interface that appears to be implemented by a .NET type
 		// (e.g. System.String (aka java.lang.String) appears to implement java.lang.CharSequence,
 		// so java.lang.CharSequence is a ghost)
@@ -2149,25 +2157,8 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				bool erased = IsUnloadable || IsGhostArray || IsDynamicOnly;
+				bool erased = IsUnloadable || IsGhostArray;
 				return erased || (!IsPrimitive && IsJavaPrimitive(TypeAsSignatureType)) || (IsRemapped && this is DotNetTypeWrapper);
-			}
-		}
-
-		internal virtual bool IsDynamicOnly
-		{
-			get
-			{
-				return false;
-			}
-		}
-
-		// is this an array type of which the ultimate element type is dynamic-only?
-		internal bool IsDynamicOnlyArray
-		{
-			get
-			{
-				return IsArray && (ElementTypeWrapper.IsDynamicOnly || ElementTypeWrapper.IsDynamicOnlyArray);
 			}
 		}
 
@@ -2727,20 +2718,6 @@ namespace IKVM.Internal
 					}
 					return thisWrapper.ArrayRank == objWrapper.ArrayRank && elementType == CoreClasses.java.lang.Object.Wrapper;
 				}
-				if(thisWrapper.IsDynamicOnlyArray)
-				{
-					TypeWrapper elementType = thisWrapper;
-					while(elementType.IsArray)
-					{
-						elementType = elementType.ElementTypeWrapper;
-					}
-					elementType = elementType.BaseTypeWrapper;
-					if(elementType == null)
-					{
-						elementType = CoreClasses.java.lang.Object.Wrapper;
-					}
-					thisWrapper = elementType.MakeArrayType(thisWrapper.ArrayRank);
-				}
 				return objWrapper.IsAssignableTo(thisWrapper);
 			}
 #endif
@@ -2889,14 +2866,14 @@ namespace IKVM.Internal
 			// make sure we don't do the same method twice and dynamic only interfaces
 			// don't really exist, so there is no point in generating stub methods for
 			// them (nor can we).
-			if(doneSet.ContainsKey(this) || this.IsDynamicOnly)
+			if(doneSet.ContainsKey(this))
 			{
 				return;
 			}
 			doneSet.Add(this, this);
 			foreach(MethodWrapper method in GetMethods())
 			{
-				if(!method.IsStatic)
+				if(!method.IsStatic && !method.IsDynamicOnly)
 				{
 					ImplementInterfaceMethodStubImpl(method, typeBuilder, wrapper);
 				}
@@ -3031,12 +3008,6 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
 				ilgen.Emit(OpCodes.Castclass, ArrayTypeWrapper.MakeArrayType(typeof(object), rank));
 			}
-			else if(IsDynamicOnly)
-			{
-				ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
-				ilgen.Emit(OpCodes.Ldstr, this.Name);
-				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCast);
-			}
 			else
 			{
 				EmitHelper.Castclass(ilgen, TypeAsTBD);
@@ -3066,12 +3037,6 @@ namespace IKVM.Internal
 				}
 				ilgen.Emit(OpCodes.Ldc_I4, rank);
 				ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("IsInstanceArray"));
-			}
-			else if(IsDynamicOnly)
-			{
-				ilgen.Emit(OpCodes.Ldtoken, context.TypeAsTBD);
-				ilgen.Emit(OpCodes.Ldstr, this.Name);
-				ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicInstanceOf);
 			}
 			else
 			{
@@ -5550,18 +5515,13 @@ namespace IKVM.Internal
 					if (!interfaceList.Contains(iface))
 					{
 						interfaceList.Add(iface);
-						// skip interfaces that don't really exist
-						// (e.g. delegate "Method" and attribute "Annotation" inner interfaces)
-						if (!iface.IsDynamicOnly)
+						// NOTE we're using TypeAsBaseType for the interfaces!
+						Type ifaceType = iface.TypeAsBaseType;
+						if(!iface.IsPublic && !ifaceType.Assembly.Equals(typeBuilder.Assembly))
 						{
-							// NOTE we're using TypeAsBaseType for the interfaces!
-							Type ifaceType = iface.TypeAsBaseType;
-							if(!iface.IsPublic && !ifaceType.Assembly.Equals(typeBuilder.Assembly))
-							{
-								ifaceType = ifaceType.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(ifaceType));
-							}
-							typeBuilder.AddInterfaceImplementation(ifaceType);
+							ifaceType = ifaceType.Assembly.GetType(DynamicClassLoader.GetProxyHelperName(ifaceType));
 						}
+						typeBuilder.AddInterfaceImplementation(ifaceType);
 #if STATIC_COMPILER
 						if (!wrapper.IsInterface)
 						{
@@ -6696,7 +6656,7 @@ namespace IKVM.Internal
 							}
 #endif // STATIC_COMPILER
 							// if we changed the name or if the interface method name is remapped, we need to add an explicit methodoverride.
-							if(!baseMethods[index].DeclaringType.IsDynamicOnly && name != baseMethods[index].RealName)
+							if(!baseMethods[index].IsDynamicOnly && name != baseMethods[index].RealName)
 							{
 								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethods[index].GetMethod());
 							}
@@ -8263,6 +8223,31 @@ namespace IKVM.Internal
 					return GetName(type.DeclaringType) + "$" + type.Name;
 				}
 			}
+			if(type.IsGenericType)
+			{
+				string suffix;
+				switch (type.GetGenericTypeDefinition().FullName)
+				{
+					case DotNetTypeWrapper.GenericEnumEnumTypeName:
+						suffix = DotNetTypeWrapper.EnumEnumSuffix;
+						break;
+					case DotNetTypeWrapper.GenericDelegateInterfaceTypeName:
+						suffix = DotNetTypeWrapper.DelegateInterfaceSuffix;
+						break;
+					case DotNetTypeWrapper.GenericAttributeAnnotationTypeName:
+						suffix = DotNetTypeWrapper.AttributeAnnotationSuffix;
+						break;
+					case DotNetTypeWrapper.GenericAttributeAnnotationReturnValueTypeName:
+						suffix = DotNetTypeWrapper.AttributeAnnotationReturnValueSuffix;
+						break;
+					case DotNetTypeWrapper.GenericAttributeAnnotationMultipleTypeName:
+						suffix = DotNetTypeWrapper.AttributeAnnotationMultipleSuffix;
+						break;
+					default:
+						throw new InvalidOperationException();
+				}
+				return ClassLoaderWrapper.GetWrapperFromType(type.GetGenericArguments()[0]).Name + suffix;
+			}
 			return type.FullName;
 		}
 
@@ -9136,6 +9121,11 @@ namespace IKVM.Internal
 		internal const string AttributeAnnotationReturnValueSuffix = "$__ReturnValue";
 		internal const string AttributeAnnotationMultipleSuffix = "$__Multiple";
 		internal const string EnumEnumSuffix = "$__Enum";
+		internal const string GenericEnumEnumTypeName = "ikvm.internal.EnumEnum`1";
+		internal const string GenericDelegateInterfaceTypeName = "ikvm.internal.DelegateInterface`1";
+		internal const string GenericAttributeAnnotationTypeName = "ikvm.internal.AttributeAnnotation`1";
+		internal const string GenericAttributeAnnotationReturnValueTypeName = "ikvm.internal.AttributeAnnotationReturnValue`1";
+		internal const string GenericAttributeAnnotationMultipleTypeName = "ikvm.internal.AttributeAnnotationMultiple`1";
 		private readonly Type type;
 		private TypeWrapper[] innerClasses;
 		private TypeWrapper outerClass;
@@ -9375,12 +9365,16 @@ namespace IKVM.Internal
 
 		private class DelegateInnerClassTypeWrapper : TypeWrapper
 		{
-			private Type delegateType;
+			private readonly Type fakeType;
 
 			internal DelegateInnerClassTypeWrapper(string name, Type delegateType, ClassLoaderWrapper classLoader)
 				: base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract, name, null)
 			{
-				this.delegateType = delegateType;
+#if STATIC_COMPILER
+				this.fakeType = FakeTypes.GetDelegateType(delegateType);
+#elif !FIRST_PASS
+				this.fakeType = typeof(ikvm.@internal.DelegateInterface<>).MakeGenericType(delegateType);
+#endif
 				MethodInfo invoke = delegateType.GetMethod("Invoke");
 				ParameterInfo[] parameters = invoke.GetParameters();
 				TypeWrapper[] argTypeWrappers = new TypeWrapper[parameters.Length];
@@ -9397,19 +9391,11 @@ namespace IKVM.Internal
 				SetFields(FieldWrapper.EmptyArray);
 			}
 
-			internal override bool IsDynamicOnly
-			{
-				get
-				{
-					return true;
-				}
-			}
-
 			internal override TypeWrapper DeclaringTypeWrapper
 			{
 				get
 				{
-					return ClassLoaderWrapper.GetWrapperFromType(delegateType);
+					return ClassLoaderWrapper.GetWrapperFromType(fakeType.GetGenericArguments()[0]);
 				}
 			}
 
@@ -9462,15 +9448,7 @@ namespace IKVM.Internal
 			{
 				get
 				{
-					return typeof(object);
-				}
-			}
-
-			internal override Type TypeAsBaseType
-			{
-				get
-				{
-					throw new InvalidOperationException();
+					return fakeType;
 				}
 			}
 		}
@@ -9480,6 +9458,14 @@ namespace IKVM.Internal
 			internal DynamicOnlyMethodWrapper(TypeWrapper declaringType, string name, string sig, TypeWrapper returnType, TypeWrapper[] parameterTypes)
 				: base(declaringType, name, sig, null, returnType, parameterTypes, Modifiers.Public | Modifiers.Abstract, MemberFlags.None)
 			{
+			}
+
+			internal override bool IsDynamicOnly
+			{
+				get
+				{
+					return true;
+				}
 			}
 
 #if !STATIC_COMPILER
@@ -9494,20 +9480,22 @@ namespace IKVM.Internal
 
 		private class EnumEnumTypeWrapper : TypeWrapper
 		{
-			private Type enumType;
+			private readonly Type fakeType;
 
 			internal EnumEnumTypeWrapper(string name, Type enumType)
 				: base(Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, ClassLoaderWrapper.LoadClassCritical("java.lang.Enum"))
 			{
-				this.enumType = enumType;
+#if STATIC_COMPILER
+				this.fakeType = FakeTypes.GetEnumType(enumType);
+#elif !FIRST_PASS
+				this.fakeType = typeof(ikvm.@internal.EnumEnum<>).MakeGenericType(enumType);
+#endif
 			}
 
 			private class EnumFieldWrapper : FieldWrapper
 			{
 				private readonly int ordinal;
 				private object val;
-				private static ConstructorInfo enumEnumConstructor;
-				private static FieldInfo enumEnumTypeField;
 
 				internal EnumFieldWrapper(TypeWrapper tw, string name, int ordinal)
 					: base(tw, tw, name, tw.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final | Modifiers.Enum, null, MemberFlags.None)
@@ -9517,32 +9505,21 @@ namespace IKVM.Internal
 
 				internal override object GetValue(object unused)
 				{
-					lock(this)
+					if(val == null)
 					{
-						if(val == null)
-						{
-							if(enumEnumConstructor == null)
-							{
-								enumEnumConstructor = JVM.CoreAssembly.GetType("ikvm.internal.EnumEnum").GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(string), typeof(int) }, null);
-							}
-							object obj = enumEnumConstructor.Invoke(new object[] { this.Name, ordinal });
-							if(enumEnumTypeField == null)
-							{
-								enumEnumTypeField = enumEnumConstructor.DeclaringType.GetField("typeWrapper", BindingFlags.NonPublic | BindingFlags.Instance);
-							}
-							enumEnumTypeField.SetValue(obj, this.DeclaringType);
-							val = obj;
-						}
+						System.Threading.Interlocked.CompareExchange(ref val, Activator.CreateInstance(this.DeclaringType.TypeAsTBD, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new object[] { this.Name, ordinal }, null), null);
 					}
 					return val;
 				}
 
 				protected override void EmitGetImpl(ILGenerator ilgen)
 				{
+					// TODO we should throw a NoSuchFieldError if at runtime we find out that the "field" doesn't exist
 					ilgen.Emit(OpCodes.Ldstr, this.DeclaringType.Name);
 					CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("forName", "(Ljava.lang.String;)Ljava.lang.Class;", false).EmitCall(ilgen);
 					ilgen.Emit(OpCodes.Ldstr, this.Name);
 					this.DeclaringType.BaseTypeWrapper.GetMethodWrapper("valueOf", "(Ljava.lang.Class;Ljava.lang.String;)Ljava.lang.Enum;", false).EmitCall(ilgen);
+					ilgen.Emit(OpCodes.Castclass, this.DeclaringType.TypeAsTBD);
 				}
 
 				protected override void EmitSetImpl(ILGenerator ilgen)
@@ -9555,6 +9532,14 @@ namespace IKVM.Internal
 				internal EnumValuesMethodWrapper(TypeWrapper declaringType)
 					: base(declaringType, "values", "()[" + declaringType.SigName, null, declaringType.MakeArrayType(1), TypeWrapper.EmptyArray, Modifiers.Public | Modifiers.Static, MemberFlags.None)
 				{
+				}
+
+				internal override bool IsDynamicOnly
+				{
+					get
+					{
+						return true;
+					}
 				}
 
 #if !STATIC_COMPILER
@@ -9578,6 +9563,14 @@ namespace IKVM.Internal
 				{
 				}
 
+				internal override bool IsDynamicOnly
+				{
+					get
+					{
+						return true;
+					}
+				}
+
 #if !STATIC_COMPILER && !FIRST_PASS
 				internal override object Invoke(object obj, object[] args, bool nonVirtual)
 				{
@@ -9598,7 +9591,7 @@ namespace IKVM.Internal
 			{
 				ArrayList fields = new ArrayList();
 				int ordinal = 0;
-				foreach(FieldInfo field in enumType.GetFields(BindingFlags.Static | BindingFlags.Public))
+				foreach(FieldInfo field in fakeType.GetGenericArguments()[0].GetFields(BindingFlags.Static | BindingFlags.Public))
 				{
 					if(field.IsLiteral)
 					{
@@ -9616,7 +9609,7 @@ namespace IKVM.Internal
 			{
 				get
 				{
-					return ClassLoaderWrapper.GetWrapperFromType(enumType);
+					return ClassLoaderWrapper.GetWrapperFromType(fakeType.GetGenericArguments()[0]);
 				}
 			}
 
@@ -9665,28 +9658,11 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal override bool IsDynamicOnly
-			{
-				get
-				{
-					return true;
-				}
-			}
-
 			internal override Type TypeAsTBD
 			{
 				get
 				{
-					// return java.lang.Enum instead
-					return BaseTypeWrapper.TypeAsTBD;
-				}
-			}
-
-			internal override Type TypeAsBaseType
-			{
-				get
-				{
-					throw new InvalidOperationException();
+					return fakeType;
 				}
 			}
 		}
@@ -9734,40 +9710,22 @@ namespace IKVM.Internal
 					return new TypeWrapper[] { ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.annotation.Annotation") };
 				}
 			}
-
-			internal sealed override bool IsDynamicOnly
-			{
-				get
-				{
-					return true;
-				}
-			}
-
-			internal sealed override Type TypeAsTBD
-			{
-				get
-				{
-					return typeof(object);
-				}
-			}
-
-			internal sealed override Type TypeAsBaseType
-			{
-				get
-				{
-					throw new InvalidOperationException();
-				}
-			}
 		}
 
 		private sealed class AttributeAnnotationTypeWrapper : AttributeAnnotationTypeWrapperBase
 		{
-			private Type attributeType;
+			private readonly Type fakeType;
+			private readonly Type attributeType;
 			private TypeWrapper[] innerClasses;
 
 			internal AttributeAnnotationTypeWrapper(string name, Type attributeType)
 				: base(name)
 			{
+#if STATIC_COMPILER
+				this.fakeType = FakeTypes.GetAttributeType(attributeType);
+#elif !FIRST_PASS
+				this.fakeType = typeof(ikvm.@internal.AttributeAnnotation<>).MakeGenericType(attributeType);
+#endif
 				this.attributeType = attributeType;
 			}
 
@@ -10012,13 +9970,27 @@ namespace IKVM.Internal
 				}
 			}
 
+			internal override Type TypeAsTBD
+			{
+				get
+				{
+					return fakeType;
+				}
+			}
+
 			private sealed class ReturnValueAnnotationTypeWrapper : AttributeAnnotationTypeWrapperBase
 			{
-				private AttributeAnnotationTypeWrapper declaringType;
+				private readonly Type fakeType;
+				private readonly AttributeAnnotationTypeWrapper declaringType;
 
 				internal ReturnValueAnnotationTypeWrapper(AttributeAnnotationTypeWrapper declaringType)
 					: base(declaringType.Name + AttributeAnnotationReturnValueSuffix)
 				{
+#if STATIC_COMPILER
+					this.fakeType = FakeTypes.GetAttributeReturnValueType(declaringType.attributeType);
+#elif !FIRST_PASS
+					this.fakeType = typeof(ikvm.@internal.AttributeAnnotationReturnValue<>).MakeGenericType(declaringType.attributeType);
+#endif
 					this.declaringType = declaringType;
 				}
 
@@ -10046,6 +10018,14 @@ namespace IKVM.Internal
 					get
 					{
 						return TypeWrapper.EmptyArray;
+					}
+				}
+
+				internal override Type TypeAsTBD
+				{
+					get
+					{
+						return fakeType;
 					}
 				}
 
@@ -10140,11 +10120,17 @@ namespace IKVM.Internal
 
 			private sealed class MultipleAnnotationTypeWrapper : AttributeAnnotationTypeWrapperBase
 			{
-				private AttributeAnnotationTypeWrapper declaringType;
+				private readonly Type fakeType;
+				private readonly AttributeAnnotationTypeWrapper declaringType;
 
 				internal MultipleAnnotationTypeWrapper(AttributeAnnotationTypeWrapper declaringType)
 					: base(declaringType.Name + AttributeAnnotationMultipleSuffix)
 				{
+#if STATIC_COMPILER
+					this.fakeType = FakeTypes.GetAttributeMultipleType(declaringType.attributeType);
+#elif !FIRST_PASS
+					this.fakeType = typeof(ikvm.@internal.AttributeAnnotationMultiple<>).MakeGenericType(declaringType.attributeType);
+#endif
 					this.declaringType = declaringType;
 				}
 
@@ -10168,6 +10154,14 @@ namespace IKVM.Internal
 					get
 					{
 						return TypeWrapper.EmptyArray;
+					}
+				}
+
+				internal override Type TypeAsTBD
+				{
+					get
+					{
+						return fakeType;
 					}
 				}
 
@@ -10292,6 +10286,14 @@ namespace IKVM.Internal
 						}
 					}
 					return innerClasses;
+				}
+			}
+
+			internal override bool IsFakeTypeContainer
+			{
+				get
+				{
+					return true;
 				}
 			}
 
@@ -11415,6 +11417,14 @@ namespace IKVM.Internal
 					}
 				}
 				return innerClasses;
+			}
+		}
+
+		internal override bool IsFakeTypeContainer
+		{
+			get
+			{
+				return IsDelegate(type) || IsAttribute(type) || (type.IsEnum && IsVisible(type));
 			}
 		}
 

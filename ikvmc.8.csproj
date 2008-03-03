@@ -77,6 +77,7 @@
     <Compile Include="ikvmc\CompilerClassLoader.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ikvmc\FakeTypes.cs" />
     <Compile Include="ikvmc\remapper.cs">
       <SubType>Code</SubType>
     </Compile>

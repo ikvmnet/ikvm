@@ -1510,9 +1510,6 @@
         </body>
       </method>
     </class>
-		<class name="ikvm.internal.EnumEnum">
-			<field name="typeWrapper" sig="Ljava.lang.Object;" modifiers="private" />
-		</class>
     <class name="java.lang.Package">
       <method name="getSystemPackage" sig="(Ljava.lang.String;)Ljava.lang.Package;" modifiers="static">
         <body>

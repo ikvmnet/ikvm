@@ -1521,7 +1521,7 @@ namespace IKVM.Internal
 			}
 			if(hasDotNetModule)
 			{
-				// for manufactured types, we load the declaring outer type (the real one) and
+				// for fake types, we load the declaring outer type (the real one) and
 				// let that generated the manufactured nested classes
 				TypeWrapper outer = null;
 				if(name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
@@ -1544,7 +1544,7 @@ namespace IKVM.Internal
 				{
 					outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.EnumEnumSuffix.Length));
 				}
-				if(outer != null && (outer is DotNetTypeWrapper || outer.IsDynamicOnly))
+				if(outer != null && outer.IsFakeTypeContainer)
 				{
 					foreach(TypeWrapper tw in outer.InnerClasses)
 					{
