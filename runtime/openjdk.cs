@@ -3703,9 +3703,10 @@ namespace IKVM.NativeCode.java
 
 			public static long nanoTime()
 			{
-				// Note that the epoch is undefined, but we use something similar to the JDK
-				const long epoch = 632785401332600000L;
-				return (DateTime.UtcNow.Ticks - epoch) * 100L;
+				const long NANOS_PER_SEC = 1000000000;
+				double current = global::System.Diagnostics.Stopwatch.GetTimestamp();
+				double freq = global::System.Diagnostics.Stopwatch.Frequency;
+				return (long)((current / freq) * NANOS_PER_SEC);
 			}
 
 			public static string mapLibraryName(string libname)
