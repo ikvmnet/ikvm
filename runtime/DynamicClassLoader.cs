@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,6 +24,7 @@
 #if !COMPACT_FRAMEWORK
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -54,6 +55,8 @@ namespace IKVM.Internal
 		private TypeBuilder proxyHelperContainer;
 		private ArrayList proxyHelpers;
 #endif // STATIC_COMPILER
+		private Dictionary<string, TypeBuilder> unloadables;
+		private TypeBuilder unloadableContainer;
 
 		static DynamicClassLoader()
 		{
@@ -227,14 +230,19 @@ namespace IKVM.Internal
 				AttributeHelper.SetEditorBrowsableNever(proxyHelperContainer);
 				proxyHelpers = new ArrayList();
 			}
-			proxyHelpers.Add(proxyHelperContainer.DefineNestedType(GetProxyHelperName(type).Substring(10), TypeAttributes.NestedPublic | TypeAttributes.Interface | TypeAttributes.Abstract, null, new Type[] { type }));
+			proxyHelpers.Add(proxyHelperContainer.DefineNestedType(MangleNestedTypeName(type.FullName), TypeAttributes.NestedPublic | TypeAttributes.Interface | TypeAttributes.Abstract, null, new Type[] { type }));
 		}
 #endif
 
 		internal static string GetProxyHelperName(Type type)
 		{
-			System.Text.StringBuilder sb = new System.Text.StringBuilder("__<Proxy>+");
-			foreach (char c in type.FullName)
+			return "__<Proxy>+" + MangleNestedTypeName(type.FullName);
+		}
+
+		private static string MangleNestedTypeName(string name)
+		{
+			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			foreach (char c in name)
 			{
 				int index = specialCharactersString.IndexOf(c);
 				if(c == '.')
@@ -257,6 +265,30 @@ namespace IKVM.Internal
 			return sb.ToString();
 		}
 
+		internal override Type DefineUnloadable(string name)
+		{
+			lock(this)
+			{
+				if(unloadables == null)
+				{
+					unloadables = new Dictionary<string, TypeBuilder>();
+				}
+				TypeBuilder type;
+				if(unloadables.TryGetValue(name, out type))
+				{
+					return type;
+				}
+				if(unloadableContainer == null)
+				{
+					unloadableContainer = moduleBuilder.DefineType("__<Unloadable>", TypeAttributes.Interface | TypeAttributes.Abstract);
+					AttributeHelper.HideFromJava(unloadableContainer);
+				}
+				type = unloadableContainer.DefineNestedType(MangleNestedTypeName(name), TypeAttributes.NestedPrivate | TypeAttributes.Interface | TypeAttributes.Abstract);
+				unloadables.Add(name, type);
+				return type;
+			}
+		}
+
 		internal void FinishAll()
 		{
 			Hashtable done = new Hashtable();
@@ -274,6 +306,14 @@ namespace IKVM.Internal
 						Tracer.Info(Tracer.Runtime, "Finishing {0}", tw.TypeAsTBD.FullName);
 						tw.Finish();
 					}
+				}
+			}
+			if(unloadableContainer != null)
+			{
+				unloadableContainer.CreateType();
+				foreach(TypeBuilder tb in unloadables.Values)
+				{
+					tb.CreateType();
 				}
 			}
 #if STATIC_COMPILER
