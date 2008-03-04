@@ -2153,12 +2153,20 @@ namespace IKVM.Internal
 				|| type == PrimitiveTypeWrapper.VOID.TypeAsTBD;
 		}
 
+		internal bool IsBoxedPrimitive
+		{
+			get
+			{
+				return !IsPrimitive && IsJavaPrimitive(TypeAsSignatureType);
+			}
+		}
+
 		internal bool IsErasedOrBoxedPrimitiveOrRemapped
 		{
 			get
 			{
 				bool erased = IsUnloadable || IsGhostArray;
-				return erased || (!IsPrimitive && IsJavaPrimitive(TypeAsSignatureType)) || (IsRemapped && this is DotNetTypeWrapper);
+				return erased || IsBoxedPrimitive || (IsRemapped && this is DotNetTypeWrapper);
 			}
 		}
 
@@ -6748,16 +6756,43 @@ namespace IKVM.Internal
 					}
 					if(ReferenceEquals(m.Name, StringConstants.INIT))
 					{
+						Type[][] modopt = null;
 						if(setNameSig)
 						{
-							// TODO we might have to mangle the signature to make it unique
+							// we add optional modifiers to make the signature unique
+							TypeWrapper[] parameters = methods[index].GetParameters();
+							modopt = new Type[parameters.Length][];
+							for(int i = 0; i < parameters.Length; i++)
+							{
+								if(parameters[i].IsGhostArray)
+								{
+									TypeWrapper elemTypeWrapper = parameters[i];
+									while(elemTypeWrapper.IsArray)
+									{
+										elemTypeWrapper = elemTypeWrapper.ElementTypeWrapper;
+									}
+									modopt[i] = new Type[] { elemTypeWrapper.TypeAsTBD };
+								}
+								else if(parameters[i].IsBoxedPrimitive)
+								{
+									modopt[i] = new Type[] { typeof(object) };
+								}
+								else if(parameters[i].IsRemapped && parameters[i] is DotNetTypeWrapper)
+								{
+									modopt[i] = new Type[] { parameters[i].TypeAsSignatureType };
+								}
+								else if(parameters[i].IsUnloadable)
+								{
+									modopt[i] = new Type[] { wrapper.classLoader.GetTypeWrapperFactory().DefineUnloadable(parameters[i].Name) };
+								}
+							}
 						}
 						// strictfp is the only modifier that a constructor can have
 						if(m.IsStrictfp)
 						{
 							setModifiers = true;
 						}
-						method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod());
+						method = typeBuilder.DefineConstructor(attribs, CallingConventions.Standard, methods[index].GetParametersForDefineMethod(), null, modopt);
 						((ConstructorBuilder)method).SetImplementationFlags(MethodImplAttributes.NoInlining);
 					}
 					else if(m.IsClassInitializer)
