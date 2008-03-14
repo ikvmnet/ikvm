@@ -628,16 +628,25 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 		    break;
 		case SocketOptions.IP_MULTICAST_IF:
 		    {
-			NetworkInterface netIf = (NetworkInterface)val;
-			Enumeration e = netIf.getInetAddresses();
-			if (e.hasMoreElements())
-			{
-			    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement()).get_Address());
-			}
+			InetAddress addr = (InetAddress)val;
+			netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress(addr).get_Address());
 			break;
 		    }
 		case SocketOptions.IP_MULTICAST_IF2:
-		    throw new SocketException("SocketOptions.IP_MULTICAST_IF2 not implemented");
+		    {
+			NetworkInterface netIf = (NetworkInterface)val;
+			Enumeration e = netIf.getInetAddresses();
+			while (e.hasMoreElements())
+			{
+			    InetAddress addr = (InetAddress)e.nextElement();
+			    if (addr.getAddress().length == 4)
+			    {
+				netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress(addr).get_Address());
+				return;
+			    }
+			}
+			throw new SocketException("No IPv4 address found on interface");
+		    }
 		case SocketOptions.IP_MULTICAST_LOOP:
 		    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback), ((Boolean)val).booleanValue() ? 1 : 0);
 		    break;
@@ -658,6 +667,18 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 	    throw new SocketException("Socket is closed");
 	}
     }
+    
+    private static InetAddress getInetAddressFromInt(int addr) throws SocketException
+    {
+	try
+	{
+	    return InetAddress.getByAddress(cli.System.BitConverter.GetBytes(addr));
+	}
+	catch (UnknownHostException x)
+	{
+	    throw new SocketException(x.getMessage());
+	}
+    }
 
     private Object socketGetOption(int opt) throws SocketException
     {
@@ -670,9 +691,12 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 		case SocketOptions.SO_BROADCAST:
 		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast))) != 0;
 		case SocketOptions.IP_MULTICAST_IF:
-		    //return getInetAddressFromInt(CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface))));
+		    return getInetAddressFromInt(CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface))));
 		case SocketOptions.IP_MULTICAST_IF2:
-		    throw new SocketException("SocketOptions.IP_MULTICAST_IF(2) not implemented");
+		    {
+			NetworkInterface inf = NetworkInterface.getByInetAddress(getInetAddressFromInt(CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface)))));
+			return inf != null ? inf : new NetworkInterface(null, -1, new InetAddress[] { new Inet4Address() });
+		    }
 		case SocketOptions.IP_MULTICAST_LOOP:
 		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback))) != 0;
 		case SocketOptions.SO_REUSEADDR:
