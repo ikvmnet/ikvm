@@ -306,10 +306,10 @@ class IkvmcCompiler
 						string path = Path.GetDirectoryName(r);
 						files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(r));
 					}
-					catch (ArgumentException x)
+					catch (ArgumentException)
 					{
 					}
-					catch (IOException x)
+					catch (IOException)
 					{
 					}
 					if(files.Length == 0)

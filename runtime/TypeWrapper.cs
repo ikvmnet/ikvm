@@ -764,9 +764,22 @@ namespace IKVM.Internal
 
 		internal static object GetConstantValue(FieldInfo field)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || field.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!field.DeclaringType.Assembly.ReflectionOnly)
 			{
+				// In Java, instance fields can also have a ConstantValue attribute so we emulate that
+				// with ConstantValueAttribute (for consumption by ikvmstub only)
+				object[] attrib = field.GetCustomAttributes(typeof(ConstantValueAttribute), false);
+				if(attrib.Length == 1)
+				{
+					return ((ConstantValueAttribute)attrib[0]).GetConstantValue();
+				}
+				return null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofConstantValueAttribute))
@@ -774,24 +787,23 @@ namespace IKVM.Internal
 						return cad.ConstructorArguments[0].Value;
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			// In Java, instance fields can also have a ConstantValue attribute so we emulate that
-			// with ConstantValueAttribute (for consumption by ikvmstub only)
-			object[] attrib = field.GetCustomAttributes(typeof(ConstantValueAttribute), false);
-			if(attrib.Length == 1)
-			{
-				return ((ConstantValueAttribute)attrib[0]).GetConstantValue();
-			}
-			return null;
 		}
 
 		internal static ModifiersAttribute GetModifiersAttribute(Type type)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!type.Assembly.ReflectionOnly)
 			{
+				object[] attr = type.GetCustomAttributes(typeof(ModifiersAttribute), false);
+				return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
@@ -804,18 +816,27 @@ namespace IKVM.Internal
 						return new ModifiersAttribute((Modifiers)args[0].Value);
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attr = type.GetCustomAttributes(typeof(ModifiersAttribute), false);
-			return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
 		}
 
 		internal static ExModifiers GetModifiers(MethodBase mb, bool assemblyIsPrivate)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || mb.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!mb.DeclaringType.Assembly.ReflectionOnly)
 			{
+				object[] customAttribute = mb.GetCustomAttributes(typeof(ModifiersAttribute), false);
+				if(customAttribute.Length == 1)
+				{
+					ModifiersAttribute mod = (ModifiersAttribute)customAttribute[0];
+					return new ExModifiers(mod.Modifiers, mod.IsInternal);
+				}
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
@@ -828,16 +849,7 @@ namespace IKVM.Internal
 						return new ExModifiers((Modifiers)args[0].Value, false);
 					}
 				}
-			}
-			else
 #endif
-			{
-				object[] customAttribute = mb.GetCustomAttributes(typeof(ModifiersAttribute), false);
-				if(customAttribute.Length == 1)
-				{
-					ModifiersAttribute mod = (ModifiersAttribute)customAttribute[0];
-					return new ExModifiers(mod.Modifiers, mod.IsInternal);
-				}
 			}
 			Modifiers modifiers = 0;
 			if(mb.IsPublic)
@@ -894,9 +906,20 @@ namespace IKVM.Internal
 
 		internal static ExModifiers GetModifiers(FieldInfo fi, bool assemblyIsPrivate)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || fi.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!fi.DeclaringType.Assembly.ReflectionOnly)
 			{
+				object[] customAttribute = fi.GetCustomAttributes(typeof(ModifiersAttribute), false);
+				if(customAttribute.Length == 1)
+				{
+					ModifiersAttribute mod = (ModifiersAttribute)customAttribute[0];
+					return new ExModifiers(mod.Modifiers, mod.IsInternal);
+				}
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
@@ -909,16 +932,7 @@ namespace IKVM.Internal
 						return new ExModifiers((Modifiers)args[0].Value, false);
 					}
 				}
-			}
-			else
 #endif
-			{
-				object[] customAttribute = fi.GetCustomAttributes(typeof(ModifiersAttribute), false);
-				if(customAttribute.Length == 1)
-				{
-					ModifiersAttribute mod = (ModifiersAttribute)customAttribute[0];
-					return new ExModifiers(mod.Modifiers, mod.IsInternal);
-				}
 			}
 			Modifiers modifiers = 0;
 			if(fi.IsPublic)
@@ -1157,9 +1171,16 @@ namespace IKVM.Internal
 
 		internal static NameSigAttribute GetNameSig(FieldInfo field)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || field.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!field.DeclaringType.Assembly.ReflectionOnly)
 			{
+				object[] attr = field.GetCustomAttributes(typeof(NameSigAttribute), false);
+				return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(field))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
@@ -1168,18 +1189,23 @@ namespace IKVM.Internal
 						return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attr = field.GetCustomAttributes(typeof(NameSigAttribute), false);
-			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
 		}
 
 		internal static NameSigAttribute GetNameSig(MethodBase method)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || method.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!method.DeclaringType.Assembly.ReflectionOnly)
 			{
+				object[] attr = method.GetCustomAttributes(typeof(NameSigAttribute), false);
+				return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(method))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofNameSigAttribute))
@@ -1188,11 +1214,9 @@ namespace IKVM.Internal
 						return new NameSigAttribute((string)args[0].Value, (string)args[1].Value);
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attr = method.GetCustomAttributes(typeof(NameSigAttribute), false);
-			return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
 		}
 
 #if !COMPACT_FRAMEWORK
@@ -1210,9 +1234,16 @@ namespace IKVM.Internal
 
 		internal static ImplementsAttribute GetImplements(Type type)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!type.Assembly.ReflectionOnly)
 			{
+				object[] attribs = type.GetCustomAttributes(typeof(ImplementsAttribute), false);
+				return attribs.Length == 1 ? (ImplementsAttribute)attribs[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofImplementsAttribute))
@@ -1221,18 +1252,23 @@ namespace IKVM.Internal
 						return new ImplementsAttribute(DecodeArray<string>(args[0]));
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attribs = type.GetCustomAttributes(typeof(ImplementsAttribute), false);
-			return attribs.Length == 1 ? (ImplementsAttribute)attribs[0] : null;
 		}
 
 		internal static ThrowsAttribute GetThrows(MethodBase mb)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || mb.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!mb.DeclaringType.Assembly.ReflectionOnly)
 			{
+				object[] attribs = mb.GetCustomAttributes(typeof(ThrowsAttribute), false);
+				return attribs.Length == 1 ? (ThrowsAttribute)attribs[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofThrowsAttribute))
@@ -1241,19 +1277,29 @@ namespace IKVM.Internal
 						return new ThrowsAttribute(DecodeArray<string>(args[0]));
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attribs = mb.GetCustomAttributes(typeof(ThrowsAttribute), false);
-			return attribs.Length == 1 ? (ThrowsAttribute)attribs[0] : null;
 		}
 
 		internal static string[] GetNonNestedInnerClasses(Type t)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || t.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!t.Assembly.ReflectionOnly)
+			{
+				object[] attribs = t.GetCustomAttributes(typeof(NonNestedInnerClassAttribute), false);
+				string[] classes = new string[attribs.Length];
+				for (int i = 0; i < attribs.Length; i++)
+				{
+					classes[i] = ((NonNestedInnerClassAttribute)attribs[i]).InnerClassName;
+				}
+				return classes;
+			}
+			else
+#endif
 			{
 				List<string> list = new List<string>();
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedInnerClassAttribute))
@@ -1262,24 +1308,24 @@ namespace IKVM.Internal
 						list.Add((string)args[0].Value);
 					}
 				}
+#endif
 				return list.ToArray();
 			}
-#endif
-			object[] attribs = t.GetCustomAttributes(typeof(NonNestedInnerClassAttribute), false);
-			string[] classes = new string[attribs.Length];
-			for(int i = 0; i < attribs.Length; i++)
-			{
-				classes[i] = ((NonNestedInnerClassAttribute)attribs[i]).InnerClassName;
-			}
-			return classes;
 		}
 
 		internal static string GetNonNestedOuterClasses(Type t)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || t.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!t.Assembly.ReflectionOnly)
+			{
+				object[] attribs = t.GetCustomAttributes(typeof(NonNestedOuterClassAttribute), false);
+				return attribs.Length == 1 ? ((NonNestedOuterClassAttribute)attribs[0]).OuterClassName : null;
+			}
+			else
+#endif
 			{
 				List<string> list = new List<string>();
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofNonNestedOuterClassAttribute))
@@ -1288,18 +1334,23 @@ namespace IKVM.Internal
 						return (string)args[0].Value;
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attribs = t.GetCustomAttributes(typeof(NonNestedOuterClassAttribute), false);
-			return attribs.Length == 1 ? ((NonNestedOuterClassAttribute)attribs[0]).OuterClassName : null;
 		}
 
 		internal static SignatureAttribute GetSignature(MethodBase mb)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || mb.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!mb.DeclaringType.Assembly.ReflectionOnly)
 			{
+				object[] attribs = mb.GetCustomAttributes(typeof(SignatureAttribute), false);
+				return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mb))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
@@ -1308,18 +1359,23 @@ namespace IKVM.Internal
 						return new SignatureAttribute((string)args[0].Value);
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attribs = mb.GetCustomAttributes(typeof(SignatureAttribute), false);
-			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
 		}
 
 		internal static SignatureAttribute GetSignature(Type type)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!type.Assembly.ReflectionOnly)
 			{
+				object[] attribs = type.GetCustomAttributes(typeof(SignatureAttribute), false);
+				return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
@@ -1328,20 +1384,23 @@ namespace IKVM.Internal
 						return new SignatureAttribute((string)args[0].Value);
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attribs = type.GetCustomAttributes(typeof(SignatureAttribute), false);
-			// HACK for the time being we have to support having two signature attributes
-			// (because of the hack in map.xml to make japi happy on the non-generics branch)
-			return attribs.Length >= 1 ? (SignatureAttribute)attribs[0] : null;
 		}
 
 		internal static SignatureAttribute GetSignature(FieldInfo fi)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || fi.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!fi.DeclaringType.Assembly.ReflectionOnly)
 			{
+				object[] attribs = fi.GetCustomAttributes(typeof(SignatureAttribute), false);
+				return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(fi))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofSignatureAttribute))
@@ -1350,18 +1409,23 @@ namespace IKVM.Internal
 						return new SignatureAttribute((string)args[0].Value);
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attribs = fi.GetCustomAttributes(typeof(SignatureAttribute), false);
-			return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
 		}
 
 		internal static InnerClassAttribute GetInnerClass(Type type)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!type.Assembly.ReflectionOnly)
 			{
+				object[] attribs = type.GetCustomAttributes(typeof(InnerClassAttribute), false);
+				return attribs.Length == 1 ? (InnerClassAttribute)attribs[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofInnerClassAttribute))
@@ -1370,41 +1434,51 @@ namespace IKVM.Internal
 						return new InnerClassAttribute((string)args[0].Value, (Modifiers)args[1].Value);
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attribs = type.GetCustomAttributes(typeof(InnerClassAttribute), false);
-			return attribs.Length == 1 ? (InnerClassAttribute)attribs[0] : null;
 		}
 
 		internal static RemappedInterfaceMethodAttribute[] GetRemappedInterfaceMethods(Type type)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!type.Assembly.ReflectionOnly)
+			{
+				object[] attr = type.GetCustomAttributes(typeof(RemappedInterfaceMethodAttribute), false);
+				RemappedInterfaceMethodAttribute[] attr1 = new RemappedInterfaceMethodAttribute[attr.Length];
+				Array.Copy(attr, attr1, attr.Length);
+				return attr1;
+			}
+			else
+#endif
 			{
 				List<RemappedInterfaceMethodAttribute> attrs = new List<RemappedInterfaceMethodAttribute>();
-					foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+#if !COMPACT_FRAMEWORK
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedInterfaceMethodAttribute))
 					{
-						if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedInterfaceMethodAttribute))
-						{
-							IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-							attrs.Add(new RemappedInterfaceMethodAttribute((string)args[0].Value, (string)args[1].Value));
-						}
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						attrs.Add(new RemappedInterfaceMethodAttribute((string)args[0].Value, (string)args[1].Value));
 					}
+				}
+#endif
 				return attrs.ToArray();
 			}
-#endif
-			object[] attr = type.GetCustomAttributes(typeof(RemappedInterfaceMethodAttribute), false);
-			RemappedInterfaceMethodAttribute[] attr1 = new RemappedInterfaceMethodAttribute[attr.Length];
-			Array.Copy(attr, attr1, attr.Length);
-			return attr1;
 		}
 
 		internal static RemappedTypeAttribute GetRemappedType(Type type)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!type.Assembly.ReflectionOnly)
 			{
+				object[] attribs = type.GetCustomAttributes(typeof(RemappedTypeAttribute), false);
+				return attribs.Length == 1 ? (RemappedTypeAttribute)attribs[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedTypeAttribute))
@@ -1413,41 +1487,55 @@ namespace IKVM.Internal
 						return new RemappedTypeAttribute((Type)args[0].Value);
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attribs = type.GetCustomAttributes(typeof(RemappedTypeAttribute), false);
-			return attribs.Length == 1 ? (RemappedTypeAttribute)attribs[0] : null;
 		}
 
 		internal static RemappedClassAttribute[] GetRemappedClasses(Assembly coreAssembly)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || coreAssembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!coreAssembly.ReflectionOnly)
+			{
+				object[] attr = coreAssembly.GetCustomAttributes(typeof(RemappedClassAttribute), false);
+				RemappedClassAttribute[] attr1 = new RemappedClassAttribute[attr.Length];
+				Array.Copy(attr, attr1, attr.Length);
+				return attr1;
+			}
+			else
+#endif
 			{
 				List<RemappedClassAttribute> attrs = new List<RemappedClassAttribute>();
-					foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(coreAssembly))
+#if !COMPACT_FRAMEWORK
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(coreAssembly))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedClassAttribute))
 					{
-						if(MatchTypes(cad.Constructor.DeclaringType, typeofRemappedClassAttribute))
-						{
-							IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
-							attrs.Add(new RemappedClassAttribute((string)args[0].Value, (Type)args[1].Value));
-						}
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						attrs.Add(new RemappedClassAttribute((string)args[0].Value, (Type)args[1].Value));
 					}
+				}
+#endif
 				return attrs.ToArray();
 			}
-#endif
-			object[] attr = coreAssembly.GetCustomAttributes(typeof(RemappedClassAttribute), false);
-			RemappedClassAttribute[] attr1 = new RemappedClassAttribute[attr.Length];
-			Array.Copy(attr, attr1, attr.Length);
-			return attr1;
 		}
 
 		internal static string GetAnnotationAttributeType(Type type)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!type.Assembly.ReflectionOnly)
 			{
+				object[] attr = type.GetCustomAttributes(typeof(AnnotationAttributeAttribute), false);
+				if(attr.Length == 1)
+				{
+					return ((AnnotationAttributeAttribute)attr[0]).AttributeType;
+				}
+				return null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofAnnotationAttributeAttribute))
@@ -1455,15 +1543,9 @@ namespace IKVM.Internal
 						return (string)cad.ConstructorArguments[0].Value;
 					}
 				}
+#endif
 				return null;
 			}
-#endif
-			object[] attr = type.GetCustomAttributes(typeof(AnnotationAttributeAttribute), false);
-			if(attr.Length == 1)
-			{
-				return ((AnnotationAttributeAttribute)attr[0]).AttributeType;
-			}
-			return null;
 		}
 
 		internal static AssemblyName[] GetInternalsVisibleToAttributes(Assembly assembly)
@@ -1488,9 +1570,15 @@ namespace IKVM.Internal
 
 		internal static bool IsDefined(Module mod, Type attribute)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || mod.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!mod.Assembly.ReflectionOnly)
 			{
+				return mod.IsDefined(attribute, false);
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
 				{
 					// NOTE we don't support subtyping relations!
@@ -1499,17 +1587,22 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
+#endif
 				return false;
 			}
-#endif
-			return mod.IsDefined(attribute, false);
 		}
 
 		internal static bool IsDefined(Assembly asm, Type attribute)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || asm.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!asm.ReflectionOnly)
 			{
+				return asm.IsDefined(attribute, false);
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(asm))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, attribute))
@@ -1517,17 +1610,22 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
+#endif
 				return false;
 			}
-#endif
-			return asm.IsDefined(attribute, false);
 		}
 
 		internal static bool IsDefined(Type type, Type attribute)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || type.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!type.Assembly.ReflectionOnly)
 			{
+				return type.IsDefined(attribute, false);
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(type))
 				{
 					// NOTE we don't support subtyping relations!
@@ -1536,17 +1634,22 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
+#endif
 				return false;
 			}
-#endif
-			return type.IsDefined(attribute, false);
 		}
 
 		internal static bool IsDefined(ParameterInfo pi, Type attribute)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || pi.Member.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!pi.Member.DeclaringType.Assembly.ReflectionOnly)
 			{
+				return pi.IsDefined(attribute, false);
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(pi))
 				{
 					// NOTE we don't support subtyping relations!
@@ -1555,17 +1658,22 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
+#endif
 				return false;
 			}
-#endif
-			return pi.IsDefined(attribute, false);
 		}
 
 		internal static bool IsDefined(MemberInfo member, Type attribute)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || member.DeclaringType.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!member.DeclaringType.Assembly.ReflectionOnly)
 			{
+				return member.IsDefined(attribute, false);
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(member))
 				{
 					// NOTE we don't support subtyping relations!
@@ -1574,10 +1682,9 @@ namespace IKVM.Internal
 						return true;
 					}
 				}
+#endif
 				return false;
 			}
-#endif
-			return member.IsDefined(attribute, false);
 		}
 
 		internal static bool IsJavaModule(Module mod)
@@ -1587,10 +1694,16 @@ namespace IKVM.Internal
 
 		internal static object[] GetJavaModuleAttributes(Module mod)
 		{
-#if !COMPACT_FRAMEWORK
-			if(JVM.IsStaticCompiler || mod.Assembly.ReflectionOnly)
+#if !STATIC_COMPILER
+			if(!mod.Assembly.ReflectionOnly)
+			{
+				return mod.GetCustomAttributes(typeofJavaModuleAttribute, false);
+			}
+			else
+#endif
 			{
 				ArrayList attrs = new ArrayList();
+#if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
 				{
 					if(MatchTypes(cad.Constructor.DeclaringType, typeofJavaModuleAttribute))
@@ -1606,10 +1719,9 @@ namespace IKVM.Internal
 						}
 					}
 				}
+#endif
 				return attrs.ToArray();
 			}
-#endif
-			return mod.GetCustomAttributes(typeofJavaModuleAttribute, false);
 		}
 
 		internal static bool IsNoPackagePrefix(Type type)
