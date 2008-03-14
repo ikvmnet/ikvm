@@ -116,6 +116,10 @@ namespace IKVM.NativeCode.java.lang
 			TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
 			if(tw != null)
 			{
+				if(tw.IsPrimitive)
+				{
+					return DotNetTypeWrapper.GetName(type);
+				}
 				return tw.Name;
 			}
 			return type.FullName;
