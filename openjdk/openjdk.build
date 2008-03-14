@@ -49,7 +49,7 @@
 
     <target name="IKVM.OpenJDK.ClassLibrary.dll" depends="classes vfs">
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
-          <arg value="-version:0.36.0.9" />
+          <arg value="-version:0.36.0.11" />
           <arg value="${signoption}" />
           <arg value="-compressresources" />
           <arg value="-opt:fields" />
