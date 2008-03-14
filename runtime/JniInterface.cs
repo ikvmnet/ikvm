@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1720,6 +1720,23 @@ namespace IKVM.Runtime
 			return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
 		}
 
+		private static MethodWrapper GetMethodImpl(TypeWrapper tw, string name, string sig)
+		{
+			for(;;)
+			{
+				MethodWrapper mw = tw.GetMethodWrapper(name, sig, true);
+				if(mw == null || !mw.IsHideFromReflection)
+				{
+					return mw;
+				}
+				tw = mw.DeclaringType.BaseTypeWrapper;
+				if(tw == null)
+				{
+					return null;
+				}
+			}
+		}
+
 		private static jmethodID FindMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
 		{
 			try
@@ -1730,7 +1747,7 @@ namespace IKVM.Runtime
 				// don't allow dotted names!
 				if(methodsig.IndexOf('.') < 0)
 				{
-					MethodWrapper mw = wrapper.GetMethodWrapper(StringFromUTF8(name), methodsig.Replace('/', '.'), true);
+					MethodWrapper mw = GetMethodImpl(wrapper, StringFromUTF8(name), methodsig.Replace('/', '.'));
 					if(mw != null)
 					{
 						if(mw.IsStatic == isstatic)
@@ -1938,6 +1955,23 @@ namespace IKVM.Runtime
 			InvokeHelper(pEnv, obj, methodID, args, true);
 		}
 
+		private static FieldWrapper GetFieldImpl(TypeWrapper tw, string name, string sig)
+		{
+			for(;;)
+			{
+				FieldWrapper fw = tw.GetFieldWrapper(name, sig);
+				if(fw == null || !fw.IsHideFromReflection)
+				{
+					return fw;
+				}
+				tw = fw.DeclaringType.BaseTypeWrapper;
+				if(tw == null)
+				{
+					return null;
+				}
+			}
+		}
+
 		private static jfieldID FindFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
 		{
 			try
@@ -1948,7 +1982,7 @@ namespace IKVM.Runtime
 				// don't allow dotted names!
 				if(fieldsig.IndexOf('.') < 0)
 				{
-					FieldWrapper fw = wrapper.GetFieldWrapper(StringFromUTF8(name), fieldsig.Replace('/', '.'));
+					FieldWrapper fw = GetFieldImpl(wrapper, StringFromUTF8(name), fieldsig.Replace('/', '.'));
 					if(fw != null)
 					{
 						if(fw.IsStatic == isstatic)
