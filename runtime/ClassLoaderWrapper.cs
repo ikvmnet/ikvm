@@ -1837,6 +1837,11 @@ namespace IKVM.Internal
 				{
 					codebase = new java.net.URL(assembly.CodeBase);
 				}
+				catch(NotSupportedException)
+				{
+					// dynamic assemblies don't have a codebase
+					codebase = null;
+				}
 				catch(java.net.MalformedURLException)
 				{
 					codebase = null;
