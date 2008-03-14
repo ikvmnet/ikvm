@@ -4027,6 +4027,16 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
+#if !FIRST_PASS
+			sealed class GetSystemClassLoaderAction : global::java.security.PrivilegedAction
+			{
+				public object run()
+				{
+					return global::java.lang.ClassLoader.getSystemClassLoader();
+				}
+			}
+#endif
+
 			private static VMThread AttachThread(string name, bool addToGroup, object threadGroup)
 			{
 #if FIRST_PASS
@@ -4055,6 +4065,10 @@ namespace IKVM.NativeCode.java
 				}
 				cleanup = new Cleanup(thread);
 				thread._priority(MapNativePriorityToJava(t.nativeThread.Priority));
+				if (addToGroup)
+				{
+					thread._contextClassLoader((jlClassLoader)jsAccessController.doPrivileged(new GetSystemClassLoaderAction()));
+				}
 				bool daemon = t.nativeThread.IsBackground;
 				if (!daemon)
 				{

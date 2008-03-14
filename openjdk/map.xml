@@ -1311,6 +1311,14 @@
           <ret />
         </body>
       </method>
+      <method name="_contextClassLoader" sig="(Ljava.lang.ClassLoader;)V">
+        <body>
+          <ldarg_0 />
+          <ldarg_1 />
+          <stfld class="java.lang.Thread" name="contextClassLoader" sig="Ljava.lang.ClassLoader;" />
+          <ret />
+        </body>
+      </method>
     </class>
     <class name="java.lang.ThreadGroup">
       <method name="createRootGroup" sig="()Ljava.lang.ThreadGroup;" modifiers="static">
