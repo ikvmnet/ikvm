@@ -701,6 +701,16 @@ namespace IKVM.Internal
 				if (cmp != null)
 				{
 					stack = null;
+					if (cmp is FCmpgExpr || cmp is FCmplExpr)
+					{
+						// FXBUG we would like to use Bne_Un/Beq here, but the .NET 1.1 JIT generates incorrect code
+						// that returns the wrong result when comparing NaN to itself
+						Emit(OpCodes.Ceq);
+						// this Neg is to thwart the (broken) optimizer
+						Emit(OpCodes.Neg);
+						Emit(brtrue ? OpCodes.Brfalse : OpCodes.Brtrue, label);
+						return;
+					}
 					Emit(brtrue ? OpCodes.Bne_Un : OpCodes.Beq, label);
 					return;
 				}
