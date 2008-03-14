@@ -380,7 +380,7 @@ namespace IKVM.Internal
 			foreach(DictionaryEntry d in resources)
 			{
 				byte[] buf = (byte[])d.Value;
-				if(buf.Length > 0)
+				if(true)
 				{
 					string name = JVM.MangleResourceName((string)d.Key);
 #if WHIDBEY
