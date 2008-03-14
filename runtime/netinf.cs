@@ -277,7 +277,15 @@ namespace System.Net.NetworkInformation
 						{
 							dnsservers = new IPAddress[0];
 						}
-						ifaces.Add(new NetworkInterface((uint)props["InterfaceIndex"].Value, (string)props["Description"].Value, addr, mtu, mac, dnssuffix, dnsservers));
+						uint interfaceIndex = 0;
+						try
+						{
+							interfaceIndex = (uint)props["InterfaceIndex"].Value;
+						}
+						catch
+						{
+						}
+						ifaces.Add(new NetworkInterface(interfaceIndex, (string)props["Description"].Value, addr, mtu, mac, dnssuffix, dnsservers));
 					}
 				}
 				netif = (NetworkInterface[])ifaces.ToArray(typeof(NetworkInterface));
@@ -289,7 +297,15 @@ namespace System.Net.NetworkInformation
 					foreach (ManagementObject obj in moc)
 					{
 						PropertyDataCollection props = obj.Properties;
-						uint interfaceIndex = (uint)props["InterfaceIndex"].Value;
+						uint interfaceIndex;
+						try
+						{
+							interfaceIndex = (uint)props["InterfaceIndex"].Value;
+						}
+						catch
+						{
+							break;
+						}
 						NetworkInterfaceType type = NetworkInterfaceType.Unknown;
 						try
 						{
