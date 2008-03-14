@@ -380,25 +380,23 @@ namespace IKVM.Internal
 			foreach(DictionaryEntry d in resources)
 			{
 				byte[] buf = (byte[])d.Value;
-				if(buf.Length > 0)
+				string name = JVM.MangleResourceName((string)d.Key);
+				MemoryStream mem = new MemoryStream();
+				if(compressedResources)
 				{
-					string name = JVM.MangleResourceName((string)d.Key);
-					MemoryStream mem = new MemoryStream();
-					if(compressedResources)
+					mem.WriteByte(1);
+					using(System.IO.Compression.DeflateStream def = new System.IO.Compression.DeflateStream(mem, System.IO.Compression.CompressionMode.Compress, true))
 					{
-						mem.WriteByte(1);
-						System.IO.Compression.DeflateStream def = new System.IO.Compression.DeflateStream(mem, System.IO.Compression.CompressionMode.Compress, true);
 						def.Write(buf, 0, buf.Length);
-						def.Close();
 					}
-					else
-					{
-						mem.WriteByte(0);
-						mem.Write(buf, 0, buf.Length);
-					}
-					mem.Position = 0;
-					moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
 				}
+				else
+				{
+					mem.WriteByte(0);
+					mem.Write(buf, 0, buf.Length);
+				}
+				mem.Position = 0;
+				moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
 			}
 		}
 
