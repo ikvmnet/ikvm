@@ -1041,16 +1041,20 @@ com/sun/imageio/plugins/jpeg/JPEGImageReaderSpi.java
 com/sun/imageio/plugins/jpeg/JPEGImageWriterSpi.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/FieldReflectorBase.java
+java/io/DeleteOnExitHook.java
 java/io/FileDescriptor.java
 java/io/FileInputStream.java
 java/io/FileOutputStream.java
 java/io/ObjectStreamClass.java
 java/io/RandomAccessFile.java
 java/lang/Class.java
+java/lang/ClassLoader.java
 java/lang/LangHelper.java
 java/lang/ProcessImpl.java
 java/lang/Shutdown.java
 java/lang/StringHelper.java
+java/lang/System.java
+java/lang/Thread.java
 java/lang/VMThread.java
 java/lang/ref/Reference.java
 java/lang/ref/SoftReference.java
@@ -1084,10 +1088,13 @@ ServiceUI.java
 sun/awt/AppContext.java
 sun/management/ManagementFactory.java
 sun/misc/FileURLMapper.java
+sun/misc/Launcher.java
 sun/misc/MiscHelper.java
 sun/misc/OSEnvironment.java
+sun/misc/SharedSecrets.java
 sun/misc/Unsafe.java
 sun/misc/Version.java
+sun/misc/VM.java
 sun/net/www/protocol/ikvmres/Handler.java
 sun/net/www/protocol/file/Handler.java
 sun/net/www/protocol/jar/JarFileFactory.java
@@ -6284,7 +6291,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/DataInputStream.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/DataOutput.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/DataOutputStream.java
-../../openjdk-b13/j2se/src/share/classes/java/io/DeleteOnExitHook.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/EOFException.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/ExpiringCache.java
 ../../openjdk-b13/j2se/src/share/classes/java/io/Externalizable.java
@@ -6362,7 +6368,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ClassCastException.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ClassCircularityError.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ClassFormatError.java
-../../openjdk-b13/j2se/src/share/classes/java/lang/ClassLoader.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ClassNotFoundException.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/Cloneable.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/CloneNotSupportedException.java
@@ -6428,8 +6433,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/StringCoding.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/StringIndexOutOfBoundsException.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/SuppressWarnings.java
-../../openjdk-b13/j2se/src/share/classes/java/lang/System.java
-../../openjdk-b13/j2se/src/share/classes/java/lang/Thread.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ThreadDeath.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ThreadGroup.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ThreadLocal.java
@@ -8880,7 +8883,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/JavaLangAccess.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/JavaNetAccess.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/JavaUtilJarAccess.java
-../../openjdk-b13/j2se/src/share/classes/sun/misc/Launcher.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/Lock.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/LRUCache.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/MessageUtils.java
@@ -8899,7 +8901,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/Resource.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/Service.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/ServiceConfigurationError.java
-../../openjdk-b13/j2se/src/share/classes/sun/misc/SharedSecrets.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/Signal.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/SignalHandler.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/SoftCache.java
@@ -8911,7 +8912,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/URLClassPath.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/UUDecoder.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/UUEncoder.java
-../../openjdk-b13/j2se/src/share/classes/sun/misc/VM.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/VMNotification.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/VMSupport.java
 ../../openjdk-b13/j2se/src/share/classes/sun/misc/resources/Messages.java
