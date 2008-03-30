@@ -174,9 +174,7 @@ public final class FileDescriptor {
 
     private static boolean flushWin32(FileStream fs)
     {
-        int rc = FlushFileBuffers(fs.get_Handle());
-        cli.System.GC.KeepAlive(fs);
-        return rc != 0;
+        return FlushFileBuffers(fs.get_SafeFileHandle()) != 0;
     }
 
     private static boolean flushPosix(FileStream fs)
@@ -196,7 +194,7 @@ public final class FileDescriptor {
     }
 
     @DllImportAttribute.Annotation("kernel32")
-    private static native int FlushFileBuffers(IntPtr handle);
+    private static native int FlushFileBuffers(cli.Microsoft.Win32.SafeHandles.SafeFileHandle handle);
 
     private static FileDescriptor standardStream(int fd) {
         FileDescriptor desc = new FileDescriptor();
