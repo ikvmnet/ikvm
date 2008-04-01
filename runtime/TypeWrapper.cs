@@ -5412,8 +5412,7 @@ namespace IKVM.Internal
 					if(classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0)
 					{
 						// TODO handle name clash
-						tbFields = typeBuilder.DefineNestedType("__Fields", TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed);
-						tbFields.DefineDefaultConstructor(MethodAttributes.Private);
+						tbFields = typeBuilder.DefineNestedType("__Fields", TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
 						AttributeHelper.HideFromJava(tbFields);
 						ILGenerator ilgenClinit = null;
 						foreach(ClassFile.Field f in classFile.Fields)
