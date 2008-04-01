@@ -6609,6 +6609,15 @@ namespace IKVM.Internal
 
 			private ConstructorBuilder DefineClassInitializer()
 			{
+				if(typeBuilder.IsInterface)
+				{
+					// LAMESPEC the ECMA spec says (part. I, sect. 8.5.3.2) that all interface members must be public, so we make
+					// the class constructor public.
+					// NOTE it turns out that on .NET 2.0 this isn't necessary anymore (neither Ref.Emit nor the CLR verifier complain about it),
+					// but the C# compiler still considers interfaces with non-public methods to be invalid, so to keep interop with C# we have
+					// to keep making the .cctor method public.
+					return typeBuilder.DefineConstructor(MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard, Type.EmptyTypes);
+				}
 				// NOTE we don't need to record the modifiers here, because they aren't visible from Java reflection
 				return typeBuilder.DefineTypeInitializer();
 			}
