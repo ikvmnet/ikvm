@@ -1013,6 +1013,7 @@
 ../classpath/ikvm/internal/__unspecified.java
 ../classpath/ikvm/internal/AssemblyClassLoader.java
 ../classpath/ikvm/internal/Formatter.java
+../classpath/ikvm/internal/MonoUtils.java
 ../classpath/ikvm/internal/stubgen/StubGenerator.java
 ../classpath/ikvm/internal/Util.java
 ../classpath/ikvm/internal/WeakIdentityMap.java
