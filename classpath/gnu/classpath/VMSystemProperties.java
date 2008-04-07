@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2004-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -107,6 +107,75 @@ public class VMSystemProperties
         return asm.get_Location();
     }
 
+    private static String getLibraryPath()
+    {
+        String libraryPath;
+        if(ikvm.internal.Util.WINDOWS)
+        {
+	    // see /hotspot/src/os/win32/vm/os_win32.cpp for the comment that describes how we build the path
+	    libraryPath = ".";
+	    String windir = SafeGetEnvironmentVariable("SystemRoot");
+	    if(windir != null)
+	    {
+		libraryPath += cli.System.IO.Path.PathSeparator + windir + "\\Sun\\Java\\bin";
+	    }
+            try
+            {
+                libraryPath += cli.System.IO.Path.PathSeparator + GetSystemDirectory();
+            }
+            catch(cli.System.MissingMethodException _)
+            {
+            }
+            catch(cli.System.Security.SecurityException _)
+            {
+            }
+            if(windir != null)
+            {
+		libraryPath += cli.System.IO.Path.PathSeparator + windir;
+            }
+            String path = SafeGetEnvironmentVariable("PATH");
+            if(path != null)
+            {
+                libraryPath += cli.System.IO.Path.PathSeparator + path;
+            }
+        }
+        else if(ikvm.internal.Util.MACOSX)
+        {
+            libraryPath = ".";
+        }
+        else /* assume Linux, since that's the only other platform we support */
+        {
+	    // on Linux we have some hardcoded paths (from /hotspot/src/os/linux/vm/os_linux.cpp)
+	    // and we can only guess the cpu arch based on bitness (that means only x86 and x64)
+	    String cpu_arch = cli.System.IntPtr.get_Size() == 4 ? "i386" : "amd64";
+	    libraryPath = "/usr/java/packages/lib/" + cpu_arch + ":/lib:/usr/lib";
+            String ld_library_path = SafeGetEnvironmentVariable("LD_LIBRARY_PATH");
+            if(ld_library_path != null)
+            {
+		libraryPath = ld_library_path + ":" + libraryPath;
+            }
+        }
+        try
+        {
+            cli.System.Reflection.Assembly entryAsm = GetEntryAssembly();
+            // If the CLR was started by a native app (e.g. via COM interop) there is no entry assembly
+            if (entryAsm != null)
+            {
+		// the application (or launcher) directory is prepended to the library path
+		// (similar to how the JDK prepends its directory to the path)
+                libraryPath = new cli.System.IO.FileInfo(GetAssemblyLocation(entryAsm)).get_DirectoryName() + cli.System.IO.Path.PathSeparator + libraryPath;
+            }
+        }
+        catch(cli.System.MissingMethodException _)
+        {
+        }
+        catch(Throwable _)
+        {
+            // ignore
+        }
+        return libraryPath;
+    }
+
     private static void initCommonProperties(Properties p)
     {
         p.setProperty("java.version", "1.6.0");
@@ -126,59 +195,7 @@ public class VMSystemProperties
         p.setProperty("java.specification.name", SPEC_TITLE);
         p.setProperty("java.class.version", "50.0");
         p.setProperty("java.class.path", "");
-        String libraryPath = null;
-        if(cli.System.Environment.get_OSVersion().ToString().indexOf("Unix") >= 0)
-        {
-            libraryPath = SafeGetEnvironmentVariable("LD_LIBRARY_PATH");
-        }
-        else
-        {
-            try
-            {
-                cli.System.Reflection.Assembly entryAsm = GetEntryAssembly();
-                // If the CLR was started by a native app (e.g. via COM interop) there is no entry assembly
-                if (entryAsm != null)
-                {
-                    libraryPath = new cli.System.IO.FileInfo(GetAssemblyLocation(entryAsm)).get_DirectoryName();
-                }
-            }
-            catch(cli.System.MissingMethodException _)
-            {
-            }
-            catch(Throwable t)
-            {
-                // ignore
-            }
-            if(libraryPath == null)
-            {
-                libraryPath = ".";
-            }
-            else
-            {
-                libraryPath += cli.System.IO.Path.PathSeparator + ".";
-            }
-            try
-            {
-                libraryPath += cli.System.IO.Path.PathSeparator + GetSystemDirectory();
-            }
-            catch(cli.System.MissingMethodException _1)
-            {
-                // ignore
-            }
-            catch(cli.System.Security.SecurityException _)
-            {
-                // ignore
-            }
-            String path = SafeGetEnvironmentVariable("PATH");
-            if(path != null)
-            {
-                libraryPath += cli.System.IO.Path.PathSeparator + path;
-            }
-        }
-        if(libraryPath != null)
-        {
-            p.setProperty("java.library.path", libraryPath);
-        }
+        p.setProperty("java.library.path", getLibraryPath());
         try
         {
             if(false) throw new cli.System.Security.SecurityException();
@@ -254,6 +271,18 @@ public class VMSystemProperties
                     }
                 }
                 break;
+            case cli.System.PlatformID.Unix:
+		if(ikvm.internal.Util.MACOSX)
+		{
+		    // for back compat Mono will return PlatformID.Unix when running on the Mac,
+		    // so we handle that explicitly here
+		    osname = "Mac OS X";
+		    // HACK this tries to map the Darwin version to the OS X version
+		    // (based on http://en.wikipedia.org/wiki/Darwin_(operating_system)#Releases)
+		    cli.System.Version ver = cli.System.Environment.get_OSVersion().get_Version();
+		    osver = "10." + (ver.get_Major() - 4) + "." + ver.get_Minor();
+		}
+		break;
         }
         if(osname == null)
         {
@@ -268,8 +297,15 @@ public class VMSystemProperties
         String arch = SafeGetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
         if(arch == null)
         {
-            // TODO get this info from somewhere else
-            arch = "x86";
+	    // we don't know, so we make a guess
+	    if(cli.System.IntPtr.get_Size() == 4)
+	    {
+		arch = ikvm.internal.Util.WINDOWS ? "x86" : "i386";
+	    }
+	    else
+	    {
+		arch = "amd64";
+	    }
         }
         if(arch.equals("AMD64"))
         {
