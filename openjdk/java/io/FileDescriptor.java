@@ -30,10 +30,6 @@ import cli.System.IO.FileMode;
 import cli.System.IO.FileShare;
 import cli.System.IO.FileStream;
 import cli.System.IO.SeekOrigin;
-import cli.System.IntPtr;
-import cli.System.Type;
-import cli.System.Reflection.BindingFlags;
-import cli.System.Reflection.MethodInfo;
 import cli.System.Runtime.InteropServices.DllImportAttribute;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -164,7 +160,7 @@ public final class FileDescriptor {
 	if (stream instanceof FileStream)
 	{
 	    FileStream fs = (FileStream)stream;
-	    boolean ok = ikvm.internal.Util.WINDOWS ? flushWin32(fs) : flushPosix(fs);
+	    boolean ok = ikvm.internal.Util.WINDOWS ? flushWin32(fs) : ikvm.internal.MonoUtils.fsync(fs);
 	    if (!ok)
 	    {
 		throw new SyncFailedException("sync failed");
@@ -175,22 +171,6 @@ public final class FileDescriptor {
     private static boolean flushWin32(FileStream fs)
     {
         return FlushFileBuffers(fs.get_SafeFileHandle()) != 0;
-    }
-
-    private static boolean flushPosix(FileStream fs)
-    {
-        Type t = Type.GetType("Mono.Unix.Native.Syscall, Mono.Posix");
-        if (t != null)
-        {
-            BindingFlags flags = BindingFlags.wrap(BindingFlags.Public | BindingFlags.Static);
-            MethodInfo fsync = t.GetMethod("fsync", flags, null, new Type[] { Type.GetType("System.Int32") }, null);
-            if (fsync != null)
-            {
-                Object[] args = new Object[] { ikvm.lang.CIL.box_int(fs.get_Handle().ToInt32()) };
-                return ikvm.lang.CIL.unbox_int(fsync.Invoke(null, args)) == 0;
-            }
-        }
-        return true;
     }
 
     @DllImportAttribute.Annotation("kernel32")
