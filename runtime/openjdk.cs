@@ -3629,19 +3629,11 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				// TODO instead of using the System property, we should use
-				// a VM level shared variable that contains the os
-				// (and that os.name is defined by)
-				string osname = jlSystem.getProperty("os.name");
-				if (osname == null)
-				{
-					return libname;
-				}
-				else if (osname.IndexOf("Windows") >= 0)
+				if (global::ikvm.@internal.Util.WINDOWS)
 				{
 					return libname + ".dll";
 				}
-				else if (osname == "Mac OS X")
+				else if (global::ikvm.@internal.Util.MACOSX)
 				{
 					return "lib" + libname + ".jnilib";
 				}
