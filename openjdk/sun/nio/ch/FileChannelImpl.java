@@ -1358,7 +1358,8 @@ public class FileChannelImpl
 		    throw new Error();
 	    }
 
-	    SafeFileHandle hFileMapping = CreateFileMapping(fs.get_SafeFileHandle(), IntPtr.Zero, fileProtect, (int)(length >> 32), (int)length, null);
+	    long maxSize = length + position;
+	    SafeFileHandle hFileMapping = CreateFileMapping(fs.get_SafeFileHandle(), IntPtr.Zero, fileProtect, (int)(maxSize >> 32), (int)maxSize, null);
 	    int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
 	    if (hFileMapping.get_IsInvalid())
 	    {
@@ -1366,7 +1367,7 @@ public class FileChannelImpl
 	    }
 	    IntPtr p = MapViewOfFile(hFileMapping, mapAccess, (int)(position >> 32), (int)position, IntPtr.op_Explicit(length));
 	    err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-	    CloseHandle(hFileMapping);
+	    hFileMapping.Close();
 	    if (p.Equals(IntPtr.Zero))
 	    {
 		if (err == 8 /*ERROR_NOT_ENOUGH_MEMORY*/)
@@ -1426,9 +1427,6 @@ public class FileChannelImpl
 
     @DllImportAttribute.Annotation("kernel32")
     private static native int FlushFileBuffers(SafeFileHandle handle);
-
-    @DllImportAttribute.Annotation("kernel32")
-    private static native int CloseHandle(SafeFileHandle handle);
 
     @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
     private static native SafeFileHandle CreateFileMapping(SafeFileHandle hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, String lpName);
