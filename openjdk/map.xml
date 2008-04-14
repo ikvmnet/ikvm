@@ -1729,27 +1729,6 @@
           <ret />
         </body>
       </method>
-      <method name="setIn0" sig="(Ljava.io.InputStream;)V">
-        <body>
-          <ldarg_0 />
-          <stsfld class="java.lang.System" name="in" sig="Ljava.io.InputStream;" />
-          <ret />
-        </body>
-      </method>
-      <method name="setOut0" sig="(Ljava.io.PrintStream;)V">
-        <body>
-          <ldarg_0 />
-          <stsfld class="java.lang.System" name="out" sig="Ljava.io.PrintStream;" />
-          <ret />
-        </body>
-      </method>
-      <method name="setErr0" sig="(Ljava.io.PrintStream;)V">
-        <body>
-          <ldarg_0 />
-          <stsfld class="java.lang.System" name="err" sig="Ljava.io.PrintStream;" />
-          <ret />
-        </body>
-      </method>
     </class>
     <class name="sun.misc.Launcher">
       <method name="&lt;init&gt;" sig="()V">

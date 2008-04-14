@@ -39,6 +39,14 @@ import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 import sun.reflect.annotation.AnnotationType;
 
+final class StdIO
+{
+    private StdIO() { }
+    static InputStream in = new BufferedInputStream(new FileInputStream(FileDescriptor.in));
+    static PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.out), 128), true);
+    static PrintStream err = new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.err), 128), true);
+}
+
 /**
  * The <code>System</code> class contains several useful class fields
  * and methods. It cannot be instantiated.
@@ -71,7 +79,15 @@ public final class System {
      * corresponds to keyboard input or another input source specified by
      * the host environment or user.
      */
-    public final static InputStream in = nullInputStream();
+    @ikvm.lang.Property(get="get_in")
+    public final static InputStream in;
+    
+    static { in = null; }
+    
+    private static InputStream get_in()
+    {
+	return StdIO.in;
+    }
 
     /**
      * The "standard" output stream. This stream is already
@@ -98,7 +114,15 @@ public final class System {
      * @see     java.io.PrintStream#println(java.lang.Object)
      * @see     java.io.PrintStream#println(java.lang.String)
      */
-    public final static PrintStream out = nullPrintStream();
+    @ikvm.lang.Property(get="get_out")
+    public final static PrintStream out;
+    
+    static { out = null; }
+    
+    private static PrintStream get_out()
+    {
+	return StdIO.out;
+    }
 
     /**
      * The "standard" error output stream. This stream is already
@@ -112,7 +136,15 @@ public final class System {
      * variable <code>out</code>, has been redirected to a file or other
      * destination that is typically not continuously monitored.
      */
-    public final static PrintStream err = nullPrintStream();
+    @ikvm.lang.Property(get="get_err")
+    public final static PrintStream err;
+    
+    static { err = null ; }
+
+    private static PrintStream get_err()
+    {
+	return StdIO.err;
+    }
 
     /* The security manager for the system.
      */
@@ -140,7 +172,7 @@ public final class System {
      */
     public static void setIn(InputStream in) {
 	checkIO();
-	setIn0(in);
+	StdIO.in = in;
     }
 
     /**
@@ -164,7 +196,7 @@ public final class System {
      */
     public static void setOut(PrintStream out) {
 	checkIO();
-	setOut0(out);
+	StdIO.out = out;
     }
 
     /**
@@ -188,7 +220,7 @@ public final class System {
      */
     public static void setErr(PrintStream err) {
 	checkIO();
-	setErr0(err);
+	StdIO.err = err;
     }
 
     private static volatile Console cons = null;
@@ -244,10 +276,6 @@ public final class System {
 	    sm.checkPermission(new RuntimePermission("setIO"));
 	}
     }
-
-    private static native void setIn0(InputStream in);
-    private static native void setOut0(PrintStream out);
-    private static native void setErr0(PrintStream err);
 
     /**
      * Sets the System security.
@@ -1063,38 +1091,12 @@ public final class System {
     public static native String mapLibraryName(String libname);
 
     /**
-     * The following two methods exist because in, out, and err must be
-     * initialized to null.  The compiler, however, cannot be permitted to
-     * inline access to them, since they are later set to more sensible values
-     * by initializeSystemClass().
-     */
-    private static InputStream nullInputStream() throws NullPointerException {
-	if (currentTimeMillis() > 0) {
-	    return null;
-	}
-	throw new NullPointerException();
-    }
-
-    private static PrintStream nullPrintStream() throws NullPointerException {
-	if (currentTimeMillis() > 0) {
-	    return null;
-	}
-	throw new NullPointerException();
-    }
-
-    /**
      * Initialize the system class.  Called after thread initialization.
      */
     private static void initializeSystemClass() {
 	props = new Properties();
 	initProperties(props);
 	sun.misc.Version.init();
-	FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
-	FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
-	FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
-	setIn0(new BufferedInputStream(fdIn));
-	setOut0(new PrintStream(new BufferedOutputStream(fdOut, 128), true));
-	setErr0(new PrintStream(new BufferedOutputStream(fdErr, 128), true));
 
 	// Load the zip library now in order to keep java.util.zip.ZipFile
 	// from trying to use itself to load this library later.
