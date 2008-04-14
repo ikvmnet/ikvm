@@ -528,6 +528,11 @@ namespace ikvm.awt
 		{
 			return new NetDesktopPeer();
 		}
+
+		public override java.awt.Cursor createCustomCursor(java.awt.Image cursor, java.awt.Point hotSpot, string name)
+		{
+			throw new java.awt.AWTException("Not implemented");
+		}
 	}
 
 	class NetLightweightComponentPeer : NetComponentPeer, java.awt.peer.LightweightPeer
