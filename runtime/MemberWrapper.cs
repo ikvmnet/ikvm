@@ -41,7 +41,8 @@ namespace IKVM.Internal
 		ExplicitOverride = 2,
 		MirandaMethod = 8,
 		AccessStub = 16,
-		InternalAccess = 32  // member has "internal" access (@ikvm.lang.Internal)
+		InternalAccess = 32,  // member has "internal" access (@ikvm.lang.Internal)
+		PropertyAccessor = 64,
 	}
 
 	class MemberWrapper
@@ -172,6 +173,26 @@ namespace IKVM.Internal
 			get
 			{
 				return (flags & MemberFlags.AccessStub) != 0;
+			}
+		}
+
+		internal bool IsPropertyAccessor
+		{
+			get
+			{
+				return (flags & MemberFlags.PropertyAccessor) != 0;
+			}
+			set
+			{
+				// this is unsynchronized, so it may only be called during the JavaTypeImpl constructor
+				if(value)
+				{
+					flags |= MemberFlags.PropertyAccessor;
+				}
+				else
+				{
+					flags &= ~MemberFlags.PropertyAccessor;
+				}
 			}
 		}
 
@@ -1356,7 +1377,7 @@ namespace IKVM.Internal
 			return new SimpleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
 		}
 
-		internal void ResolveField()
+		internal virtual void ResolveField()
 		{
 			FieldBuilder fb = field as FieldBuilder;
 			if(fb != null)
@@ -1602,6 +1623,255 @@ namespace IKVM.Internal
 			}
 		}
 #endif
+	}
+
+	// this class represents a .NET property defined in Java with the ikvm.lang.Property annotation
+	sealed class DynamicPropertyFieldWrapper : FieldWrapper
+	{
+		private readonly MethodWrapper getter;
+		private readonly MethodWrapper setter;
+		private PropertyBuilder pb;
+
+		private MethodWrapper GetMethod(string name, string sig, bool isstatic)
+		{
+			if(name != null)
+			{
+				MethodWrapper mw = this.DeclaringType.GetMethodWrapper(name, sig, false);
+				if(mw != null && mw.IsStatic == isstatic)
+				{
+					mw.IsPropertyAccessor = true;
+					return mw;
+				}
+				Tracer.Error(Tracer.Compiler, "Property '{0}' accessor '{1}' not found in class '{2}'", this.Name, name, this.DeclaringType.Name);
+			}
+			return null;
+		}
+
+		internal DynamicPropertyFieldWrapper(TypeWrapper declaringType, ClassFile.Field fld)
+			: base(declaringType, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null)
+		{
+			getter = GetMethod(fld.PropertyGetter, "()" + fld.Signature, fld.IsStatic);
+			setter = GetMethod(fld.PropertySetter, "(" + fld.Signature + ")V", fld.IsStatic);
+		}
+
+#if !STATIC_COMPILER
+		internal override void ResolveField()
+		{
+			if (getter != null)
+			{
+				getter.ResolveMethod();
+			}
+			if (setter != null)
+			{
+				setter.ResolveMethod();
+			}
+		}
+#endif
+
+		internal PropertyBuilder GetPropertyBuilder()
+		{
+			AssertLinked();
+			return pb;
+		}
+
+		internal void DoLink(TypeBuilder tb)
+		{
+			if(getter != null)
+			{
+				getter.Link();
+			}
+			if(setter != null)
+			{
+				setter.Link();
+			}
+			pb = tb.DefineProperty(this.Name, PropertyAttributes.None, this.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
+			if(getter != null)
+			{
+				pb.SetGetMethod((MethodBuilder)getter.GetMethod());
+			}
+			if(setter != null)
+			{
+				pb.SetSetMethod((MethodBuilder)setter.GetMethod());
+			}
+#if STATIC_COMPILER
+			AttributeHelper.SetModifiers(pb, this.Modifiers, this.IsInternal);
+#endif
+		}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		internal override object GetValue(object obj)
+		{
+			if(getter == null)
+			{
+				throw new global::java.lang.NoSuchMethodError();
+			}
+			return getter.Invoke(obj, new object[0], false);
+		}
+
+		internal override void SetValue(object obj, object val)
+		{
+			if(setter == null)
+			{
+				throw new global::java.lang.NoSuchMethodError();
+			}
+			setter.Invoke(obj, new object[] { val }, false);
+		}
+#endif
+
+		protected override void EmitGetImpl(CountingILGenerator ilgen)
+		{
+			if(getter == null)
+			{
+				EmitThrowNoSuchMethodErrorForGetter(ilgen, this.FieldTypeWrapper, this.IsStatic);
+			}
+			else if(getter.IsStatic)
+			{
+				getter.EmitCall(ilgen);
+			}
+			else
+			{
+				getter.EmitCallvirt(ilgen);
+			}
+		}
+
+		internal static void EmitThrowNoSuchMethodErrorForGetter(CountingILGenerator ilgen, TypeWrapper type, bool isStatic)
+		{
+			// HACK the branch around the throw is to keep the verifier happy
+			CountingLabel label = ilgen.DefineLabel();
+			ilgen.Emit(OpCodes.Ldc_I4_0);
+			ilgen.Emit(OpCodes.Brtrue_S, label);
+			EmitHelper.Throw(ilgen, "java.lang.NoSuchMethodError");
+			ilgen.MarkLabel(label);
+			if (!isStatic)
+			{
+				ilgen.Emit(OpCodes.Pop);
+			}
+			ilgen.Emit(OpCodes.Ldloc, ilgen.DeclareLocal(type.TypeAsLocalOrStackType));
+		}
+
+		protected override void EmitSetImpl(CountingILGenerator ilgen)
+		{
+			if(setter == null)
+			{
+				if(this.IsFinal)
+				{
+					ilgen.Emit(OpCodes.Pop);
+					if(!this.IsStatic)
+					{
+						ilgen.Emit(OpCodes.Pop);
+					}
+				}
+				else
+				{
+					EmitThrowNoSuchMethodErrorForSetter(ilgen, this.IsStatic);
+				}
+			}
+			else if(setter.IsStatic)
+			{
+				setter.EmitCall(ilgen);
+			}
+			else
+			{
+				setter.EmitCallvirt(ilgen);
+			}
+		}
+
+		internal static void EmitThrowNoSuchMethodErrorForSetter(CountingILGenerator ilgen, bool isStatic)
+		{
+			// HACK the branch around the throw is to keep the verifier happy
+			CountingLabel label = ilgen.DefineLabel();
+			ilgen.Emit(OpCodes.Ldc_I4_0);
+			ilgen.Emit(OpCodes.Brtrue_S, label);
+			EmitHelper.Throw(ilgen, "java.lang.NoSuchMethodError");
+			ilgen.MarkLabel(label);
+			ilgen.Emit(OpCodes.Pop);
+			if (!isStatic)
+			{
+				ilgen.Emit(OpCodes.Pop);
+			}
+		}
+	}
+
+	// this class represents a .NET property defined in Java with the ikvm.lang.Property annotation
+	sealed class CompiledPropertyFieldWrapper : FieldWrapper
+	{
+		private readonly PropertyInfo property;
+
+		internal CompiledPropertyFieldWrapper(TypeWrapper declaringType, PropertyInfo property, ExModifiers modifiers)
+			: base(declaringType, ClassLoaderWrapper.GetWrapperFromType(property.PropertyType), property.Name, ClassLoaderWrapper.GetWrapperFromType(property.PropertyType).SigName, modifiers, null)
+		{
+			this.property = property;
+		}
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		internal override object GetValue(object obj)
+		{
+			if (!property.CanRead)
+			{
+				throw new global::java.lang.NoSuchMethodError();
+			}
+			return property.GetValue(obj, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty, null, null, null);
+		}
+
+		internal override void SetValue(object obj, object val)
+		{
+			if(!property.CanWrite)
+			{
+				throw new global::java.lang.NoSuchMethodError();
+			}
+			property.SetValue(obj, val, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty, null, null, null);
+		}
+#endif
+
+		protected override void EmitGetImpl(CountingILGenerator ilgen)
+		{
+			MethodInfo getter = property.GetGetMethod(true);
+			if(getter == null)
+			{
+				DynamicPropertyFieldWrapper.EmitThrowNoSuchMethodErrorForGetter(ilgen, this.FieldTypeWrapper, this.IsStatic);
+			}
+			else if(getter.IsStatic)
+			{
+				ilgen.Emit(OpCodes.Call, getter);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Callvirt, getter);
+			}
+		}
+
+		protected override void EmitSetImpl(CountingILGenerator ilgen)
+		{
+			MethodInfo setter = property.GetSetMethod(true);
+			if (setter == null)
+			{
+				if(this.IsFinal)
+				{
+					ilgen.Emit(OpCodes.Pop);
+					if(!this.IsStatic)
+					{
+						ilgen.Emit(OpCodes.Pop);
+					}
+				}
+				else
+				{
+					DynamicPropertyFieldWrapper.EmitThrowNoSuchMethodErrorForSetter(ilgen, this.IsStatic);
+				}
+			}
+			else if(setter.IsStatic)
+			{
+				ilgen.Emit(OpCodes.Call, setter);
+			}
+			else
+			{
+				ilgen.Emit(OpCodes.Callvirt, setter);
+			}
+		}
+
+		internal PropertyInfo GetProperty()
+		{
+			return property;
+		}
 	}
 
 	sealed class ConstantFieldWrapper : FieldWrapper

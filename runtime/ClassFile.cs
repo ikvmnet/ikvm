@@ -1969,6 +1969,7 @@ namespace IKVM.Internal
 		internal sealed class Field : FieldOrMethod
 		{
 			private object constantValue;
+			private string[] propertyGetterSetter;
 
 			internal Field(ClassFile classFile, BigEndianBinaryReader br) : base(classFile, br)
 			{
@@ -2068,7 +2069,6 @@ namespace IKVM.Internal
 							}
 							annotations = ReadAnnotations(br, classFile);
 							break;
-#if STATIC_COMPILER
 						case "RuntimeInvisibleAnnotations":
 							if(classFile.MajorVersion < 49)
 							{
@@ -2076,18 +2076,61 @@ namespace IKVM.Internal
 							}
 							foreach(object[] annot in ReadAnnotations(br, classFile))
 							{
-								if(annot[1].Equals("Likvm/lang/Internal;"))
+								if(annot[1].Equals("Likvm/lang/Property;"))
+								{
+									DecodePropertyAnnotation(classFile, annot);
+								}
+#if STATIC_COMPILER
+								else if(annot[1].Equals("Likvm/lang/Internal;"))
 								{
 									this.access_flags &= ~Modifiers.AccessMask;
 									flags |= FLAG_MASK_INTERNAL;
 								}
+#endif
 							}
 							break;
-#endif
 						default:
 							br.Skip(br.ReadUInt32());
 							break;
 					}
+				}
+			}
+
+			private void DecodePropertyAnnotation(ClassFile classFile, object[] annot)
+			{
+				if(propertyGetterSetter != null)
+				{
+					Tracer.Error(Tracer.ClassLoading, "Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}", classFile.Name, this.Name);
+					return;
+				}
+				propertyGetterSetter = new string[2];
+				for(int i = 2; i < annot.Length - 1; i += 2)
+				{
+					string value = annot[i + 1] as string;
+					if(value == null)
+					{
+						propertyGetterSetter = null;
+						break;
+					}
+					if(annot[i].Equals("get") && propertyGetterSetter[0] == null)
+					{
+						propertyGetterSetter[0] = value;
+					}
+					else if(annot[i].Equals("set") && propertyGetterSetter[1] == null)
+					{
+						propertyGetterSetter[1] = value;
+					}
+					else
+					{
+						propertyGetterSetter = null;
+						break;
+					}
+				}
+				if(propertyGetterSetter == null || propertyGetterSetter[0] == null)
+				{
+					propertyGetterSetter = null;
+					Tracer.Error(Tracer.ClassLoading, "Ignoring malformed ikvm.lang.Property annotation on {0}.{1}", classFile.Name, this.Name);
+					return;
 				}
 			}
 
@@ -2104,6 +2147,30 @@ namespace IKVM.Internal
 				get
 				{
 					return constantValue;
+				}
+			}
+
+			internal bool IsProperty
+			{
+				get
+				{
+					return propertyGetterSetter != null;
+				}
+			}
+
+			internal string PropertyGetter
+			{
+				get
+				{
+					return propertyGetterSetter[0];
+				}
+			}
+
+			internal string PropertySetter
+			{
+				get
+				{
+					return propertyGetterSetter[1];
 				}
 			}
 		}

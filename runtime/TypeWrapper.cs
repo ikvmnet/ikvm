@@ -821,6 +821,35 @@ namespace IKVM.Internal
 			}
 		}
 
+		internal static ModifiersAttribute GetModifiersAttribute(PropertyInfo property)
+		{
+#if !STATIC_COMPILER
+			if (!property.DeclaringType.Assembly.ReflectionOnly)
+			{
+				object[] attr = property.GetCustomAttributes(typeof(ModifiersAttribute), false);
+				return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
+			}
+			else
+#endif
+			{
+#if !COMPACT_FRAMEWORK
+				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(property))
+				{
+					if(MatchTypes(cad.Constructor.DeclaringType, typeofModifiersAttribute))
+					{
+						IList<CustomAttributeTypedArgument> args = cad.ConstructorArguments;
+						if(args.Count == 2)
+						{
+							return new ModifiersAttribute((Modifiers)args[0].Value, (bool)args[1].Value);
+						}
+						return new ModifiersAttribute((Modifiers)args[0].Value);
+					}
+				}
+#endif
+				return null;
+			}
+		}
+
 		internal static ExModifiers GetModifiers(MethodBase mb, bool assemblyIsPrivate)
 		{
 #if !STATIC_COMPILER
@@ -1011,6 +1040,20 @@ namespace IKVM.Internal
 				customAttributeBuilder = new CustomAttributeBuilder(typeofModifiersAttribute.GetConstructor(new Type[] { typeofModifiers }), new object[] { modifiers });
 			}
 			fb.SetCustomAttribute(customAttributeBuilder);
+		}
+
+		internal static void SetModifiers(PropertyBuilder pb, Modifiers modifiers, bool isInternal)
+		{
+			CustomAttributeBuilder customAttributeBuilder;
+			if (isInternal)
+			{
+				customAttributeBuilder = new CustomAttributeBuilder(typeofModifiersAttribute.GetConstructor(new Type[] { typeofModifiers, typeof(bool) }), new object[] { modifiers, isInternal });
+			}
+			else
+			{
+				customAttributeBuilder = new CustomAttributeBuilder(typeofModifiersAttribute.GetConstructor(new Type[] { typeofModifiers }), new object[] { modifiers });
+			}
+			pb.SetCustomAttribute(customAttributeBuilder);
 		}
 
 		internal static void SetModifiers(TypeBuilder tb, Modifiers modifiers, bool isInternal)
@@ -1937,6 +1980,7 @@ namespace IKVM.Internal
 		internal abstract void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation);
 		internal abstract void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation);
 		internal abstract void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation);
+		internal abstract void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation);
 
 		internal virtual void ApplyReturnValue(ClassLoaderWrapper loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
 		{
@@ -3951,6 +3995,10 @@ namespace IKVM.Internal
 #endif
 						fields[i] = new ConstantFieldWrapper(wrapper, fieldType, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.None);
 					}
+					else if(fld.IsProperty)
+					{
+						fields[i] = new DynamicPropertyFieldWrapper(wrapper, fld);
+					}
 #if STATIC_COMPILER
 					else if(fld.IsFinal
 						&& (fld.IsPublic || fld.IsProtected)
@@ -4700,6 +4748,11 @@ namespace IKVM.Internal
 				if(fw.IsAccessStub)
 				{
 					((AotAccessStubFieldWrapper)fw).DoLink(typeBuilder);
+					return null;
+				}
+				if(fw is DynamicPropertyFieldWrapper)
+				{
+					((DynamicPropertyFieldWrapper)fw).DoLink(typeBuilder);
 					return null;
 				}
 				int fieldIndex = GetFieldIndex(fw);
@@ -5538,7 +5591,15 @@ namespace IKVM.Internal
 									}
 									else
 									{
-										annotation.Apply(wrapper.GetClassLoader(), (FieldBuilder)fields[i].GetField(), def);
+										DynamicPropertyFieldWrapper prop = fields[i] as DynamicPropertyFieldWrapper;
+										if(prop != null)
+										{
+											annotation.Apply(wrapper.GetClassLoader(), prop.GetPropertyBuilder(), def);
+										}
+										else
+										{
+											annotation.Apply(wrapper.GetClassLoader(), (FieldBuilder)fields[i].GetField(), def);
+										}
 									}
 								}
 							}
@@ -6266,6 +6327,15 @@ namespace IKVM.Internal
 						ab.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
 					}
 				}
+
+				internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
+				{
+					if(annotationTypeBuilder != null)
+					{
+						annotation = QualifyClassNames(loader, annotation);
+						pb.SetCustomAttribute(new CustomAttributeBuilder(defineConstructor, new object[] { annotation }));
+					}
+				}
 			}
 #endif // STATIC_COMPILER
 
@@ -6760,6 +6830,59 @@ namespace IKVM.Internal
 				return null;
 			}
 
+			private MethodAttributes GetPropertyAccess(MethodWrapper mw)
+			{
+				string sig = mw.ReturnType.SigName;
+				if(sig == "V")
+				{
+					sig = mw.GetParameters()[0].SigName;
+				}
+				int access = -1;
+				foreach(ClassFile.Field field in classFile.Fields)
+				{
+					if(field.IsProperty
+						&& field.IsStatic == mw.IsStatic
+						&& field.Signature == sig
+						&& (field.PropertyGetter == mw.Name || field.PropertySetter == mw.Name))
+					{
+						int nacc;
+						if(field.IsPublic)
+						{
+							nacc = 3;
+						}
+						else if(field.IsProtected)
+						{
+							nacc = 2;
+						}
+						else if(field.IsPrivate)
+						{
+							nacc = 0;
+						}
+						else
+						{
+							nacc = 1;
+						}
+						if(nacc > access)
+						{
+							access = nacc;
+						}
+					}
+				}
+				switch(access)
+				{
+					case 0:
+						return MethodAttributes.Private;
+					case 1:
+						return MethodAttributes.Assembly;
+					case 2:
+						return MethodAttributes.FamORAssem;
+					case 3:
+						return MethodAttributes.Public;
+					default:
+						throw new InvalidOperationException();
+				}
+			}
+
 			private MethodBase GenerateMethod(int index, bool unloadableOverrideStub)
 			{
 				methods[index].AssertLinked();
@@ -6858,21 +6981,30 @@ namespace IKVM.Internal
 							setModifiers = true;
 						}
 					}
-					if(m.IsPrivate)
+					if(methods[index].IsPropertyAccessor)
 					{
-						attribs |= MethodAttributes.Private;
-					}
-					else if(m.IsProtected)
-					{
-						attribs |= MethodAttributes.FamORAssem;
-					}
-					else if(m.IsPublic)
-					{
-						attribs |= MethodAttributes.Public;
+						attribs |= GetPropertyAccess(methods[index]);
+						attribs |= MethodAttributes.SpecialName;
+						setModifiers = true;
 					}
 					else
 					{
-						attribs |= MethodAttributes.Assembly;
+						if(m.IsPrivate)
+						{
+							attribs |= MethodAttributes.Private;
+						}
+						else if(m.IsProtected)
+						{
+							attribs |= MethodAttributes.FamORAssem;
+						}
+						else if(m.IsPublic)
+						{
+							attribs |= MethodAttributes.Public;
+						}
+						else
+						{
+							attribs |= MethodAttributes.Assembly;
+						}
 					}
 					if(ReferenceEquals(m.Name, StringConstants.INIT))
 					{
@@ -8831,7 +8963,17 @@ namespace IKVM.Internal
 								}
 								else
 								{
-									fields.Add(CreateFieldWrapper(property));
+									// If the property has a ModifiersAttribute, we know that it is an explicit property
+									// (defined in Java source by an @ikvm.lang.Property annotation)
+									ModifiersAttribute mods = AttributeHelper.GetModifiersAttribute(property);
+									if(mods != null)
+									{
+										fields.Add(new CompiledPropertyFieldWrapper(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
+									}
+									else
+									{
+										fields.Add(CreateFieldWrapper(property));
+									}
 								}
 							}
 						}
@@ -9162,6 +9304,16 @@ namespace IKVM.Internal
 				}
 				return getter.GetGetter().GetCustomAttributes(false);
 			}
+			CompiledPropertyFieldWrapper prop = fw as CompiledPropertyFieldWrapper;
+			if(prop != null)
+			{
+				if (prop.GetProperty().DeclaringType.Assembly.ReflectionOnly)
+				{
+					// TODO on Whidbey this must be implemented
+					return null;
+				}
+				return prop.GetProperty().GetCustomAttributes(false);
+			}
 			return new object[0];
 		}
 
@@ -9214,6 +9366,12 @@ namespace IKVM.Internal
 			{
 				annotation = QualifyClassNames(loader, annotation);
 				ab.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
+			}
+
+			internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
+			{
+				annotation = QualifyClassNames(loader, annotation);
+				pb.SetCustomAttribute(MakeCustomAttributeBuilder(annotation));
 			}
 		}
 
@@ -10261,6 +10419,10 @@ namespace IKVM.Internal
 					internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
 					{
 					}
+
+					internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
+					{
+					}
 				}
 
 				internal override Annotation Annotation
@@ -10405,6 +10567,15 @@ namespace IKVM.Internal
 						foreach (object ann in UnwrapArray(annotation))
 						{
 							annot.Apply(loader, tb, ann);
+						}
+					}
+
+					internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
+					{
+						Annotation annot = type.Annotation;
+						foreach (object ann in UnwrapArray(annotation))
+						{
+							annot.Apply(loader, pb, ann);
 						}
 					}
 				}
@@ -10675,6 +10846,11 @@ namespace IKVM.Internal
 				internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 				{
 					ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+				}
+
+				internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
+				{
+					pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 				}
 			}
 

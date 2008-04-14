@@ -1022,6 +1022,7 @@
 ../classpath/ikvm/lang/Internal.java
 ../classpath/ikvm/lang/IterableEnumerator.java
 ../classpath/ikvm/lang/MapEnumerator.java
+../classpath/ikvm/lang/Property.java
 ../classpath/ikvm/runtime/AppDomainAssemblyClassLoader.java
 ../classpath/ikvm/runtime/ClassPathAssemblyClassLoader.java
 ../classpath/ikvm/runtime/Startup.java
