@@ -388,6 +388,7 @@ public class VMSystemProperties
 	p.setProperty("user.timezone", "");
 	p.setProperty("sun.os.patch.level", "");
 	p.setProperty("java.vm.info", "compiled mode");
+	p.setProperty("sun.nio.MaxDirectMemorySize", "-1");
 	// TODO
 	// sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
 	// sun.desktop:=windows
