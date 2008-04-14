@@ -1337,6 +1337,9 @@ namespace IKVM.NativeCode.java
 				catch (System.Security.SecurityException)
 				{
 				}
+				catch (System.NotSupportedException)
+				{
+				}
 				return path;
 			}
 
@@ -1354,6 +1357,11 @@ namespace IKVM.NativeCode.java
 					//
 					// FXBUG we're appending the directory separator to work around an apparent .NET bug.
 					// If we don't do this, "c:\j\." would be canonicalized to "C:\"
+					int colon = path.IndexOf(':', 2);
+					if (colon != -1)
+					{
+						return CanonicalizePath(path.Substring(0, colon) + System.IO.Path.DirectorySeparatorChar) + path.Substring(colon);
+					}
 					return CanonicalizePath(path + System.IO.Path.DirectorySeparatorChar);
 				}
 				catch (System.ArgumentException x)
