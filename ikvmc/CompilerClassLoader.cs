@@ -1880,9 +1880,21 @@ namespace IKVM.Internal
 					if(map[i].code != null)
 					{
 						ilgen.Emit(OpCodes.Ldarg_0);
-						// TODO we should manually walk the instruction list and add a suppressFillInStackTrace call
-						// before each newobj that instantiates an exception
-						map[i].code.Emit(ilgen);
+						if(map[i].code.invoke != null)
+						{
+							Hashtable context = new Hashtable();
+							foreach(MapXml.Instruction instr in map[i].code.invoke)
+							{
+								MapXml.NewObj newobj = instr as MapXml.NewObj;
+								if(newobj != null
+									&& newobj.Class != null
+									&& ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
+								{
+									mwSuppressFillInStackTrace.EmitCall(ilgen);
+								}
+								instr.Generate(context, ilgen);
+							}
+						}
 						ilgen.Emit(OpCodes.Ret);
 					}
 					else
@@ -2408,6 +2420,10 @@ namespace IKVM.Internal
 			if(!loader.remapped.ContainsKey("java.lang.Object"))
 			{
 				FakeTypes.Load(JVM.CoreAssembly);
+			}
+			else
+			{
+				FakeTypes.CreatePre(loader.GetTypeWrapperFactory().ModuleBuilder);
 			}
 
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
