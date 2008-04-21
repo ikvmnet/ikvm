@@ -1049,6 +1049,7 @@ java/io/FileInputStream.java
 java/io/FileOutputStream.java
 java/io/ObjectStreamClass.java
 java/io/RandomAccessFile.java
+java/lang/ApplicationShutdownHooks.java
 java/lang/Class.java
 java/lang/ClassLoader.java
 java/lang/LangHelper.java
@@ -6356,7 +6357,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/AbstractMethodError.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/AbstractStringBuilder.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/Appendable.java
-../../openjdk-b13/j2se/src/share/classes/java/lang/ApplicationShutdownHooks.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ArithmeticException.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ArrayIndexOutOfBoundsException.java
 ../../openjdk-b13/j2se/src/share/classes/java/lang/ArrayStoreException.java
