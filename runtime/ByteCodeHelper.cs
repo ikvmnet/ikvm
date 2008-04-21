@@ -586,7 +586,27 @@ namespace IKVM.Runtime
 		public static void VerboseCastFailure(RuntimeTypeHandle typeHandle, object obj)
 		{
 #if !FIRST_PASS
-			string msg = String.Format("Object of type \"{0}\" cannot be cast to \"{1}\"", obj.GetType().AssemblyQualifiedName, Type.GetTypeFromHandle(typeHandle).AssemblyQualifiedName);
+			Type t1 = obj.GetType();
+			Type t2 = Type.GetTypeFromHandle(typeHandle);
+			string msg;
+			if(t1.Assembly.FullName == t2.Assembly.FullName && t1.Assembly.Location != t2.Assembly.Location)
+			{
+				string l1 = t1.Assembly.Location;
+				string l2 = t2.Assembly.Location;
+				if(l1 == "")
+				{
+					l1 = "unknown location";
+				}
+				if(l2 == "")
+				{
+					l2 = "unknown location";
+				}
+				msg = String.Format("Object of type \"{0}\" loaded from {1} cannot be cast to \"{2}\" loaded from {3}", t1.AssemblyQualifiedName, l1, t2.AssemblyQualifiedName, l2);
+			}
+			else
+			{
+				msg = String.Format("Object of type \"{0}\" cannot be cast to \"{1}\"", t1.AssemblyQualifiedName, t2.AssemblyQualifiedName);
+			}
 			throw new java.lang.ClassCastException(msg);
 #endif // !FIRST_PASS
 		}
