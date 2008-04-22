@@ -9779,6 +9779,20 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 				this.fakeType = FakeTypes.GetEnumType(enumType);
 #elif !FIRST_PASS
+				if(enumType.Assembly.ReflectionOnly)
+				{
+					TypeWrapper decl = ClassLoaderWrapper.GetWrapperFromType(enumType);
+					TypeWrapperFactory factory = ClassLoaderWrapper.GetBootstrapClassLoader().GetTypeWrapperFactory();
+					string basename = "<ReflectionOnlyType>" + enumType.FullName;
+					name = basename;
+					int index = 0;
+					while(!factory.ReserveName(name))
+					{
+						name = basename + (++index);
+					}
+					enumType = factory.ModuleBuilder.DefineEnum(name, TypeAttributes.Public, typeof(int)).CreateType();
+					ClassLoaderWrapper.SetWrapperForType(enumType, decl);
+				}
 				this.fakeType = typeof(ikvm.@internal.EnumEnum<>).MakeGenericType(enumType);
 #endif
 			}
@@ -9882,7 +9896,7 @@ namespace IKVM.Internal
 			{
 				ArrayList fields = new ArrayList();
 				int ordinal = 0;
-				foreach(FieldInfo field in fakeType.GetGenericArguments()[0].GetFields(BindingFlags.Static | BindingFlags.Public))
+				foreach(FieldInfo field in this.DeclaringTypeWrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.Public))
 				{
 					if(field.IsLiteral)
 					{
