@@ -2081,7 +2081,12 @@
 		<exception src="System.IndexOutOfRangeException" dst="java.lang.ArrayIndexOutOfBoundsException" />
 		<!-- HACK for String methods, we remap ArgumentOutOfRangeException to StringIndexOutOfBoundsException -->
 		<exception src="System.ArgumentOutOfRangeException" dst="java.lang.StringIndexOutOfBoundsException" />
-		<exception src="System.InvalidCastException" dst="java.lang.ClassCastException" />
+    <exception src="System.InvalidCastException" dst="java.lang.ClassCastException">
+      <code>
+        <callvirt type="System.Exception" name="get_Message" sig="()Ljava.lang.String;" />
+        <newobj class="java.lang.ClassCastException" name="&lt;init&gt;" sig="(Ljava.lang.String;)V" />
+      </code>
+    </exception>
 		<!-- NOTE we "map" to java.lang.Error, because that is the base class of all possible mappings.
 			The * in front of the class name means that all subclasses can be thrown as well.
 		 -->
