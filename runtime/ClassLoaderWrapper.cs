@@ -1559,7 +1559,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		internal TypeWrapper GetWrapperFromAssemblyType(Type type)
+		internal virtual TypeWrapper GetWrapperFromAssemblyType(Type type)
 		{
 			//Tracer.Info(Tracer.Runtime, "GetWrapperFromAssemblyType: {0}", type.FullName);
 			Debug.Assert(!type.Name.EndsWith("[]"), "!type.IsArray", type.FullName);
@@ -1913,6 +1913,24 @@ namespace IKVM.Internal
 		internal BootstrapClassLoader()
 			: base(JVM.CoreAssembly, null, false)
 		{
+		}
+
+		internal override TypeWrapper GetWrapperFromAssemblyType(Type type)
+		{
+			// we have to special case the fake types here
+			if(type.IsGenericType)
+			{
+				TypeWrapper outer = ClassLoaderWrapper.GetWrapperFromType(type.GetGenericArguments()[0]);
+				foreach(TypeWrapper inner in outer.InnerClasses)
+				{
+					if(inner.TypeAsTBD == type)
+					{
+						return inner;
+					}
+				}
+				return null;
+			}
+			return base.GetWrapperFromAssemblyType(type);
 		}
 
 		internal override object GetProtectionDomain()

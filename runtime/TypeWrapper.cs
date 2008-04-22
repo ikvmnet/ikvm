@@ -8494,6 +8494,7 @@ namespace IKVM.Internal
 
 		internal static string GetName(Type type)
 		{
+			Debug.Assert(!type.IsGenericType);
 			Debug.Assert(AttributeHelper.IsJavaModule(type.Module));
 
 			// look for our custom attribute, that contains the real name of the type (for inner classes)
@@ -8509,31 +8510,6 @@ namespace IKVM.Internal
 				{
 					return GetName(type.DeclaringType) + "$" + type.Name;
 				}
-			}
-			if(type.IsGenericType)
-			{
-				string suffix;
-				switch (type.GetGenericTypeDefinition().FullName)
-				{
-					case DotNetTypeWrapper.GenericEnumEnumTypeName:
-						suffix = DotNetTypeWrapper.EnumEnumSuffix;
-						break;
-					case DotNetTypeWrapper.GenericDelegateInterfaceTypeName:
-						suffix = DotNetTypeWrapper.DelegateInterfaceSuffix;
-						break;
-					case DotNetTypeWrapper.GenericAttributeAnnotationTypeName:
-						suffix = DotNetTypeWrapper.AttributeAnnotationSuffix;
-						break;
-					case DotNetTypeWrapper.GenericAttributeAnnotationReturnValueTypeName:
-						suffix = DotNetTypeWrapper.AttributeAnnotationReturnValueSuffix;
-						break;
-					case DotNetTypeWrapper.GenericAttributeAnnotationMultipleTypeName:
-						suffix = DotNetTypeWrapper.AttributeAnnotationMultipleSuffix;
-						break;
-					default:
-						throw new InvalidOperationException();
-				}
-				return ClassLoaderWrapper.GetWrapperFromType(type.GetGenericArguments()[0]).Name + suffix;
 			}
 			return type.FullName;
 		}
