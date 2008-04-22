@@ -9806,8 +9806,8 @@ namespace IKVM.Internal
 				protected override void EmitGetImpl(ILGenerator ilgen)
 				{
 					// TODO we should throw a NoSuchFieldError if at runtime we find out that the "field" doesn't exist
-					ilgen.Emit(OpCodes.Ldstr, this.DeclaringType.Name);
-					CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("forName", "(Ljava.lang.String;)Ljava.lang.Class;", false).EmitCall(ilgen);
+					ilgen.Emit(OpCodes.Ldtoken, this.DeclaringType.TypeAsTBD);
+					ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
 					ilgen.Emit(OpCodes.Ldstr, this.Name);
 					this.DeclaringType.BaseTypeWrapper.GetMethodWrapper("valueOf", "(Ljava.lang.Class;Ljava.lang.String;)Ljava.lang.Enum;", false).EmitCall(ilgen);
 					ilgen.Emit(OpCodes.Castclass, this.DeclaringType.TypeAsTBD);
