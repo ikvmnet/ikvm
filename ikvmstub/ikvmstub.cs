@@ -53,6 +53,20 @@ public class NetExp
 				{
 					continueOnError = true;
 				}
+				else if(s.StartsWith("-r:") || s.StartsWith("-reference:"))
+				{
+					string path = s.Substring(s.IndexOf(':') + 1);
+					try
+					{
+						Assembly.ReflectionOnlyLoadFrom(path);
+					}
+					catch (Exception x)
+					{
+						Console.Error.WriteLine("Error: unable to load reference {0}", path);
+						Console.Error.WriteLine("    ({0})", x.Message);
+						return 1;
+					}
+				}
 				else
 				{
 					// unrecognized option, or multiple assemblies, print usage message and exit
