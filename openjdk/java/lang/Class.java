@@ -2278,11 +2278,6 @@ public final
     // Annotations handling
     private native Map<Class, Annotation> getDeclaredAnnotationsImpl();
 
-    ConstantPool getConstantPool()
-    {
-	throw new NoSuchMethodError();
-    }
-
     //
     //
     // java.lang.reflect.Field handling
