@@ -1661,17 +1661,6 @@
         </replace-method-call>
       </method>
     </class>
-    <class name="sun.misc.Unsafe">
-      <method name="getUnsafe" sig="()Lsun.misc.Unsafe;">
-        <replace-method-call class="sun.misc.Unsafe" name="ensureClassInitialized" sig="(Ljava.lang.Class;)V">
-          <code>
-            <pop />
-            <pop />
-            <runclassinit class="java.lang.System" />
-          </code>
-        </replace-method-call>
-      </method>
-    </class>
 		<class name="java.util.concurrent.atomic.AtomicReference">
 			<method name="compareAndSet" sig="(Ljava.lang.Object;Ljava.lang.Object;)Z">
 				<body>

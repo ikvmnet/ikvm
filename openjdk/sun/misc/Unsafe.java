@@ -49,11 +49,6 @@ public final class Unsafe
         {
             throw new SecurityException("Unsafe");
         }
-	if(c == SharedSecrets.class)
-	{
-	    // HACK make sure that bootstrap has occurred before SharedSecrets.getJavaLangAccess() is called.
-	    theUnsafe.ensureClassInitialized(System.class);
-	}
 	return theUnsafe;
     }
 
