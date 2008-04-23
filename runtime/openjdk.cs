@@ -3335,21 +3335,7 @@ namespace IKVM.NativeCode.java
 		{
 			public static int availableProcessors(object thisRuntime)
 			{
-				string s = JVM.SafeGetEnvironmentVariable("NUMBER_OF_PROCESSORS");
-				if (s != null)
-				{
-					try
-					{
-						return Int32.Parse(s, NumberFormatInfo.InvariantInfo);
-					}
-					catch (FormatException)
-					{
-					}
-					catch (OverflowException)
-					{
-					}
-				}
-				return 1;
+				return Environment.ProcessorCount;
 			}
 
 			public static long freeMemory(object thisRuntime)
