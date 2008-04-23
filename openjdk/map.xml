@@ -1158,22 +1158,6 @@
 			</method>
 		</class>
 		<!-- Here we are adding/replacing methods to existing classes -->
-    <class name="java.io.Console">
-      <method name="_reinitHack" sig="()V" modifiers="static">
-        <body>
-          <call class="java.io.Console" name="&lt;clinit&gt;" sig="()V" />
-          <ret />
-        </body>
-      </method>
-    </class>
-    <class name="java.io.File">
-      <method name="_reinitHack" sig="()V" modifiers="static">
-        <body>
-          <call class="java.io.File" name="&lt;clinit&gt;" sig="()V" />
-          <ret />
-        </body>
-      </method>
-    </class>
 		<class name="java.lang.Class">
       <field name="typeWrapper" sig="Lcli.IKVM.Internal.TypeWrapper;" modifiers="">
         <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
@@ -1214,13 +1198,6 @@
           <ret />
         </body>
       </method>
-      <method name="clearSclSet" sig="()V" modifiers="static">
-        <body>
-          <ldc_i4_0 />
-          <stsfld class="java.lang.ClassLoader" name="sclSet" sig="Z" />
-          <ret />
-        </body>
-      </method>
     </class>
     <class name="java.lang.Thread">
       <field name="vmThread" sig="Lcli.IKVM.NativeCode.java.lang.Thread$VMThread;" modifiers="">
@@ -1228,41 +1205,6 @@
       </field>
       <field name="parkLock" sig="Ljava.lang.Object;" modifiers="" />
       <field name="parkState" sig="I" modifiers="" />
-      <constructor sig="(Lcli.IKVM.NativeCode.java.lang.Thread$VMThread;Ljava.lang.ThreadGroup;Ljava.lang.String;)V">
-        <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-        <body>
-          <ldarg_0 />
-          <ldarg_1 />
-          <stfld class="java.lang.Thread" name="vmThread" sig="Lcli.IKVM.NativeCode.java.lang.Thread$VMThread;" />
-          <ldarg_0 />
-          <ldarg_2 />
-          <ldarg_3 />
-          <call class="java.lang.Thread" name="&lt;init&gt;" sig="(Ljava.lang.ThreadGroup;Ljava.lang.String;)V" />
-          <ret />
-        </body>
-      </constructor>
-      <constructor sig="(Lcli.IKVM.NativeCode.java.lang.Thread$VMThread;Ljava.lang.ThreadGroup;Ljava.lang.Runnable;)V">
-        <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-        <body>
-          <ldarg_0 />
-          <ldarg_1 />
-          <stfld class="java.lang.Thread" name="vmThread" sig="Lcli.IKVM.NativeCode.java.lang.Thread$VMThread;" />
-          <ldarg_0 />
-          <ldarg_2 />
-          <ldarg_3 />
-          <call class="java.lang.Thread" name="&lt;init&gt;" sig="(Ljava.lang.ThreadGroup;Ljava.lang.Runnable;)V" />
-          <ret />
-        </body>
-      </constructor>
-      <method name="init" sig="(Ljava.lang.ThreadGroup;Ljava.lang.Runnable;Ljava.lang.String;J)V">
-        <replace-method-call class="java.lang.Thread" name="currentThread" sig="()Ljava.lang.Thread;">
-          <code>
-            <ldarg_0 />
-            <call type="IKVM.NativeCode.java.lang.Thread" name="CurrentThreadFromInit" sig="(Ljava.lang.Object;)Ljava.lang.Object;" />
-            <castclass class="java.lang.Thread" />
-          </code>
-        </replace-method-call>
-      </method>
       <method name="getState" sig="()Ljava.lang.Thread$State;">
         <body>
           <ldarg_0 />
@@ -1295,43 +1237,11 @@
           <ret />
         </body>
       </method>
-      <method name="_deamon" sig="(Z)V">
-        <body>
-          <ldarg_0 />
-          <ldarg_1 />
-          <stfld class="java.lang.Thread" name="daemon" sig="Z" />
-          <ret />
-        </body>
-      </method>
-      <method name="_priority" sig="(I)V">
-        <body>
-          <ldarg_0 />
-          <ldarg_1 />
-          <stfld class="java.lang.Thread" name="priority" sig="I" />
-          <ret />
-        </body>
-      </method>
-      <method name="_contextClassLoader" sig="(Ljava.lang.ClassLoader;)V">
-        <body>
-          <ldarg_0 />
-          <ldarg_1 />
-          <stfld class="java.lang.Thread" name="contextClassLoader" sig="Ljava.lang.ClassLoader;" />
-          <ret />
-        </body>
-      </method>
     </class>
     <class name="java.lang.ThreadGroup">
       <method name="createRootGroup" sig="()Ljava.lang.ThreadGroup;" modifiers="static">
         <body>
           <newobj class="java.lang.ThreadGroup" name="&lt;init&gt;" sig="()V" />
-          <ret />
-        </body>
-      </method>
-    </class>
-    <class name="java.lang.reflect.AccessibleObject">
-      <method name="_reinitHack" sig="()V" modifiers="static">
-        <body>
-          <call class="java.lang.reflect.AccessibleObject" name="&lt;clinit&gt;" sig="()V" />
           <ret />
         </body>
       </method>
@@ -1350,14 +1260,6 @@
         <body>
           <ldarg_0 />
           <ldfld class="java.lang.reflect.Method" name="slot" sig="I" />
-          <ret />
-        </body>
-      </method>
-    </class>
-    <class name="java.lang.reflect.Modifier">
-      <method name="_reinitHack" sig="()V" modifiers="static">
-        <body>
-          <call class="java.lang.reflect.Modifier" name="&lt;clinit&gt;" sig="()V" />
           <ret />
         </body>
       </method>
@@ -1698,14 +1600,6 @@
 			</method>
 		</class>
 		<class name="java.lang.System">
-      <!-- HACK we replace <clinit> to remove the null initialization of in/out/err,
-           because we have to trigger VM initialization in registerNatives. -->
-      <method name="&lt;clinit&gt;" sig="()V">
-        <body>
-          <call class="java.lang.System" name="registerNatives" sig="()V" />
-          <ret />
-        </body>
-      </method>
 			<method name="identityHashCode" sig="(Ljava.lang.Object;)I">
 				<body>
 					<ldarg_0 />
@@ -1723,12 +1617,6 @@
 					<ret />
 				</body>
 			</method>
-      <method name="runInit" sig="()V" modifiers="static">
-        <body>
-          <call class="java.lang.System" name="initializeSystemClass" sig="()V" />
-          <ret />
-        </body>
-      </method>
     </class>
     <class name="sun.misc.Launcher">
       <method name="&lt;init&gt;" sig="()V">
@@ -1998,21 +1886,6 @@
           <ldsfld class="java.nio.ByteOrder" name="BIG_ENDIAN" sig="Ljava.nio.ByteOrder;" />
           <ret />
         </body>
-      </method>
-    </class>
-    <class name="java.nio.charset.spi.CharsetProvider">
-      <method name="&lt;init&gt;" sig="()V">
-        <!-- HACK this is a work around for a bootstrap issue, we can't trigger initialization of java.lang.System from here -->
-        <replace-method-call class="java.lang.System" name="getSecurityManager" sig="()Ljava.lang.SecurityManager;">
-          <code>
-            <ldnull />
-            <call class="sun.misc.VM" name="isBooted" sig="()Z" />
-            <brfalse name="skip" />
-            <pop />
-            <call class="java.lang.System" name="getSecurityManager" sig="()Ljava.lang.SecurityManager;" />
-            <label name="skip" />
-          </code>
-        </replace-method-call>
       </method>
     </class>
     <class name="sun.reflect.Reflection">

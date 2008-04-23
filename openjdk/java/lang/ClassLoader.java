@@ -43,6 +43,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
 import java.util.Map;
@@ -1620,8 +1621,7 @@ public abstract class ClassLoader {
     static private String usr_paths[];
     static private String sys_paths[];
 
-    private static String[] initializePath(String propname) {
-        String ldpath = System.getProperty(propname, "");
+    private static String[] initializePath(String ldpath) {
 	String ps = File.pathSeparator;
 	int ldlen = ldpath.length();
 	int i, j, n;
@@ -1651,6 +1651,15 @@ public abstract class ClassLoader {
 	paths[n] = ldpath.substring(i, ldlen);
 	return paths;
     }
+    
+    private static String java_library_path;
+    private static String sun_boot_library_path;
+    
+    static void initializeLibraryPaths(Properties props)
+    {
+        java_library_path = props.getProperty("java.library.path", "");
+        sun_boot_library_path = props.getProperty("sun.boot.library.path", "");
+    }
 
     // Invoked in the java.lang.Runtime class to implement load and loadLibrary.
     static void loadLibrary(Class fromClass, String name,
@@ -1658,8 +1667,8 @@ public abstract class ClassLoader {
         ClassLoader loader =
 	    (fromClass == null) ? null : fromClass.getClassLoader();
         if (sys_paths == null) {
-	    usr_paths = initializePath("java.library.path");
-	    sys_paths = initializePath("sun.boot.library.path");
+	    usr_paths = initializePath(java_library_path);
+	    sys_paths = initializePath(sun_boot_library_path);
         }
         if (isAbsolute) {
 	    if (loadLibrary0(fromClass, new File(name))) {

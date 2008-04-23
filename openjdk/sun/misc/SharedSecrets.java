@@ -41,7 +41,7 @@ import java.io.File;
 public class SharedSecrets {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static JavaUtilJarAccess javaUtilJarAccess;
-    private static JavaLangAccess javaLangAccess;
+    private static JavaLangAccess javaLangAccess = LangHelper.getJavaLangAccess();
     private static JavaIOAccess javaIOAccess;
     private static JavaIODeleteOnExitAccess javaIODeleteOnExitAccess;
     private static JavaNetAccess javaNetAccess;
@@ -57,10 +57,6 @@ public class SharedSecrets {
 
     public static void setJavaUtilJarAccess(JavaUtilJarAccess access) {
         javaUtilJarAccess = access;
-    }
-
-    public static void setJavaLangAccess(JavaLangAccess jla) {
-        javaLangAccess = jla;
     }
 
     public static JavaLangAccess getJavaLangAccess() {

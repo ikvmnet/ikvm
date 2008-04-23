@@ -3652,11 +3652,6 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			public static void registerNatives()
-			{
-				Thread.Bootstrap();
-			}
-
 			public static object initProperties(object props)
 			{
 #if !FIRST_PASS
@@ -3666,20 +3661,6 @@ namespace IKVM.NativeCode.java
 				p.put("java.home", io.VirtualFileSystem.RootPath.Substring(0, io.VirtualFileSystem.RootPath.Length - 1));
 				p.put("sun.boot.library.path", io.VirtualFileSystem.RootPath + "bin");
 				global::gnu.classpath.VMSystemProperties.initOpenJDK(p);
-
-				// HACK this is an extremely gross hack, here we explicitly call the class initializer of a bunch of
-				// classes while their class initializers may already be running. All of their class initializers are
-				// idempotent (or so we hope).
-				// Normally this wouldn't be necessary, but for some scenarios the initialization order may be such
-				// that the code following us will expect the class initializer of the following classes to already have
-				// run to completion, but if one of these classes was responsible for triggering bootstrap, a second
-				// invocation wouldn't normally result in the class initializer running again, by running them
-				// explicitly (and thus possibly twice), we make sure that subsequent code won't see an unexpected
-				// state.
-				jiFile._reinitHack();
-				jlrAccessibleObject._reinitHack();
-				jlrModifier._reinitHack();
-				jiConsole._reinitHack();
 #endif
 				return props;
 			}
@@ -3906,37 +3887,9 @@ namespace IKVM.NativeCode.java
 #if !FIRST_PASS
 			static Thread()
 			{
-				jlThreadGroup systemThreadGroup = jlThreadGroup.createRootGroup();
-				mainThreadGroup = new jlThreadGroup(systemThreadGroup, "main");
-				AttachThread(null, false, null);
-				jlSystem.runInit();
-				// make sure the Launcher singleton is created on the main thread and allow it to install the security manager
-				smLauncher.getLauncher();
-				if (jlClassLoader.getSystemClassLoader() == null)
-				{
-					// HACK because of bootstrap issues (Launcher instantiates a URL and GNU Classpath's URL calls getSystemClassLoader) we have
-					// to set clear the sclSet flag here, to make sure the system class loader is constructed next time getSystemClassLoader is called
-					jlClassLoader.clearSclSet();
-				}
-				try
-				{
-					// AppDomain.ProcessExit has a LinkDemand, so we have to have a separate method
-					RegisterShutdownHook();
-				}
-				catch (global::System.Security.SecurityException)
-				{
-				}
-			}
-
-			private static void RegisterShutdownHook()
-			{
-				AppDomain.CurrentDomain.ProcessExit += delegate { global::java.lang.Shutdown.shutdown(); };
+				mainThreadGroup = new jlThreadGroup(jlThreadGroup.createRootGroup(), "main");
 			}
 #endif
-			internal static void Bootstrap()
-			{
-				// call this method to trigger the bootstrap (in the static initializer)
-			}
 
 			public static void registerNatives()
 			{
@@ -3993,7 +3946,7 @@ namespace IKVM.NativeCode.java
 				VMThread t = vmThread;
 				if (t == null)
 				{
-					t = AttachThread(null, true, null);
+					t = AttachThread(null);
 				}
 				return t;
 			}
@@ -4007,37 +3960,7 @@ namespace IKVM.NativeCode.java
 #endif
 			}
 
-			internal static object CurrentThreadFromInit(object newThread)
-			{
-#if FIRST_PASS
-				return null;
-#else
-				VMThread t = CurrentVMThread();
-				jlThread thread = t.javaThread;
-				if (thread == null)
-				{
-					thread = (jlThread)newThread;
-					t.javaThread = thread;
-					thread.vmThread = t;
-					// priority must be set before running the rest of Thread.init(),
-					// otherwise it will try to "copy" an illegal priority.
-					thread._priority(MapNativePriorityToJava(t.nativeThread.Priority));
-				}
-				return thread;
-#endif
-			}
-
-#if !FIRST_PASS
-			sealed class GetSystemClassLoaderAction : global::java.security.PrivilegedAction
-			{
-				public object run()
-				{
-					return global::java.lang.ClassLoader.getSystemClassLoader();
-				}
-			}
-#endif
-
-			private static VMThread AttachThread(string name, bool addToGroup, object threadGroup)
+			private static VMThread AttachThread(object threadGroup)
 			{
 #if FIRST_PASS
 				return null;
@@ -4047,63 +3970,21 @@ namespace IKVM.NativeCode.java
 					threadGroup = mainThreadGroup;
 				}
 				VMThread t = new VMThread(null, SystemThreadingThread.CurrentThread);
-				if (name == null)
-				{
-					// inherit the .NET name of the thread (if it has a name)
-					name = t.nativeThread.Name;
-				}
 				t.running = true;
 				vmThread = t;
-				jlThread thread;
-				if (name != null)
-				{
-					thread = new jlThread((jlThreadGroup)threadGroup, name);
-				}
-				else
-				{
-					thread = new jlThread((jlThreadGroup)threadGroup, (jlRunnable)null);
-				}
+				jlThread thread = new jlThread((jlThreadGroup)threadGroup);
+				thread.vmThread = t;
+				t.javaThread = thread;
 				cleanup = new Cleanup(thread);
-				thread._priority(MapNativePriorityToJava(t.nativeThread.Priority));
-				if (addToGroup)
-				{
-					thread._contextClassLoader((jlClassLoader)jsAccessController.doPrivileged(new GetSystemClassLoaderAction()));
-				}
-				bool daemon = t.nativeThread.IsBackground;
-				if (!daemon)
+				if (!thread.isDaemon())
 				{
 					Interlocked.Increment(ref nonDaemonCount);
-				}
-				thread._deamon(daemon);
-				SetThreadStatus(thread, RUNNABLE);
-				if (addToGroup)
-				{
-					((jlThreadGroup)threadGroup).add(thread);
 				}
 				return t;
 #endif
 			}
 
 #if !FIRST_PASS
-			private static int MapNativePriorityToJava(SystemThreadingThreadPriority priority)
-			{
-				// TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
-				switch (priority)
-				{
-					case SystemThreadingThreadPriority.Lowest:
-						return jlThread.MIN_PRIORITY;
-					case SystemThreadingThreadPriority.BelowNormal:
-						return 3;
-					default:
-					case SystemThreadingThreadPriority.Normal:
-						return jlThread.NORM_PRIORITY;
-					case SystemThreadingThreadPriority.AboveNormal:
-						return 7;
-					case SystemThreadingThreadPriority.Highest:
-						return jlThread.MAX_PRIORITY;
-				}
-			}
-
 			private static SystemThreadingThreadPriority MapJavaPriorityToNative(int priority)
 			{
 				// TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
@@ -4455,7 +4336,7 @@ namespace IKVM.NativeCode.java
 			internal static void AttachThreadFromJni(object threadGroup)
 			{
 #if !FIRST_PASS
-				AttachThread(null, true, threadGroup);
+				AttachThread(threadGroup);
 #endif
 			}
 
@@ -5396,7 +5277,6 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				IKVM.NativeCode.java.lang.Thread.Bootstrap();
 				Type caller;
 				for (int i = 1; ; i++)
 				{

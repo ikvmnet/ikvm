@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007 Jeroen Frijters
+  Copyright (C) 2007, 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,9 +32,12 @@ import java.net.URL;
 import java.security.AccessController;
 import java.util.Enumeration;
 import java.util.Map;
+import sun.nio.ch.Interruptible;
+import sun.reflect.annotation.AnnotationType;
 import sun.security.action.GetPropertyAction;
 
-class LangHelper
+@ikvm.lang.Internal
+public class LangHelper
 {
     private static boolean addedSystemPackages;
 
@@ -96,5 +99,27 @@ class LangHelper
     static Enumeration getBootstrapResources(String name) throws IOException
     {
 	return AssemblyClassLoader.getResources(null, getBootstrapAssembly(), name);
+    }
+    
+    public static sun.misc.JavaLangAccess getJavaLangAccess()
+    {
+	return new sun.misc.JavaLangAccess() {
+            public sun.reflect.ConstantPool getConstantPool(Class klass) {
+		return null;
+            }
+            public void setAnnotationType(Class klass, AnnotationType type) {
+                klass.setAnnotationType(type);
+            }
+            public AnnotationType getAnnotationType(Class klass) {
+                return klass.getAnnotationType();
+            }
+            public <E extends Enum<E>>
+		    E[] getEnumConstantsShared(Class<E> klass) {
+                return klass.getEnumConstantsShared();
+            }
+            public void blockedOn(Thread t, Interruptible b) {
+                t.blockedOn(b);
+            }
+        };
     }
 }

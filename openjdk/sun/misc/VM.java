@@ -144,60 +144,15 @@ public class VM {
      */
     // public native static void writeJavaProfilerReport();
 
-
-    private static volatile boolean booted = false;
-
-    // Invoked by by System.initializeSystemClass just before returning.
-    // Subsystems that are invoked during initialization can check this
-    // property in order to avoid doing things that should wait until the
-    // application class loader has been set up.
-    //
-    public static void booted() {
-	booted = true;
-    }
-
     public static boolean isBooted() {
-	return booted;
+	// [IKVM] we support arbitrary order class initialization,
+	//  so we don't distinguish between booted and not booted states
+	return true;
     }
 
-    // A user-settable upper limit on the maximum amount of allocatable direct
-    // buffer memory.  This value may be changed during VM initialization if
-    // "java" is launched with "-XX:MaxDirectMemorySize=<size>".
-    //
-    // The initial value of this field is arbitrary; during JRE initialization
-    // it will be reset to the value specified on the command line, if any,
-    // otherwise to Runtime.getRuntime.maxDirectMemory().
-    //
-    private static long directMemory = 64 * 1024 * 1024;
-
-    // If this method is invoked during VM initialization, it initializes the
-    // maximum amount of allocatable direct buffer memory (in bytes) from the
-    // system property sun.nio.MaxDirectMemorySize.  The system property will
-    // be removed when it is accessed.
-    //
-    // If this method is invoked after the VM is booted, it returns the
-    // maximum amount of allocatable direct buffer memory.
-    //
     public static long maxDirectMemory() {
-	if (booted)
-	    return directMemory;
-
-	Properties p = System.getProperties();
-	String s = (String)p.remove("sun.nio.MaxDirectMemorySize");
-	System.setProperties(p);
-
-	if (s != null) {
-	    if (s.equals("-1")) {
-		// -XX:MaxDirectMemorySize not given, take default
-		directMemory = Runtime.getRuntime().maxMemory();
-	    } else {
-		long l = Long.parseLong(s);
-		if (l > -1)
-		    directMemory = l;
-	    }
-	}
-
-	return directMemory;
+	// we don't support -XX:MaxDirectMemorySize
+	return Long.MAX_VALUE;
     }
 
     // A user-settable boolean to determine whether ClassLoader.loadClass should
@@ -224,23 +179,23 @@ public class VM {
     // allowArraySyntax boolean set during initialization.
     //    
     public static boolean allowArraySyntax() {
-	if (!booted) {
-	    String s
-		= (String) System.getProperty("sun.lang.ClassLoader.allowArraySyntax");
-	    allowArraySyntax = (s == null 
-				? defaultAllowArraySyntax
-				: Boolean.parseBoolean(s));
-	}
 	return allowArraySyntax;
+    }
+
+    @ikvm.lang.Internal    
+    public static void initializeAllowArraySyntax()
+    {
+	String s
+	    = (String) System.getProperty("sun.lang.ClassLoader.allowArraySyntax");
+	allowArraySyntax = (s == null 
+			    ? defaultAllowArraySyntax
+			    : Boolean.parseBoolean(s));
     }
     
     // Initialize any miscellenous operating system settings that need to be
     // set for the class libraries. 
     //
     public static void initializeOSEnvironment() {
-        if (!booted) {
-            OSEnvironment.initialize();
-        }
     }
 
     /* Current count of objects pending for finalization */

@@ -37,6 +37,11 @@ class DeleteOnExitHook {
     private static DeleteOnExitHook instance = null;
 
     private static LinkedHashSet<String> files = new LinkedHashSet<String>();
+    
+    static {
+	// [IKVM] make sure that we are registered with the shutdown process
+	Shutdown.init();
+    }
 
     static DeleteOnExitHook hook() {
 	if (instance == null)

@@ -40,6 +40,11 @@ class ApplicationShutdownHooks implements Runnable {
     /* The set of registered hooks */
     private static IdentityHashMap<Thread, Thread> hooks = new IdentityHashMap<Thread, Thread>();
 
+    static {
+	// [IKVM] make sure that we are registered with the shutdown process
+	Shutdown.init();
+    }
+
     static synchronized ApplicationShutdownHooks hook() {
 	if (instance == null)
 	    instance = new ApplicationShutdownHooks();

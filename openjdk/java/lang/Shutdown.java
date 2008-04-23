@@ -26,7 +26,9 @@
 package java.lang;
 
 import java.util.ArrayList;
-
+import cli.System.AppDomain;
+import cli.System.EventArgs;
+import cli.System.EventHandler;
 
 /**
  * Package-private utility class containing data structures and logic
@@ -36,8 +38,8 @@ import java.util.ArrayList;
  * @version  1.19, 07/05/05
  * @since    1.3
  */
-
-class Shutdown {
+@ikvm.lang.Internal
+public final class Shutdown {
 
     /* Shutdown state */
     private static final int RUNNING = 0;
@@ -64,7 +66,41 @@ class Shutdown {
 	    runFinalizersOnExit = run;
 	}
     }
+    
+    private static boolean initialized;
+    
+    public static void init() {
+	synchronized (lock) {
+	    if (initialized || state > RUNNING)
+		return;
+	    initialized = true;
+	    try
+	    {
+		// AppDomain.ProcessExit has a LinkDemand, so we have to have a separate method
+		registerShutdownHook();
+		if (false) throw new cli.System.Security.SecurityException();
+	    }
+	    catch (cli.System.Security.SecurityException _)
+	    {
+	    }
+	    // The order in with the hooks are added here is important as it
+	    // determines the order in which they are run. 
+	    // (1)Console restore hook needs to be called first.
+	    // (2)Application hooks must be run before calling deleteOnExitHook.
+	    hooks.add(sun.misc.SharedSecrets.getJavaIOAccess().consoleRestoreHook());
+	    hooks.add(ApplicationShutdownHooks.hook());
+	    hooks.add(sun.misc.SharedSecrets.getJavaIODeleteOnExitAccess());
+	}
+    }
 
+    private static void registerShutdownHook()
+    {
+	AppDomain.get_CurrentDomain().add_ProcessExit(new EventHandler(new EventHandler.Method() {
+	    public void Invoke(Object sender, EventArgs e) {
+		shutdown();
+	    }
+	}));
+    }
 
     /* Add a new shutdown hook.  Checks the shutdown state and the hook itself,
      * but does not do any security checks.
@@ -74,6 +110,7 @@ class Shutdown {
 	    if (state > RUNNING)
 		throw new IllegalStateException("Shutdown in progress");
 
+	    init();
 	    hooks.add(hook);
 	}
     }

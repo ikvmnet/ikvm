@@ -159,6 +159,7 @@ class Thread implements Runnable {
 
     /* The context ClassLoader for this thread */
     private ClassLoader contextClassLoader;
+    private boolean contextClassLoaderIsSystemClassLoader;
 
     /* The inherited AccessControlContext of this thread */
     private AccessControlContext inheritedAccessControlContext;
@@ -367,8 +368,10 @@ class Thread implements Runnable {
 	this.name = name.toCharArray();
 	if (security == null || isCCLOverridden(parent.getClass()))
 	    this.contextClassLoader = parent.getContextClassLoader();
-	else
+	else {
 	    this.contextClassLoader = parent.contextClassLoader;
+	    this.contextClassLoaderIsSystemClassLoader = parent.contextClassLoaderIsSystemClassLoader;
+	}
 	this.inheritedAccessControlContext = AccessController.getContext();
 	this.target = target;
 	setPriority(priority);
@@ -380,6 +383,47 @@ class Thread implements Runnable {
 
         /* Set thread ID */
         tid = nextThreadID();
+    }
+    
+    // [IKVM] constructor for attaching to a .NET thread
+    Thread(ThreadGroup g) {
+	cli.System.Threading.Thread thread = cli.System.Threading.Thread.get_CurrentThread();
+	String name = thread.get_Name();
+	if (name == null) {
+	    name = "Thread-" + nextThreadNum();
+	}
+
+	this.group = g;
+	this.daemon = thread.get_IsBackground();
+	this.priority = mapClrPriorityToJava(thread.get_Priority().Value);
+	this.name = name.toCharArray();
+	this.contextClassLoaderIsSystemClassLoader = true;
+	this.threadStatus = 5; /* JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE */
+
+        /* Set thread ID */
+        tid = nextThreadID();
+
+	synchronized (g) {
+	    g.addUnstarted();
+	    g.add(this);
+	}
+    }
+    
+    private static int mapClrPriorityToJava(int priority) {
+	// TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
+	switch (priority) {
+	case cli.System.Threading.ThreadPriority.Lowest:
+	    return MIN_PRIORITY;
+	case cli.System.Threading.ThreadPriority.BelowNormal:
+	    return 3;
+	default:
+	case cli.System.Threading.ThreadPriority.Normal:
+	    return NORM_PRIORITY;
+	case cli.System.Threading.ThreadPriority.AboveNormal:
+	    return 7;
+	case cli.System.Threading.ThreadPriority.Highest:
+	    return MAX_PRIORITY;
+	}
     }
 
    /**
@@ -1329,8 +1373,13 @@ class Thread implements Runnable {
      * @since 1.2
      */
     public ClassLoader getContextClassLoader() {
-	if (contextClassLoader == null)
-	    return null;
+	if (contextClassLoader == null) {
+	    if (contextClassLoaderIsSystemClassLoader) {
+		contextClassLoader = ClassLoader.getSystemClassLoader();
+	    } else {
+		return null;
+	    }
+	}
 	SecurityManager sm = System.getSecurityManager();
 	if (sm != null) {
 	    ClassLoader ccl = ClassLoader.getCallerClassLoader();
@@ -1368,6 +1417,7 @@ class Thread implements Runnable {
 	if (sm != null) {
 	    sm.checkPermission(new RuntimePermission("setContextClassLoader"));
 	}
+	contextClassLoaderIsSystemClassLoader = false;
 	contextClassLoader = cl;
     }
 

@@ -33,11 +33,9 @@ import java.security.PrivilegedAction;
 import java.security.AllPermission;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
-import sun.nio.ch.Interruptible;
 import sun.net.InetAddressCachePolicy;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
-import sun.reflect.annotation.AnnotationType;
 
 final class StdIO
 {
@@ -45,6 +43,25 @@ final class StdIO
     static InputStream in = new BufferedInputStream(new FileInputStream(FileDescriptor.in));
     static PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.out), 128), true);
     static PrintStream err = new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.err), 128), true);
+}
+
+final class Props
+{
+    private Props() { }
+
+    static Properties props;
+    
+    static
+    {
+	props = new Properties();
+	System.initProperties(props);
+	
+	// after we've initialized the system properties, we need to fixate certain
+	// results that depend on system properties, because we don't want Java code to
+	// be able to change the behavior by setting these system properties.
+	ClassLoader.initializeLibraryPaths(props);
+	sun.misc.VM.initializeAllowArraySyntax();
+    }
 }
 
 /**
@@ -62,12 +79,6 @@ final class StdIO
  * @since   JDK1.0
  */
 public final class System {
-
-    /* First thing---register the natives */
-    private static native void registerNatives();
-    static {
-        registerNatives();
-    }
 
     /** Don't let anyone instantiate this class */
     private System() {
@@ -529,8 +540,7 @@ public final class System {
      * </dl>
      */
 
-    private static Properties props;
-    private static native Properties initProperties(Properties props);
+    static native Properties initProperties(Properties props);
 
     /**
      * Determines the current system properties.
@@ -628,7 +638,7 @@ public final class System {
 	    sm.checkPropertiesAccess();
 	}
 
-	return props;
+	return Props.props;
     }
 
     /**
@@ -662,7 +672,7 @@ public final class System {
             props = new Properties();
             initProperties(props);
         }
-	System.props = props;
+	Props.props = props;
     }
 
     /**
@@ -698,7 +708,7 @@ public final class System {
 	    sm.checkPropertyAccess(key);
 	}
 
-	return props.getProperty(key);
+	return Props.props.getProperty(key);
     }
 
     /**
@@ -734,7 +744,7 @@ public final class System {
 	    sm.checkPropertyAccess(key);
 	}
 
-	return props.getProperty(key, def);
+	return Props.props.getProperty(key, def);
     }
 
     /**
@@ -774,7 +784,7 @@ public final class System {
 		SecurityConstants.PROPERTY_WRITE_ACTION));
 	}
 
-	return (String) props.setProperty(key, value);
+	return (String) Props.props.setProperty(key, value);
     }
 
     /**
@@ -811,7 +821,7 @@ public final class System {
             sm.checkPermission(new PropertyPermission(key, "write"));
 	}
 
-        return (String) props.remove(key);
+        return (String) Props.props.remove(key);
     }
 
     private static void checkKey(String key) {
@@ -1089,77 +1099,6 @@ public final class System {
      * @since      1.2
      */
     public static native String mapLibraryName(String libname);
-
-    /**
-     * Initialize the system class.  Called after thread initialization.
-     */
-    private static void initializeSystemClass() {
-	props = new Properties();
-	initProperties(props);
-	sun.misc.Version.init();
-
-	// Load the zip library now in order to keep java.util.zip.ZipFile
-	// from trying to use itself to load this library later.
-	loadLibrary("zip");
-
-	// Setup Java signal handlers for HUP, TERM, and INT (where available).
-        Terminator.setup();
-
-	// The order in with the hooks are added here is important as it
-	// determines the order in which they are run. 
-        // (1)Console restore hook needs to be called first.
-        // (2)Application hooks must be run before calling deleteOnExitHook.
-	Shutdown.add(sun.misc.SharedSecrets.getJavaIOAccess().consoleRestoreHook());
-	Shutdown.add(ApplicationShutdownHooks.hook());
-	Shutdown.add(sun.misc.SharedSecrets.getJavaIODeleteOnExitAccess());
-
-        // Initialize any miscellenous operating system settings that need to be
-        // set for the class libraries. Currently this is no-op everywhere except
-        // for Windows where the process-wide error mode is set before the java.io
-        // classes are used.
-        sun.misc.VM.initializeOSEnvironment();
-
-	// Set the maximum amount of direct memory.  This value is controlled
-	// by the vm option -XX:MaxDirectMemorySize=<size>.  This method acts
-	// as an initializer only if it is called before sun.misc.VM.booted().
- 	sun.misc.VM.maxDirectMemory();
-
-	// Set a boolean to determine whether ClassLoader.loadClass accepts
-	// array syntax.  This value is controlled by the system property
-	// "sun.lang.ClassLoader.allowArraySyntax".  This method acts as
-	// an initializer only if it is called before sun.misc.VM.booted().
-	sun.misc.VM.allowArraySyntax();
-
-	// Subsystems that are invoked during initialization can invoke
-	// sun.misc.VM.isBooted() in order to avoid doing things that should
-	// wait until the application class loader has been set up.
-	sun.misc.VM.booted();
-
-        // The main thread is not added to its thread group in the same
-        // way as other threads; we must do it ourselves here.
-        Thread current = Thread.currentThread();
-        current.getThreadGroup().add(current);
-
-        // Allow privileged classes outside of java.lang
-        sun.misc.SharedSecrets.setJavaLangAccess(new sun.misc.JavaLangAccess(){
-            public sun.reflect.ConstantPool getConstantPool(Class klass) {
-                return klass.getConstantPool();
-            }
-            public void setAnnotationType(Class klass, AnnotationType type) {
-                klass.setAnnotationType(type);
-            }
-            public AnnotationType getAnnotationType(Class klass) {
-                return klass.getAnnotationType();
-            }
-            public <E extends Enum<E>>
-		    E[] getEnumConstantsShared(Class<E> klass) {
-                return klass.getEnumConstantsShared();
-            }
-            public void blockedOn(Thread t, Interruptible b) {
-                t.blockedOn(b);
-            }
-        });
-    }
 
     /* returns the class of the caller. */
     static Class getCallerClass() {
