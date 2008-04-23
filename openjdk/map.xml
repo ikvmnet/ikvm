@@ -1599,25 +1599,6 @@
 				</body>
 			</method>
 		</class>
-		<class name="java.lang.System">
-			<method name="identityHashCode" sig="(Ljava.lang.Object;)I">
-				<body>
-					<ldarg_0 />
-					<conditional framework="2.0">
-						<code>
-							<call type="System.Runtime.CompilerServices.RuntimeHelpers" name="GetHashCode" sig="(Ljava.lang.Object;)I" />
-						</code>
-					</conditional>
-					<conditional framework="1.1">
-						<code>
-							<!-- FXBUG RuntimeHelpers.GetHashCode is broken in multi AppDomain scenarios (on v1.x) -->
-							<call type="System.Object" name="GetHashCode" sig="()I" />
-						</code>
-					</conditional>
-					<ret />
-				</body>
-			</method>
-    </class>
     <class name="sun.misc.Launcher">
       <method name="&lt;init&gt;" sig="()V">
         <replace-method-call class="sun.misc.Launcher$ExtClassLoader" name="getExtClassLoader" sig="()Lsun.misc.Launcher$ExtClassLoader;">

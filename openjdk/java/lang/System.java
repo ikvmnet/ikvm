@@ -54,7 +54,7 @@ final class Props
     static
     {
 	props = new Properties();
-	System.initProperties(props);
+	initProperties(props);
 	
 	// after we've initialized the system properties, we need to fixate certain
 	// results that depend on system properties, because we don't want Java code to
@@ -62,6 +62,18 @@ final class Props
 	ClassLoader.initializeLibraryPaths(props);
 	sun.misc.VM.initializeAllowArraySyntax();
     }
+    
+    static void initProperties(Properties props)
+    {
+	props.put("openjdk.version", "OpenJDK 7 b13");
+	props.put("gnu.classpath.version", "0.95");
+	String vfsroot = getVirtualFileSystemRoot();
+	props.put("java.home", vfsroot.substring(0, vfsroot.length() - 1));
+	props.put("sun.boot.library.path", vfsroot + "bin");
+	gnu.classpath.VMSystemProperties.initOpenJDK(props);
+    }
+    
+    private static native String getVirtualFileSystemRoot();
 }
 
 /**
@@ -381,7 +393,10 @@ public final class System {
      *          the current time and midnight, January 1, 1970 UTC.
      * @see     java.util.Date
      */
-    public static native long currentTimeMillis();
+    public static long currentTimeMillis() {
+	long january_1st_1970 = 62135596800000L;
+	return cli.System.DateTime.get_UtcNow().get_Ticks() / 10000L - january_1st_1970;
+    }
 
     /**
      * Returns the current value of the most precise available system
@@ -517,7 +532,9 @@ public final class System {
      * @return  the hashCode
      * @since   JDK1.1
      */
-    public static native int identityHashCode(Object x);
+    public static int identityHashCode(Object x) {
+	return cli.System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(x);
+    }
 
     /**
      * System properties. The following properties are guaranteed to be defined:
@@ -540,7 +557,7 @@ public final class System {
      * </dl>
      */
 
-    static native Properties initProperties(Properties props);
+    //private static native Properties initProperties(Properties props);
 
     /**
      * Determines the current system properties.
@@ -670,7 +687,7 @@ public final class System {
 	}
         if (props == null) {
             props = new Properties();
-            initProperties(props);
+            Props.initProperties(props);
         }
 	Props.props = props;
     }
@@ -1098,7 +1115,15 @@ public final class System {
      * @see        java.lang.ClassLoader#findLibrary(java.lang.String)
      * @since      1.2
      */
-    public static native String mapLibraryName(String libname);
+    public static String mapLibraryName(String libname) {
+	if (ikvm.internal.Util.WINDOWS) {
+	    return libname + ".dll";
+	} else if (ikvm.internal.Util.MACOSX) {
+	    return "lib" + libname + ".jnilib";
+	} else {
+	    return "lib" + libname + ".so";
+	}
+    }
 
     /* returns the class of the caller. */
     static Class getCallerClass() {

@@ -1025,14 +1025,14 @@ namespace IKVM.NativeCode.java
 				dict[RootPath] = new VfsDummyEntry(true);
 				dict[RootPath + "lib/security/cacerts".Replace('/', sep)] = new VfsCacertsEntry();
 				dict[RootPath + "bin"] = new VfsDummyEntry(true);
-				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("zip")] = new VfsDummyEntry(false);
-				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("awt")] = new VfsDummyEntry(false);
-				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("rmi")] = new VfsDummyEntry(false);
-				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("w2k_lsa_auth")] = new VfsDummyEntry(false);
-				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("jaas_nt")] = new VfsDummyEntry(false);
-				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("jaas_unix")] = new VfsDummyEntry(false);
-				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("unpack")] = new VfsDummyEntry(false);
-				dict[RootPath + "bin" + sep + IKVM.NativeCode.java.lang.System.mapLibraryName("net")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("zip")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("awt")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("rmi")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("w2k_lsa_auth")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("jaas_nt")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("jaas_unix")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("unpack")] = new VfsDummyEntry(false);
+				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("net")] = new VfsDummyEntry(false);
 				if (Interlocked.CompareExchange(ref entries, dict, null) != null)
 				{
 					// we lost the race, so we close our zip file
@@ -3331,6 +3331,14 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
+		static class Props
+		{
+			public static string getVirtualFileSystemRoot()
+			{
+				return io.VirtualFileSystem.RootPath;
+			}
+		}
+
 		static class Runtime
 		{
 			public static int availableProcessors(object thisRuntime)
@@ -3598,57 +3606,12 @@ namespace IKVM.NativeCode.java
 				IKVM.Runtime.ByteCodeHelper.arraycopy(src, srcPos, dest, destPos, length);
 			}
 
-			// FXBUG this is implemented by a non-virtual call to System.Object.GetHashCode (in map.xml),
-			// because RuntimeHelpers.GetHashCode is broken (in v1.x) when called in a secondary AppDomain.
-			// See http://weblog.ikvm.net/PermaLink.aspx?guid=c2442bc8-7b48-4570-b082-82649cc347dc
-			//
-			// public static int identityHashCode(object obj)
-
-			public static long currentTimeMillis()
-			{
-				const long january_1st_1970 = 62135596800000L;
-				return DateTime.UtcNow.Ticks / 10000L - january_1st_1970;
-			}
-
 			public static long nanoTime()
 			{
 				const long NANOS_PER_SEC = 1000000000;
 				double current = global::System.Diagnostics.Stopwatch.GetTimestamp();
 				double freq = global::System.Diagnostics.Stopwatch.Frequency;
 				return (long)((current / freq) * NANOS_PER_SEC);
-			}
-
-			public static string mapLibraryName(string libname)
-			{
-#if FIRST_PASS
-				return null;
-#else
-				if (global::ikvm.@internal.Util.WINDOWS)
-				{
-					return libname + ".dll";
-				}
-				else if (global::ikvm.@internal.Util.MACOSX)
-				{
-					return "lib" + libname + ".jnilib";
-				}
-				else
-				{
-					return "lib" + libname + ".so";
-				}
-#endif
-			}
-
-			public static object initProperties(object props)
-			{
-#if !FIRST_PASS
-				juProperties p = (juProperties)props;
-				p.put("openjdk.version", "b13");
-				p.put("gnu.classpath.version", "0.95");
-				p.put("java.home", io.VirtualFileSystem.RootPath.Substring(0, io.VirtualFileSystem.RootPath.Length - 1));
-				p.put("sun.boot.library.path", io.VirtualFileSystem.RootPath + "bin");
-				global::gnu.classpath.VMSystemProperties.initOpenJDK(p);
-#endif
-				return props;
 			}
 		}
 
