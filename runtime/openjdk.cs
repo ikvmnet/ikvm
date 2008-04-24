@@ -3605,14 +3605,6 @@ namespace IKVM.NativeCode.java
 			{
 				IKVM.Runtime.ByteCodeHelper.arraycopy(src, srcPos, dest, destPos, length);
 			}
-
-			public static long nanoTime()
-			{
-				const long NANOS_PER_SEC = 1000000000;
-				double current = global::System.Diagnostics.Stopwatch.GetTimestamp();
-				double freq = global::System.Diagnostics.Stopwatch.Frequency;
-				return (long)((current / freq) * NANOS_PER_SEC);
-			}
 		}
 
 		static class Thread

@@ -423,7 +423,12 @@ public final class System {
      * @return The current value of the system timer, in nanoseconds.
      * @since 1.5
      */
-    public static native long nanoTime();
+    public static long nanoTime() {
+        long NANOS_PER_SEC = 1000000000;
+        double current = cli.System.Diagnostics.Stopwatch.GetTimestamp();
+        double freq = cli.System.Diagnostics.Stopwatch.Frequency;
+        return (long)((current / freq) * NANOS_PER_SEC);
+    }
 
     /**
      * Copies an array from the specified source array, beginning at the
