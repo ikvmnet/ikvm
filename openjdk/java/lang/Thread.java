@@ -795,12 +795,18 @@ class Thread implements Runnable {
     }
 
     private void start0() {
-	// TODO on NET 2.0 set the stack size
-	nativeThread = new cli.System.Threading.Thread(new cli.System.Threading.ThreadStart(new cli.System.Threading.ThreadStart.Method() {
+	cli.System.Threading.ThreadStart threadStart = new cli.System.Threading.ThreadStart(new cli.System.Threading.ThreadStart.Method() {
 	    public void Invoke() {
 		threadProc();
 	    }
-	}));
+	});
+	if (stackSize <= 0) {
+	    nativeThread = new cli.System.Threading.Thread(threadStart);
+	}
+	else {
+	    int maxStackSize = (int)Math.min(Math.max(128 * 1024, stackSize), Integer.MAX_VALUE);
+	    nativeThread = new cli.System.Threading.Thread(threadStart, maxStackSize);
+	}
 	nativeThread.set_Name(getName());
 	nativeThread.set_IsBackground(daemon);
 	nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)));
