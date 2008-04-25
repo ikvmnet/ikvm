@@ -9822,6 +9822,7 @@ namespace IKVM.Internal
 					// TODO we should throw a NoSuchFieldError if at runtime we find out that the "field" doesn't exist
 					ilgen.Emit(OpCodes.Ldtoken, this.DeclaringType.TypeAsTBD);
 					ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.GetClassFromTypeHandle);
+					ilgen.Emit(OpCodes.Castclass, CoreClasses.java.lang.Class.Wrapper.TypeAsTBD);
 					ilgen.Emit(OpCodes.Ldstr, this.Name);
 					this.DeclaringType.BaseTypeWrapper.GetMethodWrapper("valueOf", "(Ljava.lang.Class;Ljava.lang.String;)Ljava.lang.Enum;", false).EmitCall(ilgen);
 					ilgen.Emit(OpCodes.Castclass, this.DeclaringType.TypeAsTBD);
