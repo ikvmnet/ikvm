@@ -47,7 +47,7 @@
 					<ldc_i4_0 />
 					<conv_i8 />
 					<ldc_i4_0 />
-					<call type="IKVM.NativeCode.java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
+					<call class="java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
 					<ret />
 				</body>
 			</method>
@@ -58,7 +58,7 @@
 					<ldarg_0 />
 					<ldarg_1 />
 					<ldc_i4_0 />
-					<call type="IKVM.NativeCode.java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
+					<call class="java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
           <ret />
         </body>
       </method>
@@ -70,7 +70,7 @@
           <ldarg_0 />
           <ldarg_1 />
           <ldarg_2 />
-          <call type="IKVM.NativeCode.java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
+          <call class="java.lang.Thread" name="objectWait" sig="(Ljava.lang.Object;JI)V" />
 					<ret />
 				</body>
 			</method>
@@ -1200,43 +1200,8 @@
       </method>
     </class>
     <class name="java.lang.Thread">
-      <field name="vmThread" sig="Lcli.IKVM.NativeCode.java.lang.Thread$VMThread;" modifiers="">
-        <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
-      </field>
       <field name="parkLock" sig="Ljava.lang.Object;" modifiers="" />
       <field name="parkState" sig="I" modifiers="" />
-      <method name="getState" sig="()Ljava.lang.Thread$State;">
-        <body>
-          <ldarg_0 />
-          <call type="IKVM.NativeCode.java.lang.Thread" name="getState" sig="(Ljava.lang.Object;)Ljava.lang.Object;" />
-          <castclass class="java.lang.Thread$State" />
-          <ret />
-        </body>
-      </method>
-      <method name="_exit" sig="()V">
-        <body>
-          <ldarg_0 />
-          <call class="java.lang.Thread" name="exit" sig="()V" />
-          <ret />
-        </body>
-      </method>
-      <method name="_threadStatus" sig="()I">
-        <body>
-          <ldarg_0 />
-          <volatile />
-          <ldfld class="java.lang.Thread" name="threadStatus" sig="I" />
-          <ret />
-        </body>
-      </method>
-      <method name="_threadStatus" sig="(I)V">
-        <body>
-          <ldarg_0 />
-          <ldarg_1 />
-          <volatile />
-          <stfld class="java.lang.Thread" name="threadStatus" sig="I" />
-          <ret />
-        </body>
-      </method>
     </class>
     <class name="java.lang.ThreadGroup">
       <method name="createRootGroup" sig="()Ljava.lang.ThreadGroup;" modifiers="static">
