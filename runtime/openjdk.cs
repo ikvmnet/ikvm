@@ -433,7 +433,7 @@ namespace IKVM.NativeCode.java
 				while (ndoubles-- > 0)
 				{
 					dst[dstpos++] = BitConverter.ToDouble(src, srcpos);
-					srcpos += 4;
+					srcpos += 8;
 				}
 			}
 
