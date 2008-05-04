@@ -9390,15 +9390,17 @@ namespace IKVM.Internal
 		{
 			System.Text.StringBuilder sb = new System.Text.StringBuilder(NamePrefix, NamePrefix.Length + name.Length);
 			bool escape = false;
+			bool nested = false;
 			for(int i = 0; i < name.Length; i++)
 			{
 				char c = name[i];
 				if(c == '+' && !escape && (sb.Length == 0 || sb[sb.Length - 1] != '$'))
 				{
+					nested = true;
 					sb.Append('$');
 				}
 				else if("_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".IndexOf(c) != -1
-					|| (c == '.' && !escape))
+					|| (c == '.' && !escape && !nested))
 				{
 					sb.Append(c);
 				}

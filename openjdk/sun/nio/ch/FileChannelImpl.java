@@ -1357,7 +1357,8 @@ public class FileChannelImpl
 		    throw new Error();
 	    }
 
-	    IntPtr hFileMapping = CreateFileMapping(fs.get_Handle(), IntPtr.Zero, fileProtect, (int)(length >> 32), (int)length, null);
+	    long maxSize = length + position;
+	    IntPtr hFileMapping = CreateFileMapping(fs.get_Handle(), IntPtr.Zero, fileProtect, (int)(maxSize >> 32), (int)maxSize, null);
 	    int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
 	    if (hFileMapping.Equals(IntPtr.Zero))
 	    {

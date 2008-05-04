@@ -405,7 +405,7 @@ namespace IKVM.NativeCode.java
 				while (ndoubles-- > 0)
 				{
 					dst[dstpos++] = BitConverter.ToDouble(src, srcpos);
-					srcpos += 4;
+					srcpos += 8;
 				}
 			}
 
@@ -1201,6 +1201,9 @@ namespace IKVM.NativeCode.java
 				{
 				}
 				catch (System.IO.IOException)
+				{
+				}
+				catch (System.NotSupportedException)
 				{
 				}
 				return path;
