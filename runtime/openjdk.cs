@@ -473,19 +473,31 @@ namespace IKVM.NativeCode.java
 		{
 			public static void floatsToBytes(float[] src, int srcpos, byte[] dst, int dstpos, int nfloats)
 			{
-				while (nfloats-- > 0)
+				IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+				for (int i = 0; i < nfloats; i++)
 				{
-					Buffer.BlockCopy(BitConverter.GetBytes(src[srcpos++]), 0, dst, dstpos, 4);
-					dstpos += 4;
+					int v = IKVM.Runtime.FloatConverter.ToInt(src[srcpos++], ref converter);
+					dst[dstpos++] = (byte)(v >>  0);
+					dst[dstpos++] = (byte)(v >>  8);
+					dst[dstpos++] = (byte)(v >> 16);
+					dst[dstpos++] = (byte)(v >> 24);
 				}
 			}
 
 			public static void doublesToBytes(double[] src, int srcpos, byte[] dst, int dstpos, int ndoubles)
 			{
-				while (ndoubles-- > 0)
+				IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+				for (int i = 0; i < ndoubles; i++)
 				{
-					Buffer.BlockCopy(BitConverter.GetBytes(src[srcpos++]), 0, dst, dstpos, 8);
-					dstpos += 8;
+					long v = IKVM.Runtime.DoubleConverter.ToLong(src[srcpos++], ref converter);
+					dst[dstpos++] = (byte)(v >> 0);
+					dst[dstpos++] = (byte)(v >> 8);
+					dst[dstpos++] = (byte)(v >> 16);
+					dst[dstpos++] = (byte)(v >> 24);
+					dst[dstpos++] = (byte)(v >> 32);
+					dst[dstpos++] = (byte)(v >> 40);
+					dst[dstpos++] = (byte)(v >> 48);
+					dst[dstpos++] = (byte)(v >> 56);
 				}
 			}
 		}
@@ -525,7 +537,7 @@ namespace IKVM.NativeCode.java
 			public static void WriteFloat(byte[] buf, int offset, float value)
 			{
 #if !FIRST_PASS
-				WriteInt(buf, offset, jlFloat.floatToIntBits(value));
+				global::java.io.Bits.putFloat(buf, offset, value);
 #endif
 			}
 
@@ -538,7 +550,7 @@ namespace IKVM.NativeCode.java
 			public static void WriteDouble(byte[] buf, int offset, double value)
 			{
 #if !FIRST_PASS
-				WriteLong(buf, offset, jlDouble.doubleToLongBits(value));
+				global::java.io.Bits.putDouble(buf, offset, value);
 #endif
 			}
 
@@ -3276,12 +3288,14 @@ namespace IKVM.NativeCode.java
 		{
 			public static long doubleToRawLongBits(double value)
 			{
-				return BitConverter.DoubleToInt64Bits(value);
+				IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+				return IKVM.Runtime.DoubleConverter.ToLong(value, ref converter);
 			}
 
 			public static double longBitsToDouble(long bits)
 			{
-				return BitConverter.Int64BitsToDouble(bits);
+				IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+				return IKVM.Runtime.DoubleConverter.ToDouble(bits, ref converter);
 			}
 		}
 
@@ -3289,12 +3303,14 @@ namespace IKVM.NativeCode.java
 		{
 			public static int floatToRawIntBits(float value)
 			{
-				return BitConverter.ToInt32(BitConverter.GetBytes(value), 0);
+				IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+				return IKVM.Runtime.FloatConverter.ToInt(value, ref converter);
 			}
 
 			public static float intBitsToFloat(int bits)
 			{
-				return BitConverter.ToSingle(BitConverter.GetBytes(bits), 0);
+				IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+				return IKVM.Runtime.FloatConverter.ToFloat(bits, ref converter);
 			}
 		}
 
