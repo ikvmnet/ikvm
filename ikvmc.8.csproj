@@ -109,6 +109,7 @@
     <Compile Include="runtime\DynamicClassLoader.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="runtime\intrinsics.cs" />
     <Compile Include="runtime\JavaException.cs">
       <SubType>Code</SubType>
     </Compile>

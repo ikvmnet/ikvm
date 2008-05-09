@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -43,6 +43,7 @@ namespace IKVM.Internal
 		AccessStub = 16,
 		InternalAccess = 32,  // member has "internal" access (@ikvm.lang.Internal)
 		PropertyAccessor = 64,
+		Intrinsic = 128,
 	}
 
 	class MemberWrapper
@@ -194,6 +195,19 @@ namespace IKVM.Internal
 					flags &= ~MemberFlags.PropertyAccessor;
 				}
 			}
+		}
+
+		internal bool IsIntrinsic
+		{
+			get
+			{
+				return (flags & MemberFlags.Intrinsic) != 0;
+			}
+		}
+
+		protected void SetIntrinsicFlag()
+		{
+			flags |= MemberFlags.Intrinsic;
 		}
 
 		internal Modifiers Modifiers
@@ -373,6 +387,10 @@ namespace IKVM.Internal
 			Debug.Assert(((returnType == null) == (parameterTypes == null)) || (returnType == PrimitiveTypeWrapper.VOID));
 			this.returnTypeWrapper = returnType;
 			this.parameterTypeWrappers = parameterTypes;
+			if (Intrinsics.IsIntrinsic(this))
+			{
+				SetIntrinsicFlag();
+			}
 		}
 
 		internal void SetDeclaredExceptions(string[] exceptions)

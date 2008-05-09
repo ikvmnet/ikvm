@@ -48,22 +48,13 @@ namespace IKVM.Internal
 		LineNumberTable = 2,
 	}
 
-	sealed class StringConstants
+	static class StringConstants
 	{
-		private StringConstants() {}
-
 		internal static readonly string CLINIT = string.Intern("<clinit>");
 		internal static readonly string INIT = string.Intern("<init>");
 		internal static readonly string SIG_VOID = string.Intern("()V");
-
-		internal static readonly string JAVA_LANG_SYSTEM = string.Intern("java.lang.System");
-		internal static readonly string JAVA_LANG_VMSYSTEM = string.Intern("java.lang.VMSystem");
-		internal static readonly string ARRAYCOPY = string.Intern("arraycopy");
-		internal static readonly string SIG_ARRAYCOPY = string.Intern("(Ljava.lang.Object;ILjava.lang.Object;II)V");
 		internal static readonly string FINALIZE = string.Intern("finalize");
 		internal static readonly string CLONE = string.Intern("clone");
-		internal static readonly string TOCHARARRAY = string.Intern("toCharArray");
-		internal static readonly string SIG_TOCHARARRAY = string.Intern("()[C");
 	}
 
 	sealed class ClassFile

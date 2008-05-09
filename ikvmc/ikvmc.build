@@ -25,6 +25,7 @@
                 <include name="../runtime/compiler.cs" />
                 <include name="../runtime/CoreClasses.cs" />
                 <include name="../runtime/DynamicClassLoader.cs" />
+                <include name="../runtime/intrinsics.cs" />
                 <include name="../runtime/JavaException.cs" />
                 <include name="../runtime/MemberWrapper.cs" />
                 <include name="../runtime/profiler.cs" />

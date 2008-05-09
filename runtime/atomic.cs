@@ -30,17 +30,11 @@ using IKVM.Internal;
 
 static class AtomicReferenceFieldUpdaterEmitter
 {
-	private static readonly string ClassName = string.Intern("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
-	private static readonly string MethodName = string.Intern("newUpdater");
-	private static readonly string MethodSignature = string.Intern("(Ljava.lang.Class;Ljava.lang.Class;Ljava.lang.String;)Ljava.util.concurrent.atomic.AtomicReferenceFieldUpdater;");
 	private static readonly Dictionary<FieldWrapper, ConstructorBuilder> map = new Dictionary<FieldWrapper, ConstructorBuilder>();
 
-	internal static bool Emit(TypeWrapper wrapper, CountingILGenerator ilgen, ClassFile classFile, ClassFile.ConstantPoolItemMI cpi, int i, ClassFile.Method.Instruction[] code)
+	internal static bool Emit(TypeWrapper wrapper, CountingILGenerator ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code)
 	{
-		if (ReferenceEquals(cpi.Class, AtomicReferenceFieldUpdaterEmitter.ClassName)
-			&& ReferenceEquals(cpi.Name, AtomicReferenceFieldUpdaterEmitter.MethodName)
-			&& ReferenceEquals(cpi.Signature, AtomicReferenceFieldUpdaterEmitter.MethodSignature)
-			&& i >= 3
+		if (i >= 3
 			&& !code[i - 0].IsBranchTarget
 			&& !code[i - 1].IsBranchTarget
 			&& !code[i - 2].IsBranchTarget
@@ -77,7 +71,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 		if (!exists)
 		{
 			// note that we don't need to lock here, because we're running as part of FinishCore, which is already protected by a lock
-			TypeWrapper arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical(ClassName);
+			TypeWrapper arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
 			TypeBuilder tb = wrapper.TypeAsBuilder.DefineNestedType("__ARFU_" + field.Name + field.Signature.Replace('.', '/'), TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
 			EmitCompareAndSet("compareAndSet", tb, field.GetField());
 			EmitCompareAndSet("weakCompareAndSet", tb, field.GetField());

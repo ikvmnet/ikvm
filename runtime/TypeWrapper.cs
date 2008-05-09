@@ -3999,12 +3999,12 @@ namespace IKVM.Internal
 					{
 						fields[i] = new DynamicPropertyFieldWrapper(wrapper, fld);
 					}
-#if STATIC_COMPILER
+#if STATIC_COMPILER && !OPENJDK
 					else if(fld.IsFinal
 						&& (fld.IsPublic || fld.IsProtected)
 						&& wrapper.IsPublic
 						&& !wrapper.IsInterface
-						&& (!wrapper.classLoader.StrictFinalFieldSemantics || ReferenceEquals(wrapper.Name, StringConstants.JAVA_LANG_SYSTEM)))
+						&& (!wrapper.classLoader.StrictFinalFieldSemantics || wrapper.Name == "java.lang.System"))
 					{
 						fields[i] = new GetterFieldWrapper(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null, null);
 					}

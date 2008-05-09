@@ -66,6 +66,7 @@
                 <include name="CoreClasses.cs" />
                 <include name="DynamicClassLoader.cs" />
                 <include name="ExceptionHelper.cs" />
+                <include name="intrinsics.cs" />
                 <include name="JavaException.cs" />
                 <include name="MemberWrapper.cs" />
                 <include unless="${classpath}" name="openjdk.cs" />

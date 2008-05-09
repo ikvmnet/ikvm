@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1718,63 +1718,11 @@ class Compiler
 				case NormalizedByteCode.__invokestatic:
 				{
 					ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
-					// HACK special case for calls to System.arraycopy, if the array arguments on the stack
-					// are of a known array type, we can redirect to an optimized version of arraycopy.
-					// Note that we also have to handle VMSystem.arraycopy, because StringBuffer directly calls
-					// this method to avoid prematurely initialising System.
-					if((ReferenceEquals(cpi.Class, StringConstants.JAVA_LANG_SYSTEM) || ReferenceEquals(cpi.Class, StringConstants.JAVA_LANG_VMSYSTEM))
-						&& ReferenceEquals(cpi.Name, StringConstants.ARRAYCOPY)
-						&& ReferenceEquals(cpi.Signature, StringConstants.SIG_ARRAYCOPY)
-						&& cpi.GetClassType().GetClassLoader() == java_lang_Class.GetClassLoader())
-					{
-						TypeWrapper dst_type = ma.GetStackTypeWrapper(i, 2);
-						TypeWrapper src_type = ma.GetStackTypeWrapper(i, 4);
-						if(!dst_type.IsUnloadable && dst_type.IsArray && dst_type == src_type)
-						{
-							switch(dst_type.Name[1])
-							{
-								case 'J':
-								case 'D':
-									ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.arraycopy_primitive_8);
-									break;
-								case 'I':
-								case 'F':
-									ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.arraycopy_primitive_4);
-									break;
-								case 'S':
-								case 'C':
-									ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.arraycopy_primitive_2);
-									break;
-								case 'B':
-								case 'Z':
-									ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.arraycopy_primitive_1);
-									break;
-								default:
-									// TODO once the verifier tracks actual types (i.e. it knows that
-									// a particular reference is the result of a "new" opcode) we can
-									// use the fast version if the exact destination type is known
-									// (in that case the "dst_type == src_type" above should
-									// be changed to "src_type.IsAssignableTo(dst_type)".
-									TypeWrapper elemtw = dst_type.ElementTypeWrapper;
-									// note that IsFinal returns true for array types, so we have to be careful!
-									if(!elemtw.IsArray && elemtw.IsFinal)
-									{
-										ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.arraycopy_fast);
-									}
-									else
-									{
-										ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.arraycopy);
-									}
-									break;
-							}
-							break;
-						}
-					}
-					if(AtomicReferenceFieldUpdaterEmitter.Emit(clazz, ilGenerator, classFile, cpi, i, code))
+					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
+					if(method.IsIntrinsic && Intrinsics.Emit(ilGenerator, method, ma, i, clazz, classFile, code))
 					{
 						break;
 					}
-					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
 					// if the stack values don't match the argument types (for interface argument types)
 					// we must emit code to cast the stack value to the interface type
 					CastInterfaceArgs(method, cpi.GetArgTypes(), i, false);
@@ -1811,24 +1759,10 @@ class Compiler
 
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
 
-#if STATIC_COMPILER
-					if(method.DeclaringType == CoreClasses.java.lang.String.Wrapper
-						&& ReferenceEquals(method.Name, StringConstants.TOCHARARRAY)
-						&& ReferenceEquals(method.Signature, StringConstants.SIG_TOCHARARRAY))
+					if(method.IsIntrinsic && Intrinsics.Emit(ilGenerator, method, ma, i, clazz, classFile, code))
 					{
-						string str = ilGenerator.PopLazyLdstr();
-						if(str != null)
-						{
-							// arbitrary length for "big" strings
-							if(str.Length > 128)
-							{
-								EmitLoadCharArrayLiteral(ilGenerator, str, mw.DeclaringType);
-								break;
-							}
-							ilGenerator.Emit(OpCodes.Ldstr, str);
-						}
+						break;
 					}
-#endif
 
 					if(method.IsProtected && (method.DeclaringType == java_lang_Object || method.DeclaringType == java_lang_Throwable))
 					{
@@ -3211,58 +3145,6 @@ class Compiler
 					break;
 			}
 		}
-	}
-
-	private static void EmitLoadCharArrayLiteral(ILGenerator ilgen, string str, TypeWrapper tw)
-	{
-		ModuleBuilder mod = tw.GetClassLoader().GetTypeWrapperFactory().ModuleBuilder;
-		// FXBUG on .NET 1.1 & 2.0 the value type that Ref.Emit automatically generates is public,
-		// so we pre-create a non-public type with the right name here and it will "magically" use
-		// that instead.
-		// If we're running on Mono this isn't necessary, but for simplicitly we'll simply create
-		// the type as well (it is useless, but all it does is waste a little space).
-		int length = str.Length * 2;
-		string typename = "$ArrayType$" + length;
-		Type type = mod.GetType(typename, false, false);
-		if(type == null)
-		{
-			if(tw.GetClassLoader().GetTypeWrapperFactory().ReserveName(typename))
-			{
-				TypeBuilder tb = mod.DefineType(typename, TypeAttributes.Sealed | TypeAttributes.Class | TypeAttributes.ExplicitLayout | TypeAttributes.NotPublic, typeof(ValueType), PackingSize.Size1, length);
-				AttributeHelper.HideFromJava(tb);
-				type = tb.CreateType();
-			}
-		}
-		if(type == null
-			|| !type.IsValueType
-			|| type.StructLayoutAttribute.Pack != 1 || type.StructLayoutAttribute.Size != length)
-		{
-			// the type that we found doesn't match (must mean we've compiled a Java type with that name),
-			// so we fall back to the string approach
-			ilgen.Emit(OpCodes.Ldstr, str);
-			ilgen.Emit(OpCodes.Call, typeof(string).GetMethod("ToCharArray", Type.EmptyTypes));
-			return;
-		}
-		ilgen.Emit(OpCodes.Ldc_I4, str.Length);
-		ilgen.Emit(OpCodes.Newarr, typeof(char));
-		ilgen.Emit(OpCodes.Dup);
-		byte[] data = new byte[length];
-		for (int j = 0; j < str.Length; j++)
-		{
-			data[j * 2 + 0] = (byte)(str[j] >> 0);
-			data[j * 2 + 1] = (byte)(str[j] >> 8);
-		}
-		// NOTE we define a module field, because type fields on Mono don't use the global $ArrayType$<n> type.
-		// NOTE this also means that this will only work during static compilation, because ModuleBuilder.CreateGlobalFunctions() must
-		// be called before the field can be used.
-		FieldBuilder fb = mod.DefineInitializedData("__<str>", data, FieldAttributes.Static | FieldAttributes.PrivateScope);
-		if(!fb.FieldType.Equals(type))
-		{
-			// this is actually relatively harmless, but I would like to know about it, so we abort and hope that users report this when they encounter it
-			JVM.CriticalFailure("Unsupported runtime: ModuleBuilder.DefineInitializedData() field type mispredicted", null);
-		}
-		ilgen.Emit(OpCodes.Ldtoken, fb);
-		ilgen.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("InitializeArray", new Type[] { typeof(Array), typeof(RuntimeFieldHandle) }));
 	}
 
 	private MethodInfo GetInvokeSpecialStub(MethodWrapper method)

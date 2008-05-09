@@ -112,6 +112,7 @@
     <Compile Include="ExceptionHelper.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="intrinsics.cs" />
     <Compile Include="JavaException.cs">
       <SubType>Code</SubType>
     </Compile>
