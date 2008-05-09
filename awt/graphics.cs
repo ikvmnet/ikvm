@@ -805,18 +805,23 @@ namespace ikvm.awt
             g.Transform = transform;
         }
 
-        public override void rotate(double angle)
+		private static double RadiansToDegrees(double radians)
+		{
+			return radians * (180 / Math.PI);
+		}
+
+        public override void rotate(double theta)
         {
             Matrix transform = g.Transform;
-            transform.Rotate((float)angle);
+            transform.Rotate((float)RadiansToDegrees(theta));
             g.Transform = transform;
         }
 
-        public override void rotate(double angle, double x, double y)
+        public override void rotate(double theta, double x, double y)
         {
             Matrix transform = g.Transform;
             transform.Translate((float)x, (float)y);
-            transform.Rotate((float)angle);
+			transform.Rotate((float)RadiansToDegrees(theta));
             transform.Translate(-(float)x, -(float)y);
             g.Transform = transform;
         }
