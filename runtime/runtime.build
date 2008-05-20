@@ -17,7 +17,7 @@
     </target>
 
     <target name="IKVM.Runtime.JNI">
-        <csc target="library" output="IKVM.Runtime.JNI.dll" define="${defs}" optimize="true" unsafe="true" rebuild="true">
+        <csc noconfig="true" target="library" output="IKVM.Runtime.JNI.dll" define="${defs}" optimize="true" unsafe="true" rebuild="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="JniInterface.cs" />
@@ -26,6 +26,7 @@
                 <include unless="${first-pass or not classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
                 <include unless="${first-pass or classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
+                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
             </references>
         </csc>
         <copy file="IKVM.Runtime.JNI.dll" todir="../bin" />        
@@ -48,7 +49,7 @@
         <if test="${not first-pass}">
             <call target="IKVM.Runtime.JNI" />
         </if>
-        <csc target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" rebuild="true">
+        <csc noconfig="true" target="library" output="IKVM.Runtime.dll" define="${defs}" optimize="true" unsafe="false" rebuild="true">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AssemblyInfo.cs" />
@@ -83,7 +84,7 @@
                 <include unless="${first-pass}" name="../bin/IKVM.Runtime.JNI.dll" asis="true" />
                 <include unless="${first-pass or not classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
                 <include unless="${first-pass or classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
-                <!-- HACK mcs requires an explicit reference to System.Configuration -->
+                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Configuration.dll" />
             </references>
             <nowarn>
