@@ -146,18 +146,18 @@ namespace IKVM.Internal
 		private static CustomAttributeBuilder paramArrayAttribute;
 		private static ConstructorInfo nonNestedInnerClassAttribute;
 		private static ConstructorInfo nonNestedOuterClassAttribute;
+		private static Type typeofModifiers = JVM.LoadType(typeof(Modifiers));
+		private static Type typeofSourceFileAttribute = JVM.LoadType(typeof(SourceFileAttribute));
+		private static Type typeofLineNumberTableAttribute = JVM.LoadType(typeof(LineNumberTableAttribute));
+		private static Type typeofEnclosingMethodAttribute = JVM.LoadType(typeof(EnclosingMethodAttribute));
 #endif // STATIC_COMPILER
 #endif // !COMPACT_FRAMEWORK
 		private static Type typeofRemappedClassAttribute = JVM.LoadType(typeof(RemappedClassAttribute));
 		private static Type typeofRemappedTypeAttribute = JVM.LoadType(typeof(RemappedTypeAttribute));
 		private static Type typeofModifiersAttribute = JVM.LoadType(typeof(ModifiersAttribute));
-		private static Type typeofModifiers = JVM.LoadType(typeof(Modifiers));
 		private static Type typeofRemappedInterfaceMethodAttribute = JVM.LoadType(typeof(RemappedInterfaceMethodAttribute));
 		private static Type typeofNameSigAttribute = JVM.LoadType(typeof(NameSigAttribute));
 		private static Type typeofJavaModuleAttribute = JVM.LoadType(typeof(JavaModuleAttribute));
-		private static Type typeofSourceFileAttribute = JVM.LoadType(typeof(SourceFileAttribute));
-		private static Type typeofLineNumberTableAttribute = JVM.LoadType(typeof(LineNumberTableAttribute));
-		private static Type typeofEnclosingMethodAttribute = JVM.LoadType(typeof(EnclosingMethodAttribute));
 		private static Type typeofSignatureAttribute = JVM.LoadType(typeof(SignatureAttribute));
 		private static Type typeofInnerClassAttribute = JVM.LoadType(typeof(InnerClassAttribute));
 		private static Type typeofImplementsAttribute = JVM.LoadType(typeof(ImplementsAttribute));
@@ -1367,7 +1367,6 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-				List<string> list = new List<string>();
 #if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(t))
 				{
@@ -4256,17 +4255,6 @@ namespace IKVM.Internal
 							}
 						}
 					}
-					string sourceFile = null;
-					if(wrapper.classLoader.EmitStackTraceInfo)
-					{
-						if(f.SourceFileAttribute != null)
-						{
-							if(f.SourceFileAttribute != typeBuilder.Name + ".java")
-							{
-								sourceFile = f.SourceFileAttribute;
-							}
-						}
-					}
 					TypeWrapper[] interfaces = wrapper.Interfaces;
 					string[] implements = new string[interfaces.Length];
 					for(int i = 0; i < implements.Length; i++)
@@ -4286,15 +4274,6 @@ namespace IKVM.Internal
 					else if(outerClass.innerClass != 0)
 					{
 						AttributeHelper.SetInnerClass(typeBuilder, null, outerClass.accessFlags);
-					}
-					string enclosingMethodClass = null;
-					string enclosingMethodName = null;
-					string enclosingMethodSig = null;
-					if(classFile.EnclosingMethod != null)
-					{
-						enclosingMethodClass = classFile.EnclosingMethod[0];
-						enclosingMethodName = classFile.EnclosingMethod[1];
-						enclosingMethodSig = classFile.EnclosingMethod[2];
 					}
 					AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
 					if(classFile.DeprecatedAttribute)
@@ -4395,6 +4374,7 @@ namespace IKVM.Internal
 				return false;
 			}
 
+#if STATIC_COMPILER
 			private ClassFile.InnerClass getOuterClass()
 			{
 				ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
@@ -4412,7 +4392,6 @@ namespace IKVM.Internal
 				return new ClassFile.InnerClass();
 			}
 
-#if STATIC_COMPILER
 			private bool IsSideEffectFreeStaticInitializer(ClassFile.Method m)
 			{
 				if(m.ExceptionTable.Length != 0)
@@ -4466,7 +4445,6 @@ namespace IKVM.Internal
 					return false;
 				}
 			}
-#endif // STATIC_COMPILER
 
 			private static bool ContainsMemberWrapper(ArrayList members, string name, string sig)
 			{
@@ -4479,6 +4457,7 @@ namespace IKVM.Internal
 				}
 				return false;
 			}
+#endif // STATIC_COMPILER
 
 			private MethodWrapper GetMethodWrapperDuringCtor(TypeWrapper lookup, ArrayList methods, string name, string sig)
 			{
@@ -4543,6 +4522,7 @@ namespace IKVM.Internal
 				}
 			}
 
+#if STATIC_COMPILER
 			private void AddAccessStubMethods(ArrayList methods, ArrayList baseMethods, TypeWrapper tw)
 			{
 				foreach(MethodWrapper mw in tw.GetMethods())
@@ -4592,6 +4572,7 @@ namespace IKVM.Internal
 				Debug.Assert(CheckInnerOuterNames(inner, outer));
 				return DynamicClassLoader.EscapeName(inner.Substring(outer.Length + 1));
 			}
+#endif // STATIC_COMPILER
 
 			private static bool IsCompatibleArgList(TypeWrapper[] caller, TypeWrapper[] callee)
 			{
@@ -5817,7 +5798,9 @@ namespace IKVM.Internal
 
 			class TraceHelper
 			{
+#if STATIC_COMPILER
 				private readonly static MethodInfo methodIsTracedMethod = typeof(Tracer).GetMethod("IsTracedMethod");
+#endif
 				private readonly static MethodInfo methodMethodInfo = typeof(Tracer).GetMethod("MethodInfo");
 
 				internal static void EmitMethodTrace(ILGenerator ilgen, string tracemessage)
@@ -5838,6 +5821,7 @@ namespace IKVM.Internal
 				}
 			}
 
+#if STATIC_COMPILER
 			private bool IsValidAnnotationElementType(string type)
 			{
 				if(type[0] == '[')
@@ -5886,7 +5870,6 @@ namespace IKVM.Internal
 				return false;
 			}
 
-#if STATIC_COMPILER
 			sealed class AnnotationBuilder : Annotation
 			{
 				private TypeBuilder annotationTypeBuilder;
@@ -8160,6 +8143,7 @@ namespace IKVM.Internal
 			return sourceFileName;
 		}
 
+#if !STATIC_COMPILER
 		private int GetMethodBaseToken(MethodBase mb)
 		{
 			ConstructorInfo ci = mb as ConstructorInfo;
@@ -8172,6 +8156,7 @@ namespace IKVM.Internal
 				return classLoader.GetTypeWrapperFactory().ModuleBuilder.GetMethodToken((MethodInfo)mb).Token;
 			}
 		}
+#endif // !STATIC_COMPILER
 
 		internal void RegisterPostFinishProc(System.Threading.ThreadStart proc)
 		{
@@ -8970,14 +8955,18 @@ namespace IKVM.Internal
 		private class CompiledRemappedMethodWrapper : SmartMethodWrapper
 		{
 			private MethodInfo mbHelper;
+#if !STATIC_COMPILER
 			private MethodInfo mbNonvirtualHelper;
+#endif
 
 			internal CompiledRemappedMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, ExModifiers modifiers, bool hideFromReflection, MethodInfo mbHelper, MethodInfo mbNonvirtualHelper)
 				: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers.Modifiers,
 						(modifiers.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None) | (hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None))
 			{
 				this.mbHelper = mbHelper;
+#if !STATIC_COMPILER
 				this.mbNonvirtualHelper = mbNonvirtualHelper;
+#endif
 			}
 
 #if !COMPACT_FRAMEWORK
@@ -10971,14 +10960,18 @@ namespace IKVM.Internal
 
 		private class ByRefMethodWrapper : SmartMethodWrapper
 		{
+#if !STATIC_COMPILER
 			private bool[] byrefs;
+#endif
 			private Type[] args;
 
 			internal ByRefMethodWrapper(Type[] args, bool[] byrefs, TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, bool hideFromReflection)
 				: base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
 			{
 				this.args = args;
+#if !STATIC_COMPILER
 				this.byrefs = byrefs;
+#endif
 			}
 
 #if !COMPACT_FRAMEWORK

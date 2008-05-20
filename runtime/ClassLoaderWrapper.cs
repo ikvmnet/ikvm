@@ -1143,12 +1143,12 @@ namespace IKVM.Internal
 			return loader;
 		}
 
+#if !STATIC_COMPILER && !FIRST_PASS
 		private static object CreateUnitializedCustomClassLoader(Type customClassLoaderClass)
 		{
 			return System.Runtime.Serialization.FormatterServices.GetUninitializedObject(customClassLoaderClass);
 		}
 
-#if !STATIC_COMPILER && !FIRST_PASS
 		private static void LoadCustomClassLoaderRedirects()
 		{
 			// this method assumes that we hold a global lock

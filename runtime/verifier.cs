@@ -2754,12 +2754,12 @@ class MethodAnalyzer
 							if(classFile.GetConstantPoolConstantType(instructions[i].Arg1) == ClassFile.ConstantType.Class)
 							{
 								TypeWrapper tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
-#if STATIC_COMPILER
 								if(tw.IsUnloadable)
 								{
+#if STATIC_COMPILER
 									instructions[i].SetHardError(HardError.NoClassDefFoundError, AllocErrorMessage(tw.Name));
-								}
 #endif
+								}
 							}
 							break;
 						case NormalizedByteCode.__new:

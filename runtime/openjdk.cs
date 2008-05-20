@@ -1278,38 +1278,6 @@ namespace IKVM.NativeCode.java
 				return "\\";
 			}
 
-			private static System.IO.FileInfo GetFileInfo(string path)
-			{
-#if FIRST_PASS
-				return null;
-#else
-				try
-				{
-					return new System.IO.FileInfo(path);
-				}
-				catch(System.Security.SecurityException x1)
-				{
-					throw new jiIOException(x1.Message);
-				}
-				catch(System.ArgumentException x2)
-				{
-					throw new jiIOException(x2.Message);
-				}
-				catch(System.UnauthorizedAccessException x3)
-				{
-					throw new jiIOException(x3.Message);
-				}
-				catch(System.IO.IOException x4)
-				{
-					throw new jiIOException(x4.Message);
-				}
-				catch(System.NotSupportedException x5)
-				{
-					throw new jiIOException(x5.Message);
-				}
-#endif
-			}
-
 			private static string CanonicalizePath(string path)
 			{
 				try
@@ -4471,7 +4439,7 @@ namespace IKVM.NativeCode.java
 
 			public static int load0(object thisMappedByteBuffer, long address, long length, int pageSize)
 			{
-				int bogus = 0;
+				int bogus = bogusField;
 				while (length > 0)
 				{
 					// touch a byte in every page
