@@ -399,7 +399,13 @@ namespace IKVM.Runtime
 		private static ArrayList nativeLibraries = new ArrayList();
 		internal static readonly object JniLock = new object();
 
-		internal unsafe static int LoadLibrary(string filename, ClassLoaderWrapper loader)
+		// MONOBUG with mcs we can't pass ClassLoaderWrapper from IKVM.Runtime.dll to IKVM.Runtime.JNI.dll
+		internal unsafe static int LoadLibrary(string filename, object loader)
+		{
+			return LoadLibrary(filename, (ClassLoaderWrapper)loader);
+		}
+
+		private unsafe static int LoadLibrary(string filename, ClassLoaderWrapper loader)
 		{
 			Tracer.Info(Tracer.Jni, "loadLibrary: {0}, class loader: {1}", filename, loader);
 			lock(JniLock)

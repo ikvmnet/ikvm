@@ -2047,7 +2047,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 #elif OPENJDK
 						java.lang.Class clazz = java.lang.Class.newClass();
-						clazz.typeWrapper = this;
+						SetTypeWrapperHack(ref clazz.typeWrapper, this);
 						classObject = clazz;
 #else
 						classObject = JVM.Library.newClass(this, null, GetClassLoader().GetJavaClassLoader());
@@ -2058,12 +2058,19 @@ namespace IKVM.Internal
 			}
 		}
 
+		// MONOBUG this method is to work around an mcs bug
+		internal static void SetTypeWrapperHack<T>(ref T field, TypeWrapper type)
+		{
+			field = (T)(object)type;
+		}
+
 		internal static TypeWrapper FromClass(object classObject)
 		{
 #if FIRST_PASS
 			return null;
 #elif OPENJDK
-			return ((java.lang.Class)classObject).typeWrapper;
+			// MONOBUG redundant cast to workaround mcs bug
+			return (TypeWrapper)(object)((java.lang.Class)classObject).typeWrapper;
 #else
 			return (TypeWrapper)JVM.Library.getWrapperFromClass(classObject);
 #endif

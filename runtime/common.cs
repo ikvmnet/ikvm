@@ -298,10 +298,8 @@ namespace IKVM.NativeCode.ikvm.runtime
 		{
 #if FIRST_PASS
 			return 0;
-#elif OPENJDK
-			return ClassLoaderWrapper.GetGenericClassLoaderId(((global::java.lang.ClassLoader)classLoader).wrapper);
 #else
-			return ClassLoaderWrapper.GetGenericClassLoaderId((ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(classLoader));
+			return ClassLoaderWrapper.GetGenericClassLoaderId(ClassLoaderWrapper.GetClassLoaderWrapper(classLoader));
 #endif
 		}
 
@@ -314,10 +312,8 @@ namespace IKVM.NativeCode.ikvm.runtime
 		{
 #if FIRST_PASS
 			return null;
-#elif OPENJDK
-			return ((GenericClassLoader)((global::java.lang.ClassLoader)classLoader).wrapper).GetName();
 #else
-			return ((GenericClassLoader)JVM.Library.getWrapperFromClassLoader(classLoader)).GetName();
+			return ((GenericClassLoader)ClassLoaderWrapper.GetClassLoaderWrapper(classLoader)).GetName();
 #endif
 		}
 	}

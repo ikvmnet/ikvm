@@ -205,7 +205,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER || FIRST_PASS
 #elif OPENJDK
 					java.lang.Class clazz = java.lang.Class.newClass();
-					clazz.typeWrapper = type;
+					TypeWrapper.SetTypeWrapperHack(ref clazz.typeWrapper, type);
 					clazz.pd = (java.security.ProtectionDomain)protectionDomain;
 					type.SetClassObject(clazz);
 #else
