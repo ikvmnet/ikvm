@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?> 
 <!--
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -173,18 +173,8 @@
 			<method name="hashCode" sig="()I" modifiers="public">
 				<override name="GetHashCode" />
 				<nonvirtualAlternateBody>
-					<ldarg_0 />
-					<conditional framework="2.0">
-						<code>
-							<call type="System.Runtime.CompilerServices.RuntimeHelpers" name="GetHashCode" sig="(Ljava.lang.Object;)I" />
-						</code>
-					</conditional>
-					<conditional framework="1.1">
-						<code>
-							<!-- FXBUG RuntimeHelpers.GetHashCode is broken in multi AppDomain scenarios (on v1.x) -->
-							<call type="System.Object" name="GetHashCode" sig="()I" />
-						</code>
-					</conditional>
+          <ldarg_0 />
+          <call type="System.Runtime.CompilerServices.RuntimeHelpers" name="GetHashCode" sig="(Ljava.lang.Object;)I" />
 					<ret />
 				</nonvirtualAlternateBody>
 			</method>
