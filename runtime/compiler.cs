@@ -1719,7 +1719,7 @@ class Compiler
 				{
 					ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
-					if(method.IsIntrinsic && Intrinsics.Emit(ilGenerator, method, ma, i, clazz, classFile, code))
+					if(method.IsIntrinsic && Intrinsics.Emit(ilGenerator, method, ma, i, mw, classFile, code))
 					{
 						break;
 					}
@@ -1759,7 +1759,7 @@ class Compiler
 
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
 
-					if(method.IsIntrinsic && Intrinsics.Emit(ilGenerator, method, ma, i, clazz, classFile, code))
+					if(method.IsIntrinsic && Intrinsics.Emit(ilGenerator, method, ma, i, mw, classFile, code))
 					{
 						break;
 					}

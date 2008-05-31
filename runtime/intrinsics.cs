@@ -32,7 +32,7 @@ namespace IKVM.Internal
 {
 	static class Intrinsics
 	{
-		private delegate bool Emitter(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, TypeWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code);
+		private delegate bool Emitter(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code);
 		private struct IntrinsicKey : IEquatable<IntrinsicKey>
 		{
 			private readonly string className;
@@ -98,31 +98,31 @@ namespace IKVM.Internal
 			return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader();
 		}
 
-		internal static bool Emit(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, TypeWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		internal static bool Emit(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			// note that intrinsics can always refuse to emit code and the code generator will fall back to a normal method call
 			return intrinsics[new IntrinsicKey(method)](ilgen, method, ma, opcodeIndex, caller, classFile, code);
 		}
 
-		private static bool Float_floatToRawIntBits(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, TypeWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Float_floatToRawIntBits(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			EmitConversion(ilgen, typeofFloatConverter, "ToInt");
 			return true;
 		}
 
-		private static bool Float_intBitsToFloat(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, TypeWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Float_intBitsToFloat(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			EmitConversion(ilgen, typeofFloatConverter, "ToFloat");
 			return true;
 		}
 
-		private static bool Double_doubleToRawLongBits(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, TypeWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Double_doubleToRawLongBits(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			EmitConversion(ilgen, typeofDoubleConverter, "ToLong");
 			return true;
 		}
 
-		private static bool Double_longBitsToDouble(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, TypeWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Double_longBitsToDouble(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			EmitConversion(ilgen, typeofDoubleConverter, "ToDouble");
 			return true;
@@ -135,7 +135,7 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, converterType.GetMethod(method));
 		}
 
-		private static bool System_arraycopy(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, TypeWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool System_arraycopy(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			// if the array arguments on the stack are of a known array type, we can redirect to an optimized version of arraycopy.
 			// Note that we also have to handle VMSystem.arraycopy, because on GNU Classpath StringBuffer directly calls
@@ -188,12 +188,12 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static bool AtomicReferenceFieldUpdater_newUpdater(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, TypeWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool AtomicReferenceFieldUpdater_newUpdater(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
-			return AtomicReferenceFieldUpdaterEmitter.Emit(caller, ilgen, classFile, opcodeIndex, code);
+			return AtomicReferenceFieldUpdaterEmitter.Emit(caller.DeclaringType, ilgen, classFile, opcodeIndex, code);
 		}
 
-		private static bool String_toCharArray(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, TypeWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool String_toCharArray(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			string str = ilgen.PopLazyLdstr();
 			if (str != null)
@@ -201,7 +201,7 @@ namespace IKVM.Internal
 				// arbitrary length for "big" strings
 				if (str.Length > 128)
 				{
-					EmitLoadCharArrayLiteral(ilgen, str, caller);
+					EmitLoadCharArrayLiteral(ilgen, str, caller.DeclaringType);
 					return true;
 				}
 				ilgen.Emit(OpCodes.Ldstr, str);
