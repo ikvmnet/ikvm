@@ -251,24 +251,27 @@ namespace IKVM.Runtime
 		}
 
 		[DebuggerStepThroughAttribute]
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
 		public static object DynamicInvokeSpecialNew(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 		{
 			Profiler.Count("DynamicInvokeSpecialNew");
-			return GetMethodWrapper(null, type, clazz, name, sig, false).Invoke(null, args, false);
+			return GetMethodWrapper(null, type, clazz, name, sig, false).Invoke(null, args, false, ikvm.@internal.CallerID.create(new StackFrame(1, false)));
 		}
 
 		[DebuggerStepThroughAttribute]
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
 		public static object DynamicInvokestatic(RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 		{
 			Profiler.Count("DynamicInvokestatic");
-			return GetMethodWrapper(null, type, clazz, name, sig, true).Invoke(null, args, false);
+			return GetMethodWrapper(null, type, clazz, name, sig, true).Invoke(null, args, false, ikvm.@internal.CallerID.create(new StackFrame(1, false)));
 		}
 
 		[DebuggerStepThroughAttribute]
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
 		public static object DynamicInvokevirtual(object obj, RuntimeTypeHandle type, string clazz, string name, string sig, object[] args)
 		{
 			Profiler.Count("DynamicInvokevirtual");
-			return GetMethodWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false).Invoke(obj, args, false);
+			return GetMethodWrapper(ClassLoaderWrapper.GetWrapperFromType(obj.GetType()), type, clazz, name, sig, false).Invoke(obj, args, false, ikvm.@internal.CallerID.create(new StackFrame(1, false)));
 		}
 
 		[DebuggerStepThroughAttribute]

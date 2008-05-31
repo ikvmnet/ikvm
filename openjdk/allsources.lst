@@ -1012,7 +1012,9 @@
 ../classpath/ikvm/extensions/ExtensionMethods.java
 ../classpath/ikvm/internal/__unspecified.java
 ../classpath/ikvm/internal/AssemblyClassLoader.java
+../classpath/ikvm/internal/CallerID.java
 ../classpath/ikvm/internal/Formatter.java
+../classpath/ikvm/internal/HasCallerID.java
 ../classpath/ikvm/internal/MonoUtils.java
 ../classpath/ikvm/internal/stubgen/StubGenerator.java
 ../classpath/ikvm/internal/Util.java
@@ -1112,6 +1114,7 @@ sun/nio/ch/SelectionKeyImpl.java
 sun/nio/ch/ServerSocketChannelImpl.java
 sun/nio/ch/SocketChannelImpl.java
 sun/nio/ch/Util.java
+sun/reflect/MethodAccessor.java
 sun/reflect/Reflection.java
 sun/reflect/ReflectionFactory.java
 sun/security/jgss/wrapper/NativeGSSFactory.java
@@ -9111,7 +9114,6 @@ SystemProperties.java
 ../../openjdk-b13/j2se/src/share/classes/sun/reflect/InstantiationExceptionConstructorAccessorImpl.java
 ../../openjdk-b13/j2se/src/share/classes/sun/reflect/LangReflectAccess.java
 ../../openjdk-b13/j2se/src/share/classes/sun/reflect/MagicAccessorImpl.java
-../../openjdk-b13/j2se/src/share/classes/sun/reflect/MethodAccessor.java
 ../../openjdk-b13/j2se/src/share/classes/sun/reflect/SignatureIterator.java
 ../../openjdk-b13/j2se/src/share/classes/sun/reflect/annotation/AnnotationInvocationHandler.java
 ../../openjdk-b13/j2se/src/share/classes/sun/reflect/annotation/AnnotationParser.java

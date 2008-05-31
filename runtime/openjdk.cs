@@ -5820,7 +5820,7 @@ namespace IKVM.NativeCode.sun.reflect
 			}
 
 			[IKVM.Attributes.HideFromJava]
-			public object invoke(object obj, object[] args)
+			public object invoke(object obj, object[] args, global::ikvm.@internal.CallerID callerID)
 			{
 				if (!mw.IsStatic && !mw.DeclaringType.IsInstance(obj))
 				{
@@ -5840,7 +5840,7 @@ namespace IKVM.NativeCode.sun.reflect
 				object retval;
 				try
 				{
-					retval = mw.Invoke(obj, args, false);
+					retval = mw.Invoke(obj, args, false, callerID);
 				}
 				catch (MethodAccessException x)
 				{
@@ -5874,7 +5874,7 @@ namespace IKVM.NativeCode.sun.reflect
 			private static readonly MethodInfo longValue;
 			private static readonly MethodInfo doubleValue;
 			internal static readonly ConstructorInfo invocationTargetExceptionCtor;
-			private delegate object Invoker(object obj, object[] args);
+			private delegate object Invoker(object obj, object[] args, global::ikvm.@internal.CallerID callerID);
 			private Invoker invoker;
 
 			static FastMethodAccessorImpl()
@@ -5914,12 +5914,12 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 
 				[IKVM.Attributes.HideFromJava]
-				internal object invoke(object obj, object[] args)
+				internal object invoke(object obj, object[] args, global::ikvm.@internal.CallerID callerID)
 				{
 					// FXBUG pre-SP1 a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
 					tw.RunClassInit();
 					outer.invoker = invoker;
-					return invoker(obj, args);
+					return invoker(obj, args, callerID);
 				}
 			}
 
@@ -5932,11 +5932,11 @@ namespace IKVM.NativeCode.sun.reflect
 				if (mw.DeclaringType.TypeAsTBD.IsInterface)
 				{
 					// FXBUG interfaces aren't allowed as owners of dynamic methods
-					dm = new DynamicMethod("__<Invoker>", MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeof(object), new Type[] { typeof(object), typeof(object[]) }, mw.DeclaringType.TypeAsTBD.Module, true);
+					dm = new DynamicMethod("__<Invoker>", MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) }, mw.DeclaringType.TypeAsTBD.Module, true);
 				}
 				else
 				{
-					dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object), typeof(object[]) }, mw.DeclaringType.TypeAsTBD);
+					dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) }, mw.DeclaringType.TypeAsTBD);
 				}
 				CountingILGenerator ilgen = dm.GetILGenerator();
 				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
@@ -6009,6 +6009,10 @@ namespace IKVM.NativeCode.sun.reflect
 					{
 						ilgen.Emit(OpCodes.Ldloc, args[i]);
 					}
+				}
+				if (mw.HasCallerID)
+				{
+					ilgen.Emit(OpCodes.Ldarg_2);
 				}
 				if (mw.IsStatic)
 				{
@@ -6213,9 +6217,9 @@ namespace IKVM.NativeCode.sun.reflect
 			}
 
 			[IKVM.Attributes.HideFromJava]
-			public object invoke(object obj, object[] args)
+			public object invoke(object obj, object[] args, global::ikvm.@internal.CallerID callerID)
 			{
-				return invoker(obj, args);
+				return invoker(obj, args, callerID);
 			}
 		}
 
@@ -6234,7 +6238,7 @@ namespace IKVM.NativeCode.sun.reflect
 				args = ConvertArgs(mw.GetParameters(), args);
 				try
 				{
-					return mw.Invoke(null, args, false);
+					return mw.Invoke(null, args, false, null);
 				}
 				catch (MethodAccessException x)
 				{
@@ -6355,7 +6359,7 @@ namespace IKVM.NativeCode.sun.reflect
 				try
 				{
 					object obj = FormatterServices.GetUninitializedObject(type);
-					constructor.Invoke(obj, args, false);
+					constructor.Invoke(obj, args, false, null);
 					return obj;
 				}
 				catch (RetargetableJavaException x)

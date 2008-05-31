@@ -25,6 +25,7 @@
 
 package java.lang.reflect;
 
+import ikvm.internal.CallerID;
 import sun.reflect.MethodAccessor;
 import sun.reflect.Reflection;
 import sun.reflect.generics.repository.MethodRepository;
@@ -589,13 +590,14 @@ public final
      * @exception ExceptionInInitializerError if the initialization
      * provoked by this method fails.
      */
+    @ikvm.internal.HasCallerID
     public Object invoke(Object obj, Object... args)
 	throws IllegalAccessException, IllegalArgumentException,
            InvocationTargetException
     {
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
-                Class caller = Reflection.getCallerClass(1);
+                Class caller = CallerID.getCallerID().getCallerClass();
                 Class targetClass = ((obj == null || !Modifier.isProtected(modifiers))
                                      ? clazz
                                      : obj.getClass());
@@ -615,7 +617,7 @@ public final
             }
         }
         if (methodAccessor == null) acquireMethodAccessor();
-        return methodAccessor.invoke(obj, args);
+        return methodAccessor.invoke(obj, args, CallerID.getCallerID());
     }
 
     /**

@@ -1422,7 +1422,7 @@ namespace IKVM.Runtime
 				try
 				{
 					wrapper.Finish();
-					exception = (Exception)mw.Invoke(null, new object[] { StringFromOEM(msg) }, false);
+					exception = (Exception)mw.InvokeJNI(null, new object[] { StringFromOEM(msg) }, false, null);
 					rc = JNI_OK;
 				}
 				catch(RetargetableJavaException x)
@@ -1682,7 +1682,12 @@ namespace IKVM.Runtime
 			}
 			try
 			{
-				return MethodWrapper.FromCookie(methodID).Invoke(pEnv->UnwrapRef(obj), argarray, nonVirtual);
+				MethodBase caller = null;
+				if(pEnv->currentMethod.Value != IntPtr.Zero)
+				{
+					caller = MethodBase.GetMethodFromHandle(pEnv->currentMethod);
+				}
+				return MethodWrapper.FromCookie(methodID).InvokeJNI(pEnv->UnwrapRef(obj), argarray, nonVirtual, caller);
 			}
 			catch(java.lang.reflect.InvocationTargetException x)
 			{

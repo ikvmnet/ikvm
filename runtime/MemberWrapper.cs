@@ -44,6 +44,7 @@ namespace IKVM.Internal
 		InternalAccess = 32,  // member has "internal" access (@ikvm.lang.Internal)
 		PropertyAccessor = 64,
 		Intrinsic = 128,
+		CallerID = 256,
 	}
 
 	class MemberWrapper
@@ -210,6 +211,14 @@ namespace IKVM.Internal
 			flags |= MemberFlags.Intrinsic;
 		}
 
+		internal bool HasCallerID
+		{
+			get
+			{
+				return (flags & MemberFlags.CallerID) != 0;
+			}
+		}
+
 		internal Modifiers Modifiers
 		{
 			get
@@ -338,15 +347,15 @@ namespace IKVM.Internal
 			}
 #endif
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 			[HideFromJava]
-			internal override object Invoke(object obj, object[] args, bool nonVirtual)
+			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
 			{
 				object wrapper = Activator.CreateInstance(DeclaringType.TypeAsSignatureType);
 				DeclaringType.GhostRefField.SetValue(wrapper, obj);
 
 				ResolveGhostMethod();
-				return InvokeImpl(ghostMethod, wrapper, args, nonVirtual);
+				return InvokeImpl(ghostMethod, wrapper, args, nonVirtual, callerID);
 			}
 #endif // !STATIC_COMPILER
 		}
@@ -590,10 +599,19 @@ namespace IKVM.Internal
 		internal Type[] GetParametersForDefineMethod()
 		{
 			TypeWrapper[] wrappers = GetParameters();
-			Type[] temp = new Type[wrappers.Length];
+			int len = wrappers.Length;
+			if(HasCallerID)
+			{
+				len++;
+			}
+			Type[] temp = new Type[len];
 			for(int i = 0; i < wrappers.Length; i++)
 			{
 				temp[i] = wrappers[i].TypeAsSignatureType;
+			}
+			if(HasCallerID)
+			{
+				temp[len - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
 			}
 			return temp;
 		}
@@ -692,11 +710,23 @@ namespace IKVM.Internal
 
 #if !STATIC_COMPILER
 		[HideFromJava]
-		internal virtual object Invoke(object obj, object[] args, bool nonVirtual)
+		internal object InvokeJNI(object obj, object[] args, bool nonVirtual, MethodBase callerID)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return Invoke(obj, args, nonVirtual, ikvm.@internal.CallerID.create(callerID));
+#endif
+		}
+#endif // !STATIC_COMPILER
+
+#if !STATIC_COMPILER && !FIRST_PASS
+		[HideFromJava]
+		internal virtual object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
 		{
 			AssertLinked();
 			ResolveMethod();
-			return InvokeImpl(method, obj, args, nonVirtual);
+			return InvokeImpl(method, obj, args, nonVirtual, callerID);
 		}
 
 		internal void ResolveMethod()
@@ -714,10 +744,10 @@ namespace IKVM.Internal
 #endif // !COMPACT_FRAMEWORK
 		}
 
-		private delegate object Invoker(IntPtr pFunc, object obj, object[] args);
+		private delegate object Invoker(IntPtr pFunc, object obj, object[] args, ikvm.@internal.CallerID callerID);
 
 		[HideFromJava]
-		internal object InvokeImpl(MethodBase method, object obj, object[] args, bool nonVirtual)
+		internal object InvokeImpl(MethodBase method, object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
 		{
 #if !FIRST_PASS
 #if !COMPACT_FRAMEWORK
@@ -752,7 +782,7 @@ namespace IKVM.Internal
 						// NOTE this means that we cannot detect a NullPointerException when calling <init> (does JNI require this?)
 						try
 						{
-							InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, null, args);
+							InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, null, args, callerID);
 							object o = ((ConstructorInfo)method).Invoke(proc.GetArgs());
 							// since we just constructed an instance, it can't possibly be a ghost
 							return o;
@@ -798,8 +828,8 @@ namespace IKVM.Internal
 					Invoker invoker = NonvirtualInvokeHelper.GetInvoker(this);
 					try
 					{
-						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, args);
-						return invoker(method.MethodHandle.GetFunctionPointer(), proc.GetObj(), proc.GetArgs());
+						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, args, null);
+						return invoker(method.MethodHandle.GetFunctionPointer(), proc.GetObj(), proc.GetArgs(), callerID);
 					}
 					catch(ArgumentException x1)
 					{
@@ -814,7 +844,7 @@ namespace IKVM.Internal
 			}
 			try
 			{
-				InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, args);
+				InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, args, callerID);
 				object o = method.Invoke(proc.GetObj(), proc.GetArgs());
 				TypeWrapper retType = this.ReturnType;
 				if(!retType.IsUnloadable && retType.IsGhost)
@@ -915,7 +945,7 @@ namespace IKVM.Internal
 			{
 				// TODO we need to support byref arguments...
 				TypeBuilder typeBuilder = module.DefineType("class" + cache.Count);
-				MethodBuilder methodBuilder = typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Static, typeof(object), new Type[] { typeof(IntPtr), typeof(object), typeof(object[]) });
+				MethodBuilder methodBuilder = typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Static, typeof(object), new Type[] { typeof(IntPtr), typeof(object), typeof(object[]), typeof(ikvm.@internal.CallerID) });
 				AttributeHelper.HideFromJava(methodBuilder);
 				ILGenerator ilgen = methodBuilder.GetILGenerator();
 				ilgen.Emit(OpCodes.Ldarg_1);
@@ -938,6 +968,10 @@ namespace IKVM.Internal
 					{
 						paramTypes[i].EmitUnbox(ilgen);
 					}
+				}
+				if(mw.HasCallerID)
+				{
+					ilgen.Emit(OpCodes.Ldarg_3);
 				}
 				ilgen.Emit(OpCodes.Ldarg_0);
 				ilgen.EmitCalli(OpCodes.Calli, CallingConventions.HasThis, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod(), null);
@@ -972,7 +1006,7 @@ namespace IKVM.Internal
 			private object obj;
 			private object[] args;
 
-			internal InvokeArgsProcessor(MethodWrapper mw, MethodBase method, object original_obj, object[] original_args)
+			internal InvokeArgsProcessor(MethodWrapper mw, MethodBase method, object original_obj, object[] original_args, ikvm.@internal.CallerID callerID)
 			{
 				TypeWrapper[] argTypes = mw.GetParameters();
 
@@ -1012,6 +1046,14 @@ namespace IKVM.Internal
 						}
 					}
 				}
+
+				if(mw.HasCallerID)
+				{
+					object[] nargs = new object[args.Length + 1];
+					Array.Copy(args, nargs, args.Length);
+					nargs[args.Length] = callerID;
+					args = nargs;
+				}
 			}
 
 			internal object GetObj()
@@ -1024,7 +1066,7 @@ namespace IKVM.Internal
 				return args;
 			}
 		}
-#endif // !STATIC_COMPILER
+#endif // !STATIC_COMPILER && !FIRST_PASS
 
 #if !COMPACT_FRAMEWORK
 		internal static OpCode SimpleOpCodeToOpCode(SimpleOpCode opc)
@@ -1672,7 +1714,7 @@ namespace IKVM.Internal
 			setter = GetMethod(fld.PropertySetter, "(" + fld.Signature + ")V", fld.IsStatic);
 		}
 
-#if !STATIC_COMPILER
+#if !STATIC_COMPILER && !FIRST_PASS
 		internal override void ResolveField()
 		{
 			if (getter != null)
@@ -1723,7 +1765,7 @@ namespace IKVM.Internal
 			{
 				throw new global::java.lang.NoSuchMethodError();
 			}
-			return getter.Invoke(obj, new object[0], false);
+			return getter.Invoke(obj, new object[0], false, null);
 		}
 
 		internal override void SetValue(object obj, object val)
@@ -1732,7 +1774,7 @@ namespace IKVM.Internal
 			{
 				throw new global::java.lang.NoSuchMethodError();
 			}
-			setter.Invoke(obj, new object[] { val }, false);
+			setter.Invoke(obj, new object[] { val }, false, null);
 		}
 #endif
 

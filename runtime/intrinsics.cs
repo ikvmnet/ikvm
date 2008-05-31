@@ -90,6 +90,9 @@ namespace IKVM.Internal
 #endif
 			intrinsics.Add(new IntrinsicKey("java.util.concurrent.atomic.AtomicReferenceFieldUpdater", "newUpdater", "(Ljava.lang.Class;Ljava.lang.Class;Ljava.lang.String;)Ljava.util.concurrent.atomic.AtomicReferenceFieldUpdater;"), AtomicReferenceFieldUpdater_newUpdater);
 			intrinsics.Add(new IntrinsicKey("java.lang.String", "toCharArray", "()[C"), String_toCharArray);
+			intrinsics.Add(new IntrinsicKey("sun.reflect.Reflection", "getCallerClass", "(I)Ljava.lang.Class;"), Reflection_getCallerClass);
+			intrinsics.Add(new IntrinsicKey("java.lang.ClassLoader", "getCallerClassLoader", "()Ljava.lang.ClassLoader;"), ClassLoader_getCallerClassLoader);
+			intrinsics.Add(new IntrinsicKey("ikvm.internal.CallerID", "getCallerID", "()Likvm.internal.CallerID;"), CallerID_getCallerID);
 			return intrinsics;
 		}
 
@@ -259,6 +262,62 @@ namespace IKVM.Internal
 			}
 			ilgen.Emit(OpCodes.Ldtoken, fb);
 			ilgen.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("InitializeArray", new Type[] { typeof(Array), typeof(RuntimeFieldHandle) }));
+		}
+
+		private static bool Reflection_getCallerClass(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		{
+			if (caller.HasCallerID
+				&& opcodeIndex > 0
+				&& !code[opcodeIndex - 1].IsBranchTarget
+				&& code[opcodeIndex - 1].NormalizedOpCode == NormalizedByteCode.__iconst
+				&& code[opcodeIndex - 1].Arg1 == 2)
+			{
+				ilgen.Emit(OpCodes.Pop);
+				int arg = caller.GetParametersForDefineMethod().Length - 1;
+				if (!caller.IsStatic)
+				{
+					arg++;
+				}
+				ilgen.Emit(OpCodes.Ldarg, (short)arg);
+				MethodWrapper mw = CoreClasses.ikvm.@internal.CallerID.Wrapper.GetMethodWrapper("getCallerClass", "()Ljava.lang.Class;", false);
+				mw.Link();
+				mw.EmitCallvirt(ilgen);
+				return true;
+			}
+			return false;
+		}
+
+		private static bool ClassLoader_getCallerClassLoader(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		{
+			if (caller.HasCallerID)
+			{
+				int arg = caller.GetParametersForDefineMethod().Length - 1;
+				if (!caller.IsStatic)
+				{
+					arg++;
+				}
+				ilgen.Emit(OpCodes.Ldarg, (short)arg);
+				MethodWrapper mw = CoreClasses.ikvm.@internal.CallerID.Wrapper.GetMethodWrapper("getCallerClassLoader", "()Ljava.lang.ClassLoader;", false);
+				mw.Link();
+				mw.EmitCallvirt(ilgen);
+				return true;
+			}
+			return false;
+		}
+
+		private static bool CallerID_getCallerID(CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		{
+			if (caller.HasCallerID)
+			{
+				int arg = caller.GetParametersForDefineMethod().Length - 1;
+				if (!caller.IsStatic)
+				{
+					arg++;
+				}
+				ilgen.Emit(OpCodes.Ldarg, (short)arg);
+				return true;
+			}
+			return false;
 		}
 	}
 }

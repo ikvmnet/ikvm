@@ -42,6 +42,7 @@ public final class Unsafe
 
     private Unsafe() { }
 
+    @ikvm.internal.HasCallerID
     public static Unsafe getUnsafe()
     {
 	Class c = sun.reflect.Reflection.getCallerClass(2);

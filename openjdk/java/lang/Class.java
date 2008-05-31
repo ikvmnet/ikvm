@@ -182,6 +182,7 @@ public final
      *            by this method fails
      * @exception ClassNotFoundException if the class cannot be located
      */
+    @ikvm.internal.HasCallerID
     public static Class<?> forName(String className) 
                 throws ClassNotFoundException {
         return forName0(className, true, ClassLoader.getCallerClassLoader());
@@ -248,6 +249,7 @@ public final
      * @see 	  java.lang.ClassLoader
      * @since 	  1.2
      */
+    @ikvm.internal.HasCallerID
     public static Class<?> forName(String name, boolean initialize,
 				   ClassLoader loader)
         throws ClassNotFoundException
@@ -317,16 +319,17 @@ public final
      *             </ul>
      *
      */
+    @ikvm.internal.HasCallerID
     public T newInstance() 
         throws InstantiationException, IllegalAccessException
     {
 	if (System.getSecurityManager() != null) {
 	    checkMemberAccess(Member.PUBLIC, ClassLoader.getCallerClassLoader());
 	}
-	return newInstance0();
+	return newInstance0(ikvm.internal.CallerID.getCallerID());
     }
 
-    private T newInstance0()
+    private T newInstance0(ikvm.internal.CallerID callerID)
         throws InstantiationException, IllegalAccessException
     {
         // NOTE: the following code may not be strictly correct under
@@ -362,7 +365,7 @@ public final
         // Security check (same as in java.lang.reflect.Constructor)
         int modifiers = tmpConstructor.getModifiers();
         if (!Reflection.quickCheckMemberAccess(this, modifiers)) {
-            Class caller = Reflection.getCallerClass(3);
+            Class caller = callerID.getCallerClass();
             if (newInstanceCallerCache != caller) {
                 Reflection.ensureMemberAccess(caller, this, null, modifiers);
                 newInstanceCallerCache = caller;
@@ -601,6 +604,7 @@ public final
      * @see SecurityManager#checkPermission
      * @see java.lang.RuntimePermission
      */
+    @ikvm.internal.HasCallerID
     public ClassLoader getClassLoader() {
         ClassLoader cl = getClassLoader0();
         if (cl == null)
@@ -1291,6 +1295,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Class<?>[] getClasses() {
 	// be very careful not to change the stack depth of this
 	// checkMemberAccess call for security reasons 
@@ -1369,6 +1374,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Field[] getFields() throws SecurityException {
 	// be very careful not to change the stack depth of this
 	// checkMemberAccess call for security reasons 
@@ -1420,6 +1426,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Method[] getMethods() throws SecurityException {
 	// be very careful not to change the stack depth of this
 	// checkMemberAccess call for security reasons 
@@ -1469,6 +1476,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Constructor<?>[] getConstructors() throws SecurityException {
 	// be very careful not to change the stack depth of this
 	// checkMemberAccess call for security reasons 
@@ -1527,6 +1535,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Field getField(String name)
         throws NoSuchFieldException, SecurityException {
 	// be very careful not to change the stack depth of this
@@ -1612,6 +1621,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Method getMethod(String name, Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
 	// be very careful not to change the stack depth of this
@@ -1666,6 +1676,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Constructor<T> getConstructor(Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
 	// be very careful not to change the stack depth of this
@@ -1709,6 +1720,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Class<?>[] getDeclaredClasses() throws SecurityException {
 	// be very careful not to change the stack depth of this
 	// checkMemberAccess call for security reasons 
@@ -1753,6 +1765,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Field[] getDeclaredFields() throws SecurityException {
 	// be very careful not to change the stack depth of this
 	// checkMemberAccess call for security reasons 
@@ -1801,6 +1814,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Method[] getDeclaredMethods() throws SecurityException {
 	// be very careful not to change the stack depth of this
 	// checkMemberAccess call for security reasons 
@@ -1846,6 +1860,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Constructor<?>[] getDeclaredConstructors() throws SecurityException {
 	// be very careful not to change the stack depth of this
 	// checkMemberAccess call for security reasons 
@@ -1889,6 +1904,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Field getDeclaredField(String name)
         throws NoSuchFieldException, SecurityException {
 	// be very careful not to change the stack depth of this
@@ -1944,6 +1960,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Method getDeclaredMethod(String name, Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
 	// be very careful not to change the stack depth of this
@@ -1994,6 +2011,7 @@ public final
      *
      * @since JDK1.1
      */
+    @ikvm.internal.HasCallerID
     public Constructor<T> getDeclaredConstructor(Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
 	// be very careful not to change the stack depth of this

@@ -70,6 +70,7 @@ namespace IKVM.Internal
 		private const ushort FLAG_MASK_DEPRECATED = 0x100;
 		private const ushort FLAG_MASK_INTERNAL = 0x200;
 		private const ushort FLAG_MASK_EFFECTIVELY_FINAL = 0x400;
+		private const ushort FLAG_HAS_CALLERID = 0x800;
 		private ConstantPoolItemClass[] interfaces;
 		private Field[] fields;
 		private Method[] methods;
@@ -1061,6 +1062,21 @@ namespace IKVM.Internal
 			get
 			{
 				return (flags & FLAG_MASK_EFFECTIVELY_FINAL) != 0;
+			}
+		}
+
+		internal bool HasInitializedFields
+		{
+			get
+			{
+				foreach (Field f in fields)
+				{
+					if (f.IsStatic && !f.IsFinal && f.ConstantValue != null)
+					{
+						return true;
+					}
+				}
+				return false;
 			}
 		}
 
@@ -2307,6 +2323,10 @@ namespace IKVM.Internal
 									this.access_flags &= ~Modifiers.AccessMask;
 									flags |= FLAG_MASK_INTERNAL;
 								}
+								if(annot[1].Equals("Likvm/internal/HasCallerID;"))
+								{
+									flags |= FLAG_HAS_CALLERID;
+								}
 							}
 							break;
 #endif
@@ -2358,6 +2378,15 @@ namespace IKVM.Internal
 				get
 				{
 					return ReferenceEquals(Name, StringConstants.CLINIT) && ReferenceEquals(Signature, StringConstants.SIG_VOID);
+				}
+			}
+
+			// for use by ikvmc only
+			internal bool HasCallerID
+			{
+				get
+				{
+					return (flags & FLAG_HAS_CALLERID) != 0;
 				}
 			}
 

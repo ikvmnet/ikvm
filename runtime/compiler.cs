@@ -1726,6 +1726,10 @@ class Compiler
 					// if the stack values don't match the argument types (for interface argument types)
 					// we must emit code to cast the stack value to the interface type
 					CastInterfaceArgs(method, cpi.GetArgTypes(), i, false);
+					if(method.HasCallerID)
+					{
+						ilGenerator.Emit(OpCodes.Ldsfld, ((DynamicTypeWrapper)clazz).CallerIDField);
+					}
 					method.EmitCall(ilGenerator);
 					method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
 					if(!strictfp)
@@ -1981,6 +1985,11 @@ class Compiler
 					}
 					else
 					{
+						if(method.HasCallerID)
+						{
+							ilGenerator.Emit(OpCodes.Ldsfld, ((DynamicTypeWrapper)clazz).CallerIDField);
+						}
+
 						if(isinvokespecial)
 						{
 							if(VerifierTypeWrapper.IsThis(type))

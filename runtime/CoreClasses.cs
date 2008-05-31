@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2004, 2005, 2006, 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,6 +26,20 @@ namespace IKVM.Internal
 {
 	internal static class CoreClasses
 	{
+		internal static class ikvm
+		{
+			internal static class @internal
+			{
+				internal static class CallerID
+				{
+					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
+					// (we don't want the classes to be loaded prematurely, because they might not be available then)
+					static CallerID() { }
+					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.CallerID");
+				}
+			}
+		}
+
 		internal static class java
 		{
 			internal static class lang

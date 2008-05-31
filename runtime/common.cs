@@ -145,6 +145,24 @@ namespace IKVM.NativeCode.gnu.classpath
 
 namespace IKVM.NativeCode.ikvm.@internal
 {
+	static class CallerID
+	{
+		public static object GetClass(object obj)
+		{
+			return ClassLoaderWrapper.GetWrapperFromType(obj.GetType().DeclaringType).ClassObject;
+		}
+
+		public static object GetClassLoader(object obj)
+		{
+			return ClassLoaderWrapper.GetWrapperFromType(obj.GetType().DeclaringType).GetClassLoader().GetJavaClassLoader();
+		}
+
+		public static object GetAssemblyClassLoader(Assembly asm)
+		{
+			return ClassLoaderWrapper.GetAssemblyClassLoader(asm).GetJavaClassLoader();
+		}
+	}
+
 	namespace stubgen
 	{
 		static class StubGenerator

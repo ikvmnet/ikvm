@@ -34,6 +34,7 @@ import sun.reflect.generics.scope.ClassScope;
 import java.lang.annotation.Annotation;
 import java.util.Map;
 import sun.reflect.annotation.AnnotationParser;
+import ikvm.internal.CallerID;
 
 
 /**
@@ -368,10 +369,11 @@ class Field extends AccessibleObject implements Member {
      * @exception ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
      */
+    @ikvm.internal.HasCallerID
     public Object get(Object obj)
         throws IllegalArgumentException, IllegalAccessException
     {
-        return getFieldAccessor(obj).get(obj);
+        return getFieldAccessor(obj, CallerID.getCallerID()).get(obj);
     }
 
     /**
@@ -395,10 +397,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#get
      */
+    @ikvm.internal.HasCallerID
     public boolean getBoolean(Object obj)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        return getFieldAccessor(obj).getBoolean(obj);
+        return getFieldAccessor(obj, CallerID.getCallerID()).getBoolean(obj);
     }
 
     /**
@@ -422,10 +425,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#get
      */
+    @ikvm.internal.HasCallerID
     public byte getByte(Object obj)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        return getFieldAccessor(obj).getByte(obj);
+        return getFieldAccessor(obj, CallerID.getCallerID()).getByte(obj);
     }
 
     /**
@@ -451,10 +455,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see Field#get
      */
+    @ikvm.internal.HasCallerID
     public char getChar(Object obj)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        return getFieldAccessor(obj).getChar(obj);
+        return getFieldAccessor(obj, CallerID.getCallerID()).getChar(obj);
     }
 
     /**
@@ -480,10 +485,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#get
      */
+    @ikvm.internal.HasCallerID
     public short getShort(Object obj)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        return getFieldAccessor(obj).getShort(obj);
+        return getFieldAccessor(obj, CallerID.getCallerID()).getShort(obj);
     }
 
     /**
@@ -509,10 +515,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#get
      */
+    @ikvm.internal.HasCallerID
     public int getInt(Object obj)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        return getFieldAccessor(obj).getInt(obj);
+        return getFieldAccessor(obj, CallerID.getCallerID()).getInt(obj);
     }
 
     /**
@@ -538,10 +545,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#get
      */
+    @ikvm.internal.HasCallerID
     public long getLong(Object obj)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        return getFieldAccessor(obj).getLong(obj);
+        return getFieldAccessor(obj, CallerID.getCallerID()).getLong(obj);
     }
 
     /**
@@ -567,10 +575,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see Field#get
      */
+    @ikvm.internal.HasCallerID
     public float getFloat(Object obj)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        return getFieldAccessor(obj).getFloat(obj);
+        return getFieldAccessor(obj, CallerID.getCallerID()).getFloat(obj);
     }
 
     /**
@@ -596,10 +605,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#get
      */
+    @ikvm.internal.HasCallerID
     public double getDouble(Object obj)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        return getFieldAccessor(obj).getDouble(obj);
+        return getFieldAccessor(obj, CallerID.getCallerID()).getDouble(obj);
     }
 
     /**
@@ -667,10 +677,11 @@ class Field extends AccessibleObject implements Member {
      * @exception ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
      */
+    @ikvm.internal.HasCallerID
     public void set(Object obj, Object value)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        getFieldAccessor(obj).set(obj, value);
+        getFieldAccessor(obj, CallerID.getCallerID()).set(obj, value);
     }
 
     /**
@@ -696,10 +707,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#set
      */
+    @ikvm.internal.HasCallerID
     public void setBoolean(Object obj, boolean z)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        getFieldAccessor(obj).setBoolean(obj, z);
+        getFieldAccessor(obj, CallerID.getCallerID()).setBoolean(obj, z);
     }
 
     /**
@@ -725,10 +737,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#set
      */
+    @ikvm.internal.HasCallerID
     public void setByte(Object obj, byte b)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        getFieldAccessor(obj).setByte(obj, b);
+        getFieldAccessor(obj, CallerID.getCallerID()).setByte(obj, b);
     }
 
     /**
@@ -754,10 +767,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#set
      */
+    @ikvm.internal.HasCallerID
     public void setChar(Object obj, char c)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        getFieldAccessor(obj).setChar(obj, c);
+        getFieldAccessor(obj, CallerID.getCallerID()).setChar(obj, c);
     }
 
     /**
@@ -783,10 +797,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#set
      */
+    @ikvm.internal.HasCallerID
     public void setShort(Object obj, short s)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        getFieldAccessor(obj).setShort(obj, s);
+        getFieldAccessor(obj, CallerID.getCallerID()).setShort(obj, s);
     }
 
     /**
@@ -812,10 +827,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#set
      */
+    @ikvm.internal.HasCallerID
     public void setInt(Object obj, int i)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        getFieldAccessor(obj).setInt(obj, i);
+        getFieldAccessor(obj, CallerID.getCallerID()).setInt(obj, i);
     }
 
     /**
@@ -841,10 +857,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#set
      */
+    @ikvm.internal.HasCallerID
     public void setLong(Object obj, long l)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        getFieldAccessor(obj).setLong(obj, l);
+        getFieldAccessor(obj, CallerID.getCallerID()).setLong(obj, l);
     }
 
     /**
@@ -870,10 +887,11 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#set
      */
+    @ikvm.internal.HasCallerID
     public void setFloat(Object obj, float f)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        getFieldAccessor(obj).setFloat(obj, f);
+        getFieldAccessor(obj, CallerID.getCallerID()).setFloat(obj, f);
     }
 
     /**
@@ -899,17 +917,18 @@ class Field extends AccessibleObject implements Member {
      *              by this method fails.
      * @see       Field#set
      */
+    @ikvm.internal.HasCallerID
     public void setDouble(Object obj, double d)
 	throws IllegalArgumentException, IllegalAccessException
     {
-        getFieldAccessor(obj).setDouble(obj, d);
+        getFieldAccessor(obj, CallerID.getCallerID()).setDouble(obj, d);
     }
 
     // Convenience routine which performs security checks
-    private FieldAccessor getFieldAccessor(Object obj)
+    private FieldAccessor getFieldAccessor(Object obj, CallerID callerID)
         throws IllegalAccessException
     {
-        doSecurityCheck(obj);
+        doSecurityCheck(obj, callerID);
         boolean ov = override;
         FieldAccessor a = (ov)? overrideFieldAccessor : fieldAccessor;
         return (a != null)? a : acquireFieldAccessor(ov);
@@ -959,10 +978,10 @@ class Field extends AccessibleObject implements Member {
     // NOTE: be very careful if you change the stack depth of this
     // routine. The depth of the "getCallerClass" call is hardwired so
     // that the compiler can have an easier time if this gets inlined.
-    private void doSecurityCheck(Object obj) throws IllegalAccessException {
+    private void doSecurityCheck(Object obj, CallerID callerID) throws IllegalAccessException {
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
-                Class caller = Reflection.getCallerClass(4);
+                Class caller = callerID.getCallerClass();
                 Class targetClass = ((obj == null || !Modifier.isProtected(modifiers))
                                      ? clazz
                                      : obj.getClass());

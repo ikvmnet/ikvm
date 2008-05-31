@@ -127,16 +127,18 @@ namespace IKVM.NativeCode.java.lang
 
 		public static void initThrowable(object throwable, object detailMessage, object cause)
 		{
+#if !FIRST_PASS
 			if(cause == throwable)
 			{
 				MethodWrapper mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
-				mw.Invoke(throwable, new object[] { detailMessage }, true);
+				mw.Invoke(throwable, new object[] { detailMessage }, true, null);
 			}
 			else
 			{
 				MethodWrapper mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;Ljava.lang.Throwable;)V", false);
-				mw.Invoke(throwable, new object[] { detailMessage, cause }, true);
+				mw.Invoke(throwable, new object[] { detailMessage, cause }, true, null);
 			}
+#endif
 		}
 
 #if !COMPACT_FRAMEWORK

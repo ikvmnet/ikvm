@@ -517,6 +517,7 @@ public final
      * @exception ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
      */
+    @ikvm.internal.HasCallerID
     public T newInstance(Object ... initargs)
 	throws InstantiationException, IllegalAccessException,
                IllegalArgumentException, InvocationTargetException

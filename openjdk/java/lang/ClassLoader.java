@@ -194,6 +194,17 @@ public abstract class ClassLoader {
     // The packages defined in this class loader.  Each package name is mapped
     // to its corresponding Package object.
     private HashMap packages = new HashMap();
+    
+    @ikvm.lang.Internal
+    public static final ClassLoader NIL_CLASSLOADER = new ClassLoader(false) { };
+    
+    private ClassLoader(boolean ignored)
+    {
+	package2certs = null;
+	classes = null;
+	domains = null;
+	packages = null;
+    }
 
     /**
      * Creates a new class loader using the specified parent class loader for
@@ -1301,6 +1312,7 @@ public abstract class ClassLoader {
      *
      * @revised  1.4
      */
+    @ikvm.internal.HasCallerID
     public static ClassLoader getSystemClassLoader() {
 	initSystemClassLoader();
 	if (scl == null) {
