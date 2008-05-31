@@ -227,7 +227,6 @@ namespace IKVM.Internal
 					messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
 				}
 #endif
-				new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Assert();
 				message = String.Format("****** Critical Failure: {1} ******{0}{0}" +
 					"PLEASE FILE A BUG REPORT FOR IKVM.NET WHEN YOU SEE THIS MESSAGE{0}{0}" +
 					(messageBox != null ? "(on Windows you can use Ctrl+C to copy the contents of this message to the clipboard){0}{0}" : "") +
@@ -239,7 +238,6 @@ namespace IKVM.Internal
 					x,
 					x != null ? new StackTrace(x, true).ToString() : "",
 					new StackTrace(true));
-				CodeAccessPermission.RevertAssert();
 				if(messageBox != null)
 				{
 					try
