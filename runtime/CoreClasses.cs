@@ -24,42 +24,38 @@
 
 namespace IKVM.Internal
 {
-	internal sealed class CoreClasses
+	internal static class CoreClasses
 	{
-		internal sealed class java
+		internal static class java
 		{
-			internal sealed class lang
+			internal static class lang
 			{
-				internal sealed class Object
+				internal static class Object
 				{
-					private Object() {}
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Object() {}
 					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
 				}
 
-				internal sealed class String
+				internal static class String
 				{
-					private String() {}
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static String() {}
 					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.String");
 				}
 
-				internal sealed class Class
+				internal static class Class
 				{
-					private Class() {}
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Class() {}
 					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Class");
 				}
 
-				internal sealed class Throwable
+				internal static class Throwable
 				{
-					private Throwable() {}
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Throwable() {}
