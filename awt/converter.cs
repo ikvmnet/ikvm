@@ -175,6 +175,7 @@ namespace ikvm.awt
                     case java.awt.geom.PathIterator.__Fields.SEG_MOVETO:
                         x = coords[0];
                         y = coords[1];
+                        gp.StartFigure();
                         break;
                     case java.awt.geom.PathIterator.__Fields.SEG_LINETO:
                         gp.AddLine(x, y, coords[0], coords[1]);
