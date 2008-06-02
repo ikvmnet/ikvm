@@ -2382,7 +2382,7 @@ namespace IKVM.Internal
 			}
 
 			// for use by ikvmc only
-			internal bool HasCallerID
+			internal bool HasCallerIDAnnotation
 			{
 				get
 				{

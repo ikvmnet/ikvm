@@ -3945,7 +3945,9 @@ namespace IKVM.Internal
 						flags |= MemberFlags.InternalAccess;
 					}
 					// we only support HasCallerID instance methods on final types, because we don't support interface stubs with CallerID
-					if(m.HasCallerID && (m.IsStatic || classFile.IsFinal))
+					if(m.HasCallerIDAnnotation
+						&& (m.IsStatic || classFile.IsFinal)
+						&& wrapper.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
 					{
 						flags |= MemberFlags.CallerID;
 					}
@@ -5559,7 +5561,7 @@ namespace IKVM.Internal
 							parameterBuilders = GetParameterBuilders(mb, parameterNames.Length, parameterNames);
 						}
 #if STATIC_COMPILER
-						if((m.Modifiers & Modifiers.VarArgs) != 0 && !m.HasCallerID)
+						if((m.Modifiers & Modifiers.VarArgs) != 0 && !methods[i].HasCallerID)
 						{
 							if(parameterBuilders == null)
 							{
@@ -5613,7 +5615,7 @@ namespace IKVM.Internal
 							}
 						}
 #if STATIC_COMPILER
-						if(m.HasCallerID)
+						if(methods[i].HasCallerID)
 						{
 							AttributeHelper.SetEditorBrowsableNever((MethodBuilder)mb);
 							EmitCallerIDStub(methods[i], parameterNames);
@@ -7117,7 +7119,7 @@ namespace IKVM.Internal
 						setNameSig |= tw.IsErasedOrBoxedPrimitiveOrRemapped;
 					}
 					bool setModifiers = false;
-					if(m.HasCallerID && (m.Modifiers & Modifiers.VarArgs) != 0)
+					if(methods[index].HasCallerID && (m.Modifiers & Modifiers.VarArgs) != 0)
 					{
 						// the implicit callerID parameter was added at the end so that means we shouldn't use ParamArrayAttribute,
 						// so we need to explicitly record that the method is varargs
