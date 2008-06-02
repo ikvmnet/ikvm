@@ -30,7 +30,7 @@ import cli.System.Reflection.Assembly;
 public abstract class CallerID
 {
     private Class clazz;
-    private ClassLoader classLoader = ClassLoader.NIL_CLASSLOADER;
+    private ClassLoader classLoader;
 
     protected CallerID() { }
 
@@ -47,11 +47,16 @@ public abstract class CallerID
     @ikvm.lang.Internal
     public final ClassLoader getCallerClassLoader()
     {
-	if (classLoader == ClassLoader.NIL_CLASSLOADER)
+	ClassLoader cl = classLoader;
+	if (cl == null)
 	{
-	    classLoader = GetClassLoader();
+	    cl = GetClassLoader();
+	    if (cl == null)
+	    {
+		cl = classLoader = ClassLoader.NIL_CLASSLOADER;
+	    }
 	}
-	return classLoader;
+	return cl == ClassLoader.NIL_CLASSLOADER ? null : cl;
     }
 
     @ikvm.lang.Internal
