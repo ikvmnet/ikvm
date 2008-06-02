@@ -3162,7 +3162,7 @@ class Compiler
 		MethodInfo mi = (MethodInfo)invokespecialstubcache[key];
 		if(mi == null)
 		{
-			MethodBuilder stub = clazz.TypeAsBuilder.DefineMethod("<>", MethodAttributes.PrivateScope, method.ReturnTypeForDefineMethod, method.GetParametersForDefineMethod());
+			MethodBuilder stub = clazz.TypeAsBuilder.DefineMethod("__<>", MethodAttributes.PrivateScope, method.ReturnTypeForDefineMethod, method.GetParametersForDefineMethod());
 			ILGenerator ilgen = stub.GetILGenerator();
 			ilgen.Emit(OpCodes.Ldarg_0);
 			int argc = method.GetParametersForDefineMethod().Length;
