@@ -4609,16 +4609,32 @@ namespace IKVM.Internal
 
 			private void EmitCallerIDInitialization(ILGenerator ilGenerator)
 			{
-				if(typeCallerID != null)
+				if (callerIDField != null)
 				{
-					ConstructorBuilder cb = typeCallerID.DefineConstructor(MethodAttributes.Assembly, CallingConventions.Standard, null);
-					ILGenerator ctorIlgen = cb.GetILGenerator();
-					ctorIlgen.Emit(OpCodes.Ldarg_0);
-					MethodWrapper mw = CoreClasses.ikvm.@internal.CallerID.Wrapper.GetMethodWrapper("<init>", "()V", false);
-					mw.Link();
-					mw.EmitCall(ctorIlgen);
-					ctorIlgen.Emit(OpCodes.Ret);
-					ilGenerator.Emit(OpCodes.Newobj, cb);
+					TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
+					// we need to prohibit this optimization at runtime, because proxy classes may be injected into the boot class loader,
+					// but they don't actually have access to core library internals
+#if STATIC_COMPILER
+					if (tw.GetClassLoader() == wrapper.GetClassLoader())
+					{
+						MethodWrapper create = tw.GetMethodWrapper("create", "(Lcli.System.RuntimeTypeHandle;)Likvm.internal.CallerID;", false);
+						ilGenerator.Emit(OpCodes.Ldtoken, this.typeBuilder);
+						create.Link();
+						create.EmitCall(ilGenerator);
+					}
+					else
+#endif
+					{
+						typeCallerID = typeBuilder.DefineNestedType("__<CallerID>", TypeAttributes.Sealed | TypeAttributes.NestedPrivate, tw.TypeAsBaseType);
+						ConstructorBuilder cb = typeCallerID.DefineConstructor(MethodAttributes.Assembly, CallingConventions.Standard, null);
+						ILGenerator ctorIlgen = cb.GetILGenerator();
+						ctorIlgen.Emit(OpCodes.Ldarg_0);
+						MethodWrapper mw = tw.GetMethodWrapper("<init>", "()V", false);
+						mw.Link();
+						mw.EmitCall(ctorIlgen);
+						ctorIlgen.Emit(OpCodes.Ret);
+						ilGenerator.Emit(OpCodes.Newobj, cb);
+					}
 					ilGenerator.Emit(OpCodes.Stsfld, callerIDField);
 				}
 			}
@@ -4686,9 +4702,7 @@ namespace IKVM.Internal
 					if(callerIDField == null)
 					{
 						TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
-						tw.Finish();
-						typeCallerID = typeBuilder.DefineNestedType("__<CallerID>", TypeAttributes.Sealed | TypeAttributes.NestedPrivate, tw.TypeAsBaseType);
-						callerIDField = typeBuilder.DefineField("__<callerID>", typeCallerID, FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.InitOnly | FieldAttributes.SpecialName);
+						callerIDField = typeBuilder.DefineField("__<callerID>", tw.TypeAsSignatureType, FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.InitOnly | FieldAttributes.SpecialName);
 					}
 					return callerIDField;
 				}
@@ -5367,7 +5381,7 @@ namespace IKVM.Internal
 						}
 					}
 
-					if(clinitIndex != -1 || (basehasclinit && !classFile.IsInterface) || classFile.HasInitializedFields || typeCallerID != null)
+					if(clinitIndex != -1 || (basehasclinit && !classFile.IsInterface) || classFile.HasInitializedFields || callerIDField != null)
 					{
 						ConstructorBuilder cb;
 						if(clinitIndex != -1)

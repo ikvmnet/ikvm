@@ -87,6 +87,20 @@ public abstract class CallerID
 	};
     }
 
+    // this is a shortcut for use inside the core class library, it removes the need to create a nested type for every caller
+    @ikvm.lang.Internal
+    public static CallerID create(final cli.System.RuntimeTypeHandle typeHandle)
+    {
+	return new CallerID() {
+	    Class GetClass() {
+		return ikvm.runtime.Util.getClassFromTypeHandle(typeHandle);
+	    }
+	    ClassLoader GetClassLoader() {
+		return getCallerClass().getClassLoader();
+	    }
+	};
+    }
+
     @ikvm.lang.Internal
     public static CallerID getCallerID()
     {
