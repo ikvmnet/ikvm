@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -37,11 +37,6 @@ using Label = IKVM.Internal.CountingLabel;
 
 namespace IKVM.Internal
 {
-	public abstract class CodeEmitter
-	{
-		internal abstract void Emit(CountingILGenerator ilgen);
-	}
-
 	class AotTypeWrapper : DynamicTypeWrapper
 	{
 		private FieldInfo ghostRefField;
@@ -180,11 +175,22 @@ namespace IKVM.Internal
 			Hashtable mapxml = ((CompilerClassLoader)classLoader).GetMapXml();
 			if(mapxml != null)
 			{
-				CodeEmitter opcodes = (CodeEmitter)mapxml[f.Name + "." + m.Name + m.Signature];
-				if(opcodes != null)
+				object obj = mapxml[f.Name + "." + m.Name + m.Signature];
+				if(obj != null)
 				{
-					opcodes.Emit(ilgen);
-					return true;
+					IKVM.Internal.MapXml.InstructionList opcodes = obj as IKVM.Internal.MapXml.InstructionList;
+					if(opcodes != null)
+					{
+						opcodes.Emit(ilgen);
+						return true;
+					}
+					// HACK if we're compiling the core class library, it can also be the ExceptionMapEmitter
+					CompilerClassLoader.ExceptionMapEmitter eme = obj as CompilerClassLoader.ExceptionMapEmitter;
+					if(eme != null)
+					{
+						eme.Emit(ilgen);
+						return true;
+					}
 				}
 			}
 			return false;

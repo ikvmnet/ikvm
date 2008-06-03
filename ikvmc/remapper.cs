@@ -1087,7 +1087,7 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
-	public class InstructionList : CodeEmitter
+	public class InstructionList
 	{
 		[XmlElement(typeof(Ldstr))]
 		[XmlElement(typeof(Call))]
@@ -1180,7 +1180,7 @@ namespace IKVM.Internal.MapXml
 			}
 		}
 
-		internal sealed override void Emit(ILGenerator ilgen)
+		internal void Emit(ILGenerator ilgen)
 		{
 			Generate(new Hashtable(), ilgen);
 		}

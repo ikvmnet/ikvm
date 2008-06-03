@@ -1849,7 +1849,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private class ExceptionMapEmitter : CodeEmitter
+		internal sealed class ExceptionMapEmitter
 		{
 			private IKVM.Internal.MapXml.ExceptionMapping[] map;
 
@@ -1858,7 +1858,7 @@ namespace IKVM.Internal
 				this.map = map;
 			}
 
-			internal override void Emit(ILGenerator ilgen)
+			internal void Emit(ILGenerator ilgen)
 			{
 				MethodWrapper mwSuppressFillInStackTrace = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
 				mwSuppressFillInStackTrace.Link();

@@ -3464,9 +3464,9 @@ class Compiler
 #if STATIC_COMPILER
 	private class ReplacedMethodWrapper : MethodWrapper
 	{
-		private CodeEmitter code;
+		private IKVM.Internal.MapXml.InstructionList code;
 
-		internal ReplacedMethodWrapper(ClassFile.ConstantPoolItemMI cpi, CodeEmitter code)
+		internal ReplacedMethodWrapper(ClassFile.ConstantPoolItemMI cpi, IKVM.Internal.MapXml.InstructionList code)
 			: base(cpi.GetClassType(), cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
 		{
 			this.code = code;
