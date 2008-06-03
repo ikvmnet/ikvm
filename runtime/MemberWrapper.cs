@@ -26,7 +26,6 @@ using System.Collections;
 using System.Reflection;
 #if !COMPACT_FRAMEWORK
 using System.Reflection.Emit;
-using ILGenerator = IKVM.Internal.CountingILGenerator;
 #endif
 using System.Diagnostics;
 using IKVM.Attributes;
@@ -288,22 +287,22 @@ namespace IKVM.Internal
 		private TypeWrapper[] parameterTypeWrappers;
 
 #if !COMPACT_FRAMEWORK
-		internal virtual void EmitCall(ILGenerator ilgen)
+		internal virtual void EmitCall(CodeEmitter ilgen)
 		{
 			throw new InvalidOperationException();
 		}
 
-		internal virtual void EmitCallvirt(ILGenerator ilgen)
+		internal virtual void EmitCallvirt(CodeEmitter ilgen)
 		{
 			throw new InvalidOperationException();
 		}
 
-		internal void EmitNewobj(ILGenerator ilgen)
+		internal void EmitNewobj(CodeEmitter ilgen)
 		{
 			EmitNewobj(ilgen, null, 0);
 		}
 
-		internal virtual void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
+		internal virtual void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 		{
 			throw new InvalidOperationException();
 		}
@@ -340,7 +339,7 @@ namespace IKVM.Internal
 			}
 
 #if !COMPACT_FRAMEWORK
-			protected override void CallvirtImpl(ILGenerator ilgen)
+			protected override void CallvirtImpl(CodeEmitter ilgen)
 			{
 				ResolveGhostMethod();
 				ilgen.Emit(OpCodes.Call, ghostMethod);
@@ -947,7 +946,7 @@ namespace IKVM.Internal
 				TypeBuilder typeBuilder = module.DefineType("class" + cache.Count);
 				MethodBuilder methodBuilder = typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Static, typeof(object), new Type[] { typeof(IntPtr), typeof(object), typeof(object[]), typeof(ikvm.@internal.CallerID) });
 				AttributeHelper.HideFromJava(methodBuilder);
-				ILGenerator ilgen = methodBuilder.GetILGenerator();
+				CodeEmitter ilgen = CodeEmitter.Create(methodBuilder);
 				ilgen.Emit(OpCodes.Ldarg_1);
 				TypeWrapper[] paramTypes = mw.GetParameters();
 				for(int i = 0; i < paramTypes.Length; i++)
@@ -1094,23 +1093,23 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		protected virtual void PreEmit(ILGenerator ilgen)
+		protected virtual void PreEmit(CodeEmitter ilgen)
 		{
 		}
-	
-		internal sealed override void EmitCall(ILGenerator ilgen)
+
+		internal sealed override void EmitCall(CodeEmitter ilgen)
 		{
 			AssertLinked();
 			PreEmit(ilgen);
 			CallImpl(ilgen);
 		}
 
-		protected virtual void CallImpl(ILGenerator ilgen)
+		protected virtual void CallImpl(CodeEmitter ilgen)
 		{
 			throw new InvalidOperationException();
 		}
 
-		internal sealed override void EmitCallvirt(ILGenerator ilgen)
+		internal sealed override void EmitCallvirt(CodeEmitter ilgen)
 		{
 			AssertLinked();
 			PreEmit(ilgen);
@@ -1126,12 +1125,12 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected virtual void CallvirtImpl(ILGenerator ilgen)
+		protected virtual void CallvirtImpl(CodeEmitter ilgen)
 		{
 			throw new InvalidOperationException();
 		}
 
-		internal sealed override void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
+		internal sealed override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 		{
 			AssertLinked();
 			PreEmit(ilgen);
@@ -1142,7 +1141,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected virtual void NewobjImpl(ILGenerator ilgen)
+		protected virtual void NewobjImpl(CodeEmitter ilgen)
 		{
 			throw new InvalidOperationException();
 		}
@@ -1169,12 +1168,12 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		internal override void EmitCall(ILGenerator ilgen)
+		internal override void EmitCall(CodeEmitter ilgen)
 		{
 			ilgen.Emit(SimpleOpCodeToOpCode(call), (MethodInfo)GetMethod());
 		}
 
-		internal override void EmitCallvirt(ILGenerator ilgen)
+		internal override void EmitCallvirt(CodeEmitter ilgen)
 		{
 			ilgen.Emit(SimpleOpCodeToOpCode(callvirt), (MethodInfo)GetMethod());
 		}
@@ -1194,12 +1193,12 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		protected override void CallImpl(ILGenerator ilgen)
+		protected override void CallImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(SimpleOpCodeToOpCode(call), (MethodInfo)GetMethod());
 		}
 
-		protected override void CallvirtImpl(ILGenerator ilgen)
+		protected override void CallvirtImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(SimpleOpCodeToOpCode(callvirt), (MethodInfo)GetMethod());
 		}
@@ -1214,12 +1213,12 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		protected override void CallImpl(ILGenerator ilgen)
+		protected override void CallImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, (ConstructorInfo)GetMethod());
 		}
 
-		protected override void NewobjImpl(ILGenerator ilgen)
+		protected override void NewobjImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Newobj, (ConstructorInfo)GetMethod());
 		}
@@ -1370,21 +1369,21 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		internal void EmitGet(ILGenerator ilgen)
+		internal void EmitGet(CodeEmitter ilgen)
 		{
 			AssertLinked();
 			EmitGetImpl(ilgen);
 		}
 
-		protected abstract void EmitGetImpl(ILGenerator ilgen);
+		protected abstract void EmitGetImpl(CodeEmitter ilgen);
 
-		internal void EmitSet(ILGenerator ilgen)
+		internal void EmitSet(CodeEmitter ilgen)
 		{
 			AssertLinked();
 			EmitSetImpl(ilgen);
 		}
 
-		protected abstract void EmitSetImpl(ILGenerator ilgen);
+		protected abstract void EmitSetImpl(CodeEmitter ilgen);
 #endif
 
 		internal void Link()
@@ -1496,7 +1495,7 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		protected override void EmitGetImpl(ILGenerator ilgen)
+		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
 			{
@@ -1509,7 +1508,7 @@ namespace IKVM.Internal
 			ilgen.Emit(IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, GetField());
 		}
 
-		protected override void EmitSetImpl(ILGenerator ilgen)
+		protected override void EmitSetImpl(CodeEmitter ilgen)
 		{
 			FieldInfo fi = GetField();
 			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
@@ -1538,7 +1537,7 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		protected override void EmitGetImpl(ILGenerator ilgen)
+		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			FieldInfo fi = GetField();
 			if(fi.IsStatic)
@@ -1564,7 +1563,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override void EmitSetImpl(ILGenerator ilgen)
+		protected override void EmitSetImpl(CodeEmitter ilgen)
 		{
 			FieldInfo fi = GetField();
 			LocalBuilder temp = ilgen.DeclareLocal(FieldTypeWrapper.TypeAsSignatureType);
@@ -1644,7 +1643,7 @@ namespace IKVM.Internal
 #endif
 
 #if !COMPACT_FRAMEWORK
-		protected override void EmitGetImpl(ILGenerator ilgen)
+		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
 			{
@@ -1659,7 +1658,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override void EmitSetImpl(ILGenerator ilgen)
+		protected override void EmitSetImpl(CodeEmitter ilgen)
 		{
 			if(!IsStatic && DeclaringType.IsNonPrimitiveValueType)
 			{
@@ -1778,7 +1777,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-		protected override void EmitGetImpl(CountingILGenerator ilgen)
+		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			if(getter == null)
 			{
@@ -1794,10 +1793,10 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static void EmitThrowNoSuchMethodErrorForGetter(CountingILGenerator ilgen, TypeWrapper type, bool isStatic)
+		internal static void EmitThrowNoSuchMethodErrorForGetter(CodeEmitter ilgen, TypeWrapper type, bool isStatic)
 		{
 			// HACK the branch around the throw is to keep the verifier happy
-			CountingLabel label = ilgen.DefineLabel();
+			CodeEmitterLabel label = ilgen.DefineLabel();
 			ilgen.Emit(OpCodes.Ldc_I4_0);
 			ilgen.Emit(OpCodes.Brtrue_S, label);
 			EmitHelper.Throw(ilgen, "java.lang.NoSuchMethodError");
@@ -1809,7 +1808,7 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Ldloc, ilgen.DeclareLocal(type.TypeAsLocalOrStackType));
 		}
 
-		protected override void EmitSetImpl(CountingILGenerator ilgen)
+		protected override void EmitSetImpl(CodeEmitter ilgen)
 		{
 			if(setter == null)
 			{
@@ -1836,10 +1835,10 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static void EmitThrowNoSuchMethodErrorForSetter(CountingILGenerator ilgen, bool isStatic)
+		internal static void EmitThrowNoSuchMethodErrorForSetter(CodeEmitter ilgen, bool isStatic)
 		{
 			// HACK the branch around the throw is to keep the verifier happy
-			CountingLabel label = ilgen.DefineLabel();
+			CodeEmitterLabel label = ilgen.DefineLabel();
 			ilgen.Emit(OpCodes.Ldc_I4_0);
 			ilgen.Emit(OpCodes.Brtrue_S, label);
 			EmitHelper.Throw(ilgen, "java.lang.NoSuchMethodError");
@@ -1883,7 +1882,7 @@ namespace IKVM.Internal
 		}
 #endif
 
-		protected override void EmitGetImpl(CountingILGenerator ilgen)
+		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			MethodInfo getter = property.GetGetMethod(true);
 			if(getter == null)
@@ -1900,7 +1899,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override void EmitSetImpl(CountingILGenerator ilgen)
+		protected override void EmitSetImpl(CodeEmitter ilgen)
 		{
 			MethodInfo setter = property.GetSetMethod(true);
 			if (setter == null)
@@ -1946,7 +1945,7 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		protected override void EmitGetImpl(ILGenerator ilgen)
+		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			// Reading a field should trigger the cctor, but since we're inlining the value
 			// we have to trigger it explicitly
@@ -2012,7 +2011,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override void EmitSetImpl(ILGenerator ilgen)
+		protected override void EmitSetImpl(CodeEmitter ilgen)
 		{
 			// when constant static final fields are updated, the JIT normally doesn't see that (because the
 			// constant value is inlined), so we emulate that behavior by emitting a Pop
@@ -2094,7 +2093,7 @@ namespace IKVM.Internal
 				getter = typeBuilder.DefineMethod(GenerateUniqueMethodName("get_" + Name, propType, Type.EmptyTypes), attribs, propType, Type.EmptyTypes);
 				AttributeHelper.HideFromJava(getter);
 				pb.SetGetMethod(getter);
-				ILGenerator ilgen = getter.GetILGenerator();
+				CodeEmitter ilgen = CodeEmitter.Create(getter);
 				if(!basefield.IsStatic)
 				{
 					ilgen.Emit(OpCodes.Ldarg_0);
@@ -2106,7 +2105,7 @@ namespace IKVM.Internal
 					setter = typeBuilder.DefineMethod(GenerateUniqueMethodName("set_" + Name, typeof(void), new Type[] { propType }), attribs, null, new Type[] { propType });
 					AttributeHelper.HideFromJava(setter);
 					pb.SetSetMethod(setter);
-					ilgen = setter.GetILGenerator();
+					ilgen = CodeEmitter.Create(setter);
 					ilgen.Emit(OpCodes.Ldarg_0);
 					if(!basefield.IsStatic)
 					{
@@ -2118,7 +2117,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override void EmitGetImpl(CountingILGenerator ilgen)
+		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			if(basefield is ConstantFieldWrapper)
 			{
@@ -2130,7 +2129,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override void EmitSetImpl(CountingILGenerator ilgen)
+		protected override void EmitSetImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, setter);
 		}
@@ -2180,12 +2179,12 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		protected override void EmitGetImpl(CountingILGenerator ilgen)
+		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, getter);
 		}
 
-		protected override void EmitSetImpl(CountingILGenerator ilgen)
+		protected override void EmitSetImpl(CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Call, setter);
 		}

@@ -35,8 +35,6 @@ using System.Text;
 using System.Threading;
 using IKVM.Attributes;
 
-using ILGenerator = IKVM.Internal.CountingILGenerator;
-using Label = IKVM.Internal.CountingLabel;
 using System.Security.Permissions;
 using System.Security;
 
@@ -261,7 +259,7 @@ namespace IKVM.Internal
 			{
 				mainStub.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
 			}
-			ILGenerator ilgen = mainStub.GetILGenerator();
+			CodeEmitter ilgen = CodeEmitter.Create(mainStub);
 			LocalBuilder rc = ilgen.DeclareLocal(typeof(int));
 			TypeWrapper startupType = LoadClassByDottedName("ikvm.runtime.Startup");
 			if(props.Count > 0)
@@ -615,12 +613,12 @@ namespace IKVM.Internal
 					this.m = m;
 				}
 
-				internal override void EmitCall(ILGenerator ilgen)
+				internal override void EmitCall(CodeEmitter ilgen)
 				{
 					ilgen.Emit(OpCodes.Call, (ConstructorInfo)GetMethod());
 				}
 
-				internal override void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
+				internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 				{
 					if(mbHelper != null)
 					{
@@ -681,7 +679,7 @@ namespace IKVM.Internal
 
 					if(cbCore != null)
 					{
-						ILGenerator ilgen = cbCore.GetILGenerator();
+						CodeEmitter ilgen = CodeEmitter.Create(cbCore);
 						// TODO we need to support ghost (and other funky?) parameter types
 						if(m.body != null)
 						{
@@ -719,7 +717,7 @@ namespace IKVM.Internal
 
 					if(mbHelper != null)
 					{
-						ILGenerator ilgen = mbHelper.GetILGenerator();
+						CodeEmitter ilgen = CodeEmitter.Create(mbHelper);
 						if(m.redirect != null)
 						{
 							m.redirect.Emit(ilgen);
@@ -780,12 +778,12 @@ namespace IKVM.Internal
 					}
 				}
 
-				internal override void EmitCall(ILGenerator ilgen)
+				internal override void EmitCall(CodeEmitter ilgen)
 				{
 					ilgen.Emit(OpCodes.Call, (MethodInfo)GetMethod());
 				}
 
-				internal override void EmitCallvirt(ILGenerator ilgen)
+				internal override void EmitCallvirt(CodeEmitter ilgen)
 				{
 					if(mbHelper != null)
 					{
@@ -842,7 +840,7 @@ namespace IKVM.Internal
 						MethodBuilder helper = null;
 						if(specialCases != null)
 						{
-							ILGenerator ilgen;
+							CodeEmitter ilgen;
 							Type[] temp = typeWrapper.GetClassLoader().ArgTypeListFromSig(m.Sig);
 							Type[] argTypes = new Type[temp.Length + 1];
 							temp.CopyTo(argTypes, 1);
@@ -852,7 +850,7 @@ namespace IKVM.Internal
 								// FXBUG we use a nested helper class, because Reflection.Emit won't allow us to add a static method to the interface
 								// TODO now that we're on Whidbey we can remove this workaround
 								typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class | TypeAttributes.Sealed);
-								ilgen = typeWrapper.helperTypeBuilder.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, Type.EmptyTypes).GetILGenerator();
+								ilgen = CodeEmitter.Create(typeWrapper.helperTypeBuilder.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, Type.EmptyTypes));
 								ilgen.Emit(OpCodes.Ldnull);
 								ilgen.Emit(OpCodes.Throw);
 								AttributeHelper.HideFromJava(typeWrapper.helperTypeBuilder);
@@ -866,14 +864,14 @@ namespace IKVM.Internal
 								}
 							}
 							SetParameters(helper, m.Params);
-							ilgen = helper.GetILGenerator();
+							ilgen = CodeEmitter.Create(helper);
 							foreach(IKVM.Internal.MapXml.Class c in specialCases)
 							{
 								TypeWrapper tw = typeWrapper.GetClassLoader().LoadClassByDottedName(c.Name);
 								ilgen.Emit(OpCodes.Ldarg_0);
 								ilgen.Emit(OpCodes.Isinst, tw.TypeAsTBD);
 								ilgen.Emit(OpCodes.Dup);
-								Label label = ilgen.DefineLabel();
+								CodeEmitterLabel label = ilgen.DefineLabel();
 								ilgen.Emit(OpCodes.Brfalse_S, label);
 								for(int i = 1; i < argTypes.Length; i++)
 								{
@@ -1025,7 +1023,7 @@ namespace IKVM.Internal
 					// NOTE sealed types don't have instance methods (only instancehelpers)
 					if(mbCore != null)
 					{
-						ILGenerator ilgen = mbCore.GetILGenerator();
+						CodeEmitter ilgen = CodeEmitter.Create(mbCore);
 						MethodInfo baseMethod = null;
 						if(m.@override != null)
 						{
@@ -1093,7 +1091,7 @@ namespace IKVM.Internal
 					// (currently this only applies to Comparable.compareTo).
 					if(mbHelper != null && !this.DeclaringType.IsInterface)
 					{
-						ILGenerator ilgen = mbHelper.GetILGenerator();
+						CodeEmitter ilgen = CodeEmitter.Create(mbHelper);
 						// check "this" for null
 						if(m.@override != null && m.redirect == null && m.body == null && m.alternateBody == null)
 						{
@@ -1112,7 +1110,7 @@ namespace IKVM.Internal
 							ilgen.Emit(OpCodes.Ldarg_0);
 							ilgen.Emit(OpCodes.Isinst, DeclaringType.TypeAsBaseType);
 							ilgen.Emit(OpCodes.Dup);
-							Label skip = ilgen.DefineLabel();
+							CodeEmitterLabel skip = ilgen.DefineLabel();
 							ilgen.Emit(OpCodes.Brfalse_S, skip);
 							for(int i = 0; i < paramTypes.Length; i++)
 							{
@@ -1137,7 +1135,7 @@ namespace IKVM.Internal
 								ilgen.Emit(OpCodes.Ldarg_0);
 								ilgen.Emit(OpCodes.Isinst, overrider.TypeAsTBD);
 								ilgen.Emit(OpCodes.Dup);
-								Label skip = ilgen.DefineLabel();
+								CodeEmitterLabel skip = ilgen.DefineLabel();
 								ilgen.Emit(OpCodes.Brfalse_S, skip);
 								for(int i = 0; i < paramTypes.Length; i++)
 								{
@@ -1229,7 +1227,7 @@ namespace IKVM.Internal
 						}
 						SetParameters(mb, m.Params);
 						AttributeHelper.HideFromJava(mb);
-						ILGenerator ilgen = mb.GetILGenerator();
+						CodeEmitter ilgen = CodeEmitter.Create(mb);
 						if(m.nonvirtualAlternateBody != null)
 						{
 							m.nonvirtualAlternateBody.Emit(ilgen);
@@ -1253,7 +1251,7 @@ namespace IKVM.Internal
 					}
 				}
 
-				private void EmitRedirect(Type baseType, ILGenerator ilgen)
+				private void EmitRedirect(Type baseType, CodeEmitter ilgen)
 				{
 					string redirName = m.redirect.Name;
 					string redirSig = m.redirect.Sig;
@@ -1448,7 +1446,7 @@ namespace IKVM.Internal
 				if(classDef.Clinit != null)
 				{
 					ConstructorBuilder cb = typeBuilder.DefineTypeInitializer();
-					ILGenerator ilgen = cb.GetILGenerator();
+					CodeEmitter ilgen = CodeEmitter.Create(cb);
 					// TODO emit code to make sure super class is initialized
 					classDef.Clinit.body.Emit(ilgen);
 				}
@@ -1487,7 +1485,7 @@ namespace IKVM.Internal
 							AttributeHelper.HideFromJava(mb);
 							AttributeHelper.SetEditorBrowsableNever(mb);
 							CopyLinkDemands(mb, mi);
-							ILGenerator ilgen = mb.GetILGenerator();
+							CodeEmitter ilgen = CodeEmitter.Create(mb);
 							for(int i = 0; i < paramTypes.Length; i++)
 							{
 								ilgen.Emit(OpCodes.Ldarg_S, (byte)i);
@@ -1575,11 +1573,11 @@ namespace IKVM.Internal
 				MethodBuilder mb = typeBuilder.DefineMethod("__<instanceof>", attr, typeof(bool), new Type[] { typeof(object) });
 				AttributeHelper.HideFromJava(mb);
 				AttributeHelper.SetEditorBrowsableNever(mb);
-				ILGenerator ilgen = mb.GetILGenerator();
+				CodeEmitter ilgen = CodeEmitter.Create(mb);
 
 				ilgen.Emit(OpCodes.Ldarg_0);
 				ilgen.Emit(OpCodes.Isinst, shadowType);
-				Label retFalse = ilgen.DefineLabel();
+				CodeEmitterLabel retFalse = ilgen.DefineLabel();
 				ilgen.Emit(OpCodes.Brfalse_S, retFalse);
 
 				if(!shadowType.IsSealed)
@@ -1624,9 +1622,9 @@ namespace IKVM.Internal
 				MethodBuilder mb = typeBuilder.DefineMethod("__<checkcast>", attr, shadowType, new Type[] { typeof(object) });
 				AttributeHelper.HideFromJava(mb);
 				AttributeHelper.SetEditorBrowsableNever(mb);
-				ILGenerator ilgen = mb.GetILGenerator();
+				CodeEmitter ilgen = CodeEmitter.Create(mb);
 
-				Label fail = ilgen.DefineLabel();
+				CodeEmitterLabel fail = ilgen.DefineLabel();
 				bool hasfail = false;
 
 				if(!shadowType.IsSealed)
@@ -1858,7 +1856,7 @@ namespace IKVM.Internal
 				this.map = map;
 			}
 
-			internal void Emit(ILGenerator ilgen)
+			internal void Emit(CodeEmitter ilgen)
 			{
 				MethodWrapper mwSuppressFillInStackTrace = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
 				mwSuppressFillInStackTrace.Link();
@@ -1871,7 +1869,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldtoken, Type.GetType(map[i].src));
 					ilgen.Emit(OpCodes.Call, GetTypeFromHandle);
 					ilgen.Emit(OpCodes.Ceq);
-					Label label = ilgen.DefineLabel();
+					CodeEmitterLabel label = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Brfalse_S, label);
 					ilgen.Emit(OpCodes.Pop);
 					if(map[i].code != null)

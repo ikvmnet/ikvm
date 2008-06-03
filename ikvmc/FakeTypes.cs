@@ -87,7 +87,7 @@ namespace IKVM.Internal
 			TypeBuilder tb = modb.DefineType(DotNetTypeWrapper.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public, enumTypeWrapper.TypeAsBaseType);
 			GenericTypeParameterBuilder gtpb = tb.DefineGenericParameters("T")[0];
 			gtpb.SetBaseTypeConstraint(typeof(Enum));
-			CountingILGenerator ilgen = tb.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, new Type[] { typeof(string), typeof(int) }).GetILGenerator();
+			CodeEmitter ilgen = CodeEmitter.Create(tb.DefineConstructor(MethodAttributes.Private, CallingConventions.Standard, new Type[] { typeof(string), typeof(int) }));
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ldarg_1);
 			ilgen.Emit(OpCodes.Ldarg_2);

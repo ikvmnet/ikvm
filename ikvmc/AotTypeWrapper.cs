@@ -32,9 +32,6 @@ using System.Security;
 using System.Security.Permissions;
 using IKVM.Attributes;
 
-using ILGenerator = IKVM.Internal.CountingILGenerator;
-using Label = IKVM.Internal.CountingLabel;
-
 namespace IKVM.Internal
 {
 	class AotTypeWrapper : DynamicTypeWrapper
@@ -170,7 +167,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		protected override bool EmitMapXmlMethodBody(CountingILGenerator ilgen, ClassFile f, ClassFile.Method m)
+		protected override bool EmitMapXmlMethodBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m)
 		{
 			Hashtable mapxml = ((CompilerClassLoader)classLoader).GetMapXml();
 			if(mapxml != null)
@@ -313,7 +310,7 @@ namespace IKVM.Internal
 						{
 							mb = typeBuilder.DefineMethod(GenerateUniqueMethodName("get_" + prop.Name, mw), GetPropertyMethodAttributes(mw, final), typeWrapper.TypeAsSignatureType, indexer);
 							AttributeHelper.HideFromJava(mb);
-							ILGenerator ilgen = new CountingILGenerator(mb.GetILGenerator());
+							CodeEmitter ilgen = CodeEmitter.Create(mb);
 							if(mw.IsStatic)
 							{
 								for(int i = 0; i < indexer.Length; i++)
@@ -353,7 +350,7 @@ namespace IKVM.Internal
 						{
 							mb = typeBuilder.DefineMethod(GenerateUniqueMethodName("set_" + prop.Name, mw), GetPropertyMethodAttributes(mw, final), mw.ReturnTypeForDefineMethod, args);
 							AttributeHelper.HideFromJava(mb);
-							ILGenerator ilgen = new CountingILGenerator(mb.GetILGenerator());
+							CodeEmitter ilgen = CodeEmitter.Create(mb);
 							if(mw.IsStatic)
 							{
 								for(int i = 0; i <= indexer.Length; i++)
@@ -534,7 +531,7 @@ namespace IKVM.Internal
 								{
 									AttributeHelper.SetModifiers(cb, (Modifiers)constructor.Modifiers, false);
 								}
-								ILGenerator ilgen = cb.GetILGenerator();
+								CodeEmitter ilgen = CodeEmitter.Create(cb);
 								constructor.body.Emit(ilgen);
 								if(constructor.Attributes != null)
 								{
@@ -591,7 +588,7 @@ namespace IKVM.Internal
 									mw.Link();
 									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
 								}
-								ILGenerator ilgen = mb.GetILGenerator();
+								CodeEmitter ilgen = CodeEmitter.Create(mb);
 								method.body.Emit(ilgen);
 								if(method.Attributes != null)
 								{
@@ -644,7 +641,7 @@ namespace IKVM.Internal
 									MethodBuilder mb = typeBuilder.DefineMethod(tw.Name + "/" + m.Name, MethodAttributes.Private | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.CheckAccessOnOverride, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
 									AttributeHelper.HideFromJava(mb);
 									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
-									m.Emit(mb.GetILGenerator());
+									m.Emit(CodeEmitter.Create(mb));
 								}
 							}
 						}
@@ -676,14 +673,14 @@ namespace IKVM.Internal
 						MethodBuilder stub = typeBuilder.DefineMethod(methods[i].Name, MethodAttributes.Public, methods[i].ReturnTypeForDefineMethod, methods[i].GetParametersForDefineMethod());
 						AddParameterMetadata(stub, methods[i]);
 						AttributeHelper.SetModifiers(stub, methods[i].Modifiers, methods[i].IsInternal);
-						ILGenerator ilgen = stub.GetILGenerator();
-						Label end = ilgen.DefineLabel();
+						CodeEmitter ilgen = CodeEmitter.Create(stub);
+						CodeEmitterLabel end = ilgen.DefineLabel();
 						TypeWrapper[] implementers = ((CompilerClassLoader)classLoader).GetGhostImplementers(this);
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Ldfld, ghostRefField);
 						ilgen.Emit(OpCodes.Dup);
 						ilgen.Emit(OpCodes.Isinst, typeBuilderGhostInterface);
-						Label label = ilgen.DefineLabel();
+						CodeEmitterLabel label = ilgen.DefineLabel();
 						ilgen.Emit(OpCodes.Brfalse_S, label);
 						ilgen.Emit(OpCodes.Castclass, typeBuilderGhostInterface);
 						for(int k = 0; k < args.Length; k++)
@@ -720,14 +717,14 @@ namespace IKVM.Internal
 				if(true)
 				{
 					MethodBuilder mb;
-					ILGenerator ilgen;
+					CodeEmitter ilgen;
 					LocalBuilder local;
 					// add implicit conversions for all the ghost implementers
 					TypeWrapper[] implementers = ((CompilerClassLoader)classLoader).GetGhostImplementers(this);
 					for(int i = 0; i < implementers.Length; i++)
 					{
 						mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, new Type[] { implementers[i].TypeAsSignatureType });
-						ilgen = mb.GetILGenerator();
+						ilgen = CodeEmitter.Create(mb);
 						local = ilgen.DeclareLocal(TypeAsSignatureType);
 						ilgen.Emit(OpCodes.Ldloca, local);
 						ilgen.Emit(OpCodes.Ldarg_0);
@@ -739,13 +736,13 @@ namespace IKVM.Internal
 					// Implement the "IsInstance" method
 					mb = ghostIsInstanceMethod;
 					AttributeHelper.HideFromJava(mb);
-					ilgen = mb.GetILGenerator();
-					Label end = ilgen.DefineLabel();
+					ilgen = CodeEmitter.Create(mb);
+					CodeEmitterLabel end = ilgen.DefineLabel();
 					for(int i = 0; i < implementers.Length; i++)
 					{
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Isinst, implementers[i].TypeAsTBD);
-						Label label = ilgen.DefineLabel();
+						CodeEmitterLabel label = ilgen.DefineLabel();
 						ilgen.Emit(OpCodes.Brfalse_S, label);
 						ilgen.Emit(OpCodes.Ldc_I4_1);
 						ilgen.Emit(OpCodes.Br, end);
@@ -760,10 +757,10 @@ namespace IKVM.Internal
 					// Implement the "IsInstanceArray" method
 					mb = ghostIsInstanceArrayMethod;
 					AttributeHelper.HideFromJava(mb);
-					ilgen = mb.GetILGenerator();
+					ilgen = CodeEmitter.Create(mb);
 					LocalBuilder localType = ilgen.DeclareLocal(typeof(Type));
 					ilgen.Emit(OpCodes.Ldarg_0);
-					Label skip = ilgen.DefineLabel();
+					CodeEmitterLabel skip = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Brtrue_S, skip);
 					ilgen.Emit(OpCodes.Ldc_I4_0);
 					ilgen.Emit(OpCodes.Ret);
@@ -773,7 +770,7 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Stloc, localType);
 					skip = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Br_S, skip);
-					Label iter = ilgen.DefineLabel();
+					CodeEmitterLabel iter = ilgen.DefineLabel();
 					ilgen.MarkLabel(iter);
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Ldc_I4_1);
@@ -798,7 +795,7 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle"));
 						ilgen.Emit(OpCodes.Ldloc, localType);
 						ilgen.Emit(OpCodes.Callvirt, typeof(Type).GetMethod("IsAssignableFrom"));
-						Label label = ilgen.DefineLabel();
+						CodeEmitterLabel label = ilgen.DefineLabel();
 						ilgen.Emit(OpCodes.Brfalse_S, label);
 						ilgen.Emit(OpCodes.Ldc_I4_1);
 						ilgen.Emit(OpCodes.Ret);
@@ -822,7 +819,7 @@ namespace IKVM.Internal
 					// Implement the "Cast" method
 					mb = ghostCastMethod;
 					AttributeHelper.HideFromJava(mb);
-					ilgen = mb.GetILGenerator();
+					ilgen = CodeEmitter.Create(mb);
 					end = ilgen.DefineLabel();
 					for(int i = 0; i < implementers.Length; i++)
 					{
@@ -844,7 +841,7 @@ namespace IKVM.Internal
 					// Add "ToObject" methods
 					mb = typeBuilder.DefineMethod("ToObject", MethodAttributes.HideBySig | MethodAttributes.Public, typeof(object), Type.EmptyTypes);
 					AttributeHelper.HideFromJava(mb);
-					ilgen = mb.GetILGenerator();
+					ilgen = CodeEmitter.Create(mb);
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
 					ilgen.Emit(OpCodes.Ret);
@@ -855,7 +852,7 @@ namespace IKVM.Internal
 					// instead of reimplementing the check here.
 					mb = ghostCastArrayMethod;
 					AttributeHelper.HideFromJava(mb);
-					ilgen = mb.GetILGenerator();
+					ilgen = CodeEmitter.Create(mb);
 					end = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Brfalse_S, end);
@@ -870,7 +867,7 @@ namespace IKVM.Internal
 					// Implement the "Equals" method
 					mb = typeBuilder.DefineMethod("Equals", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual, typeof(bool), new Type[] { typeof(object) });
 					AttributeHelper.HideFromJava(mb);
-					ilgen = mb.GetILGenerator();
+					ilgen = CodeEmitter.Create(mb);
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
 					ilgen.Emit(OpCodes.Ldarg_1);
@@ -880,7 +877,7 @@ namespace IKVM.Internal
 					// Implement the "GetHashCode" method
 					mb = typeBuilder.DefineMethod("GetHashCode", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual, typeof(int), Type.EmptyTypes);
 					AttributeHelper.HideFromJava(mb);
-					ilgen = mb.GetILGenerator();
+					ilgen = CodeEmitter.Create(mb);
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
 					ilgen.Emit(OpCodes.Callvirt, typeof(object).GetMethod("GetHashCode"));
@@ -889,7 +886,7 @@ namespace IKVM.Internal
 					// Implement the "op_Equality" method
 					mb = typeBuilder.DefineMethod("op_Equality", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeof(bool), new Type[] { typeBuilder, typeBuilder });
 					AttributeHelper.HideFromJava(mb);
-					ilgen = mb.GetILGenerator();
+					ilgen = CodeEmitter.Create(mb);
 					ilgen.Emit(OpCodes.Ldarga_S, (byte)0);
 					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
 					ilgen.Emit(OpCodes.Ldarga_S, (byte)1);
@@ -900,7 +897,7 @@ namespace IKVM.Internal
 					// Implement the "op_Inequality" method
 					mb = typeBuilder.DefineMethod("op_Inequality", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeof(bool), new Type[] { typeBuilder, typeBuilder });
 					AttributeHelper.HideFromJava(mb);
-					ilgen = mb.GetILGenerator();
+					ilgen = CodeEmitter.Create(mb);
 					ilgen.Emit(OpCodes.Ldarga_S, (byte)0);
 					ilgen.Emit(OpCodes.Ldfld, ghostRefField);
 					ilgen.Emit(OpCodes.Ldarga_S, (byte)1);
@@ -952,7 +949,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override void EmitCheckcast(TypeWrapper context, ILGenerator ilgen)
+		internal override void EmitCheckcast(TypeWrapper context, CodeEmitter ilgen)
 		{
 			if(IsGhost)
 			{
@@ -980,7 +977,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal override void EmitInstanceOf(TypeWrapper context, ILGenerator ilgen)
+		internal override void EmitInstanceOf(TypeWrapper context, CodeEmitter ilgen)
 		{
 			if(IsGhost)
 			{

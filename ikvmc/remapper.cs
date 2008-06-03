@@ -29,9 +29,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
 using IKVM.Attributes;
-
-using ILGenerator = IKVM.Internal.CountingILGenerator;
-using Label = IKVM.Internal.CountingLabel;
+using IKVM.Internal;
 
 namespace IKVM.Internal.MapXml
 {
@@ -47,7 +45,7 @@ namespace IKVM.Internal.MapXml
 			}
 		}
 
-		internal abstract void Generate(Hashtable context, ILGenerator ilgen);
+		internal abstract void Generate(Hashtable context, CodeEmitter ilgen);
 	}
 
 	[XmlType("ldstr")]
@@ -56,7 +54,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("value")]
 		public string Value;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldstr, Value);
 		}
@@ -93,7 +91,7 @@ namespace IKVM.Internal.MapXml
 
 		private OpCode opcode;
 
-		internal sealed override void Generate(Hashtable context, ILGenerator ilgen)
+		internal sealed override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			Debug.Assert(Name != null);
 			if(Name == ".ctor")
@@ -228,7 +226,7 @@ namespace IKVM.Internal.MapXml
 			this.opcode = opcode;
 		}
 
-		internal sealed override void Generate(Hashtable context, ILGenerator ilgen)
+		internal sealed override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			ilgen.Emit(opcode);
 		}
@@ -260,7 +258,7 @@ namespace IKVM.Internal.MapXml
 		internal TypeWrapper typeWrapper;
 		internal Type typeType;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			if(typeWrapper == null && typeType == null)
 			{
@@ -283,8 +281,8 @@ namespace IKVM.Internal.MapXml
 		public IsInst()
 		{
 		}
-	
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			base.Generate(context, ilgen);
 			if(typeType != null)
@@ -299,7 +297,7 @@ namespace IKVM.Internal.MapXml
 					// NOTE we pass a null context, but that shouldn't be a problem, because
 					// typeWrapper should never be an UnloadableTypeWrapper
 					typeWrapper.EmitInstanceOf(null, ilgen);
-					Label endLabel = ilgen.DefineLabel();
+					CodeEmitterLabel endLabel = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Brtrue_S, endLabel);
 					ilgen.Emit(OpCodes.Pop);
 					ilgen.Emit(OpCodes.Ldnull);
@@ -320,7 +318,7 @@ namespace IKVM.Internal.MapXml
 		{
 		}
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			base.Generate(context, ilgen);
 			if(typeType != null)
@@ -349,7 +347,7 @@ namespace IKVM.Internal.MapXml
 			this.opcode = opcode;
 		}
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			if(typeType == null)
 			{
@@ -393,9 +391,9 @@ namespace IKVM.Internal.MapXml
 			this.opcode = opcode;
 		}
 
-		internal sealed override void Generate(Hashtable context, ILGenerator ilgen)
+		internal sealed override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
-			Label l;
+			CodeEmitterLabel l;
 			if(context[Name] == null)
 			{
 				l = ilgen.DefineLabel();
@@ -403,7 +401,7 @@ namespace IKVM.Internal.MapXml
 			}
 			else
 			{
-				l = (Label)context[Name];
+				l = (CodeEmitterLabel)context[Name];
 			}
 			ilgen.Emit(opcode, l);
 		}
@@ -492,9 +490,9 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("name")]
 		public string Name;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
-			Label l;
+			CodeEmitterLabel l;
 			if(context[Name] == null)
 			{
 				l = ilgen.DefineLabel();
@@ -502,7 +500,7 @@ namespace IKVM.Internal.MapXml
 			}
 			else
 			{
-				l = (Label)context[Name];
+				l = (CodeEmitterLabel)context[Name];
 			}
 			ilgen.MarkLabel(l);
 		}
@@ -521,7 +519,7 @@ namespace IKVM.Internal.MapXml
 		private TypeWrapper typeWrapper;
 		private Type typeType;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			LocalBuilder lb = (LocalBuilder)context[Name];
 			if(lb == null)
@@ -550,8 +548,8 @@ namespace IKVM.Internal.MapXml
 	{
 		[XmlAttribute("name")]
 		public string Name;
-		
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldloc, (LocalBuilder)context[Name]);
 		}
@@ -563,7 +561,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("argNum")]
 		public ushort ArgNum;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldarga, (short)ArgNum);
 		}
@@ -715,7 +713,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("sig")]
 		public string Sig;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
@@ -733,7 +731,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("sig")]
 		public string Sig;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
@@ -754,7 +752,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("sig")]
 		public string Sig;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			if(Type != null)
 			{
@@ -780,7 +778,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("sig")]
 		public string Sig;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
@@ -799,7 +797,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("sig")]
 		public string Sig;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			FieldWrapper fw = ClassLoaderWrapper.LoadClassCritical(Class).GetFieldWrapper(Name, Sig);
 			fw.Link();
@@ -814,7 +812,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("value")]
 		public int val;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldc_I4, val);
 		}
@@ -955,7 +953,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("alignment")]
 		public int Alignment;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Unaligned, (byte)Alignment);
 		}
@@ -992,7 +990,7 @@ namespace IKVM.Internal.MapXml
 		public CatchBlock @catch;
 		public InstructionList @finally;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			ilgen.BeginExceptionBlock();
 			@try.Generate(context, ilgen);
@@ -1034,7 +1032,7 @@ namespace IKVM.Internal.MapXml
 		public string framework;
 		public InstructionList code;
 
-		internal override void Generate(Hashtable context, CountingILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			if (Environment.Version.ToString().StartsWith(framework))
 			{
@@ -1057,7 +1055,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("sig")]
 		public string Sig;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldelema, ClassLoaderWrapper.GetBootstrapClassLoader().FieldTypeWrapperFromSig(Sig).TypeAsArrayType);
 		}
@@ -1069,7 +1067,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("type")]
 		public string type;
 
-		internal override void Generate(Hashtable context, ILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			ilgen.Emit(OpCodes.Ldtoken, StaticCompiler.GetType(type));
 		}
@@ -1081,7 +1079,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("class")]
 		public string Class;
 
-		internal override void Generate(Hashtable context, CountingILGenerator ilgen)
+		internal override void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(Class).EmitRunClassConstructor(ilgen);
 		}
@@ -1165,7 +1163,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(RunClassInit))]
 		public Instruction[] invoke;
 
-		internal void Generate(Hashtable context, ILGenerator ilgen)
+		internal void Generate(Hashtable context, CodeEmitter ilgen)
 		{
 			if(invoke != null)
 			{
@@ -1180,7 +1178,7 @@ namespace IKVM.Internal.MapXml
 			}
 		}
 
-		internal void Emit(ILGenerator ilgen)
+		internal void Emit(CodeEmitter ilgen)
 		{
 			Generate(new Hashtable(), ilgen);
 		}
@@ -1230,7 +1228,7 @@ namespace IKVM.Internal.MapXml
 		[XmlAttribute("type")]
 		public string Type;
 
-		internal void Emit(ILGenerator ilgen)
+		internal void Emit(CodeEmitter ilgen)
 		{
 			if(Type != "static" || Class == null || Name == null || Sig == null)
 			{
@@ -1315,7 +1313,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement("replace-method-call")]
 		public ReplaceMethodCall[] ReplaceMethodCalls;
 
-		internal void Emit(ILGenerator ilgen)
+		internal void Emit(CodeEmitter ilgen)
 		{
 			if(redirect != null)
 			{

@@ -32,7 +32,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 {
 	private static readonly Dictionary<FieldWrapper, ConstructorBuilder> map = new Dictionary<FieldWrapper, ConstructorBuilder>();
 
-	internal static bool Emit(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, CountingILGenerator ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code)
+	internal static bool Emit(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code)
 	{
 		if (i >= 3
 			&& !code[i - 0].IsBranchTarget
@@ -60,7 +60,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 		return false;
 	}
 
-	private static void DoEmit(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, CountingILGenerator ilgen, FieldWrapper field)
+	private static void DoEmit(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, CodeEmitter ilgen, FieldWrapper field)
 	{
 		ConstructorBuilder cb;
 		bool exists;
@@ -84,7 +84,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 			{
 				map.Add(field, cb);
 			}
-			CountingILGenerator ctorilgen = cb.GetILGenerator();
+			CodeEmitter ctorilgen = CodeEmitter.Create(cb);
 			ctorilgen.Emit(OpCodes.Ldarg_0);
 			MethodWrapper basector = arfuTypeWrapper.GetMethodWrapper("<init>", "()V", false);
 			basector.Link();

@@ -704,10 +704,10 @@ namespace IKVM.NativeCode.java
 						DynamicMethod dmPrimGetter = new DynamicMethod("__<PrimFieldGetter>", null, new Type[] { typeof(object), typeof(byte[]) }, tw.TypeAsBaseType);
 						DynamicMethod dmObjSetter = new DynamicMethod("__<ObjFieldSetter>", null, new Type[] { typeof(object), typeof(object[]) }, tw.TypeAsBaseType);
 						DynamicMethod dmPrimSetter = new DynamicMethod("__<PrimFieldSetter>", null, new Type[] { typeof(object), typeof(byte[]) }, tw.TypeAsBaseType);
-						CountingILGenerator ilgenObjGetter = dmObjGetter.GetILGenerator();
-						CountingILGenerator ilgenPrimGetter = dmPrimGetter.GetILGenerator();
-						CountingILGenerator ilgenObjSetter = dmObjSetter.GetILGenerator();
-						CountingILGenerator ilgenPrimSetter = dmPrimSetter.GetILGenerator();
+						CodeEmitter ilgenObjGetter = CodeEmitter.Create(dmObjGetter);
+						CodeEmitter ilgenPrimGetter = CodeEmitter.Create(dmPrimGetter);
+						CodeEmitter ilgenObjSetter = CodeEmitter.Create(dmObjSetter);
+						CodeEmitter ilgenPrimSetter = CodeEmitter.Create(dmPrimSetter);
 						foreach (jiObjectStreamField field in fields)
 						{
 							FieldWrapper fw = GetFieldWrapper(field);
@@ -5938,7 +5938,7 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) }, mw.DeclaringType.TypeAsTBD);
 				}
-				CountingILGenerator ilgen = dm.GetILGenerator();
+				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
 				if (!mw.IsStatic)
 				{
@@ -5948,7 +5948,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 
 				// check args length
-				CountingLabel argsLengthOK = ilgen.DefineLabel();
+				CodeEmitterLabel argsLengthOK = ilgen.DefineLabel();
 				if (mw.GetParameters().Length == 0)
 				{
 					// zero length array may be null
@@ -6042,7 +6042,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private static void Expand(CountingILGenerator ilgen, TypeWrapper type)
+			private static void Expand(CodeEmitter ilgen, TypeWrapper type)
 			{
 				if (type == PrimitiveTypeWrapper.FLOAT)
 				{
@@ -6058,7 +6058,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			internal static void EmitUnboxArg(CountingILGenerator ilgen, TypeWrapper type)
+			internal static void EmitUnboxArg(CodeEmitter ilgen, TypeWrapper type)
 			{
 				if (type == PrimitiveTypeWrapper.BYTE)
 				{
@@ -6083,12 +6083,12 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					ilgen.Emit(OpCodes.Dup);
 					ilgen.Emit(OpCodes.Isinst, typeof(jlByte));
-					CountingLabel next = ilgen.DefineLabel();
+					CodeEmitterLabel next = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Brfalse_S, next);
 					ilgen.Emit(OpCodes.Call, byteValue);
 					ilgen.Emit(OpCodes.Conv_I1);
 					Expand(ilgen, type);
-					CountingLabel done = ilgen.DefineLabel();
+					CodeEmitterLabel done = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Br_S, done);
 					ilgen.MarkLabel(next);
 					if (type == PrimitiveTypeWrapper.SHORT)
@@ -6176,7 +6176,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			private static void BoxReturnValue(CountingILGenerator ilgen, TypeWrapper type)
+			private static void BoxReturnValue(CodeEmitter ilgen, TypeWrapper type)
 			{
 				if (type == PrimitiveTypeWrapper.VOID)
 				{
@@ -6259,11 +6259,11 @@ namespace IKVM.NativeCode.sun.reflect
 				mw.DeclaringType.Finish();
 				mw.ResolveMethod();
 				DynamicMethod dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object[]) }, mw.DeclaringType.TypeAsTBD);
-				CountingILGenerator ilgen = dm.GetILGenerator();
+				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
 
 				// check args length
-				CountingLabel argsLengthOK = ilgen.DefineLabel();
+				CodeEmitterLabel argsLengthOK = ilgen.DefineLabel();
 				if (mw.GetParameters().Length == 0)
 				{
 					// zero length array may be null
@@ -6398,7 +6398,7 @@ namespace IKVM.NativeCode.sun.reflect
 					throw x.ToJava();
 				}
 				DynamicMethod dm = new DynamicMethod("__<SerializationCtor>", typeof(object), null, constructor.DeclaringType.TypeAsBaseType);
-				CountingILGenerator ilgen = dm.GetILGenerator();
+				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				ilgen.Emit(OpCodes.Ldtoken, type);
 				ilgen.Emit(OpCodes.Call, GetTypeFromHandleMethod);
 				ilgen.Emit(OpCodes.Call, GetUninitializedObjectMethod);
@@ -7058,7 +7058,7 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					dm = new DynamicMethod("__<Getter>", fieldType, new Type[] { typeof(object) }, fw.DeclaringType.TypeAsBaseType);
 				}
-				CountingILGenerator ilgen = dm.GetILGenerator();
+				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				if (fw.IsStatic)
 				{
 					fw.EmitGet(ilgen);
@@ -7097,7 +7097,7 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					dm = new DynamicMethod("__<Setter>", null, new Type[] { typeof(object), fieldType }, fw.DeclaringType.TypeAsBaseType);
 				}
-				CountingILGenerator ilgen = dm.GetILGenerator();
+				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				if (fw.IsStatic)
 				{
 					if (fieldType == typeof(object))

@@ -32,7 +32,7 @@ namespace IKVM.Internal
 {
 	static class Intrinsics
 	{
-		private delegate bool Emitter(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code);
+		private delegate bool Emitter(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code);
 		private struct IntrinsicKey : IEquatable<IntrinsicKey>
 		{
 			private readonly string className;
@@ -101,44 +101,44 @@ namespace IKVM.Internal
 			return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader();
 		}
 
-		internal static bool Emit(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		internal static bool Emit(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			// note that intrinsics can always refuse to emit code and the code generator will fall back to a normal method call
 			return intrinsics[new IntrinsicKey(method)](context, ilgen, method, ma, opcodeIndex, caller, classFile, code);
 		}
 
-		private static bool Float_floatToRawIntBits(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Float_floatToRawIntBits(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			EmitConversion(ilgen, typeofFloatConverter, "ToInt");
 			return true;
 		}
 
-		private static bool Float_intBitsToFloat(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Float_intBitsToFloat(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			EmitConversion(ilgen, typeofFloatConverter, "ToFloat");
 			return true;
 		}
 
-		private static bool Double_doubleToRawLongBits(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Double_doubleToRawLongBits(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			EmitConversion(ilgen, typeofDoubleConverter, "ToLong");
 			return true;
 		}
 
-		private static bool Double_longBitsToDouble(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Double_longBitsToDouble(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			EmitConversion(ilgen, typeofDoubleConverter, "ToDouble");
 			return true;
 		}
 
-		private static void EmitConversion(CountingILGenerator ilgen, Type converterType, string method)
+		private static void EmitConversion(CodeEmitter ilgen, Type converterType, string method)
 		{
 			LocalBuilder converter = ilgen.UnsafeAllocTempLocal(converterType);
 			ilgen.Emit(OpCodes.Ldloca, converter);
 			ilgen.Emit(OpCodes.Call, converterType.GetMethod(method));
 		}
 
-		private static bool System_arraycopy(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool System_arraycopy(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			// if the array arguments on the stack are of a known array type, we can redirect to an optimized version of arraycopy.
 			// Note that we also have to handle VMSystem.arraycopy, because on GNU Classpath StringBuffer directly calls
@@ -191,12 +191,12 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static bool AtomicReferenceFieldUpdater_newUpdater(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool AtomicReferenceFieldUpdater_newUpdater(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			return AtomicReferenceFieldUpdaterEmitter.Emit(context, caller.DeclaringType, ilgen, classFile, opcodeIndex, code);
 		}
 
-		private static bool String_toCharArray(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool String_toCharArray(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			string str = ilgen.PopLazyLdstr();
 			if (str != null)
@@ -212,7 +212,7 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		private static void EmitLoadCharArrayLiteral(CountingILGenerator ilgen, string str, TypeWrapper tw)
+		private static void EmitLoadCharArrayLiteral(CodeEmitter ilgen, string str, TypeWrapper tw)
 		{
 			ModuleBuilder mod = tw.GetClassLoader().GetTypeWrapperFactory().ModuleBuilder;
 			// FXBUG on .NET 1.1 & 2.0 the value type that Ref.Emit automatically generates is public,
@@ -264,7 +264,7 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod("InitializeArray", new Type[] { typeof(Array), typeof(RuntimeFieldHandle) }));
 		}
 
-		private static bool Reflection_getCallerClass(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool Reflection_getCallerClass(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			if (caller.HasCallerID
 				&& opcodeIndex > 0
@@ -287,7 +287,7 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		private static bool ClassLoader_getCallerClassLoader(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool ClassLoader_getCallerClassLoader(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			if (caller.HasCallerID)
 			{
@@ -305,7 +305,7 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		private static bool CallerID_getCallerID(DynamicTypeWrapper.FinishContext context, CountingILGenerator ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
+		private static bool CallerID_getCallerID(DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, MethodWrapper method, MethodAnalyzer ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, ClassFile.Method.Instruction[] code)
 		{
 			if (caller.HasCallerID)
 			{

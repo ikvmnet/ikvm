@@ -31,12 +31,12 @@ using System.Diagnostics.SymbolStore;
 
 namespace IKVM.Internal
 {
-	class CountingLabel
+	class CodeEmitterLabel
 	{
 		private Label label;
 		private int offset = -1;
 
-		internal CountingLabel(Label label)
+		internal CodeEmitterLabel(Label label)
 		{
 			this.label = label;
 		}
@@ -62,7 +62,7 @@ namespace IKVM.Internal
 		}
 	}
 
-	class CountingILGenerator
+	class CodeEmitter
 	{
 		private ILGenerator ilgen_real;
 		private int offset;
@@ -73,18 +73,28 @@ namespace IKVM.Internal
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
 #endif // STATIC_COMPILER
 		private Expr stack;
-		private CountingLabel lazyBranch;
+		private CodeEmitterLabel lazyBranch;
 		private LocalBuilder[] tempLocals = new LocalBuilder[32];
 #if LABELCHECK
 		private Hashtable labels = new Hashtable();
 #endif
 
-		public static implicit operator CountingILGenerator(ILGenerator ilgen)
+		internal static CodeEmitter Create(MethodBuilder mb)
 		{
-			return new CountingILGenerator(ilgen);
+			return new CodeEmitter(mb.GetILGenerator());
 		}
 
-		internal CountingILGenerator(ILGenerator ilgen)
+		internal static CodeEmitter Create(ConstructorBuilder cb)
+		{
+			return new CodeEmitter(cb.GetILGenerator());
+		}
+
+		internal static CodeEmitter Create(DynamicMethod dm)
+		{
+			return new CodeEmitter(dm.GetILGenerator());
+		}
+
+		private CodeEmitter(ILGenerator ilgen)
 		{
 			this.ilgen_real = ilgen;
 		}
@@ -206,13 +216,13 @@ namespace IKVM.Internal
 			return loc;
 		}
 
-		internal CountingLabel DefineLabel()
+		internal CodeEmitterLabel DefineLabel()
 		{
 			Label label = ilgen_real.DefineLabel();
 #if LABELCHECK
 			labels.Add(label, new System.Diagnostics.StackFrame(1, true));
 #endif
-			return new CountingLabel(label);
+			return new CodeEmitterLabel(label);
 		}
 
 		internal void Emit(OpCode opcode)
@@ -271,7 +281,7 @@ namespace IKVM.Internal
 			ilgen_real.Emit(opcode, arg);
 		}
 
-		internal void Emit(OpCode opcode, CountingLabel label)
+		internal void Emit(OpCode opcode, CodeEmitterLabel label)
 		{
 			LazyGen();
 			if(label.Offset == -1)
@@ -336,7 +346,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void Emit(OpCode opcode, CountingLabel[] labels)
+		internal void Emit(OpCode opcode, CodeEmitterLabel[] labels)
 		{
 			LazyGen();
 			offset += 5 + labels.Length * 4;
@@ -474,7 +484,7 @@ namespace IKVM.Internal
 			ilgen_real.EndScope();
 		}
 
-		internal void MarkLabel(CountingLabel loc)
+		internal void MarkLabel(CodeEmitterLabel loc)
 		{
 			if(lazyBranch == loc)
 			{
@@ -571,11 +581,11 @@ namespace IKVM.Internal
 			{
 				// NOTE if the reference is null, we treat it as a default instance of the value type.
 				Emit(OpCodes.Dup);
-				CountingLabel label1 = DefineLabel();
+				CodeEmitterLabel label1 = DefineLabel();
 				Emit(OpCodes.Brtrue_S, label1);
 				Emit(OpCodes.Pop);
 				Emit(OpCodes.Ldloc, DeclareLocal(type));
-				CountingLabel label2 = DefineLabel();
+				CodeEmitterLabel label2 = DefineLabel();
 				Emit(OpCodes.Br_S, label2);
 				MarkLabel(label1);
 				Emit(OpCodes.Unbox, type);
@@ -624,11 +634,11 @@ namespace IKVM.Internal
 			{
 				Emit(OpCodes.Dup);
 				Emit(OpCodes.Ldc_I4_M1);
-				CountingLabel label = DefineLabel();
+				CodeEmitterLabel label = DefineLabel();
 				Emit(OpCodes.Bne_Un_S, label);
 				Emit(OpCodes.Pop);
 				Emit(OpCodes.Neg);
-				CountingLabel label2 = DefineLabel();
+				CodeEmitterLabel label2 = DefineLabel();
 				Emit(OpCodes.Br_S, label2);
 				MarkLabel(label);
 				Emit(OpCodes.Div);
@@ -659,11 +669,11 @@ namespace IKVM.Internal
 				Emit(OpCodes.Dup);
 				Emit(OpCodes.Ldc_I4_M1);
 				Emit(OpCodes.Conv_I8);
-				CountingLabel label = DefineLabel();
+				CodeEmitterLabel label = DefineLabel();
 				Emit(OpCodes.Bne_Un_S, label);
 				Emit(OpCodes.Pop);
 				Emit(OpCodes.Neg);
-				CountingLabel label2 = DefineLabel();
+				CodeEmitterLabel label2 = DefineLabel();
 				Emit(OpCodes.Br_S, label2);
 				MarkLabel(label);
 				Emit(OpCodes.Div);
@@ -677,17 +687,17 @@ namespace IKVM.Internal
 			stack = new InstanceOfExpr(type);
 		}
 
-		internal void LazyEmit_ifeq(CountingLabel label)
+		internal void LazyEmit_ifeq(CodeEmitterLabel label)
 		{
 			LazyEmit_if_ne_eq(label, false);
 		}
 
-		internal void LazyEmit_ifne(CountingLabel label)
+		internal void LazyEmit_ifne(CodeEmitterLabel label)
 		{
 			LazyEmit_if_ne_eq(label, true);
 		}
 
-		private void LazyEmit_if_ne_eq(CountingLabel label, bool brtrue)
+		private void LazyEmit_if_ne_eq(CodeEmitterLabel label, bool brtrue)
 		{
 			InstanceOfExpr instanceof = stack as InstanceOfExpr;
 			if (instanceof != null)
@@ -716,7 +726,7 @@ namespace IKVM.Internal
 			GreaterThan
 		}
 
-		private void EmitBcc(Comparison comp, CountingLabel label)
+		private void EmitBcc(Comparison comp, CodeEmitterLabel label)
 		{
 			switch (comp)
 			{
@@ -735,7 +745,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void LazyEmit_if_le_lt_ge_gt(Comparison comp, CountingLabel label)
+		internal void LazyEmit_if_le_lt_ge_gt(Comparison comp, CodeEmitterLabel label)
 		{
 			CmpExpr cmp = stack as CmpExpr;
 			if (cmp != null)
@@ -842,7 +852,7 @@ namespace IKVM.Internal
 				this.Type = type;
 			}
 
-			internal abstract void Emit(CountingILGenerator ilgen);
+			internal abstract void Emit(CodeEmitter ilgen);
 		}
 
 		abstract class UnaryExpr : Expr
@@ -855,7 +865,7 @@ namespace IKVM.Internal
 				this.Expr = expr;
 			}
 
-			internal override void Emit(CountingILGenerator ilgen)
+			internal override void Emit(CodeEmitter ilgen)
 			{
 				if (Expr != null)
 				{
@@ -871,7 +881,7 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal override void Emit(CountingILGenerator ilgen)
+			internal override void Emit(CodeEmitter ilgen)
 			{
 				base.Emit(ilgen);
 				ilgen.Emit(OpCodes.Box, Type);
@@ -885,7 +895,7 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal override void Emit(CountingILGenerator ilgen)
+			internal override void Emit(CodeEmitter ilgen)
 			{
 				base.Emit(ilgen);
 				ilgen.Emit(OpCodes.Unbox, Type);
@@ -899,7 +909,7 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal override void Emit(CountingILGenerator ilgen)
+			internal override void Emit(CodeEmitter ilgen)
 			{
 				base.Emit(ilgen);
 				// unbox leaves a pointer to the value of the stack (instead of the value)
@@ -918,7 +928,7 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal override void Emit(CountingILGenerator ilgen)
+			internal override void Emit(CodeEmitter ilgen)
 			{
 				base.Emit(ilgen);
 				ilgen.Emit(OpCodes.Ldobj, Type);
@@ -935,7 +945,7 @@ namespace IKVM.Internal
 				this.i = i;
 			}
 
-			internal override void Emit(CountingILGenerator ilgen)
+			internal override void Emit(CodeEmitter ilgen)
 			{
 				switch(i)
 				{
@@ -993,7 +1003,7 @@ namespace IKVM.Internal
 				this.l = l;
 			}
 
-			internal override void Emit(CountingILGenerator ilgen)
+			internal override void Emit(CodeEmitter ilgen)
 			{
 				switch (l)
 				{
@@ -1076,7 +1086,7 @@ namespace IKVM.Internal
 				this.str = str;
 			}
 
-			internal override void Emit(CountingILGenerator ilgen)
+			internal override void Emit(CodeEmitter ilgen)
 			{
 				ilgen.Emit(OpCodes.Ldstr, str);
 			}
@@ -1089,7 +1099,7 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal override void Emit(CountingILGenerator ilgen)
+			internal override void Emit(CodeEmitter ilgen)
 			{
 				ilgen.Emit(OpCodes.Isinst, this.Type);
 				ilgen.Emit(OpCodes.Ldnull);
@@ -1104,7 +1114,7 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal abstract void EmitBcc(CountingILGenerator ilgen, Comparison comp, CountingLabel label);
+			internal abstract void EmitBcc(CodeEmitter ilgen, Comparison comp, CodeEmitterLabel label);
 		}
 
 		sealed class LCmpExpr : CmpExpr
@@ -1113,7 +1123,7 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal sealed override void Emit(CountingILGenerator ilgen)
+			internal sealed override void Emit(CodeEmitter ilgen)
 			{
 				LocalBuilder value1 = ilgen.AllocTempLocal(typeof(long));
 				LocalBuilder value2 = ilgen.AllocTempLocal(typeof(long));
@@ -1130,7 +1140,7 @@ namespace IKVM.Internal
 				ilgen.ReleaseTempLocal(value1);
 			}
 
-			internal sealed override void EmitBcc(CountingILGenerator ilgen, Comparison comp, CountingLabel label)
+			internal sealed override void EmitBcc(CodeEmitter ilgen, Comparison comp, CodeEmitterLabel label)
 			{
 				ilgen.EmitBcc(comp, label);
 			}
@@ -1143,7 +1153,7 @@ namespace IKVM.Internal
 				return typeof(float);
 			}
 
-			internal sealed override void Emit(CountingILGenerator ilgen)
+			internal sealed override void Emit(CodeEmitter ilgen)
 			{
 				LocalBuilder value1 = ilgen.AllocTempLocal(FloatOrDouble());
 				LocalBuilder value2 = ilgen.AllocTempLocal(FloatOrDouble());
@@ -1160,7 +1170,7 @@ namespace IKVM.Internal
 				ilgen.ReleaseTempLocal(value2);
 			}
 
-			internal sealed override void EmitBcc(CountingILGenerator ilgen, Comparison comp, CountingLabel label)
+			internal sealed override void EmitBcc(CodeEmitter ilgen, Comparison comp, CodeEmitterLabel label)
 			{
 				switch (comp)
 				{
@@ -1187,7 +1197,7 @@ namespace IKVM.Internal
 				return typeof(float);
 			}
 
-			internal sealed override void Emit(CountingILGenerator ilgen)
+			internal sealed override void Emit(CodeEmitter ilgen)
 			{
 				LocalBuilder value1 = ilgen.AllocTempLocal(FloatOrDouble());
 				LocalBuilder value2 = ilgen.AllocTempLocal(FloatOrDouble());
@@ -1204,7 +1214,7 @@ namespace IKVM.Internal
 				ilgen.ReleaseTempLocal(value2);
 			}
 
-			internal sealed override void EmitBcc(CountingILGenerator ilgen, Comparison comp, CountingLabel label)
+			internal sealed override void EmitBcc(CodeEmitter ilgen, Comparison comp, CodeEmitterLabel label)
 			{
 				switch (comp)
 				{

@@ -32,9 +32,6 @@ using System.Diagnostics.SymbolStore;
 using IKVM.Attributes;
 using IKVM.Internal;
 
-using ILGenerator = IKVM.Internal.CountingILGenerator;
-using Label = IKVM.Internal.CountingLabel;
-
 using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
@@ -143,7 +140,7 @@ class Compiler
 	private MethodWrapper mw;
 	private ClassFile classFile;
 	private ClassFile.Method m;
-	private ILGenerator ilGenerator;
+	private CodeEmitter ilGenerator;
 	private MethodAnalyzer ma;
 	private ExceptionTableEntry[] exceptions;
 	private ISymbolDocumentWriter symboldocument;
@@ -227,7 +224,7 @@ class Compiler
 		}
 	}
 
-	private Compiler(DynamicTypeWrapper.FinishContext context, TypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ClassLoaderWrapper classLoader, ISymbolDocumentWriter symboldocument, Hashtable invokespecialstubcache)
+	private Compiler(DynamicTypeWrapper.FinishContext context, TypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader, ISymbolDocumentWriter symboldocument, Hashtable invokespecialstubcache)
 	{
 		this.context = context;
 		this.clazz = clazz;
@@ -620,16 +617,16 @@ class Compiler
 
 	private sealed class ReturnCookie
 	{
-		private Label stub;
+		private CodeEmitterLabel stub;
 		private LocalBuilder local;
 
-		internal ReturnCookie(Label stub, LocalBuilder local)
+		internal ReturnCookie(CodeEmitterLabel stub, LocalBuilder local)
 		{
 			this.stub = stub;
 			this.local = local;
 		}
 
-		internal void EmitRet(ILGenerator ilgen)
+		internal void EmitRet(CodeEmitter ilgen)
 		{
 			ilgen.MarkLabel(stub);
 			if(local != null)
@@ -643,8 +640,8 @@ class Compiler
 	private sealed class BranchCookie
 	{
 		// NOTE Stub gets used for both the push stub (inside the exception block) as well as the pop stub (outside the block)
-		internal Label Stub;
-		internal Label TargetLabel;
+		internal CodeEmitterLabel Stub;
+		internal CodeEmitterLabel TargetLabel;
 		internal bool ContentOnStack;
 		internal readonly int TargetPC;
 		internal DupHelper dh;
@@ -656,7 +653,7 @@ class Compiler
 			this.dh = new DupHelper(compiler, stackHeight);
 		}
 
-		internal BranchCookie(Label label, int targetPC)
+		internal BranchCookie(CodeEmitterLabel label, int targetPC)
 		{
 			this.Stub = label;
 			this.TargetPC = targetPC;
@@ -773,7 +770,7 @@ class Compiler
 		}
 	}
 
-	internal static void Compile(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref bool nonleaf, Hashtable invokespecialstubcache, ref LineNumberTableAttribute.LineNumberWriter lineNumberTable)
+	internal static void Compile(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf, Hashtable invokespecialstubcache, ref LineNumberTableAttribute.LineNumberWriter lineNumberTable)
 	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
@@ -860,7 +857,7 @@ class Compiler
 			if(m.IsSynchronized && m.IsStatic)
 			{
 				ilGenerator.Emit(OpCodes.Ldsfld, context.ClassObjectField);
-				Label label = ilGenerator.DefineLabel();
+				CodeEmitterLabel label = ilGenerator.DefineLabel();
 				ilGenerator.Emit(OpCodes.Brtrue_S, label);
 				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 				getClassFromTypeHandle.EmitCall(ilGenerator);
@@ -941,7 +938,7 @@ class Compiler
 	private class Block
 	{
 		private Compiler compiler;
-		private ILGenerator ilgen;
+		private CodeEmitter ilgen;
 		private int begin;
 		private int end;
 		private int exceptionIndex;
@@ -988,7 +985,7 @@ class Compiler
 			exits.Add(bc);
 		}
 
-		internal Label GetLabel(int targetPC)
+		internal CodeEmitterLabel GetLabel(int targetPC)
 		{
 			int targetIndex = compiler.FindPcIndex(targetPC);
 			if(IsInRange(targetPC))
@@ -999,7 +996,7 @@ class Compiler
 					l = ilgen.DefineLabel();
 					labels[targetIndex] = l;
 				}
-				return (Label)l;
+				return (CodeEmitterLabel)l;
 			}
 			else
 			{
@@ -1034,13 +1031,13 @@ class Compiler
 			object label = labels[instructionIndex];
 			if(label == null)
 			{
-				Label l = ilgen.DefineLabel();
+				CodeEmitterLabel l = ilgen.DefineLabel();
 				ilgen.MarkLabel(l);
 				labels[instructionIndex] = l;
 			}
 			else
 			{
-				ilgen.MarkLabel((Label)label);
+				ilgen.MarkLabel((CodeEmitterLabel)label);
 			}
 		}
 
@@ -1384,7 +1381,7 @@ class Compiler
 							ilGenerator.Emit(OpCodes.Dup);
 							bc.dh.Store(0);
 						}
-						Label rethrow = ilGenerator.DefineLabel();
+						CodeEmitterLabel rethrow = ilGenerator.DefineLabel();
 						ilGenerator.Emit(OpCodes.Brfalse, rethrow);
 						ilGenerator.Emit(OpCodes.Leave, bc.Stub);
 						ilGenerator.MarkLabel(rethrow);
@@ -2065,7 +2062,7 @@ class Compiler
 							local = ilGenerator.UnsafeAllocTempLocal(retTypeWrapper.TypeAsSignatureType);
 							ilGenerator.Emit(OpCodes.Stloc, local);
 						}
-						Label label = ilGenerator.DefineLabel();
+						CodeEmitterLabel label = ilGenerator.DefineLabel();
 						// NOTE leave automatically discards any junk that may be on the stack
 						ilGenerator.Emit(OpCodes.Leave, label);
 						block.AddExitHack(new ReturnCookie(label, local));
@@ -2528,16 +2525,16 @@ class Compiler
 					ilGenerator.Emit(OpCodes.Bgt, block.GetLabel(instr.PC + instr.Arg1));
 					break;
 				case NormalizedByteCode.__ifle:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CountingILGenerator.Comparison.LessOrEqual, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessOrEqual, block.GetLabel(instr.PC + instr.Arg1));
 					break;
 				case NormalizedByteCode.__iflt:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CountingILGenerator.Comparison.LessThan, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.LessThan, block.GetLabel(instr.PC + instr.Arg1));
 					break;
 				case NormalizedByteCode.__ifge:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CountingILGenerator.Comparison.GreaterOrEqual, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterOrEqual, block.GetLabel(instr.PC + instr.Arg1));
 					break;
 				case NormalizedByteCode.__ifgt:
-					ilGenerator.LazyEmit_if_le_lt_ge_gt(CountingILGenerator.Comparison.GreaterThan, block.GetLabel(instr.PC + instr.Arg1));
+					ilGenerator.LazyEmit_if_le_lt_ge_gt(CodeEmitter.Comparison.GreaterThan, block.GetLabel(instr.PC + instr.Arg1));
 					break;
 				case NormalizedByteCode.__ifne:
 					ilGenerator.LazyEmit_ifne(block.GetLabel(instr.PC + instr.Arg1));
@@ -2665,7 +2662,7 @@ class Compiler
 					{
 						ilGenerator.Emit(OpCodes.Conv_I8);
 					}
-					Label label = ilGenerator.DefineLabel();
+					CodeEmitterLabel label = ilGenerator.DefineLabel();
 					ilGenerator.Emit(OpCodes.Bne_Un_S, label);
 					ilGenerator.Emit(OpCodes.Pop);
 					ilGenerator.Emit(OpCodes.Pop);
@@ -2674,7 +2671,7 @@ class Compiler
 					{
 						ilGenerator.Emit(OpCodes.Conv_I8);
 					}
-					Label label2 = ilGenerator.DefineLabel();
+					CodeEmitterLabel label2 = ilGenerator.DefineLabel();
 					ilGenerator.Emit(OpCodes.Br_S, label2);
 					ilGenerator.MarkLabel(label);
 					ilGenerator.Emit(OpCodes.Rem);
@@ -2971,7 +2968,7 @@ class Compiler
 				{
 					// note that a tableswitch always has at least one entry
 					// (otherwise it would have failed verification)
-					Label[] labels = new Label[instr.SwitchEntryCount];
+					CodeEmitterLabel[] labels = new CodeEmitterLabel[instr.SwitchEntryCount];
 					for(int j = 0; j < labels.Length; j++)
 					{
 						labels[j] = block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j));
@@ -2990,7 +2987,7 @@ class Compiler
 					{
 						ilGenerator.Emit(OpCodes.Dup);
 						ilGenerator.LazyEmitLdc_I4(instr.GetSwitchValue(j));
-						Label label = ilGenerator.DefineLabel();
+						CodeEmitterLabel label = ilGenerator.DefineLabel();
 						ilGenerator.Emit(OpCodes.Bne_Un_S, label);
 						ilGenerator.Emit(OpCodes.Pop);
 						ilGenerator.Emit(OpCodes.Br, block.GetLabel(instr.PC + instr.GetSwitchTargetOffset(j)));
@@ -3165,7 +3162,7 @@ class Compiler
 		if(mi == null)
 		{
 			MethodBuilder stub = clazz.TypeAsBuilder.DefineMethod("__<>", MethodAttributes.PrivateScope, method.ReturnTypeForDefineMethod, method.GetParametersForDefineMethod());
-			ILGenerator ilgen = stub.GetILGenerator();
+			CodeEmitter ilgen = CodeEmitter.Create(stub);
 			ilgen.Emit(OpCodes.Ldarg_0);
 			int argc = method.GetParametersForDefineMethod().Length;
 			for(int i = 1; i <= argc; i++)
@@ -3377,7 +3374,7 @@ class Compiler
 		}
 	}
 
-	private static void EmitReturnTypeConversion(ILGenerator ilgen, TypeWrapper typeWrapper)
+	private static void EmitReturnTypeConversion(CodeEmitter ilgen, TypeWrapper typeWrapper)
 	{
 		if(typeWrapper.IsUnloadable)
 		{
@@ -3415,22 +3412,22 @@ class Compiler
 			this.cpi = cpi;
 		}
 
-		internal override void EmitCall(ILGenerator ilgen)
+		internal override void EmitCall(CodeEmitter ilgen)
 		{
 			Emit(ByteCodeHelperMethods.DynamicInvokestatic, ilgen, cpi.GetRetType());
 		}
 
-		internal override void EmitCallvirt(ILGenerator ilgen)
+		internal override void EmitCallvirt(CodeEmitter ilgen)
 		{
 			Emit(ByteCodeHelperMethods.DynamicInvokevirtual, ilgen, cpi.GetRetType());
 		}
 
-		internal override void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
+		internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 		{
 			Emit(ByteCodeHelperMethods.DynamicInvokeSpecialNew, ilgen, cpi.GetClassType());
 		}
 
-		private void Emit(MethodInfo helperMethod, ILGenerator ilGenerator, TypeWrapper retTypeWrapper)
+		private void Emit(MethodInfo helperMethod, CodeEmitter ilGenerator, TypeWrapper retTypeWrapper)
 		{
 			Profiler.Count("EmitDynamicInvokeEmitter");
 			TypeWrapper[] args = cpi.GetArgTypes();
@@ -3472,17 +3469,17 @@ class Compiler
 			this.code = code;
 		}
 
-		internal override void EmitCall(ILGenerator ilgen)
+		internal override void EmitCall(CodeEmitter ilgen)
 		{
 			code.Emit(ilgen);
 		}
 
-		internal override void EmitCallvirt(ILGenerator ilgen)
+		internal override void EmitCallvirt(CodeEmitter ilgen)
 		{
 			code.Emit(ilgen);
 		}
 
-		internal override void EmitNewobj(ILGenerator ilgen, MethodAnalyzer ma, int opcodeIndex)
+		internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 		{
 			code.Emit(ilgen);
 		}
