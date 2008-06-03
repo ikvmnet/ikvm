@@ -32,7 +32,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 {
 	private static readonly Dictionary<FieldWrapper, ConstructorBuilder> map = new Dictionary<FieldWrapper, ConstructorBuilder>();
 
-	internal static bool Emit(TypeWrapper wrapper, CountingILGenerator ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code)
+	internal static bool Emit(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, CountingILGenerator ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code)
 	{
 		if (i >= 3
 			&& !code[i - 0].IsBranchTarget
@@ -52,7 +52,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 				if (field != null && !field.IsStatic && field.IsVolatile && field.DeclaringType == wrapper && field.FieldTypeWrapper == vclass)
 				{
 					// everything matches up, now call the actual emitter
-					DoEmit(wrapper, ilgen, field);
+					DoEmit(context, wrapper, ilgen, field);
 					return true;
 				}
 			}
@@ -60,7 +60,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 		return false;
 	}
 
-	private static void DoEmit(TypeWrapper wrapper, CountingILGenerator ilgen, FieldWrapper field)
+	private static void DoEmit(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, CountingILGenerator ilgen, FieldWrapper field)
 	{
 		ConstructorBuilder cb;
 		bool exists;
@@ -90,7 +90,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 			basector.Link();
 			basector.EmitCall(ctorilgen);
 			ctorilgen.Emit(OpCodes.Ret);
-			((DynamicTypeWrapper)wrapper).RegisterPostFinishProc(delegate
+			context.RegisterPostFinishProc(delegate
 			{
 				arfuTypeWrapper.Finish();
 				tb.CreateType();

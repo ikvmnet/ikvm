@@ -138,6 +138,7 @@ class Compiler
 	private static TypeWrapper java_lang_ThreadDeath;
 	private static TypeWrapper cli_System_Object;
 	private static TypeWrapper cli_System_Exception;
+	private readonly DynamicTypeWrapper.FinishContext context;
 	private TypeWrapper clazz;
 	private MethodWrapper mw;
 	private ClassFile classFile;
@@ -226,8 +227,9 @@ class Compiler
 		}
 	}
 
-	private Compiler(TypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ClassLoaderWrapper classLoader, ISymbolDocumentWriter symboldocument, Hashtable invokespecialstubcache)
+	private Compiler(DynamicTypeWrapper.FinishContext context, TypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ClassLoaderWrapper classLoader, ISymbolDocumentWriter symboldocument, Hashtable invokespecialstubcache)
 	{
+		this.context = context;
 		this.clazz = clazz;
 		this.mw = mw;
 		this.classFile = classFile;
@@ -771,7 +773,7 @@ class Compiler
 		}
 	}
 
-	internal static void Compile(DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref bool nonleaf, Hashtable invokespecialstubcache, ref LineNumberTableAttribute.LineNumberWriter lineNumberTable)
+	internal static void Compile(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, ILGenerator ilGenerator, ref bool nonleaf, Hashtable invokespecialstubcache, ref LineNumberTableAttribute.LineNumberWriter lineNumberTable)
 	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
@@ -829,7 +831,7 @@ class Compiler
 			Profiler.Enter("new Compiler");
 			try
 			{
-				c = new Compiler(clazz, mw, classFile, m, ilGenerator, classLoader, symboldocument, invokespecialstubcache);
+				c = new Compiler(context, clazz, mw, classFile, m, ilGenerator, classLoader, symboldocument, invokespecialstubcache);
 			}
 			finally
 			{
@@ -857,14 +859,14 @@ class Compiler
 		{
 			if(m.IsSynchronized && m.IsStatic)
 			{
-				ilGenerator.Emit(OpCodes.Ldsfld, clazz.ClassObjectField);
+				ilGenerator.Emit(OpCodes.Ldsfld, context.ClassObjectField);
 				Label label = ilGenerator.DefineLabel();
 				ilGenerator.Emit(OpCodes.Brtrue_S, label);
 				ilGenerator.Emit(OpCodes.Ldtoken, clazz.TypeAsTBD);
 				getClassFromTypeHandle.EmitCall(ilGenerator);
-				ilGenerator.Emit(OpCodes.Stsfld, clazz.ClassObjectField);
+				ilGenerator.Emit(OpCodes.Stsfld, context.ClassObjectField);
 				ilGenerator.MarkLabel(label);
-				ilGenerator.Emit(OpCodes.Ldsfld, clazz.ClassObjectField);
+				ilGenerator.Emit(OpCodes.Ldsfld, context.ClassObjectField);
 				ilGenerator.Emit(OpCodes.Dup);
 				LocalBuilder monitor = ilGenerator.DeclareLocal(typeof(object));
 				ilGenerator.Emit(OpCodes.Stloc, monitor);
@@ -1719,7 +1721,7 @@ class Compiler
 				{
 					ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instr.Arg1);
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
-					if(method.IsIntrinsic && Intrinsics.Emit(ilGenerator, method, ma, i, mw, classFile, code))
+					if(method.IsIntrinsic && Intrinsics.Emit(context, ilGenerator, method, ma, i, mw, classFile, code))
 					{
 						break;
 					}
@@ -1728,7 +1730,7 @@ class Compiler
 					CastInterfaceArgs(method, cpi.GetArgTypes(), i, false);
 					if(method.HasCallerID)
 					{
-						ilGenerator.Emit(OpCodes.Ldsfld, ((DynamicTypeWrapper)clazz).CallerIDField);
+						ilGenerator.Emit(OpCodes.Ldsfld, context.CallerIDField);
 					}
 					method.EmitCall(ilGenerator);
 					method.ReturnType.EmitConvSignatureTypeToStackType(ilGenerator);
@@ -1763,7 +1765,7 @@ class Compiler
 
 					MethodWrapper method = GetMethodCallEmitter(cpi, instr.NormalizedOpCode);
 
-					if(method.IsIntrinsic && Intrinsics.Emit(ilGenerator, method, ma, i, mw, classFile, code))
+					if(method.IsIntrinsic && Intrinsics.Emit(context, ilGenerator, method, ma, i, mw, classFile, code))
 					{
 						break;
 					}
@@ -1987,7 +1989,7 @@ class Compiler
 					{
 						if(method.HasCallerID)
 						{
-							ilGenerator.Emit(OpCodes.Ldsfld, ((DynamicTypeWrapper)clazz).CallerIDField);
+							ilGenerator.Emit(OpCodes.Ldsfld, context.CallerIDField);
 						}
 
 						if(isinvokespecial)
