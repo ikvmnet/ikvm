@@ -867,7 +867,7 @@ namespace IKVM.Internal
 		}
 
 #if !COMPACT_FRAMEWORK
-		private class NonvirtualInvokeHelper
+		private static class NonvirtualInvokeHelper
 		{
 			private static Hashtable cache;
 			private static ModuleBuilder module;

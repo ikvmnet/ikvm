@@ -35,10 +35,8 @@ using IKVM.Internal;
 #if !STATIC_COMPILER && !COMPACT_FRAMEWORK
 namespace IKVM.Internal
 {
-	public sealed class Starter
+	public static class Starter
 	{
-		private Starter() {}
-
 		public static void PrepareForSaveDebugImage()
 		{
 			JVM.IsSaveDebugImage  = true;
@@ -66,7 +64,7 @@ namespace IKVM.Internal
 
 namespace IKVM.Internal
 {
-	class JVM
+	static class JVM
 	{
 #if STATIC_COMPILER
 		internal const bool IsStaticCompiler = true;

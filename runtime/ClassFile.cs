@@ -81,7 +81,7 @@ namespace IKVM.Internal
 		private string signature;
 		private string[] enclosingMethod;
 
-		private class SupportedVersions
+		private static class SupportedVersions
 		{
 			internal static readonly int Minimum = 45;
 			internal static readonly int Maximum = 50;

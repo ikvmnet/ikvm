@@ -39,7 +39,7 @@ using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 
-class ByteCodeHelperMethods
+static class ByteCodeHelperMethods
 {
 	internal static readonly MethodInfo GetClassFromTypeHandle;
 	internal static readonly MethodInfo multianewarray;

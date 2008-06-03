@@ -51,12 +51,10 @@ namespace IKVM.Internal
 	}
 
 #if !COMPACT_FRAMEWORK
-	class EmitHelper
+	static class EmitHelper
 	{
 		private static MethodInfo objectToString = typeof(object).GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private static MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
-
-		static EmitHelper() {}
 
 		internal static void Throw(ILGenerator ilgen, string dottedClassName)
 		{
@@ -128,7 +126,7 @@ namespace IKVM.Internal
 	}
 #endif
 
-	class AttributeHelper
+	static class AttributeHelper
 	{
 #if !COMPACT_FRAMEWORK
 		private static CustomAttributeBuilder hideFromJavaAttribute;
@@ -3549,7 +3547,7 @@ namespace IKVM.Internal
 	}
 
 #if !COMPACT_FRAMEWORK
-	class BakedTypeCleanupHack
+	static class BakedTypeCleanupHack
 	{
 		private static readonly FieldInfo m_methodBuilder = typeof(ConstructorBuilder).GetField("m_methodBuilder", BindingFlags.Instance | BindingFlags.NonPublic);
 		private static readonly FieldInfo[] methodBuilderFields = GetFieldList(typeof(MethodBuilder), new string[]
@@ -7410,7 +7408,7 @@ namespace IKVM.Internal
 			}
 
 #if !STATIC_COMPILER
-			internal class JniProxyBuilder
+			internal static class JniProxyBuilder
 			{
 				private static ModuleBuilder mod;
 				private static int count;
@@ -7462,7 +7460,7 @@ namespace IKVM.Internal
 			}
 #endif // !STATIC_COMPILER
 
-			private class JniBuilder
+			private static class JniBuilder
 			{
 #if STATIC_COMPILER
 				private static readonly Type localRefStructType = StaticCompiler.GetType("IKVM.Runtime.JNI+Frame");
@@ -7674,7 +7672,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			class TraceHelper
+			private static class TraceHelper
 			{
 #if STATIC_COMPILER
 				private readonly static MethodInfo methodIsTracedMethod = typeof(Tracer).GetMethod("IsTracedMethod");

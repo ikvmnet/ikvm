@@ -121,7 +121,7 @@ using ssaGetPropertyAction = sun.security.action.GetPropertyAction;
 using sndResolverConfigurationImpl = sun.net.dns.ResolverConfigurationImpl;
 #endif
 
-sealed class DynamicMethodSupport
+static class DynamicMethodSupport
 {
 	// MONOBUG as of Mono 1.2.5.1, DynamicMethod is too broken to be used
 	internal static readonly bool Enabled = IsFullTrust && Type.GetType("Mono.Runtime") == null;
@@ -885,7 +885,7 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		sealed class VirtualFileSystem
+		static class VirtualFileSystem
 		{
 			internal static readonly string RootPath = JVM.IsUnix ? "/.virtual-ikvm-home/" : @"C:\.virtual-ikvm-home\";
 
