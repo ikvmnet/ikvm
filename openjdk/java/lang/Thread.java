@@ -180,7 +180,6 @@ class Thread implements Runnable {
 
     /* The context ClassLoader for this thread */
     private ClassLoader contextClassLoader;
-    private boolean contextClassLoaderIsSystemClassLoader;
 
     /* The inherited AccessControlContext of this thread */
     private AccessControlContext inheritedAccessControlContext;
@@ -467,10 +466,8 @@ class Thread implements Runnable {
 	this.name = name.toCharArray();
 	if (security == null || isCCLOverridden(parent.getClass()))
 	    this.contextClassLoader = parent.getContextClassLoader();
-	else {
+	else
 	    this.contextClassLoader = parent.contextClassLoader;
-	    this.contextClassLoaderIsSystemClassLoader = parent.contextClassLoaderIsSystemClassLoader;
-	}
 	this.inheritedAccessControlContext = AccessController.getContext();
 	this.target = target;
 	setPriority(priority);
@@ -498,7 +495,7 @@ class Thread implements Runnable {
 	this.daemon = thread.get_IsBackground();
 	this.priority = mapClrPriorityToJava(thread.get_Priority().Value);
 	this.name = name.toCharArray();
-	this.contextClassLoaderIsSystemClassLoader = true;
+	this.contextClassLoader = ClassLoader.DUMMY;
 	this.threadStatus = 0x0005; /* JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE */
 
         /* Set thread ID */
@@ -1579,13 +1576,11 @@ class Thread implements Runnable {
      * @since 1.2
      */
     public ClassLoader getContextClassLoader() {
-	if (contextClassLoader == null) {
-	    if (contextClassLoaderIsSystemClassLoader) {
-		contextClassLoader = ClassLoader.getSystemClassLoader();
-	    } else {
-		return null;
-	    }
+	if (contextClassLoader == ClassLoader.DUMMY) {
+	    contextClassLoader = ClassLoader.getSystemClassLoader();
 	}
+	if (contextClassLoader == null)
+	    return null;
 	SecurityManager sm = System.getSecurityManager();
 	if (sm != null) {
 	    ClassLoader ccl = ClassLoader.getCallerClassLoader();
@@ -1623,7 +1618,6 @@ class Thread implements Runnable {
 	if (sm != null) {
 	    sm.checkPermission(new RuntimePermission("setContextClassLoader"));
 	}
-	contextClassLoaderIsSystemClassLoader = false;
 	contextClassLoader = cl;
     }
 

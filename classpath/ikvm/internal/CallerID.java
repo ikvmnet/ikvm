@@ -53,10 +53,10 @@ public abstract class CallerID
 	    cl = GetClassLoader();
 	    if (cl == null)
 	    {
-		cl = classLoader = ClassLoader.NIL_CLASSLOADER;
+		cl = classLoader = ClassLoader.DUMMY;
 	    }
 	}
-	return cl == ClassLoader.NIL_CLASSLOADER ? null : cl;
+	return cl == ClassLoader.DUMMY ? null : cl;
     }
 
     @ikvm.lang.Internal

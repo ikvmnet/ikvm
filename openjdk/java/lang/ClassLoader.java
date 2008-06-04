@@ -160,31 +160,26 @@ import sun.security.util.SecurityConstants;
  */
 public abstract class ClassLoader {
 
-    private static native void registerNatives();
-    static {
-        registerNatives();
-    }
-
     // If initialization succeed this is set to true and security checks will
     // succeed.  Otherwise the object is not initialized and the object is
     // useless.
-    private boolean initialized = false;
+    private boolean initialized;
 
     // The parent class loader for delegation
     private ClassLoader parent;
 
     // Hashtable that maps packages to certs
-    private Hashtable package2certs = new Hashtable(11);
+    private Hashtable package2certs;
 
     // Shared among all packages with unsigned classes
     java.security.cert.Certificate[] nocerts;
 
     // The classes loaded by this class loader.  The only purpose of this table
     // is to keep the classes from being GC'ed until the loader is GC'ed.
-    private Vector classes = new Vector();
+    private Vector classes;
 
     // The initiating protection domains for all classes loaded by this loader
-    private Set domains = new HashSet();
+    private Set domains;
 
     // Invoked by the VM to record every loaded class with this loader.
     void addClass(Class c) {
@@ -193,17 +188,13 @@ public abstract class ClassLoader {
 
     // The packages defined in this class loader.  Each package name is mapped
     // to its corresponding Package object.
-    private HashMap packages = new HashMap();
+    private HashMap packages;
     
     @ikvm.lang.Internal
-    public static final ClassLoader NIL_CLASSLOADER = new ClassLoader(false) { };
+    public static final ClassLoader DUMMY = new ClassLoader(false) { };
     
     private ClassLoader(boolean ignored)
     {
-	package2certs = null;
-	classes = null;
-	domains = null;
-	packages = null;
     }
 
     /**
@@ -230,6 +221,11 @@ public abstract class ClassLoader {
 	if (security != null) {
 	    security.checkCreateClassLoader();
 	}
+	packages = new HashMap();
+	domains = new HashSet();
+	classes = new Vector();
+	package2certs = new Hashtable(11);
+	nativeLibraries = new Vector();
 	this.parent = parent;
 	initialized = true;
     }
@@ -250,12 +246,7 @@ public abstract class ClassLoader {
      *          of a new class loader.
      */
     protected ClassLoader() {
-	SecurityManager security = System.getSecurityManager();
-	if (security != null) {
-	    security.checkCreateClassLoader();
-	}
-	this.parent = getSystemClassLoader();
-	initialized = true;
+	this(getSystemClassLoader());
     }
 
 
@@ -1607,7 +1598,7 @@ public abstract class ClassLoader {
 
     // The "default" domain. Set as the default ProtectionDomain on newly
     // created classes.
-    private ProtectionDomain defaultDomain = null;
+    private ProtectionDomain defaultDomain;
 
     // Returns (and initializes) the default domain.
     private synchronized ProtectionDomain getDefaultDomain() {
@@ -1624,7 +1615,7 @@ public abstract class ClassLoader {
     // Native libraries belonging to system classes.
     private static Vector systemNativeLibraries = new Vector();
     // Native libraries associated with the class loader.
-    private Vector nativeLibraries = new Vector();
+    private Vector nativeLibraries;
 
     // native libraries being loaded/unloaded.
     private static Stack nativeLibraryContext = new Stack();
@@ -1821,20 +1812,20 @@ public abstract class ClassLoader {
     // -- Assertion management --
 
     // The default toggle for assertion checking.
-    private boolean defaultAssertionStatus = false;
+    private boolean defaultAssertionStatus;
 
     // Maps String packageName to Boolean package default assertion status Note
     // that the default package is placed under a null map key.  If this field
     // is null then we are delegating assertion status queries to the VM, i.e.,
     // none of this ClassLoader's assertion status modification methods have
     // been invoked.
-    private Map packageAssertionStatus = null;
+    private Map packageAssertionStatus;
 
     // Maps String fullyQualifiedClassName to Boolean assertionStatus If this
     // field is null then we are delegating assertion status queries to the VM,
     // i.e., none of this ClassLoader's assertion status modification methods
     // have been invoked.
-    Map classAssertionStatus = null;
+    Map classAssertionStatus;
 
     /**
      * Sets the default assertion status for this class loader.  This setting

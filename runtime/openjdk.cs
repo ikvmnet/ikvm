@@ -3066,10 +3066,6 @@ namespace IKVM.NativeCode.java
 			private static jlClassNotFoundException classNotFoundException;
 #endif
 
-			public static void registerNatives()
-			{
-			}
-
 			public static object defineClass0(object thisClassLoader, string name, byte[] b, int off, int len, object pd)
 			{
 				return defineClass1(thisClassLoader, name, b, off, len, pd, null);
