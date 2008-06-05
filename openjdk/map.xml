@@ -327,29 +327,13 @@
 				<parameter name="offset" />
 				<parameter name="length" />
 				<parameter name="charset" />
-				<alternateBody>
-					<ldarg_3 />
-					<ldarg_0 />
-					<ldarg_1 />
-					<ldarg_2 />
-					<call class="java.nio.ByteBuffer" name="wrap" sig="([BII)Ljava.nio.ByteBuffer;" />
-					<callvirt class="java.nio.charset.Charset" name="decode" sig="(Ljava.nio.ByteBuffer;)Ljava.nio.CharBuffer;" />
-					<callvirt class="java.nio.CharBuffer" name="toString" sig="()Ljava.lang.String;" />
-					<ret />
-				</alternateBody>
+        <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIILjava.nio.charset.Charset;)Ljava.lang.String;" />
 			</constructor>
 			<constructor sig="([BLjava.nio.charset.Charset;)V" modifiers="public">
 				<parameter name="bytes" />
 				<parameter name="charset" />
-				<alternateBody>
-					<ldarg_1 />
-					<ldarg_0 />
-					<call class="java.nio.ByteBuffer" name="wrap" sig="([B)Ljava.nio.ByteBuffer;" />
-					<callvirt class="java.nio.charset.Charset" name="decode" sig="(Ljava.nio.ByteBuffer;)Ljava.nio.CharBuffer;" />
-					<callvirt class="java.nio.CharBuffer" name="toString" sig="()Ljava.lang.String;" />
-					<ret />
-				</alternateBody>
-			</constructor>
+        <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BLjava.nio.charset.Charset;)Ljava.lang.String;" />
+      </constructor>
 			<method name="hashCode" sig="()I" modifiers="public">
 				<redirect class="java.lang.StringHelper" name="hashCode" type="static" sig="(Lcli.System.String;)I" />
 			</method>
@@ -899,13 +883,7 @@
 			</method>
 			<method name="getBytes" sig="(Ljava.nio.charset.Charset;)[B" modifiers="public">
 				<parameter name="charset" />
-				<body>
-					<ldarg_1 />
-					<ldarg_0 />
-					<callvirt class="java.nio.charset.Charset" name="encode" sig="(Ljava.lang.String;)Ljava.nio.ByteBuffer;" />
-					<callvirt class="java.nio.ByteBuffer" name="array" sig="()[B" />
-					<ret />
-				</body>
+        <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.nio.charset.Charset;)[B" />
 			</method>
 			<field name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" modifiers="public static final">
 				<attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
