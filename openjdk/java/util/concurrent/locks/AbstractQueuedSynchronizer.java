@@ -381,6 +381,7 @@ public abstract class AbstractQueuedSynchronizer
      * on the design of this class.
      */
     static final class Node {
+	static final AtomicReferenceFieldUpdater<Node, Node> nextUpdater = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "next");
 	/** Marker to indicate a node is waiting in shared mode */
         static final Node SHARED = new Node();
         /** Marker to indicate a node is waiting in exclusive mode */
@@ -449,7 +450,7 @@ public abstract class AbstractQueuedSynchronizer
          * point to the node itself instead of null, to make life
          * easier for isOnSyncQueue.
          */
-        final AtomicReference<Node> next = new AtomicReference<Node>();
+        volatile Node next;
 
         /**
          * The thread that enqueued this node.  Initialized on
@@ -511,13 +512,13 @@ public abstract class AbstractQueuedSynchronizer
      * If head exists, its waitStatus is guaranteed not to be
      * CANCELLED.
      */
-    private transient volatile Object head;
+    private transient volatile Node head;
 
     /**
      * Tail of the wait queue, lazily initialized.  Modified only via
      * method enq to add new wait node.
      */
-    private transient volatile Object tail;
+    private transient volatile Node tail;
 
     /**
      * The synchronization state.
@@ -571,14 +572,14 @@ public abstract class AbstractQueuedSynchronizer
      */
     private Node enq(final Node node) {
         for (;;) {
-            Node t = ((Node)tail);
+            Node t = tail;
             if (t == null) { // Must initialize
 		if (compareAndSetHead(new Node()))
 		    tail = head;
 	    } else {
                 node.prev = t;
                 if (compareAndSetTail(t, node)) {
-                    t.next.set(node);
+                    t.next = node;
                     return t;
                 }
             }
@@ -594,11 +595,11 @@ public abstract class AbstractQueuedSynchronizer
     private Node addWaiter(Node mode) {
         Node node = new Node(Thread.currentThread(), mode);
         // Try the fast path of enq; backup to full enq on failure
-	Node pred = ((Node)tail);
+	Node pred = tail;
         if (pred != null) {
             node.prev = pred;
             if (compareAndSetTail(pred, node)) {
-                pred.next.set(node);
+                pred.next = node;
                 return node;
             }
         }
@@ -637,10 +638,10 @@ public abstract class AbstractQueuedSynchronizer
          * traverse backwards from tail to find the actual
          * non-cancelled successor.
          */
-        Node s = node.next.get();
+        Node s = node.next;
         if (s == null || s.waitStatus > 0) {
             s = null;
-	    for (Node t = ((Node)tail); t != null && t != node; t = t.prev)
+	    for (Node t = tail; t != null && t != node; t = t.prev)
                 if (t.waitStatus <= 0)
                     s = t;
         }
@@ -663,7 +664,7 @@ public abstract class AbstractQueuedSynchronizer
              * Don't bother fully figuring out successor.  If it
              * looks null, call unparkSuccessor anyway to be safe.
              */
-            Node s = node.next.get();
+            Node s = node.next;
             if (s == null || s.isShared())
                 unparkSuccessor(node);
         }
@@ -689,7 +690,7 @@ public abstract class AbstractQueuedSynchronizer
 	    node.prev = pred = pred.prev;
 
 	// Getting this before setting waitStatus ensures staleness
-	Node predNext = pred.next.get();
+	Node predNext = pred.next;
 
 	// Can use unconditional write instead of CAS here
 	node.waitStatus = Node.CANCELLED;
@@ -699,20 +700,20 @@ public abstract class AbstractQueuedSynchronizer
 	    compareAndSetNext(pred, predNext, null);
 	} else {
 	    // If "active" predecessor found...
-	    if (pred != ((Node)head)
+	    if (pred != head
 		&& (pred.waitStatus == Node.SIGNAL
 		    || compareAndSetWaitStatus(pred, 0, Node.SIGNAL))
 		&& pred.thread != null) {
 
 		// If successor is active, set predecessor's next link
-		Node next = node.next.get();
+		Node next = node.next;
 		if (next != null && next.waitStatus <= 0)
 		    compareAndSetNext(pred, predNext, next);
 	    } else {
 		unparkSuccessor(node);
 	    }
 
-	    node.next.set(node); // help GC
+	    node.next = node; // help GC
 	}
     }
 
@@ -741,7 +742,7 @@ public abstract class AbstractQueuedSynchronizer
 	    do {
 		node.prev = pred = pred.prev;
 	    } while (pred.waitStatus > 0);
-	    pred.next.set(node);
+	    pred.next = node;
 	}
         else
             /*
@@ -795,7 +796,7 @@ public abstract class AbstractQueuedSynchronizer
 		final Node p = node.predecessor();
 		if (p == head && tryAcquire(arg)) {
 		    setHead(node);
-		    p.next.set(null); // help GC
+		    p.next = null; // help GC
 		    failed = false;
 		    return interrupted;
 		}
@@ -822,7 +823,7 @@ public abstract class AbstractQueuedSynchronizer
 		final Node p = node.predecessor();
 		if (p == head && tryAcquire(arg)) {
 		    setHead(node);
-		    p.next.set(null); // help GC
+		    p.next = null; // help GC
 		    failed = false;
 		    return;
 		}
@@ -853,7 +854,7 @@ public abstract class AbstractQueuedSynchronizer
 		final Node p = node.predecessor();
 		if (p == head && tryAcquire(arg)) {
 		    setHead(node);
-		    p.next.set(null); // help GC
+		    p.next = null; // help GC
 		    failed = false;
 		    return true;
 		}
@@ -889,7 +890,7 @@ public abstract class AbstractQueuedSynchronizer
 		    int r = tryAcquireShared(arg);
 		    if (r >= 0) {
 			setHeadAndPropagate(node, r);
-			p.next.set(null); // help GC
+			p.next = null; // help GC
 			if (interrupted)
 			    selfInterrupt();
 			failed = false;
@@ -921,7 +922,7 @@ public abstract class AbstractQueuedSynchronizer
 		    int r = tryAcquireShared(arg);
 		    if (r >= 0) {
 			setHeadAndPropagate(node, r);
-			p.next.set(null); // help GC
+			p.next = null; // help GC
 			failed = false;
 			return;
 		    }
@@ -956,7 +957,7 @@ public abstract class AbstractQueuedSynchronizer
 		    int r = tryAcquireShared(arg);
 		    if (r >= 0) {
 			setHeadAndPropagate(node, r);
-			p.next.set(null); // help GC
+			p.next = null; // help GC
 			failed = false;
 			return true;
 		    }
@@ -1191,7 +1192,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final boolean release(int arg) {
         if (tryRelease(arg)) {
-            Node h = ((Node)head);
+            Node h = head;
             if (h != null && h.waitStatus != 0)
                 unparkSuccessor(h);
             return true;
@@ -1269,7 +1270,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final boolean releaseShared(int arg) {
         if (tryReleaseShared(arg)) {
-	    Node h = ((Node)head);
+	    Node h = head;
             if (h != null && h.waitStatus != 0)
                 unparkSuccessor(h);
             return true;
@@ -1337,9 +1338,9 @@ public abstract class AbstractQueuedSynchronizer
          */
         Node h, s;
         Thread st;
-	if (((h = ((Node)head)) != null && (s = h.next.get()) != null &&
+	if (((h = head) != null && (s = h.next) != null &&
              s.prev == head && (st = s.thread) != null) ||
-	    ((h = ((Node)head)) != null && (s = h.next.get()) != null &&
+	    ((h = head) != null && (s = h.next) != null &&
              s.prev == head && (st = s.thread) != null))
             return st;
 
@@ -1351,7 +1352,7 @@ public abstract class AbstractQueuedSynchronizer
          * guaranteeing termination.
          */
 
-	Node t = ((Node)tail);
+	Node t = tail;
         Thread firstThread = null;
         while (t != null && t != head) {
             Thread tt = t.thread;
@@ -1375,7 +1376,7 @@ public abstract class AbstractQueuedSynchronizer
     public final boolean isQueued(Thread thread) {
         if (thread == null)
             throw new NullPointerException();
-	for (Node p = ((Node)tail); p != null; p = p.prev)
+	for (Node p = tail; p != null; p = p.prev)
             if (p.thread == thread)
                 return true;
         return false;
@@ -1388,7 +1389,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     final boolean apparentlyFirstQueuedIsExclusive() {
         Node h, s;
-	return (h = ((Node)head)) != null && (s = h.next.get()) != null && !s.isShared();
+	return (h = head) != null && (s = h.next) != null && !s.isShared();
     }
 
     /**
@@ -1398,8 +1399,8 @@ public abstract class AbstractQueuedSynchronizer
      */
     final boolean isFirst(Thread current) {
         Node h, s;
-	return ((h = ((Node)head)) == null ||
-                ((s = h.next.get()) != null && s.thread == current) ||
+	return ((h = head) == null ||
+                ((s = h.next) != null && s.thread == current) ||
                 fullIsFirst(current));
     }
 
@@ -1407,10 +1408,10 @@ public abstract class AbstractQueuedSynchronizer
         // same idea as fullGetFirstQueuedThread
         Node h, s;
         Thread firstThread = null;
-	if (((h = ((Node)head)) != null && (s = h.next.get()) != null &&
+	if (((h = head) != null && (s = h.next) != null &&
              s.prev == head && (firstThread = s.thread) != null))
             return firstThread == current;
-	Node t = ((Node)tail);
+	Node t = tail;
         while (t != null && t != head) {
             Thread tt = t.thread;
             if (tt != null)
@@ -1435,7 +1436,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final int getQueueLength() {
         int n = 0;
-        for (Node p = ((Node)tail); p != null; p = p.prev) {
+        for (Node p = tail; p != null; p = p.prev) {
             if (p.thread != null)
                 ++n;
         }
@@ -1455,7 +1456,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final Collection<Thread> getQueuedThreads() {
         ArrayList<Thread> list = new ArrayList<Thread>();
-        for (Node p = ((Node)tail); p != null; p = p.prev) {
+        for (Node p = tail; p != null; p = p.prev) {
             Thread t = p.thread;
             if (t != null)
                 list.add(t);
@@ -1473,7 +1474,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final Collection<Thread> getExclusiveQueuedThreads() {
         ArrayList<Thread> list = new ArrayList<Thread>();
-        for (Node p = ((Node)tail); p != null; p = p.prev) {
+        for (Node p = tail; p != null; p = p.prev) {
             if (!p.isShared()) {
                 Thread t = p.thread;
                 if (t != null)
@@ -1493,7 +1494,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final Collection<Thread> getSharedQueuedThreads() {
         ArrayList<Thread> list = new ArrayList<Thread>();
-        for (Node p = ((Node)tail); p != null; p = p.prev) {
+        for (Node p = tail; p != null; p = p.prev) {
             if (p.isShared()) {
                 Thread t = p.thread;
                 if (t != null)
@@ -1531,7 +1532,7 @@ public abstract class AbstractQueuedSynchronizer
     final boolean isOnSyncQueue(Node node) {
         if (node.waitStatus == Node.CONDITION || node.prev == null)
             return false;
-        if (node.next.get() != null) // If has successor, it must be on queue
+        if (node.next != null) // If has successor, it must be on queue
             return true;
         /*
          * node.prev can be non-null, but not yet on queue because
@@ -1550,7 +1551,7 @@ public abstract class AbstractQueuedSynchronizer
      * @return true if present
      */
     private boolean findNodeFromTail(Node node) {
-	Node t = ((Node)tail);
+	Node t = tail;
         for (;;) {
             if (t == node)
                 return true;
@@ -2162,14 +2163,26 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * IKVM specific. We use AtomicReferenceFieldUpdater instead of Unsafe primitives.
+     */
+    private static final AtomicReferenceFieldUpdater<AbstractQueuedSynchronizer, Node> headUpdater = 
+	AtomicReferenceFieldUpdater.newUpdater(AbstractQueuedSynchronizer.class, Node.class, "head");
+    private static final AtomicReferenceFieldUpdater<AbstractQueuedSynchronizer, Node> tailUpdater = 
+	AtomicReferenceFieldUpdater.newUpdater(AbstractQueuedSynchronizer.class, Node.class, "tail");
+
+    /**
      * CAS head field. Used only by enq.
      */
-    private final native boolean compareAndSetHead(Node update); // implemented in map.xml
+    private final boolean compareAndSetHead(Node update) {
+	return headUpdater.compareAndSet(this, null, update);
+    }
 
     /**
      * CAS tail field. Used only by enq.
      */
-    private final native boolean compareAndSetTail(Node expect, Node update); // implemented in map.xml
+    private final boolean compareAndSetTail(Node expect, Node update) {
+	return tailUpdater.compareAndSet(this, expect, update);
+    }
 
     /**
      * CAS waitStatus field of a node.
@@ -2183,6 +2196,6 @@ public abstract class AbstractQueuedSynchronizer
     private final static boolean compareAndSetNext(Node node,
                                                    Node expect,
                                                    Node update) {
-	return node.next.compareAndSet(expect, update);
+	return Node.nextUpdater.compareAndSet(node, expect, update);
     }
 }

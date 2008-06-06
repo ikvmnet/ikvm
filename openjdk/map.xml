@@ -1269,30 +1269,6 @@
           <ret />
         </body>
       </method>
-      <method name="compareAndSetHead" sig="(Ljava.util.concurrent.locks.AbstractQueuedSynchronizer$Node;)Z">
-        <body>
-          <ldarg_0 />
-          <ldflda class="java.util.concurrent.locks.AbstractQueuedSynchronizer" name="head" sig="Ljava.lang.Object;" />
-          <ldarg_1 />
-          <ldnull />
-          <call type="System.Threading.Interlocked" name="CompareExchange" sig="System.Object&amp;;System.Object;System.Object" />
-          <ldnull />
-          <ceq />
-          <ret />
-        </body>
-      </method>
-      <method name="compareAndSetTail" sig="(Ljava.util.concurrent.locks.AbstractQueuedSynchronizer$Node;Ljava.util.concurrent.locks.AbstractQueuedSynchronizer$Node;)Z">
-        <body>
-          <ldarg_0 />
-          <ldflda class="java.util.concurrent.locks.AbstractQueuedSynchronizer" name="tail" sig="Ljava.lang.Object;" />
-          <ldarg_2 />
-          <ldarg_1 />
-          <call type="System.Threading.Interlocked" name="CompareExchange" sig="System.Object&amp;;System.Object;System.Object" />
-          <ldarg_1 />
-          <ceq />
-          <ret />
-        </body>
-      </method>
       <method name="compareAndSetWaitStatus" sig="(Ljava.util.concurrent.locks.AbstractQueuedSynchronizer$Node;II)Z">
         <body>
           <ldarg_0 />
