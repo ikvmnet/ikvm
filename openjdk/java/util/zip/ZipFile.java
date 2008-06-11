@@ -201,12 +201,12 @@ public class ZipFile implements ZipConstants
       {
         try
           {
-	    raf.close();
+            raf.close();
           }
         catch (IOException _)
           {
           }
-	throw new ZipException("Not a valid zip file");
+        throw new ZipException("Not a valid zip file");
       }
   }
 
@@ -239,10 +239,10 @@ public class ZipFile implements ZipConstants
     long top = Math.max(0, pos - 65536);
     do
       {
-	if (pos < top)
-	  throw new ZipException
-	    ("central directory not found, probably not a zip file: " + name);
-	inp.seek(pos--);
+        if (pos < top)
+          throw new ZipException
+            ("central directory not found, probably not a zip file: " + name);
+        inp.seek(pos--);
       }
     while (inp.readLeInt() != ENDSIG);
     
@@ -258,40 +258,40 @@ public class ZipFile implements ZipConstants
     
     for (int i = 0; i < count; i++)
       {
-	if (inp.readLeInt() != CENSIG)
-	  throw new ZipException("Wrong Central Directory signature: " + name);
+        if (inp.readLeInt() != CENSIG)
+          throw new ZipException("Wrong Central Directory signature: " + name);
 
         inp.skip(6);
-	int method = inp.readLeShort();
-	int dostime = inp.readLeInt();
-	int crc = inp.readLeInt();
-	int csize = inp.readLeInt();
-	int size = inp.readLeInt();
-	int nameLen = inp.readLeShort();
-	int extraLen = inp.readLeShort();
-	int commentLen = inp.readLeShort();
+        int method = inp.readLeShort();
+        int dostime = inp.readLeInt();
+        int crc = inp.readLeInt();
+        int csize = inp.readLeInt();
+        int size = inp.readLeInt();
+        int nameLen = inp.readLeShort();
+        int extraLen = inp.readLeShort();
+        int commentLen = inp.readLeShort();
         inp.skip(8);
-	int offset = inp.readLeInt();
-	String name = inp.readString(nameLen);
+        int offset = inp.readLeInt();
+        String name = inp.readString(nameLen);
 
-	ZipEntry entry = new ZipEntry(name);
-	entry.setMethod(method);
-	entry.setCrc(crc & 0xffffffffL);
-	entry.setSize(size & 0xffffffffL);
-	entry.setCompressedSize(csize & 0xffffffffL);
-	entry.time = dostime;
-	if (extraLen > 0)
-	  {
-	    byte[] extra = new byte[extraLen];
-	    inp.readFully(extra);
-	    entry.setExtra(extra);
-	  }
-	if (commentLen > 0)
-	  {
+        ZipEntry entry = new ZipEntry(name);
+        entry.setMethod(method);
+        entry.setCrc(crc & 0xffffffffL);
+        entry.setSize(size & 0xffffffffL);
+        entry.setCompressedSize(csize & 0xffffffffL);
+        entry.time = dostime;
+        if (extraLen > 0)
+          {
+            byte[] extra = new byte[extraLen];
+            inp.readFully(extra);
+            entry.setExtra(extra);
+          }
+        if (commentLen > 0)
+          {
             entry.setComment(inp.readString(commentLen));
-	  }
-	entry.offset = offset;
-	entries.put(name, entry);
+          }
+        entry.offset = offset;
+        entries.put(name, entry);
       }
   }
 
@@ -310,9 +310,9 @@ public class ZipFile implements ZipConstants
 
     synchronized (raf)
       {
-	closed = true;
-	entries = null;
-	raf.close();
+        closed = true;
+        entries = null;
+        raf.close();
       }
   }
 
@@ -336,11 +336,11 @@ public class ZipFile implements ZipConstants
     
     try
       {
-	return new ZipEntryEnumeration(getEntries().values().iterator());
+        return new ZipEntryEnumeration(getEntries().values().iterator());
       }
     catch (IOException ioe)
       {
-	return EmptyEnumeration.getInstance();
+        return EmptyEnumeration.getInstance();
       }
   }
 
@@ -354,12 +354,12 @@ public class ZipFile implements ZipConstants
   {
     synchronized(raf)
       {
-	checkClosed();
+        checkClosed();
 
-	if (entries == null)
-	  readEntries();
+        if (entries == null)
+          readEntries();
 
-	return entries;
+        return entries;
       }
   }
 
@@ -378,16 +378,16 @@ public class ZipFile implements ZipConstants
 
     try
       {
-	LinkedHashMap<String, ZipEntry> entries = getEntries();
-	ZipEntry entry = entries.get(name);
+        LinkedHashMap<String, ZipEntry> entries = getEntries();
+        ZipEntry entry = entries.get(name);
         // If we didn't find it, maybe it's a directory.
         if (entry == null && !name.endsWith("/"))
-	  entry = entries.get(name + '/');
-	return entry != null ? new ZipEntry(entry, name) : null;
+          entry = entries.get(name + '/');
+        return entry != null ? new ZipEntry(entry, name) : null;
       }
     catch (IOException ioe)
       {
-	return null;
+        return null;
       }
   }
 
@@ -446,7 +446,7 @@ public class ZipFile implements ZipConstants
     switch (method)
       {
       case ZipOutputStream.STORED:
-	return inp;
+        return inp;
       case ZipOutputStream.DEFLATED:
         inp.addDummyByte();
         final Inflater inf = new Inflater(true);
@@ -463,7 +463,7 @@ public class ZipFile implements ZipConstants
           }
         };
       default:
-	throw new ZipException("Unknown compression method " + method);
+        throw new ZipException("Unknown compression method " + method);
       }
   }
   
@@ -486,11 +486,11 @@ public class ZipFile implements ZipConstants
     
     try
       {
-	return getEntries().size();
+        return getEntries().size();
       }
     catch (IOException ioe)
       {
-	return 0;
+        return 0;
       }
   }
   
@@ -577,14 +577,14 @@ public class ZipFile implements ZipConstants
     {
       long amount = end - (bufferOffset + pos);
       if (amount > Integer.MAX_VALUE)
-	return Integer.MAX_VALUE;
+        return Integer.MAX_VALUE;
       return (int) amount;
     }
     
     public int read() throws IOException
     {
       if (bufferOffset + pos >= end + dummyByteCount)
-	return -1;
+        return -1;
       if (pos == buffer.length)
         {
           bufferOffset += buffer.length;
@@ -598,11 +598,11 @@ public class ZipFile implements ZipConstants
     public int read(byte[] b, int off, int len) throws IOException
     {
       if (len > end + dummyByteCount - (bufferOffset + pos))
-	{
-	  len = (int) (end + dummyByteCount - (bufferOffset + pos));
-	  if (len == 0)
-	    return -1;
-	}
+        {
+          len = (int) (end + dummyByteCount - (bufferOffset + pos));
+          if (len == 0)
+            return -1;
+        }
 
       int totalBytesRead = Math.min(buffer.length - pos, len);
       System.arraycopy(buffer, pos, b, off, totalBytesRead);
@@ -629,9 +629,9 @@ public class ZipFile implements ZipConstants
     public long skip(long amount) throws IOException
     {
       if (amount < 0)
-	return 0;
+        return 0;
       if (amount > end - (bufferOffset + pos))
-	amount = end - (bufferOffset + pos);
+        amount = end - (bufferOffset + pos);
       seek(bufferOffset + pos + amount);
       return amount;
     }

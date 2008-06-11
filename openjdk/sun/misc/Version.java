@@ -30,25 +30,25 @@ public class Version {
 
 
     private static final String launcher_name =
-	"@@launcher_name@@";
+        "@@launcher_name@@";
 
     private static final String java_version =
-	"@@java_version@@";
-	
+        "@@java_version@@";
+        
     private static final String java_runtime_name =
-	"@@java_runtime_name@@";
+        "@@java_runtime_name@@";
 
     private static final String java_runtime_version =
-	"@@java_runtime_version@@";
+        "@@java_runtime_version@@";
 
     static {
-	init();
+        init();
     }
 
     public static void init() {
-	//System.setProperty("java.version", java_version);
-	//System.setProperty("java.runtime.version", java_runtime_version);
-	//System.setProperty("java.runtime.name", java_runtime_name);
+        //System.setProperty("java.version", java_version);
+        //System.setProperty("java.runtime.version", java_runtime_version);
+        //System.setProperty("java.runtime.name", java_runtime_name);
     }
 
     private static boolean versionsInitialized = false;
@@ -71,26 +71,26 @@ public class Version {
      * stdout.
      */
     public static void print() {
-	print(System.err);
+        print(System.err);
     }
 
     /**
      * Give a stream, it will print version info on it.
      */
     public static void print(PrintStream ps) {
-	/* First line: platform version. */
-	ps.println(launcher_name + " version \"" + java_version + "\"");
+        /* First line: platform version. */
+        ps.println(launcher_name + " version \"" + java_version + "\"");
 
-	/* Second line: runtime version (ie, libraries). */
-	ps.println(java_runtime_name + " (build " +
-			   java_runtime_version + ")");
+        /* Second line: runtime version (ie, libraries). */
+        ps.println(java_runtime_name + " (build " +
+                           java_runtime_version + ")");
 
-	/* Third line: JVM information. */
-	String java_vm_name    = System.getProperty("java.vm.name");
-	String java_vm_version = System.getProperty("java.vm.version");
-	String java_vm_info    = System.getProperty("java.vm.info");
-	ps.println(java_vm_name + " (build " + java_vm_version + ", " +
-		   java_vm_info + ")");
+        /* Third line: JVM information. */
+        String java_vm_name    = System.getProperty("java.vm.name");
+        String java_vm_version = System.getProperty("java.vm.version");
+        String java_vm_info    = System.getProperty("java.vm.info");
+        ps.println(java_vm_name + " (build " + java_vm_version + ", " +
+                   java_vm_info + ")");
     }
 
     /**
@@ -250,7 +250,7 @@ public class Version {
             // new JVM_GetVersionInfo is added.
             // valid format of the version string is:
             // n.n.n[_uu[c]][-<identifer>]-bxx
-	    CharSequence cs = System.getProperty("java.vm.version");
+            CharSequence cs = System.getProperty("java.vm.version");
             if (cs.length() >= 5 && 
                 Character.isDigit(cs.charAt(0)) && cs.charAt(1) == '.' && 
                 Character.isDigit(cs.charAt(2)) && cs.charAt(3) == '.' &&

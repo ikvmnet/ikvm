@@ -45,33 +45,33 @@ public final class Unsafe
     @ikvm.internal.HasCallerID
     public static Unsafe getUnsafe()
     {
-	Class c = sun.reflect.Reflection.getCallerClass(2);
+        Class c = sun.reflect.Reflection.getCallerClass(2);
         if(c.getClassLoader() != null)
         {
             throw new SecurityException("Unsafe");
         }
-	return theUnsafe;
+        return theUnsafe;
     }
 
     // NOTE we have a really lame (and slow) implementation!
     public long objectFieldOffset(Field field)
     {
-	if(Modifier.isStatic(field.getModifiers()))
-	{
-	    throw new IllegalArgumentException();
-	}
-	return fieldOffset(field);
+        if(Modifier.isStatic(field.getModifiers()))
+        {
+            throw new IllegalArgumentException();
+        }
+        return fieldOffset(field);
     }
 
     public int fieldOffset(Field original)
     {
-	Field copy = ReflectHelper.copyFieldAndMakeAccessible(original);
-	synchronized(fields)
-	{
-	    int id = fields.size();
-	    fields.add(copy);
-	    return id;
-	}
+        Field copy = ReflectHelper.copyFieldAndMakeAccessible(original);
+        synchronized(fields)
+        {
+            int id = fields.size();
+            fields.add(copy);
+            return id;
+        }
     }
 
     public int arrayBaseOffset(Class c)
@@ -113,19 +113,19 @@ public final class Unsafe
             Field field = getField(offset);
             synchronized(field)
             {
-		try
-		{
-		    if(field.get(obj) == expect)
-		    {
-			field.set(obj, update);
-			return true;
-		    }
-		    return false;
-		}
-		catch(IllegalAccessException x)
-		{
-		    throw (InternalError)new InternalError().initCause(x);
-		}
+                try
+                {
+                    if(field.get(obj) == expect)
+                    {
+                        field.set(obj, update);
+                        return true;
+                    }
+                    return false;
+                }
+                catch(IllegalAccessException x)
+                {
+                    throw (InternalError)new InternalError().initCause(x);
+                }
             }
         }
     }
@@ -144,14 +144,14 @@ public final class Unsafe
             Field field = getField(offset);
             synchronized(field)
             {
-		try
-		{
+                try
+                {
                     field.set(obj, newValue);
-		}
-		catch(IllegalAccessException x)
-		{
-		    throw (InternalError)new InternalError().initCause(x);
-		}
+                }
+                catch(IllegalAccessException x)
+                {
+                    throw (InternalError)new InternalError().initCause(x);
+                }
             }
         }
     }
@@ -175,14 +175,14 @@ public final class Unsafe
             Field field = getField(offset);
             synchronized(field)
             {
-		try
-		{
-		    return field.get(obj);
-		}
-		catch(IllegalAccessException x)
-		{
-		    throw (InternalError)new InternalError().initCause(x);
-		}
+                try
+                {
+                    return field.get(obj);
+                }
+                catch(IllegalAccessException x)
+                {
+                    throw (InternalError)new InternalError().initCause(x);
+                }
             }
         }
     }
@@ -208,19 +208,19 @@ public final class Unsafe
             Field field = getField(offset);
             synchronized(field)
             {
-		try
-		{
-		    if(field.getInt(obj) == expect)
-		    {
-			field.setInt(obj, update);
-			return true;
-		    }
-		    return false;
-		}
-		catch(IllegalAccessException x)
-		{
-		    throw (InternalError)new InternalError().initCause(x);
-		}
+                try
+                {
+                    if(field.getInt(obj) == expect)
+                    {
+                        field.setInt(obj, update);
+                        return true;
+                    }
+                    return false;
+                }
+                catch(IllegalAccessException x)
+                {
+                    throw (InternalError)new InternalError().initCause(x);
+                }
             }
         }
     }
@@ -239,14 +239,14 @@ public final class Unsafe
             Field field = getField(offset);
             synchronized(field)
             {
-		try
-		{
+                try
+                {
                     field.setInt(obj, newValue);
-		}
-		catch(IllegalAccessException x)
-		{
-		    throw (InternalError)new InternalError().initCause(x);
-		}
+                }
+                catch(IllegalAccessException x)
+                {
+                    throw (InternalError)new InternalError().initCause(x);
+                }
             }
         }
     }
@@ -270,14 +270,14 @@ public final class Unsafe
             Field field = getField(offset);
             synchronized(field)
             {
-		try
-		{
+                try
+                {
                     return field.getInt(obj);
-		}
-		catch(IllegalAccessException x)
-		{
-		    throw (InternalError)new InternalError().initCause(x);
-		}
+                }
+                catch(IllegalAccessException x)
+                {
+                    throw (InternalError)new InternalError().initCause(x);
+                }
             }
         }
     }
@@ -303,19 +303,19 @@ public final class Unsafe
             Field field = getField(offset);
             synchronized(field)
             {
-		try
-		{
-		    if(field.getLong(obj) == expect)
-		    {
-			field.setLong(obj, update);
-			return true;
-		    }
-		    return false;
-		}
-		catch(IllegalAccessException x)
-		{
-		    throw (InternalError)new InternalError().initCause(x);
-		}
+                try
+                {
+                    if(field.getLong(obj) == expect)
+                    {
+                        field.setLong(obj, update);
+                        return true;
+                    }
+                    return false;
+                }
+                catch(IllegalAccessException x)
+                {
+                    throw (InternalError)new InternalError().initCause(x);
+                }
             }
         }
     }
@@ -334,14 +334,14 @@ public final class Unsafe
             Field field = getField(offset);
             synchronized(field)
             {
-		try
-		{
+                try
+                {
                     field.setLong(obj, newValue);
-		}
-		catch(IllegalAccessException x)
-		{
-		    throw (InternalError)new InternalError().initCause(x);
-		}
+                }
+                catch(IllegalAccessException x)
+                {
+                    throw (InternalError)new InternalError().initCause(x);
+                }
             }
         }
     }
@@ -365,358 +365,358 @@ public final class Unsafe
             Field field = getField(offset);
             synchronized(field)
             {
-		try
-		{
+                try
+                {
                     return field.getLong(obj);
-		}
-		catch(IllegalAccessException x)
-		{
-		    throw (InternalError)new InternalError().initCause(x);
-		}
+                }
+                catch(IllegalAccessException x)
+                {
+                    throw (InternalError)new InternalError().initCause(x);
+                }
             }
         }
     }
 
     public void putBoolean(Object obj, long offset, boolean newValue)
     {
-	if (obj instanceof boolean[])
-	{
-	    ((boolean[])obj)[(int)offset] = newValue;
-	}
-	else
-	{
-	    try
-	    {
-		getField(offset).setBoolean(obj, newValue);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof boolean[])
+        {
+            ((boolean[])obj)[(int)offset] = newValue;
+        }
+        else
+        {
+            try
+            {
+                getField(offset).setBoolean(obj, newValue);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public boolean getBoolean(Object obj, long offset)
     {
-	if (obj instanceof boolean[])
-	{
-	    return ((boolean[])obj)[(int)offset];
-	}
-	else
-	{
-	    try
-	    {
-		return getField(offset).getBoolean(obj);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof boolean[])
+        {
+            return ((boolean[])obj)[(int)offset];
+        }
+        else
+        {
+            try
+            {
+                return getField(offset).getBoolean(obj);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public void putByte(Object obj, long offset, byte newValue)
     {
-	if (obj instanceof byte[])
-	{
-	    ((byte[])obj)[(int)offset] = newValue;
-	}
-	else
-	{
-	    try
-	    {
-		getField(offset).setByte(obj, newValue);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof byte[])
+        {
+            ((byte[])obj)[(int)offset] = newValue;
+        }
+        else
+        {
+            try
+            {
+                getField(offset).setByte(obj, newValue);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public byte getByte(Object obj, long offset)
     {
-	if (obj instanceof byte[])
-	{
-	    return ((byte[])obj)[(int)offset];
-	}
-	else
-	{
-	    try
-	    {
-		return getField(offset).getByte(obj);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof byte[])
+        {
+            return ((byte[])obj)[(int)offset];
+        }
+        else
+        {
+            try
+            {
+                return getField(offset).getByte(obj);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public void putChar(Object obj, long offset, char newValue)
     {
-	if (obj instanceof char[])
-	{
-	    ((char[])obj)[(int)offset] = newValue;
-	}
-	else
-	{
-	    try
-	    {
-		getField(offset).setChar(obj, newValue);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof char[])
+        {
+            ((char[])obj)[(int)offset] = newValue;
+        }
+        else
+        {
+            try
+            {
+                getField(offset).setChar(obj, newValue);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public char getChar(Object obj, long offset)
     {
-	if (obj instanceof char[])
-	{
-	    return ((char[])obj)[(int)offset];
-	}
-	else
-	{
-	    try
-	    {
-		return getField(offset).getChar(obj);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof char[])
+        {
+            return ((char[])obj)[(int)offset];
+        }
+        else
+        {
+            try
+            {
+                return getField(offset).getChar(obj);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public void putShort(Object obj, long offset, short newValue)
     {
-	if (obj instanceof short[])
-	{
-	    ((short[])obj)[(int)offset] = newValue;
-	}
-	else
-	{
-	    try
-	    {
-		getField(offset).setShort(obj, newValue);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof short[])
+        {
+            ((short[])obj)[(int)offset] = newValue;
+        }
+        else
+        {
+            try
+            {
+                getField(offset).setShort(obj, newValue);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public short getShort(Object obj, long offset)
     {
-	if (obj instanceof short[])
-	{
-	    return ((short[])obj)[(int)offset];
-	}
-	else
-	{
-	    try
-	    {
-		return getField(offset).getShort(obj);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof short[])
+        {
+            return ((short[])obj)[(int)offset];
+        }
+        else
+        {
+            try
+            {
+                return getField(offset).getShort(obj);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public void putInt(Object obj, long offset, int newValue)
     {
-	if (obj instanceof int[])
-	{
-	    ((int[])obj)[(int)offset] = newValue;
-	}
-	else
-	{
-	    try
-	    {
-		getField(offset).setInt(obj, newValue);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof int[])
+        {
+            ((int[])obj)[(int)offset] = newValue;
+        }
+        else
+        {
+            try
+            {
+                getField(offset).setInt(obj, newValue);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public int getInt(Object obj, long offset)
     {
-	if (obj instanceof int[])
-	{
-	    return ((int[])obj)[(int)offset];
-	}
-	else
-	{
-	    try
-	    {
-		return getField(offset).getInt(obj);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof int[])
+        {
+            return ((int[])obj)[(int)offset];
+        }
+        else
+        {
+            try
+            {
+                return getField(offset).getInt(obj);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public void putFloat(Object obj, long offset, float newValue)
     {
-	if (obj instanceof float[])
-	{
-	    ((float[])obj)[(int)offset] = newValue;
-	}
-	else
-	{
-	    try
-	    {
-		getField(offset).setFloat(obj, newValue);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof float[])
+        {
+            ((float[])obj)[(int)offset] = newValue;
+        }
+        else
+        {
+            try
+            {
+                getField(offset).setFloat(obj, newValue);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public float getFloat(Object obj, long offset)
     {
-	if (obj instanceof float[])
-	{
-	    return ((float[])obj)[(int)offset];
-	}
-	else
-	{
-	    try
-	    {
-		return getField(offset).getFloat(obj);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof float[])
+        {
+            return ((float[])obj)[(int)offset];
+        }
+        else
+        {
+            try
+            {
+                return getField(offset).getFloat(obj);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public void putLong(Object obj, long offset, long newValue)
     {
-	if (obj instanceof long[])
-	{
-	    ((long[])obj)[(int)offset] = newValue;
-	}
-	else
-	{
-	    try
-	    {
-		getField(offset).setLong(obj, newValue);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof long[])
+        {
+            ((long[])obj)[(int)offset] = newValue;
+        }
+        else
+        {
+            try
+            {
+                getField(offset).setLong(obj, newValue);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public long getLong(Object obj, long offset)
     {
-	if (obj instanceof long[])
-	{
-	    return ((long[])obj)[(int)offset];
-	}
-	else
-	{
-	    try
-	    {
-		return getField(offset).getLong(obj);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof long[])
+        {
+            return ((long[])obj)[(int)offset];
+        }
+        else
+        {
+            try
+            {
+                return getField(offset).getLong(obj);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public void putDouble(Object obj, long offset, double newValue)
     {
-	if (obj instanceof double[])
-	{
-	    ((double[])obj)[(int)offset] = newValue;
-	}
-	else
-	{
-	    try
-	    {
-		getField(offset).setDouble(obj, newValue);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof double[])
+        {
+            ((double[])obj)[(int)offset] = newValue;
+        }
+        else
+        {
+            try
+            {
+                getField(offset).setDouble(obj, newValue);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public double getDouble(Object obj, long offset)
     {
-	if (obj instanceof double[])
-	{
-	    return ((double[])obj)[(int)offset];
-	}
-	else
-	{
-	    try
-	    {
-		return getField(offset).getDouble(obj);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof double[])
+        {
+            return ((double[])obj)[(int)offset];
+        }
+        else
+        {
+            try
+            {
+                return getField(offset).getDouble(obj);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public void putObject(Object obj, long offset, Object newValue)
     {
-	if (obj instanceof Object[])
-	{
-	    ((Object[])obj)[(int)offset] = newValue;
-	}
-	else
-	{
-	    try
-	    {
-		getField(offset).set(obj, newValue);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof Object[])
+        {
+            ((Object[])obj)[(int)offset] = newValue;
+        }
+        else
+        {
+            try
+            {
+                getField(offset).set(obj, newValue);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public Object getObject(Object obj, long offset)
     {
-	if (obj instanceof Object[])
-	{
-	    return ((Object[])obj)[(int)offset];
-	}
-	else
-	{
-	    try
-	    {
-		return getField(offset).get(obj);
-	    }
-	    catch (IllegalAccessException x)
-	    {
-		throw (InternalError)new InternalError().initCause(x);
-	    }
-	}
+        if (obj instanceof Object[])
+        {
+            return ((Object[])obj)[(int)offset];
+        }
+        else
+        {
+            try
+            {
+                return getField(offset).get(obj);
+            }
+            catch (IllegalAccessException x)
+            {
+                throw (InternalError)new InternalError().initCause(x);
+            }
+        }
     }
 
     public native void throwException(Throwable t);
@@ -727,12 +727,12 @@ public final class Unsafe
 
     public int addressSize()
     {
-	return IntPtr.get_Size();
+        return IntPtr.get_Size();
     }
 
     public int pageSize()
     {
-	return 4096;
+        return 4096;
     }
 
     // The really unsafe methods start here. They are all @Internal to prevent
@@ -741,21 +741,21 @@ public final class Unsafe
     @Internal
     public long allocateMemory(long bytes)
     {
-	try
-	{
-	    if (false) throw new cli.System.OutOfMemoryException();
-	    return Marshal.AllocHGlobal(IntPtr.op_Explicit(bytes)).ToInt64();
-	}
-	catch (cli.System.OutOfMemoryException x)
-	{
-	    throw new OutOfMemoryError(x.get_Message());
-	}
+        try
+        {
+            if (false) throw new cli.System.OutOfMemoryException();
+            return Marshal.AllocHGlobal(IntPtr.op_Explicit(bytes)).ToInt64();
+        }
+        catch (cli.System.OutOfMemoryException x)
+        {
+            throw new OutOfMemoryError(x.get_Message());
+        }
     }
 
     @Internal
     public void freeMemory(long address)
     {
-	Marshal.FreeHGlobal(IntPtr.op_Explicit(address));
+        Marshal.FreeHGlobal(IntPtr.op_Explicit(address));
     }
 
     @Internal
@@ -797,24 +797,24 @@ public final class Unsafe
     @Internal
     public float getFloat(long address)
     {
-	return Float.intBitsToFloat(getInt(address));
+        return Float.intBitsToFloat(getInt(address));
     }
 
     @Internal
     public void putFloat(long address, float x)
     {
-	putInt(address, Float.floatToIntBits(x));
+        putInt(address, Float.floatToIntBits(x));
     }
 
     @Internal
     public double getDouble(long address)
     {
-	return Double.longBitsToDouble(getLong(address));
+        return Double.longBitsToDouble(getLong(address));
     }
 
     @Internal
     public void putDouble(long address, double x)
     {
-	putLong(address, Double.doubleToLongBits(x));
+        putLong(address, Double.doubleToLongBits(x));
     }
 }

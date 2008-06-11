@@ -54,19 +54,19 @@ import java.lang.reflect.Modifier;
  * @see java.lang.Class#getConstructor(Class[])
  * @see java.lang.Class#getDeclaredConstructors()
  *
- * @author	Kenneth Russell
- * @author	Nakul Saraiya
+ * @author      Kenneth Russell
+ * @author      Nakul Saraiya
  */
 public final
     class Constructor<T> extends AccessibleObject implements 
                                                     GenericDeclaration, 
                                                     Member {
 
-    private Class<T>		clazz;
-    private int			slot;
-    private Class[]		parameterTypes;
-    private Class[]		exceptionTypes;
-    private int			modifiers;
+    private Class<T>            clazz;
+    private int                 slot;
+    private Class[]             parameterTypes;
+    private Class[]             exceptionTypes;
+    private int                 modifiers;
     // Generics and annotations support
     private transient String    signature;
     // generic info repository; lazily initialized
@@ -82,25 +82,25 @@ public final
 
     // Modifiers that can be applied to a constructor in source code
     private static final int LANGUAGE_MODIFIERS = 
-	Modifier.PUBLIC		| Modifier.PROTECTED	| Modifier.PRIVATE;
+        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
 
     // Generics infrastructure
     // Accessor for factory
     private GenericsFactory getFactory() {
-	// create scope and factory
-	return CoreReflectionFactory.make(this, ConstructorScope.make(this)); 
+        // create scope and factory
+        return CoreReflectionFactory.make(this, ConstructorScope.make(this)); 
     }
 
     // Accessor for generic info repository
     private ConstructorRepository getGenericInfo() {
-	// lazily initialize repository if necessary
-	if (genericInfo == null) {
-	    // create and cache generic info repository
-	    genericInfo = 
-		ConstructorRepository.make(getSignature(), 
-					   getFactory());
-	}
-	return genericInfo; //return cached repository
+        // lazily initialize repository if necessary
+        if (genericInfo == null) {
+            // create and cache generic info repository
+            genericInfo = 
+                ConstructorRepository.make(getSignature(), 
+                                           getFactory());
+        }
+        return genericInfo; //return cached repository
     }
 
     private volatile ConstructorAccessor constructorAccessor;
@@ -145,8 +145,8 @@ public final
         // objects be fabricated for each reflective call on Class
         // objects.)
         Constructor<T> res = new Constructor<T>(clazz,
-						parameterTypes,
-						exceptionTypes, modifiers, slot,
+                                                parameterTypes,
+                                                exceptionTypes, modifiers, slot,
                                                 signature,
                                                 null,
                                                 null);
@@ -161,7 +161,7 @@ public final
      * the constructor represented by this <code>Constructor</code> object.
      */
     public Class<T> getDeclaringClass() {
-	return clazz;
+        return clazz;
     }
 
     /**
@@ -170,7 +170,7 @@ public final
      * class.
      */
     public String getName() {
-	return getDeclaringClass().getName();
+        return getDeclaringClass().getName();
     }
 
     /**
@@ -181,7 +181,7 @@ public final
      * @see Modifier
      */
     public int getModifiers() {
-	return modifiers;
+        return modifiers;
     }
 
     /**
@@ -201,7 +201,7 @@ public final
      */
     public TypeVariable<Constructor<T>>[] getTypeParameters() {
       if (getSignature() != null) {
-	return (TypeVariable<Constructor<T>>[])getGenericInfo().getTypeParameters();
+        return (TypeVariable<Constructor<T>>[])getGenericInfo().getTypeParameters();
       } else
           return (TypeVariable<Constructor<T>>[])new TypeVariable[0];
     }
@@ -217,7 +217,7 @@ public final
      * represents
      */
     public Class<?>[] getParameterTypes() {
-	return (Class<?>[]) parameterTypes.clone();
+        return (Class<?>[]) parameterTypes.clone();
     }
 
 
@@ -248,10 +248,10 @@ public final
      * @since 1.5
      */
     public Type[] getGenericParameterTypes() {
-	if (getSignature() != null)
-	    return getGenericInfo().getParameterTypes();
-	else
-	    return getParameterTypes();
+        if (getSignature() != null)
+            return getGenericInfo().getParameterTypes();
+        else
+            return getParameterTypes();
     }
 
 
@@ -265,7 +265,7 @@ public final
      * constructor this object represents
      */
     public Class<?>[] getExceptionTypes() {
-	return (Class<?>[])exceptionTypes.clone();
+        return (Class<?>[])exceptionTypes.clone();
     }
 
 
@@ -295,12 +295,12 @@ public final
      * @since 1.5
      */
       public Type[] getGenericExceptionTypes() {
-	  Type[] result;
-	  if (getSignature() != null && 
-	      ( (result = getGenericInfo().getExceptionTypes()).length > 0  ))
-	      return result;
-	  else
-	      return getExceptionTypes();
+          Type[] result;
+          if (getSignature() != null && 
+              ( (result = getGenericInfo().getExceptionTypes()).length > 0  ))
+              return result;
+          else
+              return getExceptionTypes();
       }
 
     /**
@@ -310,22 +310,22 @@ public final
      * same formal parameter types.
      */
     public boolean equals(Object obj) {
-	if (obj != null && obj instanceof Constructor) {
-	    Constructor other = (Constructor)obj;
-	    if (getDeclaringClass() == other.getDeclaringClass()) {
-		/* Avoid unnecessary cloning */
-		Class[] params1 = parameterTypes;
-		Class[] params2 = other.parameterTypes;
-		if (params1.length == params2.length) {
-		    for (int i = 0; i < params1.length; i++) {
-			if (params1[i] != params2[i])
-			    return false;
-		    }
-		    return true;
-		}
-	    }
-	}
-	return false;
+        if (obj != null && obj instanceof Constructor) {
+            Constructor other = (Constructor)obj;
+            if (getDeclaringClass() == other.getDeclaringClass()) {
+                /* Avoid unnecessary cloning */
+                Class[] params1 = parameterTypes;
+                Class[] params2 = other.parameterTypes;
+                if (params1.length == params2.length) {
+                    for (int i = 0; i < params1.length; i++) {
+                        if (params1[i] != params2[i])
+                            return false;
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -334,7 +334,7 @@ public final
      * declaring class name.
      */
     public int hashCode() {
-	return getDeclaringClass().getName().hashCode();
+        return getDeclaringClass().getName().hashCode();
     }
 
     /**
@@ -353,34 +353,34 @@ public final
      * constructor has default (package) access.
      */
     public String toString() {
-	try {
-	    StringBuffer sb = new StringBuffer();
-	    int mod = getModifiers() & LANGUAGE_MODIFIERS;
-	    if (mod != 0) {
-		sb.append(Modifier.toString(mod) + " ");
-	    }
-	    sb.append(Field.getTypeName(getDeclaringClass()));
-	    sb.append("(");
-	    Class[] params = parameterTypes; // avoid clone
-	    for (int j = 0; j < params.length; j++) {
-		sb.append(Field.getTypeName(params[j]));
-		if (j < (params.length - 1))
-		    sb.append(",");
-	    }
-	    sb.append(")");
-	    Class[] exceptions = exceptionTypes; // avoid clone
-	    if (exceptions.length > 0) {
-		sb.append(" throws ");
-		for (int k = 0; k < exceptions.length; k++) {
-		    sb.append(exceptions[k].getName());
-		    if (k < (exceptions.length - 1))
-			sb.append(",");
-		}
-	    }
-	    return sb.toString();
-	} catch (Exception e) {
-	    return "<" + e + ">";
-	}
+        try {
+            StringBuffer sb = new StringBuffer();
+            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            if (mod != 0) {
+                sb.append(Modifier.toString(mod) + " ");
+            }
+            sb.append(Field.getTypeName(getDeclaringClass()));
+            sb.append("(");
+            Class[] params = parameterTypes; // avoid clone
+            for (int j = 0; j < params.length; j++) {
+                sb.append(Field.getTypeName(params[j]));
+                if (j < (params.length - 1))
+                    sb.append(",");
+            }
+            sb.append(")");
+            Class[] exceptions = exceptionTypes; // avoid clone
+            if (exceptions.length > 0) {
+                sb.append(" throws ");
+                for (int k = 0; k < exceptions.length; k++) {
+                    sb.append(exceptions[k].getName());
+                    if (k < (exceptions.length - 1))
+                        sb.append(",");
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "<" + e + ">";
+        }
     }
 
     /**
@@ -417,56 +417,56 @@ public final
      * @since 1.5
      */
     public String toGenericString() {
-	try {
-	    StringBuilder sb = new StringBuilder();
-	    int mod = getModifiers() & LANGUAGE_MODIFIERS;
-	    if (mod != 0) {
-		sb.append(Modifier.toString(mod) + " ");
-	    }
-	    Type[] typeparms = getTypeParameters();
-	    if (typeparms.length > 0) {
-		boolean first = true;
-		sb.append("<");
-		for(Type typeparm: typeparms) {
-		    if (!first)
-			sb.append(",");
-		    if (typeparm instanceof Class)
-			sb.append(((Class)typeparm).getName());
-		    else
-			sb.append(typeparm.toString());
-		    first = false;
-		}
-		sb.append("> ");
-	    }
-	    sb.append(Field.getTypeName(getDeclaringClass()));
-	    sb.append("(");
-	    Type[] params = getGenericParameterTypes();
-	    for (int j = 0; j < params.length; j++) {
-		String param = (params[j] instanceof Class)?
-		    Field.getTypeName((Class)params[j]):
-		    (params[j].toString());
-		if (isVarArgs() && (j == params.length - 1)) // replace T[] with T...
-		    param = param.replaceFirst("\\[\\]$", "...");
-		sb.append(param);
-		if (j < (params.length - 1))
-		    sb.append(",");
-	    }
-	    sb.append(")");
-	    Type[] exceptions = getGenericExceptionTypes();
-	    if (exceptions.length > 0) {
-		sb.append(" throws ");
-		for (int k = 0; k < exceptions.length; k++) {
-		    sb.append((exceptions[k] instanceof Class)?
-			      ((Class)exceptions[k]).getName():
-			      exceptions[k].toString());
-		    if (k < (exceptions.length - 1))
-			sb.append(",");
-		}
-	    }
-	    return sb.toString();
-	} catch (Exception e) {
-	    return "<" + e + ">";
-	}
+        try {
+            StringBuilder sb = new StringBuilder();
+            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            if (mod != 0) {
+                sb.append(Modifier.toString(mod) + " ");
+            }
+            Type[] typeparms = getTypeParameters();
+            if (typeparms.length > 0) {
+                boolean first = true;
+                sb.append("<");
+                for(Type typeparm: typeparms) {
+                    if (!first)
+                        sb.append(",");
+                    if (typeparm instanceof Class)
+                        sb.append(((Class)typeparm).getName());
+                    else
+                        sb.append(typeparm.toString());
+                    first = false;
+                }
+                sb.append("> ");
+            }
+            sb.append(Field.getTypeName(getDeclaringClass()));
+            sb.append("(");
+            Type[] params = getGenericParameterTypes();
+            for (int j = 0; j < params.length; j++) {
+                String param = (params[j] instanceof Class)?
+                    Field.getTypeName((Class)params[j]):
+                    (params[j].toString());
+                if (isVarArgs() && (j == params.length - 1)) // replace T[] with T...
+                    param = param.replaceFirst("\\[\\]$", "...");
+                sb.append(param);
+                if (j < (params.length - 1))
+                    sb.append(",");
+            }
+            sb.append(")");
+            Type[] exceptions = getGenericExceptionTypes();
+            if (exceptions.length > 0) {
+                sb.append(" throws ");
+                for (int k = 0; k < exceptions.length; k++) {
+                    sb.append((exceptions[k] instanceof Class)?
+                              ((Class)exceptions[k]).getName():
+                              exceptions[k].toString());
+                    if (k < (exceptions.length - 1))
+                        sb.append(",");
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "<" + e + ">";
+        }
     }
 
     /**
@@ -519,7 +519,7 @@ public final
      */
     @ikvm.internal.HasCallerID
     public T newInstance(Object ... initargs)
-	throws InstantiationException, IllegalAccessException,
+        throws InstantiationException, IllegalAccessException,
                IllegalArgumentException, InvocationTargetException
     {
         if (!override) {
@@ -531,8 +531,8 @@ public final
                 }
             }
         }
-	if ((clazz.getModifiers() & Modifier.ENUM) != 0) 
-	    throw new IllegalArgumentException("Cannot reflectively create enum objects");
+        if ((clazz.getModifiers() & Modifier.ENUM) != 0) 
+            throw new IllegalArgumentException("Cannot reflectively create enum objects");
         if (constructorAccessor == null) acquireConstructorAccessor();
         return (T) constructorAccessor.newInstance(initargs);
     }
@@ -602,7 +602,7 @@ public final
     }
 
    String getSignature() {
-	    return signature;
+            return signature;
    }
 
     byte[] getRawAnnotations() {
@@ -664,23 +664,23 @@ public final
         if (result == null)
             return new Annotation[numParameters][0];
         if (result.length != numParameters) {
-	    Class<?> declaringClass = getDeclaringClass();
-	    if (declaringClass.isEnum() || 
-		declaringClass.isAnonymousClass() || 
-		declaringClass.isLocalClass() )
-		; // Can't do reliable parameter counting
-	    else { 
-		if (!declaringClass.isMemberClass() || // top-level 
-		    // Check for the enclosing instance parameter for
-		    // non-static member classes
-		    (declaringClass.isMemberClass() && 
-		     ((declaringClass.getModifiers() & Modifier.STATIC) == 0)  && 
-		     result.length + 1 != numParameters) ) {
-		    throw new AnnotationFormatError(
-			      "Parameter annotations don't match number of parameters");
-		}
-	    }
-	}
+            Class<?> declaringClass = getDeclaringClass();
+            if (declaringClass.isEnum() || 
+                declaringClass.isAnonymousClass() || 
+                declaringClass.isLocalClass() )
+                ; // Can't do reliable parameter counting
+            else { 
+                if (!declaringClass.isMemberClass() || // top-level 
+                    // Check for the enclosing instance parameter for
+                    // non-static member classes
+                    (declaringClass.isMemberClass() && 
+                     ((declaringClass.getModifiers() & Modifier.STATIC) == 0)  && 
+                     result.length + 1 != numParameters) ) {
+                    throw new AnnotationFormatError(
+                              "Parameter annotations don't match number of parameters");
+                }
+            }
+        }
         return result;
     }
 }

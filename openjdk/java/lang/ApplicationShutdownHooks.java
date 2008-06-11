@@ -41,15 +41,15 @@ class ApplicationShutdownHooks implements Runnable {
     private static IdentityHashMap<Thread, Thread> hooks = new IdentityHashMap<Thread, Thread>();
 
     static {
-	// [IKVM] make sure that we are registered with the shutdown process
-	Shutdown.init();
+        // [IKVM] make sure that we are registered with the shutdown process
+        Shutdown.init();
     }
 
     static synchronized ApplicationShutdownHooks hook() {
-	if (instance == null)
-	    instance = new ApplicationShutdownHooks();
+        if (instance == null)
+            instance = new ApplicationShutdownHooks();
 
-	return instance;
+        return instance;
     }
 
     private ApplicationShutdownHooks() {}
@@ -58,14 +58,14 @@ class ApplicationShutdownHooks implements Runnable {
      * but does not do any security checks.
      */
     static synchronized void add(Thread hook) {
-	if(hooks == null)
-	    throw new IllegalStateException("Shutdown in progress");
+        if(hooks == null)
+            throw new IllegalStateException("Shutdown in progress");
 
-	if (hook.isAlive())
-	    throw new IllegalArgumentException("Hook already running");
+        if (hook.isAlive())
+            throw new IllegalArgumentException("Hook already running");
 
-	if (hooks.containsKey(hook))
-	    throw new IllegalArgumentException("Hook previously registered");
+        if (hooks.containsKey(hook))
+            throw new IllegalArgumentException("Hook previously registered");
 
         hooks.put(hook, hook);
     }
@@ -74,13 +74,13 @@ class ApplicationShutdownHooks implements Runnable {
      * does not do any security checks.
      */
     static synchronized boolean remove(Thread hook) {
-	if(hooks == null)
-	    throw new IllegalStateException("Shutdown in progress");
+        if(hooks == null)
+            throw new IllegalStateException("Shutdown in progress");
 
-	if (hook == null) 
-	    throw new NullPointerException();
+        if (hook == null) 
+            throw new NullPointerException();
 
-	return hooks.remove(hook) != null;
+        return hooks.remove(hook) != null;
     }
 
     /* Iterates over all application hooks creating a new thread for each
@@ -88,20 +88,20 @@ class ApplicationShutdownHooks implements Runnable {
      * them to finish.
      */
     public void run() {
-	Collection<Thread> threads;
-	synchronized(ApplicationShutdownHooks.class) {
-	    threads = hooks.keySet();
-	    hooks = null;
-	}
+        Collection<Thread> threads;
+        synchronized(ApplicationShutdownHooks.class) {
+            threads = hooks.keySet();
+            hooks = null;
+        }
 
-	for (Thread hook : threads) {
-	    hook.start();
-	}
-	for (Thread hook : threads) {
-	    try {
-		hook.join();
-	    } catch (InterruptedException x) { }
-	}
+        for (Thread hook : threads) {
+            hook.start();
+        }
+        for (Thread hook : threads) {
+            try {
+                hook.join();
+            } catch (InterruptedException x) { }
+        }
     }
 }
 

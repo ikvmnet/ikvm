@@ -72,11 +72,11 @@ class StreamManipulator
   {
     if (bits_in_buffer < n)
       {
-	if (window_start == window_end)
-	  return -1;
-	buffer |= (window[window_start++] & 0xff
-		   | (window[window_start++] & 0xff) << 8) << bits_in_buffer;
-	bits_in_buffer += 16;
+        if (window_start == window_end)
+          return -1;
+        buffer |= (window[window_start++] & 0xff
+                   | (window[window_start++] & 0xff) << 8) << bits_in_buffer;
+        bits_in_buffer += 16;
       }
     return buffer & ((1 << n) - 1);
   }
@@ -154,11 +154,11 @@ class StreamManipulator
     int count = 0;
     while (bits_in_buffer > 0 && length > 0)
       {
-	output[offset++] = (byte) buffer;
-	buffer >>>= 8;
-	bits_in_buffer -= 8;
-	length--;
-	count++;
+        output[offset++] = (byte) buffer;
+        buffer >>>= 8;
+        bits_in_buffer -= 8;
+        length--;
+        count++;
       }
     if (length == 0)
       return count;
@@ -171,9 +171,9 @@ class StreamManipulator
 
     if (((window_start - window_end) & 1) != 0)
       {
-	/* We always want an even number of bytes in input, see peekBits */
-	buffer = (window[window_start++] & 0xff);
-	bits_in_buffer = 8;
+        /* We always want an even number of bytes in input, see peekBits */
+        buffer = (window[window_start++] & 0xff);
+        bits_in_buffer = 8;
       }
     return count + length;
   }
@@ -191,7 +191,7 @@ class StreamManipulator
   {
     if (window_start < window_end)
       throw new IllegalStateException
-	("Old input was not completely processed");
+        ("Old input was not completely processed");
 
     int end = off + len;
 
@@ -203,9 +203,9 @@ class StreamManipulator
     
     if ((len & 1) != 0)
       {
-	/* We always want an even number of bytes in input, see peekBits */
-	buffer |= (buf[off++] & 0xff) << bits_in_buffer;
-	bits_in_buffer += 8;
+        /* We always want an even number of bytes in input, see peekBits */
+        buffer |= (buf[off++] & 0xff) << bits_in_buffer;
+        bits_in_buffer += 8;
       }
     
     window = buf;

@@ -149,41 +149,41 @@ final class StringHelper
             throw new StringIndexOutOfBoundsException(offset + count);
         }
 
-	int expansion = 0;
-	int margin = 1;
-	char[] v = new char[count + margin];
-	int x = offset;
-	int j = 0;
-	for (int i = 0; i < count; i++) {
-	    int c = codePoints[x++];
-	    if (c < 0) {
-		throw new IllegalArgumentException();
-	    }
-	    if (margin <= 0 && (j+1) >= v.length) {
-		if (expansion == 0) {
-		    expansion = (((-margin + 1) * count) << 10) / i;
-		    expansion >>= 10;
-		    if (expansion <= 0) {
-			expansion = 1;
-		    }
-		} else {
-		    expansion *= 2;
-		}
+        int expansion = 0;
+        int margin = 1;
+        char[] v = new char[count + margin];
+        int x = offset;
+        int j = 0;
+        for (int i = 0; i < count; i++) {
+            int c = codePoints[x++];
+            if (c < 0) {
+                throw new IllegalArgumentException();
+            }
+            if (margin <= 0 && (j+1) >= v.length) {
+                if (expansion == 0) {
+                    expansion = (((-margin + 1) * count) << 10) / i;
+                    expansion >>= 10;
+                    if (expansion <= 0) {
+                        expansion = 1;
+                    }
+                } else {
+                    expansion *= 2;
+                }
                 int newLen = Math.min(v.length+expansion, count*2);
-		margin = (newLen - v.length) - (count - i);
+                margin = (newLen - v.length) - (count - i);
                 v = Arrays.copyOf(v, newLen);
-	    }
-	    if (c < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
-		v[j++] = (char) c;
-	    } else if (c <= Character.MAX_CODE_POINT) {
-		Character.toSurrogates(c, v, j);
-		j += 2;
-		margin--;
-	    } else {
-		throw new IllegalArgumentException();
-	    }
-	}
-	return new String(v, 0, j);
+            }
+            if (c < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
+                v[j++] = (char) c;
+            } else if (c <= Character.MAX_CODE_POINT) {
+                Character.toSurrogates(c, v, j);
+                j += 2;
+                margin--;
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
+        return new String(v, 0, j);
     }
 
     /**
@@ -227,7 +227,7 @@ final class StringHelper
      */
     @Deprecated
     static String NewString(byte ascii[], int hibyte, int offset, int count) {
-	checkBounds(ascii, offset, count);
+        checkBounds(ascii, offset, count);
         char value[] = new char[count];
 
         if (hibyte == 0) {
@@ -240,7 +240,7 @@ final class StringHelper
                 value[i] = (char) (hibyte | (ascii[i + offset] & 0xff));
             }
         }
-	return new String(value, 0, count);
+        return new String(value, 0, count);
     }
 
     /**
@@ -283,12 +283,12 @@ final class StringHelper
      * constructors.
      */
     private static void checkBounds(byte[] bytes, int offset, int length) {
-	if (length < 0)
-	    throw new StringIndexOutOfBoundsException(length);
-	if (offset < 0)
-	    throw new StringIndexOutOfBoundsException(offset);
-	if (offset > bytes.length - length)
-	    throw new StringIndexOutOfBoundsException(offset + length);
+        if (length < 0)
+            throw new StringIndexOutOfBoundsException(length);
+        if (offset < 0)
+            throw new StringIndexOutOfBoundsException(offset);
+        if (offset > bytes.length - length)
+            throw new StringIndexOutOfBoundsException(offset + length);
     }
 
     /**
@@ -325,13 +325,13 @@ final class StringHelper
      * @since  JDK1.1
      */
     static String NewString(byte bytes[], int offset, int length, String charsetName)
-	throws UnsupportedEncodingException
+        throws UnsupportedEncodingException
     {
-	if (charsetName == null)
-	    throw new NullPointerException("charsetName");
-	checkBounds(bytes, offset, length);
-	char[] v = StringCoding.decode(charsetName, bytes, offset, length);
-	return new String(v);
+        if (charsetName == null)
+            throw new NullPointerException("charsetName");
+        checkBounds(bytes, offset, length);
+        char[] v = StringCoding.decode(charsetName, bytes, offset, length);
+        return new String(v);
     }
 
     /**
@@ -365,11 +365,11 @@ final class StringHelper
      * @since  1.6
      */
     static String NewString(byte bytes[], int offset, int length, Charset charset) {
-	if (charset == null)
-	    throw new NullPointerException("charset");
-	checkBounds(bytes, offset, length);
-	char[] v = StringCoding.decode(charset, bytes, offset, length);
-	return new String(v);
+        if (charset == null)
+            throw new NullPointerException("charset");
+        checkBounds(bytes, offset, length);
+        char[] v = StringCoding.decode(charset, bytes, offset, length);
+        return new String(v);
     }
 
     /**
@@ -396,9 +396,9 @@ final class StringHelper
      * @since  JDK1.1
      */
     static String NewString(byte bytes[], String charsetName)
-	throws UnsupportedEncodingException
+        throws UnsupportedEncodingException
     {
-	return NewString(bytes, 0, bytes.length, charsetName);
+        return NewString(bytes, 0, bytes.length, charsetName);
     }
 
     /**
@@ -422,7 +422,7 @@ final class StringHelper
      * @since  1.6
      */
     static String NewString(byte bytes[], Charset charset) {
-	return NewString(bytes, 0, bytes.length, charset);
+        return NewString(bytes, 0, bytes.length, charset);
     }
 
     /**
@@ -452,9 +452,9 @@ final class StringHelper
      * @since  JDK1.1
      */
     static String NewString(byte bytes[], int offset, int length) {
-	checkBounds(bytes, offset, length);
-	char[] v  = StringCoding.decode(bytes, offset, length);
-	return new String(v);
+        checkBounds(bytes, offset, length);
+        char[] v  = StringCoding.decode(bytes, offset, length);
+        return new String(v);
     }
 
     /**
@@ -474,7 +474,7 @@ final class StringHelper
      * @since  JDK1.1
      */
     static String NewString(byte bytes[]) {
-	return NewString(bytes, 0, bytes.length);
+        return NewString(bytes, 0, bytes.length);
     }
 
     /**
@@ -512,7 +512,7 @@ final class StringHelper
 
     // Package private constructor which shares value array for speed.
     static String NewString(int offset, int count, char value[]) {
-	return new String(value, offset, count);
+        return new String(value, offset, count);
     }
 
     /**
@@ -576,7 +576,7 @@ final class StringHelper
      * @since     1.5
      */
     static int codePointBefore(String _this, int index) {
-	int i = index - 1;
+        int i = index - 1;
         if ((i < 0) || (i >= _this.length())) {
             throw new StringIndexOutOfBoundsException(index);
         }
@@ -614,19 +614,19 @@ final class StringHelper
      * @since  1.5
      */
     static int codePointCount(String _this, int beginIndex, int endIndex) {
-	if (beginIndex < 0 || endIndex > _this.length() || beginIndex > endIndex) {
-	    throw new IndexOutOfBoundsException();
-	}
-	int n = 0;
-	for (int i = beginIndex; i < endIndex; ) {
-	    n++;
-	    if (Character.isHighSurrogate(_this.charAt(i++))) {
-		if (i < endIndex && Character.isLowSurrogate(_this.charAt(i))) {
-		    i++;
-		}
-	    }
-	}
-	return n;
+        if (beginIndex < 0 || endIndex > _this.length() || beginIndex > endIndex) {
+            throw new IndexOutOfBoundsException();
+        }
+        int n = 0;
+        for (int i = beginIndex; i < endIndex; ) {
+            n++;
+            if (Character.isHighSurrogate(_this.charAt(i++))) {
+                if (i < endIndex && Character.isLowSurrogate(_this.charAt(i))) {
+                    i++;
+                }
+            }
+        }
+        return n;
     }
 
     /**
@@ -650,38 +650,38 @@ final class StringHelper
      * @since 1.5
      */
     static int offsetByCodePoints(String _this, int index, int codePointOffset) {
-	int count = _this.length();
-	if (index < 0 || index > count) {
-	    throw new IndexOutOfBoundsException();
-	}
-	int x = index;
-	if (codePointOffset >= 0) {
-	    int limit = count;
-	    int i;
-	    for (i = 0; x < limit && i < codePointOffset; i++) {
-		if (Character.isHighSurrogate(_this.charAt(x++))) {
-		    if (x < limit && Character.isLowSurrogate(_this.charAt(x))) {
-			x++;
-		    }
-		}
-	    }
-	    if (i < codePointOffset) {
-		throw new IndexOutOfBoundsException();
-	    }
-	} else {
-	    int i;
-	    for (i = codePointOffset; x > 0 && i < 0; i++) {
-		if (Character.isLowSurrogate(_this.charAt(--x))) {
-		    if (x > 0 && Character.isHighSurrogate(_this.charAt(x-1))) {
-			x--;
-		    }
-		}
-	    } 
-	    if (i < 0) {
-		throw new IndexOutOfBoundsException();
-	    }
-	}
-	return x;
+        int count = _this.length();
+        if (index < 0 || index > count) {
+            throw new IndexOutOfBoundsException();
+        }
+        int x = index;
+        if (codePointOffset >= 0) {
+            int limit = count;
+            int i;
+            for (i = 0; x < limit && i < codePointOffset; i++) {
+                if (Character.isHighSurrogate(_this.charAt(x++))) {
+                    if (x < limit && Character.isLowSurrogate(_this.charAt(x))) {
+                        x++;
+                    }
+                }
+            }
+            if (i < codePointOffset) {
+                throw new IndexOutOfBoundsException();
+            }
+        } else {
+            int i;
+            for (i = codePointOffset; x > 0 && i < 0; i++) {
+                if (Character.isLowSurrogate(_this.charAt(--x))) {
+                    if (x > 0 && Character.isHighSurrogate(_this.charAt(x-1))) {
+                        x--;
+                    }
+                }
+            } 
+            if (i < 0) {
+                throw new IndexOutOfBoundsException();
+            }
+        }
+        return x;
     }
 
     /**
@@ -689,7 +689,7 @@ final class StringHelper
      * This method doesn't perform any range checking.
      */
     static void getChars(String _this, char dst[], int dstBegin) {
-	_this.getChars(0, _this.length(), dst, dstBegin);
+        _this.getChars(0, _this.length(), dst, dstBegin);
     }
 
     /**
@@ -732,7 +732,7 @@ final class StringHelper
         if (srcBegin > srcEnd) {
             throw new StringIndexOutOfBoundsException(srcEnd - srcBegin);
         }
-	_this.CopyTo(srcBegin, dst, dstBegin, srcEnd - srcBegin);
+        _this.CopyTo(srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
     /**
@@ -819,13 +819,13 @@ final class StringHelper
      * @since  JDK1.1
      */
     static byte[] getBytes(String _this, String charsetName)
-	throws UnsupportedEncodingException
+        throws UnsupportedEncodingException
     {
-	if (charsetName == null) throw new NullPointerException();
-	char[] value = _this.toCharArray();
-	int offset = 0;
-	int count = value.length;
-	return StringCoding.encode(charsetName, value, offset, count);
+        if (charsetName == null) throw new NullPointerException();
+        char[] value = _this.toCharArray();
+        int offset = 0;
+        int count = value.length;
+        return StringCoding.encode(charsetName, value, offset, count);
     }
 
     /**
@@ -847,11 +847,11 @@ final class StringHelper
      * @since  1.6
      */
     static byte[] getBytes(String _this, Charset charset) {
-	if (charset == null) throw new NullPointerException();
-	char[] value = _this.toCharArray();
-	int offset = 0;
-	int count = value.length;
-	return StringCoding.encode(charset, value, offset, count);
+        if (charset == null) throw new NullPointerException();
+        char[] value = _this.toCharArray();
+        int offset = 0;
+        int count = value.length;
+        return StringCoding.encode(charset, value, offset, count);
     }
 
     /**
@@ -868,10 +868,10 @@ final class StringHelper
      * @since      JDK1.1
      */
     static byte[] getBytes(String _this) {
-	char[] value = _this.toCharArray();
-	int offset = 0;
-	int count = value.length;
-	return StringCoding.encode(value, offset, count);
+        char[] value = _this.toCharArray();
+        int offset = 0;
+        int count = value.length;
+        return StringCoding.encode(value, offset, count);
     }
 
     /**
@@ -909,7 +909,7 @@ final class StringHelper
      * @since  1.5
      */
     static boolean contentEquals(String _this, CharSequence cs) {
-	int count = _this.length();
+        int count = _this.length();
         if (count != cs.length())
             return false;
         // Argument is a StringBuffer, StringBuilder
@@ -922,7 +922,7 @@ final class StringHelper
                 if (_this.charAt(i++) != v2[j++])
                     return false;
             }
-	    return true;
+            return true;
         }
         // Argument is a String
         if (cs.equals(_this))
@@ -969,7 +969,7 @@ final class StringHelper
     static boolean equalsIgnoreCase(String _this, String anotherString) {
         return (_this == anotherString) ? true :
                (anotherString != null) && (anotherString.length() == _this.length()) &&
-	       regionMatches(_this, true, 0, anotherString, 0, _this.length());
+               regionMatches(_this, true, 0, anotherString, 0, _this.length());
     }
 
     /**
@@ -1014,16 +1014,16 @@ final class StringHelper
      *          lexicographically greater than the string argument.
      */
     static int compareTo(String _this, String anotherString) {
-	int len = Math.min(_this.length(), anotherString.length());
-	for (int i = 0; i < len; i++)
-	{
-	    int diff = _this.charAt(i) - anotherString.charAt(i);
-	    if (diff != 0)
-	    {
-		return diff;
-	    }
-	}
-	return _this.length() - anotherString.length();
+        int len = Math.min(_this.length(), anotherString.length());
+        for (int i = 0; i < len; i++)
+        {
+            int diff = _this.charAt(i) - anotherString.charAt(i);
+            if (diff != 0)
+            {
+                return diff;
+            }
+        }
+        return _this.length() - anotherString.length();
     }
 
     /**
@@ -1041,8 +1041,8 @@ final class StringHelper
      *
      * @param   str   the <code>String</code> to be compared.
      * @return  a negative integer, zero, or a positive integer as the
-     *		specified String is greater than, equal to, or less
-     *		than this String, ignoring case considerations.
+     *          specified String is greater than, equal to, or less
+     *          than this String, ignoring case considerations.
      * @see     java.text.Collator#compare(String, String)
      * @since   1.2
      */
@@ -1082,20 +1082,20 @@ final class StringHelper
      *          <code>false</code> otherwise.
      */
     static boolean regionMatches(String _this, int toffset, String other, int ooffset,
-				 int len) {
-	int to = toffset;
-	int po = ooffset;
-	// Note: toffset, ooffset, or len might be near -1>>>1.
-	if ((ooffset < 0) || (toffset < 0) || (toffset > (long)_this.length() - len)
-	    || (ooffset > (long)other.length() - len)) {
-	    return false;
-	}
-	while (len-- > 0) {
-	    if (_this.charAt(to++) != other.charAt(po++)) {
-	        return false;
-	    }
-	}
-	return true;
+                                 int len) {
+        int to = toffset;
+        int po = ooffset;
+        // Note: toffset, ooffset, or len might be near -1>>>1.
+        if ((ooffset < 0) || (toffset < 0) || (toffset > (long)_this.length() - len)
+            || (ooffset > (long)other.length() - len)) {
+            return false;
+        }
+        while (len-- > 0) {
+            if (_this.charAt(to++) != other.charAt(po++)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -1200,14 +1200,14 @@ final class StringHelper
      * @return  a hash code value for this object.
      */
     static int hashCode(cli.System.String _this) {
-	int h = 0;
-	// NOTE having the get_Length in the for condition is actually faster than hoisting it,
-	// the CLR JIT recognizes this pattern and optimizes the array bounds check in get_Chars.
-	for (int i = 0; i < _this.get_Length(); i++)
-	{
-	    h = h * 31 + _this.get_Chars(i);
-	}
-	return h;
+        int h = 0;
+        // NOTE having the get_Length in the for condition is actually faster than hoisting it,
+        // the CLR JIT recognizes this pattern and optimizes the array bounds check in get_Chars.
+        for (int i = 0; i < _this.get_Length(); i++)
+        {
+            h = h * 31 + _this.get_Chars(i);
+        }
+        return h;
     }
 
     /**
@@ -1235,7 +1235,7 @@ final class StringHelper
      *          <code>-1</code> if the character does not occur.
      */
     static int indexOf(cli.System.String _this, int ch) {
-	return indexOf(_this, ch, 0);
+        return indexOf(_this, ch, 0);
     }
 
     /**
@@ -1278,42 +1278,42 @@ final class StringHelper
      *          if the character does not occur.
      */
     static int indexOf(cli.System.String _this, int ch, int fromIndex) {
-	int max = _this.get_Length();
+        int max = _this.get_Length();
 
-	if (fromIndex < 0) {
-	    fromIndex = 0;
-	} else if (fromIndex >= max) {
-	    // Note: fromIndex might be near -1>>>1.
-	    return -1;
-	}
+        if (fromIndex < 0) {
+            fromIndex = 0;
+        } else if (fromIndex >= max) {
+            // Note: fromIndex might be near -1>>>1.
+            return -1;
+        }
 
-	int i = fromIndex;
-	if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
-	    // handle most cases here (ch is a BMP code point or a
-	    // negative value (invalid code point))
-	    for (; i < max ; i++) {
-		if (_this.get_Chars(i) == ch) {
-		    return i;
-		}
-	    }
-	    return -1;
-	}
+        int i = fromIndex;
+        if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
+            // handle most cases here (ch is a BMP code point or a
+            // negative value (invalid code point))
+            for (; i < max ; i++) {
+                if (_this.get_Chars(i) == ch) {
+                    return i;
+                }
+            }
+            return -1;
+        }
 
-	if (ch <= Character.MAX_CODE_POINT) {
-	    // handle supplementary characters here
-	    char[] surrogates = Character.toChars(ch);
-	    for (; i < max; i++) {
-		if (_this.get_Chars(i) == surrogates[0]) {
-		    if (i + 1 == max) {
-			break;
-		    }
-		    if (_this.get_Chars(i+1) == surrogates[1]) {
-			return i;
-		    }
-		}
-	    }
-	}
-	return -1;
+        if (ch <= Character.MAX_CODE_POINT) {
+            // handle supplementary characters here
+            char[] surrogates = Character.toChars(ch);
+            for (; i < max; i++) {
+                if (_this.get_Chars(i) == surrogates[0]) {
+                    if (i + 1 == max) {
+                        break;
+                    }
+                    if (_this.get_Chars(i+1) == surrogates[1]) {
+                        return i;
+                    }
+                }
+            }
+        }
+        return -1;
     }
 
     /**
@@ -1340,7 +1340,7 @@ final class StringHelper
      *          <code>-1</code> if the character does not occur.
      */
     static int lastIndexOf(cli.System.String _this, int ch) {
-	return lastIndexOf(_this, ch, _this.get_Length() - 1);
+        return lastIndexOf(_this, ch, _this.get_Length() - 1);
     }
 
     /**
@@ -1378,37 +1378,37 @@ final class StringHelper
      *          if the character does not occur before that point.
      */
     static int lastIndexOf(cli.System.String _this, int ch, int fromIndex) {
-	int count = _this.get_Length();
+        int count = _this.get_Length();
 
-	int i = ((fromIndex >= count) ? count - 1 : fromIndex);
+        int i = ((fromIndex >= count) ? count - 1 : fromIndex);
 
-	if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
-	    // handle most cases here (ch is a BMP code point or a
-	    // negative value (invalid code point))
-	    for (; i >= 0 ; i--) {
-		if (_this.get_Chars(i) == ch) {
-		    return i;
-		}
-	    }
-	    return -1;
-	}
+        if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
+            // handle most cases here (ch is a BMP code point or a
+            // negative value (invalid code point))
+            for (; i >= 0 ; i--) {
+                if (_this.get_Chars(i) == ch) {
+                    return i;
+                }
+            }
+            return -1;
+        }
 
-	int max = count;
-	if (ch <= Character.MAX_CODE_POINT) {
-	    // handle supplementary characters here
-	    char[] surrogates = Character.toChars(ch);
-	    for (; i >= 0; i--) {
-		if (_this.get_Chars(i) == surrogates[0]) {
-		    if (i + 1 == max) {
-			break;
-		    }
-		    if (_this.get_Chars(i+1) == surrogates[1]) {
-			return i;
-		    }
-		}
-	    }
-	}
-	return -1;
+        int max = count;
+        if (ch <= Character.MAX_CODE_POINT) {
+            // handle supplementary characters here
+            char[] surrogates = Character.toChars(ch);
+            for (; i >= 0; i--) {
+                if (_this.get_Chars(i) == surrogates[0]) {
+                    if (i + 1 == max) {
+                        break;
+                    }
+                    if (_this.get_Chars(i+1) == surrogates[1]) {
+                        return i;
+                    }
+                }
+            }
+        }
+        return -1;
     }
 
     /**
@@ -1427,7 +1427,7 @@ final class StringHelper
      *          substring, <code>-1</code> is returned.
      */
     static int indexOf(String _this, String str) {
-	return indexOf(_this, str, 0);
+        return indexOf(_this, str, 0);
     }
 
     /**
@@ -1487,15 +1487,15 @@ final class StringHelper
     static int indexOf(char[] source, int sourceOffset, int sourceCount,
                        char[] target, int targetOffset, int targetCount,
                        int fromIndex) {
-	if (fromIndex >= sourceCount) {
+        if (fromIndex >= sourceCount) {
             return (targetCount == 0 ? sourceCount : -1);
-	}
-    	if (fromIndex < 0) {
-    	    fromIndex = 0;
-    	}
-	if (targetCount == 0) {
-	    return fromIndex;
-	}
+        }
+        if (fromIndex < 0) {
+            fromIndex = 0;
+        }
+        if (targetCount == 0) {
+            return fromIndex;
+        }
 
         char first  = target[targetOffset];
         int max = sourceOffset + (sourceCount - targetCount);
@@ -1539,7 +1539,7 @@ final class StringHelper
      *          a substring, <code>-1</code> is returned.
      */
     static int lastIndexOf(String _this, String str) {
-	return lastIndexOf(_this, str, _this.length());
+        return lastIndexOf(_this, str, _this.length());
     }
 
     /**
@@ -1557,17 +1557,17 @@ final class StringHelper
      *          specified substring.
      */
     static int lastIndexOf(String _this, String str, int fromIndex) {
-	// start by dereferencing s, to make sure we throw a NullPointerException if s is null
-	int slen = _this.length();
-	if (fromIndex < 0)
-	{
-	    return -1;
-	}
+        // start by dereferencing s, to make sure we throw a NullPointerException if s is null
+        int slen = _this.length();
+        if (fromIndex < 0)
+        {
+            return -1;
+        }
         int olen = str.length();
-	if (olen == 0)
-	{
-	    return Math.min(slen, fromIndex);
-	}
+        if (olen == 0)
+        {
+            return Math.min(slen, fromIndex);
+        }
         if (olen > slen)
         {
             return -1;
@@ -1604,46 +1604,46 @@ final class StringHelper
                            char[] target, int targetOffset, int targetCount,
                            int fromIndex) {
         /*
-	 * Check arguments; return immediately where possible. For
-	 * consistency, don't check for null str.
-	 */
+         * Check arguments; return immediately where possible. For
+         * consistency, don't check for null str.
+         */
         int rightIndex = sourceCount - targetCount;
-	if (fromIndex < 0) {
-	    return -1;
-	}
-	if (fromIndex > rightIndex) {
-	    fromIndex = rightIndex;
-	}
-	/* Empty string always matches. */
-	if (targetCount == 0) {
-	    return fromIndex;
-	}
+        if (fromIndex < 0) {
+            return -1;
+        }
+        if (fromIndex > rightIndex) {
+            fromIndex = rightIndex;
+        }
+        /* Empty string always matches. */
+        if (targetCount == 0) {
+            return fromIndex;
+        }
 
         int strLastIndex = targetOffset + targetCount - 1;
-	char strLastChar = target[strLastIndex];
-	int min = sourceOffset + targetCount - 1;
-	int i = min + fromIndex;
+        char strLastChar = target[strLastIndex];
+        int min = sourceOffset + targetCount - 1;
+        int i = min + fromIndex;
 
     startSearchForLastChar:
-	while (true) {
-	    while (i >= min && source[i] != strLastChar) {
-		i--;
-	    }
-	    if (i < min) {
-		return -1;
-	    }
-	    int j = i - 1;
-	    int start = j - (targetCount - 1);
-	    int k = strLastIndex - 1;
+        while (true) {
+            while (i >= min && source[i] != strLastChar) {
+                i--;
+            }
+            if (i < min) {
+                return -1;
+            }
+            int j = i - 1;
+            int start = j - (targetCount - 1);
+            int k = strLastIndex - 1;
 
-	    while (j > start) {
-	        if (source[j--] != target[k--]) {
-		    i--;
-		    continue startSearchForLastChar;
-		}
-	    }
-	    return start - sourceOffset + 1;
-	}
+            while (j > start) {
+                if (source[j--] != target[k--]) {
+                    i--;
+                    continue startSearchForLastChar;
+                }
+            }
+            return start - sourceOffset + 1;
+        }
     }
 
     /**
@@ -1669,18 +1669,18 @@ final class StringHelper
      *             <code>endIndex</code>.
      */
     static String substring(cli.System.String _this, int beginIndex, int endIndex) {
-	int count = _this.get_Length();
-	if (beginIndex < 0) {
-	    throw new StringIndexOutOfBoundsException(beginIndex);
-	}
-	if (endIndex > count) {
-	    throw new StringIndexOutOfBoundsException(endIndex);
-	}
-	if (beginIndex > endIndex) {
-	    throw new StringIndexOutOfBoundsException(endIndex - beginIndex);
-	}
-	return ((beginIndex == 0) && (endIndex == count)) ? (String)(Object)_this :
-	    _this.Substring(beginIndex, endIndex - beginIndex);
+        int count = _this.get_Length();
+        if (beginIndex < 0) {
+            throw new StringIndexOutOfBoundsException(beginIndex);
+        }
+        if (endIndex > count) {
+            throw new StringIndexOutOfBoundsException(endIndex);
+        }
+        if (beginIndex > endIndex) {
+            throw new StringIndexOutOfBoundsException(endIndex - beginIndex);
+        }
+        return ((beginIndex == 0) && (endIndex == count)) ? (String)(Object)_this :
+            _this.Substring(beginIndex, endIndex - beginIndex);
     }
 
     /**
@@ -1704,11 +1704,11 @@ final class StringHelper
      *          characters followed by the string argument's characters.
      */
     static String concat(String _this, String str) {
-	int otherLen = str.length();
-	if (otherLen == 0) {
-	    return _this;
-	}
-	return cli.System.String.Concat(_this, str);
+        int otherLen = str.length();
+        if (otherLen == 0) {
+            return _this;
+        }
+        return cli.System.String.Concat(_this, str);
     }
 
     /**
@@ -1741,29 +1741,29 @@ final class StringHelper
      *          occurrence of <code>oldChar</code> with <code>newChar</code>.
      */
     static String replace(String _this, char oldChar, char newChar) {
-	if (oldChar != newChar) {
-	    int len = _this.length();
-	    int i = -1;
+        if (oldChar != newChar) {
+            int len = _this.length();
+            int i = -1;
 
-	    while (++i < len) {
-		if (_this.charAt(i) == oldChar) {
-		    break;
-		}
-	    }
-	    if (i < len) {
-		char buf[] = new char[len];
-		for (int j = 0 ; j < i ; j++) {
-		    buf[j] = _this.charAt(j);
-		}
-		while (i < len) {
-		    char c = _this.charAt(i);
-		    buf[i] = (c == oldChar) ? newChar : c;
-		    i++;
-		}
-		return new String(0, len, buf);
-	    }
-	}
-	return _this;
+            while (++i < len) {
+                if (_this.charAt(i) == oldChar) {
+                    break;
+                }
+            }
+            if (i < len) {
+                char buf[] = new char[len];
+                for (int j = 0 ; j < i ; j++) {
+                    buf[j] = _this.charAt(j);
+                }
+                while (i < len) {
+                    char c = _this.charAt(i);
+                    buf[i] = (c == oldChar) ? newChar : c;
+                    i++;
+                }
+                return new String(0, len, buf);
+            }
+        }
+        return _this;
     }
 
     /**
@@ -1851,57 +1851,57 @@ final class StringHelper
      * @since   1.1
      */
     static String toLowerCase(String _this, Locale locale) {
-	if (locale == null) {
-	    throw new NullPointerException();
+        if (locale == null) {
+            throw new NullPointerException();
         }
 
-	final int count = _this.length();
+        final int count = _this.length();
         int     firstUpper;
 
-	/* Now check if there are any characters that need to be changed. */
-	scan: {
-	    for (firstUpper = 0 ; firstUpper < count; ) {
-		char c = _this.charAt(firstUpper);
-		if ((c >= Character.MIN_HIGH_SURROGATE) &&
-		    (c <= Character.MAX_HIGH_SURROGATE)) {
-		    int supplChar = _this.codePointAt(firstUpper);
-		    if (supplChar != Character.toLowerCase(supplChar)) {
-		        break scan;
-		    }
-		    firstUpper += Character.charCount(supplChar);
-		} else {
-		    if (c != Character.toLowerCase(c)) {
-		        break scan;
-		    }
-		    firstUpper++;
-		}
-	    }
-	    return _this;
-	}
+        /* Now check if there are any characters that need to be changed. */
+        scan: {
+            for (firstUpper = 0 ; firstUpper < count; ) {
+                char c = _this.charAt(firstUpper);
+                if ((c >= Character.MIN_HIGH_SURROGATE) &&
+                    (c <= Character.MAX_HIGH_SURROGATE)) {
+                    int supplChar = _this.codePointAt(firstUpper);
+                    if (supplChar != Character.toLowerCase(supplChar)) {
+                        break scan;
+                    }
+                    firstUpper += Character.charCount(supplChar);
+                } else {
+                    if (c != Character.toLowerCase(c)) {
+                        break scan;
+                    }
+                    firstUpper++;
+                }
+            }
+            return _this;
+        }
 
         char[]  result = new char[count];
-	int     resultOffset = 0;  /* result may grow, so i+resultOffset
-				    * is the write location in result */
+        int     resultOffset = 0;  /* result may grow, so i+resultOffset
+                                    * is the write location in result */
 
         /* Just copy the first few lowerCase characters. */
-	_this.getChars(0, firstUpper, result, 0);
+        _this.getChars(0, firstUpper, result, 0);
 
-	String lang = locale.getLanguage();
-	boolean localeDependent =
+        String lang = locale.getLanguage();
+        boolean localeDependent =
             (lang == "tr" || lang == "az" || lang == "lt");
         char[] lowerCharArray;
         int lowerChar;
         int srcChar;
         int srcCount;
         for (int i = firstUpper; i < count; i += srcCount) {
-	    srcChar = (int)_this.charAt(i);
-	    if ((char)srcChar >= Character.MIN_HIGH_SURROGATE &&
-	        (char)srcChar <= Character.MAX_HIGH_SURROGATE) {
-		srcChar = _this.codePointAt(i);
-		srcCount = Character.charCount(srcChar);
-	    } else {
-	        srcCount = 1;
-	    }
+            srcChar = (int)_this.charAt(i);
+            if ((char)srcChar >= Character.MIN_HIGH_SURROGATE &&
+                (char)srcChar <= Character.MAX_HIGH_SURROGATE) {
+                srcChar = _this.codePointAt(i);
+                srcCount = Character.charCount(srcChar);
+            } else {
+                srcCount = 1;
+            }
             if (localeDependent || srcChar == '\u03A3') { // GREEK CAPITAL LETTER SIGMA
                 lowerChar = ConditionalSpecialCasing.toLowerCaseEx(_this, i, locale);
             } else {
@@ -1913,20 +1913,20 @@ final class StringHelper
                     lowerCharArray =
                         ConditionalSpecialCasing.toLowerCaseCharArray(_this, i, locale);
                 } else if (srcCount == 2) {
-		    resultOffset += Character.toChars(lowerChar, result, i + resultOffset) - srcCount;
-		    continue;
+                    resultOffset += Character.toChars(lowerChar, result, i + resultOffset) - srcCount;
+                    continue;
                 } else {
-		    lowerCharArray = Character.toChars(lowerChar);
-		}
+                    lowerCharArray = Character.toChars(lowerChar);
+                }
 
                 /* Grow result if needed */
                 int mapLen = lowerCharArray.length;
-		if (mapLen > srcCount) {
+                if (mapLen > srcCount) {
                     char[] result2 = new char[result.length + mapLen - srcCount];
                     System.arraycopy(result, 0, result2, 0,
                         i + resultOffset);
                     result = result2;
-		}
+                }
                 for (int x=0; x<mapLen; ++x) {
                     result[i+resultOffset+x] = lowerCharArray[x];
                 }
@@ -2010,58 +2010,58 @@ final class StringHelper
      * @since   1.1
      */
     static String toUpperCase(String _this, Locale locale) {
-	if (locale == null) {
-	    throw new NullPointerException();
+        if (locale == null) {
+            throw new NullPointerException();
         }
 
-	final int count = _this.length();
+        final int count = _this.length();
         int     firstLower;
 
-	/* Now check if there are any characters that need to be changed. */
-	scan: {
-	    for (firstLower = 0 ; firstLower < count; ) {
-		int c = (int)_this.charAt(firstLower);
-		int srcCount;
-		if ((c >= Character.MIN_HIGH_SURROGATE) &&
-		    (c <= Character.MAX_HIGH_SURROGATE)) {
-		    c = _this.codePointAt(firstLower);
-		    srcCount = Character.charCount(c);
-		} else {
-		    srcCount = 1;
-		}
-		int upperCaseChar = Character.toUpperCaseEx(c);
-		if ((upperCaseChar == Character.ERROR) ||
-		    (c != upperCaseChar)) {
-		    break scan;
-		}
-		firstLower += srcCount;
-	    }
-	    return _this;
-	}
+        /* Now check if there are any characters that need to be changed. */
+        scan: {
+            for (firstLower = 0 ; firstLower < count; ) {
+                int c = (int)_this.charAt(firstLower);
+                int srcCount;
+                if ((c >= Character.MIN_HIGH_SURROGATE) &&
+                    (c <= Character.MAX_HIGH_SURROGATE)) {
+                    c = _this.codePointAt(firstLower);
+                    srcCount = Character.charCount(c);
+                } else {
+                    srcCount = 1;
+                }
+                int upperCaseChar = Character.toUpperCaseEx(c);
+                if ((upperCaseChar == Character.ERROR) ||
+                    (c != upperCaseChar)) {
+                    break scan;
+                }
+                firstLower += srcCount;
+            }
+            return _this;
+        }
 
         char[]  result       = new char[count]; /* may grow */
-	int     resultOffset = 0;  /* result may grow, so i+resultOffset
-				    * is the write location in result */
+        int     resultOffset = 0;  /* result may grow, so i+resultOffset
+                                    * is the write location in result */
 
-	/* Just copy the first few upperCase characters. */
-	_this.getChars(0, firstLower, result, 0);
+        /* Just copy the first few upperCase characters. */
+        _this.getChars(0, firstLower, result, 0);
 
-	String lang = locale.getLanguage();
-	boolean localeDependent =
+        String lang = locale.getLanguage();
+        boolean localeDependent =
             (lang == "tr" || lang == "az" || lang == "lt");
         char[] upperCharArray;
         int upperChar;
         int srcChar;
         int srcCount;
         for (int i = firstLower; i < count; i += srcCount) {
-	    srcChar = (int)_this.charAt(i);
-	    if ((char)srcChar >= Character.MIN_HIGH_SURROGATE &&
-	        (char)srcChar <= Character.MAX_HIGH_SURROGATE) {
-		srcChar = _this.codePointAt(i);
-		srcCount = Character.charCount(srcChar);
-	    } else {
-	        srcCount = 1;
-	    }
+            srcChar = (int)_this.charAt(i);
+            if ((char)srcChar >= Character.MIN_HIGH_SURROGATE &&
+                (char)srcChar <= Character.MAX_HIGH_SURROGATE) {
+                srcChar = _this.codePointAt(i);
+                srcCount = Character.charCount(srcChar);
+            } else {
+                srcCount = 1;
+            }
             if (localeDependent) {
                 upperChar = ConditionalSpecialCasing.toUpperCaseEx(_this, i, locale);
             } else {
@@ -2077,20 +2077,20 @@ final class StringHelper
                         upperCharArray = Character.toUpperCaseCharArray(srcChar);
                     }
                 } else if (srcCount == 2) {
-		    resultOffset += Character.toChars(upperChar, result, i + resultOffset) - srcCount;
-		    continue;
+                    resultOffset += Character.toChars(upperChar, result, i + resultOffset) - srcCount;
+                    continue;
                 } else {
                     upperCharArray = Character.toChars(upperChar);
-		}
+                }
 
                 /* Grow result if needed */
                 int mapLen = upperCharArray.length;
-		if (mapLen > srcCount) {
+                if (mapLen > srcCount) {
                     char[] result2 = new char[result.length + mapLen - srcCount];
                     System.arraycopy(result, 0, result2, 0,
                         i + resultOffset);
                     result = result2;
-		}
+                }
                 for (int x=0; x<mapLen; ++x) {
                     result[i+resultOffset+x] = upperCharArray[x];
                 }
@@ -2157,17 +2157,17 @@ final class StringHelper
      *          trailing white space.
      */
     static String trim(String _this) {
-	int count = _this.length();
-	int len = count;
-	int st = 0;
+        int count = _this.length();
+        int len = count;
+        int st = 0;
 
-	while ((st < len) && (_this.charAt(st) <= ' ')) {
-	    st++;
-	}
-	while ((st < len) && (_this.charAt(len - 1) <= ' ')) {
-	    len--;
-	}
-	return ((st > 0) || (len < count)) ? _this.substring(st, len) : _this;
+        while ((st < len) && (_this.charAt(st) <= ' ')) {
+            st++;
+        }
+        while ((st < len) && (_this.charAt(len - 1) <= ' ')) {
+            len--;
+        }
+        return ((st > 0) || (len < count)) ? _this.substring(st, len) : _this;
     }
 
     /**
@@ -2180,7 +2180,7 @@ final class StringHelper
      * @see     java.lang.Object#toString()
      */
     static String valueOf(Object obj) {
-	return (obj == null) ? "null" : obj.toString();
+        return (obj == null) ? "null" : obj.toString();
     }
 
     /**
@@ -2194,7 +2194,7 @@ final class StringHelper
      *          characters contained in the character array argument.
      */
     static String valueOf(char data[]) {
-	return new String(data);
+        return new String(data);
     }
 
     /**
@@ -2219,7 +2219,7 @@ final class StringHelper
      *          <code>data.length</code>.
      */
     static String valueOf(char data[], int offset, int count) {
-	return new String(data, offset, count);
+        return new String(data, offset, count);
     }
 
     /**
@@ -2233,8 +2233,8 @@ final class StringHelper
      *          specified subarray of the character array.
      */
     static String copyValueOf(char data[], int offset, int count) {
-	// All public String constructors now copy the data.
-	return new String(data, offset, count);
+        // All public String constructors now copy the data.
+        return new String(data, offset, count);
     }
 
     /**
@@ -2246,7 +2246,7 @@ final class StringHelper
      *          character array.
      */
     static String copyValueOf(char data[]) {
-	return copyValueOf(data, 0, data.length);
+        return copyValueOf(data, 0, data.length);
     }
 
     /**
@@ -2258,7 +2258,7 @@ final class StringHelper
      *          <code>"false"</code> is returned.
      */
     static String valueOf(boolean b) {
-	return b ? "true" : "false";
+        return b ? "true" : "false";
     }
 
     /**
@@ -2270,8 +2270,8 @@ final class StringHelper
      *          as its single character the argument <code>c</code>.
      */
     static String valueOf(char c) {
-	char data[] = {c};
-	return new String(0, 1, data);
+        char data[] = {c};
+        return new String(0, 1, data);
     }
 
     /**
@@ -2313,7 +2313,7 @@ final class StringHelper
      * @see     java.lang.Float#toString(float)
      */
     static String valueOf(float f) {
-	return Float.toString(f);
+        return Float.toString(f);
     }
 
     /**
@@ -2327,6 +2327,6 @@ final class StringHelper
      * @see     java.lang.Double#toString(double)
      */
     static String valueOf(double d) {
-	return Double.toString(d);
+        return Double.toString(d);
     }
 }

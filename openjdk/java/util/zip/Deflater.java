@@ -374,8 +374,8 @@ public class Deflater
 
     if (level != lvl)
       {
-	level = lvl;
-	engine.setLevel(lvl);
+        level = lvl;
+        engine.setLevel(lvl);
       }
   }
 
@@ -389,7 +389,7 @@ public class Deflater
   public void setStrategy(int stgy)
   {
     if (stgy != DEFAULT_STRATEGY && stgy != FILTERED
-	&& stgy != HUFFMAN_ONLY)
+        && stgy != HUFFMAN_ONLY)
       throw new IllegalArgumentException();
     engine.setStrategy(stgy);
   }
@@ -425,78 +425,78 @@ public class Deflater
 
     if (state < BUSY_STATE)
       {
-	/* output header */
-	int header = (DEFLATED + 
-		      ((DeflaterConstants.MAX_WBITS - 8) << 4)) << 8;
-	int level_flags = (level - 1) >> 1;
-	if (level_flags < 0 || level_flags > 3) 
-	  level_flags = 3;
-	header |= level_flags << 6;
-	if ((state & IS_SETDICT) != 0)
-	  /* Dictionary was set */
-	  header |= DeflaterConstants.PRESET_DICT;
-	header += 31 - (header % 31);
+        /* output header */
+        int header = (DEFLATED + 
+                      ((DeflaterConstants.MAX_WBITS - 8) << 4)) << 8;
+        int level_flags = (level - 1) >> 1;
+        if (level_flags < 0 || level_flags > 3) 
+          level_flags = 3;
+        header |= level_flags << 6;
+        if ((state & IS_SETDICT) != 0)
+          /* Dictionary was set */
+          header |= DeflaterConstants.PRESET_DICT;
+        header += 31 - (header % 31);
 
-	pending.writeShortMSB(header);
-	if ((state & IS_SETDICT) != 0)
-	  {
-	    int chksum = engine.getAdler();
-	    engine.resetAdler();
-	    pending.writeShortMSB(chksum >> 16);
-	    pending.writeShortMSB(chksum & 0xffff);
-	  }
+        pending.writeShortMSB(header);
+        if ((state & IS_SETDICT) != 0)
+          {
+            int chksum = engine.getAdler();
+            engine.resetAdler();
+            pending.writeShortMSB(chksum >> 16);
+            pending.writeShortMSB(chksum & 0xffff);
+          }
 
-	state = BUSY_STATE | (state & (IS_FLUSHING | IS_FINISHING));
+        state = BUSY_STATE | (state & (IS_FLUSHING | IS_FINISHING));
       }
 
     for (;;)
       {
-	int count = pending.flush(output, offset, length);
-	offset += count;
-	totalOut += count;
-	length -= count;
-	if (length == 0 || state == FINISHED_STATE)
-	  break;
+        int count = pending.flush(output, offset, length);
+        offset += count;
+        totalOut += count;
+        length -= count;
+        if (length == 0 || state == FINISHED_STATE)
+          break;
 
-	if (!engine.deflate((state & IS_FLUSHING) != 0, 
-			    (state & IS_FINISHING) != 0))
-	  {
-	    if (state == BUSY_STATE)
-	      /* We need more input now */
-	      return origLength - length;
-	    else if (state == FLUSHING_STATE)
-	      {
-		if (level != NO_COMPRESSION)
-		  {
-		    /* We have to supply some lookahead.  8 bit lookahead
-		     * are needed by the zlib inflater, and we must fill 
-		     * the next byte, so that all bits are flushed.
-		     */
-		    int neededbits = 8 + ((-pending.getBitCount()) & 7);
-		    while (neededbits > 0)
-		      {
-			/* write a static tree block consisting solely of
-			 * an EOF:
-			 */
-			pending.writeBits(2, 10);
-			neededbits -= 10;
-		      }
-		  }
-		state = BUSY_STATE;
-	      }
-	    else if (state == FINISHING_STATE)
-	      {
-		pending.alignToByte();
-		/* We have completed the stream */
-		if (!noHeader)
-		  {
-		    int adler = engine.getAdler();
-		    pending.writeShortMSB(adler >> 16);
-		    pending.writeShortMSB(adler & 0xffff);
-		  }
-		state = FINISHED_STATE;
-	      }
-	  }
+        if (!engine.deflate((state & IS_FLUSHING) != 0, 
+                            (state & IS_FINISHING) != 0))
+          {
+            if (state == BUSY_STATE)
+              /* We need more input now */
+              return origLength - length;
+            else if (state == FLUSHING_STATE)
+              {
+                if (level != NO_COMPRESSION)
+                  {
+                    /* We have to supply some lookahead.  8 bit lookahead
+                     * are needed by the zlib inflater, and we must fill 
+                     * the next byte, so that all bits are flushed.
+                     */
+                    int neededbits = 8 + ((-pending.getBitCount()) & 7);
+                    while (neededbits > 0)
+                      {
+                        /* write a static tree block consisting solely of
+                         * an EOF:
+                         */
+                        pending.writeBits(2, 10);
+                        neededbits -= 10;
+                      }
+                  }
+                state = BUSY_STATE;
+              }
+            else if (state == FINISHING_STATE)
+              {
+                pending.alignToByte();
+                /* We have completed the stream */
+                if (!noHeader)
+                  {
+                    int adler = engine.getAdler();
+                    pending.writeShortMSB(adler >> 16);
+                    pending.writeShortMSB(adler & 0xffff);
+                  }
+                state = FINISHED_STATE;
+              }
+          }
       }
 
     return origLength - length;

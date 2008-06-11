@@ -48,14 +48,14 @@ public class VM {
     }
 
     public static boolean allowThreadSuspension(ThreadGroup g, boolean b) {
-	return g.allowThreadSuspension(b);
+        return g.allowThreadSuspension(b);
     }
 
     /** @deprecated */
     @Deprecated
     public static boolean suspendThreads() {
         suspended = true;
-	return true;
+        return true;
     }
 
     // Causes any suspended threadgroups to be resumed.
@@ -88,7 +88,7 @@ public class VM {
     /** @deprecated */
     @Deprecated
     public static final int getState() {
-	return STATE_GREEN;
+        return STATE_GREEN;
     }
 
     /** @deprecated */
@@ -121,8 +121,8 @@ public class VM {
      * java.prof report to be automatically generated on exit; if not,
      * writeJavaProfilerReport must be invoked to write a report.
      *
-     * @see 	resetJavaProfiler
-     * @see 	writeJavaProfilerReport
+     * @see     resetJavaProfiler
+     * @see     writeJavaProfilerReport
      */
 
     // public native static void resumeJavaProfiler();
@@ -145,14 +145,14 @@ public class VM {
     // public native static void writeJavaProfilerReport();
 
     public static boolean isBooted() {
-	// [IKVM] we support arbitrary order class initialization,
-	//  so we don't distinguish between booted and not booted states
-	return true;
+        // [IKVM] we support arbitrary order class initialization,
+        //  so we don't distinguish between booted and not booted states
+        return true;
     }
 
     public static long maxDirectMemory() {
-	// we don't support -XX:MaxDirectMemorySize
-	return Long.MAX_VALUE;
+        // we don't support -XX:MaxDirectMemorySize
+        return Long.MAX_VALUE;
     }
 
     // A user-settable boolean to determine whether ClassLoader.loadClass should
@@ -179,17 +179,17 @@ public class VM {
     // allowArraySyntax boolean set during initialization.
     //    
     public static boolean allowArraySyntax() {
-	return allowArraySyntax;
+        return allowArraySyntax;
     }
 
     @ikvm.lang.Internal    
     public static void initializeAllowArraySyntax()
     {
-	String s
-	    = (String) System.getProperty("sun.lang.ClassLoader.allowArraySyntax");
-	allowArraySyntax = (s == null 
-			    ? defaultAllowArraySyntax
-			    : Boolean.parseBoolean(s));
+        String s
+            = (String) System.getProperty("sun.lang.ClassLoader.allowArraySyntax");
+        allowArraySyntax = (s == null 
+                            ? defaultAllowArraySyntax
+                            : Boolean.parseBoolean(s));
     }
     
     // Initialize any miscellenous operating system settings that need to be

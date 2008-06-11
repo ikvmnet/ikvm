@@ -113,9 +113,9 @@ class PendingBuffer
       throw new IllegalStateException();
     if (bitCount > 0)
       {
-	buf[end++] = (byte) bits;
-	if (bitCount > 8)
-	  buf[end++] = (byte) (bits >>> 8);
+        buf[end++] = (byte) bits;
+        if (bitCount > 8)
+          buf[end++] = (byte) (bits >>> 8);
       }
     bits = 0;
     bitCount = 0;
@@ -161,21 +161,21 @@ class PendingBuffer
   public final int flush(byte[] output, int offset, int length) {
     if (bitCount >= 8)
       {
-	buf[end++] = (byte) bits;
-	bits >>>= 8;
-	bitCount -= 8;
+        buf[end++] = (byte) bits;
+        bits >>>= 8;
+        bitCount -= 8;
       }
     if (length > end - start)
       {
-	length = end - start;
-	System.arraycopy(buf, start, output, offset, length);
-	start = 0;
-	end = 0;
+        length = end - start;
+        System.arraycopy(buf, start, output, offset, length);
+        start = 0;
+        end = 0;
       }
     else
       {
-	System.arraycopy(buf, start, output, offset, length);
-	start += length;
+        System.arraycopy(buf, start, output, offset, length);
+        start += length;
       }
     return length;
   }

@@ -82,9 +82,9 @@ public class AtomicBoolean implements java.io.Serializable {
      * the actual value was not equal to the expected value.
      */
     public final boolean compareAndSet(boolean expect, boolean update) {
-	int e = expect ? 1 : 0;
-	int u = update ? 1 : 0;
-	return compareAndSwapInt(e, u);
+        int e = expect ? 1 : 0;
+        int u = update ? 1 : 0;
+        return compareAndSwapInt(e, u);
     }
     // implemented in map.xml
     private native boolean compareAndSwapInt(int expected, int update);
@@ -109,7 +109,7 @@ public class AtomicBoolean implements java.io.Serializable {
      * @param newValue the new value
      */
     public final void set(boolean newValue) {
-	value = newValue ? 1 : 0;
+        value = newValue ? 1 : 0;
     }
 
     /**
@@ -119,7 +119,7 @@ public class AtomicBoolean implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(boolean newValue) {
-	value = newValue ? 1 : 0;
+        value = newValue ? 1 : 0;
     }
 
     /**

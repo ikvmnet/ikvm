@@ -29,6 +29,6 @@ public final class SunNativeProvider extends java.security.Provider
 {
     public SunNativeProvider()
     {
-	super(null, 0.0, null);
+        super(null, 0.0, null);
     }
 }

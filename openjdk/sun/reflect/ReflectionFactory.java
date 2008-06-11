@@ -138,7 +138,7 @@ public class ReflectionFactory {
             return new InstantiationExceptionConstructorAccessorImpl
                 ("Can not instantiate java.lang.Class");
         }
-	return newConstructorAccessor0(c);
+        return newConstructorAccessor0(c);
     }
 
     //--------------------------------------------------------------------------
@@ -275,7 +275,7 @@ public class ReflectionFactory {
             return constructorToCall;
         }
 
-	ConstructorAccessor acc = newConstructorAccessorForSerialization(classToInstantiate, constructorToCall);
+        ConstructorAccessor acc = newConstructorAccessorForSerialization(classToInstantiate, constructorToCall);
         Constructor c = newConstructor(constructorToCall.getDeclaringClass(),
                                        constructorToCall.getParameterTypes(),
                                        constructorToCall.getExceptionTypes(),

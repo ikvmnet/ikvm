@@ -86,9 +86,9 @@ public class FileChannelImpl
     private FileChannelImpl(FileDescriptor fd, boolean readable,
                             boolean writable, Object parent, boolean append)
     {
-	this.fd = fd;
-	this.readable = readable;
-	this.writable = writable;
+        this.fd = fd;
+        this.readable = readable;
+        this.writable = writable;
         this.parent = parent;
         this.appending = append;            
     }
@@ -97,22 +97,22 @@ public class FileChannelImpl
     // of java.io.File{Input,Output}Stream and RandomAccessFile
     //
     public static FileChannel open(FileDescriptor fd,
-				   boolean readable, boolean writable,
-				   Object parent)
+                                   boolean readable, boolean writable,
+                                   Object parent)
     {
-	return new FileChannelImpl(fd, readable, writable, parent, false);
+        return new FileChannelImpl(fd, readable, writable, parent, false);
     }
 
     public static FileChannel open(FileDescriptor fd,
-				   boolean readable, boolean writable,
-				   Object parent, boolean append)
+                                   boolean readable, boolean writable,
+                                   Object parent, boolean append)
     {
-	return new FileChannelImpl(fd, readable, writable, parent, append);
+        return new FileChannelImpl(fd, readable, writable, parent, append);
     }
 
     private void ensureOpen() throws IOException {
-	if (!isOpen())
-	    throw new ClosedChannelException();
+        if (!isOpen())
+            throw new ClosedChannelException();
     }
 
 
@@ -130,287 +130,287 @@ public class FileChannelImpl
             });
         }
 
-	if (parent != null) {
+        if (parent != null) {
 
-	    // Close the fd via the parent stream's close method.  The parent
-	    // will reinvoke our close method, which is defined in the
-	    // superclass AbstractInterruptibleChannel, but the isOpen logic in
-	    // that method will prevent this method from being reinvoked.
-	    //
-	    if (parent instanceof FileInputStream)
-		((FileInputStream)parent).close();
-	    else if (parent instanceof FileOutputStream)
-		((FileOutputStream)parent).close();
-	    else if (parent instanceof RandomAccessFile)
-		((RandomAccessFile)parent).close();
-	    else
-		assert false;
+            // Close the fd via the parent stream's close method.  The parent
+            // will reinvoke our close method, which is defined in the
+            // superclass AbstractInterruptibleChannel, but the isOpen logic in
+            // that method will prevent this method from being reinvoked.
+            //
+            if (parent instanceof FileInputStream)
+                ((FileInputStream)parent).close();
+            else if (parent instanceof FileOutputStream)
+                ((FileOutputStream)parent).close();
+            else if (parent instanceof RandomAccessFile)
+                ((RandomAccessFile)parent).close();
+            else
+                assert false;
 
-	} else {
-	    fd.close();
-	}
+        } else {
+            fd.close();
+        }
 
     }
 
     public int read(ByteBuffer dst) throws IOException {
-	ensureOpen();
-	if (!readable)
-	    throw new NonReadableChannelException();
-	synchronized (positionLock) {
-	    int n = 0;
-	    try {
-		begin();
-		if (!isOpen())
-		    return 0;
-		n = readImpl(dst);
-		return IOStatus.normalize(n);
-	    } finally {
-		end(n > 0);
-		assert IOStatus.check(n);
-	    }
-	}
+        ensureOpen();
+        if (!readable)
+            throw new NonReadableChannelException();
+        synchronized (positionLock) {
+            int n = 0;
+            try {
+                begin();
+                if (!isOpen())
+                    return 0;
+                n = readImpl(dst);
+                return IOStatus.normalize(n);
+            } finally {
+                end(n > 0);
+                assert IOStatus.check(n);
+            }
+        }
     }
 
     private long read0(ByteBuffer[] dsts) throws IOException {
-	ensureOpen();
+        ensureOpen();
         if (!readable)
             throw new NonReadableChannelException();
-	synchronized (positionLock) {
-	    long n = 0;
-	    try {
-		begin();
-		if (!isOpen())
-		    return 0;
-		n = readImpl(dsts);
-		return IOStatus.normalize(n);
-	    } finally {
-		end(n > 0);
-		assert IOStatus.check(n);
-	    }
-	}
+        synchronized (positionLock) {
+            long n = 0;
+            try {
+                begin();
+                if (!isOpen())
+                    return 0;
+                n = readImpl(dsts);
+                return IOStatus.normalize(n);
+            } finally {
+                end(n > 0);
+                assert IOStatus.check(n);
+            }
+        }
     }
 
     public long read(ByteBuffer[] dsts, int offset, int length)
-	throws IOException
+        throws IOException
     {
         if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
            throw new IndexOutOfBoundsException();
-	// ## Fix IOUtil.write so that we can avoid this array copy
-	return read0(Util.subsequence(dsts, offset, length));
+        // ## Fix IOUtil.write so that we can avoid this array copy
+        return read0(Util.subsequence(dsts, offset, length));
     }
 
     public int write(ByteBuffer src) throws IOException {
-	ensureOpen();
+        ensureOpen();
         if (!writable)
             throw new NonWritableChannelException();
-	synchronized (positionLock) {
-	    int n = 0;
-	    try {
-		begin();
-		if (!isOpen())
-		    return 0;
+        synchronized (positionLock) {
+            int n = 0;
+            try {
+                begin();
+                if (!isOpen())
+                    return 0;
                 if (appending)
                     position(size());
-		n = writeImpl(src);
-		return IOStatus.normalize(n);
-	    } finally {
-		end(n > 0);
-		assert IOStatus.check(n);
-	    }
-	}
+                n = writeImpl(src);
+                return IOStatus.normalize(n);
+            } finally {
+                end(n > 0);
+                assert IOStatus.check(n);
+            }
+        }
     }
 
     private long write0(ByteBuffer[] srcs) throws IOException {
-	ensureOpen();
+        ensureOpen();
         if (!writable)
             throw new NonWritableChannelException();
-	synchronized (positionLock) {
-	    long n = 0;
-	    try {
-		begin();
-		if (!isOpen())
-		    return 0;
+        synchronized (positionLock) {
+            long n = 0;
+            try {
+                begin();
+                if (!isOpen())
+                    return 0;
                 if (appending)
                     position(size());
-		n = writeImpl(srcs);
-		return IOStatus.normalize(n);
-	    } finally {
-		end(n > 0);
-		assert IOStatus.check(n);
-	    }
-	}
+                n = writeImpl(srcs);
+                return IOStatus.normalize(n);
+            } finally {
+                end(n > 0);
+                assert IOStatus.check(n);
+            }
+        }
     }
 
     public long write(ByteBuffer[] srcs, int offset, int length)
-	throws IOException
+        throws IOException
     {
         if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
            throw new IndexOutOfBoundsException();
-	// ## Fix IOUtil.write so that we can avoid this array copy
-	return write0(Util.subsequence(srcs, offset, length));
+        // ## Fix IOUtil.write so that we can avoid this array copy
+        return write0(Util.subsequence(srcs, offset, length));
     }
 
 
     // -- Other operations --
 
     public long position() throws IOException {
-	ensureOpen();
-	synchronized (positionLock) {
-	    long p = -1;
-	    try {
-		begin();
-		if (!isOpen())
-		    return 0;
-		do {
-		    p = position0(fd, -1);
-		} while ((p == IOStatus.INTERRUPTED) && isOpen());
-		return IOStatus.normalize(p);
-	    } finally {
-		end(p > -1);
-		assert IOStatus.check(p);
-	    }
-	}
+        ensureOpen();
+        synchronized (positionLock) {
+            long p = -1;
+            try {
+                begin();
+                if (!isOpen())
+                    return 0;
+                do {
+                    p = position0(fd, -1);
+                } while ((p == IOStatus.INTERRUPTED) && isOpen());
+                return IOStatus.normalize(p);
+            } finally {
+                end(p > -1);
+                assert IOStatus.check(p);
+            }
+        }
     }
 
     public FileChannel position(long newPosition) throws IOException {
-	ensureOpen();
+        ensureOpen();
         if (newPosition < 0)
             throw new IllegalArgumentException();
-	synchronized (positionLock) {
-	    long p = -1;
-	    try {
-		begin();
-		if (!isOpen())
-		    return null;
-		do {
-		    p  = position0(fd, newPosition);
-		} while ((p == IOStatus.INTERRUPTED) && isOpen());
-		return this;
-	    } finally {
-		end(p > -1);
-		assert IOStatus.check(p);
-	    }
-	}
+        synchronized (positionLock) {
+            long p = -1;
+            try {
+                begin();
+                if (!isOpen())
+                    return null;
+                do {
+                    p  = position0(fd, newPosition);
+                } while ((p == IOStatus.INTERRUPTED) && isOpen());
+                return this;
+            } finally {
+                end(p > -1);
+                assert IOStatus.check(p);
+            }
+        }
     }
 
     public long size() throws IOException {
-	ensureOpen();
-	synchronized (positionLock) {
-	    long s = -1;
-	    try {
-		begin();
-		if (!isOpen())
-		    return -1;
-		do {
-		    s = size0(fd);
-		} while ((s == IOStatus.INTERRUPTED) && isOpen());
-		return IOStatus.normalize(s);
-	    } finally {
-		end(s > -1);
-		assert IOStatus.check(s);
-	    }
-	}
+        ensureOpen();
+        synchronized (positionLock) {
+            long s = -1;
+            try {
+                begin();
+                if (!isOpen())
+                    return -1;
+                do {
+                    s = size0(fd);
+                } while ((s == IOStatus.INTERRUPTED) && isOpen());
+                return IOStatus.normalize(s);
+            } finally {
+                end(s > -1);
+                assert IOStatus.check(s);
+            }
+        }
     }
 
     public FileChannel truncate(long size) throws IOException {
-	ensureOpen();
+        ensureOpen();
         if (size < 0)
             throw new IllegalArgumentException();
         if (size > size())
             return this;
-	if (!writable)
-	    throw new NonWritableChannelException();
-	synchronized (positionLock) {
+        if (!writable)
+            throw new NonWritableChannelException();
+        synchronized (positionLock) {
             int rv = -1;
-	    long p = -1;
-	    try {
-		begin();
-		if (!isOpen())
-		    return null;
-
-                // get current position
-		do {
-		    p = position0(fd, -1);
-		} while ((p == IOStatus.INTERRUPTED) && isOpen());
-		if (!isOpen()) 
-                    return null;
-                assert p >= 0;
-
-		// truncate file
-		do {
-		    rv = truncate0(fd, size);
-		} while ((rv == IOStatus.INTERRUPTED) && isOpen());
+            long p = -1;
+            try {
+                begin();
                 if (!isOpen())
                     return null;
 
-		// set position to size if greater than size
+                // get current position
+                do {
+                    p = position0(fd, -1);
+                } while ((p == IOStatus.INTERRUPTED) && isOpen());
+                if (!isOpen()) 
+                    return null;
+                assert p >= 0;
+
+                // truncate file
+                do {
+                    rv = truncate0(fd, size);
+                } while ((rv == IOStatus.INTERRUPTED) && isOpen());
+                if (!isOpen())
+                    return null;
+
+                // set position to size if greater than size
                 if (p > size)
                     p = size;
                 do {
                     rv = (int)position0(fd, p);
                 } while ((rv == IOStatus.INTERRUPTED) && isOpen());
-		return this;
-	    } finally {
-		end(rv > -1);
-		assert IOStatus.check(rv);
-	    }
-	}
+                return this;
+            } finally {
+                end(rv > -1);
+                assert IOStatus.check(rv);
+            }
+        }
     }
 
     public void force(boolean metaData) throws IOException {
-	ensureOpen();
-	int rv = -1;
-	try {
-	    begin();
-	    if (!isOpen())
-		return;
-	    do {
-		rv = force0(fd, metaData);
-	    } while ((rv == IOStatus.INTERRUPTED) && isOpen());
-	} finally {
-	    end(rv > -1);
-	    assert IOStatus.check(rv);
-	}
+        ensureOpen();
+        int rv = -1;
+        try {
+            begin();
+            if (!isOpen())
+                return;
+            do {
+                rv = force0(fd, metaData);
+            } while ((rv == IOStatus.INTERRUPTED) && isOpen());
+        } finally {
+            end(rv > -1);
+            assert IOStatus.check(rv);
+        }
     }
 
     private long transferToArbitraryChannel(long position, int icount,
-					    WritableByteChannel target)
-	throws IOException
+                                            WritableByteChannel target)
+        throws IOException
     {
-	// Untrusted target: Use a newly-erased buffer
-	int c = Math.min(icount, TRANSFER_SIZE);
+        // Untrusted target: Use a newly-erased buffer
+        int c = Math.min(icount, TRANSFER_SIZE);
         ByteBuffer bb = ByteBuffer.allocate(c);
-	long tw = 0;			// Total bytes written
-	long pos = position;
-	try {
-	    while (tw < icount) {
-		bb.limit(Math.min((int)(icount - tw), TRANSFER_SIZE));
-		int nr = read(bb, pos);
-		if (nr <= 0)
-		    break;
-		bb.flip();
-		// ## Bug: Will block writing target if this channel
-		// ##      is asynchronously closed
-		int nw = target.write(bb);
-		tw += nw;
-		if (nw != nr)
-		    break;
-		pos += nw;
-		bb.clear();
-	    }
-	    return tw;
-	} catch (IOException x) {
-	    if (tw > 0)
-		return tw;
-	    throw x;
+        long tw = 0;                    // Total bytes written
+        long pos = position;
+        try {
+            while (tw < icount) {
+                bb.limit(Math.min((int)(icount - tw), TRANSFER_SIZE));
+                int nr = read(bb, pos);
+                if (nr <= 0)
+                    break;
+                bb.flip();
+                // ## Bug: Will block writing target if this channel
+                // ##      is asynchronously closed
+                int nw = target.write(bb);
+                tw += nw;
+                if (nw != nr)
+                    break;
+                pos += nw;
+                bb.clear();
+            }
+            return tw;
+        } catch (IOException x) {
+            if (tw > 0)
+                return tw;
+            throw x;
         }
     }
 
     public long transferTo(long position, long count,
-			   WritableByteChannel target)
-	throws IOException
+                           WritableByteChannel target)
+        throws IOException
     {
-	ensureOpen();
+        ensureOpen();
         if (!target.isOpen())
             throw new ClosedChannelException();
         if (!readable)
@@ -420,15 +420,15 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         if ((position < 0) || (count < 0))
             throw new IllegalArgumentException();
-	long sz = size();
+        long sz = size();
         if (position > sz)
             return 0;
-	int icount = (int)Math.min(count, Integer.MAX_VALUE);
+        int icount = (int)Math.min(count, Integer.MAX_VALUE);
         if ((sz - position) < icount)
             icount = (int)(sz - position);
 
-	// Slow path for untrusted targets
-	return transferToArbitraryChannel(position, icount, target);
+        // Slow path for untrusted targets
+        return transferToArbitraryChannel(position, icount, target);
     }
 
     private static final int TRANSFER_SIZE = 8192;
@@ -437,40 +437,40 @@ public class FileChannelImpl
                                               long position, long count)
         throws IOException
     {
-	// Untrusted target: Use a newly-erased buffer
-	int c = (int)Math.min(count, TRANSFER_SIZE);
+        // Untrusted target: Use a newly-erased buffer
+        int c = (int)Math.min(count, TRANSFER_SIZE);
         ByteBuffer bb = ByteBuffer.allocate(c);
-	long tw = 0;			// Total bytes written
-	long pos = position;
+        long tw = 0;                    // Total bytes written
+        long pos = position;
         try {
-	    while (tw < count) {
+            while (tw < count) {
                 bb.limit((int)Math.min((count - tw), (long)TRANSFER_SIZE));
-		// ## Bug: Will block reading src if this channel
-		// ##      is asynchronously closed
-		int nr = src.read(bb);
-		if (nr <= 0)
-		    break;
-		bb.flip();
-		int nw = write(bb, pos);
-		tw += nw;
-		if (nw != nr)
-		    break;
-		pos += nw;
-		bb.clear();
-	    }
-	    return tw;
-	} catch (IOException x) {
-	    if (tw > 0)
-		return tw;
-	    throw x;
+                // ## Bug: Will block reading src if this channel
+                // ##      is asynchronously closed
+                int nr = src.read(bb);
+                if (nr <= 0)
+                    break;
+                bb.flip();
+                int nw = write(bb, pos);
+                tw += nw;
+                if (nw != nr)
+                    break;
+                pos += nw;
+                bb.clear();
+            }
+            return tw;
+        } catch (IOException x) {
+            if (tw > 0)
+                return tw;
+            throw x;
         }
     }
 
     public long transferFrom(ReadableByteChannel src,
-			     long position, long count)
-	throws IOException
+                             long position, long count)
+        throws IOException
     {
-	ensureOpen();
+        ensureOpen();
         if (!src.isOpen())
             throw new ClosedChannelException();
         if (!writable)
@@ -491,17 +491,17 @@ public class FileChannelImpl
         if (!readable)
             throw new NonReadableChannelException();
         ensureOpen();
-	int n = 0;
-	try {
-	    begin();
-	    if (!isOpen())
-		return -1;
-	    n = readImpl(dst, position);
-	    return IOStatus.normalize(n);
-	} finally {
-	    end(n > 0);
-	    assert IOStatus.check(n);
-	}
+        int n = 0;
+        try {
+            begin();
+            if (!isOpen())
+                return -1;
+            n = readImpl(dst, position);
+            return IOStatus.normalize(n);
+        } finally {
+            end(n > 0);
+            assert IOStatus.check(n);
+        }
     }
 
     public int write(ByteBuffer src, long position) throws IOException {
@@ -512,48 +512,48 @@ public class FileChannelImpl
         if (!writable)
             throw new NonWritableChannelException();
         ensureOpen();
-	int n = 0;
-	try {
-	    begin();
-	    if (!isOpen())
-		return -1;
-	    n = writeImpl(src, position);
-	    return IOStatus.normalize(n);
-	} finally {
-	    end(n > 0);
-	    assert IOStatus.check(n);
-	}
+        int n = 0;
+        try {
+            begin();
+            if (!isOpen())
+                return -1;
+            n = writeImpl(src, position);
+            return IOStatus.normalize(n);
+        } finally {
+            end(n > 0);
+            assert IOStatus.check(n);
+        }
     }
 
 
     // -- Memory-mapped buffers --
 
     private static class Unmapper
-	implements Runnable
+        implements Runnable
     {
 
-	private long address;
-	private long size;
+        private long address;
+        private long size;
 
-	private Unmapper(long address, long size) {
-	    assert (address != 0);
-	    this.address = address;
-	    this.size = size;
-	}
+        private Unmapper(long address, long size) {
+            assert (address != 0);
+            this.address = address;
+            this.size = size;
+        }
 
-	public void run() {
-	    if (address == 0)
-		return;
-	    unmap0(address, size);
-	    address = 0;
-	}
+        public void run() {
+            if (address == 0)
+                return;
+            unmap0(address, size);
+            address = 0;
+        }
 
     }
 
     private static void unmap(MappedByteBuffer bb) {
-	Cleaner cl = ((DirectBuffer)bb).cleaner();
-	if (cl != null)
-	    cl.clean();
+        Cleaner cl = ((DirectBuffer)bb).cleaner();
+        if (cl != null)
+            cl.clean();
     }
 
     private static final int MAP_RO = 0;
@@ -564,41 +564,41 @@ public class FileChannelImpl
         throws IOException
     {
         ensureOpen();
-	if (position < 0L)
-	    throw new IllegalArgumentException("Negative position");
-	if (size < 0L)
-	    throw new IllegalArgumentException("Negative size");
+        if (position < 0L)
+            throw new IllegalArgumentException("Negative position");
+        if (size < 0L)
+            throw new IllegalArgumentException("Negative size");
         if (position + size < 0)
             throw new IllegalArgumentException("Position + size overflow");
-	if (size > Integer.MAX_VALUE)
-	    throw new IllegalArgumentException("Size exceeds Integer.MAX_VALUE");
-	int imode = -1;
+        if (size > Integer.MAX_VALUE)
+            throw new IllegalArgumentException("Size exceeds Integer.MAX_VALUE");
+        int imode = -1;
         if (mode == MapMode.READ_ONLY)
-	    imode = MAP_RO;
-	else if (mode == MapMode.READ_WRITE)
-	    imode = MAP_RW;
-	else if (mode == MapMode.PRIVATE)
-	    imode = MAP_PV;
-	assert (imode >= 0);
-	if ((mode != MapMode.READ_ONLY) && !writable)
-	    throw new NonWritableChannelException();
-	if (!readable)
-	    throw new NonReadableChannelException();
+            imode = MAP_RO;
+        else if (mode == MapMode.READ_WRITE)
+            imode = MAP_RW;
+        else if (mode == MapMode.PRIVATE)
+            imode = MAP_PV;
+        assert (imode >= 0);
+        if ((mode != MapMode.READ_ONLY) && !writable)
+            throw new NonWritableChannelException();
+        if (!readable)
+            throw new NonReadableChannelException();
 
-	long addr = -1;
-	try {
-	    begin();
-	    if (!isOpen())
-		return null;
+        long addr = -1;
+        try {
+            begin();
+            if (!isOpen())
+                return null;
             if (size() < position + size) { // Extend file size
                 if (!writable) {
                     throw new IOException("Channel not open for writing " +
                         "- cannot extend file to required size");
                 }
-		int rv;
-		do {
-		    rv = truncate0(fd, position + size);
-		} while ((rv == IOStatus.INTERRUPTED) && isOpen());
+                int rv;
+                do {
+                    rv = truncate0(fd, position + size);
+                } while ((rv == IOStatus.INTERRUPTED) && isOpen());
             }
             if (size == 0) {
                 addr = 0;
@@ -608,28 +608,28 @@ public class FileChannelImpl
                     return Util.newMappedByteBuffer(0, 0, null);
             }
 
-	    int pagePosition = (int)(position % allocationGranularity);
-	    long mapPosition = position - pagePosition;
-	    long mapSize = size + pagePosition;  
-	    try {
-		// If no exception was thrown from map0, the address is valid
-		addr = map0(imode, mapPosition, mapSize);
-	    } catch (OutOfMemoryError x) {
-		// An OutOfMemoryError may indicate that we've exhausted memory
-		// so force gc and re-attempt map
-		System.gc();
-		try {
-		    Thread.sleep(100);
-		} catch (InterruptedException y) { 
-		    Thread.currentThread().interrupt();
-		}
-		try {
-		    addr = map0(imode, mapPosition, mapSize);
-		} catch (OutOfMemoryError y) {
-		    // After a second OOME, fail
-		    throw new IOException("Map failed", y);
-		} 
-	    }
+            int pagePosition = (int)(position % allocationGranularity);
+            long mapPosition = position - pagePosition;
+            long mapSize = size + pagePosition;  
+            try {
+                // If no exception was thrown from map0, the address is valid
+                addr = map0(imode, mapPosition, mapSize);
+            } catch (OutOfMemoryError x) {
+                // An OutOfMemoryError may indicate that we've exhausted memory
+                // so force gc and re-attempt map
+                System.gc();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException y) { 
+                    Thread.currentThread().interrupt();
+                }
+                try {
+                    addr = map0(imode, mapPosition, mapSize);
+                } catch (OutOfMemoryError y) {
+                    // After a second OOME, fail
+                    throw new IOException("Map failed", y);
+                } 
+            }
 
             assert (IOStatus.checkAll(addr));
             assert (addr % allocationGranularity == 0);
@@ -639,9 +639,9 @@ public class FileChannelImpl
                 return Util.newMappedByteBufferR(isize, addr + pagePosition, um);
             else
                 return Util.newMappedByteBuffer(isize, addr + pagePosition, um);
-	} finally {
-	    end(IOStatus.checkAll(addr));
-	}
+        } finally {
+            end(IOStatus.checkAll(addr));
+        }
     }
 
 
@@ -693,21 +693,21 @@ public class FileChannelImpl
     }
 
     public FileLock lock(long position, long size, boolean shared)
-	throws IOException
+        throws IOException
     {
         ensureOpen();
-	if (shared && !readable)
-	    throw new NonReadableChannelException();
-	if (!shared && !writable)
-	    throw new NonWritableChannelException();
+        if (shared && !readable)
+            throw new NonReadableChannelException();
+        if (!shared && !writable)
+            throw new NonWritableChannelException();
         FileLockImpl fli = new FileLockImpl(this, position, size, shared);        
         FileLockTable flt = fileLockTable();
         flt.add(fli);
         boolean i = true;
         try {
             begin();
-	    if (!isOpen())
-		return null;
+            if (!isOpen())
+                return null;
             int result = lock0(fd, true, position, size, shared);
             if (result == RET_EX_LOCK) {
                 assert shared;
@@ -734,33 +734,33 @@ public class FileChannelImpl
     }
 
     public FileLock tryLock(long position, long size, boolean shared)
-	throws IOException
+        throws IOException
     {
         ensureOpen();
-	if (shared && !readable)
-	    throw new NonReadableChannelException();
-	if (!shared && !writable)
-	    throw new NonWritableChannelException();
+        if (shared && !readable)
+            throw new NonReadableChannelException();
+        if (!shared && !writable)
+            throw new NonWritableChannelException();
         FileLockImpl fli = new FileLockImpl(this, position, size, shared);
         FileLockTable flt = fileLockTable();
         flt.add(fli);
-	int result = lock0(fd, false, position, size, shared);
-	if (result == NO_LOCK) {
-	    flt.remove(fli);
-	    return null;
-	}
-	if (result == RET_EX_LOCK) {
-	    assert shared;
-	    FileLockImpl fli2 = new FileLockImpl(this, position, size,
-						 false);
-	    flt.replace(fli, fli2);
-	    return fli2;
-	}
+        int result = lock0(fd, false, position, size, shared);
+        if (result == NO_LOCK) {
+            flt.remove(fli);
+            return null;
+        }
+        if (result == RET_EX_LOCK) {
+            assert shared;
+            FileLockImpl fli2 = new FileLockImpl(this, position, size,
+                                                 false);
+            flt.replace(fli, fli2);
+            return fli2;
+        }
         return fli;
     }
 
     void release(FileLockImpl fli) throws IOException {
-	ensureOpen();
+        ensureOpen();
         release0(fd, fli.position(), fli.size());
         assert fileLockTable != null;
         fileLockTable.remove(fli);
@@ -1059,336 +1059,336 @@ public class FileChannelImpl
 
     private int readImpl(ByteBuffer dst) throws IOException
     {
-	if (dst.hasArray())
-	{
-	    byte[] buf = dst.array();
-	    int len = fd.readBytes(buf, dst.arrayOffset() + dst.position(), dst.remaining());
-	    if (len > 0)
-	    {
-		dst.position(dst.position() + len);
-	    }
-	    return len;
-	}
-	else
-	{
-	    byte[] buf = new byte[dst.remaining()];
-	    int len = fd.readBytes(buf, 0, buf.length);
-	    if (len > 0)
-	    {
-		dst.put(buf, 0, len);
-	    }
-	    return len;
-	}
+        if (dst.hasArray())
+        {
+            byte[] buf = dst.array();
+            int len = fd.readBytes(buf, dst.arrayOffset() + dst.position(), dst.remaining());
+            if (len > 0)
+            {
+                dst.position(dst.position() + len);
+            }
+            return len;
+        }
+        else
+        {
+            byte[] buf = new byte[dst.remaining()];
+            int len = fd.readBytes(buf, 0, buf.length);
+            if (len > 0)
+            {
+                dst.put(buf, 0, len);
+            }
+            return len;
+        }
     }
 
     private int readImpl(ByteBuffer dst, long position) throws IOException
     {
-	synchronized (positionLock)
-	{
-	    long prev = position0(fd, -1);
-	    try
-	    {
-		position0(fd, position);
-		return readImpl(dst);
-	    }
-	    finally
-	    {
-		position0(fd, prev);
-	    }
-	}
+        synchronized (positionLock)
+        {
+            long prev = position0(fd, -1);
+            try
+            {
+                position0(fd, position);
+                return readImpl(dst);
+            }
+            finally
+            {
+                position0(fd, prev);
+            }
+        }
     }
 
     private long readImpl(ByteBuffer[] dsts) throws IOException
     {
-	long totalRead = 0;
-	try
-	{
-	    for (int i = 0; i < dsts.length; i++)
-	    {
-		int size = dsts[i].remaining();
-		if (size > 0)
-		{
-		    int read = readImpl(dsts[i]);
-		    if (read < 0)
-		    {
-			break;
-		    }
-		    totalRead += read;
-		    if (read < size || fd.available() == 0)
-		    {
-			break;
-		    }
-		}
-	    }
-	}
-	catch (IOException x)
-	{
-	    if (totalRead == 0)
-	    {
-		throw x;
-	    }
-	}
-	return totalRead;
+        long totalRead = 0;
+        try
+        {
+            for (int i = 0; i < dsts.length; i++)
+            {
+                int size = dsts[i].remaining();
+                if (size > 0)
+                {
+                    int read = readImpl(dsts[i]);
+                    if (read < 0)
+                    {
+                        break;
+                    }
+                    totalRead += read;
+                    if (read < size || fd.available() == 0)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        catch (IOException x)
+        {
+            if (totalRead == 0)
+            {
+                throw x;
+            }
+        }
+        return totalRead;
     }
 
     private int writeImpl(ByteBuffer src) throws IOException
     {
-	if (src.hasArray())
-	{
-	    byte[] buf = src.array();
-	    int len = src.remaining();
-	    fd.writeBytes(buf, src.arrayOffset() + src.position(), len);
-	    src.position(src.position() + len);
-	    return len;
-	}
-	else
-	{
-	    int pos = src.position();
-	    byte[] buf = new byte[src.remaining()];
-	    src.get(buf);
-	    fd.writeBytes(buf, 0, buf.length);
-	    src.position(pos + buf.length);
-	    return buf.length;
-	}
+        if (src.hasArray())
+        {
+            byte[] buf = src.array();
+            int len = src.remaining();
+            fd.writeBytes(buf, src.arrayOffset() + src.position(), len);
+            src.position(src.position() + len);
+            return len;
+        }
+        else
+        {
+            int pos = src.position();
+            byte[] buf = new byte[src.remaining()];
+            src.get(buf);
+            fd.writeBytes(buf, 0, buf.length);
+            src.position(pos + buf.length);
+            return buf.length;
+        }
     }
 
     private int writeImpl(ByteBuffer src, long position) throws IOException
     {
-	synchronized (positionLock)
-	{
-	    long prev = position0(fd, -1);
-	    try
-	    {
-		position0(fd, position);
-		return writeImpl(src);
-	    }
-	    finally
-	    {
-		position0(fd, prev);
-	    }
-	}
+        synchronized (positionLock)
+        {
+            long prev = position0(fd, -1);
+            try
+            {
+                position0(fd, position);
+                return writeImpl(src);
+            }
+            finally
+            {
+                position0(fd, prev);
+            }
+        }
     }
 
     private long writeImpl(ByteBuffer[] srcs) throws IOException
     {
-	long totalWritten = 0;
-	try
-	{
-	    for (int i = 0; i < srcs.length; i++)
-	    {
-		int size = srcs[i].remaining();
-		if (size > 0)
-		{
-		    int written = writeImpl(srcs[i]);
-		    totalWritten += written;
-		    if (written < size)
-		    {
-			break;
-		    }
-		}
-	    }
-	}
-	catch (IOException x)
-	{
-	    if (totalWritten == 0)
-	    {
-		throw x;
-	    }
-	}
-	return totalWritten;
+        long totalWritten = 0;
+        try
+        {
+            for (int i = 0; i < srcs.length; i++)
+            {
+                int size = srcs[i].remaining();
+                if (size > 0)
+                {
+                    int written = writeImpl(srcs[i]);
+                    totalWritten += written;
+                    if (written < size)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        catch (IOException x)
+        {
+            if (totalWritten == 0)
+            {
+                throw x;
+            }
+        }
+        return totalWritten;
     }
 
     @StructLayoutAttribute.Annotation(LayoutKind.__Enum.Sequential)
     private static final class OVERLAPPED extends cli.System.Object
     {
-	IntPtr Internal;
-	IntPtr InternalHigh;
-	int OffsetLow;
-	int OffsetHigh;
-	IntPtr hEvent;
+        IntPtr Internal;
+        IntPtr InternalHigh;
+        int OffsetLow;
+        int OffsetHigh;
+        IntPtr hEvent;
     }
 
     // Grabs a file lock
     static int lock0(FileDescriptor fd, boolean blocking, long pos, long size, boolean shared) throws IOException
     {
-	FileStream fs = (FileStream)fd.getStream();
-	if (winNT)
-	{
-	    int LOCKFILE_FAIL_IMMEDIATELY = 1;
-	    int LOCKFILE_EXCLUSIVE_LOCK = 2;
-	    int ERROR_LOCK_VIOLATION = 33;
-	    int flags = 0;
-	    OVERLAPPED o = new OVERLAPPED();
-	    o.OffsetLow = (int)pos;
-	    o.OffsetHigh = (int)(pos >> 32);
-	    if (!blocking)
-	    {
-		flags |= LOCKFILE_FAIL_IMMEDIATELY;
-	    }
-	    if (!shared)
-	    {
-		flags |= LOCKFILE_EXCLUSIVE_LOCK;
-	    }
-	    int result = LockFileEx(fs.get_SafeFileHandle(), flags, 0, (int)size, (int)(size >> 32), o);
-	    if (result == 0)
-	    {
-		int error = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-		if (!blocking && error == ERROR_LOCK_VIOLATION)
-		{
-		    return NO_LOCK;
-		}
-		throw new IOException("Lock failed");
-	    }
-	    return LOCKED;
-	}
-	else
-	{
-	    try
-	    {
-		if (false) throw new cli.System.ArgumentOutOfRangeException();
-		for (;;)
-		{
-		    try
-		    {
-			if (false) throw new cli.System.IO.IOException();
-			if (false) throw new cli.System.ObjectDisposedException("");
-			fs.Lock(pos, size);
-			return shared ? RET_EX_LOCK : LOCKED;
-		    }
-		    catch (cli.System.IO.IOException x)
-		    {
-			if (!blocking)
-			{
-			    return NO_LOCK;
-			}
-			cli.System.Threading.Thread.Sleep(100);
-		    }
-		    catch (cli.System.ObjectDisposedException x)
-		    {
-			throw new IOException(x.getMessage());
-		    }
-		}
-	    }
-	    catch (cli.System.ArgumentOutOfRangeException x)
-	    {
-		throw new IOException(x.getMessage());
-	    }
-	}
+        FileStream fs = (FileStream)fd.getStream();
+        if (winNT)
+        {
+            int LOCKFILE_FAIL_IMMEDIATELY = 1;
+            int LOCKFILE_EXCLUSIVE_LOCK = 2;
+            int ERROR_LOCK_VIOLATION = 33;
+            int flags = 0;
+            OVERLAPPED o = new OVERLAPPED();
+            o.OffsetLow = (int)pos;
+            o.OffsetHigh = (int)(pos >> 32);
+            if (!blocking)
+            {
+                flags |= LOCKFILE_FAIL_IMMEDIATELY;
+            }
+            if (!shared)
+            {
+                flags |= LOCKFILE_EXCLUSIVE_LOCK;
+            }
+            int result = LockFileEx(fs.get_SafeFileHandle(), flags, 0, (int)size, (int)(size >> 32), o);
+            if (result == 0)
+            {
+                int error = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                if (!blocking && error == ERROR_LOCK_VIOLATION)
+                {
+                    return NO_LOCK;
+                }
+                throw new IOException("Lock failed");
+            }
+            return LOCKED;
+        }
+        else
+        {
+            try
+            {
+                if (false) throw new cli.System.ArgumentOutOfRangeException();
+                for (;;)
+                {
+                    try
+                    {
+                        if (false) throw new cli.System.IO.IOException();
+                        if (false) throw new cli.System.ObjectDisposedException("");
+                        fs.Lock(pos, size);
+                        return shared ? RET_EX_LOCK : LOCKED;
+                    }
+                    catch (cli.System.IO.IOException x)
+                    {
+                        if (!blocking)
+                        {
+                            return NO_LOCK;
+                        }
+                        cli.System.Threading.Thread.Sleep(100);
+                    }
+                    catch (cli.System.ObjectDisposedException x)
+                    {
+                        throw new IOException(x.getMessage());
+                    }
+                }
+            }
+            catch (cli.System.ArgumentOutOfRangeException x)
+            {
+                throw new IOException(x.getMessage());
+            }
+        }
     }
 
     // Releases a file lock
     static void release0(FileDescriptor fd, long pos, long size) throws IOException
     {
-	FileStream fs = (FileStream)fd.getStream();
-	if (winNT)
-	{
-	    OVERLAPPED o = new OVERLAPPED();
-	    o.OffsetLow = (int)pos;
-	    o.OffsetHigh = (int)(pos >> 32);
-	    int result = UnlockFileEx(fs.get_SafeFileHandle(), 0, (int)size, (int)(size >> 32), o);
-	    if (result == 0)
-	    {
-		throw new IOException("Release failed");
-	    }
-	}
-	else
-	{
-	    try
-	    {
-		if (false) throw new cli.System.ArgumentOutOfRangeException();
-		if (false) throw new cli.System.IO.IOException();
-		if (false) throw new cli.System.ObjectDisposedException("");
-		fs.Unlock(pos, size);
-	    }
-	    catch (cli.System.ArgumentOutOfRangeException x)
-	    {
-		throw new IOException(x.getMessage());
-	    }
-	    catch (cli.System.IO.IOException x)
-	    {
-		throw new IOException(x.getMessage());
-	    }
-	    catch (cli.System.ObjectDisposedException x)
-	    {
-		throw new IOException(x.getMessage());
-	    }
-	}
+        FileStream fs = (FileStream)fd.getStream();
+        if (winNT)
+        {
+            OVERLAPPED o = new OVERLAPPED();
+            o.OffsetLow = (int)pos;
+            o.OffsetHigh = (int)(pos >> 32);
+            int result = UnlockFileEx(fs.get_SafeFileHandle(), 0, (int)size, (int)(size >> 32), o);
+            if (result == 0)
+            {
+                throw new IOException("Release failed");
+            }
+        }
+        else
+        {
+            try
+            {
+                if (false) throw new cli.System.ArgumentOutOfRangeException();
+                if (false) throw new cli.System.IO.IOException();
+                if (false) throw new cli.System.ObjectDisposedException("");
+                fs.Unlock(pos, size);
+            }
+            catch (cli.System.ArgumentOutOfRangeException x)
+            {
+                throw new IOException(x.getMessage());
+            }
+            catch (cli.System.IO.IOException x)
+            {
+                throw new IOException(x.getMessage());
+            }
+            catch (cli.System.ObjectDisposedException x)
+            {
+                throw new IOException(x.getMessage());
+            }
+        }
     }
 
     // Creates a new mapping
     private long map0(int prot, long position, long length) throws IOException
     {
-	FileStream fs = (FileStream)fd.getStream();
-	if (win32)
-	    return mapViewOfFileWin32(fs, prot, position, length);
-	else
-	    return mapViewOfFilePosix(fs, prot, position, length);
+        FileStream fs = (FileStream)fd.getStream();
+        if (win32)
+            return mapViewOfFileWin32(fs, prot, position, length);
+        else
+            return mapViewOfFilePosix(fs, prot, position, length);
     }
 
     private static long mapViewOfFileWin32(FileStream fs, int prot, long position, long length) throws IOException
     {
-	try
-	{
-	    int PAGE_READONLY = 2;
-	    int PAGE_READWRITE = 4;
-	    int PAGE_WRITECOPY = 8;
-	    
-	    int FILE_MAP_WRITE = 2;
-	    int FILE_MAP_READ = 4;
-	    int FILE_MAP_COPY = 1;
+        try
+        {
+            int PAGE_READONLY = 2;
+            int PAGE_READWRITE = 4;
+            int PAGE_WRITECOPY = 8;
+            
+            int FILE_MAP_WRITE = 2;
+            int FILE_MAP_READ = 4;
+            int FILE_MAP_COPY = 1;
 
-	    int fileProtect;
-	    int mapAccess;
+            int fileProtect;
+            int mapAccess;
 
-	    switch (prot)
-	    {
-		case MAP_RO:
-		    fileProtect = PAGE_READONLY;
-		    mapAccess = FILE_MAP_READ;
-		    break;
-		case MAP_RW:
-		    fileProtect = PAGE_READWRITE;
-		    mapAccess = FILE_MAP_WRITE;
-		    break;
-		case MAP_PV:
-		    fileProtect = PAGE_WRITECOPY;
-		    mapAccess = FILE_MAP_COPY;
-		    break;
-		default:
-		    throw new Error();
-	    }
+            switch (prot)
+            {
+                case MAP_RO:
+                    fileProtect = PAGE_READONLY;
+                    mapAccess = FILE_MAP_READ;
+                    break;
+                case MAP_RW:
+                    fileProtect = PAGE_READWRITE;
+                    mapAccess = FILE_MAP_WRITE;
+                    break;
+                case MAP_PV:
+                    fileProtect = PAGE_WRITECOPY;
+                    mapAccess = FILE_MAP_COPY;
+                    break;
+                default:
+                    throw new Error();
+            }
 
-	    long maxSize = length + position;
-	    SafeFileHandle hFileMapping = CreateFileMapping(fs.get_SafeFileHandle(), IntPtr.Zero, fileProtect, (int)(maxSize >> 32), (int)maxSize, null);
-	    int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-	    if (hFileMapping.get_IsInvalid())
-	    {
-		throw new IOException("Win32 error " + err);
-	    }
-	    IntPtr p = MapViewOfFile(hFileMapping, mapAccess, (int)(position >> 32), (int)position, IntPtr.op_Explicit(length));
-	    err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-	    hFileMapping.Close();
-	    if (p.Equals(IntPtr.Zero))
-	    {
-		if (err == 8 /*ERROR_NOT_ENOUGH_MEMORY*/)
-		{
-		    throw new OutOfMemoryError("Map failed");
-		}
-		throw new IOException("Win32 error " + err);
-	    }
-	    cli.System.GC.AddMemoryPressure(length);
-	    return p.ToInt64();
-	}
-	finally
-	{
-	    cli.System.GC.KeepAlive(fs);
-	}
+            long maxSize = length + position;
+            SafeFileHandle hFileMapping = CreateFileMapping(fs.get_SafeFileHandle(), IntPtr.Zero, fileProtect, (int)(maxSize >> 32), (int)maxSize, null);
+            int err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+            if (hFileMapping.get_IsInvalid())
+            {
+                throw new IOException("Win32 error " + err);
+            }
+            IntPtr p = MapViewOfFile(hFileMapping, mapAccess, (int)(position >> 32), (int)position, IntPtr.op_Explicit(length));
+            err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+            hFileMapping.Close();
+            if (p.Equals(IntPtr.Zero))
+            {
+                if (err == 8 /*ERROR_NOT_ENOUGH_MEMORY*/)
+                {
+                    throw new OutOfMemoryError("Map failed");
+                }
+                throw new IOException("Win32 error " + err);
+            }
+            cli.System.GC.AddMemoryPressure(length);
+            return p.ToInt64();
+        }
+        finally
+        {
+            cli.System.GC.KeepAlive(fs);
+        }
     }
 
     private static long mapViewOfFilePosix(FileStream fs, int prot, long position, long length) throws IOException
     {
-	byte writeable = prot != MAP_RO ? (byte)1 : (byte)0;
-	byte copy_on_write = prot == MAP_PV ? (byte)1 : (byte)0;
+        byte writeable = prot != MAP_RO ? (byte)1 : (byte)0;
+        byte copy_on_write = prot == MAP_PV ? (byte)1 : (byte)0;
         IntPtr p = ikvm_mmap(fs.get_SafeFileHandle(), writeable, copy_on_write, position, (int)length);
         cli.System.GC.KeepAlive(fs);
         // HACK ikvm_mmap should really be changed to return a null pointer on failure,
@@ -1398,7 +1398,7 @@ public class FileChannelImpl
         {
             throw new IOException("file mapping failed");
         }
-	cli.System.GC.AddMemoryPressure(length);
+        cli.System.GC.AddMemoryPressure(length);
         return p.ToInt64();
     }
 
@@ -1457,26 +1457,26 @@ public class FileChannelImpl
         else
             ikvm_munmap(IntPtr.op_Explicit(address), (int)length);
         cli.System.GC.RemoveMemoryPressure(length);
-	return 0;
+        return 0;
     }
 
     // Forces output to device
     private static int force0(FileDescriptor fd, boolean metaData) throws IOException
     {
-	FileStream fs = (FileStream)fd.getStream();
-	boolean rc = win32 ? flushWin32(fs) : flushPosix(fs);
-	if (!rc)
-	{
-	    throw new IOException("Force failed");
-	}
-	return 0;
+        FileStream fs = (FileStream)fd.getStream();
+        boolean rc = win32 ? flushWin32(fs) : flushPosix(fs);
+        if (!rc)
+        {
+            throw new IOException("Force failed");
+        }
+        return 0;
     }
 
     // Truncates a file
     private static int truncate0(FileDescriptor fd, long size) throws IOException
     {
-	fd.setLength(size);
-	return 0;
+        fd.setLength(size);
+        return 0;
     }
 
     // Sets or reports this file's position
@@ -1484,18 +1484,18 @@ public class FileChannelImpl
     // otherwise the position is set to offset
     private static long position0(FileDescriptor fd, long offset) throws IOException
     {
-	if (offset == -1)
-	{
-	    return fd.getFilePointer();
-	}
-	fd.seek(offset);
-	return offset;
+        if (offset == -1)
+        {
+            return fd.getFilePointer();
+        }
+        fd.seek(offset);
+        return offset;
     }
 
     // Reports this file's size
     private static long size0(FileDescriptor fd) throws IOException
     {
-	return fd.length();
+        return fd.length();
     }
 
     static {

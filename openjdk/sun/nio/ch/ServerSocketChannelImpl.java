@@ -79,153 +79,153 @@ class ServerSocketChannelImpl
 
 
     public ServerSocketChannelImpl(SelectorProvider sp) throws IOException {
-	super(sp);
-	this.fd = Net.serverSocket(true);
-	this.state = ST_INUSE;
+        super(sp);
+        this.fd = Net.serverSocket(true);
+        this.state = ST_INUSE;
     }
 
     public ServerSocketChannelImpl(SelectorProvider sp, FileDescriptor fd) 
-	throws IOException
+        throws IOException
     {
-	super(sp);
-	this.fd = fd;
-	this.state = ST_INUSE;
-	localAddress = Net.localAddress(fd);
+        super(sp);
+        this.fd = fd;
+        this.state = ST_INUSE;
+        localAddress = Net.localAddress(fd);
     }
 
     public ServerSocket socket() {
-	synchronized (stateLock) {
-	    if (socket == null)
-		socket = ServerSocketAdaptor.create(this);
-	    return socket;
-	}
+        synchronized (stateLock) {
+            if (socket == null)
+                socket = ServerSocketAdaptor.create(this);
+            return socket;
+        }
     }
 
     public boolean isBound() {
-	synchronized (stateLock) {
-	    return localAddress != null;
-	}
+        synchronized (stateLock) {
+            return localAddress != null;
+        }
     }
 
     public SocketAddress localAddress() {
-	synchronized (stateLock) {
-	    return localAddress;
-	}
+        synchronized (stateLock) {
+            return localAddress;
+        }
     }
 
     public void bind(SocketAddress local, int backlog) throws IOException {
-	synchronized (lock) {
-	    if (!isOpen())
-		throw new ClosedChannelException();
-	    if (isBound())
-		throw new AlreadyBoundException();
-	    InetSocketAddress isa = Net.checkAddress(local);
-	    SecurityManager sm = System.getSecurityManager();
-	    if (sm != null)
-		sm.checkListen(isa.getPort());
-	    Net.bind(fd, isa.getAddress(), isa.getPort());
-	    listen(fd, backlog < 1 ? 50 : backlog);
-	    synchronized (stateLock) {
-		localAddress = Net.localAddress(fd);
-	    }
-	}
+        synchronized (lock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+            if (isBound())
+                throw new AlreadyBoundException();
+            InetSocketAddress isa = Net.checkAddress(local);
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null)
+                sm.checkListen(isa.getPort());
+            Net.bind(fd, isa.getAddress(), isa.getPort());
+            listen(fd, backlog < 1 ? 50 : backlog);
+            synchronized (stateLock) {
+                localAddress = Net.localAddress(fd);
+            }
+        }
     }
 
     public SocketChannel accept() throws IOException {
-	synchronized (lock) {
-	    if (!isOpen())
-		throw new ClosedChannelException();
-	    if (!isBound())
-		throw new NotYetBoundException();
-	    SocketChannel sc = null;
+        synchronized (lock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+            if (!isBound())
+                throw new NotYetBoundException();
+            SocketChannel sc = null;
 
-	    int n = 0;
-	    FileDescriptor newfd = new FileDescriptor();
-	    InetSocketAddress[] isaa = new InetSocketAddress[1];
+            int n = 0;
+            FileDescriptor newfd = new FileDescriptor();
+            InetSocketAddress[] isaa = new InetSocketAddress[1];
 
-	    try {
-		begin();
-		if (!isOpen())
-		    return null;
-		thread = NativeThread.current();
-		for (;;) {
-		    n = accept0(this.fd, newfd, isaa);
-		    if ((n == IOStatus.INTERRUPTED) && isOpen())
-			continue;
-		    break;
-		}
-	    } finally {
-		thread = 0;
-		end(n > 0);
-		assert IOStatus.check(n);
-	    }
+            try {
+                begin();
+                if (!isOpen())
+                    return null;
+                thread = NativeThread.current();
+                for (;;) {
+                    n = accept0(this.fd, newfd, isaa);
+                    if ((n == IOStatus.INTERRUPTED) && isOpen())
+                        continue;
+                    break;
+                }
+            } finally {
+                thread = 0;
+                end(n > 0);
+                assert IOStatus.check(n);
+            }
 
-	    if (n < 1)
-		return null;
+            if (n < 1)
+                return null;
 
-	    IOUtil.configureBlocking(newfd, true);
-	    InetSocketAddress isa = isaa[0];
-	    sc = new SocketChannelImpl(provider(), newfd, isa);
-	    SecurityManager sm = System.getSecurityManager();
-	    if (sm != null) {
-		try {
-		    sm.checkAccept(isa.getAddress().getHostAddress(),
-				   isa.getPort());
-		} catch (SecurityException x) {
-		    sc.close();
-		    throw x;
-		}
-	    }
-	    return sc;
+            IOUtil.configureBlocking(newfd, true);
+            InetSocketAddress isa = isaa[0];
+            sc = new SocketChannelImpl(provider(), newfd, isa);
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                try {
+                    sm.checkAccept(isa.getAddress().getHostAddress(),
+                                   isa.getPort());
+                } catch (SecurityException x) {
+                    sc.close();
+                    throw x;
+                }
+            }
+            return sc;
 
-	}
+        }
     }
 
     protected void implConfigureBlocking(boolean block) throws IOException {
-	IOUtil.configureBlocking(fd, block);
+        IOUtil.configureBlocking(fd, block);
     }
 
     public SocketOpts options() {
-	synchronized (stateLock) {
-	    if (options == null) {
-		SocketOptsImpl.Dispatcher d
-		    = new SocketOptsImpl.Dispatcher() {
-			    int getInt(int opt) throws IOException {
-				return Net.getIntOption(fd, opt);
-			    }
-			    void setInt(int opt, int arg) throws IOException {
-				Net.setIntOption(fd, opt, arg);
-			    }
-			};
-		options = new SocketOptsImpl.IP.TCP(d);
-	    }
-	    return options;
-	}
+        synchronized (stateLock) {
+            if (options == null) {
+                SocketOptsImpl.Dispatcher d
+                    = new SocketOptsImpl.Dispatcher() {
+                            int getInt(int opt) throws IOException {
+                                return Net.getIntOption(fd, opt);
+                            }
+                            void setInt(int opt, int arg) throws IOException {
+                                Net.setIntOption(fd, opt, arg);
+                            }
+                        };
+                options = new SocketOptsImpl.IP.TCP(d);
+            }
+            return options;
+        }
     }
 
     protected void implCloseSelectableChannel() throws IOException {
-	synchronized (stateLock) {
-	    closeImpl();
-	    long th = thread;
-	    if (th != 0)
-		NativeThread.signal(th);
-	    if (!isRegistered())
-		kill();
-	}
+        synchronized (stateLock) {
+            closeImpl();
+            long th = thread;
+            if (th != 0)
+                NativeThread.signal(th);
+            if (!isRegistered())
+                kill();
+        }
     }
 
     public void kill() throws IOException {
-	synchronized (stateLock) {
-	    if (state == ST_KILLED)
-		return;
-	    if (state == ST_UNINITIALIZED) {
+        synchronized (stateLock) {
+            if (state == ST_KILLED)
+                return;
+            if (state == ST_UNINITIALIZED) {
                 state = ST_KILLED;
-		return;
+                return;
             }
-	    assert !isOpen() && !isRegistered();
-	    closeImpl();
-	    state = ST_KILLED;
-	}
+            assert !isOpen() && !isRegistered();
+            closeImpl();
+            state = ST_KILLED;
+        }
     }
 
     /**
@@ -238,11 +238,11 @@ class ServerSocketChannelImpl
         int newOps = initialOps;
 
         if ((ops & PollArrayWrapper.POLLNVAL) != 0) {
-	    // This should only happen if this channel is pre-closed while a
-	    // selection operation is in progress
-	    // ## Throw an error if this channel has not been pre-closed
-	    return false;
-	}
+            // This should only happen if this channel is pre-closed while a
+            // selection operation is in progress
+            // ## Throw an error if this channel has not been pre-closed
+            return false;
+        }
 
         if ((ops & (PollArrayWrapper.POLLERR
                     | PollArrayWrapper.POLLHUP)) != 0) {
@@ -281,50 +281,50 @@ class ServerSocketChannelImpl
     }
 
     public FileDescriptor getFD() {
-	return fd;
+        return fd;
     }
 
     public int getFDVal() {
-	throw new Error();
+        throw new Error();
     }
 
     public String toString() {
-	StringBuffer sb = new StringBuffer();
-	sb.append(this.getClass().getName());
-	sb.append('[');
-	if (!isOpen())
-	    sb.append("closed");
-	else {
-	    synchronized (stateLock) {
-		if (localAddress() == null) {
-		    sb.append("unbound");
-		} else {
-		    sb.append(localAddress().toString());
-		}
-	    }
-	}
-	sb.append(']');
-	return sb.toString();
+        StringBuffer sb = new StringBuffer();
+        sb.append(this.getClass().getName());
+        sb.append('[');
+        if (!isOpen())
+            sb.append("closed");
+        else {
+            synchronized (stateLock) {
+                if (localAddress() == null) {
+                    sb.append("unbound");
+                } else {
+                    sb.append(localAddress().toString());
+                }
+            }
+        }
+        sb.append(']');
+        return sb.toString();
     }
 
     // -- Native methods --
 
     private static void listen(FileDescriptor fd, int backlog) throws IOException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    fd.getSocket().Listen(backlog);
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ObjectDisposedException _)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            fd.getSocket().Listen(backlog);
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
+        catch (cli.System.ObjectDisposedException _)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     // Accepts a new connection, setting the given file descriptor to refer to
@@ -334,49 +334,49 @@ class ServerSocketChannelImpl
     //
     private static int accept0(FileDescriptor ssfd, FileDescriptor newfd, InetSocketAddress[] isaa) throws IOException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    cli.System.Net.Sockets.Socket netSocket = ssfd.getSocket();
-	    if (netSocket.get_Blocking() || netSocket.Poll(0, cli.System.Net.Sockets.SelectMode.wrap(cli.System.Net.Sockets.SelectMode.SelectRead)))
-	    {
-		cli.System.Net.Sockets.Socket accsock = netSocket.Accept();
-		newfd.setSocket(accsock);
-		cli.System.Net.IPEndPoint ep = (cli.System.Net.IPEndPoint)accsock.get_RemoteEndPoint();
-		isaa[0] = new InetSocketAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(ep), ep.get_Port());
-		return 1;
-	    }
-	    else
-	    {
-		return IOStatus.UNAVAILABLE;
-	    }
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ObjectDisposedException _)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            cli.System.Net.Sockets.Socket netSocket = ssfd.getSocket();
+            if (netSocket.get_Blocking() || netSocket.Poll(0, cli.System.Net.Sockets.SelectMode.wrap(cli.System.Net.Sockets.SelectMode.SelectRead)))
+            {
+                cli.System.Net.Sockets.Socket accsock = netSocket.Accept();
+                newfd.setSocket(accsock);
+                cli.System.Net.IPEndPoint ep = (cli.System.Net.IPEndPoint)accsock.get_RemoteEndPoint();
+                isaa[0] = new InetSocketAddress(PlainSocketImpl.getInetAddressFromIPEndPoint(ep), ep.get_Port());
+                return 1;
+            }
+            else
+            {
+                return IOStatus.UNAVAILABLE;
+            }
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
+        catch (cli.System.ObjectDisposedException _)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     private void closeImpl() throws IOException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    fd.getSocket().Close();
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            fd.getSocket().Close();
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
+        catch (cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 }

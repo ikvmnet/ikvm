@@ -197,19 +197,19 @@ public class AtomicInteger extends Number implements java.io.Serializable {
 
 
     public int intValue() {
-	return get();
+        return get();
     }
 
     public long longValue() {
-	return (long)get();
+        return (long)get();
     }
 
     public float floatValue() {
-	return (float)get();
+        return (float)get();
     }
 
     public double doubleValue() {
-	return (double)get();
+        return (double)get();
     }
 
 }

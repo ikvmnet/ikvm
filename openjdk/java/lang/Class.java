@@ -115,8 +115,8 @@ import sun.reflect.annotation.AnnotationType;
  */
 public final
     class Class<T> implements java.io.Serializable, 
-			      java.lang.reflect.GenericDeclaration, 
-			      java.lang.reflect.Type,
+                              java.lang.reflect.GenericDeclaration, 
+                              java.lang.reflect.Type,
                               java.lang.reflect.AnnotatedElement {
     private static final int ANNOTATION= 0x00002000;
     private static final int ENUM      = 0x00004000;
@@ -245,32 +245,32 @@ public final
      * @exception ClassNotFoundException if the class cannot be located by
      *            the specified class loader
      *
-     * @see 	  java.lang.Class#forName(String) 
-     * @see 	  java.lang.ClassLoader
-     * @since 	  1.2
+     * @see       java.lang.Class#forName(String) 
+     * @see       java.lang.ClassLoader
+     * @since     1.2
      */
     @ikvm.internal.HasCallerID
     public static Class<?> forName(String name, boolean initialize,
-				   ClassLoader loader)
+                                   ClassLoader loader)
         throws ClassNotFoundException
     {
-	if (loader == null) {
-	    SecurityManager sm = System.getSecurityManager();
-	    if (sm != null) {
-		ClassLoader ccl = ClassLoader.getCallerClassLoader();
-		if (ccl != null) {
-		    sm.checkPermission(
-			SecurityConstants.GET_CLASSLOADER_PERMISSION);
-		}
-	    }
-	}
-	return forName0(name, initialize, loader);
+        if (loader == null) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                ClassLoader ccl = ClassLoader.getCallerClassLoader();
+                if (ccl != null) {
+                    sm.checkPermission(
+                        SecurityConstants.GET_CLASSLOADER_PERMISSION);
+                }
+            }
+        }
+        return forName0(name, initialize, loader);
     }
 
     /** Called after security checks have been made. */
     private static native Class forName0(String name, boolean initialize,
-					    ClassLoader loader)
-	throws ClassNotFoundException;
+                                            ClassLoader loader)
+        throws ClassNotFoundException;
 
     /**
      * Creates a new instance of the class represented by this <tt>Class</tt>
@@ -323,10 +323,10 @@ public final
     public T newInstance() 
         throws InstantiationException, IllegalAccessException
     {
-	if (System.getSecurityManager() != null) {
-	    checkMemberAccess(Member.PUBLIC, ClassLoader.getCallerClassLoader());
-	}
-	return newInstance0(ikvm.internal.CallerID.getCallerID());
+        if (System.getSecurityManager() != null) {
+            checkMemberAccess(Member.PUBLIC, ClassLoader.getCallerClassLoader());
+        }
+        return newInstance0(ikvm.internal.CallerID.getCallerID());
     }
 
     private T newInstance0(ikvm.internal.CallerID callerID)
@@ -343,7 +343,7 @@ public final
                 );
             }
             try {
-		Class[] empty = {};
+                Class[] empty = {};
                 final Constructor<T> c = getConstructor0(empty, Member.DECLARED);
                 // Disable accessibility checks on the constructor
                 // since we have to do the security check here anyway
@@ -504,7 +504,7 @@ public final
      * @since 1.5
      */
     public boolean isAnnotation() {
-	return (getModifiers() & ANNOTATION) != 0;
+        return (getModifiers() & ANNOTATION) != 0;
     }
 
     /**
@@ -515,7 +515,7 @@ public final
      * @since 1.5
      */
     public boolean isSynthetic() {
-	return (getModifiers() & SYNTHETIC) != 0;
+        return (getModifiers() & SYNTHETIC) != 0;
     }
 
     /**
@@ -569,9 +569,9 @@ public final
      *          represented by this object.
      */
     public String getName() {
-	if (name == null)
-	    name = getName0();
-	return name;
+        if (name == null)
+            name = getName0();
+        return name;
     }
 
     // cache the name to reduce the number of calls into the VM
@@ -639,10 +639,10 @@ public final
      * @since 1.5
      */
     public TypeVariable<Class<T>>[] getTypeParameters() {
-	if (getGenericSignature() != null) 
-	    return (TypeVariable<Class<T>>[])getGenericInfo().getTypeParameters();
-	else
-	    return (TypeVariable<Class<T>>[])new TypeVariable[0];
+        if (getGenericSignature() != null) 
+            return (TypeVariable<Class<T>>[])getGenericInfo().getTypeParameters();
+        else
+            return (TypeVariable<Class<T>>[])new TypeVariable[0];
     }
 
 
@@ -690,15 +690,15 @@ public final
      * @since 1.5
      */
     public Type getGenericSuperclass() {
-	if (getGenericSignature() != null) {
-	    // Historical irregularity:
-	    // Generic signature marks interfaces with superclass = Object
-	    // but this API returns null for interfaces
-	    if (isInterface())
-		return null;
-	    return getGenericInfo().getSuperclass();
-	} else
-	    return getSuperclass();
+        if (getGenericSignature() != null) {
+            // Historical irregularity:
+            // Generic signature marks interfaces with superclass = Object
+            // but this API returns null for interfaces
+            if (isInterface())
+                return null;
+            return getGenericInfo().getSuperclass();
+        } else
+            return getSuperclass();
     }
 
     /**
@@ -812,10 +812,10 @@ public final
      * @since 1.5
      */
     public Type[] getGenericInterfaces() {
-	if (getGenericSignature() != null)
-	    return getGenericInfo().getSuperInterfaces();
-	else
-	    return getInterfaces();
+        if (getGenericSignature() != null)
+            return getGenericInfo().getSuperInterfaces();
+        else
+            return getInterfaces();
     }
 
 
@@ -866,9 +866,9 @@ public final
      * Gets the signers of this class.
      *
      * @return  the signers of this class, or null if there are no signers.  In
-     * 		particular, this method returns null if this object represents
-     * 		a primitive type or void.
-     * @since 	JDK1.1
+     *          particular, this method returns null if this object represents
+     *          a primitive type or void.
+     * @since   JDK1.1
      */
     public native Object[] getSigners();
         
@@ -895,117 +895,117 @@ public final
      * @since 1.5
      */
     public Method getEnclosingMethod() {
-	EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
-	
-	if (enclosingInfo == null)
-	    return null;
-	else {
-	    if (!enclosingInfo.isMethod())
-		return null;
+        EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
+        
+        if (enclosingInfo == null)
+            return null;
+        else {
+            if (!enclosingInfo.isMethod())
+                return null;
 
-	    MethodRepository typeInfo = MethodRepository.make(enclosingInfo.getDescriptor(), 
-							      getFactory());
-	    Class      returnType       = toClass(typeInfo.getReturnType());
-	    Type []    parameterTypes   = typeInfo.getParameterTypes();
-	    Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
+            MethodRepository typeInfo = MethodRepository.make(enclosingInfo.getDescriptor(), 
+                                                              getFactory());
+            Class      returnType       = toClass(typeInfo.getReturnType());
+            Type []    parameterTypes   = typeInfo.getParameterTypes();
+            Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
 
-	    // Convert Types to Classes; returned types *should*
-	    // be class objects since the methodDescriptor's used
-	    // don't have generics information
-	    for(int i = 0; i < parameterClasses.length; i++)
-		parameterClasses[i] = toClass(parameterTypes[i]);
+            // Convert Types to Classes; returned types *should*
+            // be class objects since the methodDescriptor's used
+            // don't have generics information
+            for(int i = 0; i < parameterClasses.length; i++)
+                parameterClasses[i] = toClass(parameterTypes[i]);
 
-	    /*
-	     * Loop over all declared methods; match method name,
-	     * number of and type of parameters, *and* return
-	     * type.  Matching return type is also necessary
-	     * because of covariant returns, etc.
-	     */
-	    for(Method m: enclosingInfo.getEnclosingClass().getDeclaredMethods()) {
-		if (m.getName().equals(enclosingInfo.getName()) ) {
-		    Class<?>[] candidateParamClasses = m.getParameterTypes();
-		    if (candidateParamClasses.length == parameterClasses.length) {
-			boolean matches = true;
-			for(int i = 0; i < candidateParamClasses.length; i++) {
-			    if (!candidateParamClasses[i].equals(parameterClasses[i])) {
-				matches = false;
-				break;
-			    }
-			}
-			    
-			if (matches) { // finally, check return type
-			    if (m.getReturnType().equals(returnType) )
-				return m;
-			}
-		    }
-		}
-	    }
-		
-	    throw new InternalError("Enclosing method not found");
-	}
+            /*
+             * Loop over all declared methods; match method name,
+             * number of and type of parameters, *and* return
+             * type.  Matching return type is also necessary
+             * because of covariant returns, etc.
+             */
+            for(Method m: enclosingInfo.getEnclosingClass().getDeclaredMethods()) {
+                if (m.getName().equals(enclosingInfo.getName()) ) {
+                    Class<?>[] candidateParamClasses = m.getParameterTypes();
+                    if (candidateParamClasses.length == parameterClasses.length) {
+                        boolean matches = true;
+                        for(int i = 0; i < candidateParamClasses.length; i++) {
+                            if (!candidateParamClasses[i].equals(parameterClasses[i])) {
+                                matches = false;
+                                break;
+                            }
+                        }
+                            
+                        if (matches) { // finally, check return type
+                            if (m.getReturnType().equals(returnType) )
+                                return m;
+                        }
+                    }
+                }
+            }
+                
+            throw new InternalError("Enclosing method not found");
+        }
     }
 
     private native Object[] getEnclosingMethod0();
 
     private EnclosingMethodInfo getEnclosingMethodInfo() {
-	Object[] enclosingInfo = getEnclosingMethod0();
-	if (enclosingInfo == null)
-	    return null;
-	else {
-	    return new EnclosingMethodInfo(enclosingInfo);
-	}
+        Object[] enclosingInfo = getEnclosingMethod0();
+        if (enclosingInfo == null)
+            return null;
+        else {
+            return new EnclosingMethodInfo(enclosingInfo);
+        }
     }
 
     private final static class EnclosingMethodInfo {
-	private Class<?> enclosingClass;
-	private String name;
-	private String descriptor;
+        private Class<?> enclosingClass;
+        private String name;
+        private String descriptor;
 
-	private EnclosingMethodInfo(Object[] enclosingInfo) {
-	    if (enclosingInfo.length != 3)
-		throw new InternalError("Malformed enclosing method information");
-	    try {
-		// The array is expected to have three elements:
+        private EnclosingMethodInfo(Object[] enclosingInfo) {
+            if (enclosingInfo.length != 3)
+                throw new InternalError("Malformed enclosing method information");
+            try {
+                // The array is expected to have three elements:
 
-		// the immediately enclosing class
-		enclosingClass = (Class<?>) enclosingInfo[0];
-		assert(enclosingClass != null);
+                // the immediately enclosing class
+                enclosingClass = (Class<?>) enclosingInfo[0];
+                assert(enclosingClass != null);
 
-		// the immediately enclosing method or constructor's
-		// name (can be null).
-		name		= (String)   enclosingInfo[1]; 
+                // the immediately enclosing method or constructor's
+                // name (can be null).
+                name            = (String)   enclosingInfo[1]; 
 
-		// the immediately enclosing method or constructor's
-		// descriptor (null iff name is).
-		descriptor	= (String)   enclosingInfo[2];
-		assert((name != null && descriptor != null) || name == descriptor);
-	    } catch (ClassCastException cce) {
-		throw new InternalError("Invalid type in enclosing method information");
-	    }
-	}
+                // the immediately enclosing method or constructor's
+                // descriptor (null iff name is).
+                descriptor      = (String)   enclosingInfo[2];
+                assert((name != null && descriptor != null) || name == descriptor);
+            } catch (ClassCastException cce) {
+                throw new InternalError("Invalid type in enclosing method information");
+            }
+        }
 
-	boolean isPartial() {
-	    return enclosingClass == null || name == null || descriptor == null;
-	}
+        boolean isPartial() {
+            return enclosingClass == null || name == null || descriptor == null;
+        }
 
-	boolean isConstructor() { return !isPartial() && "<init>".equals(name); }
+        boolean isConstructor() { return !isPartial() && "<init>".equals(name); }
 
-	boolean isMethod() { return !isPartial() && !isConstructor() && !"<clinit>".equals(name); }
+        boolean isMethod() { return !isPartial() && !isConstructor() && !"<clinit>".equals(name); }
 
-	Class<?> getEnclosingClass() { return enclosingClass; }
+        Class<?> getEnclosingClass() { return enclosingClass; }
 
-	String getName() { return name; }
+        String getName() { return name; }
 
-	String getDescriptor() { return descriptor; }
+        String getDescriptor() { return descriptor; }
 
     }
 
     private static Class toClass(Type o) {
-	if (o instanceof GenericArrayType)
-	    return Array.newInstance(toClass(((GenericArrayType)o).getGenericComponentType()),
-				     0)
-		.getClass();
-	return (Class)o;
+        if (o instanceof GenericArrayType)
+            return Array.newInstance(toClass(((GenericArrayType)o).getGenericComponentType()),
+                                     0)
+                .getClass();
+        return (Class)o;
      }
 
     /**
@@ -1023,47 +1023,47 @@ public final
      * @since 1.5
      */
     public Constructor<?> getEnclosingConstructor() {
-	EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
-	
-	if (enclosingInfo == null)
-	    return null;
-	else {
-	    if (!enclosingInfo.isConstructor())
-		return null;
+        EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
+        
+        if (enclosingInfo == null)
+            return null;
+        else {
+            if (!enclosingInfo.isConstructor())
+                return null;
 
-	    ConstructorRepository typeInfo = ConstructorRepository.make(enclosingInfo.getDescriptor(), 
-									getFactory());
-	    Type []    parameterTypes   = typeInfo.getParameterTypes();
-	    Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
+            ConstructorRepository typeInfo = ConstructorRepository.make(enclosingInfo.getDescriptor(), 
+                                                                        getFactory());
+            Type []    parameterTypes   = typeInfo.getParameterTypes();
+            Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
 
-	    // Convert Types to Classes; returned types *should*
-	    // be class objects since the methodDescriptor's used
-	    // don't have generics information
-	    for(int i = 0; i < parameterClasses.length; i++)
-		parameterClasses[i] = toClass(parameterTypes[i]);
+            // Convert Types to Classes; returned types *should*
+            // be class objects since the methodDescriptor's used
+            // don't have generics information
+            for(int i = 0; i < parameterClasses.length; i++)
+                parameterClasses[i] = toClass(parameterTypes[i]);
 
-	    /*
-	     * Loop over all declared constructors; match number
-	     * of and type of parameters.
-	     */
-	    for(Constructor c: enclosingInfo.getEnclosingClass().getDeclaredConstructors()) {
-		Class<?>[] candidateParamClasses = c.getParameterTypes();
-		if (candidateParamClasses.length == parameterClasses.length) {
-		    boolean matches = true;
-		    for(int i = 0; i < candidateParamClasses.length; i++) {
-			if (!candidateParamClasses[i].equals(parameterClasses[i])) {
-			    matches = false;
-			    break;
-			}
-		    }
-			
-		    if (matches)
-			return c;
-		}
-	    }
-		
-	    throw new InternalError("Enclosing constructor not found");
-	}
+            /*
+             * Loop over all declared constructors; match number
+             * of and type of parameters.
+             */
+            for(Constructor c: enclosingInfo.getEnclosingClass().getDeclaredConstructors()) {
+                Class<?>[] candidateParamClasses = c.getParameterTypes();
+                if (candidateParamClasses.length == parameterClasses.length) {
+                    boolean matches = true;
+                    for(int i = 0; i < candidateParamClasses.length; i++) {
+                        if (!candidateParamClasses[i].equals(parameterClasses[i])) {
+                            matches = false;
+                            break;
+                        }
+                    }
+                        
+                    if (matches)
+                        return c;
+                }
+            }
+                
+            throw new InternalError("Enclosing constructor not found");
+        }
     }
 
 
@@ -1089,30 +1089,30 @@ public final
      * @since 1.5
      */
     public Class<?> getEnclosingClass() {
-	// There are five kinds of classes (or interfaces):
-	// a) Top level classes
-	// b) Nested classes (static member classes)
-	// c) Inner classes (non-static member classes)
-	// d) Local classes (named classes declared within a method)
-	// e) Anonymous classes
+        // There are five kinds of classes (or interfaces):
+        // a) Top level classes
+        // b) Nested classes (static member classes)
+        // c) Inner classes (non-static member classes)
+        // d) Local classes (named classes declared within a method)
+        // e) Anonymous classes
 
 
-	// JVM Spec 4.8.6: A class must have an EnclosingMethod
-	// attribute if and only if it is a local class or an
-	// anonymous class.
-	EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
+        // JVM Spec 4.8.6: A class must have an EnclosingMethod
+        // attribute if and only if it is a local class or an
+        // anonymous class.
+        EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
 
-	if (enclosingInfo == null) {
-	    // This is a top level or a nested class or an inner class (a, b, or c)
-	    return getDeclaringClass();
-	} else {
-	    Class<?> enclosingClass = enclosingInfo.getEnclosingClass();
-	    // This is a local class or an anonymous class (d or e)
-	    if (enclosingClass == this || enclosingClass == null)
-		throw new InternalError("Malformed enclosing method information");
-	    else
-		return enclosingClass;
-	}
+        if (enclosingInfo == null) {
+            // This is a top level or a nested class or an inner class (a, b, or c)
+            return getDeclaringClass();
+        } else {
+            Class<?> enclosingClass = enclosingInfo.getEnclosingClass();
+            // This is a local class or an anonymous class (d or e)
+            if (enclosingClass == this || enclosingClass == null)
+                throw new InternalError("Malformed enclosing method information");
+            else
+                return enclosingClass;
+        }
     }
 
     /**
@@ -1128,36 +1128,36 @@ public final
      * @since 1.5
      */
     public String getSimpleName() {
-	if (isArray())
-	    return getComponentType().getSimpleName()+"[]";
+        if (isArray())
+            return getComponentType().getSimpleName()+"[]";
 
-	String simpleName = getSimpleBinaryName();
-	if (simpleName == null) { // top level class
-	    simpleName = getName();
-	    return simpleName.substring(simpleName.lastIndexOf(".")+1); // strip the package name
-	}
-	// According to JLS3 "Binary Compatibility" (13.1) the binary
-	// name of non-package classes (not top level) is the binary
-	// name of the immediately enclosing class followed by a '$' followed by:
-	// (for nested and inner classes): the simple name.
-	// (for local classes): 1 or more digits followed by the simple name.
-	// (for anonymous classes): 1 or more digits.
+        String simpleName = getSimpleBinaryName();
+        if (simpleName == null) { // top level class
+            simpleName = getName();
+            return simpleName.substring(simpleName.lastIndexOf(".")+1); // strip the package name
+        }
+        // According to JLS3 "Binary Compatibility" (13.1) the binary
+        // name of non-package classes (not top level) is the binary
+        // name of the immediately enclosing class followed by a '$' followed by:
+        // (for nested and inner classes): the simple name.
+        // (for local classes): 1 or more digits followed by the simple name.
+        // (for anonymous classes): 1 or more digits.
 
-	// Since getSimpleBinaryName() will strip the binary name of
-	// the immediatly enclosing class, we are now looking at a
-	// string that matches the regular expression "\$[0-9]*"
-	// followed by a simple name (considering the simple of an
-	// anonymous class to be the empty string).
+        // Since getSimpleBinaryName() will strip the binary name of
+        // the immediatly enclosing class, we are now looking at a
+        // string that matches the regular expression "\$[0-9]*"
+        // followed by a simple name (considering the simple of an
+        // anonymous class to be the empty string).
 
-	// Remove leading "\$[0-9]*" from the name
-	int length = simpleName.length();
-	if (length < 1 || simpleName.charAt(0) != '$')
-	    throw new InternalError("Malformed class name");
-	int index = 1;
-	while (index < length && isAsciiDigit(simpleName.charAt(index)))
-	    index++;
-	// Eventually, this is the empty string iff this is an anonymous class
-	return simpleName.substring(index);
+        // Remove leading "\$[0-9]*" from the name
+        int length = simpleName.length();
+        if (length < 1 || simpleName.charAt(0) != '$')
+            throw new InternalError("Malformed class name");
+        int index = 1;
+        while (index < length && isAsciiDigit(simpleName.charAt(index)))
+            index++;
+        // Eventually, this is the empty string iff this is an anonymous class
+        return simpleName.substring(index);
     }
 
     /**
@@ -1165,7 +1165,7 @@ public final
      * digits.  This one does not.
      */
     private static boolean isAsciiDigit(char c) {
-	return '0' <= c && c <= '9';
+        return '0' <= c && c <= '9';
     }
 
     /**
@@ -1179,24 +1179,24 @@ public final
      * @since 1.5
      */
     public String getCanonicalName() {
-	if (isArray()) {
-	    String canonicalName = getComponentType().getCanonicalName();
-	    if (canonicalName != null)
-		return canonicalName + "[]";
-	    else
-		return null;
-	}
-	if (isLocalOrAnonymousClass())
-	    return null;
-	Class<?> enclosingClass = getEnclosingClass();
-	if (enclosingClass == null) { // top level class
-	    return getName();
-	} else {
-	    String enclosingName = enclosingClass.getCanonicalName();
-	    if (enclosingName == null)
-		return null;
-	    return enclosingName + "." + getSimpleName();
-	}
+        if (isArray()) {
+            String canonicalName = getComponentType().getCanonicalName();
+            if (canonicalName != null)
+                return canonicalName + "[]";
+            else
+                return null;
+        }
+        if (isLocalOrAnonymousClass())
+            return null;
+        Class<?> enclosingClass = getEnclosingClass();
+        if (enclosingClass == null) { // top level class
+            return getName();
+        } else {
+            String enclosingName = enclosingClass.getCanonicalName();
+            if (enclosingName == null)
+                return null;
+            return enclosingName + "." + getSimpleName();
+        }
     }
  
     /**
@@ -1207,7 +1207,7 @@ public final
      * @since 1.5
      */
     public boolean isAnonymousClass() {
-	return "".equals(getSimpleName());
+        return "".equals(getSimpleName());
     }
  
     /**
@@ -1218,7 +1218,7 @@ public final
      * @since 1.5
      */
     public boolean isLocalClass() {
-	return isLocalOrAnonymousClass() && !isAnonymousClass();
+        return isLocalOrAnonymousClass() && !isAnonymousClass();
     }
 
     /**
@@ -1229,7 +1229,7 @@ public final
      * @since 1.5
      */
     public boolean isMemberClass() {
-	return getSimpleBinaryName() != null && !isLocalOrAnonymousClass();
+        return getSimpleBinaryName() != null && !isLocalOrAnonymousClass();
     }
 
     /**
@@ -1239,15 +1239,15 @@ public final
      * class.
      */
     private String getSimpleBinaryName() {
-	Class<?> enclosingClass = getEnclosingClass();
-	if (enclosingClass == null) // top level class
-	    return null;
-	// Otherwise, strip the enclosing class' name
-	try {
-	    return getName().substring(enclosingClass.getName().length());
-	} catch (IndexOutOfBoundsException ex) {
-	    throw new InternalError("Malformed class name");
-	}
+        Class<?> enclosingClass = getEnclosingClass();
+        if (enclosingClass == null) // top level class
+            return null;
+        // Otherwise, strip the enclosing class' name
+        try {
+            return getName().substring(enclosingClass.getName().length());
+        } catch (IndexOutOfBoundsException ex) {
+            throw new InternalError("Malformed class name");
+        }
     }
 
     /**
@@ -1255,10 +1255,10 @@ public final
      * class.  Returns <tt>false</tt> otherwise.
      */
     private boolean isLocalOrAnonymousClass() {
-	// JVM Spec 4.8.6: A class must have an EnclosingMethod
-	// attribute if and only if it is a local class or an
-	// anonymous class.
-	return getEnclosingMethodInfo() != null;
+        // JVM Spec 4.8.6: A class must have an EnclosingMethod
+        // attribute if and only if it is a local class or an
+        // anonymous class.
+        return getEnclosingMethodInfo() != null;
     }
 
     /**
@@ -1297,35 +1297,35 @@ public final
      */
     @ikvm.internal.HasCallerID
     public Class<?>[] getClasses() {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.PUBLIC, ClassLoader.getCallerClassLoader());
 
-	// Privileged so this implementation can look at DECLARED classes,
-	// something the caller might not have privilege to do.  The code here
-	// is allowed to look at DECLARED classes because (1) it does not hand
-	// out anything other than public members and (2) public member access
-	// has already been ok'd by the SecurityManager.
+        // Privileged so this implementation can look at DECLARED classes,
+        // something the caller might not have privilege to do.  The code here
+        // is allowed to look at DECLARED classes because (1) it does not hand
+        // out anything other than public members and (2) public member access
+        // has already been ok'd by the SecurityManager.
 
-	Class[] result = (Class[]) java.security.AccessController.doPrivileged
-	    (new java.security.PrivilegedAction() {
-	        public Object run() {
-		    java.util.List<Class> list = new java.util.ArrayList();
-		    Class currentClass = Class.this;
-		    while (currentClass != null) {
-			Class[] members = currentClass.getDeclaredClasses();
-			for (int i = 0; i < members.length; i++) {
-			    if (Modifier.isPublic(members[i].getModifiers())) {
-				list.add(members[i]);
-			    }
-			}
-			currentClass = currentClass.getSuperclass();
-		    }
-		    Class[] empty = {};
-		    return list.toArray(empty);
-		}
-	    });
+        Class[] result = (Class[]) java.security.AccessController.doPrivileged
+            (new java.security.PrivilegedAction() {
+                public Object run() {
+                    java.util.List<Class> list = new java.util.ArrayList();
+                    Class currentClass = Class.this;
+                    while (currentClass != null) {
+                        Class[] members = currentClass.getDeclaredClasses();
+                        for (int i = 0; i < members.length; i++) {
+                            if (Modifier.isPublic(members[i].getModifiers())) {
+                                list.add(members[i]);
+                            }
+                        }
+                        currentClass = currentClass.getSuperclass();
+                    }
+                    Class[] empty = {};
+                    return list.toArray(empty);
+                }
+            });
 
         return result;
     }
@@ -1376,9 +1376,9 @@ public final
      */
     @ikvm.internal.HasCallerID
     public Field[] getFields() throws SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.PUBLIC, ClassLoader.getCallerClassLoader());
         return copyFields(privateGetPublicFields(null));
     }
@@ -1428,9 +1428,9 @@ public final
      */
     @ikvm.internal.HasCallerID
     public Method[] getMethods() throws SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.PUBLIC, ClassLoader.getCallerClassLoader());
         return copyMethods(privateGetPublicMethods());
     }
@@ -1478,9 +1478,9 @@ public final
      */
     @ikvm.internal.HasCallerID
     public Constructor<?>[] getConstructors() throws SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.PUBLIC, ClassLoader.getCallerClassLoader());
         return copyConstructors(privateGetDeclaredConstructors(true));
     }
@@ -1498,8 +1498,8 @@ public final
      * <LI> If C declares a public field with the name specified, that is the
      *      field to be reflected.</LI>
      * <LI> If no field was found in step 1 above, this algorithm is applied
-     * 	    recursively to each direct superinterface of C. The direct
-     * 	    superinterfaces are searched in the order they were declared.</LI>
+     *      recursively to each direct superinterface of C. The direct
+     *      superinterfaces are searched in the order they were declared.</LI>
      * <LI> If no field was found in steps 1 and 2 above, and C has a
      *      superclass S, then this algorithm is invoked recursively upon S.
      *      If C has no superclass, then a <code>NoSuchFieldException</code>
@@ -1538,9 +1538,9 @@ public final
     @ikvm.internal.HasCallerID
     public Field getField(String name)
         throws NoSuchFieldException, SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.PUBLIC, ClassLoader.getCallerClassLoader());
         Field field = getField0(name);
         if (field == null) {
@@ -1566,8 +1566,8 @@ public final
      * class represented by this object:
      * <OL>
      * <LI> C is searched for any <I>matching methods</I>. If no matching
-     * 	    method is found, the algorithm of step 1 is invoked recursively on
-     * 	    the superclass of C.</LI>
+     *      method is found, the algorithm of step 1 is invoked recursively on
+     *      the superclass of C.</LI>
      * <LI> If no method was found in step 1 above, the superinterfaces of C
      *      are searched for a matching method. If any such method is found, it
      *      is reflected.</LI>
@@ -1624,9 +1624,9 @@ public final
     @ikvm.internal.HasCallerID
     public Method getMethod(String name, Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.PUBLIC, ClassLoader.getCallerClassLoader());
         Method method = getMethod0(name, parameterTypes);
         if (method == null) {
@@ -1679,9 +1679,9 @@ public final
     @ikvm.internal.HasCallerID
     public Constructor<T> getConstructor(Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.PUBLIC, ClassLoader.getCallerClassLoader());
         return getConstructor0(parameterTypes, Member.PUBLIC);
     }
@@ -1722,9 +1722,9 @@ public final
      */
     @ikvm.internal.HasCallerID
     public Class<?>[] getDeclaredClasses() throws SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.DECLARED, ClassLoader.getCallerClassLoader());
         return getDeclaredClasses0();
     }
@@ -1767,9 +1767,9 @@ public final
      */
     @ikvm.internal.HasCallerID
     public Field[] getDeclaredFields() throws SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.DECLARED, ClassLoader.getCallerClassLoader());
         return copyFields(privateGetDeclaredFields(false));
     }
@@ -1816,9 +1816,9 @@ public final
      */
     @ikvm.internal.HasCallerID
     public Method[] getDeclaredMethods() throws SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.DECLARED, ClassLoader.getCallerClassLoader());
         return copyMethods(privateGetDeclaredMethods(false));
     }
@@ -1862,9 +1862,9 @@ public final
      */
     @ikvm.internal.HasCallerID
     public Constructor<?>[] getDeclaredConstructors() throws SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.DECLARED, ClassLoader.getCallerClassLoader());
         return copyConstructors(privateGetDeclaredConstructors(false));
     }
@@ -1907,9 +1907,9 @@ public final
     @ikvm.internal.HasCallerID
     public Field getDeclaredField(String name)
         throws NoSuchFieldException, SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.DECLARED, ClassLoader.getCallerClassLoader());
         Field field = searchFields(privateGetDeclaredFields(false), name);
         if (field == null) {
@@ -1963,9 +1963,9 @@ public final
     @ikvm.internal.HasCallerID
     public Method getDeclaredMethod(String name, Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.DECLARED, ClassLoader.getCallerClassLoader());
         Method method = searchMethods(privateGetDeclaredMethods(false), name, parameterTypes);
         if (method == null) {
@@ -2014,9 +2014,9 @@ public final
     @ikvm.internal.HasCallerID
     public Constructor<T> getDeclaredConstructor(Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
-	// be very careful not to change the stack depth of this
-	// checkMemberAccess call for security reasons 
-	// see java.lang.SecurityManager.checkMemberAccess
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons 
+        // see java.lang.SecurityManager.checkMemberAccess
         checkMemberAccess(Member.DECLARED, ClassLoader.getCallerClassLoader());
         return getConstructor0(parameterTypes, Member.DECLARED);
     }
@@ -2191,16 +2191,16 @@ public final
         SecurityManager s = System.getSecurityManager();
         if (s != null) {
             s.checkMemberAccess(this, which);
-	    ClassLoader cl = getClassLoader0();
+            ClassLoader cl = getClassLoader0();
             if ((ccl != null) && (ccl != cl) && 
                   ((cl == null) || !cl.isAncestor(ccl))) {
-		String name = this.getName();
-		int i = name.lastIndexOf('.');
-		if (i != -1) {
-		    s.checkPackageAccess(name.substring(0, i));
-		}
-	    }
-	}
+                String name = this.getName();
+                int i = name.lastIndexOf('.');
+                if (i != -1) {
+                    s.checkPackageAccess(name.substring(0, i));
+                }
+            }
+        }
     }
 
     /**
@@ -2255,19 +2255,19 @@ public final
     // Clears cached values that might possibly have been obsoleted by
     // a class redefinition.
     private void clearCachesOnClassRedefinition() {
-	if (lastRedefinedCount != classRedefinedCount) {
-	    declaredFields = publicFields = declaredPublicFields = null;
-	    declaredMethods = publicMethods = declaredPublicMethods = null;
-	    declaredConstructors = publicConstructors = null;
-	    annotations = declaredAnnotations = null;
+        if (lastRedefinedCount != classRedefinedCount) {
+            declaredFields = publicFields = declaredPublicFields = null;
+            declaredMethods = publicMethods = declaredPublicMethods = null;
+            declaredConstructors = publicConstructors = null;
+            annotations = declaredAnnotations = null;
 
-	    // Use of "volatile" (and synchronization by caller in the case
-	    // of annotations) ensures that no thread sees the update to
-	    // lastRedefinedCount before seeing the caches cleared.
-	    // We do not guard against brief windows during which multiple
-	    // threads might redundantly work to fill an empty cache.
-	    lastRedefinedCount = classRedefinedCount;
-	}
+            // Use of "volatile" (and synchronization by caller in the case
+            // of annotations) ensures that no thread sees the update to
+            // lastRedefinedCount before seeing the caches cleared.
+            // We do not guard against brief windows during which multiple
+            // threads might redundantly work to fill an empty cache.
+            lastRedefinedCount = classRedefinedCount;
+        }
     }
 
     // Generic signature handling
@@ -2278,19 +2278,19 @@ public final
 
     // accessor for factory
     private GenericsFactory getFactory() {
-	// create scope and factory
-	return CoreReflectionFactory.make(this, ClassScope.make(this)); 
+        // create scope and factory
+        return CoreReflectionFactory.make(this, ClassScope.make(this)); 
     }
 
     // accessor for generic info repository
     private ClassRepository getGenericInfo() {
-	// lazily initialize repository if necessary
-	if (genericInfo == null) {
-	    // create and cache generic info repository
-	    genericInfo = ClassRepository.make(getGenericSignature(), 
-					       getFactory());
-	}
-	return genericInfo; //return cached repository
+        // lazily initialize repository if necessary
+        if (genericInfo == null) {
+            // create and cache generic info repository
+            genericInfo = ClassRepository.make(getGenericSignature(), 
+                                               getFactory());
+        }
+        return genericInfo; //return cached repository
     }
 
     // Annotations handling
@@ -2676,18 +2676,18 @@ public final
                                         String name,
                                         Class[] parameterTypes)
     {
- 	Method res = null;
+        Method res = null;
         String internedName = name.intern();
         for (int i = 0; i < methods.length; i++) {
-	    Method m = methods[i];
+            Method m = methods[i];
             if (m.getName() == internedName
-		&& arrayContentsEq(parameterTypes, m.getParameterTypes())
-		&& (res == null
-		    || res.getReturnType().isAssignableFrom(m.getReturnType())))
-		res = m;
+                && arrayContentsEq(parameterTypes, m.getParameterTypes())
+                && (res == null
+                    || res.getReturnType().isAssignableFrom(m.getReturnType())))
+                res = m;
         }
 
-	return (res == null ? res : getReflectionFactory().copyMethod(res));
+        return (res == null ? res : getReflectionFactory().copyMethod(res));
     }
   
 
@@ -2806,8 +2806,8 @@ public final
                 if (i > 0) {
                     buf.append(", ");
                 }
-		Class c = argTypes[i];
-		buf.append((c == null) ? "null" : c.getName());
+                Class c = argTypes[i];
+                buf.append((c == null) ? "null" : c.getName());
             }
         }
         buf.append(")");
@@ -2835,7 +2835,7 @@ public final
      * @see java.io.ObjectStreamClass
      */
     private static final ObjectStreamField[] serialPersistentFields = 
-	new ObjectStreamField[0];
+        new ObjectStreamField[0];
 
 
     /**
@@ -2890,11 +2890,11 @@ public final
      * @since 1.5
      */
     public boolean isEnum() {
-	// An enum must both directly extend java.lang.Enum and have
-	// the ENUM bit set; classes for specialized enum constants
-	// don't do the former.
-	return (this.getModifiers() & ENUM) != 0 && 
-	this.getSuperclass() == java.lang.Enum.class;
+        // An enum must both directly extend java.lang.Enum and have
+        // the ENUM bit set; classes for specialized enum constants
+        // don't do the former.
+        return (this.getModifiers() & ENUM) != 0 && 
+        this.getSuperclass() == java.lang.Enum.class;
     }
 
     // Fetches the factory for reflective objects
@@ -2951,8 +2951,8 @@ public final
      * @since 1.5
      */
     public T[] getEnumConstants() {
-	T[] values = getEnumConstantsShared();
-	return (values != null) ? values.clone() : null;
+        T[] values = getEnumConstantsShared();
+        return (values != null) ? values.clone() : null;
     }
 
     /**
@@ -2962,10 +2962,10 @@ public final
      * the result is uncloned, cached, and shared by all callers.
      */
     T[] getEnumConstantsShared() {
-	if (enumConstants == null) {
-	    if (!isEnum()) return null;
-	    try {
-		final Method values = getMethod("values");
+        if (enumConstants == null) {
+            if (!isEnum()) return null;
+            try {
+                final Method values = getMethod("values");
                 java.security.AccessController.doPrivileged
                     (new java.security.PrivilegedAction() {
                             public Object run() {
@@ -2973,15 +2973,15 @@ public final
                                 return null;
                             }
                         });
-		enumConstants = (T[])values.invoke(null);
-	    }
-	    // These can happen when users concoct enum-like classes
-	    // that don't comply with the enum spec.
-	    catch (InvocationTargetException ex) { return null; }
-	    catch (NoSuchMethodException ex) { return null; }
-	    catch (IllegalAccessException ex) { return null; }
-	}
-	return enumConstants;
+                enumConstants = (T[])values.invoke(null);
+            }
+            // These can happen when users concoct enum-like classes
+            // that don't comply with the enum spec.
+            catch (InvocationTargetException ex) { return null; }
+            catch (NoSuchMethodException ex) { return null; }
+            catch (IllegalAccessException ex) { return null; }
+        }
+        return enumConstants;
     }
     private volatile transient T[] enumConstants = null;
 
@@ -2993,7 +2993,7 @@ public final
      * created lazily on first use.  Typically it won't ever get created.
      */
     Map<String, T> enumConstantDirectory() {
-	if (enumConstantDirectory == null) {
+        if (enumConstantDirectory == null) {
             T[] universe = getEnumConstantsShared();
             if (universe == null)
                 throw new IllegalArgumentException(
@@ -3020,10 +3020,10 @@ public final
      * @since 1.5
      */
     public T cast(Object obj) {
-	if (obj != null && !isInstance(obj))
-	    throw new ClassCastException("Cannot cast " + obj.getClass().getName() 
-					 + " to " + getName());
-	return (T) obj;
+        if (obj != null && !isInstance(obj))
+            throw new ClassCastException("Cannot cast " + obj.getClass().getName() 
+                                         + " to " + getName());
+        return (T) obj;
     }
 
     /**

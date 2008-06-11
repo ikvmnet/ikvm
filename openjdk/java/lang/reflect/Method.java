@@ -61,16 +61,16 @@ import java.util.Map;
  */
 public final
     class Method extends AccessibleObject implements GenericDeclaration, 
-						     Member {
-    private Class		clazz;
-    private int			slot;
+                                                     Member {
+    private Class               clazz;
+    private int                 slot;
     // This is guaranteed to be interned by the VM in the 1.4
     // reflection implementation
-    private String		name;
-    private Class		returnType;
-    private Class[]		parameterTypes;
-    private Class[]		exceptionTypes;
-    private int			modifiers;
+    private String              name;
+    private Class               returnType;
+    private Class[]             parameterTypes;
+    private Class[]             exceptionTypes;
+    private int                 modifiers;
     // Generics and annotations support
     private transient String              signature;
     // generic info repository; lazily initialized
@@ -88,9 +88,9 @@ public final
 
     // Modifiers that can be applied to a method in source code
     private static final int LANGUAGE_MODIFIERS = 
-	Modifier.PUBLIC		| Modifier.PROTECTED	| Modifier.PRIVATE | 
-	Modifier.ABSTRACT	| Modifier.STATIC	| Modifier.FINAL   |  
-	Modifier.SYNCHRONIZED	| Modifier.NATIVE;
+        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE | 
+        Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.FINAL   |  
+        Modifier.SYNCHRONIZED   | Modifier.NATIVE;
 
    // Generics infrastructure
 
@@ -98,19 +98,19 @@ public final
 
     // Accessor for factory
     private GenericsFactory getFactory() {
-	// create scope and factory
-	return CoreReflectionFactory.make(this, MethodScope.make(this)); 
+        // create scope and factory
+        return CoreReflectionFactory.make(this, MethodScope.make(this)); 
     }
 
     // Accessor for generic info repository
     private MethodRepository getGenericInfo() {
-	// lazily initialize repository if necessary
-	if (genericInfo == null) {
-	    // create and cache generic info repository
-	    genericInfo = MethodRepository.make(getGenericSignature(), 
-						getFactory());
-	}
-	return genericInfo; //return cached repository
+        // lazily initialize repository if necessary
+        if (genericInfo == null) {
+            // create and cache generic info repository
+            genericInfo = MethodRepository.make(getGenericSignature(), 
+                                                getFactory());
+        }
+        return genericInfo; //return cached repository
     }
 
     /**
@@ -167,7 +167,7 @@ public final
      * that declares the method represented by this <code>Method</code> object.
      */
     public Class<?> getDeclaringClass() {
-	return clazz;
+        return clazz;
     }
 
     /**
@@ -175,7 +175,7 @@ public final
      * object, as a <code>String</code>.
      */
     public String getName() {
-	return name;
+        return name;
     }
 
     /**
@@ -186,7 +186,7 @@ public final
      * @see Modifier
      */
     public int getModifiers() {
-	return modifiers;
+        return modifiers;
     }
 
     /**
@@ -205,10 +205,10 @@ public final
      * @since 1.5
      */
     public TypeVariable<Method>[] getTypeParameters() {
-	if (getGenericSignature() != null)
-	    return (TypeVariable<Method>[])getGenericInfo().getTypeParameters();
-	else
-	    return (TypeVariable<Method>[])new TypeVariable[0];
+        if (getGenericSignature() != null)
+            return (TypeVariable<Method>[])getGenericInfo().getTypeParameters();
+        else
+            return (TypeVariable<Method>[])new TypeVariable[0];
     }
 
     /**
@@ -218,7 +218,7 @@ public final
      * @return the return type for the method this object represents
      */
     public Class<?> getReturnType() {
-	return returnType;
+        return returnType;
     }
 
     /**
@@ -246,7 +246,7 @@ public final
      */
     public Type getGenericReturnType() {
       if (getGenericSignature() != null) {
-	return getGenericInfo().getReturnType();
+        return getGenericInfo().getReturnType();
       } else { return getReturnType();}
     }
 
@@ -261,7 +261,7 @@ public final
      * represents
      */
     public Class<?>[] getParameterTypes() {
-	return (Class<?>[]) parameterTypes.clone();
+        return (Class<?>[]) parameterTypes.clone();
     }
 
     /**
@@ -291,10 +291,10 @@ public final
      * @since 1.5
      */
     public Type[] getGenericParameterTypes() {
-	if (getGenericSignature() != null)
-	    return getGenericInfo().getParameterTypes();
-	else
-	    return getParameterTypes();
+        if (getGenericSignature() != null)
+            return getGenericInfo().getParameterTypes();
+        else
+            return getParameterTypes();
     }
 
 
@@ -309,7 +309,7 @@ public final
      * method this object represents
      */
     public Class<?>[] getExceptionTypes() {
-	return (Class<?>[]) exceptionTypes.clone();
+        return (Class<?>[]) exceptionTypes.clone();
     }
 
     /**
@@ -338,12 +338,12 @@ public final
      * @since 1.5
      */
       public Type[] getGenericExceptionTypes() {
-	  Type[] result;
-	  if (getGenericSignature() != null &&
-	      ((result = getGenericInfo().getExceptionTypes()).length > 0))
-	      return result;
-	  else
-	      return getExceptionTypes();
+          Type[] result;
+          if (getGenericSignature() != null &&
+              ((result = getGenericInfo().getExceptionTypes()).length > 0))
+              return result;
+          else
+              return getExceptionTypes();
       }
 
     /**
@@ -353,25 +353,25 @@ public final
      * and formal parameter types and return type.
      */
     public boolean equals(Object obj) {
-	if (obj != null && obj instanceof Method) {
-	    Method other = (Method)obj;
-	    if ((getDeclaringClass() == other.getDeclaringClass())
-		&& (getName() == other.getName())) {
-		if (!returnType.equals(other.getReturnType()))
-		    return false;
-		/* Avoid unnecessary cloning */
-		Class[] params1 = parameterTypes;
-		Class[] params2 = other.parameterTypes;
-		if (params1.length == params2.length) {
-		    for (int i = 0; i < params1.length; i++) {
-			if (params1[i] != params2[i])
-			    return false;
-		    }
-		    return true;
-		}
-	    }
-	}
-	return false;
+        if (obj != null && obj instanceof Method) {
+            Method other = (Method)obj;
+            if ((getDeclaringClass() == other.getDeclaringClass())
+                && (getName() == other.getName())) {
+                if (!returnType.equals(other.getReturnType()))
+                    return false;
+                /* Avoid unnecessary cloning */
+                Class[] params1 = parameterTypes;
+                Class[] params2 = other.parameterTypes;
+                if (params1.length == params2.length) {
+                    for (int i = 0; i < params1.length; i++) {
+                        if (params1[i] != params2[i])
+                            return false;
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -380,7 +380,7 @@ public final
      * method's declaring class name and the method's name.
      */
     public int hashCode() {
-	return getDeclaringClass().getName().hashCode() ^ getName().hashCode();
+        return getDeclaringClass().getName().hashCode() ^ getName().hashCode();
     }
 
     /**
@@ -406,35 +406,35 @@ public final
      * <tt>synchronized</tt>, <tt>native</tt>.
      */
     public String toString() {
-	try {
-	    StringBuffer sb = new StringBuffer();
-	    int mod = getModifiers() & LANGUAGE_MODIFIERS;
-	    if (mod != 0) {
-		sb.append(Modifier.toString(mod) + " ");
-	    }
-	    sb.append(Field.getTypeName(getReturnType()) + " ");
-	    sb.append(Field.getTypeName(getDeclaringClass()) + ".");
-	    sb.append(getName() + "(");
-	    Class[] params = parameterTypes; // avoid clone
-	    for (int j = 0; j < params.length; j++) {
-		sb.append(Field.getTypeName(params[j]));
-		if (j < (params.length - 1))
-		    sb.append(",");
-	    }
-	    sb.append(")");
-	    Class[] exceptions = exceptionTypes; // avoid clone
-	    if (exceptions.length > 0) {
-		sb.append(" throws ");
-		for (int k = 0; k < exceptions.length; k++) {
-		    sb.append(exceptions[k].getName());
-		    if (k < (exceptions.length - 1))
-			sb.append(",");
-		}
-	    }
-	    return sb.toString();
-	} catch (Exception e) {
-	    return "<" + e + ">";
-	}
+        try {
+            StringBuffer sb = new StringBuffer();
+            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            if (mod != 0) {
+                sb.append(Modifier.toString(mod) + " ");
+            }
+            sb.append(Field.getTypeName(getReturnType()) + " ");
+            sb.append(Field.getTypeName(getDeclaringClass()) + ".");
+            sb.append(getName() + "(");
+            Class[] params = parameterTypes; // avoid clone
+            for (int j = 0; j < params.length; j++) {
+                sb.append(Field.getTypeName(params[j]));
+                if (j < (params.length - 1))
+                    sb.append(",");
+            }
+            sb.append(")");
+            Class[] exceptions = exceptionTypes; // avoid clone
+            if (exceptions.length > 0) {
+                sb.append(" throws ");
+                for (int k = 0; k < exceptions.length; k++) {
+                    sb.append(exceptions[k].getName());
+                    if (k < (exceptions.length - 1))
+                        sb.append(",");
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "<" + e + ">";
+        }
     }
 
     /**
@@ -476,61 +476,61 @@ public final
      * @since 1.5
      */
     public String toGenericString() {
-	try {
-	    StringBuilder sb = new StringBuilder();
-	    int mod = getModifiers() & LANGUAGE_MODIFIERS;
-	    if (mod != 0) {
-		sb.append(Modifier.toString(mod) + " ");
-	    }
-	    Type[] typeparms = getTypeParameters();
-	    if (typeparms.length > 0) {
-		boolean first = true;
-		sb.append("<");
-		for(Type typeparm: typeparms) {
-		    if (!first)
-			sb.append(",");
-		    if (typeparm instanceof Class)
-			sb.append(((Class)typeparm).getName());
-		    else
-			sb.append(typeparm.toString());
-		    first = false;
-		}
-		sb.append("> ");
-	    }
+        try {
+            StringBuilder sb = new StringBuilder();
+            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            if (mod != 0) {
+                sb.append(Modifier.toString(mod) + " ");
+            }
+            Type[] typeparms = getTypeParameters();
+            if (typeparms.length > 0) {
+                boolean first = true;
+                sb.append("<");
+                for(Type typeparm: typeparms) {
+                    if (!first)
+                        sb.append(",");
+                    if (typeparm instanceof Class)
+                        sb.append(((Class)typeparm).getName());
+                    else
+                        sb.append(typeparm.toString());
+                    first = false;
+                }
+                sb.append("> ");
+            }
 
-	    Type genRetType = getGenericReturnType();
-	    sb.append( ((genRetType instanceof Class)?
-			Field.getTypeName((Class)genRetType):genRetType.toString())  + " ");
+            Type genRetType = getGenericReturnType();
+            sb.append( ((genRetType instanceof Class)?
+                        Field.getTypeName((Class)genRetType):genRetType.toString())  + " ");
 
-	    sb.append(Field.getTypeName(getDeclaringClass()) + ".");
-	    sb.append(getName() + "(");
-	    Type[] params = getGenericParameterTypes();
-	    for (int j = 0; j < params.length; j++) {
-		String param = (params[j] instanceof Class)?
-		    Field.getTypeName((Class)params[j]):
-		    (params[j].toString());
-		if (isVarArgs() && (j == params.length - 1)) // replace T[] with T...
-		    param = param.replaceFirst("\\[\\]$", "...");
-		sb.append(param);
-		if (j < (params.length - 1))
-		    sb.append(",");
-	    }
-	    sb.append(")");
-	    Type[] exceptions = getGenericExceptionTypes();
-	    if (exceptions.length > 0) {
-		sb.append(" throws ");
-		for (int k = 0; k < exceptions.length; k++) {
-		    sb.append((exceptions[k] instanceof Class)?
-			      ((Class)exceptions[k]).getName():
-			      exceptions[k].toString());
-		    if (k < (exceptions.length - 1))
-			sb.append(",");
-		}
-	    }
-	    return sb.toString();
-	} catch (Exception e) {
-	    return "<" + e + ">";
-	}
+            sb.append(Field.getTypeName(getDeclaringClass()) + ".");
+            sb.append(getName() + "(");
+            Type[] params = getGenericParameterTypes();
+            for (int j = 0; j < params.length; j++) {
+                String param = (params[j] instanceof Class)?
+                    Field.getTypeName((Class)params[j]):
+                    (params[j].toString());
+                if (isVarArgs() && (j == params.length - 1)) // replace T[] with T...
+                    param = param.replaceFirst("\\[\\]$", "...");
+                sb.append(param);
+                if (j < (params.length - 1))
+                    sb.append(",");
+            }
+            sb.append(")");
+            Type[] exceptions = getGenericExceptionTypes();
+            if (exceptions.length > 0) {
+                sb.append(" throws ");
+                for (int k = 0; k < exceptions.length; k++) {
+                    sb.append((exceptions[k] instanceof Class)?
+                              ((Class)exceptions[k]).getName():
+                              exceptions[k].toString());
+                    if (k < (exceptions.length - 1))
+                        sb.append(",");
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "<" + e + ">";
+        }
     }
 
     /**
@@ -592,7 +592,7 @@ public final
      */
     @ikvm.internal.HasCallerID
     public Object invoke(Object obj, Object... args)
-	throws IllegalAccessException, IllegalArgumentException,
+        throws IllegalAccessException, IllegalArgumentException,
            InvocationTargetException
     {
         if (!override) {
@@ -602,18 +602,18 @@ public final
                                      ? clazz
                                      : obj.getClass());
 
-		boolean cached;
-		synchronized (this) {
-		    cached = (securityCheckCache == caller)
-			    && (securityCheckTargetClassCache == targetClass);
-		}
-		if (!cached) {
-		    Reflection.ensureMemberAccess(caller, clazz, obj, modifiers);
-		    synchronized (this) {
-			securityCheckCache = caller;
-			securityCheckTargetClassCache = targetClass;
-		    }
-		}
+                boolean cached;
+                synchronized (this) {
+                    cached = (securityCheckCache == caller)
+                            && (securityCheckTargetClassCache == targetClass);
+                }
+                if (!cached) {
+                    Reflection.ensureMemberAccess(caller, clazz, obj, modifiers);
+                    synchronized (this) {
+                        securityCheckCache = caller;
+                        securityCheckTargetClassCache = targetClass;
+                    }
+                }
             }
         }
         if (methodAccessor == null) acquireMethodAccessor();
@@ -755,7 +755,7 @@ public final
      * @since 1.5
      */
     public Annotation[][] getParameterAnnotations() {
-	Annotation[][] result = getParameterAnnotationsImpl(this);
+        Annotation[][] result = getParameterAnnotationsImpl(this);
         int numParameters = parameterTypes.length;
         if (result == null)
             return new Annotation[numParameters][0];

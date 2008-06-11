@@ -31,28 +31,28 @@ class MiscHelper
     // map.xml replaces ExtClassLoader.getExtClassLoader() invocation in Launcher constructor with a call to this method
     static Launcher.ExtClassLoader getExtClassLoader() throws IOException
     {
-	if ("".equals(System.getProperty("java.ext.dirs")) && "".equals(System.getProperty("java.class.path")))
-	{
-	    return null;
-	}
-	return Launcher.ExtClassLoader.getExtClassLoader();
+        if ("".equals(System.getProperty("java.ext.dirs")) && "".equals(System.getProperty("java.class.path")))
+        {
+            return null;
+        }
+        return Launcher.ExtClassLoader.getExtClassLoader();
     }
 
     // map.xml replaces AppClassLoader.getAppClassLoader() invocation in Launcher constructor with a call to this method
     static ClassLoader getAppClassLoader(ClassLoader extcl) throws IOException
     {
-	Assembly entryAssembly = Assembly.GetEntryAssembly();
-	if (entryAssembly != null)
-	{
-	    ClassLoader acl = getAssemblyClassLoader(entryAssembly, extcl);
-	    if (acl != null)
-	    {
-		// assembly has a custom assembly class loader,
-		// that overrides the Launcher.AppClassLoader
-		return acl;
-	    }
-	}
-	return Launcher.AppClassLoader.getAppClassLoader(extcl);
+        Assembly entryAssembly = Assembly.GetEntryAssembly();
+        if (entryAssembly != null)
+        {
+            ClassLoader acl = getAssemblyClassLoader(entryAssembly, extcl);
+            if (acl != null)
+            {
+                // assembly has a custom assembly class loader,
+                // that overrides the Launcher.AppClassLoader
+                return acl;
+            }
+        }
+        return Launcher.AppClassLoader.getAppClassLoader(extcl);
     }
 
     private static native ClassLoader getAssemblyClassLoader(Assembly asm, ClassLoader extcl);

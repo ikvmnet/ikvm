@@ -39,26 +39,26 @@ import java.nio.channels.spi.*;
 
 class IOUtil {
 
-    private IOUtil() { }		// No instantiation
+    private IOUtil() { }                // No instantiation
 
     static boolean randomBytes(byte[] someBytes)
     {
-	try
-	{
-	    if (false) throw new cli.System.Security.Cryptography.CryptographicException();
-	    cli.System.Security.Cryptography.RNGCryptoServiceProvider csp = new cli.System.Security.Cryptography.RNGCryptoServiceProvider();
-	    csp.GetBytes(someBytes);
-	    return true;
-	}
-	catch (cli.System.Security.Cryptography.CryptographicException _)
-	{
-	    return false;
-	}
+        try
+        {
+            if (false) throw new cli.System.Security.Cryptography.CryptographicException();
+            cli.System.Security.Cryptography.RNGCryptoServiceProvider csp = new cli.System.Security.Cryptography.RNGCryptoServiceProvider();
+            csp.GetBytes(someBytes);
+            return true;
+        }
+        catch (cli.System.Security.Cryptography.CryptographicException _)
+        {
+            return false;
+        }
     }
 
     static void configureBlocking(FileDescriptor fd, boolean blocking) throws IOException
     {
-	Net.configureBlocking(fd, blocking);
+        Net.configureBlocking(fd, blocking);
     }
 
 }

@@ -66,7 +66,7 @@ class FileOutputStream extends OutputStream
     private Object closeLock = new Object();
     private volatile boolean closed = false;
     private static ThreadLocal<Boolean> runningFinalize =
-					new ThreadLocal<Boolean>();
+                                        new ThreadLocal<Boolean>();
 
     private static boolean isRunningFinalize() {
         Boolean val;
@@ -97,7 +97,7 @@ class FileOutputStream extends OutputStream
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      */
     public FileOutputStream(String name) throws FileNotFoundException {
-	this(name != null ? new File(name) : null, false);
+        this(name != null ? new File(name) : null, false);
     }
 
     /**
@@ -158,7 +158,7 @@ class FileOutputStream extends OutputStream
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      */
     public FileOutputStream(File file) throws FileNotFoundException {
-	this(file, false);
+        this(file, false);
     }
 
     /**
@@ -194,20 +194,20 @@ class FileOutputStream extends OutputStream
         throws FileNotFoundException
     {
         String name = (file != null ? file.getPath() : null);
-	SecurityManager security = System.getSecurityManager();
-	if (security != null) {
-	    security.checkWrite(name);
-	}
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkWrite(name);
+        }
         if (name == null) {
             throw new NullPointerException();
         }
-	fd = new FileDescriptor();
+        fd = new FileDescriptor();
         this.append = append;
-	if (append) {
-	    openAppend(name);
-	} else {
-	    open(name);
-	}
+        if (append) {
+            openAppend(name);
+        } else {
+            open(name);
+        }
     }
 
     /**
@@ -234,21 +234,21 @@ class FileOutputStream extends OutputStream
      * @see        java.lang.SecurityManager#checkWrite(java.io.FileDescriptor)
      */
     public FileOutputStream(FileDescriptor fdObj) {
-	SecurityManager security = System.getSecurityManager();
-	if (fdObj == null) {
-	    throw new NullPointerException();
-	}
-	if (security != null) {
-	    security.checkWrite(fdObj);
-	}
-	fd = fdObj;
+        SecurityManager security = System.getSecurityManager();
+        if (fdObj == null) {
+            throw new NullPointerException();
+        }
+        if (security != null) {
+            security.checkWrite(fdObj);
+        }
+        fd = fdObj;
 
-	/*
-	 * FileDescriptor is being shared by streams.
-	 * Ensure that it's GC'ed only when all the streams/channels are done
-	 * using it.
-	 */
-	fd.incrementAndGetUseCount();
+        /*
+         * FileDescriptor is being shared by streams.
+         * Ensure that it's GC'ed only when all the streams/channels are done
+         * using it.
+         */
+        fd.incrementAndGetUseCount();
     }
 
     /**
@@ -257,7 +257,7 @@ class FileOutputStream extends OutputStream
      */
     private void open(String name) throws FileNotFoundException
     {
-	fd.openWriteOnly(name);
+        fd.openWriteOnly(name);
     }
 
     /**
@@ -266,7 +266,7 @@ class FileOutputStream extends OutputStream
      */
     private void openAppend(String name) throws FileNotFoundException
     {
-	fd.openAppend(name);
+        fd.openAppend(name);
     }
 
     /**
@@ -278,7 +278,7 @@ class FileOutputStream extends OutputStream
      */
     public void write(int b) throws IOException
     {
-	fd.write(b);
+        fd.write(b);
     }
 
     /**
@@ -290,7 +290,7 @@ class FileOutputStream extends OutputStream
      */
     private void writeBytes(byte b[], int off, int len) throws IOException
     {
-	fd.writeBytes(b, off, len);
+        fd.writeBytes(b, off, len);
     }
 
     /**
@@ -301,7 +301,7 @@ class FileOutputStream extends OutputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[]) throws IOException {
-	writeBytes(b, 0, b.length);
+        writeBytes(b, 0, b.length);
     }
 
     /**
@@ -314,7 +314,7 @@ class FileOutputStream extends OutputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[], int off, int len) throws IOException {
-	writeBytes(b, off, len);
+        writeBytes(b, off, len);
     }
 
     /**
@@ -331,29 +331,29 @@ class FileOutputStream extends OutputStream
      * @spec JSR-51
      */
     public void close() throws IOException {
-	synchronized (closeLock) {
+        synchronized (closeLock) {
             if (closed) {
                 return;
             }
             closed = true;
-	}
+        }
 
-	if (channel != null) {
-	    /*
-	     * Decrement FD use count associated with the channel
-	     * The use count is incremented whenever a new channel
-	     * is obtained from this stream.
-	     */
-	    fd.decrementAndGetUseCount();
-	    channel.close();
-	}
+        if (channel != null) {
+            /*
+             * Decrement FD use count associated with the channel
+             * The use count is incremented whenever a new channel
+             * is obtained from this stream.
+             */
+            fd.decrementAndGetUseCount();
+            channel.close();
+        }
 
-	/*
-	 * Decrement FD use count associated with this stream
-	 */
-	int useCount = fd.decrementAndGetUseCount();
+        /*
+         * Decrement FD use count associated with this stream
+         */
+        int useCount = fd.decrementAndGetUseCount();
 
-	/*
+        /*
          * If FileDescriptor is still in use by another stream, the finalizer
          * will not close it.
          */
@@ -373,8 +373,8 @@ class FileOutputStream extends OutputStream
      * @see        java.io.FileDescriptor
      */
      public final FileDescriptor getFD()  throws IOException {
-	if (fd != null) return fd;
-	throw new IOException();
+        if (fd != null) return fd;
+        throw new IOException();
      }
     
     /**
@@ -395,19 +395,19 @@ class FileOutputStream extends OutputStream
      * @spec JSR-51
      */
     public FileChannel getChannel() {
-	synchronized (this) {
-	    if (channel == null) {
-		channel = FileChannelImpl.open(fd, false, true, this, append);
+        synchronized (this) {
+            if (channel == null) {
+                channel = FileChannelImpl.open(fd, false, true, this, append);
 
-	        /*
-		 * Increment fd's use count. Invoking the channel's close()
-		 * method will result in decrementing the use count set for
-		 * the channel.
-		 */ 
-		fd.incrementAndGetUseCount();
-	    }
-	    return channel;
-	}
+                /*
+                 * Increment fd's use count. Invoking the channel's close()
+                 * method will result in decrementing the use count set for
+                 * the channel.
+                 */ 
+                fd.incrementAndGetUseCount();
+            }
+            return channel;
+        }
     }
 
     /**
@@ -419,28 +419,28 @@ class FileOutputStream extends OutputStream
      * @see        java.io.FileInputStream#close()
      */
     protected void finalize() throws IOException {
- 	if (fd != null) {
+        if (fd != null) {
             if (fd == fd.out || fd == fd.err) {
- 		flush();
- 	    } else {
+                flush();
+            } else {
 
-	        /*
-	         * Finalizer should not release the FileDescriptor if another
-		 * stream is still using it. If the user directly invokes
-		 * close() then the FileDescriptor is also released.
-		 */
+                /*
+                 * Finalizer should not release the FileDescriptor if another
+                 * stream is still using it. If the user directly invokes
+                 * close() then the FileDescriptor is also released.
+                 */
                 runningFinalize.set(Boolean.TRUE);
-		try {
-		    close();
-		} finally {
+                try {
+                    close();
+                } finally {
                     runningFinalize.set(Boolean.FALSE);
-		}
- 	    }
- 	}
+                }
+            }
+        }
     }
 
     private void close0() throws IOException
     {
-	fd.close();
+        fd.close();
     }
 }

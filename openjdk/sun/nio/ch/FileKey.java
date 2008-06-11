@@ -33,25 +33,25 @@ public class FileKey
 
     public static FileKey create(FileDescriptor fd)
     {
-	FileKey fk = new FileKey();
-	fk.path = ((cli.System.IO.FileStream)fd.getStream()).get_Name();
-	try
-	{
-	    fk.path = new File(fk.path).getCanonicalPath();
-	}
-	catch (IOException x)
-	{
-	}
-	return fk;
+        FileKey fk = new FileKey();
+        fk.path = ((cli.System.IO.FileStream)fd.getStream()).get_Name();
+        try
+        {
+            fk.path = new File(fk.path).getCanonicalPath();
+        }
+        catch (IOException x)
+        {
+        }
+        return fk;
     }
 
     public int hashCode()
     {
-	return path.hashCode();
+        return path.hashCode();
     }
 
     public boolean equals(Object obj)
     {
-	return obj == this || (obj instanceof FileKey && ((FileKey)obj).path.equals(path));
+        return obj == this || (obj instanceof FileKey && ((FileKey)obj).path.equals(path));
     }
 }

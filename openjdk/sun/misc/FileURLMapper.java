@@ -44,8 +44,8 @@ import sun.net.www.ParseUtil;
  * Platform specific handling for file: URLs . In particular deals
  * with network paths mapping them to UNCs.
  *
- * @author	Michael McMahon
- * @version 	1.10, 07/05/05
+ * @author      Michael McMahon
+ * @version     1.10, 07/05/05
  */
 
 public class FileURLMapper {
@@ -54,7 +54,7 @@ public class FileURLMapper {
     String file;
 
     public FileURLMapper (URL url) {
-	this.url = url;
+        this.url = url;
     }
 
     /**
@@ -63,37 +63,37 @@ public class FileURLMapper {
      */
 
     public String getPath () {
-	if (file != null) {
-	    return file;
-	}
-	if (runningOnWindows) {
-    	    String host = url.getHost();
-    	    if (host != null && !host.equals("") &&
-		!"localhost".equalsIgnoreCase(host)) {
-		String rest = url.getFile();
-		String s = host + ParseUtil.decode (url.getFile());
-		file = "\\\\"+ s.replace('/', '\\');
-		return file;
-	    }
-	    String path = url.getFile().replace('/', '\\');
-	    file = ParseUtil.decode(path);
-	    return file;
-	} else {
-	    String host = url.getHost();
-	    if (host == null || "".equals(host) || "localhost".equalsIgnoreCase (host)) {
-		file = url.getFile();
-		file = ParseUtil.decode (file);
-	    }
-	    return file;
+        if (file != null) {
+            return file;
+        }
+        if (runningOnWindows) {
+            String host = url.getHost();
+            if (host != null && !host.equals("") &&
+                !"localhost".equalsIgnoreCase(host)) {
+                String rest = url.getFile();
+                String s = host + ParseUtil.decode (url.getFile());
+                file = "\\\\"+ s.replace('/', '\\');
+                return file;
+            }
+            String path = url.getFile().replace('/', '\\');
+            file = ParseUtil.decode(path);
+            return file;
+        } else {
+            String host = url.getHost();
+            if (host == null || "".equals(host) || "localhost".equalsIgnoreCase (host)) {
+                file = url.getFile();
+                file = ParseUtil.decode (file);
+            }
+            return file;
         }
     }
 
     public boolean exists() {
-	String path = getPath();
-	if (path == null) {
-	    return false;
-	}
-	File f = new File (path);
-	return f.exists();
+        String path = getPath();
+        if (path == null) {
+            return false;
+        }
+        File f = new File (path);
+        return f.exists();
     }
 }

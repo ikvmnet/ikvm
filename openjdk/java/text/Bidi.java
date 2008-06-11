@@ -644,7 +644,7 @@ public final class Bidi
               case Character.DIRECTIONALITY_OTHER_NEUTRALS:
               case Character.DIRECTIONALITY_SEGMENT_SEPARATOR:
               case Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR:
-	      case Character.DIRECTIONALITY_WHITESPACE:
+              case Character.DIRECTIONALITY_WHITESPACE:
                 if (neutralStart == -1)
                   neutralStart = i;
                 break;
@@ -983,17 +983,17 @@ public final class Bidi
   {
     for (int i = start; i < end; i++)
       {
-	byte dir = Character.getDirectionality(text[i]);
-	if (dir != Character.DIRECTIONALITY_LEFT_TO_RIGHT
-	    && dir != Character.DIRECTIONALITY_EUROPEAN_NUMBER
-	    && dir != Character.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR
-	    && dir != Character.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR
-	    && dir != Character.DIRECTIONALITY_ARABIC_NUMBER
-	    && dir != Character.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR
-	    && dir != Character.DIRECTIONALITY_SEGMENT_SEPARATOR
-	    && dir != Character.DIRECTIONALITY_WHITESPACE
+        byte dir = Character.getDirectionality(text[i]);
+        if (dir != Character.DIRECTIONALITY_LEFT_TO_RIGHT
+            && dir != Character.DIRECTIONALITY_EUROPEAN_NUMBER
+            && dir != Character.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR
+            && dir != Character.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR
+            && dir != Character.DIRECTIONALITY_ARABIC_NUMBER
+            && dir != Character.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR
+            && dir != Character.DIRECTIONALITY_SEGMENT_SEPARATOR
+            && dir != Character.DIRECTIONALITY_WHITESPACE
             && dir != Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR)
-	  return true;
+          return true;
       }
 
     return false;

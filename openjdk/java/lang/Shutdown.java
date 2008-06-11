@@ -62,57 +62,57 @@ public final class Shutdown {
 
     /* Invoked by Runtime.runFinalizersOnExit */
     static void setRunFinalizersOnExit(boolean run) {
-	synchronized (lock) {
-	    runFinalizersOnExit = run;
-	}
+        synchronized (lock) {
+            runFinalizersOnExit = run;
+        }
     }
     
     private static boolean initialized;
     
     public static void init() {
-	synchronized (lock) {
-	    if (initialized || state > RUNNING)
-		return;
-	    initialized = true;
-	    try
-	    {
-		// AppDomain.ProcessExit has a LinkDemand, so we have to have a separate method
-		registerShutdownHook();
-		if (false) throw new cli.System.Security.SecurityException();
-	    }
-	    catch (cli.System.Security.SecurityException _)
-	    {
-	    }
-	    // The order in with the hooks are added here is important as it
-	    // determines the order in which they are run. 
-	    // (1)Console restore hook needs to be called first.
-	    // (2)Application hooks must be run before calling deleteOnExitHook.
-	    hooks.add(sun.misc.SharedSecrets.getJavaIOAccess().consoleRestoreHook());
-	    hooks.add(ApplicationShutdownHooks.hook());
-	    hooks.add(sun.misc.SharedSecrets.getJavaIODeleteOnExitAccess());
-	}
+        synchronized (lock) {
+            if (initialized || state > RUNNING)
+                return;
+            initialized = true;
+            try
+            {
+                // AppDomain.ProcessExit has a LinkDemand, so we have to have a separate method
+                registerShutdownHook();
+                if (false) throw new cli.System.Security.SecurityException();
+            }
+            catch (cli.System.Security.SecurityException _)
+            {
+            }
+            // The order in with the hooks are added here is important as it
+            // determines the order in which they are run. 
+            // (1)Console restore hook needs to be called first.
+            // (2)Application hooks must be run before calling deleteOnExitHook.
+            hooks.add(sun.misc.SharedSecrets.getJavaIOAccess().consoleRestoreHook());
+            hooks.add(ApplicationShutdownHooks.hook());
+            hooks.add(sun.misc.SharedSecrets.getJavaIODeleteOnExitAccess());
+        }
     }
 
     private static void registerShutdownHook()
     {
-	AppDomain.get_CurrentDomain().add_ProcessExit(new EventHandler(new EventHandler.Method() {
-	    public void Invoke(Object sender, EventArgs e) {
-		shutdown();
-	    }
-	}));
+        AppDomain.get_CurrentDomain().add_ProcessExit(new EventHandler(new EventHandler.Method() {
+            public void Invoke(Object sender, EventArgs e) {
+                shutdown();
+            }
+        }));
     }
 
     /* Add a new shutdown hook.  Checks the shutdown state and the hook itself,
      * but does not do any security checks.
      */
     static void add(Runnable hook) {
-	synchronized (lock) {
-	    if (state > RUNNING)
-		throw new IllegalStateException("Shutdown in progress");
+        synchronized (lock) {
+            if (state > RUNNING)
+                throw new IllegalStateException("Shutdown in progress");
 
-	    init();
-	    hooks.add(hook);
-	}
+            init();
+            hooks.add(hook);
+        }
     }
 
 
@@ -120,35 +120,35 @@ public final class Shutdown {
      * does not do any security checks.
      */
     static boolean remove(Runnable hook) {
-	synchronized (lock) {
-	    if (state > RUNNING)
-		throw new IllegalStateException("Shutdown in progress");
-	    if (hook == null) throw new NullPointerException();
-	    if (hooks == null) {
-		return false;
-	    } else {
-		return hooks.remove(hook);
-	    }
-	}
+        synchronized (lock) {
+            if (state > RUNNING)
+                throw new IllegalStateException("Shutdown in progress");
+            if (hook == null) throw new NullPointerException();
+            if (hooks == null) {
+                return false;
+            } else {
+                return hooks.remove(hook);
+            }
+        }
     }
 
 
     /* Run all registered shutdown hooks
      */
     private static void runHooks() {
-	/* We needn't bother acquiring the lock just to read the hooks field,
-	 * since the hooks can't be modified once shutdown is in progress
-	 */
-	for (Runnable hook : hooks) {
-	    try {
-		hook.run();
-	    } catch(Throwable t) { 
-		if (t instanceof ThreadDeath) {
-   		    ThreadDeath td = (ThreadDeath)t;
-		    throw td;
-		} 
-	    }
-	}
+        /* We needn't bother acquiring the lock just to read the hooks field,
+         * since the hooks can't be modified once shutdown is in progress
+         */
+        for (Runnable hook : hooks) {
+            try {
+                hook.run();
+            } catch(Throwable t) { 
+                if (t instanceof ThreadDeath) {
+                    ThreadDeath td = (ThreadDeath)t;
+                    throw td;
+                } 
+            }
+        }
     }
 
     /* The halt method is synchronized on the halt lock
@@ -162,7 +162,7 @@ public final class Shutdown {
     }
 
     static void halt0(int status) {
-	cli.System.Environment.Exit(status);
+        cli.System.Environment.Exit(status);
     }
 
     /* Wormhole for invoking java.lang.ref.Finalizer.runAllFinalizers */
@@ -181,19 +181,19 @@ public final class Shutdown {
      * response to SIGINT, SIGTERM, etc.
      */
     private static void sequence() {
-	synchronized (lock) {
-	    /* Guard against the possibility of a daemon thread invoking exit
-	     * after DestroyJavaVM initiates the shutdown sequence
-	     */
-	    if (state != HOOKS) return;
-	}
-	runHooks();
-	boolean rfoe;
-	synchronized (lock) {
-	    state = FINALIZERS;
-	    rfoe = runFinalizersOnExit;
-	}
-	if (rfoe) runAllFinalizers();
+        synchronized (lock) {
+            /* Guard against the possibility of a daemon thread invoking exit
+             * after DestroyJavaVM initiates the shutdown sequence
+             */
+            if (state != HOOKS) return;
+        }
+        runHooks();
+        boolean rfoe;
+        synchronized (lock) {
+            state = FINALIZERS;
+            rfoe = runFinalizersOnExit;
+        }
+        if (rfoe) runAllFinalizers();
     }
 
 
@@ -202,39 +202,39 @@ public final class Shutdown {
      * which should pass a nonzero status code.
      */
     static void exit(int status) {
-	boolean runMoreFinalizers = false;
-	synchronized (lock) {
-	    if (status != 0) runFinalizersOnExit = false;
-	    switch (state) {
-	    case RUNNING:	/* Initiate shutdown */
-		state = HOOKS;
-		break;
-	    case HOOKS:		/* Stall and halt */
-		break;
-	    case FINALIZERS:
-		if (status != 0) {
-		    /* Halt immediately on nonzero status */
-		    halt(status);
-		} else {
-		    /* Compatibility with old behavior:
-		     * Run more finalizers and then halt
-		     */
-		    runMoreFinalizers = runFinalizersOnExit;
-		}
-		break;
-	    }
-	}
-	if (runMoreFinalizers) {
-	    runAllFinalizers();
-	    halt(status);
-	}
-	synchronized (Shutdown.class) {
-	    /* Synchronize on the class object, causing any other thread
+        boolean runMoreFinalizers = false;
+        synchronized (lock) {
+            if (status != 0) runFinalizersOnExit = false;
+            switch (state) {
+            case RUNNING:       /* Initiate shutdown */
+                state = HOOKS;
+                break;
+            case HOOKS:         /* Stall and halt */
+                break;
+            case FINALIZERS:
+                if (status != 0) {
+                    /* Halt immediately on nonzero status */
+                    halt(status);
+                } else {
+                    /* Compatibility with old behavior:
+                     * Run more finalizers and then halt
+                     */
+                    runMoreFinalizers = runFinalizersOnExit;
+                }
+                break;
+            }
+        }
+        if (runMoreFinalizers) {
+            runAllFinalizers();
+            halt(status);
+        }
+        synchronized (Shutdown.class) {
+            /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely
-	     */
-	    sequence();
-	    halt(status);
-	}
+             */
+            sequence();
+            halt(status);
+        }
     }
 
 
@@ -243,19 +243,19 @@ public final class Shutdown {
      * actually halt the VM.
      */
     static void shutdown() {
-	synchronized (lock) {
-	    switch (state) {
-	    case RUNNING:	/* Initiate shutdown */
-		state = HOOKS;
-		break;
-	    case HOOKS:		/* Stall and then return */
-	    case FINALIZERS:
-		break;
-	    }
-	}
-	synchronized (Shutdown.class) {
-	    sequence();
-	}
+        synchronized (lock) {
+            switch (state) {
+            case RUNNING:       /* Initiate shutdown */
+                state = HOOKS;
+                break;
+            case HOOKS:         /* Stall and then return */
+            case FINALIZERS:
+                break;
+            }
+        }
+        synchronized (Shutdown.class) {
+            sequence();
+        }
     }
 
 }

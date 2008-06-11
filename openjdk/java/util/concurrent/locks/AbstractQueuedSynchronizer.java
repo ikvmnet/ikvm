@@ -381,8 +381,8 @@ public abstract class AbstractQueuedSynchronizer
      * on the design of this class.
      */
     static final class Node {
-	static final AtomicReferenceFieldUpdater<Node, Node> nextUpdater = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "next");
-	/** Marker to indicate a node is waiting in shared mode */
+        static final AtomicReferenceFieldUpdater<Node, Node> nextUpdater = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "next");
+        /** Marker to indicate a node is waiting in shared mode */
         static final Node SHARED = new Node();
         /** Marker to indicate a node is waiting in exclusive mode */
         static final Node EXCLUSIVE = null;
@@ -574,9 +574,9 @@ public abstract class AbstractQueuedSynchronizer
         for (;;) {
             Node t = tail;
             if (t == null) { // Must initialize
-		if (compareAndSetHead(new Node()))
-		    tail = head;
-	    } else {
+                if (compareAndSetHead(new Node()))
+                    tail = head;
+            } else {
                 node.prev = t;
                 if (compareAndSetTail(t, node)) {
                     t.next = node;
@@ -595,7 +595,7 @@ public abstract class AbstractQueuedSynchronizer
     private Node addWaiter(Node mode) {
         Node node = new Node(Thread.currentThread(), mode);
         // Try the fast path of enq; backup to full enq on failure
-	Node pred = tail;
+        Node pred = tail;
         if (pred != null) {
             node.prev = pred;
             if (compareAndSetTail(pred, node)) {
@@ -641,7 +641,7 @@ public abstract class AbstractQueuedSynchronizer
         Node s = node.next;
         if (s == null || s.waitStatus > 0) {
             s = null;
-	    for (Node t = tail; t != null && t != node; t = t.prev)
+            for (Node t = tail; t != null && t != node; t = t.prev)
                 if (t.waitStatus <= 0)
                     s = t;
         }
@@ -678,43 +678,43 @@ public abstract class AbstractQueuedSynchronizer
      * @param node the node
      */
     private void cancelAcquire(Node node) {
-	// Ignore if node doesn't exist
+        // Ignore if node doesn't exist
         if (node == null)
-	    return;
+            return;
 
-	node.thread = null;
+        node.thread = null;
 
-	// Skip cancelled predecessors
-	Node pred = node.prev;
-	while (pred.waitStatus > 0)
-	    node.prev = pred = pred.prev;
+        // Skip cancelled predecessors
+        Node pred = node.prev;
+        while (pred.waitStatus > 0)
+            node.prev = pred = pred.prev;
 
-	// Getting this before setting waitStatus ensures staleness
-	Node predNext = pred.next;
+        // Getting this before setting waitStatus ensures staleness
+        Node predNext = pred.next;
 
-	// Can use unconditional write instead of CAS here
-	node.waitStatus = Node.CANCELLED;
+        // Can use unconditional write instead of CAS here
+        node.waitStatus = Node.CANCELLED;
 
-	// If we are the tail, remove ourselves
-	if (node == tail && compareAndSetTail(node, pred)) {
-	    compareAndSetNext(pred, predNext, null);
-	} else {
-	    // If "active" predecessor found...
-	    if (pred != head
-		&& (pred.waitStatus == Node.SIGNAL
-		    || compareAndSetWaitStatus(pred, 0, Node.SIGNAL))
-		&& pred.thread != null) {
+        // If we are the tail, remove ourselves
+        if (node == tail && compareAndSetTail(node, pred)) {
+            compareAndSetNext(pred, predNext, null);
+        } else {
+            // If "active" predecessor found...
+            if (pred != head
+                && (pred.waitStatus == Node.SIGNAL
+                    || compareAndSetWaitStatus(pred, 0, Node.SIGNAL))
+                && pred.thread != null) {
 
-		// If successor is active, set predecessor's next link
-		Node next = node.next;
-		if (next != null && next.waitStatus <= 0)
-		    compareAndSetNext(pred, predNext, next);
-	    } else {
-		unparkSuccessor(node);
-	    }
+                // If successor is active, set predecessor's next link
+                Node next = node.next;
+                if (next != null && next.waitStatus <= 0)
+                    compareAndSetNext(pred, predNext, next);
+            } else {
+                unparkSuccessor(node);
+            }
 
-	    node.next = node; // help GC
-	}
+            node.next = node; // help GC
+        }
     }
 
     /**
@@ -739,11 +739,11 @@ public abstract class AbstractQueuedSynchronizer
              * Predecessor was cancelled. Skip over predecessors and
              * indicate retry.
              */
-	    do {
-		node.prev = pred = pred.prev;
-	    } while (pred.waitStatus > 0);
-	    pred.next = node;
-	}
+            do {
+                node.prev = pred = pred.prev;
+            } while (pred.waitStatus > 0);
+            pred.next = node;
+        }
         else
             /*
              * Indicate that we need a signal, but don't park yet. Caller
@@ -789,25 +789,25 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if interrupted while waiting
      */
     final boolean acquireQueued(final Node node, int arg) {
-	boolean failed = true;
-	try {
-	    boolean interrupted = false;
-	    for (;;) {
-		final Node p = node.predecessor();
-		if (p == head && tryAcquire(arg)) {
-		    setHead(node);
-		    p.next = null; // help GC
-		    failed = false;
-		    return interrupted;
-		}
-		if (shouldParkAfterFailedAcquire(p, node) &&
-		    parkAndCheckInterrupt())
-		    interrupted = true;
-	    }
-	} finally {
-	    if (failed)
-		cancelAcquire(node);
-	}
+        boolean failed = true;
+        try {
+            boolean interrupted = false;
+            for (;;) {
+                final Node p = node.predecessor();
+                if (p == head && tryAcquire(arg)) {
+                    setHead(node);
+                    p.next = null; // help GC
+                    failed = false;
+                    return interrupted;
+                }
+                if (shouldParkAfterFailedAcquire(p, node) &&
+                    parkAndCheckInterrupt())
+                    interrupted = true;
+            }
+        } finally {
+            if (failed)
+                cancelAcquire(node);
+        }
     }
 
     /**
@@ -815,26 +815,26 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument
      */
     private void doAcquireInterruptibly(int arg)
-	throws InterruptedException {
-	final Node node = addWaiter(Node.EXCLUSIVE);
-	boolean failed = true;
-	try {
-	    for (;;) {
-		final Node p = node.predecessor();
-		if (p == head && tryAcquire(arg)) {
-		    setHead(node);
-		    p.next = null; // help GC
-		    failed = false;
-		    return;
-		}
-		if (shouldParkAfterFailedAcquire(p, node) &&
-		    parkAndCheckInterrupt())
-		    throw new InterruptedException();
-	    }
-	} finally {
-	    if (failed)
-		cancelAcquire(node);
-	}
+        throws InterruptedException {
+        final Node node = addWaiter(Node.EXCLUSIVE);
+        boolean failed = true;
+        try {
+            for (;;) {
+                final Node p = node.predecessor();
+                if (p == head && tryAcquire(arg)) {
+                    setHead(node);
+                    p.next = null; // help GC
+                    failed = false;
+                    return;
+                }
+                if (shouldParkAfterFailedAcquire(p, node) &&
+                    parkAndCheckInterrupt())
+                    throw new InterruptedException();
+            }
+        } finally {
+            if (failed)
+                cancelAcquire(node);
+        }
     }
 
     /**
@@ -845,34 +845,34 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if acquired
      */
     private boolean doAcquireNanos(int arg, long nanosTimeout)
-	throws InterruptedException {
-	long lastTime = System.nanoTime();
-	final Node node = addWaiter(Node.EXCLUSIVE);
-	boolean failed = true;
-	try {
-	    for (;;) {
-		final Node p = node.predecessor();
-		if (p == head && tryAcquire(arg)) {
-		    setHead(node);
-		    p.next = null; // help GC
-		    failed = false;
-		    return true;
-		}
-		if (nanosTimeout <= 0)
-		    return false;
+        throws InterruptedException {
+        long lastTime = System.nanoTime();
+        final Node node = addWaiter(Node.EXCLUSIVE);
+        boolean failed = true;
+        try {
+            for (;;) {
+                final Node p = node.predecessor();
+                if (p == head && tryAcquire(arg)) {
+                    setHead(node);
+                    p.next = null; // help GC
+                    failed = false;
+                    return true;
+                }
+                if (nanosTimeout <= 0)
+                    return false;
                 if (shouldParkAfterFailedAcquire(p, node) &&
                     nanosTimeout > spinForTimeoutThreshold)
-		    LockSupport.parkNanos(this, nanosTimeout);
-		long now = System.nanoTime();
-		nanosTimeout -= now - lastTime;
-		lastTime = now;
-		if (Thread.interrupted())
-		    throw new InterruptedException();
-	    }
-	} finally {
-	    if (failed)
-		cancelAcquire(node);
-	}
+                    LockSupport.parkNanos(this, nanosTimeout);
+                long now = System.nanoTime();
+                nanosTimeout -= now - lastTime;
+                lastTime = now;
+                if (Thread.interrupted())
+                    throw new InterruptedException();
+            }
+        } finally {
+            if (failed)
+                cancelAcquire(node);
+        }
     }
 
     /**
@@ -880,31 +880,31 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument
      */
     private void doAcquireShared(int arg) {
-	final Node node = addWaiter(Node.SHARED);
-	boolean failed = true;
-	try {
-	    boolean interrupted = false;
-	    for (;;) {
-		final Node p = node.predecessor();
-		if (p == head) {
-		    int r = tryAcquireShared(arg);
-		    if (r >= 0) {
-			setHeadAndPropagate(node, r);
-			p.next = null; // help GC
-			if (interrupted)
-			    selfInterrupt();
-			failed = false;
-			return;
-		    }
-		}
-		if (shouldParkAfterFailedAcquire(p, node) &&
-		    parkAndCheckInterrupt())
-		    interrupted = true;
-	    }
-	} finally {
-	    if (failed)
-		cancelAcquire(node);
-	}
+        final Node node = addWaiter(Node.SHARED);
+        boolean failed = true;
+        try {
+            boolean interrupted = false;
+            for (;;) {
+                final Node p = node.predecessor();
+                if (p == head) {
+                    int r = tryAcquireShared(arg);
+                    if (r >= 0) {
+                        setHeadAndPropagate(node, r);
+                        p.next = null; // help GC
+                        if (interrupted)
+                            selfInterrupt();
+                        failed = false;
+                        return;
+                    }
+                }
+                if (shouldParkAfterFailedAcquire(p, node) &&
+                    parkAndCheckInterrupt())
+                    interrupted = true;
+            }
+        } finally {
+            if (failed)
+                cancelAcquire(node);
+        }
     }
 
     /**
@@ -912,29 +912,29 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument
      */
     private void doAcquireSharedInterruptibly(int arg)
-	throws InterruptedException {
-	final Node node = addWaiter(Node.SHARED);
-	boolean failed = true;
-	try {
-	    for (;;) {
-		final Node p = node.predecessor();
-		if (p == head) {
-		    int r = tryAcquireShared(arg);
-		    if (r >= 0) {
-			setHeadAndPropagate(node, r);
-			p.next = null; // help GC
-			failed = false;
-			return;
-		    }
-		}
-		if (shouldParkAfterFailedAcquire(p, node) &&
-		    parkAndCheckInterrupt())
-		    throw new InterruptedException();
-	    }
-	} finally {
-	    if (failed)
-		cancelAcquire(node);
-	}
+        throws InterruptedException {
+        final Node node = addWaiter(Node.SHARED);
+        boolean failed = true;
+        try {
+            for (;;) {
+                final Node p = node.predecessor();
+                if (p == head) {
+                    int r = tryAcquireShared(arg);
+                    if (r >= 0) {
+                        setHeadAndPropagate(node, r);
+                        p.next = null; // help GC
+                        failed = false;
+                        return;
+                    }
+                }
+                if (shouldParkAfterFailedAcquire(p, node) &&
+                    parkAndCheckInterrupt())
+                    throw new InterruptedException();
+            }
+        } finally {
+            if (failed)
+                cancelAcquire(node);
+        }
     }
 
     /**
@@ -945,38 +945,38 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if acquired
      */
     private boolean doAcquireSharedNanos(int arg, long nanosTimeout)
-	throws InterruptedException {
+        throws InterruptedException {
 
-	long lastTime = System.nanoTime();
-	final Node node = addWaiter(Node.SHARED);
-	boolean failed = true;
-	try {
-	    for (;;) {
-		final Node p = node.predecessor();
-		if (p == head) {
-		    int r = tryAcquireShared(arg);
-		    if (r >= 0) {
-			setHeadAndPropagate(node, r);
-			p.next = null; // help GC
-			failed = false;
-			return true;
-		    }
-		}
-		if (nanosTimeout <= 0)
-		    return false;
+        long lastTime = System.nanoTime();
+        final Node node = addWaiter(Node.SHARED);
+        boolean failed = true;
+        try {
+            for (;;) {
+                final Node p = node.predecessor();
+                if (p == head) {
+                    int r = tryAcquireShared(arg);
+                    if (r >= 0) {
+                        setHeadAndPropagate(node, r);
+                        p.next = null; // help GC
+                        failed = false;
+                        return true;
+                    }
+                }
+                if (nanosTimeout <= 0)
+                    return false;
                 if (shouldParkAfterFailedAcquire(p, node) &&
                     nanosTimeout > spinForTimeoutThreshold)
-		    LockSupport.parkNanos(this, nanosTimeout);
-		long now = System.nanoTime();
-		nanosTimeout -= now - lastTime;
-		lastTime = now;
-		if (Thread.interrupted())
-		    throw new InterruptedException();
-	    }
-	} finally {
-	    if (failed)
-		cancelAcquire(node);
-	}
+                    LockSupport.parkNanos(this, nanosTimeout);
+                long now = System.nanoTime();
+                nanosTimeout -= now - lastTime;
+                lastTime = now;
+                if (Thread.interrupted())
+                    throw new InterruptedException();
+            }
+        } finally {
+            if (failed)
+                cancelAcquire(node);
+        }
     }
 
     // Main exported methods
@@ -1174,10 +1174,10 @@ public abstract class AbstractQueuedSynchronizer
      * @throws InterruptedException if the current thread is interrupted
      */
     public final boolean tryAcquireNanos(int arg, long nanosTimeout) throws InterruptedException {
-	if (Thread.interrupted())
-	    throw new InterruptedException();
-	return tryAcquire(arg) ||
-	    doAcquireNanos(arg, nanosTimeout);
+        if (Thread.interrupted())
+            throw new InterruptedException();
+        return tryAcquire(arg) ||
+            doAcquireNanos(arg, nanosTimeout);
     }
 
     /**
@@ -1253,10 +1253,10 @@ public abstract class AbstractQueuedSynchronizer
      * @throws InterruptedException if the current thread is interrupted
      */
     public final boolean tryAcquireSharedNanos(int arg, long nanosTimeout) throws InterruptedException {
-	if (Thread.interrupted())
-	    throw new InterruptedException();
-	return tryAcquireShared(arg) >= 0 ||
-	    doAcquireSharedNanos(arg, nanosTimeout);
+        if (Thread.interrupted())
+            throw new InterruptedException();
+        return tryAcquireShared(arg) >= 0 ||
+            doAcquireSharedNanos(arg, nanosTimeout);
     }
 
     /**
@@ -1270,7 +1270,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final boolean releaseShared(int arg) {
         if (tryReleaseShared(arg)) {
-	    Node h = head;
+            Node h = head;
             if (h != null && h.waitStatus != 0)
                 unparkSuccessor(h);
             return true;
@@ -1338,9 +1338,9 @@ public abstract class AbstractQueuedSynchronizer
          */
         Node h, s;
         Thread st;
-	if (((h = head) != null && (s = h.next) != null &&
+        if (((h = head) != null && (s = h.next) != null &&
              s.prev == head && (st = s.thread) != null) ||
-	    ((h = head) != null && (s = h.next) != null &&
+            ((h = head) != null && (s = h.next) != null &&
              s.prev == head && (st = s.thread) != null))
             return st;
 
@@ -1352,7 +1352,7 @@ public abstract class AbstractQueuedSynchronizer
          * guaranteeing termination.
          */
 
-	Node t = tail;
+        Node t = tail;
         Thread firstThread = null;
         while (t != null && t != head) {
             Thread tt = t.thread;
@@ -1376,7 +1376,7 @@ public abstract class AbstractQueuedSynchronizer
     public final boolean isQueued(Thread thread) {
         if (thread == null)
             throw new NullPointerException();
-	for (Node p = tail; p != null; p = p.prev)
+        for (Node p = tail; p != null; p = p.prev)
             if (p.thread == thread)
                 return true;
         return false;
@@ -1389,7 +1389,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     final boolean apparentlyFirstQueuedIsExclusive() {
         Node h, s;
-	return (h = head) != null && (s = h.next) != null && !s.isShared();
+        return (h = head) != null && (s = h.next) != null && !s.isShared();
     }
 
     /**
@@ -1399,7 +1399,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     final boolean isFirst(Thread current) {
         Node h, s;
-	return ((h = head) == null ||
+        return ((h = head) == null ||
                 ((s = h.next) != null && s.thread == current) ||
                 fullIsFirst(current));
     }
@@ -1408,10 +1408,10 @@ public abstract class AbstractQueuedSynchronizer
         // same idea as fullGetFirstQueuedThread
         Node h, s;
         Thread firstThread = null;
-	if (((h = head) != null && (s = h.next) != null &&
+        if (((h = head) != null && (s = h.next) != null &&
              s.prev == head && (firstThread = s.thread) != null))
             return firstThread == current;
-	Node t = tail;
+        Node t = tail;
         while (t != null && t != head) {
             Thread tt = t.thread;
             if (tt != null)
@@ -1551,7 +1551,7 @@ public abstract class AbstractQueuedSynchronizer
      * @return true if present
      */
     private boolean findNodeFromTail(Node node) {
-	Node t = tail;
+        Node t = tail;
         for (;;) {
             if (t == node)
                 return true;
@@ -1619,19 +1619,19 @@ public abstract class AbstractQueuedSynchronizer
      * @return previous sync state
      */
     final int fullyRelease(Node node) {
-	boolean failed = true;
-	try {
-	    int savedState = getState();
-	    if (release(savedState)) {
-		failed = false;
-		return savedState;
-	    } else {
-		throw new IllegalMonitorStateException();
-	    }
-	} finally {
-	    if (failed)
-		node.waitStatus = Node.CANCELLED;
-	}
+        boolean failed = true;
+        try {
+            int savedState = getState();
+            if (release(savedState)) {
+                failed = false;
+                return savedState;
+            } else {
+                throw new IllegalMonitorStateException();
+            }
+        } finally {
+            if (failed)
+                node.waitStatus = Node.CANCELLED;
+        }
     }
 
     // Instrumentation methods for conditions
@@ -2166,22 +2166,22 @@ public abstract class AbstractQueuedSynchronizer
      * IKVM specific. We use AtomicReferenceFieldUpdater instead of Unsafe primitives.
      */
     private static final AtomicReferenceFieldUpdater<AbstractQueuedSynchronizer, Node> headUpdater = 
-	AtomicReferenceFieldUpdater.newUpdater(AbstractQueuedSynchronizer.class, Node.class, "head");
+        AtomicReferenceFieldUpdater.newUpdater(AbstractQueuedSynchronizer.class, Node.class, "head");
     private static final AtomicReferenceFieldUpdater<AbstractQueuedSynchronizer, Node> tailUpdater = 
-	AtomicReferenceFieldUpdater.newUpdater(AbstractQueuedSynchronizer.class, Node.class, "tail");
+        AtomicReferenceFieldUpdater.newUpdater(AbstractQueuedSynchronizer.class, Node.class, "tail");
 
     /**
      * CAS head field. Used only by enq.
      */
     private final boolean compareAndSetHead(Node update) {
-	return headUpdater.compareAndSet(this, null, update);
+        return headUpdater.compareAndSet(this, null, update);
     }
 
     /**
      * CAS tail field. Used only by enq.
      */
     private final boolean compareAndSetTail(Node expect, Node update) {
-	return tailUpdater.compareAndSet(this, expect, update);
+        return tailUpdater.compareAndSet(this, expect, update);
     }
 
     /**
@@ -2196,6 +2196,6 @@ public abstract class AbstractQueuedSynchronizer
     private final static boolean compareAndSetNext(Node node,
                                                    Node expect,
                                                    Node update) {
-	return Node.nextUpdater.compareAndSet(node, expect, update);
+        return Node.nextUpdater.compareAndSet(node, expect, update);
     }
 }

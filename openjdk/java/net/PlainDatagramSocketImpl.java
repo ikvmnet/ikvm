@@ -93,9 +93,9 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      * Creates a datagram socket
      */
     protected synchronized void create() throws SocketException {
-	fd = new FileDescriptor();
-	fd1 = new FileDescriptor();
-	datagramSocketCreate();
+        fd = new FileDescriptor();
+        fd1 = new FileDescriptor();
+        datagramSocketCreate();
     }
 
     /**
@@ -103,30 +103,30 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected synchronized void bind(int lport, InetAddress laddr) 
         throws SocketException {
-	
-	bind0(lport, laddr);
-	if (laddr.isAnyLocalAddress()) {
-	    anyLocalBoundAddr = laddr;
-	}
+        
+        bind0(lport, laddr);
+        if (laddr.isAnyLocalAddress()) {
+            anyLocalBoundAddr = laddr;
+        }
     }
 
     protected synchronized void bind0(int lport, InetAddress laddr) throws SocketException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    netSocket.Bind(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(laddr), lport));
-	    localPort = ((IPEndPoint)netSocket.get_LocalEndPoint()).get_Port();
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw new BindException(x.getMessage());
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            netSocket.Bind(new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(laddr), lport));
+            localPort = ((IPEndPoint)netSocket.get_LocalEndPoint()).get_Port();
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw new BindException(x.getMessage());
+        }
+        catch (cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /**
@@ -136,29 +136,29 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected void send(DatagramPacket p) throws IOException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    int len = p.getLength();
-	    int port = p.getPort();
-	    if (port < 1 || port > 65535)
-	    {
-		throw new SocketException("Invalid port");
-	    }
-	    if (netSocket.SendTo(p.getData(), p.getOffset(), len, SocketFlags.wrap(SocketFlags.None), new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(p.getAddress()), port)) != len)
-	    {
-		throw new SocketException("Not all data was sent");
-	    }
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            int len = p.getLength();
+            int port = p.getPort();
+            if (port < 1 || port > 65535)
+            {
+                throw new SocketException("Invalid port");
+            }
+            if (netSocket.SendTo(p.getData(), p.getOffset(), len, SocketFlags.wrap(SocketFlags.None), new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(p.getAddress()), port)) != len)
+            {
+                throw new SocketException("Not all data was sent");
+            }
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
+        catch (cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /**
@@ -169,10 +169,10 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      * @param port the remote port number
      */
     protected void connect(InetAddress address, int port) throws SocketException {
-	connect0(address, port);
-	connectedAddress = address;
-	connectedPort = port;
-	connected = true;
+        connect0(address, port);
+        connectedAddress = address;
+        connectedPort = port;
+        connected = true;
     }
 
     /**
@@ -180,10 +180,10 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      * not connected already.
      */
     protected void disconnect() {
-	disconnect0(connectedAddress.family);
-	connected = false;
-	connectedAddress = null;
-	connectedPort = -1;
+        disconnect0(connectedAddress.family);
+        connected = false;
+        connectedAddress = null;
+        connectedPort = -1;
     }
 
     /**
@@ -192,17 +192,17 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected synchronized int peek(InetAddress i) throws IOException
     {
-	DatagramPacket p = new DatagramPacket(new byte[1], 1);
-	receiveImpl(p, SocketFlags.Peek);
-	i.address = p.getAddress().address;
-	i.family = InetAddress.IPv4;
-	return p.getPort();
+        DatagramPacket p = new DatagramPacket(new byte[1], 1);
+        receiveImpl(p, SocketFlags.Peek);
+        i.address = p.getAddress().address;
+        i.family = InetAddress.IPv4;
+        return p.getPort();
     }
 
     protected synchronized int peekData(DatagramPacket p) throws IOException
     {
-	receiveImpl(p, SocketFlags.Peek);
-	return p.getPort();
+        receiveImpl(p, SocketFlags.Peek);
+        return p.getPort();
     }
 
     /**
@@ -211,81 +211,81 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected synchronized void receive(DatagramPacket p) 
         throws IOException {
-	try {
-	    receive0(p);
-	} finally {
-	    fduse = -1;
-	}
+        try {
+            receive0(p);
+        } finally {
+            fduse = -1;
+        }
     }
 
     protected synchronized void receive0(DatagramPacket p) throws IOException
     {
-	receiveImpl(p, SocketFlags.None);
+        receiveImpl(p, SocketFlags.None);
     }
 
     private void receiveImpl(DatagramPacket p, int socketFlags) throws IOException
     {
-	cli.System.Net.EndPoint[] remoteEP = new cli.System.Net.EndPoint[] 
+        cli.System.Net.EndPoint[] remoteEP = new cli.System.Net.EndPoint[] 
             {
                 new cli.System.Net.IPEndPoint(0, 0)
             };
-	int length;
-	for (; ; )
-	{
-	    try
-	    {
-		if (false) throw new cli.System.Net.Sockets.SocketException();
-		if (false) throw new cli.System.ObjectDisposedException("");
-		if (timeout > 0 && !netSocket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
-		    SelectMode.wrap(SelectMode.SelectRead)))
-		{
-		    throw new SocketTimeoutException();
-		}
-		length = netSocket.ReceiveFrom(p.buf, p.offset, p.bufLength, SocketFlags.wrap(socketFlags), remoteEP);
-		break;
-	    }
-	    catch (cli.System.Net.Sockets.SocketException x)
-	    {
-		if (x.get_ErrorCode() == WSAECONNRESET)
-		{
-		    // A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
-		    // the winsock stack helpfully lets us know this, but we don't care so we just retry the receive.
-		    if ((socketFlags & SocketFlags.Peek) != 0)
-		    {
-			// We did a peek, so we still need to remove the error result.
-			try
-			{
-			    if (false) throw new cli.System.Net.Sockets.SocketException();
-			    if (false) throw new cli.System.ObjectDisposedException("");
-			    netSocket.ReceiveFrom(p.buf, 0, 0, SocketFlags.wrap(SocketFlags.None), remoteEP);
-			}
-			catch (cli.System.Net.Sockets.SocketException _)
-			{
-			}
-			catch (cli.System.ObjectDisposedException _)
-			{
-			}
-		    }
-		    continue;
-		}
-		if (x.get_ErrorCode() == WSAEMSGSIZE)
-		{
-		    // The buffer size was too small for the packet, ReceiveFrom receives the part of the packet
-		    // that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
-		    length = p.bufLength;
-		    break;
-		}
-		throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	    }
-	    catch (cli.System.ObjectDisposedException x1)
-	    {
-		throw new SocketException("Socket is closed");
-	    }
-	}
-	IPEndPoint endpoint = (IPEndPoint)remoteEP[0];
-	p.address = PlainSocketImpl.getInetAddressFromIPEndPoint(endpoint);
-	p.port = endpoint.get_Port();
-	p.length = length;
+        int length;
+        for (; ; )
+        {
+            try
+            {
+                if (false) throw new cli.System.Net.Sockets.SocketException();
+                if (false) throw new cli.System.ObjectDisposedException("");
+                if (timeout > 0 && !netSocket.Poll(Math.min(timeout, Integer.MAX_VALUE / 1000) * 1000,
+                    SelectMode.wrap(SelectMode.SelectRead)))
+                {
+                    throw new SocketTimeoutException();
+                }
+                length = netSocket.ReceiveFrom(p.buf, p.offset, p.bufLength, SocketFlags.wrap(socketFlags), remoteEP);
+                break;
+            }
+            catch (cli.System.Net.Sockets.SocketException x)
+            {
+                if (x.get_ErrorCode() == WSAECONNRESET)
+                {
+                    // A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
+                    // the winsock stack helpfully lets us know this, but we don't care so we just retry the receive.
+                    if ((socketFlags & SocketFlags.Peek) != 0)
+                    {
+                        // We did a peek, so we still need to remove the error result.
+                        try
+                        {
+                            if (false) throw new cli.System.Net.Sockets.SocketException();
+                            if (false) throw new cli.System.ObjectDisposedException("");
+                            netSocket.ReceiveFrom(p.buf, 0, 0, SocketFlags.wrap(SocketFlags.None), remoteEP);
+                        }
+                        catch (cli.System.Net.Sockets.SocketException _)
+                        {
+                        }
+                        catch (cli.System.ObjectDisposedException _)
+                        {
+                        }
+                    }
+                    continue;
+                }
+                if (x.get_ErrorCode() == WSAEMSGSIZE)
+                {
+                    // The buffer size was too small for the packet, ReceiveFrom receives the part of the packet
+                    // that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
+                    length = p.bufLength;
+                    break;
+                }
+                throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+            }
+            catch (cli.System.ObjectDisposedException x1)
+            {
+                throw new SocketException("Socket is closed");
+            }
+        }
+        IPEndPoint endpoint = (IPEndPoint)remoteEP[0];
+        p.address = PlainSocketImpl.getInetAddressFromIPEndPoint(endpoint);
+        p.port = endpoint.get_Port();
+        p.length = length;
     }
 
     /**
@@ -294,20 +294,20 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected void setTimeToLive(int ttl) throws IOException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ttl);
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw new SocketException(x.getMessage());
-	}
-	catch (cli.System.ObjectDisposedException x2)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive), ttl);
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
+        catch (cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /**
@@ -315,20 +315,20 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected int getTimeToLive() throws IOException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive)));
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw new SocketException(x.getMessage());
-	}
-	catch (cli.System.ObjectDisposedException x2)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.IpTimeToLive)));
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
+        catch (cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /**
@@ -337,7 +337,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected void setTTL(byte ttl) throws IOException
     {
-	setTimeToLive(ttl & 0xFF);
+        setTimeToLive(ttl & 0xFF);
     }
 
     /**
@@ -345,7 +345,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected byte getTTL() throws IOException
     {
-	return (byte)getTimeToLive();
+        return (byte)getTimeToLive();
     }
 
     /**
@@ -353,7 +353,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      * @param multicast address to join.
      */
     protected void join(InetAddress inetaddr) throws IOException {
-	join(inetaddr, null);
+        join(inetaddr, null);
     }
 
     /**
@@ -361,7 +361,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      * @param multicast address to leave.
      */
     protected void leave(InetAddress inetaddr) throws IOException {
-	leave(inetaddr, null);
+        leave(inetaddr, null);
     }
     /**
      * Join the multicast group.
@@ -374,47 +374,47 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      */
 
     protected void joinGroup(SocketAddress mcastaddr, NetworkInterface netIf)
-	throws IOException {
-	if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
-	    throw new IllegalArgumentException("Unsupported address type");
-	join(((InetSocketAddress)mcastaddr).getAddress(), netIf);
+        throws IOException {
+        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+            throw new IllegalArgumentException("Unsupported address type");
+        join(((InetSocketAddress)mcastaddr).getAddress(), netIf);
     }
 
     private void join(InetAddress inetaddr, NetworkInterface netIf) throws IOException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ArgumentException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    IPAddress mcastAddr = PlainSocketImpl.getAddressFromInetAddress(inetaddr);
-	    if (netIf == null)
-	    {
-		netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), new MulticastOption(mcastAddr));
-	    }
-	    else
-	    {
-		Enumeration e = netIf.getInetAddresses();
-		if (e.hasMoreElements())
-		{
-		    IPAddress bindAddr = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
-		    MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
-		    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), mcastOption);
-		}
-	    }
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ArgumentException x1)
-	{
-	    throw new IOException(x1.getMessage());
-	}
-	catch (cli.System.ObjectDisposedException x2)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ArgumentException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            IPAddress mcastAddr = PlainSocketImpl.getAddressFromInetAddress(inetaddr);
+            if (netIf == null)
+            {
+                netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), new MulticastOption(mcastAddr));
+            }
+            else
+            {
+                Enumeration e = netIf.getInetAddresses();
+                if (e.hasMoreElements())
+                {
+                    IPAddress bindAddr = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
+                    MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
+                    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.AddMembership), mcastOption);
+                }
+            }
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
+        catch (cli.System.ArgumentException x1)
+        {
+            throw new IOException(x1.getMessage());
+        }
+        catch (cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /**
@@ -426,58 +426,58 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
      * @since 1.4
      */
     protected void leaveGroup(SocketAddress mcastaddr, NetworkInterface netIf)
-	throws IOException {
-	if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
-	    throw new IllegalArgumentException("Unsupported address type");
-	leave(((InetSocketAddress)mcastaddr).getAddress(), netIf);
+        throws IOException {
+        if (mcastaddr == null || !(mcastaddr instanceof InetSocketAddress))
+            throw new IllegalArgumentException("Unsupported address type");
+        leave(((InetSocketAddress)mcastaddr).getAddress(), netIf);
     }
 
     private void leave(InetAddress inetaddr, NetworkInterface netIf) throws IOException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ArgumentException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    IPAddress mcastAddr = PlainSocketImpl.getAddressFromInetAddress(inetaddr);
-	    if (netIf == null)
-	    {
-		netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), new MulticastOption(mcastAddr));
-	    }
-	    else
-	    {
-		Enumeration e = netIf.getInetAddresses();
-		if (e.hasMoreElements())
-		{
-		    IPAddress bindAddr = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
-		    MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
-		    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), mcastOption);
-		}
-	    }
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw PlainSocketImpl.convertSocketExceptionToIOException(x);
-	}
-	catch (cli.System.ArgumentException x1)
-	{
-	    throw new IOException(x1.getMessage());
-	}
-	catch (cli.System.ObjectDisposedException x2)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ArgumentException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            IPAddress mcastAddr = PlainSocketImpl.getAddressFromInetAddress(inetaddr);
+            if (netIf == null)
+            {
+                netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), new MulticastOption(mcastAddr));
+            }
+            else
+            {
+                Enumeration e = netIf.getInetAddresses();
+                if (e.hasMoreElements())
+                {
+                    IPAddress bindAddr = PlainSocketImpl.getAddressFromInetAddress((InetAddress)e.nextElement());
+                    MulticastOption mcastOption = new MulticastOption(mcastAddr, bindAddr);
+                    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.DropMembership), mcastOption);
+                }
+            }
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
+        catch (cli.System.ArgumentException x1)
+        {
+            throw new IOException(x1.getMessage());
+        }
+        catch (cli.System.ObjectDisposedException x2)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     /**
      * Close the socket.
      */
     protected void close() {
-	if (fd != null || fd1 != null) {
-	    datagramSocketClose();
-	    fd = null;
-	    fd1 = null;
-	}
+        if (fd != null || fd1 != null) {
+            datagramSocketClose();
+            fd = null;
+            fd1 = null;
+        }
     }
 
     /**
@@ -489,62 +489,62 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
          if (fd == null && fd1 == null) {
             throw new SocketException("Socket Closed");
          }
-	 switch (optID) {
-	    /* check type safety b4 going native.  These should never
-	     * fail, since only java.Socket* has access to
-	     * PlainSocketImpl.setOption().
-	     */
-	 case SO_TIMEOUT:
-	     if (o == null || !(o instanceof Integer)) {
-		 throw new SocketException("bad argument for SO_TIMEOUT");
-	     }
-	     int tmp = ((Integer) o).intValue();
-	     if (tmp < 0)
-		 throw new IllegalArgumentException("timeout < 0");
-	     timeout = tmp;
-	     return;
-	 case IP_TOS:
-	     if (o == null || !(o instanceof Integer)) {
-		 throw new SocketException("bad argument for IP_TOS");
-	     }
-	     trafficClass = ((Integer)o).intValue();
-	     break;
-	 case SO_REUSEADDR:
-	     if (o == null || !(o instanceof Boolean)) {
-		 throw new SocketException("bad argument for SO_REUSEADDR");
-	     }
-	     break;
-	 case SO_BROADCAST:
-	     if (o == null || !(o instanceof Boolean)) {
-		 throw new SocketException("bad argument for SO_BROADCAST");
-	     }
-	     break;
-	 case SO_BINDADDR:
-	     throw new SocketException("Cannot re-bind Socket");
-	 case SO_RCVBUF:
-	 case SO_SNDBUF:
-	     if (o == null || !(o instanceof Integer) ||
-		 ((Integer)o).intValue() < 0) {
-		 throw new SocketException("bad argument for SO_SNDBUF or " +
-					   "SO_RCVBUF");
-	     }
-	     break;
-	 case IP_MULTICAST_IF:
-	     if (o == null || !(o instanceof InetAddress))
-		 throw new SocketException("bad argument for IP_MULTICAST_IF");
-	     break;
-	 case IP_MULTICAST_IF2:
-	     if (o == null || !(o instanceof NetworkInterface))
-		 throw new SocketException("bad argument for IP_MULTICAST_IF2");
-	     break;
-	 case IP_MULTICAST_LOOP:
-	     if (o == null || !(o instanceof Boolean))
-		 throw new SocketException("bad argument for IP_MULTICAST_LOOP");
-	     break;
-	 default:
-	     throw new SocketException("invalid option: " + optID);
-	 }
-	 socketSetOption(optID, o);
+         switch (optID) {
+            /* check type safety b4 going native.  These should never
+             * fail, since only java.Socket* has access to
+             * PlainSocketImpl.setOption().
+             */
+         case SO_TIMEOUT:
+             if (o == null || !(o instanceof Integer)) {
+                 throw new SocketException("bad argument for SO_TIMEOUT");
+             }
+             int tmp = ((Integer) o).intValue();
+             if (tmp < 0)
+                 throw new IllegalArgumentException("timeout < 0");
+             timeout = tmp;
+             return;
+         case IP_TOS:
+             if (o == null || !(o instanceof Integer)) {
+                 throw new SocketException("bad argument for IP_TOS");
+             }
+             trafficClass = ((Integer)o).intValue();
+             break;
+         case SO_REUSEADDR:
+             if (o == null || !(o instanceof Boolean)) {
+                 throw new SocketException("bad argument for SO_REUSEADDR");
+             }
+             break;
+         case SO_BROADCAST:
+             if (o == null || !(o instanceof Boolean)) {
+                 throw new SocketException("bad argument for SO_BROADCAST");
+             }
+             break;
+         case SO_BINDADDR:
+             throw new SocketException("Cannot re-bind Socket");
+         case SO_RCVBUF:
+         case SO_SNDBUF:
+             if (o == null || !(o instanceof Integer) ||
+                 ((Integer)o).intValue() < 0) {
+                 throw new SocketException("bad argument for SO_SNDBUF or " +
+                                           "SO_RCVBUF");
+             }
+             break;
+         case IP_MULTICAST_IF:
+             if (o == null || !(o instanceof InetAddress))
+                 throw new SocketException("bad argument for IP_MULTICAST_IF");
+             break;
+         case IP_MULTICAST_IF2:
+             if (o == null || !(o instanceof NetworkInterface))
+                 throw new SocketException("bad argument for IP_MULTICAST_IF2");
+             break;
+         case IP_MULTICAST_LOOP:
+             if (o == null || !(o instanceof Boolean))
+                 throw new SocketException("bad argument for IP_MULTICAST_LOOP");
+             break;
+         default:
+             throw new SocketException("invalid option: " + optID);
+         }
+         socketSetOption(optID, o);
      }
 
     /*
@@ -556,179 +556,179 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
             throw new SocketException("Socket Closed");
         }
 
-	Object result;
+        Object result;
 
-	switch (optID) {
-	    case SO_TIMEOUT:
-		result = new Integer(timeout);
-		break;
-	
-	    case IP_TOS:
-		result = socketGetOption(optID);
-		if ( ((Integer)result).intValue() == -1) {
-		    result = new Integer(trafficClass);
-		}
-		break;
+        switch (optID) {
+            case SO_TIMEOUT:
+                result = new Integer(timeout);
+                break;
+        
+            case IP_TOS:
+                result = socketGetOption(optID);
+                if ( ((Integer)result).intValue() == -1) {
+                    result = new Integer(trafficClass);
+                }
+                break;
 
-	    case SO_BINDADDR:
-		if (fd != null && fd1 != null) {
-		    return anyLocalBoundAddr;	
-		}
-		/* fall through */
-	    case IP_MULTICAST_IF:
-	    case IP_MULTICAST_IF2:
-	    case SO_RCVBUF:
-	    case SO_SNDBUF:
-	    case IP_MULTICAST_LOOP:
-	    case SO_REUSEADDR:
-	    case SO_BROADCAST:
-		result = socketGetOption(optID);
-		break;
+            case SO_BINDADDR:
+                if (fd != null && fd1 != null) {
+                    return anyLocalBoundAddr;   
+                }
+                /* fall through */
+            case IP_MULTICAST_IF:
+            case IP_MULTICAST_IF2:
+            case SO_RCVBUF:
+            case SO_SNDBUF:
+            case IP_MULTICAST_LOOP:
+            case SO_REUSEADDR:
+            case SO_BROADCAST:
+                result = socketGetOption(optID);
+                break;
 
-	    default:
-		throw new SocketException("invalid option: " + optID);
-  	}
+            default:
+                throw new SocketException("invalid option: " + optID);
+        }
 
-	return result;
+        return result;
     }
 
     private void datagramSocketCreate() throws SocketException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    netSocket = new cli.System.Net.Sockets.Socket(
-		AddressFamily.wrap(AddressFamily.InterNetwork),
-		SocketType.wrap(SocketType.Dgram),
-		ProtocolType.wrap(ProtocolType.Udp));
-	    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast), 1);
-	    fd1 = null;
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw new SocketException(x.getMessage());
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            netSocket = new cli.System.Net.Sockets.Socket(
+                AddressFamily.wrap(AddressFamily.InterNetwork),
+                SocketType.wrap(SocketType.Dgram),
+                ProtocolType.wrap(ProtocolType.Udp));
+            netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast), 1);
+            fd1 = null;
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
     }
 
     private void datagramSocketClose()
     {
-	netSocket.Close();
+        netSocket.Close();
     }
 
     private void socketSetOption(int opt, Object val) throws SocketException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    switch (opt)
-	    {
-		case SocketOptions.SO_BROADCAST:
-		    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast), ((Boolean)val).booleanValue() ? 1 : 0);
-		    break;
-		case SocketOptions.IP_MULTICAST_IF:
-		    {
-			InetAddress addr = (InetAddress)val;
-			netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress(addr).get_Address());
-			break;
-		    }
-		case SocketOptions.IP_MULTICAST_IF2:
-		    {
-			NetworkInterface netIf = (NetworkInterface)val;
-			Enumeration e = netIf.getInetAddresses();
-			while (e.hasMoreElements())
-			{
-			    InetAddress addr = (InetAddress)e.nextElement();
-			    if (addr.getAddress().length == 4)
-			    {
-				netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress(addr).get_Address());
-				return;
-			    }
-			}
-			throw new SocketException("No IPv4 address found on interface");
-		    }
-		case SocketOptions.IP_MULTICAST_LOOP:
-		    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback), ((Boolean)val).booleanValue() ? 1 : 0);
-		    break;
-		case SocketOptions.SO_REUSEADDR:
-		    PlainSocketImpl.setCommonSocketOption(netSocket, opt, ((Boolean)val).booleanValue(), null);
-		    break;
-		default:
-		    PlainSocketImpl.setCommonSocketOption(netSocket, opt, false, val);
-		    break;
-	    }
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw new SocketException(x.getMessage());
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            switch (opt)
+            {
+                case SocketOptions.SO_BROADCAST:
+                    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast), ((Boolean)val).booleanValue() ? 1 : 0);
+                    break;
+                case SocketOptions.IP_MULTICAST_IF:
+                    {
+                        InetAddress addr = (InetAddress)val;
+                        netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress(addr).get_Address());
+                        break;
+                    }
+                case SocketOptions.IP_MULTICAST_IF2:
+                    {
+                        NetworkInterface netIf = (NetworkInterface)val;
+                        Enumeration e = netIf.getInetAddresses();
+                        while (e.hasMoreElements())
+                        {
+                            InetAddress addr = (InetAddress)e.nextElement();
+                            if (addr.getAddress().length == 4)
+                            {
+                                netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface), (int)PlainSocketImpl.getAddressFromInetAddress(addr).get_Address());
+                                return;
+                            }
+                        }
+                        throw new SocketException("No IPv4 address found on interface");
+                    }
+                case SocketOptions.IP_MULTICAST_LOOP:
+                    netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback), ((Boolean)val).booleanValue() ? 1 : 0);
+                    break;
+                case SocketOptions.SO_REUSEADDR:
+                    PlainSocketImpl.setCommonSocketOption(netSocket, opt, ((Boolean)val).booleanValue(), null);
+                    break;
+                default:
+                    PlainSocketImpl.setCommonSocketOption(netSocket, opt, false, val);
+                    break;
+            }
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
+        catch (cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
     
     private static InetAddress getInetAddressFromInt(int addr) throws SocketException
     {
-	try
-	{
-	    return InetAddress.getByAddress(cli.System.BitConverter.GetBytes(addr));
-	}
-	catch (UnknownHostException x)
-	{
-	    throw new SocketException(x.getMessage());
-	}
+        try
+        {
+            return InetAddress.getByAddress(cli.System.BitConverter.GetBytes(addr));
+        }
+        catch (UnknownHostException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
     }
 
     private Object socketGetOption(int opt) throws SocketException
     {
-	try
-	{
-	    if (false) throw new cli.System.Net.Sockets.SocketException();
-	    if (false) throw new cli.System.ObjectDisposedException("");
-	    switch (opt)
-	    {
-		case SocketOptions.SO_BROADCAST:
-		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast))) != 0;
-		case SocketOptions.IP_MULTICAST_IF:
-		    return getInetAddressFromInt(CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface))));
-		case SocketOptions.IP_MULTICAST_IF2:
-		    {
-			NetworkInterface inf = NetworkInterface.getByInetAddress(getInetAddressFromInt(CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface)))));
-			return inf != null ? inf : new NetworkInterface(null, -1, new InetAddress[] { new Inet4Address() });
-		    }
-		case SocketOptions.IP_MULTICAST_LOOP:
-		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback))) != 0;
-		case SocketOptions.SO_REUSEADDR:
-		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress))) != 0;
-		case SocketOptions.SO_SNDBUF:
-		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer)));
-		case SocketOptions.SO_RCVBUF:
-		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveBuffer)));
-		case SocketOptions.IP_TOS:
-		    // TODO handle IPv6 here
-		    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.TypeOfService)));
-		case SocketOptions.SO_BINDADDR:
-		    return PlainSocketImpl.getInetAddressFromIPEndPoint((IPEndPoint)netSocket.get_LocalEndPoint());
-		default:
-		    throw new SocketException("Invalid socket option: " + opt);
-	    }
-	}
-	catch (cli.System.Net.Sockets.SocketException x)
-	{
-	    throw new SocketException(x.getMessage());
-	}
-	catch (cli.System.ObjectDisposedException x1)
-	{
-	    throw new SocketException("Socket is closed");
-	}
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            switch (opt)
+            {
+                case SocketOptions.SO_BROADCAST:
+                    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast))) != 0;
+                case SocketOptions.IP_MULTICAST_IF:
+                    return getInetAddressFromInt(CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface))));
+                case SocketOptions.IP_MULTICAST_IF2:
+                    {
+                        NetworkInterface inf = NetworkInterface.getByInetAddress(getInetAddressFromInt(CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastInterface)))));
+                        return inf != null ? inf : new NetworkInterface(null, -1, new InetAddress[] { new Inet4Address() });
+                    }
+                case SocketOptions.IP_MULTICAST_LOOP:
+                    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.MulticastLoopback))) != 0;
+                case SocketOptions.SO_REUSEADDR:
+                    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReuseAddress))) != 0;
+                case SocketOptions.SO_SNDBUF:
+                    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.SendBuffer)));
+                case SocketOptions.SO_RCVBUF:
+                    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.ReceiveBuffer)));
+                case SocketOptions.IP_TOS:
+                    // TODO handle IPv6 here
+                    return CIL.unbox_int(netSocket.GetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.IP), SocketOptionName.wrap(SocketOptionName.TypeOfService)));
+                case SocketOptions.SO_BINDADDR:
+                    return PlainSocketImpl.getInetAddressFromIPEndPoint((IPEndPoint)netSocket.get_LocalEndPoint());
+                default:
+                    throw new SocketException("Invalid socket option: " + opt);
+            }
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
+        catch (cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     private void connect0(InetAddress address, int port) throws SocketException
     {
-	// If we throw here, DatagramSocket will fake connectedness for us.
-	// Once we're on .NET 2.0 we can use Socket.Connect/Disconnect.
-	throw new SocketException();
+        // If we throw here, DatagramSocket will fake connectedness for us.
+        // Once we're on .NET 2.0 we can use Socket.Connect/Disconnect.
+        throw new SocketException();
     }
 
     private void disconnect0(int family)
@@ -738,6 +738,6 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
     // this is a workaround for a bug in java.net.DatagramSocket.receive(), see map.xml for details.
     static boolean equalsHack(InetAddress addr1, InetAddress addr2)
     {
-	return addr1.address == addr2.address;
+        return addr1.address == addr2.address;
     }
 }

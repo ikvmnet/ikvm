@@ -80,10 +80,10 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public ZipEntry(String name)
     {
-	int length = name.length();
-	if (length > 65535)
-	    throw new IllegalArgumentException("name length is " + length);
-	this.name = name;
+        int length = name.length();
+        if (length > 65535)
+            throw new IllegalArgumentException("name length is " + length);
+        this.name = name;
     }
 
     /**
@@ -92,19 +92,19 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public ZipEntry(ZipEntry e)
     {
-	this(e, e.name);
+        this(e, e.name);
     }
 
     ZipEntry(ZipEntry e, String name)
     {
-	this.name = name;
-	time = e.time;
-	crc = e.crc;
-	size = e.size;
-	csize = e.csize;
-	method = e.method;
-	extra = e.extra;
-	comment = e.comment;
+        this.name = name;
+        time = e.time;
+        crc = e.crc;
+        size = e.size;
+        csize = e.csize;
+        method = e.method;
+        extra = e.extra;
+        comment = e.comment;
     }
 
     /**
@@ -115,18 +115,18 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public Object clone()
     {
-	try
-	{
-	    // The JCL says that the `extra' field is also copied.
-	    ZipEntry clone = (ZipEntry)super.clone();
-	    if (extra != null)
-		clone.extra = (byte[])extra.clone();
-	    return clone;
-	}
-	catch (CloneNotSupportedException ex)
-	{
-	    throw new InternalError();
-	}
+        try
+        {
+            // The JCL says that the `extra' field is also copied.
+            ZipEntry clone = (ZipEntry)super.clone();
+            if (extra != null)
+                clone.extra = (byte[])extra.clone();
+            return clone;
+        }
+        catch (CloneNotSupportedException ex)
+        {
+            throw new InternalError();
+        }
     }
 
     /**
@@ -135,7 +135,7 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public String getName()
     {
-	return name;
+        return name;
     }
 
     /**
@@ -144,17 +144,17 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public void setTime(long time)
     {
-	Date d = new Date(time);
-	if (d.getYear() < 80)
-	{
-	    d = new Date(80, 0, 1);
-	}
-	this.time = ((d.getYear() - 80) << 25)
-	    | ((d.getMonth() + 1) << 21)
-	    | (d.getDate() << 16)
-	    | (d.getHours() << 11)
-	    | (d.getMinutes() << 5)
-	    | (d.getSeconds() >> 1);
+        Date d = new Date(time);
+        if (d.getYear() < 80)
+        {
+            d = new Date(80, 0, 1);
+        }
+        this.time = ((d.getYear() - 80) << 25)
+            | ((d.getMonth() + 1) << 21)
+            | (d.getDate() << 16)
+            | (d.getHours() << 11)
+            | (d.getMinutes() << 5)
+            | (d.getSeconds() >> 1);
     }
 
     /**
@@ -163,17 +163,17 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public long getTime()
     {
-	if (time == -1)
-	{
-	    return -1;
-	}
-	Date d = new Date((int)(((time >> 25) & 0x7f) + 80),
-		  (int)(((time >> 21) & 0x0f) - 1),
-		  (int)((time >> 16) & 0x1f),
-		  (int)((time >> 11) & 0x1f),
-		  (int)((time >> 5) & 0x3f),
-		  (int)((time << 1) & 0x3e));
-	return d.getTime();
+        if (time == -1)
+        {
+            return -1;
+        }
+        Date d = new Date((int)(((time >> 25) & 0x7f) + 80),
+                  (int)(((time >> 21) & 0x0f) - 1),
+                  (int)((time >> 16) & 0x1f),
+                  (int)((time >> 11) & 0x1f),
+                  (int)((time >> 5) & 0x3f),
+                  (int)((time << 1) & 0x3e));
+        return d.getTime();
     }
 
     /**
@@ -182,9 +182,9 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public void setSize(long size)
     {
-	if ((size & 0xffffffff00000000L) != 0)
-	    throw new IllegalArgumentException();
-	this.size = size;
+        if ((size & 0xffffffff00000000L) != 0)
+            throw new IllegalArgumentException();
+        this.size = size;
     }
 
     /**
@@ -193,7 +193,7 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public long getSize()
     {
-	return size;
+        return size;
     }
 
     /**
@@ -201,7 +201,7 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public void setCompressedSize(long csize)
     {
-	this.csize = csize;
+        this.csize = csize;
     }
 
     /**
@@ -210,7 +210,7 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public long getCompressedSize()
     {
-	return csize;
+        return csize;
     }
 
     /**
@@ -219,9 +219,9 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public void setCrc(long crc)
     {
-	if ((crc & 0xffffffff00000000L) != 0)
-	    throw new IllegalArgumentException();
-	this.crc = crc;
+        if ((crc & 0xffffffff00000000L) != 0)
+            throw new IllegalArgumentException();
+        this.crc = crc;
     }
 
     /**
@@ -230,7 +230,7 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public long getCrc()
     {
-	return crc;
+        return crc;
     }
 
     /**
@@ -242,10 +242,10 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public void setMethod(int method)
     {
-	if (method != ZipOutputStream.STORED
-	    && method != ZipOutputStream.DEFLATED)
-	    throw new IllegalArgumentException();
-	this.method = method;
+        if (method != ZipOutputStream.STORED
+            && method != ZipOutputStream.DEFLATED)
+            throw new IllegalArgumentException();
+        this.method = method;
     }
 
     /**
@@ -254,7 +254,7 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public int getMethod()
     {
-	return method;
+        return method;
     }
 
     /**
@@ -263,14 +263,14 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public void setExtra(byte[] extra)
     {
-	if (extra == null)
-	{
-	    this.extra = null;
-	    return;
-	}
-	if (extra.length > 0xffff)
-	    throw new IllegalArgumentException();
-	this.extra = extra;
+        if (extra == null)
+        {
+            this.extra = null;
+            return;
+        }
+        if (extra.length > 0xffff)
+            throw new IllegalArgumentException();
+        this.extra = extra;
     }
 
     /**
@@ -279,7 +279,7 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public byte[] getExtra()
     {
-	return extra;
+        return extra;
     }
 
     /**
@@ -288,9 +288,9 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public void setComment(String comment)
     {
-	if (comment != null && comment.length() > 0xffff / 3 && ZipOutputStream.getUTF8Length(comment) > 0xffff)
-	    throw new IllegalArgumentException();
-	this.comment = comment;
+        if (comment != null && comment.length() > 0xffff / 3 && ZipOutputStream.getUTF8Length(comment) > 0xffff)
+            throw new IllegalArgumentException();
+        this.comment = comment;
     }
 
     /**
@@ -299,7 +299,7 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public String getComment()
     {
-	return comment;
+        return comment;
     }
 
     /**
@@ -308,8 +308,8 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public boolean isDirectory()
     {
-	int nlen = name.length();
-	return nlen > 0 && name.charAt(nlen - 1) == '/';
+        int nlen = name.length();
+        return nlen > 0 && name.charAt(nlen - 1) == '/';
     }
 
     /**
@@ -318,7 +318,7 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public String toString()
     {
-	return getName();
+        return getName();
     }
 
     /**
@@ -327,6 +327,6 @@ public class ZipEntry implements ZipConstants, Cloneable
      */
     public int hashCode()
     {
-	return name.hashCode();
+        return name.hashCode();
     }
 }

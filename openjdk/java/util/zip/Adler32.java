@@ -167,20 +167,20 @@ public class Adler32 implements Checksum
 
     while (len > 0)
       {
-	// We can defer the modulo operation:
-	// s1 maximally grows from 65521 to 65521 + 255 * 3800
-	// s2 maximally grows by 3800 * median(s1) = 2090079800 < 2^31
-	int n = 3800;
-	if (n > len)
-	  n = len;
-	len -= n;
-	while (--n >= 0)
-	  {
-	    s1 = s1 + (buf[off++] & 0xFF);
-	    s2 = s2 + s1;
-	  }
-	s1 %= BASE;
-	s2 %= BASE;
+        // We can defer the modulo operation:
+        // s1 maximally grows from 65521 to 65521 + 255 * 3800
+        // s2 maximally grows by 3800 * median(s1) = 2090079800 < 2^31
+        int n = 3800;
+        if (n > len)
+          n = len;
+        len -= n;
+        while (--n >= 0)
+          {
+            s1 = s1 + (buf[off++] & 0xFF);
+            s2 = s2 + s1;
+          }
+        s1 %= BASE;
+        s2 %= BASE;
       }
 
     /*Old implementation, borrowed from somewhere:

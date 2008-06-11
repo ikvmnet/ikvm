@@ -114,7 +114,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @spec JSR-51
      */
     public RandomAccessFile(String name, String mode)
-	throws FileNotFoundException
+        throws FileNotFoundException
     {
         this(name != null ? new File(name) : null, mode);
     }
@@ -196,41 +196,41 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @spec JSR-51
      */
     public RandomAccessFile(File file, String mode)
-	throws FileNotFoundException
+        throws FileNotFoundException
     {
-	String name = (file != null ? file.getPath() : null);
-	int imode = -1;
-	if (mode.equals("r"))
-	    imode = O_RDONLY;
-	else if (mode.startsWith("rw")) {
-	    imode = O_RDWR;
-	    rw = true;
-	    if (mode.length() > 2) {
-		if (mode.equals("rws"))
-		    imode |= O_SYNC;
-		else if (mode.equals("rwd"))
-		    imode |= O_DSYNC;
-		else
-		    imode = -1;
-	    }
-	}
-	if (imode < 0)
-	    throw new IllegalArgumentException("Illegal mode \"" + mode
-					       + "\" must be one of "
-					       + "\"r\", \"rw\", \"rws\","
-					       + " or \"rwd\"");
-	SecurityManager security = System.getSecurityManager();
-	if (security != null) {
-	    security.checkRead(name);
-	    if (rw) {
-		security.checkWrite(name);
-	    }
-	}
+        String name = (file != null ? file.getPath() : null);
+        int imode = -1;
+        if (mode.equals("r"))
+            imode = O_RDONLY;
+        else if (mode.startsWith("rw")) {
+            imode = O_RDWR;
+            rw = true;
+            if (mode.length() > 2) {
+                if (mode.equals("rws"))
+                    imode |= O_SYNC;
+                else if (mode.equals("rwd"))
+                    imode |= O_DSYNC;
+                else
+                    imode = -1;
+            }
+        }
+        if (imode < 0)
+            throw new IllegalArgumentException("Illegal mode \"" + mode
+                                               + "\" must be one of "
+                                               + "\"r\", \"rw\", \"rws\","
+                                               + " or \"rwd\"");
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkRead(name);
+            if (rw) {
+                security.checkWrite(name);
+            }
+        }
         if (name == null) {
             throw new NullPointerException();
         }
-	fd = new FileDescriptor();
-	open(name, imode);
+        fd = new FileDescriptor();
+        open(name, imode);
     }
 
     /**
@@ -242,8 +242,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.io.FileDescriptor
      */
     public final FileDescriptor getFD() throws IOException {
-	if (fd != null) return fd;
-	throw new IOException();
+        if (fd != null) return fd;
+        throw new IOException();
     }
 
     /**
@@ -265,23 +265,23 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @spec JSR-51
      */
     public final FileChannel getChannel() {
-	synchronized (this) {
-	    if (channel == null) {
-		channel = FileChannelImpl.open(fd, true, rw, this);
+        synchronized (this) {
+            if (channel == null) {
+                channel = FileChannelImpl.open(fd, true, rw, this);
 
-		/*
-	 	 * FileDescriptor could be shared by FileInputStream or 
-		 * FileOutputStream.
-	 	 * Ensure that FD is GC'ed only when all the streams/channels
-		 * are done using it.
-		 * Increment fd's use count. Invoking the channel's close()
-		 * method will result in decrementing the use count set for
-		 * the channel. 
-		 */ 
-		fd.incrementAndGetUseCount();
-	    }
-	    return channel;
-	}
+                /*
+                 * FileDescriptor could be shared by FileInputStream or 
+                 * FileOutputStream.
+                 * Ensure that FD is GC'ed only when all the streams/channels
+                 * are done using it.
+                 * Increment fd's use count. Invoking the channel's close()
+                 * method will result in decrementing the use count set for
+                 * the channel. 
+                 */ 
+                fd.incrementAndGetUseCount();
+            }
+            return channel;
+        }
     }
 
     /**
@@ -296,16 +296,16 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             defined above
      */
     private void open(String name, int mode)
-	throws FileNotFoundException
+        throws FileNotFoundException
     {
-	if ((mode & O_RDWR) == O_RDWR)
-	{
-	    fd.openReadWrite(name);
-	}
-	else
-	{
-	    fd.openReadOnly(name);
-	}
+        if ((mode & O_RDWR) == O_RDWR)
+        {
+            fd.openReadWrite(name);
+        }
+        else
+        {
+            fd.openReadOnly(name);
+        }
     }
 
     // 'Read' primitives
@@ -327,7 +327,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public int read() throws IOException
     {
-	return fd.read();
+        return fd.read();
     }
 
     /**
@@ -339,7 +339,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     private int readBytes(byte b[], int off, int len) throws IOException
     {
-	return fd.readBytes(b, off, len);
+        return fd.readBytes(b, off, len);
     }
 
     /**
@@ -368,7 +368,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * <code>b.length - off</code>
      */
     public int read(byte b[], int off, int len) throws IOException {
-	return readBytes(b, off, len);
+        return readBytes(b, off, len);
     }
 
     /**
@@ -391,7 +391,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  NullPointerException If <code>b</code> is <code>null</code>.
      */
     public int read(byte b[]) throws IOException {
-	return readBytes(b, 0, b.length);
+        return readBytes(b, 0, b.length);
     }
 
     /**
@@ -407,7 +407,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException   if an I/O error occurs.       
      */
     public final void readFully(byte b[]) throws IOException {
-	readFully(b, 0, b.length);
+        readFully(b, 0, b.length);
     }
 
     /**
@@ -426,12 +426,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final void readFully(byte b[], int off, int len) throws IOException {
         int n = 0;
-	do {
-	    int count = this.read(b, off + n, len - n);
-	    if (count < 0)
-		throw new EOFException();
-	    n += count;
-	} while (n < len);
+        do {
+            int count = this.read(b, off + n, len - n);
+            if (count < 0)
+                throw new EOFException();
+            n += count;
+        } while (n < len);
     }
 
     /**
@@ -452,22 +452,22 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public int skipBytes(int n) throws IOException {
         long pos;
-	long len;
-	long newpos; 
+        long len;
+        long newpos; 
 
-	if (n <= 0) {
-	    return 0;
-	}
-	pos = getFilePointer();
-	len = length();
-	newpos = pos + n;
-	if (newpos > len) {
-	    newpos = len;
-	}
-	seek(newpos);
+        if (n <= 0) {
+            return 0;
+        }
+        pos = getFilePointer();
+        len = length();
+        newpos = pos + n;
+        if (newpos > len) {
+            newpos = len;
+        }
+        seek(newpos);
 
-	/* return the actual number of bytes skipped */
-	return (int) (newpos - pos);
+        /* return the actual number of bytes skipped */
+        return (int) (newpos - pos);
     }
 
     // 'Write' primitives
@@ -481,7 +481,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public void write(int b) throws IOException
     {
-	fd.write(b);
+        fd.write(b);
     }
 
     /**
@@ -494,7 +494,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     private void writeBytes(byte b[], int off, int len) throws IOException
     {
-	fd.writeBytes(b, off, len);
+        fd.writeBytes(b, off, len);
     }
 
     /**
@@ -505,7 +505,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[]) throws IOException {
-	writeBytes(b, 0, b.length); 
+        writeBytes(b, 0, b.length); 
     }
 
     /**
@@ -518,7 +518,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[], int off, int len) throws IOException {
-	writeBytes(b, off, len);
+        writeBytes(b, off, len);
     }
 
     // 'Random access' stuff
@@ -532,7 +532,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public long getFilePointer() throws IOException
     {
-	return fd.getFilePointer();
+        return fd.getFilePointer();
     }
 
     /**
@@ -551,7 +551,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public void seek(long pos) throws IOException
     {
-	fd.seek(pos);
+        fd.seek(pos);
     }
 
     /**
@@ -562,7 +562,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public long length() throws IOException
     {
-	return fd.length();
+        return fd.length();
     }
 
     /**
@@ -586,7 +586,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public void setLength(long newLength) throws IOException
     {
-	fd.setLength(newLength);
+        fd.setLength(newLength);
     }
 
     /**
@@ -604,28 +604,28 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @spec JSR-51
      */
     public void close() throws IOException {
-	synchronized (closeLock) {
-	    if (closed) {
+        synchronized (closeLock) {
+            if (closed) {
                 return;
             }
             closed = true;
-	}
-	if (channel != null) {
-	    /*
-	     * Decrement FD use count associated with the channel. The FD use
-	     * count is incremented whenever a new channel is obtained from
-	     * this stream.
-	     */
-	    fd.decrementAndGetUseCount();
-	    channel.close();
-	}
+        }
+        if (channel != null) {
+            /*
+             * Decrement FD use count associated with the channel. The FD use
+             * count is incremented whenever a new channel is obtained from
+             * this stream.
+             */
+            fd.decrementAndGetUseCount();
+            channel.close();
+        }
 
         /*
          * Decrement FD use count associated with this stream.
-	 * The count got incremented by FileDescriptor during its construction.
+         * The count got incremented by FileDescriptor during its construction.
          */
-	fd.decrementAndGetUseCount();
-	close0();
+        fd.decrementAndGetUseCount();
+        close0();
     }
     
     //
@@ -646,10 +646,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException   if an I/O error occurs.
      */
     public final boolean readBoolean() throws IOException {
-	int ch = this.read();
-	if (ch < 0)
-	    throw new EOFException();
-	return (ch != 0);
+        int ch = this.read();
+        if (ch < 0)
+            throw new EOFException();
+        return (ch != 0);
     }
 
     /**
@@ -671,10 +671,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException   if an I/O error occurs.
      */
     public final byte readByte() throws IOException {
-	int ch = this.read();
-	if (ch < 0)
-	    throw new EOFException();
-	return (byte)(ch);
+        int ch = this.read();
+        if (ch < 0)
+            throw new EOFException();
+        return (byte)(ch);
     }
 
     /**
@@ -691,10 +691,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException   if an I/O error occurs.
      */
     public final int readUnsignedByte() throws IOException {
-	int ch = this.read();
-	if (ch < 0)
-	    throw new EOFException();
-	return ch;
+        int ch = this.read();
+        if (ch < 0)
+            throw new EOFException();
+        return ch;
     }
 
     /**
@@ -718,11 +718,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException   if an I/O error occurs.
      */
     public final short readShort() throws IOException {
-	int ch1 = this.read();
-	int ch2 = this.read();
-	if ((ch1 | ch2) < 0)
-	    throw new EOFException();
-	return (short)((ch1 << 8) + (ch2 << 0));
+        int ch1 = this.read();
+        int ch2 = this.read();
+        if ((ch1 | ch2) < 0)
+            throw new EOFException();
+        return (short)((ch1 << 8) + (ch2 << 0));
     }
 
     /**
@@ -746,11 +746,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException   if an I/O error occurs.
      */
     public final int readUnsignedShort() throws IOException {
-	int ch1 = this.read();
-	int ch2 = this.read();
-	if ((ch1 | ch2) < 0)
-	    throw new EOFException();
-	return (ch1 << 8) + (ch2 << 0);
+        int ch1 = this.read();
+        int ch2 = this.read();
+        if ((ch1 | ch2) < 0)
+            throw new EOFException();
+        return (ch1 << 8) + (ch2 << 0);
     }
 
     /**
@@ -768,17 +768,17 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * stream is detected, or an exception is thrown. 
      *
      * @return     the next two bytes of this file, interpreted as a
-     *			<code>char</code>.
+     *                  <code>char</code>.
      * @exception  EOFException  if this file reaches the end before reading
      *               two bytes.
      * @exception  IOException   if an I/O error occurs.
      */
     public final char readChar() throws IOException {
-	int ch1 = this.read();
-	int ch2 = this.read();
-	if ((ch1 | ch2) < 0)
-	    throw new EOFException();
-	return (char)((ch1 << 8) + (ch2 << 0));
+        int ch1 = this.read();
+        int ch2 = this.read();
+        if ((ch1 | ch2) < 0)
+            throw new EOFException();
+        return (char)((ch1 << 8) + (ch2 << 0));
     }
 
     /**
@@ -802,13 +802,13 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException   if an I/O error occurs.
      */
     public final int readInt() throws IOException {
-	int ch1 = this.read();
-	int ch2 = this.read();
-	int ch3 = this.read();
-	int ch4 = this.read();
-	if ((ch1 | ch2 | ch3 | ch4) < 0)
-	    throw new EOFException();
-	return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+        int ch1 = this.read();
+        int ch2 = this.read();
+        int ch3 = this.read();
+        int ch4 = this.read();
+        if ((ch1 | ch2 | ch3 | ch4) < 0)
+            throw new EOFException();
+        return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
     }
 
     /**
@@ -840,7 +840,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException   if an I/O error occurs.
      */
     public final long readLong() throws IOException {
-	return ((long)(readInt()) << 32) + (readInt() & 0xFFFFFFFFL);
+        return ((long)(readInt()) << 32) + (readInt() & 0xFFFFFFFFL);
     }
 
     /**
@@ -863,7 +863,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Float#intBitsToFloat(int)
      */
     public final float readFloat() throws IOException {
-	return Float.intBitsToFloat(readInt());
+        return Float.intBitsToFloat(readInt());
     }
 
     /**
@@ -886,7 +886,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Double#longBitsToDouble(long)
      */
     public final double readDouble() throws IOException {
-	return Double.longBitsToDouble(readLong());
+        return Double.longBitsToDouble(readLong());
     }
 
     /**
@@ -914,33 +914,33 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
 
     public final String readLine() throws IOException {
-	StringBuffer input = new StringBuffer();
-	int c = -1;
-	boolean eol = false;
+        StringBuffer input = new StringBuffer();
+        int c = -1;
+        boolean eol = false;
 
-	while (!eol) {
-	    switch (c = read()) {
-	    case -1:
-	    case '\n':
-		eol = true;
-		break;
-	    case '\r':
-		eol = true;
-		long cur = getFilePointer();
-		if ((read()) != '\n') {
-		    seek(cur);
-		}
-		break;
-	    default:
-		input.append((char)c);
-		break;
-	    }
-	}
+        while (!eol) {
+            switch (c = read()) {
+            case -1:
+            case '\n':
+                eol = true;
+                break;
+            case '\r':
+                eol = true;
+                long cur = getFilePointer();
+                if ((read()) != '\n') {
+                    seek(cur);
+                }
+                break;
+            default:
+                input.append((char)c);
+                break;
+            }
+        }
 
-	if ((c == -1) && (input.length() == 0)) {
-	    return null;
-	}
-	return input.toString();
+        if ((c == -1) && (input.length() == 0)) {
+            return null;
+        }
+        return input.toString();
     }
 
     /**
@@ -969,7 +969,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.io.RandomAccessFile#readUnsignedShort()
      */
     public final String readUTF() throws IOException {
-	return DataInputStream.readUTF(this);
+        return DataInputStream.readUTF(this);
     }
 
     /**
@@ -983,8 +983,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeBoolean(boolean v) throws IOException {
-	write(v ? 1 : 0);
-	//written++;
+        write(v ? 1 : 0);
+        //written++;
     }
 
     /**
@@ -995,8 +995,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeByte(int v) throws IOException {
-	write(v);
-	//written++;
+        write(v);
+        //written++;
     }
 
     /**
@@ -1007,9 +1007,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeShort(int v) throws IOException {
-	write((v >>> 8) & 0xFF);
-	write((v >>> 0) & 0xFF);
-	//written += 2;
+        write((v >>> 8) & 0xFF);
+        write((v >>> 0) & 0xFF);
+        //written += 2;
     }
 
     /**
@@ -1021,9 +1021,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeChar(int v) throws IOException {
-	write((v >>> 8) & 0xFF);
-	write((v >>> 0) & 0xFF);
-	//written += 2;
+        write((v >>> 8) & 0xFF);
+        write((v >>> 0) & 0xFF);
+        //written += 2;
     }
 
     /**
@@ -1034,11 +1034,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeInt(int v) throws IOException {
-	write((v >>> 24) & 0xFF);
-	write((v >>> 16) & 0xFF);
-	write((v >>>  8) & 0xFF);
-	write((v >>>  0) & 0xFF);
-	//written += 4;
+        write((v >>> 24) & 0xFF);
+        write((v >>> 16) & 0xFF);
+        write((v >>>  8) & 0xFF);
+        write((v >>>  0) & 0xFF);
+        //written += 4;
     }
 
     /**
@@ -1049,15 +1049,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeLong(long v) throws IOException {
-	write((int)(v >>> 56) & 0xFF);
-	write((int)(v >>> 48) & 0xFF);
-	write((int)(v >>> 40) & 0xFF);
-	write((int)(v >>> 32) & 0xFF);
-	write((int)(v >>> 24) & 0xFF);
-	write((int)(v >>> 16) & 0xFF);
-	write((int)(v >>>  8) & 0xFF);
-	write((int)(v >>>  0) & 0xFF);
-	//written += 8;
+        write((int)(v >>> 56) & 0xFF);
+        write((int)(v >>> 48) & 0xFF);
+        write((int)(v >>> 40) & 0xFF);
+        write((int)(v >>> 32) & 0xFF);
+        write((int)(v >>> 24) & 0xFF);
+        write((int)(v >>> 16) & 0xFF);
+        write((int)(v >>>  8) & 0xFF);
+        write((int)(v >>>  0) & 0xFF);
+        //written += 8;
     }
 
     /**
@@ -1072,7 +1072,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Float#floatToIntBits(float)
      */
     public final void writeFloat(float v) throws IOException {
-	writeInt(Float.floatToIntBits(v));
+        writeInt(Float.floatToIntBits(v));
     }
 
     /**
@@ -1087,7 +1087,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Double#doubleToLongBits(double)
      */
     public final void writeDouble(double v) throws IOException {
-	writeLong(Double.doubleToLongBits(v));
+        writeLong(Double.doubleToLongBits(v));
     }
 
     /**
@@ -1100,10 +1100,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeBytes(String s) throws IOException {
-	int len = s.length();
-	byte[] b = new byte[len];
-	s.getBytes(0, len, b, 0);
-	writeBytes(b, 0, len);
+        int len = s.length();
+        byte[] b = new byte[len];
+        s.getBytes(0, len, b, 0);
+        writeBytes(b, 0, len);
     }
 
     /**
@@ -1117,16 +1117,16 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.io.RandomAccessFile#writeChar(int)
      */
     public final void writeChars(String s) throws IOException {
-	int clen = s.length();
-	int blen = 2*clen;
-	byte[] b = new byte[blen];
-	char[] c = new char[clen];
-	s.getChars(0, clen, c, 0);
-	for (int i = 0, j = 0; i < clen; i++) {
-	    b[j++] = (byte)(c[i] >>> 8);
-	    b[j++] = (byte)(c[i] >>> 0);
-	}
-	writeBytes(b, 0, blen);
+        int clen = s.length();
+        int blen = 2*clen;
+        byte[] b = new byte[blen];
+        char[] c = new char[clen];
+        s.getChars(0, clen, c, 0);
+        for (int i = 0, j = 0; i < clen; i++) {
+            b[j++] = (byte)(c[i] >>> 8);
+            b[j++] = (byte)(c[i] >>> 0);
+        }
+        writeBytes(b, 0, blen);
     }
 
     /**
@@ -1151,6 +1151,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private void close0() throws IOException
     {
-	fd.close();
+        fd.close();
     }
 }

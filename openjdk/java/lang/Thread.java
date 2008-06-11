@@ -133,15 +133,15 @@ public
 class Thread implements Runnable {
     // [IKVM]
     final class Cleanup {
-	private final Thread thread;
+        private final Thread thread;
 
-	Cleanup(Thread thread) {
-	    this.thread = thread;
-	}
+        Cleanup(Thread thread) {
+            this.thread = thread;
+        }
 
-	protected void finalize() {
-	    thread.die();
-	}
+        protected void finalize() {
+            thread.die();
+        }
     }
     /* --- start IKVM specific state --- */
     static final int[] nonDaemonCount = new int[1];
@@ -152,31 +152,31 @@ class Thread implements Runnable {
     private final Object lock = new Object();
     private cli.System.Threading.Thread nativeThread;
     private Throwable stillborn;
-    private boolean running;	// used only for coordination with stop0(), is never set to false
+    private boolean running;    // used only for coordination with stop0(), is never set to false
     private boolean interruptPending;
     private volatile boolean nativeInterruptPending;
     private volatile boolean interruptableWait;
     private boolean timedWait;
-    volatile Object parkLock;	// used by get/setParkLock in map.xml
-    int parkState;		// used by cmpxchgParkState in map.xml
+    volatile Object parkLock;   // used by get/setParkLock in map.xml
+    int parkState;              // used by cmpxchgParkState in map.xml
     /* --- end IKVM specific state --- */
 
-    private char	name[];
+    private char        name[];
     private int         priority;
-    private Thread	threadQ;
-    private long	eetop;
+    private Thread      threadQ;
+    private long        eetop;
 
     /* Whether or not to single_step this thread. */
-    private boolean	single_step;
+    private boolean     single_step;
 
     /* Whether or not the thread is a daemon thread. */
-    private boolean	daemon = false;
+    private boolean     daemon = false;
 
     /* What will be run. */
     private Runnable target;
 
     /* The group of this thread */
-    private ThreadGroup	group;
+    private ThreadGroup group;
 
     /* The context ClassLoader for this thread */
     private ClassLoader contextClassLoader;
@@ -187,7 +187,7 @@ class Thread implements Runnable {
     /* For autonumbering anonymous threads. */
     private static int threadInitNumber;
     private static synchronized int nextThreadNum() {
-	return threadInitNumber++;
+        return threadInitNumber++;
     }
 
     /* ThreadLocal values pertaining to this thread. This map is maintained
@@ -227,7 +227,7 @@ class Thread implements Runnable {
     private volatile int threadStatus = 0;
 
     private static synchronized long nextThreadID() {
-	return ++threadSeqNumber;
+        return ++threadSeqNumber;
     }
 
     /**
@@ -248,9 +248,9 @@ class Thread implements Runnable {
     /* Set the blocker field; invoked via sun.misc.SharedSecrets from java.nio code
      */
     void blockedOn(Interruptible b) {
-	synchronized (blockerLock) {
-	    blocker = b;
-	}
+        synchronized (blockerLock) {
+            blocker = b;
+        }
     }
 
     /**
@@ -280,11 +280,11 @@ class Thread implements Runnable {
      * @return  the currently executing thread.
      */
     public static Thread currentThread() {
-	Thread c = current;
-	if (c == null) {
-	    c = new Thread(getMainThreadGroup());
-	}
-	return c;
+        Thread c = current;
+        if (c == null) {
+            c = new Thread(getMainThreadGroup());
+        }
+        return c;
     }
     
     private static native ThreadGroup getMainThreadGroup();
@@ -294,60 +294,60 @@ class Thread implements Runnable {
      * and allow other threads to execute. 
      */
     public static void yield() {
-	cli.System.Threading.Thread.Sleep(0);
+        cli.System.Threading.Thread.Sleep(0);
     }
     
     private void enterInterruptableWait(boolean timedWait) throws InterruptedException {
-	synchronized (lock) {
-	    if (interruptPending) {
-		interruptPending = false;
-		throw new InterruptedException();
-	    }
-	    interruptableWait = true;
-	    this.timedWait = timedWait;
-	}
+        synchronized (lock) {
+            if (interruptPending) {
+                interruptPending = false;
+                throw new InterruptedException();
+            }
+            interruptableWait = true;
+            this.timedWait = timedWait;
+        }
     }
     
     private void leaveInterruptableWait() throws InterruptedException {
-	cli.System.Threading.ThreadInterruptedException dotnetInterrupt = null;
-	interruptableWait = false;
-	for (; ; ) {
-	    try {
-		if (false) throw new cli.System.Threading.ThreadInterruptedException();
-		synchronized (lock) {
-		    if (nativeInterruptPending) {
-			nativeInterruptPending = false;
-			// HACK if there is a pending Interrupt (on the .NET thread), we need to consume that
-			// (if there was no contention on "lock (this)" above the interrupted state isn't checked) 
-			try {
-			    if (false) throw new cli.System.Threading.ThreadInterruptedException();
-			    cli.System.Threading.Thread t = cli.System.Threading.Thread.get_CurrentThread();
-			    // the obvious thing to do would be t.Interrupt() / t.Join(),
-			    // but for some reason that causes a regression in JSR166TestCase (probably a CLR bug)
-			    // so we waste a time slice... sigh.
-			    t.Join(1);
-			}
-			catch (cli.System.Threading.ThreadInterruptedException _) {
-			}
-		    }
-		    if (interruptPending) {
-			interruptPending = false;
-			throw new InterruptedException();
-		    }
-		}
-		break;
-	    }
-	    catch (cli.System.Threading.ThreadInterruptedException x) {
-		dotnetInterrupt = x;
-		nativeInterruptPending = false;
-	    }
-	}
-	if (dotnetInterrupt != null) {
-	    ikvm.runtime.Util.throwException(dotnetInterrupt);
-	}
+        cli.System.Threading.ThreadInterruptedException dotnetInterrupt = null;
+        interruptableWait = false;
+        for (; ; ) {
+            try {
+                if (false) throw new cli.System.Threading.ThreadInterruptedException();
+                synchronized (lock) {
+                    if (nativeInterruptPending) {
+                        nativeInterruptPending = false;
+                        // HACK if there is a pending Interrupt (on the .NET thread), we need to consume that
+                        // (if there was no contention on "lock (this)" above the interrupted state isn't checked) 
+                        try {
+                            if (false) throw new cli.System.Threading.ThreadInterruptedException();
+                            cli.System.Threading.Thread t = cli.System.Threading.Thread.get_CurrentThread();
+                            // the obvious thing to do would be t.Interrupt() / t.Join(),
+                            // but for some reason that causes a regression in JSR166TestCase (probably a CLR bug)
+                            // so we waste a time slice... sigh.
+                            t.Join(1);
+                        }
+                        catch (cli.System.Threading.ThreadInterruptedException _) {
+                        }
+                    }
+                    if (interruptPending) {
+                        interruptPending = false;
+                        throw new InterruptedException();
+                    }
+                }
+                break;
+            }
+            catch (cli.System.Threading.ThreadInterruptedException x) {
+                dotnetInterrupt = x;
+                nativeInterruptPending = false;
+            }
+        }
+        if (dotnetInterrupt != null) {
+            ikvm.runtime.Util.throwException(dotnetInterrupt);
+        }
     }
 
-    /**	
+    /** 
      * Causes the currently executing thread to sleep (temporarily cease 
      * execution) for the specified number of milliseconds, subject to 
      * the precision and accuracy of system timers and schedulers. The thread 
@@ -360,24 +360,24 @@ class Thread implements Runnable {
      * @see        Object#notify()
      */
     public static void sleep(long millis) throws InterruptedException {
-	if (millis < 0) {
-	    throw new IllegalArgumentException("timeout value is negative");
-	}
-	Thread c = currentThread();
-	c.enterInterruptableWait(true);
-	try {
-	    if (false) throw new cli.System.Threading.ThreadInterruptedException();
-	    for (long iter = millis / Integer.MAX_VALUE; iter != 0; iter--)
-	    {
-		cli.System.Threading.Thread.Sleep(Integer.MAX_VALUE);
-	    }
-	    cli.System.Threading.Thread.Sleep((int)(millis % Integer.MAX_VALUE));
-	}
-	catch (cli.System.Threading.ThreadInterruptedException _) {
-	}
-	finally {
-	    c.leaveInterruptableWait();
-	}
+        if (millis < 0) {
+            throw new IllegalArgumentException("timeout value is negative");
+        }
+        Thread c = currentThread();
+        c.enterInterruptableWait(true);
+        try {
+            if (false) throw new cli.System.Threading.ThreadInterruptedException();
+            for (long iter = millis / Integer.MAX_VALUE; iter != 0; iter--)
+            {
+                cli.System.Threading.Thread.Sleep(Integer.MAX_VALUE);
+            }
+            cli.System.Threading.Thread.Sleep((int)(millis % Integer.MAX_VALUE));
+        }
+        catch (cli.System.Threading.ThreadInterruptedException _) {
+        }
+        finally {
+            c.leaveInterruptableWait();
+        }
     }
 
     /**
@@ -399,20 +399,20 @@ class Thread implements Runnable {
      */
     public static void sleep(long millis, int nanos) 
     throws InterruptedException {
-	if (millis < 0) {
+        if (millis < 0) {
             throw new IllegalArgumentException("timeout value is negative");
-	}
+        }
 
-	if (nanos < 0 || nanos > 999999) {
+        if (nanos < 0 || nanos > 999999) {
             throw new IllegalArgumentException(
-				"nanosecond timeout value out of range");
-	}
+                                "nanosecond timeout value out of range");
+        }
 
-	if (nanos >= 500000 || (nanos != 0 && millis == 0)) {
-	    millis++;
-	}
+        if (nanos >= 500000 || (nanos != 0 && millis == 0)) {
+            millis++;
+        }
 
-	sleep(millis);
+        sleep(millis);
     }
 
     /**
@@ -426,54 +426,54 @@ class Thread implements Runnable {
      */
     private void init(ThreadGroup g, Runnable target, String name,
                       long stackSize) {
-	Thread parent = currentThread();
-	SecurityManager security = System.getSecurityManager();
-	if (g == null) {
-	    /* Determine if it's an applet or not */
-	    
-	    /* If there is a security manager, ask the security manager
-	       what to do. */
-	    if (security != null) {
-		g = security.getThreadGroup();
-	    }
+        Thread parent = currentThread();
+        SecurityManager security = System.getSecurityManager();
+        if (g == null) {
+            /* Determine if it's an applet or not */
+            
+            /* If there is a security manager, ask the security manager
+               what to do. */
+            if (security != null) {
+                g = security.getThreadGroup();
+            }
 
-	    /* If the security doesn't have a strong opinion of the matter
-	       use the parent thread group. */
-	    if (g == null) {
-		g = parent.getThreadGroup();
-	    }
-	}
+            /* If the security doesn't have a strong opinion of the matter
+               use the parent thread group. */
+            if (g == null) {
+                g = parent.getThreadGroup();
+            }
+        }
 
-	/* checkAccess regardless of whether or not threadgroup is
+        /* checkAccess regardless of whether or not threadgroup is
            explicitly passed in. */
-	g.checkAccess();
+        g.checkAccess();
 
-	/*
-	 * Do we have the required permissions?
-	 */
-	if (security != null) {
-	    if (isCCLOverridden(getClass())) {
-	        security.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
-	    }
-	}
+        /*
+         * Do we have the required permissions?
+         */
+        if (security != null) {
+            if (isCCLOverridden(getClass())) {
+                security.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
+            }
+        }
 
 
         g.addUnstarted();
 
-	this.group = g;
-	this.daemon = parent.isDaemon();
-	this.priority = parent.getPriority();
-	this.name = name.toCharArray();
-	if (security == null || isCCLOverridden(parent.getClass()))
-	    this.contextClassLoader = parent.getContextClassLoader();
-	else
-	    this.contextClassLoader = parent.contextClassLoader;
-	this.inheritedAccessControlContext = AccessController.getContext();
-	this.target = target;
-	setPriority(priority);
+        this.group = g;
+        this.daemon = parent.isDaemon();
+        this.priority = parent.getPriority();
+        this.name = name.toCharArray();
+        if (security == null || isCCLOverridden(parent.getClass()))
+            this.contextClassLoader = parent.getContextClassLoader();
+        else
+            this.contextClassLoader = parent.contextClassLoader;
+        this.inheritedAccessControlContext = AccessController.getContext();
+        this.target = target;
+        setPriority(priority);
         if (parent.inheritableThreadLocals != null)
-	    this.inheritableThreadLocals =
-		ThreadLocal.createInheritedMap(parent.inheritableThreadLocals);
+            this.inheritableThreadLocals =
+                ThreadLocal.createInheritedMap(parent.inheritableThreadLocals);
         /* Stash the specified stack size in case the VM cares */
         this.stackSize = stackSize;
 
@@ -483,75 +483,75 @@ class Thread implements Runnable {
     
     // [IKVM] constructor for attaching to a .NET thread
     Thread(ThreadGroup g) {
-	this.running = true;
-	cli.System.Threading.Thread thread = cli.System.Threading.Thread.get_CurrentThread();
-	nativeThread = thread;
-	String name = thread.get_Name();
-	if (name == null) {
-	    name = "Thread-" + nextThreadNum();
-	}
+        this.running = true;
+        cli.System.Threading.Thread thread = cli.System.Threading.Thread.get_CurrentThread();
+        nativeThread = thread;
+        String name = thread.get_Name();
+        if (name == null) {
+            name = "Thread-" + nextThreadNum();
+        }
 
-	this.group = g;
-	this.daemon = thread.get_IsBackground();
-	this.priority = mapClrPriorityToJava(thread.get_Priority().Value);
-	this.name = name.toCharArray();
-	this.contextClassLoader = ClassLoader.DUMMY;
-	this.threadStatus = 0x0005; /* JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE */
+        this.group = g;
+        this.daemon = thread.get_IsBackground();
+        this.priority = mapClrPriorityToJava(thread.get_Priority().Value);
+        this.name = name.toCharArray();
+        this.contextClassLoader = ClassLoader.DUMMY;
+        this.threadStatus = 0x0005; /* JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE */
 
         /* Set thread ID */
         tid = nextThreadID();
 
-	synchronized (g) {
-	    g.addUnstarted();
-	    g.add(this);
-	}
+        synchronized (g) {
+            g.addUnstarted();
+            g.add(this);
+        }
 
-	current = this;
-	cleanup = new Cleanup(this);
+        current = this;
+        cleanup = new Cleanup(this);
 
-	if (!daemon) {
-	    cli.System.Threading.Interlocked.Increment(nonDaemonCount);
-	}
+        if (!daemon) {
+            cli.System.Threading.Interlocked.Increment(nonDaemonCount);
+        }
     }
     
     private static int mapClrPriorityToJava(int priority) {
-	// TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
-	switch (priority) {
-	case cli.System.Threading.ThreadPriority.Lowest:
-	    return MIN_PRIORITY;
-	case cli.System.Threading.ThreadPriority.BelowNormal:
-	    return 3;
-	default:
-	case cli.System.Threading.ThreadPriority.Normal:
-	    return NORM_PRIORITY;
-	case cli.System.Threading.ThreadPriority.AboveNormal:
-	    return 7;
-	case cli.System.Threading.ThreadPriority.Highest:
-	    return MAX_PRIORITY;
-	}
+        // TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
+        switch (priority) {
+        case cli.System.Threading.ThreadPriority.Lowest:
+            return MIN_PRIORITY;
+        case cli.System.Threading.ThreadPriority.BelowNormal:
+            return 3;
+        default:
+        case cli.System.Threading.ThreadPriority.Normal:
+            return NORM_PRIORITY;
+        case cli.System.Threading.ThreadPriority.AboveNormal:
+            return 7;
+        case cli.System.Threading.ThreadPriority.Highest:
+            return MAX_PRIORITY;
+        }
     }
     
     private static int mapJavaPriorityToClr(int priority) {
-	// TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
-	if (priority == MIN_PRIORITY) {
-	    return cli.System.Threading.ThreadPriority.Lowest;
-	}
-	else if (priority > Thread.MIN_PRIORITY && priority < Thread.NORM_PRIORITY) {
-	    return cli.System.Threading.ThreadPriority.BelowNormal;
-	}
-	else if (priority == Thread.NORM_PRIORITY) {
-	    return cli.System.Threading.ThreadPriority.Normal;
-	}
-	else if (priority > Thread.NORM_PRIORITY && priority < Thread.MAX_PRIORITY) {
-	    return cli.System.Threading.ThreadPriority.AboveNormal;
-	}
-	else if (priority == Thread.MAX_PRIORITY) {
-	    return cli.System.Threading.ThreadPriority.Highest;
-	}
-	else {
-	    // can't happen
-	    return cli.System.Threading.ThreadPriority.Normal;
-	}
+        // TODO consider supporting -XX:JavaPriorityX_To_OSPriority settings
+        if (priority == MIN_PRIORITY) {
+            return cli.System.Threading.ThreadPriority.Lowest;
+        }
+        else if (priority > Thread.MIN_PRIORITY && priority < Thread.NORM_PRIORITY) {
+            return cli.System.Threading.ThreadPriority.BelowNormal;
+        }
+        else if (priority == Thread.NORM_PRIORITY) {
+            return cli.System.Threading.ThreadPriority.Normal;
+        }
+        else if (priority > Thread.NORM_PRIORITY && priority < Thread.MAX_PRIORITY) {
+            return cli.System.Threading.ThreadPriority.AboveNormal;
+        }
+        else if (priority == Thread.MAX_PRIORITY) {
+            return cli.System.Threading.ThreadPriority.Highest;
+        }
+        else {
+            // can't happen
+            return cli.System.Threading.ThreadPriority.Normal;
+        }
     }
 
 
@@ -565,7 +565,7 @@ class Thread implements Runnable {
      * @see     #Thread(ThreadGroup, Runnable, String)
      */
     public Thread() {
-	init(null, null, "Thread-" + nextThreadNum(), 0);
+        init(null, null, "Thread-" + nextThreadNum(), 0);
     }
 
     /**
@@ -579,7 +579,7 @@ class Thread implements Runnable {
      * @see     #Thread(ThreadGroup, Runnable, String)
      */
     public Thread(Runnable target) {
-	init(null, target, "Thread-" + nextThreadNum(), 0);
+        init(null, target, "Thread-" + nextThreadNum(), 0);
     }
 
     /**
@@ -596,7 +596,7 @@ class Thread implements Runnable {
      * @see        #Thread(ThreadGroup, Runnable, String)
      */
     public Thread(ThreadGroup group, Runnable target) {
-	init(group, target, "Thread-" + nextThreadNum(), 0);
+        init(group, target, "Thread-" + nextThreadNum(), 0);
     }
 
     /**
@@ -607,7 +607,7 @@ class Thread implements Runnable {
      * @see     #Thread(ThreadGroup, Runnable, String)
      */
     public Thread(String name) {
-	init(null, null, name, 0);
+        init(null, null, name, 0);
     }
 
     /**
@@ -621,7 +621,7 @@ class Thread implements Runnable {
      * @see        #Thread(ThreadGroup, Runnable, String)
      */
     public Thread(ThreadGroup group, String name) {
-	init(group, null, name, 0);
+        init(group, null, name, 0);
     }
 
     /**
@@ -633,7 +633,7 @@ class Thread implements Runnable {
      * @see     #Thread(ThreadGroup, Runnable, String)
      */
     public Thread(Runnable target, String name) {
-	init(null, target, name, 0);
+        init(null, target, name, 0);
     }
 
     /**
@@ -691,7 +691,7 @@ class Thread implements Runnable {
      * @see        SecurityManager#checkAccess
      */
     public Thread(ThreadGroup group, Runnable target, String name) {
-	init(group, target, name, 0);
+        init(group, target, name, 0);
     }
 
     /**
@@ -753,7 +753,7 @@ class Thread implements Runnable {
      */
     public Thread(ThreadGroup group, Runnable target, String name,
                   long stackSize) {
-	init(group, target, name, stackSize);
+        init(group, target, name, stackSize);
     }
 
     /**
@@ -776,49 +776,49 @@ class Thread implements Runnable {
      */
     public synchronized void start() {
         /**
-	 * This method is not invoked for the main method thread or "system"
-	 * group threads created/set up by the VM. Any new functionality added 
-	 * to this method in the future may have to also be added to the VM.
-	 *
-	 * A zero status value corresponds to state "NEW".
+         * This method is not invoked for the main method thread or "system"
+         * group threads created/set up by the VM. Any new functionality added 
+         * to this method in the future may have to also be added to the VM.
+         *
+         * A zero status value corresponds to state "NEW".
          */
         if (threadStatus != 0)
             throw new IllegalThreadStateException();
         group.add(this);
         start0();
         if (stopBeforeStart) {
-	    stop0(throwableFromStop);
-	}
+            stop0(throwableFromStop);
+        }
     }
 
     private void start0() {
-	cli.System.Threading.ThreadStart threadStart = new cli.System.Threading.ThreadStart(new cli.System.Threading.ThreadStart.Method() {
-	    public void Invoke() {
-		threadProc();
-	    }
-	});
-	if (stackSize <= 0) {
-	    nativeThread = new cli.System.Threading.Thread(threadStart);
-	}
-	else {
-	    int maxStackSize = (int)Math.min(Math.max(128 * 1024, stackSize), Integer.MAX_VALUE);
-	    nativeThread = new cli.System.Threading.Thread(threadStart, maxStackSize);
-	}
-	nativeThread.set_Name(getName());
-	nativeThread.set_IsBackground(daemon);
-	nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)));
-	String apartment = Props.props.getProperty("ikvm.apartmentstate", "").toLowerCase();
-	if ("mta".equals(apartment)) {
-	    nativeThread.SetApartmentState(cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.MTA));
-	}
-	else if ("sta".equals(apartment)) {
-	    nativeThread.SetApartmentState(cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.STA));
-	}
-	threadStatus = 0x0005; // JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE
-	nativeThread.Start();
-	if (!daemon) {
-	    cli.System.Threading.Interlocked.Increment(nonDaemonCount);
-	}
+        cli.System.Threading.ThreadStart threadStart = new cli.System.Threading.ThreadStart(new cli.System.Threading.ThreadStart.Method() {
+            public void Invoke() {
+                threadProc();
+            }
+        });
+        if (stackSize <= 0) {
+            nativeThread = new cli.System.Threading.Thread(threadStart);
+        }
+        else {
+            int maxStackSize = (int)Math.min(Math.max(128 * 1024, stackSize), Integer.MAX_VALUE);
+            nativeThread = new cli.System.Threading.Thread(threadStart, maxStackSize);
+        }
+        nativeThread.set_Name(getName());
+        nativeThread.set_IsBackground(daemon);
+        nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)));
+        String apartment = Props.props.getProperty("ikvm.apartmentstate", "").toLowerCase();
+        if ("mta".equals(apartment)) {
+            nativeThread.SetApartmentState(cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.MTA));
+        }
+        else if ("sta".equals(apartment)) {
+            nativeThread.SetApartmentState(cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.STA));
+        }
+        threadStatus = 0x0005; // JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE
+        nativeThread.Start();
+        if (!daemon) {
+            cli.System.Threading.Interlocked.Increment(nonDaemonCount);
+        }
     }
 
     /**
@@ -834,9 +834,9 @@ class Thread implements Runnable {
      * @see     #Thread(ThreadGroup, Runnable, String)
      */
     public void run() {
-	if (target != null) {
-	    target.run();
-	}
+        if (target != null) {
+            target.run();
+        }
     }
     
     // [IKVM] for threads started from Java, this method is called on the thread itself,
@@ -845,32 +845,32 @@ class Thread implements Runnable {
     // is finalized during AppDomain shutdown while the thread is also exiting on its own),
     // but that doesn't matter because Thread.exit() is safe to call multiple times.
     void die() {
-	exit();
-	synchronized (lock) {
-	    nativeThread = null;
-	    threadStatus = 0x0002; // JVMTI_THREAD_STATE_TERMINATED
-	}
-	// NOTE locking this here isn't ideal, because we might be invoked from
-	// the Cleanup object's finalizer and some user code might own the lock and hence
-	// block the finalizer thread.
-	wakeupJoinedThreads();
-	if (!daemon) {
-	    // TODO there is a race condition in the non-daemon counting
-	    // (setDaemon() isn't synchronized so it may clear/set the daemon flag without the count being affected)
-	    cli.System.Threading.Interlocked.Decrement(nonDaemonCount);
-	}
-	if (current == this) {
-	    current = null;
-	    // check if we have a cleanup object, this happens if we attach and subsequently detach from JNI code
-	    if (cleanup != null) {
-		cli.System.GC.SuppressFinalize(cleanup);
-		cleanup = null;
-	    }
-	}
+        exit();
+        synchronized (lock) {
+            nativeThread = null;
+            threadStatus = 0x0002; // JVMTI_THREAD_STATE_TERMINATED
+        }
+        // NOTE locking this here isn't ideal, because we might be invoked from
+        // the Cleanup object's finalizer and some user code might own the lock and hence
+        // block the finalizer thread.
+        wakeupJoinedThreads();
+        if (!daemon) {
+            // TODO there is a race condition in the non-daemon counting
+            // (setDaemon() isn't synchronized so it may clear/set the daemon flag without the count being affected)
+            cli.System.Threading.Interlocked.Decrement(nonDaemonCount);
+        }
+        if (current == this) {
+            current = null;
+            // check if we have a cleanup object, this happens if we attach and subsequently detach from JNI code
+            if (cleanup != null) {
+                cli.System.GC.SuppressFinalize(cleanup);
+                cleanup = null;
+            }
+        }
     }
     
     private synchronized void wakeupJoinedThreads() {
-	notifyAll();
+        notifyAll();
     }
 
     /**
@@ -878,13 +878,13 @@ class Thread implements Runnable {
      * a chance to clean up before it actually exits.
      */
     private void exit() {
-	if (group != null) {
-	    group.remove(this);
-	    group = null;
-	}
-	/* Aggressively null out all reference fields: see bug 4006245 */
-	target = null;
-	/* Speed the release of some of these resources */
+        if (group != null) {
+            group.remove(this);
+            group = null;
+        }
+        /* Aggressively null out all reference fields: see bug 4006245 */
+        target = null;
+        /* Speed the release of some of these resources */
         threadLocals = null;
         inheritableThreadLocals = null;
         inheritedAccessControlContext = null;
@@ -940,9 +940,9 @@ class Thread implements Runnable {
      * @see        SecurityManager#checkAccess(Thread)
      * @see        SecurityManager#checkPermission
      * @deprecated This method is inherently unsafe.  Stopping a thread with
-     *	     Thread.stop causes it to unlock all of the monitors that it
-     *	     has locked (as a natural consequence of the unchecked
-     *	     <code>ThreadDeath</code> exception propagating up the stack).  If
+     *       Thread.stop causes it to unlock all of the monitors that it
+     *       has locked (as a natural consequence of the unchecked
+     *       <code>ThreadDeath</code> exception propagating up the stack).  If
      *       any of the objects previously protected by these monitors were in
      *       an inconsistent state, the damaged objects become visible to
      *       other threads, potentially resulting in arbitrary behavior.  Many
@@ -961,11 +961,11 @@ class Thread implements Runnable {
     @Deprecated
     public final void stop() {
         // If the thread is already dead, return.
-	// A zero status value corresponds to "NEW".
-	if ((threadStatus != 0) && !isAlive()) {
-	    return;
-	}
-	stop1(new ThreadDeath());
+        // A zero status value corresponds to "NEW".
+        if ((threadStatus != 0) && !isAlive()) {
+            return;
+        }
+        stop1(new ThreadDeath());
     }
 
     /**
@@ -1019,35 +1019,35 @@ class Thread implements Runnable {
      */
     @Deprecated
     public final synchronized void stop(Throwable obj) {
-	stop1(obj);
+        stop1(obj);
     }
 
     /**
      * Common impl for stop() and stop(Throwable).
      */
     private final synchronized void stop1(Throwable th) {
-	SecurityManager security = System.getSecurityManager();
-	if (security != null) {
-	    checkAccess();
-	    if ((this != Thread.currentThread()) ||
-		(!(th instanceof ThreadDeath))) {
-		security.checkPermission(SecurityConstants.STOP_THREAD_PERMISSION);
-	    }
-	}
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            checkAccess();
+            if ((this != Thread.currentThread()) ||
+                (!(th instanceof ThreadDeath))) {
+                security.checkPermission(SecurityConstants.STOP_THREAD_PERMISSION);
+            }
+        }
         // A zero status value corresponds to "NEW"
-	if (threadStatus != 0) {
-	    resume(); // Wake up thread if it was suspended; no-op otherwise
-	    stop0(th);
-	} else {
+        if (threadStatus != 0) {
+            resume(); // Wake up thread if it was suspended; no-op otherwise
+            stop0(th);
+        } else {
 
             // Must do the null arg check that the VM would do with stop0
-	    if (th == null) {
-	 	throw new NullPointerException();
-	    }
+            if (th == null) {
+                throw new NullPointerException();
+            }
 
             // Remember this stop attempt for if/when start is used
-	    stopBeforeStart = true;
-	    throwableFromStop = th;
+            stopBeforeStart = true;
+            throwableFromStop = th;
         }
     }
 
@@ -1091,18 +1091,18 @@ class Thread implements Runnable {
      * @spec JSR-51
      */
     public void interrupt() {
-	if (this != Thread.currentThread())
-	    checkAccess();
+        if (this != Thread.currentThread())
+            checkAccess();
 
-	synchronized (blockerLock) {
-	    Interruptible b = blocker;
-	    if (b != null) {
-		interrupt0();		// Just to set the interrupt flag
-		b.interrupt();
-		return;
-	    }
-	}
-	interrupt0();
+        synchronized (blockerLock) {
+            Interruptible b = blocker;
+            if (b != null) {
+                interrupt0();           // Just to set the interrupt flag
+                b.interrupt();
+                return;
+            }
+        }
+        interrupt0();
     }
 
     /**
@@ -1123,7 +1123,7 @@ class Thread implements Runnable {
      * @revised 6.0
      */
     public static boolean interrupted() {
-	return currentThread().isInterrupted(true);
+        return currentThread().isInterrupted(true);
     }
 
     /**
@@ -1140,7 +1140,7 @@ class Thread implements Runnable {
      * @revised 6.0
      */
     public boolean isInterrupted() {
-	return isInterrupted(false);
+        return isInterrupted(false);
     }
 
     /**
@@ -1149,13 +1149,13 @@ class Thread implements Runnable {
      * passed.
      */
     private boolean isInterrupted(boolean ClearInterrupted) {
-	synchronized (lock) {
-	    boolean b = interruptPending;
-	    if (ClearInterrupted) {
-		interruptPending = false;
-	    }
-	    return b;
-	}
+        synchronized (lock) {
+            boolean b = interruptPending;
+            if (ClearInterrupted) {
+                interruptPending = false;
+            }
+            return b;
+        }
     }
 
     /**
@@ -1177,7 +1177,7 @@ class Thread implements Runnable {
      */
     @Deprecated
     public void destroy() {
-	throw new NoSuchMethodError();
+        throw new NoSuchMethodError();
     }
 
     /**
@@ -1188,7 +1188,7 @@ class Thread implements Runnable {
      *          <code>false</code> otherwise.
      */
     public final boolean isAlive() {
-	return (threadStatus & 0x0001) != 0;
+        return (threadStatus & 0x0001) != 0;
     }
 
     /**
@@ -1217,8 +1217,8 @@ class Thread implements Runnable {
      */
     @Deprecated
     public final void suspend() {
-	checkAccess();
-	suspend0();
+        checkAccess();
+        suspend0();
     }
 
     /**
@@ -1243,8 +1243,8 @@ class Thread implements Runnable {
      */
     @Deprecated
     public final void resume() {
-	checkAccess();
-	resume0();
+        checkAccess();
+        resume0();
     }
 
     /**
@@ -1273,15 +1273,15 @@ class Thread implements Runnable {
      */
     public final void setPriority(int newPriority) {
         ThreadGroup g;
-	checkAccess();
-	if (newPriority > MAX_PRIORITY || newPriority < MIN_PRIORITY) {
-	    throw new IllegalArgumentException();
-	}
-	if((g = getThreadGroup()) != null) {
-	    if (newPriority > g.getMaxPriority()) {
-		newPriority = g.getMaxPriority();
-	    }
-	    setPriority0(priority = newPriority);
+        checkAccess();
+        if (newPriority > MAX_PRIORITY || newPriority < MIN_PRIORITY) {
+            throw new IllegalArgumentException();
+        }
+        if((g = getThreadGroup()) != null) {
+            if (newPriority > g.getMaxPriority()) {
+                newPriority = g.getMaxPriority();
+            }
+            setPriority0(priority = newPriority);
         }
     }
 
@@ -1292,7 +1292,7 @@ class Thread implements Runnable {
      * @see     #setPriority
      */
     public final int getPriority() {
-	return priority;
+        return priority;
     }
 
     /**
@@ -1310,8 +1310,8 @@ class Thread implements Runnable {
      * @see        #checkAccess()
      */
     public final void setName(String name) {
-	checkAccess();
-	this.name = name.toCharArray();
+        checkAccess();
+        this.name = name.toCharArray();
     }
 
     /**
@@ -1321,7 +1321,7 @@ class Thread implements Runnable {
      * @see     #setName(String)
      */
     public final String getName() {
-	return String.valueOf(name);
+        return String.valueOf(name);
     }
 
     /**
@@ -1332,7 +1332,7 @@ class Thread implements Runnable {
      * @return  this thread's thread group.
      */
     public final ThreadGroup getThreadGroup() {
-	return group;
+        return group;
     }
 
     /**
@@ -1343,7 +1343,7 @@ class Thread implements Runnable {
      *          group.
      */
     public static int activeCount() {
-	return currentThread().getThreadGroup().activeCount();
+        return currentThread().getThreadGroup().activeCount();
     }
 
     /**
@@ -1366,7 +1366,7 @@ class Thread implements Runnable {
      * @see     SecurityManager#checkAccess(ThreadGroup)
      */
     public static int enumerate(Thread tarray[]) {
-	return currentThread().getThreadGroup().enumerate(tarray);
+        return currentThread().getThreadGroup().enumerate(tarray);
     }
 
     /**
@@ -1377,12 +1377,12 @@ class Thread implements Runnable {
      * @exception  IllegalThreadStateException  if this thread is not
      *             suspended.
      * @deprecated The definition of this call depends on {@link #suspend},
-     *		   which is deprecated.  Further, the results of this call
-     *		   were never well-defined.
+     *             which is deprecated.  Further, the results of this call
+     *             were never well-defined.
      */
     @Deprecated
     public int countStackFrames() {
-	return 0;
+        return 0;
     }
 
     /**
@@ -1396,27 +1396,27 @@ class Thread implements Runnable {
      */
     public final synchronized void join(long millis) 
     throws InterruptedException {
-	long base = System.currentTimeMillis();
-	long now = 0;
+        long base = System.currentTimeMillis();
+        long now = 0;
 
-	if (millis < 0) {
+        if (millis < 0) {
             throw new IllegalArgumentException("timeout value is negative");
-	}
+        }
 
-	if (millis == 0) {
-	    while (isAlive()) {
-		wait(0);
-	    }
-	} else {
-	    while (isAlive()) {
-		long delay = millis - now;
-		if (delay <= 0) {
-		    break;
-		}
-		wait(delay);
-		now = System.currentTimeMillis() - base;
-	    }
-	}
+        if (millis == 0) {
+            while (isAlive()) {
+                wait(0);
+            }
+        } else {
+            while (isAlive()) {
+                long delay = millis - now;
+                if (delay <= 0) {
+                    break;
+                }
+                wait(delay);
+                now = System.currentTimeMillis() - base;
+            }
+        }
     }
 
     /**
@@ -1434,20 +1434,20 @@ class Thread implements Runnable {
     public final synchronized void join(long millis, int nanos) 
     throws InterruptedException {
 
-	if (millis < 0) {
+        if (millis < 0) {
             throw new IllegalArgumentException("timeout value is negative");
-	}
+        }
 
-	if (nanos < 0 || nanos > 999999) {
+        if (nanos < 0 || nanos > 999999) {
             throw new IllegalArgumentException(
-				"nanosecond timeout value out of range");
-	}
+                                "nanosecond timeout value out of range");
+        }
 
-	if (nanos >= 500000 || (nanos != 0 && millis == 0)) {
-	    millis++;
-	}
+        if (nanos >= 500000 || (nanos != 0 && millis == 0)) {
+            millis++;
+        }
 
-	join(millis);
+        join(millis);
     }
 
     /**
@@ -1458,7 +1458,7 @@ class Thread implements Runnable {
      *             current thread is cleared when this exception is thrown.
      */
     public final void join() throws InterruptedException {
-	join(0);
+        join(0);
     }
 
     /**
@@ -1468,7 +1468,7 @@ class Thread implements Runnable {
      * @see     Throwable#printStackTrace()
      */
     public static void dumpStack() {
-	new Exception("Stack trace").printStackTrace();
+        new Exception("Stack trace").printStackTrace();
     }
 
     /**
@@ -1492,11 +1492,11 @@ class Thread implements Runnable {
      * @see        #checkAccess
      */
     public final void setDaemon(boolean on) {
-	checkAccess();
-	if (isAlive()) {
-	    throw new IllegalThreadStateException();
-	}
-	daemon = on;
+        checkAccess();
+        if (isAlive()) {
+            throw new IllegalThreadStateException();
+        }
+        daemon = on;
     }
 
     /**
@@ -1507,7 +1507,7 @@ class Thread implements Runnable {
      * @see     #setDaemon(boolean)
      */
     public final boolean isDaemon() {
-	return daemon;
+        return daemon;
     }
 
     /**
@@ -1523,10 +1523,10 @@ class Thread implements Runnable {
      * @see        SecurityManager#checkAccess(Thread)
      */
     public final void checkAccess() {
-	SecurityManager security = System.getSecurityManager();
-	if (security != null) {
-	    security.checkAccess(this);
-	}
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkAccess(this);
+        }
     }
 
     /**
@@ -1537,13 +1537,13 @@ class Thread implements Runnable {
      */
     public String toString() {
         ThreadGroup group = getThreadGroup();
-	if (group != null) {
-	    return "Thread[" + getName() + "," + getPriority() + "," + 
-		           group.getName() + "]";
-	} else {
-	    return "Thread[" + getName() + "," + getPriority() + "," + 
-		            "" + "]";
-	}
+        if (group != null) {
+            return "Thread[" + getName() + "," + getPriority() + "," + 
+                           group.getName() + "]";
+        } else {
+            return "Thread[" + getName() + "," + getPriority() + "," + 
+                            "" + "]";
+        }
     }
 
     /**    
@@ -1576,20 +1576,20 @@ class Thread implements Runnable {
      * @since 1.2
      */
     public ClassLoader getContextClassLoader() {
-	if (contextClassLoader == ClassLoader.DUMMY) {
-	    contextClassLoader = ClassLoader.getSystemClassLoader();
-	}
-	if (contextClassLoader == null)
-	    return null;
-	SecurityManager sm = System.getSecurityManager();
-	if (sm != null) {
-	    ClassLoader ccl = ClassLoader.getCallerClassLoader();
-	    if (ccl != null && ccl != contextClassLoader && 
+        if (contextClassLoader == ClassLoader.DUMMY) {
+            contextClassLoader = ClassLoader.getSystemClassLoader();
+        }
+        if (contextClassLoader == null)
+            return null;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            ClassLoader ccl = ClassLoader.getCallerClassLoader();
+            if (ccl != null && ccl != contextClassLoader && 
                     !contextClassLoader.isAncestor(ccl)) {
-		sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-	    }
-	}
-	return contextClassLoader;
+                sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
+            }
+        }
+        return contextClassLoader;
     }
 
     /**   
@@ -1614,11 +1614,11 @@ class Thread implements Runnable {
      * @since 1.2 
      */
     public void setContextClassLoader(ClassLoader cl) {
-	SecurityManager sm = System.getSecurityManager();
-	if (sm != null) {
-	    sm.checkPermission(new RuntimePermission("setContextClassLoader"));
-	}
-	contextClassLoader = cl;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission("setContextClassLoader"));
+        }
+        contextClassLoader = cl;
     }
 
     /**
@@ -1638,19 +1638,19 @@ class Thread implements Runnable {
      * @since 1.4
      */
     public static boolean holdsLock(Object obj) {
-	if (obj == null) {
-	    throw new NullPointerException();
-	}
-	try {
-	    if (false) throw new cli.System.Threading.SynchronizationLockException();
-	    // The 1.5 memory model (JSR133) explicitly allows spurious wake-ups from Object.wait,
-	    // so we abuse Pulse to check if we own the monitor.
-	    cli.System.Threading.Monitor.Pulse(obj);
-	    return true;
-	}
-	catch (cli.System.Threading.SynchronizationLockException _) {
-	    return false;
-	}
+        if (obj == null) {
+            throw new NullPointerException();
+        }
+        try {
+            if (false) throw new cli.System.Threading.SynchronizationLockException();
+            // The 1.5 memory model (JSR133) explicitly allows spurious wake-ups from Object.wait,
+            // so we abuse Pulse to check if we own the monitor.
+            cli.System.Threading.Monitor.Pulse(obj);
+            return true;
+        }
+        catch (cli.System.Threading.SynchronizationLockException _) {
+            return false;
+        }
     }
 
     private static final StackTraceElement[] EMPTY_STACK_TRACE
@@ -1699,14 +1699,14 @@ class Thread implements Runnable {
                 security.checkPermission(
                     SecurityConstants.GET_STACK_TRACE_PERMISSION);
             }
-	    if (!isAlive()) {
-		return EMPTY_STACK_TRACE;
-	    }
-	    return dumpThreads(new Thread[] {this})[0];
+            if (!isAlive()) {
+                return EMPTY_STACK_TRACE;
+            }
+            return dumpThreads(new Thread[] {this})[0];
         } else {
-	    // Don't need JVM help for current thread
-	    return (new Exception()).getStackTrace();
-	}
+            // Don't need JVM help for current thread
+            return (new Exception()).getStackTrace();
+        }
     }
 
     /**
@@ -1758,7 +1758,7 @@ class Thread implements Runnable {
         Thread[] threads = getThreads(); 
         StackTraceElement[][] traces = dumpThreads(threads);
         Map<Thread, StackTraceElement[]> m
-	    = new HashMap<Thread, StackTraceElement[]>(threads.length);
+            = new HashMap<Thread, StackTraceElement[]>(threads.length);
         for (int i = 0; i < threads.length; i++) {
             if (threads[i].isAlive()) { 
                 StackTraceElement[] stackTrace = traces[i];
@@ -1786,22 +1786,22 @@ class Thread implements Runnable {
      * "enableContextClassLoaderOverride" RuntimePermission is checked.
      */
     private static boolean isCCLOverridden(Class cl) {
-	if (cl == Thread.class)
-	    return false;
-	Boolean result = null;
-	synchronized (subclassAudits) {
-	    result = (Boolean) subclassAudits.get(cl);
-	    if (result == null) {
-		/*
-		 * Note: only new Boolean instances (i.e., not Boolean.TRUE or
-		 * Boolean.FALSE) must be used as cache values, otherwise cache
-		 * entry will pin associated class.
-		 */
-		result = new Boolean(auditSubclass(cl));
-		subclassAudits.put(cl, result);
-	    }
-	}
-	return result.booleanValue();
+        if (cl == Thread.class)
+            return false;
+        Boolean result = null;
+        synchronized (subclassAudits) {
+            result = (Boolean) subclassAudits.get(cl);
+            if (result == null) {
+                /*
+                 * Note: only new Boolean instances (i.e., not Boolean.TRUE or
+                 * Boolean.FALSE) must be used as cache values, otherwise cache
+                 * entry will pin associated class.
+                 */
+                result = new Boolean(auditSubclass(cl));
+                subclassAudits.put(cl, result);
+            }
+        }
+        return result.booleanValue();
     }
 
     /**
@@ -1810,77 +1810,77 @@ class Thread implements Runnable {
      * subclass overrides any of the methods, false otherwise.
      */
     private static boolean auditSubclass(final Class subcl) {
-	Boolean result = (Boolean) AccessController.doPrivileged(
-	    new PrivilegedAction() {
-		public Object run() {
-		    for (Class cl = subcl;
-			 cl != Thread.class;
-			 cl = cl.getSuperclass())
-		    {
-			try {
-			    cl.getDeclaredMethod("getContextClassLoader", new Class[0]);
-			    return Boolean.TRUE;
-			} catch (NoSuchMethodException ex) {
-			}
-			try {
-			    Class[] params = {ClassLoader.class};
-			    cl.getDeclaredMethod("setContextClassLoader", params);
-			    return Boolean.TRUE;
-			} catch (NoSuchMethodException ex) {
-			}
-		    }
-		    return Boolean.FALSE;
-		}
-	    }
-	);
-	return result.booleanValue();
+        Boolean result = (Boolean) AccessController.doPrivileged(
+            new PrivilegedAction() {
+                public Object run() {
+                    for (Class cl = subcl;
+                         cl != Thread.class;
+                         cl = cl.getSuperclass())
+                    {
+                        try {
+                            cl.getDeclaredMethod("getContextClassLoader", new Class[0]);
+                            return Boolean.TRUE;
+                        } catch (NoSuchMethodException ex) {
+                        }
+                        try {
+                            Class[] params = {ClassLoader.class};
+                            cl.getDeclaredMethod("setContextClassLoader", params);
+                            return Boolean.TRUE;
+                        } catch (NoSuchMethodException ex) {
+                        }
+                    }
+                    return Boolean.FALSE;
+                }
+            }
+        );
+        return result.booleanValue();
     }
 
     private static StackTraceElement[][] dumpThreads(Thread[] threads) {
-	StackTraceElement[][] stacks = new StackTraceElement[threads.length][];
-	for (int i = 0; i < threads.length; i++) {
-	    cli.System.Threading.Thread nativeThread = threads[i].nativeThread;
-	    if (nativeThread == null) {
-		stacks[i] = new StackTraceElement[0];
-	    } else {
-		try {
-		    if (false) throw new cli.System.Threading.ThreadStateException();
-		    boolean suspended = false;
-		    if ((nativeThread.get_ThreadState().Value & cli.System.Threading.ThreadState.Suspended) == 0 && nativeThread != cli.System.Threading.Thread.get_CurrentThread()) {
-			nativeThread.Suspend();
-		    }
-		    cli.System.Diagnostics.StackTrace stack;
-		    try {
-			stack = new cli.System.Diagnostics.StackTrace(nativeThread, true);
-		    }
-		    finally {
-			if (suspended) {
-			    nativeThread.Resume();
-			}
-		    }
-		    stacks[i] = ExceptionHelper.getStackTrace(stack, Integer.MAX_VALUE);
-		}
-		catch (cli.System.Threading.ThreadStateException _) {
-		    stacks[i] = new StackTraceElement[0];
-		}
-	    }
-	}
-	return stacks;
+        StackTraceElement[][] stacks = new StackTraceElement[threads.length][];
+        for (int i = 0; i < threads.length; i++) {
+            cli.System.Threading.Thread nativeThread = threads[i].nativeThread;
+            if (nativeThread == null) {
+                stacks[i] = new StackTraceElement[0];
+            } else {
+                try {
+                    if (false) throw new cli.System.Threading.ThreadStateException();
+                    boolean suspended = false;
+                    if ((nativeThread.get_ThreadState().Value & cli.System.Threading.ThreadState.Suspended) == 0 && nativeThread != cli.System.Threading.Thread.get_CurrentThread()) {
+                        nativeThread.Suspend();
+                    }
+                    cli.System.Diagnostics.StackTrace stack;
+                    try {
+                        stack = new cli.System.Diagnostics.StackTrace(nativeThread, true);
+                    }
+                    finally {
+                        if (suspended) {
+                            nativeThread.Resume();
+                        }
+                    }
+                    stacks[i] = ExceptionHelper.getStackTrace(stack, Integer.MAX_VALUE);
+                }
+                catch (cli.System.Threading.ThreadStateException _) {
+                    stacks[i] = new StackTraceElement[0];
+                }
+            }
+        }
+        return stacks;
     }
 
     private static Thread[] getThreads() {
-	return (Thread[])AccessController.doPrivileged(
-	    new PrivilegedAction() {
-		public Object run() {
-		    ThreadGroup root = getMainThreadGroup();
-		    for (; ; ) {
-			Thread[] threads = new Thread[root.activeCount()];
-			if (root.enumerate(threads) == threads.length) {
-			    return threads;
-			}
-		    }
-		}
-	    });
+        return (Thread[])AccessController.doPrivileged(
+            new PrivilegedAction() {
+                public Object run() {
+                    ThreadGroup root = getMainThreadGroup();
+                    for (; ; ) {
+                        Thread[] threads = new Thread[root.activeCount()];
+                        if (root.enumerate(threads) == threads.length) {
+                            return threads;
+                        }
+                    }
+                }
+            });
     }
 
     /**
@@ -2006,26 +2006,26 @@ class Thread implements Runnable {
     public State getState() {
         // get current thread state
         switch (threadStatus) {
-	    case 0:
-		return State.NEW;
-	    case 0x0002:
-		return State.TERMINATED;
+            case 0:
+                return State.NEW;
+            case 0x0002:
+                return State.TERMINATED;
         }
-	synchronized (lock) {
-	    if (interruptableWait) {
-		// NOTE if objectWait has satisfied the wait condition (or has been interrupted or has timed-out),
-		// it can be blocking on the re-acquire of the monitor, but we have no way of detecting that.
-		return timedWait ? State.TIMED_WAITING : State.WAITING;
-	    }
-	}
-	cli.System.Threading.Thread nativeThread = this.nativeThread;
-	if (nativeThread == null) {
-	    return State.TERMINATED;
-	}
-	if ((nativeThread.get_ThreadState().Value & cli.System.Threading.ThreadState.WaitSleepJoin) != 0) {
-	    return State.BLOCKED;
-	}
-	return State.RUNNABLE;
+        synchronized (lock) {
+            if (interruptableWait) {
+                // NOTE if objectWait has satisfied the wait condition (or has been interrupted or has timed-out),
+                // it can be blocking on the re-acquire of the monitor, but we have no way of detecting that.
+                return timedWait ? State.TIMED_WAITING : State.WAITING;
+            }
+        }
+        cli.System.Threading.Thread nativeThread = this.nativeThread;
+        if (nativeThread == null) {
+            return State.TERMINATED;
+        }
+        if ((nativeThread.get_ThreadState().Value & cli.System.Threading.ThreadState.WaitSleepJoin) != 0) {
+            return State.BLOCKED;
+        }
+        return State.RUNNABLE;
     }
 
     // Added in JSR-166
@@ -2169,159 +2169,159 @@ class Thread implements Runnable {
 
     /* Some private helper methods */
     private synchronized void setPriority0(int newPriority) {
-	cli.System.Threading.Thread nativeThread = this.nativeThread;
-	if (nativeThread != null) {
-	    try {
-		if (false) throw new cli.System.Threading.ThreadStateException();
-		nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(newPriority)));
-	    }
-	    catch (cli.System.Threading.ThreadStateException _) {
-	    }
-	}
+        cli.System.Threading.Thread nativeThread = this.nativeThread;
+        if (nativeThread != null) {
+            try {
+                if (false) throw new cli.System.Threading.ThreadStateException();
+                nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(newPriority)));
+            }
+            catch (cli.System.Threading.ThreadStateException _) {
+            }
+        }
     }
 
     private void stop0(Throwable x) {
-	if (running) {
-	    // NOTE we allow ThreadDeath (and its subclasses) to be thrown on every thread, but any
-	    // other exception is ignored, except if we're throwing it on the current Thread. This
-	    // is done to allow exception handlers to be type specific, otherwise every exception
-	    // handler would have to catch ThreadAbortException and look inside it to see if it
-	    // contains the real exception that we wish to handle.
-	    // I hope we can get away with this behavior, because Thread.stop() is deprecated
-	    // anyway. Note that we do allow arbitrary exceptions to be thrown on the current
-	    // thread, since this is harmless (because they aren't wrapped) and also because it
-	    // provides some real value, because it is one of the ways you can throw arbitrary checked
-	    // exceptions from Java.
-	    if (this == current) {
-		sun.misc.Unsafe.getUnsafe().throwException(x);
-	    }
-	    else if (x instanceof ThreadDeath) {
-		cli.System.Threading.Thread nativeThread = this.nativeThread;
-		if (nativeThread == null) {
-		    return;
-		}
-		try {
-		    if (false) throw new cli.System.Threading.ThreadStateException();
-		    nativeThread.Abort(x);
-		}
-		catch (cli.System.Threading.ThreadStateException _) {
-		    // .NET 2.0 throws a ThreadStateException if the target thread is currently suspended
-		    // (but it does record the Abort request)
-		}
-		try {
-		    if (false) throw new cli.System.Threading.ThreadStateException();
-		    int suspend = cli.System.Threading.ThreadState.Suspended | cli.System.Threading.ThreadState.SuspendRequested;
-		    while ((nativeThread.get_ThreadState().Value & suspend) != 0) {
-			nativeThread.Resume();
-		    }
-		}
-		catch (cli.System.Threading.ThreadStateException _) {
-		}
-	    }
-	}
-	else {
-	    stillborn = x;
-	}
+        if (running) {
+            // NOTE we allow ThreadDeath (and its subclasses) to be thrown on every thread, but any
+            // other exception is ignored, except if we're throwing it on the current Thread. This
+            // is done to allow exception handlers to be type specific, otherwise every exception
+            // handler would have to catch ThreadAbortException and look inside it to see if it
+            // contains the real exception that we wish to handle.
+            // I hope we can get away with this behavior, because Thread.stop() is deprecated
+            // anyway. Note that we do allow arbitrary exceptions to be thrown on the current
+            // thread, since this is harmless (because they aren't wrapped) and also because it
+            // provides some real value, because it is one of the ways you can throw arbitrary checked
+            // exceptions from Java.
+            if (this == current) {
+                sun.misc.Unsafe.getUnsafe().throwException(x);
+            }
+            else if (x instanceof ThreadDeath) {
+                cli.System.Threading.Thread nativeThread = this.nativeThread;
+                if (nativeThread == null) {
+                    return;
+                }
+                try {
+                    if (false) throw new cli.System.Threading.ThreadStateException();
+                    nativeThread.Abort(x);
+                }
+                catch (cli.System.Threading.ThreadStateException _) {
+                    // .NET 2.0 throws a ThreadStateException if the target thread is currently suspended
+                    // (but it does record the Abort request)
+                }
+                try {
+                    if (false) throw new cli.System.Threading.ThreadStateException();
+                    int suspend = cli.System.Threading.ThreadState.Suspended | cli.System.Threading.ThreadState.SuspendRequested;
+                    while ((nativeThread.get_ThreadState().Value & suspend) != 0) {
+                        nativeThread.Resume();
+                    }
+                }
+                catch (cli.System.Threading.ThreadStateException _) {
+                }
+            }
+        }
+        else {
+            stillborn = x;
+        }
     }
 
     private void suspend0() {
-	try {
-	    if (false) throw new cli.System.Threading.ThreadStateException();
-	    cli.System.Threading.Thread nativeThread = this.nativeThread;
-	    if (nativeThread != null) {
-		nativeThread.Suspend();
-	    }
-	}
-	catch (cli.System.Threading.ThreadStateException _) {
-	}
+        try {
+            if (false) throw new cli.System.Threading.ThreadStateException();
+            cli.System.Threading.Thread nativeThread = this.nativeThread;
+            if (nativeThread != null) {
+                nativeThread.Suspend();
+            }
+        }
+        catch (cli.System.Threading.ThreadStateException _) {
+        }
     }
 
     private void resume0() {
-	try {
-	    if (false) throw new cli.System.Threading.ThreadStateException();
-	    cli.System.Threading.Thread nativeThread = this.nativeThread;
-	    if (nativeThread != null) {
-		nativeThread.Resume();
-	    }
-	}
-	catch (cli.System.Threading.ThreadStateException _) {
-	}
+        try {
+            if (false) throw new cli.System.Threading.ThreadStateException();
+            cli.System.Threading.Thread nativeThread = this.nativeThread;
+            if (nativeThread != null) {
+                nativeThread.Resume();
+            }
+        }
+        catch (cli.System.Threading.ThreadStateException _) {
+        }
     }
 
     private void interrupt0() {
-	synchronized (lock) {
-	    // if the thread hasn't been started yet or has been terminated, the interrupt is ignored
-	    // (like on the reference implementation)
-	    if (nativeThread == null) {
-		return;
-	    }
-	    if (!interruptPending) {
-		interruptPending = true;
-		if (interruptableWait) {
-		    nativeInterruptPending = true;
-		    nativeThread.Interrupt();
-		}
-	    }
-	}
+        synchronized (lock) {
+            // if the thread hasn't been started yet or has been terminated, the interrupt is ignored
+            // (like on the reference implementation)
+            if (nativeThread == null) {
+                return;
+            }
+            if (!interruptPending) {
+                interruptPending = true;
+                if (interruptableWait) {
+                    nativeInterruptPending = true;
+                    nativeThread.Interrupt();
+                }
+            }
+        }
     }
 
     private synchronized void setRunningAndCheckStillborn() throws Throwable {
-	running = true;
-	Throwable x = stillborn;
-	if (x != null) {
-	    stillborn = null;
-	    throw x;
-	}
+        running = true;
+        Throwable x = stillborn;
+        if (x != null) {
+            stillborn = null;
+            throw x;
+        }
     }
 
     // [IKVM] this the entry point of thread started from Java
     void threadProc() {
-	current = this;
-	try {
-	    setRunningAndCheckStillborn();
-	    run();
-	}
-	catch (Throwable x) {
-	    try {
-		getUncaughtExceptionHandler().uncaughtException(this, x);
-	    }
-	    catch (Throwable _) {
-	    }
-	}
-	finally {
-	    die();
-	}
+        current = this;
+        try {
+            setRunningAndCheckStillborn();
+            run();
+        }
+        catch (Throwable x) {
+            try {
+                getUncaughtExceptionHandler().uncaughtException(this, x);
+            }
+            catch (Throwable _) {
+            }
+        }
+        finally {
+            die();
+        }
     }
 
     // [IKVM] this the implementation of Object.wait(). It is hooked up in map.xml.
     static void objectWait(Object o, long timeout, int nanos) throws InterruptedException {
-	if (o == null) {
-	    throw new NullPointerException();
-	}
-	if (timeout < 0) {
-	    throw new IllegalArgumentException("timeout value is negative");
-	}
-	if (nanos < 0 || nanos > 999999) {
-	    throw new IllegalArgumentException("nanosecond timeout value out of range");
-	}
-	if (nanos >= 500000 || (nanos != 0 && timeout == 0)) {
-	    timeout++;
-	}
-	Thread t = currentThread();
-	t.enterInterruptableWait(timeout != 0);
-	try {
-	    if (false) throw new cli.System.Threading.ThreadInterruptedException();
-	    if (timeout == 0 || timeout > 922337203685476L) {
-		cli.System.Threading.Monitor.Wait(o);
-	    }
-	    else {
-		cli.System.Threading.Monitor.Wait(o, new cli.System.TimeSpan(timeout * 10000));
-	    }
-	}
-	catch (cli.System.Threading.ThreadInterruptedException _) {
-	}
-	finally {
-	    t.leaveInterruptableWait();
-	}
+        if (o == null) {
+            throw new NullPointerException();
+        }
+        if (timeout < 0) {
+            throw new IllegalArgumentException("timeout value is negative");
+        }
+        if (nanos < 0 || nanos > 999999) {
+            throw new IllegalArgumentException("nanosecond timeout value out of range");
+        }
+        if (nanos >= 500000 || (nanos != 0 && timeout == 0)) {
+            timeout++;
+        }
+        Thread t = currentThread();
+        t.enterInterruptableWait(timeout != 0);
+        try {
+            if (false) throw new cli.System.Threading.ThreadInterruptedException();
+            if (timeout == 0 || timeout > 922337203685476L) {
+                cli.System.Threading.Monitor.Wait(o);
+            }
+            else {
+                cli.System.Threading.Monitor.Wait(o, new cli.System.TimeSpan(timeout * 10000));
+            }
+        }
+        catch (cli.System.Threading.ThreadInterruptedException _) {
+        }
+        finally {
+            t.leaveInterruptableWait();
+        }
     }
 }

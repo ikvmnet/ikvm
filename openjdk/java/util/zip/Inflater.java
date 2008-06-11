@@ -323,27 +323,27 @@ public class Inflater
     int more;
     do
       {
-	if (mode != DECODE_CHKSUM)
-	  {
-	    /* Don't give away any output, if we are waiting for the
-	     * checksum in the input stream.
-	     *
-	     * With this trick we have always:
-	     *   needsInput() and not finished() 
-	     *   implies more output can be produced.  
-	     */
-	    more = outputWindow.copyOutput(buf, off, len);
-	    adler.update(buf, off, more);
-	    off += more;
-	    count += more;
-	    totalOut += more;
-	    len -= more;
-	    if (len == 0)
-	      return count;
-	  }
+        if (mode != DECODE_CHKSUM)
+          {
+            /* Don't give away any output, if we are waiting for the
+             * checksum in the input stream.
+             *
+             * With this trick we have always:
+             *   needsInput() and not finished() 
+             *   implies more output can be produced.  
+             */
+            more = outputWindow.copyOutput(buf, off, len);
+            adler.update(buf, off, more);
+            off += more;
+            count += more;
+            totalOut += more;
+            len -= more;
+            if (len == 0)
+              return count;
+          }
       }
     while (decode() || (outputWindow.getAvailable() > 0
-			&& mode != DECODE_CHKSUM));
+                        && mode != DECODE_CHKSUM));
     return count;
   }
 
@@ -479,12 +479,12 @@ public class Inflater
     
     if ((header & 0x0020) == 0) // Dictionary flag?
       {
-	mode = DECODE_BLOCKS;
+        mode = DECODE_BLOCKS;
       }
     else
       {
-	mode = DECODE_DICT;
-	neededBits = 32;      
+        mode = DECODE_DICT;
+        neededBits = 32;      
       }
     return true;
   }
@@ -497,12 +497,12 @@ public class Inflater
   {
     while (neededBits > 0)
       {
-	int dictByte = input.peekBits(8);
-	if (dictByte < 0)
-	  return false;
-	input.dropBits(8);
-	readAdler = (readAdler << 8) | dictByte;
-	neededBits -= 8;
+        int dictByte = input.peekBits(8);
+        if (dictByte < 0)
+          return false;
+        input.dropBits(8);
+        readAdler = (readAdler << 8) | dictByte;
+        neededBits -= 8;
       }
     return false;
   }
@@ -518,84 +518,84 @@ public class Inflater
     int free = outputWindow.getFreeSpace();
     while (free >= 258)
       {
-	int symbol;
-	switch (mode)
-	  {
-	  case DECODE_HUFFMAN:
-	    /* This is the inner loop so it is optimized a bit */
-	    while (((symbol = litlenTree.getSymbol(input)) & ~0xff) == 0)
-	      {
-		outputWindow.write(symbol);
-		if (--free < 258)
-		  return true;
-	      } 
-	    if (symbol < 257)
-	      {
-		if (symbol < 0)
-		  return false;
-		else
-		  {
-		    /* symbol == 256: end of block */
-		    distTree = null;
-		    litlenTree = null;
-		    mode = DECODE_BLOCKS;
-		    return true;
-		  }
-	      }
-		
-	    try
-	      {
-		repLength = CPLENS[symbol - 257];
-		neededBits = CPLEXT[symbol - 257];
-	      }
-	    catch (ArrayIndexOutOfBoundsException ex)
-	      {
-		throw new DataFormatException("Illegal rep length code");
-	      }
-	    /* fall through */
-	  case DECODE_HUFFMAN_LENBITS:
-	    if (neededBits > 0)
-	      {
-		mode = DECODE_HUFFMAN_LENBITS;
-		int i = input.peekBits(neededBits);
-		if (i < 0)
-		  return false;
-		input.dropBits(neededBits);
-		repLength += i;
-	      }
-	    mode = DECODE_HUFFMAN_DIST;
-	    /* fall through */
-	  case DECODE_HUFFMAN_DIST:
-	    symbol = distTree.getSymbol(input);
-	    if (symbol < 0)
-	      return false;
-	    try 
-	      {
-		repDist = CPDIST[symbol];
-		neededBits = CPDEXT[symbol];
-	      }
-	    catch (ArrayIndexOutOfBoundsException ex)
-	      {
-		throw new DataFormatException("Illegal rep dist code");
-	      }
-	    /* fall through */
-	  case DECODE_HUFFMAN_DISTBITS:
-	    if (neededBits > 0)
-	      {
-		mode = DECODE_HUFFMAN_DISTBITS;
-		int i = input.peekBits(neededBits);
-		if (i < 0)
-		  return false;
-		input.dropBits(neededBits);
-		repDist += i;
-	      }
-	    outputWindow.repeat(repLength, repDist);
-	    free -= repLength;
-	    mode = DECODE_HUFFMAN;
-	    break;
-	  default:
-	    throw new IllegalStateException();
-	  }
+        int symbol;
+        switch (mode)
+          {
+          case DECODE_HUFFMAN:
+            /* This is the inner loop so it is optimized a bit */
+            while (((symbol = litlenTree.getSymbol(input)) & ~0xff) == 0)
+              {
+                outputWindow.write(symbol);
+                if (--free < 258)
+                  return true;
+              } 
+            if (symbol < 257)
+              {
+                if (symbol < 0)
+                  return false;
+                else
+                  {
+                    /* symbol == 256: end of block */
+                    distTree = null;
+                    litlenTree = null;
+                    mode = DECODE_BLOCKS;
+                    return true;
+                  }
+              }
+                
+            try
+              {
+                repLength = CPLENS[symbol - 257];
+                neededBits = CPLEXT[symbol - 257];
+              }
+            catch (ArrayIndexOutOfBoundsException ex)
+              {
+                throw new DataFormatException("Illegal rep length code");
+              }
+            /* fall through */
+          case DECODE_HUFFMAN_LENBITS:
+            if (neededBits > 0)
+              {
+                mode = DECODE_HUFFMAN_LENBITS;
+                int i = input.peekBits(neededBits);
+                if (i < 0)
+                  return false;
+                input.dropBits(neededBits);
+                repLength += i;
+              }
+            mode = DECODE_HUFFMAN_DIST;
+            /* fall through */
+          case DECODE_HUFFMAN_DIST:
+            symbol = distTree.getSymbol(input);
+            if (symbol < 0)
+              return false;
+            try 
+              {
+                repDist = CPDIST[symbol];
+                neededBits = CPDEXT[symbol];
+              }
+            catch (ArrayIndexOutOfBoundsException ex)
+              {
+                throw new DataFormatException("Illegal rep dist code");
+              }
+            /* fall through */
+          case DECODE_HUFFMAN_DISTBITS:
+            if (neededBits > 0)
+              {
+                mode = DECODE_HUFFMAN_DISTBITS;
+                int i = input.peekBits(neededBits);
+                if (i < 0)
+                  return false;
+                input.dropBits(neededBits);
+                repDist += i;
+              }
+            outputWindow.repeat(repLength, repDist);
+            free -= repLength;
+            mode = DECODE_HUFFMAN;
+            break;
+          default:
+            throw new IllegalStateException();
+          }
       }
     return true;
   }
@@ -609,17 +609,17 @@ public class Inflater
   {
     while (neededBits > 0)
       {
-	int chkByte = input.peekBits(8);
-	if (chkByte < 0)
-	  return false;
-	input.dropBits(8);
-	readAdler = (readAdler << 8) | chkByte;
-	neededBits -= 8;
+        int chkByte = input.peekBits(8);
+        if (chkByte < 0)
+          return false;
+        input.dropBits(8);
+        readAdler = (readAdler << 8) | chkByte;
+        neededBits -= 8;
       }
     if ((int) adler.getValue() != readAdler)
       throw new DataFormatException("Adler chksum doesn't match: "
-				    +Integer.toHexString((int)adler.getValue())
-				    +" vs. "+Integer.toHexString(readAdler));
+                                    +Integer.toHexString((int)adler.getValue())
+                                    +" vs. "+Integer.toHexString(readAdler));
     mode = FINISHED;
     return false;
   }
@@ -634,103 +634,103 @@ public class Inflater
     switch (mode) 
       {
       case DECODE_HEADER:
-	return decodeHeader();
+        return decodeHeader();
       case DECODE_DICT:
-	return decodeDict();
+        return decodeDict();
       case DECODE_CHKSUM:
-	return decodeChksum();
+        return decodeChksum();
 
       case DECODE_BLOCKS:
-	if (isLastBlock)
-	  {
-	    if (nowrap)
-	      {
-		mode = FINISHED;
-		return false;
-	      }
-	    else
-	      {
-		input.skipToByteBoundary();
-		neededBits = 32;
-		mode = DECODE_CHKSUM;
-		return true;
-	      }
-	  }
+        if (isLastBlock)
+          {
+            if (nowrap)
+              {
+                mode = FINISHED;
+                return false;
+              }
+            else
+              {
+                input.skipToByteBoundary();
+                neededBits = 32;
+                mode = DECODE_CHKSUM;
+                return true;
+              }
+          }
 
-	int type = input.peekBits(3);
-	if (type < 0)
-	  return false;
-	input.dropBits(3);
+        int type = input.peekBits(3);
+        if (type < 0)
+          return false;
+        input.dropBits(3);
 
-	if ((type & 1) != 0)
-	  isLastBlock = true;
-	switch (type >> 1)
-	  {
-	  case DeflaterConstants.STORED_BLOCK:
-	    input.skipToByteBoundary();
-	    mode = DECODE_STORED_LEN1;
-	    break;
-	  case DeflaterConstants.STATIC_TREES:
-	    litlenTree = InflaterHuffmanTree.defLitLenTree;
-	    distTree = InflaterHuffmanTree.defDistTree;
-	    mode = DECODE_HUFFMAN;
-	    break;
-	  case DeflaterConstants.DYN_TREES:
-	    dynHeader = new InflaterDynHeader();
-	    mode = DECODE_DYN_HEADER;
-	    break;
-	  default:
-	    throw new DataFormatException("Unknown block type "+type);
-	  }
-	return true;
+        if ((type & 1) != 0)
+          isLastBlock = true;
+        switch (type >> 1)
+          {
+          case DeflaterConstants.STORED_BLOCK:
+            input.skipToByteBoundary();
+            mode = DECODE_STORED_LEN1;
+            break;
+          case DeflaterConstants.STATIC_TREES:
+            litlenTree = InflaterHuffmanTree.defLitLenTree;
+            distTree = InflaterHuffmanTree.defDistTree;
+            mode = DECODE_HUFFMAN;
+            break;
+          case DeflaterConstants.DYN_TREES:
+            dynHeader = new InflaterDynHeader();
+            mode = DECODE_DYN_HEADER;
+            break;
+          default:
+            throw new DataFormatException("Unknown block type "+type);
+          }
+        return true;
 
       case DECODE_STORED_LEN1:
-	{
-	  if ((uncomprLen = input.peekBits(16)) < 0)
-	    return false;
-	  input.dropBits(16);
-	  mode = DECODE_STORED_LEN2;
-	}
-	/* fall through */
+        {
+          if ((uncomprLen = input.peekBits(16)) < 0)
+            return false;
+          input.dropBits(16);
+          mode = DECODE_STORED_LEN2;
+        }
+        /* fall through */
       case DECODE_STORED_LEN2:
-	{
-	  int nlen = input.peekBits(16);
-	  if (nlen < 0)
-	    return false;
-	  input.dropBits(16);
-	  if (nlen != (uncomprLen ^ 0xffff))
-	    throw new DataFormatException("broken uncompressed block");
-	  mode = DECODE_STORED;
-	}
-	/* fall through */
+        {
+          int nlen = input.peekBits(16);
+          if (nlen < 0)
+            return false;
+          input.dropBits(16);
+          if (nlen != (uncomprLen ^ 0xffff))
+            throw new DataFormatException("broken uncompressed block");
+          mode = DECODE_STORED;
+        }
+        /* fall through */
       case DECODE_STORED:
-	{
-	  int more = outputWindow.copyStored(input, uncomprLen);
-	  uncomprLen -= more;
-	  if (uncomprLen == 0)
-	    {
-	      mode = DECODE_BLOCKS;
-	      return true;
-	    }
-	  return !input.needsInput();
-	}
+        {
+          int more = outputWindow.copyStored(input, uncomprLen);
+          uncomprLen -= more;
+          if (uncomprLen == 0)
+            {
+              mode = DECODE_BLOCKS;
+              return true;
+            }
+          return !input.needsInput();
+        }
 
       case DECODE_DYN_HEADER:
-	if (!dynHeader.decode(input))
-	  return false;
-	litlenTree = dynHeader.buildLitLenTree();
-	distTree = dynHeader.buildDistTree();
-	mode = DECODE_HUFFMAN;
-	/* fall through */
+        if (!dynHeader.decode(input))
+          return false;
+        litlenTree = dynHeader.buildLitLenTree();
+        distTree = dynHeader.buildDistTree();
+        mode = DECODE_HUFFMAN;
+        /* fall through */
       case DECODE_HUFFMAN:
       case DECODE_HUFFMAN_LENBITS:
       case DECODE_HUFFMAN_DIST:
       case DECODE_HUFFMAN_DISTBITS:
-	return decodeHuffman();
+        return decodeHuffman();
       case FINISHED:
-	return false;
+        return false;
       default:
-	throw new IllegalStateException();
-      }	
+        throw new IllegalStateException();
+      } 
   }
 }

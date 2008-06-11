@@ -41,12 +41,12 @@ final class SelectionKeyImpl extends AbstractSelectionKey
     {
         this.channel  = ch;
         this.selector = sel;
-	socket = ch.getFD().getSocket();
+        socket = ch.getFD().getSocket();
     }
 
     public SelectableChannel channel()
     {
-	return (SelectableChannel)channel;
+        return (SelectableChannel)channel;
     }
 
     public int readyOps()
@@ -94,25 +94,25 @@ final class SelectionKeyImpl extends AbstractSelectionKey
 
     void nioReadyOps(int ops)
     {
-	readyOps = ops;
+        readyOps = ops;
     }
 
     int nioReadyOps()
     {
-	return readyOps;
+        return readyOps;
     }
 
     int nioInterestOps()
     {
-	return interestOps;
+        return interestOps;
     }
 
     SelectionKey nioInterestOps(int ops)
     {
-	if ((ops & ~channel().validOps()) != 0)
-	    throw new IllegalArgumentException();
-	channel.translateAndSetInterestOps(ops, this);
-	interestOps = ops;
-	return this;
+        if ((ops & ~channel().validOps()) != 0)
+            throw new IllegalArgumentException();
+        channel.translateAndSetInterestOps(ops, this);
+        interestOps = ops;
+        return this;
     }
 }

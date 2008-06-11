@@ -141,64 +141,64 @@ public class LockSupport {
      *        this operation has no effect
      */
     public static void unpark(Thread thread) {
-	if (thread != null)
-	{
-	    if (cmpxchgParkState(thread, PARK_STATE_PERMIT, PARK_STATE_RUNNING) == PARK_STATE_PARKED)
-	    {
-		if (cmpxchgParkState(thread, PARK_STATE_RUNNING, PARK_STATE_PARKED) == PARK_STATE_PARKED)
-		{
-		    // thread is currently blocking, so we have to release it
-		    Object lock = getParkLock(thread);
-		    synchronized (lock)
-		    {
-			lock.notify();
-		    }
-		}
-	    }
-	}
+        if (thread != null)
+        {
+            if (cmpxchgParkState(thread, PARK_STATE_PERMIT, PARK_STATE_RUNNING) == PARK_STATE_PARKED)
+            {
+                if (cmpxchgParkState(thread, PARK_STATE_RUNNING, PARK_STATE_PARKED) == PARK_STATE_PARKED)
+                {
+                    // thread is currently blocking, so we have to release it
+                    Object lock = getParkLock(thread);
+                    synchronized (lock)
+                    {
+                        lock.notify();
+                    }
+                }
+            }
+        }
     }
 
     private static void parkImpl(Thread currentThread, boolean deadline, long nanos)
     {
-	if (cmpxchgParkState(currentThread, PARK_STATE_RUNNING, PARK_STATE_PERMIT) == PARK_STATE_PERMIT)
-	{
-	    // we consumed a permit
-	    return;
-	}
+        if (cmpxchgParkState(currentThread, PARK_STATE_RUNNING, PARK_STATE_PERMIT) == PARK_STATE_PERMIT)
+        {
+            // we consumed a permit
+            return;
+        }
 
-	Object lock = getParkLock(currentThread);
-	if (lock == null)
-	{
-	    // we lazily allocate the lock object
-	    lock = new Object();
-	    setParkLock(currentThread, lock);
-	}
-	synchronized (lock)
-	{
-	    if (cmpxchgParkState(currentThread, PARK_STATE_PARKED, PARK_STATE_RUNNING) == PARK_STATE_PERMIT)
-	    {
-		// entering the parked state failed because we got a permit after the previous permit test
-		// release the permit and return
-		cmpxchgParkState(currentThread, PARK_STATE_RUNNING, PARK_STATE_PERMIT);
-		return;
-	    }
-	    if (deadline)
-	    {
-		nanos -= System.currentTimeMillis() * 1000000;
-	    }
-	    if (nanos >= 0)
-	    {
-		try
-		{
-		    lock.wait(nanos / 1000000, (int)(nanos % 1000000));
-		}
-		catch (InterruptedException _)
-		{
-		    currentThread.interrupt();
-		}
-	    }
-	    cmpxchgParkState(currentThread, PARK_STATE_RUNNING, PARK_STATE_PARKED);
-	}
+        Object lock = getParkLock(currentThread);
+        if (lock == null)
+        {
+            // we lazily allocate the lock object
+            lock = new Object();
+            setParkLock(currentThread, lock);
+        }
+        synchronized (lock)
+        {
+            if (cmpxchgParkState(currentThread, PARK_STATE_PARKED, PARK_STATE_RUNNING) == PARK_STATE_PERMIT)
+            {
+                // entering the parked state failed because we got a permit after the previous permit test
+                // release the permit and return
+                cmpxchgParkState(currentThread, PARK_STATE_RUNNING, PARK_STATE_PERMIT);
+                return;
+            }
+            if (deadline)
+            {
+                nanos -= System.currentTimeMillis() * 1000000;
+            }
+            if (nanos >= 0)
+            {
+                try
+                {
+                    lock.wait(nanos / 1000000, (int)(nanos % 1000000));
+                }
+                catch (InterruptedException _)
+                {
+                    currentThread.interrupt();
+                }
+            }
+            cmpxchgParkState(currentThread, PARK_STATE_RUNNING, PARK_STATE_PARKED);
+        }
     }
 
     /**
@@ -233,7 +233,7 @@ public class LockSupport {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
         parkImpl(t, false, 0L);
-	setBlocker(t, null);
+        setBlocker(t, null);
     }
 
     /**
@@ -271,9 +271,9 @@ public class LockSupport {
     public static void parkNanos(Object blocker, long nanos) {
         if (nanos > 0) {
             Thread t = Thread.currentThread();
-	    setBlocker(t, blocker);
+            setBlocker(t, blocker);
             parkImpl(t, false, nanos);
-	    setBlocker(t, null);
+            setBlocker(t, null);
         }
     }
 
@@ -312,9 +312,9 @@ public class LockSupport {
      */
     public static void parkUntil(Object blocker, long deadline) {
         Thread t = Thread.currentThread();
-	setBlocker(t, blocker);
+        setBlocker(t, blocker);
         parkImpl(t, true, deadline);
-	setBlocker(t, null);
+        setBlocker(t, null);
     }
 
     /**

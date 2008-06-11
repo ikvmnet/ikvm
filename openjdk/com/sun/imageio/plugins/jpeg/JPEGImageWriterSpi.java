@@ -113,6 +113,6 @@ public class JPEGImageWriterSpi extends ImageWriterSpi {
 
     public ImageWriter createWriterInstance(Object extension)
         throws IIOException {
-	throw new Error("Not implemented");
+        throw new Error("Not implemented");
     }
 }

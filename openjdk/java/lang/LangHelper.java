@@ -47,15 +47,15 @@ public class LangHelper
         if (!addedSystemPackages)
         {
             addedSystemPackages = true;
-	    String[] pkgs = AssemblyClassLoader.GetPackages(getBootstrapAssembly());
-	    String openJdkVersion = AccessController.doPrivileged(new GetPropertyAction("openjdk.version", "unknown"));
+            String[] pkgs = AssemblyClassLoader.GetPackages(getBootstrapAssembly());
+            String openJdkVersion = AccessController.doPrivileged(new GetPropertyAction("openjdk.version", "unknown"));
             for (int i = 0; i < pkgs.length; i++)
             {
                 pkgMap.put(pkgs[i],
                     new Package(pkgs[i],
-		    VMSystemProperties.SPEC_TITLE,                 // specTitle
-		    VMSystemProperties.SPEC_VERSION,               // specVersion
-		    VMSystemProperties.SPEC_VENDOR,                // specVendor
+                    VMSystemProperties.SPEC_TITLE,                 // specTitle
+                    VMSystemProperties.SPEC_VERSION,               // specVersion
+                    VMSystemProperties.SPEC_VENDOR,                // specVendor
                     "IKVM.NET OpenJDK",                            // implTitle
                     openJdkVersion,                                // implVersion
                     "Sun Microsystems, Inc. & others",             // implVendor
@@ -81,31 +81,31 @@ public class LangHelper
         synchronized (pkgs)
         {
             addSystemPackage(pkgs);
-	    return (Package[])pkgs.values().toArray(new Package[pkgs.size()]);
+            return (Package[])pkgs.values().toArray(new Package[pkgs.size()]);
 
         }
     }
 
     private static cli.System.Reflection.Assembly getBootstrapAssembly()
     {
-	return ikvm.runtime.Util.getInstanceTypeFromClass(Object.class).get_Assembly();
+        return ikvm.runtime.Util.getInstanceTypeFromClass(Object.class).get_Assembly();
     }
 
     static URL getBootstrapResource(String name)
     {
-	return AssemblyClassLoader.getResource(null, getBootstrapAssembly(), name);
+        return AssemblyClassLoader.getResource(null, getBootstrapAssembly(), name);
     }
 
     static Enumeration getBootstrapResources(String name) throws IOException
     {
-	return AssemblyClassLoader.getResources(null, getBootstrapAssembly(), name);
+        return AssemblyClassLoader.getResources(null, getBootstrapAssembly(), name);
     }
     
     public static sun.misc.JavaLangAccess getJavaLangAccess()
     {
-	return new sun.misc.JavaLangAccess() {
+        return new sun.misc.JavaLangAccess() {
             public sun.reflect.ConstantPool getConstantPool(Class klass) {
-		return null;
+                return null;
             }
             public void setAnnotationType(Class klass, AnnotationType type) {
                 klass.setAnnotationType(type);
@@ -114,7 +114,7 @@ public class LangHelper
                 return klass.getAnnotationType();
             }
             public <E extends Enum<E>>
-		    E[] getEnumConstantsShared(Class<E> klass) {
+                    E[] getEnumConstantsShared(Class<E> klass) {
                 return klass.getEnumConstantsShared();
             }
             public void blockedOn(Thread t, Interruptible b) {
