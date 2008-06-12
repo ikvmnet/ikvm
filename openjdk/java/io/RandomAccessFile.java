@@ -30,30 +30,29 @@ import sun.nio.ch.FileChannelImpl;
 
 
 /**
- * Instances of this class support both reading and writing to a 
- * random access file. A random access file behaves like a large 
- * array of bytes stored in the file system. There is a kind of cursor, 
- * or index into the implied array, called the <em>file pointer</em>; 
- * input operations read bytes starting at the file pointer and advance 
- * the file pointer past the bytes read. If the random access file is 
- * created in read/write mode, then output operations are also available; 
- * output operations write bytes starting at the file pointer and advance 
- * the file pointer past the bytes written. Output operations that write 
- * past the current end of the implied array cause the array to be 
- * extended. The file pointer can be read by the 
- * <code>getFilePointer</code> method and set by the <code>seek</code> 
- * method. 
+ * Instances of this class support both reading and writing to a
+ * random access file. A random access file behaves like a large
+ * array of bytes stored in the file system. There is a kind of cursor,
+ * or index into the implied array, called the <em>file pointer</em>;
+ * input operations read bytes starting at the file pointer and advance
+ * the file pointer past the bytes read. If the random access file is
+ * created in read/write mode, then output operations are also available;
+ * output operations write bytes starting at the file pointer and advance
+ * the file pointer past the bytes written. Output operations that write
+ * past the current end of the implied array cause the array to be
+ * extended. The file pointer can be read by the
+ * <code>getFilePointer</code> method and set by the <code>seek</code>
+ * method.
  * <p>
- * It is generally true of all the reading routines in this class that 
- * if end-of-file is reached before the desired number of bytes has been 
- * read, an <code>EOFException</code> (which is a kind of 
- * <code>IOException</code>) is thrown. If any byte cannot be read for 
- * any reason other than end-of-file, an <code>IOException</code> other 
- * than <code>EOFException</code> is thrown. In particular, an 
+ * It is generally true of all the reading routines in this class that
+ * if end-of-file is reached before the desired number of bytes has been
+ * read, an <code>EOFException</code> (which is a kind of
+ * <code>IOException</code>) is thrown. If any byte cannot be read for
+ * any reason other than end-of-file, an <code>IOException</code> other
+ * than <code>EOFException</code> is thrown. In particular, an
  * <code>IOException</code> may be thrown if the stream has been closed.
  *
  * @author  unascribed
- * @version 1.89, 05/05/07
  * @since   JDK1.0
  */
 
@@ -72,11 +71,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private static final int O_DSYNC =  8;
 
     /**
-     * Creates a random access file stream to read from, and optionally 
-     * to write to, a file with the specified name. A new 
-     * {@link FileDescriptor} object is created to represent the 
+     * Creates a random access file stream to read from, and optionally
+     * to write to, a file with the specified name. A new
+     * {@link FileDescriptor} object is created to represent the
      * connection to the file.
-     * 
+     *
      * <p> The <tt>mode</tt> argument specifies the access mode with which the
      * file is to be opened.  The permitted values and their meanings are as
      * specified for the <a
@@ -270,14 +269,14 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
                 channel = FileChannelImpl.open(fd, true, rw, this);
 
                 /*
-                 * FileDescriptor could be shared by FileInputStream or 
+                 * FileDescriptor could be shared by FileInputStream or
                  * FileOutputStream.
                  * Ensure that FD is GC'ed only when all the streams/channels
                  * are done using it.
                  * Increment fd's use count. Invoking the channel's close()
                  * method will result in decrementing the use count set for
-                 * the channel. 
-                 */ 
+                 * the channel.
+                 */
                 fd.incrementAndGetUseCount();
             }
             return channel;
@@ -311,18 +310,18 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     // 'Read' primitives
 
     /**
-     * Reads a byte of data from this file. The byte is returned as an 
-     * integer in the range 0 to 255 (<code>0x00-0x0ff</code>). This 
-     * method blocks if no input is yet available. 
+     * Reads a byte of data from this file. The byte is returned as an
+     * integer in the range 0 to 255 (<code>0x00-0x0ff</code>). This
+     * method blocks if no input is yet available.
      * <p>
-     * Although <code>RandomAccessFile</code> is not a subclass of 
-     * <code>InputStream</code>, this method behaves in exactly the same 
-     * way as the {@link InputStream#read()} method of 
+     * Although <code>RandomAccessFile</code> is not a subclass of
+     * <code>InputStream</code>, this method behaves in exactly the same
+     * way as the {@link InputStream#read()} method of
      * <code>InputStream</code>.
      *
      * @return     the next byte of data, or <code>-1</code> if the end of the
      *             file has been reached.
-     * @exception  IOException  if an I/O error occurs. Not thrown if  
+     * @exception  IOException  if an I/O error occurs. Not thrown if
      *                          end-of-file has been reached.
      */
     public int read() throws IOException
@@ -331,7 +330,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads a sub array as a sequence of bytes. 
+     * Reads a sub array as a sequence of bytes.
      * @param b the buffer into which the data is read.
      * @param off the start offset of the data.
      * @param len the number of bytes to read.
@@ -343,13 +342,13 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads up to <code>len</code> bytes of data from this file into an 
-     * array of bytes. This method blocks until at least one byte of input 
-     * is available. 
+     * Reads up to <code>len</code> bytes of data from this file into an
+     * array of bytes. This method blocks until at least one byte of input
+     * is available.
      * <p>
-     * Although <code>RandomAccessFile</code> is not a subclass of 
-     * <code>InputStream</code>, this method behaves in exactly the 
-     * same way as the {@link InputStream#read(byte[], int, int)} method of 
+     * Although <code>RandomAccessFile</code> is not a subclass of
+     * <code>InputStream</code>, this method behaves in exactly the
+     * same way as the {@link InputStream#read(byte[], int, int)} method of
      * <code>InputStream</code>.
      *
      * @param      b     the buffer into which the data is read.
@@ -363,8 +362,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * other than end of file, or if the random access file has been closed, or if
      * some other I/O error occurs.
      * @exception  NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException If <code>off</code> is negative, 
-     * <code>len</code> is negative, or <code>len</code> is greater than 
+     * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
+     * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>b.length - off</code>
      */
     public int read(byte b[], int off, int len) throws IOException {
@@ -372,13 +371,13 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads up to <code>b.length</code> bytes of data from this file 
-     * into an array of bytes. This method blocks until at least one byte 
-     * of input is available. 
+     * Reads up to <code>b.length</code> bytes of data from this file
+     * into an array of bytes. This method blocks until at least one byte
+     * of input is available.
      * <p>
-     * Although <code>RandomAccessFile</code> is not a subclass of 
-     * <code>InputStream</code>, this method behaves in exactly the 
-     * same way as the {@link InputStream#read(byte[])} method of 
+     * Although <code>RandomAccessFile</code> is not a subclass of
+     * <code>InputStream</code>, this method behaves in exactly the
+     * same way as the {@link InputStream#read(byte[])} method of
      * <code>InputStream</code>.
      *
      * @param      b   the buffer into which the data is read.
@@ -395,27 +394,27 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads <code>b.length</code> bytes from this file into the byte 
-     * array, starting at the current file pointer. This method reads 
-     * repeatedly from the file until the requested number of bytes are 
-     * read. This method blocks until the requested number of bytes are 
-     * read, the end of the stream is detected, or an exception is thrown. 
+     * Reads <code>b.length</code> bytes from this file into the byte
+     * array, starting at the current file pointer. This method reads
+     * repeatedly from the file until the requested number of bytes are
+     * read. This method blocks until the requested number of bytes are
+     * read, the end of the stream is detected, or an exception is thrown.
      *
      * @param      b   the buffer into which the data is read.
      * @exception  EOFException  if this file reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.       
+     * @exception  IOException   if an I/O error occurs.
      */
     public final void readFully(byte b[]) throws IOException {
         readFully(b, 0, b.length);
     }
 
     /**
-     * Reads exactly <code>len</code> bytes from this file into the byte 
-     * array, starting at the current file pointer. This method reads 
-     * repeatedly from the file until the requested number of bytes are 
-     * read. This method blocks until the requested number of bytes are 
-     * read, the end of the stream is detected, or an exception is thrown. 
+     * Reads exactly <code>len</code> bytes from this file into the byte
+     * array, starting at the current file pointer. This method reads
+     * repeatedly from the file until the requested number of bytes are
+     * read. This method blocks until the requested number of bytes are
+     * read, the end of the stream is detected, or an exception is thrown.
      *
      * @param      b     the buffer into which the data is read.
      * @param      off   the start offset of the data.
@@ -435,15 +434,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Attempts to skip over <code>n</code> bytes of input discarding the 
-     * skipped bytes. 
+     * Attempts to skip over <code>n</code> bytes of input discarding the
+     * skipped bytes.
      * <p>
-     * 
-     * This method may skip over some smaller number of bytes, possibly zero. 
-     * This may result from any of a number of conditions; reaching end of 
-     * file before <code>n</code> bytes have been skipped is only one 
-     * possibility. This method never throws an <code>EOFException</code>. 
-     * The actual number of bytes skipped is returned.  If <code>n</code> 
+     *
+     * This method may skip over some smaller number of bytes, possibly zero.
+     * This may result from any of a number of conditions; reaching end of
+     * file before <code>n</code> bytes have been skipped is only one
+     * possibility. This method never throws an <code>EOFException</code>.
+     * The actual number of bytes skipped is returned.  If <code>n</code>
      * is negative, no bytes are skipped.
      *
      * @param      n   the number of bytes to be skipped.
@@ -453,7 +452,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     public int skipBytes(int n) throws IOException {
         long pos;
         long len;
-        long newpos; 
+        long newpos;
 
         if (n <= 0) {
             return 0;
@@ -473,7 +472,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     // 'Write' primitives
 
     /**
-     * Writes the specified byte to this file. The write starts at 
+     * Writes the specified byte to this file. The write starts at
      * the current file pointer.
      *
      * @param      b   the <code>byte</code> to be written.
@@ -485,7 +484,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Writes a sub array as a sequence of bytes. 
+     * Writes a sub array as a sequence of bytes.
      * @param b the data to be written
 
      * @param off the start offset in the data
@@ -498,19 +497,19 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Writes <code>b.length</code> bytes from the specified byte array 
-     * to this file, starting at the current file pointer. 
+     * Writes <code>b.length</code> bytes from the specified byte array
+     * to this file, starting at the current file pointer.
      *
      * @param      b   the data.
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[]) throws IOException {
-        writeBytes(b, 0, b.length); 
+        writeBytes(b, 0, b.length);
     }
 
     /**
-     * Writes <code>len</code> bytes from the specified byte array 
-     * starting at offset <code>off</code> to this file. 
+     * Writes <code>len</code> bytes from the specified byte array
+     * starting at offset <code>off</code> to this file.
      *
      * @param      b     the data.
      * @param      off   the start offset in the data.
@@ -524,7 +523,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     // 'Random access' stuff
 
     /**
-     * Returns the current offset in this file. 
+     * Returns the current offset in this file.
      *
      * @return     the offset from the beginning of the file, in bytes,
      *             at which the next read or write occurs.
@@ -536,17 +535,17 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Sets the file-pointer offset, measured from the beginning of this 
-     * file, at which the next read or write occurs.  The offset may be 
-     * set beyond the end of the file. Setting the offset beyond the end 
-     * of the file does not change the file length.  The file length will 
-     * change only by writing after the offset has been set beyond the end 
-     * of the file. 
+     * Sets the file-pointer offset, measured from the beginning of this
+     * file, at which the next read or write occurs.  The offset may be
+     * set beyond the end of the file. Setting the offset beyond the end
+     * of the file does not change the file length.  The file length will
+     * change only by writing after the offset has been set beyond the end
+     * of the file.
      *
-     * @param      pos   the offset position, measured in bytes from the 
-     *                   beginning of the file, at which to set the file 
+     * @param      pos   the offset position, measured in bytes from the
+     *                   beginning of the file, at which to set the file
      *                   pointer.
-     * @exception  IOException  if <code>pos</code> is less than 
+     * @exception  IOException  if <code>pos</code> is less than
      *                          <code>0</code> or if an I/O error occurs.
      */
     public void seek(long pos) throws IOException
@@ -590,9 +589,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Closes this random access file stream and releases any system 
-     * resources associated with the stream. A closed random access 
-     * file cannot perform input or output operations and cannot be 
+     * Closes this random access file stream and releases any system
+     * resources associated with the stream. A closed random access
+     * file cannot perform input or output operations and cannot be
      * reopened.
      *
      * <p> If this file has an associated channel then the channel is closed
@@ -627,19 +626,19 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         fd.decrementAndGetUseCount();
         close0();
     }
-    
+
     //
     //  Some "reading/writing Java data types" methods stolen from
     //  DataInputStream and DataOutputStream.
     //
 
     /**
-     * Reads a <code>boolean</code> from this file. This method reads a 
-     * single byte from the file, starting at the current file pointer. 
-     * A value of <code>0</code> represents 
-     * <code>false</code>. Any other value represents <code>true</code>. 
-     * This method blocks until the byte is read, the end of the stream 
-     * is detected, or an exception is thrown. 
+     * Reads a <code>boolean</code> from this file. This method reads a
+     * single byte from the file, starting at the current file pointer.
+     * A value of <code>0</code> represents
+     * <code>false</code>. Any other value represents <code>true</code>.
+     * This method blocks until the byte is read, the end of the stream
+     * is detected, or an exception is thrown.
      *
      * @return     the <code>boolean</code> value read.
      * @exception  EOFException  if this file has reached the end.
@@ -653,17 +652,17 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads a signed eight-bit value from this file. This method reads a 
-     * byte from the file, starting from the current file pointer. 
-     * If the byte read is <code>b</code>, where 
-     * <code>0&nbsp;&lt;=&nbsp;b&nbsp;&lt;=&nbsp;255</code>, 
+     * Reads a signed eight-bit value from this file. This method reads a
+     * byte from the file, starting from the current file pointer.
+     * If the byte read is <code>b</code>, where
+     * <code>0&nbsp;&lt;=&nbsp;b&nbsp;&lt;=&nbsp;255</code>,
      * then the result is:
      * <blockquote><pre>
      *     (byte)(b)
      * </pre></blockquote>
      * <p>
-     * This method blocks until the byte is read, the end of the stream 
-     * is detected, or an exception is thrown. 
+     * This method blocks until the byte is read, the end of the stream
+     * is detected, or an exception is thrown.
      *
      * @return     the next byte of this file as a signed eight-bit
      *             <code>byte</code>.
@@ -678,12 +677,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads an unsigned eight-bit number from this file. This method reads 
-     * a byte from this file, starting at the current file pointer, 
-     * and returns that byte. 
+     * Reads an unsigned eight-bit number from this file. This method reads
+     * a byte from this file, starting at the current file pointer,
+     * and returns that byte.
      * <p>
-     * This method blocks until the byte is read, the end of the stream 
-     * is detected, or an exception is thrown. 
+     * This method blocks until the byte is read, the end of the stream
+     * is detected, or an exception is thrown.
      *
      * @return     the next byte of this file, interpreted as an unsigned
      *             eight-bit number.
@@ -698,18 +697,18 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads a signed 16-bit number from this file. The method reads two 
-     * bytes from this file, starting at the current file pointer. 
-     * If the two bytes read, in order, are 
-     * <code>b1</code> and <code>b2</code>, where each of the two values is 
-     * between <code>0</code> and <code>255</code>, inclusive, then the 
+     * Reads a signed 16-bit number from this file. The method reads two
+     * bytes from this file, starting at the current file pointer.
+     * If the two bytes read, in order, are
+     * <code>b1</code> and <code>b2</code>, where each of the two values is
+     * between <code>0</code> and <code>255</code>, inclusive, then the
      * result is equal to:
      * <blockquote><pre>
      *     (short)((b1 &lt;&lt; 8) | b2)
      * </pre></blockquote>
      * <p>
-     * This method blocks until the two bytes are read, the end of the 
-     * stream is detected, or an exception is thrown. 
+     * This method blocks until the two bytes are read, the end of the
+     * stream is detected, or an exception is thrown.
      *
      * @return     the next two bytes of this file, interpreted as a signed
      *             16-bit number.
@@ -726,18 +725,18 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads an unsigned 16-bit number from this file. This method reads 
-     * two bytes from the file, starting at the current file pointer. 
-     * If the bytes read, in order, are 
-     * <code>b1</code> and <code>b2</code>, where 
-     * <code>0&nbsp;&lt;=&nbsp;b1, b2&nbsp;&lt;=&nbsp;255</code>, 
+     * Reads an unsigned 16-bit number from this file. This method reads
+     * two bytes from the file, starting at the current file pointer.
+     * If the bytes read, in order, are
+     * <code>b1</code> and <code>b2</code>, where
+     * <code>0&nbsp;&lt;=&nbsp;b1, b2&nbsp;&lt;=&nbsp;255</code>,
      * then the result is equal to:
      * <blockquote><pre>
      *     (b1 &lt;&lt; 8) | b2
      * </pre></blockquote>
      * <p>
-     * This method blocks until the two bytes are read, the end of the 
-     * stream is detected, or an exception is thrown. 
+     * This method blocks until the two bytes are read, the end of the
+     * stream is detected, or an exception is thrown.
      *
      * @return     the next two bytes of this file, interpreted as an unsigned
      *             16-bit integer.
@@ -755,17 +754,17 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Reads a character from this file. This method reads two
-     * bytes from the file, starting at the current file pointer. 
-     * If the bytes read, in order, are 
-     * <code>b1</code> and <code>b2</code>, where 
-     * <code>0&nbsp;&lt;=&nbsp;b1,&nbsp;b2&nbsp;&lt;=&nbsp;255</code>, 
+     * bytes from the file, starting at the current file pointer.
+     * If the bytes read, in order, are
+     * <code>b1</code> and <code>b2</code>, where
+     * <code>0&nbsp;&lt;=&nbsp;b1,&nbsp;b2&nbsp;&lt;=&nbsp;255</code>,
      * then the result is equal to:
      * <blockquote><pre>
      *     (char)((b1 &lt;&lt; 8) | b2)
      * </pre></blockquote>
      * <p>
-     * This method blocks until the two bytes are read, the end of the 
-     * stream is detected, or an exception is thrown. 
+     * This method blocks until the two bytes are read, the end of the
+     * stream is detected, or an exception is thrown.
      *
      * @return     the next two bytes of this file, interpreted as a
      *                  <code>char</code>.
@@ -782,18 +781,18 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads a signed 32-bit integer from this file. This method reads 4 
-     * bytes from the file, starting at the current file pointer. 
+     * Reads a signed 32-bit integer from this file. This method reads 4
+     * bytes from the file, starting at the current file pointer.
      * If the bytes read, in order, are <code>b1</code>,
-     * <code>b2</code>, <code>b3</code>, and <code>b4</code>, where 
-     * <code>0&nbsp;&lt;=&nbsp;b1, b2, b3, b4&nbsp;&lt;=&nbsp;255</code>, 
+     * <code>b2</code>, <code>b3</code>, and <code>b4</code>, where
+     * <code>0&nbsp;&lt;=&nbsp;b1, b2, b3, b4&nbsp;&lt;=&nbsp;255</code>,
      * then the result is equal to:
      * <blockquote><pre>
      *     (b1 &lt;&lt; 24) | (b2 &lt;&lt; 16) + (b3 &lt;&lt; 8) + b4
      * </pre></blockquote>
      * <p>
-     * This method blocks until the four bytes are read, the end of the 
-     * stream is detected, or an exception is thrown. 
+     * This method blocks until the four bytes are read, the end of the
+     * stream is detected, or an exception is thrown.
      *
      * @return     the next four bytes of this file, interpreted as an
      *             <code>int</code>.
@@ -813,10 +812,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Reads a signed 64-bit integer from this file. This method reads eight
-     * bytes from the file, starting at the current file pointer. 
-     * If the bytes read, in order, are 
-     * <code>b1</code>, <code>b2</code>, <code>b3</code>, 
-     * <code>b4</code>, <code>b5</code>, <code>b6</code>, 
+     * bytes from the file, starting at the current file pointer.
+     * If the bytes read, in order, are
+     * <code>b1</code>, <code>b2</code>, <code>b3</code>,
+     * <code>b4</code>, <code>b5</code>, <code>b6</code>,
      * <code>b7</code>, and <code>b8,</code> where:
      * <blockquote><pre>
      *     0 &lt;= b1, b2, b3, b4, b5, b6, b7, b8 &lt;=255,
@@ -830,8 +829,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *     + ((long)b7 &lt;&lt; 8) + b8
      * </pre></blockquote>
      * <p>
-     * This method blocks until the eight bytes are read, the end of the 
-     * stream is detected, or an exception is thrown. 
+     * This method blocks until the eight bytes are read, the end of the
+     * stream is detected, or an exception is thrown.
      *
      * @return     the next eight bytes of this file, interpreted as a
      *             <code>long</code>.
@@ -844,15 +843,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads a <code>float</code> from this file. This method reads an 
-     * <code>int</code> value, starting at the current file pointer, 
-     * as if by the <code>readInt</code> method 
-     * and then converts that <code>int</code> to a <code>float</code> 
-     * using the <code>intBitsToFloat</code> method in class 
-     * <code>Float</code>. 
+     * Reads a <code>float</code> from this file. This method reads an
+     * <code>int</code> value, starting at the current file pointer,
+     * as if by the <code>readInt</code> method
+     * and then converts that <code>int</code> to a <code>float</code>
+     * using the <code>intBitsToFloat</code> method in class
+     * <code>Float</code>.
      * <p>
-     * This method blocks until the four bytes are read, the end of the 
-     * stream is detected, or an exception is thrown. 
+     * This method blocks until the four bytes are read, the end of the
+     * stream is detected, or an exception is thrown.
      *
      * @return     the next four bytes of this file, interpreted as a
      *             <code>float</code>.
@@ -867,15 +866,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads a <code>double</code> from this file. This method reads a 
-     * <code>long</code> value, starting at the current file pointer, 
-     * as if by the <code>readLong</code> method 
-     * and then converts that <code>long</code> to a <code>double</code> 
-     * using the <code>longBitsToDouble</code> method in 
+     * Reads a <code>double</code> from this file. This method reads a
+     * <code>long</code> value, starting at the current file pointer,
+     * as if by the <code>readLong</code> method
+     * and then converts that <code>long</code> to a <code>double</code>
+     * using the <code>longBitsToDouble</code> method in
      * class <code>Double</code>.
      * <p>
-     * This method blocks until the eight bytes are read, the end of the 
-     * stream is detected, or an exception is thrown. 
+     * This method blocks until the eight bytes are read, the end of the
+     * stream is detected, or an exception is thrown.
      *
      * @return     the next eight bytes of this file, interpreted as a
      *             <code>double</code>.
@@ -891,7 +890,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Reads the next line of text from this file.  This method successively
-     * reads bytes from the file, starting at the current file pointer, 
+     * reads bytes from the file, starting at the current file pointer,
      * until it reaches a line terminator or the end
      * of the file.  Each byte is converted into a character by taking the
      * byte's value for the lower eight bits of the character and setting the
@@ -944,27 +943,27 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Reads in a string from this file. The string has been encoded 
+     * Reads in a string from this file. The string has been encoded
      * using a
      * <a href="DataInput.html#modified-utf-8">modified UTF-8</a>
-     * format. 
+     * format.
      * <p>
-     * The first two bytes are read, starting from the current file 
-     * pointer, as if by 
-     * <code>readUnsignedShort</code>. This value gives the number of 
+     * The first two bytes are read, starting from the current file
+     * pointer, as if by
+     * <code>readUnsignedShort</code>. This value gives the number of
      * following bytes that are in the encoded string, not
-     * the length of the resulting string. The following bytes are then 
-     * interpreted as bytes encoding characters in the modified UTF-8 format 
-     * and are converted into characters. 
+     * the length of the resulting string. The following bytes are then
+     * interpreted as bytes encoding characters in the modified UTF-8 format
+     * and are converted into characters.
      * <p>
-     * This method blocks until all the bytes are read, the end of the 
-     * stream is detected, or an exception is thrown. 
+     * This method blocks until all the bytes are read, the end of the
+     * stream is detected, or an exception is thrown.
      *
      * @return     a Unicode string.
      * @exception  EOFException            if this file reaches the end before
      *               reading all the bytes.
      * @exception  IOException             if an I/O error occurs.
-     * @exception  UTFDataFormatException  if the bytes do not represent 
+     * @exception  UTFDataFormatException  if the bytes do not represent
      *               valid modified UTF-8 encoding of a Unicode string.
      * @see        java.io.RandomAccessFile#readUnsignedShort()
      */
@@ -973,10 +972,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Writes a <code>boolean</code> to the file as a one-byte value. The 
-     * value <code>true</code> is written out as the value 
-     * <code>(byte)1</code>; the value <code>false</code> is written out 
-     * as the value <code>(byte)0</code>. The write starts at 
+     * Writes a <code>boolean</code> to the file as a one-byte value. The
+     * value <code>true</code> is written out as the value
+     * <code>(byte)1</code>; the value <code>false</code> is written out
+     * as the value <code>(byte)0</code>. The write starts at
      * the current position of the file pointer.
      *
      * @param      v   a <code>boolean</code> value to be written.
@@ -988,7 +987,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Writes a <code>byte</code> to the file as a one-byte value. The 
+     * Writes a <code>byte</code> to the file as a one-byte value. The
      * write starts at the current position of the file pointer.
      *
      * @param      v   a <code>byte</code> value to be written.
@@ -1000,7 +999,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Writes a <code>short</code> to the file as two bytes, high byte first. 
+     * Writes a <code>short</code> to the file as two bytes, high byte first.
      * The write starts at the current position of the file pointer.
      *
      * @param      v   a <code>short</code> to be written.
@@ -1014,7 +1013,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Writes a <code>char</code> to the file as a two-byte value, high
-     * byte first. The write starts at the current position of the 
+     * byte first. The write starts at the current position of the
      * file pointer.
      *
      * @param      v   a <code>char</code> value to be written.
@@ -1027,7 +1026,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Writes an <code>int</code> to the file as four bytes, high byte first. 
+     * Writes an <code>int</code> to the file as four bytes, high byte first.
      * The write starts at the current position of the file pointer.
      *
      * @param      v   an <code>int</code> to be written.
@@ -1042,7 +1041,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Writes a <code>long</code> to the file as eight bytes, high byte first. 
+     * Writes a <code>long</code> to the file as eight bytes, high byte first.
      * The write starts at the current position of the file pointer.
      *
      * @param      v   a <code>long</code> to be written.
@@ -1061,10 +1060,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Converts the float argument to an <code>int</code> using the 
-     * <code>floatToIntBits</code> method in class <code>Float</code>, 
-     * and then writes that <code>int</code> value to the file as a 
-     * four-byte quantity, high byte first. The write starts at the 
+     * Converts the float argument to an <code>int</code> using the
+     * <code>floatToIntBits</code> method in class <code>Float</code>,
+     * and then writes that <code>int</code> value to the file as a
+     * four-byte quantity, high byte first. The write starts at the
      * current position of the file pointer.
      *
      * @param      v   a <code>float</code> value to be written.
@@ -1076,10 +1075,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Converts the double argument to a <code>long</code> using the 
-     * <code>doubleToLongBits</code> method in class <code>Double</code>, 
-     * and then writes that <code>long</code> value to the file as an 
-     * eight-byte quantity, high byte first. The write starts at the current 
+     * Converts the double argument to a <code>long</code> using the
+     * <code>doubleToLongBits</code> method in class <code>Double</code>,
+     * and then writes that <code>long</code> value to the file as an
+     * eight-byte quantity, high byte first. The write starts at the current
      * position of the file pointer.
      *
      * @param      v   a <code>double</code> value to be written.
@@ -1091,9 +1090,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Writes the string to the file as a sequence of bytes. Each 
-     * character in the string is written out, in sequence, by discarding 
-     * its high eight bits. The write starts at the current position of 
+     * Writes the string to the file as a sequence of bytes. Each
+     * character in the string is written out, in sequence, by discarding
+     * its high eight bits. The write starts at the current position of
      * the file pointer.
      *
      * @param      s   a string of bytes to be written.
@@ -1107,9 +1106,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Writes a string to the file as a sequence of characters. Each 
-     * character is written to the data output stream as if by the 
-     * <code>writeChar</code> method. The write starts at the current 
+     * Writes a string to the file as a sequence of characters. Each
+     * character is written to the data output stream as if by the
+     * <code>writeChar</code> method. The write starts at the current
      * position of the file pointer.
      *
      * @param      s   a <code>String</code> value to be written.
@@ -1132,15 +1131,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     /**
      * Writes a string to the file using
      * <a href="DataInput.html#modified-utf-8">modified UTF-8</a>
-     * encoding in a machine-independent manner. 
+     * encoding in a machine-independent manner.
      * <p>
-     * First, two bytes are written to the file, starting at the 
-     * current file pointer, as if by the 
-     * <code>writeShort</code> method giving the number of bytes to 
-     * follow. This value is the number of bytes actually written out, 
-     * not the length of the string. Following the length, each character 
-     * of the string is output, in sequence, using the modified UTF-8 encoding 
-     * for each character. 
+     * First, two bytes are written to the file, starting at the
+     * current file pointer, as if by the
+     * <code>writeShort</code> method giving the number of bytes to
+     * follow. This value is the number of bytes actually written out,
+     * not the length of the string. Following the length, each character
+     * of the string is output, in sequence, using the modified UTF-8 encoding
+     * for each character.
      *
      * @param      str   a string to be written.
      * @exception  IOException  if an I/O error occurs.

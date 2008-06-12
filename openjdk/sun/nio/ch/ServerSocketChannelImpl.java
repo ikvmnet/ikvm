@@ -65,7 +65,7 @@ class ServerSocketChannelImpl
     private static final int ST_INUSE = 0;
     private static final int ST_KILLED = 1;
     private int state = ST_UNINITIALIZED;
-    
+
     // Binding
     private SocketAddress localAddress = null; // null => unbound
 
@@ -80,11 +80,11 @@ class ServerSocketChannelImpl
 
     public ServerSocketChannelImpl(SelectorProvider sp) throws IOException {
         super(sp);
-        this.fd = Net.serverSocket(true);
+        this.fd =  Net.serverSocket(true);
         this.state = ST_INUSE;
     }
 
-    public ServerSocketChannelImpl(SelectorProvider sp, FileDescriptor fd) 
+    public ServerSocketChannelImpl(SelectorProvider sp, FileDescriptor fd)
         throws IOException
     {
         super(sp);

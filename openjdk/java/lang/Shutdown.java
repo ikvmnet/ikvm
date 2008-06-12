@@ -35,7 +35,6 @@ import cli.System.EventHandler;
  * governing the virtual-machine shutdown sequence.
  *
  * @author   Mark Reinhold
- * @version  1.19, 07/05/05
  * @since    1.3
  */
 @ikvm.lang.Internal
@@ -142,11 +141,11 @@ public final class Shutdown {
         for (Runnable hook : hooks) {
             try {
                 hook.run();
-            } catch(Throwable t) { 
+            } catch(Throwable t) {
                 if (t instanceof ThreadDeath) {
                     ThreadDeath td = (ThreadDeath)t;
                     throw td;
-                } 
+                }
             }
         }
     }

@@ -70,7 +70,7 @@ public class FileChannelImpl
     private static Field isAMappedBufferField;
 
     // File descriptor
-    private FileDescriptor fd;   
+    private FileDescriptor fd;
 
     // File access mode (immutable)
     private boolean writable;
@@ -81,7 +81,7 @@ public class FileChannelImpl
     private Object parent;
 
     // Lock for operations involving position and size
-    private Object positionLock = new Object();   
+    private Object positionLock = new Object();
 
     private FileChannelImpl(FileDescriptor fd, boolean readable,
                             boolean writable, Object parent, boolean append)
@@ -90,7 +90,7 @@ public class FileChannelImpl
         this.readable = readable;
         this.writable = writable;
         this.parent = parent;
-        this.appending = append;            
+        this.appending = append;
     }
 
     // Invoked by getChannel() methods
@@ -122,7 +122,7 @@ public class FileChannelImpl
 
         // Invalidate and release any locks that we still hold
         if (fileLockTable != null) {
-            fileLockTable.removeAll( new FileLockTable.Releaser() { 
+            fileLockTable.removeAll( new FileLockTable.Releaser() {
                 public void release(FileLock fl) throws IOException {
                     ((FileLockImpl)fl).invalidate();
                     release0(fd, fl.position(), fl.size());
@@ -250,7 +250,7 @@ public class FileChannelImpl
         return write0(Util.subsequence(srcs, offset, length));
     }
 
-
+
     // -- Other operations --
 
     public long position() throws IOException {
@@ -332,7 +332,7 @@ public class FileChannelImpl
                 do {
                     p = position0(fd, -1);
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
-                if (!isOpen()) 
+                if (!isOpen())
                     return null;
                 assert p >= 0;
 
@@ -525,7 +525,7 @@ public class FileChannelImpl
         }
     }
 
-
+
     // -- Memory-mapped buffers --
 
     private static class Unmapper
@@ -610,7 +610,7 @@ public class FileChannelImpl
 
             int pagePosition = (int)(position % allocationGranularity);
             long mapPosition = position - pagePosition;
-            long mapSize = size + pagePosition;  
+            long mapSize = size + pagePosition;
             try {
                 // If no exception was thrown from map0, the address is valid
                 addr = map0(imode, mapPosition, mapSize);
@@ -620,7 +620,7 @@ public class FileChannelImpl
                 System.gc();
                 try {
                     Thread.sleep(100);
-                } catch (InterruptedException y) { 
+                } catch (InterruptedException y) {
                     Thread.currentThread().interrupt();
                 }
                 try {
@@ -628,7 +628,7 @@ public class FileChannelImpl
                 } catch (OutOfMemoryError y) {
                     // After a second OOME, fail
                     throw new IOException("Map failed", y);
-                } 
+                }
             }
 
             assert (IOStatus.checkAll(addr));
@@ -644,27 +644,27 @@ public class FileChannelImpl
         }
     }
 
-
+
     // -- Locks --
 
     public static final int NO_LOCK = -1;       // Failed to lock
     public static final int LOCKED = 0;         // Obtained requested lock
     public static final int RET_EX_LOCK = 1;    // Obtained exclusive lock
     public static final int INTERRUPTED = 2;    // Request interrupted
-    
+
     // keeps track of locks on this file
     private volatile FileLockTable fileLockTable;
-    
+
     // indicates if file locks are maintained system-wide (as per spec)
     private static boolean isSharedFileLockTable;
 
-    // indicates if the disableSystemWideOverlappingFileLockCheck property 
+    // indicates if the disableSystemWideOverlappingFileLockCheck property
     // has been checked
-    private static volatile boolean propertyChecked; 
-    
+    private static volatile boolean propertyChecked;
+
     // The lock list in J2SE 1.4/5.0 was local to each FileChannel instance so
-    // the overlap check wasn't system wide when there were multiple channels to 
-    // the same file. This property is used to get 1.4/5.0 behavior if desired.         
+    // the overlap check wasn't system wide when there were multiple channels to
+    // the same file. This property is used to get 1.4/5.0 behavior if desired.
     private static boolean isSharedFileLockTable() {
         if (!propertyChecked) {
             synchronized (FileChannelImpl.class) {
@@ -676,15 +676,15 @@ public class FileChannelImpl
                     propertyChecked = true;
                 }
             }
-        }        
-        return isSharedFileLockTable;        
+        }
+        return isSharedFileLockTable;
     }
-                      
+
     private FileLockTable fileLockTable() {
         if (fileLockTable == null) {
             synchronized (this) {
-                if (fileLockTable == null) {       
-                    fileLockTable = isSharedFileLockTable() ? 
+                if (fileLockTable == null) {
+                    fileLockTable = isSharedFileLockTable() ?
                         new SharedFileLockTable(this) : new SimpleFileLockTable();
                 }
             }
@@ -700,7 +700,7 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         if (!shared && !writable)
             throw new NonWritableChannelException();
-        FileLockImpl fli = new FileLockImpl(this, position, size, shared);        
+        FileLockImpl fli = new FileLockImpl(this, position, size, shared);
         FileLockTable flt = fileLockTable();
         flt.add(fli);
         boolean i = true;
@@ -765,14 +765,14 @@ public class FileChannelImpl
         assert fileLockTable != null;
         fileLockTable.remove(fli);
     }
-      
-
+
+
     // -- File lock support  --
-        
+
     /**
      * A table of FileLocks.
      */
-    private interface FileLockTable {   
+    private interface FileLockTable {
         /**
          * Adds a file lock to the table.
          *
@@ -780,20 +780,20 @@ public class FileChannelImpl
          *         with an existing file lock in the table
          */
         void add(FileLock fl) throws OverlappingFileLockException;
-        
+
         /**
          * Remove an existing file lock from the table.
          */
         void remove(FileLock fl);
-        
+
         /**
          * An implementation of this interface releases a given file lock.
          * Used with removeAll.
          */
-        interface Releaser { 
-            void release(FileLock fl) throws IOException; 
-        } 
-        
+        interface Releaser {
+            void release(FileLock fl) throws IOException;
+        }
+
         /**
          * Removes all file locks from the table.
          * <p>
@@ -803,26 +803,26 @@ public class FileChannelImpl
          * @throws IOException if the release method throws IOException
          */
         void removeAll(Releaser r) throws IOException;
-                        
+
         /**
          * Replaces an existing file lock in the table.
-         */         
-        void replace(FileLock fl1, FileLock fl2);        
+         */
+        void replace(FileLock fl1, FileLock fl2);
     }
-        
+
     /**
      * A simple file lock table that maintains a list of FileLocks obtained by a
      * FileChannel. Use to get 1.4/5.0 behaviour.
      */
     private static class SimpleFileLockTable implements FileLockTable {
         // synchronize on list for access
-        private List<FileLock> lockList = new ArrayList<FileLock>(2);       
-                        
-        public SimpleFileLockTable() {          
+        private List<FileLock> lockList = new ArrayList<FileLock>(2);
+
+        public SimpleFileLockTable() {
         }
-        
+
         private void checkList(long position, long size)
-            throws OverlappingFileLockException 
+            throws OverlappingFileLockException
         {
             assert Thread.holdsLock(lockList);
             for (FileLock fl: lockList) {
@@ -831,20 +831,20 @@ public class FileChannelImpl
                 }
             }
         }
-  
+
         public void add(FileLock fl) throws OverlappingFileLockException {
-            synchronized (lockList) {  
+            synchronized (lockList) {
                 checkList(fl.position(), fl.size());
                 lockList.add(fl);
             }
         }
-        
+
         public void remove(FileLock fl) {
             synchronized (lockList) {
                 lockList.remove(fl);
             }
         }
-        
+
         public void removeAll(Releaser releaser) throws IOException {
             synchronized(lockList) {
                 Iterator<FileLock> i = lockList.iterator();
@@ -855,146 +855,146 @@ public class FileChannelImpl
                 }
             }
         }
-        
+
         public void replace(FileLock fl1, FileLock fl2) {
             synchronized (lockList) {
                 lockList.remove(fl1);
                 lockList.add(fl2);
             }
-        }                      
+        }
     }
-        
+
     /**
-     * A weak reference to a FileLock. 
+     * A weak reference to a FileLock.
      * <p>
-     * SharedFileLockTable uses a list of file lock references to avoid keeping the 
+     * SharedFileLockTable uses a list of file lock references to avoid keeping the
      * FileLock (and FileChannel) alive.
-     */    
+     */
     private static class FileLockReference extends WeakReference<FileLock> {
-        private FileKey fileKey; 
-        
+        private FileKey fileKey;
+
         FileLockReference(FileLock referent,
                           ReferenceQueue queue,
-                          FileKey key) {                           
+                          FileKey key) {
             super(referent, queue);
             this.fileKey = key;
         }
-                
+
         private FileKey fileKey() {
             return fileKey;
-        }       
+        }
     }
-        
+
     /**
-     * A file lock table that is over a system-wide map of all file locks.   
+     * A file lock table that is over a system-wide map of all file locks.
      */
-    private static class SharedFileLockTable implements FileLockTable {              
+    private static class SharedFileLockTable implements FileLockTable {
         // The system-wide map is a ConcurrentHashMap that is keyed on the FileKey.
         // The map value is a list of file locks represented by FileLockReferences.
-        // All access to the list must be synchronized on the list.         
-        private static ConcurrentHashMap<FileKey, ArrayList<FileLockReference>> lockMap = 
+        // All access to the list must be synchronized on the list.
+        private static ConcurrentHashMap<FileKey, ArrayList<FileLockReference>> lockMap =
             new ConcurrentHashMap<FileKey, ArrayList<FileLockReference>>();
-        
+
         // reference queue for cleared refs
         private static ReferenceQueue queue = new ReferenceQueue();
-            
+
         // the enclosing file channel
-        private FileChannelImpl fci;            
+        private FileChannelImpl fci;
 
         // File key for the file that this channel is connected to
-        private FileKey fileKey;    
-                
+        private FileKey fileKey;
+
         public SharedFileLockTable(FileChannelImpl fci) {
             this.fci = fci;
             this.fileKey = FileKey.create(fci.fd);
-        }        
-                
-        public void add(FileLock fl) throws OverlappingFileLockException {                        
+        }
+
+        public void add(FileLock fl) throws OverlappingFileLockException {
             ArrayList<FileLockReference> list = lockMap.get(fileKey);
-            
+
             for (;;) {
-                
-                // The key isn't in the map so we try to create it atomically                
+
+                // The key isn't in the map so we try to create it atomically
                 if (list == null) {
                     list = new ArrayList<FileLockReference>(2);
                     ArrayList<FileLockReference> prev;
-                    synchronized (list) {                                        
+                    synchronized (list) {
                         prev = lockMap.putIfAbsent(fileKey, list);
-                        if (prev == null) {   
+                        if (prev == null) {
                             // we successfully created the key so we add the file lock
-                            list.add(new FileLockReference(fl, queue, fileKey));                                                       
+                            list.add(new FileLockReference(fl, queue, fileKey));
                             break;
-                        }                            
+                        }
                     }
                     // someone else got there first
-                    list = prev; 
-                } 
-                
-                // There is already a key. It is possible that some other thread  
-                // is removing it so we re-fetch the value from the map. If it 
-                // hasn't changed then we check the list for overlapping locks 
-                // and add the new lock to the list.                 
+                    list = prev;
+                }
+
+                // There is already a key. It is possible that some other thread
+                // is removing it so we re-fetch the value from the map. If it
+                // hasn't changed then we check the list for overlapping locks
+                // and add the new lock to the list.
                 synchronized (list) {
                     ArrayList<FileLockReference> current = lockMap.get(fileKey);
                     if (list == current) {
                         checkList(list, fl.position(), fl.size());
-                        list.add(new FileLockReference(fl, queue, fileKey));                                                
+                        list.add(new FileLockReference(fl, queue, fileKey));
                         break;
                     }
                     list = current;
                 }
-                
-            } 
-            
-            // process any stale entries pending in the reference queue 
+
+            }
+
+            // process any stale entries pending in the reference queue
             removeStaleEntries();
         }
-        
+
         private void removeKeyIfEmpty(FileKey fk, ArrayList<FileLockReference> list) {
             assert Thread.holdsLock(list);
             assert lockMap.get(fk) == list;
-            if (list.isEmpty()) {                     
-                lockMap.remove(fk);                   
-            }             
+            if (list.isEmpty()) {
+                lockMap.remove(fk);
+            }
         }
-                
+
         public void remove(FileLock fl) {
             assert fl != null;
-            
+
             // the lock must exist so the list of locks must be present
-            ArrayList<FileLockReference> list = lockMap.get(fileKey);            
-            assert list != null;                                              
-                        
-            synchronized (list) {                     
+            ArrayList<FileLockReference> list = lockMap.get(fileKey);
+            assert list != null;
+
+            synchronized (list) {
                 int index = 0;
                 while (index < list.size()) {
                     FileLockReference ref = list.get(index);
                     FileLock lock = ref.get();
-                    if (lock == fl) {                        
+                    if (lock == fl) {
                         assert (lock != null) && (lock.channel() == fci);
                         ref.clear();
                         list.remove(index);
                         break;
                     }
                     index++;
-                }         
-            }            
+                }
+            }
         }
-        
-        public void removeAll(Releaser releaser) throws IOException {    
+
+        public void removeAll(Releaser releaser) throws IOException {
             ArrayList<FileLockReference> list = lockMap.get(fileKey);
-            if (list != null) {                                             
-                synchronized (list) {                                
+            if (list != null) {
+                synchronized (list) {
                     int index = 0;
                     while (index < list.size()) {
                         FileLockReference ref = list.get(index);
                         FileLock lock = ref.get();
-                        
+
                         // remove locks obtained by this channel
-                        if (lock != null && lock.channel() == fci) {                                                       
+                        if (lock != null && lock.channel() == fci) {
                             // invoke the releaser to invalidate/release the lock
                             releaser.release(lock);
-                            
+
                             // remove the lock from the list
                             ref.clear();
                             list.remove(index);
@@ -1002,59 +1002,59 @@ public class FileChannelImpl
                             index++;
                         }
                     }
-                    
+
                     // once the lock list is empty we remove it from the map
-                    removeKeyIfEmpty(fileKey, list);         
-                }    
+                    removeKeyIfEmpty(fileKey, list);
+                }
             }
         }
-        
-        public void replace(FileLock fromLock, FileLock toLock) {           
+
+        public void replace(FileLock fromLock, FileLock toLock) {
             // the lock must exist so there must be a list
-            ArrayList<FileLockReference> list = lockMap.get(fileKey);            
-            assert list != null;                         
-            
-            synchronized (list) {               
+            ArrayList<FileLockReference> list = lockMap.get(fileKey);
+            assert list != null;
+
+            synchronized (list) {
                 for (int index=0; index<list.size(); index++) {
                     FileLockReference ref = list.get(index);
                     FileLock lock = ref.get();
-                    if (lock == fromLock) {   
+                    if (lock == fromLock) {
                         ref.clear();
                         list.set(index, new FileLockReference(toLock, queue, fileKey));
                         break;
                     }
                 }
             }
-        }   
-                     
-        // Check for overlapping file locks         
-        private void checkList(List<FileLockReference> list, long position, long size) 
+        }
+
+        // Check for overlapping file locks
+        private void checkList(List<FileLockReference> list, long position, long size)
             throws OverlappingFileLockException
         {
             assert Thread.holdsLock(list);
-            for (FileLockReference ref: list) {                
+            for (FileLockReference ref: list) {
                 FileLock fl = ref.get();
-                if (fl != null && fl.overlaps(position, size)) 
+                if (fl != null && fl.overlaps(position, size))
                     throw new OverlappingFileLockException();
             }
-        }                          
-        
-        // Process the reference queue        
+        }
+
+        // Process the reference queue
         private void removeStaleEntries() {
             FileLockReference ref;
-            while ((ref = (FileLockReference)queue.poll()) != null) {                
+            while ((ref = (FileLockReference)queue.poll()) != null) {
                 FileKey fk = ref.fileKey();
                 ArrayList<FileLockReference> list = lockMap.get(fk);
                 if (list != null) {
                     synchronized (list) {
-                        list.remove(ref);                              
-                        removeKeyIfEmpty(fk, list); 
+                        list.remove(ref);
+                        removeKeyIfEmpty(fk, list);
                     }
                 }
             }
-        }               
+        }
     }
- 
+
     // -- Native methods --
 
     private int readImpl(ByteBuffer dst) throws IOException

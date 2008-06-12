@@ -38,16 +38,16 @@ import java.lang.annotation.AnnotationFormatError;
 import java.lang.reflect.Modifier;
 
 /**
- * <code>Constructor</code> provides information about, and access to, a single
+ * {@code Constructor} provides information about, and access to, a single
  * constructor for a class.
  *
- * <p><code>Constructor</code> permits widening conversions to occur when matching the
+ * <p>{@code Constructor} permits widening conversions to occur when matching the
  * actual parameters to newInstance() with the underlying
  * constructor's formal parameters, but throws an
- * <code>IllegalArgumentException</code> if a narrowing conversion would occur.
+ * {@code IllegalArgumentException} if a narrowing conversion would occur.
  *
  * @param <T> the class in which the constructor is declared
- * 
+ *
  * @see Member
  * @see java.lang.Class
  * @see java.lang.Class#getConstructors()
@@ -58,8 +58,8 @@ import java.lang.reflect.Modifier;
  * @author      Nakul Saraiya
  */
 public final
-    class Constructor<T> extends AccessibleObject implements 
-                                                    GenericDeclaration, 
+    class Constructor<T> extends AccessibleObject implements
+                                                    GenericDeclaration,
                                                     Member {
 
     private Class<T>            clazz;
@@ -81,14 +81,14 @@ public final
     private volatile Class securityCheckCache;
 
     // Modifiers that can be applied to a constructor in source code
-    private static final int LANGUAGE_MODIFIERS = 
+    private static final int LANGUAGE_MODIFIERS =
         Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
 
     // Generics infrastructure
     // Accessor for factory
     private GenericsFactory getFactory() {
         // create scope and factory
-        return CoreReflectionFactory.make(this, ConstructorScope.make(this)); 
+        return CoreReflectionFactory.make(this, ConstructorScope.make(this));
     }
 
     // Accessor for generic info repository
@@ -96,8 +96,8 @@ public final
         // lazily initialize repository if necessary
         if (genericInfo == null) {
             // create and cache generic info repository
-            genericInfo = 
-                ConstructorRepository.make(getSignature(), 
+            genericInfo =
+                ConstructorRepository.make(getSignature(),
                                            getFactory());
         }
         return genericInfo; //return cached repository
@@ -157,8 +157,8 @@ public final
     }
 
     /**
-     * Returns the <code>Class</code> object representing the class that declares
-     * the constructor represented by this <code>Constructor</code> object.
+     * Returns the {@code Class} object representing the class that declares
+     * the constructor represented by this {@code Constructor} object.
      */
     public Class<T> getDeclaringClass() {
         return clazz;
@@ -175,8 +175,8 @@ public final
 
     /**
      * Returns the Java language modifiers for the constructor
-     * represented by this <code>Constructor</code> object, as an integer. The
-     * <code>Modifier</code> class should be used to decode the modifiers.
+     * represented by this {@code Constructor} object, as an integer. The
+     * {@code Modifier} class should be used to decode the modifiers.
      *
      * @see Modifier
      */
@@ -185,13 +185,13 @@ public final
     }
 
     /**
-     * Returns an array of <tt>TypeVariable</tt> objects that represent the
+     * Returns an array of {@code TypeVariable} objects that represent the
      * type variables declared by the generic declaration represented by this
-     * <tt>GenericDeclaration</tt> object, in declaration order.  Returns an
+     * {@code GenericDeclaration} object, in declaration order.  Returns an
      * array of length 0 if the underlying generic declaration declares no type
      * variables.
      *
-     * @return an array of <tt>TypeVariable</tt> objects that represent
+     * @return an array of {@code TypeVariable} objects that represent
      *     the type variables declared by this generic declaration
      * @throws GenericSignatureFormatError if the generic
      *     signature of this generic declaration does not conform to
@@ -208,9 +208,9 @@ public final
 
 
     /**
-     * Returns an array of <code>Class</code> objects that represent the formal
+     * Returns an array of {@code Class} objects that represent the formal
      * parameter types, in declaration order, of the constructor
-     * represented by this <code>Constructor</code> object.  Returns an array of
+     * represented by this {@code Constructor} object.  Returns an array of
      * length 0 if the underlying constructor takes no parameters.
      *
      * @return the parameter types for the constructor this object
@@ -222,19 +222,19 @@ public final
 
 
     /**
-     * Returns an array of <tt>Type</tt> objects that represent the formal
+     * Returns an array of {@code Type} objects that represent the formal
      * parameter types, in declaration order, of the method represented by
-     * this <tt>Constructor</tt> object. Returns an array of length 0 if the
+     * this {@code Constructor} object. Returns an array of length 0 if the
      * underlying method takes no parameters.
-     * 
+     *
      * <p>If a formal parameter type is a parameterized type,
-     * the <tt>Type</tt> object returned for it must accurately reflect
+     * the {@code Type} object returned for it must accurately reflect
      * the actual type parameters used in the source code.
      *
-     * <p>If a formal parameter type is a type variable or a parameterized 
+     * <p>If a formal parameter type is a type variable or a parameterized
      * type, it is created. Otherwise, it is resolved.
      *
-     * @return an array of <tt>Type</tt>s that represent the formal
+     * @return an array of {@code Type}s that represent the formal
      *     parameter types of the underlying method, in declaration order
      * @throws GenericSignatureFormatError
      *     if the generic method signature does not conform to the format
@@ -256,10 +256,10 @@ public final
 
 
     /**
-     * Returns an array of <code>Class</code> objects that represent the types
+     * Returns an array of {@code Class} objects that represent the types
      * of exceptions declared to be thrown by the underlying constructor
-     * represented by this <code>Constructor</code> object.  Returns an array of
-     * length 0 if the constructor declares no exceptions in its <code>throws</code> clause.
+     * represented by this {@code Constructor} object.  Returns an array of
+     * length 0 if the constructor declares no exceptions in its {@code throws} clause.
      *
      * @return the exception types declared as being thrown by the
      * constructor this object represents
@@ -270,16 +270,16 @@ public final
 
 
     /**
-     * Returns an array of <tt>Type</tt> objects that represent the 
-     * exceptions declared to be thrown by this <tt>Constructor</tt> object. 
+     * Returns an array of {@code Type} objects that represent the
+     * exceptions declared to be thrown by this {@code Constructor} object.
      * Returns an array of length 0 if the underlying method declares
-     * no exceptions in its <tt>throws</tt> clause.  
-     * 
-     * <p>If an exception type is a parameterized type, the <tt>Type</tt>
+     * no exceptions in its {@code throws} clause.
+     *
+     * <p>If an exception type is a parameterized type, the {@code Type}
      * object returned for it must accurately reflect the actual type
      * parameters used in the source code.
      *
-     * <p>If an exception type is a type variable or a parameterized 
+     * <p>If an exception type is a type variable or a parameterized
      * type, it is created. Otherwise, it is resolved.
      *
      * @return an array of Types that represent the exception types
@@ -288,15 +288,15 @@ public final
      *     if the generic method signature does not conform to the format
      *     specified in the Java Virtual Machine Specification, 3rd edition
      * @throws TypeNotPresentException if the underlying method's
-     *     <tt>throws</tt> clause refers to a non-existent type declaration
+     *     {@code throws} clause refers to a non-existent type declaration
      * @throws MalformedParameterizedTypeException if
-     *     the underlying method's <tt>throws</tt> clause refers to a
+     *     the underlying method's {@code throws} clause refers to a
      *     parameterized type that cannot be instantiated for any reason
      * @since 1.5
      */
       public Type[] getGenericExceptionTypes() {
           Type[] result;
-          if (getSignature() != null && 
+          if (getSignature() != null &&
               ( (result = getGenericInfo().getExceptionTypes()).length > 0  ))
               return result;
           else
@@ -304,8 +304,8 @@ public final
       }
 
     /**
-     * Compares this <code>Constructor</code> against the specified object.
-     * Returns true if the objects are the same.  Two <code>Constructor</code> objects are
+     * Compares this {@code Constructor} against the specified object.
+     * Returns true if the objects are the same.  Two {@code Constructor} objects are
      * the same if they were declared by the same class and have the
      * same formal parameter types.
      */
@@ -329,7 +329,7 @@ public final
     }
 
     /**
-     * Returns a hashcode for this <code>Constructor</code>. The hashcode is
+     * Returns a hashcode for this {@code Constructor}. The hashcode is
      * the same as the hashcode for the underlying constructor's
      * declaring class name.
      */
@@ -338,7 +338,7 @@ public final
     }
 
     /**
-     * Returns a string describing this <code>Constructor</code>.  The string is
+     * Returns a string describing this {@code Constructor}.  The string is
      * formatted as the constructor access modifiers, if any,
      * followed by the fully-qualified name of the declaring class,
      * followed by a parenthesized, comma-separated list of the
@@ -348,8 +348,8 @@ public final
      * </pre>
      *
      * <p>The only possible modifiers for constructors are the access
-     * modifiers <tt>public</tt>, <tt>protected</tt> or
-     * <tt>private</tt>.  Only one of these may appear, or none if the
+     * modifiers {@code public}, {@code protected} or
+     * {@code private}.  Only one of these may appear, or none if the
      * constructor has default (package) access.
      */
     public String toString() {
@@ -384,18 +384,13 @@ public final
     }
 
     /**
-     * Returns a string describing this <code>Constructor</code>,
+     * Returns a string describing this {@code Constructor},
      * including type parameters.  The string is formatted as the
      * constructor access modifiers, if any, followed by an
      * angle-bracketed comma separated list of the constructor's type
      * parameters, if any, followed by the fully-qualified name of the
      * declaring class, followed by a parenthesized, comma-separated
-     * list of the constructor's generic formal parameter types.  
-     *
-     * If this constructor was declared to take a variable number of
-     * arguments, instead of denoting the last parameter as
-     * "<code><i>Type</i>[]</code>", it is denoted as
-     * "<code><i>Type</i></code>...".
+     * list of the constructor's generic formal parameter types.
      *
      * A space is used to separate access modifiers from one another
      * and from the type parameters or return type.  If there are no
@@ -403,15 +398,15 @@ public final
      * parameter list is present, a space separates the list from the
      * class name.  If the constructor is declared to throw
      * exceptions, the parameter list is followed by a space, followed
-     * by the word &quot;<tt>throws</tt>&quot; followed by a
+     * by the word "{@code throws}" followed by a
      * comma-separated list of the thrown exception types.
      *
      * <p>The only possible modifiers for constructors are the access
-     * modifiers <tt>public</tt>, <tt>protected</tt> or
-     * <tt>private</tt>.  Only one of these may appear, or none if the
+     * modifiers {@code public}, {@code protected} or
+     * {@code private}.  Only one of these may appear, or none if the
      * constructor has default (package) access.
      *
-     * @return a string describing this <code>Constructor</code>,
+     * @return a string describing this {@code Constructor},
      * include type parameters
      *
      * @since 1.5
@@ -470,7 +465,7 @@ public final
     }
 
     /**
-     * Uses the constructor represented by this <code>Constructor</code> object to
+     * Uses the constructor represented by this {@code Constructor} object to
      * create and initialize a new instance of the constructor's
      * declaring class, with the specified initialization parameters.
      * Individual parameters are automatically unwrapped to match
@@ -478,7 +473,7 @@ public final
      * parameters are subject to method invocation conversions as necessary.
      *
      * <p>If the number of formal parameters required by the underlying constructor
-     * is 0, the supplied <code>initargs</code> array may be of length 0 or null.
+     * is 0, the supplied {@code initargs} array may be of length 0 or null.
      *
      * <p>If the constructor's declaring class is an inner class in a
      * non-static context, the first argument to the constructor needs
@@ -494,13 +489,13 @@ public final
      *
      * @param initargs array of objects to be passed as arguments to
      * the constructor call; values of primitive types are wrapped in
-     * a wrapper object of the appropriate type (e.g. a <tt>float</tt>
+     * a wrapper object of the appropriate type (e.g. a {@code float}
      * in a {@link java.lang.Float Float})
      *
      * @return a new object created by calling the constructor
      * this object represents
-     * 
-     * @exception IllegalAccessException    if this <code>Constructor</code> object
+     *
+     * @exception IllegalAccessException    if this {@code Constructor} object
      *              enforces Java language access control and the underlying
      *              constructor is inaccessible.
      * @exception IllegalArgumentException  if the number of actual
@@ -531,18 +526,18 @@ public final
                 }
             }
         }
-        if ((clazz.getModifiers() & Modifier.ENUM) != 0) 
+        if ((clazz.getModifiers() & Modifier.ENUM) != 0)
             throw new IllegalArgumentException("Cannot reflectively create enum objects");
         if (constructorAccessor == null) acquireConstructorAccessor();
         return (T) constructorAccessor.newInstance(initargs);
     }
 
     /**
-     * Returns <tt>true</tt> if this constructor was declared to take
-     * a variable number of arguments; returns <tt>false</tt>
+     * Returns {@code true} if this constructor was declared to take
+     * a variable number of arguments; returns {@code false}
      * otherwise.
      *
-     * @return <tt>true</tt> if an only if this constructor was declared to
+     * @return {@code true} if an only if this constructor was declared to
      * take a variable number of arguments.
      * @since 1.5
      */
@@ -551,8 +546,8 @@ public final
     }
 
     /**
-     * Returns <tt>true</tt> if this constructor is a synthetic
-     * constructor; returns <tt>false</tt> otherwise.
+     * Returns {@code true} if this constructor is a synthetic
+     * constructor; returns {@code false} otherwise.
      *
      * @return true if and only if this constructor is a synthetic
      * constructor as defined by the Java Language Specification.
@@ -645,7 +640,7 @@ public final
     /**
      * Returns an array of arrays that represent the annotations on the formal
      * parameters, in declaration order, of the method represented by
-     * this <tt>Constructor</tt> object. (Returns an array of length zero if the
+     * this {@code Constructor} object. (Returns an array of length zero if the
      * underlying method is parameterless.  If the method has one or more
      * parameters, a nested array of length zero is returned for each parameter
      * with no annotations.) The annotation objects contained in the returned
@@ -665,16 +660,16 @@ public final
             return new Annotation[numParameters][0];
         if (result.length != numParameters) {
             Class<?> declaringClass = getDeclaringClass();
-            if (declaringClass.isEnum() || 
-                declaringClass.isAnonymousClass() || 
+            if (declaringClass.isEnum() ||
+                declaringClass.isAnonymousClass() ||
                 declaringClass.isLocalClass() )
                 ; // Can't do reliable parameter counting
-            else { 
-                if (!declaringClass.isMemberClass() || // top-level 
+            else {
+                if (!declaringClass.isMemberClass() || // top-level
                     // Check for the enclosing instance parameter for
                     // non-static member classes
-                    (declaringClass.isMemberClass() && 
-                     ((declaringClass.getModifiers() & Modifier.STATIC) == 0)  && 
+                    (declaringClass.isMemberClass() &&
+                     ((declaringClass.getModifiers() & Modifier.STATIC) == 0)  &&
                      result.length + 1 != numParameters) ) {
                     throw new AnnotationFormatError(
                               "Parameter annotations don't match number of parameters");

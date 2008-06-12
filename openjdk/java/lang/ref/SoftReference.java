@@ -57,7 +57,6 @@ package java.lang.ref;
  * strong referents to those entries, leaving the remaining entries to be
  * discarded at the discretion of the garbage collector.
  *
- * @version  1.41, 05/05/07
  * @author   Mark Reinhold
  * @since    1.2
  */

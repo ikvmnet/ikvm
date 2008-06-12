@@ -154,7 +154,6 @@ import sun.security.util.SecurityConstants;
  *   "java.net.URLClassLoader$3$1"
  * </pre></blockquote>
  *
- * @version  1.195, 05/05/07
  * @see      #resolveClass(Class)
  * @since 1.0
  */
@@ -249,7 +248,7 @@ public abstract class ClassLoader {
         this(getSystemClassLoader());
     }
 
-
+
     // -- Class --
 
     /**
@@ -962,7 +961,7 @@ public abstract class ClassLoader {
         c.setSigners(signers);
     }
 
-
+
     // -- Resource --
 
     /**
@@ -1207,7 +1206,7 @@ public abstract class ClassLoader {
         }
     }
 
-
+
     // -- Hierarchy --
 
     /**
@@ -1384,7 +1383,7 @@ public abstract class ClassLoader {
     // Set to true once the system class loader has been set
     private static boolean sclSet;
 
-
+
     // -- Package --
 
     /**
@@ -1507,7 +1506,7 @@ public abstract class ClassLoader {
         return (Package[])map.values().toArray(new Package[map.size()]);
     }
 
-
+
     // -- Native library access --
 
     /**
@@ -1543,7 +1542,6 @@ public abstract class ClassLoader {
      * the VM when it loads the library, and used by the VM to pass the correct
      * version of JNI to the native methods.  </p>
      *
-     * @version  1.195 05/05/07
      * @see      ClassLoader
      * @since    1.2
      */
@@ -1808,7 +1806,7 @@ public abstract class ClassLoader {
         return 0;
     }
 
-
+
     // -- Assertion management --
 
     // The default toggle for assertion checking.
@@ -2021,7 +2019,7 @@ public abstract class ClassLoader {
     // Retrieves the assertion directives from the VM.
     private static native AssertionStatusDirectives retrieveDirectives();
 }
-
+
 
 class SystemClassLoaderAction implements PrivilegedExceptionAction {
     private ClassLoader parent;

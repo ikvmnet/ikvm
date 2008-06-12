@@ -146,7 +146,7 @@ import java.util.concurrent.atomic.*;
  *
  * (Shared mode is similar but may involve cascading signals.)
  *
- * <p>Because checks in acquire are invoked before enqueuing, a newly
+ * <p><a name="barging">Because checks in acquire are invoked before enqueuing, a newly
  * acquiring thread may <em>barge</em> ahead of others that are
  * blocked and queued. However, you can, if desired, define
  * <tt>tryAcquire</tt> and/or <tt>tryAcquireShared</tt> to disable
@@ -1321,7 +1321,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final Thread getFirstQueuedThread() {
         // handle only fast path, else relay
-        return (head == tail)? null : fullGetFirstQueuedThread();
+        return (head == tail) ? null : fullGetFirstQueuedThread();
     }
 
     /**
@@ -1383,9 +1383,13 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Return {@code true} if the apparent first queued thread, if one
-     * exists, is waiting in exclusive mode. Used only as a heuristic
-     * in ReentrantReadWriteLock.
+     * Returns {@code true} if the apparent first queued thread, if one
+     * exists, is waiting in exclusive mode.  If this method returns
+     * {@code true}, and the current thread is attempting to acquire in
+     * shared mode (that is, this method is invoked from {@link
+     * #tryAcquireShared}) then it is guaranteed that the current thread
+     * is not the first queued thread.  Used only as a heuristic in
+     * ReentrantReadWriteLock.
      */
     final boolean apparentlyFirstQueuedIsExclusive() {
         Node h, s;
@@ -1515,7 +1519,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public String toString() {
         int s = getState();
-        String q  = hasQueuedThreads()? "non" : "";
+        String q  = hasQueuedThreads() ? "non" : "";
         return super.toString() +
             "[State = " + s + ", " + q + "empty queue]";
     }
@@ -1904,8 +1908,8 @@ public abstract class AbstractQueuedSynchronizer
          * 0 if not interrupted.
          */
         private int checkInterruptWhileWaiting(Node node) {
-            return (Thread.interrupted()) ?
-                ((transferAfterCancelledWait(node))? THROW_IE : REINTERRUPT) :
+            return Thread.interrupted() ?
+                (transferAfterCancelledWait(node) ? THROW_IE : REINTERRUPT) :
                 0;
         }
 

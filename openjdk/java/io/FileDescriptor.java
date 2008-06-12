@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Applications should not create their own file descriptors.
  *
  * @author  Pavani Diwanji
- * @version 1.10, 05/05/07
  * @see     java.io.FileInputStream
  * @see     java.io.FileOutputStream
  * @since   JDK1.0
  */
 public final class FileDescriptor {
- 
+
     private volatile cli.System.IO.Stream stream;
     private volatile cli.System.Net.Sockets.Socket socket;
 
@@ -204,12 +203,12 @@ public final class FileDescriptor {
         }
     }
 
-    // package private methods used by FIS, FOS and RAF. 
+    // package private methods used by FIS, FOS and RAF.
 
     int incrementAndGetUseCount() {
         return useCount.incrementAndGet();
     }
- 
+
     int decrementAndGetUseCount() {
         return useCount.decrementAndGet();
     }

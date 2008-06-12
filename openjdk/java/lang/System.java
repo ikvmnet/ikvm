@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,6 @@ final class Props
  * method for quickly copying a portion of an array.
  *
  * @author  unascribed
- * @version 1.164, 05/05/07
  * @since   JDK1.0
  */
 public final class System {
@@ -264,7 +263,7 @@ public final class System {
          return cons;
      }
 
-    /** 
+    /**
      * Returns the channel inherited from the entity that created this
      * Java virtual machine.
      *
@@ -419,7 +418,7 @@ public final class System {
      *   // ... the code being measured ...
      *   long estimatedTime = System.nanoTime() - startTime;
      * </pre>
-     * 
+     *
      * @return The current value of the system timer, in nanoseconds.
      * @since 1.5
      */
@@ -571,12 +570,12 @@ public final class System {
      * <code>checkPropertiesAccess</code> method is called with no
      * arguments. This may result in a security exception.
      * <p>
-     * The current set of system properties for use by the 
-     * {@link #getProperty(String)} method is returned as a 
-     * <code>Properties</code> object. If there is no current set of 
-     * system properties, a set of system properties is first created and 
-     * initialized. This set of system properties always includes values 
-     * for the following keys: 
+     * The current set of system properties for use by the
+     * {@link #getProperty(String)} method is returned as a
+     * <code>Properties</code> object. If there is no current set of
+     * system properties, a set of system properties is first created and
+     * initialized. This set of system properties always includes values
+     * for the following keys:
      * <table summary="Shows property keys and associated values">
      * <tr><th>Key</th>
      *     <th>Description of Associated Value</th></tr>
@@ -788,7 +787,7 @@ public final class System {
      * @exception  SecurityException  if a security manager exists and its
      *             <code>checkPermission</code> method doesn't allow
      *             setting of the specified property.
-     * @exception  NullPointerException if <code>key</code> or 
+     * @exception  NullPointerException if <code>key</code> or
      *             <code>value</code> is <code>null</code>.
      * @exception  IllegalArgumentException if <code>key</code> is empty.
      * @see        #getProperty
@@ -810,20 +809,20 @@ public final class System {
     }
 
     /**
-     * Removes the system property indicated by the specified key. 
+     * Removes the system property indicated by the specified key.
      * <p>
-     * First, if a security manager exists, its 
+     * First, if a security manager exists, its
      * <code>SecurityManager.checkPermission</code> method
      * is called with a <code>PropertyPermission(key, "write")</code>
      * permission. This may result in a SecurityException being thrown.
      * If no exception is thrown, the specified property is removed.
      * <p>
      *
-     * @param      key   the name of the system property to be removed. 
+     * @param      key   the name of the system property to be removed.
      * @return     the previous string value of the system property,
      *             or <code>null</code> if there was no property with that key.
      *
-     * @exception  SecurityException  if a security manager exists and its  
+     * @exception  SecurityException  if a security manager exists and its
      *             <code>checkPropertyAccess</code> method doesn't allow
      *              access to the specified system property.
      * @exception  NullPointerException if <code>key</code> is
@@ -910,7 +909,7 @@ public final class System {
         return ProcessEnvironment.getenv(name);
     }
 
-    
+
     /**
      * Returns an unmodifiable string map view of the current system environment.
      * The environment is a system-dependent mapping from names to

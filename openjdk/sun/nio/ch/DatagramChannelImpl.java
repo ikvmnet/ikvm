@@ -43,7 +43,7 @@ class DatagramChannelImpl
     implements SelChImpl
 {
     // Our file descriptor
-    FileDescriptor fd = null;   
+    FileDescriptor fd = null;
 
     // IDs of native threads doing reads and writes, for signalling
     private volatile long readerThread = 0;

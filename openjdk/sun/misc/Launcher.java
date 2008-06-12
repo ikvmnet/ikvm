@@ -131,7 +131,7 @@ public class Launcher {
             final File[] dirs = getExtDirs();
 
             try {
-                // Prior implementations of this doPrivileged() block supplied 
+                // Prior implementations of this doPrivileged() block supplied
                 // aa synthesized ACC via a call to the private method
                 // ExtClassLoader.getContext().
 
@@ -149,7 +149,7 @@ public class Launcher {
                     throw (IOException) e.getException();
             }
         }
-        
+
         void addExtURL(URL url) {
                 super.addURL(url);
         }
@@ -166,7 +166,7 @@ public class Launcher {
             String s = System.getProperty("java.ext.dirs");
             File[] dirs;
             if (s != null) {
-                StringTokenizer st = 
+                StringTokenizer st =
                     new StringTokenizer(s, File.pathSeparator);
                 int count = st.countTokens();
                 dirs = new File[count];
@@ -224,7 +224,7 @@ public class Launcher {
             return null;
         }
 
-        private static AccessControlContext getContext(File[] dirs) 
+        private static AccessControlContext getContext(File[] dirs)
             throws IOException
         {
             PathPermissions perms =
@@ -235,7 +235,7 @@ public class Launcher {
                     (java.security.cert.Certificate[]) null),
                 perms);
 
-            AccessControlContext acc = 
+            AccessControlContext acc =
                 new AccessControlContext(new ProtectionDomain[] { domain });
 
             return acc;
@@ -255,13 +255,13 @@ public class Launcher {
             final File[] path = (s == null) ? new File[0] : getClassPath(s);
 
             // Note: on bugid 4256530
-            // Prior implementations of this doPrivileged() block supplied 
+            // Prior implementations of this doPrivileged() block supplied
             // a rather restrictive ACC via a call to the private method
             // AppClassLoader.getContext(). This proved overly restrictive
             // when loading  classes. Specifically it prevent
             // accessClassInPackage.sun.* grants from being honored.
             //
-            return (AppClassLoader) 
+            return (AppClassLoader)
                 AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
                     URL[] urls =
@@ -319,25 +319,25 @@ public class Launcher {
 
         /**
          * create a context that can read any directories (recursively)
-         * mentioned in the class path. In the case of a jar, it has to 
+         * mentioned in the class path. In the case of a jar, it has to
          * be the directory containing the jar, not just the jar, as jar
          * files might refer to other jar files.
          */
 
         private static AccessControlContext getContext(File[] cp)
-            throws java.net.MalformedURLException 
+            throws java.net.MalformedURLException
         {
             PathPermissions perms =
                 new PathPermissions(cp);
 
             ProtectionDomain domain =
-                new ProtectionDomain(new CodeSource(perms.getCodeBase(), 
+                new ProtectionDomain(new CodeSource(perms.getCodeBase(),
                     (java.security.cert.Certificate[]) null),
                 perms);
 
-            AccessControlContext acc = 
+            AccessControlContext acc =
                 new AccessControlContext(new ProtectionDomain[] { domain });
-            
+
             return acc;
         }
     }
@@ -435,7 +435,7 @@ public class Launcher {
     static URL getFileURL(File file) {
         try {
             file = file.getCanonicalFile();
-        } catch (IOException e) {} 
+        } catch (IOException e) {}
 
         try {
             return ParseUtil.fileToEncodedURL(file);

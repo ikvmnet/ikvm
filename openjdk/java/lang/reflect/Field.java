@@ -38,12 +38,12 @@ import ikvm.internal.CallerID;
 
 
 /**
- * A <code>Field</code> provides information about, and dynamic access to, a
+ * A {@code Field} provides information about, and dynamic access to, a
  * single field of a class or an interface.  The reflected field may
  * be a class (static) field or an instance field.
  *
- * <p>A <code>Field</code> permits widening conversions to occur during a get or
- * set access operation, but throws an <code>IllegalArgumentException</code> if a
+ * <p>A {@code Field} permits widening conversions to occur during a get or
+ * set access operation, but throws an {@code IllegalArgumentException} if a
  * narrowing conversion would occur.
  *
  * @see Member
@@ -73,7 +73,7 @@ class Field extends AccessibleObject implements Member {
     // Cached field accessor created without override
     private FieldAccessor fieldAccessor;
     // Cached field accessor created with override
-    private FieldAccessor overrideFieldAccessor;    
+    private FieldAccessor overrideFieldAccessor;
     // For sharing of FieldAccessors. This branching structure is
     // currently only two levels deep (i.e., one root Field and
     // potentially many Field objects pointing to it.)
@@ -92,7 +92,7 @@ class Field extends AccessibleObject implements Member {
     private GenericsFactory getFactory() {
         Class<?> c = getDeclaringClass();
         // create scope and factory
-        return CoreReflectionFactory.make(c, ClassScope.make(c)); 
+        return CoreReflectionFactory.make(c, ClassScope.make(c));
     }
 
     // Accessor for generic info repository
@@ -100,7 +100,7 @@ class Field extends AccessibleObject implements Member {
         // lazily initialize repository if necessary
         if (genericInfo == null) {
             // create and cache generic info repository
-            genericInfo = FieldRepository.make(getGenericSignature(), 
+            genericInfo = FieldRepository.make(getGenericSignature(),
                                                getFactory());
         }
         return genericInfo; //return cached repository
@@ -150,15 +150,15 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns the <code>Class</code> object representing the class or interface
-     * that declares the field represented by this <code>Field</code> object.
+     * Returns the {@code Class} object representing the class or interface
+     * that declares the field represented by this {@code Field} object.
      */
     public Class<?> getDeclaringClass() {
         return clazz;
     }
 
     /**
-     * Returns the name of the field represented by this <code>Field</code> object.
+     * Returns the name of the field represented by this {@code Field} object.
      */
     public String getName() {
         return name;
@@ -166,7 +166,7 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * Returns the Java language modifiers for the field represented
-     * by this <code>Field</code> object, as an integer. The <code>Modifier</code> class should
+     * by this {@code Field} object, as an integer. The {@code Modifier} class should
      * be used to decode the modifiers.
      *
      * @see Modifier
@@ -176,10 +176,10 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns <tt>true</tt> if this field represents an element of
-     * an enumerated type; returns <tt>false</tt> otherwise.
+     * Returns {@code true} if this field represents an element of
+     * an enumerated type; returns {@code false} otherwise.
      *
-     * @return <tt>true</tt> if and only if this field represents an element of
+     * @return {@code true} if and only if this field represents an element of
      * an enumerated type.
      * @since 1.5
      */
@@ -188,8 +188,8 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns <tt>true</tt> if this field is a synthetic
-     * field; returns <tt>false</tt> otherwise.
+     * Returns {@code true} if this field is a synthetic
+     * field; returns {@code false} otherwise.
      *
      * @return true if and only if this field is a synthetic
      * field as defined by the Java Language Specification.
@@ -200,11 +200,11 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns a <code>Class</code> object that identifies the
+     * Returns a {@code Class} object that identifies the
      * declared type for the field represented by this
-     * <code>Field</code> object.
+     * {@code Field} object.
      *
-     * @return a <code>Class</code> object identifying the declared
+     * @return a {@code Class} object identifying the declared
      * type of the field represented by this object
      */
     public Class<?> getType() {
@@ -212,18 +212,18 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns a <tt>Type</tt> object that represents the declared type for
-     * the field represented by this <tt>Field</tt> object.
-     * 
-     * <p>If the <tt>Type</tt> is a parameterized type, the
-     * <tt>Type</tt> object returned must accurately reflect the
+     * Returns a {@code Type} object that represents the declared type for
+     * the field represented by this {@code Field} object.
+     *
+     * <p>If the {@code Type} is a parameterized type, the
+     * {@code Type} object returned must accurately reflect the
      * actual type parameters used in the source code.
-     * 
+     *
      * <p>If the type of the underlying field is a type variable or a
      * parameterized type, it is created. Otherwise, it is resolved.
      *
-     * @return a <tt>Type</tt> object that represents the declared type for
-     *     the field represented by this <tt>Field</tt> object
+     * @return a {@code Type} object that represents the declared type for
+     *     the field represented by this {@code Field} object
      * @throws GenericSignatureFormatError if the generic field
      *     signature does not conform to the format specified in the Java
      *     Virtual Machine Specification, 3rd edition
@@ -244,8 +244,8 @@ class Field extends AccessibleObject implements Member {
 
 
     /**
-     * Compares this <code>Field</code> against the specified object.  Returns
-     * true if the objects are the same.  Two <code>Field</code> objects are the same if
+     * Compares this {@code Field} against the specified object.  Returns
+     * true if the objects are the same.  Two {@code Field} objects are the same if
      * they were declared by the same class and have the same name
      * and type.
      */
@@ -260,7 +260,7 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns a hashcode for this <code>Field</code>.  This is computed as the
+     * Returns a hashcode for this {@code Field}.  This is computed as the
      * exclusive-or of the hashcodes for the underlying field's
      * declaring class name and its name.
      */
@@ -269,7 +269,7 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns a string describing this <code>Field</code>.  The format is
+     * Returns a string describing this {@code Field}.  The format is
      * the access modifiers for the field, if any, followed
      * by the field type, followed by a space, followed by
      * the fully-qualified name of the class declaring the field,
@@ -281,10 +281,10 @@ class Field extends AccessibleObject implements Member {
      * </pre>
      *
      * <p>The modifiers are placed in canonical order as specified by
-     * "The Java Language Specification".  This is <tt>public</tt>,
-     * <tt>protected</tt> or <tt>private</tt> first, and then other
-     * modifiers in the following order: <tt>static</tt>, <tt>final</tt>,
-     * <tt>transient</tt>, <tt>volatile</tt>.
+     * "The Java Language Specification".  This is {@code public},
+     * {@code protected} or {@code private} first, and then other
+     * modifiers in the following order: {@code static}, {@code final},
+     * {@code transient}, {@code volatile}.
      */
     public String toString() {
         int mod = getModifiers();
@@ -295,7 +295,7 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns a string describing this <code>Field</code>, including
+     * Returns a string describing this {@code Field}, including
      * its generic type.  The format is the access modifiers for the
      * field, if any, followed by the generic field type, followed by
      * a space, followed by the fully-qualified name of the class
@@ -303,12 +303,12 @@ class Field extends AccessibleObject implements Member {
      * of the field.
      *
      * <p>The modifiers are placed in canonical order as specified by
-     * "The Java Language Specification".  This is <tt>public</tt>,
-     * <tt>protected</tt> or <tt>private</tt> first, and then other
-     * modifiers in the following order: <tt>static</tt>, <tt>final</tt>,
-     * <tt>transient</tt>, <tt>volatile</tt>.
+     * "The Java Language Specification".  This is {@code public},
+     * {@code protected} or {@code private} first, and then other
+     * modifiers in the following order: {@code static}, {@code final},
+     * {@code transient}, {@code volatile}.
      *
-     * @return a string describing this <code>Field</code>, including
+     * @return a string describing this {@code Field}, including
      * its generic type
      *
      * @since 1.5
@@ -324,39 +324,39 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns the value of the field represented by this <code>Field</code>, on
+     * Returns the value of the field represented by this {@code Field}, on
      * the specified object. The value is automatically wrapped in an
      * object if it has a primitive type.
      *
      * <p>The underlying field's value is obtained as follows:
      *
-     * <p>If the underlying field is a static field, the <code>obj</code> argument
+     * <p>If the underlying field is a static field, the {@code obj} argument
      * is ignored; it may be null.
      *
      * <p>Otherwise, the underlying field is an instance field.  If the
-     * specified <code>obj</code> argument is null, the method throws a
-     * <code>NullPointerException.</code> If the specified object is not an
+     * specified {@code obj} argument is null, the method throws a
+     * {@code NullPointerException}. If the specified object is not an
      * instance of the class or interface declaring the underlying
-     * field, the method throws an <code>IllegalArgumentException</code>.
+     * field, the method throws an {@code IllegalArgumentException}.
      *
-     * <p>If this <code>Field</code> object enforces Java language access control, and
+     * <p>If this {@code Field} object enforces Java language access control, and
      * the underlying field is inaccessible, the method throws an
-     * <code>IllegalAccessException</code>.
+     * {@code IllegalAccessException}.
      * If the underlying field is static, the class that declared the
-     * field is initialized if it has not already been initialized. 
+     * field is initialized if it has not already been initialized.
      *
      * <p>Otherwise, the value is retrieved from the underlying instance
      * or static field.  If the field has a primitive type, the value
      * is wrapped in an object before being returned, otherwise it is
      * returned as is.
      *
-     * <p>If the field is hidden in the type of <code>obj</code>,
+     * <p>If the field is hidden in the type of {@code obj},
      * the field's value is obtained according to the preceding rules.
      *
      * @param obj object from which the represented field's value is
      * to be extracted
      * @return the value of the represented field in object
-     * <tt>obj</tt>; primitive values are wrapped in an appropriate
+     * {@code obj}; primitive values are wrapped in an appropriate
      * object before being returned
      *
      * @exception IllegalAccessException    if the underlying field
@@ -377,19 +377,19 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Gets the value of a static or instance <code>boolean</code> field.
+     * Gets the value of a static or instance {@code boolean} field.
      *
-     * @param obj the object to extract the <code>boolean</code> value
+     * @param obj the object to extract the {@code boolean} value
      * from
-     * @return the value of the <code>boolean</code> field
+     * @return the value of the {@code boolean} field
      *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
-     * @exception IllegalArgumentException  if the specified object is not 
+     * @exception IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
-     *              underlying field (or a subclass or implementor 
+     *              underlying field (or a subclass or implementor
      *              thereof), or if the field value cannot be
-     *              converted to the type <code>boolean</code> by a 
+     *              converted to the type {@code boolean} by a
      *              widening conversion.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -405,19 +405,19 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Gets the value of a static or instance <code>byte</code> field.
+     * Gets the value of a static or instance {@code byte} field.
      *
-     * @param obj the object to extract the <code>byte</code> value
+     * @param obj the object to extract the {@code byte} value
      * from
-     * @return the value of the <code>byte</code> field
+     * @return the value of the {@code byte} field
      *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
-     * @exception IllegalArgumentException  if the specified object is not 
+     * @exception IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
-     *              underlying field (or a subclass or implementor 
+     *              underlying field (or a subclass or implementor
      *              thereof), or if the field value cannot be
-     *              converted to the type <code>byte</code> by a 
+     *              converted to the type {@code byte} by a
      *              widening conversion.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -434,20 +434,20 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * Gets the value of a static or instance field of type
-     * <code>char</code> or of another primitive type convertible to
-     * type <code>char</code> via a widening conversion.
+     * {@code char} or of another primitive type convertible to
+     * type {@code char} via a widening conversion.
      *
-     * @param obj the object to extract the <code>char</code> value
+     * @param obj the object to extract the {@code char} value
      * from
-     * @return the value of the field converted to type <code>char</code>
+     * @return the value of the field converted to type {@code char}
      *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
-     * @exception IllegalArgumentException  if the specified object is not 
+     * @exception IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
-     *              underlying field (or a subclass or implementor 
+     *              underlying field (or a subclass or implementor
      *              thereof), or if the field value cannot be
-     *              converted to the type <code>char</code> by a 
+     *              converted to the type {@code char} by a
      *              widening conversion.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -464,20 +464,20 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * Gets the value of a static or instance field of type
-     * <code>short</code> or of another primitive type convertible to
-     * type <code>short</code> via a widening conversion.
+     * {@code short} or of another primitive type convertible to
+     * type {@code short} via a widening conversion.
      *
-     * @param obj the object to extract the <code>short</code> value
+     * @param obj the object to extract the {@code short} value
      * from
-     * @return the value of the field converted to type <code>short</code>
+     * @return the value of the field converted to type {@code short}
      *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
-     * @exception IllegalArgumentException  if the specified object is not 
+     * @exception IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
-     *              underlying field (or a subclass or implementor 
+     *              underlying field (or a subclass or implementor
      *              thereof), or if the field value cannot be
-     *              converted to the type <code>short</code> by a 
+     *              converted to the type {@code short} by a
      *              widening conversion.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -494,20 +494,20 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * Gets the value of a static or instance field of type
-     * <code>int</code> or of another primitive type convertible to
-     * type <code>int</code> via a widening conversion.
+     * {@code int} or of another primitive type convertible to
+     * type {@code int} via a widening conversion.
      *
-     * @param obj the object to extract the <code>int</code> value
+     * @param obj the object to extract the {@code int} value
      * from
-     * @return the value of the field converted to type <code>int</code>
+     * @return the value of the field converted to type {@code int}
      *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
-     * @exception IllegalArgumentException  if the specified object is not 
+     * @exception IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
-     *              underlying field (or a subclass or implementor 
+     *              underlying field (or a subclass or implementor
      *              thereof), or if the field value cannot be
-     *              converted to the type <code>int</code> by a 
+     *              converted to the type {@code int} by a
      *              widening conversion.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -524,20 +524,20 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * Gets the value of a static or instance field of type
-     * <code>long</code> or of another primitive type convertible to
-     * type <code>long</code> via a widening conversion.
+     * {@code long} or of another primitive type convertible to
+     * type {@code long} via a widening conversion.
      *
-     * @param obj the object to extract the <code>long</code> value
+     * @param obj the object to extract the {@code long} value
      * from
-     * @return the value of the field converted to type <code>long</code>
+     * @return the value of the field converted to type {@code long}
      *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
-     * @exception IllegalArgumentException  if the specified object is not 
+     * @exception IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
-     *              underlying field (or a subclass or implementor 
+     *              underlying field (or a subclass or implementor
      *              thereof), or if the field value cannot be
-     *              converted to the type <code>long</code> by a 
+     *              converted to the type {@code long} by a
      *              widening conversion.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -554,20 +554,20 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * Gets the value of a static or instance field of type
-     * <code>float</code> or of another primitive type convertible to
-     * type <code>float</code> via a widening conversion.
+     * {@code float} or of another primitive type convertible to
+     * type {@code float} via a widening conversion.
      *
-     * @param obj the object to extract the <code>float</code> value
+     * @param obj the object to extract the {@code float} value
      * from
-     * @return the value of the field converted to type <code>float</code>
+     * @return the value of the field converted to type {@code float}
      *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
-     * @exception IllegalArgumentException  if the specified object is not 
+     * @exception IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
-     *              underlying field (or a subclass or implementor 
+     *              underlying field (or a subclass or implementor
      *              thereof), or if the field value cannot be
-     *              converted to the type <code>float</code> by a 
+     *              converted to the type {@code float} by a
      *              widening conversion.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -584,20 +584,20 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * Gets the value of a static or instance field of type
-     * <code>double</code> or of another primitive type convertible to
-     * type <code>double</code> via a widening conversion.
+     * {@code double} or of another primitive type convertible to
+     * type {@code double} via a widening conversion.
      *
-     * @param obj the object to extract the <code>double</code> value
+     * @param obj the object to extract the {@code double} value
      * from
-     * @return the value of the field converted to type <code>double</code>
+     * @return the value of the field converted to type {@code double}
      *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
-     * @exception IllegalArgumentException  if the specified object is not 
+     * @exception IllegalArgumentException  if the specified object is not
      *              an instance of the class or interface declaring the
-     *              underlying field (or a subclass or implementor 
+     *              underlying field (or a subclass or implementor
      *              thereof), or if the field value cannot be
-     *              converted to the type <code>double</code> by a 
+     *              converted to the type {@code double} by a
      *              widening conversion.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -613,29 +613,29 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the field represented by this <code>Field</code> object on the
+     * Sets the field represented by this {@code Field} object on the
      * specified object argument to the specified new value. The new
      * value is automatically unwrapped if the underlying field has a
      * primitive type.
      *
      * <p>The operation proceeds as follows:
      *
-     * <p>If the underlying field is static, the <code>obj</code> argument is
+     * <p>If the underlying field is static, the {@code obj} argument is
      * ignored; it may be null.
      *
      * <p>Otherwise the underlying field is an instance field.  If the
      * specified object argument is null, the method throws a
-     * <code>NullPointerException</code>.  If the specified object argument is not
+     * {@code NullPointerException}.  If the specified object argument is not
      * an instance of the class or interface declaring the underlying
-     * field, the method throws an <code>IllegalArgumentException</code>.
+     * field, the method throws an {@code IllegalArgumentException}.
      *
-     * <p>If this <code>Field</code> object enforces Java language access control, and
+     * <p>If this {@code Field} object enforces Java language access control, and
      * the underlying field is inaccessible, the method throws an
-     * <code>IllegalAccessException</code>.
+     * {@code IllegalAccessException}.
      *
      * <p>If the underlying field is final, the method throws an
-     * <code>IllegalAccessException</code> unless
-     * <code>setAccessible(true)</code> has succeeded for this field
+     * {@code IllegalAccessException} unless
+     * {@code setAccessible(true)} has succeeded for this field
      * and this field is non-static. Setting a final field in this way
      * is meaningful only during deserialization or reconstruction of
      * instances of classes with blank final fields, before they are
@@ -647,30 +647,30 @@ class Field extends AccessibleObject implements Member {
      * <p>If the underlying field is of a primitive type, an unwrapping
      * conversion is attempted to convert the new value to a value of
      * a primitive type.  If this attempt fails, the method throws an
-     * <code>IllegalArgumentException</code>.
+     * {@code IllegalArgumentException}.
      *
      * <p>If, after possible unwrapping, the new value cannot be
      * converted to the type of the underlying field by an identity or
      * widening conversion, the method throws an
-     * <code>IllegalArgumentException</code>.
+     * {@code IllegalArgumentException}.
      *
      * <p>If the underlying field is static, the class that declared the
      * field is initialized if it has not already been initialized.
      *
      * <p>The field is set to the possibly unwrapped and widened new value.
      *
-     * <p>If the field is hidden in the type of <code>obj</code>,
+     * <p>If the field is hidden in the type of {@code obj},
      * the field's value is set according to the preceding rules.
      *
      * @param obj the object whose field should be modified
-     * @param value the new value for the field of <code>obj</code>
+     * @param value the new value for the field of {@code obj}
      * being modified
-     * 
+     *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
      * @exception IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
-     *              field (or a subclass or implementor thereof), 
+     *              field (or a subclass or implementor thereof),
      *              or if an unwrapping conversion fails.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -685,21 +685,21 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a <code>boolean</code> on the specified object.
+     * Sets the value of a field as a {@code boolean} on the specified object.
      * This method is equivalent to
-     * <code>set(obj, zObj)</code>,
-     * where <code>zObj</code> is a <code>Boolean</code> object and 
-     * <code>zObj.booleanValue() == z</code>.
+     * {@code set(obj, zObj)},
+     * where {@code zObj} is a {@code Boolean} object and
+     * {@code zObj.booleanValue() == z}.
      *
      * @param obj the object whose field should be modified
-     * @param z   the new value for the field of <code>obj</code>
+     * @param z   the new value for the field of {@code obj}
      * being modified
-     * 
+     *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
      * @exception IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
-     *              field (or a subclass or implementor thereof), 
+     *              field (or a subclass or implementor thereof),
      *              or if an unwrapping conversion fails.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -715,21 +715,21 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a <code>byte</code> on the specified object.
+     * Sets the value of a field as a {@code byte} on the specified object.
      * This method is equivalent to
-     * <code>set(obj, bObj)</code>,
-     * where <code>bObj</code> is a <code>Byte</code> object and 
-     * <code>bObj.byteValue() == b</code>.
+     * {@code set(obj, bObj)},
+     * where {@code bObj} is a {@code Byte} object and
+     * {@code bObj.byteValue() == b}.
      *
      * @param obj the object whose field should be modified
-     * @param b   the new value for the field of <code>obj</code>
+     * @param b   the new value for the field of {@code obj}
      * being modified
-     * 
+     *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
      * @exception IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
-     *              field (or a subclass or implementor thereof), 
+     *              field (or a subclass or implementor thereof),
      *              or if an unwrapping conversion fails.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -745,21 +745,21 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a <code>char</code> on the specified object.
+     * Sets the value of a field as a {@code char} on the specified object.
      * This method is equivalent to
-     * <code>set(obj, cObj)</code>,
-     * where <code>cObj</code> is a <code>Character</code> object and 
-     * <code>cObj.charValue() == c</code>.
+     * {@code set(obj, cObj)},
+     * where {@code cObj} is a {@code Character} object and
+     * {@code cObj.charValue() == c}.
      *
      * @param obj the object whose field should be modified
-     * @param c   the new value for the field of <code>obj</code>
+     * @param c   the new value for the field of {@code obj}
      * being modified
-     * 
+     *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
      * @exception IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
-     *              field (or a subclass or implementor thereof), 
+     *              field (or a subclass or implementor thereof),
      *              or if an unwrapping conversion fails.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -775,21 +775,21 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a <code>short</code> on the specified object.
+     * Sets the value of a field as a {@code short} on the specified object.
      * This method is equivalent to
-     * <code>set(obj, sObj)</code>,
-     * where <code>sObj</code> is a <code>Short</code> object and 
-     * <code>sObj.shortValue() == s</code>.
+     * {@code set(obj, sObj)},
+     * where {@code sObj} is a {@code Short} object and
+     * {@code sObj.shortValue() == s}.
      *
      * @param obj the object whose field should be modified
-     * @param s   the new value for the field of <code>obj</code>
+     * @param s   the new value for the field of {@code obj}
      * being modified
-     * 
+     *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
      * @exception IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
-     *              field (or a subclass or implementor thereof), 
+     *              field (or a subclass or implementor thereof),
      *              or if an unwrapping conversion fails.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -805,21 +805,21 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as an <code>int</code> on the specified object.
+     * Sets the value of a field as an {@code int} on the specified object.
      * This method is equivalent to
-     * <code>set(obj, iObj)</code>,
-     * where <code>iObj</code> is a <code>Integer</code> object and 
-     * <code>iObj.intValue() == i</code>.
+     * {@code set(obj, iObj)},
+     * where {@code iObj} is a {@code Integer} object and
+     * {@code iObj.intValue() == i}.
      *
      * @param obj the object whose field should be modified
-     * @param i   the new value for the field of <code>obj</code>
+     * @param i   the new value for the field of {@code obj}
      * being modified
-     * 
+     *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
      * @exception IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
-     *              field (or a subclass or implementor thereof), 
+     *              field (or a subclass or implementor thereof),
      *              or if an unwrapping conversion fails.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -835,21 +835,21 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a <code>long</code> on the specified object.
+     * Sets the value of a field as a {@code long} on the specified object.
      * This method is equivalent to
-     * <code>set(obj, lObj)</code>,
-     * where <code>lObj</code> is a <code>Long</code> object and 
-     * <code>lObj.longValue() == l</code>.
+     * {@code set(obj, lObj)},
+     * where {@code lObj} is a {@code Long} object and
+     * {@code lObj.longValue() == l}.
      *
      * @param obj the object whose field should be modified
-     * @param l   the new value for the field of <code>obj</code>
+     * @param l   the new value for the field of {@code obj}
      * being modified
-     * 
+     *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
      * @exception IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
-     *              field (or a subclass or implementor thereof), 
+     *              field (or a subclass or implementor thereof),
      *              or if an unwrapping conversion fails.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -865,21 +865,21 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a <code>float</code> on the specified object.
+     * Sets the value of a field as a {@code float} on the specified object.
      * This method is equivalent to
-     * <code>set(obj, fObj)</code>,
-     * where <code>fObj</code> is a <code>Float</code> object and 
-     * <code>fObj.floatValue() == f</code>.
+     * {@code set(obj, fObj)},
+     * where {@code fObj} is a {@code Float} object and
+     * {@code fObj.floatValue() == f}.
      *
      * @param obj the object whose field should be modified
-     * @param f   the new value for the field of <code>obj</code>
+     * @param f   the new value for the field of {@code obj}
      * being modified
-     * 
+     *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
      * @exception IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
-     *              field (or a subclass or implementor thereof), 
+     *              field (or a subclass or implementor thereof),
      *              or if an unwrapping conversion fails.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.
@@ -895,21 +895,21 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Sets the value of a field as a <code>double</code> on the specified object.
+     * Sets the value of a field as a {@code double} on the specified object.
      * This method is equivalent to
-     * <code>set(obj, dObj)</code>,
-     * where <code>dObj</code> is a <code>Double</code> object and 
-     * <code>dObj.doubleValue() == d</code>.
+     * {@code set(obj, dObj)},
+     * where {@code dObj} is a {@code Double} object and
+     * {@code dObj.doubleValue() == d}.
      *
      * @param obj the object whose field should be modified
-     * @param d   the new value for the field of <code>obj</code>
+     * @param d   the new value for the field of {@code obj}
      * being modified
-     * 
+     *
      * @exception IllegalAccessException    if the underlying field
      *              is inaccessible.
      * @exception IllegalArgumentException  if the specified object is not an
      *              instance of the class or interface declaring the underlying
-     *              field (or a subclass or implementor thereof), 
+     *              field (or a subclass or implementor thereof),
      *              or if an unwrapping conversion fails.
      * @exception NullPointerException      if the specified object is null
      *              and the field is an instance field.

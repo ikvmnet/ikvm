@@ -77,14 +77,14 @@ class ApplicationShutdownHooks implements Runnable {
         if(hooks == null)
             throw new IllegalStateException("Shutdown in progress");
 
-        if (hook == null) 
+        if (hook == null)
             throw new NullPointerException();
 
         return hooks.remove(hook) != null;
     }
 
     /* Iterates over all application hooks creating a new thread for each
-     * to run in. Hooks are run concurrently and this method waits for 
+     * to run in. Hooks are run concurrently and this method waits for
      * them to finish.
      */
     public void run() {
@@ -104,4 +104,3 @@ class ApplicationShutdownHooks implements Runnable {
         }
     }
 }
-

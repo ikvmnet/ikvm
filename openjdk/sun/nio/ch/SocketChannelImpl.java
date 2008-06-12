@@ -225,7 +225,7 @@ class SocketChannelImpl
                 //
                 // *There is A fourth possibility. implCloseSelectableChannel()
                 // invokes nd.preClose(), signals reader/writer thred and quickly
-                // moves on to nd.close() in kill(), which does a real close. 
+                // moves on to nd.close() in kill(), which does a real close.
                 // Then a third thread accepts a new connection, opens file or
                 // whatever that causes the released "fd" to be recycled. All
                 // above happens just between our last isOpen() check and the
@@ -434,8 +434,8 @@ class SocketChannelImpl
             if (state == ST_CONNECTED &&
                 (localAddress == null ||
                  ((InetSocketAddress)localAddress).getAddress().isAnyLocalAddress())) {
-                // Socket was not bound before connecting or
-                // Socket was bound with an "anyLocalAddress"
+                    // Socket was not bound before connecting or
+                    // Socket was bound with an "anyLocalAddress"
                     localAddress = Net.localAddress(fd);
             }
             return localAddress;
@@ -755,7 +755,7 @@ class SocketChannelImpl
             sk.nioReadyOps(newOps);
             // No need to poll again in checkConnect,
             // the error will be detected there
-            readyToConnect = true; 
+            readyToConnect = true;
             return (newOps & ~oldOps) != 0;
         }
 
@@ -766,7 +766,7 @@ class SocketChannelImpl
 
         if (((ops & PollArrayWrapper.POLLCONN) != 0) &&
             ((intOps & SelectionKey.OP_CONNECT) != 0) &&
-            ((state == ST_UNCONNECTED) || (state == ST_PENDING))) { 
+            ((state == ST_UNCONNECTED) || (state == ST_PENDING))) {
             newOps |= SelectionKey.OP_CONNECT;
             readyToConnect = true;
         }
