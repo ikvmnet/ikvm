@@ -9421,8 +9421,13 @@ namespace IKVM.Internal
 			{
 				skip = 1;
 			}
-			object[][] attribs = new object[parameters.Length - skip][];
-			for(int i = skip; i < parameters.Length; i++)
+			int skipEnd = 0;
+			if(mw.HasCallerID)
+			{
+				skipEnd = 1;
+			}
+			object[][] attribs = new object[parameters.Length - skip - skipEnd][];
+			for(int i = skip; i < parameters.Length - skipEnd; i++)
 			{
 				attribs[i - skip] = parameters[i].GetCustomAttributes(false);
 			}
