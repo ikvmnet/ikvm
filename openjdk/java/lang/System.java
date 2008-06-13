@@ -65,7 +65,7 @@ final class Props
     
     static void initProperties(Properties props)
     {
-        props.put("openjdk.version", "OpenJDK 7 b13");
+        props.put("openjdk.version", "OpenJDK 6 b10");
         props.put("gnu.classpath.version", "0.95");
         String vfsroot = getVirtualFileSystemRoot();
         props.put("java.home", vfsroot.substring(0, vfsroot.length() - 1));
@@ -351,7 +351,7 @@ public final class System {
             // calls the installed security manager's checkPermission method
             // which will loop infinitely if there is a non-system class
             // (in this case: the new security manager class) on the stack).
-            AccessController.doPrivileged(new PrivilegedAction() {
+            AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 public Object run() {
                     s.getClass().getProtectionDomain().implies
                         (SecurityConstants.ALL_PERMISSION);

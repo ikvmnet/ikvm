@@ -343,7 +343,8 @@ public class Launcher {
     }
 
     public static URLClassPath getBootstrapClassPath() {
-        String prop = (String)AccessController.doPrivileged(new GetPropertyAction("sun.boot.class.path"));
+        String prop = AccessController.doPrivileged(
+            new GetPropertyAction("sun.boot.class.path"));
         URL[] urls;
         if (prop != null) {
             final String path = prop;

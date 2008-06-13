@@ -229,6 +229,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
             throw new NullPointerException();
         }
         fd = new FileDescriptor();
+        fd.incrementAndGetUseCount();
         open(name, imode);
     }
 

@@ -794,7 +794,7 @@ public class ObjectStreamClass implements Serializable {
      * returned.
      */
     ObjectStreamField[] getFields(boolean copy) {
-        return copy ? (ObjectStreamField[]) fields.clone() : fields;
+        return copy ? fields.clone() : fields;
     }
 
     /**

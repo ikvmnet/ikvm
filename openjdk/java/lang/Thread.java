@@ -1703,7 +1703,14 @@ class Thread implements Runnable {
             if (!isAlive()) {
                 return EMPTY_STACK_TRACE;
             }
-            return dumpThreads(new Thread[] {this})[0];
+            StackTraceElement[][] stackTraceArray = dumpThreads(new Thread[] {this});
+            StackTraceElement[] stackTrace = stackTraceArray[0];
+            // a thread that was alive during the previous isAlive call may have
+            // since terminated, therefore not having a stacktrace.
+            if (stackTrace == null) {
+                stackTrace = EMPTY_STACK_TRACE;
+            }
+            return stackTrace;
         } else {
             // Don't need JVM help for current thread
             return (new Exception()).getStackTrace();
@@ -1761,11 +1768,8 @@ class Thread implements Runnable {
         Map<Thread, StackTraceElement[]> m
             = new HashMap<Thread, StackTraceElement[]>(threads.length);
         for (int i = 0; i < threads.length; i++) {
-            if (threads[i].isAlive()) { 
-                StackTraceElement[] stackTrace = traces[i];
-                if (stackTrace == null) {
-                    stackTrace = EMPTY_STACK_TRACE;
-                } 
+            StackTraceElement[] stackTrace = traces[i];
+            if (stackTrace != null) {
                 m.put(threads[i], stackTrace);
             }
             // else terminated so we don't put it in the map
@@ -1812,9 +1816,9 @@ class Thread implements Runnable {
      * subclass overrides any of the methods, false otherwise.
      */
     private static boolean auditSubclass(final Class subcl) {
-        Boolean result = (Boolean) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        Boolean result = AccessController.doPrivileged(
+            new PrivilegedAction<Boolean>() {
+                public Boolean run() {
                     for (Class cl = subcl;
                          cl != Thread.class;
                          cl = cl.getSuperclass())

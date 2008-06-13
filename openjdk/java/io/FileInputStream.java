@@ -133,6 +133,7 @@ class FileInputStream extends InputStream
             throw new NullPointerException();
         }
         fd = new FileDescriptor();
+        fd.incrementAndGetUseCount();
         open(name);
     }
 

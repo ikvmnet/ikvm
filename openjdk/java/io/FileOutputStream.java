@@ -201,6 +201,7 @@ class FileOutputStream extends OutputStream
             throw new NullPointerException();
         }
         fd = new FileDescriptor();
+        fd.incrementAndGetUseCount();
         this.append = append;
         if (append) {
             openAppend(name);

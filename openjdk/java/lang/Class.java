@@ -3020,9 +3020,12 @@ public final
      */
     public T cast(Object obj) {
         if (obj != null && !isInstance(obj))
-            throw new ClassCastException("Cannot cast " + obj.getClass().getName() 
-                                         + " to " + getName());
+            throw new ClassCastException(cannotCastMsg(obj));
         return (T) obj;
+    }
+
+    private String cannotCastMsg(Object obj) {
+        return "Cannot cast " + obj.getClass().getName() + " to " + getName();
     }
 
     /**

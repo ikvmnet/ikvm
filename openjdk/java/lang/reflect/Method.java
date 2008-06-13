@@ -477,25 +477,24 @@ public final
             if (mod != 0) {
                 sb.append(Modifier.toString(mod) + " ");
             }
-            Type[] typeparms = getTypeParameters();
+            TypeVariable<?>[] typeparms = getTypeParameters();
             if (typeparms.length > 0) {
                 boolean first = true;
                 sb.append("<");
-                for(Type typeparm: typeparms) {
+                for(TypeVariable<?> typeparm: typeparms) {
                     if (!first)
                         sb.append(",");
-                    if (typeparm instanceof Class)
-                        sb.append(((Class)typeparm).getName());
-                    else
-                        sb.append(typeparm.toString());
+                    // Class objects can't occur here; no need to test
+                    // and call Class.getName().
+                    sb.append(typeparm.toString());
                     first = false;
                 }
                 sb.append("> ");
             }
 
             Type genRetType = getGenericReturnType();
-            sb.append( ((genRetType instanceof Class)?
-                        Field.getTypeName((Class)genRetType):genRetType.toString())  + " ");
+            sb.append( ((genRetType instanceof Class<?>)?
+                        Field.getTypeName((Class<?>)genRetType):genRetType.toString())  + " ");
 
             sb.append(Field.getTypeName(getDeclaringClass()) + ".");
             sb.append(getName() + "(");
@@ -504,8 +503,6 @@ public final
                 String param = (params[j] instanceof Class)?
                     Field.getTypeName((Class)params[j]):
                     (params[j].toString());
-                if (isVarArgs() && (j == params.length - 1)) // replace T[] with T...
-                    param = param.replaceFirst("\\[\\]$", "...");
                 sb.append(param);
                 if (j < (params.length - 1))
                     sb.append(",");

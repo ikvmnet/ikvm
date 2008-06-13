@@ -530,6 +530,22 @@ public class PlainSocketImpl extends SocketImpl
         }
     }
 
+    void setFileDescriptor(FileDescriptor fd) {
+        this.netSocket = fd.getSocket();
+    }
+
+    void setAddress(InetAddress address) {
+        this.address = address;
+    }
+
+    void setPort(int port) {
+        this.port = port;
+    }
+
+    void setLocalPort(int localPort) {
+        this.localport = localPort;
+    }
+
     /**
      * Gets an InputStream for this socket.
      */

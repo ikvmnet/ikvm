@@ -66,7 +66,7 @@ public final class FileDescriptor {
      * object.
      */
     public /**/ FileDescriptor() {
-        useCount = new AtomicInteger(1);
+        useCount = new AtomicInteger();
     }
 
     /**
