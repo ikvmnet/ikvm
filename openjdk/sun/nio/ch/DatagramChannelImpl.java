@@ -42,6 +42,13 @@ class DatagramChannelImpl
     extends DatagramChannel
     implements SelChImpl
 {
+    // Windows 2000 introduced a "feature" that causes it to return WSAECONNRESET from receive,
+    // if a previous send resulted in an ICMP port unreachable. We disable this feature by using
+    // this ioctl.
+    private static final int IOC_IN = (int)0x80000000;
+    private static final int IOC_VENDOR = 0x18000000;
+    private static final int SIO_UDP_CONNRESET = IOC_IN | IOC_VENDOR | 12;
+
     // Our file descriptor
     FileDescriptor fd = null;
 
@@ -92,6 +99,15 @@ class DatagramChannelImpl
         super(sp);
         this.fd = Net.socket(false);
         this.state = ST_UNCONNECTED;
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            fd.getSocket().IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
     }
 
     public DatagramChannelImpl(SelectorProvider sp, FileDescriptor fd)
@@ -448,18 +464,21 @@ class DatagramChannelImpl
                     if (sm != null)
                         sm.checkConnect(isa.getAddress().getHostAddress(),
                                         isa.getPort());
-                    // We simulate connectedness, so we don't call connect here,
-                    // but if we're not yet bound, we should bind here.
-                    if (!isBound())
+                    try
                     {
-                        socket().bind(null);
+                        if (false) throw new cli.System.Net.Sockets.SocketException();
+                        if (false) throw new cli.System.ObjectDisposedException("");
+                        fd.getSocket().Connect(PlainSocketImpl.getAddressFromInetAddress(isa.getAddress()), isa.getPort());
+                        fd.getSocket().IOControl(SIO_UDP_CONNRESET, new byte[] { 1 }, null);
                     }
-                    //int n = Net.connect(fd,
-                    //                    isa.getAddress(),
-                    //                    isa.getPort(),
-                    //                    trafficClass);
-                    //if (n <= 0)
-                    //    throw new Error();    // Can't happen
+                    catch (cli.System.Net.Sockets.SocketException x)
+                    {
+                        throw new SocketException(x.getMessage());
+                    }
+                    catch (cli.System.ObjectDisposedException x1)
+                    {
+                        throw new SocketException("Socket is closed");
+                    }
 
                     // Connection succeeded; disallow further invocation
                     state = ST_CONNECTED;
@@ -609,7 +628,21 @@ class DatagramChannelImpl
 
     private static void disconnect0(FileDescriptor fd) throws IOException
     {
-        // since we simulate connectedness, we don't need to do anything here
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            fd.getSocket().Disconnect(true);
+            fd.getSocket().IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw PlainSocketImpl.convertSocketExceptionToIOException(x);
+        }
+        catch (cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     private int receive0(ByteBuffer bb) throws IOException
@@ -637,7 +670,13 @@ class DatagramChannelImpl
                     if (x.get_ErrorCode() == Net.WSAECONNRESET)
                     {
                         // A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
-                        // the winsock stack helpfully lets us know this, but we don't care so we just retry the receive.
+                        // the winsock stack helpfully lets us know this, but we only care about this when we're connected,
+                        // otherwise we'll simply retry the receive (note that we use SIO_UDP_CONNRESET to prevent these
+                        // WSAECONNRESET exceptions, but when switching from connected to disconnected, some can slip through).
+                        if (isConnected())
+                        {
+                            throw new PortUnreachableException();
+                        }
                         continue;
                     }
                     if (x.get_ErrorCode() == Net.WSAEMSGSIZE)
