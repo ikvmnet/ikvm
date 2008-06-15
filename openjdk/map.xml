@@ -1197,19 +1197,6 @@
         </body>
       </method>
     </class>
-    <class name="java.net.DatagramSocket">
-      <method name="receive" sig="(Ljava.net.DatagramPacket;)V">
-        <!-- HACK this is to work around a bug in DatagramSocket. It compares an Inet4Address instance with an InetAddress instance,
-             but the Inet4Address.equals(Object obj) method never returns true if obj isn't also an Inet4Address.
-             Normally this code path in DatagramSocket.receive() isn't used, but since we don't supported DatagramSocketImpl.connect()
-             we do end up here. -->
-        <replace-method-call class="java.net.InetAddress" name="equals" sig="(Ljava.lang.Object;)Z">
-          <code>
-            <call class="java.net.PlainDatagramSocketImpl" name="equalsHack" sig="(Ljava.net.InetAddress;Ljava.net.InetAddress;)Z" />
-          </code>
-        </replace-method-call>
-      </method>
-    </class>
     <class name="java.util.AbstractCollection">
       <!-- We're adding an Add(object) method to allow collection initializers and Xml (soap) serialization to magically work -->
       <!-- NOTE Modifiers.Final and MethodAttributes.NewSlot is recognized by AotTypeWrapper.MapModifiers() as a magic combination that generates a non-virtual method -->

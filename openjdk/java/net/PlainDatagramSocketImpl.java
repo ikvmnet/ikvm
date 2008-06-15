@@ -53,6 +53,13 @@ import java.util.Enumeration;
 
 class PlainDatagramSocketImpl extends DatagramSocketImpl
 {
+    // Windows 2000 introduced a "feature" that causes it to return WSAECONNRESET from receive,
+    // if a previous send resulted in an ICMP port unreachable. We disable this feature by using
+    // this ioctl.
+    private static final int IOC_IN = (int)0x80000000;
+    private static final int IOC_VENDOR = 0x18000000;
+    private static final int SIO_UDP_CONNRESET = IOC_IN | IOC_VENDOR | 12;
+
     // Winsock Error Codes
     private static final int WSAEMSGSIZE = 10040;
     private static final int WSAECONNRESET = 10054;
@@ -249,7 +256,9 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
                 if (x.get_ErrorCode() == WSAECONNRESET)
                 {
                     // A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
-                    // the winsock stack helpfully lets us know this, but we don't care so we just retry the receive.
+                    // the winsock stack helpfully lets us know this, but we only care about this when we're connected,
+                    // otherwise we'll simply retry the receive (note that we use SIO_UDP_CONNRESET to prevent these
+                    // WSAECONNRESET exceptions, but when switching from connected to disconnected, some can slip through).
                     if ((socketFlags & SocketFlags.Peek) != 0)
                     {
                         // We did a peek, so we still need to remove the error result.
@@ -265,6 +274,10 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
                         catch (cli.System.ObjectDisposedException _)
                         {
                         }
+                    }
+                    if (connected)
+                    {
+                        throw new PortUnreachableException("ICMP Port Unreachable");
                     }
                     continue;
                 }
@@ -602,6 +615,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
                 SocketType.wrap(SocketType.Dgram),
                 ProtocolType.wrap(ProtocolType.Udp));
             netSocket.SetSocketOption(SocketOptionLevel.wrap(SocketOptionLevel.Socket), SocketOptionName.wrap(SocketOptionName.Broadcast), 1);
+            netSocket.IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
             fd1 = null;
         }
         catch (cli.System.Net.Sockets.SocketException x)
@@ -726,18 +740,38 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
 
     private void connect0(InetAddress address, int port) throws SocketException
     {
-        // If we throw here, DatagramSocket will fake connectedness for us.
-        // Once we're on .NET 2.0 we can use Socket.Connect/Disconnect.
-        throw new SocketException();
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            IPEndPoint ep = new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(address), port);
+            netSocket.Connect(ep);
+            netSocket.IOControl(SIO_UDP_CONNRESET, new byte[] { 1 }, null);
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+            throw new SocketException(x.getMessage());
+        }
+        catch (cli.System.ObjectDisposedException x1)
+        {
+            throw new SocketException("Socket is closed");
+        }
     }
 
     private void disconnect0(int family)
     {
-    }
-
-    // this is a workaround for a bug in java.net.DatagramSocket.receive(), see map.xml for details.
-    static boolean equalsHack(InetAddress addr1, InetAddress addr2)
-    {
-        return addr1.address == addr2.address;
+        try
+        {
+            if (false) throw new cli.System.Net.Sockets.SocketException();
+            if (false) throw new cli.System.ObjectDisposedException("");
+            netSocket.Disconnect(true);
+            netSocket.IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
+        }
+        catch (cli.System.Net.Sockets.SocketException x)
+        {
+        }
+        catch (cli.System.ObjectDisposedException x1)
+        {
+        }
     }
 }
