@@ -632,7 +632,7 @@ class DatagramChannelImpl
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            fd.getSocket().Disconnect(true);
+            fd.getSocket().Connect(new cli.System.Net.IPEndPoint(cli.System.Net.IPAddress.Any, 0));
             fd.getSocket().IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
         }
         catch (cli.System.Net.Sockets.SocketException x)

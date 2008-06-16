@@ -764,7 +764,7 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            netSocket.Disconnect(true);
+            netSocket.Connect(new IPEndPoint(IPAddress.Any, 0));
             netSocket.IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
         }
         catch (cli.System.Net.Sockets.SocketException x)
