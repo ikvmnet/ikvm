@@ -2216,7 +2216,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return IsArray && (ElementTypeWrapper.IsGhost || ElementTypeWrapper.IsGhostArray);
+				return !IsUnloadable && IsArray && (ElementTypeWrapper.IsGhost || ElementTypeWrapper.IsGhostArray);
 			}
 		}
 
