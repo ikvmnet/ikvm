@@ -109,8 +109,6 @@ class InflaterHuffmanTree
             treeSize += (end - start) >> (16 - bits);
           }
       }
-    if (code != 65536)
-      throw new DataFormatException("Code lengths don't add up properly.");
 
     /* Now create and fill the extra tables from longest to shortest
      * bit len.  This way the sub trees will be aligned.
