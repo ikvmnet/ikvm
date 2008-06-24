@@ -80,7 +80,7 @@ namespace IKVM.Internal
 			{
 				for(int i = 0; i < parameters.Length; i++)
 				{
-					if(parameterNames[i] == null)
+					if(parameters[i].Name != null)
 					{
 						parameterNames[i] = parameters[i].Name;
 					}
