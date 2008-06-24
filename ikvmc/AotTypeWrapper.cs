@@ -571,6 +571,11 @@ namespace IKVM.Internal
 							// are we adding a new method?
 							if(GetMethodWrapper(method.Name, method.Sig, false) == null)
 							{
+								if(method.body == null)
+								{
+									Console.Error.WriteLine("Error: Method {0}.{1}{2} in xml remap file doesn't have a body.", clazz.Name, method.Name, method.Sig);
+									continue;
+								}
 								bool setmodifiers = false;
 								MethodAttributes attribs = method.MethodAttributes;
 								MapModifiers(method.Modifiers, false, out setmodifiers, ref attribs);
