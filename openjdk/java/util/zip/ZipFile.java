@@ -1,5 +1,5 @@
 /* ZipFile.java --
-   Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006
+   Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2008
    Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
@@ -519,16 +519,6 @@ public class ZipFile implements ZipConstants
 
   private static final class PartialInputStream extends InputStream
   {
-    /**
-     * The UTF-8 charset use for decoding the filenames.
-     */
-    private static final Charset UTF8CHARSET = Charset.forName("UTF-8");
-
-    /**
-     * The actual UTF-8 decoder. Created on demand. 
-     */
-    private CharsetDecoder utf8Decoder;
-
     private final RandomAccessFile raf;
     private final byte[] buffer;
     private long bufferOffset;
@@ -725,26 +715,12 @@ public class ZipFile implements ZipConstants
     private String decodeChars(byte[] buffer, int pos, int length)
       throws IOException
     {
-      String result;
-      int i=length - 1;
-      while ((i >= 0) && (buffer[i] <= 0x7f))
+      for (int i = pos; i < pos + length; i++)
         {
-          i--;
+          if (buffer[i] <= 0)
+            return new String(buffer, pos, length, "UTF-8");
         }
-      if (i < 0)
-        {
-          result = new String(buffer, 0, pos, length);
-        }
-      else
-        {
-          ByteBuffer bufferBuffer = ByteBuffer.wrap(buffer, pos, length);
-          if (utf8Decoder == null)
-            utf8Decoder = UTF8CHARSET.newDecoder();
-          utf8Decoder.reset();
-          char [] characters = utf8Decoder.decode(bufferBuffer).array();
-          result = String.valueOf(characters);
-        }
-      return result;
+      return new String(buffer, 0, pos, length);
     }
 
     String readString(int length) throws IOException
