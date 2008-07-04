@@ -136,7 +136,7 @@ public class ZipFile implements ZipConstants
   public ZipFile(File file, int mode) throws ZipException, IOException
   {
     if (mode != OPEN_READ && mode != (OPEN_READ | OPEN_DELETE))
-      throw new IllegalArgumentException("invalid mode");
+      throw new IllegalArgumentException("Illegal mode: 0x" + Integer.toHexString(mode));
     if ((mode & OPEN_DELETE) != 0)
       file.deleteOnExit();
     this.raf = new RandomAccessFile(file, "r");
@@ -174,7 +174,7 @@ public class ZipFile implements ZipConstants
   private void checkClosed()
   {
     if (closed)
-      throw new IllegalStateException("ZipFile has closed: " + name);
+      throw new IllegalStateException("zip file closed");
   }
 
   /**
@@ -372,8 +372,7 @@ public class ZipFile implements ZipConstants
         }
     };
 
-    int method = zipEntry.getMethod();
-    switch (method)
+    switch (zipEntry.getMethod())
       {
       case ZipOutputStream.STORED:
         return inp;
@@ -401,7 +400,7 @@ public class ZipFile implements ZipConstants
           }
         };
       default:
-        throw new ZipException("Unknown compression method " + method);
+        throw new ZipException("invalid compression method");
       }
   }
   
