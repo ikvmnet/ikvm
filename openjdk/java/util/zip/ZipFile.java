@@ -192,7 +192,7 @@ public class ZipFile implements ZipConstants
      * Note that a comment has a maximum length of 64K, so that is the
      * maximum we search backwards.
      */
-    PartialInputStream inp = new PartialInputStream(raf, 4096);
+    PartialInputStream inp = new PartialInputStream(4096);
     long pos = raf.length() - ENDHDR;
     long top = Math.max(0, pos - 65536);
     do
@@ -351,29 +351,26 @@ public class ZipFile implements ZipConstants
   {
     checkClosed();
 
-    String name = entry.getName();
-    ZipEntry zipEntry = entries.get(name);
+    final ZipEntry zipEntry = entries.get(entry.getName());
     if (zipEntry == null)
       return null;
 
-    PartialInputStream inp = new PartialInputStream(raf, 1024);
-    inp.seek(zipEntry.offset);
+    PartialInputStream inp = new PartialInputStream(1024) {
+        void lazyInitialSeek() throws IOException {
+            seek(zipEntry.offset);
 
-    if (inp.readLeInt() != LOCSIG)
-      throw new ZipException("invalid LOC header (bad signature)");
+            if (readLeInt() != LOCSIG)
+              throw new ZipException("invalid LOC header (bad signature)");
 
-    inp.skip(4);
+            skip(22);
 
-    if (zipEntry.getMethod() != inp.readLeShort())
-      throw new ZipException("Compression method mismatch: " + name);
+            int nameLen = readLeShort();
+            int extraLen = readLeShort();
+            skip(nameLen + extraLen);
 
-    inp.skip(16);
-
-    int nameLen = inp.readLeShort();
-    int extraLen = inp.readLeShort();
-    inp.skip(nameLen + extraLen);
-
-    inp.setLength(zipEntry.getCompressedSize());
+            setLength(zipEntry.getCompressedSize());
+        }
+    };
 
     int method = zipEntry.getMethod();
     switch (method)
@@ -442,27 +439,31 @@ public class ZipFile implements ZipConstants
     }
   }
 
-  private static final class PartialInputStream extends InputStream
+  private class PartialInputStream extends InputStream
   {
-    private final RandomAccessFile raf;
     private final byte[] buffer;
     private long bufferOffset;
     private int pos;
     private long end;
+    private boolean lazy;
     // We may need to supply an extra dummy byte to our reader.
     // See Inflater.  We use a count here to simplify the logic
     // elsewhere in this class.  Note that we ignore the dummy
     // byte in methods where we know it is not needed.
     private int dummyByteCount;
 
-    public PartialInputStream(RandomAccessFile raf, int bufferSize)
+    public PartialInputStream(int bufferSize)
       throws IOException
     {
-      this.raf = raf;
       buffer = new byte[bufferSize];
       bufferOffset = -buffer.length;
       pos = buffer.length;
       end = raf.length();
+      lazy = true;
+    }
+
+    void lazyInitialSeek() throws IOException
+    {
     }
 
     void setLength(long length)
@@ -472,6 +473,9 @@ public class ZipFile implements ZipConstants
 
     private void fillBuffer() throws IOException
     {
+      if (closed)
+        throw new ZipException("ZipFile closed");
+
       synchronized (raf)
         {
           long len = end - bufferOffset;
@@ -488,8 +492,13 @@ public class ZipFile implements ZipConstants
         }
     }
     
-    public int available()
+    public int available() throws IOException
     {
+      if (lazy)
+        {
+          lazy = false;
+          lazyInitialSeek();
+        }
       long amount = end - (bufferOffset + pos);
       if (amount > Integer.MAX_VALUE)
         return Integer.MAX_VALUE;
@@ -502,6 +511,12 @@ public class ZipFile implements ZipConstants
         return -1;
       if (pos == buffer.length)
         {
+          if (lazy)
+            {
+              lazy = false;
+              lazyInitialSeek();
+              return read();
+            }
           bufferOffset += buffer.length;
           pos = 0;
           fillBuffer();
@@ -512,6 +527,12 @@ public class ZipFile implements ZipConstants
 
     public int read(byte[] b, int off, int len) throws IOException
     {
+      if (lazy)
+        {
+          lazy = false;
+          lazyInitialSeek();
+        }
+
       if (len > end + dummyByteCount - (bufferOffset + pos))
         {
           len = (int) (end + dummyByteCount - (bufferOffset + pos));
@@ -543,6 +564,11 @@ public class ZipFile implements ZipConstants
 
     public long skip(long amount) throws IOException
     {
+      if (lazy)
+        {
+          lazy = false;
+          lazyInitialSeek();
+        }
       if (amount < 0)
         return 0;
       if (amount > end - (bufferOffset + pos))
