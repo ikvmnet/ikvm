@@ -218,7 +218,7 @@ public class ZipFile implements ZipConstants
     entries = new LinkedHashMap<String, ZipEntry> (count+count/2);
     inp.seek(pos - centralSize);
     
-    for (int i = 0; i < count; i++)
+    while (inp.position() <= pos - CENHDR)
       {
         if (inp.readLeInt() != CENSIG)
           throw new ZipException("invalid CEN header (bad signature)");
