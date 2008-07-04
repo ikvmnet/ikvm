@@ -179,34 +179,31 @@ public class ZipFile implements ZipConstants
     checkZipFile();
   }
 
-  private void checkZipFile() throws ZipException
+  private void checkZipFile() throws IOException
   {
     boolean valid = false;
 
     try 
       {
-        byte[] buf = new byte[4];
-        raf.readFully(buf);
-        int sig = buf[0] & 0xFF
-                | ((buf[1] & 0xFF) << 8)
-                | ((buf[2] & 0xFF) << 16)
-                | ((buf[3] & 0xFF) << 24);
-        valid = sig == LOCSIG;
+        readEntries();
+        valid = true;
       }
-    catch (IOException _)
+    catch (EOFException _)
       {
+        throw new ZipException("invalid CEN header (bad header size)");
       } 
-
-    if (!valid)
+    finally
       {
-        try
+        if (!valid)
           {
-            raf.close();
+            try
+              {
+                raf.close();
+              }
+            catch (IOException _)
+              {
+              }
           }
-        catch (IOException _)
-          {
-          }
-        throw new ZipException("Not a valid zip file");
       }
   }
 
@@ -240,29 +237,38 @@ public class ZipFile implements ZipConstants
     do
       {
         if (pos < top)
-          throw new ZipException
-            ("central directory not found, probably not a zip file: " + name);
+          throw new ZipException("error in opening zip file");
         inp.seek(pos--);
       }
     while (inp.readLeInt() != ENDSIG);
     
-    if (inp.skip(ENDTOT - ENDNRD) != ENDTOT - ENDNRD)
-      throw new EOFException(name);
+    pos++;
+    inp.skip(6);
     int count = inp.readLeShort();
-    if (inp.skip(ENDOFF - ENDSIZ) != ENDOFF - ENDSIZ)
-      throw new EOFException(name);
+    int centralSize = inp.readLeInt();    
     int centralOffset = inp.readLeInt();
 
+    if (centralSize > pos)
+      throw new ZipException("invalid END header (bad central directory size)");
+
+    if (centralOffset > pos - centralSize)
+      throw new ZipException("invalid END header (bad central directory offset)");
+
     entries = new LinkedHashMap<String, ZipEntry> (count+count/2);
-    inp.seek(centralOffset);
+    inp.seek(pos - centralSize);
     
     for (int i = 0; i < count; i++)
       {
         if (inp.readLeInt() != CENSIG)
-          throw new ZipException("Wrong Central Directory signature: " + name);
+          throw new ZipException("invalid CEN header (bad signature)");
 
-        inp.skip(6);
+        inp.skip(4);
+        int flags = inp.readLeShort();
+        if ((flags & 1) != 0)
+          throw new ZipException("invalid CEN header (encrypted entry)");
         int method = inp.readLeShort();
+        if (method != ZipEntry.STORED && method != ZipEntry.DEFLATED)
+          throw new ZipException("invalid CEN header (bad compression method)");
         int dostime = inp.readLeInt();
         int crc = inp.readLeInt();
         int csize = inp.readLeInt();
@@ -293,6 +299,9 @@ public class ZipFile implements ZipConstants
         entry.offset = offset;
         entries.put(name, entry);
       }
+
+    if (inp.position() != pos)
+      throw new ZipException("invalid CEN header (bad header size)");
   }
 
   /**
@@ -427,7 +436,7 @@ public class ZipFile implements ZipConstants
     inp.seek(zipEntry.offset);
 
     if (inp.readLeInt() != LOCSIG)
-      throw new ZipException("Wrong Local header signature: " + name);
+      throw new ZipException("invalid LOC header (bad signature)");
 
     inp.skip(4);
 
@@ -639,6 +648,11 @@ public class ZipFile implements ZipConstants
           pos = 0;
           fillBuffer();
         }
+    }
+
+    long position()
+    {
+      return bufferOffset + pos;
     }
 
     void readFully(byte[] buf) throws IOException
