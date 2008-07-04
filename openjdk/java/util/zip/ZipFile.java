@@ -383,8 +383,16 @@ public class ZipFile implements ZipConstants
         final int sz = (int) entry.getSize();
         return new InflaterInputStream(inp, inf)
         {
+          private boolean closed;
+          public void close() throws IOException
+          {
+            closed = true;
+            super.close();
+          }
           public int available() throws IOException
           {
+            if (closed)
+              return 0;
             if (sz == -1)
               return super.available();
             if (super.available() != 0)
