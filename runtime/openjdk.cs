@@ -5016,7 +5016,7 @@ namespace IKVM.NativeCode.java
 					while (entries.hasMoreElements())
 					{
 						juzZipEntry entry = (juzZipEntry)entries.nextElement();
-						if (entry.getName().StartsWith("META-INF/"))
+						if (entry.getName().StartsWith("META-INF/", StringComparison.OrdinalIgnoreCase))
 						{
 							if (list == null)
 							{
