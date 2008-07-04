@@ -95,37 +95,6 @@ public class ZipFile implements ZipConstants
 
   private boolean closed = false;
 
-
-  /**
-   * Helper function to open RandomAccessFile and throw the proper
-   * ZipException in case opening the file fails.
-   *
-   * @param name the file name, or null if file is provided
-   *
-   * @param file the file, or null if name is provided
-   *
-   * @return the newly open RandomAccessFile, never null
-   */
-  private RandomAccessFile openFile(String name, 
-                                    File file) 
-    throws ZipException, IOException
-  {                                       
-    try 
-      {
-        return 
-          (name != null)
-          ? new RandomAccessFile(name, "r")
-          : new RandomAccessFile(file, "r");
-      }
-    catch (FileNotFoundException f)
-      { 
-        ZipException ze = new ZipException(f.getMessage());
-        ze.initCause(f);
-        throw ze;
-      }
-  }
-
-
   /**
    * Opens a Zip file with the given name for reading.
    * @exception IOException if a i/o error occured.
@@ -134,9 +103,7 @@ public class ZipFile implements ZipConstants
    */
   public ZipFile(String name) throws ZipException, IOException
   {
-    this.raf = openFile(name,null);
-    this.name = name;
-    checkZipFile();
+    this(new File(name), OPEN_READ);
   }
 
   /**
@@ -147,9 +114,7 @@ public class ZipFile implements ZipConstants
    */
   public ZipFile(File file) throws ZipException, IOException
   {
-    this.raf = openFile(null,file);
-    this.name = file.getPath();
-    checkZipFile();
+    this(file, OPEN_READ);
   }
 
   /**
@@ -174,13 +139,9 @@ public class ZipFile implements ZipConstants
       throw new IllegalArgumentException("invalid mode");
     if ((mode & OPEN_DELETE) != 0)
       file.deleteOnExit();
-    this.raf = openFile(null,file);
+    this.raf = new RandomAccessFile(file, "r");
     this.name = file.getPath();
-    checkZipFile();
-  }
 
-  private void checkZipFile() throws IOException
-  {
     boolean valid = false;
 
     try 
