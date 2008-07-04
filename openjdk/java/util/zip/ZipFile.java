@@ -342,34 +342,7 @@ public class ZipFile implements ZipConstants
   public Enumeration<? extends ZipEntry> entries()
   {
     checkClosed();
-    
-    try
-      {
-        return new ZipEntryEnumeration(getEntries().values().iterator());
-      }
-    catch (IOException ioe)
-      {
-        return EmptyEnumeration.getInstance();
-      }
-  }
-
-  /**
-   * Checks that the ZipFile is still open and reads entries when necessary.
-   *
-   * @exception IllegalStateException when the ZipFile has already been closed.
-   * @exception IOException when the entries could not be read.
-   */
-  private LinkedHashMap<String, ZipEntry> getEntries() throws IOException
-  {
-    synchronized(raf)
-      {
-        checkClosed();
-
-        if (entries == null)
-          readEntries();
-
-        return entries;
-      }
+    return new ZipEntryEnumeration(entries.values().iterator());
   }
 
   /**
@@ -384,20 +357,11 @@ public class ZipFile implements ZipConstants
   public ZipEntry getEntry(String name)
   {
     checkClosed();
-
-    try
-      {
-        LinkedHashMap<String, ZipEntry> entries = getEntries();
-        ZipEntry entry = entries.get(name);
-        // If we didn't find it, maybe it's a directory.
-        if (entry == null && !name.endsWith("/"))
-          entry = entries.get(name + '/');
-        return entry != null ? new ZipEntry(entry, name) : null;
-      }
-    catch (IOException ioe)
-      {
-        return null;
-      }
+    ZipEntry entry = entries.get(name);
+    // If we didn't find it, maybe it's a directory.
+    if (entry == null && !name.endsWith("/"))
+      entry = entries.get(name + '/');
+    return entry != null ? new ZipEntry(entry, name) : null;
   }
 
   /**
@@ -426,7 +390,6 @@ public class ZipFile implements ZipConstants
   {
     checkClosed();
 
-    LinkedHashMap<String, ZipEntry> entries = getEntries();
     String name = entry.getName();
     ZipEntry zipEntry = entries.get(name);
     if (zipEntry == null)
@@ -492,15 +455,7 @@ public class ZipFile implements ZipConstants
   public int size()
   {
     checkClosed();
-    
-    try
-      {
-        return getEntries().size();
-      }
-    catch (IOException ioe)
-      {
-        return 0;
-      }
+    return entries.size();
   }
   
   private static class ZipEntryEnumeration implements Enumeration<ZipEntry>
