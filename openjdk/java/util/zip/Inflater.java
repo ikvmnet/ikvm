@@ -363,7 +363,7 @@ public class Inflater
    */
   public boolean needsInput () 
   {
-    return input.needsInput ();
+    return input == null || input.needsInput ();
   }
 
   /**
