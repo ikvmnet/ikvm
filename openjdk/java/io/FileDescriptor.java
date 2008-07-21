@@ -304,22 +304,19 @@ public final class FileDescriptor {
     @ikvm.lang.Internal
     public int readBytes(byte buf[], int offset, int len) throws IOException
     {
-        checkOpen();
+        // NOTE we start by dereferencing buf, to make sure you get a NullPointerException first if you pass a null reference.
+        int bufLen = buf.length;
+        if ((offset < 0) || (offset > bufLen) || (len < 0) || (len > (bufLen - offset)))
+        {
+            throw new IndexOutOfBoundsException();
+        }
 
         if (len == 0)
         {
             return 0;
         }
 
-        if ((offset < 0) || (offset > buf.length))
-        {
-            throw new IllegalArgumentException("Offset invalid: " + offset);
-        }
-
-        if ((len < 0) || (len > (buf.length - offset)))
-        {
-            throw new IllegalArgumentException("Length invalid: " + len);
-        }
+        checkOpen();
 
         try
         {
@@ -440,21 +437,19 @@ public final class FileDescriptor {
     @ikvm.lang.Internal
     public void writeBytes(byte buf[], int offset, int len) throws IOException
     {
-        checkOpen();
+        // NOTE we start by dereferencing buf, to make sure you get a NullPointerException first if you pass a null reference.
+        int bufLen = buf.length;
+        if ((offset < 0) || (offset > bufLen) || (len < 0) || (len > (bufLen - offset)))
+        {
+            throw new IndexOutOfBoundsException();
+        }
+
         if (len == 0)
         {
             return;
         }
 
-        if ((offset < 0) || (offset > buf.length))
-        {
-            throw new IllegalArgumentException("Offset invalid: " + offset);
-        }
-
-        if ((len < 0) || (len > (buf.length - offset)))
-        {
-            throw new IllegalArgumentException("Length invalid: " + len);
-        }
+        checkOpen();
 
         try
         {
@@ -513,6 +508,7 @@ public final class FileDescriptor {
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.NotSupportedException();
             if (false) throw new cli.System.ObjectDisposedException(null);
+            if (false) throw new cli.System.ArgumentOutOfRangeException();
             stream.set_Position(newPosition);
         }
         catch (cli.System.IO.IOException x)
@@ -526,6 +522,10 @@ public final class FileDescriptor {
         catch (cli.System.ObjectDisposedException x)
         {
             throw new java.nio.channels.ClosedChannelException();
+        }
+        catch (cli.System.ArgumentOutOfRangeException _)
+        {
+            throw new IOException("Negative seek offset");
         }
     }
 
