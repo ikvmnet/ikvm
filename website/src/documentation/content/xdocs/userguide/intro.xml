@@ -20,7 +20,7 @@
         between the Java and .NET languages and platforms. It is still under development but people have reported success in running sophisticated applications and tools
         including Eclipse, JmDNS, JGroups, Jetty (with a few changes), etc.
         </p>
-      <p>This manual is written for IKVM.NET version 0.80. </p>
+      <p>This manual is written for IKVM.NET version 0.36. </p>
       
     </section>
     
@@ -45,9 +45,8 @@
       
       <p>
       IKVM.NET provides the VM-related technologies for byte-code translation and verification, classloading, etc. 
-      It is dependent upon the <fork href="ext:classpath">GNU Classpath</fork> project 
-      for implementations of the JDK libraries. While there are several holes in the coverage provided by these libraries, they are used by at least ten open source VMs. 
-      This means that they will continue evolving and being debugged rapidly to improve the quality of the IKVM.NET experience.</p>
+      It is dependent upon the <fork href="ext:openjdk">OpenJDK</fork> project 
+      for implementations of the JDK libraries.</p>
       
       <p>IKVM.NET is comprised by the following components:</p>
             
@@ -73,17 +72,8 @@
                         </td>
                    </tr>
                     <tr>
-                        <td>IKVM.GNU.Classpath.dll</td>
-                        <td>This is a compiled version of <fork href="ext:classpath">GNU Classpath</fork>, the Free Software Foundation's implementation of the Java class libraries, plus some additional IKVM.NET specific code. Note that GNU Classpath isn't part of IKVM.NET, but it is used by IKVM.NET.</td>
-                    </tr>
-                    <tr>
-                        <td>IKVM.JNI.CLR-Win32.dll</td>
-                        <td>Managed C++ assembly that implements the JNI interface. This is an optional part, only required when an application uses its own native libraries. This is not needed for pure Java applications. </td>
-                    </tr>
-                    <tr>
-                        <td>IKVM.JNI.Mono.dll</td>
-                        <td>Mono implementation of the JNI interface. Works together with libmono-ikvm-jni.so, which is developed and maintained as part of Mono.
-                        </td>
+                        <td>IKVM.OpenJDK.ClassLibrary.dll</td>
+                        <td>This is a compiled version of the Java class libraries, plus some additional IKVM.NET specific code.</td>
                     </tr>
                     <tr>
                         <td>IKVM.AWT.WinForms.dll</td>
@@ -112,8 +102,8 @@
       <p>You must have one of the following .NET frameworks 
       installed:</p>
       <ul>
-      <li>Microsoft .NET Framework 1.1 SDK (Windows platform)</li>
-      <li>Mono Framework 1.0 (Windows or Linux)</li>
+      <li>Microsoft .NET Framework 1.1 (or later) SDK (Windows platform)</li>
+      <li>Mono 1.2 (or later) (Windows or Linux)</li>
       </ul>
       
     </section>

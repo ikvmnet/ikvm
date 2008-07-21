@@ -246,7 +246,7 @@
 <a name="N10030"></a><a name="IKVM.NET+Components"></a>
 <h3>IKVM.NET Components</h3>
 <div style="margin-left: 0 ; border: 2px">
-<p>IKVM.NET consists of several parts:</p>
+<p>IKVM.NET 0.36 consists of several parts:</p>
 <ul>
 
 <li>
@@ -267,8 +267,8 @@ Java code as java.lang.Object, java.lang.String and java.lang.Throwable.</li>
 
 <li>
 
-<strong>IKVM.GNU.Classpath.dll</strong>: compiled version of <a href="http://www.gnu.org/software/classpath/classpath.html">GNU Classpath</a>, the Free Software Foundation's implementation of the Java class libraries, 
-plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>part</em> of IKVM.NET, but it is <em>used</em> by IKVM.NET 
+<strong>IKVM.OpenJDK.ClassLibrary.dll</strong>: compiled version of the Java class libraries derived from the <a href="http://openjdk.java.net/">OpenJDK</a> class library with some parts filled in with code from <a href="http://www.gnu.org/software/classpath/classpath.html">GNU Classpath</a> and <a href="http://icedtea.classpath.org/wiki/Main_Page">IcedTea</a>, 
+plus some additional IKVM.NET specific code.
 </li>
 
 <li>
@@ -298,11 +298,11 @@ plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>p
 </ul>
 </div>
     
-<a name="N1007D"></a><a name="Project+Status"></a>
+<a name="N1007F"></a><a name="Project+Status"></a>
 <h3>Project Status</h3>
 <div style="margin-left: 0 ; border: 2px">
-<p>This project is currently in active development. Compliance with JDK 1.4 is largely implemented, but there are some
-      holes (particularly in the <a target="_top" href="http://www.kaffe.org/~stuart/japi/htmlout/h-jdk14-classpath.html">Classpath API's</a>). In particular, </p>
+<p>This project is currently in active development. Compliance with JDK 1.6 is largely implemented, but there are some
+      holes. In particular, </p>
 <ul>
       
 <li>AWT and Swing are not presently functional. This is a low priority item for the project developers.</li>
@@ -313,18 +313,26 @@ plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>p
 <p>Still, enough functionality is in place that several large Java projects run successfully. </p>
 </div>
     
-<a name="N10097"></a><a name="Related+Work"></a>
+<a name="N10095"></a><a name="Related+Work"></a>
 <h3>Related Work</h3>
 <div style="margin-left: 0 ; border: 2px">
 <p>The following projects are related to IKVM.NET in some way:</p>
 <ul>
         
 <li>
+<a href="http://www.go-mono.org">Mono: Open Source .NET implementation that includes IKVM.NET</a>
+</li>
+        
+<li>
 <a href="http://www.monodevelop.com/">MonoDevelop: A Mono IDE with IKVM Support</a>
 </li>
         
 <li>
-<a href="http://www.gnu.org/software/classpath/classpath.html">GNU Classpath: The Free Java Library Project</a>
+<a href="http://ant-ikvmc.sourceforge.net/">Ant task for ikvmc</a>
+</li>
+        
+<li>
+<a href="http://code.google.com/p/jar2ikvmc/">Tool to figure out jar dependencies and generate ikvmc script</a>
 </li>
       
 </ul>

@@ -62,19 +62,13 @@
       
       <p xml:space="preserve"><code>     ikvmc hello.jar</code></p>
       
-      <note>If you're using Mono, you will have to tell ikvmc where to find the GNU Classpath dll. Try the following,
-      substituting the location of IKVM.GNU.Classpath.dll on your system if necessary:<br/>
-      <br/>
-       <code>ikvmc -reference:/usr/lib/IKVM.GNU.Classpath.dll hello.jar</code>
-       </note>
-      
       <p>After the command completes, you should find a hello.exe file in the current directory. To execute it:</p>
       <ul>
       <li><strong>Windows / .NET Framework:</strong>
       <p>Try running hello.exe. If you get a FileNotFound exception when the .NET runtime attempts to load the referenced
-      IKVM.GNU.Classpath.dll, remember that the .NET framework expects to find referenced dll's in the current
+      IKVM.OpenJDK.ClassLibrary.dll, remember that the .NET Framework expects to find referenced dll's in the application
       directory or in the Global Assembly Cache. Either <link href="site:install">install the dll's in the
-      Global Assembly Cache</link>, or copy them to the current directory.</p>
+      Global Assembly Cache</link>, or copy them to the application directory.</p>
       </li>
       <li><strong>Linux / Mono:</strong>
       <p>Run it using the following command:</p>
@@ -125,9 +119,6 @@
        <p>Now, we'll convert the Java class file to a .NET application. Type the following:</p>
       
       <p xml:space="preserve"><code>     ikvmc ShowDir.class</code></p>
-      <p>Note: On a Linux Mono installation, you will have to add a -reference option, like this:</p>
-      
-      <p xml:space="preserve"><code>     ikvmc -reference:/usr/lib/IKVM.GNU.Classpath.dll ShowDir.class</code></p>
        
        <p>After the command completes, you should find ShowDir.exe in the current directory. You should be able to
        execute it successfully. (On Windows .NET, remember to copy the IKVM dll's to the current directory.)</p>

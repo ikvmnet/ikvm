@@ -24,27 +24,15 @@
 
       <section>
         <title>Class Loading in ikvmc-compiled Java Applications</title>
-        <p>When you convert a Java application to CIL using ikvmc, it executes as "native" .NET code. Applications that
-        use the Java classloading API (<code>Class.forName( )</code>, and so forth) locate classes using the following algorithm:</p>
+        <p>When you convert a Java application to CIL using ikvmc, it executes as "native" .NET code. Each .NET assembly will have its own
+        Java class loader instance (typically of the type ikvm.runtime.AssemblyClassLoader). This class loader will load classes using the following algorithm:</p>
         <ol>
-          <li>All loaded assemblies are searched first. Thus, if the class exists in the .exe or any referenced dll's,
-            it will be found there.</li>
-          <li>If the class is not in a loaded assembly, the CLASSPATH is searched for a Java .class. If found, it is dynamically loaded
-            and executed using the IKVM interpreter.</li>
+          <li>The corresponding assembly is searched first. Thus, if the class exists in the assembly, it will be found there.</li>
+          <li>All assemblies directly referenced by corresponding assembly are searched.</li>
         </ol>
+
+        <p>For more details see these two articles: <link href="http://weblog.ikvm.net/PermaLink.aspx?guid=4e0b7f7c-6f5d-42a3-a4d6-5d05a99c84ff">Class Loading Architecture</link>, <link href="http://weblog.ikvm.net/PermaLink.aspx?guid=375f1ff8-912a-4458-9120-f0a8cfb23b68">Writing a Custom Assembly Class Loader</link></p>
         
-        <p>This approach means you can develop .NET applications in Java that execute at native .NET speeds, but enjoy the flexibility
-        of dynamic class loading at runtime. For example, you can write a .NET application that loads type-4 JDBC drivers dynamically.</p>
-        
-        <p>For the most part, all of this works the way you want without much thought on your part. But there are a few situations
-        that will require special handling.  Consider, for example, an application that has been compiled by ikvmc into several assemblies, A.exe, B.dll, and C.dll. 
-        A.exe references B.dll, but neither A.exe nor B.dll reference C.dll directly (perhaps C.dll is a JDBC driver).
-        If code in A.exe uses Class.forName( ) to load a class in B.dll, everything is fine. 
-        But if code in A.exe or B.dll uses Class.forName( ) to load classes in C.dll, things are not fine. Since neither A.exe nor B.dll references
-        C.dll, it will not have been loaded into the application domain at runtime, and the application will fail with a Class Not Found
-        runtime exception.</p>
-        <p>In cases like this, your application must force the runtime to load an assembly into the application domain before calling
-        Class.forName( ). To do this, call <strong>TODO: Insert API method here</strong>.</p>
       </section>
     
     </section>

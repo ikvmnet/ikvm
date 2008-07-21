@@ -7,6 +7,15 @@
 
 <body>
 
+<h2>IKVM at Deltix Lab, Inc.</h2>
+
+<p><i>At my company we are still amazed to see large part of our Java system successfully running on .NET platform thanks to IKVM.</i></p>
+
+<p><i>We plan to use IKVM heavily in our technology stack. Our company develops a product for financial data integration and analytics. IKVM 
+will be used to interface our Java-based server with C# based front end. IKVM allows to reuse Java code in .NET modules. For instance, 
+the same ActiveMQ messaging code written on Java now also brings data to our C# application.</i> -- Andy Malakov, System Architect, SCEA</p>
+
+
 <h2>IKVM at eTrading and Analytics Group at HSBC</h2>
 
 <p><i>eTrading and Analytics Group at HSBC provides real-time pricing and algorithmic strategies for a variety of financial markets.</i></p>

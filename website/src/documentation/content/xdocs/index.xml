@@ -18,7 +18,7 @@
     </section>
     <section>
     <title>IKVM.NET Components</title>
-    <p >IKVM.NET consists of several parts:</p>
+    <p >IKVM.NET 0.36 consists of several parts:</p>
 <ul >
 <li>
 <strong>IKVM.Runtime.dll</strong>: The VM runtime and all supporting code. It contains (among other things):
@@ -30,8 +30,8 @@ Java code as java.lang.Object, java.lang.String and java.lang.Throwable.</li>
 </ul>
 </li>
 <li>
-<strong>IKVM.GNU.Classpath.dll</strong>: compiled version of <link href="ext:classpath">GNU Classpath</link>, the Free Software Foundation's implementation of the Java class libraries, 
-plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>part</em> of IKVM.NET, but it is <em>used</em> by IKVM.NET 
+<strong>IKVM.OpenJDK.ClassLibrary.dll</strong>: compiled version of the Java class libraries derived from the <link href="ext:openjdk">OpenJDK</link> class library with some parts filled in with code from <link href="ext:classpath">GNU Classpath</link> and <link href="ext:icedtea">IcedTea</link>, 
+plus some additional IKVM.NET specific code.
 </li>
 <li>
 <strong>ikvm-native.dll</strong>: Unmanaged C library that implements a small part of the JNI interface and some platform specific code on non Windows platforms. On Windows this is an optional part, only required when an application uses its own native libraries. This is not needed for pure Java applications. On non-Windows platforms it is required, but it is included with the Mono distribution so it usually doesn't need to be installed seperately.
@@ -51,8 +51,8 @@ plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>p
   </section>
     <section>
       <title>Project Status</title>
-      <p>This project is currently in active development. Compliance with JDK 1.4 is largely implemented, but there are some
-      holes (particularly in the <jump href="http://www.kaffe.org/~stuart/japi/htmlout/h-jdk14-classpath.html">Classpath API's</jump>). In particular, </p>
+      <p>This project is currently in active development. Compliance with JDK 1.6 is largely implemented, but there are some
+      holes. In particular, </p>
       <ul>
       <li>AWT and Swing are not presently functional. This is a low priority item for the project developers.</li>
       <li>Security is another fairly large hole missing from the IKVM platform. This will be solved by relying on the sophisticated and powerful security model offered by the .NET platform.</li>
@@ -65,8 +65,10 @@ plus some additional IKVM.NET specific code. Note that GNU Classpath isn't <em>p
       <title>Related Work</title>
       <p>The following projects are related to IKVM.NET in some way:</p>
       <ul>
+        <li><link href="ext:mono">Mono: Open Source .NET implementation that includes IKVM.NET</link></li>
         <li><link href="ext:monodevelop">MonoDevelop: A Mono IDE with IKVM Support</link></li>
-        <li><link href="ext:classpath">GNU Classpath: The Free Java Library Project</link></li>
+        <li><link href="ext:ant-ikvmc">Ant task for ikvmc</link></li>
+        <li><link href="ext:jar2ikvmc">Tool to figure out jar dependencies and generate ikvmc script</link></li>
       </ul>
     </section>
   </body>

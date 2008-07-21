@@ -13,8 +13,8 @@
       
       <p>IKVM makes it possible to develop .NET applications that use Java API's. Here's how to proceed:</p>
       <ol>
-        <li>IKVM comes with an implementation of GNU Classpath in .NET. To use those API's, simply add
-        a reference to IKVM.GNU.Classpath.dll to your Mono / .NET IDE project. </li>
+        <li>IKVM comes with an implementation of the Java class libraries in .NET. To use those API's, simply add
+        a reference to IKVM.OpenJDK.ClassLibrary.dll to your Mono / .NET IDE project. </li>
         <li>To use other Java API's, you can take one of the following approaches:
             <ul>
                <li>Convert the Java API to .NET CIL using <link href="site:ikvmc">ikvmc</link>.

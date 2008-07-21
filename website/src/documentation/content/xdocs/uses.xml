@@ -33,8 +33,7 @@
       <title>Develop .NET applications in Java</title>
       <p>IKVM provides a way for you to develop .NET applications in
       Java. Although IKVM.NET does not include a Java compiler for .NET,
-      you can use the open source <fork href="ext:jikes">Jikes compiler</fork> to 
-      compile Java source code to JVM bytecode, then use 
+      you can use any Java compiler to compile Java source code to JVM bytecode, then use 
       <code>ikvmc -target:exe myapp.jar</code> 
       to produce a .NET executable. You can even use .NET API's in your
       Java code using the included <link href="site:ikvmstub">ikvmstub</link> application. 

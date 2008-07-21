@@ -248,11 +248,9 @@
 <div style="margin-left: 0 ; border: 2px">
 <p>If you plan to do .NET development with IKVM.NET, you may wish to do the following:</p>
 <ul>
-<li>Download the <a target="_blank" href="http://oss.software.ibm.com/developerworks/opensource/jikes/">Jikes compiler</a>
-        
-<p>If you plan to develop code in Java that runs in .NET, you will need a Java compiler. IKVM.NET does not
-              come with a compiler. You may use any Java compiler that emits standard Java .class files. Jikes is an excellent
-              open source, fast Java compiler that is available for many platforms.</p>
+<li>Download a Java SDK
+        <p>If you plan to develop code in Java that runs in .NET, you will need a Java compiler. IKVM.NET does not
+              come with a compiler. You may use any Java compiler that emits standard Java .class files.</p>
 </li>
         
 <li>Windows: Install IKVM dll's in the Global Assembly Cache
@@ -261,7 +259,7 @@
         without having the dll's in the current directory, you must install them in the Global Assembly Cache.
         To do this in Windows,  access the Microsoft .NET Framework
         Configuration item in the Windows Control Panel, and add the assemblies to the Assembly Cache.
-        At a minimum, you will want to install the IKVM.GNU.Classpath.dll and IKVM.Runtime.dll.
+        At a minimum, you will want to install the IKVM.OpenJDK.ClassLibrary.dll and IKVM.Runtime.dll.
         </p>
         
 </li>

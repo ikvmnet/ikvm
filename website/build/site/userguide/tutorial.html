@@ -288,17 +288,6 @@
 <div class="pre">
 <span class="codefrag">     ikvmc hello.jar</span>
 </div>
-<div class="frame note">
-<div class="label">Note</div>
-<div class="content">If you're using Mono, you will have to tell ikvmc where to find the GNU Classpath dll. Try the following,
-      substituting the location of IKVM.GNU.Classpath.dll on your system if necessary:<br>
-      
-<br>
-       
-<span class="codefrag">ikvmc -reference:/usr/lib/IKVM.GNU.Classpath.dll hello.jar</span>
-       
-</div>
-</div>
 <p>After the command completes, you should find a hello.exe file in the current directory. To execute it:</p>
 <ul>
       
@@ -306,9 +295,9 @@
 <strong>Windows / .NET Framework:</strong>
       
 <p>Try running hello.exe. If you get a FileNotFound exception when the .NET runtime attempts to load the referenced
-      IKVM.GNU.Classpath.dll, remember that the .NET framework expects to find referenced dll's in the current
+      IKVM.OpenJDK.ClassLibrary.dll, remember that the .NET Framework expects to find referenced dll's in the application
       directory or in the Global Assembly Cache. Either <a href="../userguide/install.html">install the dll's in the
-      Global Assembly Cache</a>, or copy them to the current directory.</p>
+      Global Assembly Cache</a>, or copy them to the application directory.</p>
       
 </li>
       
@@ -328,7 +317,7 @@
     
     
 <a name="tutorial_java2net"></a>
-    <a name="N100B1"></a><a name="Develop+a+.NET+Application+in+Java"></a>
+    <a name="N100A7"></a><a name="Develop+a+.NET+Application+in+Java"></a>
 <h3>Develop a .NET Application in Java</h3>
 <div style="margin-left: 0 ; border: 2px">
 <p>In this section, you will learn the steps needed to develop .NET applications in Java. </p>
@@ -371,10 +360,6 @@
 <p>Now, we'll convert the Java class file to a .NET application. Type the following:</p>
 <div class="pre">
 <span class="codefrag">     ikvmc ShowDir.class</span>
-</div>
-<p>Note: On a Linux Mono installation, you will have to add a -reference option, like this:</p>
-<div class="pre">
-<span class="codefrag">     ikvmc -reference:/usr/lib/IKVM.GNU.Classpath.dll ShowDir.class</span>
 </div>
 <p>After the command completes, you should find ShowDir.exe in the current directory. You should be able to
        execute it successfully. (On Windows .NET, remember to copy the IKVM dll's to the current directory.)</p>

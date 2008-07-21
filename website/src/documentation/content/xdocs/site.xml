@@ -54,13 +54,16 @@ See http://xml.apache.org/forrest/linking.html for more info
   -->
 
   <external-refs>
-    <jikes href="http://oss.software.ibm.com/developerworks/opensource/jikes/" />
     <sourceforgedl href="http://sourceforge.net/project/showfiles.php?group_id=69637" />
     <classpath href="http://www.gnu.org/software/classpath/classpath.html" />
+    <icedtea href="http://icedtea.classpath.org/wiki/Main_Page" />
+    <openjdk href="http://openjdk.java.net/" />
     <monodevelop href="http://www.monodevelop.com/" />
     <dotnet href="http://msdn.microsoft.com/netframework/" />
     <ikvmweblogfull href="http://weblog.ikvm.net/allentries.aspx" />
     <mono href="http://www.go-mono.org" />
+    <ant-ikvmc href="http://ant-ikvmc.sourceforge.net/" />
+    <jar2ikvmc href="http://code.google.com/p/jar2ikvmc/" />
     <xml.apache.org href="http://xml.apache.org/">
       <forrest href="forrest/">
         <validation href="validation.html"/>
