@@ -745,7 +745,8 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
             IPEndPoint ep = new IPEndPoint(PlainSocketImpl.getAddressFromInetAddress(address), port);
-            netSocket.Connect(ep);
+            // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
+            netSocket.EndConnect(netSocket.BeginConnect(ep, null, null));
             netSocket.IOControl(SIO_UDP_CONNRESET, new byte[] { 1 }, null);
         }
         catch (cli.System.Net.Sockets.SocketException x)
@@ -764,7 +765,8 @@ class PlainDatagramSocketImpl extends DatagramSocketImpl
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
-            netSocket.Connect(new IPEndPoint(IPAddress.Any, 0));
+            // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
+            netSocket.EndConnect(netSocket.BeginConnect(new IPEndPoint(IPAddress.Any, 0), null, null));
             netSocket.IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null);
         }
         catch (cli.System.Net.Sockets.SocketException x)
