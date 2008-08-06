@@ -123,8 +123,7 @@ using sndResolverConfigurationImpl = sun.net.dns.ResolverConfigurationImpl;
 
 static class DynamicMethodSupport
 {
-	// MONOBUG as of Mono 1.2.5.1, DynamicMethod is too broken to be used
-	internal static readonly bool Enabled = IsFullTrust && Type.GetType("Mono.Runtime") == null;
+	internal static readonly bool Enabled = IsFullTrust;
 
 	private static bool IsFullTrust
 	{

@@ -2868,6 +2868,7 @@ namespace IKVM.Internal
 			return this.IsSubTypeOf(wrapper);
 		}
 
+#if !STATIC_COMPILER
 		internal bool IsInstance(object obj)
 		{
 			if(obj != null)
@@ -2878,6 +2879,7 @@ namespace IKVM.Internal
 			}
 			return false;
 		}
+#endif
 
 		internal abstract TypeWrapper[] Interfaces
 		{
@@ -4762,10 +4764,7 @@ namespace IKVM.Internal
 					{
 						modreq = new Type[] { typeof(System.Runtime.CompilerServices.IsVolatile) };
 					}
-					// MONOBUG the __<> prefix for wrapped final fields is to work around a bug in mcs 1.1.17
-					// it crashes when it tries to lookup the property with the same name as the privatescope field
-					// http://bugzilla.ximian.com/show_bug.cgi?id=79451
-					field = typeBuilder.DefineField(isWrappedFinal ? "__<>" + fieldName : fieldName, type, modreq, Type.EmptyTypes, attribs);
+					field = typeBuilder.DefineField(fieldName, type, modreq, Type.EmptyTypes, attribs);
 					if(fld.IsTransient)
 					{
 						CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(typeof(NonSerializedAttribute).GetConstructor(Type.EmptyTypes), new object[0]);
