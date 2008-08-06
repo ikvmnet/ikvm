@@ -764,6 +764,7 @@ namespace IKVM.Internal
 					AttributeHelper.HideFromJava(mb);
 					ilgen = CodeEmitter.Create(mb);
 					LocalBuilder localType = ilgen.DeclareLocal(typeof(Type));
+					LocalBuilder localRank = ilgen.DeclareLocal(typeof(int));
 					ilgen.Emit(OpCodes.Ldarg_0);
 					CodeEmitterLabel skip = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Brtrue_S, skip);
@@ -773,27 +774,29 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldarg_0);
 					ilgen.Emit(OpCodes.Call, typeof(object).GetMethod("GetType"));
 					ilgen.Emit(OpCodes.Stloc, localType);
+					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Stloc, localRank);
 					skip = ilgen.DefineLabel();
 					ilgen.Emit(OpCodes.Br_S, skip);
 					CodeEmitterLabel iter = ilgen.DefineLabel();
 					ilgen.MarkLabel(iter);
-					ilgen.Emit(OpCodes.Ldarg_1);
-					ilgen.Emit(OpCodes.Ldc_I4_1);
-					ilgen.Emit(OpCodes.Sub);
-					ilgen.Emit(OpCodes.Starg_S, (byte)1);
 					ilgen.Emit(OpCodes.Ldloc, localType);
 					ilgen.Emit(OpCodes.Callvirt, typeof(Type).GetMethod("GetElementType"));
 					ilgen.Emit(OpCodes.Stloc, localType);
+					ilgen.Emit(OpCodes.Ldloc, localRank);
+					ilgen.Emit(OpCodes.Ldc_I4_1);
+					ilgen.Emit(OpCodes.Sub);
+					ilgen.Emit(OpCodes.Stloc, localRank);
+					ilgen.Emit(OpCodes.Ldloc, localRank);
+					CodeEmitterLabel typecheck = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Brfalse_S, typecheck);
 					ilgen.MarkLabel(skip);
 					ilgen.Emit(OpCodes.Ldloc, localType);
 					ilgen.Emit(OpCodes.Callvirt, typeof(Type).GetMethod("get_IsArray"));
 					ilgen.Emit(OpCodes.Brtrue_S, iter);
-					ilgen.Emit(OpCodes.Ldarg_1);
-					skip = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Brfalse_S, skip);
 					ilgen.Emit(OpCodes.Ldc_I4_0);
 					ilgen.Emit(OpCodes.Ret);
-					ilgen.MarkLabel(skip);
+					ilgen.MarkLabel(typecheck);
 					for(int i = 0; i < implementers.Length; i++)
 					{
 						ilgen.Emit(OpCodes.Ldtoken, implementers[i].TypeAsTBD);
@@ -815,10 +818,10 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldc_I4_1);
 					ilgen.Emit(OpCodes.Ret);
 					ilgen.MarkLabel(skip);
-					ilgen.Emit(OpCodes.Ldtoken, typeof(object));
-					ilgen.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle"));
-					ilgen.Emit(OpCodes.Ldloc, localType);
-					ilgen.Emit(OpCodes.Ceq);
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ldtoken, typeBuilder);
+					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Call, StaticCompiler.GetType("IKVM.Runtime.GhostTag").GetMethod("IsGhostArrayInstance", BindingFlags.NonPublic | BindingFlags.Static));
 					ilgen.Emit(OpCodes.Ret);
 						
 					// Implement the "Cast" method

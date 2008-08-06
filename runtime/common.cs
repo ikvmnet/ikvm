@@ -382,6 +382,11 @@ namespace IKVM.NativeCode.ikvm.runtime
 			{
 				return DotNetTypeWrapper.GetWrapperFromDotNetType(t);
 			}
+			TypeWrapper ghostType = GhostTag.GetTag(o);
+			if(ghostType != null)
+			{
+				return ghostType;
+			}
 			return ClassLoaderWrapper.GetWrapperFromType(t);
 		}
 

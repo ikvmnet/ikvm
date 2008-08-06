@@ -2504,7 +2504,12 @@ namespace IKVM.NativeCode.java
 					{
 						TypeWrapper wrapper = TypeWrapper.FromClass(componentType);
 						wrapper.Finish();
-						return SystemArray.CreateInstance(wrapper.TypeAsArrayType, length);
+						object obj = SystemArray.CreateInstance(wrapper.TypeAsArrayType, length);
+						if (wrapper.IsGhost || wrapper.IsGhostArray)
+						{
+							IKVM.Runtime.GhostTag.SetTag(obj, wrapper.MakeArrayType(1));
+						}
+						return obj;
 					}
 					catch (RetargetableJavaException x)
 					{
@@ -2530,7 +2535,12 @@ namespace IKVM.NativeCode.java
 					{
 						TypeWrapper wrapper = TypeWrapper.FromClass(componentType).MakeArrayType(dimensions.Length);
 						wrapper.Finish();
-						return IKVM.Runtime.ByteCodeHelper.multianewarray(wrapper.TypeAsArrayType.TypeHandle, dimensions);
+						object obj = IKVM.Runtime.ByteCodeHelper.multianewarray(wrapper.TypeAsArrayType.TypeHandle, dimensions);
+						if (wrapper.IsGhostArray)
+						{
+							IKVM.Runtime.GhostTag.SetTag(obj, wrapper);
+						}
+						return obj;
 					}
 					catch (RetargetableJavaException x)
 					{

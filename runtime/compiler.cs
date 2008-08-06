@@ -40,6 +40,8 @@ static class ByteCodeHelperMethods
 {
 	internal static readonly MethodInfo GetClassFromTypeHandle;
 	internal static readonly MethodInfo multianewarray;
+	internal static readonly MethodInfo multianewarray_ghost;
+	internal static readonly MethodInfo anewarray_ghost;
 	internal static readonly MethodInfo f2i;
 	internal static readonly MethodInfo d2i;
 	internal static readonly MethodInfo f2l;
@@ -82,6 +84,8 @@ static class ByteCodeHelperMethods
 #endif
 		GetClassFromTypeHandle = typeofByteCodeHelper.GetMethod("GetClassFromTypeHandle");
 		multianewarray = typeofByteCodeHelper.GetMethod("multianewarray");
+		multianewarray_ghost = typeofByteCodeHelper.GetMethod("multianewarray_ghost");
+		anewarray_ghost = typeofByteCodeHelper.GetMethod("anewarray_ghost");
 		f2i = typeofByteCodeHelper.GetMethod("f2i");
 		d2i = typeofByteCodeHelper.GetMethod("d2i");
 		f2l = typeofByteCodeHelper.GetMethod("f2l");
@@ -1701,6 +1705,16 @@ class Compiler
 								ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
 								java_lang_Class.EmitCheckcast(clazz, ilGenerator);
 							}
+							else if(tw.IsGhostArray)
+							{
+								int rank = tw.ArrayRank;
+								while(tw.IsArray)
+								{
+									tw = tw.ElementTypeWrapper;
+								}
+								ilGenerator.Emit(OpCodes.Ldtoken, ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank));
+								getClassFromTypeHandle.EmitCall(ilGenerator);
+							}
 							else
 							{
 								ilGenerator.Emit(OpCodes.Ldtoken, tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
@@ -2270,6 +2284,18 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Ldloc, localArray);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicMultianewarray);
 					}
+					else if(wrapper.IsGhost || wrapper.IsGhostArray)
+					{
+						TypeWrapper tw = wrapper;
+						while(tw.IsArray)
+						{
+							tw = tw.ElementTypeWrapper;
+						}
+						ilGenerator.Emit(OpCodes.Ldtoken, ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, wrapper.ArrayRank));
+						ilGenerator.Emit(OpCodes.Ldloc, localArray);
+						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.multianewarray_ghost);
+						ilGenerator.Emit(OpCodes.Castclass, wrapper.TypeAsArrayType);
+					}
 					else
 					{
 						Type type = wrapper.TypeAsArrayType;
@@ -2290,7 +2316,7 @@ class Compiler
 						ilGenerator.Emit(OpCodes.Ldstr, wrapper.Name);
 						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicNewarray);
 					}
-					else
+					else if(wrapper.IsGhost || wrapper.IsGhostArray)
 					{
 						// NOTE for ghost types we create object arrays to make sure that Ghost implementers can be
 						// stored in ghost arrays, but this has the unintended consequence that ghost arrays can
@@ -2302,6 +2328,16 @@ class Compiler
 						// is unfortunate, but I think we can live with this minor incompatibility.
 						// Note that this does not break type safety, because when the incorrect object is eventually
 						// used as the ghost interface type it will generate a ClassCastException.
+						TypeWrapper tw = wrapper;
+						while(tw.IsArray)
+						{
+							tw = tw.ElementTypeWrapper;
+						}
+						ilGenerator.Emit(OpCodes.Ldtoken, ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, wrapper.ArrayRank + 1));
+						ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.anewarray_ghost.MakeGenericMethod(wrapper.TypeAsArrayType));
+					}
+					else
+					{
 						ilGenerator.Emit(OpCodes.Newarr, wrapper.TypeAsArrayType);
 					}
 					break;

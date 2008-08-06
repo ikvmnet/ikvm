@@ -2870,23 +2870,12 @@ namespace IKVM.Internal
 
 		internal bool IsInstance(object obj)
 		{
-#if !FIRST_PASS && !STATIC_COMPILER
 			if(obj != null)
 			{
 				TypeWrapper thisWrapper = this;
 				TypeWrapper objWrapper = IKVM.NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj);
-				if(thisWrapper.IsGhostArray)
-				{
-					TypeWrapper elementType = objWrapper;
-					while(elementType.IsArray)
-					{
-						elementType = elementType.ElementTypeWrapper;
-					}
-					return thisWrapper.ArrayRank == objWrapper.ArrayRank && elementType == CoreClasses.java.lang.Object.Wrapper;
-				}
 				return objWrapper.IsAssignableTo(thisWrapper);
 			}
-#endif
 			return false;
 		}
 

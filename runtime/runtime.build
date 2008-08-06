@@ -71,6 +71,7 @@
                 <include name="JavaException.cs" />
                 <include name="MemberWrapper.cs" />
                 <include unless="${classpath}" name="openjdk.cs" />
+                <include name="PassiveWeakDictionary.cs" />
                 <include name="profiler.cs" />
                 <include name="tracer.cs" />
                 <include name="TypeWrapper.cs" />

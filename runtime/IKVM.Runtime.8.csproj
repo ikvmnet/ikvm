@@ -120,6 +120,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="openjdk.cs" />
+    <Compile Include="PassiveWeakDictionary.cs" />
     <Compile Include="profiler.cs">
       <SubType>Code</SubType>
     </Compile>

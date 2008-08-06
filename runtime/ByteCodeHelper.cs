@@ -31,6 +31,54 @@ using System.Runtime.InteropServices;
 
 namespace IKVM.Runtime
 {
+	static class GhostTag
+	{
+		private static volatile PassiveWeakDictionary<object, TypeWrapper> dict;
+
+		internal static void SetTag(object obj, RuntimeTypeHandle typeHandle)
+		{
+			SetTag(obj, ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(typeHandle)));
+		}
+
+		internal static void SetTag(object obj, TypeWrapper wrapper)
+		{
+			if(dict == null)
+			{
+				PassiveWeakDictionary<object, TypeWrapper> newDict = new PassiveWeakDictionary<object, TypeWrapper>();
+#pragma warning disable 0420 // don't whine about CompareExchange not respecting 'volatile'
+				if(Interlocked.CompareExchange(ref dict, newDict, null) != null)
+#pragma warning restore
+				{
+					newDict.Dispose();
+				}
+			}
+			dict.Add(obj, wrapper);
+		}
+
+		internal static TypeWrapper GetTag(object obj)
+		{
+			if(dict != null)
+			{
+				TypeWrapper tw;
+				dict.TryGetValue(obj, out tw);
+				return tw;
+			}
+			return null;
+		}
+
+		// this method is called from <GhostType>.IsInstanceArray()
+		internal static bool IsGhostArrayInstance(object obj, RuntimeTypeHandle typeHandle, int rank)
+		{
+			TypeWrapper tw1 = GhostTag.GetTag(obj);
+			if(tw1 != null)
+			{
+				TypeWrapper tw2 = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
+				return tw1.IsAssignableTo(tw2);
+			}
+			return false;
+		}
+	}
+
 	public static class ByteCodeHelper
 	{
 		[DebuggerStepThroughAttribute]
@@ -61,6 +109,29 @@ namespace IKVM.Runtime
 				}
 			}
 			return o;
+		}
+
+		[DebuggerStepThroughAttribute]
+		public static object multianewarray_ghost(RuntimeTypeHandle typeHandle, int[] lengths)
+		{
+			Type type = Type.GetTypeFromHandle(typeHandle);
+			int rank = 0;
+			while(type.IsArray)
+			{
+				rank++;
+				type = type.GetElementType();
+			}
+			object obj = multianewarray(ArrayTypeWrapper.MakeArrayType(typeof(object), rank).TypeHandle, lengths);
+			GhostTag.SetTag(obj, typeHandle);
+			return obj;
+		}
+
+		[DebuggerStepThroughAttribute]
+		public static T[] anewarray_ghost<T>(int length, RuntimeTypeHandle typeHandle)
+		{
+			T[] obj = new T[length];
+			GhostTag.SetTag(obj, typeHandle);
+			return obj;
 		}
 
 #if !COMPACT_FRAMEWORK && !FIRST_PASS
