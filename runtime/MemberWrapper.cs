@@ -48,7 +48,7 @@ namespace IKVM.Internal
 
 	class MemberWrapper
 	{
-#if OPENJDK && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS
 		protected static readonly sun.reflect.ReflectionFactory reflectionFactory = (sun.reflect.ReflectionFactory)java.security.AccessController.doPrivileged(new sun.reflect.ReflectionFactory.GetReflectionFactoryAction());
 #endif
 		private System.Runtime.InteropServices.GCHandle handle;
@@ -277,7 +277,7 @@ namespace IKVM.Internal
 
 	abstract class MethodWrapper : MemberWrapper
 	{
-#if OPENJDK && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS
 		private volatile object reflectionMethod;
 #endif
 		internal static readonly MethodWrapper[] EmptyArray  = new MethodWrapper[0];
@@ -415,7 +415,7 @@ namespace IKVM.Internal
 		{
 #if FIRST_PASS
 			return null;
-#elif OPENJDK
+#else
 			object method = reflectionMethod;
 			if (method == null)
 			{
@@ -482,12 +482,6 @@ namespace IKVM.Internal
 				return reflectionFactory.copyMethod((java.lang.reflect.Method)method);
 			}
 			return method;
-#else
-			if (this.Name == StringConstants.INIT)
-			{
-				return JVM.Library.newConstructor(this.DeclaringType.ClassObject, this);
-			}
-			return JVM.Library.newMethod(this.DeclaringType.ClassObject, this);
 #endif
 		}
 
@@ -495,7 +489,7 @@ namespace IKVM.Internal
 		{
 #if FIRST_PASS
 			return null;
-#elif OPENJDK
+#else
 			java.lang.reflect.Method method = methodOrConstructor as java.lang.reflect.Method;
 			if (method != null)
 			{
@@ -503,8 +497,6 @@ namespace IKVM.Internal
 			}
 			java.lang.reflect.Constructor constructor = (java.lang.reflect.Constructor)methodOrConstructor;
 			return TypeWrapper.FromClass(constructor.getDeclaringClass()).GetMethods()[constructor._slot()];
-#else
-			return (MethodWrapper)JVM.Library.getWrapperFromMethodOrConstructor(methodOrConstructor);
 #endif
 		}
 #endif // !STATIC_COMPILER
@@ -1227,7 +1219,7 @@ namespace IKVM.Internal
 
 	abstract class FieldWrapper : MemberWrapper
 	{
-#if OPENJDK && !FIRST_PASS
+#if !STATIC_COMPILER && !FIRST_PASS
 		private static readonly FieldInfo slotField = typeof(java.lang.reflect.Field).GetField("slot", BindingFlags.Instance | BindingFlags.NonPublic);
 		private volatile object reflectionField;
 #endif
@@ -1306,11 +1298,9 @@ namespace IKVM.Internal
 		{
 #if FIRST_PASS
 			return null;
-#elif OPENJDK
+#else
 			java.lang.reflect.Field f = (java.lang.reflect.Field)field;
 			return TypeWrapper.FromClass(f.getDeclaringClass()).GetFields()[(int)slotField.GetValue(f)];
-#else
-			return (FieldWrapper)JVM.Library.getWrapperFromField(field);
 #endif
 		}
 
@@ -1318,7 +1308,7 @@ namespace IKVM.Internal
 		{
 #if FIRST_PASS
 			return null;
-#elif OPENJDK
+#else
 			object field = reflectionField;
 			if (field == null)
 			{
@@ -1348,8 +1338,6 @@ namespace IKVM.Internal
 				field = reflectionFactory.copyField((java.lang.reflect.Field)field);
 			}
 			return field;
-#else
-			return JVM.Library.newField(this.DeclaringType.ClassObject, this);
 #endif // FIRST_PASS
 		}
 #endif // !STATIC_COMPILER

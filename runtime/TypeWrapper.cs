@@ -2039,13 +2039,10 @@ namespace IKVM.Internal
 						// DynamicTypeWrapper should haved already had SetClassObject explicitly
 						Debug.Assert(!(this is DynamicTypeWrapper));
 #endif // !COMPACT_FRAMEWORK
-#if FIRST_PASS
-#elif OPENJDK
+#if !FIRST_PASS
 						java.lang.Class clazz = java.lang.Class.newClass();
 						SetTypeWrapperHack(ref clazz.typeWrapper, this);
 						classObject = clazz;
-#else
-						classObject = JVM.Library.newClass(this, null, GetClassLoader().GetJavaClassLoader());
 #endif
 					}
 				}
@@ -2063,11 +2060,9 @@ namespace IKVM.Internal
 		{
 #if FIRST_PASS
 			return null;
-#elif OPENJDK
+#else
 			// MONOBUG redundant cast to workaround mcs bug
 			return (TypeWrapper)(object)((java.lang.Class)classObject).typeWrapper;
-#else
-			return (TypeWrapper)JVM.Library.getWrapperFromClass(classObject);
 #endif
 		}
 #endif // !STATIC_COMPILER
@@ -3989,16 +3984,6 @@ namespace IKVM.Internal
 					{
 						fields[i] = new DynamicPropertyFieldWrapper(wrapper, fld);
 					}
-#if STATIC_COMPILER && !OPENJDK
-					else if(fld.IsFinal
-						&& (fld.IsPublic || fld.IsProtected)
-						&& wrapper.IsPublic
-						&& !wrapper.IsInterface
-						&& (!wrapper.classLoader.StrictFinalFieldSemantics || wrapper.Name == "java.lang.System"))
-					{
-						fields[i] = new GetterFieldWrapper(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null, null);
-					}
-#endif
 					else
 					{
 						fields[i] = FieldWrapper.Create(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal));

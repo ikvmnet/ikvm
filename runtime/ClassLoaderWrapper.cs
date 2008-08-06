@@ -806,11 +806,9 @@ namespace IKVM.Internal
 			{
 #if FIRST_PASS
 				ClassLoaderWrapper wrapper = null;
-#elif OPENJDK
+#else
 				// MONOBUG the redundant cast to ClassLoaderWrapper is to workaround an mcs bug
 				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)(object)((java.lang.ClassLoader)javaClassLoader).wrapper;
-#else
-				ClassLoaderWrapper wrapper = (ClassLoaderWrapper)JVM.Library.getWrapperFromClassLoader(javaClassLoader);
 #endif
 				if(wrapper == null)
 				{
@@ -938,11 +936,8 @@ namespace IKVM.Internal
 
 		private static void SetWrapperForClassLoader(object javaClassLoader, ClassLoaderWrapper wrapper)
 		{
-#if FIRST_PASS || STATIC_COMPILER
-#elif OPENJDK
+#if !STATIC_COMPILER && !FIRST_PASS
 			SetClassLoadWrapperHack(ref ((java.lang.ClassLoader)javaClassLoader).wrapper, wrapper);
-#else
-			JVM.Library.setWrapperForClassLoader(javaClassLoader, wrapper);
 #endif
 		}
 

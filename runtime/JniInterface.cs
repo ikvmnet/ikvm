@@ -941,11 +941,7 @@ namespace IKVM.Runtime
 				return JNIEnv.JNI_ERR;
 			}
 			JNI.jvmDestroyed = true;
-#if OPENJDK
 			IKVM.NativeCode.java.lang.Thread.WaitUntilLastJniThread();
-#else
-			JVM.Library.jniWaitUntilLastThread();
-#endif
 			return JNIEnv.JNI_OK;
 		}
 
@@ -991,11 +987,7 @@ namespace IKVM.Runtime
 				object threadGroup = p->UnwrapRef(pAttachArgs->group);
 				if(threadGroup != null)
 				{
-#if OPENJDK
 					IKVM.NativeCode.java.lang.Thread.AttachThreadFromJni(threadGroup);
-#else
-					JVM.Library.setThreadGroup(threadGroup);
-#endif
 				}
 			}
 			*penv = JNIEnv.CreateJNIEnv();
@@ -1011,11 +1003,7 @@ namespace IKVM.Runtime
 			}
 			// TODO if we set Thread.IsBackground to false when we attached, now might be a good time to set it back to true.
 			JNIEnv.FreeJNIEnv();
-#if OPENJDK
 			IKVM.NativeCode.java.lang.VMThread.jniDetach();
-#else
-			JVM.Library.jniDetach();
-#endif
 			return JNIEnv.JNI_OK;
 		}
 
@@ -1300,11 +1288,7 @@ namespace IKVM.Runtime
 				Marshal.Copy((IntPtr)(void*)pbuf, buf, 0, length);
 				// TODO what should the protection domain be?
 				// NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
-#if OPENJDK
 				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.ClassLoader.defineClass0(pEnv->UnwrapRef(loader), name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
-#else
-				return pEnv->MakeLocalRef(IKVM.NativeCode.java.lang.VMClassLoader.defineClassImpl(pEnv->UnwrapRef(loader), name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
-#endif
 			}
 			catch(Exception x)
 			{
@@ -3375,13 +3359,9 @@ namespace IKVM.Runtime
 					SetPendingException(pEnv, new java.lang.IllegalArgumentException("capacity"));
 					return IntPtr.Zero;
 				}
-#if OPENJDK
 				return pEnv->MakeLocalRef(JVM.CoreAssembly.GetType("java.nio.DirectByteBuffer")
 					.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(long), typeof(int) }, null)
 					.Invoke(new object[] { address.ToInt64(), (int)capacity }));
-#else
-				return pEnv->MakeLocalRef(JVM.Library.newDirectByteBuffer(address, (int)capacity));
-#endif
 			}
 			catch(Exception x)
 			{
@@ -3394,11 +3374,7 @@ namespace IKVM.Runtime
 		{
 			try
 			{
-#if OPENJDK
 				return (IntPtr)((sun.nio.ch.DirectBuffer)pEnv->UnwrapRef(buf)).address();
-#else
-				return JVM.Library.getDirectBufferAddress(pEnv->UnwrapRef(buf));
-#endif
 			}
 			catch(Exception x)
 			{

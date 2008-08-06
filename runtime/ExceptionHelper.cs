@@ -100,11 +100,7 @@ namespace IKVM.NativeCode.java.lang
 
 		public static bool IsHideFromJava(MethodBase mb)
 		{
-#if OPENJDK
 			return NativeCode.sun.reflect.Reflection.IsHideFromJava(mb);
-#else
-			return NativeCode.gnu.classpath.VMStackWalker.isHideFromJava(mb);
-#endif
 		}
 
 		public static string getClassNameFromType(Type type)

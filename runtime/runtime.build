@@ -4,12 +4,7 @@
         <property name="first-pass" value="true" />
         <call target="IKVM.Runtime" />
     </target>
-    <target name="classpath">
-        <property name="classpath" value="true" />
-        <call target="IKVM.Runtime" />
-    </target>
     <target name="signed">
-        <property name="classpath" value="false" />
         <property name="signed" value="SIGNCODE" />
         <property name="signoption" value="-key:ikvm-key" />
         <property name="ilasm_signoption" value="/key:@ikvm-key" />
@@ -23,8 +18,7 @@
                 <include name="JniInterface.cs" />
             </sources>
             <references>
-                <include unless="${first-pass or not classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
-                <include unless="${first-pass or classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
+                <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
             </references>
@@ -33,15 +27,11 @@
     </target>
 
     <target name="IKVM.Runtime">
-        <property overwrite="false" name="classpath" value="false" />
         <property overwrite="false" name="cfnet" value="false" />
         <property overwrite="false" name="first-pass" value="false" />
         <property name="defs" value="TRACE" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
-        </if>
-        <if test="${not classpath}">
-            <property name="defs" value="${defs};OPENJDK" />
         </if>
         <if test="${first-pass}">
             <property name="defs" value="${defs};FIRST_PASS" />
@@ -60,7 +50,6 @@
                 <include name="ByteCodeHelper.cs" />
                 <include name="ClassFile.cs" />
                 <include name="ClassLoaderWrapper.cs" />
-                <include if="${classpath}" name="classpath.cs" />
                 <include name="CodeEmitter.cs" />
                 <include name="common.cs" />
                 <include name="compiler.cs" />
@@ -70,7 +59,7 @@
                 <include name="intrinsics.cs" />
                 <include name="JavaException.cs" />
                 <include name="MemberWrapper.cs" />
-                <include unless="${classpath}" name="openjdk.cs" />
+                <include name="openjdk.cs" />
                 <include name="PassiveWeakDictionary.cs" />
                 <include name="profiler.cs" />
                 <include name="tracer.cs" />
@@ -79,19 +68,14 @@
                 <include name="vm.cs" />
             </sources>
             <resources>
-                <include if="${not classpath and not first-pass}" name="../openjdk/vfs.zip" />
+                <include if="${not first-pass}" name="../openjdk/vfs.zip" />
             </resources>
             <references>
-                <include unless="${first-pass}" name="../bin/IKVM.Runtime.JNI.dll" asis="true" />
-                <include unless="${first-pass or not classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
-                <include unless="${first-pass or classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
+                <include if="${not first-pass}" name="../bin/IKVM.Runtime.JNI.dll" asis="true" />
+                <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Configuration.dll" />
             </references>
-            <nowarn>
-                <!-- don't whine about deprecated methods -->
-                <warning number="618" />
-            </nowarn>
         </csc>
         <copy file="IKVM.Runtime.dll" todir="../bin" />
     </target>

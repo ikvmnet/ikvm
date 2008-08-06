@@ -690,10 +690,8 @@ namespace IKVM.Runtime
 		{
 #if COMPACT_FRAMEWORK || FIRST_PASS
 			return false;
-#elif OPENJDK
-			return Environment.HasShutdownStarted && !java.lang.Shutdown.runFinalizersOnExit;
 #else
-			return Environment.HasShutdownStarted && !IKVM.Internal.JVM.Library.runFinalizersOnExit();
+			return Environment.HasShutdownStarted && !java.lang.Shutdown.runFinalizersOnExit;
 #endif
 		}
 

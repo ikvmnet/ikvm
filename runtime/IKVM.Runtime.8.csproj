@@ -36,7 +36,7 @@
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;DEBUG;WHIDBEY;OPENJDK</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
@@ -91,9 +91,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ClassLoaderWrapper.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="classpath.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CodeEmitter.cs">
