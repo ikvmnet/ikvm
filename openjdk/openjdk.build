@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="IKVM.OpenJDK.ClassLibrary.dll" default="IKVM.OpenJDK.ClassLibrary.dll">
+<project name="ClassLibrary" default="all">
     <property name="pathsep" value=":" />
     <property overwrite="false" name="signoption" value="" />
     <property name="Classpath.dir" value="${project::get-base-directory()}/../../classpath-0.95" />
@@ -7,6 +7,9 @@
     <if test="${platform::is-win32()}">
         <property name="pathsep" value=";" />
     </if>
+
+    <target name="all" depends="classes vfs core">
+    </target>
 
     <target name="classes">
         <delete>
@@ -62,7 +65,7 @@
         </zip>
     </target>
 
-    <target name="IKVM.OpenJDK.ClassLibrary.dll" depends="classes vfs">
+    <target name="core">
         <exec program="${project::get-base-directory()}/../bin/ikvmc.exe" useruntimeengine="true">
             <arg value="-version:0.37.*" />
             <arg value="${signoption}" />
