@@ -27,7 +27,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Resources;
 using System.IO;
-using System.Collections;
+using System.Collections.Generic;
 using System.Xml;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
@@ -42,8 +42,8 @@ namespace IKVM.Internal
 {
 	class CompilerClassLoader : ClassLoaderWrapper
 	{
-		private Hashtable classes;
-		private Hashtable remapped = new Hashtable();
+		private Dictionary<string, byte[]> classes;
+		private Dictionary<string, TypeWrapper> remapped = new Dictionary<string, TypeWrapper>();
 		private string assemblyName;
 		private string assemblyFile;
 		private string assemblyDir;
@@ -55,15 +55,15 @@ namespace IKVM.Internal
 		private IKVM.Internal.MapXml.Attribute[] assemblyAttributes;
 		private CompilerOptions options;
 		private AssemblyClassLoader[] referencedAssemblies;
-		private Hashtable nameMappings = new Hashtable();
-		private Hashtable packages = new Hashtable();
-		private Hashtable ghosts;
+		private Dictionary<string, string> nameMappings = new Dictionary<string, string>();
+		private Dictionary<string, string> packages = new Dictionary<string, string>();
+		private Dictionary<string, List<TypeWrapper>> ghosts;
 		private TypeWrapper[] mappedExceptions;
 		private bool[] mappedExceptionsAllSubClasses;
-		private Hashtable mapxml;
-		private Hashtable baseClasses;
+		private System.Collections.Hashtable mapxml;
+		private Dictionary<string, string> baseClasses;
 
-		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Hashtable classes)
+		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Dictionary<string, byte[]> classes)
 			: base(options.codegenoptions, null)
 		{
 			this.referencedAssemblies = referencedAssemblies;
@@ -152,13 +152,12 @@ namespace IKVM.Internal
 			TypeWrapper type = null;
 			if(type == null)
 			{
-				type = (TypeWrapper)remapped[name];
-				if(type != null)
+				if(remapped.TryGetValue(name, out type))
 				{
 					return type;
 				}
-				byte[] classdef = (byte[])classes[name];
-				if(classdef != null)
+				byte[] classdef;
+				if(classes.TryGetValue(name, out classdef))
 				{
 					classes.Remove(name);
 					ClassFile f;
@@ -247,7 +246,7 @@ namespace IKVM.Internal
 			return null;
 		}
 
-		internal void SetMain(MethodInfo m, PEFileKinds target, Hashtable props, bool noglobbing, Type apartmentAttributeType)
+		internal void SetMain(MethodInfo m, PEFileKinds target, Dictionary<string, string> props, bool noglobbing, Type apartmentAttributeType)
 		{
 			Type[] args = Type.EmptyTypes;
 			if(noglobbing)
@@ -264,13 +263,13 @@ namespace IKVM.Internal
 			TypeWrapper startupType = LoadClassByDottedName("ikvm.runtime.Startup");
 			if(props.Count > 0)
 			{
-				ilgen.Emit(OpCodes.Newobj, typeof(Hashtable).GetConstructor(Type.EmptyTypes));
-				foreach(DictionaryEntry de in props)
+				ilgen.Emit(OpCodes.Newobj, typeof(System.Collections.Hashtable).GetConstructor(Type.EmptyTypes));
+				foreach(KeyValuePair<string, string> kv in props)
 				{
 					ilgen.Emit(OpCodes.Dup);
-					ilgen.Emit(OpCodes.Ldstr, (string)de.Key);
-					ilgen.Emit(OpCodes.Ldstr, (string)de.Value);
-					ilgen.Emit(OpCodes.Callvirt, typeof(Hashtable).GetMethod("Add"));
+					ilgen.Emit(OpCodes.Ldstr, kv.Key);
+					ilgen.Emit(OpCodes.Ldstr, kv.Value);
+					ilgen.Emit(OpCodes.Callvirt, typeof(System.Collections.Hashtable).GetMethod("Add"));
 				}
 				startupType.GetMethodWrapper("setProperties", "(Lcli.System.Collections.Hashtable;)V", false).EmitCall(ilgen);
 			}
@@ -332,10 +331,10 @@ namespace IKVM.Internal
 			{
 				string[] list = new string[nameMappings.Count * 2];
 				int i = 0;
-				foreach(DictionaryEntry de in nameMappings)
+				foreach(KeyValuePair<string, string> kv in nameMappings)
 				{
-					list[i++] = (string)de.Key;
-					list[i++] = (string)de.Value;
+					list[i++] = kv.Key;
+					list[i++] = kv.Value;
 				}
 				CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(JavaModuleAttribute)).GetConstructor(new Type[] { typeof(string[]) }), new object[] { list });
 				mb.SetCustomAttribute(cab);
@@ -368,14 +367,14 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void AddResources(Hashtable resources, bool compressedResources)
+		internal void AddResources(Dictionary<string, byte[]> resources, bool compressedResources)
 		{
 			Tracer.Info(Tracer.Compiler, "CompilerClassLoader adding resources...");
 			ModuleBuilder moduleBuilder = this.GetTypeWrapperFactory().ModuleBuilder;
-			foreach(DictionaryEntry d in resources)
+			foreach(KeyValuePair<string, byte[]> kv in resources)
 			{
-				byte[] buf = (byte[])d.Value;
-				string name = JVM.MangleResourceName((string)d.Key);
+				byte[] buf = kv.Value;
+				string name = JVM.MangleResourceName(kv.Key);
 				MemoryStream mem = new MemoryStream();
 				if(compressedResources)
 				{
@@ -529,7 +528,7 @@ namespace IKVM.Internal
 					AttributeHelper.SetRemappedType(typeBuilder, shadowType);
 				}
 
-				ArrayList methods = new ArrayList();
+				List<MethodWrapper> methods = new List<MethodWrapper>();
 
 				if(c.Constructors != null)
 				{
@@ -562,10 +561,10 @@ namespace IKVM.Internal
 					}
 				}
 
-				SetMethods((MethodWrapper[])methods.ToArray(typeof(MethodWrapper)));
+				SetMethods(methods.ToArray());
 			}
 
-			private static bool FindMethod(ArrayList methods, string name, string sig)
+			private static bool FindMethod(List<MethodWrapper> methods, string name, string sig)
 			{
 				foreach(MethodWrapper mw in methods)
 				{
@@ -759,7 +758,7 @@ namespace IKVM.Internal
 				private IKVM.Internal.MapXml.Method m;
 				private IKVM.Internal.MapXml.Root map;
 				private MethodBuilder mbHelper;
-				private ArrayList overriders = new ArrayList();
+				private List<RemapperTypeWrapper> overriders = new List<RemapperTypeWrapper>();
 				private bool inherited;
 
 				internal RemappedMethodWrapper(RemapperTypeWrapper typeWrapper, IKVM.Internal.MapXml.Method m, IKVM.Internal.MapXml.Root map, bool inherited)
@@ -817,7 +816,7 @@ namespace IKVM.Internal
 						}
 						// if any of the remapped types has a body for this interface method, we need a helper method
 						// to special invocation through this interface for that type
-						ArrayList specialCases = null;
+						List<IKVM.Internal.MapXml.Class> specialCases = null;
 						foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 						{
 							if(c.Methods != null)
@@ -828,7 +827,7 @@ namespace IKVM.Internal
 									{
 										if(specialCases == null)
 										{
-											specialCases = new ArrayList();
+											specialCases = new List<IKVM.Internal.MapXml.Class>();
 										}
 										specialCases.Add(c);
 										break;
@@ -1038,7 +1037,7 @@ namespace IKVM.Internal
 						if(m.body != null)
 						{
 							// we manually walk the instruction list, because we need to special case the ret instructions
-							Hashtable context = new Hashtable();
+							System.Collections.Hashtable context = new System.Collections.Hashtable();
 							foreach(IKVM.Internal.MapXml.Instruction instr in m.body.invoke)
 							{
 								if(instr is IKVM.Internal.MapXml.Ret)
@@ -1153,7 +1152,7 @@ namespace IKVM.Internal
 						{
 							IKVM.Internal.MapXml.InstructionList body = m.alternateBody == null ? m.body : m.alternateBody;
 							// we manually walk the instruction list, because we need to special case the ret instructions
-							Hashtable context = new Hashtable();
+							System.Collections.Hashtable context = new System.Collections.Hashtable();
 							foreach(IKVM.Internal.MapXml.Instruction instr in body.invoke)
 							{
 								if(instr is IKVM.Internal.MapXml.Ret)
@@ -1358,7 +1357,7 @@ namespace IKVM.Internal
 				IKVM.Internal.MapXml.Class c = classDef;
 				TypeBuilder tb = typeBuilder;
 
-				ArrayList fields = new ArrayList();
+				List<FieldWrapper> fields = new List<FieldWrapper>();
 
 				// TODO fields should be moved to the RemapperTypeWrapper constructor as well
 				if(c.Fields != null)
@@ -1425,7 +1424,7 @@ namespace IKVM.Internal
 						}
 					}
 				}
-				SetFields((FieldWrapper[])fields.ToArray(typeof(FieldWrapper)));
+				SetFields(fields.ToArray());
 			}
 
 			internal void Process3rdPass()
@@ -1436,7 +1435,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal void Process4thPass(ICollection remappedTypes)
+			internal void Process4thPass(ICollection<TypeWrapper> remappedTypes)
 			{
 				foreach(RemappedMethodBaseWrapper m in GetMethods())
 				{
@@ -1469,7 +1468,7 @@ namespace IKVM.Internal
 					// For all inherited methods, we emit a method that hides the inherited method and
 					// annotate it with EditorBrowsableAttribute(EditorBrowsableState.Never) to make
 					// sure the inherited methods don't show up in Intellisense.
-					Hashtable methods = new Hashtable();
+					Dictionary<string, MethodBuilder> methods = new Dictionary<string, MethodBuilder>();
 					foreach(MethodInfo mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy))
 					{
 						string key = MakeMethodKey(mi);
@@ -1562,7 +1561,7 @@ namespace IKVM.Internal
 				return sb.ToString();
 			}
 
-			private void CreateShadowInstanceOf(ICollection remappedTypes)
+			private void CreateShadowInstanceOf(ICollection<TypeWrapper> remappedTypes)
 			{
 				// FXBUG .NET 1.1 doesn't allow static methods on interfaces
 				if(typeBuilder.IsInterface)
@@ -1611,7 +1610,7 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ret);
 			}
 
-			private void CreateShadowCheckCast(ICollection remappedTypes)
+			private void CreateShadowCheckCast(ICollection<TypeWrapper> remappedTypes)
 			{
 				// FXBUG .NET 1.1 doesn't allow static methods on interfaces
 				if(typeBuilder.IsInterface)
@@ -1877,7 +1876,7 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Ldarg_0);
 						if(map[i].code.invoke != null)
 						{
-							Hashtable context = new Hashtable();
+							System.Collections.Hashtable context = new System.Collections.Hashtable();
 							foreach(MapXml.Instruction instr in map[i].code.invoke)
 							{
 								MapXml.NewObj newobj = instr as MapXml.NewObj;
@@ -1911,7 +1910,7 @@ namespace IKVM.Internal
 
 		internal void LoadMapXml(IKVM.Internal.MapXml.Root map)
 		{
-			mapxml = new Hashtable();
+			mapxml = new System.Collections.Hashtable();
 			// HACK we've got a hardcoded location for the exception mapping method that is generated from the xml mapping
 			mapxml["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
 			if(map.assembly.Classes != null)
@@ -1953,7 +1952,7 @@ namespace IKVM.Internal
 			return (IKVM.Internal.MapXml.ReplaceMethodCall[])mapxml["replaced:" + mw.DeclaringType.Name + "." + mw.Name + mw.Signature];
 		}
 
-		internal Hashtable GetMapXml()
+		internal System.Collections.Hashtable GetMapXml()
 		{
 			return mapxml;
 		}
@@ -1997,7 +1996,7 @@ namespace IKVM.Internal
 
 		private void SetupGhosts(IKVM.Internal.MapXml.Root map)
 		{
-			ghosts = new Hashtable();
+			ghosts = new Dictionary<string, List<TypeWrapper>>();
 
 			// find the ghost interfaces
 			foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
@@ -2025,10 +2024,10 @@ namespace IKVM.Internal
 
 		private void AddGhost(string interfaceName, TypeWrapper implementer)
 		{
-			ArrayList list = (ArrayList)ghosts[interfaceName];
-			if(list == null)
+			List<TypeWrapper> list;
+			if(!ghosts.TryGetValue(interfaceName, out list))
 			{
-				list = new ArrayList();
+				list = new List<TypeWrapper>();
 				ghosts[interfaceName] = list;
 			}
 			list.Add(implementer);
@@ -2036,12 +2035,12 @@ namespace IKVM.Internal
 
 		internal TypeWrapper[] GetGhostImplementers(TypeWrapper wrapper)
 		{
-			ArrayList list = (ArrayList)ghosts[wrapper.Name];
-			if(list == null)
+			List<TypeWrapper> list;
+			if (!ghosts.TryGetValue(wrapper.Name, out list))
 			{
 				return TypeWrapper.EmptyArray;
 			}
-			return (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
+			return list.ToArray();
 		}
 
 		internal void FinishRemappedTypes()
@@ -2109,7 +2108,7 @@ namespace IKVM.Internal
 			Tracer.Info(Tracer.Compiler, "Loaded runtime assembly: {0}", StaticCompiler.runtimeAssembly.FullName);
 			AssemblyName runtimeAssemblyName = StaticCompiler.runtimeAssembly.GetName();
 			bool allReferencesAreStrongNamed = IsSigned(StaticCompiler.runtimeAssembly);
-			ArrayList references = new ArrayList();
+			List<Assembly> references = new List<Assembly>();
 			foreach(string r in options.references)
 			{
 				try
@@ -2207,16 +2206,16 @@ namespace IKVM.Internal
 			{
 				Assembly.ReflectionOnlyLoadFrom(typeof(System.ComponentModel.EditorBrowsableAttribute).Assembly.Location);
 			}
-			ArrayList assemblyAnnotations = new ArrayList();
-			Hashtable baseClasses = new Hashtable();
-			Hashtable h = new Hashtable();
+			List<object> assemblyAnnotations = new List<object>();
+			Dictionary<string, string> baseClasses = new Dictionary<string, string>();
+			Dictionary<string, byte[]> h = new Dictionary<string, byte[]>();
 			Tracer.Info(Tracer.Compiler, "Parsing class files");
-			foreach(DictionaryEntry de in options.classes)
+			foreach(KeyValuePair<string, byte[]> kv in options.classes)
 			{
 				ClassFile f;
 				try
 				{
-					byte[] buf = (byte[])de.Value;
+					byte[] buf = kv.Value;
 					f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None);
 					if(!f.IsInterface && f.SuperClass != null)
 					{
@@ -2248,9 +2247,9 @@ namespace IKVM.Internal
 			}
 			// HACK remove "assembly" type that exists only as a placeholder for assembly attributes
 			options.classes.Remove("assembly");
-			foreach(DictionaryEntry de in options.classes)
+			foreach(KeyValuePair<string, byte[]> kv in options.classes)
 			{
-				string name = (string)de.Key;
+				string name = kv.Key;
 				bool excluded = false;
 				for(int j = 0; j < options.classesToExclude.Length; j++)
 				{
@@ -2267,7 +2266,7 @@ namespace IKVM.Internal
 				}
 				if(!excluded)
 				{
-					h[name] = de.Value;
+					h[name] = kv.Value;
 				}
 			}
 			options.classes = null;
@@ -2422,8 +2421,8 @@ namespace IKVM.Internal
 			}
 
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
-			ArrayList allwrappers = new ArrayList();
-			foreach(string s in new ArrayList(h.Keys))
+			List<TypeWrapper> allwrappers = new List<TypeWrapper>();
+			foreach(string s in new List<string>(h.Keys))
 			{
 				TypeWrapper wrapper = loader.LoadClassByDottedNameFast(s);
 				if(wrapper != null)
@@ -2520,9 +2519,9 @@ namespace IKVM.Internal
 			loader.AddResources(options.resources, options.compressedResources);
 			if(options.externalResources != null)
 			{
-				foreach(DictionaryEntry de in options.externalResources)
+				foreach(KeyValuePair<string, string> kv in options.externalResources)
 				{
-					loader.assemblyBuilder.AddResourceFile(JVM.MangleResourceName((string)de.Key), (string)de.Value);
+					loader.assemblyBuilder.AddResourceFile(JVM.MangleResourceName(kv.Key), kv.Value);
 				}
 			}
 			if(options.fileversion != null)
@@ -2608,12 +2607,12 @@ namespace IKVM.Internal
 		internal ApartmentState apartment;
 		internal PEFileKinds target;
 		internal bool guessFileKind;
-		internal Hashtable classes;
+		internal Dictionary<string, byte[]> classes;
 		internal string[] references;
-		internal Hashtable resources;
+		internal Dictionary<string, byte[]> resources;
 		internal string[] classesToExclude;
 		internal string remapfile;
-		internal Hashtable props;
+		internal Dictionary<string, string> props;
 		internal bool noglobbing;
 		internal CodeGenOptions codegenoptions;
 		internal bool removeUnusedFields;
@@ -2621,7 +2620,7 @@ namespace IKVM.Internal
 		internal string runtimeAssembly;
 		internal string[] privatePackages;
 		internal string sourcepath;
-		internal Hashtable externalResources;
+		internal Dictionary<string, string> externalResources;
 		internal string classLoader;
 		internal PortableExecutableKinds pekind = PortableExecutableKinds.ILOnly;
 		internal ImageFileMachine imageFileMachine = ImageFileMachine.I386;
@@ -2681,8 +2680,8 @@ namespace IKVM.Internal
 			return typeof(object).Assembly.GetType(name, throwOnError);
 		}
 
-		private static Hashtable suppressWarnings = new Hashtable();
-		private static Hashtable errorWarnings = new Hashtable();
+		private static Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();
+		private static Dictionary<string, string> errorWarnings = new Dictionary<string, string>();
 
 		internal static void SuppressWarning(string key)
 		{

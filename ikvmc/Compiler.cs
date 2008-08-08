@@ -22,8 +22,7 @@
   
 */
 using System;
-using System.Collections;
-using System.Collections.Specialized;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -33,13 +32,13 @@ using IKVM.Internal;
 class IkvmcCompiler
 {
 	private static string manifestMainClass;
-	private static Hashtable classes = new Hashtable();
-	private static Hashtable resources = new Hashtable();
+	private static Dictionary<string, byte[]> classes = new Dictionary<string, byte[]>();
+	private static Dictionary<string, byte[]> resources = new Dictionary<string, byte[]>();
 	private static bool time;
 
-	private static ArrayList GetArgs(string[] args)
+	private static List<string> GetArgs(string[] args)
 	{
-		ArrayList arglist = new ArrayList();
+		List<string> arglist = new List<string>();
 		foreach(string s in args)
 		{
 			if(s.StartsWith("@"))
@@ -103,10 +102,10 @@ class IkvmcCompiler
 		options.version = "0.0.0.0";
 		options.apartment = ApartmentState.STA;
 		string defaultAssemblyName = null;
-		ArrayList classesToExclude = new ArrayList();
-		ArrayList references = new ArrayList();
-		ArrayList arglist = GetArgs(args);
-		options.props = new Hashtable();
+		List<string> classesToExclude = new List<string>();
+		List<string> references = new List<string>();
+		List<string> arglist = GetArgs(args);
+		options.props = new Dictionary<string, string>();
 		if(arglist.Count == 0)
 		{
 			Console.Error.WriteLine(GetVersionAndCopyrightInfo());
@@ -417,7 +416,7 @@ class IkvmcCompiler
 					}
 					if(options.externalResources == null)
 					{
-						options.externalResources = new Hashtable();
+						options.externalResources = new Dictionary<string, string>();
 					}
 					// TODO resource name clashes should be tested
 					options.externalResources.Add(spec[0], spec[1]);
@@ -627,9 +626,9 @@ class IkvmcCompiler
 		try
 		{
 			options.classes = classes;
-			options.references = (string[])references.ToArray(typeof(string));
+			options.references = references.ToArray();
 			options.resources = resources;
-			options.classesToExclude = (string[])classesToExclude.ToArray(typeof(string));
+			options.classesToExclude = classesToExclude.ToArray();
 			return CompilerClassLoader.Compile(options);
 		}
 		catch(Exception x)
@@ -808,7 +807,7 @@ class IkvmcCompiler
 	}
 
 	//This processes an exclusion file with a single regular expression per line
-	private static void ProcessExclusionFile(ArrayList classesToExclude, String filename)
+	private static void ProcessExclusionFile(List<string> classesToExclude, String filename)
 	{
 		try 
 		{
