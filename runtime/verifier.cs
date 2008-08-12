@@ -26,6 +26,7 @@ using System;
 using System.IO;
 using System.Collections;
 using System.Diagnostics;
+using System.Reflection.Emit;
 using IKVM.Internal;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 
@@ -1475,7 +1476,7 @@ class LocalVar
 	internal bool isArg;
 	internal int local;
 	internal TypeWrapper type;
-	internal System.Reflection.Emit.LocalBuilder builder;
+	internal LocalBuilder builder;
 	// used to emit debugging info, only available if ClassLoaderWrapper.EmitDebugInfo is true
 	internal string name;
 	internal int start_pc;

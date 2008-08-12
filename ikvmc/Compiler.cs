@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Threading;
 using ICSharpCode.SharpZipLib.Zip;
 using IKVM.Internal;
@@ -97,7 +98,7 @@ class IkvmcCompiler
 		System.Threading.Thread.CurrentThread.Name = "compiler";
 		Tracer.EnableTraceForDebug();
 		CompilerOptions options = new CompilerOptions();
-		options.target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
+		options.target = PEFileKinds.ConsoleApplication;
 		options.guessFileKind = true;
 		options.version = "0.0.0.0";
 		options.apartment = ApartmentState.STA;
@@ -190,20 +191,20 @@ class IkvmcCompiler
 					switch(s)
 					{
 						case "-target:exe":
-							options.target = System.Reflection.Emit.PEFileKinds.ConsoleApplication;
+							options.target = PEFileKinds.ConsoleApplication;
 							options.guessFileKind = false;
 							break;
 						case "-target:winexe":
-							options.target = System.Reflection.Emit.PEFileKinds.WindowApplication;
+							options.target = PEFileKinds.WindowApplication;
 							options.guessFileKind = false;
 							break;
 						case "-target:module":
 							options.targetIsModule = true;
-							options.target = System.Reflection.Emit.PEFileKinds.Dll;
+							options.target = PEFileKinds.Dll;
 							options.guessFileKind = false;
 							break;
 						case "-target:library":
-							options.target = System.Reflection.Emit.PEFileKinds.Dll;
+							options.target = PEFileKinds.Dll;
 							options.guessFileKind = false;
 							break;
 						default:
@@ -614,11 +615,11 @@ class IkvmcCompiler
 		{
 			if(options.path.ToLower().EndsWith(".dll"))
 			{
-				options.target = System.Reflection.Emit.PEFileKinds.Dll;
+				options.target = PEFileKinds.Dll;
 			}
 			options.guessFileKind = false;
 		}
-		if(options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != System.Reflection.Emit.PEFileKinds.Dll))
+		if(options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != PEFileKinds.Dll))
 		{
 			StaticCompiler.IssueMessage(Message.MainMethodFromManifest, manifestMainClass);
 			options.mainClass = manifestMainClass;
