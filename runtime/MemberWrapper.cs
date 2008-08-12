@@ -1424,6 +1424,7 @@ namespace IKVM.Internal
 			return new SimpleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
 		}
 
+#if !STATIC_COMPILER
 		internal virtual void ResolveField()
 		{
 			FieldBuilder fb = field as FieldBuilder;
@@ -1433,7 +1434,6 @@ namespace IKVM.Internal
 			}
 		}
 
-#if !STATIC_COMPILER
 		internal virtual void SetValue(object obj, object val)
 		{
 			AssertLinked();
@@ -1460,10 +1460,10 @@ namespace IKVM.Internal
 		internal virtual object GetValue(object obj)
 		{
 			AssertLinked();
-			ResolveField();
 #if STATIC_COMPILER
 			return field.GetValue(null);
 #else
+			ResolveField();
 			object val = field.GetValue(obj);
 			if(fieldType.IsGhost)
 			{
