@@ -89,10 +89,12 @@ namespace IKVM.Internal
 			return new CodeEmitter(cb.GetILGenerator());
 		}
 
+#if !STATIC_COMPILER
 		internal static CodeEmitter Create(DynamicMethod dm)
 		{
 			return new CodeEmitter(dm.GetILGenerator());
 		}
+#endif
 
 		private CodeEmitter(ILGenerator ilgen)
 		{
