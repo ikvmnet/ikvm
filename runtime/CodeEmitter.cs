@@ -66,7 +66,6 @@ namespace IKVM.Internal
 	{
 		private ILGenerator ilgen_real;
 		private int offset;
-		private ArrayList locals = new ArrayList();
 		private Stack exceptionStack = new Stack();
 		private bool inFinally;
 #if STATIC_COMPILER
@@ -213,9 +212,7 @@ namespace IKVM.Internal
 
 		internal LocalBuilder DeclareLocal(Type localType)
 		{
-			LocalBuilder loc = ilgen_real.DeclareLocal(localType);
-			locals.Add(loc);
-			return loc;
+			return ilgen_real.DeclareLocal(localType);
 		}
 
 		internal CodeEmitterLabel DefineLabel()
@@ -364,7 +361,7 @@ namespace IKVM.Internal
 		{
 			LazyGen();
 			ilgen_real.Emit(opcode, local);
-			int index = locals.IndexOf(local);
+			int index = local.LocalIndex;
 			if(index < 4 && opcode.Value != OpCodes.Ldloca.Value && opcode.Value != OpCodes.Ldloca_S.Value)
 			{
 				offset += 1;
