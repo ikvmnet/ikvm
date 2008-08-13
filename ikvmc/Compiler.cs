@@ -32,9 +32,15 @@ using IKVM.Internal;
 
 class IkvmcCompiler
 {
-	private static string manifestMainClass;
-	private static Dictionary<string, byte[]> classes = new Dictionary<string, byte[]>();
-	private static Dictionary<string, byte[]> resources = new Dictionary<string, byte[]>();
+#if MULTI_TARGET
+	private bool nonleaf;
+#endif
+	private string manifestMainClass;
+	private Dictionary<string, byte[]> classes = new Dictionary<string, byte[]>();
+	private Dictionary<string, byte[]> resources = new Dictionary<string, byte[]>();
+	private string defaultAssemblyName;
+	private List<string> classesToExclude = new List<string>();
+	private List<string> references = new List<string>();
 	private static bool time;
 
 	private static List<string> GetArgs(string[] args)
@@ -64,7 +70,38 @@ class IkvmcCompiler
 	static int Main(string[] args)
 	{
 		DateTime start = DateTime.Now;
-		int rc = RealMain(args);
+		AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+		System.Threading.Thread.CurrentThread.Name = "compiler";
+		Tracer.EnableTraceForDebug();
+		List<string> argList = GetArgs(args);
+		if (argList.Count == 0)
+		{
+			PrintHelp();
+			return 1;
+		}
+		IkvmcCompiler comp = new IkvmcCompiler();
+		List<CompilerOptions> targets = new List<CompilerOptions>();
+		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets, new CompilerOptions());
+		if (rc == 0)
+		{
+			try
+			{
+				if (targets.Count == 0)
+				{
+					Console.Error.WriteLine("Error: no target founds");
+					rc = 1;
+				}
+				else
+				{
+					rc = CompilerClassLoader.Compile(targets);
+				}
+			}
+			catch(Exception x)
+			{
+				Console.Error.WriteLine(x);
+				rc = 1;
+			}
+		}
 		if (time)
 		{
 			Console.WriteLine("Total cpu time: {0}", System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime);
@@ -92,82 +129,103 @@ class IkvmcCompiler
 		return "";
 	}
 
-	static int RealMain(string[] args)
+	private static void PrintHelp()
 	{
-		AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
-		System.Threading.Thread.CurrentThread.Name = "compiler";
-		Tracer.EnableTraceForDebug();
-		CompilerOptions options = new CompilerOptions();
+		Console.Error.WriteLine(GetVersionAndCopyrightInfo());
+		Console.Error.WriteLine();
+		Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
+		Console.Error.WriteLine();
+		Console.Error.WriteLine("options:");
+		Console.Error.WriteLine("    @<filename>                Read more options from file");
+		Console.Error.WriteLine("    -out:<outputfile>          Specify the output filename");
+		Console.Error.WriteLine("    -assembly:<name>           Specify assembly name");
+		Console.Error.WriteLine("    -target:exe                Build a console executable");
+		Console.Error.WriteLine("    -target:winexe             Build a windows executable");
+		Console.Error.WriteLine("    -target:library            Build a library");
+		Console.Error.WriteLine("    -target:module             Build a module for use by the linker");
+		Console.Error.WriteLine("    -platform:<string>         Limit which platforms this code can run on: x86,");
+		Console.Error.WriteLine("                               Itanium, x64, or anycpu. The default is anycpu.");
+		Console.Error.WriteLine("    -keyfile:<keyfilename>     Use keyfile to sign the assembly");
+		Console.Error.WriteLine("    -key:<keycontainer>        Use keycontainer to sign the assembly");
+		Console.Error.WriteLine("    -version:<M.m.b.r>         Assembly version");
+		Console.Error.WriteLine("    -fileversion:<version>     File version");
+		Console.Error.WriteLine("    -main:<class>              Specify the class containing the main method");
+		Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly (short form -r:<filespec>)");
+		Console.Error.WriteLine("    -recurse:<filespec>        Recurse directory and include matching files");
+		Console.Error.WriteLine("    -nojni                     Do not generate JNI stub for native methods");
+		Console.Error.WriteLine("    -resource:<name>=<path>    Include file as Java resource");
+		Console.Error.WriteLine("    -externalresource:<name>=<path>");
+		Console.Error.WriteLine("                               Reference file as Java resource");
+		Console.Error.WriteLine("    -exclude:<filename>        A file containing a list of classes to exclude");
+		Console.Error.WriteLine("    -debug                     Generate debug info for the output file");
+		Console.Error.WriteLine("                               (Note that this also causes the compiler to");
+		Console.Error.WriteLine("                               generated somewhat less efficient CIL code.)");
+		Console.Error.WriteLine("    -srcpath:<path>            Prepend path and package name to source file");
+		Console.Error.WriteLine("    -apartment:sta             (default) Apply STAThreadAttribute to main");
+		Console.Error.WriteLine("    -apartment:mta             Apply MTAThreadAttribute to main");
+		Console.Error.WriteLine("    -apartment:none            Don't apply STAThreadAttribute to main");
+		Console.Error.WriteLine("    -noglobbing                Don't glob the arguments");
+		Console.Error.WriteLine("    -D<name>=<value>           Set system property (at runtime)");
+		Console.Error.WriteLine("    -ea[:<packagename>...|:<classname>]");
+		Console.Error.WriteLine("    -enableassertions[:<packagename>...|:<classname>]");
+		Console.Error.WriteLine("                               Set system property to enable assertions");
+		Console.Error.WriteLine("    -da[:<packagename>...|:<classname>]");
+		Console.Error.WriteLine("    -disableassertions[:<packagename>...|:<classname>]");
+		Console.Error.WriteLine("                               Set system property to disable assertions");
+		Console.Error.WriteLine("    -removeassertions          Remove all assert statements");
+		Console.Error.WriteLine("    -nostacktraceinfo          Don't create metadata to emit rich stack traces");
+		Console.Error.WriteLine("    -opt:fields                Remove unused private fields");
+		Console.Error.WriteLine("    -Xtrace:<string>           Displays all tracepoints with the given name");
+		Console.Error.WriteLine("    -Xmethodtrace:<string>     Build tracing into the specified output methods");
+		Console.Error.WriteLine("    -compressresources         Compress resources");
+		Console.Error.WriteLine("    -strictfinalfieldsemantics Don't allow final fields to be modified outside");
+		Console.Error.WriteLine("                               of initializer methods");
+		Console.Error.WriteLine("    -privatepackage:<prefix>   Mark all classes with a package name starting");
+		Console.Error.WriteLine("                               with <prefix> as internal to the assembly");
+		Console.Error.WriteLine("    -nowarn:<warning[:key]>    Suppress specified warnings");
+		Console.Error.WriteLine("    -warnaserror:<warning[:key]>  Treat specified warnings as errors");
+		Console.Error.WriteLine("    -time                      Display timing statistics");
+		Console.Error.WriteLine("    -classloader:<class>       Set custom class loader class for assembly");
+	}
+
+	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+	{
 		options.target = PEFileKinds.ConsoleApplication;
 		options.guessFileKind = true;
 		options.version = "0.0.0.0";
 		options.apartment = ApartmentState.STA;
-		string defaultAssemblyName = null;
-		List<string> classesToExclude = new List<string>();
-		List<string> references = new List<string>();
-		List<string> arglist = GetArgs(args);
 		options.props = new Dictionary<string, string>();
-		if(arglist.Count == 0)
+		while(arglist.MoveNext())
 		{
-			Console.Error.WriteLine(GetVersionAndCopyrightInfo());
-			Console.Error.WriteLine();
-			Console.Error.WriteLine("usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
-			Console.Error.WriteLine();
-			Console.Error.WriteLine("options:");
-			Console.Error.WriteLine("    @<filename>                Read more options from file");
-			Console.Error.WriteLine("    -out:<outputfile>          Specify the output filename");
-			Console.Error.WriteLine("    -assembly:<name>           Specify assembly name");
-			Console.Error.WriteLine("    -target:exe                Build a console executable");
-			Console.Error.WriteLine("    -target:winexe             Build a windows executable");
-			Console.Error.WriteLine("    -target:library            Build a library");
-			Console.Error.WriteLine("    -target:module             Build a module for use by the linker");
-			Console.Error.WriteLine("    -platform:<string>         Limit which platforms this code can run on: x86,");
-			Console.Error.WriteLine("                               Itanium, x64, or anycpu. The default is anycpu.");
-			Console.Error.WriteLine("    -keyfile:<keyfilename>     Use keyfile to sign the assembly");
-			Console.Error.WriteLine("    -key:<keycontainer>        Use keycontainer to sign the assembly");
-			Console.Error.WriteLine("    -version:<M.m.b.r>         Assembly version");
-			Console.Error.WriteLine("    -fileversion:<version>     File version");
-			Console.Error.WriteLine("    -main:<class>              Specify the class containing the main method");
-			Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly (short form -r:<filespec>)");
-			Console.Error.WriteLine("    -recurse:<filespec>        Recurse directory and include matching files");
-			Console.Error.WriteLine("    -nojni                     Do not generate JNI stub for native methods");
-			Console.Error.WriteLine("    -resource:<name>=<path>    Include file as Java resource");
-			Console.Error.WriteLine("    -externalresource:<name>=<path>");
-			Console.Error.WriteLine("                               Reference file as Java resource");
-			Console.Error.WriteLine("    -exclude:<filename>        A file containing a list of classes to exclude");
-			Console.Error.WriteLine("    -debug                     Generate debug info for the output file");
-			Console.Error.WriteLine("                               (Note that this also causes the compiler to");
-			Console.Error.WriteLine("                               generated somewhat less efficient CIL code.)");
-			Console.Error.WriteLine("    -srcpath:<path>            Prepend path and package name to source file");
-			Console.Error.WriteLine("    -apartment:sta             (default) Apply STAThreadAttribute to main");
-			Console.Error.WriteLine("    -apartment:mta             Apply MTAThreadAttribute to main");
-			Console.Error.WriteLine("    -apartment:none            Don't apply STAThreadAttribute to main");
-			Console.Error.WriteLine("    -noglobbing                Don't glob the arguments");
-			Console.Error.WriteLine("    -D<name>=<value>           Set system property (at runtime)");
-			Console.Error.WriteLine("    -ea[:<packagename>...|:<classname>]");
-			Console.Error.WriteLine("    -enableassertions[:<packagename>...|:<classname>]");
-			Console.Error.WriteLine("                               Set system property to enable assertions");
-			Console.Error.WriteLine("    -da[:<packagename>...|:<classname>]");
-			Console.Error.WriteLine("    -disableassertions[:<packagename>...|:<classname>]");
-			Console.Error.WriteLine("                               Set system property to disable assertions");
-			Console.Error.WriteLine("    -removeassertions          Remove all assert statements");
-			Console.Error.WriteLine("    -nostacktraceinfo          Don't create metadata to emit rich stack traces");
-			Console.Error.WriteLine("    -opt:fields                Remove unused private fields");
-			Console.Error.WriteLine("    -Xtrace:<string>           Displays all tracepoints with the given name");
-			Console.Error.WriteLine("    -Xmethodtrace:<string>     Build tracing into the specified output methods");
-			Console.Error.WriteLine("    -compressresources         Compress resources");
-			Console.Error.WriteLine("    -strictfinalfieldsemantics Don't allow final fields to be modified outside");
-			Console.Error.WriteLine("                               of initializer methods");
-			Console.Error.WriteLine("    -privatepackage:<prefix>   Mark all classes with a package name starting");
-			Console.Error.WriteLine("                               with <prefix> as internal to the assembly");
-			Console.Error.WriteLine("    -nowarn:<warning[:key]>    Suppress specified warnings");
-			Console.Error.WriteLine("    -warnaserror:<warning[:key]>  Treat specified warnings as errors");
-			Console.Error.WriteLine("    -time                      Display timing statistics");
-			Console.Error.WriteLine("    -classloader:<class>       Set custom class loader class for assembly");
-			return 1;
-		}
-		foreach(string s in arglist)
-		{
+			string s = arglist.Current;
+#if MULTI_TARGET
+			if(s == "{")
+			{
+				nonleaf = true;
+				IkvmcCompiler nestedLevel = new IkvmcCompiler();
+				nestedLevel.manifestMainClass = manifestMainClass;
+				nestedLevel.classes = new Dictionary<string, byte[]>(classes);
+				nestedLevel.resources = new Dictionary<string, byte[]>(resources);
+				nestedLevel.defaultAssemblyName = defaultAssemblyName;
+				nestedLevel.classesToExclude = new List<string>(classesToExclude);
+				nestedLevel.references = new List<string>(references);
+				int rc = nestedLevel.ParseCommandLine(arglist, targets, options.Copy());
+				if(rc != 0)
+				{
+					return rc;
+				}
+			}
+			else if(s == "}")
+			{
+				break;
+			}
+			else if(nonleaf)
+			{
+				Console.Error.WriteLine("Error: you can only specify options before any child levels");
+				return 1;
+			}
+			else
+#endif
 			if(s[0] == '-')
 			{
 				if(s.StartsWith("-out:"))
@@ -593,6 +651,12 @@ class IkvmcCompiler
 				}
 			}
 		}
+#if MULTI_TARGET
+		if(nonleaf)
+		{
+			return 0;
+		}
+#endif
 		if(options.assembly == null)
 		{
 			string basename = options.path == null ? defaultAssemblyName : new FileInfo(options.path).Name;
@@ -624,19 +688,12 @@ class IkvmcCompiler
 			StaticCompiler.IssueMessage(Message.MainMethodFromManifest, manifestMainClass);
 			options.mainClass = manifestMainClass;
 		}
-		try
-		{
-			options.classes = classes;
-			options.references = references.ToArray();
-			options.resources = resources;
-			options.classesToExclude = classesToExclude.ToArray();
-			return CompilerClassLoader.Compile(options);
-		}
-		catch(Exception x)
-		{
-			Console.Error.WriteLine(x);
-			return 1;
-		}
+		options.classes = classes;
+		options.references = references.ToArray();
+		options.resources = resources;
+		options.classesToExclude = classesToExclude.ToArray();
+		targets.Add(options);
+		return 0;
 	}
 
 	private static byte[] ReadFromZip(ZipFile zf, ZipEntry ze)
@@ -651,7 +708,7 @@ class IkvmcCompiler
 		return buf;
 	}
 
-	private static void AddClassFile(string filename, byte[] buf, bool addResourceFallback)
+	private void AddClassFile(string filename, byte[] buf, bool addResourceFallback)
 	{
 		try
 		{
@@ -681,7 +738,7 @@ class IkvmcCompiler
 		}
 	}
 
-	private static void ProcessZipFile(string file)
+	private void ProcessZipFile(string file)
 	{
 		ZipFile zf = new ZipFile(file);
 		try
@@ -725,7 +782,7 @@ class IkvmcCompiler
 		}
 	}
 
-	private static void AddResource(string name, byte[] buf)
+	private void AddResource(string name, byte[] buf)
 	{
 		if(resources.ContainsKey(name))
 		{
@@ -737,7 +794,7 @@ class IkvmcCompiler
 		}
 	}
 
-	private static void ProcessFile(DirectoryInfo baseDir, string file)
+	private void ProcessFile(DirectoryInfo baseDir, string file)
 	{
 		switch(new FileInfo(file).Extension.ToLower())
 		{
@@ -795,7 +852,7 @@ class IkvmcCompiler
 		}
 	}
 
-	private static void Recurse(DirectoryInfo baseDir, DirectoryInfo dir, string spec)
+	private void Recurse(DirectoryInfo baseDir, DirectoryInfo dir, string spec)
 	{
 		foreach(FileInfo file in dir.GetFiles(spec))
 		{
