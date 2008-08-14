@@ -925,6 +925,12 @@
                     <ret />
                 </body>
             </method>
+            <method name="__mapImpl" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" modifiers="static">
+                <body>
+                    <!-- this emits the conversion code based on the <exceptionMappings /> defined below -->
+                    <exceptionMapping />
+                </body>
+            </method>
             <method name="__&lt;map&gt;" sig="(Ljava.lang.Throwable;Z)Ljava.lang.Throwable;" modifiers="public static">
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
                 <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">

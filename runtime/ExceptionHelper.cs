@@ -34,6 +34,15 @@ namespace IKVM.NativeCode.java.lang
 {
 	static class ExceptionHelper
 	{
+		public static Exception MapExceptionImpl(Exception x)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return global::java.lang.Throwable.__mapImpl(x);
+#endif
+		}
+
 		public static string SafeGetEnvironmentVariable(string name)
 		{
 			try

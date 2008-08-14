@@ -181,13 +181,6 @@ namespace IKVM.Internal
 						opcodes.Emit(classLoader, ilgen);
 						return true;
 					}
-					// HACK if we're compiling the core class library, it can also be the ExceptionMapEmitter
-					CompilerClassLoader.ExceptionMapEmitter eme = obj as CompilerClassLoader.ExceptionMapEmitter;
-					if(eme != null)
-					{
-						eme.Emit(classLoader, ilgen);
-						return true;
-					}
 				}
 			}
 			return false;

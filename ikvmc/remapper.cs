@@ -1104,6 +1104,18 @@ namespace IKVM.Internal.MapXml
 		}
 	}
 
+	[XmlType("exceptionMapping")]
+	public sealed class EmitExceptionMapping : Instruction
+	{
+		internal ExceptionMapping[] mapping;
+
+		internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
+		{
+			CompilerClassLoader.ExceptionMapEmitter emitter = new CompilerClassLoader.ExceptionMapEmitter(mapping);
+			emitter.Emit(context, ilgen);
+		}
+	}
+
 	public class InstructionList
 	{
 		[XmlElement(typeof(Ldstr))]
@@ -1180,6 +1192,7 @@ namespace IKVM.Internal.MapXml
 		[XmlElement(typeof(Ldtoken))]
 		[XmlElement(typeof(Leave))]
 		[XmlElement(typeof(RunClassInit))]
+		[XmlElement(typeof(EmitExceptionMapping))]
 		public Instruction[] invoke;
 
 		internal void Generate(CodeGenContext context, CodeEmitter ilgen)

@@ -1874,6 +1874,27 @@ namespace IKVM.Internal
 					}
 					mappedExceptions[i] = LoadClassByDottedName(dst);
 				}
+				// HACK we need to find the <exceptionMapping /> element and bind it
+				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
+				{
+					if(c.Methods != null)
+					{
+						foreach(IKVM.Internal.MapXml.Method m in c.Methods)
+						{
+							if(m.body != null && m.body.invoke != null)
+							{
+								foreach(IKVM.Internal.MapXml.Instruction instr in m.body.invoke)
+								{
+									IKVM.Internal.MapXml.EmitExceptionMapping eem = instr as IKVM.Internal.MapXml.EmitExceptionMapping;
+									if(eem != null)
+									{
+										eem.mapping = map.exceptionMappings;
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 
@@ -1886,7 +1907,7 @@ namespace IKVM.Internal
 				this.map = map;
 			}
 
-			internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)
+			internal void Emit(IKVM.Internal.MapXml.CodeGenContext context, CodeEmitter ilgen)
 			{
 				MethodWrapper mwSuppressFillInStackTrace = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
 				mwSuppressFillInStackTrace.Link();
@@ -1907,13 +1928,12 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Ldarg_0);
 						if(map[i].code.invoke != null)
 						{
-							IKVM.Internal.MapXml.CodeGenContext context = new IKVM.Internal.MapXml.CodeGenContext(loader);
 							foreach(MapXml.Instruction instr in map[i].code.invoke)
 							{
 								MapXml.NewObj newobj = instr as MapXml.NewObj;
 								if(newobj != null
 									&& newobj.Class != null
-									&& loader.LoadClassByDottedName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
+									&& context.ClassLoader.LoadClassByDottedName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
 								{
 									mwSuppressFillInStackTrace.EmitCall(ilgen);
 								}
@@ -1924,7 +1944,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						TypeWrapper tw = loader.LoadClassByDottedName(map[i].dst);
+						TypeWrapper tw = context.ClassLoader.LoadClassByDottedName(map[i].dst);
 						MethodWrapper mw = tw.GetMethodWrapper("<init>", "()V", false);
 						mw.Link();
 						mwSuppressFillInStackTrace.EmitCall(ilgen);
@@ -1942,8 +1962,6 @@ namespace IKVM.Internal
 		internal void LoadMapXml()
 		{
 			mapxml = new System.Collections.Hashtable();
-			// HACK we've got a hardcoded location for the exception mapping method that is generated from the xml mapping
-			mapxml["java.lang.ExceptionHelper.MapExceptionImpl(Ljava.lang.Throwable;)Ljava.lang.Throwable;"] = new ExceptionMapEmitter(map.exceptionMappings);
 			if(map.assembly.Classes != null)
 			{
 				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
