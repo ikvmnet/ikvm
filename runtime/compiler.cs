@@ -3507,17 +3507,17 @@ class Compiler
 
 		internal override void EmitCall(CodeEmitter ilgen)
 		{
-			code.Emit(ilgen);
+			code.Emit(DeclaringType.GetClassLoader(), ilgen);
 		}
 
 		internal override void EmitCallvirt(CodeEmitter ilgen)
 		{
-			code.Emit(ilgen);
+			code.Emit(DeclaringType.GetClassLoader(), ilgen);
 		}
 
 		internal override void EmitNewobj(CodeEmitter ilgen, MethodAnalyzer ma, int opcodeIndex)
 		{
-			code.Emit(ilgen);
+			code.Emit(DeclaringType.GetClassLoader(), ilgen);
 		}
 	}
 #endif

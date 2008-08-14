@@ -531,7 +531,7 @@ namespace IKVM.Internal
 				{
 					foreach(IKVM.Internal.MapXml.Attribute custattr in c.Attributes)
 					{
-						AttributeHelper.SetCustomAttribute(typeBuilder, custattr);
+						AttributeHelper.SetCustomAttribute(classLoader, typeBuilder, custattr);
 					}
 				}
 				if(baseInterface != null)
@@ -675,10 +675,10 @@ namespace IKVM.Internal
 						{
 							foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
 							{
-								AttributeHelper.SetCustomAttribute(mbHelper, custattr);
+								AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), mbHelper, custattr);
 							}
 						}
-						SetParameters(mbHelper, m.Params);
+						SetParameters(DeclaringType.GetClassLoader(), mbHelper, m.Params);
 						AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers, false);
 						AttributeHelper.SetNameSig(mbHelper, "<init>", m.Sig);
 						AddDeclaredExceptions(mbHelper, m.throws);
@@ -690,10 +690,10 @@ namespace IKVM.Internal
 						{
 							foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
 							{
-								AttributeHelper.SetCustomAttribute(cbCore, custattr);
+								AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), cbCore, custattr);
 							}
 						}
-						SetParameters(cbCore, m.Params);
+						SetParameters(DeclaringType.GetClassLoader(), cbCore, m.Params);
 						AddDeclaredExceptions(cbCore, m.throws);
 					}
 					return cbCore;
@@ -714,7 +714,7 @@ namespace IKVM.Internal
 						if(m.body != null)
 						{
 							// TODO do we need return type conversion here?
-							m.body.Emit(ilgen);
+							m.body.Emit(DeclaringType.GetClassLoader(), ilgen);
 						}
 						else
 						{
@@ -750,11 +750,11 @@ namespace IKVM.Internal
 						CodeEmitter ilgen = CodeEmitter.Create(mbHelper);
 						if(m.redirect != null)
 						{
-							m.redirect.Emit(ilgen);
+							m.redirect.Emit(DeclaringType.GetClassLoader(), ilgen);
 						}
 						else if(m.alternateBody != null)
 						{
-							m.alternateBody.Emit(ilgen);
+							m.alternateBody.Emit(DeclaringType.GetClassLoader(), ilgen);
 						}
 						else if(m.body != null)
 						{
@@ -890,10 +890,10 @@ namespace IKVM.Internal
 							{
 								foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
 								{
-									AttributeHelper.SetCustomAttribute(helper, custattr);
+									AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), helper, custattr);
 								}
 							}
-							SetParameters(helper, m.Params);
+							SetParameters(DeclaringType.GetClassLoader(), helper, m.Params);
 							ilgen = CodeEmitter.Create(helper);
 							foreach(IKVM.Internal.MapXml.Class c in specialCases)
 							{
@@ -981,10 +981,10 @@ namespace IKVM.Internal
 							{
 								foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
 								{
-									AttributeHelper.SetCustomAttribute(mbCore, custattr);
+									AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), mbCore, custattr);
 								}
 							}
-							SetParameters(mbCore, m.Params);
+							SetParameters(DeclaringType.GetClassLoader(), mbCore, m.Params);
 							if(overrideMethod != null && !inherited)
 							{
 								typeWrapper.typeBuilder.DefineMethodOverride(mbCore, overrideMethod);
@@ -1015,7 +1015,7 @@ namespace IKVM.Internal
 							{
 								foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
 								{
-									AttributeHelper.SetCustomAttribute(mbHelper, custattr);
+									AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), mbHelper, custattr);
 								}
 							}
 							IKVM.Internal.MapXml.Param[] parameters;
@@ -1030,7 +1030,7 @@ namespace IKVM.Internal
 							}
 							parameters[0] = new IKVM.Internal.MapXml.Param();
 							parameters[0].Name = "this";
-							SetParameters(mbHelper, parameters);
+							SetParameters(DeclaringType.GetClassLoader(), mbHelper, parameters);
 							if(!typeWrapper.IsFinal)
 							{
 								AttributeHelper.SetEditorBrowsableNever(mbHelper);
@@ -1068,7 +1068,7 @@ namespace IKVM.Internal
 						if(m.body != null)
 						{
 							// we manually walk the instruction list, because we need to special case the ret instructions
-							System.Collections.Hashtable context = new System.Collections.Hashtable();
+							IKVM.Internal.MapXml.CodeGenContext context = new IKVM.Internal.MapXml.CodeGenContext(DeclaringType.GetClassLoader());
 							foreach(IKVM.Internal.MapXml.Instruction instr in m.body.invoke)
 							{
 								if(instr is IKVM.Internal.MapXml.Ret)
@@ -1183,7 +1183,7 @@ namespace IKVM.Internal
 						{
 							IKVM.Internal.MapXml.InstructionList body = m.alternateBody == null ? m.body : m.alternateBody;
 							// we manually walk the instruction list, because we need to special case the ret instructions
-							System.Collections.Hashtable context = new System.Collections.Hashtable();
+							IKVM.Internal.MapXml.CodeGenContext context = new IKVM.Internal.MapXml.CodeGenContext(DeclaringType.GetClassLoader());
 							foreach(IKVM.Internal.MapXml.Instruction instr in body.invoke)
 							{
 								if(instr is IKVM.Internal.MapXml.Ret)
@@ -1252,15 +1252,15 @@ namespace IKVM.Internal
 						{
 							foreach(IKVM.Internal.MapXml.Attribute custattr in m.Attributes)
 							{
-								AttributeHelper.SetCustomAttribute(mb, custattr);
+								AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), mb, custattr);
 							}
 						}
-						SetParameters(mb, m.Params);
+						SetParameters(DeclaringType.GetClassLoader(), mb, m.Params);
 						AttributeHelper.HideFromJava(mb);
 						CodeEmitter ilgen = CodeEmitter.Create(mb);
 						if(m.nonvirtualAlternateBody != null)
 						{
-							m.nonvirtualAlternateBody.Emit(ilgen);
+							m.nonvirtualAlternateBody.Emit(DeclaringType.GetClassLoader(), ilgen);
 						}
 						else
 						{
@@ -1293,7 +1293,7 @@ namespace IKVM.Internal
 					{
 						redirSig = m.Sig;
 					}
-					ClassLoaderWrapper classLoader = ClassLoaderWrapper.GetBootstrapClassLoader();
+					ClassLoaderWrapper classLoader = DeclaringType.GetClassLoader();
 					// HACK if the class name contains a comma, we assume it is a .NET type
 					if(m.redirect.Class == null || m.redirect.Class.IndexOf(',') >= 0)
 					{
@@ -1309,7 +1309,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						TypeWrapper tw = ClassLoaderWrapper.LoadClassCritical(m.redirect.Class);
+						TypeWrapper tw = classLoader.LoadClassByDottedName(m.redirect.Class);
 						MethodWrapper mw = tw.GetMethodWrapper(redirName, redirSig, false);
 						if(mw == null)
 						{
@@ -1321,7 +1321,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			private static void SetParameters(MethodBuilder mb, IKVM.Internal.MapXml.Param[] parameters)
+			private static void SetParameters(ClassLoaderWrapper loader, MethodBuilder mb, IKVM.Internal.MapXml.Param[] parameters)
 			{
 				if(parameters != null)
 				{
@@ -1332,14 +1332,14 @@ namespace IKVM.Internal
 						{
 							for(int j = 0; j < parameters[i].Attributes.Length; j++)
 							{
-								AttributeHelper.SetCustomAttribute(pb, parameters[i].Attributes[j]);
+								AttributeHelper.SetCustomAttribute(loader, pb, parameters[i].Attributes[j]);
 							}
 						}
 					}
 				}
 			}
 
-			private static void SetParameters(ConstructorBuilder cb, IKVM.Internal.MapXml.Param[] parameters)
+			private static void SetParameters(ClassLoaderWrapper loader, ConstructorBuilder cb, IKVM.Internal.MapXml.Param[] parameters)
 			{
 				if(parameters != null)
 				{
@@ -1350,7 +1350,7 @@ namespace IKVM.Internal
 						{
 							for(int j = 0; j < parameters[i].Attributes.Length; j++)
 							{
-								AttributeHelper.SetCustomAttribute(pb, parameters[i].Attributes[j]);
+								AttributeHelper.SetCustomAttribute(loader, pb, parameters[i].Attributes[j]);
 							}
 						}
 					}
@@ -1368,7 +1368,7 @@ namespace IKVM.Internal
 					interfaceWrappers = new TypeWrapper[c.Interfaces.Length];
 					for(int i = 0; i < c.Interfaces.Length; i++)
 					{
-						TypeWrapper ifaceTypeWrapper = ClassLoaderWrapper.LoadClassCritical(c.Interfaces[i].Name);
+						TypeWrapper ifaceTypeWrapper = classLoader.LoadClassByDottedName(c.Interfaces[i].Name);
 						interfaceWrappers[i] = ifaceTypeWrapper;
 						if(!baseIsSealed)
 						{
@@ -1424,7 +1424,7 @@ namespace IKVM.Internal
 							{
 								foreach(IKVM.Internal.MapXml.Attribute custattr in f.Attributes)
 								{
-									AttributeHelper.SetCustomAttribute(fb, custattr);
+									AttributeHelper.SetCustomAttribute(classLoader, fb, custattr);
 								}
 							}
 							object constant;
@@ -1478,7 +1478,7 @@ namespace IKVM.Internal
 					ConstructorBuilder cb = typeBuilder.DefineTypeInitializer();
 					CodeEmitter ilgen = CodeEmitter.Create(cb);
 					// TODO emit code to make sure super class is initialized
-					classDef.Clinit.body.Emit(ilgen);
+					classDef.Clinit.body.Emit(classLoader, ilgen);
 				}
 
 				// FXBUG because the AppDomain.TypeResolve event doesn't work correctly for inner classes,
@@ -1872,7 +1872,7 @@ namespace IKVM.Internal
 						mappedExceptionsAllSubClasses[i] = true;
 						dst = dst.Substring(1);
 					}
-					mappedExceptions[i] = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dst);
+					mappedExceptions[i] = LoadClassByDottedName(dst);
 				}
 			}
 		}
@@ -1886,7 +1886,7 @@ namespace IKVM.Internal
 				this.map = map;
 			}
 
-			internal void Emit(CodeEmitter ilgen)
+			internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)
 			{
 				MethodWrapper mwSuppressFillInStackTrace = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
 				mwSuppressFillInStackTrace.Link();
@@ -1907,13 +1907,13 @@ namespace IKVM.Internal
 						ilgen.Emit(OpCodes.Ldarg_0);
 						if(map[i].code.invoke != null)
 						{
-							System.Collections.Hashtable context = new System.Collections.Hashtable();
+							IKVM.Internal.MapXml.CodeGenContext context = new IKVM.Internal.MapXml.CodeGenContext(loader);
 							foreach(MapXml.Instruction instr in map[i].code.invoke)
 							{
 								MapXml.NewObj newobj = instr as MapXml.NewObj;
 								if(newobj != null
 									&& newobj.Class != null
-									&& ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
+									&& loader.LoadClassByDottedName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
 								{
 									mwSuppressFillInStackTrace.EmitCall(ilgen);
 								}
@@ -1924,7 +1924,7 @@ namespace IKVM.Internal
 					}
 					else
 					{
-						TypeWrapper tw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(map[i].dst);
+						TypeWrapper tw = loader.LoadClassByDottedName(map[i].dst);
 						MethodWrapper mw = tw.GetMethodWrapper("<init>", "()V", false);
 						mw.Link();
 						mwSuppressFillInStackTrace.EmitCall(ilgen);
@@ -2036,10 +2036,10 @@ namespace IKVM.Internal
 				{
 					// NOTE we don't support interfaces that inherit from other interfaces
 					// (actually, if they are explicitly listed it would probably work)
-					TypeWrapper typeWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().GetLoadedClass(c.Name);
+					TypeWrapper typeWrapper = GetLoadedClass(c.Name);
 					foreach(IKVM.Internal.MapXml.Interface iface in c.Interfaces)
 					{
-						TypeWrapper ifaceWrapper = ClassLoaderWrapper.GetBootstrapClassLoader().GetLoadedClass(iface.Name);
+						TypeWrapper ifaceWrapper = GetLoadedClass(iface.Name);
 						if(ifaceWrapper == null || !ifaceWrapper.TypeAsTBD.IsAssignableFrom(typeWrapper.TypeAsTBD))
 						{
 							AddGhost(iface.Name, typeWrapper);
@@ -2093,7 +2093,7 @@ namespace IKVM.Internal
 			{
 				foreach(IKVM.Internal.MapXml.Attribute attr in assemblyAttributes)
 				{
-					AttributeHelper.SetCustomAttribute(assemblyBuilder, attr);
+					AttributeHelper.SetCustomAttribute(this, assemblyBuilder, attr);
 				}
 			}
 		}

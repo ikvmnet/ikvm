@@ -104,7 +104,7 @@ namespace IKVM.Internal
 					{
 						foreach(IKVM.Internal.MapXml.Attribute attr in parameters[i].Attributes)
 						{
-							AttributeHelper.SetCustomAttribute(pbs[i], attr);
+							AttributeHelper.SetCustomAttribute(classLoader, pbs[i], attr);
 						}
 					}
 				}
@@ -178,14 +178,14 @@ namespace IKVM.Internal
 					IKVM.Internal.MapXml.InstructionList opcodes = obj as IKVM.Internal.MapXml.InstructionList;
 					if(opcodes != null)
 					{
-						opcodes.Emit(ilgen);
+						opcodes.Emit(classLoader, ilgen);
 						return true;
 					}
 					// HACK if we're compiling the core class library, it can also be the ExceptionMapEmitter
 					CompilerClassLoader.ExceptionMapEmitter eme = obj as CompilerClassLoader.ExceptionMapEmitter;
 					if(eme != null)
 					{
-						eme.Emit(ilgen);
+						eme.Emit(classLoader, ilgen);
 						return true;
 					}
 				}
@@ -197,7 +197,7 @@ namespace IKVM.Internal
 		{
 			foreach(IKVM.Internal.MapXml.Attribute attr in clazz.Attributes)
 			{
-				AttributeHelper.SetCustomAttribute(typeBuilder, attr);
+				AttributeHelper.SetCustomAttribute(classLoader, typeBuilder, attr);
 			}
 		}
 
@@ -274,7 +274,7 @@ namespace IKVM.Internal
 				{
 					foreach(IKVM.Internal.MapXml.Attribute attr in prop.Attributes)
 					{
-						AttributeHelper.SetCustomAttribute(propbuilder, attr);
+						AttributeHelper.SetCustomAttribute(classLoader, propbuilder, attr);
 					}
 				}
 				MethodWrapper getter = null;
@@ -504,7 +504,7 @@ namespace IKVM.Internal
 										{
 											foreach(IKVM.Internal.MapXml.Attribute attr in field.Attributes)
 											{
-												AttributeHelper.SetCustomAttribute(fb, attr);
+												AttributeHelper.SetCustomAttribute(classLoader, fb, attr);
 											}
 										}
 									}
@@ -532,12 +532,12 @@ namespace IKVM.Internal
 									AttributeHelper.SetModifiers(cb, (Modifiers)constructor.Modifiers, false);
 								}
 								CodeEmitter ilgen = CodeEmitter.Create(cb);
-								constructor.body.Emit(ilgen);
+								constructor.body.Emit(classLoader, ilgen);
 								if(constructor.Attributes != null)
 								{
 									foreach(IKVM.Internal.MapXml.Attribute attr in constructor.Attributes)
 									{
-										AttributeHelper.SetCustomAttribute(cb, attr);
+										AttributeHelper.SetCustomAttribute(classLoader, cb, attr);
 									}
 								}
 							}
@@ -555,7 +555,7 @@ namespace IKVM.Internal
 										{
 											foreach(IKVM.Internal.MapXml.Attribute attr in constructor.Attributes)
 											{
-												AttributeHelper.SetCustomAttribute(mb, attr);
+												AttributeHelper.SetCustomAttribute(classLoader, mb, attr);
 											}
 										}
 									}
@@ -594,12 +594,12 @@ namespace IKVM.Internal
 									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
 								}
 								CodeEmitter ilgen = CodeEmitter.Create(mb);
-								method.body.Emit(ilgen);
+								method.body.Emit(classLoader, ilgen);
 								if(method.Attributes != null)
 								{
 									foreach(IKVM.Internal.MapXml.Attribute attr in method.Attributes)
 									{
-										AttributeHelper.SetCustomAttribute(mb, attr);
+										AttributeHelper.SetCustomAttribute(classLoader, mb, attr);
 									}
 								}
 							}
@@ -617,7 +617,7 @@ namespace IKVM.Internal
 										{
 											foreach(IKVM.Internal.MapXml.Attribute attr in method.Attributes)
 											{
-												AttributeHelper.SetCustomAttribute(mb, attr);
+												AttributeHelper.SetCustomAttribute(classLoader, mb, attr);
 											}
 										}
 									}
@@ -646,7 +646,7 @@ namespace IKVM.Internal
 									MethodBuilder mb = typeBuilder.DefineMethod(tw.Name + "/" + m.Name, MethodAttributes.Private | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.CheckAccessOnOverride, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod());
 									AttributeHelper.HideFromJava(mb);
 									typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
-									m.Emit(CodeEmitter.Create(mb));
+									m.Emit(classLoader, CodeEmitter.Create(mb));
 								}
 							}
 						}

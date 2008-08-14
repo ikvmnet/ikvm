@@ -169,7 +169,7 @@ namespace IKVM.Internal
 		private static Type typeofNonNestedOuterClassAttribute = JVM.LoadType(typeof(NonNestedOuterClassAttribute));
 
 #if STATIC_COMPILER && !COMPACT_FRAMEWORK
-		private static object ParseValue(TypeWrapper tw, string val)
+		private static object ParseValue(ClassLoaderWrapper loader, TypeWrapper tw, string val)
 		{
 			if(tw == CoreClasses.java.lang.String.Wrapper)
 			{
@@ -191,7 +191,7 @@ namespace IKVM.Internal
 			}
 			else if(tw.TypeAsTBD == typeof(Type))
 			{
-				TypeWrapper valtw = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(val);
+				TypeWrapper valtw = loader.LoadClassByDottedNameFast(val);
 				if(valtw != null)
 				{
 					return valtw.TypeAsBaseType;
@@ -236,7 +236,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static void SetPropertiesAndFields(Attribute attrib, IKVM.Internal.MapXml.Attribute attr)
+		private static void SetPropertiesAndFields(ClassLoaderWrapper loader, Attribute attrib, IKVM.Internal.MapXml.Attribute attr)
 		{
 			Type t = attrib.GetType();
 			if(attr.Properties != null)
@@ -244,7 +244,7 @@ namespace IKVM.Internal
 				foreach(IKVM.Internal.MapXml.Param prop in attr.Properties)
 				{
 					PropertyInfo pi = t.GetProperty(prop.Name);
-					pi.SetValue(attrib, ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), prop.Sig), prop.Value), null);
+					pi.SetValue(attrib, ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), prop.Sig), prop.Value), null);
 				}
 			}
 			if(attr.Fields != null)
@@ -252,24 +252,24 @@ namespace IKVM.Internal
 				foreach(IKVM.Internal.MapXml.Param field in attr.Fields)
 				{
 					FieldInfo fi = t.GetField(field.Name);
-					fi.SetValue(attrib, ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), field.Sig), field.Value));
+					fi.SetValue(attrib, ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), field.Sig), field.Value));
 				}
 			}
 		}
 
-		internal static Attribute InstantiatePseudoCustomAttribute(IKVM.Internal.MapXml.Attribute attr)
+		internal static Attribute InstantiatePseudoCustomAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr)
 		{
 			Type t = StaticCompiler.GetType(attr.Type);
 			Type[] argTypes;
 			object[] args;
-			GetAttributeArgsAndTypes(attr, out argTypes, out args);
+			GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
 			ConstructorInfo ci = t.GetConstructor(argTypes);
 			Attribute attrib = ci.Invoke(args) as Attribute;
-			SetPropertiesAndFields(attrib, attr);
+			SetPropertiesAndFields(loader, attrib, attr);
 			return attrib;
 		}
 
-		private static bool IsCodeAccessSecurityAttribute(IKVM.Internal.MapXml.Attribute attr, out SecurityAction action, out PermissionSet pset)
+		private static bool IsCodeAccessSecurityAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out SecurityAction action, out PermissionSet pset)
 		{
 			action = SecurityAction.Deny;
 			pset = null;
@@ -280,10 +280,10 @@ namespace IKVM.Internal
 				{
 					Type[] argTypes;
 					object[] args;
-					GetAttributeArgsAndTypes(attr, out argTypes, out args);
+					GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
 					ConstructorInfo ci = t.GetConstructor(argTypes);
 					CodeAccessSecurityAttribute attrib = ci.Invoke(args) as CodeAccessSecurityAttribute;
-					SetPropertiesAndFields(attrib, attr);
+					SetPropertiesAndFields(loader, attrib, attr);
 					action = attrib.Action;
 					pset = new PermissionSet(PermissionState.None);
 					pset.AddPermission(attrib.CreatePermission());
@@ -293,72 +293,72 @@ namespace IKVM.Internal
 			return false;
 		}
 
-		internal static void SetCustomAttribute(TypeBuilder tb, IKVM.Internal.MapXml.Attribute attr)
+		internal static void SetCustomAttribute(ClassLoaderWrapper loader, TypeBuilder tb, IKVM.Internal.MapXml.Attribute attr)
 		{
 			SecurityAction action;
 			PermissionSet pset;
-			if(IsCodeAccessSecurityAttribute(attr, out action, out pset))
+			if(IsCodeAccessSecurityAttribute(loader, attr, out action, out pset))
 			{
 				tb.AddDeclarativeSecurity(action, pset);
 			}
 			else
 			{
-				tb.SetCustomAttribute(CreateCustomAttribute(attr));
+				tb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
 			}
 		}
 
-		internal static void SetCustomAttribute(FieldBuilder fb, IKVM.Internal.MapXml.Attribute attr)
+		internal static void SetCustomAttribute(ClassLoaderWrapper loader, FieldBuilder fb, IKVM.Internal.MapXml.Attribute attr)
 		{
-			fb.SetCustomAttribute(CreateCustomAttribute(attr));
+			fb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
 		}
 
-		internal static void SetCustomAttribute(ParameterBuilder pb, IKVM.Internal.MapXml.Attribute attr)
+		internal static void SetCustomAttribute(ClassLoaderWrapper loader, ParameterBuilder pb, IKVM.Internal.MapXml.Attribute attr)
 		{
-			pb.SetCustomAttribute(CreateCustomAttribute(attr));
+			pb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
 		}
 
-		internal static void SetCustomAttribute(MethodBuilder mb, IKVM.Internal.MapXml.Attribute attr)
+		internal static void SetCustomAttribute(ClassLoaderWrapper loader, MethodBuilder mb, IKVM.Internal.MapXml.Attribute attr)
 		{
 			SecurityAction action;
 			PermissionSet pset;
-			if(IsCodeAccessSecurityAttribute(attr, out action, out pset))
+			if(IsCodeAccessSecurityAttribute(loader, attr, out action, out pset))
 			{
 				mb.AddDeclarativeSecurity(action, pset);
 			}
 			else
 			{
-				mb.SetCustomAttribute(CreateCustomAttribute(attr));
+				mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
 			}
 		}
 
-		internal static void SetCustomAttribute(ConstructorBuilder cb, IKVM.Internal.MapXml.Attribute attr)
+		internal static void SetCustomAttribute(ClassLoaderWrapper loader, ConstructorBuilder cb, IKVM.Internal.MapXml.Attribute attr)
 		{
 			SecurityAction action;
 			PermissionSet pset;
-			if(IsCodeAccessSecurityAttribute(attr, out action, out pset))
+			if(IsCodeAccessSecurityAttribute(loader, attr, out action, out pset))
 			{
 				cb.AddDeclarativeSecurity(action, pset);
 			}
 			else
 			{
-				cb.SetCustomAttribute(CreateCustomAttribute(attr));
+				cb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
 			}
 		}
 
-		internal static void SetCustomAttribute(PropertyBuilder pb, IKVM.Internal.MapXml.Attribute attr)
+		internal static void SetCustomAttribute(ClassLoaderWrapper loader, PropertyBuilder pb, IKVM.Internal.MapXml.Attribute attr)
 		{
-			pb.SetCustomAttribute(CreateCustomAttribute(attr));
+			pb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
 		}
 
-		internal static void SetCustomAttribute(AssemblyBuilder ab, IKVM.Internal.MapXml.Attribute attr)
+		internal static void SetCustomAttribute(ClassLoaderWrapper loader, AssemblyBuilder ab, IKVM.Internal.MapXml.Attribute attr)
 		{
-			ab.SetCustomAttribute(CreateCustomAttribute(attr));
+			ab.SetCustomAttribute(CreateCustomAttribute(loader, attr));
 		}
 
-		private static void GetAttributeArgsAndTypes(IKVM.Internal.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
+		private static void GetAttributeArgsAndTypes(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
 		{
 			// TODO add error handling
-			TypeWrapper[] twargs = ClassFile.ArgTypeWrapperListFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Sig);
+			TypeWrapper[] twargs = ClassFile.ArgTypeWrapperListFromSig(loader, new Hashtable(), attr.Sig);
 			argTypes = new Type[twargs.Length];
 			args = new object[argTypes.Length];
 			for(int i = 0; i < twargs.Length; i++)
@@ -367,30 +367,30 @@ namespace IKVM.Internal
 				TypeWrapper tw = twargs[i];
 				if(tw == CoreClasses.java.lang.Object.Wrapper)
 				{
-					tw = ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Params[i].Sig);
+					tw = ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), attr.Params[i].Sig);
 				}
 				if(tw.IsArray)
 				{
 					Array arr = Array.CreateInstance(tw.ElementTypeWrapper.TypeAsArrayType, attr.Params[i].Elements.Length);
 					for(int j = 0; j < arr.Length; j++)
 					{
-						arr.SetValue(ParseValue(tw.ElementTypeWrapper, attr.Params[i].Elements[j].Value), j);
+						arr.SetValue(ParseValue(loader, tw.ElementTypeWrapper, attr.Params[i].Elements[j].Value), j);
 					}
 					args[i] = arr;
 				}
 				else
 				{
-					args[i] = ParseValue(tw, attr.Params[i].Value);
+					args[i] = ParseValue(loader, tw, attr.Params[i].Value);
 				}
 			}
 		}
 
-		private static CustomAttributeBuilder CreateCustomAttribute(IKVM.Internal.MapXml.Attribute attr)
+		private static CustomAttributeBuilder CreateCustomAttribute(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr)
 		{
 			// TODO add error handling
 			Type[] argTypes;
 			object[] args;
-			GetAttributeArgsAndTypes(attr, out argTypes, out args);
+			GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
 			if(attr.Type != null)
 			{
 				Type t = StaticCompiler.GetType(attr.Type);
@@ -412,7 +412,7 @@ namespace IKVM.Internal
 					for(int i = 0; i < namedProperties.Length; i++)
 					{
 						namedProperties[i] = t.GetProperty(attr.Properties[i].Name);
-						propertyValues[i] = ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Properties[i].Sig), attr.Properties[i].Value);
+						propertyValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), attr.Properties[i].Sig), attr.Properties[i].Value);
 					}
 				}
 				else
@@ -429,7 +429,7 @@ namespace IKVM.Internal
 					for(int i = 0; i < namedFields.Length; i++)
 					{
 						namedFields[i] = t.GetField(attr.Fields[i].Name);
-						fieldValues[i] = ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Fields[i].Sig), attr.Fields[i].Value);
+						fieldValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), attr.Fields[i].Sig), attr.Fields[i].Value);
 					}
 				}
 				else
@@ -445,7 +445,7 @@ namespace IKVM.Internal
 				{
 					throw new NotImplementedException("Setting property values on Java attributes is not implemented");
 				}
-				TypeWrapper t = ClassLoaderWrapper.LoadClassCritical(attr.Class);
+				TypeWrapper t = loader.LoadClassByDottedName(attr.Class);
 				MethodWrapper mw = t.GetMethodWrapper("<init>", attr.Sig, false);
 				mw.Link();
 				ConstructorInfo ci = (ConstructorInfo)mw.GetMethod();
@@ -464,7 +464,7 @@ namespace IKVM.Internal
 						FieldWrapper fw = t.GetFieldWrapper(attr.Fields[i].Name, attr.Fields[i].Sig);
 						fw.Link();
 						namedFields[i] = fw.GetField();
-						fieldValues[i] = ParseValue(ClassFile.FieldTypeWrapperFromSig(ClassLoaderWrapper.GetBootstrapClassLoader(), new Hashtable(), attr.Fields[i].Sig), attr.Fields[i].Value);
+						fieldValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), attr.Fields[i].Sig), attr.Fields[i].Value);
 					}
 				}
 				else
