@@ -53,7 +53,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return ((CompilerClassLoader)classLoader).IsGhost(this);
+				return classLoader.IsGhost(this);
 			}
 		}
 
@@ -61,7 +61,7 @@ namespace IKVM.Internal
 		{
 			get
 			{
-				return ((CompilerClassLoader)classLoader).IsMapUnsafeException(this);
+				return classLoader.IsMapUnsafeException(this);
 			}
 		}
 
@@ -75,7 +75,7 @@ namespace IKVM.Internal
 
 		internal void GetParameterNamesFromXml(string methodName, string methodSig, string[] parameterNames)
 		{
-			IKVM.Internal.MapXml.Param[] parameters = ((CompilerClassLoader)classLoader).GetXmlMapParameters(Name, methodName, methodSig);
+			IKVM.Internal.MapXml.Param[] parameters = classLoader.GetXmlMapParameters(Name, methodName, methodSig);
 			if(parameters != null)
 			{
 				for(int i = 0; i < parameters.Length; i++)
@@ -90,7 +90,7 @@ namespace IKVM.Internal
 
 		internal void AddXmlMapParameterAttributes(MethodBase method, string className, string methodName, string methodSig, ref ParameterBuilder[] pbs)
 		{
-			IKVM.Internal.MapXml.Param[] parameters = ((CompilerClassLoader)classLoader).GetXmlMapParameters(className, methodName, methodSig);
+			IKVM.Internal.MapXml.Param[] parameters = classLoader.GetXmlMapParameters(className, methodName, methodSig);
 			if(parameters != null)
 			{
 				if(pbs == null)
@@ -134,7 +134,7 @@ namespace IKVM.Internal
 
 		protected override void AddMapXmlFields(ref FieldWrapper[] fields)
 		{
-			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = ((CompilerClassLoader)classLoader).GetMapXmlClasses();
+			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
 			if(mapxml != null)
 			{
 				IKVM.Internal.MapXml.Class clazz;
@@ -169,7 +169,7 @@ namespace IKVM.Internal
 
 		protected override bool EmitMapXmlMethodBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m)
 		{
-			Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> mapxml = ((CompilerClassLoader)classLoader).GetMapXmlMethodBodies();
+			Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> mapxml = classLoader.GetMapXmlMethodBodies();
 			if(mapxml != null)
 			{
 				IKVM.Internal.MapXml.InstructionList opcodes;
@@ -367,7 +367,7 @@ namespace IKVM.Internal
 
 		protected override bool IsPInvokeMethod(ClassFile.Method m)
 		{
-			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = ((CompilerClassLoader)classLoader).GetMapXmlClasses();
+			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
 			if(mapxml != null)
 			{
 				IKVM.Internal.MapXml.Class clazz;
@@ -464,7 +464,7 @@ namespace IKVM.Internal
 
 		protected override void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, FieldWrapper[] fields, MethodWrapper[] methods)
 		{
-			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = ((CompilerClassLoader)classLoader).GetMapXmlClasses();
+			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
 			if(mapxml != null)
 			{
 				IKVM.Internal.MapXml.Class clazz;
@@ -669,7 +669,7 @@ namespace IKVM.Internal
 						AttributeHelper.SetModifiers(stub, methods[i].Modifiers, methods[i].IsInternal);
 						CodeEmitter ilgen = CodeEmitter.Create(stub);
 						CodeEmitterLabel end = ilgen.DefineLabel();
-						TypeWrapper[] implementers = ((CompilerClassLoader)classLoader).GetGhostImplementers(this);
+						TypeWrapper[] implementers = classLoader.GetGhostImplementers(this);
 						ilgen.Emit(OpCodes.Ldarg_0);
 						ilgen.Emit(OpCodes.Ldfld, ghostRefField);
 						ilgen.Emit(OpCodes.Dup);
@@ -714,7 +714,7 @@ namespace IKVM.Internal
 					CodeEmitter ilgen;
 					LocalBuilder local;
 					// add implicit conversions for all the ghost implementers
-					TypeWrapper[] implementers = ((CompilerClassLoader)classLoader).GetGhostImplementers(this);
+					TypeWrapper[] implementers = classLoader.GetGhostImplementers(this);
 					for(int i = 0; i < implementers.Length; i++)
 					{
 						mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, new Type[] { implementers[i].TypeAsSignatureType });

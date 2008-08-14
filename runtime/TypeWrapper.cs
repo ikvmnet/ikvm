@@ -3637,7 +3637,11 @@ namespace IKVM.Internal
 	class DynamicTypeWrapper : TypeWrapper
 #endif
 	{
+#if STATIC_COMPILER
+		protected readonly CompilerClassLoader classLoader;
+#else
 		protected readonly ClassLoaderWrapper classLoader;
+#endif
 		private volatile DynamicImpl impl;
 		private TypeWrapper[] interfaces;
 		private readonly string sourceFileName;
@@ -3655,7 +3659,11 @@ namespace IKVM.Internal
 			return tw;
 		}
 
+#if STATIC_COMPILER
+		internal DynamicTypeWrapper(ClassFile f, CompilerClassLoader classLoader)
+#else
 		internal DynamicTypeWrapper(ClassFile f, ClassLoaderWrapper classLoader)
+#endif
 			: base(f.Modifiers, f.Name, f.IsInterface ? null : LoadTypeWrapper(classLoader, f.SuperClass))
 		{
 			Profiler.Count("DynamicTypeWrapper");
