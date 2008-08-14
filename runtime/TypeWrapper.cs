@@ -4048,8 +4048,10 @@ namespace IKVM.Internal
 							if(outerClassWrapper != null)
 							{
 								// make sure the relationship is reciprocal (otherwise we run the risk of
-								// baking the outer type before the inner type)
-								if(outerClassWrapper.impl is JavaTypeImpl)
+								// baking the outer type before the inner type) and that the inner and outer
+								// class live in the same class loader (when doing a multi target compilation,
+								// it is possible to split the two classes acros assemblies)
+								if(outerClassWrapper.impl is JavaTypeImpl && outerClassWrapper.GetClassLoader() == wrapper.GetClassLoader())
 								{
 									ClassFile outerClassFile = ((JavaTypeImpl)outerClassWrapper.impl).classFile;
 									ClassFile.InnerClass[] outerInnerClasses = outerClassFile.InnerClasses;
