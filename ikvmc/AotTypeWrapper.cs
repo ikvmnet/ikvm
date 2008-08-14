@@ -134,11 +134,11 @@ namespace IKVM.Internal
 
 		protected override void AddMapXmlFields(ref FieldWrapper[] fields)
 		{
-			Hashtable mapxml = ((CompilerClassLoader)classLoader).GetMapXml();
+			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = ((CompilerClassLoader)classLoader).GetMapXmlClasses();
 			if(mapxml != null)
 			{
-				IKVM.Internal.MapXml.Class clazz = (IKVM.Internal.MapXml.Class)mapxml[this.Name];
-				if(clazz != null)
+				IKVM.Internal.MapXml.Class clazz;
+				if(mapxml.TryGetValue(this.Name, out clazz))
 				{
 					if(clazz.Fields != null)
 					{
@@ -169,18 +169,14 @@ namespace IKVM.Internal
 
 		protected override bool EmitMapXmlMethodBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m)
 		{
-			Hashtable mapxml = ((CompilerClassLoader)classLoader).GetMapXml();
+			Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> mapxml = ((CompilerClassLoader)classLoader).GetMapXmlMethodBodies();
 			if(mapxml != null)
 			{
-				object obj = mapxml[f.Name + "." + m.Name + m.Signature];
-				if(obj != null)
+				IKVM.Internal.MapXml.InstructionList opcodes;
+				if(mapxml.TryGetValue(new MethodKey(f.Name, m.Name, m.Signature), out opcodes))
 				{
-					IKVM.Internal.MapXml.InstructionList opcodes = obj as IKVM.Internal.MapXml.InstructionList;
-					if(opcodes != null)
-					{
-						opcodes.Emit(classLoader, ilgen);
-						return true;
-					}
+					opcodes.Emit(classLoader, ilgen);
+					return true;
 				}
 			}
 			return false;
@@ -371,11 +367,11 @@ namespace IKVM.Internal
 
 		protected override bool IsPInvokeMethod(ClassFile.Method m)
 		{
-			Hashtable mapxml = ((CompilerClassLoader)classLoader).GetMapXml();
+			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = ((CompilerClassLoader)classLoader).GetMapXmlClasses();
 			if(mapxml != null)
 			{
-				IKVM.Internal.MapXml.Class clazz = (IKVM.Internal.MapXml.Class)mapxml[Name];
-				if(clazz != null && clazz.Methods != null)
+				IKVM.Internal.MapXml.Class clazz;
+				if(mapxml.TryGetValue(this.Name, out clazz) && clazz.Methods != null)
 				{
 					foreach(IKVM.Internal.MapXml.Method method in clazz.Methods)
 					{
@@ -468,11 +464,11 @@ namespace IKVM.Internal
 
 		protected override void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, FieldWrapper[] fields, MethodWrapper[] methods)
 		{
-			Hashtable mapxml = ((CompilerClassLoader)classLoader).GetMapXml();
+			Dictionary<string, IKVM.Internal.MapXml.Class> mapxml = ((CompilerClassLoader)classLoader).GetMapXmlClasses();
 			if(mapxml != null)
 			{
-				IKVM.Internal.MapXml.Class clazz = (IKVM.Internal.MapXml.Class)mapxml[classFile.Name];
-				if(clazz != null)
+				IKVM.Internal.MapXml.Class clazz;
+				if(mapxml.TryGetValue(classFile.Name, out clazz))
 				{
 					if(clazz.Attributes != null)
 					{

@@ -40,6 +40,30 @@ using System.Security;
 
 namespace IKVM.Internal
 {
+	struct MethodKey : IEquatable<MethodKey>
+	{
+		private readonly string className;
+		private readonly string methodName;
+		private readonly string methodSig;
+
+		internal MethodKey(string className, string methodName, string methodSig)
+		{
+			this.className = className;
+			this.methodName = methodName;
+			this.methodSig = methodSig;
+		}
+
+		public bool Equals(MethodKey other)
+		{
+			return className == other.className && methodName == other.methodName && methodSig == other.methodSig;
+		}
+
+		public override int GetHashCode()
+		{
+			return className.GetHashCode() ^ methodName.GetHashCode() ^ methodSig.GetHashCode();
+		}
+	}
+
 	class CompilerClassLoader : ClassLoaderWrapper
 	{
 		private Dictionary<string, byte[]> classes;
@@ -60,7 +84,9 @@ namespace IKVM.Internal
 		private Dictionary<string, List<TypeWrapper>> ghosts;
 		private TypeWrapper[] mappedExceptions;
 		private bool[] mappedExceptionsAllSubClasses;
-		private System.Collections.Hashtable mapxml;
+		private Dictionary<string, IKVM.Internal.MapXml.Class> mapxml_Classes;
+		private Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> mapxml_MethodBodies;
+		private Dictionary<MethodKey, IKVM.Internal.MapXml.ReplaceMethodCall[]> mapxml_ReplacedMethods;
 		private Dictionary<string, string> baseClasses;
 		private IKVM.Internal.MapXml.Root map;
 		private bool compilingCoreAssembly;
@@ -1961,16 +1987,18 @@ namespace IKVM.Internal
 
 		internal void LoadMapXml()
 		{
-			mapxml = new System.Collections.Hashtable();
 			if(map.assembly.Classes != null)
 			{
+				mapxml_Classes = new Dictionary<string, IKVM.Internal.MapXml.Class>();
+				mapxml_MethodBodies = new Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList>();
+				mapxml_ReplacedMethods = new Dictionary<MethodKey, IKVM.Internal.MapXml.ReplaceMethodCall[]>();
 				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 				{
 					// HACK if it is not a remapped type, we assume it is a container for native methods
 					if(c.Shadows == null)
 					{
 						string className = c.Name;
-						mapxml.Add(className, c);
+						mapxml_Classes.Add(className, c);
 						if(c.Methods != null)
 						{
 							foreach(IKVM.Internal.MapXml.Method method in c.Methods)
@@ -1979,11 +2007,11 @@ namespace IKVM.Internal
 								{
 									string methodName = method.Name;
 									string methodSig = method.Sig;
-									mapxml.Add(className + "." + methodName + methodSig, method.body);
+									mapxml_MethodBodies.Add(new MethodKey(className, methodName, methodSig), method.body);
 								}
 								if(method.ReplaceMethodCalls != null)
 								{
-									mapxml.Add("replaced:" + className + "." + method.Name + method.Sig, method.ReplaceMethodCalls);
+									mapxml_ReplacedMethods.Add(new MethodKey(className, method.Name, method.Sig), method.ReplaceMethodCalls);
 								}
 							}
 						}
@@ -1994,24 +2022,31 @@ namespace IKVM.Internal
 
 		internal IKVM.Internal.MapXml.ReplaceMethodCall[] GetReplacedMethodsFor(MethodWrapper mw)
 		{
-			if(mapxml == null)
+			if(mapxml_ReplacedMethods == null)
 			{
 				return null;
 			}
-			return (IKVM.Internal.MapXml.ReplaceMethodCall[])mapxml["replaced:" + mw.DeclaringType.Name + "." + mw.Name + mw.Signature];
+			IKVM.Internal.MapXml.ReplaceMethodCall[] rmc;
+			mapxml_ReplacedMethods.TryGetValue(new MethodKey(mw.DeclaringType.Name, mw.Name, mw.Signature), out rmc);
+			return rmc;
 		}
 
-		internal System.Collections.Hashtable GetMapXml()
+		internal Dictionary<string, IKVM.Internal.MapXml.Class> GetMapXmlClasses()
 		{
-			return mapxml;
+			return mapxml_Classes;
+		}
+
+		internal Dictionary<MethodKey, IKVM.Internal.MapXml.InstructionList> GetMapXmlMethodBodies()
+		{
+			return mapxml_MethodBodies;
 		}
 
 		internal IKVM.Internal.MapXml.Param[] GetXmlMapParameters(string classname, string method, string sig)
 		{
-			if(mapxml != null)
+			if(mapxml_Classes != null)
 			{
-				IKVM.Internal.MapXml.Class clazz = (IKVM.Internal.MapXml.Class)mapxml[classname];
-				if(clazz != null)
+				IKVM.Internal.MapXml.Class clazz;
+				if(mapxml_Classes.TryGetValue(classname, out clazz))
 				{
 					if(method == "<init>" && clazz.Constructors != null)
 					{
