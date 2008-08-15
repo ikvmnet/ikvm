@@ -22,7 +22,6 @@
   
 */
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
@@ -3307,7 +3306,7 @@ namespace IKVM.NativeCode.java
 			public static string environmentBlock()
 			{
 				StringBuilder sb = new StringBuilder();
-				foreach (DictionaryEntry de in Environment.GetEnvironmentVariables())
+				foreach (global::System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
 				{
 					sb.Append(de.Key).Append('=').Append(de.Value).Append('\u0000');
 				}

@@ -25,7 +25,6 @@ using System;
 using System.Threading;
 using System.Reflection;
 using System.IO;
-using System.Collections;
 using System.Diagnostics;
 using System.Text;
 using System.Security;
@@ -349,16 +348,6 @@ namespace IKVM.Internal
 			}
 #endif
 		}
-
-#if !STATIC_COMPILER
-		internal static void SetProperties(Hashtable props)
-		{
-#if FIRST_PASS
-#else
-			gnu.classpath.VMSystemProperties.props = props;
-#endif
-		}
-#endif
 
 #if !STATIC_COMPILER
 		internal static object NewAnnotation(object classLoader, object definition)

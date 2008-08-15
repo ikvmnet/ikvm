@@ -23,15 +23,15 @@
 */
 #if !COMPACT_FRAMEWORK
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 class Profiler
 {
 	private static Profiler instance = new Profiler();
-	private static Hashtable counters = new Hashtable();
+	private static Dictionary<string, Entry> counters = new Dictionary<string, Entry>();
 	[ThreadStatic]
-	private static Stack stack;
+	private static Stack<Entry> stack;
 
 	private class Entry
 	{
@@ -46,9 +46,9 @@ class Profiler
 		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "Event", "Count", "Time (ms)");
 		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "-----", "-----", "---------");
 		long totalTime = 0;
-		foreach(DictionaryEntry e in counters)
+		foreach(KeyValuePair<string, Entry> e in counters)
 		{
-			Entry entry = (Entry)e.Value;
+			Entry entry = e.Value;
 			if(entry.Time == 0)
 			{
 				Console.Error.WriteLine("{0,-40}{1,10}", e.Key, entry.Count);
@@ -71,14 +71,14 @@ class Profiler
 		{
 			if(stack == null)
 			{
-				stack = new Stack();
+				stack = new Stack<Entry>();
 			}
 			if(stack.Count > 0)
 			{
-				((Entry)stack.Peek()).Time += ticks;
+				stack.Peek().Time += ticks;
 			}
-			Entry e = (Entry)counters[name];
-			if(e == null)
+			Entry e;
+			if(!counters.TryGetValue(name, out e))
 			{
 				e = new Entry();
 				counters[name] = e;
@@ -96,7 +96,7 @@ class Profiler
 		stack.Pop();
 		lock(counters)
 		{
-			Entry e = (Entry)counters[name];
+			Entry e = counters[name];
 			e.Time += ticks;
 			if(stack.Count > 0)
 			{
@@ -110,8 +110,8 @@ class Profiler
 	{
 		lock(counters)
 		{
-			Entry e = (Entry)counters[name];
-			if(e == null)
+			Entry e;
+			if(!counters.TryGetValue(name, out e))
 			{
 				e = new Entry();
 				counters[name] = e;

@@ -24,7 +24,7 @@
 using System;
 using System.Reflection;
 using System.IO;
-using System.Collections;
+using System.Collections.Generic;
 using java.util.zip;
 using java.lang.reflect;
 
@@ -32,8 +32,8 @@ public class NetExp
 {
 	private static int zipCount;
 	private static ZipOutputStream zipFile;
-	private static Hashtable done = new Hashtable();
-	private static Hashtable todo = new Hashtable();
+	private static Dictionary<string, NetExp> done = new Dictionary<string, NetExp>();
+	private static Dictionary<string, java.lang.Class> todo = new Dictionary<string, java.lang.Class>();
 	private static FileInfo file;
 
 	public static int Main(string[] args)
@@ -236,7 +236,7 @@ public class NetExp
 		do
 		{
 			keepGoing = false;
-			foreach(java.lang.Class c in new ArrayList(todo.Values))
+			foreach(java.lang.Class c in new List<java.lang.Class>(todo.Values))
 			{
 				if(!done.ContainsKey(c.getName()))
 				{

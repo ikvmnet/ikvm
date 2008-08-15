@@ -22,7 +22,7 @@
   
 */
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 #if !COMPACT_FRAMEWORK
 using System.Reflection.Emit;
@@ -858,50 +858,12 @@ namespace IKVM.Internal
 #if !COMPACT_FRAMEWORK
 		private static class NonvirtualInvokeHelper
 		{
-			private static Hashtable cache;
+			private static Dictionary<MethodKey, Invoker> cache;
 			private static ModuleBuilder module;
-
-			private class KeyGen : IEqualityComparer
-			{
-				public int GetHashCode(object o)
-				{
-					MethodWrapper mw = (MethodWrapper)o;
-					return mw.Signature.GetHashCode();
-				}
-
-				public new bool Equals(object x, object y)
-				{
-					return Compare(x, y) == 0;
-				}
-
-				public int Compare(object x, object y)
-				{
-					MethodWrapper mw1 = (MethodWrapper)x;
-					MethodWrapper mw2 = (MethodWrapper)y;
-					if(mw1.ReturnType == mw2.ReturnType)
-					{
-						TypeWrapper[] p1 = mw1.GetParameters();
-						TypeWrapper[] p2 = mw2.GetParameters();
-						if(p1.Length == p2.Length)
-						{
-							for(int i = 0; i < p1.Length; i++)
-							{
-								if(p1[i] != p2[i])
-								{
-									return 1;
-								}
-							}
-							return 0;
-						}
-					}
-					return 1;
-				}
-			}
 
 			static NonvirtualInvokeHelper()
 			{
-				KeyGen keygen = new KeyGen();
-				cache = new Hashtable(keygen);
+				cache = new Dictionary<MethodKey, Invoker>();
 				AssemblyName name = new AssemblyName();
 				name.Name = "NonvirtualInvoker";
 				AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
@@ -918,13 +880,14 @@ namespace IKVM.Internal
 
 			internal static Invoker GetInvoker(MethodWrapper mw)
 			{
-				lock(cache.SyncRoot)
+				lock(cache)
 				{
-					Invoker inv = (Invoker)cache[mw];
-					if(inv == null)
+					MethodKey key = new MethodKey(mw.DeclaringType.Name, mw.Name, mw.Signature);
+					Invoker inv;
+					if(!cache.TryGetValue(key, out inv))
 					{
 						inv = CreateInvoker(mw);
-						cache[mw] = inv;
+						cache[key] = inv;
 					}
 					return inv;
 				}

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,8 +23,8 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.Xml.Serialization;
-using System.Collections;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
@@ -36,16 +36,21 @@ namespace IKVM.Internal.MapXml
 	class CodeGenContext
 	{
 		private ClassLoaderWrapper classLoader;
-		private readonly Hashtable h = new Hashtable();
+		private readonly Dictionary<string, object> h = new Dictionary<string, object>();
 
 		internal CodeGenContext(ClassLoaderWrapper classLoader)
 		{
 			this.classLoader = classLoader;
 		}
 
-		internal object this[object key]
+		internal object this[string key]
 		{
-			get { return h[key]; }
+			get
+			{
+				object val;
+				h.TryGetValue(key, out val);
+				return val;
+			}
 			set { h[key] = value; }
 		}
 

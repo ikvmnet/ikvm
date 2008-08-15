@@ -23,7 +23,7 @@
 */
 using System;
 using System.IO;
-using System.Collections;
+using System.Collections.Generic;
 using IKVM.Attributes;
 
 namespace IKVM.Internal
@@ -822,7 +822,7 @@ namespace IKVM.Internal
 
 		internal void RemoveUnusedFields()
 		{
-			ArrayList list = new ArrayList();
+			List<Field> list = new List<Field>();
 			foreach(Field f in fields)
 			{
 				if(f.IsPrivate && f.IsStatic && f.Name != "serialVersionUID" && !IsReferenced(f))
@@ -835,7 +835,7 @@ namespace IKVM.Internal
 					list.Add(f);
 				}
 			}
-			fields = (Field[])list.ToArray(typeof(Field));
+			fields = list.ToArray();
 		}
 
 		private bool IsReferenced(Field fld)
@@ -1343,14 +1343,12 @@ namespace IKVM.Internal
 			{
 				return TypeWrapper.EmptyArray;
 			}
-			ArrayList list = new ArrayList();
+			List<TypeWrapper> list = new List<TypeWrapper>();
 			for(int i = 1; sig[i] != ')';)
 			{
 				list.Add(SigDecoderWrapper(classLoader, ref i, sig));
 			}
-			TypeWrapper[] types = new TypeWrapper[list.Count];
-			list.CopyTo(types);
-			return types;
+			return list.ToArray();
 		}
 
 		internal static TypeWrapper FieldTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
@@ -2615,7 +2613,7 @@ namespace IKVM.Internal
 					}
 					// build the argmap
 					string sig = method.Signature;
-					ArrayList args = new ArrayList();
+					List<int> args = new List<int>();
 					int pos = 0;
 					if(!method.IsStatic)
 					{
@@ -2647,8 +2645,7 @@ namespace IKVM.Internal
 							}
 						}
 					}
-					argmap = new int[args.Count];
-					args.CopyTo(argmap);
+					argmap = args.ToArray();
 					if(args.Count > max_locals)
 					{
 						throw new ClassFormatError("{0} (Arguments can't fit into locals)", classFile.Name);

@@ -22,16 +22,8 @@
   
 */
 using System;
-using System.Collections;
 using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Security;
-using System.Security.Permissions;
-using System.Runtime.Serialization;
-using SystemArray = System.Array;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Internal;

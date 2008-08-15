@@ -22,7 +22,6 @@
   
 */
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 #if !COMPACT_FRAMEWORK
@@ -32,7 +31,6 @@ using System.Diagnostics;
 using System.Security;
 using System.Security.Permissions;
 using IKVM.Attributes;
-
 
 namespace IKVM.Internal
 {
@@ -1740,7 +1738,7 @@ namespace IKVM.Internal
 			else
 #endif
 			{
-				ArrayList attrs = new ArrayList();
+				List<JavaModuleAttribute> attrs = new List<JavaModuleAttribute>();
 #if !COMPACT_FRAMEWORK
 				foreach(CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(mod))
 				{
@@ -3012,7 +3010,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void ImplementInterfaceMethodStubs(TypeBuilder typeBuilder, DynamicTypeWrapper wrapper, Hashtable doneSet)
+		internal void ImplementInterfaceMethodStubs(TypeBuilder typeBuilder, DynamicTypeWrapper wrapper, Dictionary<TypeWrapper, TypeWrapper> doneSet)
 		{
 			Debug.Assert(this.IsInterface);
 
@@ -3870,7 +3868,7 @@ namespace IKVM.Internal
 			private FieldWrapper[] fields;
 			private FinishedTypeImpl finishedType;
 			private bool finishInProgress;
-			private Hashtable memberclashtable;
+			private Dictionary<string, string> memberclashtable;
 			private MethodBuilder clinitMethod;
 			private MethodBuilder finalizeMethod;
 #if STATIC_COMPILER
@@ -3943,12 +3941,12 @@ namespace IKVM.Internal
 				wrapper.HasStaticInitializer = hasclinit;
 				if(!wrapper.IsInterface || wrapper.IsPublic)
 				{
-					ArrayList methodsArray = null;
-					ArrayList baseMethodsArray = null;
+					List<MethodWrapper> methodsArray = null;
+					List<MethodWrapper> baseMethodsArray = null;
 					if(wrapper.IsAbstract)
 					{
-						methodsArray = new ArrayList(methods);
-						baseMethodsArray = new ArrayList(baseMethods);
+						methodsArray = new List<MethodWrapper>(methods);
+						baseMethodsArray = new List<MethodWrapper>(baseMethods);
 						AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
 					}
 #if STATIC_COMPILER
@@ -3959,8 +3957,8 @@ namespace IKVM.Internal
 						{
 							if(methodsArray == null)
 							{
-								methodsArray = new ArrayList(methods);
-								baseMethodsArray = new ArrayList(baseMethods);
+								methodsArray = new List<MethodWrapper>(methods);
+								baseMethodsArray = new List<MethodWrapper>(baseMethods);
 							}
 							AddAccessStubMethods(methodsArray, baseMethodsArray, baseTypeWrapper);
 							baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
@@ -3969,8 +3967,8 @@ namespace IKVM.Internal
 #endif
 					if(methodsArray != null)
 					{
-						this.methods = (MethodWrapper[])methodsArray.ToArray(typeof(MethodWrapper));
-						this.baseMethods = (MethodWrapper[])baseMethodsArray.ToArray(typeof(MethodWrapper));
+						this.methods = methodsArray.ToArray();
+						this.baseMethods = baseMethodsArray.ToArray();
 					}
 				}
 				wrapper.SetMethods(methods);
@@ -3999,9 +3997,9 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 				if(wrapper.IsPublic)
 				{
-					ArrayList fieldsArray = new ArrayList(fields);
+					List<FieldWrapper> fieldsArray = new List<FieldWrapper>(fields);
 					AddAccessStubFields(fieldsArray, wrapper);
-					fields = (FieldWrapper[])fieldsArray.ToArray(typeof(FieldWrapper));
+					fields = fieldsArray.ToArray();
 				}
 				((AotTypeWrapper)wrapper).AddMapXmlFields(ref fields);
 #endif
@@ -4417,7 +4415,19 @@ namespace IKVM.Internal
 				}
 			}
 
-			private static bool ContainsMemberWrapper(ArrayList members, string name, string sig)
+			private static bool ContainsMemberWrapper(List<FieldWrapper> members, string name, string sig)
+			{
+				foreach(MemberWrapper mw in members)
+				{
+					if(mw.Name == name && mw.Signature == sig)
+					{
+						return true;
+					}
+				}
+				return false;
+			}
+
+			private static bool ContainsMemberWrapper(List<MethodWrapper> members, string name, string sig)
 			{
 				foreach(MemberWrapper mw in members)
 				{
@@ -4430,7 +4440,7 @@ namespace IKVM.Internal
 			}
 #endif // STATIC_COMPILER
 
-			private MethodWrapper GetMethodWrapperDuringCtor(TypeWrapper lookup, ArrayList methods, string name, string sig)
+			private MethodWrapper GetMethodWrapperDuringCtor(TypeWrapper lookup, List<MethodWrapper> methods, string name, string sig)
 			{
 				if(lookup == wrapper)
 				{
@@ -4456,7 +4466,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			private void AddMirandaMethods(ArrayList methods, ArrayList baseMethods, TypeWrapper tw)
+			private void AddMirandaMethods(List<MethodWrapper> methods, List<MethodWrapper> baseMethods, TypeWrapper tw)
 			{
 				foreach(TypeWrapper iface in tw.Interfaces)
 				{
@@ -4494,7 +4504,7 @@ namespace IKVM.Internal
 			}
 
 #if STATIC_COMPILER
-			private void AddAccessStubMethods(ArrayList methods, ArrayList baseMethods, TypeWrapper tw)
+			private void AddAccessStubMethods(List<MethodWrapper> methods, List<MethodWrapper> baseMethods, TypeWrapper tw)
 			{
 				foreach(MethodWrapper mw in tw.GetMethods())
 				{
@@ -4509,7 +4519,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			private void AddAccessStubFields(ArrayList fields, TypeWrapper tw)
+			private void AddAccessStubFields(List<FieldWrapper> fields, TypeWrapper tw)
 			{
 				do
 				{
@@ -4947,7 +4957,7 @@ namespace IKVM.Internal
 					if (innerclasses != null)
 					{
 						// TODO consider not pre-computing innerClassesTypeWrappers and declaringTypeWrapper here
-						ArrayList wrappers = new ArrayList();
+						List<TypeWrapper> wrappers = new List<TypeWrapper>();
 						for (int i = 0; i < innerclasses.Length; i++)
 						{
 							if (innerclasses[i].innerClass != 0 && innerclasses[i].outerClass != 0)
@@ -4962,7 +4972,7 @@ namespace IKVM.Internal
 								}
 							}
 						}
-						innerClassesTypeWrappers = (TypeWrapper[])wrappers.ToArray(typeof(TypeWrapper));
+						innerClassesTypeWrappers = wrappers.ToArray();
 #if STATIC_COMPILER
 						// before we bake our type, we need to link any inner annotations to allow them to create their attribute type (as a nested type)
 						foreach(TypeWrapper tw in innerClassesTypeWrappers)
@@ -5594,7 +5604,7 @@ namespace IKVM.Internal
 				{
 					if(memberclashtable == null)
 					{
-						memberclashtable = new Hashtable();
+						memberclashtable = new Dictionary<string, string>();
 						for(int i = 0; i < methods.Length; i++)
 						{
 							// TODO at the moment we don't support constructor signature clash resolving, so we better
@@ -5709,7 +5719,7 @@ namespace IKVM.Internal
 				string name = basename;
 				string key = GenerateClashKey("method", name, returnType, parameterTypes);
 				UpdateClashTable();
-				lock (memberclashtable.SyncRoot)
+				lock (memberclashtable)
 				{
 					for (int clashcount = 0; memberclashtable.ContainsKey(key); clashcount++)
 					{
@@ -6922,7 +6932,7 @@ namespace IKVM.Internal
 						parent = parent.BaseTypeWrapper;
 					}
 				}
-				Hashtable invokespecialstubcache = new Hashtable();
+				Dictionary<MethodKey, MethodInfo> invokespecialstubcache = new Dictionary<MethodKey, MethodInfo>();
 				bool basehasclinit = wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasStaticInitializer;
 				int clinitIndex = -1;
 				bool hasConstructor = false;
@@ -7145,7 +7155,7 @@ namespace IKVM.Internal
 				}
 
 				// add all interfaces that we implement (including the magic ones) and handle ghost conversions
-				ImplementInterfaces(wrapper.Interfaces, new ArrayList());
+				ImplementInterfaces(wrapper.Interfaces, new List<TypeWrapper>());
 
 				// NOTE non-final fields aren't allowed in interfaces so we don't have to initialize constant fields
 				if (!classFile.IsInterface)
@@ -7168,7 +7178,7 @@ namespace IKVM.Internal
 					// (e.g. interface that has an equals() method that should override System.Object.Equals())
 					// also deals with interface methods that aren't implemented (generate a stub that throws AbstractMethodError)
 					// and with methods that aren't public (generate a stub that throws IllegalAccessError)
-					Hashtable doneSet = new Hashtable();
+					Dictionary<TypeWrapper, TypeWrapper> doneSet = new Dictionary<TypeWrapper, TypeWrapper>();
 					TypeWrapper[] interfaces = wrapper.Interfaces;
 					for (int i = 0; i < interfaces.Length; i++)
 					{
@@ -7195,7 +7205,7 @@ namespace IKVM.Internal
 						{
 							if (wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasIncompleteInterfaceImplementation)
 							{
-								Hashtable hashtable = null;
+								Dictionary<TypeWrapper, TypeWrapper> hashtable = null;
 								TypeWrapper tw = wrapper.BaseTypeWrapper;
 								while (tw.HasIncompleteInterfaceImplementation)
 								{
@@ -7208,7 +7218,7 @@ namespace IKVM.Internal
 							}
 							if (true)
 							{
-								Hashtable hashtable = null;
+								Dictionary<TypeWrapper, TypeWrapper> hashtable = null;
 								foreach (TypeWrapper iface in wrapper.Interfaces)
 								{
 									AddMethodOverride(mw, (MethodBuilder)mw.GetMethod(), iface, mw.Name, mw.Signature, ref hashtable, true);
@@ -7784,7 +7794,7 @@ namespace IKVM.Internal
 			}
 #endif // STATIC_COMPILER
 
-			private void AddMethodOverride(MethodWrapper method, MethodBuilder mb, TypeWrapper iface, string name, string sig, ref Hashtable hashtable, bool unloadableOnly)
+			private void AddMethodOverride(MethodWrapper method, MethodBuilder mb, TypeWrapper iface, string name, string sig, ref Dictionary<TypeWrapper, TypeWrapper> hashtable, bool unloadableOnly)
 			{
 				if (hashtable != null && hashtable.ContainsKey(iface))
 				{
@@ -7795,7 +7805,7 @@ namespace IKVM.Internal
 				{
 					if (hashtable == null)
 					{
-						hashtable = new Hashtable();
+						hashtable = new Dictionary<TypeWrapper, TypeWrapper>();
 					}
 					hashtable.Add(iface, iface);
 					if (CheckRequireOverrideStub(method, mw))
@@ -7832,7 +7842,7 @@ namespace IKVM.Internal
 				return false;
 			}
 
-			private void ImplementInterfaces(TypeWrapper[] interfaces, ArrayList interfaceList)
+			private void ImplementInterfaces(TypeWrapper[] interfaces, List<TypeWrapper> interfaceList)
 			{
 				foreach (TypeWrapper iface in interfaces)
 				{
@@ -7853,16 +7863,16 @@ namespace IKVM.Internal
 							if (iface.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
 							{
 								if (iface.Name == "java.lang.Iterable"
-									&& !wrapper.ImplementsInterface(ClassLoaderWrapper.GetWrapperFromType(typeof(IEnumerable))))
+									&& !wrapper.ImplementsInterface(ClassLoaderWrapper.GetWrapperFromType(typeof(System.Collections.IEnumerable))))
 								{
 									TypeWrapper enumeratorType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("ikvm.lang.IterableEnumerator");
 									if (enumeratorType != null)
 									{
-										typeBuilder.AddInterfaceImplementation(typeof(IEnumerable));
+										typeBuilder.AddInterfaceImplementation(typeof(System.Collections.IEnumerable));
 										// FXBUG we're using the same method name as the C# compiler here because both the .NET and Mono implementations of Xml serialization depend on this method name
-										MethodBuilder mb = typeBuilder.DefineMethod("System.Collections.IEnumerable.GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, typeof(IEnumerator), Type.EmptyTypes);
+										MethodBuilder mb = typeBuilder.DefineMethod("System.Collections.IEnumerable.GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, typeof(System.Collections.IEnumerator), Type.EmptyTypes);
 										AttributeHelper.HideFromJava(mb);
-										typeBuilder.DefineMethodOverride(mb, typeof(IEnumerable).GetMethod("GetEnumerator"));
+										typeBuilder.DefineMethodOverride(mb, typeof(System.Collections.IEnumerable).GetMethod("GetEnumerator"));
 										CodeEmitter ilgen = CodeEmitter.Create(mb);
 										ilgen.Emit(OpCodes.Ldarg_0);
 										MethodWrapper mw = enumeratorType.GetMethodWrapper("<init>", "(Ljava.lang.Iterable;)V", false);
@@ -7916,7 +7926,7 @@ namespace IKVM.Internal
 						GenerateUnsupportedAbstractMethodStub(mb);
 					}
 				}
-				Hashtable h = new Hashtable();
+				Dictionary<MethodBase, MethodBase> h = new Dictionary<MethodBase, MethodBase>();
 				TypeWrapper tw = wrapper;
 				while (tw != null)
 				{
@@ -7952,7 +7962,7 @@ namespace IKVM.Internal
 				typeBuilder.DefineMethodOverride(m, (MethodInfo)mb);
 			}
 
-			private void CompileConstructorBody(FinishContext context, CodeEmitter ilGenerator, int methodIndex, Hashtable invokespecialstubcache)
+			private void CompileConstructorBody(FinishContext context, CodeEmitter ilGenerator, int methodIndex, Dictionary<MethodKey, MethodInfo> invokespecialstubcache)
 			{
 				MethodWrapper[] methods = wrapper.GetMethods();
 				ClassFile.Method m = classFile.Methods[methodIndex];
@@ -8100,7 +8110,7 @@ namespace IKVM.Internal
 
 		protected static void GetParameterNamesFromSig(string sig, string[] parameterNames)
 		{
-			ArrayList names = new ArrayList();
+			List<string> names = new List<string>();
 			for(int i = 1; sig[i] != ')'; i++)
 			{
 				if(sig[i] == 'L')
@@ -8190,7 +8200,7 @@ namespace IKVM.Internal
 		protected static ParameterBuilder[] GetParameterBuilders(MethodBase mb, int parameterCount, string[] parameterNames)
 		{
 			ParameterBuilder[] parameterBuilders = new ParameterBuilder[parameterCount];
-			Hashtable clashes = null;
+			Dictionary<string, int> clashes = null;
 			for(int i = 0; i < parameterBuilders.Length; i++)
 			{
 				string name = null;
@@ -8201,12 +8211,12 @@ namespace IKVM.Internal
 					{
 						if(clashes == null)
 						{
-							clashes = new Hashtable();
+							clashes = new Dictionary<string, int>();
 						}
 						int clash = 1;
 						if(clashes.ContainsKey(name))
 						{
-							clash = (int)clashes[name] + 1;
+							clash = clashes[name] + 1;
 						}
 						clashes[name] = clash;
 						name += clash;
@@ -8541,8 +8551,8 @@ namespace IKVM.Internal
 
 			protected override void LazyPublishMembers()
 			{
-				ArrayList methods = new ArrayList();
-				ArrayList fields = new ArrayList();
+				List<MethodWrapper> methods = new List<MethodWrapper>();
+				List<FieldWrapper> fields = new List<FieldWrapper>();
 				MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 				foreach(MemberInfo m in members)
 				{
@@ -8591,8 +8601,8 @@ namespace IKVM.Internal
 						methods.Add(new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null));
 					}
 				}
-				SetMethods((MethodWrapper[])methods.ToArray(typeof(MethodWrapper)));
-				SetFields((FieldWrapper[])fields.ToArray(typeof(FieldWrapper)));
+				SetMethods(methods.ToArray());
+				SetFields(fields.ToArray());
 			}
 
 			private MethodWrapper CreateRemappedMethodWrapper(MethodBase mb)
@@ -8837,7 +8847,7 @@ namespace IKVM.Internal
 				if(innerclasses == null)
 				{
 					Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-					ArrayList wrappers = new ArrayList();
+					List<TypeWrapper> wrappers = new List<TypeWrapper>();
 					for(int i = 0; i < nestedTypes.Length; i++)
 					{
 						if(!AttributeHelper.IsHideFromJava(nestedTypes[i]))
@@ -8849,7 +8859,7 @@ namespace IKVM.Internal
 					{
 						wrappers.Add(GetClassLoader().LoadClassByDottedName(s));
 					}
-					innerclasses = (TypeWrapper[])wrappers.ToArray(typeof(TypeWrapper));
+					innerclasses = wrappers.ToArray();
 				}
 				return innerclasses;
 			}
@@ -8951,7 +8961,7 @@ namespace IKVM.Internal
 
 		private static void ParseSig(string sig, out string[] sigparam, out string sigret)
 		{
-			ArrayList list = new ArrayList();
+			List<string> list = new List<string>();
 			int pos = 1;
 			for(;;)
 			{
@@ -8983,7 +8993,7 @@ namespace IKVM.Internal
 						break;
 					}
 					case ')':
-						sigparam = (string[])list.ToArray(typeof(string));
+						sigparam = list.ToArray();
 						sigret = sig.Substring(pos + 1);
 						return;
 					default:
@@ -9064,8 +9074,8 @@ namespace IKVM.Internal
 		protected override void LazyPublishMembers()
 		{
 			clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-			ArrayList methods = new ArrayList();
-			ArrayList fields = new ArrayList();
+			List<MethodWrapper> methods = new List<MethodWrapper>();
+			List<FieldWrapper> fields = new List<FieldWrapper>();
 			MemberInfo[] members = type.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 			foreach(MemberInfo m in members)
 			{
@@ -9143,8 +9153,8 @@ namespace IKVM.Internal
 					}
 				}
 			}
-			SetMethods((MethodWrapper[])methods.ToArray(typeof(MethodWrapper)));
-			SetFields((FieldWrapper[])fields.ToArray(typeof(FieldWrapper)));
+			SetMethods(methods.ToArray());
+			SetFields(fields.ToArray());
 		}
 
 		private class CompiledRemappedMethodWrapper : SmartMethodWrapper
@@ -10091,7 +10101,7 @@ namespace IKVM.Internal
 
 			protected override void LazyPublishMembers()
 			{
-				ArrayList fields = new ArrayList();
+				List<FieldWrapper> fields = new List<FieldWrapper>();
 				int ordinal = 0;
 				foreach(FieldInfo field in this.DeclaringTypeWrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.Public))
 				{
@@ -10102,7 +10112,7 @@ namespace IKVM.Internal
 				}
 				// TODO if the enum already has an __unspecified value, rename this one
 				fields.Add(new EnumFieldWrapper(this, "__unspecified", ordinal++));
-				SetFields((FieldWrapper[])fields.ToArray(typeof(FieldWrapper)));
+				SetFields(fields.ToArray());
 				SetMethods(new MethodWrapper[] { new EnumValuesMethodWrapper(this), new EnumValueOfMethodWrapper(this) });
 				base.LazyPublishMembers();
 			}
@@ -10379,7 +10389,7 @@ namespace IKVM.Internal
 
 			protected override void LazyPublishMembers()
 			{
-				ArrayList methods = new ArrayList();
+				List<MethodWrapper> methods = new List<MethodWrapper>();
 				ConstructorInfo defCtor;
 				ConstructorInfo singleOneArgCtor;
 				GetConstructors(attributeType, out defCtor, out singleOneArgCtor);
@@ -10402,7 +10412,7 @@ namespace IKVM.Internal
 						methods.Add(new AttributeAnnotationMethodWrapper(this, fi.Name, fi.FieldType, true));
 					}
 				}
-				SetMethods((MethodWrapper[])methods.ToArray(typeof(MethodWrapper)));
+				SetMethods(methods.ToArray());
 				base.LazyPublishMembers();
 			}
 
@@ -10787,7 +10797,7 @@ namespace IKVM.Internal
 					{
 						if(innerClasses == null)
 						{
-							ArrayList list = new ArrayList();
+							List<TypeWrapper> list = new List<TypeWrapper>();
 							AttributeUsageAttribute attr = GetAttributeUsage();
 							if((attr.ValidOn & AttributeTargets.ReturnValue) != 0)
 							{
@@ -10797,7 +10807,7 @@ namespace IKVM.Internal
 							{
 								list.Add(GetClassLoader().RegisterInitiatingLoader(new MultipleAnnotationTypeWrapper(this)));
 							}
-							innerClasses = (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
+							innerClasses = list.ToArray();
 						}
 					}
 					return innerClasses;
@@ -10958,10 +10968,10 @@ namespace IKVM.Internal
 					ConstructorInfo singleOneArgCtor;
 					object ctorArg = null;
 					GetConstructors(type, out defCtor, out singleOneArgCtor);
-					ArrayList properties = new ArrayList();
-					ArrayList propertyValues = new ArrayList();
-					ArrayList fields = new ArrayList();
-					ArrayList fieldValues = new ArrayList();
+					List<PropertyInfo> properties = new List<PropertyInfo>();
+					List<object> propertyValues = new List<object>();
+					List<FieldInfo> fields = new List<FieldInfo>();
+					List<object> fieldValues = new List<object>();
 					for(int i = 2; i < arr.Length; i += 2)
 					{
 						string name = (string)arr[i];
@@ -10994,10 +11004,10 @@ namespace IKVM.Internal
 					}
 					return new CustomAttributeBuilder(ctorArg == null ? defCtor : singleOneArgCtor,
 						ctorArg == null ? new object[0] : new object[] { ctorArg },
-						(PropertyInfo[])properties.ToArray(typeof(PropertyInfo)),
-						(object[])propertyValues.ToArray(),
-						(FieldInfo[])fields.ToArray(typeof(FieldInfo)),
-						(object[])fieldValues.ToArray());
+						properties.ToArray(),
+						propertyValues.ToArray(),
+						fields.ToArray(),
+						fieldValues.ToArray());
 				}
 
 				internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
@@ -11480,7 +11490,7 @@ namespace IKVM.Internal
 				}
 				TypeWrapper fieldType = ClassLoaderWrapper.GetWrapperFromType(underlyingType);
 				FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
-				ArrayList fieldsList = new ArrayList();
+				List<FieldWrapper> fieldsList = new List<FieldWrapper>();
 				for(int i = 0; i < fields.Length; i++)
 				{
 					if(fields[i].FieldType == type)
@@ -11499,12 +11509,12 @@ namespace IKVM.Internal
 					}
 				}
 				fieldsList.Add(new EnumValueFieldWrapper(this, fieldType));
-				SetFields((FieldWrapper[])fieldsList.ToArray(typeof(FieldWrapper)));
+				SetFields(fieldsList.ToArray());
 				SetMethods(new MethodWrapper[] { new EnumWrapMethodWrapper(this, fieldType) });
 			}
 			else
 			{
-				ArrayList fieldsList = new ArrayList();
+				List<FieldWrapper> fieldsList = new List<FieldWrapper>();
 				FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 				for(int i = 0; i < fields.Length; i++)
 				{
@@ -11519,9 +11529,9 @@ namespace IKVM.Internal
 						fieldsList.Add(CreateFieldWrapperDotNet(AttributeHelper.GetModifiers(fields[i], true).Modifiers, fields[i].Name, fields[i].FieldType, fields[i]));
 					}
 				}
-				SetFields((FieldWrapper[])fieldsList.ToArray(typeof(FieldWrapper)));
+				SetFields(fieldsList.ToArray());
 
-				Hashtable methodsList = new Hashtable();
+				Dictionary<string, MethodWrapper> methodsList = new Dictionary<string, MethodWrapper>();
 
 				// special case for delegate constructors!
 				if(IsDelegate(type))
@@ -11580,7 +11590,8 @@ namespace IKVM.Internal
 							}
 							MethodWrapper mw = CreateMethodWrapper(name, sig, args, ret, methods[i], false);
 							string key = mw.Name + mw.Signature;
-							MethodWrapper existing = (MethodWrapper)methodsList[key];
+							MethodWrapper existing;
+							methodsList.TryGetValue(key, out existing);
 							if(existing == null || existing is ByRefMethodWrapper)
 							{
 								methodsList[key] = mw;
@@ -11617,7 +11628,8 @@ namespace IKVM.Internal
 									if(MakeMethodDescriptor(map.InterfaceMethods[j], out name, out sig, out args, out ret))
 									{
 										string key = name + sig;
-										MethodWrapper existing = (MethodWrapper)methodsList[key];
+										MethodWrapper existing;
+										methodsList.TryGetValue(key, out existing);
 										if(existing == null && BaseTypeWrapper != null)
 										{
 											MethodWrapper baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
@@ -11916,7 +11928,7 @@ namespace IKVM.Internal
 					if(innerClasses == null)
 					{
 						Type[] nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic);
-						ArrayList list = new ArrayList(nestedTypes.Length);
+						List<TypeWrapper> list = new List<TypeWrapper>(nestedTypes.Length);
 						for(int i = 0; i < nestedTypes.Length; i++)
 						{
 							if (!nestedTypes[i].IsGenericTypeDefinition)
@@ -11937,7 +11949,7 @@ namespace IKVM.Internal
 						{
 							list.Add(GetClassLoader().RegisterInitiatingLoader(new EnumEnumTypeWrapper(Name + EnumEnumSuffix, type)));
 						}
-						innerClasses = (TypeWrapper[])list.ToArray(typeof(TypeWrapper));
+						innerClasses = list.ToArray();
 					}
 				}
 				return innerClasses;

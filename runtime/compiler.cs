@@ -24,7 +24,7 @@
 #if !COMPACT_FRAMEWORK
 
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
@@ -121,6 +121,30 @@ static class ByteCodeHelperMethods
 	}
 }
 
+struct MethodKey : IEquatable<MethodKey>
+{
+	private readonly string className;
+	private readonly string methodName;
+	private readonly string methodSig;
+
+	internal MethodKey(string className, string methodName, string methodSig)
+	{
+		this.className = className;
+		this.methodName = methodName;
+		this.methodSig = methodSig;
+	}
+
+	public bool Equals(MethodKey other)
+	{
+		return className == other.className && methodName == other.methodName && methodSig == other.methodSig;
+	}
+
+	public override int GetHashCode()
+	{
+		return className.GetHashCode() ^ methodName.GetHashCode() ^ methodSig.GetHashCode();
+	}
+}
+
 class Compiler
 {
 	private static MethodInfo mapExceptionMethod;
@@ -150,7 +174,7 @@ class Compiler
 	private ISymbolDocumentWriter symboldocument;
 	private LineNumberTableAttribute.LineNumberWriter lineNumbers;
 	private bool nonleaf;
-	private Hashtable invokespecialstubcache;
+	private Dictionary<MethodKey, MethodInfo> invokespecialstubcache;
 	private bool debug;
 	private bool keepAlive;
 	private bool strictfp;
@@ -199,12 +223,10 @@ class Compiler
 		getClassFromTypeHandle.Link();
 	}
 
-	private class ExceptionSorter : IComparer
+	private class ExceptionSorter : IComparer<ExceptionTableEntry>
 	{
-		public int Compare(object x, object y)
+		public int Compare(ExceptionTableEntry e1, ExceptionTableEntry e2)
 		{
-			ExceptionTableEntry e1 = (ExceptionTableEntry)x;
-			ExceptionTableEntry e2 = (ExceptionTableEntry)y;
 			if(e1.start_pc < e2.start_pc)
 			{
 				return -1;
@@ -228,7 +250,7 @@ class Compiler
 		}
 	}
 
-	private Compiler(DynamicTypeWrapper.FinishContext context, TypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader, ISymbolDocumentWriter symboldocument, Hashtable invokespecialstubcache)
+	private Compiler(DynamicTypeWrapper.FinishContext context, TypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader, ISymbolDocumentWriter symboldocument, Dictionary<MethodKey, MethodInfo> invokespecialstubcache)
 	{
 		this.context = context;
 		this.clazz = clazz;
@@ -308,7 +330,7 @@ class Compiler
 		// this code should probably be changed to use our own ETE class (which should also contain the ordinal, instead
 		// of the one in ClassFile.cs)
 
-		ArrayList ar = new ArrayList(m.ExceptionTable);
+		List<ExceptionTableEntry> ar = new List<ExceptionTableEntry>(m.ExceptionTable);
 
 		// This optimization removes the recursive exception handlers that Java compiler place around
 		// the exit of a synchronization block to be "safe" in the face of asynchronous exceptions.
@@ -322,7 +344,7 @@ class Compiler
 		// sequences to try to compile them into a fault block, instead of an exception handler.
 		for(int i = 0; i < ar.Count; i++)
 		{
-			ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
+			ExceptionTableEntry ei = ar[i];
 			if(ei.start_pc == ei.handler_pc && ei.catch_type == 0)
 			{
 				int index = FindPcIndex(ei.start_pc);
@@ -355,10 +377,10 @@ class Compiler
 		restart:
 			for(int i = 0; i < ar.Count; i++)
 			{
-				ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
+				ExceptionTableEntry ei = ar[i];
 				for(int j = 0; j < ar.Count; j++)
 				{
-					ExceptionTableEntry ej = (ExceptionTableEntry)ar[j];
+					ExceptionTableEntry ej = ar[j];
 					if(ei.start_pc <= ej.start_pc && ej.start_pc < ei.end_pc)
 					{
 						// 0006/test.j
@@ -424,7 +446,7 @@ class Compiler
 		restart_jsr:
 			for(int i = 0; i < ar.Count; i++)
 			{
-				ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
+				ExceptionTableEntry ei = ar[i];
 				for(int j = FindPcIndex(ei.start_pc), e = FindPcIndex(ei.end_pc); j < e; j++)
 				{
 					if(m.Instructions[j].NormalizedOpCode == NormalizedByteCode.__jsr)
@@ -447,7 +469,7 @@ class Compiler
 		// Split try blocks at branch targets (branches from outside the try block)
 		for(int i = 0; i < ar.Count; i++)
 		{
-			ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
+			ExceptionTableEntry ei = ar[i];
 			int start = FindPcIndex(ei.start_pc);
 			int end = FindPcIndex(ei.end_pc);
 			for(int j = 0; j < m.Instructions.Length; j++)
@@ -515,10 +537,10 @@ class Compiler
 		// exception handlers are also a kind of jump, so we need to split try blocks around handlers as well
 		for(int i = 0; i < ar.Count; i++)
 		{
-			ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
+			ExceptionTableEntry ei = ar[i];
 			for(int j = 0; j < ar.Count; j++)
 			{
-				ExceptionTableEntry ej = (ExceptionTableEntry)ar[j];
+				ExceptionTableEntry ej = ar[j];
 				if(ei.start_pc < ej.handler_pc && ej.handler_pc < ei.end_pc)
 				{
 					ExceptionTableEntry en = new ExceptionTableEntry();
@@ -535,7 +557,7 @@ class Compiler
 		// filter out zero length try blocks
 		for(int i = 0; i < ar.Count; i++)
 		{
-			ExceptionTableEntry ei = (ExceptionTableEntry)ar[i];
+			ExceptionTableEntry ei = ar[i];
 			if(ei.start_pc == ei.end_pc)
 			{
 				ar.RemoveAt(i);
@@ -575,8 +597,7 @@ class Compiler
 		//			Console.WriteLine("{0} to {1} handler {2}", e.start_pc, e.end_pc, e.handler_pc);
 		//		}
 
-		exceptions = new ExceptionTableEntry[ar.Count];
-		ar.CopyTo(exceptions, 0);
+		exceptions = ar.ToArray();
 		for(int i = 0; i < exceptions.Length; i++)
 		{
 			exceptions[i].ordinal = i;
@@ -774,7 +795,7 @@ class Compiler
 		}
 	}
 
-	internal static void Compile(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf, Hashtable invokespecialstubcache, ref LineNumberTableAttribute.LineNumberWriter lineNumberTable)
+	internal static void Compile(DynamicTypeWrapper.FinishContext context, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf, Dictionary<MethodKey, MethodInfo> invokespecialstubcache, ref LineNumberTableAttribute.LineNumberWriter lineNumberTable)
 	{
 		ClassLoaderWrapper classLoader = clazz.GetClassLoader();
 		ISymbolDocumentWriter symboldocument = null;
@@ -873,7 +894,7 @@ class Compiler
 				ilGenerator.Emit(OpCodes.Stloc, monitor);
 				ilGenerator.Emit(OpCodes.Call, monitorEnterMethod);
 				ilGenerator.BeginExceptionBlock();
-				Block b = new Block(c, 0, int.MaxValue, -1, new ArrayList(), true);
+				Block b = new Block(c, 0, int.MaxValue, -1, new List<object>(), true);
 				c.Compile(b);
 				b.Leave();
 				ilGenerator.BeginFinallyBlock();
@@ -946,11 +967,11 @@ class Compiler
 		private int begin;
 		private int end;
 		private int exceptionIndex;
-		private ArrayList exits;
+		private List<object> exits;
 		private bool nested;
 		private object[] labels;
 
-		internal Block(Compiler compiler, int beginPC, int endPC, int exceptionIndex, ArrayList exits, bool nested)
+		internal Block(Compiler compiler, int beginPC, int endPC, int exceptionIndex, List<object> exits, bool nested)
 		{
 			this.compiler = compiler;
 			this.ilgen = compiler.ilGenerator;
@@ -984,7 +1005,7 @@ class Compiler
 			labels[instructionIndex] = bc.Stub;
 			if(exits == null)
 			{
-				exits = new ArrayList();
+				exits = new List<object>();
 			}
 			exits.Add(bc);
 		}
@@ -1153,7 +1174,7 @@ class Compiler
 		}
 	}
 
-	private bool IsGuardedBlock(Stack blockStack, int instructionIndex, int instructionCount)
+	private bool IsGuardedBlock(Stack<Block> blockStack, int instructionIndex, int instructionCount)
 	{
 		int start_pc = m.Instructions[instructionIndex].PC;
 		int end_pc = m.Instructions[instructionIndex + instructionCount].PC;
@@ -1229,7 +1250,7 @@ class Compiler
 		}
 		int exceptionIndex = 0;
 		Instruction[] code = m.Instructions;
-		Stack blockStack = new Stack();
+		Stack<Block> blockStack = new Stack<Block>();
 		bool instructionIsForwardReachable = true;
 		for(int i = 0; i < code.Length; i++)
 		{
@@ -1255,7 +1276,7 @@ class Compiler
 				ExceptionTableEntry exc = exceptions[block.ExceptionIndex];
 
 				Block prevBlock = block;
-				block = (Block)blockStack.Pop();
+				block = blockStack.Pop();
 
 				exceptionIndex = block.ExceptionIndex + 1;
 				// skip over exception handlers that are no longer relevant
@@ -1460,7 +1481,7 @@ class Compiler
 					ilGenerator.BeginExceptionBlock();
 				}
 				blockStack.Push(block);
-				block = new Block(this, exceptions[exceptionIndex].start_pc, exceptions[exceptionIndex].end_pc, exceptionIndex, new ArrayList(), true);
+				block = new Block(this, exceptions[exceptionIndex].start_pc, exceptions[exceptionIndex].end_pc, exceptionIndex, new List<object>(), true);
 				block.MarkLabel(i);
 			}
 
@@ -3193,9 +3214,9 @@ class Compiler
 
 	private MethodInfo GetInvokeSpecialStub(MethodWrapper method)
 	{
-		string key = method.DeclaringType.Name + ":" + method.Name + method.Signature;
-		MethodInfo mi = (MethodInfo)invokespecialstubcache[key];
-		if(mi == null)
+		MethodKey key = new MethodKey(method.DeclaringType.Name, method.Name, method.Signature);
+		MethodInfo mi;
+		if(!invokespecialstubcache.TryGetValue(key, out mi))
 		{
 			MethodBuilder stub = clazz.TypeAsBuilder.DefineMethod("__<>", MethodAttributes.PrivateScope, method.ReturnTypeForDefineMethod, method.GetParametersForDefineMethod());
 			CodeEmitter ilgen = CodeEmitter.Create(stub);

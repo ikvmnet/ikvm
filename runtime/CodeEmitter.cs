@@ -23,7 +23,7 @@
 */
 #if !COMPACT_FRAMEWORK
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
@@ -66,7 +66,7 @@ namespace IKVM.Internal
 	{
 		private ILGenerator ilgen_real;
 		private int offset;
-		private Stack exceptionStack = new Stack();
+		private Stack<bool> exceptionStack = new Stack<bool>();
 		private bool inFinally;
 #if STATIC_COMPILER
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
@@ -75,7 +75,7 @@ namespace IKVM.Internal
 		private CodeEmitterLabel lazyBranch;
 		private LocalBuilder[] tempLocals = new LocalBuilder[32];
 #if LABELCHECK
-		private Hashtable labels = new Hashtable();
+		private Dictionary<Label, System.Diagnostics.StackFrame> labels = new Dictionary<Label, System.Diagnostics.StackFrame>();
 #endif
 
 		internal static CodeEmitter Create(MethodBuilder mb)
@@ -473,7 +473,7 @@ namespace IKVM.Internal
 			{
 				offset += 5;
 			}
-			inFinally = (bool)exceptionStack.Pop();
+			inFinally = exceptionStack.Pop();
 			ilgen_real.EndExceptionBlock();
 		}
 

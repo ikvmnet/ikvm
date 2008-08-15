@@ -24,7 +24,7 @@
 using System;
 using System.Threading;
 using System.Diagnostics;
-using System.Collections;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Configuration;
 
@@ -40,9 +40,9 @@ namespace IKVM.Internal
 		public readonly static TraceSwitch Runtime = new TraceSwitch("runtime", "Miscellaneous runtime events");
 		public readonly static TraceSwitch Jni = new TraceSwitch("jni", "JNI");
 		//	public readonly static TraceSwitch Methods = new TraceSwitch("methods", "Method Trace");
-		private readonly static Hashtable allTraceSwitches = new Hashtable();
+		private readonly static Dictionary<string, TraceSwitch> allTraceSwitches = new Dictionary<string, TraceSwitch>();
 
-		private readonly static ArrayList methodtraces = new ArrayList();
+		private readonly static List<string> methodtraces = new List<string>();
 
 		private class MyTextWriterTraceListener : TextWriterTraceListener
 		{
@@ -120,12 +120,12 @@ namespace IKVM.Internal
 			{
 				return false;
 			}
-			IEnumerator e = methodtraces.GetEnumerator();
+			IEnumerator<string> e = methodtraces.GetEnumerator();
 			while(e.MoveNext())
 			{
 				try 
 				{
-					if(Regex.IsMatch(name, e.Current.ToString()))
+					if(Regex.IsMatch(name, e.Current))
 					{
 						return true;
 					}
@@ -160,8 +160,8 @@ namespace IKVM.Internal
 			}
 			else
 			{
-				TraceSwitch ts = (TraceSwitch)allTraceSwitches[name];
-				if(ts != null)
+				TraceSwitch ts;
+				if(allTraceSwitches.TryGetValue(name, out ts))
 				{
 					ts.Level = level;
 				}

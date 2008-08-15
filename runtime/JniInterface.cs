@@ -22,8 +22,7 @@
   
 */
 using System;
-using System.Collections;
-using System.Collections.Specialized;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Reflection;
@@ -107,7 +106,7 @@ namespace IKVM.Runtime
 			{
 				return JNIEnv.JNI_ERR;
 			}
-			Hashtable props = new Hashtable();
+			System.Collections.Hashtable props = new System.Collections.Hashtable();
 			for(int i = 0; i < pInitArgs->nOptions; i++)
 			{
 				string option = JNIEnv.StringFromOEM(pInitArgs->options[i].optionString);
@@ -130,7 +129,7 @@ namespace IKVM.Runtime
 				}
 			}
 
-			JVM.SetProperties(props);
+			ikvm.runtime.Startup.setProperties(props);
 
 			// initialize the class library
 			java.lang.Thread.currentThread();
@@ -396,7 +395,7 @@ namespace IKVM.Runtime
 		[DllImport("ikvm-native")]
 		internal unsafe static extern void* ikvm_MarshalDelegate(Delegate d);
 
-		private static ArrayList nativeLibraries = new ArrayList();
+		private static List<IntPtr> nativeLibraries = new List<IntPtr>();
 		internal static readonly object JniLock = new object();
 
 		// MONOBUG with mcs we can't pass ClassLoaderWrapper from IKVM.Runtime.dll to IKVM.Runtime.JNI.dll

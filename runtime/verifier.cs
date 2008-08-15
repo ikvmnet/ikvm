@@ -24,7 +24,7 @@
 #if !COMPACT_FRAMEWORK
 using System;
 using System.IO;
-using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection.Emit;
 using IKVM.Internal;
@@ -151,7 +151,7 @@ class InstructionState
 	private int stackEnd;
 	private TypeWrapper[] locals;
 	private LocalStoreSites[] localStoreSites;
-	private ArrayList subroutines;
+	private List<Subroutine> subroutines;
 	private int callsites;
 	private bool unitializedThis;
 	internal bool changed = true;
@@ -166,7 +166,7 @@ class InstructionState
 	}
 	private ShareFlags flags;
 
-	private InstructionState(TypeWrapper[] stack, int stackSize, int stackEnd, TypeWrapper[] locals, LocalStoreSites[] localStoreSites, ArrayList subroutines, int callsites, bool unitializedThis)
+	private InstructionState(TypeWrapper[] stack, int stackSize, int stackEnd, TypeWrapper[] locals, LocalStoreSites[] localStoreSites, List<Subroutine> subroutines, int callsites, bool unitializedThis)
 	{
 		this.flags = ShareFlags.All;
 		this.stack = stack;
@@ -214,13 +214,13 @@ class InstructionState
 		return copy;
 	}
 
-	private static ArrayList CopySubroutines(ArrayList l)
+	private static List<Subroutine> CopySubroutines(List<Subroutine> l)
 	{
 		if(l == null)
 		{
 			return null;
 		}
-		ArrayList n = new ArrayList(l.Count);
+		List<Subroutine> n = new List<Subroutine>(l.Count);
 		foreach(Subroutine s in l)
 		{
 			n.Add(s.Copy());
@@ -246,8 +246,8 @@ class InstructionState
 		else
 		{
 			SubroutinesCopyOnWrite();
-			ArrayList ss1 = subroutines;
-			subroutines = new ArrayList();
+			List<Subroutine> ss1 = subroutines;
+			subroutines = new List<Subroutine>();
 			foreach(Subroutine ss2 in s2.subroutines)
 			{
 				foreach(Subroutine ss in ss1)
@@ -454,7 +454,7 @@ class InstructionState
 		SubroutinesCopyOnWrite();
 		if(subroutines == null)
 		{
-			subroutines = new ArrayList();
+			subroutines = new List<Subroutine>();
 		}
 		else
 		{
@@ -608,8 +608,8 @@ class InstructionState
 			// really do anything more clever than this.
 			return CoreClasses.java.lang.Object.Wrapper;
 		}
-		Stack st1 = new Stack();
-		Stack st2 = new Stack();
+		Stack<TypeWrapper> st1 = new Stack<TypeWrapper>();
+		Stack<TypeWrapper> st2 = new Stack<TypeWrapper>();
 		while(t1 != null)
 		{
 			st1.Push(t1);
@@ -623,8 +623,8 @@ class InstructionState
 		TypeWrapper type = null;
 		for(;;)
 		{
-			t1 = st1.Count > 0 ? (TypeWrapper)st1.Pop() : null;
-			t2 = st2.Count > 0 ? (TypeWrapper)st2.Pop() : null;
+			t1 = st1.Count > 0 ? st1.Pop() : null;
+			t2 = st2.Count > 0 ? st2.Pop() : null;
 			if(t1 != t2)
 			{
 				return type;
@@ -706,7 +706,7 @@ class InstructionState
 		localStoreSites[localIndex].Add(instructionIndex);
 	}
 
-	internal void GetLocalInt(int index, ref Hashtable readers)
+	internal void GetLocalInt(int index, ref Dictionary<int, string> readers)
 	{
 		if(GetLocalType(index, ref readers) != PrimitiveTypeWrapper.INT)
 		{
@@ -720,7 +720,7 @@ class InstructionState
 		SetLocalStoreSite(index, instructionIndex);
 	}
 
-	internal void GetLocalLong(int index, ref Hashtable readers)
+	internal void GetLocalLong(int index, ref Dictionary<int, string> readers)
 	{
 		if(GetLocalType(index, ref readers) != PrimitiveTypeWrapper.LONG)
 		{
@@ -734,7 +734,7 @@ class InstructionState
 		SetLocalStoreSite(index, instructionIndex);
 	}
 
-	internal void GetLocalFloat(int index, ref Hashtable readers)
+	internal void GetLocalFloat(int index, ref Dictionary<int, string> readers)
 	{
 		if(GetLocalType(index, ref readers) != PrimitiveTypeWrapper.FLOAT)
 		{
@@ -748,7 +748,7 @@ class InstructionState
 		SetLocalStoreSite(index, instructionIndex);
 	}
 
-	internal void GetLocalDouble(int index, ref Hashtable readers)
+	internal void GetLocalDouble(int index, ref Dictionary<int, string> readers)
 	{
 		if(GetLocalType(index, ref readers) != PrimitiveTypeWrapper.DOUBLE)
 		{
@@ -762,13 +762,13 @@ class InstructionState
 		SetLocalStoreSite(index, instructionIndex);
 	}
 
-	internal TypeWrapper GetLocalType(int index, ref Hashtable readers)
+	internal TypeWrapper GetLocalType(int index, ref Dictionary<int, string> readers)
 	{
 		try
 		{
 			if(readers == null)
 			{
-				readers = new Hashtable();
+				readers = new Dictionary<int,string>();
 			}
 			if(!localStoreSites[index].IsEmpty)
 			{
@@ -793,7 +793,7 @@ class InstructionState
 		return locals[index];
 	}
 
-	internal int GetLocalRet(int index, ref Hashtable readers)
+	internal int GetLocalRet(int index, ref Dictionary<int, string> readers)
 	{
 		TypeWrapper type = GetLocalType(index, ref readers);
 		if(VerifierTypeWrapper.IsRet(type))
@@ -1520,11 +1520,11 @@ class MethodAnalyzer
 	private ClassFile classFile;
 	private ClassFile.Method method;
 	private InstructionState[] state;
-	private ArrayList[] callsites;
+	private List<int>[] callsites;
 	private LocalVar[/*instructionIndex*/] localVars;
 	private LocalVar[/*instructionIndex*/][/*localIndex*/] invokespecialLocalVars;
 	private LocalVar[/*index*/] allLocalVars;
-	private ArrayList errorMessages;
+	private List<string> errorMessages;
 
 	static MethodAnalyzer()
 	{
@@ -1548,13 +1548,13 @@ class MethodAnalyzer
 		this.classFile = classFile;
 		this.method = method;
 		state = new InstructionState[method.Instructions.Length];
-		callsites = new ArrayList[method.Instructions.Length];
+		callsites = new List<int>[method.Instructions.Length];
 
-		Hashtable/*<int,ignored>*/[] localStoreReaders = new Hashtable[method.Instructions.Length];
+		Dictionary<int,string>[] localStoreReaders = new Dictionary<int,string>[method.Instructions.Length];
 
 		// HACK because types have to have identity, the subroutine return address and new types are cached here
-		Hashtable returnAddressTypes = new Hashtable();
-		Hashtable newTypes = new Hashtable();
+		Dictionary<int, TypeWrapper> returnAddressTypes = new Dictionary<int,TypeWrapper>();
+		Dictionary<int, TypeWrapper> newTypes = new Dictionary<int,TypeWrapper>();
 
 		try
 		{
@@ -2131,8 +2131,8 @@ class MethodAnalyzer
 							case NormalizedByteCode.__new:
 							{
 								// mark the type, so that we can ascertain that it is a "new object"
-								TypeWrapper type = (TypeWrapper)newTypes[instr.PC];
-								if(type == null)
+								TypeWrapper type;
+								if(!newTypes.TryGetValue(instr.PC, out type))
 								{
 									type = GetConstantPoolClassType(instr.Arg1);
 									if(type.IsArray)
@@ -2601,8 +2601,8 @@ class MethodAnalyzer
 								{
 									int index = method.PcIndexMap[instr.PC + instr.Arg1];
 									s.SetSubroutineId(index);
-									TypeWrapper retAddressType = (TypeWrapper)returnAddressTypes[index];
-									if(retAddressType == null)
+									TypeWrapper retAddressType;
+									if(!returnAddressTypes.TryGetValue(index, out retAddressType))
 									{
 										retAddressType = VerifierTypeWrapper.MakeRet(index);
 										returnAddressTypes[index] = retAddressType;
@@ -2974,8 +2974,8 @@ class MethodAnalyzer
 		}
 
 		// now that we've done the code flow analysis, we can do a liveness analysis on the local variables
-		Hashtable/*<string,LocalVar>*/ localByStoreSite = new Hashtable();
-		ArrayList/*<LocalVar>*/ locals = new ArrayList();
+		Dictionary<long, LocalVar> localByStoreSite = new Dictionary<long,LocalVar>();
+		List<LocalVar> locals = new List<LocalVar>();
 		for(int i = 0; i < localStoreReaders.Length; i++)
 		{
 			if(localStoreReaders[i] != null)
@@ -2983,7 +2983,7 @@ class MethodAnalyzer
 				VisitLocalLoads(locals, localByStoreSite, localStoreReaders[i], i, classLoader.EmitDebugInfo);
 			}
 		}
-		Hashtable forwarders = new Hashtable();
+		Dictionary<LocalVar, LocalVar> forwarders = new Dictionary<LocalVar,LocalVar>();
 		if(classLoader.EmitDebugInfo)
 		{
 			// if we're emitting debug info, we need to keep dead stores as well...
@@ -3061,7 +3061,7 @@ class MethodAnalyzer
 				// (by indirecting through a corresponding store)
 				foreach(int store in localStoreReaders[i].Keys)
 				{
-					v = (LocalVar)localByStoreSite[MakeKey(store, instructions[i].NormalizedArg1)];
+					v = localByStoreSite[MakeKey(store, instructions[i].NormalizedArg1)];
 					break;
 				}
 			}
@@ -3072,25 +3072,25 @@ class MethodAnalyzer
 					invokespecialLocalVars[i] = new LocalVar[method.MaxLocals];
 					for(int j = 0; j < invokespecialLocalVars[i].Length; j++)
 					{
-						invokespecialLocalVars[i][j] = (LocalVar)localByStoreSite[MakeKey(i, j)];
+						localByStoreSite.TryGetValue(MakeKey(i, j), out invokespecialLocalVars[i][j]);
 					}
 				}
 				else
 				{
-					v = (LocalVar)localByStoreSite[MakeKey(i, instructions[i].NormalizedArg1)];
+					localByStoreSite.TryGetValue(MakeKey(i, instructions[i].NormalizedArg1), out v);
 				}
 			}
 			if(v != null)
 			{
-				LocalVar fwd = (LocalVar)forwarders[v];
-				if(fwd != null)
+				LocalVar fwd;
+				if(forwarders.TryGetValue(v, out fwd))
 				{
 					v = fwd;
 				}
 				localVars[i] = v;
 			}
 		}
-		this.allLocalVars = (LocalVar[])locals.ToArray(typeof(LocalVar));
+		this.allLocalVars = locals.ToArray();
 	}
 
 	private void VerifyInvoke(TypeWrapper wrapper, ref ClassFile.Method.Instruction instr, StackState stack)
@@ -3448,14 +3448,16 @@ class MethodAnalyzer
 	{
 		if(errorMessages == null)
 		{
-			errorMessages = new ArrayList();
+			errorMessages = new List<string>();
 		}
-		return errorMessages.Add(message);
+		int index = errorMessages.Count;
+		errorMessages.Add(message);
+		return index;
 	}
 
 	internal string GetErrorMessage(int messageId)
 	{
-		return (string)errorMessages[messageId];
+		return errorMessages[messageId];
 	}
 
 	private string CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, MethodWrapper mw)
@@ -3504,7 +3506,7 @@ class MethodAnalyzer
 			bc == NormalizedByteCode.__dstore_conv;
 	}
 
-	private void VisitLocalLoads(ArrayList locals, Hashtable localByStoreSite, Hashtable storeSites, int instructionIndex, bool debug)
+	private void VisitLocalLoads(List<LocalVar> locals, Dictionary<long, LocalVar> localByStoreSite, Dictionary<int, string> storeSites, int instructionIndex, bool debug)
 	{
 		Debug.Assert(IsLoadLocal(method.Instructions[instructionIndex].NormalizedOpCode));
 		LocalVar local = null;
@@ -3534,8 +3536,8 @@ class MethodAnalyzer
 			// we can't have an invalid type, because that would have failed verification earlier
 			Debug.Assert(type != VerifierTypeWrapper.Invalid);
 
-			LocalVar l = (LocalVar)localByStoreSite[MakeKey(store, localIndex)];
-			if(l != null)
+			LocalVar l;
+			if(localByStoreSite.TryGetValue(MakeKey(store, localIndex), out l))
 			{
 				if(local == null)
 				{
@@ -3583,8 +3585,8 @@ class MethodAnalyzer
 		}
 		foreach(int store in storeSites.Keys)
 		{
-			LocalVar v = (LocalVar)localByStoreSite[MakeKey(store, localIndex)];
-			if(v == null)
+			LocalVar v;
+			if(!localByStoreSite.TryGetValue(MakeKey(store, localIndex), out v))
 			{
 				localByStoreSite[MakeKey(store, localIndex)] = local;
 			}
@@ -3595,12 +3597,12 @@ class MethodAnalyzer
 		}
 	}
 
-	private static object MakeKey(int i, int j)
+	private static long MakeKey(int i, int j)
 	{
 		return (((long)(uint)i) << 32) + (uint)j;
 	}
 
-	private static LocalVar MergeLocals(ArrayList locals, Hashtable localByStoreSite, LocalVar l1, LocalVar l2)
+	private static LocalVar MergeLocals(List<LocalVar> locals, Dictionary<long, LocalVar> localByStoreSite, LocalVar l1, LocalVar l2)
 	{
 		Debug.Assert(l1 != l2);
 		Debug.Assert(l1.local == l2.local);
@@ -3612,11 +3614,11 @@ class MethodAnalyzer
 				i--;
 			}
 		}
-		Hashtable temp = (Hashtable)localByStoreSite.Clone();
+		Dictionary<long, LocalVar> temp = new Dictionary<long,LocalVar>(localByStoreSite);
 		localByStoreSite.Clear();
-		foreach(DictionaryEntry de in temp)
+		foreach(KeyValuePair<long, LocalVar> kv in temp)
 		{
-			localByStoreSite[de.Key] = de.Value == l2 ? l1 : de.Value;
+			localByStoreSite[kv.Key] = kv.Value == l2 ? l1 : kv.Value;
 		}
 		l1.isArg |= l2.isArg;
 		l1.type = InstructionState.FindCommonBaseType(l1.type, l2.type);
@@ -3705,9 +3707,9 @@ class MethodAnalyzer
 	{
 		if(callsites[subroutineIndex] == null)
 		{
-			callsites[subroutineIndex] = new ArrayList();
+			callsites[subroutineIndex] = new List<int>();
 		}
-		ArrayList l = (ArrayList)callsites[subroutineIndex];
+		List<int> l = callsites[subroutineIndex];
 		if(l.IndexOf(callSiteIndex) == -1)
 		{
 			l.Add(callSiteIndex);
@@ -3717,7 +3719,7 @@ class MethodAnalyzer
 
 	internal int[] GetCallSites(int subroutineIndex)
 	{
-		return (int[])((ArrayList)callsites[subroutineIndex]).ToArray(typeof(int));
+		return callsites[subroutineIndex].ToArray();
 	}
 
 	internal int GetStackHeight(int index)

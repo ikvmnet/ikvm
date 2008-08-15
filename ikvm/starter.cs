@@ -24,10 +24,6 @@
 using System;
 using System.IO;
 using System.Reflection;
-using System.Reflection.Emit;
-using System.Collections;
-using System.Collections.Specialized;
-using System.Text;
 using IKVM.Internal;
 
 using ikvm.runtime;
@@ -106,7 +102,7 @@ public class Starter
 	static int Main(string[] args)
 	{
 		Tracer.EnableTraceForDebug();
-		Hashtable props = new Hashtable();
+		System.Collections.Hashtable props = new System.Collections.Hashtable();
 		string classpath = Environment.GetEnvironmentVariable("CLASSPATH");
 		if(classpath == null || classpath == "")
 		{
