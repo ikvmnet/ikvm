@@ -244,7 +244,7 @@ namespace IKVM.Internal
 				foreach(IKVM.Internal.MapXml.Param prop in attr.Properties)
 				{
 					PropertyInfo pi = t.GetProperty(prop.Name);
-					pi.SetValue(attrib, ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), prop.Sig), prop.Value), null);
+					pi.SetValue(attrib, ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, prop.Sig), prop.Value), null);
 				}
 			}
 			if(attr.Fields != null)
@@ -252,7 +252,7 @@ namespace IKVM.Internal
 				foreach(IKVM.Internal.MapXml.Param field in attr.Fields)
 				{
 					FieldInfo fi = t.GetField(field.Name);
-					fi.SetValue(attrib, ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), field.Sig), field.Value));
+					fi.SetValue(attrib, ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, field.Sig), field.Value));
 				}
 			}
 		}
@@ -358,7 +358,7 @@ namespace IKVM.Internal
 		private static void GetAttributeArgsAndTypes(ClassLoaderWrapper loader, IKVM.Internal.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
 		{
 			// TODO add error handling
-			TypeWrapper[] twargs = ClassFile.ArgTypeWrapperListFromSig(loader, new Hashtable(), attr.Sig);
+			TypeWrapper[] twargs = ClassFile.ArgTypeWrapperListFromSig(loader, attr.Sig);
 			argTypes = new Type[twargs.Length];
 			args = new object[argTypes.Length];
 			for(int i = 0; i < twargs.Length; i++)
@@ -367,7 +367,7 @@ namespace IKVM.Internal
 				TypeWrapper tw = twargs[i];
 				if(tw == CoreClasses.java.lang.Object.Wrapper)
 				{
-					tw = ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), attr.Params[i].Sig);
+					tw = ClassFile.FieldTypeWrapperFromSig(loader, attr.Params[i].Sig);
 				}
 				if(tw.IsArray)
 				{
@@ -412,7 +412,7 @@ namespace IKVM.Internal
 					for(int i = 0; i < namedProperties.Length; i++)
 					{
 						namedProperties[i] = t.GetProperty(attr.Properties[i].Name);
-						propertyValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), attr.Properties[i].Sig), attr.Properties[i].Value);
+						propertyValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, attr.Properties[i].Sig), attr.Properties[i].Value);
 					}
 				}
 				else
@@ -429,7 +429,7 @@ namespace IKVM.Internal
 					for(int i = 0; i < namedFields.Length; i++)
 					{
 						namedFields[i] = t.GetField(attr.Fields[i].Name);
-						fieldValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), attr.Fields[i].Sig), attr.Fields[i].Value);
+						fieldValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, attr.Fields[i].Sig), attr.Fields[i].Value);
 					}
 				}
 				else
@@ -464,7 +464,7 @@ namespace IKVM.Internal
 						FieldWrapper fw = t.GetFieldWrapper(attr.Fields[i].Name, attr.Fields[i].Sig);
 						fw.Link();
 						namedFields[i] = fw.GetField();
-						fieldValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, new Hashtable(), attr.Fields[i].Sig), attr.Fields[i].Value);
+						fieldValues[i] = ParseValue(loader, ClassFile.FieldTypeWrapperFromSig(loader, attr.Fields[i].Sig), attr.Fields[i].Value);
 					}
 				}
 				else
@@ -3871,7 +3871,6 @@ namespace IKVM.Internal
 			private FinishedTypeImpl finishedType;
 			private bool finishInProgress;
 			private Hashtable memberclashtable;
-			private Hashtable classCache = Hashtable.Synchronized(new Hashtable());
 			private MethodBuilder clinitMethod;
 			private MethodBuilder finalizeMethod;
 #if STATIC_COMPILER
@@ -4889,7 +4888,7 @@ namespace IKVM.Internal
 				// make sure all classes are loaded, before we start finishing the type. During finishing, we
 				// may not run any Java code, because that might result in a request to finish the type that we
 				// are in the process of finishing, and this would be a problem.
-				classFile.Link(wrapper, classCache);
+				classFile.Link(wrapper);
 				for(int i = 0; i < fields.Length; i++)
 				{
 #if STATIC_COMPILER

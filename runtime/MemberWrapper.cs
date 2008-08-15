@@ -524,10 +524,8 @@ namespace IKVM.Internal
 				}
 			}
 			ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
-			// TODO we need to use the actual classCache here
-			System.Collections.Hashtable classCache = new System.Collections.Hashtable();
-			TypeWrapper ret = ClassFile.RetTypeWrapperFromSig(loader, classCache, Signature);
-			TypeWrapper[] parameters = ClassFile.ArgTypeWrapperListFromSig(loader, classCache, Signature);
+			TypeWrapper ret = ClassFile.RetTypeWrapperFromSig(loader, Signature);
+			TypeWrapper[] parameters = ClassFile.ArgTypeWrapperListFromSig(loader, Signature);
 			lock(this)
 			{
 				if(parameterTypeWrappers == null)
@@ -1383,9 +1381,7 @@ namespace IKVM.Internal
 					return;
 				}
 			}
-			// TODO we need to use the actual classCache here
-			System.Collections.Hashtable classCache = new System.Collections.Hashtable();
-			TypeWrapper fld = ClassFile.FieldTypeWrapperFromSig(this.DeclaringType.GetClassLoader(), classCache, Signature);
+			TypeWrapper fld = ClassFile.FieldTypeWrapperFromSig(this.DeclaringType.GetClassLoader(), Signature);
 			lock(this)
 			{
 				if(fieldType == null)

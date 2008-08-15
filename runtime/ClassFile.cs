@@ -744,13 +744,13 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal void Link(TypeWrapper thisType, Hashtable classCache)
+		internal void Link(TypeWrapper thisType)
 		{
 			for(int i = 1; i < constantpool.Length; i++)
 			{
 				if(constantpool[i] != null)
 				{
-					constantpool[i].Link(thisType, classCache);
+					constantpool[i].Link(thisType);
 				}
 			}
 		}
@@ -1112,7 +1112,7 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal virtual void Link(TypeWrapper thisType, Hashtable classCache)
+			internal virtual void Link(TypeWrapper thisType)
 			{
 			}
 
@@ -1205,11 +1205,11 @@ namespace IKVM.Internal
 					throw new ClassFormatError("Invalid class name \"{0}\"", name);
 			}
 
-			internal override void Link(TypeWrapper thisType, Hashtable classCache)
+			internal override void Link(TypeWrapper thisType)
 			{
 				if(typeWrapper == null)
 				{
-					typeWrapper = LoadClassHelper(thisType.GetClassLoader(), classCache, name);
+					typeWrapper = LoadClassHelper(thisType.GetClassLoader(), name);
 				}
 			}
 
@@ -1232,16 +1232,11 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static TypeWrapper LoadClassHelper(ClassLoaderWrapper classLoader, Hashtable classCache, string name)
+		private static TypeWrapper LoadClassHelper(ClassLoaderWrapper classLoader, string name)
 		{
 			try
 			{
-				TypeWrapper wrapper = (TypeWrapper)classCache[name];
-				if(wrapper != null)
-				{
-					return wrapper;
-				}
-				wrapper = classLoader.LoadClassByDottedNameFast(name);
+				TypeWrapper wrapper = classLoader.LoadClassByDottedNameFast(name);
 				if(wrapper == null)
 				{
 					Tracer.Error(Tracer.ClassLoading, "Class not found: {0}", name);
@@ -1277,7 +1272,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private static TypeWrapper SigDecoderWrapper(ClassLoaderWrapper classLoader, Hashtable classCache, ref int index, string sig)
+		private static TypeWrapper SigDecoderWrapper(ClassLoaderWrapper classLoader, ref int index, string sig)
 		{
 			switch(sig[index++])
 			{
@@ -1297,7 +1292,7 @@ namespace IKVM.Internal
 				{
 					int pos = index;
 					index = sig.IndexOf(';', index) + 1;
-					return LoadClassHelper(classLoader, classCache, sig.Substring(pos, index - pos - 1));
+					return LoadClassHelper(classLoader, sig.Substring(pos, index - pos - 1));
 				}
 				case 'S':
 					return PrimitiveTypeWrapper.SHORT;
@@ -1320,7 +1315,7 @@ namespace IKVM.Internal
 						{
 							int pos = index;
 							index = sig.IndexOf(';', index) + 1;
-							return LoadClassHelper(classLoader, classCache, array + sig.Substring(pos, index - pos));
+							return LoadClassHelper(classLoader, array + sig.Substring(pos, index - pos));
 						}
 						case 'B':
 						case 'C':
@@ -1330,7 +1325,7 @@ namespace IKVM.Internal
 						case 'J':
 						case 'S':
 						case 'Z':
-							return LoadClassHelper(classLoader, classCache, array + sig[index++]);
+							return LoadClassHelper(classLoader, array + sig[index++]);
 						default:
 							// TODO this should never happen, because ClassFile should validate the descriptors
 							throw new InvalidOperationException(sig.Substring(index));
@@ -1342,7 +1337,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static TypeWrapper[] ArgTypeWrapperListFromSig(ClassLoaderWrapper classLoader, Hashtable classCache, string sig)
+		internal static TypeWrapper[] ArgTypeWrapperListFromSig(ClassLoaderWrapper classLoader, string sig)
 		{
 			if(sig[1] == ')')
 			{
@@ -1351,23 +1346,23 @@ namespace IKVM.Internal
 			ArrayList list = new ArrayList();
 			for(int i = 1; sig[i] != ')';)
 			{
-				list.Add(SigDecoderWrapper(classLoader, classCache, ref i, sig));
+				list.Add(SigDecoderWrapper(classLoader, ref i, sig));
 			}
 			TypeWrapper[] types = new TypeWrapper[list.Count];
 			list.CopyTo(types);
 			return types;
 		}
 
-		internal static TypeWrapper FieldTypeWrapperFromSig(ClassLoaderWrapper classLoader, Hashtable classCache, string sig)
+		internal static TypeWrapper FieldTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
 		{
 			int index = 0;
-			return SigDecoderWrapper(classLoader, classCache, ref index, sig);
+			return SigDecoderWrapper(classLoader, ref index, sig);
 		}
 
-		internal static TypeWrapper RetTypeWrapperFromSig(ClassLoaderWrapper classLoader, Hashtable classCache, string sig)
+		internal static TypeWrapper RetTypeWrapperFromSig(ClassLoaderWrapper classLoader, string sig)
 		{
 			int index = sig.IndexOf(')') + 1;
-			return SigDecoderWrapper(classLoader, classCache, ref index, sig);
+			return SigDecoderWrapper(classLoader, ref index, sig);
 		}
 
 		private sealed class ConstantPoolItemDouble : ConstantPoolItem
@@ -1424,9 +1419,9 @@ namespace IKVM.Internal
 
 			protected abstract void Validate(string name, string descriptor, int majorVersion);
 
-			internal override void Link(TypeWrapper thisType, Hashtable classCache)
+			internal override void Link(TypeWrapper thisType)
 			{
-				clazz.Link(thisType, classCache);
+				clazz.Link(thisType);
 			}
 
 			internal string Name
@@ -1485,9 +1480,9 @@ namespace IKVM.Internal
 				return fieldTypeWrapper;
 			}
 
-			internal override void Link(TypeWrapper thisType, Hashtable classCache)
+			internal override void Link(TypeWrapper thisType)
 			{
-				base.Link(thisType, classCache);
+				base.Link(thisType);
 				lock(this)
 				{
 					if(fieldTypeWrapper != null)
@@ -1506,7 +1501,7 @@ namespace IKVM.Internal
 					}
 				}
 				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper fld = FieldTypeWrapperFromSig(classLoader, classCache, this.Signature);
+				TypeWrapper fld = FieldTypeWrapperFromSig(classLoader, this.Signature);
 				lock(this)
 				{
 					if(fieldTypeWrapper == null)
@@ -1553,9 +1548,9 @@ namespace IKVM.Internal
 				}
 			}
 
-			internal override void Link(TypeWrapper thisType, Hashtable classCache)
+			internal override void Link(TypeWrapper thisType)
 			{
-				base.Link(thisType, classCache);
+				base.Link(thisType);
 				lock(this)
 				{
 					if(argTypeWrappers != null)
@@ -1564,8 +1559,8 @@ namespace IKVM.Internal
 					}
 				}
 				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper[] args = ArgTypeWrapperListFromSig(classLoader, classCache, this.Signature);
-				TypeWrapper ret = RetTypeWrapperFromSig(classLoader, classCache, this.Signature);
+				TypeWrapper[] args = ArgTypeWrapperListFromSig(classLoader, this.Signature);
+				TypeWrapper ret = RetTypeWrapperFromSig(classLoader, this.Signature);
 				lock(this)
 				{
 					if(argTypeWrappers == null)
@@ -1603,9 +1598,9 @@ namespace IKVM.Internal
 			{
 			}
 
-			internal override void Link(TypeWrapper thisType, Hashtable classCache)
+			internal override void Link(TypeWrapper thisType)
 			{
-				base.Link(thisType, classCache);
+				base.Link(thisType);
 				TypeWrapper wrapper = GetClassType();
 				if(!wrapper.IsUnloadable)
 				{
@@ -1653,9 +1648,9 @@ namespace IKVM.Internal
 				return null;
 			}
 
-			internal override void Link(TypeWrapper thisType, Hashtable classCache)
+			internal override void Link(TypeWrapper thisType)
 			{
-				base.Link(thisType, classCache);
+				base.Link(thisType);
 				TypeWrapper wrapper = GetClassType();
 				if(!wrapper.IsUnloadable)
 				{

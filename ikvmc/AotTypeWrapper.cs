@@ -247,11 +247,10 @@ namespace IKVM.Internal
 
 		private void PublishProperties(TypeBuilder typeBuilder, IKVM.Internal.MapXml.Class clazz)
 		{
-			Hashtable classCache = new Hashtable();
 			foreach(IKVM.Internal.MapXml.Property prop in clazz.Properties)
 			{
-				TypeWrapper typeWrapper = ClassFile.RetTypeWrapperFromSig(GetClassLoader(), classCache, prop.Sig);
-				TypeWrapper[] propargs = ClassFile.ArgTypeWrapperListFromSig(GetClassLoader(), classCache, prop.Sig);
+				TypeWrapper typeWrapper = ClassFile.RetTypeWrapperFromSig(GetClassLoader(), prop.Sig);
+				TypeWrapper[] propargs = ClassFile.ArgTypeWrapperListFromSig(GetClassLoader(), prop.Sig);
 				Type[] indexer = new Type[propargs.Length];
 				for(int i = 0; i < propargs.Length; i++)
 				{
@@ -452,9 +451,8 @@ namespace IKVM.Internal
 
 		private void MapSignature(string sig, out Type returnType, out Type[] parameterTypes)
 		{
-			Hashtable classCache = new Hashtable();
-			returnType = ClassFile.RetTypeWrapperFromSig(GetClassLoader(), classCache, sig).TypeAsSignatureType;
-			TypeWrapper[] parameterTypeWrappers = ClassFile.ArgTypeWrapperListFromSig(GetClassLoader(), classCache, sig);
+			returnType = ClassFile.RetTypeWrapperFromSig(GetClassLoader(), sig).TypeAsSignatureType;
+			TypeWrapper[] parameterTypeWrappers = ClassFile.ArgTypeWrapperListFromSig(GetClassLoader(), sig);
 			parameterTypes = new Type[parameterTypeWrappers.Length];
 			for(int i = 0; i < parameterTypeWrappers.Length; i++)
 			{
