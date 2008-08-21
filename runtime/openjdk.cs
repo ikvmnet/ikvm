@@ -120,27 +120,6 @@ using ssaGetPropertyAction = sun.security.action.GetPropertyAction;
 using sndResolverConfigurationImpl = sun.net.dns.ResolverConfigurationImpl;
 #endif
 
-static class DynamicMethodSupport
-{
-	internal static readonly bool Enabled = IsFullTrust;
-
-	private static bool IsFullTrust
-	{
-		get
-		{
-			try
-			{
-				new System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityPermissionFlag.UnmanagedCode).Demand();
-				return true;
-			}
-			catch (System.Security.SecurityException)
-			{
-				return false;
-			}
-		}
-	}
-}
-
 namespace IKVM.Runtime
 {
 	public static class Assertions
@@ -871,14 +850,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				if (DynamicMethodSupport.Enabled)
-				{
-					return new FastFieldReflector((jiObjectStreamField[])fieldsObj);
-				}
-				else
-				{
-					return null;
-				}
+				return new FastFieldReflector((jiObjectStreamField[])fieldsObj);
 #endif
 			}
 		}
@@ -5844,7 +5816,7 @@ namespace IKVM.NativeCode.sun.reflect
 				object retval;
 				try
 				{
-					retval = mw.Invoke(obj, args, false, callerID);
+					retval = ((ICustomInvoke)mw).Invoke(obj, args, false, callerID);
 				}
 				catch (MethodAccessException x)
 				{
@@ -6242,7 +6214,7 @@ namespace IKVM.NativeCode.sun.reflect
 				args = ConvertArgs(mw.GetParameters(), args);
 				try
 				{
-					return mw.Invoke(null, args, false, null);
+					return ((ICustomInvoke)mw).Invoke(null, args, false, null);
 				}
 				catch (MethodAccessException x)
 				{
@@ -6331,53 +6303,6 @@ namespace IKVM.NativeCode.sun.reflect
 			}
 		}
 
-		private sealed class SerializationConstructorAccessorImpl : srConstructorAccessor
-		{
-			private Type type;
-			private MethodWrapper constructor;
-
-			internal SerializationConstructorAccessorImpl(jlrConstructor constructorToCall, jlClass classToInstantiate)
-			{
-				constructor = MethodWrapper.FromMethodOrConstructor(constructorToCall);
-				try
-				{
-					TypeWrapper wrapper = TypeWrapper.FromClass(classToInstantiate);
-					wrapper.Finish();
-					type = wrapper.TypeAsBaseType;
-				}
-				catch (RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-			}
-
-			[IKVM.Attributes.HideFromJava]
-			public object newInstance(object[] args)
-			{
-				// if we're trying to deserialize a string as a TC_OBJECT, just return an emtpy string (Sun does the same)
-				if (type == typeof(string))
-				{
-					return "";
-				}
-				args = ConvertArgs(constructor.GetParameters(), args);
-				try
-				{
-					object obj = FormatterServices.GetUninitializedObject(type);
-					constructor.Invoke(obj, args, false, null);
-					return obj;
-				}
-				catch (RetargetableJavaException x)
-				{
-					throw x.ToJava();
-				}
-				catch (MethodAccessException x)
-				{
-					// this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
-					throw new jlIllegalAccessException().initCause(x);
-				}
-			}
-		}
-
 		private sealed class FastSerializationConstructorAccessorImpl : srConstructorAccessor
 		{
 			private static readonly MethodInfo GetTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle", new Type[] { typeof(RuntimeTypeHandle) });
@@ -6388,6 +6313,10 @@ namespace IKVM.NativeCode.sun.reflect
 			internal FastSerializationConstructorAccessorImpl(jlrConstructor constructorToCall, jlClass classToInstantiate)
 			{
 				MethodWrapper constructor = MethodWrapper.FromMethodOrConstructor(constructorToCall);
+				if (constructor.GetParameters().Length != 0)
+				{
+					throw new NotImplementedException("Serialization constructor cannot have parameters");
+				}
 				constructor.Link();
 				constructor.ResolveMethod();
 				Type type;
@@ -6430,50 +6359,6 @@ namespace IKVM.NativeCode.sun.reflect
 				fw = FieldWrapper.FromField(field);
 				isFinal = (!overrideAccessCheck || fw.IsStatic) && fw.IsFinal;
 				runInit = fw.DeclaringType.IsInterface;
-			}
-
-			private object getImpl(object obj)
-			{
-				// if the field is an interface field, we must explicitly run <clinit>,
-				// because .NET reflection doesn't
-				if (runInit)
-				{
-					fw.DeclaringType.RunClassInit();
-					runInit = false;
-				}
-				if (!fw.IsStatic && !fw.DeclaringType.IsInstance(obj))
-				{
-					if (obj == null)
-					{
-						throw new jlNullPointerException();
-					}
-					throw new jlIllegalArgumentException();
-				}
-				return fw.GetValue(obj);
-			}
-
-			private void setImpl(object obj, object value)
-			{
-				// if the field is an interface field, we must explicitly run <clinit>,
-				// because .NET reflection doesn't
-				if (runInit)
-				{
-					fw.DeclaringType.RunClassInit();
-					runInit = false;
-				}
-				if (isFinal)
-				{
-					throw new jlIllegalAccessException();
-				}
-				if (!fw.IsStatic && !fw.DeclaringType.IsInstance(obj))
-				{
-					if (obj == null)
-					{
-						throw new jlNullPointerException();
-					}
-					throw new jlIllegalArgumentException();
-				}
-				fw.SetValue(obj, value);
 			}
 
 			public virtual bool getBoolean(object obj)
@@ -6559,7 +6444,7 @@ namespace IKVM.NativeCode.sun.reflect
 			public abstract object get(object obj);
 			public abstract void set(object obj, object value);
 			
-			private class ObjectField : FieldAccessorImplBase
+			private abstract class ObjectField : FieldAccessorImplBase
 			{
 				private readonly jlClass fieldType;
 
@@ -6568,20 +6453,6 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					fieldType = field.getType();
 				}
-
-				public override object get(object obj)
-				{
-					return getImpl(obj);
-				}
-
-				public override void set(object obj, object value)
-				{
-					if (value != null && !fieldType.isInstance(value))
-					{
-						throw new jlIllegalArgumentException();
-					}
-					setImpl(obj, value);
-				}
 			}
 
 			private class ByteField : FieldAccessorImplBase
@@ -6589,11 +6460,6 @@ namespace IKVM.NativeCode.sun.reflect
 				internal ByteField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
-				}
-
-				public override byte getByte(object obj)
-				{
-					return (byte)getImpl(obj);
 				}
 
 				public sealed override short getShort(object obj)
@@ -6634,11 +6500,6 @@ namespace IKVM.NativeCode.sun.reflect
 					}
 					setByte(obj, ((jlByte)val).byteValue());
 				}
-
-				public override void setByte(object obj, byte b)
-				{
-					setImpl(obj, b);
-				}
 			}
 
 			private class BooleanField : FieldAccessorImplBase
@@ -6646,11 +6507,6 @@ namespace IKVM.NativeCode.sun.reflect
 				internal BooleanField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
-				}
-
-				public override bool getBoolean(object obj)
-				{
-					return (bool)getImpl(obj);
 				}
 
 				public sealed override object get(object obj)
@@ -6666,11 +6522,6 @@ namespace IKVM.NativeCode.sun.reflect
 					}
 					setBoolean(obj, ((jlBoolean)val).booleanValue());
 				}
-
-				public override void setBoolean(object obj, bool b)
-				{
-					setImpl(obj, b);
-				}
 			}
 
 			private class CharField : FieldAccessorImplBase
@@ -6678,11 +6529,6 @@ namespace IKVM.NativeCode.sun.reflect
 				internal CharField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
-				}
-
-				public override char getChar(object obj)
-				{
-					return (char)getImpl(obj);
 				}
 
 				public sealed override int getInt(object obj)
@@ -6717,11 +6563,6 @@ namespace IKVM.NativeCode.sun.reflect
 					else
 						throw new jlIllegalArgumentException();
 				}
-
-				public override void setChar(object obj, char c)
-				{
-					setImpl(obj, c);
-				}
 			}
 
 			private class ShortField : FieldAccessorImplBase
@@ -6729,11 +6570,6 @@ namespace IKVM.NativeCode.sun.reflect
 				internal ShortField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
-				}
-
-				public override short getShort(object obj)
-				{
-					return (short)getImpl(obj);
 				}
 
 				public sealed override int getInt(object obj)
@@ -6774,11 +6610,6 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					setShort(obj, (sbyte)b);
 				}
-
-				public override void setShort(object obj, short s)
-				{
-					setImpl(obj, s);
-				}
 			}
 
 			private class IntField : FieldAccessorImplBase
@@ -6786,11 +6617,6 @@ namespace IKVM.NativeCode.sun.reflect
 				internal IntField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
-				}
-
-				public override int getInt(object obj)
-				{
-					return (int)getImpl(obj);
 				}
 
 				public sealed override long getLong(object obj)
@@ -6839,11 +6665,6 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					setInt(obj, s);
 				}
-
-				public override void setInt(object obj, int i)
-				{
-					setImpl(obj, i);
-				}
 			}
 
 			private class FloatField : FieldAccessorImplBase
@@ -6851,11 +6672,6 @@ namespace IKVM.NativeCode.sun.reflect
 				internal FloatField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
-				}
-
-				public override float getFloat(object obj)
-				{
-					return (float)getImpl(obj);
 				}
 
 				public sealed override double getDouble(object obj)
@@ -6906,11 +6722,6 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					setFloat(obj, l);
 				}
-
-				public override void setFloat(object obj, float f)
-				{
-					setImpl(obj, f);
-				}
 			}
 
 			private class LongField : FieldAccessorImplBase
@@ -6918,11 +6729,6 @@ namespace IKVM.NativeCode.sun.reflect
 				internal LongField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
-				}
-
-				public override long getLong(object obj)
-				{
-					return (long)getImpl(obj);
 				}
 
 				public sealed override float getFloat(object obj)
@@ -6938,11 +6744,6 @@ namespace IKVM.NativeCode.sun.reflect
 				public sealed override object get(object obj)
 				{
 					return jlLong.valueOf(getLong(obj));
-				}
-
-				public override void setLong(object obj, long l)
-				{
-					setImpl(obj, l);
 				}
 
 				public sealed override void set(object obj, object val)
@@ -6984,11 +6785,6 @@ namespace IKVM.NativeCode.sun.reflect
 				internal DoubleField(jlrField field, bool overrideAccessCheck)
 					: base(field, overrideAccessCheck)
 				{
-				}
-
-				public override double getDouble(object obj)
-				{
-					return (double)getImpl(obj);
 				}
 
 				public override object get(object obj)
@@ -7039,11 +6835,6 @@ namespace IKVM.NativeCode.sun.reflect
 				public override void setFloat(object obj, float f)
 				{
 					setDouble(obj, f);
-				}
-
-				public override void setDouble(object obj, double d)
-				{
-					setImpl(obj, d);
 				}
 			}
 
@@ -7548,104 +7339,41 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					if (type == jlByte.TYPE)
 					{
-						if (DynamicMethodSupport.Enabled)
-						{
-							return new FastByteFieldAccessor(field, overrideAccessCheck);
-						}
-						else
-						{
-							return new ByteField(field, overrideAccessCheck);
-						}
+						return new FastByteFieldAccessor(field, overrideAccessCheck);
 					}
 					if (type == jlBoolean.TYPE)
 					{
-						if (DynamicMethodSupport.Enabled)
-						{
-							return new FastBooleanFieldAccessor(field, overrideAccessCheck);
-						}
-						else
-						{
-							return new BooleanField(field, overrideAccessCheck);
-						}
+						return new FastBooleanFieldAccessor(field, overrideAccessCheck);
 					}
 					if (type == jlCharacter.TYPE)
 					{
-						if (DynamicMethodSupport.Enabled)
-						{
-							return new FastCharFieldAccessor(field, overrideAccessCheck);
-						}
-						else
-						{
-							return new CharField(field, overrideAccessCheck);
-						}
+						return new FastCharFieldAccessor(field, overrideAccessCheck);
 					}
 					if (type == jlShort.TYPE)
 					{
-						if (DynamicMethodSupport.Enabled)
-						{
-							return new FastShortFieldAccessor(field, overrideAccessCheck);
-						}
-						else
-						{
-							return new ShortField(field, overrideAccessCheck);
-						}
+						return new FastShortFieldAccessor(field, overrideAccessCheck);
 					}
 					if (type == jlInteger.TYPE)
 					{
-						if (DynamicMethodSupport.Enabled)
-						{
-							return new FastIntegerFieldAccessor(field, overrideAccessCheck);
-						}
-						else
-						{
-							return new IntField(field, overrideAccessCheck);
-						}
+						return new FastIntegerFieldAccessor(field, overrideAccessCheck);
 					}
 					if (type == jlFloat.TYPE)
 					{
-						if (DynamicMethodSupport.Enabled)
-						{
-							return new FastFloatFieldAccessor(field, overrideAccessCheck);
-						}
-						else
-						{
-							return new FloatField(field, overrideAccessCheck);
-						}
+						return new FastFloatFieldAccessor(field, overrideAccessCheck);
 					}
 					if (type == jlLong.TYPE)
 					{
-						if (DynamicMethodSupport.Enabled)
-						{
-							return new FastLongFieldAccessor(field, overrideAccessCheck);
-						}
-						else
-						{
-							return new LongField(field, overrideAccessCheck);
-						}
+						return new FastLongFieldAccessor(field, overrideAccessCheck);
 					}
 					if (type == jlDouble.TYPE)
 					{
-						if (DynamicMethodSupport.Enabled)
-						{
-							return new FastDoubleFieldAccessor(field, overrideAccessCheck);
-						}
-						else
-						{
-							return new DoubleField(field, overrideAccessCheck);
-						}
+						return new FastDoubleFieldAccessor(field, overrideAccessCheck);
 					}
 					throw new InvalidOperationException("field type: " + type);
 				}
 				else
 				{
-					if (DynamicMethodSupport.Enabled)
-					{
-						return new FastObjectFieldAccessor(field, overrideAccessCheck);
-					}
-					else
-					{
-						return new ObjectField(field, overrideAccessCheck);
-					}
+					return new FastObjectFieldAccessor(field, overrideAccessCheck);
 				}
 			}
 		}
@@ -7666,16 +7394,15 @@ namespace IKVM.NativeCode.sun.reflect
 			return null;
 #else
 			jlrMethod m = (jlrMethod)method;
-			if (DynamicMethodSupport.Enabled)
+			MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
+			if (mw is ICustomInvoke)
 			{
-				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
-				TypeWrapper tw = TypeWrapper.FromClass(m.getDeclaringClass());
-				if (!mw.IsDynamicOnly && !tw.IsRemapped)
-				{
-					return new FastMethodAccessorImpl(m, false);
-				}
+				return new MethodAccessorImpl(m);
 			}
-			return new MethodAccessorImpl(m);
+			else
+			{
+				return new FastMethodAccessorImpl(m, false);
+			}
 #endif
 		}
 
@@ -7685,14 +7412,14 @@ namespace IKVM.NativeCode.sun.reflect
 			return null;
 #else
 			jlrConstructor cons = (jlrConstructor)constructor;
-			if (DynamicMethodSupport.Enabled
-				&& !MethodWrapper.FromMethodOrConstructor(constructor).IsDynamicOnly)
+			MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
+			if (mw is ICustomInvoke)
 			{
-				return new FastConstructorAccessorImpl(cons);
+				return new ConstructorAccessorImpl(cons);
 			}
 			else
 			{
-				return new ConstructorAccessorImpl(cons);
+				return new FastConstructorAccessorImpl(cons);
 			}
 #endif
 		}
@@ -7703,16 +7430,7 @@ namespace IKVM.NativeCode.sun.reflect
 			return null;
 #else
 			jlrConstructor cons = (jlrConstructor)constructorToCall;
-			if (DynamicMethodSupport.Enabled
-				&& cons.getParameterTypes().Length == 0
-				&& !MethodWrapper.FromMethodOrConstructor(constructorToCall).IsDynamicOnly)
-			{
-				return new FastSerializationConstructorAccessorImpl(cons, (jlClass)classToInstantiate);
-			}
-			else
-			{
-				return new SerializationConstructorAccessorImpl(cons, (jlClass)classToInstantiate);
-			}
+			return new FastSerializationConstructorAccessorImpl(cons, (jlClass)classToInstantiate);
 #endif
 		}
 	}

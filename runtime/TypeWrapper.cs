@@ -9157,7 +9157,7 @@ namespace IKVM.Internal
 			SetFields(fields.ToArray());
 		}
 
-		private class CompiledRemappedMethodWrapper : SmartMethodWrapper
+		private class CompiledRemappedMethodWrapper : SmartMethodWrapper, ICustomInvoke
 		{
 			private MethodInfo mbHelper;
 #if !STATIC_COMPILER
@@ -9221,7 +9221,7 @@ namespace IKVM.Internal
 
 #if !STATIC_COMPILER && !FIRST_PASS
 			[HideFromJava]
-			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
+			object ICustomInvoke.Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
 			{
 				MethodBase mb;
 				if(nonVirtual)
@@ -9950,7 +9950,7 @@ namespace IKVM.Internal
 			}
 		}
 
-		private class DynamicOnlyMethodWrapper : MethodWrapper
+		private class DynamicOnlyMethodWrapper : MethodWrapper, ICustomInvoke
 		{
 			internal DynamicOnlyMethodWrapper(TypeWrapper declaringType, string name, string sig, TypeWrapper returnType, TypeWrapper[] parameterTypes)
 				: base(declaringType, name, sig, null, returnType, parameterTypes, Modifiers.Public | Modifiers.Abstract, MemberFlags.None)
@@ -9966,11 +9966,19 @@ namespace IKVM.Internal
 			}
 
 #if !STATIC_COMPILER && !FIRST_PASS
-			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
+			object ICustomInvoke.Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
 			{
-				return TypeWrapper.FromClass(NativeCode.ikvm.runtime.Util.getClassFromObject(obj))
-					.GetMethodWrapper(this.Name, this.Signature, true)
-					.Invoke(obj, args, false, callerID);
+				// a DynamicOnlyMethodWrapper is an interface method, but now that we've been called on an actual object instance,
+				// we can resolve to a real method and call that instead
+				TypeWrapper tw = TypeWrapper.FromClass(NativeCode.ikvm.runtime.Util.getClassFromObject(obj));
+				MethodWrapper mw = tw.GetMethodWrapper(this.Name, this.Signature, true);
+				if(mw == null)
+				{
+					throw new java.lang.AbstractMethodError(tw.Name + "." + this.Name + this.Signature);
+				}
+				java.lang.reflect.Method m = (java.lang.reflect.Method)mw.ToMethodOrConstructor(true);
+				m.@override = true;
+				return m.invoke(obj, args, callerID);
 			}
 #endif // !STATIC_COMPILER && !FIRST_PASS
 		}
@@ -10003,6 +10011,11 @@ namespace IKVM.Internal
 #endif
 			}
 
+			internal object GetUnspecifiedValue()
+			{
+				return ((EnumFieldWrapper)GetFieldWrapper("__unspecified", this.SigName)).GetValue();
+			}
+
 			private class EnumFieldWrapper : FieldWrapper
 			{
 				private readonly int ordinal;
@@ -10014,7 +10027,7 @@ namespace IKVM.Internal
 					this.ordinal = ordinal;
 				}
 
-				internal override object GetValue(object unused)
+				internal object GetValue()
 				{
 					if(val == null)
 					{
@@ -10039,7 +10052,7 @@ namespace IKVM.Internal
 				}
 			}
 
-			private class EnumValuesMethodWrapper : MethodWrapper
+			private class EnumValuesMethodWrapper : MethodWrapper, ICustomInvoke
 			{
 				internal EnumValuesMethodWrapper(TypeWrapper declaringType)
 					: base(declaringType, "values", "()[" + declaringType.SigName, null, declaringType.MakeArrayType(1), TypeWrapper.EmptyArray, Modifiers.Public | Modifiers.Static, MemberFlags.None)
@@ -10055,20 +10068,20 @@ namespace IKVM.Internal
 				}
 
 #if !STATIC_COMPILER && !FIRST_PASS
-				internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
+				object ICustomInvoke.Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
 				{
 					FieldWrapper[] values = this.DeclaringType.GetFields();
 					object[] array = (object[])Array.CreateInstance(this.DeclaringType.TypeAsArrayType, values.Length);
 					for(int i = 0; i < values.Length; i++)
 					{
-						array[i] = values[i].GetValue(null);
+						array[i] = ((EnumFieldWrapper)values[i]).GetValue();
 					}
 					return array;
 				}
 #endif // !STATIC_COMPILER && !FIRST_PASS
 			}
 
-			private class EnumValueOfMethodWrapper : MethodWrapper
+			private class EnumValueOfMethodWrapper : MethodWrapper, ICustomInvoke
 			{
 				internal EnumValueOfMethodWrapper(TypeWrapper declaringType)
 					: base(declaringType, "valueOf", "(Ljava.lang.String;)" + declaringType.SigName, null, declaringType, new TypeWrapper[] { CoreClasses.java.lang.String.Wrapper }, Modifiers.Public | Modifiers.Static, MemberFlags.None)
@@ -10084,14 +10097,14 @@ namespace IKVM.Internal
 				}
 
 #if !STATIC_COMPILER && !FIRST_PASS
-				internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
+				object ICustomInvoke.Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
 				{
 					FieldWrapper[] values = this.DeclaringType.GetFields();
 					for(int i = 0; i < values.Length; i++)
 					{
 						if(values[i].Name.Equals(args[0]))
 						{
-							return values[i].GetValue(null);
+							return ((EnumFieldWrapper)values[i]).GetValue();
 						}
 					}
 					throw new java.lang.IllegalArgumentException("" + args[0]);
@@ -10463,7 +10476,8 @@ namespace IKVM.Internal
 					}
 					else if(mw.ReturnType is EnumEnumTypeWrapper)
 					{
-						return mw.ReturnType.GetFieldWrapper("__unspecified", mw.ReturnType.SigName).GetValue(null);
+						EnumEnumTypeWrapper eetw = (EnumEnumTypeWrapper)mw.ReturnType;
+						return eetw.GetUnspecifiedValue();
 					}
 					else if(mw.ReturnType.IsArray)
 					{
@@ -11157,15 +11171,6 @@ namespace IKVM.Internal
 				}
 			}
 #endif
-
-#if !STATIC_COMPILER && !FIRST_PASS
-			[HideFromJava]
-			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
-			{
-				// TODO map exceptions
-				return Delegate.CreateDelegate(DeclaringType.TypeAsTBD, args[0], "Invoke");
-			}
-#endif // !STATIC_COMPILER && !FIRST_PASS
 		}
 
 		private class ByRefMethodWrapper : SmartMethodWrapper
@@ -11234,35 +11239,6 @@ namespace IKVM.Internal
 				base.PreEmit(ilgen);
 			}
 #endif
-
-#if !STATIC_COMPILER && !FIRST_PASS
-			[HideFromJava]
-			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
-			{
-				object[] newargs = (object[])args.Clone();
-				for(int i = 0; i < newargs.Length; i++)
-				{
-					if(byrefs[i])
-					{
-						newargs[i] = ((Array)args[i]).GetValue(0);
-					}
-				}
-				try
-				{
-					return base.Invoke(obj, newargs, nonVirtual, callerID);
-				}
-				finally
-				{
-					for(int i = 0; i < newargs.Length; i++)
-					{
-						if(byrefs[i])
-						{
-							((Array)args[i]).SetValue(newargs[i], 0);
-						}
-					}
-				}
-			}
-#endif // !STATIC_COMPILER && !FIRST_PASS
 		}
 
 		internal static bool IsVisible(Type type)
@@ -11285,14 +11261,6 @@ namespace IKVM.Internal
 				// result in our argument being boxed (since that's still sitting on the stack).
 			}
 #endif
-
-#if !STATIC_COMPILER && !FIRST_PASS
-			[HideFromJava]
-			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
-			{
-				return Enum.ToObject(DeclaringType.TypeAsTBD, ((IConvertible)args[0]).ToInt64(null));
-			}
-#endif // !STATIC_COMPILER && !FIRST_PASS
 		}
 
 		internal class EnumValueFieldWrapper : FieldWrapper
@@ -11324,16 +11292,6 @@ namespace IKVM.Internal
 				ilgen.ReleaseTempLocal(temp);
 			}
 #endif
-
-#if !STATIC_COMPILER
-			internal override void SetValue(object obj, object val)
-			{
-				// NOTE even though the field is final, JNI reflection can still be used to set its value!
-				// NOTE the CLI spec says that an enum has exactly one instance field, so we take advantage of that fact.
-				FieldInfo f = DeclaringType.TypeAsTBD.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)[0];
-				f.SetValue(obj, val);
-			}
-#endif // !STATIC_COMPILER
 
 			// this method takes a boxed Enum and returns its value as a boxed primitive
 			// of the subset of Java primitives (i.e. byte, short, int, long)
@@ -11374,13 +11332,6 @@ namespace IKVM.Internal
 					throw new InvalidOperationException();
 				}
 			}
-
-#if !STATIC_COMPILER
-			internal override object GetValue(object obj)
-			{
-				return GetEnumPrimitiveValue(obj);
-			}
-#endif // !STATIC_COMPILER
 		}
 
 		private class ValueTypeDefaultCtor : MethodWrapper
@@ -11398,18 +11349,6 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Box, DeclaringType.TypeAsTBD);
 			}
 #endif
-
-#if !STATIC_COMPILER && !FIRST_PASS
-			[HideFromJava]
-			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
-			{
-				if(obj == null)
-				{
-					obj = Activator.CreateInstance(DeclaringType.TypeAsTBD);
-				}
-				return obj;
-			}
-#endif // !STATIC_COMPILER && !FIRST_PASS
 		}
 
 		private class FinalizeMethodWrapper : MethodWrapper
@@ -11428,13 +11367,6 @@ namespace IKVM.Internal
 			{
 				ilgen.Emit(OpCodes.Pop);
 			}
-
-#if !STATIC_COMPILER && !FIRST_PASS
-			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
-			{
-				return null;
-			}
-#endif // !STATIC_COMPILER && !FIRST_PASS
 		}
 
 		private class CloneMethodWrapper : MethodWrapper
@@ -11463,13 +11395,6 @@ namespace IKVM.Internal
 			{
 				EmitCall(ilgen);
 			}
-
-#if !STATIC_COMPILER && !FIRST_PASS
-			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
-			{
-				return CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(Name, Signature, false).Invoke(obj, args, nonVirtual, callerID);
-			}
-#endif // !STATIC_COMPILER && !FIRST_PASS
 		}
 
 		protected override void LazyPublishMembers()
@@ -11730,14 +11655,6 @@ namespace IKVM.Internal
 				m.EmitCallvirt(ilgen);
 			}
 #endif
-
-#if !STATIC_COMPILER && !FIRST_PASS
-			[HideFromJava]
-			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
-			{
-				return m.Invoke(obj, args, nonVirtual, callerID);
-			}
-#endif // !STATIC_COMPILER && !FIRST_PASS
 		}
 
 		internal static bool IsUnsupportedAbstractMethod(MethodBase mb)

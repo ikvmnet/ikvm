@@ -276,6 +276,13 @@ namespace IKVM.Internal
 		}
 	}
 
+	interface ICustomInvoke
+	{
+#if !STATIC_COMPILER && !FIRST_PASS
+		object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID);
+#endif
+	}
+
 	abstract class MethodWrapper : MemberWrapper
 	{
 #if !STATIC_COMPILER && !FIRST_PASS
@@ -347,18 +354,6 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Call, ghostMethod);
 			}
 #endif
-
-#if !STATIC_COMPILER && !FIRST_PASS
-			[HideFromJava]
-			internal override object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
-			{
-				object wrapper = Activator.CreateInstance(DeclaringType.TypeAsSignatureType);
-				DeclaringType.GhostRefField.SetValue(wrapper, obj);
-
-				ResolveGhostMethod();
-				return InvokeImpl(ghostMethod, wrapper, args, nonVirtual, callerID);
-			}
-#endif // !STATIC_COMPILER
 		}
 
 		internal static MethodWrapper Create(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
@@ -825,14 +820,6 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER
 
 #if !STATIC_COMPILER && !FIRST_PASS
-		[HideFromJava]
-		internal virtual object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
-		{
-			AssertLinked();
-			ResolveMethod();
-			return InvokeImpl(method, obj, args, nonVirtual, callerID);
-		}
-
 		internal void ResolveMethod()
 		{
 #if !COMPACT_FRAMEWORK
@@ -1509,28 +1496,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal virtual void SetValue(object obj, object val)
-		{
-			AssertLinked();
-			ResolveField();
-			if(fieldType.IsGhost)
-			{
-				object temp = field.GetValue(obj);
-				fieldType.GhostRefField.SetValue(temp, val);
-				val = temp;
-			}
-			try
-			{
-				field.SetValue(obj, val);
-			}
-			catch(FieldAccessException x)
-			{
-#if !FIRST_PASS
-				throw new java.lang.IllegalAccessException(x.Message);
-#endif
-			}
-		}
-
 		internal object GetFieldAccessorJNI()
 		{
 #if FIRST_PASS
@@ -1544,22 +1509,6 @@ namespace IKVM.Internal
 #endif
 		}
 #endif // !STATIC_COMPILER
-
-		internal virtual object GetValue(object obj)
-		{
-			AssertLinked();
-#if STATIC_COMPILER
-			return field.GetValue(null);
-#else
-			ResolveField();
-			object val = field.GetValue(obj);
-			if(fieldType.IsGhost)
-			{
-				val = fieldType.GhostRefField.GetValue(val);
-			}
-			return val;
-#endif // STATIC_COMPILER
-		}
 	}
 
 	sealed class SimpleFieldWrapper : FieldWrapper
@@ -1700,24 +1649,6 @@ namespace IKVM.Internal
 			return prop;
 		}
 
-#if !STATIC_COMPILER
-		internal override object GetValue(object obj)
-		{
-			return prop.GetValue(obj, null);
-		}
-
-		internal override void SetValue(object obj, object val)
-		{
-			if(FieldTypeWrapper.IsGhost)
-			{
-				object temp = GetValue(obj);
-				FieldTypeWrapper.GhostRefField.SetValue(temp, val);
-				val = temp;
-			}
-			prop.SetValue(obj, val, null);
-		}
-#endif
-
 #if !COMPACT_FRAMEWORK
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
@@ -1833,26 +1764,6 @@ namespace IKVM.Internal
 #endif
 		}
 
-#if !STATIC_COMPILER && !FIRST_PASS
-		internal override object GetValue(object obj)
-		{
-			if(getter == null)
-			{
-				throw new global::java.lang.NoSuchMethodError();
-			}
-			return getter.Invoke(obj, new object[0], false, null);
-		}
-
-		internal override void SetValue(object obj, object val)
-		{
-			if(setter == null)
-			{
-				throw new global::java.lang.NoSuchMethodError();
-			}
-			setter.Invoke(obj, new object[] { val }, false, null);
-		}
-#endif
-
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
 			if(getter == null)
@@ -1937,26 +1848,6 @@ namespace IKVM.Internal
 		{
 			this.property = property;
 		}
-
-#if !STATIC_COMPILER && !FIRST_PASS
-		internal override object GetValue(object obj)
-		{
-			if (!property.CanRead)
-			{
-				throw new global::java.lang.NoSuchMethodError();
-			}
-			return property.GetValue(obj, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty, null, null, null);
-		}
-
-		internal override void SetValue(object obj, object val)
-		{
-			if(!property.CanWrite)
-			{
-				throw new global::java.lang.NoSuchMethodError();
-			}
-			property.SetValue(obj, val, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty, null, null, null);
-		}
-#endif
 
 		protected override void EmitGetImpl(CodeEmitter ilgen)
 		{
@@ -2116,13 +2007,6 @@ namespace IKVM.Internal
 			}
 			return constant;
 		}
-
-		internal override object GetValue(object obj)
-		{
-			// on a non-broken CLR GetValue on a literal will not trigger type initialization, but on Java it should
-			DeclaringType.RunClassInit();
-			return GetConstantValue();
-		}
 	}
 
 #if !COMPACT_FRAMEWORK
@@ -2209,20 +2093,6 @@ namespace IKVM.Internal
 		{
 			ilgen.Emit(OpCodes.Call, setter);
 		}
-
-#if !STATIC_COMPILER
-		internal override object GetValue(object obj)
-		{
-			// We're MemberFlags.HideFromReflection, so we should never be called
-			throw new InvalidOperationException();
-		}
-
-		internal override void SetValue(object obj, object val)
-		{
-			// We're MemberFlags.HideFromReflection, so we should never be called
-			throw new InvalidOperationException();
-		}
-#endif // !STATIC_COMPILER
 	}
 #endif
 
@@ -2265,19 +2135,5 @@ namespace IKVM.Internal
 			ilgen.Emit(OpCodes.Call, setter);
 		}
 #endif
-
-#if !STATIC_COMPILER
-		internal override object GetValue(object obj)
-		{
-			// We're MemberFlags.HideFromReflection, so we should never be called
-			throw new InvalidOperationException();
-		}
-
-		internal override void SetValue(object obj, object val)
-		{
-			// We're MemberFlags.HideFromReflection, so we should never be called
-			throw new InvalidOperationException();
-		}
-#endif // !STATIC_COMPILER
 	}
 }
