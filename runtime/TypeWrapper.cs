@@ -11315,7 +11315,13 @@ namespace IKVM.Internal
 
 			protected override void EmitSetImpl(CodeEmitter ilgen)
 			{
-				throw new InvalidOperationException();
+				// NOTE even though the field is final, JNI reflection can still be used to set its value!
+				LocalBuilder temp = ilgen.AllocTempLocal(underlyingType);
+				ilgen.Emit(OpCodes.Stloc, temp);
+				ilgen.Emit(OpCodes.Unbox, underlyingType);
+				ilgen.Emit(OpCodes.Ldloc, temp);
+				ilgen.Emit(OpCodes.Stobj, underlyingType);
+				ilgen.ReleaseTempLocal(temp);
 			}
 #endif
 

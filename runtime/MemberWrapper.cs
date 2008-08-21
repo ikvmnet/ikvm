@@ -29,6 +29,7 @@ using System.Reflection.Emit;
 #endif
 using System.Diagnostics;
 using IKVM.Attributes;
+using System.Threading;
 
 namespace IKVM.Internal
 {
@@ -278,6 +279,7 @@ namespace IKVM.Internal
 	abstract class MethodWrapper : MemberWrapper
 	{
 #if !STATIC_COMPILER && !FIRST_PASS
+		private static Dictionary<MethodWrapper, sun.reflect.MethodAccessor> invokenonvirtualCache;
 		private volatile object reflectionMethod;
 #endif
 		internal static readonly MethodWrapper[] EmptyArray  = new MethodWrapper[0];
@@ -704,8 +706,121 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
-			return Invoke(obj, args, nonVirtual, ikvm.@internal.CallerID.create(callerID));
+			if (ReferenceEquals(Name, StringConstants.INIT))
+			{
+				java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)ToMethodOrConstructor(false);
+				if (obj == null)
+				{
+					sun.reflect.ConstructorAccessor acc = cons.getConstructorAccessor();
+					if (acc == null)
+					{
+						acc = reflectionFactory.newConstructorAccessor(cons);
+						cons.setConstructorAccessor(acc);
+					}
+					return acc.newInstance(args);
+				}
+				else if (method is MethodInfo)
+				{
+					Debug.Assert(method.IsStatic);
+					// we're dealing with a constructor on a remapped type, if obj is supplied, it means
+					// that we should call the constructor on an already existing instance, but that isn't
+					// possible with remapped types
+					// the type of this exception is a bit random (note that this can only happen through JNI reflection)
+					throw new java.lang.IncompatibleClassChangeError(string.Format("Remapped type {0} doesn't support constructor invocation on an existing instance", DeclaringType.Name));
+				}
+				else if (!method.DeclaringType.IsInstanceOfType(obj))
+				{
+					// we're trying to initialize an existing instance of a remapped type
+					throw new NotSupportedException("Unable to partially construct object of type " + obj.GetType().FullName + " to type " + method.DeclaringType.FullName);
+				}
+				else
+				{
+					try
+					{
+						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, UnboxArgs(args), ikvm.@internal.CallerID.create(callerID));
+						object o = method.Invoke(proc.GetObj(), proc.GetArgs());
+						TypeWrapper retType = this.ReturnType;
+						if (!retType.IsUnloadable && retType.IsGhost)
+						{
+							o = retType.GhostRefField.GetValue(o);
+						}
+						return o;
+					}
+					catch (ArgumentException x1)
+					{
+						throw new java.lang.IllegalArgumentException(x1.Message);
+					}
+					catch (TargetInvocationException x)
+					{
+						throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x.InnerException));
+					}
+				}
+			}
+			else if (nonVirtual
+				&& !this.IsStatic
+				&& !this.IsPrivate
+				&& !this.IsAbstract
+				&& !this.IsFinal
+				&& !this.DeclaringType.IsFinal)
+			{
+				if (this.DeclaringType.IsRemapped)
+				{
+					ResolveMethod();
+					return InvokeImpl(method, obj, UnboxArgs(args), true, ikvm.@internal.CallerID.create(callerID));
+				}
+				else
+				{
+					if (invokenonvirtualCache == null)
+					{
+						Interlocked.CompareExchange(ref invokenonvirtualCache, new Dictionary<MethodWrapper, sun.reflect.MethodAccessor>(), null);
+					}
+					sun.reflect.MethodAccessor acc;
+					lock (invokenonvirtualCache)
+					{
+						if (!invokenonvirtualCache.TryGetValue(this, out acc))
+						{
+							acc = new IKVM.NativeCode.sun.reflect.ReflectionFactory.FastMethodAccessorImpl((java.lang.reflect.Method)ToMethodOrConstructor(false), true);
+							invokenonvirtualCache.Add(this, acc);
+						}
+					}
+					object val = acc.invoke(obj, args, ikvm.@internal.CallerID.create(callerID));
+					if (this.ReturnType.IsPrimitive && this.ReturnType != PrimitiveTypeWrapper.VOID)
+					{
+						val = JVM.Unbox(val);
+					}
+					return val;
+				}
+			}
+			else
+			{
+				java.lang.reflect.Method method = (java.lang.reflect.Method)ToMethodOrConstructor(false);
+				sun.reflect.MethodAccessor acc = method.getMethodAccessor();
+				if (acc == null)
+				{
+					acc = reflectionFactory.newMethodAccessor(method);
+					method.setMethodAccessor(acc);
+				}
+				object val = acc.invoke(obj, args, ikvm.@internal.CallerID.create(callerID));
+				if (this.ReturnType.IsPrimitive && this.ReturnType != PrimitiveTypeWrapper.VOID)
+				{
+					val = JVM.Unbox(val);
+				}
+				return val;
+			}
 #endif
+		}
+
+		private object[] UnboxArgs(object[] args)
+		{
+			TypeWrapper[] paramTypes = GetParameters();
+			for (int i = 0; i < paramTypes.Length; i++)
+			{
+				if (paramTypes[i].IsPrimitive)
+				{
+					args[i] = JVM.Unbox(args[i]);
+				}
+			}
+			return args;
 		}
 #endif // !STATIC_COMPILER
 
@@ -1183,6 +1298,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !FIRST_PASS
 		private static readonly FieldInfo slotField = typeof(java.lang.reflect.Field).GetField("slot", BindingFlags.Instance | BindingFlags.NonPublic);
 		private volatile object reflectionField;
+		private sun.reflect.FieldAccessor jniAccessor;
 #endif
 		internal static readonly FieldWrapper[] EmptyArray  = new FieldWrapper[0];
 		private FieldInfo field;
@@ -1413,6 +1529,19 @@ namespace IKVM.Internal
 				throw new java.lang.IllegalAccessException(x.Message);
 #endif
 			}
+		}
+
+		internal object GetFieldAccessorJNI()
+		{
+#if FIRST_PASS
+			return null;
+#else
+			if (jniAccessor == null)
+			{
+				jniAccessor = reflectionFactory.newFieldAccessor((java.lang.reflect.Field)ToField(false), true);
+			}
+			return jniAccessor;
+#endif
 		}
 #endif // !STATIC_COMPILER
 

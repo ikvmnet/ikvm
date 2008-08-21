@@ -5859,7 +5859,7 @@ namespace IKVM.NativeCode.sun.reflect
 			}
 		}
 
-		private sealed class FastMethodAccessorImpl : srMethodAccessor
+		internal sealed class FastMethodAccessorImpl : srMethodAccessor
 		{
 			private static readonly MethodInfo valueOfByte;
 			private static readonly MethodInfo valueOfBoolean;
@@ -5927,7 +5927,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 			}
 
-			internal FastMethodAccessorImpl(jlrMethod method)
+			internal FastMethodAccessorImpl(jlrMethod method, bool nonvirtual)
 			{
 				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
 				mw.DeclaringType.Finish();
@@ -6018,7 +6018,7 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					ilgen.Emit(OpCodes.Ldarg_2);
 				}
-				if (mw.IsStatic)
+				if (mw.IsStatic || nonvirtual)
 				{
 					mw.EmitCall(ilgen);
 				}
@@ -7672,7 +7672,7 @@ namespace IKVM.NativeCode.sun.reflect
 				TypeWrapper tw = TypeWrapper.FromClass(m.getDeclaringClass());
 				if (!mw.IsDynamicOnly && !tw.IsRemapped)
 				{
-					return new FastMethodAccessorImpl(m);
+					return new FastMethodAccessorImpl(m, false);
 				}
 			}
 			return new MethodAccessorImpl(m);
