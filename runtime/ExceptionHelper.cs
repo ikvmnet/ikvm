@@ -132,13 +132,11 @@ namespace IKVM.NativeCode.java.lang
 #if !FIRST_PASS
 			if(cause == throwable)
 			{
-				MethodWrapper mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
-				mw.Invoke(throwable, new object[] { detailMessage }, true, null);
+				typeof(global::java.lang.Throwable).GetConstructor(new Type[] { typeof(string) }).Invoke(throwable, new object[] { detailMessage });
 			}
 			else
 			{
-				MethodWrapper mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;Ljava.lang.Throwable;)V", false);
-				mw.Invoke(throwable, new object[] { detailMessage, cause }, true, null);
+				typeof(global::java.lang.Throwable).GetConstructor(new Type[] { typeof(string), typeof(Exception) }).Invoke(throwable, new object[] { detailMessage, cause });
 			}
 #endif
 		}
