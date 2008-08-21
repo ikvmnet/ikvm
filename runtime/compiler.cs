@@ -3453,7 +3453,7 @@ class Compiler
 		}
 		else
 		{
-			ilgen.Emit(OpCodes.Castclass, typeWrapper.TypeAsTBD);
+			typeWrapper.EmitCheckcast(null, ilgen);
 		}
 	}
 
