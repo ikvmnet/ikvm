@@ -1760,6 +1760,17 @@
                 </body>
             </method>
         </class>
+        <class name="java.nio.DirectByteBuffer">
+            <!-- add a constructor accessor for JNI -->
+            <method name="__new" sig="(JI)Ljava.nio.DirectByteBuffer;" modifiers="static">
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <newobj class="java.nio.DirectByteBuffer" name="&lt;init&gt;" sig="(JI)V" />
+                    <ret />
+                </body>
+            </method>
+        </class>
         <class name="sun.reflect.Reflection">
             <!-- we manually hook up this native method, to prevent inlining and tail-call optimizations -->
             <method name="getCallerClass" sig="(I)Ljava.lang.Class;">

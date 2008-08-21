@@ -3358,9 +3358,7 @@ namespace IKVM.Runtime
 					SetPendingException(pEnv, new java.lang.IllegalArgumentException("capacity"));
 					return IntPtr.Zero;
 				}
-				return pEnv->MakeLocalRef(JVM.CoreAssembly.GetType("java.nio.DirectByteBuffer")
-					.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(long), typeof(int) }, null)
-					.Invoke(new object[] { address.ToInt64(), (int)capacity }));
+				return pEnv->MakeLocalRef(JVM.NewDirectByteBuffer(address.ToInt64(), (int)capacity));
 			}
 			catch(Exception x)
 			{
