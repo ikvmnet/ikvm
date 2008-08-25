@@ -9157,7 +9157,7 @@ namespace IKVM.Internal
 			SetFields(fields.ToArray());
 		}
 
-		private class CompiledRemappedMethodWrapper : SmartMethodWrapper, ICustomInvoke
+		private class CompiledRemappedMethodWrapper : SmartMethodWrapper
 		{
 			private MethodInfo mbHelper;
 #if !STATIC_COMPILER
@@ -9221,34 +9221,27 @@ namespace IKVM.Internal
 
 #if !STATIC_COMPILER && !FIRST_PASS
 			[HideFromJava]
-			object ICustomInvoke.Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
+			protected override object InvokeNonvirtualRemapped(object obj, object[] args)
 			{
-				MethodBase mb;
-				if(nonVirtual)
+				Type[] p1 = GetParametersForDefineMethod();
+				Type[] argTypes = new Type[p1.Length + 1];
+				p1.CopyTo(argTypes, 1);
+				argTypes[0] = this.DeclaringType.TypeAsSignatureType;
+				MethodInfo mi = mbNonvirtualHelper;
+				if (mi == null)
 				{
-					if(DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
-					{
-						mb = GetMethod();
-					}
-					else if(mbNonvirtualHelper != null)
-					{
-						mb = mbNonvirtualHelper;
-					}
-					else if(mbHelper != null)
-					{
-						mb = mbHelper;
-					}
-					else
-					{
-						// we can end up here if someone calls a constructor with nonVirtual set (which is pointless, but legal)
-						mb = GetMethod();
-					}
+					mi = mbHelper;
 				}
-				else
-				{
-					mb = mbHelper != null ? mbHelper : GetMethod();
-				}
-				return InvokeImpl(mb, obj, args, nonVirtual, callerID);
+				object[] args1 = new object[args.Length + 1];
+				args1[0] = obj;
+				args.CopyTo(args1, 1);
+				return mi.Invoke(null, args1);
+			}
+
+			internal override void EmitCallvirtReflect(CodeEmitter ilgen)
+			{
+				MethodBase mb = mbHelper != null ? mbHelper : GetMethod();
+				ilgen.Emit(mb.IsStatic ? OpCodes.Call : OpCodes.Callvirt, (MethodInfo)mb);
 			}
 #endif // !STATIC_COMPILER
 
@@ -9966,7 +9959,7 @@ namespace IKVM.Internal
 			}
 
 #if !STATIC_COMPILER && !FIRST_PASS
-			object ICustomInvoke.Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
+			object ICustomInvoke.Invoke(object obj, object[] args, ikvm.@internal.CallerID callerID)
 			{
 				// a DynamicOnlyMethodWrapper is an interface method, but now that we've been called on an actual object instance,
 				// we can resolve to a real method and call that instead
@@ -10068,7 +10061,7 @@ namespace IKVM.Internal
 				}
 
 #if !STATIC_COMPILER && !FIRST_PASS
-				object ICustomInvoke.Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
+				object ICustomInvoke.Invoke(object obj, object[] args, ikvm.@internal.CallerID callerID)
 				{
 					FieldWrapper[] values = this.DeclaringType.GetFields();
 					object[] array = (object[])Array.CreateInstance(this.DeclaringType.TypeAsArrayType, values.Length);
@@ -10097,7 +10090,7 @@ namespace IKVM.Internal
 				}
 
 #if !STATIC_COMPILER && !FIRST_PASS
-				object ICustomInvoke.Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
+				object ICustomInvoke.Invoke(object obj, object[] args, ikvm.@internal.CallerID callerID)
 				{
 					FieldWrapper[] values = this.DeclaringType.GetFields();
 					for(int i = 0; i < values.Length; i++)

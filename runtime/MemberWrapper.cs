@@ -279,7 +279,7 @@ namespace IKVM.Internal
 	interface ICustomInvoke
 	{
 #if !STATIC_COMPILER && !FIRST_PASS
-		object Invoke(object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID);
+		object Invoke(object obj, object[] args, ikvm.@internal.CallerID callerID);
 #endif
 	}
 
@@ -304,6 +304,11 @@ namespace IKVM.Internal
 		internal virtual void EmitCallvirt(CodeEmitter ilgen)
 		{
 			throw new InvalidOperationException();
+		}
+
+		internal virtual void EmitCallvirtReflect(CodeEmitter ilgen)
+		{
+			EmitCallvirt(ilgen);
 		}
 
 		internal void EmitNewobj(CodeEmitter ilgen)
@@ -758,10 +763,10 @@ namespace IKVM.Internal
 				&& !this.IsFinal
 				&& !this.DeclaringType.IsFinal)
 			{
-				if (this.DeclaringType.IsRemapped)
+				if (this.DeclaringType.IsRemapped && !this.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
 				{
 					ResolveMethod();
-					return InvokeImpl(method, obj, UnboxArgs(args), true, ikvm.@internal.CallerID.create(callerID));
+					return InvokeNonvirtualRemapped(obj, UnboxArgs(args));
 				}
 				else
 				{
@@ -835,225 +840,11 @@ namespace IKVM.Internal
 #endif // !COMPACT_FRAMEWORK
 		}
 
-		private delegate object Invoker(IntPtr pFunc, object obj, object[] args, ikvm.@internal.CallerID callerID);
-
 		[HideFromJava]
-		internal object InvokeImpl(MethodBase method, object obj, object[] args, bool nonVirtual, ikvm.@internal.CallerID callerID)
+		protected virtual object InvokeNonvirtualRemapped(object obj, object[] args)
 		{
-#if !FIRST_PASS
-#if !COMPACT_FRAMEWORK
-			Debug.Assert(!(method is MethodBuilder || method is ConstructorBuilder));
-#endif // !COMPACT_FRAMEWORK
-
-			if(IsStatic)
-			{
-				// Java allows bogus 'obj' to be specified for static methods
-				obj = null;
-			}
-			else
-			{
-				if(ReferenceEquals(Name, StringConstants.INIT))
-				{
-					if(method is MethodInfo)
-					{
-						Debug.Assert(method.IsStatic);
-						// we're dealing with a constructor on a remapped type, if obj is supplied, it means
-						// that we should call the constructor on an already existing instance, but that isn't
-						// possible with remapped types
-						if(obj != null)
-						{
-							// the type of this exception is a bit random (note that this can only happen through JNI reflection or
-							// if there is a bug in serialization [which uses the ObjectInputStream.callConstructor() in classpath.cs)
-							throw new java.lang.IncompatibleClassChangeError(string.Format("Remapped type {0} doesn't support constructor invocation on an existing instance", DeclaringType.Name));
-						}
-					}
-					else if(obj == null)
-					{
-						// calling <init> without an instance means that we're constructing a new instance
-						// NOTE this means that we cannot detect a NullPointerException when calling <init> (does JNI require this?)
-						try
-						{
-							InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, null, args, callerID);
-							object o = ((ConstructorInfo)method).Invoke(proc.GetArgs());
-							// since we just constructed an instance, it can't possibly be a ghost
-							return o;
-						}
-						catch(ArgumentException x1)
-						{
-							throw new java.lang.IllegalArgumentException(x1.Message);
-						}
-						catch(TargetInvocationException x)
-						{
-							throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x.InnerException));
-						}
-					}
-					else if(!method.DeclaringType.IsInstanceOfType(obj))
-					{
-						// we're trying to initialize an existing instance of a remapped type
-						if(obj is System.Exception && (args == null || args.Length == 0))
-						{
-							// HACK special case for deserialization of java.lang.Throwable subclasses
-							// we don't call the constructor here, it will be called by Throwable.readObject()
-							return null;
-						}
-						else
-						{
-							// NOTE this will also happen if you try to deserialize a .NET object
-							// (i.e. a type that doesn't derive from our java.lang.Object).
-							// We might want to support that in the future (it's fairly easy, because
-							// the call to Object.<init> can just be ignored)
-							throw new NotSupportedException("Unable to partially construct object of type " + obj.GetType().FullName + " to type " + method.DeclaringType.FullName);
-						}
-					}
-				}
-				else if(nonVirtual &&
-					method.IsVirtual &&	// if the method isn't virtual, normal reflection will work
-					!method.IsFinal &&	// if the method is final, normal reflection will work
-					!method.DeclaringType.IsSealed && // if the type is sealed, normal reflection will work
-					!method.IsAbstract)	// if the method is abstract, it doesn't make sense, so we'll do a virtual call
-					// (Sun does a virtual call for interface methods and crashes for abstract methods)
-				{
-#if COMPACT_FRAMEWORK
-					throw new NotSupportedException("Reflective non-virtual method invocation is not supported on the Compact Framework");
-#else
-					Invoker invoker = NonvirtualInvokeHelper.GetInvoker(this);
-					try
-					{
-						InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, args, null);
-						return invoker(method.MethodHandle.GetFunctionPointer(), proc.GetObj(), proc.GetArgs(), callerID);
-					}
-					catch(ArgumentException x1)
-					{
-						throw new java.lang.IllegalArgumentException(x1.Message);
-					}
-					catch(TargetInvocationException x)
-					{
-						throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x.InnerException));
-					}
-#endif
-				}
-			}
-			try
-			{
-				InvokeArgsProcessor proc = new InvokeArgsProcessor(this, method, obj, args, callerID);
-				object o = method.Invoke(proc.GetObj(), proc.GetArgs());
-				TypeWrapper retType = this.ReturnType;
-				if(!retType.IsUnloadable && retType.IsGhost)
-				{
-					o = retType.GhostRefField.GetValue(o);
-				}
-				return o;
-			}
-			catch(ArgumentException x1)
-			{
-				throw new java.lang.IllegalArgumentException(x1.Message);
-			}
-			catch(TargetInvocationException x)
-			{
-				throw new java.lang.reflect.InvocationTargetException(ikvm.runtime.Util.mapException(x.InnerException));
-			}
-#else // !FIRST_PASS
-			return null;
-#endif
+			throw new InvalidOperationException();
 		}
-
-#if !COMPACT_FRAMEWORK
-		private static class NonvirtualInvokeHelper
-		{
-			private static Dictionary<MethodKey, Invoker> cache;
-			private static ModuleBuilder module;
-
-			static NonvirtualInvokeHelper()
-			{
-				cache = new Dictionary<MethodKey, Invoker>();
-				AssemblyName name = new AssemblyName();
-				name.Name = "NonvirtualInvoker";
-				AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(name, JVM.IsSaveDebugImage ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
-				if(JVM.IsSaveDebugImage)
-				{
-					module = ab.DefineDynamicModule("NonvirtualInvoker", "NonvirtualInvoker.dll");
-					DynamicClassLoader.RegisterForSaveDebug(ab);
-				}
-				else
-				{
-					module = ab.DefineDynamicModule("NonvirtualInvoker");
-				}
-			}
-
-			internal static Invoker GetInvoker(MethodWrapper mw)
-			{
-				lock(cache)
-				{
-					MethodKey key = new MethodKey(mw.DeclaringType.Name, mw.Name, mw.Signature);
-					Invoker inv;
-					if(!cache.TryGetValue(key, out inv))
-					{
-						inv = CreateInvoker(mw);
-						cache[key] = inv;
-					}
-					return inv;
-				}
-			}
-
-			private static Invoker CreateInvoker(MethodWrapper mw)
-			{
-				// TODO we need to support byref arguments...
-				TypeBuilder typeBuilder = module.DefineType("class" + cache.Count);
-				MethodBuilder methodBuilder = typeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Static, typeof(object), new Type[] { typeof(IntPtr), typeof(object), typeof(object[]), typeof(ikvm.@internal.CallerID) });
-				AttributeHelper.HideFromJava(methodBuilder);
-				CodeEmitter ilgen = CodeEmitter.Create(methodBuilder);
-				ilgen.Emit(OpCodes.Ldarg_1);
-				TypeWrapper[] paramTypes = mw.GetParameters();
-				for(int i = 0; i < paramTypes.Length; i++)
-				{
-					ilgen.Emit(OpCodes.Ldarg_2);
-					ilgen.Emit(OpCodes.Ldc_I4, i);
-					ilgen.Emit(OpCodes.Ldelem_Ref);
-					if(paramTypes[i].IsUnloadable)
-					{
-						// no need to do anything
-					}
-					else if(paramTypes[i].IsPrimitive)
-					{
-						ilgen.Emit(OpCodes.Unbox, paramTypes[i].TypeAsTBD);
-						ilgen.Emit(OpCodes.Ldobj, paramTypes[i].TypeAsTBD);
-					}
-					else if(paramTypes[i].IsNonPrimitiveValueType)
-					{
-						paramTypes[i].EmitUnbox(ilgen);
-					}
-				}
-				if(mw.HasCallerID)
-				{
-					ilgen.Emit(OpCodes.Ldarg_3);
-				}
-				ilgen.Emit(OpCodes.Ldarg_0);
-				ilgen.EmitCalli(OpCodes.Calli, CallingConventions.HasThis, mw.ReturnTypeForDefineMethod, mw.GetParametersForDefineMethod(), null);
-				if(mw.ReturnType.IsUnloadable)
-				{
-					// no need to do anything
-				}
-				else if(mw.ReturnType == PrimitiveTypeWrapper.VOID)
-				{
-					ilgen.Emit(OpCodes.Ldnull);
-				}
-				else if(mw.ReturnType.IsGhost)
-				{
-					LocalBuilder local = ilgen.DeclareLocal(mw.ReturnType.TypeAsSignatureType);
-					ilgen.Emit(OpCodes.Stloc, local);
-					ilgen.Emit(OpCodes.Ldloca, local);
-					ilgen.Emit(OpCodes.Ldfld, mw.ReturnType.GhostRefField);
-				}
-				else if(mw.ReturnType.IsPrimitive)
-				{
-					ilgen.Emit(OpCodes.Box, mw.ReturnType.TypeAsTBD);
-				}
-				ilgen.Emit(OpCodes.Ret);
-				Type type = typeBuilder.CreateType();
-				return (Invoker)Delegate.CreateDelegate(typeof(Invoker), type.GetMethod("Invoke"));
-			}
-		}
-#endif
 
 		private struct InvokeArgsProcessor
 		{

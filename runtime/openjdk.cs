@@ -5816,7 +5816,7 @@ namespace IKVM.NativeCode.sun.reflect
 				object retval;
 				try
 				{
-					retval = ((ICustomInvoke)mw).Invoke(obj, args, false, callerID);
+					retval = ((ICustomInvoke)mw).Invoke(obj, args, callerID);
 				}
 				catch (MethodAccessException x)
 				{
@@ -5905,14 +5905,14 @@ namespace IKVM.NativeCode.sun.reflect
 				mw.DeclaringType.Finish();
 				mw.ResolveMethod();
 				DynamicMethod dm;
-				if (mw.DeclaringType.TypeAsTBD.IsInterface)
+				if (mw.DeclaringType.TypeAsBaseType.IsInterface)
 				{
 					// FXBUG interfaces aren't allowed as owners of dynamic methods
 					dm = new DynamicMethod("__<Invoker>", MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) }, mw.DeclaringType.TypeAsTBD.Module, true);
 				}
 				else
 				{
-					dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) }, mw.DeclaringType.TypeAsTBD);
+					dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) }, mw.DeclaringType.TypeAsBaseType);
 				}
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
@@ -5996,7 +5996,7 @@ namespace IKVM.NativeCode.sun.reflect
 				}
 				else
 				{
-					mw.EmitCallvirt(ilgen);
+					mw.EmitCallvirtReflect(ilgen);
 				}
 				mw.ReturnType.EmitConvSignatureTypeToStackType(ilgen);
 				BoxReturnValue(ilgen, mw.ReturnType);
@@ -6214,7 +6214,7 @@ namespace IKVM.NativeCode.sun.reflect
 				args = ConvertArgs(mw.GetParameters(), args);
 				try
 				{
-					return ((ICustomInvoke)mw).Invoke(null, args, false, null);
+					return ((ICustomInvoke)mw).Invoke(null, args, null);
 				}
 				catch (MethodAccessException x)
 				{
