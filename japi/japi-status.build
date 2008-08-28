@@ -1,16 +1,10 @@
 <?xml version="1.0"?>
 <project name="japi-status" default="default">
 
-    <property name="REFERENCE_API_JARS" value="c:\jdk1.6\jre\lib\rt.jar c:\jdk1.6\jre\lib\jce.jar c:\jdk1.6\jre\lib\jsse.jar" />
+    <property name="REFERENCE_API_JARS" value="c:\jdk1.6-x86\jre\lib\rt.jar c:\jdk1.6-x86\jre\lib\jce.jar c:\jdk1.6-x86\jre\lib\jsse.jar" />
     <property name="REFERENCE_API_NAME" value="JDK-1.6" />
     <property name="JAPI_HOME" value="c:\japi\japitools" />
-    <property name="IKVM_VERSION" value="0.35" />
-    <property name="CORE_LIBRARY" value="IKVM.OpenJDK.ClassLibrary" />
-
-    <target name="classpath">
-        <property name="CORE_LIBRARY" value="IKVM.GNU.Classpath" />
-        <call target="default" />
-    </target>
+    <property name="IKVM_VERSION" value="0.38" />
 
     <target name="default">
 	<call target="status" />
@@ -32,11 +26,11 @@
     </target>
 
     <target name="ikvm.japi" depends="jar,japize">
-	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis ${CORE_LIBRARY}.jar +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
+	<exec program="../bin/japize.exe" useruntimeengine="true" commandline="unzip as IKVM-${IKVM_VERSION} apis IKVM.OpenJDK.ClassLibrary.jar +java +javax +org -java.awt.dnd.peer -java.awt.peer -org.apache -org.w3c.dom.css -org.w3c.dom.events -org.w3c.dom.html -org.w3c.dom.stylesheets -org.w3c.dom.traversal -org.w3c.dom.views -java.text.resources" />
     </target>
 
     <target name="jar">
-	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="-serialver ${CORE_LIBRARY}" />
+	<exec program="../bin/ikvmstub.exe" useruntimeengine="true" commandline="-serialver IKVM.OpenJDK.ClassLibrary" />
     </target>
 
     <target name="japize">
@@ -46,7 +40,7 @@
     <target name="clean">
         <delete failonerror="false">
 	    <fileset>
-                <include name="IKVM.GNU.Classpath.jar" />
+                <include name="IKVM.OpenJDK.ClassLibrary.jar" />
                 <include name="japi1.diff" />
                 <include name="japi2.diff" />
                 <include name="${REFERENCE_API_NAME}.japi" />
