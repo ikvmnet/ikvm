@@ -1171,7 +1171,7 @@ namespace IKVM.Internal
 				customClassLoaderRedirectsLoaded = true;
 				try
 				{
-					foreach(string key in System.Configuration.ConfigurationSettings.AppSettings.AllKeys)
+					foreach(string key in System.Configuration.ConfigurationManager.AppSettings.AllKeys)
 					{
 						const string prefix = "ikvm-classloader:";
 						if(key.StartsWith(prefix))
