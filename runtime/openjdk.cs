@@ -1004,7 +1004,7 @@ namespace IKVM.NativeCode.java
 					juzZipEntry entry = (juzZipEntry)e.nextElement();
 					dict[RootPath + entry.getName().Replace('/', sep)] = new VfsZipEntry(zf, entry);
 				}
-				dict[RootPath] = new VfsDummyEntry(true);
+				dict[RootPath.Substring(0, RootPath.Length - 1)] = new VfsDummyEntry(true);
 				dict[RootPath + "lib/security/cacerts".Replace('/', sep)] = new VfsCacertsEntry();
 				dict[RootPath + "bin"] = new VfsDummyEntry(true);
 				dict[RootPath + "bin" + sep + global::java.lang.System.mapLibraryName("zip")] = new VfsDummyEntry(false);
@@ -4543,14 +4543,6 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				if (!smVM.isBooted())
-				{
-					// NOTE work around boot strap issue. When the main thread is attached,
-					// it calls us for the inherited AccessControlContext, but we won't be able
-					// to provide anything meaningful (primarily because we can't create
-					// ProtectionDomain instances yet) so we return null (which implies full trust).
-					return null;
-				}
 				object previous_protection_domain = null;
 				object privileged_context = null;
 				bool is_privileged = false;
