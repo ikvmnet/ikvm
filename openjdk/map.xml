@@ -1747,19 +1747,6 @@
                 </attribute>
             </method>
         </class>
-        <class name="java.nio.Bits">
-            <method name="byteOrder" sig="()Ljava.nio.ByteOrder;">
-                <body>
-                    <ldsfld type="System.BitConverter" name="IsLittleEndian" sig="Z" />
-                    <brfalse name="big" />
-                    <ldsfld class="java.nio.ByteOrder" name="LITTLE_ENDIAN" sig="Ljava.nio.ByteOrder;" />
-                    <ret />
-                    <label name="big" />
-                    <ldsfld class="java.nio.ByteOrder" name="BIG_ENDIAN" sig="Ljava.nio.ByteOrder;" />
-                    <ret />
-                </body>
-            </method>
-        </class>
         <class name="java.nio.DirectByteBuffer">
             <!-- add a constructor accessor for JNI -->
             <method name="__new" sig="(JI)Ljava.nio.DirectByteBuffer;" modifiers="static">

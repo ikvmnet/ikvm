@@ -1073,6 +1073,7 @@ java/net/PlainDatagramSocketImpl.java
 java/net/PlainSocketImpl.java
 java/net/SocketInputStream.java
 java/net/SocketOutputStream.java
+java/nio/Bits.java
 java/text/Bidi.java
 java/util/concurrent/locks/AbstractQueuedSynchronizer.java
 java/util/concurrent/locks/LockSupport.java
@@ -7771,7 +7772,6 @@ SystemProperties.java
 ../../openjdk6-b10/jdk/src/share/classes/java/net/URLEncoder.java
 ../../openjdk6-b10/jdk/src/share/classes/java/net/URLStreamHandler.java
 ../../openjdk6-b10/jdk/src/share/classes/java/net/URLStreamHandlerFactory.java
-../../openjdk6-b10/jdk/src/share/classes/java/nio/Bits.java
 ../../openjdk6-b10/jdk/src/share/classes/java/nio/Buffer.java
 ../../openjdk6-b10/jdk/src/share/classes/java/nio/ByteOrder.java
 ../../openjdk6-b10/jdk/src/share/classes/java/nio/MappedByteBuffer.java
