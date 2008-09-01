@@ -242,8 +242,7 @@ namespace IKVM.Runtime
 			return null;
 #else
 
-			Type type = typeof(jlClass).Assembly.GetType("java.lang.AssertionStatusDirectives");
-			object obj = Activator.CreateInstance(type, true);
+			java.lang.AssertionStatusDirectives asd = new java.lang.AssertionStatusDirectives();
 			string[] arrStrings = new string[Count(classes)];
 			bool[] arrBools = new bool[arrStrings.Length];
 			OptionNode n = classes;
@@ -253,8 +252,8 @@ namespace IKVM.Runtime
 				arrBools[i] = n.enabled;
 				n = n.next;
 			}
-			type.GetField("classes", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, arrStrings);
-			type.GetField("classEnabled", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, arrBools);
+			asd.classes = arrStrings;
+			asd.classEnabled = arrBools;
 			arrStrings = new string[Count(packages)];
 			arrBools = new bool[arrStrings.Length];
 			n = packages;
@@ -264,10 +263,10 @@ namespace IKVM.Runtime
 				arrBools[i] = n.enabled;
 				n = n.next;
 			}
-			type.GetField("packages", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, arrStrings);
-			type.GetField("packageEnabled", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, arrBools);
-			type.GetField("deflt", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(obj, userAsserts);
-			return obj;
+			asd.packages = arrStrings;
+			asd.packageEnabled = arrBools;
+			asd.deflt = userAsserts;
+			return asd;
 #endif
 		}
 	}
@@ -655,7 +654,6 @@ namespace IKVM.NativeCode.java
 				private static readonly MethodInfo WriteFloatMethod = typeof(IOHelpers).GetMethod("WriteFloat");
 				private static readonly MethodInfo WriteLongMethod = typeof(IOHelpers).GetMethod("WriteLong");
 				private static readonly MethodInfo WriteDoubleMethod = typeof(IOHelpers).GetMethod("WriteDouble");
-				private static readonly FieldInfo fieldField = typeof(jiObjectStreamField).GetField("field", BindingFlags.Instance | BindingFlags.NonPublic);
 				private delegate void ObjFieldGetterSetter(object obj, object[] objarr);
 				private delegate void PrimFieldGetterSetter(object obj, byte[] objarr);
 				private static readonly ObjFieldGetterSetter objDummy = new ObjFieldGetterSetter(Dummy);
@@ -839,7 +837,7 @@ namespace IKVM.NativeCode.java
 
 				private static FieldWrapper GetFieldWrapper(jiObjectStreamField field)
 				{
-					object f = fieldField.GetValue(field);
+					jlrField f = field.getField();
 					return f == null ? null : FieldWrapper.FromField(f);
 				}
 
@@ -3186,7 +3184,7 @@ namespace IKVM.NativeCode.java
 #if !FIRST_PASS
 				private static void doLoad(object thisNativeLibrary, string name)
 				{
-					object fromClass = thisNativeLibrary.GetType().GetField("fromClass", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(thisNativeLibrary);
+					jlClass fromClass = ((global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary).fromClass;
 					if (IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(fromClass).GetClassLoader()) == 1)
 					{
 						SetHandle(thisNativeLibrary, -1);
@@ -3197,7 +3195,9 @@ namespace IKVM.NativeCode.java
 
 				private static void SetHandle(object thisNativeLibrary, long handle)
 				{
-					thisNativeLibrary.GetType().GetField("handle", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(thisNativeLibrary, handle);
+#if !FIRST_PASS
+					((global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary).handle = handle;
+#endif
 				}
 
 				public static long find(object thisNativeLibrary, string name)
@@ -3918,22 +3918,12 @@ namespace IKVM.NativeCode.java
 		static class NetworkInterface
 		{
 #if !FIRST_PASS
-			private static ConstructorInfo ni_ctor;
-			private static FieldInfo ni_displayName;
-			private static FieldInfo ni_bindings;
-			private static FieldInfo ni_childs;
 			private static NetworkInterfaceInfo cache;
 			private static DateTime cachedSince;
 #endif
 
 			public static void init()
 			{
-#if !FIRST_PASS
-				ni_ctor = typeof(jnNetworkInterface).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(string), typeof(int), typeof(jnInetAddress[]) }, null);
-				ni_displayName = typeof(jnNetworkInterface).GetField("displayName", BindingFlags.Instance | BindingFlags.NonPublic);
-				ni_bindings = typeof(jnNetworkInterface).GetField("bindings", BindingFlags.Instance | BindingFlags.NonPublic);
-				ni_childs = typeof(jnNetworkInterface).GetField("childs", BindingFlags.Instance | BindingFlags.NonPublic);
-#endif
 			}
 
 #if !FIRST_PASS
@@ -3999,11 +3989,9 @@ namespace IKVM.NativeCode.java
 						// TODO for IPv6 addresses we should set the scope
 						addresses[j] = jnInetAddress.getByAddress(uipaic[j].Address.GetAddressBytes());
 					}
-					ret[i] = (jnNetworkInterface)ni_ctor.Invoke(new object[] { name, i, addresses });
+					ret[i] = new jnNetworkInterface(name, i, addresses);
 					// TODO should implement bindings
-					ni_bindings.SetValue(ret[i], new jnInterfaceAddress[0]);
-					ni_childs.SetValue(ret[i], new jnNetworkInterface[0]);
-					ni_displayName.SetValue(ret[i], ifaces[i].Description);
+					ret[i]._set(ifaces[i].Description, new jnInterfaceAddress[0], new jnNetworkInterface[0]);
 				}
 				NetworkInterfaceInfo nii = new NetworkInterfaceInfo();
 				nii.dotnetInterfaces = ifaces;
@@ -4496,9 +4484,6 @@ namespace IKVM.NativeCode.java
 	{
 		static class AccessController
 		{
-			private static FieldInfo threadIaccField;
-			private static ConstructorInfo accessControlContextContructor;
-			private static FieldInfo accessControlContextPrivilegedContextField;
 			[ThreadStatic]
 			private static PrivilegedElement privileged_stack_top;
 
@@ -4620,20 +4605,9 @@ namespace IKVM.NativeCode.java
 #if !FIRST_PASS
 			private static object CreateAccessControlContext(ProtectionDomain[] context, bool is_privileged, object privileged_context)
 			{
-				if (accessControlContextContructor == null)
-				{
-					accessControlContextContructor = typeof(jsAccessControlContext).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(ProtectionDomain[]), typeof(bool) }, null);
-				}
-				object obj = accessControlContextContructor.Invoke(new object[] { context, is_privileged });
-				if (privileged_context != null)
-				{
-					if (accessControlContextPrivilegedContextField == null)
-					{
-						accessControlContextPrivilegedContextField = typeof(jsAccessControlContext).GetField("privilegedContext", BindingFlags.NonPublic | BindingFlags.Instance);
-					}
-					accessControlContextPrivilegedContextField.SetValue(obj, privileged_context);
-				}
-				return obj;
+				jsAccessControlContext acc = new jsAccessControlContext(context, is_privileged);
+				acc._privilegedContext((jsAccessControlContext)privileged_context);
+				return acc;
 			}
 
 			private static object GetProtectionDomainFromType(Type type)
@@ -4660,11 +4634,7 @@ namespace IKVM.NativeCode.java
 #if FIRST_PASS
 				return null;
 #else
-				if (threadIaccField == null)
-				{
-					threadIaccField = typeof(jlThread).GetField("inheritedAccessControlContext", BindingFlags.NonPublic | BindingFlags.Instance);
-				}
-				return threadIaccField.GetValue(jlThread.currentThread());
+				return jlThread.currentThread().inheritedAccessControlContext;
 #endif
 			}
 		}
@@ -5636,9 +5606,7 @@ namespace IKVM.NativeCode.sun.net.dns
 				{
 				}
 			}
-			Type type = typeof(sndResolverConfigurationImpl);
-			type.GetField("os_searchlist", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, searchlist);
-			type.GetField("os_nameservers", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, nameservers);
+			sndResolverConfigurationImpl._set(searchlist, nameservers);
 #endif
 		}
 

@@ -1552,7 +1552,7 @@ public abstract class ClassLoader {
         private int jniVersion;
         // the class from which the library is loaded, also indicates
         // the loader this native library belongs.
-        private Class fromClass;
+        Class fromClass;
         // the canonicalized name of the native library.
         String name;
 
