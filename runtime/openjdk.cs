@@ -273,6 +273,31 @@ namespace IKVM.Runtime
 	}
 }
 
+static class DynamicMethodUtils
+{
+	internal static DynamicMethod Create(string name, Type owner, bool nonPublic, Type returnType, Type[] paramTypes)
+	{
+		try
+		{
+			if (owner.IsInterface)
+			{
+				// FXBUG interfaces aren't allowed as owners of dynamic methods
+				return new DynamicMethod(name, MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, returnType, paramTypes, owner.Module, true);
+			}
+			else
+			{
+				return new DynamicMethod(name, returnType, paramTypes, owner);
+			}
+		}
+		catch (System.Security.SecurityException)
+		{
+			// apparently we don't have full trust, so we try again with .NET 2.0 SP1 method
+			// and we only request restrictSkipVisibility if it is required
+			return new DynamicMethod(name, returnType, paramTypes, nonPublic);
+		}
+	}
+}
+
 namespace IKVM.NativeCode.java
 {
 	namespace io
@@ -677,10 +702,10 @@ namespace IKVM.NativeCode.java
 					else
 					{
 						tw.Finish();
-						DynamicMethod dmObjGetter = new DynamicMethod("__<ObjFieldGetter>", null, new Type[] { typeof(object), typeof(object[]) }, tw.TypeAsBaseType);
-						DynamicMethod dmPrimGetter = new DynamicMethod("__<PrimFieldGetter>", null, new Type[] { typeof(object), typeof(byte[]) }, tw.TypeAsBaseType);
-						DynamicMethod dmObjSetter = new DynamicMethod("__<ObjFieldSetter>", null, new Type[] { typeof(object), typeof(object[]) }, tw.TypeAsBaseType);
-						DynamicMethod dmPrimSetter = new DynamicMethod("__<PrimFieldSetter>", null, new Type[] { typeof(object), typeof(byte[]) }, tw.TypeAsBaseType);
+						DynamicMethod dmObjGetter = DynamicMethodUtils.Create("__<ObjFieldGetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(object[]) });
+						DynamicMethod dmPrimGetter = DynamicMethodUtils.Create("__<PrimFieldGetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(byte[]) });
+						DynamicMethod dmObjSetter = DynamicMethodUtils.Create("__<ObjFieldSetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(object[]) });
+						DynamicMethod dmPrimSetter = DynamicMethodUtils.Create("__<PrimFieldSetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(byte[]) });
 						CodeEmitter ilgenObjGetter = CodeEmitter.Create(dmObjGetter);
 						CodeEmitter ilgenPrimGetter = CodeEmitter.Create(dmPrimGetter);
 						CodeEmitter ilgenObjSetter = CodeEmitter.Create(dmObjSetter);
@@ -5873,16 +5898,7 @@ namespace IKVM.NativeCode.sun.reflect
 				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
 				mw.DeclaringType.Finish();
 				mw.ResolveMethod();
-				DynamicMethod dm;
-				if (mw.DeclaringType.TypeAsBaseType.IsInterface)
-				{
-					// FXBUG interfaces aren't allowed as owners of dynamic methods
-					dm = new DynamicMethod("__<Invoker>", MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) }, mw.DeclaringType.TypeAsTBD.Module, true);
-				}
-				else
-				{
-					dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) }, mw.DeclaringType.TypeAsBaseType);
-				}
+				DynamicMethod dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsBaseType, !mw.IsPublic || !mw.DeclaringType.IsPublic || nonvirtual, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
 				if (!mw.IsStatic)
@@ -6198,7 +6214,7 @@ namespace IKVM.NativeCode.sun.reflect
 				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(constructor);
 				mw.DeclaringType.Finish();
 				mw.ResolveMethod();
-				DynamicMethod dm = new DynamicMethod("__<Invoker>", typeof(object), new Type[] { typeof(object[]) }, mw.DeclaringType.TypeAsTBD);
+				DynamicMethod dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsTBD, !mw.IsPublic || !mw.DeclaringType.IsPublic, typeof(object), new Type[] { typeof(object[]) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				LocalBuilder ret = ilgen.DeclareLocal(typeof(object));
 
@@ -6294,7 +6310,7 @@ namespace IKVM.NativeCode.sun.reflect
 				{
 					throw x.ToJava();
 				}
-				DynamicMethod dm = new DynamicMethod("__<SerializationCtor>", typeof(object), null, constructor.DeclaringType.TypeAsBaseType);
+				DynamicMethod dm = DynamicMethodUtils.Create("__<SerializationCtor>", constructor.DeclaringType.TypeAsBaseType, true, typeof(object), null);
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				ilgen.Emit(OpCodes.Ldtoken, type);
 				ilgen.Emit(OpCodes.Call, GetTypeFromHandleMethod);
@@ -6807,16 +6823,7 @@ namespace IKVM.NativeCode.sun.reflect
 				fw.FieldTypeWrapper.Finish();
 				fw.DeclaringType.Finish();
 				fw.ResolveField();
-				DynamicMethod dm;
-				if (fw.DeclaringType.TypeAsBaseType.IsInterface)
-				{
-					// FXBUG interfaces aren't allowed as owners of dynamic methods
-					dm = new DynamicMethod("__<Getter>", MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, fieldType, new Type[] { typeof(object) }, fw.DeclaringType.TypeAsBaseType.Module, true);
-				}
-				else
-				{
-					dm = new DynamicMethod("__<Getter>", fieldType, new Type[] { typeof(object) }, fw.DeclaringType.TypeAsBaseType);
-				}
+				DynamicMethod dm = DynamicMethodUtils.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, new Type[] { typeof(object) });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				if (fw.IsStatic)
 				{
@@ -6846,16 +6853,7 @@ namespace IKVM.NativeCode.sun.reflect
 				fw.FieldTypeWrapper.Finish();
 				fw.DeclaringType.Finish();
 				fw.ResolveField();
-				DynamicMethod dm;
-				if (fw.DeclaringType.TypeAsBaseType.IsInterface)
-				{
-					// FXBUG interfaces aren't allowed as owners of dynamic methods
-					dm = new DynamicMethod("__<Setter>", MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, null, new Type[] { typeof(object), fieldType }, fw.DeclaringType.TypeAsBaseType.Module, true);
-				}
-				else
-				{
-					dm = new DynamicMethod("__<Setter>", null, new Type[] { typeof(object), fieldType }, fw.DeclaringType.TypeAsBaseType);
-				}
+				DynamicMethod dm = DynamicMethodUtils.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, null, new Type[] { typeof(object), fieldType });
 				CodeEmitter ilgen = CodeEmitter.Create(dm);
 				if (fw.IsStatic)
 				{
