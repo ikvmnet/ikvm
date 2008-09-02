@@ -422,19 +422,31 @@ namespace IKVM.NativeCode.java
 		{
 			public static void bytesToFloats(byte[] src, int srcpos, float[] dst, int dstpos, int nfloats)
 			{
-				while (nfloats-- > 0)
+				IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+				for (int i = 0; i < nfloats; i++)
 				{
-					dst[dstpos++] = BitConverter.ToSingle(src, srcpos);
-					srcpos += 4;
+					int v = src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					dst[dstpos++] = IKVM.Runtime.FloatConverter.ToFloat(v, ref converter);
 				}
 			}
 
 			public static void bytesToDoubles(byte[] src, int srcpos, double[] dst, int dstpos, int ndoubles)
 			{
-				while (ndoubles-- > 0)
+				IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+				for (int i = 0; i < ndoubles; i++)
 				{
-					dst[dstpos++] = BitConverter.ToDouble(src, srcpos);
-					srcpos += 8;
+					long v = src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					dst[dstpos++] = IKVM.Runtime.DoubleConverter.ToDouble(v, ref converter);
 				}
 			}
 
@@ -478,10 +490,10 @@ namespace IKVM.NativeCode.java
 				for (int i = 0; i < nfloats; i++)
 				{
 					int v = IKVM.Runtime.FloatConverter.ToInt(src[srcpos++], ref converter);
-					dst[dstpos++] = (byte)(v >>  0);
-					dst[dstpos++] = (byte)(v >>  8);
-					dst[dstpos++] = (byte)(v >> 16);
 					dst[dstpos++] = (byte)(v >> 24);
+					dst[dstpos++] = (byte)(v >> 16);
+					dst[dstpos++] = (byte)(v >> 8);
+					dst[dstpos++] = (byte)(v >> 0);
 				}
 			}
 
@@ -491,14 +503,14 @@ namespace IKVM.NativeCode.java
 				for (int i = 0; i < ndoubles; i++)
 				{
 					long v = IKVM.Runtime.DoubleConverter.ToLong(src[srcpos++], ref converter);
-					dst[dstpos++] = (byte)(v >> 0);
-					dst[dstpos++] = (byte)(v >> 8);
-					dst[dstpos++] = (byte)(v >> 16);
-					dst[dstpos++] = (byte)(v >> 24);
-					dst[dstpos++] = (byte)(v >> 32);
-					dst[dstpos++] = (byte)(v >> 40);
-					dst[dstpos++] = (byte)(v >> 48);
 					dst[dstpos++] = (byte)(v >> 56);
+					dst[dstpos++] = (byte)(v >> 48);
+					dst[dstpos++] = (byte)(v >> 40);
+					dst[dstpos++] = (byte)(v >> 32);
+					dst[dstpos++] = (byte)(v >> 24);
+					dst[dstpos++] = (byte)(v >> 16);
+					dst[dstpos++] = (byte)(v >> 8);
+					dst[dstpos++] = (byte)(v >> 0);
 				}
 			}
 		}
