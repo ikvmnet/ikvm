@@ -65,7 +65,7 @@ final class Props
     
     static void initProperties(Properties props)
     {
-        props.put("openjdk.version", "OpenJDK 6 b10");
+        props.put("openjdk.version", "OpenJDK 6 b12");
         props.put("gnu.classpath.version", "0.95");
         String vfsroot = getVirtualFileSystemRoot();
         props.put("java.home", vfsroot.substring(0, vfsroot.length() - 1));
