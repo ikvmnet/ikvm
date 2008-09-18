@@ -34,6 +34,8 @@
                 <include name="bin/ikvmstub.exe" />
                 <include name="bin/JVM.DLL" />
                 <include name="tools/asmref.exe" />
+                <include name="tools/pubkey.exe" />
+                <include name="tools/pubkey.txt" />
                 <include name="native/Release/ikvm-native.dll" />
                 <include name="native/Release/*.obj" />
             </fileset>

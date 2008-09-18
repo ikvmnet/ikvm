@@ -6,5 +6,16 @@
                 <include name="asmref.cs" />
             </sources>
         </csc>
+
+        <if test="${property::exists('signed')}">
+            <property name="defs" value="${signed}" />
+        </if>
+        <property overwrite="false" name="defs" value="" />
+        <csc target="exe" output="pubkey.exe" define="${defs}" optimize="true" rebuild="true">
+            <sources>
+                <include name="pubkey.cs" />
+            </sources>
+        </csc>
+        <exec program="pubkey.exe" useruntimeengine="true" />
     </target>
 </project>
