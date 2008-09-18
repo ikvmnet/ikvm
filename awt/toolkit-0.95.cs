@@ -1845,6 +1845,7 @@ namespace ikvm.awt
 			: base(frame, form)
 		{
 			setTitle(frame.getTitle());
+			setResizable(frame.isResizable());
         }
 
         internal override void init()
@@ -1892,7 +1893,14 @@ namespace ikvm.awt
 
 		public void setResizable(bool resizable)
 		{
-			throw new NotImplementedException();
+			if (resizable)
+			{
+				((Form)control).FormBorderStyle = FormBorderStyle.Sizable;
+			}
+			else
+			{
+				((Form)control).FormBorderStyle = FormBorderStyle.Fixed3D;
+			}
 		}
 
 		private void setTitleImpl(string title)
