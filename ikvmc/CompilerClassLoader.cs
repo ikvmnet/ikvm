@@ -177,7 +177,12 @@ namespace IKVM.Internal
 					peerHack = false;
 				}
 			}
-			return GetTypeWrapperCompilerHook(name);
+			TypeWrapper tw1 = GetTypeWrapperCompilerHook(name);
+			if(tw1 != null)
+			{
+				return tw1;
+			}
+			return LoadGenericClass(name);
 		}
 
 		private TypeWrapper GetTypeWrapperCompilerHook(string name)
