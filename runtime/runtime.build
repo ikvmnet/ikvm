@@ -33,6 +33,14 @@
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
+        <loadfile file="../tools/pubkey.txt" property="publickey" />
+        <copy file="AssemblyInfo.cs.in" tofile="AssemblyInfo.cs" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="PUBLICKEY" value="${publickey}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
         <if test="${first-pass}">
             <property name="defs" value="${defs};FIRST_PASS" />
         </if>
