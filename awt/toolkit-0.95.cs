@@ -300,7 +300,7 @@ namespace ikvm.awt
 
 		protected override java.awt.peer.FileDialogPeer createFileDialog(java.awt.FileDialog target)
 		{
-			throw new NotImplementedException();
+			return new NetFileDialogPeer(target);
 		}
 
 		protected override java.awt.peer.CheckboxMenuItemPeer createCheckboxMenuItem(java.awt.CheckboxMenuItem target)
@@ -1040,7 +1040,7 @@ namespace ikvm.awt
 
 		public bool isFocusTraversable()
 		{
-			throw new NotImplementedException();
+			return true;
 		}
 
 		public virtual java.awt.Dimension minimumSize()
@@ -2117,6 +2117,374 @@ namespace ikvm.awt
 		public void print(java.io.File f)
 		{
 			ShellExecute(f.toString(), "print");
+		}
+	}
+
+	class NetFileDialogPeer : java.awt.peer.FileDialogPeer
+	{
+		private readonly java.awt.FileDialog dialog;
+
+		internal NetFileDialogPeer(java.awt.FileDialog dialog)
+		{
+			this.dialog = dialog;
+		}
+
+		public void setDirectory(string str)
+		{
+		}
+
+		public void setFile(string str)
+		{
+		}
+
+		public void setFilenameFilter(java.io.FilenameFilter ff)
+		{
+		}
+
+		public void setResizable(bool b)
+		{
+		}
+
+		public void setTitle(string str)
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool requestWindowFocus()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void toBack()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void toFront()
+		{
+		}
+
+		public void updateAlwaysOnTop()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void beginLayout()
+		{
+		}
+
+		public void beginValidate()
+		{
+		}
+
+		public void cancelPendingPaint(int i1, int i2, int i3, int i4)
+		{
+		}
+
+		public void endLayout()
+		{
+		}
+
+		public void endValidate()
+		{
+		}
+
+		public java.awt.Insets getInsets()
+		{
+			return new java.awt.Insets(0, 0, 0, 0);
+		}
+
+		public java.awt.Insets insets()
+		{
+			return getInsets();
+		}
+
+		public bool isPaintPending()
+		{
+			return false;
+		}
+
+		public bool isRestackSupported()
+		{
+			return false;
+		}
+
+		public void restack()
+		{
+		}
+
+		public bool canDetermineObscurity()
+		{
+			return false;
+		}
+
+		public int checkImage(java.awt.Image i1, int i2, int i3, ImageObserver io)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void coalescePaintEvent(java.awt.@event.PaintEvent pe)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void createBuffers(int i, java.awt.BufferCapabilities bc)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Image createImage(int i1, int i2)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Image createImage(ImageProducer ip)
+		{
+			throw new NotImplementedException();
+		}
+
+		public VolatileImage createVolatileImage(int i1, int i2)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void destroyBuffers()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void disable()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void dispose()
+		{
+		}
+
+		public void enable()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void flip(java.awt.BufferCapabilities.FlipContents bcfc)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Image getBackBuffer()
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Rectangle getBounds()
+		{
+			throw new NotImplementedException();
+		}
+
+		public ColorModel getColorModel()
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.FontMetrics getFontMetrics(java.awt.Font f)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Graphics getGraphics()
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.GraphicsConfiguration getGraphicsConfiguration()
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Point getLocationOnScreen()
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Dimension getMinimumSize()
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Dimension getPreferredSize()
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Toolkit getToolkit()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void handleEvent(java.awt.AWTEvent awte)
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool handlesWheelScrolling()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void hide()
+		{
+		}
+
+		public bool isFocusTraversable()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool isFocusable()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool isObscured()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool isReparentSupported()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void layout()
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Dimension minimumSize()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void paint(java.awt.Graphics g)
+		{
+			throw new NotImplementedException();
+		}
+
+		public java.awt.Dimension preferredSize()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool prepareImage(java.awt.Image i1, int i2, int i3, ImageObserver io)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void print(java.awt.Graphics g)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void repaint(long l, int i1, int i2, int i3, int i4)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void reparent(ContainerPeer cp)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void requestFocus()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool requestFocus(java.awt.Component c, bool b1, bool b2, long l)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void reshape(int i1, int i2, int i3, int i4)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setBackground(java.awt.Color c)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setBounds(int i1, int i2, int i3, int i4, int i5)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setBounds(int i1, int i2, int i3, int i4)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setCursor(java.awt.Cursor c)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setEnabled(bool b)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setEventMask(long l)
+		{
+		}
+
+		public void setFont(java.awt.Font f)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setForeground(java.awt.Color c)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void setVisible(bool b)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void show()
+		{
+			if (dialog.getMode() != java.awt.FileDialog.LOAD)
+			{
+				throw new NotImplementedException();
+			}
+			Thread t = new Thread((ThreadStart)delegate
+			{
+				using (OpenFileDialog dlg = new OpenFileDialog())
+				{
+					if (dlg.ShowDialog() == DialogResult.OK)
+					{
+						dialog.setFile(Path.GetFileName(dlg.FileName));
+						dialog.setDirectory(Path.GetDirectoryName(dlg.FileName) + java.io.File.separator);
+						dialog.hide();
+					}
+					else
+					{
+						dialog.setFile(null);
+						dialog.hide();
+					}
+				}
+			});
+			t.SetApartmentState(ApartmentState.STA);
+			t.Start();
+		}
+
+		public void updateCursorImmediately()
+		{
+			throw new NotImplementedException();
 		}
 	}
 }
