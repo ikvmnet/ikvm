@@ -876,6 +876,17 @@ namespace IKVM.Internal
 			return (ConstantPoolItemMI)constantpool[index];
 		}
 
+		// this won't throw an exception if index is invalid
+		// (used by IsAccessBridge)
+		internal ConstantPoolItemMI SafeGetMethodref(int index)
+		{
+			if (index > 0 && index < constantpool.Length)
+			{
+				return constantpool[index] as ConstantPoolItemMI;
+			}
+			return null;
+		}
+
 		private ConstantPoolItem GetConstantPoolItem(int index)
 		{
 			return constantpool[index];

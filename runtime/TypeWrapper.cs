@@ -6296,7 +6296,9 @@ namespace IKVM.Internal
 						}
 					}
 					if((m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0
-						&& (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
+						&& (m.IsPublic || m.IsProtected)
+						&& wrapper.IsPublic
+						&& !IsAccessBridge(classFile, m))
 					{
 						if(method is ConstructorBuilder)
 						{
@@ -6333,6 +6335,31 @@ namespace IKVM.Internal
 					Profiler.Leave("JavaTypeImpl.GenerateMethod");
 				}
 			}
+
+#if STATIC_COMPILER
+			// The classic example of an access bridge is StringBuilder.length(), the JDK 6 compiler
+			// generates this to work around a reflection problem (which otherwise wouldn't surface the
+			// length() method, because it is defined in the non-public base class AbstractStringBuilder.)
+			private static bool IsAccessBridge(ClassFile classFile, ClassFile.Method m)
+			{
+				// HACK this is a pretty gross hack
+				// We look at the method body to figure out if the bridge method calls another method with the exact
+				// same name/signature and if that is the case, we assume that it is an access bridge.
+				// This code is based on the javac algorithm in addBridgeIfNeeded(...) in com/sun/tools/javac/comp/TransTypes.java.
+				if ((m.Modifiers & (Modifiers.Abstract | Modifiers.Native | Modifiers.Public | Modifiers.Bridge)) == (Modifiers.Public | Modifiers.Bridge))
+				{
+					foreach (ClassFile.Method.Instruction instr in m.Instructions)
+					{
+						if (instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
+						{
+							ClassFile.ConstantPoolItemMI cpi = classFile.SafeGetMethodref(instr.Arg1);
+							return cpi != null && cpi.Name == m.Name && cpi.Signature == m.Signature;
+						}
+					}
+				}
+				return false;
+			}
+#endif // STATIC_COMPILER
 
 			internal static void GenerateUnloadableOverrideStub(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder, MethodWrapper baseMethod, MethodInfo target, Type targetRet, Type[] targetArgs)
 			{
