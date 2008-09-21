@@ -1,4 +1,3 @@
 Manifest-Version: 1.0
 Specification-Title: Java Platform API Specification
-Specification-Vendor: Sun Microsystems, Inc.
-Specification-Version: 1.4
+Specification-Version: 1.6
