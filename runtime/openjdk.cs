@@ -7532,3 +7532,28 @@ namespace IKVM.NativeCode.com.sun.security.auth.module
 		}
 	}
 }
+
+namespace IKVM.NativeCode.com.sun.media.sound
+{
+	static class JDK13Services
+	{
+		public static string getDefaultProviderClassName(object deviceClass)
+		{
+			return null;
+		}
+
+		public static string getDefaultInstanceName(object deviceClass)
+		{
+			return null;
+		}
+
+		public static object getProviders(object providerClass)
+		{
+#if FIRST_PASS
+			return null;
+#else
+			return new global::java.util.ArrayList();
+#endif
+		}
+	}
+}

@@ -41,22 +41,10 @@ import java.util.List;
 
 public class JDK13Services {
 
-	public static String getDefaultProviderClassName(Class deviceClass) {
-		throw new RuntimeException("Not implemented.");
-		// TODO Auto-generated method stub
+	public static native String getDefaultProviderClassName(Class deviceClass);
 
-	}
+	public static native String getDefaultInstanceName(Class deviceClass);
 
-	public static String getDefaultInstanceName(Class deviceClass) {
-		throw new RuntimeException("Not implemented.");
-		// TODO Auto-generated method stub
-
-	}
-
-	public static List getProviders(Class providerClass) {
-		throw new RuntimeException("Not implemented.");
-		// TODO Auto-generated method stub
-
-	}
+	public static native List getProviders(Class providerClass);
 
 }
