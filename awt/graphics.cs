@@ -191,7 +191,10 @@ namespace ikvm.awt
             {
                 g.FillRectangle(brush, destRect);
             }
-            g.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+			lock (image)
+			{
+				g.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+			}
             return true;
         }
 
@@ -204,7 +207,10 @@ namespace ikvm.awt
             }
             Rectangle destRect = new Rectangle(dx1, dy1, dx2 - dx1, dy2 - dy1);
             Rectangle srcRect = new Rectangle(sx1, sy1, sx2 - sx1, sy2 - sy1);
-            g.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+			lock (image)
+			{
+				g.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+			}
             return true;
         }
 
@@ -219,7 +225,10 @@ namespace ikvm.awt
 			{
 				g.FillRectangle(brush, x, y, width, height);
 			}
-			g.DrawImage(image, x, y, width, height);
+			lock (image)
+			{
+				g.DrawImage(image, x, y, width, height);
+			}
 			return true;
 		}
 
@@ -234,7 +243,10 @@ namespace ikvm.awt
 			{
 				g.FillRectangle(brush, x, y, image.Width, image.Height);
 			}
-			g.DrawImage(image, x, y);
+			lock (image)
+			{
+				g.DrawImage(image, x, y);
+			}
 			return true;
 		}
 
@@ -245,7 +257,10 @@ namespace ikvm.awt
 			{
 				return false;
 			}
-			g.DrawImage(image, x, y, width, height);
+			lock (image)
+			{
+				g.DrawImage(image, x, y, width, height);
+			}
 			return true;
 		}
 
@@ -256,7 +271,10 @@ namespace ikvm.awt
 			{
 				return false;
 			}
-			g.DrawImage(image, x, y);
+			lock (image)
+			{
+				g.DrawImage(image, x, y);
+			}
 			return true;
 		}
 

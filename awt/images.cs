@@ -27,6 +27,7 @@ using System;
 using System.Drawing;
 using java.awt.image;
 using java.util;
+using System.Drawing.Imaging;
 
 
 namespace ikvm.awt
@@ -141,28 +142,14 @@ namespace ikvm.awt
         /// Create a bitmap from the pixel array. The bitmap will be used
         /// by drawImage.
         /// </summary>
-        void java.awt.image.ImageConsumer.setPixels(int aX, int aY, int w, int h, ColorModel model, int[] pixels, int off, int scansize)
+        void java.awt.image.ImageConsumer.setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize)
         {
-            mWidth = w;
-            mHeight = h;
-            mColorModel = model;
-            mBitmap = new Bitmap(mWidth, mHeight);
-            int pixel = 0;
-            for (int y = 0; y < mHeight; ++y)
-            {
-                for (int x = 0; x < mWidth; x++)
-                {
-                    uint argb = (uint)pixels[pixel++];
-                    int blue = (int)argb & 0xff;
-                    argb >>= 8;
-                    int green = (int)argb & 0xff;
-                    argb >>= 8;
-                    int red = (int)argb & 0xff;
-                    argb >>= 8;
-                    int alpha = (int)argb & 0xff;
-                    mBitmap.SetPixel(x, y, Color.FromArgb(alpha, red, green, blue));
-                }
-            }
+			lock (mBitmap)
+			{
+				BitmapData data = mBitmap.LockBits(new Rectangle(x, y, w, h), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+				System.Runtime.InteropServices.Marshal.Copy(pixels, off, data.Scan0, w * h);
+				mBitmap.UnlockBits(data);
+			}
         }
 
         public Bitmap getBitmap()
@@ -174,7 +161,8 @@ namespace ikvm.awt
         {
             mWidth = width;
             mHeight = height;
-        }
+			mBitmap = new Bitmap(mWidth, mHeight);
+		}
 
         public void imageComplete(int status)
         {
