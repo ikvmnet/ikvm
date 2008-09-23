@@ -93,6 +93,8 @@
             <arg value="-r:IKVM.Runtime" />
             <arg value="-r:${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
             <arg value="${OpenJDK.dir}/control/build/linux-amd64/j2re-image/lib/resources.jar" />
+            <!-- this resource is somehow missing from OpenJDK6 b12's resources.jar -->
+            <arg value="-resource:com/sun/org/apache/xml/internal/serialize/HTMLEntities.res=${OpenJDK.dir}/control/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/serialize/HTMLEntities.res" />
             <!-- we already know that the JNI assembly is not available, so suppress the warning -->
             <arg value="-nowarn:110" />
         </exec>
