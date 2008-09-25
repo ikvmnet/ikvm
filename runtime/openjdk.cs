@@ -5873,6 +5873,31 @@ namespace IKVM.NativeCode.sun.reflect
 				invocationTargetExceptionCtor = typeof(jlrInvocationTargetException).GetConstructor(new Type[] { typeof(Exception) });
 			}
 
+			private sealed class RunClassInit
+			{
+				private FastMethodAccessorImpl outer;
+				private TypeWrapper tw;
+				private Invoker invoker;
+
+				internal RunClassInit(FastMethodAccessorImpl outer, TypeWrapper tw, Invoker invoker)
+				{
+					this.outer = outer;
+					this.tw = tw;
+					this.invoker = invoker;
+				}
+
+				[IKVM.Attributes.HideFromJava]
+				internal object invoke(object obj, object[] args, global::ikvm.@internal.CallerID callerID)
+				{
+					// FXBUG pre-SP1 a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
+					// even on .NET 2.0 SP2, interface method invocations don't run the interface cctor
+					// NOTE when testing, please test both the x86 and x64 CLR JIT, because they have different bugs (even on .NET 2.0 SP2)
+					tw.RunClassInit();
+					outer.invoker = invoker;
+					return invoker(obj, args, callerID);
+				}
+			}
+
 			internal FastMethodAccessorImpl(jlrMethod method, bool nonvirtual)
 			{
 				MethodWrapper mw = MethodWrapper.FromMethodOrConstructor(method);
@@ -5976,6 +6001,10 @@ namespace IKVM.NativeCode.sun.reflect
 				ilgen.Emit(OpCodes.Ldloc, ret);
 				ilgen.Emit(OpCodes.Ret);
 				invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
+				if ((mw.IsStatic || mw.DeclaringType.IsInterface) && mw.DeclaringType.HasStaticInitializer)
+				{
+					invoker = new Invoker(new RunClassInit(this, mw.DeclaringType, invoker).invoke);
+				}
 			}
 
 			private static void Expand(CodeEmitter ilgen, TypeWrapper type)
@@ -6885,12 +6914,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 				private byte lazyGet(object obj)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(byte), fw);
 					return getter(obj);
 				}
 
 				private void lazySet(object obj, byte value)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
 						throw new jlIllegalAccessException();
@@ -6926,12 +6959,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 				private bool lazyGet(object obj)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(bool), fw);
 					return getter(obj);
 				}
 
 				private void lazySet(object obj, bool value)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
 						throw new jlIllegalAccessException();
@@ -6967,12 +7004,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 				private char lazyGet(object obj)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(char), fw);
 					return getter(obj);
 				}
 
 				private void lazySet(object obj, char value)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
 						throw new jlIllegalAccessException();
@@ -7008,12 +7049,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 				private short lazyGet(object obj)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(short), fw);
 					return getter(obj);
 				}
 
 				private void lazySet(object obj, short value)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
 						throw new jlIllegalAccessException();
@@ -7049,12 +7094,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 				private int lazyGet(object obj)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(int), fw);
 					return getter(obj);
 				}
 
 				private void lazySet(object obj, int value)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
 						throw new jlIllegalAccessException();
@@ -7090,12 +7139,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 				private float lazyGet(object obj)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(float), fw);
 					return getter(obj);
 				}
 
 				private void lazySet(object obj, float value)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
 						throw new jlIllegalAccessException();
@@ -7131,12 +7184,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 				private long lazyGet(object obj)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(long), fw);
 					return getter(obj);
 				}
 
 				private void lazySet(object obj, long value)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
 						throw new jlIllegalAccessException();
@@ -7172,12 +7229,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 				private double lazyGet(object obj)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(double), fw);
 					return getter(obj);
 				}
 
 				private void lazySet(object obj, double value)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
 						throw new jlIllegalAccessException();
@@ -7213,12 +7274,16 @@ namespace IKVM.NativeCode.sun.reflect
 
 				private object lazyGet(object obj)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					getter = (Getter)GenerateFastGetter(typeof(Getter), typeof(object), fw);
 					return getter(obj);
 				}
 
 				private void lazySet(object obj, object value)
 				{
+					// FXBUG it appears that a ldsfld/stsfld in a DynamicMethod doesn't trigger the class constructor
+					fw.DeclaringType.RunClassInit();
 					if (isFinal)
 					{
 						throw new jlIllegalAccessException();
