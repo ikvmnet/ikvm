@@ -8877,7 +8877,7 @@ namespace IKVM.Internal
 					List<TypeWrapper> wrappers = new List<TypeWrapper>();
 					for(int i = 0; i < nestedTypes.Length; i++)
 					{
-						if(!AttributeHelper.IsHideFromJava(nestedTypes[i]))
+						if(!AttributeHelper.IsHideFromJava(nestedTypes[i]) && !nestedTypes[i].Name.StartsWith("__<"))
 						{
 							wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
 						}
