@@ -8877,7 +8877,7 @@ namespace IKVM.Internal
 					List<TypeWrapper> wrappers = new List<TypeWrapper>();
 					for(int i = 0; i < nestedTypes.Length; i++)
 					{
-						if(!AttributeHelper.IsHideFromJava(nestedTypes[i]))
+						if(!AttributeHelper.IsHideFromJava(nestedTypes[i]) && !nestedTypes[i].Name.StartsWith("__<"))
 						{
 							wrappers.Add(ClassLoaderWrapper.GetWrapperFromType(nestedTypes[i]));
 						}
@@ -11374,7 +11374,7 @@ namespace IKVM.Internal
 		private class FinalizeMethodWrapper : MethodWrapper
 		{
 			internal FinalizeMethodWrapper(DotNetTypeWrapper tw)
-				: base(tw, "finalize", "()V", null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Protected, MemberFlags.None)
+				: base(tw, "finalize", "()V", null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Protected | Modifiers.Final, MemberFlags.None)
 			{
 			}
 
@@ -11392,7 +11392,7 @@ namespace IKVM.Internal
 		private class CloneMethodWrapper : MethodWrapper
 		{
 			internal CloneMethodWrapper(DotNetTypeWrapper tw)
-				: base(tw, "clone", "()Ljava.lang.Object;", null, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Protected, MemberFlags.None)
+				: base(tw, "clone", "()Ljava.lang.Object;", null, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Protected | Modifiers.Final, MemberFlags.None)
 			{
 			}
 

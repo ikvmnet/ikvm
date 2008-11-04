@@ -292,8 +292,15 @@ static class DynamicMethodUtils
 		{
 			// apparently we don't have full trust, so we try again with .NET 2.0 SP1 method
 			// and we only request restrictSkipVisibility if it is required
-			return new DynamicMethod(name, returnType, paramTypes, nonPublic);
+			return CreateNET20SP1(name, returnType, paramTypes, nonPublic);
 		}
+	}
+
+	private static DynamicMethod CreateNET20SP1(string name, Type returnType, Type[] paramTypes, bool nonPublic)
+	{
+		// this needs to be in a separate method, because this constructor doesn't exist on .NET 2.0 RTM
+		// (and the JIT will turn the entire calling method into a "throw new MethodMissingException()")
+		return new DynamicMethod(name, returnType, paramTypes, nonPublic);
 	}
 }
 
