@@ -3473,7 +3473,7 @@ class Compiler
 			case NormalizedByteCode.__dynamic_getfield:
 				Profiler.Count("EmitDynamicGetfield");
 				ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicGetfield);
-				EmitReturnTypeConversion(ilGenerator, fieldTypeWrapper);
+				EmitReturnTypeConversion(clazz, ilGenerator, fieldTypeWrapper);
 				break;
 			case NormalizedByteCode.__dynamic_putfield:
 				Profiler.Count("EmitDynamicPutfield");
@@ -3482,7 +3482,7 @@ class Compiler
 			case NormalizedByteCode.__dynamic_getstatic:
 				Profiler.Count("EmitDynamicGetstatic");
 				ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicGetstatic);
-				EmitReturnTypeConversion(ilGenerator, fieldTypeWrapper);
+				EmitReturnTypeConversion(clazz, ilGenerator, fieldTypeWrapper);
 				break;
 			case NormalizedByteCode.__dynamic_putstatic:
 				Profiler.Count("EmitDynamicPutstatic");
@@ -3493,7 +3493,7 @@ class Compiler
 		}
 	}
 
-	private static void EmitReturnTypeConversion(ILGenerator ilgen, TypeWrapper typeWrapper)
+	private static void EmitReturnTypeConversion(TypeWrapper context, ILGenerator ilgen, TypeWrapper typeWrapper)
 	{
 		if(typeWrapper.IsUnloadable)
 		{
@@ -3515,7 +3515,7 @@ class Compiler
 		}
 		else
 		{
-			typeWrapper.EmitCheckcast(null, ilgen);
+			typeWrapper.EmitCheckcast(context, ilgen);
 		}
 	}
 
@@ -3573,7 +3573,7 @@ class Compiler
 			ilGenerator.Emit(OpCodes.Ldstr, cpi.Signature);
 			ilGenerator.Emit(OpCodes.Ldloc, argarray);
 			ilGenerator.Emit(OpCodes.Call, helperMethod);
-			EmitReturnTypeConversion(ilGenerator, retTypeWrapper);
+			EmitReturnTypeConversion(wrapper, ilGenerator, retTypeWrapper);
 		}
 	}
 
