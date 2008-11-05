@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2007 Jeroen Frijters
+  Copyright (C) 2002, 2003, 2004, 2005, 2007, 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,6 +27,7 @@ using System.Diagnostics;
 using System.Threading;
 using IKVM.Attributes;
 using IKVM.Internal;
+using System.Runtime.InteropServices;
 
 namespace IKVM.Runtime
 {
@@ -650,6 +651,48 @@ namespace IKVM.Runtime
 				v = newValue;
 			}
 #endif
+		}
+	}
+
+	[StructLayout(LayoutKind.Explicit)]
+	struct DoubleConverter
+	{
+		[FieldOffset(0)]
+		private double d;
+		[FieldOffset(0)]
+		private long l;
+
+		public static long ToLong(double value, ref DoubleConverter converter)
+		{
+			converter.d = value;
+			return converter.l;
+		}
+
+		public static double ToDouble(long value, ref DoubleConverter converter)
+		{
+			converter.l = value;
+			return converter.d;
+		}
+	}
+
+	[StructLayout(LayoutKind.Explicit)]
+	struct FloatConverter
+	{
+		[FieldOffset(0)]
+		private float f;
+		[FieldOffset(0)]
+		private int i;
+
+		public static int ToInt(float value, ref FloatConverter converter)
+		{
+			converter.f = value;
+			return converter.i;
+		}
+
+		public static float ToFloat(int value, ref FloatConverter converter)
+		{
+			converter.i = value;
+			return converter.f;
 		}
 	}
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Jeroen Frijters
+  Copyright (C) 2002-2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -4076,12 +4076,10 @@ namespace IKVM.Internal
 					{
 						((CompilerClassLoader)wrapper.GetClassLoader()).AddNameMapping(wrapper.Name, typeBuilder.FullName);
 					}
-					string annotationAttributeType = null;
 					if(f.IsAnnotation && Annotation.HasRetentionPolicyRuntime(f.Annotations))
 					{
 						annotationBuilder = new AnnotationBuilder(this);
 						((AotTypeWrapper)wrapper).SetAnnotation(annotationBuilder);
-						annotationAttributeType = annotationBuilder.AttributeTypeName;
 					}
 					// For Java 5 Enum types, we generate a nested .NET enum.
 					// This is primarily to support annotations that take enum parameters.
@@ -4152,11 +4150,6 @@ namespace IKVM.Internal
 					if(classFile.EnclosingMethod != null)
 					{
 						AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
-					}
-					if(annotationAttributeType != null)
-					{
-						CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { typeof(string) }), new object[] { annotationAttributeType });
-						typeBuilder.SetCustomAttribute(cab);
 					}
 					if(wrapper.classLoader.EmitStackTraceInfo)
 					{
@@ -4935,8 +4928,31 @@ namespace IKVM.Internal
 							}
 						}
 						innerClassesTypeWrappers = (TypeWrapper[])wrappers.ToArray(typeof(TypeWrapper));
+#if STATIC_COMPILER
+						// before we bake our type, we need to link any inner annotations to allow them to create their attribute type (as a nested type)
+						foreach(TypeWrapper tw in innerClassesTypeWrappers)
+						{
+							DynamicTypeWrapper dtw = tw as DynamicTypeWrapper;
+							if(dtw != null)
+							{
+								JavaTypeImpl impl = dtw.impl as JavaTypeImpl;
+								if(impl != null)
+								{
+									if(impl.annotationBuilder != null)
+									{
+										impl.annotationBuilder.Link();
+									}
+								}
+							}
+						}
+#endif // STATIC_COMPILER
 					}
 #if STATIC_COMPILER
+					if(annotationBuilder != null)
+					{
+						CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { typeof(string) }), new object[] { annotationBuilder.AttributeTypeName });
+						typeBuilder.SetCustomAttribute(cab);
+					}
 					wrapper.FinishGhost(typeBuilder, methods);
 #endif // STATIC_COMPILER
 					// if we're not abstract make sure we don't inherit any abstract methods
@@ -5715,12 +5731,25 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 			sealed class AnnotationBuilder : Annotation
 			{
+				private JavaTypeImpl impl;
 				private TypeBuilder annotationTypeBuilder;
 				private TypeBuilder attributeTypeBuilder;
 				private ConstructorBuilder defineConstructor;
 
 				internal AnnotationBuilder(JavaTypeImpl o)
 				{
+					this.impl = o;
+				}
+
+				internal void Link()
+				{
+					if(impl == null)
+					{
+						return;
+					}
+					JavaTypeImpl o = impl;
+					impl = null;
+
 					// Make sure the annotation type only has valid methods
 					for(int i = 0; i < o.methods.Length; i++)
 					{
@@ -5884,6 +5913,7 @@ namespace IKVM.Internal
 				{
 					get
 					{
+						Link();
 						if(attributeTypeBuilder != null)
 						{
 							return attributeTypeBuilder.FullName;
@@ -5912,6 +5942,7 @@ namespace IKVM.Internal
 
 				internal void Finish(JavaTypeImpl o)
 				{
+					Link();
 					if(annotationTypeBuilder == null)
 					{
 						// not a valid annotation type
@@ -6109,6 +6140,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
 				{
+					Link();
 					if(annotationTypeBuilder != null)
 					{
 						annotation = QualifyClassNames(loader, annotation);
@@ -6118,6 +6150,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
 				{
+					Link();
 					if(annotationTypeBuilder != null)
 					{
 						annotation = QualifyClassNames(loader, annotation);
@@ -6127,6 +6160,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, ConstructorBuilder cb, object annotation)
 				{
+					Link();
 					if(annotationTypeBuilder != null)
 					{
 						annotation = QualifyClassNames(loader, annotation);
@@ -6136,6 +6170,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
 				{
+					Link();
 					if(annotationTypeBuilder != null)
 					{
 						annotation = QualifyClassNames(loader, annotation);
@@ -6145,6 +6180,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
 				{
+					Link();
 					if(annotationTypeBuilder != null)
 					{
 						annotation = QualifyClassNames(loader, annotation);
@@ -6154,6 +6190,7 @@ namespace IKVM.Internal
 
 				internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
 				{
+					Link();
 					if(annotationTypeBuilder != null)
 					{
 						annotation = QualifyClassNames(loader, annotation);
@@ -10990,7 +11027,7 @@ namespace IKVM.Internal
 		private class FinalizeMethodWrapper : MethodWrapper
 		{
 			internal FinalizeMethodWrapper(DotNetTypeWrapper tw)
-				: base(tw, "finalize", "()V", null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Protected, MemberFlags.None)
+				: base(tw, "finalize", "()V", null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Protected | Modifiers.Final, MemberFlags.None)
 			{
 			}
 
@@ -11015,7 +11052,7 @@ namespace IKVM.Internal
 		private class CloneMethodWrapper : MethodWrapper
 		{
 			internal CloneMethodWrapper(DotNetTypeWrapper tw)
-				: base(tw, "clone", "()Ljava.lang.Object;", null, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Protected, MemberFlags.None)
+				: base(tw, "clone", "()Ljava.lang.Object;", null, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Protected | Modifiers.Final, MemberFlags.None)
 			{
 			}
 

@@ -9,7 +9,7 @@
         </if>
     </target>
     <target name="ikvm-native-unix">
-        <exec program="/bin/bash" commandline="-c 'gcc -o libikvm-native.so --shared -fPIC `pkg-config --cflags gmodule-2.0` jni.c os.c'"/>
+        <exec program="/bin/bash" commandline="-c 'gcc -o libikvm-native.so --shared -fPIC `pkg-config --cflags --libs gmodule-2.0` jni.c os.c'"/>
         <copy file="libikvm-native.so" todir="../bin"/>
     </target>
     <target name="ikvm-native-win32">

@@ -91,7 +91,7 @@ namespace IKVM.Internal
 			{
 				for(int i = 0; i < parameters.Length; i++)
 				{
-					if(parameterNames[i] == null)
+					if(parameters[i].Name != null)
 					{
 						parameterNames[i] = parameters[i].Name;
 					}
@@ -476,6 +476,11 @@ namespace IKVM.Internal
 							// are we adding a new method?
 							if(GetMethodWrapper(method.Name, method.Sig, false) == null)
 							{
+								if(method.body == null)
+								{
+									Console.Error.WriteLine("Error: Method {0}.{1}{2} in xml remap file doesn't have a body.", clazz.Name, method.Name, method.Sig);
+									continue;
+								}
 								bool setmodifiers = false;
 								MethodAttributes attribs = method.MethodAttributes;
 								Modifiers modifiers = (Modifiers)method.Modifiers;
@@ -720,23 +725,23 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Br_S, skip);
 					Label iter = ilgen.DefineLabel();
 					ilgen.MarkLabel(iter);
+					ilgen.Emit(OpCodes.Ldloc, localType);
+					ilgen.Emit(OpCodes.Callvirt, typeof(Type).GetMethod("GetElementType"));
+					ilgen.Emit(OpCodes.Stloc, localType);
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Ldc_I4_1);
 					ilgen.Emit(OpCodes.Sub);
 					ilgen.Emit(OpCodes.Starg_S, (byte)1);
-					ilgen.Emit(OpCodes.Ldloc, localType);
-					ilgen.Emit(OpCodes.Callvirt, typeof(Type).GetMethod("GetElementType"));
-					ilgen.Emit(OpCodes.Stloc, localType);
+					ilgen.Emit(OpCodes.Ldarg_1);
+					Label typecheck = ilgen.DefineLabel();
+					ilgen.Emit(OpCodes.Brfalse_S, typecheck);
 					ilgen.MarkLabel(skip);
 					ilgen.Emit(OpCodes.Ldloc, localType);
 					ilgen.Emit(OpCodes.Callvirt, typeof(Type).GetMethod("get_IsArray"));
 					ilgen.Emit(OpCodes.Brtrue_S, iter);
-					ilgen.Emit(OpCodes.Ldarg_1);
-					skip = ilgen.DefineLabel();
-					ilgen.Emit(OpCodes.Brfalse_S, skip);
 					ilgen.Emit(OpCodes.Ldc_I4_0);
 					ilgen.Emit(OpCodes.Ret);
-					ilgen.MarkLabel(skip);
+					ilgen.MarkLabel(typecheck);
 					for(int i = 0; i < implementers.Length; i++)
 					{
 						ilgen.Emit(OpCodes.Ldtoken, implementers[i].TypeAsTBD);

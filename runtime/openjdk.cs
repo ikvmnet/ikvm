@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2007 Jeroen Frijters
+  Copyright (C) 2007, 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -393,19 +393,31 @@ namespace IKVM.NativeCode.java
 		{
 			public static void bytesToFloats(byte[] src, int srcpos, float[] dst, int dstpos, int nfloats)
 			{
-				while (nfloats-- > 0)
+				IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+				for (int i = 0; i < nfloats; i++)
 				{
-					dst[dstpos++] = BitConverter.ToSingle(src, srcpos);
-					srcpos += 4;
+					int v = src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					dst[dstpos++] = IKVM.Runtime.FloatConverter.ToFloat(v, ref converter);
 				}
 			}
 
 			public static void bytesToDoubles(byte[] src, int srcpos, double[] dst, int dstpos, int ndoubles)
 			{
-				while (ndoubles-- > 0)
+				IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+				for (int i = 0; i < ndoubles; i++)
 				{
-					dst[dstpos++] = BitConverter.ToDouble(src, srcpos);
-					srcpos += 8;
+					long v = src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					v = (v << 8) | src[srcpos++];
+					dst[dstpos++] = IKVM.Runtime.DoubleConverter.ToDouble(v, ref converter);
 				}
 			}
 
@@ -445,19 +457,31 @@ namespace IKVM.NativeCode.java
 		{
 			public static void floatsToBytes(float[] src, int srcpos, byte[] dst, int dstpos, int nfloats)
 			{
-				while (nfloats-- > 0)
+				IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+				for (int i = 0; i < nfloats; i++)
 				{
-					Buffer.BlockCopy(BitConverter.GetBytes(src[srcpos++]), 0, dst, dstpos, 4);
-					dstpos += 4;
+					int v = IKVM.Runtime.FloatConverter.ToInt(src[srcpos++], ref converter);
+					dst[dstpos++] = (byte)(v >> 24);
+					dst[dstpos++] = (byte)(v >> 16);
+					dst[dstpos++] = (byte)(v >> 8);
+					dst[dstpos++] = (byte)(v >> 0);
 				}
 			}
 
 			public static void doublesToBytes(double[] src, int srcpos, byte[] dst, int dstpos, int ndoubles)
 			{
-				while (ndoubles-- > 0)
+				IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+				for (int i = 0; i < ndoubles; i++)
 				{
-					Buffer.BlockCopy(BitConverter.GetBytes(src[srcpos++]), 0, dst, dstpos, 8);
-					dstpos += 8;
+					long v = IKVM.Runtime.DoubleConverter.ToLong(src[srcpos++], ref converter);
+					dst[dstpos++] = (byte)(v >> 56);
+					dst[dstpos++] = (byte)(v >> 48);
+					dst[dstpos++] = (byte)(v >> 40);
+					dst[dstpos++] = (byte)(v >> 32);
+					dst[dstpos++] = (byte)(v >> 24);
+					dst[dstpos++] = (byte)(v >> 16);
+					dst[dstpos++] = (byte)(v >> 8);
+					dst[dstpos++] = (byte)(v >> 0);
 				}
 			}
 		}
@@ -3228,12 +3252,14 @@ namespace IKVM.NativeCode.java
 		{
 			public static long doubleToRawLongBits(double value)
 			{
-				return BitConverter.DoubleToInt64Bits(value);
+				IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+				return IKVM.Runtime.DoubleConverter.ToLong(value, ref converter);
 			}
 
 			public static double longBitsToDouble(long bits)
 			{
-				return BitConverter.Int64BitsToDouble(bits);
+				IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+				return IKVM.Runtime.DoubleConverter.ToDouble(bits, ref converter);
 			}
 		}
 
@@ -3241,12 +3267,14 @@ namespace IKVM.NativeCode.java
 		{
 			public static int floatToRawIntBits(float value)
 			{
-				return BitConverter.ToInt32(BitConverter.GetBytes(value), 0);
+				IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+				return IKVM.Runtime.FloatConverter.ToInt(value, ref converter);
 			}
 
 			public static float intBitsToFloat(int bits)
 			{
-				return BitConverter.ToSingle(BitConverter.GetBytes(bits), 0);
+				IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+				return IKVM.Runtime.FloatConverter.ToFloat(bits, ref converter);
 			}
 		}
 

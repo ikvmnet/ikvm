@@ -1702,6 +1702,16 @@ class Compiler
 								ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicClassLiteral);
 								java_lang_Class.EmitCheckcast(clazz, ilGenerator);
 							}
+							else if(tw.IsGhostArray)
+							{
+								int rank = tw.ArrayRank;
+								while(tw.IsArray)
+								{
+									tw = tw.ElementTypeWrapper;
+								}
+								ilGenerator.Emit(OpCodes.Ldtoken, ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank));
+								getClassFromTypeHandle.EmitCall(ilGenerator);
+							}
 							else
 							{
 								ilGenerator.Emit(OpCodes.Ldtoken, tw.IsRemapped ? tw.TypeAsBaseType : tw.TypeAsTBD);
@@ -3505,7 +3515,7 @@ class Compiler
 		}
 		else
 		{
-			ilgen.Emit(OpCodes.Castclass, typeWrapper.TypeAsTBD);
+			typeWrapper.EmitCheckcast(null, ilgen);
 		}
 	}
 

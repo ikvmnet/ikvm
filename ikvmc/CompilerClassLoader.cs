@@ -110,7 +110,7 @@ namespace IKVM.Internal
 			name.Name = assemblyName;
 			if(keyfilename != null) 
 			{
-				using(FileStream stream = File.Open(keyfilename, FileMode.Open))
+				using(FileStream stream = File.OpenRead(keyfilename))
 				{
 					name.KeyPair = new StrongNameKeyPair(stream);
 				}
