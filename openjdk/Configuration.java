@@ -28,5 +28,5 @@ package gnu.classpath;
  */
 public interface Configuration
 {
-    String default_awt_peer_toolkit = "ikvm.awt.NetToolkit, IKVM.AWT.WinForms, Version=0.38.0.0, Culture=neutral, PublicKeyToken=13235d27fcbfff58";
+    String default_awt_peer_toolkit = "ikvm.awt.NetToolkit, IKVM.AWT.WinForms, Version=0.38.0.1, Culture=neutral, PublicKeyToken=13235d27fcbfff58";
 }
