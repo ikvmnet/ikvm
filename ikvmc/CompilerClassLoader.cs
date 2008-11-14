@@ -65,7 +65,6 @@ namespace IKVM.Internal
 		private Dictionary<MethodKey, IKVM.Internal.MapXml.ReplaceMethodCall[]> mapxml_ReplacedMethods;
 		private Dictionary<string, string> baseClasses;
 		private IKVM.Internal.MapXml.Root map;
-		private bool compilingCoreAssembly;
 		private List<object> assemblyAnnotations;
 		private List<string> classesToCompile;
 		private List<CompilerClassLoader> peerReferences = new List<CompilerClassLoader>();
@@ -145,6 +144,11 @@ namespace IKVM.Internal
 				assemblyBuilder.SetCustomAttribute(debugAttr);
 			}
 			return moduleBuilder;
+		}
+
+		public override string ToString()
+		{
+			return "CompilerClassLoader:" + options.assembly;
 		}
 
 		protected override TypeWrapper LoadClassImpl(string name, bool throwClassNotFoundException)
@@ -2160,24 +2164,20 @@ namespace IKVM.Internal
 
 		internal static int Compile(List<CompilerOptions> optionsList)
 		{
+			bool compilingCoreAssembly = false;
 			List<CompilerClassLoader> compilers = new List<CompilerClassLoader>();
 			foreach (CompilerOptions options in optionsList)
 			{
 				CompilerClassLoader compiler = null;
-				int rc = CreateCompiler(options, ref compiler);
+				int rc = CreateCompiler(options, ref compiler, ref compilingCoreAssembly);
 				if(rc != 0)
 				{
 					return rc;
 				}
 				compilers.Add(compiler);
 			}
-			bool compilingCoreAssembly = false;
 			foreach (CompilerClassLoader compiler1 in compilers)
 			{
-				if (compiler1.compilingCoreAssembly)
-				{
-					compilingCoreAssembly = true;
-				}
 				foreach (CompilerClassLoader compiler2 in compilers)
 				{
 					if (compiler1 != compiler2)
@@ -2201,7 +2201,7 @@ namespace IKVM.Internal
 			return 0;
 		}
 
-		private static int CreateCompiler(CompilerOptions options, ref CompilerClassLoader loader)
+		private static int CreateCompiler(CompilerOptions options, ref CompilerClassLoader loader, ref bool compilingCoreAssembly)
 		{
 			Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", options.path, options.assembly);
 			try
@@ -2485,14 +2485,14 @@ namespace IKVM.Internal
 				}
 				if(loader.CheckCompilingCoreAssembly())
 				{
-					loader.compilingCoreAssembly = true;
+					compilingCoreAssembly = true;
 					ClassLoaderWrapper.SetBootstrapClassLoader(loader);
 					loader.EmitRemappedTypes();
 				}
 			}
 			// If we do not yet have a reference to the core assembly and we are not compiling the core assembly,
 			// try to find the core assembly by looking at the assemblies that the runtime references
-			if(JVM.CoreAssembly == null && !loader.compilingCoreAssembly)
+			if(JVM.CoreAssembly == null && !compilingCoreAssembly)
 			{
 				foreach(AssemblyName name in StaticCompiler.runtimeAssembly.GetReferencedAssemblies())
 				{
@@ -2526,7 +2526,7 @@ namespace IKVM.Internal
 				ClassLoaderWrapper.LoadRemappedTypes();
 			}
 
-			if(!loader.compilingCoreAssembly)
+			if(!compilingCoreAssembly)
 			{
 				allReferencesAreStrongNamed &= IsSigned(JVM.CoreAssembly);
 				loader.AddReference(ClassLoaderWrapper.GetAssemblyClassLoader(JVM.CoreAssembly));
@@ -2543,11 +2543,11 @@ namespace IKVM.Internal
 				loader.LoadMapXml();
 			}
 
-			if(!loader.compilingCoreAssembly)
+			if(!compilingCoreAssembly)
 			{
 				FakeTypes.Load(JVM.CoreAssembly);
 			}
-			else
+			else if(loader.map != null && loader.CheckCompilingCoreAssembly())
 			{
 				FakeTypes.CreatePre(loader.GetTypeWrapperFactory().ModuleBuilder);
 			}
@@ -2647,7 +2647,7 @@ namespace IKVM.Internal
 				// if we're compiling the core class library, generate the "fake" generic types
 				// that represent the not-really existing types (i.e. the Java enums that represent .NET enums,
 				// the Method interface for delegates and the Annotation annotation for custom attributes)
-				if(compilingCoreAssembly)
+				if(CheckCompilingCoreAssembly())
 				{
 					FakeTypes.Create(GetTypeWrapperFactory().ModuleBuilder, this);
 				}
