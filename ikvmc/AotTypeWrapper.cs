@@ -506,6 +506,11 @@ namespace IKVM.Internal
 							// are we adding a new constructor?
 							if(GetMethodWrapper(StringConstants.INIT, constructor.Sig, false) == null)
 							{
+								if(constructor.body == null)
+								{
+									Console.Error.WriteLine("Error: Constructor {0}.<init>{1} in xml remap file doesn't have a body.", clazz.Name, constructor.Sig);
+									continue;
+								}
 								bool setmodifiers = false;
 								MethodAttributes attribs = 0;
 								MapModifiers(constructor.Modifiers, true, out setmodifiers, ref attribs);
