@@ -41,7 +41,7 @@
             <loadfile file="../tools/pubkey.txt" property="publickey" />
             <property name="IKVM.Runtime" value="IKVM.Runtime, PublicKey=${publickey}" />
         </if>
-        <copy file="AssemblyInfo.java.in" tofile="AssemblyInfo.java" overwrite="true">
+        <copy file="AssemblyInfo.java.in" tofile="AssemblyInfo.java" outputencoding="ascii" overwrite="true">
             <filterchain>
                 <replacetokens>
                     <token key="RUNTIME" value="${IKVM.Runtime}" />
