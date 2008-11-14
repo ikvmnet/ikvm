@@ -69,8 +69,7 @@ namespace IKVM.Internal
 		private List<object> assemblyAnnotations;
 		private List<string> classesToCompile;
 		private List<CompilerClassLoader> peerReferences = new List<CompilerClassLoader>();
-		[ThreadStatic]
-		private bool peerHack;
+		private Dictionary<string, string> peerLoading = new Dictionary<string, string>();
 
 		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Dictionary<string, byte[]> classes)
 			: base(options.codegenoptions, null)
@@ -158,15 +157,16 @@ namespace IKVM.Internal
 					return tw;
 				}
 			}
-			if(!peerHack)
+			if(!peerLoading.ContainsKey(name))
 			{
-				peerHack = true;
+				peerLoading.Add(name, null);
 				try
 				{
 					foreach(CompilerClassLoader ccl in peerReferences)
 					{
 						TypeWrapper tw = ccl.LoadClassByDottedNameFast(name);
-						if(tw != null && tw.GetClassLoader() == ccl)
+						// HACK we don't want to load classes referenced by peers, hence the "is CompilerClassLoader" check
+						if(tw != null && tw.GetClassLoader() is CompilerClassLoader)
 						{
 							return tw;
 						}
@@ -174,7 +174,7 @@ namespace IKVM.Internal
 				}
 				finally
 				{
-					peerHack = false;
+					peerLoading.Remove(name);
 				}
 			}
 			TypeWrapper tw1 = GetTypeWrapperCompilerHook(name);
