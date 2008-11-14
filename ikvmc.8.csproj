@@ -1,7 +1,7 @@
 ﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{4CA3F3DF-D2B7-4FA2-874C-BFC4B04286A2}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -35,7 +35,7 @@
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;DEBUG;STATIC_COMPILER;WHIDBEY</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;STATIC_COMPILER;IKVM_REF_EMIT</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
@@ -119,6 +119,7 @@
     <Compile Include="runtime\profiler.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="runtime\ReflectUtil.cs" />
     <Compile Include="runtime\tracer.cs" />
     <Compile Include="runtime\TypeWrapper.cs">
       <SubType>Code</SubType>
@@ -130,6 +131,12 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CommonAssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="refemit\IKVM.Reflection.Emit.csproj">
+      <Project>{3949055D-38DF-4A8F-A632-0F0E62337428}</Project>
+      <Name>IKVM.Reflection.Emit</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

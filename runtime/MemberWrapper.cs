@@ -24,7 +24,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-#if !COMPACT_FRAMEWORK
+#if IKVM_REF_EMIT
+using IKVM.Reflection.Emit;
+#elif !COMPACT_FRAMEWORK
 using System.Reflection.Emit;
 #endif
 using System.Diagnostics;

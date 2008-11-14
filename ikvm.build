@@ -10,6 +10,7 @@
         <nant buildfile="tools/tools.build" />
         <nant buildfile="runtime/runtime.build" target="first-pass" />
         <nant buildfile="native/native.build" />
+        <nant buildfile="refemit/refemit.build" />
         <nant buildfile="ikvmc/ikvmc.build" />
         <nant buildfile="openjdk/openjdk.build" />
         <nant buildfile="runtime/runtime.build" />
@@ -22,8 +23,9 @@
     </target>
     <target name="clean">
         <delete failonerror="false">
-	          <fileset>
+            <fileset>
                 <include name="bin/IKVM.AWT.WinForms.dll" />
+                <include name="bin/IKVM.Reflection.Emit.dll" />
                 <include name="bin/IKVM.Runtime.dll" />
                 <include name="bin/IKVM.Runtime.JNI.dll" />
                 <include name="bin/IKVM.OpenJDK.ClassLibrary.dll" />

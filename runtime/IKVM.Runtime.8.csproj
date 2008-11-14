@@ -1,7 +1,7 @@
 ﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{F5C7B588-0403-4AF2-A4DE-5697DE21BC2C}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -121,6 +121,7 @@
     <Compile Include="profiler.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ReflectUtil.cs" />
     <Compile Include="tracer.cs">
       <SubType>Code</SubType>
     </Compile>

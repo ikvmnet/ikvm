@@ -24,7 +24,11 @@
 
 using System;
 using System.Reflection;
+#if IKVM_REF_EMIT
+using IKVM.Reflection.Emit;
+#else
 using System.Reflection.Emit;
+#endif
 using System.Resources;
 using System.IO;
 using System.Collections.Generic;
@@ -131,7 +135,13 @@ namespace IKVM.Internal
 				name.KeyPair = new StrongNameKeyPair(keycontainer);
 			}
 			name.Version = new Version(version);
-			assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
+			assemblyBuilder = 
+#if IKVM_REF_EMIT
+				AssemblyBuilder
+#else
+				AppDomain.CurrentDomain
+#endif
+				.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
 			ModuleBuilder moduleBuilder;
 			moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, this.EmitDebugInfo);
 			if(this.EmitStackTraceInfo)
@@ -2612,7 +2622,7 @@ namespace IKVM.Internal
 					Console.Error.WriteLine("Error: redirected main method not supported");
 					return 1;
 				}
-				if(!method.DeclaringType.Assembly.Equals(assemblyBuilder)
+				if(!ReflectUtil.IsFromAssembly(method.DeclaringType, assemblyBuilder)
 					&& (!method.IsPublic || !method.DeclaringType.IsPublic))
 				{
 					Console.Error.WriteLine("Error: external main method must be public and in a public class");

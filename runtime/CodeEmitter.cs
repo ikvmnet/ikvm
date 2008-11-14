@@ -25,7 +25,11 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+#if IKVM_REF_EMIT
+using IKVM.Reflection.Emit;
+#else
 using System.Reflection.Emit;
+#endif
 using System.Runtime.InteropServices;
 using System.Diagnostics.SymbolStore;
 

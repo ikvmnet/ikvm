@@ -2,7 +2,7 @@
 <project name="ikvmc" default="ikvmc">
     <target name="ikvmc">
         <property overwrite="false" name="signed" value="" />
-        <property name="defs" value="TRACE;STATIC_COMPILER" />
+        <property name="defs" value="TRACE;STATIC_COMPILER;IKVM_REF_EMIT" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
         </if>
@@ -29,6 +29,7 @@
                 <include name="../runtime/JavaException.cs" />
                 <include name="../runtime/MemberWrapper.cs" />
                 <include name="../runtime/profiler.cs" />
+                <include name="../runtime/ReflectUtil.cs" />
                 <include name="../runtime/tracer.cs" />
                 <include name="../runtime/TypeWrapper.cs" />
                 <include name="../runtime/verifier.cs" />
@@ -36,6 +37,7 @@
             </sources>
             <references>
                 <include name="../bin/ICSharpCode.SharpZipLib.dll" asis="true" />
+                <include name="../bin/IKVM.Reflection.Emit.dll" asis="true" />
                 <!-- HACK mcs requires an explicit reference to System.Configuration -->
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Configuration.dll" />
             </references>
