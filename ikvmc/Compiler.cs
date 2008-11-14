@@ -55,7 +55,7 @@ class IkvmcCompiler
 					string line;
 					while((line = sr.ReadLine()) != null)
 					{
-						arglist.Add(line);
+						arglist.Add(line.Trim());
 					}
 				}
 			}
@@ -105,7 +105,13 @@ class IkvmcCompiler
 		if (time)
 		{
 			Console.WriteLine("Total cpu time: {0}", System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime);
+			Console.WriteLine("User cpu time: {0}", System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime);
 			Console.WriteLine("Total wall clock time: {0}", DateTime.Now - start);
+			Console.WriteLine("Peak virtual memory: {0}", System.Diagnostics.Process.GetCurrentProcess().PeakVirtualMemorySize64);
+			for (int i = 0; i <= GC.MaxGeneration; i++)
+			{
+				Console.WriteLine("GC({0}) count: {1}", i, GC.CollectionCount(i));
+			}
 		}
 		return rc;
 	}
