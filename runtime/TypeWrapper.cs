@@ -3856,6 +3856,7 @@ namespace IKVM.Internal
 			internal abstract object[] GetMethodAnnotations(int index);
 			internal abstract object[][] GetParameterAnnotations(int index);
 			internal abstract object[] GetFieldAnnotations(int index);
+			internal abstract MethodInfo GetFinalizeMethod();
 		}
 
 		private sealed class JavaTypeImpl : DynamicImpl
@@ -5012,7 +5013,7 @@ namespace IKVM.Internal
 					});
 #endif
 					Type type = context.FinishImpl();
-					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile)
+					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), clinitMethod, finalizeMethod
 #if STATIC_COMPILER
 						, annotationBuilder, enumBuilder
 #endif
@@ -5731,9 +5732,8 @@ namespace IKVM.Internal
 				return name;
 			}
 
-			private static MethodInfo GetBaseFinalizeMethod(TypeWrapper wrapper, out bool clash)
+			private static MethodInfo GetBaseFinalizeMethod(TypeWrapper wrapper)
 			{
-				clash = false;
 				for(;;)
 				{
 					// HACK we get called during method linking (which is probably a bad idea) and
@@ -5744,21 +5744,21 @@ namespace IKVM.Internal
 					{
 						break;
 					}
-					JavaTypeImpl impl = dtw.impl as JavaTypeImpl;
-					if(impl == null)
-					{
-						break;
-					}
 					MethodWrapper mw = dtw.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, false);
 					if(mw != null)
 					{
 						mw.Link();
 					}
-					if(impl.finalizeMethod != null)
+					MethodInfo finalizeImpl = dtw.impl.GetFinalizeMethod();
+					if(finalizeImpl != null)
 					{
-						return impl.finalizeMethod;
+						return finalizeImpl;
 					}
 					wrapper = wrapper.BaseTypeWrapper;
+				}
+				if(wrapper == CoreClasses.java.lang.Object.Wrapper || wrapper == CoreClasses.java.lang.Throwable.Wrapper)
+				{
+					return typeof(object).GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Instance);
 				}
 				Type type = wrapper.TypeAsBaseType;
 				MethodInfo baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
@@ -5778,7 +5778,6 @@ namespace IKVM.Internal
 							{
 								return m;
 							}
-							clash = true;
 						}
 					}
 					type = type.BaseType;
@@ -6119,20 +6118,11 @@ namespace IKVM.Internal
 						{
 							bool needFinalize = false;
 							bool needDispatch = false;
-							bool finalizeClash = false;
 							MethodInfo baseFinalize = null;
 							if(baseMce != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
 							{
-								baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper, out finalizeClash);
-								if(baseMce.RealName == "Finalize")
-								{
-									// We're overriding Finalize (that was renamed to finalize by DotNetTypeWrapper)
-									// in a non-Java base class.
-									attribs |= MethodAttributes.NewSlot;
-									needFinalize = true;
-									needDispatch = true;
-								}
-								else if(baseMce.DeclaringType == CoreClasses.java.lang.Object.Wrapper)
+								baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper);
+								if(baseMce.DeclaringType == CoreClasses.java.lang.Object.Wrapper)
 								{
 									// This type is the first type in the hierarchy to introduce a finalize method
 									// (other than the one in java.lang.Object obviously), so we need to override
@@ -6227,15 +6217,11 @@ namespace IKVM.Internal
 							// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
 							if(needFinalize)
 							{
-								string finalizeName = finalizeClash ? "__<Finalize>" : baseFinalize.Name;
-								// if the Java class also defines a Finalize() method, we need to name the stub differently
-								foreach(ClassFile.Method mi in classFile.Methods)
+								string finalizeName = baseFinalize.Name;
+								MethodWrapper mwClash = wrapper.GetMethodWrapper(finalizeName, StringConstants.SIG_VOID, true);
+								if(mwClash != null && mwClash.GetMethod() != baseFinalize)
 								{
-									if(mi.Name == "Finalize" && mi.Signature == "()V")
-									{
-										finalizeName = "__<Finalize>";
-										break;
-									}
+									finalizeName = "__<Finalize>";
 								}
 								MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.Virtual;
 								// make sure we don't reduce accessibility
@@ -6449,6 +6435,11 @@ namespace IKVM.Internal
 			{
 				Debug.Fail("Unreachable code");
 				return null;
+			}
+
+			internal override MethodInfo GetFinalizeMethod()
+			{
+				return finalizeMethod;
 			}
 
 #if STATIC_COMPILER
@@ -6683,13 +6674,14 @@ namespace IKVM.Internal
 			private TypeWrapper declaringTypeWrapper;
 			private Modifiers reflectiveModifiers;
 			private MethodInfo clinitMethod;
+			private MethodInfo finalizeMethod;
 			private Metadata metadata;
 #if STATIC_COMPILER
 			private Annotation annotationBuilder;
 			private TypeBuilder enumBuilder;
 #endif
 
-			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata
+			internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod
 #if STATIC_COMPILER
 				, Annotation annotationBuilder
 				, TypeBuilder enumBuilder
@@ -6700,7 +6692,8 @@ namespace IKVM.Internal
 				this.innerclasses = innerclasses;
 				this.declaringTypeWrapper = declaringTypeWrapper;
 				this.reflectiveModifiers = reflectiveModifiers;
-				this.clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+				this.clinitMethod = clinitMethod;
+				this.finalizeMethod = finalizeMethod;
 				this.metadata = metadata;
 #if STATIC_COMPILER
 				this.annotationBuilder = annotationBuilder;
@@ -6813,6 +6806,11 @@ namespace IKVM.Internal
 			internal override object[] GetFieldAnnotations(int index)
 			{
 				return Metadata.GetFieldAnnotations(metadata, index);
+			}
+
+			internal override MethodInfo GetFinalizeMethod()
+			{
+				return finalizeMethod;
 			}
 
 #if STATIC_COMPILER
