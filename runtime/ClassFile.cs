@@ -2686,7 +2686,8 @@ namespace IKVM.Internal
 			{
 				Reachable = 1,
 				Processed = 2,
-				BranchTarget = 4
+				BranchTarget = 4,
+				JsrHasRet = 8,
 			}
 
 			internal struct Instruction
