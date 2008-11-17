@@ -52,10 +52,12 @@ namespace IKVM.Reflection.Emit
 		internal const byte ELEMENT_TYPE_R4 = 0x0c;
 		internal const byte ELEMENT_TYPE_R8 = 0x0d;
 		internal const byte ELEMENT_TYPE_STRING = 0x0e;
+		internal const byte ELEMENT_TYPE_PTR = 0x0f;
 		internal const byte ELEMENT_TYPE_BYREF = 0x10;
 		internal const byte ELEMENT_TYPE_VALUETYPE = 0x11;
 		internal const byte ELEMENT_TYPE_CLASS = 0x12;
 		internal const byte ELEMENT_TYPE_VAR = 0x13;
+		internal const byte ELEMENT_TYPE_ARRAY = 0x14;
 		internal const byte ELEMENT_TYPE_GENERICINST = 0x15;
 		internal const byte ELEMENT_TYPE_I = 0x18;
 		internal const byte ELEMENT_TYPE_OBJECT = 0x1c;
@@ -78,19 +80,40 @@ namespace IKVM.Reflection.Emit
 
 		private static void WriteType(ModuleBuilder moduleBuilder, ByteBuffer bb, Type type, GenericParameterType genericParameter)
 		{
-			while (type.IsArray)
+			while (type.HasElementType)
 			{
-				// check for non-szarrays
-				if (!type.FullName.EndsWith("[]", StringComparison.Ordinal))
+				if (type.IsArray)
 				{
-					throw new NotImplementedException();
+					if (type.FullName.EndsWith("[]", StringComparison.Ordinal))
+					{
+						bb.Write(ELEMENT_TYPE_SZARRAY);
+					}
+					else
+					{
+						int rank = type.GetArrayRank();
+						bb.Write(ELEMENT_TYPE_ARRAY);
+						WriteType(moduleBuilder, bb, type.GetElementType(), genericParameter);
+						bb.WriteCompressedInt(rank);
+						// since a Type doesn't contain the lower/upper bounds
+						// (they act like a custom modifier, so they are part of the signature, but not of the Type),
+						// we set them to the C# compatible values and hope for the best
+						bb.WriteCompressedInt(0);	// boundsCount
+						bb.WriteCompressedInt(rank);	// loCount
+						for (int i = 0; i < rank; i++)
+						{
+							bb.WriteCompressedInt(0);
+						}
+						return;
+					}
 				}
-				bb.Write(ELEMENT_TYPE_SZARRAY);
-				type = type.GetElementType();
-			}
-			while (type.IsByRef)
-			{
-				bb.Write(ELEMENT_TYPE_BYREF);
+				else if (type.IsByRef)
+				{
+					bb.Write(ELEMENT_TYPE_BYREF);
+				}
+				else if (type.IsPointer)
+				{
+					bb.Write(ELEMENT_TYPE_PTR);
+				}
 				type = type.GetElementType();
 			}
 			if (type == typeof(void))

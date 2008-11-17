@@ -517,10 +517,6 @@ namespace IKVM.Reflection.Emit
 
 		private TypeToken ImportType(Type type)
 		{
-			if (type.IsPointer || type.IsByRef)
-			{
-				throw new NotImplementedException();
-			}
 			TypeBase tb = type as TypeBase;
 			if (tb != null)
 			{
@@ -537,7 +533,7 @@ namespace IKVM.Reflection.Emit
 					throw new NotImplementedException();
 				}
 			}
-			else if (type.IsArray || (type.IsGenericType && !type.IsGenericTypeDefinition))
+			else if (type.HasElementType || (type.IsGenericType && !type.IsGenericTypeDefinition))
 			{
 				ByteBuffer spec = new ByteBuffer(5);
 				SignatureHelper.WriteType(this, spec, type);
