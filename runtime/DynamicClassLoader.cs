@@ -47,6 +47,7 @@ namespace IKVM.Internal
 
 	sealed class DynamicClassLoader : TypeWrapperFactory
 	{
+		// note that MangleNestedTypeName() assumes that there are less than 16 special characters
 		private static readonly char[] specialCharacters = { '\\', '+', ',', '[', ']', '*', '&', '\u0000' };
 		private static readonly string specialCharactersString = new String(specialCharacters);
 #if !STATIC_COMPILER
@@ -255,19 +256,23 @@ namespace IKVM.Internal
 				int index = specialCharactersString.IndexOf(c);
 				if(c == '.')
 				{
-					sb.Append("%-");
+					sb.Append("_");
+				}
+				else if(c == '_')
+				{
+					sb.Append("^-");
 				}
 				else if(index == -1)
 				{
 					sb.Append(c);
-					if(c == '%')
+					if(c == '^')
 					{
 						sb.Append(c);
 					}
 				}
 				else
 				{
-					sb.Append('%').AppendFormat("{0:X2}", index);
+					sb.Append('^').AppendFormat("{0:X1}", index);
 				}
 			}
 			return sb.ToString();
