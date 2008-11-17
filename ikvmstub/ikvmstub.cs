@@ -287,9 +287,15 @@ public class NetExp
 		return t.IsGenericType;
 	}
 
+	private static bool IsNonVectorArray(java.lang.Class c)
+	{
+		System.Type t = ikvm.runtime.Util.getInstanceTypeFromClass(c);
+		return t.IsArray && !c.isArray();
+	}
+
 	private static void AddToExportListIfNeeded(java.lang.Class c)
 	{
-		if(IsGenericType(c) || (c.getModifiers() & Modifier.PUBLIC) == 0)
+		if(IsGenericType(c) || IsNonVectorArray(c) || (c.getModifiers() & Modifier.PUBLIC) == 0)
 		{
 			AddToExportList(c);
 		}
