@@ -11682,17 +11682,30 @@ namespace IKVM.Internal
 			if(mb.IsAbstract)
 			{
 				MethodInfo mi = (MethodInfo)mb;
-				if(mi.ReturnType.IsPointer || mi.ReturnType.IsByRef)
+				if(mi.ReturnType.IsByRef || IsPointerType(mi.ReturnType))
 				{
 					return true;
 				}
 				foreach(ParameterInfo p in mi.GetParameters())
 				{
-					if(p.ParameterType.IsByRef || p.ParameterType.IsPointer)
+					if(p.ParameterType.IsByRef || IsPointerType(p.ParameterType))
 					{
 						return true;
 					}
 				}
+			}
+			return false;
+		}
+
+		private static bool IsPointerType(Type type)
+		{
+			while(type.HasElementType)
+			{
+				if(type.IsPointer)
+				{
+					return true;
+				}
+				type = type.GetElementType();
 			}
 			return false;
 		}
@@ -11714,7 +11727,7 @@ namespace IKVM.Internal
 			for(int i = 0; i < parameters.Length; i++)
 			{
 				Type type = parameters[i].ParameterType;
-				if(type.IsPointer)
+				if(IsPointerType(type))
 				{
 					name = null;
 					sig = null;
@@ -11724,14 +11737,6 @@ namespace IKVM.Internal
 				}
 				if(type.IsByRef)
 				{
-					if(type.GetElementType().IsPointer)
-					{
-						name = null;
-						sig = null;
-						args = null;
-						ret = null;
-						return false;
-					}
 					type = ArrayTypeWrapper.MakeArrayType(type.GetElementType(), 1);
 					if(mb.IsAbstract)
 					{
