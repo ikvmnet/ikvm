@@ -796,7 +796,7 @@ namespace IKVM.Reflection.Emit.Writer
 				for (int i = 0; i < rowCount; i++)
 				{
 					mw.WriteTypeDef(records[i].Class);
-					mw.WriteTypeDefOrRef(records[i].Interface);
+					mw.WriteEncodedTypeDefOrRef(records[i].Interface);
 				}
 			}
 
@@ -810,6 +810,27 @@ namespace IKVM.Reflection.Emit.Writer
 
 			internal void Fixup(ModuleBuilder moduleBuilder)
 			{
+				for (int i = 0; i < rowCount; i++)
+				{
+					int token = records[i].Interface;
+					switch (token >> 24)
+					{
+						case 0:
+							break;
+						case TableHeap.TypeDefTable.Index:
+							token = (token & 0xFFFFFF) << 2 | 0;
+							break;
+						case TableHeap.TypeRefTable.Index:
+							token = (token & 0xFFFFFF) << 2 | 1;
+							break;
+						case TableHeap.TypeSpecTable.Index:
+							token = (token & 0xFFFFFF) << 2 | 2;
+							break;
+						default:
+							throw new InvalidOperationException();
+					}
+					records[i].Interface = token;
+				}
 				Array.Sort(records, 0, rowCount, this);
 			}
 

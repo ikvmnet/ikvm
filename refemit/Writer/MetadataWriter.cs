@@ -209,6 +209,18 @@ namespace IKVM.Reflection.Emit.Writer
 			}
 		}
 
+		internal void WriteEncodedTypeDefOrRef(int encodedToken)
+		{
+			if (moduleBuilder.bigTypeDefOrRef)
+			{
+				Write(encodedToken);
+			}
+			else
+			{
+				Write((short)encodedToken);
+			}
+		}
+
 		internal void WriteHasCustomAttribute(int encodedToken)
 		{
 			// NOTE because we've already had to do the encoding (to be able to sort the table)
