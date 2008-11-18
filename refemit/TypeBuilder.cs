@@ -54,8 +54,8 @@ namespace IKVM.Reflection.Emit
 	public sealed class TypeBuilder : Impl.TypeBase, ITypeOwner
 	{
 		private readonly ITypeOwner owner;
-		private readonly TypeToken token;
-		private readonly TypeToken extends;
+		private readonly int token;
+		private readonly int extends;
 		private readonly int typeName;
 		private readonly int typeNameSpace;
 		private readonly string nameOrFullName;
@@ -80,7 +80,7 @@ namespace IKVM.Reflection.Emit
 			this.baseType = baseType;
 			if (baseType != null)
 			{
-				extends = this.ModuleBuilder.GetTypeToken(baseType);
+				extends = this.ModuleBuilder.GetTypeToken(baseType).Token;
 			}
 			this.attribs = attribs;
 			if (!this.IsNested)
@@ -162,7 +162,7 @@ namespace IKVM.Reflection.Emit
 		public void DefineMethodOverride(MethodInfo methodInfoBody, MethodInfo methodInfoDeclaration)
 		{
 			TableHeap.MethodImplTable.Record rec = new TableHeap.MethodImplTable.Record();
-			rec.Class = token.Token;
+			rec.Class = token;
 			rec.MethodBody = this.ModuleBuilder.GetMethodToken(methodInfoBody).Token;
 			rec.MethodDeclaration = this.ModuleBuilder.GetMethodToken(methodInfoDeclaration).Token;
 			this.ModuleBuilder.Tables.MethodImpl.AddRecord(rec);
@@ -219,7 +219,7 @@ namespace IKVM.Reflection.Emit
 		public void AddInterfaceImplementation(Type interfaceType)
 		{
 			TableHeap.InterfaceImplTable.Record rec = new TableHeap.InterfaceImplTable.Record();
-			rec.Class = token.Token;
+			rec.Class = token;
 			rec.Interface = this.ModuleBuilder.GetTypeToken(interfaceType).Token;
 			this.ModuleBuilder.Tables.InterfaceImpl.AddRecord(rec);
 		}
@@ -243,7 +243,7 @@ namespace IKVM.Reflection.Emit
 				TableHeap.ClassLayoutTable.Record rec = new TableHeap.ClassLayoutTable.Record();
 				rec.PackingSize = (short)(pack ?? 0);
 				rec.ClassSize = size ?? 0;
-				rec.Parent = token.Token;
+				rec.Parent = token;
 				this.ModuleBuilder.Tables.ClassLayout.AddRecord(rec);
 			}
 			attribs &= ~TypeAttributes.LayoutMask;
@@ -292,7 +292,7 @@ namespace IKVM.Reflection.Emit
 			}
 			else
 			{
-				this.ModuleBuilder.SetCustomAttribute(token.Token, customBuilder);
+				this.ModuleBuilder.SetCustomAttribute(token, customBuilder);
 			}
 		}
 
@@ -310,7 +310,7 @@ namespace IKVM.Reflection.Emit
 				TableHeap.GenericParamTable.Record rec = new TableHeap.GenericParamTable.Record();
 				rec.Number = (short)i;
 				rec.Flags = 0;
-				rec.Owner = token.Token;
+				rec.Owner = token;
 				rec.Name = this.ModuleBuilder.Strings.Add(names[i]);
 				gtpb[i] = new GenericTypeParameterBuilder(this.ModuleBuilder, this.ModuleBuilder.Tables.GenericParam.AddRecord(rec));
 			}
@@ -326,7 +326,7 @@ namespace IKVM.Reflection.Emit
 			if (properties != null)
 			{
 				TableHeap.PropertyMapTable.Record rec = new TableHeap.PropertyMapTable.Record();
-				rec.Parent = token.Token;
+				rec.Parent = token;
 				rec.PropertyList = this.ModuleBuilder.Tables.Property.RowCount + 1;
 				this.ModuleBuilder.Tables.PropertyMap.AddRecord(rec);
 				foreach (PropertyBuilder pb in properties)
@@ -502,7 +502,7 @@ namespace IKVM.Reflection.Emit
 
 		public override int MetadataToken
 		{
-			get { return token.Token; }
+			get { return token; }
 		}
 
 		internal void WriteTypeDefRecord(MetadataWriter mw, ref int fieldList, ref int methodList)
@@ -510,7 +510,7 @@ namespace IKVM.Reflection.Emit
 			mw.Write((int)attribs);
 			mw.WriteStringIndex(typeName);
 			mw.WriteStringIndex(typeNameSpace);
-			mw.WriteTypeDefOrRef(extends.Token);
+			mw.WriteTypeDefOrRef(extends);
 			mw.WriteField(fieldList);
 			mw.WriteMethodDef(methodList);
 			methodList += methods.Count;
@@ -567,7 +567,7 @@ namespace IKVM.Reflection.Emit
 	sealed class ArrayType : Impl.TypeBase
 	{
 		private readonly Impl.TypeBase type;
-		private TypeToken token;
+		private int token;
 
 		internal static Type Make(Impl.TypeBase type)
 		{
@@ -649,13 +649,13 @@ namespace IKVM.Reflection.Emit
 		{
 			get
 			{
-				if (token.Token == 0)
+				if (token == 0)
 				{
 					ByteBuffer spec = new ByteBuffer(5);
 					SignatureHelper.WriteType(this.ModuleBuilder, spec, this);
-					token = new TypeToken(0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec)));
+					token = 0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
 				}
-				return token.Token;
+				return token;
 			}
 		}
 	}
@@ -776,7 +776,7 @@ namespace IKVM.Reflection.Emit
 	{
 		private readonly TypeBuilder typeBuilder;
 		private readonly Type[] typeArguments;
-		private TypeToken token;
+		private int token;
 
 		internal static Type Make(TypeBuilder typeBuilder, Type[] typeArguments)
 		{
@@ -881,13 +881,13 @@ namespace IKVM.Reflection.Emit
 		{
 			get
 			{
-				if (token.Token == 0)
+				if (token == 0)
 				{
 					ByteBuffer spec = new ByteBuffer(5);
 					SignatureHelper.WriteGenericSignature(typeBuilder.ModuleBuilder, spec, typeBuilder, typeArguments);
-					token = new TypeToken(0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec)));
+					token = 0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
 				}
-				return token.Token;
+				return token;
 			}
 		}
 

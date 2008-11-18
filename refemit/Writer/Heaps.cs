@@ -695,9 +695,9 @@ namespace IKVM.Reflection.Emit.Writer
 		{
 			internal const int Index = 0x02;
 
-			internal TypeToken AllocToken()
+			internal int AllocToken()
 			{
-				return new TypeToken(0x02000000 + AddRow());
+				return 0x02000000 + AddRow();
 			}
 
 			internal override void Write(MetadataWriter mw)
@@ -1152,11 +1152,11 @@ namespace IKVM.Reflection.Emit.Writer
 				return x.Parent == y.Parent ? 0 : (x.Parent > y.Parent ? 1 : -1);
 			}
 
-			internal void GetLayout(TypeToken token, ref int pack, ref int size)
+			internal void GetLayout(int token, ref int pack, ref int size)
 			{
 				for (int i = 0; i < rowCount; i++)
 				{
-					if (records[i].Parent == token.Token)
+					if (records[i].Parent == token)
 					{
 						pack = records[i].PackingSize;
 						size = records[i].ClassSize;
