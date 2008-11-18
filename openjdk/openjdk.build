@@ -48,7 +48,7 @@
                 </replacetokens>
             </filterchain>
         </copy>
-        <exec program="javac" commandline="-J-Xmx1536M -g -nowarn -bootclasspath ../classpath/mscorlib.jar${pathsep}../classpath/System.jar${pathsep}../classpath/IKVM.Runtime.jar @allsources.lst" useruntimeengine="false" />
+        <exec program="javac" commandline="-J-Xmx1536M -g -nowarn -bootclasspath ../classpath/mscorlib.jar${pathsep}../classpath/System.jar${pathsep}../classpath/System.Core.jar${pathsep}../classpath/IKVM.Runtime.jar @allsources.lst" useruntimeengine="false" />
     </target>
 
     <target name="vfs">
@@ -91,6 +91,12 @@
             <arg value="-recurse:${Classpath.dir}/*.class" />
             <arg value="-r:mscorlib" />
             <arg value="-r:IKVM.Runtime" />
+            <!-- Instead of using -r:System.Core we add System.Core.jar
+                 (containing only System.Runtime.CompilerServices.ExtensionAttribute).
+                 This allows compilation to succeed (though with warnings) when System.Core.dll is not available.
+                 It also prevents accidentally taking additional dependencies on System.Core.dll.
+            -->
+            <arg value="../classpath/System.Core.jar" />
             <arg value="-r:${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
             <arg value="${OpenJDK.dir}/control/build/linux-amd64/j2re-image/lib/resources.jar" />
             <!-- this resource is somehow missing from OpenJDK6 b12's resources.jar -->
