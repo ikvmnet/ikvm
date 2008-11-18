@@ -216,8 +216,8 @@ namespace IKVM.Reflection.Emit.Impl
 			return ArrayType.Make(this);
 		}
 
-		internal abstract ModuleBuilder ModuleBuilder { get; }
+		public abstract override int MetadataToken { get; }
 
-		internal abstract TypeToken GetToken();
+		internal abstract ModuleBuilder ModuleBuilder { get; }
 	}
 }

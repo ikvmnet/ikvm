@@ -227,8 +227,8 @@ namespace IKVM.Reflection.Emit
 			if (enclosingType != null)
 			{
 				TableHeap.NestedClassTable.Record rec = new TableHeap.NestedClassTable.Record();
-				rec.NestedClass = typeBuilder.GetToken().Token;
-				rec.EnclosingClass = enclosingType.GetToken().Token;
+				rec.NestedClass = typeBuilder.MetadataToken;
+				rec.EnclosingClass = enclosingType.MetadataToken;
 				this.Tables.NestedClass.AddRecord(rec);
 			}
 			return typeBuilder;
@@ -243,7 +243,7 @@ namespace IKVM.Reflection.Emit
 				TableHeap.ClassLayoutTable.Record rec = new TableHeap.ClassLayoutTable.Record();
 				rec.PackingSize = (short)packingSize;
 				rec.ClassSize = typesize;
-				rec.Parent = typeBuilder.GetToken().Token;
+				rec.Parent = typeBuilder.MetadataToken;
 				this.Tables.ClassLayout.AddRecord(rec);
 			}
 		}
@@ -522,7 +522,7 @@ namespace IKVM.Reflection.Emit
 			{
 				if (tb.ModuleBuilder == this)
 				{
-					return tb.GetToken();
+					return new TypeToken(tb.MetadataToken);
 				}
 				else if (tb.ModuleBuilder.Assembly != this.Assembly)
 				{
@@ -807,7 +807,7 @@ namespace IKVM.Reflection.Emit
 				{
 					TableHeap.ExportedTypeTable.Record rec = new TableHeap.ExportedTypeTable.Record();
 					rec.Flags = (int)type.Attributes;
-					rec.TypeDefId = type.GetToken().Token & 0xFFFFFF;
+					rec.TypeDefId = type.MetadataToken & 0xFFFFFF;
 					rec.TypeName = manifestModule.Strings.Add(type.Name);
 					rec.TypeNamespace = manifestModule.Strings.Add(type.Namespace);
 					if (type.IsNested)

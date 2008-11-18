@@ -500,6 +500,11 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		public override int MetadataToken
+		{
+			get { return token.Token; }
+		}
+
 		internal void WriteTypeDefRecord(MetadataWriter mw, ref int fieldList, ref int methodList)
 		{
 			mw.Write((int)attribs);
@@ -551,11 +556,6 @@ namespace IKVM.Reflection.Emit
 		internal override ModuleBuilder ModuleBuilder
 		{
 			get { return owner.ModuleBuilder; }
-		}
-
-		internal override TypeToken GetToken()
-		{
-			return token;
 		}
 
 		ModuleBuilder ITypeOwner.ModuleBuilder
@@ -645,15 +645,18 @@ namespace IKVM.Reflection.Emit
 			get { return type.ModuleBuilder; }
 		}
 
-		internal override TypeToken GetToken()
+		public override int MetadataToken
 		{
-			if (token.Token == 0)
+			get
 			{
-				ByteBuffer spec = new ByteBuffer(5);
-				SignatureHelper.WriteType(this.ModuleBuilder, spec, this);
-				token = new TypeToken(0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec)));
+				if (token.Token == 0)
+				{
+					ByteBuffer spec = new ByteBuffer(5);
+					SignatureHelper.WriteType(this.ModuleBuilder, spec, this);
+					token = new TypeToken(0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec)));
+				}
+				return token.Token;
 			}
-			return token;
 		}
 	}
 
@@ -758,14 +761,14 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
+		public override int MetadataToken
+		{
+			get { return typeBuilder.MetadataToken; }
+		}
+
 		internal override ModuleBuilder ModuleBuilder
 		{
 			get { return typeBuilder.ModuleBuilder; }
-		}
-
-		internal override TypeToken GetToken()
-		{
-			return typeBuilder.GetToken();
 		}
 	}
 
@@ -874,20 +877,23 @@ namespace IKVM.Reflection.Emit
 			get { return false; }
 		}
 
+		public override int MetadataToken
+		{
+			get
+			{
+				if (token.Token == 0)
+				{
+					ByteBuffer spec = new ByteBuffer(5);
+					SignatureHelper.WriteGenericSignature(typeBuilder.ModuleBuilder, spec, typeBuilder, typeArguments);
+					token = new TypeToken(0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec)));
+				}
+				return token.Token;
+			}
+		}
+
 		internal override ModuleBuilder ModuleBuilder
 		{
 			get { return typeBuilder.ModuleBuilder; }
-		}
-
-		internal override TypeToken GetToken()
-		{
-			if (token.Token == 0)
-			{
-				ByteBuffer spec = new ByteBuffer(5);
-				SignatureHelper.WriteGenericSignature(typeBuilder.ModuleBuilder, spec, typeBuilder, typeArguments);
-				token = new TypeToken(0x1B000000 | this.ModuleBuilder.Tables.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec)));
-			}
-			return token;
 		}
 	}
 }
