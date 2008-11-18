@@ -390,16 +390,9 @@ namespace IKVM.Reflection.Emit
 		public ConstructorToken GetConstructorToken(ConstructorInfo constructor)
 		{
 			ConstructorBuilder cb = constructor as ConstructorBuilder;
-			if (cb != null)
+			if (cb != null && cb.ModuleBuilder == this)
 			{
-				if (cb.ModuleBuilder == this)
-				{
-					return new ConstructorToken(cb.MetadataToken);
-				}
-				else
-				{
-					throw new NotImplementedException();
-				}
+				return new ConstructorToken(cb.MetadataToken);
 			}
 			else
 			{
