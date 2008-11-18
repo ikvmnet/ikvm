@@ -51,7 +51,7 @@
         <copy file="Configuration.java.in" tofile="Configuration.java" outputencoding="ascii" overwrite="true">
             <filterchain>
                 <replacetokens>
-                    <token key="AWTASSEMBLY" value="${string::replace(assemblyname::get-full-name(assemblyname::get-assembly-name('../bin/IKVM.Runtime.dll')), 'IKVM.Runtime', 'IKVM.AWT.WinForms')}" />
+                    <token key="AWTASSEMBLY" value="${string::replace(assemblyname::get-full-name(assemblyname::get-assembly-name(path::combine(project::get-base-directory(), '../bin/IKVM.Runtime.dll'))), 'IKVM.Runtime', 'IKVM.AWT.WinForms')}" />
                 </replacetokens>
             </filterchain>
         </copy>
