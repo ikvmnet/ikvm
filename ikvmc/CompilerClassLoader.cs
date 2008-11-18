@@ -73,6 +73,7 @@ namespace IKVM.Internal
 		private List<string> classesToCompile;
 		private List<CompilerClassLoader> peerReferences = new List<CompilerClassLoader>();
 		private Dictionary<string, string> peerLoading = new Dictionary<string, string>();
+		private Dictionary<string, TypeWrapper> importedStubTypes = new Dictionary<string, TypeWrapper>();
 
 		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Dictionary<string, byte[]> classes)
 			: base(options.codegenoptions, null)
@@ -254,6 +255,10 @@ namespace IKVM.Internal
 					try
 					{
 						type = DefineClass(f, null);
+						if(f.IKVMAssemblyAttribute != null)
+						{
+							importedStubTypes.Add(f.Name, type);
+						}
 					}
 					catch (ClassFormatError x)
 					{
@@ -2576,7 +2581,7 @@ namespace IKVM.Internal
 					ClassLoaderWrapper loader = wrapper.GetClassLoader();
 					if(loader != this)
 					{
-						if(!(loader is GenericClassLoader || loader is CompilerClassLoader))
+						if(!(loader is GenericClassLoader || loader is CompilerClassLoader || (importedStubTypes.ContainsKey(s) && importedStubTypes[s] == wrapper)))
 						{
 							StaticCompiler.IssueMessage(Message.SkippingReferencedClass, s, ((AssemblyClassLoader)loader).Assembly.FullName);
 						}
