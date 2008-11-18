@@ -616,7 +616,7 @@ namespace IKVM.Internal
 			Profiler.Enter("ClassLoader.loadClass");
 			try
 			{
-				java.lang.Class c = javaClassLoader.loadClass(name);
+				java.lang.Class c = javaClassLoader.loadClassInternal(name);
 				if(c == null)
 				{
 					return null;

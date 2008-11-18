@@ -333,7 +333,7 @@ public abstract class ClassLoader {
     }
 
     // This method is invoked by the virtual machine to load a class.
-    private synchronized Class loadClassInternal(String name)
+    final synchronized Class loadClassInternal(String name)
         throws ClassNotFoundException
     {
         return loadClass(name);
