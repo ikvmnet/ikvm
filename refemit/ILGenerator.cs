@@ -920,7 +920,7 @@ namespace IKVM.Reflection.Emit
 						bb.Write(block.tryLength);
 						bb.Write(block.handlerOffset);
 						bb.Write(block.handlerLength);
-						if (block.exceptionType != null)
+						if (block.exceptionType != null && block.exceptionType != FAULT)
 						{
 							bb.Write(moduleBuilder.GetTypeToken(block.exceptionType).Token);
 						}
@@ -953,7 +953,7 @@ namespace IKVM.Reflection.Emit
 						bb.Write((byte)block.tryLength);
 						bb.Write((short)block.handlerOffset);
 						bb.Write((byte)block.handlerLength);
-						if (block.exceptionType != null)
+						if (block.exceptionType != null && block.exceptionType != FAULT)
 						{
 							bb.Write(moduleBuilder.GetTypeToken(block.exceptionType).Token);
 						}
