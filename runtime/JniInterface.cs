@@ -57,14 +57,6 @@ using jweak = System.IntPtr;
 using jmethodID = System.IntPtr;
 using jfieldID = System.IntPtr;
 
-[assembly: AssemblyTitle("IKVM.NET Runtime JNI Layer")]
-[assembly: AssemblyDescription("JVM for Mono and .NET")]
-#if SIGNCODE
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("IKVM.Runtime, PublicKey=0024000004800000940000000602000000240000525341310004000001000100DD6B140E5209CAE3D1C710030021EF589D0F00D05ACA8771101A7E99E10EE063E66040DF96E6F842F717BFC5B62D2EC2B62CEB0282E4649790DACB424DB29B68ADC7EAEAB0356FCE04702379F84400B8427EDBB33DAB8720B9F16A42E2CDB87F885EF413DBC4229F2BD157C9B8DC2CD14866DEC5F31C764BFB9394CC3C60E6C0")]
-#else
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("IKVM.Runtime")]
-#endif
-
 namespace IKVM.Runtime
 {
 	[StructLayout(LayoutKind.Sequential)]
