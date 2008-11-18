@@ -351,22 +351,9 @@ namespace IKVM.Reflection.Emit
 		public FieldToken GetFieldToken(FieldInfo field)
 		{
 			FieldBuilder fb = field as FieldBuilder;
-			if (fb != null)
+			if (fb != null && fb.ModuleBuilder == this)
 			{
-				if (fb.ModuleBuilder == this)
-				{
-					return new FieldToken(fb.MetadataToken);
-				}
-				else
-				{
-					int token;
-					if (!importedMembers.TryGetValue(field, out token))
-					{
-						token = fb.ImportTo(this);
-						importedMembers.Add(field, token);
-					}
-					return new FieldToken(token);
-				}
+				return new FieldToken(fb.MetadataToken);
 			}
 			else
 			{
@@ -462,7 +449,15 @@ namespace IKVM.Reflection.Emit
 						FieldInfo field = member as FieldInfo;
 						if (field != null)
 						{
-							token = ImportField(field.DeclaringType, field.Name, field.FieldType, field.GetOptionalCustomModifiers(), field.GetRequiredCustomModifiers());
+							FieldBuilder fb = field as FieldBuilder;
+							if (fb != null)
+							{
+								token = fb.ImportTo(this);
+							}
+							else
+							{
+								token = ImportField(field.DeclaringType, field.Name, field.FieldType, field.GetOptionalCustomModifiers(), field.GetRequiredCustomModifiers());
+							}
 						}
 						else
 						{
