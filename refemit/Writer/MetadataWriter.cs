@@ -197,7 +197,7 @@ namespace IKVM.Reflection.Emit.Writer
 					token = (token & 0xFFFFFF) << 2 | 2;
 					break;
 				default:
-					throw new NotImplementedException();
+					throw new InvalidOperationException();
 			}
 			if (moduleBuilder.bigTypeDefOrRef)
 			{
