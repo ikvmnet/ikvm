@@ -724,6 +724,11 @@ namespace IKVM.Reflection.Emit
 			return typeBuilder.IsValueType;
 		}
 
+		public override Type DeclaringType
+		{
+			get { return typeBuilder.DeclaringType; }
+		}
+
 		public override Type MakeArrayType()
 		{
 			return typeBuilder.MakeArrayType();
@@ -837,6 +842,11 @@ namespace IKVM.Reflection.Emit
 		protected override bool IsByRefImpl()
 		{
 			return false;
+		}
+
+		public override Type DeclaringType
+		{
+			get { return typeBuilder.DeclaringType; }
 		}
 
 		public override bool Equals(object o)
