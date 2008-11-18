@@ -2562,16 +2562,19 @@ namespace IKVM.Internal
 			{
 				FakeTypes.Load(JVM.CoreAssembly);
 			}
-			else if(loader.map != null && loader.CheckCompilingCoreAssembly())
-			{
-				FakeTypes.CreatePre(loader.GetTypeWrapperFactory().ModuleBuilder);
-			}
 			return 0;
 		}
 
 		private int Compile()
 		{
 			Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
+			// if we're compiling the core class library, generate the "fake" generic types
+			// that represent the not-really existing types (i.e. the Java enums that represent .NET enums,
+			// the Method interface for delegates and the Annotation annotation for custom attributes)
+			if(map != null && CheckCompilingCoreAssembly())
+			{
+				FakeTypes.Create(GetTypeWrapperFactory().ModuleBuilder, this);
+			}
 			List<TypeWrapper> allwrappers = new List<TypeWrapper>();
 			foreach(string s in classesToCompile)
 			{
@@ -2659,13 +2662,6 @@ namespace IKVM.Internal
 				}
 				Tracer.Info(Tracer.Compiler, "Loading remapped types (2)");
 				FinishRemappedTypes();
-				// if we're compiling the core class library, generate the "fake" generic types
-				// that represent the not-really existing types (i.e. the Java enums that represent .NET enums,
-				// the Method interface for delegates and the Annotation annotation for custom attributes)
-				if(CheckCompilingCoreAssembly())
-				{
-					FakeTypes.Create(GetTypeWrapperFactory().ModuleBuilder, this);
-				}
 			}
 			Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
 			AddResources(options.resources, options.compressedResources);

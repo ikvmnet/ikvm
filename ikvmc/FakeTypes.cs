@@ -66,15 +66,12 @@ namespace IKVM.Internal
 			return genericAttributeAnnotationReturnValueType.MakeGenericType(attributeType);
 		}
 
-		internal static void CreatePre(ModuleBuilder modb)
+		internal static void Create(ModuleBuilder modb, ClassLoaderWrapper loader)
 		{
 			TypeBuilder tb = modb.DefineType(DotNetTypeWrapper.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
 			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(typeof(MulticastDelegate));
 			genericDelegateInterfaceType = tb.CreateType();
-		}
 
-		internal static void Create(ModuleBuilder modb, ClassLoaderWrapper loader)
-		{
 			CreateEnumEnum(modb, loader);
 
 			TypeWrapper annotationTypeWrapper = loader.LoadClassByDottedName("java.lang.annotation.Annotation");
