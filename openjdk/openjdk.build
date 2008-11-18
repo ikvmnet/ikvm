@@ -48,6 +48,13 @@
                 </replacetokens>
             </filterchain>
         </copy>
+        <copy file="Configuration.java.in" tofile="Configuration.java" outputencoding="ascii" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="AWTASSEMBLY" value="${string::replace(assemblyname::get-full-name(assemblyname::get-assembly-name('../bin/IKVM.Runtime.dll')), 'IKVM.Runtime', 'IKVM.AWT.WinForms')}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
         <exec program="javac" commandline="-J-Xmx1536M -g -nowarn -bootclasspath ../classpath/mscorlib.jar${pathsep}../classpath/System.jar${pathsep}../classpath/System.Core.jar${pathsep}../classpath/IKVM.Runtime.jar @allsources.lst" useruntimeengine="false" />
     </target>
 
