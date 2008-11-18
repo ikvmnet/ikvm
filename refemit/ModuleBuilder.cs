@@ -41,7 +41,7 @@ namespace IKVM.Reflection.Emit
 		internal readonly ISymbolWriter symbolWriter;
 		private readonly TypeBuilder moduleType;
 		private readonly List<TypeBuilder> types = new List<TypeBuilder>();
-		private readonly Dictionary<Type, TypeToken> typeTokens = new Dictionary<Type, TypeToken>();
+		private readonly Dictionary<Type, int> typeTokens = new Dictionary<Type, int>();
 		private readonly Dictionary<string, TypeBuilder> fullNameToType = new Dictionary<string, TypeBuilder>();
 		internal readonly ByteBuffer methodBodies = new ByteBuffer(128 * 1024);
 		internal readonly List<int> tokenFixupOffsets = new List<int>();
@@ -274,17 +274,6 @@ namespace IKVM.Reflection.Emit
 			moduleType.CreateType();
 		}
 
-		public TypeToken GetTypeToken(Type type)
-		{
-			TypeToken token;
-			if (!typeTokens.TryGetValue(type, out token))
-			{
-				token  = ImportType(type);
-				typeTokens.Add(type, token);
-			}
-			return token;
-		}
-
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
 		{
 			SetCustomAttribute(0x00000001, customBuilder);
@@ -346,6 +335,19 @@ namespace IKVM.Reflection.Emit
 		public ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
 		{
 			return symbolWriter.DefineDocument(url, language, languageVendor, documentType);
+		}
+
+		public TypeToken GetTypeToken(Type type)
+		{
+			TypeBase tb = type as TypeBase;
+			if (tb != null && tb.ModuleBuilder == this)
+			{
+				return new TypeToken(tb.MetadataToken);
+			}
+			else
+			{
+				return new TypeToken(ImportType(type));
+			}
 		}
 
 		public FieldToken GetFieldToken(FieldInfo field)
@@ -503,53 +505,51 @@ namespace IKVM.Reflection.Emit
 			return 0x0A000000 | this.Tables.MemberRef.AddRecord(rec);
 		}
 
-		private TypeToken ImportType(Type type)
+		private int ImportType(Type type)
+		{
+			int token;
+			if (!typeTokens.TryGetValue(type, out token))
+			{
+				if (type.HasElementType || (type.IsGenericType && !type.IsGenericTypeDefinition))
+				{
+					ByteBuffer spec = new ByteBuffer(5);
+					SignatureHelper.WriteType(this, spec, type);
+					token = 0x1B000000 | this.Tables.TypeSpec.AddRecord(this.Blobs.Add(spec));
+				}
+				else
+				{
+					TableHeap.TypeRefTable.Record rec = new TableHeap.TypeRefTable.Record();
+					if (type.IsNested)
+					{
+						rec.ResolutionScope = GetTypeToken(type.DeclaringType).Token;
+						rec.TypeName = this.Strings.Add(type.Name);
+						rec.TypeNameSpace = 0;
+					}
+					else
+					{
+						rec.ResolutionScope = ImportAssemblyRef(GetAssemblyName(type));
+						rec.TypeName = this.Strings.Add(type.Name);
+						string ns = type.Namespace;
+						rec.TypeNameSpace = ns == null ? 0 : this.Strings.Add(ns);
+					}
+					token = 0x01000000 | this.Tables.TypeRef.AddRecord(rec);
+				}
+				typeTokens.Add(type, token);
+			}
+			return token;
+		}
+
+		private static AssemblyName GetAssemblyName(Type type)
 		{
 			TypeBase tb = type as TypeBase;
 			if (tb != null)
 			{
-				if (tb.ModuleBuilder == this)
-				{
-					return new TypeToken(tb.MetadataToken);
-				}
-				else if (tb.ModuleBuilder.Assembly != this.Assembly)
-				{
-					return ImportTypeRef(tb.ModuleBuilder.Assembly.GetName(), type);
-				}
-				else
-				{
-					throw new NotImplementedException();
-				}
-			}
-			else if (type.HasElementType || (type.IsGenericType && !type.IsGenericTypeDefinition))
-			{
-				ByteBuffer spec = new ByteBuffer(5);
-				SignatureHelper.WriteType(this, spec, type);
-				return new TypeToken(0x1B000000 | this.Tables.TypeSpec.AddRecord(this.Blobs.Add(spec)));
+				return tb.ModuleBuilder.Assembly.GetName();
 			}
 			else
 			{
-				return ImportTypeRef(type.Assembly.GetName(), type);
+				return type.Assembly.GetName();
 			}
-		}
-
-		private TypeToken ImportTypeRef(AssemblyName asm, Type type)
-		{
-			TableHeap.TypeRefTable.Record rec = new TableHeap.TypeRefTable.Record();
-			if (type.IsNested)
-			{
-				rec.ResolutionScope = GetTypeToken(type.DeclaringType).Token;
-				rec.TypeName = this.Strings.Add(type.Name);
-				rec.TypeNameSpace = 0;
-			}
-			else
-			{
-				rec.ResolutionScope = ImportAssemblyRef(asm);
-				rec.TypeName = this.Strings.Add(type.Name);
-				string ns = type.Namespace;
-				rec.TypeNameSpace = ns == null ? 0 : this.Strings.Add(ns);
-			}
-			return new TypeToken(0x01000000 | this.Tables.TypeRef.AddRecord(rec));
 		}
 
 		private int ImportAssemblyRef(AssemblyName asm)
