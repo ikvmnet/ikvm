@@ -1,7 +1,7 @@
 ﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{CEA4FEC4-1D24-4004-908E-F86C8D7AC772}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -69,6 +69,7 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="JniAssemblyInfo.cs" />
     <Compile Include="JniInterface.cs">
       <SubType>Code</SubType>
     </Compile>
