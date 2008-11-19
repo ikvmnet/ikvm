@@ -179,11 +179,16 @@ namespace IKVM.Internal
 				{
 					foreach(CompilerClassLoader ccl in peerReferences)
 					{
-						TypeWrapper tw = ccl.LoadClassByDottedNameFast(name);
-						// HACK we don't want to load classes referenced by peers, hence the "is CompilerClassLoader" check
-						if(tw != null && tw.GetClassLoader() is CompilerClassLoader)
+						// To keep the performance acceptable in cases where we're compiling many targets, we first check if the load can
+						// possibly succeed on this class loader, otherwise we'll end up doing a lot of futile recursive loading attempts.
+						if (ccl.classes.ContainsKey(name) || ccl.remapped.ContainsKey(name) || ccl.GetLoadedClass(name) != null)
 						{
-							return tw;
+							TypeWrapper tw = ccl.LoadClassByDottedNameFast(name);
+							// HACK we don't want to load classes referenced by peers, hence the "is CompilerClassLoader" check
+							if (tw != null && tw.GetClassLoader() is CompilerClassLoader)
+							{
+								return tw;
+							}
 						}
 					}
 				}
