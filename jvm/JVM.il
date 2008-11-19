@@ -21,10 +21,6 @@
   jeroen@frijters.net
   
 */
-.assembly JVM
-{
-  .ver 0:39:0:0
-}
 .module JVM.DLL
 
 .method public static int32 JNI_CreateJavaVM(void* ppvm, void* ppenv, void* args)
