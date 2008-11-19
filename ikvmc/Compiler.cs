@@ -21,6 +21,11 @@
   jeroen@frijters.net
   
 */
+#if IKVM_REF_EMIT
+// FXBUG multi target only work with our own Reflection.Emit implementation
+#define MULTI_TARGET
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -85,7 +90,7 @@ class IkvmcCompiler
 		}
 		IkvmcCompiler comp = new IkvmcCompiler();
 		List<CompilerOptions> targets = new List<CompilerOptions>();
-		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets, new CompilerOptions());
+		int rc = comp.ParseCommandLine(argList.GetEnumerator(), targets);
 		if (rc == 0)
 		{
 			try
@@ -198,13 +203,19 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -classloader:<class>       Set custom class loader class for assembly");
 	}
 
-	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets)
 	{
+		CompilerOptions options = new CompilerOptions();
 		options.target = PEFileKinds.ConsoleApplication;
 		options.guessFileKind = true;
 		options.version = "0.0.0.0";
 		options.apartment = ApartmentState.STA;
 		options.props = new Dictionary<string, string>();
+		return ContinueParseCommandLine(arglist, targets, options);
+	}
+
+	int ContinueParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+	{
 		while(arglist.MoveNext())
 		{
 			string s = arglist.Current;
@@ -219,7 +230,7 @@ class IkvmcCompiler
 				nestedLevel.defaultAssemblyName = defaultAssemblyName;
 				nestedLevel.classesToExclude = new List<string>(classesToExclude);
 				nestedLevel.references = new List<string>(references);
-				int rc = nestedLevel.ParseCommandLine(arglist, targets, options.Copy());
+				int rc = nestedLevel.ContinueParseCommandLine(arglist, targets, options.Copy());
 				if(rc != 0)
 				{
 					return rc;
