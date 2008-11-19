@@ -135,7 +135,7 @@ namespace IKVM.Reflection.Emit
 			if (name.Version != null)
 			{
 				assemblyRecord.MajorVersion = (short)name.Version.Major;
-				assemblyRecord.MinorVersion = (short)name.Version.Major;
+				assemblyRecord.MinorVersion = (short)name.Version.Minor;
 				assemblyRecord.BuildNumber = (short)name.Version.Build;
 				assemblyRecord.RevisionNumber = (short)name.Version.Revision;
 			}
