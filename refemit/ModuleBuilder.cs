@@ -30,6 +30,7 @@ using System.Diagnostics.SymbolStore;
 using IKVM.Reflection.Emit.Impl;
 using IKVM.Reflection.Emit.Writer;
 using System.Security.Cryptography;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Reflection.Emit
 {
@@ -272,6 +273,50 @@ namespace IKVM.Reflection.Emit
 		public void CreateGlobalFunctions()
 		{
 			moduleType.CreateType();
+		}
+
+		private void AddTypeForwarder(Type type)
+		{
+			ExportType(type);
+			foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+			{
+				// we export all nested types (i.e. even the private ones)
+				// (this behavior is the same as the C# compiler)
+				AddTypeForwarder(nested);
+			}
+		}
+
+		private int ExportType(Type type)
+		{
+			TableHeap.ExportedTypeTable.Record rec = new TableHeap.ExportedTypeTable.Record();
+			rec.TypeDefId = type.MetadataToken;
+			rec.TypeName = this.Strings.Add(type.Name);
+			if (type.IsNested)
+			{
+				rec.Flags = 0;
+				rec.TypeNamespace = 0;
+				rec.Implementation = ExportType(type.DeclaringType);
+			}
+			else
+			{
+				rec.Flags = 0x00200000;	// CorTypeAttr.tdForwarder
+				string ns = type.Namespace;
+				rec.TypeNamespace = ns == null ? 0 : this.Strings.Add(ns);
+				rec.Implementation = ImportAssemblyRef(GetAssemblyName(type));
+			}
+			return 0x27000000 | this.Tables.ExportedType.FindOrAddRecord(rec);
+		}
+
+		internal void SetAssemblyCustomAttribute(CustomAttributeBuilder customBuilder)
+		{
+			if (customBuilder.Constructor.DeclaringType == typeof(TypeForwardedToAttribute))
+			{
+				AddTypeForwarder((Type)customBuilder.GetConstructorArgument(0));
+			}
+			else
+			{
+				SetCustomAttribute(0x20000001, customBuilder);
+			}
 		}
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)

@@ -166,7 +166,7 @@ namespace IKVM.Reflection.Emit
 
 			foreach (CustomAttributeBuilder cab in customAttributes)
 			{
-				manifestModule.SetCustomAttribute(0x20000001, cab);
+				manifestModule.SetAssemblyCustomAttribute(cab);
 			}
 
 			foreach (ResourceFile resfile in resourceFiles)

@@ -1641,6 +1641,20 @@ namespace IKVM.Reflection.Emit.Writer
 					.WriteImplementation()
 					.Value;
 			}
+
+			internal int FindOrAddRecord(Record rec)
+			{
+				for (int i = 0; i < rowCount; i++)
+				{
+					if (records[i].Implementation == rec.Implementation
+						&& records[i].TypeName == rec.TypeName
+						&& records[i].TypeNamespace == rec.TypeNamespace)
+					{
+						return i + 1;
+					}
+				}
+				return AddRecord(rec);
+			}
 		}
 
 		internal sealed class ManifestResourceTable : Table<ManifestResourceTable.Record>
