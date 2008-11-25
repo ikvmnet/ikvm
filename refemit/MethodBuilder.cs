@@ -271,6 +271,10 @@ namespace IKVM.Reflection.Emit
 			{
 				implFlags |= MethodImplAttributes.PreserveSig;
 			}
+			else if (customBuilder.Constructor.DeclaringType == typeof(SpecialNameAttribute))
+			{
+				attributes |= MethodAttributes.SpecialName;
+			}
 			else
 			{
 				this.ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);

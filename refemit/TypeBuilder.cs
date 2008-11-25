@@ -28,6 +28,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using IKVM.Reflection.Emit.Writer;
 using IKVM.Reflection.Emit.Impl;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Reflection.Emit
 {
@@ -289,6 +290,10 @@ namespace IKVM.Reflection.Emit
 			else if (customBuilder.Constructor.DeclaringType == typeof(ComImportAttribute))
 			{
 				attribs |= TypeAttributes.Import;
+			}
+			else if (customBuilder.Constructor.DeclaringType == typeof(SpecialNameAttribute))
+			{
+				attribs |= TypeAttributes.SpecialName;
 			}
 			else
 			{

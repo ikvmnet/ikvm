@@ -24,6 +24,7 @@
 using System;
 using System.Reflection;
 using IKVM.Reflection.Emit.Writer;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Reflection.Emit
 {
@@ -31,7 +32,7 @@ namespace IKVM.Reflection.Emit
 	{
 		private readonly ModuleBuilder moduleBuilder;
 		private readonly int name;
-		private readonly PropertyAttributes attributes;
+		private PropertyAttributes attributes;
 		private readonly ByteBuffer signature;
 		private int getMethodToken;
 		private int setMethodToken;
@@ -78,11 +79,18 @@ namespace IKVM.Reflection.Emit
 
 		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
 		{
-			if (pseudoToken == 0)
+			if (customBuilder.Constructor.DeclaringType == typeof(SpecialNameAttribute))
 			{
-				pseudoToken = moduleBuilder.AllocPseudoToken();
+				attributes |= PropertyAttributes.SpecialName;
 			}
-			moduleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
+			else
+			{
+				if (pseudoToken == 0)
+				{
+					pseudoToken = moduleBuilder.AllocPseudoToken();
+				}
+				moduleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
+			}
 		}
 
 		public override PropertyAttributes Attributes

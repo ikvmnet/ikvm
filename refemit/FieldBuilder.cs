@@ -25,6 +25,7 @@ using System;
 using System.Reflection;
 using IKVM.Reflection.Emit.Writer;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Reflection.Emit
 {
@@ -82,6 +83,10 @@ namespace IKVM.Reflection.Emit
 			else if (customBuilder.Constructor.DeclaringType == typeof(NonSerializedAttribute))
 			{
 				attribs |= FieldAttributes.NotSerialized;
+			}
+			else if (customBuilder.Constructor.DeclaringType == typeof(SpecialNameAttribute))
+			{
+				attribs |= FieldAttributes.SpecialName;
 			}
 			else
 			{
