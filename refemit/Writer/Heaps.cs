@@ -1702,6 +1702,19 @@ namespace IKVM.Reflection.Emit.Writer
 					.WriteTypeDef()
 					.Value;
 			}
+
+			internal List<int> GetNestedClasses(int enclosingClass)
+			{
+				List<int> nestedClasses = new List<int>();
+				for (int i = 0; i < rowCount; i++)
+				{
+					if (records[i].EnclosingClass == enclosingClass)
+					{
+						nestedClasses.Add(records[i].NestedClass);
+					}
+				}
+				return nestedClasses;
+			}
 		}
 
 		internal sealed class GenericParamTable : Table<GenericParamTable.Record>, IComparer<GenericParamTable.Record>

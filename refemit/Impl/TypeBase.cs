@@ -117,7 +117,7 @@ namespace IKVM.Reflection.Emit.Impl
 			throw new NotSupportedException();
 		}
 
-		public sealed override Type[] GetNestedTypes(BindingFlags bindingAttr)
+		public override Type[] GetNestedTypes(BindingFlags bindingAttr)
 		{
 			throw new NotSupportedException();
 		}

@@ -891,5 +891,10 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return this; }
 		}
+
+		public Type ResolveType(int metadataToken)
+		{
+			return types[(metadataToken & 0xFFFFFF) - 1];
+		}
 	}
 }

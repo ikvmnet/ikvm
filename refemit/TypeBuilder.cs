@@ -71,6 +71,7 @@ namespace IKVM.Reflection.Emit
 		private enum TypeFlags
 		{
 			IsGenericTypeDefinition = 1,
+			HasNestedTypes = 2,
 		}
 
 		internal TypeBuilder(ITypeOwner owner, string name, Type baseType, TypeAttributes attribs)
@@ -204,6 +205,7 @@ namespace IKVM.Reflection.Emit
 
 		public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent)
 		{
+			this.typeFlags |= TypeFlags.HasNestedTypes;
 			return this.ModuleBuilder.DefineNestedTypeHelper(this, name, attr, parent, PackingSize.Unspecified, 0);
 		}
 
@@ -567,6 +569,11 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return owner.ModuleBuilder; }
 		}
+
+		internal bool HasNestedTypes
+		{
+			get { return (typeFlags & TypeFlags.HasNestedTypes) != 0; }
+		}
 	}
 
 	sealed class ArrayType : Impl.TypeBase
@@ -707,6 +714,28 @@ namespace IKVM.Reflection.Emit
 		public override MethodInfo[] GetMethods(BindingFlags bindingAttr)
 		{
 			return typeBuilder.GetMethods(bindingAttr);
+		}
+
+		public override Type[] GetNestedTypes(BindingFlags bindingAttr)
+		{
+			if (typeBuilder.HasNestedTypes)
+			{
+				List<Type> types = new List<Type>();
+				List<int> classes = typeBuilder.ModuleBuilder.Tables.NestedClass.GetNestedClasses(typeBuilder.MetadataToken);
+				foreach (int nestedClass in classes)
+				{
+					Type type = typeBuilder.ModuleBuilder.ResolveType(nestedClass);
+					if ((type.IsNestedPublic && (bindingAttr & BindingFlags.Public) != 0) || (!type.IsNestedPublic && (bindingAttr & BindingFlags.NonPublic) != 0))
+					{
+						types.Add(type);
+					}
+				}
+				return types.ToArray();
+			}
+			else
+			{
+				return Type.EmptyTypes;
+			}
 		}
 
 		protected override bool HasElementTypeImpl()
