@@ -409,6 +409,10 @@ namespace IKVM.Reflection.Emit
 				Type type = con.DeclaringType;
 				return type == typeof(AssemblyFlagsAttribute)
 					|| type == typeof(AssemblyAlgorithmIdAttribute)
+					|| type == typeof(AssemblyVersionAttribute)
+					|| type == typeof(AssemblyKeyFileAttribute)
+					|| type == typeof(AssemblyKeyNameAttribute)
+					|| type == typeof(AssemblyCultureAttribute)
 					|| type == typeof(DllImportAttribute)
 					|| type == typeof(FieldOffsetAttribute)
 					|| type == typeof(InAttribute)
@@ -420,8 +424,9 @@ namespace IKVM.Reflection.Emit
 					|| type == typeof(SerializableAttribute)
 					|| type == typeof(OptionalAttribute)
 					|| type == typeof(PreserveSigAttribute)
-					|| type == typeof(AssemblyVersionAttribute)
 					|| type == typeof(ComImportAttribute)
+					|| type == typeof(TypeForwardedToAttribute)
+					|| type == typeof(SpecialNameAttribute)
 					|| type == typeof(DefaultParameterValueAttribute);
 			}
 		}
