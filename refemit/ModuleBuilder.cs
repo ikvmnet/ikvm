@@ -783,8 +783,10 @@ namespace IKVM.Reflection.Emit
 			this.bigResolutionScope = IsBig(2, Tables.Module, Tables.ModuleRef, Tables.AssemblyRef, Tables.TypeRef);
 			this.bigMemberRefParent = IsBig(3, Tables.TypeDef, Tables.TypeRef, Tables.ModuleRef, Tables.MethodDef, Tables.TypeSpec);
 			this.bigMethodDefOrRef = IsBig(1, Tables.MethodDef, Tables.MemberRef);
-			this.bigTypeDefOrRef = IsBig(2, Tables.TypeDef, Tables.TypeRef);
-			this.bigHasCustomAttribute = IsBig(5, Tables.MethodDef, Tables.Field, Tables.TypeDef, Tables.Param, Tables.Module, Tables.Property, Tables.Assembly);
+			this.bigTypeDefOrRef = IsBig(2, Tables.TypeDef, Tables.TypeRef, Tables.TypeSpec);
+			this.bigHasCustomAttribute = IsBig(5, Tables.MethodDef, Tables.Field, Tables.TypeRef, Tables.TypeDef, Tables.Param, Tables.InterfaceImpl, Tables.MemberRef,
+				Tables.Module, /*Tables.Permission,*/ Tables.Property, /*Tables.Event,*/ Tables.StandAloneSig, Tables.ModuleRef, Tables.TypeSpec, Tables.Assembly,
+				Tables.AssemblyRef, Tables.File, Tables.ExportedType, Tables.ManifestResource);
 			this.bigCustomAttributeType = IsBig(3, Tables.MethodDef, Tables.MemberRef);
 			this.bigHasConstant = IsBig(2, Tables.Field, Tables.Param, Tables.Property);
 			this.bigHasSemantics = IsBig(1, /*Tables.Event,*/ Tables.Property);
