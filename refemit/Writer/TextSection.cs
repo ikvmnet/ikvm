@@ -211,6 +211,7 @@ namespace IKVM.Reflection.Emit.Writer
 			{
 				if (peWriter.Headers.FileHeader.Machine == IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_IA64)
 				{
+					// note that the alignment is driven by the requirement that the two relocation fixups are in a single page
 					return (ImportDirectoryRVA + ImportDirectoryLength + 15U) & ~15U;
 				}
 				else

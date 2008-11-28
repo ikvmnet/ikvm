@@ -250,21 +250,33 @@ namespace IKVM.Reflection.Emit.Writer
 
 				fs.Seek(reloc.PointerToRawData, SeekOrigin.Begin);
 				// .reloc section
-				uint pageRVA = code.StartupStubRVA & ~0xFFFU;
+				uint relocAddress = code.StartupStubRVA;
+				switch (imageFileMachine)
+				{
+					case ImageFileMachine.I386:
+					case ImageFileMachine.AMD64:
+						relocAddress += 2;
+						break;
+					case ImageFileMachine.IA64:
+						relocAddress += 0x20;
+						break;
+				}
+				uint pageRVA = relocAddress & ~0xFFFU;
 				mw.Write(pageRVA);	// PageRVA
 				mw.Write(0x000C);	// Block Size
 				if (imageFileMachine == ImageFileMachine.I386)
 				{
-					mw.Write(0x3000 + code.StartupStubRVA - pageRVA + 2);	// Type / Offset + padding
+					mw.Write(0x3000 + relocAddress - pageRVA);				// Type / Offset
 				}
 				else if (imageFileMachine == ImageFileMachine.AMD64)
 				{
-					mw.Write(0xA000 + code.StartupStubRVA - pageRVA + 2);	// Type / Offset + padding
+					mw.Write(0xA000 + relocAddress - pageRVA);				// Type / Offset
 				}
 				else if (imageFileMachine == ImageFileMachine.IA64)
 				{
-					mw.Write((short)(0xA000 + code.StartupStubRVA - pageRVA + 0x20));	// Type / Offset
-					mw.Write((short)(0xA000 + code.StartupStubRVA - pageRVA + 0x28));	// Type / Offset
+					// on IA64 the StartupStubRVA is 16 byte aligned, so these two addresses won't cross a page boundary
+					mw.Write((short)(0xA000 + relocAddress - pageRVA));		// Type / Offset
+					mw.Write((short)(0xA000 + relocAddress - pageRVA + 8));	// Type / Offset
 				}
 
 				// file alignment
