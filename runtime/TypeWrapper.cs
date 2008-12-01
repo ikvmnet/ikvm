@@ -6177,7 +6177,7 @@ namespace IKVM.Internal
 									setNameSig = true;
 								}
 							}
-							bool needMethodImpl = baseMce != null && (explicitOverride || baseMce.RealName != name) && !needFinalize;
+							bool needMethodImpl = baseMce != null && (setNameSig || explicitOverride || baseMce.RealName != name) && !needFinalize;
 							if(unloadableOverrideStub || needMethodImpl)
 							{
 								attribs |= MethodAttributes.NewSlot;
