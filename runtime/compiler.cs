@@ -3296,7 +3296,7 @@ class Compiler
 				}
 				// if the stack contains an unloadable, we might need to cast it
 				// (e.g. if the argument type is a base class that is loadable)
-				if(ma.GetRawStackTypeWrapper(instructionIndex, i).IsUnloadable)
+				if(ma.GetRawStackTypeWrapper(instructionIndex, args.Length - 1 - i).IsUnloadable)
 				{
 					needsCast = true;
 					firstCastArg = i;
