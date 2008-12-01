@@ -3134,6 +3134,13 @@ class Compiler
 					{
 						ilGenerator.Emit(OpCodes.Br, block.GetLabel(m.Instructions[callsites[callsites.Length - 1] + 1].PC));
 					}
+					else
+					{
+						// this code location is unreachable, but the verifier doesn't know that, so we emit a branch to keep it happy
+						// (it would be a little nicer to rewrite the above for loop to dynamically find the last reachable callsite,
+						// but since this only happens with unreachable code, it's not a big deal).
+						ilGenerator.Emit(OpCodes.Br_S, (sbyte)-2);
+					}
 					break;
 				}
 				case NormalizedByteCode.__nop:
