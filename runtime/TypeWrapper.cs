@@ -5015,7 +5015,16 @@ namespace IKVM.Internal
 					});
 #endif
 					Type type = context.FinishImpl();
-					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), clinitMethod, finalizeMethod
+					MethodInfo finishedClinitMethod = clinitMethod;
+#if !STATIC_COMPILER
+					if(finishedClinitMethod != null)
+					{
+						// In dynamic mode, we may need to emit a call to this method from a DynamicMethod which doesn't support calling unfinished methods,
+						// so we must resolve to the real method here.
+						finishedClinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+					}
+#endif
+					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), finishedClinitMethod, finalizeMethod
 #if STATIC_COMPILER
 						, annotationBuilder, enumBuilder
 #endif
