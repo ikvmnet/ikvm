@@ -38,6 +38,7 @@ using System.Reflection.Emit;
 using System.Threading;
 using ICSharpCode.SharpZipLib.Zip;
 using IKVM.Internal;
+using System.Text.RegularExpressions;
 
 class IkvmcCompiler
 {
@@ -438,7 +439,14 @@ class IkvmcCompiler
 						try
 						{
 							DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec));
-							Recurse(dir, dir, Path.GetFileName(spec));
+							if(dir.Exists)
+							{
+								Recurse(dir, dir, Path.GetFileName(spec));
+							}
+							else
+							{
+								RecurseJar(spec);
+							}
 						}
 						catch(PathTooLongException)
 						{
@@ -759,7 +767,7 @@ class IkvmcCompiler
 		}
 	}
 
-	private void ProcessZipFile(string file)
+	private void ProcessZipFile(string file, Predicate<ZipEntry> filter)
 	{
 		ZipFile zf = new ZipFile(file);
 		try
@@ -767,6 +775,10 @@ class IkvmcCompiler
 			foreach(ZipEntry ze in zf)
 			{
 				if(ze.IsDirectory)
+				{
+					// skip
+				}
+				else if(filter != null && !filter(ze))
 				{
 					// skip
 				}
@@ -831,7 +843,7 @@ class IkvmcCompiler
 			case ".zip":
 				try
 				{
-					ProcessZipFile(file);
+					ProcessZipFile(file, null);
 				}
 				catch(ICSharpCode.SharpZipLib.SharpZipBaseException x)
 				{
@@ -882,6 +894,30 @@ class IkvmcCompiler
 		foreach(DirectoryInfo sub in dir.GetDirectories())
 		{
 			Recurse(baseDir, sub, spec);
+		}
+	}
+
+	private void RecurseJar(string path)
+	{
+		string file = "";
+		for (; ; )
+		{
+			file = Path.Combine(Path.GetFileName(path), file);
+			path = Path.GetDirectoryName(path);
+			if (Directory.Exists(path))
+			{
+				throw new DirectoryNotFoundException();
+			}
+			else if (File.Exists(path))
+			{
+				string pathFilter = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
+				string fileFilter = "^" + Regex.Escape(Path.GetFileName(file)).Replace("\\*", ".*").Replace("\\?", ".") + "$";
+				ProcessZipFile(path, delegate(ZipEntry ze) {
+					return (Path.GetDirectoryName(ze.Name) + Path.DirectorySeparatorChar).StartsWith(pathFilter)
+						&& Regex.IsMatch(Path.GetFileName(ze.Name), fileFilter);
+				});
+				return;
+			}
 		}
 	}
 
