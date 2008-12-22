@@ -1,28 +1,20 @@
 <?xml version="1.0"?>
 <project name="awt" default="awt">
-    <target name="classpath">
-        <property name="classpath" value="true" />
-        <call target="awt" />
-    </target>
     <target name="awt">
         <property overwrite="false" name="signed" value="" />
-        <property overwrite="false" name="classpath" value="false" />
         <csc target="library" output="../bin/IKVM.AWT.WinForms.dll" define="TRACE;${signed}">
             <sources>
                 <include name="../CommonAssemblyInfo.cs" />
                 <include name="AssemblyInfo.cs" />
                 <include name="converter.cs" />
-                <include unless="${classpath}" name="fonts-0.95.cs" />
-                <include if="${classpath}" name="fonts.cs" />
+                <include name="fonts-0.95.cs" />
                 <include name="graphics.cs" />
                 <include name="images.cs" />
                 <include name="robot.cs" />
-                <include unless="${classpath}" name="toolkit-0.95.cs" />
-                <include if="${classpath}" name="toolkit.cs" />
+                <include name="toolkit-0.95.cs" />
             </sources>
             <references>
-                <include if="${classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
-                <include unless="${classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
+                <include name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
                 <include name="System.Windows.Forms.dll" asis="true" />
                 <include name="System.Drawing.dll" asis="true" />

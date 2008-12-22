@@ -1,11 +1,6 @@
 <?xml version="1.0"?>
 <project name="ikvm" default="ikvm">
-    <target name="classpath">
-        <property name="classpath" value="true" />
-        <call target="ikvm" />
-    </target>
     <target name="ikvm">
-        <property overwrite="false" name="classpath" value="false" />
         <property overwrite="false" name="signed" value="" />
         <csc target="exe" output="../bin/ikvm.exe" define="TRACE;${signed}">
             <sources>
@@ -13,8 +8,7 @@
                 <include name="*.cs" />
             </sources>
             <references>
-                <include if="${classpath}" name="../bin/IKVM.GNU.Classpath.dll" asis="true" />
-                <include unless="${classpath}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
+                <include name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
             </references>
         </csc>
