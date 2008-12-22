@@ -3201,6 +3201,8 @@ namespace IKVM.NativeCode.java
 				}
 
 #if !FIRST_PASS
+				// we don't want to inline this method, because that would needlessly cause IKVM.Runtime.JNI.dll to be loaded when loading a fake native library from VFS
+				[MethodImpl(MethodImplOptions.NoInlining)]
 				private static void doLoad(object thisNativeLibrary, string name)
 				{
 					jlClass fromClass = ((global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary).fromClass;
