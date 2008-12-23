@@ -1857,7 +1857,13 @@ namespace IKVM.Internal
 				{
 					SetupGhosts(map);
 				}
+			}
+		}
 
+		internal void EmitRemappedTypes2ndPass()
+		{
+			if (map != null && map.assembly != null && map.assembly.Classes != null)
+			{
 				// 2nd pass, resolve interfaces, publish methods/fields
 				foreach(IKVM.Internal.MapXml.Class c in map.assembly.Classes)
 				{
@@ -2210,6 +2216,10 @@ namespace IKVM.Internal
 						compiler1.AddReference(compiler2);
 					}
 				}
+			}
+			foreach (CompilerClassLoader compiler in compilers)
+			{
+				compiler.EmitRemappedTypes2ndPass();
 			}
 			if (!compilingCoreAssembly)
 			{
