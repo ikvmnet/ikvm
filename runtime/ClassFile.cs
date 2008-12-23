@@ -38,6 +38,7 @@ namespace IKVM.Internal
 		AbstractMethodError,
 		NoSuchMethodError,
 		LinkageError
+		// if an error is added here, it must also be added to MethodAnalyzer.SetHardError()
 	}
 
 	[Flags]

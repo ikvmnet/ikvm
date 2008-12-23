@@ -2821,6 +2821,14 @@ namespace IKVM.Internal
 		NotAClassFile = 108,
 		SkippingReferencedClass = 109,
 		NoJniRuntime= 110,
+		EmittedNoClassDefFoundError = 111,
+		EmittedIllegalAccessError = 112,
+		EmittedInstantiationError = 113,
+		EmittedIncompatibleClassChangeError = 114,
+		EmittedNoSuchFieldError = 115,
+		EmittedAbstractMethodError = 116,
+		EmittedNoSuchMethodError = 117,
+		EmittedLinkageError = 118,
 	}
 
 	class StaticCompiler
@@ -2937,6 +2945,38 @@ namespace IKVM.Internal
 					break;
 				case Message.NoJniRuntime:
 					msg = "unable to load runtime JNI assembly";
+					break;
+				case Message.EmittedNoClassDefFoundError:
+					msg = "emitted java.lang.NoClassDefFoundError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.EmittedIllegalAccessError:
+					msg = "emitted java.lang.IllegalAccessError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.EmittedInstantiationError:
+					msg = "emitted java.lang.InstantiationError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.EmittedIncompatibleClassChangeError:
+					msg = "emitted java.lang.IncompatibleClassChangeError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.EmittedNoSuchFieldError:
+					msg = "emitted java.lang.NoSuchFieldError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.EmittedAbstractMethodError:
+					msg = "emitted java.lang.AbstractMethodError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.EmittedNoSuchMethodError:
+					msg = "emitted java.lang.NoSuchMethodError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
+					break;
+				case Message.EmittedLinkageError:
+					msg = "emitted java.lang.LinkageError in \"{0}\"" + Environment.NewLine +
+						"    (\"{1}\")";
 					break;
 				default:
 					throw new InvalidProgramException();
