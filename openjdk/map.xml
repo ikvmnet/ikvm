@@ -1570,17 +1570,6 @@
                 </replace-method-call>
             </method>
         </class>
-        <class name="sun.net.dns.ResolverConfigurationImpl">
-            <method name="_set" sig="(Ljava.lang.String;Ljava.lang.String;)V" modifiers="static">
-                <body>
-                    <ldarg_0 />
-                    <stsfld class="sun.net.dns.ResolverConfigurationImpl" name="os_searchlist" sig="Ljava.lang.String;" />
-                    <ldarg_1 />
-                    <stsfld class="sun.net.dns.ResolverConfigurationImpl" name="os_nameservers" sig="Ljava.lang.String;" />
-                    <ret />
-                </body>
-            </method>
-        </class>
         <class name="java.util.concurrent.atomic.AtomicReference">
             <method name="compareAndSet" sig="(Ljava.lang.Object;Ljava.lang.Object;)Z">
                 <body>
