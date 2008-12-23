@@ -302,27 +302,11 @@ public class Starter
 			string[] vmargs = Startup.glob(vmargsIndex);
 			if (jar)
 			{
-				JarFile jf = new JarFile(mainClass);
-				try
+				mainClass = GetMainClassFromJarManifest(mainClass);
+				if (mainClass == null)
 				{
-					Manifest manifest = jf.getManifest();
-					if(manifest == null)
-					{
-						Console.Error.WriteLine("Jar file doesn't contain manifest");
-						return 1;
-					}
-					mainClass = manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
-				}
-				finally
-				{
-					jf.close();
-				}
-				if(mainClass == null)
-				{
-					Console.Error.WriteLine("Manifest doesn't contain a Main-Class.");
 					return 1;
 				}
-				mainClass = mainClass.Replace('/', '.');
 			}
 			java.lang.Class clazz = java.lang.Class.forName(mainClass, true, java.lang.ClassLoader.getSystemClassLoader());
 			try
@@ -377,6 +361,31 @@ public class Starter
 			Startup.exitMainThread();
 		}
 		return 1;
+	}
+
+	private static string GetMainClassFromJarManifest(string mainClass)
+	{
+		JarFile jf = new JarFile(mainClass);
+		try
+		{
+			Manifest manifest = jf.getManifest();
+			if (manifest == null)
+			{
+				Console.Error.WriteLine("Jar file doesn't contain manifest");
+				return null;
+			}
+			mainClass = manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
+		}
+		finally
+		{
+			jf.close();
+		}
+		if (mainClass == null)
+		{
+			Console.Error.WriteLine("Manifest doesn't contain a Main-Class.");
+			return null;
+		}
+		return mainClass.Replace('/', '.');
 	}
 
 	private static Method FindMainMethod(java.lang.Class clazz)
