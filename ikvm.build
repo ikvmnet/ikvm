@@ -28,7 +28,16 @@
                 <include name="bin/IKVM.Reflection.Emit.dll" />
                 <include name="bin/IKVM.Runtime.dll" />
                 <include name="bin/IKVM.Runtime.JNI.dll" />
-                <include name="bin/IKVM.OpenJDK.ClassLibrary.dll" />
+                <include name="bin/IKVM.OpenJDK.Charsets.dll" />
+                <include name="bin/IKVM.OpenJDK.Corba.dll" />
+                <include name="bin/IKVM.OpenJDK.Core.dll" />
+                <include name="bin/IKVM.OpenJDK.Management.dll" />
+                <include name="bin/IKVM.OpenJDK.Misc.dll" />
+                <include name="bin/IKVM.OpenJDK.Security.dll" />
+                <include name="bin/IKVM.OpenJDK.SwingAWT.dll" />
+                <include name="bin/IKVM.OpenJDK.Text.dll" />
+                <include name="bin/IKVM.OpenJDK.Util.dll" />
+                <include name="bin/IKVM.OpenJDK.XML.dll" />
                 <include name="bin/ikvm-native.dll" />
                 <include name="bin/libikvm-native.so" />
                 <include name="bin/ikvm.exe" />

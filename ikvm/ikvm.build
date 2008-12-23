@@ -8,7 +8,8 @@
                 <include name="*.cs" />
             </sources>
             <references>
-                <include name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
+                <include name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
+                <include name="../bin/IKVM.OpenJDK.Util.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
             </references>
         </csc>

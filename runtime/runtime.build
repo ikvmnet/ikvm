@@ -27,7 +27,7 @@
                 <include name="JniInterface.cs" />
             </sources>
             <references>
-                <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
+                <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
                 <include name="../bin/IKVM.Runtime.dll" asis="true" />
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
             </references>
@@ -90,7 +90,9 @@
             </resources>
             <references>
                 <include if="${not first-pass}" name="../bin/IKVM.Runtime.JNI.dll" asis="true" />
-                <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.ClassLibrary.dll" asis="true" />
+                <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Core.dll" asis="true" />
+                <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Util.dll" asis="true" />
+                <include if="${not first-pass}" name="../bin/IKVM.OpenJDK.Misc.dll" asis="true" />
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.dll" />
                 <include name="${framework::get-assembly-directory(framework::get-target-framework())}/System.Configuration.dll" />
             </references>

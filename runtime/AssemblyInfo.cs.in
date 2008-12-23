@@ -37,8 +37,18 @@ using System.Runtime.CompilerServices;
 
 #if SIGNCODE
 [assembly: InternalsVisibleTo("IKVM.Runtime.JNI, PublicKey=@PUBLICKEY@")]
-[assembly: InternalsVisibleTo("IKVM.OpenJDK.ClassLibrary, PublicKey=@PUBLICKEY@")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.Core, PublicKey=@PUBLICKEY@")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.Util, PublicKey=@PUBLICKEY@")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.Security, PublicKey=@PUBLICKEY@")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.Misc, PublicKey=@PUBLICKEY@")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.XML, PublicKey=@PUBLICKEY@")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.SwingAWT, PublicKey=@PUBLICKEY@")]
 #else
 [assembly: InternalsVisibleTo("IKVM.Runtime.JNI")]
-[assembly: InternalsVisibleTo("IKVM.OpenJDK.ClassLibrary")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.Core")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.Util")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.Security")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.Misc")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.XML")]
+[assembly: InternalsVisibleTo("IKVM.OpenJDK.SwingAWT")]
 #endif
