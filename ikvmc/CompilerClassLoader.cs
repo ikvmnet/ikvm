@@ -41,6 +41,7 @@ using IKVM.Attributes;
 
 using System.Security.Permissions;
 using System.Security;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Internal
 {
@@ -60,7 +61,7 @@ namespace IKVM.Internal
 		private CompilerOptions options;
 		private AssemblyClassLoader[] referencedAssemblies;
 		private Dictionary<string, string> nameMappings = new Dictionary<string, string>();
-		private Dictionary<string, string> packages = new Dictionary<string, string>();
+		private Dictionary<string, string> packages;
 		private Dictionary<string, List<TypeWrapper>> ghosts;
 		private TypeWrapper[] mappedExceptions;
 		private bool[] mappedExceptionsAllSubClasses;
@@ -74,6 +75,8 @@ namespace IKVM.Internal
 		private List<CompilerClassLoader> peerReferences = new List<CompilerClassLoader>();
 		private Dictionary<string, string> peerLoading = new Dictionary<string, string>();
 		private Dictionary<string, TypeWrapper> importedStubTypes = new Dictionary<string, TypeWrapper>();
+		private List<ClassLoaderWrapper> internalsVisibleTo = new List<ClassLoaderWrapper>();
+		private List<TypeWrapper> dynamicallyImportedTypes = new List<TypeWrapper>();
 
 		internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, string path, string keyfilename, string keycontainer, string version, bool targetIsModule, string assemblyName, Dictionary<string, byte[]> classes)
 			: base(options.codegenoptions, null)
@@ -308,6 +311,48 @@ namespace IKVM.Internal
 			return null;
 		}
 
+		internal override bool InternalsVisibleTo(ClassLoaderWrapper other)
+		{
+			// TODO ideally we should also respect InternalsVisibleToAttribute.Annotation here
+			if (this == other || internalsVisibleTo.Contains(other))
+			{
+				return true;
+			}
+			CompilerClassLoader ccl = other as CompilerClassLoader;
+			if (ccl != null
+				&& options.sharedclassloader != null
+				&& options.sharedclassloader.Contains(ccl))
+			{
+				AddInternalsVisibleToAttribute(ccl.assemblyBuilder);
+				internalsVisibleTo.Add(other);
+				return true;
+			}
+			return false;
+		}
+
+		private void AddInternalsVisibleToAttribute(AssemblyBuilder asm)
+		{
+			AssemblyName asmName = asm.GetName();
+			string name = asmName.Name;
+			byte[] pubkey = asmName.GetPublicKey();
+			if (pubkey == null && asmName.KeyPair != null)
+			{
+				pubkey = asmName.KeyPair.PublicKey;
+			}
+			if (pubkey != null && pubkey.Length != 0)
+			{
+				StringBuilder sb = new StringBuilder(name);
+				sb.Append(", PublicKey=");
+				foreach (byte b in pubkey)
+				{
+					sb.AppendFormat("{0:X2}", b);
+				}
+				name = sb.ToString();
+			}
+			CustomAttributeBuilder cab = new CustomAttributeBuilder(typeof(InternalsVisibleToAttribute).GetConstructor(new Type[] { typeof(string) }), new object[] { name });
+			this.assemblyBuilder.SetCustomAttribute(cab);
+		}
+
 		internal void SetMain(MethodInfo m, PEFileKinds target, Dictionary<string, string> props, bool noglobbing, Type apartmentAttributeType)
 		{
 			Type[] args = Type.EmptyTypes;
@@ -408,11 +453,17 @@ namespace IKVM.Internal
 			}
 
 			// add a package list
-			if(true)
+			if(options.sharedclassloader == null || options.sharedclassloader[0] == this)
 			{
 				string[] list = new string[packages.Count];
 				packages.Keys.CopyTo(list, 0);
 				mb.SetCustomAttribute(new CustomAttributeBuilder(JVM.LoadType(typeof(PackageListAttribute)).GetConstructor(new Type[] { typeof(string[]) }), new object[] { list }));
+			}
+
+			// if we're the main assembly in a shared class loader group, add a resource that lists all the types available in the other assemblies
+			if(options.sharedclassloader != null && options.sharedclassloader.Count > 1 && options.sharedclassloader[0] == this)
+			{
+				WriteExportMap();
 			}
 
 			if(targetIsModule)
@@ -427,6 +478,60 @@ namespace IKVM.Internal
 				Tracer.Info(Tracer.Compiler, "CompilerClassLoader saving {0} in {1}", assemblyFile, assemblyDir);
 				assemblyBuilder.Save(assemblyFile, options.pekind, options.imageFileMachine);
 			}
+		}
+
+		private static void AddExportMapEntry(Dictionary<CompilerClassLoader, List<string>> map, CompilerClassLoader ccl, string name)
+		{
+			List<string> list;
+			if (!map.TryGetValue(ccl, out list))
+			{
+				list = new List<string>();
+				map.Add(ccl, list);
+			}
+			list.Add(name);
+		}
+
+		private void WriteExportMap()
+		{
+			Dictionary<CompilerClassLoader, List<string>> exportedNamesPerAssembly = new Dictionary<CompilerClassLoader, List<string>>();
+			foreach (TypeWrapper tw in dynamicallyImportedTypes)
+			{
+				AddExportMapEntry(exportedNamesPerAssembly, (CompilerClassLoader)tw.GetClassLoader(), tw.Name);
+			}
+			foreach (CompilerClassLoader ccl in options.sharedclassloader)
+			{
+				if (ccl != this)
+				{
+					if (ccl.options.resources != null)
+					{
+						foreach (string name in ccl.options.resources.Keys)
+						{
+							AddExportMapEntry(exportedNamesPerAssembly, ccl, name);
+						}
+					}
+					if (ccl.options.externalResources != null)
+					{
+						foreach (string name in ccl.options.externalResources.Keys)
+						{
+							AddExportMapEntry(exportedNamesPerAssembly, ccl, name);
+						}
+					}
+				}
+			}
+			MemoryStream ms = new MemoryStream();
+			BinaryWriter bw = new BinaryWriter(ms);
+			bw.Write(exportedNamesPerAssembly.Count);
+			foreach (KeyValuePair<CompilerClassLoader, List<string>> kv in exportedNamesPerAssembly)
+			{
+				bw.Write(kv.Key.assemblyBuilder.GetName().FullName);
+				bw.Write(kv.Value.Count);
+				foreach (string name in kv.Value)
+				{
+					bw.Write(JVM.PersistableHash(name));
+				}
+			}
+			ms.Position = 0;
+			this.GetTypeWrapperFactory().ModuleBuilder.DefineManifestResource("ikvm.exports", ms, ResourceAttributes.Public);
 		}
 
 		internal void AddResources(Dictionary<string, byte[]> resources, bool compressedResources)
@@ -2206,6 +2311,10 @@ namespace IKVM.Internal
 					return rc;
 				}
 				compilers.Add(compiler);
+				if(options.sharedclassloader != null)
+				{
+					options.sharedclassloader.Add(compiler);
+				}
 			}
 			foreach (CompilerClassLoader compiler1 in compilers)
 			{
@@ -2225,13 +2334,33 @@ namespace IKVM.Internal
 			{
 				ClassLoaderWrapper.SetBootstrapClassLoader(ClassLoaderWrapper.GetAssemblyClassLoader(JVM.CoreAssembly));
 			}
+			Dictionary<CompilerClassLoader, CustomAttributeBuilder> mainAssemblyCabs = new Dictionary<CompilerClassLoader, CustomAttributeBuilder>();
 			foreach (CompilerClassLoader compiler in compilers)
 			{
+				if (compiler.options.sharedclassloader != null)
+				{
+					CustomAttributeBuilder mainAssembly;
+					if (!mainAssemblyCabs.TryGetValue(compiler.options.sharedclassloader[0], out mainAssembly))
+					{
+						TypeBuilder tb = compiler.options.sharedclassloader[0].GetTypeWrapperFactory().ModuleBuilder.DefineType("__<MainAssembly>", TypeAttributes.NotPublic | TypeAttributes.Abstract | TypeAttributes.SpecialName);
+						AttributeHelper.HideFromJava(tb);
+						mainAssembly = new CustomAttributeBuilder(typeof(TypeForwardedToAttribute).GetConstructor(new Type[] { typeof(Type) }), new object[] { tb.CreateType() });
+						mainAssemblyCabs.Add(compiler.options.sharedclassloader[0], mainAssembly);
+					}
+					if (compiler.options.sharedclassloader[0] != compiler)
+					{
+						compiler.GetTypeWrapperFactory().ModuleBuilder.Assembly.SetCustomAttribute(mainAssembly);
+					}
+				}
 				int rc = compiler.Compile();
 				if (rc != 0)
 				{
 					return rc;
 				}
+			}
+			foreach (CompilerClassLoader compiler in compilers)
+			{
+				compiler.Save();
 			}
 			return 0;
 		}
@@ -2595,6 +2724,14 @@ namespace IKVM.Internal
 			{
 				FakeTypes.Create(GetTypeWrapperFactory().ModuleBuilder, this);
 			}
+			if(options.sharedclassloader != null && options.sharedclassloader[0] != this)
+			{
+				packages = options.sharedclassloader[0].packages;
+			}
+			else
+			{
+				packages = new Dictionary<string, string>();
+			}
 			List<TypeWrapper> allwrappers = new List<TypeWrapper>();
 			foreach(string s in classesToCompile)
 			{
@@ -2618,6 +2755,10 @@ namespace IKVM.Internal
 					if(pos != -1)
 					{
 						packages[wrapper.Name.Substring(0, pos)] = "";
+					}
+					if(options.sharedclassloader != null && options.sharedclassloader[0] != this)
+					{
+						options.sharedclassloader[0].dynamicallyImportedTypes.Add(wrapper);
 					}
 					allwrappers.Add(wrapper);
 				}
@@ -2745,7 +2886,6 @@ namespace IKVM.Internal
 				assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { wrapper.TypeAsTBD }));
 			}
 			assemblyBuilder.DefineVersionInfoResource();
-			Save();
 			return 0;
 		}
 
@@ -2792,6 +2932,7 @@ namespace IKVM.Internal
 		internal string classLoader;
 		internal PortableExecutableKinds pekind = PortableExecutableKinds.ILOnly;
 		internal ImageFileMachine imageFileMachine = ImageFileMachine.I386;
+		internal List<CompilerClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
 
 		internal CompilerOptions Copy()
 		{

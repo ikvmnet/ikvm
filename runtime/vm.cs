@@ -189,6 +189,26 @@ namespace IKVM.Internal
 			return sb.ToString();
 		}
 
+		// based on Bret Mulvey's C# port of Jenkins32
+		// note that this algorithm cannot be changed, because we persist these hashcodes in the metadata of shared class loader assemblies
+		internal static int PersistableHash(string str)
+		{
+			uint key = 1;
+			foreach (char c in str)
+			{
+				key += c;
+				key += (key << 12);
+				key ^= (key >> 22);
+				key += (key << 4);
+				key ^= (key >> 9);
+				key += (key << 10);
+				key ^= (key >> 2);
+				key += (key << 7);
+				key ^= (key >> 12);
+			}
+			return (int)key;
+		}
+
 		internal static void CriticalFailure(string message, Exception x)
 		{
 			try

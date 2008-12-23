@@ -202,6 +202,10 @@ class IkvmcCompiler
 		Console.Error.WriteLine("    -warnaserror:<warning[:key]>  Treat specified warnings as errors");
 		Console.Error.WriteLine("    -time                      Display timing statistics");
 		Console.Error.WriteLine("    -classloader:<class>       Set custom class loader class for assembly");
+#if MULTI_TARGET
+		Console.Error.WriteLine("    -sharedclassloader         All targets below this level share a common");
+		Console.Error.WriteLine("                               class loader");
+#endif
 	}
 
 	int ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets)
@@ -639,6 +643,15 @@ class IkvmcCompiler
 				{
 					options.classLoader = s.Substring(13);
 				}
+#if MULTI_TARGET
+				else if(s == "-sharedclassloader")
+				{
+					if(options.sharedclassloader == null)
+					{
+						options.sharedclassloader = new List<CompilerClassLoader>();
+					}
+				}
+#endif
 				else
 				{
 					Console.Error.WriteLine("Warning: unrecognized option: {0}", s);
