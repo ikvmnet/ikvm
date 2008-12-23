@@ -2575,42 +2575,43 @@ namespace IKVM.Internal
 
 		internal bool IsPackageAccessibleFrom(TypeWrapper wrapper)
 		{
-			if(GetClassLoader().InternalsVisibleTo(wrapper.GetClassLoader()))
+			return MatchingPackageNames(name, wrapper.name) && GetClassLoader().InternalsVisibleTo(wrapper.GetClassLoader());
+		}
+
+		private static bool MatchingPackageNames(string name1, string name2)
+		{
+			int index1 = name1.LastIndexOf('.');
+			int index2 = name2.LastIndexOf('.');
+			if (index1 == -1 && index2 == -1)
 			{
-				int index1 = name.LastIndexOf('.');
-				int index2 = wrapper.name.LastIndexOf('.');
-				if(index1 == -1 && index2 == -1)
-				{
-					return true;
-				}
-				// for array types we need to skip the brackets
-				int skip1 = 0;
-				int skip2 = 0;
-				while(name[skip1] == '[')
-				{
-					skip1++;
-				}
-				while(wrapper.name[skip2] == '[')
-				{
-					skip2++;
-				}
-				if(skip1 > 0)
-				{
-					// skip over the L that follows the brackets
-					skip1++;
-				}
-				if(skip2 > 0)
-				{
-					// skip over the L that follows the brackets
-					skip2++;
-				}
-				if((index1 - skip1) != (index2 - skip2))
-				{
-					return false;
-				}
-				return String.CompareOrdinal(name, skip1, wrapper.name, skip2, index1 - skip1) == 0;
+				return true;
 			}
-			return false;
+			// for array types we need to skip the brackets
+			int skip1 = 0;
+			int skip2 = 0;
+			while (name1[skip1] == '[')
+			{
+				skip1++;
+			}
+			while (name2[skip2] == '[')
+			{
+				skip2++;
+			}
+			if (skip1 > 0)
+			{
+				// skip over the L that follows the brackets
+				skip1++;
+			}
+			if (skip2 > 0)
+			{
+				// skip over the L that follows the brackets
+				skip2++;
+			}
+			if ((index1 - skip1) != (index2 - skip2))
+			{
+				return false;
+			}
+			return String.CompareOrdinal(name1, skip1, name2, skip2, index1 - skip1) == 0;
 		}
 
 		internal abstract Type TypeAsTBD
@@ -11112,6 +11113,7 @@ namespace IKVM.Internal
 
 		internal static TypeWrapper GetWrapperFromDotNetType(Type type)
 		{
+			// TODO this might benefit from caching
 			return ClassLoaderWrapper.GetAssemblyClassLoader(type.Assembly).GetWrapperFromAssemblyType(type);
 		}
 
