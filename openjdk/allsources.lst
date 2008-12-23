@@ -1042,6 +1042,7 @@ java/io/DeleteOnExitHook.java
 java/io/FileDescriptor.java
 java/io/FileInputStream.java
 java/io/FileOutputStream.java
+java/io/FilePermission.java
 java/io/ObjectStreamClass.java
 java/io/RandomAccessFile.java
 java/lang/ApplicationShutdownHooks.java
@@ -1101,8 +1102,10 @@ sun/misc/SharedSecrets.java
 sun/misc/Unsafe.java
 sun/misc/Version.java
 sun/misc/VM.java
+sun/net/dns/ResolverConfigurationImpl.java
 sun/net/www/protocol/ikvmres/Handler.java
 sun/net/www/protocol/file/Handler.java
+sun/net/www/protocol/file/FileURLConnection.java
 sun/net/www/protocol/jar/JarFileFactory.java
 sun/nio/ch/DatagramChannelImpl.java
 sun/nio/ch/DefaultSelectorProvider.java
@@ -7503,7 +7506,6 @@ SystemProperties.java
 ../../openjdk6-b12/jdk/src/share/classes/java/io/FileFilter.java
 ../../openjdk6-b12/jdk/src/share/classes/java/io/FilenameFilter.java
 ../../openjdk6-b12/jdk/src/share/classes/java/io/FileNotFoundException.java
-../../openjdk6-b12/jdk/src/share/classes/java/io/FilePermission.java
 ../../openjdk6-b12/jdk/src/share/classes/java/io/FileReader.java
 ../../openjdk6-b12/jdk/src/share/classes/java/io/FileSystem.java
 ../../openjdk6-b12/jdk/src/share/classes/java/io/FileWriter.java
@@ -9750,7 +9752,6 @@ SystemProperties.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/net/www/http/KeepAliveStream.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/net/www/http/KeepAliveStreamCleaner.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/net/www/http/PosterOutputStream.java
-../../openjdk6-b12/jdk/src/share/classes/sun/net/www/protocol/file/FileURLConnection.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/net/www/protocol/ftp/FtpURLConnection.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/net/www/protocol/ftp/Handler.java
 ../../openjdk6-b12/jdk/src/share/classes/sun/net/www/protocol/gopher/GopherClient.java
@@ -10897,7 +10898,6 @@ SystemProperties.java
 ../../openjdk6-b12/jdk/src/windows/classes/java/lang/Terminator.java
 ../../openjdk6-b12/jdk/src/windows/classes/java/util/prefs/WindowsPreferences.java
 ../../openjdk6-b12/jdk/src/windows/classes/java/util/prefs/WindowsPreferencesFactory.java
-../../openjdk6-b12/jdk/src/windows/classes/sun/net/dns/ResolverConfigurationImpl.java
 ../../openjdk6-b12/jdk/src/windows/classes/sun/nio/ch/NativeThread.java
 ../../openjdk6-b12/jdk/src/windows/classes/sun/nio/ch/PipeImpl.java
 ../../openjdk6-b12/jdk/src/windows/classes/sun/nio/ch/SinkChannelImpl.java
