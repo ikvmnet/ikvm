@@ -846,7 +846,12 @@ namespace IKVM.Internal
 
 				internal override void EmitCallvirt(CodeEmitter ilgen)
 				{
-					if(mbHelper != null)
+					EmitCallvirtImpl(ilgen, this.IsProtected && !mbHelper.IsPublic);
+				}
+
+				private void EmitCallvirtImpl(CodeEmitter ilgen, bool cloneOrFinalizeHack)
+				{
+					if(mbHelper != null && !cloneOrFinalizeHack)
 					{
 						ilgen.Emit(OpCodes.Call, mbHelper);
 					}
@@ -1203,7 +1208,7 @@ namespace IKVM.Internal
 									ilgen.Emit(OpCodes.Ldarg, (short)(i + 1));
 								}
 								mw.Link();
-								mw.EmitCallvirt(ilgen);
+								mw.EmitCallvirtImpl(ilgen, false);
 								this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
 								ilgen.Emit(OpCodes.Ret);
 								ilgen.MarkLabel(skip);
