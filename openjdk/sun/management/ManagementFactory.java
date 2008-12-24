@@ -102,7 +102,7 @@ public class ManagementFactory {
     }
 
     public static MBeanServer createPlatformMBeanServer() {
-	throw new Error("Not implemented");
+	return MBeanServerFactory.createMBeanServer();
     }
 
     public static boolean isThreadSuspended(int state) {
