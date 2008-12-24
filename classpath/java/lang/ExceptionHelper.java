@@ -731,23 +731,29 @@ public final class ExceptionHelper
 
     static Throwable MapTypeInitializeException(cli.System.TypeInitializationException t, cli.System.Type handler)
     {
+        boolean wrapped = false;
         Throwable r = MapExceptionFast(t.get_InnerException(), true);
         if(!(r instanceof Error))
         {
             r = new ExceptionInInitializerError(r);
+            wrapped = true;
         }
         String type = t.get_TypeName();
         if(failedTypes.containsKey(type))
         {
             r = new NoClassDefFoundError(type).initCause(r);
+            wrapped = true;
         }
         if(handler != null && !handler.IsInstanceOfType(r))
         {
             return null;
         }
         failedTypes.put(type, type);
-        // transplant the stack trace
-        setStackTrace(r, new ExceptionInfoHelper(t, true).get_StackTrace(t));
+        if(wrapped)
+        {
+            // transplant the stack trace
+            setStackTrace(r, new ExceptionInfoHelper(t, true).get_StackTrace(t));
+        }
         return r;
     }
 
