@@ -1049,11 +1049,6 @@ namespace IKVM.Internal
 			{
 				if(!assemblyClassLoaders.TryGetValue(assembly, out loader))
 				{
-#if !STATIC_COMPILER && !FIRST_PASS
-					if(assembly == JVM.CoreAssembly)
-					{
-						return GetBootstrapClassLoader();
-					}
 					// If the assembly is a part of a multi-assembly shared class loader,
 					// it will export the __<MainAssembly> type from the main assembly in the group.
 					Type forwarder = assembly.GetType("__<MainAssembly>");
@@ -1066,6 +1061,11 @@ namespace IKVM.Internal
 							assemblyClassLoaders[assembly] = loader;
 							return loader;
 						}
+					}
+#if !STATIC_COMPILER && !FIRST_PASS
+					if(assembly == JVM.CoreAssembly)
+					{
+						return GetBootstrapClassLoader();
 					}
 					if(!assembly.ReflectionOnly)
 					{
