@@ -232,7 +232,7 @@ assembly.class
 }
 {
     -out:IKVM.OpenJDK.XML.dll
-    -resource:com/sun/org/apache/xml/internal/serialize/HTMLEntities.res=C:/ikvm/openjdk/../../openjdk6-b12/control/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/serialize/HTMLEntities.res
+    -resource:com/sun/org/apache/xml/internal/serialize/HTMLEntities.res=../../openjdk6-b12/control/build/linux-amd64/impsrc/com/sun/org/apache/xml/internal/serialize/HTMLEntities.res
     -recurse:../../openjdk6-b12/control/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/org/apache/*
     -recurse:../../openjdk6-b12/control/build/linux-amd64/j2re-image/lib/resources.jar/com/sun/xml/*
     -recurse:../../openjdk6-b12/control/build/linux-amd64/j2re-image/lib/resources.jar/javax/xml/*
