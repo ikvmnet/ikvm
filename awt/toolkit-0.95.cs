@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007 Volker Berlin
+  Copyright (C) 2006, 2007, 2008 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -88,7 +88,7 @@ namespace ikvm.awt
 		}
 	}
 
-    public class NetToolkit : gnu.java.awt.ClasspathToolkit
+    public class NetToolkit : gnu.java.awt.ClasspathToolkit, ikvm.awt.IkvmToolkit
 	{
         internal static java.awt.EventQueue eventQueue = new java.awt.EventQueue();
 		internal static volatile Form bogusForm;
@@ -360,7 +360,7 @@ namespace ikvm.awt
 			{
 				using(System.IO.FileStream stream = new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
 				{
-					return new NetBufferedImage(new Bitmap(Image.FromStream(stream)));
+					return new BufferedImage(new Bitmap(Image.FromStream(stream)));
 				}
 			}
 			catch(Exception)
@@ -382,7 +382,7 @@ namespace ikvm.awt
 			try
 			{
 				mem.Position = 0;
-				return new NetBufferedImage(new Bitmap(Image.FromStream(mem)));
+				return new BufferedImage(new Bitmap(Image.FromStream(mem)));
 			}
 			catch
 			{
@@ -444,7 +444,7 @@ namespace ikvm.awt
 		{
             try
             {
-                return new NetBufferedImage(new Bitmap(new MemoryStream(imagedata, imageoffset, imagelength, false)));
+                return new BufferedImage(new Bitmap(new MemoryStream(imagedata, imageoffset, imagelength, false)));
             }
             catch (Exception)
             {
@@ -532,6 +532,15 @@ namespace ikvm.awt
 		public override java.awt.Cursor createCustomCursor(java.awt.Image cursor, java.awt.Point hotSpot, string name)
 		{
 			throw new java.awt.AWTException("Not implemented");
+		}
+		
+		/*===============================
+		 * Implementations of interface IkvmToolkit
+		 */
+		 
+		public java.awt.Graphics2D createGraphics(System.Drawing.Bitmap bitmap)
+		{
+		    return new BitmapGraphics(bitmap);
 		}
 	}
 
@@ -941,7 +950,7 @@ namespace ikvm.awt
 
 		public java.awt.Image createImage(int width, int height)
 		{
-			return new NetBufferedImage(width, height);
+			return new BufferedImage(width, height);
 		}
 
 		public void disable()

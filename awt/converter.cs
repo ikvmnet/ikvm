@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007 Volker Berlin
+  Copyright (C) 2006, 2007, 2008 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -57,9 +57,9 @@ namespace ikvm.awt
 
         internal static Image ConvertImage(java.awt.Image img)
         {
-            if (img is NetBufferedImage)
+            if (img is BufferedImage)
             {
-                return ((NetBufferedImage)img).bitmap;
+                return ((BufferedImage)img).getBitmap();
             }
             if (img is NetVolatileImage)
             {
@@ -69,48 +69,12 @@ namespace ikvm.awt
             {
                 return ((NetProducerImage)img).getBitmap();
             }
-            if (img is BufferedImage)
-            {
-                return ConvertImage((BufferedImage)img);
-            }
             if (img is NoImage)
             {
                 return null;
             }
             Console.WriteLine(new System.Diagnostics.StackTrace());
             throw new NotImplementedException("Image class:" + img.GetType().FullName);
-        }
-
-        private static Image ConvertImage(BufferedImage img)
-        {
-            //First map the pixel from Java type to .NET type
-            PixelFormat format;
-            switch (img.getType())
-            {
-                case BufferedImage.TYPE_INT_ARGB:
-                    format = PixelFormat.Format32bppArgb;
-                    break;
-                default:
-                    throw new NotImplementedException("BufferedImage Type:" + img.getType());
-            }
-
-            //Create a .NET BufferedImage (alias Bitmap)
-            int width = img.getWidth();
-            int height = img.getHeight();
-            Bitmap bitmap = new Bitmap(width, height, format);
-
-            //Request the .NET pixel pointer
-            Rectangle rec = new Rectangle(0, 0, width, height);
-            BitmapData data = bitmap.LockBits(rec, ImageLockMode.WriteOnly, format);
-            IntPtr pixelPtr = data.Scan0;
-
-            //Request the pixel data from Java and copy it to .NET
-            WritableRaster raster = img.getRaster();
-            int[] pixelData = raster.getPixels(0, 0, width, height, (int[])null);
-            Marshal.Copy(pixelData, 0, pixelPtr, pixelData.Length);
-
-            bitmap.UnlockBits(data);
-            return bitmap;
         }
 
         internal static PointF ConvertPoint(java.awt.geom.Point2D point)

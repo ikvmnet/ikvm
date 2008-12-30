@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006, 2007 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007 Volker Berlin
+  Copyright (C) 2006, 2007, 2008 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -950,7 +950,7 @@ namespace ikvm.awt
 
         public override java.awt.image.BufferedImage createCompatibleImage(int width, int height)
         {
-            return new NetBufferedImage(width, height);
+            return new BufferedImage(width, height);
         }
 
         public override java.awt.image.VolatileImage createCompatibleVolatileImage(int param1, int param2, java.awt.ImageCapabilities param3)

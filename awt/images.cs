@@ -1,7 +1,7 @@
 /*
   Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
   Copyright (C) 2006 Active Endpoints, Inc.
-  Copyright (C) 2006, 2007 Volker Berlin
+  Copyright (C) 2006, 2007, 2008 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,51 +32,6 @@ using System.Drawing.Imaging;
 
 namespace ikvm.awt
 {
-
-    // HACK Classpath should have a working BufferedImage, but currently it doesn't, until then, we
-    // provide a hacked up version
-    class NetBufferedImage : java.awt.image.BufferedImage
-    {
-        internal Bitmap bitmap;
-
-        internal NetBufferedImage(Bitmap bitmap)
-            : base(bitmap.Width, bitmap.Height, java.awt.image.BufferedImage.TYPE_INT_RGB)
-        {
-            this.bitmap = bitmap;
-        }
-
-        internal NetBufferedImage(int width, int height)
-            : base(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
-        {
-            bitmap = new Bitmap(width, height);
-            using (Graphics g = Graphics.FromImage(bitmap))
-            {
-                g.Clear(Color.White);
-            }
-        }
-
-        public override java.awt.Graphics2D createGraphics()
-        {
-            Graphics g = Graphics.FromImage(bitmap);
-            // HACK for off-screen images we don't want ClearType or anti-aliasing
-            // TODO I'm sure Java 2D has a way to control text rendering quality, we should honor that
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
-            return new BitmapGraphics(bitmap);
-        }
-
-        public override java.awt.image.ImageProducer getSource()
-        {
-            int[] pix = new int[bitmap.Width * bitmap.Height];
-            for (int y = 0; y < bitmap.Height; y++)
-            {
-                for (int x = 0; x < bitmap.Width; x++)
-                {
-                    pix[x + y * bitmap.Width] = bitmap.GetPixel(x, y).ToArgb();
-                }
-            }
-            return new java.awt.image.MemoryImageSource(bitmap.Width, bitmap.Height, pix, 0, bitmap.Width);
-        }
-    }
 
     class NetProducerImage : java.awt.Image, java.awt.image.ImageConsumer
     {
@@ -135,7 +90,7 @@ namespace ikvm.awt
 
         public void setPixels(int x, int y, int w, int h, ColorModel model, byte[] pixels, int off, int scansize)
         {
-            Console.WriteLine("NetBufferedImage: setPixels");
+            Console.WriteLine("NetProducerImage: setPixels");
         }
 
         /// <summary>
@@ -166,7 +121,7 @@ namespace ikvm.awt
 
         public void imageComplete(int status)
         {
-            // Console.WriteLine("NetBufferedImage: imageComplete");
+            // Console.WriteLine("NetProducerImage: imageComplete");
         }
 
         public void setColorModel(ColorModel model)
@@ -234,7 +189,7 @@ namespace ikvm.awt
 
         public override BufferedImage getSnapshot()
         {
-            return new NetBufferedImage(bitmap);
+            return new BufferedImage(bitmap);
         }
 
         public override int validate(java.awt.GraphicsConfiguration gc)
