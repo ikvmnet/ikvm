@@ -950,7 +950,7 @@ namespace ikvm.awt
 
 		public java.awt.Image createImage(int width, int height)
 		{
-			return new BufferedImage(width, height);
+			return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		}
 
 		public void disable()

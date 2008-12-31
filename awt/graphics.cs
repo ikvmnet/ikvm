@@ -950,7 +950,7 @@ namespace ikvm.awt
 
         public override java.awt.image.BufferedImage createCompatibleImage(int width, int height)
         {
-            return new BufferedImage(width, height);
+            return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         }
 
         public override java.awt.image.VolatileImage createCompatibleVolatileImage(int param1, int param2, java.awt.ImageCapabilities param3)

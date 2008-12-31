@@ -300,24 +300,13 @@ public class BufferedImage extends java.awt.Image
     /**
      * Create a BufferedImage directly from the .NET Bitmap class
      */
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
     public BufferedImage(cli.System.Drawing.Bitmap bitmap){
         this.imageType = TYPE_INT_ARGB;
+        this.colorModel = createColorModel();
         this.bitmap = bitmap;
         this.currentBuffer = BUFFER_BITMAP;
     }
-
-    /**
-     * Create a BufferedImage with the default ColorModel of IKVM.
-     */
-    public BufferedImage(int width, int height){
-        this.imageType = TYPE_INT_ARGB;
-        this.bitmap = new cli.System.Drawing.Bitmap(width, height);
-        this.currentBuffer = BUFFER_BITMAP;
-        cli.System.Drawing.Graphics g = cli.System.Drawing.Graphics.FromImage(bitmap);
-        g.Clear(cli.System.Drawing.Color.get_White());
-        g.Dispose();
-    }
-    
 
     /**
      * Constructs a <code>BufferedImage</code> of one of the predefined
@@ -346,8 +335,8 @@ public class BufferedImage extends java.awt.Image
                          int imageType) {
         this.imageType = imageType;
         this.colorModel = createColorModel();
-        this.raster = createRaster(width, height);
-        this.currentBuffer = BUFFER_RASTER;
+        this.bitmap = new cli.System.Drawing.Bitmap(width, height);
+        this.currentBuffer = BUFFER_BITMAP;
     }
 
     /**
@@ -636,6 +625,7 @@ public class BufferedImage extends java.awt.Image
     /**
      * Get the .NET Bitmap object.
      */
+    @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
     public cli.System.Drawing.Bitmap getBitmap(){
         raster2Bitmap();
         return bitmap;
