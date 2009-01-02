@@ -4504,71 +4504,7 @@ namespace IKVM.NativeCode.java
 	{
 		static class AccessController
 		{
-			[ThreadStatic]
-			private static PrivilegedElement privileged_stack_top;
-
-			private class PrivilegedElement
-			{
-				internal object protection_domain;
-				internal object privileged_context;
-			}
-
-			// NOTE two different Java methods map to this native method
-			public static object doPrivileged(object action)
-			{
-				return doPrivileged(action, null);
-			}
-
-			[MethodImpl(MethodImplOptions.NoInlining)]
-			public static object doPrivileged(object action, object context)
-			{
-#if FIRST_PASS
-				return null;
-#else
-				Type caller;
-				for (int i = 1; ; i++)
-				{
-					caller = new StackFrame(i).GetMethod().DeclaringType;
-					if (caller != typeof(AccessController) && caller != typeof(jsAccessController))
-					{
-						break;
-					}
-				}
-
-				PrivilegedElement savedPrivilegedElement = privileged_stack_top;
-				try
-				{
-					PrivilegedElement pi = new PrivilegedElement();
-					privileged_stack_top = pi;
-					pi.privileged_context = context;
-					pi.protection_domain = GetProtectionDomainFromType(caller);
-					jsPrivilegedAction pa = action as jsPrivilegedAction;
-					if (pa != null)
-					{
-						return pa.run();
-					}
-					try
-					{
-						return ((jsPrivilegedExceptionAction)action).run();
-					}
-					catch (Exception x)
-					{
-						x = irUtil.mapException(x);
-						if (x is jlException && !(x is jlRuntimeException))
-						{
-							throw new jsPrivilegedActionException((jlException)x);
-						}
-						throw;
-					}
-				}
-				finally
-				{
-					privileged_stack_top = savedPrivilegedElement;
-				}
-#endif
-			}
-
-			public static object getStackAccessControlContext()
+			public static object getStackAccessControlContext(object context, object callerID)
 			{
 #if FIRST_PASS
 				return null;
@@ -4587,9 +4523,9 @@ namespace IKVM.NativeCode.java
 						&& method.Name == "doPrivileged")
 					{
 						is_privileged = true;
-						PrivilegedElement p = privileged_stack_top;
-						privileged_context = p.privileged_context;
-						protection_domain = p.protection_domain;
+						privileged_context = context;
+						global::java.lang.Class caller = ((global::ikvm.@internal.CallerID)callerID).getCallerClass();
+						protection_domain = caller == null ? null : java.lang.Class.getProtectionDomain0(caller);
 					}
 					else
 					{

@@ -25,6 +25,8 @@
 
 package java.security;
 
+import ikvm.internal.CallerID;
+import sun.misc.Unsafe;
 import sun.security.util.Debug;
 
 /**
@@ -236,6 +238,38 @@ import sun.security.util.Debug;
 
 public final class AccessController {
 
+    @cli.System.ThreadStaticAttribute.Annotation
+    private static PrivilegedElement privileged_stack_top;
+
+    private static final class PrivilegedElement {
+        CallerID callerID;
+        AccessControlContext context;
+    }
+
+    private static Object doPrivileged(Object action, AccessControlContext context, CallerID callerID) {
+        PrivilegedElement savedPrivilegedElement = privileged_stack_top;
+        try {
+            PrivilegedElement pi = new PrivilegedElement();
+            pi.callerID = callerID;
+            pi.context = context;
+            privileged_stack_top = pi;
+            try {
+                if (action instanceof PrivilegedAction) {
+                    return ((PrivilegedAction)action).run();
+                } else {
+                    return ((PrivilegedExceptionAction)action).run();
+                }
+            } catch (Exception x) {
+                if (!(x instanceof RuntimeException)) {
+                    Unsafe.getUnsafe().throwException(new PrivilegedActionException(x));
+                }
+                throw (RuntimeException)x;
+            }
+        } finally {
+            privileged_stack_top = savedPrivilegedElement;
+        }
+    }
+
     /**
      * Don't allow anyone to instantiate an AccessController
      */
@@ -264,7 +298,10 @@ public final class AccessController {
      * @see java.security.DomainCombiner
      */
 
-    public static native <T> T doPrivileged(PrivilegedAction<T> action);
+    @ikvm.internal.HasCallerID
+    public static <T> T doPrivileged(PrivilegedAction<T> action) {
+        return (T)doPrivileged(action, null, CallerID.getCallerID());
+    }
 
     /**
      * Performs the specified <code>PrivilegedAction</code> with privileges
@@ -326,8 +363,11 @@ public final class AccessController {
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedExceptionAction,AccessControlContext)
      */
-    public static native <T> T doPrivileged(PrivilegedAction<T> action,
-                                            AccessControlContext context);
+    @ikvm.internal.HasCallerID
+    public static <T> T doPrivileged(PrivilegedAction<T> action,
+                                     AccessControlContext context) {
+        return (T)doPrivileged(action, context, CallerID.getCallerID());
+    }
 
     /**
      * Performs the specified <code>PrivilegedExceptionAction</code> with
@@ -353,9 +393,12 @@ public final class AccessController {
      * @see #doPrivilegedWithCombiner(PrivilegedExceptionAction)
      * @see java.security.DomainCombiner
      */
-    public static native <T> T
+    @ikvm.internal.HasCallerID
+    public static <T> T
         doPrivileged(PrivilegedExceptionAction<T> action)
-        throws PrivilegedActionException;
+        throws PrivilegedActionException {
+        return (T)doPrivileged(action, null, CallerID.getCallerID());
+    }
 
 
     /**
@@ -450,10 +493,13 @@ public final class AccessController {
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedExceptionAction,AccessControlContext)
      */
-    public static native <T> T
+    @ikvm.internal.HasCallerID
+    public static <T> T
         doPrivileged(PrivilegedExceptionAction<T> action,
                      AccessControlContext context)
-        throws PrivilegedActionException;
+        throws PrivilegedActionException {
+        return (T)doPrivileged(action, context, CallerID.getCallerID());
+    }
 
     /**
      * Returns the AccessControl context. i.e., it gets
@@ -465,7 +511,18 @@ public final class AccessController {
      *         null if there was only privileged system code.
      */
 
-    private static native AccessControlContext getStackAccessControlContext();
+    private static AccessControlContext getStackAccessControlContext() {
+        AccessControlContext context = null;
+        CallerID callerID = null;
+        PrivilegedElement pi = privileged_stack_top;
+        if (pi != null) {
+            context = pi.context;
+            callerID = pi.callerID;
+        }
+        return getStackAccessControlContext(context, callerID);
+    }
+    
+    private static native AccessControlContext getStackAccessControlContext(AccessControlContext context, CallerID callerID);
 
     /**
      * Returns the "inherited" AccessControl context. This is the context
