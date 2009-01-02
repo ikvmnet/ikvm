@@ -15,6 +15,7 @@ assembly.class
     java/lang/reflect/*.class
     java/net/*.class
     java/nio/*.class
+    java/security/*.class
     java/util/*.class
     java/util/concurrent/locks/*.class
     sun/misc/*.class
