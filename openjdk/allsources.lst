@@ -1069,6 +1069,7 @@ java/net/SocketInputStream.java
 java/net/SocketOutputStream.java
 java/nio/Bits.java
 java/text/Bidi.java
+java/util/ResourceBundle.java
 java/util/concurrent/locks/AbstractQueuedSynchronizer.java
 java/util/concurrent/locks/LockSupport.java
 java/util/zip/Adler32.java
@@ -8205,7 +8206,6 @@ SystemProperties.java
 ../../openjdk6-b12/jdk/src/share/classes/java/util/Random.java
 ../../openjdk6-b12/jdk/src/share/classes/java/util/RandomAccess.java
 ../../openjdk6-b12/jdk/src/share/classes/java/util/RegularEnumSet.java
-../../openjdk6-b12/jdk/src/share/classes/java/util/ResourceBundle.java
 ../../openjdk6-b12/jdk/src/share/classes/java/util/Scanner.java
 ../../openjdk6-b12/jdk/src/share/classes/java/util/ServiceConfigurationError.java
 ../../openjdk6-b12/jdk/src/share/classes/java/util/ServiceLoader.java

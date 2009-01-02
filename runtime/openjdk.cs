@@ -5018,31 +5018,6 @@ namespace IKVM.NativeCode.java
 			}
 		}
 
-		static class ResourceBundle
-		{
-			public static object getClassContext()
-			{
-#if FIRST_PASS
-				return null;
-#else
-				// the caller is only interested in context[2], so that's all we'll fill
-				jlClass[] context = new jlClass[3];
-				int index = 4;
-				// HACK handle inlining or tail-call optimization of native method stub
-				if (new StackFrame(1).GetMethod().Name != "getClassContext")
-				{
-					index--;
-				}
-				Type type = new StackFrame(index).GetMethod().DeclaringType;
-				if (type != null)
-				{
-					context[2] = (jlClass)ClassLoaderWrapper.GetWrapperFromType(type).ClassObject;
-				}
-				return context;
-#endif
-			}
-		}
-
 		static class TimeZone
 		{
 			public static string getSystemTimeZoneID(string javaHome, string country)
