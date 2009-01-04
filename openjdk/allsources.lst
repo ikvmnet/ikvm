@@ -352,7 +352,6 @@
 ../../classpath-0.95/java/awt/image/ByteLookupTable.java
 ../../classpath-0.95/java/awt/image/ColorModel.java
 ../../classpath-0.95/java/awt/image/ComponentColorModel.java
-../../classpath-0.95/java/awt/image/ComponentSampleModel.java
 ../../classpath-0.95/java/awt/image/ConvolveOp.java
 ../../classpath-0.95/java/awt/image/CropImageFilter.java
 ../../classpath-0.95/java/awt/image/DirectColorModel.java
@@ -370,7 +369,6 @@
 ../../classpath-0.95/java/awt/image/MultiPixelPackedSampleModel.java
 ../../classpath-0.95/java/awt/image/PackedColorModel.java
 ../../classpath-0.95/java/awt/image/PixelGrabber.java
-../../classpath-0.95/java/awt/image/PixelInterleavedSampleModel.java
 ../../classpath-0.95/java/awt/image/RasterFormatException.java
 ../../classpath-0.95/java/awt/image/RasterOp.java
 ../../classpath-0.95/java/awt/image/renderable/ContextualRenderedImageFactory.java
@@ -384,7 +382,6 @@
 ../../classpath-0.95/java/awt/image/ReplicateScaleFilter.java
 ../../classpath-0.95/java/awt/image/RescaleOp.java
 ../../classpath-0.95/java/awt/image/RGBImageFilter.java
-../../classpath-0.95/java/awt/image/SampleModel.java
 ../../classpath-0.95/java/awt/image/ShortLookupTable.java
 ../../classpath-0.95/java/awt/image/SinglePixelPackedSampleModel.java
 ../../classpath-0.95/java/awt/image/TileObserver.java
@@ -1040,7 +1037,9 @@ ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/FieldReflectorBase.java
 java/awt/image/BufferedImage.java
 java/awt/image/ColorConvertOp.java
+java/awt/image/ComponentSampleModel.java
 java/awt/image/Raster.java
+java/awt/image/SampleModel.java
 java/io/DeleteOnExitHook.java
 java/io/FileDescriptor.java
 java/io/FileInputStream.java
@@ -7428,6 +7427,7 @@ SystemProperties.java
 ../../openjdk6-b12/jdk/src/share/classes/java/awt/image/DataBufferInt.java
 ../../openjdk6-b12/jdk/src/share/classes/java/awt/image/DataBufferShort.java
 ../../openjdk6-b12/jdk/src/share/classes/java/awt/image/DataBufferUShort.java
+../../openjdk6-b12/jdk/src/share/classes/java/awt/image/PixelInterleavedSampleModel.java
 ../../openjdk6-b12/jdk/src/share/classes/java/beans/AppletInitializer.java
 ../../openjdk6-b12/jdk/src/share/classes/java/beans/BeanDescriptor.java
 ../../openjdk6-b12/jdk/src/share/classes/java/beans/BeanInfo.java
