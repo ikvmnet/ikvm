@@ -767,6 +767,7 @@ assembly.class
     -recurse:../../openjdk6-b12/control/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
     -recurse:../../openjdk6-b12/control/build/linux-amd64/j2re-image/lib/resources.jar/sun/print/*
     -recurse:../../openjdk6-b12/control/build/linux-amd64/j2re-image/lib/resources.jar/sun/rmi/*
+	-r:System.Drawing
     com/sun/imageio/plugins/jpeg/*.class
     icedtea/rt/com/sun/media/sound/*.class
     sun/net/dns/*.class

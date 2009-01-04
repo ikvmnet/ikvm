@@ -36,11 +36,11 @@ import javax.imageio.IIOException;
 
 public class JPEGImageReaderSpi extends ImageReaderSpi {
 
-    private static String [] writerSpiNames = 
+    private static String [] writerSpiNames =
         {"com.sun.imageio.plugins.jpeg.JPEGImageWriterSpi"};
 
     private boolean registered = false;
-    
+
     public JPEGImageReaderSpi() {
         super(JPEG.vendor,
               JPEG.version,
@@ -84,7 +84,7 @@ public class JPEGImageReaderSpi extends ImageReaderSpi {
     }
 
     public String getDescription(Locale locale) {
-        return "Standard JPEG Image Reader (not implemented)";
+        return "Standard JPEG Image Reader";
     }
 
     public boolean canDecodeInput(Object source) throws IOException {
@@ -103,10 +103,10 @@ public class JPEGImageReaderSpi extends ImageReaderSpi {
         }
         return false;
     }
-    
-    public ImageReader createReaderInstance(Object extension) 
+
+    public ImageReader createReaderInstance(Object extension)
         throws IIOException {
-        throw new Error("Not implemented");
+        return new JPEGImageReader(this);
     }
 
 }

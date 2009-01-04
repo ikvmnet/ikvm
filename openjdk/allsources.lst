@@ -1032,7 +1032,9 @@ AssemblyInfo.java
 Configuration.java
 ConnectorBootstrap.java
 com/sun/imageio/plugins/jpeg/JPEGImageReaderSpi.java
+com/sun/imageio/plugins/jpeg/JPEGImageReader.java
 com/sun/imageio/plugins/jpeg/JPEGImageWriterSpi.java
+com/sun/imageio/plugins/jpeg/JPEGImageWriter.java
 ikvm/awt/IkvmToolkit.java
 ikvm/internal/AnnotationAttributeBase.java
 ikvm/internal/FieldReflectorBase.java
