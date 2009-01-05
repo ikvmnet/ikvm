@@ -318,6 +318,10 @@ namespace IKVM.Internal
 				ilgen.Emit(OpCodes.Ldarg, (short)arg);
 				return true;
 			}
+			else
+			{
+				JVM.CriticalFailure("CallerID.getCallerID() requires a HasCallerID annotation", null);
+			}
 			return false;
 		}
 	}
