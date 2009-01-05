@@ -3920,7 +3920,7 @@ namespace IKVM.Internal
 					// we only support HasCallerID instance methods on final types, because we don't support interface stubs with CallerID
 					if(m.HasCallerIDAnnotation
 						&& (m.IsStatic || classFile.IsFinal)
-						&& wrapper.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
+						&& CoreClasses.java.lang.Object.Wrapper.GetClassLoader().InternalsVisibleTo(wrapper.GetClassLoader()))
 					{
 						flags |= MemberFlags.CallerID;
 					}
