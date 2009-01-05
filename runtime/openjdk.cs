@@ -100,7 +100,6 @@ using jnCharset = java.nio.charset.Charset;
 using juProperties = java.util.Properties;
 using irUtil = ikvm.runtime.Util;
 using iiFieldReflectorBase = ikvm.@internal.FieldReflectorBase;
-using jsDriverManager = java.sql.DriverManager;
 using juzZipFile = java.util.zip.ZipFile;
 using juzZipEntry = java.util.zip.ZipEntry;
 using juEnumeration = java.util.Enumeration;
@@ -4591,42 +4590,6 @@ namespace IKVM.NativeCode.java
 				return null;
 #else
 				return jlThread.currentThread().inheritedAccessControlContext;
-#endif
-			}
-		}
-	}
-
-	namespace sql
-	{
-		static class DriverManager
-		{
-			public static object getCallerClassLoader()
-			{
-#if FIRST_PASS
-				return null;
-#else
-				for (int i = 1; ; i++)
-				{
-					StackFrame frame = new StackFrame(i);
-					MethodBase method = frame.GetMethod();
-					if (method == null)
-					{
-						return null;
-					}
-					Type type = method.DeclaringType;
-					if (type != typeof(jsDriverManager))
-					{
-						if (type != null)
-						{
-							TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
-							if (wrapper != null)
-							{
-								return wrapper.GetClassLoader().GetJavaClassLoader();
-							}
-						}
-						return null;
-					}
-				}
 #endif
 			}
 		}

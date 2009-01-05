@@ -25,6 +25,7 @@
 
 package java.sql;
 
+import ikvm.internal.CallerID;
 import java.util.Iterator;
 import java.sql.Driver;
 import java.util.ServiceLoader;
@@ -159,12 +160,13 @@ public class DriverManager {
      * @return a Connection to the URL
      * @exception SQLException if a database access error occurs
      */
+    @ikvm.internal.HasCallerID
     public static Connection getConnection(String url,
         java.util.Properties info) throws SQLException {
 
         // Gets the classloader of the code that called this method, may
         // be null.
-        ClassLoader callerCL = DriverManager.getCallerClassLoader();
+        ClassLoader callerCL = CallerID.getCallerID().getCallerClassLoader();
 
         return (getConnection(url, info, callerCL));
     }
@@ -182,13 +184,14 @@ public class DriverManager {
      * @return a connection to the URL
      * @exception SQLException if a database access error occurs
      */
+    @ikvm.internal.HasCallerID
     public static Connection getConnection(String url,
         String user, String password) throws SQLException {
         java.util.Properties info = new java.util.Properties();
 
         // Gets the classloader of the code that called this method, may
         // be null.
-        ClassLoader callerCL = DriverManager.getCallerClassLoader();
+        ClassLoader callerCL = CallerID.getCallerID().getCallerClassLoader();
 
         if (user != null) {
             info.put("user", user);
@@ -210,6 +213,7 @@ public class DriverManager {
      * @return a connection to the URL
      * @exception SQLException if a database access error occurs
      */
+    @ikvm.internal.HasCallerID
     public static Connection getConnection(String url)
         throws SQLException {
 
@@ -217,7 +221,7 @@ public class DriverManager {
 
         // Gets the classloader of the code that called this method, may
         // be null.
-        ClassLoader callerCL = DriverManager.getCallerClassLoader();
+        ClassLoader callerCL = CallerID.getCallerID().getCallerClassLoader();
 
         return (getConnection(url, info, callerCL));
     }
@@ -233,6 +237,7 @@ public class DriverManager {
      * that can connect to the given URL
      * @exception SQLException if a database access error occurs
      */
+    @ikvm.internal.HasCallerID
     public static Driver getDriver(String url)
         throws SQLException {
         java.util.Vector drivers = null;
@@ -250,7 +255,7 @@ public class DriverManager {
 
         // Gets the classloader of the code that called this method, may
         // be null.
-        ClassLoader callerCL = DriverManager.getCallerClassLoader();
+        ClassLoader callerCL = CallerID.getCallerID().getCallerClassLoader();
 
         // Walk through the loaded drivers attempting to locate someone
         // who understands the given URL.
@@ -319,11 +324,12 @@ public class DriverManager {
      * @param driver the JDBC Driver to drop
      * @exception SQLException if a database access error occurs
      */
+    @ikvm.internal.HasCallerID
     public static synchronized void deregisterDriver(Driver driver)
         throws SQLException {
         // Gets the classloader of the code that called this method,
         // may be null.
-        ClassLoader callerCL = DriverManager.getCallerClassLoader();
+        ClassLoader callerCL = CallerID.getCallerID().getCallerClassLoader();
         println("DriverManager.deregisterDriver: " + driver);
 
         // Walk through the loaded drivers.
@@ -363,6 +369,7 @@ public class DriverManager {
      *
      * @return the list of JDBC Drivers loaded by the caller's class loader
      */
+    @ikvm.internal.HasCallerID
     public static java.util.Enumeration<Driver> getDrivers() {
         java.util.Vector<Driver> result = new java.util.Vector<Driver>();
         java.util.Vector drivers = null;
@@ -378,7 +385,7 @@ public class DriverManager {
 
         // Gets the classloader of the code that called this method, may
         // be null.
-        ClassLoader callerCL = DriverManager.getCallerClassLoader();
+        ClassLoader callerCL = CallerID.getCallerID().getCallerClassLoader();
 
         // Walk through the loaded drivers.
         for (int i = 0; i < drivers.size(); i++) {
@@ -666,9 +673,6 @@ public class DriverManager {
     private static boolean initialized = false;
 
     private static Object logSync = new Object();
-
-    /* Returns the caller's class loader, or null if none */
-    private static native ClassLoader getCallerClassLoader();
 
 }
 
