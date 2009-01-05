@@ -1070,6 +1070,7 @@ java/net/SocketInputStream.java
 java/net/SocketOutputStream.java
 java/nio/Bits.java
 java/security/AccessController.java
+java/sql/DriverManager.java
 java/text/Bidi.java
 java/util/ResourceBundle.java
 java/util/concurrent/locks/AbstractQueuedSynchronizer.java
@@ -8056,7 +8057,6 @@ SystemProperties.java
 ../../openjdk6-b12/jdk/src/share/classes/java/sql/DataTruncation.java
 ../../openjdk6-b12/jdk/src/share/classes/java/sql/Date.java
 ../../openjdk6-b12/jdk/src/share/classes/java/sql/Driver.java
-../../openjdk6-b12/jdk/src/share/classes/java/sql/DriverManager.java
 ../../openjdk6-b12/jdk/src/share/classes/java/sql/DriverPropertyInfo.java
 ../../openjdk6-b12/jdk/src/share/classes/java/sql/NClob.java
 ../../openjdk6-b12/jdk/src/share/classes/java/sql/ParameterMetaData.java

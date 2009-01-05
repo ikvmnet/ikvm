@@ -770,6 +770,7 @@ assembly.class
 	-r:System.Drawing
     com/sun/imageio/plugins/jpeg/*.class
     icedtea/rt/com/sun/media/sound/*.class
+    java/sql/*.class
     sun/net/dns/*.class
     ServiceUI.class
     ../../openjdk6-b12/control/build/linux-amd64/impsrc/com/sun/activation/registries/*.class
