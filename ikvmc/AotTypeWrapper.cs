@@ -863,7 +863,10 @@ namespace IKVM.Internal
 					ilgen.Emit(OpCodes.Ldarg_1);
 					ilgen.Emit(OpCodes.Call, ghostIsInstanceArrayMethod);
 					ilgen.Emit(OpCodes.Brtrue_S, end);
-					EmitHelper.Throw(ilgen, "java.lang.ClassCastException");
+					ilgen.Emit(OpCodes.Ldarg_0);
+					ilgen.Emit(OpCodes.Ldtoken, typeBuilder);
+					ilgen.Emit(OpCodes.Ldarg_1);
+					ilgen.Emit(OpCodes.Call, StaticCompiler.GetType("IKVM.Runtime.GhostTag").GetMethod("ThrowClassCastException", BindingFlags.NonPublic | BindingFlags.Static));
 					ilgen.MarkLabel(end);
 					ilgen.Emit(OpCodes.Ret);
 

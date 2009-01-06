@@ -77,6 +77,18 @@ namespace IKVM.Runtime
 			}
 			return false;
 		}
+
+		// this method is called from <GhostType>.CastArray()
+		[HideFromJava]
+		internal static void ThrowClassCastException(object obj, RuntimeTypeHandle typeHandle, int rank)
+		{
+#if !FIRST_PASS
+			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			sb.Append(ikvm.runtime.Util.getClassFromObject(obj).getName()).Append(" cannot be cast to ")
+				.Append('[', rank).Append('L').Append(ikvm.runtime.Util.getClassFromTypeHandle(typeHandle).getName()).Append(';');
+			throw new java.lang.ClassCastException(sb.ToString());
+#endif
+		}
 	}
 
 	public static class ByteCodeHelper
