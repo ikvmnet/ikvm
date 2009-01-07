@@ -358,6 +358,7 @@ namespace ikvm.awt
 		{
 			try
 			{
+				filename = new java.io.File(filename).getPath(); //convert a Java file name to .NET filename (slahes, backslasches, etc)
 				using(System.IO.FileStream stream = new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
 				{
 					return new BufferedImage(new Bitmap(Image.FromStream(stream)));
