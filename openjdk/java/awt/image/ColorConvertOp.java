@@ -328,7 +328,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp
     return new BufferedImage(dstCM,
                              createCompatibleDestRaster(src.getRaster(),
                                                         dstCM.getColorSpace(),
-                                                        src.getColorModel().hasAlpha,
+                                                        src.getColorModel().hasAlpha(),
                                                         dstCM.getTransferType()),
                              src.isAlphaPremultiplied, null);
   }

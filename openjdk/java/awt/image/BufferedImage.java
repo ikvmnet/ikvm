@@ -651,7 +651,7 @@ public class BufferedImage extends java.awt.Image
                 bitmap = new cli.System.Drawing.Bitmap(width, height, PixelFormat.wrap( PixelFormat.Format32bppArgb ));
                 for( int y = 0; y<height; y++){
                     for(int x = 0; x<width; x++){
-                        int rgb = getRGB(x, y);
+                        int rgb = colorModel.getRGB(raster.getDataElements(x, y, null));
                         bitmap.SetPixel(x, y, cli.System.Drawing.Color.FromArgb(rgb));
                     }
                 }
@@ -698,16 +698,29 @@ public class BufferedImage extends java.awt.Image
             raster = createRaster(width, height);
         }
         
-        // Request the .NET pixel pointer
-        cli.System.Drawing.Rectangle rec = new cli.System.Drawing.Rectangle(0, 0, width, height);
-        cli.System.Drawing.Imaging.BitmapData data = bitmap.LockBits(rec, ImageLockMode.wrap(ImageLockMode.ReadOnly), PixelFormat.wrap( PixelFormat.Format32bppArgb ));
-        cli.System.IntPtr pixelPtr = data.get_Scan0();
-        
-        // Request the pixel data from .NET and copy it to Java
-        int[] pixelData = ((DataBufferInt)raster.getDataBuffer()).getData();
-        cli.System.Runtime.InteropServices.Marshal.Copy(pixelPtr, pixelData, 0, pixelData.length);
-        
-        bitmap.UnlockBits(data);
+        switch (getType()){
+        case TYPE_INT_ARGB:
+            // Request the .NET pixel pointer
+            cli.System.Drawing.Rectangle rec = new cli.System.Drawing.Rectangle(0, 0, width, height);
+            cli.System.Drawing.Imaging.BitmapData data = bitmap.LockBits(rec, ImageLockMode.wrap(ImageLockMode.ReadOnly), PixelFormat.wrap( PixelFormat.Format32bppArgb ));
+            cli.System.IntPtr pixelPtr = data.get_Scan0();
+            
+            // Request the pixel data from .NET and copy it to Java
+            int[] pixelData = ((DataBufferInt)raster.getDataBuffer()).getData();
+            cli.System.Runtime.InteropServices.Marshal.Copy(pixelPtr, pixelData, 0, pixelData.length);
+            
+            bitmap.UnlockBits(data);
+            break;
+        default:{
+            for( int y = 0; y<height; y++){
+                for(int x = 0; x<width; x++){
+                	int rgb = bitmap.GetPixel(x, y).ToArgb();
+                	raster.setDataElements(x, y, colorModel.getDataElements(rgb, null));
+                }
+            }
+            return;
+        }   
+    }
         this.currentBuffer = BUFFER_BOTH;
     }
 

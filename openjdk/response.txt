@@ -619,6 +619,7 @@ assembly.class
     ../../openjdk6-b12/jdk/src/share/classes/java/awt/image/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/awt/image/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/*.class
+    ../../openjdk6-b12/jdk/src/share/classes/sun/java2d/cmm/*.class
     ../../openjdk6-b12/jdk/src/share/classes/sun/swing/*.class
     ../classpath/gnu/java/awt/peer/*.class
     ../classpath/gnu/java/awt/peer/gtk/*.class
