@@ -9053,7 +9053,7 @@ namespace IKVM.Internal
 			if(len > 0
 				&& parameters[len - 1].ParameterType == CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType
 				&& !method.DeclaringType.IsInterface
-				&& ClassLoaderWrapper.IsCoreAssemblyType(method.DeclaringType))
+				&& GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader())
 			{
 				len--;
 				flags |= MemberFlags.CallerID;
