@@ -130,11 +130,6 @@ namespace IKVM.Internal
 			}
 		}
 
-		internal static bool IsCoreAssemblyType(Type type)
-		{
-			return type.Assembly == JVM.CoreAssembly;
-		}
-
 		internal ClassLoaderWrapper(CodeGenOptions codegenoptions, object javaClassLoader)
 		{
 			this.codegenoptions = codegenoptions;
