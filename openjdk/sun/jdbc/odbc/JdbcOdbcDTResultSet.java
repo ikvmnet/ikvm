@@ -34,16 +34,17 @@ import java.util.Map;
 import cli.System.Data.*;
 
 /**
- * @author Volker Berlin
+ * This JDBC Driver is a wrapper to the ODBC.NET Data Provider.
+ * This ResultSet based on DataTable.
  */
-public class JdbcOdbcMetaResultSet implements ResultSet{
+public class JdbcOdbcDTResultSet implements ResultSet{
 
     private final DataTable data;
     private final DataRowCollection rows;
     private int rowIndex; // row index starting with 0;
     private cli.System.Data.DataRow row;
 
-    public JdbcOdbcMetaResultSet(DataTable data){
+    public JdbcOdbcDTResultSet(DataTable data){
         this.data = data;
         this.rows = data.get_Rows();
         this.rowIndex = -1;
@@ -93,8 +94,7 @@ public class JdbcOdbcMetaResultSet implements ResultSet{
 
 
     public int findColumn(String columnLabel) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+        return data.get_Columns().IndexOf(columnLabel) + 1;
     }
 
 
@@ -339,7 +339,7 @@ public class JdbcOdbcMetaResultSet implements ResultSet{
 
 
     public ResultSetMetaData getMetaData(){
-        return new JdbcOdbcResultSetMetaData(null, data);
+        return new JdbcOdbcDTResultSetMetaData(null, data);
     }
 
 

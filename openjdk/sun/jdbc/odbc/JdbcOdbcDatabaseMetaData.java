@@ -413,7 +413,7 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
         // the description of the restrictions can you request with GetSchema("Restrictions")
         String[] restrictions = new String[]{catalog, schemaPattern, procedureNamePattern};
         DataTable data = netConn.GetSchema(OdbcMetaDataCollectionNames.Procedures, restrictions);
-        return new JdbcOdbcMetaResultSet(data);
+        return new JdbcOdbcDTResultSet(data);
     }
 
 

@@ -28,7 +28,7 @@ import java.sql.*;
 import cli.System.Data.Common.*;
 
 /**
- * This JDBC Driver is a wrapper to the ODBC.NET Data Provider
+ * This JDBC Driver is a wrapper to the ODBC.NET Data Provider.
  */
 public class JdbcOdbcStatement implements Statement{
 
@@ -52,8 +52,8 @@ public class JdbcOdbcStatement implements Statement{
     public void cancel() throws SQLException{
         try{
             command.Cancel();
-        }catch(Exception ex){
-            throw new SQLException(ex);
+        }catch(Throwable ex){
+            throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
 
@@ -80,8 +80,8 @@ public class JdbcOdbcStatement implements Statement{
             command.set_CommandText(sql);
             DbDataReader reader = command.ExecuteReader();
             return reader != null;
-        }catch(Exception ex){
-            throw new SQLException(ex);
+        }catch(Throwable ex){
+            throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
 
@@ -111,8 +111,8 @@ public class JdbcOdbcStatement implements Statement{
         try{
             command.set_CommandText(sql);
             return new JdbcOdbcResultSet(this, command.ExecuteReader());
-        }catch(Exception ex){
-            throw new SQLException(ex);
+        }catch(Throwable ex){
+            throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
 
@@ -121,8 +121,8 @@ public class JdbcOdbcStatement implements Statement{
         try{
             command.set_CommandText(sql);
             return command.ExecuteNonQuery();
-        }catch(Exception ex){
-            throw new SQLException(ex);
+        }catch(Throwable ex){
+            throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
 
@@ -188,9 +188,8 @@ public class JdbcOdbcStatement implements Statement{
     }
 
 
-    public int getQueryTimeout() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public int getQueryTimeout(){
+        return command.get_CommandTimeout();
     }
 
 
@@ -284,9 +283,8 @@ public class JdbcOdbcStatement implements Statement{
     }
 
 
-    public void setQueryTimeout(int seconds) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setQueryTimeout(int seconds){
+        command.set_CommandTimeout(seconds);
     }
 
 

@@ -44,26 +44,30 @@ public class JdbcOdbcConnection implements Connection{
 
 
     JdbcOdbcConnection(String connectString, Properties info) throws SQLException{
-        boolean isDSN = connectString.indexOf('=') < 0;
-        StringBuilder connStr = new StringBuilder();
-        if(isDSN){
-            connStr.append("DSN=");
+        try{
+            boolean isDSN = connectString.indexOf('=') < 0;
+            StringBuilder connStr = new StringBuilder();
+            if(isDSN){
+                connStr.append("DSN=");
+            }
+            connStr.append(connectString);
+
+            String uid = info.getProperty("user");
+            String pwd = info.getProperty("password");
+
+            if(uid != null){
+                connStr.append(";UID=").append(uid);
+            }
+            if(pwd != null){
+                connStr.append(";PWD=").append(pwd);
+            }
+
+            netConn = new OdbcConnection(connStr.toString());
+
+            netConn.Open();
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
         }
-        connStr.append(connectString);
-
-        String uid = info.getProperty("user");
-        String pwd = info.getProperty("password");
-
-        if(uid != null){
-            connStr.append(";UID=").append(uid);
-        }
-        if(pwd != null){
-            connStr.append(";PWD=").append(pwd);
-        }
-
-        netConn = new OdbcConnection(connStr.toString());
-
-        netConn.Open();
     }
 
 
@@ -76,8 +80,8 @@ public class JdbcOdbcConnection implements Connection{
     public void close() throws SQLException{
         try{
             netConn.Close();
-        }catch(Exception ex){
-            throw new SQLException(ex);
+        }catch(Throwable ex){
+            throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
 
@@ -115,8 +119,8 @@ public class JdbcOdbcConnection implements Connection{
     public Statement createStatement() throws SQLException{
         try{
             return new JdbcOdbcStatement(this, netConn.CreateCommand());
-        }catch(Exception ex){
-            throw new SQLException(ex);
+        }catch(Throwable ex){
+            throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
 
@@ -171,8 +175,8 @@ public class JdbcOdbcConnection implements Connection{
                 transaction.Commit();
                 transaction = null;
             }
-        }catch(Exception ex){
-            throw new SQLException(ex);
+        }catch(Throwable ex){
+            throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
 
@@ -190,8 +194,8 @@ public class JdbcOdbcConnection implements Connection{
             }
             transaction.Commit();
             transaction = netConn.BeginTransaction(transaction.get_IsolationLevel());
-        }catch(Exception ex){
-            throw new SQLException(ex);
+        }catch(Throwable ex){
+            throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
 
@@ -204,8 +208,8 @@ public class JdbcOdbcConnection implements Connection{
             }
             transaction.Rollback();
             transaction = netConn.BeginTransaction(transaction.get_IsolationLevel());
-        }catch(Exception ex){
-            throw new SQLException(ex);
+        }catch(Throwable ex){
+            throw JdbcOdbcUtils.createSQLException(ex);
         }
     }
 
