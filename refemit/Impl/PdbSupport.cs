@@ -29,6 +29,20 @@ namespace IKVM.Reflection.Emit.Impl
 {
 	static class PdbSupport
 	{
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct IMAGE_DEBUG_DIRECTORY
+		{
+			internal uint Characteristics;
+			internal uint TimeDateStamp;
+			internal ushort MajorVersion;
+			internal ushort MinorVersion;
+			internal uint Type;
+			internal uint SizeOfData;
+			internal uint AddressOfRawData;
+			internal uint PointerToRawData;
+		}
+
+#if HAS_ISYMWRAPPER
 		[Guid("809c652e-7396-11d2-9771-00a0c9b4d50c")]
 		[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 		[CoClass(typeof(MetaDataDispenserClass))]
@@ -98,19 +112,6 @@ namespace IKVM.Reflection.Emit.Impl
 		[ComImport]
 		private class CorSymWriterClass { }
 
-		[StructLayout(LayoutKind.Sequential)]
-		internal struct IMAGE_DEBUG_DIRECTORY
-		{
-			internal uint Characteristics;
-			internal uint TimeDateStamp;
-			internal ushort MajorVersion;
-			internal ushort MinorVersion;
-			internal uint Type;
-			internal uint SizeOfData;
-			internal uint AddressOfRawData;
-			internal uint PointerToRawData;
-		}
-
 		private sealed class MySymWriter : SymWriter
 		{
 			private readonly IntPtr ppISymUnmanagedWriter = Marshal.AllocHGlobal(IntPtr.Size);
@@ -175,5 +176,21 @@ namespace IKVM.Reflection.Emit.Impl
 		{
 			((MySymWriter)writer).RemapToken(oldToken, newToken);
 		}
+#else
+		internal static ISymbolWriter CreateSymbolWriter(string fileName)
+		{
+			throw new NotImplementedException();
+		}
+
+		internal static byte[] GetDebugInfo(ISymbolWriter writer, ref IMAGE_DEBUG_DIRECTORY idd)
+		{
+			throw new NotImplementedException();
+		}
+
+		internal static void RemapToken(ISymbolWriter writer, int oldToken, int newToken)
+		{
+			throw new NotImplementedException();
+		}
+#endif
 	}
 }

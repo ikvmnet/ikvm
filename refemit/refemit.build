@@ -1,10 +1,13 @@
 <?xml version="1.0"?>
 <project name="refemit" default="IKVM.Reflection.Emit">
     <target name="IKVM.Reflection.Emit">
-        <property overwrite="false" name="signed" value="" />
         <property name="defs" value="IKVM_REF_EMIT" />
         <if test="${property::exists('signed')}">
             <property name="defs" value="${defs};${signed}" />
+        </if>
+        <if test="${file::exists(path::combine(framework::get-assembly-directory(framework::get-target-framework()), 'ISymWrapper.dll'))}">
+            <property name="defs" value="${defs};HAS_ISYMWRAPPER" />
+            <property name="has.isymwrapper" value="true" />
         </if>
         <csc target="library" output="../bin/IKVM.Reflection.Emit.dll" define="${defs}">
             <sources>
@@ -39,7 +42,7 @@
                 <include name="Writer/VersionInfo.cs" />
             </sources>
             <references>
-                <include name="${framework::get-assembly-directory(framework::get-target-framework())}/ISymWrapper.dll" />
+                <include if="${property::exists('has.isymwrapper')}" name="${framework::get-assembly-directory(framework::get-target-framework())}/ISymWrapper.dll" />
             </references>
         </csc>
     </target>
