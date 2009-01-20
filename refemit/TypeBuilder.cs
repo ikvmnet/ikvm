@@ -644,7 +644,8 @@ namespace IKVM.Reflection.Emit
 		public override bool Equals(object o)
 		{
 			ArrayType at = o as ArrayType;
-			return at != null && at.type.Equals(type);
+			// MONOBUG we need to call Equals(object) to end up in our version (in TypeBase), because Mono's Type.Equals is broken
+			return at != null && at.type.Equals((object)type);
 		}
 
 		public override int GetHashCode()

@@ -256,7 +256,8 @@ namespace IKVM.Internal
 			// NOTE this also means that this will only work during static compilation, because ModuleBuilder.CreateGlobalFunctions() must
 			// be called before the field can be used.
 			FieldBuilder fb = mod.DefineInitializedData("__<str>", data, FieldAttributes.Static | FieldAttributes.PrivateScope);
-			if (!fb.FieldType.Equals(type))
+			// MONOBUG Type.Equals(Type) is broken on Mono. We have to use the virtual method that ends up in our implementation
+			if (!fb.FieldType.Equals((object)type))
 			{
 				// this is actually relatively harmless, but I would like to know about it, so we abort and hope that users report this when they encounter it
 				JVM.CriticalFailure("Unsupported runtime: ModuleBuilder.DefineInitializedData() field type mispredicted", null);

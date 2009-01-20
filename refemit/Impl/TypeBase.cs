@@ -219,5 +219,23 @@ namespace IKVM.Reflection.Emit.Impl
 		public abstract override int MetadataToken { get; }
 
 		internal abstract ModuleBuilder ModuleBuilder { get; }
+
+		// MONOBUG we need to override Equals because Mono's Type.Equals is broken
+		public override bool Equals(object o)
+		{
+			Type other = o as Type;
+			return other != null && this.UnderlyingSystemType == other.UnderlyingSystemType;
+		}
+
+		// MONOBUG we need to override GetHashCode because Mono's Type.GetHashCode is broken
+		public override int GetHashCode()
+		{
+			Type underlying = this.UnderlyingSystemType;
+			if (underlying == this)
+			{
+				return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
+			}
+			return underlying.GetHashCode();
+		}
 	}
 }
