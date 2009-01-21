@@ -672,11 +672,6 @@ namespace IKVM.Reflection.Emit
 			throw new NotImplementedException();
 		}
 
-		private void EmitWriteLineHelper(Type type)
-		{
-			throw new NotImplementedException();
-		}
-
 		public void EmitWriteLine(string text)
 		{
 			Emit(OpCodes.Ldstr, text);

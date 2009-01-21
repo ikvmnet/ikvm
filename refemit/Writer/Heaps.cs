@@ -1914,7 +1914,6 @@ namespace IKVM.Reflection.Emit.Writer
 			{
 				if (table != null && table.RowCount > 0)
 				{
-					int pos = mw.Position;
 					mw.Write(table.RowCount);
 				}
 			}
