@@ -27,11 +27,11 @@
                 <include name="SignatureHelper.cs" />
                 <include name="Tokens.cs" />
                 <include name="TypeBuilder.cs" />
-                <include name="impl/CryptoConvert.cs" />
-                <include name="impl/CryptoHack.cs" />
-                <include name="impl/ITypeOwner.cs" />
-                <include name="impl/PdbSupport.cs" />
-                <include name="impl/TypeBase.cs" />
+                <include name="Impl/CryptoConvert.cs" />
+                <include name="Impl/CryptoHack.cs" />
+                <include name="Impl/ITypeOwner.cs" />
+                <include name="Impl/PdbSupport.cs" />
+                <include name="Impl/TypeBase.cs" />
                 <include name="Properties/AssemblyInfo.cs" />
                 <include name="Writer/ByteBuffer.cs" />
                 <include name="Writer/Heaps.cs" />
