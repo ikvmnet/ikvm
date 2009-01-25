@@ -27,6 +27,7 @@ import ikvm.lang.CIL;
 
 import java.math.BigDecimal;
 import java.sql.*;
+import java.util.Calendar;
 import java.util.HashMap;
 
 import cli.System.Data.Common.DbException;
@@ -46,7 +47,7 @@ public class JdbcOdbcUtils{
         classNameMap.put("System.Double", "java.lang.Double");
         classNameMap.put("System.Decimal", "java.math.BigDecimal");
         classNameMap.put("System.DateTime", "java.sql.Timestamp");
-        classNameMap.put("System.TimeSpan", "java.sql.Time");       
+        classNameMap.put("System.TimeSpan", "java.sql.Time");
     }
 
 
@@ -97,19 +98,64 @@ public class JdbcOdbcUtils{
         return obj;
     }
 
+
     /**
      * Get the milliseconds in the Java range from a .NET DateTime object.
-     * @param dt the DateTime object
+     * 
+     * @param dt
+     *            the DateTime object
      * @return the milliseconds since 1970-01-01
      */
     public static long getJavaMillis(cli.System.DateTime dt){
-        //calculation copied from System.currentTimeMillis()
+        // calculation copied from System.currentTimeMillis()
         long january_1st_1970 = 62135596800000L;
         return dt.get_Ticks() / 10000L - january_1st_1970;
     }
-    
+
+
     /**
-     * The only valid Exception for JDBC is a SQLException.
+     * Convert a local (current default) Date to a Date in the time zone of the given calendar. Do nothing if date or
+     * calendar is null.
+     * 
+     * @param date
+     *            the converting Date
+     * @param cal
+     *            the Calendar with the time zone
+     */
+    public static void convertLocalToCalendarDate(java.util.Date date, Calendar cal){
+        if(date == null || cal == null){
+            return;
+        }
+        cal.set(date.getYear() + 1900, date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date
+                .getSeconds());
+        long millis = cal.getTimeInMillis() / 1000 * 1000 + date.getTime() % 1000;
+        date.setTime(millis);
+    }
+
+
+    /**
+     * Convert a Date in the calendar time zone to a date in the local (current default) time zone. Do nothing if date
+     * or calendar is null.
+     * 
+     * @param date
+     * @param cal
+     */
+    public static void convertCalendarToLocalDate(java.util.Date date, Calendar cal){
+        if(date == null || cal == null){
+            return;
+        }
+        cal.setTimeInMillis(date.getTime());
+        date.setYear(cal.get(Calendar.YEAR)-1900);
+        date.setMonth(cal.get(Calendar.MONTH));
+        date.setDate(cal.get(Calendar.DAY_OF_MONTH));
+        date.setHours(cal.get(Calendar.HOUR_OF_DAY));
+        date.setMinutes(cal.get(Calendar.MINUTE));
+        date.setSeconds(cal.get(Calendar.SECOND));
+     }
+
+
+    /**
+     * The only valid Exception for JDBC is a SQLException. Here we create one based on the real exception.
      * 
      * @param th
      *            any Throwable that occur

@@ -351,7 +351,11 @@ public class JdbcOdbcConnection implements Connection{
 
 
     public void setCatalog(String catalog) throws SQLException{
-        netConn.ChangeDatabase(catalog);
+        try{
+            netConn.ChangeDatabase(catalog);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
     }
 
 

@@ -26,20 +26,16 @@ package sun.jdbc.odbc;
 import java.sql.*;
 
 import cli.System.Data.*;
-import cli.System.Data.Common.*;
-import cli.System.Data.Odbc.*;
 
 /**
  * This JDBC Driver is a wrapper to the ODBC.NET Data Provider
  */
 public class JdbcOdbcDTResultSetMetaData implements ResultSetMetaData{
 
-    private final DbDataReader reader;
     private final DataTable table;
 
 
-    public JdbcOdbcDTResultSetMetaData(DbDataReader reader, DataTable table){
-        this.reader = reader;
+    public JdbcOdbcDTResultSetMetaData(DataTable table){
         this.table = table;
     }
 
@@ -50,8 +46,8 @@ public class JdbcOdbcDTResultSetMetaData implements ResultSetMetaData{
 
 
     public String getColumnClassName(int column){
-        cli.System.Type type = getDataColumn(column).get_DataType();
-        return type.get_FullName();
+        String type = getDataColumn(column).get_DataType().toString();
+        return JdbcOdbcUtils.getJavaClassName(type);
     }
 
 
@@ -84,7 +80,7 @@ public class JdbcOdbcDTResultSetMetaData implements ResultSetMetaData{
 
 
     public String getColumnTypeName(int column) throws SQLException{
-        return reader != null ? reader.GetDataTypeName(column - 1) : "";
+        return "";
     }
 
 
@@ -173,6 +169,11 @@ public class JdbcOdbcDTResultSetMetaData implements ResultSetMetaData{
     }
 
 
+    /**
+     * Get a DataColumn from the DataTable
+     * @param column the JDBC column index starting with 1
+     * @return the DataColumn
+     */
     private DataColumn getDataColumn(int column){
         return table.get_Columns().get_Item(column - 1);
     }

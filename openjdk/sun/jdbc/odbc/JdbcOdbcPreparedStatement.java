@@ -42,11 +42,14 @@ import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.Calendar;
 
+import cli.System.DBNull;
+import cli.System.Data.ParameterDirection;
 import cli.System.Data.Common.DbCommand;
-
-
+import cli.System.Data.Common.DbParameter;
+import cli.System.Data.Common.DbParameterCollection;
 
 /**
  * @author Volker Berlin
@@ -56,281 +59,315 @@ public class JdbcOdbcPreparedStatement extends JdbcOdbcStatement implements Prep
     public JdbcOdbcPreparedStatement(JdbcOdbcConnection jdbcConn, DbCommand command, String sql){
         super(jdbcConn, command);
         command.set_CommandText(sql);
+        command.Prepare();
     }
+
 
     public void addBatch() throws SQLException{
         // TODO Auto-generated method stub
-        
+
     }
+
 
     public void clearParameters() throws SQLException{
         // TODO Auto-generated method stub
-        
+
     }
+
 
     public boolean execute() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        return super.execute(null);
     }
+
 
     public ResultSet executeQuery() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        return super.executeQuery(null);
     }
 
+
     public int executeUpdate() throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+        return super.executeUpdate(null);
     }
+
 
     public ResultSetMetaData getMetaData() throws SQLException{
         // TODO Auto-generated method stub
         return null;
     }
 
+
     public ParameterMetaData getParameterMetaData() throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
+
 
     public void setArray(int parameterIndex, Array x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.ARRAY);
     }
+
 
     public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.LONGVARCHAR);
     }
+
 
     public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.LONGVARCHAR, length);
     }
+
 
     public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.LONGVARCHAR, (int)length);
     }
+
 
     public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.DECIMAL);
     }
+
 
     public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.LONGVARBINARY);
     }
+
 
     public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.LONGVARBINARY, length);
     }
+
 
     public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.LONGVARBINARY, (int)length);
     }
+
 
     public void setBlob(int parameterIndex, Blob x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.BLOB);
     }
 
-    public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setBlob(int parameterIndex, InputStream x) throws SQLException{
+        setObject(parameterIndex, x, Types.BLOB);
     }
 
-    public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setBlob(int parameterIndex, InputStream x, long length) throws SQLException{
+        setObject(parameterIndex, x, Types.BLOB, (int)length);
     }
+
 
     public void setBoolean(int parameterIndex, boolean x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, Boolean.valueOf(x), Types.BOOLEAN);
     }
+
 
     public void setByte(int parameterIndex, byte x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, Byte.valueOf(x), Types.TINYINT);
     }
+
 
     public void setBytes(int parameterIndex, byte[] x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.BINARY);
     }
 
-    public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setCharacterStream(int parameterIndex, Reader x) throws SQLException{
+        setObject(parameterIndex, x, Types.LONGVARCHAR);
     }
 
-    public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setCharacterStream(int parameterIndex, Reader x, int length) throws SQLException{
+        setObject(parameterIndex, x, Types.NCLOB, length);
     }
 
-    public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setCharacterStream(int parameterIndex, Reader x, long length) throws SQLException{
+        setObject(parameterIndex, x, Types.LONGVARCHAR, (int)length);
     }
+
 
     public void setClob(int parameterIndex, Clob x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.CLOB);
     }
 
-    public void setClob(int parameterIndex, Reader reader) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setClob(int parameterIndex, Reader x) throws SQLException{
+        setObject(parameterIndex, x, Types.CLOB);
     }
 
-    public void setClob(int parameterIndex, Reader reader, long length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setClob(int parameterIndex, Reader x, long length) throws SQLException{
+        setObject(parameterIndex, x, Types.CLOB, (int)length);
     }
+
 
     public void setDate(int parameterIndex, Date x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.DATE);
     }
+
 
     public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        JdbcOdbcUtils.convertCalendarToLocalDate(x, cal);
+        setObject(parameterIndex, x, Types.DATE);
     }
+
 
     public void setDouble(int parameterIndex, double x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, Double.valueOf(x), Types.DOUBLE);
     }
+
 
     public void setFloat(int parameterIndex, float x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, Float.valueOf(x), Types.FLOAT);
     }
+
 
     public void setInt(int parameterIndex, int x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, Integer.valueOf(x), Types.INTEGER);
     }
+
 
     public void setLong(int parameterIndex, long x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, Long.valueOf(x), Types.BIGINT);
     }
 
-    public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setNCharacterStream(int parameterIndex, Reader x) throws SQLException{
+        setObject(parameterIndex, x, Types.LONGNVARCHAR);
     }
 
-    public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setNCharacterStream(int parameterIndex, Reader x, long length) throws SQLException{
+        setObject(parameterIndex, x, Types.LONGNVARCHAR, (int)length);
     }
 
-    public void setNClob(int parameterIndex, NClob value) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setNClob(int parameterIndex, NClob x) throws SQLException{
+        setObject(parameterIndex, x, Types.NCLOB);
     }
 
-    public void setNClob(int parameterIndex, Reader reader) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setNClob(int parameterIndex, Reader x) throws SQLException{
+        setObject(parameterIndex, x, Types.NCLOB);
     }
 
-    public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setNClob(int parameterIndex, Reader x, long length) throws SQLException{
+        setObject(parameterIndex, x, Types.NCLOB, (int)length);
     }
 
-    public void setNString(int parameterIndex, String value) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setNString(int parameterIndex, String x) throws SQLException{
+        setObject(parameterIndex, x, Types.NVARCHAR);
     }
+
 
     public void setNull(int parameterIndex, int sqlType) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, null, sqlType);
     }
+
 
     public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, null, sqlType);
     }
 
+
     public void setObject(int parameterIndex, Object x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        DbParameter para = getPara(parameterIndex);
+        para.set_Value(x == null ? DBNull.Value : x);
+        if(para.get_Direction().Value == ParameterDirection.Output){
+            para.set_Direction(ParameterDirection.wrap(ParameterDirection.InputOutput));
+        }
     }
+
 
     public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException{
         // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x);
     }
+
 
     public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException{
         // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x);
     }
+
 
     public void setRef(int parameterIndex, Ref x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.REF);
     }
+
 
     public void setRowId(int parameterIndex, RowId x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.ROWID);
     }
 
-    public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException{
-        // TODO Auto-generated method stub
-        
+
+    public void setSQLXML(int parameterIndex, SQLXML x) throws SQLException{
+        setObject(parameterIndex, x, Types.SQLXML);
     }
+
 
     public void setShort(int parameterIndex, short x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, Short.valueOf(x), Types.SMALLINT);
     }
+
 
     public void setString(int parameterIndex, String x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.VARCHAR);
     }
+
 
     public void setTime(int parameterIndex, Time x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.TIME);
     }
+
 
     public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        JdbcOdbcUtils.convertCalendarToLocalDate(x, cal);
+        setObject(parameterIndex, x, Types.TIME);
     }
+
 
     public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.TIMESTAMP);
     }
+
 
     public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        JdbcOdbcUtils.convertCalendarToLocalDate(x, cal);
+        setObject(parameterIndex, x, Types.TIMESTAMP);
     }
+
 
     public void setURL(int parameterIndex, URL x) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.DATALINK);
     }
+
 
     public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException{
-        // TODO Auto-generated method stub
-        
+        setObject(parameterIndex, x, Types.LONGNVARCHAR, length);
     }
 
+
+    /**
+     * Get the DbParameter from the current command. If the parameter does not exits in the collection then add it.
+     * 
+     * @param parameterIndex
+     *            The JDBC parameter index starting with 1
+     * @return the DbParameter for the index.
+     * @throws SQLException
+     *             If any error occur.
+     */
+    protected DbParameter getPara(int parameterIndex) throws SQLException{
+        try{
+            DbParameterCollection params = command.get_Parameters();
+            while(params.get_Count() < parameterIndex){
+                params.Add(command.CreateParameter());
+            }
+            return params.get_Item(parameterIndex - 1);
+        }catch(Throwable th){
+            throw JdbcOdbcUtils.createSQLException(th);
+        }
+    }
 }

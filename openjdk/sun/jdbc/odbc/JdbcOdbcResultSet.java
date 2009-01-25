@@ -23,42 +23,21 @@
  */
 package sun.jdbc.odbc;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
-import java.net.URL;
 import java.sql.*;
-import java.util.Calendar;
-import java.util.Map;
 
-import cli.System.Convert;
-import cli.System.DBNull;
-import cli.System.IConvertible;
-import cli.System.Int16;
-import cli.System.Int32;
-import cli.System.Int64;
-import cli.System.OverflowException;
-import cli.System.Single;
-import cli.System.TimeSpan;
-import cli.System.Data.DataTable;
-import cli.System.Data.SchemaType;
-import cli.System.Data.Common.DbDataAdapter;
-import cli.System.Data.Common.DbDataReader;
-import cli.System.Data.Odbc.OdbcDataAdapter;
+import cli.System.Data.Common.*;
 
 /**
  * This JDBC Driver is a wrapper to the ODBC.NET Data Provider. This ResultSet based on a DataReader.
  */
-public class JdbcOdbcResultSet implements ResultSet{
+public class JdbcOdbcResultSet extends JdbcOdbcObject implements ResultSet{
 
-    private final DbDataReader reader;
+    private DbDataReader reader;
 
     private final JdbcOdbcStatement statement;
-
-    private boolean wasNull;
 
     private final int holdability;
 
@@ -70,29 +49,60 @@ public class JdbcOdbcResultSet implements ResultSet{
 
     private final int resultSetType;
 
+    private ResultSetMetaData metaData;
 
+
+    /**
+     * Create a ResultSet that based on a DbDataReader
+     * 
+     * @param statement
+     *            the statement for getStatement(), can be null
+     * @param reader
+     *            the reader for the data access, if it null then the resultset is closed.
+     */
     public JdbcOdbcResultSet(JdbcOdbcStatement statement, DbDataReader reader){
         this.statement = statement;
         this.reader = reader;
-        holdability = HOLD_CURSORS_OVER_COMMIT;
-        concurrency = CONCUR_READ_ONLY;
-        resultSetType = TYPE_FORWARD_ONLY;
+        this.resultSetType = TYPE_FORWARD_ONLY;
+        this.concurrency = CONCUR_READ_ONLY;
+        this.holdability = HOLD_CURSORS_OVER_COMMIT;
     }
 
 
-    public boolean absolute(int row) throws SQLException{
-        throwReadOnly();
+    /**
+     * A constructor for extended classes. All methods that use the reader must be overridden if you use this
+     * constructor.
+     * 
+     * @param statement
+     *            the statement for getStatement(), can be null
+     * @param resultSetType
+     *            a result set type; one of ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, or
+     *            ResultSet.TYPE_SCROLL_SENSITIVE
+     * @param concurrency
+     *            a concurrency type; one of ResultSet.CONCUR_READ_ONLY or ResultSet.CONCUR_UPDATABLE
+     */
+    protected JdbcOdbcResultSet(JdbcOdbcStatement statement, int resultSetType, int concurrency){
+        this.statement = statement;
+        this.reader = null;
+        this.resultSetType = resultSetType;
+        this.concurrency = concurrency;
+        this.holdability = HOLD_CURSORS_OVER_COMMIT;
+    }
+
+
+    public boolean absolute(int rowPosition) throws SQLException{
+        throwForwardOnly();
         return false; // for Compiler
     }
 
 
     public void afterLast() throws SQLException{
-        throwReadOnly();
+        throwForwardOnly();
     }
 
 
     public void beforeFirst() throws SQLException{
-        throwReadOnly();
+        throwForwardOnly();
     }
 
 
@@ -107,9 +117,9 @@ public class JdbcOdbcResultSet implements ResultSet{
     }
 
 
-    public void close() throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void close(){
+        reader = null;
+        statement.closeReaderIfPossible();
     }
 
 
@@ -118,202 +128,19 @@ public class JdbcOdbcResultSet implements ResultSet{
     }
 
 
+    @Override
     public int findColumn(String columnLabel) throws SQLException{
-        return reader.GetOrdinal(columnLabel) + 1;
+        try{
+            return getReader().GetOrdinal(columnLabel) + 1;
+        }catch(ArrayIndexOutOfBoundsException ex){
+            throw new SQLException("Column '" + columnLabel + "' not found.", "S0022", ex);
+        }
     }
 
 
     public boolean first() throws SQLException{
-        throwReadOnly();
+        throwForwardOnly();
         return false; // for compiler
-    }
-
-
-    public Array getArray(int columnIndex){
-        throw new UnsupportedOperationException();
-    }
-
-
-    public Array getArray(String columnLabel) throws SQLException{
-        return getArray(findColumn(columnLabel));
-    }
-
-
-    public InputStream getAsciiStream(int columnIndex) throws SQLException{
-        try{
-            String str = getString(columnIndex);
-            if(str == null){
-                return null;
-            }
-            return new ByteArrayInputStream(str.getBytes("Ascii"));
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public InputStream getAsciiStream(String columnLabel) throws SQLException{
-        return getAsciiStream(findColumn(columnLabel));
-    }
-
-
-    public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException{
-        BigDecimal dec = getBigDecimal(columnIndex);
-        if(dec == null){
-            return null;
-        }
-        if(dec.scale() != scale){
-            return dec.setScale(scale, BigDecimal.ROUND_HALF_EVEN);
-        }
-        return dec;
-    }
-
-
-    public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException{
-        return getBigDecimal(findColumn(columnLabel), scale);
-    }
-
-
-    public BigDecimal getBigDecimal(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return null;
-            }
-            String str = obj.toString();
-            return new BigDecimal(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public BigDecimal getBigDecimal(String columnLabel) throws SQLException{
-        return getBigDecimal(findColumn(columnLabel));
-    }
-
-
-    public InputStream getBinaryStream(int columnIndex) throws SQLException{
-        byte[] data = getBytes(columnIndex);
-        if(data == null){
-            return null;
-        }
-        return new ByteArrayInputStream(data);
-    }
-
-
-    public InputStream getBinaryStream(String columnLabel) throws SQLException{
-        return getBinaryStream(findColumn(columnLabel));
-    }
-
-
-    public Blob getBlob(int columnIndex){
-        throw new UnsupportedOperationException();
-    }
-
-
-    public Blob getBlob(String columnLabel) throws SQLException{
-        return getBlob(findColumn(columnLabel));
-    }
-
-
-    public boolean getBoolean(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return false;
-            }
-            if(obj instanceof IConvertible){
-                return Convert.ToBoolean(obj);
-            }
-            String str = obj.toString();
-            if(str.length() > 0){
-                // special handling for boolean representation in old databases
-                char ch = str.charAt(0);
-                if(ch == 'T' || ch == 't'){
-                    return true;
-                }
-                if(ch == 'F' || ch == 'f'){
-                    return true;
-                }
-            }
-            return cli.System.Boolean.Parse(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public boolean getBoolean(String columnLabel) throws SQLException{
-        return getBoolean(findColumn(columnLabel));
-    }
-
-
-    public byte getByte(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return 0;
-            }
-            if(obj instanceof IConvertible){
-                return Convert.ToByte(obj);
-            }
-            String str = obj.toString();
-            return cli.System.Byte.Parse(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public byte getByte(String columnLabel) throws SQLException{
-        return getByte(findColumn(columnLabel));
-    }
-
-
-    public byte[] getBytes(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return null;
-            }
-            if(obj instanceof byte[]){
-                return (byte[])obj;
-            }
-            String str = obj.toString();
-            return str.getBytes(); // which encoding?
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public byte[] getBytes(String columnLabel) throws SQLException{
-        return getBytes(findColumn(columnLabel));
-    }
-
-
-    public Reader getCharacterStream(int columnIndex) throws SQLException{
-        String str = getString(columnIndex);
-        if(str == null){
-            return null;
-        }
-        return new StringReader(str);
-    }
-
-
-    public Reader getCharacterStream(String columnLabel) throws SQLException{
-        return getCharacterStream(findColumn(columnLabel));
-    }
-
-
-    public Clob getClob(int columnIndex){
-        throw new UnsupportedOperationException();
-    }
-
-
-    public Clob getClob(String columnLabel) throws SQLException{
-        return getClob(findColumn(columnLabel));
     }
 
 
@@ -328,77 +155,6 @@ public class JdbcOdbcResultSet implements ResultSet{
     }
 
 
-    public Date getDate(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return null;
-            }
-            if(obj instanceof cli.System.DateTime){
-                cli.System.DateTime dt = (cli.System.DateTime)obj;
-                return new Date(dt.get_Year() - 1900, dt.get_Month() - 1, dt.get_Day());
-            }
-            String str = obj.toString();
-            return Date.valueOf(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public Date getDate(String columnLabel) throws SQLException{
-        return getDate(findColumn(columnLabel));
-    }
-
-
-    public Date getDate(int columnIndex, Calendar cal) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return null;
-            }
-            if(obj instanceof cli.System.DateTime){
-                cal.setTimeInMillis(JdbcOdbcUtils.getJavaMillis((cli.System.DateTime)obj));
-                int year = cal.get(Calendar.YEAR) - 1900;
-                int month = cal.get(Calendar.MONTH) - 1;
-                int day = cal.get(Calendar.DAY_OF_MONTH);
-                return new Date(year, month, day);
-            }
-            String str = obj.toString();
-            return Date.valueOf(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public Date getDate(String columnLabel, Calendar cal) throws SQLException{
-        return getDate(findColumn(columnLabel), cal);
-    }
-
-
-    public double getDouble(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return 0;
-            }
-            if(obj instanceof IConvertible){
-                return Convert.ToDouble(obj);
-            }
-            String str = obj.toString();
-            return cli.System.Double.Parse(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public double getDouble(String columnLabel) throws SQLException{
-        return getDouble(findColumn(columnLabel));
-    }
-
-
     public int getFetchDirection(){
         return FETCH_UNKNOWN;
     }
@@ -409,186 +165,22 @@ public class JdbcOdbcResultSet implements ResultSet{
     }
 
 
-    public float getFloat(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return 0;
-            }
-            if(obj instanceof IConvertible){
-                return Convert.ToSingle(obj);
-            }
-            String str = obj.toString();
-            return Single.Parse(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public float getFloat(String columnLabel) throws SQLException{
-        return getFloat(findColumn(columnLabel));
-    }
-
-
     public int getHoldability(){
         return holdability;
     }
 
 
-    public int getInt(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return 0;
-            }
-            if(obj instanceof IConvertible){
-                return Convert.ToInt32(obj);
-            }
-            String str = obj.toString();
-            return Int32.Parse(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
+    public ResultSetMetaData getMetaData() throws SQLException{
+        if(metaData == null){
+            metaData = new JdbcOdbcResultSetMetaData(getReader());
         }
+        return metaData;
     }
 
 
-    public int getInt(String columnLabel) throws SQLException{
-        return getInt(findColumn(columnLabel));
-    }
-
-
-    public long getLong(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return 0;
-            }
-            if(obj instanceof IConvertible){
-                return Convert.ToInt64(obj);
-            }
-            String str = obj.toString();
-            return Int64.Parse(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public long getLong(String columnLabel) throws SQLException{
-        return getLong(findColumn(columnLabel));
-    }
-
-
-    public ResultSetMetaData getMetaData(){
-        return new JdbcOdbcResultSetMetaData(reader);
-    }
-
-
-    public Reader getNCharacterStream(int columnIndex) throws SQLException{
-        return getCharacterStream(columnIndex);
-    }
-
-
-    public Reader getNCharacterStream(String columnLabel) throws SQLException{
-        return getCharacterStream(columnLabel);
-    }
-
-
-    public NClob getNClob(int columnIndex){
-        throw new UnsupportedOperationException();
-    }
-
-
-    public NClob getNClob(String columnLabel) throws SQLException{
-        return getNClob(findColumn(columnLabel));
-    }
-
-
-    public String getNString(int columnIndex) throws SQLException{
-        return getString(columnIndex);
-    }
-
-
-    public String getNString(String columnLabel) throws SQLException{
-        return getString(columnLabel);
-    }
-
-
-    public Object getObject(int columnIndex) throws SQLException{
-        return JdbcOdbcUtils.convertNet2Java(getObjectImpl(columnIndex));
-    }
-
-
-    public Object getObject(String columnLabel) throws SQLException{
-        return getObject(findColumn(columnLabel));
-    }
-
-
-    public Object getObject(int columnIndex, Map<String, Class<?>> map){
-        throw new UnsupportedOperationException();
-    }
-
-
-    public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException{
-        return getObject(findColumn(columnLabel), map);
-    }
-
-
-    public Ref getRef(int columnIndex){
-        throw new UnsupportedOperationException();
-    }
-
-
-    public Ref getRef(String columnLabel) throws SQLException{
-        return getRef(findColumn(columnLabel));
-    }
-
-
-    public int getRow(){
+    public int getRow() throws SQLException{
+        getReader(); // checking for is closed
         return row;
-    }
-
-
-    public RowId getRowId(int columnIndex){
-        throw new UnsupportedOperationException();
-    }
-
-
-    public RowId getRowId(String columnLabel) throws SQLException{
-        return getRowId(findColumn(columnLabel));
-    }
-
-
-    public SQLXML getSQLXML(int columnIndex){
-        throw new UnsupportedOperationException();
-    }
-
-
-    public SQLXML getSQLXML(String columnLabel) throws SQLException{
-        return getSQLXML(findColumn(columnLabel));
-    }
-
-
-    public short getShort(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return 0;
-            }
-            if(obj instanceof IConvertible){
-                return Convert.ToInt16(obj);
-            }
-            String str = obj.toString();
-            return Int16.Parse(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public short getShort(String columnLabel) throws SQLException{
-        return getShort(findColumn(columnLabel));
     }
 
 
@@ -597,122 +189,8 @@ public class JdbcOdbcResultSet implements ResultSet{
     }
 
 
-    public String getString(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return null;
-            }
-            return obj.toString();
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public String getString(String columnLabel) throws SQLException{
-        return getString(findColumn(columnLabel));
-    }
-
-
-    public Time getTime(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return null;
-            }
-            if(obj instanceof cli.System.DateTime){
-                cli.System.DateTime dt = (cli.System.DateTime)obj;
-                return new Time(dt.get_Hour(), dt.get_Minute() - 1, dt.get_Second());
-            }
-            if(obj instanceof cli.System.TimeSpan){
-                cli.System.TimeSpan ts = (cli.System.TimeSpan)obj;
-                return new Time(ts.get_Hours(), ts.get_Minutes() - 1, ts.get_Seconds());
-            }
-            String str = obj.toString();
-            return Time.valueOf(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public Time getTime(String columnLabel) throws SQLException{
-        return getTime(findColumn(columnLabel));
-    }
-
-
-    public Time getTime(int columnIndex, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-
-    public Time getTime(String columnLabel, Calendar cal) throws SQLException{
-        return getTime(findColumn(columnLabel), cal);
-    }
-
-
-    public Timestamp getTimestamp(int columnIndex) throws SQLException{
-        try{
-            Object obj = getObjectImpl(columnIndex);
-            if(wasNull){
-                return null;
-            }
-            if(obj instanceof cli.System.DateTime){
-                cli.System.DateTime dt = (cli.System.DateTime)obj;
-                return new Timestamp(JdbcOdbcUtils.getJavaMillis(dt));
-            }
-            String str = obj.toString();
-            return Timestamp.valueOf(str);
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public Timestamp getTimestamp(String columnLabel) throws SQLException{
-        return getTimestamp(findColumn(columnLabel));
-    }
-
-
-    public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-
-    public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException{
-        return getTimestamp(findColumn(columnLabel), cal);
-    }
-
-
     public int getType(){
         return resultSetType;
-    }
-
-
-    public URL getURL(int columnIndex){
-        throw new UnsupportedOperationException();
-    }
-
-
-    public URL getURL(String columnLabel) throws SQLException{
-        return getURL(findColumn(columnLabel));
-    }
-
-
-    public InputStream getUnicodeStream(int columnIndex) throws SQLException{
-        try{
-            return new ByteArrayInputStream(getString(columnIndex).getBytes("UTF16"));
-        }catch(Throwable th){
-            throw JdbcOdbcUtils.createSQLException(th);
-        }
-    }
-
-
-    public InputStream getUnicodeStream(String columnLabel) throws SQLException{
-        return getUnicodeStream(findColumn(columnLabel));
     }
 
 
@@ -728,37 +206,36 @@ public class JdbcOdbcResultSet implements ResultSet{
 
 
     public boolean isAfterLast() throws SQLException{
-        throwReadOnly();
+        throwForwardOnly();
         return false; // only for compiler
     }
 
 
     public boolean isBeforeFirst() throws SQLException{
-        throwReadOnly();
+        throwForwardOnly();
         return false; // only for compiler
     }
 
 
-    public boolean isClosed() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+    public boolean isClosed(){
+        return reader == null;
     }
 
 
     public boolean isFirst() throws SQLException{
-        throwReadOnly();
+        throwForwardOnly();
         return false; // only for compiler
     }
 
 
     public boolean isLast() throws SQLException{
-        throwReadOnly();
+        throwForwardOnly();
         return false; // only for compiler
     }
 
 
     public boolean last() throws SQLException{
-        throwReadOnly();
+        throwForwardOnly();
         return false; // only for compiler
     }
 
@@ -774,28 +251,33 @@ public class JdbcOdbcResultSet implements ResultSet{
 
 
     public boolean next() throws SQLException{
-        if(reader.Read()){
+        DbDataReader dataReader = getReader();
+        //if we after the last row then we close the reader
+        //to prevent an error on repeating call of next() after the end
+        //that we check also get_IsClosed()
+        if(!dataReader.get_IsClosed() && dataReader.Read()){
             row++;
             return true;
         }
         row = 0;
+        statement.closeReaderIfPossible();
         return false;
     }
 
 
     public boolean previous() throws SQLException{
-        throwReadOnly();
+        throwForwardOnly();
         return false; // only for compiler
     }
 
 
     public void refreshRow() throws SQLException{
-        throwReadOnly();
+        throwForwardOnly();
     }
 
 
-    public boolean relative(int rows) throws SQLException{
-        throwReadOnly();
+    public boolean relative(int rowPositions) throws SQLException{
+        throwForwardOnly();
         return false; // only for compiler
     }
 
@@ -1243,11 +725,6 @@ public class JdbcOdbcResultSet implements ResultSet{
     }
 
 
-    public boolean wasNull(){
-        return wasNull;
-    }
-
-
     public boolean isWrapperFor(Class<?> iface){
         return iface.isAssignableFrom(this.getClass());
     }
@@ -1261,23 +738,45 @@ public class JdbcOdbcResultSet implements ResultSet{
     }
 
 
-    protected Object getObjectImpl(int columnIndex) throws SQLException{
-        try{
-            columnIndex--;
-            Object obj = reader.get_Item(columnIndex);
-            if(obj == null || obj == DBNull.Value){
-                wasNull = true;
-                return null;
-            }
-            return obj;
-        }catch(Throwable ex){
-            throw JdbcOdbcUtils.createSQLException(ex);
-        }
+    private void throwForwardOnly() throws SQLException{
+        throw new SQLException("ResultSet is forward only.", "24000");
     }
 
 
     private void throwReadOnly() throws SQLException{
-        throw new SQLException("ResultSet is read only.");
+        throw new SQLException("ResultSet is read only.", "24000");
+    }
+
+
+    /**
+     * Check if this ResultSet is closed before access to the DbDataReader
+     * 
+     * @return
+     * @throws SQLException
+     */
+    private DbDataReader getReader() throws SQLException{
+        if(reader == null){
+            throw new SQLException("ResultSet is closed.", "24000");
+        }
+        return reader;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Object getObjectImpl(int columnIndex) throws SQLException{
+        try{
+            DbDataReader datareader = getReader();
+            try{
+                return datareader.get_Item(columnIndex-1);
+            }catch(ArrayIndexOutOfBoundsException aioobe){
+                throw new SQLException( "Invalid column number ("+columnIndex+"). A number between 1 and "+datareader.get_FieldCount()+" is valid.", "S1002");
+            }
+        }catch(Throwable ex){
+            throw JdbcOdbcUtils.createSQLException(ex);
+        }
     }
 
 }

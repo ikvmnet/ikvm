@@ -31,6 +31,7 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
+import cli.System.Data.ParameterDirection;
 import cli.System.Data.Common.*;
 
 
@@ -40,675 +41,597 @@ import cli.System.Data.Common.*;
  */
 public class JdbcOdbcCallableStatement extends JdbcOdbcPreparedStatement implements CallableStatement{
 
+    private final Parameters parameters = new Parameters();
+    
     public JdbcOdbcCallableStatement(JdbcOdbcConnection jdbcConn, DbCommand command, String sql){
         super(jdbcConn, command, sql);
-        // TODO Auto-generated constructor stub
     }
 
 
-    public Array getArray(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Array getArray(int parameterIndex){
+        return parameters.getArray(parameterIndex);
     }
 
 
-    public Array getArray(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Array getArray(String parameterName) throws SQLException{
+        return parameters.getArray(parameterName);
     }
 
 
-    public BigDecimal getBigDecimal(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final BigDecimal getBigDecimal(int parameterIndex, int scale) throws SQLException{
+        return parameters.getBigDecimal(parameterIndex, scale);
     }
 
 
-    public BigDecimal getBigDecimal(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final BigDecimal getBigDecimal(int parameterIndex) throws SQLException{
+        return parameters.getBigDecimal(parameterIndex);
     }
 
 
-    public BigDecimal getBigDecimal(int parameterIndex, int scale) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final BigDecimal getBigDecimal(String parameterName) throws SQLException{
+        return parameters.getBigDecimal(parameterName);
     }
 
 
-    public Blob getBlob(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Blob getBlob(int parameterIndex){
+        return parameters.getBlob(parameterIndex);
     }
 
 
-    public Blob getBlob(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Blob getBlob(String parameterName) throws SQLException{
+        return parameters.getBlob(parameterName);
     }
 
 
-    public boolean getBoolean(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+    public final boolean getBoolean(int parameterIndex) throws SQLException{
+        return parameters.getBoolean(parameterIndex);
     }
 
 
-    public boolean getBoolean(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+    public final boolean getBoolean(String parameterName) throws SQLException{
+        return parameters.getBoolean(parameterName);
     }
 
 
-    public byte getByte(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final byte getByte(int parameterIndex) throws SQLException{
+        return parameters.getByte(parameterIndex);
     }
 
 
-    public byte getByte(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final byte getByte(String parameterName) throws SQLException{
+        return parameters.getByte(parameterName);
     }
 
 
-    public byte[] getBytes(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final byte[] getBytes(int parameterIndex) throws SQLException{
+        return parameters.getBytes(parameterIndex);
     }
 
 
-    public byte[] getBytes(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final byte[] getBytes(String parameterName) throws SQLException{
+        return parameters.getBytes(parameterName);
     }
 
 
-    public Reader getCharacterStream(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Reader getCharacterStream(int parameterIndex) throws SQLException{
+        return parameters.getCharacterStream(parameterIndex);
     }
 
 
-    public Reader getCharacterStream(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Reader getCharacterStream(String parameterName) throws SQLException{
+        return parameters.getCharacterStream(parameterName);
     }
 
 
-    public Clob getClob(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Clob getClob(int parameterIndex){
+        return parameters.getClob(parameterIndex);
     }
 
 
-    public Clob getClob(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Clob getClob(String parameterName) throws SQLException{
+        return parameters.getClob(parameterName);
     }
 
 
-    public Date getDate(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Date getDate(int parameterIndex, Calendar cal) throws SQLException{
+        return parameters.getDate(parameterIndex, cal);
     }
 
 
-    public Date getDate(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Date getDate(int parameterIndex) throws SQLException{
+        return parameters.getDate(parameterIndex);
     }
 
 
-    public Date getDate(int parameterIndex, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Date getDate(String parameterName, Calendar cal) throws SQLException{
+        return parameters.getDate(parameterName, cal);
     }
 
 
-    public Date getDate(String parameterName, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Date getDate(String parameterName) throws SQLException{
+        return parameters.getDate(parameterName);
     }
 
 
-    public double getDouble(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final double getDouble(int parameterIndex) throws SQLException{
+        return parameters.getDouble(parameterIndex);
     }
 
 
-    public double getDouble(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final double getDouble(String parameterName) throws SQLException{
+        return parameters.getDouble(parameterName);
     }
 
 
-    public float getFloat(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final float getFloat(int parameterIndex) throws SQLException{
+        return parameters.getFloat(parameterIndex);
     }
 
 
-    public float getFloat(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final float getFloat(String parameterName) throws SQLException{
+        return parameters.getFloat(parameterName);
     }
 
 
-    public int getInt(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final int getInt(int parameterIndex) throws SQLException{
+        return parameters.getInt(parameterIndex);
     }
 
 
-    public int getInt(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final int getInt(String parameterName) throws SQLException{
+        return parameters.getInt(parameterName);
     }
 
 
-    public long getLong(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final long getLong(int parameterIndex) throws SQLException{
+        return parameters.getLong(parameterIndex);
     }
 
 
-    public long getLong(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final long getLong(String parameterName) throws SQLException{
+        return parameters.getLong(parameterName);
     }
 
 
-    public Reader getNCharacterStream(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Reader getNCharacterStream(int parameterIndex) throws SQLException{
+        return parameters.getNCharacterStream(parameterIndex);
     }
 
 
-    public Reader getNCharacterStream(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Reader getNCharacterStream(String parameterName) throws SQLException{
+        return parameters.getNCharacterStream(parameterName);
     }
 
 
-    public NClob getNClob(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final NClob getNClob(int parameterIndex){
+        return parameters.getNClob(parameterIndex);
     }
 
 
-    public NClob getNClob(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final NClob getNClob(String parameterName) throws SQLException{
+        return parameters.getNClob(parameterName);
     }
 
 
-    public String getNString(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final String getNString(int parameterIndex) throws SQLException{
+        return parameters.getNString(parameterIndex);
     }
 
 
-    public String getNString(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final String getNString(String parameterName) throws SQLException{
+        return parameters.getNString(parameterName);
     }
 
 
-    public Object getObject(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Object getObject(int parameterIndex, Map<String, Class<?>> map){
+        return parameters.getObject(parameterIndex, map);
     }
 
 
-    public Object getObject(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Object getObject(int parameterIndex) throws SQLException{
+        return parameters.getObject(parameterIndex);
     }
 
 
-    public Object getObject(int parameterIndex, Map<String, Class<?>> map) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Object getObject(String parameterName, Map<String, Class<?>> map) throws SQLException{
+        return parameters.getObject(parameterName, map);
     }
 
 
-    public Object getObject(String parameterName, Map<String, Class<?>> map) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Object getObject(String parameterName) throws SQLException{
+        return parameters.getObject(parameterName);
     }
 
 
-    public Ref getRef(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Ref getRef(int parameterIndex){
+        return parameters.getRef(parameterIndex);
     }
 
 
-    public Ref getRef(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Ref getRef(String parameterName) throws SQLException{
+        return parameters.getRef(parameterName);
     }
 
 
-    public RowId getRowId(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final RowId getRowId(int parameterIndex){
+        return parameters.getRowId(parameterIndex);
     }
 
 
-    public RowId getRowId(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final RowId getRowId(String parameterName) throws SQLException{
+        return parameters.getRowId(parameterName);
     }
 
 
-    public SQLXML getSQLXML(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final short getShort(int parameterIndex) throws SQLException{
+        return parameters.getShort(parameterIndex);
     }
 
 
-    public SQLXML getSQLXML(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final short getShort(String parameterName) throws SQLException{
+        return parameters.getShort(parameterName);
     }
 
 
-    public short getShort(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final SQLXML getSQLXML(int parameterIndex){
+        return parameters.getSQLXML(parameterIndex);
     }
 
 
-    public short getShort(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return 0;
+    public final SQLXML getSQLXML(String parameterName) throws SQLException{
+        return parameters.getSQLXML(parameterName);
     }
 
 
-    public String getString(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final String getString(int parameterIndex) throws SQLException{
+        return parameters.getString(parameterIndex);
     }
 
 
-    public String getString(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final String getString(String parameterName) throws SQLException{
+        return parameters.getString(parameterName);
     }
 
 
-    public Time getTime(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Time getTime(int parameterIndex, Calendar cal) throws SQLException{
+        return parameters.getTime(parameterIndex, cal);
     }
 
 
-    public Time getTime(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Time getTime(int parameterIndex) throws SQLException{
+        return parameters.getTime(parameterIndex);
     }
 
 
-    public Time getTime(int parameterIndex, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Time getTime(String parameterName, Calendar cal) throws SQLException{
+        return parameters.getTime(parameterName, cal);
     }
 
 
-    public Time getTime(String parameterName, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Time getTime(String parameterName) throws SQLException{
+        return parameters.getTime(parameterName);
     }
 
 
-    public Timestamp getTimestamp(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Timestamp getTimestamp(int parameterIndex, Calendar cal) throws SQLException{
+        return parameters.getTimestamp(parameterIndex, cal);
     }
 
 
-    public Timestamp getTimestamp(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Timestamp getTimestamp(int parameterIndex) throws SQLException{
+        return parameters.getTimestamp(parameterIndex);
     }
 
 
-    public Timestamp getTimestamp(int parameterIndex, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Timestamp getTimestamp(String parameterName, Calendar cal) throws SQLException{
+        return parameters.getTimestamp(parameterName, cal);
     }
 
 
-    public Timestamp getTimestamp(String parameterName, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final Timestamp getTimestamp(String parameterName) throws SQLException{
+        return parameters.getTimestamp(parameterName);
     }
 
 
-    public URL getURL(int parameterIndex) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final URL getURL(int parameterIndex){
+        return parameters.getURL(parameterIndex);
     }
 
 
-    public URL getURL(String parameterName) throws SQLException{
-        // TODO Auto-generated method stub
-        return null;
+    public final URL getURL(String parameterName) throws SQLException{
+        return parameters.getURL(parameterName);
+    }
+
+
+    public final boolean wasNull(){
+        return parameters.wasNull();
     }
 
 
     public void registerOutParameter(int parameterIndex, int sqlType) throws SQLException{
-        // TODO Auto-generated method stub
-
+        DbParameter para = getPara(parameterIndex);
+        int direction = para.get_Value() == null ? ParameterDirection.Output : ParameterDirection.InputOutput;
+        para.set_Direction(ParameterDirection.wrap(direction));
+        para.set_Size(1999); //TODO the value should depend of the type
+        //TODO the type should be set 
     }
 
 
     public void registerOutParameter(String parameterName, int sqlType) throws SQLException{
-        // TODO Auto-generated method stub
-
+        registerOutParameter(parameters.findColumn(parameterName), sqlType);
     }
 
 
     public void registerOutParameter(int parameterIndex, int sqlType, int scale) throws SQLException{
-        // TODO Auto-generated method stub
-
+        DbParameter para = getPara(parameterIndex);
+        int direction = para.get_Value() == null ? ParameterDirection.Output : ParameterDirection.InputOutput;
+        para.set_Direction(ParameterDirection.wrap(direction));
+        para.set_Scale((byte)scale);
+        //TODO see above
     }
 
 
-    public void registerOutParameter(int parameterIndex, int sqlType, String typeName) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void registerOutParameter(int parameterIndex, int sqlType, String typeName){
+        throw new UnsupportedOperationException();
     }
 
 
     public void registerOutParameter(String parameterName, int sqlType, int scale) throws SQLException{
-        // TODO Auto-generated method stub
-
+        registerOutParameter(parameters.findColumn(parameterName), sqlType, scale);
     }
 
 
     public void registerOutParameter(String parameterName, int sqlType, String typeName) throws SQLException{
-        // TODO Auto-generated method stub
-
+        registerOutParameter(parameters.findColumn(parameterName), sqlType, typeName);
     }
 
 
     public void setAsciiStream(String parameterName, InputStream x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setAsciiStream(parameters.findColumn(parameterName), x);
     }
 
 
     public void setAsciiStream(String parameterName, InputStream x, int length) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setAsciiStream(parameters.findColumn(parameterName), x, length);
     }
 
 
     public void setAsciiStream(String parameterName, InputStream x, long length) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setAsciiStream(parameters.findColumn(parameterName), x, length);
     }
 
 
     public void setBigDecimal(String parameterName, BigDecimal x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setBigDecimal(parameters.findColumn(parameterName), x);
     }
 
 
     public void setBinaryStream(String parameterName, InputStream x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setBinaryStream(parameters.findColumn(parameterName), x);
     }
 
 
     public void setBinaryStream(String parameterName, InputStream x, int length) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setBinaryStream(parameters.findColumn(parameterName), x, length);
     }
 
 
     public void setBinaryStream(String parameterName, InputStream x, long length) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setBinaryStream(parameters.findColumn(parameterName), x, length);
     }
 
 
     public void setBlob(String parameterName, Blob x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setBlob(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setBlob(String parameterName, InputStream inputStream) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setBlob(String parameterName, InputStream x) throws SQLException{
+        setBlob(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setBlob(String parameterName, InputStream inputStream, long length) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setBlob(String parameterName, InputStream x, long length) throws SQLException{
+        setBlob(parameters.findColumn(parameterName), x, length);
     }
 
 
     public void setBoolean(String parameterName, boolean x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setBoolean(parameters.findColumn(parameterName), x);
     }
 
 
     public void setByte(String parameterName, byte x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setByte(parameters.findColumn(parameterName), x);
     }
 
 
     public void setBytes(String parameterName, byte[] x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setBytes(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setCharacterStream(String parameterName, Reader reader) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setCharacterStream(String parameterName, Reader x) throws SQLException{
+        setCharacterStream(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setCharacterStream(String parameterName, Reader reader, int length) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setCharacterStream(String parameterName, Reader x, int length) throws SQLException{
+        setCharacterStream(parameters.findColumn(parameterName), x, length);
     }
 
 
-    public void setCharacterStream(String parameterName, Reader reader, long length) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setCharacterStream(String parameterName, Reader x, long length) throws SQLException{
+        setCharacterStream(parameters.findColumn(parameterName), x, length);
     }
 
 
     public void setClob(String parameterName, Clob x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setClob(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setClob(String parameterName, Reader reader) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setClob(String parameterName, Reader x) throws SQLException{
+        setClob(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setClob(String parameterName, Reader reader, long length) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setClob(String parameterName, Reader x, long length) throws SQLException{
+        setClob(parameters.findColumn(parameterName), x, length);
     }
 
 
     public void setDate(String parameterName, Date x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setDate(parameters.findColumn(parameterName), x);
     }
 
 
     public void setDate(String parameterName, Date x, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setDate(parameters.findColumn(parameterName), x, cal);
     }
 
 
     public void setDouble(String parameterName, double x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setDouble(parameters.findColumn(parameterName), x);
     }
 
 
     public void setFloat(String parameterName, float x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setFloat(parameters.findColumn(parameterName), x);
     }
 
 
     public void setInt(String parameterName, int x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setInt(parameters.findColumn(parameterName), x);
     }
 
 
     public void setLong(String parameterName, long x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setLong(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setNCharacterStream(String parameterName, Reader value) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setNCharacterStream(String parameterName, Reader x) throws SQLException{
+        setNCharacterStream(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setNCharacterStream(String parameterName, Reader value, long length) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setNCharacterStream(String parameterName, Reader x, long length) throws SQLException{
+        setNCharacterStream(parameters.findColumn(parameterName), x, length);
     }
 
 
-    public void setNClob(String parameterName, NClob value) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setNClob(String parameterName, NClob x) throws SQLException{
+        setNClob(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setNClob(String parameterName, Reader reader) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setNClob(String parameterName, Reader x) throws SQLException{
+        setNClob(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setNClob(String parameterName, Reader reader, long length) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setNClob(String parameterName, Reader x, long length) throws SQLException{
+        setNClob(parameters.findColumn(parameterName), x, length);
     }
 
 
-    public void setNString(String parameterName, String value) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setNString(String parameterName, String x) throws SQLException{
+        setNString(parameters.findColumn(parameterName), x);
     }
 
 
     public void setNull(String parameterName, int sqlType) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setNull(parameters.findColumn(parameterName), sqlType);
     }
 
 
     public void setNull(String parameterName, int sqlType, String typeName) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setNull(parameters.findColumn(parameterName), sqlType, typeName);
     }
 
 
     public void setObject(String parameterName, Object x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setObject(parameters.findColumn(parameterName), x);
     }
 
 
     public void setObject(String parameterName, Object x, int targetSqlType) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setObject(parameters.findColumn(parameterName), x, targetSqlType);
     }
 
 
-    public void setObject(String parameterName, Object x, int targetSqlType, int scale) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setObject(String parameterName, Object x, int targetSqlType, int scaleOrLength) throws SQLException{
+        setObject(parameters.findColumn(parameterName), x, targetSqlType, scaleOrLength);
     }
 
 
     public void setRowId(String parameterName, RowId x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setRowId(parameters.findColumn(parameterName), x);
     }
 
 
-    public void setSQLXML(String parameterName, SQLXML xmlObject) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setSQLXML(String parameterName, SQLXML x) throws SQLException{
+        setSQLXML(parameters.findColumn(parameterName), x);
     }
 
 
     public void setShort(String parameterName, short x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setShort(parameters.findColumn(parameterName), x);
     }
 
 
     public void setString(String parameterName, String x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setString(parameters.findColumn(parameterName), x);
     }
 
 
     public void setTime(String parameterName, Time x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setTime(parameters.findColumn(parameterName), x);
     }
 
 
     public void setTime(String parameterName, Time x, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setTime(parameters.findColumn(parameterName), x, cal);
     }
 
 
     public void setTimestamp(String parameterName, Timestamp x) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setTimestamp(parameters.findColumn(parameterName), x);
     }
 
 
     public void setTimestamp(String parameterName, Timestamp x, Calendar cal) throws SQLException{
-        // TODO Auto-generated method stub
-
+        setTimestamp(parameters.findColumn(parameterName), x, cal);
     }
 
 
-    public void setURL(String parameterName, URL val) throws SQLException{
-        // TODO Auto-generated method stub
-
+    public void setURL(String parameterName, URL x) throws SQLException{
+        setURL(parameters.findColumn(parameterName), x);
     }
 
+    private class Parameters extends JdbcOdbcObject{
 
-    public boolean wasNull() throws SQLException{
-        // TODO Auto-generated method stub
-        return false;
+        @Override
+        public int findColumn(String parameterName) throws SQLException{
+            try{
+                DbParameterCollection params = command.get_Parameters();
+                for(int i=0; i<params.get_Count();i++){
+                    DbParameter param = params.get_Item(i);
+                    if(parameterName.equalsIgnoreCase(param.get_ParameterName())){
+                        return i+1;
+                    }
+                }
+                throw new SQLException( "Parameter '"+parameterName+"' not found.", "S0022");
+            }catch(Throwable th){
+                throw JdbcOdbcUtils.createSQLException(th);
+            }
+        }
+
+        @Override
+        protected Object getObjectImpl(int parameterIndex) throws SQLException{
+            return getPara(parameterIndex).get_Value();
+        }
+        
     }
-
 }
