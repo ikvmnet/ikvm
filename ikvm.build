@@ -31,6 +31,7 @@
                 <include name="bin/IKVM.OpenJDK.Charsets.dll" />
                 <include name="bin/IKVM.OpenJDK.Corba.dll" />
                 <include name="bin/IKVM.OpenJDK.Core.dll" />
+                <include name="bin/IKVM.OpenJDK.Jdbc.dll" />
                 <include name="bin/IKVM.OpenJDK.Management.dll" />
                 <include name="bin/IKVM.OpenJDK.Misc.dll" />
                 <include name="bin/IKVM.OpenJDK.Security.dll" />

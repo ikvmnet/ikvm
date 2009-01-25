@@ -333,7 +333,7 @@ public class JdbcOdbcCallableStatement extends JdbcOdbcPreparedStatement impleme
     }
 
 
-    public final URL getURL(int parameterIndex){
+    public final URL getURL(int parameterIndex) throws SQLException{
         return parameters.getURL(parameterIndex);
     }
 
