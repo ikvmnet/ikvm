@@ -940,8 +940,9 @@ assembly.class
 {
     -out:IKVM.OpenJDK.Jdbc.dll
     -recurse:../../openjdk6-b12/control/build/linux-amd64/j2re-image/lib/resources.jar/javax/sql/*
-    -r:System.Drawing
+    -r:System.Data
     java/sql/*.class
+    sun/jdbc/odbc/*.class
     ../../openjdk6-b12/jdk/src/share/classes/java/sql/*.class
     ../../openjdk6-b12/jdk/src/share/classes/javax/sql/*.class
     ../../openjdk6-b12/jdk/src/share/classes/javax/sql/rowset/*.class
