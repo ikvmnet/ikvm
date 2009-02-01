@@ -1107,6 +1107,7 @@ sun/jdbc/odbc/JdbcOdbcPreparedStatement.java
 sun/jdbc/odbc/JdbcOdbcResultSet.java
 sun/jdbc/odbc/JdbcOdbcResultSetMetaData.java
 sun/jdbc/odbc/JdbcOdbcStatement.java
+sun/jdbc/odbc/JdbcOdbcUpdateableResultSet.java
 sun/jdbc/odbc/JdbcOdbcUtils.java
 sun/management/ManagementFactory.java
 sun/misc/FileURLMapper.java
